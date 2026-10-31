@@ -1,0 +1,1010 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T67bc,---
+description: "There are three example random file programs. The first is very simple, but it demonstrates the principle of random access files. The second expands the first into quite a useful database program...."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# Random (Relative) Files
+
+## Introduction [#introduction]
+
+There are three example random file programs. The first is very simple, but it demonstrates the principle of random access files. The second expands the first into quite a useful database program. The final example is an inventory program. Although it does not provide application dependent features, it would serve as it stands and it is sufficiently well structured to be expanded without too many problems.
+
+## Designing the File [#designing-the-file]
+
+Unlike other versions of BASIC, there is no formalised record structure in BBC BASIC. A file is considered to be a continuous stream of bytes (characters) and you can directly access any byte of the file. This approach has many advantages, but most files are logically considered as a sequence of records (some of which may be empty). How then do we create this structure and access our logical records?
+
+### Record Structure [#record-structure]
+
+Creating the structure is quite simple. You need to decide what information you want to hold and the order in which you want to store it. In the first example, for instance, we have two items of information (fields) per logical record; the name and the remarks. The name can be a maximum of 30 characters long and the remarks a maximum of 50 characters. So our logical record has two fields, one 30 characters long and the other 50 characters long. When the name string is written to disk it will be terminated by a CR - and so will the remarks string. So each record will be a maximum of 82 characters long.
+
+We haven't finished yet, however. We need to be able to tell whether any one record is 'live' or empty (or deleted). To do this we need an extra byte at the start of each record which we set to one value for 'empty' and another for 'live'. In all the examples we use 0 to indicate 'empty' and NOT 0 to indicate 'live'. We are writing character data to the file so we could use the first byte of the name string as the indicator because the lowest ASCII code we will be storing is 32 (space). You can't do this for mixed data files because this byte could hold a data value of zero. Because of this, we have chosen to use an additional byte for the indicator in all the examples.
+
+Our logical record thus consists of:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>1</Table.Td>
+<Table.Td>indicator byte</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>31</Table.Td>
+<Table.Td>bytes for the name</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>51</Table.Td>
+<Table.Td>bytes for the remarks</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+Thus the maximum amount of data in each record is 83 bytes. Because we cannot tell in advance how big each record needs to be (and we may want to change it later), we must assume that ALL the records will be this length. Since most of the records will be smaller than this, we are going to waste quite a lot of space in our random access file, but this is the penalty we pay for convenience and comparative simplicity.
+
+When we write the data to the file, we could insist that each field was treated as a fixed length field by packing each string out with spaces to make it the 'correct' length. This would force each field to start at its 'proper' byte within the record. We don't need to do this, however, because we aren't going to randomly access the fields within the record; we know the order of the fields within the record and we are going to read them sequentially into appropriately named variables. We can write the fields to the file with each field following on immediately behind the previous one. All the 'spare' room is now left at the end of the record and not split up at the end of each field.
+
+### Accessing The Records [#accessing-the-records]
+
+In order to access any particular record, you need to set PTR\# to the first byte of that record. Remember, you can't tell BBC BASIC(Z80) that you want 'record 5', because it knows nothing of your file and record structure. You need to calculate the position of the first byte of 'record 5' and set PTR\# to this value.
+
+To start with, let's call the first record on the file 'record zero', the second record 'record 1', the third record 'record 2', etc. The first byte of 'record zero' is at byte zero on the file. The first byte of 'record 1' is at byte 83 on the file. The first byte of 'record 2' is at byte 166 (2\*83) on the file. And so on. So, the start point of any record can be calculated by:
+
+```text
+first_byte= 83*record_number
+```
+
+Now, we need to set PTR\# to the position of this byte in order to access the record. If the record number was held in 'recno' and the file handle in 'fnum', we could do this directly by:
+
+```text
+PTR#fnum=83*recno
+```
+
+However, we may want to do this in several places in the program so it would be better to define and use a function to set PTR\# as illustrated below.
+
+```text
+190 ...
+200 PTR#fnum=FN_ptr(recno)
+210 ...
+etc
+```
+
+```text
+900 DEF FN_ptr(record)=83*record
+```
+
+Whilst the computer is quite happy with the first record being 'record zero', us mere humans find it a little confusing. What we need is to be able to call the first record 'record 1', etc. We could do this without altering the function which calculates the start position of each record, but we would waste the space allocated to 'record 0' since we would never use it. We want to call it 'record 1' and the program wants to call it 'record 0'. We can change the function to cater for this. If we subtract 1 from the record number before we multiply it by the record length, we will get the result we want. Record 1 will start at byte zero, record 2 will start at byte 83, etc. Our function now looks like this:
+
+```text
+DEF FN_ptr(record)=83*(record-1)
+```
+
+In our example so far we have used a record length of 83. If we replace this with a variable 'rec\_len' we have a general function which we can use to calculate the start position of any record in the file in any program. (You will need to set rec\_len to the appropriate value at the start of the program.) The function now becomes:
+
+```text
+DEF FN_ptr(record)=rec_len*(record-1)
+```
+
+We use this function (or something very similar to it) in the following three example programs using random access files.
+
+## Ex 9 - Simple Random Access File [#ex-9---simple-random-access-file]
+
+```text
+ 10 REM F-RAND1
+ 20 :
+ 30 REM VERY SIMPLE RANDOM ACCESS PROGRAM
+ 40 :
+ 50 REM This program maintains a random access
+ 60 REM file of names and remarks.  There is
+ 70 REM room for a maximum of 20 entries. Each
+ 80 REM name can be up to a max of 30 chars
+ 90 REM long and each remark up to 50 chars.
+100 REM The first byte of the record is set non
+110 REM zero (in fact &FF) if there is a record
+120 REM present.  This gives a maximum record
+130 REM length of 1+31+51=83. (Including CRs)
+140 :
+150 bell$=CHR$(7)
+160 temp$=STRING$(50," ")
+170 maxrec=20
+180 rec_len=83
+190 ans$=""
+200 CLS
+210 WIDTH 0
+220 fnum=OPENUP "RANDONE"
+230 IF fnum=0 fnum=FN_setup("RANDONE")
+240 REPEAT
+250   REPEAT
+260     INPUT '"Enter record number: "ans$
+270     IF ans$="0" CLOSE#fnum:CLS:END
+280     IF ans$="" record=record+1 ELSE record=VAL(ans$)
+290     IF record<1 OR record>maxrec PRINT bell$;
+300   UNTIL record>0 AND record<=maxrec
+310   PTR#fnum=FN_ptr(record)
+320   PROC_display
+330   INPUT '"Do you wish to change this record" ,ans$
+340   PTR#fnum=FN_ptr(record)
+350   IF FN_test(ans$) PROC_modify
+360 UNTIL FALSE
+370 END
+380 :
+390 :
+400 DEF FN_test(A$) =LEFT$(A$,1)="Y" OR LEFT$(A$,1)="y"
+410 :
+420 :
+430 DEF FN_ptr(record)=rec_len*(record-1)
+440 REM This makes record 1 start at PTR# = 0
+450 :
+460 :
+470 DEF PROC_display
+480 PRINT '"Record number ";record'
+490 flag=BGET#fnum
+500 IF flag=0 PROC_clear:ENDPROC
+510 INPUT#fnum,name$,remark$
+520 PRINT name$;" ";remark$ '
+530 ENDPROC
+540 :
+550 :
+560 DEF PROC_clear
+570 PRINT "Record empty"
+580 name$=""
+590 remark$=""
+600 ENDPROC
+610 :
+620 :
+630 DEF PROC_modify
+640 PRINT '"(Enter <Enter> for no change or DELETE to delete)"'
+650 INPUT "Name ",temp$
+660 temp$=LEFT$(temp$,30)
+670 IF temp$<>"" name$=temp$
+680 INPUT "Remark ",temp$
+690 temp$=LEFT$(temp$,50)
+700 IF temp$<>"" remark$=temp$
+710 INPUT '"Confirm update record",ans$
+720 IF NOT FN_test(ans$) ENDPROC
+730 IF name$="DELETE" BPUT#fnum,0:ENDPROC
+740 BPUT#fnum,255
+750 PRINT#fnum,name$,remark$
+760 ENDPROC
+770 :
+780 :
+790 DEF FN_setup(fname$)
+800 PRINT "Setting up the database file"
+810 fnum=OPENOUT(fname$)
+820 FOR record=1 TO maxrec
+830   PTR#fnum=FN_ptr(record)
+840   BPUT#fnum,0
+850 NEXT
+860 =fnum
+```
+
+## Ex 10 - Simple Random Access Database [#ex-10---simple-random-access-database]
+
+The second program in this sub-section expands the previous program into a simple, but quite versatile, database program. A setup procedure has been added which allows you to specify the file name. If it is a new file, you are then allowed to specify the number of records and the number, name and size of the fields you wish to use. This information is stored at the start of the file. If the file already exists this data is read from the records at the beginning of the file. The function for calculating the start position of each record is modified to take into account the room used at the front of the file to store information about the database.
+
+```text
+ 10 REM F-RAN
+ 20 REM SIMPLE DATABASE PROGRAM
+ 30 REM Written by R T Russell Jan 1983
+ 40 REM Mod for BBC BASIC(Z80): D Mounter Dec 1985
+ 50 :
+ 60 REM This is a simple database program.  You
+ 70 REM are asked for the name of the file you
+ 80 REM wish to use.  If the file does not
+ 90 REM already exist, you are asked to enter
+100 REM the number and format of the records.
+110 REM If the file does already exist, the file
+120 REM specification is read from the file.
+130 :
+140 @%=&90A
+150 bell$=CHR$(7)
+160 CLS
+170 WIDTH 0
+180 INPUT '"Enter the filename of the data file: "filename$
+190 fnum=OPENUP(filename$)
+200 IF fnum=0 fnum=FN_setup(filename$) ELSE PROC_readgen
+210 PRINT
+220 :
+230 REPEAT
+240   REPEAT
+250     INPUT '"Enter record number: "ans$
+260     IF ans$="0" CLOSE#fnum:CLS:END
+270     IF ans$="" record=record+1 ELSE record=VAL(ans$)
+280     IF record<1 OR record>maxrec PRINT bell$;
+290   UNTIL record>0 AND record<=maxrec
+300   PTR#fnum=FN_ptr(record)
+310   PROC_display
+320   INPUT '"Do you wish to change this record" ,ans$
+330   PTR#fnum=FN_ptr(record)
+340   IF FN_test(ans$) PROC_modify
+350 UNTIL FALSE
+360 END
+370 :
+380 :
+390 DEF FN_test(A$) =LEFT$(A$,1)="Y" OR LEFT$(A$,1)="y"
+400 :
+410 :
+420 DEF FN_ptr(record)=base+rec_len*(record-1)
+430 :
+440 :
+450 DEF FN_setup(filename$)
+460 PRINT "New file."
+470 fnum=OPENOUT(filename$)
+480 REPEAT
+490   INPUT "Enter the number of records (max 1000): "maxrec
+500 UNTIL maxrec>0 AND maxrec<1001
+510 REPEAT
+520   INPUT "Enter number of fields per record (max 20): "fields
+530 UNTIL fields>0 AND fields<21
+540 DIM title$(fields),size(fields),A$(fields)
+550 FOR field=1 TO fields
+560   PRINT '"Enter title of field number ";field;": ";
+570   INPUT ""title$(field)
+580   PRINT
+590     REPEAT
+600     INPUT "Max size of field (characters)",size(field)
+610   UNTIL size(field)>0 AND size(field)<256
+620 NEXT field
+630 rec_len=1
+640 PRINT#fnum,maxrec,fields
+650 FOR field=1 TO fields
+660   PRINT#fnum,title$(field),size(field)
+670   rec_len=rec_len+size(field)+1
+680 NEXT field
+690 base=PTR#fnum
+700 :
+710 FOR record=1 TO maxrec
+720   PTR#fnum=FN_ptr(record)
+730   BPUT#fnum,0
+740 NEXT
+750 =fnum
+760 :
+770 :
+780 DEF PROC_readgen
+790 rec_len=1
+800 INPUT#fnum,maxrec,fields
+810 DIM title$(fields),size(fields),A$(fields)
+820 FOR field=1 TO fields
+830   INPUT#fnum,title$(field),size(field)
+ 840   rec_len=rec_len+size(field)+1
+ 850 NEXT field
+ 860 base=PTR#fnum
+ 870 ENDPROC
+ 880 :
+ 890 :
+ 900 DEF PROC_display
+ 910 PRINT '"Record number ";record'
+ 920 flag=BGET#fnum
+ 930 IF flag=0 PROC_clear:ENDPROC
+ 940 FOR field=1 TO fields
+ 950   INPUT#fnum,A$(field)
+ 960   PRINT title$(field);" ";A$(field)
+ 970 NEXT field
+ 980 ENDPROC
+ 990 :
+1000 :
+1010 DEF PROC_clear
+1020 FOR field=1 TO fields
+1030   A$(field)=""
+1040 NEXT
+1050 ENDPROC
+1060 :
+1070 :
+1080 DEF PROC_modify
+1090 PRINT '"(Enter <Enter> for no change)"'
+1100 FOR field=1 TO fields
+1110   REPEAT
+1120     PRINT title$(field);" ";
+1130     INPUT LINE ""A$
+1140     IF A$="" PRINT TAB(POS,VPOS-1)title$(field);" ";A$(field)
+1150     REM TAB(POS,VPOS-1) moves the cursor up 1 line
+1160   UNTIL LEN(A$)<=size(field)
+1170   IF A$<>"" A$(field)=A$
+1180 NEXT field
+1190 INPUT '"Confirm update record",ans$
+1200 IF NOT FN_test(ans$) ENDPROC
+1210 IF A$(1)="DELETE" BPUT#fnum,0:ENDPROC
+1220 BPUT#fnum,255
+1230 FOR field=1 TO fields
+1240   PRINT#fnum,A$(field)
+1250 NEXT field
+1260 ENDPROC
+```
+
+## Ex 11 - Random Access Inventory Program [#ex-11---random-access-inventory-program]
+
+The final example in this sub-section is a full-blown inventory program. Rather than go through all its aspects at the start, they are discussed at the appropriate point in the listing. (These comments do not have line numbers and are not, of course, part of the program.)
+
+```text
+ 10 REM F-RAND
+ 20 :
+ 30 REM Written by Doug Mounter Jan 1982
+ 40 REM Modified for BBC BASIC(Z80) Dec 1985
+ 50 :
+ 60 REM EXAMPLE OF A RANDOM ACCESS FILE
+ 70 :
+ 80 REM This is a simple inventory program.  It
+ 90 REM uses the item's part number as the key
+ 92 REM and stores:
+100 REM  The item description - char max len 30
+110 REM  The quantity in stock - numeric
+120 REM  The re-order level - numeric
+130 REM  The unit price - numeric
+140 REM In addition, the first byte of the rec
+150 REM is used as a valid data flag.  Set to 0
+160 REM if empty, D if the record has been
+170 REM deleted or V if the record is valid.
+180 REM This gives a MAX record len of 47 bytes
+190 REM (Don't forget the CR after the string)
+200 :
+210 PROC_initialise
+220 inventry=FN_open("INVENTRY")
+```
+
+The following section of code is the command loop. You are offered a choice of functions until you eventually select function 0. The more traditional ON GOSUB statement has been used for menu selection processing. The newer ON PROC statement is illustrated in the indexed file example which follows. There are some forward jumps within procedures, etc to overcome the lack of a multi line IF statement. It would have been possible to have used further procedures, but the whole thing would have become rather laboured.
+
+```text
+230 REPEAT
+240   CLS
+250   PRINT TAB(5,3);"If you want to:-"'
+260   PRINT TAB(10);"End This Session";TAB(55);"Type 0"
+270   PRINT TAB(10);"Amend or Create an Entry";TAB(55);"Type 1"
+280   PRINT TAB(10);"Disp Inventory for One Part";TAB(55);"Type 2"
+290   PRINT TAB(10);"Alter Stock  of One Part";TAB(55);"Type 3"
+300   PRINT TAB(10);"Disp Items to Reorder";TAB(55);"Type 4"
+310   PRINT TAB(10);"Recover a Deleted Item";TAB(55);"Type 5"
+320   PRINT TAB(10);"List Deleted Items";TAB(55);"Type 6"
+330   PRINT TAB(10);"Set Up a New Inventory";TAB(55);"Type 9"
+340   REPEAT
+350     PRINT TAB(5,15);bell$;
+360     PRINT "Please enter selection (0 to 6 or 9) ";
+370     function$=GET$
+380   UNTIL function$>"/" AND function$<"8" OR function$="9"
+390   function=VAL(function$)
+400   ON function GOSUB 500,670,810,1100,1350,1540,1770,1790,1840 ELSE
+410 UNTIL function=0
+420 CLS
+430 PRINT "Inventory File Closed" ''
+440 CLOSE#inventry
+450 END
+460 :
+470 :
+```
+
+This is the data entry function. You can delete or amend an entry or enter a new one. Have a look at the definition of FN\_getrec for an explanation of the ASC"V" in its parameters.
+
+```text
+480 REM AMEND/CREATE AN ENTRY
+490 :
+500 REPEAT
+510   CLS
+520   PRINT "AMEND/CREATE"
+530   partno=FN_getpartno
+540   flag=FN_getrec(partno,ASC"V")
+550   PROC_display(flag)
+560   PRINT'"Do you wish to ";
+570   IF flag PRINT "change this entry ? "; ELSE PRINT "enter data ? ";
+580   IF GET$<>"N" flag=FN_amend(partno):PROC_cteos
+590   PROC_write(partno,flag,type)
+600   PRINT bell$;"Do you wish to amend/create another record ? ";
+610 UNTIL GET$="N"
+620 RETURN
+630 :
+640 :
+```
+
+This subroutine allows you to look at a record without the ability to change or delete it.
+
+```text
+650 REM DISPLAY AN ENTRY
+660 :
+670 REPEAT
+680   CLS
+690   PRINT "DISPLAY"
+700   partno=FN_getpartno
+710   flag=FN_getrec(partno,ASC"V")
+720   PROC_display(flag)
+730   PRINT '
+740   PRINT "Do you wish to view another part?";
+750 UNTIL GET$="N"
+760 RETURN
+770 :
+780 :
+```
+
+The purpose of this subroutine is to allow you to update the stock level without having to amend the rest of the record.
+
+```text
+ 790 REM CHANGE THE STOCK LEVEL FOR ONE PART
+ 800 :
+ 810 REPEAT
+ 820   CLS
+ 830   PRINT "CHANGE STOCK"
+ 840   partno=FN_getpartno
+ 850   flag=FN_getrec(partno,ASC"V")
+ 860   REPEAT
+ 870     PROC_display(flag)
+ 880     PROC_cteos
+ 890     REPEAT
+ 900       PRINT TAB(0,12);:PROC_cteol
+ 910       INPUT "What is the change ? " temp$
+ 920       change=VAL(temp$)
+ 930     UNTIL INT(change)=change AND stock+change>=0
+ 940     IF temp$="" flag=FALSE:GOTO 1000
+ 950     stock=stock+change
+ 960     PROC_display(flag)
+ 970     PRINT'"Is this correct ? ";
+ 980     temp$=GET$
+ 990 :
+1000   UNTIL NOT flag OR temp$="Y"
+1010   PROC_write(partno,flag,ASC"V")
+1020   PRINT return$;bell$;
+1030   PRINT "Do you want any more updates ? ";
+1040 UNTIL GET$="N"
+1050 RETURN
+1060 :
+1070 :
+```
+
+This subroutine goes through the file in stock number order and lists all those items where the current stock is below the reorder level. You can interrupt the process at any time by pushing a key.
+
+```text
+1080 REM DISPLAY ITEMS BELOW REORDER LEVEL
+1090 :
+1100 partno=1
+1110 REPEAT
+1120   CLS
+1130   PRINT "ITEMS BELOW REORDER LEVEL"'
+1140   line_count=2
+1150   REPEAT
+1160     flag=FN_getrec(partno,ASC"V")
+1170     IF NOT(flag AND stock<reord) THEN 1230
+1180     PRINT "Part Number ";partno
+1190     PRINT desc$;" Stock ";stock;" Reorder Level ";reord
+1200     PRINT
+1210     line_count=line_count+3
+1220 :
+1230     partno=partno+1
+1240     temp$=INKEY$(0)
+1250   UNTIL partno>maxpartno OR line_count>20 OR temp$<>""
+1260   PRINT TAB(0,23);bell$;"Push any key to continue or E to end ";
+1270   temp$=GET$
+1280 UNTIL partno>maxpartno OR temp$="E"
+1290 partno=0
+1300 RETURN
+1310 :
+1320 :
+```
+
+Deleted entries are not actually removed from the file, just marked as deleted. This subroutine makes it possible for you to correct the mistake you made by deleting data you really wanted. If you have never used this type of program seriously, you won't believe how useful this is.
+
+```text
+1330 REM RECOVER A DELETED ENTRY
+1340 :
+1350 REPEAT
+1360   CLS
+1370   PRINT "RECOVER DELETED RECORDS"
+1380   partno=FN_getpartno
+1390   flag=FN_getrec(partno,ASC"D")
+1400   PROC_display(flag)
+1410   PRINT
+1420   IF NOT flag THEN 1470
+1430   PRINT "If you wish to recover this entry type Y ";
+1440   temp$=GET$
+1450   IF temp$="Y"PROC_write(partno,flag,ASC"V")
+1460 :
+1470   PRINT return$;bell$;"Do you wish to recover another record ? ";
+1480 UNTIL GET$="N"
+1490 RETURN
+1500 :
+1510 :
+```
+
+This subroutine lists all the deleted entries so you can check you really don't want the data.
+
+```text
+1520 REM LIST DELETED ENTRIES
+1530 :
+1540 partno=1
+1550 REPEAT
+1560   CLS
+1570   PRINT "DELETED ITEMS"'
+1580   line_count=2
+1590   REPEAT
+1600     flag=FN_getrec(partno,ASC"D")
+1610     IF NOT flag THEN 1660
+1620     PRINT "Part Number ";partno
+1630     PRINT "Description ";desc$'
+1640     line_count=line_count+3
+1650 :
+1660     partno=partno+1
+1670     temp$=INKEY$(0)
+1680   UNTIL partno>maxpartno OR line_count>20 OR temp$<>""
+1690   PRINT TAB(0,23);bell$;"Push any key to continue or E to end ";
+1700 UNTIL partno>maxpartno OR GET$="E"
+1710 partno=0
+1720 RETURN
+1730 :
+1740 :
+1750 REM DUMMY RETURNS FOR INVALID FUNCTION NUMs
+1760 :
+1770 RETURN
+1780 :
+1790 RETURN
+1800 :
+1810 :
+1820 REM REINITIALISE THE INVENTORY DATA FILE
+1830 :
+1840 CLS
+1850 PRINT TAB(0,3);bell$;"Are you sure you want to set up a new inventory?"
+1860 PRINT "You will DESTROY ALL THE DATA YOU HAVE ACCUMULATED so far."
+1870 PRINT '"It would be safer to use a new disk in drive B and start a new"
+1880 PRINT "inventory file."'
+1890 PRINT "If you are SURE you want to do it, enter YES"
+1900 PRINT "If you want to start a new inventory file, enter NEW"
+1910 INPUT "Otherwise, just hit return ",temp$
+1920 IF temp$="YES" PROC_setup(inventry)
+1930 IF temp$="NEW" function=0
+1940 RETURN
+1950 :
+1960 :
+```
+
+This is where all the variables that you usually write as CHR$(\#) go. Then you can find them if you want to change them.
+
+```text
+1970 REM INITIALISE ALL THE VARIOUS PRESETS ETC
+1980 :
+1990 DEF PROC_initialise
+2010 bell$=CHR$(7)
+2020 return$=CHR$(13)
+2030 rec_length=47
+2040 partno=0
+```
+
+If you initially set strings to the maximum length you will ever use, you will save prevent the generation of 'garbage'.
+
+```text
+2050 desc$=STRING$(30," ")
+2060 temp$=STRING$(40," ")
+2070 WIDTH 0
+```
+
+```text
+2130 REM OPEN FILE AND RETURN THE FILE HANDLE
+2140 :
+2150 REM If the file already exists, the largest permitted
+2160 REM part number is read into maxpartno.
+2170 REM If it is a new file, the file is
+2180 REM initialised and the largest part
+2190 REM number is written as the first record.
+2200 :
+2210 DEF FN_open(name$)
+2220 fnum=OPENUP(name$)
+2230 IF fnum>0 INPUT#fnum,maxpartno: =fnum
+2240 fnum=OPENOUT(name$)
+2250 CLS
+```
+
+It's a new file, so we won't go through the warning bit.
+
+```text
+2260 PROC_setup(fnum)
+2270 =fnum
+2280 :
+2290 REM SET UP THE FILE
+2300 :
+2310 REM Ask for maximum part number required,
+2320 REM write it as the first record and then
+2330 REM write 0 in to first byte of each rec.
+2340 :
+2350 DEF PROC_setup(fnum)
+2360 REPEAT
+2370   PRINT TAB(0,12);bell$;:PROC_cteos
+2380   INPUT "What is the highest part number required (Max 5000)",maxpartno
+2390 UNTIL maxpartno>0 AND maxpartno<5000 AND INT(maxpartno)=maxpartno
+2400 PTR#fnum=0
+2410 PRINT#fnum,maxpartno
+2420 FOR partno=1 TO maxpartno
+2430   PTR#fnum=FN_ptr(partno)
+2440   BPUT#fnum,0
+2450 NEXT
+2460 partno=0
+2470 ENDPROC
+2480 :
+2490 :
+```
+
+Ask for the required part number. If a null is entered, make the next part number one more than the last.
+
+```text
+2500 REM GET AND RETURN THE REQUIRED PART NUMBER
+2510 :
+2520 DEF FN_getpartno
+2530 REPEAT
+2540   PRINT TAB(0,5);bell$;:PROC_cteos
+2550   PRINT "Enter a Part Number Between 1 and ";maxpartno '
+2560   IF partno=maxpartno THEN 2590
+2570   PRINT "The Next Part Number is ";partno+1;
+2580   PRINT " Just hit RETURN to get this"'
+2590 :
+2600   INPUT "What is the Part Number You Want ", partno$
+2610   IF partno$<>"" partno=VAL(partno$):GOTO 2630
+2620   IF partno=maxpartno partno=0 ELSE partno=partno+1
+2630 :
+2640   PRINT TAB(35,9);partno;:PROC_cteol
+2650 UNTIL partno>0 AND partno<maxpartno+1 AND INT(partno)=partno
+2660 =partno
+2670 :
+2680 :
+2690 REM GET THE RECORD FOR THE PART NUMBER
+2700 :
+2710 REM Return TRUE if the record exists and
+2720 REM FALSE if not  If the record does not
+2730 REM exist, load desc$ with "No Record" The
+2740 REM remainder of the record is set to 0.
+2742 :
+2750 DEF FN_getrec(partno,type)
+2760 stock=0
+2770 reord=0
+2780 price=0
+2790 PTR#inventry=FN_ptr(partno)
+2800 test=BGET#inventry
+2810 IF test=0 desc$="No Record": =FALSE
+2820 IF test=type THEN 2850
+2830 IF type=86 desc$="Record Deleted" ELSE desc$="Record Exists"
+2840 =FALSE
+2850 :
+2860 INPUT#inventry,desc$
+2870 INPUT#inventry,stock,reord,price
+2880 =TRUE
+2890 :
+2900 :
+```
+
+Part numbers run from 1 up. The record for part number 1 starts at byte 5 of the file. The start position could have been calculated as (part-no -1) \*record\_length + 5. The expression below works out to the same thing, but it executes quicker.
+
+```text
+2910 REM CALCULATE THE VALUE OF PTR FOR THIS REC
+2920 :
+2930 DEF FN_ptr(partno)=partno*rec_length+5-rec_length
+2940 :
+2950 :
+```
+
+This function amends the record as required and returns with flag=TRUE if any amendment has taken place. It also sets the record type indicator (valid deleted or no record) to ASC"V" or ASC"D" as appropriate.
+
+```text
+2960 REM AMEND THE RECORD
+2970 :
+2980 DEF FN_amend(partno)
+2990 PRINT return$;:PROC_cteol:PRINT TAB(0,4);
+3000 PRINT "Please Complete the Details for Part Number ";partno
+3010 PRINT "Just hit Return to leave the entry as it is"'
+3020 flag=FALSE
+3030 type=ASC"V"
+3040 INPUT "Description - Max 30 Chars " temp$
+3050 IF temp$="DELETE" type=ASC"D": =TRUE
+3060 temp$=LEFT$(temp$,30)
+3070 IF temp$<>"" desc$=temp$:flag=TRUE
+3080 IF desc$="No Record" OR desc$="Record Deleted" =FALSE
+3090 INPUT "Current Stock Level " temp$
+3100 IF temp$<>"" stock=VAL(temp$):flag=TRUE
+3110 INPUT "Reorder Level " temp$
+3120 IF temp$<>"" reord=VAL(temp$):flag=TRUE
+3130 INPUT "Unit Price " temp$
+3140 IF temp$<>"" price=VAL(temp$):flag=TRUE
+3150 =flag
+3160 :
+3170 :
+```
+
+Write the record to the file if necessary (flag=TRUE)
+
+```text
+3180 REM WRITE THE RECORD
+3190 :
+3200 DEF PROC_write(partno,flag,type)
+3210 IF NOT flag ENDPROC
+3220 PTR#inventry=FN_ptr(partno)
+3230 BPUT#inventry,type
+3240 PRINT#inventry,desc$,stock,reord,price
+3250 ENDPROC
+3260 :
+3270 :
+```
+
+Print the record details to the screen. If the record is not of the required type (V or D) or it does not exist, stop after printing the description. The description holds "Record Exists" or "Record Deleted" or valid data as set by FN\_getrec.
+
+```text
+3280 REM DISPLAY THE RECORD DETAILS
+3290 :
+3300 DEF PROC_display(flag)
+3310 PRINT TAB(0,5);:PROC_cteos
+3320 PRINT "Part Number ";partno'
+3330 PRINT "Description ";desc$
+3340 IF NOT flag ENDPROC
+3350 PRINT "Current Stock Level ";stock
+3360 PRINT "Reorder Level ";reord
+3370 PRINT "Unit Price ";price
+3380 ENDPROC
+3390 :
+3400 :
+```
+
+The two following procedures rely on the screen width being 80 characters:
+
+```text
+3410 REM There are no 'native' clear to end of
+3420 REM line/screen vdu procedures.  The
+3430 REM following two procedures clear to the
+3440 REM end of the line/screen.
+3450 DEF PROC_cteol
+3460 LOCAL x,y
+3470 x=POS:y=VPOS
+3480 IF y=31 PRINT SPC(79-x); ELSE PRINT SPC(80-x);
+3490 PRINT TAB(x,y);
+3500 ENDPROC
+3510 :
+3520 :
+3530 DEF PROC_cteos
+3540 LOCAL I,x,y
+3550 x=POS:y=VPOS
+3560 IF y<31 FOR I=y TO 30:PRINT SPC(80);:NEXT
+3570 PRINT SPC(79-x);TAB(x,y);
+3580 ENDPROC
+```a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Introduction","id":"introduction","depth":2},{"value":"Designing the File","id":"designing-the-file","depth":2},{"value":"Record Structure","id":"record-structure","depth":3},{"value":"Accessing The Records","id":"accessing-the-records","depth":3},{"value":"Ex 9 - Simple Random Access File","id":"ex-9---simple-random-access-file","depth":2},{"value":"Ex 10 - Simple Random Access Database","id":"ex-10---simple-random-access-database","depth":2},{"value":"Ex 11 - Random Access Inventory Program","id":"ex-11---random-access-inventory-program","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"There are three example random file programs. The first is very simple, but it demonstrates the principle of random access files. The second expands the first into quite a useful database program....","title":"Random (Relative) Files","filePath":"content/en/library/cambridge-z88/bbc-basic/bbc-basic-z80-files/random-relative-files.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/bbc-basic/bbc-basic-z80-files/random-relative-files","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Random (Relative) Files - Klive IDE"}],["$","meta","1",{"name":"description","content":"There are three example random file programs. The first is very simple, but it demonstrates the principle of random access files. The second expands the first into quite a useful database program...."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/bbc-basic/bbc-basic-z80-files/random-relative-files/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"dZNfFVLPQi_KHqnwQrQVE"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+5b:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Random (Relative) Files","$undefined"]}],"\n",["$","h2",null,{"id":"introduction","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Introduction",["$","$L20",null,{"id":"introduction"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"There are three example random file programs. The first is very simple, but it demonstrates the principle of random access files. The second expands the first into quite a useful database program. The final example is an inventory program. Although it does not provide application dependent features, it would serve as it stands and it is sufficiently well structured to be expanded without too many problems."}],"\n",["$","h2",null,{"id":"designing-the-file","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Designing the File",["$","$L20",null,{"id":"designing-the-file"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Unlike other versions of BASIC, there is no formalised record structure in BBC BASIC. A file is considered to be a continuous stream of bytes (characters) and you can directly access any byte of the file. This approach has many advantages, but most files are logically considered as a sequence of records (some of which may be empty). How then do we create this structure and access our logical records?"}],"\n",["$","h3",null,{"id":"record-structure","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Record Structure",["$","$L20",null,{"id":"record-structure"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Creating the structure is quite simple. You need to decide what information you want to hold and the order in which you want to store it. In the first example, for instance, we have two items of information (fields) per logical record; the name and the remarks. The name can be a maximum of 30 characters long and the remarks a maximum of 50 characters. So our logical record has two fields, one 30 characters long and the other 50 characters long. When the name string is written to disk it will be terminated by a CR - and so will the remarks string. So each record will be a maximum of 82 characters long."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"We haven’t finished yet, however. We need to be able to tell whether any one record is ‘live’ or empty (or deleted). To do this we need an extra byte at the start of each record which we set to one value for ‘empty’ and another for ‘live’. In all the examples we use 0 to indicate ‘empty’ and NOT 0 to indicate ‘live’. We are writing character data to the file so we could use the first byte of the name string as the indicator because the lowest ASCII code we will be storing is 32 (space). You can’t do this for mixed data files because this byte could hold a data value of zero. Because of this, we have chosen to use an additional byte for the indicator in all the examples."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Our logical record thus consists of:"}],"\n","$L21","\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49","\n","$L4a","\n","$L4b","\n","$L4c","\n","$L4d","\n","$L4e","\n","$L4f","\n","$L50","\n","$L51","\n","$L52","\n","$L53","\n","$L54","\n","$L55","\n","$L56","\n","$L57","\n","$L58","\n","$L59","\n","$L5a"]]}]
+15:["$","$L5b",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@5c"}]}]
+1f:true
+5d:"ToggleWordWrapButton"
+5e:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$5d"]
+5f:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+9:300
+21:["$","table",null,{"children":["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"1","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"indicator byte","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"31","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"bytes for the name","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"51","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"bytes for the remarks","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}],"className":"x:block x:overflow-x-auto"}]
+22:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Thus the maximum amount of data in each record is 83 bytes. Because we cannot tell in advance how big each record needs to be (and we may want to change it later), we must assume that ALL the records will be this length. Since most of the records will be smaller than this, we are going to waste quite a lot of space in our random access file, but this is the penalty we pay for convenience and comparative simplicity."}]
+23:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When we write the data to the file, we could insist that each field was treated as a fixed length field by packing each string out with spaces to make it the ‘correct’ length. This would force each field to start at its ‘proper’ byte within the record. We don’t need to do this, however, because we aren’t going to randomly access the fields within the record; we know the order of the fields within the record and we are going to read them sequentially into appropriately named variables. We can write the fields to the file with each field following on immediately behind the previous one. All the ‘spare’ room is now left at the end of the record and not split up at the end of each field."}]
+24:["$","h3",null,{"id":"accessing-the-records","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Accessing The Records",["$","$L20",null,{"id":"accessing-the-records"}]]}]
+25:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"In order to access any particular record, you need to set PTR# to the first byte of that record. Remember, you can’t tell BBC BASIC(Z80) that you want ‘record 5’, because it knows nothing of your file and record structure. You need to calculate the position of the first byte of ‘record 5’ and set PTR# to this value."}]
+26:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"To start with, let’s call the first record on the file ‘record zero’, the second record ‘record 1’, the third record ‘record 2’, etc. The first byte of ‘record zero’ is at byte zero on the file. The first byte of ‘record 1’ is at byte 83 on the file. The first byte of ‘record 2’ is at byte 166 (2*83) on the file. And so on. So, the start point of any record can be calculated by:"}]
+27:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L5e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L5f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"first_byte= 83*record_number"}]}]}]]}]]}]
+28:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Now, we need to set PTR# to the position of this byte in order to access the record. If the record number was held in ‘recno’ and the file handle in ‘fnum’, we could do this directly by:"}]
+29:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L5e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L5f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"PTR#fnum=83*recno"}]}]}]]}]]}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"However, we may want to do this in several places in the program so it would be better to define and use a function to set PTR# as illustrated below."}]
+2b:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L5e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L5f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"190 ..."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"200 PTR#fnum=FN_ptr(recno)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"210 ..."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"etc"}]}]]}]]}]]}]
+2c:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L5e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L5f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"900 DEF FN_ptr(record)=83*record"}]}]}]]}]]}]
+2d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Whilst the computer is quite happy with the first record being ‘record zero’, us mere humans find it a little confusing. What we need is to be able to call the first record ‘record 1’, etc. We could do this without altering the function which calculates the start position of each record, but we would waste the space allocated to ‘record 0’ since we would never use it. We want to call it ‘record 1’ and the program wants to call it ‘record 0’. We can change the function to cater for this. If we subtract 1 from the record number before we multiply it by the record length, we will get the result we want. Record 1 will start at byte zero, record 2 will start at byte 83, etc. Our function now looks like this:"}]
+2e:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L5e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L5f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"DEF FN_ptr(record)=83*(record-1)"}]}]}]]}]]}]
+2f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"In our example so far we have used a record length of 83. If we replace this with a variable ‘rec_len’ we have a general function which we can use to calculate the start position of any record in the file in any program. (You will need to set rec_len to the appropriate value at the start of the program.) The function now becomes:"}]
+30:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L5e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L5f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"DEF FN_ptr(record)=rec_len*(record-1)"}]}]}]]}]]}]
+31:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"We use this function (or something very similar to it) in the following three example programs using random access files."}]
+32:["$","h2",null,{"id":"ex-9---simple-random-access-file","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Ex 9 - Simple Random Access File",["$","$L20",null,{"id":"ex-9---simple-random-access-file"}]]}]
+33:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L5e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L5f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":" 10 REM F-RAND1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 20 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 30 REM VERY SIMPLE RANDOM ACCESS PROGRAM"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 40 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 50 REM This program maintains a random access"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 60 REM file of names and remarks.  There is"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 70 REM room for a maximum of 20 entries. Each"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 80 REM name can be up to a max of 30 chars"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 90 REM long and each remark up to 50 chars."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"100 REM The first byte of the record is set non"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"110 REM zero (in fact &FF) if there is a record"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"120 REM present.  This gives a maximum record"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"130 REM length of 1+31+51=83. (Including CRs)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"140 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"150 bell$=CHR$(7)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"160 temp$=STRING$(50,\" \")"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"170 maxrec=20"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"180 rec_len=83"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"190 ans$=\"\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"200 CLS"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"210 WIDTH 0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"220 fnum=OPENUP \"RANDONE\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"230 IF fnum=0 fnum=FN_setup(\"RANDONE\")"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"240 REPEAT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"250   REPEAT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"260     INPUT '\"Enter record number: \"ans$"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"270     IF ans$=\"0\" CLOSE#fnum:CLS:END"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"280     IF ans$=\"\" record=record+1 ELSE record=VAL(ans$)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"290     IF record<1 OR record>maxrec PRINT bell$;"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"300   UNTIL record>0 AND record<=maxrec"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"310   PTR#fnum=FN_ptr(record)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"320   PROC_display"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"330   INPUT '\"Do you wish to change this record\" ,ans$"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"340   PTR#fnum=FN_ptr(record)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"350   IF FN_test(ans$) PROC_modify"}]}],"\n",["$","span",null,{"children":"$L60"}],"\n","$L61","\n","$L62","\n","$L63","\n","$L64","\n","$L65","\n","$L66","\n","$L67","\n","$L68","\n","$L69","\n","$L6a","\n","$L6b","\n","$L6c","\n","$L6d","\n","$L6e","\n","$L6f","\n","$L70","\n","$L71","\n","$L72","\n","$L73","\n","$L74","\n","$L75","\n","$L76","\n","$L77","\n","$L78","\n","$L79","\n","$L7a","\n","$L7b","\n","$L7c","\n","$L7d","\n","$L7e","\n","$L7f","\n","$L80","\n","$L81","\n","$L82","\n","$L83","\n","$L84","\n","$L85","\n","$L86","\n","$L87","\n","$L88","\n","$L89","\n","$L8a","\n","$L8b","\n","$L8c","\n","$L8d","\n","$L8e","\n","$L8f","\n","$L90","\n","$L91","\n","$L92"]}]]}]]}]
+34:["$","h2",null,{"id":"ex-10---simple-random-access-database","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Ex 10 - Simple Random Access Database",["$","$L20",null,{"id":"ex-10---simple-random-access-database"}]]}]
+35:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The second program in this sub-section expands the previous program into a simple, but quite versatile, database program. A setup procedure has been added which allows you to specify the file name. If it is a new file, you are then allowed to specify the number of records and the number, name and size of the fields you wish to use. This information is stored at the start of the file. If the file already exists this data is read from the records at the beginning of the file. The function for calculating the start position of each record is modified to take into account the room used at the front of the file to store information about the database."}]
+36:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L5e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L5f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":" 10 REM F-RAN"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 20 REM SIMPLE DATABASE PROGRAM"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 30 REM Written by R T Russell Jan 1983"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 40 REM Mod for BBC BASIC(Z80): D Mounter Dec 1985"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 50 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 60 REM This is a simple database program.  You"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 70 REM are asked for the name of the file you"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 80 REM wish to use.  If the file does not"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 90 REM already exist, you are asked to enter"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"100 REM the number and format of the records."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"110 REM If the file does already exist, the file"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"120 REM specification is read from the file."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"130 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"140 @%=&90A"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"150 bell$=CHR$(7)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"160 CLS"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"170 WIDTH 0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"180 INPUT '\"Enter the filename of the data file: \"filename$"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"190 fnum=OPENUP(filename$)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"200 IF fnum=0 fnum=FN_setup(filename$) ELSE PROC_readgen"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"210 PRINT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"220 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"230 REPEAT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"240   REPEAT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"250     INPUT '\"Enter record number: \"ans$"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"260     IF ans$=\"0\" CLOSE#fnum:CLS:END"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"270     IF ans$=\"\" record=record+1 ELSE record=VAL(ans$)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"280     IF record<1 OR record>maxrec PRINT bell$;"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"290   UNTIL record>0 AND record<=maxrec"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"300   PTR#fnum=FN_ptr(record)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"310   PROC_display"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"320   INPUT '\"Do you wish to change this record\" ,ans$"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"330   PTR#fnum=FN_ptr(record)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"340   IF FN_test(ans$) PROC_modify"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"350 UNTIL FALSE"}]}],"\n","$L93","\n","$L94","\n","$L95","\n","$L96","\n","$L97","\n","$L98","\n","$L99","\n","$L9a","\n","$L9b","\n","$L9c","\n","$L9d","\n","$L9e","\n","$L9f","\n","$La0","\n","$La1","\n","$La2","\n","$La3","\n","$La4","\n","$La5","\n","$La6","\n","$La7","\n","$La8","\n","$La9","\n","$Laa","\n","$Lab","\n","$Lac","\n","$Lad","\n","$Lae","\n","$Laf","\n","$Lb0","\n","$Lb1","\n","$Lb2","\n","$Lb3","\n","$Lb4","\n","$Lb5","\n","$Lb6","\n","$Lb7","\n","$Lb8","\n","$Lb9","\n","$Lba","\n","$Lbb","\n","$Lbc","\n","$Lbd","\n","$Lbe","\n","$Lbf","\n","$Lc0","\n","$Lc1","\n","$Lc2","\n","$Lc3","\n","$Lc4","\n","$Lc5","\n","$Lc6","\n","$Lc7","\n","$Lc8","\n","$Lc9","\n","$Lca","\n","$Lcb","\n","$Lcc","\n","$Lcd","\n","$Lce","\n","$Lcf","\n","$Ld0","\n","$Ld1","\n","$Ld2","\n","$Ld3","\n","$Ld4","\n","$Ld5","\n","$Ld6","\n","$Ld7","\n","$Ld8","\n","$Ld9","\n","$Lda","\n","$Ldb","\n","$Ldc","\n","$Ldd","\n","$Lde","\n","$Ldf","\n","$Le0","\n","$Le1","\n","$Le2","\n","$Le3","\n","$Le4","\n","$Le5","\n","$Le6","\n","$Le7","\n","$Le8","\n","$Le9","\n","$Lea","\n","$Leb","\n","$Lec","\n","$Led"]}]]}]]}]
+37:["$","h2",null,{"id":"ex-11---random-access-inventory-program","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Ex 11 - Random Access Inventory Program",["$","$L20",null,{"id":"ex-11---random-access-inventory-program"}]]}]
+38:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The final example in this sub-section is a full-blown inventory program. Rather than go through all its aspects at the start, they are discussed at the appropriate point in the listing. (These comments do not have line numbers and are not, of course, part of the program.)"}]
+39:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L5e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L5f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":" 10 REM F-RAND"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 20 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 30 REM Written by Doug Mounter Jan 1982"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 40 REM Modified for BBC BASIC(Z80) Dec 1985"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 50 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 60 REM EXAMPLE OF A RANDOM ACCESS FILE"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 70 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 80 REM This is a simple inventory program.  It"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 90 REM uses the item's part number as the key"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 92 REM and stores:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"100 REM  The item description - char max len 30"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"110 REM  The quantity in stock - numeric"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"120 REM  The re-order level - numeric"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"130 REM  The unit price - numeric"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"140 REM In addition, the first byte of the rec"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"150 REM is used as a valid data flag.  Set to 0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"160 REM if empty, D if the record has been"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"170 REM deleted or V if the record is valid."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"180 REM This gives a MAX record len of 47 bytes"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"190 REM (Don't forget the CR after the string)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"200 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"210 PROC_initialise"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"220 inventry=FN_open(\"INVENTRY\")"}]}]]}]]}]]}]
+3a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The following section of code is the command loop. You are offered a choice of functions until you eventually select function 0. The more traditional ON GOSUB statement has been used for menu selection processing. The newer ON PROC statement is illustrated in the indexed file example which follows. There are some forward jumps within procedures, etc to overcome the lack of a multi line IF statement. It would have been possible to have used further procedures, but the whole thing would have become rather laboured."}]
+3b:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L5e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L5f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"230 REPEAT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"240   CLS"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"250   PRINT TAB(5,3);\"If you want to:-\"'"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"260   PRINT TAB(10);\"End This Session\";TAB(55);\"Type 0\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"270   PRINT TAB(10);\"Amend or Create an Entry\";TAB(55);\"Type 1\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"280   PRINT TAB(10);\"Disp Inventory for One Part\";TAB(55);\"Type 2\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"290   PRINT TAB(10);\"Alter Stock  of One Part\";TAB(55);\"Type 3\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"300   PRINT TAB(10);\"Disp Items to Reorder\";TAB(55);\"Type 4\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"310   PRINT TAB(10);\"Recover a Deleted Item\";TAB(55);\"Type 5\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"320   PRINT TAB(10);\"List Deleted Items\";TAB(55);\"Type 6\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"330   PRINT TAB(10);\"Set Up a New Inventory\";TAB(55);\"Type 9\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"340   REPEAT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"350     PRINT TAB(5,15);bell$;"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"360     PRINT \"Please enter selection (0 to 6 or 9) \";"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"370     function$=GET$"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"380   UNTIL function$>\"/\" AND function$<\"8\" OR function$=\"9\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"390   function=VAL(function$)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"400   ON function GOSUB 500,670,810,1100,1350,1540,1770,1790,1840 ELSE"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"410 UNTIL function=0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"420 CLS"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"430 PRINT \"Inventory File Closed\" ''"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"440 CLOSE#inventry"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"450 END"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"460 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"470 :"}]}]]}]]}]]}]
+3c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This is the data entry function. You can delete or amend an entry or enter a new one. Have a look at the definition of FN_getrec for an explanation of the ASC”V” in its parameters."}]
+3d:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L5e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L5f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"480 REM AMEND/CREATE AN ENTRY"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"490 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"500 REPEAT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"510   CLS"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"520   PRINT \"AMEND/CREATE\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"530   partno=FN_getpartno"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"540   flag=FN_getrec(partno,ASC\"V\")"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"550   PROC_display(flag)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"560   PRINT'\"Do you wish to \";"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"570   IF flag PRINT \"change this entry ? \"; ELSE PRINT \"enter data ? \";"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"580   IF GET$<>\"N\" flag=FN_amend(partno):PROC_cteos"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"590   PROC_write(partno,flag,type)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"600   PRINT bell$;\"Do you wish to amend/create another record ? \";"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"610 UNTIL GET$=\"N\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"620 RETURN"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"630 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"640 :"}]}]]}]]}]]}]
+3e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This subroutine allows you to look at a record without the ability to change or delete it."}]
+3f:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L5e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L5f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"650 REM DISPLAY AN ENTRY"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"660 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"670 REPEAT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"680   CLS"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"690   PRINT \"DISPLAY\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"700   partno=FN_getpartno"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"710   flag=FN_getrec(partno,ASC\"V\")"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"720   PROC_display(flag)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"730   PRINT '"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"740   PRINT \"Do you wish to view another part?\";"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"750 UNTIL GET$=\"N\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"760 RETURN"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"770 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"780 :"}]}]]}]]}]]}]
+40:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The purpose of this subroutine is to allow you to update the stock level without having to amend the rest of the record."}]
+41:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L5e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L5f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":" 790 REM CHANGE THE STOCK LEVEL FOR ONE PART"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 800 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 810 REPEAT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 820   CLS"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 830   PRINT \"CHANGE STOCK\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 840   partno=FN_getpartno"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 850   flag=FN_getrec(partno,ASC\"V\")"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 860   REPEAT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 870     PROC_display(flag)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 880     PROC_cteos"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 890     REPEAT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 900       PRINT TAB(0,12);:PROC_cteol"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 910       INPUT \"What is the change ? \" temp$"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 920       change=VAL(temp$)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 930     UNTIL INT(change)=change AND stock+change>=0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 940     IF temp$=\"\" flag=FALSE:GOTO 1000"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 950     stock=stock+change"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 960     PROC_display(flag)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 970     PRINT'\"Is this correct ? \";"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 980     temp$=GET$"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 990 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1000   UNTIL NOT flag OR temp$=\"Y\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1010   PROC_write(partno,flag,ASC\"V\")"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1020   PRINT return$;bell$;"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1030   PRINT \"Do you want any more updates ? \";"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1040 UNTIL GET$=\"N\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1050 RETURN"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1060 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1070 :"}]}]]}]]}]]}]
+42:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This subroutine goes through the file in stock number order and lists all those items where the current stock is below the reorder level. You can interrupt the process at any time by pushing a key."}]
+43:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L5e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L5f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"1080 REM DISPLAY ITEMS BELOW REORDER LEVEL"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1090 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1100 partno=1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1110 REPEAT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1120   CLS"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1130   PRINT \"ITEMS BELOW REORDER LEVEL\"'"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1140   line_count=2"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1150   REPEAT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1160     flag=FN_getrec(partno,ASC\"V\")"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1170     IF NOT(flag AND stock<reord) THEN 1230"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1180     PRINT \"Part Number \";partno"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1190     PRINT desc$;\" Stock \";stock;\" Reorder Level \";reord"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1200     PRINT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1210     line_count=line_count+3"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1220 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1230     partno=partno+1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1240     temp$=INKEY$(0)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1250   UNTIL partno>maxpartno OR line_count>20 OR temp$<>\"\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1260   PRINT TAB(0,23);bell$;\"Push any key to continue or E to end \";"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1270   temp$=GET$"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1280 UNTIL partno>maxpartno OR temp$=\"E\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1290 partno=0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1300 RETURN"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1310 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1320 :"}]}]]}]]}]]}]
+44:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Deleted entries are not actually removed from the file, just marked as deleted. This subroutine makes it possible for you to correct the mistake you made by deleting data you really wanted. If you have never used this type of program seriously, you won’t believe how useful this is."}]
+45:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L5e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L5f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"1330 REM RECOVER A DELETED ENTRY"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1340 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1350 REPEAT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1360   CLS"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1370   PRINT \"RECOVER DELETED RECORDS\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1380   partno=FN_getpartno"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1390   flag=FN_getrec(partno,ASC\"D\")"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1400   PROC_display(flag)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1410   PRINT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1420   IF NOT flag THEN 1470"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1430   PRINT \"If you wish to recover this entry type Y \";"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1440   temp$=GET$"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1450   IF temp$=\"Y\"PROC_write(partno,flag,ASC\"V\")"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1460 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1470   PRINT return$;bell$;\"Do you wish to recover another record ? \";"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1480 UNTIL GET$=\"N\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1490 RETURN"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1500 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1510 :"}]}]]}]]}]]}]
+46:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This subroutine lists all the deleted entries so you can check you really don’t want the data."}]
+47:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L5e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L5f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"1520 REM LIST DELETED ENTRIES"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1530 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1540 partno=1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1550 REPEAT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1560   CLS"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1570   PRINT \"DELETED ITEMS\"'"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1580   line_count=2"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1590   REPEAT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1600     flag=FN_getrec(partno,ASC\"D\")"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1610     IF NOT flag THEN 1660"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1620     PRINT \"Part Number \";partno"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1630     PRINT \"Description \";desc$'"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1640     line_count=line_count+3"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1650 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1660     partno=partno+1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1670     temp$=INKEY$(0)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1680   UNTIL partno>maxpartno OR line_count>20 OR temp$<>\"\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1690   PRINT TAB(0,23);bell$;\"Push any key to continue or E to end \";"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1700 UNTIL partno>maxpartno OR GET$=\"E\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1710 partno=0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1720 RETURN"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1730 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1740 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1750 REM DUMMY RETURNS FOR INVALID FUNCTION NUMs"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1760 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1770 RETURN"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1780 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1790 RETURN"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1800 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1810 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1820 REM REINITIALISE THE INVENTORY DATA FILE"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1830 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1840 CLS"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1850 PRINT TAB(0,3);bell$;\"Are you sure you want to set up a new inventory?\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1860 PRINT \"You will DESTROY ALL THE DATA YOU HAVE ACCUMULATED so far.\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1870 PRINT '\"It would be safer to use a new disk in drive B and start a new\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1880 PRINT \"inventory file.\"'"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1890 PRINT \"If you are SURE you want to do it, enter YES\""}]}],"\n","$Lee","\n","$Lef","\n","$Lf0","\n","$Lf1","\n","$Lf2","\n","$Lf3","\n","$Lf4"]}]]}]]}]
+48:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This is where all the variables that you usually write as CHR$(#) go. Then you can find them if you want to change them."}]
+49:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L5e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L5f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"1970 REM INITIALISE ALL THE VARIOUS PRESETS ETC"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1980 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1990 DEF PROC_initialise"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2010 bell$=CHR$(7)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2020 return$=CHR$(13)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2030 rec_length=47"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2040 partno=0"}]}]]}]]}]]}]
+4a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If you initially set strings to the maximum length you will ever use, you will save prevent the generation of ‘garbage’."}]
+4b:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L5e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L5f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"2050 desc$=STRING$(30,\" \")"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2060 temp$=STRING$(40,\" \")"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2070 WIDTH 0"}]}]]}]]}]]}]
+4c:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L5e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L5f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"2130 REM OPEN FILE AND RETURN THE FILE HANDLE"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2140 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2150 REM If the file already exists, the largest permitted"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2160 REM part number is read into maxpartno."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2170 REM If it is a new file, the file is"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2180 REM initialised and the largest part"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2190 REM number is written as the first record."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2200 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2210 DEF FN_open(name$)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2220 fnum=OPENUP(name$)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2230 IF fnum>0 INPUT#fnum,maxpartno: =fnum"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2240 fnum=OPENOUT(name$)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2250 CLS"}]}]]}]]}]]}]
+4d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"It’s a new file, so we won’t go through the warning bit."}]
+4e:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L5e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L5f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"2260 PROC_setup(fnum)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2270 =fnum"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2280 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2290 REM SET UP THE FILE"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2300 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2310 REM Ask for maximum part number required,"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2320 REM write it as the first record and then"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2330 REM write 0 in to first byte of each rec."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2340 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2350 DEF PROC_setup(fnum)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2360 REPEAT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2370   PRINT TAB(0,12);bell$;:PROC_cteos"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2380   INPUT \"What is the highest part number required (Max 5000)\",maxpartno"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2390 UNTIL maxpartno>0 AND maxpartno<5000 AND INT(maxpartno)=maxpartno"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2400 PTR#fnum=0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2410 PRINT#fnum,maxpartno"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2420 FOR partno=1 TO maxpartno"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2430   PTR#fnum=FN_ptr(partno)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2440   BPUT#fnum,0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2450 NEXT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2460 partno=0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2470 ENDPROC"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2480 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2490 :"}]}]]}]]}]]}]
+4f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Ask for the required part number. If a null is entered, make the next part number one more than the last."}]
+50:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L5e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L5f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"2500 REM GET AND RETURN THE REQUIRED PART NUMBER"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2510 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2520 DEF FN_getpartno"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2530 REPEAT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2540   PRINT TAB(0,5);bell$;:PROC_cteos"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2550   PRINT \"Enter a Part Number Between 1 and \";maxpartno '"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2560   IF partno=maxpartno THEN 2590"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2570   PRINT \"The Next Part Number is \";partno+1;"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2580   PRINT \" Just hit RETURN to get this\"'"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2590 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2600   INPUT \"What is the Part Number You Want \", partno$"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2610   IF partno$<>\"\" partno=VAL(partno$):GOTO 2630"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2620   IF partno=maxpartno partno=0 ELSE partno=partno+1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2630 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2640   PRINT TAB(35,9);partno;:PROC_cteol"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2650 UNTIL partno>0 AND partno<maxpartno+1 AND INT(partno)=partno"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2660 =partno"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2670 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2680 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2690 REM GET THE RECORD FOR THE PART NUMBER"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2700 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2710 REM Return TRUE if the record exists and"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2720 REM FALSE if not  If the record does not"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2730 REM exist, load desc$ with \"No Record\" The"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2740 REM remainder of the record is set to 0."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2742 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2750 DEF FN_getrec(partno,type)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2760 stock=0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2770 reord=0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2780 price=0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2790 PTR#inventry=FN_ptr(partno)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2800 test=BGET#inventry"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2810 IF test=0 desc$=\"No Record\": =FALSE"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2820 IF test=type THEN 2850"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2830 IF type=86 desc$=\"Record Deleted\" ELSE desc$=\"Record Exists\""}]}],"\n","$Lf5","\n","$Lf6","\n","$Lf7","\n","$Lf8","\n","$Lf9","\n","$Lfa","\n","$Lfb"]}]]}]]}]
+51:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Part numbers run from 1 up. The record for part number 1 starts at byte 5 of the file. The start position could have been calculated as (part-no -1) *record_length + 5. The expression below works out to the same thing, but it executes quicker."}]
+52:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L5e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L5f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"2910 REM CALCULATE THE VALUE OF PTR FOR THIS REC"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2920 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2930 DEF FN_ptr(partno)=partno*rec_length+5-rec_length"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2940 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2950 :"}]}]]}]]}]]}]
+53:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This function amends the record as required and returns with flag=TRUE if any amendment has taken place. It also sets the record type indicator (valid deleted or no record) to ASC”V” or ASC”D” as appropriate."}]
+54:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L5e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L5f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"2960 REM AMEND THE RECORD"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2970 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2980 DEF FN_amend(partno)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2990 PRINT return$;:PROC_cteol:PRINT TAB(0,4);"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3000 PRINT \"Please Complete the Details for Part Number \";partno"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3010 PRINT \"Just hit Return to leave the entry as it is\"'"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3020 flag=FALSE"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3030 type=ASC\"V\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3040 INPUT \"Description - Max 30 Chars \" temp$"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3050 IF temp$=\"DELETE\" type=ASC\"D\": =TRUE"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3060 temp$=LEFT$(temp$,30)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3070 IF temp$<>\"\" desc$=temp$:flag=TRUE"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3080 IF desc$=\"No Record\" OR desc$=\"Record Deleted\" =FALSE"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3090 INPUT \"Current Stock Level \" temp$"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3100 IF temp$<>\"\" stock=VAL(temp$):flag=TRUE"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3110 INPUT \"Reorder Level \" temp$"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3120 IF temp$<>\"\" reord=VAL(temp$):flag=TRUE"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3130 INPUT \"Unit Price \" temp$"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3140 IF temp$<>\"\" price=VAL(temp$):flag=TRUE"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3150 =flag"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3160 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3170 :"}]}]]}]]}]]}]
+55:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Write the record to the file if necessary (flag=TRUE)"}]
+56:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L5e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L5f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"3180 REM WRITE THE RECORD"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3190 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3200 DEF PROC_write(partno,flag,type)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3210 IF NOT flag ENDPROC"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3220 PTR#inventry=FN_ptr(partno)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3230 BPUT#inventry,type"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3240 PRINT#inventry,desc$,stock,reord,price"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3250 ENDPROC"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3260 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3270 :"}]}]]}]]}]]}]
+57:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Print the record details to the screen. If the record is not of the required type (V or D) or it does not exist, stop after printing the description. The description holds “Record Exists” or “Record Deleted” or valid data as set by FN_getrec."}]
+58:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L5e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L5f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"3280 REM DISPLAY THE RECORD DETAILS"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3290 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3300 DEF PROC_display(flag)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3310 PRINT TAB(0,5);:PROC_cteos"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3320 PRINT \"Part Number \";partno'"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3330 PRINT \"Description \";desc$"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3340 IF NOT flag ENDPROC"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3350 PRINT \"Current Stock Level \";stock"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3360 PRINT \"Reorder Level \";reord"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3370 PRINT \"Unit Price \";price"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3380 ENDPROC"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3390 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3400 :"}]}]]}]]}]]}]
+59:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The two following procedures rely on the screen width being 80 characters:"}]
+5a:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L5e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L5f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"3410 REM There are no 'native' clear to end of"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3420 REM line/screen vdu procedures.  The"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3430 REM following two procedures clear to the"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3440 REM end of the line/screen."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3450 DEF PROC_cteol"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3460 LOCAL x,y"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3470 x=POS:y=VPOS"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3480 IF y=31 PRINT SPC(79-x); ELSE PRINT SPC(80-x);"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3490 PRINT TAB(x,y);"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3500 ENDPROC"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3510 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3520 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3530 DEF PROC_cteos"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3540 LOCAL I,x,y"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3550 x=POS:y=VPOS"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3560 IF y<31 FOR I=y TO 30:PRINT SPC(80);:NEXT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3570 PRINT SPC(79-x);TAB(x,y);"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3580 ENDPROC"}]}]]}]]}]]}]
+5c:null
+9:C
+60:["$","span",null,{"children":"360 UNTIL FALSE"}]
+61:["$","span",null,{"children":["$","span",null,{"children":"370 END"}]}]
+62:["$","span",null,{"children":["$","span",null,{"children":"380 :"}]}]
+63:["$","span",null,{"children":["$","span",null,{"children":"390 :"}]}]
+64:["$","span",null,{"children":["$","span",null,{"children":"400 DEF FN_test(A$) =LEFT$(A$,1)=\"Y\" OR LEFT$(A$,1)=\"y\""}]}]
+65:["$","span",null,{"children":["$","span",null,{"children":"410 :"}]}]
+66:["$","span",null,{"children":["$","span",null,{"children":"420 :"}]}]
+67:["$","span",null,{"children":["$","span",null,{"children":"430 DEF FN_ptr(record)=rec_len*(record-1)"}]}]
+68:["$","span",null,{"children":["$","span",null,{"children":"440 REM This makes record 1 start at PTR# = 0"}]}]
+69:["$","span",null,{"children":["$","span",null,{"children":"450 :"}]}]
+6a:["$","span",null,{"children":["$","span",null,{"children":"460 :"}]}]
+6b:["$","span",null,{"children":["$","span",null,{"children":"470 DEF PROC_display"}]}]
+6c:["$","span",null,{"children":["$","span",null,{"children":"480 PRINT '\"Record number \";record'"}]}]
+6d:["$","span",null,{"children":["$","span",null,{"children":"490 flag=BGET#fnum"}]}]
+6e:["$","span",null,{"children":["$","span",null,{"children":"500 IF flag=0 PROC_clear:ENDPROC"}]}]
+6f:["$","span",null,{"children":["$","span",null,{"children":"510 INPUT#fnum,name$,remark$"}]}]
+70:["$","span",null,{"children":["$","span",null,{"children":"520 PRINT name$;\" \";remark$ '"}]}]
+71:["$","span",null,{"children":["$","span",null,{"children":"530 ENDPROC"}]}]
+72:["$","span",null,{"children":["$","span",null,{"children":"540 :"}]}]
+73:["$","span",null,{"children":["$","span",null,{"children":"550 :"}]}]
+74:["$","span",null,{"children":["$","span",null,{"children":"560 DEF PROC_clear"}]}]
+75:["$","span",null,{"children":["$","span",null,{"children":"570 PRINT \"Record empty\""}]}]
+76:["$","span",null,{"children":["$","span",null,{"children":"580 name$=\"\""}]}]
+77:["$","span",null,{"children":["$","span",null,{"children":"590 remark$=\"\""}]}]
+78:["$","span",null,{"children":["$","span",null,{"children":"600 ENDPROC"}]}]
+79:["$","span",null,{"children":["$","span",null,{"children":"610 :"}]}]
+7a:["$","span",null,{"children":["$","span",null,{"children":"620 :"}]}]
+7b:["$","span",null,{"children":["$","span",null,{"children":"630 DEF PROC_modify"}]}]
+7c:["$","span",null,{"children":["$","span",null,{"children":"640 PRINT '\"(Enter <Enter> for no change or DELETE to delete)\"'"}]}]
+7d:["$","span",null,{"children":["$","span",null,{"children":"650 INPUT \"Name \",temp$"}]}]
+7e:["$","span",null,{"children":["$","span",null,{"children":"660 temp$=LEFT$(temp$,30)"}]}]
+7f:["$","span",null,{"children":["$","span",null,{"children":"670 IF temp$<>\"\" name$=temp$"}]}]
+80:["$","span",null,{"children":["$","span",null,{"children":"680 INPUT \"Remark \",temp$"}]}]
+81:["$","span",null,{"children":["$","span",null,{"children":"690 temp$=LEFT$(temp$,50)"}]}]
+82:["$","span",null,{"children":["$","span",null,{"children":"700 IF temp$<>\"\" remark$=temp$"}]}]
+83:["$","span",null,{"children":["$","span",null,{"children":"710 INPUT '\"Confirm update record\",ans$"}]}]
+84:["$","span",null,{"children":["$","span",null,{"children":"720 IF NOT FN_test(ans$) ENDPROC"}]}]
+85:["$","span",null,{"children":["$","span",null,{"children":"730 IF name$=\"DELETE\" BPUT#fnum,0:ENDPROC"}]}]
+86:["$","span",null,{"children":["$","span",null,{"children":"740 BPUT#fnum,255"}]}]
+87:["$","span",null,{"children":["$","span",null,{"children":"750 PRINT#fnum,name$,remark$"}]}]
+88:["$","span",null,{"children":["$","span",null,{"children":"760 ENDPROC"}]}]
+89:["$","span",null,{"children":["$","span",null,{"children":"770 :"}]}]
+8a:["$","span",null,{"children":["$","span",null,{"children":"780 :"}]}]
+8b:["$","span",null,{"children":["$","span",null,{"children":"790 DEF FN_setup(fname$)"}]}]
+8c:["$","span",null,{"children":["$","span",null,{"children":"800 PRINT \"Setting up the database file\""}]}]
+8d:["$","span",null,{"children":["$","span",null,{"children":"810 fnum=OPENOUT(fname$)"}]}]
+8e:["$","span",null,{"children":["$","span",null,{"children":"820 FOR record=1 TO maxrec"}]}]
+8f:["$","span",null,{"children":["$","span",null,{"children":"830   PTR#fnum=FN_ptr(record)"}]}]
+90:["$","span",null,{"children":["$","span",null,{"children":"840   BPUT#fnum,0"}]}]
+91:["$","span",null,{"children":["$","span",null,{"children":"850 NEXT"}]}]
+92:["$","span",null,{"children":["$","span",null,{"children":"860 =fnum"}]}]
+93:["$","span",null,{"children":["$","span",null,{"children":"360 END"}]}]
+94:["$","span",null,{"children":["$","span",null,{"children":"370 :"}]}]
+95:["$","span",null,{"children":["$","span",null,{"children":"380 :"}]}]
+96:["$","span",null,{"children":["$","span",null,{"children":"390 DEF FN_test(A$) =LEFT$(A$,1)=\"Y\" OR LEFT$(A$,1)=\"y\""}]}]
+97:["$","span",null,{"children":["$","span",null,{"children":"400 :"}]}]
+98:["$","span",null,{"children":["$","span",null,{"children":"410 :"}]}]
+99:["$","span",null,{"children":["$","span",null,{"children":"420 DEF FN_ptr(record)=base+rec_len*(record-1)"}]}]
+9a:["$","span",null,{"children":["$","span",null,{"children":"430 :"}]}]
+9b:["$","span",null,{"children":["$","span",null,{"children":"440 :"}]}]
+9c:["$","span",null,{"children":["$","span",null,{"children":"450 DEF FN_setup(filename$)"}]}]
+9d:["$","span",null,{"children":["$","span",null,{"children":"460 PRINT \"New file.\""}]}]
+9e:["$","span",null,{"children":["$","span",null,{"children":"470 fnum=OPENOUT(filename$)"}]}]
+9f:["$","span",null,{"children":["$","span",null,{"children":"480 REPEAT"}]}]
+a0:["$","span",null,{"children":["$","span",null,{"children":"490   INPUT \"Enter the number of records (max 1000): \"maxrec"}]}]
+a1:["$","span",null,{"children":["$","span",null,{"children":"500 UNTIL maxrec>0 AND maxrec<1001"}]}]
+a2:["$","span",null,{"children":["$","span",null,{"children":"510 REPEAT"}]}]
+a3:["$","span",null,{"children":["$","span",null,{"children":"520   INPUT \"Enter number of fields per record (max 20): \"fields"}]}]
+a4:["$","span",null,{"children":["$","span",null,{"children":"530 UNTIL fields>0 AND fields<21"}]}]
+a5:["$","span",null,{"children":["$","span",null,{"children":"540 DIM title$(fields),size(fields),A$(fields)"}]}]
+a6:["$","span",null,{"children":["$","span",null,{"children":"550 FOR field=1 TO fields"}]}]
+a7:["$","span",null,{"children":["$","span",null,{"children":"560   PRINT '\"Enter title of field number \";field;\": \";"}]}]
+a8:["$","span",null,{"children":["$","span",null,{"children":"570   INPUT \"\"title$(field)"}]}]
+a9:["$","span",null,{"children":["$","span",null,{"children":"580   PRINT"}]}]
+aa:["$","span",null,{"children":["$","span",null,{"children":"590     REPEAT"}]}]
+ab:["$","span",null,{"children":["$","span",null,{"children":"600     INPUT \"Max size of field (characters)\",size(field)"}]}]
+ac:["$","span",null,{"children":["$","span",null,{"children":"610   UNTIL size(field)>0 AND size(field)<256"}]}]
+ad:["$","span",null,{"children":["$","span",null,{"children":"620 NEXT field"}]}]
+ae:["$","span",null,{"children":["$","span",null,{"children":"630 rec_len=1"}]}]
+af:["$","span",null,{"children":["$","span",null,{"children":"640 PRINT#fnum,maxrec,fields"}]}]
+b0:["$","span",null,{"children":["$","span",null,{"children":"650 FOR field=1 TO fields"}]}]
+b1:["$","span",null,{"children":["$","span",null,{"children":"660   PRINT#fnum,title$(field),size(field)"}]}]
+b2:["$","span",null,{"children":["$","span",null,{"children":"670   rec_len=rec_len+size(field)+1"}]}]
+b3:["$","span",null,{"children":["$","span",null,{"children":"680 NEXT field"}]}]
+b4:["$","span",null,{"children":["$","span",null,{"children":"690 base=PTR#fnum"}]}]
+b5:["$","span",null,{"children":["$","span",null,{"children":"700 :"}]}]
+b6:["$","span",null,{"children":["$","span",null,{"children":"710 FOR record=1 TO maxrec"}]}]
+b7:["$","span",null,{"children":["$","span",null,{"children":"720   PTR#fnum=FN_ptr(record)"}]}]
+b8:["$","span",null,{"children":["$","span",null,{"children":"730   BPUT#fnum,0"}]}]
+b9:["$","span",null,{"children":["$","span",null,{"children":"740 NEXT"}]}]
+ba:["$","span",null,{"children":["$","span",null,{"children":"750 =fnum"}]}]
+bb:["$","span",null,{"children":["$","span",null,{"children":"760 :"}]}]
+bc:["$","span",null,{"children":["$","span",null,{"children":"770 :"}]}]
+bd:["$","span",null,{"children":["$","span",null,{"children":"780 DEF PROC_readgen"}]}]
+be:["$","span",null,{"children":["$","span",null,{"children":"790 rec_len=1"}]}]
+bf:["$","span",null,{"children":["$","span",null,{"children":"800 INPUT#fnum,maxrec,fields"}]}]
+c0:["$","span",null,{"children":["$","span",null,{"children":"810 DIM title$(fields),size(fields),A$(fields)"}]}]
+c1:["$","span",null,{"children":["$","span",null,{"children":"820 FOR field=1 TO fields"}]}]
+c2:["$","span",null,{"children":["$","span",null,{"children":"830   INPUT#fnum,title$(field),size(field)"}]}]
+c3:["$","span",null,{"children":["$","span",null,{"children":" 840   rec_len=rec_len+size(field)+1"}]}]
+c4:["$","span",null,{"children":["$","span",null,{"children":" 850 NEXT field"}]}]
+c5:["$","span",null,{"children":["$","span",null,{"children":" 860 base=PTR#fnum"}]}]
+c6:["$","span",null,{"children":["$","span",null,{"children":" 870 ENDPROC"}]}]
+c7:["$","span",null,{"children":["$","span",null,{"children":" 880 :"}]}]
+c8:["$","span",null,{"children":["$","span",null,{"children":" 890 :"}]}]
+c9:["$","span",null,{"children":["$","span",null,{"children":" 900 DEF PROC_display"}]}]
+ca:["$","span",null,{"children":["$","span",null,{"children":" 910 PRINT '\"Record number \";record'"}]}]
+cb:["$","span",null,{"children":["$","span",null,{"children":" 920 flag=BGET#fnum"}]}]
+cc:["$","span",null,{"children":["$","span",null,{"children":" 930 IF flag=0 PROC_clear:ENDPROC"}]}]
+cd:["$","span",null,{"children":["$","span",null,{"children":" 940 FOR field=1 TO fields"}]}]
+ce:["$","span",null,{"children":["$","span",null,{"children":" 950   INPUT#fnum,A$(field)"}]}]
+cf:["$","span",null,{"children":["$","span",null,{"children":" 960   PRINT title$(field);\" \";A$(field)"}]}]
+d0:["$","span",null,{"children":["$","span",null,{"children":" 970 NEXT field"}]}]
+d1:["$","span",null,{"children":["$","span",null,{"children":" 980 ENDPROC"}]}]
+d2:["$","span",null,{"children":["$","span",null,{"children":" 990 :"}]}]
+d3:["$","span",null,{"children":["$","span",null,{"children":"1000 :"}]}]
+d4:["$","span",null,{"children":["$","span",null,{"children":"1010 DEF PROC_clear"}]}]
+d5:["$","span",null,{"children":["$","span",null,{"children":"1020 FOR field=1 TO fields"}]}]
+d6:["$","span",null,{"children":["$","span",null,{"children":"1030   A$(field)=\"\""}]}]
+d7:["$","span",null,{"children":["$","span",null,{"children":"1040 NEXT"}]}]
+d8:["$","span",null,{"children":["$","span",null,{"children":"1050 ENDPROC"}]}]
+d9:["$","span",null,{"children":["$","span",null,{"children":"1060 :"}]}]
+da:["$","span",null,{"children":["$","span",null,{"children":"1070 :"}]}]
+db:["$","span",null,{"children":["$","span",null,{"children":"1080 DEF PROC_modify"}]}]
+dc:["$","span",null,{"children":["$","span",null,{"children":"1090 PRINT '\"(Enter <Enter> for no change)\"'"}]}]
+dd:["$","span",null,{"children":["$","span",null,{"children":"1100 FOR field=1 TO fields"}]}]
+de:["$","span",null,{"children":["$","span",null,{"children":"1110   REPEAT"}]}]
+df:["$","span",null,{"children":["$","span",null,{"children":"1120     PRINT title$(field);\" \";"}]}]
+e0:["$","span",null,{"children":["$","span",null,{"children":"1130     INPUT LINE \"\"A$"}]}]
+e1:["$","span",null,{"children":["$","span",null,{"children":"1140     IF A$=\"\" PRINT TAB(POS,VPOS-1)title$(field);\" \";A$(field)"}]}]
+e2:["$","span",null,{"children":["$","span",null,{"children":"1150     REM TAB(POS,VPOS-1) moves the cursor up 1 line"}]}]
+e3:["$","span",null,{"children":["$","span",null,{"children":"1160   UNTIL LEN(A$)<=size(field)"}]}]
+e4:["$","span",null,{"children":["$","span",null,{"children":"1170   IF A$<>\"\" A$(field)=A$"}]}]
+e5:["$","span",null,{"children":["$","span",null,{"children":"1180 NEXT field"}]}]
+e6:["$","span",null,{"children":["$","span",null,{"children":"1190 INPUT '\"Confirm update record\",ans$"}]}]
+e7:["$","span",null,{"children":["$","span",null,{"children":"1200 IF NOT FN_test(ans$) ENDPROC"}]}]
+e8:["$","span",null,{"children":["$","span",null,{"children":"1210 IF A$(1)=\"DELETE\" BPUT#fnum,0:ENDPROC"}]}]
+e9:["$","span",null,{"children":["$","span",null,{"children":"1220 BPUT#fnum,255"}]}]
+ea:["$","span",null,{"children":["$","span",null,{"children":"1230 FOR field=1 TO fields"}]}]
+eb:["$","span",null,{"children":["$","span",null,{"children":"1240   PRINT#fnum,A$(field)"}]}]
+ec:["$","span",null,{"children":["$","span",null,{"children":"1250 NEXT field"}]}]
+ed:["$","span",null,{"children":["$","span",null,{"children":"1260 ENDPROC"}]}]
+ee:["$","span",null,{"children":["$","span",null,{"children":"1900 PRINT \"If you want to start a new inventory file, enter NEW\""}]}]
+ef:["$","span",null,{"children":["$","span",null,{"children":"1910 INPUT \"Otherwise, just hit return \",temp$"}]}]
+f0:["$","span",null,{"children":["$","span",null,{"children":"1920 IF temp$=\"YES\" PROC_setup(inventry)"}]}]
+f1:["$","span",null,{"children":["$","span",null,{"children":"1930 IF temp$=\"NEW\" function=0"}]}]
+f2:["$","span",null,{"children":["$","span",null,{"children":"1940 RETURN"}]}]
+f3:["$","span",null,{"children":["$","span",null,{"children":"1950 :"}]}]
+f4:["$","span",null,{"children":["$","span",null,{"children":"1960 :"}]}]
+f5:["$","span",null,{"children":["$","span",null,{"children":"2840 =FALSE"}]}]
+f6:["$","span",null,{"children":["$","span",null,{"children":"2850 :"}]}]
+f7:["$","span",null,{"children":["$","span",null,{"children":"2860 INPUT#inventry,desc$"}]}]
+f8:["$","span",null,{"children":["$","span",null,{"children":"2870 INPUT#inventry,stock,reord,price"}]}]
+f9:["$","span",null,{"children":["$","span",null,{"children":"2880 =TRUE"}]}]
+fa:["$","span",null,{"children":["$","span",null,{"children":"2890 :"}]}]
+fb:["$","span",null,{"children":["$","span",null,{"children":"2900 :"}]}]
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

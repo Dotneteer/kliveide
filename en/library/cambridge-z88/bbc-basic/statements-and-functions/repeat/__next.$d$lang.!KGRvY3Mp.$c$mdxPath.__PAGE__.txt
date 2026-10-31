@@ -1,0 +1,102 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+20:"ViewportBoundary"
+21:I[484,[],"$20"]
+22:"MetadataBoundary"
+23:I[484,[],"$22"]
+24:"$Sreact.suspense"
+25:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T6e4,---
+description: "A statement which is the starting point of a REPEAT...UNTIL loop. A single REPEAT may have more than one UNTIL, but this is bad practice."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# REPEAT (REP.)
+
+A statement which is the starting point of a REPEAT...UNTIL loop. A single REPEAT may have more than one UNTIL, but this is bad practice.
+
+The purpose of a REPEAT...UNTIL loop is to make BBC BASIC(Z80) repeat a set number of instructions until some condition is satisfied.
+
+```text
+REPEAT UNTIL GET=13 :REM wait for CR
+```
+
+```text
+X=0
+REPEAT
+  X=X+10
+  PRINT "What do you think of it so far?"
+UNTIL X>45
+```
+
+You must not exit a REPEAT...UNTIL loop with a GOTO. If you jump out of a loop with a GOTO (How could you!!!) you should jump back in. If you must jump out of the loop, you should use UNTIL TRUE to 'pop' the stack. For (a ghastly) example:
+
+```text
+ 10 i=1
+ 20 REPEAT: REM Print 1 to 100 unless
+ 30   I=I+1: REM interrupted by the
+ 40   PRINT i: REM space bar being pressed
+ 50   x=INKEY(0): REM Get a key
+ 60   IF x=32 THEN 110:REM exit if <SPACE>
+ 70 UNTIL i=100
+ 80 PRINT "****"
+ 90 END
+100 :
+110 UNTIL TRUE: REM Pop the stack
+120 PRINT "Forced exit":REM Carry on with program
+130 FOR j=1000 TO 1005
+140   PRINT j
+150 NEXT
+```
+
+See the keyword UNTIL for ways of using REPEAT...UNTIL loops to replace unconditional GOTOs for program looping.
+
+See the sub-section on ‘Program Flow Control’ in the ‘General Information’ section for more details on the working of the program stack.
+
+**Syntax**
+
+REPEAT
+
+**Associated Keywords**
+
+UNTILa:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"A statement which is the starting point of a REPEAT...UNTIL loop. A single REPEAT may have more than one UNTIL, but this is bad practice.","title":"REPEAT (REP.)","filePath":"content/en/library/cambridge-z88/bbc-basic/statements-and-functions/repeat.mdx","timestamp":1792315833000},"sourceCode":"$12","children":[["$","div",null,{"id":"nextra-skip-nav"}],["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["REPEAT (REP.)","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A statement which is the starting point of a REPEAT…UNTIL loop. A single REPEAT may have more than one UNTIL, but this is bad practice."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The purpose of a REPEAT…UNTIL loop is to make BBC BASIC(Z80) repeat a set number of instructions until some condition is satisfied."}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":["$L13","$L14"]}]]}],"\n","$L15","\n","$L16","\n","$L17","\n","$L18","\n","$L19","\n","$L1a","\n","$L1b","\n","$L1c","\n","$L1d"]]}]]}]]}]}],null,"$L1e"]}],"p":"$@1f","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/bbc-basic/statements-and-functions/repeat","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L21",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L23",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$24",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"REPEAT (REP.) - Klive IDE"}],["$","meta","1",{"name":"description","content":"A statement which is the starting point of a REPEAT...UNTIL loop. A single REPEAT may have more than one UNTIL, but this is bad practice."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/bbc-basic/statements-and-functions/repeat/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L25","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@26","v":null,"s":"$9"}},"a":"$@27","u":"$@28","b":"dZNfFVLPQi_KHqnwQrQVE"}
+29:"ToggleWordWrapButton"
+2a:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$29"]
+2b:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+2c:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L2a",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L2b",null,{"className":""}]]}]
+14:["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"REPEAT UNTIL GET=13 :REM wait for CR"}]}]}]
+15:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L2a",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L2b",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"X=0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"REPEAT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  X=X+10"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  PRINT \"What do you think of it so far?\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"UNTIL X>45"}]}]]}]]}]]}]
+16:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You must not exit a REPEAT…UNTIL loop with a GOTO. If you jump out of a loop with a GOTO (How could you!!!) you should jump back in. If you must jump out of the loop, you should use UNTIL TRUE to ‘pop’ the stack. For (a ghastly) example:"}]
+17:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L2a",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L2b",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":" 10 i=1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 20 REPEAT: REM Print 1 to 100 unless"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 30   I=I+1: REM interrupted by the"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 40   PRINT i: REM space bar being pressed"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 50   x=INKEY(0): REM Get a key"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 60   IF x=32 THEN 110:REM exit if <SPACE>"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 70 UNTIL i=100"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 80 PRINT \"****\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 90 END"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"100 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"110 UNTIL TRUE: REM Pop the stack"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"120 PRINT \"Forced exit\":REM Carry on with program"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"130 FOR j=1000 TO 1005"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"140   PRINT j"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"150 NEXT"}]}]]}]]}]]}]
+18:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"See the keyword UNTIL for ways of using REPEAT…UNTIL loops to replace unconditional GOTOs for program looping."}]
+19:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"See the sub-section on ‘Program Flow Control’ in the ‘General Information’ section for more details on the working of the program stack."}]
+1a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Syntax"}]}]
+1b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"REPEAT"}]
+1c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Associated Keywords"}]}]
+1d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"UNTIL"}]
+1e:["$","$L2c",null,{"children":["$","$24",null,{"name":"Next.MetadataOutlet","children":"$@2d"}]}]
+28:true
+9:300
+2d:null
+9:C
+27:0
+7:"$undefined"
+26:"$undefined"
+1f:"$undefined"

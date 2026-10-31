@@ -1,0 +1,116 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:Ta2b,---
+description: "A function which gets a byte from the file whose file handle is its argument. The file pointer is incremented after the byte has been read."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# BGET# (B.#)
+
+A function which gets a byte from the file whose file handle is its argument. The file pointer is incremented after the byte has been read.
+
+```text
+E=BGET#n
+aux=BGET#3
+```
+
+You must normally have opened a file using OPENOUT, OPENIN or OPENUP before you use this statement. (See these keywords and the BBC BASIC(Z80) Files section for details.)
+
+You can use `BGET#` to read single bytes from a file. This enables you to read back small integers which have been 'packed' into fewer than 5 bytes (see BPUT\#). It is also very useful if you need to perform some conversion operation on a file. Each byte read is numeric, but you can use `CHR$(BGET#n)` to convert it to a string.
+
+The input file in the example below is a text file produced by a word-processor.
+
+Words to be underlined are 'bracketed' with ^S. The program produces an output file suitable for a printer which expects such words to be bracketed by ^Y. You could, of course, perform several such translations in one program.
+
+```text
+ 10 REM Open i/p and o/p files. End if error.
+ 20 infile=OPENIN "WSFILE.DOC"
+ 30 IF infile=0 THEN END
+ 40 outfile=OPENOUT "BROTH.DOC"
+ 50 IF outfile=0 THEN END
+ 60 :
+ 70 REM Process file, converting ^S to ^Y
+ 80 REPEAT
+ 90   temp=BGET#infile :REM Read byte
+100    IF temp=&13 THEN temp=&19 :REM Convert ^S
+110    BPUT#outfile,temp :REM Write byte
+120 UNTIL temp=&1A :REM ^Z
+130 CLOSE#0 :REM Close all files
+140 END
+```
+
+To make the program more useful, it could ask for the names of the input and output files at 'run time':
+
+```text
+ 10 INPUT "Enter name of INPUT file " infile$
+ 20 INPUT "Enter name of OUTPUT file " outfile$
+ 30 REM Open i/p and o/p files. End if error.
+ 40 infile=OPENIN(infile$)
+ 50 IF infile=0 THEN END
+ 60 outfile=OPENOUT(outfile$)
+ 70 IF outfile=0 THEN END
+ 80 :
+ 90 REM Process file, converting ^S to ^Y
+100 REPEAT
+110    temp=BGET#infile :REM Read byte
+120    IF temp=&13 THEN temp=&19 :REM Convert ^S
+130    BPUT#outfile,temp :REM Write byte
+140 UNTIL temp=&1A :REM ^Z
+150 CLOSE#0 :REM Close all files
+160 END
+```
+
+**Syntax**
+
+```text
+<n-var>=BGET#<numeric>
+```
+
+**Associated Keywords**
+
+OPENIN, OPENUP, OPENOUT, CLOSE\#, PRINT\#, INPUT\#, BGET\#, EXT\#, PTR\#, EOF\#a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"A function which gets a byte from the file whose file handle is its argument. The file pointer is incremented after the byte has been read.","title":"BGET# (B.#)","filePath":"content/en/library/cambridge-z88/bbc-basic/statements-and-functions/bget-hash.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/bbc-basic/statements-and-functions/bget-hash","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"BGET# (B.#) - Klive IDE"}],["$","meta","1",{"name":"description","content":"A function which gets a byte from the file whose file handle is its argument. The file pointer is incremented after the byte has been read."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/bbc-basic/statements-and-functions/bget-hash/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"dZNfFVLPQi_KHqnwQrQVE"}
+20:"ToggleWordWrapButton"
+21:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$20"]
+22:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+2b:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["BGET# (B.#)","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A function which gets a byte from the file whose file handle is its argument. The file pointer is incremented after the byte has been read."}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"E=BGET#n"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"aux=BGET#3"}]}]]}]]}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You must normally have opened a file using OPENOUT, OPENIN or OPENUP before you use this statement. (See these keywords and the BBC BASIC(Z80) Files section for details.)"}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["You can use ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"BGET#"}]," to read single bytes from a file. This enables you to read back small integers which have been ‘packed’ into fewer than 5 bytes (see BPUT#). It is also very useful if you need to perform some conversion operation on a file. Each byte read is numeric, but you can use ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"CHR$(BGET#n)"}]," to convert it to a string."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The input file in the example below is a text file produced by a word-processor."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Words to be underlined are ‘bracketed’ with ^S. The program produces an output file suitable for a printer which expects such words to be bracketed by ^Y. You could, of course, perform several such translations in one program."}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],"$L23"]}],"$L24"]}]]}],"\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a"]]}]
+15:["$","$L2b",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@2c"}]}]
+1f:true
+9:300
+23:["$","$L22",null,{"className":""}]
+24:["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":" 10 REM Open i/p and o/p files. End if error."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 20 infile=OPENIN \"WSFILE.DOC\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 30 IF infile=0 THEN END"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 40 outfile=OPENOUT \"BROTH.DOC\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 50 IF outfile=0 THEN END"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 60 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 70 REM Process file, converting ^S to ^Y"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 80 REPEAT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 90   temp=BGET#infile :REM Read byte"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"100    IF temp=&13 THEN temp=&19 :REM Convert ^S"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"110    BPUT#outfile,temp :REM Write byte"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"120 UNTIL temp=&1A :REM ^Z"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"130 CLOSE#0 :REM Close all files"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"140 END"}]}]]}]
+25:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"To make the program more useful, it could ask for the names of the input and output files at ‘run time’:"}]
+26:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":" 10 INPUT \"Enter name of INPUT file \" infile$"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 20 INPUT \"Enter name of OUTPUT file \" outfile$"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 30 REM Open i/p and o/p files. End if error."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 40 infile=OPENIN(infile$)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 50 IF infile=0 THEN END"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 60 outfile=OPENOUT(outfile$)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 70 IF outfile=0 THEN END"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 80 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 90 REM Process file, converting ^S to ^Y"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"100 REPEAT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"110    temp=BGET#infile :REM Read byte"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"120    IF temp=&13 THEN temp=&19 :REM Convert ^S"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"130    BPUT#outfile,temp :REM Write byte"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"140 UNTIL temp=&1A :REM ^Z"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"150 CLOSE#0 :REM Close all files"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"160 END"}]}]]}]]}]]}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Syntax"}]}]
+28:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"<n-var>=BGET#<numeric>"}]}]}]]}]]}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Associated Keywords"}]}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"OPENIN, OPENUP, OPENOUT, CLOSE#, PRINT#, INPUT#, BGET#, EXT#, PTR#, EOF#"}]
+2c:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

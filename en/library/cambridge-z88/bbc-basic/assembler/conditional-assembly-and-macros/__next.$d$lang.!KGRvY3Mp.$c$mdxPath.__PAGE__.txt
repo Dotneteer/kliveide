@@ -1,0 +1,387 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T2b73,---
+description: "Most machine code assemblers provide conditional assembly and macro facilities. The assembler does not directly offer these facilities, but it is possible to implement them by using other features..."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# Conditional Assembly and Macros
+
+## Introduction [#introduction]
+
+Most machine code assemblers provide conditional assembly and macro facilities. The assembler does not directly offer these facilities, but it is possible to implement them by using other features of BBC BASIC(Z80).
+
+## Conditional Assembly [#conditional-assembly]
+
+You may wish to write a program which makes use of special facilities and which will be run on different types of computer. The majority of the assembly code will be the same, but some of it will be different. In the example below, different output routines are assembled depending on the value of 'flag'.
+
+```text
+DIM code 200
+FOR pass=0 TO 3 STEP 3
+  [OPT pass
+  .start     - - -
+             - - - code - - -
+             - - - :]
+  :
+  IF flag  [OPT  pass: - code for routine 1 -:]
+  IF NOT flag [OPT pass: - code for routine 2 - :]
+  :
+  [OPT pass
+  .more_code - - -
+             - - - code - - -
+             - - -:]
+NEXT
+```
+
+## Macros [#macros]
+
+Within any machine code program it is often necessary to repeat a section of code a number of times and this can become quite tedious. You can avoid this repetition by defining a macro which you use every time you want to include the code. The example below uses a macro to pass a character to the screen or printer. Conditional assembly is used within the macro to select either the screen or the auxiliary output, depending on the value of op\_flag.
+
+It is possible to suppress the listing of the code in a macro by forcing bit 0 of OPT to zero for the duration of the macro code. This can most easily be done by ANDing the value passed to OPT with 6.
+
+This is illustrated in PROC\_screen and PROC\_aux in the example below.
+
+```text
+DIM code 200
+op_flag=TRUE
+FOR pass=0 TO 3 STEP 3
+  [OPT pass
+  .start   - - -
+           - - - code - - -
+           - - -
+:
+  OPT FN_select(op_flag); Include code depending on op_flag
+:
+           - - -
+           - - - code - - -
+           - - -:]
+NEXT
+END
+:
+:
+REM Include code depending on value of op_flag
+:
+DEF FN_select(op_flag)
+IF op_flag PROC_screen ELSE PROC_print
+=pass
+REM Return original value of OPT.  This is a
+REM bit artificial, but necessary to insert
+REM some BBC BASIC code in the assembly code.
+:
+DEF PROC_screen
+[OPT pass AND 6
+RST &20: DEFB &27 ; OS_Out: A = character to send to screen
+]
+ENDPROC
+:
+DEF PROC_print
+[OPT pass AND 6
+; some code to send character to the printer
+]
+ENDPROC
+```
+
+The use of a function call to incorporate the code provides a neat way of incorporating the macro within the program and allows parameters to be passed to it. The function should return the original value of OPT.
+
+## Managing system error events on the Z88 [#managing-system-error-events-on-the-z88]
+
+### Warning [#warning]
+
+If you write an application which contains bugs or tries to circumnavigate the operating system, then it is likely that all the other applications in the Z88 will be affected.
+
+The effect may not be immediate, some indiscretions take weeks or even months to become apparent, but will usually be in the form of a system crash. You must always remember that the resources of the Z88 are not devoted exclusively to your application and therefore only use legal interfaces.
+
+All internal applications follow all the rules and use no ‘back door’ techniques.
+
+If you wish to write more than the simplest assembler code programs for the Z88, you will need a considerable amount of technical information about the machine. This information is available in the [Developers’ Notes](/en/library/cambridge-z88/developers-notes) on the **cambridgez88.jira.com** wiki.
+
+### Error handling [#error-handling]
+
+If your assembler language program makes any use at all of the Z88’s facilities, it will be possible to suspend it. Under these circumstances, it is imperative that your program includes error handling code.
+
+The following assembler language ‘wrap around’ provides the minimum acceptable error handling capability. It is also an example of how to use a macro for OZ system call API and how to open files to read date stamp properties.
+
+The ‘wrap around’ recognises and acts on the following events:
+
+- An Escape condition (the `[ESC]` key having been pressed whilst escape detection is enabled).
+- The `[INDEX]` having been pressed or another application / popdown being activated
+- The □ key having been pressed.
+- The process having been killed (normally from INDEX)
+
+You may wish to develop your own error handler, but you should always use one. If you don’t, you could run into trouble.
+
+```text
+.J
+AUTO
+```
+
+```text
+DIM code 512                   : REM space for program
+GN_Esp=&4C09                   : REM return pointer to system error message
+GN_Soe=&3C09                   : REM Write string at extended address to standard output
+GN_Nln=&2E09                   : REM carriage return, linefeed to std. output
+GN_Sop=&3A09                   : REM output string to std. output
+GN_Opf=&6009                   : REM open file
+OS_Erh=&75                     : REM install error handler
+OS_Esc=&6F                     : REM examine special condition
+GN_Err=&4A09                   : REM standard system error box
+GN_Sdo=&0E09                   : REM date and time to standard output
+OS_Dor=&87                     : REM DOR interface
+dr_rd=&09                      : REM read DOR record
+dr_fre=&05                     : REM free DOR handle
+op_dor=&06                     : REM open file for DOR access
+rc_quit=&67                    : REM KILL request error code
+rc_esc=&01                     : REM escape detection error code
+```
+
+```text
+FOR pass=0 TO 2 STEP 2
+P%=code
+[
+OPT  pass
+LD   HL,0
+ADD  HL,SP                     \ get current BASIC stack pointer
+LD   (bstk),HL                 \ preserve it
+LD   SP,(&1FFE)                \ install system (safe) stack pointer
+XOR  A
+LD   B,A
+LD   HL,errhan                 \ address of error handler
+OPT  FNsys(OS_Erh)             \ install new error handler
+LD   (obou),A                  \ save old error handler call level
+LD   (oerr),HL                 \ save old error handler address
+```
+
+```text
+\ Here is the call to your assembler language routine which should be
+\ included at the end of this code.
+CALL main                      \ call main routine
+```
+
+```text
+.exit
+LD   HL,(oerr)                 \ address of old error handler
+LD   A,(obou)                  \ old call level
+LD   B,0
+OPT  FNsys(OS_Erh)             \ restore previous error handler
+LD   SP,(bstk)                 \ restore BASIC stack pointer
+RET                            \ return to BBC BASIC interpreter
+```
+
+```text
+.errhan
+RET  Z
+CP   rc_esc                    \ ESC pressed?
+JR   NZ,err1
+OPT  FNsys(OS_Esc)             \ acknowledge ESC
+LD   A,rc_esc
+OR   A                         \ return rc_esc back to main program
+RET                            \ Fc = 0, Fz = 0
+```
+
+```text
+.err1
+CP   rc_quit                   \ KILL request?
+JR   NZ,err2
+```
+
+```text
+LD   HL,(oerr)                 \ re-install old error handler
+LD   A,(obou)                  \ old call level
+OPT  FNsys(OS_Erh)
+```
+
+```text
+LD   SP,(bstk)                 \ install BASIC stack pointer
+LD   HL,(oerr)
+```
+
+```text
+LD   A, rc_quit                \ reload A with RC_QUIT
+OR   A                         \ Fz = 0
+SCF                            \ Fc = 1
+JP   (HL)                      \ jump to BASIC's error handler
+```
+
+```text
+.err2                          \ write error message if possible
+OPT  FNsys(GN_Esp)             \ Get ext. pointer to system error message
+OPT  FNsys(GN_Soe)             \ Write error message to std. output
+OPT  FNsys(GN_Nln)             \ New line to std. output
+OR   A                         \ Fc = 0
+RET
+```
+
+```text
+.bstk DEFW 0                   \ storage for BASIC stack pointer
+.obou DEFB 0                   \ storage for old call level
+.oerr DEFW 0                   \ storage for old error handler address
+```
+
+```text
+\ ----------------------------------------------------------------------
+\ main routine starts here
+.main
+LD   HL,scratch_1              \ holds address of file to open
+LD   DE,scratch_2              \ explicit name buffer
+LD   C,40                      \ size of explicit name buffer
+LD   B,0                       \ HL string pointer is local
+LD   a, op_dor                 \ get DOR handle
+OPT  FNsys(GN_Opf)             \ open...
+JR   NC,opened_OK
+OPT  FNsys(GN_Err)             \ report error in standard window
+RET
+.opened_OK
+LD   A,dr_rd                   \ read DOR record
+LD   B,ASC"U"                  \ read update information
+LD   C,6                       \ 3 byte internal date, 3 byte int. time
+LD   DE,scratch_1              \ store returned information at (DE)
+OPT  FNsys(OS_Dor)             \ fetch update date
+LD   A,dr_fre
+OPT  FNsys(OS_Dor)             \ free DOR handle
+LD   HL,scratch_2              \ display explicit filename
+OPT  FNsys(GN_Sop)             \ to standard output
+LD   HL,tab_str
+OPT  FNsys(GN_Sop)             \ tab to column 40
+LD   HL,scratch_1
+OPT  FNsys(GN_Sdo)             \ output returned update date
+OPT  FNsys(GN_Nln)             \ display newline
+RET                            \ back to BASIC
+```
+
+```text
+.scratch_1 DEFM STRING$(40,"X")
+.scratch_2 DEFM STRING$(40,"X")
+.tab_str DEFM CHR$1+"2X"+CHR$(32+40)+CHR$0
+\ main routine ends here
+\ ----------------------------------------------------------------------
+]
+NEXT pass
+```
+
+```text
+CLS
+PRINT "Read File Update Date and Time"
+INPUT "Filename:"A$
+IF LEN(A$)>40 THEN PRINT "String too long": END
+```
+
+```text
+A$=A$+CHR$0  : REM null-terminate filename string
+$scratch_1=A$
+CALL code
+END
+:
+DEF FNsys(arg)
+IF arg>255 THEN PROC_Rst20Defw(arg) ELSE PROC_Rst20Defb(arg)
+=pass
+:
+DEF PROC_Rst20Defw(arg)
+[OPT pass
+RST &20: DEFW arg
+]
+ENDPROC
+DEF PROC_Rst20Defb(arg)
+[OPT pass
+RST &20: DEFB arg
+]
+ENDPROC
+```
+
+You can test the error handling code by replacing the above main routine with the following program as the other ‘main’ routine (also remove the filename input code after the assembler section which is no longer necessary).
+
+```text
+.main
+LD   B,10                      \ Loop 10 times
+.loop
+LD   A,B                       \ loop value
+ADD  A,ASC”0”-1                \ convert to Ascii digit
+OPT  FNsys(OS_Out)             \ display digit to std. output
+\
+.inp
+OPT  FNsys(OS_In)              \ Read a character from keyboard
+JR   C,inp                     \ if Fc = 1, read error code
+DJNZ loop
+RET
+```
+
+Try running the complete program and observe the effect of:
+
+- Suspending (eg. activate INDEX) and then either killing or reentering
+- Pressing `[ESC]`
+- Switching the Z88 off and on (both `[SHIFT]` keys)a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Introduction","id":"introduction","depth":2},{"value":"Conditional Assembly","id":"conditional-assembly","depth":2},{"value":"Macros","id":"macros","depth":2},{"value":"Managing system error events on the Z88","id":"managing-system-error-events-on-the-z88","depth":2},{"value":"Warning","id":"warning","depth":3},{"value":"Error handling","id":"error-handling","depth":3}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"Most machine code assemblers provide conditional assembly and macro facilities. The assembler does not directly offer these facilities, but it is possible to implement them by using other features...","title":"Conditional Assembly and Macros","filePath":"content/en/library/cambridge-z88/bbc-basic/assembler/conditional-assembly-and-macros.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/bbc-basic/assembler/conditional-assembly-and-macros","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Conditional Assembly and Macros - Klive IDE"}],["$","meta","1",{"name":"description","content":"Most machine code assemblers provide conditional assembly and macro facilities. The assembler does not directly offer these facilities, but it is possible to implement them by using other features..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/bbc-basic/assembler/conditional-assembly-and-macros/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"dZNfFVLPQi_KHqnwQrQVE"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+21:"ToggleWordWrapButton"
+22:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$21"]
+23:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+49:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Conditional Assembly and Macros","$undefined"]}],"\n",["$","h2",null,{"id":"introduction","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Introduction",["$","$L20",null,{"id":"introduction"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Most machine code assemblers provide conditional assembly and macro facilities. The assembler does not directly offer these facilities, but it is possible to implement them by using other features of BBC BASIC(Z80)."}],"\n",["$","h2",null,{"id":"conditional-assembly","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Conditional Assembly",["$","$L20",null,{"id":"conditional-assembly"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You may wish to write a program which makes use of special facilities and which will be run on different types of computer. The majority of the assembly code will be the same, but some of it will be different. In the example below, different output routines are assembled depending on the value of ‘flag’."}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"DIM code 200"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"FOR pass=0 TO 3 STEP 3"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  [OPT pass"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  .start     - - -"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"             - - - code - - -"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"             - - - :]"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  IF flag  [OPT  pass: - code for routine 1 -:]"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  IF NOT flag [OPT pass: - code for routine 2 - :]"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  [OPT pass"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  .more_code - - -"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"             - - - code - - -"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"             - - -:]"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"NEXT"}]}]]}]]}]]}],"\n",["$","h2",null,{"id":"macros","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Macros",["$","$L20",null,{"id":"macros"}]]}],"\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48"]]}]
+15:["$","$L49",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@4a"}]}]
+1f:true
+4b:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+9:300
+24:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Within any machine code program it is often necessary to repeat a section of code a number of times and this can become quite tedious. You can avoid this repetition by defining a macro which you use every time you want to include the code. The example below uses a macro to pass a character to the screen or printer. Conditional assembly is used within the macro to select either the screen or the auxiliary output, depending on the value of op_flag."}]
+25:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"It is possible to suppress the listing of the code in a macro by forcing bit 0 of OPT to zero for the duration of the macro code. This can most easily be done by ANDing the value passed to OPT with 6."}]
+26:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This is illustrated in PROC_screen and PROC_aux in the example below."}]
+27:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"DIM code 200"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"op_flag=TRUE"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"FOR pass=0 TO 3 STEP 3"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  [OPT pass"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  .start   - - -"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"           - - - code - - -"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"           - - -"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":":"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  OPT FN_select(op_flag); Include code depending on op_flag"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":":"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"           - - -"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"           - - - code - - -"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"           - - -:]"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"NEXT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"END"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":":"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":":"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"REM Include code depending on value of op_flag"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":":"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"DEF FN_select(op_flag)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"IF op_flag PROC_screen ELSE PROC_print"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"=pass"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"REM Return original value of OPT.  This is a"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"REM bit artificial, but necessary to insert"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"REM some BBC BASIC code in the assembly code."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":":"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"DEF PROC_screen"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"[OPT pass AND 6"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"RST &20: DEFB &27 ; OS_Out: A = character to send to screen"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"]"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"ENDPROC"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":":"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"DEF PROC_print"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"[OPT pass AND 6"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; some code to send character to the printer"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"]"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"ENDPROC"}]}]]}]]}]]}]
+28:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The use of a function call to incorporate the code provides a neat way of incorporating the macro within the program and allows parameters to be passed to it. The function should return the original value of OPT."}]
+29:["$","h2",null,{"id":"managing-system-error-events-on-the-z88","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Managing system error events on the Z88",["$","$L20",null,{"id":"managing-system-error-events-on-the-z88"}]]}]
+2a:["$","h3",null,{"id":"warning","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Warning",["$","$L20",null,{"id":"warning"}]]}]
+2b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If you write an application which contains bugs or tries to circumnavigate the operating system, then it is likely that all the other applications in the Z88 will be affected."}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The effect may not be immediate, some indiscretions take weeks or even months to become apparent, but will usually be in the form of a system crash. You must always remember that the resources of the Z88 are not devoted exclusively to your application and therefore only use legal interfaces."}]
+2d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"All internal applications follow all the rules and use no ‘back door’ techniques."}]
+2e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["If you wish to write more than the simplest assembler code programs for the Z88, you will need a considerable amount of technical information about the machine. This information is available in the ",["$","$L4b",null,{"href":"/en/library/cambridge-z88/developers-notes","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Developers’ Notes"}]," on the ",["$","strong",null,{"children":"cambridgez88.jira.com"}]," wiki."]}]
+2f:["$","h3",null,{"id":"error-handling","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Error handling",["$","$L20",null,{"id":"error-handling"}]]}]
+30:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If your assembler language program makes any use at all of the Z88’s facilities, it will be possible to suspend it. Under these circumstances, it is imperative that your program includes error handling code."}]
+31:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The following assembler language ‘wrap around’ provides the minimum acceptable error handling capability. It is also an example of how to use a macro for OZ system call API and how to open files to read date stamp properties."}]
+32:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The ‘wrap around’ recognises and acts on the following events:"}]
+33:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["An Escape condition (the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"[ESC]"}]," key having been pressed whilst escape detection is enabled)."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["The ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"[INDEX]"}]," having been pressed or another application / popdown being activated"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"The □ key having been pressed."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"The process having been killed (normally from INDEX)"}],"\n"]}]
+34:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You may wish to develop your own error handler, but you should always use one. If you don’t, you could run into trouble."}]
+35:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":".J"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"AUTO"}]}]]}]]}]]}]
+36:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"DIM code 512                   : REM space for program"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"GN_Esp=&4C09                   : REM return pointer to system error message"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"GN_Soe=&3C09                   : REM Write string at extended address to standard output"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"GN_Nln=&2E09                   : REM carriage return, linefeed to std. output"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"GN_Sop=&3A09                   : REM output string to std. output"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"GN_Opf=&6009                   : REM open file"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OS_Erh=&75                     : REM install error handler"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OS_Esc=&6F                     : REM examine special condition"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"GN_Err=&4A09                   : REM standard system error box"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"GN_Sdo=&0E09                   : REM date and time to standard output"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OS_Dor=&87                     : REM DOR interface"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"dr_rd=&09                      : REM read DOR record"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"dr_fre=&05                     : REM free DOR handle"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"op_dor=&06                     : REM open file for DOR access"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"rc_quit=&67                    : REM KILL request error code"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"rc_esc=&01                     : REM escape detection error code"}]}]]}]]}]]}]
+37:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"FOR pass=0 TO 2 STEP 2"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"P%=code"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"["}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OPT  pass"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"LD   HL,0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"ADD  HL,SP                     \\ get current BASIC stack pointer"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"LD   (bstk),HL                 \\ preserve it"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"LD   SP,(&1FFE)                \\ install system (safe) stack pointer"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"XOR  A"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"LD   B,A"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"LD   HL,errhan                 \\ address of error handler"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OPT  FNsys(OS_Erh)             \\ install new error handler"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"LD   (obou),A                  \\ save old error handler call level"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"LD   (oerr),HL                 \\ save old error handler address"}]}]]}]]}]]}]
+38:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"\\ Here is the call to your assembler language routine which should be"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"\\ included at the end of this code."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"CALL main                      \\ call main routine"}]}]]}]]}]]}]
+39:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":".exit"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"LD   HL,(oerr)                 \\ address of old error handler"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"LD   A,(obou)                  \\ old call level"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"LD   B,0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OPT  FNsys(OS_Erh)             \\ restore previous error handler"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"LD   SP,(bstk)                 \\ restore BASIC stack pointer"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"RET                            \\ return to BBC BASIC interpreter"}]}]]}]]}]]}]
+3a:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":".errhan"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"RET  Z"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"CP   rc_esc                    \\ ESC pressed?"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"JR   NZ,err1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OPT  FNsys(OS_Esc)             \\ acknowledge ESC"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"LD   A,rc_esc"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OR   A                         \\ return rc_esc back to main program"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"RET                            \\ Fc = 0, Fz = 0"}]}]]}]]}]]}]
+3b:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":".err1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"CP   rc_quit                   \\ KILL request?"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"JR   NZ,err2"}]}]]}]]}]]}]
+3c:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"LD   HL,(oerr)                 \\ re-install old error handler"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"LD   A,(obou)                  \\ old call level"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OPT  FNsys(OS_Erh)"}]}]]}]]}]]}]
+3d:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"LD   SP,(bstk)                 \\ install BASIC stack pointer"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"LD   HL,(oerr)"}]}]]}]]}]]}]
+3e:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"LD   A, rc_quit                \\ reload A with RC_QUIT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OR   A                         \\ Fz = 0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"SCF                            \\ Fc = 1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"JP   (HL)                      \\ jump to BASIC's error handler"}]}]]}]]}]]}]
+3f:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":".err2                          \\ write error message if possible"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OPT  FNsys(GN_Esp)             \\ Get ext. pointer to system error message"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OPT  FNsys(GN_Soe)             \\ Write error message to std. output"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OPT  FNsys(GN_Nln)             \\ New line to std. output"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OR   A                         \\ Fc = 0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"RET"}]}]]}]]}]]}]
+40:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":".bstk DEFW 0                   \\ storage for BASIC stack pointer"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":".obou DEFB 0                   \\ storage for old call level"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":".oerr DEFW 0                   \\ storage for old error handler address"}]}]]}]]}]]}]
+41:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"\\ ----------------------------------------------------------------------"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"\\ main routine starts here"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":".main"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"LD   HL,scratch_1              \\ holds address of file to open"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"LD   DE,scratch_2              \\ explicit name buffer"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"LD   C,40                      \\ size of explicit name buffer"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"LD   B,0                       \\ HL string pointer is local"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"LD   a, op_dor                 \\ get DOR handle"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OPT  FNsys(GN_Opf)             \\ open..."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"JR   NC,opened_OK"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OPT  FNsys(GN_Err)             \\ report error in standard window"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"RET"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":".opened_OK"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"LD   A,dr_rd                   \\ read DOR record"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"LD   B,ASC\"U\"                  \\ read update information"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"LD   C,6                       \\ 3 byte internal date, 3 byte int. time"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"LD   DE,scratch_1              \\ store returned information at (DE)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OPT  FNsys(OS_Dor)             \\ fetch update date"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"LD   A,dr_fre"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OPT  FNsys(OS_Dor)             \\ free DOR handle"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"LD   HL,scratch_2              \\ display explicit filename"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OPT  FNsys(GN_Sop)             \\ to standard output"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"LD   HL,tab_str"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OPT  FNsys(GN_Sop)             \\ tab to column 40"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"LD   HL,scratch_1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OPT  FNsys(GN_Sdo)             \\ output returned update date"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OPT  FNsys(GN_Nln)             \\ display newline"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"RET                            \\ back to BASIC"}]}]]}]]}]]}]
+42:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":".scratch_1 DEFM STRING$(40,\"X\")"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":".scratch_2 DEFM STRING$(40,\"X\")"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":".tab_str DEFM CHR$1+\"2X\"+CHR$(32+40)+CHR$0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"\\ main routine ends here"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"\\ ----------------------------------------------------------------------"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"]"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"NEXT pass"}]}]]}]]}]]}]
+43:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"CLS"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"PRINT \"Read File Update Date and Time\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"INPUT \"Filename:\"A$"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"IF LEN(A$)>40 THEN PRINT \"String too long\": END"}]}]]}]]}]]}]
+44:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"A$=A$+CHR$0  : REM null-terminate filename string"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$scratch_1=A$"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"CALL code"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"END"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":":"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"DEF FNsys(arg)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"IF arg>255 THEN PROC_Rst20Defw(arg) ELSE PROC_Rst20Defb(arg)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"=pass"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":":"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"DEF PROC_Rst20Defw(arg)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"[OPT pass"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"RST &20: DEFW arg"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"]"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"ENDPROC"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"DEF PROC_Rst20Defb(arg)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"[OPT pass"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"RST &20: DEFB arg"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"]"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"ENDPROC"}]}]]}]]}]]}]
+45:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You can test the error handling code by replacing the above main routine with the following program as the other ‘main’ routine (also remove the filename input code after the assembler section which is no longer necessary)."}]
+46:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":".main"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"LD   B,10                      \\ Loop 10 times"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":".loop"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"LD   A,B                       \\ loop value"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"ADD  A,ASC”0”-1                \\ convert to Ascii digit"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OPT  FNsys(OS_Out)             \\ display digit to std. output"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"\\"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":".inp"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OPT  FNsys(OS_In)              \\ Read a character from keyboard"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"JR   C,inp                     \\ if Fc = 1, read error code"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"DJNZ loop"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"RET"}]}]]}]]}]]}]
+47:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Try running the complete program and observe the effect of:"}]
+48:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Suspending (eg. activate INDEX) and then either killing or reentering"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Pressing ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"[ESC]"}]]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Switching the Z88 off and on (both ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"[SHIFT]"}]," keys)"]}],"\n"]}]
+4a:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

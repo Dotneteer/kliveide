@@ -1,0 +1,91 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+1e:"ViewportBoundary"
+1f:I[484,[],"$1e"]
+20:"MetadataBoundary"
+21:I[484,[],"$20"]
+22:"$Sreact.suspense"
+23:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T66b,---
+description: "The part of the REPEAT ... UNTIL structure which signifies its end."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# UNTIL (U.)
+
+The part of the REPEAT ... UNTIL structure which signifies its end.
+
+You can use a REPEAT...UNTIL loop to repeat a set of program instructions until some condition is met.
+
+If the condition associated with the UNTIL statement is never met, the loop will execute for ever. (At least, until `[Esc]` is pressed or some other error occurs.)
+
+The following example will continually ask for a number and print its square. The only way to stop it is by pressing `[Esc]` or forcing a 'Too big' error.
+
+```text
+10 z=1
+20 REPEAT
+30   INPUT "Enter a number " num
+40   PRINT "The square of ";num;" is ";num*num
+50 UNTIL z=0
+```
+
+Since the result of the test z=0 is ALWAYS FALSE, we can replace z=0 with FALSE. The program now becomes:
+
+```text
+20 REPEAT
+30   INPUT "Enter a number " num
+40   PRINT "The square of ";num;" is ";num*num
+50 UNTIL FALSE
+```
+
+This is a much neater way of unconditionally looping than using a GOTO statement. The program executes at least as fast and the section of program within the loop is highlighted by the indentation.
+
+See the keyword REPEAT for more details on REPEAT...UNTIL loops. See the Variables sub-section for more details on Boolean variables and the keyword AND for logical tests and their results.
+
+**Syntax**
+
+```text
+UNTIL <t-cond>
+```
+
+**Associated Keywords**
+
+REPEATa:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"The part of the REPEAT ... UNTIL structure which signifies its end.","title":"UNTIL (U.)","filePath":"content/en/library/cambridge-z88/bbc-basic/statements-and-functions/until.mdx","timestamp":1792315833000},"sourceCode":"$12","children":[["$","div",null,{"id":"nextra-skip-nav"}],["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["UNTIL (U.)","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The part of the REPEAT … UNTIL structure which signifies its end."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You can use a REPEAT…UNTIL loop to repeat a set of program instructions until some condition is met."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["If the condition associated with the UNTIL statement is never met, the loop will execute for ever. (At least, until ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"[Esc]"}]," is pressed or some other error occurs.)"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The following example will continually ask for a number and print its square. The only way to stop it is by pressing ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"[Esc]"}]," or forcing a ‘Too big’ error."]}],"\n","$L13","\n","$L14","\n","$L15","\n","$L16","\n","$L17","\n","$L18","\n","$L19","\n","$L1a","\n","$L1b"]]}]]}]]}]}],null,"$L1c"]}],"p":"$@1d","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/bbc-basic/statements-and-functions/until","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L1f",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L21",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$22",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"UNTIL (U.) - Klive IDE"}],["$","meta","1",{"name":"description","content":"The part of the REPEAT ... UNTIL structure which signifies its end."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/bbc-basic/statements-and-functions/until/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L23","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@24","v":null,"s":"$9"}},"a":"$@25","u":"$@26","b":"dZNfFVLPQi_KHqnwQrQVE"}
+27:"ToggleWordWrapButton"
+28:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$27"]
+29:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+2a:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L28",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L29",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"10 z=1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"20 REPEAT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"30   INPUT \"Enter a number \" num"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"40   PRINT \"The square of \";num;\" is \";num*num"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"50 UNTIL z=0"}]}]]}]]}]]}]
+14:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Since the result of the test z=0 is ALWAYS FALSE, we can replace z=0 with FALSE. The program now becomes:"}]
+15:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L28",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L29",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"20 REPEAT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"30   INPUT \"Enter a number \" num"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"40   PRINT \"The square of \";num;\" is \";num*num"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"50 UNTIL FALSE"}]}]]}]]}]]}]
+16:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This is a much neater way of unconditionally looping than using a GOTO statement. The program executes at least as fast and the section of program within the loop is highlighted by the indentation."}]
+17:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"See the keyword REPEAT for more details on REPEAT…UNTIL loops. See the Variables sub-section for more details on Boolean variables and the keyword AND for logical tests and their results."}]
+18:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Syntax"}]}]
+19:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L28",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L29",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"UNTIL <t-cond>"}]}]}]]}]]}]
+1a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Associated Keywords"}]}]
+1b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"REPEAT"}]
+1c:["$","$L2a",null,{"children":["$","$22",null,{"name":"Next.MetadataOutlet","children":"$@2b"}]}]
+26:true
+9:300
+2b:null
+9:C
+25:0
+7:"$undefined"
+24:"$undefined"
+1d:"$undefined"

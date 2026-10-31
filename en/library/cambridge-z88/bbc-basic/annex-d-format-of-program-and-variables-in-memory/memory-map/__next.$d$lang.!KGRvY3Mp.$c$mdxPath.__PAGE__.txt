@@ -1,0 +1,200 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T1fc4,---
+description: "BBC BASIC(Z80) runs under the Z88’s operating system. When a Z88 has 128Kbytes or more in slot 0 or slot 1, it becomes an expanded machine. The difference between an expanded and non-expanded Z88..."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# Memory Map
+
+BBC BASIC(Z80) runs under the Z88’s operating system. When a Z88 has 128Kbytes or more in slot 0 or slot 1, it becomes an expanded machine. The difference between an expanded and non-expanded Z88 are listed below.
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td />
+<Table.Td>**Non-expanded**</Table.Td>
+<Table.Td>**Expanded**</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Memory available for variables and program</Table.Td>
+<Table.Td>&1D00</Table.Td>
+<Table.Td>&9D00</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Maximum map width</Table.Td>
+<Table.Td>80 pixels</Table.Td>
+<Table.Td>256 pixels</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>User characters</Table.Td>
+<Table.Td>16 (see below)</Table.Td>
+<Table.Td>64</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Value of EOF\#-1</Table.Td>
+<Table.Td>0 (FALSE)</Table.Td>
+<Table.Td>-1 (TRUE)</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+For Z88 ROMs V2.2 - V4.0: If you wish to add 128Kbytes or more memory to your Z88 without turning it into an expanded machine, put the memory card in slot 2.
+
+An unexpanded Z88 can use 64 user defined characters, but if an 80 pixel map is used, the last 48 of these will be overwritten by map information when PipeDream is used. Reducing the map width to 64 pixels, or not using the map at all, allows for free use of all 64-characters.
+
+The PTR\#, EXT\#, and EOF\# file attributes functions may be used to discover information about your Z88.
+
+| **Attribute** | **Information** |
+| --- | --- |
+| PTR\#-1 | High word = No. of free handles in the system.<br />Low word = ROM version code<br />Because 2 values are packed into one number, you need to display the value returned by PTR\#-1 in hexadecimal. For example:<br /><br />`PRINT ~PTR#-1` |
+| EXT\#-1 | Estimate of free memory. See later under ‘Memory for Files and Applications’ |
+| EOF\#-1 | TRUE (-1) = expanded<br />FALSE (0) = unexpanded |
+
+## Memory for Files and Applications [#memory-for-files-and-applications]
+
+The memory in each card slot is available to the Filer and to applications (and the special device `:RAM.-`) and this memory is allocated on a ‘first come, first served’ basis. However, because of the differences in the way memory is managed by the Filer and applications, the Filer generally has access to slightly less memory than either the applications or the device `:RAM.-`.
+
+The free memory value returned by EXT\#-1 is the memory available to applications or the device `:RAM.-`. Consequently, the memory available for files (other than `:RAM.-`) is generally somewhat less than the value returned by EXT\#-1.
+
+A file is limited by the size of the device in which it is held (`:RAM.1`, `:RAM.2`, etc). The device `:RAM.-` can use all the free memory anywhere in the system. Consequently, it can be larger than any one physical device and it is useful for very large files. However, there is a bug in versions of the Z88 operating system up to V4.0 which will cause the system to fail if you perform a soft reset whilst any files exist in `:RAM.-`. Ensure that you delete all files in `:RAM.-` as soon as you have finished with them and do not perform a soft reset whilst any files exist in this device.
+
+## Auto-boot CLI File and Z88 ROM’s up to V4.0 [#auto-boot-cli-file-and-z88-roms-up-to-v40]
+
+If there is an EPROM or FLASH card which contains a file called ‘boot.cli’ in slot 3 when the Z88 is reset, the file will be loaded into `:RAM.-` and executed as a CLI command file. Make sure you have deleted this file from `:RAM.-` when you have finished with it.
+
+## BBC BASIC(Z80) Program [#bbc-basicz80-program]
+
+By default, your program will start on the page boundary immediately following the interpreter's data area and the 'dynamic data structures' will immediately follow your program. The total group of the dynamic data structures is called the 'heap'. The base of the program control stack is located at HIMEM. HIMEM is at &C000 on an expanded Z88 and at &4000 if the Z88 is unexpanded.
+
+As your program runs, the heap expands upwards towards the stack and the stack expands downwards towards the heap. If the two should meet, you get a 'No room' error. Fortunately, there is a limit to the amount by which the stack and the heap expands.
+
+In general, the heap only expands whilst new variables are being declared. However, bad management of string variables can also cause the heap to expand.
+
+In addition to running your program, the stack is also used 'internally' by the BBC BASIC(Z80) interpreter. Its size fluctuates but, in general, it expands every time you increase the depth of nesting of your program structure and every time you increase the number of local variables in use.
+
+## The Memory Map [#the-memory-map]
+
+In its Z88 incarnation, BASIC occupies a memory map of the following form:
+
+`&C000 - &FFFF` BBC BASIC interpreter application (16K)<br />`&4000 - &BFFF` (additional 32K of program/workspace, expanded Z88)<br />`&2000 - &3FFF` BASIC program/workspace<br />`&0000 - &1FFF` Operating system use (and application stack)
+
+BASIC's program/workspace is arranged in the following manner:
+
+```text
+                +-------------------+   &FFFF
+                | BBC BASIC(Z80)    |
+                .                   .
+                .                   .
+HIMEM           +-------------------+   &BFFF or &3FFF
+                | Stack             |
+                +-------------------+   Current limit of the stack
+                .                   .   (Stack expands downwards)
+                . Unused memory     .
+                .                   .
+                +-------------------+   Current limit of the heap
+                | Heap              |   (Heap expands upwards)
+LOMEM           +-------------------+
+                .                   .
+                .                   .
+TOP             +-------------------+
+                | Program           |
+PAGE            +-------------------+   &2300
+                | Workspace for     |
+                | interpreter       |
+                +-------------------+   &2000
+                | Operating system  |
+                | system usage      |
+                +-------------------+   &0000
+```
+
+The function of HIMEM, LOMEM, TOP and PAGE are briefly discussed below. You will find more complete definitions elsewhere in this manual. You can directly set HIMEM, LOMEM and PAGE. However, for most of your programs you won't need to alter any of them. You will probably only need to change HIMEM if you want to put some machine code sub-routines at the top of memory.
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>HIMEM</Table.Td>
+<Table.Td>The first address at the top of memory which is not available for use by BBC BASIC(Z80). The base of the program stack is set at HIMEM. (The first 'thing' stored on the stack goes at HIMEM-1.)</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>LOMEM</Table.Td>
+<Table.Td>The start address for the heap. The first of the dynamic data structures starts at LOMEM.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>TOP</Table.Td>
+<Table.Td>
+
+The first free location after the end of your program. Unless you have set LOMEM yourself, LOMEM=TOP. You cannot directly set TOP. It alters as you enter your program. The current length of your program is given by:
+
+```text
+PRINT TOP-PAGE
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>PAGE</Table.Td>
+<Table.Td>The address of the start of your program. You can place several programs in memory and switch between them by using PAGE. Don't forget to control LOMEM as well. If you don't, the heap for one program might overwrite another program.</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Memory for Files and Applications","id":"memory-for-files-and-applications","depth":2},{"value":"Auto-boot CLI File and Z88 ROM’s up to V4.0","id":"auto-boot-cli-file-and-z88-roms-up-to-v40","depth":2},{"value":"BBC BASIC(Z80) Program","id":"bbc-basicz80-program","depth":2},{"value":"The Memory Map","id":"the-memory-map","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"BBC BASIC(Z80) runs under the Z88’s operating system. When a Z88 has 128Kbytes or more in slot 0 or slot 1, it becomes an expanded machine. The difference between an expanded and non-expanded Z88...","title":"Memory Map","filePath":"content/en/library/cambridge-z88/bbc-basic/annex-d-format-of-program-and-variables-in-memory/memory-map.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/bbc-basic/annex-d-format-of-program-and-variables-in-memory/memory-map","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Memory Map - Klive IDE"}],["$","meta","1",{"name":"description","content":"BBC BASIC(Z80) runs under the Z88’s operating system. When a Z88 has 128Kbytes or more in slot 0 or slot 1, it becomes an expanded machine. The difference between an expanded and non-expanded Z88..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/bbc-basic/annex-d-format-of-program-and-variables-in-memory/memory-map/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"dZNfFVLPQi_KHqnwQrQVE"}
+34:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Memory Map","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"BBC BASIC(Z80) runs under the Z88’s operating system. When a Z88 has 128Kbytes or more in slot 0 or slot 1, it becomes an expanded machine. The difference between an expanded and non-expanded Z88 are listed below."}],"\n",["$","table",null,{"children":["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","strong",null,{"children":"Non-expanded"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","strong",null,{"children":"Expanded"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Memory available for variables and program","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"&1D00","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"&9D00","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Maximum map width","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"80 pixels","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"256 pixels","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"User characters","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"16 (see below)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"64","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Value of EOF#-1","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"0 (FALSE)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"-1 (TRUE)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}],"className":"x:block x:overflow-x-auto"}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"For Z88 ROMs V2.2 - V4.0: If you wish to add 128Kbytes or more memory to your Z88 without turning it into an expanded machine, put the memory card in slot 2."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"An unexpanded Z88 can use 64 user defined characters, but if an 80 pixel map is used, the last 48 of these will be overwritten by map information when PipeDream is used. Reducing the map width to 64 pixels, or not using the map at all, allows for free use of all 64-characters."}],"\n","$L20","\n","$L21","\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33"]]}]
+15:["$","$L34",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@35"}]}]
+1f:true
+36:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+37:"ToggleWordWrapButton"
+38:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$37"]
+39:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+9:300
+20:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The PTR#, EXT#, and EOF# file attributes functions may be used to discover information about your Z88."}]
+21:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":["$","strong",null,{"children":"Attribute"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":["$","strong",null,{"children":"Information"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"PTR#-1","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["High word = No. of free handles in the system.",["$","br",null,{}],"Low word = ROM version code",["$","br",null,{}],"Because 2 values are packed into one number, you need to display the value returned by PTR#-1 in hexadecimal. For example:",["$","br",null,{}],["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"PRINT ~PTR#-1"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"EXT#-1","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Estimate of free memory. See later under ‘Memory for Files and Applications’","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"EOF#-1","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["TRUE (-1) = expanded",["$","br",null,{}],"FALSE (0) = unexpanded"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}]
+22:["$","h2",null,{"id":"memory-for-files-and-applications","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Memory for Files and Applications",["$","$L36",null,{"id":"memory-for-files-and-applications"}]]}]
+23:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The memory in each card slot is available to the Filer and to applications (and the special device ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":":RAM.-"}],") and this memory is allocated on a ‘first come, first served’ basis. However, because of the differences in the way memory is managed by the Filer and applications, the Filer generally has access to slightly less memory than either the applications or the device ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":":RAM.-"}],"."]}]
+24:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The free memory value returned by EXT#-1 is the memory available to applications or the device ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":":RAM.-"}],". Consequently, the memory available for files (other than ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":":RAM.-"}],") is generally somewhat less than the value returned by EXT#-1."]}]
+25:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A file is limited by the size of the device in which it is held (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":":RAM.1"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":":RAM.2"}],", etc). The device ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":":RAM.-"}]," can use all the free memory anywhere in the system. Consequently, it can be larger than any one physical device and it is useful for very large files. However, there is a bug in versions of the Z88 operating system up to V4.0 which will cause the system to fail if you perform a soft reset whilst any files exist in ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":":RAM.-"}],". Ensure that you delete all files in ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":":RAM.-"}]," as soon as you have finished with them and do not perform a soft reset whilst any files exist in this device."]}]
+26:["$","h2",null,{"id":"auto-boot-cli-file-and-z88-roms-up-to-v40","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Auto-boot CLI File and Z88 ROM’s up to V4.0",["$","$L36",null,{"id":"auto-boot-cli-file-and-z88-roms-up-to-v40"}]]}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["If there is an EPROM or FLASH card which contains a file called ‘boot.cli’ in slot 3 when the Z88 is reset, the file will be loaded into ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":":RAM.-"}]," and executed as a CLI command file. Make sure you have deleted this file from ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":":RAM.-"}]," when you have finished with it."]}]
+28:["$","h2",null,{"id":"bbc-basicz80-program","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["BBC BASIC(Z80) Program",["$","$L36",null,{"id":"bbc-basicz80-program"}]]}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"By default, your program will start on the page boundary immediately following the interpreter’s data area and the ‘dynamic data structures’ will immediately follow your program. The total group of the dynamic data structures is called the ‘heap’. The base of the program control stack is located at HIMEM. HIMEM is at &C000 on an expanded Z88 and at &4000 if the Z88 is unexpanded."}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"As your program runs, the heap expands upwards towards the stack and the stack expands downwards towards the heap. If the two should meet, you get a ‘No room’ error. Fortunately, there is a limit to the amount by which the stack and the heap expands."}]
+2b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"In general, the heap only expands whilst new variables are being declared. However, bad management of string variables can also cause the heap to expand."}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"In addition to running your program, the stack is also used ‘internally’ by the BBC BASIC(Z80) interpreter. Its size fluctuates but, in general, it expands every time you increase the depth of nesting of your program structure and every time you increase the number of local variables in use."}]
+2d:["$","h2",null,{"id":"the-memory-map","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The Memory Map",["$","$L36",null,{"id":"the-memory-map"}]]}]
+2e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"In its Z88 incarnation, BASIC occupies a memory map of the following form:"}]
+2f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"&C000 - &FFFF"}]," BBC BASIC interpreter application (16K)",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"&4000 - &BFFF"}]," (additional 32K of program/workspace, expanded Z88)",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"&2000 - &3FFF"}]," BASIC program/workspace",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"&0000 - &1FFF"}]," Operating system use (and application stack)"]}]
+30:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"BASIC’s program/workspace is arranged in the following manner:"}]
+31:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L38",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L39",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"                +-------------------+   &FFFF"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                | BBC BASIC(Z80)    |"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                .                   ."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                .                   ."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"HIMEM           +-------------------+   &BFFF or &3FFF"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                | Stack             |"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                +-------------------+   Current limit of the stack"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                .                   .   (Stack expands downwards)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                . Unused memory     ."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                .                   ."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                +-------------------+   Current limit of the heap"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                | Heap              |   (Heap expands upwards)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"LOMEM           +-------------------+"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                .                   ."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                .                   ."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"TOP             +-------------------+"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                | Program           |"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"PAGE            +-------------------+   &2300"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                | Workspace for     |"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                | interpreter       |"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                +-------------------+   &2000"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                | Operating system  |"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                | system usage      |"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                +-------------------+   &0000"}]}]]}]]}]]}]
+32:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The function of HIMEM, LOMEM, TOP and PAGE are briefly discussed below. You will find more complete definitions elsewhere in this manual. You can directly set HIMEM, LOMEM and PAGE. However, for most of your programs you won’t need to alter any of them. You will probably only need to change HIMEM if you want to put some machine code sub-routines at the top of memory."}]
+33:["$","table",null,{"children":["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"HIMEM","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The first address at the top of memory which is not available for use by BBC BASIC(Z80). The base of the program stack is set at HIMEM. (The first ‘thing’ stored on the stack goes at HIMEM-1.)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"LOMEM","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The start address for the heap. The first of the dynamic data structures starts at LOMEM.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"TOP","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The first free location after the end of your program. Unless you have set LOMEM yourself, LOMEM=TOP. You cannot directly set TOP. It alters as you enter your program. The current length of your program is given by:"}],["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L38",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L39",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"PRINT TOP-PAGE"}]}]}]]}]]}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"PAGE","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The address of the start of your program. You can place several programs in memory and switch between them by using PAGE. Don’t forget to control LOMEM as well. If you don’t, the heap for one program might overwrite another program.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}],"className":"x:block x:overflow-x-auto"}]
+35:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

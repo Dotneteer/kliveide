@@ -1,0 +1,197 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:Tc96,---
+description: "File and device specifiers must comply with the standard Z88 filer conventions. These conventions are described at Appendix D to the Z88 manual and summarised briefly below."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# File Specifiers
+
+File and device specifiers must comply with the standard Z88 filer conventions. These conventions are described at Appendix D to the Z88 manual and summarised briefly below.
+
+```text
+[:device][/][path/]filename.extension
+```
+
+`:device` The memory bank where the file is located or the name of a physical device.<br /> This can be:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+:RAM.0
+
+:RAM.1
+
+:RAM.2
+
+:RAM.3
+
+:RAM.-
+
+:SCR.0
+
+:ROM.0
+
+:PTR.0
+
+:COM.0
+
+:INP.0<br />:OUT.0
+
+:NUL.0
+
+</Table.Td>
+<Table.Td>
+
+RAM in slot 0 (internal memory).
+
+RAM in slot 1 (external memory).
+
+RAM in slot 2 (external memory).
+
+RAM in slot 3 (external memory).
+
+Any RAM memory (RAM.0 to RAM.3). Used by the CLI for temporary files. Lost on reset.
+
+Screen
+
+ROM.
+
+Printer.(Serial port via the printer driver so that any special codes and escape sequences are interpreted.)
+
+Communications (serial) port, but NOT via the printer driver.
+
+Standard input<br />Standard output
+
+Null. (Absorbs output and acts like an empty file on input.)
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+The final .0 of a device name may be omitted if the device is unique. For example, :COM.0 may be abbreviated to :COM
+
+There is a bug in versions of the filer up to and including version 3 that will cause the Z88 to crash if you use the device :RAM.- and then perform a soft reset whilst any files are still present in the device. You can avoid this problem by deleting any files in :RAM.- as soon as you have finished with them.
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+```text
+path
+```
+
+</Table.Td>
+<Table.Td>The list of directories which must be followed in order to find the specified file. The names of each directory in the path must be separated by the slash (divide) character. If the path is omitted, the current directory on the specified drive is assumed.</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+```text
+BBCBASIC/PROGS
+```
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+```text
+filename
+```
+
+```text
+extension
+```
+
+</Table.Td>
+<Table.Td>
+
+The name of the file. The length of the name must not exceed 12 characters.
+
+The optional extension of the file. If an extension is used; it must be separated from the filename by a full-stop.
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+The standard Z88 'wild-cards' may be used when an ambiguous file specifier is acceptable.
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+?
+
+\*
+
+//
+
+</Table.Td>
+<Table.Td>
+
+Allow any single character in this position. If this is used as the last character in the name, a null character will be accepted.
+
+Allow any character (including a null) from the position of the \`<sup>4</sup>' to the end of the name or extension.
+
+Matches any number of directories (or none).
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"File and device specifiers must comply with the standard Z88 filer conventions. These conventions are described at Appendix D to the Z88 manual and summarised briefly below.","title":"File Specifiers","filePath":"content/en/library/cambridge-z88/bbc-basic/operating-system-interface/file-specifiers.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/bbc-basic/operating-system-interface/file-specifiers","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"File Specifiers - Klive IDE"}],["$","meta","1",{"name":"description","content":"File and device specifiers must comply with the standard Z88 filer conventions. These conventions are described at Appendix D to the Z88 manual and summarised briefly below."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/bbc-basic/operating-system-interface/file-specifiers/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"dZNfFVLPQi_KHqnwQrQVE"}
+20:"ToggleWordWrapButton"
+21:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$20"]
+22:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+2d:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["File Specifiers","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"File and device specifiers must comply with the standard Z88 filer conventions. These conventions are described at Appendix D to the Z88 manual and summarised briefly below."}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"[:device][/][path/]filename.extension"}]}]}]]}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":":device"}]," The memory bank where the file is located or the name of a physical device.",["$","br",null,{}]," This can be:"]}],"\n",["$","table",null,{"children":["$","tbody",null,{"children":["$","tr",null,{"children":[["$","td",null,{"children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":":RAM.0"}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":":RAM.1"}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":":RAM.2"}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":":RAM.3"}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":":RAM.-"}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":":SCR.0"}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":":ROM.0"}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":":PTR.0"}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":":COM.0"}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[":INP.0",["$","br",null,{}],":OUT.0"]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":":NUL.0"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"RAM in slot 0 (internal memory)."}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"RAM in slot 1 (external memory)."}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"RAM in slot 2 (external memory)."}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"RAM in slot 3 (external memory)."}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Any RAM memory (RAM.0 to RAM.3). Used by the CLI for temporary files. Lost on reset."}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Screen"}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"ROM."}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Printer.(Serial port via the printer driver so that any special codes and escape sequences are interpreted.)"}],"$L23","$L24","$L25"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],"className":"x:block x:overflow-x-auto"}],"\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c"]]}]
+15:["$","$L2d",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@2e"}]}]
+1f:true
+9:300
+23:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Communications (serial) port, but NOT via the printer driver."}]
+24:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Standard input",["$","br",null,{}],"Standard output"]}]
+25:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Null. (Absorbs output and acts like an empty file on input.)"}]
+26:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The final .0 of a device name may be omitted if the device is unique. For example, :COM.0 may be abbreviated to :COM"}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"There is a bug in versions of the filer up to and including version 3 that will cause the Z88 to crash if you use the device :RAM.- and then perform a soft reset whilst any files are still present in the device. You can avoid this problem by deleting any files in :RAM.- as soon as you have finished with them."}]
+28:["$","table",null,{"children":["$","tbody",null,{"children":["$","tr",null,{"children":[["$","td",null,{"children":["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"path"}]}]}]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The list of directories which must be followed in order to find the specified file. The names of each directory in the path must be separated by the slash (divide) character. If the path is omitted, the current directory on the specified drive is assumed.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],"className":"x:block x:overflow-x-auto"}]
+29:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"BBCBASIC/PROGS"}]}]}]]}]]}]
+2a:["$","table",null,{"children":["$","tbody",null,{"children":["$","tr",null,{"children":[["$","td",null,{"children":[["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"filename"}]}]}]]}]]}],["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"extension"}]}]}]]}]]}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The name of the file. The length of the name must not exceed 12 characters."}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The optional extension of the file. If an extension is used; it must be separated from the filename by a full-stop."}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],"className":"x:block x:overflow-x-auto"}]
+2b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The standard Z88 ‘wild-cards’ may be used when an ambiguous file specifier is acceptable."}]
+2c:["$","table",null,{"children":["$","tbody",null,{"children":["$","tr",null,{"children":[["$","td",null,{"children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"?"}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"*"}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"//"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Allow any single character in this position. If this is used as the last character in the name, a null character will be accepted."}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Allow any character (including a null) from the position of the `",["$","sup",null,{"children":"4"}],"’ to the end of the name or extension."]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Matches any number of directories (or none)."}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],"className":"x:block x:overflow-x-auto"}]
+2e:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

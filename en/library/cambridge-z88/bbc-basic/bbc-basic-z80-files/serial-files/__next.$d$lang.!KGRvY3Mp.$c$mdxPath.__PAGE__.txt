@@ -1,0 +1,795 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T3fa0,---
+description: "The section on serial files is split into three parts. The first deals with character data files. These are the simplest type of files to use and the examples are correspondingly short. The second..."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# Serial Files
+
+## Introduction [#introduction]
+
+The section on serial files is split into three parts. The first deals with character data files. These are the simplest type of files to use and the examples are correspondingly short. The second part looks at mixed numeric/character data files. The final part describes conversion between BBC BASIC(Z80) format files and the file formats required/produced by other systems.
+
+## Character Data Files [#character-data-files]
+
+The first three examples are programs to write data in character format to a serial file and to read the data back. All the data is in character format and, since the files will not be read by other versions of BASIC, no extra control characters have been added.
+
+You may notice that we have cheated a little in that a procedure is called to close the files and end the program without returning. This saves using a GOTO, but leaves the return address on the stack. However, ending a program clears the stack and no harm is done. You should not use this sort of trick anywhere else in a program. If you do you will quickly use up memory.
+
+### Ex 1 - Writing Serial Character Data [#ex-1---writing-serial-character-data]
+
+```text
+ 10 REM F-WSER1
+ 20 :
+ 30 REM WRITING TO A SERIAL CHARACTER DATA FILE
+ 40 :
+ 50 REM This program opens a data file and writes
+ 60 REM serial character data to it.  The use of
+ 70 REM OPENOUT ensures that, even if the file
+ 80 REM existed before, it is cleared before
+ 90 REM being written to.
+100 :
+110 phonenos=OPENOUT "PHONENOS"
+120 PRINT "File Name PHONENOS Opened as Handle ";phonenos
+130 PRINT
+140 REPEAT
+150   INPUT "Name ? " name$
+160   IF name$="" THEN PROC_end
+170   INPUT "Phone Number ? " phone$
+180   PRINT
+190   PRINT#phonenos,name$,phone$
+200 UNTIL FALSE
+210 :
+220 DEF PROC_end
+230 CLOSE#phonenos
+240 END
+```
+
+### Ex 2 - Reading Serial Character Data [#ex-2---reading-serial-character-data]
+
+```text
+ 10 REM F-RSER1
+ 20 :
+ 30 REM EXAMPLE OF READING A SERIAL CHARACTER FILE
+ 40 :
+ 50 REM This program opens a previously written
+ 60 REM serial file and reads it.
+ 70 :
+ 80 :
+ 90 phonenos=OPENIN "PHONENOS"
+100 PRINT "File Name PHONENOS Opened as Handle ";phonenos
+110 PRINT
+120 REPEAT
+130   INPUT#phonenos,name$,phone$
+140   PRINT name$,phone$
+150 UNTIL EOF#phonenos
+160 :
+170 CLOSE#phonenos
+180 END
+```
+
+### Ex 3 - Writing 'AT END' of Character Files [#ex-3---writing-at-end-of-character-files]
+
+The next example extends the write program from Example 1. This new program opens the file, sets PTR\# to the end (line 380) and then adds data to it. A procedure is used to open the file. This has the advantage of making the program more understandable by putting the detailed 'open at end' coding out of the main flow of the program.
+
+```text
+ 10 REM F-WESER1
+ 20 :
+ 30 REM EXAMPLE OF WRITING TO THE END OF A SERIAL DATA FILE
+ 40 :
+ 50 REM The program opens a file and sets PTR
+ 60 REM to the end before writing data to it.
+ 70 :
+ 80 REM A function is used to open the file.
+ 90 :
+100 :
+110 phonenos=FN_openend("PHONENOS")
+120 PRINT "File Name PHONENOS Opened as Handle ";phonenos
+130 PRINT
+140 REPEAT
+150   INPUT "Name ? " name$
+160   IF name$="" THEN PROC_end
+170   INPUT "Phone Number ? " phone$
+180   PRINT
+190   PRINT#phonenos,name$,phone$
+200 UNTIL FALSE
+210 :
+220 DEF PROC_end
+230 CLOSE#phonenos
+240 END
+250 :
+260 :
+270 REM Open the file 'AT END'.
+280 :
+290 REM If the file does not already exist, it
+300 REM is created with OPENOUT.  PTR# is left
+310 REM at zero and the handle is returned.  If
+320 REM the file exists, PTR# is set to the end
+330 REM and the file handle returned.
+340 DEF FN_openend(name$)
+350 LOCAL fnum
+360 fnum=OPENUP(name$)
+370 IF fnum=0 THEN fnum=OPENOUT(name$): =fnum
+380 PTR#fnum=EXT#fnum
+390 =fnum
+```
+
+## Mixed Numeric/Character Data Files [#mixed-numericcharacter-data-files]
+
+The second three examples are also programs which write data to a file and read it back, but this time the data is mixed. They are simply extensions of the previous examples which illustrate the handling of mixed data.
+
+### Ex 4 - Writing a Mixed Data File [#ex-4---writing-a-mixed-data-file]
+
+```text
+ 10 REM F-WSER2
+ 20 :
+ 30 REM EXAMPLE OF WRITING TO A MIXED NUMERIC/CHAR DATA FILE
+ 40 :
+ 50 REM This program opens a file and writes
+ 60 REM numeric and char data to it.  The use
+ 70 REM of OPENOUT ensures that, even if the
+ 80 REM file exists, it is cleared before
+ 90 REM being written to.  Functions
+100 REM are used to accept and validate
+110 REM the data before writing it to the file.
+120 :
+130 :
+140 stats=OPENOUT("STATS")
+150 PRINT "File Name STATS Opened as Handle ";stats
+160 PRINT
+170 REPEAT
+180   name$=FN_name
+190   IF name$="" THEN PROC_end
+200   age=FN_age
+210   height=FN_height
+220   sex$=FN_sex
+230   PRINT
+240   PRINT#stats,name$,age,height,sex$
+250 UNTIL FALSE
+260 :
+270 DEF PROC_end
+280 PRINT "The file is ";EXT#stats;" bytes long"
+290 CLOSE#stats
+300 END
+310 :
+320 :
+330 REM Accept a name from the keyboard and make
+340 REM sure it consists only of spaces and
+350 REM upper or lower case characters. Leading
+360 REM spaces are ignored on input.
+370 :
+380 DEF FN_name
+390 LOCAL name$,FLAG,n
+400 REPEAT
+410   FLAG=TRUE
+420   INPUT "Name ? " name$
+430   IF name$="" THEN 490
+440   FOR I=1 TO LEN(name$)
+450     n=ASC(MID$(name$,I,1))
+460     IF NOT(n=32 OR n>64 AND n<91 OR n>96 AND n<123) THEN FLAG=FALSE
+470   NEXT
+480   IF NOT FLAG THEN PRINT "No funny characters please !!!"
+490 UNTIL FLAG
+500 =name$
+510 :
+520 :
+530 REM Accept the age from the keyboard and
+540 REM round to one place of decimals.  Ages
+550 REM of 0 or less, or 150 or more are
+560 REM considered to be in error.
+570 DEF FN_age
+580 LOCAL age
+590 REPEAT
+600   INPUT "What age ? " age
+610   IF age<=0 OR age >=150 THEN PRINT "No impossible ages please !!!"
+620 UNTIL age>0 AND age<150
+630 =INT(age*10+.5)/10
+640 :
+650 :
+660 REM Accept the height in centimetres from
+670 REM the keyboard and round to an integer.
+680 REM Heights of 50 or less and 230 or more
+690 REM are considered to be in error.
+700 DEF FN_height
+710 LOCAL height
+720 REPEAT
+730   INPUT "Height in centimetres ? " height
+740   IF height<=50 OR height>=230 THEN PRINT "Very funny !!!"
+750 UNTIL height>50 AND height<230
+760 =INT(height+.5)
+770 :
+780 :
+790 REM Accept the sex from the keyboard.  Only
+800 REM words beginning with upper or lower case
+810 REM M or F are OK.  The returned string is
+820 REM truncated to 1 character.
+830 DEF FN_sex
+840 LOCAL sex$,FLAG
+850 REPEAT
+860   FLAG=TRUE
+870   INPUT "Male or Female - M or F ? " sex$
+880   IF sex$<>"" THEN sex$=CHR$(ASC(MID$(sex$,1,1)) AND 95)
+890   IF sex$<>"M" AND sex$<>"F" THEN FLAG=FALSE
+900   IF NOT FLAG THEN PRINT "No more sex(es) please !!!"
+910 UNTIL FLAG
+920 =sex$
+```
+
+### Ex 5 - Reading a Mixed Data File [#ex-5---reading-a-mixed-data-file]
+
+```text
+ 10 REM F-RSER2
+ 20 :
+ 30 REM EXAMPLE OF READING FROM A MIXED NUMERIC/CHAR DATA FILE
+ 40 :
+ 50 REM This program opens a file and reads
+ 60 REM numeric and character data from it.
+ 70 :
+ 80 :
+ 90 stats=OPENIN("STATS")
+100 PRINT "File Name STATS Opened as Handle ";stats
+110 PRINT
+120 REPEAT
+130   INPUT#stats,name$,age,height,sex$
+140   PRINT "Name ";name$
+150   PRINT "Age ";age
+160   PRINT "Height in centimetres ";height
+170   IF sex$="M" THEN PRINT "Male" ELSE PRINT "Female"
+180   PRINT
+190 UNTIL EOF#stats
+200 :
+210 CLOSE#stats
+220 END
+```
+
+### Ex 6 - Writing 'AT END' of Mixed Files [#ex-6---writing-at-end-of-mixed-files]
+
+This example is similar to Example 3, but for a mixed data file.
+
+```text
+  10 REM F-WESER2
+  20 :
+  30 REM EXAMPLE OF WRITING AT THE END OF A
+  40 REM MIXED NUMERIC/CHAR DATA FILE
+  50 :
+  60 REM This program opens a file, sets PTR
+  70 REM to its end and then writes numeric and
+  80 REM character data to it.
+  90 :
+ 100 REM Functions are used to accept and
+ 110 REM validate the data before writing it to
+ 120 REM the file.
+ 130 :
+ 140 stats=FN_open("STATS")
+ 150 PRINT "File Name STATS Opened as Handle ";stats
+ 160 PRINT
+ 170 REPEAT
+ 180   name$=FN_name
+ 190   IF name$="" THEN PROC_end
+ 200   age=FN_age
+ 210   height=FN_height
+ 220   sex$=FN_sex
+ 230   PRINT
+ 240   PRINT#stats,name$,age,height,sex$
+ 250 UNTIL FALSE
+ 260 :
+ 270 DEF PROC_end
+ 280 PRINT "The file is ";EXT#stats;" bytes long"
+ 290 CLOSE#stats
+ 300 END
+ 310 :
+ 320 :
+ 330 REM Open the file.  If it exists, set PTR#
+ 340 REM to the end and return the handle.  If
+ 350 REM it does not exist, open it, leave PTR#
+ 360 REM as it is and return the file handle.
+ 370 DEF FN_open(name$)
+ 380 LOCAL fnum
+ 390 fnum=OPENUP(name$)
+ 400 IF fnum=0 THEN fnum=OPENOUT(name$): =fnum
+ 410 PTR#fnum=EXT#fnum
+ 420 =fnum
+ 430 :
+ 440 :
+ 450 REM Accept a name from the keyboard and make
+ 460 REM sure it consists of spaces and upper or
+ 470 REM lower case characters.  Leading spaces
+ 480 REM are automatically ignored on input.
+ 490 DEF FN_name
+ 500 LOCAL name$,FLAG,n
+ 510 REPEAT
+ 520   FLAG=TRUE
+ 530   INPUT "Name ? " name$
+ 540   IF name$="" THEN 600
+ 550   FOR I=1 TO LEN(name$)
+ 560     n=ASC(MID$(name$,I,1))
+ 570     IF NOT(n=32 OR n>64 AND n<91 OR n>96 AND n<123) THEN FLAG=FALSE
+ 580  NEXT
+ 590   IF NOT FLAG THEN PRINT "No funny characters please !!!"
+ 600 UNTIL FLAG
+ 610 =name$
+ 620 :
+ 630 :
+ 640 REM Accept the age from the keyboard and
+ 650 REM round to one place of decimals. Ages of
+ 660 REM 0 or less or 150 or more are in error.
+ 670 :
+ 680 DEF FN_age
+ 690 LOCAL age
+ 700 REPEAT
+ 710   INPUT "What age ? " age
+ 720   IF age<=0 OR age >=150 THEN PRINT "No impossible ages please !!!"
+ 730 UNTIL age>0 AND age<150
+ 740 =INT(age*10+.5)/10
+ 750 :
+ 760 :
+ 770 REM Accept the height in centimetres from
+ 780 REM the keyboard and round to an integer.
+ 790 REM Heights of 50 or less or 230 or more
+ 800 REM are in error.
+ 810 DEF FN_height
+ 820 LOCAL height
+ 830 REPEAT
+ 840   INPUT "Height in centimetres ? " height
+ 850   IF height<=50 OR height>=230 THEN PRINT "Very funny !!!"
+ 860 UNTIL height>50 AND height<230
+ 870 =INT(height+.5)
+ 880 :
+ 890 :
+ 900 REM Accept the sex from the keyboard.  Only
+ 910 REM words beginning with upper or lower
+ 920 REM case M or F are valid.  The returned
+ 930 REM string is truncated to 1 character.
+ 940 DEF FN_sex
+ 950 LOCAL sex$,FLAG
+ 960 REPEAT
+ 970   FLAG=TRUE
+ 980   INPUT "Male or Female - M or F ? " sex$
+ 990   IF sex$<>"" THEN sex$=CHR$(ASC(MID$(sex$,1,1)) AND 95)
+1000   IF sex$<>"M" AND sex$<>"F" THEN FLAG=FALSE
+1010   IF NOT FLAG THEN PRINT "No more sex(es) please !!!"
+1020 UNTIL FLAG
+1030 =sex$
+```
+
+## Compatible Data Files [#compatible-data-files]
+
+The next example tackles the problem of writing files which will be compatible with other versions of BASIC. The most common format for serial files is as follows:
+
+- Data is written to the file as ASCII characters.
+- Data items are separated by commas.
+- Records are terminated by the two characters CR and LF.
+- The file is terminated by a Control Z (&1A).
+
+The example program accepts data from the keyboard and writes it to a file in the above format.
+
+### Ex 7 - Writing a Compatible Data File [#ex-7---writing-a-compatible-data-file]
+
+```text
+  10 REM F-WSTD
+  20 :
+  30 REM EXAMPLE OF WRITING A COMPATIBLE FILE
+  40 :
+  50 REM This program opens a file and writes
+  60 REM numeric and character data to it in a
+  70 REM compatible format.  Numerics are changed
+  80 REM to strings before they are written and
+  90 REM the data items are separated by commas.
+ 100 REM Each record is terminated by CR LF and
+ 110 REM the file is terminated by a Control Z.
+ 120 :
+ 130 REM Functions are used to accept and
+ 140 REM validate the data before writing it to
+ 150 REM the file.
+ 160 :
+ 170 record$=STRING$(100," "): REM Reserve room for the longest
+ 180 name$=STRING$(20," "): REM record necessary.
+ 190 : REM It saves on string space.
+ 200 compat=OPENOUT("COMPAT")
+ 210 PRINT "File Name COMPAT Opened as Handle ";compat
+ 220 PRINT
+ 230 REPEAT
+ 240   name$=FN_name
+ 250   IF name$="" THEN PROC_end
+ 260   age=FN_age
+ 270   height=FN_height
+ 280   sex$=FN_sex
+ 290   PRINT
+ 300   record$=name$+","+STR$(age)+","+STR$(height)+","+sex$
+ 310   PRINT#compat,record$
+ 320   BPUT#compat,&0A
+ 330 UNTIL FALSE
+ 340 :
+ 350 DEF PROC_end
+ 360 BPUT#compat,&1A
+ 370 CLOSE#compat
+ 380 END
+ 390 :
+ 400 :
+ 410 REM Accept a name from the keyboard and make
+ 420 REM sure it consists only of spaces and
+ 430 REM upper or lower case characters. Leading
+ 440 REM spaces are ignored on input.
+ 450 :
+ 460 DEF FN_name
+ 470 LOCAL name$,FLAG,n
+ 480 REPEAT
+ 490   FLAG=TRUE
+ 500   INPUT "Name ? " name$
+ 510   IF name$="" THEN 570
+ 520   FOR I=1 TO LEN(name$)
+ 530     n=ASC(MID$(name$,I,1))
+ 540     IF NOT(n=32 OR n>64 AND n<91 OR n>96 AND n<123) THEN FLAG=TRUE
+ 550   NEXT
+ 560   IF NOT FLAG THEN PRINT "No funny characters please !!!"
+ 570 UNTIL FLAG
+ 580 =name$
+ 590 :
+ 600 :
+ 610 REM Accept the age from the keyboard and
+ 620 REM round to one place of decimals.  Ages
+ 630 REM of 0 or less or 150 or more are
+ 640 REM considered to be in error.
+ 650 DEF FN_age
+ 660 LOCAL age
+ 670 REPEAT
+ 680   INPUT "What age ? " age
+ 690   IF age<=0 OR age >=150 THEN PRINT "No impossible ages please !!!"
+ 700 UNTIL age>0 AND age<150
+ 710 =INT(age*10+.5)/10
+ 720 :
+ 730 :
+ 740 REM Accept the height in centimetres from
+ 750 REM the keyboard and round to an integer.
+ 760 REM Heights of 50 or less and 230 or more
+ 770 REM are considered to be in error.
+ 780 DEF FN_height
+ 790 LOCAL height
+ 800 REPEAT
+ 810   INPUT "Height in centimetres ? " height
+ 820   IF height<=50 OR height>=230 THEN PRINT "Very funny !!!"
+ 830 UNTIL height>50 AND height<230
+ 840 =INT(height+.5)
+ 850 :
+ 860 :
+ 870 REM Accept the sex from the keyboard. Only
+ 880 REM words beginning with upper or lower
+ 890 REM case M or F are valid.  The returned
+ 900 REM string is truncated to 1 character.
+ 910 DEF FN_sex
+ 920 LOCAL sex$,FLAG
+ 930 REPEAT
+ 940   FLAG=TRUE
+ 950   INPUT "Male or Female - M or F ? " sex$
+ 960   IF sex$<>"" THEN sex$=CHR$(ASC(MID$(sex$,1,1)) AND 95)
+ 970   IF sex$<>"M" AND sex$<>"F" THEN FLAG=FALSE
+ 980   IF NOT FLAG THEN PRINT "No more sex(es) please !!!"
+ 990 UNTIL FLAG
+1000 =sex$
+```
+
+### Ex 8 - Reading a Compatible Data File [#ex-8---reading-a-compatible-data-file]
+
+The last example in this section reads a file written in the above format and strips off the extraneous characters. The file is read character by character and the appropriate action taken. This is a simple example of how BBC BASIC(Z80) can be used to manipulate any file by processing it on a character by character basis.
+
+```text
+ 10 REM F-RSTD
+ 20 :
+ 30 REM EXAMPLE OF READING A COMPATIBLE FILE
+ 40 :
+ 50 REM This program opens a data file and reads
+ 60 REM numeric and character data from it.  The
+ 70 REM data is read a byte at a time and the
+ 80 REM appropriate action taken depending on
+ 90 REM whether it is a character, a comma, or
+100 REM a control char.
+110 compat=OPENUP("COMPAT")
+120 PRINT "File Name COMPAT Opened as Handle ";compat
+130 PRINT
+140 REPEAT
+150   name$=FN_read
+160   PRINT "Name ";name$
+170   age=VAL(FN_read)
+180   PRINT "Age ";age
+190   height=VAL(FN_read)
+200   PRINT "Height in centimetres ";height
+210   sex$=FN_read
+220   IF sex$="M" THEN PRINT "Male" ELSE PRINT "Female"
+230   PRINT
+240 UNTIL FALSE
+250 :
+260 :
+270 REM Read a data item from the file.  Treat
+280 REM commas and CRs as data item terminators
+290 REM and Control Z as the file terminator.
+300 REM Since we are not interested in reading a
+310 REM record at a time, the record terminator
+320 REM CR LF is of no special interest to us.
+330 REM We use the CR, along with commas, as a
+332 REM data item separator and discard the LF.
+334 :
+340 DEF FN_read
+350 LOCAL data$,byte$,byte
+360 data$=""
+370 REPEAT
+380   byte=BGET#compat
+390   IF byte=&1A OR EOF#compat THEN CLOSE#compat: END
+400   IF NOT(byte=&0A OR byte=&0D OR byte=&2C) THEN data$=data$+CHR$(byte)
+410 UNTIL byte=&0D OR byte=&2C
+420 =data$
+```a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Introduction","id":"introduction","depth":2},{"value":"Character Data Files","id":"character-data-files","depth":2},{"value":"Ex 1 - Writing Serial Character Data","id":"ex-1---writing-serial-character-data","depth":3},{"value":"Ex 2 - Reading Serial Character Data","id":"ex-2---reading-serial-character-data","depth":3},{"value":"Ex 3 - Writing ‘AT END’ of Character Files","id":"ex-3---writing-at-end-of-character-files","depth":3},{"value":"Mixed Numeric/Character Data Files","id":"mixed-numericcharacter-data-files","depth":2},{"value":"Ex 4 - Writing a Mixed Data File","id":"ex-4---writing-a-mixed-data-file","depth":3},{"value":"Ex 5 - Reading a Mixed Data File","id":"ex-5---reading-a-mixed-data-file","depth":3},{"value":"Ex 6 - Writing ‘AT END’ of Mixed Files","id":"ex-6---writing-at-end-of-mixed-files","depth":3},{"value":"Compatible Data Files","id":"compatible-data-files","depth":2},{"value":"Ex 7 - Writing a Compatible Data File","id":"ex-7---writing-a-compatible-data-file","depth":3},{"value":"Ex 8 - Reading a Compatible Data File","id":"ex-8---reading-a-compatible-data-file","depth":3}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"The section on serial files is split into three parts. The first deals with character data files. These are the simplest type of files to use and the examples are correspondingly short. The second...","title":"Serial Files","filePath":"content/en/library/cambridge-z88/bbc-basic/bbc-basic-z80-files/serial-files.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/bbc-basic/bbc-basic-z80-files/serial-files","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Serial Files - Klive IDE"}],["$","meta","1",{"name":"description","content":"The section on serial files is split into three parts. The first deals with character data files. These are the simplest type of files to use and the examples are correspondingly short. The second..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/bbc-basic/bbc-basic-z80-files/serial-files/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"dZNfFVLPQi_KHqnwQrQVE"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+21:"ToggleWordWrapButton"
+22:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$21"]
+23:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+4e:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Serial Files","$undefined"]}],"\n",["$","h2",null,{"id":"introduction","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Introduction",["$","$L20",null,{"id":"introduction"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The section on serial files is split into three parts. The first deals with character data files. These are the simplest type of files to use and the examples are correspondingly short. The second part looks at mixed numeric/character data files. The final part describes conversion between BBC BASIC(Z80) format files and the file formats required/produced by other systems."}],"\n",["$","h2",null,{"id":"character-data-files","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Character Data Files",["$","$L20",null,{"id":"character-data-files"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The first three examples are programs to write data in character format to a serial file and to read the data back. All the data is in character format and, since the files will not be read by other versions of BASIC, no extra control characters have been added."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You may notice that we have cheated a little in that a procedure is called to close the files and end the program without returning. This saves using a GOTO, but leaves the return address on the stack. However, ending a program clears the stack and no harm is done. You should not use this sort of trick anywhere else in a program. If you do you will quickly use up memory."}],"\n",["$","h3",null,{"id":"ex-1---writing-serial-character-data","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Ex 1 - Writing Serial Character Data",["$","$L20",null,{"id":"ex-1---writing-serial-character-data"}]]}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":" 10 REM F-WSER1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 20 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 30 REM WRITING TO A SERIAL CHARACTER DATA FILE"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 40 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 50 REM This program opens a data file and writes"}]}],"\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36"]}]]}]]}],"\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49","\n","$L4a","\n","$L4b","\n","$L4c","\n","$L4d"]]}]
+15:["$","$L4e",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@4f"}]}]
+1f:true
+9:300
+24:["$","span",null,{"children":["$","span",null,{"children":" 60 REM serial character data to it.  The use of"}]}]
+25:["$","span",null,{"children":["$","span",null,{"children":" 70 REM OPENOUT ensures that, even if the file"}]}]
+26:["$","span",null,{"children":["$","span",null,{"children":" 80 REM existed before, it is cleared before"}]}]
+27:["$","span",null,{"children":["$","span",null,{"children":" 90 REM being written to."}]}]
+28:["$","span",null,{"children":["$","span",null,{"children":"100 :"}]}]
+29:["$","span",null,{"children":["$","span",null,{"children":"110 phonenos=OPENOUT \"PHONENOS\""}]}]
+2a:["$","span",null,{"children":["$","span",null,{"children":"120 PRINT \"File Name PHONENOS Opened as Handle \";phonenos"}]}]
+2b:["$","span",null,{"children":["$","span",null,{"children":"130 PRINT"}]}]
+2c:["$","span",null,{"children":["$","span",null,{"children":"140 REPEAT"}]}]
+2d:["$","span",null,{"children":["$","span",null,{"children":"150   INPUT \"Name ? \" name$"}]}]
+2e:["$","span",null,{"children":["$","span",null,{"children":"160   IF name$=\"\" THEN PROC_end"}]}]
+2f:["$","span",null,{"children":["$","span",null,{"children":"170   INPUT \"Phone Number ? \" phone$"}]}]
+30:["$","span",null,{"children":["$","span",null,{"children":"180   PRINT"}]}]
+31:["$","span",null,{"children":["$","span",null,{"children":"190   PRINT#phonenos,name$,phone$"}]}]
+32:["$","span",null,{"children":["$","span",null,{"children":"200 UNTIL FALSE"}]}]
+33:["$","span",null,{"children":["$","span",null,{"children":"210 :"}]}]
+34:["$","span",null,{"children":["$","span",null,{"children":"220 DEF PROC_end"}]}]
+35:["$","span",null,{"children":["$","span",null,{"children":"230 CLOSE#phonenos"}]}]
+36:["$","span",null,{"children":["$","span",null,{"children":"240 END"}]}]
+37:["$","h3",null,{"id":"ex-2---reading-serial-character-data","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Ex 2 - Reading Serial Character Data",["$","$L20",null,{"id":"ex-2---reading-serial-character-data"}]]}]
+38:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":" 10 REM F-RSER1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 20 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 30 REM EXAMPLE OF READING A SERIAL CHARACTER FILE"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 40 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 50 REM This program opens a previously written"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 60 REM serial file and reads it."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 70 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 80 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 90 phonenos=OPENIN \"PHONENOS\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"100 PRINT \"File Name PHONENOS Opened as Handle \";phonenos"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"110 PRINT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"120 REPEAT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"130   INPUT#phonenos,name$,phone$"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"140   PRINT name$,phone$"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"150 UNTIL EOF#phonenos"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"160 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"170 CLOSE#phonenos"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"180 END"}]}]]}]]}]]}]
+39:["$","h3",null,{"id":"ex-3---writing-at-end-of-character-files","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Ex 3 - Writing ‘AT END’ of Character Files",["$","$L20",null,{"id":"ex-3---writing-at-end-of-character-files"}]]}]
+3a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The next example extends the write program from Example 1. This new program opens the file, sets PTR# to the end (line 380) and then adds data to it. A procedure is used to open the file. This has the advantage of making the program more understandable by putting the detailed ‘open at end’ coding out of the main flow of the program."}]
+3b:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":" 10 REM F-WESER1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 20 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 30 REM EXAMPLE OF WRITING TO THE END OF A SERIAL DATA FILE"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 40 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 50 REM The program opens a file and sets PTR"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 60 REM to the end before writing data to it."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 70 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 80 REM A function is used to open the file."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 90 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"100 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"110 phonenos=FN_openend(\"PHONENOS\")"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"120 PRINT \"File Name PHONENOS Opened as Handle \";phonenos"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"130 PRINT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"140 REPEAT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"150   INPUT \"Name ? \" name$"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"160   IF name$=\"\" THEN PROC_end"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"170   INPUT \"Phone Number ? \" phone$"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"180   PRINT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"190   PRINT#phonenos,name$,phone$"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"200 UNTIL FALSE"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"210 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"220 DEF PROC_end"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"230 CLOSE#phonenos"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"240 END"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"250 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"260 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"270 REM Open the file 'AT END'."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"280 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"290 REM If the file does not already exist, it"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"300 REM is created with OPENOUT.  PTR# is left"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"310 REM at zero and the handle is returned.  If"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"320 REM the file exists, PTR# is set to the end"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"330 REM and the file handle returned."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"340 DEF FN_openend(name$)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"350 LOCAL fnum"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"360 fnum=OPENUP(name$)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"370 IF fnum=0 THEN fnum=OPENOUT(name$): =fnum"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"380 PTR#fnum=EXT#fnum"}]}],"\n",["$","span",null,{"children":"$L50"}]]}]]}]]}]
+3c:["$","h2",null,{"id":"mixed-numericcharacter-data-files","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Mixed Numeric/Character Data Files",["$","$L20",null,{"id":"mixed-numericcharacter-data-files"}]]}]
+3d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The second three examples are also programs which write data to a file and read it back, but this time the data is mixed. They are simply extensions of the previous examples which illustrate the handling of mixed data."}]
+3e:["$","h3",null,{"id":"ex-4---writing-a-mixed-data-file","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Ex 4 - Writing a Mixed Data File",["$","$L20",null,{"id":"ex-4---writing-a-mixed-data-file"}]]}]
+3f:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":" 10 REM F-WSER2"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 20 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 30 REM EXAMPLE OF WRITING TO A MIXED NUMERIC/CHAR DATA FILE"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 40 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 50 REM This program opens a file and writes"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 60 REM numeric and char data to it.  The use"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 70 REM of OPENOUT ensures that, even if the"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 80 REM file exists, it is cleared before"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 90 REM being written to.  Functions"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"100 REM are used to accept and validate"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"110 REM the data before writing it to the file."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"120 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"130 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"140 stats=OPENOUT(\"STATS\")"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"150 PRINT \"File Name STATS Opened as Handle \";stats"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"160 PRINT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"170 REPEAT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"180   name$=FN_name"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"190   IF name$=\"\" THEN PROC_end"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"200   age=FN_age"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"210   height=FN_height"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"220   sex$=FN_sex"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"230   PRINT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"240   PRINT#stats,name$,age,height,sex$"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"250 UNTIL FALSE"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"260 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"270 DEF PROC_end"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"280 PRINT \"The file is \";EXT#stats;\" bytes long\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"290 CLOSE#stats"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"300 END"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"310 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"320 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"330 REM Accept a name from the keyboard and make"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"340 REM sure it consists only of spaces and"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"350 REM upper or lower case characters. Leading"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"360 REM spaces are ignored on input."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"370 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"380 DEF FN_name"}]}],"\n","$L51","\n","$L52","\n","$L53","\n","$L54","\n","$L55","\n","$L56","\n","$L57","\n","$L58","\n","$L59","\n","$L5a","\n","$L5b","\n","$L5c","\n","$L5d","\n","$L5e","\n","$L5f","\n","$L60","\n","$L61","\n","$L62","\n","$L63","\n","$L64","\n","$L65","\n","$L66","\n","$L67","\n","$L68","\n","$L69","\n","$L6a","\n","$L6b","\n","$L6c","\n","$L6d","\n","$L6e","\n","$L6f","\n","$L70","\n","$L71","\n","$L72","\n","$L73","\n","$L74","\n","$L75","\n","$L76","\n","$L77","\n","$L78","\n","$L79","\n","$L7a","\n","$L7b","\n","$L7c","\n","$L7d","\n","$L7e","\n","$L7f","\n","$L80","\n","$L81","\n","$L82","\n","$L83","\n","$L84","\n","$L85","\n","$L86"]}]]}]]}]
+40:["$","h3",null,{"id":"ex-5---reading-a-mixed-data-file","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Ex 5 - Reading a Mixed Data File",["$","$L20",null,{"id":"ex-5---reading-a-mixed-data-file"}]]}]
+41:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":" 10 REM F-RSER2"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 20 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 30 REM EXAMPLE OF READING FROM A MIXED NUMERIC/CHAR DATA FILE"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 40 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 50 REM This program opens a file and reads"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 60 REM numeric and character data from it."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 70 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 80 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 90 stats=OPENIN(\"STATS\")"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"100 PRINT \"File Name STATS Opened as Handle \";stats"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"110 PRINT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"120 REPEAT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"130   INPUT#stats,name$,age,height,sex$"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"140   PRINT \"Name \";name$"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"150   PRINT \"Age \";age"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"160   PRINT \"Height in centimetres \";height"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"170   IF sex$=\"M\" THEN PRINT \"Male\" ELSE PRINT \"Female\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"180   PRINT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"190 UNTIL EOF#stats"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"200 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"210 CLOSE#stats"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"220 END"}]}]]}]]}]]}]
+42:["$","h3",null,{"id":"ex-6---writing-at-end-of-mixed-files","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Ex 6 - Writing ‘AT END’ of Mixed Files",["$","$L20",null,{"id":"ex-6---writing-at-end-of-mixed-files"}]]}]
+43:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This example is similar to Example 3, but for a mixed data file."}]
+44:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"  10 REM F-WESER2"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  20 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  30 REM EXAMPLE OF WRITING AT THE END OF A"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  40 REM MIXED NUMERIC/CHAR DATA FILE"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  50 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  60 REM This program opens a file, sets PTR"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  70 REM to its end and then writes numeric and"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  80 REM character data to it."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  90 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 100 REM Functions are used to accept and"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 110 REM validate the data before writing it to"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 120 REM the file."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 130 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 140 stats=FN_open(\"STATS\")"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 150 PRINT \"File Name STATS Opened as Handle \";stats"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 160 PRINT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 170 REPEAT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 180   name$=FN_name"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 190   IF name$=\"\" THEN PROC_end"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 200   age=FN_age"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 210   height=FN_height"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 220   sex$=FN_sex"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 230   PRINT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 240   PRINT#stats,name$,age,height,sex$"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 250 UNTIL FALSE"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 260 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 270 DEF PROC_end"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 280 PRINT \"The file is \";EXT#stats;\" bytes long\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 290 CLOSE#stats"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 300 END"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 310 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 320 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 330 REM Open the file.  If it exists, set PTR#"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 340 REM to the end and return the handle.  If"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 350 REM it does not exist, open it, leave PTR#"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 360 REM as it is and return the file handle."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 370 DEF FN_open(name$)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 380 LOCAL fnum"}]}],"\n","$L87","\n","$L88","\n","$L89","\n","$L8a","\n","$L8b","\n","$L8c","\n","$L8d","\n","$L8e","\n","$L8f","\n","$L90","\n","$L91","\n","$L92","\n","$L93","\n","$L94","\n","$L95","\n","$L96","\n","$L97","\n","$L98","\n","$L99","\n","$L9a","\n","$L9b","\n","$L9c","\n","$L9d","\n","$L9e","\n","$L9f","\n","$La0","\n","$La1","\n","$La2","\n","$La3","\n","$La4","\n","$La5","\n","$La6","\n","$La7","\n","$La8","\n","$La9","\n","$Laa","\n","$Lab","\n","$Lac","\n","$Lad","\n","$Lae","\n","$Laf","\n","$Lb0","\n","$Lb1","\n","$Lb2","\n","$Lb3","\n","$Lb4","\n","$Lb5","\n","$Lb6","\n","$Lb7","\n","$Lb8","\n","$Lb9","\n","$Lba","\n","$Lbb","\n","$Lbc","\n","$Lbd","\n","$Lbe","\n","$Lbf","\n","$Lc0","\n","$Lc1","\n","$Lc2","\n","$Lc3","\n","$Lc4","\n","$Lc5","\n","$Lc6","\n","$Lc7"]}]]}]]}]
+45:["$","h2",null,{"id":"compatible-data-files","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Compatible Data Files",["$","$L20",null,{"id":"compatible-data-files"}]]}]
+46:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The next example tackles the problem of writing files which will be compatible with other versions of BASIC. The most common format for serial files is as follows:"}]
+47:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Data is written to the file as ASCII characters."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Data items are separated by commas."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Records are terminated by the two characters CR and LF."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"The file is terminated by a Control Z (&1A)."}],"\n"]}]
+48:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The example program accepts data from the keyboard and writes it to a file in the above format."}]
+49:["$","h3",null,{"id":"ex-7---writing-a-compatible-data-file","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Ex 7 - Writing a Compatible Data File",["$","$L20",null,{"id":"ex-7---writing-a-compatible-data-file"}]]}]
+4a:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"  10 REM F-WSTD"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  20 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  30 REM EXAMPLE OF WRITING A COMPATIBLE FILE"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  40 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  50 REM This program opens a file and writes"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  60 REM numeric and character data to it in a"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  70 REM compatible format.  Numerics are changed"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  80 REM to strings before they are written and"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  90 REM the data items are separated by commas."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 100 REM Each record is terminated by CR LF and"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 110 REM the file is terminated by a Control Z."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 120 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 130 REM Functions are used to accept and"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 140 REM validate the data before writing it to"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 150 REM the file."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 160 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 170 record$=STRING$(100,\" \"): REM Reserve room for the longest"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 180 name$=STRING$(20,\" \"): REM record necessary."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 190 : REM It saves on string space."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 200 compat=OPENOUT(\"COMPAT\")"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 210 PRINT \"File Name COMPAT Opened as Handle \";compat"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 220 PRINT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 230 REPEAT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 240   name$=FN_name"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 250   IF name$=\"\" THEN PROC_end"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 260   age=FN_age"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 270   height=FN_height"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 280   sex$=FN_sex"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 290   PRINT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 300   record$=name$+\",\"+STR$(age)+\",\"+STR$(height)+\",\"+sex$"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 310   PRINT#compat,record$"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 320   BPUT#compat,&0A"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 330 UNTIL FALSE"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 340 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 350 DEF PROC_end"}]}],"\n",["$","span",null,{"children":"$Lc8"}],"\n","$Lc9","\n","$Lca","\n","$Lcb","\n","$Lcc","\n","$Lcd","\n","$Lce","\n","$Lcf","\n","$Ld0","\n","$Ld1","\n","$Ld2","\n","$Ld3","\n","$Ld4","\n","$Ld5","\n","$Ld6","\n","$Ld7","\n","$Ld8","\n","$Ld9","\n","$Lda","\n","$Ldb","\n","$Ldc","\n","$Ldd","\n","$Lde","\n","$Ldf","\n","$Le0","\n","$Le1","\n","$Le2","\n","$Le3","\n","$Le4","\n","$Le5","\n","$Le6","\n","$Le7","\n","$Le8","\n","$Le9","\n","$Lea","\n","$Leb","\n","$Lec","\n","$Led","\n","$Lee","\n","$Lef","\n","$Lf0","\n","$Lf1","\n","$Lf2","\n","$Lf3","\n","$Lf4","\n","$Lf5","\n","$Lf6","\n","$Lf7","\n","$Lf8","\n","$Lf9","\n","$Lfa","\n","$Lfb","\n","$Lfc","\n","$Lfd","\n","$Lfe","\n","$Lff","\n","$L100","\n","$L101","\n","$L102","\n","$L103","\n","$L104","\n","$L105","\n","$L106","\n","$L107","\n","$L108"]}]]}]]}]
+4b:["$","h3",null,{"id":"ex-8---reading-a-compatible-data-file","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Ex 8 - Reading a Compatible Data File",["$","$L20",null,{"id":"ex-8---reading-a-compatible-data-file"}]]}]
+4c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The last example in this section reads a file written in the above format and strips off the extraneous characters. The file is read character by character and the appropriate action taken. This is a simple example of how BBC BASIC(Z80) can be used to manipulate any file by processing it on a character by character basis."}]
+4d:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":" 10 REM F-RSTD"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 20 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 30 REM EXAMPLE OF READING A COMPATIBLE FILE"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 40 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 50 REM This program opens a data file and reads"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 60 REM numeric and character data from it.  The"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 70 REM data is read a byte at a time and the"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 80 REM appropriate action taken depending on"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 90 REM whether it is a character, a comma, or"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"100 REM a control char."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"110 compat=OPENUP(\"COMPAT\")"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"120 PRINT \"File Name COMPAT Opened as Handle \";compat"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"130 PRINT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"140 REPEAT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"150   name$=FN_read"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"160   PRINT \"Name \";name$"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"170   age=VAL(FN_read)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"180   PRINT \"Age \";age"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"190   height=VAL(FN_read)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"200   PRINT \"Height in centimetres \";height"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"210   sex$=FN_read"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"220   IF sex$=\"M\" THEN PRINT \"Male\" ELSE PRINT \"Female\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"230   PRINT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"240 UNTIL FALSE"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"250 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"260 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"270 REM Read a data item from the file.  Treat"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"280 REM commas and CRs as data item terminators"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"290 REM and Control Z as the file terminator."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"300 REM Since we are not interested in reading a"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"310 REM record at a time, the record terminator"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"320 REM CR LF is of no special interest to us."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"330 REM We use the CR, along with commas, as a"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"332 REM data item separator and discard the LF."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"334 :"}]}],"\n","$L109","\n","$L10a","\n","$L10b","\n","$L10c","\n","$L10d","\n","$L10e","\n","$L10f","\n","$L110","\n","$L111"]}]]}]]}]
+4f:null
+9:C
+50:["$","span",null,{"children":"390 =fnum"}]
+51:["$","span",null,{"children":["$","span",null,{"children":"390 LOCAL name$,FLAG,n"}]}]
+52:["$","span",null,{"children":["$","span",null,{"children":"400 REPEAT"}]}]
+53:["$","span",null,{"children":["$","span",null,{"children":"410   FLAG=TRUE"}]}]
+54:["$","span",null,{"children":["$","span",null,{"children":"420   INPUT \"Name ? \" name$"}]}]
+55:["$","span",null,{"children":["$","span",null,{"children":"430   IF name$=\"\" THEN 490"}]}]
+56:["$","span",null,{"children":["$","span",null,{"children":"440   FOR I=1 TO LEN(name$)"}]}]
+57:["$","span",null,{"children":["$","span",null,{"children":"450     n=ASC(MID$(name$,I,1))"}]}]
+58:["$","span",null,{"children":["$","span",null,{"children":"460     IF NOT(n=32 OR n>64 AND n<91 OR n>96 AND n<123) THEN FLAG=FALSE"}]}]
+59:["$","span",null,{"children":["$","span",null,{"children":"470   NEXT"}]}]
+5a:["$","span",null,{"children":["$","span",null,{"children":"480   IF NOT FLAG THEN PRINT \"No funny characters please !!!\""}]}]
+5b:["$","span",null,{"children":["$","span",null,{"children":"490 UNTIL FLAG"}]}]
+5c:["$","span",null,{"children":["$","span",null,{"children":"500 =name$"}]}]
+5d:["$","span",null,{"children":["$","span",null,{"children":"510 :"}]}]
+5e:["$","span",null,{"children":["$","span",null,{"children":"520 :"}]}]
+5f:["$","span",null,{"children":["$","span",null,{"children":"530 REM Accept the age from the keyboard and"}]}]
+60:["$","span",null,{"children":["$","span",null,{"children":"540 REM round to one place of decimals.  Ages"}]}]
+61:["$","span",null,{"children":["$","span",null,{"children":"550 REM of 0 or less, or 150 or more are"}]}]
+62:["$","span",null,{"children":["$","span",null,{"children":"560 REM considered to be in error."}]}]
+63:["$","span",null,{"children":["$","span",null,{"children":"570 DEF FN_age"}]}]
+64:["$","span",null,{"children":["$","span",null,{"children":"580 LOCAL age"}]}]
+65:["$","span",null,{"children":["$","span",null,{"children":"590 REPEAT"}]}]
+66:["$","span",null,{"children":["$","span",null,{"children":"600   INPUT \"What age ? \" age"}]}]
+67:["$","span",null,{"children":["$","span",null,{"children":"610   IF age<=0 OR age >=150 THEN PRINT \"No impossible ages please !!!\""}]}]
+68:["$","span",null,{"children":["$","span",null,{"children":"620 UNTIL age>0 AND age<150"}]}]
+69:["$","span",null,{"children":["$","span",null,{"children":"630 =INT(age*10+.5)/10"}]}]
+6a:["$","span",null,{"children":["$","span",null,{"children":"640 :"}]}]
+6b:["$","span",null,{"children":["$","span",null,{"children":"650 :"}]}]
+6c:["$","span",null,{"children":["$","span",null,{"children":"660 REM Accept the height in centimetres from"}]}]
+6d:["$","span",null,{"children":["$","span",null,{"children":"670 REM the keyboard and round to an integer."}]}]
+6e:["$","span",null,{"children":["$","span",null,{"children":"680 REM Heights of 50 or less and 230 or more"}]}]
+6f:["$","span",null,{"children":["$","span",null,{"children":"690 REM are considered to be in error."}]}]
+70:["$","span",null,{"children":["$","span",null,{"children":"700 DEF FN_height"}]}]
+71:["$","span",null,{"children":["$","span",null,{"children":"710 LOCAL height"}]}]
+72:["$","span",null,{"children":["$","span",null,{"children":"720 REPEAT"}]}]
+73:["$","span",null,{"children":["$","span",null,{"children":"730   INPUT \"Height in centimetres ? \" height"}]}]
+74:["$","span",null,{"children":["$","span",null,{"children":"740   IF height<=50 OR height>=230 THEN PRINT \"Very funny !!!\""}]}]
+75:["$","span",null,{"children":["$","span",null,{"children":"750 UNTIL height>50 AND height<230"}]}]
+76:["$","span",null,{"children":["$","span",null,{"children":"760 =INT(height+.5)"}]}]
+77:["$","span",null,{"children":["$","span",null,{"children":"770 :"}]}]
+78:["$","span",null,{"children":["$","span",null,{"children":"780 :"}]}]
+79:["$","span",null,{"children":["$","span",null,{"children":"790 REM Accept the sex from the keyboard.  Only"}]}]
+7a:["$","span",null,{"children":["$","span",null,{"children":"800 REM words beginning with upper or lower case"}]}]
+7b:["$","span",null,{"children":["$","span",null,{"children":"810 REM M or F are OK.  The returned string is"}]}]
+7c:["$","span",null,{"children":["$","span",null,{"children":"820 REM truncated to 1 character."}]}]
+7d:["$","span",null,{"children":["$","span",null,{"children":"830 DEF FN_sex"}]}]
+7e:["$","span",null,{"children":["$","span",null,{"children":"840 LOCAL sex$,FLAG"}]}]
+7f:["$","span",null,{"children":["$","span",null,{"children":"850 REPEAT"}]}]
+80:["$","span",null,{"children":["$","span",null,{"children":"860   FLAG=TRUE"}]}]
+81:["$","span",null,{"children":["$","span",null,{"children":"870   INPUT \"Male or Female - M or F ? \" sex$"}]}]
+82:["$","span",null,{"children":["$","span",null,{"children":"880   IF sex$<>\"\" THEN sex$=CHR$(ASC(MID$(sex$,1,1)) AND 95)"}]}]
+83:["$","span",null,{"children":["$","span",null,{"children":"890   IF sex$<>\"M\" AND sex$<>\"F\" THEN FLAG=FALSE"}]}]
+84:["$","span",null,{"children":["$","span",null,{"children":"900   IF NOT FLAG THEN PRINT \"No more sex(es) please !!!\""}]}]
+85:["$","span",null,{"children":["$","span",null,{"children":"910 UNTIL FLAG"}]}]
+86:["$","span",null,{"children":["$","span",null,{"children":"920 =sex$"}]}]
+87:["$","span",null,{"children":["$","span",null,{"children":" 390 fnum=OPENUP(name$)"}]}]
+88:["$","span",null,{"children":["$","span",null,{"children":" 400 IF fnum=0 THEN fnum=OPENOUT(name$): =fnum"}]}]
+89:["$","span",null,{"children":["$","span",null,{"children":" 410 PTR#fnum=EXT#fnum"}]}]
+8a:["$","span",null,{"children":["$","span",null,{"children":" 420 =fnum"}]}]
+8b:["$","span",null,{"children":["$","span",null,{"children":" 430 :"}]}]
+8c:["$","span",null,{"children":["$","span",null,{"children":" 440 :"}]}]
+8d:["$","span",null,{"children":["$","span",null,{"children":" 450 REM Accept a name from the keyboard and make"}]}]
+8e:["$","span",null,{"children":["$","span",null,{"children":" 460 REM sure it consists of spaces and upper or"}]}]
+8f:["$","span",null,{"children":["$","span",null,{"children":" 470 REM lower case characters.  Leading spaces"}]}]
+90:["$","span",null,{"children":["$","span",null,{"children":" 480 REM are automatically ignored on input."}]}]
+91:["$","span",null,{"children":["$","span",null,{"children":" 490 DEF FN_name"}]}]
+92:["$","span",null,{"children":["$","span",null,{"children":" 500 LOCAL name$,FLAG,n"}]}]
+93:["$","span",null,{"children":["$","span",null,{"children":" 510 REPEAT"}]}]
+94:["$","span",null,{"children":["$","span",null,{"children":" 520   FLAG=TRUE"}]}]
+95:["$","span",null,{"children":["$","span",null,{"children":" 530   INPUT \"Name ? \" name$"}]}]
+96:["$","span",null,{"children":["$","span",null,{"children":" 540   IF name$=\"\" THEN 600"}]}]
+97:["$","span",null,{"children":["$","span",null,{"children":" 550   FOR I=1 TO LEN(name$)"}]}]
+98:["$","span",null,{"children":["$","span",null,{"children":" 560     n=ASC(MID$(name$,I,1))"}]}]
+99:["$","span",null,{"children":["$","span",null,{"children":" 570     IF NOT(n=32 OR n>64 AND n<91 OR n>96 AND n<123) THEN FLAG=FALSE"}]}]
+9a:["$","span",null,{"children":["$","span",null,{"children":" 580  NEXT"}]}]
+9b:["$","span",null,{"children":["$","span",null,{"children":" 590   IF NOT FLAG THEN PRINT \"No funny characters please !!!\""}]}]
+9c:["$","span",null,{"children":["$","span",null,{"children":" 600 UNTIL FLAG"}]}]
+9d:["$","span",null,{"children":["$","span",null,{"children":" 610 =name$"}]}]
+9e:["$","span",null,{"children":["$","span",null,{"children":" 620 :"}]}]
+9f:["$","span",null,{"children":["$","span",null,{"children":" 630 :"}]}]
+a0:["$","span",null,{"children":["$","span",null,{"children":" 640 REM Accept the age from the keyboard and"}]}]
+a1:["$","span",null,{"children":["$","span",null,{"children":" 650 REM round to one place of decimals. Ages of"}]}]
+a2:["$","span",null,{"children":["$","span",null,{"children":" 660 REM 0 or less or 150 or more are in error."}]}]
+a3:["$","span",null,{"children":["$","span",null,{"children":" 670 :"}]}]
+a4:["$","span",null,{"children":["$","span",null,{"children":" 680 DEF FN_age"}]}]
+a5:["$","span",null,{"children":["$","span",null,{"children":" 690 LOCAL age"}]}]
+a6:["$","span",null,{"children":["$","span",null,{"children":" 700 REPEAT"}]}]
+a7:["$","span",null,{"children":["$","span",null,{"children":" 710   INPUT \"What age ? \" age"}]}]
+a8:["$","span",null,{"children":["$","span",null,{"children":" 720   IF age<=0 OR age >=150 THEN PRINT \"No impossible ages please !!!\""}]}]
+a9:["$","span",null,{"children":["$","span",null,{"children":" 730 UNTIL age>0 AND age<150"}]}]
+aa:["$","span",null,{"children":["$","span",null,{"children":" 740 =INT(age*10+.5)/10"}]}]
+ab:["$","span",null,{"children":["$","span",null,{"children":" 750 :"}]}]
+ac:["$","span",null,{"children":["$","span",null,{"children":" 760 :"}]}]
+ad:["$","span",null,{"children":["$","span",null,{"children":" 770 REM Accept the height in centimetres from"}]}]
+ae:["$","span",null,{"children":["$","span",null,{"children":" 780 REM the keyboard and round to an integer."}]}]
+af:["$","span",null,{"children":["$","span",null,{"children":" 790 REM Heights of 50 or less or 230 or more"}]}]
+b0:["$","span",null,{"children":["$","span",null,{"children":" 800 REM are in error."}]}]
+b1:["$","span",null,{"children":["$","span",null,{"children":" 810 DEF FN_height"}]}]
+b2:["$","span",null,{"children":["$","span",null,{"children":" 820 LOCAL height"}]}]
+b3:["$","span",null,{"children":["$","span",null,{"children":" 830 REPEAT"}]}]
+b4:["$","span",null,{"children":["$","span",null,{"children":" 840   INPUT \"Height in centimetres ? \" height"}]}]
+b5:["$","span",null,{"children":["$","span",null,{"children":" 850   IF height<=50 OR height>=230 THEN PRINT \"Very funny !!!\""}]}]
+b6:["$","span",null,{"children":["$","span",null,{"children":" 860 UNTIL height>50 AND height<230"}]}]
+b7:["$","span",null,{"children":["$","span",null,{"children":" 870 =INT(height+.5)"}]}]
+b8:["$","span",null,{"children":["$","span",null,{"children":" 880 :"}]}]
+b9:["$","span",null,{"children":["$","span",null,{"children":" 890 :"}]}]
+ba:["$","span",null,{"children":["$","span",null,{"children":" 900 REM Accept the sex from the keyboard.  Only"}]}]
+bb:["$","span",null,{"children":["$","span",null,{"children":" 910 REM words beginning with upper or lower"}]}]
+bc:["$","span",null,{"children":["$","span",null,{"children":" 920 REM case M or F are valid.  The returned"}]}]
+bd:["$","span",null,{"children":["$","span",null,{"children":" 930 REM string is truncated to 1 character."}]}]
+be:["$","span",null,{"children":["$","span",null,{"children":" 940 DEF FN_sex"}]}]
+bf:["$","span",null,{"children":["$","span",null,{"children":" 950 LOCAL sex$,FLAG"}]}]
+c0:["$","span",null,{"children":["$","span",null,{"children":" 960 REPEAT"}]}]
+c1:["$","span",null,{"children":["$","span",null,{"children":" 970   FLAG=TRUE"}]}]
+c2:["$","span",null,{"children":["$","span",null,{"children":" 980   INPUT \"Male or Female - M or F ? \" sex$"}]}]
+c3:["$","span",null,{"children":["$","span",null,{"children":" 990   IF sex$<>\"\" THEN sex$=CHR$(ASC(MID$(sex$,1,1)) AND 95)"}]}]
+c4:["$","span",null,{"children":["$","span",null,{"children":"1000   IF sex$<>\"M\" AND sex$<>\"F\" THEN FLAG=FALSE"}]}]
+c5:["$","span",null,{"children":["$","span",null,{"children":"1010   IF NOT FLAG THEN PRINT \"No more sex(es) please !!!\""}]}]
+c6:["$","span",null,{"children":["$","span",null,{"children":"1020 UNTIL FLAG"}]}]
+c7:["$","span",null,{"children":["$","span",null,{"children":"1030 =sex$"}]}]
+c8:["$","span",null,{"children":" 360 BPUT#compat,&1A"}]
+c9:["$","span",null,{"children":["$","span",null,{"children":" 370 CLOSE#compat"}]}]
+ca:["$","span",null,{"children":["$","span",null,{"children":" 380 END"}]}]
+cb:["$","span",null,{"children":["$","span",null,{"children":" 390 :"}]}]
+cc:["$","span",null,{"children":["$","span",null,{"children":" 400 :"}]}]
+cd:["$","span",null,{"children":["$","span",null,{"children":" 410 REM Accept a name from the keyboard and make"}]}]
+ce:["$","span",null,{"children":["$","span",null,{"children":" 420 REM sure it consists only of spaces and"}]}]
+cf:["$","span",null,{"children":["$","span",null,{"children":" 430 REM upper or lower case characters. Leading"}]}]
+d0:["$","span",null,{"children":["$","span",null,{"children":" 440 REM spaces are ignored on input."}]}]
+d1:["$","span",null,{"children":["$","span",null,{"children":" 450 :"}]}]
+d2:["$","span",null,{"children":["$","span",null,{"children":" 460 DEF FN_name"}]}]
+d3:["$","span",null,{"children":["$","span",null,{"children":" 470 LOCAL name$,FLAG,n"}]}]
+d4:["$","span",null,{"children":["$","span",null,{"children":" 480 REPEAT"}]}]
+d5:["$","span",null,{"children":["$","span",null,{"children":" 490   FLAG=TRUE"}]}]
+d6:["$","span",null,{"children":["$","span",null,{"children":" 500   INPUT \"Name ? \" name$"}]}]
+d7:["$","span",null,{"children":["$","span",null,{"children":" 510   IF name$=\"\" THEN 570"}]}]
+d8:["$","span",null,{"children":["$","span",null,{"children":" 520   FOR I=1 TO LEN(name$)"}]}]
+d9:["$","span",null,{"children":["$","span",null,{"children":" 530     n=ASC(MID$(name$,I,1))"}]}]
+da:["$","span",null,{"children":["$","span",null,{"children":" 540     IF NOT(n=32 OR n>64 AND n<91 OR n>96 AND n<123) THEN FLAG=TRUE"}]}]
+db:["$","span",null,{"children":["$","span",null,{"children":" 550   NEXT"}]}]
+dc:["$","span",null,{"children":["$","span",null,{"children":" 560   IF NOT FLAG THEN PRINT \"No funny characters please !!!\""}]}]
+dd:["$","span",null,{"children":["$","span",null,{"children":" 570 UNTIL FLAG"}]}]
+de:["$","span",null,{"children":["$","span",null,{"children":" 580 =name$"}]}]
+df:["$","span",null,{"children":["$","span",null,{"children":" 590 :"}]}]
+e0:["$","span",null,{"children":["$","span",null,{"children":" 600 :"}]}]
+e1:["$","span",null,{"children":["$","span",null,{"children":" 610 REM Accept the age from the keyboard and"}]}]
+e2:["$","span",null,{"children":["$","span",null,{"children":" 620 REM round to one place of decimals.  Ages"}]}]
+e3:["$","span",null,{"children":["$","span",null,{"children":" 630 REM of 0 or less or 150 or more are"}]}]
+e4:["$","span",null,{"children":["$","span",null,{"children":" 640 REM considered to be in error."}]}]
+e5:["$","span",null,{"children":["$","span",null,{"children":" 650 DEF FN_age"}]}]
+e6:["$","span",null,{"children":["$","span",null,{"children":" 660 LOCAL age"}]}]
+e7:["$","span",null,{"children":["$","span",null,{"children":" 670 REPEAT"}]}]
+e8:["$","span",null,{"children":["$","span",null,{"children":" 680   INPUT \"What age ? \" age"}]}]
+e9:["$","span",null,{"children":["$","span",null,{"children":" 690   IF age<=0 OR age >=150 THEN PRINT \"No impossible ages please !!!\""}]}]
+ea:["$","span",null,{"children":["$","span",null,{"children":" 700 UNTIL age>0 AND age<150"}]}]
+eb:["$","span",null,{"children":["$","span",null,{"children":" 710 =INT(age*10+.5)/10"}]}]
+ec:["$","span",null,{"children":["$","span",null,{"children":" 720 :"}]}]
+ed:["$","span",null,{"children":["$","span",null,{"children":" 730 :"}]}]
+ee:["$","span",null,{"children":["$","span",null,{"children":" 740 REM Accept the height in centimetres from"}]}]
+ef:["$","span",null,{"children":["$","span",null,{"children":" 750 REM the keyboard and round to an integer."}]}]
+f0:["$","span",null,{"children":["$","span",null,{"children":" 760 REM Heights of 50 or less and 230 or more"}]}]
+f1:["$","span",null,{"children":["$","span",null,{"children":" 770 REM are considered to be in error."}]}]
+f2:["$","span",null,{"children":["$","span",null,{"children":" 780 DEF FN_height"}]}]
+f3:["$","span",null,{"children":["$","span",null,{"children":" 790 LOCAL height"}]}]
+f4:["$","span",null,{"children":["$","span",null,{"children":" 800 REPEAT"}]}]
+f5:["$","span",null,{"children":["$","span",null,{"children":" 810   INPUT \"Height in centimetres ? \" height"}]}]
+f6:["$","span",null,{"children":["$","span",null,{"children":" 820   IF height<=50 OR height>=230 THEN PRINT \"Very funny !!!\""}]}]
+f7:["$","span",null,{"children":["$","span",null,{"children":" 830 UNTIL height>50 AND height<230"}]}]
+f8:["$","span",null,{"children":["$","span",null,{"children":" 840 =INT(height+.5)"}]}]
+f9:["$","span",null,{"children":["$","span",null,{"children":" 850 :"}]}]
+fa:["$","span",null,{"children":["$","span",null,{"children":" 860 :"}]}]
+fb:["$","span",null,{"children":["$","span",null,{"children":" 870 REM Accept the sex from the keyboard. Only"}]}]
+fc:["$","span",null,{"children":["$","span",null,{"children":" 880 REM words beginning with upper or lower"}]}]
+fd:["$","span",null,{"children":["$","span",null,{"children":" 890 REM case M or F are valid.  The returned"}]}]
+fe:["$","span",null,{"children":["$","span",null,{"children":" 900 REM string is truncated to 1 character."}]}]
+ff:["$","span",null,{"children":["$","span",null,{"children":" 910 DEF FN_sex"}]}]
+100:["$","span",null,{"children":["$","span",null,{"children":" 920 LOCAL sex$,FLAG"}]}]
+101:["$","span",null,{"children":["$","span",null,{"children":" 930 REPEAT"}]}]
+102:["$","span",null,{"children":["$","span",null,{"children":" 940   FLAG=TRUE"}]}]
+103:["$","span",null,{"children":["$","span",null,{"children":" 950   INPUT \"Male or Female - M or F ? \" sex$"}]}]
+104:["$","span",null,{"children":["$","span",null,{"children":" 960   IF sex$<>\"\" THEN sex$=CHR$(ASC(MID$(sex$,1,1)) AND 95)"}]}]
+105:["$","span",null,{"children":["$","span",null,{"children":" 970   IF sex$<>\"M\" AND sex$<>\"F\" THEN FLAG=FALSE"}]}]
+106:["$","span",null,{"children":["$","span",null,{"children":" 980   IF NOT FLAG THEN PRINT \"No more sex(es) please !!!\""}]}]
+107:["$","span",null,{"children":["$","span",null,{"children":" 990 UNTIL FLAG"}]}]
+108:["$","span",null,{"children":["$","span",null,{"children":"1000 =sex$"}]}]
+109:["$","span",null,{"children":["$","span",null,{"children":"340 DEF FN_read"}]}]
+10a:["$","span",null,{"children":["$","span",null,{"children":"350 LOCAL data$,byte$,byte"}]}]
+10b:["$","span",null,{"children":["$","span",null,{"children":"360 data$=\"\""}]}]
+10c:["$","span",null,{"children":["$","span",null,{"children":"370 REPEAT"}]}]
+10d:["$","span",null,{"children":["$","span",null,{"children":"380   byte=BGET#compat"}]}]
+10e:["$","span",null,{"children":["$","span",null,{"children":"390   IF byte=&1A OR EOF#compat THEN CLOSE#compat: END"}]}]
+10f:["$","span",null,{"children":["$","span",null,{"children":"400   IF NOT(byte=&0A OR byte=&0D OR byte=&2C) THEN data$=data$+CHR$(byte)"}]}]
+110:["$","span",null,{"children":["$","span",null,{"children":"410 UNTIL byte=&0D OR byte=&2C"}]}]
+111:["$","span",null,{"children":["$","span",null,{"children":"420 =data$"}]}]
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

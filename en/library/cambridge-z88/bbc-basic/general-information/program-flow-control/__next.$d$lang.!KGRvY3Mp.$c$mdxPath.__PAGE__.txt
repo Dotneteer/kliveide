@@ -1,0 +1,198 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T1a27,---
+description: "Whenever the BBC BASIC(Z80) comes across a FOR, REPEAT, GOSUB, FN or PROC statement, it needs to remember where it is in the program so that it can loop back or return there when it encounters a..."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# Program Flow Control
+
+## Introduction [#introduction]
+
+Whenever the BBC BASIC(Z80) comes across a FOR, REPEAT, GOSUB, FN or PROC statement, it needs to remember where it is in the program so that it can loop back or return there when it encounters a line with NEXT, UNTIL or RETURN statement or when it reaches the end of a function or procedure. These 'return addresses' tell BBC BASIC(Z80) where it is in the structure of your program.
+
+Every time the BBC BASIC(Z80) encounters a FOR, REPEAT, GOSUB, FN or PROC statement it 'pushes' the return address on to a 'stack' and every time it encounters a NEXT, UNTIL, RETURN statement or the end of a function or procedure it 'pops' the latest return address of the stack and goes back there.
+
+Unlike the BBC Micro, which has separate stacks for FOR...NEXT, REPEAT...UNTIL GOSUB...RETURN and FN/PROC operations, BBC BASIC(Z80) uses a single control stack (the processor's hardware stack) for all looping and nesting operations. The main effects of this difference are discussed below.
+
+## <strong> Loop Operation Errors</strong> [#loop-operation-errors]
+
+Apart from memory size, there is no limit to the level of nesting of FOR...NEXT, REPEAT...UNTIL and GOSUB...RETURN operations. The untrappable error message 'No room' will be issued if all the stack space is used up. Because a single stack is used, the following error messages do not exist.
+
+```text
+Too many FORs
+Too many REPEATs
+Too many GOSUBs
+```
+
+## Program Structure Limitations [#program-structure-limitations]
+
+The use of a common stack has one disadvantage (if it is a disadvantage) in that it forces stricter adherence to proper program structure. It is not good practice to exit from a FOR...NEXT loop without passing through the NEXT statement. It makes the program more difficult to understand and the FOR address is left on the stack. Similarly, the loop or return address is left on the stack if a REPEAT...UNTIL loop or a GOSUB...RETURN structure is incorrectly exited. This means that if you leave a FOR..NEXT loop without executing the NEXT statement, and then subsequently encounter, for example, a RETURN statement, BBC BASIC(Z80) will report an error. (In this case, a 'No GOSUB at line nnnn' error.) The example below would result in the error message 'No PROC at line 500'.
+
+```text
+400 - - -
+410 INPUT "What number should I stop at", num
+420 PROC_error_demo
+430 END
+440 :
+450 DEF PROC_error_demo
+460 FOR i=1 TO 100
+470   PRINT i;
+480   IF i=num THEN 500
+490 NEXT i
+500 ENDPROC
+```
+
+BBC BASIC(Z80) is a little unusual in detecting this error, but it is always risky. It usually results in an inconsistent program structure and an unexpected 'Too many FORs/REPEATs/GOSUBs' error on the BBC Micro when the control stack overflows.
+
+## <strong> Leaving Program Loops</strong> [#leaving-program-loops]
+
+There are a number of ways to leave a program loop which do not conflict with the need to write tidy program structures. These are discussed below.
+
+### REPEAT...UNTIL Loops [#repeatuntil-loops]
+
+The simplest way to overcome the problem of exiting a FOR...NEXT loop is to restructure it as a REPEAT...UNTIL loop. The example below performs the same function as the previous example, but exits the structure properly. It has the additional advantage of more clearly showing the conditions which will cause the loop to be terminated.
+
+```text
+400 - - -
+410 INPUT "What number should I stop at", num
+420 PROC_error_demo
+430 END
+440 :
+450 DEF PROC_error_demo
+460 i=0
+470 REPEAT
+480   i=i+1
+490   PRINT i;
+500 UNTIL i=100 OR i=num
+510 ENDPROC
+```
+
+### Changing the Loop Variable [#changing-the-loop-variable]
+
+A simple way of forcing an exit from a FOR...NEXT loop is to set the loop variable to a value equal to the limit value and then GOTO to the NEXT statement. alternatively, you could set the loop variable to a value greater than the limit (assuming a positive step), but in this case the value on exit would be different depending on why the loop was terminated. (In some circumstances, this may be an advantage.) The example below uses this method to exit from the loop. Notice, however, that the conditions which cause the loop to terminate are less clear since they do not appear together.
+
+```text
+400 - - -
+410 INPUT "What number should I stop at", num
+420 PROC_error_dem
+430 END
+440 :
+450 DEF PROC_error_demo
+460 FOR i=1 TO 100
+470   PRINT i;
+480   IF i=num THEN i=500: GOTO 510
+490   ....
+500 More program here if necessary
+510 NEXT
+520 ENDPROC
+```
+
+### Popping the Inner Variable [#popping-the-inner-variable]
+
+A less satisfactory way of exiting a FOR...NEXT loop is to enclose the loop in a dummy outer loop and rely on BBC BASIC(Z80)'s ability to 'pop' inner control variables off the stack until they match. If you use this method you MUST include the variable name in the NEXT statement. This method, which is demonstrated below, is very artificial and the conditions which cause the loop to terminate are unclear.
+
+```text
+400 - - -
+410 INPUT "What number should I stop at", num
+420 PROC_error_demo
+430 END
+440 :
+450 DEF PROC_error_demo
+460 FOR dummy=1 TO 1 :REM Loop once only
+470 FOR i=1 TO 100
+480   PRINT i;
+490   IF i=num THEN 530 :REM Jump to outer NEXT
+500   - - -
+510 More program here if necessary
+520 NEXT i
+530 NEXT dummy
+540 ENDPROC
+```
+
+## Local Variables [#local-variables]
+
+Since local variables are also stored on the processor's stack, you cannot use a FOR...NEXT loop to make an array LOCAL. For example, the following program will give the error message 'Not LOCAL at line 400'.
+
+```text
+380 DEF PROC_error_demo
+390 FOR i=1 TO 10
+400   LOCAL data(i)
+410 NEXT
+420 ENDPROC
+```
+
+You can overcome this by fabricating the loop using an IF...THEN statement as shown below. This is probably the only occasion when the use of a single stack promotes poor program structure.
+
+```text
+380 DEF PROC_error_demo
+390 i=1
+400 LOCAL data(i)
+410 i=i+1
+420 IF i<11 THEN 400
+430 ENDPROC
+```
+
+## Stack Pointer [#stack-pointer]
+
+The program stack is initialised to begin at HIMEM and, because of this, you cannot change the value of HIMEM when there is anything on the stack. As a result, you cannot change HIMEM from within a procedure, function, subroutine, FOR...NEXT loop or REPEAT...UNTIL loop.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Introduction","id":"introduction","depth":2},{"value":[["$","$4",".0",{"children":[["$","strong",".0",{"children":" Loop Operation Errors"}]]}]],"id":"loop-operation-errors","depth":2},{"value":"Program Structure Limitations","id":"program-structure-limitations","depth":2},{"value":[["$","$4",".0",{"children":[["$","strong",".0",{"children":" Leaving Program Loops"}]]}]],"id":"leaving-program-loops","depth":2},{"value":"REPEAT…UNTIL Loops","id":"repeatuntil-loops","depth":3},{"value":"Changing the Loop Variable","id":"changing-the-loop-variable","depth":3},{"value":"Popping the Inner Variable","id":"popping-the-inner-variable","depth":3},{"value":"Local Variables","id":"local-variables","depth":2},{"value":"Stack Pointer","id":"stack-pointer","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"Whenever the BBC BASIC(Z80) comes across a FOR, REPEAT, GOSUB, FN or PROC statement, it needs to remember where it is in the program so that it can loop back or return there when it encounters a...","title":"Program Flow Control","filePath":"content/en/library/cambridge-z88/bbc-basic/general-information/program-flow-control.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/bbc-basic/general-information/program-flow-control","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Program Flow Control - Klive IDE"}],["$","meta","1",{"name":"description","content":"Whenever the BBC BASIC(Z80) comes across a FOR, REPEAT, GOSUB, FN or PROC statement, it needs to remember where it is in the program so that it can loop back or return there when it encounters a..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/bbc-basic/general-information/program-flow-control/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"dZNfFVLPQi_KHqnwQrQVE"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+21:"ToggleWordWrapButton"
+22:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$21"]
+23:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+3a:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Program Flow Control","$undefined"]}],"\n",["$","h2",null,{"id":"introduction","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Introduction",["$","$L20",null,{"id":"introduction"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Whenever the BBC BASIC(Z80) comes across a FOR, REPEAT, GOSUB, FN or PROC statement, it needs to remember where it is in the program so that it can loop back or return there when it encounters a line with NEXT, UNTIL or RETURN statement or when it reaches the end of a function or procedure. These ‘return addresses’ tell BBC BASIC(Z80) where it is in the structure of your program."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Every time the BBC BASIC(Z80) encounters a FOR, REPEAT, GOSUB, FN or PROC statement it ‘pushes’ the return address on to a ‘stack’ and every time it encounters a NEXT, UNTIL, RETURN statement or the end of a function or procedure it ‘pops’ the latest return address of the stack and goes back there."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Unlike the BBC Micro, which has separate stacks for FOR…NEXT, REPEAT…UNTIL GOSUB…RETURN and FN/PROC operations, BBC BASIC(Z80) uses a single control stack (the processor’s hardware stack) for all looping and nesting operations. The main effects of this difference are discussed below."}],"\n",["$","h2",null,{"id":"loop-operation-errors","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":[["$","strong",null,{"children":" Loop Operation Errors"}],["$","$L20",null,{"id":"loop-operation-errors"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Apart from memory size, there is no limit to the level of nesting of FOR…NEXT, REPEAT…UNTIL and GOSUB…RETURN operations. The untrappable error message ‘No room’ will be issued if all the stack space is used up. Because a single stack is used, the following error messages do not exist."}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"Too many FORs"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Too many REPEATs"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Too many GOSUBs"}]}]]}]]}]]}],"\n",["$","h2",null,{"id":"program-structure-limitations","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Program Structure Limitations","$L24"]}],"\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39"]]}]
+15:["$","$L3a",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@3b"}]}]
+1f:true
+9:300
+24:["$","$L20",null,{"id":"program-structure-limitations"}]
+25:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The use of a common stack has one disadvantage (if it is a disadvantage) in that it forces stricter adherence to proper program structure. It is not good practice to exit from a FOR…NEXT loop without passing through the NEXT statement. It makes the program more difficult to understand and the FOR address is left on the stack. Similarly, the loop or return address is left on the stack if a REPEAT…UNTIL loop or a GOSUB…RETURN structure is incorrectly exited. This means that if you leave a FOR..NEXT loop without executing the NEXT statement, and then subsequently encounter, for example, a RETURN statement, BBC BASIC(Z80) will report an error. (In this case, a ‘No GOSUB at line nnnn’ error.) The example below would result in the error message ‘No PROC at line 500’."}]
+26:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"400 - - -"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"410 INPUT \"What number should I stop at\", num"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"420 PROC_error_demo"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"430 END"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"440 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"450 DEF PROC_error_demo"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"460 FOR i=1 TO 100"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"470   PRINT i;"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"480   IF i=num THEN 500"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"490 NEXT i"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"500 ENDPROC"}]}]]}]]}]]}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"BBC BASIC(Z80) is a little unusual in detecting this error, but it is always risky. It usually results in an inconsistent program structure and an unexpected ‘Too many FORs/REPEATs/GOSUBs’ error on the BBC Micro when the control stack overflows."}]
+28:["$","h2",null,{"id":"leaving-program-loops","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":[["$","strong",null,{"children":" Leaving Program Loops"}],["$","$L20",null,{"id":"leaving-program-loops"}]]}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"There are a number of ways to leave a program loop which do not conflict with the need to write tidy program structures. These are discussed below."}]
+2a:["$","h3",null,{"id":"repeatuntil-loops","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["REPEAT…UNTIL Loops",["$","$L20",null,{"id":"repeatuntil-loops"}]]}]
+2b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The simplest way to overcome the problem of exiting a FOR…NEXT loop is to restructure it as a REPEAT…UNTIL loop. The example below performs the same function as the previous example, but exits the structure properly. It has the additional advantage of more clearly showing the conditions which will cause the loop to be terminated."}]
+2c:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"400 - - -"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"410 INPUT \"What number should I stop at\", num"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"420 PROC_error_demo"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"430 END"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"440 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"450 DEF PROC_error_demo"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"460 i=0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"470 REPEAT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"480   i=i+1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"490   PRINT i;"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"500 UNTIL i=100 OR i=num"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"510 ENDPROC"}]}]]}]]}]]}]
+2d:["$","h3",null,{"id":"changing-the-loop-variable","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Changing the Loop Variable",["$","$L20",null,{"id":"changing-the-loop-variable"}]]}]
+2e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A simple way of forcing an exit from a FOR…NEXT loop is to set the loop variable to a value equal to the limit value and then GOTO to the NEXT statement. alternatively, you could set the loop variable to a value greater than the limit (assuming a positive step), but in this case the value on exit would be different depending on why the loop was terminated. (In some circumstances, this may be an advantage.) The example below uses this method to exit from the loop. Notice, however, that the conditions which cause the loop to terminate are less clear since they do not appear together."}]
+2f:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"400 - - -"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"410 INPUT \"What number should I stop at\", num"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"420 PROC_error_dem"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"430 END"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"440 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"450 DEF PROC_error_demo"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"460 FOR i=1 TO 100"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"470   PRINT i;"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"480   IF i=num THEN i=500: GOTO 510"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"490   ...."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"500 More program here if necessary"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"510 NEXT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"520 ENDPROC"}]}]]}]]}]]}]
+30:["$","h3",null,{"id":"popping-the-inner-variable","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Popping the Inner Variable",["$","$L20",null,{"id":"popping-the-inner-variable"}]]}]
+31:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A less satisfactory way of exiting a FOR…NEXT loop is to enclose the loop in a dummy outer loop and rely on BBC BASIC(Z80)‘s ability to ‘pop’ inner control variables off the stack until they match. If you use this method you MUST include the variable name in the NEXT statement. This method, which is demonstrated below, is very artificial and the conditions which cause the loop to terminate are unclear."}]
+32:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"400 - - -"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"410 INPUT \"What number should I stop at\", num"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"420 PROC_error_demo"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"430 END"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"440 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"450 DEF PROC_error_demo"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"460 FOR dummy=1 TO 1 :REM Loop once only"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"470 FOR i=1 TO 100"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"480   PRINT i;"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"490   IF i=num THEN 530 :REM Jump to outer NEXT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"500   - - -"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"510 More program here if necessary"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"520 NEXT i"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"530 NEXT dummy"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"540 ENDPROC"}]}]]}]]}]]}]
+33:["$","h2",null,{"id":"local-variables","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Local Variables",["$","$L20",null,{"id":"local-variables"}]]}]
+34:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Since local variables are also stored on the processor’s stack, you cannot use a FOR…NEXT loop to make an array LOCAL. For example, the following program will give the error message ‘Not LOCAL at line 400’."}]
+35:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"380 DEF PROC_error_demo"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"390 FOR i=1 TO 10"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"400   LOCAL data(i)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"410 NEXT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"420 ENDPROC"}]}]]}]]}]]}]
+36:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You can overcome this by fabricating the loop using an IF…THEN statement as shown below. This is probably the only occasion when the use of a single stack promotes poor program structure."}]
+37:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"380 DEF PROC_error_demo"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"390 i=1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"400 LOCAL data(i)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"410 i=i+1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"420 IF i<11 THEN 400"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"430 ENDPROC"}]}]]}]]}]]}]
+38:["$","h2",null,{"id":"stack-pointer","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Stack Pointer",["$","$L20",null,{"id":"stack-pointer"}]]}]
+39:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The program stack is initialised to begin at HIMEM and, because of this, you cannot change the value of HIMEM when there is anything on the stack. As a result, you cannot change HIMEM from within a procedure, function, subroutine, FOR…NEXT loop or REPEAT…UNTIL loop."}]
+3b:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

@@ -1,0 +1,176 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T123b,---
+description: "The commands and statements are listed alphabetically for ease of reference; they are not separated into two sections."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# Introduction
+
+The commands and statements are listed alphabetically for ease of reference; they are not separated into two sections.
+
+All statements can also be used as direct commands.
+
+Where appropriate, the abbreviated form is shown to the right of the statement.
+
+The associated keywords are listed at the end of each explanation.
+
+If the lexical analyser tries to expand a line to more than 255 characters, a 'Line space' error will be reported.
+
+## Syntax [#syntax]
+
+Abbreviated definitions for the commands and statements in BBC BASIC(Z80) are given at the end of the explanation for each keyword. Most of us have seen formal syntax diagrams and Backus-Naur Form (BNF) definitions for languages, and many of us have found them to be somewhat confusing. Consequently, we have attempted to produce something which, whilst being reasonably precise, is readable by the majority of BBC BASIC(Z80) users. To those amongst you who would have preferred 'the real thing' - we apologise.
+
+## Symbols [#symbols]
+
+The following symbols have special meaning in the syntax definitions.
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>\{ \}</Table.Td>
+<Table.Td>The enclosed item may be repeated zero or more times.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\[ \]</Table.Td>
+<Table.Td>The items enclosed are optional, they may occur zero or one time.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\|</Table.Td>
+<Table.Td>Indicates alternatives; one of which must be used.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\<stmt\></Table.Td>
+<Table.Td>Means a BBC BASIC(Z80) statement.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\<var\></Table.Td>
+<Table.Td>Means a numeric or string variable.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\<exp\></Table.Td>
+<Table.Td>Means an expression like PI\*radius\*height+2 or name$+"FRED"+CHR$(&0D). It can also be a single variable or constant like 23 or "FRED".</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\<l-num\></Table.Td>
+<Table.Td>Means a line number in a BBC BASIC(Z80) program.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\<k-num\></Table.Td>
+<Table.Td>Means the number of one of the programmable keys.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\<n-const\></Table.Td>
+<Table.Td>Means a numeric constant like '26.4' or '256'.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\<n-var\></Table.Td>
+<Table.Td>Means a numeric variable like 'size' or 'weight'.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\<numeric\></Table.Td>
+<Table.Td>Means a \<n-const\> or a \<n-var\> or an expression combining them. For example: PI\*radius+2.66</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\<s-const\></Table.Td>
+<Table.Td>Means a string constant like "FRED".</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\<string\></Table.Td>
+<Table.Td>Means an unquoted string of characters.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\<s-var\></Table.Td>
+<Table.Td>Means a string variable like 'address$'.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\<str\></Table.Td>
+<Table.Td>Means a \<s-const\> or a \<s-var\> or an expression combining them. For example: name$+add$+"Phone".</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\<t-cond\></Table.Td>
+<Table.Td>Means a 'testable condition'. In other words, something which is either TRUE or FALSE. Since BBC BASIC does not have true Boolean variables, TRUE and FALSE are numeric (with a value of -1 and 0). Consequently, a \<numeric\> can be used anywhere a \<t-cond\> is specified.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\<name\></Table.Td>
+<Table.Td>Means a valid variable name.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\<d:\></Table.Td>
+<Table.Td>Means a device drive name. eg. :RAM.0 (See the ‘Operating System Interface’ section for details of valid devices).</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\<afsp\></Table.Td>
+<Table.Td>Means an ambiguous file specifier.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\<ufsp\></Table.Td>
+<Table.Td>Means an unambiguous file specifier.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\<nchr\></Table.Td>
+<Table.Td>Means a character valid for use in a name. 0 to 9, A to Z, a to z and underline.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>PI</Table.Td>
+<Table.Td>The mathematical constant 𝛑 (3.14159 etc.).</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Syntax","id":"syntax","depth":2},{"value":"Symbols","id":"symbols","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"The commands and statements are listed alphabetically for ease of reference; they are not separated into two sections.","title":"Introduction","filePath":"content/en/library/cambridge-z88/bbc-basic/statements-and-functions/introduction.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/bbc-basic/statements-and-functions/introduction","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Introduction - Klive IDE"}],["$","meta","1",{"name":"description","content":"The commands and statements are listed alphabetically for ease of reference; they are not separated into two sections."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/bbc-basic/statements-and-functions/introduction/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"dZNfFVLPQi_KHqnwQrQVE"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+35:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Introduction","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The commands and statements are listed alphabetically for ease of reference; they are not separated into two sections."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"All statements can also be used as direct commands."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Where appropriate, the abbreviated form is shown to the right of the statement."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The associated keywords are listed at the end of each explanation."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If the lexical analyser tries to expand a line to more than 255 characters, a ‘Line space’ error will be reported."}],"\n",["$","h2",null,{"id":"syntax","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Syntax",["$","$L20",null,{"id":"syntax"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Abbreviated definitions for the commands and statements in BBC BASIC(Z80) are given at the end of the explanation for each keyword. Most of us have seen formal syntax diagrams and Backus-Naur Form (BNF) definitions for languages, and many of us have found them to be somewhat confusing. Consequently, we have attempted to produce something which, whilst being reasonably precise, is readable by the majority of BBC BASIC(Z80) users. To those amongst you who would have preferred ‘the real thing’ - we apologise."}],"\n",["$","h2",null,{"id":"symbols","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Symbols",["$","$L20",null,{"id":"symbols"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The following symbols have special meaning in the syntax definitions."}],"\n",["$","table",null,{"children":["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"{ }","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The enclosed item may be repeated zero or more times.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"[ ]","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The items enclosed are optional, they may occur zero or one time.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"|","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Indicates alternatives; one of which must be used.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":["$L21","$L22"],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L23","$L24","$L25","$L26","$L27","$L28","$L29","$L2a","$L2b","$L2c","$L2d","$L2e","$L2f","$L30","$L31","$L32","$L33","$L34"]}],"className":"x:block x:overflow-x-auto"}]]]}]
+15:["$","$L35",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@36"}]}]
+1f:true
+9:300
+21:["$","td",null,{"children":"<stmt>","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+22:["$","td",null,{"children":"Means a BBC BASIC(Z80) statement.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+23:["$","tr",null,{"children":[["$","td",null,{"children":"<var>","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Means a numeric or string variable.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+24:["$","tr",null,{"children":[["$","td",null,{"children":"<exp>","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Means an expression like PI*radius*height+2 or name$+“FRED”+CHR$(&0D). It can also be a single variable or constant like 23 or “FRED”.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+25:["$","tr",null,{"children":[["$","td",null,{"children":"<l-num>","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Means a line number in a BBC BASIC(Z80) program.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+26:["$","tr",null,{"children":[["$","td",null,{"children":"<k-num>","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Means the number of one of the programmable keys.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+27:["$","tr",null,{"children":[["$","td",null,{"children":"<n-const>","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Means a numeric constant like ‘26.4’ or ‘256’.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+28:["$","tr",null,{"children":[["$","td",null,{"children":"<n-var>","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Means a numeric variable like ‘size’ or ‘weight’.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+29:["$","tr",null,{"children":[["$","td",null,{"children":"<numeric>","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Means a <n-const> or a <n-var> or an expression combining them. For example: PI*radius+2.66","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+2a:["$","tr",null,{"children":[["$","td",null,{"children":"<s-const>","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Means a string constant like “FRED”.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+2b:["$","tr",null,{"children":[["$","td",null,{"children":"<string>","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Means an unquoted string of characters.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+2c:["$","tr",null,{"children":[["$","td",null,{"children":"<s-var>","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Means a string variable like ‘address$’.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+2d:["$","tr",null,{"children":[["$","td",null,{"children":"<str>","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Means a <s-const> or a <s-var> or an expression combining them. For example: name$+add$+“Phone”.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+2e:["$","tr",null,{"children":[["$","td",null,{"children":"<t-cond>","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Means a ‘testable condition’. In other words, something which is either TRUE or FALSE. Since BBC BASIC does not have true Boolean variables, TRUE and FALSE are numeric (with a value of -1 and 0). Consequently, a <numeric> can be used anywhere a <t-cond> is specified.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+2f:["$","tr",null,{"children":[["$","td",null,{"children":"<name>","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Means a valid variable name.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+30:["$","tr",null,{"children":[["$","td",null,{"children":"<d:>","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Means a device drive name. eg. :RAM.0 (See the ‘Operating System Interface’ section for details of valid devices).","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+31:["$","tr",null,{"children":[["$","td",null,{"children":"<afsp>","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Means an ambiguous file specifier.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+32:["$","tr",null,{"children":[["$","td",null,{"children":"<ufsp>","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Means an unambiguous file specifier.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+33:["$","tr",null,{"children":[["$","td",null,{"children":"<nchr>","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Means a character valid for use in a name. 0 to 9, A to Z, a to z and underline.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+34:["$","tr",null,{"children":[["$","td",null,{"children":"PI","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The mathematical constant 𝛑 (3.14159 etc.).","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+36:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

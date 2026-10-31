@@ -1,0 +1,151 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:Tee9,---
+description: "A statement to call a machine code subroutine."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# CALL (CA.)
+
+A statement to call a machine code subroutine.
+
+```text
+CALL Muldiv,A,B,C,D
+CALL &FFE3
+CALL 12340,A$,M,J$
+```
+
+The processor's A, B, C, D, E, F, H and L registers are initialised to the least significant words of A%, B%, C%, D%, E%, F%, H% and L% respectively (see also USR).
+
+## Parameter Table [#parameter-table]
+
+CALL sets up a table in RAM containing details of the parameters. The IX register is set to the address of this parameter table.
+
+Variables included in the parameter list need not have been declared before the CALL statement. The parameter types are:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>**Code No**</Table.Td>
+<Table.Td>**Parameter Type**</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>0:<br />4:<br />5:<br />128:<br />129:</Table.Td>
+<Table.Td>byte (8 bits)<br />word (32 bits)<br />real (40 bits)<br />fixed string<br />movable string</Table.Td>
+<Table.Td>eg ?A%<br />eg !A% or A%<br />eg A<br />eg $A%<br />eg A$</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>Number of parameters</Table.Td>
+<Table.Td>1 byte (at IX)</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Parameter type<br />Parameter address</Table.Td>
+<Table.Td>1 byte (at IX+1)<br />2 bytes (at IX+2 IX+3 LSB first)</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Parameter type<br />Parameter address</Table.Td>
+<Table.Td>) repeated as often as necessary.<br />)</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+Except in the case of a movable string (normal string variable), the parameter address given is the absolute address at which the item is stored. In the case of movable strings (type 129), it is the address of a parameter block containing the current length, the maximum length and the start address of the string, in that order
+
+## Parameter Formats [#parameter-formats]
+
+Integer variables are stored in two’s complement format with their least significant byte first.
+
+Fixed strings are stored as the characters of the string followed by a carriage return (&0D).
+
+Floating point variables are stored in binary floating point format with their least significant byte first. The fifth byte is the exponent. The mantissa is stored as a binary fraction in sign and magnitude format. Bit 7 of the most significant byte is the sign bit and, for the purposes of calculating the magnitude of the number, this bit is assumed to be set to one. The exponent is stored as a positive integer in excess 127 format. (To find the exponent subtract 127 from the value in the fifth byte.)
+
+If the exponent of a floating point number is zero, the number is stored in integer format in the mantissa. If the exponent is not zero, then the variable has a floating point value. Thus, an integer can be stored in two different formats in a real variable. For example, 5 can be stored as
+
+```text
+& 00 00 00 05 00   Integer 5
+```
+
+or
+
+```text
+& 20 00 00 00 82   (.5+.125) * 2^3 = 5
+```
+
+(the &20 becomes &A0 because the MSB is always assumed)
+
+In the case of a movable string (normal string variable), the parameter address points to the 'string descriptor'. This descriptor gives the current length of the string, the number of bytes allocated to the string (the maximum length of the string) and the address of the start of the string (LSB first).
+
+See the Annex entitled ‘Format of Program and Variables in Memory’ for details of how parameters are stored.
+
+**Syntax**
+
+```text
+CALL <numeric>{,<n-var>|<s-var>}
+```
+
+**Associated Keywords**
+
+USRa:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Parameter Table","id":"parameter-table","depth":2},{"value":"Parameter Formats","id":"parameter-formats","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"A statement to call a machine code subroutine.","title":"CALL (CA.)","filePath":"content/en/library/cambridge-z88/bbc-basic/statements-and-functions/call.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/bbc-basic/statements-and-functions/call","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"CALL (CA.) - Klive IDE"}],["$","meta","1",{"name":"description","content":"A statement to call a machine code subroutine."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/bbc-basic/statements-and-functions/call/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"dZNfFVLPQi_KHqnwQrQVE"}
+20:"ToggleWordWrapButton"
+21:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$20"]
+22:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+23:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+35:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["CALL (CA.)","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A statement to call a machine code subroutine."}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"CALL Muldiv,A,B,C,D"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"CALL &FFE3"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"CALL 12340,A$,M,J$"}]}]]}]]}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The processor’s A, B, C, D, E, F, H and L registers are initialised to the least significant words of A%, B%, C%, D%, E%, F%, H% and L% respectively (see also USR)."}],"\n",["$","h2",null,{"id":"parameter-table","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Parameter Table",["$","$L23",null,{"id":"parameter-table"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"CALL sets up a table in RAM containing details of the parameters. The IX register is set to the address of this parameter table."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Variables included in the parameter list need not have been declared before the CALL statement. The parameter types are:"}],"\n",["$","table",null,{"children":["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"Code No"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","strong",null,{"children":"Parameter Type"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["0:",["$","br",null,{}],"4:",["$","br",null,{}],"5:",["$","br",null,{}],"128:",["$","br",null,{}],"129:"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["byte (8 bits)",["$","br",null,{}],"word (32 bits)",["$","br",null,{}],"real (40 bits)",["$","br",null,{}],"fixed string",["$","br",null,{}],"movable string"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["eg ?A%",["$","br",null,{}],"eg !A% or A%",["$","br",null,{}],"eg A",["$","br",null,{}],"eg $A%",["$","br",null,{}],"eg A$"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}],"className":"x:block x:overflow-x-auto"}],"\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34"]]}]
+15:["$","$L35",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@36"}]}]
+1f:true
+9:300
+24:["$","table",null,{"children":["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"Number of parameters","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"1 byte (at IX)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["Parameter type",["$","br",null,{}],"Parameter address"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["1 byte (at IX+1)",["$","br",null,{}],"2 bytes (at IX+2 IX+3 LSB first)"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["Parameter type",["$","br",null,{}],"Parameter address"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[") repeated as often as necessary.",["$","br",null,{}],")"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}],"className":"x:block x:overflow-x-auto"}]
+25:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Except in the case of a movable string (normal string variable), the parameter address given is the absolute address at which the item is stored. In the case of movable strings (type 129), it is the address of a parameter block containing the current length, the maximum length and the start address of the string, in that order"}]
+26:["$","h2",null,{"id":"parameter-formats","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Parameter Formats",["$","$L23",null,{"id":"parameter-formats"}]]}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Integer variables are stored in two’s complement format with their least significant byte first."}]
+28:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Fixed strings are stored as the characters of the string followed by a carriage return (&0D)."}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Floating point variables are stored in binary floating point format with their least significant byte first. The fifth byte is the exponent. The mantissa is stored as a binary fraction in sign and magnitude format. Bit 7 of the most significant byte is the sign bit and, for the purposes of calculating the magnitude of the number, this bit is assumed to be set to one. The exponent is stored as a positive integer in excess 127 format. (To find the exponent subtract 127 from the value in the fifth byte.)"}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If the exponent of a floating point number is zero, the number is stored in integer format in the mantissa. If the exponent is not zero, then the variable has a floating point value. Thus, an integer can be stored in two different formats in a real variable. For example, 5 can be stored as"}]
+2b:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"& 00 00 00 05 00   Integer 5"}]}]}]]}]]}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"or"}]
+2d:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"& 20 00 00 00 82   (.5+.125) * 2^3 = 5"}]}]}]]}]]}]
+2e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"(the &20 becomes &A0 because the MSB is always assumed)"}]
+2f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"In the case of a movable string (normal string variable), the parameter address points to the ‘string descriptor’. This descriptor gives the current length of the string, the number of bytes allocated to the string (the maximum length of the string) and the address of the start of the string (LSB first)."}]
+30:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"See the Annex entitled ‘Format of Program and Variables in Memory’ for details of how parameters are stored."}]
+31:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Syntax"}]}]
+32:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"CALL <numeric>{,<n-var>|<s-var>}"}]}]}]]}]]}]
+33:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Associated Keywords"}]}]
+34:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"USR"}]
+36:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

@@ -1,0 +1,76 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+13:"ToggleWordWrapButton"
+14:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$13"]
+15:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+21:"ViewportBoundary"
+22:I[484,[],"$21"]
+23:"MetadataBoundary"
+24:I[484,[],"$23"]
+25:"$Sreact.suspense"
+26:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T5bd,---
+description: "A function which returns the total length of the file whose file handle is its argument."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# EXT#
+
+A function which returns the total length of the file whose file handle is its argument.
+
+```text
+length=EXT#f_num
+```
+
+In the case of a sparse random-access file, the value returned is the complete file length from byte zero to the last byte written. This may well be greater than the actual amount of data in the file, but it is the amount of disk space allocated to the file by the Z88’s operating system.
+
+The file must have been opened before EXT\# can be used to find its length.
+
+EXT\#-1 returns an estimate of the amount of free memory in the Z88. See the Annex entitled ‘Format of Program and Variables in Memory’ for more details.
+
+Free memory is available to the device <strong>`:RAM.-`</strong> and to applications (such as PipeDream), but not necessarily to the RAM filing system. Consequently, you cannot reliably use EXT\#-1 to discover how much space is left in the current filing system device. (<strong>`:RAM.0`</strong> for example).
+
+**Syntax**
+
+```text
+<n-var>=EXT#(<numeric>)
+```
+
+**Associated Keywords**
+
+OPENIN, OPENUP, OPENOUT, CLOSE\#, PRINT\#, INPUT\#, BPUT\#, BGET\#, PTR\#, EOF\#a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"A function which returns the total length of the file whose file handle is its argument.","title":"EXT#","filePath":"content/en/library/cambridge-z88/bbc-basic/statements-and-functions/ext-hash.mdx","timestamp":1792315833000},"sourceCode":"$12","children":[["$","div",null,{"id":"nextra-skip-nav"}],["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["EXT#","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A function which returns the total length of the file whose file handle is its argument."}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L14",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L15",null,{"className":""}]]}],"$L16"]}]]}],"\n","$L17","\n","$L18","\n","$L19","\n","$L1a","\n","$L1b","\n","$L1c","\n","$L1d","\n","$L1e"]]}]]}]]}]}],null,"$L1f"]}],"p":"$@20","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/bbc-basic/statements-and-functions/ext-hash","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L22",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L24",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$25",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"EXT# - Klive IDE"}],["$","meta","1",{"name":"description","content":"A function which returns the total length of the file whose file handle is its argument."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/bbc-basic/statements-and-functions/ext-hash/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L26","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@27","v":null,"s":"$9"}},"a":"$@28","u":"$@29","b":"dZNfFVLPQi_KHqnwQrQVE"}
+2a:I[484,[],"OutletBoundary"]
+16:["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"length=EXT#f_num"}]}]}]
+17:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"In the case of a sparse random-access file, the value returned is the complete file length from byte zero to the last byte written. This may well be greater than the actual amount of data in the file, but it is the amount of disk space allocated to the file by the Z88’s operating system."}]
+18:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The file must have been opened before EXT# can be used to find its length."}]
+19:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"EXT#-1 returns an estimate of the amount of free memory in the Z88. See the Annex entitled ‘Format of Program and Variables in Memory’ for more details."}]
+1a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Free memory is available to the device ",["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":":RAM.-"}]}]," and to applications (such as PipeDream), but not necessarily to the RAM filing system. Consequently, you cannot reliably use EXT#-1 to discover how much space is left in the current filing system device. (",["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":":RAM.0"}]}]," for example)."]}]
+1b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Syntax"}]}]
+1c:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L14",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L15",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"<n-var>=EXT#(<numeric>)"}]}]}]]}]]}]
+1d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Associated Keywords"}]}]
+1e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"OPENIN, OPENUP, OPENOUT, CLOSE#, PRINT#, INPUT#, BPUT#, BGET#, PTR#, EOF#"}]
+1f:["$","$L2a",null,{"children":["$","$25",null,{"name":"Next.MetadataOutlet","children":"$@2b"}]}]
+29:true
+9:300
+2b:null
+9:C
+28:0
+7:"$undefined"
+27:"$undefined"
+20:"$undefined"

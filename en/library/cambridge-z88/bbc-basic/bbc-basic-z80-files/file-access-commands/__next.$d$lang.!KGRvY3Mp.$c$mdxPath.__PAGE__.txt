@@ -1,0 +1,562 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T3950,---
+description: "The commands and statements used in file manipulation are described below. They are not in alphabetical order, but in the order you are likely to want to use them. Whilst these notes repeat much..."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# File Access Commands
+
+## Introduction [#introduction]
+
+The commands and statements used in file manipulation are described below. They are not in alphabetical order, but in the order you are likely to want to use them. Whilst these notes repeat much of the material covered in the Statements and Functions section, additional information has been added and they are presented in a more readable order.
+
+## Filenames [#filenames]
+
+Please refer to your ‘Z88 Users’ Guide’ for a full explanation of device, directory and filenames. The explanation below is only intended as a brief reference guide.
+
+The Z88’s operating system allows a composite file name in the following format:
+
+```text
+:DEVICENAME/PATHNAME/FILENAME.EXTENSION
+```
+
+The **devicename** is the name of a RAM memory or a physical device. This can be:
+
+`:RAM.0` Files stored in RAM in slot 0 (internal memory)
+
+`:RAM.1` Files stored in RAM in slot 1 (external memory)
+
+`:RAM.2` Files stored in RAM in slot 2 (external memory)
+
+`:RAM.3` Files stored in RAM in slot 3 (external memory)
+
+`:RAM.-` Files stored in any RAM (:RAM.0 - :RAM.3).
+
+Used by the CLI for temporary files. Lost on Reset
+
+`:SCR.0` Screen
+
+`:ROM.0-3` Application names available in internal ROM or external application cards,
+
+such as EPROM or Flash cards.
+
+`:EPR.0-3` Files stored on external EPROM or Flash Cards, formatted via Filer.
+
+This device is only available in OZ V5.0 or later.
+
+`:PRT.0` Printer. (Serial port via the printer driver so that any special codes and
+
+escape sequences are interpreted)
+
+`:COM.0` Communications (serial) port, but NOT via the printer driver.
+
+`:INP.0` Standard input
+
+`:OUT.0` Standard output.
+
+`:NUL.0` Null. (Absorbs output and acts like an empty file on input.
+
+The final .0 of a device name may be omitted if the device is unique. For example, :COM.0 may be abbreviated to :COM.
+
+There is a bug in all ROM versions before V4.0, in the Filer popdown, that will cause the Z88 to crash if you use `:RAM.-` device to store files - and then perform a soft reset whilst any files are still present in the device. You can avoid this problem by deleting any files in :RAM.- before issuing a soft reset.
+
+The **pathname** is the name of the directory or the path to the directory in which the file will be found or created.
+
+The filename can be up to 12 characters long, and the extension up to 3 characters.
+
+## Organisation of Examples [#organisation-of-examples]
+
+Simple examples are given throughout this section with the explanation of the various commands. The following sections contain examples of complete programs for serial files, random files and, finally, indexed files. If you have problems understanding the action of any of the commands you may find the examples helpful. The best way to learn is to do - so have a go.
+
+## Program File Manipulation [#program-file-manipulation]
+
+### SAVE [#save]
+
+Save the current program to a file, in internal (tokenised) format. The filename can be a variable or a string.
+
+```text
+SAVE filename
+SAVE "FRED"
+```
+
+```text
+A$="COMPOUND"
+SAVE A$
+```
+
+The first example will save the program to a file named FRED. The second will save COMPOUND.
+
+You can specify a device name and a path as well as the file name. The following example will save the current program to a file called “TEST” in a directory called PROGS which is in a directory called BBCBASIC on device :RAM.0.
+
+```text
+SAVE “:RAM.0/BBCBASIC/PROGS/TEST”
+```
+
+### LOAD [#load]
+
+Load the program 'filename' into the program area. The old program is deleted (as if a NEW command had been given prior to the LOAD) and all the dynamic variables are cleared. The program must be in tokenised format. File names must conform to the Z88 file format.
+
+```text
+LOAD filename
+LOAD "FRED"
+```
+
+```text
+A$="HEATING"
+LOAD A$
+```
+
+As with SAVE, you can specify a device name and path. The example below loads the program saved previously as an example of the SAVE command.
+
+```text
+LOAD ":RAM.0/BBCBASIC/PROGS/TEST"
+```
+
+### CHAIN [#chain]
+
+LOAD and RUN the program 'filename'. All the dynamic variables are cleared. The program must be in tokenised format.
+
+```text
+CHAIN filename
+CHAIN "GAME1"
+```
+
+```text
+A$="PART2"
+CHAIN A$
+```
+
+As with SAVE and LOAD, you can specify a device name and/or a path.
+
+### <strong>\*DELETE</strong> [#delete]
+
+Delete the file 'filename'. Since variables are not allowed as arguments to \* commands, the filename must be a constant.
+
+```text
+*DELETE filename
+```
+
+```text
+*DELETE FRED
+*DELETE PHONE.DTA
+```
+
+To delete a file whose name is known only at run-time, use the OSCLI command. It's a bit clumsy, but a lot better than the original specification for BBC BASIC allowed. This time all of the command, including the ERA, must be supplied as the argument for the OSCLI command. You can use OSCLI for erasing a file whose name is a constant, but you must include all of the command line - in quotes this time.
+
+```text
+fname$="FRED"
+OSCLI "DELETE "+fname$
+```
+
+```text
+fname$="PHONE.DTA"
+command$="DELETE "
+OSCLI command$+fname$
+```
+
+```text
+OSCLI "DELETE FRED"
+```
+
+You can include a device name and/or path in both the \*DELETE and \*OSCLI command formats.
+
+### <strong>\*RENAME</strong> [#rename]
+
+Rename 'file1' to be called 'file2'.
+
+```text
+*RENAME file2=file1
+*RENAME FRED2=FRED1
+*RENAME PHONE.DTA=PHONE
+```
+
+Once again, if you want to rename files whose names are only known at run-time, you must use the OSCLI command.
+
+fname1$="FRED1"
+
+fname2$="FRED2"
+
+OSCLI "RENAME "+fname2$+"="+fname1$
+
+If you attempt to rename an open file, an ‘in use’ error will be reported.
+
+## Files and Devices [#files-and-devices]
+
+### Introduction [#introduction-2]
+
+The statements and functions used for data files are:
+
+```text
+OPENIN
+OPENUP
+OPENOUT
+EXT#
+PTR#
+INPUT#      BGET#
+PRINT#      BPUT#
+CLOSE#      END
+EOF#
+```
+
+### Opening Files [#opening-files]
+
+You cannot use a file until you have told the system it exists. In order to do this you must OPEN the file for use. Other versions of BASIC allow you to choose the file number. In order to improve efficiency, BBC BASIC(Z80) chooses the number for you.
+
+When you open the file, a file handle (an integer number) is returned by the interpreter and you will need to store it for future use. (The open commands are, in fact, functions which open the appropriate file and return its file handle.)
+
+You use the file handle for all subsequent access to the file. (With the exception of the STAR commands outlined previously.)
+
+If the system has been unable to open the file, the handle returned will be 0. This will occur if you try to open a non-existent file in the input mode (OPENIN or OPENUP).
+
+The BBC BASIC(Z80) for the Z88 imposes a limit on the number of files you can have open at any one time. The limit is 10 for BBC BASIC(Z80) and more than 90 for the whole filing system (other application instantiations opening files), depending on which ROM version you are using on your Z88. If you attempt to have more files open at one time than allowed for BBC BASIC(Z80), the file will not be created and you will get a ‘Too many files open’ error. If you try to exceed the limit for the filing system, you will get a ‘No Room’ error.
+
+### File Opening Functions [#file-opening-functions]
+
+The three functions which open files are OPENIN, OPENUP and OPENOUT. OPENOUT should be used to create new files, or overwrite old ones. OPENIN should be used for input only and OPENUP should be used for input/output.
+
+### OPENOUT [#openout]
+
+Open the file 'filename' for output and return the file handle allocated. The use of OPENOUT destroys the contents of the file if it previously existed. (The directory is updated with the length of the new file you have just written when you close the file.)
+
+```text
+x=OPENOUT filename
+x=OPENOUT devicename
+```
+
+```text
+file_num=OPENOUT "PHONENUMS"
+file_num=OPENOUT ":COM"
+```
+
+You always need to store the file handle because it must be used for all the other file commands and functions. If you choose a variable with the same name as the file, you will make programs which use a number of files easier to understand.
+
+```text
+phonenums=OPENOUT "PHONENUMS"
+opfile=OPENOUT opfile$
+```
+
+### OPENIN [#openin]
+
+Open the file 'filename' for input only. Unlike the Z80 version of BBC BASIC, you cannot write to a file opened with OPENIN.
+
+```text
+x=OPENIN filename
+x=OPENIN devicename
+```
+
+```text
+address=OPENIN "ADDRESS"
+check_file=OPENIN check_file$
+comms=OPENIN “:COM”
+```
+
+You will be unable to open for input (file handle returned = 0) if the file does not already exist.
+
+If you try to write to a file opened for input you will get a ‘Write protected’ error (252).
+
+### OPENUP [#openup]
+
+Open the file 'filename' for update (input or output) without destroying the contents of the file. The file may be read from or written to. When the file is closed, the directory is updated to show the maximum used length of the file. None of the previously written data is lost unless it has been overwritten. Consequently, you would use OPENUP for reading serial and random files, adding to the end of serial files or writing to random files.
+
+```text
+x=OPENUP filename
+x=OPENUP devicename
+```
+
+```text
+address=OPENUP "ADDRESS"
+check_file=OPENUP check_file$
+comms=OPENUP “:COM”
+```
+
+You will be unable to open for update (file handle returned = 0) if the file does not already exist.
+
+### CLOSE\# [#close]
+
+Close the file opened as 'fnum'. CLOSE\#0, END or 'dropping off the end' of a program will close all files.
+
+```text
+CLOSE#fnum
+```
+
+### INPUT\# [#input]
+
+Read from the file opened as 'fnum' into the variable 'var'. Several variables can be read using the same INPUT\# statement.
+
+INPUT\#fnum,var
+
+```text
+data=OPENIN "DATA"
+:
+INPUT#data,name$,age,height,sex$
+:
+READ# can be used as an alternative to INPUT#
+```
+
+### PRINT\# [#print]
+
+Write the variable 'var' to the file opened as 'fnum'. Several variables can be written using the same PRINT\# statement.
+
+```text
+PRINT#fnum,var
+```
+
+String variables are written as the character bytes in the string plus a carriage-return. Numeric variables are written as 5 bytes of binary data.
+
+```text
+data=OPENOUT "DATA"
+:
+PRINT#data,name$,age,height,sex$
+```
+
+### EXT\# [#ext]
+
+Return the total length of the file opened as 'fnum'.
+
+```text
+EXT#fnum
+```
+
+In the case of a sparse random-access file the value returned is the length of the file to the last byte actually written to the file. Although much of the file may well be unused, writing this 'last byte' reserved physical space in RAM for a file of this length. Thus it is possible to write a single byte to a file and get a 'No Room' error.
+
+### PTR\# [#ptr]
+
+A pseudo-variable which points to the position within the file from where the next byte to be read will be taken or where the next byte to be written will be put.
+
+```text
+PTR#fnum
+```
+
+When the file is OPENED, PTR\# is set to zero. However, you can set PTR\# to any value you like. (Even beyond the end of the file - so take care).
+
+Reading or writing, using INPUT\# and PRINT\#, (and BGET\# and BPUT\# - explained later), takes place at the current position of the pointer. The pointer is automatically updated following a read or write operation.
+
+A file opened with OPENUP may be extended by setting PTR\# to its end (PTR\# = EXT\#), and then writing the new data to it. You must remember to CLOSE such a file in order to update its directory entry with its new length. A couple of examples of this are included in the sections on serial and indexed files.
+
+PTR\#-1 Returns the number of file handles still available for the entire Z88 (not just BBC BASIC(Z80)) and the ROM release number.
+
+If you are going to display this information, you will need to do so in hexadecimal because the one (4 byte) number contains two items of information. For example:
+
+```text
+PRINT ~PTR#-1
+        5A0004
+```
+
+The last 3 digits (least significant 2 bytes) are the ROM release number. The first 2 digits (most significant 2 bytes) are the number of files handles still available for use by the filing system (&5A=90).
+
+### EOF\# [#eof]
+
+A function which will return -1 (TRUE) if the data file whose file handle is the argument is at (or beyond) its end. In other words, when PTR\# points beyond the current end of the file.
+
+```text
+eof=EOF#fnum
+```
+
+Attempting to read beyond the current end of file will not give rise to an error. Either zero or a null string will be returned depending on the type of variable read.
+
+EOF\# is only really of use when dealing with serial (sequential) files. It indicates that PTR\# is greater than the recorded length of the file (found by using EXT\#). When reading a serial file, EOF\# would go true when the last byte of the file had been read.
+
+EOF\# is only true if PTR\# is set beyond the last byte written to in the file. It will NOT be true if an attempt has been made to read from an empty area of a sparse random access file. Reading from an empty area of a sparse file will return garbage. Because of this, it is difficult to tell which records of an uninitialised random access file have had data written to them and which are empty. These files need to be initialised and the unused records marked as empty.
+
+Writing to a byte beyond the current end of file updates the file length immediately, whether the record is physically written to the disk at that time or not.
+
+EOF\#-1 returns TRUE for an expanded Z88 and FALSE for an unexpanded Z88 (32K in slot 0).
+
+### BGET\# [#bget]
+
+A function which reads a byte of data from the file opened as 'fnum', from the position pointed to by PTR\#fnum. PTR\#fnum is incremented by 1 following the read. A positive integer between 0 and 255 is returned (as you might expect). This can be converted into a string variable using the CHR$ function.
+
+```text
+BGET#fnum
+```
+
+```text
+byte=BGET#fnum
+char$=CHR$(byte)
+```
+
+or, more expediently
+
+```text
+char$=CHR$(BGET#fnum)
+```
+
+### BPUT\# [#bput]
+
+Write the least significant byte of the variable 'var' to the file opened as 'fnum', at the position pointed to by PTR\#fnum. PTR\#fnum is incremented by 1 following the write.
+
+```text
+BPUT#fnum,var
+```
+
+```text
+BPUT#fnum,&1B
+BPUT#fnum,house_num
+BPUT#fnum,ASC "E"
+```a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Introduction","id":"introduction","depth":2},{"value":"Filenames","id":"filenames","depth":2},{"value":"Organisation of Examples","id":"organisation-of-examples","depth":2},{"value":"Program File Manipulation","id":"program-file-manipulation","depth":2},{"value":"SAVE","id":"save","depth":3},{"value":"LOAD","id":"load","depth":3},{"value":"CHAIN","id":"chain","depth":3},{"value":[["$","$4",".0",{"children":[["$","strong",".0",{"children":"*DELETE"}]]}]],"id":"delete","depth":3},{"value":[["$","$4",".0",{"children":[["$","strong",".0",{"children":"*RENAME"}]]}]],"id":"rename","depth":3},{"value":"Files and Devices","id":"files-and-devices","depth":2},{"value":"Introduction","id":"introduction-2","depth":3},{"value":"Opening Files","id":"opening-files","depth":3},{"value":"File Opening Functions","id":"file-opening-functions","depth":3},{"value":"OPENOUT","id":"openout","depth":3},{"value":"OPENIN","id":"openin","depth":3},{"value":"OPENUP","id":"openup","depth":3},{"value":"CLOSE#","id":"close","depth":3},{"value":"INPUT#","id":"input","depth":3},{"value":"PRINT#","id":"print","depth":3},{"value":"EXT#","id":"ext","depth":3},{"value":"PTR#","id":"ptr","depth":3},{"value":"EOF#","id":"eof","depth":3},{"value":"BGET#","id":"bget","depth":3},{"value":"BPUT#","id":"bput","depth":3}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"The commands and statements used in file manipulation are described below. They are not in alphabetical order, but in the order you are likely to want to use them. Whilst these notes repeat much...","title":"File Access Commands","filePath":"content/en/library/cambridge-z88/bbc-basic/bbc-basic-z80-files/file-access-commands.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/bbc-basic/bbc-basic-z80-files/file-access-commands","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"File Access Commands - Klive IDE"}],["$","meta","1",{"name":"description","content":"The commands and statements used in file manipulation are described below. They are not in alphabetical order, but in the order you are likely to want to use them. Whilst these notes repeat much..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/bbc-basic/bbc-basic-z80-files/file-access-commands/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"dZNfFVLPQi_KHqnwQrQVE"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+21:"ToggleWordWrapButton"
+22:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$21"]
+23:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+a3:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["File Access Commands","$undefined"]}],"\n",["$","h2",null,{"id":"introduction","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Introduction",["$","$L20",null,{"id":"introduction"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The commands and statements used in file manipulation are described below. They are not in alphabetical order, but in the order you are likely to want to use them. Whilst these notes repeat much of the material covered in the Statements and Functions section, additional information has been added and they are presented in a more readable order."}],"\n",["$","h2",null,{"id":"filenames","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Filenames",["$","$L20",null,{"id":"filenames"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Please refer to your ‘Z88 Users’ Guide’ for a full explanation of device, directory and filenames. The explanation below is only intended as a brief reference guide."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The Z88’s operating system allows a composite file name in the following format:"}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":":DEVICENAME/PATHNAME/FILENAME.EXTENSION"}]}]}]]}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","strong",null,{"children":"devicename"}]," is the name of a RAM memory or a physical device. This can be:"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":":RAM.0"}]," Files stored in RAM in slot 0 (internal memory)"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":":RAM.1"}]," Files stored in RAM in slot 1 (external memory)"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":":RAM.2"}]," Files stored in RAM in slot 2 (external memory)"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":":RAM.3"}]," Files stored in RAM in slot 3 (external memory)"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":":RAM.-"}]," Files stored in any RAM (:RAM.0 - :RAM.3)."]}],"\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49","\n","$L4a","\n","$L4b","\n","$L4c","\n","$L4d","\n","$L4e","\n","$L4f","\n","$L50","\n","$L51","\n","$L52","\n","$L53","\n","$L54","\n","$L55","\n","$L56","\n","$L57","\n","$L58","\n","$L59","\n","$L5a","\n","$L5b","\n","$L5c","\n","$L5d","\n","$L5e","\n","$L5f","\n","$L60","\n","$L61","\n","$L62","\n","$L63","\n","$L64","\n","$L65","\n","$L66","\n","$L67","\n","$L68","\n","$L69","\n","$L6a","\n","$L6b","\n","$L6c","\n","$L6d","\n","$L6e","\n","$L6f","\n","$L70","\n","$L71","\n","$L72","\n","$L73","\n","$L74","\n","$L75","\n","$L76","\n","$L77","\n","$L78","\n","$L79","\n","$L7a","\n","$L7b","\n","$L7c","\n","$L7d","\n","$L7e","\n","$L7f","\n","$L80","\n","$L81","\n","$L82","\n","$L83","\n","$L84","\n","$L85","\n","$L86","\n","$L87","\n","$L88","\n","$L89","\n","$L8a","\n","$L8b","\n","$L8c","\n","$L8d","\n","$L8e","\n","$L8f","\n","$L90","\n","$L91","\n","$L92","\n","$L93","\n","$L94","\n","$L95","\n","$L96","\n","$L97","\n","$L98","\n","$L99","\n","$L9a","\n","$L9b","\n","$L9c","\n","$L9d","\n","$L9e","\n","$L9f","\n","$La0","\n","$La1","\n","$La2"]]}]
+15:["$","$La3",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@a4"}]}]
+1f:true
+9:300
+24:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Used by the CLI for temporary files. Lost on Reset"}]
+25:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":":SCR.0"}]," Screen"]}]
+26:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":":ROM.0-3"}]," Application names available in internal ROM or external application cards,"]}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"such as EPROM or Flash cards."}]
+28:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":":EPR.0-3"}]," Files stored on external EPROM or Flash Cards, formatted via Filer."]}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This device is only available in OZ V5.0 or later."}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":":PRT.0"}]," Printer. (Serial port via the printer driver so that any special codes and"]}]
+2b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"escape sequences are interpreted)"}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":":COM.0"}]," Communications (serial) port, but NOT via the printer driver."]}]
+2d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":":INP.0"}]," Standard input"]}]
+2e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":":OUT.0"}]," Standard output."]}]
+2f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":":NUL.0"}]," Null. (Absorbs output and acts like an empty file on input."]}]
+30:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The final .0 of a device name may be omitted if the device is unique. For example, :COM.0 may be abbreviated to :COM."}]
+31:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["There is a bug in all ROM versions before V4.0, in the Filer popdown, that will cause the Z88 to crash if you use ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":":RAM.-"}]," device to store files - and then perform a soft reset whilst any files are still present in the device. You can avoid this problem by deleting any files in :RAM.- before issuing a soft reset."]}]
+32:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","strong",null,{"children":"pathname"}]," is the name of the directory or the path to the directory in which the file will be found or created."]}]
+33:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The filename can be up to 12 characters long, and the extension up to 3 characters."}]
+34:["$","h2",null,{"id":"organisation-of-examples","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Organisation of Examples",["$","$L20",null,{"id":"organisation-of-examples"}]]}]
+35:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Simple examples are given throughout this section with the explanation of the various commands. The following sections contain examples of complete programs for serial files, random files and, finally, indexed files. If you have problems understanding the action of any of the commands you may find the examples helpful. The best way to learn is to do - so have a go."}]
+36:["$","h2",null,{"id":"program-file-manipulation","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Program File Manipulation",["$","$L20",null,{"id":"program-file-manipulation"}]]}]
+37:["$","h3",null,{"id":"save","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["SAVE",["$","$L20",null,{"id":"save"}]]}]
+38:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Save the current program to a file, in internal (tokenised) format. The filename can be a variable or a string."}]
+39:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"SAVE filename"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"SAVE \"FRED\""}]}]]}]]}]]}]
+3a:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"A$=\"COMPOUND\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"SAVE A$"}]}]]}]]}]]}]
+3b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The first example will save the program to a file named FRED. The second will save COMPOUND."}]
+3c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You can specify a device name and a path as well as the file name. The following example will save the current program to a file called “TEST” in a directory called PROGS which is in a directory called BBCBASIC on device :RAM.0."}]
+3d:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"SAVE “:RAM.0/BBCBASIC/PROGS/TEST”"}]}]}]]}]]}]
+3e:["$","h3",null,{"id":"load","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["LOAD",["$","$L20",null,{"id":"load"}]]}]
+3f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Load the program ‘filename’ into the program area. The old program is deleted (as if a NEW command had been given prior to the LOAD) and all the dynamic variables are cleared. The program must be in tokenised format. File names must conform to the Z88 file format."}]
+40:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"LOAD filename"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"LOAD \"FRED\""}]}]]}]]}]]}]
+41:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"A$=\"HEATING\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"LOAD A$"}]}]]}]]}]]}]
+42:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"As with SAVE, you can specify a device name and path. The example below loads the program saved previously as an example of the SAVE command."}]
+43:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"LOAD \":RAM.0/BBCBASIC/PROGS/TEST\""}]}]}]]}]]}]
+44:["$","h3",null,{"id":"chain","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["CHAIN",["$","$L20",null,{"id":"chain"}]]}]
+45:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"LOAD and RUN the program ‘filename’. All the dynamic variables are cleared. The program must be in tokenised format."}]
+46:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"CHAIN filename"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"CHAIN \"GAME1\""}]}]]}]]}]]}]
+47:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"A$=\"PART2\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"CHAIN A$"}]}]]}]]}]]}]
+48:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"As with SAVE and LOAD, you can specify a device name and/or a path."}]
+49:["$","h3",null,{"id":"delete","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":[["$","strong",null,{"children":"*DELETE"}],["$","$L20",null,{"id":"delete"}]]}]
+4a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Delete the file ‘filename’. Since variables are not allowed as arguments to * commands, the filename must be a constant."}]
+4b:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"*DELETE filename"}]}]}]]}]]}]
+4c:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"*DELETE FRED"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"*DELETE PHONE.DTA"}]}]]}]]}]]}]
+4d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"To delete a file whose name is known only at run-time, use the OSCLI command. It’s a bit clumsy, but a lot better than the original specification for BBC BASIC allowed. This time all of the command, including the ERA, must be supplied as the argument for the OSCLI command. You can use OSCLI for erasing a file whose name is a constant, but you must include all of the command line - in quotes this time."}]
+4e:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"fname$=\"FRED\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OSCLI \"DELETE \"+fname$"}]}]]}]]}]]}]
+4f:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"fname$=\"PHONE.DTA\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"command$=\"DELETE \""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OSCLI command$+fname$"}]}]]}]]}]]}]
+50:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"OSCLI \"DELETE FRED\""}]}]}]]}]]}]
+51:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You can include a device name and/or path in both the *DELETE and *OSCLI command formats."}]
+52:["$","h3",null,{"id":"rename","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":[["$","strong",null,{"children":"*RENAME"}],["$","$L20",null,{"id":"rename"}]]}]
+53:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Rename ‘file1’ to be called ‘file2’."}]
+54:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"*RENAME file2=file1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"*RENAME FRED2=FRED1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"*RENAME PHONE.DTA=PHONE"}]}]]}]]}]]}]
+55:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Once again, if you want to rename files whose names are only known at run-time, you must use the OSCLI command."}]
+56:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"fname1$=“FRED1”"}]
+57:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"fname2$=“FRED2”"}]
+58:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"OSCLI “RENAME “+fname2$+”=“+fname1$"}]
+59:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If you attempt to rename an open file, an ‘in use’ error will be reported."}]
+5a:["$","h2",null,{"id":"files-and-devices","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Files and Devices",["$","$L20",null,{"id":"files-and-devices"}]]}]
+5b:["$","h3",null,{"id":"introduction-2","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Introduction",["$","$L20",null,{"id":"introduction-2"}]]}]
+5c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The statements and functions used for data files are:"}]
+5d:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"OPENIN"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OPENUP"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OPENOUT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"EXT#"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"PTR#"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"INPUT#      BGET#"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"PRINT#      BPUT#"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"CLOSE#      END"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"EOF#"}]}]]}]]}]]}]
+5e:["$","h3",null,{"id":"opening-files","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Opening Files",["$","$L20",null,{"id":"opening-files"}]]}]
+5f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You cannot use a file until you have told the system it exists. In order to do this you must OPEN the file for use. Other versions of BASIC allow you to choose the file number. In order to improve efficiency, BBC BASIC(Z80) chooses the number for you."}]
+60:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When you open the file, a file handle (an integer number) is returned by the interpreter and you will need to store it for future use. (The open commands are, in fact, functions which open the appropriate file and return its file handle.)"}]
+61:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You use the file handle for all subsequent access to the file. (With the exception of the STAR commands outlined previously.)"}]
+62:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If the system has been unable to open the file, the handle returned will be 0. This will occur if you try to open a non-existent file in the input mode (OPENIN or OPENUP)."}]
+63:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The BBC BASIC(Z80) for the Z88 imposes a limit on the number of files you can have open at any one time. The limit is 10 for BBC BASIC(Z80) and more than 90 for the whole filing system (other application instantiations opening files), depending on which ROM version you are using on your Z88. If you attempt to have more files open at one time than allowed for BBC BASIC(Z80), the file will not be created and you will get a ‘Too many files open’ error. If you try to exceed the limit for the filing system, you will get a ‘No Room’ error."}]
+64:["$","h3",null,{"id":"file-opening-functions","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["File Opening Functions",["$","$L20",null,{"id":"file-opening-functions"}]]}]
+65:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The three functions which open files are OPENIN, OPENUP and OPENOUT. OPENOUT should be used to create new files, or overwrite old ones. OPENIN should be used for input only and OPENUP should be used for input/output."}]
+66:["$","h3",null,{"id":"openout","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["OPENOUT",["$","$L20",null,{"id":"openout"}]]}]
+67:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Open the file ‘filename’ for output and return the file handle allocated. The use of OPENOUT destroys the contents of the file if it previously existed. (The directory is updated with the length of the new file you have just written when you close the file.)"}]
+68:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"x=OPENOUT filename"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"x=OPENOUT devicename"}]}]]}]]}]]}]
+69:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"file_num=OPENOUT \"PHONENUMS\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"file_num=OPENOUT \":COM\""}]}]]}]]}]]}]
+6a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You always need to store the file handle because it must be used for all the other file commands and functions. If you choose a variable with the same name as the file, you will make programs which use a number of files easier to understand."}]
+6b:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"phonenums=OPENOUT \"PHONENUMS\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"opfile=OPENOUT opfile$"}]}]]}]]}]]}]
+6c:["$","h3",null,{"id":"openin","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["OPENIN",["$","$L20",null,{"id":"openin"}]]}]
+6d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Open the file ‘filename’ for input only. Unlike the Z80 version of BBC BASIC, you cannot write to a file opened with OPENIN."}]
+6e:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"x=OPENIN filename"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"x=OPENIN devicename"}]}]]}]]}]]}]
+6f:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"address=OPENIN \"ADDRESS\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"check_file=OPENIN check_file$"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"comms=OPENIN “:COM”"}]}]]}]]}]]}]
+70:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You will be unable to open for input (file handle returned = 0) if the file does not already exist."}]
+71:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If you try to write to a file opened for input you will get a ‘Write protected’ error (252)."}]
+72:["$","h3",null,{"id":"openup","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["OPENUP",["$","$L20",null,{"id":"openup"}]]}]
+73:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Open the file ‘filename’ for update (input or output) without destroying the contents of the file. The file may be read from or written to. When the file is closed, the directory is updated to show the maximum used length of the file. None of the previously written data is lost unless it has been overwritten. Consequently, you would use OPENUP for reading serial and random files, adding to the end of serial files or writing to random files."}]
+74:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"x=OPENUP filename"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"x=OPENUP devicename"}]}]]}]]}]]}]
+75:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"address=OPENUP \"ADDRESS\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"check_file=OPENUP check_file$"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"comms=OPENUP “:COM”"}]}]]}]]}]]}]
+76:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You will be unable to open for update (file handle returned = 0) if the file does not already exist."}]
+77:["$","h3",null,{"id":"close","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["CLOSE#",["$","$L20",null,{"id":"close"}]]}]
+78:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Close the file opened as ‘fnum’. CLOSE#0, END or ‘dropping off the end’ of a program will close all files."}]
+79:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"CLOSE#fnum"}]}]}]]}]]}]
+7a:["$","h3",null,{"id":"input","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["INPUT#",["$","$L20",null,{"id":"input"}]]}]
+7b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Read from the file opened as ‘fnum’ into the variable ‘var’. Several variables can be read using the same INPUT# statement."}]
+7c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"INPUT#fnum,var"}]
+7d:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"data=OPENIN \"DATA\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":":"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"INPUT#data,name$,age,height,sex$"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":":"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"READ# can be used as an alternative to INPUT#"}]}]]}]]}]]}]
+7e:["$","h3",null,{"id":"print","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["PRINT#",["$","$L20",null,{"id":"print"}]]}]
+7f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Write the variable ‘var’ to the file opened as ‘fnum’. Several variables can be written using the same PRINT# statement."}]
+80:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"PRINT#fnum,var"}]}]}]]}]]}]
+81:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"String variables are written as the character bytes in the string plus a carriage-return. Numeric variables are written as 5 bytes of binary data."}]
+82:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"data=OPENOUT \"DATA\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":":"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"PRINT#data,name$,age,height,sex$"}]}]]}]]}]]}]
+83:["$","h3",null,{"id":"ext","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["EXT#",["$","$L20",null,{"id":"ext"}]]}]
+84:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Return the total length of the file opened as ‘fnum’."}]
+85:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"EXT#fnum"}]}]}]]}]]}]
+86:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"In the case of a sparse random-access file the value returned is the length of the file to the last byte actually written to the file. Although much of the file may well be unused, writing this ‘last byte’ reserved physical space in RAM for a file of this length. Thus it is possible to write a single byte to a file and get a ‘No Room’ error."}]
+87:["$","h3",null,{"id":"ptr","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["PTR#",["$","$L20",null,{"id":"ptr"}]]}]
+88:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A pseudo-variable which points to the position within the file from where the next byte to be read will be taken or where the next byte to be written will be put."}]
+89:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"PTR#fnum"}]}]}]]}]]}]
+8a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When the file is OPENED, PTR# is set to zero. However, you can set PTR# to any value you like. (Even beyond the end of the file - so take care)."}]
+8b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Reading or writing, using INPUT# and PRINT#, (and BGET# and BPUT# - explained later), takes place at the current position of the pointer. The pointer is automatically updated following a read or write operation."}]
+8c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A file opened with OPENUP may be extended by setting PTR# to its end (PTR# = EXT#), and then writing the new data to it. You must remember to CLOSE such a file in order to update its directory entry with its new length. A couple of examples of this are included in the sections on serial and indexed files."}]
+8d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"PTR#-1 Returns the number of file handles still available for the entire Z88 (not just BBC BASIC(Z80)) and the ROM release number."}]
+8e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If you are going to display this information, you will need to do so in hexadecimal because the one (4 byte) number contains two items of information. For example:"}]
+8f:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"PRINT ~PTR#-1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        5A0004"}]}]]}]]}]]}]
+90:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The last 3 digits (least significant 2 bytes) are the ROM release number. The first 2 digits (most significant 2 bytes) are the number of files handles still available for use by the filing system (&5A=90)."}]
+91:["$","h3",null,{"id":"eof","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["EOF#",["$","$L20",null,{"id":"eof"}]]}]
+92:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A function which will return -1 (TRUE) if the data file whose file handle is the argument is at (or beyond) its end. In other words, when PTR# points beyond the current end of the file."}]
+93:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"eof=EOF#fnum"}]}]}]]}]]}]
+94:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Attempting to read beyond the current end of file will not give rise to an error. Either zero or a null string will be returned depending on the type of variable read."}]
+95:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"EOF# is only really of use when dealing with serial (sequential) files. It indicates that PTR# is greater than the recorded length of the file (found by using EXT#). When reading a serial file, EOF# would go true when the last byte of the file had been read."}]
+96:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"EOF# is only true if PTR# is set beyond the last byte written to in the file. It will NOT be true if an attempt has been made to read from an empty area of a sparse random access file. Reading from an empty area of a sparse file will return garbage. Because of this, it is difficult to tell which records of an uninitialised random access file have had data written to them and which are empty. These files need to be initialised and the unused records marked as empty."}]
+97:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Writing to a byte beyond the current end of file updates the file length immediately, whether the record is physically written to the disk at that time or not."}]
+98:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"EOF#-1 returns TRUE for an expanded Z88 and FALSE for an unexpanded Z88 (32K in slot 0)."}]
+99:["$","h3",null,{"id":"bget","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["BGET#",["$","$L20",null,{"id":"bget"}]]}]
+9a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A function which reads a byte of data from the file opened as ‘fnum’, from the position pointed to by PTR#fnum. PTR#fnum is incremented by 1 following the read. A positive integer between 0 and 255 is returned (as you might expect). This can be converted into a string variable using the CHR$ function."}]
+9b:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"BGET#fnum"}]}]}]]}]]}]
+9c:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"byte=BGET#fnum"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"char$=CHR$(byte)"}]}]]}]]}]]}]
+9d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"or, more expediently"}]
+9e:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"char$=CHR$(BGET#fnum)"}]}]}]]}]]}]
+9f:["$","h3",null,{"id":"bput","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["BPUT#",["$","$L20",null,{"id":"bput"}]]}]
+a0:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Write the least significant byte of the variable ‘var’ to the file opened as ‘fnum’, at the position pointed to by PTR#fnum. PTR#fnum is incremented by 1 following the write."}]
+a1:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"BPUT#fnum,var"}]}]}]]}]]}]
+a2:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"BPUT#fnum,&1B"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"BPUT#fnum,house_num"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"BPUT#fnum,ASC \"E\""}]}]]}]]}]]}]
+a4:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

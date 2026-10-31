@@ -1,0 +1,332 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T2541,---
+description: "Once you have written your program and removed all the syntax errors, you might think that your program is error free. Unfortunately life is not so simple, you have only passed the first hurdle...."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# Error Handling
+
+## Introduction [#introduction]
+
+### Types of Errors [#types-of-errors]
+
+Once you have written your program and removed all the syntax errors, you might think that your program is error free. Unfortunately life is not so simple, you have only passed the first hurdle. There are two kinds of errors which you could still encounter; errors of logic and run-time errors. Errors of logic are where BBC BASIC(Z80) understands exactly what you said, but what you said is not what you meant. Run-time errors are where something occurs during the running of the program which BBC BASIC(Z80) is unable to cope with. For example,
+
+```text
+answer=A/B
+```
+
+is quite correct and it will work for all values of A. But if B is zero, the answer is 'infinity'. BBC BASIC(Z80) has no way of dealing with 'infinity' and it will report a 'Division by zero' error.
+
+### Trapping Errors [#trapping-errors]
+
+There is no way that BBC BASIC(Z80) can trap errors of logic, since it has no way of understanding what you really meant it to do. However, you can generally predict which of the run-time errors are likely to occur and include a special 'error handling' routine in your program to recover from them.
+
+### Reasons for Trapping Errors [#reasons-for-trapping-errors]
+
+Why would you want to take over responsibility for handling run-time errors? When BBC BASIC(Z80) detects a run-time error, it reports it and RETURNS TO THE COMMAND MODE. When you write a program for yourself, you know what you want it to do and you also know what it can't do. If, by accident, you try to make it do something which could give rise to an error, you accept the fact that BBC BASIC(Z80) might terminate the program and return to the command mode. However, when somebody else uses your program they are not blessed with your insight and they may find the program 'crashing out' to the command mode without knowing what they have done wrong. Such programs are called 'fragile'. You can protect your user from much frustration if you predict what these problems are likely to be and include an error handling routine. In the example below, a '-ve root' error would occur if the number input was negative and BBC BASIC(Z80) would return to the command mode.
+
+```text
+10 REPEAT
+20   INPUT "Type in a number " num
+30   PRINT num," ",SQR(num)
+40   PRINT
+50 UNTIL FALSE:REM  Loop until the ESCape
+60 :REM key is pressed
+```
+
+Example run:
+
+RUN
+
+Type in a number **5**
+
+5 2.23606798
+
+Type in a number **23**
+
+23 4.79583152
+
+Type in a number **2**
+
+2 1.41421356
+
+Type in a number **-2**
+
+-2
+
+-ve root at line 30
+
+## Error Trapping Commands [#error-trapping-commands]
+
+The **ON ERROR** command directs BBC BASIC(Z80) to execute the statement(s) following ON ERROR when a trappable error occurs:
+
+```text
+ON ERROR PRINT '"Oh No!":END
+```
+
+If an error was detected in a program after this line had been encountered, the message 'Oh No!' would be printed and the program terminated. If, as in this example, the ON ERROR line contains the END statement or transfers control elsewhere (e.g. using GOTO) then the position of the line within the program is unimportant *so long as it is encountered before the error occurs*. If there is no transfer of control, execution following the error continues as usual on the succeeding line, so in this case the position of the ON ERROR line can matter.
+
+As explained in the Program Flow Control sub-section, every time BBC BASIC(Z80) encounters a FOR, REPEAT, GOSUB, FN or PROC statement it 'pushes' the return address on to a 'stack' and every time it encounters a NEXT, UNTIL, RETURN statement or the end of a function or procedure it 'pops' the latest return address of the stack and goes back there. The program stack is where BBC BASIC(Z80) records where it is within the structure of your program.
+
+When an error is detected by BBC BASIC(Z80), the stack is cleared. Thus, you cannot just take any necessary action depending on the error and return to where you were because BBC BASIC(Z80) no longer knows where you were.
+
+If an error occurs within a procedure or function, the value of any PRIVATE variables will be the last value they were set to within the procedure or function which gave rise to the error.
+
+## Error Reporting [#error-reporting]
+
+There are two functions, ERR and ERL, and one statement, REPORT, which may be used to investigate and report on errors. Using these, you can trap out errors, check that you can deal with them and abort the program run if you cannot.
+
+### ERR [#err]
+
+ERR returns the error number (see the Annex entitled Error Messages and Codes).
+
+### ERL [#erl]
+
+ERL returns the line number where the error occurred. If an error occurs in a procedure or function call, ERL will return the number of the calling line, not the number of the line in which the procedure/function is defined. If an error in a DATA statement causes a READ to fail, ERL will return the number of the line containing the READ statement, not the number of the line containing the DATA.
+
+### REPORT [#report]
+
+REPORT prints out the error string associated with the last error which occurred.
+
+## Problems with Error Trapping [#problems-with-error-trapping]
+
+If there is an error in your ON ERROR statement, BBC BASIC(Z80) will go into an infinite loop. \[ESC\] (which generates error code 27) will not break you out of this loop. On most (single tasking) computers like the BBC Micro, you can escape from such a loop by pressing \<BREAK\> or turning the computer off.
+
+Because the Z88 is a sophisticated computer which is capable of holding several programs in memory concurrently, this option has complications.
+
+If there is an error in the error handling part of your program, you will end up in a ‘doom loop’. Unless you take special precautions, you will need to perform a soft or hard reset to escape from this situation. A hard reset will cause all the programs and data in RAM to be lost and a soft reset may possibly leave the computer in an unstable condition which will lead to an eventual software failure.
+
+To overcome this problem, you should **ALWAYS** include a line similar to
+
+```text
+dummy = INKEY(0)
+```
+
+as the **FIRST** line of any error handling routine. If you do so, you will be able to escape to the INDEX from a ‘doom loop’ by pressing the `[INDEX]` key. If you try to return to your BBC BASIC(Z80) program, you will find yourself in the same situation as when you left it. All you can do is to ♢`KILL` the offending BBC BASIC(Z80) instantiation. You will lose your program, but everything else will be intact. For example:
+
+```text
+10 ON ERROR GOTO 1000
+20 FOR i= 1 TO 20
+30 etc…
+```
+
+```text
+1000 dummy = INKEY(0)
+1010 PRINT “Error!”
+1020 etc..
+```
+
+## Error Trapping Examples [#error-trapping-examples]
+
+The example below does not try to deal with errors, it just uses ERR, ERL and REPORT to tell the user about the error. It’s only advantage over BBC BASIC(Z80)'s normal error handling is that it gives the error number; it would probably not be used in practice. As you can see from the second run, pressing `[ESC]` is treated as an error (number 17).
+
+```text
+  5 ON ERROR GOTO 100
+ 10 REPEAT
+ 20   INPUT "Type a number " num
+ 30   PRINT num," ",SQR(num)
+ 40   PRINT
+ 50 UNTIL FALSE
+ 60 :
+ 70 :
+100 dummy = INKEY(0)
+110 PRINT
+120 PRINT "Error No ";ERR
+130 REPORT:PRINT " at line ";ERL
+140 END
+```
+
+Example run:
+
+RUN
+
+Type a number **1**
+
+1
+
+Type a number **-2**
+
+-2
+
+Error No 21
+
+-ve root at line 30
+
+RUN
+
+Type a number <strong>\[Esc\]</strong>
+
+Error No 17
+
+Escape at line 20
+
+The example below has been further expanded to include error trapping. The only 'predictable' error is that the user will try a negative number. Any other error is unacceptable, so it is reported and the program aborted. Consequently, when `[ESC]` is used to abort the program, it is reported as an error. However, a further test for ERR=17 could be included so that the program would halt on ESCAPE without an error being reported.
+
+```text
+  5 ON ERROR GOTO 100
+ 10 REPEAT
+ 20  INPUT "Type a number " num
+ 30   PRINT num," ",SQR(num)
+ 40  PRINT
+ 50 UNTIL FALSE
+ 60 :
+ 70 :
+100 dummy = INKEY(0)
+110 PRINT
+120 IF ERR=21 THEN PRINT "No negatives":GOTO 10
+130 REPORT:PRINT " at line ";ERL
+140 END
+```
+
+RUN
+
+Type a number **5**
+
+5 2.23606798
+
+Type a number **2**
+
+2 1.41421356
+
+Type a number **-1**
+
+-1
+
+No negatives
+
+Type a number **4**
+
+4 2
+
+Type a number <strong>\[Esc\]</strong>
+
+Escape at line 20
+
+The above example is very simple and was chosen for clarity. In practice, it would be better to test for a negative number before using SQR rather than trap the '-ve root' error.
+
+A more realistic example is the evaluation of a user-supplied HEX number, where trapping 'Bad hex' would be much easier than testing the input string beforehand.
+
+```text
+ 10 ON ERROR GOTO 100
+ 20 REPEAT
+ 30   INPUT "Type a HEX number " input$
+ 40   num=EVAL("&"+input$)
+ 50   PRINT input$,num
+ 60   PRINT
+ 70 UNTIL FALSE
+ 80 :
+ 90 :
+100 dummy = INKEY(0)
+110 PRINT
+120 IF ERR=28 THEN PRINT "Not hex":GOTO 20
+130 REPORT:PRINT " at line ";ERL
+140 END
+```a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Introduction","id":"introduction","depth":2},{"value":"Types of Errors","id":"types-of-errors","depth":3},{"value":"Trapping Errors","id":"trapping-errors","depth":3},{"value":"Reasons for Trapping Errors","id":"reasons-for-trapping-errors","depth":3},{"value":"Error Trapping Commands","id":"error-trapping-commands","depth":2},{"value":"Error Reporting","id":"error-reporting","depth":2},{"value":"ERR","id":"err","depth":3},{"value":"ERL","id":"erl","depth":3},{"value":"REPORT","id":"report","depth":3},{"value":"Problems with Error Trapping","id":"problems-with-error-trapping","depth":2},{"value":"Error Trapping Examples","id":"error-trapping-examples","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"Once you have written your program and removed all the syntax errors, you might think that your program is error free. Unfortunately life is not so simple, you have only passed the first hurdle....","title":"Error Handling","filePath":"content/en/library/cambridge-z88/bbc-basic/general-information/error-handling.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/bbc-basic/general-information/error-handling","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Error Handling - Klive IDE"}],["$","meta","1",{"name":"description","content":"Once you have written your program and removed all the syntax errors, you might think that your program is error free. Unfortunately life is not so simple, you have only passed the first hurdle...."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/bbc-basic/general-information/error-handling/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"dZNfFVLPQi_KHqnwQrQVE"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+21:"ToggleWordWrapButton"
+22:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$21"]
+23:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+68:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Error Handling","$undefined"]}],"\n",["$","h2",null,{"id":"introduction","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Introduction",["$","$L20",null,{"id":"introduction"}]]}],"\n",["$","h3",null,{"id":"types-of-errors","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Types of Errors",["$","$L20",null,{"id":"types-of-errors"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Once you have written your program and removed all the syntax errors, you might think that your program is error free. Unfortunately life is not so simple, you have only passed the first hurdle. There are two kinds of errors which you could still encounter; errors of logic and run-time errors. Errors of logic are where BBC BASIC(Z80) understands exactly what you said, but what you said is not what you meant. Run-time errors are where something occurs during the running of the program which BBC BASIC(Z80) is unable to cope with. For example,"}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"answer=A/B"}]}]}]]}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"is quite correct and it will work for all values of A. But if B is zero, the answer is ‘infinity’. BBC BASIC(Z80) has no way of dealing with ‘infinity’ and it will report a ‘Division by zero’ error."}],"\n",["$","h3",null,{"id":"trapping-errors","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Trapping Errors",["$","$L20",null,{"id":"trapping-errors"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"There is no way that BBC BASIC(Z80) can trap errors of logic, since it has no way of understanding what you really meant it to do. However, you can generally predict which of the run-time errors are likely to occur and include a special ‘error handling’ routine in your program to recover from them."}],"\n",["$","h3",null,{"id":"reasons-for-trapping-errors","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Reasons for Trapping Errors",["$","$L20",null,{"id":"reasons-for-trapping-errors"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Why would you want to take over responsibility for handling run-time errors? When BBC BASIC(Z80) detects a run-time error, it reports it and RETURNS TO THE COMMAND MODE. When you write a program for yourself, you know what you want it to do and you also know what it can’t do. If, by accident, you try to make it do something which could give rise to an error, you accept the fact that BBC BASIC(Z80) might terminate the program and return to the command mode. However, when somebody else uses your program they are not blessed with your insight and they may find the program ‘crashing out’ to the command mode without knowing what they have done wrong. Such programs are called ‘fragile’. You can protect your user from much frustration if you predict what these problems are likely to be and include an error handling routine. In the example below, a ‘-ve root’ error would occur if the number input was negative and BBC BASIC(Z80) would return to the command mode."}],"\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49","\n","$L4a","\n","$L4b","\n","$L4c","\n","$L4d","\n","$L4e","\n","$L4f","\n","$L50","\n","$L51","\n","$L52","\n","$L53","\n","$L54","\n","$L55","\n","$L56","\n","$L57","\n","$L58","\n","$L59","\n","$L5a","\n","$L5b","\n","$L5c","\n","$L5d","\n","$L5e","\n","$L5f","\n","$L60","\n","$L61","\n","$L62","\n","$L63","\n","$L64","\n","$L65","\n","$L66","\n","$L67"]]}]
+15:["$","$L68",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@69"}]}]
+1f:true
+9:300
+24:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"10 REPEAT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"20   INPUT \"Type in a number \" num"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"30   PRINT num,\" \",SQR(num)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"40   PRINT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"50 UNTIL FALSE:REM  Loop until the ESCape"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"60 :REM key is pressed"}]}]]}]]}]]}]
+25:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Example run:"}]
+26:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"RUN"}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Type in a number ",["$","strong",null,{"children":"5"}]]}]
+28:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"5 2.23606798"}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Type in a number ",["$","strong",null,{"children":"23"}]]}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"23 4.79583152"}]
+2b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Type in a number ",["$","strong",null,{"children":"2"}]]}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"2 1.41421356"}]
+2d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Type in a number ",["$","strong",null,{"children":"-2"}]]}]
+2e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"-2"}]
+2f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"-ve root at line 30"}]
+30:["$","h2",null,{"id":"error-trapping-commands","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Error Trapping Commands",["$","$L20",null,{"id":"error-trapping-commands"}]]}]
+31:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","strong",null,{"children":"ON ERROR"}]," command directs BBC BASIC(Z80) to execute the statement(s) following ON ERROR when a trappable error occurs:"]}]
+32:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"ON ERROR PRINT '\"Oh No!\":END"}]}]}]]}]]}]
+33:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["If an error was detected in a program after this line had been encountered, the message ‘Oh No!’ would be printed and the program terminated. If, as in this example, the ON ERROR line contains the END statement or transfers control elsewhere (e.g. using GOTO) then the position of the line within the program is unimportant ",["$","em",null,{"children":"so long as it is encountered before the error occurs"}],". If there is no transfer of control, execution following the error continues as usual on the succeeding line, so in this case the position of the ON ERROR line can matter."]}]
+34:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"As explained in the Program Flow Control sub-section, every time BBC BASIC(Z80) encounters a FOR, REPEAT, GOSUB, FN or PROC statement it ‘pushes’ the return address on to a ‘stack’ and every time it encounters a NEXT, UNTIL, RETURN statement or the end of a function or procedure it ‘pops’ the latest return address of the stack and goes back there. The program stack is where BBC BASIC(Z80) records where it is within the structure of your program."}]
+35:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When an error is detected by BBC BASIC(Z80), the stack is cleared. Thus, you cannot just take any necessary action depending on the error and return to where you were because BBC BASIC(Z80) no longer knows where you were."}]
+36:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If an error occurs within a procedure or function, the value of any PRIVATE variables will be the last value they were set to within the procedure or function which gave rise to the error."}]
+37:["$","h2",null,{"id":"error-reporting","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Error Reporting",["$","$L20",null,{"id":"error-reporting"}]]}]
+38:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"There are two functions, ERR and ERL, and one statement, REPORT, which may be used to investigate and report on errors. Using these, you can trap out errors, check that you can deal with them and abort the program run if you cannot."}]
+39:["$","h3",null,{"id":"err","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["ERR",["$","$L20",null,{"id":"err"}]]}]
+3a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"ERR returns the error number (see the Annex entitled Error Messages and Codes)."}]
+3b:["$","h3",null,{"id":"erl","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["ERL",["$","$L20",null,{"id":"erl"}]]}]
+3c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"ERL returns the line number where the error occurred. If an error occurs in a procedure or function call, ERL will return the number of the calling line, not the number of the line in which the procedure/function is defined. If an error in a DATA statement causes a READ to fail, ERL will return the number of the line containing the READ statement, not the number of the line containing the DATA."}]
+3d:["$","h3",null,{"id":"report","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["REPORT",["$","$L20",null,{"id":"report"}]]}]
+3e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"REPORT prints out the error string associated with the last error which occurred."}]
+3f:["$","h2",null,{"id":"problems-with-error-trapping","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Problems with Error Trapping",["$","$L20",null,{"id":"problems-with-error-trapping"}]]}]
+40:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If there is an error in your ON ERROR statement, BBC BASIC(Z80) will go into an infinite loop. [ESC] (which generates error code 27) will not break you out of this loop. On most (single tasking) computers like the BBC Micro, you can escape from such a loop by pressing <BREAK> or turning the computer off."}]
+41:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Because the Z88 is a sophisticated computer which is capable of holding several programs in memory concurrently, this option has complications."}]
+42:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If there is an error in the error handling part of your program, you will end up in a ‘doom loop’. Unless you take special precautions, you will need to perform a soft or hard reset to escape from this situation. A hard reset will cause all the programs and data in RAM to be lost and a soft reset may possibly leave the computer in an unstable condition which will lead to an eventual software failure."}]
+43:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["To overcome this problem, you should ",["$","strong",null,{"children":"ALWAYS"}]," include a line similar to"]}]
+44:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"dummy = INKEY(0)"}]}]}]]}]]}]
+45:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["as the ",["$","strong",null,{"children":"FIRST"}]," line of any error handling routine. If you do so, you will be able to escape to the INDEX from a ‘doom loop’ by pressing the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"[INDEX]"}]," key. If you try to return to your BBC BASIC(Z80) program, you will find yourself in the same situation as when you left it. All you can do is to ♢",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"KILL"}]," the offending BBC BASIC(Z80) instantiation. You will lose your program, but everything else will be intact. For example:"]}]
+46:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"10 ON ERROR GOTO 1000"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"20 FOR i= 1 TO 20"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"30 etc…"}]}]]}]]}]]}]
+47:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"1000 dummy = INKEY(0)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1010 PRINT “Error!”"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1020 etc.."}]}]]}]]}]]}]
+48:["$","h2",null,{"id":"error-trapping-examples","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Error Trapping Examples",["$","$L20",null,{"id":"error-trapping-examples"}]]}]
+49:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The example below does not try to deal with errors, it just uses ERR, ERL and REPORT to tell the user about the error. It’s only advantage over BBC BASIC(Z80)‘s normal error handling is that it gives the error number; it would probably not be used in practice. As you can see from the second run, pressing ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"[ESC]"}]," is treated as an error (number 17)."]}]
+4a:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"  5 ON ERROR GOTO 100"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 10 REPEAT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 20   INPUT \"Type a number \" num"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 30   PRINT num,\" \",SQR(num)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 40   PRINT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 50 UNTIL FALSE"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 60 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 70 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"100 dummy = INKEY(0)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"110 PRINT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"120 PRINT \"Error No \";ERR"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"130 REPORT:PRINT \" at line \";ERL"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"140 END"}]}]]}]]}]]}]
+4b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Example run:"}]
+4c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"RUN"}]
+4d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Type a number ",["$","strong",null,{"children":"1"}]]}]
+4e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"1"}]
+4f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Type a number ",["$","strong",null,{"children":"-2"}]]}]
+50:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"-2"}]
+51:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Error No 21"}]
+52:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"-ve root at line 30"}]
+53:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"RUN"}]
+54:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Type a number ",["$","strong",null,{"children":"[Esc]"}]]}]
+55:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Error No 17"}]
+56:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Escape at line 20"}]
+57:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The example below has been further expanded to include error trapping. The only ‘predictable’ error is that the user will try a negative number. Any other error is unacceptable, so it is reported and the program aborted. Consequently, when ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"[ESC]"}]," is used to abort the program, it is reported as an error. However, a further test for ERR=17 could be included so that the program would halt on ESCAPE without an error being reported."]}]
+58:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"  5 ON ERROR GOTO 100"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 10 REPEAT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 20  INPUT \"Type a number \" num"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 30   PRINT num,\" \",SQR(num)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 40  PRINT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 50 UNTIL FALSE"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 60 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 70 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"100 dummy = INKEY(0)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"110 PRINT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"120 IF ERR=21 THEN PRINT \"No negatives\":GOTO 10"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"130 REPORT:PRINT \" at line \";ERL"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"140 END"}]}]]}]]}]]}]
+59:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"RUN"}]
+5a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Type a number ",["$","strong",null,{"children":"5"}]]}]
+5b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"5 2.23606798"}]
+5c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Type a number ",["$","strong",null,{"children":"2"}]]}]
+5d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"2 1.41421356"}]
+5e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Type a number ",["$","strong",null,{"children":"-1"}]]}]
+5f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"-1"}]
+60:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"No negatives"}]
+61:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Type a number ",["$","strong",null,{"children":"4"}]]}]
+62:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"4 2"}]
+63:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Type a number ",["$","strong",null,{"children":"[Esc]"}]]}]
+64:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Escape at line 20"}]
+65:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The above example is very simple and was chosen for clarity. In practice, it would be better to test for a negative number before using SQR rather than trap the ‘-ve root’ error."}]
+66:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A more realistic example is the evaluation of a user-supplied HEX number, where trapping ‘Bad hex’ would be much easier than testing the input string beforehand."}]
+67:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":" 10 ON ERROR GOTO 100"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 20 REPEAT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 30   INPUT \"Type a HEX number \" input$"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 40   num=EVAL(\"&\"+input$)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 50   PRINT input$,num"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 60   PRINT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 70 UNTIL FALSE"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 80 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 90 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"100 dummy = INKEY(0)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"110 PRINT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"120 IF ERR=28 THEN PRINT \"Not hex\":GOTO 20"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"130 REPORT:PRINT \" at line \";ERL"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"140 END"}]}]]}]]}]]}]
+69:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

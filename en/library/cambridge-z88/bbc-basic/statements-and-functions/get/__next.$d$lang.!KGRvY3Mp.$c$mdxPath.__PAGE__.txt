@@ -1,0 +1,109 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+24:"ViewportBoundary"
+25:I[484,[],"$24"]
+26:"MetadataBoundary"
+27:I[484,[],"$26"]
+28:"$Sreact.suspense"
+29:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T93d,---
+description: "A function and compatible string function that reads the next character from the keyboard buffer (it waits for the character)."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# GET/GET$
+
+A function and compatible string function that reads the next character from the keyboard buffer (it waits for the character).
+
+```text
+N=GET
+N$=GET$
+```
+
+GET and GET$ wait for a 'key' (character) to be present in the keyboard buffer and then return the ASCII number of the key (see Annex A) or a string containing the character of the key. If there are any characters in the keyboard buffer when a GET is issued, then a character will be returned immediately. See the keyword INKEY for a way of emptying the keyboard buffer before issuing a GET.
+
+GET and GET$ do not echo the pressed key to the screen. If you want to display the character for the pressed key, you must PRINT it.
+
+You can use GET and GET$ whenever you want your program to wait for a reply before continuing. For example, you may wish to display several screens of instructions and allow the user to decide when he has read each screen.
+
+```text
+REM First screen of instructions
+CLS
+PRINT .......
+PRINT .......
+PRINT "Press any key to continue ";
+temp=GET
+REM Second screen of instructions
+CLS
+PRINT ....... etc
+```
+
+The values returned by the cursor and other ‘special’ keys are listed below. Many of the keys return 2 bytes, a zero byte followed by another value.
+
+**Keys Normal with with with<br /> Codes \[SHIFT\]** ♢ □
+
+`[ENTER]` 13 0,209 0,193 0,177<br />`[TAB]` 9 0,210 0,194 0,178<br />`[DEL]` 127 0,211 0,195 0,179<br />⇦ 0,252 0,248 0,244 0,240<br />⇨ 0,253 0,249 0,245 0,241<br />⇩ 0,254 0,250 0,246 0,242<br />⇧ 0,255 0,251 0,247 0,243<br />£ 163 126 (-) 30 158<br />= 61 43 0,0 Nothing<br />`[SPACE]` 32 32 160 32<br />**‘** 39 35 (“) 96 Nothing
+
+GET can also be used to input data from an I/O port. Full 16-bit port addressing is available :
+
+```text
+N=GET(X) :REM input from port X
+```
+
+This is an addition to the original language specification.
+
+**Syntax**
+
+```text
+<n-var>=GET
+<n-var>=GET(<numeric>)
+<s-var>=GET$
+```
+
+**Associated Keywords**
+
+PUT, INKEY, INKEY$a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"A function and compatible string function that reads the next character from the keyboard buffer (it waits for the character).","title":"GET/GET$","filePath":"content/en/library/cambridge-z88/bbc-basic/statements-and-functions/get.mdx","timestamp":1792315833000},"sourceCode":"$12","children":[["$","div",null,{"id":"nextra-skip-nav"}],["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["GET/GET$","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A function and compatible string function that reads the next character from the keyboard buffer (it waits for the character)."}],"\n","$L13","\n","$L14","\n","$L15","\n","$L16","\n","$L17","\n","$L18","\n","$L19","\n","$L1a","\n","$L1b","\n","$L1c","\n","$L1d","\n","$L1e","\n","$L1f","\n","$L20","\n","$L21"]]}]]}]]}]}],null,"$L22"]}],"p":"$@23","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/bbc-basic/statements-and-functions/get","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L25",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L27",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$28",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"GET/GET$ - Klive IDE"}],["$","meta","1",{"name":"description","content":"A function and compatible string function that reads the next character from the keyboard buffer (it waits for the character)."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/bbc-basic/statements-and-functions/get/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L29","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@2a","v":null,"s":"$9"}},"a":"$@2b","u":"$@2c","b":"dZNfFVLPQi_KHqnwQrQVE"}
+2d:"ToggleWordWrapButton"
+2e:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$2d"]
+2f:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+30:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L2e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L2f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"N=GET"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"N$=GET$"}]}]]}]]}]]}]
+14:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"GET and GET$ wait for a ‘key’ (character) to be present in the keyboard buffer and then return the ASCII number of the key (see Annex A) or a string containing the character of the key. If there are any characters in the keyboard buffer when a GET is issued, then a character will be returned immediately. See the keyword INKEY for a way of emptying the keyboard buffer before issuing a GET."}]
+15:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"GET and GET$ do not echo the pressed key to the screen. If you want to display the character for the pressed key, you must PRINT it."}]
+16:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You can use GET and GET$ whenever you want your program to wait for a reply before continuing. For example, you may wish to display several screens of instructions and allow the user to decide when he has read each screen."}]
+17:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L2e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L2f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"REM First screen of instructions"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"CLS"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"PRINT ......."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"PRINT ......."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"PRINT \"Press any key to continue \";"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"temp=GET"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"REM Second screen of instructions"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"CLS"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"PRINT ....... etc"}]}]]}]]}]]}]
+18:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The values returned by the cursor and other ‘special’ keys are listed below. Many of the keys return 2 bytes, a zero byte followed by another value."}]
+19:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":["Keys Normal with with with",["$","br",null,{}]," Codes [SHIFT]"]}]," ♢ □"]}]
+1a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"[ENTER]"}]," 13 0,209 0,193 0,177",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"[TAB]"}]," 9 0,210 0,194 0,178",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"[DEL]"}]," 127 0,211 0,195 0,179",["$","br",null,{}],"⇦ 0,252 0,248 0,244 0,240",["$","br",null,{}],"⇨ 0,253 0,249 0,245 0,241",["$","br",null,{}],"⇩ 0,254 0,250 0,246 0,242",["$","br",null,{}],"⇧ 0,255 0,251 0,247 0,243",["$","br",null,{}],"£ 163 126 (-) 30 158",["$","br",null,{}],"= 61 43 0,0 Nothing",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"[SPACE]"}]," 32 32 160 32",["$","br",null,{}],["$","strong",null,{"children":"‘"}]," 39 35 (“) 96 Nothing"]}]
+1b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"GET can also be used to input data from an I/O port. Full 16-bit port addressing is available :"}]
+1c:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L2e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L2f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"N=GET(X) :REM input from port X"}]}]}]]}]]}]
+1d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This is an addition to the original language specification."}]
+1e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Syntax"}]}]
+1f:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L2e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L2f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"<n-var>=GET"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"<n-var>=GET(<numeric>)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"<s-var>=GET$"}]}]]}]]}]]}]
+20:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Associated Keywords"}]}]
+21:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"PUT, INKEY, INKEY$"}]
+22:["$","$L30",null,{"children":["$","$28",null,{"name":"Next.MetadataOutlet","children":"$@31"}]}]
+2c:true
+9:300
+31:null
+9:C
+2b:0
+7:"$undefined"
+2a:"$undefined"
+23:"$undefined"

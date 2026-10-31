@@ -1,0 +1,160 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+2d:"ViewportBoundary"
+2e:I[484,[],"$2d"]
+2f:"MetadataBoundary"
+30:I[484,[],"$2f"]
+31:"$Sreact.suspense"
+32:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T8db,---
+description: "A command which controls the appearance of a LISTed program. The command controls the setting of the three least significant bits of the format control byte which can, therefore, be set to an..."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# LISTO
+
+A command which controls the appearance of a LISTed program. The command controls the setting of the three least significant bits of the format control byte which can, therefore, be set to an integer 0 to 7 (0=all three bits 0, 7=all three bits 1).
+
+## Bit Settings [#bit-settings]
+
+### Bit 0 (LSB) [#bit-0-lsb]
+
+If Bit 0 is set, a space will be printed between the line number and the remainder of the line. (All leading spaces are stripped when the line is originally entered.)
+
+### Bit 1 [#bit-1]
+
+If Bit 1 is set, two extra spaces will be printed out on lines between FOR and NEXT. Two extra spaces will be printed for each depth of nesting.
+
+### Bit 2 [#bit-2]
+
+If Bit 2 is set two extra spaces will be printed out on lines between REPEAT and UNTIL. Two extra spaces will be printed for each depth of nesting.
+
+The default setting of LISTO is 7. This will give a properly formatted listing. The indentation of the FOR..NEXT and REPEAT..UNTIL lines is done in the correct manner, in that the NEXT is aligned with the FOR and the REPEAT with the UNTIL.
+
+```text
+LISTO 7
+```
+
+will give
+
+```text
+ 10 A=20
+ 20 TEST$="FRED"
+ 30 FOR I=1 TO A
+ 40   Z=2^I
+ 50   PRINT I,Z
+ 60   REPEAT
+ 70     PRINT TEST$
+ 80     TEST$=LEFT$(TEST$,LEN(TEST$)-1)
+ 90   UNTIL LEN(TEST$)=0
+100 NEXT
+110 END
+```
+
+at the other extreme
+
+```text
+LISTO 0
+```
+
+will give
+
+```text
+ 10A=20
+ 20TEST$="FRED"
+ 30FOR I=1 TO A
+ 40Z=2^I
+ 50PRINT I,Z
+ 60REPEAT
+ 70PRINT TEST$
+ 80TEST$=LEFT$(TEST$,LEN(TEST$)-1)
+ 90UNTIL LEN(TEST$)=0
+100NEXT
+110END
+```
+
+and
+
+```text
+LISTO 2
+```
+
+will give
+
+```text
+ 10A=20
+ 20TEST$="FRED"
+ 30FOR I=1 TO A
+ 40  Z=2^Z
+ 50  PRINT I,Z
+ 60  REPEAT
+ 70  PRINT TEST$
+ 80  TEST$=LEFT$(TEST$,LEN(TEST$)-1)
+ 90  UNTIL LEN(TEST$)=0
+100NEXT
+110END
+```
+
+**Syntax**
+
+```text
+LISTO <n-const>
+```
+
+**Associated Keywords**
+
+LISTa:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Bit Settings","id":"bit-settings","depth":2},{"value":"Bit 0 (LSB)","id":"bit-0-lsb","depth":3},{"value":"Bit 1","id":"bit-1","depth":3},{"value":"Bit 2","id":"bit-2","depth":3}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"A command which controls the appearance of a LISTed program. The command controls the setting of the three least significant bits of the format control byte which can, therefore, be set to an...","title":"LISTO","filePath":"content/en/library/cambridge-z88/bbc-basic/statements-and-functions/listo.mdx","timestamp":1792315833000},"sourceCode":"$12","children":[["$","div",null,{"id":"nextra-skip-nav"}],["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["LISTO","$undefined"]}],"\n","$L13","\n","$L14","\n","$L15","\n","$L16","\n","$L17","\n","$L18","\n","$L19","\n","$L1a","\n","$L1b","\n","$L1c","\n","$L1d","\n","$L1e","\n","$L1f","\n","$L20","\n","$L21","\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a"]]}]]}]]}]}],null,"$L2b"]}],"p":"$@2c","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/bbc-basic/statements-and-functions/listo","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L2e",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L30",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$31",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"LISTO - Klive IDE"}],["$","meta","1",{"name":"description","content":"A command which controls the appearance of a LISTed program. The command controls the setting of the three least significant bits of the format control byte which can, therefore, be set to an..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/bbc-basic/statements-and-functions/listo/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L32","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@33","v":null,"s":"$9"}},"a":"$@34","u":"$@35","b":"dZNfFVLPQi_KHqnwQrQVE"}
+36:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+37:"ToggleWordWrapButton"
+38:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$37"]
+39:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+3a:I[484,[],"OutletBoundary"]
+13:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A command which controls the appearance of a LISTed program. The command controls the setting of the three least significant bits of the format control byte which can, therefore, be set to an integer 0 to 7 (0=all three bits 0, 7=all three bits 1)."}]
+14:["$","h2",null,{"id":"bit-settings","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Bit Settings",["$","$L36",null,{"id":"bit-settings"}]]}]
+15:["$","h3",null,{"id":"bit-0-lsb","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Bit 0 (LSB)",["$","$L36",null,{"id":"bit-0-lsb"}]]}]
+16:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If Bit 0 is set, a space will be printed between the line number and the remainder of the line. (All leading spaces are stripped when the line is originally entered.)"}]
+17:["$","h3",null,{"id":"bit-1","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Bit 1",["$","$L36",null,{"id":"bit-1"}]]}]
+18:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If Bit 1 is set, two extra spaces will be printed out on lines between FOR and NEXT. Two extra spaces will be printed for each depth of nesting."}]
+19:["$","h3",null,{"id":"bit-2","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Bit 2",["$","$L36",null,{"id":"bit-2"}]]}]
+1a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If Bit 2 is set two extra spaces will be printed out on lines between REPEAT and UNTIL. Two extra spaces will be printed for each depth of nesting."}]
+1b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The default setting of LISTO is 7. This will give a properly formatted listing. The indentation of the FOR..NEXT and REPEAT..UNTIL lines is done in the correct manner, in that the NEXT is aligned with the FOR and the REPEAT with the UNTIL."}]
+1c:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L38",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L39",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"LISTO 7"}]}]}]]}]]}]
+1d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"will give"}]
+1e:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L38",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L39",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":" 10 A=20"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 20 TEST$=\"FRED\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 30 FOR I=1 TO A"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 40   Z=2^I"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 50   PRINT I,Z"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 60   REPEAT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 70     PRINT TEST$"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 80     TEST$=LEFT$(TEST$,LEN(TEST$)-1)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 90   UNTIL LEN(TEST$)=0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"100 NEXT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"110 END"}]}]]}]]}]]}]
+1f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"at the other extreme"}]
+20:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L38",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L39",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"LISTO 0"}]}]}]]}]]}]
+21:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"will give"}]
+22:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L38",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L39",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":" 10A=20"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 20TEST$=\"FRED\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 30FOR I=1 TO A"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 40Z=2^I"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 50PRINT I,Z"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 60REPEAT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 70PRINT TEST$"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 80TEST$=LEFT$(TEST$,LEN(TEST$)-1)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 90UNTIL LEN(TEST$)=0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"100NEXT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"110END"}]}]]}]]}]]}]
+23:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"and"}]
+24:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L38",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L39",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"LISTO 2"}]}]}]]}]]}]
+25:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"will give"}]
+26:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L38",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L39",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":" 10A=20"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 20TEST$=\"FRED\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 30FOR I=1 TO A"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 40  Z=2^Z"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 50  PRINT I,Z"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 60  REPEAT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 70  PRINT TEST$"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 80  TEST$=LEFT$(TEST$,LEN(TEST$)-1)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 90  UNTIL LEN(TEST$)=0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"100NEXT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"110END"}]}]]}]]}]]}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Syntax"}]}]
+28:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L38",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L39",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"LISTO <n-const>"}]}]}]]}]]}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Associated Keywords"}]}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"LIST"}]
+2b:["$","$L3a",null,{"children":["$","$31",null,{"name":"Next.MetadataOutlet","children":"$@3b"}]}]
+35:true
+9:300
+3b:null
+9:C
+34:0
+7:"$undefined"
+33:"$undefined"
+2c:"$undefined"

@@ -1,0 +1,276 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T29da,---
+description: "Procedures and functions are similar to subroutines in that they are 'bits' of program which performs a discrete function. Like subroutines, they can be performed (called) from several places in..."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# Procedures and Functions
+
+## Introduction [#introduction]
+
+Procedures and functions are similar to subroutines in that they are 'bits' of program which performs a discrete function. Like subroutines, they can be performed (called) from several places in the program. However, they have two great advantages over subroutines: you can refer to them by name and the variables used within them can be made private to the procedure or function.
+
+Arguably, the major advantage of procedures and functions is that they can be referred to by name. Consider the two similar program lines below.
+
+```text
+100 IF name$="ZZ" THEN GOSUB 500 ELSE GOSUB 800
+100 IF name$="ZZ" THEN PROC_end ELSE PROC_print
+```
+
+The first statement gives no indication of what the subroutines at 500 and 800 actually do. The second, however, tells you what to expect from the two procedures. This enhanced readability stems from the choice of meaningful names for the two procedures.
+
+A function often carries out a number of actions, but it always produces a single result. For instance, the 'built in' function INT returns the integer part of its argument.
+
+```text
+age=INT(months/12)
+```
+
+A procedure on the other hand, is specifically intended to carry out a number of actions, some of which may affect program variables, but it does not directly return a result.
+
+Whilst BBC BASIC(Z80) has a large number of predefined functions (INT and LEN for example) it is very useful to be able to define your own to do something special. Suppose you had written a function called FN\_discount to calculate the discount price from the normal retail price. You could write something similar to the following example anywhere in your program where you wished this calculation to be carried out.
+
+```text
+discount_price=FN_discount(retail_price)
+```
+
+It may seem hardly worth while defining a function to do something this simple. However, functions and procedures are not confined to single line definitions and they are very useful for improving the structure and readability of your program.
+
+## Names [#names]
+
+The names of procedures and functions MUST start with PROC or FN and, like variable names, they cannot contain spaces. (A space tells BBC BASIC(Z80) that it has reached the end of the word.) This restriction can give rise to some pretty unreadable names. However, the underline character can be used to advantage. Consider the procedure and function names below and decide which is easier to read.
+
+```text
+PROCPRINTDETAILS                FNDISCOUNT
+PROC_print_details                FN_discount
+```
+
+Function and procedure names may end with a '$'. However, this is not compulsory for functions which return strings.
+
+## Functions and Procedure Definitions [#functions-and-procedure-definitions]
+
+### Starting a Definition [#starting-a-definition]
+
+Functions and procedure definitions are 'signalled' to BBC BASIC(Z80) by preceding the function or procedure name with the keyword DEF. DEF must be at the beginning of the line. If the computer encounters DEF during execution of the program, the rest of the line is ignored. Consequently, you can put single line definitions anywhere in your program.
+
+### The Function/Procedure Body [#the-functionprocedure-body]
+
+The 'body' of a procedure or function must not be executed directly - it must be performed (called) by another part of the program. Since BBC BASIC(Z80) only skips the rest of the line when it encounters DEF, there is a danger that the remaining lines of a multi-line definition might be executed directly. You can avoid this by putting multi-line definitions at the end of the main program text after the END statement. Procedures and functions do not need to be declared before they are used and there is no speed advantage to be gained by placing them at the start of the program.
+
+### Ending a Definition [#ending-a-definition]
+
+The end of a procedure definition is indicated by the keyword ENDPROC. The end of a function definition is signalled by using a statement which starts with an equals (=) sign. The function returns the value of the expression to the right of the equals sign.
+
+### Single Line Functions/Procedures [#single-line-functionsprocedures]
+
+For single line definitions, the start and end are signalled on the same line. The first example below defines a function which returns the average of two numbers. The second defines a procedure which clears from the current cursor position to the end of line on a 40 column screen.
+
+```text
+500 DEF FN_average(n1,n2)=(n1+n2)/2
+120 DEF PROC_clear:PRINT SPC(40-POS);:ENDPROC
+```
+
+### Extending the Language [#extending-the-language]
+
+You can define a whole library of procedures and functions and include them in your programs. By doing this you can effectively extend the scope of the language. For instance, BBC BASIC(Z80) does not have a 'clear to end of screen' command. Some computers will perform this function on receipt of a sequence of control characters and in this case you can use VDU or CHR$ to send the appropriate codes. However, many computers do not have this facility and a procedure to clear to the end of the screen would be useful. The example below is a procedure to clear to the end of screen on a computer with a 94 by 8 display. In order to prevent the display from scrolling, you must not write to the last column of the last row. The three variables used (i, x, and y) are declared as LOCAL to the procedure (see later).
+
+```text
+100 DEF PROC_clear_to_end
+110 LOCAL i,x,y
+120 x=POS:y=VPOS
+130 REM If not last line, print lines of spaces which
+140 REM will wrap around and end up on last line
+150 IF y<7 FOR i=y TO 6:PRINT SPC(94);:NEXT
+160 REM Print spaces to end-1 of last line.
+170 PRINT SPC(93-x);
+180 PRINT TAB(x,y);
+190 ENDPROC
+```
+
+## Passing Parameters [#passing-parameters]
+
+When you define a procedure or a function, you list the parameters to be passed to it in brackets. For instance, the discount example expected one parameter (the retail price) to be passed to it. You can write the definition to accept any number of parameters. For example, we may wish to pass both the retail price and the discount percentage. The function definition would then look something like this:
+
+```text
+DEF FN_discount(price,pcent)=price*(1-pcent/100)
+```
+
+In this case, to use the function we would need to pass two parameters.
+
+```text
+90 ....
+100 retail_price=26.55
+110 discount_price=FN_discount(retail_price,25)
+120 ....
+```
+
+or
+
+```text
+90 ....
+100 price=26.55
+110 discount=25
+120 price=FN_discount(price,discount)
+130 ....
+```
+
+or
+
+```text
+90 ....
+100 price=FN_discount(26.55,25)
+110 ....
+```
+
+### Formal and Actual Parameters [#formal-and-actual-parameters]
+
+The value of the first parameter in the line using the procedure or function is passed to the first variable named in the parameter list in the definition, the second to the second, and so on. This is termed 'passing by value'. The parameters declared in the definition are called 'formal parameters' and the values passed in the lines which perform (call) the procedure or function are called 'actual parameters'. There must be as many actual parameters passed as there are formal parameters declared in the definition. You can pass a mix of string and numeric parameters to the same procedure or function and a function can return either a string or numeric value, irrespective of the type of parameters passed to it. However, you must make sure that the parameter types match up. The first example below is correct; the second would give rise to an 'Arguments at line 10' error message and the third would cause a 'Type mismatch at line 10' error to be reported.
+
+**Correct**
+
+```text
+10 PROC_printit(1,"FRED",2)
+20 END
+30 :
+40 DEF PROC_printit(num1,name$,num2)
+50 PRINT num1,name$,num2
+60 ENDPROC
+```
+
+**Arguments Error**
+
+```text
+10 PROC_printit(1,"FRED",2,4)
+20 END
+30 :
+40 DEF PROC_printit(num1,name$,num2)
+50 PRINT num1,name$,num2
+60 ENDPROC
+```
+
+**Type Mismatch**
+
+```text
+10 PROC_printit(1,"FRED","JIM")
+20 END
+30 :
+40 DEF PROC_printit(num1,name$,num2)
+50 PRINT num1,name$,num2
+60 ENDPROC
+```
+
+## Local Variables [#local-variables]
+
+You can use the statement LOCAL to define variables which are only known locally to individual procedures and functions. In addition, formal parameters are local to the procedure or function declaring them. These variables are only known locally to the defining procedure or function. They are not known to the rest of the program and they can only be changed from within the procedure or function where they are defined. Consequently, you can have two variables of the same name, say FLAG, in various parts of your program, and change the value of one without changing the other. This technique is used extensively in the example file handling programs in this manual.
+
+Declaring variables as local, creates them locally and initialises them to zero/null.
+
+Variables which are not formal variables or declared as LOCAL are known to the whole program, including all the procedures and functions. Such variables are called GLOBAL.
+
+### Re-entrant Functions/Procedures [#re-entrant-functionsprocedures]
+
+Because the formal parameters which receive the passed parameters are local, all procedures and functions can be re- entrant. That is, they can call themselves. But for this feature, the short example program below would be very difficult to code. It is the often used example of a factorial number routine. (The factorial of a number n is n \* n-1 \* n-2 \*....\* 1. Factorial 6, for instance, is 6\*5\*4\*3\*2\*1).
+
+```text
+ 10 REPEAT
+ 20   INPUT "Enter an INTEGER less than 35 "num
+ 30 UNTIL INT(num)=num AND num<35
+ 40 fact=FN_fact_num(num)
+ 50 PRINT num,fact
+ 60 END
+ 70:
+ 80 DEF FN_fact_num(n)
+ 90 IF n=1 OR n=0 THEN =1
+100 REM Return with 1 if n= 0 or 1
+110 =n*FN_fact_num(n-1)
+120 REM Else go round again
+```
+
+Since 'n' is the input variable to the function FN\_fact\_num, it is local to each and every use of the function. The function keeps calling itself until it returns the answer 1. It then works its way back through all the calls until it has completed the final multiplication, when it returns the answer. The limit of 35 on the input number prevents the answer being too big for the computer to handle.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Introduction","id":"introduction","depth":2},{"value":"Names","id":"names","depth":2},{"value":"Functions and Procedure Definitions","id":"functions-and-procedure-definitions","depth":2},{"value":"Starting a Definition","id":"starting-a-definition","depth":3},{"value":"The Function/Procedure Body","id":"the-functionprocedure-body","depth":3},{"value":"Ending a Definition","id":"ending-a-definition","depth":3},{"value":"Single Line Functions/Procedures","id":"single-line-functionsprocedures","depth":3},{"value":"Extending the Language","id":"extending-the-language","depth":3},{"value":"Passing Parameters","id":"passing-parameters","depth":2},{"value":"Formal and Actual Parameters","id":"formal-and-actual-parameters","depth":3},{"value":"Local Variables","id":"local-variables","depth":2},{"value":"Re-entrant Functions/Procedures","id":"re-entrant-functionsprocedures","depth":3}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"Procedures and functions are similar to subroutines in that they are 'bits' of program which performs a discrete function. Like subroutines, they can be performed (called) from several places in...","title":"Procedures and Functions","filePath":"content/en/library/cambridge-z88/bbc-basic/general-information/procedures-and-functions.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/bbc-basic/general-information/procedures-and-functions","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Procedures and Functions - Klive IDE"}],["$","meta","1",{"name":"description","content":"Procedures and functions are similar to subroutines in that they are 'bits' of program which performs a discrete function. Like subroutines, they can be performed (called) from several places in..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/bbc-basic/general-information/procedures-and-functions/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"dZNfFVLPQi_KHqnwQrQVE"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+21:"ToggleWordWrapButton"
+22:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$21"]
+23:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+55:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Procedures and Functions","$undefined"]}],"\n",["$","h2",null,{"id":"introduction","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Introduction",["$","$L20",null,{"id":"introduction"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Procedures and functions are similar to subroutines in that they are ‘bits’ of program which performs a discrete function. Like subroutines, they can be performed (called) from several places in the program. However, they have two great advantages over subroutines: you can refer to them by name and the variables used within them can be made private to the procedure or function."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Arguably, the major advantage of procedures and functions is that they can be referred to by name. Consider the two similar program lines below."}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"100 IF name$=\"ZZ\" THEN GOSUB 500 ELSE GOSUB 800"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"100 IF name$=\"ZZ\" THEN PROC_end ELSE PROC_print"}]}]]}]]}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The first statement gives no indication of what the subroutines at 500 and 800 actually do. The second, however, tells you what to expect from the two procedures. This enhanced readability stems from the choice of meaningful names for the two procedures."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A function often carries out a number of actions, but it always produces a single result. For instance, the ‘built in’ function INT returns the integer part of its argument."}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":["$L24","$L25"]}],"$L26"]}]]}],"\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49","\n","$L4a","\n","$L4b","\n","$L4c","\n","$L4d","\n","$L4e","\n","$L4f","\n","$L50","\n","$L51","\n","$L52","\n","$L53","\n","$L54"]]}]
+15:["$","$L55",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@56"}]}]
+1f:true
+9:300
+24:["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}]
+25:["$","$L23",null,{"className":""}]
+26:["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"age=INT(months/12)"}]}]}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A procedure on the other hand, is specifically intended to carry out a number of actions, some of which may affect program variables, but it does not directly return a result."}]
+28:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Whilst BBC BASIC(Z80) has a large number of predefined functions (INT and LEN for example) it is very useful to be able to define your own to do something special. Suppose you had written a function called FN_discount to calculate the discount price from the normal retail price. You could write something similar to the following example anywhere in your program where you wished this calculation to be carried out."}]
+29:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"discount_price=FN_discount(retail_price)"}]}]}]]}]]}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"It may seem hardly worth while defining a function to do something this simple. However, functions and procedures are not confined to single line definitions and they are very useful for improving the structure and readability of your program."}]
+2b:["$","h2",null,{"id":"names","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Names",["$","$L20",null,{"id":"names"}]]}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The names of procedures and functions MUST start with PROC or FN and, like variable names, they cannot contain spaces. (A space tells BBC BASIC(Z80) that it has reached the end of the word.) This restriction can give rise to some pretty unreadable names. However, the underline character can be used to advantage. Consider the procedure and function names below and decide which is easier to read."}]
+2d:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"PROCPRINTDETAILS                FNDISCOUNT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"PROC_print_details                FN_discount"}]}]]}]]}]]}]
+2e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Function and procedure names may end with a ’$’. However, this is not compulsory for functions which return strings."}]
+2f:["$","h2",null,{"id":"functions-and-procedure-definitions","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Functions and Procedure Definitions",["$","$L20",null,{"id":"functions-and-procedure-definitions"}]]}]
+30:["$","h3",null,{"id":"starting-a-definition","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Starting a Definition",["$","$L20",null,{"id":"starting-a-definition"}]]}]
+31:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Functions and procedure definitions are ‘signalled’ to BBC BASIC(Z80) by preceding the function or procedure name with the keyword DEF. DEF must be at the beginning of the line. If the computer encounters DEF during execution of the program, the rest of the line is ignored. Consequently, you can put single line definitions anywhere in your program."}]
+32:["$","h3",null,{"id":"the-functionprocedure-body","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["The Function/Procedure Body",["$","$L20",null,{"id":"the-functionprocedure-body"}]]}]
+33:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The ‘body’ of a procedure or function must not be executed directly - it must be performed (called) by another part of the program. Since BBC BASIC(Z80) only skips the rest of the line when it encounters DEF, there is a danger that the remaining lines of a multi-line definition might be executed directly. You can avoid this by putting multi-line definitions at the end of the main program text after the END statement. Procedures and functions do not need to be declared before they are used and there is no speed advantage to be gained by placing them at the start of the program."}]
+34:["$","h3",null,{"id":"ending-a-definition","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Ending a Definition",["$","$L20",null,{"id":"ending-a-definition"}]]}]
+35:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The end of a procedure definition is indicated by the keyword ENDPROC. The end of a function definition is signalled by using a statement which starts with an equals (=) sign. The function returns the value of the expression to the right of the equals sign."}]
+36:["$","h3",null,{"id":"single-line-functionsprocedures","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Single Line Functions/Procedures",["$","$L20",null,{"id":"single-line-functionsprocedures"}]]}]
+37:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"For single line definitions, the start and end are signalled on the same line. The first example below defines a function which returns the average of two numbers. The second defines a procedure which clears from the current cursor position to the end of line on a 40 column screen."}]
+38:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"500 DEF FN_average(n1,n2)=(n1+n2)/2"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"120 DEF PROC_clear:PRINT SPC(40-POS);:ENDPROC"}]}]]}]]}]]}]
+39:["$","h3",null,{"id":"extending-the-language","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Extending the Language",["$","$L20",null,{"id":"extending-the-language"}]]}]
+3a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You can define a whole library of procedures and functions and include them in your programs. By doing this you can effectively extend the scope of the language. For instance, BBC BASIC(Z80) does not have a ‘clear to end of screen’ command. Some computers will perform this function on receipt of a sequence of control characters and in this case you can use VDU or CHR$ to send the appropriate codes. However, many computers do not have this facility and a procedure to clear to the end of the screen would be useful. The example below is a procedure to clear to the end of screen on a computer with a 94 by 8 display. In order to prevent the display from scrolling, you must not write to the last column of the last row. The three variables used (i, x, and y) are declared as LOCAL to the procedure (see later)."}]
+3b:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"100 DEF PROC_clear_to_end"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"110 LOCAL i,x,y"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"120 x=POS:y=VPOS"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"130 REM If not last line, print lines of spaces which"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"140 REM will wrap around and end up on last line"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"150 IF y<7 FOR i=y TO 6:PRINT SPC(94);:NEXT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"160 REM Print spaces to end-1 of last line."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"170 PRINT SPC(93-x);"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"180 PRINT TAB(x,y);"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"190 ENDPROC"}]}]]}]]}]]}]
+3c:["$","h2",null,{"id":"passing-parameters","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Passing Parameters",["$","$L20",null,{"id":"passing-parameters"}]]}]
+3d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When you define a procedure or a function, you list the parameters to be passed to it in brackets. For instance, the discount example expected one parameter (the retail price) to be passed to it. You can write the definition to accept any number of parameters. For example, we may wish to pass both the retail price and the discount percentage. The function definition would then look something like this:"}]
+3e:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"DEF FN_discount(price,pcent)=price*(1-pcent/100)"}]}]}]]}]]}]
+3f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"In this case, to use the function we would need to pass two parameters."}]
+40:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"90 ...."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"100 retail_price=26.55"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"110 discount_price=FN_discount(retail_price,25)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"120 ...."}]}]]}]]}]]}]
+41:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"or"}]
+42:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"90 ...."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"100 price=26.55"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"110 discount=25"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"120 price=FN_discount(price,discount)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"130 ...."}]}]]}]]}]]}]
+43:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"or"}]
+44:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"90 ...."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"100 price=FN_discount(26.55,25)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"110 ...."}]}]]}]]}]]}]
+45:["$","h3",null,{"id":"formal-and-actual-parameters","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Formal and Actual Parameters",["$","$L20",null,{"id":"formal-and-actual-parameters"}]]}]
+46:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The value of the first parameter in the line using the procedure or function is passed to the first variable named in the parameter list in the definition, the second to the second, and so on. This is termed ‘passing by value’. The parameters declared in the definition are called ‘formal parameters’ and the values passed in the lines which perform (call) the procedure or function are called ‘actual parameters’. There must be as many actual parameters passed as there are formal parameters declared in the definition. You can pass a mix of string and numeric parameters to the same procedure or function and a function can return either a string or numeric value, irrespective of the type of parameters passed to it. However, you must make sure that the parameter types match up. The first example below is correct; the second would give rise to an ‘Arguments at line 10’ error message and the third would cause a ‘Type mismatch at line 10’ error to be reported."}]
+47:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Correct"}]}]
+48:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"10 PROC_printit(1,\"FRED\",2)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"20 END"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"30 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"40 DEF PROC_printit(num1,name$,num2)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"50 PRINT num1,name$,num2"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"60 ENDPROC"}]}]]}]]}]]}]
+49:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Arguments Error"}]}]
+4a:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"10 PROC_printit(1,\"FRED\",2,4)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"20 END"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"30 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"40 DEF PROC_printit(num1,name$,num2)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"50 PRINT num1,name$,num2"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"60 ENDPROC"}]}]]}]]}]]}]
+4b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Type Mismatch"}]}]
+4c:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"10 PROC_printit(1,\"FRED\",\"JIM\")"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"20 END"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"30 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"40 DEF PROC_printit(num1,name$,num2)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"50 PRINT num1,name$,num2"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"60 ENDPROC"}]}]]}]]}]]}]
+4d:["$","h2",null,{"id":"local-variables","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Local Variables",["$","$L20",null,{"id":"local-variables"}]]}]
+4e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You can use the statement LOCAL to define variables which are only known locally to individual procedures and functions. In addition, formal parameters are local to the procedure or function declaring them. These variables are only known locally to the defining procedure or function. They are not known to the rest of the program and they can only be changed from within the procedure or function where they are defined. Consequently, you can have two variables of the same name, say FLAG, in various parts of your program, and change the value of one without changing the other. This technique is used extensively in the example file handling programs in this manual."}]
+4f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Declaring variables as local, creates them locally and initialises them to zero/null."}]
+50:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Variables which are not formal variables or declared as LOCAL are known to the whole program, including all the procedures and functions. Such variables are called GLOBAL."}]
+51:["$","h3",null,{"id":"re-entrant-functionsprocedures","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Re-entrant Functions/Procedures",["$","$L20",null,{"id":"re-entrant-functionsprocedures"}]]}]
+52:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Because the formal parameters which receive the passed parameters are local, all procedures and functions can be re- entrant. That is, they can call themselves. But for this feature, the short example program below would be very difficult to code. It is the often used example of a factorial number routine. (The factorial of a number n is n * n-1 * n-2 *…* 1. Factorial 6, for instance, is 6*5*4*3*2*1)."}]
+53:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":" 10 REPEAT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 20   INPUT \"Enter an INTEGER less than 35 \"num"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 30 UNTIL INT(num)=num AND num<35"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 40 fact=FN_fact_num(num)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 50 PRINT num,fact"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 60 END"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 70:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 80 DEF FN_fact_num(n)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 90 IF n=1 OR n=0 THEN =1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"100 REM Return with 1 if n= 0 or 1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"110 =n*FN_fact_num(n-1)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"120 REM Else go round again"}]}]]}]]}]]}]
+54:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Since ‘n’ is the input variable to the function FN_fact_num, it is local to each and every use of the function. The function keeps calling itself until it returns the answer 1. It then works its way back through all the calls until it has completed the final multiplication, when it returns the answer. The limit of 35 on the input number prevents the answer being too big for the computer to handle."}]
+56:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

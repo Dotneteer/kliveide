@@ -1,0 +1,279 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T1922,---
+description: "The Z88 Command Line Interpreter (CLI) is very powerful. It 'sits' between the keyboard and the current application and interprets the keys that you press. In most cases, the characters for the..."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# The Command Line Interpreter (CLI)
+
+The Z88 Command Line Interpreter (CLI) is very powerful. It 'sits' between the keyboard and the current application and interprets the keys that you press. In most cases, the characters for the keys that you press are passed directly to the application that is currently active. However, some keys, \[INDEX\] ❑ and ◇ for example, have a particular significance to the CLI and they cause subsequent key presses to be interpreted as CLI commands and actioned accordingly. For example, pressing the ❑ key followed by the **F** key will take you into the filer popdown.
+
+You can use the CLI to make changes to the way the Z88 behaves. Any such changes are confined to the application that was active at the time.
+
+The CLI takes its input from the keyboard or from a file. Thus, the CLI acts in many ways like a programming language for controlling the way the computer functions.
+
+## CLI Command Files [#cli-command-files]
+
+The CLI may receive commands from a file as well as from the keyboard (or the current input stream). For example, from within the FILER popdown, the following key sequence
+
+◇ `EXprnt.cli`
+
+will invoke (run) the CLI command file \`pmt.cli'.
+
+A CLI command file is terminated when the end of the file is reached or it is suspended (see later). Control is then returned to the CLI.
+
+You can use the command .`*filename`
+
+within one CLI command file to invoke another CLI command file. When the second CLI command file terminates, control is returned to the first CLI command file.
+
+## Cancelling a CLI File [#cancelling-a-cli-file]
+
+The only way to cancel a CLI command file whilst it is running or suspended is by pressing the \[SHIFT\] and \[ESC\] keys together. Since this sequence cannot be represented in any other way (see below), you cannot cancel a suspended CLI command file from within a program.
+
+You can cancel all CLI command files by pressing ◇\[ESC\].
+
+## Special Character Sequences [#special-character-sequences]
+
+Some of the keys on the keyboard, '❑' and '◇' for example, have no ASCII code. However, some way of representing these keys is required when input is taken from a CLI command file (or redirected). The ASCII character sequences listed below represent many of the \`non-printable' keys. Unfortunately not all key sequences may be represented in this manner. For instance, there is no way of representing \[CAPS LOCK\] key or ◇\[ESC\].
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+**Sequence**
+
+```text
+#
+|
+~A
+~C
+|[
+~E
+~S
+~I
+~M
+~H
+~X
+~U
+~D
+~L
+~R
+##
+||
+~~
+~.
+```
+
+```text
+.;
+```
+
+</Table.Td>
+<Table.Td>
+
+**Represents**
+
+Holding down the ❑ key and pressing the next key in the sequence.
+
+Holding down the ◇ key and pressing the next key in the sequence.
+
+Pressing ❑ and releasing it before pressing another key.
+
+Pressing ◇ and releasing it before pressing another key.
+
+\[ESCAPE\] key.
+
+\[ENTER\] key.
+
+\[SHIFT\]. This is only generated if \<SHIFT\> would have any effect.
+
+\[INDEX\] key.
+
+\[MENU\] key.
+
+\[HELP\] key.
+
+\[DELETE\] key.
+
+↑ (cursor up) key.
+
+↓ (cursor down) key.
+
+← (cursor left) key.
+
+→ (cursor right) key.
+
+A single '\#'.
+
+A single 'I'.
+
+A single ‘\~’.
+
+Used to generate a single ‘.’ at the beginning of a line without it being taken as the start of a CLI command.
+
+Treat the rest of the line as a remark.
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+## File Control Commands [#file-control-commands]
+
+A full stop at the beginning of a line in a CLI command file introduces the **I/O** redirection and additional file control commands as described below.
+
+## I/O Redirection [#io-redirection]
+
+The standard input and output for the Z88 initially come from and go to the keyboard and the screen. In computer jargon, they are 'bound' to the keyboard and the screen.
+
+You can change the input and output binding (redirect the I/O) with the following CLI commands:
+
+.\<filename Take input from the file (or device) 'filename'
+
+.\>filename Send output to the file (or device) 'filename'
+
+Don't forget that as far as the Z88 is concerned there is no difference between a 'real' file and a device. For example, the device :COM.0 is treated in the same way as a file by the Z88.
+
+In addition to completely redirecting the input or output, you can also copy the input or output stream to a file with the following CLI commands:
+
+.T\<filename Send a copy of the input to the file (or device) \`filename'
+
+.T\>filename Send a copy of the output to the file (or device) \`filename'
+
+The previous output redirection commands apply to the standard output. If you want to redirect the Printer output, you may so do with the following CLI commands:
+
+.=filename Redirect the pre-filter output to the file (or device) \`filename'
+
+.T=filename Send a copy of the pre-filter output to the file (or device) 'filename'
+
+## Additional CLI File Commands [#additional-cli-file-commands]
+
+The following additional commands are only effective from within a CLI file or from redirected input.
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+**Sequence**
+
+```text
+.S
+```
+
+```text
+.D
+```
+
+```text
+.J
+```
+
+```text
+.*file
+```
+
+</Table.Td>
+<Table.Td>
+
+**Effect**
+
+Suspend the current CLI, but maintain all re-bindings
+
+Delay for 'n' centiseconds. If \[ESC\] is pressed during a delay, all subsequent delays for that CLI will fail.
+
+Jammer. Ignore all special sequences for the rest of the CLI. For example, after this command, \#P will generate the characters \`\#P' and not invoke PipeDream.
+
+Invoke (run) the CLI command file 'file'.
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+## Re-binding Within a CLI Command File [#re-binding-within-a-cli-command-file]
+
+Any re-bindings are in effect only for the duration of the CLI command file. You may suspend a CLI command file and maintain the bindings with the \``.S`' command. However, once you have done so, the only way of cancelling the CLI is by pressing \[SHIFT\]/\[ESCAPE\] on the keyboard.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"CLI Command Files","id":"cli-command-files","depth":2},{"value":"Cancelling a CLI File","id":"cancelling-a-cli-file","depth":2},{"value":"Special Character Sequences","id":"special-character-sequences","depth":2},{"value":"File Control Commands","id":"file-control-commands","depth":2},{"value":"I/O Redirection","id":"io-redirection","depth":2},{"value":"Additional CLI File Commands","id":"additional-cli-file-commands","depth":2},{"value":"Re-binding Within a CLI Command File","id":"re-binding-within-a-cli-command-file","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"The Z88 Command Line Interpreter (CLI) is very powerful. It 'sits' between the keyboard and the current application and interprets the keys that you press. In most cases, the characters for the...","title":"The Command Line Interpreter (CLI)","filePath":"content/en/library/cambridge-z88/bbc-basic/operating-system-interface/the-command-line-interpreter.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/bbc-basic/operating-system-interface/the-command-line-interpreter","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"The Command Line Interpreter (CLI) - Klive IDE"}],["$","meta","1",{"name":"description","content":"The Z88 Command Line Interpreter (CLI) is very powerful. It 'sits' between the keyboard and the current application and interprets the keys that you press. In most cases, the characters for the..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/bbc-basic/operating-system-interface/the-command-line-interpreter/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"dZNfFVLPQi_KHqnwQrQVE"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+37:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["The Command Line Interpreter (CLI)","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The Z88 Command Line Interpreter (CLI) is very powerful. It ‘sits’ between the keyboard and the current application and interprets the keys that you press. In most cases, the characters for the keys that you press are passed directly to the application that is currently active. However, some keys, [INDEX] ❑ and ◇ for example, have a particular significance to the CLI and they cause subsequent key presses to be interpreted as CLI commands and actioned accordingly. For example, pressing the ❑ key followed by the ",["$","strong",null,{"children":"F"}]," key will take you into the filer popdown."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You can use the CLI to make changes to the way the Z88 behaves. Any such changes are confined to the application that was active at the time."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The CLI takes its input from the keyboard or from a file. Thus, the CLI acts in many ways like a programming language for controlling the way the computer functions."}],"\n",["$","h2",null,{"id":"cli-command-files","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["CLI Command Files",["$","$L20",null,{"id":"cli-command-files"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The CLI may receive commands from a file as well as from the keyboard (or the current input stream). For example, from within the FILER popdown, the following key sequence"}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["◇ ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"EXprnt.cli"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"will invoke (run) the CLI command file `pmt.cli’."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A CLI command file is terminated when the end of the file is reached or it is suspended (see later). Control is then returned to the CLI."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["You can use the command .",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"*filename"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"within one CLI command file to invoke another CLI command file. When the second CLI command file terminates, control is returned to the first CLI command file."}],"\n",["$","h2",null,{"id":"cancelling-a-cli-file","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Cancelling a CLI File",["$","$L20",null,{"id":"cancelling-a-cli-file"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The only way to cancel a CLI command file whilst it is running or suspended is by pressing the [SHIFT] and [ESC] keys together. Since this sequence cannot be represented in any other way (see below), you cannot cancel a suspended CLI command file from within a program."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You can cancel all CLI command files by pressing ◇[ESC]."}],"\n","$L21","\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36"]]}]
+15:["$","$L37",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@38"}]}]
+1f:true
+39:"ToggleWordWrapButton"
+3a:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$39"]
+3b:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+9:300
+21:["$","h2",null,{"id":"special-character-sequences","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Special Character Sequences",["$","$L20",null,{"id":"special-character-sequences"}]]}]
+22:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Some of the keys on the keyboard, ’❑’ and ’◇’ for example, have no ASCII code. However, some way of representing these keys is required when input is taken from a CLI command file (or redirected). The ASCII character sequences listed below represent many of the `non-printable’ keys. Unfortunately not all key sequences may be represented in this manner. For instance, there is no way of representing [CAPS LOCK] key or ◇[ESC]."}]
+23:["$","table",null,{"children":["$","tbody",null,{"children":["$","tr",null,{"children":[["$","td",null,{"children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Sequence"}]}],["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L3a",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L3b",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"#"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"|"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"~A"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"~C"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"|["}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"~E"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"~S"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"~I"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"~M"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"~H"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"~X"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"~U"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"~D"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"~L"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"~R"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"##"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"||"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"~~"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"~."}]}]]}]]}]]}],["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L3a",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L3b",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":".;"}]}]}]]}]]}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Represents"}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Holding down the ❑ key and pressing the next key in the sequence."}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Holding down the ◇ key and pressing the next key in the sequence."}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Pressing ❑ and releasing it before pressing another key."}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Pressing ◇ and releasing it before pressing another key."}],"$L3c","$L3d","$L3e","$L3f","$L40","$L41","$L42","$L43","$L44","$L45","$L46","$L47","$L48","$L49","$L4a","$L4b"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],"className":"x:block x:overflow-x-auto"}]
+24:["$","h2",null,{"id":"file-control-commands","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["File Control Commands",["$","$L20",null,{"id":"file-control-commands"}]]}]
+25:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A full stop at the beginning of a line in a CLI command file introduces the ",["$","strong",null,{"children":"I/O"}]," redirection and additional file control commands as described below."]}]
+26:["$","h2",null,{"id":"io-redirection","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["I/O Redirection",["$","$L20",null,{"id":"io-redirection"}]]}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The standard input and output for the Z88 initially come from and go to the keyboard and the screen. In computer jargon, they are ‘bound’ to the keyboard and the screen."}]
+28:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You can change the input and output binding (redirect the I/O) with the following CLI commands:"}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":".<filename Take input from the file (or device) ‘filename’"}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":".>filename Send output to the file (or device) ‘filename’"}]
+2b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Don’t forget that as far as the Z88 is concerned there is no difference between a ‘real’ file and a device. For example, the device :COM.0 is treated in the same way as a file by the Z88."}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"In addition to completely redirecting the input or output, you can also copy the input or output stream to a file with the following CLI commands:"}]
+2d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":".T<filename Send a copy of the input to the file (or device) `filename’"}]
+2e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":".T>filename Send a copy of the output to the file (or device) `filename’"}]
+2f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The previous output redirection commands apply to the standard output. If you want to redirect the Printer output, you may so do with the following CLI commands:"}]
+30:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":".=filename Redirect the pre-filter output to the file (or device) `filename’"}]
+31:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":".T=filename Send a copy of the pre-filter output to the file (or device) ‘filename’"}]
+32:["$","h2",null,{"id":"additional-cli-file-commands","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Additional CLI File Commands",["$","$L20",null,{"id":"additional-cli-file-commands"}]]}]
+33:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The following additional commands are only effective from within a CLI file or from redirected input."}]
+34:["$","table",null,{"children":["$","tbody",null,{"children":["$","tr",null,{"children":[["$","td",null,{"children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Sequence"}]}],["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L3a",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L3b",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":".S"}]}]}]]}]]}],["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L3a",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L3b",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":".D"}]}]}]]}]]}],["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L3a",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L3b",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":".J"}]}]}]]}]]}],["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":["$L4c","$L4d"]}]]}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],"$L4e"],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],"className":"x:block x:overflow-x-auto"}]
+35:["$","h2",null,{"id":"re-binding-within-a-cli-command-file","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Re-binding Within a CLI Command File",["$","$L20",null,{"id":"re-binding-within-a-cli-command-file"}]]}]
+36:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Any re-bindings are in effect only for the duration of the CLI command file. You may suspend a CLI command file and maintain the bindings with the `",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".S"}],"’ command. However, once you have done so, the only way of cancelling the CLI is by pressing [SHIFT]/[ESCAPE] on the keyboard."]}]
+38:null
+9:C
+3c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"[ESCAPE] key."}]
+3d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"[ENTER] key."}]
+3e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"[SHIFT]. This is only generated if <SHIFT> would have any effect."}]
+3f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"[INDEX] key."}]
+40:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"[MENU] key."}]
+41:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"[HELP] key."}]
+42:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"[DELETE] key."}]
+43:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"↑ (cursor up) key."}]
+44:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"↓ (cursor down) key."}]
+45:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"← (cursor left) key."}]
+46:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"→ (cursor right) key."}]
+47:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A single ’#’."}]
+48:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A single ‘I’."}]
+49:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A single ‘~’."}]
+4a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Used to generate a single ‘.’ at the beginning of a line without it being taken as the start of a CLI command."}]
+4b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Treat the rest of the line as a remark."}]
+4c:["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L3a",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L3b",null,{"className":""}]]}]
+4d:["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":".*file"}]}]}]
+4e:["$","td",null,{"children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Effect"}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Suspend the current CLI, but maintain all re-bindings"}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Delay for ‘n’ centiseconds. If [ESC] is pressed during a delay, all subsequent delays for that CLI will fail."}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Jammer. Ignore all special sequences for the rest of the CLI. For example, after this command, #P will generate the characters `#P’ and not invoke PipeDream."}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Invoke (run) the CLI command file ‘file’."}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

@@ -1,0 +1,186 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T11ee,---
+description: "DTR is high when the Z88 is awake. The Z88 is always awake when the screen is active. Even if the Z88 is asleep, it will wake every minute or so to carry out various housekeeping tasks (checking..."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# The Serial Port
+
+## Hardware Connections [#hardware-connections]
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td colSpan={3}>
+
+<strong><br />Z88 9 Way D Type</strong>
+
+**(Male)**
+
+</Table.Td>
+<Table.Td />
+<Table.Td colSpan={2}>
+
+**Printer**
+
+**25 Way D Type (Male)**
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>1</Table.Td>
+<Table.Td colSpan={2}>Unswitched +5v at 10 uA</Table.Td>
+<Table.Td>output</Table.Td>
+<Table.Td />
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>2</Table.Td>
+<Table.Td>TX</Table.Td>
+<Table.Td>Transmit data</Table.Td>
+<Table.Td>output</Table.Td>
+<Table.Td>3</Table.Td>
+<Table.Td>RX</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>3</Table.Td>
+<Table.Td>RX</Table.Td>
+<Table.Td>Receive data</Table.Td>
+<Table.Td>input</Table.Td>
+<Table.Td>2</Table.Td>
+<Table.Td>TX</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>4</Table.Td>
+<Table.Td>RTS</Table.Td>
+<Table.Td>Ready to send</Table.Td>
+<Table.Td>output</Table.Td>
+<Table.Td>5</Table.Td>
+<Table.Td>CTS</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>5</Table.Td>
+<Table.Td>CTS</Table.Td>
+<Table.Td>Clear to send</Table.Td>
+<Table.Td>input</Table.Td>
+<Table.Td>20</Table.Td>
+<Table.Td>DTR</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>6</Table.Td>
+<Table.Td />
+<Table.Td colSpan={2}>Reserved for future use</Table.Td>
+<Table.Td />
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>7</Table.Td>
+<Table.Td>GND</Table.Td>
+<Table.Td colSpan={2}>Signal ground</Table.Td>
+<Table.Td>7</Table.Td>
+<Table.Td>GND</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>8</Table.Td>
+<Table.Td>DCD</Table.Td>
+<Table.Td>Data carrier detect</Table.Td>
+<Table.Td>input</Table.Td>
+<Table.Td>20</Table.Td>
+<Table.Td>DTR</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>9</Table.Td>
+<Table.Td>DTR</Table.Td>
+<Table.Td>Data terminal ready</Table.Td>
+<Table.Td>output</Table.Td>
+<Table.Td>6,8</Table.Td>
+<Table.Td>DSR, DCD</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+DTR is high when the Z88 is awake. The Z88 is always awake when the screen is active. Even if the Z88 is asleep, it will wake every minute or so to carry out various housekeeping tasks (checking the alarms, for example). At these times, DTR will go high.
+
+Pin 1 can be used to indicate that power is available to the Z88.
+
+You can use the PANEL (❑S) to set up the parameters of the serial port (speed, parity, etc).
+
+## Flow Control [#flow-control]
+
+Output from and input to the serial port can be controlled either by software or hardware. The hardware handshaking is always active, so if you only want to use software handshaking, you will need to wire a cable to set the handshaking lines high at all times. You can do this by connecting pins 5, 8 and 9 together on the Z88 9-pin connector.
+
+## Output [#output]
+
+An external device (printer, modem, etc) can ask the Z88 to stop sending by either bringing the CTS line (pin 5) low or sending an XOFF (CHR$(19)) character to the Z88.
+
+There is potentially a slight delay when using software handshaking. Transmission will stop only after the XOFF character has been recognised and, since the Z88 has an input buffer, this can only happen after previously received characters have been processed. With hardware flow control, transmission stops at the end of the next character.
+
+Transmission is resumed when an XON (CHR$(17)) character is received or the CTS line is brought high.
+
+The output buffer is around 95 bytes long.
+
+## Input [#input]
+
+If software flow control is used, the Z88 will send XOFF to an external device once the receive buffer is more than half full. Characters will continue to be received until there are only 15 spaces left in the buffer. At this point, an XOFF character will be sent for every character subsequently sent by the external device. If the receive buffer overflows, then the received data is lost. The Z88 will send the XON character when the receive buffer has been cleared to less than half full.
+
+If hardware flow control is used, the Z88 will bring RTS low when the receive buffer becomes more than half full and bring RTS high when the receive buffer is less than a quarter full.
+
+The input buffer is around 127 bytes long.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Hardware Connections","id":"hardware-connections","depth":2},{"value":"Flow Control","id":"flow-control","depth":2},{"value":"Output","id":"output","depth":2},{"value":"Input","id":"input","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"DTR is high when the Z88 is awake. The Z88 is always awake when the screen is active. Even if the Z88 is asleep, it will wake every minute or so to carry out various housekeeping tasks (checking...","title":"The Serial Port","filePath":"content/en/library/cambridge-z88/bbc-basic/printing/the-serial-port.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/bbc-basic/printing/the-serial-port","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"The Serial Port - Klive IDE"}],["$","meta","1",{"name":"description","content":"DTR is high when the Z88 is awake. The Z88 is always awake when the screen is active. Even if the Z88 is asleep, it will wake every minute or so to carry out various housekeeping tasks (checking..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/bbc-basic/printing/the-serial-port/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"dZNfFVLPQi_KHqnwQrQVE"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+35:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["The Serial Port","$undefined"]}],"\n",["$","h2",null,{"id":"hardware-connections","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Hardware Connections",["$","$L20",null,{"id":"hardware-connections"}]]}],"\n",["$","table",null,{"children":["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"colSpan":3,"children":[["$","strong",null,{"children":[["$","br",null,{}],"Z88 9 Way D Type"]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"(Male)"}]}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"colSpan":2,"children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Printer"}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"25 Way D Type (Male)"}]}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"1","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"colSpan":2,"children":"Unswitched +5v at 10 uA","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"output","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"2","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"TX","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Transmit data","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"output","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"3","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"RX","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"3","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"RX","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Receive data","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"input","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"2","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"TX","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L21","$L22","$L23","$L24","$L25","$L26"]}],"className":"x:block x:overflow-x-auto"}],"\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34"]]}]
+15:["$","$L35",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@36"}]}]
+1f:true
+9:300
+21:["$","tr",null,{"children":[["$","td",null,{"children":"4","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"RTS","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Ready to send","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"output","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"5","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"CTS","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+22:["$","tr",null,{"children":[["$","td",null,{"children":"5","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"CTS","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Clear to send","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"input","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"20","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"DTR","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+23:["$","tr",null,{"children":[["$","td",null,{"children":"6","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"colSpan":2,"children":"Reserved for future use","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+24:["$","tr",null,{"children":[["$","td",null,{"children":"7","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"GND","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"colSpan":2,"children":"Signal ground","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"7","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"GND","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+25:["$","tr",null,{"children":[["$","td",null,{"children":"8","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"DCD","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Data carrier detect","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"input","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"20","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"DTR","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+26:["$","tr",null,{"children":[["$","td",null,{"children":"9","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"DTR","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Data terminal ready","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"output","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"6,8","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"DSR, DCD","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"DTR is high when the Z88 is awake. The Z88 is always awake when the screen is active. Even if the Z88 is asleep, it will wake every minute or so to carry out various housekeeping tasks (checking the alarms, for example). At these times, DTR will go high."}]
+28:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Pin 1 can be used to indicate that power is available to the Z88."}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You can use the PANEL (❑S) to set up the parameters of the serial port (speed, parity, etc)."}]
+2a:["$","h2",null,{"id":"flow-control","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Flow Control",["$","$L20",null,{"id":"flow-control"}]]}]
+2b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Output from and input to the serial port can be controlled either by software or hardware. The hardware handshaking is always active, so if you only want to use software handshaking, you will need to wire a cable to set the handshaking lines high at all times. You can do this by connecting pins 5, 8 and 9 together on the Z88 9-pin connector."}]
+2c:["$","h2",null,{"id":"output","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Output",["$","$L20",null,{"id":"output"}]]}]
+2d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"An external device (printer, modem, etc) can ask the Z88 to stop sending by either bringing the CTS line (pin 5) low or sending an XOFF (CHR$(19)) character to the Z88."}]
+2e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"There is potentially a slight delay when using software handshaking. Transmission will stop only after the XOFF character has been recognised and, since the Z88 has an input buffer, this can only happen after previously received characters have been processed. With hardware flow control, transmission stops at the end of the next character."}]
+2f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Transmission is resumed when an XON (CHR$(17)) character is received or the CTS line is brought high."}]
+30:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The output buffer is around 95 bytes long."}]
+31:["$","h2",null,{"id":"input","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Input",["$","$L20",null,{"id":"input"}]]}]
+32:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If software flow control is used, the Z88 will send XOFF to an external device once the receive buffer is more than half full. Characters will continue to be received until there are only 15 spaces left in the buffer. At this point, an XOFF character will be sent for every character subsequently sent by the external device. If the receive buffer overflows, then the received data is lost. The Z88 will send the XON character when the receive buffer has been cleared to less than half full."}]
+33:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If hardware flow control is used, the Z88 will bring RTS low when the receive buffer becomes more than half full and bring RTS high when the receive buffer is less than a quarter full."}]
+34:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The input buffer is around 127 bytes long."}]
+36:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

@@ -1,0 +1,112 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T161d,---
+description: "Conventional serial disk file procedures are little different from file procedures for cassette based computers. With serial files the records need only be as large as the data to be stored and..."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# Files in BBC BASIC(Z80)
+
+## Introduction [#introduction]
+
+Conventional serial disk file procedures are little different from file procedures for cassette based computers. With serial files the records need only be as large as the data to be stored and there are no empty records. (The data item FRED only occupies 4 bytes whereas ERMINTRUDE occupies 10 bytes.) Consequently serial files are the most space efficient way to hold data on a disk (or any other storage media).
+
+Serial files cannot be used to access particular records from within the file quickly and easily. In order to do this with the minimum access time, random access files are necessary. However, a random file generally occupies more space on the disk than a serial file holding the same amount of data because the records must be a fixed length and some of the records will be empty.
+
+Most versions of BASIC only offer serial and random files, but because of the way that disk files are handled by BBC BASIC (both on the BBC computer and the Z88 using BBC BASIC(Z80)), it is possible to construct indexed, and even linked, files as well. Indexed files take a little longer to access than random files and it is necessary to have a separate index file, but they are generally the best space/speed compromise for files holding a large amount of data.
+
+## How Data is Read/Written [#how-data-is-readwritten]
+
+As far as the programmer is concerned, data can be written to and read from a file a data item or a character (byte) at a time. In fact, there is a buffer between the program and the operating system, but this should only concern you when you are organising your program for maximum file access efficiency.
+
+Because of the character by character action of the write/read process, it is possible (in fact, necessary) to keep track of your position within the file. BBC BASIC does this for you automatically and provides a pointer PTR (a pseudo-variable) which holds the position of the NEXT character (byte) to be written/read. Every time a character is written/read PTR is incremented by 1, but it is possible to set PTR to any number you like. This ability to 'jump around' the file enables you to construct both random (relative) and indexed files.
+
+BBC BASIC provides the facility for completely free-format binary data files. Any file which can be read by the computer, from any source and in any data format, can be processed using the BGET, BPUT and PTR functions.
+
+## How Data is Stored [#how-data-is-stored]
+
+Data files written by the PRINT\# statement and read by the INPUT\# statement have different format to files produced by similar statements on the BBC Micro. This only becomes significant when calculating record sizes for random access files. Record sizing is discussed at the ‘Random (Relative) Files’ sub-section.
+
+### Numeric Data [#numeric-data]
+
+In order to make the most efficient use of disk space and to preserve accuracy, numerics are stored in a data file in binary format, not as strings of characters. To prevent confusion when numerics are being read from a file, both integers and reals occupy 5 bytes (40 bits). If they were stored as character strings they could occupy up to 10 bytes. For compatibility with other BASICs, you can store numerics as strings by using the STR$ function.
+
+### How Strings are Stored [#how-strings-are-stored]
+
+Strings are stored in a data file as the ASCII bytes of the string followed by a carriage-return. A string, therefore, occupies one more byte than the length of the string. If no carriage-return (CR) is found within 256 characters when reading a string value, a null string is returned.
+
+If you need a line feed as well, it's no problem to add it using the Byte-Put function BPUT\#. Similarly, extraneous characters included in files produced by other programs can be read and, if necessary, discarded using BGET\#.
+
+## How Files are Referred To [#how-files-are-referred-to]
+
+We refer to a file (or device) by its name. Unfortunately, this is too complicated for the Z88’s Operating System. Consequently, the only time OZ refers to a file by its name is when it opens the file. From then on, it refers to the file by the number it allocated to it when it was opened. This number is called the 'file handle'.
+
+## The Z88 FIling System [#the-z88-filing-system]
+
+The Z88 has a uniform device independent I/O system. Although procedures do exist that will explicitly send data directly to, for example, the serial port, it is more logical to think of these devices as ‘files’ and use the standard file I/O interface.
+
+For example, to send data to the communications port (serial port without the printer filter), you can open a file to :COM.0 and PRINT to it just as if you were PRINTing to a file.
+
+```text
+10 com=OPENOUT(“:COM.0”)
+20 PRINT#com,”This is going to the comms device”
+30 BPUT#com,10: REM Send the linefeed
+40 CLOSE#com
+```
+
+Remember, you need to explicitly send the line-feed. See the ‘Operating System Interface’ and ‘Printing’ sections for more details.
+
+Logically, you can only write to and read from the I/O devices in a sequential manner. It makes no sense, for example, to try to set the file pointer with PTR\#.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Introduction","id":"introduction","depth":2},{"value":"How Data is Read/Written","id":"how-data-is-readwritten","depth":2},{"value":"How Data is Stored","id":"how-data-is-stored","depth":2},{"value":"Numeric Data","id":"numeric-data","depth":3},{"value":"How Strings are Stored","id":"how-strings-are-stored","depth":3},{"value":"How Files are Referred To","id":"how-files-are-referred-to","depth":2},{"value":"The Z88 FIling System","id":"the-z88-filing-system","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"Conventional serial disk file procedures are little different from file procedures for cassette based computers. With serial files the records need only be as large as the data to be stored and...","title":"Files in BBC BASIC(Z80)","filePath":"content/en/library/cambridge-z88/bbc-basic/bbc-basic-z80-files/files-in-bbc-basic.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/bbc-basic/bbc-basic-z80-files/files-in-bbc-basic","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Files in BBC BASIC(Z80) - Klive IDE"}],["$","meta","1",{"name":"description","content":"Conventional serial disk file procedures are little different from file procedures for cassette based computers. With serial files the records need only be as large as the data to be stored and..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/bbc-basic/bbc-basic-z80-files/files-in-bbc-basic/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"dZNfFVLPQi_KHqnwQrQVE"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+30:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Files in BBC BASIC(Z80)","$undefined"]}],"\n",["$","h2",null,{"id":"introduction","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Introduction",["$","$L20",null,{"id":"introduction"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Conventional serial disk file procedures are little different from file procedures for cassette based computers. With serial files the records need only be as large as the data to be stored and there are no empty records. (The data item FRED only occupies 4 bytes whereas ERMINTRUDE occupies 10 bytes.) Consequently serial files are the most space efficient way to hold data on a disk (or any other storage media)."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Serial files cannot be used to access particular records from within the file quickly and easily. In order to do this with the minimum access time, random access files are necessary. However, a random file generally occupies more space on the disk than a serial file holding the same amount of data because the records must be a fixed length and some of the records will be empty."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Most versions of BASIC only offer serial and random files, but because of the way that disk files are handled by BBC BASIC (both on the BBC computer and the Z88 using BBC BASIC(Z80)), it is possible to construct indexed, and even linked, files as well. Indexed files take a little longer to access than random files and it is necessary to have a separate index file, but they are generally the best space/speed compromise for files holding a large amount of data."}],"\n",["$","h2",null,{"id":"how-data-is-readwritten","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["How Data is Read/Written",["$","$L20",null,{"id":"how-data-is-readwritten"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"As far as the programmer is concerned, data can be written to and read from a file a data item or a character (byte) at a time. In fact, there is a buffer between the program and the operating system, but this should only concern you when you are organising your program for maximum file access efficiency."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Because of the character by character action of the write/read process, it is possible (in fact, necessary) to keep track of your position within the file. BBC BASIC does this for you automatically and provides a pointer PTR (a pseudo-variable) which holds the position of the NEXT character (byte) to be written/read. Every time a character is written/read PTR is incremented by 1, but it is possible to set PTR to any number you like. This ability to ‘jump around’ the file enables you to construct both random (relative) and indexed files."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"BBC BASIC provides the facility for completely free-format binary data files. Any file which can be read by the computer, from any source and in any data format, can be processed using the BGET, BPUT and PTR functions."}],"\n","$L21","\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f"]]}]
+15:["$","$L30",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@31"}]}]
+1f:true
+32:"ToggleWordWrapButton"
+33:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$32"]
+34:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+9:300
+21:["$","h2",null,{"id":"how-data-is-stored","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["How Data is Stored",["$","$L20",null,{"id":"how-data-is-stored"}]]}]
+22:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Data files written by the PRINT# statement and read by the INPUT# statement have different format to files produced by similar statements on the BBC Micro. This only becomes significant when calculating record sizes for random access files. Record sizing is discussed at the ‘Random (Relative) Files’ sub-section."}]
+23:["$","h3",null,{"id":"numeric-data","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Numeric Data",["$","$L20",null,{"id":"numeric-data"}]]}]
+24:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"In order to make the most efficient use of disk space and to preserve accuracy, numerics are stored in a data file in binary format, not as strings of characters. To prevent confusion when numerics are being read from a file, both integers and reals occupy 5 bytes (40 bits). If they were stored as character strings they could occupy up to 10 bytes. For compatibility with other BASICs, you can store numerics as strings by using the STR$ function."}]
+25:["$","h3",null,{"id":"how-strings-are-stored","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["How Strings are Stored",["$","$L20",null,{"id":"how-strings-are-stored"}]]}]
+26:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Strings are stored in a data file as the ASCII bytes of the string followed by a carriage-return. A string, therefore, occupies one more byte than the length of the string. If no carriage-return (CR) is found within 256 characters when reading a string value, a null string is returned."}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If you need a line feed as well, it’s no problem to add it using the Byte-Put function BPUT#. Similarly, extraneous characters included in files produced by other programs can be read and, if necessary, discarded using BGET#."}]
+28:["$","h2",null,{"id":"how-files-are-referred-to","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["How Files are Referred To",["$","$L20",null,{"id":"how-files-are-referred-to"}]]}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"We refer to a file (or device) by its name. Unfortunately, this is too complicated for the Z88’s Operating System. Consequently, the only time OZ refers to a file by its name is when it opens the file. From then on, it refers to the file by the number it allocated to it when it was opened. This number is called the ‘file handle’."}]
+2a:["$","h2",null,{"id":"the-z88-filing-system","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The Z88 FIling System",["$","$L20",null,{"id":"the-z88-filing-system"}]]}]
+2b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The Z88 has a uniform device independent I/O system. Although procedures do exist that will explicitly send data directly to, for example, the serial port, it is more logical to think of these devices as ‘files’ and use the standard file I/O interface."}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"For example, to send data to the communications port (serial port without the printer filter), you can open a file to :COM.0 and PRINT to it just as if you were PRINTing to a file."}]
+2d:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L33",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L34",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"10 com=OPENOUT(“:COM.0”)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"20 PRINT#com,”This is going to the comms device”"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"30 BPUT#com,10: REM Send the linefeed"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"40 CLOSE#com"}]}]]}]]}]]}]
+2e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Remember, you need to explicitly send the line-feed. See the ‘Operating System Interface’ and ‘Printing’ sections for more details."}]
+2f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Logically, you can only write to and read from the I/O devices in a sequential manner. It makes no sense, for example, to try to set the file pointer with PTR#."}]
+31:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

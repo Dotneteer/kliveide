@@ -1,0 +1,216 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T21c4,---
+description: "The only assembly directive is OPT. As with the 6502 assembler, 'OPT' controls the way the assembler works, whether a listing is displayed and whether errors are reported. OPT should be followed..."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# The Assembly Process
+
+## OPT [#opt]
+
+The only assembly directive is OPT. As with the 6502 assembler, 'OPT' controls the way the assembler works, whether a listing is displayed and whether errors are reported. OPT should be followed by a number in the range 0 to 7. The way the assembler functions is controlled by the three bits of this number in the following manner.
+
+### Bit 0 - LSB [#bit-0---lsb]
+
+Bit 0 controls the listing. If it is set, a listing is displayed.
+
+### Bit 1 [#bit-1]
+
+Bit 1 controls the error reporting. If it is set, errors are reported.
+
+### Bit 2 [#bit-2]
+
+Bit 2 controls where the assembled code is placed. If bit 2 is set, code is placed in memory starting at the address specified by O%. However, the program counter (P%) is still used by the assembler for calculating the instruction addresses.
+
+## Assembly at a Different Address [#assembly-at-a-different-address]
+
+In general, machine code will only run properly if it is in memory at the addresses for which it was assembled. Thus, at first glance, the option of assembling it in a different area of memory is of little use. However, using this facility, it is possible to build up a library of machine code utilities for use by a number of programs. The machine code can be assembled for a particular address by one program without any constraints as to its actual location in memory and saved using \*SAVE. This code can then be loaded into its working location from a number of different programs using \*LOAD.
+
+## OPT Summary [#opt-summary]
+
+### Code Assembled Starting at P% [#code-assembled-starting-at-p]
+
+The code is assembled using the program counter (P%) to calculate the instruction addresses and the code is also placed in memory at the address specified by the program counter.
+
+OPT 0 reports no errors and gives nolisting.<br />OPT 1 reports no errors, but gives a listing.<br />OPT 2 reports errors, but gives no listing.<br />OPT 3 reports errors and gives a listing.
+
+### Code Assembled Starting at O% [#code-assembled-starting-at-o]
+
+The code is assembled using the program counter (P%) to calculate the instruction addresses. However, the assembled code is placed in memory at the address specified by O%.
+
+OPT 4 reports no errors and gives no<br />OPT 5 reports no errors, but gives a listing.<br />OPT 6 reports errors, but gives no listing.<br />OPT 7 reports errors and gives a listing.
+
+## How the Assembler Works [#how-the-assembler-works]
+
+The assembler works line by line through the machine code. When it finds a label declared it generates a BBC BASIC(Z80) variable with that name and loads it with the current value of the program counter (P%). This is fine all the while labels are declared before they are used. However, labels are often used for forward jumps and no variable with that name would exist when it was first encountered. When this happens, a 'No such variable' error occurs. If error reporting has not been disabled, this error is reported and BBC BASIC(Z80) returns to the direct mode in the normal way. If error reporting has been disabled (OPT 0, 1, 4 or 5), the current value of the program counter is used in place of the address which would have been found in the variable, and assembly continues. By the end of the assembly process the variable will exist (assuming the code is correct), but this is of little use since the assembler cannot 'back track' and correct the errors. However, if a second pass is made through the assembly code, all the labels will exist as variables and errors will not occur. The example below shows the result of two passes through a (completely futile) demonstration program. Twelve bytes of memory are reserved for the program. (If the program was run, it would 'doom-loop' from line 50 to 70 and back again.) The program disables error reporting by using OPT 1.
+
+```text
+10 DIM code 12
+20 FOR opt=1 TO 3 STEP 2
+30 P%=code
+40 [OPT opt
+50 .jim JR fred
+60 DEFW &2345
+70 .fred JR jim
+80 ]
+90 NEXT
+```
+
+This is the first pass through the assembly process (note that the 'JR fred' instruction jumps to itself):
+
+```text
+3E7B              OPT opt
+3E7B 18 FE        .jim JR fred
+3E7D 45 23        DEFW &2345
+3E7F 18 FA        .fred JR jim
+```
+
+This is the second pass through the assembly process (note that the 'JR fred' instruction now jumps to the correct address):
+
+```text
+3E7B              OPT opt
+3E7B 18 02        .jim JR fred
+3E7D 45 23        DEFW &2345
+3E7F 18 FA        .fred JR jim
+```
+
+Generally, if labels have been used, you must make two passes through the assembly language code to resolve forward references. This can be done using a FOR...NEXT loop. Normally, the first pass should be with OPT 0 (or OPT 4) and the second pass with OPT 2 (OPT 6). If you want a listing, use OPT 3 (OPT7) for the second pass. During the first pass, a table of variables giving the address of the labels is built. Labels which have not yet been included in the table (forward references) will generate the address of the current op-code. The correct address will be generated during the second pass.
+
+## Saving and Loading Machine Code Programs [#saving-and-loading-machine-code-programs]
+
+As mentioned earlier, you can use machine code routines in a number of BBC BASIC(Z80) programs by using \*SAVE and \*LOAD. The safest way to do this is to write a program which consists of only the machine code routines and enough BBC BASIC(Z80) to assemble them. They should be assembled 'out of the way' at the top of memory (each routine starting at a known address) and then \*SAVEd. (Don't forget to move HIMEM down first.) The BBC BASIC(Z80) programs that use these routines should move HIMEM down to the same value before they \*LOAD the assembly code routines into the address at which they were originally assembled. \*SAVE and \*LOAD are explained below.
+
+### <strong>\*SAVE</strong> [#save]
+
+Save an area of memory to disk. You MUST specify the start address (aaaa) and either the length of the area of memory (llll) or its end address+1 (bbbb).
+
+```text
+*SAVE ufsp aaaa +llll
+*SAVE ufsp aaaa bbbb
+OSCLI "SAVE "+<st>+" "+STR$~(<n>)+"+"+STR$~(<n>)
+*SAVE "WOMBAT" &8F00 +80
+*SAVE "WOMBAT" &8F00 &8F80
+OSCLI "SAVE "+ufn$+" "+STR$~(add)+"+"+STR$~(len)
+```
+
+### <strong>\*LOAD</strong> [#load]
+
+Load the specified file into memory at hexadecimal address 'aaaa'. The load address MUST always be specified. OSCLI may also be used to load a file. However, you must take care to provide the load address as a hexadecimal number in string format.
+
+```text
+*LOAD ufsp aaaa
+OSCLI "LOAD "+<str>+" "+STR$~<num>
+```
+
+```text
+*LOAD “:RAM.0/WOMBAT” &8F00
+OSCLI "LOAD "+f_name$+" "+STR$~(strt_address)
+```
+
+### Saving and loading machine code files with PROC\_save & PROC\_load [#saving-and-loading-machine-code-files-with-proc_save--proc_load]
+
+\*LOAD and \*SAVE commands are only available with Z88 Patch, either installed manually with CHAIN command or when you are using OZ ROM V4.3 or later. See section “[Installing Z88 Patch with Program Editor and other commands](/en/library/cambridge-z88/bbc-basic/general-information/installing-z88-patch-with-program-editor-and-other-commands)” on how to install the Z88 Patch.
+
+Use the following two procedures in your machine code programs, as an alternative to \*LOAD and \*SAVE:
+
+```text
+   10 REM Procedures to substitute for *LOAD and *SAVE
+   20 REM R.T.Russell, June 1988
+  100 DIM fname 255
+  200 END
+60000 DEF PROC_load($fname,E%):LOCAL H%,L%,D%,B%,C%:L%=fname
+60010 H%=L% DIV 256:D%=E% DIV 256:B%=255:C%=255:CALL &FEA3:ENDPROC
+60020 DEF PROC_save($fname,E%,C%):LOCAL H%,L%,D%,B%:L%=fname
+60030 H%=L% DIV 256:D%=E% DIV 256:B%=C% DIV 256:CALL &FEA6:ENDPROC
+```
+
+### Using PROC\_save [#using-proc_save]
+
+Save an area of memory to a file. You MUST specify the start address (aaaa) and the length of the area of memory (1111). Both examples below uses hexadecimal notation.
+
+```text
+PROC_save(“ufsp”, &aaaa, &1111)
+PROC_save(“WOMBAT”,&8F00,&80)
+```
+
+### Using PROC\_load [#using-proc_load]
+
+Load the specified file into memory at hexadecimal address ‘aaaa’. The load address MUST always be specified.
+
+```text
+PROC_load(“ufsp”,&aaaa)
+PROC_load(“WOMBAT”,&8F00)
+```a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"OPT","id":"opt","depth":2},{"value":"Bit 0 - LSB","id":"bit-0---lsb","depth":3},{"value":"Bit 1","id":"bit-1","depth":3},{"value":"Bit 2","id":"bit-2","depth":3},{"value":"Assembly at a Different Address","id":"assembly-at-a-different-address","depth":2},{"value":"OPT Summary","id":"opt-summary","depth":2},{"value":"Code Assembled Starting at P%","id":"code-assembled-starting-at-p","depth":3},{"value":"Code Assembled Starting at O%","id":"code-assembled-starting-at-o","depth":3},{"value":"How the Assembler Works","id":"how-the-assembler-works","depth":2},{"value":"Saving and Loading Machine Code Programs","id":"saving-and-loading-machine-code-programs","depth":2},{"value":[["$","$4",".0",{"children":[["$","strong",".0",{"children":"*SAVE"}]]}]],"id":"save","depth":3},{"value":[["$","$4",".0",{"children":[["$","strong",".0",{"children":"*LOAD"}]]}]],"id":"load","depth":3},{"value":"Saving and loading machine code files with PROC_save & PROC_load","id":"saving-and-loading-machine-code-files-with-proc_save--proc_load","depth":3},{"value":"Using PROC_save","id":"using-proc_save","depth":3},{"value":"Using PROC_load","id":"using-proc_load","depth":3}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"The only assembly directive is OPT. As with the 6502 assembler, 'OPT' controls the way the assembler works, whether a listing is displayed and whether errors are reported. OPT should be followed...","title":"The Assembly Process","filePath":"content/en/library/cambridge-z88/bbc-basic/assembler/the-assembly-process.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/bbc-basic/assembler/the-assembly-process","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"The Assembly Process - Klive IDE"}],["$","meta","1",{"name":"description","content":"The only assembly directive is OPT. As with the 6502 assembler, 'OPT' controls the way the assembler works, whether a listing is displayed and whether errors are reported. OPT should be followed..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/bbc-basic/assembler/the-assembly-process/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"dZNfFVLPQi_KHqnwQrQVE"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+42:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["The Assembly Process","$undefined"]}],"\n",["$","h2",null,{"id":"opt","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["OPT",["$","$L20",null,{"id":"opt"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The only assembly directive is OPT. As with the 6502 assembler, ‘OPT’ controls the way the assembler works, whether a listing is displayed and whether errors are reported. OPT should be followed by a number in the range 0 to 7. The way the assembler functions is controlled by the three bits of this number in the following manner."}],"\n",["$","h3",null,{"id":"bit-0---lsb","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Bit 0 - LSB",["$","$L20",null,{"id":"bit-0---lsb"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Bit 0 controls the listing. If it is set, a listing is displayed."}],"\n",["$","h3",null,{"id":"bit-1","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Bit 1",["$","$L20",null,{"id":"bit-1"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Bit 1 controls the error reporting. If it is set, errors are reported."}],"\n",["$","h3",null,{"id":"bit-2","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Bit 2",["$","$L20",null,{"id":"bit-2"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Bit 2 controls where the assembled code is placed. If bit 2 is set, code is placed in memory starting at the address specified by O%. However, the program counter (P%) is still used by the assembler for calculating the instruction addresses."}],"\n",["$","h2",null,{"id":"assembly-at-a-different-address","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Assembly at a Different Address",["$","$L20",null,{"id":"assembly-at-a-different-address"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"In general, machine code will only run properly if it is in memory at the addresses for which it was assembled. Thus, at first glance, the option of assembling it in a different area of memory is of little use. However, using this facility, it is possible to build up a library of machine code utilities for use by a number of programs. The machine code can be assembled for a particular address by one program without any constraints as to its actual location in memory and saved using *SAVE. This code can then be loaded into its working location from a number of different programs using *LOAD."}],"\n",["$","h2",null,{"id":"opt-summary","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["OPT Summary",["$","$L20",null,{"id":"opt-summary"}]]}],"\n",["$","h3",null,{"id":"code-assembled-starting-at-p","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Code Assembled Starting at P%","$L21"]}],"\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41"]]}]
+15:["$","$L42",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@43"}]}]
+1f:true
+45:"ToggleWordWrapButton"
+46:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$45"]
+47:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+48:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+9:300
+21:["$","$L20",null,{"id":"code-assembled-starting-at-p"}]
+22:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The code is assembled using the program counter (P%) to calculate the instruction addresses and the code is also placed in memory at the address specified by the program counter."}]
+23:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["OPT 0 reports no errors and gives nolisting.",["$","br",null,{}],"OPT 1 reports no errors, but gives a listing.",["$","br",null,{}],"OPT 2 reports errors, but gives no listing.",["$","br",null,{}],"OPT 3 reports errors and gives a listing."]}]
+24:["$","h3",null,{"id":"code-assembled-starting-at-o","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Code Assembled Starting at O%",["$","$L20",null,{"id":"code-assembled-starting-at-o"}]]}]
+25:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The code is assembled using the program counter (P%) to calculate the instruction addresses. However, the assembled code is placed in memory at the address specified by O%."}]
+26:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["OPT 4 reports no errors and gives no",["$","br",null,{}],"OPT 5 reports no errors, but gives a listing.",["$","br",null,{}],"OPT 6 reports errors, but gives no listing.",["$","br",null,{}],"OPT 7 reports errors and gives a listing."]}]
+27:["$","h2",null,{"id":"how-the-assembler-works","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["How the Assembler Works",["$","$L20",null,{"id":"how-the-assembler-works"}]]}]
+44:T571,The assembler works line by line through the machine code. When it finds a label declared it generates a BBC BASIC(Z80) variable with that name and loads it with the current value of the program counter (P%). This is fine all the while labels are declared before they are used. However, labels are often used for forward jumps and no variable with that name would exist when it was first encountered. When this happens, a ‘No such variable’ error occurs. If error reporting has not been disabled, this error is reported and BBC BASIC(Z80) returns to the direct mode in the normal way. If error reporting has been disabled (OPT 0, 1, 4 or 5), the current value of the program counter is used in place of the address which would have been found in the variable, and assembly continues. By the end of the assembly process the variable will exist (assuming the code is correct), but this is of little use since the assembler cannot ‘back track’ and correct the errors. However, if a second pass is made through the assembly code, all the labels will exist as variables and errors will not occur. The example below shows the result of two passes through a (completely futile) demonstration program. Twelve bytes of memory are reserved for the program. (If the program was run, it would ‘doom-loop’ from line 50 to 70 and back again.) The program disables error reporting by using OPT 1.28:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"$44"}]
+29:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L46",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L47",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"10 DIM code 12"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"20 FOR opt=1 TO 3 STEP 2"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"30 P%=code"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"40 [OPT opt"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"50 .jim JR fred"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"60 DEFW &2345"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"70 .fred JR jim"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"80 ]"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"90 NEXT"}]}]]}]]}]]}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This is the first pass through the assembly process (note that the ‘JR fred’ instruction jumps to itself):"}]
+2b:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L46",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L47",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"3E7B              OPT opt"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3E7B 18 FE        .jim JR fred"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3E7D 45 23        DEFW &2345"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3E7F 18 FA        .fred JR jim"}]}]]}]]}]]}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This is the second pass through the assembly process (note that the ‘JR fred’ instruction now jumps to the correct address):"}]
+2d:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L46",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L47",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"3E7B              OPT opt"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3E7B 18 02        .jim JR fred"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3E7D 45 23        DEFW &2345"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3E7F 18 FA        .fred JR jim"}]}]]}]]}]]}]
+2e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Generally, if labels have been used, you must make two passes through the assembly language code to resolve forward references. This can be done using a FOR…NEXT loop. Normally, the first pass should be with OPT 0 (or OPT 4) and the second pass with OPT 2 (OPT 6). If you want a listing, use OPT 3 (OPT7) for the second pass. During the first pass, a table of variables giving the address of the labels is built. Labels which have not yet been included in the table (forward references) will generate the address of the current op-code. The correct address will be generated during the second pass."}]
+2f:["$","h2",null,{"id":"saving-and-loading-machine-code-programs","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Saving and Loading Machine Code Programs",["$","$L20",null,{"id":"saving-and-loading-machine-code-programs"}]]}]
+30:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"As mentioned earlier, you can use machine code routines in a number of BBC BASIC(Z80) programs by using *SAVE and *LOAD. The safest way to do this is to write a program which consists of only the machine code routines and enough BBC BASIC(Z80) to assemble them. They should be assembled ‘out of the way’ at the top of memory (each routine starting at a known address) and then *SAVEd. (Don’t forget to move HIMEM down first.) The BBC BASIC(Z80) programs that use these routines should move HIMEM down to the same value before they *LOAD the assembly code routines into the address at which they were originally assembled. *SAVE and *LOAD are explained below."}]
+31:["$","h3",null,{"id":"save","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":[["$","strong",null,{"children":"*SAVE"}],["$","$L20",null,{"id":"save"}]]}]
+32:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Save an area of memory to disk. You MUST specify the start address (aaaa) and either the length of the area of memory (llll) or its end address+1 (bbbb)."}]
+33:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L46",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L47",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"*SAVE ufsp aaaa +llll"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"*SAVE ufsp aaaa bbbb"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OSCLI \"SAVE \"+<st>+\" \"+STR$~(<n>)+\"+\"+STR$~(<n>)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"*SAVE \"WOMBAT\" &8F00 +80"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"*SAVE \"WOMBAT\" &8F00 &8F80"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OSCLI \"SAVE \"+ufn$+\" \"+STR$~(add)+\"+\"+STR$~(len)"}]}]]}]]}]]}]
+34:["$","h3",null,{"id":"load","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":[["$","strong",null,{"children":"*LOAD"}],["$","$L20",null,{"id":"load"}]]}]
+35:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Load the specified file into memory at hexadecimal address ‘aaaa’. The load address MUST always be specified. OSCLI may also be used to load a file. However, you must take care to provide the load address as a hexadecimal number in string format."}]
+36:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L46",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L47",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"*LOAD ufsp aaaa"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OSCLI \"LOAD \"+<str>+\" \"+STR$~<num>"}]}]]}]]}]]}]
+37:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L46",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L47",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"*LOAD “:RAM.0/WOMBAT” &8F00"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OSCLI \"LOAD \"+f_name$+\" \"+STR$~(strt_address)"}]}]]}]]}]]}]
+38:["$","h3",null,{"id":"saving-and-loading-machine-code-files-with-proc_save--proc_load","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Saving and loading machine code files with PROC_save & PROC_load",["$","$L20",null,{"id":"saving-and-loading-machine-code-files-with-proc_save--proc_load"}]]}]
+39:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["*LOAD and *SAVE commands are only available with Z88 Patch, either installed manually with CHAIN command or when you are using OZ ROM V4.3 or later. See section “",["$","$L48",null,{"href":"/en/library/cambridge-z88/bbc-basic/general-information/installing-z88-patch-with-program-editor-and-other-commands","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Installing Z88 Patch with Program Editor and other commands"}],"” on how to install the Z88 Patch."]}]
+3a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Use the following two procedures in your machine code programs, as an alternative to *LOAD and *SAVE:"}]
+3b:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L46",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L47",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"   10 REM Procedures to substitute for *LOAD and *SAVE"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"   20 REM R.T.Russell, June 1988"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  100 DIM fname 255"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  200 END"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"60000 DEF PROC_load($fname,E%):LOCAL H%,L%,D%,B%,C%:L%=fname"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"60010 H%=L% DIV 256:D%=E% DIV 256:B%=255:C%=255:CALL &FEA3:ENDPROC"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"60020 DEF PROC_save($fname,E%,C%):LOCAL H%,L%,D%,B%:L%=fname"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"60030 H%=L% DIV 256:D%=E% DIV 256:B%=C% DIV 256:CALL &FEA6:ENDPROC"}]}]]}]]}]]}]
+3c:["$","h3",null,{"id":"using-proc_save","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Using PROC_save",["$","$L20",null,{"id":"using-proc_save"}]]}]
+3d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Save an area of memory to a file. You MUST specify the start address (aaaa) and the length of the area of memory (1111). Both examples below uses hexadecimal notation."}]
+3e:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L46",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L47",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"PROC_save(“ufsp”, &aaaa, &1111)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"PROC_save(“WOMBAT”,&8F00,&80)"}]}]]}]]}]]}]
+3f:["$","h3",null,{"id":"using-proc_load","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Using PROC_load",["$","$L20",null,{"id":"using-proc_load"}]]}]
+40:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Load the specified file into memory at hexadecimal address ‘aaaa’. The load address MUST always be specified."}]
+41:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L46",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L47",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"PROC_load(“ufsp”,&aaaa)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"PROC_load(“WOMBAT”,&8F00)"}]}]]}]]}]]}]
+43:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

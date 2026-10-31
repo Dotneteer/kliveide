@@ -1,0 +1,107 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T1274,---
+description: "The version of BBC BASIC resident in the Cambridge Computer Z88 ROM releases V2.2 - V4.0 is deficient in a few respects, especially in the lack of any editing facilities or support for graphics..."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# Installing Z88 Patch with Program Editor and other commands
+
+The version of BBC BASIC resident in the Cambridge Computer Z88 ROM releases V2.2 - V4.0 is deficient in a few respects, especially in the lack of any editing facilities or support for graphics operations. The purpose of the BASIC Patch program is to provide some of these capabilities.
+
+The patch provides \*EDIT (Program Editor), MODE, CLG, DRAW, MOVE, PLOT commands and POINT() function; their syntax is compatible with other versions of BBC BASIC. Their syntax and functionality is described in the command reference section later in this manual.
+
+The patch needs an expanded machine (at least 128 Kbytes of RAM installed in slot 1). If this is not the case, or if the available memory has been deliberately reduced by changing HIMEM, the message "No RAM" will be displayed when the program is CHAINed. The patch only works with Operating System (“OZ”) versions V2.2-V3.0 and V4.0 (it will not work with foreign language versions V3.12 to V3.26 ROM’s, because of a software bug in these machines).
+
+The patch program is installed with a simple CHAIN command, and thereafter remains resident until the machine is reset or BASIC is KILLed. It occupies two kilobytes of memory, and results in the value of PAGE being raised to &2B00; when the graphics operations are used a further 2K is used for the display buffer.
+
+Download the Z88 Patch ZIP file from R.T. Russell’s BBC BASIC website here: [http://www.bbcbasic.co.uk/bbcbasic/z88patch.html](http://www.bbcbasic.co.uk/bbcbasic/z88patch.html), then follow these steps:
+
+- Extract Zip file contents and upload the Z88PATCH.BBC program to your Z88, for example to :RAM.0.
+- Instantiate or activate a BBC BASIC(Z80) application with □B
+- Enter the following command:
+
+```text
+CH.”:RAM.0/Z88PATCH.BBC”
+```
+
+- The patch will be installed in the BBC BASIC(Z80) application
+
+<Shot src="z88-bbc-basic/general-information/installing-z88-patch-with-program-editor-and-other-commands/image13.webp" alt="BBC BASIC's start-up screen after loading the Z88 Patch" width={640} />
+
+Installation of the BASIC Patch has a number of "side effects" of which you should be aware:
+
+1. Changing HIMEM will have the effect of disabling the patch. If HIMEM has been changed it must be set back to &C000 before re-CHAINing the patch program (or alternatively KILL and restart BASIC from the INDEX). Changing HIMEM is not recommended in any case, since setting it to an unsuitable value will "crash" the machine (even without the patch).
+
+2. The "Silly", "RENUMBER space" and "LINE space" errors will not appear; instead the "No room" message will be produced in each case.
+
+3. You are advised to select MODE 0 before entering Pipedream, since it seems to get confused by the presence of the graphics window.
+
+4. Since Cambridge Computer provided no "legal" method of installing a patch such as this, a rather "dirty" method has had to be adopted. This has some unfortunate, but unavoidable, consequences:
+
+1. The RUN and CHAIN commands may occasionally fail to work properly (on average fewer than 1 in 1000 times). If this happens no harm will be done; simply issue the command again.
+
+2. If you reply to the INPUT statement with a very long string (more than 252 characters) the machine will crash, so you must avoid doing so.
+
+1. Using graphics statements in an ON ERROR routine may give anomalous results. For example:
+
+```text
+10 ON ERROR MODE 0 : REPORT : END
+20 MODE 1
+30 REPEAT
+40   DRAW RND(256)-1,RND(64)-1
+50 UNTIL FALSE
+```
+
+The above program can be aborted only by pressing `[ESC]`. The intention is that this will cause the display to clear and the message "Escape" to be displayed. In practice, the message actually displayed will be "Sorry, not implemented" since, although the Patch is active, the MODE statement still affects REPORT, ERR and ERL.
+
+The Patch commands are integrated in OZ V4.3 and later releases, without the above mentioned “side effects”. PAGE address is not affected (remains at &2300). Later Z88 ROM versions, provided by the Open Source Z88 Development Project, can be accessed here (contains release notes and download links):
+
+[https://cambridgez88.jira.com/wiki/spaces/OZ/](https://cambridgez88.jira.com/wiki/spaces/OZ/)a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"The version of BBC BASIC resident in the Cambridge Computer Z88 ROM releases V2.2 - V4.0 is deficient in a few respects, especially in the lack of any editing facilities or support for graphics...","title":"Installing Z88 Patch with Program Editor and other commands","filePath":"content/en/library/cambridge-z88/bbc-basic/general-information/installing-z88-patch-with-program-editor-and-other-commands.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/bbc-basic/general-information/installing-z88-patch-with-program-editor-and-other-commands","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Installing Z88 Patch with Program Editor and other commands - Klive IDE"}],["$","meta","1",{"name":"description","content":"The version of BBC BASIC resident in the Cambridge Computer Z88 ROM releases V2.2 - V4.0 is deficient in a few respects, especially in the lack of any editing facilities or support for graphics..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/bbc-basic/general-information/installing-z88-patch-with-program-editor-and-other-commands/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"dZNfFVLPQi_KHqnwQrQVE"}
+2a:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Installing Z88 Patch with Program Editor and other commands","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The version of BBC BASIC resident in the Cambridge Computer Z88 ROM releases V2.2 - V4.0 is deficient in a few respects, especially in the lack of any editing facilities or support for graphics operations. The purpose of the BASIC Patch program is to provide some of these capabilities."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The patch provides *EDIT (Program Editor), MODE, CLG, DRAW, MOVE, PLOT commands and POINT() function; their syntax is compatible with other versions of BBC BASIC. Their syntax and functionality is described in the command reference section later in this manual."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The patch needs an expanded machine (at least 128 Kbytes of RAM installed in slot 1). If this is not the case, or if the available memory has been deliberately reduced by changing HIMEM, the message “No RAM” will be displayed when the program is CHAINed. The patch only works with Operating System (“OZ”) versions V2.2-V3.0 and V4.0 (it will not work with foreign language versions V3.12 to V3.26 ROM’s, because of a software bug in these machines)."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The patch program is installed with a simple CHAIN command, and thereafter remains resident until the machine is reset or BASIC is KILLed. It occupies two kilobytes of memory, and results in the value of PAGE being raised to &2B00; when the graphics operations are used a further 2K is used for the display buffer."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Download the Z88 Patch ZIP file from R.T. Russell’s BBC BASIC website here: ",["$","a",null,{"href":"http://www.bbcbasic.co.uk/bbcbasic/z88patch.html","target":"_blank","rel":"noreferrer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["http://www.bbcbasic.co.uk/bbcbasic/z88patch.html",[" ",["$","svg",null,{"fill":"none","stroke":"currentColor","strokeLinecap":"round","strokeLinejoin":"round","strokeWidth":1.7,"viewBox":"0 0 24 24","height":"1em","className":"x:inline x:align-baseline x:shrink-0","children":[["$","path",null,{"d":"M7 17L17 7"}],["$","path",null,{"d":"M7 7h10v10"}]]}]]]}],", then follow these steps:"]}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Extract Zip file contents and upload the Z88PATCH.BBC program to your Z88, for example to :RAM.0."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Instantiate or activate a BBC BASIC(Z80) application with □B"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Enter the following command:"}],"\n"]}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":["$L20","$L21"]}]]}],"\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29"]]}]
+15:["$","$L2a",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@2b"}]}]
+1f:true
+2c:"ToggleWordWrapButton"
+2d:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$2c"]
+2e:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+9:300
+20:["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L2d",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L2e",null,{"className":""}]]}]
+21:["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"CH.”:RAM.0/Z88PATCH.BBC”"}]}]}]
+22:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"The patch will be installed in the BBC BASIC(Z80) application"}],"\n"]}]
+23:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-bbc-basic/general-information/installing-z88-patch-with-program-editor-and-other-commands/image13.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-bbc-basic/general-information/installing-z88-patch-with-program-editor-and-other-commands/image13.webp","alt":"BBC BASIC's start-up screen after loading the Z88 Patch","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+24:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Installation of the BASIC Patch has a number of “side effects” of which you should be aware:"}]
+25:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Changing HIMEM will have the effect of disabling the patch. If HIMEM has been changed it must be set back to &C000 before re-CHAINing the patch program (or alternatively KILL and restart BASIC from the INDEX). Changing HIMEM is not recommended in any case, since setting it to an unsuitable value will “crash” the machine (even without the patch)."}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The “Silly”, “RENUMBER space” and “LINE space” errors will not appear; instead the “No room” message will be produced in each case."}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You are advised to select MODE 0 before entering Pipedream, since it seems to get confused by the presence of the graphics window."}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Since Cambridge Computer provided no “legal” method of installing a patch such as this, a rather “dirty” method has had to be adopted. This has some unfortunate, but unavoidable, consequences:"}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The RUN and CHAIN commands may occasionally fail to work properly (on average fewer than 1 in 1000 times). If this happens no harm will be done; simply issue the command again."}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If you reply to the INPUT statement with a very long string (more than 252 characters) the machine will crash, so you must avoid doing so."}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Using graphics statements in an ON ERROR routine may give anomalous results. For example:"}],"\n"]}],"\n"]}]
+26:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L2d",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L2e",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"10 ON ERROR MODE 0 : REPORT : END"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"20 MODE 1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"30 REPEAT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"40   DRAW RND(256)-1,RND(64)-1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"50 UNTIL FALSE"}]}]]}]]}]]}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The above program can be aborted only by pressing ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"[ESC]"}],". The intention is that this will cause the display to clear and the message “Escape” to be displayed. In practice, the message actually displayed will be “Sorry, not implemented” since, although the Patch is active, the MODE statement still affects REPORT, ERR and ERL."]}]
+28:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The Patch commands are integrated in OZ V4.3 and later releases, without the above mentioned “side effects”. PAGE address is not affected (remains at &2300). Later Z88 ROM versions, provided by the Open Source Z88 Development Project, can be accessed here (contains release notes and download links):"}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","a",null,{"href":"https://cambridgez88.jira.com/wiki/spaces/OZ/","target":"_blank","rel":"noreferrer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["https://cambridgez88.jira.com/wiki/spaces/OZ/",[" ",["$","svg",null,{"fill":"none","stroke":"currentColor","strokeLinecap":"round","strokeLinejoin":"round","strokeWidth":1.7,"viewBox":"0 0 24 24","height":"1em","className":"x:inline x:align-baseline x:shrink-0","children":[["$","path",null,{"d":"M7 17L17 7"}],["$","path",null,{"d":"M7 7h10v10"}]]}]]]}]}]
+2b:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

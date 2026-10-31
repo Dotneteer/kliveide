@@ -1,0 +1,290 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T175c,---
+description: "All output explicitly sent to the printer device :PRT.0 goes via the ‘Printer Filter'. This filter examines every character to see if it has some special meaning or if it is to be translated into..."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# The Printer Filter
+
+All output explicitly sent to the printer device :PRT.0 goes via the ‘Printer Filter'. This filter examines every character to see if it has some special meaning or if it is to be translated into another character or sequence of characters. The code translation and command codes may be edited using the 'Printer Editor' (❑E) as described in your Z88 Users' Guide.
+
+Most printers have a set of control codes that switch the printer into similar modes. However, whilst most printers provide a number of similar modes, the codes used are often different. The 'Printer Filter' provides a universal set of print format controls which may be used irrespective of the printer in use. Provided you use the 'Printer Editor' (❑E) to configure the Print Filter for your printer, your programs will work in exactly the same way irrespective of the printer in use.
+
+The 'Printer Filter On' and 'Printer Filter Off' Escape sequences also turn the printing on and off. So remember to use them before and after printing.
+
+The tables in the following sub-sections include program segments that will send the appropriate codes to the printer file. These assume that the printer file handle is in the variable \`pf' and that ENQ$ is CHR$(5).
+
+## Printer Control Codes [#printer-control-codes]
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+**Escape Sequence**
+
+```text
+PRINT#pf,ENQ$+"["
+BPUT#pf,5:BPUT#pf,91
+```
+
+```text
+PRINT#pf,ENQ$+"]"
+BPUT#pf,5:BPUT#pf,93
+```
+
+```text
+PRINT#pf,ENQ$+"2P"+CHR$(32+n)
+BPUT#pf,5:BPUT#pf,50:BPUT#pf,80:BPUT#pf,32+n
+```
+
+```text
+PRINT#pf,ENQ$+"2H"+CHR$(32+n)
+BPUT#pf,5:BPUT#pf,50:BPUT#pf,72:BPUT#pf,32+n
+```
+
+```text
+PRINT#pf,ENQ$+"5S" BPUTfpf,5:BPUT#pf,83
+```
+
+```text
+PRINT#pf,ENQW53$"+CHRS(x)+CHRS(y)
+BPUT#pf,5:BPUT#pf,51:BPUT#pf,36:BPUT#pf,x:BPUT#pf,y
+```
+
+</Table.Td>
+<Table.Td>
+
+**Meaning**
+
+Printer ON.
+
+Printer OFF.
+
+Set page length to 'n' lines.
+
+Microspace 'n' units of 1/120 inch.
+
+Reset attributes that would be reset by a new-line.
+
+Send the hex values 'x' and 'y' to the printer.
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+## **Attributes** [#attributes]
+
+The following codes toggle printer attributes such as bold print, underline, etc. These toggles can be automatically reset at the next carriage-return by setting the 'Off at CR' option in the Printer Editor to 'Yes'. By default, all the attribute toggles with the exception of ‘Alternate Font' (\`A') and 'User Defined' (\`E') are automatically reset when a carriage-return is sent.
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+**Escape Sequence**
+
+```text
+PRINT#pf,ENQ$+"U"
+BPUT#pf,5:BPUT#pf,85
+```
+
+```text
+PRINT#pf,ENQ$+"B"
+BPUT#pf,5:BPUT#pf,66
+```
+
+```text
+PRINT#pf,ENQ$+"X"
+BPUT#pf,5:BPUT#pf88
+```
+
+```text
+PRINT#pf,ENQ$+"I"
+BPUT#pf,5:BPUT#pf,73
+```
+
+```text
+PRINT#pf,ENQ$+"L"
+BPUT#pf,5:BPUT#pf,76
+```
+
+```text
+PRINT#pf,ENQ$+"R"
+BPUT#pf5:13PUT#pf,82
+```
+
+</Table.Td>
+<Table.Td>
+
+**Meaning**
+
+Underline
+
+Bold
+
+Extended sequence
+
+Italics
+
+Subscript
+
+Superscript
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+**Escape Sequence**
+
+```text
+PRINT#pf,ENQ$+"A" BPUT#pf,5:BPUT#pf,65
+PRINT#pf,ENQ$+"E" BPUT#pf,5:BPUT#pf,69
+```
+
+</Table.Td>
+<Table.Td>
+
+**Meaning**
+
+Alternate font
+
+User defined
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+Unless you have used the Printer Editor to set 'Off at CR' to 'No', you should use the \`BPUT\#' version of the commands. If you use the 'PRINT\#' version of the commands, the terminating CR will undo its effect (excepting Printer On/Off and Alternate and User Defined fonts).
+
+Unlike the screen control codes, the printer control codes cannot be strung together or explicitly set by preceding them with a '+' or ‘-’. Neither is there a 'reset all toggles' command.
+
+## **Untrapped Characters** [#untrapped-characters]
+
+The following control characters are not treated as commands by the Print Filter. Like the normal printable characters (Space to Delete &20 to &7F) they may be translated, but they are otherwise sent directly to the printer.
+
+| **Name** | **Hex Value** |
+| --- | --- |
+| NUL | &00 |
+| BEL | &07 |
+| BS | &08 |
+| HT | &09 |
+| LF | &10 |
+| VT | &OB |
+| FF | &OC |
+| CR | &OD |
+
+## **Printer Redirection** [#printer-redirection]
+
+The 'Operating System Interface' section of the manual describes how input and output may be redirected. The diagram below may help you to visualise how and where redirection takes place. It also illustrates how the Printer Editor and the PANEL affect the output.
+
+<Shot src="z88-bbc-basic/printing/the-printer-filter/image10.webp" alt="How printer output flows from an application through the Printer Filter to the serial port" width={441} />
+
+Since you cannot issue CLI 'dot' commands from the keyboard, you will need to write a CLI command file using PipeDream in order to redirect the printer input or output. The CLI command file shown below would redirect printer output to a file called \`pfile'.
+
+.=pfile <br />.S
+
+If this file had been saved (in ‘plain text’ format) as ‘predif, you could initiate printer output redirection by issuing the command
+
+```text
+♢EXpredir
+```
+
+from the filer (❑F), or
+
+```text
+*CLI .*predir
+```
+
+in the immediate mode from within BBCBASIC(Z80).
+
+If you wished to issue the command from within a BBCBASIC(Z80) program, you would need the following program line.
+
+```text
+OSCLI("CLI .*predir"):x=INKEY(0)
+```
+
+See the 'Operating System Interface' section of the manual for an explanation of CLI command files.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Printer Control Codes","id":"printer-control-codes","depth":2},{"value":[["$","$4",".0",{"children":[["$","strong",".0",{"children":"Attributes"}]]}]],"id":"attributes","depth":2},{"value":[["$","$4",".0",{"children":[["$","strong",".0",{"children":"Untrapped Characters"}]]}]],"id":"untrapped-characters","depth":2},{"value":[["$","$4",".0",{"children":[["$","strong",".0",{"children":"Printer Redirection"}]]}]],"id":"printer-redirection","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"All output explicitly sent to the printer device :PRT.0 goes via the ‘Printer Filter'. This filter examines every character to see if it has some special meaning or if it is to be translated into...","title":"The Printer Filter","filePath":"content/en/library/cambridge-z88/bbc-basic/printing/the-printer-filter.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/bbc-basic/printing/the-printer-filter","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"The Printer Filter - Klive IDE"}],["$","meta","1",{"name":"description","content":"All output explicitly sent to the printer device :PRT.0 goes via the ‘Printer Filter'. This filter examines every character to see if it has some special meaning or if it is to be translated into..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/bbc-basic/printing/the-printer-filter/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"dZNfFVLPQi_KHqnwQrQVE"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+21:"ToggleWordWrapButton"
+22:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$21"]
+23:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+41:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["The Printer Filter","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"All output explicitly sent to the printer device :PRT.0 goes via the ‘Printer Filter’. This filter examines every character to see if it has some special meaning or if it is to be translated into another character or sequence of characters. The code translation and command codes may be edited using the ‘Printer Editor’ (❑E) as described in your Z88 Users’ Guide."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Most printers have a set of control codes that switch the printer into similar modes. However, whilst most printers provide a number of similar modes, the codes used are often different. The ‘Printer Filter’ provides a universal set of print format controls which may be used irrespective of the printer in use. Provided you use the ‘Printer Editor’ (❑E) to configure the Print Filter for your printer, your programs will work in exactly the same way irrespective of the printer in use."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The ‘Printer Filter On’ and ‘Printer Filter Off’ Escape sequences also turn the printing on and off. So remember to use them before and after printing."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The tables in the following sub-sections include program segments that will send the appropriate codes to the printer file. These assume that the printer file handle is in the variable `pf’ and that ENQ$ is CHR$(5)."}],"\n",["$","h2",null,{"id":"printer-control-codes","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Printer Control Codes",["$","$L20",null,{"id":"printer-control-codes"}]]}],"\n",["$","table",null,{"children":["$","tbody",null,{"children":["$","tr",null,{"children":[["$","td",null,{"children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Escape Sequence"}]}],["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"PRINT#pf,ENQ$+\"[\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"BPUT#pf,5:BPUT#pf,91"}]}]]}]]}]]}],["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":["$L24","$L25"]}]]}],"$L26","$L27","$L28","$L29"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],"$L2a"],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],"className":"x:block x:overflow-x-auto"}],"\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40"]]}]
+15:["$","$L41",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@42"}]}]
+1f:true
+9:300
+24:["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}]
+25:["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"PRINT#pf,ENQ$+\"]\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"BPUT#pf,5:BPUT#pf,93"}]}]]}]
+26:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"PRINT#pf,ENQ$+\"2P\"+CHR$(32+n)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"BPUT#pf,5:BPUT#pf,50:BPUT#pf,80:BPUT#pf,32+n"}]}]]}]]}]]}]
+27:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"PRINT#pf,ENQ$+\"2H\"+CHR$(32+n)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"BPUT#pf,5:BPUT#pf,50:BPUT#pf,72:BPUT#pf,32+n"}]}]]}]]}]]}]
+28:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"PRINT#pf,ENQ$+\"5S\" BPUTfpf,5:BPUT#pf,83"}]}]}]]}]]}]
+29:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"PRINT#pf,ENQW53$\"+CHRS(x)+CHRS(y)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"BPUT#pf,5:BPUT#pf,51:BPUT#pf,36:BPUT#pf,x:BPUT#pf,y"}]}]]}]]}]]}]
+2a:["$","td",null,{"children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Meaning"}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Printer ON."}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Printer OFF."}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Set page length to ‘n’ lines."}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Microspace ‘n’ units of 1/120 inch."}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Reset attributes that would be reset by a new-line."}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Send the hex values ‘x’ and ‘y’ to the printer."}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+2b:["$","h2",null,{"id":"attributes","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":[["$","strong",null,{"children":"Attributes"}],["$","$L20",null,{"id":"attributes"}]]}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The following codes toggle printer attributes such as bold print, underline, etc. These toggles can be automatically reset at the next carriage-return by setting the ‘Off at CR’ option in the Printer Editor to ‘Yes’. By default, all the attribute toggles with the exception of ‘Alternate Font’ (`A’) and ‘User Defined’ (`E’) are automatically reset when a carriage-return is sent."}]
+2d:["$","table",null,{"children":["$","tbody",null,{"children":["$","tr",null,{"children":[["$","td",null,{"children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Escape Sequence"}]}],["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"PRINT#pf,ENQ$+\"U\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"BPUT#pf,5:BPUT#pf,85"}]}]]}]]}]]}],["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"PRINT#pf,ENQ$+\"B\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"BPUT#pf,5:BPUT#pf,66"}]}]]}]]}]]}],["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"PRINT#pf,ENQ$+\"X\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"BPUT#pf,5:BPUT#pf88"}]}]]}]]}]]}],["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":["$L43","$L44"]}]]}],"$L45","$L46"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],"$L47"],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],"className":"x:block x:overflow-x-auto"}]
+2e:["$","table",null,{"children":["$","tbody",null,{"children":["$","tr",null,{"children":[["$","td",null,{"children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Escape Sequence"}]}],["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"PRINT#pf,ENQ$+\"A\" BPUT#pf,5:BPUT#pf,65"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"PRINT#pf,ENQ$+\"E\" BPUT#pf,5:BPUT#pf,69"}]}]]}]]}]]}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Meaning"}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Alternate font"}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"User defined"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],"className":"x:block x:overflow-x-auto"}]
+2f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Unless you have used the Printer Editor to set ‘Off at CR’ to ‘No’, you should use the `BPUT#’ version of the commands. If you use the ‘PRINT#’ version of the commands, the terminating CR will undo its effect (excepting Printer On/Off and Alternate and User Defined fonts)."}]
+30:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Unlike the screen control codes, the printer control codes cannot be strung together or explicitly set by preceding them with a ’+’ or ‘-’. Neither is there a ‘reset all toggles’ command."}]
+31:["$","h2",null,{"id":"untrapped-characters","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":[["$","strong",null,{"children":"Untrapped Characters"}],["$","$L20",null,{"id":"untrapped-characters"}]]}]
+32:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The following control characters are not treated as commands by the Print Filter. Like the normal printable characters (Space to Delete &20 to &7F) they may be translated, but they are otherwise sent directly to the printer."}]
+33:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":["$","strong",null,{"children":"Name"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":["$","strong",null,{"children":"Hex Value"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"NUL","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"&00","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"BEL","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"&07","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"BS","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"&08","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"HT","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"&09","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"LF","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"&10","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"VT","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"&OB","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"FF","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"&OC","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"CR","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"&OD","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}]
+34:["$","h2",null,{"id":"printer-redirection","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":[["$","strong",null,{"children":"Printer Redirection"}],["$","$L20",null,{"id":"printer-redirection"}]]}]
+35:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The ‘Operating System Interface’ section of the manual describes how input and output may be redirected. The diagram below may help you to visualise how and where redirection takes place. It also illustrates how the Printer Editor and the PANEL affect the output."}]
+36:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"441px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-bbc-basic/printing/the-printer-filter/image10.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-bbc-basic/printing/the-printer-filter/image10.webp","alt":"How printer output flows from an application through the Printer Filter to the serial port","loading":"lazy","decoding":"async","width":507,"height":415}],[]]}]]}]
+37:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Since you cannot issue CLI ‘dot’ commands from the keyboard, you will need to write a CLI command file using PipeDream in order to redirect the printer input or output. The CLI command file shown below would redirect printer output to a file called `pfile’."}]
+38:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[".=pfile ",["$","br",null,{}],".S"]}]
+39:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If this file had been saved (in ‘plain text’ format) as ‘predif, you could initiate printer output redirection by issuing the command"}]
+3a:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"♢EXpredir"}]}]}]]}]]}]
+3b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"from the filer (❑F), or"}]
+3c:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"*CLI .*predir"}]}]}]]}]]}]
+3d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"in the immediate mode from within BBCBASIC(Z80)."}]
+3e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If you wished to issue the command from within a BBCBASIC(Z80) program, you would need the following program line."}]
+3f:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"OSCLI(\"CLI .*predir\"):x=INKEY(0)"}]}]}]]}]]}]
+40:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"See the ‘Operating System Interface’ section of the manual for an explanation of CLI command files."}]
+42:null
+9:C
+43:["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}]
+44:["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"PRINT#pf,ENQ$+\"I\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"BPUT#pf,5:BPUT#pf,73"}]}]]}]
+45:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"PRINT#pf,ENQ$+\"L\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"BPUT#pf,5:BPUT#pf,76"}]}]]}]]}]]}]
+46:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"PRINT#pf,ENQ$+\"R\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"BPUT#pf5:13PUT#pf,82"}]}]]}]]}]]}]
+47:["$","td",null,{"children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Meaning"}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Underline"}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Bold"}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Extended sequence"}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Italics"}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Subscript"}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Superscript"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

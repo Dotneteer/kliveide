@@ -1,0 +1,243 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T1704,---
+description: "Most versions of BASIC allow access to the computer's memory with the PEEK function and the POKE command. Such access, which is limited to one byte at a time, is sufficient for setting and reading..."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# Indirection
+
+## Introduction [#introduction]
+
+Most versions of BASIC allow access to the computer's memory with the PEEK function and the POKE command. Such access, which is limited to one byte at a time, is sufficient for setting and reading screen locations or 'flags', but it is difficult to use for building more complicated data structures. The indirection operators provided in BBC BASIC(Z80) enable you to read and write to memory in a far more flexible way. They provide a simple equivalent of PEEK and POKE, but they come into their own when used to pass data between CHAINed programs, build complicated data structures or for use with machine code programs.
+
+## The indirection operators [#the-indirection-operators]
+
+There are three indirection operators:
+
+| **Name** | **Symbol** | **Purpose** | **No. of Bytes Affected** |
+| --- | --- | --- | --- |
+| Query | ? | Byte Indirection Operator | 1 |
+| Exclamation | ! | Word Indirection Operator | 4 |
+| Dollar | $ | String Indirection Operator | 1 to 256 |
+
+The examples that follow assume that a DIM statement has been used to reserve an area of memory and store the address of the first byte of the memory in a variable called ‘mem’. See the keyword DIM for more details. Or example:
+
+```text
+DIM mem 20
+```
+
+If you know what you are doing, you can use the indirection operators to access the Z88’s system memory. However, because of the sophistication of the operating system, **THIS CAN BE DISASTROUS**.
+
+## Query [#query]
+
+### Byte Access [#byte-access]
+
+The query operator accesses individual bytes of memory. ?M means 'the contents of' memory location 'M'. The first example below write &23 to memory location `mem`, the second example sets ‘number’ to the contents of that memory location and the third example print the contents of that memory location.
+
+```text
+?mem=&23
+number=?mem
+PRINT ?mem
+```
+
+Thus, '?' provides a direct replacement for PEEK and POKE.
+
+?A=B is equivalent to POKE A,B
+
+B=?A is equivalent to B=PEEK(A)
+
+### Query as a Byte Variable [#query-as-a-byte-variable]
+
+A byte variable, '?count' for instance, may be used as the control variable in a FOR...NEXT loop and only one byte of memory will be used.
+
+```text
+DIM count% 0
+FOR ?count%=0 TO 20
+  - - -
+  - - -
+NEXT
+```
+
+## Exclamation [#exclamation]
+
+The query (?) indirection operator works on one byte of memory. The word indirection operator (!) works on 4 bytes (an integer word) of memory. Thus,
+
+```text
+!M=&12345678
+```
+
+would load
+
+&78 into address M
+
+&56 into address M+1
+
+&34 into address M+2
+
+&12 into address M+3.
+
+and
+
+`PRINT ~!M` (print !M in hex format)
+
+would give
+
+<strong>12345678<br /></strong>
+
+## Dollar [#dollar]
+
+The string indirection operator ($) writes a string followed by a carriage-return (&0D) into memory starting at the specified address. Do not confuse M$ with $M. The former is the familiar string variable whilst the latter means 'the string starting at memory location M'. For example,
+
+```text
+$M="ABCDEF"
+```
+
+would load the ASCII characters A to F into addresses M to M+5 and &0D into address M+6, and
+
+PRINT $M
+
+would print<br /> ABCDEF
+
+## Use as Binary Operators [#use-as-binary-operators]
+
+All the examples so far have used only one operand with the byte and word indirection operators. Provided the left-hand operand is a variable (such as 'memory') and not a constant, '?' and '!' can also be used as binary operators. (In other words, they can be used with two operands.) For instance, M?3 means 'the contents of memory location M plus 3' and M!3 means 'the contents of the 4 bytes starting at M plus 3'. In the following example, the contents of memory location ‘mem’ plus 5 is first set to &50 and then printed.
+
+```text
+DIM memory 20
+memory?5=&50
+PRINT memory?5
+```
+
+Thus,
+
+`A?I=B` is equivalent to POKE A+I,B
+
+`B=A?I` is equivalent to B=PEEK(A+I)
+
+The two examples below show how two operands can be used with the byte indirection operator (?) to examine the contents of memory. The first example displays the contents of 12 bytes of memory from location ‘mem’. The second example displays the memory contents for a real numeric variable. (See the Annex entitled Format of Program and Variables in Memory.)
+
+```text
+10 DIM memory 20
+20 FOR offset=0 TO 12
+30   PRINT ~memory+offset, ~memory?offset
+40 NEXT
+```
+
+Line 30 prints the memory address and the contents in hexadecimal format.
+
+```text
+ 10 NUMBER=0
+ 20 DIM A% -1
+ 30 REPEAT
+ 40   INPUT"NUMBER PLEASE "NUMBER
+ 50   PRINT "& ";
+ 60   FOR I%=2 TO 5
+ 70     NUM$=STR$~(A%?-I%)
+ 80     IF LEN(NUM$)=1 NUM$="0"+NUM$
+ 90     PRINT NUM$;" ";
+100   NEXT
+110   N%=A%?-1
+120   NUM$=STR$~(N%)
+130   IF LEN(NUM$)=1 NUM$="0"+NUM$
+140   PRINT " & "+NUM$''
+150 UNTIL NUMBER=0
+```
+
+See the Annex entitled Format of Program and Variables In Memory for an explanation of this program.
+
+## <strong> Power of Indirection Operators</strong> [#power-of-indirection-operators]
+
+Indirection operators can be used to create special data structures, and as such they are an extremely powerful feature. For example, a structure consisting of a 10 character string, an 8 bit number and a reference to a similar structure can be constructed.
+
+If M is the address of the start of the structure then:
+
+$M is the string<br />M?11 is the 8 bit number<br />M!12 is the address of the related structure
+
+Linked lists and tree structures can easily be created and manipulated in memory using this facility.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Introduction","id":"introduction","depth":2},{"value":"The indirection operators","id":"the-indirection-operators","depth":2},{"value":"Query","id":"query","depth":2},{"value":"Byte Access","id":"byte-access","depth":3},{"value":"Query as a Byte Variable","id":"query-as-a-byte-variable","depth":3},{"value":"Exclamation","id":"exclamation","depth":2},{"value":"Dollar","id":"dollar","depth":2},{"value":"Use as Binary Operators","id":"use-as-binary-operators","depth":2},{"value":[["$","$4",".0",{"children":[["$","strong",".0",{"children":" Power of Indirection Operators"}]]}]],"id":"power-of-indirection-operators","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"Most versions of BASIC allow access to the computer's memory with the PEEK function and the POKE command. Such access, which is limited to one byte at a time, is sufficient for setting and reading...","title":"Indirection","filePath":"content/en/library/cambridge-z88/bbc-basic/general-information/indirection.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/bbc-basic/general-information/indirection","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Indirection - Klive IDE"}],["$","meta","1",{"name":"description","content":"Most versions of BASIC allow access to the computer's memory with the PEEK function and the POKE command. Such access, which is limited to one byte at a time, is sufficient for setting and reading..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/bbc-basic/general-information/indirection/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"dZNfFVLPQi_KHqnwQrQVE"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+51:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Indirection","$undefined"]}],"\n",["$","h2",null,{"id":"introduction","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Introduction",["$","$L20",null,{"id":"introduction"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Most versions of BASIC allow access to the computer’s memory with the PEEK function and the POKE command. Such access, which is limited to one byte at a time, is sufficient for setting and reading screen locations or ‘flags’, but it is difficult to use for building more complicated data structures. The indirection operators provided in BBC BASIC(Z80) enable you to read and write to memory in a far more flexible way. They provide a simple equivalent of PEEK and POKE, but they come into their own when used to pass data between CHAINed programs, build complicated data structures or for use with machine code programs."}],"\n",["$","h2",null,{"id":"the-indirection-operators","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The indirection operators",["$","$L20",null,{"id":"the-indirection-operators"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"There are three indirection operators:"}],"\n",["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":["$","strong",null,{"children":"Name"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":["$","strong",null,{"children":"Symbol"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":["$","strong",null,{"children":"Purpose"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":["$","strong",null,{"children":"No. of Bytes Affected"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"Query","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"?","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Byte Indirection Operator","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"1","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Exclamation","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"!","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Word Indirection Operator","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"4","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L21"]}]]}],"\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49","\n","$L4a","\n","$L4b","\n","$L4c","\n","$L4d","\n","$L4e","\n","$L4f","\n","$L50"]]}]
+15:["$","$L51",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@52"}]}]
+1f:true
+53:"ToggleWordWrapButton"
+54:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$53"]
+55:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+9:300
+21:["$","tr",null,{"children":[["$","td",null,{"children":"Dollar","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"$$","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"String Indirection Operator","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"1 to 256","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+22:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The examples that follow assume that a DIM statement has been used to reserve an area of memory and store the address of the first byte of the memory in a variable called ‘mem’. See the keyword DIM for more details. Or example:"}]
+23:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L54",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L55",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"DIM mem 20"}]}]}]]}]]}]
+24:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["If you know what you are doing, you can use the indirection operators to access the Z88’s system memory. However, because of the sophistication of the operating system, ",["$","strong",null,{"children":"THIS CAN BE DISASTROUS"}],"."]}]
+25:["$","h2",null,{"id":"query","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Query",["$","$L20",null,{"id":"query"}]]}]
+26:["$","h3",null,{"id":"byte-access","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Byte Access",["$","$L20",null,{"id":"byte-access"}]]}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The query operator accesses individual bytes of memory. ?M means ‘the contents of’ memory location ‘M’. The first example below write &23 to memory location ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"mem"}],", the second example sets ‘number’ to the contents of that memory location and the third example print the contents of that memory location."]}]
+28:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L54",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L55",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"?mem=&23"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"number=?mem"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"PRINT ?mem"}]}]]}]]}]]}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Thus, ’?’ provides a direct replacement for PEEK and POKE."}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"?A=B is equivalent to POKE A,B"}]
+2b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"B=?A is equivalent to B=PEEK(A)"}]
+2c:["$","h3",null,{"id":"query-as-a-byte-variable","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Query as a Byte Variable",["$","$L20",null,{"id":"query-as-a-byte-variable"}]]}]
+2d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A byte variable, ‘?count’ for instance, may be used as the control variable in a FOR…NEXT loop and only one byte of memory will be used."}]
+2e:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L54",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L55",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"DIM count% 0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"FOR ?count%=0 TO 20"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  - - -"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  - - -"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"NEXT"}]}]]}]]}]]}]
+2f:["$","h2",null,{"id":"exclamation","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Exclamation",["$","$L20",null,{"id":"exclamation"}]]}]
+30:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The query (?) indirection operator works on one byte of memory. The word indirection operator (!) works on 4 bytes (an integer word) of memory. Thus,"}]
+31:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L54",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L55",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"!M=&12345678"}]}]}]]}]]}]
+32:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"would load"}]
+33:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"&78 into address M"}]
+34:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"&56 into address M+1"}]
+35:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"&34 into address M+2"}]
+36:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"&12 into address M+3."}]
+37:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"and"}]
+38:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"PRINT ~!M"}]," (print !M in hex format)"]}]
+39:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"would give"}]
+3a:["$","strong",null,{"children":["12345678",["$","br",null,{}]]}]
+3b:["$","h2",null,{"id":"dollar","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Dollar",["$","$L20",null,{"id":"dollar"}]]}]
+3c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The string indirection operator ($) writes a string followed by a carriage-return (&0D) into memory starting at the specified address. Do not confuse M$ with $M. The former is the familiar string variable whilst the latter means ‘the string starting at memory location M’. For example,"}]
+3d:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L54",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L55",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"$$M=\"ABCDEF\""}]}]}]]}]]}]
+3e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"would load the ASCII characters A to F into addresses M to M+5 and &0D into address M+6, and"}]
+3f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"PRINT $M"}]
+40:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["would print",["$","br",null,{}]," ABCDEF"]}]
+41:["$","h2",null,{"id":"use-as-binary-operators","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Use as Binary Operators",["$","$L20",null,{"id":"use-as-binary-operators"}]]}]
+42:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"All the examples so far have used only one operand with the byte and word indirection operators. Provided the left-hand operand is a variable (such as ‘memory’) and not a constant, ’?’ and ’!’ can also be used as binary operators. (In other words, they can be used with two operands.) For instance, M?3 means ‘the contents of memory location M plus 3’ and M!3 means ‘the contents of the 4 bytes starting at M plus 3’. In the following example, the contents of memory location ‘mem’ plus 5 is first set to &50 and then printed."}]
+43:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L54",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L55",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"DIM memory 20"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"memory?5=&50"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"PRINT memory?5"}]}]]}]]}]]}]
+44:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Thus,"}]
+45:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"A?I=B"}]," is equivalent to POKE A+I,B"]}]
+46:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"B=A?I"}]," is equivalent to B=PEEK(A+I)"]}]
+47:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The two examples below show how two operands can be used with the byte indirection operator (?) to examine the contents of memory. The first example displays the contents of 12 bytes of memory from location ‘mem’. The second example displays the memory contents for a real numeric variable. (See the Annex entitled Format of Program and Variables in Memory.)"}]
+48:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L54",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L55",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"10 DIM memory 20"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"20 FOR offset=0 TO 12"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"30   PRINT ~memory+offset, ~memory?offset"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"40 NEXT"}]}]]}]]}]]}]
+49:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Line 30 prints the memory address and the contents in hexadecimal format."}]
+4a:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L54",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L55",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":" 10 NUMBER=0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 20 DIM A% -1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 30 REPEAT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 40   INPUT\"NUMBER PLEASE \"NUMBER"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 50   PRINT \"& \";"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 60   FOR I%=2 TO 5"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 70     NUM$=STR$~(A%?-I%)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 80     IF LEN(NUM$)=1 NUM$=\"0\"+NUM$"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" 90     PRINT NUM$;\" \";"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"100   NEXT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"110   N%=A%?-1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"120   NUM$=STR$~(N%)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"130   IF LEN(NUM$)=1 NUM$=\"0\"+NUM$"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"140   PRINT \" & \"+NUM$''"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"150 UNTIL NUMBER=0"}]}]]}]]}]]}]
+4b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"See the Annex entitled Format of Program and Variables In Memory for an explanation of this program."}]
+4c:["$","h2",null,{"id":"power-of-indirection-operators","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":[["$","strong",null,{"children":" Power of Indirection Operators"}],["$","$L20",null,{"id":"power-of-indirection-operators"}]]}]
+4d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Indirection operators can be used to create special data structures, and as such they are an extremely powerful feature. For example, a structure consisting of a 10 character string, an 8 bit number and a reference to a similar structure can be constructed."}]
+4e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If M is the address of the start of the structure then:"}]
+4f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$$M is the string",["$","br",null,{}],"M?11 is the 8 bit number",["$","br",null,{}],"M!12 is the address of the related structure"]}]
+50:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Linked lists and tree structures can easily be created and manipulated in memory using this facility."}]
+52:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

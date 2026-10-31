@@ -1,0 +1,179 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T1dc1,---
+description: "There are 2 ways of sending data to the printer from within a program. The first involves the use of the Command Line Interpreter and the second used the BBCBASIC(Z80) command, PRINT#. The former..."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# From Within a Program
+
+There are 2 ways of sending data to the printer from within a program. The first involves the use of the Command Line Interpreter and the second used the BBCBASIC(Z80) command, PRINT\#. The former echoes characters sent to the screen to the printer. It provides all the normal BBCBASIC(Z80) print control features, but it is more complicated to set up. The latter sends characters to the printer only. It is simple to set up, but it becomes more difficult to use as the complexity of the printed line increases.
+
+## Using the CLI [#using-the-cli]
+
+The use of the Command Line Interpreter is explained in Section Seven of your Z88 manual [https://cambridgez88.jira.com/wiki/x/RAAkAg](https://cambridgez88.jira.com/wiki/x/RAAkAg) and in the \`Operating System Interface' section of this manual.
+
+Using CLI commands to send data to the printer has the advantage that the screen format is duplicated on the printer and all BBCBASIC(Z80)'s print format controls work. You do not, however, have access to the special print controls provided by the Z88's Printer Filter and you are left with a suspended CLI command file (explained in the 'Operating System Interface' section). Consequently, this is the least favoured method unless you especially want to echo screen output to the printer.
+
+It is possible to emulate pressing the key sequences ❑+P and ❑-P from within BBCBASIC(Z80) by sending these key sequences to the CLI. At first glance, the following program line should work. Remember that the \`\#' symbol is interpreted as ❑ by the CLI.
+
+```text
+*CLI #+P
+```
+
+This does not achieve the desired effect within a program because the CLI command does not become active until the next attempt to read a character from the keyboard. In order to activate the CLI command, the line needs to have an INKEY command at the end. Since a star command must be the last (or only) command in a program line, you need to use the OSCLI command to pass the CLI command to the operating system. Thus, the line becomes;
+
+```text
+OSCLI("CLI #+P"):dummy=INKEY(0)
+```
+
+Try this line out on the Z88. You will see the CLI indicator in the status panel flash on and off again indicating that a CLI command sequence is momentarily active. Unfortunately, the print echo is only active whilst the CLI indicator is present, so this is not a lot of use to us!
+
+In order to keep print echo active, we need to suspend the CLI command sequence after we have issued the print echo command. Unfortunately, this needs 2 command lines and must be done using a CLI command file.
+
+You will need to use PipeDream to create the following CLI command file. Save it as ‘plain text’ to a file named pon.cli.
+
+```text
+#+P
+.S
+```
+
+Remember to save it as ‘plain text’ - you will get all sorts of interesting error messages if you don't.
+
+Once you have created this file, you can turn the printer on and off from within your program with the following program lines:
+
+## Printer On [#printer-on]
+
+```text
+OSCLI("CLI .*:RAM.0/pon.cli"):dummy=INKEY(0)
+```
+
+All subsequent PRINT statements will print to the screen and the printer.
+
+The first line of the CLI file turns printer echo on by sending the command ❑+P to the CLI. In order to stop the printer echo being turned off at the end of the CLI command file, the CLI is suspended with the ‘.S' command on the next line. Without the INKEY(0) command at the end of the program line, print echo would not be turned on until the program attempted to read from the keyboard or the program terminated and BBCBASIC(Z80) returned to the immediate mode.
+
+Remember, you cannot cancel a suspended CLI command file from within a program. The only way is to press the \[SHIFT\]/\[ESC\] or ◇\[ESC\] keys on the keyboard. Consequently, you should avoid using this method of sending characters to the printer unless you really need to.
+
+The use of CLI command files is explained more fully in the ‘Operating System Interface' section of the manual.
+
+## Printer Off [#printer-off]
+
+```text
+OSCLI ("CLI #-P"):dummy=INKEY(0)
+```
+
+Subsequent PRINT statements will now only print to the screen.
+
+This line sends ❑-P to the CLI and turns printer echo off. Unfortunately, this leaves the CLI suspended and there is no way to reactivate it from within your program. You can, however, reactivate the CLI manually by pressing \[SHIFT\]/\[ESCAPE\] when your program has terminated. You may not initially notice the effect of having a suspended CLI command file. However, when you list a program you will find that the listing no longer pauses automatically after every page.
+
+## Using PRINT\# [#using-print]
+
+You can also send output to the printer using the devices (hardware names) :PRT.0 and :COM.0. The :PRT.0 device filters output through a 'filter' (device driver), the :COM.0 device sends output direct to the printer (serial port).
+
+This method of printing does allow you to make use of the 'Printer Filter', but as the complexity of the line to be printed increases, this method becomes more difficult.
+
+To send data to the printer in this way, you first open a file to the device and then use the PRINT\# statement to send the characters to be printed to the printer. Characters printed in this way do not appear on the screen.
+
+When you send characters to the printer device :PRT.0 in this way, they are processed by the Printer Filter and all the codes described in the 'Print Filter' sub-section are recognised and acted upon.
+
+If you are using the :PRT.0 device, you must send the printer-on Escape sequence ENQ \[ (ASCII codes 5 & 91) to turn printing on before you send anything you want printed. Remember to turn the printer off with the Escape sequence ENQ \] (ASCII codes 5 & 93) when you have finished.
+
+The following example opens a file and prints to it via the Printer Filter. It uses some printer Escape sequences which are discussed in the 'Printer Escape Sequences' sub-section and it assumes that the Printer Editor has been used to set 'Off at CR' to \`No' for bold and underline.
+
+```text
+10 REM Open the printer file
+20 prntr=OPENOUT ":PRT"
+30 :
+40 ENQ$=CHR$(5):LF=10
+50 REM Send the Print Filter On Escape sequence
+60 PRINT#prntr,ENQ$+"["
+70 :
+80 REM Set bold print on
+90 PRINT#prntr,ENQ$+"B"
+100 :
+110 REM Set underline on
+120 PRINT#prntr,ENQ$+"U"
+130 :
+140 REM Print 'Hello World' and send a line-feed
+150 PRINT#prntr,"Hello World":BPUT#prntr,LF
+160 :
+170 REM Send the Print Filter Off Escape sequence
+180 PRINT#prntr,ENQ$+"]"
+190 :
+200 REM Close the printer file
+210 CLOSE#prntr
+220 END
+```
+
+PRINT\# is intended for sending data to a file. Consequently, it works in a different way to PRINT. Items separated by commas or spaces are treated as different data fields and a carriage-return is sent between each field. Consequently, you need to build and send a complete line at a time. In addition, you must explicitly send the line-feed character at the end of the line.
+
+If you are using the :COM.0 device, everything is sent to the printer and you don't need to turn it on and off. However, you must send the printer specific control codes for underline, etc since the Printer Filter is not being used.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Using the CLI","id":"using-the-cli","depth":2},{"value":"Printer On","id":"printer-on","depth":2},{"value":"Printer Off","id":"printer-off","depth":2},{"value":"Using PRINT#","id":"using-print","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"There are 2 ways of sending data to the printer from within a program. The first involves the use of the Command Line Interpreter and the second used the BBCBASIC(Z80) command, PRINT#. The former...","title":"From Within a Program","filePath":"content/en/library/cambridge-z88/bbc-basic/printing/from-within-a-program.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/bbc-basic/printing/from-within-a-program","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"From Within a Program - Klive IDE"}],["$","meta","1",{"name":"description","content":"There are 2 ways of sending data to the printer from within a program. The first involves the use of the Command Line Interpreter and the second used the BBCBASIC(Z80) command, PRINT#. The former..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/bbc-basic/printing/from-within-a-program/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"dZNfFVLPQi_KHqnwQrQVE"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+21:"ToggleWordWrapButton"
+22:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$21"]
+42:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["From Within a Program","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"There are 2 ways of sending data to the printer from within a program. The first involves the use of the Command Line Interpreter and the second used the BBCBASIC(Z80) command, PRINT#. The former echoes characters sent to the screen to the printer. It provides all the normal BBCBASIC(Z80) print control features, but it is more complicated to set up. The latter sends characters to the printer only. It is simple to set up, but it becomes more difficult to use as the complexity of the printed line increases."}],"\n",["$","h2",null,{"id":"using-the-cli","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Using the CLI",["$","$L20",null,{"id":"using-the-cli"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The use of the Command Line Interpreter is explained in Section Seven of your Z88 manual ",["$","a",null,{"href":"https://cambridgez88.jira.com/wiki/x/RAAkAg","target":"_blank","rel":"noreferrer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["https://cambridgez88.jira.com/wiki/x/RAAkAg",[" ",["$","svg",null,{"fill":"none","stroke":"currentColor","strokeLinecap":"round","strokeLinejoin":"round","strokeWidth":1.7,"viewBox":"0 0 24 24","height":"1em","className":"x:inline x:align-baseline x:shrink-0","children":[["$","path",null,{"d":"M7 17L17 7"}],["$","path",null,{"d":"M7 7h10v10"}]]}]]]}]," and in the `Operating System Interface’ section of this manual."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Using CLI commands to send data to the printer has the advantage that the screen format is duplicated on the printer and all BBCBASIC(Z80)‘s print format controls work. You do not, however, have access to the special print controls provided by the Z88’s Printer Filter and you are left with a suspended CLI command file (explained in the ‘Operating System Interface’ section). Consequently, this is the least favoured method unless you especially want to echo screen output to the printer."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"It is possible to emulate pressing the key sequences ❑+P and ❑-P from within BBCBASIC(Z80) by sending these key sequences to the CLI. At first glance, the following program line should work. Remember that the `#’ symbol is interpreted as ❑ by the CLI."}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":"$L23"}]}],"$L24"]}],"$L25"]}]]}],"\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41"]]}]
+15:["$","$L42",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@43"}]}]
+1f:true
+44:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+9:300
+23:["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]
+24:["$","$L44",null,{"className":""}]
+25:["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"*CLI #+P"}]}]}]
+26:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This does not achieve the desired effect within a program because the CLI command does not become active until the next attempt to read a character from the keyboard. In order to activate the CLI command, the line needs to have an INKEY command at the end. Since a star command must be the last (or only) command in a program line, you need to use the OSCLI command to pass the CLI command to the operating system. Thus, the line becomes;"}]
+27:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L44",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"OSCLI(\"CLI #+P\"):dummy=INKEY(0)"}]}]}]]}]]}]
+28:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Try this line out on the Z88. You will see the CLI indicator in the status panel flash on and off again indicating that a CLI command sequence is momentarily active. Unfortunately, the print echo is only active whilst the CLI indicator is present, so this is not a lot of use to us!"}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"In order to keep print echo active, we need to suspend the CLI command sequence after we have issued the print echo command. Unfortunately, this needs 2 command lines and must be done using a CLI command file."}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You will need to use PipeDream to create the following CLI command file. Save it as ‘plain text’ to a file named pon.cli."}]
+2b:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L44",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"#+P"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":".S"}]}]]}]]}]]}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Remember to save it as ‘plain text’ - you will get all sorts of interesting error messages if you don’t."}]
+2d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Once you have created this file, you can turn the printer on and off from within your program with the following program lines:"}]
+2e:["$","h2",null,{"id":"printer-on","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Printer On",["$","$L20",null,{"id":"printer-on"}]]}]
+2f:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L44",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"OSCLI(\"CLI .*:RAM.0/pon.cli\"):dummy=INKEY(0)"}]}]}]]}]]}]
+30:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"All subsequent PRINT statements will print to the screen and the printer."}]
+31:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The first line of the CLI file turns printer echo on by sending the command ❑+P to the CLI. In order to stop the printer echo being turned off at the end of the CLI command file, the CLI is suspended with the ‘.S’ command on the next line. Without the INKEY(0) command at the end of the program line, print echo would not be turned on until the program attempted to read from the keyboard or the program terminated and BBCBASIC(Z80) returned to the immediate mode."}]
+32:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Remember, you cannot cancel a suspended CLI command file from within a program. The only way is to press the [SHIFT]/[ESC] or ◇[ESC] keys on the keyboard. Consequently, you should avoid using this method of sending characters to the printer unless you really need to."}]
+33:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The use of CLI command files is explained more fully in the ‘Operating System Interface’ section of the manual."}]
+34:["$","h2",null,{"id":"printer-off","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Printer Off",["$","$L20",null,{"id":"printer-off"}]]}]
+35:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L44",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"OSCLI (\"CLI #-P\"):dummy=INKEY(0)"}]}]}]]}]]}]
+36:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Subsequent PRINT statements will now only print to the screen."}]
+37:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This line sends ❑-P to the CLI and turns printer echo off. Unfortunately, this leaves the CLI suspended and there is no way to reactivate it from within your program. You can, however, reactivate the CLI manually by pressing [SHIFT]/[ESCAPE] when your program has terminated. You may not initially notice the effect of having a suspended CLI command file. However, when you list a program you will find that the listing no longer pauses automatically after every page."}]
+38:["$","h2",null,{"id":"using-print","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Using PRINT#",["$","$L20",null,{"id":"using-print"}]]}]
+39:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You can also send output to the printer using the devices (hardware names) :PRT.0 and :COM.0. The :PRT.0 device filters output through a ‘filter’ (device driver), the :COM.0 device sends output direct to the printer (serial port)."}]
+3a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This method of printing does allow you to make use of the ‘Printer Filter’, but as the complexity of the line to be printed increases, this method becomes more difficult."}]
+3b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"To send data to the printer in this way, you first open a file to the device and then use the PRINT# statement to send the characters to be printed to the printer. Characters printed in this way do not appear on the screen."}]
+3c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When you send characters to the printer device :PRT.0 in this way, they are processed by the Printer Filter and all the codes described in the ‘Print Filter’ sub-section are recognised and acted upon."}]
+3d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If you are using the :PRT.0 device, you must send the printer-on Escape sequence ENQ [ (ASCII codes 5 & 91) to turn printing on before you send anything you want printed. Remember to turn the printer off with the Escape sequence ENQ ] (ASCII codes 5 & 93) when you have finished."}]
+3e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The following example opens a file and prints to it via the Printer Filter. It uses some printer Escape sequences which are discussed in the ‘Printer Escape Sequences’ sub-section and it assumes that the Printer Editor has been used to set ‘Off at CR’ to `No’ for bold and underline."}]
+3f:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L44",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"10 REM Open the printer file"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"20 prntr=OPENOUT \":PRT\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"30 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"40 ENQ$=CHR$(5):LF=10"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"50 REM Send the Print Filter On Escape sequence"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"60 PRINT#prntr,ENQ$+\"[\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"70 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"80 REM Set bold print on"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"90 PRINT#prntr,ENQ$+\"B\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"100 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"110 REM Set underline on"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"120 PRINT#prntr,ENQ$+\"U\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"130 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"140 REM Print 'Hello World' and send a line-feed"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"150 PRINT#prntr,\"Hello World\":BPUT#prntr,LF"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"160 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"170 REM Send the Print Filter Off Escape sequence"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"180 PRINT#prntr,ENQ$+\"]\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"190 :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"200 REM Close the printer file"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"210 CLOSE#prntr"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"220 END"}]}]]}]]}]]}]
+40:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"PRINT# is intended for sending data to a file. Consequently, it works in a different way to PRINT. Items separated by commas or spaces are treated as different data fields and a carriage-return is sent between each field. Consequently, you need to build and send a complete line at a time. In addition, you must explicitly send the line-feed character at the end of the line."}]
+41:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If you are using the :COM.0 device, everything is sent to the printer and you don’t need to turn it on and off. However, you must send the printer specific control codes for underline, etc since the Printer Filter is not being used."}]
+43:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

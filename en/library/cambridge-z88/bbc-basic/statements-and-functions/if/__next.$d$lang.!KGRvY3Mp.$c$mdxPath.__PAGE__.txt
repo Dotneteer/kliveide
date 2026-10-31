@@ -1,0 +1,101 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+21:"ViewportBoundary"
+22:I[484,[],"$21"]
+23:"MetadataBoundary"
+24:I[484,[],"$23"]
+25:"$Sreact.suspense"
+26:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T84b,---
+description: "A statement which sets up a test condition which can be used to control the subsequent flow of the program. It is part of the IF....THEN....ELSE structure."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# IF
+
+A statement which sets up a test condition which can be used to control the subsequent flow of the program. It is part of the IF....THEN....ELSE structure.
+
+```text
+IF length=5 THEN 110
+IF A<C OR A>D GOTO 110
+IF A>C AND C>=D THEN GOTO 110 ELSE PRINT "BBC"
+IF A>Q PRINT"IT IS GREATER":A=1:GOTO 120
+```
+
+The word THEN is optional under most circumstances.
+
+The IF statement is the primary decision making statement. The testable condition (A=B, etc) is evaluated and the answer is either TRUE or FALSE. If the answer is TRUE, the rest of the line (up to the ELSE clause if there is one) is executed. The '=' sign has two meanings. It can be used to assign a value to a variable or as part of a test. The example shows the two uses in one program line.
+
+```text
+A=B=C
+```
+
+In English this reads "A becomes equal to the result of the test B=C". Thus if B does equal C, A will be set to TRUE (-1). However, if B does not equal C, A will be set to FALSE (0). The example below is similar, but A will be set to TRUE (-1) if 'age' is less than 21.
+
+```text
+A=age<21
+```
+
+Since the IF statement evaluates the testable condition and acts on the result, you can use a previously set variable name in place of the test. The two examples below will print 'Under 21' if the value of 'age' is less than 21.
+
+```text
+IF age<21 THEN PRINT "Under 21"
+flag=age<21
+IF flag THEN PRINT "Under 21"
+```
+
+**Syntax**
+
+```text
+IF <t-cond> THEN <stmt>{:<stmt>} [ELSE <stmt>{:<stmt>}]
+IF <exp> THEN <stmt>{:<stmt>} [ELSE <stmt>{:<stmt>}]
+IF <t-cond> GOTO <l-num> [ELSE <l-num>]
+IF <exp> GOTO <l-num> [ELSE <l-num>]
+IF <t-cond> THEN <l-num> [ELSE <l-num>]
+IF <exp> THEN <l-num> [ELSE <l-num>]
+```
+
+**Associated Keywords**
+
+THEN, ELSEa:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"A statement which sets up a test condition which can be used to control the subsequent flow of the program. It is part of the IF....THEN....ELSE structure.","title":"IF","filePath":"content/en/library/cambridge-z88/bbc-basic/statements-and-functions/if.mdx","timestamp":1792315833000},"sourceCode":"$12","children":[["$","div",null,{"id":"nextra-skip-nav"}],["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["IF","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A statement which sets up a test condition which can be used to control the subsequent flow of the program. It is part of the IF…THEN…ELSE structure."}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined","$L13"]}],"\n","$L14","\n","$L15","\n","$L16","\n","$L17","\n","$L18","\n","$L19","\n","$L1a","\n","$L1b","\n","$L1c","\n","$L1d","\n","$L1e"]]}]]}]]}]}],null,"$L1f"]}],"p":"$@20","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/bbc-basic/statements-and-functions/if","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L22",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L24",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$25",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"IF - Klive IDE"}],["$","meta","1",{"name":"description","content":"A statement which sets up a test condition which can be used to control the subsequent flow of the program. It is part of the IF....THEN....ELSE structure."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/bbc-basic/statements-and-functions/if/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L26","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@27","v":null,"s":"$9"}},"a":"$@28","u":"$@29","b":"dZNfFVLPQi_KHqnwQrQVE"}
+2a:"ToggleWordWrapButton"
+2b:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$2a"]
+2c:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+2d:I[484,[],"OutletBoundary"]
+13:["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L2b",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L2c",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"IF length=5 THEN 110"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"IF A<C OR A>D GOTO 110"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"IF A>C AND C>=D THEN GOTO 110 ELSE PRINT \"BBC\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"IF A>Q PRINT\"IT IS GREATER\":A=1:GOTO 120"}]}]]}]]}]
+14:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The word THEN is optional under most circumstances."}]
+15:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The IF statement is the primary decision making statement. The testable condition (A=B, etc) is evaluated and the answer is either TRUE or FALSE. If the answer is TRUE, the rest of the line (up to the ELSE clause if there is one) is executed. The ’=’ sign has two meanings. It can be used to assign a value to a variable or as part of a test. The example shows the two uses in one program line."}]
+16:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L2b",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L2c",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"A=B=C"}]}]}]]}]]}]
+17:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"In English this reads “A becomes equal to the result of the test B=C”. Thus if B does equal C, A will be set to TRUE (-1). However, if B does not equal C, A will be set to FALSE (0). The example below is similar, but A will be set to TRUE (-1) if ‘age’ is less than 21."}]
+18:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L2b",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L2c",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"A=age<21"}]}]}]]}]]}]
+19:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Since the IF statement evaluates the testable condition and acts on the result, you can use a previously set variable name in place of the test. The two examples below will print ‘Under 21’ if the value of ‘age’ is less than 21."}]
+1a:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L2b",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L2c",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"IF age<21 THEN PRINT \"Under 21\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"flag=age<21"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"IF flag THEN PRINT \"Under 21\""}]}]]}]]}]]}]
+1b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Syntax"}]}]
+1c:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L2b",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L2c",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"IF <t-cond> THEN <stmt>{:<stmt>} [ELSE <stmt>{:<stmt>}]"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"IF <exp> THEN <stmt>{:<stmt>} [ELSE <stmt>{:<stmt>}]"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"IF <t-cond> GOTO <l-num> [ELSE <l-num>]"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"IF <exp> GOTO <l-num> [ELSE <l-num>]"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"IF <t-cond> THEN <l-num> [ELSE <l-num>]"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"IF <exp> THEN <l-num> [ELSE <l-num>]"}]}]]}]]}]]}]
+1d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Associated Keywords"}]}]
+1e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"THEN, ELSE"}]
+1f:["$","$L2d",null,{"children":["$","$25",null,{"name":"Next.MetadataOutlet","children":"$@2e"}]}]
+29:true
+9:300
+2e:null
+9:C
+28:0
+7:"$undefined"
+27:"$undefined"
+20:"$undefined"
