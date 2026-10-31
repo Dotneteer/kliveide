@@ -33,7 +33,7 @@ for k,v in list(fixes.items()):
 for lo,hi in replace:
   b['regions']=[r for r in b['regions'] if r['type']=='disassemble' or r['end']<lo or r['start']>hi]
   for key in list(d['provenance']):
-    if key.endswith(':region') and lo<=int(key.split(':')[1])<=hi: d['provenance'].pop(key)
+    if key.startswith(f'{PAGE}:') and key.endswith(':region') and lo<=int(key.split(':')[1])<=hi: d['provenance'].pop(key)
 # --- Rebuild the disassemble regions around the data that is left
 # --- The page ends where its last region ends ($3FFF for a 16K page, $2FFF for the HT-1080Z's 12K BASIC)
 PAGE_END=max(r['end'] for r in b['regions'])

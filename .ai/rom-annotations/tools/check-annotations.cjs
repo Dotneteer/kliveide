@@ -52,13 +52,17 @@ function registerTsRuntime() {
 
 registerTsRuntime();
 const { checkRomSidecar } = require(join(root, "src/renderer/appIde/annotations/romSidecarCheck.ts"));
-const { canonicalShippedSidecar, workingCopyRelativePath } = require(join(root, "src/common/roms/romSidecarPaths.ts"));
+const { canonicalShippedSidecar, managedSidecarOf, workingCopyRelativePath } = require(join(root, "src/common/roms/romSidecarPaths.ts"));
 const ROMS = join(root, "src/public/roms");
 // --- A shipped ROM by its path under src/public/roms; a bare Next name (enNextZX.rom) is nextzxos-2.08's
 const shippedRom = (name) => join(ROMS, canonicalShippedSidecar(`${name}.dis`).replace(/\.dis$/i, ""));
 (async () => {
   const text = readFileSync(process.argv[2], "utf8");
-  const romFile = JSON.parse(text).source?.fileName ?? "zx81.rom"; // the ROM the sidecar names
+  // --- The ROM the sidecar describes: by its own path when it is a shipped file or a working copy
+  // --- (`zxnext/nextzxos-2.10/enNextZX.rom.dis` is the 2.10 set's, whatever its bare source.fileName
+  // --- says), else the ROM it names (a bare Next name is nextzxos-2.08's)
+  const managed = managedSidecarOf(resolve(process.argv[2]));
+  const romFile = managed ? managed.sidecar.replace(/\.dis$/i, "") : (JSON.parse(text).source?.fileName ?? "zx81.rom");
   const rom = new Uint8Array(readFileSync(shippedRom(romFile)));
   // --- Inherited sidecars as the IDE reads them: the working copy when there is one, else the shipped
   // --- file; the bytes of the shipped ROM each was written for

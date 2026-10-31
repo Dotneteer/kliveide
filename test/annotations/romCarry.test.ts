@@ -161,10 +161,13 @@ describe("the carried nextzxos-2.10 sidecars", () => {
   const ROMS = join(__dirname, "../../src/public/roms");
   const files = ["enNextZX", "enNxtmmc", "enNextMf", "enAltZX", "enNextLG"];
 
-  it.each(files)("%s names the 2.08 sidecar it was carried from, and its entries are derived", (file) => {
+  // --- Carried entries are derived; the entries authored afterwards from the 2.10 bytes are observed
+  it.each(files)("%s names the 2.08 sidecar it was carried from; its entries are carried or observed", (file) => {
     const raw = JSON.parse(readFileSync(join(ROMS, `zxnext/nextzxos-2.10/${file}.rom.dis`), "utf8"));
     expect(raw.carriedFrom.sidecar).toBe(`zxnext/nextzxos-2.08/${file}.rom.dis`);
-    expect(new Set(Object.values(raw.provenance))).toEqual(new Set(["derived"]));
+    const kinds = new Set(Object.values(raw.provenance));
+    expect(kinds.has("derived")).toBe(true);
+    expect([...kinds].every((kind) => kind === "derived" || kind === "observed")).toBe(true);
     const old = JSON.parse(readFileSync(join(ROMS, raw.carriedFrom.sidecar), "utf8"));
     expect(Object.keys(raw.banks)).toEqual(Object.keys(old.banks));
   });
