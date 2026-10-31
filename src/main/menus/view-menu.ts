@@ -97,10 +97,12 @@ export function createViewMenu(context: MenuContext): MenuItemConstructorOptions
       click: () => fitEmuWindowToScreen(emuWindow, "1x")
     },
     {
+      // --- A toggle: checked while the IDE window is shown; unchecking hides it as closing does
       id: "show_ide_window",
       label: t("menu.view.showIde"),
-      visible: !context.ideWindowVisible,
-      click: () => context.ensureIdeWindow()
+      type: "checkbox",
+      checked: context.ideWindowVisible,
+      click: () => (context.ideWindowVisible ? context.hideIdeWindow() : context.ensureIdeWindow())
     },
     { type: "separator" },
     /*

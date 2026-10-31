@@ -40,6 +40,8 @@ export type MenuContext = {
   focusedWindow: () => BrowserWindow;
   /** Shows the IDE window (and remembers to show it at the next start) */
   ensureIdeWindow: () => void;
+  /** Hides the IDE window (and remembers to keep it hidden at the next start) */
+  hideIdeWindow: () => void;
   /** Opens the Settings dialog in the focused window, optionally on one page */
   openSettings: (page?: SettingsPageId) => Promise<void>;
   /** Opens the Select Machine dialog in the focused window */

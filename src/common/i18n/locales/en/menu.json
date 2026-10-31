@@ -208,7 +208,7 @@
   },
   "menu.view.showIde": "Show IDE",
   "@menu.view.showIde": {
-    "context": "View menu: shows the IDE window when it is hidden."
+    "context": "View menu: a checkbox item; checked while the IDE window is shown, toggling it shows or hides the IDE window."
   },
   "menu.view.goBack": "Go Back",
   "@menu.view.goBack": {

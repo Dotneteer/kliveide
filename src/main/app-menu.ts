@@ -19,7 +19,7 @@ import { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
 import { machineMenuRegistry } from "./machine-menus/machine-menu-registry";
 import { collectedBuildTasks } from "./build";
 import { openMachineSelector, openSettingsDialog, selectMachineType } from "./ui-actions";
-import { isEmuWindowFocused, isIdeWindowVisible, showIdeWindow } from ".";
+import { hideIdeWindow, isEmuWindowFocused, isIdeWindowVisible, showIdeWindow } from ".";
 import type { MenuContext } from "./menus/menu-context";
 import { createFileMenu } from "./menus/file-menu";
 import { createViewMenu } from "./menus/view-menu";
@@ -71,6 +71,7 @@ export function createMenuContext(emuWindow: BrowserWindow, ideWindow: BrowserWi
     },
     focusedWindow: () => BrowserWindow.getFocusedWindow() ?? emuWindow,
     ensureIdeWindow: showIdeWindow,
+    hideIdeWindow,
     openSettings: (page) => openSettingsDialog(page),
     openMachineSelector: () => openMachineSelector(),
     selectMachineType
