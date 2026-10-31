@@ -903,6 +903,14 @@ class MainApiImpl {
   }
 
   /**
+   * Whether the IDE leaves the last project closed at startup, because Klive was started with
+   * `--machine` or `--start` (the project's own machine would replace that machine).
+   */
+  async skipsLastProjectReopen(): Promise<boolean> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Reloads the currently selected tape file.
    */
   async reloadTapeFile(): Promise<void> {

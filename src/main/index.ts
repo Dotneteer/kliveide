@@ -71,7 +71,8 @@ import { __WIN32__ } from "./electron-utils";
 import { processRendererToMainMessages } from "./RendererToMainProcessor";
 import { mainStore } from "./main-store";
 import { createWindowStateManager } from "./WindowStateManager";
-import { setMachineType } from "./registeredMachines";
+import { logEmuEvent, setMachineType } from "./registeredMachines";
+import { getLaunchSwitches, resolveLaunchMachine, START_SWITCH } from "./launch-switches";
 import { resolveModelId } from "@common/machines/machine-registry";
 import { parseKeyMappings } from "./key-mappings/keymapping-parser";
 import { setSelectedDiskFile, setSelectedTapeFile } from "./machine-menus/zx-specrum-menus";
@@ -409,7 +410,30 @@ async function createAppWindows() {
       // --- resolves it for the emulator; resolve it here too, or the dispatch below would write
       // --- the retired id straight back into the store.
       modelId = resolveModelId(machineId, modelId);
-      await setMachineType(machineId, modelId, appSettings.config);
+      let machineConfig = appSettings.config;
+
+      // --- `--machine <id>[:<model>]` replaces the saved machine; a bad one leaves it in place
+      const launchSwitches = getLaunchSwitches();
+      const launchProblems = [...launchSwitches.errors];
+      if (launchSwitches.machine) {
+        const resolved = resolveLaunchMachine(launchSwitches.machine, {
+          machineId,
+          modelId,
+          config: machineConfig
+        });
+        if (resolved.machine) {
+          machineId = resolved.machine.machineId;
+          modelId = resolved.machine.modelId;
+          machineConfig = resolved.machine.config;
+        } else if (resolved.error) {
+          launchProblems.push(resolved.error);
+        }
+      }
+      await setMachineType(machineId, modelId, machineConfig);
+      for (const problem of launchProblems) {
+        console.warn(problem);
+        await logEmuEvent(problem, "bright-red");
+      }
 
       // --- Ready, sign the machine type state change
       mainStore.dispatch(setMachineTypeAction(machineId));
@@ -418,7 +442,9 @@ async function createAppWindows() {
       markAppStateRestored();
 
       if (appSettings.media?.[MEDIA_TAPE]) {
-        await setSelectedTapeFile(appSettings.media[MEDIA_TAPE]);
+        // --- The last session's tape may belong to another machine (a TVC or HT-1080Z .cas waits
+        // --- for its own machine, also after `--machine`): restore it without announcing that
+        await setSelectedTapeFile(appSettings.media[MEDIA_TAPE], true, true);
       }
 
       const diskAState = appSettings.media?.[MEDIA_DISK_A];
@@ -450,6 +476,17 @@ async function createAppWindows() {
           mainStore.dispatch(setKeyMappingsAction(appSettings.keyMappingFile, mappings));
         } catch (err) {
           // --- Intentionally ignored
+        }
+      }
+
+      // --- `--start`: run the machine now that it and its media are in place
+      if (getLaunchSwitches().start) {
+        try {
+          await getEmuApi().issueMachineCommand("start");
+        } catch (err) {
+          const message = `${START_SWITCH} could not start the machine: ${err instanceof Error ? err.message : String(err)}`;
+          console.warn(message);
+          await logEmuEvent(message, "bright-red");
         }
       }
 

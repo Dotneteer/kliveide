@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import createAppStore from "@state/store";
-import { MI_HT1080Z, MI_SPECTRUM_48, MI_TVC } from "@common/machines/constants";
+import { MI_HT1080Z, MI_SPECTRUM_48, MI_TVC, MI_ZXNEXT } from "@common/machines/constants";
 import { MEDIA_TAPE } from "@common/structs/project-const";
 import { buildTvcCasFile, isTvcTapeFile } from "@emu/machines/tvc/TvcCasFile";
 
@@ -87,6 +87,15 @@ describe(".cas tapes in the emulator", () => {
 
     // --- Not on yet another machine
     await call(machineService, "setMachineType", MI_SPECTRUM_48);
+    expect(properties.has(MEDIA_TAPE)).toBe(false);
+    await call(machineService, "setMachineType", MI_TVC);
+    expect(isTvcTapeFile(properties.get(MEDIA_TAPE))).toBe(true);
+  });
+
+  it("keeps a tape for another machine without a message when the last session's tape is restored", async () => {
+    const { machineService, properties } = machineServiceWith(MI_ZXNEXT);
+    await call(machineService, "setTapeFile", "/d/Hovagta.cas", TVC_CAS, undefined, undefined, true);
+    expect(displayMessageBox).not.toHaveBeenCalled();
     expect(properties.has(MEDIA_TAPE)).toBe(false);
     await call(machineService, "setMachineType", MI_TVC);
     expect(isTvcTapeFile(properties.get(MEDIA_TAPE))).toBe(true);

@@ -80,7 +80,11 @@ describe("app shell startup hooks", () => {
     expect(cleanupIpc).not.toHaveBeenCalled();
   }, IDE_STARTUP_IMPORT_TIMEOUT);
 
-  it("loads the last IDE project after settings are synced", async () => {
+  it.each([
+    [false, true],
+    [true, false]
+  ])("loads the last IDE project after settings are synced (skipped: %s)", async (skipped, opens) => {
+    const skipsLastProjectReopen = vi.fn(() => Promise.resolve(skipped));
     const openFolder = vi.fn(() => Promise.resolve());
     const getAppSettings = vi.fn(() =>
       Promise.resolve({ project: { folderPath: "c:\\workspace\\demo" } })
@@ -95,7 +99,7 @@ describe("app shell startup hooks", () => {
       getGlobalSetting: () => true
     }));
     vi.doMock("@common/messaging/MainApi", () => ({
-      createMainApi: () => ({ getAppSettings, openFolder })
+      createMainApi: () => ({ getAppSettings, openFolder, skipsLastProjectReopen })
     }));
     vi.doMock("@renderer/appIde/MainToIdeIpc", () => ({ registerMainToIdeIpc: vi.fn(() => vi.fn()) }));
     vi.doMock("@renderer/appIde/IdeCommands", () => ({ registerIdeCommands: vi.fn() }));
@@ -121,7 +125,14 @@ describe("app shell startup hooks", () => {
       })
     );
 
-    await waitFor(() => expect(openFolder).toHaveBeenCalledWith("c:/workspace/demo"));
+    if (opens) {
+      await waitFor(() => expect(openFolder).toHaveBeenCalledWith("c:/workspace/demo"));
+    } else {
+      await waitFor(() => expect(skipsLastProjectReopen).toHaveBeenCalled());
+      await Promise.resolve();
+      expect(getAppSettings).not.toHaveBeenCalled();
+      expect(openFolder).not.toHaveBeenCalled();
+    }
   });
 
   it("runs EMU startup once and does not own MainToEmu IPC registration", async () => {

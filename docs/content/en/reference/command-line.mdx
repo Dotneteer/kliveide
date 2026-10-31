@@ -20,6 +20,29 @@ Klive comes with a command-line tool, `klive`, for scripts and continuous integr
 
 `klive test`, `klive build`, `klive run` and `klive disk` never open a window, so they can run while the IDE is open. `klive ide` needs a running Klive with automation turned on; [Automation](/en/guides/testing/automation/#turning-it-on) explains how, and what a script may do at each permission level.
 
+## Starting Klive with a machine
+
+The Klive app itself, not the `klive` command, takes switches that choose the machine it opens with and start it:
+
+| Switch | What it does |
+| --- | --- |
+| `--machine <id>[:<model>]` | Opens on this machine instead of the one the last session used. The IDs are the ones in [Machine Types](/en/reference/machine-types/), such as `sp128`, `zxnext` or `sp48:ntsc`; case does not matter. Without a model, Klive keeps the last session's model of that machine, or takes the machine's first model. `--machine=<id>` works too. |
+| `--start` | Starts the machine once the emulator has loaded, as **Machine › Start** does. |
+| `--noide` | Keeps the IDE window closed; only the emulator opens. |
+| `--showide` | Opens the IDE window even when it was closed at the end of the last session. |
+
+With `--machine` or `--start`, Klive does not reopen the last project, because opening it would switch to the project's own machine. A machine that `--machine` chose becomes the last session's machine, like a choice from **Machine › Machine Type**, and it starts with the model's default configuration unless it is the machine and model the last session used. The last session's tape and disks stay in the drives; a `.cas` tape of the Videoton TVC or the HT-1080Z waits, without a message, until its own machine runs. An unknown machine or model leaves the last session's machine in place, and the Emulator output pane says what was wrong and lists the IDs it knows.
+
+The switches apply when Klive starts. Klive runs once per user, so starting it again while it is open brings the open Klive to the front and ignores the switches.
+
+On macOS, pass them to the app with `open`:
+
+```bash
+open -a "Klive IDE" --args --machine zxnext --start --noide
+```
+
+On Windows, add them after the path of `Klive IDE.exe`, in a shortcut or a terminal. On Linux, add them after the AppImage's name.
+
 ## Exit codes
 
 Every command exits with a code a script can test. `0` always means success, and `2` means the build had errors; each command's page lists the rest.
