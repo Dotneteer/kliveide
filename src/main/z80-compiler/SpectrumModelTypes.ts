@@ -7,7 +7,8 @@ import {
   MI_ZX81,
   MI_ZXNEXT,
   MI_HT1080Z,
-  MI_TVC
+  MI_TVC,
+  MI_ENTERPRISE
 } from "@common/machines/constants";
 
 
@@ -20,7 +21,8 @@ export const enum SpectrumModelType {
   ZX80 = 5,
   ZX81 = 6,
   HT1080Z = 7,
-  TVC = 8
+  TVC = 8,
+  Enterprise = 9
 }
 
 /**
@@ -34,7 +36,8 @@ export const SpectrumModelTypes: Record<number, string> = {
   5: "ZX80",
   6: "ZX81",
   7: "HT1080Z",
-  8: "TVC"
+  8: "TVC",
+  9: "Enterprise"
 }
 
 /**
@@ -56,6 +59,11 @@ export function isHt1080zModelType(modelType: number | undefined): boolean {
 /** Whether a model type is the Videoton TVC's, both models (`.plans/VIDEOTON_TVC_PLAN.md` §11) */
 export function isTvcModelType(modelType: number | undefined): boolean {
   return modelType === SpectrumModelType.TVC;
+}
+
+/** Whether a model type is the Enterprise 64/128's, both models (`.plans/ENTERPRISE_PLAN.md` §12) */
+export function isEnterpriseModelType(modelType: number | undefined): boolean {
+  return modelType === SpectrumModelType.Enterprise;
 }
 
 /**
@@ -95,6 +103,8 @@ export function defaultModelTypeForMachine(
       return SpectrumModelType.HT1080Z;
     case MI_TVC:
       return SpectrumModelType.TVC;
+    case MI_ENTERPRISE:
+      return SpectrumModelType.Enterprise;
     default:
       return undefined;
   }

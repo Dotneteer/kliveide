@@ -13,6 +13,7 @@
  *          7 the tape data comparator (both 1 with no input)
  *   B7     write: serial/net data and status out
  *   BF     write: the system register (ep-dave.c)
+ *   10-1F  the EXDOS card, when fitted (ep-exdos.c): 10-17 the WD1770, 18-1F its control register
  *   BC     write: a request from Klive's FILE: ROM to the host (below); no real hardware decodes it
  *          (B8h-BEh are inside DAVE's range and unused)
  *
@@ -43,6 +44,7 @@ static void epResetPorts(void) {
 static uint8_t epCpuReadPort(uint16_t address) {
   const uint8_t port = (uint8_t)address;
   if (port >= 0x80u && port <= 0x8fu) return epNickDataBus;
+  if (port >= 0x10u && port <= 0x1fu && epExdosPresent()) return epExdosReadPort(port);
   switch (port) {
     case 0xb0u:
     case 0xb1u:
@@ -54,8 +56,8 @@ static uint8_t epCpuReadPort(uint16_t address) {
     case 0xb5u:
       return epReadKeyboard();
     case 0xb6u:
-      // --- No printer (not ready), the serial inputs as ep128emu gives them, no tape signal
-      return (uint8_t)(0xc0u | 0x08u | epReadControlColumns());
+      // --- No printer (not ready), the serial inputs as ep128emu gives them, the tape's comparators (ep-tape.c)
+      return (uint8_t)(epTapeInputBits() | 0x08u | epReadControlColumns());
     default:
       return 0xffu;
   }
@@ -67,8 +69,14 @@ static void epCpuWritePort(uint16_t address, uint8_t value) {
     epNickWritePort(port, value);
     return;
   }
+  if (port >= 0x10u && port <= 0x1fu) {
+    if (epExdosPresent()) epExdosWritePort(port, value);
+    return;
+  }
   if (port >= 0xa0u && port <= 0xafu) {
     epDaveReg[port & 15u] = value;
+    // --- The left D/A is the tape's output (ep-tape.c)
+    if ((port & 15u) == 7u || (port & 15u) == 8u) epTapeAfterDaveWrite();
     return;
   }
   switch (port) {
@@ -83,8 +91,10 @@ static void epCpuWritePort(uint16_t address, uint8_t value) {
       epDaveWriteB4(value);
       break;
     case 0xb5u:
+      epTapeBeforeMotorChange();
       epPortB5 = value;
       epKeyboardRow = value & 0x0fu;
+      epTapeAfterMotorChange();
       break;
     case 0xb6u:
       epPortB6 = value;

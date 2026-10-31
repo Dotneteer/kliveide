@@ -111,6 +111,8 @@ export const MC_EP_CARTRIDGE = "epCartridge";
 export const MC_EP_PALETTE = "epPalette";
 /** Enterprise only: Klive's FILE: device ROM at segment 10h (absent or true: fitted) */
 export const MC_EP_HOSTFS = "epHostFs";
+/** Enterprise only: the EXDOS floppy interface card, with its EXDOS 1.3 ROM at segments 20h-21h (true: fitted) */
+export const MC_EP_EXDOS = "epExdos";
 /**
  * The 48K, the 128K (its own timing, not the Pentagon's or the Scorpion's) and the +2A/+3/+2E/+3E: a
  * DivMMC is connected (`.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md` C5). It boots the esxDOS ROM the

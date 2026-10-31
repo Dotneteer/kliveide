@@ -167,13 +167,21 @@ static void epVsyncStarted(void);
 static void epFrameEnds(uint32_t newStart);
 static inline void epClockAdvance(uint32_t halves);
 static inline void epCheckFrameCap(void);
+/* The cassette (ep-tape.c): the comparator bits, the left D/A's level, the motor */
+static uint8_t epTapeInputBits(void);
+static void epTapeAfterDaveWrite(void);
+static void epTapeBeforeMotorChange(void);
+static void epTapeAfterMotorChange(void);
+static void epTapeReset(void);
 
 #include "ep-memory.c"
 #include "ep-keyboard.c"
 #include "ep-dave.c"
 #include "ep-audio.c"
 #include "ep-nick.c"
+#include "ep-exdos.c"
 #include "ep-ports.c"
+#include "ep-tape.c"
 #include "ep-timing.c"
 
 /*
@@ -346,6 +354,8 @@ static void epResetMachine(void) {
   epDaveNextTick = epDaveTickHalves;
   epNickReset();
   epAudioReset();
+  epTapeReset();
+  epExdosReset();
 }
 
 /* The reset button: the CPU and DAVE reset, the RAM kept (EXOS decides warm or cold from RST_ADDR) */

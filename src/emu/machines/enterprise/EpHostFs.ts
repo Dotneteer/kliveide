@@ -12,7 +12,9 @@
  * An open file is a byte array in memory: reads, writes and seeks are answered at once, inside the
  * frame. Opening a file, closing one that was written and destroying one need the file store - the
  * main process in the app, a map in the tests - and finish asynchronously (`EpHostFsAsync`), while the
- * CPU keeps waiting.
+ * CPU keeps waiting. A store that is `synchronous` (an in-memory one: the headless runner's, `klive run`'s)
+ * is answered inside the frame instead, through its `...Sync` methods: the headless runner has no frame
+ * commands to wait on.
  */
 
 /** EXOS status codes the device returns (the kernel specification, part II §3) */
@@ -47,6 +49,37 @@ export interface EpHostFileStore {
   write(name: string, data: Uint8Array): Promise<void>;
   /** Whether the file was there to remove */
   remove(name: string): Promise<boolean>;
+  /** Answers at once through the `...Sync` methods (the machine needs no frame command) */
+  readonly synchronous?: boolean;
+  readSync?(name: string): Uint8Array | undefined;
+  writeSync?(name: string, data: Uint8Array): void;
+  removeSync?(name: string): boolean;
+}
+
+/** A store's read, write and remove: synchronous when the store is, else its promises */
+function readOf(store: EpHostFileStore, name: string, then: (data: Uint8Array | undefined) => void): Promise<void> {
+  if (store.synchronous && store.readSync) {
+    then(store.readSync(name));
+    return Promise.resolve();
+  }
+  return store.read(name).then(then);
+}
+
+function writeOf(store: EpHostFileStore, name: string, data: Uint8Array, then: () => void): Promise<void> {
+  if (store.synchronous && store.writeSync) {
+    store.writeSync(name, data);
+    then();
+    return Promise.resolve();
+  }
+  return store.write(name, data).then(then);
+}
+
+function removeOf(store: EpHostFileStore, name: string, then: (removed: boolean) => void): Promise<void> {
+  if (store.synchronous && store.removeSync) {
+    then(store.removeSync(name));
+    return Promise.resolve();
+  }
+  return store.remove(name).then(then);
 }
 
 /** What the device needs of the machine while it answers a call */
@@ -78,21 +111,41 @@ type Channel = {
   dirty: boolean;
 };
 
-/** An in-memory file store (the tests'; names match whatever their case) */
+/**
+ * An in-memory file store (the tests', the headless runner's; names match whatever their case). The
+ * tests use it asynchronously, as the app's store is; `synchronous: true` answers inside the frame.
+ */
 export class EpMemoryFileStore implements EpHostFileStore {
   readonly files = new Map<string, Uint8Array>();
+  readonly synchronous: boolean;
+
+  constructor({ synchronous = false }: { synchronous?: boolean } = {}) {
+    this.synchronous = synchronous;
+  }
 
   async read(name: string): Promise<Uint8Array | undefined> {
+    return this.readSync(name);
+  }
+
+  async write(name: string, data: Uint8Array): Promise<void> {
+    this.writeSync(name, data);
+  }
+
+  async remove(name: string): Promise<boolean> {
+    return this.removeSync(name);
+  }
+
+  readSync(name: string): Uint8Array | undefined {
     const key = this.find(name);
     return key === undefined ? undefined : this.files.get(key)!.slice();
   }
 
-  async write(name: string, data: Uint8Array): Promise<void> {
+  writeSync(name: string, data: Uint8Array): void {
     this.files.delete(this.find(name) ?? name);
     this.files.set(name, data.slice());
   }
 
-  async remove(name: string): Promise<boolean> {
+  removeSync(name: string): boolean {
     const key = this.find(name);
     return key !== undefined && this.files.delete(key);
   }
@@ -138,16 +191,16 @@ export class EpHostFs {
 
       case EpHostFsCall.Open: {
         const name = this.readName(cpu);
-        return async (store) => {
-          const data = await store.read(name);
-          if (!data) {
-            setStatus(EP_FILE_NOT_FOUND);
-            return;
-          }
-          this.channels.set(channel, { name, data, length: data.length, position: 0, dirty: false });
-          this.lastOpened = channel;
-          ok();
-        };
+        return (store) =>
+          readOf(store, name, (data) => {
+            if (!data) {
+              setStatus(EP_FILE_NOT_FOUND);
+              return;
+            }
+            this.channels.set(channel, { name, data, length: data.length, position: 0, dirty: false });
+            this.lastOpened = channel;
+            ok();
+          });
       }
 
       case EpHostFsCall.Create:
@@ -174,16 +227,11 @@ export class EpHostFs {
           ok();
           return undefined;
         }
-        return async (store) => {
-          await store.write(open.name, open.data.slice(0, open.length));
-          ok();
-        };
+        return (store) => writeOf(store, open.name, open.data.slice(0, open.length), ok);
 
       case EpHostFsCall.Destroy:
         this.channels.delete(channel);
-        return async (store) => {
-          setStatus((await store.remove(open.name)) ? EXOS_OK : EP_FILE_NOT_FOUND);
-        };
+        return (store) => removeOf(store, open.name, (removed) => setStatus(removed ? EXOS_OK : EP_FILE_NOT_FOUND));
 
       case EpHostFsCall.ReadChar:
         if (open.position >= open.length) {

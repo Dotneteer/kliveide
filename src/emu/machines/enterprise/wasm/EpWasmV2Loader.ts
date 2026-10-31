@@ -64,6 +64,10 @@ export type EpWasmV2Views = {
   readonly breakpointFlags: Uint16Array;
   /** The debugger's condition plan (`z80-debug-loop.c`, `WASM_CORE_CONDITION_PLAN_WORDS` words) */
   readonly condPlan: Uint32Array;
+  /** The tape program the deck plays (`ep-tape.c`, `EpTapeFile.ts`) */
+  readonly tapeProgram: Uint32Array;
+  /** The SAVE recording's ring of half-periods (`epTapeGetSavedLength` bytes ever written) */
+  readonly savedData: Uint8Array;
 };
 
 export type EpWasmV2Runtime = EpWasmV2Views & {
@@ -198,9 +202,44 @@ export const epWasmV2RequiredExports = [
   "epSetNickSlotPhase",
   "epSetTacts",
   "epSetTargetClockMultiplier",
+  "epGetTapeCapacity",
+  "epTapeGetLevel",
+  "epTapeGetMotor",
+  "epTapeGetPlaying",
+  "epTapeGetPosition",
+  "epTapeGetSaveCapacity",
+  "epTapeGetSavedLength",
+  "epTapeGetSavedRevision",
+  "epTapeProgramPtr",
+  "epTapeRewind",
+  "epTapeSavedDataPtr",
+  "epTapeSetLength",
   "epWriteMemory",
   "epWritePhysical",
   "epWritePort",
+  // --- The EXDOS card (`ep-exdos.c`): the WD1770's registers, the control register, the disks
+  "epExdosClearDirty",
+  "epExdosDiskDataPtr",
+  "epExdosDiskEject",
+  "epExdosDiskGetCapacity",
+  "epExdosDiskInsert",
+  "epExdosDiskSetWriteProtected",
+  "epExdosGetControl",
+  "epExdosGetDirtyRevision",
+  "epExdosGetDiskChanged",
+  "epExdosGetDiskCylinders",
+  "epExdosGetDiskPresent",
+  "epExdosGetDiskSides",
+  "epExdosGetDriveCylinder",
+  "epExdosGetFdcBusy",
+  "epExdosGetFdcCommand",
+  "epExdosGetFdcData",
+  "epExdosGetFdcSector",
+  "epExdosGetFdcTrack",
+  "epExdosGetMotorOn",
+  "epExdosGetPresent",
+  "epExdosGetSectorCount",
+  "epExdosGetSectorDirty",
   // --- Last: the breakpoint condition evaluator, identical in every Z80 core
   ...CONDITION_CORE_EXPORTS,
   // --- The execution-history recorder, identical in every core that records history
@@ -270,6 +309,10 @@ export function createEpWasmV2Views(exports: EpWasmV2Exports, artifactName = EP_
   check("accessLog", exports.epGetAccessLogPtr(), WASM_ACCESS_LOG_CAPACITY * 4);
   check("breakpointFlags", exports.epBreakpointFlagsPtr(), 0x1_0000 * 2);
   check("condPlan", exports.epCondPlanPtr(), WASM_CORE_CONDITION_PLAN_WORDS * 4);
+  const tapeWords = exports.epGetTapeCapacity();
+  const saveSize = exports.epTapeGetSaveCapacity();
+  check("tapeProgram", exports.epTapeProgramPtr(), tapeWords * 4);
+  check("savedData", exports.epTapeSavedDataPtr(), saveSize);
   return {
     memoryBuffer,
     memory: new Uint8Array(memoryBuffer, exports.epMemoryPtr(), memorySize),
@@ -283,7 +326,9 @@ export function createEpWasmV2Views(exports: EpWasmV2Exports, artifactName = EP_
     audioSamples: new Float64Array(memoryBuffer, exports.epAudioSamplesPtr(), audioDoubles),
     accessLog: new Uint32Array(memoryBuffer, exports.epGetAccessLogPtr(), WASM_ACCESS_LOG_CAPACITY),
     breakpointFlags: new Uint16Array(memoryBuffer, exports.epBreakpointFlagsPtr(), 0x1_0000),
-    condPlan: new Uint32Array(memoryBuffer, exports.epCondPlanPtr(), WASM_CORE_CONDITION_PLAN_WORDS)
+    condPlan: new Uint32Array(memoryBuffer, exports.epCondPlanPtr(), WASM_CORE_CONDITION_PLAN_WORDS),
+    tapeProgram: new Uint32Array(memoryBuffer, exports.epTapeProgramPtr(), tapeWords),
+    savedData: new Uint8Array(memoryBuffer, exports.epTapeSavedDataPtr(), saveSize)
   };
 }
 

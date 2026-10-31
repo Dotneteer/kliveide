@@ -14,6 +14,32 @@ import { EpKeyCode } from "./EpKeyCode";
 import { epKeyMappings } from "./EpKeyMappings";
 import { epStrokesForText } from "./EpTyper";
 import { EP_CLOCK, EP_TACTS_IN_FRAME, resolveEpHardware, type EpHardware } from "./epMachineInfo";
+import type { EpRomSetId } from "./EpRoms";
+import { t } from "@common/i18n/i18n";
+import {
+  EP_CODE_START,
+  EP_RUN_FILE_NAME,
+  describeEpPlacementProblem,
+  epComFile,
+  epRunCommand,
+  isEpPlacementProblem,
+  placeEpCode,
+  type EpPlacement
+} from "@common/enterprise/codePlacement";
+
+/**
+ * Where the ROMs wait for a key, found by running them (the most frequent PCs over 60 000 steps):
+ * EXOS's banner (segment 00h at page 3) and the HALT IS-BASIC's editor waits on at its prompt (in
+ * segment F8h/FCh at page 0, after an EI at 0056h). The banner never runs 0057h.
+ */
+const EP_KEY_WAITS: Record<EpRomSetId, { banner: number; prompt: number }> = {
+  "21": { banner: 0xdc58, prompt: 0x0057 },
+  "20": { banner: 0xdc2a, prompt: 0x0057 }
+};
+/** The frames Run waits on the banner before its key */
+const BANNER_KEY_DELAY_FRAMES = 10;
+/** The frames Run waits at the prompt before it types */
+const PROMPT_KEY_DELAY_FRAMES = 50;
 
 /** The frames the typer waits after ENTER, for the line to be stored (`typeText`) */
 const ENTER_SETTLE_FRAMES = 6;
@@ -167,11 +193,55 @@ export abstract class EpWasmHost extends Z80MachineBase {
   // ==========================================================================================
   // Code injection: Phase 8 (`.plans/ENTERPRISE_PLAN.md` §12)
 
-  async getCodeInjectionFlow(_model: string): Promise<CodeInjectionFlow> {
-    throw new Error("Running code on the Enterprise is not supported yet.");
+  // ==========================================================================================
+  // Run and Debug (`.plans/ENTERPRISE_PLAN.md` §12, `common/enterprise/codePlacement.ts`)
+
+  /**
+   * Files the FILE: device serves before it asks the file store: Run puts the program here, so it
+   * never lands in the user's FILE: folder. Names match whatever their case.
+   */
+  readonly stagedHostFiles = new Map<string, Uint8Array>();
+
+  /** Checks the code against the placement rules; throws the reason it cannot run */
+  placeCode(codeToInject: CodeToInject): EpPlacement {
+    const placement = placeEpCode(codeToInject.segments, codeToInject.entryAddress);
+    if (isEpPlacementProblem(placement)) throw new Error(describeEpPlacementProblem(placement));
+    return placement;
   }
 
-  injectCodeToRun(_codeToInject: CodeToInject): number {
-    throw new Error("Running code on the Enterprise is not supported yet.");
+  /**
+   * Run and Debug go through EXOS's own loader: power on, pass the ENTERPRISE banner with a key, wait
+   * for IS-BASIC's prompt, stage the program as `KLIVE.COM` in the FILE: device, and type
+   * `LOAD "FILE:KLIVE.COM"`. EXOS loads the `$$APP` at 0100h and starts it. The two waits are the
+   * places the ROMs wait for a key, found by running them (`EP_KEY_WAITS`).
+   */
+  async getCodeInjectionFlow(model: string): Promise<CodeInjectionFlow> {
+    if (model !== this.machineId) {
+      throw new Error(`Code for machine model '${model}' cannot run on this virtual machine.`);
+    }
+    if (!this.hardware.hostFs) throw new Error(t("emu.ep.code.noHostFs"));
+    const waits = EP_KEY_WAITS[this.hardware.romSet];
+    return [
+      { type: "ReachExecPoint", rom: 0, execPoint: waits.banner, message: "EXOS shows its banner" },
+      { type: "QueueKey", primary: EpKeyCode.Space, delayFrames: BANNER_KEY_DELAY_FRAMES, wait: 0 },
+      { type: "Start" },
+      { type: "WaitKeyQueue" },
+      { type: "ReachExecPoint", rom: 0, execPoint: waits.prompt, message: "IS-BASIC is at its prompt" },
+      { type: "Inject" },
+      // --- The placement throws before anything is typed when the rules refuse the code
+      {
+        type: "TypeText",
+        text: (code) => (code ? (this.placeCode(code), epRunCommand()) : ""),
+        delayFrames: PROMPT_KEY_DELAY_FRAMES
+      },
+      { type: "KeepPc" }
+    ];
+  }
+
+  /** Stages the program for the FILE: device; EXOS loads it when Run types `LOAD` */
+  injectCodeToRun(codeToInject: CodeToInject): number {
+    const placement = this.placeCode(codeToInject);
+    this.stagedHostFiles.set(EP_RUN_FILE_NAME, epComFile(placement));
+    return EP_CODE_START;
   }
 }

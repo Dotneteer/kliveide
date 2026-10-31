@@ -146,9 +146,45 @@ const productionExports = [
   "epSetNickSlotPhase",
   "epSetTacts",
   "epSetTargetClockMultiplier",
+  // --- The cassette (`ep-tape.c`): the tape program, the motor, the SAVE recording
+  "epGetTapeCapacity",
+  "epTapeGetLevel",
+  "epTapeGetMotor",
+  "epTapeGetPlaying",
+  "epTapeGetPosition",
+  "epTapeGetSaveCapacity",
+  "epTapeGetSavedLength",
+  "epTapeGetSavedRevision",
+  "epTapeProgramPtr",
+  "epTapeRewind",
+  "epTapeSavedDataPtr",
+  "epTapeSetLength",
   "epWriteMemory",
   "epWritePhysical",
-  "epWritePort"
+  "epWritePort",
+  // --- The EXDOS card (`ep-exdos.c`): the WD1770's registers, the control register, the disks
+  "epExdosClearDirty",
+  "epExdosDiskDataPtr",
+  "epExdosDiskEject",
+  "epExdosDiskGetCapacity",
+  "epExdosDiskInsert",
+  "epExdosDiskSetWriteProtected",
+  "epExdosGetControl",
+  "epExdosGetDirtyRevision",
+  "epExdosGetDiskChanged",
+  "epExdosGetDiskCylinders",
+  "epExdosGetDiskPresent",
+  "epExdosGetDiskSides",
+  "epExdosGetDriveCylinder",
+  "epExdosGetFdcBusy",
+  "epExdosGetFdcCommand",
+  "epExdosGetFdcData",
+  "epExdosGetFdcSector",
+  "epExdosGetFdcTrack",
+  "epExdosGetMotorOn",
+  "epExdosGetPresent",
+  "epExdosGetSectorCount",
+  "epExdosGetSectorDirty"
 ];
 
 
@@ -158,8 +194,15 @@ const productionExports = [
  * the access profile's flags and counter pool (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D5) make
  * it 8 MiB, as the HT-1080Z's and the TVC's before its disks. Raise this only with a recorded reason
  * (EXDOS's drives will, in Phase 9).
+ *
+ * 9 MiB since the tape (plan §9.3, `ep-tape.c`): the tape program the deck plays (256K words, 1 MiB:
+ * an EXOS file of up to about 1 MB, or a recorded signal of about 256K half-periods) and the SAVE
+ * recording's 64K ring did not fit in the 430K the 8 MiB left.
+ *
+ * 11 MiB since the EXDOS card (plan §10, `ep-exdos.c`): its two drives hold 82 x 2 x 9 x 512 bytes
+ * each in the controller's canonical layout (1.48 MB), which the 9 MiB had no room for.
  */
-const EP_WASM_MEMORY_BYTES = 8 * 1024 * 1024;
+const EP_WASM_MEMORY_BYTES = 11 * 1024 * 1024;
 
 function normalizeOptimization(optimization = process.env.EP_WASM_OPTIMIZATION || "speed") {
   if (optimizationProfiles[optimization] == null) {

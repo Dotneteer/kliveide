@@ -2442,6 +2442,11 @@
     "context": "Export Code dialog, a choice in the Format list: a machine-code load module for the HT-1080Z (a Hungarian school computer, a TRS-80 Model I relative). .cmd is a file extension: keep it.",
     "maxChars": 24
   },
+  "dialog.exportCode.format.epCom": "EXOS program (.com)",
+  "@dialog.exportCode.format.epCom": {
+    "context": "Export Code dialog, a choice in the Format list: a program file for the Enterprise 64/128 that its operating system, EXOS, loads and starts. .com is a file extension and EXOS a product name: keep them.",
+    "maxChars": 24
+  },
   "dialog.exportCode.format.tvcCas": "TVC tape (.cas)",
   "@dialog.exportCode.format.tvcCas": {
     "context": "Export Code dialog, a choice in the Format list: a cassette tape image for the Videoton TVC whose program LOAD runs. .cas is a file extension: keep it.",

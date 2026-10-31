@@ -632,6 +632,40 @@ non-Spectrum machine on the shared Z80. What it taught, for the next one:
 - **A witness must be able to fail.** Several first tests passed on something BASIC repaints anyway
   (the border); the template test passed without its text. Compare against a run that prints nothing.
 
+## Two Clocks That Never Line Up: The Enterprise 64/128
+
+The Enterprise (`.plans/ENTERPRISE_PLAN.md` §18, `src/emu/machines/enterprise/wasm/README.md`) is the
+fourth non-Spectrum machine on the shared Z80, and the first whose video chip runs from its own
+oscillator. What it taught:
+
+- **An asynchronous clock is an exact rational phase, never a float.** NICK's position is an integer
+  accumulator advanced per half-T (40 434 603 per half-T, a slot every 363 520 000). Integer
+  arithmetic makes every replay see the same slots; a float would drift between two runs of the same
+  journal. The frame then is not a whole number of T-states, and nothing needs it to be.
+- **Set frame state where the frame ends, not in one caller of it.** The last frame's length was set
+  only by the fast frame loop, so a debugger run left it stale and a replay reached another image; the
+  journal-replay test found it. Anything that describes "the frame" goes in the one function every path
+  passes (`epFrameEnds`), and the cross-core replay suite is what proves it.
+- **The existing hooks were enough.** Contention against a foreign slot grid, DAVE's Tw waits and a
+  port write landing at its access point all fit `Z80_DELAY_*` and the `_TAIL` halves. Check the hook
+  list before planning a new one.
+- **A host trap can be a port no hardware decodes.** The `FILE:` device's calls write to an unused
+  port: no opcode hook, no list of trap addresses, no paging check. The core holds the CPU while the
+  host answers and the frame and debug loops return for the request, as the Next's SD card does.
+- **Serve Run's program from memory, not from the user's folders.** Run goes through the ROM's own
+  loader (`LOAD "FILE:KLIVE.COM"`), but the file is staged in the machine and served before the file
+  store is asked, so a run never writes into a folder the user owns.
+- **A headless host answers synchronously.** The headless runner and `klive run` drive frames in a
+  loop with no event turn between them, so a device whose app path is asynchronous (the main
+  process's file store) needs a `synchronous` store that answers inside the frame there.
+- **Many test files must not each build the core.** Twenty-odd files building `ep.wasm` one after
+  another behind the build lock timed out a worker's first test; the harness skips the build when the
+  artifact is newer than its inputs.
+- **A program started by the OS inherits the OS's state.** EXOS starts a `$$APP` on its own system
+  stack, and the first interrupt lands in EXOS; Run cannot add code before code at the start address,
+  so the template sets the stack. When a ROM starts user code, check what it leaves in SP, the
+  interrupt mode and the paging before the first test of Run.
+
 ## Recommended First Reading For Next Migration
 
 Before touching ZX Spectrum Next WASM work, read:

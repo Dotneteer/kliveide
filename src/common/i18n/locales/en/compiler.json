@@ -515,6 +515,20 @@
       "0": "A name, token, number or file name from the source code or the build, shown verbatim"
     }
   },
+  "compiler.asm.Z0386": "Code at ${0} is below $0100: on the Enterprise, EXOS loads a program at $0100 and keeps its own data below it. Run and Export refuse it; start the code at $0100.",
+  "@compiler.asm.Z0386": {
+    "context": "Z80 assembler message Z0386, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0387": "Code at ${0} is too high for the Enterprise: a program may reach $BFFF; from $C000 up is EXOS's system segment. Run and Export refuse it.",
+  "@compiler.asm.Z0387": {
+    "context": "Z80 assembler message Z0387, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
   "compiler.asm.Z0401": "Unexpected error when emitting code for mnemonic ''{0}'.",
   "@compiler.asm.Z0401": {
     "context": "Z80 assembler message Z0401, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",

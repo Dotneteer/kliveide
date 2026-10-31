@@ -22,7 +22,8 @@ import { dockBankOf, parseDckFile } from "@common/timex/dckFile";
 import { isZx8081ProgramFileName, parseZxProgramFile } from "@emu/machines/zx8081/ZxPFile";
 import { ht1080zTapeErrorKey, isHt1080zTapeFor, parseHt1080zTapeFile } from "@emu/machines/ht1080z/Ht1080zTapeFile";
 import { isTvcCasFileName, parseTvcCasFile } from "@emu/machines/tvc/TvcCasFile";
-import { MI_TVC } from "@common/machines/constants";
+import { MI_ENTERPRISE, MI_TVC } from "@common/machines/constants";
+import { isEpTapeFileName, parseEpTapeFile } from "@emu/machines/enterprise/EpTapeFile";
 import { mediaStore } from "@emu/machines/media/media-info";
 import { screenImageOf } from "@common/headless/screenImage";
 import { tapeBlocksOf } from "@common/headless/tapeBlocks";
@@ -300,6 +301,34 @@ class EmuMessageProcessor {
       }
       mediaStore.addMedia({ id: MEDIA_TAPE, mediaFile: file, mediaContents: program });
       this.machineService.getMachineController()?.machine?.setMachineProperty(MEDIA_TAPE, program);
+      if (confirm) {
+        await createMainApi(this.mainMessenger).displayMessageBox(
+          "info",
+          t("emu.media.tape.setTitle"),
+          t("emu.media.tape.setMessage", { file })
+        );
+      }
+      return;
+    }
+
+    // --- An Enterprise tape (.tap or .wav on the Enterprise): decoded into the tape program its core
+    // --- plays (`.plans/ENTERPRISE_PLAN.md` §9.3); before the Spectrum's .tap handling
+    if (this.machineService.getMachineController()?.machine?.machineId === MI_ENTERPRISE && isEpTapeFileName(file)) {
+      let epTape;
+      try {
+        epTape = parseEpTapeFile(contents);
+      } catch {
+        if (!suppressError) {
+          await createMainApi(this.mainMessenger).displayMessageBox(
+            "error",
+            t("emu.media.tape.errorTitle"),
+            t("emu.media.tape.epNotTape", { file })
+          );
+        }
+        return;
+      }
+      mediaStore.addMedia({ id: MEDIA_TAPE, mediaFile: file, mediaContents: epTape });
+      this.machineService.getMachineController()?.machine?.setMachineProperty(MEDIA_TAPE, epTape);
       if (confirm) {
         await createMainApi(this.mainMessenger).displayMessageBox(
           "info",

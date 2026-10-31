@@ -26,19 +26,23 @@ import { captureWasmImage, restoreWasmImage, type MachineStateParts } from "../s
 import { fillCoreBytes, writeCoreBytes } from "@emu/machines/reverse/coreMemoryWrites";
 import { loadEpWasmV2 } from "./wasm/EpWasmV2Loader";
 import { EpWasmHost } from "./EpWasmHost";
-import { EP_FILEIO_ROM_NAME, EP_ROM_SETS } from "./EpRoms";
+import { EP_EXDOS_ROM_IMAGE, EP_FILEIO_ROM_NAME, EP_ROM_SETS } from "./EpRoms";
+import { EpExdosDisks } from "./EpExdosDisks";
 import { EpHostFs, type EpHostFileStore, type EpHostFsAsync } from "./EpHostFs";
 import { EpMainFileStore } from "./EpMainFileStore";
 import {
   readEpDaveDebugState,
   readEpNickDebugState,
+  readEpLpt,
   type EpDaveDebugState,
   type EpNickDebugState
 } from "./EpDebugState";
 import {
   EP_PHYS_UNMAPPED,
+  EP_PHYS_VRAM,
   EP_PIXEL_ASPECT,
   EP_ROM_CART,
+  EP_ROM_EXDOS,
   EP_ROM_FILEIO,
   EP_SCREEN_HEIGHT,
   EP_SCREEN_WIDTH,
@@ -60,11 +64,36 @@ import {
   type JoystickConnector
 } from "@emu/machines/zxNext/IZxNextHostInputMachine";
 import type { AudioSample } from "@emu/abstractions/IAudioDevice";
-import { AUDIO_SAMPLE_RATE, EP_FILEIO_FOLDER } from "../machine-props";
+import {
+  AUDIO_SAMPLE_RATE,
+  DISK_A_CHANGES,
+  DISK_A_WP,
+  DISK_B_CHANGES,
+  DISK_B_WP,
+  EP_FILEIO_FOLDER,
+  FAST_LOAD,
+  REWIND_REQUESTED,
+  SAVED_TO_TAPE
+} from "../machine-props";
+import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-const";
+import type { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
+import { DSK_WHOLE_IMAGE_KEY } from "../disk/disk-changes";
+import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
+import { EpTapeRecorder, isEpTapeFile } from "./EpTapeFile";
 import type { MessengerBase as Messenger } from "@common/messaging/MessengerBase";
 
 /** The DC filter's cut-off, as the other cores' (`AudioDeviceBase.DC_FILTER_CUTOFF_HZ`); the core has no `exp` */
 const DC_FILTER_CUTOFF_HZ = 1.4;
+
+/**
+ * Fast load (`FAST_LOAD`, on by default): while the tape plays with its motor on, a displayed frame
+ * runs this many machine frames. EXOS decodes the real signal - nothing is trapped - so a load behaves
+ * exactly as at normal speed, only sooner. The sound of the skipped frames is dropped.
+ */
+const FAST_LOAD_FRAMES = 25;
+
+/** Frames a tape-load script waits for EXOS before it is dropped (two minutes) */
+const LOAD_SCRIPT_TIMEOUT_FRAMES = 6000;
 
 /**
  * An Enterprise 64/128 on the WASM core (`wasm/ep/`, `.plans/ENTERPRISE_PLAN.md`): one core for both
@@ -77,6 +106,33 @@ const DC_FILTER_CUTOFF_HZ = 1.4;
  * The core carries the shared execution-history recorder and access profile, and its whole state is
  * its linear memory: state files and reverse debugging save and restore that image.
  */
+/**
+ * A file store that serves the staged files (read-only) before it asks `backing`; as synchronous as
+ * `backing` is
+ */
+function stagedFileStore(staged: ReadonlyMap<string, Uint8Array>, backing: EpHostFileStore | undefined): EpHostFileStore {
+  const find = (name: string) => [...staged.keys()].find((k) => k.toUpperCase() === name.toUpperCase());
+  const readSync = (name: string) => {
+    const key = find(name);
+    return key !== undefined ? staged.get(key)!.slice() : backing?.readSync?.(name);
+  };
+  return {
+    synchronous: !!backing?.synchronous,
+    read: async (name) => {
+      const key = find(name);
+      if (key !== undefined) return staged.get(key)!.slice();
+      return backing?.read(name);
+    },
+    write: async (name, data) => {
+      if (backing) await backing.write(name, data);
+    },
+    remove: async (name) => (backing ? backing.remove(name) : false),
+    readSync,
+    writeSync: (name, data) => backing?.writeSync?.(name, data),
+    removeSync: (name) => backing?.removeSync?.(name) ?? false
+  };
+}
+
 export class EpWasmV2Machine extends EpWasmHost implements IExecutionHistorySource, IAccessProfileSource {
   // ==============================================================================================
   // Execution history: the shared recorder in the core, read through the shared reader; the
@@ -426,7 +482,15 @@ export class EpWasmV2Machine extends EpWasmHost implements IExecutionHistorySour
       writeCoreBytes(runtime, runtime.fileIoRom, fileIo.subarray(0, 0x4000));
     }
     fillCoreBytes(runtime, runtime.exdosRom, 0xff);
-    runtime.exports.epConfigure(hw.is128 ? 1 : 0, (hw.cartridge ? EP_ROM_CART : 0) | (hw.hostFs ? EP_ROM_FILEIO : 0));
+    // --- The EXDOS card, with its EXDOS 1.3 ROM at segments 20h-21h (`MC_EP_EXDOS`)
+    if (hw.exdos) {
+      const exdos = await this.loadRomFromResource(EP_EXDOS_ROM_IMAGE.name);
+      writeCoreBytes(runtime, runtime.exdosRom, exdos.subarray(0, EP_EXDOS_ROM_IMAGE.size));
+    }
+    runtime.exports.epConfigure(
+      hw.is128 ? 1 : 0,
+      (hw.cartridge ? EP_ROM_CART : 0) | (hw.hostFs ? EP_ROM_FILEIO : 0) | (hw.exdos ? EP_ROM_EXDOS : 0)
+    );
     runtime.exports.epNickSetLinearPalette(hw.linearPalette ? 1 : 0);
     const words = runtime.exports.epGetScreenWidth() * runtime.exports.epGetScreenHeight();
     this.screenPixels = runtime.pixelBuffer.subarray(0, words);
@@ -435,6 +499,10 @@ export class EpWasmV2Machine extends EpWasmHost implements IExecutionHistorySour
     this.setTactsInFrame(runtime.exports.epGetTactsInFrame());
     runtime.exports.epHardReset();
     this.syncAudioSampleRate(runtime);
+    this.setupTape(runtime);
+    this.exdosDisks ??= new EpExdosDisks(runtime.exports);
+    this.insertDisk(0, this.getMachineProperty(MEDIA_DISK_A));
+    this.insertDisk(1, this.getMachineProperty(MEDIA_DISK_B));
     this.syncCpuFromWasmV2(runtime);
   }
 
@@ -443,6 +511,41 @@ export class EpWasmV2Machine extends EpWasmHost implements IExecutionHistorySour
     const runtime = this.wasmV2Runtime;
     if (runtime == null) return;
     if (key === AUDIO_SAMPLE_RATE) this.syncAudioSampleRate(runtime);
+    this.onTapeProperty(runtime, key, value);
+    if (key === MEDIA_DISK_A || key === MEDIA_DISK_B) this.insertDisk(key === MEDIA_DISK_A ? 0 : 1, value);
+    else if (key === DISK_A_WP || key === DISK_B_WP) this.exdosDisks?.setWriteProtected(key === DISK_A_WP ? 0 : 1, !!value);
+  }
+
+  // ==========================================================================================
+  // The EXDOS card's disks (`.plans/ENTERPRISE_PLAN.md` §10, `EpExdosDisks.ts`, `wasm/ep/ep-exdos.c`)
+
+  /** The card's drives (`MEDIA_DISK_A/B`), once the core is loaded; they hold disks with or without the card */
+  private exdosDisks?: EpExdosDisks;
+  /** Why the last disk inserted could not go in a drive (`EpDiskImage.ts`), per drive */
+  diskProblems: (string | undefined)[] = [undefined, undefined];
+
+  private insertDisk(drive: number, contents: unknown): void {
+    if (!this.exdosDisks) return;
+    this.diskProblems[drive] = this.exdosDisks.insert(drive, contents, !!this.getMachineProperty(drive ? DISK_B_WP : DISK_A_WP));
+  }
+
+  /** The guest's writes, as the drives' whole new images, for the main process to write back */
+  private publishDiskChanges(): void {
+    const published = this.exdosDisks?.publish();
+    if (!published) return;
+    published.forEach((image, drive) => {
+      if (image) super.setMachineProperty(drive ? DISK_B_CHANGES : DISK_A_CHANGES, new Map([[DSK_WHOLE_IMAGE_KEY, image]]) as SectorChanges);
+    });
+  }
+
+  /** The controller asks for the pending writes before it reads them (a pause, a stop) */
+  flushDiskChanges(): void {
+    this.publishDiskChanges();
+  }
+
+  /** The disk in a drive as a raw `.img` image, the guest's writes included */
+  exportDisk(drive: number): Uint8Array | undefined {
+    return this.exdosDisks?.image(drive);
   }
 
   // ==========================================================================================
@@ -520,8 +623,12 @@ export class EpWasmV2Machine extends EpWasmHost implements IExecutionHistorySour
     do {
       runtime.exports.epExecuteFrame();
     } while (runtime.exports.epGetFrameCompleted() === 0 && this.serviceHostFs(runtime));
+    this.runTapeTurbo(runtime);
+    this.publishSavedTape(runtime);
+    this.publishDiskChanges();
     this.syncFrameCounters(runtime);
     this.frameCompleted = runtime.exports.epGetFrameCompleted() !== 0;
+    this.advanceLoadScript(runtime);
     this.executionContext.lastTerminationReason = FrameTerminationMode.Normal;
     return FrameTerminationMode.Normal;
   }
@@ -591,6 +698,7 @@ export class EpWasmV2Machine extends EpWasmHost implements IExecutionHistorySour
       importBusAccess: () => this.importBusAccess(runtime),
       hasAccessBreakpoint: () => this.hasAccessBreakpoint(),
       shouldStopAtBreakpoint: (instructionsExecuted) => this.shouldStopAtBreakpoint(instructionsExecuted),
+      onFrameEnd: () => this.advanceLoadScript(runtime),
       finish: (termination) => this.finishDebugLoop(termination)
     };
   }
@@ -599,6 +707,8 @@ export class EpWasmV2Machine extends EpWasmHost implements IExecutionHistorySour
     const runtime = this.requireWasmV2Runtime();
     this.syncCpuFromWasmV2(runtime);
     this.importBusAccess(runtime);
+    this.publishSavedTape(runtime);
+    this.publishDiskChanges();
     this.executionContext.lastTerminationReason = termination;
     return termination;
   }
@@ -700,7 +810,9 @@ export class EpWasmV2Machine extends EpWasmHost implements IExecutionHistorySour
     const runtime = this.wasmV2Runtime;
     if (!pending || !runtime) return;
     this.hostFsPending = undefined;
-    const store = this.hostFileStore ?? (messenger ? new EpMainFileStore(messenger, this.getMachineProperty(EP_FILEIO_FOLDER)) : undefined);
+    const backing = this.hostFileStore ?? (messenger ? new EpMainFileStore(messenger, this.getMachineProperty(EP_FILEIO_FOLDER)) : undefined);
+    // --- Run's staged program first (`EpWasmHost.stagedHostFiles`), then the folder
+    const store = this.stagedHostFiles.size ? stagedFileStore(this.stagedHostFiles, backing) : backing;
     try {
       if (store) await pending(store);
     } catch (err) {
@@ -731,11 +843,158 @@ export class EpWasmV2Machine extends EpWasmHost implements IExecutionHistorySour
       writePhysical: (a, v) => w.epWritePhysical(a, v & 0xff)
     });
     if (pending) {
-      this.hostFsPending = pending;
-      return false;
+      // --- A synchronous store (the headless runner's) answers inside the frame
+      const store = this.syncHostStore();
+      if (!store) {
+        this.hostFsPending = pending;
+        return false;
+      }
+      void pending(store);
     }
     w.epHostFsDone();
     return true;
+  }
+
+  /** The store FILE: uses, when it answers synchronously (`EpHostFileStore.synchronous`) */
+  private syncHostStore(): EpHostFileStore | undefined {
+    const backing = this.hostFileStore;
+    if (!backing?.synchronous) return undefined;
+    return this.stagedHostFiles.size ? stagedFileStore(this.stagedHostFiles, backing) : backing;
+  }
+
+  // ==========================================================================================
+  // Tape (`.plans/ENTERPRISE_PLAN.md` §9.3, `wasm/ep/ep-tape.c`, `EpTapeFile.ts`)
+
+  /** Decodes the core's SAVE recording as it grows */
+  private readonly tapeRecorder = new EpTapeRecorder();
+  /** Load and Run's steps still to do, each once EXOS shows what it waits for: "banner" (a key), then the command */
+  private loadScript: string[] = [];
+  private loadScriptIdleFrames = 0;
+  private loadScriptAge = 0;
+
+  /** At setup: the deck's tape to the core, the recording read from the core's current count */
+  private setupTape(runtime: EpWasmV2Runtime): void {
+    this.tapeRecorder.sync(runtime.exports.epTapeGetSavedLength());
+    this.uploadTape(runtime, this.getMachineProperty(MEDIA_TAPE));
+  }
+
+  /** The deck's machine properties: a tape put in or taken out, a rewind */
+  private onTapeProperty(runtime: EpWasmV2Runtime, key: string, value: unknown): void {
+    if (key === MEDIA_TAPE) this.uploadTape(runtime, value);
+    else if (key === REWIND_REQUESTED && (value === true || value === undefined)) runtime.exports.epTapeRewind();
+  }
+
+  /**
+   * Puts a tape in the deck: its tape program goes to the core, which plays it while a remote relay
+   * runs the motor. Anything that is not an Enterprise tape empties the deck.
+   */
+  private uploadTape(runtime: EpWasmV2Runtime, value: unknown): void {
+    if (!isEpTapeFile(value)) {
+      runtime.exports.epTapeSetLength(0);
+      return;
+    }
+    if (value.program.length > runtime.tapeProgram.length) {
+      throw new Error(`The tape is too long: ${value.program.length} words (at most ${runtime.tapeProgram.length}).`);
+    }
+    writeCoreBytes(runtime, runtime.tapeProgram, value.program);
+    runtime.exports.epTapeSetLength(value.program.length);
+  }
+
+  /**
+   * Load and Run (`tape-load -r`): the machine starts, and the frame loop presses a key at EXOS's
+   * banner and types a command at IS-BASIC's prompt: `RUN "TAPE:"` for an IS-BASIC program (it loads
+   * and runs it), `LOAD "TAPE:"` for anything else (an application module starts itself). EXOS idles in
+   * the same loop at the banner and at the prompt, so the steps watch the screen, not an address.
+   * @throws when there is no Enterprise tape in the deck
+   */
+  getTapeLoadFlow(): CodeInjectionFlow {
+    const tape = this.getMachineProperty(MEDIA_TAPE);
+    if (!isEpTapeFile(tape)) throw new Error("There is no Enterprise tape in the deck.");
+    this.loadScript = ["banner", tape.moduleType === 4 ? 'RUN "TAPE:"\n' : 'LOAD "TAPE:"\n'];
+    this.loadScriptIdleFrames = 0;
+    this.loadScriptAge = 0;
+    return [{ type: "Start", message: "EXOS starts; IS-BASIC loads the tape" }, { type: "KeepPc" }];
+  }
+
+  /** The tape-load steps still to do (the tests read it) */
+  get pendingLoadCommands(): readonly string[] {
+    return this.loadScript;
+  }
+
+  /** The text rows of EXOS's character-mode LPBs (as the harness's `screenText` reads them) */
+  private screenRows(runtime: EpWasmV2Runtime): string[] {
+    const vram = (a: number) => runtime.memory[EP_PHYS_VRAM + (a & 0xffff)];
+    const rows: string[] = [];
+    for (const block of readEpLpt(vram, runtime.exports.epNickGetLptBase())) {
+      if (block.mode < 3 || block.mode > 5 || block.rm <= block.lm) continue;
+      let row = "";
+      for (let i = 0; i < block.rm - block.lm; i++) {
+        const code = vram(block.ld1 + i) & 0x7f;
+        row += code >= 0x20 && code < 0x7f ? String.fromCharCode(code) : " ";
+      }
+      rows.push(row.trim());
+    }
+    return rows;
+  }
+
+  /**
+   * Does the load script's next step once EXOS waits for it, two frames in a row with nothing being
+   * typed and the motor off: the banner (its copyright line) for the key, IS-BASIC's "ok" as the last
+   * line for a command. A reverse-debugging replay types nothing (the journal replays the keys the live
+   * run typed); a script that never finishes is dropped.
+   */
+  private advanceLoadScript(runtime: EpWasmV2Runtime): void {
+    if (this.loadScript.length === 0 || this.executionContext.isReplayingHistory?.()) return;
+    if (++this.loadScriptAge > LOAD_SCRIPT_TIMEOUT_FRAMES) {
+      this.loadScript = [];
+      return;
+    }
+    const w = runtime.exports;
+    let ready = this.getKeyQueueLength() === 0 && w.epTapeGetMotor() === 0;
+    if (ready) {
+      const rows = this.screenRows(runtime);
+      if (this.loadScript[0] === "banner") {
+        ready = rows.some((row) => row.includes("Intelligent Software Ltd"));
+        // --- A machine already past the banner goes straight to the command
+        if (!ready && rows.some((row) => row.includes("IS-BASIC"))) this.loadScript.shift();
+      } else {
+        ready = rows.filter((row) => row !== "").pop() === "ok";
+      }
+    }
+    this.loadScriptIdleFrames = ready ? this.loadScriptIdleFrames + 1 : 0;
+    if (this.loadScriptIdleFrames >= 2) {
+      this.loadScriptIdleFrames = 0;
+      const step = this.loadScript.shift()!;
+      this.typeText(step === "banner" ? " " : step, 10);
+    }
+  }
+
+  /** Whether the tape plays with its motor on: fast load runs several frames for each one shown */
+  private get isTapeLoading(): boolean {
+    const w = this.wasmV2Runtime?.exports;
+    return !!w && w.epTapeGetPlaying() !== 0 && w.epTapeGetMotor() !== 0;
+  }
+
+  /** Fast load (`FAST_LOAD`, on by default): more machine frames while the tape plays */
+  private runTapeTurbo(runtime: EpWasmV2Runtime): void {
+    const fast = this.getMachineProperty(FAST_LOAD);
+    if (fast !== undefined && !fast) return;
+    for (let i = 1; i < FAST_LOAD_FRAMES && this.isTapeLoading && runtime.exports.epGetFrameCompleted() !== 0; i++) {
+      do {
+        runtime.exports.epExecuteFrame();
+      } while (runtime.exports.epGetFrameCompleted() === 0 && this.serviceHostFs(runtime));
+    }
+  }
+
+  /**
+   * Hands a file EXOS saved to the host as an ep128emu `.tap` (`SAVED_TO_TAPE`), as the other machines
+   * hand over theirs, once its last chunk is recorded and every CRC checks
+   */
+  private publishSavedTape(runtime: EpWasmV2Runtime): void {
+    const files = this.tapeRecorder.feed(runtime.savedData, runtime.exports.epTapeGetSavedLength());
+    for (const file of files) {
+      super.setMachineProperty(SAVED_TO_TAPE, { name: `${file.name || "enterprise"}.tap`, contents: file.tap });
+    }
   }
 
   // ==========================================================================================

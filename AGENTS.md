@@ -273,6 +273,29 @@ merely uncoloured, which no route diff can see.
 - The HBF floppy card (`MC_TVC_HBF`) runs on the shared WD1793 (`src/emu/machines/common/wasm/wd1793.c`,
   also the Beta 128's): a change there rebuilds both cores, and the 128K core must stay unchanged.
 
+## Enterprise 64/128
+
+- One C/WASM core runs the Enterprise 128 and 64 (machine `ep`, models `ep128`, `ep64`):
+  `src/emu/machines/enterprise/wasm/` - read its `README.md` (the half-T clock and NICK's exact
+  rational phase, the slot stepper and the LPT, the stretch, DAVE, sound, `FILE:`, tape) before
+  changing it. The plan and its as-built record are `.plans/ENTERPRISE_PLAN.md` (§18); the research
+  pack is `_input/enterprise128/`.
+- Provenance (plan D1): Klive's own code, written from the research pack. Clock Signal (MIT) and MAME
+  (BSD) may be read for interface facts; GPL sources (ep128emu, Xep128, the FPGA core) are not read for
+  design, and ep128emu is only run as an oracle, recording observed results. The ROMs are bundled under
+  the rights holder's free-use permission (`src/public/roms/ep-roms-readme.txt`); the `FILE:` ROM is
+  Klive's own source (`src/emu/machines/enterprise/fileio/`), pinned by a test to its image.
+- Test with the harness in `test/harness/enterprise/` (real ROMs, `bootToBasic`, typing, the LPT and
+  `screenText()`, DAVE, a bare machine); hardware tests go in `test/ep-hw/`. Pictures are pinned by
+  hashes only after they were checked by eye (`EP_SHOTS_PNG=<dir>` writes them).
+- Run stages the program as `KLIVE.COM`, served from memory by the `FILE:` device, and types
+  `LOAD "FILE:KLIVE.COM"` at IS-BASIC's prompt; EXOS starts it at $0100, so the program sets its own
+  stack. The rules ($0100-$BFFF, the `JP entry`) are one module, `src/common/enterprise/codePlacement.ts`,
+  shared by Run and the `.com` export.
+- The EXDOS card (`MC_EP_EXDOS`, `ep-exdos.c`) runs on the shared WD1793 (`src/emu/machines/common/wasm/wd1793.c`)
+  in its 1770 variant (`WD1793_VARIANT == 1770`): a change there rebuilds the Beta 128's and the TVC's
+  cores, which must stay byte-identical.
+
 ## ROM Annotations (reverse engineering the ROMs)
 
 - The shipped ROM sidecars (`src/public/roms/*.rom.dis`) are written from scratch: **read

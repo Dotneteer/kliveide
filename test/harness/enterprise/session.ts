@@ -1,9 +1,9 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
-import { MC_EP_MODEL, MI_ENTERPRISE } from "@common/machines/constants";
+import { MC_EP_EXDOS, MC_EP_MODEL, MI_ENTERPRISE } from "@common/machines/constants";
 import { connectConditionSupport } from "@emu/machines/conditionStore";
 import { DebugSupport } from "@emu/machines/DebugSupport";
 import { EpWasmV2Machine } from "@emu/machines/enterprise/EpWasmV2Machine";
@@ -19,6 +19,11 @@ import {
   type EpNickCore
 } from "@emu/machines/enterprise/EpDebugState";
 
+import { DISK_A_CHANGES, DISK_A_WP, DISK_B_CHANGES, DISK_B_WP, FAST_LOAD, SAVED_TO_TAPE } from "@emu/machines/machine-props";
+import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-const";
+import { DSK_WHOLE_IMAGE_KEY } from "@emu/machines/disk/disk-changes";
+import type { EpTapeFile } from "@emu/machines/enterprise/EpTapeFile";
+
 import { buildEpWasm, productionOutput } from "../../../scripts/build-ep-wasm.cjs";
 
 export const REPO_ROOT = join(__dirname, "../../..");
@@ -28,6 +33,8 @@ export type RunLimit = { maxFrames?: number };
 export type EpSessionOptions = {
   /** "ep128" (the default) or "ep64" */
   model?: string;
+  /** The EXDOS floppy interface with its ROM (`MC_EP_EXDOS`; off by default) */
+  exdos?: boolean;
 };
 
 /** NICK as the harness reads it (the IDE's NICK panel reads it the same way, `EpDebugState.ts`) */
@@ -35,9 +42,9 @@ export type EpNickState = EpNickCore;
 export type { EpLpb };
 
 class HarnessEpMachine extends EpWasmV2Machine {
-  constructor(modelId: string) {
+  constructor(modelId: string, exdos = false) {
     const model = { modelId, displayName: modelId, config: { [MC_EP_MODEL]: modelId === "ep64" ? "64" : "128" } };
-    super(MI_ENTERPRISE, model, undefined, undefined, {
+    super(MI_ENTERPRISE, model, exdos ? { ...model.config, [MC_EP_EXDOS]: true } : undefined, undefined, {
       artifactName: "harness-ep.wasm",
       readArtifact: async () => readFileSync(productionOutput)
     });
@@ -51,13 +58,31 @@ class HarnessEpMachine extends EpWasmV2Machine {
 
 let wasmBuilt = false;
 
-/** Creates an Enterprise on the real WASM core with the model's real ROMs, powered on. Builds the core once per process. */
+/** The core's inputs: its sources, the shared Z80 and device sources, the build scripts */
+const CORE_INPUTS = ["src/emu/machines/enterprise/wasm/ep", "src/emu/z80/wasm", "src/emu/machines/common/wasm", "scripts"];
+
+/**
+ * Whether the built core is newer than every input. Twenty-odd test files each build the core once,
+ * one at a time behind the build lock; a worker whose first test waited for all of them timed out.
+ */
+function coreIsCurrent(): boolean {
+  if (!existsSync(productionOutput)) return false;
+  const built = statSync(productionOutput).mtimeMs;
+  const newer = (path: string): boolean => {
+    const stat = statSync(path);
+    if (stat.isDirectory()) return readdirSync(path).some((name) => newer(join(path, name)));
+    return /\.(c|h|cjs)$/.test(path) && stat.mtimeMs > built;
+  };
+  return !CORE_INPUTS.some((dir) => newer(join(__dirname, "../../..", dir)));
+}
+
+/** Creates an Enterprise on the real WASM core with the model's real ROMs, powered on. Builds the core once per process, unless it is current. */
 export async function createEpSession(options: EpSessionOptions = {}): Promise<EpTestSession> {
   if (!wasmBuilt) {
-    buildEpWasm();
+    if (!coreIsCurrent()) buildEpWasm();
     wasmBuilt = true;
   }
-  const machine = new HarnessEpMachine(options.model ?? "ep128");
+  const machine = new HarnessEpMachine(options.model ?? "ep128", options.exdos ?? false);
   await machine.setup();
   return new EpTestSession(machine);
 }
@@ -277,6 +302,60 @@ export class EpTestSession {
 
   dave(): EpDaveCore {
     return readEpDaveCore(this.wasm);
+  }
+
+  // ==========================================================================================
+  // Tape (`ep-tape.c`, `EpTapeFile.ts`)
+
+  /** Puts a tape in the deck; `fastLoad` (the default) runs extra frames while it plays */
+  insertTape(tape: EpTapeFile | undefined, { fastLoad = true }: { fastLoad?: boolean } = {}): this {
+    this.machine.setMachineProperty(FAST_LOAD, fastLoad);
+    this.machine.setMachineProperty(MEDIA_TAPE, tape);
+    return this;
+  }
+
+  /** Whether a remote relay runs the motor (B5h bits 7-6) */
+  get motorOn(): boolean {
+    return this.wasm.epTapeGetMotor() !== 0;
+  }
+
+  /** The last SAVE the machine published (`SAVED_TO_TAPE`), if any; reading it clears it */
+  takeSavedTape(): { name: string; contents: Uint8Array } | undefined {
+    const saved = this.machine.getMachineProperty(SAVED_TO_TAPE);
+    this.machine.setMachineProperty(SAVED_TO_TAPE, undefined);
+    return saved;
+  }
+
+  // ==========================================================================================
+  // The EXDOS card's disks (`ep-exdos.c`, `EpExdosDisks.ts`)
+
+  /**
+   * Puts a raw `.img` image in drive 0 (A) or 1 (B), or empties it with undefined
+   * @returns why the image cannot go in (`EpDiskImage.ts`), or undefined
+   */
+  insertDisk(drive: number, image: Uint8Array | undefined, { writeProtected = false }: { writeProtected?: boolean } = {}): string | undefined {
+    this.machine.setMachineProperty(drive ? DISK_B_WP : DISK_A_WP, writeProtected);
+    this.machine.setMachineProperty(drive ? MEDIA_DISK_B : MEDIA_DISK_A, image);
+    return this.machine.diskProblems[drive];
+  }
+
+  /** Write protection of the disk in a drive */
+  setDiskWriteProtected(drive: number, value: boolean): this {
+    this.machine.setMachineProperty(drive ? DISK_B_WP : DISK_A_WP, value);
+    return this;
+  }
+
+  /** The disk in a drive as a raw image, the guest's writes included */
+  diskImage(drive: number): Uint8Array | undefined {
+    return this.machine.exportDisk(drive);
+  }
+
+  /** The whole new image the machine last published for a drive's file (`DSK_WHOLE_IMAGE_KEY`); reading it clears it */
+  takePublishedDisk(drive: number): Uint8Array | undefined {
+    const key = drive ? DISK_B_CHANGES : DISK_A_CHANGES;
+    const changes = this.machine.getMachineProperty(key) as Map<number, Uint8Array> | undefined;
+    this.machine.setMachineProperty(key, undefined);
+    return changes?.get(DSK_WHOLE_IMAGE_KEY);
   }
 
   /** The published picture, as a copy (0xAABBGGRR words, 736 x 288) */

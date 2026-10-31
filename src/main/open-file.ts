@@ -40,6 +40,7 @@ export async function pickAndOpenEmulatorFile(window: BrowserWindow): Promise<vo
       { name: t("common.filter.tapes"), extensions: ["tap", "tzx"] },
       { name: t("common.filter.ht1080zTapes"), extensions: ["cas", "cmd", "bas"] },
       { name: t("common.filter.tvcTapes"), extensions: ["cas"] },
+      { name: t("common.filter.epTapes"), extensions: ["tap", "wav"] },
       { name: t("common.filter.allFiles"), extensions: ["*"] }
     ],
     properties: ["openFile"]

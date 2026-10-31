@@ -19,7 +19,8 @@ import { tapeMenuRenderer, spectrumIdeRenderer, diskMenuRenderer, ulaHardwareRen
 import { z88ResetRenderer } from "./z88-menus";
 import { ht1080zHardwareRenderer, ht1080zTapeMenuRenderer } from "./ht1080z-menus";
 import { tvcDiskMenuRenderer, tvcTapeMenuRenderer } from "./tvc-menus";
-import { epHardwareRenderer } from "./ep-menus";
+import { epDiskMenuRenderer, epHardwareRenderer } from "./ep-menus";
+import { epTapeMenuRenderer } from "./ep-tape-menus";
 import {
   hotkeyMenuRenderer,
   soundOutputMenuRenderer,
@@ -62,8 +63,9 @@ export const machineMenuRegistry: Record<string, MachineMenuInfo> = {
     viewItems: spectrumIdeRenderer
   },
   [MI_ENTERPRISE]: {
-    // --- The cartridge, Klive's FILE: device and its folder, the palette (`ep-menus.ts`); tape and EXDOS
-    // --- come with plan Phases 8 and 9
+    // --- The tape (`ep-tape-menus.ts`); the EXDOS card and its drives, the cartridge, Klive's FILE:
+    // --- device and its folder, the palette (`ep-menus.ts`)
+    devices: { tape: epTapeMenuRenderer, disks: epDiskMenuRenderer },
     hardwareItems: epHardwareRenderer,
     viewItems: spectrumIdeRenderer
   },

@@ -26,7 +26,8 @@ BASIC, press one button, and watch your code run — or step through it — insi
 ## ✨ At a Glance
 
 - **Machines** — ZX Spectrum 48K/128K/+2A/+3/+2E/+3E, ZX Spectrum Next, Timex TC2048/TC2068/TS2068,
-  Pentagon, Scorpion ZS-256, Cambridge Z88, Sinclair ZX80/ZX81, HT-1080Z, and Videoton TVC 64K/64K+.
+  Pentagon, Scorpion ZS-256, Cambridge Z88, Sinclair ZX80/ZX81, HT-1080Z, Videoton TVC 64K/64K+, and
+  Enterprise 64/128.
   [All machines and models →](https://kliveide.net/en/reference/machine-types/)
 - **Languages** — the built-in Klive Z80 Assembler and Klive BASIC, plus Boriel BASIC, SJASMPLUS,
   z88dk, and PASTA/80. [Languages →](https://kliveide.net/en/guides/languages/klive-z80-assembler/)

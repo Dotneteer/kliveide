@@ -27,6 +27,10 @@ states and NICK's clock stretch are in. The virtual keyboard waits for its desig
 - `ep/ep-audio.c`: DAVE's sound generator, the stereo mix and the host's samples.
 - `ep/ep-nick.c`: NICK's slot stepper, the LPT walker, LD1/LD2, VINT, vertical sync, port 83h.
 - `ep/ep-ports.c`: the I/O decode.
+- `ep/ep-tape.c`: the cassette: the tape program the deck plays, the motor, B6h's comparators, and the
+  SAVE recording of the left D/A.
+- `ep/ep-exdos.c`: the EXDOS floppy card: the shared controller (`../../common/wasm/wd1793.c`) as a
+  WD1770, the card's control register, two drives.
 - `ep/ep-timing.c`: DAVE's wait states and NICK's clock stretch.
 
 ## Physical memory
@@ -38,7 +42,7 @@ Only the segments that hold something have room in `epMemory`:
 | 00000h | 00h-01h | EXOS (32K) |
 | 08000h | 04h | the cartridge (IS-BASIC, 16K) |
 | 0C000h | 10h | Klive's `FILE:` ROM (Phase 5) |
-| 10000h | 20h-21h | EXDOS (Phase 9) |
+| 10000h | 20h-21h | EXDOS 1.3, with the EXDOS card (`MC_EP_EXDOS`) |
 | 18000h | F8h-FBh | RAM on the 128 |
 | 28000h | FCh-FFh | RAM, the video RAM (NICK's 0000h-FFFFh) |
 | 38000h | every other | one segment of FFh |
@@ -168,6 +172,55 @@ keeps waiting. With the ROM fitted, EXOS keeps 19 bytes of system RAM for the de
 A new application (`$$APP`, a `.com`) loaded through `FILE:` starts at 0100h; like any EXOS
 application it must set up its own stack before it enables interrupts (the kernel spec §9.3).
 
+## The cassette (plan §9.3)
+
+`ep/ep-tape.c`'s header has the details. The host turns a tape file (`../EpTapeFile.ts`: an ep128emu
+`.tap`, an EPTE/TAPir `.tap` or a `.wav`) into a *tape program*, a list of words (silence, runs of equal
+half-periods, a byte at EXOS's fast or slow timings, a single edge), so a file needs no sample buffer.
+The tape runs while REM1 or REM2 (B5h bits 6, 7) is set, and B6h bits 7 and 6 read its level. While a
+motor runs, every change of the left output's level (EXOS writes through the left D/A) ends a
+half-period, recorded in a ring the host decodes into chunks, checks (CRC-16, 0810h feedback, low byte
+first) and publishes as an ep128emu `.tap`.
+
+What the ROM does, observed on it: `LOAD` alone loads from tape (TAPE: is the default device) and
+`RUN "TAPE:"` loads and runs; EXOS writes its PROTECT variable (34) into the header as it is, FFh for an
+ordinary SAVE and 00h after `TOGGLE 34`, so 00h is the protected value. Fast load runs extra machine
+frames per displayed frame while the tape plays with its motor on.
+
+A new application loaded by Run (`common/enterprise/codePlacement.ts`) comes through `FILE:` too: the
+machine serves the assembled program as `KLIVE.COM` from memory before it asks the file store, and a
+store marked `synchronous` (the headless runner's) is answered inside the frame.
+
+## The EXDOS card (plan §10)
+
+`MC_EP_EXDOS` fits the card (off by default): the host uploads EXDOS 1.3 (`ep-exdos13.rom`) to segments
+20h-21h and sets `EP_ROM_EXDOS` in `epConfigure`'s mask, which maps the ROM and decodes the ports.
+Without it, 10h-1Fh read FFh as before.
+
+- **Ports.** 10h-13h the controller (status/command, track, sector, data), mirrored at 14h-17h;
+  18h-1Fh the control register, taken as one register (the pack's OQ4; CLK's decode). Write: bits 0-3
+  select drive 0-3 (the lowest set bit; drives 2 and 3 have nothing in them), bit 4 the side, bit 5
+  /DDEN (kept, not modelled: MFM only), bit 6 = 1 clears the selected drive's disk-change flag, bit 7 the
+  LED. Read: bit 7 DRQ, bit 6 the disk-change line inverted (1 = no disk went in or out since the last
+  clear; MAME's and ep128emu's polarity), bit 1 INTRQ, the rest 0.
+- **The controller** is the shared WD1793 with `WD1793_VARIANT 1770` (`wd1793.c`'s header lists the
+  differences): Motor On in status bit 7, spin-up (six index pulses unless command bit 3 is set) and
+  Spin-up in Type I's bit 5, the motor off after nine idle revolutions, no READY wait and no side compare.
+  A drive without a disk gives no index pulses, so a command on it waits until EXDOS gives up and sends
+  a Force Interrupt. Its time is the 8 MHz half-T clock, not the stretched T-states. The 128K and TVC
+  cores, which include the same file as a 1793, built byte-identical after the change.
+- **Disks** (`../EpExdosDisks.ts`, `../EpDiskImage.ts`): raw `.img`/`.dsk` FAT12 images, the geometry
+  from the boot sector; the controller's layout has nine 512-byte sectors a track, 82 cylinders, two
+  sides, so 720K, 360K (40 x 2 or 80 x 1) and 180K disks go in and 8-, 10- and 18-sector disks are
+  refused. The guest's writes go back as the whole image (`DSK_WHOLE_IMAGE_KEY`), as on the TVC.
+
+What EXDOS does, observed on it: with an empty drive B it spends about 2 s at the cold start on that
+drive (about 7.5 s when the controller failed such a command after four revolutions instead of waiting
+for index pulses); `:HELP` lists "EXDOS version 1.3"; `SAVE "NAME"` and `LOAD "NAME"` use the disk
+(DISK: becomes the default device); a write-protected disk gives "Write protected disk -- drive A:" and
+asks to retry or abort. `EXDOS.INI` (EXDOS commands, one a line) runs at a cold start, not at the reset
+button's warm start, which keeps the time it set. The ROM's text names a `START` file beside `EXDOS.INI`; what it does with it was not checked.
+
 ## Testing
 
 `test/harness/enterprise/` scripts the real core: `bootToBasic`, frames, stepping, the LPT and the
@@ -191,5 +244,9 @@ screen's text, DAVE. `test/ep-hw/`:
 - `hostfs.test.ts`: the ROM in segment 10h, IS-BASIC's `SAVE`/`LOAD` through `FILE:`, a `.com` loaded
   and started, and a missing file. (`test/machines/ep-fileio-rom.test.ts` checks the ROM image against
   its source.)
+- `exdos.test.ts`: the card's ports and ROM, the disk-change flag, the WD1770's motor, spin-up and
+  time-out, an empty drive's wait, `:DIR`, a 40-track disk, `SAVE`/`LOAD` through the published image,
+  write protection, and `EXDOS.INI`; the disks come from the tests' own FAT12 writer
+  (`test/ep/fat12Image.ts`; `test/ep/ep-disk-image.test.ts` checks the image conversion).
 
 Most run on a bare machine (`bare.ts`): the CPU in segment F8h, the LPT written by the test.

@@ -3,7 +3,7 @@ import path from "path";
 
 import type { MachineMenuItem, MachineMenuRenderer } from "@common/machines/info-types";
 
-import { MC_EP_CARTRIDGE, MC_EP_HOSTFS, MC_EP_PALETTE } from "@common/machines/constants";
+import { MC_DISK_SUPPORT, MC_EP_CARTRIDGE, MC_EP_EXDOS, MC_EP_HOSTFS, MC_EP_PALETTE } from "@common/machines/constants";
 import { getModelConfig } from "@common/machines/machine-registry";
 import { t } from "@common/i18n/i18n";
 import { EP_FILEIO_HOME_FOLDER } from "@emu/machines/enterprise/EpMainFileStore";
@@ -14,6 +14,7 @@ import { KLIVE_HOME_FOLDER } from "@main/settings";
 import { logEmuEvent, setMachineType } from "@main/registeredMachines";
 import { incMenuVersionAction } from "@state/actions";
 import { shell } from "electron";
+import { diskMenuRenderer } from "./zx-specrum-menus";
 
 /**
  * The Enterprise 64/128's hardware items (`.plans/ENTERPRISE_PLAN.md` §4.3, §11): the IS-BASIC
@@ -69,6 +70,33 @@ export const epHardwareRenderer: MachineMenuRenderer = (_windowInfo, _machine, m
     }
   ];
   return items;
+};
+
+/**
+ * The EXDOS floppy interface (`.plans/ENTERPRISE_PLAN.md` §10): a switch that fits the card with its
+ * EXDOS 1.3 ROM (the machine config's `MC_EP_EXDOS`, which restarts the machine), and with it the
+ * two drives' items - the Spectrum's disk menu, without its "create a disk" (that makes a +3 image).
+ */
+export const epDiskMenuRenderer: MachineMenuRenderer = (windowInfo, machine, model, config) => {
+  const effective = config ?? mainStore.getState()?.emulatorState?.config ?? model?.config;
+  const exdos = effective?.[MC_EP_EXDOS] === true;
+  const items: MachineMenuItem[] = [
+    {
+      id: "ep_exdos",
+      label: t("menu.ep.exdos"),
+      type: "checkbox",
+      checked: exdos,
+      click: async () => {
+        await setEpConfig(MC_EP_EXDOS, exdos ? undefined : true, exdos ? "EXDOS floppy interface removed" : "EXDOS floppy interface fitted");
+      }
+    }
+  ];
+  if (!exdos) return items;
+  const disks = diskMenuRenderer(windowInfo, machine, { ...model, config: { [MC_DISK_SUPPORT]: 2 } } as any, config);
+  const floppy = disks.find((item) => item.id === "floppy_menu");
+  const drives = (floppy?.submenu ?? []).filter((item) => item.id !== "create_disk_file");
+  while (drives[0]?.type === "separator") drives.shift();
+  return [...items, { type: "separator" }, ...drives];
 };
 
 /** Sets one configuration key (undefined: the default) and restarts the machine with it */

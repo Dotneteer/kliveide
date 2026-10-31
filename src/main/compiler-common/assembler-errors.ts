@@ -132,6 +132,10 @@ export type ErrorCodes =
   | "Z0384"
   | "Z0385"
 
+  // --- Enterprise model
+  | "Z0386"
+  | "Z0387"
+
   // --- Instructions
   | "Z0401"
   | "Z0402"

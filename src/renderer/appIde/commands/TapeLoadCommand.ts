@@ -7,11 +7,13 @@ import type { ValidationMessage } from "@renderer/abstractions/ValidationMessage
 
 import { MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48, MI_TIMEX, MI_SCORPION, MI_ZX80, MI_ZX81,
   MI_HT1080Z,
-  MI_TVC
+  MI_TVC,
+  MI_ENTERPRISE
 } from "@common/machines/constants";
 import { isZx8081ProgramFileName, parseZxProgramFile } from "@emu/machines/zx8081/ZxPFile";
 import { ht1080zTapeErrorKey, isHt1080zTapeFor, parseHt1080zTapeFile } from "@emu/machines/ht1080z/Ht1080zTapeFile";
 import { isTvcCasFileName, parseTvcCasFile } from "@emu/machines/tvc/TvcCasFile";
+import { isEpTapeFileName, parseEpTapeFile } from "@emu/machines/enterprise/EpTapeFile";
 import { analyzeHt1080zFile } from "../DocumentPanels/Ht1080zTape/ht1080zTapeView";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { analyzeTape } from "../DocumentPanels/Tape/tapeView";
@@ -162,7 +164,8 @@ export class TapeLoadCommand extends IdeCommandBase<TapeLoadCommandArgs> {
     }
     // --- A .cas on the Videoton TVC is the TVC's tape: it goes in the deck, and -r/-d boot BASIC and
     // --- type LOAD (`TvcWasmV2Machine.getTapeLoadFlow`). It names no start address for -e.
-    if (currentMachine === MI_TVC && !!args.file?.trim() && isTvcCasFileName(args.file.trim())) {
+    const isEpTape = currentMachine === MI_ENTERPRISE && !!args.file?.trim() && isEpTapeFileName(args.file.trim());
+    if ((currentMachine === MI_TVC && !!args.file?.trim() && isTvcCasFileName(args.file.trim())) || isEpTape) {
       if ([args["-r"], args["-d"], args["-e"]].filter(Boolean).length > 1) {
         messages.push(validationError(t("commands.tapeLoad.oneMode")));
       } else if (args["-e"]) {
@@ -222,12 +225,15 @@ export class TapeLoadCommand extends IdeCommandBase<TapeLoadCommandArgs> {
     } catch (err) {
       return commandError(t("commands.tapeLoad.readFailed", { file, error: messageOf(err) }));
     }
-    // --- A Videoton TVC tape: checked as the emulator reads it, then inserted
-    if (context.store.getState().emulatorState?.machineId === MI_TVC && isTvcCasFileName(file)) {
+    // --- A Videoton TVC tape, or an Enterprise one: checked as the emulator reads it, then inserted
+    const runningMachine = context.store.getState().emulatorState?.machineId;
+    const epTape = runningMachine === MI_ENTERPRISE && isEpTapeFileName(file);
+    if ((runningMachine === MI_TVC && isTvcCasFileName(file)) || epTape) {
       try {
-        parseTvcCasFile(bytes, file);
+        if (epTape) parseEpTapeFile(bytes);
+        else parseTvcCasFile(bytes, file);
       } catch {
-        return commandError(t("emu.media.tape.tvcNotCas", { file }));
+        return commandError(epTape ? t("emu.media.tape.epNotTape", { file }) : t("emu.media.tape.tvcNotCas", { file }));
       }
       const tvcError = await context.mainApi.setTapeFile(file);
       if (tvcError) return commandError(tvcError);

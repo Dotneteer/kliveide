@@ -12,6 +12,7 @@ import { buildSp128Wasm } from "../../scripts/build-sp128-wasm.cjs";
 import { buildZx8081Wasm } from "../../scripts/build-zx8081-wasm.cjs";
 import { buildHt1080zWasm } from "../../scripts/build-ht1080z-wasm.cjs";
 import { buildTvcWasm } from "../../scripts/build-tvc-wasm.cjs";
+import { buildEpWasm } from "../../scripts/build-ep-wasm.cjs";
 import { tvcExportFile } from "@renderer/appIde/utils/tvc-code";
 import { buildZxNextWasmArtifact } from "../wasm/zxNext/wasm-next-test-helpers";
 
@@ -108,6 +109,7 @@ beforeAll(async () => {
   buildSp128Wasm();
   buildZx8081Wasm();
   buildHt1080zWasm();
+  buildEpWasm();
   await buildZxNextWasmArtifact();
   out = fs.mkdtempSync(path.join(os.tmpdir(), "klive-run-"));
 }, 300_000);
@@ -277,6 +279,14 @@ describe("klive run: inputs", () => {
     expect(run.result.stop).toBe("pc");
     expect(bytesOf("tvc.bin")).toEqual(new Uint8Array([10]));
     expect(run.result.registers.pc).toBe(0x1a39);
+  }, 120_000);
+
+  it("builds an Enterprise project, and EXOS loads it through FILE: and starts it at 0100h", async () => {
+    const run = await kliveJson(["run", "runep", "--until-pc", "Done", "--timeout", "120", "--dump-mem", `Counter:1=${file("ep.bin")}`]);
+    expect(run.code).toBe(0);
+    expect(run.result.stop).toBe("pc");
+    expect(bytesOf("ep.bin")).toEqual(new Uint8Array([10]));
+    expect(run.result.registers.pc).toBe(0x010e);
   }, 120_000);
 
   it("loads a TVC .cas with LOAD, and it starts itself", async () => {

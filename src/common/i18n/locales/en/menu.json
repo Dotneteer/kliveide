@@ -501,6 +501,10 @@
   "@menu.tape.fastLoad": {
     "context": "Machine › Tape / Program checkbox: loads programs instantly instead of at the real tape speed."
   },
+  "menu.tape.loadAndRun": "Load and Run",
+  "@menu.tape.loadAndRun": {
+    "context": "Machine › Tape (Enterprise 64/128): restarts the machine, loads the program on the tape in the emulated cassette player and runs it."
+  },
   "menu.spectrum.snowEffect": "Snow Effect",
   "@menu.spectrum.snowEffect": {
     "context": "Machine menu of the ZX Spectrum 48K and 128K, a checked menu item: shows the speckles ('snow') the real machine's picture shows while the I register points at contended memory."
@@ -888,6 +892,11 @@
   "menu.ep.linearPalette": "Linear Palette Levels",
   "@menu.ep.linearPalette": {
     "context": "Checkbox in the Enterprise 64/128's Machine menu: draws the machine's colours with evenly spaced brightness levels instead of the levels the real circuit board's resistors produce; changing it restarts the machine.",
+    "maxChars": 40
+  },
+  "menu.ep.exdos": "EXDOS Floppy Interface",
+  "@menu.ep.exdos": {
+    "context": "Checkbox in the Enterprise 64/128's Machine menu: fits the EXDOS floppy disk interface card (with its EXDOS ROM), which adds two floppy drives; changing it restarts the machine. EXDOS is a product name and stays untranslated.",
     "maxChars": 40
   },
   "menu.if1.connect": "Interface 1",

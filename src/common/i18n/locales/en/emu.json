@@ -237,6 +237,13 @@
       "file": "The file's path"
     }
   },
+  "emu.media.tape.epNotTape": "{file} is not an Enterprise tape (.tap or .wav).",
+  "@emu.media.tape.epNotTape": {
+    "context": "Error message when a file inserted as a tape on the Enterprise 64/128 is not a tape image the emulator can read. {file} is the file's path; .tap and .wav are file extensions: keep them.",
+    "placeholders": {
+      "file": "The file's path"
+    }
+  },
   "emu.media.tape.tvcNotCas": "{file} is not a Videoton TVC tape (.cas).",
   "@emu.media.tape.tvcNotCas": {
     "context": "Error message when a file inserted as a tape on the Videoton TV Computer (TVC) is not a valid .cas tape image. {file} is the file's path.",
@@ -1045,6 +1052,38 @@
       "address": "A hexadecimal address",
       "lowest": "The lowest allowed hexadecimal address, $46E9"
     }
+  },
+  "emu.ep.code.empty": "The build has no code to put into the Enterprise.",
+  "@emu.ep.code.empty": {
+    "context": "Error when building code for the Enterprise 64/128 (a British home computer) produced no bytes."
+  },
+  "emu.ep.code.tooLow": "Code at {address} is below where EXOS loads a program. Start it at {lowest}.",
+  "@emu.ep.code.tooLow": {
+    "context": "Error: assembled code lies below the address where the Enterprise's operating system (EXOS) loads programs. Keep the addresses.",
+    "placeholders": {
+      "address": "A hexadecimal address such as $0080",
+      "lowest": "The lowest allowed hexadecimal address, $0100"
+    }
+  },
+  "emu.ep.code.tooHigh": "Code at {address} reaches EXOS's system memory. End it at {highest} or below.",
+  "@emu.ep.code.tooHigh": {
+    "context": "Error: assembled code reaches the Enterprise's top 16K, which its operating system (EXOS) uses while a program runs. Keep the addresses.",
+    "placeholders": {
+      "address": "A hexadecimal address",
+      "highest": "The highest allowed hexadecimal address, $BFFF"
+    }
+  },
+  "emu.ep.code.entry": "EXOS starts a program at {start}, but the code starts at {entry} and other code is at {start}. Put the entry point at {start}, or leave {start}-$0102 free for a jump.",
+  "@emu.ep.code.entry": {
+    "context": "Error: the Enterprise's operating system (EXOS) always starts a loaded program at $0100; the code's entry point is elsewhere and there is no room at $0100 for a jump to it. Keep the addresses.",
+    "placeholders": {
+      "entry": "The code's entry address in hexadecimal",
+      "start": "The address EXOS starts programs at, $0100"
+    }
+  },
+  "emu.ep.code.noHostFs": "Run and Debug load the program through Klive's FILE: device. Turn it on in the Machine menu (FILE: Device) and try again.",
+  "@emu.ep.code.noHostFs": {
+    "context": "Error when the user runs code on the Enterprise 64/128 while Klive's FILE: device (which lets the emulated machine read files from the user's computer) is switched off. 'FILE: Device' is the Machine menu item's name; keep it as that item is translated. FILE: stays untranslated."
   },
   "emu.tvc.code.empty": "The build has no code to put into the Videoton TVC.",
   "@emu.tvc.code.empty": {

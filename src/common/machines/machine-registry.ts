@@ -725,15 +725,18 @@ export const machineRegistry: MachineInfo[] = [
   {
     // --- `.plans/ENTERPRISE_PLAN.md`: the 128 and the 64 as models (D2). The IDE's
     // --- surfaces arrive phase by phase: the picture (3), sound (4), keyboard and FILE: (5), the
-    // --- debugger's partitions, history and profile (7), Run and tapes (8), EXDOS (9).
+    // --- debugger's partitions, history and profile (7), Run and tapes (8), EXDOS and disks (9).
     machineId: MI_ENTERPRISE,
     displayName: "Enterprise",
     // --- EXOS's own font (`char-codes.ts`): £ at 23h, accented letters and arrows below 20h
     charSet: EpChars,
     features: {
       [MF_Z80]: true,
-      // --- Run and Debug come with Klive's FILE: ROM (Phase 8, §12)
-      [MF_INJECT_SUPPORT]: false,
+      // --- Run and Debug stage the program as an EXOS `$$APP` and LOAD it through Klive's FILE: device
+      // --- (`common/enterprise/codePlacement.ts`)
+      [MF_INJECT_SUPPORT]: true,
+      // --- .tap (ep128emu, EPTE) and .wav tapes, played with a turbo, and SAVE to an ep128emu .tap (§9.3)
+      [MF_TAPE_SUPPORT]: true,
       [MF_ALLOW_SCAN_LINES]: false,
       // --- The 256 segments DAVE pages: the memory panel's segment matrix (labels and groups from the machine)
       [MF_BANK]: 256,
@@ -744,6 +747,8 @@ export const machineRegistry: MachineInfo[] = [
       [MF_REVERSE_DEBUG]: true
     },
     models: EP_MODELS,
+    // --- The disks need the EXDOS card (`MC_EP_EXDOS`); without it the drives hold nothing the ROMs see
+    mediaIds: [MEDIA_TAPE, MEDIA_DISK_A, MEDIA_DISK_B],
     toolInfo: {
       [CT_DISASSEMBLER]: (
         memorySections: MemorySection[],

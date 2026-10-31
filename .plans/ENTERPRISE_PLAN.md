@@ -1,10 +1,10 @@
 # Enterprise 64/128 on the WASM Core — Implementation Plan
 
-**Status:** Phases 1–7 done (2026-10-31): EXOS 2.1 boots to IS-BASIC 2.1 on the core (and EXOS 2.0 to
-IS-BASIC 2.0 on the 64), the picture shows it, DAVE plays, the host and virtual keyboards and the
-joysticks work, Klive's `FILE:` device loads and saves host files, and the IDE's debugger surfaces
-(history, profile, reverse debugging, state files, the NICK and DAVE panels, EXOS calls and variables,
-the IS-BASIC listing) cover the Enterprise (§18). Next: the assembler, Run and tapes (Phase 8).
+**Status:** Complete (2026-10-31), Phases 1–10: EXOS 2.1 boots to IS-BASIC 2.1 on the core (and EXOS
+2.0 to IS-BASIC 2.0 on the 64), the picture shows it, DAVE plays, the host and virtual keyboards and the
+joysticks work, Klive's `FILE:` device loads and saves host files, the IDE's debugger surfaces cover the
+Enterprise, `.model ENTERPRISE` code runs and exports as a `.com`, tapes load and save, the EXDOS card runs
+EXDOS 1.3 on FAT12 disks, and the documentation, notices and changeset ship it (§18). Follow-ups below.
 D1–D9 accepted (§16). Still open in Phase 0: reading EP64 schematic sheet 1 for Q1 (the VINT edge).
 **Input:** the research pack `_input/enterprise128/`. Read these first:
 - `README.md`: the machine at a glance, the disagreements table and the ROM decision;
@@ -712,9 +712,9 @@ Each gets one constant or define, its default and its reason in the core README.
 | **5. Keyboard and `FILE:`** | §9.1, §9.2: matrix, host mapping, joysticks, the `FILE:` ROM and host side; the virtual keyboard after its design is approved. | Done 2026-10-31 (§18): `keyboard.test.ts`, `hostfs.test.ts`, `ep-fileio-rom.test.ts`, `test/controls/EpKeyboard.test.tsx`; in the running app, host typing, `SAVE "FILE:…"` to the `FILEIO` folder, and the virtual keyboard's space bar past the banner. |
 | **6. 64K model** | `ep64`: EXOS 2.0, IS-BASIC 2.0, 64K. | Done 2026-10-31 (§18): `ep64.test.ts` (EXOS 2.0's RAM test, 65536 bytes, F8h–FBh empty, the IS-BASIC 2.0 picture hash checked by eye); in the running app, the 64 boots to IS-BASIC 2.0. |
 | **7. IDE** | Partitions, the NICK and DAVE panels, disassembler (`RST 30h`), SysVars, charset, menus, state files, history, profile, CLI; the IS-BASIC listing if §11.4 finds the table. | Done 2026-10-31 (§18): history, profile, charset, debug-state, IS-BASIC token and listing tests; the Enterprise in the export contract, journal replay, state determinism, debug recordings and hardware specs suites; `MF_EXEC_HISTORY`, `MF_PROFILE`, `MF_REVERSE_DEBUG` on; the panels, the listing, the menu and the memory view seen in the running app. The CLI moves to Phase 8 with Run. |
-| **8. Assembler and tape** | §12 (`.model ENTERPRISE`, Run/Debug through `FILE:`, `.com` export, project template), §9.3 (tape formats, playing, turbo, SAVE). | `code-injection.test.ts`, `project-templates.test.ts` (runs checked by eye), `tape.test.ts`; `klive run` and `klive test` on the Enterprise. |
-| **9. EXDOS** | §10: the WD1770 variant (its own commit, Beta 128 and TVC byte-identical), the card, disks. | `exdos.test.ts`; EXDOS lists a disk in the running app. |
-| **10. Ship** | Notices (`THIRD_PARTY_NOTICES.md`: CLK files if any were ported; the ROM readme), docs pages, an `AGENTS.md` section, the landing page's machine table (`docs/landing/LandingPage.tsx`, gated by release version), `README.md`'s machine list, the lessons in `.ai/wasm-migration-intent-and-lessons.md`, one `feature` changeset. `npm run test:slow` before release. | Gates and `doc:build` + `doc:check` green; both models, Run, tape and EXDOS checked in the built app. |
+| **8. Assembler and tape** | §12 (`.model ENTERPRISE`, Run/Debug through `FILE:`, `.com` export, project template), §9.3 (tape formats, playing, turbo, SAVE). | Done 2026-10-31 (§18): `code-injection.test.ts`, `project-templates.test.ts` (the picture checked by eye), `tape.test.ts`, `ep-model.test.ts`; `klive run` (`klive-run-e2e.test.ts`) and the unit-test runner on the Enterprise; in the running app, a new project from the template runs. |
+| **9. EXDOS** | §10: the WD1770 variant (its own commit, Beta 128 and TVC byte-identical), the card, disks. | Done 2026-10-31 (§18): `exdos.test.ts`, `ep-disk-image.test.ts`; the 128K and TVC cores byte-identical; EXDOS lists a disk in the running app. |
+| **10. Ship** | Notices (`THIRD_PARTY_NOTICES.md`: CLK files if any were ported; the ROM readme), docs pages, an `AGENTS.md` section, the landing page's machine table (`docs/landing/LandingPage.tsx`, gated by release version), `README.md`'s machine list, the lessons in `.ai/wasm-migration-intent-and-lessons.md`, one `feature` changeset. `npm run test:slow` before release. | Done 2026-10-31 (§18): gates, `test:fast`, `test:slow`, `doc:build` + `doc:check` green; both models, Run, tape and EXDOS checked in the built app. |
 
 The changeset comes with the commit that completes the plan (AGENTS.md); phase commits carry none.
 Docs for Phase 10:
@@ -970,3 +970,112 @@ The core's README (`src/emu/machines/enterprise/wasm/README.md`) is the referenc
   indentation, and the memory panel on segment F8h.
 - **Not done here:** `klive run`/`klive test` and the headless factory move to Phase 8 with Run; ROM
   page documents get no EXOS variable names (an EXOS kind in `romSysVars.ts`, if ROM annotations come).
+
+### Phase 8 (2026-10-31)
+
+- **The assembler:** `.model ENTERPRISE` (model type 9, `SpectrumModelTypes.ts`); code with no `.org`
+  goes to 0100h; Z0386 warns about code below 0100h, Z0387 about code above BFFFh.
+- **Run and Debug** (`EpWasmHost.getCodeInjectionFlow`, `common/enterprise/codePlacement.ts`): boot, a
+  key at the banner, IS-BASIC's prompt, then `LOAD "FILE:KLIVE.COM"`. The program is staged in memory
+  (`stagedHostFiles`) and served before the file store, so it never lands in the user's FILE: folder.
+  EXOS starts a `$$APP` at 0100h; when the entry is elsewhere and 0100h-0102h are free, the `.com` gets
+  a `JP entry` there. The landmarks were found by running the ROMs (the most frequent PCs): the banner's
+  wait at DC58h (EXOS 2.1) / DC2Ah (EXOS 2.0), the prompt's HALT at 0057h; typing waits 50 frames after
+  it, as the editor drops the first keys earlier.
+- **A program sets its own stack.** EXOS starts a `$$APP` on its system stack, and the first interrupt
+  then lands the CPU in EXOS (observed). Run cannot add code before code assembled at 0100h, so the
+  program does it; the template shows how. This settles Phase 5's note.
+- **Export:** `.com` (the 16-byte module header, the body from 0100h) in `expc` and the Export dialog
+  (`renderer/appIde/utils/ep-code.ts`).
+- **The project template** (`src/public/project-templates/ep/default/`): sets the video variables
+  (EXOS function 16), opens `VIDEO:`, displays the page (special function 1, @@DISP) and writes two
+  lines. EDITOR: alone shows nothing: a page is not displayed until it is asked to be. Its picture is
+  pinned after checking it by eye, from Run and from the export.
+- **Headless:** the Enterprise is a headless machine (`headlessMachines.ts`, `HeadlessMachineFactory.ts`)
+  and a unit-test machine. The headless runner is synchronous, so the FILE: device answers inside the
+  frame when its store is `synchronous` (`EpHostFs.ts`); the app keeps the asynchronous main-process
+  store. `klive run` runs a project (`test/cli/fixtures/runep`); the unit-test runner boots to IS-BASIC's
+  prompt. Observed: LP_POINTER is B900h after an EXOS 2.1 boot, BB00h after EXOS 2.0.
+- **Tape** (`ep-tape.c`, `EpTapeFile.ts`, `ep-tape-menus.ts`; the core's README has the design): reads
+  ep128emu `.tap` (1/2/4/8-bit), EPTE/TAPir `.tap` and `.wav`; writes ep128emu 1-bit `.tap` (D9). DAVE
+  OQ7 settled: EXOS writes its PROTECT variable as it is, FFh for an ordinary SAVE, 00h when protected.
+  No real EPTE file was available: the reader is checked against Klive's own EPTE writer. Headerless
+  (legacy) ep128emu files are not read: nothing tells them from a Spectrum `.tap`. The core's memory went
+  from 8 to 9 MiB for the tape program and the SAVE ring. The tape signal is not mixed into the sound.
+- **Tests' core build:** the harness skips the build when `ep.wasm` is newer than its inputs; twenty-odd
+  files building it one by one behind the lock timed out a worker's first test.
+- **Not done:** Load and Run of a `.com` or `.bas` from the IDE's file menus (copy it into the FILE:
+  folder and `LOAD "FILE:name"` meanwhile); slow-speed tapes are implemented but not tested on the ROM.
+
+### Phase 9 (2026-10-31)
+
+- **The WD1770 variant** (`common/wasm/wd1793.c`, `WD1793_VARIANT 1770`; the default stays 1793). Every
+  difference is inside `#if`, so a 1793 includer's preprocessed source is the same: `zx-spectrum128.wasm`
+  (591 994 bytes) and `tvc.wasm` (186 265 bytes) rebuilt byte-identical (`cmp`, SHA-1 unchanged). The
+  +3E and the other cores do not include the file. What differs: Motor On in status bit 7 (no Not
+  Ready, no READY wait for Types II and III), Type I's bit 5 Spin-up (no head-load/HLT), every command
+  turns the motor on and, with it off and command bit 3 clear, waits six index pulses first; nine idle
+  revolutions turn it off; no side compare (Type II/III bit 1); the index bit only while the motor runs.
+  The 1770's step rates (6/12/20/30 ms at 8 MHz) are the 1793's at 1 MHz, so the table has the same
+  numbers. **A drive without a disk gives no index pulses:** whatever counts revolutions waits until a
+  Force Interrupt. Failing such a command after four revolutions, as the 1793 model does without READY,
+  made EXDOS spend about 7.5 s on an empty drive at every cold start; with the wait, its own time-out
+  ends it in about 2 s.
+- **The card** (`ep-exdos.c`): 10h–13h the controller, mirrored at 14h–17h; 18h–1Fh one control register
+  (OQ4: CLK's decode). Write: drive select bits 0–3 (the lowest set bit), side bit 4, /DDEN bit 5 (kept,
+  MFM only), bit 6 = 1 clears the selected drive's disk-change flag, bit 7 the LED. Read: DRQ bit 7,
+  disk change bit 6 inverted (1 = no change; MAME's and ep128emu's polarity, CLK has it the other way),
+  INTRQ bit 1, the rest 0 (ep128emu's "not ready" bit 0 left out, as MAME does). The controller's clock
+  is the 8 MHz half-T clock, which NICK does not stretch. Two drives (A, B); EXDOS also probes drives
+  C/D, which hold nothing. The card is `MC_EP_EXDOS` (off by default), the ROM mask's `EP_ROM_EXDOS`; the
+  memory panel describes segments 20h–21h as EXDOS 0/1 when it is fitted. The core's memory went from 9
+  to 11 MiB for the two drives' 1.48 MB; the core is 195 559 bytes.
+- **EXDOS 1.3 worked first time**, so the comparison with MAME's `exdos13.rom` the plan kept in reserve
+  was not needed (Klive's image's CRC32 is still the one `EpRoms.ts` records).
+- **Disks** (`EpDiskImage.ts`, `EpExdosDisks.ts`): raw `.img`/`.dsk`, the geometry from the FAT12 boot
+  sector. The controller's layout is fixed per includer at nine 512-byte sectors, 82 cylinders, two
+  sides: 720K, 360K (40 x 2, read by EXDOS in the 80-track drive as it is) and 180K go in; 8-, 10- and
+  18-sector disks are refused ("sectorsPerTrack"). The guest's writes are published as the whole image
+  (`DSK_WHOLE_IMAGE_KEY`), write protection through `DISK_A_WP`/`DISK_B_WP`.
+- **Observed on the ROM:** `:HELP` lists "EXDOS version 1.3"; `:DIR` prints the volume, the files and the
+  free space; `SAVE "TEST"` and `LOAD "TEST"` use the disk; a write-protected disk gives "Write
+  protected disk -- drive A:" with "Retry or abort (R/A)?". `EXDOS.INI` holds EXDOS commands, one a line
+  (`MKDIR`, `TIME` tested); it runs at a cold start but **not** at the reset button's warm start, which
+  keeps the time it set: the plan's "every restart" means every cold one.
+- **IDE:** the Enterprise's media are the tape and disks A/B; Machine › the disk items
+  (`epDiskMenuRenderer`: the "EXDOS Floppy Interface" checkbox, which restarts the machine, and with it
+  the drives' insert, eject and write-protect items, without "create a disk"); the Insert Disk dialog
+  offers "Enterprise Disks" (`.img`, `.dsk`). Disks are not opened by File › Open or by dropping a file
+  (no machine's are).
+- **Tests:** `test/ep-hw/exdos.test.ts` (9), `test/ep/ep-disk-image.test.ts` (5); the disks come from the
+  tests' own FAT12 writer (`test/ep/fat12Image.ts`), so no third-party image is needed. The harness has
+  `createEpSession({ exdos })`, `insertDisk`, `setDiskWriteProtected`, `diskImage` and
+  `takePublishedDisk`.
+- **In the running app** (the doc-shots driver, a throwaway home, the card and a disk seeded in the
+  session): EXDOS boots and `:DIR` lists the disk's three files. The menu items were not seen there:
+  the driver could not focus a window to get the machine menu's submenus.
+- **Not done:** an EXDOS panel in the debugger; drives C and D; the media strip under the emulator (the
+  Enterprise has none yet); what EXDOS does with a `START` file its ROM names.
+
+### Phase 10 (2026-10-31)
+
+- **Docs:** `guides/machines/enterprise.mdx` (with its screenshots, generated by
+  `scripts/doc-shots/recipes/guides-enterprise.cjs`), `reference/z80-assembler/enterprise.mdx`, the
+  Enterprise in `machine-types.mdx`, `pragmas.mdx` and `basic-listing.mdx`, and an "Under the hood" article
+  on NICK (`under-the-hood/emulator-internals/ep-nick.mdx`). The landing page's machine table lists the
+  Enterprise from 0.67.0; `README.md`, an `AGENTS.md` section, the lessons in
+  `.ai/wasm-migration-intent-and-lessons.md`, and the competitive analysis's machine row.
+- **Notices:** `THIRD_PARTY_NOTICES.md` names the ROMs and the rights holder's permission; no emulator
+  code was ported (D1), so there is no code notice. Klive's `FILE:` ROM is Klive's own.
+- **The screenshot recipe** opens the BASIC Listing with the View menu, or, when the OS gives the app no
+  window focus (macOS builds the menu's submenus only for a focused window), with the same IDE call sent
+  to the IDE window.
+- **Checked in the built app:** both models boot; a project from the template runs; a tape SAVEd by the
+  machine loads and runs with `tape-load -r` ("TAPE OK"); EXDOS lists a disk (Phase 9). The Machine
+  menu's Enterprise items are covered by `test/main/ep-menus.test.ts`, as the app's menu could not be
+  read while the app had no focus.
+- **Gates:** `test:fast` (1434 files), `test:slow` (29 files), `build:check`, `lint:renderer`, `doc:build`,
+  `doc:check`. One `feature` changeset describes the whole plan.
+- **Follow-ups left:** Load and Run of a `.com`/`.bas` from the IDE's file menus; slow-speed tapes on
+  the ROM; mixing the tape signal into the sound; EXDOS drives C and D; ROM annotations for EXOS and
+  IS-BASIC; and the list under §15.
