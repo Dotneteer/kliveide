@@ -755,6 +755,13 @@
       "format": "The format the user asked for, e.g. 'tap'"
     }
   },
+  "commands.compile.epFormat": "Enterprise code exports as a .com file (or Intel HEX), not as {format}.",
+  "@commands.compile.epFormat": {
+    "context": "Error of the IDE's export command (expc) when Enterprise 64/128 code is asked for a format of another machine. .com and Intel HEX are file formats: keep them.",
+    "placeholders": {
+      "format": "The format the user asked for, e.g. 'tap'"
+    }
+  },
   "commands.compile.tvcFormat": "Videoton TVC code exports as a .cas file (or Intel HEX), not as {format}.",
   "@commands.compile.tvcFormat": {
     "context": "Error of the IDE's export command (expc) when Videoton TVC code is asked for a format of another machine. .cas and Intel HEX are file formats: keep them.",

@@ -44,7 +44,8 @@ import {
   MI_ZX81,
   MI_ZXNEXT,
   MI_HT1080Z,
-  MI_TVC
+  MI_TVC,
+  MI_ENTERPRISE
 } from "./constants";
 import {
   ZX80_ROM,
@@ -79,6 +80,14 @@ import {
   TVC_TACTS_PER_LINE
 } from "@emu/machines/tvc/tvcMachineInfo";
 import { TVC_ROM_SETS, type TvcRomSetId } from "@emu/machines/tvc/TvcRoms";
+import {
+  EP_CLOCK,
+  EP_PIXEL_ASPECT,
+  EP_SCREEN_HEIGHT,
+  EP_SCREEN_WIDTH,
+  EP_TACTS_IN_FRAME
+} from "@emu/machines/enterprise/epMachineInfo";
+import { EP_ROM_SETS, type EpRomSetId } from "@emu/machines/enterprise/EpRoms";
 import { getP3RomSet } from "@emu/machines/zxSpectrumP3e/p3RomSets";
 import { TIMEX_MODELS_INFO } from "@emu/machines/timex/timexModels";
 import { SP128_TIMINGS } from "@emu/machines/zxSpectrum128/sp128Timings";
@@ -256,6 +265,14 @@ function tvcRoms(id: TvcRomSetId): RomSource[] {
     { id: set.sysLow.name, kb: set.sysLow.size / 1024, role: tx("hardware.rom.tvcSys") },
     { id: set.sysHigh.name, kb: set.sysHigh.size / 1024, role: tx("hardware.rom.tvcSys") },
     { id: set.exth.name, kb: set.exth.size / 1024, role: tx("hardware.rom.tvcExth") }
+  ];
+}
+
+function epRoms(id: EpRomSetId): RomSource[] {
+  const set = EP_ROM_SETS[id];
+  return [
+    { id: set.exos.name, kb: set.exos.size / 1024, role: tx("hardware.rom.epExos") },
+    { id: set.basic.name, kb: set.basic.size / 1024, role: tx("hardware.rom.epBasic") }
   ];
 }
 
@@ -552,6 +569,38 @@ export const HARDWARE_SPECS: Readonly<Record<string, MachineSpecs>> = {
     },
     // --- The 64K+: BASIC 2.2 (and four 16K video banks, which the sheet has no row for)
     models: { tvc64p: { rom: tvcRoms("22") } }
+  },
+  [MI_ENTERPRISE]: {
+    // --- epMachineInfo.ts, EpRoms.ts, wasm/ep/ep.c (`.plans/ENTERPRISE_PLAN.md`)
+    base: {
+      cpu: "Zilog Z80A",
+      clockHz: EP_CLOCK,
+      rom: epRoms("21"),
+      ramKb: 128,
+      display: {
+        kind: "crt",
+        // --- EXOS's text screen: 40 slots of 16 pixels, 28 rows of 9 lines
+        width: 640,
+        height: 252,
+        rasterWidth: EP_SCREEN_WIDTH,
+        rasterHeight: EP_SCREEN_HEIGHT,
+        pixelAspect: EP_PIXEL_ASPECT,
+        colours: tx("hardware.colours.enterprise"),
+        text: tx("hardware.text.enterprise")
+      },
+      timing: {
+        unit: "T-states",
+        perLine: 256.22,
+        linesPerFrame: 312,
+        perFrame: EP_TACTS_IN_FRAME,
+        note: tx("hardware.timing.enterprise")
+      },
+      sound: [tx("hardware.sound.enterprise")],
+      media: [],
+      input: [{ label: KEYBOARD, value: tx("hardware.keyboard.enterprise") }]
+    },
+    // --- The 64: EXOS 2.0 and IS-BASIC 2.0 in 64K (FCh-FFh, all of it video RAM)
+    models: { ep64: { rom: epRoms("20"), ramKb: 64 } }
   },
   [MI_ZX80]: {
     base: {

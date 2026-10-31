@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
-import { MI_HT1080Z, MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_TVC, MI_ZXNEXT, runProgram } from "./unitTestSupport";
+import { MI_HT1080Z, MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_TVC, MI_ZXNEXT, MI_ENTERPRISE, runProgram } from "./unitTestSupport";
 
 /*
  * The unit-test runner on the 128K, the +2A/+3/+3E and the Next (`.plans/Z80_UNIT_TESTS_PLAN.md`
@@ -198,6 +198,55 @@ UT_Fails:
     expect(results.UT_Adds.status).toBe("passed");
     expect(results.UT_ReadsHimem.status).toBe("passed");
     expect(results.UT_PrintsAndReturns.status).toBe("passed");
+    expect(results.UT_Fails.message).toContain("(A=$01, B=$02)");
+  });
+});
+
+describe("unit-test runner, Enterprise", () => {
+  // --- Booted by the machine's own flow to IS-BASIC's prompt; code at $0100, the Enterprise's default
+  // --- LP_POINTER after boot (observed): B900h on EXOS 2.1, BB00h on EXOS 2.0
+  it.each([
+    ["ep128", "$B9"],
+    ["ep64", "$BB"]
+  ])("runs tests that call EXOS on %s", async (modelId, lptHigh) => {
+    const { results, summary, problems } = await runProgram(
+      `
+  .model ENTERPRISE
+  UNITTEST_INITIALIZE()
+    ret
+
+UT_Adds:
+    ld a,40
+    add a,2
+    TEST_A(42)
+    TC_END()
+
+UT_ReadsLpPointer:
+    ld hl,($BFF4)        ; LP_POINTER: the line parameter table's CPU address (in segment FFh,
+    ld a,h               ; EXOS's system segment, seen through page 2)
+    TEST_A(${lptHigh})
+    TC_END()
+
+UT_CallsExos:
+    ld b,0               ; read...
+    ld c,22              ; ...MODE_VID
+    rst $30              ; EXOS call 16...
+    .defb 16
+    TEST_A(0)            ; ...returns past its function byte with status 0
+    TC_END()
+
+UT_Fails:
+    ld a,1
+    TEST_A(2)
+    TC_END()
+`,
+      { machineId: MI_ENTERPRISE, modelId, model: SpectrumModelType.Enterprise }
+    );
+    expect(problems).toEqual([]);
+    expect(summary).toMatchObject({ total: 4, passed: 3, failed: 1, errors: 0 });
+    expect(results.UT_Adds.status).toBe("passed");
+    expect(results.UT_ReadsLpPointer.status).toBe("passed");
+    expect(results.UT_CallsExos.status).toBe("passed");
     expect(results.UT_Fails.message).toContain("(A=$01, B=$02)");
   });
 });

@@ -1,7 +1,8 @@
 // ----------------------------------------------------------------------------
 // The WD1793 floppy disk controller (the FD179X data sheet [DS]), shared by the disk interfaces built
 // on it: the Beta 128 (`zx-spectrum-beta128.c`, `.plans/BETA128_TRDOS_PLAN.md`) and the Videoton
-// TVC's HBF card (`tvc-hbf.c`, `.plans/VIDEOTON_TVC_PLAN.md` §9.4). Extracted from the Beta 128
+// TVC's HBF card (`tvc-hbf.c`, `.plans/VIDEOTON_TVC_PLAN.md` §9.4), and as a WD1770 by the Enterprise's
+// EXDOS card (`ep-exdos.c`, `.plans/ENTERPRISE_PLAN.md` §10). Extracted from the Beta 128
 // unchanged; its symbols take the prefix the includer chooses, so the Beta 128 keeps its names.
 //
 // The includer defines, before including this file:
@@ -15,7 +16,25 @@
 //   WD1793_DRIVE_INDEX()   the drive the interface selects (WD1793_DRIVE_COUNT or more: none)
 //   WD1793_SIDE()          the side the interface selects, 0 or 1
 //   WD1793_MR_INACTIVE()   nonzero while the master reset line is not held
-//   WD1793_HLT()           nonzero while the head-load timing input is high
+//   WD1793_HLT()           nonzero while the head-load timing input is high (not used by the 1770)
+//   WD1793_VARIANT         1793 (the default) or 1770, below
+//
+// The WD1770 variant (`WD1793_VARIANT 1770`, the Enterprise's EXDOS card, `ep-exdos.c`) differs from
+// the 1793 where the 1770's data sheet does, and nowhere else:
+//   - it has no head-load output, HLT input or READY input: it switches the drive's motor instead.
+//     Status bit 7 is Motor On (not Not Ready), and Type I's bit 5 is Spin-up complete (not Head
+//     Loaded). Every command turns the motor on; with the motor off and command bit 3 (h, spin-up
+//     disable) clear, the command first waits six index pulses. The motor goes off after nine
+//     revolutions without a command. Types II and III do not wait for READY. Without READY, a drive
+//     with no disk shows itself only by giving no index pulses: what counts revolutions (the
+//     spin-up, a verify, a sector search, the revolution-timed failures) then waits until a Force
+//     Interrupt, as on the chip; the firmware's own timeout ends it. (The 1793 model fails such a
+//     command at once on Not Ready.)
+//   - Type II/III command bit 1 is not the side-compare flag (C): the 1770 never compares the side.
+//   - its step rates at 8 MHz: 6, 12, 20 and 30 ms (the 1793's at 1 MHz are the same numbers; the
+//     1772's would be 6, 12, 2 and 3 ms).
+// A 1793 includer's preprocessed source is unchanged by these (`#if`), so its core builds to the
+// same bytes.
 //
 // The controller is lazy. Every port access first plays the events that fell due since the last one,
 // in order (`Advance`), so DRQ, Lost Data, the index pulse and INTRQ read exactly as a running
@@ -25,6 +44,10 @@
 // from 1) a track: byte ((cylinder * 2 + side) * SECTORS + sector - 1) * SECTOR_SIZE. The TypeScript
 // side converts the image files to and from it.
 // ----------------------------------------------------------------------------
+
+#ifndef WD1793_VARIANT
+#define WD1793_VARIANT 1793
+#endif
 
 #define WD1793_CAT2(a, b) a##b
 #define WD1793_CAT(a, b) WD1793_CAT2(a, b)
@@ -114,6 +137,13 @@ static uint8_t WD(WriteProtectFault);
 static uint8_t WD(HeadLoad);
 static uint8_t WD(StepIn);
 static uint8_t WD(IntOnIndex);
+#if WD1793_VARIANT == 1770
+/* The 1770's Motor On output, and the tact its spin-up completes (Type I status bit 5 from then) */
+static uint8_t WD(MotorOn);
+static uint32_t WD(SpinUpAt);
+/* 1 while the command waits for its spin-up's index pulses */
+static uint8_t WD(SpinUpWait);
+#endif
 
 /* The running command */
 static uint8_t WD(Phase);
@@ -300,10 +330,12 @@ static void WD(StartSearch)(uint32_t tact) {
   const uint8_t isWrite = (WD(Command) & 0xe0u) == 0xa0u;
   uint8_t found = WD(TrackReadable)() && WD(Sector) >= 1u && WD(Sector) <= WD1793_SECTORS &&
     WD(Track) == WD(CurrentDrive)()->cylinder;
+#if WD1793_VARIANT != 1770
   /* The side compare (C flag): the S flag against the side recorded in the ID field */
   if (found && (WD(Command) & 0x02u) != 0u) {
     found = ((WD(Command) >> 3u) & 0x01u) == WD(Side)();
   }
+#endif
   if (!found) {
     WD(RecordNotFound) = 1u;
     WD(Schedule)(WD1793_PHASE_DONE, tact + 4u * WD(RevolutionTacts)());
@@ -344,13 +376,33 @@ static void WD(StepOnce)(void) {
 }
 
 static uint32_t WD(StepTacts)(void) {
+#if WD1793_VARIANT == 1770
+  /* The WD1770's rates (8 MHz clock) */
   static const uint8_t rates[4] = {6u, 12u, 20u, 30u};
+#else
+  static const uint8_t rates[4] = {6u, 12u, 20u, 30u};
+#endif
   return WD(MsTacts)(rates[WD(Command) & 0x03u]);
 }
 
 static void WD(RunEvent)(void) {
   const uint32_t tact = WD(EventTact);
   const uint32_t byteTacts = WD(ByteTacts)();
+#if WD1793_VARIANT == 1770
+  /*
+   * The 1770 counts revolutions by the index pulses, and a drive without a disk gives none: the
+   * spin-up, a verify, a sector search and every revolution-timed failure wait for them, so the
+   * command stays busy until a Force Interrupt (or until a disk goes in). Stepping needs no disk.
+   */
+  if (!WD(Ready)() && (WD(SpinUpWait) != 0u || WD(Phase) != WD1793_PHASE_STEP)) {
+    WD(EventTact) = tact + WD(RevolutionTacts)();
+    return;
+  }
+  if (WD(SpinUpWait) != 0u) {
+    WD(SpinUpWait) = 0u;
+    WD(SpinUpAt) = tact;
+  }
+#endif
   switch (WD(Phase)) {
     case WD1793_PHASE_STEP: {
       const uint8_t command = WD(Command);
@@ -615,6 +667,12 @@ static void WD(Advance)(void) {
     /* Idle for 15 index pulses: the head unloads ([DS]) */
     WD(HeadLoad) = 0u;
   }
+#if WD1793_VARIANT == 1770
+  if (WD(Busy) == 0u && WD(MotorOn) != 0u && now - WD(IdleSince) >= 9u * WD(RevolutionTacts)()) {
+    /* Nine revolutions without a command: the 1770 turns the motor off */
+    WD(MotorOn) = 0u;
+  }
+#endif
   if (WD(IntOnIndex) != 0u) {
     const uint32_t count = WD(IndexCount)(now);
     if (count != WD(IndexMark)) {
@@ -623,6 +681,24 @@ static void WD(Advance)(void) {
     }
   }
 }
+
+#if WD1793_VARIANT == 1770
+/*
+ * The 1770 turns the motor on for a command. With the motor off and h (command bit 3) clear, the
+ * command waits for six index pulses first. Returns the tact the command starts at.
+ */
+static uint32_t WD(MotorStart)(uint32_t now, uint8_t command) {
+  if (WD(MotorOn) != 0u) return now;
+  WD(MotorOn) = 1u;
+  if ((command & 0x08u) != 0u) {
+    WD(SpinUpAt) = now;
+    return now;
+  }
+  WD(SpinUpAt) = WD(NextPass)(now, 0u) + 5u * WD(RevolutionTacts)();
+  WD(SpinUpWait) = 1u;
+  return WD(SpinUpAt);
+}
+#endif
 
 static void WD(StartCommand)(uint8_t command) {
   const uint32_t now = WD1793_NOW();
@@ -634,6 +710,9 @@ static void WD(StartCommand)(uint8_t command) {
       WD(Busy) = 0u;
       WD(Phase) = WD1793_PHASE_IDLE;
       WD(IdleSince) = now;
+#if WD1793_VARIANT == 1770
+      WD(SpinUpWait) = 0u;
+#endif
     } else {
       WD(TypeOneStatus) = 1u;
       WD(SeekError) = 0u;
@@ -658,6 +737,12 @@ static void WD(StartCommand)(uint8_t command) {
   WD(RecordNotFound) = 0u;
   WD(LostData) = 0u;
   WD(WriteProtectFault) = 0u;
+#if WD1793_VARIANT == 1770
+  const uint32_t begin = WD(MotorStart)(now, command);
+#define WD1793_BEGIN begin
+#else
+#define WD1793_BEGIN now
+#endif
 
   if ((command & 0x80u) == 0u) {
     /* Type I */
@@ -673,17 +758,19 @@ static void WD(StartCommand)(uint8_t command) {
       if ((command & 0x60u) == 0x60u) WD(StepIn) = 0u;
       WD(StepsLeft) = 1u;
     }
-    WD(Schedule)(WD1793_PHASE_STEP, now);
+    WD(Schedule)(WD1793_PHASE_STEP, WD1793_BEGIN);
     WD(Advance)();
     return;
   }
 
-  /* Types II and III: the drive must be ready, and the head loads */
+  /* Types II and III: the drive must be ready (not on the 1770, which has no READY), and the head loads */
   WD(TypeOneStatus) = 0u;
+#if WD1793_VARIANT != 1770
   if (!WD(Ready)()) {
     WD(Finish)(now);
     return;
   }
+#endif
   WD(HeadLoad) = 1u;
   const uint32_t settle = (command & 0x04u) != 0u ? WD(MsTacts)(30u) : 0u;
   const uint8_t kind = (uint8_t)(command & 0xf0u);
@@ -696,14 +783,14 @@ static void WD(StartCommand)(uint8_t command) {
   }
   if ((command & 0xc0u) == 0x80u) {
     /* Read Sector / Write Sector */
-    WD(Schedule)(WD1793_PHASE_SEARCH, now + settle);
+    WD(Schedule)(WD1793_PHASE_SEARCH, WD1793_BEGIN + settle);
   } else if (kind == 0xc0u) {
     /* Read Address: the next ID field to pass */
     if (!WD(TrackReadable)()) {
       WD(RecordNotFound) = 1u;
-      WD(Schedule)(WD1793_PHASE_DONE, now + settle + 4u * WD(RevolutionTacts)());
+      WD(Schedule)(WD1793_PHASE_DONE, WD1793_BEGIN + settle + 4u * WD(RevolutionTacts)());
     } else {
-      const uint32_t from = now + settle;
+      const uint32_t from = WD1793_BEGIN + settle;
       const uint32_t position = WD(TrackPosition)(from);
       uint32_t slot = position < WD1793_FIRST_SLOT ? 0u : (position - WD1793_FIRST_SLOT) / WD1793_SLOT_PITCH + 1u;
       if (slot >= WD1793_SECTORS) slot = 0u;
@@ -724,15 +811,16 @@ static void WD(StartCommand)(uint8_t command) {
   } else if (kind == 0xe0u) {
     /* Read Track: from the next index pulse to the one after */
     WD(ByteIndex) = 0u;
-    WD(Schedule)(WD1793_PHASE_TRACK_BYTE, WD(NextPass)(now + settle, 0u) + WD(ByteTacts)());
+    WD(Schedule)(WD1793_PHASE_TRACK_BYTE, WD(NextPass)(WD1793_BEGIN + settle, 0u) + WD(ByteTacts)());
   } else if (kind == 0xf0u) {
     /* Write Track: DRQ at once; writing starts at the next index pulse */
     WD(Drq) = 1u;
-    WD(Schedule)(WD1793_PHASE_WRITE_TRACK_START, WD(NextPass)(now + settle, 0u));
+    WD(Schedule)(WD1793_PHASE_WRITE_TRACK_START, WD(NextPass)(WD1793_BEGIN + settle, 0u));
   } else {
     WD(Finish)(now);
   }
   WD(Advance)();
+#undef WD1793_BEGIN
 }
 
 /* ------------------------------------------------------------------------------------------- */
@@ -753,25 +841,46 @@ static void WD(ResetController)(void) {
   WD(HeadLoad) = 0u;
   WD(IntOnIndex) = 0u;
   WD(Sector) = 1u;
+#if WD1793_VARIANT == 1770
+  WD(MotorOn) = 0u;
+  WD(SpinUpWait) = 0u;
+#endif
 }
 
 
 static uint8_t WD(ReadStatus)(void) {
   WD(Advance)();
   uint8_t status = WD(Busy) != 0u ? WD1793_ST_BUSY : 0u;
+#if WD1793_VARIANT == 1770
+  /* Bit 7 is Motor On */
+  if (WD(MotorOn) != 0u) status |= WD1793_ST_NOT_READY;
+#else
   if (!WD(Ready)()) status |= WD1793_ST_NOT_READY;
+#endif
   const WD(Drive) *drive = WD(CurrentDrive)();
   if (WD(TypeOneStatus) != 0u) {
     if (drive != (WD(Drive) *)0 && drive->present != 0u && drive->writeProtected != 0u) {
       status |= WD1793_ST_PROTECTED;
     }
+#if WD1793_VARIANT == 1770
+    /* Bit 5 is Spin-up: the motor is on and its spin-up has completed */
+    if (WD(MotorOn) != 0u && (int32_t)(WD1793_NOW() - WD(SpinUpAt)) >= 0) status |= WD1793_ST_HEAD_RECTYPE;
+#else
     if (WD(HeadLoad) != 0u && (WD1793_HLT()) != 0u) status |= WD1793_ST_HEAD_RECTYPE;
+#endif
     if (WD(SeekError) != 0u) status |= WD1793_ST_SEEK_RNF;
     if (WD(CrcError) != 0u) status |= WD1793_ST_CRC;
     if (drive != (WD(Drive) *)0 && drive->cylinder == 0u) status |= WD1793_ST_TRACK0_LOST;
+#if WD1793_VARIANT == 1770
+    /* The index hole passes only while the motor turns the disk */
+    if (WD(MotorOn) != 0u && WD(Ready)() && WD(TrackPosition)(WD1793_NOW()) < WD1793_INDEX_BYTES) {
+      status |= WD1793_ST_INDEX_DRQ;
+    }
+#else
     if (WD(Ready)() && WD(TrackPosition)(WD1793_NOW()) < WD1793_INDEX_BYTES) {
       status |= WD1793_ST_INDEX_DRQ;
     }
+#endif
   } else {
     if (WD(WriteProtectFault) != 0u) status |= WD1793_ST_PROTECTED;
     if (WD(RecordNotFound) != 0u) status |= WD1793_ST_SEEK_RNF;
@@ -787,6 +896,9 @@ static void WD(ShiftTactOrigin)(uint32_t by) {
   WD(EventTact) -= by;
   WD(RotationOrigin) -= by;
   WD(IdleSince) -= by;
+#if WD1793_VARIANT == 1770
+  WD(SpinUpAt) -= by;
+#endif
 }
 
 /* ------------------------------------------------------------------------------------------- */

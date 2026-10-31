@@ -15,6 +15,8 @@ export const MI_SCORPION = "scorpion";
 export const MI_HT1080Z = "ht1080z";
 /** The Videoton TV Computer (`.plans/VIDEOTON_TVC_PLAN.md`): the 64K and the 64K+ as models */
 export const MI_TVC = "tvc";
+/** The Enterprise 64/128 (`.plans/ENTERPRISE_PLAN.md`): the 128 and the 64 as models */
+export const MI_ENTERPRISE = "ep";
 
 /**
  * The machines whose emulator screen can show the media strip (the tape and disk files in use),
@@ -32,7 +34,8 @@ export const MEDIA_INFO_MACHINE_IDS: string[] = [
 
 /**
  * The machines with a raster beam the emulator can show on its paused screen
- * (`.plans/BEAM_POSITION_OVERLAY_PLAN.md`): the ZX Spectrum family, the Next, the HT-1080Z and the TVC. Not
+ * (`.plans/BEAM_POSITION_OVERLAY_PLAN.md`): the ZX Spectrum family, the Next, the HT-1080Z, the TVC and the
+ * Enterprise. Not
  * the Z88 (an LCD, no beam), the ZX80/81 (a CPU-generated display) or the C64. The toolbar button and the View menu
  * item appear only for these.
  */
@@ -44,7 +47,8 @@ export const BEAM_POSITION_MACHINE_IDS: string[] = [
   MI_SCORPION,
   MI_ZXNEXT,
   MI_HT1080Z,
-  MI_TVC
+  MI_TVC,
+  MI_ENTERPRISE
 ];
 
 /**
@@ -99,6 +103,16 @@ export const MC_HT_MODEL = "htModel";
 export const MC_TVC_MODEL = "tvcModel";
 /** The Videoton TVC's HBF floppy interface card in slot 0, with VT-DOS (true: plugged in) */
 export const MC_TVC_HBF = "tvcHbf";
+/** Enterprise only: the model the core runs (`epMachineInfo.ts`): "128" or "64" */
+export const MC_EP_MODEL = "epModel";
+/** Enterprise only: IS-BASIC in the cartridge slot (absent or true: plugged in; false boots the word processor) */
+export const MC_EP_CARTRIDGE = "epCartridge";
+/** Enterprise only: NICK's colour levels: "resistor" (absent: the board's DAC) or "linear" (the guide's formula) */
+export const MC_EP_PALETTE = "epPalette";
+/** Enterprise only: Klive's FILE: device ROM at segment 10h (absent or true: fitted) */
+export const MC_EP_HOSTFS = "epHostFs";
+/** Enterprise only: the EXDOS floppy interface card, with its EXDOS 1.3 ROM at segments 20h-21h (true: fitted) */
+export const MC_EP_EXDOS = "epExdos";
 /**
  * The 48K, the 128K (its own timing, not the Pentagon's or the Scorpion's) and the +2A/+3/+2E/+3E: a
  * DivMMC is connected (`.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md` C5). It boots the esxDOS ROM the

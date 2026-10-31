@@ -2,21 +2,17 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
+import { EP_ROM_IMAGES } from "@emu/machines/enterprise/EpRoms";
+
 /*
  * The Enterprise 64/128 ROM images. A replaced or corrupted image fails here instead of booting to
- * a garbled screen. The CRC32s were recorded when the images were taken from the libretro
- * ep128emu core (`src/public/roms/ep-roms-readme.txt`).
+ * a garbled screen. The CRC32s are `EpRoms.ts`'s, recorded when the images were taken from the
+ * libretro ep128emu core (`src/public/roms/ep-roms-readme.txt`).
  */
 
 const ROM_DIR = join(__dirname, "../../src/public/roms");
 
-const EP_ROMS = [
-  { name: "ep-exos20", size: 0x8000, crc32: 0xd421795f, banner: "EXOS 2.0" },
-  { name: "ep-exos21", size: 0x8000, crc32: 0x982a3b44, banner: "EXOS 2.1" },
-  { name: "ep-basic20", size: 0x4000, crc32: 0x1228de34, banner: "BASIC version 2.0" },
-  { name: "ep-basic21", size: 0x4000, crc32: 0x55f96251, banner: "BASIC version 2.1" },
-  { name: "ep-exdos13", size: 0x8000, crc32: 0xe0135929, banner: "EXDOS version 1.3" }
-];
+const EP_ROMS = EP_ROM_IMAGES;
 
 const CRC_TABLE = (() => {
   const table = new Uint32Array(256);

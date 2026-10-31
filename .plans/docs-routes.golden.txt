@@ -169,6 +169,7 @@
 /en/guides/languages/z88dk/index.html
 /en/guides/languages/zx-basic/index.html
 /en/guides/machines/cambridge-z88/index.html
+/en/guides/machines/enterprise/index.html
 /en/guides/machines/ht1080z/index.html
 /en/guides/machines/timex-scorpion/index.html
 /en/guides/machines/videoton-tvc/index.html
@@ -802,6 +803,7 @@
 /en/reference/machine-types/index.html
 /en/reference/whats-new/index.html
 /en/reference/z80-assembler/directives/index.html
+/en/reference/z80-assembler/enterprise/index.html
 /en/reference/z80-assembler/expressions/index.html
 /en/reference/z80-assembler/ht1080z/index.html
 /en/reference/z80-assembler/index.html
@@ -824,6 +826,7 @@
 /en/under-the-hood/emulator-internals/computer-sound/index.html
 /en/under-the-hood/emulator-internals/crt-display/index.html
 /en/under-the-hood/emulator-internals/debugger-loop/index.html
+/en/under-the-hood/emulator-internals/ep-nick/index.html
 /en/under-the-hood/emulator-internals/ht1080z-video/index.html
 /en/under-the-hood/emulator-internals/next-audio/beeper/index.html
 /en/under-the-hood/emulator-internals/next-audio/dacs/index.html

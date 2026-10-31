@@ -18,6 +18,10 @@ import { TvcWasmV2Machine } from "@emu/machines/tvc/TvcWasmV2Machine";
 import { TVC_MODELS } from "@emu/machines/tvc/tvcMachineInfo";
 import { MI_TVC } from "@common/machines/constants";
 import { buildTvcWasm, productionOutput as tvcWasm } from "../../scripts/build-tvc-wasm.cjs";
+import { EpWasmV2Machine } from "@emu/machines/enterprise/EpWasmV2Machine";
+import { EP_MODELS } from "@emu/machines/enterprise/epMachineInfo";
+import { MI_ENTERPRISE } from "@common/machines/constants";
+import { buildEpWasm, productionOutput as epWasm } from "../../scripts/build-ep-wasm.cjs";
 
 /*
  * The hardware sheet's figures against the running cores, for the machines that only report their
@@ -134,5 +138,16 @@ describe("hardware specs against the cores", () => {
       }
     })(MI_TVC, model, model.config, undefined, { readArtifact: async () => readFileSync(tvcWasm) });
     await expectMatches(machine, MI_TVC, modelId);
+  });
+
+  it.each(EP_MODELS.map((m) => m.modelId!))("Enterprise %s", async (modelId) => {
+    buildEpWasm();
+    const model = EP_MODELS.find((m) => m.modelId === modelId)!;
+    const machine = new (class extends EpWasmV2Machine {
+      protected override async loadRomFromResource(romName: string): Promise<Uint8Array> {
+        return new Uint8Array(readFileSync(`src/public/roms/${romName}.rom`));
+      }
+    })(MI_ENTERPRISE, model, model.config, undefined, { readArtifact: async () => readFileSync(epWasm) });
+    await expectMatches(machine, MI_ENTERPRISE, modelId);
   });
 });

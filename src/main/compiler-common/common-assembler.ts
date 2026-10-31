@@ -144,6 +144,7 @@ import {
   findModelTypeByName,
   isHt1080zModelType,
   isTvcModelType,
+  isEnterpriseModelType,
   isZx8081ModelType,
   SpectrumModelType
 } from "@main/z80-compiler/SpectrumModelTypes";
@@ -1147,6 +1148,26 @@ export abstract class CommonAssembler<
     }
   }
 
+  /**
+   * On the Enterprise, a program is an EXOS `$$APP` loaded at $0100 (`common/enterprise/codePlacement.ts`):
+   * below $0100 is EXOS's page-zero area, and from $C000 page 3 holds EXOS's system segment. Warned
+   * once per segment and area; Run and Export refuse both.
+   */
+  protected checkEnterpriseCodeRange(): void {
+    const model = this._output.modelType ?? this._options.currentModel;
+    if (!isEnterpriseModelType(model) || !this._currentSegment) return;
+    const address = this.getCurrentAssemblyAddress();
+    const segment = this._currentSegment as any;
+    const hex = address.toString(16).toUpperCase().padStart(4, "0");
+    if (address < 0x0100) {
+      if (!segment.epLowWarned) this.reportAssemblyWarning("Z0386", this._currentSourceLine, null, hex);
+      segment.epLowWarned = true;
+    } else if (address > 0xbfff) {
+      if (!segment.epHighWarned) this.reportAssemblyWarning("Z0387", this._currentSourceLine, null, hex);
+      segment.epHighWarned = true;
+    }
+  }
+
   protected checkUnbankedCodeRange(): void {
     // Only check if in Next auto mode and current segment is unbanked
     if (!this._output.isNextAutoMode || !this._currentSegment || this._currentSegment.bank !== undefined) {
@@ -1389,6 +1410,9 @@ export abstract class CommonAssembler<
       // --- After the BASIC launcher line, where TVC machine code is loaded (`common/tvc/codePlacement.ts`)
       case SpectrumModelType.TVC:
         return 0x1a30;
+      // --- Where EXOS loads a `$$APP` program (`common/enterprise/codePlacement.ts`)
+      case SpectrumModelType.Enterprise:
+        return 0x0100;
       default:
         return 0x8000;
     }
@@ -5798,6 +5822,7 @@ export abstract class CommonAssembler<
     this.checkZx8081CodeRange();
     this.checkHt1080zCodeRange();
     this.checkTvcCodeRange();
+    this.checkEnterpriseCodeRange();
     const overflow = this._currentSegment.emitByte(data);
     if (overflow) {
       this.reportAssemblyError(overflow, this._currentSourceLine);

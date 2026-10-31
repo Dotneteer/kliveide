@@ -1,0 +1,79 @@
+@use "@styles/core.scss" as *;
+
+/*
+ * The Enterprise's NICK and DAVE side-bar panels. `DataPanel`s built from the register rows, so font,
+ * size and leading come from `Data.module.scss`; this file only lays out the colour swatches, the LPT
+ * list and the interrupt rows. Widths are `ch` (M2).
+ */
+
+/* A colour NICK outputs: the colour is the data (an inline style), the frame is the theme's */
+.swatch {
+  display: inline-block;
+  width: 1.5ch;
+  height: 1.5ch;
+  flex-shrink: 0;
+  border: 1px solid var(--border-strong);
+}
+
+.swatches {
+  display: flex;
+  flex-direction: row;
+  gap: 0.25ch;
+  align-items: center;
+}
+
+/* The swatch rows sit under the label column like a value */
+.swatchLabel {
+  width: var(--measure-label);
+}
+
+/* The LPT list: one row a block, the current one marked */
+.lptList {
+  border-block: 1px solid var(--border-subtle);
+  white-space: nowrap;
+}
+
+.lptRow {
+  overflow: hidden;
+}
+
+/* `▶` marks the current block (two cells, so the column holds the glyph) */
+.marker {
+  width: 2ch;
+  flex-shrink: 0;
+  color: var(--color-state-value);
+}
+
+span.colAddress {
+  width: 5ch;
+  flex-shrink: 0;
+}
+
+span.colLines {
+  width: 5ch;
+  flex-shrink: 0;
+  justify-content: flex-end;
+}
+
+span.colMode {
+  width: 7ch;
+  flex-shrink: 0;
+}
+
+span.colFlags {
+  width: 5ch;
+  flex-shrink: 0;
+}
+
+/* The interrupt rows: the source's name, then its EN/LAT/PIN flags */
+span.intName {
+  width: 5ch;
+  flex-shrink: 0;
+}
+
+/* An EN/LAT/PIN column: the heading and the dot centred under it */
+.intFlag.intFlag {
+  width: 4ch;
+  flex-shrink: 0;
+  justify-content: center;
+}

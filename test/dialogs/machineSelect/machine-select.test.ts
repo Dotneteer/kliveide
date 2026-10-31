@@ -62,7 +62,10 @@ describe("Select Machine dialog", () => {
     const h = open();
     const sections = h.vm.sections.filter((s) => s.kind !== "favorites");
     expect(sections.map((s) => s.id)).toEqual(machineRegistry.map((m) => m.machineId));
+    // --- The Enterprise has two models, the 128 and the 64 (`.plans/ENTERPRISE_PLAN.md` Phase 6)
     expect(sections.filter((s) => s.kind === "leaf").map((s) => s.id)).toEqual(["zxnext", "scorpion"]);
+    const ep = sections.find((s) => s.id === "ep")!;
+    expect(ep.kind === "machine" && ep.rows.map((r) => r.name)).toEqual(["Enterprise 128", "Enterprise 64"]);
     const z88 = sections.find((s) => s.id === "z88")!;
     expect(z88.kind === "machine" && z88.rows).toHaveLength(10);
   });

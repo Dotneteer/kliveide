@@ -32,7 +32,8 @@ export const CORE_EXPORT_PREFIXES: Record<string, readonly string[]> = {
   z88: ["z88"],
   zx8081: ["zx8081"],
   ht1080z: ["ht1080z"],
-  tvc: ["tvc"]
+  tvc: ["tvc"],
+  ep: ["ep"]
 };
 
 /** Exports shared by every Z80 core, by exact name prefix */
@@ -137,6 +138,18 @@ const CORE_OVERRIDES: Record<string, Record<string, ExportClass>> = {
   tvc: {
     // --- Picks the CRTC type (Hitachi or Motorola 6845), machine state the image holds
     CrtcSetMotorola: "journaled"
+  },
+  ep: {
+    // --- A byte of the 4 MB physical space, without a bus cycle
+    ReadPhysical: "pure",
+    // --- NICK's power-on register seed and the palette's levels: machine state the image holds
+    NickSetSeed: "journaled",
+    NickSetLinearPalette: "journaled",
+    // --- Klive's FILE: device (`ep-ports.c`): reading the request is pure; taking it and answering it
+    // --- let the waiting CPU go on
+    HostFsGetRequest: "pure",
+    HostFsTake: "journaled",
+    HostFsDone: "journaled"
   }
 };
 
@@ -188,6 +201,8 @@ const JOURNALED = new RegExp(
       "DivMmc",
       // --- The Videoton TVC's HBF floppy card (`tvc-hbf.c`): the card, its disks, their write-back
       "Hbf",
+      // --- The Enterprise's EXDOS card (`ep-exdos.c`): its disks and their write-back
+      "Exdos",
       // --- The Interface 1 (`zx-spectrum-if1.c`): connect, ROM, paging, cartridges, write-back
       "If1",
       "Dma",

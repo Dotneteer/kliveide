@@ -676,3 +676,52 @@ function buildTvcChars(): Record<number, CharDescriptor> {
 }
 
 export const TvcChars: Record<number, CharDescriptor> = buildTvcChars();
+
+/*
+ * The Enterprise 64/128's character set for the memory panel (`.plans/ENTERPRISE_PLAN.md` §11), read
+ * from EXOS 2.1's own font as it lies in video RAM after boot (128 glyphs; `test/ep-hw/charset.test.ts`
+ * pins some of them). ASCII at 20h-7Eh but for 23h, which is £ (the UK machine's # is 01h); below 20h
+ * EXOS keeps accented letters, arrows and a few symbols. Codes whose glyph is not a clear character
+ * (00h, 0Dh, 0Fh, 1Ah, 1Eh, 7Fh) have none here; codes from 80h repeat the glyphs (bit 7 picks the
+ * colour in NICK's text modes).
+ */
+const EP_LOW_CHARS: Record<number, string> = {
+  0x01: "#",
+  0x02: "Ä",
+  0x03: "Ö",
+  0x04: "Ü",
+  0x05: "Å",
+  0x06: "Ø",
+  0x07: "Æ",
+  0x08: "é",
+  0x09: "Ç",
+  0x0a: "à",
+  0x0b: "↑",
+  0x0c: "→",
+  0x0e: "■",
+  0x10: "π",
+  0x11: "Σ",
+  0x12: "ä",
+  0x13: "ö",
+  0x14: "ü",
+  0x15: "å",
+  0x16: "ø",
+  0x17: "æ",
+  0x18: "è",
+  0x19: "§",
+  0x1b: "↓",
+  0x1c: "←",
+  0x1d: "µ",
+  0x1f: "█"
+};
+
+function buildEpChars(): Record<number, CharDescriptor> {
+  const chars: Record<number, CharDescriptor> = {};
+  for (const [code, v] of Object.entries(EP_LOW_CHARS)) chars[Number(code)] = { v };
+  chars[0x20] = { v: "\xa0", t: "(space)" };
+  for (let code = 0x21; code < 0x7f; code++) chars[code] = { v: String.fromCharCode(code) };
+  chars[0x23] = { v: "£" };
+  return chars;
+}
+
+export const EpChars: Record<number, CharDescriptor> = buildEpChars();

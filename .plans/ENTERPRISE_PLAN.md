@@ -1,0 +1,1081 @@
+# Enterprise 64/128 on the WASM Core — Implementation Plan
+
+**Status:** Complete (2026-10-31), Phases 1–10: EXOS 2.1 boots to IS-BASIC 2.1 on the core (and EXOS
+2.0 to IS-BASIC 2.0 on the 64), the picture shows it, DAVE plays, the host and virtual keyboards and the
+joysticks work, Klive's `FILE:` device loads and saves host files, the IDE's debugger surfaces cover the
+Enterprise, `.model ENTERPRISE` code runs and exports as a `.com`, tapes load and save, the EXDOS card runs
+EXDOS 1.3 on FAT12 disks, and the documentation, notices and changeset ship it (§18). Follow-ups below.
+D1–D9 accepted (§16). Still open in Phase 0: reading EP64 schematic sheet 1 for Q1 (the VINT edge).
+**Input:** the research pack `_input/enterprise128/`. Read these first:
+- `README.md`: the machine at a glance, the disagreements table and the ROM decision;
+- `NICK_VIDEO.md`, then `NICK_VIDEO_BACKGROUND.md` §1–§2 (the original design documents settle most
+  of the first file's open questions);
+- `DAVE_MEMORY_IO.md`, then `DAVE_AUDIO_BACKGROUND.md` §1–§2 and §7, and its §2.8 corrections to the
+  first file;
+- `STORAGE_FIRMWARE_SOFTWARE.md` §2–§6 (ROMs, EXOS, tape, EXDOS, file formats);
+- `EXISTING_EMULATORS.md` §1, §2 and §10.
+
+Beside them: the reference documents in `docs/` and the MIT-licensed Clock Signal sources in `clk/`
+(commit in `clk/COMMIT`). The original Intelligent Software/AMI scans (`docs/hardware/`) are not in
+the repository; the research README gives the Wayback Machine index to fetch them again, and the
+background files cite them by document and page.
+
+**Shape of the result:** one new C translation unit that `#include`s the shared Z80 core
+`src/emu/z80/wasm/z80.c`, as the ZX81, the HT-1080Z and the TVC do. There is no second CPU, no copy of
+`z80.c`, and no TypeScript Enterprise machine. **The Videoton TVC is the template**: it is the newest
+core, it has a video chip that stretches the CPU clock in half-T steps (the Enterprise's NICK does the
+same), audio, tape, a floppy card on the shared WD1793, and the most complete IDE wiring.
+
+---
+
+## 0. Ground rules
+
+### 0.1 Licence and provenance (decision D1)
+- **The default is Klive's own code**, written from the hardware facts in the research pack. That is
+  how the HT-1080Z and the TVC were built.
+- **Clock Signal (CLK) is MIT** (`_input/enterprise128/clk/`). Porting from it is allowed: a derived
+  file keeps "Copyright (c) 2015 Thomas Harte" and the permission notice in a header comment naming
+  the upstream file, and `THIRD_PARTY_NOTICES.md` already has a CLK section (the ZX80/81 port) that
+  gains the Enterprise files. **But CLK is a weak model of this machine**, and the research shows it
+  wrong in several places: it reads the LPB once per block (NICK_VIDEO_BACKGROUND §2.6), gives the Z80
+  the first six clocks of a slot (§2.3), has no pixel pipeline delay (§2.5), runs the noise clock at
+  62.5 kHz (DAVE_AUDIO_BACKGROUND §1 A), and calls its own wait timing a guess. Useful parts: the
+  keyboard matrix table, the EXDOS control register, and the host-file ROM idea (§9.2).
+- **MAME (BSD-3)** may be read for interface facts and ported with its notice. Nothing is expected to
+  need porting.
+- **GPL sources** (ep128emu, its libretro and Ep128web derivatives, Xemu/Xep128, the Kyp069 FPGA
+  core) are **not read for design and no code is taken.** The research pack already records the
+  facts it needed from them in its own words, with their citations; the implementation works from
+  those notes, not from the sources. Where the pack records a *number* (for example ep128emu's
+  contention latencies, §6.3), it is used as a fact with its citation.
+- **Running** ep128emu as a behavioural oracle is allowed (the Klive BASIC plan's D12, the TVC plan's
+  D1): only the observed results of Klive's own test programs are recorded, never generated code, and
+  never in CI.
+- **ROMs** are settled (§16 D3): bundled under the rights holder's free-use permission.
+- **ROM annotations:** none in this plan. Writing EXOS or IS-BASIC sidecars is ROM-annotation work
+  under `.ai/rom-annotations/README.md` (rule D4). No commented disassembly, published or remembered,
+  feeds them.
+
+### 0.2 Reuse rules for the CPU
+From `.ai/wasm-migration-intent-and-lessons.md` ("Shared CPU Intent", and the TVC section):
+- The machine configures `z80.c` through `#define Z80_*` hooks before the `#include` and never forks it.
+- **No new hook is expected.** The hooks the Enterprise needs already exist:
+  - `Z80_DELAY_MEMORY_READ` / `_WRITE` for DAVE's waits and NICK's video-RAM stretch;
+  - `Z80_DELAY_OPCODE_FETCH` (H1, added for the TVC) for M1 cycles. Its M1 set is exactly DAVE's
+    ("an M1 is the first opcode byte, and the byte after `CB`/`ED`/`DD`/`FD`, but not the `DD CB d op`
+    displacement or opcode", DAVE_MEMORY_IO §1.1);
+  - `Z80_DELAY_PORT_READ` / `_WRITE` and their `_TAIL` variants for the NICK port synchronisation;
+  - `Z80_TACT_PLUS_N` for the clock tree, `Z80_INT_ACK`, and `cpu.interruptVector` (FFh) for IM 2.
+- If one is still needed, it goes in as its own phase, compiled only under `#ifdef`, with every existing
+  core rebuilt **byte-identical** before any Enterprise code lands (the TVC's H1 rule).
+
+### 0.3 Documents to read before working on this
+- `src/emu/z80/wasm/README.md`, before touching a hook or the debug loop.
+- `src/emu/machines/tvc/wasm/README.md`: the template core (time base, stretch, sound, tape, HBF).
+- `.plans/VIDEOTON_TVC_PLAN.md` §11–§17: the integration checklist and what was learned.
+- `.ai/wasm-v2-machine-migration-guide.md`, `.ai/wasm-migration-intent-and-lessons.md`.
+- `.ai/i18n-guide.md` (every UI text), `.ai/ui-theming-intent-and-lessons.md` (the virtual keyboard and
+  the panels), `.ai/visual-tests-guide.md` (screen goldens), `.ai/doc-screenshots-guide.md` (Phase 10).
+
+---
+
+## 1. Goals and non-goals
+
+### Goals
+1. **Enterprise 128 with EXOS 2.1 and IS-BASIC 2.1** and **Enterprise 64 with EXOS 2.0 and IS-BASIC
+   2.0**, booting through the RAM test and the flashing ENTERPRISE banner to the IS-BASIC prompt, with
+   keyboard, colour picture and stereo sound.
+2. **NICK at the precision the research established:**
+   - the exact clock (14 237 536.27 Hz, 912 clocks = 284 subcarrier cycles), asynchronous to the CPU;
+   - the 57-slot line; HSYNC, burst and blanking at their slots;
+   - the LPB re-read on every line; all seven modes in 2/4/16/256 colours with the ALT bits;
+   - the one-slot fetch-to-pixel pipeline; port writes landing at a slot boundary;
+   - FIXBIAS, border, the floating data bus on port reads, the 83h reload sequence;
+   - VSYNC lines (including mid-line sync for interlace), and VINT.
+3. **CPU timing:** NICK's clock stretch on every video-RAM access and NICK port access, in half-T
+   steps, against the asynchronous slot grid; DAVE's wait states (BFh) as Tw states.
+4. **DAVE:** paging, the four interrupt sources with their latches, the 1 Hz / 50 Hz / 1 kHz / tone
+   timers, and the full sound generator (tones, polynomial distortion, noise, filters, ring modulation,
+   D/A mode), mixed to stereo.
+5. **Program loading without disks or tapes:** a Klive-written `FILE:` EXOS extension ROM that reads
+   and writes host files, so `.com` and `.bas` load at once (§9.2).
+6. **Tape:** `.tap` (both formats) and `.wav`, played in real time with motor control and a turbo,
+   and SAVE to a file.
+7. **IDE:** debugger and disassembly with EXOS calls, segment-aware memory views, NICK and DAVE panels,
+   virtual keyboard, machine states, history and profiling, as the other WASM cores have.
+8. **Assembler:** `.model ENTERPRISE`, Run/Debug through EXOS's own loader, `.com` export.
+9. **Floppy** (a later phase): the EXDOS card on the shared WD1793 in its WD1770 variant, raw
+   `.img`/`.dsk` FAT12 images, EXDOS 1.3.
+
+### Non-goals (possible follow-ups, §15)
+- Interlaced display as a woven 576-line picture (the core detects fields; presentation is one field).
+- Expansion RAM beyond 128K, EXOS 2.2–2.4, language ROMs (`brd.rom`, `hun.rom`), the EXDOS 1.4 + IS-DOS
+  ROM, SDEXT, IDE, RTC, EnterMice, the Spectrum emulator card, network, printer and serial.
+- The external colour inputs (EC0–EC3, /EXTC): inert on a bare machine (NICK OQ10).
+- A PAL composite model (the LM1886 matrix): RGB only.
+- Turbo machines (a 6 MHz Z80). DAVE is still timed from its own input clock, so this can be added later.
+- An IS-BASIC listing panel, unless its token table is found during Phase 7 (§11.4).
+- Klive BASIC or z88dk targeting the Enterprise.
+
+---
+
+## 2. Inventory: what the research pack gives and where it goes
+
+| Topic | Source in `_input/enterprise128/` | Klive destination |
+|---|---|---|
+| Segment map, B0h–B3h, ROM/cart/RAM layout, unmapped reads | DAVE_MEMORY_IO §2 | `ep-memory.c` |
+| Reset, DAVE register reset values | DAVE_MEMORY_IO §3; DAVE_AUDIO_BACKGROUND §1 L | `ep.c` |
+| Interrupts, B4h, edge rules | DAVE_MEMORY_IO §4 | `ep-dave.c` |
+| Wait states (BFh), DAVE wait = Tw | DAVE_MEMORY_IO §1.1; DAVE_AUDIO_BACKGROUND §2.7 | `ep-timing.c` |
+| NICK clock, slot map, in-slot windows, stretch | NICK_VIDEO_BACKGROUND §2.2–§2.4 | `ep-timing.c`, `ep-nick.c` |
+| LPT, LPB, margins, LD1/LD2, VRES, 83h | NICK_VIDEO §3; NICK_VIDEO_BACKGROUND §2.5–§2.7 | `ep-nick.c` |
+| Modes, colour modes, ALT bits, palette, FIXBIAS, border | NICK_VIDEO §4–§5; NICK_VIDEO_BACKGROUND §2.8–§2.10 | `ep-nick.c` |
+| RGB levels (resistor DAC) | NICK_VIDEO_BACKGROUND §3.3 | `ep-nick.c` palette table |
+| Sound generator | DAVE_MEMORY_IO §5; DAVE_AUDIO_BACKGROUND §1–§3 | `ep-dave-sound.c` |
+| Analogue path, mixing, DC | DAVE_AUDIO_BACKGROUND §4, §7.2 | `ep-dave-sound.c` |
+| Keyboard matrix, joysticks, B5h/B6h/B7h | DAVE_MEMORY_IO §6–§7.1; CLK `Keyboard.cpp` | `ep-keyboard.c`, `EpKeyCode.ts` |
+| Tape signal, chunk layout, CRC, image formats | DAVE_MEMORY_IO §7.2–§7.5; STORAGE §4 | `ep-tape.c`, `EpTapeFile.ts` |
+| EXOS: boot, module header, RST 30h, system segment | STORAGE §3 | §9.2 ROM, §11 debugger, §12 Run |
+| Host file device | STORAGE §5.4; CLK `HostFS/` (MIT) | Klive's own `FILE:` ROM (§9.2) |
+| EXDOS card, WD1770, FAT12 | DAVE_MEMORY_IO §9.2; STORAGE §5.1–§5.2 | `ep-exdos.c` on `common/wasm/wd1793.c` |
+| ROM images | `src/public/roms/ep-*.rom` (already added) | `EpRoms.ts` |
+| Test software | NICK_VIDEO_BACKGROUND §7; DAVE_AUDIO_BACKGROUND §8; STORAGE §8 | oracle runs only (licences unknown) |
+
+---
+
+## 3. The design problems
+
+### 3.1 Two clocks that never line up (decision D4)
+The Z80 runs at 4 MHz from the 8 MHz crystal. NICK runs from its own phase-locked oscillator at
+14 237 536.27 Hz (exactly 4 433 618.75 × 912 / 284). **NICK also makes the Z80 clock**: it divides
+the 8 MHz input by two and stretches it by inhibiting the toggle, so a stretch is a whole number of
+8 MHz periods, i.e. half-T steps (NICK_VIDEO_BACKGROUND §2.2).
+
+**Proposal: the TVC's time base, with an exact rational NICK phase.**
+- Keep `cpu.tacts` in whole T-states and keep a **half-T clock** beside it (`epHalfClock`, 125 ns
+  units = the 8 MHz crystal), exactly as the TVC's D5. DAVE runs on this clock (its input is the
+  8 MHz crystal): one DAVE tick every 32 half-T (16 T), or 48 with BFh bit 1 set.
+- **NICK's position is a rational function of the half-T clock.** NICK clocks per 8 MHz period =
+  40 434 603 / 22 720 000, exactly. Keep an integer accumulator: each half-T adds 40 434 603; a NICK
+  clock passes for every 22 720 000, a **slot** for every 363 520 000. No floating point, no drift.
+  - A slot is 8.990 half-T (4.495 T); a line 512.45 half-T (256.22 T); 312 lines 79 941.9 T (50.036 Hz).
+- **NICK steps eagerly, one slot at a time, inside `Z80_TACT_PLUS_N`**, as the TVC's CRTC does
+  (its §17 found eager stepping cheap and exact). At 889 846 slots per second that is about 17 800
+  slot steps per frame.
+- Rejected: counting `cpu.tacts` in half-T (doubles every tact in the IDE); a floating-point phase
+  (drifts, and two runs of a replay could round differently).
+
+### 3.2 The frame is whatever the LPT says
+The frame length is set by the program's LPT, normally 312 lines, and it is not a whole number of
+T-states. **The machine frame ends where vertical sync starts**: the slot at which a VSYNC-mode line's
+left margin turns `/VSYNC` on. That is what a TV locks to.
+- A safety cap ends a frame if no sync starts within two nominal frames (160 000 T): before EXOS
+  programs NICK the LPT pointer is random (NICK_VIDEO §3.6).
+- Host pacing uses the measured frame length (≈ 50.04 Hz with EXOS's table).
+- **Interlace:** the slot at which sync starts tells the fields apart. Record the field parity in the
+  frame info; presentation shows each field as it comes (a woven picture is a follow-up).
+- The frame boundary does not move any interrupt: VINT is wherever the LPT puts it.
+
+### 3.3 Contention against an asynchronous grid (decision D5)
+Each 16-clock slot is NICK read 1 (clocks 0–4), NICK read 2 (5–9), then the **Z80 window, clocks
+10–15** (NICK_VIDEO_BACKGROUND §2.3). A Z80 access to video RAM (a page mapped to segments FCh–FFh),
+or to ports 80h–8Fh, is held until it lines up with a window; the hold is in half-T steps.
+- What the documents do not give (N11): the point inside the machine cycle where NICK samples the
+  request, and so how many half-T steps each phase costs. The missing IS documents DPC08/09 describe
+  the stretch unit.
+- **Proposal:** model the rule directly — the access's data point is moved to the next Z80 window, in
+  half-T steps — with the request point of each cycle type as a **named constant**:
+  - M1 at T2.0, memory read/write at T2.5, I/O at T3.5 (the EXOS book's measured access points,
+    DAVE_MEMORY_IO §1.2);
+  - the latency constants the pack records for ep128emu (≈ 359 ns memory, 356 ns M1, 363 ns I/O,
+    NICK_VIDEO §8.2) as the defaults, so the totals match the community's reference.
+- Proof: Klive-written timing loops (§13) whose T-state totals are compared with ep128emu runs; the
+  observed totals are recorded in Klive's words. The constants are one table, so a measurement on
+  real hardware is a one-line change.
+- DAVE's waits never apply to video RAM ("would conflict with Z80 clock stretch").
+
+### 3.4 Pixels: one slot late, sixteen at a time
+NICK puts out 16 pixels per slot at the 14 MHz dot clock. The design documents settle that the bytes
+fetched in slot *n* are shifted out in slot *n* + 1, picture and "active" alike
+(NICK_VIDEO_BACKGROUND §2.5); ep128emu, CLK and MAME show them in the fetch slot. For a static picture
+the difference is a uniform 16-pixel shift; it matters for mid-line writes.
+- Each slot step: margin compares → LPB fetch or display fetch or refresh → shift the *previous*
+  slot's buffers out through the current mode's renderer → blank (slots 56 and 0–9 output colour 0,
+  whatever the margins) → write 16 pixels.
+- A port write lands in clocks 10–15 of the slot the Z80's window falls in, so it takes effect from
+  the next slot boundary.
+- Renderers are lookup-table driven (2/4/16-colour bit interleaving, ALT offsets OR-ed in), one per
+  mode × colour mode, with a generic path for the undefined combinations (§7.5).
+
+### 3.5 Where the VINT interrupt lands (decision D6)
+NICK's side is settled: `/VIRQ` falls in slot 0 of a VINT block's first line and rises in slot 0 of
+the line after the block. DAVE latches INT1 on a **falling** edge (all three spec issues). That gives
+an interrupt at the **start** of the block — but ep128emu, Xemu and the EXOS book appendix (IstvanV,
+who worked from real-machine tests) put it at the **end** of the block.
+- *Inference, to check:* both are right if the board inverts `/VIRQ` on its way to DAVE's `/INT1`.
+  The EP64 schematic sheet 1 (`EP64-1-0.jpg`) shows that net; reading it is Phase 0 work.
+- **Proposal:** one constant, `EP_VINT_AT_BLOCK_END`, defaulting to **end of block** (the measured
+  behaviour) until the schematic is read. B4h bit 4 reads the INT1 pin level either way.
+
+---
+
+## 4. Architecture and file layout
+
+### 4.1 C (one artifact; the model chosen at run time)
+```
+src/emu/machines/enterprise/wasm/
+  README.md                 build, ABI, exports, the hardware model (the TVC README's shape)
+  EpWasmV2Loader.ts
+  dist/ep.wasm
+  ep/
+    ep.c                    the TU: state, time base, Z80_* hooks, #include z80.c, frame loop, exports,
+                            debug loop, condition evaluator, history, profile
+    ep-memory.c             the 256-segment map, B0h-B3h, ROM upload, RAM sizes, unmapped FFh, peek/poke
+    ep-ports.c              the 8-bit I/O decode, write-only and unmapped reads
+    ep-timing.c             the half-T clock, the NICK phase accumulator, the stretch, DAVE waits
+    ep-nick.c               slot stepper, LPT walker, renderers, palette, FIXBIAS, border, VINT, VSYNC
+    ep-dave.c               interrupt latches and timers (1 Hz, 50 Hz/1 kHz/TG), B4h, BFh
+    ep-dave-sound.c         tone/noise channels, polys, filters, ring, D/A, mixing, sample buffer
+    ep-keyboard.c           the 10 x 8 matrix, B5h/B6h, external joysticks
+    ep-tape.c               tape player (B6h bits 6-7), motor (REM1/REM2), SAVE recorder (left D/A)
+    ep-hostfs.c             the FILE: device traps and their host channel (§9.2)
+    ep-exdos.c              the EXDOS card on the shared WD1793 (Phase 9)
+scripts/build-ep-wasm.cjs (+ .d.cts)
+scripts/check-ep-wasm-size.cjs
+scripts/benchmark-ep-wasm.cjs
+```
+
+The hook block in `ep.c` (names illustrative):
+
+```c
+#define Z80_EXTERNAL_BUS 1
+#define Z80_READ_MEMORY(a)          epReadMemory(a)
+#define Z80_WRITE_MEMORY(a, v)      epWriteMemory(a, v)
+#define Z80_READ_PORT(a)            epReadPort(a)
+#define Z80_WRITE_PORT(a, v)        epWritePort(a, v)
+#define Z80_DELAY_MEMORY_READ(a)    epDelayMemory(a, EP_CYCLE_READ)   /* 3 T + DAVE wait | NICK stretch */
+#define Z80_DELAY_MEMORY_WRITE(a)   epDelayMemory(a, EP_CYCLE_WRITE)
+#define Z80_DELAY_OPCODE_FETCH(a)   epDelayMemory(a, EP_CYCLE_M1)     /* H1 */
+#define Z80_DELAY_PORT_READ(a)      epDelayPort(a)                    /* NICK ports 80h-8Fh stretch */
+#define Z80_DELAY_PORT_WRITE(a)     epDelayPort(a)
+#define Z80_TACT_PLUS_N(n)          epAdvanceTacts(n)                 /* half-T clock, NICK slots, DAVE ticks */
+#define Z80_BEFORE_OPCODE_FETCH()   epCheckHostFsTrap()               /* §9.2, only inside the FILE: ROM */
+#include "../../../../z80/wasm/z80.c"
+```
+
+The memory map is a 4-entry page table of segment numbers plus per-page flags (ROM, video,
+unmapped), refreshed on B0h–B3h and BFh writes, so the hot path is one table look-up and one compare.
+
+### 4.2 TypeScript (the TVC pattern)
+```
+src/emu/machines/enterprise/
+  EpWasmHost.ts             abstract host: keys, typer, partitions, sysVars, injection flow
+  EpWasmV2Machine.ts        the adapter: registers proxied to the core, screen, audio, tape, state,
+                            IExecutionHistorySource, IAccessProfileSource
+  EpMachineFactory.ts
+  epMachineInfo.ts          models (§4.3), clocks, ROM ids
+  EpRoms.ts                 ROM sets per model (the TVC/HT-1080Z shape: name, size, CRC32)
+  EpKeyCode.ts              the matrix keys and their legends
+  EpKeyMappings.ts          host key -> matrix
+  EpTyper.ts                auto-type
+  EpTapeFile.ts             .tap (ep128emu and EPTE) and .wav recognition, chunk decoding for the viewer
+  EpComFile.ts              EXOS module header (16 bytes): type, length, start
+  EpSysVars.ts              EXOS variables for the SysVars panel
+  EpHostFs.ts               the FILE: device's host side (§9.2)
+```
+Add a separation test like `test/zx8081/zx8081-separation.test.ts`: the host imports no TS device code.
+`test/machines/ep-rom-images.test.ts` (already in the repository) moves to the `EpRoms.ts` table, as the
+HT-1080Z's test reads `HT1080Z_ROM_SETS`.
+
+### 4.3 Machine ID and models (decision D2)
+**One machine ID, `MI_ENTERPRISE = "ep"`, display name "Enterprise 64/128":**
+
+| Model id | RAM (segments) | ROMs | Notes |
+|---|---|---|---|
+| `ep128` (default) | 128K (F8h–FFh) | EXOS 2.1 at 00h–01h, IS-BASIC 2.1 at 04h | The standard target |
+| `ep64` | 64K (FCh–FFh) | EXOS 2.0 at 00h–01h, IS-BASIC 2.0 at 04h | |
+
+Machine config keys:
+- `MC_EP_CARTRIDGE` (on by default): IS-BASIC in the cartridge slot. Off boots to the word processor.
+- `MC_EP_EXDOS` (off by default, Phase 9): the EXDOS card and its ROM at 20h–21h.
+- `MC_EP_HOSTFS` (on by default): Klive's `FILE:` ROM at segment 10h.
+- `MC_EP_PALETTE`: `resistor` (default, the board's DAC, NICK_VIDEO_BACKGROUND §3.3) or `linear`
+  (the guide's formula).
+
+---
+
+## 5. Memory and ports (`ep-memory.c`, `ep-ports.c`)
+
+- **Segments:** physical = `B0h–B3h[A15:A14] << 14 | A13–A0`. ROM 00h–01h (EXOS), 04h (BASIC), 10h
+  (`FILE:`), 20h–21h (EXDOS); RAM counted down from FFh (FCh–FFh on the 64, F8h–FFh on the 128); video
+  RAM FCh–FFh; everything else reads FFh and ignores writes (DAVE_MEMORY_IO §2.4).
+  - Segments 02h–03h on a 32K-ROM machine: mirror or open bus is open (DAVE OQ2). Default: FFh
+    (unmapped), recorded in the README.
+  - BFh bit 0 = 1 ("16K on-board"): only FFh is video RAM. Implement it (it is one flag), but it never
+    happens on a sold machine.
+- **B0h–B3h** are read/write. Reset clears them to 00h, so the Z80 starts in EXOS segment 0.
+- **Ports:** 8-bit decode (`port & FFh`).
+  - 80h–8Fh NICK (A0–A1 select; reads return NICK's last fetched byte, the floating video bus, and are
+    synchronised like writes);
+  - A0h–AFh DAVE sound (write-only), B0h–B3h paging, B4h interrupts, B5h/B6h/B7h, BFh config
+    (write-only; the scans head R31 **W**, DAVE_AUDIO_BACKGROUND §2.8);
+  - 10h–1Fh EXDOS when the card is in (Phase 9);
+  - reads of write-only or undefined ports return FFh (the emulators' value; the real bus is open,
+    DAVE OQ5). One constant.
+- **Reset:** DAVE clears all 22 registers (sound silent, interrupts off, BFh = 0 so every memory access
+  waits, B5h = 0), then the B4h "AAh" semantics. NICK's four port registers are random at power-on
+  (the reason for EXOS's forced reload); use a fixed seed so runs are reproducible, and a test that
+  EXOS boots from several seeds. The reset button keeps RAM: EXOS decides warm or cold from `RST_ADDR`.
+
+---
+
+## 6. CPU timing (`ep-timing.c`)
+
+1. **DAVE waits (BFh bits 3–2):** 00 every non-video memory access, 01 M1 only (EXOS's default after
+   boot), 10/11 none. One wait = **1 T**, inserted as a Tw after T2 (DAVE pulls /WAIT;
+   DAVE_AUDIO_BACKGROUND §2.7). BFh bit 1 does not change it. I/O cycles get none.
+2. **NICK stretch:** a memory access whose page maps FCh–FFh, or an I/O access to 80h–8Fh, is held until
+   its data point falls in clocks 10–15 of a slot (§3.3). The hold is a whole number of half-T steps;
+   the half-T phase carries to the next cycle as in the TVC.
+3. **M1 from video RAM** gets the stretch only, never the DAVE wait; the refresh cycle that follows is
+   not stretched (NICK does its own refresh in slots 54–56). Record the refresh choice in the README.
+4. **Interrupt acknowledge:** no stretch; the bus reads FFh (`cpu.interruptVector`).
+5. **NICK phase at reset:** not documented. Choose 0, make it one constant, record it.
+
+**Proof (§13):** loops of `LD A,(nn)` / `LD (nn),A` / `NOP` sleds / `IN A,(80h)` in video RAM and in
+ordinary RAM, timed with the DAVE 1 kHz interrupt, at every BFh wait mode; the totals checked against
+the model and recorded against ep128emu oracle runs. One expected finding, as on the TVC: code that
+keeps touching video RAM locks to the slot grid (≈ 4.5 T per access).
+
+---
+
+## 7. NICK (`ep-nick.c`)
+
+Every fact here is in `NICK_VIDEO.md` and `NICK_VIDEO_BACKGROUND.md` §2; the section numbers point there.
+
+### 7.1 The slot stepper
+- **Slot map (BG §2.4):** 0–7 LPB fetch (two bytes per slot: SC/MB, LM/RM, LD1, LD2, COL0–7);
+  8–53 display fetches; 54–56 DRAM refresh; slot 56 is the counter reset.
+- **Sync and blank (BG §2.4):** `/HSYNC` slots 0–3, `/BURST` 6–9 (inhibited on VSYNC lines), `/BLNK`
+  from slot 56 through slot 9. Blanked slots output colour 0, not the border.
+- **Margins (NICK §3.3, BG §2.5):** 6-bit, compared with the slot counter; display from LM up to RM; a
+  right margin ≥ 57 never matches, so display or sync runs on into the next line. The compares happen in
+  blanked slots too and still clock LD1.
+- **The LPB is fetched on every line (BG §2.6).** What happens only on a block's first line: the line
+  counter loads, LD2 loads, and LD1 loads (also on every line when VRES = 0).
+- **LD1/LD2 (NICK §3.4, BG §2.5):** LD1 counts once per active slot (twice in PIXEL), including active
+  control slots (0–7, 54–56) where nothing is fetched; LD2 counts per active slot in ATTRIBUTE and once
+  per line (at the line end) in the character modes. With VRES = 0 only LD1 reloads (ep128emu's rule,
+  N10; the final text's "and LD2" is taken as loose wording).
+- **The pipeline (BG §2.5, N2):** slot *n*'s bytes appear in slot *n* + 1. Slots where the buffers are
+  not reloaded (54, 55 when the margins reach them) re-show the last display bytes.
+- **The renderer is latched at the left margin** (NICK §11 item 2): a mode-byte change takes effect at the
+  next left margin.
+- **The LPT pointer and port 83h (BG §2.7):** a loadable counter. It advances by 16 after a block's last
+  line, or reloads the base after a RELOAD block. Bit 7 = 0 holds LOAD; bit 6 = 0 blocks the block-end
+  clock, and its 0→1 write supplies one clock. The visible behaviour is ep128emu's flag model, which the
+  pack describes step by step (NICK §3.5); follow it.
+
+### 7.2 Modes and colours (NICK §4–§5, BG §2.8–§2.10)
+- Modes: VSYNC, PIXEL (2 bytes/slot), ATTRIBUTE, CH256/CH128/CH64, LPIXEL (one byte, both halves), and
+  VM 6 (open, OQ6: the generic path with glyph address FFFFh).
+- Bit order: 2-colour bit 7 first; 4-colour pixel *k* (0–3, leftmost first) takes its high bit from
+  b(3−k) and its low bit from b(7−k); 16-colour left pixel = b1,b5,b3,b7 as index bits 3..0, right =
+  b0,b4,b2,b6 (the Nov 84 edition, the guide and every emulator agree; NICK §4.2).
+- ALT bits: LM bit 7 MSBALT (+2), bit 6 LSBALT (+4); RM: **ALTIND1 on bit 6, ALTIND0 on bit 7** — the
+  guide's and ep128emu's assignment, which the final ET1/1 edition contradicts (N8). Settle it in Phase 3
+  by EXOS's own text screen: IS-BASIC colours 2/3 and 4–7 swap if it is wrong. One constant.
+- Palette: COL0–7 from the LPB every line; 8–15 = FIXBIAS bits 4–0 × 8 + index. 256-colour bypasses it.
+- **Colour levels (BG §3.3):** the board's resistor DAC (R, G: 100/220/470 Ω; B: 82/220 Ω), not the
+  linear formula, as the default; one table, so a measurement replaces it (N3). Blue is visibly non-linear.
+- FIXBIAS bits 5–6 (external colour priority) and bit 7 (VC1, the speaker mute) are stored for the
+  debugger; bit 7 mutes only the internal speaker, which Klive does not model separately (§8.4).
+
+### 7.3 VSYNC and VINT
+- On a VSYNC-mode line, sync turns on at LM and off at RM (or at slot 0 of a non-VSYNC line), and the
+  output is blank. The frame ends where sync turns on (§3.2).
+- VINT: MB bit 7 drives `/VIRQ` per line; DAVE's INT1 latch takes the edge chosen by D6 (§3.5).
+
+### 7.4 The TV window (decision D7)
+- Render the unblanked part of each line, **slots 10–55 = 736 pixels**, and **288 lines** placed after
+  sync as a TV would place them, centred on EXOS's picture.
+- Aspect ratio against Klive's square 7 MHz Spectrum pixel: 7 / 14.2375 ≈ 0.49 (the TVC's rule).
+- A program whose sync falls outside a TV's capture range shows the signal-lost picture
+  (`isVideoSignalLost`, as the HT-1080Z and TVC do).
+- **Beam position:** expose `getBeamPosition`, join `BEAM_POSITION_MACHINE_IDS`; raster effects are the
+  Enterprise's main trick.
+
+### 7.5 Undefined combinations
+ALT bits in 4/16-colour modes, ATTRIBUTE with more than two colours, VM 6: the palette-bus bits that a
+mode does not drive are 0 and the ALT offsets are OR-ed in (BG §2.8, DPC12 p. 14). Write one generic
+renderer from that rule; the specialised ones are speed paths that must agree with it (a test runs both).
+
+---
+
+## 8. DAVE (`ep-dave.c`, `ep-dave-sound.c`)
+
+### 8.1 Interrupts (DAVE_MEMORY_IO §4)
+- Four latches: the selectable source (1 kHz / 50 Hz / tone 0 / tone 1, A7h bits 6–5), 1 Hz, INT1 (NICK),
+  INT2 (serial/net STATUS IN; inert without a peripheral). `/INT` is the OR of the latched sources:
+  level-triggered, IM 1.
+- B4h write: enables on bits 0/2/4/6; a 1 in bits 1/3/5/7 clears that latch; disabling a source clears
+  its latch. Read: divider state, latch, pin level, latch — interleaved (Issue 5 layout).
+- Timers latch on **every** toggle of their divider. 50 Hz = 5000 DAVE ticks = 80 000 T, **not**
+  locked to the video frame. Tone-generator mode interrupts at 250 000 / (n + 1).
+- External inputs latch on the falling edge while enabled (and see D6 for VINT).
+
+### 8.2 The sound generator (DAVE_MEMORY_IO §5; DAVE_AUDIO_BACKGROUND §1–§3)
+One step per DAVE tick (16 T at BFh bit 1 = 0, 24 T at 1), on the half-T clock, catching up before any
+A0h–AFh or B4h access:
+- tone channels: 12-bit down counters reloading with *n* (period *n* + 1); pure tone toggles, distortion
+  samples the 4/5/7-bit or variable poly at each reload; a new code takes effect at the next reload;
+- sync (A7h bits 0–2): counter held at its code, output 0, no TG interrupt while held; count from the next
+  tick after release (§1 C);
+- noise: clock 31.25 kHz (one poly step per 8 ticks) or a tone channel's falling edge; 17/15/11/9-bit
+  variable poly; the 7/17 swap (A6h bit 4); low-pass by ch2 (ep128emu semantics, §1 H), high-pass by
+  ch0, ring by ch1, in that order;
+- tone high-pass by the next channel, ring by its partner, applied continuously;
+- polys reset to their cleared state on power-on (§1 B; all ones in ep128emu — the phase only shifts the
+  noise). Period 2ⁿ − 1 (the gate plan's extra NOR term is open, §9 item 9). One constant each;
+- the tick order follows the pack's ep128emu description (§3.1), the validated reference; the gate plan's
+  "every partner sees the previous tick" is recorded as a known one-tick skew (§9 item 3).
+
+### 8.3 Output (DAVE_AUDIO_BACKGROUND §4, §7.2)
+- Per side: the sum of the amplitudes (A8h–AFh, 6-bit) of the channels whose output is 1, 0–252; D/A mode
+  (A7h bits 3/4) outputs **4 × A8h / ACh** (§1 F).
+- Tape monitor: with B5h bit 5 = 0 and a tape playing, add 63 × (input high) to both sides.
+- A one-pole low-pass at the board's ≈ 22.6 kHz pole, run at the tick rate, then each host sample is the
+  average over its interval (the TVC's integration), then a ≈ 10 Hz DC high-pass for the output coupling.
+- **Stereo**: the left and right sums are independent; the host gets both (§11 checks Klive's audio path).
+
+### 8.4 What is not modelled
+The DAC's resistor-pack non-linearity (values unknown, §9 item 1; linear), the 8 µs output multiplex, the
+LM386 speaker path and its mute (VC1). A tone code 0 toggles every tick (125 kHz, the design intent).
+
+---
+
+## 9. Keyboard, program loading, tape
+
+### 9.1 Keyboard and joysticks (DAVE_MEMORY_IO §6)
+- The 10 × 8 active-low matrix: B5h bits 3–0 select the row, the B5h read returns it; rows A–F read FFh.
+- The built-in joystick is the cursor keys (row 7); its fire is SPACE.
+- External joysticks on B6h bit 0 ("J" column), rows 0–4 joystick 1 and 5–9 joystick 2; the K/L columns
+  (bits 1–2) for the extra fire buttons. Wire into Klive's joystick input if the joystick plan's
+  abstraction allows it, otherwise a follow-up.
+- Host mapping: a UK layout by position, the Enterprise's extra keys (STOP, HOLD, ERASE, INS, DEL, ALT,
+  the eight function keys, LOCK) on host keys chosen for the editor's use. The table is data
+  (`EpKeyMappings.ts`) and tested.
+- **Virtual keyboard:** drawn from a photograph of the real keyboard (the TVC's way, §17 of its plan),
+  `EpKeyboard.tsx`, with the joystick. Colours as tokens in `palette.ts`; a short entry in
+  `.ai/ui-theming-intent-and-lessons.md`.
+
+### 9.2 The `FILE:` device (decision D8)
+The community loads most software as loose files (`.com`, `.bas`), not tapes. Both CLK and ep128emu do
+it with an EXOS extension ROM whose device-driver entry points trap to the host.
+- **Klive writes its own ROM**, as Z80 source in the repository (`src/public/roms/ep-klive-fileio.asm`,
+  built to `ep-klive-fileio.rom` by Klive's own assembler in a script, checked by a test that the
+  shipped image matches the source). It carries the `EXOS_ROM` signature, registers device `FILE`, and
+  each driver entry point is a trap site.
+- **The trap is by address**, not by a special opcode: `Z80_BEFORE_OPCODE_FETCH` checks whether the PC
+  is one of the ROM's trap addresses *and* page 3 (or the page the ROM runs in) maps segment 10h. The
+  addresses come from the assembler's listing at build time. No `z80.c` change, no undocumented opcode.
+- **The host side** (`EpHostFs.ts`) implements the EXOS device functions (open, create, close, read
+  and write character and block, status, position) on one host folder: the project's output folder by
+  default. The core suspends on a trap, the host answers through the machine's existing
+  core-to-host request path, and the core resumes with A (status) and the registers set.
+- CLK's `hostfs.z80s` (MIT) is the model for the EXOS side and may be ported with its notice if that
+  is quicker than writing it; the function numbering follows the EXOS device-driver specification
+  (`docs/EXOS20_Technical_Information.pdf`), not either emulator.
+- **Use:** `LOAD "FILE:GAME.COM"` from IS-BASIC loads and starts a `$$APP`; `:LOAD` from EXOS likewise.
+  Files dropped onto the machine, or opened through File > Open, are staged into the folder and typed.
+
+### 9.3 Tape (`ep-tape.c`, `EpTapeFile.ts`)
+- **Formats (STORAGE §4.2):** the ep128emu native `.tap` (a sample stream with a 4096-byte header),
+  the EPTE/TAPir `.tap` (decoded chunks, magic at offset 128), and `.wav`. Detect by magic: ep128emu
+  first, then EPTE, then WAV.
+- **Playing:** the host turns a file into a tape program (the TVC's word format: silence, runs of equal
+  cycles, data bytes); an EPTE file's chunks are synthesised at the EXOS fast timings (leader 424 µs,
+  1 = 344 µs, 0 = 504 µs, sync 696 µs, full cycles, LSB first; DAVE_MEMORY_IO §7.4); a sample stream
+  plays as edges. B6h bit 7 is the data comparator, bit 6 the level comparator.
+- **Motor:** REM1 (B5h bit 6) or REM2 (bit 7) runs the tape; EXOS stops it between chunks.
+- **Fast load: a turbo, as on the TVC** (its §17): extra machine frames per displayed frame while the
+  tape plays with its motor on. EXOS decodes the real signal.
+- **SAVE:** EXOS writes through DAVE's left D/A (A7h bit 3, levels to A8h). Record the left D/A level's
+  transitions while a motor runs, classify full cycles against the measured leader, rebuild chunks and
+  blocks, check every CRC (16-bit, 0810h feedback, DAVE_MEMORY_IO §7.4), and publish through
+  `SAVED_TO_TAPE`. Output format: an ep128emu native 1-bit `.tap` (lossless, readable by both Klive and
+  ep128emu); decision D9.
+- The header chunk's protection byte polarity is open (DAVE OQ7); the SAVE round-trip test settles
+  what EXOS writes and reads, whatever the documents say.
+
+---
+
+## 10. EXDOS and disks (Phase 9, `ep-exdos.c`)
+
+- **The controller** is a WD1770 (8 MHz). Use the shared `src/emu/machines/common/wasm/wd1793.c`
+  (extracted for the TVC's HBF card) with a **1770 variant flag**: motor-on control instead of
+  head-load and READY, the 1770's step rates, no side-compare flag. The variant is its own commit; the
+  Beta 128 and TVC cores rebuild **byte-identical**.
+- **Ports (DAVE_MEMORY_IO §9.2):** 10h–13h the controller (mirrored at 14h–17h); 18h the control
+  register (write: drive select 0–3, side, /DDEN, disk-change reset, LED; read: INTRQ bit 1, disk change
+  bit 6, DRQ bit 7). The decode differs between emulators (STORAGE OQ4): take 18h–1Fh as one register
+  (CLK, MIT), record it.
+- **ROM:** `ep-exdos13.rom` at 20h–21h. Its CRC differs from MAME's `exdos13.rom` (the readme notes it);
+  if EXDOS misbehaves, compare with the MAME image before debugging the controller.
+- **Disks:** raw `.img`/`.dsk`, geometry from the FAT12 boot sector (720K 80 × 2 × 9 × 512 the norm;
+  40-track and 10-sector variants accepted). The guest's writes are published as the whole image, as on
+  the TVC (`DSK_WHOLE_IMAGE_KEY`).
+- `EXDOS.INI` runs at every restart, so a disk with one auto-boots.
+
+---
+
+## 11. IDE integration checklist
+Grouped as in the TVC's §11; **(2×)** marks a list kept in two places.
+
+- **Registry:**
+  - `constants.ts`: `MI_ENTERPRISE`, the `MC_EP_*` keys, `MEDIA_INFO_MACHINE_IDS`,
+    `BEAM_POSITION_MACHINE_IDS`.
+  - `machine-registry.ts`: features `MF_Z80`, `MF_TAPE_SUPPORT`, `MF_INJECT_SUPPORT`, `MF_EXEC_HISTORY`,
+    `MF_REVERSE_DEBUG`, `MF_PROFILE`; models; media ids; tool info with the custom disassembler; an
+    Enterprise `charSet` (`char-codes.ts`, read from EXOS's own character set, not from a table).
+  - `machine-renderer-registry.ts`, `hardware-specs.ts` (+ `hardware.*` i18n keys), `NewProjectModel.ts`
+    `MACHINE_FAMILIES`, a project template under `src/public/project-templates/enterprise/`.
+- **Build and packaging:** `scripts/build-ep-wasm.cjs` copies `build-tvc-wasm.cjs` (plain `clang` for
+  wasm32; the export allow-list from `z80-cpu-exports.cjs`, `z80-condition-exports.cjs`,
+  `z80-history-exports.cjs`, `z80-profile-exports.cjs`; an `EP_VOLATILE_SYMBOLS` list; the build lock and
+  layout stamp). `package.json` `build:ep-wasm`, `check:ep-wasm-size` (set the ceiling from the first
+  build, with its reason), an entry in `build:all-wasm` **and** an `extraResources` mapping to
+  `wasm/ep` **(2×)**; `scripts/check-wasm-cpu-contract.cjs`, `src/main/unit-tests/wasmArtifacts.ts`,
+  `unitTestMachines.ts`, `src/common/headless/headlessMachines.ts` + `HeadlessMachineFactory.ts`,
+  `src/emu/machines/reverse/exportContract.ts`.
+- **Tests:** `test/vitest.setup.ts` `CORE_EXPORT` gets the `ep` prefix; `build/e2e-tests.ts` gets
+  `test/ep-hw/**` in `E2E_CORE_TESTS` (`scripts/run-tests.cjs` already counts any `test/*-hw/` folder and
+  `build-*-wasm.cjs` as core inputs). Give `test/harness/enterprise/` the README its `index.ts` points to
+  (the TVC harness lacks one).
+- **Messaging and panels:** `MainToEmuProcessor.ts` and `src/common/messaging/EmuApi.ts` get
+  `getEpNickState` / `getEpDaveState` (the `getTvcVideoState` pattern); the panels register in
+  `src/renderer/registry.ts`; `MachineSelectView.tsx` / `MachineSelectViewModel.ts` get the screen
+  proportions; `tool-registry.tsx` the media tool strip; `TapeLoadCommand.ts`, `TapeLaunchMenu.tsx`,
+  `dropped-file-action.ts` and `src/main/open-file.ts` (with `sniff-content-kind.ts`) the `.tap`, `.com`,
+  `.bas` and `.img` files.
+- **State:** `STATE_MACHINES` in `src/main/machine-menus/state-menus.ts` **and** `MachineStateCommands.ts`
+  **(2×)**; `coreIdOfMachine` in `machineStateFile.ts`. The state is the core's image, as on the TVC.
+- **Menus:** `machine-menu-registry.ts` + `ep-menus.ts` (tape, the cartridge, `FILE:`, EXDOS and its
+  drives, palette).
+- **Debugger:**
+  - **memory partitions are segments**: 0–255 by number, with labels (EXOS0/1, BASIC, FILE, EXDOS0/1, the
+    RAM segments, VRAM0–3), through `getPartitionLabels` / `getPartition`, and an `epBankSpace` in
+    `bankSpace.ts` (16K pages). Unlike the TVC, set **`MF_BANK: 256`** in the registry, as the Z88 does,
+    so the memory panel offers its bank matrix (`memoryViewModel.ts` enables it only with `MF_ROM` or
+    `MF_BANK`); implement `getPartitionDescriptions` / `getPartitionGroups` (only the Next has them
+    today) so the 256 segments group as ROM, cartridge, expansion ROMs, RAM and video RAM;
+  - history and profile contexts record B0h–B3h (`src/common/history/contexts/epContext.ts`,
+    `src/common/profile/layouts/ep.ts`, registered in its `index.ts`);
+  - a custom disassembler (`disassemblers/z80-disassembler/ep-disassembler.ts`): **`RST 30h` is followed
+    by a function byte** (an EXOS call); list it as data with the function's name from the EXOS
+    specification, and make `getCallInstructionLength` return 2 so Step Over stops after it (the TVC's
+    `RST 30h` lesson);
+  - an **EXOS variables** SysVars view (`EpSysVars.ts`, from the EXOS specification's variable list:
+    `LP_POINTER`, `RST_ADDR`, `PORTB5`, `USER_ISR`, …).
+- **A NICK panel** (Debug activity, `restrictTo: [MI_ENTERPRISE]`): the four ports as written (the core
+  keeps them for the debugger), the LPT base and current LPB address, the current line and slot, the
+  decoded current LPB (lines, mode, colour mode, VRES, VINT, RELOAD, margins and ALT bits, LD1/LD2,
+  COL0–7), LD1/LD2 live values, FIXBIAS and border swatches, and an **LPT list** (every LPB to the
+  RELOAD one, decoded, the current one marked). Built on `@renderer/controls/data`, `ch` widths,
+  row-size tokens (M1–M3), `--color-state-value`.
+- **A DAVE panel:** the page registers with segment labels, the interrupt enables, latches and pin
+  levels, BFh decoded, and the sound registers decoded per channel (frequency in Hz, distortion,
+  filters, ring, volumes), the noise setup and the D/A bits.
+- **Assembler:** `.model ENTERPRISE` in `VALID_MODELS`, `SpectrumModelTypes.ts` (enum, name map,
+  `isEnterpriseModelType`), `compile-code.ts`, `UnitTestRunner.ts`, `z80-completion-data.ts`.
+- **CLI:** `src/cli/run/inputs.ts`, `src/cli/verbs/run.ts` `--machine ep`, `unitTestMachines.ts`.
+- **i18n:** every new UI text through `t()` with an English entry and translator context, then
+  `npm run i18n:keys`.
+- **Feature roadmap:** if `.plans/CLOSING_THE_GAPS_PLAN.md` or the competitive analysis lists machine
+  coverage, update its tables in the same change (AGENTS.md's standing instruction).
+
+### 11.4 IS-BASIC listing (conditional)
+IS-BASIC's token table and line layout are not documented (STORAGE OQ1). In Phase 7, look for the table
+in the running ROM (type lines, read the stored bytes; Klive's own observation, as the TVC's tables
+were). If it is found, add a detokeniser for `BasicPanel.tsx`; if not, it stays a follow-up.
+
+---
+
+## 12. Run, Debug and export (`src/common/enterprise/codePlacement.ts`)
+
+- **The program is an EXOS `$$APP`** (module type 5): a 16-byte header (`00 05 lenLo lenHi`, twelve
+  zeros) and the body loaded at 0100h, up to BFFFh (STORAGE §3.7). `.model ENTERPRISE` puts code with no
+  `.org` at 0100h; Z-codes warn about code outside 0100h–BFFFh.
+- **Run and Debug go through EXOS's own loader** (the TVC's lesson: make the ROM do the work):
+  1. boot to IS-BASIC's prompt (skip the banner with a key, wait for the editor's key wait, found by
+     running the ROM — the harness's landmark, §13);
+  2. stage the assembled `.com` in the `FILE:` folder;
+  3. type `LOAD "FILE:KLIVE.COM"`. EXOS loads it, resets with user RAM kept, and jumps to 0100h, so the
+     debugger stops on the program's first instruction when asked to.
+  - No ROM address is needed for the return path: a `$$APP` exits through EXOS.
+  - With `MC_EP_HOSTFS` off, Run is refused with a message saying why.
+- **Export:** a `.com` file (header + body) through `ExportCodeModel.ts`; and, as an option, an EPTE or
+  ep128emu `.tap` holding it (the tape writer of §9.3).
+- **Load and Run** for `.com`, `.bas` (`LOAD "FILE:…"` then `RUN`), `.tap` (`LOAD` with the tape playing)
+  and, in Phase 9, disks (auto-boot).
+
+---
+
+## 13. Tests
+
+All tests run the real WASM machine.
+- **Harness `test/harness/enterprise/`** (copy `test/harness/tvc/`):
+  - `bootToBasic(model)`: waits for IS-BASIC's prompt, observed through the editor's state and video
+    RAM, not pixels;
+  - `typeKeys`, `runFrames`, `runTo`, `step`, `peek`/`poke` (physical and paged), `segments()`;
+  - `nick()` (ports, LPT pointer, line, slot, LD1/LD2, the decoded LPB) and `beam()`;
+  - `dave()` (registers, latches, timers, channel outputs), `audio()`;
+  - a **bare machine** (`bare.ts`, the TVC's): CPU parked in RAM, the LPT written by the test, no EXOS.
+- **Hardware tests (`test/ep-hw/`)**, one file per topic:
+  - memory: every page register combination over ROM, RAM, video and unmapped segments; 64K vs 128K;
+    BFh bit 0;
+  - timing: DAVE waits in each BFh mode for M1 and data cycles; the NICK stretch for read, write, M1
+    and port I/O at a sweep of slot phases (a test-only export places the CPU at a chosen phase, as
+    `tvcSetHalfClock` did); the lock-to-grid NOP sled; `debug-loop-equivalence.test.ts` gets the
+    Enterprise;
+  - NICK: the slot map (sync, burst, blank at their slots); each mode × colour mode on a worked byte;
+    the ALT bits; FIXBIAS 8–15; the one-slot pipeline (LM = 31, RM = 32 puts 16 pixels in slot 32);
+    margins ≥ 57 running on; LD1 counting in active control slots; the LPB re-read (a palette byte
+    rewritten mid-block shows on the next line); the 83h forced-reload sequence step by step;
+    mid-line border and FIXBIAS writes landing on the right slot; port reads returning the last fetch;
+    the IS 1984 demo's 312-line LPT (NICK_VIDEO_BACKGROUND §6.1) as a second picture golden;
+  - interrupts: each source, enable/clear/disable semantics, the 1 Hz/50 Hz/1 kHz periods, TG mode at
+    250 000/(n + 1), VINT at the D6 edge, two consecutive VINT blocks giving one interrupt;
+  - sound: pitch from *n*, each distortion's sequence period, noise clock sources, sync hold and release,
+    high-pass and ring cases, D/A ×4, stereo independence, BFh bit 1's ×2/3;
+  - keyboard: every matrix key typed and seen by EXOS; the joysticks through B6h;
+  - `FILE:`: `LOAD "FILE:x.com"` starts a program; SAVE from BASIC writes a host file; the ROM image
+    matches its source;
+  - tape: SAVE to `.tap`, LOAD in a fresh machine, with and without the turbo, at fast and slow speed;
+    an EPTE file loads; motor pause;
+  - EXDOS (Phase 9): directory of a disk, SAVE/LOAD round trip, write protection, `EXDOS.INI` boot.
+- **Boot goldens:** the EXOS banner and the IS-BASIC prompt on both models (picture hashes recorded only
+  after checking them by eye); **EXOS's LPT dumped from the running machine** (`LP_POINTER` at BFF4h,
+  to the RELOAD LPB) as a fixture — this answers N4 (what EXOS's stock table is) and is allowed as an
+  observation of the ROM.
+- **Cross-core suites** that list every core: the contract test, state determinism and layout, reverse
+  journal and export contract, history drivers, profile, `debug-recording-cores`, `hardware-specs`,
+  machine-select, new-project, menu structure, `runner-machines`, CLI e2e.
+- **Oracle runs (manual, never in CI):** run the same Klive-written programs in ep128emu; compare
+  screens, cycle totals, interrupt positions and sound. Record observed results in Klive's words in the
+  core README. Where Klive and the oracle disagree, the research pack decides, and the README says why.
+  Third-party demos (Bad Apple!, the interlace demos, PJV Raster) are run by hand for confidence; their
+  licences are unknown, so **they never become fixtures**.
+- **Performance:** `benchmark:ep-wasm` must show more than 10× real time. The slot stepper and the
+  per-tick DAVE are the hot paths.
+- **Tiers:** every core test goes in `build/e2e-tests.ts`; a file over 20 s moves to `E2E_SLOW_TESTS`.
+  EXOS's cold boot (RAM test, banner) is several seconds of machine time: most tests use the bare
+  machine or a booted state.
+
+---
+
+## 14. Open hardware questions that affect the code
+
+Each gets one constant or define, its default and its reason in the core README. None blocks a phase.
+
+| # | Question | Default | Where it is discussed |
+|---|---|---|---|
+| Q1 | VINT at the start or the end of the block (does the board invert `/VIRQ`?) | end (ep128emu, measured) — revisit after reading EP64 sheet 1 | §3.5; NICK BG §2.6, N9 |
+| Q2 | Which RM bit is ALTIND1 | **Settled (Phase 3): bit 6**, as the guide and ep128emu say; EXOS's text screen shows it (§18) | NICK BG §2.9, N8 |
+| Q3 | Where NICK samples a CPU request; cost per phase | the EXOS book's access points + ep128emu's latencies | §3.3; NICK BG N11 |
+| Q4 | VM 6 and undefined combinations | generic renderer (unused bits 0, ALT OR-ed) | NICK OQ6; BG §2.8 |
+| Q5 | With VRES = 0, does LD2 also reload | no (LD1 only) | NICK BG §2.6, N10 |
+| Q6 | Measured RGB levels | resistor DAC values | NICK BG §3.3, N3 |
+| Q7 | Poly period 2ⁿ or 2ⁿ − 1; poly reset state | 2ⁿ − 1; cleared at power-on | DAVE BG §2.6, §9 items 5, 9 |
+| Q8 | DAVE tick order vs "everyone sees the previous tick" | ep128emu's order | DAVE BG §3.1, §9 item 3 |
+| Q9 | High-pass with a distorted channel | ep128emu's rule | DAVE BG §9 item 10 |
+| Q10 | DAC non-linearity | linear | DAVE BG §9 item 1 |
+| Q11 | Segments 02h–03h on a 32K ROM | unmapped (FFh) | DAVE OQ2 |
+| Q12 | Reads of write-only/undefined ports | FFh | DAVE OQ5 |
+| Q13 | NICK phase at reset; NICK port values at power-on | 0; a fixed seed | §5, §6 |
+| Q14 | Speaker mute: FIXBIAS bit 7 or 5 | bit 7 (stored only) | NICK BG N5 |
+| Q15 | EXDOS control-register decode | 18h–1Fh | STORAGE OQ4 |
+| Q16 | Tape header protection byte polarity | whatever EXOS writes (round trip) | DAVE OQ7 |
+| Q17 | EXDOS 1.3 image vs MAME's | ship ours; compare if EXDOS misbehaves | `ep-roms-readme.txt` |
+
+---
+
+## 15. Phases and exit criteria
+
+| Phase | Content | Exit criteria |
+|---|---|---|
+| **0. Decisions** | Settle D1–D9 (§16) with the project author. Read EP64 schematic sheet 1 for Q1 (fetch the scan again). | D1–D9 accepted 2026-10-30 (§16). Q1 still to read; its default (end of block) stands until then. |
+| **1. Skeleton** | `ep.c` TU; segments and paging; ROM upload; ports; DAVE interrupts and timers; the half-T clock and NICK phase accumulator; NICK's slot stepper with the LPT walker and VINT but no pixels; a frame loop ending at VSYNC; loader; host; registry entry for `ep128` only; build and contract scripts. | Done 2026-10-30 (§18): `bootToBasic()` reaches IS-BASIC 2.1's "ok" (read from the LPT and video RAM); `boot.test.ts` pins EXOS's LPT; `dave.test.ts`, `nick-lpt.test.ts`. |
+| **2. Timing** | §6: DAVE waits, the NICK stretch, the phase sweep export. | Done 2026-10-30 (§18): `timing.test.ts`; the Enterprise in `debug-loop-equivalence.test.ts`. The oracle comparison with ep128emu is not done yet (it needs a manual run). |
+| **3. Picture** | §7: renderers, palette and levels, the pipeline, blanking, the TV window, beam position, VSYNC frame and field detection. | Done 2026-10-30 (§18): the IS-BASIC picture's hash (checked by eye); `nick-picture.test.ts`; Q2 settled by EXOS's text colours (RM bit 6 is ALTIND1); the IS 1984 demo's frame; the banner and IS-BASIC seen in the running app. |
+| **4. Sound** | §8.2–§8.3, stereo out. | Done 2026-10-31 (§18): `sound.test.ts` (the generator, the outputs, a 1 kHz tone through to the host's samples, EXOS's keyclick). Not heard by ear: no audio output in this environment; `SOUND` statements need the typer (Phase 5). |
+| **5. Keyboard and `FILE:`** | §9.1, §9.2: matrix, host mapping, joysticks, the `FILE:` ROM and host side; the virtual keyboard after its design is approved. | Done 2026-10-31 (§18): `keyboard.test.ts`, `hostfs.test.ts`, `ep-fileio-rom.test.ts`, `test/controls/EpKeyboard.test.tsx`; in the running app, host typing, `SAVE "FILE:…"` to the `FILEIO` folder, and the virtual keyboard's space bar past the banner. |
+| **6. 64K model** | `ep64`: EXOS 2.0, IS-BASIC 2.0, 64K. | Done 2026-10-31 (§18): `ep64.test.ts` (EXOS 2.0's RAM test, 65536 bytes, F8h–FBh empty, the IS-BASIC 2.0 picture hash checked by eye); in the running app, the 64 boots to IS-BASIC 2.0. |
+| **7. IDE** | Partitions, the NICK and DAVE panels, disassembler (`RST 30h`), SysVars, charset, menus, state files, history, profile, CLI; the IS-BASIC listing if §11.4 finds the table. | Done 2026-10-31 (§18): history, profile, charset, debug-state, IS-BASIC token and listing tests; the Enterprise in the export contract, journal replay, state determinism, debug recordings and hardware specs suites; `MF_EXEC_HISTORY`, `MF_PROFILE`, `MF_REVERSE_DEBUG` on; the panels, the listing, the menu and the memory view seen in the running app. The CLI moves to Phase 8 with Run. |
+| **8. Assembler and tape** | §12 (`.model ENTERPRISE`, Run/Debug through `FILE:`, `.com` export, project template), §9.3 (tape formats, playing, turbo, SAVE). | Done 2026-10-31 (§18): `code-injection.test.ts`, `project-templates.test.ts` (the picture checked by eye), `tape.test.ts`, `ep-model.test.ts`; `klive run` (`klive-run-e2e.test.ts`) and the unit-test runner on the Enterprise; in the running app, a new project from the template runs. |
+| **9. EXDOS** | §10: the WD1770 variant (its own commit, Beta 128 and TVC byte-identical), the card, disks. | Done 2026-10-31 (§18): `exdos.test.ts`, `ep-disk-image.test.ts`; the 128K and TVC cores byte-identical; EXDOS lists a disk in the running app. |
+| **10. Ship** | Notices (`THIRD_PARTY_NOTICES.md`: CLK files if any were ported; the ROM readme), docs pages, an `AGENTS.md` section, the landing page's machine table (`docs/landing/LandingPage.tsx`, gated by release version), `README.md`'s machine list, the lessons in `.ai/wasm-migration-intent-and-lessons.md`, one `feature` changeset. `npm run test:slow` before release. | Done 2026-10-31 (§18): gates, `test:fast`, `test:slow`, `doc:build` + `doc:check` green; both models, Run, tape and EXDOS checked in the built app. |
+
+The changeset comes with the commit that completes the plan (AGENTS.md); phase commits carry none.
+Docs for Phase 10:
+- `docs/content/en/guides/machines/enterprise.mdx`, `reference/machine-types.mdx`,
+  `reference/z80-assembler/enterprise.mdx`; screenshots from a `scripts/doc-shots/recipes/guides-enterprise.cjs`
+  recipe;
+- an "Under the hood" series on NICK (the slot, the LPT, the pipeline, contention) adapted from the
+  research under `.ai/hardware-articles-guide.md`: sources unnamed, facts proved on the emulated machine.
+
+### Follow-ups (not in this plan)
+- A woven interlaced picture; expansion RAM; EXOS 2.2–2.4 and the language ROMs; EXDOS 1.4 + IS-DOS.
+- SDEXT, IDE, RTC, EnterMice; printer, serial and network.
+- ROM annotations for EXOS and IS-BASIC written from scratch (`.ai/rom-annotations/` rules).
+- A turbo (6 MHz) option, timing DAVE from its own input clock.
+- The IS-BASIC listing, if Phase 7 does not find the token table.
+
+---
+
+## 16. Decisions (accepted by the project author on 2026-10-30)
+
+All nine recommendations were accepted as written. The questions and recommendations follow for the
+record.
+
+- **D1 — provenance.** *Recommendation:* Klive's own code from the research pack; CLK (MIT) ported with
+  its notice only where it saves work (keyboard table, EXDOS register, the `FILE:` ROM's shape);
+  MAME for interface facts; GPL sources not read for design (the pack already holds their facts);
+  ep128emu run as an oracle only.
+- **D2 — one machine ID, `ep`, with the models `ep128` (default) and `ep64`** (§4.3). *Recommendation:
+  yes.* They differ in ROMs and RAM, not in how users think of the machine.
+- **D3 — ROMs.** *Settled 2026-10-30:* bundled under Werner Lindner's free-use permission (no charge,
+  original company names kept); `src/public/roms/ep-roms-readme.txt`.
+- **D4 — time base:** whole T-states plus a half-T clock (the TVC's D5), NICK as an exact rational
+  phase, NICK stepped eagerly per slot (§3.1). *Recommendation: yes.*
+- **D5 — contention:** the "next Z80 window" rule with named access-point and latency constants,
+  defaulting to the EXOS book's points and ep128emu's recorded latencies (§3.3). *Recommendation:
+  yes.*
+- **D6 — VINT edge:** end of block by default, one constant, revisited after reading the schematic
+  (§3.5). *Recommendation: yes.*
+- **D7 — the picture:** 736 × 288 (slots 10–55), aspect ≈ 0.49, the one-slot pipeline, resistor DAC
+  levels by default (§7). *Recommendation: yes.*
+- **D8 — program loading:** a Klive-written `FILE:` EXOS ROM in the repository, trapped by address
+  (§9.2); Run and Debug through it. *Recommendation: yes.* The alternative — injecting the program
+  and imitating EXOS's start procedure — would duplicate EXOS's reset, segment allocation and channel
+  setup, and break with every EXOS version.
+- **D9 — tape SAVE format:** ep128emu's native 1-bit `.tap` (§9.3). *Recommendation: yes*; EPTE is
+  read-only in the tools that know it.
+
+---
+
+## 17. Risks
+
+- **The slot stepper and the per-tick DAVE are the hot path** (≈ 17 800 slots and 5 000 ticks per frame).
+  Keep both table-driven, keep the per-access video check to one compare on the page flags, and measure
+  with the benchmark from Phase 1.
+- **Contention constants are tuned, not derived** (Q3). The model must keep them in one table; tests pin
+  the *model's* behaviour, and the oracle comparison is recorded, so a later measurement changes data,
+  not code.
+- **Two clocks:** any drift between the half-T clock and the NICK phase breaks replays. Integer
+  arithmetic only (§3.1); the debug loop's volatile-state rule (`src/emu/z80/wasm/README.md`) applies to
+  the NICK accumulator and the DAVE tick phase.
+- **EXOS's boot is long** (RAM test, ROM scan, banner). Tests start from a booted state or a bare
+  machine; only the boot tests pay for it.
+- **`FILE:` suspends the core on a host call.** Keep the request path synchronous inside a frame (the
+  host answers before the next frame) and make the trap a no-op when the ROM is not paged in, so a
+  program that happens to jump to the same address in another segment is unaffected.
+- **ROM rights:** if a rights holder objects, the ROMs must be removable. Keep loading behind
+  `EpRoms.ts`, so a user-supplied ROM setting is a settings change, not a rewrite.
+- **No real hardware to check against.** The research pack is the reference; record every case where
+  the oracle and the pack disagree, and its resolution, in the core README.
+
+---
+
+## 18. Implementation record
+
+The core's README (`src/emu/machines/enterprise/wasm/README.md`) is the reference for how it works now.
+
+### Phases 1–2 (2026-10-30)
+
+- **No new Z80 hook.** H1 (`Z80_DELAY_OPCODE_FETCH`) gives DAVE's M1 set exactly; the port delay hooks
+  and their `_TAIL` halves let a write to NICK land at the I/O access point. Every other core is
+  untouched.
+- **Time (D4):** as planned. `epHalfClock` beside `cpu.tacts`; NICK's position an integer accumulator
+  (40 434 603 per half-T, a slot every 363 520 000); NICK stepped eagerly per slot, DAVE per tick. The
+  core is 175 KB; the whole boot (about 440 frames) runs in well under a second in the tests.
+- **What booting takes (observed):** EXOS 2.1 tests the RAM, showing `EXOS 2.1  TESTING  xx` as it counts
+  the segments down (FFh to F8h, about 300 frames), then the ENTERPRISE banner with "1985 Intelligent
+  Software Ltd" under it, which waits for a key. After a key, IS-BASIC prints `IS-BASIC program 0`,
+  `131072 bytes in system`, `116121 bytes unused`, `ok`. The harness reads all of this from the LPT and
+  video RAM (`screenText()`), so Phase 1 needed no pixels.
+- **Findings:**
+  - **EXOS sets BFh = 04h** (waits on M1 only) during boot: OQ9 of NICK_VIDEO.md is settled.
+  - **EXOS 2.1's LPT (N4)**, pinned in `boot.test.ts`: 34 LPBs, 312 lines. 28 CH128 rows of 9 lines (the
+    status line and 27 text rows), then a 14-line blank PIXEL block with VINT, then three VSYNC blocks
+    (3 lines; 4 lines with sync on from slot 6; 1 line with sync off at slot 32: 4.5 lines of sync), a
+    4-line blank block and a 34-line RELOAD block. So EXOS's video interrupt (at the end of its VINT
+    block, D6) comes three lines before vertical sync, and the frame ends during its handler.
+  - EXOS boots whatever NICK's ports hold at power-on (three seeds tested).
+- **The stretch model (D5, Q3):** the access points are the EXOS book's (M1 at T2.0, memory T2.5,
+  I/O T3.5), held to NICK clocks 10–15 of a slot. ep128emu's latency constants were *not* used: the
+  model's window already reproduces the lock to the grid, and the single-access costs wait for the
+  oracle comparison.
+- **Pulled forward:** the keyboard matrix (Phase 5; the banner needs a key) and DAVE's tone counters
+  (Phase 4; the tone-generator interrupt needs them).
+- **Registry:** `ep128` only (`machine-select.test.ts` counts the Enterprise as a one-model leaf until
+  Phase 6). No hardware-sheet media until tapes (Phase 8); no history, profile or reverse debugging in
+  the IDE until Phase 7, though the core carries the recorder and the profile. `MF_INJECT_SUPPORT` is
+  false until Phase 8. The hardware sheet has its texts (`hardware.*.enterprise`).
+- **Not checked in the running app:** with no pixels yet, the emulator panel shows a black screen.
+  Phase 3 checks the app.
+
+### Phase 3 (2026-10-30)
+
+- **The renderer is part of the slot step** (`ep-nick.c`): each slot first draws what the previous slot
+  fetched (the one-slot pipeline), then fetches. The fetch fills two data buffers and a code byte; the
+  mode, colours and ALT bits are latched at the left margin. Undefined combinations go through the same
+  rule as the defined ones (the ALT offsets OR-ed onto the index), so there is no separate generic path.
+  The core grew to 182 KB.
+- **Q2 settled: RM bit 6 is ALTIND1.** EXOS 2.1 writes RM = 73h for its text rows and stores
+  "IS-BASIC" (and the red block cursor, 8Eh) with code bit 7 set. Every ordinary letter has code bit 6
+  set, so with bit 6 as ALTIND0 the letters of "131072 bytes in system" would be blue and its digits
+  green. `nick-picture.test.ts` checks the status line's colours (red, cyan) and the next row's (green).
+- **The TV window:** slots 10–55 and 288 lines from the 25th line after vertical sync. EXOS's screen
+  sits 18 lines down and 32 pixels in; the IS 1984 demo's 512 x 256 bitmap at (80, 16), its sync from
+  slot 4.
+- **EXOS's cursor flashes** by the editor writing and erasing code 8Eh every few frames; the IS-BASIC
+  golden happens to catch it off (it is deterministic, so the hash is stable).
+- **Beam position:** `getBeamPosition` maps the frame (which starts at the sync slot) onto the window;
+  the paper outline is EXOS's text screen. The Enterprise joined `BEAM_POSITION_MACHINE_IDS`.
+- **`MC_EP_PALETTE`** (`"linear"`) switches the colour levels; no menu yet (Phase 7).
+- **In the running app** (scripted through the doc-shots harness with a seeded, throwaway profile):
+  the machine starts, the banner flashes, a key brings up IS-BASIC with its cursor, at real-time speed.
+  Typing from the host did not reach EXOS: Playwright's key taps are shorter than EXOS's 50 Hz scan
+  needs, and the host typer is Phase 5.
+- **Not done:** pixel-level checks of interlace (each field is shown as it comes, as planned).
+
+### Phase 4 (2026-10-31)
+
+- **The generator is `ep-audio.c`**, hooked into `epDaveTick` at its start (the polys) and its end (the
+  channels and the sides), in ep128emu's order as the pack records it (Q8 unchanged). The tone
+  counters stay in `ep-dave.c`, which tells the generator which channels reloaded.
+- **Samples are exact to their time:** the clock loop emits the samples due before each DAVE tick
+  first, so a sample never averages a level from after its end.
+- **Gain:** one channel at full amplitude is a quarter of a side's full scale (63 of 252), ±0.125 after
+  the DC filter, the proportion ep128emu gives. Four channels reach ±0.5.
+- **Checked against the pack's numbers:** the periods 15, 31, 127, 511 and 2047; 125 000 / (n + 1);
+  the noise poly at 31.25 kHz (every 8 ticks) and on a tone channel's falling edge; the EXOS book's
+  aliasing example (code 8 on the 4-bit poly repeats every 5 reloads); D/A ×4; BFh bit 1's ×2/3.
+- **EXOS drives it:** a key at IS-BASIC's prompt makes the keyboard driver's click on the left and
+  right outputs; the prompt is otherwise silent.
+- **Speed:** about 28× real time with sound on (IS-BASIC idling in the harness), against the plan's
+  10× floor (§13).
+- **Not done:** listening in the running app (no audio device here); the app's path is the generic
+  stereo one the TVC uses. `SOUND` and `ENVELOPE` from BASIC wait for the typer (Phase 5).
+
+### Phase 5 (2026-10-31)
+
+- **The typer** (`EpTyper.ts`) was read off the running ROM: every key and SHIFT with every key typed
+  at IS-BASIC's prompt and read back from the screen. 3 frames held and 3 released types every key;
+  6 more frames after ENTER let the line be stored.
+- **Joysticks:** the emulator panel's joystick bindings reach the CONTROL connectors through
+  `setJoystickState` (the Timex's contract). IS-BASIC's `JOY(1)` reads the external stick.
+- **`FILE:` (D8), with one deviation:** the trap is a **port** (BCh), not an address. A port needs no
+  opcode hook, no list of trap addresses and no check of the paging; it is still invisible to real
+  software (B8h–BEh are DAVE's and unused). The ROM pushes AF, writes the call number, pops AF and
+  returns; the host puts its results in the stack's A and in B, C, DE. The CPU waits in the core while
+  the host works, and the frame and debug loops return for a new request
+  (`Z80_DEBUG_LOOP_STOP`), as the Next's SD card does.
+- **The ROM is Klive's own**, assembled by Klive's assembler; a unit test pins the shipped image to its
+  source (`EP_FILEIO_ROM_WRITE=1` rewrites it). CLK's ROM was read for EXOS's header and descriptor
+  layout, which the EXOS book (§6.2–§6.3, §9) confirms; no code was taken.
+- **Files** are byte arrays on the host side while open; only open, a written file's close and destroy
+  reach the store (the main process, `EpMainFileStore.ts`) as frame commands. The folder is
+  `EP_FILEIO_FOLDER` (unset: `FILEIO` in the Klive home folder); Phase 8's Run sets it.
+- **A finding worth keeping:** a `$$APP` must load SP before it enables interrupts (the kernel spec
+  §9.3). EXOS starts it on EXOS's own system stack, so a module that does not crashes at its first
+  interrupt. Klive's Run (Phase 8) must make sure the code it starts does this, or do it for it.
+- **The IS-BASIC golden changed:** with the ROM fitted EXOS keeps 19 bytes for the device ("116102
+  bytes unused"); the picture was checked again by eye.
+- **In the running app** (the doc-shots driver, a throwaway home): host keys typed
+  `10 PRINT "HELLO"`, and `SAVE "FILE:HELLO.BAS"` wrote a 47-byte file into `Klive/FILEIO`.
+- **The virtual keyboard** (`src/renderer/appEmu/Keyboard/EpKeyboard.tsx`, added the same day) is drawn
+  from the photo the project author supplied (https://frescho.hu/wp-content/gallery/enterprise-128/IMG_2033.JPG):
+  the word processor's label strip, blue F1–F8, green control keys, a red STOP, the L-shaped ENTER and
+  the joystick. After the project author's review it was redrawn from an approved mockup: the caps print
+  exactly the photo's (German-layout) legends on the matrix key at each place, so the cap printed Z is
+  the UK matrix's Y; a sans-serif face; every key one unit high but ENTER, a flat base with a centred
+  raised cap; PAUSE and STOP on the function row after a gap; ERASE, DEL and INS together at the end of
+  the number row (ERASE with ⌫, DEL with ⌦); a readable label strip. The cap the photo prints PAUSE is
+  HOLD in EXOS's documents. The joystick's directions are row 7's cursor keys and its knob is SPACE, the
+  built-in stick's fire. Colours are tokens sampled from the photo (`keyEp` and the rest in
+  `palette.ts`), except the strip, drawn lighter so its labels can be read.
+
+### Phase 6 (2026-10-31)
+
+- **The 64 is a model, not new code.** The core already took the RAM size (`epConfigure`'s `is128`:
+  FCh–FFh or F8h–FFh), the ROM table already had EXOS 2.0 and IS-BASIC 2.0 (`EpRoms.ts`, set `"20"`),
+  and `resolveEpHardware` already chose them for `MC_EP_MODEL = "64"`. Phase 6 added the `ep64` entry to
+  `EP_MODELS` and its hardware sheet (`hardware-specs.ts`: EXOS 2.0 and IS-BASIC 2.0, 64K).
+- **Observed:** EXOS 2.0 tests FEh, FDh and FCh (the 128's EXOS 2.1 goes on to F8h). `screenText()` reads "ERROR" beside
+  every segment on both models while they are tested and both boot with all their RAM; what that word
+  is on the visible picture was not checked, the banner says
+  "1984 Intelligent Software Ltd", and IS-BASIC 2.0 reports "65536 bytes in system" and
+  "50583 bytes unused" with Klive's `FILE:` ROM fitted.
+- **Tests:** `test/ep-hw/ep64.test.ts` (the RAM test, the byte counts, F8h–FBh reading FFh, the picture
+  pinned by SHA-1 after it was checked by eye); the machine-select dialog's test now expects the
+  Enterprise as a two-model section.
+- **In the running app** (the doc-shots driver, a throwaway home): the 64 starts, a click on the
+  virtual space bar passes the banner, and IS-BASIC 2.0 shows its 65536 bytes.
+
+### Phase 7 (2026-10-31)
+
+- **Debugger features on** (`machine-registry.ts`): `MF_EXEC_HISTORY`, `MF_PROFILE`, `MF_REVERSE_DEBUG`,
+  and `MF_BANK: 256` for the memory panel's segment matrix. The history context decoder
+  (`common/history/contexts/epContext.ts`: B0h–B3h, the model, BFh) and the profile layout
+  (`common/profile/layouts/ep.ts`: a byte's offset is its offset in `epMemory`) name segments by their
+  DAVE number; `test/wasm/history/history-ep.test.ts` and `test/ep-hw/profile.test.ts` check them.
+- **A core fix the journal-replay test found:** the last frame's length (`epLastFrameTacts`) was set
+  only by `epExecuteFrame`, so a debugger run left it stale and a replay reached another image. It is
+  now set in `epFrameEnds`, which every path passes. The new exports are classified in
+  `exportContract.ts` (`ReadPhysical` and `HostFsGetRequest` pure; the NICK seed, the palette and the
+  FILE: answers journaled).
+- **Cross-core suites:** the export contract, journal replay (inputs: memory, NICK's border and
+  FIXBIAS, DAVE's sound registers, the keyboard row), state determinism, debug recordings and the
+  hardware specs all run the Enterprise. State files: `STATE_MACHINES` in both places.
+- **Partitions:** labels stay the hex segment numbers (the identity breakpoints and the disassembly
+  use); `getPartitionDescriptions`/`getPartitionGroups` (`epMachineInfo.ts`) describe and group them
+  (EXOS ROM, cartridge, expansion ROM, RAM, video RAM, empty) by the model and the configuration.
+  `getCurrentPartitions` now reports one entry per 8K slot, as the IDE's slot paging counts.
+  `epBankSpace` (`bankSpace.ts`) gives bank breakpoints and annotations the 256 segments.
+- **Character set** (`EpChars`): read from EXOS 2.1's font in video RAM, not from a table. ASCII but
+  £ at 23h (# at 01h), accented letters, arrows and symbols below 20h; `test/ep-hw/charset.test.ts`
+  pins four glyphs.
+- **EXOS calls and variables:** `ep-disassembler.ts` lists the byte after `RST 30h` as data with the
+  function's name (31 functions, codes 0–11 and 16–34, from the EXOS specification's function table);
+  `EpSysVars.ts` lists 13 system-segment variables (BFEDh–BFFFh, LP_POINTER at BFF4h). The
+  specification puts CRDISP_FLAG at both BFEEh and BFEFh; EXOS 2.1 reads BFEFh, which is recorded. The
+  values are EXOS's while page 2 shows segment FFh.
+- **NICK and DAVE panels** (Debug activity, `EpNickPanel.tsx`, `EpDavePanel.tsx`, decoding in
+  `EpDebugState.ts`, which the harness shares): NICK's ports, the beam, the current LPB decoded with
+  its palette, and the LPT list; DAVE's paging, interrupt enables, latches and pins, BFh, and each sound
+  channel decoded. Both show the history banner when the cursor is in the past.
+- **IS-BASIC listing (§11.4: found).** Observed on the running ROM and recorded in
+  `common/enterprise/basicTokens.ts`: a line is its length, the line number, an indent byte and items
+  ending in 00h; statements are 60h and a token (93 words, the ROM's own keyword table at offset
+  35A7h); names, strings, numbers and operators each have a range of first bytes. The current program
+  starts at the word at 021Ah and ends at 0236h (segment F8h in page 0). `epBasicListing.ts` feeds the
+  BASIC Listing view, characters through `EpChars`. Only program 0 is visible through the CPU's
+  paging; the other programs' segment is paged in only while IS-BASIC works on them.
+- **Machine menu** (`ep-menus.ts`): the IS-BASIC cartridge, the FILE: device and "Open FILE: Folder",
+  and linear palette levels; each switch restarts the machine.
+- **In the running app** (the doc-shots driver): the NICK and DAVE panels at IS-BASIC's prompt (EXOS's
+  34-block LPT), the menu's four items, a typed program in the BASIC Listing view with IS-BASIC's
+  indentation, and the memory panel on segment F8h.
+- **Not done here:** `klive run`/`klive test` and the headless factory move to Phase 8 with Run; ROM
+  page documents get no EXOS variable names (an EXOS kind in `romSysVars.ts`, if ROM annotations come).
+
+### Phase 8 (2026-10-31)
+
+- **The assembler:** `.model ENTERPRISE` (model type 9, `SpectrumModelTypes.ts`); code with no `.org`
+  goes to 0100h; Z0386 warns about code below 0100h, Z0387 about code above BFFFh.
+- **Run and Debug** (`EpWasmHost.getCodeInjectionFlow`, `common/enterprise/codePlacement.ts`): boot, a
+  key at the banner, IS-BASIC's prompt, then `LOAD "FILE:KLIVE.COM"`. The program is staged in memory
+  (`stagedHostFiles`) and served before the file store, so it never lands in the user's FILE: folder.
+  EXOS starts a `$$APP` at 0100h; when the entry is elsewhere and 0100h-0102h are free, the `.com` gets
+  a `JP entry` there. The landmarks were found by running the ROMs (the most frequent PCs): the banner's
+  wait at DC58h (EXOS 2.1) / DC2Ah (EXOS 2.0), the prompt's HALT at 0057h; typing waits 50 frames after
+  it, as the editor drops the first keys earlier.
+- **A program sets its own stack.** EXOS starts a `$$APP` on its system stack, and the first interrupt
+  then lands the CPU in EXOS (observed). Run cannot add code before code assembled at 0100h, so the
+  program does it; the template shows how. This settles Phase 5's note.
+- **Export:** `.com` (the 16-byte module header, the body from 0100h) in `expc` and the Export dialog
+  (`renderer/appIde/utils/ep-code.ts`).
+- **The project template** (`src/public/project-templates/ep/default/`): sets the video variables
+  (EXOS function 16), opens `VIDEO:`, displays the page (special function 1, @@DISP) and writes two
+  lines. EDITOR: alone shows nothing: a page is not displayed until it is asked to be. Its picture is
+  pinned after checking it by eye, from Run and from the export.
+- **Headless:** the Enterprise is a headless machine (`headlessMachines.ts`, `HeadlessMachineFactory.ts`)
+  and a unit-test machine. The headless runner is synchronous, so the FILE: device answers inside the
+  frame when its store is `synchronous` (`EpHostFs.ts`); the app keeps the asynchronous main-process
+  store. `klive run` runs a project (`test/cli/fixtures/runep`); the unit-test runner boots to IS-BASIC's
+  prompt. Observed: LP_POINTER is B900h after an EXOS 2.1 boot, BB00h after EXOS 2.0.
+- **Tape** (`ep-tape.c`, `EpTapeFile.ts`, `ep-tape-menus.ts`; the core's README has the design): reads
+  ep128emu `.tap` (1/2/4/8-bit), EPTE/TAPir `.tap` and `.wav`; writes ep128emu 1-bit `.tap` (D9). DAVE
+  OQ7 settled: EXOS writes its PROTECT variable as it is, FFh for an ordinary SAVE, 00h when protected.
+  No real EPTE file was available: the reader is checked against Klive's own EPTE writer. Headerless
+  (legacy) ep128emu files are not read: nothing tells them from a Spectrum `.tap`. The core's memory went
+  from 8 to 9 MiB for the tape program and the SAVE ring. The tape signal is not mixed into the sound.
+- **Tests' core build:** the harness skips the build when `ep.wasm` is newer than its inputs; twenty-odd
+  files building it one by one behind the lock timed out a worker's first test.
+- **Not done:** Load and Run of a `.com` or `.bas` from the IDE's file menus (copy it into the FILE:
+  folder and `LOAD "FILE:name"` meanwhile); slow-speed tapes are implemented but not tested on the ROM.
+
+### Phase 9 (2026-10-31)
+
+- **The WD1770 variant** (`common/wasm/wd1793.c`, `WD1793_VARIANT 1770`; the default stays 1793). Every
+  difference is inside `#if`, so a 1793 includer's preprocessed source is the same: `zx-spectrum128.wasm`
+  (591 994 bytes) and `tvc.wasm` (186 265 bytes) rebuilt byte-identical (`cmp`, SHA-1 unchanged). The
+  +3E and the other cores do not include the file. What differs: Motor On in status bit 7 (no Not
+  Ready, no READY wait for Types II and III), Type I's bit 5 Spin-up (no head-load/HLT), every command
+  turns the motor on and, with it off and command bit 3 clear, waits six index pulses first; nine idle
+  revolutions turn it off; no side compare (Type II/III bit 1); the index bit only while the motor runs.
+  The 1770's step rates (6/12/20/30 ms at 8 MHz) are the 1793's at 1 MHz, so the table has the same
+  numbers. **A drive without a disk gives no index pulses:** whatever counts revolutions waits until a
+  Force Interrupt. Failing such a command after four revolutions, as the 1793 model does without READY,
+  made EXDOS spend about 7.5 s on an empty drive at every cold start; with the wait, its own time-out
+  ends it in about 2 s.
+- **The card** (`ep-exdos.c`): 10h–13h the controller, mirrored at 14h–17h; 18h–1Fh one control register
+  (OQ4: CLK's decode). Write: drive select bits 0–3 (the lowest set bit), side bit 4, /DDEN bit 5 (kept,
+  MFM only), bit 6 = 1 clears the selected drive's disk-change flag, bit 7 the LED. Read: DRQ bit 7,
+  disk change bit 6 inverted (1 = no change; MAME's and ep128emu's polarity, CLK has it the other way),
+  INTRQ bit 1, the rest 0 (ep128emu's "not ready" bit 0 left out, as MAME does). The controller's clock
+  is the 8 MHz half-T clock, which NICK does not stretch. Two drives (A, B); EXDOS also probes drives
+  C/D, which hold nothing. The card is `MC_EP_EXDOS` (off by default), the ROM mask's `EP_ROM_EXDOS`; the
+  memory panel describes segments 20h–21h as EXDOS 0/1 when it is fitted. The core's memory went from 9
+  to 11 MiB for the two drives' 1.48 MB; the core is 195 559 bytes.
+- **EXDOS 1.3 worked first time**, so the comparison with MAME's `exdos13.rom` the plan kept in reserve
+  was not needed (Klive's image's CRC32 is still the one `EpRoms.ts` records).
+- **Disks** (`EpDiskImage.ts`, `EpExdosDisks.ts`): raw `.img`/`.dsk`, the geometry from the FAT12 boot
+  sector. The controller's layout is fixed per includer at nine 512-byte sectors, 82 cylinders, two
+  sides: 720K, 360K (40 x 2, read by EXDOS in the 80-track drive as it is) and 180K go in; 8-, 10- and
+  18-sector disks are refused ("sectorsPerTrack"). The guest's writes are published as the whole image
+  (`DSK_WHOLE_IMAGE_KEY`), write protection through `DISK_A_WP`/`DISK_B_WP`.
+- **Observed on the ROM:** `:HELP` lists "EXDOS version 1.3"; `:DIR` prints the volume, the files and the
+  free space; `SAVE "TEST"` and `LOAD "TEST"` use the disk; a write-protected disk gives "Write
+  protected disk -- drive A:" with "Retry or abort (R/A)?". `EXDOS.INI` holds EXDOS commands, one a line
+  (`MKDIR`, `TIME` tested); it runs at a cold start but **not** at the reset button's warm start, which
+  keeps the time it set: the plan's "every restart" means every cold one.
+- **IDE:** the Enterprise's media are the tape and disks A/B; Machine › the disk items
+  (`epDiskMenuRenderer`: the "EXDOS Floppy Interface" checkbox, which restarts the machine, and with it
+  the drives' insert, eject and write-protect items, without "create a disk"); the Insert Disk dialog
+  offers "Enterprise Disks" (`.img`, `.dsk`). Disks are not opened by File › Open or by dropping a file
+  (no machine's are).
+- **Tests:** `test/ep-hw/exdos.test.ts` (9), `test/ep/ep-disk-image.test.ts` (5); the disks come from the
+  tests' own FAT12 writer (`test/ep/fat12Image.ts`), so no third-party image is needed. The harness has
+  `createEpSession({ exdos })`, `insertDisk`, `setDiskWriteProtected`, `diskImage` and
+  `takePublishedDisk`.
+- **In the running app** (the doc-shots driver, a throwaway home, the card and a disk seeded in the
+  session): EXDOS boots and `:DIR` lists the disk's three files. The menu items were not seen there:
+  the driver could not focus a window to get the machine menu's submenus.
+- **Not done:** an EXDOS panel in the debugger; drives C and D; the media strip under the emulator (the
+  Enterprise has none yet); what EXDOS does with a `START` file its ROM names.
+
+### Phase 10 (2026-10-31)
+
+- **Docs:** `guides/machines/enterprise.mdx` (with its screenshots, generated by
+  `scripts/doc-shots/recipes/guides-enterprise.cjs`), `reference/z80-assembler/enterprise.mdx`, the
+  Enterprise in `machine-types.mdx`, `pragmas.mdx` and `basic-listing.mdx`, and an "Under the hood" article
+  on NICK (`under-the-hood/emulator-internals/ep-nick.mdx`). The landing page's machine table lists the
+  Enterprise from 0.67.0; `README.md`, an `AGENTS.md` section, the lessons in
+  `.ai/wasm-migration-intent-and-lessons.md`, and the competitive analysis's machine row.
+- **Notices:** `THIRD_PARTY_NOTICES.md` names the ROMs and the rights holder's permission; no emulator
+  code was ported (D1), so there is no code notice. Klive's `FILE:` ROM is Klive's own.
+- **The screenshot recipe** opens the BASIC Listing with the View menu, or, when the OS gives the app no
+  window focus (macOS builds the menu's submenus only for a focused window), with the same IDE call sent
+  to the IDE window.
+- **Checked in the built app:** both models boot; a project from the template runs; a tape SAVEd by the
+  machine loads and runs with `tape-load -r` ("TAPE OK"); EXDOS lists a disk (Phase 9). The Machine
+  menu's Enterprise items are covered by `test/main/ep-menus.test.ts`, as the app's menu could not be
+  read while the app had no focus.
+- **Gates:** `test:fast` (1434 files), `test:slow` (29 files), `build:check`, `lint:renderer`, `doc:build`,
+  `doc:check`. One `feature` changeset describes the whole plan.
+- **Follow-ups left:** Load and Run of a `.com`/`.bas` from the IDE's file menus; slow-speed tapes on
+  the ROM; mixing the tape signal into the sound; EXDOS drives C and D; ROM annotations for EXOS and
+  IS-BASIC; and the list under §15.

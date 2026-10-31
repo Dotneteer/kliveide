@@ -39,10 +39,11 @@ import {
   MI_SCORPION,
   MI_HT1080Z,
   MC_HT_MODEL,
-  MI_TVC
+  MI_TVC,
+  MI_ENTERPRISE
 } from "./constants";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_DOCK, MEDIA_MICRODRIVE_1, MEDIA_MICRODRIVE_2, MEDIA_TAPE } from "@common/structs/project-const";
-import { Ht1080zChars, type Ht1080zCharSetId, ht1080zCharsFor, TvcChars, Zx80Chars, Zx81Chars, ZxNextChars, ZxSpectrumChars } from "./char-codes";
+import { Ht1080zChars, type Ht1080zCharSetId, ht1080zCharsFor, TvcChars, EpChars, Zx80Chars, Zx81Chars, ZxNextChars, ZxSpectrumChars } from "./char-codes";
 import { DisassemblyOptions, MemorySection } from "@renderer/appIde/disassemblers/common-types";
 import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z80-disassembler";
 import { ZxSpectrum48CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/zx-spectrum-48-disassembler";
@@ -66,6 +67,8 @@ import {
 import { ZX80_MODELS, ZX81_MODELS } from "@emu/machines/zx8081/zx8081MachineInfo";
 import { HT1080Z_MODELS } from "@emu/machines/ht1080z/ht1080zMachineInfo";
 import { TVC_MODELS } from "@emu/machines/tvc/tvcMachineInfo";
+import { EP_MODELS } from "@emu/machines/enterprise/epMachineInfo";
+import { EpCustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/ep-disassembler";
 import { SCORPION_MODELS, SP128_MODELS } from "@emu/machines/zxSpectrum128/sp128Timings";
 import { P3_MODELS } from "@emu/machines/zxSpectrumP3e/p3RomSets";
 import { TIMEX_MODELS } from "@emu/machines/timex/timexModels";
@@ -713,6 +716,48 @@ export const machineRegistry: MachineInfo[] = [
       ) => new Z80Disassembler(memorySections, memoryContents, partitionLabels, options),
       // --- RST 30h's function byte, in every program (the OS vectors it through RAM)
       [CT_CUSTOM_DISASSEMBLER]: () => new TvcCustomDisassembler(),
+      [CT_DISASSEMBLER_VIEW]: {
+        showRamOption: false,
+        showScreenOption: false
+      }
+    }
+  },
+  {
+    // --- `.plans/ENTERPRISE_PLAN.md`: the 128 and the 64 as models (D2). The IDE's
+    // --- surfaces arrive phase by phase: the picture (3), sound (4), keyboard and FILE: (5), the
+    // --- debugger's partitions, history and profile (7), Run and tapes (8), EXDOS and disks (9).
+    machineId: MI_ENTERPRISE,
+    displayName: "Enterprise",
+    // --- EXOS's own font (`char-codes.ts`): £ at 23h, accented letters and arrows below 20h
+    charSet: EpChars,
+    features: {
+      [MF_Z80]: true,
+      // --- Run and Debug stage the program as an EXOS `$$APP` and LOAD it through Klive's FILE: device
+      // --- (`common/enterprise/codePlacement.ts`)
+      [MF_INJECT_SUPPORT]: true,
+      // --- .tap (ep128emu, EPTE) and .wav tapes, played with a turbo, and SAVE to an ep128emu .tap (§9.3)
+      [MF_TAPE_SUPPORT]: true,
+      [MF_ALLOW_SCAN_LINES]: false,
+      // --- The 256 segments DAVE pages: the memory panel's segment matrix (labels and groups from the machine)
+      [MF_BANK]: 256,
+      // --- The shared execution-history recorder and the access profile
+      [MF_EXEC_HISTORY]: true,
+      [MF_PROFILE]: true,
+      // --- Passes the journal-replay determinism test (REVERSE_DEBUGGING_PLAN D19)
+      [MF_REVERSE_DEBUG]: true
+    },
+    models: EP_MODELS,
+    // --- The disks need the EXDOS card (`MC_EP_EXDOS`); without it the drives hold nothing the ROMs see
+    mediaIds: [MEDIA_TAPE, MEDIA_DISK_A, MEDIA_DISK_B],
+    toolInfo: {
+      [CT_DISASSEMBLER]: (
+        memorySections: MemorySection[],
+        memoryContents: Uint8Array,
+        partitionLabels?: string[],
+        options?: DisassemblyOptions
+      ) => new Z80Disassembler(memorySections, memoryContents, partitionLabels, options),
+      // --- RST 30h's function byte: EXOS's call (`ep-disassembler.ts`)
+      [CT_CUSTOM_DISASSEMBLER]: () => new EpCustomDisassembler(),
       [CT_DISASSEMBLER_VIEW]: {
         showRamOption: false,
         showScreenOption: false

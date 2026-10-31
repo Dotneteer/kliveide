@@ -41,7 +41,7 @@ export type MachineType = {
 export const MACHINE_FAMILIES: readonly { id: MachineFamilyId; machineIds: readonly string[] }[] = [
   { id: "zxSpectrum", machineIds: ["sp48", "sp128", "spp3e", "zxnext"] },
   { id: "spectrumCompatibles", machineIds: ["timex", "scorpion"] },
-  { id: "otherZ80", machineIds: ["zx81", "zx80", "z88", "ht1080z", "tvc"] }
+  { id: "otherZ80", machineIds: ["zx81", "zx80", "z88", "ht1080z", "tvc", "ep"] }
 ];
 export const OTHER_FAMILY: MachineFamilyId = "other";
 

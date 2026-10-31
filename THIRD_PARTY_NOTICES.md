@@ -110,6 +110,19 @@ publishes them openly (taken from the rtvc emulator's repository, each image mat
 and tvc64p sets), and they will be removed on request from a rights holder. The details and the file
 list are kept beside them in `tvc-roms-readme.txt`.
 
+## The Enterprise 64/128 ROMs
+
+`src/public/roms/ep-exos20.rom`, `ep-exos21.rom`, `ep-basic20.rom`, `ep-basic21.rom` and
+`ep-exdos13.rom` (shipped under `roms/`) are the EXOS 2.0 and 2.1 system ROMs, the IS-BASIC 2.0 and
+2.1 cartridges and the EXDOS 1.3 disk ROM of the Enterprise 64 and 128, developed by Intelligent
+Software Ltd for Enterprise Computers Ltd, unmodified. They are not covered by the MIT licence above,
+nor by Klive's own. They are included under the permission Werner Lindner, former managing director of
+Enterprise Computers GmbH, gave the Enterprise community to use and modify the software freely, on two
+conditions: no money may be asked for it, and the names of the original development companies must
+not be removed. They will be removed on request from a rights holder. The details, the source of the
+images and the file list are kept beside them in `ep-roms-readme.txt`. `ep-klive-fileio.rom` is not
+one of them: it is Klive's own, assembled from `src/emu/machines/enterprise/fileio/ep-klive-fileio.asm`.
+
 ## The ZX Spectrum +2A/+3 ROMs
 
 `src/public/roms/spp3-40-*.rom`, `spp3-41-*.rom` and `spp3-41es-*.rom` (shipped under `roms/`) are

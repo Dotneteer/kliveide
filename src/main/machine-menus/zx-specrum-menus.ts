@@ -33,7 +33,8 @@ import {
   MI_SPECTRUM_48,
   MI_TIMEX,
   MI_HT1080Z,
-  MI_TVC
+  MI_TVC,
+  MI_ENTERPRISE
 } from "@common/machines/constants";
 
 /** The machines whose drives are a Beta 128's (TR-DOS disks): the Pentagon's and the Scorpion's */
@@ -436,15 +437,19 @@ async function setDiskFile(
   const defaultPath =
     appSettings?.folders?.[DISK_FILE_FOLDER] ||
     (lastFile ? path.dirname(lastFile) : app.getPath("home"));
-  // --- The Pentagon's and the Scorpion's Beta 128 reads TR-DOS images; the +3 reads CPC DSK
-  const trdos = isBeta128Machine(mainStore.getState()?.emulatorState?.machineId);
+  // --- The Pentagon's and the Scorpion's Beta 128 reads TR-DOS images; the +3 reads CPC DSK; the
+  // --- Enterprise's EXDOS card raw FAT12 images (`EpDiskImage.ts`)
+  const machineId = mainStore.getState()?.emulatorState?.machineId;
+  const trdos = isBeta128Machine(machineId);
   const dialogResult = await dialog.showOpenDialog(browserWindow, {
     title: t("messages.disk.select"),
     defaultPath,
     filters: [
       trdos
         ? { name: t("common.filter.trdosDisks"), extensions: ["trd", "scl"] }
-        : { name: t("common.filter.diskFiles"), extensions: ["dsk"] },
+        : machineId === MI_ENTERPRISE
+          ? { name: t("common.filter.epDisks"), extensions: ["img", "dsk"] }
+          : { name: t("common.filter.diskFiles"), extensions: ["dsk"] },
       { name: t("common.filter.allFiles"), extensions: ["*"] }
     ],
     properties: ["openFile"]

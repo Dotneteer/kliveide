@@ -123,6 +123,11 @@
 /images/en/guides/emulator/keyboard/sp48-keyboard.webp
 /images/en/guides/languages/sjasmplus/integration-dialog.webp
 /images/en/guides/machines/cambridge-z88/z88-index.webp
+/images/en/guides/machines/enterprise/ep-basic-listing.webp
+/images/en/guides/machines/enterprise/ep-dave-panel.webp
+/images/en/guides/machines/enterprise/ep-keyboard.webp
+/images/en/guides/machines/enterprise/ep-nick-panel.webp
+/images/en/guides/machines/enterprise/ep-run.webp
 /images/en/guides/machines/timex-scorpion/scorpion.webp
 /images/en/guides/machines/timex-scorpion/timex-rom-setting.webp
 /images/en/guides/machines/timex-scorpion/timex-ts2068.webp

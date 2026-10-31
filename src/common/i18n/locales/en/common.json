@@ -220,6 +220,14 @@
   "@common.filter.tvcTapes": {
     "context": "File type filter in the Insert Tape and Open File dialogs for the Videoton TV Computer (TVC), a Hungarian home computer: its tape images (.cas). Keep TVC."
   },
+  "common.filter.epTapes": "Enterprise Tapes",
+  "@common.filter.epTapes": {
+    "context": "File type filter in the Insert Tape dialog for the Enterprise 64/128 home computer: its tape images (.tap) and tape recordings (.wav). Keep Enterprise (the computer's name)."
+  },
+  "common.filter.epDisks": "Enterprise Disks",
+  "@common.filter.epDisks": {
+    "context": "File type filter in the Insert Disk dialog for the Enterprise 64/128 home computer: its floppy disk images (.img, .dsk) for the EXDOS disk interface. Keep Enterprise (the computer's name)."
+  },
   "common.filter.textTrace": "Text trace",
   "@common.filter.textTrace": {
     "context": "File-type filter in an operating-system Open/Save file dialog (the drop-down of file types). An instruction trace as plain text."

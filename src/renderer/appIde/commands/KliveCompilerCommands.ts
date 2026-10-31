@@ -37,7 +37,7 @@ import { nexFileNameOf, sdCardNexName } from "@renderer/appIde/utils/nex-file-na
 import { createSourceDebugSidecar, sidecarProgramOf, sourceDebugSidecarPath } from "@common/utils/source-debug-sidecar";
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
 import { machineRegistry } from "@common/machines/machine-registry";
-import { MF_INJECT_SUPPORT, MI_Z88, MI_ZX80, MI_ZX81, MI_HT1080Z, MI_TVC, MI_ZXNEXT } from "@common/machines/constants";
+import { MF_INJECT_SUPPORT, MI_Z88, MI_ZX80, MI_ZX81, MI_HT1080Z, MI_TVC, MI_ZXNEXT, MI_ENTERPRISE } from "@common/machines/constants";
 import {
   zx8081ExportFile,
   zx8081ExportFormatOf,
@@ -60,6 +60,8 @@ import { describeTvcPlacementProblem, isTvcPlacementProblem, placeTvcCode } from
 import { resolveHt1080zHardware } from "@emu/machines/ht1080z/ht1080zMachineInfo";
 import { ht1080zExportFile, ht1080zExportFormatOf, ht1080zFormatProblem } from "../utils/ht1080z-code";
 import { tvcExportFile, tvcExportFormatOf, tvcFormatProblem } from "../utils/tvc-code";
+import { epExportFile, epExportFormatOf, epFormatProblem } from "../utils/ep-code";
+import { describeEpPlacementProblem, isEpPlacementProblem, placeEpCode } from "@common/enterprise/codePlacement";
 
 const EXPORT_FILE_FOLDER = "KliveExports";
 
@@ -229,6 +231,24 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
           emulatorState?.config,
           args["-n"] ?? args.filename
         );
+        if ("error" in file) return commandError(file.error);
+        try {
+          const filePath = await context.mainApi.saveBinaryFile(args.filename, file.data, `kliveHome:${EXPORT_FILE_FOLDER}`);
+          return commandSuccessWith(t("commands.compile.exported", { file: filePath }), { file: filePath });
+        } catch (err) {
+          return commandError(err.toString());
+        }
+      }
+    }
+
+    // --- Enterprise code exports as an EXOS `$$APP` .com file (`renderer/appIde/utils/ep-code.ts`)
+    const epFormat = epExportFormatOf((output as CompilerOutput).modelType, emulatorState?.machineId);
+    if (epFormat) {
+      const epRequested = args["-f"] ?? epFormat;
+      const problem = epFormatProblem(epRequested);
+      if (problem) return commandError(problem);
+      if (epRequested === "com") {
+        const file = epExportFile(output as CompilerOutput);
         if ("error" in file) return commandError(file.error);
         try {
           const filePath = await context.mainApi.saveBinaryFile(args.filename, file.data, `kliveHome:${EXPORT_FILE_FOLDER}`);
@@ -1492,6 +1512,13 @@ export async function injectCode(
   if (isTvc && (result.modelType === undefined || result.modelType === SpectrumModelType.TVC)) {
     const placement = placeTvcCode(result.segments, result.entryAddress);
     if (isTvcPlacementProblem(placement)) return commandError(describeTvcPlacementProblem(placement));
+  }
+
+  // --- The Enterprise runs an EXOS `$$APP` from 0100h (`common/enterprise/codePlacement.ts`)
+  const isEp = emulatorState?.machineId === MI_ENTERPRISE;
+  if (isEp && (result.modelType === undefined || result.modelType === SpectrumModelType.Enterprise)) {
+    const placement = placeEpCode(result.segments, result.entryAddress);
+    if (isEpPlacementProblem(placement)) return commandError(describeEpPlacementProblem(placement));
   }
 
   if (isZxNext && operationType === "inject") {

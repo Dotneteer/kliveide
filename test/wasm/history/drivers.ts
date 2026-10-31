@@ -75,3 +75,9 @@ export async function ht1080zDriver(model = "ht1080z-s2"): Promise<HistoryCoreDr
 export async function tvcDriver(model = "tvc64p"): Promise<HistoryCoreDriver> {
   return driver((await createTvcSession({ model })).bootToBasic(), "tvcGetCpuPrefix");
 }
+
+/** The Enterprise (the 128 by default) at IS-BASIC's prompt */
+export async function epDriver(model: "ep128" | "ep64" = "ep128"): Promise<HistoryCoreDriver> {
+  const { createEpSession } = await import("../../harness/enterprise");
+  return driver((await createEpSession({ model })).bootToBasic(), "epGetCpuPrefix");
+}

@@ -706,7 +706,27 @@ on the key, so every hover takes `--accent-on-device-light`, and a pressed key g
 The HT-1080Z mockup was first drawn dark-on-light-legends because the manual's keyboard drawing is
 black and white; the machine's keys are cream with black legends. Its tokens (`keyHt1080z` and the
 rest of that block in `palette.ts`) are averages sampled from a photo, and the palette comment names
-the photo. A drawing gives geometry and legends; only a photo gives colour.
+the photo. A drawing gives geometry and legends; only a photo gives colour. Under studio light a key's
+top is far brighter than its sides; sample several faces and take the shaded middle, not the highlight
+(the Enterprise's dark grey keys sampled from #75 to #9c; `keyEp` is #57565d).
+
+**A device keyboard prints exactly what the photographed caps print.** The Enterprise photo shows a
+German-layout keyboard (QWERTZ, ß, §, Ö, Ä, Ü) while Klive runs the UK EXOS; the virtual keyboard
+still prints the photo's legends, each on the matrix key that sits there, rather than what the ROM
+types (the project author's review overturned a first version that printed the UK characters). A cap
+whose word differs from the documents' name keeps the photo's word (PAUSE, which EXOS calls HOLD).
+
+**Device keyboards are drawn in a sans-serif face (`Helvetica, Arial, sans-serif`), whatever the
+machine's print**, and every key is one unit high except a key that spans rows (ENTER): a flat base in
+the edge colour with a raised cap centred on it (an even inset all round, generous corner radii), solid
+colours, no gradients. A cap set high on its base with a deep front lip read as off-centre.
+
+**Printed labels off the keys (the Enterprise's word-processor strip) must be readable at panel size.**
+Sampled grey-on-grey print at 12 units could not be read; the strip is drawn lighter with near-black,
+bold, 19-unit text and a rule between its lines, a deliberate departure from the sampled colours.
+
+**Major layout changes to a device keyboard start from a high-fidelity mockup the project author
+approves**, drawn with the real token values, before the component changes.
 
 **Legends a device never had are marked as the emulator's.** The HT-1080Z keyboard's Hungarian
 hints (`--color-keyht1080z-hint`) type characters the extension ROM builds from key combinations;
@@ -719,6 +739,10 @@ Videoton TVC has cream character keys and dark grey function keys: a hovered leg
 pressed mix (`--accent-device-pressed-tvc` / `-tvc-fn`). Marks the machine never printed (the arrows
 on the TVC's joystick) are drawn in the function keys' legend colour, on a shape that is plainly not
 a key, rather than in a hint colour: they are a control, not a legend someone could mistake for print.
+A keyboard whose every face is dark (the Enterprise's grey, green, blue and red keys, all with light
+legends) takes `--accent-on-device-dark` for every hover, and still gets one pressed tint per face
+colour (`--accent-device-pressed-ep`, `-ep-fn`, `-ep-f`, `-ep-stop`): one shared tint would turn a
+pressed green key grey.
 
 ## Alignment In The Register Panels
 
@@ -764,6 +788,11 @@ enough to look like "it just feels off" and large enough to be visible.
   round glyph. Same idea aligns the flag strip to the value column: `.flagLetter` is
   `calc(var(--measure-label) - 1ch)`, because a `3ch` flag column centres its content 1.5ch in while
   a value cell's first character centres 0.5ch in.
+- **Several flags of one thing are a small table, not a row of `FlagValue`s.** Each `FlagValue`
+  carries a full label and value column (`--measure-label` + `--measure-value`, 17ch), so three on a
+  row overflow the sidebar. The DAVE panel's interrupt sources (EN/LAT/PIN per source) use a heading
+  row of `DataLabel`s and `BitValue` dots, each in one narrow `ch` column centred under its heading
+  (`EpChipPanels.module.scss`'s `.intFlag`).
 
 ## CSS Grid: What Sizes A Track
 

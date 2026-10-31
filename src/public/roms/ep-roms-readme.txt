@@ -39,5 +39,9 @@ Cross-checks:
     the "EXDOS version 1.3" banner; which one is the unmodified original is not
     known yet.
 
+ep-klive-fileio.rom is not one of these ROMs: it is Klive's own EXOS extension ROM for its FILE:
+device, assembled by Klive from src/emu/machines/enterprise/fileio/ep-klive-fileio.asm
+(test/machines/ep-fileio-rom.test.ts checks the image against the source).
+
 Sizes and CRC32s are checked by test/machines/ep-rom-images.test.ts.
 This notice must be retained.

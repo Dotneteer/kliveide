@@ -207,6 +207,19 @@ const wasmCpuContract = [
     // --- No Spectrum device: the TVC's sound and tape are its own (`.plans/VIDEOTON_TVC_PLAN.md` §10)
     forbiddenIncludeFragments: ["zxSpectrum/wasm/common/"],
     requiredExports: ["tvcGetCpuAf", "tvcGetCpuBc", "tvcGetCpuDe", "tvcGetCpuHl", "tvcGetCpuPc", "tvcGetCpuSp"]
+  },
+  {
+    id: "ep",
+    label: "Enterprise 64/128",
+    mode: "z80",
+    buildScript: resolve(root, "scripts/build-ep-wasm.cjs"),
+    buildEntrySource: resolve(root, "src/emu/machines/enterprise/wasm/ep/ep.c"),
+    cpuAdapterSource: resolve(root, "src/emu/machines/enterprise/wasm/ep/ep.c"),
+    artifact: resolve(root, "src/emu/machines/enterprise/wasm/dist/ep.wasm"),
+    include: '#include "../../../../z80/wasm/z80.c"',
+    // --- No Spectrum device: NICK and DAVE are the Enterprise's own (`.plans/ENTERPRISE_PLAN.md` §4.1)
+    forbiddenIncludeFragments: ["zxSpectrum/wasm/common/"],
+    requiredExports: ["epGetCpuAf", "epGetCpuBc", "epGetCpuDe", "epGetCpuHl", "epGetCpuPc", "epGetCpuSp"]
   }
 ];
 

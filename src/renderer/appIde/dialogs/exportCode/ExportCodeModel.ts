@@ -52,6 +52,13 @@ export const TVC_FORMAT_OPTIONS: SelectOption[] = [
   HEX_OPTION
 ];
 
+// --- The Enterprise's code goes into an EXOS `$$APP` .com file (`renderer/appIde/utils/ep-code.ts`)
+export const EP_COM_FORMAT = "com";
+export const EP_FORMAT_OPTIONS: SelectOption[] = [
+  labelled({ value: EP_COM_FORMAT, labelKey: "dialog.exportCode.format.epCom" }),
+  HEX_OPTION
+];
+
 // --- A bootable disk (`.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md` B6): a +3DOS `.dsk` on the
 // --- +2A/+3, a TR-DOS `.trd` on the machines with a Beta 128 (the Pentagon, the Scorpion)
 export const DSK_FORMAT = "dsk";
@@ -68,6 +75,7 @@ export function formatOptionsFor(machineId: string | undefined): SelectOption[] 
   if (machineId === "zx80") return ZX80_FORMAT_OPTIONS;
   if (machineId === "ht1080z") return HT1080Z_FORMAT_OPTIONS;
   if (machineId === "tvc") return TVC_FORMAT_OPTIONS;
+  if (machineId === "ep") return EP_FORMAT_OPTIONS;
   if (machineId === "spp3e") return [...FORMAT_OPTIONS, DSK_OPTION];
   if (machineId === "sp128") return [...FORMAT_OPTIONS, TRD_OPTION, MDR_OPTION];
   if (machineId === "scorpion") return [...FORMAT_OPTIONS, TRD_OPTION];
@@ -274,14 +282,15 @@ export function effectiveFormatOf(state: ExportCodeState): string {
 // --- A HEX file has no tape blocks, so there is no loader to create; a ZX80 program cannot start
 // --- itself. On a ZX81 program the checkbox makes it run once loaded. An HT-1080Z .cmd or .cas
 // --- always carries its start address: SYSTEM's `/` starts it. A TVC .cas (the same "cas") always
-// --- starts itself.
+// --- starts itself, and so does an Enterprise .com (EXOS starts it at 0100h).
 export function supportsLoader(state: ExportCodeState): boolean {
   const format = effectiveFormatOf(state);
   return (
     format !== HEX_FORMAT &&
     format !== ZX80_PROGRAM_FORMAT &&
     format !== HT1080Z_CMD_FORMAT &&
-    format !== HT1080Z_CAS_FORMAT
+    format !== HT1080Z_CAS_FORMAT &&
+    format !== EP_COM_FORMAT
   );
 }
 

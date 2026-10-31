@@ -34,7 +34,7 @@ export type DroppedFileAction =
   | { kind: "unsupported"; message: string };
 
 /** The extensions `droppedFileAction` opens, for File › Open File…'s file filter */
-export const EMULATOR_FILE_EXTENSIONS = ["sna", "z80", "szx", "z88", "kls", "klr", "rzx", "tap", "tzx", "cas", "cmd", "bas"];
+export const EMULATOR_FILE_EXTENSIONS = ["sna", "z80", "szx", "z88", "kls", "klr", "rzx", "tap", "tzx", "wav", "cas", "cmd", "bas"];
 
 /** The action for a dropped (or opened) file's path */
 export function droppedFileAction(path: string): DroppedFileAction {
@@ -49,6 +49,8 @@ export function droppedFileAction(path: string): DroppedFileAction {
       return { kind: "command", command: z88SnapshotCommandText(path, "autorun") };
     case "tap":
     case "tzx":
+    // --- An Enterprise tape recording (`EpTapeFile.ts`); the deck checks it is the machine's
+    case "wav":
       return { kind: "tape" };
     case "cas":
     case "cmd":

@@ -1,0 +1,295 @@
+---
+description: "How the Enterprise's NICK chip draws the picture: a 16-clock slot shared by NICK and the Z80, a 57-slot line, the line parameter table a program writes to describe its own screen, the one-slot delay between a fetch and its pixels, and the clock stretch that holds the CPU when it touches video memory."
+---
+
+import { Callout } from 'nextra/components'
+
+# NICK: A Picture Built Slot by Slot
+
+Ask an Enterprise where its screen is, and it has no answer. There is no screen address, no mode
+register, no fixed resolution. Instead a program writes a little table into memory that says, block
+by block down the frame, what each group of lines should be: text here, a bitmap there, 256 colours
+for twenty lines, a different palette on every line if you like. The video chip, NICK, reads that
+table again on every single line, and draws whatever it says.
+
+That makes NICK one of the most flexible video chips of its time, and it is why the details matter in
+practice. A game that splits the screen, a demo that changes colours on every line, or a program that
+simply wants its writes to video memory to be fast all depend on when NICK reads what, and on when it
+lets the CPU in. You should know what a scan line and a frame are first:
+[How a television draws a picture](/en/under-the-hood/emulator-internals/crt-display/) explains them.
+
+## The road ahead
+
+We start with the two clocks of the machine and the slot, NICK's unit of time, which NICK and the CPU
+share. Then we stretch the slot out into a line of 57 and see what NICK does in each. The line
+parameter block and the table built from it come next: this is the heart of the chip, and the reason
+the Enterprise has no fixed screen. After that we follow the bytes from memory to the screen and meet
+the one-slot delay between a fetch and its pixels. The last stop is the CPU's side of the bargain, the
+clock stretch that holds it back whenever it touches video memory.
+
+<Callout type="info">
+The numbers are for an Enterprise 128 running EXOS 2.1, with the line parameter table EXOS builds at
+power-on; the Enterprise 64 draws the same way. The behaviour described is Klive's emulated machine,
+checked against the hardware's documented design by Klive's tests.
+</Callout>
+
+## Two clocks that never meet
+
+The Z80 runs at 4 MHz, from an 8 MHz crystal. NICK runs from an oscillator of its own, at
+14,237,536 Hz: exactly 912/284 times the PAL colour subcarrier, so that one line of 912 NICK clocks is
+284 subcarrier cycles. The two frequencies have no small common multiple. Over a long run they drift
+past each other forever, and a CPU instruction can start anywhere relative to NICK's work.
+
+Here is the twist: **NICK makes the CPU's clock.** It divides the 8 MHz crystal by two to get the
+Z80's 4 MHz, and it can hold that clock still when it needs the CPU to wait. It holds it for whole
+periods of the 8 MHz crystal, so the CPU is delayed in **half-T steps** of 125 ns. Keep that in mind;
+it comes back at the end.
+
+## The slot
+
+NICK counts its clocks in groups of sixteen, called **slots**. A slot lasts 1.124 µs, which is 4.495
+T-states of the CPU, and NICK shows 16 pixels in it, one per NICK clock.
+
+The memory is shared, so the slot is shared too. NICK uses clocks 0 to 4 for its first read and 5 to 9
+for its second, and **clocks 10 to 15 are the Z80's window**: the only time the CPU may touch video
+memory or NICK's ports.
+
+<figure><svg viewBox="0 0 700 230" role="img" aria-label="Two NICK slots to scale, 16 NICK clocks each: clocks 0 to 4 are NICK's first read, 5 to 9 its second read, and 10 to 15 the Z80's window. Under them the CPU clock's half-T steps, 1.78 NICK clocks apart, which do not line up with the slots. An access that wants the bus at clock 3 is held for 4 half-T steps, half a microsecond, and lands at clock 10.1, inside the Z80's window." style={{ width: "100%", height: "auto" }}><defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs><text x="0.0" y="52.0" fontSize="15" textAnchor="start" fill="currentColor">NICK slot</text><text x="0.0" y="70.0" fontSize="14" textAnchor="start" fill="currentColor">(16 clocks)</text><rect x="130.0" y="35.0" width="89.1" height="40.0" fill="#3b82f6" fillOpacity="0.45" stroke="currentColor" strokeWidth="1"/><text x="174.5" y="60.0" fontSize="14" textAnchor="middle" fill="currentColor">read 1</text><rect x="219.1" y="35.0" width="89.1" height="40.0" fill="#3b82f6" fillOpacity="0.25" stroke="currentColor" strokeWidth="1"/><text x="263.6" y="60.0" fontSize="14" textAnchor="middle" fill="currentColor">read 2</text><rect x="308.1" y="35.0" width="106.9" height="40.0" fill="#e8912d" fillOpacity="0.6" stroke="currentColor" strokeWidth="1"/><text x="361.6" y="60.0" fontSize="14" textAnchor="middle" fill="currentColor">Z80</text><rect x="415.0" y="35.0" width="89.1" height="40.0" fill="#3b82f6" fillOpacity="0.45" stroke="currentColor" strokeWidth="1"/><text x="459.5" y="60.0" fontSize="14" textAnchor="middle" fill="currentColor">read 1</text><rect x="504.1" y="35.0" width="89.1" height="40.0" fill="#3b82f6" fillOpacity="0.25" stroke="currentColor" strokeWidth="1"/><text x="548.6" y="60.0" fontSize="14" textAnchor="middle" fill="currentColor">read 2</text><rect x="593.1" y="35.0" width="106.9" height="40.0" fill="#e8912d" fillOpacity="0.6" stroke="currentColor" strokeWidth="1"/><text x="646.6" y="60.0" fontSize="14" textAnchor="middle" fill="currentColor">Z80</text><line x1="130.0" y1="75.0" x2="130.0" y2="81.0" stroke="currentColor" strokeWidth="1.5"/><text x="130.0" y="96.0" fontSize="14" textAnchor="middle" fill="currentColor">0</text><line x1="165.6" y1="75.0" x2="165.6" y2="81.0" stroke="currentColor" strokeWidth="1.5"/><text x="165.6" y="96.0" fontSize="14" textAnchor="middle" fill="currentColor">2</text><line x1="201.2" y1="75.0" x2="201.2" y2="81.0" stroke="currentColor" strokeWidth="1.5"/><text x="201.2" y="96.0" fontSize="14" textAnchor="middle" fill="currentColor">4</text><line x1="236.9" y1="75.0" x2="236.9" y2="81.0" stroke="currentColor" strokeWidth="1.5"/><text x="236.9" y="96.0" fontSize="14" textAnchor="middle" fill="currentColor">6</text><line x1="272.5" y1="75.0" x2="272.5" y2="81.0" stroke="currentColor" strokeWidth="1.5"/><text x="272.5" y="96.0" fontSize="14" textAnchor="middle" fill="currentColor">8</text><line x1="308.1" y1="75.0" x2="308.1" y2="81.0" stroke="currentColor" strokeWidth="1.5"/><text x="308.1" y="96.0" fontSize="14" textAnchor="middle" fill="currentColor">10</text><line x1="343.8" y1="75.0" x2="343.8" y2="81.0" stroke="currentColor" strokeWidth="1.5"/><text x="343.8" y="96.0" fontSize="14" textAnchor="middle" fill="currentColor">12</text><line x1="379.4" y1="75.0" x2="379.4" y2="81.0" stroke="currentColor" strokeWidth="1.5"/><text x="379.4" y="96.0" fontSize="14" textAnchor="middle" fill="currentColor">14</text><line x1="415.0" y1="75.0" x2="415.0" y2="81.0" stroke="currentColor" strokeWidth="1.5"/><text x="415.0" y="96.0" fontSize="14" textAnchor="middle" fill="currentColor">0</text><line x1="450.6" y1="75.0" x2="450.6" y2="81.0" stroke="currentColor" strokeWidth="1.5"/><text x="450.6" y="96.0" fontSize="14" textAnchor="middle" fill="currentColor">2</text><line x1="486.2" y1="75.0" x2="486.2" y2="81.0" stroke="currentColor" strokeWidth="1.5"/><text x="486.2" y="96.0" fontSize="14" textAnchor="middle" fill="currentColor">4</text><line x1="521.9" y1="75.0" x2="521.9" y2="81.0" stroke="currentColor" strokeWidth="1.5"/><text x="521.9" y="96.0" fontSize="14" textAnchor="middle" fill="currentColor">6</text><line x1="557.5" y1="75.0" x2="557.5" y2="81.0" stroke="currentColor" strokeWidth="1.5"/><text x="557.5" y="96.0" fontSize="14" textAnchor="middle" fill="currentColor">8</text><line x1="593.1" y1="75.0" x2="593.1" y2="81.0" stroke="currentColor" strokeWidth="1.5"/><text x="593.1" y="96.0" fontSize="14" textAnchor="middle" fill="currentColor">10</text><line x1="628.8" y1="75.0" x2="628.8" y2="81.0" stroke="currentColor" strokeWidth="1.5"/><text x="628.8" y="96.0" fontSize="14" textAnchor="middle" fill="currentColor">12</text><line x1="664.4" y1="75.0" x2="664.4" y2="81.0" stroke="currentColor" strokeWidth="1.5"/><text x="664.4" y="96.0" fontSize="14" textAnchor="middle" fill="currentColor">14</text><line x1="700.0" y1="75.0" x2="700.0" y2="81.0" stroke="currentColor" strokeWidth="1.5"/><text x="0.0" y="96.0" fontSize="14" textAnchor="start" fill="currentColor">NICK clock</text><text x="0.0" y="135.0" fontSize="15" textAnchor="start" fill="currentColor">CPU clock</text><text x="0.0" y="153.0" fontSize="14" textAnchor="start" fill="currentColor">(half-T steps)</text><line x1="147.8" y1="118.0" x2="147.8" y2="140.0" stroke="currentColor" strokeWidth="1.2"/><line x1="179.5" y1="118.0" x2="179.5" y2="140.0" stroke="currentColor" strokeWidth="1.2"/><line x1="211.2" y1="118.0" x2="211.2" y2="140.0" stroke="currentColor" strokeWidth="1.2"/><line x1="242.9" y1="118.0" x2="242.9" y2="140.0" stroke="currentColor" strokeWidth="1.2"/><line x1="274.6" y1="118.0" x2="274.6" y2="140.0" stroke="currentColor" strokeWidth="1.2"/><line x1="306.3" y1="118.0" x2="306.3" y2="140.0" stroke="currentColor" strokeWidth="1.2"/><line x1="338.0" y1="118.0" x2="338.0" y2="140.0" stroke="currentColor" strokeWidth="1.2"/><line x1="369.7" y1="118.0" x2="369.7" y2="140.0" stroke="currentColor" strokeWidth="1.2"/><line x1="401.4" y1="118.0" x2="401.4" y2="140.0" stroke="currentColor" strokeWidth="1.2"/><line x1="433.1" y1="118.0" x2="433.1" y2="140.0" stroke="currentColor" strokeWidth="1.2"/><line x1="464.8" y1="118.0" x2="464.8" y2="140.0" stroke="currentColor" strokeWidth="1.2"/><line x1="496.5" y1="118.0" x2="496.5" y2="140.0" stroke="currentColor" strokeWidth="1.2"/><line x1="528.2" y1="118.0" x2="528.2" y2="140.0" stroke="currentColor" strokeWidth="1.2"/><line x1="559.9" y1="118.0" x2="559.9" y2="140.0" stroke="currentColor" strokeWidth="1.2"/><line x1="591.6" y1="118.0" x2="591.6" y2="140.0" stroke="currentColor" strokeWidth="1.2"/><line x1="623.3" y1="118.0" x2="623.3" y2="140.0" stroke="currentColor" strokeWidth="1.2"/><line x1="655.0" y1="118.0" x2="655.0" y2="140.0" stroke="currentColor" strokeWidth="1.2"/><line x1="686.7" y1="118.0" x2="686.7" y2="140.0" stroke="currentColor" strokeWidth="1.2"/><line x1="130.0" y1="140.0" x2="700.0" y2="140.0" stroke="currentColor" strokeWidth="1"/><circle cx="183.4" cy="185" r="6" fill="#e5484d" stroke="white" strokeWidth="1.5"/><line x1="191.4" y1="185.0" x2="308.2" y2="185.0" stroke="currentColor" strokeWidth="1.8" markerEnd="url(#ah)"/><circle cx="310.2" cy="185" r="6" fill="#e8912d" stroke="white" strokeWidth="1.5"/><line x1="310.2" y1="179.0" x2="310.2" y2="80.0" stroke="#e8912d" strokeWidth="1.5" strokeDasharray="4 3"/><text x="0.0" y="190.0" fontSize="15" textAnchor="start" fill="currentColor">an access</text><text x="183.4" y="215.0" fontSize="14" textAnchor="start" fill="currentColor">wants the bus at clock 3</text><text x="322.2" y="190.0" fontSize="14" textAnchor="start" fill="currentColor">held 4 half-T steps (0.5 µs), lands at clock 10.1</text></svg>
+<figcaption>Two slots to scale, with the CPU clock's half-T steps under them. The steps do not line up with the slots, so an access can arrive anywhere in a slot.</figcaption></figure>
+
+Two reads a slot is NICK's whole memory budget. Everything it shows, the description of the line
+included, has to fit into those reads.
+
+## A line of 57 slots
+
+A line is **57 slots**, 912 NICK clocks or 64.06 µs (256.2 T-states). NICK does not spend them all on
+the picture:
+
+- **Slots 0 to 7** read the line's description, two bytes a slot: the 16-byte line parameter block of
+  the next section.
+- **Slots 8 to 53** are display fetches: here NICK reads the picture's bytes, but only between the
+  line's margins.
+- **Slots 54 to 56** refresh the dynamic RAM, and slot 56 resets the slot counter.
+
+The television signals ride on the same count. Horizontal sync is on in slots 0 to 3 and the colour
+burst in slots 6 to 9, and the picture is **blanked** from slot 56 through slot 9: those slots send
+colour 0 whatever the margins say. So 46 slots, 10 to 55, can show anything at all, 736 pixels.
+
+<figure><svg viewBox="0 0 700 345" role="img" aria-label="One NICK line of 57 slots to scale. Slots 0 to 7 read the line parameter block, slots 8 to 53 are display fetches, slots 54 to 56 refresh the memory. Horizontal sync is on in slots 0 to 3 and the colour burst in 6 to 9; slots 56 and 0 to 9 are blanked. On EXOS's text rows NICK fetches characters in slots 11 to 50 and shows them one slot later, in slots 12 to 51." style={{ width: "100%", height: "auto" }}><defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs><text x="0.0" y="48.0" fontSize="15" textAnchor="start" fill="currentColor">what NICK</text><text x="0.0" y="66.0" fontSize="15" textAnchor="start" fill="currentColor">reads</text><rect x="130.0" y="30.0" width="80.0" height="40.0" fill="#a855f7" fillOpacity="0.45" stroke="currentColor" strokeWidth="1"/><rect x="210.0" y="30.0" width="460.0" height="40.0" fill="#3b82f6" fillOpacity="0.45" stroke="currentColor" strokeWidth="1"/><rect x="670.0" y="30.0" width="30.0" height="40.0" fill="#30a46c" fillOpacity="0.55" stroke="currentColor" strokeWidth="1"/><line x1="140.0" y1="30.0" x2="140.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="150.0" y1="30.0" x2="150.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="160.0" y1="30.0" x2="160.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="170.0" y1="30.0" x2="170.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="180.0" y1="30.0" x2="180.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="190.0" y1="30.0" x2="190.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="200.0" y1="30.0" x2="200.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="220.0" y1="30.0" x2="220.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="230.0" y1="30.0" x2="230.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="240.0" y1="30.0" x2="240.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="250.0" y1="30.0" x2="250.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="260.0" y1="30.0" x2="260.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="270.0" y1="30.0" x2="270.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="280.0" y1="30.0" x2="280.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="290.0" y1="30.0" x2="290.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="300.0" y1="30.0" x2="300.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="310.0" y1="30.0" x2="310.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="320.0" y1="30.0" x2="320.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="330.0" y1="30.0" x2="330.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="340.0" y1="30.0" x2="340.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="350.0" y1="30.0" x2="350.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="360.0" y1="30.0" x2="360.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="370.0" y1="30.0" x2="370.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="380.0" y1="30.0" x2="380.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="390.0" y1="30.0" x2="390.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="400.0" y1="30.0" x2="400.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="410.0" y1="30.0" x2="410.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="420.0" y1="30.0" x2="420.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="430.0" y1="30.0" x2="430.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="440.0" y1="30.0" x2="440.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="450.0" y1="30.0" x2="450.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="460.0" y1="30.0" x2="460.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="470.0" y1="30.0" x2="470.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="480.0" y1="30.0" x2="480.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="490.0" y1="30.0" x2="490.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="500.0" y1="30.0" x2="500.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="510.0" y1="30.0" x2="510.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="520.0" y1="30.0" x2="520.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="530.0" y1="30.0" x2="530.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="540.0" y1="30.0" x2="540.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="550.0" y1="30.0" x2="550.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="560.0" y1="30.0" x2="560.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="570.0" y1="30.0" x2="570.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="580.0" y1="30.0" x2="580.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="590.0" y1="30.0" x2="590.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="600.0" y1="30.0" x2="600.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="610.0" y1="30.0" x2="610.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="620.0" y1="30.0" x2="620.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="630.0" y1="30.0" x2="630.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="640.0" y1="30.0" x2="640.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="650.0" y1="30.0" x2="650.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="660.0" y1="30.0" x2="660.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="680.0" y1="30.0" x2="680.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><line x1="690.0" y1="30.0" x2="690.0" y2="70.0" stroke="currentColor" strokeWidth="0.4"/><text x="170.0" y="95.0" fontSize="14" textAnchor="middle" fill="currentColor">LPB</text><text x="440.0" y="95.0" fontSize="14" textAnchor="middle" fill="currentColor">display fetches, slots 8 to 53</text><text x="700.0" y="95.0" fontSize="14" textAnchor="end" fill="currentColor">refresh</text><text x="0.0" y="132.0" fontSize="15" textAnchor="start" fill="currentColor">sync</text><rect x="130.0" y="115.0" width="40.0" height="24.0" fill="#e5484d" fillOpacity="0.8" stroke="currentColor" strokeWidth="1"/><text x="150.0" y="157.0" fontSize="14" textAnchor="middle" fill="currentColor">HSYNC</text><rect x="190.0" y="115.0" width="40.0" height="24.0" fill="#e8912d" fillOpacity="0.8" stroke="currentColor" strokeWidth="1"/><text x="216.0" y="157.0" fontSize="14" textAnchor="start" fill="currentColor">burst</text><text x="0.0" y="192.0" fontSize="15" textAnchor="start" fill="currentColor">blanked</text><rect x="130.0" y="176.0" width="100.0" height="22.0" fill="currentColor" fillOpacity="0.5" stroke="currentColor" strokeWidth="1"/><rect x="690.0" y="176.0" width="10.0" height="22.0" fill="currentColor" fillOpacity="0.5" stroke="currentColor" strokeWidth="1"/><text x="250.0" y="192.0" fontSize="14" textAnchor="start" fill="currentColor">slots 56 and 0 to 9 send colour 0</text><text x="0.0" y="243.0" fontSize="15" textAnchor="start" fill="currentColor">EXOS's</text><text x="0.0" y="261.0" fontSize="15" textAnchor="start" fill="currentColor">text row</text><rect x="240.0" y="226.0" width="400.0" height="22.0" fill="#3b82f6" fillOpacity="0.25" stroke="currentColor" strokeWidth="1"/><text x="440.0" y="242.0" fontSize="14" textAnchor="middle" fill="currentColor">fetched: slots 11 to 50</text><rect x="250.0" y="254.0" width="400.0" height="22.0" fill="#3b82f6" fillOpacity="0.55" stroke="currentColor" strokeWidth="1"/><text x="450.0" y="270.0" fontSize="14" textAnchor="middle" fill="currentColor">shown: slots 12 to 51</text><line x1="130.0" y1="286.0" x2="130.0" y2="292.0" stroke="currentColor" strokeWidth="1.5"/><text x="130.0" y="308.0" fontSize="14" textAnchor="middle" fill="currentColor">0</text><line x1="210.0" y1="286.0" x2="210.0" y2="292.0" stroke="currentColor" strokeWidth="1.5"/><text x="210.0" y="308.0" fontSize="14" textAnchor="middle" fill="currentColor">8</text><line x1="240.0" y1="286.0" x2="240.0" y2="292.0" stroke="currentColor" strokeWidth="1.5"/><text x="240.0" y="308.0" fontSize="14" textAnchor="middle" fill="currentColor">11</text><line x1="330.0" y1="286.0" x2="330.0" y2="292.0" stroke="currentColor" strokeWidth="1.5"/><text x="330.0" y="308.0" fontSize="14" textAnchor="middle" fill="currentColor">20</text><line x1="430.0" y1="286.0" x2="430.0" y2="292.0" stroke="currentColor" strokeWidth="1.5"/><text x="430.0" y="308.0" fontSize="14" textAnchor="middle" fill="currentColor">30</text><line x1="530.0" y1="286.0" x2="530.0" y2="292.0" stroke="currentColor" strokeWidth="1.5"/><text x="530.0" y="308.0" fontSize="14" textAnchor="middle" fill="currentColor">40</text><line x1="640.0" y1="286.0" x2="640.0" y2="292.0" stroke="currentColor" strokeWidth="1.5"/><text x="640.0" y="308.0" fontSize="14" textAnchor="middle" fill="currentColor">51</text><line x1="670.0" y1="286.0" x2="670.0" y2="292.0" stroke="currentColor" strokeWidth="1.5"/><text x="670.0" y="308.0" fontSize="14" textAnchor="middle" fill="currentColor">54</text><text x="415.0" y="331.0" fontSize="14" textAnchor="middle" fill="currentColor">slot in the line (each 16 pixels, 1.124 µs)</text></svg>
+<figcaption>One line to scale: what NICK reads in each slot, the signals for the television, and EXOS's text row, fetched in slots 11 to 50 and shown one slot later.</figcaption></figure>
+
+The **margins** are slot numbers. Display turns on when the slot counter reaches the left margin and
+off when it reaches the right one, and between the two NICK fetches picture bytes; outside them it
+shows the **border** colour from port `81h`. EXOS's text rows have their left margin at 11 and their
+right margin at 51, 40 slots for 40 characters.
+
+Hey, notice what a margin of 57 or more does: the counter never reaches it. A right margin that never
+matches leaves the display on into the next line, and that is not a bug to avoid but a tool, as the
+vertical sync of the frame shows later.
+
+## The line parameter block
+
+Every line is described by a **line parameter block** (LPB), 16 bytes in video memory:
+
+```text
+ byte  0     SC     256 - the number of lines in the block
+ byte  1     MB     the mode byte: bit 7 VINT, bits 6-5 colours, bit 4 VRES, bits 3-1 mode, bit 0 RELOAD
+ byte  2     LM     left margin (bits 5-0); bit 7 MSBALT, bit 6 LSBALT
+ byte  3     RM     right margin (bits 5-0); bit 6 ALTIND1, bit 7 ALTIND0
+ bytes 4-5   LD1    line data pointer 1, low byte first
+ bytes 6-7   LD2    line data pointer 2, low byte first
+ bytes 8-15  COL0-COL7, the palette's first eight entries
+```
+
+A block covers one or more lines. Here is the surprise: **NICK reads the whole block again on every
+line of it**, in slots 0 to 7, two bytes a slot. Only a few things happen on the block's first line
+alone: the line counter loads, LD2 loads, and LD1 loads (and on every line too, while VRES is clear).
+Everything else, the margins, the mode and the palette, is taken fresh on each line.
+
+That has a practical side. Rewrite one of a block's palette bytes while the beam is in the middle of
+the block, and the very next line shows the new colour. A colour bar that changes on every line needs
+no interrupt per line at all, only a block of one line per colour, or a program that races the beam.
+
+A few of the mode byte's bits deserve a word now:
+
+- **Colours** (bits 6-5): 2, 4, 16 or 256. A pixel's colour number picks one of the palette's 16
+  entries; in 256-colour mode the byte is the colour itself.
+- **The palette.** Entries 0 to 7 are the block's own COL0-COL7. Entries 8 to 15 are shared by every
+  block: FIXBIAS, port `80h`, gives bits 7-3 and the entry number gives bits 2-0. A colour byte holds
+  three bits of red, three of green and two of blue.
+- **VINT** (bit 7) asks for the video interrupt. NICK raises its interrupt line at the start of each
+  VINT line, and DAVE, the chip that handles interrupts, interrupts the CPU where the VINT block ends.
+- **RELOAD** (bit 0) marks the last block of the table, the subject of the next section.
+
+## The line parameter table
+
+The blocks follow each other in memory, 16 bytes apart, and together they form the **line parameter
+table** (LPT). NICK keeps a pointer into it. After a block's last line the pointer moves on 16 bytes
+to the next block; after a block with RELOAD set it goes back to the table's start, which a program
+writes into ports `82h` and `83h`. So the table is a loop, and one pass of it is a frame.
+
+The frame is exactly as long as the table says. A program can make it 312 lines, 310, or anything
+else; the television follows whatever sync it is given. EXOS builds a table of 34 blocks and 312
+lines:
+
+<figure><svg viewBox="0 0 700 225" role="img" aria-label="EXOS's line parameter table to scale, 312 lines: a 9-line status row and 27 text rows of 9 lines in CH128 mode make 252 lines; a 14-line border block raises the video interrupt, which comes at its end, line 266; three VSYNC blocks of 3, 4 and 1 lines follow, with vertical sync on from slot 6 of the second to slot 32 of the third, about 4.5 lines; then 4 and 34 lines of border, the last block reloading the table." style={{ width: "100%", height: "auto" }}><defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs><text x="0.0" y="55.0" fontSize="15" textAnchor="start" fill="currentColor">EXOS's</text><text x="0.0" y="73.0" fontSize="15" textAnchor="start" fill="currentColor">LPT</text><rect x="130.0" y="35.0" width="16.3" height="45.0" fill="#3b82f6" fillOpacity="0.75" stroke="currentColor" strokeWidth="1"/><rect x="146.3" y="35.0" width="440.0" height="45.0" fill="#3b82f6" fillOpacity="0.45" stroke="currentColor" strokeWidth="1"/><text x="358.2" y="62.0" fontSize="14" textAnchor="middle" fill="currentColor">27 text rows, CH128, 9 lines each</text><rect x="586.3" y="35.0" width="25.4" height="45.0" fill="#e8912d" fillOpacity="0.45" stroke="currentColor" strokeWidth="1"/><rect x="611.7" y="35.0" width="14.5" height="45.0" fill="currentColor" fillOpacity="0.5" stroke="currentColor" strokeWidth="1"/><rect x="626.2" y="35.0" width="68.8" height="45.0" fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="1"/><text x="660.6" y="62.0" fontSize="14" textAnchor="middle" fill="currentColor">border</text><rect x="617.3" y="84.0" width="8.1" height="10.0" fill="#e5484d" fillOpacity="0.9"/><text x="130.0" y="112.0" fontSize="14" textAnchor="start" fill="currentColor">status row</text><text x="607.7" y="112.0" fontSize="14" textAnchor="end" fill="currentColor">VINT block (orange)</text><text x="700.0" y="132.0" fontSize="14" textAnchor="end" fill="currentColor">VSYNC blocks (dark grey),</text><text x="700.0" y="150.0" fontSize="14" textAnchor="end" fill="currentColor">sync on for 4.5 lines (red)</text><circle cx="611.7" cy="30" r="6" fill="#e8912d" stroke="white" strokeWidth="1.5"/><text x="601.7" y="22.0" fontSize="14" textAnchor="end" fill="currentColor">interrupt</text><line x1="130.0" y1="165.0" x2="130.0" y2="171.0" stroke="currentColor" strokeWidth="1.5"/><text x="130.0" y="187.0" fontSize="14" textAnchor="start" fill="currentColor">0</text><line x1="586.3" y1="165.0" x2="586.3" y2="171.0" stroke="currentColor" strokeWidth="1.5"/><text x="586.3" y="187.0" fontSize="14" textAnchor="middle" fill="currentColor">252</text><line x1="695.0" y1="165.0" x2="695.0" y2="171.0" stroke="currentColor" strokeWidth="1.5"/><text x="695.0" y="187.0" fontSize="14" textAnchor="end" fill="currentColor">312</text><text x="412.5" y="210.0" fontSize="14" textAnchor="middle" fill="currentColor">lines of the frame: 312 lines, 79,942 T, 50.04 frames a second</text></svg>
+<figcaption>EXOS's line parameter table, one frame of 312 lines to scale. The video interrupt comes where the VINT block ends, three lines before vertical sync starts.</figcaption></figure>
+
+1. A status row and 27 text rows, each a block of 9 lines in the CH128 character mode: 252 lines.
+2. A 14-line border block with VINT set. Its margins never match (63 and 0), so it is all border.
+3. Three blocks in the **VSYNC mode**, 3, 4 and 1 lines. A VSYNC line is blanked, and its margins
+   switch vertical sync instead of the display: the second block turns sync on at its left margin,
+   slot 6, and leaves it on with a right margin of 63, which never matches; the third block's right
+   margin, 32, turns it off. That is 4.5 lines of vertical sync, made from the margin rule of the last
+   section.
+4. Two border blocks of 4 and 34 lines, the last one with RELOAD set.
+
+So the video interrupt comes at line 266, three lines before vertical sync starts. The frame is
+312 × 912 NICK clocks, about 79,942 T-states, **50.04 frames a second**, a hair faster than 50.
+
+Ports `82h` and `83h` hold the table's start address (on a 16-byte boundary in NICK's 64K) and two
+control bits in `83h`. At power-on the ports hold random values, so NICK walks a random table until
+EXOS writes them.
+
+## Where the picture's bytes come from
+
+The display fetches read through two pointers that count as the line goes: LD1 and LD2. What they
+point at depends on the mode (MB bits 3-1):
+
+- **PIXEL**: two bitmap bytes a slot through LD1. In two colours that is 16 pixels a slot, 640 across
+  40 slots: the mode for fine graphics.
+- **LPIXEL**: one bitmap byte a slot, each pixel twice as wide. Half the memory for the same width.
+- **ATTRIBUTE**: LD1 reads an attribute byte, LD2 a bitmap byte. The bitmap's 1 bits take the
+  attribute's low four bits as their colour and its 0 bits the high four: colour cells, as on the ZX
+  Spectrum, but one byte wide and any number of lines high.
+- **CH256, CH128, CH64**: character modes. LD1 reads a character code, and the code picks a byte of the
+  font at LD2: LD2 × 256 + code in CH256, LD2 × 128 + the code's low 7 bits in CH128, LD2 × 64 + its
+  low 6 bits in CH64. LD2 counts once a line, so the next line reads the next row of the font.
+- **VSYNC**: nothing shown; the margins make vertical sync, as in EXOS's table.
+
+LD1 counts once in every slot between the margins (twice in PIXEL), the slots 0-7 and 54-56 included
+when the margins reach them, even though nothing is fetched there.
+
+Let's follow EXOS's text rows through this. Each is a CH128 block of 9 lines with VRES clear, so LD1
+reloads from the block on every line and all nine lines read the same 40 character codes. LD2 starts
+at the font's first row and moves one row down each line. So a 40-character row of text costs 40
+bytes of codes, and the font, which every row shares, does the rest. Clever, isn't it? A whole screen
+of text is 28 × 40 codes, about 1K, plus one font.
+
+## One slot late
+
+NICK's pixels do not come out in the slot that fetches them. The bytes a slot reads go into a buffer,
+and **the next slot shows them**. Here is the order of things in each slot:
+
+1. NICK compares the slot counter with the right margin and then the left one, and turns the display
+   off or on.
+2. It shows the bytes the previous slot fetched: 16 pixels, or the border if the previous slot was
+   outside the margins.
+3. It does this slot's reads: the block, a display fetch, or a refresh.
+
+A narrow example makes it visible. Take a block with the left margin at 31 and the right margin at 32,
+in LPIXEL mode, with the byte `B4h` at LD1:
+
+<figure><svg viewBox="0 0 700 210" role="img" aria-label="Slots 28 to 35 of a line with the left margin at 31 and the right margin at 32. Only slot 31 is inside the margins, so only slot 31 fetches a byte, B4h. The byte is shown one slot later: slot 32 shows 16 pixels and every other slot, slot 31 included, shows the border." style={{ width: "100%", height: "auto" }}><defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs><text x="165.6" y="25.0" fontSize="15" textAnchor="middle" fill="currentColor">slot 28</text><text x="236.9" y="25.0" fontSize="15" textAnchor="middle" fill="currentColor">slot 29</text><text x="308.1" y="25.0" fontSize="15" textAnchor="middle" fill="currentColor">slot 30</text><text x="379.4" y="25.0" fontSize="15" textAnchor="middle" fill="currentColor">slot 31</text><text x="450.6" y="25.0" fontSize="15" textAnchor="middle" fill="currentColor">slot 32</text><text x="521.9" y="25.0" fontSize="15" textAnchor="middle" fill="currentColor">slot 33</text><text x="593.1" y="25.0" fontSize="15" textAnchor="middle" fill="currentColor">slot 34</text><text x="664.4" y="25.0" fontSize="15" textAnchor="middle" fill="currentColor">slot 35</text><text x="0.0" y="60.0" fontSize="15" textAnchor="start" fill="currentColor">margins</text><rect x="343.8" y="42.0" width="71.2" height="30.0" fill="#3b82f6" fillOpacity="0.25" stroke="currentColor" strokeWidth="1"/><text x="379.4" y="62.0" fontSize="14" textAnchor="middle" fill="currentColor">inside</text><line x1="343.8" y1="36.0" x2="343.8" y2="78.0" stroke="#e5484d" strokeWidth="2"/><line x1="415.0" y1="36.0" x2="415.0" y2="78.0" stroke="#e5484d" strokeWidth="2"/><text x="339.8" y="92.0" fontSize="14" textAnchor="end" fill="currentColor">LM = 31</text><text x="419.0" y="92.0" fontSize="14" textAnchor="start" fill="currentColor">RM = 32</text><text x="0.0" y="128.0" fontSize="15" textAnchor="start" fill="currentColor">fetch</text><rect x="343.8" y="110.0" width="71.2" height="30.0" fill="#3b82f6" fillOpacity="0.6" stroke="currentColor" strokeWidth="1"/><text x="379.4" y="130.0" fontSize="14" textAnchor="middle" fill="currentColor">B4h</text><text x="0.0" y="188.0" fontSize="15" textAnchor="start" fill="currentColor">shown</text><rect x="130.0" y="170.0" width="71.2" height="30.0" fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="1"/><text x="165.6" y="190.0" fontSize="14" textAnchor="middle" fill="currentColor">border</text><rect x="201.2" y="170.0" width="71.2" height="30.0" fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="1"/><text x="236.9" y="190.0" fontSize="14" textAnchor="middle" fill="currentColor">border</text><rect x="272.5" y="170.0" width="71.2" height="30.0" fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="1"/><text x="308.1" y="190.0" fontSize="14" textAnchor="middle" fill="currentColor">border</text><rect x="343.8" y="170.0" width="71.2" height="30.0" fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="1"/><text x="379.4" y="190.0" fontSize="14" textAnchor="middle" fill="currentColor">border</text><rect x="415.0" y="170.0" width="71.2" height="30.0" fill="#3b82f6" fillOpacity="0.6" stroke="currentColor" strokeWidth="1"/><text x="450.6" y="190.0" fontSize="14" textAnchor="middle" fill="currentColor">16 pixels</text><rect x="486.2" y="170.0" width="71.2" height="30.0" fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="1"/><text x="521.9" y="190.0" fontSize="14" textAnchor="middle" fill="currentColor">border</text><rect x="557.5" y="170.0" width="71.2" height="30.0" fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="1"/><text x="593.1" y="190.0" fontSize="14" textAnchor="middle" fill="currentColor">border</text><rect x="628.8" y="170.0" width="71.2" height="30.0" fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="1"/><text x="664.4" y="190.0" fontSize="14" textAnchor="middle" fill="currentColor">border</text><line x1="379.4" y1="141.0" x2="379.4" y2="155.0" stroke="currentColor" strokeWidth="1.8"/><line x1="379.4" y1="155.0" x2="450.6" y2="155.0" stroke="currentColor" strokeWidth="1.8"/><line x1="450.6" y1="155.0" x2="450.6" y2="169.0" stroke="currentColor" strokeWidth="1.8" markerEnd="url(#ah)"/></svg>
+<figcaption>Margins at 31 and 32: slot 31 fetches the byte and slot 32 shows it. Every other slot, slot 31 included, shows the border.</figcaption></figure>
+
+- Slot 31: the left margin matches, the display turns on, and the slot fetches `B4h`. It shows what
+  slot 30 fetched, which was nothing, so it shows the border.
+- Slot 32: the right margin matches and the display turns off before the fetch, so nothing is
+  fetched. But the slot shows what slot 31 fetched: 16 pixels of `B4h`.
+- Slot 33: it shows what slot 32 fetched, nothing, so the border again.
+
+For an ordinary picture the delay is a uniform 16-pixel shift to the right, and you would never know.
+It matters for anything timed to the beam: a write that changes a byte NICK fetches in slot *n*
+changes the pixels of slot *n* + 1. EXOS's text, fetched in slots 11 to 50, is on the screen in slots
+12 to 51.
+
+Two more consequences. The buffers load only in the display-fetch slots, 8 to 53, so with a right
+margin of 55 or more, slot 54 fetches nothing and slot 55 shows slot 53's bytes a second time. And the mode is latched at the left
+margin, so a program that rewrites the mode byte in the middle of a line sees the change at the next
+left margin.
+
+## Sharing the memory: the clock stretch
+
+Now for the CPU's side. Video memory is the top four 16K segments, `FCh` to `FFh`, NICK's whole 64K
+address space. Whenever the Z80 reads or writes one of them, through whatever page the segment is in,
+or reads or writes NICK's ports `80h` to `8Fh`, its access must fall into the Z80's window of a slot,
+clocks 10 to 15.
+
+So NICK holds the CPU's clock until it does. Step by step:
+
+1. Each kind of machine cycle has a point where it needs the bus: an opcode fetch at T2.0, a memory
+   read or write at T2.5, an I/O cycle at T3.5.
+2. If that point falls in clocks 10 to 15 of a slot, nothing happens.
+3. Otherwise NICK holds the CPU's clock, one half-T step (1.78 NICK clocks) at a time, until the point
+   falls in the window.
+
+Back to the first figure for the numbers. An access whose point arrives at NICK clock 3 is held for 4
+half-T steps, 0.5 µs, and lands at clock 10.1. One that arrives at clock 0, just after a window has
+closed, is held for 6 steps, 3 T-states, the most it can ever cost. One that arrives inside the window
+costs nothing. Since the two clocks drift, the same instruction costs a different amount each time.
+
+Uhm, so the cost is random? Not when code keeps touching video memory. Take a run of `NOP`s executed
+from video RAM. A `NOP` takes 4 T-states, 14.2 NICK clocks, a little less than a slot. After the first
+one is held into a window, the next opcode fetch arrives just after that window has closed and waits
+for the next slot's. **The code locks to the slot grid: every `NOP` takes one slot, 4.495 T-states.**
+A loop of video memory reads locks the same way, to whole slots.
+
+Three things set NICK's stretch apart:
+
+- **It does not depend on the beam.** Every slot has its Z80 window, in the border, during blanking
+  and during the picture alike. Racing the beam does not make video memory any faster.
+- **It never touches ordinary RAM.** Segments `F8h` to `FBh` on the 128 run at full speed, apart from
+  DAVE's own wait states, which EXOS sets to one T-state on each opcode fetch. Code runs faster from
+  ordinary RAM; keep video memory for the picture.
+- **A port write lands in the window**, so a new border colour, FIXBIAS or LPT address takes effect
+  from the next slot. That is the finest step for changing them in the middle of a line.
+
+In return the CPU and NICK never use the memory at the same moment, so the Enterprise shows no snow,
+however hard a program writes to the screen.
+
+## How Klive does it
+
+Klive's Enterprise core keeps the CPU's whole T-states and, beside them, a half-T clock in 125 ns
+steps, because the stretch moves the CPU by half-T steps. NICK's position is an integer: each half-T
+step adds 40,434,603 to an accumulator, and a slot passes every 363,520,000. That is the exact ratio
+of the two clocks, so no rounding ever creeps in, and replaying a recorded run (reverse debugging
+does) meets every slot at the same moment.
+
+As the CPU's clock passes the start of a slot, the core runs that slot: the margin compares, then the
+picture (the previous slot's bytes drawn as 16 pixels), then the slot's own reads. The CPU's memory
+and port hooks compute the stretch from the accumulator: how many half-T steps until the access point
+falls in clocks 10 to 15. Exactly where inside a cycle NICK samples a request is not documented; the
+access points are named constants, so a measurement on a real machine would change one line.
+
+The picture a television would show is the unblanked slots 10 to 55, 736 pixels, and 288 lines
+starting at the 25th line after vertical sync begins. EXOS's 252 lines then have 18 lines of border
+above and below them. The machine's frame ends where vertical sync starts, as the television's does.
+
+The **NICK** panel in the Debug activity shows the ports, the beam's line and slot, the block NICK is
+showing, decoded, and the whole table, block by block (see
+[The Enterprise 64 and 128](/en/guides/machines/enterprise/#debugging)).
+
+| File | What it holds |
+|---|---|
+| `src/emu/machines/enterprise/wasm/ep/ep-nick.c` | The slot stepper, the LPT walker, LD1 and LD2, VINT, vertical sync, the pixels and the TV window |
+| `src/emu/machines/enterprise/wasm/ep/ep-timing.c` | The clock stretch and DAVE's wait states |
+| `src/emu/machines/enterprise/wasm/ep/ep.c` | The half-T clock, NICK's accumulator and the frame loop |
+| `test/ep-hw/nick-lpt.test.ts`, `nick-picture.test.ts`, `timing.test.ts` | The block read every line, the margins, the modes, the one-slot delay, the stretch and the lock to the slot grid |
+
+## What to take home
+
+NICK's unit is the slot: 16 of its clocks, 1.124 µs, 4.495 T-states, 16 pixels. NICK reads twice in
+each slot and gives the CPU the last six clocks. A line is 57 slots: eight to read the line's
+description, 46 for the picture, three for refresh, and only slots 10 to 55 are ever visible.
+
+The picture is a program. Each block of the line parameter table says how many lines it covers, its
+mode, colours, margins, data pointers and eight palette entries, and NICK reads the block again on
+every line, so a palette byte rewritten mid-block shows on the next line. The table loops at its
+RELOAD block, and it alone decides the frame: EXOS's is 312 lines, 50.04 frames a second, with its
+video interrupt three lines before vertical sync.
+
+Every byte NICK fetches appears one slot later, a 16-pixel shift that matters only to code racing the
+beam. And the CPU pays for sharing: every access to video memory or NICK's ports is held, in half-T
+steps of up to 3 T-states, until it falls in its window. Code that keeps touching video memory locks
+to the slot grid, wherever the beam is; in exchange there is never any snow.

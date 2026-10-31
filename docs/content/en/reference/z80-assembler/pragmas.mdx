@@ -501,7 +501,7 @@ The __EXTERN__ pragma is kept for future extension. The current compiler accepts
 
 ## The MODEL pragma
 
-This pragma is used when you run or debug your Z80 code within the emulator. With Spectrum 128K, Spectrum +3, and Spectrum Next models, you can run the Z80 code in different contexts. The __MODEL__ pragma lets you specify which model to run the code. You can use the `SPECTRUM48`, `SPECTRUM128`, `SPECTRUMP3`, `NEXT`, `ZX80`, `ZX81`, `HT1080Z`, or `TVC` identifiers to choose the model (identifiers are case-insensitive):
+This pragma is used when you run or debug your Z80 code within the emulator. With Spectrum 128K, Spectrum +3, and Spectrum Next models, you can run the Z80 code in different contexts. The __MODEL__ pragma lets you specify which model to run the code. You can use the `SPECTRUM48`, `SPECTRUM128`, `SPECTRUMP3`, `NEXT`, `ZX80`, `ZX81`, `HT1080Z`, `TVC`, or `ENTERPRISE` identifiers to choose the model (identifiers are case-insensitive):
 
 ```z80klive
 .model Spectrum48
@@ -512,6 +512,7 @@ This pragma is used when you run or debug your Z80 code within the emulator. Wit
 .model ZX81
 .model HT1080Z
 .model TVC
+.model ENTERPRISE
 ```
 
 Without a __MODEL__ pragma, the code is assembled for the machine running in the emulator: `#ifmod` and the model-specific pragmas follow that machine.
@@ -521,6 +522,8 @@ Without a __MODEL__ pragma, the code is assembled for the machine running in the
 `HT1080Z` code runs from RAM, as the machine's `SYSTEM` command runs it: Run answers the power-on question so BASIC keeps below the code, writes the code and starts it. Code with no `.org` starts at $7000, `.bank` is not available, and code below $3C00 (the ROM and the keyboard) or in $3C00-$42E8 (video RAM and the ROM's work area) gets a warning. See [HT-1080Z Development](/en/reference/z80-assembler/ht1080z).
 
 `TVC` code runs from RAM and is called by BASIC: Run moves BASIC's program space above the code with `LOMEM` and calls it with `C=USR(entry)`, so a `RET` goes back to BASIC. Code with no `.org` starts at $1A30, `.bank` is not available, and code below $1A30 or above $BBFF gets a warning. See [Videoton TVC Development](/en/reference/z80-assembler/videoton-tvc).
+
+`ENTERPRISE` code is an EXOS program: Run loads it through Klive's `FILE:` device with `LOAD "FILE:KLIVE.COM"`, and EXOS starts it at $0100. Code with no `.org` starts at $0100, `.bank` is not available, and code below $0100 or above $BFFF gets a warning. See [Enterprise 64/128 Development](/en/reference/z80-assembler/enterprise).
 
 For example, when you create code for Spectrum 128K, and add the `.model Spectrum48` pragma to the code, the __Run__ command will start the virtual machine, turn the machine into Spectrum 48K mode, and ignite the code just after that.
 
