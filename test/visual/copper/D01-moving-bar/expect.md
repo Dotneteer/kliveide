@@ -11,4 +11,4 @@ has a ragged edge, or is missing; red in the border.
 
 $1F reads the copper line (zxnext.vhd, $1E/$1F readback = cvc). **Geometry:** copper line L = buffer row 48+L; paper x = buffer x 96+2x (see C00).
 
-Source: _input/next-fpga/src: copper.vhd, video/zxula_timing.vhd, zxnext.vhd.
+Source: vendor/next-fpga/3.02.01/src: copper.vhd, video/zxula_timing.vhd, zxnext.vhd.

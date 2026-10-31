@@ -1,12 +1,11 @@
-import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-import { createSession, type NextTestSession } from "../../harness/zxnext";
+import { createSession, type NextTestSession, readNextRom } from "../../harness/zxnext";
 
 /*
  * Multiface (catalogue MF-001 - MF-007; MF-002 is RST-005 in `reset/reset-register`).
  *
- * Hardware (`_input/next-fpga/src`):
+ * Hardware (`vendor/next-fpga/3.02.01/src`):
  * - device/multiface.vhd (mode: $0A bits 7-6 - 00 MF+3, 11 MF48, else MF128):
  *   - `mf_enable` (memory paged in): set by the fetch at $0066 while `nmi_active`, cleared by a
  *     disable-port read or RETN, and an enable-port read sets it to `not invisible_eff`.
@@ -29,7 +28,7 @@ import { createSession, type NextTestSession } from "../../harness/zxnext";
  *   - `z80_retn_seen` is ED 45 only (im2_control S_ED45_T4).
  */
 
-const MF_ROM = readFileSync("src/public/roms/enNextMf.rom");
+const MF_ROM = readNextRom("enNextMf.rom");
 
 /** [enable port, disable port] per $0A type. */
 const PORTS: Record<number, [number, number]> = { 0: [0x3f, 0xbf], 1: [0xbf, 0x3f], 2: [0x9f, 0x1f], 3: [0x9f, 0x1f] };

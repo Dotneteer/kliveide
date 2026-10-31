@@ -226,5 +226,6 @@ export type MachineMenuInfo = {
   recordItems?: MachineMenuRenderer;
   helpLinks?: HelpLinkInfo[];
   initializer?: () => Promise<void>;
-  setup?: () => Promise<void>;
+  /** Runs before the emulator switches to the machine; `modelId` is the model it switches to */
+  setup?: (modelId?: string) => Promise<void>;
 };

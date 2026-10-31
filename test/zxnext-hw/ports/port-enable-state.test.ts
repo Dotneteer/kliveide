@@ -7,7 +7,7 @@ import { createSession, type NextTestSession } from "../../harness/zxnext";
  * (catalogue PORT-014 - PORT-016; ported from test/zxnext/PortEnableGating.test.ts and
  * test/zxnext/NextIoPortManager.test.ts).
  *
- * Hardware (`_input/next-fpga/src/zxnext.vhd`):
+ * Hardware (`vendor/next-fpga/3.02.01/src/zxnext.vhd`):
  * - ~2538: `port_fe` is every even address, with no enable bit.
  * - ~2581-2582: `port_243b` / `port_253b` decode the address only, with no enable bit.
  * - ~2348-2400: the enables gate the *decode* (`port_ff_wr <= iowr and port_ff and port_ff_io_en`,

@@ -8,7 +8,7 @@ import { createSession, type NextTestSession } from "../../harness/zxnext";
  * ("Counter mode", "Trigger edge change", "Interrupt enable"); the rest of that file is covered by
  * `ctc.test.ts`.
  *
- * Hardware (`_input/next-fpga/src`):
+ * Hardware (`vendor/next-fpga/3.02.01/src`):
  * - device/ctc_chan.vhd
  *   - ~141: `t_count_en <= prescaler_clk when D6 = 0 else clk_trg_edge` - a counter (D6 = 1) never
  *     counts on the prescaler, only on a clock/trigger edge.

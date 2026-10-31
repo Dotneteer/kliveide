@@ -7,7 +7,7 @@ import { hex, results, romBytes, runCode } from "./_memory-helpers";
  * MMU slots, ROM in slots 0/1, out-of-range pages and ROM write protection (catalogue MEM-002 -
  * MEM-006, MEM-024).
  *
- * Hardware (`_input/next-fpga/src/zxnext.vhd`):
+ * Hardware (`vendor/next-fpga/3.02.01/src/zxnext.vhd`):
  * - ~2908: slot n ($n000 x 8K) shows page MMUn; ~2919: `mmu_A21_A13 = ("0001" + page(7:5)) & page(4:0)`,
  *   so page p is SRAM 8K page p + 32 and bit 8 is set for p >= $E0.
  * - ~2986-3014: in $0000-$3FFF a page with bit 8 clear is RAM; anything else (`$FF`, but also $E0-$FE)

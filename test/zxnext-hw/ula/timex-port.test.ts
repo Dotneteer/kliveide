@@ -8,7 +8,7 @@ import { colours, hex8, PAPER_LEFT, PAPER_TOP, writePalette } from "./_ula-helpe
  * Port $FF beyond the screen mode, and mode changes during the frame (catalogue TMX-006 - TMX-009,
  * TMX-012).
  *
- * Hardware (`_input/next-fpga/src/zxnext.vhd`):
+ * Hardware (`vendor/next-fpga/3.02.01/src/zxnext.vhd`):
  * - ~3607-3622: port_ff_reg takes the whole byte on a port write (~2670: only with the port enable,
  *   $82 bit 0 - no timing condition); NextReg $69 writes bits 5-0, $22 writes bit 6 from its bit 2,
  *   $C4 writes bit 6 from the inverse of its bit 0. Reset clears it.

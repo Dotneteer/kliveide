@@ -24,6 +24,7 @@ export {
   type SessionOptions,
   type WritableRegisters
 } from "./script/session";
+export { forEachProfile } from "./script/profiles";
 export { MemorySdCard, SD_SECTOR_BYTES, type SdCardBacking } from "./script/sd-card";
 export { type UartFrame, type UartIndex } from "./script/uart-peer";
 export { piI2sWord, type PiI2sSamples } from "./script/pi-i2s";
@@ -33,6 +34,7 @@ export { MATRIX_KEYS, NEXT_EXTRA_KEYS, type ExtraKey, type MatrixKey, type NextK
 
 // --- Machines and low-level helpers
 export { createCore, readNextRegDirect, runDisplayedFrame, type NextMachine } from "./core/machines";
+export { nextRomFile, readNextRom, readNextRomImages } from "./core/roms";
 export { captureFrame, pixelHex, rowRuns, summarizeRows, type Frame, type RowRun } from "./core/frame";
 export { frameHash, framePng } from "./core/capture";
 export { compileNexFile, type CompiledNex } from "./core/compile-nex";

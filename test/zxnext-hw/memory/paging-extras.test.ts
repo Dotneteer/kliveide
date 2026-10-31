@@ -7,7 +7,7 @@ import { hex, romBytes } from "./_memory-helpers";
  * Paging details ported from the TypeScript-only test/zxnext/MemoryDevice.test.ts (catalogue MEM-002,
  * MEM-009, MEM-010, MEM-014).
  *
- * Hardware (`_input/next-fpga/src/zxnext.vhd`):
+ * Hardware (`vendor/next-fpga/3.02.01/src/zxnext.vhd`):
  * - ~3715: `elsif port_1ffd_wr = '1' and port_7ffd_locked = '0'` - a $1FFD write is ignored while $7FFD
  *   is locked (~3749: `port_7ffd_locked` = $7FFD bit 5 outside Pentagon 1024), and ~3793 it does not
  *   reload the MMU either.

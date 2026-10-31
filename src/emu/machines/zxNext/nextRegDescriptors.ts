@@ -296,7 +296,8 @@ export const NEXT_REG_DESCRIPTORS: readonly NextRegDescriptor[] = [
           3: "Multiface 1 (enable port 0x9F, disable port 0x1F)"
         }
       },
-      { mask: 0x20, shift: 5, description: "1 to swap SD card 0 and 1 (hard reset = 0)" },
+      // --- Reserved in core 3.02.01 (nextreg.txt@3.02.01); 3.02.04 made it the SD swap (`nextRegSets/30204.ts`)
+      { mask: 0x20, shift: 5, description: "Reserved, must be zero" },
       { mask: 0x10, shift: 4, description: "Enable DivMMC automap (hard reset = 0)" },
       {
         mask: 0x08,
@@ -926,10 +927,7 @@ export const NEXT_REG_DESCRIPTORS: readonly NextRegDescriptor[] = [
       {
         mask: 0x03,
         description: "Max cpu speed when the expansion bus is on (currently fixed at 00 = 3.5MHz)"
-      },
-      { mask: 0x04, shift: 2, description: "Enable romcs rom replacement from DivMMC banks 14/15" },
-      { mask: 0x02, shift: 1, description: "Disable i/o cycles & ignore iorqula" },
-      { mask: 0x01, description: "Disable memory cycles & ignore romcs" }
+      }
     ]
   },
   {

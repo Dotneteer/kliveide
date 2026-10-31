@@ -2949,6 +2949,7 @@ export type MessageKey =
   | "media.state.noLayoutStampSave"
   | "media.state.otherCore"
   | "media.state.otherLayout"
+  | "media.state.otherNextModel"
   | "media.tape.tapTruncated"
   | "menu.app.about"
   | "menu.app.hide"

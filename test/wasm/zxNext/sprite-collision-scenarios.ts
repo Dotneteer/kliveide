@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
 /*
- * The sprite collision flag — port $303B bit 0 — against the FPGA (`_input/next-fpga/src/video/sprites.vhd`):
+ * The sprite collision flag — port $303B bit 0 — against the FPGA (`vendor/next-fpga/3.02.01/src/video/sprites.vhd`):
  *
  *   status_reg_s(0) <= status_reg_s(0) or (spr_line_data_o(8) and spr_line_we)
  *

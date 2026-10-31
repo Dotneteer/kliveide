@@ -1,7 +1,6 @@
-import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-import { createSession, type NextTestSession } from "../../harness/zxnext";
+import { createSession, type NextTestSession, readNextRom } from "../../harness/zxnext";
 
 /*
  * NMI arbitration and the $02 cause flags (catalogue NMI-008 - NMI-009). Ported from the
@@ -10,7 +9,7 @@ import { createSession, type NextTestSession } from "../../harness/zxnext";
  * mfNmiByIoTrap"); the rest of those files is covered by `nmi.test.ts`, `multiface/*.test.ts` and
  * `reset/reset-register.test.ts`.
  *
- * Hardware (`_input/next-fpga/src/zxnext.vhd`):
+ * Hardware (`vendor/next-fpga/3.02.01/src/zxnext.vhd`):
  * - ~2045-2047: a $02 write with bits 3 and 2 asserts both causes in the same clock (`nmi_gen_nr_mf`,
  *   `nmi_gen_nr_divmmc`, ~3812-3814), each gated by its $06 enable.
  * - ~2051-2071: while no NMI is active the arbiter latches *one* source, the Multiface first
@@ -23,7 +22,7 @@ import { createSession, type NextTestSession } from "../../harness/zxnext";
  *   out and ends the hold.
  */
 
-const MF_ROM = readFileSync("src/public/roms/enNextMf.rom");
+const MF_ROM = readNextRom("enNextMf.rom");
 const pagedIn = (s: NextTestSession) => Array.from(s.peekBytes(0x0000, 16)).join() === Array.from(MF_ROM.subarray(0, 16)).join();
 
 async function program(body: string): Promise<NextTestSession> {

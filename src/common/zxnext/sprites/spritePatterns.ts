@@ -5,7 +5,7 @@
  * Pure: bytes in, palette indices out. The NEX Sprites view and the Sprite Inspector draw what this
  * returns, and the tests pin the layout without a canvas.
  *
- * The layout follows the hardware, not Klive's emulator. From `_input/next-fpga/src/video/sprites.vhd`:
+ * The layout follows the hardware, not Klive's emulator. From `vendor/next-fpga/3.02.01/src/video/sprites.vhd`:
  *
  * - **8-bit** pattern N is 256 bytes, one byte per pixel, row by row. A pixel is transparent when the
  *   whole byte equals the transparency index (Reg `$4B`).

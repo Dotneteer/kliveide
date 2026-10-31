@@ -9,7 +9,7 @@ import { colours, hex8, parkedSession, writePalette } from "../ula/_ula-helpers"
  * Replaces the hardware-visible parts of test/zxnext/SpriteDevice.test.ts, SpriteDevice-index,
  * SpriteDevice-patterns and SpriteDevice-d4d6d7 (D6/D7), which inspected SpriteDevice fields.
  *
- * All VHDL references are `_input/next-fpga/src/video/sprites.vhd` unless marked zxnext.vhd.
+ * All VHDL references are `vendor/next-fpga/3.02.01/src/video/sprites.vhd` unless marked zxnext.vhd.
  *
  * Geometry: sprite x is buffer x 32 + 2x, sprite y is buffer row 16 + y ($15 = $03: visible, over
  * the border, so no clip window applies). The ULA is off ($68 bit 7), so where no sprite pixel is the

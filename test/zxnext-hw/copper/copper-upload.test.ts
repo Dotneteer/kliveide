@@ -5,7 +5,7 @@ import { createSession } from "../../harness/zxnext";
 /*
  * How bytes reach copper list RAM, observed by what the uploaded instruction does.
  *
- * Hardware (`_input/next-fpga/src/zxnext.vhd`):
+ * Hardware (`vendor/next-fpga/3.02.01/src/zxnext.vhd`):
  * - `$60` and `$63` both store the written byte in `nr_copper_data_stored` only at an EVEN copper
  *   address (~5396, ~5411: `if nr_copper_addr(0) = '0' then nr_copper_data_stored <= nr_wr_dat`).
  * - A `$63` write at an ODD address commits `nr_copper_data_stored` as the MSB and the written byte

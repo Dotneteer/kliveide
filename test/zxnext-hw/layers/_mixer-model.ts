@@ -1,5 +1,5 @@
 /*
- * A transcription of the layer mixer - `_input/next-fpga/src/zxnext.vhd` "VIDEO PIPELINE STAGE 2"
+ * A transcription of the layer mixer - `vendor/next-fpga/3.02.01/src/zxnext.vhd` "VIDEO PIPELINE STAGE 2"
  * (~7040-7300) - for one pixel. Colours are 9-bit RRRGGGBBB; every "transparent" input is the stage-2
  * signal of the same name. Used by compositing.test.ts; read that file for how the inputs are made.
  */

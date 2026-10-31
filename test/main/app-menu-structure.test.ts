@@ -63,7 +63,8 @@ import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { MC_DISK_SUPPORT } from "@common/machines/constants";
 import { setLanguage } from "@common/i18n/i18n";
-import { ROM_ANNOTATION_CATALOG } from "@common/roms/romAnnotationCatalog";
+import { ROM_ANNOTATION_CATALOG, romCatalogFileName } from "@common/roms/romAnnotationCatalog";
+import { NEXT_ROM_SETS } from "@common/zxnext/romSets";
 
 const window = { isDestroyed: () => false, isFullScreen: () => false, isFocused: () => true } as any;
 
@@ -440,7 +441,9 @@ describe("the menu in the pseudo-locale", () => {
   const NEVER_TRANSLATED = new Set<string>([
     "Klive",
     ...machineRegistry.flatMap((m) => [m.displayName, ...(m.models ?? []).map((mo) => mo.displayName)]),
-    ...ROM_ANNOTATION_CATALOG.flatMap((m) => m.groups.flat().map((entry) => entry.file))
+    ...ROM_ANNOTATION_CATALOG.flatMap((m) => m.groups.flat().map((entry) => romCatalogFileName(entry))),
+    // --- The NextZXOS releases the ROM Annotations menu groups the Next's ROMs by: product names
+    ...Object.values(NEXT_ROM_SETS).map((set) => `NextZXOS ${set.nextZxOs}`)
   ]);
   const isPseudo = (label: string) => /^\[.*~+\]$/.test(label);
 

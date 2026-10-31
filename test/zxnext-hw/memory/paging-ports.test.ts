@@ -7,7 +7,7 @@ import { hex, results, romBytes, runCode } from "./_memory-helpers";
  * 128K / +3 / Pentagon paging through $7FFD, $DFFD, $1FFD, $EFF7 and NextRegs $8E / $8F (catalogue
  * MEM-003, MEM-007, MEM-008, MEM-010 - MEM-015).
  *
- * Hardware (`_input/next-fpga/src/zxnext.vhd`):
+ * Hardware (`vendor/next-fpga/3.02.01/src/zxnext.vhd`):
  * - ~2549-2560: $7FFD = A15 0, A14 1 (+3 timing), A1-0 01; $DFFD = A15-12 1101; $1FFD = A15-14 00,
  *   A13-12 01; $EFF7 = A15-12 1110, low byte $F7.
  * - ~3743-3746: `port_7ffd_bank` = $DFFD(3:0) & $7FFD(2:0); in Pentagon mode ($8F) bits 4-3 come from

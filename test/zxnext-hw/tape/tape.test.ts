@@ -10,7 +10,7 @@ import { edgeStep, side } from "../audio/_audio-helpers";
  *
  * (TAPE-009 is the audio series' beeper article, `.plans/NEXT_AUDIO_ARTICLES_PLAN.md` §4.)
  *
- * Hardware (`_input/next-fpga/src`):
+ * Hardware (`vendor/next-fpga/3.02.01/src`):
  * - zxnext_top_issue4.vhd ~620-690: the EAR socket goes through `debounce` (COUNTER_SIZE 1 on the
  *   1.75 MHz enable: a level must hold for two enables) and `relaxation` (a 1 held for 64 enables of
  *   512 clocks, about 1.15 ms, falls to 0); idle it is 0.

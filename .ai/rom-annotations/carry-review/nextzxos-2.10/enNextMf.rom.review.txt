@@ -1,0 +1,222 @@
+Carried by scripts/rom-annotations-carry.cjs (byte signature), for hand review.
+From: zxnext/nextzxos-2.08/enNextMf.rom.dis
+To:   zxnext/nextzxos-2.10/enNextMf.rom.dis  (level 0)
+
+== Page 0 (36db4453 -> 112dcf94)
+   labels 421/424, line annotations 1989/1997, data regions 34/34 carried
+
+-- Labels not carried (3)
+$11AA  SHOW_TITLE
+        missing
+$11AE  SHOW_TITLE_COPY
+        missing
+$1BA4  TXT_VERSION_ROM
+        missing
+
+-- Line annotations not carried (8)
+$11AA  Copies the text at HL to $5F00 up to and including its first control code, then draws the 
+        missing
+$11AD  Its start kept
+        missing
+$11AE  One byte.
+        missing
+$11B1  A control code (copied too) ends it
+        missing
+$11B3  Not a control code: again
+        missing
+$11B5  HL = the copy
+        missing
+$1A51  "d:" and $FF at $D827
+        missing
+$1BA4  "0208 enNextMf.rom", 17 characters.
+        missing
+
+-- Data regions carried with another length (1)
+$1FCC  bytes/fill $1FCC-$1FFF
+        carried, 52 -> 43 bytes: check its comment
+
+-- Carried comments to check: a ROM address they name moved or was not placed, or their data changed (91)
+$0010 (was $0010)  RST $10: calls the routine in ROM 0 whose address is the word after the RST, then returns 
+        $1558 -> $1561
+$0018 (was $0018)  RST $18: as RST $10 for ROM 1 ($1576): NextReg $8E = 1 through RAM_ROM1 ($5B3E) for the ca
+        $1576 -> $157F
+$0020 (was $0020)  RST $20: as RST $10 for ROM 2 ($158F): NextReg $8E = 2 through RAM_ROM2 ($5B43), back to R
+        $158F -> $1598
+$0028 (was $0028)  RST $28: as RST $10 for ROM 3 ($15A8): NextReg $8E = 3 through RAM_ROM3 ($5B48), back to R
+        $15A8 -> $15B1
+$006D (was $006D)  The NMI handler: saves the interrupted program's state and quietens the machine. 1. SP is 
+        $123B -> $1244, $1FFD -> ambiguous
+$00EA (was $00EA)  Last $1FFD value
+        $1FFD -> ambiguous
+$0189 (was $0189)  Sets the machine for the menu, after NMI_ENTRY, or again from BACK_TO_MENU with the progra
+        $17CC -> $17D5, $17F2 -> $17FB, $17FD -> $1806
+$032F (was $032F)  Shows the main menu ("NMI Menu": Snapshot, Screenshot, TAP Files, POKEs, Debug Tools, Sett
+        $13E6 -> $13EF
+$0371 (was $0371)  Copies the RAM image ($1856-$1AAF, $025A bytes) to $5B00-$5D59. Changes: BC, DE, HL.
+        $1856 -> $185F, $1AAF -> $1AB8
+$03A0 (was $03A0)  Loads overlay D, c:/nextzxos/enMfD.sys, at $F720 unless it is there already ($12AD), and j
+        $12AD -> $12B6
+$03A9 (was $03A9)  Key V on the status screen (key table at $1477): shows the program's screen until SPACE. $
+        $1477 -> $1480
+$03D7 (was $03D7)  With the program's paging and NextRegs set back ($3F2D = $FE): RAM image at $5B00, stack a
+        $1569 -> $1572
+$03EE (was $03EE)  Key C on the status and breakpoint screens (key tables at $1477 and $14D7): the breakpoint
+        $1477 -> $1480, $14D7 -> $14E0
+$040F (was $040F)  Puts the program's memory back. Entry: carry for ROM 2's snapshot start (MENU_SETUP), none
+        $13A5 -> $13AE, $135A -> $1363, $138B -> $1394
+$0455 (was $0455)  Returns to the interrupted program: 1. Stack at $3916; $5B00-$5DFF back from $3B54; one in
+        $1FFD -> ambiguous, $123B -> $1244
+$04B3 (was $04B3)  $1FFD back
+        $1FFD -> ambiguous
+$04FD (was $04FD)  Port $123B without its paging bits 0 and 2.
+        $123B -> $1244
+$05C5 (was $05C5)  Classifies the ROM the program runs with, for the snapshot: reads the word at $0066 and th
+        $15C1 -> $15CA
+$06D6 (was $06D6)  Saves the program as a .z80 file: 1. The header completed (Z80_HEADER_BUILD). 2. The file 
+        $1227 -> $1230, $1253 -> $125C, $1268 -> $1271
+$0745 (was $0745)  The file closed ($124B, ROM 2's DOS_CLOSE).
+        $124B -> $1254
+$0755 (was $0755)  SPACE in a debugger screen ($1441): the window back to normal ($10C1), then DEBUG_MENU.
+        $1441 -> $144A
+$0758 (was $0758)  Main menu 4, Debug Tools: the menu text at $10D5 ("Debug": Status, Memory Browser, Breakpo
+        $13EC -> $13F5
+$0774 (was $0774)  Debug menu 3, Save 8K Banks: 1. The 64-column screen titled "Save 8K Banks" ($1093); the f
+        $1289 -> $1292
+$07DE (was $07DE)  Shows DOS error A (ROM 0's SHOW_DOS_ERROR), then closes the file ($124B).
+        $124B -> $1254
+$07EF (was $07EF)  The memory browser at HL in page C, $FF for address mode (from the breakpoint screen, $0F3
+        $1419 -> $1422, $14A1 -> $14AA
+$0AF4 (was $0AF4)  Moves the print position to byte L's hex digits (row 3 + L / 16, column 7 + 3 x (L mod 16)
+        $14A1 -> $14AA
+$0B58 (was $0B58)  Reads a hex number of up to B digits at the print position, with a cursor block: 1. The cu
+        $1D2C -> $1D35
+$0BF9 (was $0BF9)  Key 'S' in the memory browser's and the breakpoint screen's key tables ($14A1, $14D7): the
+        $14A1 -> $14AA, $14D7 -> $14E0
+$0BFB (was $0BFB)  The Status screen (Debug menu item 0, from $0766): 1. The hi-res screen titled 'Status' (H
+        $1D33 -> $1D3C, $1DF9 -> $1E02
+$0E76 (was $0E76)  The 83 NextRegs whose values are kept at $3F4E-$3FA0, in that order, ended by 0: read by $
+        $179A -> $17A3, $17B1 -> $17BA
+$0ED6 (was $0ED6)  The Breakpoints screen (Debug menu item 2, from $076D): 1. The hi-res screen titled 'Break
+        $1E91 -> $1E9A
+$0F89 (was $0F89)  Stores breakpoint slot 20 - B with page A and offset HL: refused (carry) for an offset of 
+        $1FFA -> ambiguous
+$0F8A (was $0F8A)  Offset $1FFA or above refused
+        $1FFA -> ambiguous
+$0F8B (was $0F8B)  Below $1F00?
+        $1F00 -> $1F09
+$0FCE (was $0FCE)  Is DE more than 6 above HL? Exit: carry when DE > HL + 6. Keeps HL. Also from $1764.
+        $1764 -> $176D
+$10CA (was $10CA)  Channels K and S get the routine BC, by ROM 1's SM_CHANNELS ($144F) with carry set; then W
+        $144F -> $1458
+$1179 (was $1179)  Appends a 4-character extension to the $FF-ended name at HL unless the name already ends w
+        $1ABF -> $1AC8
+$11F8 (was $11EF)  Copies the bit-7-ended text at HL to DE, ended by $FF. A byte with bit 7 that is $40-$5F w
+        $1AC4 -> $1ACD
+$1215 (was $120C)  HL = the token table at $1AC4
+        $1AC4 -> $1ACD
+$13C1 (was $13B8)  $1B00 bytes
+        $1B00 -> $1B09
+$1422 (was $1419)  The key loop of the debugger's screens. Entry: DE = a key table, HL and BC = the screen's 
+        $1C24 -> $1C2D, $1CD6 -> $1CDF
+$150A (was $1501)  The NMI menu's text, $57 bytes to $1557, copied to PROG by NMI_MENU: the title 'NMI Menu' 
+        $1557 -> $1560
+$15F9 (was $15F0)  A = 2 x the 128K/+3 ROM selected in the saved paging: bit 2 from the $1FFD copy at $3FFF, 
+        $1FFD -> ambiguous, $1629 -> $1632
+$1603 (was $15FA)  $1FFD's bit 1 cleared
+        $1FFD -> ambiguous
+$1605 (was $15FC)  A = the ROM x 2: bit 2 from $1FFD, bit 1 from $7FFD
+        $1FFD -> ambiguous
+$1609 (was $1600)  Maps a byte of the interrupted program's memory so that the Multiface can read or write it
+        $1800 -> $1809, $15C1 -> $15CA, $15D5 -> $15DE
+$163C (was $1633)  Page $0B: below offset $1800 its copy in the Multiface RAM (key $00); from $1800 the page 
+        $1800 -> $1809
+$17FB (was $17F2)  The 37 values for NR_INIT_REGS. Its 6 bytes from $17FD (MMU 0-5) are also copied to the pa
+        $17FD -> $1806
+$185F (was $1856)  The Multiface's RAM image: $025A bytes copied to $5B00-$5D59 by $0371 and $03D7, so each r
+        $1856 -> $185F, $1956 -> $195F
+$18BC (was $18B3)  Runs at $5B5D: ROM 3's error restart with the error code at $5B5E, stored there by $1569, 
+        $1569 -> $1572
+$18BF (was $18B6)  $5B60-$5B72: variables. $5B67 is the copy of port $1FFD ($00); $5B6A holds the stack point
+        $1FFD -> ambiguous, $13FF -> $1408
+$18E9 (was $18E0)  Runs at $5B8A, called at $0284: checks the NextZXOS version and moves the program's memory
+        $1FFD -> ambiguous
+$18EC (was $18E3)  Port $1FFD = 0
+        $1FFD -> ambiguous
+$1941 (was $1938)  $5BE2-$5C1B: 0s up to $5BFF (the stack at $5BFF down), then from $1956 the 48K system vari
+        $1956 -> $195F
+$1ABE (was $1AB5)  IDE_BROWSER filetype list for saving snapshots, after expansion by $11EC (which adds the $
+        $11EC -> $11F5
+$1AC8 (was $1ABF)  ".z80" and $FF: the extension $1179 puts on a snapshot's name when it lacks it (it is pass
+        $1AC2 -> $1ACB
+$1ACD (was $1AC4)  The 4 texts that the bytes $C0-$C3 stand for when $11EC expands a text: the n-th text afte
+        $11EC -> $11F5
+$1B9C (was $1B93)  Plain text printed by length from $12FF: "Version mismatch:" (17), then from $1BA4 "0208 e
+        the data under it changed: check its text
+$1B9C (was $1B93)  Plain text printed by length from $12FF: "Version mismatch:" (17), then from $1BA4 "0208 e
+        $12FF -> $1308, $1BA4 -> missing
+$1BF1 (was $1BE8)  Plain text printed by length: "Error loading enMf" (18, from $133F), " enMf" (5, from $133
+        $133F -> $1348, $1332 -> $133B, $134D -> $1356
+$1C07 (was $1BFE)  Prompt for the snapshot's file name; texts from here end with bit 7 set, $C0-$DF excepted.
+        the data under it changed: check its text
+$1C19 (was $1C10)  Prompt for the bank dump's file name.
+        the data under it changed: check its text
+$1C2D (was $1C24)  INVERSE 1, ">", INVERSE 0, printed at $1425.
+        the data under it changed: check its text
+$1C2D (was $1C24)  INVERSE 1, ">", INVERSE 0, printed at $1425.
+        $1425 -> $142E
+$1C31 (was $1C28)  8 bytes ending with bit 7 set ($1E $05 $0E $1A $00 $16 $17 $00): no reader found.
+        the data under it changed: check its text
+$1C39 (was $1C30)  The memory view's help line and its menu (AT 22,0 first).
+        the data under it changed: check its text
+$1CC5 (was $1CBC)  "Bank" as a highlighted field.
+        the data under it changed: check its text
+$1CCC (was $1CC3)  "Offset" as a highlighted field.
+        the data under it changed: check its text
+$1CD6 (was $1CCD)  "Address" as a highlighted field.
+        the data under it changed: check its text
+$1CDF (was $1CD6)  A space.
+        the data under it changed: check its text
+$1CE0 (was $1CD7)  AT 0,32 and "Enter "; the prompts below follow it.
+        the data under it changed: check its text
+$1CE9 (was $1CE0)  "bank: ": the bank prompt, passed to $0B0F at $08B0.
+        the data under it changed: check its text
+$1CEF (was $1CE6)  "offset: ": the offset prompt, passed to $0B16 at $08C5.
+        the data under it changed: check its text
+$1CF7 (was $1CEE)  "address: ": the address prompt, passed to $0B16 at $08D3.
+        the data under it changed: check its text
+$1D00 (was $1CF7)  "1st offset: ": the first prompt of a range by offset, passed to $0B49 from $09BE.
+        the data under it changed: check its text
+$1D0C (was $1D03)  "1st address: ": the first prompt of a range by address, passed to $0B49 from $09C4.
+        the data under it changed: check its text
+$1D19 (was $1D10)  " last: ": the range's end prompt, passed to $0B4C at $09CB.
+        the data under it changed: check its text
+$1D20 (was $1D17)  " dest: ": the destination prompt, passed to $0B4C at $09D2.
+        the data under it changed: check its text
+$1D27 (was $1D1E)  " Sure?": the confirmation, printed through $108A at $09D9.
+        the data under it changed: check its text
+$1D2D (was $1D24)  AT 0,32 and "H/T? ".
+        the data under it changed: check its text
+$1D35 (was $1D2C)  OVER 1, INVERSE 1 and a space, OVER 0, INVERSE 0, then cursor left: marks the edit positio
+        the data under it changed: check its text
+$1D3C (was $1D33)  The register view's fixed text: register names placed with AT row,column (columns $42 and 
+        the data under it changed: check its text
+$1E02 (was $1DF9)  The register view's help line and menu, then "OS 2.08" at AT 23,75 and "Core " at AT 22,73
+        the data under it changed: check its text
+$1E82 (was $1E79)  "-->".
+        the data under it changed: check its text
+$1E85 (was $1E7C)  "1st bank: ": the bank dump's first-bank prompt, passed to $0B0F at $077A.
+        the data under it changed: check its text
+$1E8F (was $1E86)  "last bank: ": the bank dump's last-bank prompt, passed to $0B0F at $0785.
+        the data under it changed: check its text
+$1E9A (was $1E91)  The breakpoint view's help line and menu, ending with "Global" highlighted at AT 0,64.
+        the data under it changed: check its text
+$1F42 (was $1F39)  "c:/nextzxos/enMf0.sys": the file $12C7 loads; the digit at $5F10 (offset 16) is replaced 
+        the data under it changed: check its text
+$1F42 (was $1F39)  "c:/nextzxos/enMf0.sys": the file $12C7 loads; the digit at $5F10 (offset 16) is replaced 
+        $12C7 -> $12D0
+$1F57 (was $1F4E)  The message for a program that touched the +3 FDC ports (printed at $034C): FLASH 1 "ERROR
+        the data under it changed: check its text
+$1FD5 (was $1FCC)  Unused: $00 to the end of the ROM.
+        the data under it changed: check its text
+
+Page 0 measured: level 0, 3 unlabelled target(s), 0 label(s) without a synopsis, 0 misplaced

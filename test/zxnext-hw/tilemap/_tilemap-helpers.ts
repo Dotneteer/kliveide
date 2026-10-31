@@ -2,7 +2,7 @@ import { hex8, parkedSession, writePalette } from "../ula/_ula-helpers";
 import type { NextTestSession } from "../../harness/zxnext";
 
 /*
- * A transcription of `_input/next-fpga/src/video/tilemap.vhd` and a screen set up to check it pixel by
+ * A transcription of `vendor/next-fpga/3.02.01/src/video/tilemap.vhd` and a screen set up to check it pixel by
  * pixel. Coordinates are the tilemap's: x 0-319 from buffer x 32 (40 columns, 2 buffer pixels each) or
  * 0-639 (80 columns, 1 buffer pixel each), y 0-255 from buffer row 16.
  *

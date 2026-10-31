@@ -42,7 +42,7 @@ clock stretch differs for an M1, and its WAIT circuit adds a wait state to every
 ## The Next's CPU is a T80N, not a Zilog Z80
 
 `Z80_T80N`, defined only by the Next (`zxnext-cpu.c`), switches `z80.c` to the FPGA's T80N
-(`_input/next-fpga/src/cpu/`) where the two differ:
+(`vendor/next-fpga/3.02.01/src/cpu/`) where the two differ:
 - *Flags:* `BIT` takes flag bits 3/5 from the operand, or 0 for `(HL)`/`(IX+d)`, never from MEMPTR.
   `IN r,(C)`, `LD A,I` and `LD A,R` keep flag bits 3/5, and `IN r,(C)` sets parity. `CPI` and friends
   take flag bits 3/5 from the byte. Block I/O keeps the flags of `SUB B,1`. The Z80N block copies

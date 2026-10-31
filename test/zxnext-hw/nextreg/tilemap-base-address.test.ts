@@ -5,7 +5,7 @@ import { createSession } from "../../harness/zxnext";
 /*
  * NextReg $6E / $6F keep a 6-bit page offset plus the bank 7 flag.
  *
- * Hardware (`_input/next-fpga/src/zxnext.vhd` ~5444-5450, readback ~6053):
+ * Hardware (`vendor/next-fpga/3.02.01/src/zxnext.vhd` ~5444-5450, readback ~6053):
  * `nr_6e_tilemap_base <= nr_wr_dat(5 downto 0)`, bit 7 selects bank 7, bit 6 reads 0
  * (tilemap.vhd:57, "5:0 are offsets into 16K").
  */

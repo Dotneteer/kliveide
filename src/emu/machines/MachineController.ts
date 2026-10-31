@@ -35,7 +35,8 @@ import type { IRzxSession, RzxInterruptReason, RzxStop } from "@emu/machines/zxS
 import type { ReverseDebugState, RzxState } from "@state/AppState";
 
 import { toHexa4 } from "@appIde/services/ide-commands";
-import { NEXT_REG_DESCRIPTORS } from "@emu/machines/zxNext/nextRegDescriptors";
+// --- Register names: the union of every core's set (`.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` D5)
+import { nextRegUnion } from "@emu/machines/zxNext/nextRegSets";
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { LiteEvent } from "@emu/utils/lite-event";
@@ -2582,7 +2583,7 @@ export class MachineController implements IMachineController {
     }
 
     const hex2 = (value: number) => `$${value.toString(16).toUpperCase().padStart(2, "0")}`;
-    const name = NEXT_REG_DESCRIPTORS.find((d) => d.id === write.reg)?.description;
+    const name = nextRegUnion().find((d) => d.id === write.reg)?.description;
     const named = name ? `${hex2(write.reg)} (${name})` : hex2(write.reg);
 
     /*

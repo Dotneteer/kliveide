@@ -8,7 +8,7 @@ import { createSession, type AudioSample, type NextTestSession } from "../../har
  * Ports the hardware-visible parts of test/audio/DacPortDevice.step6 ("odd and even addresses are the
  * same") and DacPortEnableGating.step21.
  *
- * Hardware (`_input/next-fpga/src/zxnext.vhd`):
+ * Hardware (`vendor/next-fpga/3.02.01/src/zxnext.vhd`):
  * - ~2469-2518: `port_XX_lsb` is set only for the exact low byte X"0F", X"1F", X"3F", X"4F", X"5F",
  *   X"B3", X"DF", X"F1", X"F3", X"F9", X"FB"; ~2614-2620 build the DAC selects from those alone. An
  *   even address is the ULA port instead (~2538: A0 = 0), and $00 written there sets border 0, EAR 0,

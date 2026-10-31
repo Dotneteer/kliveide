@@ -1,0 +1,3026 @@
+Carried by scripts/rom-annotations-carry.cjs (byte signature), for hand review.
+From: zxnext/nextzxos-2.08/enAltZX.rom.dis
+To:   zxnext/nextzxos-2.10/enAltZX.rom.dis  (level 0)
+
+== Page 0 (574ec214 -> fa6cf261)
+   labels 444/511, line annotations 2249/2521, data regions 19/21 carried
+
+-- Labels not carried (67)
+$01FE  RB_FIRST_LINE
+        missing
+$02E5  EDITOR_REENTER
+        missing
+$035E  RESUME_ROWS
+        missing
+$04B9  KEY_DELETE_BACK
+        missing
+$04E8  KEY_ENTER_NEXT
+        missing
+$04F7  KEY_ENTER_NONE
+        missing
+$04FB  KEY_ENTER_FAIL
+        missing
+$0525  KEY_PROG_END
+        missing
+$052A  KEY_WORD_LEFT
+        missing
+$0535  KEY_WORD_RIGHT
+        missing
+$0540  CURSOR_OFF
+        missing
+$0546  CURSOR_PUT
+        missing
+$0593  TEN_DOWN_BACK
+        missing
+$0685  ROW_DOWN_TEXT
+        missing
+$0753  WORD_LEFT_END
+        missing
+$0772  WORD_RIGHT_NONE
+        missing
+$078C  LINE_START_ROW
+        missing
+$0793  TO_LINE_END
+        missing
+$0795  LINE_END_LOOP
+        missing
+$07D8  EDIT_LINE_ENTER
+        missing
+$07DA  FIND_FIRST_ROW
+        missing
+$0FF1  ROW_END_EMPTY
+        missing
+$100C  ROW_INDENT
+        missing
+$1074  WINDOW_MAIN
+        missing
+$107D  WINDOW_LOWER
+        missing
+$1080  WINDOW_SET
+        missing
+$1356  SWAP_SHOW
+        missing
+$1409  EXPAND_NEXT
+        missing
+$141A  EXPAND_TEXT_SP
+        missing
+$1427  EXPAND_TEXT_PTR
+        missing
+$143D  EXPAND_PROG
+        missing
+$1476  EXPAND_TOKEN
+        missing
+$1487  EXPAND_OWN_TOK
+        missing
+$1496  EXPAND_CHAR
+        missing
+$14A5  EXPAND_GOT
+        missing
+$14A7  IDE_TOKENISER
+        missing
+$14C5  DETOK_LOOP
+        missing
+$1504  TOKENIZE_GO
+        missing
+$1515  TOK_CLEAR_LOOP
+        missing
+$151D  TOK_NEXT_CHAR
+        missing
+$1520  TOK_STATE
+        missing
+$1583  TOK_WORD_END
+        missing
+$1588  TOK_SPLIT
+        missing
+$15B2  TOK_BUF_RESET
+        missing
+$15B8  TOK_BUF_LEN
+        missing
+$15BF  TOK_PASS_END
+        missing
+$15C6  TOK_FLUSH
+        missing
+$15D9  TOK_GET_CHAR
+        missing
+$160D  TOK_GET_MEM
+        missing
+$1626  TOK_BUF_ADD
+        missing
+$1641  TOK_OUT
+        missing
+$165F  TOK_OUT_HOLD
+        missing
+$16A4  TOK_OUT_B
+        missing
+$16A5  TOK_PUT
+        missing
+$16EC  TOK_PUT_STATE
+        missing
+$16F1  TOK_PUT_QUOTE
+        missing
+$16F8  TOK_SPACING
+        missing
+$1716  TOK_SPACE_FLAGS
+        missing
+$1742  TOK_KEYWORD_OUT
+        missing
+$175A  TOK_WRITE
+        missing
+$177A  TOK_WRITE_FOUND
+        missing
+$179A  KEYWORD_LOOKUP
+        missing
+$186D  TOK_GET_BANK
+        missing
+$1881  EXPAND_INIT
+        missing
+$188A  RAM_ROUTINES
+        missing
+$18A3  WORD_TO_BUFFER
+        missing
+$18D4  WORD_FIND
+        missing
+
+-- Line annotations not carried (272)
+$0097  The call as CALL_ROM3's
+        missing
+$00B4  Alternate ROM off; RET to $5B48
+        missing
+$012D  HL = the line at the window's top
+        missing
+$01F6  Not shown: the window starts at E_PPC
+        missing
+$01F9  The rows above emptied
+        missing
+$01FC  Again
+        missing
+$01FE  E_PPC 0: $D74E = 0 and E_PPC = the line $1401 gives.
+        missing
+$02E5  Returns to the editor from NextZXOS ROM 0's menu (its $0E8D, through CALL_ALT_ROM): 1. Wit
+        missing
+$02E8  Zero?
+        missing
+$02F2  The same?
+        missing
+$030C  $D74E = it
+        missing
+$035E  IX, DF_SZ and the buffers; the way on by the mode.
+        missing
+$03D1  IX = the editor's window block
+        missing
+$0401  Run (RUN_MENU)
+        missing
+$0404  The columns applied (COLUMNS_APPLY)
+        missing
+$0407  Carry
+        missing
+$0408  IX = the editor's window block
+        missing
+$04B4  No text: nothing deleted
+        missing
+$04B9  One place left; no move: the cursor shown.
+        missing
+$04BD  Then the cursor shown
+        missing
+$04C0  Then deleted
+        missing
+$04DA  Then an empty one-row line
+        missing
+$04DF  The line changed?
+        missing
+$04E3  Entered
+        missing
+$04E6  Not entered
+        missing
+$04E8  The cursor to the line's end, one place on, a blank row there, column 0.
+        missing
+$04EB  One place on
+        missing
+$04EE  A blank row there
+        missing
+$04F1  Column 0
+        missing
+$04F3  The remembered column back
+        missing
+$04F4  Carry
+        missing
+$04F5  The cursor stored
+        missing
+$04F7  An empty one-row line: only the cursor shown, carry.
+        missing
+$04F8  Carry
+        missing
+$04F9  The cursor shown
+        missing
+$04FB  Not entered: the cursor shown.
+        missing
+$04FC  The cursor shown
+        missing
+$0523  The cursor shown
+        missing
+$0525  Key $01: as KEY_PROG_START with 10000: E_PPC = the line before the first one numbered 1000
+        missing
+$0528  On
+        missing
+$052A  Key $04: the cursor off, back to the start of the previous word (WORD_LEFT); stored with t
+        missing
+$052D  To the start of the previous word
+        missing
+$0530  Not moved: only shown
+        missing
+$0532  A = the column
+        missing
+$0533  The cursor stored
+        missing
+$0535  Key $05: the cursor off, on to the start of the next word (WORD_RIGHT); stored (CURSOR_PUT
+        missing
+$0538  To the start of the next word
+        missing
+$053B  Not moved: only shown
+        missing
+$053D  A = the column
+        missing
+$053E  The cursor stored
+        missing
+$0540  Takes the cursor off the screen: its place (CURSOR_GET), then $1053. Exit: C = the row, B 
+        missing
+$0543  Taken off the screen
+        missing
+$0546  Moves the cursor to row C, column B, remembered column A: E_PPC = $D74E, the cursor's kind
+        missing
+$0549  E_PPC = it
+        missing
+$0593  A row without text: back up one row, the column placed (COL_PLACE_R); no carry.
+        missing
+$0594  One row back up
+        missing
+$0598  B = the remembered column
+        missing
+$0599  Placed in the row's text
+        missing
+$059C  A = the remembered column
+        missing
+$059D  No carry
+        missing
+$059E  The cursor stored
+        missing
+$0654  A report: no move
+        missing
+$0680  Text: on
+        missing
+$0682  No text: the row removed instead
+        missing
+$0685  Leaving the last row of an edited line enters it first; then C below $D749, or the rows sc
+        missing
+$0688  A report: no move
+        missing
+$0753  No more text: no carry.
+        missing
+$0770  DE and HL back
+        missing
+$0772  No word follows: back one place, no carry.
+        missing
+$0775  No carry
+        missing
+$0776  DE and HL back
+        missing
+$078A  No: done
+        missing
+$078C  First row: the start of its text.
+        missing
+$078E  To the start of its text
+        missing
+$0791  Done
+        missing
+$0793  Moves the cursor down (ROW_DOWN) to its line's last row (flags bit 3) and there to just af
+        missing
+$0795  The line's last row?
+        missing
+$0798  HL = the width
+        missing
+$079B  HL = the flags byte
+        missing
+$079C  The line's last row?
+        missing
+$07A0  Down a row
+        missing
+$07A3  Moved: again
+        missing
+$07A5  No: done
+        missing
+$07D8  Enters the edited line the cursor is on (also from NextZXOS ROM 0's RUN_COMMAND at $097C, 
+        missing
+$07DA  The line's first row?
+        missing
+$07DD  HL = the width
+        missing
+$07E0  HL = the flags byte
+        missing
+$07E1  The line's first row?
+        missing
+$07E5  The row above
+        missing
+$07E6  Not above row 0 yet
+        missing
+$07E9  Row 0
+        missing
+$07EB  State 1: the rows above the window
+        missing
+$081D  BC = the word at $D7F3
+        missing
+$0B33  HL = the line at the window's top
+        missing
+$0B36  Stepped back ($13F9)
+        missing
+$0B39  Stored
+        missing
+$0DDA  The line before the top line
+        missing
+$0DDD  PREV_LINE_NUM: HL = its number or 0
+        missing
+$0DE0  Found: it is the top line now
+        missing
+$0E21  $D74E = that line
+        missing
+$0E33  The line after the top line (0 when none)
+        missing
+$0E39  $D74E = that line, or 0
+        missing
+$0E9A  After REM ($EA)?
+        missing
+$0F23  The number's text at $D767
+        missing
+$0F27  Given first by EXPAND_NEXT
+        missing
+$0F51  The place in the program
+        missing
+$0FEA  $D7D7 bit 0: a line's end written
+        missing
+$0FF1  As ROW_END_LINE for a line with no text: only bit 3 of the flags set. Exit: carry, Z.
+        missing
+$0FF4  Bit 3: the line's last row
+        missing
+$100C  Clears row DE's first ($D7D8) cells. Exit: B = ($D7D8), the column after them. Changes: AF
+        missing
+$1074  IX = $D7D9, the window there from WINDOW_MAIN_DATA (main screen, lines 0-20). From $0437.
+        missing
+$1078  Main screen's window
+        missing
+$107D  The window at $D7D9 from WINDOW_LOW_DATA (lines 22-23). From $0425.
+        missing
+$1080  The 8 bytes at HL to $D7D9 (COPY_COUNTED, $045A).
+        missing
+$1356  The line in $D74E, if any, set up; the editor shown.
+        missing
+$139D  Bank 7
+        missing
+$1409  The next character of the program line being expanded (set up by NEXT_LINE_START, PREV_LIN
+        missing
+$141A  $D761 = 0, or $FF after a keyword's last space.
+        missing
+$141D  Not inside quotes
+        missing
+$141E  $D762 = 0
+        missing
+$1421  The last character (bit 7)?
+        missing
+$1425  HL = 0: the text done
+        missing
+$1427  $D765 = the next character, or 0 after the last.
+        missing
+$143D  Nothing pending: the next byte of the line, if any.
+        missing
+$145C  The place in the line
+        missing
+$145F  HL = the quote flag
+        missing
+$1476  $D760 = the byte; a keyword's code?
+        missing
+$1479  $A5 up?
+        missing
+$147D  Codes $A5 up: ROM 3's keyword table
+        missing
+$147F  ROM 3's table from RND
+        missing
+$1482  KEYWORD_TEXT at $D772 with ROM 3
+        missing
+$1487  Codes $81-$A4: this ROM's NEXT_KEYWORDS.
+        missing
+$148B  The word's number
+        missing
+$1490  KEYWORD_TEXT at $D772 with this ROM
+        missing
+$1493  Its text given now
+        missing
+$1496  Any other byte: $D761 = 0, B = it; ENTER ends the expansion.
+        missing
+$1497  $D761 = 0
+        missing
+$149B  ENTER?
+        missing
+$14A0  $D763 = 0: the line done
+        missing
+$14A5  Carry: A is a character.
+        missing
+$14A6  Carry
+        missing
+$14A7  IDE_TOKENISER ($01D8, as documented), reached from NextZXOS ROM 2's IDE_TOKENISER ($1093, 
+        missing
+$14A8  C = the buffer's bank
+        missing
+$14AC  Its address through MMU 1
+        missing
+$14AE  $D7F8 = the buffer's address
+        missing
+$14B1  Bank 0
+        missing
+$14B2  B = 0: tokenise
+        missing
+$14B6  Detokenise: bank 7
+        missing
+$14B7  DE = the tokenised line
+        missing
+$14B8  The expansion reset
+        missing
+$14BB  HL = it
+        missing
+$14BC  The line to expand
+        missing
+$14BF  $D761 = $FF: no space first
+        missing
+$14C2  $D761 = $FF, $D762 = 0
+        missing
+$14C5  The next character, until none is left.
+        missing
+$14C8  HL = the place in the buffer
+        missing
+$14CB  None left: done
+        missing
+$14CD  B = the character
+        missing
+$14CE  The buffer's bank in MMU 1
+        missing
+$14E0  No: the place moves on
+        missing
+$1504  The tokenizer's state set: A = the source, B = the mode. From TOKENISE_MEM too.
+        missing
+$1507  $D7EE = the mode
+        missing
+$1508  SP kept for a return from mode 1
+        missing
+$150C  $D7F7 = the source
+        missing
+$150F  The place written: E_LINE
+        missing
+$1515  $D7EF-$D7F5 cleared.
+        missing
+$151D  The next character: $D7F3 counted, B = it, C = its class (TOK_GET_CHAR).
+        missing
+$1520  State 1 ($D7F1): in a word?
+        missing
+$156B  Still in a word?
+        missing
+$1581  The next character
+        missing
+$1583  Anything else: the buffer written as text (TOK_FLUSH); the character taken again.
+        missing
+$1586  The character again
+        missing
+$1588  With a space in the word buffer ($D7F0 not 0): the characters before it written as text (T
+        missing
+$158C  No: no carry
+        missing
+$158E  The buffer
+        missing
+$15A3  The rest to the buffer's start
+        missing
+$15B2  State bit 0 cleared; the buffer empty.
+        missing
+$15B5  Not in a word
+        missing
+$15B7  Length 0
+        missing
+$15B8  $D7EF = A, the length; no space in it ($D7F0 = 0).
+        missing
+$15BB  No space in it
+        missing
+$15BF  $D7F1 bit 4 cleared: no word passed as text. Exit: carry.
+        missing
+$15C2  Not passing a word
+        missing
+$15C6  Writes the word buffer as text (TOK_OUT for each character, up to the one with bit 7) and 
+        missing
+$15C7  The buffer
+        missing
+$15D9  The next character in B and its class in C, $D7F3 counted: from the banked buffer (TOK_GET
+        missing
+$15E0  Where from?
+        missing
+$160D  From memory: ($D7FA) characters at ($D7F8), read with bank 0; ENTER when none are left.
+        missing
+$1612  None: ENTER
+        missing
+$1616  One fewer
+        missing
+$161A  The place
+        missing
+$161D  Bank 0
+        missing
+$161E  The character
+        missing
+$1620  Bank 7
+        missing
+$1621  The place moved on
+        missing
+$1624  Classed
+        missing
+$1626  Adds character B to the word buffer ($D7E1, up to 9 characters, $D7EF the length), the las
+        missing
+$1629  Full: Z, no carry
+        missing
+$162C  The buffer
+        missing
+$1641  Writes A, joining a '<' or '>' with the character after it: either is held in $D7F5; then 
+        missing
+$1644  Inside quotes?
+        missing
+$1646  Yes: straight on
+        missing
+$1648  In a comment?
+        missing
+$164A  Yes: straight on
+        missing
+$1659  At a statement's start
+        missing
+$165F  Is a '<' or '>' held?
+        missing
+$1660  One held?
+        missing
+$166E  Neither: written
+        missing
+$16A4  A = B, the pair's token.
+        missing
+$16A5  Writes A, keeping the state: ENTER ends the line (in mode 1 a return from TOKENIZE, TOK_WR
+        missing
+$16A9  ENTER: mode 1?
+        missing
+$16AC  The mode
+        missing
+$16AD  BC = the characters read
+        missing
+$16B1  Mode 1: out of TOKENIZE
+        missing
+$16B4  A space held: written
+        missing
+$16C5  Past a statement's start?
+        missing
+$16EC  $D7F1 = A.
+        missing
+$16EF  Written
+        missing
+$16F1  A quote: $D7F1 bit 1 flipped.
+        missing
+$16F4  Bit 1 flipped
+        missing
+$16F6  Stored, written
+        missing
+$16F8  Writes A (TOK_WRITE), dropping the spaces around keywords, with the flags in $D7F2 (bit 0 
+        missing
+$16F9  D = the flags
+        missing
+$1716  $D7F2 = A.
+        missing
+$1742  A keyword, outside quotes, comments and dot commands?
+        missing
+$1755  Stored
+        missing
+$1758  Written
+        missing
+$175A  Writes A at the place in $D7EA and moves it on. Mode 0 ($D7EE = 0): one byte of room made 
+        missing
+$175B  HL = the place
+        missing
+$175E  The mode
+        missing
+$176C  BC = $D7F3 - $D7EF
+        missing
+$176F  DE = the buffer's length
+        missing
+$1772  Less the characters read
+        missing
+$1777  BC = the place's count
+        missing
+$177A  SP back: out of TOKENIZE.
+        missing
+$1795  Stored
+        missing
+$179A  Looks the word in the buffer at $D7E1 up as a keyword, letters in either case, unless a wo
+        missing
+$179D  Passing a word?
+        missing
+$179F  Yes: no carry
+        missing
+$17A0  ROM 3's keywords from RND, code $A5
+        missing
+$17A5  ROM 3's WORD_FIND at $D7B0
+        missing
+$17A8  Found: carry, A = the token
+        missing
+$17A9  This ROM's, from code $D0
+        missing
+$17AE  WORD_FIND, this ROM's
+        missing
+$17D6  The text and its length
+        missing
+$17D9  Its length
+        missing
+$17DD  From memory, mode 0
+        missing
+$17DF  Mode 0
+        missing
+$17E4  BC = the end less it
+        missing
+$1805  Its address again
+        missing
+$180C  The old byte kept
+        missing
+$180D  Bank 0
+        missing
+$180E  ROM 1's $0A05: the line checked
+        missing
+$1814  Bank 7
+        missing
+$1815  The DivMMC byte back
+        missing
+$1819  BC = the characters read
+        missing
+$1855  To $D7B0
+        missing
+$186D  The next character from the banked buffer: ($D7F8) with the bank in $D7F6 paged into MMU 1
+        missing
+$1870  The buffer's bank
+        missing
+$1876  The character
+        missing
+$187C  The place moved on
+        missing
+$187F  NZ
+        missing
+$1881  Resets the expansion of a line ($D763, the place in the program, and $D765, the place in a
+        missing
+$1884  No line
+        missing
+$188A  Copies KEYWORD_TEXT and WORD_FIND ($1896-$18FA, 101 bytes) to $D772-$D7D6, where they run 
+        missing
+$188D  To $D772
+        missing
+$18A3  The string reached: a space first?
+        missing
+$18A6  Bit 0: no space first
+        missing
+$18A8  $D761 = 0
+        missing
+$18AA  The buffer
+        missing
+$18AD  Its text given first
+        missing
+$18D4  Run at $D7B0: compares the word at $D7E1 (its last character with bit 7 set) with the stri
+        missing
+
+-- Data regions not carried (their bytes are code regions now) (2)
+$002F  bytes/fill $002F-$0037
+        no longer one filler byte
+$1A37  bytes/fill $1A37-$3FFF
+        start ambiguous ($2760, $2761, $2762, $2763, ...)
+
+-- Carried comments to check: a ROM address they name moved or was not placed, or their data changed (92)
+$0003 (was $0003)  Returns DE = $0208, the version of this ROM; NextZXOS ROM 2 calls it at $1D05 (through its
+        $0208 -> $0225, $1D05 -> ambiguous, $3E18 -> ambiguous
+$0080 (was $0080)  RST $18's work: calls the routine at the word after the RST in ROM 1: BC = the word, the r
+        $3E8A -> ambiguous
+$008E (was $008E)  ROM 0's $3E8A selects ROM 1 and goes to BC
+        $3E8A -> ambiguous
+$0092 (was $0092)  Alternate ROM off; RET to $3E8A
+        $3E8A -> ambiguous
+$0129 (was $010C)  Rebuilds the editing rows (window rows 0 to ($D73C), bank 7 from $C000) from the program a
+        $0DC3 -> $0E49, $13F9 -> $1482, $1401 -> $148A
+$0146 (was $0129)  The count of rows above the window kept; $D74C = the line before $D74E ($13F9); both buffe
+        $13F9 -> $1482
+$022C (was $020F)  Draws editing rows B to C on the screen, each through $1169. With NZ on entry the cursor i
+        $1169 -> $11EF
+$0233 (was $0216)  One row drawn ($1169); the next, up to A.
+        $1169 -> $11EF
+$0257 (was $023A)  Scrolls the editing rows up by one: row 0 goes to the rows above the window ($0E0F; when t
+        $0E0F -> $0E95
+$0266 (was $0249)  Rows B+1 to ($D73C) moved up by one into rows B to ($D73C) - 1, the screen scrolled the sa
+        $101C -> $10A2
+$0282 (was $0265)  The screen scrolled up ($101C); the new row into the last row.
+        $101C -> $10A2
+$028F (was $0272)  Scrolls the editing rows down by one: the last row above the window comes back ($0DCC; whe
+        $0DCC -> $0E52
+$0295 (was $0278)  Row ($D73C) goes to the rows below the window (BELOW_PUSH; when there is no room there, no
+        $1030 -> $10B6
+$02BB (was $029E)  DE = row B's place; the screen scrolled down ($1030); the new row into row B.
+        $1030 -> $10B6
+$031E (was $02FC)  Starts the editor in mode 2A (0 NextBASIC, 4 the Calculator, 8 a third mode): NextZXOS ROM
+        $2C29 -> ambiguous, $12E4 -> $136A, $0FD3 -> $1059
+$0325 (was $0303)  EDITOR_START with E_PPC kept: from $132F with A = ($D5EC).
+        $132F -> $13B5
+$0359 (was $0337)  $12E4 (ROM 0's $1277 on the window's rows)
+        $12E4 -> $136A, $1277 -> $12FD
+$036A (was $0348)  $0FD3 for all modes.
+        $0FD3 -> $1059
+$03C1 (was $039F)  Handles key A: looked up in the key table at $13B3 (TABLE_DISPATCH); a routine that return
+        $13B3 -> $143C
+$03F8 (was $03D6)  Handles character A as a key in the editor, from NextZXOS ROM 1's $0A45 and $0A90 (through
+        $0A45 -> $0ACB, $0A90 -> $0B16
+$0431 (was $040F)  Key $19: in mode 0 only, the cursor off, editing moved between the upper and the lower scr
+        $1332 -> $13B8
+$043F (was $041D)  Editing in the lower screen: $D5B7 bit 6 set, two editing rows (EDIT_IN_LOWER), $107D, the
+        $107D -> missing
+$0451 (was $042F)  Editing in the upper screen: $D5B7 bit 6 cleared, 21 editing rows (EDIT_IN_MAIN), $1074, t
+        $1074 -> missing
+$0476 (was $0454)  $D745-$D74A from CURS_UPPER_INIT. Also called by NextZXOS ROM 0's RUN_COMMAND ($0975) befo
+        $0975 -> $09FB
+$047C (was $045A)  Copies the bytes at HL, a count first, to DE (also used from $0DC9, $0FD9 and $1083). Exit
+        $0DC9 -> $0E4F, $0FD9 -> $105F, $1083 -> $1109
+$0483 (was $0461)  A character key (not in the key table): codes below $20 only update the cursor's kind ($10
+        $1086 -> $110C
+$04A4 (was $0482)  A control code: the cursor's kind updated ($1086).
+        $1086 -> $110C
+$053A (was $04FE)  Key $1A, mode 0 only: E_PPC = the program's first line (ROM 3's FIND_LINE from 0 and LINE_
+        $1086 -> $110C
+$058B (was $0552)  Shows the cursor at its place (CURSOR_GET, then $1044). Exit: as CURSOR_GET.
+        $1044 -> $10CA
+$072D (was $06C1)  Moves the cursor (row C, column B) one place right within the text (TEXT_AT_OR_RIGHT). Pas
+        $11A9 -> $122F, $100C -> missing
+$0860 (was $0808)  The handler at $5B6C = $0B91
+        $0B91 -> $0C17
+$086F (was $0817)  $14EE
+        $14EE -> $15AC
+$0879 (was $0821)  Not above $0500?
+        $0500 -> $053C
+$08A4 (was $084C)  A report while the line was entered: the reader's state set back ($D5B2-$D5B4 to $D5AF-$D5
+        $14EA -> $15A8
+$08B6 (was $085E)  $14EA
+        $14EA -> $15A8
+$08F4 (was $089C)  $D5B7 bit 7 set again; the cursor stored with the remembered column ($D747), cursor kind 4
+        $108F -> $1115
+$0934 (was $08AE)  Gives the next character of the line being entered, read from the editor's rows (from $15E
+        $15EA -> $16A8, $11DE -> $1264
+$097A (was $08F4)  ROWS_READ_CHAR's table for TABLE_DISPATCH: for each state its number and routine: 2 ROWS_S
+        the data under it changed: check its text
+$0984 (was $08FE)  State 1: the next character from row C of the rows kept above the window ($0E5E). Past the
+        $0E5E -> $0EE4
+$0A16 (was $0990)  Editing in the lower screen: TV_FLAG bit 0 set, the print position at row 0, column 0 ($10
+        $10E1 -> $1167, $07BA -> $0824
+$0A67 (was $09E1)  Inserts character A at the cursor (row C, column B), the rest of the line moving right acr
+        $1169 -> $11EF, $100C -> missing
+$0B6F (was $0AE9)  Redraws the cursor's line from row C to its last row (flags bit 3, the flags coming back f
+        $1169 -> $11EF, $11A9 -> $122F
+$0B8A (was $0B04)  One row below ($11A9); the line's last row?
+        $11A9 -> $122F
+$0BA9 (was $0B23)  Removes window row C (at DE), which holds no text: 1. When it is not its line's first row 
+        $13F9 -> $1482
+$0C84 (was $0BFE)  Not reached: $0BF1 jumps past it
+        $0BF1 -> $0C77
+$0CDA (was $0C54)  DE = HL + ($D73F) x C: row C of the rows from HL (BELOW_ROW_ADDR for $C73B, $0E5E for $CE7
+        $0E5E -> $0EE4
+$0CF9 (was $0C73)  Takes the next row from those kept below the window (rows from $C73B, count at $C738): wit
+        $1401 -> $148A, $0E64 -> $0EEA
+$0D07 (was $0C81)  The line after ($D74C) looked for ($1401).
+        $1401 -> $148A
+$0D15 (was $0C8F)  BC = the line; its rows made from $C73B ($0E64).
+        $0E64 -> $0EEA
+$0D40 (was $0CBA)  Puts the editor row at DE (($D73D) characters, a flags byte, the line number high byte fir
+        $1881 -> missing, $13F9 -> $1482, $0EEE -> $0F74
+$0D53 (was $0CCD)  $1881
+        $1881 -> missing
+$0D97 (was $0D11)  Carries character A, pushed off the end of the window's last row (HL = that row's flags by
+        $0EEE -> $0F74
+$0E06 (was $0D80)  Text in the row from column 0 ($09A2)?
+        $09A2 -> $0A28
+$0E0B (was $0D85)  The character from the row below in at the end ($02C9)
+        $02C9 -> $02E6
+$0E42 (was $0DBC)  DE and BC back; return (with carry when the rows moved, from $0DBB; as entered from $0D78)
+        $0DBB -> $0E41, $0D78 -> $0DFE
+$0E45 (was $0DBF)  ABOVE_INIT's bytes for COPY_COUNTED ($045A): a count (3), then $00 for $CE73 (the count of
+        $045A -> $047C
+$0E49 (was $0DC3)  Empties the stack of rows kept above the window: $CE73 (the count) = 0 and $CE74 (the poin
+        $045A -> $047C, $0136 -> $0153, $01F9 -> missing, $0369 -> $038B
+$0EE4 (was $0E5E)  DE = row C of the stack above the window: $CE76 + ($D73F) x C (ROW_ADDRESS_HL at $0C54). K
+        $0C54 -> $0CDA, $08FE -> $0984, $0B41 -> $0BC7
+$0F74 (was $0EEE)  Do C + 1 rows of ($D73F) bytes fit in $0738 bytes, the size of each row buffer? Exit: carr
+        $0738 -> $07A4
+$0FA5 (was $0F1F)  Sets up the expansion of a line, DE its number and HL its address + 1: the number as four 
+        $1A0A -> $1AD5, $1A27 -> $1AF2
+$1056 (was $0FD0)  ROW_SETUP's bytes for COPY_COUNTED ($045A): a count (2), then 1 for $D7D7 and 5 for $D7D8.
+        $045A -> $047C
+$1059 (was $0FD3)  $D7D7 = 1 and $D7D8 = 5 (the cells a line's later rows are indented by, ROW_INDENT), copie
+        $045A -> $047C, $0348 -> $036A
+$110C (was $1086)  IX + 6 = the cursor's kind from ROM 0's CURSOR_KIND (from MODE, or caps lock), the index i
+        $0482 -> $04A4, $051C -> $0558, $054C -> $0585
+$1149 (was $10C3)  Draws the cursor at line B, column C with OVER 1, so that drawing it twice takes it off: U
+        $07BA -> $0824
+$114D (was $10C7)  ROM 0's $07BA: AT B, C
+        $07BA -> $0824
+$11B1 (was $112B)  The second display file, $2000 on
+        $2000 -> ambiguous
+$11EF (was $1169)  Prints the row at HL on window line C, from column 0, in its syntax colours (ROW_COLOURED)
+        $07BA -> $0824, $0217 -> $0234, $09F1 -> $0A77, $0AC4 -> $0B4A, $0AEE -> $0B74
+$121C (was $1196)  ROM 0's $07BA: AT B, C
+        $07BA -> $0824
+$136A (was $12E4)  Clears the window's screen lines, from its top line (IX + 1) to that + ($D73C), through RO
+        $0337 -> $0359
+$13B2 (was $132C)  Restarts the editor with the mode in $D5EC: START_KEEP_EPPC ($0303), which stores it in $D
+        $0303 -> $0325
+$13B5 (was $132F)  $0303 with the mode in A (from MODE_TOGGLE).
+        $0303 -> $0325
+$13B8 (was $1332)  Moves the editor between the main and the lower screen: $D5B8 = 0, the columns applied (RO
+        $03BD -> $03DF, $041D -> $043F, $042F -> $0451, $010C -> $0129, $0417 -> $0439, $11DA -> $1260
+$13E4 (was $135E)  The editor shown ($010C)
+        $010C -> $0129
+$13EB (was $1365)  Sets the editor's column count: $D73D = L (H = 0) and $D73F = L + 3, the length of a row (
+        $0216 -> $0233
+$1406 (was $1380)  With bank 0: NextZXOS ROM 1's CALL_DMMC_27A8 (the DivMMC memory's $27A8 with BC = HL = 10)
+        $27A8 -> ambiguous, $03B9 -> $03DB
+$1416 (was $1390)  The alternate stack ($5B6A) moved to UDG - 1; with bank 0, NextZXOS ROM 1's CLEAR_CHECK ($
+        $3485 -> ambiguous
+$1429 (was $13A0)  Key $11 (EDIT_KEY_TABLE; NextZXOS ROM 0's LINEIN_KEY_11 at $2A70 too): FLAGS2 ($5C6A) bit 
+        $2A70 -> ambiguous
+$143C (was $13B3)  The editor's key table, read by $039F (through $00E4): for each key a code and the address
+        the data under it changed: check its text
+$143C (was $13B3)  The editor's key table, read by $039F (through $00E4): for each key a code and the address
+        $039F -> $03C1, $00E4 -> $0101, $05E4 -> $061D, $0605 -> $063E, $0627 -> $0660, $0633 -> $066C, $049B -> $04BD, $04C2 -> $04EC, $05A0 -> $05D9, $0576 -> $05AF, $052A -> missing, $0535 -> missing, $04FE -> $053A, $0525 -> missing, $05D7 -> $0610, $05CA -> $0603, $0488 -> $04AA, $0BBE -> $0C44, $0B5F -> $0BE5, $0C16 -> $0C9C, $0BE4 -> $0C6A, $040F -> $0431, $03F7 -> $0419
+$1482 (was $13F9)  PREV_LINE_START for the line before line HL. Exit: carry and HL = its number, the expansio
+        $0D6D -> $0DF3
+$15A8 (was $14EA)  TOKENIZE in mode 1 ($D7EE = 1), from $085E: the line is walked, not written, to find X_PTR
+        $085E -> $08B6
+$15AC (was $14EE)  TOKENIZE in mode 0 ($D7EE = 0), from $0817: the line is written.
+        $0817 -> $086F
+$16A8 (was $15EA)  0: the editor's rows (ROWS_READ_CHAR, $08AE)
+        $08AE -> $0934
+$189A (was $17CF)  Tokenises BC characters at DE (read with bank 0, TOK_GET_MEM) into a line at E_LINE (TOKEN
+        $17CF -> $189A
+$18BA (was $17EF)  IDE_TOKENISER with B = 0: the work space cleared (ROM 3's CLEAR_WS), an ENTER put at E_LIN
+        $0A05 -> $0A8B, $09FB -> $0A81, $32FF -> ambiguous, $04FB -> missing
+$18D3 (was $1808)  The DivMMC byte $32FF = 0, B = it
+        $32FF -> ambiguous
+$18DC (was $1811)  ROM 1's $0A05
+        $0A05 -> $0A8B
+$1900 (was $1835)  No report: more than $04FB characters is an error too.
+        $04FB -> missing
+$191D (was $1852)  Swaps A with the DivMMC memory's byte at $32FF: DMMC_SWAP_CODE copied to $D7B0 and run the
+        $32FF -> ambiguous, $0DBA -> $0E40
+$1AAD (was $19E2)  Prints program lines through RST $28, from the line at HL in bank ($5B65) on (NextZXOS ROM
+        $3612 -> ambiguous, $2800 -> ambiguous
+$1ABF (was $19F4)  A number from $2800 up?
+        $2800 -> ambiguous
+$1AE7 (was $1A1C)  Counts the characters the line at HL expands to (its number and text; LINE_START_NUM, then
+        $03FA -> $041C
+
+== Page 1 (74bc5674 -> c511d3a4)
+   labels 485/612, line annotations 2261/3104, data regions 29/32 carried
+
+-- Labels not carried (127)
+$05A5  SPR_PRINT_BORDR
+        missing
+$061D  SPR_DIM
+        missing
+$0648  SPR_SET
+        missing
+$065A  SPR_SET_GIVEN
+        missing
+$065B  SPR_SET_NEXT
+        missing
+$0676  SPR_SET_ITEM
+        missing
+$06E8  SPR_BANK
+        missing
+$085F  TV_STORE
+        missing
+$08DC  SPR_ERR_B
+        missing
+$093F  SO_RANGE_ERR
+        missing
+$0BAA  SPR_CONTINUE
+        missing
+$0BF2  SC_OPT3
+        missing
+$0C89  SPR_PAUSE
+        missing
+$0CCB  SR_TO
+        missing
+$0F97  TL_TO
+        missing
+$0FAC  TILE_RUN
+        missing
+$101A  TL_NO_AT
+        missing
+$1171  TL_AT_ONLY
+        missing
+$11EF  TILE_BANK_CMD
+        missing
+$1233  ERR_B_BANK0
+        missing
+$1238  TILE_DIM_CMD
+        missing
+$1253  TILE_DIM_SIZE
+        missing
+$12D7  LAYER_OVER_CMD
+        missing
+$12F1  LAYER_AT_CMD
+        missing
+$1323  LAYER_REG_PAIR
+        missing
+$1333  LAYER_BANK_CMD
+        missing
+$1383  LAYER_BANK_NEXT
+        missing
+$13F8  LAYER_ERASE_CMD
+        missing
+$141F  LAYER_ERASE_DEF
+        missing
+$1425  LAYER_ERASE_GO
+        missing
+$14AA  PAL_FORMAT_CMD
+        missing
+$14C9  SPRITE_PAL_CMD
+        missing
+$1589  PAL_SELECT_SET
+        missing
+$158C  PAL_BANK_LOAD
+        missing
+$163C  PAL_DIM_CMD
+        missing
+$1660  PAL_OVER_CMD
+        missing
+$16A4  PLAY_RUN
+        missing
+$1797  PLAY_STEP
+        missing
+$1CD8  PLAY_RPT_L
+        missing
+$1CED  PLAY_RPT_K
+        missing
+$1D02  PLAY_RPT_D
+        missing
+$1D17  PLAY_RPT_M
+        missing
+$1D2C  PLAY_RPT_O
+        missing
+$1E75  PLAY_PERIODS
+        its data region (words $1E75-$1F4C) was not carried
+$1F5B  CAT_STREAM
+        missing
+$2041  CAT_ERROR
+        missing
+$2046  CAT_DOS_ERROR
+        missing
+$2055  CAT_ENTRY_KEEP
+        missing
+$2056  CAT_ENTRY
+        missing
+$20A7  CAT_LFN
+        missing
+$2108  CAT_SHORT_INFO
+        missing
+$21D9  CAT_ASN_NEXT
+        missing
+$2309  CAT_TAB_UNIT_END
+        missing
+$23BE  TAPE_CAT_CODE
+        missing
+$23FA  TAPE_CAT_LAYER
+        missing
+$24D3  COPY_TO_NAME
+        missing
+$24F7  COPY_STREAM_A
+        missing
+$24F9  COPY_TO_STREAM
+        missing
+$251D  COPY_STRM_SET
+        missing
+$2532  COPY_FILES
+        missing
+$2561  COPY_TYPE_BYTE
+        missing
+$2572  COPY_TYPE_PRINT
+        missing
+$258C  COPY_TYPE_END
+        missing
+$2591  COPY_TYPE_CLOSED
+        missing
+$2597  COPY_TYPE_LF
+        missing
+$259E  COPY_TO_FILE
+        missing
+$25A3  COPY_TO_FILE_GO
+        missing
+$25D3  COPY_SOURCE
+        missing
+$25FF  COPY_DEST_NAMED
+        missing
+$2639  DOS_FAIL_QUIET
+        missing
+$2640  COPY_WILD
+        missing
+$264B  COPY_WILD_BAD
+        missing
+$265F  COPY_WILD_GO
+        missing
+$2665  COPY_SPEC_LOOP
+        missing
+$2672  COPY_CLEAR_LOOP
+        missing
+$2676  COPY_CAT_NEXT
+        missing
+$26A3  COPY_GOT_LFN
+        missing
+$26BD  COPY_SHORT_NAME
+        missing
+$26DB  COPY_WILD_ONE
+        missing
+$26F6  COPY_WILD_COPY
+        missing
+$26FC  COPY_WILD_END
+        missing
+$2704  COPY_FILES_DONE
+        missing
+$2789  COPY_OPEN_DEST
+        missing
+$279D  COPY_CLOSE_TEST
+        missing
+$27D8  COPY_ONE_END
+        missing
+$2882  ERASE_CMD
+        missing
+$28D6  ERASE_ASK_KEY
+        missing
+$28E8  ERASE_GO
+        missing
+$28F2  MOVE_CMD
+        missing
+$297B  MOVE_OUT
+        missing
+$2986  MOVE_ATTRIB
+        missing
+$29C0  MOVE_ATTR_OK
+        missing
+$2A0E  PART_NAME_ARG
+        missing
+$2A26  PART_NAME_BAD
+        missing
+$2A37  PART_NAME_UNIT
+        missing
+$2A86  PART_NAME_DONE
+        missing
+$2A89  IMAGE_NAME_ARG
+        missing
+$2AFF  PWD_CMD
+        missing
+$2B34  FORMAT_CMD
+        missing
+$2B5F  FORMAT_LINE
+        missing
+$2B72  FORMAT_LPRINT
+        missing
+$2B96  FORMAT_LPR_END
+        missing
+$2B9A  NAME_ARG
+        missing
+$2BAC  REPORT_BAD_NAME
+        missing
+$2BBD  NAME_TO_F700
+        missing
+$2C2D  CAT_NAME_E090
+        missing
+$2CF7  PRECT_OFF_SCREEN
+        missing
+$2E20  STACK_TO_PLACES
+        missing
+$2E69  STP_END_BANK
+        missing
+$2F19  STP_PRIV_TEST
+        missing
+$2F1C  STP_PRIV_ITEM
+        missing
+$2F51  STP_NAME_END
+        missing
+$2F72  STP_BANK_PLACE
+        missing
+$2F86  STP_T1_DONE
+        missing
+$2F8A  STP_NAME_DIFF
+        missing
+$2F8B  STP_ITEM_SKIP
+        missing
+$2FAC  STP_PRIV_NEXT
+        missing
+$3060  STP_BANK_SCAN
+        missing
+$3084  STP_QUOTE
+        missing
+$3087  STP_PROC_TEST
+        missing
+$308B  STP_PROC
+        missing
+$30AE  STP_NOT_PROC
+        missing
+$30BF  STP_NEXT_STMT
+        missing
+$30D0  STP_CH_ADD_SET
+        missing
+$30F3  STP_DROP
+        conflict ($392F, $392B)
+$3116  KVU_BANK
+        missing
+$317E  FILLER_317E
+        ambiguous ($0156, $0157, $0158, $0159, ...)
+
+-- Line annotations not carried (843)
+$0583  STOP?
+        missing
+$0587  PRINT?
+        missing
+$058B  BORDER?
+        missing
+$058F  PALETTE (token $9D)? Handled at $14C9
+        missing
+$0594  CLEAR?
+        missing
+$0598  DIM?
+        missing
+$059D  BANK (token $9A)?
+        missing
+$05A2  Any other token: SPRITE n and its numbers
+        missing
+$05A5  SPRITE PRINT n and SPRITE BORDER n: n (0 or 1, otherwise report B) into NextReg $15 throug
+        missing
+$05A6  ROM 1's NEXT_CLASS_6: the number after the token
+        missing
+$05B5  The token back
+        missing
+$05B6  Checking stops here
+        missing
+$05B9  Keep the token
+        missing
+$05BA  ROM 1's TAKE_BYTE: A = n
+        missing
+$05DB  ROM 1's NEXTREG_15_MASK: NextReg $15 changed
+        missing
+$060D  ROM 1's SPRITES_RESET
+        missing
+$061D  SPRITE DIM x1,x2,y1,y2: two pairs (ROM 1's NEXT_CLASS_8 each; report C without the ',' bet
+        missing
+$062C  A ',' must follow
+        missing
+$0631  ROM 1's NEXT_CLASS_8: y1,y2
+        missing
+$0640  Checking stops here
+        missing
+$0643  L = $19, the sprites' clip window register
+        missing
+$0645  Set it from the four numbers
+        missing
+$0648  SPRITE n,x,y,p,f,s,h,v (SPRITE followed by a number): n and up to 7 more numbers, any of t
+        missing
+$0657  No places yet
+        missing
+$065A  A number was given: a 1 for its place.
+        missing
+$065B  The place's bit into C; C full (8 places) ends the list.
+        missing
+$0660  ROM 1's STMT_END_TEST: the end?
+        missing
+$066F  At the end: an empty place
+        missing
+$0671  Otherwise a ',' must follow
+        missing
+$0675  Past the ','
+        missing
+$0676  After a ',': another ',' or the end leaves the place empty; otherwise a number.
+        missing
+$0685  End: an empty place
+        missing
+$0687  Another ',': an empty place
+        missing
+$068B  Keep the flags
+        missing
+$068C  ROM 1's CLASS_6: the number
+        missing
+$069B  The flags back; a number given
+        missing
+$06D9  ROM 1's ERROR_128_A
+        missing
+$06E8  SPRITE BANK b [,o,p,n]: copies sprite patterns from RAM bank b to the sprites' pattern mem
+        missing
+$06F7  Only the bank?
+        missing
+$06FB  ROM 1's NEXT_CLASS_8: offset and first slot
+        missing
+$070A  A ',' must follow
+        missing
+$070E  ROM 1's NEXT_CLASS_6: the count
+        missing
+$071D  Checking stops here
+        missing
+$0720  ROM 1's TAKE_BYTE: the count
+        missing
+$072F  0 patterns: report B
+        missing
+$0733  More than 64: report B
+        missing
+$0738  B = the count
+        missing
+$0739  Keep it
+        missing
+$073A  ROM 1's TAKE_BYTE: the first slot
+        missing
+$075A  ROM 1's TAKE_WORD: the offset
+        missing
+$0778  ROM 1's TAKE_BYTE: the bank
+        missing
+$0787  Offset, count and slot back
+        missing
+$0789  ROM 1's BANK_PAGE_ROM3: A = the bank's upper page
+        missing
+$084E  Not given: skip it
+        missing
+$0850  ROM 1's FP_TO_BC: BC = |value|
+        missing
+$085F  The value's word stored; its sign into DE.
+        missing
+$0861  Past 65535: report B
+        missing
+$08D8  Negative where not allowed?
+        missing
+$08DC  Report B (error code $0A, Integer out of range) through ROM 1's ERROR_128_A, after PAGE_RO
+        missing
+$08DF  Error code $0A, report B
+        missing
+$08E1  ROM 1's ERROR_128_A
+        missing
+$093F  Report B (SPR_ERR_B) when a number is 128 or more.
+        missing
+$0941  Is c below b?
+        missing
+$0A26  Hidden: nothing overlaps
+        missing
+$0BAA  SPRITE CONTINUE n [,x1 [TO x2]] [STEP s] [RUN|STOP] [,y1 [TO y2] [STEP t] [RUN|STOP]] [,p1
+        missing
+$0BB9  HL = 1 (n given), DE = 0
+        missing
+$0BBE  ROM 1's OPT_RANGE_STEP: the x part
+        missing
+$0BCD  ROM 1's OPT_RANGE_STEP: the y part
+        missing
+$0BDC  RUN/STOP bits up to bits 7-6
+        missing
+$0BE0  Keep them
+        missing
+$0BE1  ROM 1's OPT_RANGE: the pattern range
+        missing
+$0BF0  Three more places
+        missing
+$0BF2  Three optional numbers: a given bit each into HL (ROM 1's SHIFT_CARRY_HL).
+        missing
+$0BF3  An optional number
+        missing
+$0BF7  Flags back
+        missing
+$0BF8  Its bit into HL: ROM 1's SHIFT_CARRY_HL
+        missing
+$0C09  Next of the three
+        missing
+$0C4B  ROM 1's CLASS_6: the number
+        missing
+$0C89  SPRITE PAUSE n [TO m]: sprites n to m stop moving (their bits in the moving map cleared). 
+        missing
+$0CB3  Off the stack: checking stops here
+        missing
+$0CB8  ROM 1's TAKE_BYTE: n
+        missing
+$0CC7  B = C = n
+        missing
+$0CCB  TO m: the number, the statement's end, both bytes taken.
+        missing
+$0CDA  Off the stack: checking stops here
+        missing
+$0CDF  ROM 1's TAKE_BYTE: m
+        missing
+$0CEE  B = m
+        missing
+$0CF0  ROM 1's TAKE_BYTE: n
+        missing
+$0D17  Past INT
+        missing
+$0D18  ROM 1's STMT_END_TEST: a number?
+        missing
+$0D27  None: a HALT
+        missing
+$0D29  ROM 1's CLASS_6: n
+        missing
+$0D38  Checking stops here
+        missing
+$0D3B  ROM 1's TAKE_BYTE: n
+        missing
+$0F57  ROM 1's STMT_END_TEST: TILE alone?
+        missing
+$0F66  Yes: the whole screen
+        missing
+$0F69  ROM 1's CLASS_8: w,h
+        missing
+$0F7F  AT?
+        missing
+$0F81  TO next?
+        missing
+$0F83  AT given
+        missing
+$0F85  ROM 1's NEXT_CLASS_8: x,y
+        missing
+$0F94  HL back at the flags
+        missing
+$0F97  TO a,b: $5B66 bit 6, two numbers.
+        missing
+$0F99  No: on
+        missing
+$0F9B  TO given
+        missing
+$0F9D  ROM 1's NEXT_CLASS_8: a,b
+        missing
+$0FAC  TILE when running (from $0F99): the screen mode tested, then the AT and TO options.
+        missing
+$0FB4  DE = 0 without
+        missing
+$0FB9  ROM 1's TAKE_BYTE: b
+        missing
+$0FC8  Not below the rows: report B
+        missing
+$0FCB  No: report B
+        missing
+$0FCE  In pixels
+        missing
+$0FD1  D = the screen y
+        missing
+$0FD3  ROM 1's TAKE_BYTE: a
+        missing
+$0FF8  No AT: on
+        missing
+$0FFA  ROM 1's TAKE_WORD: y
+        missing
+$1009  Keep it
+        missing
+$100A  ROM 1's TAKE_WORD: x
+        missing
+$1019  DE = y
+        missing
+$101A  No AT: BC = DE = 0.
+        missing
+$101C  ROM 1's TAKE_BYTE: h
+        missing
+$102B  H = h
+        missing
+$102C  ROM 1's TAKE_BYTE: w
+        missing
+$102D  A = the size's first number (NextZXOS ROM 1's TAKE_BYTE)
+        missing
+$10AC  The transparent colour into A'
+        missing
+$116F  The whole screen
+        missing
+$1171  TILE AT x,y: the map place; the size of the whole screen.
+        missing
+$1180  Checking stops here; the mode tested
+        missing
+$1183  No TO
+        missing
+$1187  ROM 1's TAKE_WORD: y
+        missing
+$1196  Keep it
+        missing
+$1197  ROM 1's TAKE_WORD: x
+        missing
+$11EF  TILE BANK n (from NextZXOS ROM 1's syntax entry for TILE BANK, the word at its $04FB): ban
+        missing
+$11F2  Kept
+        missing
+$11F3  A = the bank (NextZXOS ROM 1's TAKE_BYTE)
+        missing
+$1202  E = the bank
+        missing
+$1203  Is it a bank? (NextZXOS ROM 1's BANK_PAGE_ROM3 past its HL test)
+        missing
+$1233  RAM bank 0 and the normal stack back ($00E8), then ERR_B. Also reached from $07AE.
+        missing
+$1236  Then report B
+        missing
+$1238  TILE DIM bank, offset, width, size (from NextZXOS ROM 1's syntax entry for TILE DIM, the w
+        missing
+$123B  Kept
+        missing
+$123C  A = the tile size (NextZXOS ROM 1's TAKE_BYTE)
+        missing
+$124B  8?
+        missing
+$124D  Yes
+        missing
+$124F  16?
+        missing
+$1251  Neither: report B
+        missing
+$1253  The tile size kept in $5BBE.
+        missing
+$1256  BC = the map width (NextZXOS ROM 1's TAKE_WORD)
+        missing
+$1265  0?
+        missing
+$1267  Yes: report B
+        missing
+$1269  Over 2048?
+        missing
+$126D  Yes: report B
+        missing
+$126F  BC = the width again
+        missing
+$1270  Kept
+        missing
+$1271  BC = the map's offset (NextZXOS ROM 1's TAKE_WORD)
+        missing
+$1280  Kept
+        missing
+$1281  A = the map's bank (NextZXOS ROM 1's TAKE_BYTE)
+        missing
+$1290  HL = the offset
+        missing
+$1291  BC = the width
+        missing
+$1292  D = the bank
+        missing
+$1293  Bank A and offset HL checked (NextZXOS ROM 1's BANK_PAGE_ROM3)
+        missing
+$12D7  LAYER OVER n (from NextZXOS ROM 1's syntax entry for LAYER OVER, the word at its $0517): t
+        missing
+$12E6  0-7 only
+        missing
+$12E8  Otherwise report B
+        missing
+$12EA  To bits 4-2
+        missing
+$12EC  D = the bits kept in NextReg $15
+        missing
+$12EE  NextReg $15 = its other bits OR these ($05DA)
+        missing
+$12F1  LAYER AT x, y (from NextZXOS ROM 1's syntax entry for LAYER AT, the word at its $051F): th
+        missing
+$12F4  A = the second number, y (NextZXOS ROM 1's TAKE_BYTE)
+        missing
+$1303  Below 192?
+        missing
+$1305  No: report B
+        missing
+$1307  Kept
+        missing
+$1308  A = the first number, x (NextZXOS ROM 1's TAKE_BYTE)
+        missing
+$1318  E = x
+        missing
+$1319  A = the mode (1 LoRes)
+        missing
+$131C  L = NextReg $32: LoRes's X offset
+        missing
+$1321  L = NextReg $16: Layer 2's X offset
+        missing
+$1323  NextReg L = E, NextReg L + 1 = D (NextZXOS ROM 1's NEXTREG_PAIR), then return.
+        missing
+$1333  LAYER BANK n, m (from NextZXOS ROM 1's syntax entry for LAYER BANK, the word at its $051B)
+        missing
+$1342  Kept
+        missing
+$1343  A = the first bank (NextZXOS ROM 1's TAKE_BYTE)
+        missing
+$1370  The same bank twice?
+        missing
+$1372  Yes: once is enough
+        missing
+$1374  Is bank E a bank?
+        missing
+$1383  The next bank of each.
+        missing
+$1385  Three times
+        missing
+$1387  E = the first, D = the second
+        missing
+$1388  NextReg $12 = E, $13 = D: Layer 2's banks
+        missing
+$138A  Set them
+        missing
+$1397  A = the fourth number (NextZXOS ROM 1's TAKE_BYTE)
+        missing
+$13A6  Below 192?
+        missing
+$13A8  No: report B
+        missing
+$13AB  E = the fourth
+        missing
+$13AC  Kept
+        missing
+$13AD  A = the third number (NextZXOS ROM 1's TAKE_BYTE)
+        missing
+$13BC  D back
+        missing
+$13BD  D = the third
+        missing
+$13BE  Kept
+        missing
+$13BF  A = the second number (NextZXOS ROM 1's TAKE_BYTE)
+        missing
+$13CE  Below 192?
+        missing
+$13D0  No: report B
+        missing
+$13D3  C = the second
+        missing
+$13D4  Kept
+        missing
+$13D5  A = the first number (NextZXOS ROM 1's TAKE_BYTE)
+        missing
+$13E4  C back
+        missing
+$13E5  B = the first
+        missing
+$13E6  D, E = the third, the fourth
+        missing
+$13E7  L = the clip window's NextReg
+        missing
+$13E8  Written as B, C, D, E (NextZXOS ROM 1's CLIP_SET past its zeros)
+        missing
+$13F8  LAYER ERASE x, y, w, h [, c] (from NextZXOS ROM 1's syntax entry for LAYER ERASE, the word
+        missing
+$13FA  No
+        missing
+$13FC  Past ',', then a number (NextZXOS ROM 1's NEXT_CLASS_6)
+        missing
+$140B  Checking: done; running: a mode that has tiles
+        missing
+$140E  A = the colour (NextZXOS ROM 1's TAKE_BYTE)
+        missing
+$141D  Use it
+        missing
+$141F  No colour: the global transparent one.
+        missing
+$1422  A = the global transparent colour (NextReg $14)
+        missing
+$1425  $5B8A = the colour; the block's numbers.
+        missing
+$1428  A = the fourth number, the height (NextZXOS ROM 1's TAKE_BYTE)
+        missing
+$1437  D = the height
+        missing
+$1438  Kept
+        missing
+$1439  BC = the third number, the width (NextZXOS ROM 1's TAKE_WORD)
+        missing
+$1448  0?
+        missing
+$144A  Yes: report B
+        missing
+$144C  Over 256?
+        missing
+$144F  Yes: report B
+        missing
+$1451  D = the height
+        missing
+$1452  E = the width less 1
+        missing
+$1453  Kept
+        missing
+$1454  A = the second number, y (NextZXOS ROM 1's TAKE_BYTE)
+        missing
+$1463  D = y
+        missing
+$1464  Kept
+        missing
+$1465  A = the first number, x (NextZXOS ROM 1's TAKE_BYTE)
+        missing
+$14AA  PALETTE FORMAT n (from NextZXOS ROM 1's syntax entry for PALETTE FORMAT, the word at its $
+        missing
+$14B9  The ULANext ink mask (NextZXOS ROM 1's SET_ULANEXT)
+        missing
+$14C9  SPRITE PALETTE n ... (jumped to from $0591, the SPRITE command's PALETTE): past PALETTE an
+        missing
+$14EA  Z at ENTER or ':' (NextZXOS ROM 1's STMT_END_TEST)
+        missing
+$14F9  The statement's end: choose the active palette
+        missing
+$14FB  BANK?
+        missing
+$14FD  Yes: load a palette from a bank
+        missing
+$1500  ','?
+        missing
+$1502  Anything else: report C
+        missing
+$1505  Past ',', then two numbers (NextZXOS ROM 1's NEXT_CLASS_8)
+        missing
+$1514  Checking syntax: the statement ends here
+        missing
+$1517  BC = the colour (NextZXOS ROM 1's TAKE_WORD)
+        missing
+$1526  Over 511?
+        missing
+$1529  Yes: report B
+        missing
+$152C  Kept
+        missing
+$152D  A = the entry (NextZXOS ROM 1's TAKE_BYTE)
+        missing
+$153C  Kept
+        missing
+$153D  A = the palette, 0 or 1 (NextZXOS ROM 1's TAKE_BYTE)
+        missing
+$1566  A = the palette, 0 or 1 (NextZXOS ROM 1's TAKE_BYTE)
+        missing
+$1589  NextReg $43 = (NextReg $43 AND E) OR D.
+        missing
+$158C  n BANK b, o: palette n chosen for writing from entry 0; bank b paged at $C000 (checked thr
+        missing
+$159B  Checking syntax: the statement ends here
+        missing
+$159E  BC = the offset (NextZXOS ROM 1's TAKE_WORD)
+        missing
+$15AD  Kept
+        missing
+$15AE  A = the bank (NextZXOS ROM 1's TAKE_BYTE)
+        missing
+$15BD  Kept
+        missing
+$15BE  A = the palette, 0 or 1 (NextZXOS ROM 1's TAKE_BYTE)
+        missing
+$15CD  It chosen for writing
+        missing
+$15D0  From entry 0
+        missing
+$15D4  A = the bank
+        missing
+$15D5  HL = the offset
+        missing
+$15D6  Bank A, offset HL checked (NextZXOS ROM 1's BANK_PAGE_ROM3)
+        missing
+$163C  PALETTE DIM n (from NextZXOS ROM 1's syntax entry for PALETTE DIM, the word at its $0505):
+        missing
+$1660  PALETTE OVER n (from NextZXOS ROM 1's syntax entry for PALETTE OVER, the word at its $050B
+        missing
+$166F  The transparent colour in NextRegs $14 and $4B ($15BE)
+        missing
+$1691  Fine
+        missing
+$1693  Too many: error code $0B, report C (NextZXOS ROM 1's ERROR_128_A)
+        missing
+$16A4  Plays the B strings on the calculator stack together on the three AY chips (TurboSound), i
+        missing
+$16F5  DE = the string, BC = its length (NextZXOS ROM 1's STK_FETCH)
+        missing
+$1737  More strings?
+        missing
+$1790  No: on
+        missing
+$1792  Yes: the AY silenced
+        missing
+$1795  Interrupts back on
+        missing
+$1797  The shortest length waited (PLAY_WAIT), the lengths moved on (PLAY_ADVANCE), the next shor
+        missing
+$1798  Waited
+        missing
+$179B  The lengths moved on, new notes read and started
+        missing
+$179E  The next shortest length
+        missing
+$17A1  Again
+        missing
+$17BC  Both down: is BREAK ignored? (NextZXOS ROM 1's TAPE_BREAK_TEST)
+        missing
+$18EF  No: on
+        missing
+$18F1  Yes: the AY silenced
+        missing
+$18F4  Interrupts on
+        missing
+$18F5  And error code $14, report L (NextZXOS ROM 1's ERROR_128_A)
+        missing
+$191E  The next character
+        missing
+$19F7  4 x the tempo stacked (NextZXOS ROM 1's STACK_BC)
+        missing
+$1A08  Plus 42: TEMPO_CODE's copy
+        missing
+$1A0C  BC = its address
+        missing
+$1A11  BC = the delay (NextZXOS ROM 1's FP_TO_BC)
+        missing
+$1ABC  No: the current length, once
+        missing
+$1AFE  No: store the length
+        missing
+$1B29  Another tie?
+        missing
+$1CC6  Interrupts on
+        missing
+$1CC7  Error code $29, report n (NextZXOS ROM 1's ERROR_128_A)
+        missing
+$1CD8  Error code $27, report l (number too big).
+        missing
+$1CDB  Interrupts on
+        missing
+$1CDC  Error code $27, report l
+        missing
+$1CED  Error code $26, report k (invalid note name).
+        missing
+$1CF0  Interrupts on
+        missing
+$1CF1  Error code $26, report k
+        missing
+$1D02  Error code $1F, report d (too many brackets).
+        missing
+$1D05  Interrupts on
+        missing
+$1D06  Error code $1F, report d
+        missing
+$1D17  Error code $28, report m (note out of range).
+        missing
+$1D1A  Interrupts on
+        missing
+$1D1B  Error code $28, report m
+        missing
+$1D2C  Error code $2A, report o (too many tied notes).
+        missing
+$1D2F  Interrupts on
+        missing
+$1D30  Error code $2A, report o
+        missing
+$1E75  The AY tone periods for notes 21 up, one word each: 108 of them (notes 21-128); note 21's 
+        its data region (words $1E75-$1F4C) was not carried
+$1F5B  The stream, then what follows.
+        missing
+$1F6A  A = the character there
+        missing
+$1F6B  Z at ENTER or ':' (NextZXOS ROM 1's STMT_END_TEST)
+        missing
+$1F7A  No name: everything
+        missing
+$1F7C  EXP?
+        missing
+$1F7E  Yes: everything, with the details
+        missing
+$1F80  ASN?
+        missing
+$1F82  Yes: the drives ($219A)
+        missing
+$1F85  TAB?
+        missing
+$1F87  Yes: the cards ($21E2)
+        missing
+$1F8A  A string: the name (NextZXOS ROM 1's CLASS_A)
+        missing
+$1FA7  DE = the name, BC = its length (NextZXOS ROM 1's STK_FETCH)
+        missing
+$2025  An error
+        missing
+$2033  $D7FF = the directory handle
+        missing
+$2036  HL = entry 1, the first new one
+        missing
+$2039  B = the new entries
+        missing
+$203B  Any?
+        missing
+$203C  Yes
+        missing
+$203E  None: the end
+        missing
+$2041  An error from ROM 2: $17 (nothing matched) is CAT_NONE; the others stop it through NextZXO
+        missing
+$2043  Yes: the end
+        missing
+$2046  RAM bank 0, then the error in A stops it (NextZXOS ROM 1's DOS_ERROR_BANK0). Also reached 
+        missing
+$2055  BC kept, then CAT_ENTRY (from $203C).
+        missing
+$2056  One file: A = the names left, HL = its entry; its long name, date, time and size from IDE_
+        missing
+$2057  The entry's address kept
+        missing
+$2058  DE = the entry
+        missing
+$2059  HL = the name
+        missing
+$205C  BC = $D827: the long name's buffer
+        missing
+$205F  IX = the directory handle
+        missing
+$2063  IDE_GET_LFN (ROM 2)
+        missing
+$2066  An error
+        missing
+$2068  The date, time and size kept (ROM 0's STORE_LFN_INFO)
+        missing
+$206D  RAM bank 0
+        missing
+$2070  BREAK stops it (NextZXOS ROM 1's BREAK_STOP)
+        missing
+$20A5  On
+        missing
+$20A7  The long name from $D827 (NextZXOS ROM 1's PRINT_MSG).
+        missing
+$20AA  Printed (NextZXOS ROM 1's PRINT_MSG)
+        missing
+$20CF  HL = the size's address, kept
+        missing
+$20D0  RAM bank 0
+        missing
+$20D3  EXP given ($5B66 bit 6)?
+        missing
+$20D8  No: the size only
+        missing
+$20DA  The attributes kept
+        missing
+$20DB  8 characters
+        missing
+$20DE  The attributes at DE printed (ROM 3's PRINT_STRING)
+        missing
+$20E1  DE = the time
+        missing
+$20E5  BC = the date
+        missing
+$20E9  Printed (NextZXOS ROM 1's PRINT_DATE_TIME)
+        missing
+$20F8  A space
+        missing
+$20FD  A = the attributes
+        missing
+$20FE  A directory?
+        missing
+$20FF  Yes: no size
+        missing
+$2101  The size in bytes (ROM 0's PRINT_FILE_SIZE)
+        missing
+$2106  On
+        missing
+$2108  Without EXP: "<DIR>" for a directory, otherwise its size in K.
+        missing
+$210A  No: its size
+        missing
+$210C  "<DIR>"
+        missing
+$2112  On
+        missing
+$2117  HL = the size in K
+        missing
+$211B  RAM bank 0
+        missing
+$211E  Spaces for leading zeros
+        missing
+$2120  Printed (NextZXOS ROM 1's NUM_OUT_5)
+        missing
+$21A7  BC = the 256-byte buffer for the description
+        missing
+$21AA  L = $80 + the letter: the long form
+        missing
+$21AC  ROM 2's IDE_DOS_MAPPING
+        missing
+$21AF  An error: $2046
+        missing
+$21B2  Not mapped: the next letter
+        missing
+$21BF  ' '
+        missing
+$21C4  The description, $FF-ended
+        missing
+$21C7  ROM 1's PRINT_MSG, back at $21D6
+        missing
+$21D6  ENTER
+        missing
+$21D9  The next letter; after P, bank 0.
+        missing
+$21DA  The count back
+        missing
+$21DB  The next letter
+        missing
+$21DC  For 16 letters
+        missing
+$220F  ROM 1's NUM_OUT_5, back at $221E
+        missing
+$2262  No: a partition
+        missing
+$2264  The unit
+        missing
+$2265  The free-entry count
+        missing
+$2266  One more
+        missing
+$2268  The unit kept again
+        missing
+$2269  The next entry
+        missing
+$226E  The entry number kept
+        missing
+$226F  HL = the unit
+        missing
+$2272  No blanks before it
+        missing
+$2277  ROM 1's NUM_OUT_5, back at $2286
+        missing
+$22EC  No blanks before it
+        missing
+$22EE  Bank 0
+        missing
+$22F1  ROM 1's NUM_OUT_5, back at $2300
+        missing
+$2300  " free partition entries", two ENTERs
+        missing
+$2306  Bank 7
+        missing
+$2309  The next unit; after the 16th, bank 0.
+        missing
+$2314  Then the free-entry count
+        missing
+$236F  No: other types
+        missing
+$238A  ROM 1's NUM_OUT_5, back at $2399
+        ambiguous ($2373, $23AA)
+$2399  The next header
+        missing
+$23BE  Type 3: CODE, the start (header bytes 13-14), ',' and the length (bytes 11-12).
+        missing
+$23CB  No blanks before it
+        missing
+$23CD  ROM 1's NUM_OUT_5, back at $23DC
+        ambiguous ($2373, $23AA)
+$23E7  No blanks before it
+        missing
+$23E9  ROM 1's NUM_OUT_5, back at $23F8
+        missing
+$23F8  The next header
+        missing
+$23FA  Types 4 and up: ROM 1's SHOW_LAYER_KIND with A = the type; then the next header.
+        missing
+$2409  The next header
+        missing
+$243B  ROM 1's NUM_OUT_5, back at $244A
+        missing
+$24D3  COPY "name" TO "name" (the syntax table's word at $048C, NextZXOS ROM 1, after classes $0A
+        missing
+$24E2  The destination's name goes to $D827
+        missing
+$24E5  From the calculator stack, $FF-ended
+        missing
+$24E8  $10: the destination is a file
+        missing
+$24EA  Kept for COPY_FILES
+        missing
+$24F0  LPRINT?
+        missing
+$24F4  Yes
+        missing
+$24F7  A = the stream.
+        missing
+$24F9  COPY "name" TO #n (the syntax table's word at $0493, after '#' and class 0): A = the strea
+        missing
+$2508  Stream 0-15?
+        missing
+$250A  Yes
+        missing
+$250C  Error code $0A (report B)
+        missing
+$250E  ROM 1's ERROR_128_A
+        missing
+$251D  ROM 1's SCREEN_COLOURS (checking ends there); stream A made current (ROM 3's STREAM_SELECT
+        missing
+$251E  ROM 1's SCREEN_COLOURS, back at $252D
+        missing
+$252D  The stream
+        missing
+$252F  ROM 3's STREAM_SELECT
+        missing
+$2532  Runs a COPY with the destination chosen (A on the stack: a stream 0-15, or $10 for a file 
+        missing
+$2535  The stream, or $10 for a file
+        missing
+$2536  Bank 7
+        missing
+$2539  Kept at $D7FD
+        missing
+$253C  $10: a file?
+        missing
+$253E  Yes: COPY_TO_FILE
+        missing
+$2543  File 0, exclusive-read
+        missing
+$254C  Failed: DOS_FAIL
+        missing
+$255F  The end: close it
+        missing
+$2561  A byte read (C): $1A ends the file; ENTER is printed; LF goes to COPY_TYPE_LF; other codes
+        missing
+$2566  ENTER?
+        missing
+$2568  Printed
+        missing
+$256A  LF?
+        missing
+$256E  Another control code?
+        missing
+$2570  Skipped
+        missing
+$2572  Printed in bank 0; BREAK tested (ROM 1's BREAK_STOP); bank 7.
+        missing
+$2575  ROM 3's PRINT_A
+        missing
+$2578  ROM 1's BREAK_STOP, back at $2587
+        missing
+$2587  Bank 7
+        missing
+$258A  The next byte
+        missing
+$258C  The end: file 0 closed; bank 0.
+        missing
+$258E  ROM 2's DOS_CLOSE
+        missing
+$2591  A failed open or close goes to DOS_FAIL.
+        missing
+$2593  Bank 0
+        missing
+$2597  LF: skipped after an ENTER, printed as ENTER otherwise.
+        missing
+$2599  Then the LF is skipped
+        missing
+$259C  Otherwise printed as ENTER
+        missing
+$259E  COPY to a file: ENTER printed first. Also entered at COPY_TO_FILE_GO.
+        missing
+$25A3  COPY to a file, with the source's name at $E090 and the destination's at $D827 (bank 7, $F
+        missing
+$25A7  No files copied yet
+        missing
+$25AB  The destination's name
+        missing
+$25AE  Parsed
+        missing
+$25B1  Where its file name starts
+        missing
+$25B4  Its user area and drive
+        missing
+$25B8  Its flags
+        missing
+$25BB  Bit 2: a wildcard?
+        missing
+$25BD  No
+        missing
+$25BF  Bank 0
+        missing
+$25C2  Error code $49
+        missing
+$25C4  ROM 1's ERROR_128_A
+        missing
+$25D3  The source's name parsed.
+        missing
+$25D6  Parsed
+        missing
+$25D9  Where its file name starts
+        missing
+$25DC  Its user area and drive
+        missing
+$25E0  Its flags
+        missing
+$25E3  Bit 2: a wildcard?
+        missing
+$25E5  Yes: COPY_WILD
+        missing
+$25E7  Bit 3: a file name?
+        missing
+$25E9  Yes
+        missing
+$25EB  Bank 0
+        missing
+$25EE  Error code $2C
+        missing
+$25F0  ROM 1's ERROR_128_A
+        missing
+$25FF  Neither has a wildcard and the source has a name: a destination with a name is one file (C
+        missing
+$2602  Bit 3: a file name?
+        missing
+$2604  No: COPY_WILD copies into the place
+        missing
+$2623  $D7FD bit 7: quiet?
+        missing
+$2627  Yes: back to the caller
+        missing
+$2629  The error
+        missing
+$262A  ROM 1's DOS_ERROR_BANK0, which reports it
+        missing
+$2639  Quiet: the error code back in A, the stack as COPY_TO_FILE_GO found it, NC.
+        missing
+$263A  The stack as COPY_TO_FILE_GO found it
+        missing
+$263E  NC: failed
+        missing
+$2640  A wildcard in the source, or a destination with no file name: the destination must be a dr
+        missing
+$2643  A file name in the destination?
+        missing
+$2645  Yes: an error
+        missing
+$2647  A drive, user area or path?
+        missing
+$2649  Yes: go on
+        missing
+$264B  Error code $4A (ROM 1's ERROR_128_A).
+        missing
+$264E  Error code $4A
+        missing
+$2650  ROM 1's ERROR_128_A
+        missing
+$265F  The source's name to $DA31, up to and including its $FF.
+        missing
+$2662  copied to $DA31
+        missing
+$2665  One byte.
+        missing
+$2666  One byte
+        missing
+$2669  Up to its $FF
+        missing
+$266C  The catalogue slot
+        missing
+$266F  cleared
+        missing
+$2670  13 bytes
+        missing
+$2672  One byte of the 13 cleared.
+        missing
+$2676  The next matching file (see COPY_WILD).
+        missing
+$2679  is the next search's start
+        missing
+$267C  13 bytes
+        missing
+$2681  The source's name, wildcards and all
+        missing
+$2684  B = 2 slots, C = 2 (LFN flags)
+        missing
+$2687  The buffer
+        missing
+$268A  ROM 2's DOS_CATALOG
+        missing
+$268D  An error: DOS_FAIL
+        missing
+$2690  B = the names found: none?
+        missing
+$2691  IX = the directory handle
+        missing
+$2694  None: COPY_WILD_END
+        missing
+$2696  The name to look up
+        missing
+$2699  The entry found
+        missing
+$269C  BC = the source's file name: the long one goes there
+        missing
+$26A0  ROM 2's IDE_GET_LFN
+        missing
+$26A3  IDE_GET_LFN's result: a failure (or error $17 from COPY_WILD_END) goes to DOS_FAIL.
+        missing
+$26A6  The destination's drive
+        missing
+$26A9  ROM 2's DOS_REF_XDPB: does it have one?
+        missing
+$26AC  DE = the destination's file name
+        missing
+$26B0  Yes: an 8.3 name
+        missing
+$26B2  No: the long name
+        missing
+$26B6  Copied
+        missing
+$26B8  Up to its $FF
+        missing
+$26BB  On
+        missing
+$26BD  An XDPB drive: the 8 name characters up to a space, '.', the 3 type characters up to a spa
+        missing
+$26C0  up to a space
+        missing
+$26C5  Then '.'
+        missing
+$26DB  The names ready: BREAK tested in bank 0 (ROM 1's BREAK_STOP) unless $D7FD bit 7 is set.
+        missing
+$26DF  Yes: no BREAK test
+        missing
+$26E1  Bank 0
+        missing
+$26E4  ROM 1's BREAK_STOP, back at $26F3
+        missing
+$26F3  Bank 7
+        missing
+$26F6  The file copied (COPY_ONE); the next match.
+        missing
+$26F9  The next match
+        missing
+$26FC  No more matches: none copied is error $17 (through COPY_GOT_LFN's JP NC).
+        missing
+$26FF  None?
+        missing
+$2700  Error $17
+        missing
+$2702  Through COPY_GOT_LFN's JP NC
+        missing
+$2704  Every file copied: unless $D7FD bit 7 is set, the count from $D7FE (NUM_OUT_5, blanks befo
+        missing
+$2708  Yes: done
+        missing
+$2709  HL = the count of files
+        missing
+$270E  Blanks before it
+        missing
+$2710  Bank 0
+        missing
+$2713  ROM 1's NUM_OUT_5, back at $2722
+        missing
+$2740  $D7FD bit 7: quiet?
+        missing
+$2744  Yes: no names shown
+        missing
+$2746  The source's name
+        missing
+$2749  ROM 1's PRINT_MSG, back at $2758
+        missing
+$276D  The destination
+        missing
+$2770  Kept
+        missing
+$2771  $D7FD bit 7: quiet?
+        missing
+$2775  Yes: not shown
+        missing
+$2777  ROM 1's PRINT_MSG, back at $2786
+        missing
+$2786  ENTER
+        missing
+$2789  The destination opened as file 1, then the copy.
+        missing
+$278A  File 1, exclusive-write
+        missing
+$278D  Open action 4 (erase it), create action 2
+        missing
+$2790  ROM 2's DOS_OPEN
+        missing
+$2793  Failed: DOS_FAIL
+        missing
+$2795  The bytes copied
+        missing
+$2798  File 1
+        missing
+$279A  ROM 2's DOS_CLOSE
+        missing
+$279D  File 1 closed? Then the metadata file.
+        missing
+$279F  One more file copied
+        missing
+$27B6  The destination's name
+        missing
+$27D8  ENTER unless $D7FD bit 7 is set.
+        missing
+$2882  ERASE "name": deletes the files the name matches (reached from NextZXOS ROM 1's ALT_ROM_28
+        missing
+$2885  To $E090 in bank 7
+        missing
+$2888  Kept
+        missing
+$2889  HL = the string
+        missing
+$288A  ROM 1's COPY_BANK0_TO_7, back at $2899
+        missing
+$28A7  Bit 3 clear: no file name, an error
+        missing
+$28AE  No: delete at once
+        missing
+$28B0  "Erase " (NextZXOS ROM 1's MSG_ERASE)
+        missing
+$28B3  ROM 1's PRINT_LOWER_TEXT, back at $28C2
+        missing
+$28C2  The name
+        missing
+$28C4  Bank 7
+        missing
+$28C7  ROM 1's PRINT_MSG, back at $28D6
+        missing
+$28D6  The name printed: "? (Y/N)" and the key (ROM 1's $2B6F, in ASK_YES_NO).
+        missing
+$28D9  "? (Y/N)" and the key: ROM 1's $2B6F
+        missing
+$28E8  NZ (no) returns; otherwise the files are deleted in bank 7.
+        missing
+$28E9  NZ: not deleted
+        missing
+$28EA  Bank 7
+        missing
+$28ED  ROM 2's DOS_DELETE
+        missing
+$28F0  The result
+        missing
+$28F2  MOVE "a" TO "b" (the syntax table's word at $04E1, after classes $0A and $0C): the second 
+        missing
+$28F5  Its first character
+        missing
+$28F6  '+'?
+        missing
+$28F8  An attribute change
+        missing
+$28FB  '-'?
+        missing
+$2900  The new name to $E090
+        missing
+$2903  Kept
+        missing
+$2904  HL = the string
+        missing
+$2905  ROM 1's COPY_BANK0_TO_7, back at $2914
+        missing
+$2914  Bank 7
+        missing
+$2917  $FF after it
+        missing
+$291A  Bank 0
+        missing
+$291D  The old name
+        missing
+$2920  to $D827
+        missing
+$2923  Kept
+        missing
+$2924  HL = the string
+        missing
+$2925  ROM 1's COPY_BANK0_TO_7, back at $2934
+        missing
+$296C  ROM 1's DOS_ERROR, which reports A
+        missing
+$297B  MOVE "d:" OUT (the syntax table's word at $04DD): the drive letter (DRIVE_ARG) and ROM 2's
+        missing
+$297E  Bank 7
+        missing
+$2981  ROM 2's IDE_DOS_UNMAP
+        missing
+$2984  The result
+        missing
+$2986  MOVE "name" TO "+x" or "-x": the second string must be two characters (error code $47 othe
+        missing
+$2987  less 2
+        missing
+$2989  0: two characters?
+        missing
+$298A  Yes
+        missing
+$298C  Error code $47
+        missing
+$298E  ROM 1's ERROR_128_A
+        missing
+$299F  The letter
+        missing
+$29A3  P?
+        missing
+$29A7  S?
+        missing
+$29AB  A?
+        missing
+$29AF  None of them: error code $47
+        missing
+$29B1  ROM 1's ERROR_128_A
+        missing
+$29C0  The sign and the letter kept; the file's name (NAME_ARG, not empty) to $F700 in bank 7, $F
+        missing
+$29C1  The letter kept
+        missing
+$29C2  The file's name (not empty)
+        missing
+$29C5  to $F700
+        missing
+$29C8  HL = the string
+        missing
+$29C9  ROM 1's COPY_BANK0_TO_7, back at $29D8
+        missing
+$2A0B  The result
+        missing
+$2A0E  Takes a partition, device or image name from the calculator stack (ROM 1's STK_FETCH); a s
+        missing
+$2A1D  256 characters or more?
+        missing
+$2A1F  Yes: an error
+        missing
+$2A21  Fewer than 2?
+        missing
+$2A24  No: go on
+        missing
+$2A26  Error code $2C (ROM 1's ERROR_128_A).
+        missing
+$2A28  ROM 1's ERROR_128_A
+        missing
+$2A37  The digits read (DIGIT_ACC); a '>' must follow them.
+        missing
+$2A38  The start kept
+        missing
+$2A39  HL = the string
+        missing
+$2A3A  The unit, 0 so far
+        missing
+$2A3C  A digit?
+        missing
+$2A3F  No: an image file's name
+        missing
+$2A41  A second digit, if any
+        missing
+$2A44  D = the unit
+        missing
+$2A45  Nothing left?
+        missing
+$2A47  Then not a partition
+        missing
+$2A49  The next character
+        missing
+$2A4C  '>'?
+        missing
+$2A4E  No: an image file's name
+        missing
+$2A50  Drop the start
+        missing
+$2A51  Drop the length
+        missing
+$2A52  The name's length
+        missing
+$2A54  None: the unit alone (NC)
+        missing
+$2A55  More than 16?
+        missing
+$2A57  Yes: an error
+        missing
+$2A59  The unit kept
+        missing
+$2A5A  The length kept
+        missing
+$2A5B  The name to $F752
+        missing
+$2A5E  ROM 1's COPY_BANK0_TO_7, back at $2A6D
+        missing
+$2A6D  The length back
+        missing
+$2A6E  16 - the length
+        missing
+$2A71  None: no padding
+        missing
+$2A73  Spaces in NextZXOS ROM 1
+        missing
+$2A76  BC = the spaces wanted
+        missing
+$2A77  ROM 1's COPY_BANK0_TO_7, back at $2A86
+        missing
+$2A86  Carry: a partition name; D = the unit.
+        missing
+$2A87  D = the unit
+        missing
+$2A89  An image file: the string to $D827 in bank 7 and an $FF after it (the byte at NextZXOS ROM
+        missing
+$2A8A  BC = its length
+        missing
+$2A8B  The image's name to $D827
+        missing
+$2A8E  Kept
+        missing
+$2A8F  ROM 1's COPY_BANK0_TO_7, back at $2A9E
+        missing
+$2A9E  NextZXOS ROM 1's $0004, an $FF
+        missing
+$2AA1  One byte
+        missing
+$2AA4  ROM 1's COPY_BANK0_TO_7, back at $2AB3
+        missing
+$2AFF  PWD (token $9F; the syntax table's word at $038F, class $0E): ROM 1's STREAM_OPT_2 (stream
+        missing
+$2B12  Bank 7
+        missing
+$2B1D  Failed: the error
+        missing
+$2B1F  The path, $FF-ended
+        missing
+$2B23  ROM 1's PRINT_MSG, back at $2B2E
+        missing
+$2B2E  ENTER
+        missing
+$2B31  Carry: done
+        missing
+$2B34  FORMAT (the syntax table's word at $03AC, class $0E), A = the character after it: FORMAT L
+        missing
+$2B36  Yes: FORMAT LINE
+        missing
+$2B38  LPRINT?
+        missing
+$2B3A  Yes: FORMAT LPRINT
+        missing
+$2B3C  ROM 1's CLASS_A, back at $2B4B
+        missing
+$2B4B  The statement's end: checking stops here
+        missing
+$2B4E  Error code $52
+        missing
+$2B50  ROM 1's ERROR_128_A
+        missing
+$2B5F  FORMAT LINE: past LINE, a number (ROM 1's NEXT_CLASS_6), the statement's end; then return.
+        missing
+$2B6E  The statement's end: checking stops here
+        missing
+$2B71  Running: nothing done
+        missing
+$2B72  FORMAT LPRINT: past LPRINT, a string (ROM 1's NEXT_CLASS_A), and when ';' follows another 
+        missing
+$2B81  The character after the string
+        missing
+$2B82  ';'?
+        missing
+$2B84  No
+        missing
+$2B86  Past it
+        missing
+$2B87  ROM 1's CLASS_A, back at $2B96
+        missing
+$2B96  The statement's end ($0149); then return.
+        missing
+$2B99  Running: nothing done
+        missing
+$2B9A  Takes a string from the calculator stack (ROM 1's STK_FETCH): DE = its start, BC = its len
+        missing
+$2BA9  The length
+        missing
+$2BAB  Not 0: done
+        missing
+$2BAC  Error code $2C (ROM 1's ERROR_128_A).
+        missing
+$2BAE  ROM 1's ERROR_128_A
+        missing
+$2BBD  Copies a string from the calculator stack (NAME_ARG) to $F700 in bank 7 (ROM 1's COPY_BANK
+        missing
+$2BC0  The copy's start
+        missing
+$2BC3  Kept
+        missing
+$2BC4  HL = the string
+        missing
+$2BC5  ROM 1's COPY_BANK0_TO_7, back at $2BD4
+        missing
+$2BF3  ROM 1's ERROR_128_A
+        missing
+$2C13  ROM 1's COPY_BANK0_TO_7, back at $2C22
+        missing
+$2C2D  CAT's name to $E090 in bank 7: BC = its length and DE its start (from STK_FETCH, before $1
+        missing
+$2C32  Not 0: copied
+        missing
+$2CC3  ROM 1's ERROR_128_A
+        missing
+$2CF1  Yes: on to the address
+        missing
+$2CF3  LoRes: row 96 or more?
+        missing
+$2CF5  No: on to the address
+        missing
+$2CF7  Error code 4 (ROM 1's ERROR_128_A), SP swapped back first.
+        missing
+$2CFA  Error code 4
+        missing
+$2CFC  ROM 1's ERROR_128_A
+        missing
+$2DC1  ROM 1's RESTORE_5_BYTES, back at $2DD0
+        ambiguous ($36F9, $398C)
+$2E1D  The next entry
+        missing
+$2E20  After the program has changed (from NextZXOS ROM 1's RUN_SETUP at $0B65 and LOADED_PROG_FI
+        missing
+$2E25  ROM 1's PROG_BASE_PPC, back at $2E34
+        missing
+$2E4F  0: a variable entry
+        missing
+$2E69  ROM 1's SET_PROG_BANK.
+        missing
+$2E78  BC = the PPC saved
+        missing
+$2E79  ROM 1's LINE_FIND, back at $2E88
+        missing
+$2E88  ROM 1's LINE_PPC_NEXT, back at $2E97
+        missing
+$2E97  NXTLIN = the line after it
+        missing
+$2E9A  ROM 1's PROG_BASE_PPC, back at $2EA9
+        missing
+$2ECE  Yes: the next entry
+        ambiguous ($3704, $37C6)
+$2ED1  The line number's address
+        missing
+$2ED2  Kept
+        missing
+$2ED3  BC = the line number
+        missing
+$2ED6  ROM 1's SET_PROG_BANK, back at $2EE5
+        missing
+$2EE5  ROM 1's LINE_FIND, back at $2EF4
+        missing
+$2EF4  Gone: STP_T1_GONE
+        missing
+$2EF7  ROM 1's LINE_PPC_NEXT, back at $2F06
+        missing
+$2F06  HL = the line
+        missing
+$2F07  Any statement, starting PRIVATE
+        missing
+$2F0A  ROM 1's FIND_STMT_CHAR, back at $2F19
+        missing
+$2F19  No PRIVATE statement left: STP_T1_GONE.
+        missing
+$2F1C  One item: a hidden number ($0E and 5 bytes) must come next; then the name after it is comp
+        missing
+$2F1F  A hidden number?
+        missing
+$2F21  No: the next statement
+        missing
+$2F3A  No: the next item
+        missing
+$2F4A  No: the next item
+        missing
+$2F4C  Again
+        missing
+$2F4E  Bit 7 into the carry: the last?
+        missing
+$2F4F  No: the next character
+        missing
+$2F51  The name ended: a letter or digit after it is a different name (ROM 1's ALPHANUM).
+        missing
+$2F52  ROM 1's ALPHANUM, back at $2F61
+        missing
+$2F61  A letter or digit: a longer name
+        missing
+$2F72  In a bank: the number's address in the bank (ROM 1's CACHE_TO_BANK).
+        missing
+$2F83  The place written over it
+        missing
+$2F86  The next entry.
+        missing
+$2F8A  Not this name: on to the next ',' (another item) or the statement's end.
+        missing
+$2F8B  One character; a hidden number is passed.
+        missing
+$2F8C  ','?
+        missing
+$2F8E  Yes: the next item
+        missing
+$2F90  ROM 1's STMT_END_TEST, back at $2F9F
+        missing
+$2F9F  The statement's end: the next one
+        missing
+$2FA1  Past it
+        missing
+$2FA2  A hidden number?
+        missing
+$2FA4  No: the next character
+        missing
+$2FA6  Its 5 bytes passed
+        missing
+$2FAC  The next statement, then the next PRIVATE (ROM 1's SKIP_STMT).
+        missing
+$2FAF  Outside quotes
+        missing
+$2FB1  ROM 1's SKIP_STMT, back at $2FC0
+        missing
+$2FC0  Then FIND_STMT_CHAR's result
+        missing
+$2FD5  Entry bytes 7-8
+        missing
+$2FD9  BC = the line number
+        missing
+$2FDC  Bit 15: a direct command?
+        missing
+$2FDE  Yes: dropped
+        missing
+$2FE1  Bank $FE?
+        missing
+$2FE3  Yes: dropped
+        missing
+$2FE6  ROM 1's SET_PROG_BANK, back at $2FF5
+        missing
+$2FF5  ROM 1's LINE_FIND, back at $3004
+        missing
+$3004  Gone: dropped
+        missing
+$3007  ROM 1's LINE_PPC_NEXT, back at $3016
+        missing
+$303D  ROM 1's FIND_STMT_CH, back at $304C
+        missing
+$304C  CH_ADD = the statement
+        missing
+$304F  Not there: dropped
+        missing
+$3052  The type's address
+        missing
+$3054  The type
+        missing
+$3055  Type $22?
+        missing
+$3057  No
+        missing
+$3059  The statement's first character
+        missing
+$305A  BANK?
+        missing
+$305C  No: PROC?
+        missing
+$305E  Outside quotes
+        missing
+$3060  BANK n ...: the statement scanned, quotes skipped, for PROC; ENTER or ':' first drops the 
+        missing
+$3061  ENTER?
+        missing
+$3063  Yes: dropped
+        missing
+$3066  A quote?
+        missing
+$3068  Yes: flip
+        missing
+$306A  Inside quotes?
+        missing
+$306C  Yes: the next
+        missing
+$306E  PROC?
+        missing
+$3070  Yes
+        missing
+$3072  ':'?
+        missing
+$3074  Yes: dropped
+        missing
+$3077  A hidden number?
+        missing
+$3079  No: the next
+        missing
+$307B  Its 5 bytes passed
+        missing
+$307F  CH_ADD past them
+        missing
+$3082  The next
+        missing
+$3084  A quote: C bit 0 flips.
+        missing
+$3087  Not BANK: it must be PROC.
+        missing
+$3089  No: dropped
+        missing
+$308B  PROC: past the name and its bracketed list (ROM 1's CHECK_NAME_PAREN, SKIP_BRACKETS).
+        missing
+$308C  ROM 1's CHECK_NAME_PAREN, back at $309B
+        missing
+$309B  Past '('
+        missing
+$309C  ROM 1's SKIP_BRACKETS, back at $30AB
+        missing
+$30AB  One back
+        missing
+$30AE  Type $4B: ON ERROR must follow; CH_ADD past it.
+        missing
+$30B0  No: the other types
+        missing
+$30B2  The next character
+        missing
+$30B3  ON?
+        missing
+$30B5  No: dropped
+        missing
+$30B7  The next character
+        missing
+$30B8  ERROR?
+        missing
+$30BA  No: dropped
+        missing
+$30BC  CH_ADD past it
+        missing
+$30BF  Other types: the start of the next statement (FIND_STMT_CH with D = 2).
+        missing
+$30C1  ROM 1's FIND_STMT_CH, back at $30D0
+        missing
+$30D0  CH_ADD's offset from PROG_BASE into entry bytes 3-4; the next entry.
+        missing
+$30D1  ROM 1's PROG_BASE_PPC, back at $30E0
+        missing
+$30F3  The entry dropped: its bank byte $FE.
+        conflict ($392F, $392B)
+$30F4  The bank byte
+        conflict ($3930, $392C)
+$3116  In a bank: CACHE_TO_BANK.
+        missing
+$317E  Unused, $00 to the end of the page ($317E-$3FFF).
+        ambiguous ($0156, $0157, $0158, $0159, ...)
+
+-- Data regions not carried (their bytes are code regions now) (3)
+$0156  bytes/fill $0156-$056A
+        no longer one filler byte
+$1E75  words $1E75-$1F4C
+        odd length 255 for words
+$317E  bytes/fill $317E-$3FFF
+        start ambiguous ($0156, $0157, $0158, $0159, ...)
+
+-- Carried comments to check: a ROM address they name moved or was not placed, or their data changed (93)
+$00A7 (was $00A7)  RST $20's stub past its inline word: calls the ROM 3 routine at BC (from $1A0E, which sets
+        $1A0E -> $1AC9
+$00D7 (was $00D7)  Calls the DivMMC memory's routine whose address is the word after the CALL: BC kept at $5B
+        $3EA0 -> ambiguous, $2705 -> missing
+$00E1 (was $00E1)  The DivMMC routine, entered by ROM 1's $3EA0
+        $3EA0 -> ambiguous
+$00E8 (was $00E8)  RAM bank 0 at $C000 with ROM 1 selected (NextReg $8E = $09), then SWAP_SP. The same bytes 
+        $2AEE -> $29DF
+$00FF (was $00FF)  SWAP_SP, then RAM bank 7 at $C000 with ROM 1 selected (NextReg $8E = $79). The same work a
+        $2B05 -> missing
+$011F (was $011F)  HL + 1, CH_ADD = HL, then SKIP_CHAR. The same bytes as ROM 1's SKIP_ONE ($3ECF).
+        $3ECF -> ambiguous
+$0149 (was $0149)  The end of a command's operands, as ROM 1's STATEMENT_END. Running (FLAGS bit 7 set): retu
+        $0956 -> $0882, $11B9 -> $0FC5
+$056B (was $056B)  SPRITE (token $9E): NextZXOS ROM 1's syntax entry for it ($038B) is class $0E with the wor
+        $038B -> ambiguous, $14C9 -> missing
+$05D7 (was $05F8)  Past the token, the statement's end (STATEMENT_END); then $2CFF in 8K page $10 = E (page $
+        $2CFF -> missing, $2000 -> $2057
+$05DB (was $05FC)  Page $10 at $2000
+        $2000 -> $2057
+$05DF (was $0600)  $2CFF = the mode
+        $2CFF -> missing
+$05E3 (was $0604)  The ROM back at $2000
+        $2000 -> $2057
+$05E8 (was $0609)  SPRITE CLEAR: past CLEAR, the statement's end, then ROM 1's SPRITES_RESET (sprites off, al
+        $24DF -> missing, $2CFF -> missing
+$064F (was $069E)  SPRITE n,... at its end: checking stops here (STATEMENT_END). 1. The 8 places' values take
+        $2CFF -> missing
+$0683 (was $06D2)  The ROM back at $2000
+        $2000 -> $2057
+$06D3 (was $0776)  B = the count, C = the first slot, HL = the offset: the bank taken (ROM 1's BANK_PAGE_ROM3
+        $303B -> $38B2
+$0705 (was $07C0)  The ROM back at $2000
+        $2000 -> $2057
+$070D (was $07C8)  Sends a sprite's record to the sprite slot selected by port $303B: its attribute bytes thr
+        $303B -> $38B2
+$0746 (was $0801)  SET_FIELDS' table for SPRITE n,... with n not negative (an anchor or a plain sprite), $080
+        $0801 -> $0746, $0811 -> $0756, $06A6 -> $0657
+$0757 (was $0812)  SET_FIELDS' table for SPRITE -n,... (a relative sprite), $0812-$0822, laid out as SPRITE_F
+        $0812 -> $0757, $0822 -> $0767, $06AF -> $0660
+$0768 (was $0823)  SET_FIELDS' table for SPRITE CONTINUE's 12 places, $0823-$083B, laid out as SPRITE_FIELDS:
+        $0823 -> $0768, $083B -> $0780, $0C19 -> $0B1E
+$07AE (was $0876)  Puts the values at $5C9A into sprite ($5C9A)'s record by the table at HL (SPRITE_FIELDS' l
+        $303B -> $38B2, $2000 -> $2057
+$0860 (was $0934)  SPRITE OVER (a,b [TO c] [,d [,e]]) for ROM 3's SPRITE_OVER_FN ($39AF), which calls here th
+        $39AF -> ambiguous, $1EF2 -> missing
+$0877 (was $094B)  MMU 1 = $FF (the ROM back at $2000-$3FFF) and IY = $5C3A, the system variables.
+        $2000 -> $2057
+$08C7 (was $099B)  SPRITE AT (n,i) for ROM 3's SPRITE_CALL ($39A4, with L = AT), called through its $1EF2: a 
+        $39A4 -> ambiguous, $1EF2 -> missing
+$09C2 (was $0A86)  Selects sprite slot (or pattern slot) A through port $303B, pages 8K page $10 in at $2000 
+        $303B -> $38B2, $2000 -> $2057, $24DF -> missing
+$09C7 (was $0A8B)  SELECT_SPRITE without the port: page $10 at $2000, DE = sprite A's record.
+        $2000 -> $2057
+$09CB (was $0A8F)  DE = $24DF + 16 x A, sprite A's record (page $10 already at $2000).
+        $24DF -> missing, $2000 -> $2057
+$09D7 (was $0A9B)  A = NextReg A, through ports $243B and $253B. Exit: BC = $253B, so an OUT (C) writes the s
+        $243B -> missing, $253B -> missing
+$09DC (was $0AA0)  Read it through port $253B
+        $253B -> missing
+$0A0C (was $0AD0)  IY = sprite A's record, IX = its anchor's: the nearest record at or before it whose byte 3
+        $2000 -> $2057
+$0B3E (was $0C39)  With carry: the sprite's moving bit set ($0C6C), then the ROM back at $2000 (from $06CC).
+        $0C6C -> $0B65, $2000 -> $2057, $06CC -> $067D
+$0B41 (was $0C3C)  The ROM back at $2000
+        $2000 -> $2057
+$0B55 (was $0C5C)  HL = sprite A's byte in the two maps at $2CDF (page $10), one pair of bytes for each 8 spr
+        $2CDF -> $3623
+$0B6E (was $0C75)  Sets the moving bit of sprites C to B, taken by SPR_RANGE (n [TO m] at CH_ADD); MMU 1 = $F
+        $0C75 -> $0B6E
+$0B7D (was $0C84)  The ROM back at $2000
+        $2000 -> $2057
+$0B97 (was $0CAA)  The ROM back at $2000
+        $2000 -> $2057
+$0B9C (was $0CAF)  n [TO m] (A = the character after n): TO m (ROM 1's NEXT_CLASS_6); the statement's end wit
+        $2000 -> $2057
+$0BBE (was $0D01)  Both below 128, B not below C; page $10 at $2000.
+        $2000 -> $2057
+$0BCA (was $0D0D)  Page $10 at $2000
+        $2000 -> $2057
+$0C0F (was $0D76)  Goes through the 128 sprites' maps at $2CDF (page $10), 8 sprites a pair of bytes: each ch
+        $2CDF -> $3623, $2000 -> $2057
+$0C37 (was $0D9E)  The ROM back at $2000
+        $2000 -> $2057
+$0C7D (was $0DE4)  Byte 2's mirror and turn bits (3-1) for a sprite whose look follows its direction, by SPRI
+        $0DC5 -> $0C5E
+$0DCE (was $0F35)  TILE [w,h] [AT x,y] [TO a,b] (token $9B with no sub-keyword: NextZXOS ROM 1's SUBKEY_ENTRI
+        $0F35 -> $0DCE, $11B9 -> $0FC5, $2CD2 -> $3616, $11DD -> $0FDD, $1495 -> $1177
+$0E88 (was $1067)  C = the width in pixels - 1; the screen set up ($2CD2).
+        $2CD2 -> $3616
+$0E9A (was $1079)  Interrupts off; the two banks paged ($11DD).
+        $11DD -> $0FDD
+$0F6C (was $113C)  Yes: Layer 2's next third paged ($2D5E)
+        $2D5E -> $3696
+$0FC5 (was $11B9)  Ends the statement when checking syntax (through $0149: the caller does not come back); ru
+        $2D78 -> $36B0
+$0FC9 (was $11BD)  The screen mode's tile kind ($2D78): carry when it has one
+        $2D78 -> $36B0
+$102D (was $121F)  Back from the other stack ($00EC), then ERR_B. Also reached from $2CE2.
+        $2CE2 -> $3626
+$10F2 (was $138C)  LAYER DIM a, b, c, d (from NextZXOS ROM 1's syntax entry for LAYER DIM, the word at its $0
+        $152D -> missing
+$115F (was $147D)  DE = the screen address of x, y, paged in ($2CD2)
+        $2CD2 -> $3616
+$116D (was $148B)  DE = the next row's ($2D51)
+        $2D51 -> $3689
+$1174 (was $1492)  The screen's paging put back ($2D6E)
+        $2D6E -> $36A6
+$39C6 (was $14E6)  The palette commands, n (0 or 1, the first or second palette) on the calculator stack and 
+        $06D7 -> $0688
+$3A8C (was $1632)  NextReg $43 = (NextReg $43 AND E) OR D: read through $0A9B (port $243B selected, port $253
+        $0A9B -> $09D7, $243B -> missing, $253B -> missing
+$1758 (was $167F)  PLAY a$, b$, ... (from NextZXOS ROM 1's syntax entry for token $A4, the word at its $0392)
+        $0392 -> ambiguous
+$1813 (was $1739)  The tempo's delay ($0B1A) at IY + 40, TEMPO_CODE copied to IY + 42; on every chip the mixe
+        $0B1A -> $0A56
+$1814 (was $173A)  IY + 40 = $0B1A: the tempo's delay at first
+        $0B1A -> $0A56
+$1C38 (was $1B8B)  The routines of PLAY's commands, from the index PLAY_FIND_LETTER gives (0 for none): a not
+        the data under it changed: check its text
+$1C94 (was $1BE7)  Sounds note A (within the octave) on the string's chip and channel: the octave's base adde
+        $0FBF -> missing
+$1FD4 (was $1F4D)  CAT [-] [#n] [name] [EXP] (from NextZXOS ROM 1's syntax entry for CAT, the word at its $03
+        $0371 -> ambiguous, $219A -> $21B4, $21E2 -> $21F0, $231F -> $2308
+$203E (was $1FE7)  A name of two characters, T and ':' (either case): the tape, at $231F.
+        $231F -> $2308
+$204E (was $1FF7)  Yes: the tape ($231F)
+        $231F -> $2308
+$2053 (was $1FFC)  The name to $E090 in bank 7; bank 7 paged in; the buffer's first entry at $F700 cleared (1
+        $2C2D -> missing
+$20EE (was $20BC)  TAB 25 and a space ($245C)
+        $245C -> $2409
+$2177 (was $215D)  The sort's memory freed ($272D: DOS_CATALOG with B = 2, C = $20, A = 0); the free space on
+        $272D -> $2653, $240B -> $23C4, $246F -> $241C
+$2191 (was $2177)  Printed in K, M or G ($240B)
+        $240B -> $23C4
+$219A (was $2180)  Nothing matched: "No files found" ($2475) unless an earlier part of the catalogue was prin
+        $2475 -> $2422
+$21B4 (was $219A)  CAT ASN (CAT followed by the token ASN, from $1F82): past ASN; checking ends at the statem
+        $1F82 -> missing, $2046 -> missing
+$21F0 (was $21E2)  CAT TAB (CAT followed by the token TAB, from $1F87): lists the cards' partitions. Past TAB
+        $1F87 -> missing, $05CC -> $05B7
+$2233 (was $2231)  ROM 2's $05CC (the DivMMC memory's copy routine)
+        $05CC -> $05B7
+$22FB (was $2312)  IDE_PARTITON_READ failed: error $38 is the table's end (CAT_TAB_FREE); $16 ends the unit w
+        $2046 -> missing
+$2308 (was $231F)  CAT of the tape (from $1FF9, for a name of two characters starting 'T:'): lists the header
+        $1FF9 -> $2050
+$2413 (was $2466)  "$() ", bit 7 on the last byte; TAPE_CAT prints it for a string array and from $2467, "() 
+        $2467 -> $2414
+$248E (was $24ED)  COPY "name" TO SCREEN$ or TO LPRINT (the syntax table's word at $048F): stream 3 when the 
+        $048F -> ambiguous
+$26FC (was $27E9)  Copies file 0 into file 1 in 2K pieces through $F700 (bank 7), showing the K copied so far
+        $0800 -> $0745
+$2D12 (was $2947)  MOVE "d:" IN "partition" (the syntax table's word at $04DA): maps drive d to a partition, 
+        $04DA -> ambiguous
+$29C6 (was $2AD5)  CD "path" (token $A0; the syntax table's word at $03B4, after classes $0A and $0C): the pa
+        $03B4 -> ambiguous, $0506 -> ambiguous, $1BE0 -> $1C8D
+$29D6 (was $2AE5)  ROM 2's $1BE0: LOAD and SAVE drives = the default
+        $1BE0 -> $1C8D
+$29DC (was $2AEB)  MKDIR "path" (token $A1; the syntax table's word at $03B8): IDE_PATH with A = 2 (rc_path_m
+        $03B8 -> ambiguous
+$29E9 (was $2AF8)  RMDIR "path" (token $A2; the syntax table's word at $03BC): IDE_PATH with A = 3 (rc_path_d
+        $03BC -> ambiguous
+$3616 (was $2CD2)  Checks a rectangle on the current screen and works out the address of its top-left pixel (
+        $106C -> $0E8D, $147D -> $115F, $121F -> $102D
+$3643 (was $2D0B)  Layer 2: the 16K third holding row D is paged in at $0000-$3FFF for writing (port $123B, L
+        $123B -> missing
+$3659 (was $2D21)  Port $123B = A, the third (bits 7-6; third 3 becomes third 0) and the paging bits, kept at
+        $123B -> missing
+$365F (was $2D27)  Port $123B written; BC = $40FF.
+        $123B -> missing
+$3662 (was $2D2A)  Port $123B, Layer 2 access
+        $123B -> missing
+$3689 (was $2D51)  The next row: DE = HL (this row's start) + C + 1. When that crosses B: Layer 2 pages the n
+        $148B -> $116D
+$3696 (was $2D5E)  Layer 2: D back to $00-$3F, the next third ($5B7B + $40) paged in. Also called from $113C.
+        $113C -> $0F6C
+$369F (was $2D67)  LoRes: on to $6000 on (D + 8); B = $78. Also called from $1148.
+        $1148 -> $0F78
+$36A6 (was $2D6E)  Ends drawing (from $1159 and $1492): LoRes (C = $7F) gives MMU slot 3 page $11 back (LORES
+        $1159 -> $0F89, $1492 -> $1174, $123B -> missing
+$36AE (was $2D76)  Port $123B: paging off
+        $123B -> missing
+$36B0 (was $2D78)  A = the low four bits of $5C7F (the screen mode): 0 returns Z, 1-2 return with carry; 3 an
+        $11BD -> $0FC9, $1319 -> missing
+
+Page 0 measured: level 0, 228 unlabelled target(s), 0 label(s) without a synopsis, 0 misplaced
+Page 1 measured: level 0, 291 unlabelled target(s), 0 label(s) without a synopsis, 0 misplaced

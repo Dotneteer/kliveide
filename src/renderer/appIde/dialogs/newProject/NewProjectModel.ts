@@ -1,5 +1,5 @@
 import type { MachineFavorite } from "@common/machines/machine-favorites";
-import { machineRegistry } from "@common/machines/machine-registry";
+import { machineRegistry, newProjectModelOf } from "@common/machines/machine-registry";
 import type { UiReducer } from "@mvc/core/types";
 import type { IValidationService } from "@renderer/core/ValidationService";
 
@@ -124,7 +124,8 @@ const NO_CONTEXT: NewProjectContext = { favorites: [] };
 
 /**
  * The model a machine type starts on: the running model when that machine runs, else the first of
- * the user's favourite models (the Machine type menu) of that type, else the type's first model.
+ * the user's favourite models (the Machine type menu) of that type, else the type's new-project model
+ * (`newProjectModelOf`: the Next's newest core), else its first model.
  */
 export function defaultModelOf(machineId: string, context: NewProjectContext): string | undefined {
   const type = machineTypeOf(machineId);
@@ -135,7 +136,8 @@ export function defaultModelOf(machineId: string, context: NewProjectContext): s
   }
   const favorite = context.favorites.find((f) => f.machineId === machineId && has(f.modelId));
   if (favorite) return favorite.modelId;
-  return type.models[0].modelId;
+  const preferred = newProjectModelOf(machineId);
+  return has(preferred) ? preferred : type.models[0].modelId;
 }
 
 export function initialState(

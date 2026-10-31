@@ -28,6 +28,7 @@ import { BinaryReader } from "@common/utils/BinaryReader";
 import { TapReader } from "@emu/machines/tape/TapReader";
 import { createSp48Session } from "../../harness/sp48";
 import { createSession as createNextSession } from "../../harness/zxnext";
+import type { NextProfileId } from "@emu/machines/zxNext/nextProfiles";
 import { createSp128Session, type Sp128SessionModel } from "../../harness/sp128";
 import { MEDIA_DISK_A } from "@common/structs/project-const";
 import { createZ88Session } from "../../harness/z88";
@@ -246,8 +247,8 @@ async function sp48Machine(): Promise<Driver> {
  * reads the whole keyboard and writes what it read through banked memory, and counts interrupts on
  * the border.
  */
-async function nextMachine(piI2s = false, tape = false): Promise<Driver> {
-  const s = await createNextSession();
+async function nextMachine(piI2s = false, tape = false, profile?: NextProfileId): Promise<Driver> {
+  const s = await createNextSession({ profile });
   await s.loadCode(`
       .org $8000
 start:
@@ -627,6 +628,8 @@ const cores: [SpikeCoreId, MachineFactory, string[], string?][] = [
   ["zxnext", () => nextMachine(), NEXT_KEYS],
   ["zxnext", () => nextMachine(true), NEXT_KEYS, "zxnext (Pi I2S)"],
   ["zxnext", () => nextMachine(false, true), NEXT_KEYS, "zxnext (tape)"],
+  // --- One representative case per further Next artifact (`.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` P3)
+  ["zxnext", () => nextMachine(false, false, "ks2-30204"), NEXT_KEYS, "zxnext (ks2-30204)"],
   ["sp128", sp128FamilyMachine("sp128", "sp128"), SP128_KEYS],
   ["sp128", sp128FamilyMachine("pentagon", "sp128"), SP128_KEYS, "pentagon"],
   // --- Without its own ROM the Scorpion boots the 128K ROMs, on its own memory map and timing

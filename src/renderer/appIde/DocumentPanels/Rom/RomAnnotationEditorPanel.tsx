@@ -1,4 +1,5 @@
 import { useT } from "@common/i18n/useT";
+import { managedSidecarOf } from "@common/roms/romSidecarPaths";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import classnames from "classnames";
 
@@ -94,7 +95,8 @@ export function romSidecarLocationOf(path: string): RomSidecarLocation {
   const parent = parts[parts.length - 3];
   // --- `src/public/roms` in development, `resources/roms` when packaged
   if (folder === "roms" && (parent === "public" || parent === "resources")) return "shipped";
-  return "custom";
+  // --- A ROM set's folder (`roms/zxnext/<set>/`) and its nested working copies
+  return managedSidecarOf(path)?.location ?? "custom";
 }
 
 /** Whether a path names a file on disk rather than one relative to Klive's public folder. */

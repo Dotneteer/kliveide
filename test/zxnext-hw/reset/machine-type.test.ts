@@ -5,7 +5,7 @@ import { createSession } from "../../harness/zxnext";
 /*
  * NextReg $03 - machine type, display timing, user lock, config mode (catalogue RST-007 - RST-012).
  *
- * Hardware (`_input/next-fpga/src/zxnext.vhd` ~5100-5130, read mux ~5840):
+ * Hardware (`vendor/next-fpga/3.02.01/src/zxnext.vhd` ~5100-5130, read mux ~5840):
  * - read: palette_sub_idx (7) & machine_timing (6-4) & user_dt_lock (3) & machine_type (2-0).
  * - timing changes only when bit 7 = 1, bit 3 = 0 and the lock is off; 000/001 -> 001 (48K),
  *   010 -> 128K, 011 -> +3, 100 -> Pentagon, 101-111 -> 011.

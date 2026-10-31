@@ -13,6 +13,7 @@ const { cpuExports, debugLoopExports, debugLoopVolatileSymbols, Z80_ACCESS_LOG_V
 const { Z80_CONDITION_EXPORTS, Z80_CONDITION_VOLATILE_SYMBOLS } = require("./z80-condition-exports.cjs");
 const { Z80_HISTORY_EXPORTS, Z80_HISTORY_VOLATILE_SYMBOLS } = require("./z80-history-exports.cjs");
 const { Z80_PROFILE_EXPORTS, Z80_PROFILE_VOLATILE_SYMBOLS } = require("./z80-profile-exports.cjs");
+const { ZXNEXT_ARTIFACTS, artifactDefines } = require("./zxnext-artifacts.cjs");
 
 /**
  * Statics a Klive state file leaves out (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` trap 10):
@@ -38,6 +39,11 @@ const ZXNEXT_VOLATILE_SYMBOLS = [
   // --- The tape's data: media the IDE uploads, not machine state (`.plans/NEXT_TAPE_PLAN.md` D3);
   // --- the playback position and the block table stay in the state
   "sp48TapeData",
+  // --- The ROM set's tape routines: host-owned facts about the ROMs (`.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` D6)
+  "zxnextTapeRomLoadBytes",
+  "zxnextTapeRomLoadBytesInvalidHeader",
+  "zxnextTapeRomLoadBytesResume",
+  "zxnextTapeRomSaveBytes",
   "zxnextNextRegHit",
   "zxnextNextRegHitOrigin",
   "zxnextNextRegHitNew",
@@ -247,6 +253,7 @@ const productionExports = [
   "zxnextTapeGetLoadStartCount",
   "zxnextTapeGetSaveStartCount",
   "zxnextTapeGetInputBit",
+  "zxnextTapeSetRomRoutines",
   "zxnextTapeSaveDataPtr",
   "zxnextTapeGetSaveDataCapacity",
   "zxnextTapeGetSavedBlockCount",
@@ -515,7 +522,13 @@ function normalizeOptimization(optimization = process.env.ZXNEXT_WASM_OPTIMIZATI
   return optimization;
 }
 
+/** The output path of an artifact entry (`zxnext-artifacts.cjs`) */
+function artifactOutput(entry) {
+  return resolve(wasmDistDirectory, entry.artifact);
+}
+
 function buildZxNextWasm({
+  artifact = ZXNEXT_ARTIFACTS[0],
   compiler = process.env.ZXNEXT_WASM_CC || "clang",
   mode = process.env.ZXNEXT_WASM_BUILD_MODE || "production",
   optimization = process.env.ZXNEXT_WASM_OPTIMIZATION || "speed",
@@ -525,17 +538,19 @@ function buildZxNextWasm({
   const buildMode = normalizeBuildMode(mode);
   const optimizationProfile = normalizeOptimization(optimization);
   const selected = buildModes[buildMode];
-  const selectedOutput = outputPath ?? selected.output;
+  const selectedOutput = outputPath ?? (artifact === ZXNEXT_ARTIFACTS[0] ? selected.output : artifactOutput(artifact));
   // --- A real build is staged and renamed into place (see `publishWasmOutput`)
   const compiledOutput = stagingWasmOutput(selectedOutput, run === spawnSync);
-  const releaseBuildLock = selectedOutput === productionOutput
+  const releaseBuildLock = dirname(selectedOutput) === wasmDistDirectory
     ? acquireZxNextWasmBuildLock()
     : () => {};
   try {
+    // --- Stale artifacts go; every artifact of the list stays (`zxnext-artifacts.cjs`)
     if (existsSync(wasmDistDirectory) && dirname(selectedOutput) === wasmDistDirectory) {
+      const known = new Set(ZXNEXT_ARTIFACTS.map(artifactOutput));
       for (const entry of readdirSync(wasmDistDirectory)) {
         const candidate = resolve(wasmDistDirectory, entry);
-        if (entry.endsWith(".wasm") && candidate !== selectedOutput) {
+        if (entry.endsWith(".wasm") && candidate !== selectedOutput && !known.has(candidate)) {
           unlinkSync(candidate);
         }
       }
@@ -552,6 +567,8 @@ function buildZxNextWasm({
       "-Wl,--export-memory",
       `-Wl,--initial-memory=${selected.initialMemory}`,
       `-Wl,--max-memory=${selected.initialMemory}`,
+      // --- Which Next this artifact is (`zxnext-profile.h`)
+      ...artifactDefines(artifact),
       ...selected.exports.filter(name => name !== "memory").map(name => `-Wl,--export=${name}`),
       ...selected.sources,
       "-o",
@@ -576,6 +593,7 @@ function buildZxNextWasm({
       compiler,
       args,
       mode: buildMode,
+      artifact: artifact.artifact,
       optimization: optimizationProfile,
       exports: selected.exports,
       source: selected.sources[0],
@@ -661,8 +679,9 @@ function sleepSync(ms) {
   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 }
 
+/** Every artifact of the list, one after another (`zxnext-artifacts.cjs`) */
 function buildAllZxNextWasm(options = {}) {
-  return [buildZxNextWasm(options)];
+  return ZXNEXT_ARTIFACTS.map((artifact) => buildZxNextWasm({ ...options, artifact, outputPath: undefined }));
 }
 
 if (require.main === module) buildAllZxNextWasm();
@@ -674,6 +693,8 @@ function toPosixRelative(from, to) {
 }
 
 module.exports = {
+  ZXNEXT_ARTIFACTS,
+  artifactOutput,
   ZXNEXT_VOLATILE_SYMBOLS,
   buildZxNextWasm,
   buildAllZxNextWasm,

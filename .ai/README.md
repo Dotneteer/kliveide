@@ -20,7 +20,7 @@ This folder stores durable notes for future AI-assisted work in this repository.
   the bank/offset/address model that every offset depends on, the NEX container layout,
   the full sidecar schema and the rules its loader enforces, a verified recipe for
   producing raw and annotated listings, the official Next register and I/O port
-  references in `_input/next-fpga/` and how to query them, and the rules that stop a
+  references in `vendor/next-fpga/3.02.01/` and how to query them, and the rules that stop a
   hand-written sidecar destroying the breakpoints stored beside the annotations.
 - **Before writing anything into a shipped ROM sidecar (`src/public/roms/*.rom.dis`), read
   `rom-annotations/README.md` and `rom-annotations/PROVENANCE.md`.** The ROM annotations are

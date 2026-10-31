@@ -27,5 +27,5 @@ headless-vs-browser comparison; the probes pin the parts whose position the hard
 **Must not see:** stripes that move from row 144 down, a row split between the two scrolls, bars at other rows, a sprite that stands still or
 jumps, or anything but black in the bottom border.
 
-Source: _input/next-fpga/src: copper.vhd, video/zxula_timing.vhd, video/layer2.vhd,
+Source: vendor/next-fpga/3.02.01/src: copper.vhd, video/zxula_timing.vhd, video/layer2.vhd,
 video/sprites.vhd, zxnext.vhd.

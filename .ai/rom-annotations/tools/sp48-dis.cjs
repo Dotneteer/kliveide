@@ -1,7 +1,8 @@
 // Lists a Spectrum ROM page through Klive's own disassembler with the decoding the IDE gives that page
 // (prepareRomDisassembler: for a 48K BASIC page, RST $08 report codes and RST $28 calculator codes)
 // (the D4-sanctioned source). The 48K ROM by default; another ROM by its sidecar's source.fileName,
-// or ROM=<file in src/public/roms> without a sidecar.
+// or ROM=<path under src/public/roms> without a sidecar (ROM=zxnext/nextzxos-2.08/enNextZX.rom; a bare
+// Next name such as enNextZX.rom means the nextzxos-2.08 set's, as in the IDE).
 // Usage: [PAGE=<n>] node .ai/rom-annotations/tools/sp48-dis.cjs <from hex> <to hex> [sidecar.dis]
 // With a sidecar, its regions are used (data shown as .defb/.defw) - for a sidecar that `inherits`,
 // merged with the inherited sidecars' byte-bound regions, as the IDE shows them; without, all code.
@@ -65,7 +66,11 @@ const { prepareRomDisassembler } = require(join(root, "src/renderer/appIde/annot
 const { knownRomPageKind, romPageIdentity } = require(join(root, "src/common/roms/romIdentity.ts"));
 const { parseAnnotations } = require(join(root, "src/renderer/appIde/annotations/programAnnotations.ts"));
 const { withInheritedEntries } = require(join(root, "src/renderer/appIde/annotations/romInheritance.ts"));
+const { canonicalShippedSidecar } = require(join(root, "src/common/roms/romSidecarPaths.ts"));
 const ROMS = join(root, "src/public/roms");
+// --- A shipped ROM or sidecar by its path under src/public/roms; a bare Next name is nextzxos-2.08's
+const shippedRom = (name) => join(ROMS, canonicalShippedSidecar(`${name}.dis`).replace(/\.dis$/i, ""));
+const shippedSidecar = (name) => join(ROMS, canonicalShippedSidecar(name));
 (async () => {
   const [from, to] = process.argv.slice(2, 4).map((x) => parseInt(x, 16));
   const sidecarFile = process.argv[4];
@@ -74,15 +79,15 @@ const ROMS = join(root, "src/public/roms");
   // --- PAGE=<n>: a page of a ROM file of several 16K pages (enNextZX.rom has four); the sidecar's bank n
   const page = Number(process.env.PAGE ?? 0);
   const bank = String(page);
-  const bytes = new Uint8Array(readFileSync(join(ROMS, romFile))).subarray(page * 0x4000, (page + 1) * 0x4000);
+  const bytes = new Uint8Array(readFileSync(shippedRom(romFile))).subarray(page * 0x4000, (page + 1) * 0x4000);
   // --- A merged (inherited) page's regions come parsed: decoded data regions carry their decoding as the type
   const types = { disassemble: MemorySectionType.Disassemble, bytes: MemorySectionType.ByteArray, words: MemorySectionType.WordArray, skip: MemorySectionType.Skip,
     text: MemorySectionType.ByteArray, defc: MemorySectionType.ByteArray, fill: MemorySectionType.ByteArray, graphic: MemorySectionType.ByteArray };
   let regions = sidecar?.banks[bank]?.regions;
   if (sidecar?.inherits?.length) {
     const merged = await withInheritedEntries(parseAnnotations(JSON.stringify(sidecar)).annotations, (p) => (p === page ? bytes : undefined), async (name, p) => ({
-      annotations: parseAnnotations(readFileSync(join(ROMS, name), "utf8")).annotations,
-      bytes: new Uint8Array(readFileSync(join(ROMS, name.replace(/\.dis$/i, "")))).subarray(p * 0x4000, (p + 1) * 0x4000)
+      annotations: parseAnnotations(readFileSync(shippedSidecar(name), "utf8")).annotations,
+      bytes: new Uint8Array(readFileSync(shippedRom(name.replace(/\.dis$/i, "")))).subarray(p * 0x4000, (p + 1) * 0x4000)
     }));
     regions = merged.annotations.banks[bank].regions;
     // --- LABELS=<file>: write the merged page's labels ("$XXXX NAME" lines) instead of a listing

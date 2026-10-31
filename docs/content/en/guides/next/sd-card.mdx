@@ -15,10 +15,19 @@ files between it and your computer.
 
 ## The default card
 
-On first use Klive copies a ready-made card with NextZXOS on it to `Klive/ks2.cim` in your home
-folder (`~/Klive/ks2.cim` on macOS and Linux). In portable mode it is in the `Klive` folder of the
-portable data folder instead. The Next uses this image until you select another, and every change the
-emulated machine makes to the card (a file NextZXOS saves, say) is written to it.
+On first use of a Next model Klive copies a ready-made card with that model's NextZXOS on it to the
+`Klive` folder in your home folder (`~/Klive` on macOS and Linux). Each model has its own default card,
+so switching models never boots NextZXOS from a card of another release:
+
+| Model | Default card | NextZXOS |
+|---|---|---|
+| ZX Spectrum Next (KS2, core 3.02.01) | `ks2.cim` | 2.08 |
+| ZX Spectrum Next (KS2, core 3.02.04) | `ks2-30204.cim` | 2.10 |
+
+In portable mode the cards are in the `Klive` folder of the portable data folder instead. The Next
+uses its model's card until you select another, and every change the emulated machine makes to the
+card (a file NextZXOS saves, say) is written to it. [ZX Spectrum Next models](/en/guides/next/next-models)
+explains the models.
 
 When the Next starts, it boots NextZXOS from the card, as the real machine does.
 
@@ -29,8 +38,8 @@ The **Machine › SD Card** menu has three items, available while the machine is
 | Item | What it does |
 |---|---|
 | **Select Image...** | Uses another `.cim` image as the Next's card. Klive remembers the choice. |
-| **Use the Default Image** | Goes back to `ks2.cim` in the Klive folder. |
-| **Reset the Default Image...** | Replaces the default image with a fresh copy of the one Klive ships, after asking. Every change made to the default card is lost. |
+| **Use the Default Image** | Goes back to the current model's default card in the Klive folder. |
+| **Reset the Default Image...** | Replaces the current model's default card with a fresh copy of the one Klive ships, after asking. Every change made to that card is lost. |
 
 <Callout type="warning">
 Reset the default image only when you mean to: it deletes everything programs or you have put on the

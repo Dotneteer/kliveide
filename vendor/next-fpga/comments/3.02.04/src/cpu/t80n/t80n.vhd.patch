@@ -1,0 +1,15 @@
+--- a/src/cpu/t80n/t80n.vhd
++++ b/src/cpu/t80n/t80n.vhd
+@@ -1729,12 +1729,6 @@ begin
+             if MCycle = "001" and TState = "010" and WAIT_n = '1' then  -- 30/10/19 Charlie Ingley - Fixed M1_n (always finishes at end of T2)
+                M1_n <= '1';
+             end if;
+---          if MCycle = "001" and TState = 2 and WAIT_n = '1' and IntCycle = '0' then           -- by Fabio Belavenuto: Fix IRQ Acnowledgment timing
+---             M1_n <= '1';
+---          end if;
+---          if MCycle = "001" and TState = 3 and WAIT_n = '1' and IntCycle = '1' then           -- by Fabio Belavenuto: Fix IRQ Acnowledgment timing
+---             M1_n <= '1';
+---          end if;
+             if BusReq_s = '1' and BusAck = '1' then
+             else
+                BusAck <= '0';

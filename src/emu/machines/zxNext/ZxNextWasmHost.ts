@@ -22,6 +22,7 @@ import {
   z80nCallInstructionLength
 } from "./nextMachineInfo";
 import { zxNextSysVars } from "./ZxNextSysVars";
+import { IMPLICIT_NEXT_PROFILE_ID, nextProfileOf, romSetOf, type NextProfile } from "./nextProfiles";
 import { writeCodeSegments } from "../writeCodeSegments";
 
 /**
@@ -50,12 +51,19 @@ export abstract class ZxNextWasmHost extends Z80MachineBase {
 
   private frameCommand: any;
 
+  /**
+   * The Next model this machine is: its board, core version, ROM set and SD card
+   * (`nextProfiles.ts`, `.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` D2)
+   */
+  readonly profile: NextProfile;
+
   constructor(
     public readonly modelInfo?: MachineModel,
     config?: MachineConfigSet,
     protected readonly messenger?: MessengerBase
   ) {
     super(config ?? modelInfo?.config ?? {});
+    this.profile = nextProfileOf(modelInfo?.modelId);
     this.baseClockFrequency = 3_500_000;
     this.clockMultiplier = 1;
     this.delayedAddressBus = true;
@@ -219,7 +227,8 @@ export abstract class ZxNextWasmHost extends Z80MachineBase {
 
   async getCodeInjectionFlow(_model: string, additionalInfo?: any): Promise<CodeInjectionFlow> {
     const hasAutoExec = await createMainApi(this.messenger).hasNextAutoExec();
-    return buildNextCodeInjectionFlow(hasAutoExec, additionalInfo);
+    const bootCheckpoint = this.profile.id === IMPLICIT_NEXT_PROFILE_ID ? "zxnext-boot" : `zxnext-boot-${this.profile.id}`;
+    return buildNextCodeInjectionFlow(hasAutoExec, additionalInfo, romSetOf(this.profile).facts, bootCheckpoint);
   }
 
   /**

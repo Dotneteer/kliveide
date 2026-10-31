@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include "zxnext-profile.h"
 
 #define ZXNEXT_MEMORY_SIZE (2048 * 1024 + 0x2000)
 #define ZXNEXT_FLAT_MEMORY_SIZE 0x10000

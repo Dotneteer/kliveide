@@ -4,6 +4,12 @@ import { isAbsolute, join, resolve } from "node:path";
 import { AUDIO_SAMPLE_RATE, FILE_PROVIDER } from "@emu/machines/machine-props";
 import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
 import type { IFileProvider } from "@renderer/core/IFileProvider";
+import {
+  IMPLICIT_NEXT_PROFILE_ID,
+  NEXT_PROFILES,
+  nextModelDisplayName,
+  type NextProfileId
+} from "@emu/machines/zxNext/nextProfiles";
 
 /** The ZX Spectrum Next machine the harness drives: the production WASM core. */
 export type NextMachine = ZxNextWasmV2Machine;
@@ -23,7 +29,10 @@ function findRepoRoot(start: string): string {
   }
   return dir;
 }
-const WASM_ARTIFACT = join(REPO_ROOT, "src/emu/machines/zxNext/wasm/dist/zx-spectrum-next.wasm");
+/** A profile's WASM artifact (`.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` D3) */
+export function wasmArtifactOf(profile: NextProfileId = IMPLICIT_NEXT_PROFILE_ID): string {
+  return join(REPO_ROOT, "src/emu/machines/zxNext/wasm/dist", NEXT_PROFILES[profile].wasmArtifact);
+}
 const WASM_SOURCES = join(REPO_ROOT, "src/emu/machines/zxNext/wasm/zxnext");
 
 /** Read-only ROM provider; paths are relative to `src/public`, as in the app. */
@@ -49,7 +58,8 @@ class HarnessFileProvider implements IFileProvider {
  * A stale WASM artifact would make every WASM result describe old C code, silently. The runner
  * refuses rather than guesses; `npm run build:zxnext-wasm` fixes it.
  */
-export function assertWasmArtifactFresh(): void {
+export function assertWasmArtifactFresh(profile?: NextProfileId): void {
+  const WASM_ARTIFACT = wasmArtifactOf(profile);
   if (!existsSync(WASM_ARTIFACT)) {
     throw new Error(`No WASM artifact at ${WASM_ARTIFACT}. Run \`npm run build:zxnext-wasm\`.`);
   }
@@ -74,12 +84,17 @@ export type CreateCoreOptions = {
   audioSampleRate?: number;
   /** Hard-reset after setup, as the app's machine start does (`MachineService`). */
   hardReset?: boolean;
+  /** The Next model (`nextProfiles.ts`): its artifact, ROM set and identity. The implicit one by default. */
+  profile?: NextProfileId;
 };
 
 export async function createCore(options: CreateCoreOptions = {}): Promise<NextMachine> {
-  const machine = new ZxNextWasmV2Machine(undefined, undefined, undefined, {
-    artifactName: "visual-tests.wasm",
-    readArtifact: async () => readFileSync(WASM_ARTIFACT)
+  const profile = options.profile ?? IMPLICIT_NEXT_PROFILE_ID;
+  const artifact = wasmArtifactOf(profile);
+  const model = { modelId: profile, displayName: nextModelDisplayName(profile), config: {} };
+  const machine = new ZxNextWasmV2Machine(model, undefined, undefined, {
+    artifactName: `visual-tests-${profile}.wasm`,
+    readArtifact: async () => readFileSync(artifact)
   });
   machine.setMachineProperty(FILE_PROVIDER, new HarnessFileProvider());
   if (options.audioSampleRate) machine.setMachineProperty(AUDIO_SAMPLE_RATE, options.audioSampleRate);

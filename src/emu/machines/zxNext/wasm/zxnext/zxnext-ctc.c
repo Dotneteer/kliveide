@@ -52,6 +52,12 @@ static uint32_t zxnextCtcAdvanceCounterByFires(ZxNextCtcChannel *ch, uint32_t fi
   const uint32_t timeConstant = ch->timeConstantReg;
   const uint32_t effectiveTimeConstant = timeConstant == 0 ? 256u : timeConstant;
 
+#if ZXNEXT_CORE_VERSION >= 30204
+  /* 3.02.04 reloads on the clock that would count 1 -> 0 (device/ctc_chan.vhd@3.02.04 ~152-170:
+     `zc_to <= t_count_next_zero and t_count_en`), so a count of 0 is only ever a time constant of 0
+     and counts on to 255; there is no pending zero edge (3.02.01: ctc_chan.vhd@3.02.01 ~142-166) */
+  if (count == 0) ch->countZeroD = 1;
+#endif
   if (count == 0) {
     if (!ch->countZeroD) {
       zcToCount++;
@@ -132,7 +138,11 @@ static void zxnextCtcStartOnTrigger(ZxNextCtcChannel *ch) {
   ch->state = 3u;
   ch->prescalerCount = 0;
   ch->count = ch->timeConstantReg;
+#if ZXNEXT_CORE_VERSION >= 30204
+  ch->countZeroD = ch->count == 0; /* no zero edge in 3.02.04 (ctc_chan.vhd@3.02.04 ~170) */
+#else
   ch->countZeroD = 0;
+#endif
 }
 
 /* System clocks until a running timer's next ZC/TO (the counterpart of AdvanceChannelBySysClocks) */
@@ -142,7 +152,10 @@ static uint32_t zxnextCtcFirstZcToOffset(ZxNextCtcChannel *ch) {
   const uint32_t firstFire = (mask - (ch->prescalerCount & mask)) & mask;
   uint32_t fires;
   if (ch->count == 0) {
+#if ZXNEXT_CORE_VERSION < 30204
+    /* 3.02.01 only: a count of 0 not yet seen is a zero edge now (ctc_chan.vhd@3.02.01 ~166) */
     if (!ch->countZeroD) return 0;
+#endif
     fires = 256u;
   } else {
     fires = ch->count;
@@ -266,7 +279,16 @@ void zxnextCtcClock(uint32_t channel, uint32_t iowr, uint32_t cpuData, uint32_t 
   uint8_t prescalerClk = prescaler256 ? (pCountLo && pCountHi) : pCountLo;
   uint8_t tCountEn = isCounterMode ? clkTrgEdge : prescalerClk;
   uint8_t tCountZero = oldCount == 0;
+#if ZXNEXT_CORE_VERSION >= 30204
+  /* device/ctc_chan.vhd@3.02.04 ~152-170: ZC/TO on the enable that would count 1 -> 0, which reloads
+     the time constant instead, so the counter never reads $00 (3.02.01, ctc_chan.vhd@3.02.01 ~142-166:
+     count to $00, then the zero edge reloads on the next clock). The output is registered (`zc_to_d`,
+     ~172-183), which is the clock 3.02.01's zero edge came out on; the event is counted here. */
+  uint8_t zcTo = oldCount == 1 && tCountEn && oldState == 3;
+  (void)oldCountZeroD;
+#else
   uint8_t zcTo = tCountZero && !oldCountZeroD && oldState == 3;
+#endif
   uint8_t stateNext = 0;
 
   if (resetSoftTrigger) {
@@ -276,6 +298,13 @@ void zxnextCtcClock(uint32_t channel, uint32_t iowr, uint32_t cpuData, uint32_t 
   } else if (oldState == 1) {
     stateNext = iowrTc ? 2 : 1;
   } else if (oldState == 2) {
+#if ZXNEXT_CORE_VERSION >= 30204
+    /* device/ctc_chan.vhd@3.02.04 ~220-227: a control word with D2 while waiting for the trigger
+       (S_TRIGGER) goes back to waiting for a time constant (S_RESET_TC). 3.02.01 stayed in S_WAIT and
+       could start on the old constant (ctc_chan.vhd@3.02.01 ~205-210, D2 only set control_reg(0)). */
+    if (iowrCr && (byteData & 0x04u)) stateNext = 1;
+    else
+#endif
     stateNext = (!isCounterMode && triggerStart && !clkTrgEdge) ? 2 : 3;
   } else {
     stateNext = 3;

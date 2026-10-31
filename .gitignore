@@ -63,6 +63,11 @@ test/vhdl/f3/results/
 # Boriel BASIC setup kits: archives are downloaded (see vendor/boriel-basic/README.md), never committed
 vendor/boriel-basic/kits/
 vendor/boriel-basic/stage/
+
+# ZX Spectrum Next VHDL reference: fetched by `npm run next-fpga:fetch`, never committed; only the
+# pins (sources.json) and Klive's comment patches (comments/) are tracked
+vendor/next-fpga/*/
+!vendor/next-fpga/comments/
 # Output of scripts/boriel-ide-check.cjs (throwaway homes and screenshots)
 .boriel-ide-check/
 # Output of scripts/z88dk-ide-check.cjs (throwaway homes and screenshots)

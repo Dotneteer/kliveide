@@ -16,4 +16,4 @@ x 96+2x. **Copper geometry** (hardware): copper line L = paper row L−$64 (mod 
 border); WAIT(L,H) fires at paper x = 8H, i.e. buffer x 96+16H. MOVE and the palette lookup add under
 two ULA pixels of delay, so horizontal edges are probed with a 4-px margin.
 
-Source: _input/next-fpga/src: copper.vhd (WAIT/MOVE), video/zxula_timing.vhd (cvc, hc_ula), zxnext.vhd (NextRegs, palette, mixer).
+Source: vendor/next-fpga/3.02.01/src: copper.vhd (WAIT/MOVE), video/zxula_timing.vhd (cvc, hc_ula), zxnext.vhd (NextRegs, palette, mixer).

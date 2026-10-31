@@ -7,6 +7,7 @@ import {
   MI_ZX80,
   MI_ZX81
 } from "@common/machines/constants";
+import { NEXT_ROM_SETS, nextRomAnnotationFile } from "@common/zxnext/romSets";
 
 /*
  * Which ROM a ROM page is (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §5.3).
@@ -64,13 +65,59 @@ export type RomPageKind =
   | "next-divmmc"
   | "next-multiface";
 
+/** A known ROM page: its file (relative to `src/public/roms`), what it holds, and its 16K page. */
+export type KnownRomPage = {
+  file: string;
+  kind: RomPageKind;
+  /** The 16K page within the file (0 when absent). */
+  page?: number;
+};
+
 /**
- * The ROM pages Klive ships, by CRC-32 (`src/public/roms`). Recorded by checksumming the files;
- * `test/annotations/romIdentity.test.ts` keeps it in step with them.
+ * The kind of each page of the ZX Spectrum Next's ROM files, by file name: NextZXOS in four 16K pages,
+ * its 48K BASIC page (3) decoded as the 48K ROM's with Z80N opcodes (`next-basic`); `enNextLG.rom`
+ * differs from `enNextZX.rom` in page 2 only (its other pages are the same bytes, listed once); the
+ * alternate ROM's two pages; the 8K DivMMC and Multiface ROMs.
  */
-export const KNOWN_ROM_PAGES: Readonly<
-  Record<string, { file: string; kind: RomPageKind; /** The 16K page within the file (0 when absent). */ page?: number }>
-> = {
+const NEXT_PAGE_KINDS: Readonly<Record<string, readonly (RomPageKind | undefined)[]>> = {
+  "enNextZX.rom": ["next-os0", "next-os1", "next-os2", "next-basic"],
+  "enNextLG.rom": [undefined, undefined, "next-os2", undefined],
+  "enAltZX.rom": ["next-alt0", "next-alt1"],
+  "enNxtmmc.rom": ["next-divmmc"],
+  "enNextMf.rom": ["next-multiface"]
+};
+
+/**
+ * The Next's pages, generated from the ROM set manifest (`.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` D9.3):
+ * every page of every set, named by its path (`zxnext/<setId>/enNextZX.rom`). A page whose CRC is
+ * already listed (the same bytes in another file or set) keeps its first entry.
+ */
+function nextRomPages(): Record<string, KnownRomPage> {
+  const result: Record<string, KnownRomPage> = {};
+  for (const set of Object.values(NEXT_ROM_SETS)) {
+    for (const [file, info] of Object.entries(set.files)) {
+      const kinds = NEXT_PAGE_KINDS[file];
+      info.pages.forEach((crc, page) => {
+        const kind = kinds?.[page];
+        if (!kind || result[crc]) return;
+        result[crc] = {
+          file: nextRomAnnotationFile(set.id, file),
+          kind,
+          ...(info.pages.length > 1 ? { page } : {})
+        };
+      });
+    }
+  }
+  return result;
+}
+
+/**
+ * The ROM pages Klive ships, by CRC-32 (`src/public/roms`), each named by its path relative to that
+ * folder. Recorded by checksumming the files; the Next's come from its ROM set manifest.
+ * `test/annotations/romIdentity.test.ts` and `test/zxnext/romSets.test.ts` keep it in step with them.
+ */
+export const KNOWN_ROM_PAGES: Readonly<Record<string, KnownRomPage>> = {
+  ...nextRomPages(),
   ddee531f: { file: "sp48.rom", kind: "sp48-basic" },
   e76799d2: { file: "sp128-0.rom", kind: "sp128-editor" },
   b96a36be: { file: "sp128-1.rom", kind: "sp48-basic" },
@@ -89,18 +136,6 @@ export const KNOWN_ROM_PAGES: Readonly<
   "7f4a5482": { file: "spp3e-0.rom", kind: "plus3-editor" },
   "5aeb4675": { file: "spp3e-1.rom", kind: "plus3-syntax" },
   "504755cb": { file: "spp3e-2.rom", kind: "plus3-dos" },
-  // --- The ZX Spectrum Next: NextZXOS in four 16K pages (enNextLG differs in page 2 only), its 48K BASIC
-  // --- page (3) decoded as the 48K ROM's, with Z80N opcodes (`next-basic`); the alternate ROM's two pages;
-  // --- the 8K DivMMC and Multiface ROMs
-  "95ba84d4": { file: "enNextZX.rom", kind: "next-os0", page: 0 },
-  "74dbb504": { file: "enNextZX.rom", kind: "next-os1", page: 1 },
-  cafb1e32: { file: "enNextZX.rom", kind: "next-os2", page: 2 },
-  "92d23960": { file: "enNextZX.rom", kind: "next-basic", page: 3 },
-  "43fc1f2f": { file: "enNextLG.rom", kind: "next-os2", page: 2 },
-  "574ec214": { file: "enAltZX.rom", kind: "next-alt0", page: 0 },
-  "74bc5674": { file: "enAltZX.rom", kind: "next-alt1", page: 1 },
-  "5a443736": { file: "enNxtmmc.rom", kind: "next-divmmc" },
-  "36db4453": { file: "enNextMf.rom", kind: "next-multiface" },
   "4b1dd6eb": { file: "zx81.rom", kind: "zx81" },
   "4c7fc597": { file: "zx80.rom", kind: "zx80" },
   // --- The HT-1080Z's BASIC: Series I and II share one image (ht1080z-s2.rom is byte-identical),
@@ -216,7 +251,7 @@ export type RomSource = RomPageIdentity & {
   bytes?: Uint8Array;
 };
 
-/** Whether a ROM source is one of the ROM files Klive ships (a relative `roms/…` path). */
+/** Whether a ROM source is one of the ROM files Klive ships (a relative `roms/…` path, subfolders included). */
 export function isShippedRomPath(path: string | undefined): boolean {
   return !!path && /^roms[\\/]/.test(path);
 }

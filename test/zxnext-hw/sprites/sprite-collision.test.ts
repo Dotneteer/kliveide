@@ -5,7 +5,7 @@ import { createSession } from "../../harness/zxnext";
 /*
  * Sprite collision flag, driven only through the hardware interface on the real machine (both cores).
  *
- * Hardware (`_input/next-fpga/src/video/sprites.vhd`):
+ * Hardware (`vendor/next-fpga/3.02.01/src/video/sprites.vhd`):
  *   status_reg_s(0) <= status_reg_s(0) or (spr_line_data_o(8) and spr_line_we)
  * - set when a sprite writes an opaque pixel where another sprite already wrote one; reading port
  * $303B returns and clears it. Four attribute bytes per sprite when attr3 bit 6 is 0.

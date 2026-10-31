@@ -9,6 +9,11 @@ static uint8_t zxnextBeeperMic;
 static uint8_t zxnextBeeperPortMic;
 static uint8_t zxnextBeeperTapeEar;
 static uint8_t zxnextBeeperPiEar;
+#if ZXNEXT_CORE_VERSION >= 30204
+/* 3.02.04: the tape stage's relaxation has timed out, so i_AUDIO_EAR is `port_fe_mic and issue 2`
+   instead of the live level `zxnextBeeperTapeEar` (zxnext-tape.c) */
+static uint8_t zxnextBeeperTapeRelaxed;
+#endif
 static uint32_t zxnextBeeperTacts;
 static double zxnextBeeperFrameStartTact;
 static double zxnextBeeperSampleWindowStartTact;
@@ -29,6 +34,9 @@ static void zxnextBeeperReset(void) {
   zxnextBeeperPortMic = 0u;
   zxnextBeeperTapeEar = 0u;
   zxnextBeeperPiEar = 0u;
+#if ZXNEXT_CORE_VERSION >= 30204
+  zxnextBeeperTapeRelaxed = 1u;
+#endif
   zxnextBeeperTacts = 0u;
   zxnextBeeperFrameStartTact = 0.0;
   zxnextBeeperSampleWindowStartTact = 0.0;
@@ -98,9 +106,27 @@ static inline void zxnextBeeperRecord(uint8_t nextEar, uint8_t nextMic, double t
   zxnextBeeperMic = nextMic;
 }
 
+/*
+ * The MIC line (`beep_mic_final`).
+ * - 3.02.01 (zxnext.vhd@3.02.01 ~6449): port_fe_mic xor i_AUDIO_EAR xor pi_fe_ear.
+ * - 3.02.04 (zxnext.vhd@3.02.04 ~7059): i_AUDIO_EAR xor (port_fe_mic and issue 2) xor port_fe_mic, with
+ *   the Pi's EAR bit already in i_AUDIO_EAR (zxnext_top_issue4.vhd@3.02.04 ~736). Relaxed, i_AUDIO_EAR
+ *   is `port_fe_mic and issue 2` itself, so the line is port_fe_mic.
+ */
+#if ZXNEXT_CORE_VERSION >= 30204
+static inline uint8_t zxnextBeeperMicLine(void) {
+  if (zxnextBeeperTapeRelaxed) return zxnextBeeperPortMic;
+  const uint8_t issue2Mic = zxnextBeeperPortMic & (zxnextNextRegs[0x08u] & 0x01u);
+  return (uint8_t)(zxnextBeeperTapeEar ^ issue2Mic ^ zxnextBeeperPortMic);
+}
+#define ZXNEXT_BEEPER_MIC_LINE() zxnextBeeperMicLine()
+#else
+#define ZXNEXT_BEEPER_MIC_LINE() (zxnextBeeperPortMic ^ zxnextBeeperTapeEar ^ zxnextBeeperPiEar)
+#endif
+
 static inline void zxnextBeeperSetOutput(uint32_t ear, uint32_t mic) {
   zxnextBeeperPortMic = mic != 0u;
-  zxnextBeeperRecord(ear != 0u, zxnextBeeperPortMic ^ zxnextBeeperTapeEar ^ zxnextBeeperPiEar, (double)zxnextBeeperTacts);
+  zxnextBeeperRecord(ear != 0u, ZXNEXT_BEEPER_MIC_LINE(), (double)zxnextBeeperTacts);
 }
 
 /* The Pi I2S EAR bit changed at `tact`, which may lie a little in the past (the receiver is brought
@@ -113,11 +139,17 @@ static void zxnextBeeperSetPiEarAt(uint32_t on, double tact) {
     at = zxnextBeeperTransitionTacts[zxnextBeeperTransitionCount - 1u];
   }
   if (at > (double)zxnextBeeperTacts) at = (double)zxnextBeeperTacts;
-  zxnextBeeperRecord(zxnextBeeperEar, zxnextBeeperPortMic ^ zxnextBeeperTapeEar ^ zxnextBeeperPiEar, at);
+  zxnextBeeperRecord(zxnextBeeperEar, ZXNEXT_BEEPER_MIC_LINE(), at);
 }
 
-/* The conditioned tape input changed at `tact` (stepped lazily, like the Pi's EAR bit) */
+/* The conditioned tape input changed at `tact` (stepped lazily, like the Pi's EAR bit). 3.02.04:
+   `on` is the live level and `relaxed` whether the relaxation has timed out. */
+#if ZXNEXT_CORE_VERSION >= 30204
+static void zxnextBeeperSetTapeEarAt(uint32_t on, uint32_t relaxed, double tact) {
+  zxnextBeeperTapeRelaxed = relaxed != 0u;
+#else
 static void zxnextBeeperSetTapeEarAt(uint32_t on, double tact) {
+#endif
   zxnextBeeperTapeEar = on != 0u;
   double at = tact;
   if (at < zxnextBeeperSampleWindowStartTact) at = zxnextBeeperSampleWindowStartTact;
@@ -125,7 +157,7 @@ static void zxnextBeeperSetTapeEarAt(uint32_t on, double tact) {
     at = zxnextBeeperTransitionTacts[zxnextBeeperTransitionCount - 1u];
   }
   if (at > (double)zxnextBeeperTacts) at = (double)zxnextBeeperTacts;
-  zxnextBeeperRecord(zxnextBeeperEar, zxnextBeeperPortMic ^ zxnextBeeperTapeEar ^ zxnextBeeperPiEar, at);
+  zxnextBeeperRecord(zxnextBeeperEar, ZXNEXT_BEEPER_MIC_LINE(), at);
 }
 
 static uint32_t zxnextBeeperGetEar(void) { return zxnextBeeperEar; }

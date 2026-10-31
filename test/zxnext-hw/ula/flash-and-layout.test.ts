@@ -6,7 +6,7 @@ import { colours, fillScreen, hex8, PAPER_LEFT, PAPER_TOP, parkedSession, writeP
 /*
  * FLASH and the display file layout (catalogue ULA-004, ULA-005).
  *
- * Hardware (`_input/next-fpga/src/video/zxula.vhd`):
+ * Hardware (`vendor/next-fpga/3.02.01/src/video/zxula.vhd`):
  * - ~453-462: flash_cnt (5 bits) counts once per frame, at hc = 0 / vc = 0; ~451:
  *   pixel_en = shift_reg(15) xor (attr(7) and flash_cnt(4) ...), so a FLASH cell swaps ink and paper
  *   every 16 frames - a 32-frame period. The counter has no reset value, so only the period is checked.

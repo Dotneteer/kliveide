@@ -9,7 +9,7 @@ import { ay, ayRead, frequency, relativeError, side, swing, toneHz } from "./_au
  * the hardware-visible parts of test/audio/PsgCompatibility.step14, TurboSoundTesting.step15,
  * TurboSoundDevice.step2, PortHandlers.step10, AudioControlDevice.step9 and FinalIntegration.step20.
  *
- * Hardware (`_input/next-fpga/src`):
+ * Hardware (`vendor/next-fpga/3.02.01/src`):
  * - audio/turbosound.vhd ~121-127: on reset `ay_select <= "11"` (chip 0) and every pan is "11".
  *   ~141-150: a register-number write (bits 7-5 = 000) goes only to the selected chip
  *   (`psgN_addr`); ~321: $FFFD reads the selected chip.

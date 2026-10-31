@@ -4,7 +4,12 @@ import { join } from "node:path";
 
 import { machineRegistry } from "@common/machines/machine-registry";
 import { KNOWN_ROM_PAGES, romCrc32 } from "@common/roms/romIdentity";
-import { ROM_ANNOTATION_CATALOG, romAnnotationOpenCommand } from "@common/roms/romAnnotationCatalog";
+import {
+  ROM_ANNOTATION_CATALOG,
+  romAnnotationOpenCommand,
+  romCatalogFileName
+} from "@common/roms/romAnnotationCatalog";
+import { NEXT_ROM_SETS } from "@common/zxnext/romSets";
 
 /*
  * The Debug › ROM Annotations menu's table (`.plans/ROM_ANNOTATIONS_MENU_PLAN.md` D2), kept in step
@@ -63,7 +68,22 @@ describe("ROM_ANNOTATION_CATALOG", () => {
 
   it("opens a page with rom-ann-open, creating annotations when there are none", () => {
     expect(romAnnotationOpenCommand({ file: "sp48.rom" })).toBe("rom-ann-open sp48.rom -create");
-    expect(romAnnotationOpenCommand({ file: "enNextZX.rom", page: 0 })).toBe("rom-ann-open enNextZX.rom -create");
-    expect(romAnnotationOpenCommand({ file: "enNextZX.rom", page: 2 })).toBe("rom-ann-open enNextZX.rom -page 2 -create");
+    const next = "zxnext/nextzxos-2.08/enNextZX.rom";
+    expect(romAnnotationOpenCommand({ file: next, page: 0 })).toBe(`rom-ann-open ${next} -create`);
+    expect(romAnnotationOpenCommand({ file: next, page: 2 })).toBe(`rom-ann-open ${next} -page 2 -create`);
+  });
+
+  it("lists each Next ROM set's files by their paths, in the four groups of a set", () => {
+    const next = ROM_ANNOTATION_CATALOG.find((machine) => machine.machineId === "zxnext")!;
+    const sets = Object.keys(NEXT_ROM_SETS);
+    expect(next.groups.length).toBe(4 * sets.length);
+    expect(next.groups.slice(0, 4).map((group) => group.map((entry) => romCatalogFileName(entry)))).toEqual([
+      ["enNextZX.rom", "enNextZX.rom", "enNextZX.rom", "enNextZX.rom"],
+      ["enNextLG.rom", "enNextLG.rom", "enNextLG.rom", "enNextLG.rom"],
+      ["enAltZX.rom", "enAltZX.rom"],
+      ["enNxtmmc.rom", "enNextMf.rom"]
+    ]);
+    expect(next.groups[0][3]).toEqual({ file: "zxnext/nextzxos-2.08/enNextZX.rom", page: 3 });
+    for (const entry of next.groups.flat()) expect(entry.file).toMatch(/^zxnext\/[^/]+\/[^/]+\.rom$/);
   });
 });

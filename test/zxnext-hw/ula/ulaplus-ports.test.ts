@@ -5,7 +5,7 @@ import { createSession, displayFileAddress, type NextTestSession } from "../../h
 /*
  * B12 - the ULA+ ports $BF3B (register select) and $FF3B (data).
  *
- * Hardware (`_input/next-fpga/src/zxnext.vhd` ~4500-4563, 4717-4720, 6903-6904):
+ * Hardware (`vendor/next-fpga/3.02.01/src/zxnext.vhd` ~4500-4563, 4717-4720, 6903-6904):
  * - $BF3B write: `port_bf3b_ulap_mode <= cpu_do(7 downto 6)`; in mode group "00" also
  *   `port_bf3b_ulap_index <= cpu_do(5 downto 0)`.
  * - $FF3B write in group "00": a NextReg-stream palette write (`cpu_requester_2`, register X"FF") to

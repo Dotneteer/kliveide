@@ -52,7 +52,10 @@ describe("createRomAnnotationsMenu", () => {
 
   it("separates the ROM sets, and names a page of a multi-page file", () => {
     const menu = createRomAnnotationsMenu(machineRegistry, vi.fn());
-    const next = submenu(submenu(menu).find((item) => item.label === "ZX Spectrum Next")!);
+    const nextReleases = submenu(submenu(menu).find((item) => item.label === "ZX Spectrum Next")!);
+    // --- One submenu per NextZXOS release: the releases' files have the same names
+    expect(shape(nextReleases)).toEqual(["NextZXOS 2.08", "NextZXOS 2.10"]);
+    const next = submenu(nextReleases[0]);
     expect(shape(next)).toEqual([
       "enNextZX.rom, page 0",
       "enNextZX.rom, page 1",
@@ -70,6 +73,8 @@ describe("createRomAnnotationsMenu", () => {
       "enNxtmmc.rom",
       "enNextMf.rom"
     ]);
+    // --- A Next item is labelled by the file name, and its id carries the set's path
+    expect(next[0].id).toBe("rom_ann_zxnext_zxnext/nextzxos-2.08/enNextZX.rom_0");
     const sp128 = submenu(submenu(menu).find((item) => item.label === "ZX Spectrum 128K")!);
     expect(shape(sp128)).toEqual(["sp128-0.rom", "sp128-1.rom"]);
   });
@@ -102,9 +107,9 @@ describe("openRomAnnotations", () => {
   it("shows the IDE and runs rom-ann-open with -create", async () => {
     env.executeCommand.mockResolvedValue({ success: true });
     const ensureIdeWindow = vi.fn();
-    await openRomAnnotations({ file: "enNextZX.rom", page: 3 }, ensureIdeWindow, window);
+    await openRomAnnotations({ file: "zxnext/nextzxos-2.08/enNextZX.rom", page: 3 }, ensureIdeWindow, window);
     expect(ensureIdeWindow).toHaveBeenCalled();
-    expect(env.executeCommand).toHaveBeenCalledWith("rom-ann-open enNextZX.rom -page 3 -create");
+    expect(env.executeCommand).toHaveBeenCalledWith("rom-ann-open zxnext/nextzxos-2.08/enNextZX.rom -page 3 -create");
     expect(env.showMessageBox).not.toHaveBeenCalled();
   });
 

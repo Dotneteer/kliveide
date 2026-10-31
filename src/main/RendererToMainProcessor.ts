@@ -78,7 +78,7 @@ import { CompileProfile, CompilerOptions, KliveCompilerOutput } from "@abstracti
 import { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
 import {
   activeSdCardFile,
-  DEFAULT_SD_CARD_FILE,
+  getDefaultSdCardPath,
   getSdCardDevice,
   invalidateSdCardHandler
 } from "./machine-menus/zx-next-menus";
@@ -731,7 +731,7 @@ class MainMessageProcessor {
    * @param destFile The destination file path on the SD card image.
    */
   async copyToSdCard(srcFile: string, destFile: string) {
-    const sdCardPath = path.join(getKliveHomeBase(), KLIVE_HOME_FOLDER, DEFAULT_SD_CARD_FILE);
+    const sdCardPath = getDefaultSdCardPath();
     if (!fs.existsSync(sdCardPath)) {
       // --- The folder does not exist, we cannot proceed
       console.error("SD card path does not exist:", sdCardPath);
@@ -769,7 +769,7 @@ class MainMessageProcessor {
     const appState = mainStore.getState();
     const currentStoragePath =
       appState.media?.[MEDIA_SD_CARD] ??
-      path.join(getKliveHomeBase(), KLIVE_HOME_FOLDER, DEFAULT_SD_CARD_FILE);
+      getDefaultSdCardPath();
 
     return await copyZxNextStorageFileOnHost(request, {
       projectFolder: appState.project?.folderPath,
@@ -1435,7 +1435,7 @@ class MainMessageProcessor {
    * @returns True if the "autoexec.1st" file exists, false otherwise.
    */
   async hasNextAutoExec(): Promise<boolean> {
-    const sdCardPath = path.join(getKliveHomeBase(), KLIVE_HOME_FOLDER, DEFAULT_SD_CARD_FILE);
+    const sdCardPath = getDefaultSdCardPath();
     if (!fs.existsSync(sdCardPath)) {
       return false;
     }

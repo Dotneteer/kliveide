@@ -5,7 +5,7 @@ import { createSession } from "../../harness/zxnext";
 /*
  * SPR-036: the sprite layer is transparent outside its 320-pixel window.
  *
- * Hardware (`_input/next-fpga/src/video/sprites.vhd`): `hcounter_i_valid <= hcounter_i < 320` (~1019) and
+ * Hardware (`vendor/next-fpga/3.02.01/src/video/sprites.vhd`): `hcounter_i_valid <= hcounter_i < 320` (~1019) and
  * `pixel_en_o` needs it (~1085), whatever the clip window and `$15` say. With sprites over the border
  * (`$15` bit 1) a sprite at X = 312 shows its left eight pixels (x 312-319); the rest of the line -
  * the right border - and the start of the next line - the left border before sprite x 0 - show no

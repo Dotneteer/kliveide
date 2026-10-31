@@ -9,6 +9,7 @@ import type { MainApi } from "@common/messaging/MainApi";
 import { ROM_ANNOTATION_EDITOR } from "@common/state/common-ids";
 import { formatRomSidecar, type Provenance } from "@common/roms/romAnnotationTools";
 import { romPageIdentity } from "@common/roms/romIdentity";
+import { canonicalShippedSidecar, isShippedSidecarShape } from "@common/roms/romSidecarPaths";
 import {
   SHIPPED_ROM_FOLDER,
   inheritedSidecarSource,
@@ -47,8 +48,9 @@ import { t } from "@common/i18n/i18n";
 /*
  * The `rom-ann-*` commands (`.plans/ROM_ANNOTATION_EDITING_PLAN.md` R7, R8).
  *
- * A ROM is named as Klive ships it (`sp48.rom`, `sp128-1.rom`), or by the path of a ROM file
- * (absolute, or relative to the open project). A multi-page file takes `-page <n>`.
+ * A ROM is named as Klive ships it, by its path under `src/public/roms` (`sp48.rom`, `sp128-1.rom`,
+ * `zxnext/nextzxos-2.08/enNextZX.rom`), or by the path of a ROM file (absolute, or relative to the
+ * open project). A multi-page file takes `-page <n>`.
  */
 
 function fileNameOf(path: string): string {
@@ -61,10 +63,19 @@ function pageOf(bytes: Uint8Array, page: number): Uint8Array | undefined {
 }
 
 /**
+ * Whether a ROM argument can name a shipped ROM: a file name (`sp48.rom`) or a Next ROM set's path
+ * under `src/public/roms` (`zxnext/nextzxos-2.08/enNextZX.rom`). Any other path is a file of the
+ * user's, never looked for among the shipped ROMs.
+ */
+function isShippedRomName(rom: string): boolean {
+  return isShippedSidecarShape(rom.replace(/\\/g, "/"));
+}
+
+/**
  * Where the working copy of a ROM page is, and what it starts from.
  *
- * A shipped ROM's name is looked up among the shipped ROMs first; anything else is read as a ROM
- * file. A page Klive ships a sidecar for is named after that sidecar whatever file it came from.
+ * A shipped ROM's name or path under `src/public/roms` is looked up among the shipped ROMs first;
+ * anything else is read as a ROM file. A page Klive ships a sidecar for is named after that sidecar whatever file it came from.
  */
 export async function romTargetOf(
   context: IdeCommandContext,
@@ -75,8 +86,10 @@ export async function romTargetOf(
   const isPath = /[\\/]/.test(rom);
   let bytes: Uint8Array | undefined;
   let path: string;
-  if (!isPath) {
-    path = `${SHIPPED_ROM_FOLDER}/${rom}`;
+  if (isShippedRomName(rom)) {
+    // --- A bare Next name (`enNextZX.rom`, from before the set folders) is the nextzxos-2.08 set's
+    const shipped = canonicalShippedSidecar(`${rom.replace(/\\/g, "/")}.dis`).replace(/\.dis$/i, "");
+    path = `${SHIPPED_ROM_FOLDER}/${shipped}`;
     bytes = await mainApi.readBinaryFile(path).catch(() => undefined);
   }
   if (!bytes) {
@@ -100,7 +113,7 @@ export async function romTargetOf(
     ...(working.shippedSidecar ? { shippedSidecar: working.shippedSidecar } : {}),
     crc32: identity.crc32,
     size: identity.size,
-    romName: working.shippedSidecar ? working.shippedSidecar.replace(/\.dis$/i, "") : fileNameOf(path)
+    romName: fileNameOf(working.shippedSidecar ? working.shippedSidecar.replace(/\.dis$/i, "") : path)
   };
 }
 

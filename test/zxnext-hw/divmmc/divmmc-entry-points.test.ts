@@ -8,7 +8,7 @@ import { createSession, type NextTestSession } from "../../harness/zxnext";
  * DivMmcDevice-regression.test.ts and DivMmcDevice-fpga.test.ts; `divmmc.test.ts` (DIV-001 - DIV-013)
  * has the rest.
  *
- * Hardware (`_input/next-fpga/src`):
+ * Hardware (`vendor/next-fpga/3.02.01/src`):
  * - zxnext.vhd ~2804-2839: RST $00-$38 (A7-6 = 00, A2-0 = 000) pick bit n of $B8 (enable), $B9 (valid:
  *   1 = always, 0 = ROM 3 only) and $BA (timing: 1 instant, 0 delayed).
  *   ~2841-2843: always + enabled -> `divmmc_automap_instant_on` / `_delayed_on`.

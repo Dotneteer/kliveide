@@ -22,7 +22,7 @@ import {
 /*
  * AY / TurboSound (catalogue AY-001 - AY-011, AY-013 - AY-019; AY-012 is `ay-stereo-mode.test.ts`).
  *
- * Hardware (`_input/next-fpga/src`):
+ * Hardware (`vendor/next-fpga/3.02.01/src`):
  * - zxnext.vhd ~2603-2604: $FFFD = A15-14 "11", $BFFD = "10", both A2 = 1, A1-0 = "01", gated by the
  *   internal port enable bit 16 ($84 bit 0); ~2605 $BFF5 (A3 = 0) reads the chip id and register
  *   number; ~6325 the PSGs are held in reset while $06 bits 1-0 = 11; `aymode_i` = $06 bit 0

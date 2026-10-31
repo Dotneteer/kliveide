@@ -6,7 +6,7 @@ import { createSession, type NextTestSession } from "../../harness/zxnext";
  * CPU speed - NextReg $07, the expansion bus override and the $06 hotkey enable (catalogue
  * SPD-001 - SPD-007).
  *
- * Hardware (`_input/next-fpga/src/zxnext.vhd`):
+ * Hardware (`vendor/next-fpga/3.02.01/src/zxnext.vhd`):
  * - ~5729-5739: `nr_07_cpu_speed` is reset to "00", loaded from a `$07` write (bits 1-0) and
  *   incremented by the F8 hotkey.
  * - ~5742-5770: `cpu_speed` (the actual speed) follows `nr_07_cpu_speed` whenever the CPU is between

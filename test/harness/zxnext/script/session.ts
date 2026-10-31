@@ -5,6 +5,7 @@ import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import type { NextMachine } from "../core/machines";
 import { toBcd } from "@emu/machines/zxNext/nextRtc";
+import type { NextProfileId } from "@emu/machines/zxNext/nextProfiles";
 import { isZxNextIdeMachine } from "@emu/machines/zxNext/IZxNextIdeMachine";
 import type { BeamPosition } from "@common/utils/beamGeometry";
 import type {
@@ -84,6 +85,11 @@ const NEXT_MODEL = 4;
 export type SessionOptions = {
   /** Enables `audio()`. The core reads the rate at setup, so it cannot be switched on later. */
   audioSampleRate?: number;
+  /**
+   * The Next model to run (`nextProfiles.ts`): its WASM artifact, ROM set and identity. The implicit
+   * one (`ks2-30201`) by default; `forEachProfile` runs a test on several.
+   */
+  profile?: NextProfileId;
 };
 
 /** A NextReg write the core caught for an armed watch, as `takeNextRegHit` reports it. */
@@ -187,7 +193,10 @@ export class NextTestSession {
   ) {}
 
   static async create(options: SessionOptions = {}): Promise<NextTestSession> {
-    return new NextTestSession(await createCore({ audioSampleRate: options.audioSampleRate, hardReset: true }), options);
+    return new NextTestSession(
+      await createCore({ audioSampleRate: options.audioSampleRate, hardReset: true, profile: options.profile }),
+      options
+    );
   }
 
   /** Power-on reset of the whole machine. */

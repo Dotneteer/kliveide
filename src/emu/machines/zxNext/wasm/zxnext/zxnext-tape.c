@@ -46,10 +46,20 @@
 #define SP48_TAPE_BIT0_PULSE_LENGTH 855u
 #define SP48_TAPE_BIT1_PULSE_LENGTH 1710u
 #define SP48_TAPE_TERM_SYNC_PULSE_LENGTH 947u
-#define SP48_TAPE_LOAD_BYTES_ROUTINE 0x056cu
-#define SP48_TAPE_LOAD_BYTES_INVALID_HEADER_ROUTINE 0x05b6u
-#define SP48_TAPE_LOAD_BYTES_RESUME_ROUTINE 0x05e2u
-#define SP48_TAPE_SAVE_BYTES_ROUTINE 0x04c2u
+/*
+ * The ROM 3 routines the trap watches are facts about the ROM set, not hardware: the host writes them
+ * when it uploads the ROMs (`zxnextTapeSetRomRoutines`, from `nextRomSets.json`'s `facts.ldBytes`;
+ * `.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` D6). Host-owned, so volatile: a state restore keeps the live
+ * values. The defaults are the 48K ROM's, which NextZXOS 2.08's ROM 3 has byte for byte.
+ */
+static uint32_t zxnextTapeRomLoadBytes = 0x056cu;
+static uint32_t zxnextTapeRomLoadBytesInvalidHeader = 0x05b6u;
+static uint32_t zxnextTapeRomLoadBytesResume = 0x05e2u;
+static uint32_t zxnextTapeRomSaveBytes = 0x04c2u;
+#define SP48_TAPE_LOAD_BYTES_ROUTINE zxnextTapeRomLoadBytes
+#define SP48_TAPE_LOAD_BYTES_INVALID_HEADER_ROUTINE zxnextTapeRomLoadBytesInvalidHeader
+#define SP48_TAPE_LOAD_BYTES_RESUME_ROUTINE zxnextTapeRomLoadBytesResume
+#define SP48_TAPE_SAVE_BYTES_ROUTINE zxnextTapeRomSaveBytes
 #define SP48_DIAGNOSTIC_TAPE_BLOCK_OVERFLOW 0x00000004u
 #define SP48_DIAGNOSTIC_TAPE_DATA_OVERFLOW 0x00000008u
 #define SP48_DIAGNOSTIC_TAPE_UPLOAD_INCOMPLETE 0x00000010u
@@ -169,6 +179,15 @@ static uint32_t zxnextTapeTrapActive(void);
 // ----------------------------------------------------------------------------
 // Time and the trap
 
+/* The ROM set's tape routines in ROM 3 (see the defaults above) */
+void zxnextTapeSetRomRoutines(uint32_t loadBytes, uint32_t loadBytesInvalidHeader, uint32_t loadBytesResume,
+                              uint32_t saveBytes) {
+  zxnextTapeRomLoadBytes = loadBytes & 0xffffu;
+  zxnextTapeRomLoadBytesInvalidHeader = loadBytesInvalidHeader & 0xffffu;
+  zxnextTapeRomLoadBytesResume = loadBytesResume & 0xffffu;
+  zxnextTapeRomSaveBytes = saveBytes & 0xffffu;
+}
+
 static ZxNextClock28 zxnextTapeClock;
 
 /* The 28 MHz clock now */
@@ -197,6 +216,28 @@ static uint8_t zxnextTapeInputDebounced;
 /* The relaxation's count of membrane enables with the debounced level at 1 (0-64), and the result */
 static uint8_t zxnextTapeInputRelax;
 static uint8_t zxnextTapeInput;
+#if ZXNEXT_CORE_VERSION >= 30204
+/*
+ * 3.02.04's relaxation (misc/symmetric_relaxation.vhd@3.02.04, zxnext_top_issue4.vhd@3.02.04
+ * ~705-739): its input is `ear_port_i_qq xor not zxn_pi_fe_ear`, inverted (INVERT = '1'), so it works on
+ * `sig = ear_port_i_qq xor pi_fe_ear`. Any change of `sig` restarts the count; once it has held for 64
+ * membrane enables the output is `port_fe_mic and issue 2` (`i_relax_0` = `i_relax_1`), otherwise it is
+ * `sig`. The debounced pin `ear_port_i_qq` is the inverse of the level this file calls the socket's
+ * (`zxnextTapeInputDebounced`, which 3.02.01 delivers as is: relaxation.vhd@3.02.01 with INVERT = '1'
+ * on `ear_port_i_qq`, ~677-689), so with the Pi silent 3.02.04 delivers the socket's level inverted.
+ * That is what the VHDL says; the ROM's edge-driven loader does not tell the difference.
+ */
+static uint8_t zxnextTapeInputSig = 1u;
+static uint8_t zxnextTapeInputRelaxed = 1u;
+
+/* `port_fe_mic and nr_08_keyboard_issue2` (zxnext.vhd@3.02.04 ~1755) */
+static inline uint8_t zxnextTapeIssue2Mic(void) { return micBit && (zxnextNextRegs[0x08u] & 0x01u) != 0u; }
+
+/* i_AUDIO_EAR now */
+static inline uint8_t zxnextTapeInputOutput(void) {
+  return zxnextTapeInputRelaxed ? zxnextTapeIssue2Mic() : zxnextTapeInputSig;
+}
+#endif
 
 /* The socket's level at the player's current time: the player while the ROM loads, 0 otherwise */
 static inline uint8_t zxnextTapeSocketLevel(void) {
@@ -214,6 +255,53 @@ static inline uint64_t zxnextTapeFirstTickAfter(uint64_t clock) {
 }
 
 /* Steps the input stage through every 1.75 MHz enable up to `now` */
+#if ZXNEXT_CORE_VERSION >= 30204
+static void zxnextTapeInputSync(uint64_t now) {
+  if (zxnextTapeInputNextTick > now) return;
+  const uint8_t loading = sp48TapeMode == SP48_TAPE_MODE_LOAD;
+  /* The Pi's EAR bit as of now, for the whole step (the stage is synced before every instruction) */
+  const uint8_t pi = (uint8_t)(zxnextPiI2sGetFeEar() != 0u);
+  if (!loading && pi == 0u && zxnextTapeInputRawPrev == 0u && zxnextTapeInputDebounced == 0u &&
+      zxnextTapeInputSig == 1u && zxnextTapeInputRelaxed) {
+    /* Settled at rest (the socket idle, the Pi silent, relaxed): nothing changes until one of them does */
+    zxnextTapeInputNextTick = zxnextTapeFirstTickAfter(now + 1u);
+    return;
+  }
+  while (zxnextTapeInputNextTick <= now) {
+    const uint64_t t = zxnextTapeInputNextTick;
+    zxnextTapeNowTacts = (uint32_t)(t >> 3u);
+    const uint8_t raw = zxnextTapeSocketLevel();
+    /* debounce.vhd: unchanged from 3.02.01 */
+    if (raw != zxnextTapeInputRawPrev) {
+      zxnextTapeInputStable = 1u;
+    } else if (zxnextTapeInputStable < 2u) {
+      zxnextTapeInputStable++;
+    }
+    if (zxnextTapeInputStable >= 2u) zxnextTapeInputDebounced = raw;
+    zxnextTapeInputRawPrev = raw;
+    /* symmetric_relaxation.vhd@3.02.04: sig = ear_port_i_qq xor pi_fe_ear; a change clears the count */
+    const uint8_t sig = (uint8_t)((zxnextTapeInputDebounced == 0u) ^ pi);
+    if (sig != zxnextTapeInputSig) {
+      zxnextTapeInputRelax = 0u;
+    } else if ((t % ZXNEXT_TAPE_RELAX_PERIOD) == ZXNEXT_TAPE_RELAX_PERIOD - 1u &&
+               zxnextTapeInputRelax < ZXNEXT_TAPE_RELAX_COUNT) {
+      zxnextTapeInputRelax++;
+    }
+    const uint8_t relaxed = zxnextTapeInputRelax >= ZXNEXT_TAPE_RELAX_COUNT;
+    if (sig != zxnextTapeInputSig || relaxed != zxnextTapeInputRelaxed) {
+      zxnextTapeInputSig = sig;
+      zxnextTapeInputRelaxed = relaxed;
+      zxnextBeeperSetTapeEarAt(sig, relaxed, zxnextTapeBeeperTact(t, now));
+    }
+    zxnextTapeInput = zxnextTapeInputOutput();
+    zxnextTapeInputNextTick += ZXNEXT_TAPE_DEBOUNCE_PERIOD;
+    if (!loading && pi == 0u && raw == 0u && zxnextTapeInputDebounced == 0u && sig == 1u && relaxed) {
+      zxnextTapeInputNextTick = zxnextTapeFirstTickAfter(now + 1u);
+      break;
+    }
+  }
+}
+#else
 static void zxnextTapeInputSync(uint64_t now) {
   if (zxnextTapeInputNextTick > now) return;
   const uint8_t loading = sp48TapeMode == SP48_TAPE_MODE_LOAD;
@@ -253,10 +341,14 @@ static void zxnextTapeInputSync(uint64_t now) {
     }
   }
 }
+#endif
 
 /* The conditioned tape input now (port $FE bit 6, the MIC line) */
 static uint32_t zxnextTapeGetInput(void) {
   zxnextTapeInputSync(zxnextTapeClockNow());
+#if ZXNEXT_CORE_VERSION >= 30204
+  zxnextTapeInput = zxnextTapeInputOutput(); /* relaxed, it follows port_fe_mic and $08 bit 0 */
+#endif
   return zxnextTapeInput;
 }
 
@@ -282,6 +374,13 @@ static void zxnextTapeReset(void) {
   zxnextTapeInputDebounced = 0u;
   zxnextTapeInputRelax = 0u;
   zxnextTapeInput = 0u;
+#if ZXNEXT_CORE_VERSION >= 30204
+  /* At rest: the idle socket reads ear_port_i_qq = 1, held long enough to be relaxed. (A power-on's
+     first 1.15 ms, before the count fills, are not modelled.) */
+  zxnextTapeInputRelax = ZXNEXT_TAPE_RELAX_COUNT;
+  zxnextTapeInputSig = 1u;
+  zxnextTapeInputRelaxed = 1u;
+#endif
 }
 
 static void zxnextTapeSetMode(uint32_t mode) {

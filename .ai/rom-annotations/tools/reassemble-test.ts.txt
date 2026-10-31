@@ -2,6 +2,7 @@
 // reassembled, and must give the ROM back byte for byte (what the IDE's Export as source and
 // rom-ann-export do). Copy to test/reverse-eng/zz-reassemble.test.ts, run, delete:
 //   [PAGE=<n>] SIDECAR=~/Klive/RomAnnotations/sp48.rom.dis ROM=sp48.rom OUT=<scratchpad>/export.kz80.asm \
+//   (ROM is a path under src/public/roms: ROM=zxnext/nextzxos-2.08/enNextZX.rom for the Next's)
 //     npx vitest run --config build/vitest.config.ts --project node test/reverse-eng/zz-reassemble.test.ts
 // OUT keeps the exported source for reading.
 import { readFileSync, writeFileSync } from "node:fs";
@@ -13,6 +14,7 @@ import { knownRomPageKind, romPageIdentity } from "@common/roms/romIdentity";
 import { parseAnnotations } from "@renderer/appIde/annotations/programAnnotations";
 import { buildRomSourceExport, compareRomAssembly } from "@renderer/appIde/annotations/romSourceExport";
 import { withInheritedEntries } from "@renderer/appIde/annotations/romInheritance";
+import { canonicalShippedSidecar } from "@common/roms/romSidecarPaths";
 
 it("reassembles to the ROM byte for byte", async () => {
   const ROMS = join(__dirname, "../../src/public/roms");
@@ -22,8 +24,8 @@ it("reassembles to the ROM byte for byte", async () => {
   const bytes = new Uint8Array(readFileSync(join(ROMS, process.env.ROM!))).subarray(page * 0x4000, (page + 1) * 0x4000);
   // --- A sidecar that `inherits` is exported with its inherited, byte-bound entries, as the IDE does
   const { annotations } = await withInheritedEntries(own, (p) => (p === page ? bytes : undefined), async (sidecar, inheritedPage) => ({
-    annotations: parseAnnotations(readFileSync(join(ROMS, sidecar), "utf8")).annotations!,
-    bytes: new Uint8Array(readFileSync(join(ROMS, sidecar.replace(/\.dis$/, "")))).subarray(inheritedPage * 0x4000, (inheritedPage + 1) * 0x4000)
+    annotations: parseAnnotations(readFileSync(join(ROMS, canonicalShippedSidecar(sidecar)), "utf8")).annotations!,
+    bytes: new Uint8Array(readFileSync(join(ROMS, canonicalShippedSidecar(sidecar).replace(/\.dis$/, "")))).subarray(inheritedPage * 0x4000, (inheritedPage + 1) * 0x4000)
   }));
   const pages = [{ page, bytes, kind: knownRomPageKind(romPageIdentity(bytes)), crc32: romPageIdentity(bytes).crc32 }];
   const exported = await buildRomSourceExport(annotations, pages, { header: ["check"] });

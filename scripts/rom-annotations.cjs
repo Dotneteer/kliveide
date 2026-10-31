@@ -3,7 +3,7 @@
 /*
  * The shipped ROM sidecars' tools (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §5.4, §6).
  *
- *   npm run rom:annotations                 format every src/public/roms/*.rom.dis and regenerate
+ *   npm run rom:annotations                 format every .rom.dis under src/public/roms and regenerate
  *                                           rom-annotations.index.json (the default)
  *   npm run rom:annotations -- --check      fail when formatting would change anything (CI)
  *   npm run rom:annotations -- level [file] the completeness level of each page (§5.6)
@@ -17,10 +17,14 @@
  *
  * The rules authors follow, and the provenance log, are in `.ai/rom-annotations/`. This script only
  * formats and measures; the logic is `src/common/roms/romAnnotationTools.ts`, which the tests run.
+ *
+ * A sidecar is named by its path relative to src/public/roms (`sp48.rom.dis`,
+ * `zxnext/nextzxos-2.08/enNextZX.rom.dis`); a file argument may also be a path to the file. A bare
+ * Next name (`enNextZX.rom.dis`) means the nextzxos-2.08 set's (`src/common/roms/romSidecarPaths.ts`).
  */
 
 const { existsSync, readFileSync, readdirSync, writeFileSync } = require("node:fs");
-const { dirname, join, resolve } = require("node:path");
+const { dirname, join, relative, resolve, sep } = require("node:path");
 const { spawnSync } = require("node:child_process");
 
 const root = resolve(__dirname, "..");
@@ -30,6 +34,7 @@ const INDEX = join(ROMS, "rom-annotations.index.json");
 registerTsRuntime();
 const tools = require(join(root, "src/common/roms/romAnnotationTools.ts"));
 const identity = require(join(root, "src/common/roms/romIdentity.ts"));
+const sidecarPaths = require(join(root, "src/common/roms/romSidecarPaths.ts"));
 
 const args = process.argv.slice(2);
 const command = args[0] && !args[0].startsWith("--") ? args[0] : "format";
@@ -57,15 +62,32 @@ async function main() {
   }
 }
 
+/** Every shipped sidecar, by its path relative to src/public/roms (subfolders included). */
 function sidecarFiles() {
-  return readdirSync(ROMS)
+  return readdirSync(ROMS, { recursive: true })
+    .map((name) => String(name).split(sep).join("/"))
     .filter((name) => name.endsWith(".rom.dis"))
     .sort();
 }
 
 function readSidecar(name) {
-  const path = existsSync(name) ? name : join(ROMS, name);
+  const path = existsSync(name) ? name : join(ROMS, sidecarPaths.canonicalShippedSidecar(name));
   return { path, json: JSON.parse(readFileSync(path, "utf8")) };
+}
+
+/**
+ * The shipped ROM a sidecar argument describes, relative to src/public/roms: a shipped sidecar's
+ * own path, a working copy's shipped file (`~/Klive/RomAnnotations/enNextZX.rom.dis`), or the file
+ * of that name in src/public/roms.
+ */
+function romFileOf(name) {
+  const sidecar = existsSync(name)
+    ? (sidecarPaths.managedSidecarOf(resolve(name))?.sidecar ??
+      (resolve(name).startsWith(ROMS + sep)
+        ? relative(ROMS, resolve(name)).split(sep).join("/")
+        : sidecarPaths.canonicalShippedSidecar(name.split(/[\\/]/).pop())))
+    : sidecarPaths.canonicalShippedSidecar(name);
+  return sidecar.replace(/\.dis$/i, "");
 }
 
 /** The pages a sidecar has banks for (the index lists only those). */
@@ -130,8 +152,9 @@ async function measuredBank(json, page, pageBytes) {
     parseAnnotations(JSON.stringify(json)).annotations,
     (p) => (p === Number(page) ? pageBytes : undefined),
     async (sidecar, p) => ({
-      annotations: parseAnnotations(readFileSync(join(ROMS, sidecar), "utf8")).annotations,
-      bytes: romBytes(sidecar.replace(/\.dis$/i, "")).subarray(p * 0x4000, (p + 1) * 0x4000)
+      annotations: parseAnnotations(readFileSync(join(ROMS, sidecarPaths.canonicalShippedSidecar(sidecar)), "utf8"))
+        .annotations,
+      bytes: romBytes(romFileOf(sidecar)).subarray(p * 0x4000, (p + 1) * 0x4000)
     })
   );
   return annotations.banks[page];
@@ -140,7 +163,7 @@ async function measuredBank(json, page, pageBytes) {
 async function level(only) {
   for (const name of only ? [only] : sidecarFiles()) {
     const { json } = readSidecar(name);
-    const romFile = name.replace(/\.dis$/i, "").split(/[\\/]/).pop();
+    const romFile = romFileOf(name);
     for (const page of Object.keys(json.banks ?? {})) {
       const { decode, pageBytes } = decoderFor(romFile, Number(page));
       const report = await tools.measureRomLevel(await measuredBank(json, page, pageBytes), pageBytes, decode);
@@ -163,7 +186,7 @@ async function skeleton(name, page) {
   const sidecar = name.endsWith(".dis")
     ? readSidecar(name).json
     : { banks: { [page]: { regions: [{ start: 0, end: 0x3fff, type: "disassemble" }] } } };
-  const romFile = name.replace(/\.dis$/i, "").split(/[\\/]/).pop();
+  const romFile = romFileOf(name.endsWith(".dis") ? name : `${name}.dis`);
   const { decode, pageBytes } = decoderFor(romFile, page);
   const bank = await measuredBank(sidecar, String(page), pageBytes);
   const report = await tools.measureRomLevel(bank, pageBytes, decode);
@@ -175,7 +198,7 @@ function bind(name, romFile, page) {
   if (!name || !romFile) throw new Error("bind <sidecar> <rom file> [page]");
   const { bindRomPage } = require(join(root, "src/renderer/appIde/annotations/romBinding.ts"));
   const { json } = readSidecar(name);
-  const described = romBytes(name.replace(/\.dis$/i, "").split(/[\\/]/).pop()).subarray(page * 0x4000, (page + 1) * 0x4000);
+  const described = romBytes(romFileOf(name)).subarray(page * 0x4000, (page + 1) * 0x4000);
   const target = romBytes(romFile).subarray(0, 0x4000);
   const binding = bindRomPage(json.banks[String(page)], described, target);
   const bound = (json.banks[String(page)].localLabels ?? []).filter((label) => binding.bound.has(label.value));

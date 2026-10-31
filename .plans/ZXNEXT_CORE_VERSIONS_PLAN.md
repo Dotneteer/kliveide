@@ -1,6 +1,6 @@
 # ZX Spectrum Next: Board and Core Versions as Models — Implementation Plan
 
-**Status:** proposed 2026-10-31, not started.
+**Status:** implemented 2026-10-31 (P0-P7), uncommitted at the time of writing; see "As built" below.
 **Goal:** move from one hard-wired ZX Spectrum Next (KS2 board, core 3.02.01) to a set of
 *Next models*, each a pair **(board, core version)** with its own VHDL reference, ROM set, SD-card
 base image, NextReg set and, where the hardware differs, its own WASM artifact. The first new model
@@ -412,3 +412,43 @@ a profile record, guarded C, its tests, ROMs/SD, UI entry.
 3. Default model for new projects (D7).
 4. Do you want a run-time "core version" switch on one model instead of separate models? (This plan
    says no: a model is what a project records, and the artifact must follow it.)
+
+---
+
+## As built (2026-10-31)
+
+- **P0:** `$0E` reads `.01`; the version comes from `zxnext-profile.h` now.
+- **P1:** `nextProfiles.ts` (`ks2-30201`, aliases `standard`/`compatibility`, implicit model);
+  `nextRegSets/` (base + delta, union for names); ROM sets in `src/public/roms/zxnext/<setId>/`,
+  manifest **`src/common/zxnext/nextRomSets.json`** (renamed from `romSets.json`: tsconfig-paths in
+  scripts resolved `@common/zxnext/romSets` to the `.json`). `npm run next-roms:fetch -- nextzxos-2.08
+  --ref KS2` reproduced the five committed ROMs byte for byte (`enNextLG.rom` belongs to the set too).
+  `ks2-base.cim` kept by name (D9.4), referenced from the manifest. The 2.08 set's ROM annotation
+  working copies stay flat in `~/Klive/RomAnnotations/` (`romSidecarPaths.ts`); other sets nest.
+  The loader checks page CRCs (D9.3). The tape trap addresses are host-written (`zxnextTapeSetRomRoutines`).
+- **P2:** `vendor/next-fpga/` (pins, comment patches for 3.02.01 and carried to 3.02.04),
+  `npm run next-fpga:{fetch,comments,diff}`; the fetched 3.02.01 tree + comments equals the old
+  `_input/next-fpga/` (bar `relaxation.vhd` line endings), which is deleted. Citations say
+  `vendor/next-fpga/3.02.01/`. Nothing in CI reads the VHDL, so CI needs no fetch step. The delta
+  is `.ai/zxnext-cores/30201-to-30204.md`. The `KS3` distribution branch is NextZXOS **2.10**
+  (set `nextzxos-2.10`); its README lists core 3.02.04 for issue 4 boards. D3 confirmed: guards, no
+  second files. Open: the `nextreg.txt` "comment" patch is two stray edits, not comments; and the
+  `t80na.vhd` patch's pin descriptions should be checked for provenance.
+- **P3:** `scripts/zxnext-artifacts.cjs`, both artifacts built and size-checked. The layout
+  fingerprint does not see code, so state files, debug recordings and boot checkpoints carry a
+  per-model core id (`stateCoreIdOf`; `zxnext` for 3.02.01) and the refusal names both models.
+- **P4:** items 1, 2, 4-8 guarded in C with tests on both profiles; item 3 (ULA I/O contention)
+  skipped: neither version models it. The 3.02.01 artifact's bytes are unchanged (MD5 before = after).
+  Item 4's EAR polarity follows the VHDL pin chain; not confirmed on hardware.
+- **P5:** facts for 2.10 (key-wait loop $0C98-$0CBE, HALT $0CB5; ROM 3 tape routines unchanged),
+  proved by `rom-facts.test.ts` and `nextzxos-boot.test.ts` (each model boots its own card into its
+  loop). SD base image by `npm run next-sd:build`. Sidecars carried by byte signature
+  (`npm run rom:annotations:carry`), level 0, review lists in `.ai/rom-annotations/carry-review/`.
+  Not done: per-profile visual goldens (recorded only after checking by eye).
+- **P6:** models in Select Machine / New Project; SD card per model, another model's default card
+  counts as no choice; the ROM Annotations menu groups the Next's ROMs by NextZXOS release; NEX
+  check against the active model. Model names are not translated (i18n guide D9).
+- **P7:** `docs/content/en/guides/next/next-models.mdx`, SD card page; changeset
+  `.changes/zx-spectrum-next-models.md`. D7 decided by the project author: new projects start on `ks2-30204`
+  (`NEW_PROJECT_NEXT_PROFILE_ID`, `newProjectModelIds` in the registry, the default favourite);
+  model-less references still mean `ks2-30201`.

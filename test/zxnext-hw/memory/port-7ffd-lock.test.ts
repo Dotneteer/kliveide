@@ -5,7 +5,7 @@ import { createSession } from "../../harness/zxnext";
 /*
  * The $7FFD paging lock and NextReg $08 bit 7 (catalogue MEM-009, B13).
  *
- * Hardware (`_input/next-fpga/src/zxnext.vhd`):
+ * Hardware (`vendor/next-fpga/3.02.01/src/zxnext.vhd`):
  * - ~3646: a $7FFD write is ignored while `port_7ffd_locked` (= port_7ffd_reg(5), bit 5 of the last
  *   accepted write) is set.
  * - ~3650: a NextReg $08 write with bit 7 = 1 clears port_7ffd_reg(5); bit 7 = 0 leaves it.

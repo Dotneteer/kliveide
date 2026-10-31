@@ -238,12 +238,27 @@ merely uncoloured, which no route diff can see.
     review, optionally through real NextZXOS `.nexload` in Chrome - `npm run test:visual`.
     Read `.ai/visual-tests-guide.md` before writing one.
 - New tests for Next hardware behaviour go in `test/zxnext-hw/` through the harness. The mock-based
-  device tests are gone: there is one Next machine, the WASM core, and its reference is the VHDL in
-  `_input/next-fpga/`, not a second emulator.
+  device tests are gone: there is one Next machine, the WASM core, and its reference is the VHDL of
+  the model's core version, fetched by `npm run next-fpga:fetch` into `vendor/next-fpga/<version>/`
+  (never committed; Klive's VHDL comments are patches in `vendor/next-fpga/comments/`), not a second
+  emulator.
   `test/wasm/zxNext/` keeps what the harness cannot reach - the loader, the machine lifecycle,
   checkpoints, the debug loop, boot traces, IDE-facing state.
 - Missing a capability? Add a session method (README: "Adding a method"), do not reach into
   `session.machine`.
+
+## ZX Spectrum Next models (board and core versions)
+
+- Each Next model is a profile (`src/emu/machines/zxNext/nextProfiles.ts`): a board and a core
+  version, with its own WASM artifact, VHDL version, NextReg set (`nextRegSets/`), ROM set and SD
+  card. Read `.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` before adding a model or a version-dependent
+  behaviour. Nothing reads "which Next" from a literal: it comes from the active profile.
+- ROM sets are committed in `src/public/roms/zxnext/<setId>/`, recorded in
+  `src/common/zxnext/nextRomSets.json` (`npm run next-roms:fetch`, `next-roms:check`); their facts
+  (key-wait loop, tape trap) are proved by `test/zxnext-hw/rom/rom-facts.test.ts`. SD base images
+  are built by `npm run next-sd:build`. Tests find ROMs through `nextRomFile()`/`readNextRom()`.
+- A version-sensitive hardware test runs every profile (`createSession({ profile })`,
+  `forEachProfile`); one that runs only one profile is a review smell.
 
 ## Sinclair ZX80 / ZX81
 

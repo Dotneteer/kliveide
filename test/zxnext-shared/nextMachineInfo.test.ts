@@ -5,9 +5,11 @@ import {
   buildNextCodeInjectionFlow,
   nextPartitionLabels,
   parseNextPartitionLabel,
-  z80nCallInstructionLength,
-  ZXNEXT_MAIN_WAITING_LOOP
+  z80nCallInstructionLength
 } from "@emu/machines/zxNext/nextMachineInfo";
+import { NEXT_ROM_SETS } from "@common/zxnext/romSets";
+
+const ZXNEXT_MAIN_WAITING_LOOP = NEXT_ROM_SETS["nextzxos-2.08"].facts.mainWaitingLoop;
 
 /*
  * `nextMachineInfo.ts` is what the ZX Spectrum Next machine tells the IDE and the debugger about

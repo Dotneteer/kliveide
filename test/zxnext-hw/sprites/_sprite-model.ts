@@ -1,5 +1,5 @@
 /*
- * A transcription of the line engine of `_input/next-fpga/src/video/sprites.vhd` (LOAD SPRITE LINE):
+ * A transcription of the line engine of `vendor/next-fpga/3.02.01/src/video/sprites.vhd` (LOAD SPRITE LINE):
  * for display line V (0-255, sprite coordinates: 32 lines above the paper) it walks sprites 0-127 in order
  * and writes their opaque pixels into a 320-pixel line buffer, as S_QUALIFY / S_PROCESS do.
  *

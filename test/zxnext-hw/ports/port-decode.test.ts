@@ -5,7 +5,7 @@ import { createSession } from "../../harness/zxnext";
 /*
  * Port decoding (catalogue PORT-004, PORT-005, PORT-009 - PORT-013).
  *
- * Hardware (`_input/next-fpga/src/zxnext.vhd`):
+ * Hardware (`vendor/next-fpga/3.02.01/src/zxnext.vhd`):
  * - ~2538: $FE is every even address (A0 = 0); no enable bit.
  * - ~3453-3465: $FE reads 1 & EAR & 1 & keyboard columns, where EAR = the EAR input or the last $FE
  *   bit 4 written (or bit 3, MIC, with $08 bit 0 = issue 2).

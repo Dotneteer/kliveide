@@ -20,7 +20,8 @@ import {
 } from "./z80-completion-data";
 import { lookupTstates } from "./z80-tstates-data";
 import type { DocumentOutlineEntry, SymbolDefinitionInfo } from "@abstractions/CompilerInfo";
-import { NEXT_REG_DESCRIPTORS } from "@emu/machines/zxNext/nextRegDescriptors";
+// --- Register names: the union of every core's set (`.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` D5)
+import { nextRegUnion } from "@emu/machines/zxNext/nextRegSets";
 import {
   decodeCopperWord,
   describeCopperInstruction,
@@ -521,7 +522,7 @@ const COPPER_SUBCOMMAND_ITEMS: CompletionResult[] = [
 ];
 
 /** NextRegs $01-$7F: the registers a Copper MOVE can write ($00 would be a NOP). */
-const COPPER_MOVE_REG_ITEMS: CompletionResult[] = NEXT_REG_DESCRIPTORS.filter(
+const COPPER_MOVE_REG_ITEMS: CompletionResult[] = nextRegUnion().filter(
   (d) => d.id >= 0x01 && d.id <= 0x7f
 ).map((d) => {
   const label = `$${d.id.toString(16).toUpperCase().padStart(2, "0")}`;

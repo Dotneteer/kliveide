@@ -1,7 +1,7 @@
 #include "zxnext-psg.h"
 
 /*
- * The three PSGs of TurboSound Next, following `_input/next-fpga/src/audio/ym2149.vhd` (I_SEL_L = '1')
+ * The three PSGs of TurboSound Next, following `vendor/next-fpga/3.02.01/src/audio/ym2149.vhd` (I_SEL_L = '1')
  * and turbosound.vhd; mirrors `NextPsgChip` / `TurboSoundDevice` of the TypeScript core.
  *
  * One `zxnextPsgTick` is one `ena_div` pulse: the 1.75 MHz PSG enable divided by 8, every 128 master

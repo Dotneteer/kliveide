@@ -6,7 +6,7 @@ import { colours, DISTINCT_32, fillScreen, hex8, PAPER_LEFT, PAPER_TOP, parkedSe
 /*
  * Standard ULA colours (catalogue ULA-001 - ULA-003, ULA-016, ULA-017).
  *
- * Hardware (`_input/next-fpga/src/video/zxula.vhd` ~541-553, "Standard ULA"):
+ * Hardware (`vendor/next-fpga/3.02.01/src/video/zxula.vhd` ~541-553, "Standard ULA"):
  *   ula_pixel = "000" & (not pixel_en) & attr(6) & (ink: attr(2:0) | paper: attr(5:3))
  * so ink is palette index 0-7, BRIGHT ink 8-15, paper 16-23, BRIGHT paper 24-31.
  * The border (~427, ~434) loads attr_reg with border_clr = "00" & border & border: BRIGHT 0, and

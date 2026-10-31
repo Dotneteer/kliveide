@@ -82,7 +82,7 @@ end-of-frame render and is used only for the paused "instant screen" view.
 `contactSheet`, `tiers` (`["headless","browser"]`), `knownFailures` (`{oracle, name?, reason}`).
 
 **Expectations come from hardware, never from emulator output.** Cite the VHDL in `expect.md`
-(`_input/next-fpga/src`: `copper.vhd`, `video/zxula_timing.vhd`, `zxnext.vhd`). Geometry: copper line L
+(`vendor/next-fpga/3.02.01/src`: `copper.vhd`, `video/zxula_timing.vhd`, `zxnext.vhd`). Geometry: copper line L
 is buffer row `48 + L − $64`; WAIT H fires at buffer x `96 + 16H`; ULA pixels are 2 buffer pixels wide.
 Horizontal edges get a 4-px probe margin (MOVE + palette pipeline delay).
 

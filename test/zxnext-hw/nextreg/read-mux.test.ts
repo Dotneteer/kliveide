@@ -5,7 +5,7 @@ import { createSession } from "../../harness/zxnext";
 /*
  * What a `$253B` read returns (catalogue NR-009 - NR-011).
  *
- * Hardware: the read mux in `_input/next-fpga/src/zxnext.vhd` (~5830-6233) is one `case nr_register`.
+ * Hardware: the read mux in `vendor/next-fpga/3.02.01/src/zxnext.vhd` (~5830-6233) is one `case nr_register`.
  * Registers it does not list fall into `when others => port_253b_dat <= (others => '0')` (~6232) -
  * including registers that exist only for writing ($04, $35-$39, $60, $63, $75-$79, ...). Registers it
  * lists pad some bits with constant '0' (or '1') bits.

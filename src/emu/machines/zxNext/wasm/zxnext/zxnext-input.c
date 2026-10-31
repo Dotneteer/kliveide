@@ -29,6 +29,13 @@ static uint32_t zxnextMousePortReads;
 /* The connectors: 12 bits, active high: MODE X Z Y START A C B U D L R */
 static uint16_t zxnextJoystickLeftState;
 static uint16_t zxnextJoystickRightState;
+#if ZXNEXT_CORE_VERSION >= 30204
+/* The MD pad reset's debounced line and its timers (zxnextInputOnFrameWrap) */
+#define ZXNEXT_PAD_RESET_ENABLE_CLOCKS 262144u /* 2^18: CLK_28_DEBOUNCE_EN */
+static uint8_t zxnextPadResetDebounced;
+static uint32_t zxnextPadResetStableClocks;
+static uint32_t zxnextPadResetHeldClocks;
+#endif
 /* membrane_stick.vhd udk_map: initialised by a core load (keyjoy_64_6.coe), kept by resets */
 static uint8_t zxnextJoymap[64];
 static uint8_t zxnextKeymapSelectJoy;
@@ -71,7 +78,53 @@ static void zxnextJoystickHardReset(void) {
   }
   zxnextKeymapSelectJoy = 0;
   zxnextKeymapAddress = 0;
+#if ZXNEXT_CORE_VERSION >= 30204
+  zxnextPadResetDebounced = 0u;
+  zxnextPadResetStableClocks = 0u;
+  zxnextPadResetHeldClocks = 0u;
+#endif
 }
+
+#if ZXNEXT_CORE_VERSION >= 30204
+/*
+ * The MD pad reset (zxnext_top_issue4.vhd@3.02.04 ~759-765; 3.02.01 ~707-712 has the button alone):
+ * B, C, A and START held together on either connector (bits 4-7) pull the reset button's line low. The
+ * line then runs the button's path: the ~571 ns noise filter and the debounce of 8 enables of
+ * CLK_28_DEBOUNCE_EN, 2^18 clocks each (~1095, ~1735-1760), then emu_fnkeys
+ * (input/membrane/emu_fnkeys.vhd@3.02.04 ~87-100, ~146-157, ~255-260): on release, held for less than
+ * BUTTON_PERIOD_MS / CLOCK_EN_PERIOD_MS = 100 enables is F4 (soft reset, not in config mode), longer
+ * is F1 (hard reset) (zxnext.vhd@3.02.04 ~6874-6877, ~6904-6905).
+ *
+ * The host changes the connectors between frames, so the line is sampled once a frame, with the
+ * frame's 28 MHz clocks as the time it held. The pad is outside the Next's reset (the debouncers run
+ * on power-on reset only), so nothing here is reset but by a core load.
+ */
+
+static uint32_t zxnextPadResetCombo(uint32_t side) { return (zxnextJoystickConnector(side) & 0xf0u) == 0xf0u; }
+
+static void zxnextInputOnFrameWrap(uint32_t clocks) {
+  const uint8_t raw = (uint8_t)(zxnextPadResetCombo(0u) || zxnextPadResetCombo(1u));
+  if (zxnextPadResetDebounced) {
+    zxnextPadResetHeldClocks += clocks;
+    if (zxnextPadResetHeldClocks > 0x7fffffffu) zxnextPadResetHeldClocks = 0x7fffffffu;
+  }
+  if (raw == zxnextPadResetDebounced) {
+    zxnextPadResetStableClocks = 0u;
+    return;
+  }
+  zxnextPadResetStableClocks += clocks;
+  if (zxnextPadResetStableClocks < 8u * ZXNEXT_PAD_RESET_ENABLE_CLOCKS) return;
+  zxnextPadResetStableClocks = 0u;
+  zxnextPadResetDebounced = raw;
+  if (raw) {
+    zxnextPadResetHeldClocks = 0u;
+  } else if (zxnextPadResetHeldClocks >= 100u * ZXNEXT_PAD_RESET_ENABLE_CLOCKS) {
+    zxnextResetRequest = 2u;
+  } else if (!zxnextConfigMode && zxnextResetRequest == 0u) {
+    zxnextResetRequest = 1u;
+  }
+}
+#endif
 
 void zxnextSetJoystickLeftState(uint32_t state) { zxnextJoystickLeftState = (uint16_t)(state & 0xfffu); }
 void zxnextSetJoystickRightState(uint32_t state) { zxnextJoystickRightState = (uint16_t)(state & 0xfffu); }

@@ -7,7 +7,7 @@ import { createSession, type NextTestSession } from "../../harness/zxnext";
  * (`zxnextPartitionOfPage` in zxnext.c). The partition must name the memory the CPU actually reads
  * code from - source mapping, partitioned breakpoints, `page()` and the execution history all ask it.
  *
- * Hardware (`_input/next-fpga/src`):
+ * Hardware (`vendor/next-fpga/3.02.01/src`):
  * - device/divmmc.vhd ~131-140: with conmem ($E3 bit 7) or automap, $0000-$1FFF is the DivMMC ROM
  *   (or, with mapram, DivMMC RAM bank 3) and $2000-$3FFF the DivMMC RAM bank $E3 bits 3-0 select.
  * - zxnext.vhd ~2998-3012: in $0000-$3FFF the Multiface wins over the DivMMC, and both over the MMU

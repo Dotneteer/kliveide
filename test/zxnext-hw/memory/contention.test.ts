@@ -5,7 +5,7 @@ import { createSession } from "../../harness/zxnext";
 /*
  * Memory contention and NextReg $08 bit 6 (catalogue MEM-023).
  *
- * Hardware (`_input/next-fpga/src/zxnext.vhd`):
+ * Hardware (`vendor/next-fpga/3.02.01/src/zxnext.vhd`):
  * - ~4461: contention is enabled only with $08 bit 6 = 0, a non-Pentagon timing and 3.5 MHz.
  * - ~4469-4473: whether an access is contended depends on the 8K *page* being accessed, not on the
  *   address: only pages $00-$0F (16K banks 0-7); 48K timing: bank 5; 128K: odd banks; +3: banks 4-7.

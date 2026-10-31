@@ -1,5 +1,5 @@
 -- F1 of .plans/ZX_NEXT_FIDELITY_PROOF_PLAN.md: the T80N from the ZX Spectrum Next FPGA source
--- (_input/next-fpga/src/cpu/t80na.vhd, unchanged) running the single-instruction cases written by
+-- (vendor/next-fpga/3.02.01/src/cpu/t80na.vhd, unchanged) running the single-instruction cases written by
 -- generate-cases.cjs. The CPU sees a flat 64K RAM and one I/O value; nothing else of the Next.
 --
 -- Per case: the CPU is reset; its first three reads are served "JP $8000" without touching RAM

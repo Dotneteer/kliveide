@@ -1,8 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 
 import { createTestZxNextWasmMachine } from "./wasm-next-test-helpers";
+import { readNextRomImages } from "../../harness/zxnext/core/roms";
 import { ZXNEXT_FRAME_TRACE_CAPACITY, ZXNEXT_FRAME_TRACE_HEADER_SIZE, ZXNEXT_FRAME_TRACE_RECORD_SIZE, ZXNEXT_FRAME_TRACE_TOTAL_BYTES } from "@emu/machines/zxNext/wasm/frameTraceLayout";
 
 describe("ZX Spectrum Next WASM frame trace layout", () => {
@@ -58,11 +57,7 @@ describe("ZX Spectrum Next WASM machine setup", () => {
   it("loads ROM images into WASM memory during setup and keeps them after hard reset", async () => {
     const machine = await createTestZxNextWasmMachine();
     const runtime = machine.wasmV2Runtime!;
-    const romRoot = resolve(__dirname, "../../../src/public/roms");
-    const nextRom = readFileSync(resolve(romRoot, "enNextZX.rom"));
-    const divMmcRom = readFileSync(resolve(romRoot, "enNxtmmc.rom"));
-    const multifaceRom = readFileSync(resolve(romRoot, "enNextMf.rom"));
-    const altRom = readFileSync(resolve(romRoot, "enAltZX.rom"));
+    const { nextRom, divMmcRom, multifaceRom, altRom } = readNextRomImages();
 
     expect(machine.doReadMemory(0x0000)).toBe(0xf3);
     expect(runtime.exports.zxnextReadPhysicalMemory(0x00000)).toBe(nextRom[0]);

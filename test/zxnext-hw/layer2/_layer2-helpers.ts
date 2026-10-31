@@ -2,7 +2,7 @@ import { hex8, parkedSession, writePalette } from "../ula/_ula-helpers";
 import type { NextTestSession } from "../../harness/zxnext";
 
 /*
- * A transcription of `_input/next-fpga/src/video/layer2.vhd` and a screen set up to check it pixel by
+ * A transcription of `vendor/next-fpga/3.02.01/src/video/layer2.vhd` and a screen set up to check it pixel by
  * pixel.
  *
  * - 256x192 (`$70` bits 5-4 = 00): display pixel (x, y) of the paper; x = x + scroll_x (the address

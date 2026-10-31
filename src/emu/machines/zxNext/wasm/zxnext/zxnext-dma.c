@@ -3,7 +3,7 @@
 
 /*
  * zxnDMA / Z80 DMA for the WASM Next backend: a line-by-line port of DmaDevice.ts, which follows
- * `_input/next-fpga/src/device/dma.vhd` - see its header for the hardware notes. In short: clocked by
+ * `vendor/next-fpga/3.02.01/src/device/dma.vhd` - see its header for the hardware notes. In short: clocked by
  * the CPU clock (6 CPU clocks a byte by default), the counter counts from 0 (zxnDMA, $6B) or $FFFF
  * (Z80 DMA, $0B) and the transfer goes on while counter < length, the prescaler counts 28 MHz time
  * (32 x prescaler clocks of 28 MHz per byte), burst mode frees the bus while it waits, byte mode is

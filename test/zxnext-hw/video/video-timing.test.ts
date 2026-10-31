@@ -6,7 +6,7 @@ import { delay } from "../_timing-helpers";
 /*
  * Video timing (catalogue VT-001 - VT-009, VT-011).
  *
- * Hardware (`_input/next-fpga/src/video/zxula_timing.vhd` ~146-310, `zxnext.vhd`):
+ * Hardware (`vendor/next-fpga/3.02.01/src/video/zxula_timing.vhd` ~146-310, `zxnext.vhd`):
  * - Per timing: line length c_max_hc + 1 (7 MHz clocks, 2 per 3.5 MHz tact), frame c_max_vc + 1
  *   lines, display origin c_min_vactive, interrupt at (c_int_v, c_int_h):
  *     48K       448 x 312 (60 Hz: 264), vactive 64 (40), int (0, 116)

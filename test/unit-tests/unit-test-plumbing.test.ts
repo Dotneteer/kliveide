@@ -20,7 +20,7 @@ import { unsupportedMachineMessage } from "@main/unit-tests/unitTestMachines";
 import { SP48_WASM_V2_ARTIFACT_NAME } from "@emu/machines/zxSpectrum48/wasm/Sp48WasmV2Loader";
 import { SP128_WASM_V2_ARTIFACT_NAME } from "@emu/machines/zxSpectrum128/wasm/Sp128WasmV2Loader";
 import { SPP3E_WASM_V2_ARTIFACT_NAME } from "@emu/machines/zxSpectrumP3e/wasm/SpP3eWasmV2Loader";
-import { ZXNEXT_WASM_V2_ARTIFACT_NAME } from "@emu/machines/zxNext/wasm/ZxNextWasmV2Loader";
+import { NEXT_PROFILES } from "@emu/machines/zxNext/nextProfiles";
 import { KLIVE_UNIT_TEST_INCLUDE } from "@main/unit-tests/includes/kliveInclude";
 import { SJASMPLUS_UNIT_TEST_INCLUDE } from "@main/unit-tests/includes/sjasmplusInclude";
 import { resultText, unitTestRows } from "@renderer/appIde/unit-tests/unitTestTree";
@@ -146,7 +146,8 @@ describe("project settings and machines", () => {
     expect(artifactNameOf("sp48")).toBe(SP48_WASM_V2_ARTIFACT_NAME);
     expect(artifactNameOf("sp128")).toBe(SP128_WASM_V2_ARTIFACT_NAME);
     expect(artifactNameOf("spp3e")).toBe(SPP3E_WASM_V2_ARTIFACT_NAME);
-    expect(artifactNameOf("zxnext")).toBe(ZXNEXT_WASM_V2_ARTIFACT_NAME);
+    expect(artifactNameOf("zxnext")).toBe("zx-spectrum-next.wasm");
+    expect(artifactNameOf("zxnext", "ks2-30204")).toBe(NEXT_PROFILES["ks2-30204"].wasmArtifact);
     expect(unsupportedMachineMessage("sp48")).toBeUndefined();
     expect(unsupportedMachineMessage("c64")).toMatch(/Z80/);
     expect(unsupportedMachineMessage("z88")).toMatch(/Cambridge Z88/);

@@ -1,6 +1,5 @@
-import { readFileSync } from "node:fs";
 
-import { createSession, type NextTestSession } from "../../harness/zxnext";
+import { createSession, type NextTestSession, readNextRom } from "../../harness/zxnext";
 
 /*
  * Shared helpers for the memory-management tests (catalogue §4.5).
@@ -12,7 +11,7 @@ import { createSession, type NextTestSession } from "../../harness/zxnext";
 
 export const RESULTS = 0xa000;
 
-const rom = (name: string) => readFileSync(new URL(`../../../src/public/roms/${name}`, import.meta.url));
+const rom = (name: string) => readNextRom(name);
 
 /** The four 16K ROMs of `enNextZX.rom`: ROM n is what `$0000-$3FFF` shows with ROM select n. */
 export const NEXT_ROM = rom("enNextZX.rom");

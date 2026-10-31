@@ -1,0 +1,63 @@
+---
+description: "The ZX Spectrum Next models Klive emulates: a board and an FPGA core version, each with its own NextZXOS, SD card and hardware, and how to choose one."
+---
+
+import { Callout } from 'nextra/components'
+
+# ZX Spectrum Next Models
+
+A real ZX Spectrum Next is a board running an FPGA core, and the core is updated over the years: a
+newer core fixes and changes hardware behaviour, and the NextZXOS release made for it expects it.
+Klive emulates each pairing it supports as a separate model of the Next. This page lists the models
+and what differs between them.
+
+*Applies to: ZX Spectrum Next.*
+
+## The models
+
+| Model | Board | Core | NextZXOS | Default SD card |
+|---|---|---|---|---|
+| ZX Spectrum Next (KS2, core 3.02.01) | KS2 (issue 4) | 3.02.01 | 2.08 | `ks2.cim` |
+| ZX Spectrum Next (KS2, core 3.02.04) | KS2 (issue 4) | 3.02.04 | 2.10 | `ks2-30204.cim` |
+
+Each model has its own:
+
+- **Emulated hardware.** The core version decides how the hardware behaves; NextReg `$01` and `$0E`
+  report it, and a NEX file that asks for a newer core than the model's is flagged in the NEX viewer.
+- **ROMs.** The model boots the ROMs of its NextZXOS release.
+- **SD card.** Each model has its own default card with its NextZXOS release on it
+  ([The Next's SD card](/en/guides/next/sd-card)).
+- **Next Registers descriptions.** The Next Registers panel describes the registers as the model's
+  core has them.
+
+## Choosing a model
+
+Pick the model in **Machine › Select Machine...** (or **New Project**). A project remembers its model.
+A new Next project starts on KS2 with core 3.02.04, the newest core Klive emulates, unless a Next
+model is running or is in your favourites. Projects saved before Klive had several Next models open on
+KS2 with core 3.02.01, the Next that those versions of Klive emulated.
+
+Choose the model that matches the core your program targets, or the one your own Next runs. To try a
+program on both, switch the model and run it again.
+
+<Callout type="info">
+A machine state file or a debug recording belongs to the model it was saved on: another Next model
+refuses it, and says which model saved it.
+</Callout>
+
+## What changed in core 3.02.04
+
+The KS2 / 3.02.04 model emulates these hardware changes; the 3.02.01 model keeps the older behaviour:
+
+| Area | Core 3.02.04 |
+|---|---|
+| Sprites | No early end of a line's sprite rendering: more sprites fit on a line (the last one may be cut part-way), and port `$303B` bit 1 is set only when the line runs out of time. |
+| CTC | A counter reloads its time constant as it would reach zero; a control word with D2 set while a channel waits for its trigger makes it wait for a new time constant. |
+| EAR input | The input's relaxation is symmetric, and a tape loads in real time with the issue 2 keyboard setting. |
+| NextReg `$0A` | Bit 5 swaps SD cards 0 and 1 (written in config mode, with bit 2 set). |
+| NextReg `$81` | Bit 3 is stored and readable; port `$1FFD` bit 3 drives a disk motor latch, which the Multiface +3 reads back. |
+| NextReg `$A0` | Bit 1 is writable, reads back and survives a soft reset. |
+| Mega Drive pad | A+B+C+START works as the reset button. |
+
+The [Next Registers panel](/en/guides/next/next-registers) shows each register as the model's core
+describes it.

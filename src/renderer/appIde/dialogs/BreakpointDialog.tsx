@@ -39,7 +39,8 @@ import {
   parseNumericInput,
   validateBreakpointForm
 } from "@renderer/appIde/utils/breakpoint-form";
-import { NEXT_REG_DESCRIPTORS } from "@emu/machines/zxNext/nextRegDescriptors";
+// --- Register names: the union of every core's set (`.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` D5)
+import { nextRegUnion } from "@emu/machines/zxNext/nextRegSets";
 import { SPRITE_ATTRIBUTE_LABELS } from "@common/zxnext/sprites/spriteBreakpoints";
 import styles from "./BreakpointDialog.module.scss";
 import { t as translate } from "@common/i18n/i18n";
@@ -111,7 +112,7 @@ const describeNextReg = (text: string): string | undefined => {
   const parsed = parseNumericInput(text);
   if (!parsed.ok || parsed.value < 0 || parsed.value > 0xff) return undefined;
   const hex = `$${parsed.value.toString(16).toUpperCase().padStart(2, "0")}`;
-  const described = NEXT_REG_DESCRIPTORS.find((d) => d.id === parsed.value);
+  const described = nextRegUnion().find((d) => d.id === parsed.value);
   return described
     ? `${hex} — ${described.description}`
     : translate("dialog.breakpoint.nextReg.undocumented", { register: hex });

@@ -6,7 +6,7 @@ import { createSession, type NextTestSession } from "../../harness/zxnext";
  * NextReg $04 stores bits 6-0 only (catalogue NR-019; ported from test/zxnext/NextRegDevice.test.ts
  * "Reg $04 write #1/#2").
  *
- * Hardware (`_input/next-fpga/src/zxnext.vhd`):
+ * Hardware (`vendor/next-fpga/3.02.01/src/zxnext.vhd`):
  * - ~1099: `nr_04_romram_bank` is 7 bits; ~5131-5132: a $04 write stores `nr_wr_dat(6 downto 0)` -
  *   bit 7 is dropped.
  * - ~2998-3000: in config mode $0000-$3FFF maps SRAM `nr_04_romram_bank & A13`, writable. 16K bank 16

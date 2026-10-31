@@ -6,7 +6,7 @@ import { colours, fillScreen, hex8, PAPER_LEFT, PAPER_TOP, parkedSession, pokeCe
 /*
  * ULA transparency and stencil mode (catalogue ULA-018, ULA-019).
  *
- * Hardware (`_input/next-fpga/src/zxnext.vhd`):
+ * Hardware (`vendor/next-fpga/3.02.01/src/zxnext.vhd`):
  * - ~7046-7049: ula_transparent when ula_rgb(8:1) = $14 (the palette *output*, compared as RGB, so two
  *   palette indices holding the same colour are both transparent), when clipped, or when $68 bit 7
  *   disables the ULA. The border is a ULA pixel too.

@@ -5,8 +5,8 @@ import { createSession, type NextTestSession, type WritableRegisters } from "../
 /*
  * The Z80N extended instructions on the whole machine (catalogue CPU-001 - CPU-017).
  *
- * Hardware: `_input/next-fpga/src/cpu/t80n_mcode.vhd` (the ED table, ~1640-2560) and
- * `_input/next-fpga/src/cpu/t80n.vhd` (the Z80N commands, ~695-1140). Flags are compared as
+ * Hardware: `vendor/next-fpga/3.02.01/src/cpu/t80n_mcode.vhd` (the ED table, ~1640-2560) and
+ * `vendor/next-fpga/3.02.01/src/cpu/t80n.vhd` (the Z80N commands, ~695-1140). Flags are compared as
  * S Z H P/V N C (mask $D7); the undocumented bits 5/3 are not asserted.
  */
 

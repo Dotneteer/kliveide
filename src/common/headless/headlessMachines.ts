@@ -1,3 +1,4 @@
+import { nextProfileOf } from "@emu/machines/zxNext/nextProfiles";
 import {
   MI_C64,
   MI_HT1080Z,
@@ -22,7 +23,6 @@ import {
 const SP48_WASM_V2_ARTIFACT_NAME = "zx-spectrum48.wasm";
 const SP128_WASM_V2_ARTIFACT_NAME = "zx-spectrum128.wasm";
 const SPP3E_WASM_V2_ARTIFACT_NAME = "zx-spectrum-p3e.wasm";
-const ZXNEXT_WASM_V2_ARTIFACT_NAME = "zx-spectrum-next.wasm";
 const ZX8081_WASM_V2_ARTIFACT_NAME = "zx8081.wasm";
 const HT1080Z_WASM_V2_ARTIFACT_NAME = "ht1080z.wasm";
 const TVC_WASM_V2_ARTIFACT_NAME = "tvc.wasm";
@@ -59,7 +59,7 @@ export function headlessUnsupportedMessage(machineId: string | undefined): strin
 }
 
 /** The WASM artifact a machine loads */
-export function artifactNameOf(machineId: string): string {
+export function artifactNameOf(machineId: string, modelId?: string): string {
   switch (machineId) {
     case MI_SPECTRUM_48:
       return SP48_WASM_V2_ARTIFACT_NAME;
@@ -68,7 +68,8 @@ export function artifactNameOf(machineId: string): string {
     case MI_SPECTRUM_3E:
       return SPP3E_WASM_V2_ARTIFACT_NAME;
     case MI_ZXNEXT:
-      return ZXNEXT_WASM_V2_ARTIFACT_NAME;
+      // --- One artifact per Next model's hardware (`.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` D3)
+      return nextProfileOf(modelId).wasmArtifact;
     case MI_ZX80:
     case MI_ZX81:
       return ZX8081_WASM_V2_ARTIFACT_NAME;

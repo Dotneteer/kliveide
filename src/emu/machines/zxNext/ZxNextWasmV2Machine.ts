@@ -1,3 +1,4 @@
+import { t } from "@common/i18n/i18n";
 import { conditionStoreOf, type ConditionStore } from "../conditionStore";
 import { WasmHistorySource } from "../history/WasmHistorySource";
 import { WasmProfileSource } from "../profile/WasmProfileSource";
@@ -31,7 +32,7 @@ import type {
   IZxNextHostInputMachine,
   JoystickConnector
 } from "./IZxNextHostInputMachine";
-import { NEXT_REG_DESCRIPTORS } from "./nextRegDescriptors";
+import { nextRegSetOf } from "./nextRegSets";
 import { BANK5_PHYSICAL, BANK7_PHYSICAL } from "@common/zxnext/tilemap/tilemapDecode";
 import { isOutsideRam, LAYER2_RAM_PHYSICAL, LAYER2_READ_BYTES } from "@common/zxnext/layer2/layer2Decode";
 import {
@@ -74,6 +75,8 @@ import {
 } from "./nextMemoryLayout";
 import { ZxNextWasmHost } from "./ZxNextWasmHost";
 import { NEXT_ROM_FLAGS } from "./nextMachineInfo";
+import { NEXT_ROM_FILES, NEXT_ROM_SETS, nextRomPageCrcs, nextRomPath } from "@common/zxnext/romSets";
+import { nextModelDisplayName, profileOfStateCoreId, stateCoreIdOf } from "./nextProfiles";
 import { rtcRegistersFromDate } from "./nextRtc";
 import {
   AUDIO_SAMPLE_RATE,
@@ -90,6 +93,7 @@ import { nextAudioOutputIndex } from "@common/settings/next-audio-output";
 import { importAccessLog } from "../wasmAccessLog";
 import {
   captureWasmImage,
+  MachineStateMismatchError,
   restoreWasmImage,
   type MachineStateParts
 } from "../state/wasmStateImage";
@@ -539,7 +543,11 @@ export class ZxNextWasmV2Machine
 
   override async setup(): Promise<void> {
     this.wasmV2RomImages = await this.loadWasmV2RomImages();
-    this.wasmV2Runtime = await loadZxNextWasmV2(this.wasmV2LoaderOptions);
+    // --- The profile's artifact (D3), unless the caller supplies its own reader and name
+    this.wasmV2Runtime = await loadZxNextWasmV2({
+      ...this.wasmV2LoaderOptions,
+      artifactName: this.wasmV2LoaderOptions?.artifactName ?? this.profile.wasmArtifact
+    });
     this.hardResetWasmV2(this.wasmV2Runtime);
     // --- The DS1307 holds the host's time, as the battery-backed clock of a machine set up before
     this.wasmV2Runtime.exports.zxnextRtcSetTime(...rtcRegistersFromDate(new Date()));
@@ -663,7 +671,7 @@ export class ZxNextWasmV2Machine
   saveMachineState(): MachineStateParts {
     const runtime = this.requireWasmV2Runtime();
     return {
-      ...captureWasmImage("zxnext", runtime.module, runtime.exports.memory.buffer),
+      ...captureWasmImage(stateCoreIdOf(this.profile), runtime.module, runtime.exports.memory.buffer),
       host: this.captureHostState()
     };
   }
@@ -671,7 +679,10 @@ export class ZxNextWasmV2Machine
   // ------------------------------------------------------------------------------------------------
   // Reverse debugging (`.plans/REVERSE_DEBUGGING_PLAN.md` §4.2, `reverse/Timeline.ts`)
 
-  readonly reverseCoreId = "zxnext";
+  /** Per model, as the state files' (`stateCoreIdOf`): a recording made on one Next model never replays on another */
+  get reverseCoreId(): string {
+    return stateCoreIdOf(this.profile);
+  }
 
   get reverseRuntime(): ZxNextWasmV2Runtime | undefined {
     return this.wasmV2Runtime;
@@ -730,7 +741,18 @@ export class ZxNextWasmV2Machine
    */
   loadMachineState(parts: MachineStateParts): void {
     const runtime = this.requireWasmV2Runtime();
-    restoreWasmImage(parts, "zxnext", runtime.module, runtime.exports.memory.buffer);
+    // --- Another Next model's state: say which model saved it (`.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` §4)
+    const coreId = stateCoreIdOf(this.profile);
+    const savedOn = profileOfStateCoreId(parts.coreId);
+    if (savedOn && parts.coreId !== coreId) {
+      throw new MachineStateMismatchError(
+        t("media.state.otherNextModel", {
+          saved: nextModelDisplayName(savedOn.id),
+          model: nextModelDisplayName(this.profile.id)
+        })
+      );
+    }
+    restoreWasmImage(parts, coreId, runtime.module, runtime.exports.memory.buffer);
     this.applyHostFields(parts.host);
     // --- As a checkpoint restore: queued work of the replaced run goes; the audio rate is re-pushed
     this.emulatedKeyStrokes.length = 0;
@@ -2254,7 +2276,7 @@ export class ZxNextWasmV2Machine
   }
 
   getNextRegDescriptors(): NextRegDescriptors["descriptors"] {
-    return NEXT_REG_DESCRIPTORS.slice();
+    return nextRegSetOf(this.profile).slice();
   }
 
   getNextRegState(): NextRegState {
@@ -2321,12 +2343,28 @@ export class ZxNextWasmV2Machine
     this.wasmV2LastStopReason = "reset";
   }
 
+  /**
+   * The profile's ROM set (`.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` D9), each file checked against the
+   * manifest's page CRCs (D9.3): a hand-replaced ROM is reported, not booted
+   */
   private async loadWasmV2RomImages(): Promise<ZxNextWasmV2RomImages> {
+    const set = NEXT_ROM_SETS[this.profile.romSet];
+    const load = async (file: string) => {
+      const bytes = await this.loadRomFromFile(nextRomPath(set.id, file));
+      const pages = nextRomPageCrcs(bytes);
+      const expected = set.files[file]?.pages ?? [];
+      if (pages.join() !== expected.join()) {
+        throw new Error(
+          `The ZX Spectrum Next ROM '${nextRomPath(set.id, file)}' is not the one Klive ships with NextZXOS ${set.nextZxOs}.`
+        );
+      }
+      return bytes;
+    };
     return {
-      nextRom: await this.loadRomFromFile("roms/enNextZX.rom"),
-      divMmcRom: await this.loadRomFromFile("roms/enNxtmmc.rom"),
-      multifaceRom: await this.loadRomFromFile("roms/enNextMf.rom"),
-      altRom: await this.loadRomFromFile("roms/enAltZX.rom")
+      nextRom: await load(NEXT_ROM_FILES.nextRom),
+      divMmcRom: await load(NEXT_ROM_FILES.divMmcRom),
+      multifaceRom: await load(NEXT_ROM_FILES.multifaceRom),
+      altRom: await load(NEXT_ROM_FILES.altRom)
     };
   }
 
@@ -2338,6 +2376,9 @@ export class ZxNextWasmV2Machine
     writeCoreBytes(runtime, runtime.memory, roms.divMmcRom, OFFS_DIVMMC_ROM);
     writeCoreBytes(runtime, runtime.memory, roms.multifaceRom, OFFS_MULTIFACE_MEM);
     writeCoreBytes(runtime, runtime.memory, roms.altRom, OFFS_ALT_ROM_0);
+    // --- The ROM set's facts the core depends on (`.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` D6)
+    const tape = NEXT_ROM_SETS[this.profile.romSet].facts.ldBytes;
+    runtime.exports.zxnextTapeSetRomRoutines(tape.loadBytes, tape.loadBytesInvalidHeader, tape.loadBytesResume, tape.saveBytes);
   }
 
 
@@ -2570,7 +2611,7 @@ export class ZxNextWasmV2Machine
    */
   private getWasmNextRegDeviceState(): NextRegDeviceState {
     const ex = this.requireWasmV2Runtime().exports;
-    const regs: RegValueState[] = NEXT_REG_DESCRIPTORS.map((d) => {
+    const regs: RegValueState[] = nextRegSetOf(this.profile).map((d) => {
       const lastWrite = ex.zxnextGetNextRegisterLastWrite(d.id);
       return {
         id: d.id,

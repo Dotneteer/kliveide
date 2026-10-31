@@ -7,7 +7,7 @@ import { colours, fillScreen, hex8, PAPER_LEFT, PAPER_TOP, parkedSession, writeP
 /*
  * ULA hardware scrolling (catalogue ULA-010 - ULA-012).
  *
- * Hardware (`_input/next-fpga/src/video/zxula.vhd`):
+ * Hardware (`vendor/next-fpga/3.02.01/src/video/zxula.vhd`):
  * - ~196-208: py = (vc + scroll_y) with py_s >= 192 folded back (the three branches amount to
  *   (vc + scroll_y) mod 192 for every 8-bit scroll_y, including 192-255), so screen row
  *   (r + scroll_y) mod 192 is shown on paper row r; attributes follow py(7:3) (~223).

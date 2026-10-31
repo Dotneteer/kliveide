@@ -5,7 +5,7 @@ import { createSession, type NextTestSession } from "../../harness/zxnext";
 /*
  * DivMMC paging and automap (catalogue DIV-001 - DIV-013; DIV-014 is NMI-002).
  *
- * Hardware (`_input/next-fpga/src`):
+ * Hardware (`vendor/next-fpga/3.02.01/src`):
  * - device/divmmc.vhd:
  *   - conmem = $E3 bit 7, mapram = bit 6. In $0000-$1FFF (page0) with conmem or automap: the DivMMC ROM
  *     when mapram = 0, RAM page 3 when mapram = 1. In $2000-$3FFF (page1): RAM page $E3 bits 3-0.

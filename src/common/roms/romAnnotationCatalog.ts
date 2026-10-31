@@ -1,3 +1,4 @@
+import { NEXT_ROM_SETS, nextRomAnnotationFile, type NextRomSet } from "@common/zxnext/romSets";
 import { MI_HT1080Z, MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48, MI_TVC, MI_ZX80, MI_ZX81, MI_ZXNEXT } from "@common/machines/constants";
 
 /*
@@ -8,7 +9,10 @@ import { MI_HT1080Z, MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48, MI_TVC, MI
  * keeps the table in step with both sources and with the files in `src/public/roms`.
  */
 
-/** One ROM page: a file in `src/public/roms`, and its 16K page when the file has several. */
+/**
+ * One ROM page: a file by its path relative to `src/public/roms` (`sp48.rom`,
+ * `zxnext/nextzxos-2.08/enNextZX.rom`), and its 16K page when the file has several.
+ */
 export type RomCatalogEntry = { file: string; page?: number };
 
 /** A machine type's ROMs, in groups (one per ROM set) the menu separates. */
@@ -20,6 +24,22 @@ const files = (...names: string[]): RomCatalogEntry[] => names.map((file) => ({ 
 const p3Set = (stem: string): RomCatalogEntry[] =>
   Array.from({ length: 4 }, (_, index) => ({ file: `${stem}-${index}.rom` }));
 
+/**
+ * A Next ROM set's groups: NextZXOS, its LG variant, the alternate ROM, then the DivMMC and Multiface
+ * ROMs. A file of the set is listed once per 16K page it has.
+ */
+function nextSetGroups(set: NextRomSet): RomCatalogEntry[][] {
+  const entriesOf = (file: string): RomCatalogEntry[] => {
+    const info = set.files[file];
+    if (!info) return [];
+    const path = nextRomAnnotationFile(set.id, file);
+    return info.pages.length > 1 ? pages(path, info.pages.length) : files(path);
+  };
+  return [["enNextZX.rom"], ["enNextLG.rom"], ["enAltZX.rom"], ["enNxtmmc.rom", "enNextMf.rom"]]
+    .map((group) => group.flatMap(entriesOf))
+    .filter((group) => group.length > 0);
+}
+
 export const ROM_ANNOTATION_CATALOG: readonly RomCatalogMachine[] = [
   { machineId: MI_SPECTRUM_48, groups: [files("sp48.rom")] },
   { machineId: MI_SPECTRUM_128, groups: [files("sp128-0.rom", "sp128-1.rom")] },
@@ -30,12 +50,8 @@ export const ROM_ANNOTATION_CATALOG: readonly RomCatalogMachine[] = [
   },
   {
     machineId: MI_ZXNEXT,
-    groups: [
-      pages("enNextZX.rom", 4),
-      pages("enNextLG.rom", 4),
-      pages("enAltZX.rom", 2),
-      files("enNxtmmc.rom", "enNextMf.rom")
-    ]
+    // --- Each ROM set's groups in turn, its files named by their paths (`romSets.ts`)
+    groups: Object.values(NEXT_ROM_SETS).flatMap(nextSetGroups)
   },
   { machineId: MI_ZX81, groups: [files("zx81.rom")] },
   { machineId: MI_ZX80, groups: [files("zx80.rom")] },
@@ -54,7 +70,15 @@ export const ROM_ANNOTATION_CATALOG: readonly RomCatalogMachine[] = [
   }
 ];
 
-/** The IDE command that opens a ROM page's annotations, making an empty working copy when it has none. */
+/** A catalog entry's file name, without its folder: what the menu shows (`enNextZX.rom`). */
+export function romCatalogFileName(entry: RomCatalogEntry): string {
+  return entry.file.split("/").pop() ?? entry.file;
+}
+
+/**
+ * The IDE command that opens a ROM page's annotations, making an empty working copy when it has none.
+ * The file is named by its path under `src/public/roms`, which `rom-ann-open` looks up there first.
+ */
 export function romAnnotationOpenCommand(entry: RomCatalogEntry): string {
   return `rom-ann-open ${entry.file}${entry.page ? ` -page ${entry.page}` : ""} -create`;
 }

@@ -1,13 +1,12 @@
-import { readFileSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
 
-import { createSession, type AudioSample, type NextTestSession } from "../../harness/zxnext";
+import { createSession, type AudioSample, type NextTestSession, readNextRom } from "../../harness/zxnext";
 
 /*
  * Internal port enables, NextRegs $82-$85 (catalogue PORT-001 - PORT-003).
  *
- * Hardware (`_input/next-fpga/src/zxnext.vhd`):
+ * Hardware (`vendor/next-fpga/3.02.01/src/zxnext.vhd`):
  * - ~1219-1223: power-on $82-$84 = $FF, $85 enables = $F, $85 bit 7 (reset type) = 1; ~6084 $85 reads
  *   reset_type & "000" & enables.
  * - ~5030-5037: a reset sets all enables again only while $85 bit 7 = 1; bit 7 itself has no reset.
@@ -20,8 +19,8 @@ import { createSession, type AudioSample, type NextTestSession } from "../../har
  * with only that bit cleared.
  */
 
-const MF_ROM = readFileSync(new URL("../../../src/public/roms/enNextMf.rom", import.meta.url));
-const NEXT_ROM = readFileSync(new URL("../../../src/public/roms/enNextZX.rom", import.meta.url));
+const MF_ROM = readNextRom("enNextMf.rom");
+const NEXT_ROM = readNextRom("enNextZX.rom");
 
 type Scenario = {
   bit: number;

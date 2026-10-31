@@ -5,7 +5,7 @@ import { createSession } from "../../harness/zxnext";
 /*
  * Selecting and writing NextRegs (catalogue NR-001 - NR-005).
  *
- * Hardware (`_input/next-fpga/src/zxnext.vhd`):
+ * Hardware (`vendor/next-fpga/3.02.01/src/zxnext.vhd`):
  * - ~4572-4580: a `$243B` write stores the register number in `nr_register`; a reset sets it to `$24`
  *   ("protection against legacy programs accidentally hitting ports 0x243B, 0x253B").
  * - ~4583, ~2774: reading `$243B` returns `nr_register`.

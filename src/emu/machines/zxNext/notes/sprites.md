@@ -5,7 +5,7 @@
 The ZX Spectrum Next sprite engine is a high-performance hardware renderer supporting up to 128 sprites with sophisticated transformation capabilities. The architecture uses a state machine-driven approach with double-buffered line buffers to efficiently process sprites during frame rendering. This document describes the algorithm for emulation implementation.
 
 > **How to read this document.** It is a hardware description, verified against
-> `_input/next-fpga/src/video/sprites.vhd`, and that is what to trust in it. Parts of it are written
+> `vendor/next-fpga/3.02.01/src/video/sprites.vhd`, and that is what to trust in it. Parts of it are written
 > as implementation guidance for the TypeScript sprite renderer that Klive used to have — TypeScript
 > pseudo-code against `SpriteDevice`, `patternMemory8bit[]`, `NextComposedScreenDevice`, references
 > to pre-transformed pattern variants. That renderer was removed
@@ -126,7 +126,7 @@ These hardware characteristics enable the Next's sprite engine to process 128 sp
 
 ### Hardware Pattern and Attribute Model (FPGA, authoritative)
 
-Verified against `_input/next-fpga/src/video/sprites.vhd`. The engine
+Verified against `vendor/next-fpga/3.02.01/src/video/sprites.vhd`. The engine
 (`wasm/zxnext/zxnext-sprites.c`, `zxnext-ula.c`) follows this model, and is run through the
 pixel-level scenarios in `test/wasm/zxNext/sprite-fpga-scenarios.ts`
 (`test/wasm/zxNext/wasm-next-sprites-fpga.test.ts`). A second, TypeScript engine used to run the

@@ -8,7 +8,7 @@ import { parkedSession } from "../ula/_ula-helpers";
  * test/zxnext/SpriteDevice-status.test.ts (which set the flags by poking SpriteDevice fields), the
  * $303B read cases of SpriteDevice.test.ts and the zero-on-top case of sprite-collision-scenarios.ts.
  *
- * `_input/next-fpga/src/video/sprites.vhd`:
+ * `vendor/next-fpga/3.02.01/src/video/sprites.vhd`:
  * - ~982-1011: status_reg_s bits 7-2 are 0; bit 1 |= sprites_overtime, bit 0 |= (spr_line_data_o(8)
  *   and spr_line_we): both sticky. Only a $303B read (port303b_r_en_s) clears them, copying them to
  *   status_reg_read, which the read returns (~750). No write - $303B, $57, $5B, NextRegs - touches them.

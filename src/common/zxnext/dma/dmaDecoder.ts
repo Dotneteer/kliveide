@@ -8,7 +8,7 @@
  *
  * The sequencing is that of `zxnextDmaWriteBase` / `zxnextDmaWritePort` in
  * `src/emu/machines/zxNext/wasm/zxnext/zxnext-dma.c`, whose reference is
- * `_input/next-fpga/src/device/dma.vhd`. In short, for a base byte `d`:
+ * `vendor/next-fpga/3.02.01/src/device/dma.vhd`. In short, for a base byte `d`:
  *
  *   D7=0, D1D0≠00       WR0  D3/D4 port A low/high, D5/D6 block length low/high follow
  *   D7=0, D2D1D0=100    WR1  D6: a timing byte follows; its D5: one more byte (swallowed)

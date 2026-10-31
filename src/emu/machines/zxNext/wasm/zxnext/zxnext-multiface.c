@@ -65,7 +65,12 @@ static void zxnextMultifaceRetn(void) {
 static uint32_t zxnextMultifacePortData(uint32_t port) {
   if (zxnextMultifaceModeP3()) {
     switch ((port >> 12u) & 0x0fu) {
+#if ZXNEXT_CORE_VERSION >= 30204
+      /* "0000" & motor & port_1ffd_reg (zxnext.vhd@3.02.04 ~4804); 3.02.01 the last byte (~4292) */
+      case 0x1u: return (zxnextExpansionMotor() << 3u) | zxnextMemoryGetPort1ffd();
+#else
       case 0x1u: return zxnextMemoryGetPort1ffd();
+#endif
       case 0x7u: return zxnextMemoryGetPort7ffd();
       case 0xdu: return zxnextMemoryGetPortDffdReadback();
       case 0xeu: return zxnextMemoryGetPortEff7(); /* bits 3-2 */

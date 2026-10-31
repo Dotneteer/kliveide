@@ -1,5 +1,3 @@
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { DebugSupport } from "@emu/machines/DebugSupport";
@@ -8,6 +6,7 @@ import { OFFS_ALT_ROM_0, OFFS_DIVMMC_ROM, OFFS_MULTIFACE_MEM, OFFS_NEXT_ROM } fr
 import type { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
 
 import { createTestZxNextWasmMachine } from "./wasm-next-test-helpers";
+import { readNextRomImages } from "../../harness/zxnext/core/roms";
 
 const BOOT_STEP_COUNT = 2;
 const ROM_SAMPLE_ADDRESSES = [0x0000, 0x0001, 0x0002, 0x0003, 0x00ef, 0x00f0];
@@ -94,12 +93,8 @@ export async function createBootTrace(stepCount = BOOT_STEP_COUNT): Promise<ZxNe
 }
 
 export function readZxNextBootRomImages() {
-  const romRoot = resolve(__dirname, "../../../src/public/roms");
   return {
-    nextRom: readFileSync(resolve(romRoot, "enNextZX.rom")),
-    divMmcRom: readFileSync(resolve(romRoot, "enNxtmmc.rom")),
-    multifaceRom: readFileSync(resolve(romRoot, "enNextMf.rom")),
-    altRom: readFileSync(resolve(romRoot, "enAltZX.rom"))
+    ...readNextRomImages()
   };
 }
 

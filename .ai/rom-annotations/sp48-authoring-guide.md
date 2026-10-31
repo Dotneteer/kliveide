@@ -20,7 +20,7 @@ supersedes, keep no history (that is `PROVENANCE.md`'s job).
 - **Every ZX Spectrum Next ROM ships at level 2** (2026-10-21; the mapping and merge scripts are in
   `tools/`): one working copy per
   ROM file with a bank per page (`enNextZX.rom.dis` holds pages 0-3); give the tools `PAGE=<n>`. The
-  author follows the work by opening the working copy (`rom-ann-open enNextZX.rom -page 3`): write
+  author follows the work by opening the working copy (`rom-ann-open zxnext/nextzxos-2.08/enNextZX.rom -page 3`): write
   it back after every step, since the IDE re-reads it on each change.
 - **Every +2A/+3 (v4.0, v4.1, Spanish) and +2E/+3E ROM ships at level 2** (2026-10-20, R4 done):
   ROMs 0 (editor), 1 (syntax), 2 (+3DOS) and 3 (48K BASIC). v4.1 was authored from the bytes, the

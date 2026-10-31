@@ -5,7 +5,7 @@ import { createSession, type NextTestSession } from "../../harness/zxnext";
 /*
  * COP-016: NextReg $64 (copper line offset) takes effect when `cvc` reloads, not when it is written.
  *
- * Hardware (`_input/next-fpga/src/video/zxula_timing.vhd` ~455-472): `cvc` - the line counter the
+ * Hardware (`vendor/next-fpga/3.02.01/src/video/zxula_timing.vhd` ~455-472): `cvc` - the line counter the
  * copper, the line interrupt and NextRegs `$1E`/`$1F` all read - is a counter. At `hc_ula` 0 of the
  * first active line (`ula_max_hc and ula_min_vactive`) it is loaded with `$64`; on every other line it
  * counts on (wrapping at `c_max_vc`). So a `$64` write before that point in a frame shows from that
