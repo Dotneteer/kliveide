@@ -1558,6 +1558,28 @@ Any state the main process publishes for a renderer must be **re-published when 
 loads**: an action dispatched in main before a window's store exists never reaches it (the item
 was missing until the first client connected).
 
+## Two Panes Of One List: Focus Takes The Accent, Marks The Secondary Accent
+
+The File Manager (`DocumentPanels/FileManager/`) shows two lists side by side, each with a cursor and
+marked rows. The rules it settled:
+
+- **Only the focused pane wears the accent.** Its header gets a 2px `--accent-solid` top rule and its
+  cursor row the `--accent-subtle` wash with an `--accent-border` ring; the other pane keeps its
+  cursor as a neutral `--surface-selected` row, so the eye finds the pane the keys go to at once.
+- **A mark is a text colour, not a background**: `--accent-secondary-text`, semibold. Mark and cursor
+  must read apart on the same row, which a second wash cannot do.
+- **A grid of `ch` columns sizes its tracks in the grid container's font.** The header row and the
+  data rows must therefore set the same `font-family` on the grid element (the header's labels may
+  use the UI font inside their cells), or the `ch` tracks of the two rows differ and the columns
+  drift apart.
+- **The one flexible column gets a floor**: `minmax(12ch, 1fr)`, never `minmax(0, 1fr)`. A half-width
+  pane with five fixed `ch` columns otherwise gives the name column zero width and still overflows.
+  Keep the fixed columns to what their values need (`9ch` for a size, `4ch` for `RSA` or a user number).
+- **A path of clickable steps lets the earlier steps give way**: the last step keeps its name
+  (`flex-shrink: 0`, capped at 60 %), the ones before it ellipsize first.
+- **A status line's right-hand fact is not clipped**: it is `flex: 0 0 auto`, and the left text has
+  `min-width: 0` so it is the one that shortens.
+
 ## Token Architecture
 
 Four layers, in `src/renderer/theming/tokens/`:

@@ -3844,5 +3844,216 @@
   "panels.tvcTape.field.reserved": "Reserved",
   "@panels.tvcTape.field.reserved": {
     "context": "Videoton TVC tape file viewer (a document showing a Videoton TVC .cas tape file: a 144-byte header and the program; the Videoton TVC is a Hungarian home computer). Name of a byte field in the application header's byte anatomy: the bytes after the autostart flag."
+  },
+  "panels.fileManager.col.name": "Name",
+  "@panels.fileManager.col.name": {
+    "context": "File Manager (a two-pane file manager document): column header of a pane's file list."
+  },
+  "panels.fileManager.col.size": "Size",
+  "@panels.fileManager.col.size": {
+    "context": "File Manager (a two-pane file manager document): column header: the file's size."
+  },
+  "panels.fileManager.col.modified": "Modified",
+  "@panels.fileManager.col.modified": {
+    "context": "File Manager (a two-pane file manager document): column header: when the file was last changed."
+  },
+  "panels.fileManager.col.kind": "Type",
+  "@panels.fileManager.col.kind": {
+    "context": "File Manager (a two-pane file manager document): column header: what a ZX Spectrum file holds (BASIC, Code, ...)."
+  },
+  "panels.fileManager.col.start": "Start",
+  "@panels.fileManager.col.start": {
+    "context": "File Manager (a two-pane file manager document): column header: a Spectrum file's load address or auto-run line."
+  },
+  "panels.fileManager.col.attributes": "Attr.",
+  "@panels.fileManager.col.attributes": {
+    "context": "File Manager (a two-pane file manager document): column header: a +3DOS file's attributes (R, S, A). Narrow column."
+  },
+  "panels.fileManager.col.user": "User",
+  "@panels.fileManager.col.user": {
+    "context": "File Manager (a two-pane file manager document): column header: a +3DOS file's user area (0-15). Narrow column."
+  },
+  "panels.fileManager.dirMarker": "<DIR>",
+  "@panels.fileManager.dirMarker": {
+    "context": "File Manager (a two-pane file manager document): shown in the Size column for a folder, in the style of classic two-pane file managers. Narrow column."
+  },
+  "panels.fileManager.upMarker": "<UP>",
+  "@panels.fileManager.upMarker": {
+    "context": "File Manager (a two-pane file manager document): shown in the Size column of the '..' row that goes to the folder above. Narrow column."
+  },
+  "panels.fileManager.size.bytes": "{count, plural, one {# byte} other {# bytes}}",
+  "@panels.fileManager.size.bytes": {
+    "context": "File Manager (a two-pane file manager document): a size in bytes, in the status line or the drive menu.",
+    "placeholders": {
+      "count": "The number of bytes"
+    }
+  },
+  "panels.fileManager.size.mb": "{value} MB",
+  "@panels.fileManager.size.mb": {
+    "context": "File Manager (a two-pane file manager document): a size in megabytes.",
+    "placeholders": {
+      "value": "The size, already formatted with up to one decimal"
+    }
+  },
+  "panels.fileManager.size.tb": "{value} TB",
+  "@panels.fileManager.size.tb": {
+    "context": "File Manager (a two-pane file manager document): a size in terabytes.",
+    "placeholders": {
+      "value": "The size, already formatted with up to one decimal"
+    }
+  },
+  "panels.fileManager.size.gb": "{value} GB",
+  "@panels.fileManager.size.gb": {
+    "context": "File Manager (a two-pane file manager document): a size in gigabytes.",
+    "placeholders": {
+      "value": "The size, already formatted with up to one decimal"
+    }
+  },
+  "panels.fileManager.drive.home": "Home",
+  "@panels.fileManager.drive.home": {
+    "context": "File Manager (a two-pane file manager document): the drive that is the user's home folder, in the drive button and menu."
+  },
+  "panels.fileManager.drive.project": "Project: {name}",
+  "@panels.fileManager.drive.project": {
+    "context": "File Manager (a two-pane file manager document): the drive that is the open Klive project, in the drive button and menu.",
+    "placeholders": {
+      "name": "The project folder's name"
+    }
+  },
+  "panels.fileManager.drive.partition": "{name}, partition {index}",
+  "@panels.fileManager.drive.partition": {
+    "context": "File Manager (a two-pane file manager document): one partition of a hard-disk image with several, as a drive.",
+    "placeholders": {
+      "name": "The image file's name",
+      "index": "The partition's number, from 1"
+    }
+  },
+  "panels.fileManager.group.computer": "This computer",
+  "@panels.fileManager.group.computer": {
+    "context": "File Manager (a two-pane file manager document): heading of the drive menu's group of this computer's disks and folders."
+  },
+  "panels.fileManager.group.project": "Project",
+  "@panels.fileManager.group.project": {
+    "context": "File Manager (a two-pane file manager document): heading of the drive menu's group holding the open project."
+  },
+  "panels.fileManager.group.images": "Disk images",
+  "@panels.fileManager.group.images": {
+    "context": "File Manager (a two-pane file manager document): heading of the drive menu's group of disk and SD card image files opened as drives."
+  },
+  "panels.fileManager.openImage": "Open image as drive…",
+  "@panels.fileManager.openImage": {
+    "context": "File Manager (a two-pane file manager document): drive menu item: pick a disk or SD card image file and show it as a drive."
+  },
+  "panels.fileManager.imageFilter": "Disk images",
+  "@panels.fileManager.imageFilter": {
+    "context": "File Manager (a two-pane file manager document): file type filter name in the file dialog that picks an image to open as a drive."
+  },
+  "panels.fileManager.emptyFolder": "This folder is empty.",
+  "@panels.fileManager.emptyFolder": {
+    "context": "File Manager (a two-pane file manager document): shown in a pane whose folder has no files."
+  },
+  "panels.fileManager.loading": "Reading…",
+  "@panels.fileManager.loading": {
+    "context": "File Manager (a two-pane file manager document): shown in a pane while its folder is read."
+  },
+  "panels.fileManager.status.items": "{count, plural, one {# item} other {# items}}",
+  "@panels.fileManager.status.items": {
+    "context": "File Manager (a two-pane file manager document): a pane's status line: how many files and folders the folder holds.",
+    "placeholders": {
+      "count": "The number of items"
+    }
+  },
+  "panels.fileManager.status.marked": "{count} of {total} marked, {size}",
+  "@panels.fileManager.status.marked": {
+    "context": "File Manager (a two-pane file manager document): a pane's status line when files are marked for an operation.",
+    "placeholders": {
+      "count": "How many items are marked",
+      "total": "How many items the folder holds",
+      "size": "The marked files' total size, with its unit"
+    }
+  },
+  "panels.fileManager.status.fsFree": "{fs} · {free} free",
+  "@panels.fileManager.status.fsFree": {
+    "context": "File Manager (a two-pane file manager document): right side of a pane's status line: the drive's file system and its free space.",
+    "placeholders": {
+      "fs": "The file system, e.g. FAT32 or +3DOS (not translated)",
+      "free": "The free space, with its unit"
+    }
+  },
+  "panels.fileManager.status.free": "{free} free",
+  "@panels.fileManager.status.free": {
+    "context": "File Manager (a two-pane file manager document): right side of a pane's status line on a drive of this computer.",
+    "placeholders": {
+      "free": "The free space, with its unit"
+    }
+  },
+  "panels.fileManager.error.notFound": "{name} does not exist.",
+  "@panels.fileManager.error.notFound": {
+    "context": "File Manager (a two-pane file manager document): shown in a pane whose folder or drive could not be found.",
+    "placeholders": {
+      "name": "The folder, file or drive"
+    }
+  },
+  "panels.fileManager.error.notAFolder": "{name} is not a folder.",
+  "@panels.fileManager.error.notAFolder": {
+    "context": "File Manager (a two-pane file manager document): shown in a pane asked to show a file as a folder.",
+    "placeholders": {
+      "name": "The path"
+    }
+  },
+  "panels.fileManager.error.accessDenied": "{name} cannot be read: access is denied.",
+  "@panels.fileManager.error.accessDenied": {
+    "context": "File Manager (a two-pane file manager document): shown in a pane whose folder the system does not let Klive read.",
+    "placeholders": {
+      "name": "The folder"
+    }
+  },
+  "panels.fileManager.error.unsupported": "{name} is not an image Klive can open as a drive.",
+  "@panels.fileManager.error.unsupported": {
+    "context": "File Manager (a two-pane file manager document): shown when a file cannot be opened as a drive.",
+    "placeholders": {
+      "name": "The file's name"
+    }
+  },
+  "panels.fileManager.error.unformatted": "{name} has no file system Klive can read.",
+  "@panels.fileManager.error.unformatted": {
+    "context": "File Manager (a two-pane file manager document): shown when an image file holds no file system (it is blank, or its format is unknown).",
+    "placeholders": {
+      "name": "The file's name"
+    }
+  },
+  "panels.fileManager.error.noProject": "No project is open.",
+  "@panels.fileManager.error.noProject": {
+    "context": "File Manager (a two-pane file manager document): shown in a pane restored on the project drive when no project is open."
+  },
+  "panels.fileManager.error.failed": "{name} could not be read.",
+  "@panels.fileManager.error.failed": {
+    "context": "File Manager (a two-pane file manager document): shown in a pane when reading a folder failed for another reason.",
+    "placeholders": {
+      "name": "The folder or file"
+    }
+  },
+  "panels.fileManager.refresh": "Refresh (Ctrl+R)",
+  "@panels.fileManager.refresh": {
+    "context": "File Manager (a two-pane file manager document): tooltip of the pane's button that reads the folder again."
+  },
+  "panels.fileManager.showHidden": "Show hidden files (Ctrl+H)",
+  "@panels.fileManager.showHidden": {
+    "context": "File Manager (a two-pane file manager document): tooltip of the pane's toggle that shows or hides hidden files."
+  },
+  "panels.fileManager.changeDrive": "Change drive (Alt+F1, Alt+F2)",
+  "@panels.fileManager.changeDrive": {
+    "context": "File Manager (a two-pane file manager document): tooltip of the pane's drive button that opens the drive menu."
+  },
+  "panels.fileManager.readOnly": "Read-only",
+  "@panels.fileManager.readOnly": {
+    "context": "File Manager (a two-pane file manager document): tooltip of the lock icon on a drive that cannot be written."
+  },
+  "panels.fileManager.pathTooltip": "Go to {name}",
+  "@panels.fileManager.pathTooltip": {
+    "context": "File Manager (a two-pane file manager document): tooltip of a step of the pane's path, which goes to that folder.",
+    "placeholders": {
+      "name": "The folder or drive"
+    }
   }
 }

@@ -977,5 +977,9 @@
   "@menu.next.soundOutput": {
     "context": "Machine › Sound (ZX Spectrum Next): submenu choosing which of the Next's sound outputs the emulator plays (audio jack, internal speaker or HDMI). It sits under the volume levels of the Sound menu, so 'Output' means the sound output.",
     "maxChars": 30
+  },
+  "menu.file.fileManager": "File Manager...",
+  "@menu.file.fileManager": {
+    "context": "File menu item that opens the File Manager document (a two-pane file manager) in the IDE window."
   }
 }

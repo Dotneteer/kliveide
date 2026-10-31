@@ -836,5 +836,9 @@
   "@panels.sideBar.tvcVideo": {
     "context": "Side-bar panel heading (Debug activity): the Videoton TVC's video circuit - its 6845 CRTC, palette, border and video banks. 'TVC' is the machine name, keep it.",
     "maxChars": 27
+  },
+  "panels.document.fileManager": "File Manager",
+  "@panels.document.fileManager": {
+    "context": "Name of the File Manager document's tab: a two-pane file manager for this computer, the project and disk images."
   }
 }

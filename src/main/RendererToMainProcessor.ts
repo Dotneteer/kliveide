@@ -49,6 +49,7 @@ import {
 } from "@state/actions";
 import { createCompilerRegistry } from "./compiler-integration/compiler-registry";
 import { getDirectoryContent, getProjectDirectoryContentFilter } from "./directory-content";
+import { fmList, fmListDrives, fmOpenImage, fmRead } from "./file-manager/fmService";
 import { KLIVE_GITHUB_PAGES } from "./menus/help-menu";
 import { checkZ88SlotFile } from "./machine-menus/z88-menus";
 import { displaySaveFileDialog } from "./save-file-dialog";
@@ -388,6 +389,34 @@ class MainMessageProcessor {
     if (typeof filePath !== "string" || typeof hostFolder !== "string") throw new Error("An image and a folder are required");
     // --- Input validated
     return copyFolderToHardDiskSafely(filePath, hostFolder, targetDir, partition);
+  }
+
+  fmListDrives() {
+    return fmListDrives();
+  }
+
+  fmOpenImage(filePath: string) {
+    // Input validation
+    if (typeof filePath !== "string" || !filePath) throw new Error("An image path is required");
+    // --- Input validated
+    return fmOpenImage(filePath);
+  }
+
+  fmList(driveId: string, dir?: string) {
+    // Input validation
+    if (typeof driveId !== "string" || !driveId) throw new Error("A drive is required");
+    if (dir !== undefined && dir !== null && typeof dir !== "string") throw new Error("The folder must be a string");
+    // --- Input validated
+    return fmList(driveId, dir ?? undefined);
+  }
+
+  fmRead(driveId: string, filePath: string) {
+    // Input validation
+    if (typeof driveId !== "string" || !driveId || typeof filePath !== "string" || !filePath) {
+      throw new Error("A drive and a file are required");
+    }
+    // --- Input validated
+    return fmRead(driveId, filePath);
   }
 
   createHardDiskImage(filePath: string, options: { sizeMb: number; fatType: 16 | 32; label?: string; partitioned?: boolean }) {

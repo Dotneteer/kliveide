@@ -1,0 +1,342 @@
+import { t, translator } from "@common/i18n/i18n";
+import type { MessageKey } from "@common/i18n/keys.generated";
+import type { FmColumnSet, FmDriveRef, FmEntry, FmErrorCode, FmSpectrumFacts } from "@common/fileManager/fmTypes";
+import { paneRows, type FmState, type PaneSide, type PaneState, type SortKey } from "./FileManagerModel";
+
+/*
+ * What the File Manager shows (.plans/FILE_MANAGER_PLAN.md §4): every text and number formatted
+ * here, so the view only lays it out.
+ */
+
+export type ColumnKey = SortKey | "start" | "attributes" | "user";
+
+export type ColumnVm = {
+  key: ColumnKey;
+  label: string;
+  /** In `ch` (M2: no px column widths); the name column takes the rest */
+  width?: number;
+  align: "start" | "end";
+  sortable: boolean;
+  sorted?: "ascending" | "descending";
+};
+
+export type RowVm = {
+  key: string;
+  isUp: boolean;
+  isDirectory: boolean;
+  isImage: boolean;
+  marked: boolean;
+  cursor: boolean;
+  /** One per column, in the columns' order */
+  cells: string[];
+};
+
+/** A step of the path: a folder of this drive, or the place an entered image was entered from */
+export type CrumbTarget = { kind: "dir"; dir: string } | { kind: "leave"; returnIndex: number };
+
+export type CrumbVm = { label: string; target: CrumbTarget; current: boolean };
+
+export type DriveIcon = "volume" | "home" | "folder" | "project" | "image";
+
+export type PaneVm = {
+  side: PaneSide;
+  active: boolean;
+  drive?: { label: string; icon: DriveIcon; readOnly: boolean };
+  crumbs: CrumbVm[];
+  /** The pane's place in one line, for a tooltip */
+  pathText: string;
+  columns: ColumnVm[];
+  rows: RowVm[];
+  cursor: number;
+  loading: boolean;
+  error?: string;
+  /** Shown in an empty folder */
+  empty?: string;
+  statusLeft: string;
+  statusRight: string;
+};
+
+export type DriveMenuItemVm = {
+  id: string;
+  label: string;
+  detail?: string;
+  free?: string;
+  icon: DriveIcon;
+  selected: boolean;
+};
+
+export type DriveMenuVm = {
+  side: PaneSide;
+  groups: { title: string; items: DriveMenuItemVm[] }[];
+  openImageLabel: string;
+};
+
+export type FileManagerVm = {
+  panes: [PaneVm, PaneVm];
+  menu?: DriveMenuVm;
+  drivesError?: string;
+};
+
+// -------------------------------------------------------------------------------------------------
+// Formatting
+
+/** A size in bytes: grouped digits below 1 MB, then MB, GB or TB with one decimal */
+export function formatSize (bytes: number): string {
+  const n = new Intl.NumberFormat(translator.language);
+  if (bytes < 1024 * 1024) return n.format(bytes);
+  const units: [number, MessageKey][] = [
+    [1024 ** 4, "panels.fileManager.size.tb"],
+    [1024 ** 3, "panels.fileManager.size.gb"],
+    [1024 ** 2, "panels.fileManager.size.mb"]
+  ];
+  const [unit, key] = units.find(([u]) => bytes >= u)!;
+  const one = new Intl.NumberFormat(translator.language, { maximumFractionDigits: 1 });
+  return t(key, { value: one.format(bytes / unit) });
+}
+
+/** A size with its unit, for a sentence: bytes below 1 MB, then MB, GB or TB */
+export function formatSizeWithUnit (bytes: number): string {
+  return bytes < 1024 * 1024 ? t("panels.fileManager.size.bytes", { count: bytes }) : formatSize(bytes);
+}
+
+/** A date as `YYYY-MM-DD HH:MM`, the same in every language (a column, read across rows) */
+export function formatModified (ms: number | undefined): string {
+  if (ms === undefined) return "";
+  const d = new Date(ms);
+  const two = (v: number) => String(v).padStart(2, "0");
+  return `${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())} ${two(d.getHours())}:${two(d.getMinutes())}`;
+}
+
+const KIND_KEYS: Record<FmSpectrumFacts["kind"], MessageKey> = {
+  basic: "panels.diskExplorer.kind.basic",
+  numberArray: "panels.diskExplorer.kind.numberArray",
+  charArray: "panels.diskExplorer.kind.charArray",
+  code: "panels.diskExplorer.kind.code",
+  raw: "panels.diskExplorer.kind.raw"
+};
+
+function spectrumStart (s: FmSpectrumFacts | undefined): string {
+  if (!s) return "";
+  if (s.kind === "numberArray" || s.kind === "charArray") return s.variableName ?? "";
+  return s.start === undefined ? "" : String(s.start);
+}
+
+function attributesText (s: FmSpectrumFacts | undefined): string {
+  const a = s?.attributes;
+  return a ? `${a.readOnly ? "R" : "-"}${a.system ? "S" : "-"}${a.archive ? "A" : "-"}` : "";
+}
+
+// -------------------------------------------------------------------------------------------------
+// Columns
+
+type ColumnDef = { key: ColumnKey; label: MessageKey; width?: number; align: "start" | "end"; sortable: boolean };
+
+const NAME: ColumnDef = { key: "name", label: "panels.fileManager.col.name", align: "start", sortable: true };
+const SIZE: ColumnDef = { key: "size", label: "panels.fileManager.col.size", width: 9, align: "end", sortable: true };
+const MODIFIED: ColumnDef = { key: "modified", label: "panels.fileManager.col.modified", width: 17, align: "start", sortable: true };
+const KIND: ColumnDef = { key: "kind", label: "panels.fileManager.col.kind", width: 9, align: "start", sortable: true };
+const START: ColumnDef = { key: "start", label: "panels.fileManager.col.start", width: 6, align: "end", sortable: false };
+const ATTR: ColumnDef = { key: "attributes", label: "panels.fileManager.col.attributes", width: 4, align: "start", sortable: false };
+const USER: ColumnDef = { key: "user", label: "panels.fileManager.col.user", width: 4, align: "end", sortable: false };
+
+const COLUMN_SETS: Record<FmColumnSet, ColumnDef[]> = {
+  host: [NAME, SIZE, MODIFIED],
+  fat: [NAME, SIZE],
+  plus3dos: [NAME, KIND, SIZE, START, ATTR, USER],
+  trdos: [NAME, KIND, SIZE, START],
+  microdrive: [NAME, KIND, SIZE, START]
+};
+
+function cellOf (key: ColumnKey, e: FmEntry): string {
+  switch (key) {
+    case "name":
+      return e.name;
+    case "size":
+      return e.isDirectory ? t("panels.fileManager.dirMarker") : formatSize(e.size);
+    case "modified":
+      return formatModified(e.modified);
+    case "kind":
+      return e.spectrum ? t(KIND_KEYS[e.spectrum.kind]) : "";
+    case "start":
+      return spectrumStart(e.spectrum);
+    case "attributes":
+      return attributesText(e.spectrum);
+    case "user":
+      return e.spectrum?.user === undefined ? "" : String(e.spectrum.user);
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+// Drives
+
+export function driveIconOf (drive: FmDriveRef): DriveIcon {
+  switch (drive.role) {
+    case "root":
+    case "volume":
+      return "volume";
+    case "home":
+      return "home";
+    case "klive":
+    case "kliveProjects":
+      return "folder";
+    case "project":
+      return "project";
+    default:
+      return "image";
+  }
+}
+
+/** A drive's name as the pane and the menu show it */
+export function driveLabelOf (drive: FmDriveRef): string {
+  switch (drive.role) {
+    case "home":
+      return t("panels.fileManager.drive.home");
+    case "project":
+      return t("panels.fileManager.drive.project", { name: drive.name });
+    case "partition":
+      return t("panels.fileManager.drive.partition", { name: drive.name, index: (drive.partition ?? 0) + 1 });
+    default:
+      return drive.name;
+  }
+}
+
+function driveDetailOf (drive: FmDriveRef): string | undefined {
+  if (drive.group === "images") return drive.fileSystem;
+  if (drive.role === "volume" || drive.role === "klive" || drive.role === "kliveProjects") return drive.root;
+  return undefined;
+}
+
+const ERROR_KEYS: Record<FmErrorCode, MessageKey> = {
+  notFound: "panels.fileManager.error.notFound",
+  notAFolder: "panels.fileManager.error.notAFolder",
+  accessDenied: "panels.fileManager.error.accessDenied",
+  unsupported: "panels.fileManager.error.unsupported",
+  unformatted: "panels.fileManager.error.unformatted",
+  noProject: "panels.fileManager.error.noProject",
+  failed: "panels.fileManager.error.failed"
+};
+
+export function errorText (code: FmErrorCode, name?: string): string {
+  return t(ERROR_KEYS[code] ?? ERROR_KEYS.failed, { name: name ?? "" });
+}
+
+// -------------------------------------------------------------------------------------------------
+// The view model
+
+function selectPane (state: FmState, side: PaneSide): PaneVm {
+  const pane: PaneState = state.panes[side];
+  const columnSet = pane.listing?.columns ?? "host";
+  const defs = COLUMN_SETS[columnSet];
+  const columns: ColumnVm[] = defs.map((d) => ({
+    key: d.key,
+    label: t(d.label),
+    width: d.width,
+    align: d.align,
+    sortable: d.sortable,
+    sorted: pane.sort.key === d.key ? (pane.sort.descending ? "descending" : "ascending") : undefined
+  }));
+  const rows: RowVm[] = paneRows(pane).map((row, index) => {
+    if (row.kind === "up") {
+      return {
+        key: "..",
+        isUp: true,
+        isDirectory: true,
+        isImage: false,
+        marked: false,
+        cursor: index === pane.cursor,
+        cells: defs.map((d) => (d.key === "name" ? ".." : d.key === "size" ? t("panels.fileManager.upMarker") : ""))
+      };
+    }
+    const e = row.entry;
+    return {
+      key: e.path,
+      isUp: false,
+      isDirectory: e.isDirectory,
+      isImage: !!e.imageKind,
+      marked: pane.marked.includes(e.path),
+      cursor: index === pane.cursor,
+      cells: defs.map((d) => cellOf(d.key, e))
+    };
+  });
+
+  const driveLabel = pane.drive ? driveLabelOf(pane.drive) : "";
+  // --- An entered image shows where it was entered from first
+  const outer: CrumbVm[] = pane.returnTo.map((r, returnIndex) => ({
+    label: driveLabelOf(r.drive),
+    target: { kind: "leave", returnIndex },
+    current: false
+  }));
+  const crumbs: CrumbVm[] = (pane.listing?.crumbs ?? []).map((c, i, all) => ({
+    label: i === 0 ? topCrumbLabel(pane, driveLabel) : c.label,
+    target: { kind: "dir", dir: c.dir },
+    current: i === all.length - 1
+  }));
+  const allCrumbs = [...outer, ...crumbs];
+
+  const entries = pane.listing?.entries ?? [];
+  const markedEntries = entries.filter((e) => pane.marked.includes(e.path));
+  const statusLeft = markedEntries.length
+    ? t("panels.fileManager.status.marked", {
+      count: markedEntries.length,
+      total: entries.length,
+      size: formatSizeWithUnit(markedEntries.reduce((sum, e) => sum + e.size, 0))
+    })
+    : t("panels.fileManager.status.items", { count: entries.length });
+  const drive = pane.listing?.drive ?? pane.drive;
+  const fileSystem = drive?.fileSystem ?? "";
+  const statusRight = drive?.freeBytes === undefined
+    ? fileSystem
+    : fileSystem
+      ? t("panels.fileManager.status.fsFree", { fs: fileSystem, free: formatSizeWithUnit(drive.freeBytes) })
+      : t("panels.fileManager.status.free", { free: formatSizeWithUnit(drive.freeBytes) });
+
+  return {
+    side,
+    active: state.active === side,
+    drive: pane.drive ? { label: driveLabel, icon: driveIconOf(pane.drive), readOnly: pane.drive.readOnly } : undefined,
+    crumbs: allCrumbs,
+    pathText: [...pane.returnTo.map((r) => r.drive.root), pane.dir ?? ""].filter(Boolean).join(" › "),
+    columns,
+    rows,
+    cursor: pane.cursor,
+    loading: pane.status === "loading",
+    error: pane.status === "error" && pane.error ? errorText(pane.error.code, pane.error.name) : undefined,
+    empty: pane.status === "ready" && entries.length === 0 ? t("panels.fileManager.emptyFolder") : undefined,
+    statusLeft,
+    statusRight
+  };
+}
+
+/** A drive's top in the path: the folder itself on this computer, the file for an image */
+function topCrumbLabel (pane: PaneState, driveLabel: string): string {
+  const drive = pane.drive;
+  if (!drive) return driveLabel;
+  return drive.kind === "host" || drive.kind === "project" ? drive.root : drive.name;
+}
+
+function selectMenu (state: FmState): DriveMenuVm | undefined {
+  if (state.menuFor === undefined) return undefined;
+  const pane = state.panes[state.menuFor];
+  const item = (d: FmDriveRef): DriveMenuItemVm => ({
+    id: d.id,
+    label: driveLabelOf(d),
+    detail: driveDetailOf(d),
+    free: d.freeBytes === undefined ? undefined : formatSizeWithUnit(d.freeBytes),
+    icon: driveIconOf(d),
+    selected: pane.drive?.id === d.id
+  });
+  const groups = [
+    { title: t("panels.fileManager.group.computer"), items: state.drives.filter((d) => d.group === "computer").map(item) },
+    { title: t("panels.fileManager.group.project"), items: state.drives.filter((d) => d.group === "project").map(item) },
+    { title: t("panels.fileManager.group.images"), items: state.openedImages.map(item) }
+  ].filter((g) => g.items.length > 0);
+  return { side: state.menuFor, groups, openImageLabel: t("panels.fileManager.openImage") };
+}
+
+export function selectViewModel (state: FmState): FileManagerVm {
+  return {
+    panes: [selectPane(state, 0), selectPane(state, 1)],
+    menu: selectMenu(state),
+    drivesError: state.drivesError ? errorText(state.drivesError.code, state.drivesError.name) : undefined
+  };
+}

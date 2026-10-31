@@ -1,6 +1,7 @@
 import { ProjectNodeWithChildren } from "@abstractions/ProjectNode";
 import type { HardDiskView } from "@common/diskfs/hardDisk";
 import type { DiskEdit } from "@common/diskfs/edit";
+import type { FmDriveRef, FmListing } from "@common/fileManager/fmTypes";
 import type { SdCardFingerprint } from "@common/machineState/machineStateTypes";
 import { buildMessagingProxy } from "./MessageProxy";
 import type { UnitTestRunRequest, UnitTestRunResponse } from "@common/unit-tests/unitTestTypes";
@@ -203,6 +204,26 @@ class MainApiImpl {
 
   /** Copies a host folder's files and folders into a folder of a hard-disk image; returns the file count */
   async copyFolderToHardDisk(_filePath: string, _hostFolder: string, _targetDir?: string, _partition?: number): Promise<number> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /** The File Manager's drives: this computer's volumes and folders, and the open project (.plans/FILE_MANAGER_PLAN.md §5.1) */
+  async fmListDrives(): Promise<FmDriveRef[]> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /** An image file opened as File Manager drives: one for a floppy or cartridge, one per FAT partition */
+  async fmOpenImage(_filePath: string): Promise<FmDriveRef[]> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /** A folder of a File Manager drive; the drive's top when `dir` is omitted */
+  async fmList(_driveId: string, _dir?: string): Promise<FmListing> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /** A file's bytes on a File Manager drive (a Spectrum file's header left out) */
+  async fmRead(_driveId: string, _path: string): Promise<Uint8Array> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 

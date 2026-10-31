@@ -1801,5 +1801,9 @@
     "placeholders": {
       "action": "The action, e.g. compact"
     }
+  },
+  "commands.fileManager.showDescription": "Opens the File Manager",
+  "@commands.fileManager.showDescription": {
+    "context": "Description of the show-file-manager IDE command, shown in the command help."
   }
 }

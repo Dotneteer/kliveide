@@ -1,6 +1,6 @@
 # Klive File Manager (two-pane commander) — Implementation Plan
 
-**Status:** Accepted (2026-10-31). Nothing built yet. Decisions D1–D10 in §3 are accepted, and with
+**Status:** Phases 1–2 built (2026-10-31): the drive layer and read-only browsing (§12). Decisions D1–D10 in §3 are accepted, and with
 them the proposed answers to Q1–Q3 (§11); Q4 and Q5 stay open until Phase 8 and Phase 9.
 **Mockups:** `.plans/mockups/file-manager.html` (open it in a browser; it has tabs for each screen and
 a light/dark switch).
@@ -347,3 +347,42 @@ Still open:
 - **Q4.** Should the file manager be in the CLI too (`klive fm copy a.dsk:LOADER b.trd:`), reusing
   `planTransfer` and the jobs? The `klive disk` verb covers part of it.
 - **Q5.** Phase 9's order: IDEDOS first (Klive has a +3e, though no IDE interface yet), or MGT +D?
+
+## 12. As built
+
+### Phases 1 and 2 (2026-10-31)
+
+- **Drive layer** (`src/main/file-manager/fmDrives.ts`): host volumes (macOS `/Volumes` without the
+  system's `com.apple.*` mounts, Windows drive letters, Linux `/media`, `/run/media`, `/mnt`), home,
+  `Klive`, `KliveProjects` and the project; host folders; floppy and cartridge images read whole per
+  request (`openDiskFileSystem`); hard-disk images one drive per FAT partition, read through
+  `withHardDisk`. Nothing in it imports Electron: the host environment and the hard-disk access are
+  handed in, so `test/file-manager/fm-drives.test.ts` runs it on temp folders and real images.
+- **Requests** (`fmService.ts`, `MainApi.fmListDrives/fmOpenImage/fmList/fmRead`): the renderer
+  names a drive by its **id**, never sends a drive object back. The main process keeps the drives it
+  handed out and rebuilds an unknown one from its id (`host:`, `project:`, `image:`, `hd:<path>#<n>`),
+  which is what restores a pane after a restart. The machine's SD card is read under
+  `withSdCardAccess`. Errors cross IPC as `[fm:<code>]` in the message (`FmError`, `fmErrorCodeOf`).
+- **No image registry yet.** §7's shared in-memory copy only matters once something writes; Phase 4
+  adds it with the jobs.
+- **Browsing** (`src/renderer/appIde/DocumentPanels/FileManager/`): MVC per `.ai/ui-mvc-guide.md`.
+  `FileManagerModel.ts` (two panes, cursor, marks, sort, hidden files, the images entered),
+  `FileManagerViewModel.ts` (columns per file system, texts, sizes), `FileManagerController.ts`
+  (ports: `fm`, `picker`, `locations`), `fileManagerKeys.ts` (keys to intents, pure),
+  `FileManagerView.tsx` (virtualized rows, drive menu), `FileManagerPanel.tsx` (wiring).
+  Tested in `test/file-manager/fm-controller.test.ts` and `fm-keys.test.ts` without a DOM.
+- **Opening it:** the special document `$fileManager` (restored with the workspace; the panes' places
+  are its view state), the `show-file-manager` command (`fm`), and **File › File Manager...** — not
+  View, as D1 said: the View menu is held to 12 items by `test/main/app-menu-structure.test.ts`.
+- **Entering an image** (D9) works from host and project panes. An image *inside* an image (a `.dsk`
+  on an SD card) is listed with its image icon but not entered: that needs the bytes as a host file,
+  which comes with Phase 4's jobs.
+- **Keys built:** arrows, Page Up/Down, Home/End, Enter, Backspace, Tab, Insert/Space, Escape (clear
+  marks), Alt+F1/Alt+F2, Ctrl+R, Ctrl+H (hidden files), Ctrl+A (mark all files). Ctrl/Cmd+click marks.
+  F3–F8 and the button bar come with the viewer and the jobs.
+- **Column widths:** host `Name | Size 9ch | Modified 17ch`; FAT `Name | Size` (the FAT listing has no
+  dates); +3DOS adds `Type 9ch | Start 6ch | Attr. 4ch | User 4ch`. The name column is
+  `minmax(12ch, 1fr)`.
+- **Checked in the running IDE over CDP:** home and project panes, the drive menu, entering and
+  leaving a `.dsk` and an `.img`, a FAT folder, marking, Tab, and the tab restored with its panes
+  after a restart.
