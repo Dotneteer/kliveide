@@ -4,6 +4,9 @@ import path from "path";
 import { openDiskFileSystem } from "@common/diskfs/open";
 import { FAT_PARTITION_TYPES, partitionDevice, readPartitions } from "@common/diskfs/blockDevice";
 import { FatFileSystem } from "@common/diskfs/fat";
+import { openHardDiskFs } from "@common/diskfs/hardDiskFs";
+import { IDEDOS_PARTITION_BASE, IdedosPlus3Store, readIdedos, TYPE_PLUS3DOS } from "@common/diskfs/idedos";
+import { Plus3DosFileSystem } from "@common/diskfs/plus3dos";
 import { DiskFsError, type DiskFileEntry, type DiskFileSystem } from "@common/diskfs/types";
 import {
   FmError,
@@ -259,24 +262,42 @@ export async function openImageDrives (filePath: string, access: FmHardDiskAcces
     }
     return await access(root, () =>
       withHardDisk(root, (device) => {
-        const partitions = readPartitions(device).filter((p) => p.whole || FAT_PARTITION_TYPES.has(p.type));
-        if (partitions.length === 0) throw new DiskFsError("unformatted", "The disk has no FAT partition.");
-        return partitions.map((p): FmDriveRef => {
-          const info = new FatFileSystem(partitionDevice(device, p)).info();
-          return {
-            id: `hd:${root}#${p.index}`,
-            kind: "hardDisk",
-            role: partitions.length > 1 ? "partition" : "image",
-            group: "images",
-            name,
-            root,
-            partition: p.index,
-            fileSystem: info.system,
-            readOnly,
-            freeBytes: info.freeBytes,
-            totalBytes: info.totalBytes
-          };
-        });
+        // --- A +3e disk's IDEDOS +3DOS partitions (Phase 9), then any FAT partitions of its MBR
+        const idedos = readIdedos(device)?.partitions.filter((p) => p.type === TYPE_PLUS3DOS) ?? [];
+        const fat = idedos.length && readIdedos(device)?.systemLba === 0
+          ? []
+          : readPartitions(device).filter((p) => p.whole || FAT_PARTITION_TYPES.has(p.type));
+        const found: { partition: number; info: ReturnType<FatFileSystem["info"]>; label?: string }[] = [];
+        for (const p of idedos) {
+          try {
+            const info = new Plus3DosFileSystem(new IdedosPlus3Store(device, p)).info();
+            found.push({ partition: IDEDOS_PARTITION_BASE + p.index, info, label: p.name });
+          } catch {
+            // --- A partition without a +3DOS file system Klive can read is left out
+          }
+        }
+        for (const p of fat) {
+          try {
+            found.push({ partition: p.index, info: new FatFileSystem(partitionDevice(device, p)).info() });
+          } catch {
+            // --- Not a FAT file system after all
+          }
+        }
+        if (found.length === 0) throw new DiskFsError("unformatted", "The disk has no partition Klive can read.");
+        return found.map(({ partition, info, label }): FmDriveRef => ({
+          id: `hd:${root}#${partition}`,
+          kind: "hardDisk",
+          // --- An IDEDOS partition is named by its own name; an MBR partition by its number
+          role: !label && found.length > 1 ? "partition" : "image",
+          group: "images",
+          name: label ? `${name} (${label})` : name,
+          root,
+          partition,
+          fileSystem: info.system,
+          readOnly,
+          freeBytes: info.freeBytes,
+          totalBytes: info.totalBytes
+        }));
       })
     );
   } catch (err) {
@@ -298,8 +319,10 @@ export async function listImageFolder (
     }
     return await access(drive.root, () =>
       withHardDisk(drive.root, (device) => {
-        const fat = FatFileSystem.open(device, drive.partition);
-        return imageListing(drive, fat, folder, fat.list({ dir: folder }), false);
+        const diskFs = openHardDiskFs(device, drive.partition);
+        // --- A +3DOS partition is flat: no folders
+        const dir = diskFs.system === "fat" ? folder : "";
+        return imageListing(drive, diskFs, dir, diskFs.list({ dir }), false);
       })
     );
   } catch (err) {
@@ -324,7 +347,7 @@ export async function readDriveFile (
     }
     if (drive.kind === "image") return openDiskFileSystem(readImage(drive.root), drive.root).read(filePath);
     return await access(drive.root, () =>
-      withHardDisk(drive.root, (device) => FatFileSystem.open(device, drive.partition).read(filePath))
+      withHardDisk(drive.root, (device) => openHardDiskFs(device, drive.partition).read(filePath))
     );
   } catch (err) {
     throw drive.kind === "host" || drive.kind === "project" ? hostError(err, filePath) : imageError(err, filePath);

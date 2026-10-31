@@ -73,7 +73,7 @@ export type NewDiskFile = {
 
 /** The file system as a whole */
 export type DiskFsInfo = {
-  /** "+3DOS", "TR-DOS", "FAT16"/"FAT32", "Microdrive", or "TAP"/"TZX" */
+  /** "+3DOS", "TR-DOS", "FAT16"/"FAT32", "Microdrive", "TAP"/"TZX" or "MGT" */
   system: string;
   /** The format, e.g. "+3 (173K)", "CPC data", "PCW/+3 double-sided" */
   format: string;
@@ -117,7 +117,7 @@ export class DiskFsError extends Error {
 }
 
 /** The file systems the layer knows */
-export type DiskFsKind = "+3dos" | "trdos" | "fat" | "microdrive" | "tape";
+export type DiskFsKind = "+3dos" | "trdos" | "fat" | "microdrive" | "tape" | "mgt";
 
 export interface DiskFileSystem {
   readonly system: DiskFsKind;

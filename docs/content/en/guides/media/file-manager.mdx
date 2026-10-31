@@ -1,5 +1,5 @@
 ---
-description: "Copy, move, rename and delete files between this computer, the project, disk images, SD card images, tapes and the stopped machine's own storage in Klive's two-pane File Manager."
+description: "Copy, move, rename and delete files between this computer, the project, disk images, SD card and +3e hard disk images, tapes and the stopped machine's own storage in Klive's two-pane File Manager."
 ---
 
 import { Callout, Steps } from 'nextra/components'
@@ -51,9 +51,10 @@ The drive menu lists, in groups:
   only while the machine is stopped.
 - **Disk images**: the images opened this session. **Open image as drive...** opens another one.
 
-A disk image (`.dsk`, `.trd`, `.scl`, `.mdr`), an SD card image (`.img`, `.hdf`, `.cim`) or a tape
-(`.tap`, `.tzx`) is also entered like a folder from the pane that lists it. An SD card image with
-several FAT partitions is one drive for each.
+A disk image (`.dsk`, `.trd`, `.scl`, `.mdr`, and the MGT +D/DISCiPLE's `.mgt`), an SD card or hard
+disk image (`.img`, `.hdf`, `.cim`) or a tape (`.tap`, `.tzx`) is also entered like a folder from the
+pane that lists it. A hard disk image is one drive for each of its partitions: each FAT partition, and
+each +3DOS partition of a ZX Spectrum +3e disk (IDEDOS), named after the partition.
 
 ## Choosing files
 
@@ -118,7 +119,7 @@ image beside it.
 | This computer | An SD card, and back | The file as it is | The file as it is | The file as it is |
 
 Names are made to fit the target: eight characters, a dot and three on a +3 disk, eight and a type
-letter on TR-DOS, ten on a Microdrive or a tape. The copy dialog shows every name that changed.
+letter on TR-DOS, ten on a Microdrive, an MGT disk or a tape. The copy dialog shows every name that changed.
 Folders are copied with what they hold where the target has folders; a disk without folders takes
 their files only when you tick **Copy the files of folders too**.
 

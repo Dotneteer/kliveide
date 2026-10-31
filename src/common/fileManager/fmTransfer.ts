@@ -13,7 +13,7 @@ import type { FmDriveRef, FmSpectrumFacts } from "./fmTypes";
  */
 
 /** A target or source file system, as the conversion rules see it */
-export type FmFileSystem = "host" | "fat" | "+3dos" | "trdos" | "microdrive" | "tape";
+export type FmFileSystem = "host" | "fat" | "+3dos" | "trdos" | "microdrive" | "tape" | "mgt";
 
 /** How files cross between a file store and a Spectrum catalogue (D6) */
 export type FmTransferMode = "auto" | "headers" | "raw";
@@ -60,7 +60,7 @@ export type FmOutFile = {
 };
 
 export function isCatalogue (fs: FmFileSystem): boolean {
-  return fs === "+3dos" || fs === "trdos" || fs === "microdrive" || fs === "tape";
+  return fs === "+3dos" || fs === "trdos" || fs === "microdrive" || fs === "tape" || fs === "mgt";
 }
 
 /** The file system the conversion rules see on a drive */
@@ -70,6 +70,7 @@ export function fmFileSystemOf (drive: Pick<FmDriveRef, "kind" | "fileSystem">):
   if (drive.fileSystem === "TR-DOS") return "trdos";
   if (drive.fileSystem === "Microdrive") return "microdrive";
   if (drive.fileSystem === "TAP" || drive.fileSystem === "TZX") return "tape";
+  if (drive.fileSystem === "MGT") return "mgt";
   return "fat";
 }
 
@@ -93,7 +94,7 @@ function becomesOf (kind: DiskFileKind, data: Uint8Array, start?: number, variab
 export function splitName (name: string, fs: FmFileSystem): { stem: string; extension: string } {
   const dot = name.lastIndexOf(".");
   if (fs === "trdos") return { stem: dot > 0 ? name.slice(0, dot) : name, extension: "" };
-  if (fs === "microdrive" || fs === "tape" || dot <= 0) return { stem: name, extension: "" };
+  if (fs === "microdrive" || fs === "tape" || fs === "mgt" || dot <= 0) return { stem: name, extension: "" };
   return { stem: name.slice(0, dot), extension: name.slice(dot + 1) };
 }
 
@@ -144,7 +145,7 @@ export function convertFile (src: FmSourceFile, from: FmFileSystem, to: FmFileSy
   // --- has no extension of its own, so one from another catalogue stays part of it)
   if (isCatalogue(to)) {
     const split = splitName(src.name, from);
-    const { stem, extension } = (to === "microdrive" || to === "tape") && split.extension
+    const { stem, extension } = (to === "microdrive" || to === "tape" || to === "mgt") && split.extension
       ? { stem: `${split.stem}.${split.extension}`, extension: "" }
       : split;
     return [{
@@ -214,7 +215,7 @@ export function storeSafeName (name: string): string {
 }
 
 /** Name lengths on the catalogues: the stem's room */
-const STEM_ROOM: Partial<Record<FmFileSystem, number>> = { "+3dos": 8, trdos: 8, microdrive: 10, tape: 10 };
+const STEM_ROOM: Partial<Record<FmFileSystem, number>> = { "+3dos": 8, trdos: 8, microdrive: 10, tape: 10, mgt: 10 };
 
 /**
  * A name not in `taken` (lower-case names): on a file store `name (2).ext`, on a catalogue the stem's
@@ -223,7 +224,7 @@ const STEM_ROOM: Partial<Record<FmFileSystem, number>> = { "+3dos": 8, trdos: 8,
 export function freeName (name: string, fs: FmFileSystem, taken: ReadonlySet<string>): string {
   if (!taken.has(name.toLowerCase())) return name;
   const dot = name.lastIndexOf(".");
-  const hasExt = dot > 0 && fs !== "microdrive" && fs !== "tape";
+  const hasExt = dot > 0 && fs !== "microdrive" && fs !== "tape" && fs !== "mgt";
   const stem = hasExt ? name.slice(0, dot) : name;
   const ext = hasExt ? name.slice(dot) : "";
   for (let n = 2; n < 10000; n++) {

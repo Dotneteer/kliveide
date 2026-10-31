@@ -194,7 +194,8 @@ const COLUMN_SETS: Record<FmColumnSet, ColumnDef[]> = {
   plus3dos: [NAME, KIND, SIZE, START, ATTR, USER],
   trdos: [NAME, KIND, SIZE, START],
   microdrive: [NAME, KIND, SIZE, START],
-  tape: [NAME, KIND, SIZE, START]
+  tape: [NAME, KIND, SIZE, START],
+  mgt: [NAME, KIND, SIZE, START]
 };
 
 function cellOf (key: ColumnKey, e: FmEntry): string {

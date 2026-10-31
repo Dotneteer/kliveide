@@ -1,6 +1,6 @@
 # Klive File Manager (two-pane commander) — Implementation Plan
 
-**Status:** Phases 1–8 built (2026-10-31): the first release is complete (§12). Phase 9 (more file systems) stays for later, with Q4 and Q5.
+**Status:** Complete (2026-10-31): Phases 1–9 (§12). Opus Discovery was not built (its catalogue's place and file headers could not be confirmed, §12); Q4 (a CLI) stays open.
 them the proposed answers to Q1–Q3 (§11); Q4 and Q5 stay open until Phase 8 and Phase 9.
 **Mockups:** `.plans/mockups/file-manager.html` (open it in a browser; it has tabs for each screen and
 a light/dark switch).
@@ -502,3 +502,31 @@ Still open:
 - **Not built in the first release:** a CLI (Q4), the +3DOS 128-byte header on FAT under Keep headers,
   Start waiting for a running job (§12, Phases 5–6), and the two slow machine tests of Phase 5 (a Next
   booting a card the File Manager wrote, a +3 `LOAD`ing a disk it wrote).
+
+### Phase 9 (2026-10-31)
+
+- **Sources, read for format facts only, each recorded in the file's header:** MGT's DISCiPLE/+D
+  Technical Guide (the directory, the sector count high byte first, the sector address map from
+  track 4 sector 1, 510 data bytes and a (track, sector) link, side 1 as 128+, the 9-byte header
+  first in a ZX file); MAME's SAM Coupé image format for the `.mgt` file's order (the heads
+  alternate); the Sinclair Wiki's IDEDOS page for the partition table; the +3 manual's XDPB.
+- **MGT +D/DISCiPLE** (`src/common/diskfs/mgtfs.ts`, system `mgt`, `.mgt` of 819,200 bytes):
+  read and written. 80 directory entries on tracks 0-3; files allocated from the map, side 0 first;
+  SCREEN$ gets its own type (7); a file over 64K is refused (the header's length is 16 bits). Names
+  of up to 10 characters, kept as typed. Opened like a floppy (`openDiskFileSystem`), so the
+  File Manager enters, lists, copies onto and off, renames and deletes on it.
+- **IDEDOS** (`src/common/diskfs/idedos.ts`): `readIdedos` finds the `PLUSIDEDOS` system partition
+  at LBA 0 or at head 1 (behind an MBR); each type-3 partition is a `Plus3DosFileSystem` on an
+  `IdedosPlus3Store` (the XDPB's block size, DSM, DRM, directory blocks and reserved tracks), read
+  and written in place. `Plus3DosFileSystem` now takes such a store as well as a `.dsk`.
+  `formatIdedos` makes a disk (4K blocks, 512 directory entries) for the tests. In the File
+  Manager, a hard disk image is one drive per +3DOS partition (`hd:<file>#<1000 + entry>`, named
+  `file (partition)`) besides its FAT partitions; `openHardDiskFs` picks the file system.
+- **Not built: Opus Discovery.** Its manual (read from the scanned PDF) gives the catalogue file's
+  16-byte entries (the last block's byte count, the first and last block, the name) and the `.opd`
+  image's order (40 tracks, 18 sectors of 256 bytes, the sides alternating), but not where the
+  catalogue starts or whether a file's data carries a header. Writing disks on a guess could spoil
+  real ones; it waits for a real `.opd` to read the rest from.
+- **No oracle:** Klive emulates neither interface, so these are checked against the documents'
+  own examples (the guide's map bits, the link out of side 0's last sector to track 128) and by
+  round trips, not by a machine reading what Klive wrote.

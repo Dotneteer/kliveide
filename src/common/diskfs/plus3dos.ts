@@ -67,15 +67,42 @@ type FileEntries = {
   deleted: boolean;
 };
 
+/**
+ * Blocks a +3DOS file system lives in other than a `.dsk`'s tracks: an IDEDOS partition of a hard
+ * disk (`idedos.ts`, `.plans/FILE_MANAGER_PLAN.md` Phase 9), read and written in place
+ */
+export interface Plus3BlockStore {
+  readonly spec: Plus3DosSpec;
+  /** DSM + 1 */
+  readonly totalBlocks: number;
+  /** DRM + 1 */
+  readonly directoryEntries: number;
+  readBlock(block: number): Uint8Array;
+  writeBlock(block: number, data: Uint8Array): void;
+}
+
+function isBlockStore (x: unknown): x is Plus3BlockStore {
+  return !!x && typeof (x as Plus3BlockStore).readBlock === "function";
+}
+
 export class Plus3DosFileSystem implements DiskFileSystem {
   readonly system = "+3dos";
   readonly spec: Plus3DosSpec;
-  private readonly disk: DiskInformation;
+  private readonly disk?: DiskInformation;
+  private readonly store?: Plus3BlockStore;
   private readonly totalBlocks: number;
   private readonly wideBlocks: boolean;
   private readonly entriesPerDirectory: number;
 
-  constructor (image: Uint8Array | DiskInformation) {
+  constructor (image: Uint8Array | DiskInformation | Plus3BlockStore) {
+    if (isBlockStore(image)) {
+      this.store = image;
+      this.spec = image.spec;
+      this.totalBlocks = image.totalBlocks;
+      this.wideBlocks = this.totalBlocks > 255;
+      this.entriesPerDirectory = Math.min(image.directoryEntries, (image.spec.directoryBlocks * image.spec.blockSize) / 32);
+      return;
+    }
     this.disk = image instanceof Uint8Array ? readDiskData(image) : image;
     this.spec = detectSpec(this.disk);
     const s = this.spec;
@@ -220,6 +247,7 @@ export class Plus3DosFileSystem implements DiskFileSystem {
 
   layout (): Map<number, DiskSectorRole> {
     const roles = new Map<number, DiskSectorRole>();
+    if (!this.disk) return roles;
     this.disk.tracks.forEach((track, t) => track.sectors.forEach((_, i) => roles.set(t * 256 + i, { role: "unused" })));
     const s = this.spec;
     for (let lt = 0; lt < s.reservedTracks; lt++) {
@@ -242,6 +270,8 @@ export class Plus3DosFileSystem implements DiskFileSystem {
   }
 
   image (): Uint8Array {
+    // --- A block store is written in place, block by block: it has no image of its own
+    if (!this.disk) return new Uint8Array(0);
     return writeDiskData(this.disk);
   }
 
@@ -251,6 +281,7 @@ export class Plus3DosFileSystem implements DiskFileSystem {
   /** The physical sector of logical track `lt`'s `k`-th sector */
   private sectorRef (lt: number, k: number): DiskSectorRef | undefined {
     const s = this.spec;
+    if (!this.disk) return undefined;
     let cylinder: number;
     let head: number;
     if (s.sidedness === 0) {
@@ -272,12 +303,13 @@ export class Plus3DosFileSystem implements DiskFileSystem {
   }
 
   private sector (ref: DiskSectorRef): SectorInformation {
-    return this.disk.tracks[ref.trackIndex].sectors[ref.sectorIndex];
+    return this.disk!.tracks[ref.trackIndex].sectors[ref.sectorIndex];
   }
 
   /** The sectors of block `b`, in order */
   private blockSectors (block: number): DiskSectorRef[] {
     const s = this.spec;
+    if (this.store) return [];
     const perBlock = s.blockSize / s.sectorSize;
     const refs: DiskSectorRef[] = [];
     for (let i = 0; i < perBlock; i++) {
@@ -292,6 +324,7 @@ export class Plus3DosFileSystem implements DiskFileSystem {
   }
 
   private readBlock (block: number): Uint8Array {
+    if (this.store) return this.store.readBlock(block);
     const out = new Uint8Array(this.spec.blockSize);
     this.blockSectors(block).forEach((ref, i) => {
       out.set(this.sector(ref).sectorData.subarray(0, this.spec.sectorSize), i * this.spec.sectorSize);
@@ -300,6 +333,10 @@ export class Plus3DosFileSystem implements DiskFileSystem {
   }
 
   private writeBlock (block: number, data: Uint8Array): void {
+    if (this.store) {
+      this.store.writeBlock(block, data);
+      return;
+    }
     this.blockSectors(block).forEach((ref, i) => {
       const sector = this.sector(ref);
       const part = data.subarray(i * this.spec.sectorSize, (i + 1) * this.spec.sectorSize);
@@ -322,7 +359,7 @@ export class Plus3DosFileSystem implements DiskFileSystem {
       const bytes = this.readBlock(b);
       for (let i = 0; i + 32 <= bytes.length; i += 32) entries.push(bytes.subarray(i, i + 32));
     }
-    return entries;
+    return entries.slice(0, this.entriesPerDirectory);
   }
 
   private writeDirectoryEntry (slot: number, entry: Uint8Array): void {

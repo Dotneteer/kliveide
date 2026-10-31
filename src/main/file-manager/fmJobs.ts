@@ -3,6 +3,7 @@ import path from "path";
 
 import { diskImageBytes, openDiskFileSystem } from "@common/diskfs/open";
 import { FatFileSystem } from "@common/diskfs/fat";
+import { openHardDiskFs } from "@common/diskfs/hardDiskFs";
 import { TapeFileSystem } from "@common/diskfs/tapefs";
 import { DiskFsError, type DiskFileSystem } from "@common/diskfs/types";
 import {
@@ -187,8 +188,8 @@ function floppySource (drive: FmDriveRef): SourceSession {
 }
 
 function hardDiskSource (drive: FmDriveRef, deps: FmJobDeps): SourceSession {
-  const withFat = <T>(op: (fat: FatFileSystem) => T) =>
-    deps.hardDiskRead(drive.root, () => withHardDisk(drive.root, (device) => op(FatFileSystem.open(device, drive.partition))));
+  const withFat = <T>(op: (fat: DiskFileSystem) => T) =>
+    deps.hardDiskRead(drive.root, () => withHardDisk(drive.root, (device) => op(openHardDiskFs(device, drive.partition))));
   return {
     async collect (paths, read) {
       return withFat((fat) => {
@@ -198,6 +199,10 @@ function hardDiskSource (drive: FmDriveRef, deps: FmJobDeps): SourceSession {
           const entry = fat.list({ dir: parent }).find((e) => e.name.toLowerCase() === p.toLowerCase());
           if (!entry) throw new FmError("notFound", `${p} is not on ${drive.name}.`, { name: p });
           const name = imageLeaf(entry.name);
+          // --- A +3DOS partition's file goes with its header (Phase 9)
+          const spectrum = fat.system === "fat"
+            ? undefined
+            : { kind: entry.kind, start: entry.start, variablesOffset: entry.variablesOffset, variableName: entry.variableName };
           if (entry.isDirectory) {
             out.push({ sourcePath: entry.name, sourceName: name, relDir, isDirectory: true, size: 0 });
             const inner = relDir ? `${relDir}/${name}` : name;
@@ -210,7 +215,7 @@ function hardDiskSource (drive: FmDriveRef, deps: FmJobDeps): SourceSession {
             relDir,
             isDirectory: false,
             size: entry.size,
-            file: read ? { name, data: fat.read(entry.name) } : undefined
+            file: read ? { name, data: fat.read(entry.name), spectrum } : undefined
           });
         };
         for (const p of paths) walk(p, "");
@@ -321,6 +326,7 @@ async function floppyTarget (drive: FmDriveRef, deps: FmJobDeps): Promise<Target
 }
 
 function hardDiskTarget (drive: FmDriveRef, dir: string, deps: FmJobDeps): TargetSession {
+  if (drive.fileSystem !== "" && !/^FAT/.test(drive.fileSystem)) return flatHardDiskTarget(drive, deps);
   const edit = <T>(op: (fat: FatFileSystem) => T) =>
     deps.hardDiskWrite(drive.root, () => withHardDisk(drive.root, (device) => op(FatFileSystem.open(device, drive.partition))));
   const read = <T>(op: (fat: FatFileSystem) => T) =>
@@ -353,6 +359,39 @@ function hardDiskTarget (drive: FmDriveRef, dir: string, deps: FmJobDeps): Targe
           if (same && !same.isDirectory) fat.delete(same.name);
         }
         fat.write({ name: full, kind: "raw", data: bytes });
+      });
+    },
+    async commit () {},
+    async cancel () {}
+  };
+}
+
+/** A catalogue on a hard disk (an IDEDOS +3DOS partition, Phase 9): written in place, file by file */
+function flatHardDiskTarget (drive: FmDriveRef, deps: FmJobDeps): TargetSession {
+  const on = <T>(access: FmHardDiskAccess, op: (fs: DiskFileSystem) => T) =>
+    access(drive.root, () => withHardDisk(drive.root, (device) => op(openHardDiskFs(device, drive.partition))));
+  return {
+    atomic: false,
+    async existing () {
+      return on(deps.hardDiskRead, (fs) => new Set(fs.list().map((e) => e.name.toLowerCase())));
+    },
+    async freeBytes () {
+      return on(deps.hardDiskRead, (fs) => {
+        const info = fs.info();
+        return { free: info.freeBytes, block: info.blockSize };
+      });
+    },
+    async mkdir () {
+      throw new FmError("unsupported", `${drive.name} has no folders.`, { name: drive.name });
+    },
+    async write (_relDir, name, data, out, replace) {
+      const bytes = await data();
+      await on(deps.hardDiskWrite, (fs) => {
+        if (replace) {
+          const same = fs.list().find((e) => e.name.toLowerCase() === name.toLowerCase());
+          if (same) fs.delete(same.name);
+        }
+        fs.write({ name, kind: out?.kind ?? "raw", data: bytes, start: out?.start, variablesOffset: out?.variablesOffset, variableName: out?.variableName });
       });
     },
     async commit () {},
@@ -647,7 +686,7 @@ export async function deleteEntries (
   }
   await deps.hardDiskWrite(drive.root, () =>
     withHardDisk(drive.root, (device) => {
-      const fat = FatFileSystem.open(device, drive.partition);
+      const fat = openHardDiskFs(device, drive.partition);
       const remove = (p: string) => {
         const parent = p.includes("/") ? p.slice(0, p.lastIndexOf("/")) : "";
         const entry = fat.list({ dir: parent }).find((e) => e.name.toLowerCase() === p.toLowerCase());
@@ -684,6 +723,7 @@ export async function makeFolder (drive: FmDriveRef, dir: string, name: string, 
     return full;
   }
   if (drive.kind === "image") throw new FmError("unsupported", `${drive.name} has no folders.`, { name: drive.name });
+  if (drive.fileSystem && !/^FAT/.test(drive.fileSystem)) throw new FmError("unsupported", `${drive.name} has no folders.`, { name: drive.name });
   const full = joinImagePath(dir, name);
   await deps.hardDiskWrite(drive.root, () =>
     withHardDisk(drive.root, (device) => {
@@ -727,7 +767,7 @@ export async function renameEntry (drive: FmDriveRef, entryPath: string, newName
     return newName;
   }
   await deps.hardDiskWrite(drive.root, () =>
-    withHardDisk(drive.root, (device) => FatFileSystem.open(device, drive.partition).rename(entryPath, newName))
+    withHardDisk(drive.root, (device) => openHardDiskFs(device, drive.partition).rename(entryPath, newName))
   ).catch((err) => {
     throw asFmError(err, newName);
   });

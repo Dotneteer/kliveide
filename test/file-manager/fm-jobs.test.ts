@@ -4,6 +4,9 @@ import os from "os";
 import path from "path";
 
 import { Plus3DosFileSystem } from "@common/diskfs/plus3dos";
+import { MgtFileSystem } from "@common/diskfs/mgtfs";
+import { MemoryBlockDevice } from "@common/diskfs/blockDevice";
+import { formatIdedos } from "@common/diskfs/idedos";
 import { TrdosFileSystem } from "@common/diskfs/trdos";
 import { tapFiles } from "@common/diskfs/importFiles";
 import { openDiskFileSystem } from "@common/diskfs/open";
@@ -13,7 +16,7 @@ import type { FmTransferRequest } from "@common/fileManager/fmJobTypes";
 import { createBlankDsk } from "@emu/machines/disk/blank-dsk";
 import { createBlankTrd } from "@emu/machines/disk/trd/trdImage";
 import { createHardDiskImage, editHardDisk, withHardDisk } from "@main/hard-disk-images";
-import { defaultHostEnv, openImageDrives, projectDriveOf } from "@main/file-manager/fmDrives";
+import { defaultHostEnv, listImageFolder, openImageDrives, projectDriveOf } from "@main/file-manager/fmDrives";
 import {
   cancelJob,
   deleteEntries,
@@ -204,6 +207,65 @@ describe("tapes (Phase 6)", () => {
     const reopened = (await openImageDrives(tape.root))[0];
     await copy(w, reopened, ["DISK", "GAME.BIN"], w.host, path.join(w.root, "out"), { options: { mode: "headers" } });
     expect(fs.readdirSync(path.join(w.root, "out")).sort()).toEqual(["DISK.tap", "GAME.BIN.tap"]);
+  });
+});
+
+describe("MGT disks (Phase 9)", () => {
+  it("+3DOS to MGT and back to the host keep the headers", async () => {
+    const w = await world();
+    const file = path.join(w.root, "plusd.mgt");
+    fs.writeFileSync(file, MgtFileSystem.blank().image());
+    const [mgt] = await openImageDrives(file);
+    expect(mgt).toMatchObject({ fileSystem: "MGT", kind: "image" });
+    const { plan } = await copy(w, w.dsk, ["DISK", "GAME.BIN", "TITLE"], mgt, "");
+    expect(plan.items.map((i) => i.targetName)).toEqual(["DISK", "GAME.BIN", "TITLE"]);
+    const disk = diskOf(file);
+    expect(disk.list().map((e) => [e.name, e.kind, e.start])).toEqual([["DISK", "basic", 10], ["GAME.BIN", "code", 24000], ["TITLE", "code", 16384]]);
+    const [again] = await openImageDrives(file);
+    await copy(w, again, ["DISK"], w.host, path.join(w.root, "out"));
+    const [program] = tapFiles(new Uint8Array(fs.readFileSync(path.join(w.root, "out", "DISK.tap"))), "x");
+    expect(program).toMatchObject({ kind: "basic", start: 10, data: PRINT_42 });
+  });
+});
+
+describe("IDEDOS +3DOS partitions (Phase 9)", () => {
+  function plus3eDisk (w: World): string {
+    const image = new Uint8Array(4 * 1024 * 1024);
+    formatIdedos(new MemoryBlockDevice(image), { partitions: [{ name: "games", sizeKb: 1024 }, { name: "work", sizeKb: 512 }] });
+    const file = path.join(w.root, "plus3e.img");
+    fs.writeFileSync(file, image);
+    return file;
+  }
+
+  it("each +3DOS partition is a drive, named by the partition", async () => {
+    const w = await world();
+    const file = plus3eDisk(w);
+    const drives = await openImageDrives(file);
+    expect(drives.map((d) => [d.id, d.name, d.role, d.fileSystem, d.partition])).toEqual([
+      [`hd:${file}#1001`, "plus3e.img (games)", "image", "+3DOS", 1001],
+      [`hd:${file}#1002`, "plus3e.img (work)", "image", "+3DOS", 1002]
+    ]);
+    const listing = await listImageFolder(drives[0], "");
+    expect(listing).toMatchObject({ columns: "plus3dos", entries: [] });
+  });
+
+  it("a +3 disk's files go onto a partition with their headers, in place, and come back", async () => {
+    const w = await world();
+    const file = plus3eDisk(w);
+    const [games, work] = await openImageDrives(file);
+    await copy(w, w.dsk, ["DISK", "GAME.BIN"], games, "");
+    const listing = await listImageFolder(games, "");
+    expect(listing.entries.map((e) => [e.name, e.spectrum?.kind, e.spectrum?.start])).toEqual([["DISK", "basic", 10], ["GAME.BIN", "code", 24000]]);
+    expect((await listImageFolder(work, "")).entries).toEqual([]);
+
+    await copy(w, games, ["DISK"], w.host, path.join(w.root, "out"));
+    const [program] = tapFiles(new Uint8Array(fs.readFileSync(path.join(w.root, "out", "DISK.tap"))), "x");
+    expect(program).toMatchObject({ kind: "basic", start: 10, data: PRINT_42 });
+
+    await renameEntry(games, "GAME.BIN", "MAIN.BIN", w.deps);
+    await deleteEntries(games, ["DISK"], w.deps);
+    expect((await listImageFolder(games, "")).entries.map((e) => e.name)).toEqual(["MAIN.BIN"]);
+    await expect(makeFolder(games, "", "X", w.deps)).rejects.toThrow(/\[fm:unsupported\]/);
   });
 });
 

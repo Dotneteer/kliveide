@@ -28,7 +28,7 @@ export type FmMachineSlot = "sdCard" | "diskA" | "diskB" | "microdrive1" | "micr
 export type FmDriveGroup = "computer" | "project" | "machine" | "images";
 
 /** The columns a listing shows, by its file system (§4.1) */
-export type FmColumnSet = "host" | "plus3dos" | "trdos" | "microdrive" | "fat" | "tape";
+export type FmColumnSet = "host" | "plus3dos" | "trdos" | "microdrive" | "fat" | "tape" | "mgt";
 
 /** A drive a pane can show */
 export type FmDriveRef = {
@@ -123,7 +123,7 @@ export type FmErrorCode =
 /** The kinds of image a pane can enter */
 export type FmImageKind = "image" | "hardDisk";
 
-const FLOPPY_IMAGE = /\.(dsk|trd|scl|mdr|tap|tzx)$/i;
+const FLOPPY_IMAGE = /\.(dsk|trd|scl|mdr|tap|tzx|mgt)$/i;
 const HARD_DISK_IMAGE = /\.(img|hdf|cim)$/i;
 
 /** Is this file an image the File Manager opens as a drive? */
@@ -140,6 +140,7 @@ export function fmColumnSetOf (fileSystem: string): FmColumnSet {
   if (fileSystem === "Microdrive") return "microdrive";
   if (/^FAT/.test(fileSystem)) return "fat";
   if (fileSystem === "TAP" || fileSystem === "TZX") return "tape";
+  if (fileSystem === "MGT") return "mgt";
   return "host";
 }
 

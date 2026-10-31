@@ -1,6 +1,7 @@
 import { isDskImage } from "@emu/machines/disk/disk-changes";
 import { MicrodriveFileSystem } from "./mdrfs";
 import { Plus3DosFileSystem } from "./plus3dos";
+import { MgtFileSystem } from "./mgtfs";
 import { TapeFileSystem } from "./tapefs";
 import { TrdosFileSystem } from "./trdos";
 import { DiskFsError, type DiskFileSystem } from "./types";
@@ -24,6 +25,8 @@ export function openDiskFileSystem (bytes: Uint8Array, fileName: string): DiskFi
   // --- Explorer and `disk` never see them, so `diskImageKind` does not name them
   if (/\.tap$/i.test(fileName)) return new TapeFileSystem(bytes, "tap");
   if (/\.tzx$/i.test(fileName)) return new TapeFileSystem(bytes, "tzx");
+  // --- MGT +D / DISCiPLE disks (Phase 9): the File Manager's too
+  if (/\.mgt$/i.test(fileName)) return new MgtFileSystem(bytes);
   const kind = diskImageKind(fileName, bytes);
   if (kind === "dsk") return new Plus3DosFileSystem(bytes);
   if (kind === "trd" || kind === "scl") return new TrdosFileSystem(bytes);
