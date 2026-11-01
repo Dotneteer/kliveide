@@ -34,6 +34,7 @@
     "i18n:merge": "node scripts/i18n-merge.cjs",
     "rom:annotations": "node scripts/rom-annotations.cjs",
     "rom:annotations:carry": "node scripts/rom-annotations-carry.cjs",
+    "rom:pipeline": "node scripts/rom-pipeline.cjs",
     "boriel:fixtures": "node scripts/boriel-fixtures.cjs",
     "next-fpga:fetch": "node scripts/next-fpga-fetch.cjs",
     "next-fpga:comments": "node scripts/next-fpga-comments.cjs",

@@ -4087,7 +4087,7 @@
         "9891": {"comment":"'Printer BUSY signal test'"},
         "9897": {"comment":"'Turn the printer '"},
         "9903": {"comment":"'OFFLINE'"},
-        "9909": {"comment":"'Press any key to continue'","synopsis":"PRINTER_TEST's \"Press any key to continue\" and the key. The JP at $010C names this address\ntoo, but it runs with ROM 1 paged in, so nothing in this ROM jumps here."},
+        "9909": {"synopsis":"PRINTER_TEST's \"Press any key to continue\" and the key. The JP at $010C names this address\ntoo, but it runs with ROM 1 paged in, so nothing in this ROM jumps here.","comment":"'Press any key to continue'"},
         "9915": {"comment":"A key (WAIT_NEW_KEY)"},
         "9918": {"comment":"Port $0FFD: BUSY in bit 0"},
         "9923": {"comment":"Busy while off line? If not, a fail"},

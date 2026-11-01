@@ -134,15 +134,17 @@ src/common/reverse/pipeline/
   postprocess/       .ann parser, merge, naming, wrapping, provenance, lint, problem list
   conventions/       per-ROM-family plug-ins (hidden entries, inline data, packed texts)
   annFormat.ts       the .ann grammar: parse and write (shared by both sides)
-  index.ts           the public API (§3.3)
+  listing.ts         the bank listing through Klive's disassembler (the `listing` command)
 scripts/rom-pipeline.cjs         the Node.js CLI: reads and writes files, calls the API
-test/reverse/pipeline/           unit tests (unit tier)
+test/rom-pipeline/               unit tests (unit tier; `test/reverse/` is an e2e glob)
 ```
 
 - **Beside the existing reverse-engineering tools.** `src/common/reverse/` already has the coverage
   classifier (`classify.ts`), the static reachability walk (`reach.ts`), region proposals (`proposal.ts`),
   SkoolKit import/export (`skool/`) and source export (`sourceExport.ts`). They work per bank, which is what
   the pipeline needs; it calls them instead of re-implementing them.
+- **No barrel file.** Callers import from the file that owns a function (`image/romImage.ts`,
+  `listing.ts`), as the repository's rules ask; §3.3 lists the API by function, not by entry module.
 - **The core is pure.** Every function takes an image, annotation objects, profile data and text, and
   returns data. No `fs`, no `process`, no core instantiation inside the pipeline folder. That keeps it
   testable in the unit tier and lets the IDE use the same code later (cards in a panel, `.ann` round trip).
@@ -200,7 +202,7 @@ renderQuestions(analysis: ImageAnalysis): string
 // .ann format
 parseAnn(text: string, fileName: string): { header: AnnHeader; entries: AnnEntry[]; problems: AnnProblem[] }
 writeAnn(header: AnnHeader, entries: AnnEntry[]): string
-annotationsToAnn(annotations: ProgramAnnotations, image: BinaryImage, bank: string): string
+sidecarPageToAnn(sidecar: RawRomSidecar, page: number, options: { cpu: Cpu; rom?: string }): string
 
 // postprocess
 compileAnnotations(input: { image: BinaryImage; base?: ProgramAnnotations;
@@ -386,11 +388,18 @@ Generalise `rom:annotations:carry`:
 
 ## 5. The `.ann` format
 
-A plain text format that is cheap to write and hard to get wrong. A header names the image, the bank and the
-CPU; then one entry per block, keyed by offset or by name:
+A plain text format that is cheap to write and hard to get wrong (as built in P1; the grammar's own
+reference is the header comment of `src/common/reverse/pipeline/annFormat.ts`). One file covers part or all
+of one ROM page:
 
 ```
-image exos21.rom bank 0 cpu z80                # the postprocessor checks all three
+# A comment line (column 0 only)
+rom ep-exos21.rom page 0 cpu z80             # the header: the postprocessor checks all three
+default observed                              # the provenance of every entry not listed below
+
+code 0000-0B3C                                # regions: code, bytes, words, text, fill, defc
+bytes 0B3D-0B3F rows=1 radix=binary           # bytes take rows=<n> and radix=binary
+words 000A-002D
 
 @0B40 SEG1_SERVICE
   EXOS 32 (read time): segment 1 service 0; returns the time (C, D, E) ...
@@ -402,43 +411,59 @@ image exos21.rom bank 0 cpu z80                # the postprocessor checks all th
   .0B41 A' = service number
   .0B44 Through the pager at $B217
 
-data 0B3D-0B40 bytes "Four INC A entries"     # a region
-text 017A-01B2 zero                           # kinds: zero, bit7, counted, raw
-words 000A-002D
-manual 0B40:label 0B40:line                   # provenance from a manual
-replace 0B40:synopsis                         # for carried sidecars
-
-feedback missing 0B40 "Card did not say $B217 is the pager; read its code to find out"
-feedback wrong 0C12 "Card lists C as written; the write is on a path that cannot run"
-feedback pattern 0D00-0D40 "Six routines end LD A,n / SCF / RET: an error exit, could be a card fact"
-feedback listing 0E10-0E60 "Opened the listing: the card's operands were unnamed RAM"
+manual 0B40:label 0B40:line                   # provenance exceptions: observed, manual, derived
+delete 0C00:synopsis                          # removes a base entry: label, synopsis, comment, line
+question 0C40 Does A come back 0 for a missing drive? Needs a run with no disk
+feedback missing 0B40 Card did not say $B217 is the pager; read its code to find out
+feedback wrong 0C12 Card lists C as written; the write is on a path that cannot run
+feedback pattern 0D00-0D40 Six routines end LD A,n / SCF / RET: an error exit, could be a card fact
+feedback listing 0E10-0E60 Opened the listing: the card's operands were unnamed RAM
 ```
 
-- Line 1 of a block is `@offset NAME` (the name optional when one exists).
-- The indented paragraph is the synopsis; `.offset text` lines are end-of-line comments.
-- Data lines declare regions.
+- A block is `@offset` and an optional label; the lines indented by two spaces under it are the synopsis,
+  one line per line, kept as written (rewrapping is P7). `.offset text` lines are end-of-line comments,
+  inside a block or at the top level.
+- Region kinds are the sidecar's: `text`, `fill` and `defc` are `bytes` regions with that `decode`.
+- Escapes: a comment's or note's newline is `\n` and its backslash `\\`; a synopsis line that starts with
+  `\` or looks like a comment line gets one more `\` in front; `\` alone is an empty synopsis line. Notes
+  may also be a JSON string in quotes.
 - `question` lines are things to settle with a run (§7, step 7); the postprocessor lists them in
   `problems.md` until an `Observed:` line or a later `.ann` answers them.
 - `feedback` lines are about the tools, not the ROM (D11); the postprocessor collects them and never writes
   them into the sidecar.
-- Free wrapping: the postprocessor rewraps at 92 columns and keeps numbered steps and
-  `Entry:/Exit:/Error:/Changes:/Keeps:/Observed:`, each on its own line.
-- A number that must stay a number (a constant that looks like an address) can be marked so the naming pass
-  leaves it alone (syntax to be decided).
+- Not built yet: free wrapping at 92 columns (keeping numbered steps and the D10 lines), and marking a
+  number that must stay a number for the naming pass (both P7).
 
 ## 6. The postprocessor
 
 ### 6.1 What it does (all deterministic)
 
-- Parses every `.ann` file and merges them in address order. Overlapping regions and duplicate names become
-  problems, not silent skips.
-- Swaps numbers for names in text where a label exists, skipping other ROMs' addresses, marked numbers and the
-  explicit "offset" form; formats run addresses as offsets. It lists the swaps it made.
-- Writes provenance (`observed`, `manual`, `derived`) from the file and from the `manual` lines.
-- Canonicalises through the formatter in `romAnnotationTools.ts`, measures the level, and runs the
-  reassembly check (`romSourceExport` and the assembler).
-- Prints a **short problem list**, each item with the fix the AI should make: "unlabelled target $3688 called
-  from $3891 (code, ran)".
+As built in P1 (`postprocess/compile.ts`):
+
+- **Overlay:** every `.ann` file is laid over one page of a base sidecar. An entry replaces the base's entry
+  at the same place: a label, a synopsis, a comment, the bytes a region covers (the base's regions are cut
+  around it). Every replaced or deleted base entry is listed as a change, so a carried sidecar's text is
+  never overwritten unseen.
+- **Conflicts are errors, not "last one wins":** one offset with two names, one name at two offsets (also
+  against the base), overlapping regions, two different texts for one offset, two comments for one offset
+  in a file. A header that names another ROM, page or CPU (D2) is an error too.
+- **Provenance:** an entry a file sets takes that file's mark for it, else its `default`; a base entry keeps
+  its own; a region piece cut from a base region keeps that region's. Keys that name nothing any more are
+  dropped; an entry left without one is an error. A mark that names no entry is a warning.
+- **Coverage:** the page's regions must cover it from 0 to its last byte (the larger of the ROM page and
+  what the base already covers: the ZX81's 8K ROM is listed to $3FFF).
+- **Output:** the sidecar through `formatRomSidecar`; the CLI measures the level (with inherited entries, as
+  `rom:annotations level` does) and writes `problems.md`: errors, warnings, unlabelled targets, labels
+  without a synopsis, misplaced labels, changed base entries, questions and feedback. With any error,
+  nothing is written.
+- **Base:** `--sidecar`, else the working copy, else the shipped file, else a new all-code sidecar
+  (`postprocess/newSidecar.ts`, for a ROM nobody has annotated yet). The working copy is written only when
+  it is unchanged since it was read.
+
+Still to come (P7): swapping numbers for names in text (skipping other ROMs' addresses, marked numbers and
+the explicit "offset" form, listing every swap), the reassembly check (`romSourceExport` and the
+assembler), and a problem list that says the fix for each item ("unlabelled target $3688 called from $3891
+(code, ran)").
 
 ### 6.2 Lint (deterministic house style)
 
@@ -523,16 +548,95 @@ it: listing requests and `missing`/`wrong` feedback per routine should fall from
 
 | Phase | What | Depends on |
 |---|---|---|
-| P0 | The module layout, the shared TS loader for Node scripts, the `rom:pipeline` CLI shell (with the recorded `listing` command); the image model with the CPU flag and the ROM-page adapter | — |
-| P1 | The `.ann` format (parse, write, `annotationsToAnn`) and the postprocessor's core (merge, provenance, formatting, level); round trip of one finished sidecar to `.ann` and back as a test | P0 |
-| P2 | Routine cards from the decoder plus the existing sidecar (entries, callers, callees, RAM, coverage, "still needed"), for both CPUs; a Z80N test that covers every extended opcode; the subroutine marking and the register-facts pass (D10), tested on hand-made routines and on finished sidecars' routines | P0 |
-| P3 | Profile recipes per machine and the `profile` command; profile offsets known per core | P0 |
+| P0 | **Done.** The module layout, the shared TS loader for Node scripts, the `rom:pipeline` CLI shell (with the recorded `listing` command); the image model with the CPU flag and the ROM-page adapter | — |
+| P1 | **Done.** The `.ann` format (parse, write, `sidecarPageToAnn`) and the postprocessor's core (merge, provenance, formatting, level); round trip of every shipped sidecar to `.ann` and back as a test | P0 |
+| P2 | **Done.** Routine cards from the decoder plus the existing sidecar (entries, callers, callees, RAM, coverage, "still needed"), for both CPUs; a Z80N test that covers every extended opcode; the subroutine marking and the register-facts pass (D10), tested on hand-made routines and on finished sidecars' routines | P0 |
+| P3 | **Done.** Profile recipes per machine and the `profile` command; profile offsets known per core | P0 |
 | P4 | Data and table detectors; region proposals with their effect on false targets | P2 |
 | P5 | Convention plug-ins: hidden entries, inline texts, packed-text decoders (Enterprise first) | P2 |
 | P6 | Version alignment with a RAM map; the carry logic moved in, plus "same / shifted / different" | P2 |
 | P7 | Naming pass, lint (with the D10 contract checks), the problem list and `feedback.md` with the measured signals (D11); the backlog file; retire the replaced `.ai/rom-annotations/tools/` scripts; update the helper brief and the authoring guides | P1 |
 | P8 | Try it on a ROM; measure §8; review its feedback and fix the backlog before the next ROM | all |
 | P9 | The "Under the Hood" article on AI-assisted reverse engineering (§11) | P8 |
+
+### 9.1 As built: P0
+
+- `scripts/lib/ts-runtime.cjs` is the one TypeScript loader for Node scripts; `rom-annotations.cjs`,
+  `rom-annotations-carry.cjs`, `rom-pipeline.cjs`, `build-next-sd-image.cjs` and the debug-loop and Z88
+  benchmarks use it. `benchmark-zxnext-wasm.cjs` keeps its own (decorators, JSX, DOM shims).
+- `src/common/reverse/pipeline/image/`: `cpu.ts` (the `Cpu` flag, `parseCpu`, the default per ROM kind),
+  `binaryImage.ts` (`BinaryImage`, `ImageBank`, `ImageEntry`), `romImage.ts` (16K pages,
+  `imageFromRomPage`: kind by CRC unless given, origin from the kind, the CPU's fixed entries on a page
+  at $0000). `listing.ts` lists a bank with the image's CPU, the kind's custom decoding and optional
+  regions.
+- `npm run rom:pipeline -- image|listing` work; `listing` appends each request to
+  `.rom-annotations/work/<rom>/listing-requests.jsonl` (`page`, `from`, `to`, `why`, `lines`).
+  `prepare`, `compile`, `export-ann` and `profile` exit with "not built yet (phase Pn)".
+- Tests: `test/rom-pipeline/` (unit tier). `test/reverse/**` is an e2e glob in `build/e2e-tests.ts`, so
+  the pipeline's unit tests do not live there.
+- `romDecoderFor` (used by the level check and the carry) still takes the Z80N from the ROM kind; the
+  pipeline's own decoding uses the image's CPU. Cards (P2) decode through the pipeline, so D2 holds for
+  everything the pipeline produces.
+
+### 9.2 As built: P1
+
+- `annFormat.ts` (parse, write, escapes), `postprocess/sidecarToAnn.ts` (`sidecarPageToAnn`: the page's
+  most common provenance becomes the default), `postprocess/compile.ts` (§6.1), `postprocess/regionKinds.ts`,
+  `postprocess/newSidecar.ts`.
+- `npm run rom:pipeline -- export-ann` and `compile` (§3.2).
+- **Every shipped sidecar round-trips byte for byte** (`test/rom-pipeline/compile.test.ts`, all 44 files,
+  every page): rebuilt from its `.ann` onto an emptied page, and laid over itself with no changes. That is
+  the proof D6 relies on: `.ann` files lose nothing, so they can stay work files.
+- The round trip found one gap in the canonical form: 407 line entries in 21 sidecars stored `comment`
+  before `synopsis`. `formatRomSidecar` now writes a line entry's keys in one order (synopsis, comment),
+  and the 21 files were reformatted (key order only).
+
+### 9.3 As built: P2
+
+- `preprocess/effects.ts`: what each instruction does to registers (8-bit halves), memory (`(nn)`),
+  ports, Next registers, the stack and the swaps, read from Klive's disassembler's text and bytes.
+  `test/rom-pipeline/effects.test.ts` runs **every opcode of both CPUs** through it (none unknown) and
+  checks that the Z80N's own `ED` opcodes decode only for `z80n`.
+- `preprocess/decode.ts`: the sidecar's code regions decoded linearly from each region start and label
+  (as the level check does), with the image's CPU. **Hidden entries** (a jump into the middle of an
+  instruction, EXOS's `LD A,n` error codes inside `LD DE,nn` runs) are decoded too, as their own short
+  stream until it meets the main one; this was planned for P5 but is generic, so it moved here.
+- `preprocess/routines.ts`: entries with evidence (CPU vectors, labels, region starts, call/jump targets,
+  the sidecar's `words` tables, profile callees), routines cut at entries, callers and callees, and the
+  D10 kinds.
+- `preprocess/registers.ts`: the register facts. A symbolic pass: each register holds the name of the
+  entry register whose value it still has, through `PUSH`/`POP`, `EX`, `EXX` and callee summaries
+  (bottom-up, iterated over recursion); a `RET` after `LD SP` or a `POP` of the return address is not a
+  return; exits record carry, zero and A. Unfollowable steps are listed as unknown with the instruction.
+- `preprocess/analyse.ts` and `preprocess/cards.ts`: memory and I/O facts, coverage from a profile, the
+  work left, open questions, ranges (bottom-up, balanced by work), and the outputs of `prepare`
+  (`overview.md`, `cards/range-NN.txt`, `questions.md`, `facts.json`, `inputs.json`; a re-run with the
+  same inputs is skipped). About 0.3 s per 16K page.
+- **Measured against finished sidecars:** the computed `Changes:` agree with the authors' lines (by pair)
+  on 39 of 42 comparable sp48 routines (`registers.test.ts` holds it above 85 %). The rest are the
+  pass's conservative side: a value restored by arithmetic (`SBC HL,DE; ADD HL,DE`) reads as changed, so
+  the facts are "may change". **P7's lint must therefore flag only definite contradictions** (a register
+  in `Changes:` that no path writes), and list the others as questions.
+- Not yet (later phases): naming RAM by system variable and ports by function (stage 11 names only the
+  page's labels); finding code and data without a sidecar (P4: a new ROM is decoded as all code for
+  now); the EXOS call and other restarts' ABIs (P5: `RST 30h` is a call outside the page, so its
+  callers' register facts are unknown after it); version alignment (P6).
+
+### 9.4 As built: P3
+
+- `profile/romPageProfile.ts` cuts a run (the core's flag buffer and call edges) into one ROM page's
+  profile, through the core's profile layout; `analyse.ts` takes it (`RomPageProfile`).
+- The recipes are `test/rom-annotations/profileRecipes.ts` (they run cores, so they live in the e2e
+  tier): `sp48`, `ep128` (EXOS 2.1, IS-BASIC 2.1), `ep64` (EXOS 2.0, IS-BASIC 2.0) and `ep128-exdos`
+  (with the card and an empty 720K disk: `:DIR`, `SAVE`, `LOAD`). `profile.test.ts` runs one when
+  `npm run rom:pipeline -- profile <recipe>` asks, writing `work/<rom>/profile-page-<n>.json` (which
+  `prepare` reads by default) and `work/<recipe>.log.md` with every command and the screen after it, so
+  a session can quote what it observed. Without a recipe it checks the 48K run (about 2 s).
+- The log paid for itself at once: it showed that IS-BASIC refuses a multi-statement line and that an
+  extension's command needs a `:` (`:DIR`), and both were fixed in the script.
+- EXDOS: page 0 runs 4,050 instruction starts in `ep128-exdos`; **page 1 is never reached** by it.
+- No recipe yet for the ZX80/81, HT-1080Z, TVC, Spectrum 128/+3 or Next ROMs: each is written when one of
+  them is next annotated with the pipeline.
 
 ## 10. Details still to settle
 
@@ -541,8 +645,8 @@ The open questions are decided (§2, D4-D11). What is left is detail, settled wh
 1. **Marking a number that must stay a number** in `.ann` text, so the naming pass leaves it alone (§5;
    P1, P7).
 2. **The measurement** (§8): what is recorded per helper and where, fixed before EXDOS 1.3 starts (P8).
-3. **The profile recipe for the Enterprise with EXDOS**: which commands exercise the disk ROM without a disk
-   image, or which disk image to use (P3).
+3. **EXDOS page 1**: which commands reach it (the `ep128-exdos` recipe runs page 0 only), before
+   EXDOS 1.3 is annotated (P8).
 
 ## 11. Documentation: the "Under the Hood" article
 

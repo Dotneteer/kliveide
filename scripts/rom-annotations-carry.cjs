@@ -41,6 +41,7 @@
  */
 
 const { existsSync, mkdirSync, readFileSync, writeFileSync } = require("node:fs");
+const { registerTsRuntime } = require("./lib/ts-runtime.cjs");
 const { basename, dirname, join, relative, resolve, sep } = require("node:path");
 
 const PAGE = 0x4000;
@@ -467,7 +468,7 @@ const hex4 = (v) => v.toString(16).toUpperCase().padStart(4, "0");
 const hex = (v) => (v === undefined ? "?" : `$${hex4(v)}`);
 const regionText = (r) => `${r.type}${r.decode ? `/${r.decode}` : ""} ${hex(r.start)}-${hex(r.end)}`;
 
-module.exports = { addressOperandIndex, operandMask, boundariesOf, reanchor, carryBank, dropMisaligned, addressMentions, registerTsRuntime };
+module.exports = { addressOperandIndex, operandMask, boundariesOf, reanchor, carryBank, dropMisaligned, addressMentions };
 
 // =================================================================================================
 // The command line
@@ -669,49 +670,4 @@ async function main() {
         `data regions ${s.regions[0]}/${s.regions[1]} (${s.resized} resized), ${s.moved} carried comment(s) to check`
     );
   }
-}
-
-// Loading the TypeScript sources in plain Node (as `scripts/rom-annotations.cjs` does)
-function registerTsRuntime(root) {
-  const esbuild = require("esbuild");
-  require.extensions[".ts"] = (module, filename) => {
-    const result = esbuild.transformSync(readFileSync(filename, "utf8"), {
-      format: "cjs",
-      loader: "ts",
-      platform: "node",
-      target: "es2020",
-      tsconfigRaw: { compilerOptions: { esModuleInterop: true, useDefineForClassFields: false } }
-    });
-    module._compile(result.code, filename);
-  };
-  require("tsconfig-paths").register({
-    baseUrl: root,
-    paths: {
-      "@abstractions/*": ["src/common/abstractions/*"],
-      "@common/*": ["src/common/*"],
-      "@messaging/*": ["src/common/messaging/*"],
-      "@state/*": ["src/common/state/*"],
-      "@utils/*": ["src/common/utils/*"],
-      "@renderer/*": ["src/renderer/*"],
-      "@emu/*": ["src/emu/*"],
-      "@appIde/*": ["src/renderer/appIde/*"],
-      "@main/*": ["src/main/*"],
-      "@controls/*": ["src/renderer/controls/*"]
-    }
-  });
-  const Module = require("node:module");
-  const original = Module._resolveFilename;
-  Module._resolveFilename = function (request, parent, isMain, opts) {
-    try {
-      return original.call(this, request, parent, isMain, opts);
-    } catch (error) {
-      if (error?.code === "MODULE_NOT_FOUND" && parent?.filename) {
-        const base = request.startsWith(".") ? resolve(dirname(parent.filename), request) : undefined;
-        for (const candidate of base ? [`${base}.ts`, `${base}/index.ts`] : []) {
-          if (existsSync(candidate)) return candidate;
-        }
-      }
-      throw error;
-    }
-  };
 }

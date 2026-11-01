@@ -41,6 +41,9 @@ const BANK_KEYS = [
   "operandReferences"
 ];
 
+/** The order of a line annotation's keys. */
+const LINE_KEYS = ["synopsis", "comment"];
+
 const json = (value: unknown) => JSON.stringify(value);
 
 function orderedKeys(object: Record<string, any>, order: string[]): string[] {
@@ -84,8 +87,14 @@ function formatBank(bank: Record<string, any>, indent: string): string {
       );
     } else if ((key === "lineAnnotations" || key === "operandReferences") && value && typeof value === "object") {
       const keys = sortedOffsets(Object.keys(value));
+      // --- A line annotation's own keys in one order too (synopsis, then comment), so the same
+      // --- entry never shows up as a diff because a tool built it in another order
+      const entry = (v: any) =>
+        key === "lineAnnotations" && v && typeof v === "object" && !Array.isArray(v)
+          ? Object.fromEntries(orderedKeys(v, LINE_KEYS).map((k) => [k, v[k]]))
+          : v;
       lines.push(
-        `${inner}${json(key)}: {\n${keys.map((k) => `${inner}  ${json(k)}: ${json(value[k])}`).join(",\n")}\n${inner}}`
+        `${inner}${json(key)}: {\n${keys.map((k) => `${inner}  ${json(k)}: ${json(entry(value[k]))}`).join(",\n")}\n${inner}}`
       );
     } else {
       lines.push(`${inner}${json(key)}: ${json(value)}`);

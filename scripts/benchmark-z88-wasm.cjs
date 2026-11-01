@@ -14,7 +14,8 @@
  */
 
 const { existsSync, readFileSync } = require("node:fs");
-const { dirname, resolve } = require("node:path");
+const { registerTsRuntime } = require("./lib/ts-runtime.cjs");
+const { resolve } = require("node:path");
 const { performance } = require("node:perf_hooks");
 
 const root = resolve(__dirname, "..");
@@ -286,53 +287,6 @@ function printTable(report) {
 // ---------------------------------------------------------------------------------------------
 // Loading the TypeScript sources in plain Node (the pattern of `benchmark-zxnext-wasm.cjs`)
 
-let tsRuntimeRegistered = false;
-
-function registerTsRuntime() {
-  if (tsRuntimeRegistered) return;
-  const esbuild = require("esbuild");
-  require.extensions[".ts"] = (module, filename) => {
-    const result = esbuild.transformSync(readFileSync(filename, "utf8"), {
-      format: "cjs",
-      loader: "ts",
-      platform: "node",
-      target: "es2020",
-      tsconfigRaw: { compilerOptions: { esModuleInterop: true, useDefineForClassFields: false } }
-    });
-    module._compile(result.code, filename);
-  };
-  require("tsconfig-paths").register({
-    baseUrl: root,
-    paths: {
-      "@abstractions/*": ["src/common/abstractions/*"],
-      "@common/*": ["src/common/*"],
-      "@messaging/*": ["src/common/messaging/*"],
-      "@state/*": ["src/common/state/*"],
-      "@utils/*": ["src/common/utils/*"],
-      "@renderer/*": ["src/renderer/*"],
-      "@emu/*": ["src/emu/*"],
-      "@appIde/*": ["src/renderer/appIde/*"],
-      "@main/*": ["src/main/*"],
-      "@controls/*": ["src/renderer/controls/*"]
-    }
-  });
-  const Module = require("node:module");
-  const original = Module._resolveFilename;
-  Module._resolveFilename = function (request, parent, isMain, opts) {
-    try {
-      return original.call(this, request, parent, isMain, opts);
-    } catch (error) {
-      if (error?.code === "MODULE_NOT_FOUND" && request.startsWith(".") && parent?.filename) {
-        for (const candidate of [`${request}.ts`, `${request}/index.ts`]) {
-          const path = resolve(dirname(parent.filename), candidate);
-          if (existsSync(path)) return path;
-        }
-      }
-      throw error;
-    }
-  };
-  tsRuntimeRegistered = true;
-}
 
 async function main() {
   const options = parseArgs(process.argv.slice(2));
