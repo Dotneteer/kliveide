@@ -1,5 +1,5 @@
 ---
-description: "How the ZX Spectrum Next's sprite hardware draws 128 sprites: the 512 × 512 sprite space, 16K of patterns in 8-bit and 4-bit form, the four or five attribute bytes and the ports that upload them, eight orientations and four sizes, anchors with composite and unified relative sprites, the two line buffers, the time budget of a line and what happens when it runs out, sprites over the border, clipping, collisions, and how Klive's emulator reproduces all of it."
+description: "How the ZX Spectrum Next's sprite hardware draws 128 sprites: the 512 × 512 sprite space, 16K of patterns in 8-bit and 4-bit form, the four or five attribute bytes and the ports that upload them, eight orientations and four sizes, anchors with composite and unified relative sprites, the two line buffers, the time budget of a line and what happens when it runs out, sprites over the border, clipping and collisions."
 ---
 
 import { Callout } from 'nextra/components'
@@ -9,7 +9,9 @@ import { Callout } from 'nextra/components'
 Picture a busy game screen: your ship, a dozen enemies, a hail of bullets, an explosion or two. On the
 Next, every one of them can be a sprite, up to 128 at once, each moving on its own. A screen of 128
 sprites is a picture in its own right, 320 × 256 dots, so you would expect the hardware to keep it
-somewhere. It does not. It holds **two lines**. So how do 128 sprites fit into two lines?
+somewhere. It does not. It holds **two lines**. So how do 128 sprites fit into two lines? I think the
+answer is one of the best bits of engineering in the whole machine, and by the end of the chapter I
+hope you will agree.
 
 First, why bother with sprites at all? Almost everything that moves on a screen is one: the player, the
 enemies, the bullets and explosions of a game, and the pointer, cursor and dragged icon of an
@@ -17,13 +19,16 @@ application. A machine without them, like the 48K Spectrum, makes the CPU draw e
 screen memory itself, then put back what was behind it before drawing it again one step further on.
 That work ate most of a Spectrum game's frame, and drawing into the bitmap is why moving objects took on
 the colours of the cells they crossed. Hardware sprites take all of it off the CPU, which is left free
-for the game itself.
+for the game itself. If you ask me, nothing on the Next saves a game programmer more of the CPU's
+time.
 
 A sprite is a picture that moves on its own. Your program says "put this 16 × 16 picture at X 140,
 Y 90", and the hardware draws it there, in front of the background, without your program touching a
 byte of screen memory. Want to move it? Change two numbers. The Next has **128** of them, each up to
 16 × 16 dots, enlarged up to eight times in either direction, turned and mirrored, and linked into
-objects far bigger than one sprite.
+objects far bigger than one sprite. The big picture chapter calls the sprites **the troupe**, a
+company of performers, each with a costume and a place of its own, and I will stay in that theatre
+here: you will meet their wings, their sketchbook and their cast list.
 
 Read the overview chapter, [the big picture](/en/under-the-hood/emulator-internals/next-display/overview/),
 and the [palettes chapter](/en/under-the-hood/emulator-internals/next-display/palettes/) first: this
@@ -37,14 +42,14 @@ with the ports that upload them. Then the sprites go on the machine: eight orien
 and anchors that drag whole groups of sprites along with them. After that comes the key idea, the two
 line buffers, and with them the answer to which sprite ends up in front. The heart of the chapter is the
 time budget of a line: how many sprites the hardware can draw before it runs out of time, and what it
-does when it does. If you read only one section closely, make it that one. We finish with sprites over
-the border, the clip window, collisions, and how Klive does all of it.
+does when it does. If you read only one section closely, make it that one; it is the part I find most
+fascinating. We finish with sprites over the border, the clip window and collisions, and then gather it all up.
 
 <Callout type="info">
-The pictures are Klive's Next with the sprites alone on screen (the ULA switched off, the fallback
+The pictures are the Next with the sprites alone on screen (the ULA switched off, the fallback
 colour black, unless a picture needs the border), at 128K/+3 timing and 50 Hz. Each picture comes from a
 checked test that first finds the dots the text describes. The time budget's numbers come from the
-hardware's sprite engine simulated clock by clock, and Klive's are checked against them.
+hardware's sprite engine simulated clock by clock.
 </Callout>
 
 ## Sprite space
@@ -53,10 +58,11 @@ A sprite's position is two **9-bit** numbers, X and Y, each 0–511. They place 
 dot in a square of 512 × 512 positions, **sprite space**, of which only a corner is ever shown: the
 320 × 256 **wide area**, X 0–319 and Y 0–255. The Spectrum's display area sits inside it at
 X 32, Y 32, so a sprite at (32, 32) starts exactly at the top-left corner of the ULA's picture, and one
-at (0, 0) at the top-left corner of the border.
+at (0, 0) at the top-left corner of the border. I always remember the 32 as "one border's width"
+in both directions.
 
 <figure>
-<svg viewBox="0 0 700 410" role="img" aria-label="Sprite space drawn to scale: a square of 512 by 512 positions. Its top-left corner, 320 by 256, is the wide area that is shown; the ULA's display area sits inside it from X 32, Y 32, 256 by 192. The rest of the square, X 320 to 511 and Y 256 to 511, is never shown. A sprite at X 100, Y 60 is inside the wide area. A sprite at X 500, Y 8 runs past 511 and wraps: its last 4 dots appear at the left edge, X 0 to 3. Beside the square: X and Y are 9 bits each, 0 to 511; shown are X 0 to 319 and Y 0 to 255; positions wrap at 512 both ways, so a sprite can slide in from the left or the top a dot at a time; a 4-byte sprite has no ninth Y bit, so its Y is 0 to 255." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 414" role="img" aria-label="Sprite space drawn to scale: a square of 512 by 512 positions. Its top-left corner, 320 by 256, is the wide area that is shown; the ULA's display area sits inside it from X 32, Y 32, 256 by 192. The rest of the square, X 320 to 511 and Y 256 to 511, is never shown. A sprite at X 100, Y 60 is inside the wide area. A sprite at X 500, Y 8 runs past 511 and wraps: its last 4 dots appear at the left edge, X 0 to 3. Beside the square: X and Y are 9 bits each, 0 to 511; shown are X 0 to 319 and Y 0 to 255; positions wrap at 512 both ways, so a sprite can slide in from the left or the top a dot at a time; a 4-byte sprite has no ninth Y bit, so its Y is 0 to 255." style={{ width: "100%", height: "auto" }}>
   <defs>
     <pattern id="sp-hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
       <line x1="0" y1="0" x2="0" y2="8" stroke="currentColor" strokeOpacity="0.22" strokeWidth="2" />
@@ -99,15 +105,20 @@ at (0, 0) at the top-left corner of the border.
 Why 512 positions for a 320-dot screen? So that a sprite can be **partly off** any edge. A 16-dot
 sprite moving left from X 0 goes to X 511, 510, …: positions wrap round at 512, so at X 500 its first
 12 dots are past the right of sprite space, out of sight, and its last 4 come back in at X 0–3. To your
-program it is X −12, and the sprite never notices that it went round the back. The same happens
+program it is X −12, and the sprite never notices that it went round the back. I call the hidden
+part of sprite space **the wings**, as in a theatre: sprites wait there, out of the audience's sight,
+for their cue. The same happens
 at the top with Y. With 8 bits, X could not even reach the right-hand side of a 320-dot screen; the
 ninth bit reaches it and leaves 192 hidden positions across and 256 down, more than the widest sprite.
+Roomy wings, if you ask me.
 
 ## Patterns
 
 A sprite's picture is a **pattern**, and the patterns live apart from the sprites, in **16K** of memory
 of their own inside the FPGA. Many sprites can show the same pattern, as many cells of the tilemap can
-show the same tile. Ten enemies of one kind cost you one pattern, not ten.
+show the same tile. Ten enemies of one kind cost you one pattern, not ten. I think of the pattern
+memory as **the sketchbook**: every sprite picks a drawing from it, and any number of them may use the
+same one. (The wardrobe, in this series, is the palette.)
 
 A pattern is **16 × 16 dots**, stored row after row, the left dot first, in one of two forms:
 
@@ -120,7 +131,7 @@ A pattern is **16 × 16 dots**, stored row after row, the left dot first, in one
 Here is how the two forms share one memory:
 
 <figure>
-<svg viewBox="0 0 700 390" role="img" aria-label="The 16 kilobytes of pattern memory, to scale, as 64 slots of 256 bytes. Slot 5 is highlighted and opened below in two ways. As an 8-bit pattern, number 5: 16 rows of 16 bytes, one byte per dot. Or as two 4-bit patterns, numbers 10 and 11: the first 128 bytes and the second 128 bytes, each 16 rows of 8 bytes, two dots per byte, the upper nibble on the left." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 394" role="img" aria-label="The 16 kilobytes of pattern memory, to scale, as 64 slots of 256 bytes. Slot 5 is highlighted and opened below in two ways. As an 8-bit pattern, number 5: 16 rows of 16 bytes, one byte per dot. Or as two 4-bit patterns, numbers 10 and 11: the first 128 bytes and the second 128 bytes, each 16 rows of 8 bytes, two dots per byte, the upper nibble on the left." style={{ width: "100%", height: "auto" }}>
   <defs>
     <pattern id="sp-slots" x="0" y="0" width="10.9375" height="30" patternUnits="userSpaceOnUse">
       <path d="M10.9375,0 V30" fill="none" stroke="#a855f7" strokeOpacity="0.35" strokeWidth="0.8" />
@@ -154,28 +165,31 @@ Here is how the two forms share one memory:
 <figcaption>Pattern memory, to scale. The same 256 bytes are one 8-bit pattern or two 4-bit ones; for a 4-bit pattern, one more bit, N6, picks the half.</figcaption>
 </figure>
 
-So the two forms share one memory, and your program mixes them freely: 8-bit pattern 5 and 4-bit
+So the two forms share one memory, and your program mixes them freely (I find this one of the more
+generous design choices): 8-bit pattern 5 and 4-bit
 patterns 10 and 11 are the same bytes. A sprite names its pattern with six bits, **N5–N0**, which pick
 the 256-byte slot; that is the whole number of an 8-bit pattern. A 4-bit pattern needs one more bit,
 **N6**, which picks the half of the slot: 0 the first 128 bytes, 1 the second. So the 4-bit pattern's
-number is 2 × slot + N6, and N6 is its *lowest* bit, even though it is the seventh one added. Which form
+number is 2 × slot + N6, and N6 is its *lowest* bit, even though it is the seventh one added. Let me
+warn you: this is the bit everyone puts in the wrong place the first time. Which form
 a sprite uses is a bit of its own (the H bit, which you meet with the attribute bytes below), not a
 setting of the memory.
 
-A dot is **transparent** when its value, before the palette offset, equals the Sprite Transparency
-Index register, **NextReg `$4B`** (`$E3` after a reset): the whole byte for an 8-bit pattern, the low
-four bits of NextReg `$4B` for a 4-bit one. The colours come from one of the two sprite palettes,
-chosen by bit 3 of the Palette Control register, NextReg `$43`. The palettes chapter's
+A dot is **transparent** when its value, before the palette offset, equals the value in the Sprite
+Transparency Index register, **NextReg `$4B`** (`$E3` after a reset): the whole byte for an 8-bit
+pattern, the low four bits of NextReg `$4B` for a 4-bit one. The colours come from one of the two
+sprite palettes, chosen by bit 3 of the Palette Control register, NextReg `$43`. The palettes chapter's
 [other layers](/en/under-the-hood/emulator-internals/next-display/palettes/#the-other-layers-a-dot-and-an-offset)
 explains the offset and why the test comes before it.
 
 ## The attribute bytes
 
 Everything else about a sprite is in its **attributes**: four or five bytes for each of the 128
-sprites, in a table of their own beside the pattern memory.
+sprites, in a table of their own beside the pattern memory. If the patterns are the sketchbook, this
+table is the **cast list**: who is on stage, where they stand, and which drawing they use.
 
 <figure>
-<svg viewBox="0 0 700 334" role="img" aria-label="The five attribute bytes of a sprite as bit strips, bit 7 on the left. Byte 0: X, bits 7 to 0. Byte 1: Y, bits 7 to 0. Byte 2: bits 7 to 4 the palette offset, bit 3 X mirror, bit 2 Y mirror, bit 1 rotate, bit 0 the ninth bit of X. Byte 3: bit 7 visible, bit 6 E, a fifth byte follows, bits 5 to 0 the pattern number N5 to N0. Byte 4, only when E is set: bit 7 H, a 4-bit pattern, bit 6 N6, for a 4-bit pattern which half of the 256-byte slot, bit 5 T, the relative type, bits 4 and 3 the X scale, bits 2 and 1 the Y scale, bit 0 the ninth bit of Y. A key below the strips spells out each short name." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 338" role="img" aria-label="The five attribute bytes of a sprite as bit strips, bit 7 on the left. Byte 0: X, bits 7 to 0. Byte 1: Y, bits 7 to 0. Byte 2: bits 7 to 4 the palette offset, bit 3 X mirror, bit 2 Y mirror, bit 1 rotate, bit 0 the ninth bit of X. Byte 3: bit 7 visible, bit 6 E, a fifth byte follows, bits 5 to 0 the pattern number N5 to N0. Byte 4, only when E is set: bit 7 H, a 4-bit pattern, bit 6 N6, for a 4-bit pattern which half of the 256-byte slot, bit 5 T, the relative type, bits 4 and 3 the X scale, bits 2 and 1 the Y scale, bit 0 the ninth bit of Y. A key below the strips spells out each short name." style={{ width: "100%", height: "auto" }}>
   <text x="114" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.75">7</text>
   <text x="192" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.75">6</text>
   <text x="270" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.75">5</text>
@@ -251,12 +265,13 @@ sprites, in a table of their own beside the pattern memory.
 Byte 4 bits 7 and 6 together have one more meaning. Look closely at the combination `01`: H clear, so an
 8-bit pattern, but N6 set, the half-slot bit that only a 4-bit pattern uses. It cannot mean anything
 sensible as a pattern, so the hardware gives it a job: it makes the sprite a **relative** sprite, whose
-bytes then mean something else (see Anchors and relative sprites).
+bytes then mean something else (see Anchors and relative sprites). I love this kind of thrift: a
+combination that would be nonsense becomes a feature.
 
 ## Uploading through three ports
 
 The pattern memory and the attribute table are not in the CPU's memory map. Your program writes them
-through three ports, each with an index that steps on by itself:
+through three ports, each with an index that steps on by itself, which I find a pleasure to use:
 
 | Port | Name | What a write does |
 |---|---|---|
@@ -269,7 +284,7 @@ takes four. Its byte 4 is not written, and keeps whatever it held, but no part o
 while E is 0:
 
 <figure>
-<svg viewBox="0 0 700 194" role="img" aria-label="One stream of bytes written to port 57. The first four bytes, X, Y, byte 2, and a byte 3 with E equal to 0, go to sprite n, and the port steps on to sprite n plus 1 without a fifth byte; sprite n's byte 4 is left as it was. The next five bytes, with E equal to 1 in byte 3, go to sprite n plus 1, bytes 0 to 4." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 198" role="img" aria-label="One stream of bytes written to port 57. The first four bytes, X, Y, byte 2, and a byte 3 with E equal to 0, go to sprite n, and the port steps on to sprite n plus 1 without a fifth byte; sprite n's byte 4 is left as it was. The next five bytes, with E equal to 1 in byte 3, go to sprite n plus 1, bytes 0 to 4." style={{ width: "100%", height: "auto" }}>
   <defs>
     <marker id="sp-arrow2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="currentColor" fillOpacity="0.6" />
@@ -309,22 +324,25 @@ while E is 0:
 
 The attributes can also be written through NextRegs, which the Copper can do in the middle of a frame.
 The Sprite Number register, **NextReg `$34`**, picks the sprite (bits 6–0), and the Sprite Attribute 0–4
-registers, **NextRegs `$35`–`$39`**, write its bytes 0–4 directly, in any order. NextRegs **`$75`–`$79`**
-write the same bytes and then step NextReg `$34` to the next sprite, so your program ends each sprite's
-bytes with one of them. Normally NextReg `$34` and port `$303B` pick their sprites independently; bit 4
+registers, **NextRegs `$35`–`$39`**, write its bytes 0–4 directly, in any order. The Sprite Attribute 0–4
+with automatic post increment of Sprite Number registers, NextRegs **`$75`–`$79`**, write the same bytes
+and then step NextReg `$34` to the next sprite, so your program ends each sprite's bytes with one of
+them. Normally NextReg `$34` and port `$303B` pick their sprites independently; bit 4
 of the Peripheral 4 Setting register, NextReg `$09`, ties them, so that either one sets both (and then bit
-7 of NextReg `$34` is port `$303B`'s 128-byte bit).
+7 of NextReg `$34` is port `$303B`'s 128-byte bit). My advice is to pick one way in and stick to it
+for a whole upload; mixing the two pointers is where the confusion starts.
 
 ## Eight orientations
 
 Bits 3–1 of byte 2 turn a pattern into any of its **eight orientations**, the same eight as a tile's,
-by the same rule: **rotate 90 degrees clockwise first, then mirror**. Meet the spaceship that flies
+by the same rule: **rotate 90 degrees clockwise first, then mirror**. I always say it as a little
+chant, "turn, then flip", and that is all there is to remember. Meet the spaceship that flies
 through the rest of the chapter: one pattern, a small ship pointing right with a big tail fin on top and
 a small one underneath, drawn eight times with byte 2 from `$00` to `$0E`. Its red nose tip shows which
 way each one points:
 
 <figure>
-<svg viewBox="0 0 700 438" role="img" aria-label="One 16 by 16 pattern, a spaceship pointing right with a red nose tip, a big tail fin on top, a small fin underneath and a flame at the back, drawn as eight sprites on Klive's Next with byte 2 set to every combination of the mirror and rotate bits. Top row: 00 as stored, pointing right, big fin on top; 02 rotated clockwise, pointing down, big fin top right; 04 mirrored down, pointing right, big fin underneath; 06 rotated, then mirrored down, pointing up, big fin bottom right. Bottom row: 08 mirrored across, pointing left, big fin on top; 0A rotated, then mirrored across, pointing down, big fin top left; 0C mirrored both ways, pointing left, big fin underneath; 0E rotated, then mirrored both ways, pointing up, big fin bottom left." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 442" role="img" aria-label="One 16 by 16 pattern, a spaceship pointing right with a red nose tip, a big tail fin on top, a small fin underneath and a flame at the back, drawn as eight sprites on the emulated Next with byte 2 set to every combination of the mirror and rotate bits. Top row: 00 as stored, pointing right, big fin on top; 02 rotated clockwise, pointing down, big fin top right; 04 mirrored down, pointing right, big fin underneath; 06 rotated, then mirrored down, pointing up, big fin bottom right. Bottom row: 08 mirrored across, pointing left, big fin on top; 0A rotated, then mirrored across, pointing down, big fin top left; 0C mirrored both ways, pointing left, big fin underneath; 0E rotated, then mirrored both ways, pointing up, big fin bottom left." style={{ width: "100%", height: "auto" }}>
   <image x="0" y="0" width="700" height="437.5" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/sprites/orientations.webp`} />
   <rect x="0.5" y="0.5" width="699" height="436.5" fill="none" stroke="currentColor" strokeOpacity="0.35" />
   <text x="87.5" y="192" textAnchor="middle" fill="#fff" fontSize="15">$00: as stored</text>
@@ -339,7 +357,7 @@ way each one points:
 <figcaption>The eight orientations of one sprite pattern on the machine. The test that drew them checks where the red nose tip lands in each against "rotate clockwise, then mirror".</figcaption>
 </figure>
 
-As with tiles, nothing is moved. The hardware reads the pattern's dots in a different order: for X
+As with tiles, nothing is moved, and I find that the neatest part. The hardware reads the pattern's dots in a different order: for X
 mirror it walks each row from the right, for Y mirror it takes the rows from the bottom, and for rotate
 it walks a *column* where it would walk a row. The tilemap chapter's
 [eight orientations](/en/under-the-hood/emulator-internals/next-display/tilemap/#eight-orientations)
@@ -353,7 +371,7 @@ dots, two fifths of the screen's width, drawn from the same 16 × 16 pattern. He
 sizes:
 
 <figure>
-<svg viewBox="0 0 700 350" role="img" aria-label="The spaceship pattern on Klive's Next at different scales. Top row: 1 times, 16 by 16 dots; 2 times, 32 by 32; 4 times, 64 by 64; 8 times, 128 by 128, where every dot of the pattern is a block of 8 by 8. Below: 4 times across and 1 time down, a long flat ship 64 by 16, and 1 time across and 4 times down, a tall thin one 16 by 64. The red nose tip grows with the scale: 2, 4 or 8 dots each way." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 354" role="img" aria-label="The spaceship pattern on the emulated Next at different scales. Top row: 1 times, 16 by 16 dots; 2 times, 32 by 32; 4 times, 64 by 64; 8 times, 128 by 128, where every dot of the pattern is a block of 8 by 8. Below: 4 times across and 1 time down, a long flat ship 64 by 16, and 1 time across and 4 times down, a tall thin one 16 by 64. The red nose tip grows with the scale: 2, 4 or 8 dots each way." style={{ width: "100%", height: "auto" }}>
   <image x="0" y="0" width="700" height="350" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/sprites/scale.webp`} />
   <rect x="0.5" y="0.5" width="699" height="349" fill="none" stroke="currentColor" strokeOpacity="0.35" />
   <text x="38.9" y="75.3" textAnchor="middle" fill="#fff" fontSize="15">1×</text>
@@ -370,14 +388,15 @@ sizes:
 The scale belongs to the screen, not to the pattern: a sprite 4× across and 1× down is wide whether or not
 it is rotated, because the hardware rotates the pattern first and stretches the result. Scale is not
 free, though. You will see in the time budget of a line that a sprite twice as wide takes twice as long
-to draw.
+to draw. Big is cheap in memory and dear in time; keep that in mind.
 
 ## Anchors and relative sprites
 
 One sprite is at most 16 × 16 dots of detail. A boss, a mothership or a big character is several sprites
 moved together, and moving them one by one means rewriting every one's position each frame. Tedious, and
-slow. **Relative sprites** let the hardware do it for you: a sprite can be placed relative to an
-**anchor**, the last ordinary sprite before it in the table, and moves when the anchor moves.
+slow. I would not wish it on anyone. **Relative sprites** let the hardware do it for you: a sprite can be placed relative to an
+**anchor**, the last ordinary sprite before it in the table, and moves when the anchor moves. The name
+fits well: drop the anchor somewhere, and everything tied to it stays close by.
 
 A sprite is relative when its bytes 3 and 4 say so: E set (five bytes) and byte 4 bits 7–6 `01`. Every
 other sprite, visible or not, is an anchor, and the relative sprites that follow it in the table, up to
@@ -405,7 +424,7 @@ three ships, all drawn from the same pattern, an anchor (grey hull) and two rela
 and (0, +16) (green), each coloured by its own palette offset:
 
 <figure>
-<svg viewBox="0 0 700 216" role="img" aria-label="Four formations on Klive's Next, each three ships drawn from the same pattern: an anchor ship with a grey hull and two relative ships, at offset 16, 0 with a blue hull and at 0, 16 with a green one. First, composite, anchor not rotated: three ships pointing right, the blue one beside the anchor and the green one below it. Second, composite, anchor rotated: the anchor ship points down, the two relatives still point right in their places. Third, unified, anchor not rotated: the same as the first. Fourth, unified, anchor rotated: the whole formation has turned clockwise round the anchor: all three ships point down, the blue one is now below the anchor and the green one to its left." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 220" role="img" aria-label="Four formations on the emulated Next, each three ships drawn from the same pattern: an anchor ship with a grey hull and two relative ships, at offset 16, 0 with a blue hull and at 0, 16 with a green one. First, composite, anchor not rotated: three ships pointing right, the blue one beside the anchor and the green one below it. Second, composite, anchor rotated: the anchor ship points down, the two relatives still point right in their places. Third, unified, anchor not rotated: the same as the first. Fourth, unified, anchor rotated: the whole formation has turned clockwise round the anchor: all three ships point down, the blue one is now below the anchor and the green one to its left." style={{ width: "100%", height: "auto" }}>
   <image x="0" y="0" width="700" height="164.7" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/sprites/relative.webp`} />
   <rect x="0.5" y="0.5" width="699" height="164.2" fill="none" stroke="currentColor" strokeOpacity="0.35" />
   <text x="102.9" y="190" textAnchor="middle" fill="currentColor" fontSize="15" fontWeight="600">composite</text>
@@ -423,26 +442,29 @@ offset (*x*, *y*) to (−*y*, *x*), a quarter turn clockwise; X mirror negates *
 then the scale multiplies both by 2, 4 or 8. Since every sprite is the same 16 × 16 and turns round its own
 middle, moving each corner like this keeps the pieces together: the blue sprite at (16, 0) goes to
 (0, 16), below the anchor, and the green one at (0, 16) to (−16, 0), to its left. Neat, isn't it? One
-bit of one sprite, and the whole formation banks into the turn.
+bit of one sprite, and the whole formation banks into the turn. I could watch it all day.
 
 The two "add the anchor's" bits make objects cheap to animate and recolour: with pattern-relative set,
 an object's frames can be consecutive patterns, and changing the anchor's pattern number moves every
 part to its next frame; with palette-relative set, one write to the anchor recolours the whole object.
+If you build big objects at all, my advice is to plan their patterns for this from the start.
 
 ## Two lines, not a screen
 
 Now for the key idea. The sprites do not have a picture memory. What they have is two **line buffers**,
 each 320 entries long, one for every dot of a line of the wide area. An entry is **9 bits**: the 8-bit
-palette index of a sprite dot, and a ninth bit that says "a sprite dot is here".
+palette index of a sprite dot, and a ninth bit that says "a sprite dot is here". I picture them as
+**two easels**: one stands in front of the audience, the other is backstage, being painted.
 
 While the beam draws line *v*, one buffer is being **shown**: read out dot by dot at the 7 MHz dot rate,
 each entry cleared as soon as it has been read. At the same time the **sprite engine** fills the other
 buffer with line *v* + 1: it goes through the sprite table, sprite 0 first, and for every sprite that has
 a row on that line, writes the row's dots into the buffer at the sprite's X, one dot per 28 MHz clock.
-When the line ends, the two buffers swap, and the buffer just shown, empty again, is the next one filled:
+When the line ends, the two buffers swap, and the buffer just shown, empty again, is the next one filled.
+The easels change places, and the engine starts on a clean canvas:
 
 <figure>
-<svg viewBox="0 0 700 232" role="img" aria-label="The two line buffers over two lines. During line v, buffer A is shown: read out at 7 megahertz and cleared as it is read; at the same time the engine writes line v plus 1 into buffer B at 28 megahertz. At the swap, when the wide counter reaches 511, one dot before the wide area's first dot, the roles change: during line v plus 1, buffer B is shown and the engine writes line v plus 2 into buffer A. An arrow shows buffer B's line v plus 1, written during line v, being shown during line v plus 1. Each buffer has 320 entries of 9 bits: an 8-bit index and a bit that says a sprite is there." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 236" role="img" aria-label="The two line buffers over two lines. During line v, buffer A is shown: read out at 7 megahertz and cleared as it is read; at the same time the engine writes line v plus 1 into buffer B at 28 megahertz. At the swap, when the wide counter reaches 511, one dot before the wide area's first dot, the roles change: during line v plus 1, buffer B is shown and the engine writes line v plus 2 into buffer A. An arrow shows buffer B's line v plus 1, written during line v, being shown during line v plus 1. Each buffer has 320 entries of 9 bits: an 8-bit index and a bit that says a sprite is there." style={{ width: "100%", height: "auto" }}>
   <defs>
     <marker id="sp-arrow3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="#a855f7" />
@@ -479,7 +501,8 @@ entries at any time, so a sprite drawn later can land **to the left** of one dra
 X = 200 and sprite 6 at X = 40 are drawn in that order, and the line still comes out right, because
 nothing reads the buffer until the whole line is in it. Sprites never have to be sorted by X, or by
 anything else; their numbers only decide how long the line takes (see the time budget of a line, below)
-and which one is in front where two overlap.
+and which one is in front where two overlap. I find this the cleverest point of the design: the
+hardware never sorts anything, because a line buffer does not care in which order it is filled.
 
 The swap happens when the wide area's horizontal counter reaches 511, the dot just before the wide
 area's first dot: the end of one line's sprites is the start of the next's. A line's sprites are drawn in
@@ -487,26 +510,27 @@ the line before it is shown, from the attribute table **as it is at that moment*
 shows from the next line the engine draws: a sprite moved while the beam is on it shows its upper rows in
 the old place and the rest in the new, and a program that rewrites a sprite below the beam can use it
 again further down the same frame. One sprite, two appearances in a frame: a cheap trick worth keeping
-in your pocket.
+in your pocket, and the last chapter of the series puts it to work.
 
 The buffer's ninth bit is also what the rest of the machine sees. The sprite layer answers "opaque" for a
 dot where it is set and "transparent" where it is not, and its index goes through the sprite palette to
 the [composition stage](/en/under-the-hood/emulator-internals/next-display/composition/#six-orders),
 where the layer order decides whether a sprite is in front of Layer 2 or behind it. Bit 0 of the Sprite
-and Layers System register, **NextReg `$15`**, which switches the sprites on, only gates this output:
-the engine keeps drawing into the buffers when the sprites are switched off, and the collision flag (see
+and Layers System register, **NextReg `$15`**, which switches the sprites on, only gates this output.
+The easel in front is covered, but the engine keeps drawing into the buffers when the sprites are switched off, and the collision flag (see
 Collisions) keeps counting.
 
 ## Which sprite is in front
 
 When two sprites cover the same dot, both write it into the buffer, and the order of the writes decides.
 The engine always works through the table from sprite 0 to sprite 127, so normally the **later write
-wins**: sprite 127 is in front of sprite 126, and sprite 1 in front of sprite 0. NextReg `$15` bit 6 turns
+wins**: sprite 127 is in front of sprite 126, and sprite 1 in front of sprite 0. Bit 6 of the Sprite and
+Layers System register, NextReg `$15`, turns
 it round: a dot is then written only where no sprite has written yet, so the **first write wins** and
 sprite 0 is in front:
 
 <figure>
-<svg viewBox="0 0 700 370" role="img" aria-label="Two overlapping sprites on Klive's Next: sprite 0, red, at the top left, and sprite 1, blue, below and to the right of it. Left, NextReg 15 bit 6 clear: sprite 1 is in front of sprite 0, so sprite 127 would be on top; the later write wins. Right, bit 6 set: sprite 0 is in front of sprite 1; the first write wins." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 374" role="img" aria-label="Two overlapping sprites on the emulated Next: sprite 0, red, at the top left, and sprite 1, blue, below and to the right of it. Left, NextReg 15 bit 6 clear: sprite 1 is in front of sprite 0, so sprite 127 would be on top; the later write wins. Right, bit 6 set: sprite 0 is in front of sprite 1; the first write wins." style={{ width: "100%", height: "auto" }}>
   <image x="25" y="0" width="300" height="300" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/sprites/priority-127.webp`} />
   <rect x="25" y="0.5" width="300" height="299.5" fill="none" stroke="currentColor" strokeOpacity="0.35" />
   <image x="375" y="0" width="300" height="300" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/sprites/priority-0.webp`} />
@@ -522,13 +546,15 @@ sprite 0 is in front:
 </figure>
 
 Either way the drawing order, and so the time it takes, is the same. Only what a write does to a dot
-already written changes.
+already written changes. My preference is the "first write wins" setting for games, because then the
+sprite you care about most, at the top of the table, is also the one in front.
 
 ## The time budget of a line
 
 You have just seen that the engine draws a line's sprites while the beam is showing the line before it.
 Its time for a line is fixed: from one swap of the line buffers to the next. Now let's count how many
-sprites fit into that time, and what the engine does when they do not.
+sprites fit into that time, and what the engine does when they do not. Fair warning: this is the part
+of the sprite hardware I find most fascinating, and it takes a few sections.
 
 The engine runs at 28 MHz, four clocks for every dot the beam moves. A 128K/+3 line is 456 dots, so the
 engine has **1,824 clocks** from one swap to the next; at 48K or Pentagon timing, 448 dots and 1,792
@@ -538,7 +564,8 @@ clocks. All the numbers below are for 128K/+3 timing.
 that the beam shows line *v* while the engine draws line *v* + 1 into the other buffer. So when I say
 "the beam is at dot 316", it means: at that moment the machine is showing dot 316 of line *v*. It does
 not mean anything about the line the engine is drawing. The beam is simply the engine's clock face, the
-way to tell how far through its line's time the engine is.
+way to tell how far through its line's time the engine is. I find it easiest to forget the picture
+here and think of the beam as the hand of a stopwatch.
 
 The engine's clock and the beam move together, so every clock has a beam position. The swap comes one dot
 before dot 0, so at clock *c* the beam is at dot *c* ÷ 4 − 1, rounded down. A few clocks you will meet
@@ -565,7 +592,7 @@ the swap:
 
 So a 1× sprite on the line costs **17 clocks**, and an 8× one 129. Dividing 1,824 by 17 suggests that
 about 107 1× sprites fit on a line. In fact only **75** do when every sprite is on it, because of one more
-rule.
+rule, and it is the one I would ask you to read twice.
 
 ## The cut-off window: when the engine gives up on a line
 
@@ -574,7 +601,7 @@ drawing a sprite. I call it the sprite's **cut-off window**: if the engine gets 
 that sprite is not drawn at all, and the line is cut off there. There are four of them, one for each
 sprite scale, all ending just before the beam reaches dot 320:
 
-<svg viewBox="0 0 700 170" role="img" aria-label="The engine's line from one swap to the next, with the beam above: the wide area, dots 0 to 319, then the border and blanking. Four cut-off windows end at dot 320: dots 316 to 319 for a 1 times sprite, 312 to 319 for 2 times, 304 to 319 for 4 times and 288 to 319 for 8 times. If the engine gets to a sprite on the line while the beam is in that sprite's window, it gives up on the line." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 174" role="img" aria-label="The engine's line from one swap to the next, with the beam above: the wide area, dots 0 to 319, then the border and blanking. Four cut-off windows end at dot 320: dots 316 to 319 for a 1 times sprite, 312 to 319 for 2 times, 304 to 319 for 4 times and 288 to 319 for 8 times. If the engine gets to a sprite on the line while the beam is in that sprite's window, it gives up on the line." style={{ width: "100%", height: "auto" }}>
   <text x="0" y="36" textAnchor="start" fill="currentColor" fontSize="15">beam</text>
   <rect x="65.39" y="18" width="445.62" height="26" fill="currentColor" fillOpacity="0.1" stroke="currentColor" strokeOpacity="0.5" />
   <text x="288.2" y="36" textAnchor="middle" fill="currentColor" fontSize="15">the wide area: dots 0–319</text>
@@ -606,7 +633,7 @@ drawing time, so the wider the sprite, the longer its window, and the earlier it
 | 4× | dots 304–319 | 1,220–1,283 | 64 clocks |
 | 8× | dots 288–319 | 1,156–1,283 | 128 clocks |
 
-Nothing about it is uncertain: the same table always gives the same result. And it says nothing about where
+Nothing about it is uncertain: the same table always gives the same result, which I find reassuring. And it says nothing about where
 the sprite is on the screen: a 1× sprite at X = 10 and one at X = 300 have the same cut-off window. What
 decides is how late in the line the engine gets to the sprite, and that depends on how much work the
 sprites before it in the table took.
@@ -625,10 +652,10 @@ Three things follow from the rule, and the two examples below show each of them:
 
 ## Example 1: every sprite on the line
 
-Let's start with the worst case. All 128 sprites are 1× and on the same 16 lines, one every 2 dots:
+Let's start with the worst case, a crowd scene. All 128 sprites are 1× and on the same 16 lines, one every 2 dots:
 sprite *k* at X = 2*k*.
 
-<svg viewBox="0 0 700 236" role="img" aria-label="Every sprite on the line. Top: a picture from Klive's Next, lines 0 to 63 of the wide area: 128 sprites, one every 2 dots along the same 16 lines, each in one of 16 colours; the band stops after sprite 74, at dot 164, and the rest of the line is empty. Below it, on the same scale, the beam's line and the engine's work: sprites 0 to 74 are drawn from the swap up to dot 318; there the engine gets to sprite 75 while the beam is inside the 1 times cut-off window, dots 316 to 319, and gives up: nothing more is drawn." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 240" role="img" aria-label="Every sprite on the line. Top: a picture from the emulated Next, lines 0 to 63 of the wide area: 128 sprites, one every 2 dots along the same 16 lines, each in one of 16 colours; the band stops after sprite 74, at dot 164, and the rest of the line is empty. Below it, on the same scale, the beam's line and the engine's work: sprites 0 to 74 are drawn from the swap up to dot 318; there the engine gets to sprite 75 while the beam is inside the 1 times cut-off window, dots 316 to 319, and gives up: nothing more is drawn." style={{ width: "100%", height: "auto" }}>
   <text x="0" y="63" textAnchor="start" fill="currentColor" fontSize="15">picture</text>
   <image x="65.39" y="14" width="445.62" height="89.12" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/sprites/budget-all.webp`} />
   <rect x="65.39" y="14" width="445.62" height="89.12" fill="none" stroke="currentColor" strokeOpacity="0.35" />
@@ -684,9 +711,10 @@ Sprites 2×, 4× and 8× wide meet their wider cut-off windows sooner, after **3
 
 ## Example 2: some sprites on other lines
 
-Now a twist. The same sprites, but with numbers 74–99 moved 32 lines down:
+Now a twist, and my favourite example in the chapter. The same sprites, but with numbers 74–99 moved
+32 lines down:
 
-<svg viewBox="0 0 700 276" role="img" aria-label="Sprites 74 to 99 moved 32 lines down. Top: the picture from Klive's Next: the top band has sprites 0 to 73 and then 100 to 127 further right, and the 26 moved sprites form a short band below. Below it, on the same scale: sprites 0 to 73 are drawn up to dot 314, the 26 one-clock checks of sprites 74 to 99, in grey, carry the engine over the cut-off window, and sprites 100 to 127 are drawn from dot 320 on, ending before the next swap." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 280" role="img" aria-label="Sprites 74 to 99 moved 32 lines down. Top: the picture from the emulated Next: the top band has sprites 0 to 73 and then 100 to 127 further right, and the 26 moved sprites form a short band below. Below it, on the same scale: sprites 0 to 73 are drawn up to dot 314, the 26 one-clock checks of sprites 74 to 99, in grey, carry the engine over the cut-off window, and sprites 100 to 127 are drawn from dot 320 on, ending before the next swap." style={{ width: "100%", height: "auto" }}>
   <text x="0" y="63" textAnchor="start" fill="currentColor" fontSize="15">picture</text>
   <image x="65.39" y="14" width="445.62" height="89.12" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/sprites/budget-gap.webp`} />
   <rect x="65.39" y="14" width="445.62" height="89.12" fill="none" stroke="currentColor" strokeOpacity="0.35" />
@@ -741,17 +769,18 @@ Follow the engine row again:
 4. Sprites 100–127 take 17 clocks each, and the last one ends at clock 1,763, before the next swap.
 
 That is **102** sprites on one line, 27 more than in Example 1, and no flag. Moving sprites *away* from a
-line let more of them onto it. Funny old world.
+line let more of them onto it. Funny old world. I would never have guessed it without counting.
 
 ## The next swap: the hard stop
 
 The swap is the one real deadline. Wherever the engine is when it comes, it stops and starts the next
 line, even in the middle of a sprite. The dots it has already written stay, so a wide sprite late in the
-table can appear cut short on its right. That also sets the flag.
+table can appear cut short on its right. That also sets the flag. Think of it as the curtain coming
+down mid-sentence: what was said stays said, the rest is never heard.
 
 ## What a program can count on
 
-So, what does all this mean for your program? Here is what you can rely on:
+Enough counting. What does all this mean for your program? Here is what I would rely on:
 
 - The flag is bit 1 of port `$303B` when read (written, the same port selects a sprite slot). It is **set** the moment a
   line loses sprites: when the engine gives up in a cut-off window, or when the next swap stops it in the
@@ -759,24 +788,24 @@ So, what does all this mean for your program? Here is what you can rely on:
 - **Reading** port `$303B` returns the flag and **clears** it, together with the collision flag, bit 0
   (see Collisions), in the same read. A flag raised just after a read waits for the next one. A reset
   clears both as well. So the flag says that some line lost sprites since the last read; it does not say
-  which line, or how many. (Klive works the flag out once a frame rather than as each line is drawn: see
-  How Klive does it.)
+  which line, or how many.
 - Sprites low in the table are safe: the engine always starts at sprite 0, so the sprites that matter
-  most, the player, the bullets, go first.
+  most, the player, the bullets, go first. This is my first rule for any sprite table.
 - Every sprite in the table costs at least one clock on every line, visible or not. A line on which all
   the work is done before clock 1,156, when the beam reaches dot 288, can never lose a sprite, whatever
   the scales.
 - Wide sprites are expensive: one 8× sprite costs as much as seven and a half 1× ones. Scaling a sprite to
-  fill the screen is cheap in memory and dear in time.
+  fill the screen is cheap in memory and dear in time. I would spend 8× sprites like money.
 
 ## Over the border, and clipping
 
 Sprite space's visible corner is the whole wide area, border included, but by default the sprites are
-shown only over the Spectrum's display area. Bit 1 of NextReg `$15` lets them **over the border**. Here
+shown only over the Spectrum's display area. Bit 1 of the Sprite and Layers System register, NextReg
+`$15`, lets them **over the border**, and if you ask me, it belongs on in almost every game. Here
 are two ships near the left edge, with the bit set and clear:
 
 <figure>
-<svg viewBox="0 0 700 290" role="img" aria-label="The top-left part of the screen on Klive's Next, with a yellow display area and a blue border, and two ship sprites: one at 24, 48, across the display area's left edge, and one at 4, 80, wholly in the border. Left, NextReg 15 bit 1 set: both ships are shown whole, over the border. Right, bit 1 clear: only the front half of the first ship, its nose and cockpit over the display area, is shown, and the second ship is not shown at all." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 294" role="img" aria-label="The top-left part of the screen on the emulated Next, with a yellow display area and a blue border, and two ship sprites: one at 24, 48, across the display area's left edge, and one at 4, 80, wholly in the border. Left, NextReg 15 bit 1 set: both ships are shown whole, over the border. Right, bit 1 clear: only the front half of the first ship, its nose and cockpit over the display area, is shown, and the second ship is not shown at all." style={{ width: "100%", height: "auto" }}>
   <image x="0" y="0" width="340" height="255" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/sprites/border-on.webp`} />
   <rect x="0.5" y="0.5" width="339" height="254" fill="none" stroke="currentColor" strokeOpacity="0.35" />
   <image x="360" y="0" width="340" height="255" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/sprites/border-off.webp`} />
@@ -813,10 +842,11 @@ explains the exception that keeps the border from hiding them.
 
 Did your ship just fly into a rock? Bit 0 of port `$303B`, when read, says whether two sprites
 **collided**: whether an opaque sprite dot was written into the line buffer where another sprite had
-already written one.
+already written one. I call this bit **the gossip**: it always knows *that* something happened, and it
+never tells you who was involved.
 
 <figure>
-<svg viewBox="0 0 700 202" role="img" aria-label="A stretch of the line buffer. Sprite A writes its opaque dots at positions 100 to 115. Sprite B, later in the table, writes its opaque dots at positions 110 to 125. At positions 110 to 115 B's writes find the 'a sprite is here' bit already set: that sets the collision flag, bit 0 of port 303B. The check is in the buffer, so it happens before the clip window, whichever sprite stays in front, and with the sprite layer switched off." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 206" role="img" aria-label="A stretch of the line buffer. Sprite A writes its opaque dots at positions 100 to 115. Sprite B, later in the table, writes its opaque dots at positions 110 to 125. At positions 110 to 115 B's writes find the 'a sprite is here' bit already set: that sets the collision flag, bit 0 of port 303B. The check is in the buffer, so it happens before the clip window, whichever sprite stays in front, and with the sprite layer switched off." style={{ width: "100%", height: "auto" }}>
   <text x="0" y="49" textAnchor="start" fill="currentColor" fontSize="15">sprite A</text>
   <rect x="180" y="30" width="240" height="28" fill="#a855f7" fillOpacity="0.35" stroke="#a855f7" />
   <text x="300" y="49" textAnchor="middle" fill="currentColor" fontSize="15">dots 100–115</text>
@@ -838,7 +868,8 @@ already written one.
 **What counts as a touch.** Two sprites touch only where both of them write the **same dot** of the
 same line. Each of these conditions must hold:
 
-- **Both dots are opaque.** A dot whose value equals the transparency index, NextReg `$4B` (see
+- **Both dots are opaque.** A dot whose value equals the value in the Sprite Transparency Index
+  register, NextReg `$4B` (see
   Patterns), is never written into the buffer: it does not set the flag, and it leaves no mark for a later
   sprite to hit. So two sprites whose 16 × 16 squares overlap only where at least one of them is
   transparent do **not** collide. The flag is exact to the dot; it is not a test of the sprites' boxes.
@@ -851,57 +882,17 @@ same line. Each of these conditions must hold:
 
 Because the check is made in the line buffer, it follows the buffer's rules, not the screen's: dots
 outside the clip window collide, overlaps hidden by "sprite 0 on top" collide, and sprites switched off
-with NextReg `$15` bit 0 still collide. Only dots inside the 320-dot line count. Both flags of port
+with the Sprite and Layers System register, NextReg `$15` bit 0, still collide. Only dots inside the 320-dot line count. Both flags of port
 `$303B` stay set until the port is read, and reading it clears both.
 
-The flag says *that* two sprites touched somewhere, in this dot-exact sense, not *which* two or where. A
-game reads it once a frame as a cheap "something hit something", and only then compares the positions of
-the sprites it cares about.
-
-## How Klive does it
-
-Klive's Next core keeps the 128 × 5 attribute bytes and follows the hardware's port and NextReg rules for
-writing them: the four-or-five-byte stream of port `$57`, the stepping of NextRegs `$75`–`$79`, and the tie
-of NextReg `$09` bit 4. Pattern memory is kept a little differently: every byte written to port `$5B` is
-stored eight times, once in each orientation of its pattern, and in both the 8-bit and 4-bit views, so the
-renderer reads a turned or mirrored sprite as if it were stored that way. The cost is memory; the gain is
-that the renderer never transforms a coordinate.
-
-Klive does not run the engine line by line. Before it draws the sprites, it **resolves** the table as the
-hardware's engine would see it: every relative sprite composed onto its anchor (position, orientation,
-scale, palette offset, pattern, visibility), by the rules of anchors and relative sprites above. It then
-works out, for each of the 256 lines, where the hardware would run out of time: the first sprite it would
-not finish, and how many dots of that sprite it would have written. That is the arithmetic of the time
-budget, done per line in a few sums per sprite, and it was checked against the hardware's sprite engine
-simulated clock by clock on random sprite tables at both line lengths, dot for dot. Then it draws each
-sprite, row by row, skipping the rows a line's budget does not reach, and stops a cut sprite at its last
-dot.
-
-Drawing whole sprites instead of whole lines gives the same picture: within a line the drawing order and
-the "first write" or "later write" rule are the same, so the same sprite wins every dot, and a write to the
-sprite table during the frame makes the raster draw the lines the beam has passed with the old table first.
-Where such a change lands can differ from the hardware by about a line, because the hardware's engine works a
-line ahead of the beam. Two things happen at a different moment than on the hardware. The collision flag
-and the "too many sprites" flag are worked out once per frame, when the frame is complete, rather than as
-each line is drawn, so a program that reads port `$303B` in the middle of a frame sees only what the frames
-before it raised.
-
-In the IDE, the [Sprite Inspector](/en/guides/next/sprite-inspector/) shows the attribute table, resolved
-the same way (relative sprites on their anchors), and the patterns; the [Layers](/en/guides/next/layers/)
-view shows the sprite layer alone. Sprite palettes and pattern files open in the
-[sprite and palette editors](/en/guides/next/sprite-palette-editors/). And if you want to read the code
-yourself, here is where it lives:
-
-| What | Where |
-|---|---|
-| The ports, NextRegs, attribute table and pre-turned patterns | `src/emu/machines/zxNext/wasm/zxnext/zxnext-sprites.c` |
-| Resolving relative sprites, the line budget and the renderer | `zxnext-ula.c` in the same folder (`zxnextUlaResolveSpritesInto`, `zxnextUlaComputeSpriteLineCuts`, `zxnextUlaProcessSprites`) |
-| The budget's numbers, as the simulated hardware gave them | `test/zxnext-hw/sprites/sprite-time-budget.test.ts` |
-| The pictures above, with the dots they check | `test/zxnext-hw/layers/next-display-scene.test.ts` |
+The gossip says *that* two sprites touched somewhere, in this dot-exact sense, not *which* two or
+where. A game reads it once a frame as a cheap "something hit something", and only then compares the
+positions of the sprites it cares about. That is exactly how I would use it.
 
 ## What to take home
 
-Let's gather it all up. The Next has **128 sprites**, each placed by a 9-bit X and Y in a **512 × 512
+Two easels and a stopwatch: that is the sprite hardware, and here it is once more in a few lines. The
+Next has **128 sprites**, the troupe, each placed by a 9-bit X and Y in a **512 × 512
 sprite space**, of which only the 320 × 256 wide area is shown. Positions wrap at 512, so a sprite can be
 partly off any edge. Their pictures live in **16K of patterns**, 64 8-bit ones of 256 bytes or 128 4-bit
 ones of 128, mixed freely; a dot equal to NextReg `$4B` is transparent, and the palette offset recolours
@@ -922,6 +913,5 @@ when all of them are on it. The next swap stops the engine outright. Both set po
 
 Sprites show over the border only with NextReg `$15` bit 1, and the clip window, NextReg `$19`, is
 applied as the buffer is read out. A **collision**, port `$303B` bit 0, is two opaque writes to one buffer
-entry, counted before any clipping. Klive resolves the table, works out each line's budget as the hardware
-would, and draws whole sprites by the same rules. Put your player at sprite 0, and the rest of the table
-can fight over the time that is left.
+entry, counted before any clipping. If you remember only one piece of advice from me, make it this one:
+put your player at sprite 0, and the rest of the table can fight over the time that is left.

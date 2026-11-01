@@ -1,5 +1,5 @@
 ---
-description: "What the ZX Spectrum Next adds to the Spectrum's ULA screen: the screen memory inside the FPGA, a line read twice over for scrolling, the Timex second screen, hi-colour and 512-dot hi-res modes, ULANext and ULA+ attribute formats, the border in each mode, the hardware scroll with its half-dot step, the clip window, and how Klive's emulator draws the same."
+description: "What the ZX Spectrum Next adds to the Spectrum's ULA screen: the screen memory inside the FPGA, a line read twice over for scrolling, the Timex second screen, hi-colour and 512-dot hi-res modes, ULANext and ULA+ attribute formats, the border in each mode, the hardware scroll with its half-dot step, and the clip window."
 ---
 
 import { Callout } from 'nextra/components'
@@ -15,7 +15,8 @@ It matters because the ULA is the screen almost every Spectrum program draws on,
 programs still use for text, menus and status lines. A new mode that broke one old game would be a bad
 trade, so every extension sits behind a switch that old software never touches. Learn the switches, and you
 get the familiar screen with its worst limits taken away: colour clash, eight colours per cell, and
-scrolling by moving thousands of bytes.
+scrolling by moving thousands of bytes. The overview calls the ULA the veteran of the cast, and I think
+this is where the veteran shows it has learned new tricks without forgetting a single old one.
 
 Everything here builds on [ZX Spectrum: How the Screen Is Drawn](/en/under-the-hood/emulator-internals/spectrum-display/),
 which explains the ULA itself: the bitmap and its attributes, the famous address order, how a line is read
@@ -32,12 +33,12 @@ imitate contention rather than suffer it. Then we watch the ULA read every line 
 the Spectrum made four, and find out what the extra four are for. The heart of the chapter comes next: the
 Timex modes, a second screen, hi-colour and hi-res, each shown on the machine. After that, two new ways of
 reading the attribute byte, ULANext and ULA+, and what each does to the border. Then the hardware scroll,
-dot by dot with the colours moving along, down to half a dot. We end with the clip window, switching the ULA
-off, and how Klive does all of this.
+dot by dot with the colours moving along, down to half a dot. We end with the clip window and switching the
+ULA off.
 
 <Callout type="info">
-The pictures are Klive's Next with only the ULA switched on, at 128K/+3 timing and 50 Hz. Each picture is
-written by a test that first checks the dots the text describes: the colours of a cell's lines, the letters
+The pictures show the Next with only the ULA switched on, at 128K/+3 timing and 50 Hz. Each picture comes
+from a test that first checks the dots the text describes: the colours of a cell's lines, the letters
 of the hi-res text, the dots a scroll moves.
 </Callout>
 
@@ -66,10 +67,11 @@ The Next has no such limit. On the Next, **bank 5**, the 16K that normally appea
 kept in **block RAM inside the FPGA**, and so is the first half of **bank 7**, the 128K's shadow screen.
 Block RAM is built with **two ports** at no extra cost: two independent sets of address and data lines into
 the same bytes. The CPU uses one, the ULA (and the tilemap) the other, and neither ever waits for the other.
-The ULA reads bank 5 directly, whichever banks the CPU has paged in.
+The ULA reads bank 5 directly, whichever banks the CPU has paged in. If you ask me, this is the change that
+makes every other one possible.
 
 <figure>
-<svg viewBox="0 0 700 270" role="img" aria-label="The ULA's memory, drawn to scale. Bank 5, sixteen kilobytes from address 4000 to 7FFF: the first display file's bitmap, 6,144 bytes from 4000; its attributes, 768 bytes from 5800; 1,280 bytes that are not screen; then the second display file's bitmap, or hi-colour's colour bytes, 6,144 bytes from 6000; and that file's attributes, 768 bytes from 7800. All of bank 5 is in the FPGA's block RAM. Bank 7, sixteen kilobytes: the shadow screen's bitmap and attributes in its first 6,912 bytes; only the first eight kilobytes of bank 7 are in the block RAM, so the ULA cannot see its second half." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 274" role="img" aria-label="The ULA's memory, drawn to scale. Bank 5, sixteen kilobytes from address 4000 to 7FFF: the first display file's bitmap, 6,144 bytes from 4000; its attributes, 768 bytes from 5800; 1,280 bytes that are not screen; then the second display file's bitmap, or hi-colour's colour bytes, 6,144 bytes from 6000; and that file's attributes, 768 bytes from 7800. All of bank 5 is in the FPGA's block RAM. Bank 7, sixteen kilobytes: the shadow screen's bitmap and attributes in its first 6,912 bytes; only the first eight kilobytes of bank 7 are in the block RAM, so the ULA cannot see its second half." style={{ width: "100%", height: "auto" }}>
   <defs>
     <pattern id="ula-hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
       <line x1="0" y1="0" x2="0" y2="8" stroke="currentColor" strokeOpacity="0.3" strokeWidth="2" />
@@ -120,7 +122,8 @@ Two consequences follow, and you will meet both of them again.
 Next has no such problem, yet old programs count T-states with the delays built in. So the ULA works out,
 from the beam's position, exactly when a Spectrum's CPU would have been held up, and holds the Next's CPU up
 then, for no other reason than to keep time. Notice the irony: the Next goes to some trouble to slow itself
-down on purpose. It does so only while the CPU runs at 3.5 MHz, as the timing chapter's
+down on purpose. The veteran limps on cue, because the old programs expect the limp, and I find that
+rather touching. It does so only while the CPU runs at 3.5 MHz, as the timing chapter's
 [Dots, ticks and T-states](/en/under-the-hood/emulator-internals/next-display/timing/#dots-ticks-and-t-states)
 explains. And there is **no snow**: the Spectrum's flickering dots came from the CPU's refresh cycles
 disturbing the ULA's reads of shared RAM, and here the ULA has a port of its own.
@@ -128,7 +131,7 @@ disturbing the ULA's reads of shared RAM, and here the ULA has a port of its own
 **Bank 7 is only half there.** The FPGA has enough block RAM for 16K of bank 5 but only 8K of bank 7. That is
 plenty for the 128K shadow screen, 6,912 bytes, but not for a second display file at `+$2000`. So while the
 shadow screen is shown, the Timex modes are switched off, and the ULA shows a plain Spectrum screen from
-bank 7.
+bank 7. My advice: if you want the Timex modes, keep the picture in bank 5.
 
 ## Reading a line twice
 
@@ -141,7 +144,7 @@ scroll, the 8 dots the beam is about to draw are exactly one cell. With a scroll
 last 5 dots of one cell and the first 3 of the next:
 
 <figure>
-<svg viewBox="0 0 700 400" role="img" aria-label="Two rows of the same line, with and without a scroll that is not a multiple of 8. Top: X scroll 0. The picture in memory is cells n, n plus 1, n plus 2, 8 dots each, and every 8-dot stretch the ULA draws on screen lines up with exactly one cell, so it needs one bitmap byte and one attribute. Bottom: X scroll 3. The picture is moved 3 dots to the left, so every 8-dot stretch on screen takes its first 5 dots from the end of cell n and its last 3 from the start of cell n plus 1, each part in its own cell's colours: the ULA needs both cells' bitmaps and attributes for the same stretch." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 404" role="img" aria-label="Two rows of the same line, with and without a scroll that is not a multiple of 8. Top: X scroll 0. The picture in memory is cells n, n plus 1, n plus 2, 8 dots each, and every 8-dot stretch the ULA draws on screen lines up with exactly one cell, so it needs one bitmap byte and one attribute. Bottom: X scroll 3. The picture is moved 3 dots to the left, so every 8-dot stretch on screen takes its first 5 dots from the end of cell n and its last 3 from the start of cell n plus 1, each part in its own cell's colours: the ULA needs both cells' bitmaps and attributes for the same stretch." style={{ width: "100%", height: "auto" }}>
   <text x="0" y="20" textAnchor="start" fill="currentColor" fontSize="16.5" fontWeight="600">X scroll 0 (or 8, 16, …): the 8 dots on screen are one cell</text>
   <text x="92" y="60" textAnchor="end" fill="currentColor" fontSize="15">memory</text>
   <rect x="154" y="40" width="144" height="30" fill="#3b82f6" fillOpacity="0.4" stroke="#3b82f6" />
@@ -210,10 +213,11 @@ last 5 dots of one cell and the first 3 of the next:
 
 So the ULA needs both cells' bytes, both bitmaps and both attributes, at once. It always fetches both,
 scroll or not; block RAM has bandwidth to spare, and a fixed pattern of reads is simpler than a changing
-one. Here are the reads of 16 dots side by side:
+one. I like that reasoning: when the work is free, do it every time and keep the logic dull. Here are the
+reads of 16 dots side by side:
 
 <figure>
-<svg viewBox="0 0 700 252" role="img" aria-label="The reads of the screen memory during 16 dots of a line. Top: the Spectrum makes four reads, the bitmap and attribute of cell n, then of cell n plus 1. Bottom: the Next makes eight reads, one every two dots. Four are the reads of the neighbouring cells needed for scrolling: the bitmap and attribute of cell n plus 1 and of cell n plus 2. The other four are the same reads the Spectrum makes, at the same moments: bitmap and attribute of cell n and of cell n plus 1. Only those four ever appear on the floating bus." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 256" role="img" aria-label="The reads of the screen memory during 16 dots of a line. Top: the Spectrum makes four reads, the bitmap and attribute of cell n, then of cell n plus 1. Bottom: the Next makes eight reads, one every two dots. Four are the reads of the neighbouring cells needed for scrolling: the bitmap and attribute of cell n plus 1 and of cell n plus 2. The other four are the same reads the Spectrum makes, at the same moments: bitmap and attribute of cell n and of cell n plus 1. Only those four ever appear on the floating bus." style={{ width: "100%", height: "auto" }}>
   <text x="350" y="18" textAnchor="middle" fill="currentColor" fontSize="16.5" fontWeight="600">16 dots of a line: two character cells</text>
   <path d="M1,30 H699 M1,26 v8 M350,26 v8 M699,26 v8" fill="none" stroke="currentColor" strokeOpacity="0.4" />
   <text x="0" y="64" textAnchor="start" fill="currentColor" fontSize="16.5" fontWeight="600">Spectrum</text>
@@ -262,13 +266,16 @@ from the display file the mode reads.
 The Next gives the floating bus with 48K and 128K timing; with +3 or Pentagon timing a port `$FF` read
 returns `$FF`. With +3 timing the floating bus appears instead on the +3's own port, with bit 0 set, as on a
 real +3. One more thing can take port `$FF`'s place: with bit 2 of the Peripheral 3 Setting register, NextReg
-`$08`, a read of port `$FF` returns the Timex register of the next section instead of the floating bus.
+`$08`, a read of port `$FF` returns the Timex register of the next section instead of the floating bus. I
+would keep that in mind before you trust a floating-bus trick on the Next: which answer port `$FF` gives
+depends on the timing and on that bit.
 
 ## The Timex modes
 
 The Timex Computer Corporation sold Spectrum-compatible machines in America whose ULA had more modes,
-switched by **port `$FF`**. A small amount of software uses them, and the Next has them all. The port's bits,
-as the Next has them:
+switched by **port `$FF`**. A small amount of software uses them, and the Next has them all. I call them
+**the American cousins**: family of the Spectrum's screen, raised abroad, with a few habits of their own.
+The port's bits, as the Next has them:
 
 | Bits of port `$FF` | Meaning |
 |---|---|
@@ -281,7 +288,7 @@ Bits 5–0 can also be written through the Display Control 1 register, **NextReg
 more switches beside them: bit 7 switches Layer 2 on, and bit 6 shows the shadow screen. The three mode bits
 act on their own: bit 0 moves the bitmap to the second display file, bit 1 takes the colours from there, bit 2
 doubles the dots across. The four combinations in the table are the ones the Timex defined, and the only ones
-software uses.
+software uses. I would stay with those four too.
 
 The mode is taken again for every 8 dots, at the same moment as the scroll. Your program, or the Copper, can
 change it between two cells of the same line, and the change shows from the next cell.
@@ -291,7 +298,7 @@ change it between two cells of the same line, and the change shows from the next
 Mode `001` is the plainest: the same Spectrum screen, read from **`$6000`** instead of `$4000`, with its
 attributes at `$7800`. A program draws the next frame in one screen while the other is shown, and switches
 with one `OUT`: **double buffering**, the 128K's shadow screen idea, but in bank 5. No more half-drawn frames
-caught by the beam halfway through.
+caught by the beam halfway through. Of the American cousins, I find this one the most useful day to day.
 
 ## Hi-colour: a colour for every 8 × 1 dots
 
@@ -304,7 +311,7 @@ attribute address is built differently, from the row of cells, which is what mad
 first place:
 
 <figure>
-<svg viewBox="0 0 700 306" role="img" aria-label="Three 16-bit addresses the ULA builds, bit 15 on the left. The bitmap address: 0 1 0, then Y7 Y6, Y2 Y1 Y0, Y5 Y4 Y3, then X4 to X0, where Y is the line and X the byte column. Hi-colour's colour address: the same bits with bit 13 set, so it points 8K higher, at 6000 plus the same offset: one colour byte per bitmap byte. The standard attribute address: 0 1 0 1 1 0, then Y7 to Y3, then X4 to X0; it uses only the top five bits of the line, so the eight lines of a cell share one attribute." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 310" role="img" aria-label="Three 16-bit addresses the ULA builds, bit 15 on the left. The bitmap address: 0 1 0, then Y7 Y6, Y2 Y1 Y0, Y5 Y4 Y3, then X4 to X0, where Y is the line and X the byte column. Hi-colour's colour address: the same bits with bit 13 set, so it points 8K higher, at 6000 plus the same offset: one colour byte per bitmap byte. The standard attribute address: 0 1 0 1 1 0, then Y7 to Y3, then X4 to X0; it uses only the top five bits of the line, so the eight lines of a cell share one attribute." style={{ width: "100%", height: "auto" }}>
   <text x="19.5" y="16" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.75">15</text>
   <text x="604.5" y="16" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.75">0</text>
   <text x="0" y="40" textAnchor="start" fill="currentColor" fontSize="16.5" fontWeight="600">bitmap byte</text>
@@ -415,13 +422,14 @@ first place:
 <figcaption>Hi-colour needs no new address logic: its colour byte is the bitmap address with bit 13 set. The standard attribute drops the line's three low bits, which is what makes a cell 8 lines tall.</figcaption>
 </figure>
 
-Have you noticed how cheap this is? one bit of the address, and a whole new mode falls out. The colour byte is an
+Have you noticed how cheap this is? One bit of the address, and a whole new mode falls out. I find it one of
+the neatest tricks on the old screen. The colour byte is an
 ordinary attribute in every other way: INK, PAPER, BRIGHT and FLASH, in the same bits. Here is the same bitmap
 twice on the machine, a ball striped with a new colour on every line, the stripes stepping down by two lines
 from one 8-dot column to the next:
 
 <figure>
-<svg viewBox="0 0 700 372" role="img" aria-label="Two close-ups from Klive's Next of the same bitmap, a ball 72 dots across, with the same colour bytes in different places. Left, the standard mode: each 8 by 8 cell has one ink, the colour of its top line, so the stripes turn into a patchwork of squares, the Spectrum's attribute clash. Right, hi-colour: every 8 dots of every line has its own colour byte, so each cell shows eight colours, one per line, in thin stripes that step down at every 8-dot column." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 376" role="img" aria-label="Two close-ups from the emulated Next of the same bitmap, a ball 72 dots across, with the same colour bytes in different places. Left, the standard mode: each 8 by 8 cell has one ink, the colour of its top line, so the stripes turn into a patchwork of squares, the Spectrum's attribute clash. Right, hi-colour: every 8 dots of every line has its own colour byte, so each cell shows eight colours, one per line, in thin stripes that step down at every 8-dot column." style={{ width: "100%", height: "auto" }}>
   <image x="0" y="0" width="340" height="340" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/ula/standard.webp`} />
   <rect x="0" y="0" width="340" height="340" fill="none" stroke="currentColor" strokeOpacity="0.35" />
   <image x="360" y="0" width="340" height="340" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/ula/hicolour.webp`} />
@@ -435,14 +443,15 @@ from one 8-dot column to the next:
 The price is memory: 12K for one screen instead of 6.75K, and your program must write 6,144 colour bytes
 where it wrote 768. The gain is that colour clash, the Spectrum's best-known limit, is gone from the vertical
 direction. A sprite can move up and down through a cell and keep its own colours; only across does it still
-share 8 dots with its neighbours.
+share 8 dots with its neighbours. For a game drawn on the ULA, I think that trade is well worth making.
 
 ## Hi-res: 512 dots across
 
 Mode `110` is the other way round: one colour, twice the dots. The line has **512 dots** instead of 256,
 each half as wide, one 14 MHz dot instead of one 7 MHz dot, so the line is just as long on the screen.
 
-First, what a **column** means here, because the word is easy to misread. A column is a strip of the screen
+First, what a **column** means here, because the word is easy to misread, and I would rather spend a
+paragraph on it than leave you guessing. A column is a strip of the screen
 **8 dots wide**: on every line it is **one byte** of the bitmap, and with an 8 × 8 font it holds **one
 character** of text.
 
@@ -465,7 +474,7 @@ character** of text.
 The start of a line in the two modes, side by side:
 
 <figure>
-<svg viewBox="0 0 700 300" role="img" aria-label="The same 16 standard dots of width at the start of a line, in the two modes. Top, hi-res: four columns of 8 hi-res dots each. Column 0 is byte 0 of the line in the first display file at 4000, column 1 is byte 0 in the second file at 6000, column 2 is byte 1 at 4000, column 3 is byte 1 at 6000. Bottom, standard: two columns of 8 standard dots each, twice as wide. Column 0 is byte 0 at 4000 and column 1 is byte 1 at 4000. Across the whole line, hi-res has 64 columns and the standard screen 32. In hi-res, ink and paper come from port FF bits 5 to 3, not from attributes." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 304" role="img" aria-label="The same 16 standard dots of width at the start of a line, in the two modes. Top, hi-res: four columns of 8 hi-res dots each. Column 0 is byte 0 of the line in the first display file at 4000, column 1 is byte 0 in the second file at 6000, column 2 is byte 1 at 4000, column 3 is byte 1 at 6000. Bottom, standard: two columns of 8 standard dots each, twice as wide. Column 0 is byte 0 at 4000 and column 1 is byte 1 at 4000. Across the whole line, hi-res has 64 columns and the standard screen 32. In hi-res, ink and paper come from port FF bits 5 to 3, not from attributes." style={{ width: "100%", height: "auto" }}>
   <text x="0" y="20" textAnchor="start" fill="currentColor" fontSize="16.5" fontWeight="600">hi-res: columns 0–3 of 64, each 8 dots of 14 MHz</text>
   <rect x="0" y="32" width="160" height="48" fill="#3b82f6" fillOpacity="0.4" stroke="#3b82f6" />
   <text x="80" y="52" textAnchor="middle" fill="currentColor" fontSize="15" fontWeight="600">column 0</text>
@@ -508,7 +517,7 @@ white, `001` blue on yellow, and so on to `111` white on black. On the machine, 
 8 × 8 font, one character per column, 64 columns to a line:
 
 <figure>
-<svg viewBox="0 0 700 328" role="img" aria-label="Two close-ups from Klive's Next of the same bytes in the two display files: the left half of the screen, three character rows. Top, in hi-res mode, with port FF bits 5 to 3 set to 001: blue text on yellow reading 512 DOTS ACROSS: 64 COLUMNS, EVEN ONES FROM 4000, ODD ONES FROM 6000, every character eight hi-res dots wide. Bottom, the same memory in the standard mode with a blue on yellow attribute: only the first file is shown, so every other character is missing and the rest are twice as wide." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 332" role="img" aria-label="Two close-ups from the emulated Next of the same bytes in the two display files: the left half of the screen, three character rows. Top, in hi-res mode, with port FF bits 5 to 3 set to 001: blue text on yellow reading 512 DOTS ACROSS: 64 COLUMNS, EVEN ONES FROM 4000, ODD ONES FROM 6000, every character eight hi-res dots wide. Bottom, the same memory in the standard mode with a blue on yellow attribute: only the first file is shown, so every other character is missing and the rest are twice as wide." style={{ width: "100%", height: "auto" }}>
   <image x="0" y="0" width="700" height="132" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/ula/hires.webp`} />
   <rect x="0" y="0" width="700" height="132" fill="none" stroke="currentColor" strokeOpacity="0.35" />
   <text x="350" y="154" textAnchor="middle" fill="currentColor" fontSize="15" fontWeight="600">hi-res (port $FF = $0E): both files, 512 dots across</text>
@@ -519,7 +528,8 @@ white, `001` blue on yellow, and so on to `111` white on black. On the machine, 
 <figcaption>The left half of the screen, 128 × 24 dots: hi-res columns 0–31 above, standard columns 0–15 below. The same bytes; the standard mode shows only the file at `$4000`, the hi-res columns 0, 2, 4, …, each at twice the width.</figcaption>
 </figure>
 
-Hi-res is a text mode at heart, 64 columns of 8 × 8 characters where the Spectrum has 32, and it is the ULA's
+Hi-res is a text mode at heart, and I would use it as one: 64 columns of 8 × 8 characters where the
+Spectrum has 32, and it is the ULA's
 only 512-dot mode: the left and right halves of a 7 MHz dot really differ here, as the overview chapter's
 [Two dots for every position of the beam](/en/under-the-hood/emulator-internals/next-display/overview/#two-dots-for-every-position-of-the-beam)
 describes. It costs the same 12K as hi-colour, and its colours can still be changed for a band of the screen
@@ -534,7 +544,7 @@ Byte Format register, **NextReg `$42`**, holds a **mask**: the bits the mask cov
 the PAPER. FLASH and BRIGHT are gone; their bits are colour now.
 
 <figure>
-<svg viewBox="0 0 700 340" role="img" aria-label="The attribute byte, bit 7 on the left, read five ways. Standard: FLASH, BRIGHT, three PAPER bits, three INK bits; ink is entry 0 to 7, paper 16 to 23, plus 8 for BRIGHT. ULANext with mask 07: five paper bits and three ink bits; 8 inks in entries 0 to 7 and 32 papers in entries 128 to 159. Mask 0F: four and four; 16 inks, entries 0 to 15, and 16 papers, 128 to 143. Mask 3F: two paper bits and six ink bits; 64 inks, 0 to 63, and 4 papers, 128 to 131. Mask FF: all eight bits are ink, 256 inks, entries 0 to 255; the paper and the border are the fallback colour." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 344" role="img" aria-label="The attribute byte, bit 7 on the left, read five ways. Standard: FLASH, BRIGHT, three PAPER bits, three INK bits; ink is entry 0 to 7, paper 16 to 23, plus 8 for BRIGHT. ULANext with mask 07: five paper bits and three ink bits; 8 inks in entries 0 to 7 and 32 papers in entries 128 to 159. Mask 0F: four and four; 16 inks, entries 0 to 15, and 16 papers, 128 to 143. Mask 3F: two paper bits and six ink bits; 64 inks, 0 to 63, and 4 papers, 128 to 131. Mask FF: all eight bits are ink, 256 inks, entries 0 to 255; the paper and the border are the fallback colour." style={{ width: "100%", height: "auto" }}>
   <text x="113" y="16" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.75">7</text>
   <text x="407" y="16" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.75">0</text>
   <text x="82" y="48" textAnchor="end" fill="currentColor" fontSize="16.5" fontWeight="600">standard</text>
@@ -669,12 +679,13 @@ screen can do.
 ## ULA+: 64 colours
 
 **ULA+** is not the Next's invention. It is a standard defined for Spectrum clones and add-ons, with software
-and emulators that support it, and the Next implements it so that software runs. It keeps the Spectrum's
+and emulators that support it, and the Next implements it so that software runs. I think of ULA+ as **the
+guest**: welcome in the house, made to feel at home, but it brought its own manners. It keeps the Spectrum's
 attribute layout and reuses its FLASH and BRIGHT bits: together they pick one of **four groups** of 16
 colours, and each group has 8 inks and 8 papers. The colours live in entries **192–255** of the ULA palette:
 
 <figure>
-<svg viewBox="0 0 700 352" role="img" aria-label="How ULA+ turns an attribute byte into a palette index. The attribute: bit 7, the old FLASH bit, and bit 6, the old BRIGHT bit, become bits 5 and 4 of the index, the group. Bits 5 to 3, the paper, or bits 2 to 0, the ink, become bits 2 to 0 of the index, depending on whether the dot is paper or ink. Bit 3 of the index is 1 for paper and 0 for ink. Bits 7 and 6 of the index are always 1. So the index is 192 plus 16 times the group, plus 8 for paper, plus the colour: 64 entries, 192 to 255." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 356" role="img" aria-label="How ULA+ turns an attribute byte into a palette index. The attribute: bit 7, the old FLASH bit, and bit 6, the old BRIGHT bit, become bits 5 and 4 of the index, the group. Bits 5 to 3, the paper, or bits 2 to 0, the ink, become bits 2 to 0 of the index, depending on whether the dot is paper or ink. Bit 3 of the index is 1 for paper and 0 for ink. Bits 7 and 6 of the index are always 1. So the index is 192 plus 16 times the group, plus 8 for paper, plus the colour: 64 entries, 192 to 255." style={{ width: "100%", height: "auto" }}>
   <defs>
     <marker id="ula-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="currentColor" fillOpacity="0.6" />
@@ -753,7 +764,8 @@ explains. A Next program can also switch ULA+ with bit 3 of the ULA Control regi
 entries 192–255 through the ordinary palette registers.
 
 With ULA+ the border uses the paper half of group 0, entries **200–207**. If both ULA+ and ULANext are
-switched on, ULANext wins. And neither of them has FLASH: its bit now chooses colours, so nothing blinks.
+switched on, ULANext wins: the guest gives way to the house's own rules. And neither of them has FLASH: its
+bit now chooses colours, so nothing blinks. If your program needs FLASH, I would stay with the standard map.
 
 ## The border in every mode
 
@@ -770,7 +782,7 @@ palette entry, which follows the mode:
 
 The hi-res line is worth a second look: in hi-res, the border takes the paper colour of port `$FF` bits 5–3,
 so the whole screen, border and all, is one paper colour, and port `$FE`'s border is ignored. A loader that
-flashes the border in hi-res flashes nothing at all.
+flashes the border in hi-res flashes nothing at all. That one, let me warn you, is easy to forget.
 
 A new border colour from port `$FE` reaches the screen at the start of the next 8-dot cell, as on the
 Spectrum, so border stripes have the Spectrum's 8-dot steps; with Pentagon timing the change shows from the
@@ -789,12 +801,12 @@ and the ULA Y Scroll register, **NextReg `$27`**, 0–191 lines. The ULA starts 
 dots to the right and lines down, and the picture **wraps round**: across at 256, down at 192. (A Y offset of
 192–255 counts on from 0, as 0–63.)
 
-Now the interesting part: what happens to the **colours**? A program that scrolls the Spectrum's screen by
+Now the part I like best: what happens to the **colours**? A program that scrolls the Spectrum's screen by
 one dot moves the bitmap and leaves the attributes, which can only move by whole cells. The ULA's scroll moves
 both. Here is how, for one 8-dot stretch of the line:
 
 <figure>
-<svg viewBox="0 0 700 330" role="img" aria-label="How the ULA draws 8 dots with a scroll of 3 dots. Top: the bitmap bytes of two neighbouring cells, n and n plus 1, 16 dots, each cell with its own attribute. Middle: the ULA loads both into a 32-place shift register, each dot twice, once per half; it shifts them left by twice the scroll's low three bits plus the half-dot bit, here 6 places, and takes the next 16 places, 8 dots. Bottom: the 8 dots on screen: 5 from cell n, drawn in cell n's colours, and 3 from cell n plus 1, in cell n plus 1's colours. The colours change at the cell edge inside the 8 dots." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 334" role="img" aria-label="How the ULA draws 8 dots with a scroll of 3 dots. Top: the bitmap bytes of two neighbouring cells, n and n plus 1, 16 dots, each cell with its own attribute. Middle: the ULA loads both into a 32-place shift register, each dot twice, once per half; it shifts them left by twice the scroll's low three bits plus the half-dot bit, here 6 places, and takes the next 16 places, 8 dots. Bottom: the 8 dots on screen: 5 from cell n, drawn in cell n's colours, and 3 from cell n plus 1, in cell n plus 1's colours. The colours change at the cell edge inside the 8 dots." style={{ width: "100%", height: "auto" }}>
   <text x="0" y="20" textAnchor="start" fill="currentColor" fontSize="16.5" fontWeight="600">the bitmap of cells n and n+1, as read</text>
   <rect x="0.75" y="32" width="349.25" height="32" fill="#3b82f6" fillOpacity="0.4" stroke="#3b82f6" />
   <text x="175" y="53" textAnchor="middle" fill="currentColor" fontSize="15">cell n · its attribute</text>
@@ -828,10 +840,11 @@ The ULA does it with the reads of Reading a line twice, step by step:
 3. A counter started at the same dot tells the ULA when it passes from the first cell into the second.
 4. At that point it switches from the first cell's attribute to the second's.
 
-So every dot keeps its own cell's colours, wherever the scroll puts it. On the machine:
+So every dot keeps its own cell's colours, wherever the scroll puts it. This is the trick I would most like
+to have had on the 48K. On the machine:
 
 <figure>
-<svg viewBox="0 0 700 304" role="img" aria-label="Two frames from Klive's Next, the ULA alone. Left: no scroll; a black ball in the top left over a screen of coloured cells. Right: X scroll 100 and Y scroll 60. The picture has moved 100 dots left and 60 lines up, and wrapped round: the ball, pushed off the top left, is now split between the top right and the bottom right of the display area. The cells keep their colours as they move, though 100 is not a multiple of 8. The border has not moved." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 308" role="img" aria-label="Two frames from the emulated Next, the ULA alone. Left: no scroll; a black ball in the top left over a screen of coloured cells. Right: X scroll 100 and Y scroll 60. The picture has moved 100 dots left and 60 lines up, and wrapped round: the ball, pushed off the top left, is now split between the top right and the bottom right of the display area. The cells keep their colours as they move, though 100 is not a multiple of 8. The border has not moved." style={{ width: "100%", height: "auto" }}>
   <image x="0" y="0" width="340" height="272" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/ula/scroll-0.webp`} />
   <rect x="0" y="0" width="340" height="272" fill="none" stroke="currentColor" strokeOpacity="0.35" />
   <image x="360" y="0" width="340" height="272" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/ula/scroll-1.webp`} />
@@ -848,15 +861,16 @@ One more bit makes the scroll finer still: bit 2 of the ULA Control register, **
 **half-dot scroll**, moves the picture half a dot further left, one 14 MHz dot. The shift register already
 holds every dot twice, once for each half, so a shift by one place more is all it takes. In the standard modes
 it is a smoothing step for slow scrolls. In hi-res, where every dot is a 14 MHz dot, it is what makes the
-scroll exact: NextReg `$26` moves a hi-res picture two dots at a time, and the half-dot bit adds the one
-between.
+scroll exact: the ULA X Scroll register, NextReg `$26`, moves a hi-res picture two dots at a time, and the
+half-dot bit adds the one between. A tiny bit, and I think a well-placed one.
 
 ## When a scroll takes effect
 
 The ULA takes both offsets, the half-dot bit and the Timex mode once for every 8 dots, at the start of the
 cell it is about to fetch. A new value written in the middle of a line shows from the next cell on. That is
 fine enough to scroll the bottom of the screen differently from the top, from a line interrupt or the
-Copper, and even to change the offsets within a line.
+Copper, and even to change the offsets within a line. I find that generous for a chip that started life
+with no scroll at all.
 
 ## Clipped and switched off
 
@@ -872,66 +886,25 @@ border included, and the screen is made by the other layers and the fallback col
 the blend modes of the composition chapter's
 [Blending](/en/under-the-hood/emulator-internals/next-display/composition/#blending-adding-instead-of-choosing) still read its
 colours. [LoRes](/en/under-the-hood/emulator-internals/next-display/lores/), which takes the ULA's place,
-obeys the same window and the same switch.
+obeys the same window and the same switch: the understudy, as ever, plays by the veteran's rules.
 
-All of the ULA's switches in one place:
+All of the ULA's switches in one place, the kind of table I like to keep beside the keyboard:
 
 | Register | Bits | What it does |
 |---|---|---|
 | port `$FE` | 2–0 | the border colour |
-| port `$FF` (and NextReg `$69` bits 5–0) | 5–3, 2–0 | hi-res ink; the Timex screen mode |
+| port `$FF` (and the Display Control 1 register, NextReg `$69`, bits 5–0) | 5–3, 2–0 | hi-res ink; the Timex screen mode |
 | port `$7FFD` (and NextReg `$69` bit 6) | 3 | show the shadow screen in bank 7 (no Timex modes) |
-| NextReg `$26`, `$27` | 7–0 | the X and Y scroll |
-| NextReg `$68` | 7, 3, 2 | ULA off; ULA+ on; the half-dot scroll |
-| NextReg `$43` | 0 | ULANext on |
-| NextReg `$42` | 7–0 | the ULANext ink mask |
+| the ULA X Scroll and ULA Y Scroll registers, NextReg `$26`, `$27` | 7–0 | the X and Y scroll |
+| the ULA Control register, NextReg `$68` | 7, 3, 2 | ULA off; ULA+ on; the half-dot scroll |
+| the Palette Control register, NextReg `$43` | 0 | ULANext on |
+| the ULANext Attribute Byte Format register, NextReg `$42` | 7–0 | the ULANext ink mask |
 | port `$BF3B`, `$FF3B` | | ULA+ colours and on/off |
 | NextReg `$1A` | | the clip window |
 
-## How Klive does it
-
-Klive's Next core draws the ULA layer in C, with two renderers that follow the Timex modes. The four
-standard-width modes, the Spectrum's screen, the second screen and hi-colour, share one:
-`zxnextUlaRenderStandardScreen` reads, for every dot, a bitmap byte and a colour byte, and the mode only
-changes where it reads them from, the bitmap at `$4000` or `$6000`, the colour at `$5800`, `$7800` or the
-bitmap address plus `$2000`, exactly the addresses of the hi-colour figure. Hi-res has its own,
-`zxnextUlaRenderHiResScreen`, which takes one bit per 14 MHz dot from the two files in turn.
-
-Both turn an ink or paper dot into a palette index through one function, `zxnextUlaAttrPaletteIndex`: the
-standard rule with BRIGHT and FLASH, ULANext's mask, or ULA+'s groups, as the ULANext and ULA+ sections
-describe them, including the fallback colour for the full-ink mode and for a mask that is not a run of ones.
-The scroll is applied as the address is formed, the half-dot bit by taking the second half of each dot from
-the next dot along.
-
-The emulator does not run a shift register; it renders a stretch of dots at a time. To change things where
-the hardware does, it **latches** the border colour, the scroll offsets, the half-dot bit and the Timex mode:
-a write is recorded with the frame position where the hardware would first use it, the start of the next
-8-dot cell (every dot for the border with Pentagon timing), and the raster renders up to that position with
-the old value. So a border stripe or a mid-line scroll split falls on the same dot as on the hardware.
-
-Klive works out the floating bus the way Reading a line twice describes it: from the beam's position it knows
-which of the Spectrum's four reads, if any, the ULA is making, and it forms that read's address as the ULA
-does, with the scroll offsets, the Timex mode and the shadow screen in force at that moment. So a program
-reading port `$FF` over a scrolled screen, or in hi-colour or hi-res, gets the bytes it would get on the
-hardware.
-
-In the IDE, the **ULA & I/O** panel shows the border colour and the beam's position (see
-[Machine-state panels](/en/guides/debugging/machine-state-panels/#ula--io)); the **Next Registers** and
-**Next Palettes** panels show the scroll, mode and ULANext registers and the ULA palette's entries (see
-[Next Registers, Memory Mapping and Palettes](/en/guides/next/next-registers/)); and the
-[Layers](/en/guides/next/layers/) view shows the ULA layer alone, with its clip window. And if you want to
-read the code yourself, here is where it lives:
-
-| What | Where |
-|---|---|
-| The renderers, the index rule, the border and the latches | `src/emu/machines/zxNext/wasm/zxnext/zxnext-ula.c` |
-| Port `$FF` and port `$FE` | `zxnext-ports.c`, `zxnext-ula.c` in the same folder |
-| The ULA palette and ULA+'s colour order | `zxnext-palette.c` |
-| The pictures above, with the dots they check | `test/zxnext-hw/layers/next-display-scene.test.ts` |
-
 ## What to take home
 
-Let's look back. The Next's ULA is the Spectrum's, byte for byte, but its screen memory, all of bank 5
+One last look at the veteran. The Next's ULA is the Spectrum's, byte for byte, but its screen memory, all of bank 5
 and the first half of bank 7, is **block RAM inside the FPGA** with a port of its own. Contention is only
 imitated, and only at 3.5 MHz, and there is no snow. The ULA reads **eight bytes per 16 dots**: the
 Spectrum's four, which the floating bus shows, and the next cell's, which the scroll needs.
@@ -943,10 +916,10 @@ interleaved, in one colour pair from port `$FF` bits 5–3. The shadow screen in
 Two new readings of the attribute byte add colour. **ULANext**, switched on by NextReg `$43` bit 0, splits the
 byte by the mask in NextReg `$42`: inks from entry 0, papers from 128, and with `$FF` 256 inks with the
 fallback colour as paper. **ULA+**, through ports `$BF3B` and `$FF3B` or NextReg `$68` bit 3, turns FLASH and
-BRIGHT into four groups of 16 colours in entries 192–255. The border follows the mode's paper entries, and in
+BRIGHT into four groups of 16 colours in entries 192–255: the guest, with its own manners. The border
+follows the mode's paper entries, and in
 hi-res it is the hi-res paper.
 
 NextRegs **`$26`** and **`$27`** scroll the picture by the dot, wrapping at 256 × 192, and the colours move
-with it; NextReg `$68` bit 2 adds half a dot. Offsets and modes take effect from the next 8-dot cell, and
-Klive latches each change at exactly that cell, rendering the four standard-width modes with one renderer and
-hi-res with another. The old screen, it turns out, had a lot of life left in it.
+with it; NextReg `$68` bit 2 adds half a dot. Offsets and modes take effect from the next 8-dot cell. The old
+screen, it turns out, had a lot of life left in it, and I hope you will give it some more.

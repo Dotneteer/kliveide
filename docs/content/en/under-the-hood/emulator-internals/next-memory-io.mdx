@@ -1,0 +1,1608 @@
+---
+description: "How the ZX Spectrum Next's Z80N reaches 2 MB of memory, some thirty I/O devices and 256 configuration registers through a CPU built for 64K: the eight MMU slots and their pages, the SRAM map, who answers an address and in which order, the DivMMC's entry points, how the 128K's paging ports rewrite the MMU, the port decoder, the port enables and the wired-OR read path, the two ways into the NextRegs and what the Copper may write, the register map, resets and contention."
+---
+
+import { Callout } from 'nextra/components'
+
+# Memory, Ports and NextRegs: How the Z80N Reaches the Machine
+
+A Z80 can name 65,536 bytes of memory. That was plenty in 1976, generous in 1982, and the Next carries
+**2 MB** of RAM. On top of it sit some thirty devices behind I/O ports, and a file of 256 registers that
+decides how everything else behaves, down to the speed of the CPU itself. The CPU still has sixteen
+address lines and not one more. So how does a 64K processor reach thirty-two times its own address space,
+and why does a game written for the 128K in 1986 never notice that anything changed?
+
+I think this is the most underrated part of the Next, and the one you meet first. Every Next program of any
+size lives by paging. Your level data does not fit in 64K, a Layer 2 picture alone takes 48K of it, the sound
+player wants its own bank, and the operating system wants its pages back when you return. Every one of those
+tricks is a write to a NextReg or a port, and every surprise ("I wrote it there, why does it read back as the
+ROM?") is one of the rules you are about to meet. Know them, and paging stops being magic and becomes
+bookkeeping. Dull, reliable, wonderful bookkeeping.
+
+You should know the Spectrum's own ports first: [ZX Spectrum: How the Screen Is
+Drawn](/en/under-the-hood/emulator-internals/spectrum-display/) explains port `$FE` and contention, and
+[The ZX Spectrum Next Core and the FPGA](/en/under-the-hood/emulator-internals/next-core/) explains why the
+Next's hardware is a design for an FPGA, and how Klive's emulator is checked against it.
+
+## The road ahead
+
+We start with the three doors the CPU has into the machine: memory, I/O ports and NextRegs. Then we walk
+through the memory door: the eight slots of 8K that make up the CPU's 64K, the pages they hold, and how a
+CPU address becomes an address in 2 MB of memory. The heart of the memory story comes next, the queue of
+characters (a stagehand, a fire brigade, a butler, a painter and the MMU, the memory management unit,
+itself) who compete for the bottom
+16K, and if you read only one memory section, make it that one. The butler, the DivMMC, gets a section of
+its own, because he is the only one who walks in without being called. After him come the 128K's paging
+ports, which on the Next are nothing more than an interpreter for the MMU, the registers that remember what
+they said, the Pentagon modes, then the ROMs and contention. The I/O door follows: which address bits a port
+decodes (and how the keyboard rides on the ones it does not), the switches that turn ports off, and what you
+read when nobody answers. Last comes the NextReg door, with its two ways in, the Copper's place in the queue,
+a map of all 256 numbers, and what a reset clears.
+
+<Callout type="info">
+The facts are for **core 3.02.01** on a Next with **2 MB** of RAM (a 1 MB machine has the same map with the
+top 1 MB missing). The machine is in **+3 timing** unless a section says otherwise, and contention is
+described at **3.5 MHz**, the only speed where it exists. Every fact was checked against the Next's hardware
+design.
+</Callout>
+
+## Three doors into one machine
+
+A Z80 talks to the world in only two ways. A **memory cycle** (the MREQ line low) reads or writes a byte at
+a 16-bit address. An **I/O cycle** (the IORQ line low) reads or writes a byte at a 16-bit port address. The
+Next adds a third door of its own, the **NextRegs**, a file of registers that configure the machine. On the
+memory door stands the **MMU**, the **memory management unit**, which decides where in the Next's memory each
+address the CPU names really lands.
+
+<figure>
+{/* fig:doors */}
+<svg viewBox="-2 -2 704 376" role="img" aria-label="The CPU on the left has three ways into the machine. The memory door: a read or write with MREQ and a 16-bit address goes through the eight MMU slots to 2 MB of SRAM and the block RAM that holds bank 5 and half of bank 7. The I/O door: an IN or OUT with IORQ and a 16-bit port address goes through the port decoder and its enables to some thirty devices. The NextReg door: ports $243B and $253B, or the NEXTREG instruction, reach a file of 256 register numbers. Dashed arrows from the register file point up to the MMU and to the port enables, because NextRegs configure the other two doors." style={{ width: "100%", height: "auto" }}>
+  <defs>
+    <marker id="mio-doors-0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
+    </marker>
+    <marker id="mio-doors-1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#3b82f6" />
+    </marker>
+    <marker id="mio-doors-2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#30a46c" />
+    </marker>
+    <marker id="mio-doors-3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#e8912d" />
+    </marker>
+  </defs>
+  <rect x="0" y="128" width="100" height="96" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="50" y="172" textAnchor="middle" fill="currentColor" fontSize="16.5" fontWeight="bold">Z80N</text>
+  <text x="50" y="191.5" textAnchor="middle" fill="currentColor" fontSize="16.5" fontWeight="bold">CPU</text>
+  <text x="186" y="22" textAnchor="middle" fill="#3b82f6" fontSize="13.5">MREQ, address</text>
+  <text x="186" y="39" textAnchor="middle" fill="#3b82f6" fontSize="13.5">$0000–$FFFF</text>
+  <rect x="268" y="24" width="190" height="56" rx="6" fill="#3b82f6" fillOpacity="0.12" stroke="#3b82f6" strokeWidth="2" />
+  <text x="363" y="48.3" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">eight MMU slots</text>
+  <text x="363" y="66.3" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">of 8K</text>
+  <rect x="510" y="24" width="190" height="56" rx="6" fill="none" stroke="#3b82f6" strokeWidth="2" />
+  <text x="605" y="48.3" textAnchor="middle" fill="#3b82f6" fontSize="15">2 MB SRAM,</text>
+  <text x="605" y="66.3" textAnchor="middle" fill="#3b82f6" fontSize="15">bank 5 in block RAM</text>
+  <path d="M100,176 L118,176 L118,52 L264,52" fill="none" stroke="#3b82f6" strokeWidth="1.8" markerEnd="url(#mio-doors-1)" strokeLinejoin="round" />
+  <path d="M458,52 L506,52" fill="none" stroke="#3b82f6" strokeWidth="1.8" markerEnd="url(#mio-doors-1)" strokeLinejoin="round" />
+  <text x="186" y="146" textAnchor="middle" fill="#30a46c" fontSize="13.5">IORQ, port</text>
+  <text x="186" y="163" textAnchor="middle" fill="#30a46c" fontSize="13.5">$0000–$FFFF</text>
+  <rect x="268" y="148" width="190" height="56" rx="6" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="2" />
+  <text x="363" y="172.3" textAnchor="middle" fill="#30a46c" fontSize="15" fontWeight="bold">port decoder</text>
+  <text x="363" y="190.3" textAnchor="middle" fill="#30a46c" fontSize="15" fontWeight="bold">and enables</text>
+  <rect x="510" y="148" width="190" height="56" rx="6" fill="none" stroke="#30a46c" strokeWidth="2" />
+  <text x="605" y="172.3" textAnchor="middle" fill="#30a46c" fontSize="15">about thirty</text>
+  <text x="605" y="190.3" textAnchor="middle" fill="#30a46c" fontSize="15">devices</text>
+  <path d="M100,176 L118,176 L118,176 L264,176" fill="none" stroke="#30a46c" strokeWidth="1.8" markerEnd="url(#mio-doors-2)" strokeLinejoin="round" />
+  <path d="M458,176 L506,176" fill="none" stroke="#30a46c" strokeWidth="1.8" markerEnd="url(#mio-doors-2)" strokeLinejoin="round" />
+  <text x="186" y="270" textAnchor="middle" fill="#e8912d" fontSize="13.5">$243B / $253B</text>
+  <text x="186" y="287" textAnchor="middle" fill="#e8912d" fontSize="13.5">or NEXTREG</text>
+  <rect x="268" y="272" width="190" height="56" rx="6" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="2" />
+  <text x="363" y="296.3" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">register file,</text>
+  <text x="363" y="314.3" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">256 numbers</text>
+  <rect x="510" y="272" width="190" height="56" rx="6" fill="none" stroke="#e8912d" strokeWidth="2" />
+  <text x="605" y="296.3" textAnchor="middle" fill="#e8912d" fontSize="15">the machine's</text>
+  <text x="605" y="314.3" textAnchor="middle" fill="#e8912d" fontSize="15">settings</text>
+  <path d="M100,176 L118,176 L118,300 L264,300" fill="none" stroke="#e8912d" strokeWidth="1.8" markerEnd="url(#mio-doors-3)" strokeLinejoin="round" />
+  <path d="M458,300 L506,300" fill="none" stroke="#e8912d" strokeWidth="1.8" markerEnd="url(#mio-doors-3)" strokeLinejoin="round" />
+  <path d="M300,272 L300,208" fill="none" stroke="#e8912d" strokeWidth="1.8" strokeDasharray="6 4" markerEnd="url(#mio-doors-3)" strokeLinejoin="round" />
+  <path d="M430,272 L430,236 L484,236 L484,110 L430,110 L430,84" fill="none" stroke="#e8912d" strokeWidth="1.8" strokeDasharray="6 4" markerEnd="url(#mio-doors-3)" strokeLinejoin="round" />
+  <text x="310" y="232" fill="#e8912d" fontSize="13.5">configures the other two</text>
+</svg>
+{/* /fig:doors */}
+<figcaption>The CPU's three doors. Memory goes through the eight MMU slots to the SRAM and the block RAM; I/O goes through the port decoder to the devices; the NextRegs, reached through two ports or an instruction of their own, hold the settings that steer the other two doors.</figcaption>
+</figure>
+
+Strictly speaking, the third door is a room behind the second one. You reach the NextRegs through two I/O
+ports, `$243B` and `$253B`, or through the Z80N's own `NEXTREG` instruction. But I give them a door of their
+own, because they are where the machine keeps its **settings**: which page sits in which slot, which ports
+are switched on, how fast the CPU runs, which layers the screen draws. The dashed arrows in the figure are the
+point. Memory and I/O do the work; the NextRegs decide how the work is routed. I like to think of them as the
+machine's control room: nothing happens there, and yet everything is decided there.
+
+## Eight slots of 8K
+
+The CPU's 64K is cut into **eight slots of 8K**. Bits 15–13 of an address pick the slot: `$0000–$1FFF` is
+slot 0, `$2000–$3FFF` slot 1, and so on up to `$E000–$FFFF`, slot 7. Each slot holds a **page**, an 8K piece
+of the Next's memory, and one register per slot says which: the **MMU slot 0 register, NextReg `$50`**, for
+slot 0, through the **MMU slot 7 register, NextReg `$57`**, for slot 7. Together these eight registers are
+the MMU, the memory management unit from the first door. I picture it as a switchboard with eight sockets: the CPU only ever
+talks to the sockets, and the switchboard decides which page is on the other end of each line.
+
+<figure>
+{/* fig:slots */}
+<svg viewBox="-2 -2 704 234" role="img" aria-label="The CPU's 64K drawn as eight equal slots of 8K, from $0000 on the left to $FFFF on the right. Each slot is set by one NextReg, $50 to $57. After a reset they hold $FF, $FF, $0A, $0B, $04, $05, $00 and $01: the ROM in the first two slots, then 16K bank 5 as pages $0A and $0B, bank 2 as pages $04 and $05, and bank 0 as pages $00 and $01." style={{ width: "100%", height: "auto" }}>
+  <text x="2" y="18" fill="currentColor" fontSize="13.5">$0000</text>
+  <rect x="2" y="28" width="83.5" height="70" rx="6" fill="none" stroke="#3b82f6" strokeWidth="2" />
+  <text x="43.8" y="59.3" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">slot 0</text>
+  <text x="43.8" y="77.3" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">$FF</text>
+  <text x="43.8" y="120" textAnchor="middle" fill="currentColor" fontSize="13.5">NextReg $50</text>
+  <text x="89.5" y="18" fill="currentColor" fontSize="13.5">$2000</text>
+  <rect x="89.5" y="28" width="83.5" height="70" rx="6" fill="none" stroke="#3b82f6" strokeWidth="2" />
+  <text x="131.3" y="59.3" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">slot 1</text>
+  <text x="131.3" y="77.3" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">$FF</text>
+  <text x="131.3" y="120" textAnchor="middle" fill="currentColor" fontSize="13.5">NextReg $51</text>
+  <text x="177" y="18" fill="currentColor" fontSize="13.5">$4000</text>
+  <rect x="177" y="28" width="83.5" height="70" rx="6" fill="#3b82f6" fillOpacity="0.12" stroke="#3b82f6" strokeWidth="2" />
+  <text x="218.8" y="59.3" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">slot 2</text>
+  <text x="218.8" y="77.3" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">$0A</text>
+  <text x="218.8" y="120" textAnchor="middle" fill="currentColor" fontSize="13.5">NextReg $52</text>
+  <text x="264.5" y="18" fill="currentColor" fontSize="13.5">$6000</text>
+  <rect x="264.5" y="28" width="83.5" height="70" rx="6" fill="#3b82f6" fillOpacity="0.12" stroke="#3b82f6" strokeWidth="2" />
+  <text x="306.3" y="59.3" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">slot 3</text>
+  <text x="306.3" y="77.3" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">$0B</text>
+  <text x="306.3" y="120" textAnchor="middle" fill="currentColor" fontSize="13.5">NextReg $53</text>
+  <text x="352" y="18" fill="currentColor" fontSize="13.5">$8000</text>
+  <rect x="352" y="28" width="83.5" height="70" rx="6" fill="#3b82f6" fillOpacity="0.12" stroke="#3b82f6" strokeWidth="2" />
+  <text x="393.8" y="59.3" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">slot 4</text>
+  <text x="393.8" y="77.3" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">$04</text>
+  <text x="393.8" y="120" textAnchor="middle" fill="currentColor" fontSize="13.5">NextReg $54</text>
+  <text x="439.5" y="18" fill="currentColor" fontSize="13.5">$A000</text>
+  <rect x="439.5" y="28" width="83.5" height="70" rx="6" fill="#3b82f6" fillOpacity="0.12" stroke="#3b82f6" strokeWidth="2" />
+  <text x="481.3" y="59.3" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">slot 5</text>
+  <text x="481.3" y="77.3" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">$05</text>
+  <text x="481.3" y="120" textAnchor="middle" fill="currentColor" fontSize="13.5">NextReg $55</text>
+  <text x="527" y="18" fill="currentColor" fontSize="13.5">$C000</text>
+  <rect x="527" y="28" width="83.5" height="70" rx="6" fill="#3b82f6" fillOpacity="0.12" stroke="#3b82f6" strokeWidth="2" />
+  <text x="568.8" y="59.3" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">slot 6</text>
+  <text x="568.8" y="77.3" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">$00</text>
+  <text x="568.8" y="120" textAnchor="middle" fill="currentColor" fontSize="13.5">NextReg $56</text>
+  <text x="614.5" y="18" fill="currentColor" fontSize="13.5">$E000</text>
+  <rect x="614.5" y="28" width="83.5" height="70" rx="6" fill="#3b82f6" fillOpacity="0.12" stroke="#3b82f6" strokeWidth="2" />
+  <text x="656.3" y="59.3" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">slot 7</text>
+  <text x="656.3" y="77.3" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">$01</text>
+  <text x="656.3" y="120" textAnchor="middle" fill="currentColor" fontSize="13.5">NextReg $57</text>
+  <path d="M6,140 L6,150 L169,150 L169,140" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+  <text x="87.5" y="174" textAnchor="middle" fill="currentColor" fontSize="15" fontWeight="bold">the ROM</text>
+  <path d="M181,140 L181,150 L344,150 L344,140" fill="none" stroke="#3b82f6" strokeWidth="1.6" strokeLinejoin="round" />
+  <text x="262.5" y="174" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">bank 5</text>
+  <path d="M356,140 L356,150 L519,150 L519,140" fill="none" stroke="#3b82f6" strokeWidth="1.6" strokeLinejoin="round" />
+  <text x="437.5" y="174" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">bank 2</text>
+  <path d="M531,140 L531,150 L694,150 L694,140" fill="none" stroke="#3b82f6" strokeWidth="1.6" strokeLinejoin="round" />
+  <text x="612.5" y="174" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">bank 0</text>
+  <text x="0" y="214" fill="currentColor" fontSize="13.5">16K bank n is the two 8K pages 2n and 2n + 1; $FF in slot 0 or 1 means “the ROM”</text>
+</svg>
+{/* /fig:slots */}
+<figcaption>The CPU's 64K as eight slots, drawn to scale, with the page each one holds after a reset: the ROM in slots 0 and 1, then bank 5, bank 2 and bank 0, the 128K's layout.</figcaption>
+</figure>
+
+A page number is 8 bits wide. Pages `$00–$DF` are RAM, 224 pages of 8K, which makes 1,792K. The Spectrum
+world counts in **16K banks**, though, and the Next keeps that habit: bank *n* is simply the two pages
+**2*n*** and **2*n* + 1**. Bank 5, the 48K screen, is pages `$0A` and `$0B`; bank 0 is pages `$00` and
+`$01`. Write `$0A` to NextReg `$52` and `$0B` to NextReg `$53`, and bank 5 sits at `$4000`, exactly where a
+48K program expects its screen. I always do the doubling in my head the same way: bank 5, "ten and eleven".
+
+After a reset the slots hold `$FF`, `$FF`, `$0A`, `$0B`, `$04`, `$05`, `$00`, `$01`: bank 5 at `$4000`,
+bank 2 at `$8000` and bank 0 at `$C000`, the layout of a 128K just switched on. And what is `$FF`? In slot
+0 or 1 it means **"the ROM here"**. In fact any page of `$E0` or more does in those two slots, because
+anything from `$E0` up points past the end of the RAM, and the machine falls back on the ROM. In slots 2–7
+there is no ROM to fall back on: a write through such a page goes nowhere, and what a read returns is not
+defined. My advice: use `$FF` for the ROM and leave the other thirty-one values to the philosophers.
+
+Moving a page costs one instruction. Here is a program that puts page `$20` at `$E000`, writes a byte, and
+puts bank 0 back:
+
+```z80klive
+    nextreg $57,$20     ; slot 7 ($E000-$FFFF): page $20
+    ld a,$5A
+    ld ($E000),a        ; lands in page $20, offset 0
+    nextreg $57,$01     ; slot 7: page $01 (bank 0) again
+```
+
+Two things are worth seeing here. First, a page can sit in **several slots at once**: put page `$20` in
+slots 3 and 7, and a byte written at `$6000` reads back at `$E000`. Second, nothing stops you from paging
+out the code you are running. Page slot 4 away while the CPU executes from `$8000`, and its next opcode
+comes from the new page. The machine does exactly what you said, which is not always what you meant. I
+find that honest, if a little unforgiving.
+
+Because the eight NextRegs read back what they hold, borrowing a slot politely is easy: read the slot's
+register, page in what you need, and write the old value back when you are done. I treat this as good
+manners rather than an option. Any code that may run in the middle of someone else's (an interrupt routine,
+a library call) should do exactly that, because the ROM, NextZXOS or the main program may count on a slot
+holding a particular page.
+
+## From a CPU address to the SRAM
+
+The Next's main memory is an external **SRAM** of 2 MB, and its addresses are 21 bits wide. Turning a CPU
+address into one takes no arithmetic worth the name: the slot's page, plus `$20`, becomes the top 8 bits,
+and the CPU address's low 13 bits come along unchanged.
+
+<figure>
+{/* fig:address */}
+<svg viewBox="-2 -2 704 334" role="img" aria-label="How a CPU address becomes an SRAM address, with the example $C123. The top bit strip is the 16-bit CPU address: bits 15 to 13 are 110, slot 6, and bits 12 to 0 are the offset $0123. Slot 6 holds page $10 in NextReg $56. Adding $20 gives SRAM page $30. The bottom strip is the 21-bit SRAM address: the 8 bits of the SRAM page above the same 13-bit offset, $060123." style={{ width: "100%", height: "auto" }}>
+  <defs>
+    <marker id="mio-addr-0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
+    </marker>
+    <marker id="mio-addr-1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#3b82f6" />
+    </marker>
+  </defs>
+  <text x="0" y="52" fill="currentColor" fontSize="15" fontWeight="bold">CPU address</text>
+  <text x="0" y="70" fill="currentColor" fontSize="15" fontWeight="bold">$C123</text>
+  <text x="169" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">15</text>
+  <rect x="153" y="28" width="32" height="40" rx="4" fill="#3b82f6" fillOpacity="0.16" stroke="#3b82f6" strokeWidth="2" />
+  <text x="169" y="54" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">1</text>
+  <text x="203" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">14</text>
+  <rect x="187" y="28" width="32" height="40" rx="4" fill="#3b82f6" fillOpacity="0.16" stroke="#3b82f6" strokeWidth="2" />
+  <text x="203" y="54" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">1</text>
+  <text x="237" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">13</text>
+  <rect x="221" y="28" width="32" height="40" rx="4" fill="#3b82f6" fillOpacity="0.16" stroke="#3b82f6" strokeWidth="2" />
+  <text x="237" y="54" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">0</text>
+  <text x="271" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">12</text>
+  <rect x="255" y="28" width="32" height="40" rx="4" fill="none" stroke="currentColor" strokeWidth="1.4" />
+  <text x="271" y="54" textAnchor="middle" fill="currentColor" fontSize="15">0</text>
+  <text x="305" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">11</text>
+  <rect x="289" y="28" width="32" height="40" rx="4" fill="none" stroke="currentColor" strokeWidth="1.4" />
+  <text x="305" y="54" textAnchor="middle" fill="currentColor" fontSize="15">0</text>
+  <text x="339" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">10</text>
+  <rect x="323" y="28" width="32" height="40" rx="4" fill="none" stroke="currentColor" strokeWidth="1.4" />
+  <text x="339" y="54" textAnchor="middle" fill="currentColor" fontSize="15">0</text>
+  <text x="373" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">9</text>
+  <rect x="357" y="28" width="32" height="40" rx="4" fill="none" stroke="currentColor" strokeWidth="1.4" />
+  <text x="373" y="54" textAnchor="middle" fill="currentColor" fontSize="15">0</text>
+  <text x="407" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">8</text>
+  <rect x="391" y="28" width="32" height="40" rx="4" fill="none" stroke="currentColor" strokeWidth="1.4" />
+  <text x="407" y="54" textAnchor="middle" fill="currentColor" fontSize="15">1</text>
+  <text x="441" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">7</text>
+  <rect x="425" y="28" width="32" height="40" rx="4" fill="none" stroke="currentColor" strokeWidth="1.4" />
+  <text x="441" y="54" textAnchor="middle" fill="currentColor" fontSize="15">0</text>
+  <text x="475" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">6</text>
+  <rect x="459" y="28" width="32" height="40" rx="4" fill="none" stroke="currentColor" strokeWidth="1.4" />
+  <text x="475" y="54" textAnchor="middle" fill="currentColor" fontSize="15">0</text>
+  <text x="509" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">5</text>
+  <rect x="493" y="28" width="32" height="40" rx="4" fill="none" stroke="currentColor" strokeWidth="1.4" />
+  <text x="509" y="54" textAnchor="middle" fill="currentColor" fontSize="15">1</text>
+  <text x="543" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">4</text>
+  <rect x="527" y="28" width="32" height="40" rx="4" fill="none" stroke="currentColor" strokeWidth="1.4" />
+  <text x="543" y="54" textAnchor="middle" fill="currentColor" fontSize="15">0</text>
+  <text x="577" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">3</text>
+  <rect x="561" y="28" width="32" height="40" rx="4" fill="none" stroke="currentColor" strokeWidth="1.4" />
+  <text x="577" y="54" textAnchor="middle" fill="currentColor" fontSize="15">0</text>
+  <text x="611" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">2</text>
+  <rect x="595" y="28" width="32" height="40" rx="4" fill="none" stroke="currentColor" strokeWidth="1.4" />
+  <text x="611" y="54" textAnchor="middle" fill="currentColor" fontSize="15">0</text>
+  <text x="645" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">1</text>
+  <rect x="629" y="28" width="32" height="40" rx="4" fill="none" stroke="currentColor" strokeWidth="1.4" />
+  <text x="645" y="54" textAnchor="middle" fill="currentColor" fontSize="15">1</text>
+  <text x="679" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">0</text>
+  <rect x="663" y="28" width="32" height="40" rx="4" fill="none" stroke="currentColor" strokeWidth="1.4" />
+  <text x="679" y="54" textAnchor="middle" fill="currentColor" fontSize="15">1</text>
+  <text x="203" y="88" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">slot 6</text>
+  <text x="475" y="88" textAnchor="middle" fill="currentColor" fontSize="15">offset $0123 (13 bits), passed on unchanged</text>
+  <path d="M203,96 L203,126" fill="none" stroke="#3b82f6" strokeWidth="1.8" markerEnd="url(#mio-addr-1)" strokeLinejoin="round" />
+  <rect x="122" y="130" width="162" height="56" rx="6" fill="#3b82f6" fillOpacity="0.12" stroke="#3b82f6" strokeWidth="2" />
+  <text x="203" y="154.3" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">NextReg $56</text>
+  <text x="203" y="172.3" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">holds page $10</text>
+  <path d="M284,158 L342,158" fill="none" stroke="#3b82f6" strokeWidth="1.8" markerEnd="url(#mio-addr-1)" strokeLinejoin="round" />
+  <rect x="346" y="130" width="170" height="56" rx="6" fill="none" stroke="#3b82f6" strokeWidth="2" />
+  <text x="431" y="154.3" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">page + $20 =</text>
+  <text x="431" y="172.3" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">SRAM page $30</text>
+  <path d="M431,186 L431,226" fill="none" stroke="#3b82f6" strokeWidth="1.8" markerEnd="url(#mio-addr-1)" strokeLinejoin="round" />
+  <path d="M475,96 L475,112 L682,112 L682,252 L662,252" fill="none" stroke="currentColor" strokeWidth="1.8" markerEnd="url(#mio-addr-0)" strokeLinejoin="round" />
+  <text x="0" y="254" fill="currentColor" fontSize="15" fontWeight="bold">SRAM address</text>
+  <text x="0" y="272" fill="currentColor" fontSize="15" fontWeight="bold">$060123</text>
+  <rect x="152" y="230" width="198.1" height="44" rx="4" fill="#3b82f6" fillOpacity="0.16" stroke="#3b82f6" strokeWidth="2" />
+  <text x="251" y="257" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">SRAM page $30</text>
+  <rect x="350.1" y="230" width="321.9" height="44" rx="4" fill="none" stroke="currentColor" strokeWidth="1.4" />
+  <text x="511" y="257" textAnchor="middle" fill="currentColor" fontSize="15">offset $0123</text>
+  <text x="152" y="296" fill="currentColor" fontSize="13.5">bits 20–13</text>
+  <text x="354.1" y="296" fill="currentColor" fontSize="13.5">bits 12–0</text>
+  <text x="0" y="322" fill="currentColor" fontSize="13.5">$30 × 8K + $0123 = $060123: 21 bits reach 2 MB</text>
+</svg>
+{/* /fig:address */}
+<figcaption>The address $C123 with page $10 in slot 6. Bits 15–13 pick the slot, the slot's page plus $20 gives SRAM page $30, and the 13-bit offset comes along unchanged: SRAM address $060123.</figcaption>
+</figure>
+
+Let's take `$C123` step by step:
+
+1. Bits 15–13 are `110`: slot 6.
+2. The **MMU slot 6 register, NextReg `$56`**, holds page `$10`.
+3. Page `$10` plus `$20` is SRAM page `$30`.
+4. The low 13 bits are `$0123`, so the SRAM address is `$30` × 8K + `$0123`, which is `$060123`.
+
+Why the `$20`? Because RAM page 0 does not start at the bottom of the SRAM. The first **256K**, 32 pages of
+8K, belong to the machine itself, and no page number of the MMU can reach them:
+
+<figure>
+{/* fig:sram */}
+<svg viewBox="-2 -2 704 384" role="img" aria-label="Two strips drawn to scale. The top strip is the whole 2 MB of SRAM: the first 256K, one eighth of it, is the system area, and the rest is RAM pages $00 to $DF; on a machine with 1 MB, RAM ends at page $5F, at the 1 MB mark. The bottom strip enlarges the first 256K: 64K of the Next's four ROMs, 8K of DivMMC ROM, 8K unused, 16K of Multiface ROM and RAM, 16K each for the two alternate ROMs, and 128K of DivMMC RAM. Page $00 of RAM begins at SRAM address $040000." style={{ width: "100%", height: "auto" }}>
+  <text x="0" y="22" fill="currentColor" fontSize="15" fontWeight="bold">the whole SRAM, 2 MB</text>
+  <rect x="0" y="46" width="87.5" height="56" fill="#a855f7" fillOpacity="0.16" stroke="#a855f7" strokeWidth="2" />
+  <rect x="87.5" y="46" width="262.5" height="56" fill="#3b82f6" fillOpacity="0.2" stroke="#3b82f6" strokeWidth="2" />
+  <rect x="350" y="46" width="350" height="56" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="2" strokeDasharray="6 4" />
+  <text x="218.8" y="80" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">RAM pages $00–$5F</text>
+  <text x="525" y="71" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">pages $60–$DF</text>
+  <text x="525" y="89" textAnchor="middle" fill="#3b82f6" fontSize="13.5">(only with 2 MB)</text>
+  <line x1="0" y1="102" x2="0" y2="110" stroke="currentColor" strokeWidth="1.4" />
+  <text x="0" y="126" fill="currentColor" fontSize="13.5">$000000</text>
+  <line x1="87.5" y1="102" x2="87.5" y2="110" stroke="currentColor" strokeWidth="1.4" />
+  <text x="87.5" y="126" fill="currentColor" fontSize="13.5">$040000</text>
+  <line x1="350" y1="102" x2="350" y2="110" stroke="currentColor" strokeWidth="1.4" />
+  <text x="350" y="126" textAnchor="middle" fill="currentColor" fontSize="13.5">$100000: 1 MB</text>
+  <line x1="700" y1="102" x2="700" y2="110" stroke="currentColor" strokeWidth="1.4" />
+  <text x="700" y="126" textAnchor="end" fill="currentColor" fontSize="13.5">$1FFFFF</text>
+  <line x1="0" y1="132" x2="0" y2="190" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" />
+  <line x1="87.5" y1="132" x2="700" y2="190" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" />
+  <rect x="0" y="196" width="175" height="60" fill="none" stroke="currentColor" strokeWidth="1.4" />
+  <text x="87.5" y="231" textAnchor="middle" fill="currentColor" fontSize="15" fontWeight="bold">4 ROMs</text>
+  <rect x="175" y="196" width="21.9" height="60" fill="#a855f7" fillOpacity="0.14" stroke="#a855f7" strokeWidth="2" />
+  <rect x="196.9" y="196" width="21.9" height="60" fill="none" stroke="currentColor" strokeWidth="1.4" />
+  <rect x="218.8" y="196" width="43.8" height="60" fill="#a855f7" fillOpacity="0.14" stroke="#a855f7" strokeWidth="2" />
+  <rect x="262.5" y="196" width="43.8" height="60" fill="none" stroke="currentColor" strokeWidth="1.4" />
+  <rect x="306.3" y="196" width="43.8" height="60" fill="none" stroke="currentColor" strokeWidth="1.4" />
+  <rect x="350" y="196" width="350" height="60" fill="#a855f7" fillOpacity="0.14" stroke="#a855f7" strokeWidth="2" />
+  <text x="525" y="231" textAnchor="middle" fill="#a855f7" fontSize="15" fontWeight="bold">DivMMC RAM, 16 × 8K</text>
+  <path d="M185.9375,256 L185.9375,266 L110,266 L110,300" fill="none" stroke="#a855f7" strokeWidth="1.2" strokeLinejoin="round" />
+  <text x="110" y="318" textAnchor="middle" fill="#a855f7" fontSize="13.5">DivMMC</text>
+  <text x="110" y="334" textAnchor="middle" fill="#a855f7" fontSize="13.5">ROM 8K</text>
+  <path d="M207.8125,256 L207.8125,266 L212,266 L212,300" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
+  <text x="212" y="318" textAnchor="middle" fill="currentColor" fontSize="13.5">unused</text>
+  <text x="212" y="334" textAnchor="middle" fill="currentColor" fontSize="13.5">8K</text>
+  <path d="M240.625,256 L240.625,290 L316,290 L316,300" fill="none" stroke="#a855f7" strokeWidth="1.2" strokeLinejoin="round" />
+  <text x="316" y="318" textAnchor="middle" fill="#a855f7" fontSize="13.5">Multiface</text>
+  <text x="316" y="334" textAnchor="middle" fill="#a855f7" fontSize="13.5">16K</text>
+  <path d="M284.375,256 L284.375,280 L420,280 L420,300" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
+  <text x="420" y="318" textAnchor="middle" fill="currentColor" fontSize="13.5">alt ROM 0</text>
+  <text x="420" y="334" textAnchor="middle" fill="currentColor" fontSize="13.5">16K</text>
+  <path d="M328.125,256 L328.125,270 L524,270 L524,300" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
+  <text x="524" y="318" textAnchor="middle" fill="currentColor" fontSize="13.5">alt ROM 1</text>
+  <text x="524" y="334" textAnchor="middle" fill="currentColor" fontSize="13.5">16K</text>
+  <text x="0" y="368" fill="currentColor" fontSize="13.5">the first 256K, enlarged: nothing the MMU can name lives here</text>
+</svg>
+{/* /fig:sram */}
+<figcaption>The SRAM to scale. The first 256K hold the ROMs, the DivMMC's and the Multiface's memory and the two alternate ROMs; RAM page $00 starts at $040000. With 1 MB fitted, RAM ends at page $5F; with 2 MB, at page $DF.</figcaption>
+</figure>
+
+- **`$000000–$00FFFF`**: the Next's own four 16K ROMs, NextZXOS's ROM set, copied there from the SD card
+  when the machine starts. They keep the +3's numbering, ROM 0 to ROM 3.
+- **`$010000–$011FFF`**: the DivMMC's 8K ROM, and an 8K gap after it.
+- **`$014000–$017FFF`**: the Multiface's 8K ROM and 8K RAM.
+- **`$018000–$01FFFF`**: two **alternate ROMs** of 16K each, one for 128K mode and one for 48K, filled from
+  the same ROM set.
+- **`$020000–$03FFFF`**: the DivMMC's 128K of RAM, sixteen banks of 8K.
+- **`$040000` up**: RAM page `$00`, then every page in order, up to page `$DF` at `$1FE000`.
+
+I call this first 256K **the basement**: the machine keeps its own things down there, and your page numbers
+have no stairs leading to it. And look at what it holds. The ROMs are not chips on the board; they are
+ordinary RAM that the CPU is not allowed to write through the MMU. The DivMMC and the Multiface, which were
+cartridges with their own memory on the original Spectrum, are simply 160K of the same SRAM, fenced off. One
+memory chip plays a dozen parts, and the decoding logic decides who gets to see which. If you ask me, this is
+the cleverest economy in the whole machine.
+
+There is one exception to "everything is SRAM", and it matters. **Bank 5**, pages `$0A` and `$0B`, and the
+first half of **bank 7**, page `$0E`, live in **block RAM** inside the FPGA, not in the SRAM. That block RAM
+has two ports, so the ULA and the tilemap can read the screen while the CPU writes it (the screen series'
+[Big Picture](/en/under-the-hood/emulator-internals/next-display/overview/) tells why). The SRAM still has
+room for those three pages, and that has a curious consequence: the CPU's writes through the MMU go to the
+block RAM only, while **Layer 2 is always displayed from the SRAM**. Point Layer 2 at bank 5, and it shows
+the SRAM's copy, which the CPU never wrote. Write through the Layer 2 mapping (coming up in the next
+section), and the bytes land in the SRAM, where the ULA never looks. I think of them as **the twins**: two
+memories answering to one bank number, living in different houses, and never talking to each other. My
+advice is to keep Layer 2 out of banks 5 and 7, and let the twins live their separate lives.
+
+## Who answers an address
+
+The MMU is not alone. Four other pieces of hardware can claim an address before it, and I find it easier to
+remember them as characters than as signals:
+
+- **The stagehand** is the **boot ROM**, which sets the scene while the machine starts and leaves before the
+  curtain rises.
+- **The fire brigade** is the **Multiface**, a debugging cartridge built into the machine: press its button,
+  and it takes over the whole ground floor, no questions asked.
+- **The butler** is the **DivMMC**, the SD card interface that NextZXOS and esxDOS run on: always there when
+  you ring for him, gone as soon as the job is done.
+- **The painter** is the **Layer 2 mapping**, which puts up scaffolding over the bottom of the address space
+  so the CPU can paint a Layer 2 picture through it.
+
+Each one, when it is active, takes over part of the CPU's 64K. They cannot all win, so the Next keeps a
+strict order of precedence:
+
+<figure>
+{/* fig:priority */}
+<svg viewBox="-2 -2 704 384" role="img" aria-label="Three columns for three parts of the CPU's 64K, each a stack of candidates in priority order, the highest at the top; the first one that claims the address answers. $0000 to $3FFF: the boot ROM (reads only, while the machine starts), the Multiface, the DivMMC, the Layer 2 mapping, RAM through the MMU, the config bank of NextReg $04, and last the ROM or the alternate ROM. $4000 to $BFFF: the Layer 2 mapping, when it covers all 48K, then the MMU. $C000 to $FFFF: the MMU alone." style={{ width: "100%", height: "auto" }}>
+  <defs>
+    <marker id="mio-prio-0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
+    </marker>
+    <marker id="mio-prio-1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#e5484d" />
+    </marker>
+  </defs>
+  <text x="129" y="20" textAnchor="middle" fill="currentColor" fontSize="16.5" fontWeight="bold">$0000–$3FFF</text>
+  <rect x="0" y="34" width="258" height="36" rx="6" fill="#a855f7" fillOpacity="0.1" stroke="#a855f7" strokeWidth="2" />
+  <text x="129" y="57.3" textAnchor="middle" fill="#a855f7" fontSize="15">boot ROM (reads, at start-up)</text>
+  <rect x="0" y="78" width="258" height="36" rx="6" fill="#a855f7" fillOpacity="0.1" stroke="#a855f7" strokeWidth="2" />
+  <text x="129" y="101.3" textAnchor="middle" fill="#a855f7" fontSize="15">Multiface</text>
+  <rect x="0" y="122" width="258" height="36" rx="6" fill="#a855f7" fillOpacity="0.1" stroke="#a855f7" strokeWidth="2" />
+  <text x="129" y="145.3" textAnchor="middle" fill="#a855f7" fontSize="15">DivMMC</text>
+  <rect x="0" y="166" width="258" height="36" rx="6" fill="#e8912d" fillOpacity="0.1" stroke="#e8912d" strokeWidth="2" />
+  <text x="129" y="189.3" textAnchor="middle" fill="#e8912d" fontSize="15">Layer 2 mapping</text>
+  <rect x="0" y="210" width="258" height="36" rx="6" fill="#3b82f6" fillOpacity="0.1" stroke="#3b82f6" strokeWidth="2" />
+  <text x="129" y="233.3" textAnchor="middle" fill="#3b82f6" fontSize="15">RAM through the MMU</text>
+  <rect x="0" y="254" width="258" height="36" rx="6" fill="#3b82f6" fillOpacity="0.1" stroke="#3b82f6" strokeWidth="2" />
+  <text x="129" y="277.3" textAnchor="middle" fill="#3b82f6" fontSize="15">config bank, NextReg $04</text>
+  <rect x="0" y="298" width="258" height="36" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="129" y="321.3" textAnchor="middle" fill="currentColor" fontSize="15">the ROM or the alt ROM</text>
+  <text x="395" y="20" textAnchor="middle" fill="currentColor" fontSize="16.5" fontWeight="bold">$4000–$BFFF</text>
+  <rect x="300" y="34" width="190" height="36" rx="6" fill="#e8912d" fillOpacity="0.1" stroke="#e8912d" strokeWidth="2" />
+  <text x="395" y="57.3" textAnchor="middle" fill="#e8912d" fontSize="15">Layer 2 mapping</text>
+  <rect x="300" y="78" width="190" height="36" rx="6" fill="#3b82f6" fillOpacity="0.1" stroke="#3b82f6" strokeWidth="2" />
+  <text x="395" y="101.3" textAnchor="middle" fill="#3b82f6" fontSize="15">the MMU</text>
+  <text x="615" y="20" textAnchor="middle" fill="currentColor" fontSize="16.5" fontWeight="bold">$C000–$FFFF</text>
+  <rect x="530" y="34" width="170" height="36" rx="6" fill="#3b82f6" fillOpacity="0.1" stroke="#3b82f6" strokeWidth="2" />
+  <text x="615" y="57.3" textAnchor="middle" fill="#3b82f6" fontSize="15">the MMU</text>
+  <path d="M300,128 L300,330" fill="none" stroke="#e5484d" strokeWidth="1.8" markerEnd="url(#mio-prio-1)" strokeLinejoin="round" />
+  <text x="316" y="160" fill="#e5484d" fontSize="15">the first candidate</text>
+  <text x="316" y="179" fill="#e5484d" fontSize="15">that claims the</text>
+  <text x="316" y="198" fill="#e5484d" fontSize="15">address answers;</text>
+  <text x="316" y="217" fill="#e5484d" fontSize="15">the ones below it</text>
+  <text x="316" y="236" fill="#e5484d" fontSize="15">never see it</text>
+  <text x="530" y="140" fill="currentColor" fontSize="13.5">Layer 2 maps here only</text>
+  <text x="530" y="157" fill="currentColor" fontSize="13.5">when its segment is 11</text>
+  <text x="0" y="360" fill="currentColor" fontSize="13.5">a write to a read-only candidate (a ROM) is dropped; it does not fall through to the next one</text>
+</svg>
+{/* /fig:priority */}
+<figcaption>Who answers an address, highest first. The bottom 16K has seven candidates; the middle 32K two; the top 16K only the MMU. The first candidate that claims the address answers, and a write to one that is read-only is dropped.</figcaption>
+</figure>
+
+Reading it from the top:
+
+1. **The boot ROM** answers reads of `$0000–$3FFF` while the machine starts. It is 8K of ROM inside the
+   FPGA, seen twice in the bottom 16K. It switches itself off the first time anyone writes the **Machine Type
+   register, NextReg `$03`**, which the start-up code does when it is done. Exit the stagehand.
+2. **The Multiface** takes the whole bottom 16K when its button is pressed: its ROM at `$0000`, read-only,
+   its RAM at `$2000`. Nothing below it is seen, not even the DivMMC. When the fire brigade arrives, the
+   butler steps aside.
+3. **The DivMMC** takes `$0000–$3FFF` when its ROM is paged in, either by a program (port `$E3` bit 7) or
+   automatically when the CPU fetches an instruction from one of its entry points. Its ROM, read-only, is at
+   `$0000`, and one of its sixteen 8K RAM banks (port `$E3` bits 3–0) at `$2000`.
+4. **The Layer 2 mapping**, switched on through port `$123B`, lays the Layer 2 picture over the bottom of
+   the address space, with reads (bit 2) and writes (bit 0) switched on separately. Bits 7–6 choose the
+   **segment**: `00`, `01` and `10` put the picture's first, second or third 16K at `$0000–$3FFF`, and
+   `11` puts all 48K at `$0000–$BFFF`, which is why Layer 2 is the only candidate in the middle column
+   too. The picture starts at the bank in the **Layer 2 Active RAM bank register, NextReg `$12`** (bank 8
+   after a reset), or in the **Layer 2 Shadow RAM bank register, NextReg `$13`** (bank 11) when bit 3 asks
+   for the shadow picture.
+5. **The MMU** answers with RAM when its page is below `$E0`.
+6. **The config bank**, a 16K bank of the SRAM chosen by the **Config Mapping register, NextReg `$04`**,
+   answers while the machine is in its start-up configuration mode. That is how the start-up code writes the
+   ROM images into the first 64K of the SRAM: reads come from the boot ROM, writes go to the config bank
+   underneath it. I love this trick. The stagehand reads its lines from one script and writes the next act
+   on the floor beneath its feet.
+7. **The ROM**, or the alternate ROM, answers everything else.
+
+Above `$C000` none of this exists. The top 16K is the MMU's alone, which is why I keep my stack and my
+interrupt routine there, and why I suggest you do the same: whatever pages in at the bottom, they stay where
+they are.
+
+Uhm, one rule in that list catches almost everyone out. A higher candidate wins **even over RAM the MMU
+pages into slots 0 and 1**. Put page `$20` in slot 0, and as soon as the butler pages himself in (and
+NextZXOS rings for him all the time), your page is gone from view until he leaves again. Your data is not
+lost; it is only hidden behind him. And a write that reaches the ROM does not fall through to the next
+candidate. It goes nowhere, quietly.
+
+## The DivMMC's entry points
+
+Of all those characters, the butler is the one I find most interesting, because he is the only one who comes
+in without being called by name. His trick is to watch the CPU's **instruction fetches**. When the CPU
+fetches an opcode from one of his **entry points**, the DivMMC **automaps**: its 8K ROM appears at `$0000`
+and one of its RAM banks at `$2000`, and its own code runs instead of the ROM's. Nobody asks for it. A
+program calls `RST $08`, the CPU fetches the opcode at `$0008`, and the SD card's operating system is
+suddenly at its service, like a butler who heard the bell from the other end of the house.
+
+On the original DivMMC the entry points were wired into the board. On the Next, four registers choose them:
+
+- The **Divmmc Entry Points 0 register, NextReg `$B8`**, switches on the eight `RST` addresses, `$0000` to
+  `$0038`, one bit each. After a reset it holds `$83`: `$0000`, `$0008` and `$0038`.
+- The **Divmmc Entry Points Valid 0 register, NextReg `$B9`**, says, per `RST`, whether it maps **always**
+  or **only when ROM 3 is present**, which, in short, means "only when the instruction at the entry point is
+  being fetched from the 48K BASIC ROM" (the exact rule follows below). After a reset only `$0000` maps
+  always.
+- The **Divmmc Entry Points Timing 0 register, NextReg `$BA`**, says, per `RST`, whether the mapping is
+  **instant** or **delayed** (all delayed after a reset).
+- The **Divmmc Entry Points 1 register, NextReg `$BB`**, adds the rest: `$0066` (the NMI, after the DRIVE
+  button), four addresses inside the 48K ROM's tape routines (`$04C6`, `$0562`, `$04D7` and `$056A`), which
+  let the DivMMC load a tape image from the SD card, and `$3D00–$3DFF`, where the Beta Disk interface's
+  TR-DOS was entered.
+
+What is the difference between instant and delayed? With **instant** mapping, the opcode at the entry point
+already comes from the DivMMC: its ROM is the handler, from the first byte. With **delayed** mapping, the
+opcode at the entry point still comes from the ROM and runs, and the DivMMC takes over from the next fetch.
+That is what the tape addresses need: they sit in the middle of the 48K ROM's tape routines, so the ROM's own
+instruction must run before the DivMMC's code continues the job. A good butler lets you finish your sentence
+before he takes the coat.
+
+Now, what exactly does **"ROM 3 is present"** mean? The name comes from the +3, whose ROM 3 is the 48K
+BASIC, and the condition is about that ROM, not about a number. It is checked at the moment the CPU fetches
+the opcode at the entry point, and it is true when that opcode is being read from the 48K BASIC ROM: not
+from RAM, not from another ROM, not from anything laid over the ROM. In detail, all of these must hold at
+that fetch:
+
+1. **The slot shows a ROM at all.** Its MMU register holds `$FF` (or any page from `$E0` up), the machine is
+   not in its start-up config mode, and no Layer 2 read mapping covers the bottom 16K, because then the
+   fetch would read the Layer 2 picture rather than any ROM.
+2. **That ROM is the machine type's 48K BASIC.** On a +3 or Next machine type, it is ROM 3. On a 128K
+   machine type, it is ROM 1, because the 128K numbered its two ROMs differently and kept the 48K BASIC in
+   ROM 1. On a 48K machine type there is only one ROM, and it always counts.
+3. **If the alternate ROM is on for reads** (the Alternate ROM register, NextReg `$8C`, with bit 7 set and
+   bit 6 clear), the alternate ROM is what the fetch reads, so the question goes to it instead: it counts
+   when it is the 48K alternate ROM, and not when it is the 128K one.
+
+Why all this care? The tape entry points sit inside the 48K ROM's tape routines. In any other ROM, or in
+RAM, `$04C6` is just some instruction in the middle of something else, and mapping the DivMMC there would
+wreck the program.
+
+I admire how careful this is. The butler does not barge into a room just because a bell rang; he checks
+that it is the right house first.
+
+Once mapped, the DivMMC stays until its code leaves. It leaves on a `RETN`, or by fetching an instruction
+from `$1FF8–$1FFF` (with NextReg `$BB` bit 6 set), which unmaps it after that fetch. Bit 4 of the
+**Peripheral 5 Setting register, NextReg `$0A`**, is the master switch: clear it, and no entry point maps at
+all, and any mapping in force is dropped. The butler has the evening off. A program can also page the DivMMC
+in by hand: port `$E3` bit 7 maps its ROM and the RAM bank in bits 3–0 until the program clears the bit
+again.
+
+## The 128K's ports, rewritten
+
+A 128K program pages memory through port `$7FFD`: bits 2–0 choose the bank at `$C000`, bit 3 the screen,
+bit 4 the ROM, and bit 5 locks the port until the next reset. A +3 program adds port `$1FFD`, and the Next
+adds port `$DFFD` for bank numbers above 7. Does the Next keep a 128K memory decoder beside the MMU for them?
+It does not, and I think that was exactly the right call. On the Next, **a paging port is a way of writing
+the MMU**. I call `$7FFD` **the interpreter**: it speaks fluent 128K, and everything it hears, it translates
+into MMU. When you write one of these ports, the machine works out the 128K layout and loads it into the
+eight slots, and from then on only the MMU decides.
+
+<figure>
+{/* fig:p7ffd */}
+<svg viewBox="-2 -2 704 266" role="img" aria-label="Two rows of the eight MMU slots, before and after writing 5 to port $7FFD. Before: $0A, $0B, $0A, $20, $04, $05, $00, $01, set by the program. After: $FF, $FF, $0A, $20, $04, $05, $0A, $0B. The write puts the ROM back in slots 0 and 1 and bank 5 in slots 6 and 7, marked as changed; slots 2 to 5 keep what the program put there, including the $20 in slot 3." style={{ width: "100%", height: "auto" }}>
+  <defs>
+    <marker id="mio-7ffd-0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
+    </marker>
+  </defs>
+  <text x="137.5" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">slot 0</text>
+  <text x="212.5" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">slot 1</text>
+  <text x="287.5" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">slot 2</text>
+  <text x="362.5" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">slot 3</text>
+  <text x="437.5" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">slot 4</text>
+  <text x="512.5" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">slot 5</text>
+  <text x="587.5" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">slot 6</text>
+  <text x="662.5" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">slot 7</text>
+  <text x="0" y="50" fill="currentColor" fontSize="15" fontWeight="bold">before</text>
+  <rect x="102" y="28" width="71" height="52" rx="6" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="2" />
+  <text x="137.5" y="59.3" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">$0A</text>
+  <rect x="177" y="28" width="71" height="52" rx="6" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="2" />
+  <text x="212.5" y="59.3" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">$0B</text>
+  <rect x="252" y="28" width="71" height="52" rx="6" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="2" />
+  <text x="287.5" y="59.3" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">$0A</text>
+  <rect x="327" y="28" width="71" height="52" rx="6" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="2" />
+  <text x="362.5" y="59.3" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">$20</text>
+  <rect x="402" y="28" width="71" height="52" rx="6" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="2" />
+  <text x="437.5" y="59.3" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">$04</text>
+  <rect x="477" y="28" width="71" height="52" rx="6" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="2" />
+  <text x="512.5" y="59.3" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">$05</text>
+  <rect x="552" y="28" width="71" height="52" rx="6" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="2" />
+  <text x="587.5" y="59.3" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">$00</text>
+  <rect x="627" y="28" width="71" height="52" rx="6" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="2" />
+  <text x="662.5" y="59.3" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">$01</text>
+  <path d="M60,92 L60,132" fill="none" stroke="currentColor" strokeWidth="1.8" markerEnd="url(#mio-7ffd-0)" strokeLinejoin="round" />
+  <text x="76" y="117" fill="currentColor" fontSize="15" fontWeight="bold">OUT ($7FFD), 5: bank 5, ROM 0</text>
+  <text x="0" y="162" fill="currentColor" fontSize="15" fontWeight="bold">after</text>
+  <rect x="102" y="140" width="71" height="52" rx="6" fill="#e5484d" fillOpacity="0.14" stroke="#e5484d" strokeWidth="2" />
+  <text x="137.5" y="171.3" textAnchor="middle" fill="#e5484d" fontSize="15" fontWeight="bold">$FF</text>
+  <rect x="177" y="140" width="71" height="52" rx="6" fill="#e5484d" fillOpacity="0.14" stroke="#e5484d" strokeWidth="2" />
+  <text x="212.5" y="171.3" textAnchor="middle" fill="#e5484d" fontSize="15" fontWeight="bold">$FF</text>
+  <rect x="252" y="140" width="71" height="52" rx="6" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="2" />
+  <text x="287.5" y="171.3" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">$0A</text>
+  <rect x="327" y="140" width="71" height="52" rx="6" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="2" />
+  <text x="362.5" y="171.3" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">$20</text>
+  <rect x="402" y="140" width="71" height="52" rx="6" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="2" />
+  <text x="437.5" y="171.3" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">$04</text>
+  <rect x="477" y="140" width="71" height="52" rx="6" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="2" />
+  <text x="512.5" y="171.3" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">$05</text>
+  <rect x="552" y="140" width="71" height="52" rx="6" fill="#e5484d" fillOpacity="0.14" stroke="#e5484d" strokeWidth="2" />
+  <text x="587.5" y="171.3" textAnchor="middle" fill="#e5484d" fontSize="15" fontWeight="bold">$0A</text>
+  <rect x="627" y="140" width="71" height="52" rx="6" fill="#e5484d" fillOpacity="0.14" stroke="#e5484d" strokeWidth="2" />
+  <text x="662.5" y="171.3" textAnchor="middle" fill="#e5484d" fontSize="15" fontWeight="bold">$0B</text>
+  <text x="175" y="220" textAnchor="middle" fill="#e5484d" fontSize="15" fontWeight="bold">ROM again</text>
+  <text x="400" y="220" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">left alone</text>
+  <text x="625" y="220" textAnchor="middle" fill="#e5484d" fontSize="15" fontWeight="bold">bank 5</text>
+  <text x="0" y="250" fill="currentColor" fontSize="13.5">slots 2–5 change only when a program leaves the +3's all-RAM layout</text>
+</svg>
+{/* /fig:p7ffd */}
+<figcaption>The eight slots before and after writing 5 to port $7FFD. The ROM comes back in slots 0 and 1 and bank 5 goes into slots 6 and 7; slots 2–5 keep the pages the program put there.</figcaption>
+</figure>
+
+Here is what a write to `$7FFD`, `$DFFD` or `$1FFD` does, outside the +3's all-RAM layouts:
+
+- **Slots 0 and 1** get `$FF`, the ROM, whatever you put there.
+- **Slots 6 and 7** get the selected bank's two pages: bank 5 is `$0A` and `$0B`.
+- **Slots 2–5 are left alone.** They are set to `$0A`, `$0B`, `$04`, `$05` only when a program leaves one of
+  the +3's all-RAM layouts.
+
+So a 128K program and a Next program can share a machine. Old code that pages through `$7FFD` gets exactly the
+banks it expects at `$C000`; new code that writes the MMU directly gets the slots it asked for, until the next
+paging-port write overwrites slots 0, 1, 6 and 7. My rule of thumb: if you mix the two, write the MMU after
+the port, never before. The interpreter always has the last word on the four slots it speaks for.
+
+The +3's **all-RAM layouts** (port `$1FFD` bit 0) load all eight slots at once, with RAM even where the ROM
+used to be, in one of four layouts chosen by `$1FFD` bits 2–1:
+
+<figure>
+{/* fig:allram */}
+<svg viewBox="-2 -2 704 320" role="img" aria-label="Four rows, one for each value of port $1FFD bits 2 to 1 with bit 0 set, each showing the CPU's 64K as four 16K blocks, $0000, $4000, $8000 and $C000, with the bank in each and its two MMU pages. Bits 00: banks 0, 1, 2 and 3. Bits 01: banks 4, 5, 6 and 7. Bits 10: banks 4, 5, 6 and 3. Bits 11: banks 4, 7, 6 and 3. Banks 5 and 7, the two screens, are filled. There is no ROM in any of the layouts." style={{ width: "100%", height: "auto" }}>
+  <text x="0" y="14" fill="currentColor" fontSize="13.5" fontWeight="bold">$1FFD</text>
+  <text x="0" y="30" fill="currentColor" fontSize="13.5" fontWeight="bold">bits 2–1</text>
+  <text x="134" y="24" fill="currentColor" fontSize="13.5">$0000</text>
+  <text x="276.5" y="24" fill="currentColor" fontSize="13.5">$4000</text>
+  <text x="419" y="24" fill="currentColor" fontSize="13.5">$8000</text>
+  <text x="561.5" y="24" fill="currentColor" fontSize="13.5">$C000</text>
+  <text x="0" y="66" fill="currentColor" fontSize="16.5" fontWeight="bold">00</text>
+  <rect x="132" y="34" width="138.5" height="52" rx="6" fill="none" stroke="#3b82f6" strokeWidth="2" />
+  <text x="201.3" y="56.3" textAnchor="middle" fill="#3b82f6" fontSize="15">bank 0</text>
+  <text x="201.3" y="74.3" textAnchor="middle" fill="#3b82f6" fontSize="15">pages $00, $01</text>
+  <rect x="274.5" y="34" width="138.5" height="52" rx="6" fill="none" stroke="#3b82f6" strokeWidth="2" />
+  <text x="343.8" y="56.3" textAnchor="middle" fill="#3b82f6" fontSize="15">bank 1</text>
+  <text x="343.8" y="74.3" textAnchor="middle" fill="#3b82f6" fontSize="15">pages $02, $03</text>
+  <rect x="417" y="34" width="138.5" height="52" rx="6" fill="none" stroke="#3b82f6" strokeWidth="2" />
+  <text x="486.3" y="56.3" textAnchor="middle" fill="#3b82f6" fontSize="15">bank 2</text>
+  <text x="486.3" y="74.3" textAnchor="middle" fill="#3b82f6" fontSize="15">pages $04, $05</text>
+  <rect x="559.5" y="34" width="138.5" height="52" rx="6" fill="none" stroke="#3b82f6" strokeWidth="2" />
+  <text x="628.8" y="56.3" textAnchor="middle" fill="#3b82f6" fontSize="15">bank 3</text>
+  <text x="628.8" y="74.3" textAnchor="middle" fill="#3b82f6" fontSize="15">pages $06, $07</text>
+  <text x="0" y="128" fill="currentColor" fontSize="16.5" fontWeight="bold">01</text>
+  <rect x="132" y="96" width="138.5" height="52" rx="6" fill="none" stroke="#3b82f6" strokeWidth="2" />
+  <text x="201.3" y="118.3" textAnchor="middle" fill="#3b82f6" fontSize="15">bank 4</text>
+  <text x="201.3" y="136.3" textAnchor="middle" fill="#3b82f6" fontSize="15">pages $08, $09</text>
+  <rect x="274.5" y="96" width="138.5" height="52" rx="6" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="343.8" y="118.3" textAnchor="middle" fill="#3b82f6" fontSize="15">bank 5</text>
+  <text x="343.8" y="136.3" textAnchor="middle" fill="#3b82f6" fontSize="15">pages $0A, $0B</text>
+  <rect x="417" y="96" width="138.5" height="52" rx="6" fill="none" stroke="#3b82f6" strokeWidth="2" />
+  <text x="486.3" y="118.3" textAnchor="middle" fill="#3b82f6" fontSize="15">bank 6</text>
+  <text x="486.3" y="136.3" textAnchor="middle" fill="#3b82f6" fontSize="15">pages $0C, $0D</text>
+  <rect x="559.5" y="96" width="138.5" height="52" rx="6" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="628.8" y="118.3" textAnchor="middle" fill="#3b82f6" fontSize="15">bank 7</text>
+  <text x="628.8" y="136.3" textAnchor="middle" fill="#3b82f6" fontSize="15">pages $0E, $0F</text>
+  <text x="0" y="190" fill="currentColor" fontSize="16.5" fontWeight="bold">10</text>
+  <rect x="132" y="158" width="138.5" height="52" rx="6" fill="none" stroke="#3b82f6" strokeWidth="2" />
+  <text x="201.3" y="180.3" textAnchor="middle" fill="#3b82f6" fontSize="15">bank 4</text>
+  <text x="201.3" y="198.3" textAnchor="middle" fill="#3b82f6" fontSize="15">pages $08, $09</text>
+  <rect x="274.5" y="158" width="138.5" height="52" rx="6" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="343.8" y="180.3" textAnchor="middle" fill="#3b82f6" fontSize="15">bank 5</text>
+  <text x="343.8" y="198.3" textAnchor="middle" fill="#3b82f6" fontSize="15">pages $0A, $0B</text>
+  <rect x="417" y="158" width="138.5" height="52" rx="6" fill="none" stroke="#3b82f6" strokeWidth="2" />
+  <text x="486.3" y="180.3" textAnchor="middle" fill="#3b82f6" fontSize="15">bank 6</text>
+  <text x="486.3" y="198.3" textAnchor="middle" fill="#3b82f6" fontSize="15">pages $0C, $0D</text>
+  <rect x="559.5" y="158" width="138.5" height="52" rx="6" fill="none" stroke="#3b82f6" strokeWidth="2" />
+  <text x="628.8" y="180.3" textAnchor="middle" fill="#3b82f6" fontSize="15">bank 3</text>
+  <text x="628.8" y="198.3" textAnchor="middle" fill="#3b82f6" fontSize="15">pages $06, $07</text>
+  <text x="0" y="252" fill="currentColor" fontSize="16.5" fontWeight="bold">11</text>
+  <rect x="132" y="220" width="138.5" height="52" rx="6" fill="none" stroke="#3b82f6" strokeWidth="2" />
+  <text x="201.3" y="242.3" textAnchor="middle" fill="#3b82f6" fontSize="15">bank 4</text>
+  <text x="201.3" y="260.3" textAnchor="middle" fill="#3b82f6" fontSize="15">pages $08, $09</text>
+  <rect x="274.5" y="220" width="138.5" height="52" rx="6" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="343.8" y="242.3" textAnchor="middle" fill="#3b82f6" fontSize="15">bank 7</text>
+  <text x="343.8" y="260.3" textAnchor="middle" fill="#3b82f6" fontSize="15">pages $0E, $0F</text>
+  <rect x="417" y="220" width="138.5" height="52" rx="6" fill="none" stroke="#3b82f6" strokeWidth="2" />
+  <text x="486.3" y="242.3" textAnchor="middle" fill="#3b82f6" fontSize="15">bank 6</text>
+  <text x="486.3" y="260.3" textAnchor="middle" fill="#3b82f6" fontSize="15">pages $0C, $0D</text>
+  <rect x="559.5" y="220" width="138.5" height="52" rx="6" fill="none" stroke="#3b82f6" strokeWidth="2" />
+  <text x="628.8" y="242.3" textAnchor="middle" fill="#3b82f6" fontSize="15">bank 3</text>
+  <text x="628.8" y="260.3" textAnchor="middle" fill="#3b82f6" fontSize="15">pages $06, $07</text>
+  <rect x="0" y="294" width="18" height="14" rx="3" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="1.2" />
+  <text x="24" y="306" fill="currentColor" fontSize="13.5">banks 5 and 7, the two screens; no layout has a ROM anywhere</text>
+</svg>
+{/* /fig:allram */}
+<figcaption>The four all-RAM layouts, one row per value of port $1FFD bits 2–1 (bit 0 set), with each 16K block's bank and its two MMU pages. Banks 5 and 7, the two screens, are filled.</figcaption>
+</figure>
+
+Look at the top 16K: three of the four layouts keep bank 3 there. That makes bank 3 the spot I would choose
+for a stack and for the code that switches between layouts, because in three cases out of four it stays put
+while everything below it changes. Leave all-RAM mode, and slots 2–5 go back to banks 5 and 2, as the list above says.
+
+The ROM itself, outside these layouts, is chosen by `$1FFD` bit 2 and `$7FFD` bit 4 together, one of the four
+16K ROMs. And the lock? Bit 5 of `$7FFD` blocks further writes to
+`$7FFD`, `$1FFD` and `$DFFD`, as on a 128K. It does not block the MMU, and it can be undone without a reset:
+writing 1 to bit 7 of the **Peripheral 3 Setting register, NextReg `$08`**, clears the lock, and the bit
+reads back 1 while `$7FFD` is not locked. On a 128K, that lock was a one-way door. The Next quietly fitted a
+handle on the other side, and I am grateful for it every time a debugger needs to look around.
+
+The Next has one more door into the same logic: the **Spectrum 128K Memory Mapping register, NextReg
+`$8E`**, sets the bank, the ROM and the all-RAM layout in a single write, and reads back the state of all
+three ports at once. Its bit 3 makes the write selective: with bit 3 set, the bank in bits 6–4 (and bit 7)
+is stored and slots 6 and 7 follow it; with bit 3 clear, the bank fields are ignored and only the ROM
+changes. So you can swap the ROM without knowing which bank is at `$C000`.
+
+Why do I make such a fuss about that? Because `$7FFD` cannot be read. The 128K's ROM kept a copy of every
+value it wrote there in a system variable, `BANKM` at `$5B5C`, a sticky note on the fridge, and well-behaved
+programs did the same, so that an interrupt routine could find out what was paged in. A program that bypassed
+`BANKM` left everybody else guessing. On the Next nobody has to guess: NextReg `$8E` is **the interpreter's
+notebook**, and returns the bank, the ROM and the all-RAM bits, and bit 6 of the **Display Control 1
+register, NextReg `$69`**, reads (and writes) the screen bit, `$7FFD` bit 3. Save them, do your work, write
+them back.
+
+One more register changes what the old ports mean. The **Memory Mapping Mode register, NextReg `$8F`**, lets
+the Next page like the Pentagon, a family of Russian Spectrum clones with more memory than a 128K. With `$8F`
+= 2 (**Pentagon 512K**), the bank comes from `$7FFD` bits 7–6 and 2–0, five bits for 32 banks, and `$DFFD`
+is ignored. With `$8F` = 3 (**Pentagon 1024K**), bit 5 of `$7FFD` stops being the lock and becomes a sixth
+bank bit, and bit 2 of port `$EFF7` can turn this mode back into standard paging. On a 1 MB Next, Pentagon
+1024K reaches only 768K, because the first 256K of the SRAM belongs to the basement. The interpreter, it
+turns out, speaks a Russian dialect too. Native Next code leaves `$8F` at 0, and so do I.
+
+## The ROMs, and how to replace one
+
+Slots 0 and 1 with `$FF` show **one 16K ROM**: slot 0 its first 8K, slot 1 its second. Which ROM it is
+depends on the machine type and the paging ports, just as on the +3: ROM 0 to ROM 3, chosen by `$1FFD` bit 2
+and `$7FFD` bit 4. The ROMs themselves are not the +3's but the Next's own, from NextZXOS, and they keep the
++3's numbering: **ROM 3 is the 48K BASIC**, with the 48K ROM's routines at their old addresses, the one a 48K
+program expects to find, and the
+one the butler's tape entry points look for. The ROMs are in RAM, but the decoder marks them **read-only**,
+so a write to `$0000` with the ROM paged in does nothing, as on every Spectrum.
+
+The **Alternate ROM register, NextReg `$8C`**, can swap in one of the two alternate ROMs, the 128K one or the
+48K one. Its bit 7 switches it on, and its bit 6 chooses which direction it works in:
+
+- With bit 6 clear, **reads come from the alternate ROM**, and it is read-only like any ROM.
+- With bit 6 set, **writes go to the alternate ROM** while reads still come from the normal one.
+
+That second mode is the one I find delightful: it is how you load a ROM of your own. Set bit 6, copy 16K to
+`$0000`, clear bit 6, and the machine runs your ROM from then on. You are painting the new stage set behind
+the curtain while the old play is still running in front of it. Bits 5 and 4 lock the ROM selection to one
+ROM, whatever the paging ports say, and a soft reset copies bits 3–0 into bits 7–4, so the setting can
+survive a reset if you prepare it in advance.
+
+## Contention
+
+The 48K and the 128K have **contended memory**: while the ULA reads the screen, the CPU must wait for some
+banks. The Next reproduces the delay, cycle for cycle, so timing-critical code (a border effect, a tape
+loader) runs as it did. I call it **the nostalgia tax**. The Next's ULA has its own memory and does not need
+the CPU to wait at all; the CPU waits only because old software expects it to, and paying the tax is what
+keeps that software happy.
+
+Which pages are contended depends on the timing:
+
+- **48K timing**: bank 5, pages `$0A` and `$0B`.
+- **128K timing**: the odd banks, 1, 3, 5 and 7.
+- **+3 timing**: banks 4–7.
+- **Pentagon timing**: none.
+
+Only pages `$00–$0F` can ever be contended, the 128K's eight banks. And all of it happens only at
+**3.5 MHz**: at 7, 14 or 28 MHz there is no contention at all, and bit 6 of the **Peripheral 3 Setting
+register, NextReg `$08`**, switches it off at 3.5 MHz too. That switch is a little lazy: the ULA takes a
+copy of the bit only in the last part of every line, from dot 256 on, so a write early in a line changes
+nothing until the beam gets there, and reading NextReg `$08` back meanwhile returns the old bit. I would not
+lose sleep over it, but I would not time anything against the exact moment of that write either.
+
+At 28 MHz there is a delay of a different kind: the SRAM is not quite fast enough, so every read from the
+SRAM or from bank 5 adds one wait state. Writes and bank 7 reads do not.
+
+I/O cycles pay the nostalgia tax as well, in 48K and 128K timing: every even port (the ULA's) and port
+`$7FFD` in 128K timing, as on the original machines. In +3 timing only memory is contended. If you write new
+code, my honest advice is to run above 3.5 MHz or set bit 6 and forget the tax exists.
+
+## Ports: which bits count
+
+A port address is 16 bits wide, but almost no Spectrum device ever looked at all of them. The 48K's ULA
+answered **every even address**, because it decoded only bit 0, and a lot of software relies on that: `OUT
+($FE),A` is the same port as `OUT ($00FE),A` or `OUT ($7EFE),A`. I think of the ULA as the greediest tenant
+in the building: it holds the keys to half of all port addresses and uses one of them. The Next decodes each
+old port exactly as loosely as the original did, and each new one strictly:
+
+<figure>
+{/* fig:decode */}
+<svg viewBox="-2 -2 704 318" role="img" aria-label="A grid of the sixteen address bits of a port, bit 15 on the left, for four ports. Port $FE decodes only bit 0, which must be 0, so every even address is the ULA. Port $7FFD decodes bit 15 = 0, bit 1 = 0 and bit 0 = 1, and bit 14 = 1 only in +3 timing. Port $FFFD decodes bits 15 and 14 = 1, bit 2 = 1, bit 1 = 0 and bit 0 = 1. Port $243B decodes all sixteen bits. A dot marks a bit the port ignores." style={{ width: "100%", height: "auto" }}>
+  <text x="157.5" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">15</text>
+  <text x="192.5" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">14</text>
+  <text x="227.5" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">13</text>
+  <text x="262.5" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">12</text>
+  <text x="297.5" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">11</text>
+  <text x="332.5" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">10</text>
+  <text x="367.5" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">9</text>
+  <text x="402.5" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">8</text>
+  <text x="437.5" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">7</text>
+  <text x="472.5" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">6</text>
+  <text x="507.5" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">5</text>
+  <text x="542.5" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">4</text>
+  <text x="577.5" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">3</text>
+  <text x="612.5" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">2</text>
+  <text x="647.5" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">1</text>
+  <text x="682.5" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">0</text>
+  <text x="0" y="52" fill="currentColor" fontSize="15" fontWeight="bold">$FE</text>
+  <text x="0" y="70" fill="currentColor" fontSize="15" fontWeight="bold">the ULA</text>
+  <rect x="141" y="32" width="33" height="46" rx="4" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="157.5" y="61" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="176" y="32" width="33" height="46" rx="4" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="192.5" y="61" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="211" y="32" width="33" height="46" rx="4" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="227.5" y="61" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="246" y="32" width="33" height="46" rx="4" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="262.5" y="61" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="281" y="32" width="33" height="46" rx="4" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="297.5" y="61" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="316" y="32" width="33" height="46" rx="4" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="332.5" y="61" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="351" y="32" width="33" height="46" rx="4" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="367.5" y="61" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="386" y="32" width="33" height="46" rx="4" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="402.5" y="61" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="421" y="32" width="33" height="46" rx="4" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="437.5" y="61" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="456" y="32" width="33" height="46" rx="4" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="472.5" y="61" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="491" y="32" width="33" height="46" rx="4" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="507.5" y="61" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="526" y="32" width="33" height="46" rx="4" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="542.5" y="61" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="561" y="32" width="33" height="46" rx="4" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="577.5" y="61" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="596" y="32" width="33" height="46" rx="4" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="612.5" y="61" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="631" y="32" width="33" height="46" rx="4" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="647.5" y="61" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="666" y="32" width="33" height="46" rx="4" fill="#30a46c" fillOpacity="0.16" stroke="#30a46c" strokeWidth="2" />
+  <text x="682.5" y="61" textAnchor="middle" fill="#30a46c" fontSize="15" fontWeight="bold">0</text>
+  <text x="0" y="114" fill="currentColor" fontSize="15" fontWeight="bold">$7FFD</text>
+  <text x="0" y="132" fill="currentColor" fontSize="15" fontWeight="bold">128K paging</text>
+  <rect x="141" y="94" width="33" height="46" rx="4" fill="#30a46c" fillOpacity="0.16" stroke="#30a46c" strokeWidth="2" />
+  <text x="157.5" y="123" textAnchor="middle" fill="#30a46c" fontSize="15" fontWeight="bold">0</text>
+  <rect x="176" y="94" width="33" height="46" rx="4" fill="#30a46c" fillOpacity="0.16" stroke="#30a46c" strokeWidth="2" strokeDasharray="4 3" />
+  <text x="192.5" y="123" textAnchor="middle" fill="#30a46c" fontSize="15" fontWeight="bold">1</text>
+  <rect x="211" y="94" width="33" height="46" rx="4" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="227.5" y="123" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="246" y="94" width="33" height="46" rx="4" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="262.5" y="123" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="281" y="94" width="33" height="46" rx="4" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="297.5" y="123" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="316" y="94" width="33" height="46" rx="4" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="332.5" y="123" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="351" y="94" width="33" height="46" rx="4" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="367.5" y="123" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="386" y="94" width="33" height="46" rx="4" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="402.5" y="123" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="421" y="94" width="33" height="46" rx="4" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="437.5" y="123" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="456" y="94" width="33" height="46" rx="4" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="472.5" y="123" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="491" y="94" width="33" height="46" rx="4" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="507.5" y="123" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="526" y="94" width="33" height="46" rx="4" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="542.5" y="123" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="561" y="94" width="33" height="46" rx="4" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="577.5" y="123" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="596" y="94" width="33" height="46" rx="4" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="612.5" y="123" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="631" y="94" width="33" height="46" rx="4" fill="#30a46c" fillOpacity="0.16" stroke="#30a46c" strokeWidth="2" />
+  <text x="647.5" y="123" textAnchor="middle" fill="#30a46c" fontSize="15" fontWeight="bold">0</text>
+  <rect x="666" y="94" width="33" height="46" rx="4" fill="#30a46c" fillOpacity="0.16" stroke="#30a46c" strokeWidth="2" />
+  <text x="682.5" y="123" textAnchor="middle" fill="#30a46c" fontSize="15" fontWeight="bold">1</text>
+  <text x="0" y="176" fill="currentColor" fontSize="15" fontWeight="bold">$FFFD</text>
+  <text x="0" y="194" fill="currentColor" fontSize="15" fontWeight="bold">AY register</text>
+  <rect x="141" y="156" width="33" height="46" rx="4" fill="#30a46c" fillOpacity="0.16" stroke="#30a46c" strokeWidth="2" />
+  <text x="157.5" y="185" textAnchor="middle" fill="#30a46c" fontSize="15" fontWeight="bold">1</text>
+  <rect x="176" y="156" width="33" height="46" rx="4" fill="#30a46c" fillOpacity="0.16" stroke="#30a46c" strokeWidth="2" />
+  <text x="192.5" y="185" textAnchor="middle" fill="#30a46c" fontSize="15" fontWeight="bold">1</text>
+  <rect x="211" y="156" width="33" height="46" rx="4" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="227.5" y="185" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="246" y="156" width="33" height="46" rx="4" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="262.5" y="185" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="281" y="156" width="33" height="46" rx="4" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="297.5" y="185" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="316" y="156" width="33" height="46" rx="4" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="332.5" y="185" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="351" y="156" width="33" height="46" rx="4" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="367.5" y="185" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="386" y="156" width="33" height="46" rx="4" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="402.5" y="185" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="421" y="156" width="33" height="46" rx="4" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="437.5" y="185" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="456" y="156" width="33" height="46" rx="4" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="472.5" y="185" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="491" y="156" width="33" height="46" rx="4" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="507.5" y="185" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="526" y="156" width="33" height="46" rx="4" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="542.5" y="185" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="561" y="156" width="33" height="46" rx="4" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="577.5" y="185" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="596" y="156" width="33" height="46" rx="4" fill="#30a46c" fillOpacity="0.16" stroke="#30a46c" strokeWidth="2" />
+  <text x="612.5" y="185" textAnchor="middle" fill="#30a46c" fontSize="15" fontWeight="bold">1</text>
+  <rect x="631" y="156" width="33" height="46" rx="4" fill="#30a46c" fillOpacity="0.16" stroke="#30a46c" strokeWidth="2" />
+  <text x="647.5" y="185" textAnchor="middle" fill="#30a46c" fontSize="15" fontWeight="bold">0</text>
+  <rect x="666" y="156" width="33" height="46" rx="4" fill="#30a46c" fillOpacity="0.16" stroke="#30a46c" strokeWidth="2" />
+  <text x="682.5" y="185" textAnchor="middle" fill="#30a46c" fontSize="15" fontWeight="bold">1</text>
+  <text x="0" y="238" fill="currentColor" fontSize="15" fontWeight="bold">$243B</text>
+  <text x="0" y="256" fill="currentColor" fontSize="15" fontWeight="bold">NextReg select</text>
+  <rect x="141" y="218" width="33" height="46" rx="4" fill="#30a46c" fillOpacity="0.16" stroke="#30a46c" strokeWidth="2" />
+  <text x="157.5" y="247" textAnchor="middle" fill="#30a46c" fontSize="15" fontWeight="bold">0</text>
+  <rect x="176" y="218" width="33" height="46" rx="4" fill="#30a46c" fillOpacity="0.16" stroke="#30a46c" strokeWidth="2" />
+  <text x="192.5" y="247" textAnchor="middle" fill="#30a46c" fontSize="15" fontWeight="bold">0</text>
+  <rect x="211" y="218" width="33" height="46" rx="4" fill="#30a46c" fillOpacity="0.16" stroke="#30a46c" strokeWidth="2" />
+  <text x="227.5" y="247" textAnchor="middle" fill="#30a46c" fontSize="15" fontWeight="bold">1</text>
+  <rect x="246" y="218" width="33" height="46" rx="4" fill="#30a46c" fillOpacity="0.16" stroke="#30a46c" strokeWidth="2" />
+  <text x="262.5" y="247" textAnchor="middle" fill="#30a46c" fontSize="15" fontWeight="bold">0</text>
+  <rect x="281" y="218" width="33" height="46" rx="4" fill="#30a46c" fillOpacity="0.16" stroke="#30a46c" strokeWidth="2" />
+  <text x="297.5" y="247" textAnchor="middle" fill="#30a46c" fontSize="15" fontWeight="bold">0</text>
+  <rect x="316" y="218" width="33" height="46" rx="4" fill="#30a46c" fillOpacity="0.16" stroke="#30a46c" strokeWidth="2" />
+  <text x="332.5" y="247" textAnchor="middle" fill="#30a46c" fontSize="15" fontWeight="bold">1</text>
+  <rect x="351" y="218" width="33" height="46" rx="4" fill="#30a46c" fillOpacity="0.16" stroke="#30a46c" strokeWidth="2" />
+  <text x="367.5" y="247" textAnchor="middle" fill="#30a46c" fontSize="15" fontWeight="bold">0</text>
+  <rect x="386" y="218" width="33" height="46" rx="4" fill="#30a46c" fillOpacity="0.16" stroke="#30a46c" strokeWidth="2" />
+  <text x="402.5" y="247" textAnchor="middle" fill="#30a46c" fontSize="15" fontWeight="bold">0</text>
+  <rect x="421" y="218" width="33" height="46" rx="4" fill="#30a46c" fillOpacity="0.16" stroke="#30a46c" strokeWidth="2" />
+  <text x="437.5" y="247" textAnchor="middle" fill="#30a46c" fontSize="15" fontWeight="bold">0</text>
+  <rect x="456" y="218" width="33" height="46" rx="4" fill="#30a46c" fillOpacity="0.16" stroke="#30a46c" strokeWidth="2" />
+  <text x="472.5" y="247" textAnchor="middle" fill="#30a46c" fontSize="15" fontWeight="bold">0</text>
+  <rect x="491" y="218" width="33" height="46" rx="4" fill="#30a46c" fillOpacity="0.16" stroke="#30a46c" strokeWidth="2" />
+  <text x="507.5" y="247" textAnchor="middle" fill="#30a46c" fontSize="15" fontWeight="bold">1</text>
+  <rect x="526" y="218" width="33" height="46" rx="4" fill="#30a46c" fillOpacity="0.16" stroke="#30a46c" strokeWidth="2" />
+  <text x="542.5" y="247" textAnchor="middle" fill="#30a46c" fontSize="15" fontWeight="bold">1</text>
+  <rect x="561" y="218" width="33" height="46" rx="4" fill="#30a46c" fillOpacity="0.16" stroke="#30a46c" strokeWidth="2" />
+  <text x="577.5" y="247" textAnchor="middle" fill="#30a46c" fontSize="15" fontWeight="bold">1</text>
+  <rect x="596" y="218" width="33" height="46" rx="4" fill="#30a46c" fillOpacity="0.16" stroke="#30a46c" strokeWidth="2" />
+  <text x="612.5" y="247" textAnchor="middle" fill="#30a46c" fontSize="15" fontWeight="bold">0</text>
+  <rect x="631" y="218" width="33" height="46" rx="4" fill="#30a46c" fillOpacity="0.16" stroke="#30a46c" strokeWidth="2" />
+  <text x="647.5" y="247" textAnchor="middle" fill="#30a46c" fontSize="15" fontWeight="bold">1</text>
+  <rect x="666" y="218" width="33" height="46" rx="4" fill="#30a46c" fillOpacity="0.16" stroke="#30a46c" strokeWidth="2" />
+  <text x="682.5" y="247" textAnchor="middle" fill="#30a46c" fontSize="15" fontWeight="bold">1</text>
+  <text x="0" y="302" fill="currentColor" fontSize="13.5">· = ignored;  dashed = decoded only in +3 timing</text>
+</svg>
+{/* /fig:decode */}
+<figcaption>The address bits four ports decode. Port $FE looks at bit 0 only; $7FFD at bits 15, 1 and 0, and at bit 14 only in +3 timing; $FFFD at bits 15, 14, 2, 1 and 0; $243B at all sixteen.</figcaption>
+</figure>
+
+- **Port `$FE`**, the ULA: bit 0 = 0. Every even port is the ULA.
+- **Port `$7FFD`**: bit 15 = 0, bits 1–0 = `01`, and bit 14 = 1 only in +3 timing. In 48K and 128K timing,
+  `$3FFD` pages memory too, as it did on a real 128K.
+- **Ports `$FFFD` and `$BFFD`**, the AY: bits 15–14 = `11` or `10`, bit 2 = 1, bits 1–0 = `01`.
+- **The Next's own ports**, `$243B`, `$253B`, `$123B`, `$303B` and the rest ending in `$3B`: all sixteen bits.
+
+The bits a port does not decode are not wasted, though. When the CPU executes `IN A,($FE)`, it puts A on the
+top half of the address bus, and `IN r,(C)` puts all of BC there. The ULA ignores those bits for choosing the
+port, but reads them for something else: bits 15–8 select the **keyboard rows**. Each 0 bit in the high byte
+picks one half-row of five keys, and the five bits you read back are 0 for a key held down:
+
+```z80klive
+    ld a,$FB            ; %11111011: the Q-W-E-R-T half-row
+    in a,($FE)          ; port $FBFE: the row in the top byte
+    bit 0,a             ; bit 0 is Q: zero while it is held down
+```
+
+Clear several bits at once, and the rows are ANDed: a 0 comes back if the key is held in any of the rows you
+chose. I love this one. The address is not only the name of whom you are asking; it is half of the question.
+
+Have you noticed that every Next port is odd? `$3B`, `$E3`, `$57`, `$5B`, `$6B`: all have bit 0 set. That is
+no accident. The greedy tenant owns every even address, so a new device with an even address would collide
+with it, and with every 48K program's border writes.
+
+Two decodes can overlap, and the Next keeps the overlaps the old machines had. When two devices answer the
+same write, both receive it; this is how a write to a Soundrive DAC at `$F1` could also be a `$7FFD` write,
+which the Next prevents with a rule of its own (while that DAC is on, `$xxF1` and `$xxF9` writes do not page
+memory). I am glad somebody thought of that, because a drum sample that pages out your code is a bug I
+would not wish on anyone.
+
+## Switching ports off
+
+A Next carries more devices than any one program wants, and some of their ports collide with hardware an old
+program expects, or with a peripheral on the expansion bus. So every internal port can be switched off,
+through four registers: the **Internal Port Decoding Enables registers, NextRegs `$82`–`$85`**, 28 bits in
+all, one per port or group of ports. Bit 1 of NextReg `$82` is port `$7FFD`, bit 7 of NextReg `$83` is
+Layer 2's port `$123B`, bit 0 of NextReg `$84` the AY, and so on. They all power on as 1. I picture a row of
+light switches by the front door, one per room.
+
+A port that is switched off is gone: writes to it are dropped, and a read returns what an absent device
+would, as the next section explains. Three ports have no switch at all: the ULA's `$FE` and the NextReg ports
+`$243B` and `$253B`. Think about why. Switch off `$253B`, and you could never write NextReg `$82` again to
+switch it back on. The machine refuses to let you lock yourself out of your own house, and I wish more
+software were that considerate.
+
+The same idea serves the **expansion bus**. The **Expansion Bus Decoding Enables registers, NextRegs
+`$86`–`$89`**, mirror `$82`–`$85` for the time the bus is on: a port is answered inside only when both its
+bits are set, and otherwise the I/O cycle goes out to the bus, where a real peripheral can answer it. Bit 7
+of NextReg `$85` chooses whether a soft reset switches every internal port back on, so a program that
+disabled one can ask for it to stay disabled.
+
+## What you read when nobody answers
+
+When the CPU executes an `IN`, every device compares the port address with its own. The Next does not then
+ask "which device is first?". It uses **wired-OR logic**: every device that matches puts its byte out, every
+device that does not puts out 0, and all the bytes are ORed into one. I like to imagine a meeting where
+everybody speaks at once, but those with nothing to say say exactly nothing, so you hear only the one who
+does.
+
+<figure>
+{/* fig:readpath */}
+<svg viewBox="-2 -2 704 334" role="img" aria-label="The read path of an IN instruction. Every device compares the port address with its own; a device that matches puts its byte out, one that does not puts out 0. The bytes of all devices are ORed together into one byte. If some device inside the machine claimed the port, the CPU reads that byte. If none did, it reads the expansion bus when the bus is on and allowed to answer I/O, and $FF otherwise." style={{ width: "100%", height: "auto" }}>
+  <defs>
+    <marker id="mio-read-0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
+    </marker>
+    <marker id="mio-read-1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#30a46c" />
+    </marker>
+    <marker id="mio-read-2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#e5484d" />
+    </marker>
+  </defs>
+  <rect x="0" y="12" width="190" height="60" rx="6" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="2" />
+  <text x="95" y="38.3" textAnchor="middle" fill="#30a46c" fontSize="15">ULA, $FE</text>
+  <text x="95" y="56.3" textAnchor="middle" fill="#30a46c" fontSize="15">matches: its byte</text>
+  <path d="M190,42 L222,42 L222,150 L246,150" fill="none" stroke="#30a46c" strokeWidth="1.8" strokeLinejoin="round" />
+  <rect x="0" y="86" width="190" height="60" rx="6" fill="none" stroke="#30a46c" strokeWidth="2" />
+  <text x="95" y="112.3" textAnchor="middle" fill="#30a46c" fontSize="15">AY, $FFFD</text>
+  <text x="95" y="130.3" textAnchor="middle" fill="#30a46c" fontSize="15">no match: 0</text>
+  <path d="M190,116 L222,116 L222,150 L246,150" fill="none" stroke="#30a46c" strokeWidth="1.8" markerEnd="url(#mio-read-1)" strokeLinejoin="round" />
+  <rect x="0" y="160" width="190" height="60" rx="6" fill="none" stroke="#30a46c" strokeWidth="2" />
+  <text x="95" y="186.3" textAnchor="middle" fill="#30a46c" fontSize="15">Kempston, $1F</text>
+  <text x="95" y="204.3" textAnchor="middle" fill="#30a46c" fontSize="15">no match: 0</text>
+  <path d="M190,190 L222,190 L222,150 L246,150" fill="none" stroke="#30a46c" strokeWidth="1.8" strokeLinejoin="round" />
+  <rect x="0" y="234" width="190" height="60" rx="6" fill="none" stroke="#30a46c" strokeWidth="2" />
+  <text x="95" y="260.3" textAnchor="middle" fill="#30a46c" fontSize="15">NextReg, $253B</text>
+  <text x="95" y="278.3" textAnchor="middle" fill="#30a46c" fontSize="15">no match: 0</text>
+  <path d="M190,264 L222,264 L222,150 L246,150" fill="none" stroke="#30a46c" strokeWidth="1.8" strokeLinejoin="round" />
+  <rect x="250" y="118" width="92" height="64" rx="6" fill="none" stroke="#30a46c" strokeWidth="2" />
+  <text x="296" y="146.3" textAnchor="middle" fill="#30a46c" fontSize="15" fontWeight="bold">OR of</text>
+  <text x="296" y="164.3" textAnchor="middle" fill="#30a46c" fontSize="15" fontWeight="bold">all bytes</text>
+  <path d="M342,150 L382,150" fill="none" stroke="currentColor" strokeWidth="1.8" markerEnd="url(#mio-read-0)" strokeLinejoin="round" />
+  <rect x="386" y="112" width="150" height="76" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="461" y="137.3" textAnchor="middle" fill="currentColor" fontSize="15" fontWeight="bold">did a device</text>
+  <text x="461" y="155.3" textAnchor="middle" fill="currentColor" fontSize="15" fontWeight="bold">inside claim</text>
+  <text x="461" y="173.3" textAnchor="middle" fill="currentColor" fontSize="15" fontWeight="bold">the port?</text>
+  <rect x="580" y="12" width="120" height="60" rx="6" fill="none" stroke="#e5484d" strokeWidth="2" />
+  <text x="640" y="38.3" textAnchor="middle" fill="#e5484d" fontSize="15" fontWeight="bold">yes: the</text>
+  <text x="640" y="56.3" textAnchor="middle" fill="#e5484d" fontSize="15" fontWeight="bold">ORed byte</text>
+  <rect x="580" y="140" width="120" height="76" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="640" y="165.3" textAnchor="middle" fill="currentColor" fontSize="15">no, bus on:</text>
+  <text x="640" y="183.3" textAnchor="middle" fill="currentColor" fontSize="15">the bus's</text>
+  <text x="640" y="201.3" textAnchor="middle" fill="currentColor" fontSize="15">byte</text>
+  <rect x="580" y="254" width="120" height="60" rx="6" fill="none" stroke="#e5484d" strokeWidth="2" />
+  <text x="640" y="289.3" textAnchor="middle" fill="#e5484d" fontSize="15" fontWeight="bold">no: $FF</text>
+  <path d="M461,112 L461,42 L576,42" fill="none" stroke="currentColor" strokeWidth="1.8" markerEnd="url(#mio-read-0)" strokeLinejoin="round" />
+  <path d="M536,178 L576,178" fill="none" stroke="currentColor" strokeWidth="1.8" markerEnd="url(#mio-read-0)" strokeLinejoin="round" />
+  <path d="M461,188 L461,284 L576,284" fill="none" stroke="currentColor" strokeWidth="1.8" markerEnd="url(#mio-read-0)" strokeLinejoin="round" />
+</svg>
+{/* /fig:readpath */}
+<figcaption>The read path of an IN. Devices that do not match put out 0, so the OR of all their bytes is the matching device's byte. If no device inside claimed the port, the CPU reads the expansion bus when it is on, and $FF otherwise.</figcaption>
+</figure>
+
+Normally exactly one device matches, and the OR is its byte. When two match, their bytes are ORed, the way
+two chips driving one data bus would combine on a real Spectrum. And when none matches, the CPU reads
+**`$FF`**, or the expansion bus's byte when the bus is on and allowed to answer I/O. `$FF` is the sound of
+silence on a Spectrum, and I find it oddly comforting that the Next kept it.
+
+There is one famous exception: **port `$FF`** in 48K and 128K timing returns the **floating bus**, the last
+byte the ULA fetched from the screen, because some 48K games synchronise with the beam by reading it. They
+are eavesdropping on the ULA, and the Next lets them. In +3 timing port `$FF` reads `$FF`, and the +3's own
+floating bus appears instead at port `$0FFD` and the other addresses with bits 15–12 = `0000` and bits
+1–0 = `01`, and only while `$7FFD` is not locked, as on a real +3.
+
+And reading a port is not always harmless. Some reads **do something**: reading port `$303B` returns the
+sprite collision flags and clears them, and reading a UART's data port takes a byte out of its receive
+buffer. Read such a port twice "just to check", and the second read sees something else. My advice: read
+once, keep the value, and look at your copy as often as you like.
+
+## Two ways into the NextRegs
+
+The NextRegs are numbered `$00` to `$FF`, and there are two ways to write one. The first works on any Z80:
+write the register's number to **port `$243B`**, the **register select** port, and then the value to **port
+`$253B`**, the **data** port. The second is an instruction only the Z80N has, `NEXTREG`:
+
+<figure>
+{/* fig:nrpaths */}
+<svg viewBox="-2 -2 704 376" role="img" aria-label="Four writers reach the NextReg file. A write to port $243B stores the register number in the selection latch, which port $243B reads back and every reset sets to $24. A write to port $253B queues a write to the selected number. The NEXTREG instruction queues a write with its own number, 20 T-states for NEXTREG n,v and 17 for NEXTREG n,A, and leaves the selection alone. A Copper MOVE writes registers $01 to $7F. An arbiter gives the Copper priority; a CPU write waits one 28 MHz tick and is never lost. Reads go only through port $253B, which reads the selected register." style={{ width: "100%", height: "auto" }}>
+  <defs>
+    <marker id="mio-nr-0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
+    </marker>
+    <marker id="mio-nr-1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#e8912d" />
+    </marker>
+    <marker id="mio-nr-2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#e5484d" />
+    </marker>
+  </defs>
+  <rect x="0" y="14" width="210" height="56" rx="6" fill="none" stroke="#e8912d" strokeWidth="2" />
+  <text x="105" y="38.3" textAnchor="middle" fill="#e8912d" fontSize="15">OUT to $243B</text>
+  <text x="105" y="56.3" textAnchor="middle" fill="#e8912d" fontSize="15">(select)</text>
+  <rect x="0" y="112" width="210" height="56" rx="6" fill="none" stroke="#e8912d" strokeWidth="2" />
+  <text x="105" y="136.3" textAnchor="middle" fill="#e8912d" fontSize="15">OUT to $253B</text>
+  <text x="105" y="154.3" textAnchor="middle" fill="#e8912d" fontSize="15">(write)</text>
+  <rect x="0" y="200" width="210" height="76" rx="6" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="2" />
+  <text x="105" y="225.9" textAnchor="middle" fill="#e8912d" fontSize="14">NEXTREG n,v  20 T</text>
+  <text x="105" y="242.9" textAnchor="middle" fill="#e8912d" fontSize="14">NEXTREG n,A  17 T</text>
+  <text x="105" y="259.9" textAnchor="middle" fill="#e8912d" fontSize="14">(number in the opcode)</text>
+  <rect x="0" y="300" width="210" height="56" rx="6" fill="none" stroke="#e8912d" strokeWidth="2" />
+  <text x="105" y="324.3" textAnchor="middle" fill="#e8912d" fontSize="15">Copper MOVE</text>
+  <text x="105" y="342.3" textAnchor="middle" fill="#e8912d" fontSize="15">registers $01–$7F</text>
+  <rect x="270" y="14" width="190" height="56" rx="6" fill="none" stroke="#e8912d" strokeWidth="2" />
+  <text x="365" y="38.3" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">selection latch</text>
+  <text x="365" y="56.3" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">after reset: $24</text>
+  <rect x="270" y="150" width="140" height="168" rx="6" fill="none" stroke="#e5484d" strokeWidth="2" />
+  <text x="340" y="203.3" textAnchor="middle" fill="#e5484d" fontSize="15" fontWeight="bold">arbiter:</text>
+  <text x="340" y="221.3" textAnchor="middle" fill="#e5484d" fontSize="15" fontWeight="bold">the Copper</text>
+  <text x="340" y="239.3" textAnchor="middle" fill="#e5484d" fontSize="15" fontWeight="bold">first; the CPU</text>
+  <text x="340" y="257.3" textAnchor="middle" fill="#e5484d" fontSize="15" fontWeight="bold">waits one</text>
+  <text x="340" y="275.3" textAnchor="middle" fill="#e5484d" fontSize="15" fontWeight="bold">tick</text>
+  <rect x="490" y="150" width="210" height="168" rx="6" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="2" />
+  <text x="595" y="230" textAnchor="middle" fill="#e8912d" fontSize="16.5" fontWeight="bold">register file</text>
+  <text x="595" y="249.5" textAnchor="middle" fill="#e8912d" fontSize="16.5" fontWeight="bold">$00–$FF</text>
+  <path d="M210,42 L266,42" fill="none" stroke="#e8912d" strokeWidth="1.8" markerEnd="url(#mio-nr-1)" strokeLinejoin="round" />
+  <path d="M210,140 L240,140 L240,170 L266,170" fill="none" stroke="#e8912d" strokeWidth="1.8" markerEnd="url(#mio-nr-1)" strokeLinejoin="round" />
+  <path d="M210,238 L266,238" fill="none" stroke="#e8912d" strokeWidth="1.8" markerEnd="url(#mio-nr-1)" strokeLinejoin="round" />
+  <path d="M210,328 L240,328 L240,300 L266,300" fill="none" stroke="#e8912d" strokeWidth="1.8" markerEnd="url(#mio-nr-1)" strokeLinejoin="round" />
+  <path d="M365,70 L365,100 L340,100 L340,146" fill="none" stroke="#e8912d" strokeWidth="1.8" markerEnd="url(#mio-nr-1)" strokeLinejoin="round" />
+  <text x="374" y="96" fill="#e8912d" fontSize="13.5">number</text>
+  <path d="M410,234 L486,234" fill="none" stroke="#e5484d" strokeWidth="1.8" markerEnd="url(#mio-nr-2)" strokeLinejoin="round" />
+  <text x="520" y="40" fill="currentColor" fontSize="13.5">reads: IN from</text>
+  <text x="520" y="57" fill="currentColor" fontSize="13.5">$253B returns the</text>
+  <text x="520" y="74" fill="currentColor" fontSize="13.5">selected register;</text>
+  <text x="520" y="91" fill="currentColor" fontSize="13.5">NEXTREG cannot read</text>
+</svg>
+{/* /fig:nrpaths */}
+<figcaption>The ways into the register file. Port $243B sets the selection latch; port $253B writes the selected register; the NEXTREG instruction carries its own number and leaves the selection alone; the Copper writes registers $01–$7F and goes first when it collides with the CPU.</figcaption>
+</figure>
+
+Let me compare the two on the same job, setting the CPU to 28 MHz through the **CPU Speed register, NextReg
+`$07`**:
+
+```z80klive
+    ; --- through the ports: 52 T-states
+    ld bc,$243B         ; 10 T
+    ld a,$07            ;  7 T
+    out (c),a           ; 12 T: select NextReg $07
+    inc b               ;  4 T: BC = $253B
+    ld a,$03            ;  7 T
+    out (c),a           ; 12 T: write 3, 28 MHz
+
+    ; --- with the Z80N instruction: 20 T-states
+    nextreg $07,$03     ; NEXTREG n,v
+```
+
+`NEXTREG n,v` takes **20 T-states**, and `NEXTREG n,A`, with the value in A, **17**. Both go into the same
+write queue as a port `$253B` write. There is one difference besides the speed, and to me it is the important
+one: `NEXTREG` carries its own register number, and **leaves the selection of port `$243B` alone**. An
+interrupt routine that uses the ports changes the selection under the feet of the code it interrupted; one
+that uses `NEXTREG` does not. If your interrupt routine must use the ports, read port `$243B` first (it
+returns the selected number) and write it back before you return. My own preference is `NEXTREG` for every
+write, and the ports only where there is no choice.
+
+And reading is exactly such a place: there is no `NEXTREG` that reads. Select the number at port `$243B`,
+then `IN` from port `$253B`:
+
+```z80klive
+    ; --- which speed is the CPU really running at?
+    ld bc,$243B
+    ld a,$07
+    out (c),a           ; select NextReg $07
+    inc b
+    in a,(c)            ; bits 5-4: actual, 1-0: requested
+```
+
+And what is at `$243B` after a reset? Not 0, but **`$24`**, the **Reserved register, NextReg `$24`**, which
+does nothing. Here is why I find that so thoughtful. An old program that writes `OUT ($3B),A` puts A on the
+top half of the address bus, so with A = `$25` it writes `$25` to port `$253B` without ever meaning to. If the
+selection after a reset were a real register, that stray write would change it. With `$24` selected, it lands
+in **the decoy**, an empty room kept on purpose for visitors who came in by the wrong door.
+
+## The Copper goes first
+
+The Copper, the Next's display co-processor (the screen series'
+[raster effects](/en/under-the-hood/emulator-internals/next-display/raster-effects/) chapter takes it apart),
+writes NextRegs too, with its MOVE instruction. Two rules govern it:
+
+- **The Copper reaches only `$01`–`$7F`.** Its MOVE has seven bits for the register number, so the bottom
+  half of the map is its whole world: video, palettes, the MMU, sound mirrors. A MOVE to register 0 is the
+  Copper's NOP and writes nothing.
+- **The Copper has priority.** When the Copper and the CPU write in the same 28 MHz tick, the Copper's write
+  goes first and the CPU's waits one tick. Nothing is lost: the Copper writes at most every other tick, so
+  the CPU always gets its turn.
+
+So the Copper jumps the queue, but politely, and never twice in a row. I also like reading its reach the other
+way round: everything from `$80` up (the port enables, the expansion bus, the memory mapping registers, the
+interrupt controller) is safe from a Copper list gone wrong. A runaway Copper can make your screen look
+dreadful, but it cannot switch off your ports.
+
+## A map of 256 numbers
+
+Not all 256 numbers are used. The register list names 145 of them, and they sit in neighbourhoods:
+
+<figure>
+{/* fig:map */}
+<svg viewBox="-2 -2 704 516" role="img" aria-label="A sixteen by sixteen grid of the NextReg numbers $00 to $FF, one row per high hex digit. Numbers the register list documents are filled with their group's colour; the rest are empty. Grey: the machine and its settings, $00 to $11, the reserved $24, the user register $7F and $FF. Blue: memory, NextReg $04, the MMU at $50 to $57, and $8C to $8F. Orange: video and sound, the bulk of $12 to $79. Green: ports, inputs and peripherals, the keymap at $28 to $2B, the expansion bus and port enables at $80 to $8A, the Pi and ESP GPIO at $90 to $A9, the extended keys and DivMMC entry points at $B0 to $BB, the I/O traps at $D8 to $DA and the XDEV and XADC registers at $F0 to $FA. Purple: interrupts, $20, $22, $23 and $C0 to $CF. Registers $80 and up, below the dashed line, are out of the Copper's reach." style={{ width: "100%", height: "auto" }}>
+  <text x="66.4" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">0</text>
+  <text x="107.3" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">1</text>
+  <text x="148.2" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">2</text>
+  <text x="189.1" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">3</text>
+  <text x="229.9" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">4</text>
+  <text x="270.8" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">5</text>
+  <text x="311.7" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">6</text>
+  <text x="352.6" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">7</text>
+  <text x="393.4" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">8</text>
+  <text x="434.3" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">9</text>
+  <text x="475.2" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">A</text>
+  <text x="516.1" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">B</text>
+  <text x="556.9" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">C</text>
+  <text x="597.8" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">D</text>
+  <text x="638.7" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">E</text>
+  <text x="679.6" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">F</text>
+  <text x="0" y="45" fill="currentColor" fontSize="13.5">$0x</text>
+  <rect x="47" y="29" width="38.9" height="23" rx="3" fill="currentColor" fillOpacity="0.22" stroke="currentColor" strokeWidth="1.2" />
+  <rect x="87.9" y="29" width="38.9" height="23" rx="3" fill="currentColor" fillOpacity="0.22" stroke="currentColor" strokeWidth="1.2" />
+  <rect x="128.8" y="29" width="38.9" height="23" rx="3" fill="currentColor" fillOpacity="0.22" stroke="currentColor" strokeWidth="1.2" />
+  <rect x="169.6" y="29" width="38.9" height="23" rx="3" fill="currentColor" fillOpacity="0.22" stroke="currentColor" strokeWidth="1.2" />
+  <rect x="210.5" y="29" width="38.9" height="23" rx="3" fill="#3b82f6" fillOpacity="0.3" stroke="#3b82f6" strokeWidth="1.2" />
+  <rect x="251.4" y="29" width="38.9" height="23" rx="3" fill="currentColor" fillOpacity="0.22" stroke="currentColor" strokeWidth="1.2" />
+  <rect x="292.3" y="29" width="38.9" height="23" rx="3" fill="currentColor" fillOpacity="0.22" stroke="currentColor" strokeWidth="1.2" />
+  <rect x="333.1" y="29" width="38.9" height="23" rx="3" fill="currentColor" fillOpacity="0.22" stroke="currentColor" strokeWidth="1.2" />
+  <rect x="374" y="29" width="38.9" height="23" rx="3" fill="currentColor" fillOpacity="0.22" stroke="currentColor" strokeWidth="1.2" />
+  <rect x="414.9" y="29" width="38.9" height="23" rx="3" fill="currentColor" fillOpacity="0.22" stroke="currentColor" strokeWidth="1.2" />
+  <rect x="455.8" y="29" width="38.9" height="23" rx="3" fill="currentColor" fillOpacity="0.22" stroke="currentColor" strokeWidth="1.2" />
+  <rect x="496.6" y="29" width="38.9" height="23" rx="3" fill="currentColor" fillOpacity="0.22" stroke="currentColor" strokeWidth="1.2" />
+  <rect x="537.5" y="29" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="578.4" y="29" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="619.3" y="29" width="38.9" height="23" rx="3" fill="currentColor" fillOpacity="0.22" stroke="currentColor" strokeWidth="1.2" />
+  <rect x="660.1" y="29" width="38.9" height="23" rx="3" fill="currentColor" fillOpacity="0.22" stroke="currentColor" strokeWidth="1.2" />
+  <text x="0" y="70" fill="currentColor" fontSize="13.5">$1x</text>
+  <rect x="47" y="54" width="38.9" height="23" rx="3" fill="currentColor" fillOpacity="0.22" stroke="currentColor" strokeWidth="1.2" />
+  <rect x="87.9" y="54" width="38.9" height="23" rx="3" fill="currentColor" fillOpacity="0.22" stroke="currentColor" strokeWidth="1.2" />
+  <rect x="128.8" y="54" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="169.6" y="54" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="210.5" y="54" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="251.4" y="54" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="292.3" y="54" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="333.1" y="54" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="374" y="54" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="414.9" y="54" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="455.8" y="54" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="496.6" y="54" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="537.5" y="54" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="578.4" y="54" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="619.3" y="54" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="660.1" y="54" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <text x="0" y="95" fill="currentColor" fontSize="13.5">$2x</text>
+  <rect x="47" y="79" width="38.9" height="23" rx="3" fill="#a855f7" fillOpacity="0.3" stroke="#a855f7" strokeWidth="1.2" />
+  <rect x="87.9" y="79" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="128.8" y="79" width="38.9" height="23" rx="3" fill="#a855f7" fillOpacity="0.3" stroke="#a855f7" strokeWidth="1.2" />
+  <rect x="169.6" y="79" width="38.9" height="23" rx="3" fill="#a855f7" fillOpacity="0.3" stroke="#a855f7" strokeWidth="1.2" />
+  <rect x="210.5" y="79" width="38.9" height="23" rx="3" fill="currentColor" fillOpacity="0.22" stroke="currentColor" strokeWidth="1.2" />
+  <rect x="251.4" y="79" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="292.3" y="79" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="333.1" y="79" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="374" y="79" width="38.9" height="23" rx="3" fill="#30a46c" fillOpacity="0.3" stroke="#30a46c" strokeWidth="1.2" />
+  <rect x="414.9" y="79" width="38.9" height="23" rx="3" fill="#30a46c" fillOpacity="0.3" stroke="#30a46c" strokeWidth="1.2" />
+  <rect x="455.8" y="79" width="38.9" height="23" rx="3" fill="#30a46c" fillOpacity="0.3" stroke="#30a46c" strokeWidth="1.2" />
+  <rect x="496.6" y="79" width="38.9" height="23" rx="3" fill="#30a46c" fillOpacity="0.3" stroke="#30a46c" strokeWidth="1.2" />
+  <rect x="537.5" y="79" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="578.4" y="79" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="619.3" y="79" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="660.1" y="79" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <text x="0" y="120" fill="currentColor" fontSize="13.5">$3x</text>
+  <rect x="47" y="104" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="87.9" y="104" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="128.8" y="104" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="169.6" y="104" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="210.5" y="104" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="251.4" y="104" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="292.3" y="104" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="333.1" y="104" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="374" y="104" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="414.9" y="104" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="455.8" y="104" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="496.6" y="104" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="537.5" y="104" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="578.4" y="104" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="619.3" y="104" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="660.1" y="104" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <text x="0" y="145" fill="currentColor" fontSize="13.5">$4x</text>
+  <rect x="47" y="129" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="87.9" y="129" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="128.8" y="129" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="169.6" y="129" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="210.5" y="129" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="251.4" y="129" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="292.3" y="129" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="333.1" y="129" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="374" y="129" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="414.9" y="129" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="455.8" y="129" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="496.6" y="129" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="537.5" y="129" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="578.4" y="129" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="619.3" y="129" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="660.1" y="129" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <text x="0" y="170" fill="currentColor" fontSize="13.5">$5x</text>
+  <rect x="47" y="154" width="38.9" height="23" rx="3" fill="#3b82f6" fillOpacity="0.3" stroke="#3b82f6" strokeWidth="1.2" />
+  <rect x="87.9" y="154" width="38.9" height="23" rx="3" fill="#3b82f6" fillOpacity="0.3" stroke="#3b82f6" strokeWidth="1.2" />
+  <rect x="128.8" y="154" width="38.9" height="23" rx="3" fill="#3b82f6" fillOpacity="0.3" stroke="#3b82f6" strokeWidth="1.2" />
+  <rect x="169.6" y="154" width="38.9" height="23" rx="3" fill="#3b82f6" fillOpacity="0.3" stroke="#3b82f6" strokeWidth="1.2" />
+  <rect x="210.5" y="154" width="38.9" height="23" rx="3" fill="#3b82f6" fillOpacity="0.3" stroke="#3b82f6" strokeWidth="1.2" />
+  <rect x="251.4" y="154" width="38.9" height="23" rx="3" fill="#3b82f6" fillOpacity="0.3" stroke="#3b82f6" strokeWidth="1.2" />
+  <rect x="292.3" y="154" width="38.9" height="23" rx="3" fill="#3b82f6" fillOpacity="0.3" stroke="#3b82f6" strokeWidth="1.2" />
+  <rect x="333.1" y="154" width="38.9" height="23" rx="3" fill="#3b82f6" fillOpacity="0.3" stroke="#3b82f6" strokeWidth="1.2" />
+  <rect x="374" y="154" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="414.9" y="154" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="455.8" y="154" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="496.6" y="154" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="537.5" y="154" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="578.4" y="154" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="619.3" y="154" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="660.1" y="154" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <text x="0" y="195" fill="currentColor" fontSize="13.5">$6x</text>
+  <rect x="47" y="179" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="87.9" y="179" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="128.8" y="179" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="169.6" y="179" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="210.5" y="179" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="251.4" y="179" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="292.3" y="179" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="333.1" y="179" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="374" y="179" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="414.9" y="179" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="455.8" y="179" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="496.6" y="179" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="537.5" y="179" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="578.4" y="179" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="619.3" y="179" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="660.1" y="179" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <text x="0" y="220" fill="currentColor" fontSize="13.5">$7x</text>
+  <rect x="47" y="204" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="87.9" y="204" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="128.8" y="204" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="169.6" y="204" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="210.5" y="204" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="251.4" y="204" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="292.3" y="204" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="333.1" y="204" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="374" y="204" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="414.9" y="204" width="38.9" height="23" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <rect x="455.8" y="204" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="496.6" y="204" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="537.5" y="204" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="578.4" y="204" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="619.3" y="204" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="660.1" y="204" width="38.9" height="23" rx="3" fill="currentColor" fillOpacity="0.22" stroke="currentColor" strokeWidth="1.2" />
+  <text x="0" y="245" fill="currentColor" fontSize="13.5">$8x</text>
+  <rect x="47" y="229" width="38.9" height="23" rx="3" fill="#30a46c" fillOpacity="0.3" stroke="#30a46c" strokeWidth="1.2" />
+  <rect x="87.9" y="229" width="38.9" height="23" rx="3" fill="#30a46c" fillOpacity="0.3" stroke="#30a46c" strokeWidth="1.2" />
+  <rect x="128.8" y="229" width="38.9" height="23" rx="3" fill="#30a46c" fillOpacity="0.3" stroke="#30a46c" strokeWidth="1.2" />
+  <rect x="169.6" y="229" width="38.9" height="23" rx="3" fill="#30a46c" fillOpacity="0.3" stroke="#30a46c" strokeWidth="1.2" />
+  <rect x="210.5" y="229" width="38.9" height="23" rx="3" fill="#30a46c" fillOpacity="0.3" stroke="#30a46c" strokeWidth="1.2" />
+  <rect x="251.4" y="229" width="38.9" height="23" rx="3" fill="#30a46c" fillOpacity="0.3" stroke="#30a46c" strokeWidth="1.2" />
+  <rect x="292.3" y="229" width="38.9" height="23" rx="3" fill="#30a46c" fillOpacity="0.3" stroke="#30a46c" strokeWidth="1.2" />
+  <rect x="333.1" y="229" width="38.9" height="23" rx="3" fill="#30a46c" fillOpacity="0.3" stroke="#30a46c" strokeWidth="1.2" />
+  <rect x="374" y="229" width="38.9" height="23" rx="3" fill="#30a46c" fillOpacity="0.3" stroke="#30a46c" strokeWidth="1.2" />
+  <rect x="414.9" y="229" width="38.9" height="23" rx="3" fill="#30a46c" fillOpacity="0.3" stroke="#30a46c" strokeWidth="1.2" />
+  <rect x="455.8" y="229" width="38.9" height="23" rx="3" fill="#30a46c" fillOpacity="0.3" stroke="#30a46c" strokeWidth="1.2" />
+  <rect x="496.6" y="229" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="537.5" y="229" width="38.9" height="23" rx="3" fill="#3b82f6" fillOpacity="0.3" stroke="#3b82f6" strokeWidth="1.2" />
+  <rect x="578.4" y="229" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="619.3" y="229" width="38.9" height="23" rx="3" fill="#3b82f6" fillOpacity="0.3" stroke="#3b82f6" strokeWidth="1.2" />
+  <rect x="660.1" y="229" width="38.9" height="23" rx="3" fill="#3b82f6" fillOpacity="0.3" stroke="#3b82f6" strokeWidth="1.2" />
+  <text x="0" y="270" fill="currentColor" fontSize="13.5">$9x</text>
+  <rect x="47" y="254" width="38.9" height="23" rx="3" fill="#30a46c" fillOpacity="0.3" stroke="#30a46c" strokeWidth="1.2" />
+  <rect x="87.9" y="254" width="38.9" height="23" rx="3" fill="#30a46c" fillOpacity="0.3" stroke="#30a46c" strokeWidth="1.2" />
+  <rect x="128.8" y="254" width="38.9" height="23" rx="3" fill="#30a46c" fillOpacity="0.3" stroke="#30a46c" strokeWidth="1.2" />
+  <rect x="169.6" y="254" width="38.9" height="23" rx="3" fill="#30a46c" fillOpacity="0.3" stroke="#30a46c" strokeWidth="1.2" />
+  <rect x="210.5" y="254" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="251.4" y="254" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="292.3" y="254" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="333.1" y="254" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="374" y="254" width="38.9" height="23" rx="3" fill="#30a46c" fillOpacity="0.3" stroke="#30a46c" strokeWidth="1.2" />
+  <rect x="414.9" y="254" width="38.9" height="23" rx="3" fill="#30a46c" fillOpacity="0.3" stroke="#30a46c" strokeWidth="1.2" />
+  <rect x="455.8" y="254" width="38.9" height="23" rx="3" fill="#30a46c" fillOpacity="0.3" stroke="#30a46c" strokeWidth="1.2" />
+  <rect x="496.6" y="254" width="38.9" height="23" rx="3" fill="#30a46c" fillOpacity="0.3" stroke="#30a46c" strokeWidth="1.2" />
+  <rect x="537.5" y="254" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="578.4" y="254" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="619.3" y="254" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="660.1" y="254" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <text x="0" y="295" fill="currentColor" fontSize="13.5">$Ax</text>
+  <rect x="47" y="279" width="38.9" height="23" rx="3" fill="#30a46c" fillOpacity="0.3" stroke="#30a46c" strokeWidth="1.2" />
+  <rect x="87.9" y="279" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="128.8" y="279" width="38.9" height="23" rx="3" fill="#30a46c" fillOpacity="0.3" stroke="#30a46c" strokeWidth="1.2" />
+  <rect x="169.6" y="279" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="210.5" y="279" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="251.4" y="279" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="292.3" y="279" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="333.1" y="279" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="374" y="279" width="38.9" height="23" rx="3" fill="#30a46c" fillOpacity="0.3" stroke="#30a46c" strokeWidth="1.2" />
+  <rect x="414.9" y="279" width="38.9" height="23" rx="3" fill="#30a46c" fillOpacity="0.3" stroke="#30a46c" strokeWidth="1.2" />
+  <rect x="455.8" y="279" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="496.6" y="279" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="537.5" y="279" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="578.4" y="279" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="619.3" y="279" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="660.1" y="279" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <text x="0" y="320" fill="currentColor" fontSize="13.5">$Bx</text>
+  <rect x="47" y="304" width="38.9" height="23" rx="3" fill="#30a46c" fillOpacity="0.3" stroke="#30a46c" strokeWidth="1.2" />
+  <rect x="87.9" y="304" width="38.9" height="23" rx="3" fill="#30a46c" fillOpacity="0.3" stroke="#30a46c" strokeWidth="1.2" />
+  <rect x="128.8" y="304" width="38.9" height="23" rx="3" fill="#30a46c" fillOpacity="0.3" stroke="#30a46c" strokeWidth="1.2" />
+  <rect x="169.6" y="304" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="210.5" y="304" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="251.4" y="304" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="292.3" y="304" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="333.1" y="304" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="374" y="304" width="38.9" height="23" rx="3" fill="#30a46c" fillOpacity="0.3" stroke="#30a46c" strokeWidth="1.2" />
+  <rect x="414.9" y="304" width="38.9" height="23" rx="3" fill="#30a46c" fillOpacity="0.3" stroke="#30a46c" strokeWidth="1.2" />
+  <rect x="455.8" y="304" width="38.9" height="23" rx="3" fill="#30a46c" fillOpacity="0.3" stroke="#30a46c" strokeWidth="1.2" />
+  <rect x="496.6" y="304" width="38.9" height="23" rx="3" fill="#30a46c" fillOpacity="0.3" stroke="#30a46c" strokeWidth="1.2" />
+  <rect x="537.5" y="304" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="578.4" y="304" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="619.3" y="304" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="660.1" y="304" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <text x="0" y="345" fill="currentColor" fontSize="13.5">$Cx</text>
+  <rect x="47" y="329" width="38.9" height="23" rx="3" fill="#a855f7" fillOpacity="0.3" stroke="#a855f7" strokeWidth="1.2" />
+  <rect x="87.9" y="329" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="128.8" y="329" width="38.9" height="23" rx="3" fill="#a855f7" fillOpacity="0.3" stroke="#a855f7" strokeWidth="1.2" />
+  <rect x="169.6" y="329" width="38.9" height="23" rx="3" fill="#a855f7" fillOpacity="0.3" stroke="#a855f7" strokeWidth="1.2" />
+  <rect x="210.5" y="329" width="38.9" height="23" rx="3" fill="#a855f7" fillOpacity="0.3" stroke="#a855f7" strokeWidth="1.2" />
+  <rect x="251.4" y="329" width="38.9" height="23" rx="3" fill="#a855f7" fillOpacity="0.3" stroke="#a855f7" strokeWidth="1.2" />
+  <rect x="292.3" y="329" width="38.9" height="23" rx="3" fill="#a855f7" fillOpacity="0.3" stroke="#a855f7" strokeWidth="1.2" />
+  <rect x="333.1" y="329" width="38.9" height="23" rx="3" fill="#a855f7" fillOpacity="0.3" stroke="#a855f7" strokeWidth="1.2" />
+  <rect x="374" y="329" width="38.9" height="23" rx="3" fill="#a855f7" fillOpacity="0.3" stroke="#a855f7" strokeWidth="1.2" />
+  <rect x="414.9" y="329" width="38.9" height="23" rx="3" fill="#a855f7" fillOpacity="0.3" stroke="#a855f7" strokeWidth="1.2" />
+  <rect x="455.8" y="329" width="38.9" height="23" rx="3" fill="#a855f7" fillOpacity="0.3" stroke="#a855f7" strokeWidth="1.2" />
+  <rect x="496.6" y="329" width="38.9" height="23" rx="3" fill="#a855f7" fillOpacity="0.3" stroke="#a855f7" strokeWidth="1.2" />
+  <rect x="537.5" y="329" width="38.9" height="23" rx="3" fill="#a855f7" fillOpacity="0.3" stroke="#a855f7" strokeWidth="1.2" />
+  <rect x="578.4" y="329" width="38.9" height="23" rx="3" fill="#a855f7" fillOpacity="0.3" stroke="#a855f7" strokeWidth="1.2" />
+  <rect x="619.3" y="329" width="38.9" height="23" rx="3" fill="#a855f7" fillOpacity="0.3" stroke="#a855f7" strokeWidth="1.2" />
+  <rect x="660.1" y="329" width="38.9" height="23" rx="3" fill="#a855f7" fillOpacity="0.3" stroke="#a855f7" strokeWidth="1.2" />
+  <text x="0" y="370" fill="currentColor" fontSize="13.5">$Dx</text>
+  <rect x="47" y="354" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="87.9" y="354" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="128.8" y="354" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="169.6" y="354" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="210.5" y="354" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="251.4" y="354" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="292.3" y="354" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="333.1" y="354" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="374" y="354" width="38.9" height="23" rx="3" fill="#30a46c" fillOpacity="0.3" stroke="#30a46c" strokeWidth="1.2" />
+  <rect x="414.9" y="354" width="38.9" height="23" rx="3" fill="#30a46c" fillOpacity="0.3" stroke="#30a46c" strokeWidth="1.2" />
+  <rect x="455.8" y="354" width="38.9" height="23" rx="3" fill="#30a46c" fillOpacity="0.3" stroke="#30a46c" strokeWidth="1.2" />
+  <rect x="496.6" y="354" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="537.5" y="354" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="578.4" y="354" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="619.3" y="354" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="660.1" y="354" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <text x="0" y="395" fill="currentColor" fontSize="13.5">$Ex</text>
+  <rect x="47" y="379" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="87.9" y="379" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="128.8" y="379" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="169.6" y="379" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="210.5" y="379" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="251.4" y="379" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="292.3" y="379" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="333.1" y="379" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="374" y="379" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="414.9" y="379" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="455.8" y="379" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="496.6" y="379" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="537.5" y="379" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="578.4" y="379" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="619.3" y="379" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="660.1" y="379" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <text x="0" y="420" fill="currentColor" fontSize="13.5">$Fx</text>
+  <rect x="47" y="404" width="38.9" height="23" rx="3" fill="#30a46c" fillOpacity="0.3" stroke="#30a46c" strokeWidth="1.2" />
+  <rect x="87.9" y="404" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="128.8" y="404" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="169.6" y="404" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="210.5" y="404" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="251.4" y="404" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="292.3" y="404" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="333.1" y="404" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="374" y="404" width="38.9" height="23" rx="3" fill="#30a46c" fillOpacity="0.3" stroke="#30a46c" strokeWidth="1.2" />
+  <rect x="414.9" y="404" width="38.9" height="23" rx="3" fill="#30a46c" fillOpacity="0.3" stroke="#30a46c" strokeWidth="1.2" />
+  <rect x="455.8" y="404" width="38.9" height="23" rx="3" fill="#30a46c" fillOpacity="0.3" stroke="#30a46c" strokeWidth="1.2" />
+  <rect x="496.6" y="404" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="537.5" y="404" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="578.4" y="404" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="619.3" y="404" width="38.9" height="23" rx="3" fill="none" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.3" />
+  <rect x="660.1" y="404" width="38.9" height="23" rx="3" fill="currentColor" fillOpacity="0.22" stroke="currentColor" strokeWidth="1.2" />
+  <line x1="2" y1="228" x2="700" y2="228" stroke="currentColor" strokeWidth="1.6" strokeDasharray="6 4" />
+  <rect x="0" y="441" width="18" height="16" rx="3" fill="currentColor" fillOpacity="0.22" stroke="currentColor" strokeWidth="1.2" />
+  <text x="24" y="454" fill="currentColor" fontSize="13.5">machine</text>
+  <rect x="97.8" y="441" width="18" height="16" rx="3" fill="#3b82f6" fillOpacity="0.3" stroke="#3b82f6" strokeWidth="1.2" />
+  <text x="121.8" y="454" fill="currentColor" fontSize="13.5">memory</text>
+  <rect x="188.2" y="441" width="18" height="16" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.2" />
+  <text x="212.2" y="454" fill="currentColor" fontSize="13.5">video and sound</text>
+  <rect x="345.2" y="441" width="18" height="16" rx="3" fill="#30a46c" fillOpacity="0.3" stroke="#30a46c" strokeWidth="1.2" />
+  <text x="369.2" y="454" fill="currentColor" fontSize="13.5">ports and peripherals</text>
+  <rect x="546.6" y="441" width="18" height="16" rx="3" fill="#a855f7" fillOpacity="0.3" stroke="#a855f7" strokeWidth="1.2" />
+  <text x="570.6" y="454" fill="currentColor" fontSize="13.5">interrupts</text>
+  <text x="0" y="484" fill="currentColor" fontSize="13.5">below the dashed line, $80–$FF: the CPU only; the Copper reaches $01–$7F</text>
+</svg>
+{/* /fig:map */}
+<figcaption>The 256 NextReg numbers, one row per high hex digit, coloured by what they control; empty cells are numbers the register list does not use. The Copper reaches the half above the dashed line.</figcaption>
+</figure>
+
+- **`$00`–`$11`, the machine**: its identity and core version, resets, the machine type and timing, the
+  CPU speed, the peripheral settings. The Config Mapping register, NextReg `$04`, is the start-up config bank.
+- **`$12`–`$4C`, mostly video**: Layer 2's banks, transparency, the layer order, scrolling, the clip windows,
+  the sprites' attribute ports and the palettes; plus the keymap, the line interrupt and the DAC mirrors.
+- **`$50`–`$57`, the MMU.**
+- **`$60`–`$7F`, video again**: the Copper, the ULA, LoRes, tilemap and Layer 2 controls, and at `$7F` the
+  **User Register 0**, which does nothing at all except keep a byte for you, across soft resets too. It is
+  the drawer in the hall where you leave your keys, and I find it charming that a machine this busy kept one
+  free.
+- **`$80`–`$8F`, the bus and memory**: the expansion bus, the port enables, the alternate ROM, the 128K
+  mapping and the Pentagon modes.
+- **`$90`–`$BB`, peripherals**: the Raspberry Pi's GPIO and audio, the ESP Wi-Fi GPIO, extended keys and the
+  DivMMC's entry points.
+- **`$C0`–`$CF`, interrupts**: the interrupt controller's modes, enables and status bits.
+- **`$D8`–`$FF`, the rest**: I/O traps, the FPGA's own analogue converter on some boards, and `$FF`,
+  reserved for the machine.
+
+Reading a NextReg does not always give back what you wrote, and I suspect this is where most NextReg
+confusion is born. A number the register list does not use reads **0**, and so do write-only registers, such
+as the Copper's data ports. Some registers read **state, not storage**: the **CPU Speed register, NextReg
+`$07`**, returns the speed you asked for in bits 1–0 and the speed the CPU is running at in bits 5–4, which
+differ for a moment, because the CPU changes speed only between bus cycles. And some writes are **actions**:
+a write to the **Palette Value (8 bit colour) register, NextReg `$41`**, stores a colour and moves the palette
+index on by one, a write to the **Reset register, NextReg `$02`**, resets the machine, and the first write of
+a pair to the **Palette Value (9 bit colour) register, NextReg `$44`**, only waits for the second. A register
+that answers with something other than what you gave it is not lying; it is telling you about the machine,
+not about your last write.
+
+## Resets
+
+The Next has two resets. A **hard reset** reloads the whole FPGA design, as if you had switched the machine
+off and on, and every register starts afresh: that is moving out of the house. A **soft reset** (the reset
+button, or bit 0 of the **Reset register, NextReg `$02`**) only tidies up the room: it puts the machine back
+into the state a program expects to find, but keeps the furniture. In detail, a soft reset:
+
+- puts the MMU back to `$FF`, `$FF`, `$0A`, `$0B`, `$04`, `$05`, `$00`, `$01`, clears the paging ports and
+  their lock, and selects the Reserved register, NextReg `$24`, at port `$243B`;
+- resets most video, sound and interrupt registers to their power-on values;
+- **keeps** the machine type and timing (the **Machine Type register, NextReg `$03`**), most of the
+  peripheral settings, the User Register 0 at `$7F`, and the Pentagon mapping mode;
+- switches the internal ports back on only if bit 7 of the **Internal Port Decoding Enables register,
+  NextReg `$85`**, says so, and copies the prepared halves of the **Alternate ROM register, NextReg `$8C`**,
+  and the **Expansion Bus Enable register, NextReg `$80`**, into their live halves.
+
+That last rule is my favourite small piece of cleverness here: a program prepares what the machine should
+look like after the reset, and the reset makes it so, like laying out tomorrow's clothes before you go to
+bed. And here is a warning in the same spirit as TurboSound's: because a soft reset keeps the settings, a
+program must never assume that a register is at its power-on value just because a reset happened. Set what
+you depend on. It costs a few `NEXTREG`s, and I think that is the cheapest insurance on the machine.
+
+## What to take home
+
+Three doors, then, and I hope they feel less like magic now. **Memory** is eight slots of 8K, each holding a
+page chosen by NextRegs `$50`–`$57`; a 16K bank *n* is pages 2*n* and 2*n* + 1, pages `$00`–`$DF` are RAM,
+and `$FF` in slot 0 or 1 means the ROM. A page plus `$20` is its place in the 2 MB SRAM, whose first 256K, the
+basement, hold the ROMs, the DivMMC, the Multiface and the alternate ROMs, out of the MMU's reach. Bank 5 and
+half of bank 7 live in block RAM inside the FPGA as well, and Layer 2 never sees that twin.
+
+The bottom 16K is crowded: the stagehand (the boot ROM), the fire brigade (the Multiface), the butler (the
+DivMMC) and the painter (the Layer 2 mapping) all win over the MMU, in that order, and the top 16K belongs to
+the MMU alone. The butler comes in on his own at his entry points, chosen by NextRegs `$B8`–`$BB`, and checks
+for the 48K ROM before the tape ones. The 128K's ports are an interpreter for the MMU: a `$7FFD` write sets
+slots 0, 1, 6 and 7 and leaves 2–5 alone, and NextReg `$8E` remembers what it said. Contention, the
+nostalgia tax, is paid only at 3.5 MHz, on the banks each timing contended.
+
+**Ports** decode exactly the bits the original hardware did: bit 0 for the ULA, every new port all sixteen,
+and every new port odd. NextRegs `$82`–`$85` switch ports off, except `$FE`, `$243B` and `$253B`. A read is
+the OR of every matching device's byte, and `$FF`, the sound of silence, when nobody answers.
+
+**NextRegs** are reached through ports `$243B` and `$253B`, which reset to the decoy at `$24`, or with
+`NEXTREG` in 20 or 17 T-states, which leaves the selection alone. The Copper writes `$01`–`$7F` and goes
+first, without ever losing a CPU write. Unused numbers read 0, a soft reset tidies the room but keeps the
+furniture, and everything else is the bookkeeping that lets one 64K processor run a 2 MB machine. If you keep
+only one picture from all this, keep the butler: he is in the bottom 16K far more often than you think.

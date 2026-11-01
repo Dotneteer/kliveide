@@ -16,7 +16,8 @@ Every event of the picture, the blanking, the sync pulses, the display area, the
 moment at which these counters reach a certain value. Change a handful of those values, and the Next becomes
 a different machine. Why should you care? Because every effect that touches the screen at the right moment,
 a split border, a raster bar, a status panel that stays still while the playfield scrolls, is timed against
-these counters. Know them, and you know exactly when your program's writes reach the screen.
+these counters. Know them, and you know exactly when your program's writes reach the screen. I find that
+the most reassuring thing about the Next's screen: nothing about its timing is vague.
 
 Everything here builds on the previous chapter,
 [The Big Picture: Five Producers, Four Layers, One Dot](/en/under-the-hood/emulator-internals/next-display/overview/), and on
@@ -31,12 +32,12 @@ than a range of their values. That is the key idea, and if you read only one sec
 come the four shapes of frame the Next can count, copied from the 48K, the 128K, the +3 and the Pentagon,
 and what 60 Hz does to them. After that, the interrupts: the frame interrupt the Spectrum always had, the
 line interrupt the Next adds, and the curious way its lines are numbered. Next, the one clock behind the
-picture and the CPU, at every CPU speed. Then we follow the picture out of the machine, as RGB, through the
-scan doubler as VGA, or as HDMI, and finish with how Klive counts the same frame.
+picture and the CPU, at every CPU speed. Last, we follow the picture out of the machine, as RGB, through the
+scan doubler as VGA, or as HDMI.
 
 <Callout type="info">
 The figures use the **128K/+3 timing at 50 Hz** unless they say otherwise, and the frame rates are those of
-the master clock at exactly 28 MHz (VGA mode 0, or HDMI). Klive emulates every timing described here.
+the master clock at exactly 28 MHz (VGA mode 0, or HDMI).
 </Callout>
 
 ## Two counters
@@ -44,7 +45,9 @@ the master clock at exactly 28 MHz (VGA mode 0, or HDMI). Klive emulates every t
 The beam's position is held in two counters. The **horizontal counter** counts the dots of a line at 7 MHz,
 one step per dot, from 0 at the start of the line's blanking to the last dot of the line, 455 in 128K
 timing, and then starts again. Each time it starts again, the **vertical counter** counts one more line,
-from 0 to the last line of the frame, 310, and then the frame starts again.
+from 0 to the last line of the frame, 310, and then the frame starts again. I call the pair **the
+timekeepers**: they never do anything but count, and every other part of the screen asks them what time
+it is.
 
 That is all the timing there is. Really. Everything else is a **comparison** with these two numbers:
 
@@ -60,7 +63,7 @@ That is all the timing there is. Really. Everything else is a **comparison** wit
 Here is the whole frame drawn to scale, so you can see how much of it is never shown at all:
 
 <figure>
-<svg viewBox="0 0 700 531" role="img" aria-label="The Next frame in 128K timing at 50 Hz, drawn to scale: 456 dots across by 311 lines. The horizontal counter runs from 0 to 455: dots 0 to 95 are blanking, with the horizontal sync from 16 to 47; the display area runs from dot 136 to 391, and the wide area from 104 to 423. The vertical counter runs from 0 to 310: lines 0 to 7 are blanking, with the vertical sync on lines 1 to 4; the display area runs from line 64 to 255, and the wide area from line 32 to 287. The frame interrupt is raised on line 1, at dot 128. One frame is 311 lines; one line is 456 dots, 228 T-states at 3.5 MHz." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 535" role="img" aria-label="The Next frame in 128K timing at 50 Hz, drawn to scale: 456 dots across by 311 lines. The horizontal counter runs from 0 to 455: dots 0 to 95 are blanking, with the horizontal sync from 16 to 47; the display area runs from dot 136 to 391, and the wide area from 104 to 423. The vertical counter runs from 0 to 310: lines 0 to 7 are blanking, with the vertical sync on lines 1 to 4; the display area runs from line 64 to 255, and the wide area from line 32 to 287. The frame interrupt is raised on line 1, at dot 128. One frame is 311 lines; one line is 456 dots, 228 T-states at 3.5 MHz." style={{ width: "100%", height: "auto" }}>
   <rect x="66" y="58" width="634" height="432.4" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.5" />
   <rect x="66" y="58" width="133.5" height="432.4" fill="currentColor" fillOpacity="0.16" />
   <rect x="199.5" y="58" width="500.5" height="11.1" fill="currentColor" fillOpacity="0.16" />
@@ -101,11 +104,12 @@ Here is the whole frame drawn to scale, so you can see how much of it is never s
 </figure>
 
 Look how much room the blanking takes on the left: 96 dots of every line, more than a fifth, go by
-while the beam flies back. Your program's time keeps running there all the same.
+while the beam flies back. Your program's time keeps running there all the same, and I think of those
+dots as free time: the beam shows nothing, so your program can work undisturbed.
 
 ## Three numbers that make it fit
 
-Three numbers hold the frame together, and they are worth knowing by heart:
+Three numbers hold the frame together, and if you ask me, they are worth knowing by heart:
 
 - **7 MHz dots.** One step of the horizontal counter is one dot of the 256-wide picture, and half a T-state
   of a 3.5 MHz CPU, exactly as on the Spectrum.
@@ -116,7 +120,7 @@ Three numbers hold the frame together, and they are worth knowing by heart:
 Unroll the frame, and the two counters become two strips:
 
 <figure>
-<svg viewBox="0 0 700 278" role="img" aria-label="The two counters of the 128K timing at 50 Hz, as strips. The horizontal counter counts 456 dots, 0 to 455: blanking from 0 to 95 with the sync pulse from 16 to 47, the left border from 96 to 135, the display area from 136 to 391, the right border from 392 to 455; the wide area spans 104 to 423. Then it starts again at 0. The vertical counter counts 311 lines, 0 to 310: blanking on lines 0 to 7 with the sync pulse on lines 1 to 4, the top border to line 63, the display area from 64 to 255, the bottom border from 256 to 310; the wide area spans lines 32 to 287. The frame interrupt is on line 1." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 282" role="img" aria-label="The two counters of the 128K timing at 50 Hz, as strips. The horizontal counter counts 456 dots, 0 to 455: blanking from 0 to 95 with the sync pulse from 16 to 47, the left border from 96 to 135, the display area from 136 to 391, the right border from 392 to 455; the wide area spans 104 to 423. Then it starts again at 0. The vertical counter counts 311 lines, 0 to 310: blanking on lines 0 to 7 with the sync pulse on lines 1 to 4, the top border to line 63, the display area from 64 to 255, the bottom border from 256 to 310; the wide area spans lines 32 to 287. The frame interrupt is on line 1." style={{ width: "100%", height: "auto" }}>
   <text x="0" y="24" fill="currentColor" fontSize="16.5" fontWeight="600">horizontal counter (dots)</text>
   <rect x="0" y="70" width="22.9" height="32" fill="currentColor" fillOpacity="0.16" stroke="currentColor" strokeOpacity="0.45" />
   <rect x="22.9" y="70" width="45.8" height="32" fill="currentColor" fillOpacity="0.3" stroke="currentColor" strokeOpacity="0.45" />
@@ -177,11 +181,12 @@ The producers of the picture do not simply wait for the beam. A dot has to be fe
 up in a palette before it can be shown, so each producer works a little ahead of the beam, with counters of
 its own that start before the area they draw. The ULA's counter starts 12 dots before the display area, the
 counter of the wide area 16 dots before it and 2 lines above it. The picture still appears exactly where the
-main counters say: the head start is used up by the work. Think of a kitchen that starts cooking before you
-sit down, so the plate arrives exactly when you do.
+main counters say: the head start is used up by the work. I think of a kitchen that starts cooking before
+you sit down, so the plate arrives exactly when you do.
 
 Your program can change the timing at any moment, but the counters take a new timing only **at the end of a
-frame**, when both of them go back to 0. A frame is never half one shape and half another.
+frame**, when both of them go back to 0. A frame is never half one shape and half another. I like that
+rule: the timekeepers finish the sentence they started before they change their language.
 
 ## Four timings, two frame rates
 
@@ -198,7 +203,8 @@ The Next can count four shapes of frame. Bits 6–4 of the Machine Type register
 Why copy them so exactly? Because the shape of the frame is a **contract** with the programs. A program that
 changes the border at a counted T-state, or rewrites an attribute just before the beam reaches it, is written
 for one frame. Give it a frame one line longer, and its stripes drift. So the Next does not have one frame
-that is "close enough": it has the frame of each machine, to the dot.
+that is "close enough": it has the frame of each machine, to the dot. This is the part of the Next I
+respect most: compatibility taken literally.
 
 The 128K and the +3 share a frame. What differs is small but real: the +3's frame interrupt comes one T-state
 earlier, and the two machines hold up the CPU in different memory banks and in a different pattern (more on
@@ -206,7 +212,7 @@ that in Dots, ticks and T-states below). The Pentagon, a Russian clone, has a ta
 blanking and no contention at all. Here are all four side by side:
 
 <figure>
-<svg viewBox="0 0 700 612.5964912280701" role="img" aria-label="Four frames drawn at the same scale. 48K timing: 448 dots by 312 lines, the display area from line 64, the interrupt on line 0, 50.08 Hz. 128K and +3 timing: 456 by 311, the display area from line 64, the interrupt on line 1, 49.36 Hz. Pentagon timing: 448 by 320 with wider vertical blanking, the display area from line 80, the interrupt on the last line, 48.83 Hz. 128K timing at 60 Hz: 456 by 264, the display area from line 40, the interrupt on line 0, 58.15 Hz; the wide area then fills every visible line." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 616.596" role="img" aria-label="Four frames drawn at the same scale. 48K timing: 448 dots by 312 lines, the display area from line 64, the interrupt on line 0, 50.08 Hz. 128K and +3 timing: 456 by 311, the display area from line 64, the interrupt on line 1, 49.36 Hz. Pentagon timing: 448 by 320 with wider vertical blanking, the display area from line 80, the interrupt on the last line, 48.83 Hz. 128K timing at 60 Hz: 456 by 264, the display area from line 40, the interrupt on line 0, 58.15 Hz; the wide area then fills every visible line." style={{ width: "100%", height: "auto" }}>
   <text x="0" y="20" fill="currentColor" fontSize="16.5" fontWeight="600">48K: 448 × 312</text>
   <rect x="0" y="30" width="334" height="232.6" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.5" />
   <rect x="0" y="30" width="71.6" height="232.6" fill="currentColor" fillOpacity="0.16" />
@@ -255,7 +261,7 @@ One column of the table deserves a second look: the frame rate. The Next's dots 
 of its 28 MHz clock. The original 128K ran its dots slightly faster, at about 7.09 MHz, so its frame took
 50.02 per second. The same frame on the Next runs at **49.36 Hz**, 1.3% slower. Can your program see the
 difference? No. Every frame has the same number of T-states, every line the same number of dots. Only a
-stopwatch can tell.
+stopwatch can tell, and a program carries no stopwatch.
 
 ## The 60 Hz frame
 
@@ -263,10 +269,11 @@ Bit 2 of the Peripheral 1 Setting register, NextReg `$05`, switches any timing b
 Nothing changes along the line. The frame loses lines: 264 instead of 311 or 312, and the display area starts
 on line 40 instead of 64. Above and below it, 32 lines of border are left, exactly the extra lines of the wide
 area, so at 60 Hz the wide area fills every visible line and there is no border above or below it at all.
-The frame rate becomes 58.15 Hz (128K) or 59.19 Hz (48K).
+The frame rate becomes 58.15 Hz (128K) or 59.19 Hz (48K). My advice: if your program uses the wide area,
+look at it at 60 Hz too, because the border it may have counted on above and below is gone.
 
 <figure>
-<svg viewBox="0 0 700 298" role="img" aria-label="The 128K frame at 50 Hz and at 60 Hz, side by side at the same scale. At 50 Hz the frame has 311 lines and the display area starts on line 64, with 24 lines of border visible above the wide area and 23 below it. At 60 Hz the frame has 264 lines and the display area starts on line 40: the wide area begins on line 8, the first visible line, and ends on line 263, the last, so no border is left above or below it." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 302" role="img" aria-label="The 128K frame at 50 Hz and at 60 Hz, side by side at the same scale. At 50 Hz the frame has 311 lines and the display area starts on line 64, with 24 lines of border visible above the wide area and 23 below it. At 60 Hz the frame has 264 lines and the display area starts on line 40: the wide area begins on line 8, the first visible line, and ends on line 263, the last, so no border is left above or below it." style={{ width: "100%", height: "auto" }}>
   <text x="0" y="20" fill="currentColor" fontSize="16.5" fontWeight="600">50 Hz: 311 lines</text>
   <rect x="0" y="32" width="340" height="231.9" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.5" />
   <rect x="0" y="32" width="71.6" height="231.9" fill="currentColor" fillOpacity="0.16" />
@@ -289,11 +296,11 @@ The frame rate becomes 58.15 Hz (128K) or 59.19 Hz (48K).
 <figcaption>The 128K frame at 50 and at 60 Hz, at the same scale. The 60 Hz frame has 47 fewer lines, taken from the border above and below.</figcaption>
 </figure>
 
-What does that look like on the screen? Here is the scene of the previous chapter, the same program, drawn by
-Klive at both rates:
+What does that look like on the screen? Here is the scene of the previous chapter, the same program, at
+both rates:
 
 <figure>
-<svg viewBox="0 0 700 322" role="img" aria-label="The scene of the previous chapter, drawn by Klive's Next core at 50 Hz and at 60 Hz, each in the 360 by 288 window Klive shows. At 50 Hz the picture sits in the middle of the window with border all round. At 60 Hz the picture moves up: the display area starts 24 lines into the window instead of 48, the top of the wide area is cut off, the tiles at the bottom reach the last line of the frame, and the window below it stays black because the frame has no more lines." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 326" role="img" aria-label="The scene of the previous chapter, drawn by the emulated Next at 50 Hz and at 60 Hz, each in a 360 by 288 window. At 50 Hz the picture sits in the middle of the window with border all round. At 60 Hz the picture moves up: the display area starts 24 lines into the window instead of 48, the top of the wide area is cut off, the tiles at the bottom reach the last line of the frame, and the window below it stays black because the frame has no more lines." style={{ width: "100%", height: "auto" }}>
   <image x="0" y="0" width="340" height="272" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/timing/hz50.webp`} />
   <rect x="0" y="0" width="340" height="272" fill="none" stroke="currentColor" strokeOpacity="0.35" />
   <image x="360" y="0" width="340" height="272" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/timing/hz60.webp`} />
@@ -307,8 +314,8 @@ Klive at both rates:
 
 ## The frame interrupt
 
-Once in every frame, at a fixed value of the two counters, the ULA raises the **frame interrupt**, the
-Spectrum's 50 times a second. It comes near the top of the frame, well before the display area, so that a
+Once in every frame, at a fixed value of the two counters, the ULA, the veteran of the cast, raises the
+**frame interrupt**, the Spectrum's 50 times a second. It comes near the top of the frame, well before the display area, so that a
 program that waits for it with `HALT` has time to update the screen before the beam gets there:
 
 - **48K**: on line 0, 64 lines before the display area.
@@ -320,13 +327,15 @@ program that waits for it with `HALT` has time to update the screen before the b
 These are the moments the original machines used, so the T-states between the interrupt and any dot of the
 screen are those of the original; the Spectrum screen chapter lists them. The interrupt line is held for 32
 CPU cycles in 48K and +3 timing and 36 in 128K and Pentagon timing. Bit 2 of the Line Interrupt Control
-register, NextReg `$22`, switches the frame interrupt off.
+register, NextReg `$22`, switches the frame interrupt off. I would leave it on unless you have a reason
+to switch it off.
 
 ## The line interrupt
 
 The Next adds a second one: the **line interrupt**, raised before a line your program chooses. Bit 1 of the
 Line Interrupt Control register, NextReg `$22`, switches it on, and the line number is nine bits, bit 0 of
-NextReg `$22` and the eight bits of the Line Interrupt Value register, NextReg `$23`.
+NextReg `$22` and the eight bits of the Line Interrupt Value register, NextReg `$23`. I call it **the alarm
+clock**: you set it for a line, and it rings a little before that line arrives.
 
 Now, here comes the curious part. The line numbers are counted from the display area, not from the top of
 the frame: **line 0 is the first line of the display area**, 191 the last, and the numbers go on through the
@@ -338,15 +347,17 @@ The Active Video Line registers, NextRegs `$1E` and `$1F`, read the line the bea
 bit 8 in NextReg `$1E`, the low eight bits in NextReg `$1F`. They are two reads, and the beam can move on
 between them. Read NextReg `$1E` at the end of line 255 and NextReg `$1F` just after the line has become 256,
 and the two halves say 0; the other way round they can say 511. So let me give you the safe way: read NextReg
-`$1E`, then `$1F`, then `$1E` again, and try again if the two NextReg `$1E` reads differ.
+`$1E`, then `$1F`, then `$1E` again, and try again if the two NextReg `$1E` reads differ. I find this the
+one habit worth forming in this whole section.
 
 "Before the line" is meant literally. The interrupt for line *n* is raised on line *n* − 1, near the
 right-hand end of its display area, at its dot 243. From there to the start of line *n*'s display area the
 beam still has the right border, the blanking and the left border to draw: a little over 100 T-states at
-3.5 MHz, enough for your program to set up a change that must be in place when line *n* begins.
+3.5 MHz, enough for your program to set up a change that must be in place when line *n* begins. That is
+the alarm clock's courtesy: it wakes you early enough to get dressed.
 
 <figure>
-<svg viewBox="0 0 700 388" role="img" aria-label="The 128K frame with the numbers the line interrupt uses. Line 0 is the first line of the display area; the numbers count down the display area to 191, on through the bottom border to 246, and wrap past the end of the frame, so the lines above the display area are 247 to 310. The frame interrupt is raised on line 1 of the counter, near the top. A line interrupt for line 100 is raised at the end of line 99, near the right edge of its display area, a little before line 100 begins." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 392" role="img" aria-label="The 128K frame with the numbers the line interrupt uses. Line 0 is the first line of the display area; the numbers count down the display area to 191, on through the bottom border to 246, and wrap past the end of the frame, so the lines above the display area are 247 to 310. The frame interrupt is raised on line 1 of the counter, near the top. A line interrupt for line 100 is raised at the end of line 99, near the right edge of its display area, a little before line 100 begins." style={{ width: "100%", height: "auto" }}>
   <rect x="0" y="44" width="492.5" height="335.9" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.5" />
   <rect x="0" y="44" width="103.7" height="335.9" fill="currentColor" fillOpacity="0.16" />
   <rect x="103.7" y="44" width="388.8" height="8.6" fill="currentColor" fillOpacity="0.16" />
@@ -391,11 +402,13 @@ The Vertical Line Count Offset register, NextReg `$64`, removes the problem. It 
 line numbers: the first line of the display area gets the number the offset says, instead of 0. Set it to
 **32**, and line 0 becomes the first line of the wide area, so the line numbers are exactly the rows of the
 320 × 256 layers, in every timing. The offset applies to everything that uses the numbers: the line
-interrupt, the active line read through NextRegs `$1E` and `$1F`, and the Copper. A new offset takes effect
-when the beam next reaches the first line of the display area, so it can take up to a frame.
+interrupt, the active line read through the Active Video Line registers, NextRegs `$1E` and `$1F`, and the
+Copper. A new offset takes effect when the beam next reaches the first line of the display area, so it can
+take up to a frame. If your program works mostly with the wide layers, I would set the offset to 32 once,
+early, and forget the other numbering exists.
 
 <figure>
-<svg viewBox="0 0 700 349" role="img" aria-label="The 128K frame at 50 Hz with two numberings of its lines side by side. Without an offset, NextReg 64 at 0, line 0 is the first line of the display area: the first line of the frame is 247, the first line of the wide area 279, the display area runs from 0 to 191, the wide area ends on line 223, and the frame ends on line 246. With an offset of 32, line 0 is the first line of the wide area: the frame starts on line 279, the display area runs from 32 to 223, the wide area ends on line 255, the frame on line 278, and the line numbers match the 320 by 256 coordinates of the tilemap, the sprites and the wide Layer 2 modes." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 353" role="img" aria-label="The 128K frame at 50 Hz with two numberings of its lines side by side. Without an offset, NextReg 64 at 0, line 0 is the first line of the display area: the first line of the frame is 247, the first line of the wide area 279, the display area runs from 0 to 191, the wide area ends on line 223, and the frame ends on line 246. With an offset of 32, line 0 is the first line of the wide area: the frame starts on line 279, the display area runs from 32 to 223, the wide area ends on line 255, the frame on line 278, and the line numbers match the 320 by 256 coordinates of the tilemap, the sprites and the wide Layer 2 modes." style={{ width: "100%", height: "auto" }}>
   <rect x="0" y="56" width="414" height="282.4" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.5" />
   <rect x="0" y="56" width="87.2" height="282.4" fill="currentColor" fillOpacity="0.16" />
   <rect x="87.2" y="56" width="326.9" height="7.3" fill="currentColor" fillOpacity="0.16" />
@@ -449,17 +462,19 @@ when the beam next reaches the first line of the display area, so it can take up
 Splitting the screen with the line interrupt has one weakness, though: the CPU reacts only when its current
 instruction ends, a few T-states later or earlier from frame to frame. The Copper, which the chapter on
 [changing the picture mid-frame](/en/under-the-hood/emulator-internals/next-display/raster-effects/#the-coppers-two-instructions)
-explains, does the same job without that jitter, with the same line numbers.
+explains, does the same job without that jitter, with the same line numbers. For anything that must line
+up to the dot, I would reach for the Copper first.
 
 ## Dots, ticks and T-states
 
 The picture and the CPU run on one clock. The **28 MHz master clock** ticks four times for every dot; the
 14 MHz half dots of the previous chapter's pipeline take two ticks each. The CPU's clock is made from the same
 clock, at the speed set by the CPU Speed register, NextReg `$07`: 3.5, 7, 14 or 28 MHz. So a T-state always
-lasts a whole number of ticks, and the CPU and the beam can never drift apart.
+lasts a whole number of ticks, and the CPU and the beam can never drift apart. I think this single
+decision saves more trouble than any other in the design.
 
 <figure>
-<svg viewBox="0 0 700 344" role="img" aria-label="Sixteen ticks of the 28 MHz master clock, which make four dots of the beam. Below them: 14 MHz half dots, two per dot; 7 MHz dots, four ticks each; and the CPU's T-states at its four speeds. At 3.5 MHz one T-state lasts two dots, at 7 MHz one dot, at 14 MHz half a dot, and at 28 MHz one tick." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 348" role="img" aria-label="Sixteen ticks of the 28 MHz master clock, which make four dots of the beam. Below them: 14 MHz half dots, two per dot; 7 MHz dots, four ticks each; and the CPU's T-states at its four speeds. At 3.5 MHz one T-state lasts two dots, at 7 MHz one dot, at 14 MHz half a dot, and at 28 MHz one tick." style={{ width: "100%", height: "auto" }}>
   <text x="420" y="20" textAnchor="middle" fill="currentColor" fontSize="15" fillOpacity="0.85">16 ticks of 35.7 ns = 4 dots = 0.57 µs</text>
   <text x="0" y="53.5" fill="currentColor" fontSize="15">28 MHz</text>
   <text x="0" y="70.5" fill="currentColor" fontSize="15">master clock</text>
@@ -574,17 +589,19 @@ or the +3's, and the Pentagon has none. At 7 MHz and above the CPU is never held
 Peripheral 3 Setting register, NextReg `$08`, switches contention off at 3.5 MHz too. How contention works is
 explained in the Spectrum screen chapter's
 [Sharing the memory](/en/under-the-hood/emulator-internals/spectrum-display/#part-5-sharing-the-memory); the
-Next reproduces it exactly.
+Next reproduces it exactly. I like to think of contention as the price of nostalgia, charged only to the
+programs that ask for the old speed.
 
 ## From counters to cables
 
 The video pipeline of the previous chapter puts out a **9-bit colour** at 14 MHz, together with the blanking
 and the two sync signals. Its lines come at about 15.5 kHz (7 MHz divided by 448 or 456 dots), the line rate
 of a European television. That is fine for a television, and much too slow for a computer monitor. So the
-Next has three ways out:
+Next has three ways out, and I find it remarkable that one machine speaks to all three generations of
+screen:
 
 <figure>
-<svg viewBox="0 0 700 290" role="img" aria-label="The road from the video pipeline to the connectors. The pipeline puts out a 9-bit colour at 14 MHz with blanking and sync, in lines of about 15.5 kHz. Three outputs take it from there. With the scan doubler off, NextReg 05 bit 0 clear, it goes out as RGB at 15 kHz, as a television expects. With the scan doubler on, every line is sent twice at double speed for a VGA monitor at 31 kHz, with optional scanlines from NextReg 09. The HDMI output takes a 360 by 288 window, sends every line twice, and becomes 720 by 576 at about 50 Hz, or 720 by 480 at 60 Hz. VGA modes 0 to 6, NextReg 11, set the master clock from 28 to 33 MHz; HDMI works only in modes 0 and 1." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 294" role="img" aria-label="The road from the video pipeline to the connectors. The pipeline puts out a 9-bit colour at 14 MHz with blanking and sync, in lines of about 15.5 kHz. Three outputs take it from there. With the scan doubler off, NextReg 05 bit 0 clear, it goes out as RGB at 15 kHz, as a television expects. With the scan doubler on, every line is sent twice at double speed for a VGA monitor at 31 kHz, with optional scanlines from NextReg 09. The HDMI output takes a 360 by 288 window, sends every line twice, and becomes 720 by 576 at about 50 Hz, or 720 by 480 at 60 Hz. VGA modes 0 to 6, NextReg 11, set the master clock from 28 to 33 MHz; HDMI works only in modes 0 and 1." style={{ width: "100%", height: "auto" }}>
   <defs>
     <marker id="tm7-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="currentColor" fillOpacity="0.7" />
@@ -630,17 +647,20 @@ Next has three ways out:
 The first way out is the simplest. With the **scan doubler off**, that is with bit 0 of the Peripheral 1
 Setting register, NextReg `$05`, clear, the picture leaves exactly as the counters time it: one line per line,
 15.5 kHz, 50 frames a second. A television or an old monitor with an RGB (SCART) input shows it the way it
-showed a Spectrum.
+showed a Spectrum. If you still have such a screen, I think this is the most authentic picture the Next
+can give you.
 
 ## The scan doubler and VGA
 
 A VGA monitor wants lines at least twice as fast, about 31 kHz. The **scan doubler** gets there without
 changing the frame. It writes each line into a line buffer as the pipeline makes it, at 14 MHz, and reads it
 out **twice**, each time at 28 MHz, double speed. Two output lines fit into the time of one input line, so
-the monitor gets a 31 kHz picture with every line shown twice, one line behind the original.
+the monitor gets a 31 kHz picture with every line shown twice, one line behind the original. I call the
+scan doubler **the photocopier**: it takes each line once and hands out two copies, faster than the
+original came in.
 
 <figure>
-<svg viewBox="0 0 700 218" role="img" aria-label="Scan doubling over time. The input lines 1, 2 and 3 arrive one after the other, each taking one line time of about 65 microseconds. While line 2 is being written into the line buffer, line 1 is read out of it twice, each time at double speed, so two output lines fit into one input line time. The output runs one line behind the input, and its lines are half as long, at about 31 kHz instead of 15.5 kHz. With scanlines on, the second copy of each line is darkened." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 222" role="img" aria-label="Scan doubling over time. The input lines 1, 2 and 3 arrive one after the other, each taking one line time of about 65 microseconds. While line 2 is being written into the line buffer, line 1 is read out of it twice, each time at double speed, so two output lines fit into one input line time. The output runs one line behind the input, and its lines are half as long, at about 31 kHz instead of 15.5 kHz. With scanlines on, the second copy of each line is darkened." style={{ width: "100%", height: "auto" }}>
   <defs>
     <marker id="tm8-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="currentColor" fillOpacity="0.7" />
@@ -678,16 +698,19 @@ the monitor gets a 31 kHz picture with every line shown twice, one line behind t
 
 Twice as many lines, each repeated, look smoother than a television ever did. Do you miss the dark gaps
 between the lines of a CRT? Bits 1–0 of the Peripheral 4 Setting register, NextReg `$09`, darken one of each
-pair of lines by 50%, 25% or 12.5%: **scanlines**.
+pair of lines by 50%, 25% or 12.5%: **scanlines**. The photocopier, in other words, can be told to print
+its second copy a little faint, and I confess I like the 25% setting best.
 
 Some monitors refuse the Next's 50 Hz frame. For them there are seven **VGA modes**, chosen in the Video
 Timing register, NextReg `$11`: modes 0 to 6 set the master clock from 28 MHz in steps up to 33 MHz.
 Everything is timed by that clock, so everything speeds up together, the CPU, the beam, the frame rate, by up
-to 18%, until the monitor accepts it.
+to 18%, until the monitor accepts it. I find that a pragmatic answer: rather than argue with the monitor,
+the whole machine runs a little faster.
 
 ## HDMI
 
-HDMI does not accept a television's timing at all: it carries fixed television standards, and the Next uses
+HDMI is the strictest guest at the party. It does not accept a television's timing at all: it carries fixed
+television standards, and the Next uses
 two, **720 × 576 at 50 Hz** and **720 × 480 at 60 Hz**. The Next fits its picture into them without changing
 the frame. It takes a **window** of 360 × 288 dots around the wide area, 720 pixels of 14 MHz across, and
 sends every line twice: 576 lines. (At 60 Hz the window is 360 × 240 and the lines become 480.)
@@ -701,7 +724,7 @@ standard one, the Next's own 49.36 Hz in 128K timing, which monitors accept. HDM
 only; the higher modes switch it off.
 
 <figure>
-<svg viewBox="0 0 700 248" role="img" aria-label="The HDMI path. From the Next's frame, a window of 360 by 288 dots is taken: 720 pixels of 14 MHz across and 288 lines. The pixels are written into a buffer of 8,192 pixels, about eleven lines, at 14 MHz, and read out at the HDMI clock, each line twice, giving 720 by 576 pixels. The HDMI clock, about 27 MHz, is made from the Next's own 28 MHz clock with a ratio chosen for each timing, so that one HDMI frame takes exactly as long as one Next frame and the two never drift apart." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 252" role="img" aria-label="The HDMI path. From the Next's frame, a window of 360 by 288 dots is taken: 720 pixels of 14 MHz across and 288 lines. The pixels are written into a buffer of 8,192 pixels, about eleven lines, at 14 MHz, and read out at the HDMI clock, each line twice, giving 720 by 576 pixels. The HDMI clock, about 27 MHz, is made from the Next's own 28 MHz clock with a ratio chosen for each timing, so that one HDMI frame takes exactly as long as one Next frame and the two never drift apart." style={{ width: "100%", height: "auto" }}>
   <defs>
     <marker id="tm9-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="currentColor" fillOpacity="0.7" />
@@ -749,54 +772,27 @@ HDMI also carries 8 bits per colour channel, not 3. The Next makes 8 from 3 by r
 [From palette to screen](/en/under-the-hood/emulator-internals/next-display/palettes/#from-palette-to-screen)
 comes back to this.
 
-## How Klive does it
-
-Klive's Next core counts time the way the machine does: in **ticks of the 28 MHz clock**. A frame is the dots
-of a line, times the lines of the frame, times four ticks: 567,264 ticks in 128K timing. Each CPU T-state
-moves the count on by as many ticks as it lasts at the current speed, eight at 3.5 MHz, one at 28 MHz, and the
-beam's position is the count divided by four. Contention, the line interrupt, the Copper and the raster of the
-previous chapter all read this one count.
-
-At the start of every frame, `zxnextTimingSelect` reads the timing from the Machine Type register, NextReg
-`$03`, and the frame rate from the Peripheral 1 Setting register, NextReg `$05`, as the machine does at the
-end of the previous frame, and sets the frame's numbers: the dots of a line and the lines of the frame, where
-the display area starts, where and for how many cycles the frame interrupt is raised, and which contention
-pattern applies. A timing change made in the middle of a frame waits for the next one, as on the machine.
-
-The picture Klive shows is the **360 × 288** window that HDMI shows, stored as 720 × 288 pixels, one for each
-14 MHz half dot. At 60 Hz the frame ends after line 263, so the window's last 40 rows have no frame to show
-and stay black, as the 60 Hz picture in The 60 Hz frame shows. What the real machine does after the pipeline,
-the scan doubler, scanlines, the HDMI buffer, is not emulated: Klive's picture is the pipeline's own output.
-And if you want to read the code yourself, here is where it lives:
-
-| What | Where |
-|---|---|
-| The frame numbers of each timing, chosen at every frame start (`zxnextTimingSelect`) | `src/emu/machines/zxNext/wasm/zxnext/zxnext-nextreg.c` |
-| The timing variables, the picture buffer's size, ticks per frame | `zxnext.c` in the same folder |
-| The frame loop and the tick count | `zxnext-frame.c`, `zxnext-cpu.c` |
-| The frame interrupt and the interrupt status registers | `zxnext-interrupts.c` |
-| The line interrupt, with the line counter it shares with the Copper | `zxnext-copper.c` |
-
 ## What to take home
 
-Let's rewind. Two counters time the whole picture: one counts the **7 MHz dots** of a line, the other
+Let me put it all back together. Two counters, the timekeepers, time the whole picture: one counts the **7 MHz dots** of a line, the other
 the **lines** of a frame. Blanking, sync, the display area, the wide area and the interrupts are all nothing
 more than ranges or moments of their values.
 
 The Next has the frames of four machines: the **48K** (448 dots × 312 lines), the **128K/+2** and **+3**
-(456 × 311) and the **Pentagon** (448 × 320), chosen by NextReg `$03` and taken only at the end of a frame, so
+(456 × 311) and the **Pentagon** (448 × 320), chosen by the Machine Type register, NextReg `$03`, and taken
+only at the end of a frame, so
 a program that counts T-states finds exactly the frame it was written for. **60 Hz**, NextReg `$05` bit 2,
 shortens the frame to 264 lines, and the wide area then fills every visible line. Because the dots are exactly
 7 MHz, the frames run at **50.08, 49.36 and 48.83 Hz**: the 128K's frame is 1.3% slower than on the original,
 with the same T-states.
 
-The **frame interrupt** comes where the originals had it. The **line interrupt**, NextRegs `$22` and `$23`,
+The **frame interrupt** comes where the originals had it. The **line interrupt**, the alarm clock,
+NextRegs `$22` and `$23`,
 comes just before a chosen line, numbered from the first line of the display area, and an offset of 32 in
 NextReg `$64` numbers the lines from the top of the wide area instead, the rows of the 320 × 256 layers.
 Behind it all, one **28 MHz** clock ticks four times per dot and drives the CPU at 3.5, 7, 14 or 28 MHz, and
 contention exists only at 3.5 MHz.
 
-The picture leaves as **RGB at 15 kHz**, through the **scan doubler** as VGA at 31 kHz, or as **HDMI**
-720 × 576, a 360 × 288 window with every line twice, on a clock made from the Next's own so that the frames
-never drift. Klive counts the same frame in **28 MHz ticks**, chooses each frame's timing at its start, and
-shows the window HDMI shows. Two counters, and the whole picture dances to them.
+The picture leaves as **RGB at 15 kHz**, through the **scan doubler**, the photocopier, as VGA at 31 kHz,
+or as **HDMI** 720 × 576, a 360 × 288 window with every line twice, on a clock made from the Next's own so
+that the frames never drift. Two counters, and the whole picture dances to them.

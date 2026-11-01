@@ -17,6 +17,7 @@ picture costs thousands of bytes; rewriting a palette entry costs one register w
 sky that darkens into night, a sprite that comes in eight team colours from one pattern, a picture that
 fades to black: all of them are palette tricks. And the same mechanism decides what is transparent, so
 sooner or later every Next program meets it, usually at the moment a hole in its graphics stops being a hole.
+If you ask me, no part of the Next's screen gives you more for less.
 
 Read [the first screen chapter](/en/under-the-hood/emulator-internals/next-display/overview/) first: it
 explains the layers and the pipeline the palettes sit in, including why the eight palettes live in two
@@ -31,26 +32,28 @@ three registers that write them. Next we ask where each layer's index comes from
 attributes in three different ways, and the other layers build it from their dots and a palette offset. The
 key idea follows, and it is the one to read if you read nothing else: the Next has two quite different rules
 for transparency, and `$E3`, the colour of nothing, sits at the meeting point of both. After that, the colours
-the palettes hold at power-on, the effects palettes make cheap, shown on the machine, and how a 9-bit colour
-becomes a signal on the cable. We end with how Klive does the same.
+the palettes hold at power-on, the effects palettes make cheap, shown on the machine, and, at the end, how a
+9-bit colour becomes a signal on the cable.
 
 <Callout type="info">
-The pictures here are Klive's Next running the scene of the first screen chapter. Every palette behaviour
-described is emulated, including the transparency rules and the default palettes the Next's firmware sets up.
+The pictures here show the scene of the first screen chapter, taken from checked tests. Every fact was
+checked against the Next's hardware design.
 </Callout>
 
 ## Nine bits of colour
 
 Every colour the Next shows is **RGB333**: three bits each of red, green and blue, levels 0 to 7, 512
 colours in all. The first screen chapter shows every one of them. Three bits a channel is what the video
-output carries, and nine bits is what a palette entry stores.
+output carries, and nine bits is what a palette entry stores. I think of a palette as **the wardrobe**:
+the layers never pick a colour themselves, they only say which costume number to wear, and the wardrobe
+hands over the actual colour.
 
 Nine bits is awkward for an 8-bit machine: one byte is one bit short. So most of the time your program
 writes colours in an **8-bit form**, `RRRGGGBB`: three bits of red, three of green, and only two of blue,
 the upper two. The missing lowest bit of blue is made by the hardware: it is **B1 OR B0** of the 8-bit value.
 
 <figure>
-<svg viewBox="0 0 700 362" role="img" aria-label="An 8-bit colour, RRRGGGBB, becomes a 9-bit colour: the three red bits and three green bits are copied, the two blue bits become the upper two bits of blue, and the lowest blue bit is made as B1 OR B0. So the four 8-bit blue values 00, 01, 10 and 11 become the 9-bit blue levels 000, 011, 101 and 111, that is 0, 3, 5 and 7." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 366" role="img" aria-label="An 8-bit colour, RRRGGGBB, becomes a 9-bit colour: the three red bits and three green bits are copied, the two blue bits become the upper two bits of blue, and the lowest blue bit is made as B1 OR B0. So the four 8-bit blue values 00, 01, 10 and 11 become the 9-bit blue levels 000, 011, 101 and 111, that is 0, 3, 5 and 7." style={{ width: "100%", height: "auto" }}>
   <defs>
     <marker id="pl1-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="currentColor" fillOpacity="0.7" />
@@ -145,15 +148,17 @@ the upper two. The missing lowest bit of blue is made by the hardware: it is **B
 Why OR, and not simply 0? Because of the four blue levels it gives. With a 0, two blue bits would reach the
 levels 0, 2, 4 and 6, and never full blue. With the OR they reach **0, 3, 5 and 7**: no blue and full blue
 both, and two steps between them, nearly even. Neat, isn't it? One gate, and an 8-bit colour can be as
-bright as a 9-bit one, which is what matters most.
+bright as a 9-bit one, which is what matters most. I would not have thought of it, and I am glad
+someone did.
 
 Want all nine bits? Then write them in two goes, through the 9-bit Palette Value register, NextReg `$44`. The
 first write is the upper eight bits, the same `RRRGGGBB`, and the second write carries the lowest blue bit in
 bit 0. Bit 7 of the second write has another job, for Layer 2 only: the **priority bit** that lifts a Layer 2
-dot above every other layer, whatever their order.
+dot above every other layer, whatever their order. My advice: use the 8-bit form until you need that
+last bit of blue or the priority bit, and only then pay for the second write.
 
 <figure>
-<svg viewBox="0 0 700 248" role="img" aria-label="The two writes to NextReg 44 that set a 9-bit colour. The first write holds the eight upper bits, RRRGGGBB. The second write holds the lowest blue bit in bit 0 and, for a Layer 2 palette, the priority bit in bit 7; bits 6 to 1 are reserved." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 252" role="img" aria-label="The two writes to NextReg 44 that set a 9-bit colour. The first write holds the eight upper bits, RRRGGGBB. The second write holds the lowest blue bit in bit 0 and, for a Layer 2 palette, the priority bit in bit 7; bits 6 to 1 are reserved." style={{ width: "100%", height: "auto" }}>
   <text x="0" y="48" textAnchor="start" fill="currentColor" fontSize="15" fontWeight="600">1st write</text>
   <text x="0" y="68" textAnchor="start" fill="currentColor" fontSize="13.5" fillOpacity="0.8">held until the</text>
   <text x="0" y="85" textAnchor="start" fill="currentColor" fontSize="13.5" fillOpacity="0.8">second write</text>
@@ -224,7 +229,7 @@ shares), Layer 2, the sprites and the tilemap. Each layer shows one of its two a
 can edit any of the eight, shown or not, with two independent choices in the registers:
 
 <figure>
-<svg viewBox="0 0 700 338" role="img" aria-label="The eight palettes in a grid: a first and a second palette for each of the ULA, Layer 2, the sprites and the tilemap. NextReg 43 bits 6 to 4 choose the palette a program edits, with the codes 000 and 100 for the ULA, 001 and 101 for Layer 2, 010 and 110 for the sprites, and 011 and 111 for the tilemap. Which of each pair is shown is chosen separately: NextReg 43 bit 1 for the ULA, bit 2 for Layer 2, bit 3 for the sprites, and NextReg 6B bit 4 for the tilemap. The ULA and tilemap palettes share one memory, the Layer 2 and sprite palettes the other." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 342" role="img" aria-label="The eight palettes in a grid: a first and a second palette for each of the ULA, Layer 2, the sprites and the tilemap. NextReg 43 bits 6 to 4 choose the palette a program edits, with the codes 000 and 100 for the ULA, 001 and 101 for Layer 2, 010 and 110 for the sprites, and 011 and 111 for the tilemap. Which of each pair is shown is chosen separately: NextReg 43 bit 1 for the ULA, bit 2 for Layer 2, bit 3 for the sprites, and NextReg 6B bit 4 for the tilemap. The ULA and tilemap palettes share one memory, the Layer 2 and sprite palettes the other." style={{ width: "100%", height: "auto" }}>
   <text x="0" y="79" textAnchor="start" fill="currentColor" fontSize="15">first</text>
   <text x="0" y="167" textAnchor="start" fill="currentColor" fontSize="15">second</text>
   <text x="151" y="20" textAnchor="middle" fill="#3b82f6" fontSize="16.5" fontWeight="600">ULA</text>
@@ -281,8 +286,9 @@ can edit any of the eight, shown or not, with two independent choices in the reg
 
 Two of every layer is not luxury. Your program can prepare the second palette while the first is on
 screen, and then switch the whole layer to its new colours with one register write, between two frames or
-in the middle of one. Think of it as a stage with two sets of lights: the audience sees one while the crew
-quietly rigs the other.
+in the middle of one. I think of it as a stage with two sets of lights: the audience sees one while the crew
+quietly rigs the other. Every layer has two racks in the wardrobe, in other words, and only one of them is on
+stage at a time.
 
 ## Writing and reading a palette
 
@@ -292,7 +298,7 @@ write to the 8-bit Palette Value register, NextReg `$41`, stores one 8-bit colou
 and moves the index on by one, so a run of colours goes into a run of entries without setting the index again:
 
 <figure>
-<svg viewBox="0 0 700 176" role="img" aria-label="Writing a palette, step by step. NextReg 43 picks the palette to edit. NextReg 40 sets the index, here 16. Each write to NextReg 41 stores a colour into the entry at the index, and the index moves on by one: 16, then 17, then 18. With NextReg 44, two writes store one entry and then the index moves on." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 180" role="img" aria-label="Writing a palette, step by step. NextReg 43 picks the palette to edit. NextReg 40 sets the index, here 16. Each write to NextReg 41 stores a colour into the entry at the index, and the index moves on by one: 16, then 17, then 18. With NextReg 44, two writes store one entry and then the index moves on." style={{ width: "100%", height: "auto" }}>
   <defs>
     <marker id="pl4-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="currentColor" fillOpacity="0.7" />
@@ -328,8 +334,8 @@ and moves the index on by one, so a run of colours goes into a run of entries wi
 Let's set four shades of red into Layer 2's first palette:
 
 ```z80klive
-; Set Layer 2's first palette, entries 16 to 19, to four shades of red
-    nextreg $43,%00010000   ; edit Layer 2's first palette, keep moving the index on
+; Layer 2's first palette, entries 16-19: four reds
+    nextreg $43,%00010000   ; Layer 2 palette 1, index moves
     nextreg $40,16          ; start at entry 16
     nextreg $41,%01000000   ; red 2
     nextreg $41,%10000000   ; red 4
@@ -339,7 +345,8 @@ Let's set four shades of red into Layer 2's first palette:
 
 With the 9-bit Palette Value register, NextReg `$44`, it works the same way, with two writes per entry; the
 index moves on after the second. A write to NextReg `$40`, `$41` or `$43` in between restarts the pair, so
-your program can never leave half a colour behind.
+your program can never leave half a colour behind. I find that a thoughtful touch: the hardware will not
+let a slip in your code leave the wardrobe in a mess.
 
 You can read the entries back, too. Reading NextReg `$41` gives the upper eight bits of the entry at the
 index, and reading NextReg `$44` gives its second byte, the lowest blue bit and the priority bit. Reads never
@@ -348,7 +355,8 @@ move the index on.
 ## The ULA: three maps of one palette
 
 The palettes are only half of the story; the other half is the index each layer looks up. Every layer makes
-its 8-bit index in its own way, and the ULA's way is the oddest, so let's start there.
+its 8-bit index in its own way, and the ULA's way is the oddest, so let's start there. The veteran, after
+all, was dressing its dots long before the Next had a wardrobe.
 
 The ULA's dots are not bytes but **attributes**: a bitmap bit says "ink" or "paper", and the cell's attribute
 says which colours those are. The Next can read the same attribute byte three ways, and each uses different
@@ -367,8 +375,12 @@ entries of the ULA palette:
   with 8 inks and 8 papers. ULA+ software writes its colours to port `$FF3B` in its own bit order, green
   first; the Next reorders them into `RRRGGGBB` and stores them in the ULA palette like any other colour.
 
+Which one would I pick? For new code, ULANext: it frees the most colours from one attribute byte. ULA+ is
+for software already written for it, and the standard map is for everything that should look exactly like a
+Spectrum.
+
 <figure>
-<svg viewBox="0 0 700 256" role="img" aria-label="Which entries of the ULA palette the ULA uses, in three modes, along the 256 entries. Standard ULA: entries 0 to 7 for INK, 8 to 15 for BRIGHT INK, 16 to 23 for PAPER and the border, 24 to 31 for BRIGHT PAPER. ULANext with an INK mask of 7: INK from entries 0 to 7, PAPER and the border from 128 upward, here 128 to 159. ULA+: 64 colours in entries 192 to 255, in four groups of sixteen, chosen by the FLASH and BRIGHT bits; each group has eight INK and eight PAPER entries." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 260" role="img" aria-label="Which entries of the ULA palette the ULA uses, in three modes, along the 256 entries. Standard ULA: entries 0 to 7 for INK, 8 to 15 for BRIGHT INK, 16 to 23 for PAPER and the border, 24 to 31 for BRIGHT PAPER. ULANext with an INK mask of 7: INK from entries 0 to 7, PAPER and the border from 128 upward, here 128 to 159. ULA+: 64 colours in entries 192 to 255, in four groups of sixteen, chosen by the FLASH and BRIGHT bits; each group has eight INK and eight PAPER entries." style={{ width: "100%", height: "auto" }}>
   <text x="140" y="18" textAnchor="start" fill="currentColor" fontSize="13.5" fillOpacity="0.8">0</text>
   <text x="210" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.8">32</text>
   <text x="280" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.8">64</text>
@@ -410,12 +422,13 @@ The other layers do not have attributes; they have real pixels, here called **do
 stored in memory, and the layer turns it into a palette **index**, a number from 0 to 255. How it does that
 depends on how big a dot is.
 
-**Think of an index as two hex digits.** An index is one byte, 0 to 255, or `$00` to `$FF` in hex. Each hex
+**Think of an index as two hex digits.** This is the picture I find most useful in the whole section. An
+index is one byte, 0 to 255, or `$00` to `$FF` in hex. Each hex
 digit is four bits, and you can draw the palette's 256 entries as **16 rows of 16**: the first digit is the
 row, the second the column. Entry `$59` is in row 5, column 9.
 
 <figure>
-<svg viewBox="0 0 700 410" role="img" aria-label="The 256 entries of a palette drawn as 16 rows of 16. The first hex digit of an index is its row, the second its column. Row 5, entries 50 to 5F, is what 4-bit dots with offset 5 can reach: the dot picks the column. Row 6 is what the same dots reach with offset 6. An 8-bit dot A8 with offset 1 moves one row down, to B8, in the same column; the byte E3 moves to F3 the same way." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 414" role="img" aria-label="The 256 entries of a palette drawn as 16 rows of 16. The first hex digit of an index is its row, the second its column. Row 5, entries 50 to 5F, is what 4-bit dots with offset 5 can reach: the dot picks the column. Row 6 is what the same dots reach with offset 6. An 8-bit dot A8 with offset 1 moves one row down, to B8, in the same column; the byte E3 moves to F3 the same way." style={{ width: "100%", height: "auto" }}>
   <defs>
     <marker id="pl7-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="currentColor" fillOpacity="0.85" />
@@ -747,7 +760,7 @@ layers keeps beside its dots. What the layer does with it depends on the dot:
   changes, which is why Layer 2 normally shows its bytes as they are.
 
 <figure>
-<svg viewBox="0 0 700 342" role="img" aria-label="Two ways to make an 8-bit palette index, written as two hex digits. Left, a 4-bit dot such as a pixel of a 4-bit sprite: the dot is a single hex digit, 9, and the offset, 5, is put in front of it as the first digit, so the index is 59. Right, an 8-bit dot such as a Layer 2 byte: the dot already has two digits, A8, and the offset, 1, is added to its first digit only, so the index is B8; the second digit does not change. A second example adds 1 to E3 and gives F3, and adding 1 to F3 wraps round to 03." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 346" role="img" aria-label="Two ways to make an 8-bit palette index, written as two hex digits. Left, a 4-bit dot such as a pixel of a 4-bit sprite: the dot is a single hex digit, 9, and the offset, 5, is put in front of it as the first digit, so the index is 59. Right, an 8-bit dot such as a Layer 2 byte: the dot already has two digits, A8, and the offset, 1, is added to its first digit only, so the index is B8; the second digit does not change. A second example adds 1 to E3 and gives F3, and adding 1 to F3 wraps round to 03." style={{ width: "100%", height: "auto" }}>
   <defs>
     <marker id="pl6-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="currentColor" fillOpacity="0.7" />
@@ -805,9 +818,11 @@ layers keeps beside its dots. What the layer does with it depends on the dot:
 The two rules serve two different purposes. For 4-bit dots the offset is what makes them useful at all: 16
 colours per sprite or tile, but up to 16 different sets of them in one palette. For 8-bit dots it is a way to
 shift a whole picture's colours to another part of the palette without rewriting a byte of it, for an effect
-or to share one palette between pictures.
+or to share one palette between pictures. I like to think of the 4-bit rule as choosing a rack in the wardrobe,
+and the 8-bit rule as moving the whole wardrobe along by a few racks.
 
-Every layer with dots keeps its offset somewhere else:
+Every layer with dots keeps its offset somewhere else. Two of them are in a register of their own, Layer 2's in
+the Layer 2 Control register, NextReg `$70`, and LoRes's in the LoRes Control register, NextReg `$6A`:
 
 | Layer | Its dots | Its offset | The index |
 |---|---|---|---|
@@ -823,7 +838,7 @@ The tilemap's **text mode** is the extreme case. Its dots are a single bit, on o
 index comes from the tile's attribute: a 7-bit offset, with the dot's one bit as the last bit of the index.
 Every tile of text can have its own pair of colours.
 
-Hey, keep one consequence in mind for what follows: an offset moves **every** dot, and for an 8-bit layer
+Keep one consequence in mind for what follows, because I think it is the most important sentence here: an offset moves **every** dot, and for an 8-bit layer
 that includes the byte your program uses for "nothing here". The next sections, on transparency and on what
 palettes make cheap, show what that does.
 
@@ -831,10 +846,10 @@ palettes make cheap, show what that does.
 
 [The first screen chapter](/en/under-the-hood/emulator-internals/next-display/overview/#two-answers-for-every-dot)
 says that every layer answers "am I transparent here?" for every dot. Here is how the answer is made, and why
-there are two different rules for it:
+there are two different rules for it. If you read only one section, I would make it this one:
 
 <figure>
-<svg viewBox="0 0 700 316" role="img" aria-label="The two transparency tests on the way from a dot to a colour. Before the palette and its offset, the index test: a sprite dot is transparent when its value equals the value held in NextReg 4B, and a tile dot when its value equals the value held in NextReg 4C. After the palette, the colour test: for the ULA, LoRes, Layer 2 and text-mode tiles, a dot is transparent when the upper eight bits of its colour equal the value held in NextReg 14." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 320" role="img" aria-label="The two transparency tests on the way from a dot to a colour. Before the palette and its offset, the index test: a sprite dot is transparent when its value equals the value held in NextReg 4B, and a tile dot when its value equals the value held in NextReg 4C. After the palette, the colour test: for the ULA, LoRes, Layer 2 and text-mode tiles, a dot is transparent when the upper eight bits of its colour equal the value held in NextReg 14." style={{ width: "100%", height: "auto" }}>
   <defs>
     <marker id="pl8-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="currentColor" fillOpacity="0.7" />
@@ -875,7 +890,8 @@ value equals the value in the Sprite Transparency Index register, NextReg `$4B`,
 4-bit value equals the value in the Tilemap Transparency Index register, NextReg `$4C` (for 4-bit sprites, the
 lower four bits of NextReg `$4B`). The test is made on the dot itself, **before** the palette offset is
 applied. That is what makes a pattern reusable: the hole is part of the shape, and it stays a hole whichever
-offset a sprite or tile is drawn with, and whatever the palette holds.
+offset a sprite or tile is drawn with, and whatever the palette holds. This is the rule I trust: a hole in a
+shape is a property of the shape, and nothing in the wardrobe can fill it.
 
 The second rule, the **colour rule**, makes a colour that means nothing. The **ULA**, **LoRes**, **Layer 2**,
 and tiles in text mode use it: a dot is transparent when its **colour**, after the palette, equals the
@@ -899,11 +915,13 @@ will surprise you at least once.
 
 ## `$E3`: the colour of nothing
 
-NextReg `$14` starts at `$E3`, and so do the sprites' NextReg `$4B` and the fallback colour, while the
-tilemap's NextReg `$4C` starts at `$F`. `$E3` is `111 000 11`, a bright magenta, a colour a picture rarely
+The Global Transparency Colour register, NextReg `$14`, starts at `$E3`, and so do the sprites' Sprite
+Transparency Index register, NextReg `$4B`, and the fallback colour, while the tilemap's Tilemap Transparency
+Index register, NextReg `$4C`, starts at `$F`. `$E3` is `111 000 11`, a bright magenta, a colour a picture rarely
 wants. And in the default Layer 2 and sprite palettes, entry `$E3` holds the colour `$E3` (see the colours at
 power-on, below). So out of the box, a Layer 2 byte `$E3` and a sprite pattern value `$E3` are both
-invisible, by two different rules that happen to agree. Two locks, one key.
+invisible, by two different rules that happen to agree. Two locks, one key. The first screen chapter calls
+`$E3` the Next's way of saying "nobody home", and I cannot improve on that.
 
 The same choice explains a detail of the ULA's default palette. Pure bright magenta, red 7, green 0, blue 7,
 would be the colour `$E3` itself, and every bright magenta dot of the Spectrum screen would be a hole. So the
@@ -916,12 +934,13 @@ When every layer answers "transparent" for a dot, the picture still needs a colo
 colour**, held in the Fallback Colour register, NextReg `$4A`: an 8-bit colour made into nine bits the same
 way as a write to the 8-bit Palette Value register, NextReg `$41`. The ULA uses it in two more places: in
 ULANext with the mask `$FF`, as the paper and the border, and for any mask that is not one of the eight it
-accepts.
+accepts. I think of the fallback colour as the bare stage: what the audience sees when every actor has left.
 
 ## The colours at power-on
 
 The palette memories have no reset: a reset of the Next leaves their colours as they were. It is the Next's
-firmware that fills them when the machine is switched on:
+firmware that fills them when the machine is switched on. My advice follows from that: a program that relies
+on a particular palette should write it, rather than trust whoever ran before.
 
 - The **ULA palettes** get the Spectrum's colours: the eight colours at level 5 in entries 0–7, and BRIGHT at
   level 7 in entries 8–15, bright magenta with its step of green. The same 16 colours repeat in every block of
@@ -931,8 +950,10 @@ firmware that fills them when the machine is switched on:
   until your program writes a palette, a Layer 2 byte or a sprite pattern value is an `RRRGGGBB`
   colour, and `$E3` is the transparency colour.
 
+Here are the ULA's sixteen:
+
 <figure>
-<svg viewBox="0 0 700 298" role="img" aria-label="The default ULA palette: entries 0 to 7 are the eight Spectrum colours at level 5, entries 8 to 15 the same colours BRIGHT, at level 7, except that bright magenta has one step of green. The same sixteen colours repeat in every block of sixteen entries, so entries 16 to 31, the PAPER colours, are the same." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 302" role="img" aria-label="The default ULA palette: entries 0 to 7 are the eight Spectrum colours at level 5, entries 8 to 15 the same colours BRIGHT, at level 7, except that bright magenta has one step of green. The same sixteen colours repeat in every block of sixteen entries, so entries 16 to 31, the PAPER colours, are the same." style={{ width: "100%", height: "auto" }}>
   <text x="0" y="18" textAnchor="start" fill="currentColor" fontSize="16.5" fontWeight="600">normal</text>
   <rect x="0" y="28" width="80" height="48" rx="4" fill="#000000" stroke="currentColor" strokeOpacity="0.4" />
   <text x="40" y="96" textAnchor="middle" fill="currentColor" fontSize="15">0: black</text>
@@ -993,7 +1014,7 @@ firmware that fills them when the machine is switched on:
 
 A palette sits between the picture's memory and the screen, so changing it changes the screen without
 touching the memory. On an 8-bit CPU, that is the difference between one register write and thousands of
-bytes:
+bytes, and I find these the most satisfying effects on the machine:
 
 - **Palette cycling.** Rotate the colours of a run of entries, and water flows, lights chase, a waterfall
   falls, while the bitmap stands perfectly still.
@@ -1005,7 +1026,7 @@ bytes:
   each line: the sky gradients and colour bars of Next games.
 
 For that last kind, and for most palette effects that follow the beam, the **Copper** is the best and the
-cheapest tool. It is a small co-processor of its own, beside the CPU, that runs a list of up to 1,024
+cheapest tool, and I would reach for it first. It is a small co-processor of its own, beside the CPU, that runs a list of up to 1,024
 instructions in step with the beam: **WAIT** until the beam reaches a line and a position, and **MOVE** a
 value into a NextReg. The palette registers are NextRegs, so a Copper list can rewrite a palette entry at any
 line, or at several places along one: WAIT for the line, MOVE the index into the Palette Index register,
@@ -1018,14 +1039,14 @@ Everything about it is cheaper than doing the same with the CPU. Once the list i
 CPU answers a line interrupt only when its current instruction ends, a few T-states earlier or later from
 frame to frame, while the Copper makes its MOVE at the position it waited for, every frame alike. The chapter
 on [changing the picture mid-frame](/en/under-the-hood/emulator-internals/next-display/raster-effects/#the-coppers-two-instructions)
-explains the Copper in detail, and [the Copper guide](/en/guides/next/copper/) shows how to see a Copper list
-at work in Klive.
+explains the Copper in detail, and [the Copper guide](/en/guides/next/copper/) shows how to watch a Copper
+list at work in the IDE.
 
-So, what do these tricks look like on the machine? Here is the scene of the first screen chapter, four times.
+What do these tricks look like on the machine? Here is the scene of the first screen chapter, four times.
 Layer 2's bitmap is the same in all four; only NextRegs changed:
 
 <figure>
-<svg viewBox="0 0 700 670" role="img" aria-label="Four pictures of the same frame from Klive's Next; Layer 2's bitmap is the same in all four. Top left, as drawn: brown hills. Top right, palette entry A8 rewritten: the hills are teal. Bottom left, palette offset 1: the hills are yellow-green, and the transparent sky has become an opaque pink that covers the panel and the platforms. Bottom right, entry A8 given the colour E3: the hills' body is transparent and only their light edge remains." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 674" role="img" aria-label="Four pictures of the same frame from the emulated Next; Layer 2's bitmap is the same in all four. Top left, as drawn: brown hills. Top right, palette entry A8 rewritten: the hills are teal. Bottom left, palette offset 1: the hills are yellow-green, and the transparent sky has become an opaque pink that covers the panel and the platforms. Bottom right, entry A8 given the colour E3: the hills' body is transparent and only their light edge remains." style={{ width: "100%", height: "auto" }}>
   <image x="0" y="0" width="340" height="272" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/palettes/as-drawn.webp`} />
   <rect x="0" y="0" width="340" height="272" fill="none" stroke="currentColor" strokeOpacity="0.4" />
   <text x="170" y="294" textAnchor="middle" fill="currentColor" fontSize="15" fontWeight="600">as drawn</text>
@@ -1050,7 +1071,8 @@ Look at the bottom-left picture: it is the colour rule's trap in action. The off
 `$A8` into `$B8`, as wanted, but it also turned every transparent `$E3` byte into `$F3`, an opaque pink, and
 Layer 2, in front of the tilemap and the ULA, now covers them. Pink sky, nobody asked for it. A program that
 gives Layer 2 an offset has to give the entry its "empty" byte now lands on the transparency colour too, or
-use another byte for "empty".
+use another byte for "empty". I would do the first: it is one more palette write, and it keeps "empty" meaning
+the same byte everywhere in your code.
 
 ## From palette to screen
 
@@ -1061,7 +1083,7 @@ digital-to-analogue converter for each channel. HDMI carries eight bits a channe
 from three by **repeating the bits**: `101` becomes `10110110`.
 
 <figure>
-<svg viewBox="0 0 700 262" role="img" aria-label="How the eight levels of a 3-bit channel become 8-bit values for HDMI: the three bits are repeated, so 000 becomes 0, 001 becomes 36, 010 becomes 73, 011 becomes 109, 100 becomes 146, 101 becomes 182, 110 becomes 219, and 111 becomes 255. The steps are even, and 7 reaches full brightness." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 266" role="img" aria-label="How the eight levels of a 3-bit channel become 8-bit values for HDMI: the three bits are repeated, so 000 becomes 0, 001 becomes 36, 010 becomes 73, 011 becomes 109, 100 becomes 146, 101 becomes 182, 110 becomes 219, and 111 becomes 255. The steps are even, and 7 reaches full brightness." style={{ width: "100%", height: "auto" }}>
   <rect x="64" y="176" width="70" height="0" fill="#000000" stroke="currentColor" strokeOpacity="0.4" />
   <text x="99" y="169" textAnchor="middle" fill="currentColor" fontSize="15">0</text>
   <text x="99" y="200" textAnchor="middle" fill="currentColor" fontSize="15" fontWeight="600">000</text>
@@ -1107,38 +1129,9 @@ result as scaling by 255/7 and rounding. Level 0 stays black, level 7 becomes fu
 are within a unit of even. I find this one of the prettiest tricks in the whole machine: free, exact, and made of
 nothing but wires.
 
-## How Klive does it
-
-Klive's Next core keeps the **eight palettes** as 256 entries each, nine bits of colour plus the priority bit,
-and handles the palette registers, NextRegs `$40`–`$44`, and the Fallback Colour register, NextReg `$4A`, as the
-machine does: the 8-bit form with the OR, the two writes of NextReg `$44`, the moving index and its NextReg
-`$43` bit 7, and reads that do not move it. ULA+ colours written to port `$FF3B` are reordered and stored in
-the ULA palette's top 64 entries. A reset clears the palette registers and leaves the colours; switching the
-machine on fills them with the firmware's defaults described above.
-
-Each layer's renderer, described in the first screen chapter, turns its dots into indices the way the ULA and
-offset sections describe, looks them up in the palette the layer shows, applies its transparency rule, and
-writes the 9-bit colour to the layer's buffer. The ULA's index function handles the three maps and FLASH;
-Layer 2 and the sprites add their offsets; the sprites and the tilemap test their index before the offset. The
-9-bit colours become screen pixels at the very end, through a table that repeats the bits exactly as HDMI does.
-
-You can watch all of this in the IDE. The [Layer 2 inspector](/en/guides/next/layer2-inspector/) shows the
-palette Layer 2 is using, its offset and the priority entries, and resolves any pixel to its byte, its index
-and its colour. The [Layers](/en/guides/next/layers/) view explains why a dot has its colour, transparency
-included. Next palette files (`.pal`, `.npl`) open in the IDE's
-[palette editor](/en/guides/next/sprite-palette-editors/). And if you want to read the code yourself, here is
-where it lives:
-
-| What | Where |
-|---|---|
-| The eight palettes, the palette registers, the default contents | `src/emu/machines/zxNext/wasm/zxnext/zxnext-palette.c` |
-| The ULA's three maps, the layer renderers, the transparency tests, the 9-bit to RGBA table | `zxnext-ula.c` in the same folder |
-| Layer 2's and the sprites' palette offsets | `zxnext-layer2.c`, `zxnext-sprites.c` |
-| The scene and the pictures of What palettes make cheap | `test/zxnext-hw/layers/next-display-scene.test.ts` |
-
 ## What to take home
 
-Here is the whole story in a few lines. Every colour the Next shows is **RGB333**, 512 colours. Programs usually write the 8-bit
+Time to close the wardrobe. Every colour the Next shows is **RGB333**, 512 colours. Programs usually write the 8-bit
 form `RRRGGGBB`, whose missing blue bit is **B1 OR B0**, so blue still reaches levels 0, 3, 5 and 7; NextReg
 `$44` writes all nine bits, and the Layer 2 priority bit, in two writes.
 

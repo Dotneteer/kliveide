@@ -1,5 +1,5 @@
 ---
-description: "How the ZX Spectrum Next's picture changes while a frame is drawn: the beam as a clock, when each kind of setting takes a write, the line interrupt and its jitter, the Copper's WAIT and MOVE, its memory, modes and timing, three effects made with it (a sky gradient, a split scroll, 32 sprites from 8), how Klive's emulator races the beam, and a map of the whole series."
+description: "How the ZX Spectrum Next's picture changes while a frame is drawn: the beam as a clock, when each kind of setting takes a write, the line interrupt and its jitter, the Copper's WAIT and MOVE, its memory, modes and timing, three effects made with it (a sky gradient, a split scroll, 32 sprites from 8), and a map of the whole series."
 ---
 
 import { Callout } from 'nextra/components'
@@ -9,15 +9,20 @@ import { Callout } from 'nextra/components'
 Every screen chapter so far made one quiet assumption: the registers stay still while a frame is
 drawn. Well, they do not have to. The machine draws the picture one dot at a time, and every dot uses the
 registers as they are at that very moment. Change a palette entry, a scroll offset or the layer order at
-the right line, and one screen becomes several. So what happens when you refuse to sit still?
+the right line, and one screen becomes several. So what happens when you refuse to sit still? I have
+kept this chapter for last on purpose, because I think it is where the Next's screen stops being a set
+of modes and becomes an instrument.
 
 You get the effects that make a game look like more than its hardware. A sky with more colours than the
 palette holds. A playfield that scrolls under a status bar that does not budge. More sprites than the
 machine has. The CPU can do all of this, if somebody tells it when the beam reaches a line. But the Next
 also has a small processor whose only job is to do it on time: the **Copper**, which waits for a position
-of the beam and then writes a register, as exactly on every frame as the clock allows.
+of the beam and then writes a register, as exactly on every frame as the clock allows. The big picture
+chapter treats the screen as a small theatre company; in that company, I would make the Copper **the
+stage manager**. It never appears on stage itself, it does not paint a single dot, but it calls every cue
+at exactly the same moment, night after night.
 
-Everything here builds on the line numbers and the line interrupt of the frame-and-beam chapter,
+This chapter builds on the line numbers and the line interrupt of the frame-and-beam chapter,
 [The Frame and the Beam: Two Counters, Four Timings](/en/under-the-hood/emulator-internals/next-display/timing/), and on the pipeline of
 the overview, [The Big Picture: Five Producers, Four Layers, One Dot](/en/under-the-hood/emulator-internals/next-display/overview/). Keep them at
 hand; I will point back at them more than once.
@@ -30,12 +35,12 @@ picture takes its settings at every dot. Next comes the CPU's way of splitting t
 interrupt, and the shimmer that it cannot shake off. That brings us to the Copper, the heart of the
 chapter: its two instructions, where seven of its WAITs stop on the screen, its memory, how a list ends,
 its four modes, and why it lands on the same dot every frame. Three effects then put it to work: a sky
-gradient, a split scroll and thirty-two ships made from eight sprites. After a look at how Klive races the
-beam, we close the series by following one dot through the whole machine.
+gradient, a split scroll and thirty-two ships made from eight sprites. Then we close the series by
+following one dot through the whole machine, and I gather the whole screen up one last time.
 
 <Callout type="info">
 The numbers are for 128K/+3 timing at 50 Hz: 311 lines of 456 dots, the CPU at 3.5 MHz. The pictures
-are Klive's Next, each made by a real Copper program and checked to show the dots the text describes.
+are the Next running a real Copper program each, checked to show the dots the text describes.
 </Callout>
 
 ## The beam as a clock
@@ -43,10 +48,11 @@ are Klive's Next, each made by a real Copper program and checked to show the dot
 The picture is not stored anywhere. Every dot is made at the moment the beam reaches it, from the
 layers' memory and from the registers as they are **then**. So a register written in the middle of a
 frame changes the picture **from where the beam is**: the part of the frame drawn before the write keeps
-the old value, the rest gets the new one.
+the old value, the rest gets the new one. I find it the simplest idea in the whole series, and the
+one with the longest reach.
 
 <figure>
-<svg viewBox="0 0 700 300" role="img" aria-label="A frame drawn from top to bottom, with the display area inside the border. A register holds value A at the start of the frame; a write sets it to B when the beam is about a third of the way down, and another sets it to C further down. The part of the frame drawn before the first write uses A, the part between the writes uses B, and the rest uses C: three bands from one register. The text beside it says that the beam draws the frame line by line and every dot uses the registers as they are when it is drawn, so a write takes effect from where the beam is." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 304" role="img" aria-label="A frame drawn from top to bottom, with the display area inside the border. A register holds value A at the start of the frame; a write sets it to B when the beam is about a third of the way down, and another sets it to C further down. The part of the frame drawn before the first write uses A, the part between the writes uses B, and the rest uses C: three bands from one register. The text beside it says that the beam draws the frame line by line and every dot uses the registers as they are when it is drawn, so a write takes effect from where the beam is." style={{ width: "100%", height: "auto" }}>
   <text x="170" y="20" textAnchor="middle" fill="currentColor" fontSize="16.5" fontWeight="600">one frame, top to bottom</text>
   <rect x="0" y="34" width="340" height="256" fill="currentColor" fillOpacity="0.05" stroke="currentColor" strokeOpacity="0.5" />
   <rect x="42" y="68" width="256" height="54" fill="#3b82f6" fillOpacity="0.35" stroke="none" />
@@ -81,17 +87,17 @@ the old value, the rest gets the new one.
 That makes the beam a clock, and every position on the screen a time: 456 dots a line, 311 lines a
 frame, the same every frame. Write a register at the same position in every frame, and you get a steady
 picture with a band in it. Write it at a slightly different position each time, and the band's edge
-flickers. Hey, that is the whole game in two sentences; the rest of the chapter is about hitting the same
-position every time.
+flickers. Believe it or not, that is the whole game in two sentences; everything that follows is about
+hitting the same position every time.
 
 ## When a write shows
 
 "From where the beam is" means slightly different things for different parts of the picture, because
 not every setting is read at every dot. Each of the earlier chapters found when its layer takes its
-settings:
+settings, and I have collected them here, because this is the table I would pin above my desk:
 
 <figure>
-<svg viewBox="0 0 700 438" role="img" aria-label="Five lanes, one for each kind of setting, across 50 dots of one line, with a write marked between dots 13 and 14. Settings taken at every dot (palettes, layer order, transparency, the fallback colour, Layer 2, LoRes, the ULA's clip window) show the new value from the next dot. The ULA's scroll, Timex mode and border colour show it from the next 8-dot cell, dot 16. The tilemap's settings show it from the next tile it fetches, a cell or two later. Sprites show nothing new on this line, because the engine works a line ahead. NextReg 64 takes effect at the next frame." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 442" role="img" aria-label="Five lanes, one for each kind of setting, across 50 dots of one line, with a write marked between dots 13 and 14. Settings taken at every dot (palettes, layer order, transparency, the fallback colour, Layer 2, LoRes, the ULA's clip window) show the new value from the next dot. The ULA's scroll, Timex mode and border colour show it from the next 8-dot cell, dot 16. The tilemap's settings show it from the next tile it fetches, a cell or two later. Sprites show nothing new on this line, because the engine works a line ahead. NextReg 64 takes effect at the next frame." style={{ width: "100%", height: "auto" }}>
   <text x="350" y="20" textAnchor="middle" fill="currentColor" fontSize="16.5" fontWeight="600">dots of one line, the beam moving right →</text>
   <text x="0" y="48" textAnchor="start" fill="currentColor" fontSize="15" fontWeight="600">at the next dot</text>
   <text x="0" y="66" textAnchor="start" fill="currentColor" fontSize="13.5">palettes, layer order, transparency, fallback, Layer 2, LoRes, the ULA's clip</text>
@@ -381,14 +387,14 @@ settings:
 | The ULA's scroll, its Timex mode and the border colour | at every 8-dot cell ([the ULA chapter](/en/under-the-hood/emulator-internals/next-display/ula/)) | from the next cell |
 | The tilemap's settings | at every tile fetched, a character ahead ([the tilemap chapter](/en/under-the-hood/emulator-internals/next-display/tilemap/#fetching-a-character-ahead)) | from a cell or two later |
 | The sprites' attributes | as each line is drawn, a line ahead ([the sprites chapter](/en/under-the-hood/emulator-internals/next-display/sprites/#two-lines-not-a-screen)) | from a later line |
-| The line offset, NextReg `$64` | at line 0 of the display area ([the frame and the beam](/en/under-the-hood/emulator-internals/next-display/timing/#line-numbers-for-the-wide-area)) | at the next frame |
+| The line offset, the Vertical Line Count Offset register, NextReg `$64` | at line 0 of the display area ([the frame and the beam](/en/under-the-hood/emulator-internals/next-display/timing/#line-numbers-for-the-wide-area)) | at the next frame |
 
 For most effects the first row is all that matters: a palette entry or a scroll value written at the
 start of a line shows on that whole line. The others matter when a write lands near the edge of what it
 changes, and they are the reason the sprite effect in Thirty-two sprites from eight waits a few lines
 before it moves its sprites.
 
-Screen **memory** is different again: a byte written to the ULA's screen or to Layer 2 shows when the
+Screen **memory** is different again, and worth a separate warning: a byte written to the ULA's screen or to Layer 2 shows when the
 layer next reads it, which for a byte the beam has already passed is the next frame.
 
 ## The line interrupt and its jitter
@@ -396,17 +402,19 @@ layer next reads it, which for a byte the beam has already passed is the next fr
 The Next can interrupt the CPU before a line of your program's choosing: the **line interrupt**, switched
 on by bit 1 of the Line Interrupt Control register, **NextReg `$22`**, with the line in bit 0 of
 NextReg `$22` and the Line Interrupt Value LSB register, **NextReg `$23`**. It is raised on the line
-before, near the end of its display area, in the line numbers that NextReg `$64` sets (the frame-and-beam
+before, near the end of its display area, in the line numbers that the Vertical Line Count Offset
+register, NextReg `$64`, sets (the frame-and-beam
 chapter's [line interrupt](/en/under-the-hood/emulator-internals/next-display/timing/#the-line-interrupt)).
 
 Your handler can then write the registers for the next band. That works, but it has a weakness: the CPU
 answers an interrupt only when the instruction it is running has finished. At 3.5 MHz an instruction
 takes up to 23 T-states, so the handler starts anywhere from 0 to 22 T-states later than it could, and
 one T-state is two dots. A split made this way lands up to **44 dots** later in one frame than in
-another, and its edge shimmers like a road in summer:
+another, and its edge shimmers like a road in summer. Think of it as an actor who waits for the
+director to shout his cue, and then first has to finish his sentence:
 
 <figure>
-<svg viewBox="0 0 700 368" role="img" aria-label="Two sets of eight frames, each a strip of one line where a split lands. Top, the CPU after a line interrupt: the split lands at a different dot in each frame, from the dot the program wanted to up to 44 dots after it, because the CPU must first finish the instruction it is running, which can take up to 22 T-states at 3.5 megahertz. Bottom, the Copper: the split lands on the same dot in every frame, because its WAIT is checked at every 28 megahertz clock." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 372" role="img" aria-label="Two sets of eight frames, each a strip of one line where a split lands. Top, the CPU after a line interrupt: the split lands at a different dot in each frame, from the dot the program wanted to up to 44 dots after it, because the CPU must first finish the instruction it is running, which can take up to 22 T-states at 3.5 megahertz. Bottom, the Copper: the split lands on the same dot in every frame, because its WAIT is checked at every 28 megahertz clock." style={{ width: "100%", height: "auto" }}>
   <text x="350" y="20" textAnchor="middle" fill="currentColor" fontSize="16.5" fontWeight="600">where a split lands, over eight frames</text>
   <text x="0" y="50" textAnchor="start" fill="currentColor" fontSize="15" fontWeight="600">the CPU, after a line interrupt</text>
   <text x="0" y="68" textAnchor="start" fill="currentColor" fontSize="13.5">up to 22 T-states late: 44 dots at 3.5 MHz</text>
@@ -454,17 +462,18 @@ another, and its edge shimmers like a road in summer:
 
 You can remove most of the jitter by waiting in `HALT`, which the CPU leaves at once, but then your
 program can do nothing else while it waits. At 28 MHz the jitter is smaller, but it is still there, and
-every split costs the CPU an interrupt and a handler. Wouldn't it be nice to hand the whole job to
-someone who has nothing else to do?
+every split costs the CPU an interrupt and a handler. I am not a fan of making the CPU do this.
+Wouldn't it be nice to hand the whole job to someone who has nothing else to do?
 
 ## The Copper's two instructions
 
 The **Copper** is a co-processor with exactly one job: wait for a position of the beam, then write a
 NextReg. It runs a list of instructions from its own memory, alongside the CPU, and costs the CPU nothing
-once it is started. If you read nothing else here, read this section and the four after it. The Copper knows just two instructions:
+once it is started. If you read nothing else here, read this section and the four after it. The stage
+manager knows just two instructions:
 
 <figure>
-<svg viewBox="0 0 700 296" role="img" aria-label="The Copper's two instructions as 16-bit strips. WAIT: bit 15 is 1, bits 14 to 9 are h, the horizontal position, matched at dot 8 times h, and bits 8 to 0 are the line, 0 to 511 in the numbering NextReg 64 sets. MOVE: bit 15 is 0, bits 14 to 8 are a NextReg number from 0 to 127, and bits 7 to 0 the value. A MOVE to NextReg 0 writes nothing and is the NOP; a WAIT for a line that never comes, such as FFFF, stops the Copper. Below, the instruction memory: 2K, 1,024 instructions, each with its high byte at the even address." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 300" role="img" aria-label="The Copper's two instructions as 16-bit strips. WAIT: bit 15 is 1, bits 14 to 9 are h, the horizontal position, matched at dot 8 times h, and bits 8 to 0 are the line, 0 to 511 in the numbering NextReg 64 sets. MOVE: bit 15 is 0, bits 14 to 8 are a NextReg number from 0 to 127, and bits 7 to 0 the value. A MOVE to NextReg 0 writes nothing and is the NOP; a WAIT for a line that never comes, such as FFFF, stops the Copper. Below, the instruction memory: 2K, 1,024 instructions, each with its high byte at the even address." style={{ width: "100%", height: "auto" }}>
   <text x="0" y="34" textAnchor="start" fill="currentColor" fontSize="16.5" fontWeight="600">WAIT</text>
   <rect x="84" y="10" width="38.5" height="36" fill="#e5484d" fillOpacity="0.35" stroke="currentColor" strokeOpacity="0.5" />
   <text x="103.3" y="33" textAnchor="middle" fill="currentColor" fontSize="15">1</text>
@@ -537,7 +546,8 @@ once it is started. If you read nothing else here, read this section and the fou
 </figure>
 
 - **WAIT** (bit 15 = 1) waits until the beam is on **line** *n*, bits 8–0, at or past the horizontal
-  position *h*, bits 14–9. The line is counted in the numbers that NextReg `$64` sets, the same as the
+  position *h*, bits 14–9. The line is counted in the numbers that the Vertical Line Count Offset
+  register, NextReg `$64`, sets, the same as the
   line interrupt's: line 0 is the first line of the display area, or of the wide area with an offset of
   32. The position *h* is matched at **dot 8 × *h*** of the display area, so a WAIT can stop at any 8-dot
   boundary; *h* = 0 is the first dot of the line's display area.
@@ -550,7 +560,8 @@ machine can do with so little.
 
 ## Where seven WAITs stop
 
-Let's put the WAIT to work. Here are seven of them, with NextReg `$64` at 0:
+Let's put the WAIT to work. Here are seven of them, with the Vertical Line Count Offset register,
+NextReg `$64`, at 0:
 
 | | Instruction | Encoded | The Copper goes on when the beam reaches |
 |---|---|---|---|
@@ -563,8 +574,8 @@ Let's put the WAIT to work. Here are seven of them, with NextReg `$64` at 0:
 | 7 | WAIT line 278, *h* 53 | `$EB16` | dot 424 of line 278: the top-left corner of the 320 × 256 wide area |
 
 <figure>
-<svg viewBox="0 0 700 440" role="img" aria-label="The picture Klive shows, 360 dots by 288 lines, drawn to scale, with the display area of 256 by 192 in its middle and the seven positions of the table marked as numbered red dots. 1: line 0, dot 0, the display area's top-left corner. 2: line 96, dot 128, its centre. 3: line 191, dot 248, near its bottom-right corner. 4: line 200, dot 0, in the bottom border below the display area's left edge. 5: line 300, dot 272, in the top border, to the right of the display area. 6: the left edge of the picture on line 100, 48 dots left of the display area, which the Copper reaches by waiting for line 99 at h = 51. 7: the top-left corner of the wide area of 320 by 256, outlined with a dashed line, 32 dots left of and 32 lines above the display area, which the Copper reaches by waiting for line 278 at h = 53. An orange band marks the left border, dots minus 48 to minus 13, which still counts as the line above." style={{ width: "100%", height: "auto" }}>
-  <text x="388" y="20" textAnchor="middle" fill="currentColor" fontSize="16.5" fontWeight="600">Klive's picture: 360 × 288, the border around the display area</text>
+<svg viewBox="-2 -2 704 444" role="img" aria-label="The picture, 360 dots by 288 lines, drawn to scale, with the display area of 256 by 192 in its middle and the seven positions of the table marked as numbered red dots. 1: line 0, dot 0, the display area's top-left corner. 2: line 96, dot 128, its centre. 3: line 191, dot 248, near its bottom-right corner. 4: line 200, dot 0, in the bottom border below the display area's left edge. 5: line 300, dot 272, in the top border, to the right of the display area. 6: the left edge of the picture on line 100, 48 dots left of the display area, which the Copper reaches by waiting for line 99 at h = 51. 7: the top-left corner of the wide area of 320 by 256, outlined with a dashed line, 32 dots left of and 32 lines above the display area, which the Copper reaches by waiting for line 278 at h = 53. An orange band marks the left border, dots minus 48 to minus 13, which still counts as the line above." style={{ width: "100%", height: "auto" }}>
+  <text x="388" y="20" textAnchor="middle" fill="currentColor" fontSize="16.5" fontWeight="600">the picture: 360 × 288, the border around the display area</text>
   <rect x="76" y="34" width="624" height="345.6" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.5" />
   <rect x="159.2" y="91.6" width="443.7" height="230.4" fill="#3b82f6" fillOpacity="0.12" stroke="#3b82f6" strokeOpacity="0.6" />
   <text x="381.1" y="113.6" textAnchor="middle" fill="currentColor" fontSize="13.5">the display area: dots 0–255, lines 0–191</text>
@@ -601,14 +612,15 @@ Let's put the WAIT to work. Here are seven of them, with NextReg `$64` at 0:
 <figcaption>Where the seven WAITs of the table stop, to scale. The Copper's line number changes 12 dots before the display area's left edge, so the left border belongs to the line above.</figcaption>
 </figure>
 
-Example 6 needs a word, because it catches almost everyone out. The Copper's horizontal count starts
+Example 6 needs a word, because it catches almost everyone out, and I would rather you met it here than
+in your own list. The Copper's horizontal count starts
 **12 dots before** the display area, and its line number moves on there, at dot −12. So the border to
 the left of line 100, dots −48 to −13, is still part of line 99 for the Copper: dot 408 of line 99 and
 dot −48 of line 100 are the same place.
 
 Example 7 reaches the top-left corner of the **wide area**, the 320 × 256 picture of the tilemap, the
 sprites and the wide Layer 2 modes. It falls in the same left border, and its WAIT takes three steps to
-find:
+find, and I suggest you follow them once with a pencil:
 
 1. **Where the corner is.** The wide area begins 32 dots left of the display area and 32 lines above
    it. Line 0 is the display area's first line, and in a 311-line frame the line 32 before it is line
@@ -632,7 +644,7 @@ whatever the timing:
 And since a 128K line has 456 dots, *h* = 55, dot 440, is the last position a WAIT can reach; a WAIT with
 *h* of 56 or more never matches. On the 448-dot lines of 48K and Pentagon timing the last one is 54.
 
-One more thing to keep in mind: a WAIT compares the line only for **equality**. If the Copper reaches a
+Uhm, one more thing to keep in mind: a WAIT compares the line only for **equality**. If the Copper reaches a
 WAIT for a line the beam has already passed, it does not shrug and go on; it waits for that line in the
 next frame. A WAIT for a line that never comes, such as `$FFFF`, stops the list, and that is how a list
 ends, as Where a list ends explains below.
@@ -650,11 +662,12 @@ even address. Your program writes it through NextRegs:
 - The Copper Data 8-bit Write register, **NextReg `$60`**, writes one byte at a time, each at once.
 
 Both move the address on after every write. Notice how neat the 16-bit one is: you never have to stop the
-Copper just to change a value in its list.
+Copper just to change a value in its list. My advice is to use NextReg `$63` for every list you write,
+and keep NextReg `$60` for the rare byte you really mean to write alone.
 
 ## Where a list ends
 
-Here is a surprise: the Copper has **no end instruction**, and it does not know how long a list is. It
+Here is a surprise, and not one I would have designed: the Copper has **no end instruction**, and it does not know how long a list is. It
 goes on to the next instruction in its memory, and after instruction 1,023 it goes on with
 instruction 0. What lies beyond the last instruction your program wrote is whatever the memory held
 before: an older list, or zeros, which are `MOVE $00, $00`, the NOP. A list that just stops being written
@@ -667,7 +680,7 @@ which no line is long enough to reach. `$FFFF`, WAIT line 511, *h* 63, is the us
 then sits on that WAIT, patient as a cat at a mouse hole, until something else moves it on:
 
 - in mode 11, the start of the next frame, which sends it back to instruction 0 (see the four modes below);
-- a write to NextReg `$62` that changes the mode, from the CPU;
+- a write to the Copper Control register, NextReg `$62`, that changes the mode, from the CPU;
 - in modes 01 and 10, nothing: the list ran once and the Copper waits for good.
 
 Stopping the Copper itself is a write of 00 to NextReg `$62` bits 7–6.
@@ -682,13 +695,14 @@ Bits 7–6 of the Copper Control register, **NextReg `$62`**, choose what the Co
   comes runs **once**.
 - **10, carry on.** The Copper runs on from the instruction where it stopped, and wraps the same way.
 - **11, run from the start, every frame.** Like 01, but the list also starts again from instruction 0 at
-  **line 0** of every frame, in the line numbers NextReg `$64` sets. It runs once a frame, in step with the
+  **line 0** of every frame, in the line numbers the Vertical Line Count Offset register,
+  NextReg `$64`, sets. It runs once a frame, in step with the
   beam, whatever the CPU does.
 
 Writing the mode the Copper already has changes nothing. Changing to 01 or 11 always starts from
 instruction 0; changing to 10 does not.
 
-So which one do you want? In practice:
+So which one do you want? My rule of thumb is simple:
 
 - **Mode 11 is the one for effects** that repeat every frame: the gradient, the split scroll and the
   sprites below all use it. The CPU starts the list once, and from then on only changes the values in
@@ -709,7 +723,8 @@ clock it sees the beam reach the position, it moves on, and a MOVE takes two clo
 writes go through the same path as the CPU's NextReg writes, but **ahead** of them, so the CPU can never
 delay a Copper write. Nothing in it depends on what the CPU is doing, so a list does the same thing at the
 same dot in every frame: the Copper's strips in the figure of The line interrupt and its jitter. No shimmer,
-no handler, no interrupt. The CPU is free to run the game.
+no handler, no interrupt. The CPU is free to run the game. That is why I trust the stage manager with
+every split I care about.
 
 ## A sky gradient from one palette entry
 
@@ -718,7 +733,7 @@ Copper rewrites ULA palette entry 16, which is both the border colour 0 and pape
 the frame's 311 lines:
 
 <figure>
-<svg viewBox="0 0 700 448" role="img" aria-label="Klive's whole frame, border included: a city skyline in black, drawn by the ULA, in front of a sky that fades line by line from dark navy at the top of the frame through purple and pink to orange and pale yellow at the bottom. The border and the paper both change colour on every line, because the Copper rewrites the palette entry they share before each line starts." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 452" role="img" aria-label="The whole frame, border included: a city skyline in black, drawn by the ULA, in front of a sky that fades line by line from dark navy at the top of the frame through purple and pink to orange and pale yellow at the bottom. The border and the paper both change colour on every line, because the Copper rewrites the palette entry they share before each line starts." style={{ width: "100%", height: "auto" }}>
   <image x="0" y="0" width="700" height="448" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/raster-effects/gradient.webp`} />
   <rect x="0" y="0" width="700" height="448" fill="none" stroke="currentColor" strokeOpacity="0.35" />
 </svg>
@@ -728,27 +743,28 @@ the frame's 311 lines:
 The list is 625 instructions: two to point the palette at entry 16, then a WAIT and a MOVE for every line:
 
 ```text
-MOVE $43, $80          ; palette index does not move on after a write
+MOVE $43, $80          ; index stays put after a write
 MOVE $40, 16           ; ULA palette entry 16
 WAIT 0, 0              ; the first line of the display area
 MOVE $41, colour(0)
 WAIT 1, 0
 MOVE $41, colour(1)
-…                      ; up to line 310, the last line above the display area
+…                      ; to line 310, the last line above line 0
 WAIT 511, 63           ; stop until the next frame's line 0
 ```
 
 The ULA's picture, a skyline in ink colour 0, never changes; only the colour of its paper does. One
-palette entry, a sunset's worth of colours, and the CPU did not lift a finger.
+palette entry, a sunset's worth of colours, and the CPU did not lift a finger. I think this is the
+prettiest effect for the least work on the whole machine.
 
 ## A status bar that stands still
 
 A status bar that stays still while the playfield scrolls is two values of the same register in one
-frame: the ULA's X scroll register, **NextReg `$26`**, holds the playfield's scroll for lines 0–151 and 0
+frame: the ULA X Scroll register, **NextReg `$26`**, holds the playfield's scroll for lines 0–151 and 0
 for the bar, lines 152–191:
 
 <figure>
-<svg viewBox="0 0 700 310.8" role="img" aria-label="Two ULA screens on Klive's Next. Left, not scrolled: columns of characters 0 to F in coloured bands, and below them a status bar reading SCORE 001200 LIVES 3 and THE BAR DOES NOT SCROLL. Right, the same screen with the Copper setting the ULA's X scroll to 0 for lines 152 to 191 and to 40 for every other line: the columns have moved five characters to the left and wrapped round, while the status bar is exactly where it was." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 314.8" role="img" aria-label="Two ULA screens on the emulated Next. Left, not scrolled: columns of characters 0 to F in coloured bands, and below them a status bar reading SCORE 001200 LIVES 3 and THE BAR DOES NOT SCROLL. Right, the same screen with the Copper setting the ULA's X scroll to 0 for lines 152 to 191 and to 40 for every other line: the columns have moved five characters to the left and wrapped round, while the status bar is exactly where it was." style={{ width: "100%", height: "auto" }}>
   <image x="0" y="0" width="345" height="258.8" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/raster-effects/split-0.webp`} />
   <rect x="0" y="0" width="345" height="258.8" fill="none" stroke="currentColor" strokeOpacity="0.35" />
   <image x="355" y="0" width="345" height="258.8" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/raster-effects/split-1.webp`} />
@@ -763,10 +779,10 @@ for the bar, lines 152–191:
 The list is five instructions, run in mode 11:
 
 ```text
-WAIT 151, 33           ; line 151, dot 264: the right border, after the playfield's last line
+WAIT 151, 33           ; line 151, dot 264: right border
 MOVE $26, 0            ; no scroll: the bar, lines 152-191
-WAIT 191, 33           ; line 191, dot 264: after the bar's last line
-MOVE $26, 40           ; the playfield's scroll, ready for line 0 of the next frame
+WAIT 191, 33           ; line 191, dot 264: after the bar
+MOVE $26, 40           ; playfield scroll, for next line 0
 WAIT 511, 63           ; stop until the next frame
 ```
 
@@ -788,20 +804,22 @@ border to spare. Here is my advice: whenever a split has to be clean from the ve
 write in the border of the line before.
 
 To scroll the playfield, the CPU changes only one byte: the value of the second MOVE, the instruction at
-address 3, which it rewrites through NextRegs `$61`, `$62` and `$63` once a frame. The bar is never
-touched.
+address 3, which it rewrites through the Copper Address LSB, Copper Control and Copper Data 16-bit Write
+registers, NextRegs `$61`, `$62` and `$63`, once a frame. The bar is never
+touched. I like how little the CPU has to know: one byte in someone else's list.
 
 ## Thirty-two sprites from eight
 
 The sprite engine draws each line from the attribute table as it is when the engine reaches it, a line
 ahead of the beam (the sprites chapter's
 [two lines, not a screen](/en/under-the-hood/emulator-internals/next-display/sprites/#two-lines-not-a-screen)).
-So a sprite can be shown in one band, then moved below the beam and shown again further down. Here the
+So a member of the troupe can be shown in one band, then moved below the beam and shown again further
+down, like an actor who leaves by one door and comes back in another costume. Here the
 Copper moves sprites 0–7 three times a frame, through the Sprite Number register, **NextReg `$34`**, and
-the attribute registers **NextReg `$35`**–**`$37`**:
+the Sprite Attribute 0, 1 and 2 registers, **NextRegs `$35`**–**`$37`**:
 
 <figure>
-<svg viewBox="0 0 700 440" role="img" aria-label="The wide area on Klive's Next with 32 spaceships in four rows of eight: grey, blue, green and red, each row a little to the right of the one above. They are only eight hardware sprites: the Copper moves sprites 0 to 7 to the next row, and gives them the next palette offset, after the engine has drawn the last line of the row above. The labels give each band's Y coordinate and the WAIT that moves the sprites there: lines 0, 44, 100 and 156, with NextReg 64 set to 32 so that the Copper's line numbers are the sprites' Y." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 444" role="img" aria-label="The wide area on the emulated Next with 32 spaceships in four rows of eight: grey, blue, green and red, each row a little to the right of the one above. They are only eight hardware sprites: the Copper moves sprites 0 to 7 to the next row, and gives them the next palette offset, after the engine has drawn the last line of the row above. The labels give each band's Y coordinate and the WAIT that moves the sprites there: lines 0, 44, 100 and 156, with NextReg 64 set to 32 so that the Copper's line numbers are the sprites' Y." style={{ width: "100%", height: "auto" }}>
   <image x="0" y="0" width="440" height="440" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/raster-effects/multiplex.webp`} />
   <rect x="0" y="0" width="440" height="440" fill="none" stroke="currentColor" strokeOpacity="0.35" />
   <line x1="448" y1="55" x2="466" y2="55" stroke="#a855f7" strokeWidth="2" />
@@ -820,7 +838,7 @@ the attribute registers **NextReg `$35`**–**`$37`**:
 <figcaption>Thirty-two ships from eight sprites. Each band is the same eight sprites, moved and recoloured by the Copper below the band above.</figcaption>
 </figure>
 
-The list, run in mode 11 with NextReg `$64` set to 32:
+The list, run in mode 11 with the Vertical Line Count Offset register, NextReg `$64`, set to 32:
 
 ```text
 WAIT 0, 0              ; the top of the wide area
@@ -833,7 +851,7 @@ MOVE $35, 38
 MOVE $36, 24
 MOVE $37, $00
 …                      ; the same for sprites 2-7
-WAIT 44, 0             ; band 0's last line is 39: its sprites are free
+WAIT 44, 0             ; band 0 ended at line 39: free
 MOVE $34, 0
 MOVE $35, 12           ; X = 12: a little further right
 MOVE $36, 80           ; Y = 80: band 1
@@ -863,146 +881,13 @@ How it works:
 
 The table has 128 sprites, so 32 ships do not need this; they are here only to show the trick. You need
 it when a game wants more sprites on the screen than the table holds, or more on one line than the time
-budget allows.
-
-## How Klive does it
-
-Klive's renderers draw a whole layer from the registers and memory as they are now (the overview's
-[How Klive does it](/en/under-the-hood/emulator-internals/next-display/overview/#how-klive-does-it)).
-Run once a frame, they would show every frame with its last values, and the gradient would be one dull
-colour. So the Next core draws **lazily**. Just before a write that can change the picture, it renders
-everything the beam has drawn since the previous such write, with the state **before** the write, and at
-the end of the frame it renders the rest:
-
-<figure>
-<svg viewBox="0 0 700 300" role="img" aria-label="Klive's raster as a grid of buffer rows. The rows above the beam were rendered earlier, with the old state. On the beam's row, the pixels from the end of the last rendered span up to the beam are rendered now, still with the old state, just before a write is applied. The rows below the beam are not drawn yet and will use the new state. The caption under the grid says that before the write Klive renders the pixels the beam has passed since the last one." style={{ width: "100%", height: "auto" }}>
-  <rect x="0" y="10" width="400" height="15" fill="#3b82f6" fillOpacity="0.35" stroke="currentColor" strokeOpacity="0.15" />
-  <rect x="0" y="25" width="400" height="15" fill="#3b82f6" fillOpacity="0.35" stroke="currentColor" strokeOpacity="0.15" />
-  <rect x="0" y="40" width="400" height="15" fill="#3b82f6" fillOpacity="0.35" stroke="currentColor" strokeOpacity="0.15" />
-  <rect x="0" y="55" width="400" height="15" fill="#3b82f6" fillOpacity="0.35" stroke="currentColor" strokeOpacity="0.15" />
-  <rect x="0" y="70" width="400" height="15" fill="#3b82f6" fillOpacity="0.35" stroke="currentColor" strokeOpacity="0.15" />
-  <rect x="0" y="85" width="400" height="15" fill="#3b82f6" fillOpacity="0.35" stroke="currentColor" strokeOpacity="0.15" />
-  <rect x="0" y="100" width="155.6" height="15" fill="#3b82f6" fillOpacity="0.35" stroke="currentColor" strokeOpacity="0.15" />
-  <rect x="155.6" y="100" width="100" height="15" fill="#e8912d" fillOpacity="0.55" stroke="currentColor" strokeOpacity="0.15" />
-  <rect x="255.6" y="100" width="144.4" height="15" fill="currentColor" fillOpacity="0.05" stroke="currentColor" strokeOpacity="0.15" />
-  <rect x="0" y="115" width="400" height="15" fill="currentColor" fillOpacity="0.05" stroke="currentColor" strokeOpacity="0.15" />
-  <rect x="0" y="130" width="400" height="15" fill="currentColor" fillOpacity="0.05" stroke="currentColor" strokeOpacity="0.15" />
-  <rect x="0" y="145" width="400" height="15" fill="currentColor" fillOpacity="0.05" stroke="currentColor" strokeOpacity="0.15" />
-  <rect x="0" y="160" width="400" height="15" fill="currentColor" fillOpacity="0.05" stroke="currentColor" strokeOpacity="0.15" />
-  <rect x="0" y="175" width="400" height="15" fill="currentColor" fillOpacity="0.05" stroke="currentColor" strokeOpacity="0.15" />
-  <rect x="0" y="190" width="400" height="15" fill="currentColor" fillOpacity="0.05" stroke="currentColor" strokeOpacity="0.15" />
-  <rect x="0" y="205" width="400" height="15" fill="currentColor" fillOpacity="0.05" stroke="currentColor" strokeOpacity="0.15" />
-  <rect x="0" y="220" width="400" height="15" fill="currentColor" fillOpacity="0.05" stroke="currentColor" strokeOpacity="0.15" />
-  <rect x="0" y="235" width="400" height="15" fill="currentColor" fillOpacity="0.05" stroke="currentColor" strokeOpacity="0.15" />
-  <circle cx="255.6" cy="107.5" r="6" fill="#e5484d" />
-  <text x="255.6" y="135.5" textAnchor="middle" fill="#e5484d" fontSize="15" fontWeight="600">the beam, at a write</text>
-  <text x="420" y="51" textAnchor="start" fill="currentColor" fontSize="15">drawn before,</text>
-  <text x="420" y="70" textAnchor="start" fill="currentColor" fontSize="15">with the old state</text>
-  <text x="420" y="103.5" textAnchor="start" fill="#e8912d" fontSize="15">rendered now, still</text>
-  <text x="420" y="122.5" textAnchor="start" fill="#e8912d" fontSize="15">with the old state</text>
-  <text x="420" y="175" textAnchor="start" fill="currentColor" fontSize="15">not yet drawn:</text>
-  <text x="420" y="194" textAnchor="start" fill="currentColor" fontSize="15">the new state</text>
-  <text x="350" y="284" textAnchor="middle" fill="currentColor" fontSize="15">Before the write, Klive renders the pixels the beam has passed since the last one.</text>
-</svg>
-<figcaption>Klive's lazy raster. A write that changes the picture first makes Klive render, with the state before it, everything the beam has drawn since the previous one.</figcaption>
-</figure>
-
-A frame with no changes costs one whole-frame render; each change adds only the rows it spans. The
-writes that count are those to the NextRegs the renderers read, the palette's among them, and to the
-ports that change the picture: the border colour, the Timex, Layer 2, ULA+ and sprite ports, and the
-paging ports that choose which screen is shown. `zxnextRasterIsVideoNextReg` lists the NextRegs, so that
-a write to the MMU or the sound costs nothing. Writes the hardware takes per 8-dot cell, the ULA's scroll,
-Timex mode and border, are held back to the next cell's first dot, as on the machine.
-
-**Screen memory** is handled differently. A program can write thousands of bytes in a frame, and
-rendering before each one would cost far too much. So Klive renders only up to the **start of the beam's
-row** before a write to bank 5, bank 7 or the displayed Layer 2 banks, and a line is rendered at most once
-however many bytes are written to it. The price is that the row the beam is on shows the new bytes from
-its first dot:
-
-<figure>
-<svg viewBox="0 0 700 272" role="img" aria-label="One row of 20 eight-dot cells, twice, with a write to screen memory marked in the ninth cell. On the hardware, the new bytes show from the next cell fetched after the write. In Klive, they show from the first dot of the row the beam is on, so the cells of that row to the left of the beam, already shown on the hardware with the old bytes, show the new ones. In both, the rows above the beam's row keep the old bytes." style={{ width: "100%", height: "auto" }}>
-  <text x="0" y="42" textAnchor="start" fill="currentColor" fontSize="15" fontWeight="600">the hardware</text>
-  <text x="0" y="60" textAnchor="start" fill="currentColor" fontSize="13.5">new bytes from the next cell fetched after the write</text>
-  <rect x="0" y="70" width="35" height="26" fill="#3b82f6" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.25" />
-  <rect x="35" y="70" width="35" height="26" fill="#3b82f6" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.25" />
-  <rect x="70" y="70" width="35" height="26" fill="#3b82f6" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.25" />
-  <rect x="105" y="70" width="35" height="26" fill="#3b82f6" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.25" />
-  <rect x="140" y="70" width="35" height="26" fill="#3b82f6" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.25" />
-  <rect x="175" y="70" width="35" height="26" fill="#3b82f6" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.25" />
-  <rect x="210" y="70" width="35" height="26" fill="#3b82f6" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.25" />
-  <rect x="245" y="70" width="35" height="26" fill="#3b82f6" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.25" />
-  <rect x="280" y="70" width="35" height="26" fill="#3b82f6" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.25" />
-  <rect x="315" y="70" width="35" height="26" fill="#3b82f6" fillOpacity="0.6" stroke="currentColor" strokeOpacity="0.25" />
-  <rect x="350" y="70" width="35" height="26" fill="#3b82f6" fillOpacity="0.6" stroke="currentColor" strokeOpacity="0.25" />
-  <rect x="385" y="70" width="35" height="26" fill="#3b82f6" fillOpacity="0.6" stroke="currentColor" strokeOpacity="0.25" />
-  <rect x="420" y="70" width="35" height="26" fill="#3b82f6" fillOpacity="0.6" stroke="currentColor" strokeOpacity="0.25" />
-  <rect x="455" y="70" width="35" height="26" fill="#3b82f6" fillOpacity="0.6" stroke="currentColor" strokeOpacity="0.25" />
-  <rect x="490" y="70" width="35" height="26" fill="#3b82f6" fillOpacity="0.6" stroke="currentColor" strokeOpacity="0.25" />
-  <rect x="525" y="70" width="35" height="26" fill="#3b82f6" fillOpacity="0.6" stroke="currentColor" strokeOpacity="0.25" />
-  <rect x="560" y="70" width="35" height="26" fill="#3b82f6" fillOpacity="0.6" stroke="currentColor" strokeOpacity="0.25" />
-  <rect x="595" y="70" width="35" height="26" fill="#3b82f6" fillOpacity="0.6" stroke="currentColor" strokeOpacity="0.25" />
-  <rect x="630" y="70" width="35" height="26" fill="#3b82f6" fillOpacity="0.6" stroke="currentColor" strokeOpacity="0.25" />
-  <rect x="665" y="70" width="35" height="26" fill="#3b82f6" fillOpacity="0.6" stroke="currentColor" strokeOpacity="0.25" />
-  <text x="0" y="132" textAnchor="start" fill="currentColor" fontSize="15" fontWeight="600">Klive</text>
-  <text x="0" y="150" textAnchor="start" fill="currentColor" fontSize="13.5">new bytes from the first dot of the beam's row</text>
-  <rect x="0" y="160" width="35" height="26" fill="#3b82f6" fillOpacity="0.6" stroke="currentColor" strokeOpacity="0.25" />
-  <rect x="35" y="160" width="35" height="26" fill="#3b82f6" fillOpacity="0.6" stroke="currentColor" strokeOpacity="0.25" />
-  <rect x="70" y="160" width="35" height="26" fill="#3b82f6" fillOpacity="0.6" stroke="currentColor" strokeOpacity="0.25" />
-  <rect x="105" y="160" width="35" height="26" fill="#3b82f6" fillOpacity="0.6" stroke="currentColor" strokeOpacity="0.25" />
-  <rect x="140" y="160" width="35" height="26" fill="#3b82f6" fillOpacity="0.6" stroke="currentColor" strokeOpacity="0.25" />
-  <rect x="175" y="160" width="35" height="26" fill="#3b82f6" fillOpacity="0.6" stroke="currentColor" strokeOpacity="0.25" />
-  <rect x="210" y="160" width="35" height="26" fill="#3b82f6" fillOpacity="0.6" stroke="currentColor" strokeOpacity="0.25" />
-  <rect x="245" y="160" width="35" height="26" fill="#3b82f6" fillOpacity="0.6" stroke="currentColor" strokeOpacity="0.25" />
-  <rect x="280" y="160" width="35" height="26" fill="#3b82f6" fillOpacity="0.6" stroke="currentColor" strokeOpacity="0.25" />
-  <rect x="315" y="160" width="35" height="26" fill="#3b82f6" fillOpacity="0.6" stroke="currentColor" strokeOpacity="0.25" />
-  <rect x="350" y="160" width="35" height="26" fill="#3b82f6" fillOpacity="0.6" stroke="currentColor" strokeOpacity="0.25" />
-  <rect x="385" y="160" width="35" height="26" fill="#3b82f6" fillOpacity="0.6" stroke="currentColor" strokeOpacity="0.25" />
-  <rect x="420" y="160" width="35" height="26" fill="#3b82f6" fillOpacity="0.6" stroke="currentColor" strokeOpacity="0.25" />
-  <rect x="455" y="160" width="35" height="26" fill="#3b82f6" fillOpacity="0.6" stroke="currentColor" strokeOpacity="0.25" />
-  <rect x="490" y="160" width="35" height="26" fill="#3b82f6" fillOpacity="0.6" stroke="currentColor" strokeOpacity="0.25" />
-  <rect x="525" y="160" width="35" height="26" fill="#3b82f6" fillOpacity="0.6" stroke="currentColor" strokeOpacity="0.25" />
-  <rect x="560" y="160" width="35" height="26" fill="#3b82f6" fillOpacity="0.6" stroke="currentColor" strokeOpacity="0.25" />
-  <rect x="595" y="160" width="35" height="26" fill="#3b82f6" fillOpacity="0.6" stroke="currentColor" strokeOpacity="0.25" />
-  <rect x="630" y="160" width="35" height="26" fill="#3b82f6" fillOpacity="0.6" stroke="currentColor" strokeOpacity="0.25" />
-  <rect x="665" y="160" width="35" height="26" fill="#3b82f6" fillOpacity="0.6" stroke="currentColor" strokeOpacity="0.25" />
-  <line x1="294" y1="24" x2="294" y2="222" stroke="#e5484d" strokeWidth="2" />
-  <text x="294" y="240" textAnchor="middle" fill="#e5484d" fontSize="15">a write to screen memory</text>
-  <text x="350" y="264" textAnchor="middle" fill="currentColor" fontSize="13.5">One row of 8-dot cells. Rows above the beam's are rendered with the old bytes in both.</text>
-</svg>
-<figcaption>The one difference Klive allows: a write to screen memory reaches back to the start of the beam's row. At most one line of one frame differs.</figcaption>
-</figure>
-
-At most one line of one frame can differ from the hardware this way, and only where a program writes the
-part of the line the beam has just drawn. Sprites have a similar allowance: the hardware draws a line
-from the attribute table a line ahead, Klive from the table as it is when it renders, so a sprite moved
-in the middle of the frame can land about a line away from where the machine puts it.
-
-**The Copper** is in `zxnext-copper.c`, and it runs **clock by clock**: after every CPU instruction, Klive
-advances it to the CPU's time, four 28 MHz ticks a dot, checking its WAIT at every tick like the
-hardware. A MOVE goes to the same NextReg write as the CPU's, with the Copper's own time, so the raster
-catches up to exactly the dot where the Copper wrote. The line counter it shares with the line interrupt,
-offset by NextReg `$64`, is kept there too.
-
-**In the IDE**, the [Copper guide](/en/guides/next/copper/) shows the Copper's state and its list as
-instructions, with a raster ruler that marks the line of every WAIT, and can stop the machine on an
-instruction or step the Copper alone. The visual tests in `test/visual/copper/` run Copper programs on the
-machine and compare the picture against goldens: palette bands, a WAIT staircase across one line, scroll
-and transparency per line, a list rewritten in the middle of a frame. And if you want to read the code
-yourself, here is where it lives:
-
-| What | Where |
-|---|---|
-| The Copper, its line counter and the line interrupt | `src/emu/machines/zxNext/wasm/zxnext/zxnext-copper.c` |
-| The raster: catch-up, memory writes, the ULA's cell latches | the "Beam-racing raster" section of `src/emu/machines/zxNext/wasm/zxnext/zxnext-ula.c` |
-| Which NextRegs make the raster catch up | `zxnextRasterIsVideoNextReg` in the same file |
-| The Copper checked on the machine | `test/zxnext-hw/copper/`, and the screen cases in `test/visual/copper/` |
-| The pictures above | `test/zxnext-hw/layers/next-display-scene.test.ts`, "next-display raster effects" and the sprites' "32 ships" |
+budget allows. My advice: reach for it only then, because a list that moves sprites is one more thing
+to keep in step with your game.
 
 ## One dot's way through the machine
 
-This is the last chapter of the screen. Together, the ten chapters follow one dot's way through the
-machine:
+This is the last chapter of the screen, and I would like to end it by stepping back. Together, the ten
+chapters follow one dot's way through the machine:
 
 | Chapter | What it adds |
 |---|---|
@@ -1017,14 +902,17 @@ machine:
 | [Putting It Together: Four Layers, One Colour](/en/under-the-hood/emulator-internals/next-display/composition/) | the six orders, stencils and blending |
 | Changing the picture mid-frame | the one you are reading: the beam as a clock, and the Copper |
 
-Each producer reads its own memory and makes a dot for every position of the beam; the compositor picks
-one of the four layers' dots by the layer order and the transparency rules; the palettes turn indices
+Each producer reads its own memory and makes a dot for every position of the beam; the compositor, the referee,
+picks one of the four layers' dots by the layer order and the transparency rules; the palettes turn indices
 into colours; and the registers that steer all of it can change between one dot and the next. That last
-fact is what turns a set of fixed modes into a machine that can show more than any one of them.
+fact is what turns a set of fixed modes into a machine that can show more than any one of them. In
+the theatre's terms: the veteran, the understudy, the painter, the set builder and the troupe make the
+dots, the referee picks one at every position, and the stage manager changes the scenery between the
+lines. I find it a lovely company to spend ten chapters with.
 
 ## What to take home
 
-Well, that is the whole screen, end to end. The picture is made dot by dot as the beam reaches it, from the registers **as they
+Well, that is the whole screen, end to end, and I hope it feels like one machine now rather than ten. The picture is made dot by dot as the beam reaches it, from the registers **as they
 are then**, so a write in the middle of a frame changes the picture **from where the beam is**. Most
 settings are taken at every dot. The ULA's scroll, Timex mode and border wait for the next 8-dot cell, the
 tilemap's settings for the next tile it fetches, the sprites' attributes for a later line, and NextReg
@@ -1038,12 +926,10 @@ for a line and an 8-dot position, **MOVE** a value to NextReg `$00`–`$7F`. It 
 28 MHz clock and goes ahead of the CPU, so it writes at the same dot every frame. A list ends with a WAIT
 that never comes, usually `$FFFF`; NextReg `$63` writes an instruction whole, and mode **11** of NextReg
 `$62` restarts the list at line 0 of every frame. With it, one palette entry becomes **311 colours**, a
-status bar stands still under a scrolling playfield, and **eight sprites** become 32.
-
-Klive follows the beam **lazily**: before a write that changes the picture, it renders the dots the beam
-has passed, with the old state, and it runs the Copper clock by clock. Screen-memory writes catch up only
-to the start of the beam's row, which allows **one line** of difference.
+status bar stands still under a scrolling playfield, and **eight sprites** become 32. My parting advice
+for your own programs: give every split to the stage manager,
+and write in the border of the line before.
 
 And that is the screen of the Next: ten chapters, one dot. Every effect you will ever see on it is that
-dot, made at the moment the beam gets there, from whatever the registers hold right then. The rest, my
-friend, is up to your timing.
+dot, made at the moment the beam gets there, from whatever the registers hold right then. The rest is
+up to your timing.

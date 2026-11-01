@@ -24,13 +24,14 @@ article h4 {
   text-wrap: balance;
 }
 
-/* --- Running text keeps a readable line (Hallmark rule 25: about 88 characters at most). Overpass
-   --- is narrow, about 1.4 characters per `ch`: at 70ch lines still reached 99 characters, at 62ch
-   --- they stop near 87; Nextra's full column ran to about 115. Only prose is held in: figures,
-   --- screenshots, code and tables keep the full column (a hand-drawn figure fills it on purpose,
-   --- see .ai/ui-theming-intent-and-lessons.md). */
-article :is(p, ul, ol, dl, blockquote):not(table *, figure *, .nextra-cards *) {
-  max-width: 62ch;
+/* --- One measure for the whole article: running text, figures, callouts, code and tables all stop at
+   --- the same right edge, so no block leaves an empty band beside a wider neighbour. The author chose
+   --- this over a narrower prose-only line (62ch, which left the figures and callouts sticking out past
+   --- the text). Overpass is narrow, about 1.4 characters per `ch`: at 70ch a line of prose holds about
+   --- 98 characters; Nextra's full column ran to about 115. The measure sits on the content container,
+   --- not on each block, because a `ch` measured in a code block's mono face is a different width. */
+article > main {
+  max-width: 70ch;
 }
 
 /* --- The search field's edge: Nextra draws it with a 5% tint only, 1.12:1 against the navbar in the
@@ -64,7 +65,7 @@ samp {
 /*
  * --- Hand-written figures (<figure> with an inline SVG diagram and a <figcaption>). No panel: the
  * drawing stands on the page itself, like a figure in a printed book, with room above and below it
- * so it stands apart from the text, and it takes the whole column width (in print, every millimetre
+ * so it stands apart from the text, and it takes the article's whole measure (in print, every millimetre
  * of a figure's width is type size). A thin rule separates the caption. <Shot> screenshots carry
  * module classes and keep their own look, hence :not([class]).
  */

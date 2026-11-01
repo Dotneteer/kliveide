@@ -58,7 +58,7 @@ computer's sound hardware is to produce that voltage, and it does it in a chain 
 
 <figure>
 {/* fig:chain */}
-<svg viewBox="0 0 700 232" role="img" aria-label="The chain from numbers to sound, six boxes left to right: a list of numbers; the DAC, which turns them into a staircase of voltages; the filter, which smooths the staircase into a wave; the amplifier, which makes the wave larger; the speaker, whose cone moves with it; and the air, where the movement travels as bands of higher and lower pressure. Under the first two boxes: digital, a list of numbers; from the third on: analogue, a voltage that changes smoothly." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 236" role="img" aria-label="The chain from numbers to sound, six boxes left to right: a list of numbers; the DAC, which turns them into a staircase of voltages; the filter, which smooths the staircase into a wave; the amplifier, which makes the wave larger; the speaker, whose cone moves with it; and the air, where the movement travels as bands of higher and lower pressure. Under the first two boxes: digital, a list of numbers; from the third on: analogue, a voltage that changes smoothly." style={{ width: "100%", height: "auto" }}>
   <defs>
     <marker id="snd-chain-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
@@ -159,7 +159,7 @@ Here is the same 1,000 Hz wave sampled at two rates:
 
 <figure>
 {/* fig:samples */}
-<svg viewBox="0 0 700 330" role="img" aria-label="A 1,000 Hz wave drawn twice over two milliseconds. Above, it is sampled 16,000 times a second: 32 dots sit on the curve and trace it closely. Below, it is sampled 5,000 times a second: only 10 dots, which give a much coarser outline of the same wave." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 334" role="img" aria-label="A 1,000 Hz wave drawn twice over two milliseconds. Above, it is sampled 16,000 times a second: 32 dots sit on the curve and trace it closely. Below, it is sampled 5,000 times a second: only 10 dots, which give a much coarser outline of the same wave." style={{ width: "100%", height: "auto" }}>
   <defs>
     <marker id="snd-samples-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
@@ -294,7 +294,7 @@ two rates above. The orange staircase is what the DAC delivers:
 
 <figure>
 {/* fig:dac */}
-<svg viewBox="0 0 700 250" role="img" aria-label="A 1,000 Hz wave as a DAC delivers it: 16 steps a millisecond, each number held as a flat voltage until the next one, so the output is a staircase with only 16 possible heights. Drawn over it, the same output after a low-pass filter: a smooth wave with no steps, arriving slightly later than the staircase." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 254" role="img" aria-label="A 1,000 Hz wave as a DAC delivers it: 16 steps a millisecond, each number held as a flat voltage until the next one, so the output is a staircase with only 16 possible heights. Drawn over it, the same output after a low-pass filter: a smooth wave with no steps, arriving slightly later than the staircase." style={{ width: "100%", height: "auto" }}>
   <defs>
     <marker id="snd-dac-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
@@ -380,7 +380,7 @@ through it:
 
 <figure>
 {/* fig:alias */}
-<svg viewBox="0 0 700 246" role="img" aria-label="One millisecond of a 7,000 Hz wave, drawn as a thin fast curve with seven cycles. It is sampled 8,000 times a second: nine dots in the millisecond. The dots do not follow the fast wave; they lie on a slow 1,000 Hz wave, drawn as a thick dashed curve, which is what the samples describe and what would be heard." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 250" role="img" aria-label="One millisecond of a 7,000 Hz wave, drawn as a thin fast curve with seven cycles. It is sampled 8,000 times a second: nine dots in the millisecond. The dots do not follow the fast wave; they lie on a slow 1,000 Hz wave, drawn as a thick dashed curve, which is what the samples describe and what would be heard." style={{ width: "100%", height: "auto" }}>
   <defs>
     <marker id="snd-alias-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
@@ -444,7 +444,7 @@ that is on a quarter of the time gives a quarter of the full level, half of the 
 
 <figure>
 {/* fig:pwm */}
-<svg viewBox="0 0 700 244" role="img" aria-label="A one-bit signal that is only ever on or off. For the first eight pulses it is on a quarter of each pulse period, for the next eight half of it, for the last eight three quarters of it. Drawn over it, the filtered output: it rises and settles near a quarter of the full level, then near a half, then near three quarters, with a small ripple left over." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 248" role="img" aria-label="A one-bit signal that is only ever on or off. For the first eight pulses it is on a quarter of each pulse period, for the next eight half of it, for the last eight three quarters of it. Drawn over it, the filtered output: it rises and settles near a quarter of the full level, then near a half, then near three quarters, with a small ripple left over." style={{ width: "100%", height: "auto" }}>
   <defs>
     <marker id="snd-pwm-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
@@ -494,7 +494,7 @@ In a computer, mixing is adding the numbers (or, in the electronics, adding the 
 
 <figure>
 {/* fig:mix */}
-<svg viewBox="0 0 700 416" role="img" aria-label="Three plots over the same two milliseconds. Top: a 1,000 Hz wave. Middle: a quieter 3,000 Hz wave. Bottom: their sum, worked out moment by moment, drawn against the top and bottom of the range a converter can deliver. Where the sum would go past the range, the output is flattened against the limit; those clipped stretches are marked." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 420" role="img" aria-label="Three plots over the same two milliseconds. Top: a 1,000 Hz wave. Middle: a quieter 3,000 Hz wave. Bottom: their sum, worked out moment by moment, drawn against the top and bottom of the range a converter can deliver. Where the sum would go past the range, the output is flattened against the limit; those clipped stretches are marked." style={{ width: "100%", height: "auto" }}>
   <defs>
     <marker id="snd-mix-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
@@ -561,7 +561,7 @@ The simplest way to place a sound is **panning**: mix it into the two channels a
 
 <figure>
 {/* fig:pan */}
-<svg viewBox="0 0 700 256" role="img" aria-label="Three cases, each seen from above: two speakers in front of a listener, and the level the sound has in each channel. Left only: the left channel at full level, the right silent, and the sound seems to come from the left speaker. Equal levels on both sides: the sound seems to come from the centre, between the speakers. More on the right than on the left: the sound seems to come from between the centre and the right speaker." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 260" role="img" aria-label="Three cases, each seen from above: two speakers in front of a listener, and the level the sound has in each channel. Left only: the left channel at full level, the right silent, and the sound seems to come from the left speaker. Equal levels on both sides: the sound seems to come from the centre, between the speakers. More on the right than on the left: the sound seems to come from between the centre and the right speaker." style={{ width: "100%", height: "auto" }}>
   <text x="110" y="20" textAnchor="middle" fill="currentColor" fontSize="16.5" fontWeight="bold">left only</text>
   <line x1="42" y1="56" x2="178" y2="56" stroke="currentColor" strokeWidth="1" strokeDasharray="4 4" strokeOpacity="0.35" />
   <rect x="18" y="42" width="24" height="28" rx="3" fill="none" stroke="#3b82f6" strokeWidth="2" />
@@ -639,7 +639,7 @@ bouncing off the walls, each time later and quieter:
 
 <figure>
 {/* fig:room */}
-<svg viewBox="0 0 700 300" role="img" aria-label="Left: a room 12 by 8 metres seen from above, with a speaker and a listener. The sound reaches the listener straight away along the direct path, and also along four paths that bounce once off each wall, which are longer. Right: what reaches the listener's ear over the first 60 milliseconds: the direct sound first, at about 16 milliseconds, then the four single echoes between about 26 and 40 milliseconds, quieter, then a crowd of even quieter echoes that bounced twice. Together they are the room's reverberation." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 304" role="img" aria-label="Left: a room 12 by 8 metres seen from above, with a speaker and a listener. The sound reaches the listener straight away along the direct path, and also along four paths that bounce once off each wall, which are longer. Right: what reaches the listener's ear over the first 60 milliseconds: the direct sound first, at about 16 milliseconds, then the four single echoes between about 26 and 40 milliseconds, quieter, then a crowd of even quieter echoes that bounced twice. Together they are the room's reverberation." style={{ width: "100%", height: "auto" }}>
   <defs>
     <marker id="snd-room-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />

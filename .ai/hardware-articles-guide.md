@@ -19,10 +19,11 @@ to and replace what it supersedes.
   number (clock counts, addresses, encodings) with a script rather than in your head.
 - **The article never names its reference.** No VHDL, file names, signal or process names, line numbers,
   quoted source or "the VHDL says", anywhere: text, tables, figures, captions, alt texts. State each fact
-  as a fact about the machine. The FPGA as a chip may be named. Klive's own source is named only in "How
-  Klive does it". Before publishing, search the page for `vhd`, `VHDL`, `_input`, `next-fpga` and
+  as a fact about the machine. The FPGA as a chip may be named. Klive's own source is not named in a
+  chapter about the hardware. Before publishing, search the page for `vhd`, `VHDL`, `_input`, `next-fpga` and
   `snake_case` names.
-- **Where Klive and the hardware differ, fix the core or state the difference.** A core fix is its own
+- **Where Klive and the hardware differ, fix the core.** The chapters describe the machine, not Klive, so a
+  difference is no longer stated in the text: it is fixed, or recorded in the core's own README. A core fix is its own
   commit with a `fix` changeset, before the article's commit; the article commit gets an `internal`
   changeset. Existing tests can be blind to a difference (a Radastan test used offset `$0E`, for which
   the right and the wrong rule agree): when a test passes but you doubt it, add a case that tells the two
@@ -74,10 +75,11 @@ until they are reworked. A new chapter starts in the new shape.
   cross-references name the section or chapter ("the mixer chapter's Headroom"). **Balanced headings**: no
   `###` that would be the only one under its `##`; prefer one level throughout. Short paragraphs; plain
   words first, the register's name second; **bold the one term a paragraph introduces**.
-- End with **"How Klive does it"** (the matching code, the IDE view, the "where to read the code" table
-  inside it, not under a heading of its own) and **a closing retelling** under an inviting heading ("What
-  to take home", not "The chapter in a nutshell"): a few fluent paragraphs with the key numbers, not a
-  bulleted list.
+- **No "How Klive does it" section.** The project author decided the hardware chapters do not need one:
+  a chapter is about the machine, and ends with **a closing retelling** under an inviting heading ("What to
+  take home", not "The chapter in a nutshell"): a few fluent paragraphs with the key numbers, not a bulleted
+  list. A chapter whose subject is Klive itself (the sound series' "From the Machine to Your Speakers") stays
+  a chapter of its own.
 - **"Chapter" is a technical word**: use it only when you point at a chapter ("the previous chapter", "the
   mixer chapter's Headroom"), not to talk about the text the reader is in ("everything here builds on…",
   "these pages"). A series ends with a chapter that ties
@@ -88,7 +90,18 @@ until they are reworked. A new chapter starts in the new shape.
   never sits in a register description or a figure.
 - **A company of friends discussing engineering.** The author writes as "I", talking to "you": "I" for an
   opinion, a piece of advice or a warning ("here is my advice", "let me warn you", "I always remember them
-  like this"), never for an invented experience ("I have seen this bite many programs" is fiction). Use a
+  like this"), never for an invented experience ("I have seen this bite many programs" is fiction).
+- **The author has opinions, and says so often.** Reviewing the memory and ports chapter, the project author
+  asked for "I" far more often than one per section: the text should read as the author talking about the
+  hardware, judging it as he goes ("I find this the cleverest trick in the machine", "I am not a fan of",
+  "if you ask me", "my rule of thumb"). Aim for "I" in most sections, several times in a long one, always as
+  an opinion, a preference, a confession of taste or a piece of advice, never as a fact about the machine
+  in disguise.
+- **Give the hardware's characters names.** A nickname makes a mechanism memorable when it fits what the
+  thing does: the DivMMC is "the butler" (always there when you ring, gone when you are done), the boot ROM
+  "the stagehand" (sets the scene and leaves before the curtain rises), port `$7FFD` "the interpreter" (it
+  speaks 128K and translates into MMU). Introduce the name once with the reason it fits, then use it now and
+  then beside the real name, never instead of it in a rule, a register description or a figure. Use a
   few conversational openers where they fit ("Hey, notice…", "Have you ever…?", "Uhm", "Well", "So, what
   have we got?") and questions to the reader, and mix short sentences with longer ones. Sparingly: a handful
   per section, not one per paragraph.
@@ -119,7 +132,10 @@ until they are reworked. A new chapter starts in the new shape.
 - **Show real code for effects**: a commented listing in a `z80klive` fence for Z80 code, so the site
   highlights it (a `text` fence for anything the Z80 grammar does not know, such as a Copper list, and for bit
   diagrams), then "how it works" as numbered
-  steps or bullets. Check the listing's numbers against the program the test actually runs.
+  steps or bullets. Check the listing's numbers against the program the test actually runs. Keep every
+  listing line to **64 characters** at most, comments included: the article's measure is 70ch of prose,
+  and the code face is wider, so an 80-character line scrolls sideways. Shorten the comment rather than
+  wrap the code.
 - **Explain why**, briefly: why the hardware is shaped this way, why a list writes in the border of the
   line before instead of at dot 0.
 - When an earlier article's fact turns out wrong or too general, correct it in the same change, and link
@@ -162,6 +178,10 @@ until they are reworked. A new chapter starts in the new shape.
   upright reads as a drawing slip, so route it in straight runs with right-angle turns. And give every arrow a
   last straight run longer than its arrowhead (about 13 units at stroke 1.8), or the head swallows the line and
   looks stunted: leave enough room between boxes for it.
+- **No stroke on the viewBox's edge.** A box drawn at x = 0 or ending at x = 700 loses the outer half of its
+  border to the viewBox and looks thinner than the others. Keep the drawing at 0–700 but give the viewBox
+  2 units of room on every side (`viewBox="-2 -2 704 H+4"`, as `docs/authoring/next-memory/memory-io-figures.cjs`
+  does).
 - Draw to scale where scale carries meaning, and say so. Put two things on one scale when the reader
   must line them up (a picture and the beam's timeline under it, dot 320 on both).
 - **Make close-ups big**: a magnified detail takes most of the figure's width.
@@ -171,8 +191,27 @@ until they are reworked. A new chapter starts in the new shape.
     background in both themes;
   - fine grid or dashed lines over a picture in white, clearly visible; lines inside a key in white;
   - labels must fit their boxes and the viewBox; split long labels into explicit lines.
-- Generate figures with coordinates from a small script (scratchpad) when they are to scale or have many
-  parts; edit the generator, not the generated MDX, and regenerate.
+- **Leader lines do not cross.** When several narrow parts of a strip need labels under it, give each
+  leader its own height: a leader whose drop lies inside another leader's level run must turn above it. Then
+  no drop crosses a run, and the labels can sit in one row.
+- **A label never sits on an arrow or a box edge.** "configures the other two" first ran across a dashed
+  arrow and the edge of a box; place a label in open space beside the line it explains. An arrow that must
+  reach a box ends on the box's edge, never in the space beside it.
+- **Leave no empty band.** A figure whose rows end well above its viewBox's bottom (the port decode grid) has
+  a gap a reader takes for a missing part: size the height from the last row.
+- Generate figures with coordinates from a small script when they are to scale or have many parts; edit the
+  generator, not the generated MDX, and regenerate. Keep the generator in the repository
+  (`docs/authoring/<series>/*-figures.cjs`, on the shared `docs/authoring/next-audio/_svg.cjs`): the screen
+  series' generators lived in a scratchpad and are lost, so its figures can only be edited by hand.
+- **Look at every figure as a picture before publishing**, both themes. The quickest check needs no browser
+  pane: take each `<svg>` from the built page (`docs/out/.../index.html`), swap `currentColor` for a dark and a
+  light ink, put a background rect behind it and render it with `sharp` to a PNG at 1400 px. Convert from the
+  built HTML, not from the MDX: a regex that turns JSX's camelCase into SVG attributes also mangles
+  `currentColor` and words such as "DivMMC", and shows faults that are not there. That render uses a
+  fallback font, though: the site's own (Overpass) is wider, so two labels that clear each other in the PNG
+  can touch on the page (`$000000` and a centred `$040000` 87.5 units apart did). Check tight label spacing
+  in the browser with `getBoundingClientRect()` on the `<text>` elements, and start a label at its tick
+  rather than centring it when its neighbour is close.
 
 ## Wording rules of the Next series
 
