@@ -169,9 +169,9 @@ export const KNOWN_ROM_PAGES: Readonly<Record<string, KnownRomPage>> = {
   "2169c49c": { file: "ep-exos21.rom", kind: "ep-exos", page: 0 },
   "9eaf280b": { file: "ep-exos21.rom", kind: "ep-exos-basic", page: 1 },
   "20b29761": { file: "ep-exos20.rom", kind: "ep-exos", page: 0 },
-  e4367a35: { file: "ep-exos20.rom", kind: "ep-exos", page: 1 },
+  e4367a35: { file: "ep-exos20.rom", kind: "ep-exos-basic", page: 1 },
   "55f96251": { file: "ep-basic21.rom", kind: "ep-basic" },
-  "1228de34": { file: "ep-basic20.rom", kind: "ep-ext" },
+  "1228de34": { file: "ep-basic20.rom", kind: "ep-basic" },
   d1e46955: { file: "ep-exdos13.rom", kind: "ep-ext", page: 0 },
   d1333188: { file: "ep-exdos13.rom", kind: "ep-ext", page: 1 }
 };

@@ -2423,3 +2423,25 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
   instruction, each explained on the instruction that hides it). Reassembles byte for byte. In the running IDE
   `ann-info` finds the shipped sidecar for segment 04h and the ROM annotation editor reports "Ready to ship ·
   level 2".
+
+### 2026-11-01 — Enterprise 64: `ep-exos20.rom` (EXOS 2.0, segments 00h and 01h) to level 2
+
+- **Sources:** Klive's own EXOS 2.1 sidecar, carried onto 2.0's bytes with `npm run rom:annotations:carry`
+  (579 of 1,132 labels on page 0, 630 of 923 on page 1; provenance `derived`); the ROM bytes through
+  `tools/ep-dis.cjs` (page 1 with IS-BASIC's call lists decoded, kind `ep-exos-basic`); runs on the 64
+  (`createEpSession({ model: "ep64" })`); and, for interface facts only (marked `manual`), the EXOS 2.1 kernel
+  specification, each checked against 2.0's code. No commented disassembly or name list of EXOS was opened; GPL
+  emulator sources were not read; no helper opened `_input/` or the web.
+- **How:** a script compared each carried label's routine with 2.1's (317 DIFFERS); ten helpers aligned 2.0
+  with 2.1 instruction by instruction, carried the remaining text with every ROM and RAM address translated, and
+  rewrote every routine that really differs from 2.0's bytes (`replace` and `rename` lists, new in
+  `merge-drafts.py`). The session then flagged every RAM address in the text that 2.1's code uses and 2.0's does
+  not (8, all correct on reading), settled the last "probably" by computing the 32K word sum (0), and swapped 38
+  numeric references for names.
+- **Runs (observed):** a profile on the 64 over ~145 typed commands and two programs; helper probes: CSC(1)
+  printed blank lines and never returned to "ok", ANGLE(-1,0) under OPTION ANGLE DEGREES gave 3.141592654,
+  MOD(5,-3) and MOD(-7,-3) gave -1, VER$ and VERNUM (2), TIME$ and DATE$ after the boot.
+- **Level:** 2 on both pages, measured and recorded (1,142 and 899 labels; 21 and 23 targets inside an
+  instruction). Reassembles byte for byte. On the 64 in the running IDE `dis $E471` at a breakpoint shows
+  SVC_TICK with its targets named, `ann-info` finds the shipped sidecar for segments 00h and 01h, and the ROM
+  annotation editor reports "Ready to ship · level 2".

@@ -29,9 +29,9 @@ describe("the Enterprise ROM pages", () => {
       ["ep-exos21.rom", 0, "ep-exos"],
       ["ep-exos21.rom", 1, "ep-exos-basic"],
       ["ep-exos20.rom", 0, "ep-exos"],
-      ["ep-exos20.rom", 1, "ep-exos"],
+      ["ep-exos20.rom", 1, "ep-exos-basic"],
       ["ep-basic21.rom", 0, "ep-basic"],
-      ["ep-basic20.rom", 0, "ep-ext"],
+      ["ep-basic20.rom", 0, "ep-basic"],
       ["ep-exdos13.rom", 0, "ep-ext"],
       ["ep-exdos13.rom", 1, "ep-ext"]
     ];

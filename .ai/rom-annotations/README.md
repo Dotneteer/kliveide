@@ -198,6 +198,6 @@ makes the work faster, not the sources wider.
 plus their differing routines, `sp128-0`, the +3 ROMs 0–2 (the +3DOS call
 table from the +3 manual first), and the ZX81 and ZX80 ROMs. The HT-1080Z's are done, every one at level 2: the BASIC ROMs, the extension ROMs and the
 character generators (`ht1080z-authoring-guide.md`). The Videoton TVC's are next: BASIC 1.2's SYS chips, its EXTH, BASIC 2.2's three chips,
-then VT-DOS (`tvc-authoring-guide.md`). The Enterprise's are under way: EXOS 2.1's segments 00h and 01h and the IS-BASIC
-2.1 cartridge are done to level 2; then the 64's EXOS 2.0 and IS-BASIC 2.0, and EXDOS 1.3 last
+then VT-DOS (`tvc-authoring-guide.md`). The Enterprise's are under way: EXOS 2.1 (both segments), the IS-BASIC 2.1
+cartridge and the 64's EXOS 2.0 (both segments) are done to level 2; then IS-BASIC 2.0, and EXDOS 1.3 last
 (`ep-authoring-guide.md`).

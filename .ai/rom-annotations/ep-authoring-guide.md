@@ -29,7 +29,7 @@ Every Enterprise ROM page is a 16K segment listed at **$C000** (`romKindOrigin`:
 | 1 | `ep-exos21.rom` page 0 | EXOS 2.1, segment 00h: the kernel, VIDEO, SOUND, KEYBOARD, EDITOR | `ep-exos` | Done (below) |
 | 2 | `ep-exos21.rom` page 1 | EXOS 2.1, segment 01h: IS-BASIC 2.1's added routines, the clock, PRINTER, TAPE, SERIAL, NET, the word processor | `ep-exos-basic` | Done (below) |
 | 3 | `ep-basic21.rom` | IS-BASIC 2.1 (cartridge, segment 04h) | `ep-basic` | Done (below). An extension ROM whose code uses the same call lists |
-| 4 | `ep-exos20.rom`, `ep-basic20.rom` | the 64's EXOS 2.0 and IS-BASIC 2.0 | `ep-exos`, `ep-ext` (check whether 2.0 has the call-list gate before giving it a BASIC kind) | Own sidecars, not `inherits`: only about 2.5K (page 0), 4.5K (page 1) and 1.8K (BASIC) of 2.1's bytes recur in runs of 64 or more. Reuse 2.1's names where a routine does the same job |
+| 4 | `ep-exos20.rom`, `ep-basic20.rom` | the 64's EXOS 2.0 and IS-BASIC 2.0 | `ep-exos` / `ep-exos-basic` (page 1), `ep-basic` | EXOS 2.0 done (below); IS-BASIC 2.0 next (same gate as 2.1; `rom:annotations:carry` from `ep-basic21.rom.dis` places 494 of 1,021 labels) | Own sidecars, not `inherits`: only about 2.5K (page 0), 4.5K (page 1) and 1.8K (BASIC) of 2.1's bytes recur in runs of 64 or more. Reuse 2.1's names where a routine does the same job |
 | 5 | `ep-exdos13.rom` | EXDOS 1.3 (segments 20h-21h) | `ep-ext` | Last: which EXDOS 1.3 image is the original is still open (`src/public/roms/ep-roms-readme.txt`) |
 
 `ep-klive-fileio.rom` is Klive's own source (`src/emu/machines/enterprise/fileio/`) and gets no sidecar.
@@ -136,6 +136,28 @@ own bytes before reusing one there.
 - **The last three bytes** ($3FFD-$3FFF) are reached and read by nothing after the boot; the boot's checksum
   over the 32K comes to 0 with them.
 
+### EXOS 2.0 (`ep-exos20.rom`, the 64)
+
+Read from the bytes and observed in runs on the 64 (`PROVENANCE.md`, 2026-11-01, EXOS 2.0).
+
+- **Mostly 2.1's code at other addresses**: long stretches are the same instructions shifted (page 0's VIDEO by
+  $35, page 1's NET by $98, the editor's RAM by $C2F). The kernel variables $BF00-$BFEB are 4 higher; EXOS
+  variables are 0-37 at $BFC9 + n (2.1: 0-39 at $BFC5 + n); the pager is at $B21C, the LPT at $BB00, the font at
+  $B680, SOUND's RAM at $B341, KEYBOARD's at $B4DE, the editor's at $BE82, TAPE's at $B258, SERIAL/NET's at $B2AB,
+  the clock at $BF76-$BF7B.
+- **Devices:** PRINTER is in segment 0 (descriptor $3FA5, the last of its chain: VIDEO, SOUND, KEYBOARD, EDITOR,
+  PRINTER); segment 1 has TAPE, SERIAL, NET. Segment 1 has 2.1's header shape, IS-BASIC routines with the same
+  call bytes ($92/$93/$96 take operands), the services at $2407 and the word processor ("WP version 2.0", 1984),
+  whose texts use a byte-and-phrase packing instead of 2.1's bit stream.
+- **Behaviour that differs from 2.1** (each described where the code does it): no black border or interrupt
+  counter at start-up, no USER_ISR; an empty device name opens unit 5 of the default device (read from the code);
+  fewer file-name characters; no size-overflow check in VIDEO open; the editor refuses only video mode 1 and
+  rechecks only the keyboard; changing the paper colour clears the editor's video-error mark; TAPE ignores the unit
+  and its read status is always 0; every error code has a text; IS-BASIC's CSC reads no argument and does not
+  return (run), ANGLE(-1,0) gives pi in degrees mode, MOD is x - y*INT(x/y), USR returns through
+  LD IY,$0002; SET has no PRIORITY. Instead of 2.1's tamper check, start-up stores the copyright text's XOR at
+  $BF82 and segment 0 XORs it into $BFB6.
+
 ### The IS-BASIC 2.1 cartridge (`ep-basic21.rom`)
 
 Read from the bytes and observed in runs (`PROVENANCE.md`, 2026-11-01, IS-BASIC 2.1).
@@ -218,7 +240,17 @@ Read from the bytes and observed in runs (`PROVENANCE.md`, 2026-11-01, page 1).
 | `ep-exos21.rom.dis` page 0 | **2** | 1,132 | 48 data regions, 4,717 annotated lines (443 `manual` entries); reassembles byte for byte; checked in the running IDE (`dis` at $D4D0 and $C410 with segment 0 in page 3, the editor's Ready chip) |
 | `ep-exos21.rom.dis` page 1 | **2** | 923 | 519 data regions (the function, SET-option and constant tables one entry per row), 4,333 annotated lines (325 `manual`), 7,184 instructions, 23 targets inside instructions; reassembles byte for byte; checked in the running IDE (`dis $E47A` at a breakpoint shows SVC_TICK, `ann-info` lists page 1's sidecar, the editor's Ready chip) |
 | `ep-basic21.rom.dis` | **2** | 1,021 | 493 data regions (the keyword table one entry per row), 7,770 instructions, 38 targets inside instructions; reassembles byte for byte; `ann-info` finds it for segment 04h and the editor reports "Ready to ship · level 2" (a live listing at a BASIC breakpoint was not reached: the test driver's key press does not get past the banner) |
-| the others | 0 | | next: EXOS 2.0 and IS-BASIC 2.0 (the 64) |
+| `ep-exos20.rom.dis` pages 0 and 1 | **2** | 1,142 + 899 | carried from 2.1 (`derived`) and finished by hand; 70 + 547 data regions, 8,234 + 7,097 instructions; reassembles byte for byte; checked on the 64 in the running IDE (`dis $E471` at a breakpoint shows SVC_TICK, `ann-info`, the editor's Ready chip) |
+| the others | 0 | | next: IS-BASIC 2.0 (`ep-basic20.rom`) |
+
+**Method that worked (EXOS 2.0, a carried ROM).** `npm run rom:annotations:carry -- ep-exos21.rom.dis
+ep-exos20.rom` placed about half of 2.1's entries (`derived`). A script compared each carried label's routine with
+2.1's (`carried-review.txt`: same / DIFFERS); most DIFFERS only meant labels in between had not carried. Ten helpers
+aligned 2.0 with 2.1 instruction by instruction, carried the rest of 2.1's text with every address translated
+(ROM offsets through the alignment, RAM through a map built from differing operands), and rewrote what really
+differs; a draft's `replace` and `rename` lists (`merge-drafts.py`) overwrite carried entries. **The carry tool
+does not check RAM addresses in carried text**: after the merge, flag every RAM address in the text that 2.1's
+code uses and 2.0's never does, and read each.
 
 **Method that worked (IS-BASIC 2.1).** The page-1 work had already produced the call dictionary
 (`basic-calls.md`): its 65 cartridge routine names went straight onto the call table's targets. A profile over
