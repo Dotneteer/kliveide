@@ -6,7 +6,7 @@ import { MASTER_CLOCK, side } from "../audio/_audio-helpers";
 import { colours, hex8, writePalette } from "../ula/_ula-helpers";
 
 /*
- * zxnDMA / Z80 DMA (catalogue DMA-001 - DMA-023).
+ * zxnDMA / Z80 DMA (catalogue DMA-001 - DMA-024).
  *
  * Hardware (`vendor/next-fpga/3.02.01/src`):
  * - zxnext.vhd ~1729-1776: the DMA is clocked by `i_CLK_CPU` (the CPU clock, 3.5-28 MHz) with
@@ -307,12 +307,13 @@ Wait:   inc hl                   ; 6
 
   // --- DMA-009: prescaler ----------------------------------------------------------------------------
 
-  it("DMA-009: with prescaler 100 a byte moves every 400 T-states at 3.5 MHz (875 kHz / 100)", async () => {
+  it("DMA-009: with prescaler 100 a byte moves every 403 T-states at 3.5 MHz (4 x 100 + 3)", async () => {
     // --- continuous: the CPU waits for the whole block; one byte = 4 x 100 T-states + 2 clocks
     const s = await enableProgram(setup({ a: 0xc000, b: 0xd000, len: 20, prescaler: 100 }));
     const t = timeEnable(s);
-    expect(t, `${t} T-states for 20 bytes`).toBeGreaterThanOrEqual(20 * 400);
-    expect(t).toBeLessThanOrEqual(20 * 404 + 20);
+    // --- exactly 4 x 100 + 3 a byte: the wait ends after 32 x P master clocks, two clocks reach the next read
+    expect(t, `${t} T-states for 20 bytes`).toBeGreaterThanOrEqual(20 * 403);
+    expect(t).toBeLessThanOrEqual(20 * 403 + 12);
   });
 
   it("DMA-009: burst mode paces at the same rate while the CPU runs", async () => {
@@ -335,11 +336,12 @@ Read:   in a,(c)                 ; counter lo (c = $6B)
     expect(count).toBeLessThanOrEqual(Math.ceil(elapsed / 400) + 1);
   });
 
-  it("DMA-009: the prescaler counts 28 MHz time, so at 28 MHz a byte takes 32 x prescaler CPU clocks", async () => {
+  it("DMA-009: the prescaler counts 28 MHz time, so at 28 MHz a byte takes 32 x prescaler + 3 CPU clocks", async () => {
     const s = await enableProgram(setup({ a: 0xc000, b: 0xd000, len: 20, prescaler: 100 }), { speed: 3 });
     const t = timeEnable(s);
-    expect(t, `${t} T-states at 28 MHz`).toBeGreaterThanOrEqual(20 * 3200);
-    expect(t).toBeLessThanOrEqual(20 * 3220 + 40);
+    // --- 32 x 100 + 3 clocks a byte
+    expect(t, `${t} T-states at 28 MHz`).toBeGreaterThanOrEqual(20 * 3203);
+    expect(t).toBeLessThanOrEqual(20 * 3203 + 24);
   });
 
   // --- DMA-010 - DMA-013: commands -------------------------------------------------------------------
@@ -701,5 +703,16 @@ ${table("Setup", setup({ a: 0, b: 0xc000, len: 0x4000, aMode: "fixed" }))}`,
     numbered(s, 0xc000, 8);
     write(s, [...setup({ a: 0xc000, b: 0xc100, len: 4 }), ENABLE]).runFrames(1);
     expect(Array.from(s.peekBytes(0xc100, 5)), "after reset").toEqual([1, 2, 3, 4, 0]);
+  });
+  // --- DMA-024: an enable without a load -------------------------------------------------------------
+
+  it("DMA-024: $87 after a finished block, without $CF, moves one more byte from where it ended", async () => {
+    // --- the counter is checked only after a byte: at the block's end it is already at the length
+    const s = await parked();
+    numbered(s, 0xc000, 8);
+    write(s, [...setup({ a: 0xc000, b: 0xd000, len: 4 }), ENABLE]).runFrames(1);
+    write(s, [ENABLE]).runFrames(1);
+    expect(Array.from(s.peekBytes(0xd000, 6)), "one byte more").toEqual([1, 2, 3, 4, 5, 0]);
+    expect(readBack(s), "counter past the length").toEqual({ status: STATUS_DONE, counter: 5, a: 0xc005, b: 0xd005 });
   });
 });

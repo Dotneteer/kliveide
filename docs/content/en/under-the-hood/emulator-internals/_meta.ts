@@ -11,6 +11,11 @@ export default {
   "spectrum-accuracy": "ZX Spectrum: how Klive's accuracy is tested",
   "next-display": "ZX Spectrum Next: how the screen is drawn",
   "next-audio": "ZX Spectrum Next: how the sound is made",
+  "next-memory-io": "ZX Spectrum Next: memory, ports and NextRegs",
+  "next-interrupts": "ZX Spectrum Next: interrupts",
+  "next-dma": "ZX Spectrum Next: the DMA",
+  "next-ctc": "ZX Spectrum Next: the CTC",
+  "next-storage": "ZX Spectrum Next: storage",
   "ht1080z-video": "HT-1080Z: how the screen is drawn",
   "tvc-video": "Videoton TVC: how the picture is made",
   "ep-nick": "Enterprise: how NICK draws the picture"

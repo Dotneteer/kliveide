@@ -1,21 +1,32 @@
 ---
-description: "How the ZX Spectrum Next's LoRes modes draw a 128 × 96 picture in the ULA's place: a byte per 2 × 2-dot pixel and 256 colours in 12K, the two halves of bank 5 it reads, the palette offset, Radastan's 16 colours in 6K and its two screens, the ULA's clip window, transparency and border, scrolling by half a pixel, what a full screen costs, and how Klive's emulator draws the same."
+description: "How the ZX Spectrum Next's LoRes modes draw a 128 × 96 picture in the ULA's place: a byte per 2 × 2-dot pixel and 256 colours in 12K, the two halves of bank 5 it reads, the palette offset, Radastan's 16 colours in 6K and its two screens, the ULA's clip window, transparency and border, scrolling by half a pixel, what a full screen costs."
 ---
 
 import { Callout } from 'nextra/components'
 
 # LoRes and Radastan: Big Pixels in the ULA's Place
 
-A 128 × 96 screen sounds like a step backwards. The Spectrum's own screen has four times as many dots, so why
-would anyone want fewer? Well, on the Spectrum every 8 × 8 cell of the screen can show only two colours, and
-you have to draw your picture around that. On a LoRes screen, **every pixel can be any of 256 colours**, the
-whole screen fits in **12K**, and it scrolls in both directions without your program copying a single byte.
+A 128 × 96 screen sounds like a step backwards. The Spectrum's own screen has four times as many dots, so
+why would anyone want fewer? Because on the Spectrum every 8 × 8 cell of the screen can show only two
+colours, and you have to draw your picture around that. On a LoRes screen, **every pixel can be any of 256
+colours**, the whole screen fits in **12K**, and it scrolls in both directions without your program
+copying
+a single byte. I would trade a few dots for that any day.
 
 Why does that matter? Think of a game or a demo that wants colour more than detail, on a CPU that has to
-redraw the screen 50 times a second. Fewer, fatter pixels, each in a colour of its own, is a very good trade
-for it. The Next has two such modes. **LoRes** stores a byte per pixel. **Radastan**, a mode first made for
-the ZX-Uno, stores 4 bits per pixel: 16 colours in half the memory. Neither is a layer of its own. Switch one
-on, and it takes the ULA's place, and the rest of the machine treats its picture as the ULA's.
+redraw the screen 50 times a second. Fewer, fatter pixels, each in a colour of its own, is a very good
+trade
+for it. The Next has two such modes. **LoRes** stores a byte per pixel. **Radastan**, a mode first made
+for
+the ZX-Uno, stores 4 bits per pixel: 16 colours in half the memory. Neither is a layer of its own.
+Switch one
+on, and it takes the ULA's place, and the rest of the machine treats its picture as the ULA's. That is
+why the big
+picture calls LoRes **the understudy**, and I cannot think of a better name: when it steps on stage, it
+wears
+the costume of the ULA, the veteran, stands on the veteran's mark, and the audience, the rest of the
+machine,
+never notices the swap.
 
 Read [the big picture](/en/under-the-hood/emulator-internals/next-display/overview/) and
 [colours and palettes](/en/under-the-hood/emulator-internals/next-display/palettes/) first: everything here
@@ -29,12 +40,14 @@ We start with what a LoRes pixel is, four dots of one colour, and how 128 × 96 
 area. Then we look for the bytes in bank 5, in two neat halves, and see how LoRes reads them without ever
 getting in the CPU's way. Next, a byte becomes a colour through the ULA's palette and a palette offset.
 Radastan comes after that, with its 16 colours in 6K and the two screens it can flip between. The key idea
-is the one that follows: LoRes is not a layer of its own but the ULA in disguise, with the ULA's clip window,
-border and transparency. We end with scrolling by half a pixel, with what a full screen costs to redraw, and
-with how Klive does the same.
+is the one that follows: LoRes is not a layer of its own but the ULA in disguise, with the ULA's clip
+window,
+border and transparency. We end with scrolling by half a pixel and with what a full screen costs to
+redraw,
+which is where the whole point of the mode becomes plain.
 
 <Callout type="info">
-The pictures are Klive's Next with only the ULA layer on, at 128K/+3 timing and 50 Hz, with the ULA's
+The pictures show the Next with only the ULA layer on, at 128K/+3 timing and 50 Hz, with the ULA's
 palette set so that entry *i* holds the colour whose RGB332 value is *i*. Each picture is written by a
 test that first checks the dots the text describes.
 </Callout>
@@ -43,21 +56,22 @@ test that first checks the dots the text describes.
 
 You switch LoRes on with bit 7 of the Sprite and Layers System register, **NextReg `$15`**. Its screen is
 **128 pixels across and 96 down**, and it fills the same **display area** as the Spectrum's screen,
-256 × 192 dots. So each LoRes pixel covers **2 dots across and 2 lines down**, four dots of one colour:
+256 × 192 dots. So each LoRes pixel covers **2 dots across and 2 lines down**, four dots of one colour. I
+like to think of it as a mosaic laid with big square stones:
 
 <figure>
-<svg viewBox="0 0 700 525" role="img" aria-label="Klive's Next showing a LoRes picture, 128 by 96 pixels across the whole display area: a sunset, with a sky that fades from deep blue at the top through purple and pink to orange at the horizon, a glow around a yellow sun on the right, a dark purple range of hills on the left, and a blue sea with the sun's reflection in broken orange bands." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 529" role="img" aria-label="The emulated Next showing a LoRes picture, 128 by 96 pixels across the whole display area: a sunset, with a sky that fades from deep blue at the top through purple and pink to orange at the horizon, a glow around a yellow sun on the right, a dark purple range of hills on the left, and a blue sea with the sun's reflection in broken orange bands." style={{ width: "100%", height: "auto" }}>
   <image x="0" y="0" width="700" height="525" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/lores/lores.webp`} />
   <rect x="0" y="0" width="700" height="525" fill="none" stroke="currentColor" strokeOpacity="0.35" />
 </svg>
-<figcaption>A LoRes picture on Klive's Next: 128 × 96 pixels, each any of 256 colours. It takes 12K.</figcaption>
+<figcaption>A LoRes picture: 128 × 96 pixels, each any of 256 colours. It takes 12K.</figcaption>
 </figure>
 
-Close up, you can see the four-dot blocks easily. Each square of the solid grid is one pixel, and so one
-byte in memory:
+Come closer, and the four-dot blocks are plain to see. Each square of the solid grid is one pixel, and so
+one byte in memory:
 
 <figure>
-<svg viewBox="0 0 700 360" role="img" aria-label="A close-up of the LoRes picture, 32 dots across and 24 lines down, around the top of the hills: the dark hills against the pink sky. Dashed lines separate the dots and lines; a solid grid marks every second one, and each square of the heavy grid has one colour. One square is outlined and explained beside the picture: one LoRes pixel is one byte in memory and covers 2 dots across and 2 lines down, four dots of one colour. 128 by 96 such pixels fill the display area of 256 by 192 dots." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 364" role="img" aria-label="A close-up of the LoRes picture, 32 dots across and 24 lines down, around the top of the hills: the dark hills against the pink sky. Dashed lines separate the dots and lines; a solid grid marks every second one, and each square of the heavy grid has one colour. One square is outlined and explained beside the picture: one LoRes pixel is one byte in memory and covers 2 dots across and 2 lines down, four dots of one colour. 128 by 96 such pixels fill the display area of 256 by 192 dots." style={{ width: "100%", height: "auto" }}>
   <image x="0" y="0" width="480" height="360" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/lores/blocks.webp`} />
   <rect x="0" y="0" width="480" height="360" fill="none" stroke="currentColor" strokeOpacity="0.35" />
   <line x1="15" y1="0" x2="15" y2="360" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
@@ -140,10 +154,10 @@ you will see in the section In the ULA's place.
 ## Where the bytes are
 
 LoRes keeps its picture in **bank 5**, the bank that holds the Spectrum's screen, in two halves of
-6,144 bytes:
+6,144 bytes. The understudy, in other words, also borrows the ULA's dressing room:
 
 <figure>
-<svg viewBox="0 0 700 400" role="img" aria-label="Bank 5, 16K from address 4000 to 7FFF hexadecimal, drawn to scale. LoRes uses two blocks of 6,144 bytes: 4000 to 57FF for the top half of the screen, rows 0 to 47, and 6000 to 77FF for the bottom half, rows 48 to 95; the 2K between them, 5800 to 5FFF, and the last 2K, 7800 to 7FFF, are not used. Below them, the screen: the top half takes rows 0 to 47 from the first block, the bottom half rows 48 to 95 from the second, 128 bytes a row, left to right. At the bottom, for comparison, the ULA uses the same first block as its bitmap, with its attributes at 5800, and the Timex modes keep their second bitmap where LoRes keeps its bottom half." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 404" role="img" aria-label="Bank 5, 16K from address 4000 to 7FFF hexadecimal, drawn to scale. LoRes uses two blocks of 6,144 bytes: 4000 to 57FF for the top half of the screen, rows 0 to 47, and 6000 to 77FF for the bottom half, rows 48 to 95; the 2K between them, 5800 to 5FFF, and the last 2K, 7800 to 7FFF, are not used. Below them, the screen: the top half takes rows 0 to 47 from the first block, the bottom half rows 48 to 95 from the second, 128 bytes a row, left to right. At the bottom, for comparison, the ULA uses the same first block as its bitmap, with its attributes at 5800, and the Timex modes keep their second bitmap where LoRes keeps its bottom half." style={{ width: "100%", height: "auto" }}>
   <defs>
     <marker id="lr-map-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="#3b82f6" />
@@ -190,11 +204,14 @@ LoRes keeps its picture in **bank 5**, the bank that holds the Spectrum's screen
 - The **top half**, rows 0–47, is at `$4000`–`$57FF`.
 - The **bottom half**, rows 48–95, is at `$6000`–`$77FF`.
 - Inside a half the rows are stored one after the other, **128 bytes a row**, left to right. Pixel
-  (*x*, *y*) of the top half is at `$4000` + 128*y* + *x*; of the bottom half, at `$6000` + 128(*y* − 48) + *x*.
+  (*x*, *y*) of the top half is at `$4000` + 128*y* + *x*; of the bottom half, at `$6000` + 128(*y* −
+  48) + *x*.
 
-Did you spot what is missing? the scrambling. Unlike the ULA's bitmap, the next byte is the next pixel, and
-the next 128 bytes are the next row. The gap between the halves is where the ULA keeps its attributes, at
-`$5800`, and the two halves are exactly where the Timex modes keep their two bitmaps.
+Did you spot what is missing? The scrambling. Unlike the ULA's bitmap, the next byte is the next pixel,
+and
+the next 128 bytes are the next row. If you have ever written a Spectrum plot routine, you will know why I
+find that a relief. The gap between the halves is where the ULA keeps its attributes, at `$5800`, and the
+two halves are exactly where the Timex modes keep their two bitmaps.
 
 LoRes always reads bank 5, even while a 128K program shows the shadow screen in bank 7.
 
@@ -203,26 +220,30 @@ LoRes always reads bank 5, even while a 128K program shows the shadow screen in 
 Bank 5 is block RAM inside the FPGA with two ports. The ULA and the tilemap share one; **the CPU and
 LoRes share the other**. LoRes reads one byte for every dot, through the CPU's port, and the CPU always
 goes first. In each dot there is time for the CPU's access and for LoRes's, so LoRes never delays the
-CPU and always gets its byte. Polite, and on time.
+CPU and always gets its byte. Polite, and on time: I could not ask more of a guest at the door.
 
 The ULA keeps running underneath. It still fetches its screen through its own port, and only its picture
 is replaced by LoRes. So the timing of the machine, contention included, is the same with LoRes on or
-off.
+off. The veteran is still in the building, reading its lines in the wings; it is only the understudy you
+see.
+My advice: if your program counts on contention timing, you can switch LoRes on without recounting a
+thing.
 
 ## From a byte to a colour
 
 A LoRes byte is a **palette index**. It goes through the **ULA's palette**, the first or the second one
 as bit 1 of the Palette Control register, **NextReg `$43`**, selects, and so any of the 256 entries can
 be used. The ULA's ways of reading an attribute, ULANext and ULA+, do not apply: a LoRes byte is never
-an attribute.
+an attribute. No ink, no paper, no bright, no flash. I find that refreshingly simple.
 
 The LoRes Control register, **NextReg `$6A`**, holds a **palette offset** in bits 3–0. It is added to the
 byte's high nibble before the lookup, as for an 8-bit Layer 2 dot: offset 1 turns byte `$25` into index
-`$35`. With offset 0, the byte is the index. Radastan uses the same offset differently, as the next section
+`$35`. With offset 0, the byte is the index. Radastan uses the same offset differently, as the next
+section
 shows:
 
 <figure>
-<svg viewBox="0 0 700 300" role="img" aria-label="Two paths from memory to a colour. LoRes: the byte, high nibble H and low nibble L; the palette offset from NextReg 6A bits 3 to 0 is added to the high nibble, the low nibble is kept; the result is a palette index. Radastan: the pixel's 4-bit nibble N; the offset becomes the high nibble of the index and N the low one, or, with ULA+ on, the high nibble is 11 followed by offset bits 1 and 0. Both indexes go to the ULA palette, the first or second as NextReg 43 bit 1 selects, and the colour goes to the ULA layer, where NextReg 14 can make it transparent." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 304" role="img" aria-label="Two paths from memory to a colour. LoRes: the byte, high nibble H and low nibble L; the palette offset from NextReg 6A bits 3 to 0 is added to the high nibble, the low nibble is kept; the result is a palette index. Radastan: the pixel's 4-bit nibble N; the offset becomes the high nibble of the index and N the low one, or, with ULA+ on, the high nibble is 11 followed by offset bits 1 and 0. Both indexes go to the ULA palette, the first or second as NextReg 43 bit 1 selects, and the colour goes to the ULA layer, where NextReg 14 can make it transparent." style={{ width: "100%", height: "auto" }}>
   <defs>
     <marker id="lr-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="currentColor" fillOpacity="0.6" />
@@ -264,12 +285,13 @@ palettes chapter's
 
 ## Radastan: 16 colours in 6K
 
-Bit 5 of **NextReg `$6A`** switches LoRes to **Radastan mode**. The screen is still 128 × 96 pixels of
-2 × 2 dots, but each pixel is **4 bits**, so a byte holds two of them and the screen takes half the
-memory:
+Bit 5 of the LoRes Control register, **NextReg `$6A`**, switches LoRes to **Radastan mode**. The screen
+is still 128 × 96 pixels of 2 × 2 dots, but each pixel is **4 bits**, so a byte holds two of them and the
+screen takes half the memory. Radastan is the understudy on a budget: same stage, same mark, half the
+wardrobe:
 
 <figure>
-<svg viewBox="0 0 700 290" role="img" aria-label="Radastan's memory. One byte holds two pixels: bits 7 to 4 the left one, bits 3 to 0 the right one. A row of the screen is 64 bytes, 128 pixels: the first 16 bytes are drawn as 32 pixels, then 48 more bytes follow. 96 rows take 6,144 bytes. Bank 5 can hold two such screens, display file 0 from 4000 to 57FF hexadecimal and display file 1 from 6000 to 77FF, drawn to scale; the screen shows one of them, chosen by port FF bit 0 exclusive-or NextReg 6A bit 4." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 294" role="img" aria-label="Radastan's memory. One byte holds two pixels: bits 7 to 4 the left one, bits 3 to 0 the right one. A row of the screen is 64 bytes, 128 pixels: the first 16 bytes are drawn as 32 pixels, then 48 more bytes follow. 96 rows take 6,144 bytes. Bank 5 can hold two such screens, display file 0 from 4000 to 57FF hexadecimal and display file 1 from 6000 to 77FF, drawn to scale; the screen shows one of them, chosen by port FF bit 0 exclusive-or NextReg 6A bit 4." style={{ width: "100%", height: "auto" }}>
   <text x="350" y="18" textAnchor="middle" fill="currentColor" fontSize="16.5" fontWeight="600">one byte, two pixels</text>
   <rect x="150" y="30" width="50" height="40" fill="#3b82f6" fillOpacity="0.5" stroke="currentColor" strokeOpacity="0.5" />
   <text x="175" y="56" textAnchor="middle" fill="currentColor" fontSize="15">7</text>
@@ -339,15 +361,16 @@ memory:
 - The rows follow one another with no gap: 96 rows of 64 bytes, **6,144 bytes**, in one block.
 - The pixel's 4 bits are the low half of the palette index. The high half is the palette offset,
   NextReg `$6A` bits 3–0, so the offset picks which **16 entries** of the ULA palette the picture uses.
-- With **ULA+** switched on (NextReg `$68` bit 3, or port `$FF3B`) and ULANext off, the high half is `11`
-  followed by the offset's bits 1–0, so the picture takes one of the four 16-colour groups of the ULA+
-  palette, entries 192–255.
+- With **ULA+** switched on (the ULA Control register, NextReg `$68`, bit 3, or port `$FF3B`) and ULANext
+  off, the high half is `11` followed by the offset's bits 1–0, so the picture takes one of the four
+  16-colour groups of the ULA+ palette, entries 192–255.
 
 Sixteen colours sound like a sacrifice after 256. But be honest: how many colours does your picture really
-use? Rarely more than a few dozen. Here is the same sunset in both modes:
+use? Rarely more than a few dozen, if you ask me. Here is the same sunset in both modes, so you can judge
+for yourself:
 
 <figure>
-<svg viewBox="0 0 700 292" role="img" aria-label="The same sunset twice on Klive's Next. Left, LoRes: a byte per pixel, 31 different colours in this picture, with smooth steps in the glow around the sun and in the sea. Right, Radastan: a nibble per pixel, the 16 most common of those colours; the glow and the sea show fewer, wider steps, the rest looks the same." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 296" role="img" aria-label="The same sunset twice on the emulated Next. Left, LoRes: a byte per pixel, 31 different colours in this picture, with smooth steps in the glow around the sun and in the sea. Right, Radastan: a nibble per pixel, the 16 most common of those colours; the glow and the sea show fewer, wider steps, the rest looks the same." style={{ width: "100%", height: "auto" }}>
   <image x="0" y="0" width="344" height="258" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/lores/lores.webp`} />
   <rect x="0" y="0" width="344" height="258" fill="none" stroke="currentColor" strokeOpacity="0.35" />
   <image x="356" y="0" width="344" height="258" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/lores/radastan.webp`} />
@@ -362,37 +385,42 @@ use? Rarely more than a few dozen. Here is the same sunset in both modes:
 
 A Radastan screen takes 6K, so bank 5 holds two, at `$4000` and at `$6000`: **display file 0** and
 **display file 1**. Which one is shown is decided by bit 0 of the Timex control port, **port `$FF`**,
-the same bit that picks the Timex modes' second display file, exclusive-or'ed with bit 4 of NextReg `$6A`.
+the same bit that picks the Timex modes' second display file, exclusive-or'ed with bit 4 of the LoRes
+Control register, NextReg `$6A`.
 
 That makes double buffering simple. Draw the next picture into the screen that is not shown, then flip
 one bit, and the new picture is there at once. The XOR bit is there so that your program can keep port
-`$FF` set the way other code expects, and still choose either screen.
+`$FF` set the way other code expects, and still choose either screen. I like that kind of courtesy in a
+design: it lets your code change the picture without stepping on anyone else's toes.
 
 Plain LoRes does not look at port `$FF`: its two halves are one screen, and the Timex mode does not move
 them.
 
 ## In the ULA's place
 
-If you read only one section, read this one. LoRes is not a sixth layer. When NextReg `$15` bit 7 is set,
-LoRes's dot **replaces the ULA's** on its way into the ULA layer, and from then on the machine cannot tell
-the two apart. It is the ULA wearing a different coat:
+If you read only one section, read this one. LoRes is not a sixth layer. When bit 7 of the Sprite and
+Layers System register, NextReg `$15`, is set, LoRes's dot **replaces the ULA's** on its way into the ULA
+layer, and from then on the machine cannot tell the two apart. This is the understudy's whole act: the
+ULA's costume, the ULA's mark on the stage, the ULA's cues.
 
 - **The clip window.** LoRes has no clip window of its own; it uses the ULA's, the Clip Window ULA
   register, **NextReg `$1A`**, in display-area coordinates. Outside the window the ULA layer is
   transparent, and whatever is below shows through.
 - **The border** is the ULA's: LoRes covers only the display area, and the border around it keeps the
   colour port `$FE` gives it.
-- **Transparency**: NextReg `$14` applies to LoRes colours as to ULA colours, as the section From a byte
-  to a colour says.
+- **Transparency**: the Global Transparency Colour register, NextReg `$14`, applies to LoRes colours as
+  to ULA colours, as the section From a byte to a colour says.
 - **Switching off**: bit 7 of the ULA Control register, **NextReg `$68`**, which switches the ULA off,
   switches LoRes off with it.
 - **Layer order, stencil and blending** treat the LoRes picture as the ULA's
   ([putting it together](/en/under-the-hood/emulator-internals/next-display/composition/)).
 
-Let's see it on the machine, with the clip window set to dots 32–223 across and lines 24–167 down:
+I think this is the neatest decision in the mode. Every rule you already know about the ULA layer holds
+for LoRes, so there is nothing new to learn about where it sits among the layers. Let's see it on the
+machine, with the clip window set to dots 32–223 across and lines 24–167 down:
 
 <figure>
-<svg viewBox="0 0 700 466" role="img" aria-label="Klive's whole frame with LoRes on and the ULA's clip window set to dots 32 to 223 across and lines 24 to 167 down. Inside the window the sunset shows; between the window and the edge of the display area the grey fallback colour shows, because the ULA layer is transparent there; around it the border is the ULA's border, a light blue." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 470" role="img" aria-label="The whole frame with LoRes on and the ULA's clip window set to dots 32 to 223 across and lines 24 to 167 down. Inside the window the sunset shows; between the window and the edge of the display area the grey fallback colour shows, because the ULA layer is transparent there; around it the border is the ULA's border, a light blue." style={{ width: "100%", height: "auto" }}>
   <image x="0" y="0" width="700" height="466" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/lores/clip.webp`} />
   <rect x="0" y="0" width="700" height="466" fill="none" stroke="currentColor" strokeOpacity="0.35" />
 </svg>
@@ -409,10 +437,10 @@ LoRes has its own scroll registers: the LoRes X Scroll register, **NextReg `$32`
 Y Scroll register, **NextReg `$33`**, 0–191. They count in **dots and lines**, not in LoRes pixels, so one
 step is half a pixel, and a scroll moves smoothly. The picture **wraps round** at 256 dots across and 192
 lines down: what leaves on one side comes back on the other, and your program never copies a byte to
-scroll.
+scroll. I am a big fan of this. Fat pixels usually mean jerky scrolling, and here they do not.
 
 <figure>
-<svg viewBox="0 0 700 292" role="img" aria-label="Two LoRes pictures on Klive's Next. Left, the sunset unscrolled. Right, the same picture scrolled by 101 dots across and 75 lines down: the sun and its reflection have moved to the left and up, the hills come in again from the right, and the top of the sky appears below the sea, because the picture wraps round in both directions." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 296" role="img" aria-label="Two LoRes pictures on the emulated Next. Left, the sunset unscrolled. Right, the same picture scrolled by 101 dots across and 75 lines down: the sun and its reflection have moved to the left and up, the hills come in again from the right, and the top of the sky appears below the sea, because the picture wraps round in both directions." style={{ width: "100%", height: "auto" }}>
   <image x="0" y="0" width="344" height="258" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/lores/lores.webp`} />
   <rect x="0" y="0" width="344" height="258" fill="none" stroke="currentColor" strokeOpacity="0.35" />
   <image x="356" y="0" width="344" height="258" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/lores/scroll.webp`} />
@@ -425,16 +453,17 @@ scroll.
 
 With an odd X scroll, the 2 × 2 blocks no longer line up with the even dots: each pixel's two dots across
 land half in one block of the screen and half in the next. And the two kinds of scroll keep to themselves:
-the ULA's own scroll registers do not move LoRes, and LoRes's do not move the ULA.
+the ULA's own scroll registers do not move LoRes, and LoRes's do not move the ULA. On this one point, the
+understudy keeps its own script.
 
 ## What a screen costs
 
-So why bother with a mode like this at all? Memory and time. A program that redraws the whole screen every
-frame has to copy every byte of it, and at the Spectrum's 3.5 MHz the Z80's fastest copy, `LDIR`, takes 21
-T-states a byte. A 128K frame is 70,908 T-states:
+Now, why bother with a mode like this at all? Memory and time. A program that redraws the whole screen
+every frame has to copy every byte of it, and at the Spectrum's 3.5 MHz the Z80's fastest copy, `LDIR`,
+takes 21 T-states a byte. A 128K frame is 70,908 T-states:
 
 <figure>
-<svg viewBox="0 0 700 330" role="img" aria-label="A bar chart, to scale, of the bytes one full screen takes and the frames a 3.5 megahertz Z80 needs to copy them with LDIR at 21 T-states a byte, in 70,908 T-state frames: the ULA 6,912 bytes, 2.0 frames, two colours per 8 by 8 cell; Radastan 6,144 bytes, 1.8 frames, 16 colours; LoRes 12,288 bytes, 3.6 frames, 256 colours; Layer 2 at 256 by 192, 49,152 bytes, 14.6 frames; Layer 2 at 320 by 256, 81,920 bytes, 24.3 frames." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 334" role="img" aria-label="A bar chart, to scale, of the bytes one full screen takes and the frames a 3.5 megahertz Z80 needs to copy them with LDIR at 21 T-states a byte, in 70,908 T-state frames: the ULA 6,912 bytes, 2.0 frames, two colours per 8 by 8 cell; Radastan 6,144 bytes, 1.8 frames, 16 colours; LoRes 12,288 bytes, 3.6 frames, 256 colours; Layer 2 at 256 by 192, 49,152 bytes, 14.6 frames; Layer 2 at 320 by 256, 81,920 bytes, 24.3 frames." style={{ width: "100%", height: "auto" }}>
   <text x="350" y="18" textAnchor="middle" fill="currentColor" fontSize="16.5" fontWeight="600">bytes for a full screen, and frames at 3.5 MHz to copy them with LDIR</text>
   <text x="146" y="60" textAnchor="end" fill="currentColor" fontSize="15">ULA</text>
   <text x="146" y="77" textAnchor="end" fill="currentColor" fontSize="13.5" fillOpacity="0.75">2 colours per</text>
@@ -467,45 +496,26 @@ and needs **four times the memory**, more than 14 frames to copy at that speed. 
 again: a 16-colour screen smaller than the ULA's own.
 
 The Next can run its CPU at up to 28 MHz, which cuts every copy time. The proportions between the modes
-stay the same.
-
-## How Klive does it
-
-Klive draws LoRes in `zxnextUlaRenderLoResScreen`, in `zxnext-ula.c`, the C file of the Next's WASM core
-that draws the ULA layer. When NextReg `$15` bit 7 is set, it replaces the ULA's renderer for the
-display area, after the border has been drawn, which is why the border stays the ULA's. For every dot it
-takes the ULA's clip window, adds the scroll, wraps Y at 192, and reads the byte from bank 5 at the
-address the section Where the bytes are gives, or, in Radastan mode, the nibble from the display file the
-section Two Radastan screens chooses. The index then goes through the ULA's palette and the NextReg `$14`
-test, like any ULA dot.
-
-The registers, NextReg `$15` bit 7, `$32`, `$33` and `$6A`, are kept in `zxnext-layer2.c`, with the two
-address functions.
-
-In the IDE, the [Layers strip](/en/guides/next/layers/) shows the ULA layer alone, and with LoRes on that
-is the LoRes picture, inside the ULA's clip window. And if you want to read the code yourself, here is
-where it lives:
-
-| What | Where |
-|---|---|
-| The LoRes and Radastan renderer | `zxnextUlaRenderLoResScreen` in `src/emu/machines/zxNext/wasm/zxnext/zxnext-ula.c` |
-| The registers and the two address functions | `zxnextLoResStandardAddress`, `zxnextLoResRadastanAddress` in `src/emu/machines/zxNext/wasm/zxnext/zxnext-layer2.c` |
-| The rules, checked on the machine | `test/zxnext-hw/ula/lores.test.ts` |
-| This chapter's pictures | `test/zxnext-hw/layers/next-display-scene.test.ts`, "next-display lores" |
+stay the same. That is why I keep coming back to LoRes when colour matters more than detail: whatever the
+speed, it is the cheapest way to fill the screen with colour.
 
 ## What to take home
 
-Time to pack up. **LoRes**, switched on by NextReg `$15` bit 7, draws **128 × 96 pixels** of 2 × 2
+Let me gather it all up. **LoRes**, switched on by NextReg `$15` bit 7, draws **128 × 96 pixels** of 2 × 2
 dots across the display area, a **byte per pixel**, any of 256 colours, in **12K**. The bytes sit in
-**bank 5** in rows of 128 bytes, the top half at `$4000`–`$57FF` and the bottom half at `$6000`–`$77FF`, with
+**bank 5** in rows of 128 bytes, the top half at `$4000`–`$57FF` and the bottom half at `$6000`–`$77FF`,
+with
 nothing scrambled. LoRes reads a byte per dot through the CPU's port of bank 5, and never delays the CPU.
 
-A LoRes byte is an index into the **ULA's palette**, and NextReg `$6A` bits 3–0 add a **palette offset** to
-its high nibble. **Radastan**, NextReg `$6A` bit 5, stores **two pixels a byte**: 16 colours in **6K**, with
+A LoRes byte is an index into the **ULA's palette**, and NextReg `$6A` bits 3–0 add a **palette offset**
+to
+its high nibble. **Radastan**, NextReg `$6A` bit 5, stores **two pixels a byte**: 16 colours in **6K**,
+with
 the offset as the index's high nibble, or `11` and the offset's bits 1–0 with ULA+. Bank 5 holds **two
 Radastan screens**, and port `$FF` bit 0 XOR NextReg `$6A` bit 4 chooses the one you see.
 
-Both modes **take the ULA's place**: the ULA's clip window, border, transparency test, switch and position
-among the layers. NextReg `$32` and `$33` **scroll** them by dots, half a pixel a step, wrapping at
+Both modes **take the ULA's place**, the understudy in the ULA's costume: the ULA's clip window, border,
+transparency test, switch and position among the layers. NextReg `$32` and `$33` **scroll** them by
+dots, half a pixel a step, wrapping at
 256 × 192. Fat pixels, lots of colour, little memory: not a bad deal for a screen that looks like a step
 backwards.

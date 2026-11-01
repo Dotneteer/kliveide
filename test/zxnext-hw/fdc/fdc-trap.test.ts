@@ -58,6 +58,20 @@ describe("+3 FDC ports", () => {
     }
   });
 
+  // --- ~2549, 2674, 3815: `port_7ffd_wr` does not look at the trap, and outside +3 timing $7FFD ignores
+  // --- A14, so a trapped $3FFD write in 48K/128K timing also pages; in +3 timing A14 = 0 keeps it out.
+  it("FDC-002: a trapped $3FFD write still pages as $7FFD in 128K timing, not in +3 timing", async () => {
+    const s128 = (await trapped()).setNextReg(0x03, 0xa0);
+    s128.out(0x3ffd, 0x03);
+    expect(s128.readNextReg(0xda), "trapped").toBe(0x03);
+    expect(s128.readNextReg(0x56), "128K timing: bank 3 at $C000").toBe(0x06);
+
+    const p3 = await trapped();
+    p3.out(0x3ffd, 0x03);
+    expect(p3.readNextReg(0xda), "trapped").toBe(0x03);
+    expect(p3.readNextReg(0x56), "+3 timing: no paging").toBe(0x00);
+  });
+
   it("FDC-002: other addresses do not trap: $1FFD, $0FFD, $2FFF, $6FFD, $2FFE", async () => {
     for (const port of [0x1ffd, 0x0ffd, 0x2fff, 0x6ffd, 0x2ffe]) {
       const s = await trapped();

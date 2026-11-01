@@ -14,6 +14,7 @@ static uint32_t zxnextMemoryGetPageBank16(uint32_t page);
 static uint32_t zxnextMemoryGetPageBank8(uint32_t page);
 static uint32_t zxnextMemoryGetSelectedRomPage(void);
 static uint32_t zxnextMemoryGetSelectedRamBank(void);
+static uint32_t zxnextMemoryRom3AtFetch(uint32_t address);
 static uint32_t zxnextMemoryReadPhysical(uint32_t offset);
 static void zxnextMemoryWritePhysical(uint32_t offset, uint32_t value);
 static void zxnextMemorySetNextRegister(uint32_t reg, uint32_t value);

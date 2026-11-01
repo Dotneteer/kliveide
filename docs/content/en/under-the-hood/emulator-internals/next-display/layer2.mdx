@@ -1,5 +1,5 @@
 ---
-description: "How the ZX Spectrum Next's Layer 2 works: one byte for every dot, where its 48K or 80K live in memory, why two of its three resolutions store their bytes down the screen instead of across, two 4-bit dots in a byte at 640 × 256, how the CPU reaches it through port $123B or the MMU, its scroll, clip window, palette offset and transparency, how its bytes are fetched alongside the CPU's, and how Klive's emulator draws the same."
+description: "How the ZX Spectrum Next's Layer 2 works: one byte for every dot, where its 48K or 80K live in memory, why two of its three resolutions store their bytes down the screen instead of across, two 4-bit dots in a byte at 640 × 256, how the CPU reaches it through port $123B or the MMU, its scroll, clip window, palette offset and transparency, how its bytes are fetched alongside the CPU's."
 ---
 
 import { Callout } from 'nextra/components'
@@ -15,12 +15,13 @@ anyone build it that way?
 Why should you care? Because Layer 2 is where a Next program goes when it wants a picture without
 compromises: a backdrop painted in many colours, a photo, a drawing program, a screen the CPU can
 fill dot by dot without ever thinking about cells. If you have ever fought the ULA's two colours per
-cell, you know how freeing that is. But the freedom costs memory, lots of it, and knowing where those
-bytes are, and in which order, is what lets your code draw fast.
+cell, you know how freeing that is. The big picture calls Layer 2 **the painter**, and I like the name:
+it paints its backdrop dot by dot, in any colour it likes, with no grid telling it where one colour must
+stop. But the freedom costs memory, lots of it, and knowing where those bytes are, and in which order,
+is what lets your code draw fast.
 
-Everything here builds on the
-[big picture](/en/under-the-hood/emulator-internals/next-display/overview/) (the layers, the wide
-area, clip windows and scrolling in general) and on
+Read the [big picture](/en/under-the-hood/emulator-internals/next-display/overview/) first (the layers,
+the wide area, clip windows and scrolling in general), and
 [colours and palettes](/en/under-the-hood/emulator-internals/next-display/palettes/) (how a byte
 becomes a colour, and when it is transparent). If those are fresh in your mind, you are ready.
 
@@ -32,12 +33,11 @@ the heart of the matter. Layer 2 has three resolutions, and two of them store th
 screen; once you see how the hardware turns a position into an address, the odd order turns out to be
 the obvious one, so if you read only one section, read that one. After that we squeeze two dots into a
 byte at 640 × 256, and look at how your program reaches the picture, through port `$123B` with four
-practical recipes, or through the MMU. Scrolling, clipping and colours follow, then the question of
-how Layer 2 reads a byte for every dot without slowing the CPU down. We end with how Klive does the
-same.
+practical recipes, or through the MMU. Scrolling, clipping and colours follow, and we end with the
+question of how Layer 2 reads a byte for every dot without slowing the CPU down.
 
 <Callout type="info">
-The pictures are Klive's Next with Layer 2 alone on screen (the ULA switched off, the fallback colour
+The pictures show the Next with Layer 2 alone on screen (the ULA switched off, the fallback colour
 black), at 128K/+3 timing and 50 Hz. Each picture comes from a program checked to draw exactly the
 dots the text describes.
 </Callout>
@@ -47,10 +47,10 @@ dots the text describes.
 The ULA spends one bit on each dot and one attribute byte on every 8 × 8 cell, so 6,912 bytes paint
 the whole Spectrum screen, at the price of two colours per cell. **Layer 2** spends a whole byte on
 each dot. The byte is a palette index, so every dot can have any of the 256 colours of the Layer 2
-palette, which are any 256 of the Next's 512.
+palette, which are any 256 of the Next's 512. Here is the difference, eight dots at a time:
 
 <figure>
-<svg viewBox="0 0 700 256" role="img" aria-label="Eight dots of a line, in the ULA and in Layer 2. The ULA: one bitmap byte gives the eight dots, one bit each, and one attribute byte, shared by eight lines, gives their two colours, ink and paper. Layer 2: eight bytes, one for each dot, each a palette index of its own, so each dot can be any of 256 colours. A whole 256 by 192 picture takes 6,912 bytes on the ULA and 49,152 in Layer 2." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 260" role="img" aria-label="Eight dots of a line, in the ULA and in Layer 2. The ULA: one bitmap byte gives the eight dots, one bit each, and one attribute byte, shared by eight lines, gives their two colours, ink and paper. Layer 2: eight bytes, one for each dot, each a palette index of its own, so each dot can be any of 256 colours. A whole 256 by 192 picture takes 6,912 bytes on the ULA and 49,152 in Layer 2." style={{ width: "100%", height: "auto" }}>
   <text x="0" y="20" textAnchor="start" fill="currentColor" fontSize="16.5" fontWeight="bold">ULA: 8 dots = 1 bitmap byte + a share of 1 attribute byte</text>
   <rect x="0" y="34" width="400" height="44" fill="#3b82f6" fillOpacity="0.3" stroke="#3b82f6" />
   <path d="M50,34 v44 M100,34 v44 M150,34 v44 M200,34 v44 M250,34 v44 M300,34 v44 M350,34 v44" fill="none" stroke="#3b82f6" strokeOpacity="0.5" />
@@ -80,7 +80,8 @@ The price is seven times the memory, and seven times the work for a CPU that red
 That is why Layer 2 could not simply be one more ULA mode. The ULA's memory is bank 5, 16K kept
 inside the FPGA, as the [ULA chapter](/en/under-the-hood/emulator-internals/next-display/ula/#the-same-ula-new-memory)
 explains; a 48K or 80K picture does not fit there. So Layer 2 is a layer of its own, with its own way
-into the Next's main memory.
+into the Next's main memory. I think that was the right call: the veteran keeps its small, fast room,
+and the painter gets a studio big enough for its canvases.
 
 ## Where Layer 2 lives
 
@@ -94,10 +95,12 @@ Beside it, the Layer 2 Shadow RAM bank register, **NextReg `$13`**, names a seco
 **shadow**. Layer 2 always shows the picture of NextReg `$12`; the shadow is never shown, and exists
 only for the CPU, which can map either one into memory, as you will see in a moment. Your program
 draws the next frame into the shadow while the active picture is on screen, then swaps the two
-numbers: **double buffering**, with not a single byte copied. Neat, isn't it?
+numbers: **double buffering**, with not a single byte copied. The painter works on the canvas behind
+the easel while the audience admires the one in front. I find this one of the friendliest features
+of the layer. Here is where the two pictures sit after a reset:
 
 <figure>
-<svg viewBox="0 0 700 260" role="img" aria-label="Layer 2's banks after a reset, to scale, one box for each 16 kilobyte bank from bank 8 to bank 13. The active picture, NextReg 12 = 8: a 256 by 192 picture takes banks 8, 9 and 10; a 320 by 256 or 640 by 256 picture takes banks 8 to 12. The shadow picture, NextReg 13 = 11: banks 11 to 13 for 256 by 192. In the wide modes the active picture's last two banks, 11 and 12, are the shadow's first two." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 264" role="img" aria-label="Layer 2's banks after a reset, to scale, one box for each 16 kilobyte bank from bank 8 to bank 13. The active picture, NextReg 12 = 8: a 256 by 192 picture takes banks 8, 9 and 10; a 320 by 256 or 640 by 256 picture takes banks 8 to 12. The shadow picture, NextReg 13 = 11: banks 11 to 13 for 256 by 192. In the wide modes the active picture's last two banks, 11 and 12, are the shadow's first two." style={{ width: "100%", height: "auto" }}>
   <text x="172" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.8">bank 8</text>
   <text x="268" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.8">bank 9</text>
   <text x="364" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.8">bank 10</text>
@@ -124,8 +127,9 @@ numbers: **double buffering**, with not a single byte copied. Neat, isn't it?
 
 Two details, and the first one is a trap. The defaults, banks 8 and 11, suit the 256 × 192 mode: in
 the wide modes the active picture runs into the shadow's first two banks, so if you want double
-buffering there, set NextReg `$13` to 13 or beyond. And a picture placed so that it runs past the end
-of the memory the Next can address has **no dots** there: those parts of Layer 2 are transparent.
+buffering there, set NextReg `$13` to 13 or beyond. My rule of thumb: the moment you pick a wide mode,
+move the shadow. And a picture placed so that it runs past the end of the memory the Next can address
+has **no dots** there: those parts of Layer 2 are transparent.
 
 ## Three resolutions
 
@@ -138,18 +142,18 @@ Bits 5–4 of the Layer 2 Control register, **NextReg `$70`**, choose the resolu
 | `10` | 640 × 256 | 4 | the wide area | 80K, 5 banks | **down**: column after column |
 
 The 256 × 192 mode covers the ULA's display area exactly. The two wide modes cover the 320 × 256 wide
-area, the ULA's display area with 32 dots of border on every side. Notice the last column of the
-table: two orders. That is the surprise from the opening, and it deserves a section of its own.
+area, the ULA's display area with 32 dots of border on every side. Look at the last column of the
+table: two orders. That is the surprise from the opening, and I think it deserves a section of its own.
 
 ## Why the bytes run down the screen
 
-Look at how the hardware turns a position into an address. In 256 × 192, the line *y* and the dot *x*
+Watch how the hardware turns a position into an address. In 256 × 192, the line *y* and the dot *x*
 are each a byte, 0–255 (the line only up to 191), and the address of the dot within the picture is
 the two bytes **side by side**: *y* as the high byte, *x* as the low byte. No arithmetic at all, and
 the dots run across the screen, because *x* is the part that counts up first.
 
 <figure>
-<svg viewBox="0 0 700 322" role="img" aria-label="How Layer 2 forms the address of a dot inside its picture. 256 by 192: 16 bits, the line Y7 to Y0 then the dot X7 to X0; Y7 and Y6 pick one of the three 16K banks, 64 lines each, and the rest is the place in the bank. 320 by 256 and 640 by 256: 17 bits, the column X8 to X0 then the line Y7 to Y0; X8 to X6 pick one of the five 16K banks, 64 columns each. In both, the two coordinates are simply put side by side, the one that is 256 long in the low byte. In 640 by 256, X counts byte columns, 0 to 319, each holding two dots." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 326" role="img" aria-label="How Layer 2 forms the address of a dot inside its picture. 256 by 192: 16 bits, the line Y7 to Y0 then the dot X7 to X0; Y7 and Y6 pick one of the three 16K banks, 64 lines each, and the rest is the place in the bank. 320 by 256 and 640 by 256: 17 bits, the column X8 to X0 then the line Y7 to Y0; X8 to X6 pick one of the five 16K banks, 64 columns each. In both, the two coordinates are simply put side by side, the one that is 256 long in the low byte. In 640 by 256, X counts byte columns, 0 to 319, each holding two dots." style={{ width: "100%", height: "auto" }}>
   <text x="0" y="20" textAnchor="start" fill="currentColor" fontSize="16.5" fontWeight="bold">256 × 192: line high, dot low (16 bits)</text>
   <rect x="0" y="34" width="43.75" height="40" fill="#e5484d" fillOpacity="0.2" stroke="#e5484d" />
   <text x="21.88" y="59.5" textAnchor="middle" fill="currentColor" fontSize="15">Y7</text>
@@ -239,7 +243,8 @@ the dots run across the screen, because *x* is the part that counts up first.
 Now try the same with 320 dots across. The dot no longer fits in a byte: it needs 9 bits, 0–319. So
 "line high, dot low" would leave a gap, and the address of line 1 would have to start at 320, which
 takes a multiplication, *y* × 320 + *x*. Hardware hates multiplying in a hurry. So turn the picture on
-its side, and the problem disappears. The wide modes have exactly **256 lines**, so the *line* is the
+its side, and the problem disappears. I find this the most elegant dodge in the whole screen design. The
+wide modes have exactly **256 lines**, so the *line* is the
 coordinate that fills a byte, and the address is again two coordinates side by side: the column *x* as
 the high part, the line *y* as the low byte. The dots now run **down** the screen, and each column of
 the picture is one 256-byte page of memory.
@@ -249,7 +254,7 @@ coordinate is 256 long goes in the low byte. Here it is on the machine, with the
 both modes, eight colours, each painted over 2,048 bytes in a row of memory:
 
 <figure>
-<svg viewBox="0 0 700 308" role="img" aria-label="Two frames from Klive's Next showing the same bytes of Layer 2 memory, coloured in bands: every 2,048 bytes, eight 256-byte pages, have one colour, cycling through red, yellow, green, cyan, blue, magenta, white and grey. Left, in 256 by 192: a page is a line, so the bands run across the display area, eight lines each, and the first 48K fills it. Right, in 320 by 256: a page is a column, so the same bands stand upright, eight columns each, over the whole wide area, and all 80K are shown." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 312" role="img" aria-label="Two frames from The emulated Next showing the same bytes of Layer 2 memory, coloured in bands: every 2,048 bytes, eight 256-byte pages, have one colour, cycling through red, yellow, green, cyan, blue, magenta, white and grey. Left, in 256 by 192: a page is a line, so the bands run across the display area, eight lines each, and the first 48K fills it. Right, in 320 by 256: a page is a column, so the same bands stand upright, eight columns each, over the whole wide area, and all 80K are shown." style={{ width: "100%", height: "auto" }}>
   <image x="0" y="0" width="340" height="272" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/layer2/rows.webp`} />
   <rect x="0" y="0" width="340" height="272" fill="none" stroke="currentColor" strokeOpacity="0.35" />
   <image x="360" y="0" width="340" height="272" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/layer2/columns.webp`} />
@@ -263,16 +268,18 @@ both modes, eight colours, each painted over 2,048 bytes in a row of memory:
 For your program, the column order has advantages of its own. Moving down a column is `INC L`, and
 moving across is `INC H`; an 8K memory page holds exactly 32 whole columns. Vertical lines, sprites and
 scrolling text that walk down the screen become the cheap direction. On the ULA screen, with its
-scrambled lines, moving down was the expensive one, so the tables have turned rather nicely.
+scrambled lines, moving down was the expensive one, so the tables have turned rather nicely. My advice:
+when you design a routine for a wide mode, let it walk down the columns, not across the lines.
 
 ## 640 × 256: two dots in a byte
 
 The third mode doubles the dots across, to **640**, each one a 14 MHz dot, half the width of a
-standard dot. The memory stays at 80K and the order stays column after column: what changes is the
+standard dot: the painter switches to a finer brush. The memory stays at 80K and the order stays column
+after column: what changes is the
 byte. It now holds **two dots**, four bits each, the high nibble on the left:
 
 <figure>
-<svg viewBox="0 0 700 258" role="img" aria-label="One byte in the 640 by 256 mode. Its high nibble is the left dot and its low nibble the right one, each a 14 megahertz dot. Each nibble becomes the low four bits of a palette index, and the palette offset, NextReg 70 bits 3 to 0, becomes the high four bits. So the two dots of one byte use the same row of 16 palette entries, the row the offset picks." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 262" role="img" aria-label="One byte in the 640 by 256 mode. Its high nibble is the left dot and its low nibble the right one, each a 14 megahertz dot. Each nibble becomes the low four bits of a palette index, and the palette offset, NextReg 70 bits 3 to 0, becomes the high four bits. So the two dots of one byte use the same row of 16 palette entries, the row the offset picks." style={{ width: "100%", height: "auto" }}>
   <defs>
     <marker id="l2-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
@@ -304,16 +311,18 @@ Why four bits, and not a byte for each of the 640 dots? Because Layer 2 gets **o
 7 MHz dot** from memory, and that is the same in all three modes (how it fetches them is the subject of
 the section on fetching, near the end). At 320 across, a byte is a dot. At 640 across, the same byte has
 to serve two dots, so each gets half of it. The 640 mode is the 320 mode's memory, read at the same
-pace, split differently.
+pace, split differently. I like how little this mode costs the hardware: nothing new to fetch, only a
+byte cut in two.
 
-Four bits give each dot 16 colours, and the **palette offset**, bits 3–0 of NextReg `$70`, picks
+Four bits give each dot 16 colours, and the **palette offset**, bits 3–0 of the Layer 2 Control
+register, NextReg `$70`, picks
 which 16: it becomes the high four bits of every index, as the
 [palettes chapter](/en/under-the-hood/emulator-internals/next-display/palettes/#the-other-layers-a-dot-and-an-offset)
-explains. Here it is on the machine: three lines of an 80-column text, ink nibble `$F` and paper
-nibble `$0`, with two offsets:
+explains. To my mind, this is the 640 mode's real job: text. Here it is on the machine: three lines of
+an 80-column text, ink nibble `$F` and paper nibble `$0`, with two offsets:
 
 <figure>
-<svg viewBox="0 0 700 338" role="img" aria-label="Two close-ups from Klive's Next of the same 640 by 256 Layer 2 picture: the left half of the wide area, 40 of the 80 text columns, three lines. Top, palette offset 0: the ink nibble F shows entry 0F, a light blue, and the paper nibble 0 entry 00, black. Bottom, palette offset E: the same bytes show entry EF, a pink, on entry E0, red." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 342" role="img" aria-label="Two close-ups from the emulated Next of the same 640 by 256 Layer 2 picture: the left half of the wide area, 40 of the 80 text columns, three lines. Top, palette offset 0: the ink nibble F shows entry 0F, a light blue, and the paper nibble 0 entry 00, black. Bottom, palette offset E: the same bytes show entry EF, a pink, on entry E0, red." style={{ width: "100%", height: "auto" }}>
   <image x="0" y="0" width="700" height="132" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/layer2/hires.webp`} />
   <rect x="0" y="0" width="700" height="132" fill="none" stroke="currentColor" strokeOpacity="0.35" />
   <text x="350" y="156" textAnchor="middle" fill="currentColor" fontSize="15" fontWeight="bold">palette offset 0: entries $00–$0F</text>
@@ -329,16 +338,19 @@ nibble `$0`, with two offsets:
 Layer 2 reads its picture from banks the CPU does not see unless it asks to. There are two ways to
 ask: port `$123B`, which this section and the next one are about, and the MMU.
 
-The Layer 2 control port, **port `$123B`**, can lay the picture over the bottom of the CPU's memory:
+The Layer 2 control port, **port `$123B`**, can lay the picture over the bottom of the CPU's memory.
+[Memory, Ports and NextRegs](/en/under-the-hood/emulator-internals/next-memory-io/) pictures this as
+the painter's scaffolding, put up over the bottom of the address space so the CPU can reach the
+canvas:
 
 | Bits of port `$123B` | Meaning |
 |---|---|
 | 7–6 | which part: `00`, `01`, `10` the first, second or third 16K at `$0000`–`$3FFF`; `11` the first 48K at `$0000`–`$BFFF` |
 | 5 | not used (0) |
 | 4 | 0 for this layout; 1 for the bank offset below |
-| 3 | 0 maps the active picture (NextReg `$12`), 1 the shadow (NextReg `$13`) |
+| 3 | 0 maps the active picture (the Layer 2 Active RAM bank register, NextReg `$12`), 1 the shadow (the Layer 2 Shadow RAM bank register, NextReg `$13`) |
 | 2 | 1: CPU reads come from Layer 2 |
-| 1 | 1: Layer 2 is shown (also NextReg `$69` bit 7) |
+| 1 | 1: Layer 2 is shown (also bit 7 of the Display Control 1 register, NextReg `$69`) |
 | 0 | 1: CPU writes go to Layer 2 |
 
 A write with bit 4 set stores a **bank offset** in bits 2–0 instead, 0–7 banks, added to the part
@@ -346,7 +358,7 @@ chosen in bits 7–6. The 48K window shows only three of a wide picture's five b
 any of them can be reached.
 
 <figure>
-<svg viewBox="0 0 700 332" role="img" aria-label="How port 123B lays Layer 2 over the CPU's memory, in two layouts chosen by bits 7 to 6. Left, one bank: with 00, 01 or 10, one 16 kilobyte bank of the picture, the first, second or third, appears at 0000 to 3FFF, and the rest of memory is as paged. Right, three banks: with 11, the picture's first three banks appear at 0000 to BFFF. The two columns are not reads and writes: in either layout, bit 2 switches the mapping on for reads and bit 0 for writes, separately or together. The bank is the picture's start bank, NextReg 12 or, with bit 3, NextReg 13, plus the part, plus the bank offset." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 336" role="img" aria-label="How port 123B lays Layer 2 over the CPU's memory, in two layouts chosen by bits 7 to 6. Left, one bank: with 00, 01 or 10, one 16 kilobyte bank of the picture, the first, second or third, appears at 0000 to 3FFF, and the rest of memory is as paged. Right, three banks: with 11, the picture's first three banks appear at 0000 to BFFF. The two columns are not reads and writes: in either layout, bit 2 switches the mapping on for reads and bit 0 for writes, separately or together. The bank is the picture's start bank, NextReg 12 or, with bit 3, NextReg 13, plus the part, plus the bank offset." style={{ width: "100%", height: "auto" }}>
   <text x="197" y="20" textAnchor="middle" fill="currentColor" fontSize="16.5" fontWeight="bold">Layout 1: one bank</text>
   <text x="197" y="40" textAnchor="middle" fill="currentColor" fontSize="15">bits 7–6 = 00, 01 or 10</text>
   <text x="0" y="71" textAnchor="start" fill="currentColor" fontSize="13.5" fillOpacity="0.8">$0000</text>
@@ -384,10 +396,10 @@ any of them can be reached.
 
 ## Four ways to use port `$123B`
 
-The separate switches for reads and writes are what make the port useful. With **writes only**, the
-CPU still reads, and runs, whatever is normally at those addresses, the ROM at `$0000`–`$3FFF` for a
-start, while every write there lands in Layer 2. Here are four common uses, each with the port value
-that sets it up.
+If you ask me, the separate switches for reads and writes are what make the port useful. With
+**writes only**, the CPU still reads, and runs, whatever is normally at those addresses, the ROM at
+`$0000`–`$3FFF` for a start, while every write there lands in Layer 2. Here are four common uses, each
+with the port value that sets it up.
 
 **1. Plot a dot, one third at a time** (layout 1, writes only, 256 × 192). The three thirds of a
 256 × 192 picture are 64 lines each, and bits 7–6 of the line number *are* the third's number. So the
@@ -397,21 +409,22 @@ address, H the line within the third, L the dot:
 ```z80klive
 ; Plot x = E, y = D (0-191) in the colour at L2Ink
 Plot:   ld a,d
-        and $c0                 ; y's bits 7-6 pick the third: port bits 7-6
-        or $03                  ; bit 1: Layer 2 shown; bit 0: writes mapped
+        and $c0         ; y's bits 7-6: the third
+        or $03          ; bit 1: shown; bit 0: writes mapped
         ld bc,$123b
         out (c),a
         ld a,d
-        and $3f                 ; the line within the third
+        and $3f         ; the line within the third
         ld h,a
-        ld l,e                  ; the dot
+        ld l,e          ; the dot
         ld a,(L2Ink)
-        ld (hl),a               ; into Layer 2; reads of $0000-$3FFF still see the ROM
+        ld (hl),a       ; to Layer 2; reads still see ROM
         ret
 ```
 
 The routine can live anywhere, even in the area it draws through, because only its writes are
-redirected, and only those below `$4000`: its stack can be anywhere from `$4000` up.
+redirected, and only those below `$4000`: its stack can be anywhere from `$4000` up. I find it
+charming that the painter can stand on the very scaffolding it is painting under.
 
 **2. Work on the whole picture at once** (layout 2, reads and writes, 256 × 192). With port value `$C7`
 the whole 48K picture sits at `$0000`–`$BFFF` with no gaps: **H is the line and L the dot**, and your
@@ -419,26 +432,27 @@ program can read a dot, change it and write it back. This replaces one colour wi
 whole screen:
 
 ```z80klive
-        di                      ; the ROM's interrupt handler at $0038 is not there any more
+        di              ; no ROM handler at $0038 now
         ld bc,$123b
-        ld a,$c7                ; layout 2, reads (bit 2) and writes (bit 0) mapped, shown
+        ld a,$c7        ; layout 2, reads + writes, shown
         out (c),a
         ld hl,$0000
 Next:   ld a,(hl)
-        cp $e0                  ; red...
+        cp $e0          ; red...
         jr nz,Skip
-        ld (hl),$1c             ; ...becomes green
+        ld (hl),$1c     ; ...becomes green
 Skip:   inc hl
         ld a,h
         cp $c0
         jr nz,Next
-        ld a,$02                ; unmap again, Layer 2 still shown
+        ld a,$02        ; unmap, Layer 2 still shown
         out (c),a
 ```
 
 Let me warn you about this one: with reads mapped, everything the CPU fetches below `$C000` comes from
 Layer 2, its own instructions included. So the code, its stack and its data must be at `$C000` or
-above, and interrupts off. Forget that, and the CPU cheerfully runs your picture as a program.
+above, and interrupts off. Forget that, and the CPU cheerfully runs your picture as a program. I have
+nothing against modern art, but not as machine code.
 
 **3. Reach all 80K of a wide picture** (layout 2 with a bank offset, 320 × 256). In the wide modes the
 48K window holds columns 0–191, again with no gaps, but now **H is the column and L the line**: moving
@@ -448,20 +462,20 @@ whole of column 300 in green:
 
 ```z80klive
         ld bc,$123b
-        ld a,$c3                ; layout 2, writes mapped, shown
+        ld a,$c3        ; layout 2, writes mapped, shown
         out (c),a
-        ld a,$12                ; bit 4 set: bank offset 2
+        ld a,$12        ; bit 4 set: bank offset 2
         out (c),a
-        ld h,300-128            ; column 300
-        ld l,0                  ; from line 0...
+        ld h,300-128    ; column 300
+        ld l,0          ; from line 0...
         ld b,0
 Col:    ld (hl),$1c
-        inc l                   ; ...down all 256 lines
+        inc l           ; ...down all 256 lines
         djnz Col
         ld bc,$123b
-        ld a,$10                ; the offset back to 0
+        ld a,$10        ; the offset back to 0
         out (c),a
-        ld a,$02                ; unmap
+        ld a,$02        ; unmap
         out (c),a
 ```
 
@@ -472,31 +486,37 @@ moves is every write below `$C000`: while the port is set, those go to Layer 2, 
 code updates.
 
 **4. Draw off screen, then show** (bit 3, writes only). Port value `$CB` maps the **shadow** picture,
-NextReg `$13`, while NextReg `$12`'s stays on screen, untouched. Your program draws the whole next
+the Layer 2 Shadow RAM bank register, NextReg `$13`, names, while the picture of the Layer 2 Active RAM
+bank register, NextReg `$12`, stays on screen, untouched. Your program draws the whole next
 frame into the shadow, then swaps the two bank numbers at the frame interrupt, and the new frame
 appears at once, never half drawn:
 
 ```z80klive
         ld bc,$123b
-        ld a,$cb                ; layout 2, the shadow (bit 3), writes mapped, shown
+        ld a,$cb        ; layout 2 + shadow + writes, shown
         out (c),a
-        ; ... draw the next frame with ordinary writes to $0000-$BFFF ...
+        ; ... draw the frame with plain writes to $0000-$BFFF
         ld a,$02
-        out (c),a               ; unmap
-        halt                    ; the frame interrupt: the beam is past the picture
-        nextreg $12,11          ; the shadow becomes the picture shown...
-        nextreg $13,8           ; ...and the old picture the next shadow
+        out (c),a       ; unmap
+        halt            ; frame interrupt: beam past picture
+        nextreg $12,11  ; the shadow is now shown...
+        nextreg $13,8   ; ...the old picture the next shadow
 ```
 
 With writes mapped, every write below `$C000` goes to Layer 2, the CPU's own pushes included, so the
-stack must be at `$C000` or above while the port is set.
+stack must be at `$C000` or above while the port is set. That is the one rule all four recipes share,
+and my advice is to make it a habit: whenever port `$123B` maps anything, keep your stack in the top
+16K.
 
 ## Through the MMU
 
-The other way in is the Next's MMU, the eight MMU slot registers, **NextRegs `$50`–`$57`**, which page
-any 8K page of RAM into any 8K slot of the CPU's 64K. A 16K bank *b* is 8K pages 2*b* and 2*b* + 1,
+The other way in is the Next's MMU, the eight registers from the MMU slot 0 register, **NextReg `$50`**,
+to the MMU slot 7 register, **NextReg `$57`**, which page any 8K page of RAM into any 8K slot of the
+CPU's 64K. A 16K bank *b* is 8K pages 2*b* and 2*b* + 1,
 so the default picture, banks 8–12, is pages 16–25. In the wide modes an 8K page is exactly 32 columns,
-so your program can page in the columns it is drawing and leave the rest of memory alone.
+so your program can page in the columns it is drawing and leave the rest of memory alone. Which way
+do I prefer? Port `$123B` for a quick job at the bottom of memory; the MMU when the painting takes a
+while and the rest of the program has to keep running around it.
 
 ## Scrolling, clipping and colours
 
@@ -514,12 +534,13 @@ Its clip window, the Clip Window Layer 2 register, **NextReg `$18`**, counts in 
 covers: in 256 × 192, the display area, one unit a dot; in the wide modes, the wide area, X in units of
 **two** 7 MHz dots (four dots in 640 × 256) so that 0–159 spans the 320 positions, and Y one unit a
 line. The clip window starts as 0–255, 0–191, which in a wide mode leaves the bottom 64 lines clipped
-until your program writes 0–159, 0–255. Yes, that one catches people: switch to 320 × 256, forget the
-clip window, and the bottom of your picture is missing. The
+until your program writes 0–159, 0–255. Let me warn you, this one catches almost everyone: switch to
+320 × 256, forget the clip window, and the bottom of your picture is missing. The
 [big picture](/en/under-the-hood/emulator-internals/next-display/overview/#clip-windows-a-rectangle-for-each-layer)
 has the details of both.
 
-Its colours come through the two Layer 2 palettes; the palette offset of NextReg `$70` is added to the
+Its colours come through the two Layer 2 palettes; the palette offset of the Layer 2 Control register,
+NextReg `$70`, is added to the
 high four bits of an 8-bit dot and becomes the high four bits of a 4-bit one. Layer 2 is
 **transparent** where its colour, after the palette, equals the value in the Global Transparency
 Colour register, NextReg `$14`, `$E3` after a reset. And a palette entry can carry the **priority
@@ -528,21 +549,24 @@ bit** that lifts its dots above every other layer, as the
 shows.
 
 Every one of these settings, and the bank and the resolution, is taken again for every dot, so a
-change made in the middle of a line, by the CPU or the Copper, shows from the next dot.
+change made in the middle of a line, by the CPU or the Copper, shows from the next dot. I love that:
+the painter will happily change brushes in the middle of a stroke if you ask.
 
 ## Fetching a byte for every dot
 
 The ULA reads block RAM inside the FPGA. Layer 2 reads the Next's main memory, an external static
 RAM shared with the CPU and the DMA. It needs **one byte for every 7 MHz dot** while it draws, a
 read about every 140 nanoseconds, and the CPU at 28 MHz wants the same memory too. So how do they not
-get in each other's way?
+get in each other's way? I think the answer is one of the quiet triumphs of the design.
 
 The memory is fast enough to be shared by time. It completes one access in every tick of the 28 MHz
 clock, **four accesses per dot**, and each tick goes to whoever asks, in a fixed order of priority:
-the **CPU** first, **Layer 2** second, and the **DMA** with whatever is left.
+the **CPU** first and **Layer 2** second; the DMA, while it holds the bus, takes the CPU's place (the [DMA
+chapter](/en/under-the-hood/emulator-internals/next-dma/#a-second-master-on-the-bus) explains how). I picture it as a
+revolving door that turns four times for every dot, with the CPU always at the front of the queue:
 
 <figure>
-<svg viewBox="0 0 700 270" role="img" aria-label="Memory accesses over three 7 megahertz dots, twelve ticks of the 28 megahertz clock. Each tick completes one access of the static RAM. Layer 2 asks for one byte per dot; the CPU, at 28 megahertz, can ask in any tick and always wins. Layer 2's request waits at most a tick and is served in one of the dot's other ticks, so Layer 2 gets its byte every dot and the CPU is never held up. Ticks neither uses are left for the DMA." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 274" role="img" aria-label="Memory accesses over three 7 megahertz dots, twelve ticks of the 28 megahertz clock. Each tick completes one access of the static RAM. Layer 2 asks for one byte per dot; the CPU, at 28 megahertz, can ask in any tick and always wins. Layer 2's request waits at most a tick and is served in one of the dot's other ticks, so Layer 2 gets its byte every dot and the CPU is never held up. Ticks neither uses stay free; while the DMA holds the bus, its accesses take the CPU's place." style={{ width: "100%", height: "auto" }}>
   <text x="350" y="20" textAnchor="middle" fill="currentColor" fontSize="16.5" fontWeight="bold">three 7 MHz dots = twelve 28 MHz ticks = twelve memory accesses</text>
   <path d="M88,36 v164 M292,36 v164 M496,36 v164 M700,36 v164" fill="none" stroke="currentColor" strokeOpacity="0.35" />
   <text x="190" y="56" textAnchor="middle" fill="currentColor" fontSize="15" fillOpacity="0.8">dot n</text>
@@ -550,7 +574,7 @@ the **CPU** first, **Layer 2** second, and the **DMA** with whatever is left.
   <text x="598" y="56" textAnchor="middle" fill="currentColor" fontSize="15" fillOpacity="0.8">dot n+2</text>
   <text x="0" y="91" textAnchor="start" fill="currentColor" fontSize="15">CPU</text>
   <text x="0" y="135" textAnchor="start" fill="currentColor" fontSize="15">Layer 2</text>
-  <text x="0" y="179" textAnchor="start" fill="currentColor" fontSize="15">DMA</text>
+  <text x="0" y="179" textAnchor="start" fill="currentColor" fontSize="15">free</text>
   <rect x="90" y="70" width="47" height="32" rx="3" fill="currentColor" fillOpacity="0.25" stroke="currentColor" strokeOpacity="0.5" />
   <rect x="345" y="70" width="47" height="32" rx="3" fill="currentColor" fillOpacity="0.25" stroke="currentColor" strokeOpacity="0.5" />
   <rect x="498" y="70" width="47" height="32" rx="3" fill="currentColor" fillOpacity="0.25" stroke="currentColor" strokeOpacity="0.5" />
@@ -562,7 +586,7 @@ the **CPU** first, **Layer 2** second, and the **DMA** with whatever is left.
   <rect x="600" y="158" width="47" height="32" rx="3" fill="none" stroke="currentColor" strokeOpacity="0.4" strokeDasharray="3 2" />
   <path d="M88,210 H700" fill="none" stroke="currentColor" strokeOpacity="0.35" />
   <path d="M139,206 v8 M190,206 v8 M241,206 v8 M343,206 v8 M394,206 v8 M445,206 v8 M547,206 v8 M598,206 v8 M649,206 v8" fill="none" stroke="currentColor" strokeOpacity="0.35" />
-  <text x="350" y="238" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.8">one tick each: CPU first, Layer 2 second, the DMA with the spare ticks</text>
+  <text x="350" y="238" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.8">one tick each: the CPU (or the DMA in its place) first, Layer 2 second</text>
   <text x="350" y="260" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.8">(a schematic: which ticks the CPU takes depends on the instructions it runs)</text>
 </svg>
 <figcaption>The main memory shared by time: four accesses per dot, Layer 2 needs one of them. It can wait a tick, so the CPU never waits for it.</figcaption>
@@ -574,37 +598,10 @@ Layer 2 at all, at any speed; unlike the ULA's memory on a Spectrum, Layer 2's h
 And the one byte per dot is also what sets the 640 mode's four bits: that is the answer the section
 on two dots in a byte promised.
 
-## How Klive does it
-
-Klive's Next core draws Layer 2 in C with one renderer for each resolution:
-`zxnextUlaRenderLayer2_256x192Screen`, `..._320x256Screen` and `..._640x256Screen`. Each works
-through its area dot by dot, forms the address as the section on why the bytes run down describes,
-line high in 256 × 192 and column high in the wide modes, applies the scroll with the same wrap at
-192, 256 or 320, reads the byte from the banks of NextReg `$12`, and turns it into a colour through the
-Layer 2 palette with the offset. It then writes either nothing, for a transparent dot, or the colour
-with the priority bit into Layer 2's buffer, for stage 2 to compose. A bank past the end of memory
-gives no dot, as on the hardware. The 640 renderer reads one byte per 7 MHz position and writes two
-dots from it.
-
-Klive does not model the memory sharing you met in the fetching section: on the hardware it never
-delays the CPU or the picture, so there is nothing to imitate.
-
-Port `$123B`'s mapping is part of Klive's memory decoding, `zxnextMemoryResolveLayer2Offset`, which
-lays the chosen bank over the CPU's view for reads, writes or both, as the section on the CPU's view
-describes. In the IDE, the [Layer 2 Inspector](/en/guides/next/layer2-inspector/) shows the picture's
-banks, registers and palette, and the [Layers](/en/guides/next/layers/) view shows Layer 2 alone. And
-if you want to read the code yourself, here is where it lives:
-
-| What | Where |
-|---|---|
-| The three renderers | `src/emu/machines/zxNext/wasm/zxnext/zxnext-ula.c` |
-| Layer 2's registers and port `$123B` | `zxnext-layer2.c` in the same folder |
-| The CPU's view of Layer 2 | `zxnext-memory.c` |
-| The pictures above, with the dots they check | `test/zxnext-hw/layers/next-display-scene.test.ts` |
-
 ## What to take home
 
-In short: **Layer 2** is a bitmap with **one byte for every dot**, a palette index, kept in
+Here is the painter's whole kit, then. **Layer 2** is a bitmap with **one byte for every dot**, a
+palette index, kept in
 the Next's main memory: 48K or 80K in 16K banks, starting at the bank in NextReg `$12`. NextReg `$13`
 names a **shadow** picture for double buffering, and only NextReg `$12`'s is ever shown. After a reset
 they point at banks 8 and 11, which suits 256 × 192; move the shadow to 13 or beyond for the wide modes.
@@ -623,6 +620,7 @@ Your program reaches the picture through **port `$123B`**, one 16K bank at `$000
 it is transparent where its colour equals the value in NextReg `$14`.
 
 Its bytes come from the main memory, which makes four accesses in every 7 MHz dot. The CPU gets first
-pick, Layer 2 needs only one of the four, and so Layer 2 never slows the CPU down. Klive draws each
-resolution with its own renderer, rule for rule as the hardware does. One byte, one dot, any colour:
-the rest is up to your brush.
+pick, Layer 2 needs only one of the four, and so Layer 2 never slows the CPU down. If you keep one
+thing from all this, keep the rule of the low byte: whichever coordinate is 256 long goes there, and
+the odd order of the wide modes stops being odd. One byte, one dot, any colour: the rest is up to your
+brush.

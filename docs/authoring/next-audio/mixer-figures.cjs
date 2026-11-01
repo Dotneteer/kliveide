@@ -18,6 +18,8 @@ const S = require("./_svg.cjs");
 const { BEEPER, PSG, DAC, PI, MIX, box, poly, sampleStairs, svgOpen, text, lines, line, pathEl, rect, arrows } = S;
 
 const PAGE = path.join(__dirname, "../../content/en/under-the-hood/emulator-internals/next-audio/mixer.mdx");
+// --- The "klive" figure (Klive's DC filter against the hardware's sum) lives in the chapter about Klive's own sound
+const KLIVE_PAGE = path.join(__dirname, "../../content/en/under-the-hood/emulator-internals/next-audio/klive-audio.mdx");
 const capture = (name) => JSON.parse(fs.readFileSync(path.join(__dirname, "captures/mixer", `${name}.json`), "utf8"));
 
 const figures = {};
@@ -301,5 +303,7 @@ const SH = FS + 3; // line height for FS
   numbers.push(`klive fig: first top ${firstTop.toFixed(0)} units; ${d.hz.toFixed(2)} Hz`);
 }
 
-S.writeFigures(PAGE, figures);
+const { klive, ...mixerFigures } = figures;
+S.writeFigures(PAGE, mixerFigures);
+S.writeFigures(KLIVE_PAGE, { klive });
 console.log(numbers.join("\n"));

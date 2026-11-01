@@ -1,0 +1,511 @@
+---
+description: "How the ZX Spectrum Next's CTC works: four Zilog-style channels on the 28 MHz master clock, the prescaler and the down-counter, the zero count and its reload, the control word and the channel's states, timer and counter mode, the ring that chains the channels, exact rates from chained channels, a 16-bit stopwatch, interrupts, resets, and what core 3.02.04 changed."
+---
+
+import { Callout } from 'nextra/components'
+
+# CTC: Four Timers in a Ring
+
+Switch a Next from 3.5 MHz to 28 MHz and every delay loop in your program runs eight times faster. The music
+player that counted T-states between two notes now plays like a chipmunk, the sample that took a second takes
+an eighth of one, and the stopwatch you wrote out of `DJNZ` measures nothing at all. Yet some things on the
+Next keep their pace whatever the CPU does. Who is keeping time for them?
+
+I think every serious Next program needs a clock it can trust, and the CPU is not one. The CPU's speed is a
+setting, contention stretches it, the DMA stops it. The **CTC**, the counter/timer circuit, counts the
+machine's master clock instead, and it is the piece I reach for whenever something must happen at a rate: a
+sample clock, a game tick independent of the display, a timeout, or a stopwatch to see how long a routine
+really takes.
+
+You should know one chapter first. [Interrupts: Fourteen Voices, Two
+Wires](/en/under-the-hood/emulator-internals/next-interrupts/) explains how a CTC channel's interrupt reaches
+the CPU, its vector, its status bit and the daisy chain; here we look at what makes the channel ring. [The
+Frame and the Beam](/en/under-the-hood/emulator-internals/next-display/timing/) explains the master clock the
+CTC counts.
+
+## The road ahead
+
+We start with the chip the CTC copies and the ports of its four channels. Then we open one channel up: a
+prescaler, a down-counter and the pulse that comes out when the count runs out. The control word comes next,
+with the channel's four states, and then the two ways a channel can count, by time or by events. The heart of
+the chapter is the ring that joins the four channels, and what you can build with it: exact rates and a
+16-bit stopwatch. Last come interrupts, resets, and what a later core version changed.
+
+<Callout type="info">
+The facts are for **core 3.02.01**, except where a section says otherwise. The master clock is **28 MHz**, as
+in VGA mode 0 and HDMI, and T-states are for a CPU at **3.5 MHz**. Every fact was checked against the Next's
+hardware design.
+</Callout>
+
+## A Zilog chip in the FPGA
+
+The Next's CTC is a copy of the Z80 CTC, the counter/timer chip Zilog made as a companion for the Z80, and
+programs written for it on other Z80 machines speak the same language here. I call it **the metronome**, as
+the interrupts chapter does: it beats a steady rate, and it does not care how fast the musician plays.
+
+The Zilog chip has four channels, and so does the Next, at four ports:
+
+- **Channel 0** at port `$183B`, **channel 1** at `$193B`, **channel 2** at `$1A3B` and **channel 3** at
+  `$1B3B`. The low byte is `$3B`, bits 15–11 of the address are `00011`, and bits 10–8 pick the channel.
+- **Ports `$1C3B` to `$1F3B`** belong to channels 4 to 7, which have no hardware: reading them gives `$00`,
+  and writing them does nothing.
+- **Writing** a channel's port sends it a control word or a time constant; **reading** it gives the channel's
+  current count.
+- The ports can be switched off with bit 3 of NextReg `$85`, and they are on after a reset. A channel that
+  runs keeps running while its port is off.
+
+There is one thing the Next leaves out. A Zilog CTC has pins for an outside clock or trigger on each
+channel; the Next's channels have no outside pins. Their trigger inputs are wired to each other, in a ring,
+and that ring is the most interesting thing about them.
+
+## One channel inside
+
+Each channel is a small machine of three parts:
+
+<figure>
+{/* fig:channel */}
+<svg viewBox="-2 -2 704 304" role="img" aria-label="One CTC channel. The 28 MHz master clock feeds the prescaler, which divides by 16 or 256 as bit 5 of the control word says. The trigger input, the previous channel's ZC/TO, goes through an edge detector, rising or falling as bit 4 says. A mode switch, bit 6, picks the prescaler's pulses in timer mode or the trigger's edges in counter mode, and each one counts the 8-bit down-counter down. At zero the counter sends a ZC/TO pulse, to the interrupt controller and the next channel, and reloads from the time constant register." style={{ width: "100%", height: "auto" }}>
+  <defs>
+    <marker id="ctc-ch-0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
+    </marker>
+    <marker id="ctc-ch-1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#3b82f6" />
+    </marker>
+    <marker id="ctc-ch-2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#30a46c" />
+    </marker>
+    <marker id="ctc-ch-3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#e8912d" />
+    </marker>
+    <marker id="ctc-ch-4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#e5484d" />
+    </marker>
+  </defs>
+  <rect x="0" y="20" width="150" height="60" rx="6" fill="none" stroke="#3b82f6" strokeWidth="2" />
+  <text x="75" y="46.3" textAnchor="middle" fill="#3b82f6" fontSize="15">master clock</text>
+  <text x="75" y="64.3" textAnchor="middle" fill="#3b82f6" fontSize="15">28 MHz</text>
+  <rect x="190" y="20" width="150" height="60" rx="6" fill="#3b82f6" fillOpacity="0.12" stroke="#3b82f6" strokeWidth="2" />
+  <text x="265" y="46.3" textAnchor="middle" fill="#3b82f6" fontSize="15">prescaler</text>
+  <text x="265" y="64.3" textAnchor="middle" fill="#3b82f6" fontSize="15">÷16 or ÷256</text>
+  <path d="M150,50 L186,50" fill="none" stroke="#3b82f6" strokeWidth="1.8" markerEnd="url(#ctc-ch-1)" strokeLinejoin="round" />
+  <rect x="0" y="200" width="150" height="60" rx="6" fill="none" stroke="#30a46c" strokeWidth="2" />
+  <text x="75" y="226.4" textAnchor="middle" fill="#30a46c" fontSize="14">trigger in:</text>
+  <text x="75" y="243.4" textAnchor="middle" fill="#30a46c" fontSize="14">previous ZC/TO</text>
+  <rect x="190" y="200" width="150" height="60" rx="6" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="2" />
+  <text x="265" y="226.4" textAnchor="middle" fill="#30a46c" fontSize="14">edge</text>
+  <text x="265" y="243.4" textAnchor="middle" fill="#30a46c" fontSize="14">rising or falling</text>
+  <path d="M150,230 L186,230" fill="none" stroke="#30a46c" strokeWidth="1.8" markerEnd="url(#ctc-ch-2)" strokeLinejoin="round" />
+  <rect x="370" y="110" width="120" height="60" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="430" y="136.5" textAnchor="middle" fill="currentColor" fontSize="13.5">mode</text>
+  <text x="430" y="153" textAnchor="middle" fill="currentColor" fontSize="13.5">timer/counter</text>
+  <path d="M340,50 L430,50 L430,106" fill="none" stroke="#3b82f6" strokeWidth="1.8" markerEnd="url(#ctc-ch-1)" strokeLinejoin="round" />
+  <path d="M340,230 L430,230 L430,174" fill="none" stroke="#30a46c" strokeWidth="1.8" markerEnd="url(#ctc-ch-2)" strokeLinejoin="round" />
+  <rect x="520" y="110" width="180" height="60" rx="6" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="2" />
+  <text x="610" y="136.3" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">down-counter</text>
+  <text x="610" y="154.3" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">8 bits</text>
+  <path d="M490,140 L516,140" fill="none" stroke="currentColor" strokeWidth="1.8" markerEnd="url(#ctc-ch-0)" strokeLinejoin="round" />
+  <rect x="520" y="230" width="180" height="56" rx="6" fill="none" stroke="#e8912d" strokeWidth="2" />
+  <text x="610" y="263.3" textAnchor="middle" fill="#e8912d" fontSize="15">time constant</text>
+  <path d="M610,230 L610,174" fill="none" stroke="#e8912d" strokeWidth="1.8" markerEnd="url(#ctc-ch-3)" strokeLinejoin="round" />
+  <text x="600" y="208" textAnchor="end" fill="#e8912d" fontSize="13.5">reload at zero</text>
+  <rect x="520" y="0" width="180" height="60" rx="6" fill="none" stroke="#e5484d" strokeWidth="2" />
+  <text x="610" y="26.4" textAnchor="middle" fill="#e5484d" fontSize="14">ZC/TO: interrupt,</text>
+  <text x="610" y="43.4" textAnchor="middle" fill="#e5484d" fontSize="14">next channel</text>
+  <path d="M610,110 L610,64" fill="none" stroke="#e5484d" strokeWidth="1.8" markerEnd="url(#ctc-ch-4)" strokeLinejoin="round" />
+</svg>
+{/* /fig:channel */}
+<figcaption>One channel. In timer mode the prescaler divides the 28 MHz master clock by 16 or 256 and each of its pulses counts the counter down; in counter mode the trigger input, the previous channel's ZC/TO, does. At zero the channel sends a ZC/TO pulse and reloads its time constant.</figcaption>
+</figure>
+
+- The **prescaler** is an 8-bit counter that counts every clock of the 28 MHz master clock. It gives a pulse
+  each time its low four bits are all ones, every **16** clocks, or, when bit 5 of the control word asks for
+  it, each time all eight are ones, every **256** clocks.
+- The **down-counter** holds the channel's count, 8 bits. In timer mode each prescaler pulse counts it down
+  by one; in counter mode each edge on the trigger input does.
+- The **time constant register** holds the value the count starts from. When the count reaches zero, the
+  channel sends one pulse on its output, **ZC/TO** ("zero count / time out"), and reloads the count from the
+  time constant on the next clock. Then it counts down again, with no help from your program. A time
+  constant of 0 means **256**, in both modes: the first tick, a prescaler pulse or a trigger edge, takes the
+  count from 0 to 255, and the zero count comes after 256 ticks.
+
+So a timer channel's period is simply the prescaler times the time constant, in master clocks, with 0
+counting as 256. The same numbers in time:
+
+- **Prescaler 16**: a count every 16 clocks, 0.571 µs, which is exactly **2 T-states** at 3.5 MHz. Periods
+  from 16 clocks (time constant 1) to 4,096 clocks (time constant 0), 146 µs.
+- **Prescaler 256**: a count every 256 clocks, 9.14 µs, **32 T-states** at 3.5 MHz. Periods from 256 clocks
+  to 65,536 clocks, 2.34 ms.
+
+Let's watch a channel with prescaler 16 and time constant 3:
+
+<figure>
+{/* fig:tick */}
+<svg viewBox="-2 -2 704 290" role="img" aria-label="A timeline to scale over 112 master clocks, with four numbered steps. Step 1, at clock 0: the count starts at 3 and the prescaler at 0. Step 2, from clock 16: the prescaler pulses every 16 clocks and the count goes to 2, 1, and 0 at clock 48. Step 3, at clock 48: for the one clock the count reads 0, ZC/TO is high. Step 4, from the next clock: the count is 3 again, the next pulse comes at clock 64, and the next zero count at 96, 48 clocks after the first." style={{ width: "100%", height: "auto" }}>
+  <line x1="130" y1="72" x2="130" y2="168" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.6" />
+  <circle cx="130.0" cy="16" r="12" fill="#e5484d" />
+  <text x="130" y="21" textAnchor="middle" fill="#ffffff" fontSize="13.5" fontWeight="bold">1</text>
+  <line x1="211.4" y1="72" x2="211.4" y2="168" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.6" />
+  <circle cx="211.4" cy="16" r="12" fill="#e5484d" />
+  <text x="211.4" y="21" textAnchor="middle" fill="#ffffff" fontSize="13.5" fontWeight="bold">2</text>
+  <line x1="374.3" y1="72" x2="374.3" y2="168" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.6" />
+  <circle cx="374.3" cy="16" r="12" fill="#e5484d" />
+  <text x="374.3" y="21" textAnchor="middle" fill="#ffffff" fontSize="13.5" fontWeight="bold">3</text>
+  <line x1="455.7" y1="72" x2="455.7" y2="168" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.6" />
+  <circle cx="455.7" cy="16" r="12" fill="#e5484d" />
+  <text x="455.7" y="21" textAnchor="middle" fill="#ffffff" fontSize="13.5" fontWeight="bold">4</text>
+  <g transform="translate(0,36)">
+  <line x1="130" y1="30" x2="130" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="130" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">0</text>
+  <line x1="211.4" y1="30" x2="211.4" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="211.4" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">16</text>
+  <line x1="292.9" y1="30" x2="292.9" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="292.9" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">32</text>
+  <line x1="374.3" y1="30" x2="374.3" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="374.3" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">48</text>
+  <line x1="455.7" y1="30" x2="455.7" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="455.7" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">64</text>
+  <line x1="537.1" y1="30" x2="537.1" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="537.1" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">80</text>
+  <line x1="618.6" y1="30" x2="618.6" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="618.6" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">96</text>
+  <line x1="700" y1="30" x2="700" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="700" y="22" textAnchor="end" fill="currentColor" fontSize="13.5">112</text>
+  <text x="0" y="22" fill="currentColor" fontSize="13.5">clocks</text>
+  <text x="0" y="66" fill="#3b82f6" fontSize="15" fontWeight="bold">prescaler</text>
+  <line x1="130" y1="70" x2="700" y2="70" stroke="#3b82f6" strokeWidth="1.2" strokeOpacity="0.6" />
+  <rect x="208.4" y="48" width="6" height="22" fill="#3b82f6" fillOpacity="0.6" stroke="#3b82f6" strokeWidth="1.2" />
+  <rect x="289.9" y="48" width="6" height="22" fill="#3b82f6" fillOpacity="0.6" stroke="#3b82f6" strokeWidth="1.2" />
+  <rect x="371.3" y="48" width="6" height="22" fill="#3b82f6" fillOpacity="0.6" stroke="#3b82f6" strokeWidth="1.2" />
+  <rect x="452.7" y="48" width="6" height="22" fill="#3b82f6" fillOpacity="0.6" stroke="#3b82f6" strokeWidth="1.2" />
+  <rect x="534.1" y="48" width="6" height="22" fill="#3b82f6" fillOpacity="0.6" stroke="#3b82f6" strokeWidth="1.2" />
+  <rect x="615.6" y="48" width="6" height="22" fill="#3b82f6" fillOpacity="0.6" stroke="#3b82f6" strokeWidth="1.2" />
+  <rect x="697" y="48" width="6" height="22" fill="#3b82f6" fillOpacity="0.6" stroke="#3b82f6" strokeWidth="1.2" />
+  <text x="0" y="116" fill="#e8912d" fontSize="15" fontWeight="bold">count</text>
+  <rect x="130" y="96" width="81.4" height="30" rx="3" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="170.7" y="116" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">3</text>
+  <rect x="211.4" y="96" width="81.4" height="30" rx="3" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="252.1" y="116" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">2</text>
+  <rect x="292.9" y="96" width="81.4" height="30" rx="3" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="333.6" y="116" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">1</text>
+  <rect x="374.3" y="96" width="5.1" height="30" fill="#e5484d" fillOpacity="0.6" stroke="#e5484d" strokeWidth="1.4" />
+  <rect x="379.4" y="96" width="76.3" height="30" rx="3" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="417.5" y="116" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">3</text>
+  <rect x="455.7" y="96" width="81.4" height="30" rx="3" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="496.4" y="116" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">2</text>
+  <rect x="537.1" y="96" width="81.4" height="30" rx="3" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="577.9" y="116" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">1</text>
+  <rect x="618.6" y="96" width="5.1" height="30" fill="#e5484d" fillOpacity="0.6" stroke="#e5484d" strokeWidth="1.4" />
+  <rect x="623.7" y="96" width="76.3" height="30" rx="3" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="661.8" y="116" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">3</text>
+  <text x="376.8" y="90" textAnchor="middle" fill="#e5484d" fontSize="13.5" fontWeight="bold">0</text>
+  <text x="621.1" y="90" textAnchor="middle" fill="#e5484d" fontSize="13.5" fontWeight="bold">0</text>
+  <text x="0" y="172" fill="#e5484d" fontSize="15" fontWeight="bold">ZC/TO</text>
+  <path d="M130,176 L374.2857142857143,176 L374.2857142857143,154 L379.375,154 L379.375,176 L618.5714285714286,176 L618.5714285714286,154 L623.6607142857142,154 L623.6607142857142,176 L700,176" fill="none" stroke="#e5484d" strokeWidth="1.8" strokeLinejoin="round" />
+  <path d="M374.2857142857143,196 L374.2857142857143,206 L618.5714285714286,206 L618.5714285714286,196" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+  <text x="496.4" y="228" textAnchor="middle" fill="currentColor" fontSize="13.5">48 clocks: prescaler × time constant</text>
+  </g>
+</svg>
+{/* /fig:tick */}
+<figcaption>Prescaler 16, time constant 3, to scale in master clocks. The prescaler pulses every 16 clocks; the count goes 3, 2, 1, 0; at 0 the channel sends a one-clock ZC/TO pulse and reloads 3 on the next clock. A ZC/TO every 48 clocks. The numbered badges mark the steps below.</figcaption>
+</figure>
+
+1. The channel starts with the count at 3 and the prescaler at 0.
+2. Every 16 clocks the prescaler pulses, and the count goes to 2, then 1, then 0, at clock 48.
+3. For that one clock the count reads 0, and ZC/TO is high: one pulse 36 ns long.
+4. On the next clock the count is 3 again. The prescaler never stopped, so the next pulse comes at clock 64,
+   and the next zero count at clock 96: exactly 48 clocks after the first.
+
+Notice the first step, because the Zilog datasheet and some books leave it vague: while a channel is not
+running, its prescaler is held at 0 and its count at the time constant. So a timer's first count comes
+exactly one prescaler period after it starts, and its first zero count one full period after it. There is no
+random phase to average out. I like that a lot: a timer you start at a known moment beats at known moments.
+
+And this is the answer to the opening puzzle. The CPU's clock is made from the same master clock, so whatever
+its speed, it changes nothing for the metronome. A channel that beats 17,500 times a second at 3.5 MHz beats
+17,500 times a second at 28 MHz.
+
+There is one exception, and it comes from the monitor, not from your program. Some VGA monitors refuse the
+Next's 50 Hz frame, so the machine has seven **VGA modes**, 0 to 6, chosen in the **Video Timing register,
+NextReg `$11`**. Mode 0 runs the master clock at exactly 28 MHz; the others run it faster, in steps up to
+33 MHz in mode 6, so that the whole picture comes a little faster and the monitor accepts it. The register
+can be written only in config mode, so the machine's set-up picks the mode, not your program; the frame and
+beam chapter's [scan doubler and VGA](/en/under-the-hood/emulator-internals/next-display/timing/#the-scan-doubler-and-vga)
+section tells the story. In a faster mode the metronome speeds up with the master clock, but so does the CPU:
+one count of prescaler 16 is still exactly 2 T-states at 3.5 MHz, and only the rate in seconds changes, by
+up to 18%.
+
+## The control word
+
+A channel is programmed with a **control word**, a byte with bit 0 set, and often a **time constant** after
+it:
+
+```text
+control word:  I M P E T C R 1
+  I = 1: interrupt on every zero count
+  M = mode: 0 timer, 1 counter
+  P = prescaler: 0 divides by 16, 1 by 256
+  E = trigger edge: 0 falling, 1 rising
+  T = 1: a timer waits for a trigger to start
+  C = 1: a time constant follows
+  R = 1: software reset
+```
+
+A byte with bit 0 clear, when no time constant is expected, is an **interrupt vector** on the Zilog chip.
+The Next throws it away: its vectors come from the interrupt controller, not from the CTC. And the byte after
+a control word with C set is always the time constant, whatever its bit 0.
+
+A channel is always in one of four states, and the control word moves it between them:
+
+1. **Reset.** After a reset, the channel holds still with its count at the time constant, which is 0. Only a
+   control word with **C** set wakes it; one without C is stored, but the channel stays where it is. This
+   catches people out: the first control word must announce a time constant.
+2. **Waiting for a time constant.** The next byte is the constant, and the channel moves on.
+3. **Waiting for a trigger.** A timer with **T** set waits here for an edge on its trigger input; any other
+   channel passes straight through, on the next clock.
+4. **Running.** The channel counts, as long as nothing stops it.
+
+The **software reset**, **R**, stops a channel from any state: with C clear it goes back to state 1, with C
+set to state 2, and it starts again from the new constant. Without R, a control word does not stop a running
+channel. Its settings change at once, the prescaler, the mode and the interrupt enable, and the count goes
+on. With C set, the next byte becomes the new time constant, and the channel uses it from its next zero
+count; the period under way finishes at the old one. I find that a lovely property for a sample player: you
+can change the rate between two samples without a click.
+
+Here is channel 0 set up as a timer of prescaler 16 and time constant 100, a zero count every 1,600 clocks,
+17,500 times a second, with its interrupt on:
+
+```z80klive
+        ld bc,$183b            ; channel 0
+        ld a,%10000101         ; interrupt, timer, /16,
+        out (c),a              ; constant follows
+        ld a,100
+        out (c),a              ; starts on the next clock
+```
+
+If you inherit a channel in an unknown state, my advice is to write `$03`, a software reset without C, twice.
+If the channel happened to expect a time constant, the first byte is taken as one; the second is then
+certainly a control word, and it leaves the channel in state 1, ready for your setup.
+
+## Timer and counter
+
+In **timer mode**, bit 6 clear, a channel counts the prescaler's pulses: it measures time. In **counter
+mode**, bit 6 set, it ignores the prescaler and counts edges on its trigger input instead: it counts events.
+On a Zilog chip the event could be anything wired to the pin; on the Next, it is always the previous
+channel's zero count.
+
+The trigger input matters in timer mode too. A timer with bit 3, **T**, set does not start when it gets its
+time constant: it waits for the first edge on its trigger input, and then starts, with the prescaler at 0. So
+one channel can start another at an exact moment, its own zero count.
+
+Bit 4, **E**, chooses the edge. The ZC/TO pulse is one master clock long, so its rising edge comes as the
+upstream count reaches zero and its falling edge one clock later. Either way the channel counts once per
+upstream zero count; the edge only moves the moment by 36 ns. But one detail of E deserves a warning:
+**writing a control word that changes E counts as an edge**. A counter counts one down, and a timer waiting
+for its trigger starts. My rule: choose the edge when you set a channel up, and do not touch it afterwards.
+
+## The ring
+
+The four trigger inputs are wired in a ring. Channel 1 counts channel 0's zero counts, channel 2 counts
+channel 1's, channel 3 counts channel 2's, and channel 0 counts channel 3's:
+
+<figure>
+{/* fig:ring */}
+<svg viewBox="-2 -2 704 310" role="img" aria-label="Four boxes in a square: channel 0 at port $183B top left, channel 1 at $193B top right, channel 2 at $1A3B bottom right, channel 3 at $1B3B bottom left. Arrows labelled ZC/TO run from channel 0 to 1, 1 to 2, 2 to 3 and 3 back to 0. In the middle: every ZC/TO also sets a status bit and is an interrupt request. Below channel 3, its ZC/TO can also clock joystick pin 7." style={{ width: "100%", height: "auto" }}>
+  <defs>
+    <marker id="ctc-ring-0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#e5484d" />
+    </marker>
+  </defs>
+  <rect x="0" y="6" width="220" height="70" rx="6" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="2" />
+  <text x="110" y="37.3" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">channel 0</text>
+  <text x="110" y="55.3" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">$183B</text>
+  <rect x="480" y="6" width="220" height="70" rx="6" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="2" />
+  <text x="590" y="37.3" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">channel 1</text>
+  <text x="590" y="55.3" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">$193B</text>
+  <rect x="480" y="176" width="220" height="70" rx="6" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="2" />
+  <text x="590" y="207.3" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">channel 2</text>
+  <text x="590" y="225.3" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">$1A3B</text>
+  <rect x="0" y="176" width="220" height="70" rx="6" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="2" />
+  <text x="110" y="207.3" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">channel 3</text>
+  <text x="110" y="225.3" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">$1B3B</text>
+  <path d="M220,41 L476,41" fill="none" stroke="#e5484d" strokeWidth="1.8" markerEnd="url(#ctc-ring-0)" strokeLinejoin="round" />
+  <text x="350" y="31" textAnchor="middle" fill="#e5484d" fontSize="13.5" fontWeight="bold">ZC/TO</text>
+  <path d="M590,76 L590,172" fill="none" stroke="#e5484d" strokeWidth="1.8" markerEnd="url(#ctc-ring-0)" strokeLinejoin="round" />
+  <text x="600" y="130" fill="#e5484d" fontSize="13.5" fontWeight="bold">ZC/TO</text>
+  <path d="M480,211 L224,211" fill="none" stroke="#e5484d" strokeWidth="1.8" markerEnd="url(#ctc-ring-0)" strokeLinejoin="round" />
+  <text x="350" y="231" textAnchor="middle" fill="#e5484d" fontSize="13.5" fontWeight="bold">ZC/TO</text>
+  <path d="M110,176 L110,80" fill="none" stroke="#e5484d" strokeWidth="1.8" markerEnd="url(#ctc-ring-0)" strokeLinejoin="round" />
+  <text x="120" y="130" fill="#e5484d" fontSize="13.5" fontWeight="bold">ZC/TO</text>
+  <text x="350" y="122" textAnchor="middle" fill="currentColor" fontSize="13.5">every ZC/TO also sets a status</text>
+  <text x="350" y="140" textAnchor="middle" fill="currentColor" fontSize="13.5">bit and requests an interrupt</text>
+  <path d="M110,246 L110,274" fill="none" stroke="#e5484d" strokeWidth="1.8" markerEnd="url(#ctc-ring-0)" strokeLinejoin="round" />
+  <text x="122" y="294" fill="#e5484d" fontSize="13.5">channel 3 can also clock joystick pin 7</text>
+</svg>
+{/* /fig:ring */}
+<figcaption>The four channels in a ring: each one's ZC/TO is the next one's trigger, and channel 3's goes back to channel 0. Every ZC/TO is also an interrupt request, and channel 3's can clock a joystick pin.</figcaption>
+</figure>
+
+A chain of channels is a chain of dividers. A timer divides the master clock by its prescaler and its time
+constant, and each counter after it divides by its own constant. That gives you rates no single channel can
+reach, and exact ones. Here is my favourite example, a 50 Hz tick that does not come from the display:
+
+<figure>
+{/* fig:divider */}
+<svg viewBox="-2 -2 704 134" role="img" aria-label="A chain of dividers from left to right: the 28 MHz master clock; the prescaler divides by 16, giving 1.75 MHz; channel 0, a timer with time constant 140, gives 12.5 kHz; channel 1, a counter with time constant 250, gives 50 Hz. 16 times 140 times 250 is 560,000 clocks, 20 ms." style={{ width: "100%", height: "auto" }}>
+  <defs>
+    <marker id="ctc-div-0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
+    </marker>
+  </defs>
+  <text x="34" y="46" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">28 MHz</text>
+  <text x="34" y="64" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">clock</text>
+  <rect x="96" y="20" width="124" height="60" rx="6" fill="#3b82f6" fillOpacity="0.12" stroke="#3b82f6" strokeWidth="2" />
+  <text x="158" y="46.3" textAnchor="middle" fill="#3b82f6" fontSize="15">prescaler</text>
+  <text x="158" y="64.3" textAnchor="middle" fill="#3b82f6" fontSize="15">÷16</text>
+  <rect x="316" y="20" width="124" height="60" rx="6" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="2" />
+  <text x="378" y="46.3" textAnchor="middle" fill="#e8912d" fontSize="15">channel 0</text>
+  <text x="378" y="64.3" textAnchor="middle" fill="#e8912d" fontSize="15">timer ÷140</text>
+  <rect x="536" y="20" width="124" height="60" rx="6" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="2" />
+  <text x="598" y="46.3" textAnchor="middle" fill="#e8912d" fontSize="15">channel 1</text>
+  <text x="598" y="64.3" textAnchor="middle" fill="#e8912d" fontSize="15">counter ÷250</text>
+  <path d="M72,50 L92,50" fill="none" stroke="currentColor" strokeWidth="1.8" markerEnd="url(#ctc-div-0)" strokeLinejoin="round" />
+  <path d="M220,50 L312,50" fill="none" stroke="currentColor" strokeWidth="1.8" markerEnd="url(#ctc-div-0)" strokeLinejoin="round" />
+  <path d="M440,50 L532,50" fill="none" stroke="currentColor" strokeWidth="1.8" markerEnd="url(#ctc-div-0)" strokeLinejoin="round" />
+  <text x="266" y="40" textAnchor="middle" fill="currentColor" fontSize="13.5">1.75 MHz</text>
+  <text x="486" y="40" textAnchor="middle" fill="currentColor" fontSize="13.5">12.5 kHz</text>
+  <path d="M660,50 L672,50 L672,96" fill="none" stroke="currentColor" strokeWidth="1.8" markerEnd="url(#ctc-div-0)" strokeLinejoin="round" />
+  <text x="700" y="118" textAnchor="end" fill="#e5484d" fontSize="15" fontWeight="bold">50 Hz</text>
+  <text x="0" y="118" fill="currentColor" fontSize="13.5">16 × 140 × 250 = 560,000 clocks = 20 ms</text>
+</svg>
+{/* /fig:divider */}
+<figcaption>An exact 50 Hz from the master clock: the prescaler divides 28 MHz by 16, channel 0 by 140, and channel 1, in counter mode, by 250. 16 × 140 × 250 = 560,000 clocks, 20 ms.</figcaption>
+</figure>
+
+```z80klive
+        ld bc,$183b            ; channel 0: timer, /16
+        ld a,%00000101
+        out (c),a
+        ld a,140               ; 2,240 clocks: 12.5 kHz
+        out (c),a
+        inc b                  ; $193B: channel 1
+        ld a,%11000101         ; interrupt, counter
+        out (c),a
+        ld a,250               ; 560,000 clocks: 50 Hz
+        out (c),a
+```
+
+Only channel 1 interrupts, every 20 ms, and the display's frame rate, which is close to 50 Hz but never exactly
+50 Hz, has nothing to do with it. A game whose logic runs on this tick runs at the same speed on every
+display. Two counters in the chain stretch the period further still: three channels with constants of 0 and
+prescaler 256 make a zero count about every 153 seconds.
+
+Watch the ring's one trap: it is a ring. Channel 0 in counter mode counts channel 3's zero counts, so a
+chain may start at any channel, but four counters and no timer count nothing. Start every chain with a
+timer; a timer ignores its trigger input once it runs, so the ring is cut there.
+
+## A stopwatch
+
+Reading a channel gives its count at that moment, and that makes the CTC the best stopwatch the Next has.
+Read before, read after, subtract: the count goes down, so the elapsed time is the first reading minus the
+second. One channel with prescaler 16 and time constant 0 measures up to 256 counts of 2 T-states, 512
+T-states at 3.5 MHz.
+
+For longer code, chain two channels into a **16-bit counter**: channel 0 as a timer with prescaler 16 and
+time constant 0, the low byte, and channel 1 in counter mode with time constant 0, the high byte. That counts
+65,536 times 16 clocks, 37.4 ms, nearly two frames, with a resolution of 2 T-states.
+
+There is a catch in reading it: the two bytes are two `IN` instructions, and the low byte can wrap between
+them. The fix is old and simple. Read the high byte, then the low byte, then the high byte again; if the two
+high bytes differ, the low byte wrapped in between, so read again. Read again too when the low byte is 0,
+because that is the moment channel 0 reaches zero and channel 1 counts, and a reading taken there cannot
+tell which side of the count it is on:
+
+```z80klive
+; channel 0: timer, /16, constant 0; channel 1: counter, 0
+; returns the 16-bit count in HL; changes A, BC
+Read:   ld bc,$193b
+        in h,(c)               ; high byte: channel 1
+        dec b                  ; $183B: channel 0
+        in l,(c)               ; low byte
+        inc b
+        in a,(c)               ; high byte again
+        cp h
+        jr nz,Read             ; it counted: read again
+        inc l
+        dec l
+        jr z,Read              ; low byte 0: read again
+        ret
+```
+
+Call `Read` before and after the code you measure, subtract the second count from the first, and double the
+difference for T-states at 3.5 MHz. The difference includes part of the reading itself, so measure an empty
+block once and take that off. At 28 MHz the same count is 16 T-states, so the stopwatch is
+coarser in T-states but just as exact in time; for a routine that takes less than a count, count its
+T-states from the instruction tables instead.
+
+## Interrupts
+
+Every zero count of a channel is an interrupt request, and the [interrupts
+chapter](/en/under-the-hood/emulator-internals/next-interrupts/) tells the rest of the story. From the
+CTC's side, a few facts to keep together:
+
+- **The enable is bit 7 of the control word**, and also bit *n* of the **INT EN 1 register, NextReg
+  `$C5`**, for channel *n*. They are the same flip-flop: whichever you wrote last wins, and a control word
+  without bit 7 switches the interrupt off.
+- **The status is set on every zero count**, enabled or not, in bit *n* of the **INT Status 1 register,
+  NextReg `$C9`**, and writing a 1 clears it. That is the polled mode: leave the interrupt off and watch the
+  bit. The status bit is only a record; one you forget to clear blocks nothing.
+- **In hardware IM2 mode** channels 0 to 3 are sources 3 to 6 of the chain, after the line interrupt and the
+  UART receivers and before the ULA, with vector offsets `$06` to `$0C`. **In pulse mode** a zero count
+  starts the shared pulse, and the vector is `$FF`.
+- **NextReg `$20` bits 3–0** request a CTC interrupt by software, without a zero count.
+- **NextReg `$CD` bits 3–0** let a channel's interrupt break into a DMA transfer. The CTC cannot start or
+  pace the DMA; the DMA has its own prescaler for that.
+
+A zero count is also edges for other hardware: channel 3's can clock a joystick pin. In the joystick's I/O
+mode, NextReg `$0B` with bit 7 set, bits 5–4 = 01 and bit 0 set, pin 7 of the joystick port toggles on every
+zero count of channel 3: a square wave at half its rate, for a device that wants a clock.
+
+## Resets
+
+A reset, hard or soft, puts every channel into the reset state: control word 0, time constant 0, interrupt
+off, and a count that reads 0. NextReg `$C5` reads 0 too, and the status bits in `$C9` are cleared. Nothing
+runs until a program writes a control word with a time constant. So the metronome is silent after a reset,
+and, as the interrupts chapter advises, a program should set up every channel it uses itself.
+
+## What core 3.02.04 changed
+
+Later cores rewrote the channel's state machine, and two differences can be seen from a program:
+
+- **The count skips 0.** On the clock where a count of 1 would become 0, the channel reloads the time
+  constant directly, so a channel with time constant 100 reads 100 down to 1, never 0. ZC/TO still comes on
+  the same clock as before, so periods, chains and interrupts are unchanged; only a reading at that one clock
+  differs. A time constant of 0 still means 256.
+- **A control word with C while a timer waits for its trigger** now makes the channel wait for a new time
+  constant. In 3.02.01 the channel kept waiting with its old constant, and a trigger could start it before
+  the new one arrived.
+
+Neither changes how you should program the CTC: send the time constant after every control word that
+announces one, and nothing in your program will notice which core it runs on.
+
+## What to take home
+
+The CTC, the metronome, is a Zilog Z80 CTC with four channels at ports `$183B` to `$1B3B`; channels 4 to 7
+have ports but no hardware. Each channel counts the 28 MHz master clock, not the CPU's clock, so its rates
+hold at every CPU speed.
+
+A channel is a prescaler of 16 or 256, an 8-bit down-counter and a time constant. At zero it sends a
+one-clock ZC/TO pulse and reloads, so its period is the prescaler times the constant, with 0 meaning 256:
+from 16 clocks, 2 T-states at 3.5 MHz, to 65,536 clocks, 2.34 ms. While it is not running, its prescaler and
+count are held, so a timer beats at exact moments from the time it starts.
+
+The control word, bit 0 set, chooses the interrupt, the mode, the prescaler, the edge, a triggered start, a
+time constant to follow and a software reset; the first one after a reset must announce a constant. A
+control word without a reset changes a running channel's settings at once and its constant from the next
+zero count. In counter mode a channel counts the previous channel's zero counts, in a ring 0 → 1 → 2 → 3 →
+0, which makes the channels a chain of dividers: exact rates such as 50 Hz, long periods, and a 16-bit
+stopwatch with a resolution of 2 T-states, read high, low, high again.
+
+Every zero count sets its bit in NextReg `$C9` and interrupts if bit 7 of the control word or NextReg `$C5`
+allows. A reset silences every channel. Keep the beat, and the CPU can be as fast or as slow as it likes.

@@ -82,6 +82,22 @@ describe("port decoding", () => {
     expect((s.readNextReg(0x8e) >> 4) & 0x07, "$8E bank bits").toBe(0x03);
   });
 
+  // --- ~2549, 2555: $7FFD excludes $1FFD only while the $1FFD port is enabled (`port_1ffd` includes
+  // --- `port_1ffd_io_en`, NextReg $82 bit 3); outside +3 timing A14 is not decoded, so with $1FFD off a
+  // --- $1FFD write is a $7FFD write. In +3 timing A14 = 0 keeps it out of $7FFD either way.
+  it("PORT-010: with the $1FFD port disabled, a $1FFD write pages as $7FFD outside +3 timing", async () => {
+    const s = await createSession();
+    s.setNextReg(0x03, 0xa0); // --- 128K timing
+    s.setNextReg(0x82, 0xf7); // --- $1FFD off
+    s.out(0x1ffd, 0x03);
+    expect(s.readNextReg(0x56), "bank 3 at $C000").toBe(0x06);
+
+    const p3 = await createSession(); // --- +3 timing
+    p3.setNextReg(0x82, 0xf7);
+    p3.out(0x1ffd, 0x03);
+    expect(p3.readNextReg(0x56), "+3 timing: no paging").toBe(0x00);
+  });
+
   it("PORT-011: ports no device decodes read $FF", async () => {
     const s = await createSession();
     // --- Not $DFFD: it matches $FFFD's read decode (A15-14 = 11, A2 = 1; ~2591) and reads the AY.
@@ -114,6 +130,19 @@ describe("port decoding", () => {
     s.setNextReg(0x03, 0xa0);
     expect(s.in(0xbffd), "128K").toBe(0xff);
     expect(s.in(0xfffd)).toBe(0x5a);
+  });
+
+  // --- ~2602-2603: the AY ports decode A2 = 1; $FFE9 and $BFE9 (A2 = 0, no DAC there) reach no chip
+  it("PORT-012: AY writes need A2 = 1", async () => {
+    const s = await createSession();
+    s.out(0xfffd, 0x02).out(0xbffd, 0x5a);
+    s.out(0xffe9, 0x03); // --- A2 = 0: not a register select
+    expect(s.in(0xbff5) & 0x1f, "R2 stays selected").toBe(0x02);
+    s.out(0xbfe9, 0x11); // --- A2 = 0: not a data write
+    expect(s.in(0xfffd), "R2 keeps its value").toBe(0x5a);
+    s.out(0xc005, 0x03).out(0x8005, 0x22); // --- A15-14, A2 and A1-0 are all that matter
+    expect(s.in(0xbff5) & 0x1f).toBe(0x03);
+    expect(s.in(0xfffd)).toBe(0x22);
   });
 
   // --- PORT-013: $83 bit 5 = mouse, $84 bit 7 = Specdrum ($DF), $05 = 010 00 010: Kempston 1 / 2

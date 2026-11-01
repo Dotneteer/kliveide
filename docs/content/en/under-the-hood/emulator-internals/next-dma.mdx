@@ -1,0 +1,797 @@
+---
+description: "How the ZX Spectrum Next's DMA works: a second bus master that borrows the CPU's bus, the zxnDMA and Z80 DMA ports and their byte counts, the base bytes and their followers, port A and port B, continuous and burst mode, the commands, six T-states a byte, the prescaler and its exact period, auto restart, the status byte and the read sequence, stepping aside for interrupts, wait states and resets."
+---
+
+import { Callout } from 'nextra/components'
+
+# DMA: One Bus, Two Masters
+
+Copy 16K with `LDIR` on a Next at 3.5 MHz and the CPU spends 344,059 T-states on it, almost five frames,
+reading a byte, writing it, and counting, over and over. Ask the DMA to do the same job and it is done in
+98,304 T-states, less than a frame and a half. The DMA is not a faster CPU, and it does not run beside the
+CPU either. So where do the other three and a half frames go?
+
+I think the DMA is the most underused piece of the Next. Sprite patterns, a Layer 2 screen to clear, a sample
+to play while the game runs, a sector to pull from the SD card: all of them are "move these bytes from here to
+there", and the DMA does nothing else, but it does it at the bus's own speed. Once you know how it shares the
+bus with the CPU, you can choose between a copy that stops the world for a moment and a trickle that the CPU
+hardly notices.
+
+You should know two chapters first. [Memory, Ports and NextRegs: How the Z80N Reaches the
+Machine](/en/under-the-hood/emulator-internals/next-memory-io/) explains the MMU and the port decoder, which
+the DMA uses exactly as the CPU does. [Interrupts: Fourteen Voices, Two
+Wires](/en/under-the-hood/emulator-internals/next-interrupts/) explains hardware IM2 mode, which lets an
+interrupt break into a transfer.
+
+## The road ahead
+
+We start with the bus itself: how the DMA borrows it from the CPU, and why everything else in the machine
+cannot tell who is driving it. Then come the two ports, `$6B` and `$0B`, and the one difference between their
+dialects, the byte count. Next is the way you talk to the DMA, a stream of base bytes and their followers, and
+the registers one by one: the two ports A and B, the operating mode, the flags and the commands. The heart of
+the chapter is the timing: six T-states a byte, the prescaler that spaces the bytes out, and burst mode, which
+gives the CPU its bus back between them; if you read only one part, read those three sections. After that we
+look at auto restart, reading the DMA back, interrupts, wait states and resets.
+
+<Callout type="info">
+The facts are for **core 3.02.01**. Timings are in CPU T-states for a CPU at **3.5 MHz**, unless a section
+says otherwise. Every fact was checked against the Next's hardware design.
+</Callout>
+
+## A second master on the bus
+
+The Z80 has a pair of pins for exactly this situation. **`/BUSRQ`**, bus request, is an input: a device pulls
+it low when it wants the bus. **`/BUSAK`**, bus acknowledge, is the CPU's answer: at the end of its current
+machine cycle the CPU stops, lets go of its address, data and control lines, and pulls `/BUSAK` low. From then
+on the device owns the bus, and the CPU waits, frozen in the middle of its instruction, until `/BUSRQ` goes
+high again.
+
+The Next's DMA is such a device, and I call it **the courier**, as the DAC chapter does: you hand it the parcel
+and the address once, and it delivers every byte without asking you again. Inside the FPGA there is no
+separate bus for it to use. The courier's address, data and control lines go through a switch, and while
+`/BUSAK` is low, the switch puts them where the CPU's lines would be:
+
+<figure>
+{/* fig:bus */}
+<svg viewBox="-2 -2 704 334" role="img" aria-label="On the left, the Z80N CPU above and the DMA below. The DMA asks for the bus with /BUSRQ, an arrow up to the CPU; the CPU answers with /BUSAK, an arrow down to the DMA. Both send their address, data and control lines into a bus switch in the middle, which /BUSAK controls: while it is low, the DMA's lines pass. From the switch one bus goes to the MMU and the memory, ROM, RAM and the Layer 2 mapping, and to the port decoder and the devices, NextRegs, sprites, DACs and the SD card. The DMA's own ports do not answer while it holds the bus." style={{ width: "100%", height: "auto" }}>
+  <defs>
+    <marker id="dma-bus-0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
+    </marker>
+    <marker id="dma-bus-1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#3b82f6" />
+    </marker>
+    <marker id="dma-bus-2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#e8912d" />
+    </marker>
+    <marker id="dma-bus-3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#30a46c" />
+    </marker>
+    <marker id="dma-bus-4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#a855f7" />
+    </marker>
+  </defs>
+  <rect x="0" y="20" width="180" height="80" rx="6" fill="#3b82f6" fillOpacity="0.12" stroke="#3b82f6" strokeWidth="2" />
+  <text x="90" y="65.8" textAnchor="middle" fill="#3b82f6" fontSize="16.5" fontWeight="bold">Z80N CPU</text>
+  <rect x="0" y="200" width="180" height="80" rx="6" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="2" />
+  <text x="90" y="236" textAnchor="middle" fill="#e8912d" fontSize="16.5" fontWeight="bold">DMA</text>
+  <text x="90" y="255.5" textAnchor="middle" fill="#e8912d" fontSize="16.5" fontWeight="bold">the courier</text>
+  <path d="M40,200 L40,104" fill="none" stroke="#e8912d" strokeWidth="1.8" markerEnd="url(#dma-bus-2)" strokeLinejoin="round" />
+  <text x="48" y="146" fill="#e8912d" fontSize="13.5" fontWeight="bold">/BUSRQ</text>
+  <path d="M130,100 L130,196" fill="none" stroke="#3b82f6" strokeWidth="1.8" markerEnd="url(#dma-bus-1)" strokeLinejoin="round" />
+  <text x="138" y="170" fill="#3b82f6" fontSize="13.5" fontWeight="bold">/BUSAK</text>
+  <rect x="270" y="90" width="140" height="120" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="340" y="137.9" textAnchor="middle" fill="currentColor" fontSize="14">bus switch</text>
+  <text x="340" y="154.9" textAnchor="middle" fill="currentColor" fontSize="14">/BUSAK low:</text>
+  <text x="340" y="171.9" textAnchor="middle" fill="currentColor" fontSize="14">the DMA's lines</text>
+  <path d="M180,60 L230,60 L230,120 L266,120" fill="none" stroke="#3b82f6" strokeWidth="1.8" markerEnd="url(#dma-bus-1)" strokeLinejoin="round" />
+  <path d="M180,240 L230,240 L230,180 L266,180" fill="none" stroke="#e8912d" strokeWidth="1.8" markerEnd="url(#dma-bus-2)" strokeLinejoin="round" />
+  <text x="186" y="34" fill="#3b82f6" fontSize="13.5">address, data,</text>
+  <text x="186" y="268" fill="#e8912d" fontSize="13.5">address, data,</text>
+  <text x="186" y="286" fill="#e8912d" fontSize="13.5">control</text>
+  <text x="186" y="52" fill="#3b82f6" fontSize="13.5">control</text>
+  <rect x="500" y="20" width="200" height="90" rx="6" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="2" />
+  <text x="600" y="52.9" textAnchor="middle" fill="#30a46c" fontSize="14">MMU and memory</text>
+  <text x="600" y="69.9" textAnchor="middle" fill="#30a46c" fontSize="14">ROM, RAM,</text>
+  <text x="600" y="86.9" textAnchor="middle" fill="#30a46c" fontSize="14">Layer 2 mapping</text>
+  <rect x="500" y="190" width="200" height="90" rx="6" fill="#a855f7" fillOpacity="0.12" stroke="#a855f7" strokeWidth="2" />
+  <text x="600" y="222.9" textAnchor="middle" fill="#a855f7" fontSize="14">port decoder</text>
+  <text x="600" y="239.9" textAnchor="middle" fill="#a855f7" fontSize="14">NextRegs, sprites,</text>
+  <text x="600" y="256.9" textAnchor="middle" fill="#a855f7" fontSize="14">DACs, SD card</text>
+  <line x1="410" y1="150" x2="450" y2="150" stroke="currentColor" strokeWidth="1.8" />
+  <line x1="450" y1="65" x2="450" y2="235" stroke="currentColor" strokeWidth="1.8" />
+  <path d="M450,65 L496,65" fill="none" stroke="#30a46c" strokeWidth="1.8" markerEnd="url(#dma-bus-3)" strokeLinejoin="round" />
+  <path d="M450,235 L496,235" fill="none" stroke="#a855f7" strokeWidth="1.8" markerEnd="url(#dma-bus-4)" strokeLinejoin="round" />
+  <text x="700" y="316" textAnchor="end" fill="currentColor" fontSize="13.5">the DMA's own ports, $6B and $0B, do not answer while it holds the bus</text>
+</svg>
+{/* /fig:bus */}
+<figcaption>The CPU and the DMA share one bus. The DMA asks with /BUSRQ, the CPU answers with /BUSAK, and while /BUSAK is low the switch passes the DMA's lines on: the memory and the ports see the DMA as if it were the CPU.</figcaption>
+</figure>
+
+Everything behind the switch sees the DMA as if it were the CPU, and that is the reason it is so useful:
+
+- **Memory goes through the MMU.** The DMA's addresses are 16-bit Z80 addresses, mapped by NextRegs `$50`–`$57`
+  like the CPU's. To reach any bank, you page it in first, as you would for the CPU. The ROM is read-only to the
+  DMA too, and the Layer 2 write mapping of port `$123B` catches its writes the same way.
+- **I/O goes through the port decoder.** A DMA write to port `$5B` loads a sprite pattern byte, a write to
+  `$DF` sets a DAC, a write to `$253B` writes the selected NextReg. Any port the CPU can write, the DMA can.
+- **Two exceptions.** The DMA's own ports do not answer while it holds the bus, so it cannot reprogram
+  itself. And the I/O traps of the **I/O Traps register, NextReg `$D8`**, do not fire for its accesses.
+
+Notice what this means for the CPU: it does not run while the courier works. The DMA does not save time by
+working in parallel; it saves time by moving a byte in 6 T-states where `LDIR` needs 21. That answers the
+opening puzzle. The three and a half frames were never spent at all.
+
+Two details of the handover matter in practice. The CPU only lets go at the end of a machine cycle, so when an
+`OUT` starts the DMA, the CPU still fetches the next instruction's opcode before the DMA takes over. And giving
+the bus back takes a few clocks each way, so a transfer of a few bytes costs a few T-states more than its bytes
+alone.
+
+## Two ports, two dialects
+
+The DMA answers on two ports, **`$6B`** and **`$0B`**, and only the low byte of the port address is decoded,
+so `OTIR`, which changes `B` as it goes, sends a whole table to either port. The port you use is also the
+DMA's dialect: every read or write of `$6B` puts it into **zxnDMA mode**, the Next's own, and every read or
+write of `$0B` into **Z80 DMA mode**, which copies the **Zilog Z80 DMA**, the Z8410 (Z84C10 in its CMOS
+version), the DMA controller Zilog made as a companion chip for the Z80. Whenever this chapter says "the
+Zilog chip", it means that one. The mode stays until you touch the other port, and a reset brings back
+zxnDMA mode.
+
+The two dialects differ in one thing only, where the byte counter starts. The counter counts the bytes moved,
+and the transfer goes on as long as the counter is below the block length. It is checked after each byte,
+never before the first, and that makes the counts come out like this:
+
+- **zxnDMA mode**: the counter starts at 0, so a block length of *N* moves exactly *N* bytes. That is what you
+  would expect, and it is the mode I recommend for every new program.
+- **Z80 DMA mode**: the counter starts at `$FFFF`, so a block length of *N* moves *N* + 1 bytes, as on the
+  Zilog chip. Use it for code written for a real Z80 DMA.
+- **A block length of 0 moves one byte** in both modes, never none. The largest block is `$FFFF` bytes in
+  zxnDMA mode and 65,536 bytes, the whole address space, in Z80 DMA mode.
+
+Each port can be switched off: bit 5 of NextReg `$82` enables `$6B`, and bit 1 of NextReg `$85` enables `$0B`.
+Both are on after a reset.
+
+## Base bytes and their followers
+
+The DMA has no register select port. You write a stream of bytes, and the DMA works out from each byte what
+it is. A **base byte** names a register group, WR0 to WR6, by a pattern of fixed bits, and some of its other
+bits announce **followers**, the parameter bytes that must come next, in a fixed order. When the followers
+have arrived, the next byte is a base byte again. This is how the DMA tells the groups apart:
+
+<figure>
+{/* fig:decode */}
+<svg viewBox="-2 -2 704 296" role="img" aria-label="Seven rows, one per register group, each showing the base byte's eight bits, bit 7 on the left, with the fixed bits shaded. WR0: bit 7 is 0 and bits 1 and 0 are not both 0; direction, port A address and block length. WR1: 0, then four setting bits, then 100; port A. WR2: 0, four setting bits, 000; port B. WR3: 1, five setting bits, 00; enable. WR4: 1, five setting bits, 01; mode and port B address. WR5: 10, three setting bits, 010; auto restart. WR6: 1, five bits, 11; commands." style={{ width: "100%", height: "auto" }}>
+  <text x="89" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">7</text>
+  <text x="127" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">6</text>
+  <text x="165" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">5</text>
+  <text x="203" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">4</text>
+  <text x="241" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">3</text>
+  <text x="279" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">2</text>
+  <text x="317" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">1</text>
+  <text x="355" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">0</text>
+  <text x="394" y="20" fill="currentColor" fontSize="13.5">what it sets</text>
+  <text x="0" y="57" fill="#e8912d" fontSize="15" fontWeight="bold">WR0</text>
+  <rect x="71" y="37" width="36" height="30" rx="3" fill="#e8912d" fillOpacity="0.16" stroke="#e8912d" strokeWidth="1.8" />
+  <text x="89" y="57" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">0</text>
+  <rect x="109" y="37" width="36" height="30" rx="3" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="127" y="57" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="147" y="37" width="36" height="30" rx="3" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="165" y="57" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="185" y="37" width="36" height="30" rx="3" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="203" y="57" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="223" y="37" width="36" height="30" rx="3" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="241" y="57" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="261" y="37" width="36" height="30" rx="3" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="279" y="57" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="299" y="37" width="74" height="30" rx="3" fill="#e8912d" fillOpacity="0.16" stroke="#e8912d" strokeWidth="1.8" />
+  <text x="336" y="57" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">≠ 00</text>
+  <text x="394" y="57" fill="currentColor" fontSize="15">direction, port A, length</text>
+  <text x="0" y="93" fill="#e8912d" fontSize="15" fontWeight="bold">WR1</text>
+  <rect x="71" y="73" width="36" height="30" rx="3" fill="#e8912d" fillOpacity="0.16" stroke="#e8912d" strokeWidth="1.8" />
+  <text x="89" y="93" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">0</text>
+  <rect x="109" y="73" width="36" height="30" rx="3" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="127" y="93" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="147" y="73" width="36" height="30" rx="3" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="165" y="93" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="185" y="73" width="36" height="30" rx="3" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="203" y="93" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="223" y="73" width="36" height="30" rx="3" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="241" y="93" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="261" y="73" width="36" height="30" rx="3" fill="#e8912d" fillOpacity="0.16" stroke="#e8912d" strokeWidth="1.8" />
+  <text x="279" y="93" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">1</text>
+  <rect x="299" y="73" width="36" height="30" rx="3" fill="#e8912d" fillOpacity="0.16" stroke="#e8912d" strokeWidth="1.8" />
+  <text x="317" y="93" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">0</text>
+  <rect x="337" y="73" width="36" height="30" rx="3" fill="#e8912d" fillOpacity="0.16" stroke="#e8912d" strokeWidth="1.8" />
+  <text x="355" y="93" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">0</text>
+  <text x="394" y="93" fill="currentColor" fontSize="15">port A: kind, step, timing</text>
+  <text x="0" y="129" fill="#e8912d" fontSize="15" fontWeight="bold">WR2</text>
+  <rect x="71" y="109" width="36" height="30" rx="3" fill="#e8912d" fillOpacity="0.16" stroke="#e8912d" strokeWidth="1.8" />
+  <text x="89" y="129" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">0</text>
+  <rect x="109" y="109" width="36" height="30" rx="3" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="127" y="129" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="147" y="109" width="36" height="30" rx="3" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="165" y="129" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="185" y="109" width="36" height="30" rx="3" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="203" y="129" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="223" y="109" width="36" height="30" rx="3" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="241" y="129" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="261" y="109" width="36" height="30" rx="3" fill="#e8912d" fillOpacity="0.16" stroke="#e8912d" strokeWidth="1.8" />
+  <text x="279" y="129" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">0</text>
+  <rect x="299" y="109" width="36" height="30" rx="3" fill="#e8912d" fillOpacity="0.16" stroke="#e8912d" strokeWidth="1.8" />
+  <text x="317" y="129" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">0</text>
+  <rect x="337" y="109" width="36" height="30" rx="3" fill="#e8912d" fillOpacity="0.16" stroke="#e8912d" strokeWidth="1.8" />
+  <text x="355" y="129" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">0</text>
+  <text x="394" y="129" fill="currentColor" fontSize="15">port B: kind, step, timing</text>
+  <text x="0" y="165" fill="#e8912d" fontSize="15" fontWeight="bold">WR3</text>
+  <rect x="71" y="145" width="36" height="30" rx="3" fill="#e8912d" fillOpacity="0.16" stroke="#e8912d" strokeWidth="1.8" />
+  <text x="89" y="165" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">1</text>
+  <rect x="109" y="145" width="36" height="30" rx="3" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="127" y="165" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="147" y="145" width="36" height="30" rx="3" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="165" y="165" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="185" y="145" width="36" height="30" rx="3" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="203" y="165" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="223" y="145" width="36" height="30" rx="3" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="241" y="165" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="261" y="145" width="36" height="30" rx="3" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="279" y="165" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="299" y="145" width="36" height="30" rx="3" fill="#e8912d" fillOpacity="0.16" stroke="#e8912d" strokeWidth="1.8" />
+  <text x="317" y="165" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">0</text>
+  <rect x="337" y="145" width="36" height="30" rx="3" fill="#e8912d" fillOpacity="0.16" stroke="#e8912d" strokeWidth="1.8" />
+  <text x="355" y="165" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">0</text>
+  <text x="394" y="165" fill="currentColor" fontSize="15">enable (mask, match ignored)</text>
+  <text x="0" y="201" fill="#e8912d" fontSize="15" fontWeight="bold">WR4</text>
+  <rect x="71" y="181" width="36" height="30" rx="3" fill="#e8912d" fillOpacity="0.16" stroke="#e8912d" strokeWidth="1.8" />
+  <text x="89" y="201" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">1</text>
+  <rect x="109" y="181" width="36" height="30" rx="3" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="127" y="201" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="147" y="181" width="36" height="30" rx="3" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="165" y="201" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="185" y="181" width="36" height="30" rx="3" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="203" y="201" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="223" y="181" width="36" height="30" rx="3" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="241" y="201" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="261" y="181" width="36" height="30" rx="3" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="279" y="201" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="299" y="181" width="36" height="30" rx="3" fill="#e8912d" fillOpacity="0.16" stroke="#e8912d" strokeWidth="1.8" />
+  <text x="317" y="201" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">0</text>
+  <rect x="337" y="181" width="36" height="30" rx="3" fill="#e8912d" fillOpacity="0.16" stroke="#e8912d" strokeWidth="1.8" />
+  <text x="355" y="201" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">1</text>
+  <text x="394" y="201" fill="currentColor" fontSize="15">mode, port B address</text>
+  <text x="0" y="237" fill="#e8912d" fontSize="15" fontWeight="bold">WR5</text>
+  <rect x="71" y="217" width="36" height="30" rx="3" fill="#e8912d" fillOpacity="0.16" stroke="#e8912d" strokeWidth="1.8" />
+  <text x="89" y="237" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">1</text>
+  <rect x="109" y="217" width="36" height="30" rx="3" fill="#e8912d" fillOpacity="0.16" stroke="#e8912d" strokeWidth="1.8" />
+  <text x="127" y="237" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">0</text>
+  <rect x="147" y="217" width="36" height="30" rx="3" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="165" y="237" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="185" y="217" width="36" height="30" rx="3" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="203" y="237" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="223" y="217" width="36" height="30" rx="3" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="241" y="237" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="261" y="217" width="36" height="30" rx="3" fill="#e8912d" fillOpacity="0.16" stroke="#e8912d" strokeWidth="1.8" />
+  <text x="279" y="237" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">0</text>
+  <rect x="299" y="217" width="36" height="30" rx="3" fill="#e8912d" fillOpacity="0.16" stroke="#e8912d" strokeWidth="1.8" />
+  <text x="317" y="237" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">1</text>
+  <rect x="337" y="217" width="36" height="30" rx="3" fill="#e8912d" fillOpacity="0.16" stroke="#e8912d" strokeWidth="1.8" />
+  <text x="355" y="237" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">0</text>
+  <text x="394" y="237" fill="currentColor" fontSize="15">auto restart</text>
+  <text x="0" y="273" fill="#e8912d" fontSize="15" fontWeight="bold">WR6</text>
+  <rect x="71" y="253" width="36" height="30" rx="3" fill="#e8912d" fillOpacity="0.16" stroke="#e8912d" strokeWidth="1.8" />
+  <text x="89" y="273" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">1</text>
+  <rect x="109" y="253" width="36" height="30" rx="3" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="127" y="273" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="147" y="253" width="36" height="30" rx="3" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="165" y="273" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="185" y="253" width="36" height="30" rx="3" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="203" y="273" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="223" y="253" width="36" height="30" rx="3" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="241" y="273" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="261" y="253" width="36" height="30" rx="3" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="279" y="273" textAnchor="middle" fill="currentColor" fontSize="15">·</text>
+  <rect x="299" y="253" width="36" height="30" rx="3" fill="#e8912d" fillOpacity="0.16" stroke="#e8912d" strokeWidth="1.8" />
+  <text x="317" y="273" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">1</text>
+  <rect x="337" y="253" width="36" height="30" rx="3" fill="#e8912d" fillOpacity="0.16" stroke="#e8912d" strokeWidth="1.8" />
+  <text x="355" y="273" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">1</text>
+  <text x="394" y="273" fill="currentColor" fontSize="15">commands</text>
+</svg>
+{/* /fig:decode */}
+<figcaption>How the DMA recognises a base byte, bit 7 on the left. The shaded bits are fixed for each group; the others are the group's settings. WR0 is any byte with bit 7 clear whose bits 1 and 0 are not both 0.</figcaption>
+</figure>
+
+Two consequences are worth knowing. A byte that matches no pattern, such as `$86` (bit 7 set, bits 1–0 = 10,
+but not WR5's pattern), is simply ignored. And a byte the DMA expects as a follower is taken as a follower
+whatever its value, so a sequence that announces three followers and sends two swallows your next base byte.
+My advice: write each group in one place, with its followers next to it, and never trust the DMA's state
+between two programs: start every setup with a disable, `$83`.
+
+## Port A and port B
+
+Like the Zilog chip, the DMA does not speak of a source and a destination, but of **port A** and **port B**.
+Each is an address with its own settings, and a direction bit says which way the bytes flow. That sounds
+roundabout, but it lets you set up a buffer and a device once and run the transfer either way by changing one
+bit.
+
+**WR0** sets the direction, port A's starting address and the block length:
+
+```text
+WR0:  0 L L A A D t t
+  t t = not 00 (01 for a transfer)
+  D   = direction: 1 = A to B, 0 = B to A
+  A A = port A address high / low follows
+  L L = block length high / low follows
+followers, in this order:
+  port A low, port A high, length low, length high
+```
+
+Only the followers whose bits are set are sent, but always in that order: `$6D`, with bits 6, 5 and 3 set,
+expects port A's low byte, then the length's low byte, then the length's high byte. The two bits that select
+a transfer, a search, or both on the Zilog chip are only part of the pattern here. **There is no search**:
+every WR0 is a transfer.
+
+**WR1** describes port A and **WR2** port B, in the same layout:
+
+```text
+WR1:  0 T M M I 1 0 0      WR2:  0 T M M I 0 0 0
+      I   = 1: an I/O port, 0: memory
+      M M = after each byte: 00 down, 01 up, 10 or 11 fixed
+      T   = a timing byte follows
+timing byte:  x x P x x x c c
+      c c = cycle length: 00 4, 01 3, 10 2, 11 4 clocks
+      P   = one more byte follows: WR2's prescaler
+```
+
+The address modes cover every job I can think of. A copy steps both addresses up. A fill keeps a one-byte
+source **fixed** and steps the destination; a device such as the sprite pattern port or a DAC keeps its port
+fixed. A move between overlapping buffers steps both addresses **down**, from the end, for the same reason
+`LDDR` exists. The **cycle length** is how many clocks the DMA spends on each read and each write of that
+port: three after a reset, until a **timing byte**, the follower that bit 6 announces, sets it to two,
+three or four. The timing byte is all there is to a port's timing on the Next. WR1's timing byte can announce a prescaler byte too, but port A has no prescaler:
+that byte is accepted and thrown away. Port B's is the prescaler, which gets a section of its own below.
+
+## The mode and port B's address
+
+**WR4** chooses the operating mode and sets port B's starting address:
+
+```text
+WR4:  1 m m i B B 0 1
+  m m = 00 byte, 01 continuous, 10 burst
+  B B = port B address high / low follows
+  i   = interrupt control byte follows
+followers, in this order:
+  port B low, port B high
+```
+
+Two modes really exist. In **continuous mode** the DMA keeps the bus from the first byte to the last. In
+**burst mode** it gives the bus back while the prescaler makes it wait, and only then. **Byte mode** is
+accepted, but it behaves exactly like continuous mode, and so does burst mode without a prescaler.
+
+Leave bit 4 alone. The DMA raises no interrupts, and its handling of this bit has two traps. With port B's
+address bytes, the interrupt control byte you send after them is decoded as a new base byte. Without them,
+the DMA waits for an interrupt control byte it never takes: it stays deaf to every byte you write until the
+machine is reset. A base byte such as `$91` is enough to lock it.
+
+## Enables and flags
+
+**WR3** is mostly the Zilog chip's interrupt and search register, and almost none of it is here:
+
+```text
+WR3:  1 E x H K x 0 0
+  E = enable the DMA (like command $87)
+  K = a mask byte follows
+  H = a match byte follows (after the mask)
+```
+
+Bit 6 starts the DMA, exactly like the enable command. The mask and match bytes are taken and dropped, and
+the interrupt and stop-on-match bits do nothing.
+
+**WR5** is a single byte, `1 0 R C x 0 1 0`. Bit 5, **R**, is **auto restart**, which has a section of its own
+below; bit 4, **C**, the Zilog chip's CE/WAIT setting, is stored but changes nothing on the Next. So the WR5
+you write is `$82`, or `$A2` for auto restart.
+
+## Commands
+
+**WR6** is the command register: any base byte with bit 7 set and bits 1–0 = 11 is a command, and the DMA
+acts on it at once. These are the ones that do something:
+
+- **`$C3`, reset.** Stops any transfer, resets the status byte, sets both cycle lengths back to three clocks,
+  clears the prescaler and auto restart. It does *not* touch the start addresses, the block length, the
+  direction, the address modes, the operating mode or the read mask. One `$C3` does all of this; you do not
+  need a series of them, as the Zilog chip wanted.
+- **`$C7` and `$CB`, reset port A's or port B's timing.** They set that port's cycle length, the one its
+  timing byte in WR1 or WR2 chooses, back to three clocks, and leave everything else alone; port B's
+  prescaler stays.
+- **`$CF`, load.** Copies the start addresses into the DMA's working source and destination, port A to the
+  source for A to B, port B for B to A; sets the counter to its start, 0 or `$FFFF` by the mode; and clears
+  the end-of-block flag.
+- **`$D3`, continue.** Sets the counter to its start and clears the end-of-block flag, but keeps the
+  addresses where they are, so the next block follows on from the last.
+- **`$87`, enable.** Starts the transfer. **`$83`, disable**, stops it where it is; a later `$87` goes on from
+  there.
+- **`$BB`, read mask follows; `$A7`, initialise the read sequence; `$BF`, read the status byte next; `$8B`,
+  reinitialise the status byte.** They belong to reading the DMA back, a section of its own below.
+
+The Zilog chip's interrupt commands, `$AF`, `$AB`, `$A3` and `$B7`, and force ready, `$B3`, are accepted and
+do nothing.
+
+Here is the trap I would warn every newcomer about: **the addresses you write are not the addresses the DMA
+uses.** WR0 and WR4 fill the start registers; only `$CF` copies them into the working addresses. Enable
+without a load, and the DMA carries on from wherever its last transfer stopped. After a finished block that
+means one more byte, from the address just past its end, because the counter is checked only after a byte.
+So the last two bytes of every setup are `$CF`, `$87`, in that order.
+
+## One byte, six T-states
+
+A transfer is a loop of two bus cycles: the DMA **reads** a byte from the source and **writes** it to the
+destination. Each cycle lasts the cycle length of its port, three clocks after a reset, so a byte takes **six
+T-states**. During the write's first clock the DMA counts the byte and steps both addresses, and after the
+write it decides whether there is another byte to move.
+
+<figure>
+{/* fig:byte */}
+<svg viewBox="-2 -2 704 236" role="img" aria-label="A timeline to scale over 42 T-states. LDIR: two bytes of 21 T-states each. The DMA with three-clock cycles: seven bytes of 6 T-states, each a 3 T-state read and a 3 T-state write. The DMA with two-clock cycles: ten bytes and a half of 4 T-states, each a 2 T-state read and a 2 T-state write." style={{ width: "100%", height: "auto" }}>
+  <line x1="130" y1="30" x2="130" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="130" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">0</text>
+  <line x1="211.4" y1="30" x2="211.4" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="211.4" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">6</text>
+  <line x1="292.9" y1="30" x2="292.9" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="292.9" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">12</text>
+  <line x1="374.3" y1="30" x2="374.3" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="374.3" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">18</text>
+  <line x1="455.7" y1="30" x2="455.7" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="455.7" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">24</text>
+  <line x1="537.1" y1="30" x2="537.1" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="537.1" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">30</text>
+  <line x1="618.6" y1="30" x2="618.6" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="618.6" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">36</text>
+  <line x1="700" y1="30" x2="700" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="700" y="22" textAnchor="end" fill="currentColor" fontSize="13.5">42</text>
+  <text x="0" y="22" fill="currentColor" fontSize="13.5">T-states</text>
+  <text x="0" y="72" fill="currentColor" fontSize="15" fontWeight="bold">LDIR</text>
+  <rect x="130" y="52" width="285" height="36" rx="3" fill="#3b82f6" fillOpacity="0.12" stroke="#3b82f6" strokeWidth="1.6" />
+  <text x="272.5" y="75" textAnchor="middle" fill="#3b82f6" fontSize="13.5" fontWeight="bold">one byte, 21 T</text>
+  <rect x="415" y="52" width="285" height="36" rx="3" fill="#3b82f6" fillOpacity="0.12" stroke="#3b82f6" strokeWidth="1.6" />
+  <text x="557.5" y="75" textAnchor="middle" fill="#3b82f6" fontSize="13.5" fontWeight="bold">the next byte</text>
+  <text x="0" y="130" fill="currentColor" fontSize="15" fontWeight="bold">DMA</text>
+  <text x="0" y="148" fill="currentColor" fontSize="13.5">3-clock cycles</text>
+  <rect x="130" y="110" width="40.7" height="36" rx="3" fill="#e8912d" fillOpacity="0.22" stroke="#e8912d" strokeWidth="1.6" />
+  <text x="150.4" y="133" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">R</text>
+  <rect x="170.7" y="110" width="40.7" height="36" rx="3" fill="#e8912d" fillOpacity="0.08" stroke="#e8912d" strokeWidth="1.6" />
+  <text x="191.1" y="133" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">W</text>
+  <rect x="211.4" y="110" width="40.7" height="36" rx="3" fill="#e8912d" fillOpacity="0.22" stroke="#e8912d" strokeWidth="1.6" />
+  <text x="231.8" y="133" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">R</text>
+  <rect x="252.1" y="110" width="40.7" height="36" rx="3" fill="#e8912d" fillOpacity="0.08" stroke="#e8912d" strokeWidth="1.6" />
+  <text x="272.5" y="133" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">W</text>
+  <rect x="292.9" y="110" width="40.7" height="36" rx="3" fill="#e8912d" fillOpacity="0.22" stroke="#e8912d" strokeWidth="1.6" />
+  <text x="313.2" y="133" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">R</text>
+  <rect x="333.6" y="110" width="40.7" height="36" rx="3" fill="#e8912d" fillOpacity="0.08" stroke="#e8912d" strokeWidth="1.6" />
+  <text x="353.9" y="133" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">W</text>
+  <rect x="374.3" y="110" width="40.7" height="36" rx="3" fill="#e8912d" fillOpacity="0.22" stroke="#e8912d" strokeWidth="1.6" />
+  <text x="394.6" y="133" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">R</text>
+  <rect x="415" y="110" width="40.7" height="36" rx="3" fill="#e8912d" fillOpacity="0.08" stroke="#e8912d" strokeWidth="1.6" />
+  <text x="435.4" y="133" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">W</text>
+  <rect x="455.7" y="110" width="40.7" height="36" rx="3" fill="#e8912d" fillOpacity="0.22" stroke="#e8912d" strokeWidth="1.6" />
+  <text x="476.1" y="133" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">R</text>
+  <rect x="496.4" y="110" width="40.7" height="36" rx="3" fill="#e8912d" fillOpacity="0.08" stroke="#e8912d" strokeWidth="1.6" />
+  <text x="516.8" y="133" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">W</text>
+  <rect x="537.1" y="110" width="40.7" height="36" rx="3" fill="#e8912d" fillOpacity="0.22" stroke="#e8912d" strokeWidth="1.6" />
+  <text x="557.5" y="133" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">R</text>
+  <rect x="577.9" y="110" width="40.7" height="36" rx="3" fill="#e8912d" fillOpacity="0.08" stroke="#e8912d" strokeWidth="1.6" />
+  <text x="598.2" y="133" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">W</text>
+  <rect x="618.6" y="110" width="40.7" height="36" rx="3" fill="#e8912d" fillOpacity="0.22" stroke="#e8912d" strokeWidth="1.6" />
+  <text x="638.9" y="133" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">R</text>
+  <rect x="659.3" y="110" width="40.7" height="36" rx="3" fill="#e8912d" fillOpacity="0.08" stroke="#e8912d" strokeWidth="1.6" />
+  <text x="679.6" y="133" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">W</text>
+  <text x="0" y="188" fill="currentColor" fontSize="15" fontWeight="bold">DMA</text>
+  <text x="0" y="206" fill="currentColor" fontSize="13.5">2-clock cycles</text>
+  <rect x="130" y="168" width="27.1" height="36" rx="3" fill="#e8912d" fillOpacity="0.22" stroke="#e8912d" strokeWidth="1.6" />
+  <text x="143.6" y="191" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">R</text>
+  <rect x="157.1" y="168" width="27.1" height="36" rx="3" fill="#e8912d" fillOpacity="0.08" stroke="#e8912d" strokeWidth="1.6" />
+  <text x="170.7" y="191" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">W</text>
+  <rect x="184.3" y="168" width="27.1" height="36" rx="3" fill="#e8912d" fillOpacity="0.22" stroke="#e8912d" strokeWidth="1.6" />
+  <text x="197.9" y="191" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">R</text>
+  <rect x="211.4" y="168" width="27.1" height="36" rx="3" fill="#e8912d" fillOpacity="0.08" stroke="#e8912d" strokeWidth="1.6" />
+  <text x="225" y="191" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">W</text>
+  <rect x="238.6" y="168" width="27.1" height="36" rx="3" fill="#e8912d" fillOpacity="0.22" stroke="#e8912d" strokeWidth="1.6" />
+  <text x="252.1" y="191" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">R</text>
+  <rect x="265.7" y="168" width="27.1" height="36" rx="3" fill="#e8912d" fillOpacity="0.08" stroke="#e8912d" strokeWidth="1.6" />
+  <text x="279.3" y="191" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">W</text>
+  <rect x="292.9" y="168" width="27.1" height="36" rx="3" fill="#e8912d" fillOpacity="0.22" stroke="#e8912d" strokeWidth="1.6" />
+  <text x="306.4" y="191" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">R</text>
+  <rect x="320" y="168" width="27.1" height="36" rx="3" fill="#e8912d" fillOpacity="0.08" stroke="#e8912d" strokeWidth="1.6" />
+  <text x="333.6" y="191" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">W</text>
+  <rect x="347.1" y="168" width="27.1" height="36" rx="3" fill="#e8912d" fillOpacity="0.22" stroke="#e8912d" strokeWidth="1.6" />
+  <text x="360.7" y="191" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">R</text>
+  <rect x="374.3" y="168" width="27.1" height="36" rx="3" fill="#e8912d" fillOpacity="0.08" stroke="#e8912d" strokeWidth="1.6" />
+  <text x="387.9" y="191" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">W</text>
+  <rect x="401.4" y="168" width="27.1" height="36" rx="3" fill="#e8912d" fillOpacity="0.22" stroke="#e8912d" strokeWidth="1.6" />
+  <text x="415" y="191" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">R</text>
+  <rect x="428.6" y="168" width="27.1" height="36" rx="3" fill="#e8912d" fillOpacity="0.08" stroke="#e8912d" strokeWidth="1.6" />
+  <text x="442.1" y="191" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">W</text>
+  <rect x="455.7" y="168" width="27.1" height="36" rx="3" fill="#e8912d" fillOpacity="0.22" stroke="#e8912d" strokeWidth="1.6" />
+  <text x="469.3" y="191" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">R</text>
+  <rect x="482.9" y="168" width="27.1" height="36" rx="3" fill="#e8912d" fillOpacity="0.08" stroke="#e8912d" strokeWidth="1.6" />
+  <text x="496.4" y="191" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">W</text>
+  <rect x="510" y="168" width="27.1" height="36" rx="3" fill="#e8912d" fillOpacity="0.22" stroke="#e8912d" strokeWidth="1.6" />
+  <text x="523.6" y="191" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">R</text>
+  <rect x="537.1" y="168" width="27.1" height="36" rx="3" fill="#e8912d" fillOpacity="0.08" stroke="#e8912d" strokeWidth="1.6" />
+  <text x="550.7" y="191" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">W</text>
+  <rect x="564.3" y="168" width="27.1" height="36" rx="3" fill="#e8912d" fillOpacity="0.22" stroke="#e8912d" strokeWidth="1.6" />
+  <text x="577.9" y="191" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">R</text>
+  <rect x="591.4" y="168" width="27.1" height="36" rx="3" fill="#e8912d" fillOpacity="0.08" stroke="#e8912d" strokeWidth="1.6" />
+  <text x="605" y="191" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">W</text>
+  <rect x="618.6" y="168" width="27.1" height="36" rx="3" fill="#e8912d" fillOpacity="0.22" stroke="#e8912d" strokeWidth="1.6" />
+  <text x="632.1" y="191" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">R</text>
+  <rect x="645.7" y="168" width="27.1" height="36" rx="3" fill="#e8912d" fillOpacity="0.08" stroke="#e8912d" strokeWidth="1.6" />
+  <text x="659.3" y="191" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">W</text>
+  <rect x="672.9" y="168" width="27.1" height="36" rx="3" fill="#e8912d" fillOpacity="0.22" stroke="#e8912d" strokeWidth="1.6" />
+  <text x="686.4" y="191" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">R</text>
+  <text x="700" y="228" textAnchor="end" fill="currentColor" fontSize="13.5">R: read cycle, W: write cycle; a byte is one of each</text>
+</svg>
+{/* /fig:byte */}
+<figcaption>To scale in T-states: LDIR moves a byte in 21 T-states, the DMA in 6 with three-clock cycles (a read and a write, R and W) and in 4 with two-clock cycles.</figcaption>
+</figure>
+
+Put the numbers together for a 16K copy. `LDIR` takes 21 T-states for every byte but the last, which takes 16:
+344,059 T-states. The DMA takes 6 × 16,384 = **98,304 T-states**, plus a few for the handover, 3.5 times
+faster. With two-clock cycles, a timing byte of `$02` for both ports, a byte takes **four T-states** and
+the copy 65,536. Four-clock cycles make it eight.
+
+The clocks are the CPU's clocks, so at 28 MHz the same six clocks take an eighth of the time. Three things can
+stretch a byte, all of them wait states the CPU would get too:
+
+- **Contention.** At 3.5 MHz the ULA holds the CPU's clock while it reads the screen, and the DMA runs on that
+  clock. A DMA byte that touches contended memory in the display area waits, exactly as the CPU would.
+  Contention disappears at 7 MHz and above, and when NextReg `$08` bit 6 switches it off.
+- **The SD card.** The data port of the SD card, `$EB`, shifts each byte out one bit at a time, and it holds
+  the DMA's next access to it until the last byte has finished, 16 CPU clocks. So a DMA from `$EB` to memory
+  reads a sector at the speed of the card's serial link, without a single byte lost.
+- **28 MHz memory.** At 28 MHz a read from the main memory gets a wait state, the DMA's as well as the
+  CPU's.
+
+If you ask me, the two-clock cycle is the one to use for memory to memory copies, and the three-clock cycle
+for anything that talks to a device. I have no evidence that a device minds; I simply like the margin.
+
+## The prescaler: spacing the bytes out
+
+For a copy, faster is better. For a sample, the rate *is* the sound: each byte must arrive at the DAC at
+exactly the right moment, not as soon as possible. The **prescaler**, WR2's third byte, does that. It is a
+Next addition; the Zilog chip has nothing like it.
+
+The prescaler works with a timer that counts **28 MHz time**: it goes up by 8 for each CPU clock at 3.5 MHz,
+4 at 7 MHz, 2 at 14 MHz and 1 at 28 MHz, and it starts again from zero at the start of every byte. After the
+write, the DMA waits until the timer has reached 32 times the prescaler, *P*. So the wait ends **32 × *P*
+master clocks** after the byte began, at every CPU speed, and that is where the familiar rate comes from: 28
+MHz ÷ 32 ÷ *P*, **875 kHz ÷ *P***.
+
+That is the nominal rate, and the real one is a little lower. When the wait ends, the DMA needs two more
+clocks to get to the next read, and the first clock of a byte is spent before the timer starts counting. A
+byte every **4 × *P* + 3 T-states** at 3.5 MHz, then, and every 32 × *P* + 3 clocks at 28 MHz:
+
+- **Prescaler 100 at 3.5 MHz**: a byte every 403 T-states, 8,685 bytes a second, where the formula promises
+  8,750.
+- **Prescaler 100 at 28 MHz**: a byte every 3,203 clocks, 8,742 bytes a second. The faster the CPU, the closer
+  to the formula, because the three clocks are shorter.
+
+The rule holds whenever the wait is longer than the byte itself. At 3.5 MHz a prescaler of 1 is not, and
+changes nothing; 0 switches the prescaler off at every speed. Notice too that the DMA waits after the last byte as well,
+before it calls the block finished. I find the 0.7 % of a slower rate harmless for music, but if you tune
+samples to a reference pitch, it is good to know where it goes.
+
+In continuous mode the DMA **keeps the bus while it waits**. The CPU is frozen for the whole block, and a
+prescaled block takes far longer than an unpaced one, so this is almost never what you want. With a
+prescaler, use burst mode.
+
+## Burst mode: the bus goes back between bytes
+
+In burst mode the courier hands the bus back while it waits. For each byte:
+
+1. The DMA reads and writes the byte, six T-states.
+2. On the first clock of its wait it lets go of `/BUSRQ`, and a couple of clocks later the CPU picks up its
+   instruction where it was frozen.
+3. The CPU runs while the timer counts.
+4. When the wait ends, the DMA pulls `/BUSRQ` again, and the CPU stops at the end of its current machine
+   cycle.
+5. The DMA takes the bus and moves the next byte.
+
+<figure>
+{/* fig:pace */}
+<svg viewBox="-2 -2 704 334" role="img" aria-label="Two pairs of rows to scale over 106 T-states at prescaler 10. Continuous mode: DMA bytes of 6 T-states at 0, 43 and 86, the DMA waiting in between while it keeps the bus, and the CPU stopped throughout. Burst mode: a byte at 0; the DMA lets go of the bus and the CPU runs from T-state 9; at T-state 45 the DMA asks for the bus again, the CPU finishes its machine cycle, and the next byte starts a few T-states later, about T-state 50, and the next about 100." style={{ width: "100%", height: "auto" }}>
+  <defs>
+    <marker id="dma-pace-0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#e5484d" />
+    </marker>
+  </defs>
+  <line x1="130" y1="30" x2="130" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="130" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">0</text>
+  <line x1="183.8" y1="30" x2="183.8" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="183.8" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">10</text>
+  <line x1="237.5" y1="30" x2="237.5" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="237.5" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">20</text>
+  <line x1="291.3" y1="30" x2="291.3" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="291.3" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">30</text>
+  <line x1="345.1" y1="30" x2="345.1" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="345.1" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">40</text>
+  <line x1="398.9" y1="30" x2="398.9" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="398.9" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">50</text>
+  <line x1="452.6" y1="30" x2="452.6" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="452.6" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">60</text>
+  <line x1="506.4" y1="30" x2="506.4" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="506.4" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">70</text>
+  <line x1="560.2" y1="30" x2="560.2" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="560.2" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">80</text>
+  <line x1="614" y1="30" x2="614" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="614" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">90</text>
+  <line x1="667.7" y1="30" x2="667.7" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="667.7" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">100</text>
+  <text x="0" y="22" fill="currentColor" fontSize="13.5">T-states</text>
+  <text x="0" y="66" fill="currentColor" fontSize="15" fontWeight="bold">continuous</text>
+  <text x="0" y="84" fill="#e8912d" fontSize="13.5">DMA</text>
+  <text x="0" y="120" fill="#3b82f6" fontSize="13.5">CPU</text>
+  <rect x="130" y="52" width="32.3" height="30" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.6" />
+  <rect x="361.2" y="52" width="32.3" height="30" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.6" />
+  <rect x="592.5" y="52" width="32.3" height="30" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.6" />
+  <rect x="162.3" y="52" width="199" height="30" rx="3" fill="none" fillOpacity="0" stroke="#e8912d" strokeWidth="1.6" strokeDasharray="5 4" />
+  <text x="261.7" y="72" textAnchor="middle" fill="#e8912d" fontSize="13.5">waits, keeps the bus</text>
+  <rect x="393.5" y="52" width="199" height="30" rx="3" fill="none" fillOpacity="0" stroke="#e8912d" strokeWidth="1.6" strokeDasharray="5 4" />
+  <text x="493" y="72" textAnchor="middle" fill="#e8912d" fontSize="13.5">waits</text>
+  <rect x="130" y="98" width="570" height="30" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeWidth="1.6" />
+  <text x="415" y="118" textAnchor="middle" fill="currentColor" fontSize="13.5">stopped for the whole block</text>
+  <text x="0" y="182" fill="currentColor" fontSize="15" fontWeight="bold">burst</text>
+  <text x="0" y="200" fill="#e8912d" fontSize="13.5">DMA</text>
+  <text x="0" y="236" fill="#3b82f6" fontSize="13.5">CPU</text>
+  <rect x="130" y="168" width="32.3" height="30" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.6" />
+  <rect x="398.9" y="168" width="32.3" height="30" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.6" />
+  <rect x="667.7" y="168" width="32.3" height="30" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.6" />
+  <rect x="162.3" y="168" width="209.7" height="30" rx="3" fill="none" fillOpacity="0" stroke="#e8912d" strokeWidth="1.6" strokeDasharray="5 4" />
+  <text x="267.1" y="188" textAnchor="middle" fill="#e8912d" fontSize="13.5">waits, bus free</text>
+  <rect x="431.1" y="168" width="209.7" height="30" rx="3" fill="none" fillOpacity="0" stroke="#e8912d" strokeWidth="1.6" strokeDasharray="5 4" />
+  <text x="536" y="188" textAnchor="middle" fill="#e8912d" fontSize="13.5">waits</text>
+  <rect x="130" y="214" width="48.4" height="30" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeWidth="1.6" />
+  <rect x="178.4" y="214" width="193.6" height="30" rx="3" fill="#3b82f6" fillOpacity="0.14" stroke="#3b82f6" strokeWidth="1.6" />
+  <text x="275.2" y="234" textAnchor="middle" fill="#3b82f6" fontSize="13.5" fontWeight="bold">runs</text>
+  <rect x="372" y="214" width="26.9" height="30" rx="3" fill="#e5484d" fillOpacity="0.14" stroke="#e5484d" strokeWidth="1.6" />
+  <rect x="398.9" y="214" width="48.4" height="30" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeWidth="1.6" />
+  <rect x="447.3" y="214" width="193.6" height="30" rx="3" fill="#3b82f6" fillOpacity="0.14" stroke="#3b82f6" strokeWidth="1.6" />
+  <text x="544.1" y="234" textAnchor="middle" fill="#3b82f6" fontSize="13.5" fontWeight="bold">runs</text>
+  <rect x="640.8" y="214" width="26.9" height="30" rx="3" fill="#e5484d" fillOpacity="0.14" stroke="#e5484d" strokeWidth="1.6" />
+  <path d="M385.42452830188677,290 L385.42452830188677,250" fill="none" stroke="#e5484d" strokeWidth="1.8" markerEnd="url(#dma-pace-0)" strokeLinejoin="round" />
+  <text x="393.4" y="286" fill="#e5484d" fontSize="13.5">the DMA asks; the CPU ends its M-cycle</text>
+  <text x="0" y="320" fill="currentColor" fontSize="13.5">grey: the CPU held for a byte and the handover; red: waiting for the grant</text>
+</svg>
+{/* /fig:pace */}
+<figcaption>Prescaler 10 at 3.5 MHz, to scale in T-states. Continuous mode moves a byte every 43 T-states and keeps the bus throughout; burst mode gives the bus to the CPU while it waits, and each byte comes a few T-states later, when the CPU has finished its machine cycle.</figcaption>
+</figure>
+
+So burst mode costs a little: each byte comes a few T-states later than the prescaler alone would say, and by
+an amount that depends on what the CPU was doing, so the bytes jitter by a T-state or two. In return the CPU
+gets almost all its time back. At prescaler 100 the courier holds the bus for about a dozen T-states of every
+four hundred; the CPU keeps well over 95 % of its time. That is why my rule is simple: continuous mode for
+copies, burst mode with a prescaler for anything paced.
+
+Let's play a sample. This program plays 2,048 bytes from `$C000` to the Specdrum DAC on port `$DF` at
+prescaler 55, a byte about every 226 T-states, about 15.5 kHz, while the CPU goes back to its work:
+
+```z80klive
+        nextreg $08,$18        ; DACs and speaker on
+        ld hl,Prog
+        ld bc,$106b            ; B = 16 bytes, C = port
+        otir
+        ret                    ; the sample plays on
+Prog:   .defb $83              ; disable
+        .defb $7d,$00,$c0      ; WR0: A to B, port A $C000
+        .defb $00,$08          ; ... length 2,048
+        .defb $14              ; WR1: A is memory, upwards
+        .defb $68,$21,55       ; WR2: B is I/O, fixed; P = 55
+        .defb $cd,$df,$00      ; WR4: burst, port B $00DF
+        .defb $82              ; WR5: no auto restart
+        .defb $cf,$87          ; load, enable
+```
+
+How it works:
+
+- `OTIR` sends the 16 bytes of `Prog` to port `$6B`, which also puts the DMA in zxnDMA mode, so the block
+  length 2,048 means 2,048 bytes.
+- WR2, `$68`, makes port B a fixed I/O port and announces a timing byte; the timing byte `$21` keeps three-clock
+  cycles and announces the prescaler, 55.
+- WR4, `$CD`, selects burst mode and announces port B's address, `$00DF`; only its low byte matters to the
+  port decoder.
+- `$CF` loads the addresses and `$87` starts the transfer. The CPU fetches its next opcode, the first byte of
+  `RET`, before the first byte moves; then it carries on between the samples.
+
+## Auto restart
+
+With WR5 bit 5 set, the DMA does not stop at the end of a block. It sets the end-of-block flag, copies the
+start addresses into its working addresses again, starts its counter again and moves the first byte of the
+next round, keeping the bus if it had it. A looped sample, a ring buffer streamed to a port, a waveform that
+never ends: that is what auto restart is for, and the DAC chapter's sine wave runs on it.
+
+It has one dangerous corner. In continuous mode, with a prescaler or without, an auto-restarting DMA **never
+gives the bus back**: the CPU stops for good, and it cannot even write the `$83` that would stop the DMA, because the
+DMA's port does not answer while the DMA holds the bus. Only a reset, or an interrupt the DMA has been told to
+step aside for, gets the CPU running again; in the latter case the interrupt's handler can write the `$83`.
+Pair auto restart with burst mode and a prescaler, and let me warn you, do it every time.
+
+## Reading the DMA back
+
+Read the DMA's port, and you get the next entry of its **read sequence**: the status byte, the counter's low
+and high bytes, port A's low and high address bytes, and port B's, seven entries in this order. Port A and B
+are the working addresses, where the next byte comes from and goes to, under their port names whatever the
+direction. The **read mask**, the byte after a `$BB` command, chooses the entries: bit 0 the status, bit 1 and
+2 the counter, bits 3 and 4 port A, bits 5 and 6 port B. Each read gives the next enabled entry, and after
+the last one the sequence starts again. The mask is `$7F` after a reset, all seven, so a program that reads
+the port repeatedly without a command sees all seven in turn. `$A7` starts the sequence again from its first
+enabled entry, and `$BF` makes the next read the status, whatever the mask.
+
+The **status byte** has the form `00E1101T`:
+
+- **E**, bit 5, is **0 once the end of a block has been reached**, and 1 before that. A load, a continue, a
+  reset or `$8B` sets it back to 1.
+- **T**, bit 0, is 1 when a byte has been moved in the transfer under way. It is cleared whenever the DMA is
+  idle, so it reads 1 only while a transfer is running, never after it has finished.
+- So `$3A` means idle and nothing done yet, `$3B` a transfer under way, and `$1A` finished.
+
+There is a catch: the CPU can read the DMA only while it has the bus. During a continuous transfer it does not,
+so your main program never sees `$3B`, only `$1A` at the end; an interrupt handler that runs while the DMA steps
+aside is the exception. In burst mode, polling works:
+
+```z80klive
+Wait:   ld a,$bf               ; read the status next
+        out ($6b),a
+        in a,($6b)
+        bit 5,a                ; end of block reached?
+        jr nz,Wait
+```
+
+## Stepping aside for interrupts
+
+The interrupts chapter's section [The DMA steps
+aside](/en/under-the-hood/emulator-internals/next-interrupts/#the-dma-steps-aside) explains how the **DMA INT
+EN 0, 1 and 2 registers, NextRegs `$CC`, `$CD` and `$CE`**, let chosen interrupt sources break into a
+transfer in hardware IM2 mode. Seen from the DMA:
+
+- After each byte, if such a source is requesting or in service, the DMA lets go of the bus and waits until
+  it is not. The CPU runs its instruction, takes the interrupt, runs the handler, and the transfer goes on
+  after the `RETI`. Bit 7 of NextReg `$CC` does the same for the NMI.
+- Interrupts are taken only at the end of an instruction, so every time the DMA steps aside, the interrupted
+  program also makes one instruction of progress.
+- Without these enables, or in pulse mode, the interrupt waits for the end of the transfer. A pulse-mode
+  interrupt that comes and goes while the DMA holds the bus is lost, so a continuous transfer longer than a
+  frame costs you a frame interrupt. A transfer of 16K at six T-states a byte is already nearly one and a
+  half frames long.
+
+The DMA itself raises no interrupt when a block ends. If your program must know, it polls the status byte,
+or it sets up a CTC channel to ring when the block should be done.
+
+## Resets
+
+A reset, hard or soft, puts the DMA into zxnDMA mode and continuous mode, idle, with three-clock cycles, no
+prescaler, no auto restart, the read mask `$7F` and the status `$3A`, and frees a DMA that WR4's bit 4 left
+deaf. It does not clear the start addresses, the block length, the direction or the address modes. The `$C3`
+command is a smaller reset still: it also keeps the operating mode and the read mask. So the
+advice of the interrupts chapter goes for the courier too: write every register a transfer needs, every time.
+
+## What to take home
+
+The DMA, the courier, borrows the CPU's bus with `/BUSRQ` and `/BUSAK`; while it holds the bus the CPU is
+frozen, and the rest of the machine sees the DMA as if it were the CPU, MMU, ROM, Layer 2 mapping and port
+decoder included. It does not work beside the CPU; it simply moves a byte in 6 T-states where `LDIR` needs 21,
+4 with two-clock cycles.
+
+It answers on two ports: `$6B`, zxnDMA mode, moves *N* bytes for a block length of *N*, and `$0B`, Z80 DMA
+mode, moves *N* + 1; a length of 0 moves one byte in both. You program it with base bytes, WR0 to WR6, each
+recognised by its fixed bits and followed by the bytes it announces: WR0 for the direction, port A and the
+length, WR1 and WR2 for the ports' memory or I/O, address step and cycle length, WR4 for the mode and port B,
+WR5 for auto restart, WR6 for the commands, of which `$CF`, load, and `$87`, enable, end every setup. There is
+no search, no interrupt and no mask or match, byte mode is continuous mode, and WR4's bit 4 is a trap.
+
+The prescaler, WR2's third byte, counts 28 MHz time, so its 875 kHz ÷ *P* rate holds at every CPU speed, and
+the exact period is 4 × *P* + 3 T-states at 3.5 MHz. In continuous mode the DMA keeps the bus while it waits;
+in burst mode it gives the bus back and returns at the end of the CPU's machine cycle, so the CPU keeps nearly
+all its time. Auto restart loops a block, and in continuous mode it never lets go.
+
+The status byte, `00E1101T`, and the read sequence of counter and addresses can be read only while the CPU has
+the bus. Interrupts enabled in NextRegs `$CC`–`$CE` make the DMA step aside in hardware IM2 mode, contention
+and the SD card's port slow it down like the CPU, and a reset sets it back to zxnDMA mode, continuous and
+three-clock cycles. Once you know who holds the bus and when, the courier is the fastest pair of hands in the
+machine.

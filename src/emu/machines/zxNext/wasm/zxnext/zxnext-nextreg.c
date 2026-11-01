@@ -36,7 +36,49 @@ static uint32_t zxnextNextRegConfigModeOrFlashReset(void) {
   return zxnextConfigMode || (zxnextResetType & 0x04u) != 0u;
 }
 
+/*
+ * zxnext.vhd ~5768-5770: the ULA's contention switch is `eff_nr_08_contention_disable`, a copy of $08
+ * bit 6 taken only while bit 8 of the line's dot counter (hc) is set; ~5852: $08 bit 6 reads the copy,
+ * ~5748: a reset clears it. A write in dots 0-255 of a line takes effect at dot 256 of that line.
+ */
+static uint8_t zxnextContentionOffEff;
+static uint8_t zxnextContentionOffPending;
+static uint8_t zxnextContentionOffNew;
+static uint32_t zxnextContentionOffFrame;
+static uint32_t zxnextContentionOffAt;
+
+static void zxnextNextRegResetContentionOff(void) {
+  zxnextContentionOffEff = 0u;
+  zxnextContentionOffPending = 0u;
+}
+
+/* The copy the ULA uses now: a pending write has landed once the beam reached dot 256 of its line, or
+   a later frame began. A query, so it changes no state: reading $08 from the IDE must not make a debug
+   run's state image differ from a replay's (src/emu/z80/wasm/README.md, "volatile") */
+static inline uint32_t zxnextNextRegContentionOff(void) {
+  if (zxnextContentionOffPending &&
+      (frames != zxnextContentionOffFrame || currentFrameTact >= zxnextContentionOffAt)) {
+    return zxnextContentionOffNew;
+  }
+  return zxnextContentionOffEff;
+}
+
+static void zxnextNextRegWriteContentionOff(uint32_t disable) {
+  zxnextContentionOffEff = (uint8_t)zxnextNextRegContentionOff();
+  const uint32_t dot = currentFrameTact % zxnextTimingTotalHc;
+  if (dot >= 256u) {
+    zxnextContentionOffEff = (uint8_t)disable;
+    zxnextContentionOffPending = 0u;
+    return;
+  }
+  zxnextContentionOffNew = (uint8_t)disable;
+  zxnextContentionOffPending = 1u;
+  zxnextContentionOffFrame = frames;
+  zxnextContentionOffAt = currentFrameTact - dot + 256u;
+}
+
 static void zxnextNextRegHardReset(void) {
+  zxnextNextRegResetContentionOff();
   zxnextConfigMode = 0u;
   zxnextResetType = 0x04u;
   zxnextLastResetWasHard = 1u;
@@ -206,8 +248,9 @@ static void zxnextNextRegSoftReset(uint32_t keptNr06) {
 
   /* $06: hotkey enables (bits 7, 5) reset to 1, the rest survive */
   zxnextNextRegSetDirect(0x06u, 0xa0u | (keptNr06 & 0x5fu));
-  /* $08: contention disable (bit 6) resets; bit 7 is the $7FFD lock readback */
+  /* $08: contention disable (bit 6) resets, its copy at once (~5748); bit 7 is the $7FFD lock readback */
   zxnextNextRegSetDirect(0x08u, zxnextNextRegs[0x08] & 0x3fu);
+  zxnextNextRegResetContentionOff();
   /* $09: sprite tie (bit 4) resets; bit 3 is a write-only MAPRAM reset strobe */
   zxnextNextRegSetDirect(0x09u, zxnextNextRegs[0x09] & 0xe7u);
   zxnextNextRegSetDirect(0x05u, zxnextNextRegs[0x05]);
@@ -623,6 +666,7 @@ static void zxnextNextRegSetDirect(uint32_t reg, uint32_t value) {
     /* ~6325-6335: bits 1-0 = PSG mode (bit 0 = aymode_i; 11 holds every PSG in reset) */
     zxnextPsgSetMode(value & 0x03u);
   } else if (normalized == 0x08u) {
+    zxnextNextRegWriteContentionOff((value >> 6u) & 0x01u);
     /* ~3650: writing bit 7 = 1 clears the $7FFD lock */
     if ((value & 0x80u) != 0u) zxnextMemoryUnlockPaging();
     /* ~5155-5157: bit 5 = AY stereo mode (0 ABC, 1 ACB), bit 4 = internal speaker, bit 3 = DAC enable */
@@ -716,7 +760,9 @@ static uint32_t zxnextNextRegGetDirect(uint32_t reg) {
       return (zxnextLayer2Enabled ? 0x80u : 0x00u) | (zxnextMemoryShadowScreen() ? 0x40u : 0x00u) | (portTimexValue & 0x3fu);
     /* zxnext.vhd read mux: $08 bit 7 is `not port_7ffd_locked` */
     case 0x08u:
-      return (zxnextNextRegs[0x08u] & 0x7fu) | (zxnextMemoryPagingEnabled() ? 0x80u : 0x00u);
+      /* ~5852: bit 6 reads the ULA's copy, not the bit written */
+      return (zxnextNextRegs[0x08u] & 0x3fu) | (zxnextNextRegContentionOff() ? 0x40u : 0x00u) |
+        (zxnextMemoryPagingEnabled() ? 0x80u : 0x00u);
     /* $A2: nr_a2(7:6) & '0' & nr_a2(4:2) & '1' & nr_a2(0) */
     case 0xa2u:
       return (zxnextNextRegs[0xa2u] & 0xddu) | 0x02u;

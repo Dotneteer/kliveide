@@ -524,7 +524,10 @@ uint32_t zxnextGetNextRegisterLastWrite(uint32_t reg) {
 }
 /* The M1 (Multiface) and DRIVE (DivMMC) NMI buttons - the F9/F10 menu commands. */
 void zxnextPressMultifaceNmiButton(void) { zxnextNmiRequestMultiface(); }
-void zxnextPressDivMmcNmiButton(void) { zxnextNmiRequestDivMmc(); }
+/* hotkey_drive is gated by the DivMMC port enable (zxnext.vhd ~6295), unlike a $02 request */
+void zxnextPressDivMmcNmiButton(void) {
+  if (zxnextPortsGroupEnabled(1, 0)) zxnextNmiRequestDivMmc();
+}
 /* Whether a NextReg $02 reset is pending, without taking it: the debug loop asks after every
    instruction, and only a pending request is worth a journaled take (REVERSE_DEBUGGING_PLAN D7) */
 uint32_t zxnextGetResetRequest(void) { return zxnextResetRequest; }

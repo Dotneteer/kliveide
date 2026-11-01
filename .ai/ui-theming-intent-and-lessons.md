@@ -3229,10 +3229,13 @@ drift. Change a neutral or the default accent in the app, and the site changes w
   emulator): a 2.4:1 recording sat in the 16:10 frame as a thin strip under a dark band.
 - **Landing section headings are 2rem**, above the 1.75rem feature headings they contain. At 1.5rem
   "What Klive does" was smaller than the headings under it.
-- **Docs prose stops at 62ch** (`docs/app/[lang]/(docs)/custom.css`): about 86 characters a line,
-  against Nextra's full column of about 115. Overpass is narrow, about 1.4 characters per `ch`, so a
-  `ch` figure from another face misleads; measure characters per rendered line. Only prose is held
-  in: figures, screenshots, code and tables keep the full column. Headings use `text-wrap: balance`.
+- **A docs article has one measure, 70ch, for everything in it** (`article > main` in
+  `docs/app/[lang]/(docs)/custom.css`): prose, figures, callouts, code and tables share one right edge.
+  A prose-only limit (62ch) left figures and callouts sticking out past the text, and the author
+  rejected the empty band it left beside every paragraph. Put the measure on the container, never per
+  block: `ch` is measured in each block's own face, so a code block's mono `ch` is wider. Overpass is
+  narrow, about 1.4 characters per `ch` (70ch holds about 98 characters of prose); measure characters
+  per rendered line, not `ch`. Headings use `text-wrap: balance`.
 - **Nextra's search field gets a visible edge**: its own is a 5% tint (1.12:1 in light). Half the text
   colour over the page (`color-mix` of two tokens, 3.3:1 light, 4.5:1 dark), drawn as an inset shadow
   so the field keeps its size. Measure contrast through a canvas, not by parsing `oklch()` strings,
@@ -3243,7 +3246,7 @@ drift. Change a neutral or the default accent in the app, and the site changes w
 - **A docs link card is title first, then its description**, padded as a whole
   (`docs/app/[lang]/(docs)/custom.css`, `.nextra-card`). Nextra's own layout assumes an image as
   the card's body: unpadded children above a separately padded title, which looks broken with text.
-- **A hand-drawn figure stands on the page and fills the whole text column** (`article
+- **A hand-drawn figure stands on the page and fills the article's measure** (`article
   figure:not([class])` in `docs/app/[lang]/(docs)/custom.css`): no panel, no border, no shaded
   background, no side padding, just room above and below and a thin rule over the italic caption.
   The figures are also printed as a book, where width lost to padding is type size lost; the author
@@ -3260,11 +3263,8 @@ drift. Change a neutral or the default accent in the app, and the site changes w
 - **The language menus size to their longest name** (`width: max-content`, a 16rem minimum, rows
   that never wrap), in the landing header and the docs navbar alike: a fixed narrow width wrapped
   "Português (Portugal)" and its code onto two lines.
-- **A hand-drawn figure sits in a quiet panel with its caption inside** (`custom.css`,
-  `article figure:not([class])`): panel background, thin border, generous margin above and below,
-  and the caption under a divider in smaller, muted italics. A caption that floats loose under the
-  drawing reads as the next paragraph. The rule skips figures with a class, so `<Shot>` screenshots
-  keep their own label-above look.
+- **`<Shot>` screenshots keep their own look**: the hand-drawn figure rule skips figures with a class
+  (`article figure:not([class])`), so screenshots keep their label-above style.
 - **A screenshot's callouts are HTML, never pixels:** `<Shot markers>` draws numbered badges from
   the harness's sidecar, and the numbered list under the figure is styled like the badges, so the
   text translates with the page.

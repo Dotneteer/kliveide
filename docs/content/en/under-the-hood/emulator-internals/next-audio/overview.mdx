@@ -1,5 +1,5 @@
 ---
-description: "The ZX Spectrum Next's sound from above: the beeper and the tape, three AY chips, four 8-bit DACs and the Raspberry Pi's audio, the difference between a sound generator and a level the CPU writes, the one mixer that adds them all on two sides, the outputs the sum leaves through, the clocks behind them, the registers that switch them, and how Klive's emulator makes the same sound."
+description: "The ZX Spectrum Next's sound from above: the beeper and the tape, three AY chips, four 8-bit DACs and the Raspberry Pi's audio, the difference between a sound generator and a level the CPU writes, the one mixer that adds them all on two sides, the outputs the sum leaves through, the clocks behind them, and the registers that switch them."
 ---
 
 import { Callout } from 'nextra/components'
@@ -11,14 +11,16 @@ Spectrum Next, and you hear chip music in nine voices, in stereo, with sampled d
 And the same machine still loads a tape by listening to it. So where does each of those sounds come from,
 and how do they all end up in one pair of headphones?
 
-Sound does a lot of work in a program. Music sets the mood and the pace of a game. An effect tells you
-that you jumped, fired or were hit before your eyes have found it on the screen. Speech and sampled sounds
-make a game feel larger than its 128K. On a Spectrum, sound had one more job, too: programs were saved to
-tape and loaded from it as sound. And a machine with several sound sources that run by themselves does all
-this without tying up the CPU, which is busy enough drawing the screen, thank you very much.
+I think sound is the most underestimated worker in a program. Music sets the mood and the pace of a game.
+An effect tells you that you jumped, fired or were hit before your eyes have found it on the screen.
+Speech and sampled sounds make a game feel larger than its 128K. On a Spectrum, sound had one more job,
+too: programs were saved to tape and loaded from it as sound. And a machine with several sound sources
+that run by themselves does all this without tying up the CPU, which is busy enough drawing the screen,
+thank you very much.
 
 This is the map of the Next's sound, the first of its sound chapters. The chapters that follow take each
-source apart; here you see how they fit together. If digital sound is new to you, read
+source apart; here you see how they fit together, and I would rather you had the map before the
+close-ups. If digital sound is new to you, read
 [How a Computer Makes Sound](/en/under-the-hood/emulator-internals/computer-sound/) first: it explains
 samples, the DAC, the filter that makes the result smooth, sound from a single bit and mixing, and I will
 not explain them again. [ZX Spectrum: How the Screen Is Drawn](/en/under-the-hood/emulator-internals/spectrum-display/)
@@ -35,14 +37,13 @@ a sound by themselves, and others need the CPU at every step, and that differenc
 costs your program. From there we follow the sound downstream, into the one mixer that adds everything on
 a left and a right side, and out through the jack, the speaker, HDMI and the Pi. Two clocks explain why
 the CPU's speed changes the beeper's pitch but not the AY's, and a handful of registers turn each part on
-and off. We end with the chapters that follow, and with how Klive makes the same sound.
+and off. We end with a walk past the chapters that follow, so you know where each source is taken apart.
 
 <Callout type="info">
 The numbers in the sound chapters are for the Next's **28 MHz master clock**, with the CPU at **3.5 MHz**
 unless a chapter says otherwise. Levels are given in the **units of the Next's mixer**, whose sum runs from
-0 to 8,191 per side. The waveforms are captured from Klive's emulated Next at 48,000 samples a second, from
-programs checked to do what the text says; they show Klive's mix of the sound, which keeps the hardware's
-proportions (How Klive does it, near the end, says how).
+0 to 8,191 per side. The waveforms are captured from the emulated Next at 48,000 samples a second, from
+programs checked to do what the text says, and keep the hardware's proportions.
 </Callout>
 
 ## From one bit to four kinds of source
@@ -58,7 +59,7 @@ they are set up. The Next keeps both and adds more beside them:
 
 <figure>
 {/* fig:from */}
-<svg viewBox="0 0 700 390" role="img" aria-label="Two diagrams side by side. Left, the ZX Spectrum 48K: port $FE bits 4 and 3 drive one speaker, and nothing else makes sound. Right, the ZX Spectrum Next: the same port $FE bits, three AY sound chips, four 8-bit DACs and the Raspberry Pi's audio link all feed one mixer, which has a left and a right side and goes on to the outputs." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 394" role="img" aria-label="Two diagrams side by side. Left, the ZX Spectrum 48K: port $FE bits 4 and 3 drive one speaker, and nothing else makes sound. Right, the ZX Spectrum Next: the same port $FE bits, three AY sound chips, four 8-bit DACs and the Raspberry Pi's audio link all feed one mixer, which has a left and a right side and goes on to the outputs." style={{ width: "100%", height: "auto" }}>
   <defs>
     <marker id="ov-from-0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
@@ -122,10 +123,11 @@ That makes **four kinds of source**: the beeper, with its two bits EAR and MIC (
 tape input), the AY chips, the DACs and the Pi. Everything that follows, here and in the chapters after
 this one, is about these four, the mixer that adds them, and the outputs the sum leaves through.
 
-Notice what did not change. The Spectrum's sound stays exactly as it was. A 48K program that toggles
-port `$FE` bit 4 hears the same square wave; a 128K tune that writes the AY through ports `$FFFD` and
-`$BFFD` plays on the first AY chip exactly as it did on the 128K. Everything new is switched off or out of
-the way until a program asks for it, as The switches, further down, shows.
+What I like best is what did not change. The Spectrum's sound stays exactly as it was. A 48K program that
+toggles port `$FE` bit 4 hears the same square wave; a 128K tune that writes the AY through port `$FFFD`
+and port `$BFFD` plays on the first AY chip exactly as it did on the 128K. Everything new is switched off
+or out of the way until a program asks for it, as The switches, further down, shows. The newcomers wait
+in the wings until they are called.
 
 ## The cast
 
@@ -134,7 +136,7 @@ throughout the sound chapters, with the ports and registers your program uses to
 
 <figure>
 {/* fig:hero */}
-<svg viewBox="0 0 700 456" role="img" aria-label="The Next's whole audio system as a flow from left to right. Sources: the MIC bit, port $FE bit 3, combined with the tape input and the Pi's EAR bit; the beeper, port $FE bit 4 (EAR); three AY chips behind ports $FFFD and $BFFD; four 8-bit DACs written through about a dozen ports and NextRegs $2C to $2E; and the Raspberry Pi's audio, received over I2S and controlled by NextReg $A2. Every source feeds both sides of one mixer, a left sum and a right sum. The sums go to four outputs: the audio jack, the internal speaker, HDMI audio and back to the Pi. The MIC line also goes straight to the MIC socket, for saving to tape." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 460" role="img" aria-label="The Next's whole audio system as a flow from left to right. Sources: the MIC bit, port $FE bit 3, combined with the tape input and the Pi's EAR bit; the beeper, port $FE bit 4 (EAR); three AY chips behind ports $FFFD and $BFFD; four 8-bit DACs written through about a dozen ports and NextRegs $2C to $2E; and the Raspberry Pi's audio, received over I2S and controlled by NextReg $A2. Every source feeds both sides of one mixer, a left sum and a right sum. The sums go to four outputs: the audio jack, the internal speaker, HDMI audio and back to the Pi. The MIC line also goes straight to the MIC socket, for saving to tape." style={{ width: "100%", height: "auto" }}>
   <defs>
     <marker id="ov-hero-0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
@@ -227,7 +229,7 @@ about 1,000 Hz through one source alone:
 
 <figure>
 {/* fig:cast */}
-<svg viewBox="0 0 700 420" role="img" aria-label="Four captures from the machine, five milliseconds each, all drawn on the same level scale in the mixer's units. The beeper: a square wave of 994 Hz whose step is 512 units. One AY channel: a square wave of 1,003 Hz, 255 units. A DAC fed a sine through the Specdrum port: a staircase of 16 steps per cycle at 1,003 Hz, 1,016 units from bottom to top. The Raspberry Pi's audio: a smooth 1,000 Hz sine of 1,000 units." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 424" role="img" aria-label="Four captures from the machine, five milliseconds each, all drawn on the same level scale in the mixer's units. The beeper: a square wave of 994 Hz whose step is 512 units. One AY channel: a square wave of 1,003 Hz, 255 units. A DAC fed a sine through the Specdrum port: a staircase of 16 steps per cycle at 1,003 Hz, 1,016 units from bottom to top. The Raspberry Pi's audio: a smooth 1,000 Hz sine of 1,000 units." style={{ width: "100%", height: "auto" }}>
   <text x="0" y="20" fill="#3b82f6" fontSize="15" fontWeight="bold">the beeper (EAR)</text>
   <line x1="46" y1="94" x2="330" y2="94" stroke="currentColor" strokeWidth="1" strokeOpacity="0.25" />
   <line x1="46" y1="34" x2="46" y2="154" stroke="currentColor" strokeWidth="1" strokeOpacity="0.4" />
@@ -272,7 +274,8 @@ about 1,000 Hz through one source alone:
 
 The level scale is the point of this figure: it shows how loud each source can be next to the others.
 A DAC or the Pi playing at full scale is about twice as loud as the beeper, and one AY channel is half as
-loud as the beeper.
+loud as the beeper. I find that worth remembering when you balance a mix: the old one-bit beeper is no
+whisper.
 
 Have you noticed that the four tones are all close to 1,000 Hz, but not equal? Each source gets its pitch
 from its own clock, divided by whole numbers the program chooses, and only some pitches come out of whole
@@ -303,7 +306,8 @@ is combined with the **tape input**, the signal arriving at the EAR socket from 
 with an EAR bit the Pi's audio can produce. So you hear a tape load at MIC's level, as on the original
 machine. The same line goes out of the MIC socket, so a program saves to tape by switching bit 3.
 
-The beeper costs the CPU all its time while it plays, and its pitch depends on how fast the CPU runs.
+The beeper costs the CPU all its time while it plays, and its pitch depends on how fast the CPU runs. I
+still have a soft spot for it: it is the most demanding source on the machine and the simplest.
 [The Beeper: EAR, MIC and the Tape](/en/under-the-hood/emulator-internals/next-audio/beeper/) explains the bits,
 the tape input and how one bit can play two voices.
 
@@ -317,8 +321,9 @@ original General Instrument **AY-3-8910** or as Yamaha's compatible **YM2149**, 
 The 128K's own ports reach them: **port `$FFFD`** selects a register, **port `$BFFD`** writes it. A
 special value written to port `$FFFD` (one with bit 7 set, which no register number has) selects
 *which* chip the following writes go to, and that is all your program needs to play nine channels. This
-is **TurboSound Next**. One full channel adds up to 255 units to the mixer, and with every channel of all
-three chips at full volume a side gets at most 2,295.
+is **TurboSound Next**, and if you ask me, it is the neatest way anyone could have tripled a sound chip
+without breaking a single old program. One full channel adds up to 255 units to the mixer, and with every
+channel of all three chips at full volume a side gets at most 2,295.
 
 The capture above is chip 0's channel B, with period 109: a square wave of 1,003 Hz, written once and
 left alone. [One AY Chip: Tones, Noise and Envelopes](/en/under-the-hood/emulator-internals/next-audio/psg/) takes a single chip
@@ -333,9 +338,11 @@ two channels and multiplies them by 4: up to 2,040 units.
 
 The Spectrum and Pentagon world had half a dozen sound cards built on such DACs (Soundrive, Covox,
 Specdrum and others), each on its own ports. The Next answers on all of their ports, so their software
-plays unchanged. It also adds three NextRegs, `$2C` to `$2E`, through which the Copper, or a program with
-no free port, can write them. The capture above is a sine wave, 16 steps per cycle, written to **port
-`$DF`**, Specdrum's port, which writes channels A and D at once and so reaches both sides. [The 8-Bit DACs: Four Channels, Six Sound Cards](/en/under-the-hood/emulator-internals/next-audio/dacs/)
+plays unchanged. I find that generous: six sound cards' worth of software, and you need none of the
+cards. It also adds three NextRegs, `$2C` to `$2E` (the **DAC B Mirror (left)**, **DAC A+D Mirror
+(mono)** and **DAC C Mirror (right)** registers), through which the Copper, or a program with no free
+port, can write them. The capture above is a sine wave, 16 steps per cycle, written to **port `$DF`**,
+Specdrum's port, which writes channels A and D at once and so reaches both sides. [The 8-Bit DACs: Four Channels, Six Sound Cards](/en/under-the-hood/emulator-internals/next-audio/dacs/)
 explains them in full.
 
 ## The Raspberry Pi's audio
@@ -347,9 +354,10 @@ sound chip in software) and send the result to the Next, which adds it to the mi
 up to 1,023 units.
 
 The link also works the other way, sending the Next's own sound to the Pi. And the Pi's stream can be
-turned into the EAR bit of the tape input, so that the Next loads a program the Pi plays. The **PI I2S
-Audio Control register, NextReg `$A2`**, sets it all up. The capture above is a 1,000 Hz sine, streamed
-in. [Audio from the Raspberry Pi: Samples on Four Wires](/en/under-the-hood/emulator-internals/next-audio/pi-audio/) explains the link.
+turned into the EAR bit of the tape input, so that the Next loads a program the Pi plays. I like to
+think of the Pi as the guest musician: it brings its own instrument, plays whatever you ask, and needs
+only a seat in the mixer. The **PI I2S Audio Control register, NextReg `$A2`**, sets it all up. The
+capture above is a 1,000 Hz sine, streamed in. [Audio from the Raspberry Pi: Samples on Four Wires](/en/under-the-hood/emulator-internals/next-audio/pi-audio/) explains the link.
 
 ## Generators and level writers
 
@@ -363,11 +371,15 @@ promised, and it decides what a sound costs your program:
   they make a waveform only if the CPU (or the DMA, or the Copper) writes a new level at every step of
   it, on time.
 
+I always picture the two as **the music box and the puppet**. Wind the music box (the generator) up
+once, and it plays its tune while you walk away. The puppet (the level writer) moves only while someone
+pulls its strings, and stops dead the moment the hand lets go.
+
 Here are the same two captures, with the CPU's writes marked under them:
 
 <figure>
 {/* fig:generator */}
-<svg viewBox="0 0 700 384" role="img" aria-label="Two captures from the machine over the same four milliseconds. Top: an AY chip's tone at 1,003 Hz, a square wave that goes on by itself; the CPU wrote four registers to start it, before this stretch, and writes nothing while it plays. Bottom: a sine wave at 1,003 Hz played through a DAC; it is a staircase of 16 steps per cycle, and every step is one write by the CPU, marked under the wave: about 64 writes in the four milliseconds." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 388" role="img" aria-label="Two captures from the machine over the same four milliseconds. Top: an AY chip's tone at 1,003 Hz, a square wave that goes on by itself; the CPU wrote four registers to start it, before this stretch, and writes nothing while it plays. Bottom: a sine wave at 1,003 Hz played through a DAC; it is a staircase of 16 steps per cycle, and every step is one write by the CPU, marked under the wave: about 64 writes in the four milliseconds." style={{ width: "100%", height: "auto" }}>
   <line x1="104" y1="64" x2="700" y2="64" stroke="currentColor" strokeWidth="1" strokeOpacity="0.25" />
   <path d="M104,52.6 L107.1,52.6 L107.1,52.6 L110.2,52.6 L110.2,52.6 L113.3,52.6 L113.3,52.6 L116.4,52.6 L116.4,52.6 L119.5,52.6 L119.5,52.6 L122.6,52.6 L122.6,52.6 L125.7,52.6 L125.7,52.6 L128.8,52.6 L128.8,52.6 L131.9,52.6 L131.9,52.6 L135,52.6 L135,52.6 L138.1,52.6 L138.1,52.6 L141.3,52.6 L141.3,52.6 L144.4,52.6 L144.4,52.6 L147.5,52.6 L147.5,52.6 L150.6,52.6 L150.6,52.6 L153.7,52.6 L153.7,52.6 L156.8,52.6 L156.8,52.6 L159.9,52.6 L159.9,52.6 L163,52.6 L163,52.6 L166.1,52.6 L166.1,52.6 L169.2,52.6 L169.2,52.6 L172.3,52.6 L172.3,52.6 L175.4,52.6 L175.4,55.5 L178.5,55.5 L178.5,75.4 L181.6,75.4 L181.6,75.4 L184.7,75.4 L184.7,75.4 L187.8,75.4 L187.8,75.4 L190.9,75.4 L190.9,75.4 L194,75.4 L194,75.4 L197.1,75.4 L197.1,75.4 L200.2,75.4 L200.2,75.4 L203.3,75.4 L203.3,75.4 L206.4,75.4 L206.4,75.4 L209.5,75.4 L209.5,75.4 L212.6,75.4 L212.6,75.4 L215.8,75.4 L215.8,75.4 L218.9,75.4 L218.9,75.4 L222,75.4 L222,75.4 L225.1,75.4 L225.1,75.4 L228.2,75.4 L228.2,75.4 L231.3,75.4 L231.3,75.4 L234.4,75.4 L234.4,75.4 L237.5,75.4 L237.5,75.4 L240.6,75.4 L240.6,75.4 L243.7,75.4 L243.7,75.4 L246.8,75.4 L246.8,75.4 L249.9,75.4 L249.9,70.7 L253,70.7 L253,52.6 L256.1,52.6 L256.1,52.6 L259.2,52.6 L259.2,52.6 L262.3,52.6 L262.3,52.6 L265.4,52.6 L265.4,52.6 L268.5,52.6 L268.5,52.6 L271.6,52.6 L271.6,52.6 L274.7,52.6 L274.7,52.6 L277.8,52.6 L277.8,52.6 L280.9,52.6 L280.9,52.6 L284,52.6 L284,52.6 L287.1,52.6 L287.1,52.6 L290.3,52.6 L290.3,52.6 L293.4,52.6 L293.4,52.6 L296.5,52.6 L296.5,52.6 L299.6,52.6 L299.6,52.6 L302.7,52.6 L302.7,52.6 L305.8,52.6 L305.8,52.6 L308.9,52.6 L308.9,52.6 L312,52.6 L312,52.6 L315.1,52.6 L315.1,52.6 L318.2,52.6 L318.2,52.6 L321.3,52.6 L321.3,52.6 L324.4,52.6 L324.4,59.2 L327.5,59.2 L327.5,75.4 L330.6,75.4 L330.6,75.4 L333.7,75.4 L333.7,75.4 L336.8,75.4 L336.8,75.4 L339.9,75.4 L339.9,75.4 L343,75.4 L343,75.4 L346.1,75.4 L346.1,75.4 L349.2,75.4 L349.2,75.4 L352.3,75.4 L352.3,75.4 L355.4,75.4 L355.4,75.4 L358.5,75.4 L358.5,75.4 L361.6,75.4 L361.6,75.4 L364.8,75.4 L364.8,75.4 L367.9,75.4 L367.9,75.4 L371,75.4 L371,75.4 L374.1,75.4 L374.1,75.4 L377.2,75.4 L377.2,75.4 L380.3,75.4 L380.3,75.4 L383.4,75.4 L383.4,75.4 L386.5,75.4 L386.5,75.4 L389.6,75.4 L389.6,75.4 L392.7,75.4 L392.7,75.4 L395.8,75.4 L395.8,75.4 L398.9,75.4 L398.9,66.9 L402,66.9 L402,52.6 L405.1,52.6 L405.1,52.6 L408.2,52.6 L408.2,52.6 L411.3,52.6 L411.3,52.6 L414.4,52.6 L414.4,52.6 L417.5,52.6 L417.5,52.6 L420.6,52.6 L420.6,52.6 L423.7,52.6 L423.7,52.6 L426.8,52.6 L426.8,52.6 L429.9,52.6 L429.9,52.6 L433,52.6 L433,52.6 L436.1,52.6 L436.1,52.6 L439.3,52.6 L439.3,52.6 L442.4,52.6 L442.4,52.6 L445.5,52.6 L445.5,52.6 L448.6,52.6 L448.6,52.6 L451.7,52.6 L451.7,52.6 L454.8,52.6 L454.8,52.6 L457.9,52.6 L457.9,52.6 L461,52.6 L461,52.6 L464.1,52.6 L464.1,52.6 L467.2,52.6 L467.2,52.6 L470.3,52.6 L470.3,52.6 L473.4,52.6 L473.4,63 L476.5,63 L476.5,75.4 L479.6,75.4 L479.6,75.4 L482.7,75.4 L482.7,75.4 L485.8,75.4 L485.8,75.4 L488.9,75.4 L488.9,75.4 L492,75.4 L492,75.4 L495.1,75.4 L495.1,75.4 L498.2,75.4 L498.2,75.4 L501.3,75.4 L501.3,75.4 L504.4,75.4 L504.4,75.4 L507.5,75.4 L507.5,75.4 L510.6,75.4 L510.6,75.4 L513.8,75.4 L513.8,75.4 L516.9,75.4 L516.9,75.4 L520,75.4 L520,75.4 L523.1,75.4 L523.1,75.4 L526.2,75.4 L526.2,75.4 L529.3,75.4 L529.3,75.4 L532.4,75.4 L532.4,75.4 L535.5,75.4 L535.5,75.4 L538.6,75.4 L538.6,75.4 L541.7,75.4 L541.7,75.4 L544.8,75.4 L544.8,75.4 L547.9,75.4 L547.9,63.2 L551,63.2 L551,52.6 L554.1,52.6 L554.1,52.6 L557.2,52.6 L557.2,52.6 L560.3,52.6 L560.3,52.6 L563.4,52.6 L563.4,52.6 L566.5,52.6 L566.5,52.6 L569.6,52.6 L569.6,52.6 L572.7,52.6 L572.7,52.6 L575.8,52.6 L575.8,52.6 L578.9,52.6 L578.9,52.6 L582,52.6 L582,52.6 L585.1,52.6 L585.1,52.6 L588.3,52.6 L588.3,52.6 L591.4,52.6 L591.4,52.6 L594.5,52.6 L594.5,52.6 L597.6,52.6 L597.6,52.6 L600.7,52.6 L600.7,52.6 L603.8,52.6 L603.8,52.6 L606.9,52.6 L606.9,52.6 L610,52.6 L610,52.6 L613.1,52.6 L613.1,52.6 L616.2,52.6 L616.2,52.6 L619.3,52.6 L619.3,52.6 L622.4,52.6 L622.4,66.7 L625.5,66.7 L625.5,75.4 L628.6,75.4 L628.6,75.4 L631.7,75.4 L631.7,75.4 L634.8,75.4 L634.8,75.4 L637.9,75.4 L637.9,75.4 L641,75.4 L641,75.4 L644.1,75.4 L644.1,75.4 L647.2,75.4 L647.2,75.4 L650.3,75.4 L650.3,75.4 L653.4,75.4 L653.4,75.4 L656.5,75.4 L656.5,75.4 L659.6,75.4 L659.6,75.4 L662.8,75.4 L662.8,75.4 L665.9,75.4 L665.9,75.4 L669,75.4 L669,75.4 L672.1,75.4 L672.1,75.4 L675.2,75.4 L675.2,75.4 L678.3,75.4 L678.3,75.4 L681.4,75.4 L681.4,75.4 L684.5,75.4 L684.5,75.4 L687.6,75.4 L687.6,75.4 L690.7,75.4 L690.7,75.4 L693.8,75.4 L693.8,75.4 L696.9,75.4 L696.9,59.4 L700,59.4" fill="none" stroke="#e8912d" strokeWidth="2" strokeLinejoin="round" />
   <text x="0" y="58" fill="#e8912d" fontSize="15" fontWeight="bold">an AY</text>
@@ -463,7 +475,8 @@ Here are the same two captures, with the CPU's writes marked under them:
 </figure>
 
 The DAC's sine costs 16 writes per cycle, 16,055 a second, each one on time. If a write comes late, the
-step comes late, and the wave is distorted. Your program can afford that for a drum hit or a word of
+step comes late, and the wave is distorted: the puppet stumbles. Your program can afford that for a
+drum hit or a word of
 speech, or it can hand the job to the DMA, which copies a sample to a DAC port at a fixed rate on its own
 ([the DAC chapter](/en/under-the-hood/emulator-internals/next-audio/dacs/#who-times-the-writes) shows how). The AY's tone costs nothing while it plays. That is why games of the 128K era
 played their music on the AY: the program runs the game and touches the chip only when the tune moves to
@@ -471,8 +484,8 @@ the next note, typically once every frame.
 
 In return, a level writer can play *anything*: any recorded sound, any waveform the program can compute.
 A generator plays only what its counters can make: square waves, noise and envelope shapes. The Next has
-both kinds, so you choose per sound. Here is my advice: AY music, with DAC drums over it. The two get
-along splendidly.
+both kinds, so you choose per sound. Here is my advice: AY music, with DAC drums over it. The music box
+carries the tune, the puppet dances only for the moments that need it, and the two get along splendidly.
 
 ## One mixer, two sides
 
@@ -481,6 +494,9 @@ gives each side its own number. For the beeper the two numbers are always the sa
 DACs and the Pi can make them differ, which is what places a sound left or right (the background chapter's
 section [Two speakers](/en/under-the-hood/emulator-internals/computer-sound/#two-speakers-stereo-and-space)
 explains stereo).
+
+I call the mixer **the accountant**. It does one thing, adding, and it never subtracts, never rounds and
+never asks where a number came from. You will see in a moment why that habit matters.
 
 On each side, the mixer adds five numbers, **many million times a second**. The beeper gives two of
 them, one for each of its bits, and every other source one:
@@ -495,7 +511,7 @@ The sum is a 13-bit number, 0 to 8,191. Here is how much of that range each sour
 
 <figure>
 {/* fig:budget */}
-<svg viewBox="0 0 700 282" role="img" aria-label="Two bars drawn to scale on the mixer's range of 0 to 8,191 per side. The first bar stacks every source's largest contribution: the beeper's EAR 512, MIC 128, the three AY chips 2,295, the four DACs' side 2,040 and the Pi 1,023, together 5,998, leaving 2,193 unused at the top. The second bar shows silence: with every source quiet, the DACs still add 1,024 at their rest level and the Pi 512, so silence is 1,536, not zero." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 286" role="img" aria-label="Two bars drawn to scale on the mixer's range of 0 to 8,191 per side. The first bar stacks every source's largest contribution: the beeper's EAR 512, MIC 128, the three AY chips 2,295, the four DACs' side 2,040 and the Pi 1,023, together 5,998, leaving 2,193 unused at the top. The second bar shows silence: with every source quiet, the DACs still add 1,024 at their rest level and the Pi 512, so silence is 1,536, not zero." style={{ width: "100%", height: "auto" }}>
   <text x="0" y="24" fill="currentColor" fontSize="15" fontWeight="bold">every source at its largest</text>
   <rect x="0" y="36" width="43.7" height="38" fill="#3b82f6" fillOpacity="0.8" stroke="#3b82f6" strokeWidth="1" />
   <text x="21.8" y="60" textAnchor="middle" fill="#ffffff" fontSize="13.5" fontWeight="bold">EAR</text>
@@ -538,8 +554,9 @@ The sum is a 13-bit number, 0 to 8,191. Here is how much of that range each sour
 Two things in the figure deserve a closer look.
 
 **The sum always fits.** Every source at its loudest adds up to 5,998, well below 8,191, so the sum
-itself never overflows. The audio jack is tighter: it takes only the sum's lowest 12 bits, up to 4,095.
-That is plenty for loud music with the beeper on top, but not for every source at full scale at once.
+itself never overflows: the accountant's ledger has room for every column. The audio jack is tighter: it
+takes only the sum's lowest 12 bits, up to 4,095. That is plenty for loud music with the beeper on top,
+but not for every source at full scale at once.
 The mixer chapter's [Headroom](/en/under-the-hood/emulator-internals/next-audio/mixer/#headroom)
 shows how much room real mixes need, and what the jack does past 4,095.
 
@@ -547,7 +564,7 @@ shows how much room real mixes need, and what the jack does past 4,095.
 rest holds `$80`, the middle of its range, so that a sample can swing both ways from it, and the two on
 each side add 1,024 units even when no program has touched them. The Pi's rest level is the middle of its
 range too, 512. So a silent Next sits at 1,536, and every sound moves up and down around whatever constant
-level its sources add. Sounds alarming? It is not. The background chapter's section on
+level its sources add. Sounds alarming? I promise it is not. The background chapter's section on
 [mixing](/en/under-the-hood/emulator-internals/computer-sound/#several-sounds-at-once-are-added-together)
 explains why that does no harm: a capacitor after the converters removes any constant level before the
 sound reaches a speaker. [The Mixer: One Sum, Three Outputs](/en/under-the-hood/emulator-internals/next-audio/mixer/)
@@ -559,7 +576,7 @@ The two sums leave the machine by four ways at once:
 
 <figure>
 {/* fig:outputs */}
-<svg viewBox="0 0 700 334" role="img" aria-label="The mixed sum, a 13-bit number per side, goes four ways. To the audio jack: a one-bit converter per side, running at 28 MHz, followed by a resistor and capacitor filter on the board. To the internal speaker: the left and right sums added into one, through one more one-bit converter; NextReg $08 bit 4 switches the speaker on, and with NextReg $06 bit 6 it plays only the beeper. To HDMI: 48,000 samples a second, each a 16-bit word, silenced by NextReg $09 bit 2. And to the Raspberry Pi over the I2S link." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 338" role="img" aria-label="The mixed sum, a 13-bit number per side, goes four ways. To the audio jack: a one-bit converter per side, running at 28 MHz, followed by a resistor and capacitor filter on the board. To the internal speaker: the left and right sums added into one, through one more one-bit converter; NextReg $08 bit 4 switches the speaker on, and with NextReg $06 bit 6 it plays only the beeper. To HDMI: 48,000 samples a second, each a 16-bit word, silenced by NextReg $09 bit 2. And to the Raspberry Pi over the I2S link." style={{ width: "100%", height: "auto" }}>
   <defs>
     <marker id="ov-out-0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="#e5484d" />
@@ -610,9 +627,9 @@ The two sums leave the machine by four ways at once:
 One line goes out separately: **the MIC line**, port `$FE` bit 3 combined with the tape input and the
 Pi's EAR bit, drives the MIC socket, the tape recorder's input. That is how a program saves to tape.
 
-Well, here is a detail worth a second look: the jack and the speaker have no sample rate. Their converters
-follow the sum as it changes, 28 million times a second. Only HDMI samples it, because HDMI carries sound
-as numbers. The mixer chapter explains each output.
+Here is a detail I find worth a second look: the jack and the speaker have no sample rate. Their
+converters follow the sum as it changes, 28 million times a second. Only HDMI samples it, because HDMI
+carries sound as numbers. The mixer chapter explains each output.
 
 ## The clocks behind the sound
 
@@ -621,7 +638,7 @@ they behave differently when the CPU's speed changes:
 
 <figure>
 {/* fig:clocks */}
-<svg viewBox="0 0 700 352" role="img" aria-label="The clocks behind the sound. The 28 MHz master clock feeds two separate branches. One divides it by 16 into the 1.75 MHz clock of the AY chips; inside each chip it is divided by 8 again, so the chip's counters step 218,750 times a second, and a tone's pitch is that rate divided by twice its period. The other branch is the CPU clock of 3.5, 7, 14 or 28 MHz, which times the program's loops, and with them the beeper's and the DACs' sound. Separately, HDMI audio is sent as 48,000 samples a second." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 356" role="img" aria-label="The clocks behind the sound. The 28 MHz master clock feeds two separate branches. One divides it by 16 into the 1.75 MHz clock of the AY chips; inside each chip it is divided by 8 again, so the chip's counters step 218,750 times a second, and a tone's pitch is that rate divided by twice its period. The other branch is the CPU clock of 3.5, 7, 14 or 28 MHz, which times the program's loops, and with them the beeper's and the DACs' sound. Separately, HDMI audio is sent as 48,000 samples a second." style={{ width: "100%", height: "auto" }}>
   <defs>
     <marker id="ov-clk-0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
@@ -670,13 +687,15 @@ of the 128K's AY, and each chip divides that by 8 again: its counters step 218,7
 pitch is that rate divided by twice the channel's period. So period 109 gives 218,750 ÷ 218 = 1,003 Hz,
 and the A of 440 Hz needs a period of 249 (439.3 Hz, as close as a whole number allows). Neither the
 CPU's speed nor anything else a program does changes these clocks, so AY music plays at the same pitch at
-3.5 MHz and at 28 MHz.
+3.5 MHz and at 28 MHz. I find that reassuring: whatever your program does to the CPU, the band stays in
+tune.
 
 **The beeper and the DACs follow the CPU.** They change only when an instruction writes them, so their
 timing is the program's. A loop that flips port `$FE` bit 4 every 1,760 T-states makes 994 Hz at
 3.5 MHz and twice that, 1,989 Hz, at 7 MHz. The Next's CPU can run at 3.5, 7, 14 or 28 MHz (the **CPU
 Speed register, NextReg `$07`**), so a beeper tune written for the 48K plays an octave higher at 7 MHz,
-and a sample player plays its samples faster. Chipmunks, anyone?
+and a sample player plays its samples faster. Chipmunks, anyone? My rule of thumb: a level writer's
+pitch belongs to whoever owns the clock that times its writes.
 
 Contention, which stops the CPU at certain moments when it touches the screen memory at 3.5 MHz (see
 [ZX Spectrum: How the Screen Is Drawn](/en/under-the-hood/emulator-internals/spectrum-display/)), also
@@ -696,7 +715,7 @@ the source each one belongs to:
 
 <figure>
 {/* fig:registers */}
-<svg viewBox="0 0 700 344" role="img" aria-label="Five registers as strips of eight bits, bit 7 on the left, each audio bit coloured by the source it controls and the others grey. NextReg $06: bit 6 sends the beeper only to the internal speaker; bits 1 and 0 are the AY chips' mode. NextReg $08: bit 5 ABC or ACB stereo, bit 4 the internal speaker, bit 3 the DACs, bit 1 TurboSound, bit 0 the issue 2 keyboard. NextReg $09: bits 7 to 5 put each AY chip in mono, bit 2 silences HDMI audio. NextReg $84: bit 0 the AY ports, bits 1 to 7 the seven families of DAC ports. NextReg $A2: bits 7 and 6 switch the Pi's audio on, bit 4 sets the direction of its data pins, bits 3 and 2 mute each side, bit 0 sends it to the tape input." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 348" role="img" aria-label="Five registers as strips of eight bits, bit 7 on the left, each audio bit coloured by the source it controls and the others grey. NextReg $06: bit 6 sends the beeper only to the internal speaker; bits 1 and 0 are the AY chips' mode. NextReg $08: bit 5 ABC or ACB stereo, bit 4 the internal speaker, bit 3 the DACs, bit 1 TurboSound, bit 0 the issue 2 keyboard. NextReg $09: bits 7 to 5 put each AY chip in mono, bit 2 silences HDMI audio. NextReg $84: bit 0 the AY ports, bits 1 to 7 the seven families of DAC ports. NextReg $A2: bits 7 and 6 switch the Pi's audio on, bit 4 sets the direction of its data pins, bits 3 and 2 mute each side, bit 0 sends it to the tape input." style={{ width: "100%", height: "auto" }}>
   <text x="115" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">7</text>
   <text x="193" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">6</text>
   <text x="271" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">5</text>
@@ -825,7 +844,8 @@ the source each one belongs to:
 
 After power-on, the AY chips are in YM mode with TurboSound off, the internal speaker is on, the DACs are
 off and held at `$80`, every port family is enabled, HDMI audio plays and the Pi's audio is off. In other
-words, a machine that sounds exactly like a 128K until something asks for more. Sneaky, and very polite.
+words, a machine that sounds exactly like a 128K until something asks for more. Sneaky, and very polite,
+and I think it is exactly the right default.
 
 ## The chapters that follow
 
@@ -838,71 +858,23 @@ puts three chips behind two ports, with panning, ABC, ACB and mono. [The 8-Bit D
 the six sound cards on four channels, the port families and feeding samples on time, and
 [Audio from the Raspberry Pi: Samples on Four Wires](/en/under-the-hood/emulator-internals/next-audio/pi-audio/) the I2S link in both directions and the tape input from the Pi.
 
-You can read those source chapters in any order. [The Mixer: One Sum, Three Outputs](/en/under-the-hood/emulator-internals/next-audio/mixer/)
+You can read those source chapters in any order; I would start with the one whose sound you like best.
+[The Mixer: One Sum, Three Outputs](/en/under-the-hood/emulator-internals/next-audio/mixer/)
 comes after them, since it adds up their levels: the sum in full, the jack, the speaker and HDMI. And the
 last chapter, [From the Machine to Your Speakers: Sound in an Emulator](/en/under-the-hood/emulator-internals/next-audio/klive-audio/), is mostly about Klive itself: how an emulator turns all
 this into 48,000 samples a second.
 
-## How Klive does it
-
-Klive's Next core is a C program compiled to WebAssembly, written to behave like the hardware (see
-[The ZX Spectrum Next Core and the FPGA](/en/under-the-hood/emulator-internals/next-core/)). Its sound
-follows the hardware's plan source by source.
-
-Each source is a device of its own that keeps the same state as the hardware: the beeper the EAR and
-MIC bits and the moments they changed, the AY chips their registers and counters, stepped by the
-1.75 MHz clock, the DACs their four channels and the port decoding, the Pi receiver the words latched
-from the link. The Pi itself is not emulated. In its place, a **sample source** (a WAV file or a tone,
-set with the [`pi-audio` command](/en/reference/commands/#pi-audio)) feeds samples into the Next's
-receiving half of the link, frame by frame.
-
-The hardware's mixer adds its inputs continuously. Klive adds them only at the moments it needs a
-sample: while a frame runs, every 28,000,000 ÷ 48,000 ≈ 583 master clocks at the usual rate of 48,000
-samples a second, it asks each source for its level at that moment, adds them as the mixer does, and
-stores the result. The frame's samples go to the host's sound card, which plays them while the next
-frame runs. The last chapter, [From the Machine to Your Speakers: Sound in an Emulator](/en/under-the-hood/emulator-internals/next-audio/klive-audio/), follows that path, and what happens to it
-at a breakpoint.
-
-Klive's sum keeps the hardware's **proportions**, but not its zero:
-
-- The DACs and the Pi are taken about their rest levels (`$80`, 512), so a silent DAC adds 0 rather than
-  1,024.
-- The beeper's EAR and MIC pass through a filter that removes their constant level, as the capacitor
-  after the hardware's converters does.
-- The AY chips stay as they are, 0 upwards.
-- The sum is scaled to a signed 16-bit sample, the form a sound card takes, by a factor that gives it
-  the jack's room above silence (the mixer chapter's
-  [How Klive does it](/en/under-the-hood/emulator-internals/next-audio/mixer/#how-klive-does-it)).
-
-You hear the same thing. A waveform drawn from Klive's samples, though, sits at a different level than one
-measured on the hardware, which is why the captures in the sound chapters are drawn about their middle.
-
-Klive makes **one** stream for your computer's speakers, so it plays **one** of the Next's outputs: the
-audio jack, the internal speaker or HDMI, chosen under **Machine › Sound › Output** (the jack unless you
-choose otherwise), each built as on the hardware (the mixer chapter's
-[three outputs](/en/under-the-hood/emulator-internals/next-audio/mixer/#how-klive-does-it)). A tape in
-Klive's deck reaches the MIC line through the Next's own EAR input stage, so you hear a loading tape as on
-the real machine. If you want to read the code yourself, it is all in `src/emu/machines/zxNext/wasm/zxnext/`:
-
-| What | Where |
-|---|---|
-| The beeper: EAR and MIC, and the moments they changed | `zxnext-beeper.c` |
-| The three AY chips, TurboSound's selection and stereo modes | `zxnext-psg.c` |
-| The four DACs, their port decoding and the NextReg mirrors | `zxnext-dac.c` |
-| The Pi's audio: the receiving half of the I2S link | `zxnext-pi-i2s.c` (the sample source: `src/emu/machines/zxNext/piI2s/`) |
-| The tape: the deck, fast load, SAVE capture and the EAR input stage | `zxnext-tape.c` (the player is the Spectrum cores' `src/emu/machines/zxSpectrum/wasm/common/zx-spectrum-tape.c`) |
-| The sum, its scaling and the sampling | `zxnext-audio-mixer.c` |
-
 ## What to take home
 
-So, what have we got? The Next keeps the 48K's **beeper**, port `$FE` bit 4 (EAR) and bit 3 (MIC), and
-the 128K's **AY chip**, and adds two more AY chips (**TurboSound Next**), **four 8-bit DACs** and the
-**Raspberry Pi's audio** over an I2S link: four kinds of source. The MIC line also carries the **tape
-input**, so you hear a loading tape, and it drives the MIC socket for saving.
+Four sources and one accountant, then. The Next keeps the 48K's **beeper**, port `$FE` bit 4 (EAR) and
+bit 3 (MIC), and the 128K's **AY chip**, and adds two more AY chips (**TurboSound Next**), **four 8-bit
+DACs** and the **Raspberry Pi's audio** over an I2S link: four kinds of source. The MIC line also carries
+the **tape input**, so you hear a loading tape, and it drives the MIC socket for saving.
 
-The sources come in two kinds. **Generators**, the AY chips, play by themselves once set up; **level
-writers**, the beeper and the DACs, need a write for every step. That difference decides what a sound
-costs the CPU, and it is why AY music with DAC drums on top is such a good match.
+The sources come in two kinds. **Generators**, the AY chips, play by themselves once set up, like a music
+box; **level writers**, the beeper and the DACs, need a write for every step, like a puppet on its
+strings. That difference decides what a sound costs the CPU, and it is why I keep recommending AY music
+with DAC drums on top.
 
 One **mixer** adds every source on a **left** and a **right** side: EAR 512, MIC 128, the AY chips up to
 2,295, the DACs up to 2,040 and the Pi up to 1,023 units. The sum, at most 5,998, fits its 13-bit range of
@@ -912,6 +884,4 @@ through the **audio jack** and the **internal speaker**, both one-bit converters
 
 The AY chips run from a fixed **1.75 MHz**, while the beeper's and the DACs' timing is the **program's**,
 so it changes with the CPU's speed. NextRegs **`$06`, `$08`, `$09`, `$84` and `$A2`** switch the parts on
-and off, and after power-on the Next sounds just like a 128K. Klive emulates each source in its own file
-and **adds them at the moments it takes a sample**, with the hardware's proportions, centred and scaled to
-16 bits, into one stream. Now go and meet the cast one by one.
+and off, and after power-on the Next sounds just like a 128K. Now go and meet the cast one by one.

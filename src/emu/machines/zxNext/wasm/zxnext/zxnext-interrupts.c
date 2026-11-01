@@ -196,7 +196,7 @@ static void zxnextInterruptsSetNextRegister(uint32_t reg, uint32_t value) {
       for (uint32_t i = 0; i < 4u; i++) if (byteValue & (1u << i)) zxnextInterruptsRequest(ZXNEXT_INT_CTC0 + i, 1, 1);
       break;
     case 0x22:
-      intSignalActive = (byteValue & 0x80u) != 0;
+      /* ~5272-5275: bit 7 reads the pulse /INT (~5938) and is read-only; a write stores bits 2-0 only */
       ulaInterruptDisabled = (byteValue & 0x04u) != 0;
       lineInterruptEnabled = (byteValue & 0x02u) != 0;
       lineInterrupt = (uint16_t)(((byteValue & 0x01u) << 8) | (lineInterrupt & 0x00ffu));
@@ -336,6 +336,8 @@ static uint32_t zxnextInterruptsDmaRequestActive(void) {
 }
 
 static void zxnextInterruptsReti(void) {
+  /* im2_device ~124: S_ISR -> S_0 needs i_im2_mode, so a RETI outside IM 2 releases nothing */
+  if (z80GetInterruptMode() != 2u) return;
   for (uint32_t i = 0; i < ZXNEXT_DAISY_DEVICE_COUNT; i++) {
     if (daisyInService[i]) {
       /* S_ISR -> S_0: im2_isr_serviced clears the pending request */

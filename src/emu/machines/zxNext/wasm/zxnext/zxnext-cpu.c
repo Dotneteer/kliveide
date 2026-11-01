@@ -267,7 +267,7 @@ static inline uint32_t zxnextCpuReadsBank7(uint32_t address) {
 
 static inline uint32_t zxnextCpuIsContendedIoAddress(uint32_t address) {
   if (cpuEffectiveSpeed != 0u) return 0;
-  if ((zxnextNextRegs[0x08u] & 0x40u) != 0u) return 0;
+  if (zxnextNextRegContentionOff()) return 0;
   const uint32_t page = address & 0xc000u;
   return page == 0x4000u || (page == 0xc000u && (zxnextMemoryGetSelectedRamBank() & 0x01u) != 0u);
 }
@@ -301,7 +301,7 @@ static inline uint32_t zxnextCpuContentionDelayAt(uint32_t frameTact) {
 static inline void zxnextCpuDelayContendedMemory(uint32_t address, uint32_t memoryCycle) {
   const uint32_t timing = zxnextTimingContention;
   if (timing == 0u || (timing == 3u && memoryCycle == 0u)) return;
-  if (cpuEffectiveSpeed != 0u || (zxnextNextRegs[0x08u] & 0x40u) != 0u) return;
+  if (cpuEffectiveSpeed != 0u || zxnextNextRegContentionOff()) return;
   const uint32_t page = zxnextNextRegs[0x50u + ((address >> 13) & 0x07u)];
   if (page > 0x0fu) return;
   if (timing == 1u ? (page & 0x0eu) != 0x0au : (timing == 2u ? (page & 0x02u) == 0u : (page & 0x08u) == 0u)) return;
@@ -599,7 +599,9 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
     mfWasActive = zxnextMultifaceIsActive();
     if (isRetnInstruction) zxnextMultifaceRetn();
   }
-  if (z80GetRetnExecuted()) {
+  /* The stackless return feeds only RETN's pops (zxnext.vhd ~2008: RETN_LSB/MSB tags); RETI (ED 4D) shares
+     the CPU's RETN handler but carries no tags, so it pops the real stack and leaves the stackless state */
+  if (z80GetRetnExecuted() && !isRetiInstruction) {
     uint8_t stacklessProcessed = zxnextNmiGetStacklessProcessed();
     uint32_t stacklessReturnAddress = zxnextNmiGetReturnAddress();
     zxnextNmiAfterRetn();
