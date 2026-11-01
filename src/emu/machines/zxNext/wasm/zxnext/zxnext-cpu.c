@@ -599,7 +599,9 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
     mfWasActive = zxnextMultifaceIsActive();
     if (isRetnInstruction) zxnextMultifaceRetn();
   }
-  if (z80GetRetnExecuted()) {
+  /* The stackless return feeds only RETN's pops (zxnext.vhd ~2008: RETN_LSB/MSB tags); RETI (ED 4D) shares
+     the CPU's RETN handler but carries no tags, so it pops the real stack and leaves the stackless state */
+  if (z80GetRetnExecuted() && !isRetiInstruction) {
     uint8_t stacklessProcessed = zxnextNmiGetStacklessProcessed();
     uint32_t stacklessReturnAddress = zxnextNmiGetReturnAddress();
     zxnextNmiAfterRetn();

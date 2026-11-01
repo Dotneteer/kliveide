@@ -137,6 +137,17 @@ describe("NMI", () => {
     expect(s.readNextReg(0x02) & 0x1c).toBe(0x00);
   });
 
+  // --- zxnext.vhd ~6295: hotkey_drive is ANDed with port_divmmc_io_en (NextReg $83 bit 0)
+  it("NMI-003: F10 does nothing while the DivMMC port is switched off", async () => {
+    const s = await createSession();
+    await s.loadCode(" .org $8000\n jr $");
+    s.setNextReg(0x06, 0x10).setNextReg(0x83, s.readNextReg(0x83) & 0xfe);
+    s.poke(0xbfee, [0x00, 0x00]).runFrames(1);
+    await s.pressHotkey("F10");
+    s.runFrames(2);
+    expect(s.peekWord(0xbfee), "no NMI pushed its return address").toBe(0x0000);
+  });
+
   it("NMI-003: F9 with $06 bit 3 clear does nothing - not even once the enable is set", async () => {
     const s = await createSession();
     await s.loadCode(" .org $8000\n jr $");
@@ -249,6 +260,26 @@ SubDone:`
     // --- z80_stackless_retn_en is cleared with nr_c0_stackless_nmi: RETN reads the (unwritten) stack
     expect(byte(s, "ViaStack"), "returned to the address left on the stack").toBe(1);
     expect(byte(s, "Resumed")).toBe(0);
+  });
+
+  // --- t80n_mcode.vhd ~2418-2450: RETI (ED 4D) carries no RETN_LSB/MSB tags, so the stackless return
+  // --- (zxnext.vhd ~2008, 1806) never feeds it: it pops the real stack, and the later RETN still returns
+  // --- through $C2/$C3
+  it("NMI-004: a RETI in a stackless handler pops the stack; the RETN still uses $C2/$C3", async () => {
+    const s = await nmiProgram({
+      c0: 0x08,
+      handlerTail: `
+        call RetiSub
+        ld a,1
+        ld (AfterReti),a
+        jr HandlerEnd
+RetiSub: reti
+AfterReti: .defb 0
+HandlerEnd:`
+    });
+    s.runUntilReady({ maxFrames: 4 });
+    expect(byte(s, "AfterReti"), "RETI returned to its caller").toBe(1);
+    expect(byte(s, "Resumed"), "RETN returned through $C2/$C3").toBe(1);
   });
 
   it("NMI-004: the Multiface NMI is stackless too", async () => {

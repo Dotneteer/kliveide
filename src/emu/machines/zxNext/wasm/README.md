@@ -123,3 +123,19 @@ Screen (the screen series, `docs/content/en/under-the-hood/emulator-internals/ne
   land about a line away from the hardware's position (the hardware draws a line ahead from the table). The
   collision and "too many sprites" flags are worked out once a frame, so a port `$303B` read in the middle
   of a frame sees only what earlier frames raised.
+
+Interrupts (`docs/content/en/under-the-hood/emulator-internals/next-interrupts.mdx`):
+
+- **The vector byte outside a device's acknowledge.** The hardware drives `$C0` bits 7-5 & `00000` whenever
+  the chain's IEO is low but no device is acknowledging (an IM 0 acknowledge in hardware IM2 mode, an
+  external INT during an internal handler; zxnext.vhd ~1826, im2_device.vhd ~155). Klive returns `$FF`, and
+  its IM 0 always calls `$0038`.
+- **The expansion bus interrupts are not wired in.** Neither the bus /INT (gated by `$C4` bit 7) nor the
+  bus NMI (with `$81` bit 5's debounce bypass) reaches the CPU; the registers are only stored.
+- **The DMA delay ends with the device**, not after the RETI/RETN tail that im2_control keeps it for
+  (im2_control.vhd ~184-189, 238).
+- **CTC and UART pulses start at the instruction** in which their event is synchronised, not at the exact
+  28 MHz clock; start and end can be late by up to one instruction.
+- **An NMI copies IFF1 to IFF2** in the shared Z80; the T80N leaves IFF2 alone (t80n.vhd ~1747). Only a
+  nested NMI or other IFF1 != IFF2 cases can tell.
+- **The NMI state machine passes through S_NMI_END at once**; the hardware waits for an I/O write to end.
