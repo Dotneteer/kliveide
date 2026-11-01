@@ -125,10 +125,12 @@ Each channel is a small machine of three parts:
   by one; in counter mode each edge on the trigger input does.
 - The **time constant register** holds the value the count starts from. When the count reaches zero, the
   channel sends one pulse on its output, **ZC/TO** ("zero count / time out"), and reloads the count from the
-  time constant on the next clock. Then it counts down again, with no help from your program.
+  time constant on the next clock. Then it counts down again, with no help from your program. A time
+  constant of 0 means **256**, in both modes: the first tick, a prescaler pulse or a trigger edge, takes the
+  count from 0 to 255, and the zero count comes after 256 ticks.
 
-So a timer channel's period is simply the prescaler times the time constant, in master clocks, and a time
-constant of 0 means 256: from 0 the count goes to 255 and on down. The same numbers in time:
+So a timer channel's period is simply the prescaler times the time constant, in master clocks, with 0
+counting as 256. The same numbers in time:
 
 - **Prescaler 16**: a count every 16 clocks, 0.571 µs, which is exactly **2 T-states** at 3.5 MHz. Periods
   from 16 clocks (time constant 1) to 4,096 clocks (time constant 0), 146 µs.
@@ -139,7 +141,20 @@ Let's watch a channel with prescaler 16 and time constant 3:
 
 <figure>
 {/* fig:tick */}
-<svg viewBox="-2 -2 704 254" role="img" aria-label="A timeline to scale over 112 master clocks. The prescaler pulses every 16 clocks, at 16, 32, 48 and on. The count starts at 3 and goes to 2 at clock 16, 1 at 32 and 0 at 48. For the one clock it reads 0, ZC/TO is high; on the next clock the count is 3 again. The count goes 2 at 64, 1 at 80 and 0 at 96, with the next ZC/TO, 48 clocks after the first." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 290" role="img" aria-label="A timeline to scale over 112 master clocks, with four numbered steps. Step 1, at clock 0: the count starts at 3 and the prescaler at 0. Step 2, from clock 16: the prescaler pulses every 16 clocks and the count goes to 2, 1, and 0 at clock 48. Step 3, at clock 48: for the one clock the count reads 0, ZC/TO is high. Step 4, from the next clock: the count is 3 again, the next pulse comes at clock 64, and the next zero count at 96, 48 clocks after the first." style={{ width: "100%", height: "auto" }}>
+  <line x1="130" y1="72" x2="130" y2="168" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.6" />
+  <circle cx="130.0" cy="16" r="12" fill="#e5484d" />
+  <text x="130" y="21" textAnchor="middle" fill="#ffffff" fontSize="13.5" fontWeight="bold">1</text>
+  <line x1="211.4" y1="72" x2="211.4" y2="168" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.6" />
+  <circle cx="211.4" cy="16" r="12" fill="#e5484d" />
+  <text x="211.4" y="21" textAnchor="middle" fill="#ffffff" fontSize="13.5" fontWeight="bold">2</text>
+  <line x1="374.3" y1="72" x2="374.3" y2="168" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.6" />
+  <circle cx="374.3" cy="16" r="12" fill="#e5484d" />
+  <text x="374.3" y="21" textAnchor="middle" fill="#ffffff" fontSize="13.5" fontWeight="bold">3</text>
+  <line x1="455.7" y1="72" x2="455.7" y2="168" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.6" />
+  <circle cx="455.7" cy="16" r="12" fill="#e5484d" />
+  <text x="455.7" y="21" textAnchor="middle" fill="#ffffff" fontSize="13.5" fontWeight="bold">4</text>
+  <g transform="translate(0,36)">
   <line x1="130" y1="30" x2="130" y2="36" stroke="currentColor" strokeWidth="1.2" />
   <text x="130" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">0</text>
   <line x1="211.4" y1="30" x2="211.4" y2="36" stroke="currentColor" strokeWidth="1.2" />
@@ -189,9 +204,10 @@ Let's watch a channel with prescaler 16 and time constant 3:
   <path d="M130,176 L374.2857142857143,176 L374.2857142857143,154 L379.375,154 L379.375,176 L618.5714285714286,176 L618.5714285714286,154 L623.6607142857142,154 L623.6607142857142,176 L700,176" fill="none" stroke="#e5484d" strokeWidth="1.8" strokeLinejoin="round" />
   <path d="M374.2857142857143,196 L374.2857142857143,206 L618.5714285714286,206 L618.5714285714286,196" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
   <text x="496.4" y="228" textAnchor="middle" fill="currentColor" fontSize="13.5">48 clocks: prescaler × time constant</text>
+  </g>
 </svg>
 {/* /fig:tick */}
-<figcaption>Prescaler 16, time constant 3, to scale in master clocks. The prescaler pulses every 16 clocks; the count goes 3, 2, 1, 0; at 0 the channel sends a one-clock ZC/TO pulse and reloads 3 on the next clock. A ZC/TO every 48 clocks.</figcaption>
+<figcaption>Prescaler 16, time constant 3, to scale in master clocks. The prescaler pulses every 16 clocks; the count goes 3, 2, 1, 0; at 0 the channel sends a one-clock ZC/TO pulse and reloads 3 on the next clock. A ZC/TO every 48 clocks. The numbered badges mark the steps below.</figcaption>
 </figure>
 
 1. The channel starts with the count at 3 and the prescaler at 0.
@@ -207,9 +223,17 @@ random phase to average out. I like that a lot: a timer you start at a known mom
 
 And this is the answer to the opening puzzle. The CPU's clock is made from the same master clock, so whatever
 its speed, it changes nothing for the metronome. A channel that beats 17,500 times a second at 3.5 MHz beats
-17,500 times a second at 28 MHz. In the other VGA modes the master clock is faster, up to 33 MHz, and the
-metronome speeds up with it, but so does the CPU: one count of prescaler 16 is still exactly 2 T-states at
-3.5 MHz.
+17,500 times a second at 28 MHz.
+
+There is one exception, and it comes from the monitor, not from your program. Some VGA monitors refuse the
+Next's 50 Hz frame, so the machine has seven **VGA modes**, 0 to 6, chosen in the **Video Timing register,
+NextReg `$11`**. Mode 0 runs the master clock at exactly 28 MHz; the others run it faster, in steps up to
+33 MHz in mode 6, so that the whole picture comes a little faster and the monitor accepts it. The register
+can be written only in config mode, so the machine's set-up picks the mode, not your program; the frame and
+beam chapter's [scan doubler and VGA](/en/under-the-hood/emulator-internals/next-display/timing/#the-scan-doubler-and-vga)
+section tells the story. In a faster mode the metronome speeds up with the master clock, but so does the CPU:
+one count of prescaler 16 is still exactly 2 T-states at 3.5 MHz, and only the rate in seconds changes, by
+up to 18%.
 
 ## The control word
 

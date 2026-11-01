@@ -63,7 +63,15 @@ const figures = {};
 {
   const T = 112, X0 = 130, W = 570, k = W / T;
   const px = (t) => X0 + t * k;
-  const out = [svgOpen(700, 250, "A timeline to scale over 112 master clocks. The prescaler pulses every 16 clocks, at 16, 32, 48 and on. The count starts at 3 and goes to 2 at clock 16, 1 at 32 and 0 at 48. For the one clock it reads 0, ZC/TO is high; on the next clock the count is 3 again. The count goes 2 at 64, 1 at 80 and 0 at 96, with the next ZC/TO, 48 clocks after the first.")];
+  const OY = 36; // --- room for the step badges above the drawing
+  const out = [svgOpen(700, 250 + OY, "A timeline to scale over 112 master clocks, with four numbered steps. Step 1, at clock 0: the count starts at 3 and the prescaler at 0. Step 2, from clock 16: the prescaler pulses every 16 clocks and the count goes to 2, 1, and 0 at clock 48. Step 3, at clock 48: for the one clock the count reads 0, ZC/TO is high. Step 4, from the next clock: the count is 3 again, the next pulse comes at clock 64, and the next zero count at 96, 48 clocks after the first.")];
+  // --- step badges and their guides, matching the numbered steps under the figure
+  for (const [n, t] of [[1, 0], [2, 16], [3, 48], [4, 64]]) {
+    out.push(line(px(t), 36 + OY, px(t), 132 + OY, { width: 1, dash: "3 3", opacity: 0.6 }));
+    out.push(`  <circle cx="${px(t).toFixed(1)}" cy="16" r="12" fill="${ZC}" />`);
+    out.push(text(px(t), 21, String(n), { size: FS, anchor: "middle", bold: true, fill: "#ffffff" }));
+  }
+  out.push(`  <g transform="translate(0,${OY})">`);
   for (let t = 0; t <= T; t += 16) {
     out.push(line(px(t), 30, px(t), 36, { width: 1.2 }));
     out.push(text(px(t), 22, String(t), { size: FS, anchor: t === T ? "end" : "middle" }));
@@ -88,6 +96,7 @@ const figures = {};
   // --- the period
   out.push(pathEl(`M${px(48)},196 L${px(48)},206 L${px(96)},206 L${px(96)},196`, { width: 1.4 }));
   out.push(text((px(48) + px(96)) / 2, 228, "48 clocks: prescaler × time constant", { size: FS, anchor: "middle" }));
+  out.push("  </g>");
   figures.tick = [...out, "</svg>"];
 }
 
