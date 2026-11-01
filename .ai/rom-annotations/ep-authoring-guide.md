@@ -28,8 +28,8 @@ Every Enterprise ROM page is a 16K segment listed at **$C000** (`romKindOrigin`:
 |---|---|---|---|---|
 | 1 | `ep-exos21.rom` page 0 | EXOS 2.1, segment 00h: the kernel, VIDEO, SOUND, KEYBOARD, EDITOR | `ep-exos` | Done (below) |
 | 2 | `ep-exos21.rom` page 1 | EXOS 2.1, segment 01h: IS-BASIC 2.1's added routines, the clock, PRINTER, TAPE, SERIAL, NET, the word processor | `ep-exos-basic` | Done (below) |
-| 3 | `ep-basic21.rom` | IS-BASIC 2.1 (cartridge, segment 04h) | `ep-ext` | Next. An extension ROM: `EXOS_ROM` header; keyword table at $35A7 (Phase 7). Its code uses the same call lists: make its kind decode them (check the gate first) and start from `basic-calls-cart.md`'s findings (below) |
-| 4 | `ep-exos20.rom`, `ep-basic20.rom` | the 64's EXOS 2.0 and IS-BASIC 2.0 | `ep-exos`, `ep-ext` | Own sidecars, not `inherits`: only about 2.5K (page 0), 4.5K (page 1) and 1.8K (BASIC) of 2.1's bytes recur in runs of 64 or more. Reuse 2.1's names where a routine does the same job |
+| 3 | `ep-basic21.rom` | IS-BASIC 2.1 (cartridge, segment 04h) | `ep-basic` | Done (below). An extension ROM whose code uses the same call lists |
+| 4 | `ep-exos20.rom`, `ep-basic20.rom` | the 64's EXOS 2.0 and IS-BASIC 2.0 | `ep-exos`, `ep-ext` (check whether 2.0 has the call-list gate before giving it a BASIC kind) | Own sidecars, not `inherits`: only about 2.5K (page 0), 4.5K (page 1) and 1.8K (BASIC) of 2.1's bytes recur in runs of 64 or more. Reuse 2.1's names where a routine does the same job |
 | 5 | `ep-exdos13.rom` | EXDOS 1.3 (segments 20h-21h) | `ep-ext` | Last: which EXDOS 1.3 image is the original is still open (`src/public/roms/ep-roms-readme.txt`) |
 
 `ep-klive-fileio.rom` is Klive's own source (`src/emu/machines/enterprise/fileio/`) and gets no sidecar.
@@ -84,9 +84,11 @@ the probe, log the values in `PROVENANCE.md`.
   `peek`, `physical(address)` (segment s at s * $4000), `s.wasm.epGetPageRegister(p)`.
 - **`runTo` stops at an address in whatever segment page 3 shows**: IS-BASIC runs at $C000 too. Check
   `epGetPageRegister(3) === 0` after a stop and go on if not (the template does).
-- **A profile** (`m.setProfiling(true, false)`, `m.readProfileFlags(0, 0x8000)` for both EXOS segments; bit 1
-  executed as code, bit 2 read): **the boot reads every byte of the ROM** (the 32K checksum), so reset the
-  profile after `bootToBasic()` and count only later reads as data.
+- **A profile** (`m.setProfiling(true, false)`, `m.readProfileFlags(start, length)`): the offsets are the core's
+  own compact memory (`ep.c`'s `EP_PHYS_*`), not segment x $4000: EXOS at 0 ($8000 bytes for both segments), the
+  cartridge at $8000, Klive's FILE: ROM at $C000, EXDOS at $10000 ($8000 bytes), RAM from $18000. Each byte: bit
+  0 an instruction's first byte was fetched, bit 1 executed, bit 2 read as data. **The boot reads every byte of
+  the EXOS ROM** (the 32K checksum), so reset the profile after `bootToBasic()` and count only later reads as data.
 
 ## Facts the annotations rest on
 
@@ -133,6 +135,24 @@ own bytes before reusing one there.
   ROM takes that path (EXDOS 1.3 asks for $07D4 bytes with B = 1, observed).
 - **The last three bytes** ($3FFD-$3FFF) are reached and read by nothing after the boot; the boot's checksum
   over the 32K comes to 0 with them.
+
+### The IS-BASIC 2.1 cartridge (`ep-basic21.rom`)
+
+Read from the bytes and observed in runs (`PROVENANCE.md`, 2026-11-01, IS-BASIC 2.1).
+
+- **Header:** "EXOS_ROM", device chain 0, `JR` to the entry at $0070 (1 cold start, 2 the command "BASIC", 3 help).
+  $0016-$006F is a BCD multiplication table (a x b at $000C + 10a + b) for NUM_MUL. $00E8-$016B is the call table
+  (entries $00-$41). $00C6 copies $016C-$018B to $0008 and $018C-$0249 to $005C at start-up: the restarts and
+  the gate (two blocks copied at different offsets, so a `JR` between them is listed as data at $0177).
+- **Statements** come from the keyword table at $35A7 (93 descriptors: run routine, syntax-check routine, flags,
+  counted name), linked at start-up into a chain of 3-byte records (descriptor, segment) at ($0232), so segment
+  1 and extensions add keywords. Flags: 0 command, 1 program, 2/3 block nesting, 4 allowed after THEN, 5 reset
+  the run state, 6 tokenise the rest.
+- **Inline texts:** `CALL $0E00` prints the counted text that follows it and returns past it; every such text is
+  a data region (the targets the text makes are false).
+- **Error raisers** are `LD L,n` entries in `LD DE,$xx2E` runs ($F4BB-$F557), 38 targets inside instructions
+  in all. A line that grows past 255 bytes when tokenised raises error 20073, whose text is "Statement not
+  allowed after THEN" (run); the stack walk at $3389 skips a string item one byte too far (not run).
 
 ### Segment 01h (page 1)
 
@@ -197,7 +217,14 @@ Read from the bytes and observed in runs (`PROVENANCE.md`, 2026-11-01, page 1).
 |---|---|---|---|
 | `ep-exos21.rom.dis` page 0 | **2** | 1,132 | 48 data regions, 4,717 annotated lines (443 `manual` entries); reassembles byte for byte; checked in the running IDE (`dis` at $D4D0 and $C410 with segment 0 in page 3, the editor's Ready chip) |
 | `ep-exos21.rom.dis` page 1 | **2** | 923 | 519 data regions (the function, SET-option and constant tables one entry per row), 4,333 annotated lines (325 `manual`), 7,184 instructions, 23 targets inside instructions; reassembles byte for byte; checked in the running IDE (`dis $E47A` at a breakpoint shows SVC_TICK, `ann-info` lists page 1's sidecar, the editor's Ready chip) |
-| the others | 0 | | next: `ep-basic21.rom` (IS-BASIC 2.1) |
+| `ep-basic21.rom.dis` | **2** | 1,021 | 493 data regions (the keyword table one entry per row), 7,770 instructions, 38 targets inside instructions; reassembles byte for byte; `ann-info` finds it for segment 04h and the editor reports "Ready to ship · level 2" (a live listing at a BASIC breakpoint was not reached: the test driver's key press does not get past the banner) |
+| the others | 0 | | next: EXOS 2.0 and IS-BASIC 2.0 (the 64) |
+
+**Method that worked (IS-BASIC 2.1).** The page-1 work had already produced the call dictionary
+(`basic-calls.md`): its 65 cartridge routine names went straight onto the call table's targets. A profile over
+~140 commands and two programs (offset $8000 in the profile), the kind `ep-basic` so the lists decode, then ten
+helpers by range. Merged in address order; three name clashes renamed, the RAM `JR`s listed as data, four
+"probably"s settled from the code, one run (error 20073), 298 numeric references swapped for names.
 
 **Method that worked (page 1).** A profile over ~100 typed IS-BASIC commands and the WP's keys; then a probe
 that dumped the null segment's low RAM, which showed the cartridge's gate and the call lists, and a second one

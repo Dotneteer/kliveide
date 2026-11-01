@@ -2401,3 +2401,25 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
   named; `ann-info` finds the shipped sidecar for segment 01h; the ROM annotation editor reports "Ready to ship ·
   level 2". The live gating of the call lists is covered by a test over the real page bytes and the panel's
   context function.
+
+### 2026-11-01 — Enterprise 128: `ep-basic21.rom` (the IS-BASIC 2.1 cartridge) to level 2
+
+- **Sources:** the ROM bytes through Klive's disassembler (`tools/ep-dis.cjs`, the call lists decoded: kind
+  `ep-basic`); EXOS 2.1's finished sidecar for the routines the cartridge reaches; runs on the real core; Klive's
+  `src/common/enterprise/basicTokens.ts` for token numbers the BASIC listing view decodes (interface facts); and,
+  for interface facts only (marked `manual`), the EXOS 2.1 kernel specification. No commented disassembly or
+  name list of IS-BASIC was opened; GPL emulator sources were not read; no helper opened `_input/` or the web.
+- **How:** the 65 routine names of the cartridge's call table came from the call dictionary written for EXOS's
+  segment 01h (from the bytes and probes). A profile over ~140 typed commands and two programs, then ten helpers
+  drafted ranges under `helper-briefs/ep-draft-a-range.md` with the D4 rule. Merged with `merge-drafts.py`; the
+  session renamed three clashing labels, listed the restarts' two RAM `JR`s as data (their targets differ in the
+  ROM listing), settled every "probably" from the code, and swapped 298 numeric references to labelled code for
+  names.
+- **Runs (observed):** the profile (8,976 bytes ran after the boot, 1,268 read as data); helper probes of
+  EXSTRING$ for many error numbers, statements (SELECT/CASE, slices, logical operators, ASK, CLOSE, CALL,
+  CONTINUE, INFO); a probe that typed a line of 70 "1+" terms: error 20073 "Statement not allowed after THEN"
+  from the line-buffer resize at $0504.
+- **Level:** 2, measured and recorded (1,021 labels, 493 data regions, 7,770 instructions; 38 targets inside an
+  instruction, each explained on the instruction that hides it). Reassembles byte for byte. In the running IDE
+  `ann-info` finds the shipped sidecar for segment 04h and the ROM annotation editor reports "Ready to ship ·
+  level 2".
