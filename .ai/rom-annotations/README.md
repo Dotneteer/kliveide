@@ -115,13 +115,6 @@ ROM whose bytes moved, by byte signature; the carried entries are `derived` and 
 the old sidecar. It writes a review list of everything it could not place and every carried comment to check
 (the 2.10 set's are in `carry-review/nextzxos-2.10/`). A carried file is a starting point: its `level` is
 measured again, and the review list is worked through from the new bytes like any other authoring session.
-The 2.10 set was worked to level 2 that way (`PROVENANCE.md`, 2026-10-31). Lessons: a carry misses whole
-routines when the calling convention changed (2.10 replaced `PUSH ret/PUSH $007B/PUSH routine/JP $007B` with
-`RST $10` + word), drops data regions whose neighbours moved (syntax tables and texts then decode as code and
-make false targets), and never flags RAM addresses or changed operand values in comments (2.10 moved bank 7's
-variables by 4 and the version word $0208 to $E210); a decoder's fixed call addresses must be checked for each
-new release too. The listing and check tools take the ROM from the sidecar's own path
-(`zxnext/<set>/…`), not its bare `source.fileName`, which means the 2.08 set.
 
 Always run the formatter before committing: the files are diffed one entry per line.
 

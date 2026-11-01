@@ -3,7 +3,7 @@
   "machine": "rom",
   "source": {"fileName":"enNextLG.rom"},
   "authoring": ".ai/rom-annotations/README.md",
-  "level": 2,
+  "level": 0,
   "pages": {
     "2": {"crc32":"fcabc6c7","name":"ZX Spectrum Next NextZXOS ROM 2 (enNextLG)"}
   },
@@ -26,26 +26,20 @@
         {"start":8250,"end":8258,"type":"bytes","decode":"text"},
         {"start":8259,"end":8270,"type":"bytes","decode":"text"},
         {"start":8271,"end":8277,"type":"bytes","decode":"text"},
-        {"start":8278,"end":8305,"type":"bytes"},
-        {"start":8306,"end":8324,"type":"bytes"},
-        {"start":8325,"end":8326,"type":"bytes"},
+        {"start":8278,"end":8326,"type":"disassemble"},
         {"start":8327,"end":8352,"type":"bytes","decode":"text"},
         {"start":8353,"end":8369,"type":"bytes","decode":"text"},
         {"start":8370,"end":8385,"type":"bytes","decode":"text"},
         {"start":8386,"end":8405,"type":"bytes","decode":"text"},
         {"start":8406,"end":8414,"type":"bytes","decode":"text"},
         {"start":8415,"end":8435,"type":"bytes","decode":"text"},
-        {"start":8436,"end":8472,"type":"bytes","decode":"text"},
-        {"start":8473,"end":8491,"type":"bytes","decode":"text"},
-        {"start":8492,"end":16383,"type":"disassemble"}
+        {"start":8436,"end":16383,"type":"disassemble"}
       ],
       "localLabels": [
-        {"name":"ROM_FILE_NAMES","value":8159},
-        {"name":"MSG_VERSION","value":8436}
+        {"name":"ROM_FILE_NAMES","value":8159}
       ],
       "lineAnnotations": {
-        "8159": {"synopsis":"Machine ROM file names for ROM_FILE_PATH, 8 bytes apart: \"zx80.rom\", \"zx81.rom\", \"128.rom\" $FF,\n\"lg.rom\" $FF (enNextZX.rom has \"48.rom\" here: the only other difference between the two files is\nMSG_VERSION's name)."},
-        "8436": {"synopsis":"\"Version mismatch:\", ENTER, \"e210 enNextLG.rom\", ENTER, $FF (CHECK_VERSION): enNextZX.rom's\nMSG_VERSION with this file's name."}
+        "8159": {"synopsis":"Machine ROM file names for ROM_FILE_PATH, 8 bytes apart: \"zx80.rom\", \"zx81.rom\", \"128.rom\" $FF,\n\"lg.rom\" $FF (enNextZX.rom has \"48.rom\" here: the only other difference between the two files is\nMSG_VERSION's name)."}
       }
     }
   },
@@ -65,19 +59,12 @@
     "2:8250:region": "derived",
     "2:8259:region": "derived",
     "2:8271:region": "derived",
-    "2:8278:region": "observed",
-    "2:8306:region": "observed",
-    "2:8325:region": "observed",
     "2:8327:region": "derived",
     "2:8353:region": "derived",
     "2:8370:region": "derived",
     "2:8386:region": "derived",
     "2:8406:region": "derived",
-    "2:8415:region": "derived",
-    "2:8436:label": "observed",
-    "2:8436:line": "observed",
-    "2:8436:region": "observed",
-    "2:8473:region": "observed"
+    "2:8415:region": "derived"
   },
   "carriedFrom": {"sidecar":"zxnext/nextzxos-2.08/enNextLG.rom.dis","method":"byte signature (scripts/rom-annotations-carry.cjs)"}
 }

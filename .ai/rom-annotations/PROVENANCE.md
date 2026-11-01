@@ -2292,39 +2292,3 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
   6, enNextMf 3, enAltZX 228/291, enNextLG 28 with the inherited entries). The labels kept all have synopses.
   Next: an authoring session per file works through its review list and the `skeleton` to-do list, from the 2.10
   bytes, under D4 as for any other page.
-
-### 2026-10-31 — ZX Spectrum Next: the nextzxos-2.10 sidecars to level 2
-
-- **What:** all five `src/public/roms/zxnext/nextzxos-2.10/*.rom.dis`, from the carry (level 0) to level 2, every
-  page measured and reassembled byte for byte (`reassemble-test.ts.txt`). Nine helpers drafted from the 2.10 bytes
-  (D4), one per page or range, merged with `apply-draft.py`; their facts were passed between ranges.
-  **Sources:** the 2.10 ROM bytes through Klive's disassembler, Klive's own 2.08 and 2.10 sidecars (names and
-  comments reused only where the 2.10 code was read and does the same job, or where the instruction sequence is
-  identical after aligning the two listings), and the interface documents of the earlier Next sessions (API
-  document, `nextreg.txt`, the Spectrum manual's token codes). No published or remembered NextZXOS, esxDOS or
-  Multiface disassembly, source, symbol file or name list was opened.
-- **Decoding first** (`nextzxos-disassembler.ts`, tests in `nextRomDecoder.test.ts`): 2.10 moved ROM 1's DivMMC call
-  stubs ($26CB/$26E5 → $26C5/$26DF), its error entry (2.08's `CALL $08EF` + byte → `CALL $08E2` + byte, without
-  closing file 0) and the Multiface's API call ($1569 → $1572); the alternate ROM page 0 gained `RST $30` + a ROM 2
-  word ($0099, through $5B43). The tables list both sets' addresses; a test proves no set calls the other's. The
-  tools `sp48-dis.cjs` and `check-annotations.cjs` had read the 2.08 ROM for a 2.10 sidecar (its bare
-  `source.fileName`); they now take the ROM from the sidecar's path. `apply-draft.py`'s `:replace=` dropped region
-  provenance on every page; it is now limited to its page.
-- **Found (structural, from the bytes):** 2.10 moved the SAVE/LOAD/VERIFY/MERGE code from ROM 1 into the
-  alternate ROM page 1 ($2E45-$353D), the start-up menu from ROM 0 into the alternate ROM page 0 ($2115-$2719),
-  and the Browser's settings code from ROM 0 into ROM 2 ($297E-$2A8E, its data now in DivMMC bank 1). ROM 3 hands
-  work to the alternate ROM page 1 with bare `NEXTREG $8C,$80` hooks ($03C1, $1664, $1FBE, $2962, $2BED), which
-  run PLOT/POINT/DRAW/CIRCLE for screen modes 1-15. New: LINE (renumbering), LINE NEW/MERGE, BANK n LINE/MERGE
-  and ERASE in the alternate ROM page 0, with automatic line numbers ($D74E/$D750); REG (keyword $88) takes a
-  list; OUT; SPRITE OVER; TILE BANK n OVER; a DEF FN parameter lookup; a boot option kept across resets. Bank 7's
-  variables from $D74E up and the Browser buffers moved by 4; the version word is $E210 (was $0208); the local
-  variable list pointer is ($5B58), not ($5C0B). Data regions the carry lost were restored from the bytes:
-  ROM 1's syntax tables ($0300-$056B), the copyright text, the calculator's operation table in ROM 3, PLAY's
-  periods, the Browser's key tables, and texts in new code.
-- **Labels per page:** enNextZX 1,026 / 980 / 785 / 1,149; enAltZX 660 / 806; enNextMf 425; enNxtmmc 618;
-  enNextLG 2 of its own (785 with the inherited ones).
-  Two targets inside an instruction remain on page 2 ($0747, $0934): real jumps into the ZX80 ROM from code run at
-  $F000, as in 2.08.
-- **Not done:** the carried comments in enNextZX page 0's Browser ($2EB2-$3B60) rest on the alignment and an
-  automatic address pass, not a full re-read: a comment pass there is the next step. Some cross-page caller lists
-  in synopses that were not touched may still quote 2.08 addresses of other pages. No probe was run.

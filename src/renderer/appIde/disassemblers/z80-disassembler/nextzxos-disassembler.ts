@@ -41,18 +41,12 @@ export type NextOsPageSpec = {
  * - `RST $28` (pages 0 and 1) calls the word's address in ROM 3 through the RAM routine at \$5B48
  *   (NextReg $8E = 3), returning through \$5B4D (page 0) or \$5B3E (page 1).
  * - Page 0's `RST $18` and `RST $20` jump to its \$3E80 and \$3E00 stubs: a word for ROM 1 and ROM 2.
- * - Page 1's `CALL $26CB` and `CALL $26E5` (NextZXOS 2.10: `$26C5` and `$26DF`) write port $E3 ($87 or
- *   $8A: the DivMMC's memory paged in) and call the word's address there; the way back (\$26F7) writes the
- *   port again.
+ * - Page 1's `CALL $26CB` and `CALL $26E5` write port $E3 ($87 or $8A: the DivMMC's memory paged in)
+ *   and call the word's address there; the way back (\$26F7) writes the port again.
  * - Page 1's `RST $00` jumps to its \$3F00 stub: a word for ROM 2.
  * - Page 1's `RST $08` takes an error code byte, and so does its `CALL $08EF` (which never returns; $FF
- *   there means the +3DOS error in A; NextZXOS 2.10 calls the routine's byte-reading entry, `$08E2`,
- *   without the file closing that 2.08's `$08EF` does first); its `RST $10` a function byte, and a word
- *   after it when the byte's bit 7 is set.
- *
- * The tables hold the call addresses of every NextZXOS release Klive ships (`nextRomSets.json`): the
- * page kinds are the same in every set, and no set calls another set's address
- * (`test/annotations/nextRomDecoder.test.ts` checks both).
+ *   there means the +3DOS error in A); its `RST $10` a function byte, and a word after it when
+ *   the byte's bit 7 is set.
  * - Page 2's `CALL $3E18` and `CALL $3E32` call the word's address in the alternate ROM, through ROM 0's
  *   (or ROM 1's) \$007B, coming back through \$3E13 (\$3F13).
  * - Page 2's `RST $08` (\$3F18) takes a byte (into A) and a word (into HL), pages the DivMMC's memory out
@@ -82,11 +76,8 @@ export const NEXTZXOS_PAGES: Readonly<Record<0 | 1 | 2, NextOsPageSpec>> = {
     calls: {
       0x0068: { kind: "call", rom: "alternate ROM" },
       0x0080: { kind: "call", rom: "alternate ROM" },
-      0x08e2: { kind: "error" },
       0x08ef: { kind: "error" },
-      0x26c5: { kind: "call", rom: "DivMMC" },
       0x26cb: { kind: "call", rom: "DivMMC" },
-      0x26df: { kind: "call", rom: "DivMMC" },
       0x26e5: { kind: "call", rom: "DivMMC" },
       0x3e80: { kind: "call", rom: "ROM 0" },
       0x3f00: { kind: "call", rom: "ROM 2" }
@@ -115,8 +106,8 @@ export const NEXTZXOS_PAGES: Readonly<Record<0 | 1 | 2, NextOsPageSpec>> = {
  *   same from (IX); `CALL $04F8` / `CALL $0500` + a byte, the offset of a field BC and DE are written to at
  *   (IX) / (IY).
  * - Multiface: `RST $10`/`$18`/`$20`/`$28` + a word, an address called in ROM 0/1/2/3 (through the RAM
- *   routines at \$5C1C and \$5B3E-\$5B4D); `CALL $1569` (NextZXOS 2.10: `$1572`) + an API function byte
- *   (it runs `RST $08` + that byte at \$5B5D in ROM 3).
+ *   routines at \$5C1C and \$5B3E-\$5B4D); `CALL $1569` + an API function byte (it runs `RST $08` + that
+ *   byte at \$5B5D in ROM 3).
  */
 export const NEXT_DIVMMC_ROM: NextOsPageSpec = {
   restarts: {
@@ -143,8 +134,7 @@ export const NEXT_MULTIFACE_ROM: NextOsPageSpec = {
     0x28: { kind: "call", rom: "ROM 3" }
   },
   calls: {
-    0x1569: { kind: "byte", what: "API function", call: "API call through $5B5D" },
-    0x1572: { kind: "byte", what: "API function", call: "API call through $5B5D" }
+    0x1569: { kind: "byte", what: "API function", call: "API call through $5B5D" }
   }
 };
 
@@ -152,8 +142,6 @@ export const NEXT_MULTIFACE_ROM: NextOsPageSpec = {
  * The alternate ROM (`enAltZX.rom`): page 0 stands in for ROM 0 and page 1 for ROM 1 (NextReg $8C), so
  * their stubs switch it off (NextReg $8C = 0, \$007B) and come back through the ROM they stand in for:
  * - page 0: `RST $10` + word → ROM 0, `RST $18` → ROM 1 (through ROM 0's \$3E8A), `RST $20` → ROM 3;
- *   NextZXOS 2.10 adds `RST $30` + word → ROM 2 (its \$0099, through the RAM routine at \$5B43; 2.08's
- *   page has no `RST $30`);
  * - page 1: `RST $10` + word → ROM 1, `RST $18` → ROM 2, `RST $20` → ROM 3, `CALL $00BA` → ROM 0,
  *   `$00D7` → the DivMMC memory (through ROM 1's \$3EA0).
  */
@@ -162,8 +150,7 @@ export const NEXT_ALT_ROM_PAGES: Readonly<Record<0 | 1, NextOsPageSpec>> = {
     restarts: {
       0x10: { kind: "call", rom: "ROM 0" },
       0x18: { kind: "call", rom: "ROM 1" },
-      0x20: { kind: "call", rom: "ROM 3" },
-      0x30: { kind: "call", rom: "ROM 2" }
+      0x20: { kind: "call", rom: "ROM 3" }
     },
     calls: {}
   },

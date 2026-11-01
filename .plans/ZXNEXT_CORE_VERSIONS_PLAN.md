@@ -443,10 +443,7 @@ a profile record, guarded C, its tests, ROMs/SD, UI entry.
 - **P5:** facts for 2.10 (key-wait loop $0C98-$0CBE, HALT $0CB5; ROM 3 tape routines unchanged),
   proved by `rom-facts.test.ts` and `nextzxos-boot.test.ts` (each model boots its own card into its
   loop). SD base image by `npm run next-sd:build`. Sidecars carried by byte signature
-  (`npm run rom:annotations:carry`), review lists in `.ai/rom-annotations/carry-review/`; then authored
-  from the 2.10 bytes to level 2 (every page, reassembled byte for byte; `PROVENANCE.md`, 2026-10-31).
-  The Next decoder lists both sets' inline-data call addresses (2.10 moved four, and its alternate ROM
-  page 0 gained `RST $30` + a ROM 2 word); `nextRomDecoder.test.ts` proves no set calls another's.
+  (`npm run rom:annotations:carry`), level 0, review lists in `.ai/rom-annotations/carry-review/`.
   Not done: per-profile visual goldens (recorded only after checking by eye).
 - **P6:** models in Select Machine / New Project; SD card per model, another model's default card
   counts as no choice; the ROM Annotations menu groups the Next's ROMs by NextZXOS release; NEX

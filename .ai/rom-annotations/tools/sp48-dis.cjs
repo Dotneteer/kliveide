@@ -66,7 +66,7 @@ const { prepareRomDisassembler } = require(join(root, "src/renderer/appIde/annot
 const { knownRomPageKind, romPageIdentity } = require(join(root, "src/common/roms/romIdentity.ts"));
 const { parseAnnotations } = require(join(root, "src/renderer/appIde/annotations/programAnnotations.ts"));
 const { withInheritedEntries } = require(join(root, "src/renderer/appIde/annotations/romInheritance.ts"));
-const { canonicalShippedSidecar, managedSidecarOf } = require(join(root, "src/common/roms/romSidecarPaths.ts"));
+const { canonicalShippedSidecar } = require(join(root, "src/common/roms/romSidecarPaths.ts"));
 const ROMS = join(root, "src/public/roms");
 // --- A shipped ROM or sidecar by its path under src/public/roms; a bare Next name is nextzxos-2.08's
 const shippedRom = (name) => join(ROMS, canonicalShippedSidecar(`${name}.dis`).replace(/\.dis$/i, ""));
@@ -75,11 +75,7 @@ const shippedSidecar = (name) => join(ROMS, canonicalShippedSidecar(name));
   const [from, to] = process.argv.slice(2, 4).map((x) => parseInt(x, 16));
   const sidecarFile = process.argv[4];
   const sidecar = sidecarFile ? JSON.parse(readFileSync(sidecarFile, "utf8")) : undefined;
-  // --- The ROM a sidecar describes is the one its own path names when it is a shipped file or a working
-  // --- copy (`zxnext/nextzxos-2.10/enNextZX.rom.dis` is the 2.10 set's, whatever its bare source.fileName
-  // --- says); else the ROM it names (a bare Next name is nextzxos-2.08's)
-  const managed = sidecarFile ? managedSidecarOf(resolve(sidecarFile)) : undefined;
-  const romFile = managed ? managed.sidecar.replace(/\.dis$/i, "") : (sidecar?.source?.fileName ?? process.env.ROM ?? "sp48.rom");
+  const romFile = sidecar?.source?.fileName ?? process.env.ROM ?? "sp48.rom";
   // --- PAGE=<n>: a page of a ROM file of several 16K pages (enNextZX.rom has four); the sidecar's bank n
   const page = Number(process.env.PAGE ?? 0);
   const bank = String(page);
