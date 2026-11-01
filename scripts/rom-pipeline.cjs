@@ -12,12 +12,21 @@
  *   npm run rom:pipeline -- export-ann <rom> [--page n] [--sidecar <file>] [--out <dir>]
  *                                   the sidecar's pages as .ann files (default: work/<rom>/export/)
  *   npm run rom:pipeline -- compile <rom> <ann-dir|file...> [--sidecar <file>] [--out <file>] [--dry-run]
+ *                                   [--no-wrap] [--name-numbers]
  *                                   lays the .ann files over the sidecar and writes it (default: the
- *                                   working copy), with work/<rom>/problems.md; errors write nothing
+ *                                   working copy); work/<rom>/problems.md lists what to fix (lint, level,
+ *                                   questions, each with its fix) and feedback-page-<n>.md what the run
+ *                                   says about the tools (D11); errors write nothing
  *   npm run rom:pipeline -- prepare <rom> [--page n] [--cpu z80|z80n] [--sidecar <file> | --no-sidecar]
  *                                   [--profile <file>] [--range-weight n] [--force]
  *                                   the routine cards, overview, questions, region proposals and facts of a page, in
  *                                   work/<rom>/page-<n>/ (skipped when its inputs have not changed)
+ *   npm run rom:pipeline -- carry <from sidecar> <to rom> [--page n] [--out <file>]
+ *                                   carries a sidecar to another version of its ROM (byte signatures, then
+ *                                   an instruction alignment), translating the RAM addresses that moved:
+ *                                   work/<to rom>/carried.rom.dis, alignment.md and alignment-page-<n>.json
+ *                                   (which prepare reads: the cards say which routines are the same,
+ *                                   shifted or different)
  *   npm run rom:pipeline -- profile <recipe> | --list
  *                                   runs a profile recipe on the real machine (test/rom-annotations/
  *                                   profileRecipes.ts) and writes work/<rom>/profile-page-<n>.json for
@@ -50,6 +59,9 @@ const { formatListingLine, listImageBank } = require(join(PIPELINE, "listing.ts"
 const { sidecarPageToAnn } = require(join(PIPELINE, "postprocess/sidecarToAnn.ts"));
 const { compileAnnotations } = require(join(PIPELINE, "postprocess/compile.ts"));
 const { addRomSidecarPage, newRomSidecar } = require(join(PIPELINE, "postprocess/newSidecar.ts"));
+const { lint } = require(join(PIPELINE, "postprocess/lint.ts"));
+const { feedbackSignals, problemKeys, renderFeedback, renderProblems } = require(join(PIPELINE, "postprocess/report.ts"));
+const { analyseRomPage } = require(join(PIPELINE, "preprocess/analyse.ts"));
 const sidecarPaths = require(join(root, "src/common/roms/romSidecarPaths.ts"));
 
 const LATER = {};
@@ -65,7 +77,7 @@ async function main() {
   const options = takeOptions(
     args,
     ["--page", "--kind", "--cpu", "--why", "--sidecar", "--out", "--profile", "--range-weight"],
-    ["--no-sidecar", "--dry-run", "--force", "--list", "--help"]
+    ["--no-sidecar", "--no-alignment", "--dry-run", "--force", "--list", "--no-wrap", "--name-numbers", "--help"]
   );
   const [command, ...rest] = args;
   if (!command || options["--help"]) return usage(0);
@@ -79,6 +91,7 @@ async function main() {
   if (command === "compile") return compile(rest, options);
   if (command === "prepare") return prepare(rest, options);
   if (command === "profile") return profile(rest, options);
+  if (command === "carry") return carry(rest, options);
   console.error(`Unknown command "${command}".`);
   usage(2);
 }
@@ -121,6 +134,81 @@ async function showListing([romArg, range], options) {
   appendFileSync(join(folder, "listing-requests.jsonl"), `${JSON.stringify(record)}\n`);
 }
 
+/** `carry <from sidecar> <to rom>`: a sidecar carried to another version of its ROM. */
+async function carry([fromArg, toArg], options) {
+  if (!fromArg || !toArg) usage(2);
+  const { carryPage } = require(join(PIPELINE, "align/carryPage.ts"));
+  const { formatRomSidecar, provenanceKeysOf } = require(join(root, "src/common/roms/romAnnotationTools.ts"));
+  const { romCrc32 } = require(join(root, "src/common/roms/romIdentity.ts"));
+  const fromPath = existsSync(fromArg) ? resolve(fromArg) : join(ROMS, sidecarPaths.canonicalShippedSidecar(fromArg));
+  const old = JSON.parse(readFileSync(fromPath, "utf8"));
+  const oldRom = loadRom(fromPath.replace(/\.dis$/i, ""), { "--page": "0" });
+  const target = loadRom(toArg, { "--page": "0" });
+  const pages = options["--page"] === undefined ? Object.keys(old.banks ?? {}) : [String(Number(options["--page"]))];
+  const folder = join(WORK, target.workName);
+  mkdirSync(folder, { recursive: true });
+
+  const sidecar = {};
+  for (const [key, value] of Object.entries(old)) {
+    if (!["banks", "pages", "provenance", "level", "source", "carriedFrom"].includes(key)) sidecar[key] = value;
+  }
+  sidecar.source = { fileName: basename(target.path) };
+  sidecar.level = 0;
+  sidecar.pages = {};
+  sidecar.banks = {};
+  sidecar.provenance = {};
+  sidecar.carriedFrom = { sidecar: oldRom.workName + ".dis", method: "byte signature and instruction alignment (rom:pipeline carry)" };
+  for (const page of pages) {
+    const oldImage = loadRom(oldRom.path, { "--page": page }).image;
+    const newImage = loadRom(target.path, { "--page": page }).image;
+    const result = await carryPage(oldImage, old.banks[page], newImage);
+    sidecar.pages[page] = { crc32: romCrc32(newImage.banks[0].bytes), name: old.pages?.[page]?.name ?? `${basename(target.path)} page ${page}` };
+    sidecar.banks[page] = result.bank;
+    for (const key of provenanceKeysOf({ banks: { [page]: result.bank } })) sidecar.provenance[key] = "derived";
+    const names = new Map((old.banks[page].localLabels ?? []).map((l) => [l.value, l.name]));
+    writeFileSync(
+      join(folder, `alignment-page-${page}.json`),
+      `${JSON.stringify({ from: oldRom.workName, page: Number(page), routines: result.alignment.routines.map((r) => ({ ...r, name: names.get(r.old) })) })}\n`
+    );
+    writeFileSync(join(folder, `alignment-page-${page}.md`), alignmentReport(oldRom.workName, target.workName, page, result, names));
+    const counts = {};
+    for (const r of result.alignment.routines) counts[r.status] = (counts[r.status] ?? 0) + 1;
+    console.log(
+      `page ${page}: ${result.bank.localLabels?.length ?? 0} of ${old.banks[page].localLabels?.length ?? 0} labels carried (${result.aligned} by the alignment); ` +
+        `routines ${Object.entries(counts).map(([k, v]) => `${v} ${k}`).join(", ")}; ${result.alignment.stretches.length} stretches; ` +
+        `${result.translated.length} text(s) with RAM addresses translated; ${result.lost.length} entr(ies) not carried`
+    );
+  }
+  const out = options["--out"] ? resolve(options["--out"]) : join(folder, "carried.rom.dis");
+  writeFileSync(out, formatRomSidecar(sidecar));
+  console.log(`Written: ${shown(out)}; reports: ${shown(folder)}/alignment-page-<n>.md`);
+  console.log(`Next: npm run rom:pipeline -- prepare ${target.workName} --sidecar ${shown(out)}`);
+}
+
+/** The alignment report of one carried page. */
+function alignmentReport(from, to, page, result, names) {
+  const h = (v) => `$${v.toString(16).padStart(4, "0").toUpperCase()}`;
+  const a = result.alignment;
+  const lines = [`# ${from} -> ${to}, page ${page}`, ""];
+  lines.push("## Stretches (the same instructions at a constant distance)", "");
+  for (const s of [...a.stretches].sort((x, y) => y.oldEnd - y.oldStart - (x.oldEnd - x.oldStart)).slice(0, 40)) {
+    lines.push(`- ${h(s.oldStart)}-${h(s.oldEnd)} = ${h(s.newStart)}-${h(s.newEnd)} (${s.delta >= 0 ? "+" : "-"}${h(Math.abs(s.delta))})`);
+  }
+  lines.push("", "## RAM addresses that moved (from matched instructions)", "");
+  for (const m of a.ramMap) lines.push(`- ${h(m.from)} -> ${h(m.to)}: seen ${m.count} time(s)${m.count < 2 || m.from < 0x4000 ? " (not translated in text: check)" : ""}`);
+  for (const c of a.ramConflicts) lines.push(`- ${h(c.from)} -> ${c.to.map(h).join(" or ")}: conflicting, not translated`);
+  lines.push("", "## Routines that differ (for the AI)", "");
+  for (const r of a.routines.filter((r) => r.status === "different" || r.status === "missing")) {
+    lines.push(`- ${h(r.old)} ${names.get(r.old) ?? ""}: ${r.status}${r.new !== undefined ? ` at ${h(r.new)}` : ""}, ${r.unmatched} of ${r.instructions} instruction(s) with no partner`);
+  }
+  lines.push("", "## Not carried", "");
+  for (const l of result.lost) lines.push(`- ${l.kind} ${h(l.offset)}${l.name ? ` ${l.name}` : ""}: ${l.why}`);
+  lines.push("", "## Carried text to check", "");
+  for (const m of result.moved) lines.push(`- ${h(m.offset)} (from ${h(m.from)}): ${m.why}`);
+  for (const t of result.translated) lines.push(`- ${h(t.offset)}: RAM translated ${t.swaps.join(", ")}`);
+  return `${lines.join("\n")}\n`;
+}
+
 /** `profile <recipe>`: a recipe's run on the real machine, cut into ROM page profiles. */
 function profile([recipe], options) {
   // --- The recipes import the test harnesses, so their ids are read from the file, not loaded
@@ -150,7 +238,7 @@ function profile([recipe], options) {
 /** `prepare <rom>`: the analysis bundle of one page. */
 async function prepare([romArg], options) {
   if (!romArg) usage(2);
-  const { analyseRomPage, PIPELINE_VERSION } = require(join(PIPELINE, "preprocess/analyse.ts"));
+  const { PIPELINE_VERSION } = require(join(PIPELINE, "preprocess/analyse.ts"));
   const { factsJson, renderCardFiles, renderOverview, renderProposals, renderProposalsAnn, renderQuestions, renderTexts } = require(
     join(PIPELINE, "preprocess/cards.ts")
   );
@@ -161,6 +249,8 @@ async function prepare([romArg], options) {
   const folder = join(WORK, rom.workName, `page-${bankId}`);
   const profilePath = options["--profile"] ? resolve(options["--profile"]) : join(WORK, rom.workName, `profile-page-${bankId}.json`);
   const profileText = existsSync(profilePath) ? readFileSync(profilePath, "utf8") : undefined;
+  const alignmentPath = join(WORK, rom.workName, `alignment-page-${bankId}.json`);
+  const alignmentText = options["--no-alignment"] || !existsSync(alignmentPath) ? undefined : readFileSync(alignmentPath, "utf8");
   const crc = (text) => (text === undefined ? null : romCrc32(new TextEncoder().encode(text)));
   const inputs = {
     pipelineVersion: PIPELINE_VERSION,
@@ -170,6 +260,7 @@ async function prepare([romArg], options) {
     sidecarCrc: crc(base.text),
     profile: profileText ? shown(profilePath) : null,
     profileCrc: crc(profileText),
+    alignmentCrc: crc(alignmentText),
     rangeWeight: options["--range-weight"] ? Number(options["--range-weight"]) : null
   };
   const inputsFile = join(folder, "inputs.json");
@@ -183,6 +274,7 @@ async function prepare([romArg], options) {
     bankId,
     ...(base.json ? { sidecar: base.json } : {}),
     ...(profileText ? { profile: JSON.parse(profileText) } : {}),
+    ...(alignmentText ? { carried: JSON.parse(alignmentText) } : {}),
     ...(options["--range-weight"] ? { rangeWeight: Number(options["--range-weight"]) } : {})
   });
   rmSync(join(folder, "cards"), { recursive: true, force: true });
@@ -265,25 +357,54 @@ async function compile([romArg, ...annArgs], options) {
       cpu: rom.image.cpu,
       // --- A sidecar may describe more than the ROM's bytes (the ZX81's 8K ROM is listed to $3FFF)
       pageSize: Math.max(bank.bytes.length, ...(sidecar.banks[String(page)].regions ?? []).map((r) => r.end + 1)),
-      ann
+      ann,
+      text: { wrap: !options["--no-wrap"], nameNumbers: !!options["--name-numbers"] }
     });
     sidecar = result.sidecar;
     const level = await measureLevel(sidecar, page, bank.bytes, rom.image.romKind);
     const pageErrors = result.problems.filter((p) => p.severity === "error").length;
     errors += pageErrors;
-    report.push(...pageReport(page, ann, result, level));
+
+    // --- The compiled page analysed again: the lint, the problem list with its fixes, the feedback
+    const pageFolder = join(WORK, rom.workName);
+    const readJson = (file) => (existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) : undefined);
+    const profile = readJson(join(pageFolder, `profile-page-${page}.json`));
+    const analysis = await analyseRomPage({ image: rom.image, bankId: String(page), sidecar, ...(profile ? { profile } : {}) });
+    const lintItems = lint({ analysis, touched: result.touched, otherLabels: otherSidecarLabels(rom.workName) });
+    report.push(...renderProblems({ page, files: ann.map((a) => a.fileName), result, level, lint: lintItems, analysis, ...(profile ? { flags: profile.flags } : {}) }));
+    const historyFile = join(pageFolder, `compile-history-page-${page}.jsonl`);
+    const history = existsSync(historyFile) ? readFileSync(historyFile, "utf8").trim().split("\n").filter(Boolean).map((l) => JSON.parse(l)) : [];
+    history.push({ at: new Date().toISOString(), keys: problemKeys(lintItems, level) });
+    mkdirSync(pageFolder, { recursive: true });
+    appendFileSync(historyFile, `${JSON.stringify(history[history.length - 1])}\n`);
+    const listingFile = join(pageFolder, "listing-requests.jsonl");
+    const listingRequests = existsSync(listingFile)
+      ? readFileSync(listingFile, "utf8").trim().split("\n").filter(Boolean).map((l) => JSON.parse(l)).filter((r) => r.page === page)
+      : [];
+    const facts = readJson(join(pageFolder, `page-${page}`, "facts.json"));
+    const signals = feedbackSignals({ result, lint: lintItems, analysis, listingRequests, ...(facts?.proposals ? { proposals: facts.proposals } : {}), history });
+    writeFileSync(join(pageFolder, `feedback-page-${page}.md`), renderFeedback(rom.workName, page, signals, history.length));
+    const problems = lintItems.filter((l) => l.severity === "problem").length;
     console.log(
-      `page ${page}: ${ann.length} file(s), ${pageErrors} error(s), ` +
-        `${result.problems.length - pageErrors} warning(s), ${result.changes.length} change(s) to base entries, ` +
+      `page ${page}: ${ann.length} file(s), ${pageErrors} error(s), ${problems} problem(s), ` +
+        `${lintItems.length - problems + result.questions.length} question(s), ${result.changes.length} change(s) to base entries, ` +
         `level ${level.level} (${level.unlabelledTargets.length} unlabelled target(s), ` +
-        `${level.labelsWithoutSynopsis.length} label(s) without a synopsis, ${level.misplacedLabels.length} misplaced)`
+        `${level.labelsWithoutSynopsis.length} label(s) without a synopsis, ${level.misplacedLabels.length} misplaced); ` +
+        `${signals.length} feedback signal(s)`
     );
   }
+
+  // --- The IDE's own readiness check (the "Ready to ship" chip, rom-ann-check) on the whole result
+  const ready = await readinessOf(sidecar, probe);
+  report.push("## Ready to ship?", "");
+  if (ready.problems.length) report.push(...ready.problems.map((p) => `- ${p}`));
+  else report.push(`Yes: the IDE's check finds nothing; levels ${Object.entries(ready.levels).map(([page, level]) => `page ${page}: ${level}`).join(", ")}.`);
+  report.push("");
 
   const folder = join(WORK, probe.workName);
   mkdirSync(folder, { recursive: true });
   writeFileSync(join(folder, "problems.md"), `${report.join("\n")}\n`);
-  console.log(`Report: ${shown(join(folder, "problems.md"))}`);
+  console.log(`Reports: ${shown(join(folder, "problems.md"))}, ${shown(folder)}/feedback-page-<n>.md`);
   if (errors) {
     console.error(`${errors} error(s): nothing written.`);
     process.exit(1);
@@ -300,33 +421,44 @@ async function compile([romArg, ...annArgs], options) {
   console.log(`Written: ${target}`);
 }
 
-/** The problem-list section of one page. */
-function pageReport(page, ann, result, level) {
-  const where = (p) => (p.file ? `${p.file}${p.line ? `:${p.line}` : ""}: ` : "");
-  const lines = [`## Page ${page}`, "", `Files: ${ann.map((a) => a.fileName).join(", ")}`, ""];
-  lines.push(
-    `Level ${level.level}: ${level.instructions} instructions, ${level.unlabelledTargets.length} unlabelled target(s), ` +
-      `${level.labelsWithoutSynopsis.length} label(s) without a synopsis, ${level.misplacedLabels.length} misplaced label(s).`,
-    ""
-  );
-  const section = (title, items) => {
-    if (!items.length) return;
-    lines.push(`### ${title}`, "", ...items.map((item) => `- ${item}`), "");
+/** The IDE's readiness check of a sidecar for a ROM, with the inherited sidecars as the IDE reads them. */
+async function readinessOf(sidecar, rom) {
+  const { checkRomSidecar } = require(join(root, "src/renderer/appIde/annotations/romSidecarCheck.ts"));
+  const { parseAnnotations } = require(join(root, "src/renderer/appIde/annotations/programAnnotations.ts"));
+  const { formatRomSidecar } = require(join(root, "src/common/roms/romAnnotationTools.ts"));
+  const file = new Uint8Array(readFileSync(rom.path));
+  const pageBytes = (page) => (page * 0x4000 < file.length ? romPageBytes(file, page) : undefined);
+  const inherited = async (name, page) => {
+    const canonical = sidecarPaths.canonicalShippedSidecar(name);
+    const working = join(homedir(), "Klive", sidecarPaths.workingCopyRelativePath(canonical));
+    const text = readFileSync(existsSync(working) ? working : join(ROMS, canonical), "utf8");
+    return {
+      annotations: parseAnnotations(text).annotations,
+      bytes: romPageBytes(new Uint8Array(readFileSync(join(ROMS, canonical.replace(/\.dis$/i, "")))), page)
+    };
   };
-  section("Errors", result.problems.filter((p) => p.severity === "error").map((p) => `${where(p)}${p.message}`));
-  section("Warnings", result.problems.filter((p) => p.severity === "warning").map((p) => `${where(p)}${p.message}`));
-  section("Unlabelled targets", level.unlabelledTargets.map((t) => hex(t)));
-  section("Labels without a synopsis", level.labelsWithoutSynopsis);
-  section("Misplaced labels", level.misplacedLabels);
-  section(
-    "Base entries changed",
-    result.changes.map(
-      (c) => `${hex(c.offset)} ${c.what}: ${JSON.stringify(c.before ?? "")} -> ${JSON.stringify(c.after ?? "(deleted)")} (${c.file}:${c.line})`
-    )
-  );
-  section("Questions", result.questions.map((q) => `${hex(q.offset)} ${q.text} (${q.file}:${q.line})`));
-  section("Feedback on the tools", result.feedback.map((f) => `${f.kind} ${hex(f.from)}: ${f.text} (${f.file}:${f.line})`));
-  return lines;
+  return checkRomSidecar(formatRomSidecar(sidecar), pageBytes, inherited);
+}
+
+/** Every other shipped sidecar's labels by name, for the lint's clash check. */
+function otherSidecarLabels(own) {
+  const labels = new Map();
+  const walk = (dir) => {
+    for (const name of readdirSync(dir)) {
+      const path = join(dir, name);
+      if (statSync(path).isDirectory()) walk(path);
+      else if (name.endsWith(".rom.dis")) {
+        const rel = relative(ROMS, path).split(sep).join("/");
+        if (rel === `${own}.dis`) continue;
+        const json = JSON.parse(readFileSync(path, "utf8"));
+        for (const bank of Object.values(json.banks ?? {})) {
+          for (const label of bank.localLabels ?? []) labels.set(label.name, [...(labels.get(label.name) ?? []), { sidecar: rel, offset: label.value }]);
+        }
+      }
+    }
+  };
+  walk(ROMS);
+  return labels;
 }
 
 /** The level of one page, with an inheriting sidecar's inherited entries (as `rom:annotations level`). */

@@ -1,5 +1,7 @@
 # Authoring the ZX81 ROM Annotations
 
+> **Tools.** New work goes through the ROM annotation pipeline (`npm run rom:pipeline`; README, "The tools"). Most scripts this guide names were retired by it: `tools/README.md` gives the command that replaced each.
+
 A standing brief for the next session reverse-engineering `zx81.rom` into its sidecar. Read
 `README.md` (the D4 rule, provenance, the tools) and `PROVENANCE.md` (what each session did) first;
 this file adds the method, the tools, the traps and the state of the work. Update it at the end of

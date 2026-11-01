@@ -1,5 +1,7 @@
 # Authoring the Videoton TVC ROM Annotations
 
+> **Tools.** New work goes through the ROM annotation pipeline (`npm run rom:pipeline`; README, "The tools"). Most scripts this guide names were retired by it: `tools/README.md` gives the command that replaced each.
+
 Read `README.md` beside this file first (the D4 rule, provenance, the file format, the levels). This
 guide carries what is particular to the TVC: which chip is which, how they are mapped, the order of work,
 the tools and the facts read so far. The machine itself is `src/emu/machines/tvc/wasm/README.md` and

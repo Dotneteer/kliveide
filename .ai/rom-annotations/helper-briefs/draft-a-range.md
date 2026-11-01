@@ -1,3 +1,5 @@
+
+> **Superseded for new work** by `pipeline-range.md` (the ROM annotation pipeline); kept for its machine-specific notes. The scripts it names that were retired are mapped in `../tools/README.md`.
 <!-- Template: the brief given to each helper agent drafting one address range of a ROM from scratch
      (used for the +3 ROMs). Replace <WORKDIR> with the session's work folder, adapt the ROM-specific
      "Files" and "Known facts" sections, and give each helper its range and draft path in the task. -->

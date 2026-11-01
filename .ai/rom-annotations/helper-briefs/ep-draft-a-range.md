@@ -1,3 +1,5 @@
+
+> **Superseded for new work** by `pipeline-range.md` (the ROM annotation pipeline); kept for its machine-specific notes. The scripts it names that were retired are mapped in `../tools/README.md`.
 <!-- Template: the brief given to each helper agent drafting one offset range of an Enterprise 64/128 ROM page
      (first used for ep-exos21.rom page 0, EXOS 2.1's segment 00h, run at $C000). Replace <WORKDIR>, <ROM> and
      <PAGE> with the session's work folder, ROM file and 16K page; give each helper its range and draft path in

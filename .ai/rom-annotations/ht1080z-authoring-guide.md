@@ -1,5 +1,7 @@
 # Authoring the HT-1080Z ROM Annotations
 
+> **Tools.** New work goes through the ROM annotation pipeline (`npm run rom:pipeline`; README, "The tools"). Most scripts this guide names were retired by it: `tools/README.md` gives the command that replaced each.
+
 A standing brief for the sessions reverse-engineering the HT-1080Z ROMs into their sidecars. Read
 `README.md` (the D4 rule, provenance, the tools) and `PROVENANCE.md` (what each session did) first; this
 file adds what is particular to these ROMs. Update it at the end of a session: fold new learning in,

@@ -18,7 +18,7 @@ import { buildRoutines, type Routine, type RoutineMap } from "./routines";
  */
 
 /** Bumped when the analysis changes what it produces, so `inputs.json` can tell a stale bundle. */
-export const PIPELINE_VERSION = 3;
+export const PIPELINE_VERSION = 4;
 
 /** A profile run of the page (P3 writes it): per-offset access flags and the call edges seen. */
 export type RomPageProfile = {
@@ -29,6 +29,12 @@ export type RomPageProfile = {
   edges?: { caller: number; callee: number; calls: number; kind: string }[];
   /** What the run did, for the cards (`48K BASIC: PRINT, CLS, ...`). */
   recipe?: string;
+};
+
+/** What `carry` found for the routines of a carried page (`align/alignPages.ts`), by old offset. */
+export type CarriedFrom = {
+  from: string;
+  routines: { old: number; new?: number; status: "same" | "shifted" | "different" | "missing"; unmatched: number; instructions: number; name?: string }[];
 };
 
 export type MemoryFacts = {
@@ -62,6 +68,8 @@ export type RoutineAnalysis = {
   synopsis?: string;
   comments: Map<number, string>;
   work: WorkLeft;
+  /** The routine of the older version it was carried from, and how it compares (P6). */
+  carried?: { from: string; old: number; name?: string; status: "same" | "shifted" | "different"; unmatched: number; instructions: number };
 };
 
 export type RomAnalysis = {
@@ -94,6 +102,8 @@ export type AnalyseOptions = {
   profile?: RomPageProfile;
   /** The work a range should hold (the `weight` sum). */
   rangeWeight?: number;
+  /** The alignment `carry` wrote for this page. */
+  carried?: CarriedFrom;
 };
 
 export async function analyseRomPage(options: AnalyseOptions): Promise<RomAnalysis> {
@@ -150,6 +160,11 @@ export async function analyseRomPage(options: AnalyseOptions): Promise<RomAnalys
     }));
   const lines: Record<string, { synopsis?: string; comment?: string }> = bank?.lineAnnotations ?? {};
 
+  const carriedAt = new Map(
+    (options.carried?.routines ?? [])
+      .filter((r) => r.new !== undefined && r.status !== "missing")
+      .map((r) => [r.new!, r])
+  );
   const routines = routineMap.routines.map((routine): RoutineAnalysis => {
     const facts = registers.get(routine.start);
     const memory = memoryFacts(routine);
@@ -160,7 +175,32 @@ export async function analyseRomPage(options: AnalyseOptions): Promise<RomAnalys
       const comment = lines[String(row.offset)]?.comment;
       if (comment !== undefined) comments.set(row.offset, comment);
     }
-    return { routine, ...(facts ? { registers: facts } : {}), memory, coverage, ...(synopsis !== undefined ? { synopsis } : {}), comments, work: workLeft(routine, facts, synopsis, comments) };
+    const from = carriedAt.get(routine.start);
+    const carried = from
+      ? {
+          from: options.carried!.from,
+          old: from.old,
+          ...(from.name ? { name: from.name } : {}),
+          status: from.status as "same" | "shifted" | "different",
+          unmatched: from.unmatched,
+          instructions: from.instructions
+        }
+      : undefined;
+    const work = workLeft(routine, facts, synopsis, comments);
+    // --- Only the routines that differ need the AI's full attention (§4.7): the same ones nothing, the
+    // --- shifted ones a check
+    if (carried?.status === "same") work.weight = 0;
+    else if (carried?.status === "shifted") work.weight = Math.ceil(work.weight / 4);
+    return {
+      routine,
+      ...(facts ? { registers: facts } : {}),
+      memory,
+      coverage,
+      ...(synopsis !== undefined ? { synopsis } : {}),
+      comments,
+      work,
+      ...(carried ? { carried } : {})
+    };
   });
 
   const ranges = groupRanges(routines, options.rangeWeight ?? 600);

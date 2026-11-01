@@ -1,3 +1,5 @@
+
+> **Superseded for new work** by `pipeline-range.md` (the ROM annotation pipeline); kept for its machine-specific notes. The scripts it names that were retired are mapped in `../tools/README.md`.
 <!-- Template: the brief given to each helper agent drafting one offset range of a Videoton TVC BASIC ROM chip
      (first used for tvc12-d4.rom, BASIC 1.2's SYS low chip, 8K run at $C000). Replace <WORKDIR> and <ROM> with the
      session's work folder and chip; give each helper its range and draft path in the task. Merge the drafts with

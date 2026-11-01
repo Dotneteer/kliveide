@@ -81,28 +81,37 @@ provenance that names nothing.
 
 ## The tools
 
-For the 48K ROM, `tools/sp48-dis.cjs <from> <to> [sidecar]` lists the ROM through Klive's disassembler
-with the 48K decoding (RST $08 report codes, RST $28 calculator codes); the other tools below work on
-its sidecar as they do on the ZX81's. **Write every sidecar in `zx81.rom.dis`'s style**: system
-variables with underscores (CH_ADD, not CH-ADD), synopses wrapped at 92 columns with a summary first
-(`RST $xx:` or the command name leading where it applies), numbered steps for long routines and
-`Entry:`/`Exit:`/`Changes:`/`Observed:` lines last; errors as "Stops with error code n (report X)";
-comments starting with a capital, no full stop, tests as questions; a synopsis on every label; and a
-routine doing the same job as one already named in another sidecar takes that name. For the 48K ROM,
-`sp48-authoring-guide.md` beside this file carries the method, the naming lessons, the calculator
-traps, the level-2 comment pass and the tools added for it (`annotated-view.py`,
-`apply-comments.py`, `reassemble-test.ts.txt`, `sp48-probe-template.ts.txt`). For the ZX81 ROM, `zx81-authoring-guide.md` beside this file carries the session method, the
-helper scripts in `tools/` (a listing through Klive's disassembler, applying a batch through the
-formatter, the IDE's readiness check, a harness probe template) and the state of the work. For the HT-1080Z ROMs,
-`ht1080z-authoring-guide.md` carries the order of work, `tools/ht1080z-dis.cjs` (the BASIC through the
-`ht1080z-basic` decoding), the probe recipe, the facts read so far and the state of the work. For the Videoton TVC's ROMs,
-`tvc-authoring-guide.md` carries the chips and how the machine names them (8K pages at $C000/$E000), the
-order of work, `tools/tvc-dis.cjs` (`RST $30`'s inline function code), the sources that are off limits
-there and the facts read so far. For the Enterprise 64/128's ROMs, `ep-authoring-guide.md` carries
-the pages (16K segments listed at $C000, positive partition numbers), the order of work, `tools/ep-dis.cjs`
-(`RST 30h`'s EXOS function code; on the pages that hold IS-BASIC, kind `ep-exos-basic`, also the call list
-after `RST 10h`; `PAGE=<n>` for a 32K file), the probe template, the sources that are off limits (GPL
-emulators, every commented EXOS or IS-BASIC listing) and the facts read so far.
+**New work goes through the pipeline** (`npm run rom:pipeline`, `.plans/ROM_ANNOTATION_PIPELINE_PLAN.md`; the
+code is `src/common/reverse/pipeline/`): `profile <recipe>` runs the machine, `prepare <rom>` writes routine
+cards, region proposals, decoded texts and open questions (`.rom-annotations/work/<rom>/`), the AI writes `.ann`
+files (the grammar is `annFormat.ts`'s header; a helper's brief is `helper-briefs/pipeline-range.md`),
+`compile <rom> <ann...>` lays them over the sidecar and writes `problems.md` (each item with its fix) and
+`feedback-page-<n>.md` (what the run says about the tools, D11), and `carry <from> <to>` carries a sidecar to
+another version of its ROM. `listing <rom> <from>-<to> --why "..."` is the listing, recorded. The scripts it
+replaced are listed in `tools/README.md`.
+
+**Write every sidecar in `zx81.rom.dis`'s style**: system variables with underscores (CH_ADD, not CH-ADD),
+synopses wrapped at 92 columns with a summary first (`RST $xx:` or the command name leading where it
+applies), numbered steps for long routines; errors as "Stops with error code n (report X)"; comments
+starting with a capital, no full stop, under 70 characters, tests as questions; a synopsis on every label;
+and a routine doing the same job as one already named in another sidecar takes that name.
+
+**A subroutine's synopsis ends with its contract** (D10 of the pipeline plan), in this order: `Entry:` (the
+inputs: registers, flags, memory read before written; "none" when it takes nothing), `Exit:` (the outputs on
+success), `Error:` (how failure is signalled, when it can fail; optional), `Changes:` (the registers whose
+values change, 8-bit names where only one half does, then an alternate register with a prime, `AF'`, or "all
+alternates"; other state after a semicolon), `Keeps:` (the main registers that hold their values, never the
+alternates; optional), and `Observed:` (probe results). An alternate register that `Changes:` does not name
+is unchanged. For example `Changes: AF, BC, DE, AF'.` and `Keeps: HL, IX, IY.` The pipeline's register facts
+and its lint check `Changes:` and `Keeps:` against the code; the facts are "may change", so only a register
+named in `Changes:` that every return keeps is an error.
+
+The machine guides beside this file carry each ROM family's method, facts and state of the work:
+`sp48-authoring-guide.md` (the 48K: naming lessons, the calculator traps, the level-2 comment pass),
+`zx81-authoring-guide.md`, `ht1080z-authoring-guide.md`, `tvc-authoring-guide.md` (8K pages at $C000/$E000,
+`RST $30`'s inline function code, the sources that are off limits) and `ep-authoring-guide.md` (16K segments
+listed at $C000, EXOS calls and IS-BASIC's call lists, the sources that are off limits). Where they name a
+retired script, `tools/README.md` gives the pipeline command that replaced it.
 
 ```
 npm run rom:annotations                    # format every sidecar, regenerate the CRC index
@@ -112,6 +121,7 @@ npm run rom:annotations -- skeleton sp48.rom.dis
 npm run rom:annotations -- bind sp48.rom.dis sp128-1.rom
 npm run rom:annotations -- coverage        # writes .rom-annotations/coverage-sp48.json
 npm run rom:annotations:carry -- zxnext/nextzxos-2.08/enNextZX.rom.dis zxnext/nextzxos-2.10/enNextZX.rom
+npm run rom:pipeline -- carry ep-exos21.rom.dis ep-exos20.rom   # signatures, then an instruction alignment
 ```
 
 `rom:annotations:carry` (D8 of `.plans/ZXNEXT_CORE_VERSIONS_PLAN.md`) moves a sidecar's entries to a newer
@@ -126,6 +136,13 @@ make false targets), and never flags RAM addresses or changed operand values in 
 variables by 4 and the version word $0208 to $E210); a decoder's fixed call addresses must be checked for each
 new release too. The listing and check tools take the ROM from the sidecar's own path
 (`zxnext/<set>/…`), not its bare `source.fileName`, which means the 2.08 set.
+
+`rom:pipeline -- carry` uses the same re-anchoring core (now `src/common/reverse/pipeline/align/carry.ts`,
+aware of where a page runs) and then aligns the two pages instruction by instruction: what the signatures lost
+on a matched instruction is placed by the alignment, RAM addresses that moved are translated in the carried
+text (where at least two matched instructions agree), and every routine is marked same, shifted or
+different, so `prepare` sends only the different ones to the AI. On EXOS 2.1 to 2.0 it carries 1,109 of
+page 0's 1,132 labels (the signatures alone: 579).
 
 Always run the formatter before committing: the files are diffed one entry per line.
 

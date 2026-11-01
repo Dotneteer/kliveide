@@ -53,7 +53,9 @@ describe("round trip: sidecar -> .ann -> sidecar", () => {
         rom: sidecar.source.fileName,
         cpu: "z80",
         pageSize: pageSizeOf(sidecar, page),
-        ann: [{ fileName: `page-${page}.ann`, text }]
+        ann: [{ fileName: `page-${page}.ann`, text }],
+        // --- The round trip proves the format; wrapping is a style pass (120 shipped lines are longer)
+        text: { wrap: false }
       });
       // --- Written onto an emptied page, the .ann file rebuilds it ...
       const rebuilt = compileAnnotations(input(withEmptiedPage(sidecar, page)));

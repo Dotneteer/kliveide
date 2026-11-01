@@ -1,5 +1,7 @@
 # Authoring the Enterprise 64/128 ROM Annotations
 
+> **Tools.** New work goes through the ROM annotation pipeline (`npm run rom:pipeline`; README, "The tools"). Most scripts this guide names were retired by it: `tools/README.md` gives the command that replaced each.
+
 Read `README.md` beside this file first (the D4 rule, provenance, the file format, the levels). This guide
 carries what is particular to the Enterprise: which ROM page is which, how the machine names them, the order
 of work, the tools, the sources that are off limits and the facts read so far. The machine itself is

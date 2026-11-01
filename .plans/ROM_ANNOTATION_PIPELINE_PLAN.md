@@ -460,10 +460,11 @@ As built in P1 (`postprocess/compile.ts`):
   (`postprocess/newSidecar.ts`, for a ROM nobody has annotated yet). The working copy is written only when
   it is unchanged since it was read.
 
-Still to come (P7): swapping numbers for names in text (skipping other ROMs' addresses, marked numbers and
-the explicit "offset" form, listing every swap), the reassembly check (`romSourceExport` and the
-assembler), and a problem list that says the fix for each item ("unlabelled target $3688 called from $3891
-(code, ran)").
+Added in P7 (`postprocess/textPass.ts`, `lint.ts`, `report.ts`): the text pass (a changed synopsis's long
+lines wrapped at 92; `$0B40!` keeps a number; `--name-numbers` swaps labelled offsets for their names, every
+swap listed, off by default because on a page above $0000 an offset can be a RAM address), the lint, the
+problem list with a fix for every item, `feedback-page-<n>.md`, and the IDE's readiness check ("Ready to
+ship?"). The reassembly check is still `tools/reassemble-test.ts.txt` (backlog).
 
 ### 6.2 Lint (deterministic house style)
 
@@ -554,8 +555,8 @@ it: listing requests and `missing`/`wrong` feedback per routine should fall from
 | P3 | **Done.** Profile recipes per machine and the `profile` command; profile offsets known per core | P0 |
 | P4 | **Done.** Data and table detectors; region proposals with their effect on false targets | P2 |
 | P5 | **Done.** Convention plug-ins: hidden entries, inline texts, packed-text decoders (Enterprise first) | P2 |
-| P6 | Version alignment with a RAM map; the carry logic moved in, plus "same / shifted / different" | P2 |
-| P7 | Naming pass, lint (with the D10 contract checks), the problem list and `feedback.md` with the measured signals (D11); the backlog file; retire the replaced `.ai/rom-annotations/tools/` scripts; update the helper brief and the authoring guides | P1 |
+| P6 | **Done.** Version alignment with a RAM map; the carry logic moved in, plus "same / shifted / different" | P2 |
+| P7 | **Done.** Naming pass, lint (with the D10 contract checks), the problem list and `feedback.md` with the measured signals (D11); the backlog file; retire the replaced `.ai/rom-annotations/tools/` scripts; update the helper brief and the authoring guides | P1 |
 | P8 | Try it on a ROM; measure §8; review its feedback and fix the backlog before the next ROM | all |
 | P9 | The "Under the Hood" article on AI-assisted reverse engineering (§11) | P8 |
 
@@ -676,12 +677,59 @@ it: listing requests and `missing`/`wrong` feedback per routine should fall from
 - Not built: the chapter 11 exceptions to the EXOS contract; IS-BASIC's restarts' register contracts; the
   WP's own packed texts (only its phrase table is located). Each is a backlog candidate for D11's review.
 
+### 9.7 As built: P6
+
+- The carry's re-anchoring core moved from `scripts/rom-annotations-carry.cjs` to
+  `align/carry.ts` (TypeScript, tested by `test/annotations/romCarry.test.ts`; the old command line uses it).
+  It now knows where a page runs: on a $C000 page the operands it masks are $C000-$FFFF, not below $4000,
+  which is what made the EXOS 2.0 carry translate addresses by hand.
+- `align/alignPages.ts`: the two pages matched instruction by instruction between the carry's placed labels
+  (16-bit operands as wildcards; a longest common subsequence per gap, greedy over long ones), giving the
+  stretches, the **RAM translation map** (operands outside the page that differ; conflicting ones kept out),
+  and a status per old routine: same, shifted, different (some instructions unmatched; placed from its first
+  matched one), missing.
+- `align/carryPage.ts`: carry, align, then place what the signatures lost on a matched instruction, and
+  translate RAM addresses ($4000 and up, seen at least twice) in the carried text.
+- `rom:pipeline -- carry <from> <to>` writes `work/<to>/carried.rom.dis`, `alignment-page-<n>.md` (stretches,
+  RAM map, differing routines, what was not carried, text to check) and `alignment-page-<n>.json`, which
+  `prepare` reads: cards say `carried: same|shifted|different from ...`, and the work weight of a same routine
+  is 0 and of a shifted one a quarter, so ranges hold the different ones.
+- **On EXOS 2.1 to 2.0** (`align.test.ts`): 1,109 of page 0's 1,132 labels carried (579 by signature alone,
+  the 2026-11-01 session's figure), 1,039 routines shifted, 34 different, and the stretch that session found by
+  hand ($1AC6-$25D1 = $1A91-$259C, -$35); `prepare` on the result gives 9 ranges instead of 27.
+
+### 9.8 As built: P7
+
+- **Text pass** (`postprocess/textPass.ts`): see §6.1.
+- **Lint** (`postprocess/lint.ts`), on what the `.ann` files set: label length (16) and clashes with other
+  shipped sidecars' labels (a question: the same job?); comments under 70, no full stop, not restating the
+  instruction; hedges ("probably", "unclear", ...) as questions; for subroutines, the D10 lines present and in
+  order, and `Changes:`/`Keeps:` against the register facts: a register named in `Changes:` that every return
+  keeps is a problem, everything the "may change" facts cannot settle is a question.
+- **Reports** (`postprocess/report.ts`): `problems.md` per page (errors; problems with their fixes; the
+  level's unlabelled targets with their callers and whether they ran; labels without a synopsis; questions;
+  numbers named; base entries changed; and the IDE's readiness check). `feedback-page-<n>.md` (D11): the
+  `feedback` lines, and the measured signals (listing requests, definite contradictions, unknown register facts
+  the AI settled, data regions no detector proposed, problems that recur over compiles from
+  `compile-history-page-<n>.jsonl`), grouped by stage, each with a proposed change.
+- **The backlog** is `.ai/rom-annotations/pipeline-backlog.md` (its format; the known gaps listed for review).
+- **Retired** from `.ai/rom-annotations/tools/`: the six `*-dis.cjs` listings, `listing-range.py`,
+  `annotated-view.py`, `merge-drafts.py`, `apply-draft.py`, `apply-comments.py`, `apply-annotations.cjs`,
+  `check-annotations.cjs`; `tools/README.md` maps each to its command. Kept: `map-rom.py`/`build-mapped.py`
+  (the Spectrum's inline words after `CALL $3E80`), `error-bytes.py`, the reassembly and probe templates,
+  `pdf-text.py`.
+- **Briefs and guides:** a new helper brief, `helper-briefs/pipeline-range.md` (§7 step 4); the README's tool
+  section and house style (with the D10 contract) rewritten for the pipeline; the machine guides and older
+  briefs point to the pipeline and to `tools/README.md`.
+- **Tried:** a trial `.ann` on EXDOS caught a deliberate `Changes:` contradiction (BC and F, kept by
+  `PUSH`/`POP`), the comment rules, the hedge, and wrapped the long synopsis line; its feedback grouped the
+  `feedback` line, the listing request and the contradiction by stage.
+
 ## 10. Details still to settle
 
 The open questions are decided (§2, D4-D11). What is left is detail, settled while building the phase named:
 
-1. **Marking a number that must stay a number** in `.ann` text, so the naming pass leaves it alone (§5;
-   P1, P7).
+1. ~~Marking a number that must stay a number~~: settled in P7 as `$0B40!` (§9.8).
 2. **The measurement** (§8): what is recorded per helper and where, fixed before EXDOS 1.3 starts (P8).
 3. **EXDOS page 1**: which commands reach it (the `ep128-exdos` recipe runs page 0 only), before
    EXDOS 1.3 is annotated (P8).

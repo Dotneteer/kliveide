@@ -18,6 +18,10 @@ profile and its sidecar into routine cards and facts, and a **postprocessor** th
 - `profile/romPageProfile.ts`: a run cut into one page's profile. The recipes that make runs need cores,
   so they are test code: `test/rom-annotations/profileRecipes.ts`.
 - `preprocess/proposals.ts`: region proposals from the walk, the run and the detectors (P4).
+- `align/`: `carry.ts` (the signature re-anchoring, also behind `rom:annotations:carry`), `alignPages.ts`
+  (instruction alignment, stretches, RAM map, routine status) and `carryPage.ts` (P6).
+- `postprocess/textPass.ts`, `lint.ts`, `report.ts`: the text pass, the lint with the D10 checks, and the
+  problem and feedback reports (P7).
 - `conventions/`: the plug-in shape, the registry, and the Enterprise plug-in (P5). A plug-in names the
   source of every fact it adds (D4), and gets a `PROVENANCE.md` entry.
 

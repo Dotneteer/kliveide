@@ -9,6 +9,7 @@ import {
 } from "../annFormat";
 import type { Cpu } from "../image/cpu";
 import { sidecarRegionOf, type SidecarRegion } from "./regionKinds";
+import { dropKeptMarks, nameNumbers, wrapSynopsis } from "./textPass";
 
 /*
  * The postprocessor's core (`.plans/ROM_ANNOTATION_PIPELINE_PLAN.md` §6.1, P1): `.ann` files laid over
@@ -52,6 +53,11 @@ export type CompileInput = {
   /** The page's size in bytes: offsets past it are errors, and the regions must cover it. */
   pageSize: number;
   ann: readonly { fileName: string; text: string }[];
+  /**
+   * The text pass (`textPass.ts`): wrapping a changed synopsis's long lines (default on) and naming
+   * labelled offsets (default off). Kept-number marks (`$0B40!`) are always dropped.
+   */
+  text?: { wrap?: boolean; nameNumbers?: boolean };
 };
 
 export type CompileResult = {
@@ -62,6 +68,10 @@ export type CompileResult = {
   changes: CompileChange[];
   questions: (AnnQuestion & { file: string })[];
   feedback: (AnnFeedback & { file: string })[];
+  /** Numbers the naming pass swapped for labels, by offset. */
+  swaps: { offset: number; swaps: string[] }[];
+  /** The offsets whose label or line a file set: what the lint looks at. */
+  touched: { labels: Set<number>; lines: Set<number>; regions: AnnRegion[] };
 };
 
 type Bank = {
@@ -84,7 +94,16 @@ export function compileAnnotations(input: CompileInput): CompileResult {
   const bank = sidecar.banks?.[pageKey] as Bank | undefined;
   if (!bank) {
     error(`The base sidecar has no bank for page ${input.page}`);
-    return { sidecar, text: formatRomSidecar(sidecar), problems, changes, questions: [], feedback: [] };
+    return {
+      sidecar,
+      text: formatRomSidecar(sidecar),
+      problems,
+      changes,
+      questions: [],
+      feedback: [],
+      swaps: [],
+      touched: { labels: new Set(), lines: new Set(), regions: [] }
+    };
   }
   bank.regions ??= [];
   bank.localLabels ??= [];
@@ -110,6 +129,7 @@ export function compileAnnotations(input: CompileInput): CompileResult {
 
   // --- Provenance the files give, by sidecar key (without the page)
   const setBy = new Map<string, Provenance>();
+  const swaps: { offset: number; swaps: string[] }[] = [];
   const marked = new Map<string, Provenance>();
   for (const { document } of files) {
     for (const mark of document.provenance) marked.set(`${mark.offset}:${mark.kind}`, mark.provenance);
@@ -128,7 +148,12 @@ export function compileAnnotations(input: CompileInput): CompileResult {
 
   const questions = files.flatMap(({ name, document }) => document.questions.map((q) => ({ ...q, file: name })));
   const feedback = files.flatMap(({ name, document }) => document.feedback.map((f) => ({ ...f, file: name })));
-  return { sidecar, text: formatRomSidecar(sidecar), problems, changes, questions, feedback };
+  const touched = {
+    labels: new Set(files.flatMap(({ document }) => document.labels.map((l) => l.offset))),
+    lines: new Set(files.flatMap(({ document }) => [...document.synopses, ...document.comments].map((t) => t.offset))),
+    regions: files.flatMap(({ document }) => document.regions)
+  };
+  return { sidecar, text: formatRomSidecar(sidecar), problems, changes, questions, feedback, swaps, touched };
 
   // ----------------------------------------------------------------------------------------------
 
@@ -271,15 +296,27 @@ export function compileAnnotations(input: CompileInput): CompileResult {
   }
 
   function applyTexts() {
+    const labelsAt = new Map(bank!.localLabels.map((l) => [l.value, l.name]));
     for (const { name: file, document } of files) {
       for (const [what, entries] of [["synopsis", document.synopses], ["comment", document.comments]] as const) {
         for (const entry of entries) {
           const key = String(entry.offset);
           const line = (bank!.lineAnnotations[key] ??= {});
-          if (line[what] !== undefined && line[what] !== entry.text) {
-            changes.push({ offset: entry.offset, what, before: line[what], after: entry.text, file, line: entry.line });
+          let text = entry.text;
+          if (text !== line[what]) {
+            // --- The text pass runs on text the file changes, never on text already in the sidecar
+            if (input.text?.nameNumbers) {
+              const named = nameNumbers(text, labelsAt, input.pageSize);
+              if (named.swaps.length) swaps.push({ offset: entry.offset, swaps: named.swaps });
+              text = named.text;
+            }
+            text = dropKeptMarks(text);
+            if (what === "synopsis" && input.text?.wrap !== false) text = wrapSynopsis(text);
           }
-          line[what] = entry.text;
+          if (line[what] !== undefined && line[what] !== text) {
+            changes.push({ offset: entry.offset, what, before: line[what], after: text, file, line: entry.line });
+          }
+          line[what] = text;
           setBy.set(`${entry.offset}:line`, provenanceFor(document, `${entry.offset}:line`));
         }
       }

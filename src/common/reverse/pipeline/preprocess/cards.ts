@@ -44,6 +44,16 @@ export function renderCard(analysis: RomAnalysis, item: RoutineAnalysis): string
   if (jumps.length || routine.fallsThrough) {
     lines.push(`   leaves:   ${[...unique(jumps), ...(routine.fallsThrough ? ["falls through into the next routine"] : [])].join(", ")}`);
   }
+  if (item.carried) {
+    const c = item.carried;
+    const what =
+      c.status === "same"
+        ? "the same bytes: check only"
+        : c.status === "shifted"
+          ? "every instruction matched, moved or with other operands: check the text"
+          : `${c.unmatched} of ${c.instructions} instruction(s) have no partner: rewrite what changed`;
+    lines.push(`   carried:  ${c.status} from ${c.from} $${hex(c.old)}${c.name ? ` ${c.name}` : ""} (${what})`);
+  }
   if (item.registers) lines.push(...registerLines(item.registers));
   const memory = item.memory;
   const ram = [
@@ -198,6 +208,13 @@ export function renderOverview(analysis: RomAnalysis): string {
     `# ${analysis.image.name} page ${analysis.bankId}`,
     "",
     `CPU ${analysis.image.cpu}; ROM kind ${analysis.image.romKind ?? "unknown"}; decoded at $${hex(analysis.decoded.origin)}; ${analysis.decoded.size} bytes.`,
+    ...(routines.some((r) => r.carried)
+      ? [
+          `Carried from ${routines.find((r) => r.carried)!.carried!.from}: ${["same", "shifted", "different"]
+            .map((st) => `${routines.filter((r) => r.carried?.status === st).length} ${st}`)
+            .join(", ")}; ${routines.filter((r) => !r.carried).length} routine(s) not carried.`
+        ]
+      : []),
     `${routines.length} routines: ${count("subroutine")} subroutines, ${count("jump-target")} jump targets, ${count("entry-point")} entry points, ${count("unreached")} unreached.`,
     `Work left (weight): ${work}, in ${analysis.ranges.length} range(s). Open questions: ${analysis.questions.length} (questions.md). Region proposals: ${analysis.proposals.length} (proposals.md).`,
     "",
@@ -301,6 +318,7 @@ export function factsJson(analysis: RomAnalysis): unknown {
       calls: r.routine.calls,
       jumpsOut: r.routine.jumpsOut,
       fallsThrough: r.routine.fallsThrough,
+      carried: r.carried,
       registers: r.registers,
       memory: r.memory,
       coverage: { ...r.coverage, dataReadInCode: r.coverage.dataReadInCode.length },

@@ -1,3 +1,5 @@
+
+> **Superseded for new work** by `pipeline-range.md` (the ROM annotation pipeline); kept for its machine-specific notes. The scripts it names that were retired are mapped in `../tools/README.md`.
 <!-- Template: the brief given to the helper drafting one HT-1080Z extension ROM (2K at $3000-$37FF).
      Replace <WORKDIR>, <ROM> (ht1080z-s1-ext.rom / ht1080z-s64-ext.rom), <LISTING>, <SIDECAR> and give the
      draft path in the task. Merge with merge-drafts.py. -->
