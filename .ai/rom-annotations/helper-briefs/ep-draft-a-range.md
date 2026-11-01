@@ -1,7 +1,9 @@
 <!-- Template: the brief given to each helper agent drafting one offset range of an Enterprise 64/128 ROM page
      (first used for ep-exos21.rom page 0, EXOS 2.1's segment 00h, run at $C000). Replace <WORKDIR>, <ROM> and
      <PAGE> with the session's work folder, ROM file and 16K page; give each helper its range and draft path in
-     the task. Merge the drafts with merge-drafts.py, then fix clashes by hand. -->
+     the task. Merge the drafts with merge-drafts.py, then fix clashes by hand. For a page that holds IS-BASIC
+     code (EXOS 2.1's segment 01h, the cartridges) add the section "IS-BASIC code" below and give the helpers the
+     call dictionary first (basic-calls.md, written by two helpers before the ranges). -->
 # Brief: draft level-2 annotations for part of an Enterprise ROM page
 
 You draft annotations for one offset range of page <PAGE> of `src/public/roms/<ROM>` (a 16K segment of the
@@ -25,6 +27,14 @@ forbidden.**
   a RAM layout or a description of how the ROM does something from it: that comes from the code.
 - System-segment variables without a published name (most of $B000-$BFEC) have no names here: describe them by
   address and by the use the code makes of them ("$BF79, set while an EXOS call is running").
+
+## IS-BASIC code (only for a page that holds it)
+- `RST 10h` is followed by a call list: routine bytes ended by $00, listed as `.defb` lines "(IS-BASIC call: ...)".
+  Comment each routine byte with what that step does (from `basic-calls.md`), each operand line with what it is.
+  A routine of this page that the call table reaches already has its label in `basic-calls.md`: use it exactly.
+- `LD HL,nnnn / RST 20h` raises IS-BASIC error nnnn, `RST 18h` error 9000 + A when NZ. Say which error, with its
+  text when known. `LD L,n` entries hidden in `LD DE,$xx2E` runs are entries inside instructions.
+- Labels are unique across the whole ROM file: the other page's names are listed in the work folder.
 
 ## What you may read
 - The bytes, through Klive's disassembler: the listing `<WORKDIR>/full.lst`

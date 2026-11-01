@@ -56,6 +56,9 @@ export type RomPageKind =
   // --- The Enterprise 64/128's ROMs, each 16K segment listed at $C000 (page 3), where EXOS runs its own
   // --- segments and enters an extension ROM. Their RST 30h is the EXOS call, followed by a function code
   | "ep-exos"
+  // --- An EXOS page that carries IS-BASIC code (EXOS 2.1's segment 01h): its RST 10h is IS-BASIC's far
+  // --- call, followed by the byte that picks the routine
+  | "ep-exos-basic"
   | "ep-ext"
   // --- The ZX Spectrum Next: NextZXOS's pages (and the alternate ROM's), the DivMMC and Multiface ROMs
   | "next-basic"
@@ -162,7 +165,7 @@ export const KNOWN_ROM_PAGES: Readonly<Record<string, KnownRomPage>> = {
   // --- IS-BASIC cartridges (segment 04h) and EXDOS 1.3 (segments 20h-21h). Klive's own FILE: ROM is
   // --- assembled from its source and has no annotations
   "2169c49c": { file: "ep-exos21.rom", kind: "ep-exos", page: 0 },
-  "9eaf280b": { file: "ep-exos21.rom", kind: "ep-exos", page: 1 },
+  "9eaf280b": { file: "ep-exos21.rom", kind: "ep-exos-basic", page: 1 },
   "20b29761": { file: "ep-exos20.rom", kind: "ep-exos", page: 0 },
   e4367a35: { file: "ep-exos20.rom", kind: "ep-exos", page: 1 },
   "55f96251": { file: "ep-basic21.rom", kind: "ep-ext" },
@@ -192,6 +195,7 @@ export function romKindOrigin(kind: RomPageKind | undefined): number {
     case "tvc-exth":
       return 0xe000;
     case "ep-exos":
+    case "ep-exos-basic":
     case "ep-ext":
       return 0xc000;
     default:
@@ -207,6 +211,11 @@ export function romKindIsTvc(kind: RomPageKind | undefined): boolean {
 /** Whether a page of this kind is the Enterprise's, whose `RST 30h` is followed by an EXOS function code. */
 export function romKindIsEnterprise(kind: RomPageKind | undefined): boolean {
   return kind !== undefined && kind.startsWith("ep-");
+}
+
+/** Whether a page of this kind holds IS-BASIC code, whose `RST 10h` is followed by the routine's byte. */
+export function romKindHasBasicCalls(kind: RomPageKind | undefined): boolean {
+  return kind === "ep-exos-basic";
 }
 
 /** Whether a page of this kind is the Next's, whose code uses the Z80N's extra opcodes. */

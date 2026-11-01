@@ -1,5 +1,5 @@
 import { DisassemblyItem, FetchResult, MemorySection } from "../common-types";
-import { intToX2 } from "../utils";
+import { intToX2, intToX4 } from "../utils";
 import { CUSTOM_Z80_DISASSEMBLY_TOOL, ICustomDisassembler, IDisassemblyApi } from "./custom-disassembly";
 
 /*
@@ -14,6 +14,7 @@ import { CUSTOM_Z80_DISASSEMBLY_TOOL, ICustomDisassembler, IDisassemblyApi } fro
  */
 
 const RST_30 = 0xf7;
+const RST_10 = 0xd7;
 
 /** The EXOS functions, by the code that follows `RST 30h` */
 export const EXOS_FUNCTIONS: ReadonlyMap<number, string> = new Map<number, string>([
@@ -86,6 +87,102 @@ export class EpCustomDisassembler implements ICustomDisassembler {
     if (item.opCodes?.length === 1 && item.opCodes[0] === RST_30) {
       this._inExosCall = true;
       item.hardComment = "(EXOS call)";
+    }
+  }
+}
+
+/*
+ * IS-BASIC's call list. The BASIC cartridge puts a gate in the null segment's RAM ($0010 -> $009A): `RST 10h`
+ * is followed by a list of routine bytes ended by $00, and execution goes on after the $00. The gate calls the
+ * routines one after the other; a byte with bit 7 set picks entry n & $7F of EXOS segment 1's word table (at
+ * $C000 + 2n of segment 1, which carries much of IS-BASIC 2.1), a byte below $80 entry n of the BASIC ROM's own
+ * table ($C0E8 + 2n of its segment), and $00 (that table's entry 0) leaves the list. A routine may take inline
+ * operands, reading them through the gate's pointer: $92 a byte, $93 and $96 a word (EXOS 2.1's segment 1,
+ * read from their code and observed in the running gate; `.ai/rom-annotations/ep-authoring-guide.md`).
+ * The restart means this only in IS-BASIC's own code, so the decoding is gated on the ROM pages that hold it
+ * (kind "ep-exos-basic").
+ */
+
+/** The inline operand bytes the routines of IS-BASIC 2.1's call list take, by routine byte */
+export const BASIC_CALL_OPERANDS: ReadonlyMap<number, 1 | 2> = new Map<number, 1 | 2>([
+  [0x92, 1],
+  [0x93, 2],
+  [0x96, 2]
+]);
+
+/** A list longer than this is not one: the decoder stops and goes back to code */
+const MAX_BASIC_CALLS = 64;
+
+/** The comment on a byte of the list after IS-BASIC's `RST 10h` */
+export function basicCallComment(code: number): string {
+  if (code === 0) return "(IS-BASIC call list: end)";
+  return code & 0x80
+    ? `(IS-BASIC call: segment 1, entry ${code & 0x7f})`
+    : `(IS-BASIC call: the BASIC ROM, entry ${code})`;
+}
+
+export class EpBasicCustomDisassembler implements ICustomDisassembler {
+  private _api: IDisassemblyApi;
+  private _inList = false;
+  private _calls = 0;
+  private _operand: 0 | 1 | 2 = 0;
+
+  readonly toolId = CUSTOM_Z80_DISASSEMBLY_TOOL;
+
+  setDisassemblyApi(api: IDisassemblyApi): void {
+    this._api = api;
+  }
+
+  startSectionDisassembly(_section: MemorySection): void {
+    this._inList = false;
+    this._operand = 0;
+  }
+
+  beforeInstruction(fetchResult: FetchResult): boolean {
+    if (!this._inList) return false;
+    const decimal = this._api.decimalMode;
+    if (this._operand) {
+      const size = this._operand;
+      this._operand = 0;
+      const low = this._api.fetch().opcode;
+      if (size === 1) {
+        this._api.addDisassemblyItem({
+          address: fetchResult.offset,
+          opCodes: [low],
+          instruction: `.defb ${decimal ? low.toString(10) : `$${intToX2(low)}`}`,
+          hardComment: "(operand)"
+        });
+      } else {
+        const high = this._api.fetch().opcode;
+        const value = (high << 8) | low;
+        this._api.addDisassemblyItem({
+          address: fetchResult.offset,
+          opCodes: [low, high],
+          instruction: `.defw ${decimal ? value.toString(10) : `$${intToX4(value)}`}`,
+          hardComment: "(operand)"
+        });
+      }
+      return true;
+    }
+    const code = this._api.fetch().opcode;
+    this._api.addDisassemblyItem({
+      address: fetchResult.offset,
+      opCodes: [code],
+      instruction: `.defb ${decimal ? code.toString(10) : `$${intToX2(code)}`}`,
+      hardComment: basicCallComment(code)
+    });
+    this._calls++;
+    if (code === 0 || this._calls >= MAX_BASIC_CALLS) this._inList = false;
+    else this._operand = BASIC_CALL_OPERANDS.get(code) ?? 0;
+    return true;
+  }
+
+  afterInstruction(item: DisassemblyItem): void {
+    if (item.opCodes?.length === 1 && item.opCodes[0] === RST_10) {
+      this._inList = true;
+      this._calls = 0;
+      this._operand = 0;
+      item.hardComment = "(IS-BASIC call list)";
     }
   }
 }

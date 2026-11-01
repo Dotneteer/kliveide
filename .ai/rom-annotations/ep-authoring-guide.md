@@ -27,8 +27,8 @@ Every Enterprise ROM page is a 16K segment listed at **$C000** (`romKindOrigin`:
 | # | File, page | What | Kind | Notes |
 |---|---|---|---|---|
 | 1 | `ep-exos21.rom` page 0 | EXOS 2.1, segment 00h: the kernel, VIDEO, SOUND, KEYBOARD, EDITOR | `ep-exos` | Done (below) |
-| 2 | `ep-exos21.rom` page 1 | EXOS 2.1, segment 01h: the other devices and the word processor | `ep-exos` | Next; it calls into page 0 and back |
-| 3 | `ep-basic21.rom` | IS-BASIC 2.1 (cartridge, segment 04h) | `ep-ext` | An extension ROM: `EXOS_ROM` header; keyword table at $35A7 (Phase 7) |
+| 2 | `ep-exos21.rom` page 1 | EXOS 2.1, segment 01h: IS-BASIC 2.1's added routines, the clock, PRINTER, TAPE, SERIAL, NET, the word processor | `ep-exos-basic` | Done (below) |
+| 3 | `ep-basic21.rom` | IS-BASIC 2.1 (cartridge, segment 04h) | `ep-ext` | Next. An extension ROM: `EXOS_ROM` header; keyword table at $35A7 (Phase 7). Its code uses the same call lists: make its kind decode them (check the gate first) and start from `basic-calls-cart.md`'s findings (below) |
 | 4 | `ep-exos20.rom`, `ep-basic20.rom` | the 64's EXOS 2.0 and IS-BASIC 2.0 | `ep-exos`, `ep-ext` | Own sidecars, not `inherits`: only about 2.5K (page 0), 4.5K (page 1) and 1.8K (BASIC) of 2.1's bytes recur in runs of 64 or more. Reuse 2.1's names where a routine does the same job |
 | 5 | `ep-exdos13.rom` | EXDOS 1.3 (segments 20h-21h) | `ep-ext` | Last: which EXDOS 1.3 image is the original is still open (`src/public/roms/ep-roms-readme.txt`) |
 
@@ -61,6 +61,13 @@ PAGE=0 node $T/apply-annotations.cjs $S/trial.dis $S/batch.json $S/code.lst
 node $T/check-annotations.cjs $S/trial.dis        # "problems": [] is clean
 cp $S/trial.dis $F && npm run rom:annotations -- level ep-exos21.rom.dis
 ```
+
+**IS-BASIC's call lists.** On a page of kind `ep-exos-basic` (EXOS 2.1's segment 01h) the decoder also lists
+the bytes after `RST 10h` as data (`EpBasicCustomDisassembler`, chained after the EXOS one; the machine's live
+disassembler gates it on that kind through `inRomOfKind`): one `.defb` per routine byte, "(IS-BASIC call:
+segment 1, entry n)" for $80-$C5 and "(... the BASIC ROM, entry n)" below $80, the inline operands of $92 (a
+byte) and $93/$96 (a word) as `(operand)` lines, and the $00 that ends the list. The IDE's `dis` command
+applies no machine decoder (neither EXOS's nor this one); the Disassembly panel does.
 
 `merge-drafts.py` takes a draft's `"manual"` list (`"$xxxx:label"`, `"$xxxx:line"`) for entries that state a
 fact from the specification.
@@ -127,6 +134,38 @@ own bytes before reusing one there.
 - **The last three bytes** ($3FFD-$3FFF) are reached and read by nothing after the boot; the boot's checksum
   over the 32K comes to 0 with them.
 
+### Segment 01h (page 1)
+
+Read from the bytes and observed in runs (`PROVENANCE.md`, 2026-11-01, page 1).
+
+- **Two programs share the page.** $0000-$240E is IS-BASIC 2.1's own code (it runs only while IS-BASIC is the
+  application); $240F-$3FFF is EXOS's: the service entry, the clock, PRINTER, TAPE, SERIAL, NET, the extension
+  entry and the Enterprise Word Processor (WP), which is the application when no cartridge takes the cold start.
+- **The header** has an extension ROM's shape without "EXOS_ROM": $0008 = $676A, the device chain (PRINTER ->
+  TAPE -> SERIAL -> NET; PRINTER's and TAPE's tables start two bytes early, as EDITOR's); $000A `JP` the extension
+  entry (action 1 cold start -> WP, 2 command ":WP", 3 help, 5 explain error code); $000D `JP` the service entry
+  that page 0's SEG1_SERVICE calls (0 read time ... 6 start-up). $0000-$0007 and $0010-$008B are IS-BASIC's call
+  table: entry n at $C000 + 2n.
+- **IS-BASIC's gate** is RAM the cartridge writes into the null segment: `RST 08h` calls HL in segment A, `RST 10h`
+  runs a call list (bytes ended by $00; bit 7 set: this page's table, else the cartridge's at $C0E8; the list
+  pointer at $00DA, read by `CALL $0013`/`$0015` for inline operands), `RST 18h` raises error 9000 + A when NZ,
+  `RST 20h` raises error HL. IX is always $0200, so `(IX+n)` is IS-BASIC's variable $0200 + n.
+- **Numbers** are 9-byte stack items (type 2, a BCD mantissa least significant byte first, the leading digit in
+  +6's high nibble, +8 the sign and an exponent biased by $40, $7F at +8 for the 16-bit integer form); the stack
+  pointer is ($0228) and the stack grows down. A 7-byte form (the item without its type and +7) is how the
+  constant table ($008C, 43 entries) and R1/R2 ($0E0B, $0E12) hold them.
+- **Packed texts.** IS-BASIC's error messages, class names and dictionary ($2038-$235B) and EXOS's error texts
+  ($3E72) are 4-bit codes over "EONRTAISCLDU " with escapes (`TEXT_UNPACK` $235C); the WP's help pages use another
+  bit stream (letters as 1 + 5 bits, phrases from $39A5).
+- **A tamper check.** The start-up stores $AC XOR the 25 bytes at $3FD8 at $BF7E; one second tick in eight
+  (chosen by R) subtracts the 229 bytes from $266E from it and compares with $3FFD. The ROM as shipped passes; a
+  mismatch decrements a system-segment byte.
+- **Bugs reproduced in runs:** `POS("aab","ab")` gives 0 (a partial match restores only H); RTRIM$ trims nothing
+  past 128 characters (`JP P` on the count); MOD with a negative divisor gives 0; MAXLEN of a string-array
+  element gives 0. Each is described where the code does it.
+- **Unknown command strings end at the WP**: its command check pops its caller and answers .NOSTR for any
+  command other than "WP", so segment 1, the last ROM in the list, gives the "Unrecognised command string" answer.
+
 ## Disassembly traps
 
 - **Entries inside instructions** (22 on page 0): `LD BC,nn`, `LD DE,nn`, `LD HL,nn`, `LD IY,nn` and `CP n`
@@ -142,14 +181,32 @@ own bytes before reusing one there.
 - **Tables read as code make false targets far away**: the boot texts at $017A-$01B2, the font at $25D2-$2847
   and the device tables all did. Mark the data first, then count.
 - **Regions that touch merge**: the device descriptors and their entry tables differ in type (bytes, words),
-  so they stay apart.
+  so they stay apart. A table of entries listed one per row is a run of regions with alternating types or
+  `rowBytes` (bytes only: a `words` region takes no `rowBytes`, so its rows break only at labels; segment 1's
+  call table lists its entries in the synopsis instead).
+- **Segment 1: data that hides entries.** `LD DE,$xx2E` runs hide `LD L,n` error entries ($020E-$0260, BLACK ...
+  WHITE at $04FA), `LD HL,$083E` hides argument helpers, and call bytes enter inside functions; 23 targets inside
+  instructions in all, each explained on the instruction.
+- **A call list read as code** swallows the following instructions and makes false targets; the decoder only
+  knows the operands of $92, $93 and $96. A new operand-taking routine (the cartridge's, for IS-BASIC 2.1) must be
+  added to `BASIC_CALL_OPERANDS` before its page is measured.
 
 ## State of the work
 
 | Sidecar | Level | Labels | Notes |
 |---|---|---|---|
 | `ep-exos21.rom.dis` page 0 | **2** | 1,132 | 48 data regions, 4,717 annotated lines (443 `manual` entries); reassembles byte for byte; checked in the running IDE (`dis` at $D4D0 and $C410 with segment 0 in page 3, the editor's Ready chip) |
-| the others | 0 | | next: `ep-exos21.rom` page 1 (segment 01h) |
+| `ep-exos21.rom.dis` page 1 | **2** | 923 | 519 data regions (the function, SET-option and constant tables one entry per row), 4,333 annotated lines (325 `manual`), 7,184 instructions, 23 targets inside instructions; reassembles byte for byte; checked in the running IDE (`dis $E47A` at a breakpoint shows SVC_TICK, `ann-info` lists page 1's sidecar, the editor's Ready chip) |
+| the others | 0 | | next: `ep-basic21.rom` (IS-BASIC 2.1) |
+
+**Method that worked (page 1).** A profile over ~100 typed IS-BASIC commands and the WP's keys; then a probe
+that dumped the null segment's low RAM, which showed the cartridge's gate and the call lists, and a second one
+that logged every list step (operand counts). The decoder came before any drafting. Two helpers then wrote the
+call dictionary (`basic-calls.md`: what every routine byte does, both tables, with chosen labels for this page's),
+and eleven drafted ranges ($0000/$0500/$0A00/$0DCE/$1400/$1BF0 for IS-BASIC, $240F/$2757/$2BFE/$3221/$3798 for
+EXOS; the EXOS ones did not need the dictionary and started first). Merged in address order (overlapping table
+regions keep the first draft's); two name clashes, 83 numeric references to labelled code swapped for names, every
+"probably" settled from the code or a probe.
 
 **Method that worked (page 0).** A profile run first (boot, then ~60 typed IS-BASIC commands, reads counted only
 after the boot), the reset code, the RAM copies, the dispatcher and the device chain read by hand into

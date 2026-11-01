@@ -31,6 +31,7 @@ for f in drafts:
         if any(not(e<x['start'] or s>x['end']) for x in regions): report.append(f"{tag}: region {r['start']}-{r['end']} overlaps, skipped"); continue
         nr={"start":s,"end":e,"type":r.get('type','bytes')}
         if r.get('decode'): nr['decode']=r['decode']
+        if r.get('rowBytes'): nr['rowBytes']=r['rowBytes']
         regions.append(nr); pv[f'{PAGE}:{s}:region']='observed'
     for k,n in dr.get('labels',{}).items():
         a=H(k)
