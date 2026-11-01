@@ -137,12 +137,18 @@ static void zxnextPortsWrite(uint32_t address, uint32_t value) {
      they do not also reach $7FFD, $DFFD, $1FFD or $3FFD (`port_fd_conflict_wr`) */
   uint32_t fdConflict = ((normalized & 0x00ffu) == 0x00f1u || (normalized & 0x00ffu) == 0x00f9u) &&
     zxnextPortsGroupEnabled(2, 2);
+  /* ~3815: a $3FFD write with the FDC trap on raises the trap NMI. It does not end the write: the
+     $7FFD decode (~2549) ignores the trap and, outside +3 timing, A14, so it may page as well */
   if (!fdConflict && (zxnextNextRegs[0xd8u] & 0x01u) != 0u && (normalized & 0xf003u) == 0x3001u) {
     zxnextNmiIoTrap(3u, byteValue, 1u);
-    return;
   }
   zxnextMultifaceWritePort(normalized, byteValue);
   zxnextDacWritePort(normalized, byteValue);
+#if ZXNEXT_CORE_VERSION >= 30204
+  /* the +3 disk motor latch (zxnext-expansion.c): every $1FFD-decoded write, enabled or not, also when a
+     disabled $1FFD makes the same write a $7FFD one below */
+  if (!fdConflict && (normalized & 0xf003u) == 0x1001u) zxnextExpansionWriteMotor(byteValue);
+#endif
 
   // --- Ports that change the picture: render what the beam has drawn so far with the old state.
   // --- Even ports are the ULA's $FE; only a border colour change matters (beeper writes are frequent).
@@ -194,16 +200,15 @@ static void zxnextPortsWrite(uint32_t address, uint32_t value) {
     }
   } else if (fdConflict) {
     /* a Soundrive 2 DAC write (zxnextDacWritePort above), nothing else */
-  } else if ((normalized & 0x8003u) == 0x0001u && (normalized & 0xf000u) != 0x1000u &&
+  } else if ((normalized & 0x8003u) == 0x0001u &&
+             ((normalized & 0xf000u) != 0x1000u || !zxnextPortsGroupEnabled(0, 3)) &&
              ((normalized & 0x4000u) != 0u || zxnextNextRegGetMachineTiming() != 3u)) {
-    /* ~2549: A15 = 0, A1-0 = 01, not $1FFD; A14 = 1 is decoded only in +3 timing */
+    /* ~2549: A15 = 0, A1-0 = 01, not $1FFD; A14 = 1 is decoded only in +3 timing. "Not $1FFD" holds only
+       while the $1FFD port is enabled (~2555: `port_1ffd` includes its enable, NextReg $82 bit 3) */
     if (zxnextPortsGroupEnabled(0, 1)) zxnextMemorySetPort7ffd(byteValue);
   } else if ((normalized & 0xf003u) == 0xd001u) {
     if (zxnextPortsGroupEnabled(0, 2)) zxnextMemorySetPortDffd(byteValue);
   } else if ((normalized & 0xf003u) == 0x1001u) {
-#if ZXNEXT_CORE_VERSION >= 30204
-    zxnextExpansionWriteMotor(byteValue); /* the +3 disk motor latch (zxnext-expansion.c) */
-#endif
     if (zxnextPortsGroupEnabled(0, 3)) zxnextMemorySetPort1ffd(byteValue);
   } else if ((normalized & 0xf0ffu) == 0xe0f7u) {
     /* $EFF7 (zxnext.vhd ~2560): A15-12 = 1110, low byte $F7; internal port enable bit 26 = $85 bit 2 */
@@ -231,9 +236,10 @@ static void zxnextPortsWrite(uint32_t address, uint32_t value) {
     /* The Pi I2S EAR bit's MIC transitions so far go first: the beeper keeps them in order */
     zxnextPiI2sSync();
     zxnextBeeperSetOutput((byteValue & 0x10u) != 0u, (byteValue & 0x08u) != 0u);
-  } else if ((normalized & 0xc002u) == 0xc000u) {
+  } else if ((normalized & 0xc007u) == 0xc005u) {
+    /* ~2602-2603: $FFFD and $BFFD need A15-14, A2 = 1 and A1-0 = 01; $FFE9 or $BFE9 are not AY ports */
     if (zxnextPortsGroupEnabled(2, 0)) zxnextPsgSetRegisterIndex(byteValue);
-  } else if ((normalized & 0xc002u) == 0x8000u) {
+  } else if ((normalized & 0xc007u) == 0x8005u) {
     if (zxnextPortsGroupEnabled(2, 0)) zxnextPsgWriteRegisterValue(byteValue);
   }
 }

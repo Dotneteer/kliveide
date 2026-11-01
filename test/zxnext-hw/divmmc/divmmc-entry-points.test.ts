@@ -309,6 +309,40 @@ Park:   jr Park`,
     });
   });
 
+  // --- DIV-037: what counts as "ROM 3" ------------------------------------------------------------------
+
+  // Parity finding: the core counted "ROM 3 present" only when the slot held exactly $FF and the selected
+  // ROM was ROM 3, whatever the machine type, config mode and the Alt ROM. zxnext.vhd ~2937-2963:
+  // `sram_rom3` is '1' on a 48K machine type (its one ROM is the 48K BASIC), `$7FFD bit 4` on a 128K type
+  // and ROM 3 on a +3; ~2992-3012: any page >= $E0 in slot 0/1 is the ROM path, config mode is not;
+  // ~3093: with the Alt ROM read-enabled ($8C bit 7, not bit 6) `sram_pre_alt_128_n` decides instead.
+  it("DIV-037: the ROM 3 gate follows the machine type, pages >= $E0, config mode and the Alt ROM", async () => {
+    // --- RST $08: enabled ($B8 bit 1), ROM 3 only ($B9 bit 1 clear), instant ($BA bit 1)
+    const rst08 = async (prepare: (s: NextTestSession) => void) => {
+      const s = await divmmc({ rom3: false });
+      s.setNextReg(0xb8, 0x02).setNextReg(0xb9, 0x00).setNextReg(0xba, 0x02);
+      return kind(await fetchAt(s, 0x0008, " jr $", prepare));
+    };
+    const machineType = (s: NextTestSession, type: number) => s.setNextReg(0x03, 0x07).setNextReg(0x03, type);
+    expect({
+      "48K type, ROM 0": await rst08((s) => machineType(s, 1).out(0x7ffd, 0x00).out(0x1ffd, 0x00)),
+      "128K type, $7FFD bit 4 set": await rst08((s) => machineType(s, 2).out(0x7ffd, 0x10).out(0x1ffd, 0x00)),
+      "128K type, $7FFD bit 4 clear": await rst08((s) => machineType(s, 2).out(0x7ffd, 0x00).out(0x1ffd, 0x00)),
+      "+3, ROM 3, page $E0 in slot 0": await rst08((s) => s.out(0x7ffd, 0x10).out(0x1ffd, 0x04).setNextReg(0x50, 0xe0)),
+      "+3, ROM 1, Alt ROM for reads (128K one)": await rst08((s) => s.out(0x7ffd, 0x10).out(0x1ffd, 0x00).setNextReg(0x8c, 0x80)),
+      "+3, ROM 2, Alt ROM for reads (48K one)": await rst08((s) => s.out(0x7ffd, 0x00).out(0x1ffd, 0x04).setNextReg(0x8c, 0x80)),
+      "+3, ROM 3, config mode": await rst08((s) => s.out(0x7ffd, 0x10).out(0x1ffd, 0x04).setNextReg(0x03, 0x07))
+    }).toEqual({
+      "48K type, ROM 0": "instant",
+      "128K type, $7FFD bit 4 set": "instant",
+      "128K type, $7FFD bit 4 clear": "none",
+      "+3, ROM 3, page $E0 in slot 0": "instant",
+      "+3, ROM 1, Alt ROM for reads (128K one)": "instant",
+      "+3, ROM 2, Alt ROM for reads (48K one)": "none",
+      "+3, ROM 3, config mode": "none"
+    });
+  });
+
   // --- DIV-025: conmem sweep -------------------------------------------------------------------------------
 
   it("DIV-025: without conmem no $E3 value pages anything in; with conmem every RAM bank value gives the DivMMC ROM", async () => {

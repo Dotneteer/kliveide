@@ -120,3 +120,46 @@ describe("memory contention", () => {
     expect(Math.abs(count - base), `${count} vs ${base}`).toBeLessThanOrEqual(2);
   });
 });
+
+/*
+ * ~5768-5770: the contention switch the ULA uses is a copy of $08 bit 6 that is taken only while bit 8 of
+ * the line's dot counter (hc) is set, the last part of every line; ~5852: $08 bit 6 reads that copy. A
+ * write in the first 256 dots of a line therefore shows only from dot 256 of the same line on.
+ *
+ * The program sets bit 6, reads $08 back at once, clears bit 6 and waits more than a line, 64 times at
+ * positions spread over the line (a pass is not a multiple of the line). Reads that come before dot 256
+ * of the write's line see the old 0, the others the new 1.
+ */
+describe("NextReg $08 bit 6 latch", () => {
+  it("MEM-023: a $08 bit 6 write shows only from dot 256 of the line, in the read-back too", async () => {
+    const s = await createSession();
+    await s.loadCode(`
+        .org $8000
+Start:  di
+        nextreg $07,0
+        ld hl,$c000
+        ld e,64
+Pass:   nextreg $08,$40
+        ld bc,$243b
+        ld a,$08
+        out (c),a
+        inc b
+        in a,(c)
+        ld (hl),a
+        inc hl
+        nextreg $08,$00
+        ld d,31
+Wait:   dec d
+        jr nz,Wait
+        dec e
+        jr nz,Pass
+        nextreg $7f,$a5
+        jr $
+`);
+    s.runUntilReady();
+    const bit6 = Array.from(s.peekBytes(0xc000, 64)).map((v) => (v >> 6) & 1);
+    const old = bit6.filter((b) => b === 0).length;
+    expect(old, `reads that saw the old value: ${bit6.join("")}`).toBeGreaterThan(8);
+    expect(64 - old, "reads that saw the new value").toBeGreaterThan(8);
+  });
+});

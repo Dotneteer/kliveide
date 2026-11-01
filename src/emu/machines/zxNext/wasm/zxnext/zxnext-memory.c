@@ -353,6 +353,24 @@ static uint32_t zxnextMemoryGetSelectedRomPage(void) {
   return selectedRom;
 }
 
+/*
+ * Whether a fetch at `address` reads "ROM 3", the condition of the DivMMC's ROM 3 entry points
+ * (zxnext.vhd ~3093, apart from the Layer 2 and ROMCS terms, which the DivMMC side checks):
+ * - the ROM path: slot 0 or 1 with a page >= $E0, and not config mode (~2984-3012);
+ * - with the Alt ROM serving reads ($8C bit 7 set, bit 6 clear: ~3011, ~3033), `sram_pre_alt_128_n`;
+ * - otherwise `sram_rom3` (~2937-2963): always on a 48K machine type, the selected ROM 3 on a +3, the
+ *   selected ROM 1 ($7FFD bit 4 or the $8C lock bit 5) on a 128K type.
+ */
+static uint32_t zxnextMemoryRom3AtFetch(uint32_t address) {
+  uint32_t slot = (address >> 13u) & 0x07u;
+  if (slot > 1u || zxnextNextRegs[0x50u + slot] < 0xe0u || zxnextConfigMode) return 0;
+  uint32_t altRom = zxnextNextRegs[0x8cu];
+  if ((altRom & 0xc0u) == 0x80u) return memAlt128n != 0u;
+  uint32_t machineType = zxnextNextRegGetMachineType();
+  if (machineType == 1u) return 1;
+  return selectedRom == (machineType == 3u ? 3u : 1u);
+}
+
 static uint32_t zxnextMemoryGetSelectedRamBank(void) {
   return zxnextMemoryBank16k();
 }

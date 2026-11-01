@@ -68,3 +68,58 @@ in `wasm-next-shared-source-contract.test.ts`.
 Build with `npm run build:zxnext-wasm`. The compiler defaults to `clang`; set `ZXNEXT_WASM_CC` to
 select another C compiler. The build script uses the portable `wasm32` target and `wasm-ld`, so it
 does not require Emscripten.
+
+## Known Differences From The Hardware
+
+The "Under the hood" chapters describe the machine, not Klive (`.ai/hardware-articles-guide.md`), so a
+difference that is not fixed is recorded here. Each is a candidate for a fix.
+
+Memory and I/O (`docs/content/en/under-the-hood/emulator-internals/next-memory-io.mdx`):
+
+- **Banks 5 and 7 are one memory.** The hardware keeps bank 5 and page `$0E` in dual-port block RAM and
+  also has SRAM for them: CPU writes through the MMU reach only the block RAM, while Layer 2 is displayed
+  from the SRAM and the Layer 2 mapping writes the SRAM (zxnext.vhd ~2994, ~3016, ~3058; layer2.vhd
+  ~172). Klive keeps one copy, so Layer 2 in bank 5 shows the CPU's writes and the mapping's writes show
+  on the ULA. Bank 7 is also modelled as 16K of display memory where the hardware has 8K of block RAM.
+- **I/O cycles are not contended.** `zxnextCpuDelayPortReadHead/Tail` are plain T-states; the hardware
+  contends even ports, `$7FFD` (128K/+3 timing) and the ULA+ ports in 48K/128K timing (zxnext.vhd ~4476,
+  zxula.vhd ~595).
+- **A page of `$E0` or more in slots 2-7** reads ROM bytes; on the hardware the read returns whatever the
+  SRAM port last delivered (zxnext.vhd ~1821, ~3016). Writes are dropped in both.
+- **Two devices answering one `IN`**: Klive's read decode is a priority chain; the hardware ORs every
+  matching device's byte (zxnext.vhd ~2765-2796). Only deliberately overlapping decodes (Kempston 1 and
+  the Multiface 1 at `$1F`) can tell.
+
+Sound (the sound series, `docs/content/en/under-the-hood/emulator-internals/next-audio/`; how Klive builds
+its one stream is told in its own chapter, `klive-audio.mdx`, "One stream, three outputs"):
+
+- **Samples, not a continuous sum.** The hardware's mixer adds its inputs all the time; Klive adds them only
+  when it needs a sample (about every 583 master clocks at 48 kHz). The beeper and the AY chips are averaged
+  over the time a sample covers for the jack and the speaker, and taken at the sample's moment for HDMI.
+- **The sum keeps the proportions, not the zero.** The DACs and the Pi are added about their rest levels
+  (`$80`, 512), EAR and MIC pass a DC filter (a constant falls to about a third in a little over 0.1 s), and
+  the AY chips are added as they are, so they keep a steady offset that the real output capacitor would
+  remove. Silence is 0 instead of 1,536; the jack's sum is scaled by 12.8 into 16 bits, the speaker's by 6.4
+  (the later boards' speaker; the earliest boards bias its word for their transistor), HDMI's by 7.34 and it
+  never wraps. The hardware's HDMI words carry a constant 6,144; Klive's are centred on zero. The filter's
+  time constant is tuned (the real board's RC values are not part of the design).
+- **One output at a time**: jack, speaker or HDMI, chosen by Klive's own setting, which survives a reset.
+- **The Raspberry Pi is not emulated.** A sample source (a WAV file or a tone, the IDE's `pi-audio` command)
+  feeds the Next's receiving half of the I2S link. Left out: the Pi's software and its serial commands, the
+  Next's mix sent back to the Pi, and the half-finished word a real receiver may latch the moment the link
+  is switched on.
+
+Screen (the screen series, `docs/content/en/under-the-hood/emulator-internals/next-display/`):
+
+- **Nothing after the pipeline**: the scan doubler, scanlines and the HDMI buffer are not emulated; Klive
+  shows the pipeline's own output. At 60 Hz the frame ends after line 263, so the shown window's last 40
+  rows stay black.
+- **Lazy rendering, one line of difference.** Klive renders what the beam has drawn just before a write
+  that can change the picture. Writes to screen memory (bank 5, bank 7, the displayed Layer 2 banks) render
+  only up to the start of the beam's row, so that row shows the new bytes from its first dot: at most one
+  line of one frame differs from the hardware.
+- **Sprites are drawn per frame, not line by line.** Klive resolves the attribute table and works out, per
+  line, where the hardware would run out of time, then draws whole sprites; a sprite moved mid-frame can
+  land about a line away from the hardware's position (the hardware draws a line ahead from the table). The
+  collision and "too many sprites" flags are worked out once a frame, so a port `$303B` read in the middle
+  of a frame sees only what earlier frames raised.
