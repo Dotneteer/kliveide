@@ -132,8 +132,10 @@ alone.
 The DMA answers on two ports, **`$6B`** and **`$0B`**, and only the low byte of the port address is decoded,
 so `OTIR`, which changes `B` as it goes, sends a whole table to either port. The port you use is also the
 DMA's dialect: every read or write of `$6B` puts it into **zxnDMA mode**, the Next's own, and every read or
-write of `$0B` into **Z80 DMA mode**, which copies the Zilog chip. The mode stays until you touch the other
-port, and a reset brings back zxnDMA mode.
+write of `$0B` into **Z80 DMA mode**, which copies the **Zilog Z80 DMA**, the Z8410 (Z84C10 in its CMOS
+version), the DMA controller Zilog made as a companion chip for the Z80. Whenever this chapter says "the
+Zilog chip", it means that one. The mode stays until you touch the other port, and a reset brings back
+zxnDMA mode.
 
 The two dialects differ in one thing only, where the byte counter starts. The counter counts the bytes moved,
 and the transfer goes on as long as the counter is below the block length. It is checked after each byte,
@@ -343,7 +345,8 @@ The address modes cover every job I can think of. A copy steps both addresses up
 source **fixed** and steps the destination; a device such as the sprite pattern port or a DAC keeps its port
 fixed. A move between overlapping buffers steps both addresses **down**, from the end, for the same reason
 `LDDR` exists. The **cycle length** is how many clocks the DMA spends on each read and each write of that
-port: three after a reset. WR1's timing byte can announce a prescaler byte too, but port A has no prescaler:
+port: three after a reset, until a **timing byte**, the follower that bit 6 announces, sets it to two,
+three or four. The timing byte is all there is to a port's timing on the Next. WR1's timing byte can announce a prescaler byte too, but port A has no prescaler:
 that byte is accepted and thrown away. Port B's is the prescaler, which gets a section of its own below.
 
 ## The mode and port B's address
@@ -395,7 +398,9 @@ acts on it at once. These are the ones that do something:
   clears the prescaler and auto restart. It does *not* touch the start addresses, the block length, the
   direction, the address modes, the operating mode or the read mask. One `$C3` does all of this; you do not
   need a series of them, as the Zilog chip wanted.
-- **`$C7` and `$CB`, reset port A's or port B's timing** to three clocks.
+- **`$C7` and `$CB`, reset port A's or port B's timing.** They set that port's cycle length, the one its
+  timing byte in WR1 or WR2 chooses, back to three clocks, and leave everything else alone; port B's
+  prescaler stays.
 - **`$CF`, load.** Copies the start addresses into the DMA's working source and destination, port A to the
   source for A to B, port B for B to A; sets the counter to its start, 0 or `$FFFF` by the mode; and clears
   the end-of-block flag.

@@ -153,3 +153,24 @@ The DMA (`docs/content/en/under-the-hood/emulator-internals/next-dma.mdx`):
   shifted (spi_master.vhd ~177), so a run of `$EB` accesses comes about 16 CPU clocks apart; Klive adds 16
   clocks to every `$EB` access on top of the read and write cycles.
 - **The NMI state machine passes through S_NMI_END at once**; the hardware waits for an I/O write to end.
+
+The CTC (`docs/content/en/under-the-hood/emulator-internals/next-ctc.mdx`):
+
+- **No `$00` at terminal count in 3.02.01.** The hardware holds the count at `$00` for one 28 MHz clock
+  before the zero edge reloads it (ctc_chan.vhd@3.02.01 ~142-166); Klive's fast path reloads at once, so a
+  read at that clock gives the time constant, as on 3.02.04. Periods and ZC/TO timing are the same.
+- **A counter-mode channel is read 2 T early.** A port read samples a running timer 2 T into the I/O cycle
+  (`zxnextCtcPeekAhead`), when the CPU latches the data; a counter is read as it is at the start, so an
+  upstream zero count in those 2 T is missed by that read.
+- **Joystick pin 7 is not an output.** The joystick I/O mode (NextReg `$0B`), and with it channel 3's clock
+  on pin 7, is not modelled.
+
+Storage (`docs/content/en/under-the-hood/emulator-internals/next-storage.mdx`):
+
+- **SPI is byte-level, without its clock.** The hardware shifts a byte in 16 CPU clocks and starts a new
+  one only from idle or the byte's last clock (spi_master.vhd ~80-95), so a CPU access to `$EB` sooner than
+  that is lost; Klive takes every access at once. A read of `$EB` on the hardware returns the byte of the
+  previous exchange and starts one with `$FF`; Klive's card hands out its next response byte, which the
+  `$FF` bytes before every response make look the same to a program.
+- **Only the SD cards answer.** The Raspberry Pi's two SPI selects (`$E7` = `$FB`, `$F7`) and the flash
+  (`$7F`) select nothing that answers: reads give `$FF`.

@@ -614,7 +614,8 @@ number one past the last line of the frame rings like line 0; anything higher ne
 **The CTC**, the metronome of the DAC chapter, raises a channel's interrupt when the channel's count
 reaches zero. Its timer counts the 28 MHz master clock through a prescaler of 16 or 256, so its rate does not
 change with the CPU's speed. On a Zilog CTC a program writes an interrupt vector into the chip; the Next
-decodes that write and throws it away, because the vector comes from the chain.
+decodes that write and throws it away, because the vector comes from the chain. [CTC: Four Timers in a
+Ring](/en/under-the-hood/emulator-internals/next-ctc/) opens the channels up.
 
 **The UARTs** have two receive conditions and one transmit condition:
 

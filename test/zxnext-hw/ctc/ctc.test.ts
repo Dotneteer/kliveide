@@ -4,7 +4,7 @@ import { createSession, type NextTestSession } from "../../harness/zxnext";
 import { delay } from "../_timing-helpers";
 
 /*
- * Z80 CTC (catalogue CTC-001 - CTC-014).
+ * Z80 CTC (catalogue CTC-001 - CTC-014, CTC-019).
  *
  * Hardware (`vendor/next-fpga/3.02.01/src`):
  * - zxnext.vhd ~2646: ports `$183B`-`$1F3B` (A15-A11 = 00011, low byte $3B), gated by internal port
@@ -482,5 +482,41 @@ describe("CTC", () => {
     // --- Frames are 28 MHz clocks at every speed: the 3.5 MHz window's clock count holds for both
     expectAbout(m.n.Count0, m.clocks / 65536, "3.5 MHz");
     expectAbout(f.n.Count0, m.clocks / 65536, "28 MHz");
+  });
+  // --- CTC-019: a new time constant while running -----------------------------------------------------
+
+  it("CTC-019: a D2 control word without D1 on a running timer: the count goes on, the new constant comes at the next zero", async () => {
+    // --- prescaler 256: a count every 32 T-states. After 1,000 T the count is about 169; the new
+    // --- constant 50 must not show at once, and after 6,000 T more (169 counts to zero, then about
+    // --- 18 of the new period) the count is in the new period, about 32 - not about 182.
+    const s = await createSession();
+    await s.loadCode(" .org $8000\n di\n jr $");
+    await s.loadCode(
+      `
+        .org $8000
+Start:  di
+${setupChannel(0, P256 | TC | CW, 200)}
+${delay(1000)}
+        ld a,$${(P256 | TC | CW).toString(16)}
+        out (c),a                ; D2, no reset: the next byte is a constant
+        ld a,50
+        out (c),a
+        in h,(c)
+${delay(6000)}
+        in l,(c)
+        ld (Result),hl
+        nextreg $7f,$a5
+        jr $
+Result: .defw 0`,
+      { entry: "Start" }
+    );
+    s.runUntilReady();
+    const r = s.peekWord(s.symbol("Result"));
+    const first = r >> 8;
+    const second = r & 0xff;
+    expect(first, "the old count goes on").toBeGreaterThan(150);
+    expect(first).toBeLessThan(180);
+    expect(second, "now in a period of the new constant").toBeGreaterThan(20);
+    expect(second).toBeLessThanOrEqual(50);
   });
 });

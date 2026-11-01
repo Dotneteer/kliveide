@@ -839,6 +839,7 @@
 /en/under-the-hood/emulator-internals/next-audio/psg/index.html
 /en/under-the-hood/emulator-internals/next-audio/turbosound/index.html
 /en/under-the-hood/emulator-internals/next-core/index.html
+/en/under-the-hood/emulator-internals/next-ctc/index.html
 /en/under-the-hood/emulator-internals/next-display/composition/index.html
 /en/under-the-hood/emulator-internals/next-display/layer2/index.html
 /en/under-the-hood/emulator-internals/next-display/lores/index.html
@@ -852,6 +853,7 @@
 /en/under-the-hood/emulator-internals/next-dma/index.html
 /en/under-the-hood/emulator-internals/next-interrupts/index.html
 /en/under-the-hood/emulator-internals/next-memory-io/index.html
+/en/under-the-hood/emulator-internals/next-storage/index.html
 /en/under-the-hood/emulator-internals/reverse-debugging/index.html
 /en/under-the-hood/emulator-internals/spectrum-accuracy/index.html
 /en/under-the-hood/emulator-internals/spectrum-display/index.html
