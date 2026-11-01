@@ -1,6 +1,6 @@
 import { MemorySectionType } from "@abstractions/MemorySection";
 import type { RomDecoder, RomInstruction } from "@common/roms/romAnnotationTools";
-import { romKindIsTvc, romKindOrigin, romKindUsesZ80N, type RomPageKind } from "@common/roms/romIdentity";
+import { romKindIsEnterprise, romKindIsTvc, romKindOrigin, romKindUsesZ80N, type RomPageKind } from "@common/roms/romIdentity";
 
 import { MemorySection } from "@renderer/appIde/disassemblers/common-types";
 import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z80-disassembler";
@@ -14,6 +14,7 @@ import { Zx80CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disas
 import { Zx81CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/zx81-disassembler";
 import { Ht1080zCustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/ht1080z-disassembler";
 import { TvcCustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/tvc-disassembler";
+import { EpCustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/ep-disassembler";
 
 /**
  * Install the ROM's own decoding on a disassembler: the report code after `RST $08` and the
@@ -22,7 +23,7 @@ import { TvcCustomDisassembler } from "@renderer/appIde/disassemblers/z80-disass
  * stub calls on its pages 0-2, the ZX81's equivalents on its ROM, the
  * error code after `RST $08` on the ZX80's 4K ROM, the syntax-check byte after `RST $08` (and the
  * tables the IDE lists as data) on the HT-1080Z's BASIC ROM, the function code after `RST $30` on the
- * TVC's BASIC ROMs. Any
+ * TVC's BASIC ROMs, the EXOS function code after `RST 30h` on the Enterprise's ROMs. Any
  * other page decodes as plain Z80. Shared by the authoring tools and the ROM page documents, so a
  * listing and the level report never disagree about where the code is.
  */
@@ -44,6 +45,7 @@ export function prepareRomDisassembler(
   if (kind === "zx80") disassembler.setCustomDisassembler(new Zx80CustomDisassembler());
   if (kind === "ht1080z-basic") disassembler.setCustomDisassembler(new Ht1080zCustomDisassembler());
   if (romKindIsTvc(kind)) disassembler.setCustomDisassembler(new TvcCustomDisassembler());
+  if (romKindIsEnterprise(kind)) disassembler.setCustomDisassembler(new EpCustomDisassembler());
 }
 
 /**

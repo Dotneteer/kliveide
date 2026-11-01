@@ -1,4 +1,5 @@
-# Merges helper drafts (JSON: labels, synopses, comments, regions, facts) into a copy of a ROM sidecar.
+# Merges helper drafts (JSON: labels, synopses, comments, regions, manual, facts) into a copy of a ROM sidecar.
+# "manual" lists "$xxxx:label" / "$xxxx:line" keys whose name or text is an interface fact from a manual.
 # Usage: [PAGE=<n>] python3 .ai/rom-annotations/tools/merge-drafts.py <workdir> <in.dis> <out.dis> <draft.json>...
 # Existing labels and synopses win (reported); a name that clashes gets _2 (reported); a region that
 # overlaps a data region is skipped (reported); synopses are wrapped at 92 columns. Then canonicalise
@@ -47,6 +48,11 @@ for f in drafts:
         a=H(k); e=A.setdefault(str(a),{})
         if e.get('comment'): continue
         e['comment']=t.strip().rstrip('.'); pv[f'{PAGE}:{a}:line']='observed'
+    # --- "manual": ["$xxxx:label", "$xxxx:line"]: entries that state an interface fact from a manual
+    for k in dr.get('manual',[]):
+        at,kind=k.split(':'); key=f'{PAGE}:{H(at)}:{kind}'
+        if key in pv: pv[key]='manual'
+        else: report.append(f"{tag}: manual {k} names no entry of this draft")
 regions.sort(key=lambda r:r['start']); out=[];at=0
 for r in regions:
     if r['start']>at: out.append({"start":at,"end":r['start']-1,"type":"disassemble"})

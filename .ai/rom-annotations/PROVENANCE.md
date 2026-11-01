@@ -2328,3 +2328,43 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
 - **Not done:** the carried comments in enNextZX page 0's Browser ($2EB2-$3B60) rest on the alignment and an
   automatic address pass, not a full re-read: a comment pass there is the next step. Some cross-page caller lists
   in synopses that were not touched may still quote 2.08 addresses of other pages. No probe was run.
+
+### 2026-11-01 — Enterprise 128: `ep-exos21.rom` page 0 (EXOS 2.1, segment 00h) to level 2
+
+- **What:** `src/public/roms/ep-exos21.rom.dis`, page 0 only, written from scratch: the kernel (reset, the ROM
+  checksum and RAM test, the ROM scan, the RAM-copied pager and `RST 30h` entry, the dispatcher, EXOS 0-34 except
+  what segment 1 serves, channels, the channel-buffer allocator, module loading), and the VIDEO, SOUND, KEYBOARD
+  and EDITOR devices. Plumbing in the same change: the `ep-exos`/`ep-ext` page kinds (every Enterprise ROM page
+  known by its CRC, listed at $C000, `RST 30h`'s function byte decoded), `isRomPartition` for the Enterprise's
+  positive ROM partitions, `EpWasmV2Machine.getRomPartitionImages`, `tools/ep-dis.cjs`, the probe template and the
+  helper brief; `merge-drafts.py` takes a draft's `"manual"` list.
+- **Sources:** the ROM bytes through Klive's disassembler (`tools/ep-dis.cjs`); runs on the real core
+  (`test/harness/enterprise/`); and, for interface facts only (marked `manual`, 443 entries), the EXOS 2.1 kernel
+  specification (`_input/enterprise128/docs/Exos.htm`, the Hungarian translation of the official technical
+  specification): function codes and names, the fixed system-segment variable names, EXOS variable numbers and
+  names, error codes and names, action codes, descriptor formats, special function codes, video modes and escape
+  sequences. Hardware facts (ports) from Klive's own `DAVE_MEMORY_IO.md` notes. No commented disassembly, symbol
+  file or name list of EXOS was opened; ep128emu, Xep128 and other GPL sources were not read. Segment 1's bytes
+  were read where segment 0 calls it (its service dispatcher at $E40F, service 4 at $E47A).
+- **How:** the session read the reset code, the RAM copies, the dispatcher and the device chain into a facts file
+  and a dispatch list (built from the indexing code: the function table at $000A for codes 17-34, the chain at
+  $0008, each device's entry table), extracted the specification's text, then nine helpers drafted one range
+  each under `helper-briefs/ep-draft-a-range.md` with the D4 rule; no helper opened `_input/` or the web. Merged
+  with `merge-drafts.py`; the session then renamed six labels two helpers had both chosen (from the code), swapped
+  226 numeric references to labelled code for names, turned run-address references to this page into offsets,
+  and settled every "probably" from the code or a probe.
+- **Runs (observed):** a profile over the boot and ~60 typed IS-BASIC commands: the boot reads every ROM byte (the
+  32K word checksum at $0084, which must come to 0), so only reads after the boot marked data. EXDOS 1.3's
+  action-7 request at boot is B = 1, DE = $07D4 and is given segment $FF (stop at $0339). Two helper probes read
+  the editor's buffer and variables after the boot, after typing and after cursor keys (window 24 x 40, margins
+  1 and 38, 2143 free bytes). A probe template run stopped in VIDEO's write character ($D4D0) with segment 0 in
+  page 3.
+- **Read from the bytes against the specification:** @@MARG treats $FF as "keep" and 0 as "the cursor column",
+  the reverse of the specification's text; the action-7 path for RAM in a device segment stores the request byte
+  popped at $0332 instead of the segment read at $032F (no shipped ROM takes it). Both are described as the code
+  does them.
+- **Level:** 2, measured and recorded (1,132 labels, 48 data regions, 8,268 instructions; 22 targets inside an
+  instruction, each explained on the instruction that hides it). Reassembles byte for byte (the source export).
+  Checked in the running IDE (Playwright harness): `dis $D4D0` at a breakpoint shows VID_WRITE_CHAR with its
+  operands named, `dis $C410` shows KERNEL_ENTRY; `ann-info` finds the shipped sidecar for segment 0 and lists
+  segments 01h, 04h and 10h by file; the ROM annotation editor reports "Ready to ship · level 2".

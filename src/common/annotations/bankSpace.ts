@@ -119,6 +119,16 @@ export interface BankSpace {
    * every ROM page starts at $0000.
    */
   romBase?(partition: number): number | undefined;
+  /**
+   * Whether a partition holds ROM, on a machine whose ROM partitions are not the negative ones (the
+   * Enterprise numbers every segment, ROM or RAM, as DAVE does). Absent: the negative partitions.
+   */
+  isRomPartition?(partition: number): boolean;
+}
+
+/** Whether a partition of this bank space holds ROM: its own rule, else a negative number. */
+export function isRomPartitionOf(space: BankSpace | undefined, partition: number): boolean {
+  return space?.isRomPartition ? space.isRomPartition(partition) : partition < 0;
 }
 
 const BANK_SIZE = 0x4000 as const;
@@ -471,7 +481,10 @@ export function tvcBankSpace(plus: boolean): BankSpace {
 // ------------------------------------------------------------------------------------------------
 // The Enterprise 64/128: 256 segments, any of them in any 16K page
 
-/** The segments that hold ROM (EXOS, the cartridge, Klive's FILE: ROM, EXDOS) */
+/**
+ * The segments that hold ROM (EXOS, the cartridge, Klive's FILE: ROM, EXDOS). They are positive
+ * partitions, as DAVE numbers them, so the ROM annotations ask `isRomPartition` instead of the sign.
+ */
 export const EP_ROM_SEGMENTS: readonly number[] = [0x00, 0x01, 0x04, 0x10, 0x20, 0x21];
 
 /** The Enterprise bank space: the 128's RAM is F8h-FFh, the 64's FCh-FFh */
@@ -501,7 +514,10 @@ export function epBankSpace(is128: boolean): BankSpace {
     partitionOf: (site) => site.bank,
     candidateAddresses: (site) => [0, 1, 2, 3].map((slot16) => slot16 * 0x4000 + site.offset),
     // --- EXOS's system segment (FFh) at $8000, where its variables sit at BFxxh; any other segment at $C000
-    defaultOffsetIndex: (bank) => (bank === 0xff ? 2 : 3)
+    defaultOffsetIndex: (bank) => (bank === 0xff ? 2 : 3),
+    // --- A ROM segment is listed where EXOS runs it: page 3 (`romKindOrigin`'s "ep-exos" and "ep-ext")
+    romBase: (partition) => (EP_ROM_SEGMENTS.includes(partition) ? 0xc000 : undefined),
+    isRomPartition: (partition) => EP_ROM_SEGMENTS.includes(partition)
   };
 }
 

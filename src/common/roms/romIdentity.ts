@@ -53,6 +53,10 @@ export type RomPageKind =
   | "tvc-sys-low"
   | "tvc-sys-high"
   | "tvc-exth"
+  // --- The Enterprise 64/128's ROMs, each 16K segment listed at $C000 (page 3), where EXOS runs its own
+  // --- segments and enters an extension ROM. Their RST 30h is the EXOS call, followed by a function code
+  | "ep-exos"
+  | "ep-ext"
   // --- The ZX Spectrum Next: NextZXOS's pages (and the alternate ROM's), the DivMMC and Multiface ROMs
   | "next-basic"
   // --- NextZXOS's pages 0-2, each with its own restarts and inline data (`nextzxos-disassembler.ts`)
@@ -153,7 +157,18 @@ export const KNOWN_ROM_PAGES: Readonly<Record<string, KnownRomPage>> = {
   "1cbbeac6": { file: "tvc12-d7.rom", kind: "tvc-exth" },
   "05ac3a34": { file: "tvc22-d6.rom", kind: "tvc-sys-low" },
   ba6ad589: { file: "tvc22-d4.rom", kind: "tvc-sys-high" },
-  "05e1c3a8": { file: "tvc22-d7.rom", kind: "tvc-exth" }
+  "05e1c3a8": { file: "tvc22-d7.rom", kind: "tvc-exth" },
+  // --- The Enterprise (`EpRoms.ts`): EXOS 2.1 (the 128) and 2.0 (the 64) in segments 00h-01h, the
+  // --- IS-BASIC cartridges (segment 04h) and EXDOS 1.3 (segments 20h-21h). Klive's own FILE: ROM is
+  // --- assembled from its source and has no annotations
+  "2169c49c": { file: "ep-exos21.rom", kind: "ep-exos", page: 0 },
+  "9eaf280b": { file: "ep-exos21.rom", kind: "ep-exos", page: 1 },
+  "20b29761": { file: "ep-exos20.rom", kind: "ep-exos", page: 0 },
+  e4367a35: { file: "ep-exos20.rom", kind: "ep-exos", page: 1 },
+  "55f96251": { file: "ep-basic21.rom", kind: "ep-ext" },
+  "1228de34": { file: "ep-basic20.rom", kind: "ep-ext" },
+  d1e46955: { file: "ep-exdos13.rom", kind: "ep-ext", page: 0 },
+  d1333188: { file: "ep-exdos13.rom", kind: "ep-ext", page: 1 }
 };
 
 /**
@@ -163,6 +178,9 @@ export const KNOWN_ROM_PAGES: Readonly<Record<string, KnownRomPage>> = {
  *
  * The TVC's SYS chips run at $C000 and $E000 once BASIC has paged SYS into page 3. Its first bytes
  * also run at $0000 after a reset (page 0 shows SYS then); a jump there is not counted as the page's.
+ *
+ * The Enterprise's ROM segments run at $C000: EXOS pages its own segments into page 3 (its reset code
+ * jumps from $0000 straight to $C02E), and enters an extension ROM there.
  */
 export function romKindOrigin(kind: RomPageKind | undefined): number {
   switch (kind) {
@@ -173,6 +191,9 @@ export function romKindOrigin(kind: RomPageKind | undefined): number {
     case "tvc-sys-high":
     case "tvc-exth":
       return 0xe000;
+    case "ep-exos":
+    case "ep-ext":
+      return 0xc000;
     default:
       return 0;
   }
@@ -181,6 +202,11 @@ export function romKindOrigin(kind: RomPageKind | undefined): number {
 /** Whether a page of this kind is one of the TVC's, whose `RST $30` is followed by a function code. */
 export function romKindIsTvc(kind: RomPageKind | undefined): boolean {
   return kind !== undefined && kind.startsWith("tvc-");
+}
+
+/** Whether a page of this kind is the Enterprise's, whose `RST 30h` is followed by an EXOS function code. */
+export function romKindIsEnterprise(kind: RomPageKind | undefined): boolean {
+  return kind !== undefined && kind.startsWith("ep-");
 }
 
 /** Whether a page of this kind is the Next's, whose code uses the Z80N's extra opcodes. */

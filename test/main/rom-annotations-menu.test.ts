@@ -46,7 +46,8 @@ describe("createRomAnnotationsMenu", () => {
       "Sinclair ZX81",
       "Sinclair ZX80",
       "HT-1080Z",
-      "Videoton TVC"
+      "Videoton TVC",
+      "Enterprise"
     ]);
   });
 

@@ -98,7 +98,10 @@ formatter, the IDE's readiness check, a harness probe template) and the state of
 `ht1080z-basic` decoding), the probe recipe, the facts read so far and the state of the work. For the Videoton TVC's ROMs,
 `tvc-authoring-guide.md` carries the chips and how the machine names them (8K pages at $C000/$E000), the
 order of work, `tools/tvc-dis.cjs` (`RST $30`'s inline function code), the sources that are off limits
-there and the facts read so far.
+there and the facts read so far. For the Enterprise 64/128's ROMs, `ep-authoring-guide.md` carries
+the pages (16K segments listed at $C000, positive partition numbers), the order of work, `tools/ep-dis.cjs`
+(`RST 30h`'s EXOS function code, `PAGE=<n>` for a 32K file), the probe template, the sources that are off
+limits (GPL emulators, every commented EXOS listing) and the facts read so far.
 
 ```
 npm run rom:annotations                    # format every sidecar, regenerate the CRC index
@@ -194,4 +197,6 @@ makes the work faster, not the sources wider.
 plus their differing routines, `sp128-0`, the +3 ROMs 0–2 (the +3DOS call
 table from the +3 manual first), and the ZX81 and ZX80 ROMs. The HT-1080Z's are done, every one at level 2: the BASIC ROMs, the extension ROMs and the
 character generators (`ht1080z-authoring-guide.md`). The Videoton TVC's are next: BASIC 1.2's SYS chips, its EXTH, BASIC 2.2's three chips,
-then VT-DOS (`tvc-authoring-guide.md`).
+then VT-DOS (`tvc-authoring-guide.md`). The Enterprise's are under way: EXOS 2.1's segment 00h is done to level 2;
+then its segment 01h, IS-BASIC 2.1, the 64's EXOS 2.0 and IS-BASIC 2.0, and EXDOS 1.3 last
+(`ep-authoring-guide.md`).
