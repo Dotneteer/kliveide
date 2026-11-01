@@ -1,0 +1,1019 @@
+rom ep-exdos13.rom page 0 cpu z80
+default observed
+
+# Range 4: the Abort/Retry/Ignore key test, the RAM disk driver, the interrupt-state helper, FAT
+# entry get/set, the FAT-copy mode, cluster to sector, and the path parser (drive, directories,
+# 8+3 names) with the directory selection built on it.
+
+@0FD6 KEY_ARI_ANSWER
+  The tail of the Abort/Retry/Ignore prompt ($0F9C): classifies the key in A. Entered with Z set
+  (from $0FCE, FLAG_SOFT_IRQ = $20) it answers Abort at once.
+  1. Z on entry, "A", ESC or code 3: Abort, B = 1.
+  2. B = 2; reads EXOS variable $90: when it is 0 (German) "W" is Retry, else "R"; ENTER is
+  Retry too.
+  3. B = 3; "I" is Ignore.
+  Entry: A = the key (upper case), Z = abort already.
+  Exit: Z with B = 1 (Abort), 2 (Retry) or 3 (Ignore); NZ for any other key (B = 3).
+  Changes: AF, B.
+  Keeps: C, DE, HL, IX, IY.
+  .0FD6 B = 1: Abort
+  .0FD8 Abort already (Z)?
+  .0FD9 ESC?
+  .0FDC Code 3?
+  .0FDF B = 2: Retry
+  .0FE0 Keeps the answer number
+  .0FE2 Keeps the key
+  .0FE3 Read EXOS variable $90 (the message language)
+  .0FE9 A = its value
+  .0FEA 0 (German)?
+  .0FEC A = the key
+  .0FEE No: English, Retry is "R"
+  .0FF0 German: Retry is "W"
+
+@0FF4 KEY_ARI_ENGLISH
+  Part of KEY_ARI_ANSWER: the English Retry key "R".
+  .0FF4 Retry ("R")?
+
+@0FF6 KEY_ARI_REST
+  Part of KEY_ARI_ANSWER: answers Retry for the language's key or ENTER, then Ignore for "I".
+  .0FF6 Puts DE back
+  .0FF7 B = 2
+  .0FF8 Retry key: Z, B = 2
+  .0FF9 ENTER?
+  .0FFC B = 3: Ignore
+  .0FFD "I"? Z for Ignore, NZ for any other key
+
+@1005 RAMDISK_DRIVER
+  The RAM disk's driver entry: its address ($D005) is what $01CA passes to $03DF with C = 1,
+  as $01B2 passes FLOPPY_DRIVER with C = 4. The disk lives in RAM segments; the first one, kept
+  at IY+$1D, holds the boot sector at $4000 and the list of the disk's segments at $4100, and
+  stays in page 1 while the driver runs.
+  1. Pages the RAM disk's segment into page 1 (A' = the caller's page-1 segment).
+  2. Function $FF: create (B = segments) or remove (B = 0) the disk (RD_CREATE).
+  3. No RAM disk (IY+$1D = 0): error $BE.
+  4. Functions 0-2: nothing to do. 3: reads sector 0. 4: reads, 5 and 6: write B sectors from
+  sector DE, IX being the 512-byte buffers (in the caller's page-1 segment's view). 7 and up:
+  error $BD.
+  Entry: A = the function; B = the sector count (or segment count); DE = the first sector;
+  IX = the buffer; IY = EXDOS's variables.
+  Exit: A = 0; B = the sectors transferred (1 for functions 0-2); page 1 = the RAM disk's segment.
+  Error: A = $BE (no RAM disk), $BD (no such function), $BB (sector past the end, B = the sectors
+  done), or RD_CREATE's.
+  Changes: AF, BC, DE, HL, IX, IY, AF', BC', DE', HL'.
+  .1005 Keeps the function
+  .1006 H = the caller's page-1 segment
+  .1009 L = the RAM disk's segment (0: none)
+  .100D Page 1 = the RAM disk's segment
+  .1010 A' = the caller's page-1 segment; A = the function
+  .1011 Function $FF?
+  .1015 RAM disk present?
+  .1017 No
+  .1019 Function 0-2?
+  .101B Yes: nothing to do
+  .101D Not function 3
+  .101F Function 3: sector 0 ...
+  .1021 ... one sector
+
+@1023 RD_CHECK_FUNC
+  Part of RAMDISK_DRIVER: functions 3-6 go on to the transfer; 7 and up fail with $BD.
+  .1023 A = function - 7 ($FD-$FF for 3-6)
+  .1025 Function 3-6: transfer
+  .1027 Error $BD: no such function
+
+@102A RD_NO_DISK
+  Part of RAMDISK_DRIVER: no RAM disk exists; error $BE.
+  .102A Error $BE: no RAM disk
+
+@102D RD_FUNC_NOP
+  Part of RAMDISK_DRIVER: functions 0-2 need nothing on a RAM disk; returns A = 0, B = 1.
+  .102D One unit of work done
+  .102F A = 0: done
+
+@1031 RD_TRANSFER
+  Part of RAMDISK_DRIVER: sets up the sector transfer. L counts the sectors done; the direction
+  (bit 1 of the function - 7: functions 5 and 6 write) is kept in F'.
+  .1031 L = sectors done
+  .1033 H = function - 7
+  .1035 F' = Z for a read (3, 4), NZ for a write (5, 6)
+
+@1038 RD_SECTOR_LOOP
+  Part of RAMDISK_DRIVER, once per sector: locates sector DE (RD_LOCATE_SECTOR), stops with $BB
+  past the end, disables interrupts (INT_DISABLE) and sets HL and DE for the copy: from the
+  buffer at IX to the segment for a write, the other way for a read.
+  .1038 DE' = the sector number ...
+  .1039 ... (the alternate set does the copy)
+  .103B B = its segment, DE = its offset there
+  .103E Past the end: error $BB
+  .1040 Interrupts off while page 0 is swapped
+  .1043 Keeps the interrupt state
+  .1044 HL = the buffer
+  .1047 Keeps it
+  .1048 A = the caller's page-1 segment; F = the direction
+  .1049 A write: copy buffer to segment
+  .104B A read: copy segment to buffer
+
+@104C RD_COPY_SECTOR
+  Part of RAMDISK_DRIVER: copies one 512-byte sector with the caller's segment in page 1 (where
+  the buffer is) and the RAM disk's data segment in page 0, then puts both pages back, moves IX
+  on by 512 and enables interrupts again if they were on.
+  .104C Page 1 = the caller's segment (the buffer)
+  .104E Keeps it in A' again
+  .104F C = page 0's segment
+  .1052 Page 0 = the sector's segment
+  .1055 A = page 0's own segment
+  .1056 One sector
+  .105B Page 0 back
+  .105D Page 1 = the RAM disk's segment again
+  .1062 HL = the buffer ...
+  .1063 ... plus 512
+  .1065 IX = the next buffer
+  .1068 The interrupt state
+  .1069 Were interrupts off before?
+  .106B No: enable them again
+
+@106C RD_NEXT_SECTOR
+  Part of RAMDISK_DRIVER: counts the sector done and goes on with the next one until B sectors
+  are done; then A = 0.
+  .106C The counting set
+  .106D One more sector done
+  .106E Next sector number
+  .106F More to do?
+  .1071 A = 0: done
+
+@1073 RD_DONE
+  Part of RAMDISK_DRIVER: returns B = the sectors transferred (A = 0, or $BB from
+  RD_SECTOR_LOOP).
+  .1073 The counting set
+  .1074 B = the sectors done
+
+@1076 RD_LOCATE_SECTOR
+  Finds where a RAM disk sector lives: 32 sectors of 512 bytes fill each 16K segment, and the
+  segment list at $4100 gives the segment of each run of 32.
+  Entry: DE = the sector number; the RAM disk's segment in page 1.
+  Exit: NC; A = 0; B = the segment holding the sector; DE = its offset in the segment.
+  Error: Carry and A = $BB when DE is not below the total sector count ($4013).
+  Changes: AF, B, DE, HL.
+  Keeps: C, IX, IY.
+  .1076 HL = the total sectors (the boot sector's word at +$13)
+  .107A HL = total - sector - 1
+  .107C Error $BB
+  .107E Sector DE past the end?
+  .1080 HL = sector x 2
+  .1081 A = (sector x 2) low byte
+  .1082 HL = sector x 8
+  .1084 L = sector / 32: the segment list's index
+  .1087 B = the segment
+  .1088 A = (sector mod 32) x 2
+  .108A D = the offset's high byte (512 bytes a sector)
+  .108B A = 0
+  .108C E = 0
+
+@1FC5 INT_DISABLE
+  Disables interrupts and says whether they were enabled. LD A,R copies IFF2 into P/V, but an
+  interrupt accepted during the instruction can leave it 0, so a 0 is checked again: the word
+  just below SP still holds the AF pushed at the start (A = 0) unless an interrupt's return
+  address overwrote it.
+  Entry: none.
+  Exit: interrupts disabled; NC when they were enabled, carry when they were not.
+  Changes: AF.
+  Keeps: BC, DE, HL, IX, IY.
+  .1FC5 A = 0, NC
+  .1FC6 Leaves A = 0 in the word below SP
+  .1FC8 P/V = IFF2
+  .1FCB Were enabled: NC
+  .1FCC Back to the word pushed at the start
+  .1FCE A = its high byte
+  .1FCF Not 0: an interrupt came in between, so they were enabled
+  .1FD1 Carry: interrupts were disabled
+
+@1FD3 FLOPPY_DRIVER
+  The floppy driver's entry: its address ($DFD3) is what $01B2 passes to $03DF with C = 4, as
+  $01CA passes RAMDISK_DRIVER. Keeps the function at IY-$12 and dispatches it: 0 and 1 to $1FEB,
+  2 to $2013, 3 to $2032, 4-6 to $2231, 8 to $241D; others (7 among them) fail with $BD.
+  Entry: A = the function.
+  Error: A = $BD (no such function).
+  .1FD3 Keeps the function
+  .1FD8 Function 0 or 1?
+  .1FDA Function 2?
+  .1FDD Function 3?
+  .1FE1 Function 4-6?
+  .1FE5 Function 7?
+  .1FE8 Error $BD: no such function
+
+@108E RD_CREATE
+  RAMDISK_DRIVER's function $FF, create or remove the RAM disk: B = 0 removes it; a new disk
+  of B segments may be made only when none exists, else error $9D.
+  .108E Remove (B = 0)?
+  .1091 A disk already there?
+  .1092 Error $9D: it exists
+
+@1095 RD_OPEN_CHAN
+  Part of RD_CREATE: opens a channel to "DISK:" ($0329), whose special functions give and take
+  back segments; B = 0 goes on to RD_REMOVE.
+  .1095 Keeps the segment count
+  .1099 H = the DISK: channel
+  .109D Could not open it
+  .109E Remove?
+  .10A1 The segment list (entry 0 at $4100)
+
+@10A4 RD_ALLOC_LOOP
+  Part of RD_CREATE, once per segment: asks the DISK: channel for a segment (special function
+  $F0). The first one becomes the RAM disk's own (page 1, IY+$1D). On failure the segments got
+  so far are given back (RD_FREE_LOOP) with error $F7.
+  .10A4 A = the channel
+  .10A6 Special function $F0: give a segment
+  .10AA A = the segment
+  .10AC Failed: give them back, error $F7
+  .10AE The first segment?
+  .10B1 Yes: page it in ...
+  .10B3 ... as the RAM disk's segment
+
+@10B6 RD_STORE_SEG
+  Part of RD_CREATE: lists each segment at $4100 + n, then closes the channel and writes the
+  boot sector: the 11-byte parameter template and the 11-byte volume text from $1132 at $400B
+  and $4040, the root directory entries ((segments / 4 + 2) x 16) at $4011, the total sectors
+  (segments x 32) at $4013, two sectors a cluster at $400D for 128 segments and more, and the
+  sectors of one FAT (RD_SET_FAT_SIZE).
+  .10B6 List entry n = the segment
+  .10B8 L = the segments listed
+  .10BA More to get?
+  .10BC Keeps the list's end
+  .10C0 A = the channel
+  .10C3 A = the segment count
+  .10C4 The boot sector's parameters ...
+  .10C7 ... from the template
+  .10CF The volume text
+  .10D6 L = segments / 4 ...
+  .10DB ... + 2
+  .10DD HL x 16
+  .10E2 Root directory entries
+  .10E5 HL = segments x 32
+  .10EC Total sectors
+  .10EF HL = 3 x total - 1 ...
+  .10F4 ... / 1024: the sectors of a 12-bit FAT, less one
+  .10F8 128 segments or more?
+  .10FB Yes: two sectors a cluster ...
+  .1100 ... and half the FAT
+
+@1102 RD_SET_FAT_SIZE
+  Part of RD_CREATE: stores the sectors of one FAT ($4016) and returns A = 0.
+  .1102 L = the FAT's sectors less one
+  .1104 Plus one
+  .1105 Sectors a FAT
+  .1108 A = 0: done
+
+@110A RD_REMOVE
+  Part of RD_CREATE, B = 0: removes the RAM disk. With none, just closes the channel; else gives
+  every listed segment but the first back to the DISK: channel (RD_FREE_LOOP), closes it and
+  forgets the disk (IY+$1D = 0).
+  .110A A RAM disk at all?
+  .110D No: close the channel only
+  .110F DE = the list's end
+  .1113 A = 0: the result
+  .1114 Never jumps: its operand is LD A,$F7 at $1115 (from $10AC)
+  .1117 Keeps the result (0, or $F7 from $1115)
+
+@1118 RD_FREE_LOOP
+  Part of RD_CREATE: gives the listed segments back from the last to entry 1 (special function
+  $F1), then goes on to RD_CLOSE_EXIT.
+  .1118 Back to entry 0?
+  .1119 Yes: done
+  .111B Special function $F1: take a segment back
+  .111D The previous entry
+  .111E C = its segment
+  .1120 A = the channel
+  .1121 Keeps the list pointer
+
+@1128 RD_CLOSE_NONE
+  Part of RD_CREATE: no RAM disk to remove; keeps the result and closes the channel.
+  .1128 Keeps the result
+
+@1129 RD_CLOSE_EXIT
+  Part of RD_CREATE: closes the DISK: channel and marks the RAM disk gone (IY+$1D = 0); returns
+  the result kept on the stack.
+  .1129 A = the channel
+  .112C A = the result
+  .112D No RAM disk now
+
+@114D FAT_GET_BADCL
+  Part of $1148 (read a FAT entry): the cluster number is past the disk's last; reports error $A3
+  through $0ED5, again while it returns Z, then answers the end-of-chain value $FFFF.
+  .114D Error $A3
+  .114F NC for $0ED5
+  .1150 Reports it
+  .1153 Report again?
+
+@1252 SHL4_HL
+  Shifts HL left by 4 bits into A: A:HL = HL x 16.
+  Entry: HL = the value.
+  Exit: HL = the value x 16 (low 16 bits); A = the 4 bits shifted out (entry H's high nibble).
+  Changes: AF, HL.
+  Keeps: BC, DE, IX, IY.
+  .1252 A = 0
+  .1253 Bit 15 out ...
+  .1254 ... into A, 4 times
+
+@1157 FAT_GET_UNPACK
+  Part of $1148: takes the 12-bit entry out of its two bytes at DE: the low 12 bits for an even
+  cluster (NC), the high 12 bits for an odd one (carry, from $11ED).
+  .1157 Keeps HL
+  .1158 L = the first byte
+  .115B A = the second byte
+  .115C An even cluster?
+  .115E Odd: H = the second byte
+  .115F A = its high nibble
+  .1162 L = the middle 8 bits
+
+@1163 FAT_GET_CHECK
+  Part of $1148: DE = the entry; a value above $FF7 (end of chain or bad) becomes $FFFF.
+  .1163 The entry's top 4 bits
+  .1166 DE = the entry
+  .1167 Above $FF7?
+  .116D No: NC, DE = the next cluster
+
+@116E FAT_GET_END
+  Part of $1148: answers DE = $FFFF, the end of the chain.
+  .116E End of chain
+
+@1172 CLUSTER_TO_SECT
+  Gives the disk sector of a sector within a cluster: (cluster - 2) shifted left by the drive's
+  sectors-a-cluster power, plus the sector, plus the first data sector.
+  Entry: HL = the drive's parameter block (+$09 the first data sector, +$0B the power of 2 of the
+  sectors a cluster); DE = the cluster; A = the sector within the cluster.
+  Exit: DE = the sector number.
+  Changes: AF, DE.
+  Keeps: BC, HL, IX, IY.
+  .1174 HL = the block + $0B
+  .1178 B = the shift count ...
+  .1179 ... + 1 for the DJNZ
+  .117A HL = the cluster ...
+  .117B ... - 2
+  .117D Its operand byte ($29) is the loop's ADD HL,HL at $117E
+  .117F Shifts HL left the count times
+  .1181 Plus the sector in the cluster
+  .1184 HL = the block + $09
+  .1187 HL = the first data sector
+  .118B Plus the cluster's sector
+  .118C DE = the sector number
+
+@125C FAT_SYNC_COPIES
+  Ends the single-FAT mode of the drive whose parameter block is HL: when its +$18 bit 0 is set,
+  marks every sector of the first FAT to be written to all the copies (bit 6 of each buffer's
+  flags, through $0AD2/$0B8F), then sets +$18 to 0 and stores the 0 in the boot sector (data byte
+  $46) too (FAT_MODE_SET).
+  Entry: HL = the drive's parameter block.
+  Exit: the mode cleared; IX as on entry.
+  Changes: AF, HL, IY, AF', BC', DE', HL'.
+  Keeps: BC, DE, IX.
+  .125C IX = the block (its own IX kept on the stack)
+  .125F Single-FAT mode on?
+  .1263 No: nothing to do
+  .1265 A = 0: write to all copies, mode 0
+
+@1190 FAT_SET
+  Writes a cluster's FAT entry: first ends the single-FAT mode (FAT_SYNC_COPIES), then stores the
+  12-bit value in the FAT's buffer ($1193 on, FAT_SET_STORE) and marks it to be written. A value
+  of $1000 or more is stored as $FFF.
+  Entry: HL = the drive's parameter block; DE = the cluster; BC = the value.
+  Exit: the entry set in the buffer.
+  Changes: AF, BC, HL, IY, AF', BC', DE', HL'.
+  Keeps: DE, IX.
+  .1190 Writes go to every FAT copy again
+
+@119C FAT_SET_LOCATE
+  Part of FAT_SET: finds the entry's two bytes ($11ED); a cluster past the disk's end goes to
+  FAT_SET_BADCL.
+  .119C DE = the entry's bytes, carry for an odd cluster
+  .119F Found
+
+@11A1 FAT_SET_BADCL
+  Part of FAT_SET: the cluster number is past the disk's last; reports error $A3 through $0ED5,
+  again while it returns Z, and writes nothing.
+  .11A1 Error $A3
+  .11A3 NC for $0ED5
+  .11A4 Reports it
+  .11A7 Report again?
+
+@11AB FAT_SET_STORE
+  Part of FAT_SET: an even cluster takes the low 12 bits of the two bytes: C in the first, B's
+  low nibble under the second byte's high nibble.
+  .11AB Keeps HL
+  .11AC An odd cluster?
+  .11AE First byte = the value's low byte
+  .11B1 Second byte: keeps its high nibble ...
+  .11B4 ... and takes the value's top 4 bits
+
+@11B8 FAT_SET_ODD
+  Part of FAT_SET: an odd cluster takes the high 12 bits: the value x 16 goes in under the first
+  byte's low nibble.
+  .11B8 HL = the value
+  .11BA HL = the value x 16
+  .11BD First byte: keeps its low nibble ...
+  .11C0 ... and takes the value's low 4 bits
+  .11C3 Second byte = the value's top 8 bits
+
+@11C5 FAT_SET_DIRTY
+  Part of FAT_SET: marks the buffer to be written. When the entry straddles two sectors (IY+$63
+  bit 0, its bytes kept at IY+$66), the second byte goes to the first data byte of the second
+  sector's buffer and the first byte to the last of the first sector's ($11D9, the sector kept at
+  IY+$64).
+  .11C5 Mark the buffer changed (HL = its flags)
+  .11C8 Did the entry straddle two sectors?
+  .11CC No: done
+  .11CE HL = the buffer's first data byte
+  .11D2 The second byte goes there
+  .11D3 A = the first byte
+  .11D5 DE = IY+$64: the first sector (byte $64 follows)
+
+@11D9 FAT_SET_SPLIT
+  Part of FAT_SET (after the inline byte at $11D8): puts the first byte of a straddling entry in
+  the last data byte of its sector's buffer.
+  .11D9 IX = the parameter block (saved on the stack)
+  .11DB Keeps the byte
+  .11DC HL = the sector's buffer
+  .11DF Mark it changed
+  .11E2 HL = its last data byte
+  .11E7 The first byte goes there
+  .11E8 IX back
+
+@11EA FAT_SET_EXIT
+  Part of FAT_SET: puts HL back and returns through FAT_SET_RET.
+  .11EA HL back
+
+@11EB FAT_SET_RET
+  Part of FAT_SET: puts the caller's DE back and returns.
+  .11EB DE back (the cluster)
+
+@1248 FAT_LOC_FOUND
+  Part of $11ED (find a FAT entry): DE = the entry's two bytes; Z, with carry for an odd cluster
+  (the half byte of cluster x 1.5).
+  .1248 DE = the entry's bytes
+  .1249 Carry = the odd half
+  .124A A = 0 or $FF
+  .124B Z: found
+  .124C Carry = odd cluster
+
+@124D FAT_LOC_EXIT
+  Part of $11ED: puts HL, BC and IX back and returns (NZ, from $1202, when the cluster is past the
+  last).
+  .124D HL back
+
+@1268 FAT_SINGLE_ON
+  Starts the single-FAT mode of the drive whose parameter block is HL, unless its +$19 bit 7 is
+  set or the mode is on already: goes over every sector of the first FAT through $0AE0 and
+  $09F9 with one copy, then sets +$18 to 1 and stores the 1 in the boot sector (FAT_MODE_SET).
+  From then on FAT writes go to the first copy only, until FAT_SYNC_COPIES.
+  Entry: HL = the drive's parameter block.
+  Exit: the mode on; IX as on entry.
+  Changes: AF, HL, IY, AF', BC', DE', HL'.
+  Keeps: BC, DE, IX.
+  .1268 IX = the block (its own IX kept on the stack)
+  .126B Drive barred from single-FAT mode?
+  .126F Yes: leave the mode alone
+  .1271 Single-FAT mode on already?
+  .1277 A = 1: one copy, mode 1
+
+@1279 FAT_MODE_SET
+  Part of FAT_SYNC_COPIES and FAT_SINGLE_ON (A = the new mode, 0 or 1): with more than one FAT,
+  goes over the first FAT's sectors (FAT_MODE_LOOP); then records the mode (FAT_MODE_MARK).
+  .1279 Keeps BC
+  .127A Keeps DE
+  .127B B = the number of FATs
+  .127E Only one?
+  .127F Yes: just record the mode
+  .1281 DE = the first FAT sector
+  .1287 B = the sectors of one FAT
+
+@128A FAT_MODE_LOOP
+  Part of FAT_MODE_SET, once per FAT sector: mode 1 takes its buffer through $0AE0 (one copy);
+  mode 0 through $0AD2, then marks it changed and to be written to all copies (bit 6).
+  .128A Keeps the sector count
+  .128B Keeps the mode
+  .128C Mode 1?
+  .128D B = 0 for $0AE0
+  .128F Mode 1: the buffer, one copy
+  .1292 Mode 1
+  .1294 Mode 0: the buffer, every copy
+  .1298 Mark it changed (HL = its flags)
+  .129B Write it to all the copies
+
+@129E FAT_MODE_NEXT
+  Part of FAT_MODE_SET: passes the buffer to $09F9, clears its byte +2 and goes on with the next
+  FAT sector; then B = the mode.
+  .12A1 HL = the buffer's byte +2
+  .12A5 A = the mode
+  .12A6 B = the sectors left
+  .12A7 The next FAT sector
+  .12AA B = the mode
+
+@12AB FAT_MODE_MARK
+  Part of FAT_MODE_SET: when the mode changes, records it in +$18 and in the boot sector (sector
+  0's buffer, data byte $46).
+  .12AB A = the new mode
+  .12AC Is it the mode already?
+  .12AF Yes: nothing to record
+  .12B2 Sector 0 ...
+  .12B5 ... one copy
+  .12BD Mark it changed (HL = its flags)
+  .12C0 HL = data byte $46
+  .12C5 The mode in the boot sector
+  .12C6 And in the parameter block
+
+@12C9 FAT_MODE_POP
+  Part of FAT_MODE_SET: puts DE and BC back.
+  .12C9 DE back
+
+@12CB FAT_MODE_EXIT
+  Part of FAT_SYNC_COPIES, FAT_SINGLE_ON and FAT_MODE_SET: puts IX and HL back and returns.
+  .12CB IX back; the parameter block on the stack
+  .12CD HL = the parameter block
+
+@1343 DIRPOS_PTRS
+  Sets up the copy of a 12-byte directory position between a file's descriptor (from +$17) and
+  the current one at IY+$30.
+  Entry: IX = the descriptor.
+  Exit: DE = IY+$30; HL = IX+$17; BC = 12.
+  Changes: F, BC, DE, HL.
+  Keeps: A, IX, IY.
+  .1346 DE = IY+$30: the current position
+  .134E HL = the descriptor's position
+  .1352 12 bytes
+
+@1326 DIRPOS_RESTORE
+  Makes the directory position kept in a descriptor the current one: selects its drive ($0CC9)
+  and copies its 12 bytes from +$17 to IY+$30. Sets IY+$63 bit 2 either way (the sector buffer
+  must be found again).
+  Entry: DE = the descriptor (+$07 the drive).
+  Exit: Z, A = 0; IX = the descriptor; the position copied.
+  Error: NZ, A = the error from $0CC9.
+  Changes: AF, DE, HL, IX, IY, AF', BC', DE', HL'.
+  Keeps: BC.
+  .1327 IX = the descriptor
+  .132A C = its drive
+  .132F Select the drive
+  .1332 Failed?
+  .1336 Set up the copy
+  .1339 The position is current
+  .133C A = 0: done
+
+@133D DIRPOS_EXIT
+  Part of DIRPOS_RESTORE: puts BC back and marks the buffer to be found again (IY+$63 bit 2).
+  .133D BC back
+  .133E The entry's buffer must be found again
+
+@16C7 DIR_REFETCH
+  Gives the current directory entry again after the position was restored: counts one more entry
+  left in the sector (IY+$39) and takes a step of 0 bytes through the stepping code at $16D4,
+  which comes back with DE = the entry in its sector buffer.
+  Entry: DE = the current entry; IY+$30 on, the directory position.
+  Exit: DE = the entry (from $16D4 on).
+  .16C7 Undoes the step's count of one entry
+  .16CA Keeps BC
+  .16CB A step of 0 bytes ($16D0's is $20)
+
+@12F9 DIR_REOPEN_ENTRY
+  Goes back to the directory entry of an open file: the descriptor at DE must start with $FE;
+  the position kept in the block at HL is restored (DIRPOS_RESTORE), the 4 bytes at the
+  descriptor's +$19 are copied to +$2C, and the entry is fetched again (DIR_REFETCH).
+  Entry: DE = the file's descriptor (first byte $FE); HL = the block with the position.
+  Exit: Z; A = the entry's attributes (its byte $0B); DE = the entry; IX = the descriptor.
+  Error: NZ, A = $A0 (not a $FE descriptor) or DIRPOS_RESTORE's error.
+  Changes: AF, DE, HL, IX, IY, AF', BC', DE', HL'.
+  Keeps: BC.
+  .12F9 The descriptor's first byte
+  .12FA $FE?
+  .12FC Error $A0
+  .12FF Keeps the descriptor
+  .1300 DE = the position's block
+  .1301 Restore the position
+  .1305 Failed
+  .1309 HL = the descriptor + $19 ...
+  .130E ... DE = + $2C
+  .1312 4 bytes
+  .1316 HL = the descriptor
+  .1317 DE = the directory entry
+  .131B HL = its byte $0B ...
+  .131F ... A = the attributes
+  .1321 IX = the descriptor
+  .1324 Z: done
+
+@1646 DIR_ENTER_ENTRY
+  Makes the directory whose entry DE points at the one to search: its start cluster (the entry's
+  word at +$1A) goes to IY+$30; cluster 0 means the root ($FF00). With C' bit 2 set, a start
+  cluster equal to IY+$5E sets IY+$5D bit 6 ($15A8 on).
+  Entry: DE = the directory entry.
+  Exit: Z, A = 0; IY+$30 = the directory's start cluster.
+  Changes: AF, DE.
+  Keeps: BC, HL, IX, IY.
+  .1646 Keeps HL (popped at $15C4)
+  .1647 HL = the entry's start cluster
+  .164E 0 (the root)?
+  .1650 No: that cluster
+  .1653 Yes: the root
+
+@12CF DIR_SELECT
+  Selects the directory a search runs in, and starts it at its first entry (DIR_FIRST):
+  1. DE's first byte $FF: the directory is the path text at HL (DIR_SELECT_PATH).
+  2. Else DE is an open file's descriptor: its entry is fetched again (DIR_REOPEN_ENTRY), must be
+  a directory (attribute bit 4) and becomes the one to search.
+  Entry: DE = the descriptor or $FF; HL = the path text or the block with the position; B, C as
+  PATH_PARSE takes them.
+  Exit: Z; the search started.
+  Error: NZ, A = $A1 (not a directory), $A8 (the path text does not end the path) or the error of
+  DIR_REOPEN_ENTRY or PATH_PARSE.
+  Changes: AF, BC, DE, HL, IX, IY, AF', BC', DE', HL'.
+  .12CF The first byte
+  .12D0 $FF?
+  .12D1 Yes: a path
+  .12D3 A = the entry's attributes
+  .12D6 Failed
+  .12D7 A directory?
+  .12DB Error $A1: not a directory
+  .12DE Search this directory
+
+@1513 PATH_GET_CHAR
+  Reads the next character of the path text at DE' (the alternate set): from segment IY+$2D
+  paged into page 1 unless C' bit 3 is set (the text is in view). Unless C' bit 1 is set, a-z
+  become upper case and "!" and "'" are taken as "\".
+  Entry: DE' = the text; C' = the flags.
+  Exit: NZ, A = the character, DE' past it; Z, A = 0 at the end (DE' stays).
+  Changes: AF, DE'.
+  Keeps: BC, DE, HL, IX, IY.
+  .1513 The text's set
+  .1515 Text in view?
+  .1519 Keeps BC'
+  .151C B = page 1's segment
+  .151E Page 1 = the text's segment
+  .1523 A = the character
+  .1524 Page 1 back
+  .1526 BC' back
+
+@14DB IS_CAPITAL
+  Tests for a capital letter.
+  Entry: A = the character.
+  Exit: Z (NC) for "A"-"Z"; NZ otherwise, with carry below "A".
+  Changes: F.
+  Keeps: A, BC, DE, HL, IX, IY.
+  .14DB Below "A"?
+  .14DE Above "Z"?
+  .14E2 Z: a letter
+
+@1546 PATH_UNGET_CHAR
+  Steps the path text back by one character: DE' - 1.
+  Entry: DE' = the text.
+  Exit: DE' = the text - 1.
+  Changes: DE'.
+  Keeps: AF, BC, DE, HL, IX, IY.
+  .1547 Back one character
+
+@1369 PATH_PARSE
+  Reads a path: "[drive:][\]dir\...\name.ext". Swaps the register sets (the caller's are the
+  alternates while it runs, the text read through DE') and leaves them swapped. The flags are
+  the caller's C.
+  1. A letter and ":" give the drive (1 = A); else IX+7, or the default drive IY-$57 when that
+  is 0. IX+7 = the drive.
+  2. Flag bit 7: selects the drive ($0CC9, HL = its parameter block) and sets the start
+  directory (PATH_START_DIR): the root after a "\" (or with IX+6 bit 3), else the drive's
+  current one.
+  3. IX+6 bit 3: the rest is one raw 11-character name up to "/" (PATH_RAW_NAME). Else each
+  element is read into the name buffer (PARSE_NAME_ELEM) and, when a "\" follows, looked up and
+  entered (PATH_FIND_ELEM); the last one too when flag bit 0 is set and it has a name.
+  4. PATH_FINISH writes 0 at the text position kept at IY+$5B (where the last directory element
+  ended) and, with flag bit 7, clears the word at the caller's HL.
+  Entry: DE = the text; C = the flags; HL = the word to clear; IX = the parse block (+6 flags,
+  +7 drive or 0).
+  Exit: the sets swapped; Z, A = 0; DE = the text after the path; C = the character that stopped
+  it (0 at the end); B = the last element's flags; the name buffer (IY+$6D1) holds it.
+  Error: NZ, A = the error code ($0CC9's, or a lookup's).
+  Changes: AF, BC, DE, HL, IX, IY, AF', BC', DE', HL'.
+  .1369 Text not in view ...
+  .136B ... and folded to upper case
+  .136D The text goes to the alternate set
+  .136E B = flags: bit 2, a drive was given
+  .1370 Empty?
+  .1375 A letter?
+  .1378 No: no drive
+  .137A C = the drive number (1 = A)
+  .137D Anything after it?
+  .1382 ":"?
+  .1384 Yes: a drive
+  .1386 No: back to the letter
+
+@1389 PATH_UNGET1
+  Part of PATH_PARSE: steps the text back by one character, then takes the default drive.
+  .1389 Back to the start
+
+@138C PATH_DEF_DRIVE
+  Part of PATH_PARSE: no drive in the text: the parse block's drive, or the default (IY-$57) when
+  that is 0.
+  .138C A = the block's drive
+  .138F C = the default drive
+  .1392 None in the block?
+
+@1396 PATH_NO_DRIVE
+  Part of PATH_PARSE: no drive was given (B bit 2 cleared).
+  .1396 No drive given
+
+@1398 PATH_SET_DRIVE
+  Part of PATH_PARSE: stores the drive in the block, selects it when C' bit 7 is set ($0CC9),
+  and reads a leading "\" (B bits 0 and 1); IX+6 bit 3 forces the root.
+  .1398 The block's drive
+  .139B Keeps the flags
+  .139D B = 0 for $0CC9
+  .139F Look the path up?
+  .13A2 Yes: select the drive
+  .13A6 Failed?
+  .13A8 A raw name (from the root)?
+  .13AC Keeps the answer
+  .13AF The first character
+  .13B2 End of text
+  .13B4 "\"?
+  .13B6 No: put it back
+  .13B8 Yes: B bit 0, a "\" was read
+
+@13BA PATH_FROM_ROOT
+  Part of PATH_PARSE: B bit 1, start at the root; A = 0 so nothing is put back.
+  .13BA Start at the root
+
+@154A PATH_START_DIR
+  Sets the directory a path starts in (IY+$30): the root when B bit 1 is set or the drive has no
+  current directory (+$1E bit 7 of its parameter block); else walks the drive's current-directory
+  path, kept as text at +$20, from the root through PARSE_NAME_ELEM and $15D4. When that walk
+  fails, the path text is cleared (+$20 = 0) and the root is used.
+  Entry: HL = the drive's parameter block; B = the flags; the path text at DE' (C' its flags).
+  Exit: A = 0; IY+$30 = the start directory's cluster.
+  Changes: AF, DE, HL, IX, IY, AF', HL'.
+  Keeps: BC.
+  .154A Keeps the parameter block
+  .154B From the root?
+  .154F HL = the current directory's cluster ...
+  .1556 None (bit 7)?
+  .155A Z when it is cluster 0
+  .155C HL = the block; its +$1F on the stack
+  .155D The text's set
+  .155E HL = the block + $1F
+  .1560 Keeps the caller's flags and text
+  .1562 DE = the kept path text (+$20)
+  .1564 Text in view
+  .1566 Look each element up ...
+  .156A ... unless the start cluster is 0
+
+@13BD PATH_START
+  Part of PATH_PARSE: puts a non-"\" character back, sets the start directory when C' bit 7 is
+  set (PATH_START_DIR), keeps the text position at IY+$5B and goes on with the raw name
+  (PATH_RAW_NAME) or the elements (PATH_ELEM_LOOP).
+  .13BD Not a "\": put it back
+  .13C1 Look the path up?
+  .13C4 Yes: set the start directory
+  .13C8 Keeps the text position
+  .13CF The raw-name answer
+  .13D0 A raw name
+
+@1666 NAME_BUFFER
+  Gives the 11-byte name buffer (8 + 3 characters).
+  Entry: IY = EXDOS's variables.
+  Exit: HL = IY+$6D1.
+  Changes: F, HL.
+  Keeps: A, BC, DE, IX, IY.
+  .166A HL = IY+$6D1
+
+@14E6 IS_BAD_NAME_CHR
+  Tests whether a character may not be part of a file name: a control code, or one of the 19 in
+  the table at $1500 (space, tab and : ; . , = + # \ ! ' < > | / " [ ]).
+  Entry: A = the character.
+  Exit: Z when it may not; NZ when it may.
+  Changes: F.
+  Keeps: A, BC, DE, HL, IX, IY.
+  .14E6 A control code?
+  .14E8 No: search the table
+  .14EA Z: not allowed
+
+@143E PARSE_NAME_ELEM
+  Reads one path element into the name buffer (NAME_BUFFER) as 8 + 3 characters padded with
+  spaces: "." and ".." are taken whole; else the name part up to a "." or a character not
+  allowed in a name, then the extension after a ".".
+  Entry: the text at DE' (C' its flags); B = the flags (bits 0-2 kept).
+  Exit: A = the character that stopped it (unread; 0 at the end); B bit 0 = something stored,
+  bit 3 = a name part, bit 4 = a "." before an extension, bit 5 = wildcards, bit 6 = "." or
+  "..", bit 7 = "..".
+  Changes: AF, BC, DE'.
+  Keeps: DE, HL, IX, IY.
+  .1440 HL = the name buffer
+  .1443 8 characters of name
+  .1445 Keeps the low 3 flags
+  .1449 The first character
+  .144C End: an empty name
+  .144E "."?
+  .1450 No: put it back, read a name
+  .1452 One dot
+  .1454 The next one
+  .1457 End: "."
+  .1459 Allowed in a name?
+  .145C Yes: put both back, read a name
+  .145E A second "."?
+  .1460 No: put it back, "."
+  .1462 ".."
+  .1464 Two dots
+  .1465 The next one
+  .1468 End: ".."
+  .146A Allowed in a name?
+  .146D Yes: put them back, read a name
+  .146F A third "."?
+  .1471 Yes: put them back, read a name
+
+@15C6 PATH_FIND_ELEM
+  Remembers where an element ended (IY+$5B) and marks B bit 1; when C' bit 7 is set, looks the
+  element up in the directory being searched and enters it ($15D4 on).
+  Entry: B = the element's flags; DE' = the text; C' = the flags.
+  Exit: A = 0 (not looked up, or found).
+  Error: A = $A8 or $AA from the lookup.
+  Changes: AF, BC, DE, HL, IX, IY, AF', BC', DE', HL'.
+  .15C6 A = 0
+  .15C7 B bit 1
+  .15CA Look it up?
+  .15CC Keeps the text position
+  .15D3 No: done
+
+@13D2 PATH_ELEM_LOOP
+  Part of PATH_PARSE: reads each element; one followed by "\" is a directory, looked up and
+  entered (PATH_FIND_ELEM), and the "\" is skipped.
+  .13D2 Reads an element
+  .13D5 A "\" after it?
+  .13D7 No: the last element
+  .13D9 Enter the directory
+  .13DC Failed?
+  .13DF Skips the "\"
+
+@13E4 PATH_LAST_ELEM
+  Part of PATH_PARSE: the last element is looked up too when C' bit 0 is set and it has a name or
+  an extension (B bits 3, 4).
+  .13E4 A = 0
+  .13E6 Look the last element up?
+  .13EB A name or a "."?
+  .13EE Yes: look it up
+
+@13F1 PATH_FINISH
+  Part of PATH_PARSE: C = the character after the path (0 at the end); clears the word at the
+  caller's HL when flag bit 7 is set, then PATH_CUT_TEXT.
+  .13F1 Keeps the result
+  .13F2 The next character
+  .13F5 Not the end: put it back
+  .13F8 C = it
+  .13F9 A = the result
+  .13FA The caller's set
+  .13FD Look the path up?
+  .1401 Yes: clear the word at HL
+
+@1404 PATH_CUT_TEXT
+  Part of PATH_PARSE: writes 0 at the address kept in IY+$5B, returns the text pointer in DE
+  with the sets left swapped, and Z for A = 0.
+  .1404 HL = the address kept
+  .140A 0 there
+  .140B DE = the text ...
+  .140C ... in the parser's set
+  .140E Z for A = 0
+
+@1410 PATH_RAW_NAME
+  Part of PATH_PARSE, IX+6 bit 3: the rest of the text, case kept, is one raw 11-character name
+  up to a "/" or the end, padded with spaces; characters past 11 are skipped.
+  .1410 Keep the case
+  .1414 Keeps HL
+  .1415 HL = the name buffer
+  .1418 11 characters (C counts 12)
+
+@141A RAW_NAME_FULL
+  Part of PATH_RAW_NAME: the buffer is full; C goes back to 1 so further characters are skipped.
+  .141A C = 1 again (full)
+
+@141B RAW_NAME_CHAR
+  Part of PATH_RAW_NAME: reads each character into the buffer (B bits 0 and 3).
+  .141B The next character
+  .141E End: pad
+  .1420 "/"?
+  .1422 Yes: put it back, pad
+  .1424 Something stored ...
+  .1426 ... a name
+  .1428 Buffer full?
+  .142B Stores it
+
+@142F RAW_NAME_SLASH
+  Part of PATH_RAW_NAME: puts the "/" back.
+  .142F Puts the "/" back
+
+@1432 RAW_NAME_PAD
+  Part of PATH_RAW_NAME: fills the rest of the buffer with spaces.
+  .1432 Filled?
+  .1435 A space
+
+@143A RAW_NAME_DONE
+  Part of PATH_RAW_NAME: A = 0, then PATH_FINISH.
+  .143A HL back
+  .143B A = 0: done
+
+@1473 NAME_DOTS_UNGET
+  Part of PARSE_NAME_ELEM: the character after "." or ".." is not a dot: puts it back.
+  .1473 Puts it back
+
+@1476 NAME_STORE_DOTS
+  Part of PARSE_NAME_ELEM: stores the dots ("." or "..") and marks B bits 0, 3 and 6.
+  .1476 A dot
+  .1479 One less to pad
+  .147A Another?
+  .147D Something stored, a name, dots
+
+@1483 NAME_UNGET3
+  Part of PARSE_NAME_ELEM: puts back three characters (two dots and the next).
+  .1483 Puts one back
+
+@1486 NAME_UNGET2
+  Part of PARSE_NAME_ELEM: puts back two characters.
+  .1486 Puts one back
+
+@1489 NAME_UNGET1
+  Part of PARSE_NAME_ELEM: puts back one character.
+  .1489 Puts one back
+
+@14A5 COPY_NAME_PART
+  Copies a name part from the path text to HL: at most C characters, upper case as
+  PATH_GET_CHAR gives them; "*" fills the rest with "?"; characters past C are skipped; the rest
+  is padded with spaces. Stops at the end or at a character not allowed in a name, which is put
+  back.
+  Entry: C = the part's length; HL = where it goes; the text at DE' (C' its flags); B = the
+  flags.
+  Exit: Z; HL past the part; D = 1 when a character was taken, else 0; B bit 0 set for one, bit
+  5 for "?" or "*"; A = the character that stopped it (0 at the end).
+  Changes: AF, BC, D, HL, DE'.
+  Keeps: E, IX, IY.
+  .14A5 Nothing taken yet
+
+@148C NAME_MAIN_PART
+  Part of PARSE_NAME_ELEM: copies the name part (8 characters); B bit 3 when it has one.
+  .148C The name part
+  .148F Anything taken?
+  .1492 Yes: a name
+
+@1494 NAME_EXT_DOT
+  Part of PARSE_NAME_ELEM: a "." starts the extension (B bit 4) and is skipped.
+  .1494 "."?
+  .1498 Yes: an extension
+  .149A Skips it
+
+@149D NAME_EXT_PART
+  Part of PARSE_NAME_ELEM: copies the extension (3 characters) and returns.
+  .149D 3 characters
+  .149F The extension
+
+@16AA DIR_FIRST
+  Starts a search of the directory whose start cluster is at IY+$30 (bit 7 of the high byte set:
+  the root): DE = that cluster, then on at $16AE.
+  Entry: IY+$30 = the directory's start cluster; HL = the drive's parameter block.
+  Exit: as $16AE on.
+  .16AA DE = IY+$30 (byte $30 follows)
+
+@12E3 DIR_SELECT_PATH
+  Part of DIR_SELECT: reads the path text (PATH_PARSE with flags $81: look it up, the last
+  element too); anything left after the path is error $A8.
+  .12E3 IX = the parse block
+  .12E6 Keeps BC
+  .12E7 DE = the text, HL = the block
+  .12E8 Look up every element
+  .12EA Read and walk the path
+  .12ED Failed?
+  .12EF Anything after the path?
+  .12F0 Error $A8
+
+@12F2 DIR_SELECT_POP
+  Part of DIR_SELECT: puts BC back; returns an error (NZ).
+  .12F2 BC back
+
+@12F4 DIR_SELECT_GO
+  Part of DIR_SELECT: starts the search at the directory's first entry; Z.
+  .12F4 Start at the first entry
+  .12F7 Z: done
+
+@1356 PATH_PARSE_DEF
+  PATH_PARSE_BLK with drive 0 (the default).
+  Entry: A = the parse flags (IX+6); C = PATH_PARSE's flags; DE = the text.
+  Exit: as PATH_PARSE.
+  Error: as PATH_PARSE.
+  Changes: AF, BC, DE, HL, IX, IY, AF', BC', DE', HL'.
+  .1356 Drive 0: the default
+
+@1358 PATH_PARSE_BLK
+  PATH_PARSE with EXDOS's own parse block (IY+$6A1): its flags = A, its drive = B.
+  Entry: A = the parse flags (IX+6); B = the drive (0 = the default); C = PATH_PARSE's flags;
+  DE = the text.
+  Exit: as PATH_PARSE; IX = the parse block.
+  Error: as PATH_PARSE.
+  Changes: AF, BC, DE, HL, IX, IY, AF', BC', DE', HL'.
+  .1358 IX = IY ...
+  .135D ... + $6A1: the parse block
+  .1363 Its flags
+  .1366 Its drive
+
+feedback missing 1005 The card does not say the entry's address ($D005) is passed at $01CA to $03DF, which stores it as the RAM disk's driver; nor the same for $1FD3 at $01B2. A "referenced as an immediate" fact would have saved a search of the ROM bytes.
+feedback wrong 1FC5 The card runs $1FC5 on past its RET at $1FD2 into $1FD3-$1FEA, a separate entry (the floppy driver, address passed at $01B2); it should be its own card.
+feedback wrong 154A $1581 is reported as a jump to $3F16, but it is reached only with Z (from $157F) so never jumps; its operand bytes hide LD D,$FF at $1582 (from $157A).
+feedback pattern 1513-1546 PATH_GET_CHAR and PATH_UNGET_CHAR keep the text in the alternate set; every caller's register facts (BC', DE') follow from that, worked out by hand several times.
+feedback listing 0F9C-0FD6 Opened to see what falls into $0FD6 (the key read and $BFF2 test) and $01A0-$01E0 for the $D005 reference.
+question 1005 Does the code that calls a driver put the caller's page-1 segment back? RAMDISK_DRIVER leaves its own segment in page 1 and the caller's in A'.

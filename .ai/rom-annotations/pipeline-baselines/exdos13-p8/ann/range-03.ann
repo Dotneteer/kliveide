@@ -1,0 +1,884 @@
+rom ep-exdos13.rom page 0 cpu z80
+default observed
+
+# Range 3: the sector buffer cache (a chain of buffers from IY+$22, the last one used at IY+$24),
+# the disk-change check that logs a disk in, the drive layout read from the boot sector, the
+# drive-letter map, the error prompt ("Retry or abort?") and the prompt's output helpers.
+#
+# A buffer header (BUF_CLAIM fills it): +0/+1 the next buffer (0 ends the chain), +2 the drive
+# (0 = free, bit 7 = a buffer kept aside), +3 flags (bit 7 changed, bit 6 write only the last
+# copy, bit 1 Ignore allowed, bit 0 a mark for the walks), +4/+5 the sector, +6 the number of
+# copies, +7 sectors between copies, +8 the segment holding the buffer, +9/+10 the drive's
+# parameter block, +$0B the data.
+
+bytes 0AD1-0AD1
+
+@0AA3 BUF_WR_DONE
+  The end of a buffer write (the flush that starts at $0A2E): after the error prompt, Z (Retry)
+  writes the buffer again from $0A47; otherwise, and after a write that worked, puts page 1's
+  segment and the caller's registers back.
+  .0AA3 HL = the buffer's flags byte (+3)
+  .0AA4 Retry: write it again
+  .0AA8 B = page 1's segment on entry
+  .0AAA Back in page 1
+
+@0AAE BUF_WR_EXIT
+  Returns with the caller's HL: the buffer was free or unchanged, or the write is done.
+  .0AAE HL = the buffer
+  .0AAF Done
+
+@0ACD BUF_DATA_PTR
+  The end of $0AB9 when B was $FF: returns HL = the buffer's data, 11 bytes past its header.
+  .0ACD BC = $000B (B is 0 here)
+  .0ACF HL = the data
+  .0AD1 Data: $80, read as IX+8 when $0AB9 sets IX = $CAC9
+
+@0B9B BUF_MATCH
+  Does buffer HL hold sector DE of drive C?
+  Entry: HL = a buffer header, C = the drive, DE = the sector.
+  Exit: Z = it does.
+  Changes: AF.
+  Keeps: BC, DE, HL, IX, IY.
+  .0B9C HL+2 = the buffer's drive
+  .0B9F Same drive?
+  .0BA2 HL+4 = the sector, low byte first
+  .0BA5 Same low byte?
+  .0BAA Same high byte?
+
+@0BAB BUF_MATCH_END
+  BUF_MATCH's exit: puts the buffer's address back in HL.
+  .0BAB HL = the buffer
+  .0BAC Z = a match
+
+@0AE2 BUF_GET_SECTOR
+  Finds the buffer for sector DE of the drive whose parameter block is IX, reading the sector
+  in when no buffer holds it.
+  1. The buffer used last (IY+$24) is tried first; a match returns at once.
+  2. Otherwise the chain from IY+$22 is searched (BUF_SEARCH_LOOP); a buffer found there becomes
+     the last used and moves to the chain's end ($09CC).
+  3. Otherwise the chain's first buffer is taken (the second when the first is kept aside, bit 7
+     of its drive) and filled for this sector (BUF_CLAIM), which writes it out first if changed.
+  Entry: A = the number of copies (IY+$68), B = flags (bit 0 read the sector in, bit 1 Ignore
+  allowed in the prompt), DE = the sector, IX = the drive's parameter block.
+  Exit: HL = the buffer header (data at HL+$0B), A = 0 and Z.
+  .0AE2 Copies of this sector (FAT copies)
+  .0AE5 C = the drive's number (parameter block +8)
+  .0AE8 HL = the buffer used last
+  .0AEF None yet (H = 0)? Then carry skips the test
+  .0AF4 It holds the sector: done
+  .0AF5 HL = the chain's first buffer
+
+@0AFC BUF_SEARCH_LOOP
+  Walks the buffer chain for the sector; the chain's head is on the stack. A match goes to
+  $0B7F with HL = the buffer; the end of the chain picks a buffer to reuse.
+  .0AFF Found: $0B7F drops the head and keeps HL
+  .0B01 HL = the next buffer
+  .0B05 End of the chain?
+  .0B08 HL = the chain's first buffer
+  .0B0B Is it kept aside (bit 7 of its drive)?
+  .0B0E A = the link's high byte
+  .0B10 No: reuse the first buffer
+  .0B12 Yes: reuse the second one
+
+@0B14 BUF_CLAIM
+  Fills buffer HL's header for sector DE (the layout is at the top of this file) after writing
+  out what it held ($0A2E). Bit 0 of B clear: returns at once (the caller fills the data);
+  else the sector is read in (BUF_READ_SECTOR).
+  .0B14 Writes the buffer out if it was changed
+  .0B17 Keeps the buffer
+  .0B1A +2 = the drive
+  .0B1D +3 = flags: only Ignore allowed (bit 1) is kept
+  .0B21 +4/+5 = the sector
+  .0B25 +6 = the number of copies
+  .0B2A +7 = sectors between copies (parameter block +$11)
+  .0B2F +8 = the segment in page 1, which holds the buffer
+  .0B33 HL = the data (+$0B)
+  .0B37 IX = the data; the parameter block goes on the stack
+  .0B39 HL = the parameter block
+  .0B3A +9/+10 = the parameter block
+  .0B40 IX = the data seen through page 1 ($C000 = minus $4000)
+  .0B46 Read the sector in?
+  .0B48 No: done
+
+@0B4A BUF_READ_SECTOR
+  Reads the sector into the buffer: tries each copy in turn (B = the number of copies).
+  .0B4A Keeps the flags and the drive
+  .0B4C B = copies to try
+
+@0B51 BUF_READ_NEXT
+  The next copy: C sectors further on.
+  .0B51 E + C: the same sector in the next copy
+  .0B54 No carry into D?
+
+@0B57 BUF_READ_TRY
+  Reads one copy: the disk call at $0C1E with A = 4 (read) and BC = $01FF.
+  .0B59 512 bytes
+  .0B5C Read
+  .0B63 Read: $0B79 drops the saved registers and goes on
+  .0B65 Error $BF?
+  .0B67 Yes: straight to the prompt
+  .0B69 Try the next copy
+
+@0B6B BUF_READ_FAIL
+  Every copy failed: asks the user (error prompt at $0ED5), offering Ignore only when bit 1
+  of the flags is set.
+  .0B6D No carry: Ignore is offered
+  .0B6E Ignore allowed?
+  .0B72 No: carry takes Ignore out of the prompt
+
+@0B73 BUF_READ_ASK
+  Shows the error prompt for error A: Retry reads again; Ignore goes on with the buffer as it
+  is. Abort does not come back.
+  .0B73 Error prompt: Z = Retry, NZ = Ignore
+  .0B76 Retry
+  .0B78 Never taken (Z tested above): hides POP DE/POP BC ($0B79)
+
+@0B7B BUF_CLAIM_DONE
+  The buffer is ready: puts the drive's parameter block back in IX, makes the buffer the last
+  used (IY+$24), sets bit 2 of IY+$63 and moves the buffer to the end of the chain ($09CC).
+  BUF_GET_SECTOR enters at $0B7F, inside CP $C1, to drop the chain's head instead.
+  Exit: HL = the buffer header, A = 0 and Z.
+  .0B7B HL = the buffer; the parameter block comes off the stack
+  .0B7C IX = the drive's parameter block
+  .0B7E Its result is not used: the byte $C1 is POP BC, entry $0B7F
+  .0B84 The buffer used last
+  .0B8A Moves it to the end of the chain (most recent last)
+  .0B8D A = 0: done
+
+@0B8F BUF_MARK_DIRTY
+  Marks the buffer used last (IY+$24) as changed (bit 7 of its flags), so it is written out
+  before reuse.
+  Entry: IY.
+  Exit: HL = the buffer's flags byte (+3).
+  Changes: HL.
+  Keeps: AF, BC, DE, IX, IY.
+  .0B8F HL = the buffer used last
+  .0B95 HL+3 = its flags
+  .0B98 Changed
+
+@0BAD BUF_FLUSH_DRIVE
+  Writes out every changed buffer of a drive. Entered here, the drive is that of the parameter
+  block HL (+8); entered at $0BAE (the SCF inside OR $37) it is A, $FF for every drive.
+  BUF_MARK_DRIVE marks the drive's buffers, then each marked one is written out ($0A2E).
+  Entry: HL = a parameter block, or A = the drive with entry at $0BAE.
+  Exit: Z.
+  Changes: AF, DE', L' (the last two only when the error prompt writes a number).
+  Keeps: BC, DE, HL, IX, IY (the disk call at $0470 restores IY and the alternates).
+  .0BAD Clears carry: the drive comes from HL; its $37 is SCF ($0BAE)
+  .0BAF Marks the drive's buffers
+
+@0BB3 BUF_FLUSH_LOOP
+  Writes out each marked buffer until none is left.
+  .0BB3 Next marked buffer (its mark is cleared)
+  .0BB6 None left: done
+  .0BB8 Writes it out if changed
+
+@0BC3 BUF_FREE_LOOP
+  The loop of $0BBD (and of $0BBE, the SCF inside its OR $37): frees each marked buffer without
+  writing it: moves it to the chain's head ($09FC) and sets its drive to 0.
+  .0BC3 Next marked buffer
+  .0BC6 None left: done
+  .0BC8 Moves it to the head of the chain
+  .0BCB HL+2 = its drive
+  .0BCD 0: the buffer is free
+
+@0BD3 BUF_REC_DRIVE
+  Marks the buffers of the drive whose parameter block is HL: A = its drive number (+8), then
+  BUF_MARK_DRIVE.
+  Entry: HL = a parameter block.
+  Exit: Z; bit 0 of each buffer's flags set for the drive's buffers, clear for the others.
+  Changes: AF.
+  Keeps: BC, DE, HL, IX, IY.
+  .0BD5 HL+8 = the drive's number
+
+@0BDC BUF_MARK_DRV_A
+  Marks (bit 0 of the flags) every buffer of drive A and clears the mark on all others; A =
+  $FF marks the buffers of every drive except those kept aside (bit 7 of the drive).
+  Entry: A = the drive, or $FF.
+  Exit: Z.
+  Changes: AF.
+  Keeps: BC, DE, HL, IX, IY.
+  .0BDF B = the drive to mark
+  .0BE0 HL = the chain's first buffer
+
+@0BE6 BUF_MARK_LOOP
+  One buffer of the walk: DE = the next one; clears its mark and sets it again if it belongs
+  to the drive.
+  .0BE6 DE = the next buffer
+  .0BEA A = this buffer's drive
+  .0BEC Not marked
+  .0BEE Free?
+  .0BF1 The drive asked for?
+  .0BF4 Kept aside (bit 7)?
+  .0BF7 Every drive ($FF) asked for?
+
+@0BFB BUF_MARK_ONE
+  Marks this buffer.
+  .0BFB Mark
+
+@0BFD BUF_MARK_NEXT
+  Goes on with the next buffer until the chain ends, then returns with the caller's BC, DE and
+  HL.
+  .0BFD End of the chain?
+  .0BFF HL = the next buffer
+
+@0C04 BUF_WALK_EXIT
+  Returns with the caller's HL (the flush, free and mark walks end here).
+  .0C04 HL = the caller's HL
+  .0C05 Z
+
+@0C06 BUF_NEXT_MARKED
+  Finds the first buffer of the chain whose mark (bit 0 of the flags) is set, and clears it.
+  Entry: IY.
+  Exit: NZ and HL = that buffer; Z when none is marked.
+  Changes: AF, HL.
+  Keeps: BC, DE, IX, IY.
+  .0C06 HL = the chain's first buffer
+
+@0C0C BUF_NEXT_MARK_L
+  Tests and clears one buffer's mark; else goes on along the chain.
+  .0C0D HL+3 = the flags
+  .0C10 Marked?
+  .0C15 Yes: NZ, HL = the buffer
+  .0C16 HL = the next buffer
+  .0C1A End of the chain?
+  .0C1D Z: none marked
+
+@0C24 DRV_SET_COUNT
+  Sets byte +9 of the parameter block HL to 100 ($64) and returns A unchanged with carry
+  clear. Below 3 that byte makes the next access check the disk ($0C30).
+  Entry: HL = a parameter block, A = the result to return.
+  Exit: carry clear.
+  Changes: F.
+  Keeps: A, BC, DE, HL, IX, IY.
+  .0C25 IX = the parameter block (IX kept on the stack)
+  .0C27 +9 = 100
+  .0C2B IX back
+  .0C2E Carry clear
+
+@0C69 DSK_READ_BOOT
+  Reads the drive's boot sector: the disk call at $0465 with A = 3, which fills the buffer at
+  IY-$3B5F. A failure asks the user (error prompt without Ignore) and reads again; Abort does
+  not come back.
+  Entry: HL = the drive's parameter block, IY.
+  Exit: IX = the boot sector (IY-$3B5F plus $4000, IY+$04A1).
+  Changes: AF, IX, DE', L' (the last two only when the error prompt writes a number).
+  Keeps: BC, DE, HL, IY (the disk call at $0470 saves and restores HL, IY and the alternates).
+  .0C69 Keeps BC, DE for the exit
+
+@0C6B DSK_BOOT_TRY
+  One read; on an error the prompt, then again.
+  .0C6B Disk call 3: read the boot sector
+  .0C70 Read
+  .0C72 Error prompt (no Ignore): returns only for Retry
+
+@0C77 DSK_BOOT_OK
+  The read worked: moves IX $4000 up to the buffer's address in the page it is used from.
+  .0C77 IX + $4000
+  .0C7C The caller's DE, BC
+
+@0C7F DSK_SAME_DISK
+  Is the disk in the drive the one parameter block HL describes? Compares the boot sector's
+  4-byte volume serial (DSK_VOL_SERIAL) with the block's +$19-$1C, then boot sector byte $15
+  with the block's +$1D.
+  Entry: HL = the parameter block, IX = the boot sector.
+  Exit: Z = the same disk.
+  Changes: AF, BC, DE.
+  Keeps: HL, IX, IY.
+  .0C80 HL = the serial (four $FF bytes when the disk has none)
+  .0C83 DE = it
+  .0C86 HL = the block's serial (+$19)
+  .0C8A The 4 bytes match?
+  .0C8D No: NZ
+  .0C8F A = the block's +$1D
+  .0C90 Matches the boot sector's byte $15?
+
+@0C93 DSK_SAME_EXIT
+  Returns with the block's address in HL.
+  .0C93 HL = the parameter block
+
+@0C95 DSK_VOL_SERIAL
+  Finds the boot sector's volume serial: when the 6 bytes at its +$40 are "VOL_ID" ($113D)
+  returns HL = its +$47 (the serial, 4 bytes); else HL = $0CB0, four $FF bytes.
+  Entry: IX = the boot sector.
+  Exit: HL = the serial; Z when the disk has one.
+  Changes: AF, B, DE, HL.
+  Keeps: C, IX, IY.
+  .0C98 HL = boot sector +$40
+  .0C9C DE = "VOL_ID"
+  .0C9F 6 letters
+
+@0CA1 VOL_ID_CMP
+  Compares the 6 letters; on a match HL skips the byte after them.
+  .0CA2 Same letter?
+  .0CA3 No: no serial
+  .0CA9 HL = +$47, the serial
+
+@0CAB VOL_ID_NONE
+  The disk has no "VOL_ID": HL = $0CB0, four $FF bytes taken as its serial ($0CAF, before
+  them, is 0).
+  .0CAB HL = four $FF bytes
+
+@0CB4 CMP4
+  Compares 4 bytes at DE with 4 at HL.
+  Entry: DE, HL = the two.
+  Exit: Z = equal (DE, HL past them); NZ at the first byte that differs.
+  Changes: AF, B, DE, HL.
+  Keeps: C, IX, IY.
+  .0CB4 4 bytes
+
+@0CB6 CMP4_LOOP
+  One byte of CMP4.
+  .0CB8 Different: NZ
+
+@0CFD DRV_UNIT_OWNER
+  Part of $0CC9 (log drive C in): records drive C as the one now using its unit (the table at
+  IY+$234). Then B says what else to do: 1 goes on to check the disk against the caller's file
+  (DRV_CHK_FILE); any other value to DRV_CHK_FLUSH.
+  .0CFD The unit now belongs to drive C
+  .0CFE B = 1?
+  .0CFF No
+
+@0D01 DRV_CHK_FILE
+  Checks that the disk in the drive is the one the caller's file is on: the serial kept at
+  IX+$2C. The parameter block is on the stack.
+  1. A block whose disk was never read (+9 = 0) reads the boot sector (DRV_CHK_FRESH).
+  2. When the block's serial is not the file's, the drive's changed buffers are written out
+     first, then the boot sector is read too.
+  3. Otherwise DRV_CHK_KNOWN decides from +9 whether to look at the disk at all.
+  .0D01 HL = IX
+  .0D04 IX+$2C = the file's disk serial
+  .0D08 DE = it
+  .0D09 HL = the parameter block
+  .0D0D C = 9
+  .0D0F HL+9 = the block's disk state
+  .0D11 0: no disk read yet?
+  .0D14 HL = the block's serial (+$19)
+  .0D17 C = the state
+  .0D19 The file's disk?
+  .0D1D Yes
+  .0D1F A = the drive (IY+$2B)
+  .0D22 Writes out its changed buffers (entry $0BAE: A = the drive)
+
+@0D25 DRV_CHK_FRESH
+  Reads the boot sector and compares its serial with the file's (C = 1: a match rereads the
+  layout).
+  .0D25 HL = the parameter block
+  .0D26 IX = the boot sector
+  .0D2A A match rereads the layout
+
+@0D2E DRV_CHK_KNOWN
+  The block describes the file's disk; its +9 (C) decides: 1 reads the boot sector to compare;
+  2 asks the drive whether the disk changed ($0C5A), reading it only if so; 3 or more trusts the
+  block.
+  .0D30 State 1?
+  .0D33 State 2?
+  .0D34 3 or more: nothing to check
+  .0D37 Disk changed? (disk call 2)
+  .0D3B Z: not changed
+
+@0D3D DRV_CHK_REREAD
+  Reads the boot sector to compare its serial; C = H, not 1 (blocks are not at $01xx), so a
+  match keeps the layout.
+  .0D3D IX = the boot sector
+  .0D40 C = H: not 1, so a match does not reread the layout
+
+@0D41 DRV_CHK_SERIAL
+  Compares the boot sector's serial with the file's (DE). A match ends the check, rereading the
+  layout and freeing the drive's buffers when C = 1; another disk asks for the file's disk
+  (DRV_CHK_WRONG).
+  .0D42 HL = the disk's serial
+  .0D46 The file's?
+  .0D49 HL = the parameter block (kept on the stack)
+  .0D4B No: the wrong disk
+  .0D4D C = 1?
+  .0D50 Rereads the layout from the boot sector
+  .0D53 Frees the drive's buffers
+
+@0D56 DRV_CHK_DONE
+  The disk is the right one: on to the exit.
+  .0D56 Done
+
+@0D58 DRV_CHK_WRONG
+  Error $B2 (Wrong disk for file), Ignore offered: Ignore takes the disk in the drive (layout
+  reread, buffers freed); Retry checks again from DRV_CHK_FILE.
+  .0D58 Carry clear: Ignore is offered
+  .0D59 Error $B2: Wrong disk for file
+  .0D5B Error prompt: Z = Retry
+  .0D5F Ignore: take this disk
+  .0D61 IX = the caller's
+  .0D63 The block back on the stack
+  .0D64 Retry: check again
+
+@0D66 DRV_CHK_FLUSH
+  The B other than 1 path of $0CC9: writes out the drive's changed buffers. B = 2 ends there.
+  Otherwise the disk is checked from the block's +9: below 2 (or a changed disk at 2) the boot
+  sector is read (DRV_CHK_BOOT); above 2 the block is trusted.
+  .0D66 HL = the parameter block
+  .0D67 Writes out the drive's changed buffers
+  .0D6B B = 2 on entry: only that
+  .0D6D IX kept for the exit
+  .0D70 HL+9 = the disk state
+  .0D75 D = state - 2
+  .0D79 Below 2: read the boot sector
+  .0D7B Above 2: nothing to check
+  .0D7E Disk changed? (disk call 2)
+  .0D82 Cannot tell: read the boot sector
+  .0D84 Not changed: nothing to do
+
+@0D86 DRV_CHK_BOOT
+  Reads the boot sector; the layout is read again when the block's state is 0, when the disk
+  is another one, or when bit 7 of its serial's last byte is set (always for a disk without
+  VOL_ID); else the block is kept.
+  .0D86 IX = the boot sector
+  .0D89 D = the state again
+  .0D8B State 0: read the layout
+  .0D8D The same disk?
+  .0D90 No: read the layout
+  .0D92 DE = the serial's last byte
+  .0D94 Serial's last byte below $80: keep the layout
+
+@0D98 DRV_CHK_RELOG
+  Reads the layout from the boot sector and frees the drive's buffers (a new disk).
+  .0D98 Layout from the boot sector
+  .0D9B Frees the drive's buffers
+
+@0D9E DRV_KEEP_SERIAL
+  Copies the block's serial (+$19, 4 bytes) to IX+$2C, the caller's record of the disk.
+  .0D9E DE = the caller's IX
+  .0DA1 HL = the block's serial
+  .0DA6 DE = IX+$2C
+  .0DAA 4 bytes
+
+@0DAE DRV_CHK_EXIT
+  Ends the log-in: HL = the parameter block, IX the caller's; its +9 = 100 and A = 0
+  (DRV_SET_COUNT).
+  .0DAE HL = the parameter block
+  .0DAF IX = the caller's
+  .0DB1 A = 0
+  .0DB5 Not reached by a jump on this page: error $A2
+  .0DB6 Error $A2 (Invalid MAPDISK)
+
+@0DE6 DRV_FORGET
+  Marks the parameter block HL as holding no known disk: +9 = 0 (the next access reads the
+  boot sector) and +$1E = $FF.
+  Entry: HL = a parameter block.
+  Exit: A = 0, Z.
+  Changes: AF, DE.
+  Keeps: BC, HL, IX, IY.
+  .0DE7 D = 0, E = 9
+  .0DEB +9 = 0: disk not read
+  .0DEC D is still 0
+  .0DEE HL+$1E
+
+@0E12 DRV_MAP_SET
+  Part of $0DF4: stores B in the drive map's entry for drive E (IY+$2A0 + E) and goes on at
+  $036C with A = that drive.
+  .0E12 The map entry
+  .0E13 A = the drive changed
+
+@0E17 DRV_MAP_RESET
+  Part of $0DF4 when B = 0: resets the drive map from its entry A on: entry n = n, up to 26.
+  Exit: A = 0, Z.
+  .0E17 Entry n = n
+  .0E1A Past the last (26)?
+  .0E1E A = 0
+
+@0E20 FN_DRIVE_INFO
+  EXDOS function $16 (table entry at $057C): the physical unit and number of drive B. B with
+  bit 7 clear goes through the drive map first ($02D1); bit 7 set takes the drive as given.
+  Entry: B = the drive.
+  Exit: A = 0; C = the unit (parameter block +7), B = +8, D = the segment holding the block
+  (now in page 1), E = the block's address low byte.
+  Error: A = $AF (Invalid drive) when there is no such drive.
+  Changes: AF, BC, DE, HL.
+  Keeps: IX, IY.
+  .0E21 Through the drive map?
+  .0E26 Bit 7 off
+  .0E28 DE = the parameter block; Z: none
+  .0E2B Error $AF: Invalid drive
+  .0E2E HL = DE + 7
+  .0E32 C = the unit
+  .0E34 B = the drive number
+  .0E35 D = page 1's segment (the block's)
+
+@0E3A DRV_LAYOUT
+  Reads a disk's layout from its boot sector (IX) into the parameter block HL:
+  +$0A sectors per cluster - 1, +$0B its power of 2, +$0C/$0D the reserved sectors (the first
+  FAT), +$0E the number of FATs, +$0F/$10 the root entries' remainder and count in sectors
+  (16 to a sector), +$11 sectors per FAT, +$12/$13 the root directory's first sector, +$14/$15
+  the first data sector, +$16/$17 the number of clusters + 2, +$18-$1C boot byte $46 and the
+  serial (0, $FF x 4 without VOL_ID), +$1D boot byte $15. Ends at DRV_CLEAR_1E.
+  Entry: HL = the parameter block, IX = the boot sector.
+  Exit: A = 0.
+  Changes: AF, BC, DE.
+  Keeps: HL, IX, IY.
+  .0E3B HL+$0A
+  .0E3F Sectors per cluster (boot +$0D)
+  .0E42 As a mask
+  .0E45 C counts the mask's 1 bits
+
+@0E47 DRV_LAY_SHIFT
+  Counts the mask's bits (the cluster size as a power of 2), then copies the reserved sectors
+  and the FAT count, and starts on the root directory's size.
+  .0E49 Another 1 bit?
+  .0E4B +$0B = cluster size as a shift
+  .0E4D Reserved sectors (boot +$0E)
+  .0E57 Kept: the first FAT's sector
+  .0E58 The number of FATs (boot +$10)
+  .0E5D DE = root directory entries (boot +$11)
+  .0E64 Entries over whole sectors
+  .0E67 Divides by 16 (entries to a sector)
+
+@0E69 DRV_LAY_ROOT
+  Shifts DE right 4 times; a partly used last sector adds one.
+  .0E70 Carry: some entries over (A = 0 here)
+  .0E72 +$10 = whole root sectors
+  .0E74 No remainder?
+  .0E76 One more sector
+
+@0E77 DRV_LAY_FATS
+  Copies the sectors per FAT and starts the root directory's first sector: reserved + FATs x
+  FAT size.
+  .0E77 Sectors per FAT (boot +$16)
+  .0E7C HL = the first FAT; the block's pointer goes on the stack
+  .0E7D Root directory sectors
+  .0E7E E = sectors per FAT
+  .0E80 DE: the FAT area's size, added up B times
+
+@0E81 DRV_LAY_FATMUL
+  One FAT's sectors added.
+  .0E82 No carry into D?
+
+@0E85 DRV_LAY_DATA
+  Stores the root directory's first sector and the first data sector, then works out the
+  number of clusters.
+  .0E85 Once for each FAT
+  .0E88 HL = the root directory's first sector
+  .0E8A HL = its size in sectors
+  .0E8B HL = the first data sector
+  .0E8C Kept; HL = the block's pointer
+  .0E8D +$12/$13 = the root directory's first sector
+  .0E91 DE = the first data sector
+  .0E92 +$14/$15 = it
+  .0E97 HL = total sectors (boot +$13)
+  .0E9E HL = data sectors
+  .0EA0 C = the shift + 1
+
+@0EA1 DRV_LAY_CLUST
+  Divides the data sectors by the cluster size.
+  .0EA1 Shifted enough?
+  .0EA4 HL / 2
+
+@0EAA DRV_LAY_SERIAL
+  Stores the clusters + 2, then the serial (with the byte before it) and boot byte $15.
+  .0EAA HL = clusters + 2 (they are numbered from 2)
+  .0EAE +$16/$17
+  .0EB3 HL = the serial (or the four $FF)
+  .0EB7 From the byte before it
+  .0EB8 5 bytes to +$18-$1C
+  .0EBE Boot byte $15 (the media byte)
+  .0EC1 +$1D
+  .0EC2 HL = the parameter block
+
+@0EC3 DRV_CLEAR_1E
+  Zeroes the parameter block's +$1E and +$1F unless bit 7 of +$1F is set.
+  Entry: HL = a parameter block.
+  Exit: A = 0.
+  Changes: AF.
+  Keeps: BC, DE, HL, IX, IY.
+  .0EC8 HL+$1F
+  .0ECB +$1F at $80 or more: keep both
+  .0ECF +$1F = 0
+  .0ED1 +$1E = 0
+
+@0ED2 DRV_CLR_EXIT
+  Returns with the caller's HL.
+  .0ED2 HL = the parameter block
+
+@0EEB ERR_DECIDE
+  Part of the error prompt at $0ED5 (B = the error, C = the drive): decides who answers.
+  1. Error $E5 (the STOP key, $04B2) aborts at once; error $BF retries without asking; bit 3
+     of IY-$37 set aborts without asking.
+  2. When IY-$3A is not 0, the routine in RAM at IY+$205 is called with DE = the word at
+     IY-$39 ($00F2's byte $C7), B = the error, C = the drive. Its A = 0 leaves the answer to
+     the prompt; else its B is the answer.
+  3. Otherwise ERR_PROMPT asks the user. The answer (1 Abort, 2 Retry, 3 Ignore; 4 or more
+     counts as 1) is handled at ERR_ANSWER.
+  .0EEB A = the error
+  .0EEC Error $E5 (STOP pressed)?
+  .0EEE Yes: abort
+  .0EF0 Error $BF?
+  .0EF2 Answer 2 (Retry)
+  .0EF4 Yes: retry without asking
+  .0EF6 Abort without asking?
+  .0EFC HL = IY+$205: the RAM routine
+  .0F03 A = IY-$3A: call it?
+  .0F07 DE = the word at IY-$39 (the byte after the call)
+
+@0F0B ERR_HOOK_DONE
+  Calls the RAM routine (NZ), or asks the user when it was not called or returned A = 0.
+  .0F0B The error and the drive
+  .0F0C Calls the RAM routine at HL
+  .0F0F H = the error, L = the drive
+  .0F10 A = 0?
+  .0F11 Then ask the user: B = the answer
+  .0F14 A = the answer
+  .0F15 1-3?
+
+@0F19 ERR_ABORT_NOW
+  Answer 1: abort.
+  .0F19 Abort
+
+@0F1B ERR_ANSWER
+  Handles the answer: 1 aborts (ERR_ABORT); 2 and 3 return to the caller of $0ED5 with its
+  registers: Z for Retry, NZ for Ignore.
+  .0F1B Abort?
+  .0F1C Yes
+  .0F1E The caller's IX, BC, DE, HL
+  .0F23 A = 0 and Z for Retry; 1 and NZ for Ignore
+
+@0F25 CALL_HL
+  Jumps to HL: a CALL here calls the address in HL.
+  .0F25 To the routine at HL
+
+@0F26 ERR_ABORT
+  Abort: frees every buffer without writing it ($0BBE with A = $FF), stores H at IY-$4D (the
+  error code when the prompt was asked; HL holds other values on the paths from $0EEE and
+  $0EFA), and leaves the EXDOS function with error $A4 (Disk operation aborted) from the stack
+  it saved at entry (IY+$28).
+  .0F26 A = $FF: every drive
+  .0F27 Frees their buffers (entry $0BBE)
+  .0F2A H = the error code (on the prompt path)
+  .0F2D Error $A4: Disk operation aborted
+  .0F2F DE = the stack at the function's entry (byte $28)
+
+@0F33 ERR_UNWIND
+  Puts SP back to the function's entry stack, clears HL, BC and DE, and leaves through the
+  function exit at $052F with the status in A.
+  .0F34 SP = the entry stack
+  .0F35 HL, BC, DE = 0
+  .0F3C The EXDOS function exit
+
+@3023 OUTBUF_MAIN
+  HL = the output buffer at IY+$6E.
+  Entry: IY.
+  Exit: HL = IY+$6E.
+  Changes: F, DE, HL.
+  Keeps: A, BC, IX, IY.
+
+@302B OUTBUF_CUR
+  HL = the output buffer in use: IY+$6E, or IY+$620 (the error prompt's) when bit 7 of IY-$20
+  is set. The buffer's first byte counts the characters in it.
+  Entry: IY.
+  Exit: HL = the buffer.
+  Changes: AF, DE, HL.
+  Keeps: BC, IX, IY.
+  .302E The error prompt's buffer?
+  .3033 IY+$620
+
+@305E OUTBUF_FLUSH
+  Writes the output buffer's characters to the channel in IY-$50 (EXOS 8) and empties it.
+  Entry: IY.
+  Exit: A = EXOS's status, Z = written.
+  Changes: AF.
+  Keeps: BC, DE, HL, IX, IY.
+  .3064 C = the count
+  .3067 The buffer is empty again
+  .306A DE = the characters
+  .306B A = the channel
+
+@3040 OUTBUF_CHAR
+  Writes character A to the output buffer. A full buffer (128 characters) is written out
+  first; a control code (below $1B) writes the buffer out after it.
+  Entry: A = the character, IY.
+  Exit: A = 0 and Z, or EXOS's status of the write.
+  Changes: AF.
+  Keeps: BC, DE, HL, IX, IY.
+  .3043 C = the character
+  .3047 128 in it?
+  .3049 Yes: write it out
+  .304C The write failed: return its status
+  .304E One more
+  .3053 HL = the new character's place
+  .3057 Control code?
+  .3059 A = $FF (carry) for one, else 0
+
+@3038 OUTBUF_CRLF
+  Writes CR and LF to the output buffer (and so to the channel).
+  Entry: IY.
+  Exit: A = 0 and Z, or EXOS's status.
+  Changes: AF.
+  Keeps: BC, DE, HL, IX, IY.
+  .303D A write error: stop
+
+@31D8 ERR_EXPLAIN
+  Asks EXOS for the text of error A (EXOS 28), written straight into the output buffer: its
+  count byte, then the characters.
+  Entry: A = the error code, HL = kept for the caller, IY.
+  Exit: A = EXOS's status, HL = the output buffer, B = the error code, DE = HL on entry.
+  Changes: AF, BC, DE, HL.
+  Keeps: IX, IY.
+  .31DD DE = the output buffer
+  .31DF A = the error code
+
+@3074 OUTBUF_MSG
+  Writes message A from the message table ($0098: German or English by EXOS variable $90) to
+  the output buffer, then goes on as OUTBUF_TEXT.
+  Entry: A = the message number, IY.
+  Exit: A = 0 and Z; DE = the copy's end.
+  Changes: AF, DE.
+  Keeps: BC, HL, IX, IY.
+  .3074 DE = the message, a count byte first
+
+@31C6 OUTBUF_ERRTEXT
+  Puts the text of error A in the output buffer (ERR_EXPLAIN). An error with no text gets
+  message $3D ("Error ") and the code in decimal instead ($31F4, at HL).
+  Entry: A = the error code, HL = space for the number's digits, IY.
+  Exit: NZ when EXOS gave a text (or failed); Z when the number was written.
+  Changes: AF, BC, DE, HL, DE', L'.
+  Keeps: IX, IY.
+  .31C9 A text? (count byte not 0, or an EXOS error)
+  .31CB BC = the error code
+  .31CF Message $3D: "Error "
+  .31D4 DE = the error code
+  .31D5 HL = where its digits go
+
+@0F3F ERR_PROMPT
+  Asks the user what to do about an error, on the channel in IY-$52, through the prompt's own
+  output buffer (IY+$620):
+  1. "<the error's text> -- drive X:" or, for error $B1, "Insert disk for drive X:".
+  2. "Press ENTER to continue..." for error $B1, else "Ignore, retry or abort (I/R/A)?", or
+     "Retry or abort (R/A)?" when IY+$2A is not 0 (no Ignore). German texts have W, not R.
+  3. Reads the answer (ERR_READ_KEY) until it is one, then puts the output channel back.
+  Entry: H = the error code, L = the drive (1 = A), IY.
+  Exit: B = the answer: 1 Abort, 2 Retry, 3 Ignore.
+  Changes: A, BC, DE, DE', L'.
+  Keeps: F, HL, IX, IY.
+  .0F3F The prompt's buffer in use
+  .0F43 The output channel, kept
+  .0F47 The channel for the prompt
+  .0F4D B = the error code
+  .0F4E HL = IY; the error and drive go on the stack
+  .0F51 HL = the prompt's buffer
+  .0F55 Empty
+  .0F57 A new line
+  .0F5A Error $B1?
+  .0F5D Message $49: "Insert disk for"
+  .0F61 A = the error
+  .0F62 HL = the place for its digits
+  .0F63 Its text in the buffer
+  .0F66 Message $45: " --"; NZ
+
+@0F69 ERR_PROMPT_DRV
+  Writes the first line's end: the message in A, " drive " and the drive's letter.
+  .0F69 H = the error, L = the drive
+  .0F6A Z kept: error $B1
+  .0F6B Message $45 or $49
+  .0F6E Message $46: " drive "
+  .0F73 A = the drive
+  .0F74 Its letter and a colon
+  .0F77 A new line
+
+@0F7A ERR_PROMPT_ASK
+  Picks the question: Z (error $B1) "Press ENTER to continue..." ($44); else "Ignore, retry or
+  abort (I/R/A)?" ($48), or "Retry or abort (R/A)?" ($47) when IY+$2A is not 0.
+  .0F7A Z = error $B1
+  .0F7C Message $44: "Press ENTER to continue..."
+  .0F80 Ignore allowed (IY+$2A = 0)?
+  .0F84 Message $48: "Ignore, retry or abort (I/R/A)? "
+  .0F88 Message $47: "Retry or abort (R/A)? "
+
+@3083 OUTBUF_DRIVE
+  Writes a drive's letter (A + $40) and a colon.
+  Entry: A = the drive (1 = A), IY.
+  Exit: A = 0 and Z, or EXOS's status.
+  Changes: AF.
+  Keeps: BC, DE, HL, IX, IY.
+  .3083 The letter
+  .3088 ":"
+
+@0F8A ERR_PROMPT_SHOW
+  Writes the question and reads the answer; another key asks again.
+  .0F8A The question
+  .0F8D Reads a key: B = the answer
+  .0F90 Not an answer: ask again
+  .0F92 Drops the saved flags
+  .0F93 A = the output channel
+  .0F94 Put back
+  .0F97 The normal output buffer again
+
+@3261 FIND_KBD_CHAN
+  Finds a keyboard channel: tries EXOS 11 special function 9 (@@JOY, read the joystick, C = 0)
+  on channels 0, 1, 2 ... until one answers.
+  Entry: none.
+  Exit: Z and H = that channel; NZ and H = $FF when none does.
+  Changes: AF, BC, DE, H.
+  Keeps: L, IX, IY.
+  .3261 From channel 0
+  .3263 A = the channel
+
+@3078 OUTBUF_TEXT
+  Writes the zero-ended text at DE to the output buffer.
+  Entry: DE = the text, IY.
+  Exit: A = 0 and Z; DE = its end.
+  Changes: AF, DE.
+  Keeps: BC, HL, IX, IY.
+  .3079 The end?
+  .307B Writes the character
+
+@0F9C ERR_READ_KEY
+  Reads the prompt's answer: writes code $8E, sends the buffer out, reads a key from the channel
+  in IY-$53 (EXOS 5), or from the first keyboard channel when that is $FF, and writes the codes
+  at $1000. A read error counts as A. The key is echoed when printable, followed by a new line;
+  then the STOP key (FLAG_SOFT_IRQ = $20), A, ESC and Ctrl-C give 1 (Abort); R (W in German) and
+  ENTER 2 (Retry); I 3 (Ignore).
+  Entry: IY.
+  Exit: Z and B = the answer; NZ for any other key.
+  Changes: AF, BC, DE.
+  Keeps: HL, IX, IY.
+  .0F9D Code $8E
+  .0FA2 Sends the buffer out
+  .0FA5 The key channel
+  .0FA9 None ($FF)?
+  .0FAA Then the first keyboard channel
+  .0FAD A = the channel
+  .0FB1 Z: B = the key
+  .0FB2 The codes at $1000
+  .0FB9 Read?
+  .0FBB No: take it as A (Abort)
+
+@3E31 TO_UPPER
+  Makes a letter capital: a code $60-$7F loses bit 5; others are kept.
+  Entry: A = the character.
+  Exit: A = the character in capitals.
+  Changes: AF.
+  Keeps: BC, DE, HL, IX, IY.
+  .3E31 Above $7F: kept
+  .3E34 Below $40: kept
+  .3E37 $60-$7F to $40-$5F
+  .3E3A Not reached by a call or jump on this page
+  .3E3B Not 0: on at $3E44
+
+@0FBD ERR_KEY_CLASS
+  Echoes the key when printable ($20-$7F), writes a new line, then classifies it: STOP pressed
+  or A gives B = 1 with Z (at $0FD6).
+  .0FBD A = the key
+  .0FC0 Printable?
+  .0FC3 Yes: echo it
+  .0FC6 A new line
+  .0FC9 STOP pressed (FLAG_SOFT_IRQ)?
+  .0FCE Yes: Z, answer 1
+  .0FD1 In capitals
+  .0FD4 "A": Abort?
+
+manual 3261:line 3264:line
+
+question 0F9C What do the codes $8E (written first) and $B8 $08 $08 $19 at $1000 do on the prompt's channel: a cursor shown and then rubbed out?
+question 0EEB What installs the RAM routine at IY+$205 and sets IY-$3A (an application's own disk-error handler)?
+
+feedback missing 0F0B The walk does not go on after CALL $00F2's inline byte: $0F0B (after $0F07) and $0F33 (after $0F2F) are carded as unreached with no way in, though both run on when $00F2 returns past its byte
+feedback missing 0AD1 $0AD1 ($80) is data: $0ABA sets IX = $CAC9 and $0AE5 reads (IX+8); the card lists it as an instruction of $0ACD. A LD IX,nn pointing into this page could flag the bytes it reads at fixed offsets
+feedback pattern 0B78-0B7E Two skip tricks the cards cannot see: JP Z at $0B78 is never taken (Z was tested just before) and hides POP DE/POP BC; CP $C1 at $0B7E hides POP BC. A conditional jump right after a jump on the same condition could be flagged as never taken
+feedback listing 09CC-1000 Opened the listing around the range: the cards split one routine into many jump targets and do not show the callees in other ranges ($0A2E, $0C1E, $0C30, $0CC9, $0ED5), which the buffer and prompt routines only make sense with
+feedback missing 0F3F The message numbers passed to $0098 ($3D, $44-$49) had to be decoded by hand from page 1's table; a card could show the message text for an LD A,n before CALL $3074

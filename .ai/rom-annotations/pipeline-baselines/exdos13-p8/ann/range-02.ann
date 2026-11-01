@@ -1,0 +1,1006 @@
+rom ep-exdos13.rom page 0 cpu z80
+default observed
+
+# ---------------------------------------------------------------------------------------------
+# Function 29 (the function table's $058A): a fresh FAT and root directory on a drive
+
+@05A6 FN29_INIT_FS
+  EXDOS function 29 (table word at $058A): prepares drive C, has its unit's driver run request 8,
+  then writes a fresh file system: FAT entries 0 and 1, every other FAT entry 0, and an
+  emptied root directory.
+  1. $0608 selects the drive (B = 2) and drops its buffers; DE is handed on to it.
+  2. Driver request 8 through $0470, with C = the caller's page-1 segment (IY+$2D); an answer
+     of $BD becomes error $AF (Invalid drive).
+  3. INIT_FS_FAT writes the FAT and clears the directory (function 28 joins there too).
+  Entry: C = the drive number; DE = handed to $0608; IY = EXDOS's base.
+  Exit: A = 0, Z.
+  Error: NZ, A = the error code (from $0608, the driver or the drive select).
+  Changes: AF, BC, DE, HL, IX, all alternates; page 1.
+  Keeps: IY.
+  .05A6 Select drive C (B = 2) and drop its buffers
+  .05A9 No such drive or no disk?
+  .05AB Request 8 to the unit's driver
+  .05AD C = the caller's page-1 segment, saved by $0505
+  .05B4 Request done?
+  .05B6 Answer $BD?
+  .05B9 Then error $AF (Invalid drive)
+
+@05BC INIT_FS_FAT
+  Writes a fresh FAT for drive C and clears its root directory: FAT[0] = $F00 + the media byte
+  (record+$1D), FAT[1] = $FFF, then FAT[2] up to the last cluster 0 (INIT_FS_CLEAR). Function 28
+  ($05A4) joins here too.
+  .05BC HL = the drive's record (paged into page 1)
+  .05BF Drive selected?
+  .05C1 Keep the record twice: the second slot gets the media byte
+  .05C7 C = the media byte at record+$1D
+  .05C8 BC = $0F00 + media byte, the value of FAT entry 0
+  .05CA H = media byte, kept on the stack for the end
+  .05CC DE = 0: cluster 0
+  .05CD FAT[0] = $F00 + media byte
+  .05D0 Cluster 1
+  .05D1 B >= $10 writes $FFF
+  .05D4 FAT[1] = $FFF
+
+@05D7 INIT_FS_CLEAR
+  Sets every FAT entry from cluster 2 on to 0 (free) up to the last cluster (record+$16 holds
+  the cluster count + 2), then clears the root directory's sectors (record+$12 up to
+  record+$14 - 1) through DIR_CLEAR_SECS when the media byte is below $FE, and writes the
+  drive's changed buffers back ($0BAD).
+  .05D7 Next cluster
+  .05DB FAT[DE] = 0: free
+  .05DF HL = the word at record+$16, the cluster limit
+  .05E7 The last cluster is limit - 1
+  .05E8 Was that the last one?
+  .05ED Record+$12: the root directory's first sector
+  .05F5 DE = record+$14: the sector after it (the data area)
+  .05FA L = the directory's sector count
+  .05FC A = the media byte saved at $05CB
+  .05FD Below $FE?
+  .0601 DE = the directory's last sector
+  .0602 Clear the directory, last sector first
+  .0605 Write back the drive's changed buffers
+
+@0CBE SEL_DRIVE_REC
+  Selects drive C for a call that wants its record (B = 0): IX = IY+$06A1, then the code from
+  $0CC9 (shared with $0608, which enters with B = 2) finds the drive's unit through $02D1,
+  stores it at IY+$2B, pages the unit's segment into page 1 and checks the disk in it.
+  Entry: C = the drive number (0 = the default drive, 1-26 = A-Z); IY = EXDOS's base.
+  Exit: A = 0, HL = the drive's record (in page 1).
+  Error: A = $AF (Invalid drive) with Z set when the drive has no unit; callers test A.
+  Changes: AF, BC, DE, HL, IX, all alternates; page 1.
+  Keeps: IY.
+  .0CBE B = 0: the caller wants the record
+  .0CC0 IX = IY+$06A1, a work block
+
+@1193 FAT_SET_ENTRY
+  Writes the 12-bit FAT entry of cluster DE: B >= $10 writes $FFF (end of chain), else BC.
+  The code from $119C finds the entry (FAT_ENTRY_ADDR), merges the value with the neighbouring
+  entry's nibble, marks the FAT sector changed and, for an entry that straddles two sectors,
+  writes both halves back. A cluster past the end is reported as error $A3 through
+  DISK_ERROR, and nothing is written.
+  Entry: DE = the cluster; BC = the value; HL = the drive's record; IY = EXDOS's base.
+  Exit: the entry is set, its sector's buffer marked changed.
+  Changes: AF, BC, all alternates.
+  Keeps: DE, HL, IX, IY.
+  .1194 Value $1000 or more?
+  .1199 Then the end-of-chain mark $FFF
+
+@1A48 DIR_CLEAR_SECS
+  Clears A sectors of a drive, from sector DE downwards: each gets a buffer without being read
+  ($0AE0 with B = 0), 512 zero bytes and the changed mark. After the first, each buffer is
+  moved to the head of the chain first (BUF_TO_HEAD). When bit 2 of IY+$48 is set (a new
+  directory), the lowest sector then gets the "." entry and the ".." entry, whose cluster is
+  the word at IY+$30, through $18E2.
+  Entry: A = the sector count; DE = the highest sector; HL = the drive's record; F: Z moves
+  the first sector's buffer to the head too; IY = EXDOS's base.
+  Exit: DE = the lowest sector - 1.
+  Changes: AF, BC, DE, all alternates.
+  Keeps: HL, IX, IY.
+  .1A49 IX = the drive's record, its own IX on the stack
+  .1A4C B = the sector count
+
+# ---------------------------------------------------------------------------------------------
+# Functions 14, 21 and 20
+
+@061A FN14_FLUSH
+  EXDOS function 14 (table word at $056C): writes back the changed buffers of drive B (0: the
+  default drive at IY-$57; $FF: every drive). With C nonzero it then drops those buffers and
+  marks every unit for a disk check ($025D).
+  Entry: B = the drive number (0 default, $FF all); C = nonzero to drop the buffers too.
+  Exit: A = 0, Z.
+  Error: A = $AF (Invalid drive), NZ.
+  Changes: AF, BC, DE, HL, IX, all alternates; page 1.
+  Keeps: IY.
+  .061B Drive $FF?
+  .061E Drive 0?
+  .0621 Then the default drive
+
+@0624 FN14_UNIT
+  Looks drive A up ($02D1); a drive without a unit is error $AF (Invalid drive).
+  .0624 A = the drive's unit, 0 for none
+  .0628 Unit found?
+  .062A Error $AF: Invalid drive
+
+@062D FN14_DO
+  Writes back the changed buffers of unit A ($FF: all, $0BAE), then, when C is nonzero, drops
+  them ($0BBE) and has every unit's disk checked again ($025D).
+  .062D B = the unit, $FF for all
+  .062E Write back the unit's changed buffers
+  .0631 C = 0: done?
+  .0634 Drop the unit's buffers
+  .0637 Recheck every unit's disk
+
+@063A FN21_FREE_SPACE
+  EXDOS function 21 (table word at $057A): the free space of drive B. Reads every FAT entry from
+  cluster 2 to the last one and counts the zero ones.
+  Entry: B = the drive number; IY = EXDOS's base.
+  Exit: A = 0, Z; HL = the free clusters; DE = the clusters in all; B = 1 + the byte at
+  record+$0A; C = the record's segment; IX = record+8.
+  Error: A = an error code from the drive select ($AF Invalid drive), NZ.
+  Changes: AF, BC, DE, HL, IX, all alternates; page 1.
+  Keeps: IY.
+  .063A C = the drive
+  .063B HL = the drive's record
+  .063E Selected?
+  .0640 IX = the record
+  .0643 DE = record+$16: the cluster limit (count + 2)
+  .0649 Kept on the stack for the loop's test
+  .064A Start at cluster 2
+  .064D BC = 0: the free count (D = 0)
+
+@064F FN21_COUNT
+  Reads the FAT entry of cluster DE and counts it in BC when it is 0.
+  .0650 DE = FAT[DE]
+  .0653 Free cluster?
+  .0657 Count it
+
+@0658 FN21_NEXT
+  Steps to the next cluster until the limit, then builds the results.
+  .0659 Next cluster
+  .065A HL = the limit, the record on the stack
+  .065B Limit reached?
+  .065E HL = the record again
+  .0661 HL = the free clusters
+  .0663 DE = the limit
+  .0664 DE = the clusters in all (limit - 2)
+  .0669 IX = record+8
+  .066B C = the segment in page 1, the record's
+  .066E B = 1 + the byte at record+$0A
+
+@0674 FN20_DRIVE_MAP
+  EXDOS function 20 (table word at $0578): a map of the drives that exist. For drives 26 (Z) down
+  to 1 (A) it shifts a 1 into DE:HL when the drive has a unit with a segment, so drive A ends
+  in bit 0 and Z in bit 25.
+  Entry: A = 0 (as $0505 calls it); IY = EXDOS's base.
+  Exit: A = 0, Z; DE:HL = the drive map.
+  Changes: AF, B, DE, HL, HL'.
+  Keeps: C, IX, IY.
+  .0674 DE:HL = 0
+  .0678 Drives 26 down to 1
+
+@067A FN20_LOOP
+  Shifts in the bit of drive B.
+  .067B The lookup's HL and DE are the alternates
+  .067C HL = the drive's unit entry
+  .067F A = its segment
+  .0680 Carry when the segment is nonzero
+  .0683 Shift the bit into DE:HL
+
+# ---------------------------------------------------------------------------------------------
+# The two devices: DISK (entry table $068D) and the drive-letter device (table $06A7)
+
+@09AB DEV_IY_BASE
+  Moves IY from the device's own pointer to EXDOS's base: IY += the word at IY-5. Every device
+  entry starts with it.
+  Entry: IY = the pointer the device was entered with.
+  Exit: IY = EXDOS's base.
+  Changes: F, IY, DE'.
+  Keeps: A, BC, DE, HL, IX.
+  .09AB Work in the alternate set
+  .09AC DE' = the word at IY-5
+
+@06C3 DSK_IRQ
+  DISK's interrupt entry (table word at $068D). Counts down every unit's disk-change timer (the
+  byte at record+9) by one, down to 2, then counts down the byte at IY-$5F; when that reaches
+  0 it goes on at $1C9F with B = 0.
+  Entry: IY = the device's pointer.
+  Exit: A = the IY-$5F count.
+  Changes: AF, B, DE, HL, IY, DE'; page 1.
+  Keeps: C, IX.
+  .06C6 HL = IY+$0252: 26 unit entries, 3 bytes each
+  .06CD 26 units
+
+@06CF DSK_IRQ_LOOP
+  Takes the next unit entry: segment, then the record's address.
+  .06D1 No unit here?
+  .06D4 Page the unit's segment into page 1
+  .06D6 DE = the record
+  .06D9 Back to the entry's address byte
+  .06DA DE = record+9, the disk-change timer
+
+@06E1 DSK_IRQ_TIMER
+  Counts the unit's timer down by one while it is 3 or more.
+  .06E2 Carry when below 3
+  .06E4 Minus 1 only when 3 or more
+
+@06E7 DSK_IRQ_NEXT
+  Next unit; after the last, counts down IY-$5F.
+  .06E7 Next entry
+  .06EB A = the count at IY-$5F
+  .06EE Already 0?
+  .06F4 Not 0 yet?
+  .06F5 B = 0
+
+@06F9 DSK_SPECIAL
+  The special function entry of both devices (table words at $06A3 and $06BD). B selects:
+  $10 writes the channel's buffer and finishes its file (DSK_SPEC_FLUSH); $F0 is EXOS 24
+  (allocate segment) and $F1 EXOS 25 (free segment), passed on; any other code is error $EA.
+  Entry: A = the channel number; B = the function code; IX = the channel's RAM; IY = the
+  device's pointer; C, DE for EXOS 24/25.
+  Exit: A = 0, Z, or EXOS 24/25's results.
+  Error: NZ, A = $EA for an unknown code, or the error of the work done.
+  Changes: AF, BC, DE, HL, IY, all alternates; page 1.
+  Keeps: IX.
+  .06FC Keep the channel number in A'
+  .06FE Code $10?
+  .0702 Code $F0?
+  .0706 Code $F1?
+  .0707 Any other: error $EA
+  .070A EXOS 25 (free segment), the caller's registers as they are
+
+@070D DSK_SPEC_ALLOC
+  Special function $F0: EXOS 24 (allocate segment) with the caller's registers.
+
+@0710 DSK_SPEC_FLUSH
+  Special function $10: makes the channel current, then writes its buffer and runs function $0D
+  (CHAN_COMMIT).
+  .0710 A = the channel number again
+  .0711 Make it the current channel
+
+@095E CHAN_SELECT
+  Makes channel A the current one. The current channel's 48-byte control block is worked on at
+  IY+$0724; IY+$0720 holds that channel's number (0: none), IY+$0721 the segment and IY+$0722
+  the address of the channel's own copy (at IX-$34 in its RAM). For a new channel the old
+  one's block is copied back into its RAM (its segment paged into page 1 for the copy) and the
+  new one's copied in. Then the copy's place is noted again, which also serves after the
+  channel's RAM has moved. Works in the alternate set, so BC, DE and HL are kept.
+  Entry: A = the channel number; IX = its RAM; IY = EXDOS's base.
+  Exit: A = 0, Z when the channel's open was completed (the byte at IX-1 is $FF).
+  Error: A = $E4, NZ, for a channel whose open did not complete.
+  Changes: AF, BC', DE', HL'.
+  Keeps: BC, DE, HL, IX, IY.
+  .0962 DE' = IX-$34: the channel's copy of its block
+  .096A HL' = IY+$0720: the current channel's number
+  .096E Note the new channel
+  .0972 Already the current one?
+  .0976 48 bytes
+  .0979 No channel was current?
+  .097C Keep page 1's segment
+  .097F Page in the old channel's segment
+  .0984 DE = the old channel's copy
+  .0989 Copy the block back from IY+$0724
+  .098E Page 1 back
+
+@0992 CHSEL_LOAD
+  Copies the new channel's block from its RAM to IY+$0724.
+  .0992 HL = IY+$0724
+  .0997 Copy the channel's block in
+
+@099B CHSEL_NOTE
+  Notes where the current channel's copy lives (segment, address), then tests the open mark.
+  .099B The segment in page 1: the channel RAM's
+  .099F And the copy's address
+  .09A3 The open mark: $FF once the open completed
+  .09A7 Open completed?
+  .09A8 Error $E4
+
+@084B CHAN_FLUSH_WR
+  Writes the bytes waiting in the channel's buffer to its file: the count at IX-4 (0: none) goes
+  to function $10 with the buffer at IX-$0134 and the control block at IY+$0724.
+  Entry: IX = the channel's RAM; IY = EXDOS's base.
+  Exit: A = 0, Z (also when nothing was waiting).
+  Error: NZ, A = the error of function $10.
+  Changes: AF, BC, DE, HL, IY.
+  Keeps: IX.
+  .084B A = the bytes waiting
+  .084E Nothing to write?
+  .0850 BC = the count
+
+@0853 CHAN_WRITE_BUF
+  Writes BC bytes from the channel's buffer: DE = the control block, the waiting count cleared,
+  then function $10 with IX = the buffer (the channel's IX kept on the stack).
+  .0857 No bytes waiting from now on
+  .085B HL = the channel's buffer
+  .085F IX = the buffer, the channel's IX on the stack
+  .0862 Function $10: write bytes
+
+@0803 FCB_ADDR
+  DE = IY+$0724: the current channel's control block.
+  Entry: IY = EXDOS's base.
+  Exit: DE = IY+$0724.
+  Changes: F, DE.
+  Keeps: A, BC, HL, IX, IY.
+
+@0714 CHAN_COMMIT
+  When Z: writes the channel's waiting bytes (CHAN_FLUSH_WR); then runs function $0D on the
+  current control block (the call close makes).
+  Entry: F: Z to go on (NZ returns at once); IX = the channel's RAM; IY = EXDOS's base.
+  Exit: A = 0, Z.
+  Error: NZ, A = the error code.
+  Changes: AF, BC, DE, HL, IY.
+  Keeps: IX.
+  .0718 DE = the control block
+  .071B Function $0D
+
+@071D EXDOS_FN_IX
+  Runs EXDOS function A through the entry at $0505 and keeps IX.
+  Entry: A = the function number; the function's own registers; IY = EXDOS's base.
+  Exit: the function's results: A = 0, Z on success.
+  Error: NZ, A = the error code.
+  Changes: AF, BC, DE, HL, IY.
+  Keeps: IX.
+
+@071F EXDOS_FN_POPIX
+  Runs EXDOS function A, then takes IX back from the stack (pushed by the caller).
+  .0722 IX back
+
+@0725 DRV_INIT
+  The drive-letter device's initialise entry (table word at $06BF): stores IX at IY+$6B.
+  Entry: IX, IY = the device's pointer.
+  Exit: IY = EXDOS's base; HL = IX.
+  Changes: F, HL, IY, DE'.
+  Keeps: A, BC, DE, IX.
+
+@072A DSK_INIT
+  DISK's initialise entry (table word at $06A5): no channel is current any more.
+  Entry: IY = the device's pointer.
+  Exit: IY = EXDOS's base.
+  Changes: F, BC, HL, IY, DE'.
+  Keeps: A, DE, IX.
+
+@095B CHAN_SELECT_IY
+  CHAN_SELECT for a device entry: IY to EXDOS's base first. Also the buffer-moved entry of both
+  devices (table words at $06A7 and $06C1): noting the channel's place again is all a move
+  needs. ($06A7 is the drive-letter device's interrupt word too, which a device without
+  interrupts never has called.)
+  Entry: A = the channel number; IX = its RAM; IY = the device's pointer.
+  Exit: A = 0, Z when the channel's open was completed.
+  Error: A = $E4, NZ, for a channel whose open did not complete.
+  Changes: AF, IY, BC', DE', HL'.
+  Keeps: BC, DE, HL, IX.
+
+@072F DSK_CLOSE
+  The close and destroy entry of both devices (table words at $0693, $0695, $06AD and $06AF):
+  writes the channel's waiting bytes, runs function $0D on its file and leaves no channel
+  current.
+  Entry: A = the channel number; IX = its RAM; IY = the device's pointer.
+  Exit: A = 0, Z.
+  Error: NZ, A = the error code ($E4 for a channel whose open did not complete).
+  Changes: AF, BC, DE, HL, IY, BC', DE', HL'.
+  Keeps: IX.
+
+@0735 CHAN_NONE_CUR
+  IY+$0720 = 0: no channel's block is at IY+$0724 any more.
+
+@073F DSK_OPEN
+  DISK's open entry (table word at $068F); create enters one byte on (table word at $0691, the
+  $B7 inside LD H,$B7: OR A), so carry is 1 for open, 0 for create. When bit 0 of IY-$37 is
+  set, it only allocates (word at IY+$6B) + 1 bytes of channel RAM and notes it (IY+$6B = its
+  pointer - 1, IY+$6D = the segment in page 1). Otherwise OPEN_CHAN_FILE.
+  Entry: A = the channel number; DE = the counted file name; C = the drive number; IX; IY =
+  the device's pointer.
+  Exit: A = 0, Z.
+  Error: NZ, A = the error code.
+  Changes: AF, BC, DE, HL, IX, IY, all alternates; page 1.
+  .073F Open: carry 1
+  .0740 Hides OR A at $0741: create, carry 0
+  .0742 A', F' = the channel number and open/create
+  .0746 Allocate-only mode?
+  .074C DE = the word at IY+$6B
+  .0750 EXOS 27: allocate channel RAM
+  .0755 The segment in page 1: the RAM's
+
+@075B DEV_SAVE_IX
+  IY+$6B = IX.
+  .075B HL = IX
+
+@0765 DRV_OPEN
+  The drive-letter device's open entry (table word at $06A9); create enters one byte on ($06AB,
+  the $B7 of LD H,$B7: OR A). The drive comes from the device's name: C = the letter at IY+8
+  - $40. With bit 0 of IY-$37 set it does nothing (A = 0); otherwise OPEN_CHAN_FILE.
+  Entry: A = the channel number; DE = the counted file name; IX; IY = the device's pointer.
+  Exit: A = 0, Z, or A = 0 and NZ when bit 0 of IY-$37 is set.
+  Error: NZ, A = the error code.
+  Changes: AF, BC, DE, HL, IY, all alternates; page 1.
+  Keeps: IX.
+  .0765 Open: carry 1
+  .0766 Hides OR A at $0767: create, carry 0
+  .0768 A', F' = the channel number and open/create
+  .0769 The device name's letter
+  .076C C = the drive number (A = 1)
+  .0773 Allocate-only mode: nothing to open?
+
+@0778 OPEN_CHAN_FILE
+  Opens or creates the file named by DE on channel A, drive C.
+  1. EXOS 27 allocates $0134 bytes of channel RAM: the 256-byte buffer at IX-$0134, the
+     control block's copy at IX-$34, the counts at IX-4..IX-2 and the open mark at IX-1.
+  2. The channel is made current and the name's end is marked with a 0.
+  3. Function 1 takes the path apart into the block at IY+$06A1 (drive at IY+$06A8); a
+     nonzero C back is error $A8 (Invalid pathname string).
+  4. Create runs function 6; open runs function 4, after putting "START" (or "EXDOS.INI"
+     when bit 4 of IY-$37 is set) into the block when B comes back with bits 3 and 4 clear.
+  5. An open file whose attribute byte (control block +$13) has bit 2 set is error $A1
+     (Invalid file attributes), unless bit 5 of IY-$37 is set.
+  6. Function $0C, then the open mark becomes $FF.
+  .0779 The size of the channel RAM
+  .077C EXOS 27: allocate channel RAM
+  .077F A = the channel number from A'
+  .0784 Make the new channel current
+  .0787 HL = the counted name
+  .078B HL = the name's first character
+  .078D HL = the name's end
+  .078E End the name with a 0
+  .078F Default-drive mode?
+  .0795 Then the drive at IY-$56
+
+@0798 OPEN_PATH
+  Sets up the path block and runs function 1 on the name.
+  .079B HL = IY+$06A8
+  .079F The drive
+  .07A2 IY+$06A7 = 0
+  .07A7 IY+$06A1 = $FF
+  .07A9 DE = IY+$06A1, the path block
+  .07AA HL = the name's first character
+  .07AC Function 1: take the path apart
+  .07B3 Failed?
+  .07B4 C nonzero?
+  .07B5 Then error $A8: Invalid pathname string
+  .07BA A = the channel, F: carry for open
+  .07BB Function 6: create
+  .07BD Create?
+  .07BF Bits 3 and 4 of B both clear?
+  .07C4 EXDOS.INI wanted?
+  .07C8 "EXDOS   INI"
+  .07CD "START"
+
+@07D0 OPEN_DEF_NAME
+  Copies the 11-byte default name to the path block +8.
+  .07D0 DE = the path block +8
+
+@07DA OPEN_FIND
+  A = 4: function 4, the open.
+
+@07DC OPEN_RUN_FN
+  Runs function A (4 or 6) with the control block, the path block and the name, then checks the
+  attribute.
+  .07DC DE = the control block
+  .07DF BC = the control block too
+  .07E1 DE = the path block
+  .07E2 HL = the name
+  .07E3 Function 4 (open) or 6 (create)
+  .07E6 Failed?
+  .07E7 Attributes left unchecked?
+  .07ED HL = the control block +$13: the attribute byte
+  .07F1 Attribute bit 2 set?
+  .07F3 Then error $A1: Invalid file attributes
+
+@07F6 OPEN_FINISH
+  Function $0C, then marks the channel open.
+  .07F6 HL = the path block
+  .07F7 DE = the control block
+  .07F9 Function $0C
+  .07FE Failed?
+  .07FF Open mark: $FF
+
+@080D CHBUF_START
+  HL = IX-$0134: the start of the channel's 256-byte buffer.
+  Entry: IX = the channel's RAM.
+  Exit: HL = the buffer; BC = $FECC.
+  Changes: F, BC, HL.
+  Keeps: A, DE, IX, IY.
+
+@080F CHBUF_BYTE
+  HL = IX-$0134 + C: byte C of the channel's buffer.
+  Entry: C = the index; IX = the channel's RAM.
+  Exit: HL = the byte's address; BC = $FECC.
+  Changes: F, BC, HL.
+  Keeps: A, DE, IX, IY.
+
+@081A FILE_POS_ADDR
+  DE = IY+$074C, the current file's 4-byte position; HL = IY+$073B, its 4-byte length (both in
+  the control block at IY+$0724).
+  Entry: IY = EXDOS's base.
+  Exit: DE = the position; HL = the length.
+  Changes: F, DE, HL.
+  Keeps: A, BC, IX, IY.
+
+@0827 READ_AHEAD_DROP
+  Gives back the bytes read ahead and not taken: the count at IX-2 is subtracted from the
+  file's position at IY+$074C (a borrow goes into its high word) and set to 0.
+  Entry: IX = the channel's RAM; IY = EXDOS's base.
+  Exit: A = 0; IX-2 = 0.
+  Changes: AF, BC, DE, HL.
+  Keeps: IX, IY.
+  .0827 A = the bytes read ahead
+  .082B None?
+  .082C DE = the position
+  .0830 HL = its low word
+  .0834 C = the count
+  .0836 None read ahead from now on
+  .083A Low word minus the count
+  .0840 No borrow?
+  .0841 The high word
+  .0846 Borrow from it
+
+@0867 DSK_READ_CHAR
+  The read character entry of both devices (table words at $0697 and $06B1). Takes the next
+  byte of the channel's buffer; an empty buffer is filled first: the waiting writes go out,
+  then function $0F reads up to 256 bytes into it.
+  Entry: A = the channel number; IX = its RAM; IY = the device's pointer.
+  Exit: A = 0, Z; B = the byte.
+  Error: NZ, A = the error code; A = $E4 (with Z) when nothing was left to read.
+  Changes: AF, BC, DE, HL, IY, all alternates.
+  Keeps: IX.
+  .0867 Keep the channel number in A'
+  .0868 Bytes left in the buffer?
+  .086F Make the channel current
+  .0872 Write the waiting bytes first
+  .0876 DE = the control block
+  .0879 HL = the buffer
+  .087D IX = the buffer, the channel's IX on the stack
+  .087F Up to 256 bytes
+  .0882 Function $0F: read bytes
+  .0889 Read?
+  .088B Read in part ($E4)?
+
+@088E RDCH_FILLED
+  Starts on a freshly filled buffer: BC = the bytes read.
+  .088F Nothing read?
+  .0890 Error $E4
+  .0893 Index 0
+  .0897 A = the count (0 for 256)
+
+@0898 RDCH_NEXT
+  Takes the byte at the buffer's index and counts it.
+  .0898 One byte fewer left
+  .089C C = the index
+  .08A2 B = the byte
+  .08A3 Next index
+
+@08A8 DSK_WRITE_CHAR
+  The write character entry of both devices (table words at $069B and $06B5). Gives back any
+  bytes read ahead, puts B into the channel's buffer, and writes the buffer when it holds 256.
+  Entry: A = the channel number; B = the byte; IX = its RAM; IY = the device's pointer.
+  Exit: A = 0, Z.
+  Error: NZ, A = the error code.
+  Changes: AF, BC, DE, HL, IY, BC', DE', HL'.
+  Keeps: IX.
+  .08A8 Make the channel current
+  .08AD Give back the bytes read ahead
+  .08B0 C = the bytes waiting: the index
+  .08B7 Store the byte
+  .08B9 One more waiting
+  .08BC Fewer than 256?
+  .08BD Write all 256
+
+@08C3 DSK_READ_BLOCK
+  The read block entry of both devices (table words at $0699 and $06B3): DSK_BLOCK with function
+  $0F (read bytes).
+  Entry: A = the channel number; BC = the byte count; DE = the address; IX = its RAM; IY = the
+  device's pointer.
+  Exit: A = 0, Z, or $E4 when the file ended first; BC = the bytes not read; DE = the address
+  after the last byte; IX = the caller's DE.
+  Error: NZ, A = the error code; BC = the count, DE = the address.
+  Changes: AF, BC, DE, HL, IX, IY, BC', DE', HL'.
+  .08C3 Function $0F: read bytes
+
+@08C7 DSK_WRITE_BLOCK
+  The write block entry of both devices (table words at $069D and $06B7): DSK_BLOCK with
+  function $10 (write bytes).
+  Entry: A = the channel number; BC = the byte count; DE = the address; IX = its RAM; IY = the
+  device's pointer.
+  Exit: A = 0, Z; BC = the bytes not written; DE = the address after the last byte; IX = the
+  caller's DE.
+  Error: NZ, A = the error code; BC = the count, DE = the address.
+  Changes: AF, BC, DE, HL, IX, IY, BC', DE', HL'.
+  .08C7 Function $10: write bytes
+
+@08C9 DSK_BLOCK
+  Moves a block through function H ($0F read, $10 write): makes the channel current, writes the
+  waiting bytes, gives back the bytes read ahead, then calls the function with IX = the
+  caller's address, BC = the count and DE = the control block. Its count done becomes the count
+  not done.
+  .08C9 The function number on the stack
+  .08CA Make the channel current
+  .08CD Keep the caller's BC, DE, HL in the alternates
+  .08CE Write the waiting bytes
+  .08D1 Failed?
+  .08D3 Give back the bytes read ahead
+  .08D6 The caller's registers back
+  .08D7 IX = the caller's address
+  .08DA DE = the control block
+  .08DD A = the function
+  .08DE The address on the stack
+  .08E0 Count the call at IY-$80
+  .08E3 The count on the stack
+  .08E4 Run the function: BC = the bytes moved
+  .08E7 HL = the count asked for
+  .08E8 All moved?
+  .08EA Moved in part ($E4)?
+  .08EE DE = the address: nothing moved
+
+@08F1 BLOCK_DONE
+  BC = the bytes not moved, DE = the address after the last, IX = the caller's address.
+  .08F1 HL = the bytes not moved
+  .08F3 IX = the caller's address, the function's IX on the stack
+  .08F5 DE = the address after the last byte
+
+@08F6 BLOCK_COUNT
+  BC = HL.
+
+@08F9 BLOCK_FAIL
+  The waiting writes failed: drops the function number, the caller's registers back.
+  .08FA The caller's BC, DE, HL
+
+@08FC DSK_READ_STATUS
+  The read status entry of both devices (table words at $069F and $06B9): C = 0 when a byte can
+  be read (bytes left in the buffer, or the position below the length), $FF at the end of the
+  file.
+  Entry: A = the channel number; IX = its RAM; IY = the device's pointer.
+  Exit: A = 0; C = 0 or $FF.
+  Error: NZ, A = the error code.
+  Changes: AF, BC, DE, HL, IY, all alternates.
+  Keeps: IX.
+  .08FC Keep the channel number in A'
+  .08FD Bytes left in the buffer?
+  .0901 Then readable
+  .0905 Make the channel current
+  .0908 Write the waiting bytes
+  .090C DE = the position, HL = the length
+  .090F Their high bytes
+  .0915 4 bytes, high byte first
+
+@0917 RDST_CMP_LOOP
+  Compares the position with the length, high byte first.
+  .0918 Bytes differ?
+
+@091F RDST_RESULT
+  C = 0 when carry (readable), else $FF (end of file).
+  .091F A = 0 without touching carry
+  .0922 Position below the length?
+  .0923 C = $FF: end of file
+
+@29B8 ADDR_TO_PAGE1
+  Turns address DE as one of four page maps sees it into a segment and a page-1 address: A
+  selects the map of four segment bytes (1: $BFFC, 2: IY-$5D, 3: IY-$36, 4 or more: IY+$2C);
+  the byte for DE's page (bits 14-15) is the segment, and D is moved into $4000-$7FFF.
+  Entry: A = the map (1-4); DE = the address; IY = EXDOS's base.
+  Exit: A = the segment; DE = the address in page 1.
+  Changes: AF, D.
+  Keeps: BC, E, HL, IX, IY.
+  .29BA Map 1: the four bytes at $BFFC
+  .29BD Map 1?
+  .29C0 Map 2: IY-$5D
+  .29C3 Map 2?
+  .29C6 Map 3: IY-$36
+  .29C9 Map 3?
+  .29CC Map 4: IY+$2C
+
+@0925 DSK_SET_STATUS
+  The set status entry of both devices (table words at $06A1 and $06BB). DE points at the
+  caller's 16-byte status block (paged into page 1 through the caller's page map at $BFFC):
+  with bit 0 of C set its first 4 bytes become the file's position, else the position is
+  written there. Then bytes 4-7 get the file's length and 8-15 are cleared.
+  Entry: A = the channel number; C = the flags; DE = the block; IX = its RAM; IY = the
+  device's pointer.
+  Exit: A = 0; C = 3.
+  Error: NZ, A = the error code.
+  Changes: AF, BC, DE, HL, IY, BC', DE', HL'; page 1.
+  Keeps: IX.
+  .0925 Make the channel current
+  .0928 Keep the caller's BC, DE, HL in the alternates
+  .0929 Write the waiting bytes
+  .092D Give back the bytes read ahead
+  .0930 The caller's registers back
+  .0931 The caller's page map at $BFFC
+  .0933 A = DE's segment, DE = its page-1 address
+  .0936 Page the block in
+  .0938 A = the flags
+  .093A DE = the position, HL = the length
+  .093D HL = the block, the length's address on the stack
+  .093E Bit 0 of C set?
+  .0941 No: copy the position into the block
+
+@0942 SETST_COPY
+  Copies the 4 bytes of the position one way or the other.
+  .0947 Position read?
+  .0949 DE = the block +4
+
+@094A SETST_LENGTH
+  Bytes 4-7 = the file's length, 8-15 = 0, C = 3.
+  .094A HL = the length
+  .094D Copy it into the block
+  .0952 Clear 8 bytes: one, then 7 more
+
+# ---------------------------------------------------------------------------------------------
+# The buffer chain: buffers linked from IY+$22, the next one to reuse at the head
+
+@0A1F BUF_FIND_LINK
+  Follows a chain of links (each node's first word links to the next, 0 ends it) from the link
+  at HL to node BC.
+  Entry: HL = the first link's address; BC = the node.
+  Exit: NZ, carry 0: DE = the address of the link to node BC; HL = BC.
+  Error: Z: BC is not in the chain; DE = the last link's address, HL = 0.
+  Changes: AF, DE, HL.
+  Keeps: BC, IX, IY.
+  .0A23 HL = the next node, DE = its link's address
+  .0A26 End of the chain?
+  .0A27 Node BC?
+
+@09CC BUF_TO_TAIL
+  Moves buffer HL to the end of the chain at IY+$22, the end used last; a buffer whose link is
+  already 0 stays.
+  Entry: HL = the buffer; IY = EXDOS's base.
+  Exit: HL = the buffer, now last.
+  Changes: AF.
+  Keeps: BC, DE, HL, IX, IY.
+  .09CC Link 0: last already?
+  .09D4 DE = the next buffer
+  .09D8 Its link 0: it will be the last
+  .09DC BC = the buffer
+  .09E1 HL = IY+$22: the chain's first link
+  .09E5 DE = the link to the buffer
+  .09E9 DE = the next buffer
+  .09EA Take the buffer out of the chain
+  .09EE DE = the last link
+
+@09F1 BUF_RELINK
+  Stores BC in the link at DE, then takes the registers back.
+  .09F2 The link = BC
+
+@09F7 BUF_POP_DE
+  DE back, return.
+
+@0A2E BUF_WRITE_BACK
+  Writes buffer HL back to its disk when it is in use (+2 nonzero) and changed (bit 7 of +3,
+  cleared now). A buffer is an 11-byte header and 512 data bytes: +0 the link, +2 the unit
+  key, +3 flags, +4 the sector, +6 the number of copies, +7 the distance between copies, +8 the
+  drive record's segment, +9 its address. Every copy (a FAT has one per FAT) is written by
+  driver request 5 or 6; when none could be written DISK_ERROR asks, and Z from it tries again.
+  Bit 6 of +3 writes only the one sector copies x distance further on.
+  Entry: HL = the buffer; IY = EXDOS's base.
+  Exit: bit 2 of IY+$63 is set; page 1 as it was.
+  Changes: AF, all alternates.
+  Keeps: BC, DE, HL, IX, IY.
+  .0A2E Bit 2 of IY+$63: a buffer was looked at
+  .0A35 Unit key 0: buffer not in use?
+  .0A3A Changed?
+  .0A3E Not changed from now on
+  .0A42 Keep page 1's segment
+
+@0A47 BUF_WB_TRY
+  Takes the sector and the copies from the header.
+  .0A48 Only the one copy further on?
+  .0A4B DE = the sector
+  .0A4F B = the number of copies
+
+@0A54 BUF_SKIP_COPIES
+  Adds the distance between copies B times.
+  .0A54 Add the distance (+7)
+
+@0A58 BUF_SKIP_NEXT
+  Next copy; at the end one sector is written.
+  .0A5B Write one copy
+
+@0A5D BUF_WRITE_SETUP
+  Pages in the drive's record and points IX at the data.
+  .0A5F The record's segment
+  .0A60 Into page 1
+  .0A63 DE = the record's address
+  .0A68 The data's address in page 1
+  .0A6D IX = the data
+  .0A6F HL = the record
+  .0A70 C = 1: no copy written yet
+  .0A72 DE = the sector
+
+@0AB0 WRITE_REQUEST
+  The driver request for a write: 5 when the byte at IY-$58 is nonzero, else 6.
+  Entry: IY = EXDOS's base.
+  Exit: A = 5 or 6.
+  Changes: AF.
+  Keeps: BC, DE, HL, IX, IY.
+  .0AB0 The byte at IY-$58 set?
+  .0AB4 Request 5
+  .0AB7 Request 6
+
+@0C5A UNIT_CHANGED
+  Asks the driver of unit HL (request 2) whether its disk was changed. B = 1 back: Z (not
+  changed); B = 0: decided by the byte at IY-$54 (Z when it is $FF, carry set); any other B:
+  NZ.
+  Entry: HL = the drive's record; IY = EXDOS's base.
+  Exit: Z: the disk is the same one; NZ: it may have changed.
+  Changes: AF, BC, DE, HL, IX, all alternates.
+  Keeps: IY.
+  .0C5A Request 2
+  .0C5F Answer 1?
+  .0C61 Answer other than 0?
+  .0C63 0: the byte at IY-$54 decides
+
+@0C30 UNIT_CHECK_DISK
+  Makes sure the disk in unit HL is the one its record describes, before a driver request. A
+  timer (record+9) above 2 means the disk was used lately, and nothing is checked; at 2 the
+  driver is asked (UNIT_CHANGED). Otherwise the disk's identity is read ($0C69) and compared
+  with the record ($0C7F); while it differs, error $B3 (Wrong disk) is reported and asked again.
+  Entry: HL = the drive's record; IY = EXDOS's base.
+  Exit: the right disk is in the unit.
+  Changes: HL, IX, all alternates.
+  Keeps: AF, BC, DE, IY.
+  .0C33 HL = record+9: the disk-change timer
+  .0C37 Above 2: used lately?
+  .0C3E At 2: ask the driver
+  .0C41 Not changed?
+
+@0C1E UNIT_REQUEST
+  Runs driver request A on unit HL ($0470) after UNIT_CHECK_DISK; the code from $0C24 then
+  sets the disk-change timer (record+9) to 100 and returns the driver's status.
+  Entry: A = the request; HL = the drive's record; the request's registers (BC, DE, IX);
+  IY = EXDOS's base.
+  Exit: A = the status, Z when 0; carry 0.
+  Changes: AF, BC, DE, HL, IX, all alternates.
+  Keeps: IY.
+  .0C21 The unit's driver
+
+@0A73 BUF_WRITE_COPY
+  Writes one copy: driver request 5 or 6 for one sector ($01FF).
+  .0A75 One sector
+  .0A78 A = the write request
+  .0A7B Write sector DE from IX
+  .0A80 Failed?
+  .0A82 One more copy written
+
+@0A83 BUF_WRITE_ERR
+  Error $BF ends the copies at once.
+  .0A83 Error $BF?
+  .0A87 Then stop: last copy, none written
+
+@0A8A BUF_NEXT_COPY
+  Steps DE to the next copy.
+  .0A8B The distance between copies (header +7)
+
+@0A93 BUF_COPY_DONE
+  After the last copy: done when one was written, else DISK_ERROR (carry set unless bit 1 of
+  the flags is set).
+  .0A94 Next copy
+  .0A96 At least one copy written?
+  .0A99 Header flag 1 present?
+  .0A9F Carry for DISK_ERROR (IY+$2A = $FF)
+
+@0ED5 DISK_ERROR
+  Reports disk error A on the drive whose record is at HL and returns the answer; $0ED4 enters
+  with carry set. IY+$2A = $FF with carry, else 0. A set unit flag at record+9 becomes 1.
+  Error $E5 (or bit 3 of IY-$37 set) aborts at once, error $BF is retried at once; otherwise
+  the handler at the word at IY-$39 asks (when the byte at IY-$3A is nonzero), else $0F3F.
+  Answer 1 aborts: the drive's buffers are dropped and the call ends with error $A4 (Disk
+  operation aborted) through the word at IY-$5C; it does not come back here.
+  Entry: A = the error code; HL = the drive's record; F: carry, kept as IY+$2A = $FF for the
+  question; IY = EXDOS's base.
+  Exit: Z: try again; NZ: carry on.
+  Changes: AF.
+  Keeps: BC, DE, HL, IX, IY.
+  .0EDB A = $FF with carry, else 0
+  .0EDF HL = record+8
+  .0EE3 C = the unit key
+  .0EE5 The disk-change timer
+  .0EE6 Already 0?
+  .0EE9 Then 1
+
+@0AA0 BUF_WRITE_FAIL
+  Reports the failed write (DISK_ERROR); Z comes back to try again.
+
+# ---------------------------------------------------------------------------------------------
+# The buffer chain's head: move a buffer there (the next one to reuse)
+
+@09F9 BUF_WB_TO_HEAD
+  Writes buffer HL back when changed (BUF_WRITE_BACK), then moves it to the head of the chain.
+  Entry: HL = the buffer; IY = EXDOS's base.
+  Exit: HL = the buffer, now first.
+  Changes: AF, all alternates.
+  Keeps: BC, DE, HL, IX, IY.
+
+@09FC BUF_TO_HEAD
+  Moves buffer HL to the head of the chain at IY+$22: the first buffer to be reused.
+  Entry: HL = the buffer; IY = EXDOS's base.
+  Exit: HL = the buffer, now first.
+  Changes: AF.
+  Keeps: BC, DE, HL, IX, IY.
+  .09FD DE = the word at IY+$22, the chain's head
+
+@0A01 BUF_HEAD_MOVE
+  CALL $00F2 returns here, past its byte: unlinks buffer HL and puts it first.
+  .0A02 Already first?
+  .0A09 The buffer is the head from now on
+  .0A0F BC = the buffer's next one
+  .0A13 Link it to the old head
+  .0A16 HL = the old head, DE = the buffer
+  .0A17 BC = the buffer
+  .0A19 DE = the link that still points to it
+  .0A1C BC = its next one: the link skips it
+
+# ---------------------------------------------------------------------------------------------
+# The FAT
+
+@0AD2 FAT_SECTOR_BUF
+  Gets FAT sector DE of the drive whose record is at IX into a buffer and returns it. The
+  number of FAT copies to try goes to IY+$68: the byte at record+$0E, one fewer when bit 0 of
+  record+$18 is set (at least 1). The code from $0AE0 (shared, A = 1 there) looks for a buffer
+  that holds the sector (the one used last, IY+$24, first), else reuses the head of the chain
+  (or the one after it when the head's +2 has bit 7 set), writes that back and reads the
+  sector in, trying copy after copy.
+  Entry: DE = the sector; IX = the drive's record; IY = EXDOS's base.
+  Exit: A = 0, Z; HL = the buffer (its data from HL+$0B).
+  Changes: AF, BC, HL, all alternates.
+  Keeps: DE, IX, IY.
+  .0AD2 B = 1: read the sector in
+  .0AD4 A = the number of FATs
+  .0AD7 One copy fewer for this drive?
+  .0ADD Then one fewer
+
+@11ED FAT_ENTRY_ADDR
+  Finds the 12-bit FAT entry of cluster DE: its byte offset is DE x 3 / 2, so the sector is the
+  FAT's first (record+$0C) + offset / 512. An entry that straddles two sectors is copied to
+  IY+$66 (bit 0 of IY+$63 set, the first sector at IY+$64) and DE points there.
+  Entry: DE = the cluster; HL = the drive's record; IY = EXDOS's base.
+  Exit: Z; DE = the entry's two bytes; carry = the cluster is odd (the entry is the high 12
+  bits).
+  Error: NZ, carry: the cluster is past the last one (record+$16 - 1).
+  Changes: AF, DE, all alternates.
+  Keeps: BC, HL, IX, IY.
+  .11F1 IX = the record
+  .11F4 No straddling entry yet
+  .11F8 HL = record+$16: the cluster limit
+  .11FE The last cluster
+  .1200 Cluster DE past it?
+  .1206 HL = DE x 3
+  .1208 HL = DE x 3 / 2: the byte offset, carry = odd
+  .120C The odd bit on the stack
+  .120E E = offset / 512
+  .1212 HL = the FAT's first sector
+  .1218 DE = the sector that holds the entry
+  .121A HL = its buffer
+  .121D Past the buffer's header
+  .1222 BC = the offset within the sector
+  .1227 Its last byte ($1FF)?
+  .122A A = the entry's first byte
+  .122E HL = IY+$63
+  .1232 The entry straddles two sectors
+  .1235 Note the first sector
+  .1239 And the first byte
+  .123C The next sector
+  .1244 A = the entry's second byte
+  .1246 Next to the first one
+  .1247 DE will point at the two bytes
+
+@1148 FAT_GET_ENTRY
+  Reads the FAT entry of cluster DE. A value above $0FF7 (the end-of-chain marks), and a cluster
+  past the last one (after error $A3 through DISK_ERROR), come back as DE = $FFFF.
+  Entry: DE = the cluster; HL = the drive's record; IY = EXDOS's base.
+  Exit: DE = the entry's value or $FFFF; carry 0 for a value up to $0FF7.
+  Changes: AF, DE, all alternates.
+  Keeps: BC, HL, IX, IY.
+  .1148 DE = the entry's bytes, carry = odd
+  .114B Found?
+
+# ---------------------------------------------------------------------------------------------
+# Questions and notes
+
+question 07BF Does an empty name (LOAD "") reach the default-name copy, opening START?
+question 073F When is bit 0 of IY-$37 set, so that opening DISK only allocates channel RAM?
+question 0AB0 Which of driver requests 5 and 6 writes with a verify (IY-$58 set)?
+
+feedback missing 073F-0767 Table words $0691 and $06AB name $0741 and $0767, the $B7 inside LD H,$B7 (create entries); no card or hidden-entry line has them
+feedback wrong 0A01 Marked unreached, yet it ran: CALL $00F2 at $09FD returns past its inline byte ($0A00) into $0A01
+feedback missing 095B Card lists table $06A7 as a way in; that word is the drive-letter device's interrupt slot, never called (DD_IRQFLAG 0)
+feedback listing 0CBE-0D70 Cards of $0CBE, $1193, $1A48, $0C1E stop at a fall-through into another range's label; the routine's work needed the listing
+feedback pattern 0710-08FC Device entries use LD H,$B7 to hide an OR A entry and EX AF,AF' to carry open/create in F'; card facts lose both
+feedback wrong 0470-04AE IY and the alternates are pushed at $0472-$047A and popped at $04A4-$04AE, yet every caller's facts say IY may change; Keeps: IY was settled from that
+feedback wrong 09CC-0B8E HL at $09CC and IX at $0AD2 come back (push/pop at $09D3/$09F5; ex (sp),ix at $0B37 then pop ix at $0B7C) though the facts list them as changed

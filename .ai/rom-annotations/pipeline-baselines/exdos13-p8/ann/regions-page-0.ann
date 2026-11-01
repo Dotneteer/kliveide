@@ -1,0 +1,189 @@
+rom ep-exdos13.rom page 0 cpu z80
+default observed
+
+# The extension ROM header: "EXOS_ROM", then the device chain word (0), then three JPs (code)
+text 0000-0007
+words 0008-0009
+
+# Counted "EXDOS A:", copied to RAM by $3FCD (9 bytes), drive letter patched, then EXOS 26
+text 0131-0139
+# Three counted 6-byte strings ("EXDOS" + $FF/$FC/$FB) handed to EXOS 26 ($01F2, $01FE, $024C)
+text 020C-0220
+# Counted "DISK:", opened as a channel name ($0329)
+text 0366-036B
+
+# The block $04BD-$0504 is copied to RAM by $0180 ($48 bytes): code to $04E5, then two device
+# descriptors (DD_TAB $468D and $46A7: the entry tables at $068D and $06A7 seen through page 1)
+bytes 04E6-04F2
+text 04F3-04F6
+bytes 04F7-0504
+
+# The function table of the entry at $0505 (JP from $0010): A < $1F, ld hl,$C550, add 2A
+words 0550-058D
+
+# The two devices' entry tables (the second starts at $06A7, overlapping the first's last word)
+words 068D-06C2
+
+# Two 11-byte 8.3 names copied by ldir at $07D8 ("START", "EXDOS   INI")
+text 09B6-09CB
+# Four $FF bytes returned in HL by $0CAB (and the byte before, read in the profile)
+bytes 0CAF-0CB3
+# A zero-ended control string printed by $0FB2 (de = $D000, call $3078)
+bytes 1000-1004
+# 11 bytes copied to $400B by $10C7, then "VOL_ID" compared ($0C9C) and copied ($249B), then 5 zeros
+bytes 1132-113C
+text 113D-1142
+bytes 1143-1147
+# The 19 separator characters searched by cpir at $14F8 (the first two: space and tab)
+bytes 1500-1501
+text 1502-1512
+# An empty counted name passed to $1358 by $17D9
+bytes 17E1-17E1
+# ".." and "." as 11-byte directory names ($1A77, $1A84, $1B3B, $1B41)
+text 1A96-1AA1
+# Eight error codes indexed by bit position ($2216)
+bytes 2229-2230
+# The boot sector's first 11 bytes, copied by lddr at $2488: a jump, then "EXDOS1.3"
+bytes 24C2-24C4
+text 24C5-24CC
+# (count, value) pairs expanded by $2545 into a track image ($244E, $245B, then on)
+bytes 2553-257C rows=2
+# The 32-byte copyright line written by $2B8E
+text 2BBC-2BDB
+
+# The command table ($2B9B, $2BF6): a counted name, then the handler's address; 0 ends it
+text 2C58-2C5A
+words 2C5B-2C5C
+text 2C5D-2C5F
+words 2C60-2C61
+text 2C62-2C64
+words 2C65-2C66
+text 2C67-2C69
+words 2C6A-2C6B
+text 2C6C-2C6F
+words 2C70-2C71
+text 2C72-2C75
+words 2C76-2C77
+text 2C78-2C7B
+words 2C7C-2C7D
+text 2C7E-2C81
+words 2C82-2C83
+text 2C84-2C87
+words 2C88-2C89
+text 2C8A-2C8D
+words 2C8E-2C8F
+text 2C90-2C93
+words 2C94-2C95
+text 2C96-2C99
+words 2C9A-2C9B
+text 2C9C-2C9F
+words 2CA0-2CA1
+text 2CA2-2CA6
+words 2CA7-2CA8
+text 2CA9-2CAD
+words 2CAE-2CAF
+text 2CB0-2CB4
+words 2CB5-2CB6
+text 2CB7-2CBB
+words 2CBC-2CBD
+text 2CBE-2CC2
+words 2CC3-2CC4
+text 2CC5-2CC9
+words 2CCA-2CCB
+text 2CCC-2CD0
+words 2CD1-2CD2
+text 2CD3-2CD8
+words 2CD9-2CDA
+text 2CDB-2CE0
+words 2CE1-2CE2
+text 2CE3-2CE8
+words 2CE9-2CEA
+text 2CEB-2CF0
+words 2CF1-2CF2
+text 2CF3-2CF8
+words 2CF9-2CFA
+text 2CFB-2D00
+words 2D01-2D02
+text 2D03-2D08
+words 2D09-2D0A
+text 2D0B-2D10
+words 2D11-2D12
+text 2D13-2D18
+words 2D19-2D1A
+text 2D1B-2D21
+words 2D22-2D23
+text 2D24-2D2A
+words 2D2B-2D2C
+text 2D2D-2D33
+words 2D34-2D35
+text 2D36-2D3D
+words 2D3E-2D3F
+bytes 2D40-2D40
+
+# " EXDOS" in inverse ($2E6E copies 6 bytes), then 6 bytes written by EXOS 8 at $2E30
+bytes 2F38-2F43 rows=3
+# Counted device names "KEYBOARD:", "VIDEO:", "EDITOR:" ($2E11, $2E25, $2E3E)
+text 2F9E-2FB6
+# (EXOS variable, value) pairs set by $2F8D; 0 ends it
+bytes 2FB7-2FD1 rows=2
+# Powers of ten, 4 bytes each (10^7 down to 1), $FF ends it ($3202)
+bytes 3233-3253 rows=4
+# " <dir>  " ($3340), then option (letter, bit) pairs, 0 ended ($32B0, $32BB, $3D24)
+text 33B0-33B8
+bytes 33B9-33BD rows=2
+# Option (letter, bit) lists, 0 ended ($34F8, $3529); the second one row per byte so the two stay apart
+bytes 36D4-36DA rows=2
+bytes 36DB-36E1 rows=1
+bytes 3A97-3A9D rows=2
+# Counted "A:\IS-DOS.SYS" ($3AE0)
+text 3B03-3B10
+# Option list ($3B46)
+bytes 3B66-3B68
+# Counted "ON", "OFF" ($3B8B)
+text 3BDB-3BE1
+
+fill 3E80-3FB1
+fill 3FE2-3FFF
+
+# The byte after every call to $00F2 (ex (sp),hl / ld e,(hl) / inc hl / ex (sp),hl): IY offset
+bytes 0363-0363
+bytes 0383-0383
+bytes 03B7-03B7
+bytes 0A00-0A00
+bytes 0F0A-0F0A
+bytes 0F32-0F32
+bytes 11D8-11D8
+bytes 16AD-16AD
+bytes 16DA-16DA
+bytes 1704-1704
+bytes 17B4-17B4
+bytes 19B3-19B3
+bytes 2624-2624
+bytes 2689-2689
+bytes 2690-2690
+bytes 26FA-26FA
+bytes 2723-2723
+bytes 277A-277A
+bytes 2784-2784
+bytes 27BE-27BE
+bytes 27F0-27F0
+bytes 28B7-28B7
+bytes 28C2-28C2
+bytes 28DF-28DF
+bytes 290A-290A
+bytes 2926-2926
+bytes 2939-2939
+bytes 2A0B-2A0B
+
+question 2E30 EXOS 8 at $2E36 writes 10 bytes from $2F3E, but $2F44 is code (a JR target, $2F55): are only 6 meant, or do 4 code bytes go out too?
+question 3E7A $3E7A-$3E7F (dec hl, push hl, ld c,$FF, inc hl, ld a,(hl)) runs into the $FF fill and nothing reaches it: a cut-off routine?
+
+feedback pattern 00F2-00F2 Every call to $00F2 (28 of them) is followed by one inline byte; only the 13 read in the profile were proposed, and inline bytes swallowed code at $0383, $03B7, $0A00, $0F32, $16DA, $19B3. A callee that does ex (sp),hl / ld e,(hl) / inc hl / ex (sp),hl should mark the byte after every call
+feedback missing 0550-058D ld hl,$C550 / add hl,bc / ld e,(hl) at $0524 indexes a 31-entry word table (cp $1F at $0505); the proposals offered five fragments ($0552, $0558, $0568, $057A, $058F) and false targets ($38D7, $058E's neighbours) instead of the table
+feedback missing 068D-06C2 The device entry tables are found from the descriptors' DD_TAB words ($04EE = $468D, $04FF = $46A7: page-1 addresses of this page); the proposals had fragments only
+feedback missing 04E6-0504 The $48-byte block copied by ldir at $0180 holds RAM code and two device descriptors; the card shows the descriptors as code and the words proposal at $04CE lands on the RAM code's patched operands
+feedback wrong 04CE-04D5 Not words: RAM code (ld a,n / out / jp / jp (hl)) whose operands $0180-$01A1 patch
+feedback pattern 0907-3B1F The "4 words, each the address of code the walk reached" proposals at $058F, $0907, $0924, $1AD4, $1B88, $1C2F, $2687, $2E13, $2ECF, $2F08, $3489, $34DE, $3B18 are all CALL/JP/CALL cc instructions that did not run in the profile; an unrun CD/C3/Cx nn nn is not a table
+feedback missing 2C58-2D40 The command table (counted name, handler word; 0 ends) is read by $2B9E and $2BF6; the proposals saw only six of its names as text and a few bytes, and the hidden entries $2BF0/$2BF7/$2C0D came from the copyright text at $2BBC
+feedback missing 0131-0139 ld de,$C131 at $3FCD (then ldir 9) makes a counted text; the listing decodes $0139 ':' into ld a,($F211) and hides the entry at $013A
+feedback listing 0000-3FFF Opened the whole page to judge the proposals: the cards' memory lines did not show which code reads $020C, $0366, $09B6, $1000, $1132, $17E1, $1A96, $2229, $24C2, $2553, $2BBC, $2F38, $2F9E, $2FB7, $33B9, $36D4, $3A97, $3B66, $3BDB (all ld rr,nn of an address on this page)

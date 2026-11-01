@@ -1,0 +1,1020 @@
+rom ep-exdos13.rom page 0 cpu z80
+default observed
+
+# Range 7: the end of DISK_IO and its head-command waits, then FLOPPY_DRIVER's functions
+# ($1FD3): 0/1 initialise, 2 media check, 3 log the disk in (boot sector, BPB), 4-6 read, write
+# and write with verify, 8 format; the transfer with its retries and the double-step check.
+#
+# The driver keeps one byte per drive (n = 0-3) in arrays addressed as IX = IY + n:
+# IX-$0B the select bit, IX-$07 flags (bit 0 step checked, 1 double step, 2 over 50 tracks,
+# 3 parameters known), IX-$03 sectors per track, IX+$01 the last track, IX+$05 sides, IX+$09 and
+# IX+$0D the total sectors (low, high), IX+$11 and IX+$15 the first sector's offset, IX+$19 the
+# media byte. IY-$12 holds the function, IY-$11 to IY-$0C an address field read by ADDR_READ.
+
+@1EFA DIO_STATUS
+  A sector command ended: the status's error bits ($5C) or an earlier result in D end the
+  operation; else, while sectors are left in B, the sector register is advanced and the next
+  sector's command is issued (DIO_OP_CMD) with the flags at IY-$16 = $80.
+  .1EFA The command/status register
+  .1EFC The status
+  .1EFE Write protect, not found, CRC or lost data?
+  .1F00 Yes: the result
+  .1F02 An earlier result (time-out, mismatch)?
+  .1F05 One sector fewer: none left?
+  .1F08 The sector register
+  .1F0A The sector just done
+  .1F0D The next sector
+  .1F0F Back to the command register
+  .1F11 Flags: motor on, no head move, same drive
+  .1F15 D = the operation
+  .1F18 Its command for the next sector
+
+@1F1B DIO_ST_RESULT
+  The result is the status's error bits (0 when the count ran out).
+  .1F1B D = the result
+
+@1F1C DIO_FINISH
+  After a write (2) or a track write (4), a short wait of 256 DEC/JR passes before the end.
+  .1F1C A = the operation
+  .1F1F Write?
+  .1F23 Write track?
+  .1F25 No: no wait
+
+@1F27 DIO_WR_SETTLE
+  The 256-pass wait after a write.
+
+@1F2A DIO_INT_RESTORE
+  Sets the count at IY-$5F to $6E and enables interrupts again unless INT_DISABLE (called at
+  $1E27) found them disabled.
+  .1F2A The count at IY-$5F
+  .1F2E The state kept at $1E2A: C if they were off
+  .1F2F Were off: leave them
+  .1F31 Were on
+
+@1F32 DIO_DONE_COUNT
+  L = the sectors done (the count asked for less those left in B); stores R in the next of the
+  4 bytes at IY-$4A (IY-$1F counts the stores) and leaves through DIO_EXIT with A = the result.
+  .1F32 HL = the caller's HL (L = the sector count)
+  .1F34 Less the sectors not done
+  .1F35 L = the sectors done
+  .1F36 A = the store count
+  .1F39 Counted
+  .1F3C 0-3: which byte
+  .1F41 IX = IY + that
+  .1F47 A = R
+  .1F49 Into one of IY-$4A to IY-$47
+  .1F4C A = the result
+  .1F4D Puts back BC, IX, DE; flags from A
+
+@1F58 FDC_WAIT_COUNT
+  Part of FDC_CMD_FLAGS: the wait count is $9331 while the motor runs, else 0 (65,536).
+  .1F58 The wait while the motor runs
+  .1F5B Motor running (flags bit 7)?
+  .1F60 No: the longest wait
+
+@1F8B FDC_HEAD_WAIT
+  Part of FDC_TYPE1_CMD: a new drive was selected, so waits $2C x 256 passes for the head to
+  load.
+  .1F8E $2C rounds
+
+@1F90 FDC_MOTOR_CHK
+  When the motor was off, marks it running and waits for it: up to $E935 passes, cut short once
+  index pulses (the latch's bit 0) come in.
+  .1F90 Motor already running?
+  .1F92 Yes: no wait
+  .1F94 Marks it running
+  .1F96 The drive latch
+  .1F98 B = the latch now
+  .1F9A The longest wait
+
+@1F9D FDC_INDEX_WAIT
+  Each change of the index bit cuts the passes left to at most $0CFF.
+  .1F9D The latch
+  .1F9F Index bit changed?
+  .1FA1 No
+  .1FA3 B = the latch now
+  .1FA5 More than $0CFF passes left?
+  .1FA8 No: count on
+  .1FAA Yes: $0Cxx
+
+@1FAB FDC_INDEX_NEXT
+  Counts the motor wait down.
+  .1FAE Not run out: watch the index bit
+
+@1FB0 FDC_SAVE_FLAGS
+  Stores the flags in E at IY-$16. Operations 1 and 3 (read, verify) enter at $1FB1, inside the
+  LD HL, which is RES 2,E: they skip the waits and clear the head-moved mark, so their command
+  does not wait for the head to settle.
+  .1FB0 Hides RES 2,E at $1FB1, the entry for reads and verifies
+  .1FB3 The flags
+
+@1FB6 FDC_BUSY_WAIT
+  Waits while the controller is busy (the count at IY-$5F held at $6E), then returns A = 2 when
+  the status shows track 0, else 0.
+  .1FB6 The count at IY-$5F
+  .1FBA The command/status register
+  .1FBC The status
+  .1FBE Busy?
+  .1FC1 The caller's HL
+  .1FC2 A = 2 at track 0 (status bit 2)
+
+@1FEB FD_INIT
+  FLOPPY_DRIVER functions 0 and 1: forgets every drive's track (DISK_IO 0, B = $0F), asks drives
+  3 to 0 for a disk change (DISK_IO 7), which takes a pending change off the latch, and stores
+  the select bits 1, 2, 4, 8 at IY-$0B to IY-$08. Function 1 then returns A = 0; function 0
+  restores drive 0, and drive 1 when drive 0 is at track 0 (DISK_IO 8 with B = 0, step rate 0).
+  IY is 4 higher when it leaves (the select-bit loop steps it); DRIVER_CALL gives the driver its
+  IY afresh on every call.
+  .1FEB A' = function - 2: $FE for 0, $FF for 1
+  .1FED All four drives
+  .1FEF Forgets their tracks
+  .1FF2 Drive 3 first
+
+@1FF4 FD_INIT_CHANGE
+  One drive per pass, 3 down to 0.
+  .1FF4 B = the drive's bit
+  .1FF5 Disk change report
+  .1FFC Not past drive 0: the next one
+  .1FFE 4 drives; drive 0's bit first
+
+@2001 FD_INIT_BITS
+  Stores each drive's select bit, then ends the function.
+  .2001 The drive's select bit
+  .2004 The next drive's bit
+  .2006 The next drive's slot
+  .200A A = function - 2
+  .200B Function 1: done, A = 0
+  .200D Count tracks; B = 0: drives 0 and 1
+  .200F H = 0: step rate 0
+  .2010 Function 0 returns DISK_IO's result
+
+@22C1 FD_UNIT_SLOT
+  Every function's start: checks the unit's drive number in C and points IX at the drive's slot
+  in the per-drive arrays (IY + the drive), keeping the caller's IX (the buffer) in HL'.
+  A drive number of 4 or more leaves the driver function at once with error $BC (FD_UNIT_BAD).
+  Entry: C = the drive (0-3); B = the caller's value (a count or a media byte); IX = the buffer;
+  IY = the driver's variables.
+  Exit: IX = IY + C; A = the entry B; B = the drive's select bit; HL' = the entry IX; DE' = C.
+  Error: drops its return address and returns from the driver function with A = $BC, B = 0.
+  Changes: AF, B, IX, DE', HL'.
+  Keeps: C, DE, HL, IY.
+  .22C1 A = the drive
+  .22C2 Drive 0-3?
+  .22C4 No: error $BC
+  .22C7 DE' = the drive
+  .22CA IX = IY, the caller's IX on the stack
+  .22CE IX = the drive's slot
+  .22D0 HL' = the caller's IX (the buffer)
+  .22D2 A = the caller's B
+  .22D3 B = the drive's select bit
+
+@22D7 FD_UNIT_BAD
+  No such drive: returns from the driver function with A = $BC (a code with no message) and
+  B = 0.
+  .22D7 Drops the return into the function
+  .22D8 Error $BC
+  .22DA Nothing done
+
+@2013 FD_MEDIA_CHECK
+  FLOPPY_DRIVER function 2: has the disk in the drive changed? B = $FF when the drive's
+  parameters are not known or DISK_IO 7 reports a new change (or fails); B = 0 when the drive
+  has no change mark; with a change mark B = 1 when IY-$45 is not 0, else 0. A = 0 every time.
+  .2013 IX = the drive's slot, B = its select bit
+  .2016 Parameters known?
+  .201A No: changed
+  .201C Disk change report
+  .2021 A new change (or a failure)
+  .2023 B = the drive's change mark
+  .2025 None: B = 0
+  .2027 IY-$45 = 0?
+  .202A B = 0
+  .202B Yes: B = 0
+  .202C No: B = 1
+
+@202E FD_MEDIA_UNKNOWN
+  B = $FF: the disk may have changed; A = 0.
+  .202E Changed or not known
+
+@2032 FD_LOG_DISK
+  FLOPPY_DRIVER function 3: reads the disk's layout and sets the drive's parameters.
+  1. Marks the parameters not known, forgets the track and reads track 0 sector 1 into the
+     caller's buffer (FD_XFER_RETRY).
+  2. Takes the BPB at +$0B, or the record at +$50 (BOOT_BPB_FIND); failing both, reads sector 2
+     and builds the BPB from the media byte that starts the FAT (FD_TRY_FAT_ID).
+  3. Stores the geometry in the drive's slot (FD_SET_PARAMS), checking side 1 of a two-sided
+     disk, and the double step for a new disk of more than 50 tracks.
+  .2032 IX = the drive's slot, B = its select bit, HL' = buffer
+  .2035 Parameters not known
+  .2039 DISK_IO 0
+  .203A Forgets the drive's track
+  .203D Track 0, sector 1
+  .2040 Side 0
+  .2041 One sector
+  .2043 Keeps the buffer
+  .2045 Reads it
+  .2048 HL = the buffer
+  .2049 Failed
+  .204D A usable BPB in it?
+  .2051 No: try the FAT's media byte
+  .2053 Drops the buffer
+  .2054 Z: the drive's parameters from it
+
+@2057 FD_TRY_FAT_ID
+  No usable BPB in the boot sector: reads sector 2 (the FAT's first sector) into the buffer; a
+  media byte of $F0 or more followed by $FF, $FF gives a BPB built from it (BPB_FROM_MEDIA), else
+  error $B4.
+  .2057 HL = the buffer
+  .205A HL' = the buffer
+  .205D Track 0, sector 2
+  .2060 Side 0
+  .2061 One sector
+  .2063 Reads it
+  .2066 HL = the buffer
+  .2067 Failed
+  .2069 C = the first byte (the media byte)
+  .206D The next two bytes
+  .206E Both $FF?
+  .206F No: not a DOS disk
+  .2072 Media byte $F0 or more?
+  .2074 No: not a DOS disk
+  .2076 HL = the buffer
+  .2078 The BPB at +$0B from the media byte
+  .207B NC: the drive's parameters from it
+
+@207E FD_BOOT_RD_ERR
+  The boot sector could not be read. A time-out or a disk change is mapped to its error; else
+  an address field is read on the track: if one is found the disk is formatted ($B4 Not a DOS
+  disk); if not, a second try with the latch's bit 5 set decides between $B4 and $B5.
+  .207E Time-out or disk change?
+  .2080 Yes: map it
+  .2082 Reads an address field here
+  .2085 Time-out or disk change?
+  .2089 Record not found?
+  .208B No: a formatted disk, not DOS
+  .208D Stay on the track; bit 5 to the latch
+  .2090 Tries again
+
+@2093 FD_FAT_RD_ERR
+  A read of sector 2 failed (D = 0 here: $B4 unless a time-out or change), or the second
+  address-field read ended (D = its result).
+  .2093 Time-out or disk change?
+
+@2095 FD_UNFORMATTED
+  Maps a time-out or a disk change; else a record not found gives $B5 (Unformatted disk) and
+  anything else $B4.
+  .2095 Yes: map it
+  .2098 Record not found?
+  .209A Error $B5 (Unformatted disk)
+
+@209D FD_NOT_DOS
+  Error $B4 (Not a DOS disk).
+  .209D Error $B4
+
+@20E0 BPB_CHECK
+  Checks a BPB: 512 bytes per sector, a power of 2 sectors per cluster, 1-7 FATs, 1-12 sectors
+  per FAT.
+  Entry: HL = the BPB (the bytes-per-sector word, boot sector +$0B).
+  Exit: Z when it passes: A = the sectors per track's low byte, HL = BPB+$0E (its high byte).
+  Error: NZ when a field is out of range (BPB_BAD makes it NZ with OR H).
+  Changes: AF, DE, HL.
+  Keeps: BC, IX, IY.
+  .20E0 D = bytes per sector, low
+  .20E2 A = high
+  .20E4 $0200?
+  .20E7 No: refused
+  .20E8 Sectors per cluster
+  .20E9 0: refused
+  .20EB A power of 2?
+  .20F0 No: refused
+  .20F1 BPB+$05: the number of FATs
+  .20F4 1-7?
+  .20F7 No: refused
+  .20F9 DE = 6 (D = 0 from the check)
+  .20FB BPB+$0B: sectors per FAT
+  .20FE 1-12?
+  .2101 No: refused
+  .2103 Its high byte
+  .2105 Z when 0
+  .2106 A = sectors per track, low
+
+@20DE BPB_BAD
+  A refused BPB: NZ (A OR H, H being the buffer's high byte).
+  .20DE NZ: refused
+
+@20A0 BOOT_BPB_FIND
+  Looks for a usable BPB in the boot sector: the one at +$0B (BPB_CHECK, then 1-128 sectors per
+  track and 1 or 2 sides), else the record at +$50 when byte +8 is 1 (BOOT_ALT_BPB).
+  Entry: HL = the boot sector.
+  Exit: Z. NC with HL = the boot sector +$0B; or C with HL = the boot sector +$50, its 15 bytes
+  copied over +$0B to +$19 and A = its +$0D byte (taken as the sides).
+  Error: NZ when neither passes.
+  Changes: AF, BC, DE, HL.
+  Keeps: IX, IY.
+  .20A0 The BPB at +$0B
+  .20A4 Kept
+  .20A5 Passes the first checks?
+  .20A8 No: try the record at +$50
+  .20AA Sectors per track 1-128?
+  .20AF D = its high byte
+  .20B1 A = the sides' low byte
+  .20B3 1 or 2 sides: 0
+  .20B6 With the high bytes
+  .20B8 Not 0: try the record at +$50
+  .20BA HL = the BPB
+
+@20BC BOOT_ALT_BPB
+  The BPB at +$0B failed: when the boot sector's byte +8 is 1, checks the record at +$50 the
+  same way (with its +$0D byte below 3) and copies its 15 bytes over the BPB at +$0B.
+  .20BC HL = the boot sector +$0B
+  .20BF HL = +$08
+  .20C0 Byte +8 = 1?
+  .20C2 No: NZ, refused
+  .20C3 The record at +$50
+  .20C7 Passes the checks?
+  .20CB Its +$0D byte (sides) below 3?
+  .20CD No: refused
+  .20D0 DE = the boot sector +$19
+  .20D5 15 bytes, +$5E down to +$50
+  .20D8 Over +$19 down to +$0B
+  .20DA HL = the record at +$50
+  .20DB Z
+  .20DC C: the record at +$50 was taken
+
+@2109 BPB_FROM_MEDIA
+  Builds a BPB at +$0B of the buffer from a FAT media byte (bit 0: two sides, bit 1: 8 sectors
+  per track, bit 2: 40 tracks): 512 bytes per sector; 1 sector per cluster when the bits 0 and 2
+  give 4 ($FC, $FE), else 2; 1 reserved sector; 2 FATs; $40 root entries (with 1 per cluster)
+  or $70; 320 or 360 sectors, doubled for two sides and again for 80 tracks; 1 sector per FAT
+  for $FA, $FE, $FF, 3 for $F9, else 2. Bytes +$0B to +$63 are cleared first.
+  Entry: A = C = the media byte; HL = the buffer.
+  Exit: HL = the buffer +$0B; NC.
+  Changes: AF, BC, DE, HL.
+  Keeps: IX, IY.
+  .2109 D = 0
+  .210C HL = the buffer +$64
+  .210D $59 bytes: +$0B to +$63
+
+@210F BPB_ZERO_LOOP
+  Clears the bytes, then fills in the sector size and the cluster size.
+  .210F One byte lower
+  .2110 Cleared
+  .2113 Keeps the BPB
+  .2114 B = 2
+  .2116 +$0C: bytes per sector $0200
+  .2118 +$0D: sectors per cluster 1
+  .211A Bits 0 and 2 of the media byte
+  .211C Both give 4?
+  .2120 No: 2 per cluster
+
+@2121 BPB_MEDIA_ROOT
+  One reserved sector, 2 FATs, $40 root entries, $70 when a cluster is 2 sectors.
+  .2122 +$0E: 1 reserved sector
+  .2125 +$10: 2 FATs
+  .2127 +$11: $40 root entries
+  .2129 1 sector per cluster?
+  .212C No: $70 entries
+
+@212E BPB_MEDIA_SIZE
+  Works out the total sectors (HL), the sectors per track (D) and the sides (E): 8 or 9 per
+  track from bit 1.
+  .2130 Keeps +$13 (the total sectors)
+  .2131 A = the media byte
+  .2132 40 tracks x 8 sectors
+  .2135 40 more for 9 sectors per track
+  .2138 8 sectors per track, 1 side
+  .213B 8 sectors per track (bit 1)?
+  .213F No: 9 per track
+  .2140 360 sectors
+
+@2141 BPB_MEDIA_SIDES
+  Bit 0 set: two sides, twice the sectors.
+  .2141 Two sides?
+  .2145 Yes: 2
+  .2146 Twice the sectors
+
+@2147 BPB_MEDIA_TRKS
+  Bit 2 clear: 80 tracks, twice the sectors.
+  .2147 40 tracks?
+  .214B No: twice the sectors
+
+@214C BPB_MEDIA_FAT
+  Stores the total sectors and the media byte, and the sectors per FAT: 1 for $FA, $FE, $FF,
+  3 for $F9, else 2.
+  .214C DE = the total sectors
+  .214D HL = +$13; the track geometry on the stack
+  .214E +$13: the total sectors
+  .2152 +$15: the media byte
+  .2154 +$16: 1 sector per FAT
+  .2155 $FE or $FF?
+  .2157 Yes: 1
+  .2159 $FA?
+  .215B Yes: 1
+  .215D 2
+  .215E $F9?
+  .2161 Yes: 3
+
+@2162 BPB_MEDIA_GEOM
+  Stores the sectors per track and the sides, and returns NC with HL = the BPB.
+  .2164 D = sectors per track, E = sides
+  .2165 +$18: sectors per track
+  .2168 +$1A: sides
+  .2169 HL = the buffer +$0B
+  .216A NC
+
+@216C FD_SET_PARAMS
+  Takes the drive's parameters from the BPB at HL: the total sectors (IX+$09/$0D), the sectors
+  per track and the sides. The record at +$50 (carry) gives 9 sectors per track and 2 sides
+  when its +$0D byte is 2, else 1.
+  .216C Keeps C: the record at +$50 was taken
+  .2170 HL = BPB+$08: the total sectors
+  .2175 The drive's total sectors, low
+  .2178 ... and high
+  .217B B = the media byte
+  .217F C = sectors per track
+  .2182 The record at +$50?
+  .2185 A = the sides
+  .2187 HL = BPB+$11: the hidden sectors
+
+@218A FD_ALT_SIDES
+  The record at +$50: 2 sides when its byte says 2, else 1.
+  .218A 2 sides?
+  .218E No: 1
+
+@2190 FD_ALT_SPT
+  The record at +$50: 9 sectors per track.
+  .2190 9 sectors per track
+
+@2192 FD_CHECK_SIDES
+  Stores the sectors per track; a disk with as many sides as the drive's last one, or with one
+  side, goes on; otherwise side 1 is checked (FD_SIDE1_TRY), H counting the tries.
+  .2192 The drive's sectors per track
+  .2195 The other set: B' = select bit, HL' = BPB
+  .2196 Same sides as before?
+  .219B One side?
+  .219F H = the tries
+
+@21A0 FD_SIDE1_TRY
+  Reads an address field on side 1 of the current track. A time-out or change is mapped to its
+  error; a record not found gives $96 (Incompatible disk); other failures are tried again.
+  .21A0 Stay on the track; flags 0
+  .21A3 Side 1
+  .21A5 B = the drive's select bit
+  .21A8 Reads an address field, side C
+  .21AB Read: is it side 1?
+  .21AD Time-out or disk change?
+  .21AF Yes: map it
+  .21B1 Record not found?
+  .21B3 Yes: incompatible
+  .21B5 Another try?
+
+@21B8 FD_INCOMPAT
+  Error $96 (Incompatible disk). $21BB, inside the LD HL, is LD A,$B4: the entry for error $B4
+  (Not a DOS disk).
+  .21B8 Error $96
+  .21BA Hides LD A,$B4 at $21BB: error $B4 (Not a DOS disk)
+
+@21BD FD_ERR_RET
+  Returns the error in A with NZ.
+
+@21BF FD_SIDE1_READ
+  The field was read: its side byte (IY-$10) must be 1, else the disk is incompatible.
+  .21BF The field's side
+  .21C2 1?
+  .21C3 No: incompatible
+  .21C5 2 sides
+
+@21C7 FD_SET_GEOM
+  Stores the sides and the first sector's offset (the BPB's hidden sectors), then finds the
+  last sector's track (LSN_TO_CHS): it must be 1-253. A media byte the drive had before keeps
+  the flags; else a disk of fewer than 51 tracks clears bit 2, a larger one sets it and, unless
+  bit 1 is set, has the double step checked (FD_CHECK_STEP).
+  .21C7 The drive's sides
+  .21CA HL = BPB+$11 again
+  .21CB The hidden sectors
+  .21CE The drive's first sector offset, low
+  .21D1 ... and high
+  .21D4 DE = the last sector
+  .21D5 Its track, side and sector
+  .21D8 Offset overflow: not a DOS disk
+  .21DA Track above 255?
+  .21DC Yes: NZ, A = the track's high byte
+  .21DD Track 1-253?
+  .21E1 No: not a DOS disk
+  .21E3 The drive's last track
+  .21E6 The media byte
+  .21E7 The drive's media byte before?
+  .21EA Yes: keep the flags
+  .21EC 51 tracks or more?
+  .21EF A = the drive's flags
+  .21F2 Not over 50 tracks
+  .21F4 Fewer: store them
+  .21F6 Over 50 tracks
+  .21F8 Double step known?
+  .21FA Yes: store them
+  .21FC C = the new flags
+  .21FE B = the drive's select bit
+  .2201 Checks the head steps on this disk
+  .2205 C: incompatible ($96)
+
+@2207 FD_CHECK_ERR
+  A failed check is mapped to its error; else the flags worked out before the check (C) are
+  stored, not those the check wrote.
+  .2207 Failed: map it
+  .2209 A = the new flags
+
+@220A FD_STORE_FLAGS
+  Stores the drive's flags and media byte.
+  .220A The drive's flags
+  .220D The drive's media byte
+
+@2210 FD_PARAMS_OK
+  Marks the parameters known and returns A = 0.
+  .2210 Parameters known
+  .2214 A = 0, Z
+
+@2216 FD_ERR_MAP
+  Turns DISK_IO's error bits in A into EXDOS error codes from the table at $2229, by the
+  lowest set bit: 0 time-out $BA (Not ready), 1 mismatch $B9 (Verify error), 2 lost data and
+  3 CRC $B8 (Data error), 4 not found $B7 (Sector not found), 5 disk changed $BF, 6 write
+  protected $B6 (Write protected disk), 7 no drive or bad operation $BD. $BF also marks the
+  drive's parameters not known. Exchanges the register sets (EXX) and returns NZ.
+  .2216 One before the table
+
+@2219 FD_ERR_FIND
+  Steps through the table until the lowest set bit.
+  .221A This bit set?
+  .221D A = its error code
+  .221E Swaps the register sets
+  .221F Disk changed?
+  .2223 Yes: parameters not known
+
+@2227 FD_ERR_NZ
+  Returns A with NZ.
+
+@2231 FD_TRANSFER
+  FLOPPY_DRIVER functions 4 (read), 5 (write) and 6 (write and verify): B sectors from logical
+  sector DE, the caller's IX being the buffer.
+  1. No count: A = 0. Parameters not known: A = $BF.
+  2. The double step is checked when it was not yet (FD_CHECK_STEP).
+  3. Refuses a run past the disk's end ($BB).
+  4. Works a track (and side) at a time (FD_XFER_TRACK, FD_XFER_RETRY).
+  It returns with the register sets exchanged, so the caller gets the counters kept in the
+  alternates: B = the sectors done, C = those not done, HL = past the last one done. The flags
+  do not always match A; DRIVER_CALL sets them with OR A.
+  .2231 IX = drive's slot, A = count, B = select bit
+  .2235 B' = 0: done
+  .2237 C' = the count: left
+  .2239 Parameters known?
+  .223D No: error $BF
+  .223F L = the count
+  .2241 None: A = 0
+  .2244 Step checked?
+  .2248 No: check it now
+  .224B C: incompatible ($96)
+  .224E Failed: map it
+  .2250 HL = the count
+  .2251 Less 1
+  .2252 HL = the last sector
+  .2253 Past $FFFF
+  .2256 BC = the disk's total sectors
+  .225C The last sector inside the disk?
+  .225F Yes: go
+
+@2261 FD_PAST_END
+  The run ends past the disk: error $BB (a code with no message). $2264, inside the LD HL, is
+  LD A,$BF: the entry for parameters not known.
+  .2261 Error $BB
+  .2263 Hides LD A,$BF at $2264: parameters not known
+
+@2266 FD_XFER_EXX
+  Exchanges the register sets for the caller and returns.
+  .2266 B = sectors done, C = not done, HL = buffer
+
+@2268 FD_XFER_START
+  The first sector's track, side and sector.
+  .2268 DE = track, C = side, A = sector
+  .226B D = the track
+  .226C E = the sector
+
+@226D FD_XFER_TRACK
+  L = the sectors to do on this track and side: those left on it, or fewer when the count left
+  (C') is smaller.
+  .226D Sectors per track
+  .2270 Less the first sector
+  .2271 + 1: those left on the track
+  .2272 C' = the count left
+  .2273 More than that?
+  .2276 No: all that is left
+
+@2277 FD_XFER_PASS
+  Transfers them (FD_XFER_RETRY); then goes on at sector 1 of the next side, or of the next
+  track after the last side, until the count is done.
+  .2277 L = sectors this pass
+  .2279 Transfers them
+  .227C Failed: map it
+  .227E A = 0 OR the count left
+  .2280 Done: A = 0 with the sets exchanged
+  .2282 Sector 1
+  .2284 Next side
+  .2285 Past the last side?
+  .2289 No
+  .228B Side 0
+  .228C Next track
+
+@228D FD_XFER_NEXT
+  The next pass.
+
+@228F LSN_TO_CHS
+  Turns a logical sector into its track, side and sector: adds the drive's first sector offset,
+  divides by the sectors per track, and for two sides takes the low bit of the quotient as the
+  side.
+  Entry: DE = the logical sector; IX = the drive's slot.
+  Exit: DE = the track; C = the side; A = the sector (from 1); NC.
+  Error: C with A = 0 when the offset takes it past $FFFF.
+  Changes: AF, C, DE, HL.
+  Keeps: B, IX, IY.
+  .228F A = 0
+  .2290 HL = the drive's first sector offset
+  .2296 Plus the sector
+  .2298 Past $FFFF
+  .2299 C = sectors per track
+  .229C DE = the quotient, A = the sector - 1
+  .229F C = the sides
+  .22A2 NC: side 0 for one side
+  .22A3 One side?
+  .22A4 Yes
+  .22A6 C = 0
+  .22A7 DE = the track, carry = the side
+
+@22AB LSN_SIDE_SECT
+  C = the side from the carry, A = the sector from 1.
+  .22AB C = the side
+  .22AD The sector, from 1
+
+@22AF DIV_DE_C
+  Divides DE by C, bit by bit.
+  Entry: DE = the dividend; C = the divisor (1-128).
+  Exit: DE = the quotient; A = the remainder.
+  Changes: AF, DE.
+  Keeps: BC, HL, IX, IY.
+  .22B0 16 bits
+  .22B2 The remainder starts at 0
+
+@22B3 DIV_DE_C_BIT
+  Shifts the next bit into the remainder and subtracts the divisor when it fits.
+  .22B3 Next bit of DE ...
+  .22B7 ... into the remainder
+  .22B8 Does the divisor fit?
+  .22BB Yes: take it off
+  .22BC Quotient bit 1
+
+@22BD DIV_DE_C_NEXT
+  The next bit.
+  .22BF The caller's BC
+
+@22DD ADDR_HERE
+  Reads an address field on side 0 of the track the head is on (ADDR_READ with D = $FF).
+  Entry: B = the drive's select bit; IY = the driver's variables.
+  Exit: as ADDR_READ.
+  Changes: AF, DE.
+  Keeps: BC, HL, IX, IY.
+  .22DD Stay on the track
+
+@22DF ADDR_ON_TRACK
+  Reads an address field on side 0 of track D, with no extra flags (ADDR_READ with E = 0).
+  Entry: B = the drive's select bit; D = the track; IY = the driver's variables.
+  Exit: as ADDR_READ.
+  Changes: AF, E, D.
+  Keeps: BC, HL, IX, IY.
+  .22DF No extra flags
+
+@22E1 ADDR_READ
+  Reads one address field (DISK_IO 6) on side 0 into IY-$11 to IY-$0C: track, side, sector,
+  size, CRC. $22E5 (inside LD A,$C5) is the entry that keeps the caller's C as the side.
+  Entry: B = the drive's select bit; D = the track ($FF: stay); E = flags for DISK_IO's H (bit 5
+  to the latch, bit 3 double step), added to the step rate in bits 0-1 of IY-$55; IY.
+  Exit: A = D = DISK_IO's result (0 with Z when a field was read).
+  Changes: AF, D; IY-$11 to IY-$0C.
+  Keeps: BC, E, HL, IX, IY.
+  .22E1 Keeps BC
+  .22E2 Side 0
+  .22E4 Hides PUSH BC at $22E5, the entry with C = the side
+  .22E7 IX = IY, the caller's IX on the stack
+  .22EC -$11
+  .22EF IX = IY-$11: the field goes there
+  .22F2 The step rate
+  .22F7 With the flags
+  .22F8 H = DISK_IO's flags
+  .22F9 One field
+  .22FB Read address
+  .2300 The caller's IX
+  .2304 D = the result
+
+@2306 FD_XFER_ONCE
+  One DISK_IO transfer for the function at IY-$12 (4 read, 5 write, 6 write then verify,
+  8 write a track): double step when the drive's flags say so, write precompensation on tracks
+  past half the last; then moves the counters on by the sectors done.
+  Entry: B = the drive's select bit; C = the side; D = the track; E = the sector; L = the count;
+  H = the sectors done so far; HL' = the buffer; B' = done, C' = left; IX = the drive's slot.
+  Exit: A and the flags = DISK_IO's result (function 6: the verify's when it failed); E = the
+  next sector; H = done so far + done now; L = the count less done now; HL' advanced 512 bytes a
+  sector; B' + done, C' - done; E' = done now.
+  Changes: AF, B, E, HL, AF', BC', E', H'.
+  Keeps: C, D, IX, IY.
+  .2306 Keeps the done and count
+  .2307 The step rate
+  .230C H = DISK_IO's flags
+  .230D The drive's flags
+  .2310 Double step, not over 50 tracks?
+  .2316 Yes: double step
+
+@2318 FD_XFER_PRECOMP
+  Write precompensation past half the last track.
+  .2318 The last track
+  .231B Half of it
+  .231C Track past that?
+  .2320 Yes: precompensation
+
+@2322 FD_XFER_OP
+  Puts the buffer in IX and picks DISK_IO's operation: function 8 writes a track (4).
+  .2323 The buffer ...
+  .2324 ... in IX, the drive's slot on the stack
+  .2327 The function
+  .232A Format (8)?
+  .232E Yes: 4, write a track
+
+@2331 FD_XFER_RW
+  Function 4 reads (1), functions 5 and 6 write (2).
+  .2331 Function 4?
+  .2333 Read
+  .2337 Write
+
+@2338 FD_XFER_CALL
+  Runs the operation; for function 6 after sectors were written, verifies them (DISK_IO 3) and
+  returns the verify's result when it failed, else the write's.
+  .2338 Runs it
+  .233B AF' = the result
+  .233C The function
+  .233F Write and verify?
+  .2343 Any sectors written?
+  .2346 Verify them
+  .234B Verified: the write's result
+  .234D The verify's result goes back
+
+@234E FD_XFER_ADVANCE
+  Moves the counters on by the sectors done (L) and returns DISK_IO's result.
+  .234E IX = the drive's slot
+  .2352 E = the next sector
+  .2355 A = the sectors done
+  .2357 E' = done now
+  .2358 512 bytes a sector ...
+  .235A ... H' = the buffer past them
+  .235B B' = done in all
+  .235E C' = left
+  .2362 A = done now
+  .2363 H = done so far, L = the count
+  .2364 H = done in all
+  .2366 L = the count ...
+  .2368 ... less done now
+  .236B A = DISK_IO's result
+
+@236D FD_XFER_RETRY
+  Transfers sectors with up to 4 tries' worth of retries (D'), each failure costing by kind: 5
+  for a time-out, a disk change or write protection (no retry), 1 for a mismatch, lost data or
+  CRC error, 2 for others. A first record not found reads an address field: a wrong track has
+  the double step checked again. A retry goes on from the sector that failed.
+  Entry: B = the drive's select bit; C = the side; D = the track; E = the first sector; L = the
+  count; HL' = the buffer; B' and C' the counters (FD_XFER_ONCE); IX = the drive's slot;
+  IY-$12 = the function.
+  Exit: A = 0 with Z; L = the sectors done; E = the next sector; HL', B', C' moved on.
+  Error: NZ with A = the error bits that ended it (masked by kind; $20 for a change found by the
+  address read).
+  Changes: AF, B, E, HL, AF', BC', DE', HL'.
+  Keeps: C, D, IX, IY.
+  .236E D' = the tries
+  .2371 H = done so far
+
+@2373 FD_XFER_LOOP
+  One transfer; a failure is weighed by its bits.
+  .2373 One transfer
+  .2376 Done?
+  .2377 Yes
+  .2379 Keeps done and count
+  .237A L = the error bits
+  .237B Time-out, change, write protect?
+  .237D Yes: no retry
+  .2380 Mismatch, lost data, CRC?
+  .2382 Yes: cost 1
+  .2384 A = the tries left
+  .2387 Retried before?
+  .2389 A = the error bits
+  .238A Yes: cost 2
+  .238D Stay on the track, no flags
+  .2390 Reads an address field, side C
+  .2394 Read: right track?
+  .2396 Disk change?
+  .2398 Yes: no retry
+  .239A No field: check the steps
+
+@239C FD_RETRY_TRACK
+  The head is on the right track: a retry at cost 2; on the wrong one the double step is
+  checked again.
+  .239C The track found
+  .239F The one asked for?
+  .23A0 Yes: retry
+
+@23A2 FD_RETRY_RECHK
+  Checks the double step again (FD_CHECK_STEP).
+  .23A2 Checks the steps
+  .23A5 Z when it worked
+
+@23A6 FD_RETRY_SOFT
+  Retry at cost 2 when the check worked, else no retry.
+  .23A6 A = the error bits
+  .23A7 Worked: cost 2
+
+@23A9 FD_RETRY_COST
+  H = the failure's cost (5 here; $23AC is LD H,1, $23AF LD H,2, entries inside the JPs, which
+  never jump: Z is clear). Takes the cost off the tries (D'); while they do not go below 0,
+  transfers again. Before that, a try other than the first calls DISK_IO with A = tries - 4
+  ($FC-$FF), an operation it refuses with $80.
+  .23A9 Cost 5: no retry
+  .23AB Hides LD H,1 at $23AC: cost 1
+  .23AE Hides LD H,2 at $23AF: cost 2
+  .23B1 Keeps the error bits
+  .23B3 A = the tries left
+  .23B6 The first try?
+  .23B8 No: DISK_IO refuses A = $FC-$FF
+  .23BB A = the tries left
+  .23BC Less the cost
+  .23BE D' = the tries left
+  .23C0 H = the error bits
+  .23C1 A = them
+  .23C2 H = done so far, L = the count
+  .23C3 Tries left: again
+
+@23C5 FD_XFER_END
+  L = the sectors done; flags from A.
+  .23C5 L = the sectors done
+  .23C6 Z when A = 0
+
+@23C8 FD_CHECK_STEP
+  Checks how the head steps on this disk: forgets the track, seeks 8 steps and reads an address
+  field (two tries). Track 8 found: single steps (for a disk of at most 50 tracks, bit 1 is
+  cleared). Track 4: double steps (bit 2 cleared, bit 1 set). Track 16: error $96. Sets bit 0 of
+  the drive's flags (checked), and forgets the track again at the end.
+  Entry: B = the drive's select bit; IX = the drive's slot; IY.
+  Exit: A = 0 with Z; bits 0-2 of IX-$07 set as above.
+  Error: Z and C with A = $96 (Incompatible disk); NZ with DISK_IO's bits: $01/$20/$21 for a
+  time-out or change, else the last read's result ($10 when another track was found).
+  Changes: AF; IX-$07, the drive's track (forgotten).
+  Keeps: BC, DE, HL, IX, IY.
+  .23C8 Keeps BC
+  .23CA Two tries
+  .23CC Not checked
+  .23D0 No double step
+
+@23D4 STEP_CHK_TRY
+  Forgets the track and reads an address field 8 steps in.
+  .23D4 DISK_IO 0
+  .23D5 Forgets the drive's track
+  .23D8 Track 8, single steps
+  .23DA Reads an address field there
+  .23DD Read
+  .23DF Time-out or disk change?
+  .23E1 Yes: fail
+
+@23E3 STEP_CHK_RETRY
+  Another try, or fails with the last result in D.
+  .23E3 Another try?
+  .23E6 A = the result
+  .23E7 NZ
+
+@23EA STEP_CHK_FOUND
+  Judges the track the field gives: 4 double steps, 8 single steps, 16 incompatible; another
+  is tried again with D = $10.
+  .23EA E = the flags ...
+  .23ED ... marked double step
+  .23EF The track found
+  .23F2 4?
+  .23F4 Yes: double steps
+  .23F6 8?
+  .23F8 Yes
+  .23FA 16?
+  .23FC D = $10, not found, for another
+  .23FE Neither: again
+  .2400 Error $96 (Incompatible disk)
+  .2402 C
+
+@2405 STEP_CHK_TRK8
+  Track 8: single steps; bit 1 is kept for a disk over 50 tracks, else cleared.
+  .2405 Over 50 tracks?
+  .2407 Yes: keep bit 1
+  .2409 No double step
+  .240B Never jumps (Z); hides RES 2,E at $240C, the entry for track 4
+
+@240E STEP_CHK_SET
+  Marks the drive checked and stores the flags; A = 0.
+  .240E Checked
+  .2410 The drive's flags
+  .2413 A = 0
+
+@2414 STEP_CHK_END
+  Forgets the drive's track and returns the result.
+  .2414 Keeps the result
+  .2415 DISK_IO 0
+  .2416 Forgets the drive's track
+  .241A The caller's DE and BC
+
+@241D FD_FORMAT
+  FLOPPY_DRIVER function 8: formats the disk for media byte B ($F8-$FF, else error $B4). Counts
+  the drive's tracks (DISK_IO 8): an 80-track drive gives the disk over 50 tracks unless the
+  media byte's bit 2 asks for 40 (then double steps); a 40-track drive forces bit 2 on. Then
+  checks the drive answers on track 0 and builds the track image (FMT_BUILD_IMAGE).
+  .241D IX = the drive's slot, A = the media byte
+  .2420 C = the media byte
+  .2421 $F8 or more?
+  .2423 Error $B4 (Not a DOS disk)
+  .2425 No: refused
+  .2426 H = the step rate
+  .2429 Count the drive's tracks
+  .242E Failed: map it
+  .2431 Flags: checked, double step
+  .2433 An 80-track drive (L = $FF)?
+  .2434 Yes
+  .2436 40-track drive: single steps
+  .2438 A 40-track media byte
+
+@243A FMT_MEDIA_TRKS
+  An 80-track disk (media bit 2 clear) is marked over 50 tracks.
+  .243A A 40-track media byte?
+  .243E No: over 50 tracks
+
+@2440 FMT_BUILD_IMAGE
+  Stores the drive's flags and reads an address field on track 0: a time-out, change or no drive
+  gives $BA (Not ready). Then writes the track image into the buffer from the pairs at $2553
+  (FILL_PAIRS): the track's header, then a sector at a time (FMT_IMG_SECTOR).
+  .2440 The drive's flags
+  .2443 Track 0 (A = 0 from DISK_IO)
+  .2444 Reads an address field there
+  .2447 Time-out, change, no drive?
+  .2449 Error $BA (Not ready)
+  .244C HL = the buffer
+  .244D Kept
+  .244E The track's header
+  .2451 5 pairs
+  .2456 9 sectors
+  .2458 A' = sector 1
+
+@245B FMT_IMG_SECTOR
+  One sector's part of the image: the pairs at $255D for the address field (its track and side
+  0, filled in later), the sector number, then 10 pairs for the size code 2, the gaps and 512
+  bytes of $E5. After 9 sectors, the 2 pairs that follow give the track's end.
+  .245B The sector's pairs
+  .245E 4: up to the track and side
+  .2463 A = the sector number
+  .2464 Into the address field
+  .2466 The next sector's number
+  .2468 10 pairs: size, data field, gaps
+  .246D Next sector
+  .2470 The track's end: 2 pairs
+  .2475 HL = the buffer
+  .2476 Back to the caller's set
+
+@24CD FMT_ALL_TRACKS
+  One pass over every track of the disk for function 8: takes its return address into HL (the
+  pass returns with JP (HL) at $2544), starts at track 0 and goes on at $24D0: per track and side
+  8 or 9 sectors by the media byte, through FD_XFER_RETRY with the function at IY-$12 (8 writes
+  the track image, its address fields given the track and side first).
+  Entry: C = the media byte (bit 0 two sides, bit 1 8 sectors, bit 2 40 tracks); B = the drive's
+  select bit; IX = the drive's slot; HL' = the track image; IY-$12 = the function.
+  Exit: A = 0 when every track is done.
+  Error: a failure leaves function 8 itself through FD_ERR_MAP; $C4B2 giving Z leaves it too.
+  Changes: AF, C, DE, HL, AF', BC', DE', HL'.
+  .24CD HL = the return address
+  .24CE Track 0
+
+@2545 FILL_PAIRS
+  Writes B runs of bytes from a list of (count, byte) pairs; a count of 0 is 256.
+  Entry: B = the pairs; DE = the list; HL = where to write.
+  Exit: DE past the list; HL past the bytes; B = 0.
+  Changes: A, B, DE, HL.
+  Keeps: F, C, IX, IY.
+  .2545 Keeps the pairs left
+  .2547 B = the count
+  .2549 A = the byte
+
+question 2001 Function 0 jumps into DISK_IO 8 with IY 4 higher (the select-bit loop): does op 8 then work on the right variables?
+question 2027 What does IY-$45 hold, which makes function 2 answer B = 1 rather than 0 for a drive with a change mark?
+question 20BC Which disks carry the record at +$50 (byte +8 = 1, +$0D the sides) that BOOT_ALT_BPB takes?
+question 22E1 What sets the step rate in bits 0-1 of IY-$55?
+feedback wrong 23AB The card says the routine jumps out of the page to $0126 and $0226: both JP Z are never taken (NZ on every path in), they only hide LD H,1 and LD H,2
+feedback wrong 240B The card says $2405 leaves for $93CB: JP NZ follows BIT 2,E with Z, so it never jumps; it hides RES 2,E at $240C
+feedback missing 2216 The card does not say that $2216 reads the byte table at $2229-$2230 (indexed by the lowest set bit of A)
+feedback missing 2231 No card says the functions 4-6 return with the register sets exchanged (EXX at $2266, $221E, $227E): the caller's B, C, HL are the counters kept in BC', HL'
+feedback pattern 22C1-2545 The driver's per-drive arrays (IX = IY + drive: -$0B, -$07, -$03, +$01, +$05, +$09/+$0D, +$11/+$15, +$19) recur on 40 cards with no shared summary
+feedback listing 1EE0-2000 Opened to see the dispatcher at $1FD3 (range 4's card) that enters every routine of this range
+feedback listing 2440-2580 Opened for the format code past my cards ($2477-$2544) and the pair lists at $2553
+feedback listing 1C9F-1DE2 Opened to learn what DISK_IO 7 returns in B and how DISK_IO treats IY
+feedback wrong 236D The facts say C, IX and IY may change: C comes back from DISK_IO and the PUSH BC/POP BC around ADDR_READ and FD_CHECK_STEP, IX from POP IX at $234E, and nothing writes IY
+feedback wrong 23C8 The facts say L may change: ADDR_READ pushes and pops HL around DISK_IO, and DISK_IO 0 does not touch L

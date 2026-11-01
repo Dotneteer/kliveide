@@ -1,3 +1,5 @@
+
+> **Superseded for new work** by `pipeline-range.md` (the ROM annotation pipeline); kept for its machine-specific notes. The scripts it names that were retired are mapped in `../tools/README.md`.
 <!-- Template: the brief given to a helper completing a sidecar made by map-rom.py/build-mapped.py
      (used for the +3 ROM 0/1 variants). Replace <WORKDIR>; give SIDECAR, the variant and the draft path
      in the task. Merge its draft with apply-draft.py (fixes, removals, :replace= ranges). -->

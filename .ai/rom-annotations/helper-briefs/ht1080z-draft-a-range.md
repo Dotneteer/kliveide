@@ -1,3 +1,5 @@
+
+> **Superseded for new work** by `pipeline-range.md` (the ROM annotation pipeline); kept for its machine-specific notes. The scripts it names that were retired are mapped in `../tools/README.md`.
 <!-- Template: the brief given to each helper agent drafting one address range of the HT-1080Z BASIC ROM
      (ht1080z-s1.rom, 12K). Replace <WORKDIR> with the session's work folder; give each helper its range and
      draft path in the task. Merge the drafts with merge-drafts.py, then fix clashes by hand. -->

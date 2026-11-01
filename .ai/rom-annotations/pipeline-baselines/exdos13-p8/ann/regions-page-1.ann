@@ -1,0 +1,30 @@
+rom ep-exdos13.rom page 1 cpu z80
+default observed
+
+# The header: two pointers as page 0 sees this segment in page 1 ($4004 and $4425)
+words 0000-0003
+
+@0004 MSG_TABLE_EN
+  The English messages: 75 entries (0-$4A), each a length byte, then that many characters;
+  a 0 length is an entry with no text. A "\" in a text is printed as a new line.
+  Read by page 0's $0098 (segment + 1 put in page 1), which takes this table when EXOS
+  variable $90 is not 0 (the pointer at $0000). Entries 0-$2A are the texts of error codes
+  $95-$BF ($0051), $2B the text of $CF.
+
+@0425 MSG_TABLE_DE
+  The German messages, laid out as the English table: 76 entries (0-$4B; $4B, "Neue",
+  is used only by the German date and time prompt at $3947). Page 0's $0098 takes this table
+  when EXOS variable $90 is 0 (the pointer at $0002). Umlauts are written as "{", "}", "|".
+
+text 0004-0424
+text 0425-0948
+
+@0949 MSG_RESIDUE
+  55 bytes that no entry reaches: the tail of an older copy of German entries $47 and $48.
+
+text 0949-097F
+fill 0980-3FFF
+
+feedback missing 0000-0003 The header words are the two tables' addresses in page 1; the proposals made them part of a counted text ("@%D!")
+feedback wrong 0000-004B The first proposal starts the counted texts at $0000; the table starts at $0004 and runs without a break to $0424 (the 0-length entries were proposed as bytes, $0055 and others)
+feedback missing 0004-0948 No card says which code reads this page: page 0's $0098 (in a,($B3) / inc a / out ($B1),a, then ld hl,($4002) or ($4000)) is the only reader

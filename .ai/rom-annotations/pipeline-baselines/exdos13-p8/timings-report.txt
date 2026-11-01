@@ -1,0 +1,22 @@
+Measured run "p8-exdos" (from 2026-11-01T17:28:15.847Z to 2026-11-01T18:16:31.847Z)
+  total time:          48 min 16 s
+  preprocessor/postprocessor and other tools: 49.8 s (1.7 %)
+    prepare         7 run(s)  23.8 s
+    compile        35 run(s)  23.1 s
+    listing       203 run(s)  2.9 s
+  AI (the rest):       47 min 26 s (98.3 %); helpers reported 159 min 49 s of their own, partly in parallel
+  AI tokens:           3,263,968 in 14 record(s)
+       220806  helper: regions of both pages (68 tool calls; output 49,874, cache reads 9,941,391)
+       195227  helper: page 0 range 06 (30 tool calls)
+       255785  helper: page 0 range 03 (47 tool calls)
+       219545  helper: page 0 range 05 (39 tool calls)
+       253280  helper: page 0 range 04 (44 tool calls)
+       285713  helper: page 0 range 02 (40 tool calls)
+       268582  helper: page 0 range 01 (37 tool calls)
+       143889  helper: page 0 range 12 (25 tool calls)
+       263518  helper: page 0 range 07 (41 tool calls)
+       230732  helper: page 0 range 10 (46 tool calls)
+       264259  helper: page 0 range 08 (54 tool calls)
+       262468  helper: page 0 range 09 (60 tool calls)
+       282990  helper: page 0 range 11 (55 tool calls)
+       117174  the session itself (context 705,502 -> 822,676 tokens: orchestration, merge, fixes)

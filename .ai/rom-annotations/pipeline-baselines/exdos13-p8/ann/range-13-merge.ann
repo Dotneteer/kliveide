@@ -1,0 +1,17 @@
+# Written by the session at the merge: jump targets inside UNIT_CHECK_DISK no range labelled
+rom ep-exdos13.rom page 0 cpu z80
+default observed
+
+@0C45 UNIT_ASK_DISK
+  Loop: asks for the drive's disk (error $B3) until the check at $0C7F finds it in.
+
+@0C54 UNIT_CHK_POP_IX
+  The right disk is in: restores IX, then falls into the common exit.
+
+@0C56 UNIT_CHK_POP_BC
+  Restores BC, then falls into the common exit.
+
+@0C57 UNIT_CHK_DONE
+  The common exit: restores DE and AF.
+
+feedback missing 0C45-0C57 Four jump targets inside one routine were left unlabelled between ranges; the problem list caught them only at the merge

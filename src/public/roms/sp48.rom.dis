@@ -2351,7 +2351,7 @@
         "3880": {"comment":"One byte less"},
         "3881": {"comment":"All 32"},
         "3884": {"synopsis":"The line editor, for the edit line or INPUT's line (FLAGX bit 5): edits the line the cursor\n(K_CUR) is in until ENTER, one key per pass of ED_LOOP:\n1. Waits for a key (WAIT_KEY: channel K's KEY_INPUT has already handled CAPS LOCK, E and G\n   mode, and turned colour keys into a code and its operand) and clicks (TONE_OUT, DE =\n   PIP).\n2. Codes $18 and up and below $07 are inserted before the cursor (INSERT_CHAR); $10-$17 with\n   their operands (ED_CONTROL); $07-$0F are editing keys, run through EDIT_KEY_TABLE.\n3. Each key returns to ED_LOOP, except ENTER (KEY_ENTER), which returns to the caller.\n   ERR_SP points at ED_ERROR meanwhile, the old ERR_SP kept above it, so an error while\n   editing gives a rasp and editing goes on.\nObserved: PRINT 123, LEFT, DELETE, RIGHT left \"PRINT 13\" with the cursor at the end; DELETE\nat the start and RIGHT at the end did nothing.","comment":"Keep the old ERR_SP"},
-        "3888": {"comment":"ED_ERROR is where an error returns","synopsis":"Sets up the error return again (ED_ERROR comes back here) and goes into ED_LOOP."},
+        "3888": {"synopsis":"Sets up the error return again (ED_ERROR comes back here) and goes into ED_LOOP.","comment":"ED_ERROR is where an error returns"},
         "3891": {"comment":"Pushed"},
         "3892": {"comment":"ERR_SP = its slot"},
         "3896": {"synopsis":"One key: WAIT_KEY, the click, then the key's action. ED_LOOP's own address is pushed as the\naction's return, so every action but ENTER comes back here.","comment":"A key"},

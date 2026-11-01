@@ -1,5 +1,7 @@
 # Authoring the Enterprise 64/128 ROM Annotations
 
+> **Tools.** New work goes through the ROM annotation pipeline (`npm run rom:pipeline`; README, "The tools"). Most scripts this guide names were retired by it: `tools/README.md` gives the command that replaced each.
+
 Read `README.md` beside this file first (the D4 rule, provenance, the file format, the levels). This guide
 carries what is particular to the Enterprise: which ROM page is which, how the machine names them, the order
 of work, the tools, the sources that are off limits and the facts read so far. The machine itself is
@@ -30,7 +32,7 @@ Every Enterprise ROM page is a 16K segment listed at **$C000** (`romKindOrigin`:
 | 2 | `ep-exos21.rom` page 1 | EXOS 2.1, segment 01h: IS-BASIC 2.1's added routines, the clock, PRINTER, TAPE, SERIAL, NET, the word processor | `ep-exos-basic` | Done (below) |
 | 3 | `ep-basic21.rom` | IS-BASIC 2.1 (cartridge, segment 04h) | `ep-basic` | Done (below). An extension ROM whose code uses the same call lists |
 | 4 | `ep-exos20.rom`, `ep-basic20.rom` | the 64's EXOS 2.0 and IS-BASIC 2.0 | `ep-exos` / `ep-exos-basic` (page 1), `ep-basic` | EXOS 2.0 done (below); IS-BASIC 2.0 next (same gate as 2.1; `rom:annotations:carry` from `ep-basic21.rom.dis` places 494 of 1,021 labels) | Own sidecars, not `inherits`: only about 2.5K (page 0), 4.5K (page 1) and 1.8K (BASIC) of 2.1's bytes recur in runs of 64 or more. Reuse 2.1's names where a routine does the same job |
-| 5 | `ep-exdos13.rom` | EXDOS 1.3 (segments 20h-21h) | `ep-ext` | Last: which EXDOS 1.3 image is the original is still open (`src/public/roms/ep-roms-readme.txt`) |
+| 5 | `ep-exdos13.rom` | EXDOS 1.3 (segments 20h-21h) | `ep-ext` | **Done** to level 2 with the annotation pipeline (2026-11-01, `PROVENANCE.md`); page 21h holds only the English and German message tables. Which EXDOS 1.3 image is the original is still open (`src/public/roms/ep-roms-readme.txt`) |
 
 `ep-klive-fileio.rom` is Klive's own source (`src/emu/machines/enterprise/fileio/`) and gets no sidecar.
 

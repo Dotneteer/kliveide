@@ -1,0 +1,946 @@
+rom ep-exdos13.rom page 0 cpu z80
+default observed
+
+# Range 6: cluster-chain allocation and freeing, EXDOS functions 8-11 (table $0550), and the
+# floppy controller driver DISK_IO (also reached from the header's jump at $000D).
+
+@19DD CHAIN_ADD_LOOP
+  Allocation loop: keeps the clusters still to allocate and the last cluster of the chain on the
+  stack, then searches for the next free cluster (CHAIN_FIND_FREE).
+  .19DD Clusters still to allocate
+  .19DE Last cluster of the chain (1 at the start)
+
+@19DF CHAIN_FIND_FREE
+  Scans the FAT upwards from cluster DE + 1 for a free entry (0), links it to the last cluster of
+  the chain, clears it when bit 1 of IY+$48 is set, and goes on until the count on the stack is
+  used up; then ends the chain with $FFF. A run that reaches the disk's last cluster goes to
+  CHAIN_DISK_FULL.
+  .19DF Next cluster to try
+  .19E0 HL = the drive's parameter block
+  .19E1 HL+$16 = the cluster count + 2 (one past the last)
+  .19E9 Past the last cluster?
+  .19EC Yes: the disk is full
+  .19EF DE = the cluster's FAT entry
+  .19F2 Entry 0 (free)?
+  .19F5 No: try the next cluster
+  .19F7 BC = the free cluster
+  .19F9 DE = the last cluster of the chain
+  .19FB Link it to the free cluster
+  .19FE DE = the new cluster, now the chain's last
+  .1A02 Clear new clusters?
+  .1A06 Yes: zero its sectors
+  .1A0A BC = clusters still to allocate
+  .1A0B One less
+  .1A0E More to allocate: search on from this cluster
+  .1A10 End of chain mark
+  .1A13 Ends the chain at the last new cluster
+  .1A16 FAT entry 1 holds the chain's first cluster
+  .1A19 DE = it
+  .1A1C A = 0: done
+
+@1A1F CHAIN_DISK_FULL
+  The disk ran out of free clusters: frees every cluster this call allocated (the chain hung on FAT
+  entry 1) and leaves with error $AC (Disk full) through CHAIN_RESTORE_1.
+  .1A1F Drops the last cluster of the chain
+  .1A20 Drops the count still to allocate
+  .1A21 The chain starts at FAT entry 1
+  .1A24 Frees entry 1 and the clusters linked from it
+  .1A27 Error code $AC (Disk full)
+
+@1A29 CHAIN_RESTORE_1
+  The end of the allocation that starts at $19CB: puts back FAT entry 1, which the allocation used
+  as the head of the new chain, and returns. BC = the value entry 1 held (the first new cluster on
+  success), A = 0 with Z on success or the error code with NZ; DE = the caller's DE.
+  .1A29 BC = entry 1's value before the allocation
+  .1A2A Keeps the result code
+  .1A2B DE = entry 1's value now (the chain's head)
+  .1A2C FAT entry 1
+  .1A2F Puts its old value back
+  .1A32 BC = the chain's first cluster
+  .1A34 Z when A = 0 (done), NZ for an error
+  .1A35 The caller's DE
+
+@1A37 NEW_CLUSTER_ZERO
+  Zeroes every sector of a newly allocated cluster, last sector first, through the sector buffers
+  (each one marked changed). When bit 2 of IY+$48 is set (a directory is being made) it then writes
+  the "." entry (pointing at the cluster itself) and the ".." entry (pointing at the cluster held at
+  IY+$30/$31) into the cluster's first sector, both with attributes $12.
+  Entry: BC = the cluster; HL = the drive's parameter block (+$0A sectors per cluster); IY = EXDOS's
+  variables.
+  Exit: the cluster's sectors are zero in the buffers.
+  Changes: AF, DE, AF', BC', DE', HL'; the sector buffers.
+  Keeps: BC, HL, IX, IY.
+  .1A37 Keeps the cluster
+  .1A38 DE = the cluster
+  .1A3B HL+$0A = sectors per cluster
+  .1A3F B = sectors per cluster
+  .1A41 A = sector offset: one past the cluster's last
+  .1A42 DE = that sector's number
+  .1A45 A = sectors per cluster
+  .1A46 A = sectors to clear + 1; NZ, so the first pass reads nothing
+  .1A47 BC = the cluster
+  .1A48 IX = the parameter block, the caller's IX on the stack
+  .1A4B Keeps the cluster
+
+@1A4D CLR_SECTOR_LOOP
+  Gets a buffer for sector DE (after the first pass, through $09FC) and zeroes its 512 data bytes.
+  .1A4D Keeps the count
+  .1A4E Not the first pass: calls $09FC first
+  .1A51 B = 0
+  .1A53 HL = the buffer for sector DE
+  .1A56 Keeps the buffer
+  .1A57 The data starts after the buffer's 11-byte header
+  .1A5B A = 0, B = 0: 256 passes of 2 bytes
+
+@1A5C CLR_FILL
+  Zero-fill loop for the buffer's 512 bytes; then moves to the previous sector, and after the last
+  writes the "." and ".." entries when a directory is being made.
+  .1A5C Zeroes two bytes
+  .1A60 512 bytes in all
+  .1A62 Marks the buffer changed
+  .1A65 HL = the buffer
+  .1A66 B = sectors still to clear
+  .1A67 The previous sector
+  .1A68 Z: later passes call $09FC
+  .1A69 Next sector
+  .1A6B BC = the cluster
+  .1A6C Making a directory?
+  .1A70 No: done
+  .1A72 DE = the first entry of the first sector
+  .1A77 HL = the name "." padded with spaces
+  .1A7A Attributes $12
+  .1A7C Writes the "." entry, cluster BC
+  .1A7F DE = the second entry
+  .1A84 HL = the name ".." padded with spaces
+  .1A87 BC = the parent directory's cluster
+  .1A8D Attributes $12
+  .1A8F Writes the ".." entry
+
+@1A92 CLR_EXIT
+  Puts back the caller's IX and HL and returns.
+  .1A92 IX = the caller's IX
+  .1A94 HL = the drive's parameter block
+
+@1AA2 CHAIN_FREE
+  Frees a cluster chain: sets the FAT entry of DE and of every cluster linked from it to 0. Stops
+  at an entry that was 0 or at the end-of-chain mark ($FFFF from $1148).
+  Entry: DE = the first cluster; HL = the drive's parameter block.
+  Exit: Z with A = 0 when the last entry was 0; NZ when the chain ended with an end mark.
+  Changes: AF, BC, DE, AF', BC', DE', HL'; the FAT.
+  Keeps: HL, IX, IY.
+  .1AA2 Keeps the cluster
+  .1AA3 DE = its FAT entry (the next cluster)
+  .1AA6 BC = the cluster
+  .1AA7 Keeps the next cluster
+  .1AAA Free
+  .1AAD Sets the cluster's FAT entry to 0
+  .1AB0 DE = the next cluster
+  .1AB1 Was the entry 0?
+  .1AB4 End mark ($FFFF)?
+  .1AB6 No: free the next one
+
+@1AB9 FN8_DELETE
+  EXDOS function 8 (table $0550): deletes the file or the empty directory whose descriptor is at DE.
+  1. Finds its directory entry ($12F9).
+  2. A directory: refuses "." and "..", enters it and checks every entry is ".", ".." or empty,
+     then finds the entry again.
+  3. Refuses a read-only file, and a file whose first cluster and drive match the ones recorded
+     at IY+$60-$62 while bit 1 of IY-$37 is set.
+  4. Frees the cluster chain, keeps the name's first character at entry+$0C and marks the entry
+     deleted ($E5).
+  Entry: DE = the file's descriptor (first byte $FE); HL = passed on to $12F9 and $1268.
+  Exit: A = 0 with Z.
+  Error: NZ (or C from the "." check) with A = the error code: $9E (Invalid . or .. operations),
+  $A5 (Directory not empty), $A7 (Read only file), $95 (File cannot be copied onto itself), or one
+  from $12F9.
+  Changes: AF, BC, DE, HL, IX, AF', BC', DE', HL'; the directory, the FAT.
+  Keeps: IY.
+  .1AB9 BC = HL, kept for finding the entry again
+  .1ABB DE = the entry, IX = the descriptor, A = attributes
+  .1ABE Not found
+  .1ABF A directory?
+  .1AC1 No: delete the file
+  .1AC3 Is it "." or ".."?
+  .1AC6 Yes: error $9E
+  .1AC7 Enters the directory
+  .1ACA Its first entry
+
+@1ACD DEL_DIR_SCAN
+  Walks the directory being deleted: any entry other than ".", ".." or an empty one stops with
+  error $A5 (Directory not empty).
+  .1ACD End of the directory: it is empty
+  .1ACF Empty, "." or ".."?
+  .1AD2 Error code $A5 (Directory not empty)
+  .1AD4 No: the directory has a file
+  .1AD5 The next entry
+  .1AD8 Not past the end: check it
+
+@1ADA DEL_DIR_EMPTY
+  The directory is empty: finds its own entry again from the descriptor and clears the word at
+  HL+$1E ($0EC3).
+  .1ADA DE = the descriptor
+  .1ADD HL = the caller's HL again
+  .1ADF Finds the entry again
+  .1AE2 Not found
+  .1AE3 Clears the word at HL+$1E
+
+@1AE6 DEL_ENTRY
+  Deletes the entry: refuses a read-only file, frees the chain and marks the entry deleted.
+  .1AE6 Calls $1268 with HL
+  .1AF2 Read only?
+  .1AF4 Error code $A7 (Read only file)
+  .1AF7 Yes: refused
+  .1B05 No
+  .1B0D No
+  .1B15 The same cluster?
+  .1B17 Yes: error $95
+
+@1B19 DEL_FREE_MARK
+  Frees the file's cluster chain (when it has one) and marks the entry deleted, the old first
+  character kept at entry+$0C.
+  .1B19 HL = the caller's HL
+  .1B1A Any cluster?
+  .1B1C Yes: frees the chain
+  .1B1F DE = the entry pointer kept at $1AF8
+  .1B20 DE = the directory entry
+  .1B24 HL = entry+$0C
+  .1B28 Keeps the name's first character there
+  .1B2A Deleted mark
+  .1B2D Marks the buffer changed
+
+@1B33 DEL_IN_USE
+  The file matches the one recorded at IY+$60-$62: leaves with error $95 (File cannot be copied
+  onto itself), NZ.
+  .1B33 Error code $95
+  .1B37 NZ: an error
+
+@1B39 IS_DOT_ENTRY
+  Tests whether the directory entry at DE is "." or "..", comparing it with the names at $1A97 and
+  $1A96 through $1670 (whose matching takes bit 3 of IX+$06 into account).
+  Entry: DE = the directory entry; IX = the descriptor.
+  Exit: A = $9E (Invalid . or .. operations); C when the entry is "." or "..", else NC. Z when it
+  matched or is empty (first byte 0 or $E5), NZ for any other entry.
+  Changes: AF.
+  Keeps: BC, DE, HL, IX, IY.
+  .1B3B HL = "." padded with spaces
+  .1B3E Is the entry "."?
+  .1B41 HL = ".." padded with spaces
+  .1B44 Not ".": is it ".."?
+  .1B49 Error code $9E, for a caller that refuses them
+
+@1B4C FN9_RENAME
+  EXDOS function 9 (table $0550): renames a file. The new name is taken from the descriptor at BC
+  into the file's descriptor (a "?" keeps the old character), checked, and written into the file's
+  directory entry.
+  1. Finds the entry ($12F9), clears the word at HL+$1E for a directory ($0EC3), refuses "." and "..".
+  2. Refuses a second descriptor on another drive (byte +7).
+  3. Copies the 11 name characters (+8 on) and checks the new name ($189E).
+  4. Refuses a name that exists already, then finds the entry again and stores the name.
+  Entry: DE = the file's descriptor (first byte $FE); BC = the descriptor holding the new name;
+  HL = passed on to $12F9.
+  Exit: A = 0 with Z.
+  Error: NZ, or C with A = $AB, with A = the error code: $9E (Invalid . or .. operations), $AF
+  (Invalid drive), $AB (Duplicate filename), one from $189E or $12F9.
+  Changes: AF, BC, DE, HL, IX, AF', BC', DE', HL'; the directory.
+  Keeps: IY.
+  .1B4C Keeps HL
+  .1B4D DE = the entry, IX = the descriptor, A = attributes
+  .1B50 Not found
+  .1B52 A directory?
+  .1B54 Yes: clears the word at HL+$1E
+  .1B57 Is it "." or ".."?
+  .1B5A Yes: error $9E
+  .1B5C The new name's descriptor
+  .1B5E HL' = the file's descriptor
+  .1B61 Its byte +7 (the drive)
+  .1B65 DE' = the file's descriptor +7
+  .1B66 HL' = the new name's descriptor
+  .1B67 +7
+  .1B68 The same drive?
+  .1B6A Error code $AF (Invalid drive)
+  .1B6C No: refused
+  .1B6E 11 name characters
+
+@1B70 REN_COPY_NAME
+  Copies one character of the new name over the old one, except a "?" which keeps the old one.
+  .1B72 A = the new character
+  .1B73 A "?"?
+  .1B75 Yes: keep the old one
+  .1B77 No: store it
+
+@1B78 REN_COPY_NEXT
+  The next character; then checks the new name and its uniqueness and finds the entry again.
+  .1B78 Next character
+  .1B7B Is the new name valid?
+  .1B7E No: refused
+  .1B80 Starts at the directory's first entry
+  .1B83 Searches it for the new name
+  .1B86 HL = the caller's HL
+  .1B87 Error code $AB (Duplicate filename)
+  .1B89 Found: refused
+  .1B8A DE = the file's descriptor
+  .1B8D Finds its entry again
+  .1B8E Not found
+  .1B91 HL = the new name in the descriptor
+  .1B98 Its first character
+  .1B99 $E5?
+  .1B9B No: as it is
+  .1B9D $E5 is stored as $05 in an entry
+
+@1B9F REN_STORE_NAME
+  Stores the name's first character in the entry, then the other 10 through ENTRY_COPY_N.
+  .1B9F The first character
+  .1BA2 10 more
+  .1BA4 Copies them and marks the buffer changed
+
+@1BA7 ERR_ATTRIBUTES
+  Leaves with error $A1 (Invalid file attributes).
+  .1BA7 Error code $A1
+
+@1BA9 FN_POP_RET
+  The common error exit of functions 9 and 10: drops the HL kept on the stack and returns with
+  the error code in A.
+  .1BA9 Drops the kept HL
+
+@1BAB FN10_MOVE
+  EXDOS function 10 (table $0550): moves a file or a directory to another directory on the same
+  drive. The entry is copied to $06A1 above IY, deleted ($E5) where it is, and written to a free
+  entry of the destination; a moved directory's ".." entry is then pointed at its new parent.
+  Volume labels and descriptors with bit 3 of +$06 set are refused.
+  Entry: DE = the descriptor of what moves (first byte $FE); BC = the destination's path
+  descriptor, read by $1369; HL = passed on to $12F9.
+  Exit: A = 0 with Z.
+  Error: NZ with A = the error code: $A1 (Invalid file attributes), $9E (Invalid . or ..
+  operations), $A8 (Invalid pathname string), $AF (Invalid drive), $A9 (Invalid directory move),
+  $AB (Duplicate filename), or one from $12F9, $1369 or $199A.
+  Changes: AF, BC, DE, HL, IX, AF', BC', DE', HL'; the directories.
+  Keeps: IY.
+  .1BAB Keeps HL
+  .1BAC DE = the entry, IX = the descriptor, A = attributes
+  .1BAF Not found
+  .1BB1 Descriptor bit 3 set?
+  .1BB3 Yes: error $A1
+  .1BB7 A volume label?
+  .1BB9 Yes: error $A1
+  .1BBB Keeps the destination
+  .1BBC C = $81, the flags passed to $1369
+  .1BBE A directory?
+  .1BC0 No
+  .1BC2 Adds flag bit 2 for a directory
+  .1BC5 HL = the directory's first cluster
+  .1BCA Kept at IY+$5E/$5F
+  .1BD3 Clears the word at HL+$1E
+
+@1BD6 FN10_CHECKS
+  Function 10, after the source: refuses "." and "..", reads the destination path ($1369) and checks
+  it (a plain path, the same drive, not inside the directory being moved, no entry of the same
+  name), takes a free entry there, then moves the entry and fixes a moved directory's "..".
+  .1BD6 Is the source "." or ".."?
+  .1BD9 DE = the destination's descriptor
+  .1BDA Yes: error $9E
+  .1BDC Clears the flags at IY+$5D
+  .1BE0 A' = the source's drive
+  .1BE4 Reads the destination path
+  .1BE7 Bad path
+  .1BE9 Anything left in C?
+  .1BEA Error code $A8 (Invalid pathname string)
+  .1BEC Yes: refused
+  .1BEE A = the destination's drive
+  .1BEF The same drive?
+  .1BF2 Error code $AF (Invalid drive)
+  .1BF4 No: refused
+  .1BF6 Destination inside the moved directory?
+  .1BFA Error code $A9 (Invalid directory move)
+  .1BFC Yes: refused
+  .1BFE Starts at the destination's first entry
+  .1C01 Searches it for the name
+  .1C04 Error code $AB (Duplicate filename)
+  .1C06 Found: refused
+  .1C08 Finds a free entry
+  .1C0B None
+  .1C0D Records where the free entry is
+  .1C10 HL = the caller's HL
+  .1C11 DE = the source's descriptor
+  .1C14 Finds the source entry again
+  .1C17 Not found
+  .1C18 A directory?
+  .1C1A Kept for after the move
+  .1C1B Yes: clears the word at HL+$1E
+  .1C1E HL = IY, the caller's HL kept on the stack
+  .1C21 $06A1 above IY: a 32-byte copy of the entry
+  .1C27 HL = the source entry
+  .1C28 One entry
+  .1C2B Copies it
+  .1C2D HL = the source entry
+  .1C2E Deleted mark
+  .1C30 Marks the buffer changed
+  .1C33 DE = the copy
+  .1C34 HL = the caller's HL
+  .1C36 Back to the free entry found at $1C08
+  .1C39 DE = the free entry
+  .1C3C HL = the copy, the caller's HL on the stack
+  .1C3D One entry
+  .1C41 Writes it there
+  .1C43 Marks the buffer changed
+  .1C48 Z: not a directory
+  .1C49 A = 0
+  .1C4A A file: done
+  .1C4B BC = the destination directory's cluster
+  .1C52 IX+8 = "..", a descriptor for the search
+  .1C56 Enters the moved directory
+  .1C59 Its first entry
+  .1C5C Searches it for ".."
+  .1C5F BC = the new parent's cluster
+  .1C60 Not found: done
+  .1C61 A directory?
+  .1C63 No: done
+  .1C64 HL = the ".." entry's first cluster
+  .1C68 Points it at the new parent
+  .1C6B Marks the buffer changed
+
+@1C6D FN11_SET_ATTR
+  EXDOS function 11 (table $0550): stores a file's attributes and its time and date from its
+  descriptor (attributes at +$13, time and date at +$1E-$21) into its directory entry. Some bits
+  may not change: none of a volume label's, all but bit 1 (hidden) of a directory's, and bits 7,
+  6, 4 and 3 of a file's.
+  Entry: DE = the file's descriptor (first byte $FE); HL = passed on to $12F9.
+  Exit: A = 0 with Z.
+  Error: NZ with A = $A1 (Invalid file attributes), or the error from $12F9.
+  Changes: AF, BC, DE, HL, IX, AF', BC', DE', HL'; the directory.
+  Keeps: IY.
+  .1C6D Keeps the descriptor
+  .1C6E DE = the entry, A = its attributes
+  .1C71 HL = the descriptor
+  .1C72 Not found
+  .1C73 +$13: the new attributes
+  .1C77 DE = them, HL = the entry
+  .1C7A HL = the entry's attributes
+  .1C7B B = $FF: no bit may change
+  .1C7C A volume label?
+  .1C7E Yes: B = $FF
+  .1C80 Only bit 1 may change
+  .1C82 A directory?
+  .1C84 Yes: B = $FD
+  .1C86 A file: bits 0, 1, 2 and 5 may change
+
+@1C88 ATTR_CHECK
+  Refuses attributes that change a bit outside the allowed ones (B = the fixed bits); stores them,
+  then copies the time and date.
+  .1C88 A = the new attributes
+  .1C8A Which bits change?
+  .1C8B Any fixed one?
+  .1C8C Error code $A1 (Invalid file attributes)
+  .1C8E Yes: refused
+  .1C8F Stores the attributes
+  .1C93 HL = the entry's time
+  .1C94 DE = it
+  .1C95 HL = the descriptor's time, +$1E
+  .1C96 Time and date: 4 bytes
+
+@1C98 ENTRY_COPY_N
+  Copies BC bytes from HL to DE into the directory entry, then marks the buffer changed.
+
+@1C9A ENTRY_CHANGED
+  Marks the current sector buffer changed and returns A = 0 with Z.
+  .1C9A Marks the buffer changed
+  .1C9D A = 0: done
+
+@1C9F DISK_IO
+  The floppy controller driver: runs one operation on a drive of the disk card. The controller's
+  ports are found from the segment this ROM runs in (port $B3, page 3's segment, halved; $10 when
+  bit 1 of that is set): base+0 command/status, +1 track, +2 sector, +3 data, base+8 the drive
+  latch (selects, side, bit 5 from H; reads back DRQ in bit 7, INTRQ in bit 1, a disk change in
+  bit 6). Each drive's track is kept at IY-$1B+n (n = 0-3), $FF when not known.
+  A = 0: forgets the tracks of the drives in B (B = 0: also stops a busy command and resets the
+  latch). 1 reads sectors, 2 writes sectors, 3 verifies sectors against the buffer, 4 writes a
+  track, 5 reads a track, 6 reads an address field, 7 only reports a disk change, 8 restores the
+  drive in B and counts its tracks. Another code gives $80.
+  Entry: A = the operation; B bits 0-3 = the drive (its lowest set bit); C bit 0 = the side; D = the
+  track ($FF: stay); E = the first sector; H bits 0-1 = the step rate, bit 2 = write
+  precompensation, bit 3 = double step, bit 5 = to the latch; L = the sector count; IX = the buffer.
+  Exit: A = 0 with Z when done; L = the sectors done; B as on entry except after a disk change; for operation 8 A = 0 with L = $FF (49 or more
+  steps back to track 0) or 0, A = 1 when track 0 was not found.
+  Error: NZ with A = 1 (time-out), 2 (verify mismatch), $20 (the disk was changed: B = the drives
+  marked changed), $80 (bad operation or no drive), or the controller's error bits (status AND
+  $5C: $40 write protected, $10 not found, $08 CRC, $04 lost data).
+  Changes: AF, B, L; IY-$1F to IY-$13, the 4 bytes at IY-$4A, IY-$5F.
+  Keeps: C, DE, H, IX, IY.
+  .1C9F Keeps the operation
+  .1CA2 Keeps the side
+  .1CA5 Keeps the sector
+  .1CA8 Keeps the track
+  .1CAC DE = the buffer
+  .1CAF Keeps the buffer as the exit's IX
+  .1CB1 Port $B3: page 3's segment
+  .1CB3 C = this ROM's segment
+  .1CB5 Halved: the controller's port base
+  .1CB7 Segment bit 2 set?
+  .1CBB Yes: base $10
+
+@1CBD DIO_DISPATCH
+  Runs the operation in A: 0 (DIO_RESET), 1-7 (DIO_TRANSFER), 8 (DIO_COUNT_TRK), others fail.
+  .1CBD Operation 0?
+  .1CC0 Restarts the count at IY-$5F
+  .1CC4 1-7?
+  .1CC9 8?
+
+@1CCB DIO_BAD_OP
+  An operation above 8 (or no drive given): A = $80, L = 0.
+  .1CCB Result $80
+  .1CCD No sectors done
+
+@1CCF DIO_EXIT
+  The exit: puts back BC, IX and DE, and sets the flags from the result in A.
+  .1CCF The caller's BC
+
+@1CD0 DIO_EXIT_B
+  The exit that keeps B as set (a disk change): puts back IX and DE, flags from A.
+  .1CD0 The caller's IX
+  .1CD2 The caller's DE
+  .1CD3 Z when A = 0
+
+@1CD5 DIO_RESET
+  Operation 0: sets the track of every drive in B's low 4 bits to $FF (not known).
+  .1CD5 A = the drives
+  .1CD8 IY is stepped per drive
+
+@1CDA DIO_FORGET_LOOP
+  One drive bit per pass, drive 0 first.
+  .1CDA This drive's bit
+  .1CDC Not given
+  .1CDE Its track is not known
+
+@1CE2 DIO_FORGET_NEXT
+  Steps to the next drive while bits are left; then stops a busy command when B = 0.
+  .1CE2 The next drive's track byte
+  .1CE4 More drives
+  .1CE8 Controller status
+  .1CEA Busy?
+  .1CEB No
+  .1CED Force interrupt
+  .1CEF Stops the command
+
+@1CF1 DIO_RESET_DONE
+  With drives given, returns A = 0. With B = 0 also clears the latch copy at IY-$1C, writes the
+  latch (drive 0 selected only while the motor runs) and sets the count at IY-$5F to $0A.
+  .1CF1 A = 0
+  .1CF2 Drives given?
+  .1CF3 Yes: done
+  .1CF5 No latch value
+  .1CF8 Controller status
+  .1CFA Motor on?
+  .1CFC A = 1 when it is
+  .1CFD The drive latch
+  .1CFF Selects drive 0 only while the motor runs
+  .1D01 The count at IY-$5F
+  .1D05 A = 0: done
+
+@1D08 DIO_COUNT_TRK
+  Operation 8: restores the drive in B, steps in 50 tracks and counts the steps out back to track
+  0. 49 or more gives L = $FF, fewer L = 0; no track 0 within 256 steps gives A = 1. With no drive
+  in B it restores drive 0, and drive 1 too when drive 0 reports track 0 (DIO_RESTORE_0_1).
+  .1D08 Flags: the motor counts as running
+  .1D0C A = the lowest drive bit
+  .1D12 None: restore drives 0 and 1
+  .1D14 Selects and restores the drive
+  .1D17 Waits
+  .1D1A 50 steps in
+
+@1D1C DIO_STEP_IN
+  Steps in one track per pass, then waits.
+  .1D1C Step in, update track
+  .1D1E Issues it and waits
+  .1D24 Waits
+
+@1D27 DIO_STEP_OUT
+  Steps out one track per pass until track 0, counting the steps in D; A = 1 after 256 steps.
+  .1D27 Step out, update track
+  .1D29 Issues it; NZ at track 0
+  .1D2C Track 0
+  .1D2E One more step
+  .1D2F Up to 256
+  .1D31 Track 0 not found
+
+@1D35 DIO_TRACK_ZERO
+  Track 0 reached after D steps out: L = $FF for 49 or more, L = 0 for fewer; A = 0.
+  .1D35 L = 0: few tracks
+  .1D37 49 or more steps?
+  .1D3A A = 0
+  .1D3B No: L = 0
+  .1D3D Yes: L = $FF
+
+@1D40 DIO_RESTORE_0_1
+  Operation 8 with no drive given: restores drive 0, then drive 1 when drive 0 reports track 0.
+  .1D40 A = 1: drive 0
+  .1D41 Restores it; A = 2 at track 0
+  .1D44 At track 0?
+  .1D46 A = 2: drive 1
+  .1D48 Yes: restores drive 1
+
+@1D4B DIO_DELAY_EXIT
+  Waits (DIO_DELAY), then returns through DIO_EXIT.
+  .1D4B The return goes to DIO_EXIT
+  .1D4E Pushed as the return address
+
+@1D4F DIO_DELAY
+  A wait of $1A x 256 turns of a DEC/JR loop.
+  Entry: E = the first inner count (0 for 256).
+  Exit: B = 0, E = 0.
+  Changes: F, B, E.
+  Keeps: A, C, D, HL, IX, IY.
+  .1D4F Outer count
+
+@1D51 DIO_DELAY_LOOP
+  The inner and outer loops of DIO_DELAY.
+
+@1D57 DIO_TRANSFER
+  Operations 1-7: notes whether the motor is running, finds the drive (its lowest bit in B) and
+  selects it with the side and H's bit 5 on the latch.
+  .1D57 Controller status
+  .1D59 Motor on?
+  .1D5B Flags: bit 7 = the motor runs
+  .1D5E A = the lowest drive bit
+  .1D64 None: result $80
+  .1D67 Keeps the buffer
+  .1D68 E = the drive's bit
+  .1D69 IX steps to the drive's track byte
+
+@1D6D DIO_DRIVE_NUM
+  Finds the drive's number: IX = IY + the number + 1.
+  .1D6F This drive?
+  .1D72 D = the drive's track
+
+@1D7D DIO_SELECT
+  Writes the latch: the drive, the side and bit 5 of H. A change of drive is noted in bit 0 of the
+  flags at IY-$16 (the head loads again).
+  .1D7D H's bit 5
+  .1D80 With the drive and side
+  .1D82 The drive latch
+  .1D84 Selects the drive
+  .1D86 The same drive as before?
+  .1D8B Yes
+  .1D8D Notes the new drive
+  .1D90 The latch's new value
+
+@1D93 DIO_CHK_CHANGE
+  Reads the latch's disk-change bit and clears it with a pulse of bit 6; a drive whose change is new
+  is reported (DIO_CHANGED), one already seen goes on to the seek.
+  .1D93 B = the drives seen since a change
+  .1D96 The latch
+  .1D98 Disk change bit clear?
+  .1D9A Yes: no change
+  .1D9C Pulses bit 6
+  .1DA1 To clear the change
+  .1DA3 Still set?
+  .1DA7 Yes
+  .1DA9 Already seen?
+  .1DAB Yes: go on
+  .1DAD Records the drive as seen
+  .1DB2 A = the drive
+
+@1DB3 DIO_CHANGED
+  The disk was changed: result $20.
+  .1DB3 Result $20
+
+@1DB5 DIO_REPORT_CHG
+  Adds the drive bits in A to the changed drives at IY-$1E, returns B = this drive's bit if it is
+  among them, A = the result in B on entry, L = 0.
+  .1DB5 Adds to the changed drives
+  .1DBB This drive changed?
+  .1DBE D = the result
+  .1DBF Drops the kept buffer
+  .1DC0 Drops the caller's BC
+  .1DC1 B = this drive's changed bit
+  .1DC2 A = the result
+  .1DC3 No sectors done
+
+@1DC8 DIO_NO_CHANGE
+  No change on the latch: the drive is taken off the seen drives at IY-$1D.
+  .1DC8 Every other drive
+  .1DCB Updated
+
+@1F6F FDC_RESTORE
+  Issues a restore (command $08) and waits for it (FDC_TYPE1_CMD).
+  Entry: as FDC_TYPE1_CMD.
+  Exit: as FDC_TYPE1_CMD.
+  Changes: AF, B, E.
+  Keeps: C, D, HL, IX, IY.
+  .1F6F Restore
+
+@1DCE DIO_SEEK
+  Operation 7 ends here, reporting the drive's change bit with A = 0. Others restore the head when
+  the track is not known, then seek to track D.
+  .1DCE A = the operation
+  .1DD1 7?
+  .1DD3 B = 0
+  .1DD4 Yes: report only
+  .1DD6 The command register
+  .1DD8 Track known?
+  .1DDB No: track 0 after the restore
+  .1DDC Restores the head
+  .1DDF Waits
+
+@1DE2 DIO_SEEK_TRACK
+  E = the track asked for, or the current one when $FF was asked.
+  .1DE2 D = the current track
+  .1DE3 The track asked for
+  .1DE7 $FF?
+  .1DEA Yes: stay
+
+@1DEB DIO_SEEK_STEP2
+  For double stepping, both tracks are doubled for the controller.
+  .1DEB Keeps the tracks
+  .1DEC Double step?
+
+@1DF4 DIO_SEEK_REGS
+  Loads the track, sector and data registers (the target track) and notes a head move in bit 2 of
+  IY-$16.
+  .1DF4 The track register
+  .1DF5 = the current track
+  .1DF7 The sector register
+  .1DFB = the sector
+  .1DFD The data register
+  .1DFE = the target track
+  .1E00 Back to the command register
+  .1E03 Does the head move?
+  .1E07 Yes: the next command waits for it to settle
+
+@1E0B DIO_SEEK_CMD
+  Seeks, then sets the track register and the drive's track byte to the logical track; one sector
+  for operations 4 and 5.
+  .1E0B Seek
+  .1E0D Issues it and waits
+  .1E10 E = the logical track
+  .1E12 The track register
+  .1E15 The drive's track
+  .1E1B D = the operation
+  .1E1C Operations 4 and 5?
+  .1E22 Yes: one pass
+
+@1E24 DIO_START
+  Starts the transfer: B = the sector count, E = the flags in H, HL = the buffer (the caller's HL
+  kept on the stack), and disables interrupts ($1FC5, the old state kept).
+  .1E24 B = the sector count
+  .1E25 E = the flags
+  .1E26 HL = the buffer, the caller's HL kept
+  .1E27 Disables interrupts, C if they were off
+  .1E2A Kept for the end
+
+@1E2B DIO_OP_CMD
+  Picks the controller command for the operation in D, once per sector: 1 read sector ($88), 2
+  write sector ($A8), 3 verify (a read, $88), 4 write track ($F8), 5 read track ($E8), 6 read
+  address ($C8).
+  .1E2B Read?
+  .1E2C Read sector
+  .1E30 Write?
+  .1E33 Verify?
+  .1E37 Write track?
+  .1E38 Write track
+  .1E3C Read track?
+  .1E3D Read track
+  .1E41 Read address
+
+@1F50 FDC_CMD_FLAGS
+  Adds the settle bit (bit 2) to the command in A when the head moved, and sets the wait count:
+  DE = $9331 when the motor runs, else 0 (65,536 passes).
+  Entry: A = the command; IY-$16 = the flags.
+  Exit: A = the command; DE = the wait count.
+  Changes: AF, DE.
+  Keeps: BC, HL, IX, IY.
+  .1F50 Did the head move?
+  .1F56 Yes: wait for it to settle
+  .1F58 The wait while the motor runs
+  .1F60 No: the longest wait
+
+@1E43 DIO_READ
+  Issues a read command and waits on the latch for the first data byte.
+  .1E43 Settle bit and wait count
+  .1E46 Issues the command
+  .1E48 The latch: DRQ and INTRQ
+
+@1E4A DIO_RD_WAIT
+  A jump to the poll that follows.
+
+@1E4C DIO_RD_POLL
+  Polls the latch for DRQ (bit 7) while counting DE down; a count that ends is a time-out.
+  .1E4E The latch
+  .1E50 DRQ: a byte
+  .1E53 Counts the wait
+  .1E58 DRQ: a byte
+  .1E5B Waited too long?
+  .1E5D Yes: time-out
+  .1E62 No DRQ: poll again
+
+@1E65 DIO_RD_BYTE
+  Reads a data byte into the buffer.
+  .1E65 The data register (a mirror)
+  .1E66 Reads the byte
+  .1E68 Into the buffer
+  .1E6A The latch
+
+@1E6B DIO_RD_NEXT
+  Waits for DRQ (another byte) or INTRQ (the command ended).
+  .1E6B The latch
+  .1E6D DRQ or INTRQ?
+  .1E6F Neither: wait
+  .1E71 DRQ: the next byte
+  .1E74 INTRQ: the command ended
+
+@1E76 DIO_WRITE
+  Write sector command.
+  .1E76 Write sector
+
+@1E78 DIO_WR_CMD
+  Turns write precompensation off (command bit 1) unless bit 2 of H asks for it.
+  .1E78 Precompensation asked for?
+  .1E7C No: disable it
+
+@1E7E DIO_WR_ISSUE
+  Issues the write command and waits for the first DRQ.
+  .1E7F Settle bit and wait count
+  .1E82 Issues the command
+  .1E84 The latch
+  .1E86 Wait count
+
+@1E89 DIO_WR_POLL
+  Polls the latch for DRQ; INTRQ first, or the end of the count, ends the command.
+  .1E89 Counts the wait
+  .1E8C Waited too long
+  .1E8E The latch
+  .1E90 DRQ: write
+  .1E93 INTRQ?
+  .1E95 Yes: ended early
+
+@1E99 DIO_WR_START
+  E = the data register's port.
+  .1E99 The data register (a mirror)
+  .1E9A E = its port
+
+@1E9B DIO_WR_BYTE
+  Takes the next byte from the buffer.
+  .1E9B The latch
+  .1E9C D = the next byte
+
+@1E9E DIO_WR_WAIT
+  Waits for DRQ or INTRQ and writes the byte on DRQ.
+  .1E9E The latch
+  .1EA0 DRQ or INTRQ?
+  .1EA2 Neither: wait
+  .1EA4 The data register
+  .1EA5 Writes the byte
+  .1EA7 DRQ: the next byte
+  .1EAA INTRQ: the latch again
+  .1EAB The last byte was not written
+
+@1EAE DIO_VERIFY
+  Issues a read sector command and compares the data with the buffer.
+  .1EAE Settle bit and wait count
+  .1EB1 Issues the command
+  .1EB3 The latch
+
+@1EB5 DIO_VF_WAIT
+  A jump to the poll that follows.
+
+@1EB7 DIO_VF_POLL
+  Polls the latch for DRQ while counting DE down; a count that ends is a time-out.
+  .1EB9 The latch
+  .1EBB DRQ: a byte
+  .1EBE Counts the wait
+  .1EC3 DRQ: a byte
+  .1EC6 Waited too long?
+  .1EC8 Yes: time-out
+  .1ECC No DRQ: poll again
+
+@1ECF DIO_VF_BYTE
+  Compares a data byte with the buffer.
+  .1ECF The data register (a mirror)
+  .1ED0 Reads the byte
+  .1ED2 The latch
+  .1ED3 The same as the buffer?
+  .1ED4 No: mismatch
+
+@1ED7 DIO_VF_NEXT
+  Waits for DRQ (another byte) or INTRQ (the command ended).
+  .1ED7 The latch
+  .1ED9 DRQ or INTRQ?
+  .1EDB Neither: wait
+  .1EDD DRQ: the next byte
+
+@1EE0 DIO_RD_END
+  The read or verify ended: checks the status.
+
+@1EE2 DIO_WR_TIMEOUT
+  The write waited too long or ended early: drops the kept DE.
+  .1EE2 Drops the kept command flags
+
+@1EE3 DIO_TIMEOUT
+  Result 1 (time-out) unless INTRQ shows the command ended; a command still running is stopped.
+  .1EE3 Result 1: time-out
+  .1EE5 The latch
+  .1EE7 INTRQ?
+  .1EE9 Yes: check the status
+
+@1EED DIO_VF_MISMATCH
+  Result 2: the data differs from the buffer.
+  .1EED Result 2
+
+@1EEF DIO_ABORT
+  Stops the command with a force interrupt and ends with the result in D.
+  .1EEF The command register
+  .1EF1 Force interrupt
+  .1EF3 Stops the command
+
+@1EF7 DIO_WR_END
+  The write ended: drops the kept DE.
+  .1EF7 Drops the kept command flags
+
+@1EF8 DIO_DONE
+  Result 0 so far: the status decides.
+  .1EF8 Result 0
+
+@1F64 FDC_RESTORE_DRV
+  Forgets the track of the drives in A (DISK_IO operation 0), selects them on the latch and
+  restores the head (FDC_RESTORE).
+  Entry: A = the drive bits; C = the controller's port base; H bits 0-1 = the step rate.
+  Exit: A = 2 (NZ) when the head is at track 0, else 0.
+  Changes: AF, B, E; IY-$17 to IY-$13 (the nested DISK_IO call), IY-$16, IY-$5F.
+  Keeps: C, D, HL, IX, IY.
+  .1F64 B = the drives
+  .1F65 Operation 0
+  .1F66 Forgets their tracks
+  .1F69 The drive latch
+  .1F6B Selects the drives
+  .1F6D The command register
+
+@1F71 FDC_TYPE1_CMD
+  Issues a head command (restore, seek, step) with the step rate from H, waits for the head to load
+  when the drive changed and for the motor to spin up when it was off (index pulses on latch bit
+  0, bounded), then waits while the controller is busy.
+  Entry: B = the command; C = the controller's port base; H bits 0-1 = the step rate; IY-$16 = the
+  flags, IY-$17 = the operation.
+  Exit: A = 2 (NZ) when the head is at track 0, else 0; IY-$16 = the flags, motor bit 7 set.
+  Changes: AF, B, E; IY-$16, IY-$5F.
+  Keeps: C, D, HL, IX, IY.
+  .1F71 Keeps HL
+  .1F72 The step rate
+  .1F75 Issues the command
+  .1F78 E = the flags
+  .1F7B A = the operation
+  .1F7E Operations 1 and 3 become 1
+  .1F80 Read or verify?
+  .1F81 Yes: no waits
+  .1F83 A new drive?
+  .1F87 Clears the mark
+  .1F89 Waits for the head to load
+
+question 1C9F What does the count at IY-$5F ($6E per command, $0A after operation 0 with B = 0) count down?
+question 1CB1 Which segments give a port base other than $10 (half the segment, with bit 1 clear)?
+question 1D40 Operation 8 with no drive returns A = 2 when drive 0 is not at track 0: is that a result its callers test?
+question 1AB9 What does HL hold on entry to functions 8-11, which $12F9, $0EC3 and $1268 read?
+question 1B01 What sets bit 1 of IY-$37 and the drive and cluster at IY+$60-$62 that delete refuses?
+feedback missing 1C9F The card gives no port numbers: C comes from IN C,(C) on port $B3, so every IN/OUT (C) in the driver had to be traced by hand
+feedback pattern 1C9F-1F89 The driver's IY-relative variables (IY-$1F to IY-$13) recur on 30 cards with no shared summary
+feedback missing 1A37 The card says BC, HL change but the code restores both (POP BC at $1A6B, EX (SP),IX / POP HL at $1A92)
+feedback wrong 1AA2 The facts say IY may change, but no path writes it: the only IY writes on the page are $0017, $0480 (restored at $04AC), $09B2 and DISK_IO's own (restored)
+feedback wrong 1A37 BC and HL come back: POP BC at $1A6B and POP HL at $1A94 (the Keeps: warnings are settled from the code)
+feedback listing 1148-11D8 Opened to learn what $1148, $1172, $1190 and $1193 take and return: callee contracts are not on the cards

@@ -29,8 +29,9 @@
  * `--list <file.cim>` prints the card's volume facts and one line per entry (path, size, sha256).
  */
 const { createHash } = require("node:crypto");
+const { registerTsRuntime } = require("./lib/ts-runtime.cjs");
 const { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync, renameSync } = require("node:fs");
-const { dirname, join, resolve } = require("node:path");
+const { join, resolve } = require("node:path");
 const { tmpdir } = require("node:os");
 const { execFileSync } = require("node:child_process");
 
@@ -59,44 +60,6 @@ function sha256(bytes) {
 // ------------------------------------------------------------------------------------------------
 // Loading Klive's TypeScript FAT32 code
 
-let tsRuntimeRegistered = false;
-
-function registerTsRuntime() {
-  if (tsRuntimeRegistered) return;
-  const esbuild = require("esbuild");
-  require.extensions[".ts"] = (module, filename) => {
-    const result = esbuild.transformSync(readFileSync(filename, "utf8"), {
-      format: "cjs",
-      loader: "ts",
-      platform: "node",
-      target: "es2020",
-      tsconfigRaw: { compilerOptions: { esModuleInterop: true, useDefineForClassFields: false } }
-    });
-    module._compile(result.code, filename);
-  };
-  require("tsconfig-paths").register({
-    baseUrl: ROOT,
-    paths: {
-      "@abstractions/*": ["src/common/abstractions/*"],
-      "@common/*": ["src/common/*"],
-      "@main/*": ["src/main/*"]
-    }
-  });
-  const Module = require("node:module");
-  const originalResolveFilename = Module._resolveFilename;
-  Module._resolveFilename = function (request, parent, isMain, options) {
-    try {
-      return originalResolveFilename.call(this, request, parent, isMain, options);
-    } catch (error) {
-      if (error?.code === "MODULE_NOT_FOUND" && parent?.filename) {
-        const base = request.startsWith(".") ? resolve(dirname(parent.filename), request) : null;
-        if (base && existsSync(`${base}.ts`)) return `${base}.ts`;
-      }
-      throw error;
-    }
-  };
-  tsRuntimeRegistered = true;
-}
 
 function fat() {
   registerTsRuntime();

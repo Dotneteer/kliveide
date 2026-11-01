@@ -1,0 +1,1082 @@
+rom ep-exdos13.rom page 0 cpu z80
+default observed
+
+# Range 8: the end of the floppy driver's format (function 8), the file functions 12, 13 and
+# 15-19 of the table at $0550 (open a control block, close, read and write bytes, read and
+# write whole sectors), and the byte and sector transfer machinery under them.
+#
+# The transfer state at IY+$48-$5A: +$48 the mode (bit 0 read, bit 1 function 17, bit 6 step to
+# the next sector first, bit 7 the read met the file's end), +$49/$4A the memory address,
+# +$4B/$4C the bytes left, +$4D/$4E the bytes moved, +$4F/$50 the cluster's index in the file,
+# +$51 the sector in the cluster, +$52/$53 the offset in the sector, +$54 sectors per cluster,
+# +$55/$56 the cluster, +$57/$58 the disk sector, +$59/$5A set by XFER_SETUP.
+# A file's control block (IX): +$07 the drive, +$17-$1A the size, +$1B date, +$1D time,
+# +$1F/$20 the directory's cluster (bit 6 changed, bit 5 read only), +$21/$22 the first
+# cluster, +$23/$24 a cluster kept for the next call, +$25/$26 its index, +$28-$2B the
+# position, +$2C the disk's serial.
+
+# --- The format: function 8 of FLOPPY_DRIVER, after FMT_BUILD_IMAGE
+
+@2477 FMT_PASSES
+  The format's passes, entered with the track image built at HL': FMT_ALL_TRACKS writes every
+  track (IY-$12 = 8), then a second pass with IY-$12 = 0 reads every track back. Then the boot
+  sector is built in the same buffer and written to track 0, side 0, sector 1:
+  1. BPB_FROM_MEDIA fills in the BPB from the media byte C.
+  2. +0 gets the 3 bytes and "EXDOS1.3" at $24C2, +$1E a RET ($C9).
+  3. +$40 gets "VOL_ID" ($113D), +$47 the 4 bytes at IY-$4A as the disk's serial.
+  4. FD_XFER_RETRY writes it with IY-$12 = 5 (one sector, no verify).
+  A double-sided format that finds side 1 missing on track 0 comes back here with the media
+  byte one lower (FMT_ONE_SIDED): the one-sided type.
+  .2477 Pass 1: every track, the function at IY-$12
+  .247A A = 0: pass 2 reads the tracks back
+  .247D Pass 2
+  .2480 A = the media byte
+  .2482 Keeps the buffer
+  .2483 C = the media byte
+  .2484 The BPB at +$0B; HL = the buffer +$0B
+  .2487 DE = the buffer +$0B
+  .2488 From the last byte of "EXDOS1.3"
+  .248B The jump bytes and the name: 11 bytes
+  .248E DE = the buffer +$0A
+  .248F Down to the buffer +0
+  .2493 HL = the buffer - 1
+  .2494 HL = the buffer +$1E
+  .2495 A RET
+  .2499 HL = the buffer +$40
+  .249A DE = it
+  .249B "VOL_ID"
+  .249E 6 letters
+  .24A2 DE = the buffer +$47 (+$46 stays 0)
+  .24A3 HL = IY
+  .24A6 IY-$4A
+  .24AA 4 bytes: the serial
+  .24AF HL = the buffer
+  .24B1 Keeps the media byte
+  .24B2 Track 0, sector 1
+  .24B5 Side 0
+  .24B6 One sector
+  .24B7 Function 5: write
+  .24BB Writes the boot sector
+  .24BF Failed: map the error
+  .24C1 A = 0, Z: formatted
+
+@24D0 FMT_TRACK
+  One track: D = the last side (1 for a double-sided media byte), sides done downwards.
+  .24D0 A = the media byte
+  .24D1 Bit 0: two sides
+  .24D3 D = the side
+
+@24D4 FMT_SIDE
+  One side of track E: keeps the return address and the track and side, then (pass 1, IY-$12
+  bit 3) writes the track and side into the 9 address fields of the image (FMT_PATCH_IDS).
+  .24D4 Keeps the pass's return address
+  .24D5 Keeps the side and the track
+  .24D7 B' = the side, C' = the track
+  .24D8 Keeps the image's address
+  .24D9 Writing the tracks (function 8)?
+  .24DD No: the image is not used
+  .24DF 9 address fields
+  .24E1 The first one's track byte: the image +$98
+
+@24E4 FMT_PATCH_IDS
+  Writes the track and the side into one address field, then steps to the next ($290 bytes on).
+  .24E5 The track
+  .24E7 The side
+  .24E8 One sector's bytes in the image, less 1
+  .24EB Next address field
+
+@24EE FMT_SIDE_XFER
+  The transfer for one side: L = 9 sectors, or 8 for a media byte with bit 1 set.
+  .24EE HL = the image
+  .24EF Kept again
+  .24F0 The main set
+  .24F1 Keeps the media byte
+  .24F2 Keeps the side and the track
+  .24F3 9 sectors
+  .24F5 A media byte for 8 sectors a track?
+  .24F9 8
+
+@24FA FMT_SIDE_CALL
+  Runs the side's transfer (FD_XFER_RETRY) from sector 1, then takes the registers back: the
+  pass's return address goes to HL for JP (HL) at the end.
+  .24FA C = the side
+  .24FB D = the track
+  .24FC From sector 1
+  .24FE Writes or reads the side
+  .2501 The side and the track
+  .2502 The media byte
+  .2504 HL' = the image again
+  .2506 HL = the pass's return address
+
+@2507 FMT_SIDE_DONE
+  After a side: a failure leaves the format through FD_ERR_MAP; Z from $C4B2 leaves it at once;
+  else the next side down. After side 0, a double-sided pass 1 on track 0 reads an address
+  field on side 1: a time-out or a disk change fails, any other failure, or a field whose side
+  byte is not 1, makes the disk one-sided (FMT_ONE_SIDED).
+  .2507 Failed: map the error and leave
+  .250A $C4B2 says stop?
+  .250D Yes: leave the format with Z
+  .250E The next side down
+  .250F Another side
+  .2512 Two sides?
+  .2514 No
+  .2516 Pass 1 (writing the tracks)?
+  .251A No
+  .251C Track 0?
+  .251E No
+  .2520 Keeps the track and the side
+  .2521 Keeps the media byte
+  .2522 Side 1
+  .2524 Reads an address field there (ADDR_READ's $22E5)
+  .2527 The media byte
+  .2528 The track and the side
+  .2529 Read: check its side byte
+  .252B Time-out or disk change?
+  .252D Yes: fail
+
+@252F FMT_ONE_SIDED
+  Formats again with the media byte one lower: bit 0 clear, the one-sided type.
+  .252F Media byte - 1: one side
+  .2530 Formats the disk again
+
+@2533 FMT_SIDE1_CHK
+  An address field was read on side 1: its side byte (IY-$10) must be 1.
+  .2533 The field's side byte
+  .2536 Side 1?
+  .2537 No: the drive has one head
+
+@2539 FMT_NEXT_TRACK
+  The track count by the media byte: 40 for bit 2 set, else 80.
+  .2539 40 tracks
+  .253B A 40-track media byte?
+  .253F 80 tracks
+
+@2540 FMT_TRACK_STEP
+  The next track; after the last one the pass returns through its return address in HL.
+  .2540 The next track
+  .2541 Tracks left
+  .2542 More: the next track
+  .2544 Pass done: back to its caller, A = 0
+
+@254B FILL_PAIR_LOOP
+  FILL_PAIRS' inner loop: writes byte A count times, then takes the next pair.
+  .254B One byte of the run
+  .254D Rest of the run
+  .254F B = the pairs left
+  .2550 Next pair
+
+# --- Functions 12 and 13: a file's control block and its directory entry
+
+@257D FN13_CLOSE
+  EXDOS function 13 (table word at $056A), the call close makes on a file. A file the control
+  block marks changed (bit 6 of +$20) gets its directory entry brought up to date:
+  1. The directory's cluster (+$1F/$20, flag bits cleared) goes to IY+$30; the file's drive
+     (+$07) is selected, its disk checked against the file's.
+  2. The entry is searched for again (DIR_FIRST, SEARCH_DIR): missing gives $CF; one with
+     attribute bits 0-2 set gives $A1.
+  3. STAMP_ENTRY writes the time and date; the archive bit (5) is set; the first cluster (+$21)
+     and the size (+$17) are copied in. The drive's changed buffers are written out.
+  4. FCB_FROM_ENTRY reloads the block from the entry (position 0).
+  Every return goes through $264A: DE = the control block.
+  Entry: A = 0 (the dispatcher's); DE = the file's control block; IY = EXDOS's base.
+  Exit: A = 0, Z (also for an unchanged file); DE = IX = the control block.
+  Error: NZ, A = $CF (the entry is gone), $A1 (Invalid file attributes) or SELECT_DRIVE's
+  error.
+  Changes: AF, BC, DE, HL, IX, all alternates; the directory sector's buffer; IY+$30, IY+$60-$62.
+  Keeps: IY.
+  .257D IX = the control block
+  .2580 Every return: DE = IX
+  .2584 DE = the directory's cluster and flags
+  .258A Changed?
+  .258C No: done
+  .258D Clears the changed bit
+  .258F And the read-only bit
+  .2591 The directory to search
+  .2597 C = the file's drive
+  .259A B = 1: check it holds the file's disk
+  .259C Selects the drive; HL = its record
+  .259F Failed?
+  .25A1 Starts on the directory
+  .25A4 Searches it for the name
+  .25A7 Not found: error $CF
+  .25A9 Attribute bits 0-2 set?
+  .25AB Error $A1 (Invalid file attributes)
+  .25AE Time and date into the entry
+  .25B1 Keeps the entry
+  .25B2 HL = the control block, the record kept
+  .25B5 The size at +$17
+  .25B9 DE = it, HL = the entry
+  .25BA Entry +$0B: the attributes
+  .25BD The archive bit
+  .25BF Entry +$1A: the first cluster
+  .25C2 From the block's +$21
+  .25CC HL = the block's +$17, DE = the entry's +$1C
+  .25CD 4 bytes: the size
+  .25D1 HL = the record
+  .25D2 Writes the drive's changed buffers out
+  .25D5 DE = the entry
+  .25D6 The entry again (its buffer may have moved)
+  .25D9 No attributes for the block
+  .25DB Reloads the block from the entry
+
+@25DD CLOSE_NOT_FOUND
+  The file's name is no longer in its directory: error $CF.
+  .25DD Error $CF
+
+@25E0 FN12_OPEN_FCB
+  EXDOS function 12 (table word at $0568): fills a file's control block from its directory
+  entry. DIR_REOPEN_ENTRY goes back to the entry; a directory or a volume label (attribute bit 4
+  or 3) gives $A1; then FCB_FROM_ENTRY copies it in, the position set to 0. Every return goes
+  through $264A: DE = the control block.
+  Entry: DE = the control block (first byte $FE); HL = the block with the directory position;
+  IY = EXDOS's base.
+  Exit: A = 0, Z; DE = IX = the control block; BC = the file's first cluster; IY+$60 = the unit
+  (IY+$2B), IY+$61/$62 = the first cluster.
+  Error: NZ, A = $A1 (Invalid file attributes) or DIR_REOPEN_ENTRY's error.
+  Changes: AF, BC, DE, HL, IX, AF', BC', DE', HL'.
+  Keeps: IY.
+  .25E0 Every return: DE = IX
+  .25E4 Back to the entry; A = its attributes
+  .25E7 Failed?
+  .25E8 B = the attributes
+  .25E9 A directory or a volume label?
+  .25EB Error $A1 (Invalid file attributes)
+
+@25EE FCB_FROM_ENTRY
+  Copies the directory entry DE into the control block IX: the size, date and time, the first
+  cluster (also kept as the cluster of index 0), the directory's cluster (IY+$30) with bit 5 set
+  for a read-only file (bit 0 of the attributes in B), and position 0. IY+$60-$62 keep the unit
+  and the first cluster.
+  .25EE Keeps the attributes
+  .25EF HL = the control block
+  .25F2 +$17: the size
+  .25F6 DE = it, HL = the entry
+  .25F7 Entry +$1C: its size
+  .25FA 4 bytes
+  .25FC Keeps the entry's +$1C
+  .2600 HL = entry +$1B
+  .2601 BC = the first cluster (+$1A)
+  .2604 Kept for the end
+  .2605 IY+$61/$62 = the first cluster
+  .260B The unit being used
+  .260E Kept at IY+$60
+  .2611 HL = entry +$18: the date
+  .2613 Into the block's +$1B
+  .2617 HL = entry +$16: the time
+  .261B Into the block's +$1D
+  .261F HL = the block's +$1F
+  .2620 BC = the first cluster
+  .2621 DE = IY+$30: the directory's cluster
+
+@2625 FCB_FLAGS
+  Clears the flag bits of the directory's cluster and sets bit 5 for a read-only file.
+  .2625 Not changed
+  .2627 Not read only
+  .2629 A = the attributes
+  .262A Read only?
+  .262E Yes: mark the block
+
+@2630 FCB_STORE
+  Writes the rest of the block from +$1F: the directory's cluster and flags, the first cluster
+  twice (+$21 and +$23, the cluster kept for index 0), the index 0 (+$25) and the position 0
+  (+$28-$2B); +$27 is left as it was. Returns A = 0, Z.
+  .2630 +$1F/$20: the directory and the flags
+  .2634 +$21/$22: the first cluster
+  .2638 +$23/$24: the cluster kept
+  .263C A = 0
+  .263D +$25/$26: its index, 0
+  .2641 Skips +$27
+  .2642 +$28-$2B: the position, 0
+  .2649 Returns through $264A
+
+# --- Functions 18 and 19: whole sectors, past the buffers
+
+@264E FN18_READ_SECT
+  EXDOS function 18 (table word at $0574): reads whole sectors into memory. A = 1, then
+  FN19_WRITE_SECT's code.
+  Entry: A = 0 (the dispatcher's); DE = the first sector; H = the count; L = the drive; IX = the
+  address; IY = EXDOS's base.
+  Exit: as FN19_WRITE_SECT.
+  Error: as FN19_WRITE_SECT.
+  Changes: AF, BC, DE, H, IX, all alternates; IY+$48-$4A, IY+$57/$58.
+  Keeps: L, IY.
+  .264E A = 1: read
+
+@264F FN19_WRITE_SECT
+  EXDOS function 19 (table word at $0576), and function 18's body: moves H whole sectors
+  between memory at IX and drive L from sector DE, past the sector buffers (RAW_SECTORS), bit 0
+  of IY+$48 saying which way (1 reads). A block that would pass $FFFF gives $9B. The drive's
+  changed buffers are written out and all its buffers dropped first, and dropped again after.
+  Entry: A = 0 (write), 1 from FN18_READ_SECT (read); DE = the first sector; H = the count;
+  L = the drive (0 the default, 1-26 A-Z); IX = the address in the caller's pages; IY = EXDOS's
+  base.
+  Exit: A = 0; H = the count; L = the drive; IX = the address after the last sector; DE = the
+  sector after it.
+  Error: A = $9B (the block passes $FFFF) or SEL_DRIVE_REC's error; H = 0; IX, DE as on entry.
+  Changes: AF, BC, DE, H, IX, all alternates; IY+$48-$4A, IY+$57/$58.
+  Keeps: L, IY.
+  .264F The direction
+  .2652 The first sector
+  .2658 Keeps the count and the drive
+  .2659 BC = the address
+  .265C IY+$49/$4A = the address
+  .2662 A = the address's high byte
+  .2663 Plus 2 x count pages ...
+  .2664 Past $FFFF?
+  .2666 ... (512 bytes a sector)
+
+@2667 RAWFN_CHECK
+  Fails with $9B when the block passes $FFFF; selects drive L and empties its buffers, then
+  moves the sectors (RAW_SECTORS).
+  .2667 Error $9B (with carry)
+  .2669 Past $FFFF: fail
+  .266B C = the drive
+  .266C Selects it; HL = its record
+  .266F Failed?
+  .2672 Writes its changed buffers out
+  .2675 Drops all its buffers
+  .2678 B = the count, C = the drive
+  .267A Moves the sectors
+  .267D Drops the buffers again
+  .2680 HL = the caller's count and drive
+  .2681 A = 0: done
+  .2682 Skips $2683 (POP HL, LD H,0): the error entry, H = 0
+  .2686 DE = IY+$49: the address after the last sector
+
+@268A RAWFN_SET_IX
+  IX = the address after the last sector; DE = the next sector.
+  .268A IX = it
+  .268D DE = IY+$57: the next sector
+
+@2691 RAWFN_EXIT
+  Returns with the function's results.
+
+# --- Functions 15-17: bytes of a file
+
+@2692 FN17_WRITE_RD
+  EXDOS function 17 (table word at $0572): FN16_WRITE with IY+$48 = 2 (bit 1), so every
+  sector written in part is read in first, whatever the file's size.
+  Entry: A = 0 (the dispatcher's); as FN16_WRITE.
+  Exit: as FN16_WRITE.
+  Error: as FN16_WRITE.
+  Changes: AF, BC, DE, HL, IX, all alternates; the control block's position.
+  Keeps: IY.
+  .2692 A = 2 (with the next)
+
+@2693 FN15_READ
+  EXDOS function 15 (table word at $056E): reads bytes from a file, FN16_WRITE's code with
+  IY+$48 = 1.
+  Entry: A = 0 (the dispatcher's); as FN16_WRITE.
+  Exit: as FN16_WRITE; A = $E4, NZ when the file ended first (BC = the bytes read).
+  Error: as FN16_WRITE.
+  Changes: AF, BC, DE, HL, IX, all alternates; the control block's position.
+  Keeps: IY.
+  .2693 A = 1: read
+
+@2694 FN16_WRITE
+  EXDOS function 16 (table word at $0570), also the body of 15 and 17: moves BC bytes between
+  memory at IX and the file DE at its position, IY+$48 the mode (bit 0: 1 reads). Sets up the
+  counts and runs XFER_BYTES; then adds the bytes moved to the position (+$28-$2B). A read that
+  met the file's end returns $E4 with the bytes it got.
+  Entry: A = 0 (the dispatcher's; 1 from $2693, 2 from $2692); BC = the count; DE = the file's
+  control block; IX = the address in the caller's pages; IY = EXDOS's base.
+  Exit: A = 0, Z; BC = the bytes moved; DE = the control block; IX = HL = the address after
+  the last byte.
+  Error: NZ, A = $E4 (a read met the file's end) or the error code ($9B the block passes
+  $FFFF, $A7 Read only file, $AC Disk full, $9A, the drive's errors).
+  Changes: AF, BC, DE, HL, IX, all alternates; the control block's position.
+  Keeps: IY.
+  .2694 The mode
+  .2697 No bytes moved yet
+  .269E The bytes left: the count
+  .26A4 IX = the control block
+  .26A7 HL = the address
+  .26A8 Kept at IY+$49/$4A
+  .26AE Moves the bytes
+  .26B1 BC = the bytes moved
+  .26B7 HL = the address after them
+  .26BD IX = it, DE = the control block
+  .26C1 Keeps the result
+  .26C3 The block's +$28: the position
+  .26C7 Plus the bytes moved
+  .26CE No carry?
+  .26D0 Carry into byte 3
+  .26D2 No carry?
+  .26D4 Carry into byte 4
+
+@26D6 XFER_POS_DONE
+  The position is moved on: the result, or $E4 when a read met the file's end.
+  .26D6 HL = the address after
+  .26D7 The result back
+  .26D8 Failed?
+  .26DA A read cut at the file's end?
+  .26DE No: A = 0
+  .26DF $E4: fewer bytes than asked for
+
+@26E2 XFER_BYTES
+  Moves the bytes of a read or write ($2694) for the file IX:
+  1. Checks the block does not pass $FFFF, selects the file's drive (checking it holds the
+     file's disk), and works out where the transfer starts and ends (XFER_SETUP).
+  2. Finds the cluster of the start (FILE_CLUSTER_N) and moves the part of the first sector
+     from the offset (XFER_PART_SECT).
+  3. Moves runs of whole sectors straight between memory and disk (RAW_SECTORS), each run as
+     many sectors as lie in consecutive clusters (XFER_LOOP).
+  4. Moves the part of the last sector and keeps the cluster reached and its index in the
+     block (+$23-$26) for the next call.
+  Entry: BC = the count; HL = the address; IX = the control block; IY = EXDOS's base with
+  IY+$48-$4E set by $2694.
+  Exit: A = 0, Z; IY+$49/$4A = the address after the last byte; IY+$4D/$4E = the bytes moved.
+  Error: NZ, A = the error code; carry with A = $9B when the block passes $FFFF.
+  Changes: AF, BC, DE, HL, all alternates; IY+$4B-$5A; the control block's +$17-$26.
+  Keeps: IX, IY.
+  .26E2 No bytes?
+  .26E4 Done: A = 0
+  .26E5 BC = the count - 1
+  .26E6 HL = the last byte's address
+  .26E7 Error $9B
+  .26E9 Past $FFFF: fail
+  .26EA C = the file's drive
+  .26ED B = 1: check it holds the file's disk
+  .26EF Selects the drive; HL = its record
+  .26F2 Failed?
+  .26F4 Where the transfer starts and ends
+  .26F7 DE = IY+$4F: the start's cluster index
+
+@26FB XFER_START
+  Finds the start's cluster, then moves the first sector's part when the start is not at a
+  sector's beginning.
+  .26FB Set up: the start's cluster
+  .26FE Kept at IY+$55
+  .2704 Failed?
+  .2705 BC = the offset in the sector
+  .270B Not at a sector's beginning?
+  .270D Then that sector's part first
+  .2710 Failed?
+
+@2711 XFER_LOOP
+  The whole sectors left (the bytes left / 512): with none, the last sector's part
+  (XFER_LAST_PART). Otherwise steps to the next sector, and gathers a run: the rest of this
+  cluster, then whole clusters while the next one in the chain follows on (XFER_RUN_GROW).
+  .2711 C = the bytes left / 256
+  .2714 C = the whole sectors left
+  .2716 None: the last sector's part
+  .2718 Steps on when the last sector was used
+  .271B Failed (the chain ended)?
+  .271C A = - the sector in the cluster
+  .271F B = it
+  .2720 DE = IY+$55: the cluster
+
+@2724 XFER_RUN_FIRST
+  The disk sector to start from (XFER_SECT_NUM).
+  .2724 IY+$57 = the run's first sector
+
+@2727 XFER_RUN_GROW
+  B = the run's sectors up to the end of cluster DE. Ends the run when it covers the sectors
+  left; else reads the next cluster and grows the run by a cluster while it is DE + 1.
+  .2727 Plus the sectors per cluster
+  .272B B = the run up to this cluster's end
+  .272C Enough for the sectors left?
+  .272D Yes
+  .272F Keeps the cluster
+  .2730 DE = the next cluster
+  .2733 HL = the cluster, the record kept
+  .2735 HL = the cluster + 1
+  .2736 The next one?
+  .2738 No: the run ends here
+  .273A Yes: the cluster index + 1
+  .273D No carry?
+  .273F Carry into the high byte
+
+@2742 XFER_RUN_NEXT
+  Takes the next cluster into the run.
+  .2742 HL = the record
+  .2743 Grows the run
+
+@2745 XFER_RUN_BREAK
+  The chain jumps: the run ends at the last sector of cluster DE.
+  .2745 HL = the cluster + 1
+  .2746 DE = it
+  .2747 DE = the cluster
+  .2748 HL = the record
+  .2749 A = the sectors per cluster: its last sector
+
+@274E XFER_RUN_FITS
+  The run ends inside this cluster: B = the sectors left.
+  .274E A = the sectors per cluster
+  .2751 Less the run up to the cluster's end
+  .2752 Plus the sectors left: past the run's last sector
+  .2753 B = the sectors left
+
+@2754 XFER_RUN_DO
+  Records where the run ends (the sector in the cluster, the cluster), moves the run
+  (RAW_SECTORS), counts its bytes and goes on.
+  .2754 The run's last sector in the cluster
+  .2758 The run's last cluster
+  .275E Keeps the run's sectors
+  .275F Moves the run past the buffers
+  .2763 B = the bytes / 256
+  .2765 BC = the bytes
+  .2767 Counts them
+  .276A The last sector is used: step on next
+  .276E More sectors?
+
+@2770 XFER_LAST_PART
+  The last sector's part from offset 0 (XFER_PART_SECT); then keeps the cluster reached and its
+  index in the control block, so the next call starts its walk there.
+  .2770 From the sector's beginning
+  .2773 Moves the part
+  .2776 Failed?
+  .2777 DE = IY+$55: the cluster reached
+
+@277B XFER_CACHE_CL
+  The control block's +$23/$24 = the cluster reached.
+  .2781 DE = IY+$4F: its index
+
+@2785 XFER_CACHE_IDX
+  The control block's +$25/$26 = its index; returns A = 0.
+
+@278C XFER_PART_SECT
+  Moves the part of one sector from offset BC: to the sector's end, or the bytes left when
+  fewer, through a sector buffer (SECT_VIA_BUF). Steps to the next sector first when bit 6 of
+  IY+$48 says the current one was used; then sets that bit and counts the bytes.
+  Entry: BC = the offset in the sector; HL = the drive's record; IY+$48-$58, the transfer
+  state.
+  Exit: A = 0, Z (also when no bytes are left).
+  Error: NZ, A = $9A (the cluster chain ended).
+  Changes: AF, BC, DE, all alternates; IY+$48-$58.
+  Keeps: HL, IX, IY.
+  .278C Keeps the record
+  .278D A sector's bytes
+  .2791 Less the offset: the room in the sector
+  .2793 DE = the room
+  .2794 HL = the bytes left
+  .279A More left than room?
+  .279C Yes: the room
+  .279E No: HL = the bytes left
+  .279F DE = them
+
+@27A1 PART_SECT_DO
+  Moves DE bytes of the sector, unless there are none.
+  .27A1 No bytes?
+  .27A3 HL = the record
+  .27A4 None: done
+  .27A5 Steps on when the last sector was used
+  .27A8 Failed (the chain ended)?
+  .27A9 IY+$57 = the sector
+  .27AC Moves the bytes through a buffer
+  .27AF The sector is used: step on next
+  .27B3 Counts the bytes
+  .27B6 A = 0, Z
+
+@27B8 RAW_SECTORS
+  Moves B whole sectors between the disk and memory past the sector buffers, from sector
+  IY+$57 and the address at IY+$49 (bit 0 of IY+$48: 1 reads, 0 writes).
+  1. The address is mapped into page 1 (MAP_TO_PAGE1). The run is the sectors that fit before
+     page 1's end, at most B.
+  2. The unit's driver runs request 4 (read) or WRITE_REQUEST's 5/6 on the run (UNIT_REQUEST:
+     B the sectors, C the segment, DE the sector, IX the address in page 1). A failure asks
+     DISK_ERROR: a retry runs the rest of the run again, an Ignore skips it (segment 0: no
+     request is made).
+  3. RAW_SYNC_BUFS squares the buffers with the run; IY+$49 and IY+$57 move past it.
+  4. A sector that would cross page 1's end goes alone through SECT_VIA_BUF.
+  Entry: B = the sectors; HL = the drive's record; IY+$48, IY+$49/$4A, IY+$57/$58; IY.
+  Exit: A = 0, Z; IY+$49/$4A and IY+$57/$58 past the sectors.
+  Changes: AF, BC, DE, all alternates.
+  Keeps: HL, IX, IY.
+  .27B8 No sectors (left)?
+  .27BA Done
+  .27BB DE = IY+$49: the address
+
+@27BF RAW_MAP
+  Maps the address into page 1 and sizes the run: the whole sectors before $8000, at most B.
+  .27BF A = the segment, DE = the address in page 1
+  .27C2 A' = the segment
+  .27C3 Keeps the record
+  .27C4 Room before $8000, less one sector
+  .27C8 A sector crosses page 1's end?
+  .27CA Yes: that one through a buffer
+  .27CC A = the room / 256
+  .27CD The room in sectors ...
+  .27CF ... plus the last one
+  .27D0 Fewer than B?
+  .27D3 No: all B
+
+@27D4 RAW_RUN_SIZE
+  C = the run; the sectors left after it are kept with it.
+  .27D4 C = the run
+  .27D5 HL = the record
+  .27D6 Run - B ...
+  .27D7 ... negated: the sectors left after it
+  .27D9 B = them
+  .27DA Kept with the run
+  .27DB B = the run
+  .27DC A = the segment
+  .27DD C = the segment
+
+@27DF RAW_RUN_TRY
+  One try at the run: B = the sectors, C = the segment, DE = the address in page 1.
+  .27DF The run and the segment, for the end
+  .27E0 And again, for this try
+  .27E1 The address, for the end
+  .27E2 IX = the address, the caller's IX kept
+  .27E4 Request 4: read
+  .27E6 A write?
+  .27EA Request 5 or 6
+  .27ED DE = IY+$57: the sector
+
+@27F1 RAW_RUN_REQ
+  Runs the request (not for segment 0: a run the user chose to ignore), then works out where
+  it got to: IY+$57 past the sectors done, DE past their bytes, B = the sectors not done.
+  .27F1 Keeps the sector
+  .27F2 Segment 0?
+  .27F4 No: the driver moves the sectors
+  .27F7 Keeps the result
+  .27F8 DE = the sector
+  .27F9 The caller's IX
+  .27FA Keeps the record
+  .27FC HL = the sectors done
+  .27FF Plus the first sector
+  .2800 IY+$57 = the next sector
+  .2806 HL = the record
+  .2807 DE = the address
+  .2808 D + 2 x the sectors done ...
+  .280B ... the address after them
+  .280C A = the sectors done
+  .280D B = the run, C = the segment
+  .280E Done - run ...
+  .280F ... negated: the sectors not done
+  .2811 B = them
+  .2812 The result
+  .2813 Done?
+  .2815 NC: not a format error
+  .2816 Asks: Z retries, NZ goes on
+  .2819 Retry?
+  .281B Ignore: the rest is skipped (segment 0)
+
+@281D RAW_RUN_RETRY
+  Tries the rest of the run again.
+  .281D Again
+
+@281F RAW_RUN_DONE
+  The run is done: squares the buffers with it, moves IY+$49 past it and goes on with the
+  sectors left.
+  .281F B = the run, C = the segment
+  .2820 Squares the buffers with the run
+  .2823 B = the sectors left, C = the run
+  .2824 The address's high byte ...
+  .2827 ... plus 2 x the run (512 bytes a sector)
+
+@282C RAW_LOOP
+  The next run.
+  .282C More sectors?
+
+@282E RAW_SPLIT_SECT
+  A sector that would cross page 1's end: moved alone through a buffer, then the next sector.
+  .282E HL = the record
+  .282F One sector fewer
+  .2830 Kept
+  .2831 A whole sector
+  .2834 From offset 0
+  .2836 Moves it through a buffer
+  .2839 The sectors left
+  .283A The next sector
+  .283D No carry?
+  .283F Carry into the high byte
+
+@2842 RAW_SPLIT_NEXT
+  Goes on with the sectors left.
+  .2842 More sectors?
+
+@2844 RAW_SYNC_BUFS
+  After a run of sectors moved past the buffers, squares the drive's buffers with it: a buffer
+  whose sector is one of the run's (the B sectors before IY+$57) is dropped after a write
+  (tag 0, to the head of the chain); after a read, a changed one has its data copied over that
+  sector's place in memory (segment C in page 1), so memory gets the newer data.
+  Entry: B = the run's sectors; C = the segment; DE = the address after the run in page 1;
+  HL = the drive's record; IY+$57 = the sector after the run; IY+$48 bit 0 the direction.
+  Exit: none.
+  Changes: AF, BC', DE', HL'.
+  Keeps: BC, DE, HL, IX, IY.
+  .2844 Marks the drive's buffers
+
+@2847 SYNC_BUF_LOOP
+  Takes the next marked buffer and checks whether its sector is in the run.
+  .2847 Keeps the run and the segment
+  .2849 The next marked buffer
+  .284C None left: done
+  .284E HL = the buffer +4: its sector
+  .2852 DE = the sector
+  .2855 HL = the sector, DE = the buffer +5
+  .2856 BC = the sector after the run
+  .285C Sector - it (negative in the run)
+  .285E B' = the run, C' = the segment
+  .285F Less than 256 below it?
+  .2861 No: not in the run
+  .2863 Within the run's sectors?
+  .2865 No
+  .2867 DE = the buffer +3
+  .2869 HL = the buffer +3, DE = the distance
+  .286A A read?
+  .2870 Buffer +2 ...
+  .2871 ... the tag 0: free
+  .2875 To the head of the chain
+
+@2878 SYNC_BUF_NEXT
+  The next buffer.
+  .2878 The main set again
+
+@287B SYNC_BUF_COPY
+  A read: a changed buffer (bit 7 of its +3) has its 512 bytes copied over the sector's place
+  in memory, with the run's segment in page 1.
+  .287B Changed?
+  .287D No: memory is right
+  .287F B = the segment
+  .2882 A = page 1's segment
+  .2884 The run's segment in page 1
+  .2887 The address after the run
+  .2889 The buffer's data: +$0B
+  .288D HL = the address after, the data kept
+  .288E D = the distance (negative sectors)
+  .288F E = 0
+  .2890 Less 512 bytes ...
+  .2891 ... for each sector: the sector's place
+  .2892 DE = it
+  .2893 HL = the buffer's data
+  .2894 A sector
+  .2899 Page 1 back
+
+@289D SYNC_BUF_END
+  No more marked buffers.
+  .289D The main set
+  .289E The caller's BC
+
+@28A0 XFER_STEP_SECT
+  Moves the transfer on by one sector when bit 6 of IY+$48 says the current one was used: the
+  next sector of the cluster (IY+$51), or at the cluster's end sector 0 of the next cluster in
+  the chain (IY+$55, its index IY+$4F + 1).
+  Entry: HL = the drive's record; IY.
+  Exit: A = 0, Z; bit 6 of IY+$48 clear.
+  Error: NZ, A = $9A when the chain ends.
+  Changes: AF, all alternates.
+  Keeps: BC, DE, HL, IX, IY.
+  .28A0 A = 0
+  .28A1 The current sector used?
+  .28A5 No: stay
+  .28A6 Not any more
+  .28AA The next sector of the cluster
+  .28AE Past the cluster's end?
+  .28B1 No
+  .28B3 Keeps DE
+  .28B4 DE = IY+$4F: the cluster's index
+
+@28B8 STEP_NEXT_CL
+  The next cluster: its index + 1, then the cluster itself from the FAT.
+  .28B8 The index + 1
+  .28BF DE = IY+$55: the cluster
+
+@28C3 STEP_READ_FAT
+  Reads the next cluster: an end mark fails with $9A.
+  .28C3 DE = the next cluster
+  .28C6 The current cluster
+  .28CC The chain ended?
+  .28CF Error $9A
+  .28D2 Sector 0 of the cluster
+
+@28D3 STEP_SET_SECT
+  Stores the sector in the cluster; A = 0, Z.
+  .28D3 The sector in the cluster
+  .28D6 A = 0, Z
+
+@28D8 XFER_SECT_NUM
+  IY+$57/$58 = the disk sector of sector IY+$51 of cluster DE (CLUSTER_TO_SECT).
+  Entry: DE = the cluster; HL = the drive's record; IY.
+  Exit: IY+$57/$58 = the sector.
+  Changes: AF.
+  Keeps: BC, DE, HL, IX, IY.
+  .28D8 Keeps the cluster
+  .28D9 A = the sector in the cluster
+  .28DC DE = IY+$55 (the cluster again)
+
+@28E0 SECT_NUM_STORE
+  Works out the disk sector and keeps it.
+  .28E0 DE = the disk sector
+  .28E9 The cluster back
+
+@28EB SECT_VIA_BUF
+  Moves DE bytes (up to 512) between memory at IY+$49 and sector IY+$57 from offset BC,
+  through a sector buffer (GET_SECTOR_BUF). The sector is read in first for a read, for
+  function 17 (bit 1 of IY+$48), and for a write that does not cover the sector's data (not
+  the whole sector, by the offset and the bytes left measured against IY+$59/$5A). The memory
+  is paged into page 1 a 16K page at a time (MAP_TO_PAGE1). Then IY+$49 moves past the bytes; a
+  write marks the buffer changed; a buffer used to its end is written back and goes to the head
+  of the chain, to be reused first.
+  Entry: BC = the offset in the sector; DE = the count; HL = the drive's record; IY+$48,
+  IY+$49/$4A, IY+$4B/$4C, IY+$57/$58, IY+$59/$5A; IY.
+  Exit: BC = the count; IY+$49/$4A = the address after the bytes; page 1 restored.
+  Changes: AF, BC, DE, all alternates; the sector's buffer.
+  Keeps: HL, IX, IY.
+  .28EB IX = the record, the caller's IX kept
+  .28EE Keeps the count
+  .28EF Keeps the offset
+  .28F0 A read?
+  .28F4 Yes: read the sector in
+  .28F6 A whole sector?
+  .28F8 Yes: no need to read it
+  .28FA Function 17?
+  .28FE Yes: read it in
+  .2900 Keeps the count
+  .2901 HL = the bytes left
+  .2907 DE = IY+$59
+
+@290B SVB_SIZE_CHK
+  Decides from the offset and the bytes left against IY+$59 whether the sector must be read.
+  .290B Bytes left - IY+$59
+  .290E DE = the count
+  .290F Below it?
+  .2911 Offset 0?
+  .2913 No: read it in
+  .2915 Less the count too
+  .2917 Below: no need to read it
+  .2919 Read it in
+
+@291B SVB_SHORT
+  The bytes left are below IY+$59: read in unless adding the offset carries.
+  .291B Plus the offset
+  .291C No carry: no need to read it
+
+@291E SVB_READ_IN
+  B = 3: the sector is read in (Ignore allowed); $2921, inside LD HL,$0206, is LD B,2: the
+  buffer is taken without reading.
+  .291E Read it in, Ignore allowed
+  .2920 $2921: LD B,2, no read
+  .2923 DE = IY+$57: the sector
+
+@2927 SVB_GET_BUF
+  Gets the sector's buffer and points HL at the offset in its data; DE = the address.
+  .2927 HL = the sector's buffer
+  .292A DE = the offset
+  .292B Plus the buffer
+  .292C Plus its header: the data's byte
+  .2930 BC = the count
+  .2931 Kept for the end
+  .2933 Page 1's segment
+  .2935 Kept for the end
+  .2936 DE = IY+$49: the address
+
+@293A SVB_COPY
+  Keeps the address for the end.
+  .293A The address
+
+@293B SVB_COPY_LOOP
+  Copies what fits in the page of address DE: maps it into page 1, the count cut at $8000.
+  .293B The address in the caller's pages
+  .293C The count
+  .293D The buffer's place
+  .293E A = the segment, DE = the address in page 1
+  .2941 Paged into page 1
+  .2943 $8000 - the address - the count
+  .294B Fits before $8000?
+  .294D No: BC = the room
+  .294E Up to $8000
+
+@2950 SVB_DIRECTION
+  HL = the buffer, DE = memory for a read; swapped for a write.
+  .2950 HL = the buffer's place
+  .2951 Keeps the part's size
+  .2952 A read?
+  .2958 Write: memory to the buffer
+
+@2959 SVB_LDIR
+  Copies the part.
+  .2959 Copies the part
+  .295B A read? (BIT's Z still)
+  .295D Write: HL = the buffer, DE = memory
+
+@295E SVB_COPY_NEXT
+  The count left after the part: none ends the copy, else the next page of the address.
+  .295E BC = the part's size
+  .295F HL = the count, the buffer's place kept
+  .2961 Less the part
+  .2963 BC = the count left
+  .2965 HL = the buffer's place
+  .2966 All copied?
+  .2968 A = the part's address (high byte)
+  .2969 Its page
+  .296B The next page
+  .296D DE = its beginning
+  .296E Copies the next part
+
+@2970 SVB_DONE
+  Puts page 1 back, moves IY+$49 past the bytes, marks the buffer changed for a write, and
+  writes a buffer used to its end back, to the head of the chain.
+  .2970 Drops the loop's address
+  .2971 HL = the first address
+  .2972 Page 1's segment
+  .2973 Page 1 back
+  .2975 BC = the count
+  .2976 HL = the address after the bytes
+  .2977 Kept at IY+$49/$4A
+  .297D A write?
+  .2981 Marks the buffer changed
+  .2984 HL = the offset
+  .2985 Plus the count
+  .2986 Reached the sector's end?
+  .2988 No
+  .298A HL = the buffer used last
+  .2990 Written back, to the head of the chain
+
+@2993 SVB_EXIT
+  The caller's IX and HL back.
+  .2993 IX back, HL = the record
+
+@2997 XFER_COUNT
+  Counts BC bytes as moved: IY+$4D/$4E plus BC; IY+$4B/$4C (the bytes left) minus BC, with the
+  carry of the first sum (0 while the total stays below 64K).
+  Entry: BC = the bytes; IY.
+  Exit: IY+$4B-$4E updated.
+  Changes: F.
+  Keeps: A, BC, DE, HL, IX, IY.
+  .2998 HL = the bytes moved
+  .299E Plus these
+  .29A5 HL = the bytes left
+  .29AB Less these
+
+@29B5 MAP_TO_PAGE1
+  Maps an address of the caller's into page 1: A = the segment that holds address DE, from a
+  table of four page segments chosen by IY-$80 (1: the four bytes at $BFFC; 2: IY-$5D; 3:
+  IY-$36; else IY+$2C) and indexed by the address's page (DE's top two bits); D is moved into
+  $40-$7F, the same place in page 1.
+  Entry: DE = the address; IY.
+  Exit: A = the segment; DE = the address in page 1.
+  Changes: AF, D.
+  Keeps: BC, HL, IX, IY.
+  .29B5 A = the table's kind
+
+@29CF MAP_FROM_IY
+  HL = IY + the table's offset.
+
+@29D3 MAP_INDEX
+  A = the segment of the address's page; the address moved into page 1.
+  .29D3 A = the address's high byte
+  .29D4 Top two bits ...
+  .29D6 ... the page, 0-3
+  .29DB HL = its entry
+  .29DC A = the segment
+  .29DD The address ...
+  .29DF ... in page 1
+
+@29E4 XFER_SETUP
+  Prepares a transfer of IY+$4B bytes at the file's position (+$28-$2B):
+  1. POS_TO_CLUSTER splits the position: the cluster's index, the sector in it and the offset
+     go to IY+$4F-$53.
+  2. The same for the transfer's last byte, then for the file's last byte (the size - 1, at
+     +$17-$1A) ($2A1A on).
+  3. A read of an empty file gives $E4; a read past the end is cut to the end, with bit 7 of
+     IY+$48 set to report $E4 after.
+  4. A write gives $A7 for a read-only file; else it marks the file changed (bit 6 of +$20) and
+     grows the cluster chain to cover the last byte ($AC when the disk is full), with the new
+     size.
+  Entry: HL = the drive's record; IX = the control block; IY+$48, IY+$4B/$4C; IY.
+  Exit: A = 0, Z; IY+$4F-$54 and IY+$59/$5A set.
+  Error: NZ, A = the error code ($9A, $A7, $AC or $E4).
+  Changes: AF, BC, DE, all alternates; the control block's +$17-$26 for a write.
+  Keeps: HL, IX, IY.
+  .29E4 Keeps the record
+  .29E5 BC = the position's low word
+  .29EB DE = its high word
+  .29F1 Kept
+  .29F3 Splits the start
+  .29F6 Too far: fail
+  .29F8 The start's cluster index
+  .29FE The sector in the cluster
+  .2A01 The offset in the sector
+  .2A07 HL = the position's low word
+  .2A08 DE = IY+$4B: the bytes
+
+@2A0C XFER_END_POS
+  The position of the transfer's last byte: the position + the count - 1.
+  .2A0C The count - 1
+  .2A0D Plus the low word
+  .2A0E HL = the high word, the sum kept
+  .2A0F BC = the last byte's low word
+  .2A10 DE = the high word, HL = the count - 1
+  .2A11 HL = the record, the count - 1 kept
+  .2A12 Carry out of the low word?
+  .2A14 Into the high word
+
+@2A15 XFER_END_CL
+  Splits the last byte's position (POS_TO_CLUSTER).
+  .2A15 Keeps the last byte's position
+  .2A17 Splits it
+
+@2A1A XFER_SIZE_CHK
+  A failure leaves; else the file's size - 1 (DE:BC, from +$17-$1A) for the comparison at
+  $2A31; an empty file gives $FFFF:$FFFF with Z.
+  .2A1A Too far: fail
+  .2A1C Keeps the last byte's cluster index
+  .2A1D BC = the size's low word
+  .2A23 DE = its high word
+  .2A29 Low word 0?
+  .2A2B Low word - 1
+  .2A2C No: no borrow
+  .2A2E A = the high word (Z for an empty file)
+  .2A30 Borrow from the high word
+
+@2AF8 POS_TO_CLUSTER
+  Splits a byte position of a file: the offset in its sector (position mod 512), the sector in
+  the cluster, and the cluster's index in the file; IY+$54 = the sectors per cluster.
+  Entry: DE:BC = the position (DE the high word); HL = the drive's record (+$0A sectors per
+  cluster - 1, +$0B their power of 2); IY.
+  Exit: Z; DE = the cluster's index; A = the sector in the cluster; BC = the offset in the
+  sector.
+  Error: NZ, A = $9A when the index is above $7FFF.
+  Changes: AF, B, DE.
+  Keeps: C, HL, IX, IY.
+  .2AF8 Keeps the record
+  .2AF9 A = bits 8-15
+  .2AFA D:E:A = the position / 2 ...
+  .2AFE ... / 256: the sector in the file
+  .2AFF B = bit 8: BC = the offset in the sector
+  .2B03 Kept
+  .2B04 The record's +$0A
+  .2B08 Keeps the sector's low byte
+  .2B09 The sector in the cluster
+  .2B0A C = it
+  .2B0B The sectors per cluster - 1 ...
+  .2B0C ... + 1
+  .2B0D Kept at IY+$54
+  .2B10 A = the sector's low byte
+  .2B11 The record's +$0B
+  .2B12 B = the power of 2 ...
+  .2B13 ... + 1 for DJNZ
+  .2B14 Divides by the sectors per cluster
+
+@2B2E FILE_CLUSTER_N
+  Finds the cluster of index DE in the file's chain (0: the first cluster), walking the FAT from
+  the cluster kept at +$23 (index +$25) when that is not past it, else from the first cluster
+  (+$21).
+  Entry: DE = the index; HL = the drive's record; IX = the control block; IY.
+  Exit: A = 0, Z; DE = the cluster.
+  Error: NZ, A = $9A when the block keeps no cluster (+$23 = 0, an empty file) or the chain
+  ends first.
+  Changes: AF, BC, DE, all alternates.
+  Keeps: HL, IX, IY.
+  .2B2E Keeps the record
+  .2B2F HL = the index
+  .2B30 DE = the cluster kept
+  .2B36 None?
+  .2B38 Error $9A
+  .2B3A BC = its index
+  .2B40 Steps from it
+  .2B42 Not past it: walk from there
+  .2B44 HL = the index again
+  .2B45 Walk from the first cluster
+
+# --- Notes for the session
+
+question 2692 Function 17 is a write that reads in every sector it writes in part: what calls it, and why not function 16?
+question 29B5 Which callers set IY-$80 to 2 and 3, and whose page segments do IY-$5D and IY-$36 hold?
+feedback wrong 1FD3 Range 4's FLOPPY_DRIVER says function 7 goes to $241D: the code (SUB 2, DEC, SUB 4, DEC) sends 8 there and makes 7 fail with $BD, which range 8's IY-$12 = 8 test needs
+feedback missing 24CD The cards of $2477-$2544 do not say that $24CD pops its caller's address and $2544 returns with JP (HL): every card lists "no return is reachable" or a foreign stack
+feedback pattern 26E2-2B5D The transfer state at IY+$48-$5A and the control block's fields (+$17-$2C) recur on 40 cards with no shared summary
+feedback listing 2440-2B50 Opened to follow the format's passes, the byte transfer across ranges 8-9 and the run of hidden entries ($2683, $2921)

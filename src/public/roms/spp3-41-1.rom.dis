@@ -3259,7 +3259,7 @@
         "7701": {"synopsis":"';' and the rate.","comment":"';' must follow"},
         "7707": {"comment":"Not ';': report C"},
         "7710": {"comment":"Past the ';' (ROM 3's NEXT_SKIP)"},
-        "7713": {"comment":"The rate (ROM 3's CLASS_6)","synopsis":"FORMAT LINE n's entry (from FORMAT_CMD at $027B): ';' and the number (ROM 3's CLASS_6), then on as FORMAT \"p\" does.\nObserved: FORMAT LINE 2400 gave 0 OK and changed $5B5F from 11 to 54."},
+        "7713": {"synopsis":"FORMAT LINE n's entry (from FORMAT_CMD at $027B): ';' and the number (ROM 3's CLASS_6), then on as FORMAT \"p\" does.\nObserved: FORMAT LINE 2400 gave 0 OK and changed $5B5F from 11 to 54.","comment":"The rate (ROM 3's CLASS_6)"},
         "7716": {"comment":"Running?"},
         "7720": {"comment":"Checking: the statement's end"},
         "7722": {"comment":"$5B5F = n for now (ROM 3's TAKE_WORD)"},

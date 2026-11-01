@@ -1,0 +1,10 @@
+transcripts 14 output tokens 910702 cache-read tokens 89692062
+bash search/slice        311,948 tokens of tool results (44.0%)   391 calls
+bash other               108,586 tokens of tool results (15.3%)    79 calls
+listing                  104,556 tokens of tool results (14.7%)   132 calls
+read other                94,123 tokens of tool results (13.3%)    12 calls
+read cards                76,554 tokens of tool results (10.8%)    13 calls
+compile                   12,702 tokens of tool results ( 1.8%)    41 calls
+write/edit .ann              642 tokens of tool results ( 0.1%)    16 calls
+SubagentHandback             315 tokens of tool results ( 0.0%)    13 calls
+mcp__ccd_turn__update_plan        62 tokens of tool results ( 0.0%)     1 calls

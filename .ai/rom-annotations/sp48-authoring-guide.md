@@ -1,5 +1,7 @@
 # Authoring the ZX Spectrum 48K ROM Annotations
 
+> **Tools.** New work goes through the ROM annotation pipeline (`npm run rom:pipeline`; README, "The tools"). Most scripts this guide names were retired by it: `tools/README.md` gives the command that replaced each.
+
 A standing brief for a session working on `sp48.rom.dis`, and the method to reuse for the next ROMs
 (128K, +3). Read `README.md` (the D4 rule, provenance, levels) and `zx81-authoring-guide.md` (the
 working-copy discipline, the batch tools, two-pass region batches) first; this file adds what the

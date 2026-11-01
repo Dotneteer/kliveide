@@ -1,0 +1,1051 @@
+rom ep-exdos13.rom page 0 cpu z80
+default observed
+
+# Range 11: the second half of TYPE/COPY (finishing a file, the copy loop and its buffer
+# helpers), the DATE and TIME commands with their number and separator parsers, and the FORMAT,
+# ISDOS, LOAD, PAUSE, RAMDISK and VAR commands.
+#
+# The command handlers are entered from $2C57 (JP (HL)) with A = $FF (NZ), HL = the parameter
+# text (ended by 0, its length at HL-1), IX = DE = the command's request block (IY+$FD) and
+# the return address $2D41 on the stack.
+
+# ------------------------------------------------------------------------------------------------
+# TYPE/COPY: finishing a file
+
+@363F COPY_SET_ATTR
+  The destination file is written and STOP was not pressed. When the source is a disk file
+  too, gives the destination the source's attributes plus bit 5 ($20) and a time and date
+  (COPY_TIME_DATE), stores them in its directory entry (function 11) and writes the drive's
+  buffers back (function 14). Then COPY_FREE_SEGS.
+  .363F Source (IX-$60) a disk file?
+  .3643 No: nothing to copy over
+  .3645 A = the source's attributes (descriptor +$13)
+  .3648 Plus bit 5
+  .364A The destination's attributes
+  .364D Keep the destination's descriptor (IX+$30)
+  .3652 DE = descriptor +$21, the date's high byte
+  .3653 From the destination's own descriptor (-5)
+  .3656 Destination /T switch?
+  .365A Yes: keep the destination's time and date
+  .365C Else from the source's descriptor (-$65)
+
+@365F COPY_TIME_DATE
+  Copies four bytes down into the destination's descriptor +$1E-$21 (where function 11 takes
+  the time and the date): +$1B-$1C to +$20-$21 and +$1D-$1E to +$1E-$1F of the descriptor HL
+  points into. Then function 11 (FN11_SET_ATTR) and, when it succeeded, function 14
+  (FN14_FLUSH) for the destination's drive with C = 0.
+  .365F HL = descriptor +$1C (source or destination)
+  .3661 +$1C, +$1B to the destination's +$21, +$20
+  .3665 HL = descriptor +$1E
+  .3668 +$1E, +$1D to the destination's +$1F, +$1E
+  .366C DE = the destination's descriptor
+  .366D HL = the destination's request block
+  .3670 Function 11: attributes, time, date to the entry
+  .3675 B = the destination's drive
+  .3678 C = 0 after a success: keep the buffers
+  .3679 Function 14: write the drive's buffers back
+  .367B Only when function 11 succeeded
+
+@3680 COPY_CHAN_END
+  The destination is a channel. With the destination's /A switch, and when STOP was not
+  pressed, ends the text with an end-of-file mark ($1A) written with EXOS 7.
+  .3680 Destination /A switch?
+  .3686 A = the status kept at $35FD
+  .3688 STOP pressed: no end mark
+  .368A A = the destination's channel
+  .368D B = $1A, the end-of-file mark
+  .368F EXOS 7: write it
+  .3691 Status, STOP check
+
+@3694 COPY_CLOSE_OUT
+  Closes the channel the command opened for the destination (its number at IY-$2D, $FF for
+  none) through $326F.
+  .3694 IY-$2C - 1: the destination's channel
+
+@3699 COPY_FREE_SEGS
+  Frees the copy buffer: the four segment numbers from EXOS 24 (the list pushed at $35AF),
+  one by one with EXOS 25. The status kept at $35FD stays on the stack.
+  .3699 HL = the status (AF) kept at $35FD
+  .369A HL = the segment list; the status back on the stack
+  .369B Four segments
+
+@369D COPY_FREE_LP
+  One pass of the freeing loop. On the third pass (B = 2), when B' is not 0 (a scratch sector
+  buffer was taken instead, its address in BC'), frees that buffer with function 30 (B = 0)
+  and leaves the loop.
+  .369D Keep the counter
+  .369F Third pass?
+  .36A3 And a scratch buffer taken (B' not 0)?
+  .36A8 Drop the counter
+  .36A9 B = 0: free the scratch buffer
+  .36AB Function 30
+  .36B0 And stop
+
+@36B2 COPY_FREE_ONE
+  Frees the next segment of the list with EXOS 25.
+  .36B2 C = the segment
+  .36B4 EXOS 25: free it
+  .36B6 The counter
+
+@36B9 COPY_NEXT_FILE
+  The file is done: the status of the copy (kept in F') returns when it is an error. TYPE
+  ends the text with CR LF. When the source name had wildcards (bit 5 of its parse flags)
+  the next matching file is searched for ($3CD4) and copied from $357E.
+  .36B9 Drop the status kept at $35FD
+  .36BA A, F = the copy's status
+  .36BB Error or STOP: return it
+  .36BC TYPE (not COPY)?
+  .36C0 Yes: CR LF after the text
+  .36C3 IX = the source's block
+  .36C8 The source name had wildcards?
+  .36CC No: done (A = 0, Z)
+  .36CD Search for the next matching file
+  .36D0 Found: copy it too
+
+# ------------------------------------------------------------------------------------------------
+# TYPE/COPY: the copy loop of $36E2
+
+@36F6 COPY_NO_EOF
+  A = 0, Z: no end of file seen yet; starts the block loop.
+
+@36F7 COPY_BLOCK_LP
+  Fills the buffer from the source and writes it to the destination, block after block,
+  until the source ends. F' carries the end-of-file mark (NZ once seen). A disk-file source
+  is read with function 15 (COPY_FN_BUFFER), up to the buffer's size (HL').
+  .36F7 F' = the end-of-file mark (NZ: seen)
+  .36F8 Source a disk file?
+  .36FE BC = HL', the buffer's size
+  .3702 Function 15: read into the buffer
+  .3707 Error
+  .3708 BC = the bytes read
+
+@370A COPY_READ_CHAN
+  The source is a channel. Without its /A switch and with a disk file as destination, reads
+  blocks with EXOS 6 (COPY_FILL_BUF with A = $80); else one character at a time.
+  .370A Source /A switch?
+  .370E Yes: a character at a time
+  .3710 Destination a disk file?
+  .3714 No: a character at a time
+  .3716 Read blocks with EXOS 6
+  .371B Error
+  .371C BC = the bytes read
+
+@371E COPY_READ_CHAR
+  Reads one character from the source channel (EXOS 5) into the buffer: BC = 1.
+  .371E Buffer (BC') paged in, A = the channel
+  .3721 HL = the buffer
+  .3722 EXOS 5: read a character
+  .3724 Into the buffer
+  .3725 Status: .EOF marks the end, STOP stops
+  .3728 Error
+  .3729 One byte
+
+@372C COPY_WRITE
+  Writes the BC bytes in the buffer to the destination (IX now its block). Nothing read: on
+  to COPY_BLOCK_DONE. With /A on the source or the destination the buffer is first converted
+  (COPY_FILL_BUF with A = bit 6 or 5 of IY-$2A), which can shorten it at a $1A.
+  .372C IX = the destination's block
+  .3731 Nothing read?
+  .3736 The /A switches (source $40, destination $20)
+  .373B HL' = the count, its old value on the stack
+  .373D The buffer's size to the stack, HL' = the count
+
+@373E COPY_ASCII_CALL
+  Converts the buffer for /A (COPY_FILL_BUF) and puts the buffer's size back in HL'. The
+  JP NZ at $1114 that names this address never jumps (A = 0 there).
+  .373F /A: convert, BC = the bytes to write
+  .3743 HL' = the buffer's size again
+  .3745 Destination a disk file?
+  .3749 No: write to the channel
+  .374C Destination file not created yet (bit 7)?
+  .3750 Created: write the block
+  .3753 Keep the count
+
+@3754 COPY_CREATE_DEST
+  Creates the destination file before its first block. Saves the destination's 13 name bytes
+  (+8 to +$14) at IY+$6F, then puts the source's character (from the source's descriptor)
+  in place of every "?" of the destination's 11-byte name.
+  .3754 HL = the output buffer, IY+$6E
+  .3758 DE = IY+$6F
+  .3759 Kept for the restore
+  .375A HL = IY+$165, the destination's name (+8)
+  .375E Twice: for the restore and the fill
+  .3760 13 bytes: the name and its flags
+  .3763 Saved at IY+$6F
+  .3765 DE = the destination's name
+  .3766 HL = the source's descriptor name (+$38)
+  .376A 11 characters
+
+@376C COPY_WILD_LP
+  A "?" in the destination's name takes the source's character.
+  .376C A "?"?
+  .3771 Yes: the source's character
+
+@3773 COPY_WILD_NEXT
+  Next character; then BC = the descriptor, DE = the request block, HL = DE' for function 6,
+  and bit 1 of IY-$37 set when the source is a disk file.
+  .3775 All 11?
+  .3777 BC = IX+$30, DE = IX
+  .377D HL = DE'
+  .377E Source a disk file?
+  .3784 Yes: bit 1 of IY-$37
+
+@3788 COPY_MAKE_ENTRY
+  Creates the destination's directory entry with function 6 (DIR_CREATE_ENT); only the first
+  file of the command sets bit 6 of IY-$2B and takes this path. When the name is a directory
+  ($98, "Directory exists"), no name was given and the source is a disk file, the destination
+  becomes that directory: its request block is copied to IX+$60, request and descriptor are
+  swapped with the name made all "?" (DESC_SWAP_WILD), and the name is built again from the
+  source's ($3754).
+  .3788 Function 6: find or create the entry
+  .378A Not the first file?
+  .378E Mark: the first file is done
+  .3792 Not the first: create without the checks
+  .3794 Function 6
+  .3797 Made: open it
+  .3799 $98 ("Directory exists")?
+  .379D No name given (wildcards filled)?
+  .37A3 Source a disk file?
+  .37A9 HL = IX+$60
+  .37AE DE' = IX+$60: HL for function 6 next time
+  .37B1 HL = the request block, DE = IX+$60
+  .37B2 48 bytes
+  .37B5 Keep the destination's request at IX+$60
+  .37B7 The directory found becomes the request
+  .37BA The saved parse flags, ORed with B
+  .37BD B = $3CBA's high byte of IX+$30 (bit 7 set)
+  .37C1 And the saved flags at +$14
+  .37C7 DE = the name's save area again
+  .37C8 HL = the destination's name
+  .37C9 Fill in the source's name again
+
+@37CB COPY_MAKE_AGAIN
+  A later file of the command: function 6 straight away.
+  .37CB Function 6
+  .37CE Error: restore the name and return it
+
+@37D0 COPY_OPEN_ENTRY
+  Opens the new entry with function 12 for DE + $30.
+  .37D0 DE + $30
+  .37D5 Function 12
+
+@37DA COPY_NAME_BACK
+  Puts the destination's 13 name bytes saved at IY+$6F back (the "?" pattern for the next
+  file) and returns an error; else the block is written (COPY_WRITE_FILE).
+  .37DA DE = the destination's name
+  .37DB HL = the saved copy at IY+$6F
+  .37DF Restore it
+  .37E1 BC = the count
+  .37E2 Error?
+
+@37E4 COPY_WRITE_FILE
+  The destination file exists now: writes the block with function 16 ($3862).
+  .37E4 Created
+  .37E8 Function 16: write BC bytes from the buffer
+  .37EB Error
+  .37EC Next block
+
+@37EE COPY_WRITE_CHAN
+  The destination is a channel: writes the BC bytes from the buffer (BC') in parts of at
+  most 64 bytes.
+  .37EE HL = the bytes left
+  .37F0 DE = BC', the buffer
+
+@37F4 COPY_CHAN_LP
+  Writes the next part: 64 bytes, or the rest when fewer are left.
+  .37F4 All written?
+  .37F8 Keep the address
+  .37F9 Page the part in; A = the channel
+  .37FC BC = 64
+  .37FE Next part's address on the stack
+  .3801 Bytes left - 64
+  .3803 64 or more left: a full part
+  .3805 Fewer: BC = the rest
+  .3808 And nothing left after it
+
+@380B COPY_CHAN_PART
+  Writes BC bytes from DE to the channel: one byte with EXOS 7, more with EXOS 8 (at $381A,
+  inside the LD BC at $3819).
+  .380B Only one byte?
+  .380F A = the destination's channel
+  .3812 More: EXOS 8 at $381A
+  .3815 B = the byte
+  .3817 EXOS 7: write the character
+  .3819 Hides RST 30h / EXOS 8 (write block) at $381A
+  .381C DE = the next part
+  .381D Status, STOP check
+  .3820 Error
+
+@3823 COPY_BLOCK_DONE
+  Back to the source's block. With no end of file seen (F' Z) the next block; else the
+  file is done, A = 0.
+  .3826 IX = the source's block
+  .3828 The end-of-file mark
+  .3829 Not seen: next block
+  .382C Done: A = 0, Z
+
+# ------------------------------------------------------------------------------------------------
+# TYPE/COPY: buffer helpers
+
+@3864 COPY_FN_BUFFER
+  Calls EXDOS function A on a file's block with the copy buffer: DE = its descriptor
+  (IX+$30), BC = the count, IX = the buffer (BC'), whose address IY-$80 = 3 says is in the
+  page map at IY-$36. Entered at $3862 with A = 16 (write); $3702 uses 15 (read). Then goes
+  on as COPY_STATUS.
+  Entry: A = the function; BC = the byte count; IX = the file's block; BC' = the buffer; IY.
+  Exit: as COPY_STATUS (A = 0, Z; F' NZ on .EOF); BC, DE, HL as the function leaves them.
+  Error: A = the status, NZ.
+  Changes: AF, BC, DE, HL, AF'.
+  Keeps: IX.
+  .3864 Keep the count
+  .3865 BC = the descriptor
+  .3868 DE = the descriptor
+  .386A BC = the count
+  .386C The buffer's address (BC')
+  .386E IX = the buffer; the block kept
+  .3870 The buffer is in the map at IY-$36
+  .3874 Function A
+  .3877 IX = the block again
+
+@3879 COPY_STATUS
+  Checks a status for the copy loop: a 0 status still stops for a pending STOP ($2F23); .EOF
+  ($E4) becomes success with the end-of-file mark left in F' (NZ, A' = $E4).
+  Entry: A = the status, flags from OR A.
+  Exit: A = 0, Z; after .EOF also F' NZ, A' = $E4.
+  Error: A = the status, NZ: $E5 (.STOP) when STOP was pressed.
+  Changes: AF, AF'; FLAG_SOFT_IRQ ($BFF2) cleared for STOP.
+  Keeps: BC, DE, HL, IX, IY.
+  .3879 0 becomes $E5 when STOP is pending
+  .387D .EOF?
+  .3880 NZ: the end-of-file mark
+  .3881 Into F'
+  .3882 Success
+
+@3888 COPY_PAGE_BUF
+  Pages in the copy buffer at DE: turns the address into a segment and a page-1 address
+  through the map at IY-$36 (ADDR_TO_PAGE1 with A = 3) and puts the segment in page 1.
+  Entered at $3884 with DE = BC'.
+  Entry: DE = the address in the IY-$36 map; IX = the channel's block.
+  Exit: page 1 = its segment; D moved into $4000-$7FFF; A = the channel (IX+2); B = 0; Z.
+  Changes: AF, B, D; page 1.
+  Keeps: C, E, HL, IX, IY.
+  .3888 Map 3: the segments at IY-$36
+  .388D Into page 1
+  .3891 A = the channel
+
+@3895 COPY_FILL_BUF
+  Fills or converts the copy buffer (BC') for HL' bytes, in parts of at most 64 bytes.
+  1. A bit 7 set: reads each part from the channel IX+2 with EXOS 6 ($38F2, inside the LD DE at
+     $38F1) until HL' bytes are read or the channel ends.
+  2. Bit 7 clear (an /A switch): converts the bytes already there. A $1A ends the data (F' NZ,
+     A' = $E4); TYPE also keeps CR, LF and TAB, clears bit 7 of the other bytes and shows a
+     control code as "."; COPY copies them unchanged.
+  Entry: A = the mode; HL' = the byte count; BC' = the buffer; IX = the channel's block; IY.
+  Exit: A = 0; BC = the bytes in the buffer; F' NZ, A' = $E4 when the data ended.
+  Error: A = the status, NZ ($E5 .STOP, or EXOS 6's).
+  Changes: AF, BC, DE, HL, AF'; page 1.
+  Keeps: IX, IY.
+  .3896 Keep DE'
+  .3897 D' = the mode
+  .3898 The buffer (BC')
+  .389A DE = the buffer
+  .389B HL = the bytes done
+  .389E F' carry: more to do
+
+@38A0 COPY_FILL_LP
+  The next part: stops when the count is reached; else takes 64 bytes or the rest.
+  .38A0 Keep the part's address
+  .38A2 Page it in; A = the channel
+  .38A5 Keep the bytes done
+  .38A6 BC = the bytes done
+  .38A9 HL = the count (HL')
+  .38AC Bytes left
+  .38AE None: done ($3902, inside the LD BC at $3901)
+  .38B3 Left - 64
+  .38B5 64 or more: a full part
+  .38B7 Fewer: BC = the rest
+
+@38BA COPY_FILL_PART
+  Counts the part as done and moves the address on, then reads it (mode bit 7) or converts it.
+  .38BA HL = the bytes done
+  .38BB Plus this part
+  .38BD The next part's address
+  .38C0 Read mode (D' bit 7)?
+  .38C3 Yes: EXOS 6 at $38F2
+
+@38C5 COPY_ASCII_LP
+  Converts one byte; a $1A ends the data.
+  .38C5 The byte
+  .38C6 $1A, the end-of-file mark?
+  .38CA A = $E4 (.EOF), NZ
+  .38CC Into F': the data ended
+  .38CD A = 0
+  .38CE The bytes after it are dropped
+
+@38D0 COPY_TYPE_FILT
+  TYPE only: keeps CR, LF and TAB; other bytes lose bit 7, and one below a space becomes ".".
+  .38D0 COPY?
+  .38D4 Yes: copied unchanged
+  .38D6 CR?
+  .38DA LF?
+  .38DE TAB?
+  .38E2 Bit 7 off
+  .38E4 A control code?
+  .38E8 Yes: show "."
+
+@38EA COPY_TYPE_STORE
+  Stores the shown byte.
+
+@38EB COPY_ASCII_NEXT
+  Next byte of the part; at the end skips the EXOS 6 hidden in the LD DE at $38F1.
+  .38EC One less
+  .38ED All of the part?
+  .38F1 Hides RST 30h / EXOS 6 (read block) at $38F2
+  .38F4 Status, STOP check
+
+@38F7 COPY_FILL_NEXT
+  After a part: the bytes not read or after a $1A (BC) leave the count; loops while F' carry
+  says more is to come; else BC = the bytes in the buffer, A = 0.
+  .38F7 DE = the next part's address
+  .38F8 Error
+  .38FA Done -= the bytes not taken
+  .38FC Carry off: the next F' says "stop"
+  .38FD F' carry: more to do?
+  .38FE Yes: the next part
+  .3900 The marks back into F'
+  .3901 Hides POP HL / POP DE at $3902 (count reached)
+  .3904 BC = the bytes in the buffer
+  .3906 Success
+
+@3907 COPY_FILL_END
+  Restores DE' and returns.
+  .3908 DE' as on entry
+
+# ------------------------------------------------------------------------------------------------
+# DATE and TIME
+
+@390B CMD_TIME
+  TIME command: sets carry (time, not date) and goes on as CMD_DATE.
+  Entry: as CMD_DATE.
+  Exit: as CMD_DATE.
+  Changes: AF, BC, DE, HL, AF', BC', DE', HL'.
+  Keeps: IX, IY.
+
+@390C CMD_DATE
+  DATE command (and TIME's, with carry): shows or sets the date or the time; F' carry says
+  which (set: the time).
+  1. With parameters: sets the clock from them (DT_SET).
+  2. Without: writes "Current date is " (or time) and the value (PACK_TIME_DATE, shown by $316F
+     for the date, $3131 for the time) and CR LF; then the prompt (DT_PROMPT) and a line from the
+     keyboard. An empty answer leaves the clock; a bad value writes the error's text and asks
+     again.
+  Entry: carry clear for DATE, set for TIME; HL = the parameter text; IY.
+  Exit: A = 0, Z.
+  Error: A = the error, NZ.
+  Changes: AF, BC, DE, HL, AF', BC', DE', HL'.
+  Keeps: IX, IY.
+  .390C F' carry: time
+  .390D Parameters given?
+  .390F Yes: set from them
+  .3911 "Current"
+  .3916 " date" or " time"
+  .3919 " is"
+  .3921 HL = IY-$26
+  .3925 The time and date packed at IY-$26
+  .3928 HL = the date
+  .3929 Time or date?
+  .392B Date: write it
+  .392E HL = the time's high byte
+  .392F Time: write it
+
+@3934 DT_PROMPT
+  Ends the line and writes the prompt in the order of the message language (EXOS variable
+  $90; 0 takes the German table).
+  .3934 CR LF
+  .393A Read
+  .393C EXOS variable $90
+  .3940 A = its value
+  .3943 0 (German)?
+  .3945 No: "Enter new date"
+  .3947 German: "Neue"
+  .394C Time or date?
+  .3950 Time: no "s"
+  .3952 Date: "Neues"
+
+@3957 DT_PROMPT_DE
+  The German prompt's rest: a space, the word and " eingeben" (message $43).
+  .3957 A space
+  .395C "Datum" or "Uhrzeit"
+  .395F " eingeben"
+
+@3966 DT_PROMPT_EN
+  The English prompt: "Enter new" and " date" or " time".
+  .3966 "Enter new"
+  .396B " date" or " time"
+
+@396E DT_READ_LINE
+  Ends the prompt with ": " and reads a line from the keyboard ($2FE2); also a line ended by
+  .EOF ($E4) is taken.
+  .396E ":"
+  .3973 A space
+  .3976 Read a line into the output buffer
+  .3979 HL = the text after its count
+  .397A Read: set from it
+  .397C .EOF?
+  .397E Another error: return it
+
+@397F DT_SET
+  Sets the time (TIME_FROM_TEXT) or the date (DATE_FROM_TEXT) from the text; nothing but
+  blanks leaves the clock. $EB (.ITIME) writes the error's text (ERR_EXPLAIN) and prompts again.
+  .397F Blanks passed: the end?
+  .3982 Yes: nothing to set
+  .3983 HL' = the text
+  .3984 Time or date?
+  .3988 Date
+  .398B Time
+  .398E $EB (.ITIME)?
+  .3990 Another status: return it
+  .3991 Write the error's text
+  .3994 And ask again
+
+@3996 DATE_FROM_TEXT
+  Sets the date from the text: three numbers in the order the date order byte (IY-$4F) gives,
+  each 1 or 2 digits (DATE_FIELD), with separators between them (DT_SEPARATOR). The bits 5-0
+  of IY-$4F hold three 2-bit codes, first in bits 5-4: 1 day, 2 month, 3 year, 0 ignored; 0
+  in all of them takes $6C >> 2 (day, month, year). A year xx is stored as xx - 80 in BCD (80-99
+  1980-1999, 00-79 2000-2079). A missing number keeps the clock's value. EXOS 33 sets it.
+  Entry: HL' = the text (at its first character); IY.
+  Exit: A = EXOS 33's status ($EB .ITIME for a bad date).
+  Error: A = $EB (.ITIME), NZ: a bad separator or text after the third number.
+  Changes: AF, BC, DE, HL, BC', DE', HL'.
+  Keeps: IX, IY.
+  .3996 EXOS 34: C = year, D = month, E = day
+  .3998 The date to BC', DE'; HL = the text
+  .3999 The date order byte
+  .399C Its codes to bits 7-2
+  .399E Set?
+  .39A0 No: day, month, year
+
+@39A2 DATE_READ_FIELDS
+  Three fields; the codes stay on the stack.
+  .39A2 Three numbers
+
+@39A7 DATE_FIELD_SEP
+  A separator before the second and third numbers; a bad one gives $EB ($3A0E).
+  .39A7 Separator?
+  .39AA Bad: $EB, with the codes dropped
+
+@39AC DATE_FIELD
+  Reads a number and stores it where its code says: E' the day, D' the month, C' the year
+  (minus 80, in BCD).
+  .39AC A = the number (BCD), carry: none
+  .39AF The date's registers
+  .39B0 B' = the number
+  .39B1 $FF when there was no number
+  .39B3 The codes
+  .39B4 The next code to bits 1-0
+  .39B7 No number?
+  .39B8 Yes: keep the field
+  .39BA The code
+  .39BC 0: ignored
+  .39BF 1: the day ($39CC, inside the LD B at $39CB)
+  .39C2 2: the month
+  .39C4 3: the year
+  .39C5 Less 80, in BCD
+  .39C8 C' = the year since 1980
+  .39C9 B' = D', for the LD D,B that follows
+
+@39CA DATE_SET_MONTH
+  D' = the number (the month; after a year, its own value again).
+  .39CA D' = the month
+  .39CB Hides LD E,B at $39CC: E' = the day
+
+@39CD DATE_FIELD_NEXT
+  After the third number only blanks may follow; then EXOS 33 sets the date.
+  .39CD Back to the text's registers
+  .39CE The next number
+  .39D0 Blanks passed: the end?
+  .39D3 No: $EB
+  .39D5 Drop the codes
+  .39D6 The date in C, D, E
+  .39D7 EXOS 33: set the date
+
+@39DA TIME_FROM_TEXT
+  Sets the time from the text: hours, minutes and seconds, each 1 or 2 digits, with
+  separators between them (DT_SEPARATOR); a missing one keeps the clock's value. An "A" or "P"
+  (either case) may end it: 12 A gives 0, 1-11 P adds 12; 0 P or an A hour above 12 is refused.
+  EXOS 31 sets it.
+  Entry: HL' = the text (at its first character); IY.
+  Exit: A = EXOS 31's status ($EB .ITIME for a bad time).
+  Error: A = $EB (.ITIME), NZ: other text left at the end.
+  Changes: AF, BC, DE, HL, BC', DE', HL'.
+  Keeps: IX, IY.
+  .39DA EXOS 32: C = hours, D = minutes, E = seconds
+  .39DC The time to BC', DE'; HL = the text
+  .39DD The hours
+  .39E0 None: keep them
+  .39E3 C' = the hours
+
+@39E5 TIME_MINUTES
+  A separator and the minutes (D').
+  .39E5 Separator, then the minutes
+  .39EB Bad or none: keep them
+  .39EE D' = the minutes
+
+@39F0 TIME_SECONDS
+  A separator and the seconds (E').
+  .39F0 Separator, then the seconds
+  .39F6 Bad or none: keep them
+  .39F9 E' = the seconds
+
+@39FB TIME_SUFFIX
+  After the numbers: "A" or "P" (TIME_AM_PM), the end (EXOS 31), or $EB.
+  .39FB Blanks passed
+  .39FE In capitals
+  .3A01 "A"?
+  .3A05 "P"?
+  .3A09 The end?
+  .3A0A The time in C, D, E
+  .3A0B Yes: set it
+  .3A0D Hides POP AF at $3A0E (DATE_FROM_TEXT's codes)
+
+@3A0F DT_BAD_VALUE
+  Error $EB (.ITIME): an invalid date or time.
+  .3A0F Error $EB (.ITIME)
+  .3A11 NZ
+
+@3A13 TIME_AM_PM
+  "A" or "P": only blanks may follow. AM: 12 becomes 0, above 12 is refused.
+  .3A13 Keep the letter
+  .3A14 Past it
+  .3A15 Blanks passed: the end?
+  .3A18 B = the letter
+  .3A19 More text: $EB
+  .3A1C The time's registers
+  .3A1D B = 12 (BCD)
+  .3A1F AM?
+  .3A21 A = the hours
+  .3A22 PM
+  .3A24 12 AM?
+  .3A25 Yes: hour 0 ($3A2A)
+  .3A27 Above 12: $EB
+  .3A29 Never jumps (carry); hides LD C,0 at $3A2A: 12 AM
+  .3A2C Set it
+
+@3A2E TIME_PM
+  PM: 0 is refused, 1-11 get 12 added (BCD), 12 and above stay.
+  .3A2E Hour 0?
+  .3A31 12 or more: as it is
+  .3A34 Plus 12, in BCD
+
+@3A36 TIME_STORE_HRS
+  C = the hours.
+
+@3A37 TIME_SET
+  EXOS 31 sets the time from C, D, E.
+  .3A37 EXOS 31: set the time
+
+@3A3A DT_WORD_MSG
+  Writes " time" (message $3F, with F' carry) or " date" (message $40) to the output buffer;
+  in German "Uhrzeit" or "Datum".
+  Entry: F' carry set: time; clear: date; IY.
+  Exit: as OUTBUF_MSG.
+  Changes: AF, DE.
+  Keeps: BC, HL, IX, IY.
+  .3A3A F' carry
+  .3A3E $FF for the time, 0 for the date
+  .3A3F $3F " time" or $40 " date"
+
+# ------------------------------------------------------------------------------------------------
+# FORMAT
+
+@3A44 CMD_FORMAT
+  FORMAT command: formats a drive and writes an empty file system.
+  1. Parses the drive ($3C96, function 1), takes the switches /1, /H and /8 (table $3A97) into
+     IY-$2A and C' ($3D3B); only blanks may follow.
+  2. Function 23 (FN23_OPEN_DISK) with BC = $1964 opens a query-mode "DISK:" channel (H, kept
+     in IY-$2C) and returns a segment (B, paged into page 1) and an address DE: the work space
+     is DE - $1964.
+  3. Asks "Destroy data on drive X: (Y/N)? " ($33F6); any other answer than yes ends it.
+  4. Function 29 (FN29_INIT_FS) formats drive IX+7 with B = $F8, + 4 for /H, + 2 for /8, + 1
+     unless /1, and DE = the work space.
+  5. When bit 0 of function 1's flags (B) is set, goes on in VOL's code at $34A1 (HL = $3A9D,
+     an empty switch table) to name the volume.
+  Entry: HL = the parameter text; IX = DE = the request block; IY.
+  Exit: A = 0, Z.
+  Error: A = the error, NZ.
+  Changes: AF, BC, DE, HL, IX, all alternates.
+  .3A44 Bit 3 of the request's +6
+  .3A48 Parse the drive (function 1)
+  .3A4B Keep its flags (B)
+  .3A4C The switches /1, /H, /8
+  .3A4F Take them
+  .3A52 Then only blanks
+  .3A57 $1964 bytes of work space
+  .3A5A Function 23: query-mode "DISK:" channel
+  .3A61 The channel, closed at the end
+  .3A64 Its segment
+  .3A65 In page 1
+  .3A67 C' = the switches
+  .3A6A Bit 0 out: bit 1 /1, bit 2 /8, bit 3 /H
+  .3A6B $F8, +1 unless /1, +2 /8, +4 /H
+  .3A6E B = the format flags
+  .3A70 "Destroy data on drive "
+  .3A75 The drive's letter and ":"
+  .3A78 " (Y/N)? " and the answer
+  .3A7B Not yes: stop
+  .3A7E C = the drive
+  .3A81 DE - $1964: the work space
+  .3A86 Function 29: format, write the file system
+
+@3A8B FMT_CMD_END
+  Returns the status; with bit 0 of function 1's flags set names the volume through VOL's code.
+  .3A8B B = function 1's flags
+  .3A8C Error
+  .3A8D Bit 0?
+  .3A91 The end of $3A97's table: no switches
+
+# ------------------------------------------------------------------------------------------------
+# ISDOS
+
+@3A9E CMD_ISDOS
+  ISDOS command: loads the system file "A:\IS-DOS.SYS" (the counted name at $3B03) as an EXOS
+  module and passes it the rest of the command line.
+  1. An "X:" at the start of the parameters names the drive; it, else IY-$56 as it was, else
+     the default drive (IY-$57) goes to IY-$56.
+  2. What follows must be blank or start with "/"; the text after the "/" (or nothing) is
+     copied as a counted text to IY+$6F and its address stored at IY-$7F/-$7E (ISDOS_SET_TAIL).
+  3. Opens the file (OPEN_FREE_CHAN, bit 5 of IY-$37 set meanwhile) and loads it with EXOS 29
+     (DE = IX); a load that returns without an error gives $EF. The stored address is then
+     cleared (ISDOS_CLR_TAIL).
+  Entry: HL = the parameter text (its length at HL-1); IX = the request block; IY.
+  Exit: A = the status ($EF after a load that returned).
+  Error: A = $AE ("Invalid parameter") for text that does not start with "/", or EXOS's error.
+  Changes: AF, BC, DE, HL, IX, all alternates.
+  .3A9E HL = the length byte
+  .3A9F B = the length
+  .3AA0 DE = the length byte
+  .3AA1 "X:" first? A' = its drive
+  .3AA4 A = the length
+  .3AA5 B = the drive as it was
+  .3AA8 No "X:"
+  .3AAA A = the drive named
+  .3AAC A = the length
+  .3AAD Less the "X:"
+  .3AAF DE past the "X:"
+
+@3AB1 ISDOS_DRIVE
+  C = the characters left; no drive: the default drive (IY-$57).
+  .3AB1 C = the characters left
+  .3AB2 A drive?
+  .3AB6 No: the default drive
+
+@3AB9 ISDOS_SET_DRIVE
+  Stores the drive; skips blanks; the text must end or start with "/".
+  .3AB9 IY-$56 = the drive
+  .3ABC HL = before the text
+  .3ABE Count for the blank skip
+  .3ABF Blanks passed: nothing left?
+  .3AC2 Yes: an empty tail
+  .3AC4 "/"?
+  .3AC6 $AE: "Invalid parameter"
+  .3AC9 The "/" not counted
+  .3ACA Past it
+
+@3ACB ISDOS_LOAD
+  Copies the tail as a counted text to IY+$6F, opens "A:\IS-DOS.SYS" and loads it.
+  .3ACB HL = the length's place
+  .3ACC The tail's length
+  .3ACE HL = IY+$6E
+  .3AD3 DE = IY+$6F
+  .3AD7 The length and the text
+  .3AD8 To IY+$6F
+  .3ADA HL = the copy
+  .3ADB Kept in HL'
+  .3ADC Set while the file is opened
+  .3AE0 "A:\IS-DOS.SYS"
+  .3AE3 Open it; H = the channel
+  .3AEA Error
+  .3AEC IY-$7F/-$7E = the tail's copy
+  .3AF0 BC = IX+$30, DE = IX
+  .3AF3 A = the channel
+  .3AF4 EXOS 29: load the module
+  .3AF6 Error: keep it
+  .3AF8 Returned: $EF
+
+@3AFA ISDOS_CLR_TAIL
+  HL = 0 (no carry) and stores it as the tail's address.
+  .3AFA HL = 0 or $FFFF (carry)
+
+@3AFC ISDOS_SET_TAIL
+  Stores HL at IY-$7F/-$7E: the address of the counted command tail for IS-DOS (0: none).
+  Entry: HL = the address; IY.
+  Exit: IY-$7F/-$7E = HL.
+  Changes: none.
+  Keeps: AF, BC, DE, HL, IX, IY.
+
+# ------------------------------------------------------------------------------------------------
+# LOAD, PAUSE, RAMDISK
+
+@3B11 CMD_LOAD
+  LOAD command: loads every module from a channel with EXOS 29 until EXOS answers $EC (.NOMOD,
+  no more modules), which ends it with A = 0. The parameter is "#n" (an open channel) or a
+  name, opened here ($3DDB; the channel kept in IY-$2C); nothing may follow it. Without a
+  parameter the AND (HL) bytes of $3B3D and $3B69 lead to $9F.
+  Entry: A = $FF; HL = the parameter text; IY.
+  Exit: A = 0, Z.
+  Error: A = the error, NZ: $9F ("Wrong number of parameters"), or EXOS's.
+  Changes: AF, BC, DE, HL.
+  .3B11 A parameter? (A = $FF)
+  .3B12 No: $9F
+  .3B14 E = the channel; carry: opened here
+  .3B17 Given as "#n"
+  .3B19 Opened: closed at the end
+
+@3B1C LOAD_CHECK_END
+  Only blanks may follow the channel.
+  .3B1C L = the channel, DE = the text
+  .3B1D Only blanks left?
+  .3B20 No: $9F
+
+@3B21 LOAD_MODULE_LP
+  Loads the next module, with the output buffer (IY+$6E) for its header.
+  .3B21 B = the channel
+  .3B22 HL = IY+$6E
+  .3B25 DE = the buffer
+  .3B26 L = the channel
+  .3B28 EXOS 29: load a module
+  .3B2A Loaded: the next one
+  .3B2C $EC (.NOMOD): no more?
+  .3B2E Another error
+  .3B2F Done
+
+@3B31 CMD_PAUSE
+  PAUSE command: writes its parameters and CR LF as ECHO does ($34E2), then "Press ENTER to
+  continue... " (message $44) and waits for a line ($2FE2).
+  Entry: HL = the parameter text; IY.
+  Exit: A = 0, Z when a line ended.
+  Error: A = the status, NZ.
+  Changes: AF, BC, DE, HL.
+  Keeps: IX, IY.
+  .3B31 The text and CR LF
+  .3B35 "Press ENTER to continue... "
+  .3B3A Wait for ENTER
+
+@3B3D CMD_RAMDISK
+  RAMDISK command: "RAMDISK n" calls EXDOS function 28 (FN28_DRIVE_E) with B = n (decimal,
+  0-255); the /D switch (table $3B66) first calls it with B = 0. Without a number and without /D:
+  $AE; without parameters: $9F.
+  Entry: A = $FF; HL = the parameter text; IY.
+  Exit: A = function 28's status.
+  Error: A = $9F or $AE, NZ.
+  Changes: AF, BC, DE, HL, IX, BC', DE', HL'.
+  .3B3D A parameter? (A = $FF)
+
+@3B3E RAMDISK_ARGS
+  Reads the number and the switches; only blanks may follow.
+  .3B3E No: $9F
+  .3B40 C = the number
+  .3B43 Kept
+  .3B44 C = the character after it
+  .3B45 DE = the text
+  .3B46 The switch /D
+  .3B49 Take it; C' = the switches
+  .3B4C Then only blanks
+  .3B4F C = the switches
+  .3B50 E = the number
+  .3B51 Error
+  .3B52 B = 0
+  .3B53 A number?
+  .3B54 The switches
+  .3B55 /D to carry
+  .3B56 A number: make it
+  .3B58 $AE: "Invalid parameter"
+  .3B5A Neither number nor /D
+
+@3B5B RAMDISK_MAKE
+  /D: function 28 with B = 0 first; then function 28 with B = the number.
+  .3B5C /D: function 28 with B = 0
+  .3B60 B = the number
+
+@3B61 RAMDISK_FN28
+  Calls EXDOS function 28 (FN28_DRIVE_E) with B.
+  Entry: B = the RAM disk's number from the command (0 for /D); IY.
+  Exit: as FUNC_DISPATCH: A = the status, flags from OR A.
+  Changes: AF, BC, DE, HL, IX.
+  .3B61 Function 28
+
+# ------------------------------------------------------------------------------------------------
+# VAR
+
+@3B69 CMD_VAR
+  VAR command: "VAR n" writes EXOS variable n's value (in decimal, $31E6) and CR LF; "VAR n ON",
+  "VAR n OFF" and "VAR n v" write 0, $FF or v to it (the counted names "ON" and "OFF" at $3BDB).
+  Variable 0 and other text give $AE; no parameters $9F. EXOS_VAR_RW does the reading and the
+  writing.
+  Entry: A = $FF; HL = the parameter text; IY.
+  Exit: A = 0, Z.
+  Error: A = $9F, $AE or EXOS's error.
+  Changes: AF, BC, DE, HL, DE', L'.
+  Keeps: IX, IY.
+  .3B69 A parameter? (A = $FF)
+
+@3B6A VAR_ARGS
+  The variable's number; with nothing after it the value is read and written out.
+  .3B6A $9F: "Wrong number of parameters"
+  .3B6C No parameter
+  .3B6D C = the variable
+  .3B71 Separator?
+  .3B75 Bad: $AE
+  .3B77 More text: a value
+  .3B79 B = 0: read
+  .3B7E Error?
+  .3B80 HL = the value
+  .3B82 Write it in decimal
+  .3B85 And CR LF
+
+@3B88 VAR_ON_OFF
+  The value: "ON" (0), "OFF" ($FF) or a number.
+  .3B88 Keep the variable
+  .3B89 DE = the text
+  .3B8A Before it, for the compare
+  .3B8B The counted names "ON" and "OFF"
+  .3B8E Two characters; C = 0 for ON
+  .3B91 "ON"?
+  .3B94 Yes
+  .3B96 Three characters; C = $FF for OFF
+  .3B98 "OFF"?
+  .3B9B Neither: a number
+
+@3B9D VAR_SKIP_WORD
+  Steps past the word.
+
+@3BA0 VAR_VALUE_ARG
+  A number when no word matched; only blanks may follow; then writes the variable.
+  .3BA1 HL = the text
+  .3BA2 No word: C = the number
+  .3BA6 Separator?
+  .3BAA D = the value
+  .3BAB C = the variable
+  .3BAC Bad: $AE
+  .3BAE More text: $AE
+  .3BB0 B = 1: write
+
+@3BB2 EXOS_VAR_RW
+  Reads or writes EXOS variable C with EXOS 16. While IY-$2F is not $FF, the variables in the
+  list at $2FB7 (two bytes an entry, the first the variable, 0 ends it) are kept in EXDOS's own
+  bytes at IY+$F0 + the entry's index instead.
+  Entry: B = 0 read, 1 write; C = the variable; D = the value to write; IY.
+  Exit: A = 0, Z; D = the value.
+  Error: A = $AE for variable 0 (flags Z), or EXOS 16's error.
+  Changes: AF, BC, DE, HL.
+  Keeps: IX, IY.
+  .3BB2 The variable
+  .3BB4 0: $AE
+  .3BB7 IY-$2F
+  .3BBA $FF: always EXOS
+  .3BBD DE = IY+$F0, HL = the list at $2FB7
+
+@3BC1 VAR_COPY_FIND
+  Looks for the variable in the list.
+  .3BC1 This entry's variable?
+  .3BC2 Yes: EXDOS's copy
+  .3BC4 The next copy byte
+  .3BC5 The next entry
+  .3BC8 The end (0)?
+
+@3BCB VAR_EXOS_CALL
+  Not listed: EXOS 16 reads or writes it.
+  .3BCC EXOS 16
+
+@3BCF VAR_COPY_RW
+  Listed: reads or writes EXDOS's copy byte.
+  .3BCF HL = the copy byte
+  .3BD1 Write?
+  .3BD4 Read: D = the copy
+
+@3BD5 VAR_COPY_STORE
+  D to the copy byte; A = 0.
+
+@3BD8 RET_BAD_PARAM
+  A = $AE ("Invalid parameter"); the flags as the jump left them.
+  .3BD8 Error $AE
+
+@3BEA NAME_CMP_LP
+  The compare step of the counted-name match at $3BE2: until a difference has set carry,
+  subtracts the name's byte at HL from A (first the lengths, then each given character in
+  capitals); ADD A,$FF turns any difference into carry.
+  .3BEA A difference seen: skip the compare
+  .3BEC Same?
+  .3BED Carry when they differ
+
+# ------------------------------------------------------------------------------------------------
+# Helpers
+
+@3CBA DESC_SWAP_WILD
+  Swaps the 48-byte request block at IX with the descriptor at IX+$30, then fills the name at
+  IX+8 with eleven "?" ($3CA0).
+  Entry: IX = the block.
+  Exit: the halves swapped; IX+8-IX+$12 = "?"; BC = HL = IX+$30; DE = IX; A = 0, Z.
+  Changes: AF, BC, DE, HL.
+  Keeps: IX, IY.
+  .3CBA BC = IX+$30, DE = IX
+  .3CBF HL = IX+$30
+  .3CC1 48 bytes
+
+@3D79 DT_SEPARATOR
+  Passes a separator between numbers: blanks, a separator character (SEP_CHAR) or both. With
+  no blank the next character must be a separator or the end.
+  Entry: HL = the text.
+  Exit: NC; A = the next character, Z at the end; HL at it.
+  Error: carry: no blank and no separator.
+  Changes: AF, C, HL.
+  Keeps: B, DE, IX, IY.
+  .3D79 Blanks passed
+  .3D7C None?
+  .3D7D Then a separator is needed
+  .3D7F After blanks one is optional
+
+@3D84 SEP_CHAR
+  Passes one separator, ":" or one of ",", "-", ".", "/", and the blanks after it.
+  Entry: A = the character at HL.
+  Exit: NC; A = the next character, Z at the end; HL at it.
+  Error: carry: another character (HL kept).
+  Changes: AF, C, HL.
+  Keeps: B, DE, IX, IY.
+  .3D84 The end?
+  .3D86 ":"?
+  .3D8A Below ","?
+  .3D8D Above "/"?
+
+@3DB5 BCD_2DIGITS
+  Reads one or two decimal digits as a BCD byte; after a leading 0 any more zeros are passed.
+  Entry: HL = the text.
+  Exit: NC; A = the number in BCD; HL past it.
+  Error: carry: no digit.
+  Changes: AF, DE, HL.
+  Keeps: BC, IX, IY.
+  .3DB5 The first digit
+  .3DB9 E = it
+  .3DBA 0?
+
+@3DD1 DEC_DIGIT
+  Reads a decimal digit.
+  Entry: HL = the text.
+  Exit: NC; A = the digit's value; HL past it.
+  Error: carry: not a digit (HL kept).
+  Changes: AF, HL.
+  Keeps: BC, DE, IX, IY.
+  .3DD2 Below "0"?
+  .3DD5 Above "9"?
+
+question 3A8B Which part of the FORMAT parameters sets bit 0 of function 1's flags (B), so that FORMAT names the volume through $34A1?
+question 3AF6 Does a successful load of IS-DOS.SYS ever come back to $3AF6 (A = $EF), or does the module take over?
+question 37BD Is the high byte of IX+$30 ORed into the destination's flags at $37BD meant to set only bit 7, or also bit 5 (wildcards) when the address has it?
+question 3B5C What does EXDOS function 28 do with B = 0 (RAMDISK /D)?
+
+feedback wrong 373E The card lists "jump $1114" as a way in, but the JP NZ at $1114 follows XOR A and never jumps (range 4 says so); $373E is only a fall-through.
+feedback wrong 3A13 The cards for $39DA-$3A2E say "jumps out of the page to $000E": the JP NC at $3A29 follows a taken JR NC and never jumps; its operand is the hidden LD C,0 at $3A2A.
+feedback missing 390B The command handlers' entry (A = $FF, NZ; HL = the parameter text, length at HL-1; IX = DE = the request block) comes from $2C17-$2C57, which the cards do not say; the AND (HL) at $3B11, $3B3D and $3B69 only make sense with it.
+feedback pattern 3864-3907 The copy helpers keep a flag in F' across calls (the end-of-file mark, Z/NZ, and COPY_FILL_BUF's carry); the cards list AF' as "may change" without saying which flag carries what.
+feedback listing 3580-363F The cards start in the middle of TYPE/COPY ($363F); the stack layout (the status at $35FD, the segment list at $35AF) and IX (the destination's block from $360C) needed the listing of range 10's part.
