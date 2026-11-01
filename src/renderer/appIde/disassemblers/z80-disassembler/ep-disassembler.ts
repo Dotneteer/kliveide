@@ -100,7 +100,8 @@ export class EpCustomDisassembler implements ICustomDisassembler {
  * operands, reading them through the gate's pointer: $92 a byte, $93 and $96 a word (EXOS 2.1's segment 1,
  * read from their code and observed in the running gate; `.ai/rom-annotations/ep-authoring-guide.md`).
  * The restart means this only in IS-BASIC's own code, so the decoding is gated on the ROM pages that hold it
- * (kind "ep-exos-basic").
+ * (kinds "ep-exos-basic", EXOS 2.1's segment 01h, and "ep-basic", the IS-BASIC 2.1 cartridge, whose routines take
+ * no inline operands).
  */
 
 /** The inline operand bytes the routines of IS-BASIC 2.1's call list take, by routine byte */

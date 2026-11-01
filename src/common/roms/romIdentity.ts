@@ -59,6 +59,8 @@ export type RomPageKind =
   // --- An EXOS page that carries IS-BASIC code (EXOS 2.1's segment 01h): its RST 10h is IS-BASIC's far
   // --- call, followed by the byte that picks the routine
   | "ep-exos-basic"
+  // --- The IS-BASIC cartridge: an extension ROM whose RST 10h is the same call list
+  | "ep-basic"
   | "ep-ext"
   // --- The ZX Spectrum Next: NextZXOS's pages (and the alternate ROM's), the DivMMC and Multiface ROMs
   | "next-basic"
@@ -168,7 +170,7 @@ export const KNOWN_ROM_PAGES: Readonly<Record<string, KnownRomPage>> = {
   "9eaf280b": { file: "ep-exos21.rom", kind: "ep-exos-basic", page: 1 },
   "20b29761": { file: "ep-exos20.rom", kind: "ep-exos", page: 0 },
   e4367a35: { file: "ep-exos20.rom", kind: "ep-exos", page: 1 },
-  "55f96251": { file: "ep-basic21.rom", kind: "ep-ext" },
+  "55f96251": { file: "ep-basic21.rom", kind: "ep-basic" },
   "1228de34": { file: "ep-basic20.rom", kind: "ep-ext" },
   d1e46955: { file: "ep-exdos13.rom", kind: "ep-ext", page: 0 },
   d1333188: { file: "ep-exdos13.rom", kind: "ep-ext", page: 1 }
@@ -196,6 +198,7 @@ export function romKindOrigin(kind: RomPageKind | undefined): number {
       return 0xe000;
     case "ep-exos":
     case "ep-exos-basic":
+    case "ep-basic":
     case "ep-ext":
       return 0xc000;
     default:
@@ -215,7 +218,7 @@ export function romKindIsEnterprise(kind: RomPageKind | undefined): boolean {
 
 /** Whether a page of this kind holds IS-BASIC code, whose `RST 10h` is followed by the routine's byte. */
 export function romKindHasBasicCalls(kind: RomPageKind | undefined): boolean {
-  return kind === "ep-exos-basic";
+  return kind === "ep-exos-basic" || kind === "ep-basic";
 }
 
 /** Whether a page of this kind is the Next's, whose code uses the Z80N's extra opcodes. */

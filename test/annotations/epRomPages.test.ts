@@ -30,7 +30,7 @@ describe("the Enterprise ROM pages", () => {
       ["ep-exos21.rom", 1, "ep-exos-basic"],
       ["ep-exos20.rom", 0, "ep-exos"],
       ["ep-exos20.rom", 1, "ep-exos"],
-      ["ep-basic21.rom", 0, "ep-ext"],
+      ["ep-basic21.rom", 0, "ep-basic"],
       ["ep-basic20.rom", 0, "ep-ext"],
       ["ep-exdos13.rom", 0, "ep-ext"],
       ["ep-exdos13.rom", 1, "ep-ext"]
@@ -71,6 +71,15 @@ describe("EXOS 2.1's segment 01h", () => {
     const decoded = await romDecoderFor("ep-exos-basic")(bytes, 0x316, 0x31c);
     expect(decoded.filter((i) => i.offset >= 0x317 && i.offset <= 0x319).map((i) => i.length)).toEqual([1, 1, 1]);
     expect(decoded.find((i) => i.offset === 0x31a)?.length).toBe(2);
+  });
+
+  it("lists the IS-BASIC cartridge's call lists as data too", async () => {
+    const bytes = page("ep-basic21.rom", 0);
+    // --- $0823: RST 10h / $BB $00 (segment 1's AUTO), then RET
+    expect(Array.from(bytes.subarray(0x823, 0x827))).toEqual([0xd7, 0xbb, 0x00, 0xc9]);
+    const decoded = await romDecoderFor("ep-basic")(bytes, 0x823, 0x827);
+    expect(decoded.filter((i) => i.offset >= 0x824 && i.offset <= 0x825).map((i) => i.length)).toEqual([1, 1]);
+    expect(decoded.find((i) => i.offset === 0x826)?.length).toBe(1);
   });
 
   it("keeps RST 10h an instruction on EXOS's segment 00h", async () => {

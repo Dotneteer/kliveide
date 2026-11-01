@@ -768,7 +768,9 @@ export const machineRegistry: MachineInfo[] = [
         new ChainedCustomDisassembler([
           new EpCustomDisassembler(),
           new RomGatedCustomDisassembler(new EpBasicCustomDisassembler(), (address) =>
-            context ? !!context.inRomOfKind?.(address, "ep-exos-basic") : false
+            context
+              ? !!context.inRomOfKind?.(address, "ep-exos-basic") || !!context.inRomOfKind?.(address, "ep-basic")
+              : false
           )
         ]),
       [CT_DISASSEMBLER_VIEW]: {
