@@ -561,11 +561,12 @@ get in each other's way? I think the answer is one of the quiet triumphs of the 
 
 The memory is fast enough to be shared by time. It completes one access in every tick of the 28 MHz
 clock, **four accesses per dot**, and each tick goes to whoever asks, in a fixed order of priority:
-the **CPU** first, **Layer 2** second, and the **DMA** with whatever is left. I picture it as a
+the **CPU** first and **Layer 2** second; the DMA, while it holds the bus, takes the CPU's place (the [DMA
+chapter](/en/under-the-hood/emulator-internals/next-dma/#a-second-master-on-the-bus) explains how). I picture it as a
 revolving door that turns four times for every dot, with the CPU always at the front of the queue:
 
 <figure>
-<svg viewBox="-2 -2 704 274" role="img" aria-label="Memory accesses over three 7 megahertz dots, twelve ticks of the 28 megahertz clock. Each tick completes one access of the static RAM. Layer 2 asks for one byte per dot; the CPU, at 28 megahertz, can ask in any tick and always wins. Layer 2's request waits at most a tick and is served in one of the dot's other ticks, so Layer 2 gets its byte every dot and the CPU is never held up. Ticks neither uses are left for the DMA." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 274" role="img" aria-label="Memory accesses over three 7 megahertz dots, twelve ticks of the 28 megahertz clock. Each tick completes one access of the static RAM. Layer 2 asks for one byte per dot; the CPU, at 28 megahertz, can ask in any tick and always wins. Layer 2's request waits at most a tick and is served in one of the dot's other ticks, so Layer 2 gets its byte every dot and the CPU is never held up. Ticks neither uses stay free; while the DMA holds the bus, its accesses take the CPU's place." style={{ width: "100%", height: "auto" }}>
   <text x="350" y="20" textAnchor="middle" fill="currentColor" fontSize="16.5" fontWeight="bold">three 7 MHz dots = twelve 28 MHz ticks = twelve memory accesses</text>
   <path d="M88,36 v164 M292,36 v164 M496,36 v164 M700,36 v164" fill="none" stroke="currentColor" strokeOpacity="0.35" />
   <text x="190" y="56" textAnchor="middle" fill="currentColor" fontSize="15" fillOpacity="0.8">dot n</text>
@@ -573,7 +574,7 @@ revolving door that turns four times for every dot, with the CPU always at the f
   <text x="598" y="56" textAnchor="middle" fill="currentColor" fontSize="15" fillOpacity="0.8">dot n+2</text>
   <text x="0" y="91" textAnchor="start" fill="currentColor" fontSize="15">CPU</text>
   <text x="0" y="135" textAnchor="start" fill="currentColor" fontSize="15">Layer 2</text>
-  <text x="0" y="179" textAnchor="start" fill="currentColor" fontSize="15">DMA</text>
+  <text x="0" y="179" textAnchor="start" fill="currentColor" fontSize="15">free</text>
   <rect x="90" y="70" width="47" height="32" rx="3" fill="currentColor" fillOpacity="0.25" stroke="currentColor" strokeOpacity="0.5" />
   <rect x="345" y="70" width="47" height="32" rx="3" fill="currentColor" fillOpacity="0.25" stroke="currentColor" strokeOpacity="0.5" />
   <rect x="498" y="70" width="47" height="32" rx="3" fill="currentColor" fillOpacity="0.25" stroke="currentColor" strokeOpacity="0.5" />
@@ -585,7 +586,7 @@ revolving door that turns four times for every dot, with the CPU always at the f
   <rect x="600" y="158" width="47" height="32" rx="3" fill="none" stroke="currentColor" strokeOpacity="0.4" strokeDasharray="3 2" />
   <path d="M88,210 H700" fill="none" stroke="currentColor" strokeOpacity="0.35" />
   <path d="M139,206 v8 M190,206 v8 M241,206 v8 M343,206 v8 M394,206 v8 M445,206 v8 M547,206 v8 M598,206 v8 M649,206 v8" fill="none" stroke="currentColor" strokeOpacity="0.35" />
-  <text x="350" y="238" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.8">one tick each: CPU first, Layer 2 second, the DMA with the spare ticks</text>
+  <text x="350" y="238" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.8">one tick each: the CPU (or the DMA in its place) first, Layer 2 second</text>
   <text x="350" y="260" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.8">(a schematic: which ticks the CPU takes depends on the instructions it runs)</text>
 </svg>
 <figcaption>The main memory shared by time: four accesses per dot, Layer 2 needs one of them. It can wait a tick, so the CPU never waits for it.</figcaption>

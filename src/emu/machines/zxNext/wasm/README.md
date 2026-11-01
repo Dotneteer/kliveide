@@ -138,4 +138,18 @@ Interrupts (`docs/content/en/under-the-hood/emulator-internals/next-interrupts.m
   28 MHz clock; start and end can be late by up to one instruction.
 - **An NMI copies IFF1 to IFF2** in the shared Z80; the T80N leaves IFF2 alone (t80n.vhd ~1747). Only a
   nested NMI or other IFF1 != IFF2 cases can tell.
+
+The DMA (`docs/content/en/under-the-hood/emulator-internals/next-dma.mdx`):
+
+- **The bus changes hands between instructions.** The T80N grants BUSRQ at the end of any M-cycle
+  (`T_Res`, t80n.vhd ~1718-1727); Klive's CPU loop runs the DMA before an instruction, so a burst-mode byte
+  that asks for the bus back waits for the end of the CPU's instruction (up to 23 T) instead of its
+  machine cycle. The enable's own case (the next instruction's M1 runs first) is modelled.
+- **DMA cycles are not contended.** The DMA runs on the CPU clock, and the ULA's contention looks at the
+  bus the DMA drives (zxnext.vhd ~1784-1790, ~4461; zxula.vhd ~595-600), so at 3.5 MHz the hardware
+  stretches a DMA byte that touches contended memory or ports in the display area. Klive's DMA bytes take
+  their plain clocks.
+- **The SD card's port costs a flat 16 clocks.** The SPI master holds the DMA's wait until its byte has
+  shifted (spi_master.vhd ~177), so a run of `$EB` accesses comes about 16 CPU clocks apart; Klive adds 16
+  clocks to every `$EB` access on top of the read and write cycles.
 - **The NMI state machine passes through S_NMI_END at once**; the hardware waits for an I/O write to end.
