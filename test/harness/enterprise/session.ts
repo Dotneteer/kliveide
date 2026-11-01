@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
@@ -24,6 +24,7 @@ import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-
 import { DSK_WHOLE_IMAGE_KEY } from "@emu/machines/disk/disk-changes";
 import type { EpTapeFile } from "@emu/machines/enterprise/EpTapeFile";
 
+import { buildCoreOnce } from "../coreBuild";
 import { buildEpWasm, productionOutput } from "../../../scripts/build-ep-wasm.cjs";
 
 export const REPO_ROOT = join(__dirname, "../../..");
@@ -56,32 +57,11 @@ class HarnessEpMachine extends EpWasmV2Machine {
   }
 }
 
-let wasmBuilt = false;
 
-/** The core's inputs: its sources, the shared Z80 and device sources, the build scripts */
-const CORE_INPUTS = ["src/emu/machines/enterprise/wasm/ep", "src/emu/z80/wasm", "src/emu/machines/common/wasm", "scripts"];
-
-/**
- * Whether the built core is newer than every input. Twenty-odd test files each build the core once,
- * one at a time behind the build lock; a worker whose first test waited for all of them timed out.
- */
-function coreIsCurrent(): boolean {
-  if (!existsSync(productionOutput)) return false;
-  const built = statSync(productionOutput).mtimeMs;
-  const newer = (path: string): boolean => {
-    const stat = statSync(path);
-    if (stat.isDirectory()) return readdirSync(path).some((name) => newer(join(path, name)));
-    return /\.(c|h|cjs)$/.test(path) && stat.mtimeMs > built;
-  };
-  return !CORE_INPUTS.some((dir) => newer(join(__dirname, "../../..", dir)));
-}
 
 /** Creates an Enterprise on the real WASM core with the model's real ROMs, powered on. Builds the core once per process, unless it is current. */
 export async function createEpSession(options: EpSessionOptions = {}): Promise<EpTestSession> {
-  if (!wasmBuilt) {
-    if (!coreIsCurrent()) buildEpWasm();
-    wasmBuilt = true;
-  }
+  buildCoreOnce(productionOutput, buildEpWasm);
   const machine = new HarnessEpMachine(options.model ?? "ep128", options.exdos ?? false);
   await machine.setup();
   return new EpTestSession(machine);

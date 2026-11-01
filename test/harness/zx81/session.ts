@@ -21,6 +21,7 @@ import {
 import { ZX80_CHARSET, ZX81_CHARSET } from "@common/zx8081/charset";
 import { parseZxProgramFile, type ZxProgramFile } from "@emu/machines/zx8081/ZxPFile";
 
+import { buildCoreOnce } from "../coreBuild";
 import { buildZx8081Wasm, productionOutput } from "../../../scripts/build-zx8081-wasm.cjs";
 
 export const REPO_ROOT = join(__dirname, "../../..");
@@ -49,17 +50,13 @@ class HarnessZx8081Machine extends Zx8081WasmV2Machine {
   }
 }
 
-let wasmBuilt = false;
 
 /**
  * Creates a ZX81 (or ZX80) on the real WASM core with the real ROM, ready to boot. Builds the core
  * once per test process.
  */
 export async function createZx81Session(options: Zx81SessionOptions = {}): Promise<Zx81TestSession> {
-  if (!wasmBuilt) {
-    buildZx8081Wasm();
-    wasmBuilt = true;
-  }
+  buildCoreOnce(productionOutput, buildZx8081Wasm);
   const machineId = options.machineId ?? MI_ZX81;
   const model = options.model ?? (machineId === MI_ZX81 ? "zx81-16k" : "zx80-16k");
   const machine = new HarnessZx8081Machine(machineId, model);

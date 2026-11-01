@@ -13,6 +13,7 @@ import { parseTvcCasFile, type TvcTapeFile } from "@emu/machines/tvc/TvcCasFile"
 import { FAST_LOAD, SAVED_TO_TAPE } from "@emu/machines/machine-props";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-const";
 
+import { buildCoreOnce } from "../coreBuild";
 import { buildTvcWasm, productionOutput } from "../../../scripts/build-tvc-wasm.cjs";
 
 export const REPO_ROOT = join(__dirname, "../../..");
@@ -65,17 +66,13 @@ class HarnessTvcMachine extends TvcWasmV2Machine {
   }
 }
 
-let wasmBuilt = false;
 
 /**
  * Creates a Videoton TVC on the real WASM core with the model's real ROMs, powered on. Builds the
  * core once per test process.
  */
 export async function createTvcSession(options: TvcSessionOptions = {}): Promise<TvcTestSession> {
-  if (!wasmBuilt) {
-    buildTvcWasm();
-    wasmBuilt = true;
-  }
+  buildCoreOnce(productionOutput, buildTvcWasm);
   const machine = new HarnessTvcMachine(options.model ?? "tvc64", options.hbf);
   await machine.setup();
   return new TvcTestSession(machine);

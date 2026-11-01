@@ -35,6 +35,7 @@ import { sp48TapeLoadFlow } from "@emu/machines/tapeLoadFlows";
 import type { Interface1DriveState, Interface1State, Interface1Support } from "@emu/machines/zxSpectrum/if1/if1CoreBridge";
 import { connectInterface1, insertCartridge, interface1Of, type HarnessCartridge } from "../interface1Support";
 
+import { buildCoreOnce } from "../coreBuild";
 import { buildSp48Wasm, productionOutput } from "../../../scripts/build-sp48-wasm.cjs";
 
 /** The real 48K BASIC ROM the app ships (`src/public/roms/sp48.rom`). */
@@ -81,18 +82,14 @@ class HarnessSp48Machine extends ZxSpectrum48WasmV2Machine {
   }
 }
 
-let wasmBuilt = false;
 
 /**
  * Creates a ZX Spectrum 48K with the real ROM (or the one given), ready to boot. Builds the WASM core first, once per
  * test process (the same build the 48K machine tests use).
  */
 export async function createSp48Session({ rom }: { rom?: Uint8Array } = {}): Promise<Sp48TestSession> {
-  // --- Once per test process: the build runs clang, which is most of a session's start-up cost
-  if (!wasmBuilt) {
-    buildSp48Wasm();
-    wasmBuilt = true;
-  }
+  // --- Once per test process, and only when out of date: the build runs clang, the start-up's main cost
+  buildCoreOnce(productionOutput, buildSp48Wasm);
   // --- `rom`: a 16K ROM in place of the real one (a test program that is a ROM, Time to First INT)
   const machine = new HarnessSp48Machine(rom ?? new Uint8Array(readFileSync(ROM_PATH)));
   await machine.setup();
