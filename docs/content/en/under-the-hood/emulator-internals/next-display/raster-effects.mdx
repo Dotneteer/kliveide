@@ -410,7 +410,7 @@ Your handler can then write the registers for the next band. That works, but it 
 answers an interrupt only when the instruction it is running has finished. At 3.5 MHz an instruction
 takes up to 23 T-states, so the handler starts anywhere from 0 to 22 T-states later than it could, and
 one T-state is two dots. A split made this way lands up to **44 dots** later in one frame than in
-another, and its edge shimmers like a road in summer. Think of it as an actor who waits for the
+another (more, if contention or a wait state stretches the instruction), and its edge shimmers like a road in summer. Think of it as an actor who waits for the
 director to shout his cue, and then first has to finish his sentence:
 
 <figure>
@@ -460,8 +460,9 @@ director to shout his cue, and then first has to finish his sentence:
 <figcaption>The same split made two ways. The CPU's lands where its current instruction happens to end; the Copper's lands on the same dot every frame.</figcaption>
 </figure>
 
-You can remove most of the jitter by waiting in `HALT`, which the CPU leaves at once, but then your
-program can do nothing else while it waits. At 28 MHz the jitter is smaller, but it is still there, and
+You can remove most of the jitter by waiting in `HALT`: a halted CPU runs NOP cycles of 4 T-states and
+answers at the end of one, so only 0 to 3 T-states, up to 6 dots, are left. But then your program can do
+nothing else while it waits. At 28 MHz the jitter is smaller, but it is still there, and
 every split costs the CPU an interrupt and a handler. I am not a fan of making the CPU do this.
 Wouldn't it be nice to hand the whole job to someone who has nothing else to do?
 

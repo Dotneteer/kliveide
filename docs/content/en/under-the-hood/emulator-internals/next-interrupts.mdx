@@ -1,0 +1,792 @@
+---
+description: "How the ZX Spectrum Next interrupts its Z80N: the fourteen maskable sources and their priority, pulse mode and hardware IM2 mode, the vector byte, the daisy chain and what RETI and RETN do to it, enables, status and software requests, the sources' timing, how fast the CPU answers, the DMA stepping aside, and the NMI with its arbiter, its devices at $0066 and the stackless response."
+---
+
+import { Callout } from 'nextra/components'
+
+# Interrupts: Fourteen Voices, Two Wires
+
+A Next game is a busy place. The music player wants to run fifty times a second, a raster split wants its
+line, a sample needs its next byte from a timer, the Wi-Fi chip has just sent a reply, and somebody pressed
+the DRIVE button to browse the SD card. Fourteen pieces of hardware would like the CPU's attention, often at
+the same moment. The Z80 has exactly two wires to hear them with. So who decides who goes first, how does the
+CPU learn who called, and what happens to the ones that have to wait?
+
+I think interrupts are where a Next program grows up. Polling works until it doesn't: the moment your code
+must keep a tune steady while it loads a level, or split the screen while it runs a game, you need the
+hardware to tap the CPU on the shoulder at the right time. The Next's answer is far richer than the
+Spectrum's single frame interrupt, and it has a few traps that look like bugs until you know the rule
+behind them. Know the rules, and an interrupt becomes the most reliable clock in your program.
+
+You should know two chapters first. [Memory, Ports and NextRegs: How the Z80N Reaches the
+Machine](/en/under-the-hood/emulator-internals/next-memory-io/) explains NextRegs, the DivMMC and the
+Multiface, which come back here as NMI devices. [The Frame and the Beam: Two Counters, Four
+Timings](/en/under-the-hood/emulator-internals/next-display/timing/) explains where in the frame the frame
+interrupt and the line interrupt happen, and I will not repeat it.
+
+## The road ahead
+
+We start with the two wires into the CPU, `/INT` and `/NMI`, and the cast of fourteen maskable sources in
+their order of priority. Then come the two ways the Next drives `/INT`: pulse mode, the Spectrum's way, with
+its short pulse that can be missed, and hardware IM2 mode, where every source has a vector of its own. The
+heart of the chapter is the daisy chain behind hardware IM2 mode, how a source waits its turn and what RETI
+and RETN do to the queue; if you read only one section, make it that one. After that we look at the
+switches and the status bits, the sources up close, how fast the CPU answers, and how the DMA steps aside
+for an interrupt. Last comes the NMI: its sources, its arbiter, the devices that answer at `$0066`, and the
+stackless response that keeps the stack out of it.
+
+<Callout type="info">
+The facts are for **core 3.02.01**. Timings are in CPU T-states and, where the screen matters, for the
+**+3 timing at 50 Hz** and a CPU at **3.5 MHz**. Every fact was checked against the Next's hardware
+design.
+</Callout>
+
+## Two wires into the CPU
+
+The Z80 has two interrupt inputs. **`/INT`**, the maskable interrupt, is a level the CPU looks at once per
+instruction: if it is low when an instruction ends, and interrupts are enabled, the CPU answers instead of
+fetching the next one. I call it **the doorbell**: it rings, and the CPU answers when it has finished what
+it was doing, if it is willing to answer at all. **`/NMI`**, the non-maskable interrupt, works on an edge:
+the CPU remembers that it fell, and answers at the end of the instruction whatever `DI` said. That one is
+**the fire alarm**, and you will meet the fire brigade that answers it near the end.
+
+<figure>
+{/* fig:wires */}
+<svg viewBox="-2 -2 704 424" role="img" aria-label="The CPU on the right has two interrupt inputs. Above, the maskable sources, the line interrupt, the two UARTs' receive and transmit requests, the four CTC channels and the ULA's frame interrupt, feed the interrupt controller, which works in pulse mode or hardware IM2 mode as NextReg $C0 bit 0 chooses, and drives /INT. Below, the NMI sources, the M1 button, the DRIVE button, NextReg $02 and the I/O traps, feed the NMI arbiter, which drives /NMI." style={{ width: "100%", height: "auto" }}>
+  <defs>
+    <marker id="int-wires-0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
+    </marker>
+    <marker id="int-wires-1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#3b82f6" />
+    </marker>
+    <marker id="int-wires-2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#30a46c" />
+    </marker>
+    <marker id="int-wires-3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#e8912d" />
+    </marker>
+    <marker id="int-wires-4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#a855f7" />
+    </marker>
+  </defs>
+  <rect x="0" y="6" width="200" height="36" rx="6" fill="#3b82f6" fillOpacity="0.1" stroke="#3b82f6" strokeWidth="2" />
+  <text x="100" y="29.3" textAnchor="middle" fill="#3b82f6" fontSize="15">line interrupt</text>
+  <line x1="200" y1="24" x2="232" y2="24" stroke="currentColor" strokeWidth="1.8" />
+  <rect x="0" y="52" width="200" height="36" rx="6" fill="#30a46c" fillOpacity="0.1" stroke="#30a46c" strokeWidth="2" />
+  <text x="100" y="75.3" textAnchor="middle" fill="#30a46c" fontSize="15">UART 0 / 1 receive</text>
+  <line x1="200" y1="70" x2="232" y2="70" stroke="currentColor" strokeWidth="1.8" />
+  <rect x="0" y="98" width="200" height="36" rx="6" fill="#e8912d" fillOpacity="0.1" stroke="#e8912d" strokeWidth="2" />
+  <text x="100" y="121.3" textAnchor="middle" fill="#e8912d" fontSize="15">CTC channels 0–3</text>
+  <line x1="200" y1="116" x2="232" y2="116" stroke="currentColor" strokeWidth="1.8" />
+  <rect x="0" y="144" width="200" height="36" rx="6" fill="#3b82f6" fillOpacity="0.1" stroke="#3b82f6" strokeWidth="2" />
+  <text x="100" y="167.3" textAnchor="middle" fill="#3b82f6" fontSize="15">ULA frame interrupt</text>
+  <line x1="200" y1="162" x2="232" y2="162" stroke="currentColor" strokeWidth="1.8" />
+  <rect x="0" y="190" width="200" height="36" rx="6" fill="#30a46c" fillOpacity="0.1" stroke="#30a46c" strokeWidth="2" />
+  <text x="100" y="213.3" textAnchor="middle" fill="#30a46c" fontSize="15">UART 0 / 1 transmit</text>
+  <line x1="200" y1="208" x2="232" y2="208" stroke="currentColor" strokeWidth="1.8" />
+  <line x1="232" y1="24" x2="232" y2="208" stroke="currentColor" strokeWidth="1.8" />
+  <path d="M232,124 L256,124" fill="none" stroke="currentColor" strokeWidth="1.8" markerEnd="url(#int-wires-0)" strokeLinejoin="round" />
+  <rect x="260" y="78" width="220" height="92" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="370" y="111.3" textAnchor="middle" fill="currentColor" fontSize="15">interrupt controller</text>
+  <text x="370" y="129.3" textAnchor="middle" fill="currentColor" fontSize="15">pulse or hardware IM2</text>
+  <text x="370" y="147.3" textAnchor="middle" fill="currentColor" fontSize="15">(NextReg $C0 bit 0)</text>
+  <rect x="580" y="150" width="120" height="120" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="640" y="206" textAnchor="middle" fill="currentColor" fontSize="16.5" fontWeight="bold">Z80N</text>
+  <text x="640" y="225.5" textAnchor="middle" fill="currentColor" fontSize="16.5" fontWeight="bold">CPU</text>
+  <path d="M480,124 L540,124 L540,176 L576,176" fill="none" stroke="currentColor" strokeWidth="1.8" markerEnd="url(#int-wires-0)" strokeLinejoin="round" />
+  <text x="492" y="114" fill="currentColor" fontSize="15" fontWeight="bold">/INT</text>
+  <rect x="0" y="252" width="200" height="32" rx="6" fill="none" stroke="#a855f7" strokeWidth="2" />
+  <text x="100" y="272.9" textAnchor="middle" fill="#a855f7" fontSize="14">M1 button (F9)</text>
+  <line x1="200" y1="268" x2="232" y2="268" stroke="#a855f7" strokeWidth="1.8" />
+  <rect x="0" y="294" width="200" height="32" rx="6" fill="none" stroke="#a855f7" strokeWidth="2" />
+  <text x="100" y="314.9" textAnchor="middle" fill="#a855f7" fontSize="14">DRIVE button (F10)</text>
+  <line x1="200" y1="310" x2="232" y2="310" stroke="#a855f7" strokeWidth="1.8" />
+  <rect x="0" y="336" width="200" height="32" rx="6" fill="none" stroke="#a855f7" strokeWidth="2" />
+  <text x="100" y="356.9" textAnchor="middle" fill="#a855f7" fontSize="14">NextReg $02</text>
+  <line x1="200" y1="352" x2="232" y2="352" stroke="#a855f7" strokeWidth="1.8" />
+  <rect x="0" y="378" width="200" height="32" rx="6" fill="none" stroke="#a855f7" strokeWidth="2" />
+  <text x="100" y="398.9" textAnchor="middle" fill="#a855f7" fontSize="14">I/O trap</text>
+  <line x1="200" y1="394" x2="232" y2="394" stroke="#a855f7" strokeWidth="1.8" />
+  <line x1="232" y1="268" x2="232" y2="394" stroke="#a855f7" strokeWidth="1.8" />
+  <path d="M232,324 L256,324" fill="none" stroke="#a855f7" strokeWidth="1.8" markerEnd="url(#int-wires-4)" strokeLinejoin="round" />
+  <rect x="260" y="284" width="220" height="80" rx="6" fill="#a855f7" fillOpacity="0.12" stroke="#a855f7" strokeWidth="2" />
+  <text x="370" y="311.3" textAnchor="middle" fill="#a855f7" fontSize="15">NMI arbiter</text>
+  <text x="370" y="329.3" textAnchor="middle" fill="#a855f7" fontSize="15">Multiface, DivMMC</text>
+  <text x="370" y="347.3" textAnchor="middle" fill="#a855f7" fontSize="15">or expansion bus</text>
+  <path d="M480,324 L540,324 L540,244 L576,244" fill="none" stroke="#a855f7" strokeWidth="1.8" markerEnd="url(#int-wires-4)" strokeLinejoin="round" />
+  <text x="492" y="314" fill="#a855f7" fontSize="15" fontWeight="bold">/NMI</text>
+</svg>
+{/* /fig:wires */}
+<figcaption>The two wires. The maskable sources feed the interrupt controller, which drives /INT in pulse mode or hardware IM2 mode; the NMI sources feed the NMI arbiter, which drives /NMI.</figcaption>
+</figure>
+
+A few rules of the CPU's own matter for everything that follows:
+
+- The CPU decides at **the last T-state but one** of an instruction. `/INT` must be low at that moment.
+- **Not after a prefix.** The CPU never stops between a `DD`, `FD`, `CB` or `ED` prefix and its opcode, so
+  a long chain of prefixes postpones the answer.
+- **`EI` takes effect one instruction late.** The instruction after `EI` always runs, which is what makes
+  `EI` / `RETI` at the end of a handler safe; a run of `EI`s postpones the answer for as long as it lasts.
+- **IM 1** calls `$0038`. **IM 2** reads a byte from the data bus, the **vector**, and calls the address
+  stored at `I` × 256 + vector. **IM 0** executes the byte on the data bus as an instruction.
+
+## Fourteen voices in a fixed order
+
+The Next has fourteen maskable sources, and they stand in a fixed order of priority, the same in every
+mode: the line interrupt first, then the two UARTs' receivers, then the CTC's channels, then the ULA's frame
+interrupt, and last the two UARTs' transmitters. Behind them all stands the expansion bus, for a peripheral
+plugged into the edge connector.
+
+<figure>
+{/* fig:chain */}
+<svg viewBox="-2 -2 704 290" role="img" aria-label="Fourteen boxes in two rows of seven, the interrupt sources in priority order, highest first, each with its index and the offset its vector adds. Index 0, the line interrupt, offset $00; 1, UART 0 receive, $02; 2, UART 1 receive, $04; 3 to 6, CTC channels 0 to 3, $06 to $0C; 7 to 10, CTC channels 4 to 7, reserved and never firing, $0E to $14; 11, the ULA's frame interrupt, $16; 12, UART 0 transmit, $18; 13, UART 1 transmit, $1A. The expansion bus comes after them all." style={{ width: "100%", height: "auto" }}>
+  <defs>
+    <marker id="int-chain-0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
+    </marker>
+  </defs>
+  <text x="0" y="20" fill="currentColor" fontSize="13.5" fontWeight="bold">highest priority</text>
+  <text x="700" y="20" textAnchor="end" fill="currentColor" fontSize="13.5">each one passes its turn to the next</text>
+  <rect x="2" y="34" width="96" height="74" rx="6" fill="#3b82f6" fillOpacity="0.1" stroke="#3b82f6" strokeWidth="2" />
+  <text x="50" y="58.9" textAnchor="middle" fill="#3b82f6" fontSize="14">line</text>
+  <text x="50" y="75.9" textAnchor="middle" fill="#3b82f6" fontSize="14"> </text>
+  <text x="50" y="92.9" textAnchor="middle" fill="#3b82f6" fontSize="14">0 · +$00</text>
+  <rect x="102" y="34" width="96" height="74" rx="6" fill="#30a46c" fillOpacity="0.1" stroke="#30a46c" strokeWidth="2" />
+  <text x="150" y="58.9" textAnchor="middle" fill="#30a46c" fontSize="14">UART 0</text>
+  <text x="150" y="75.9" textAnchor="middle" fill="#30a46c" fontSize="14">receive</text>
+  <text x="150" y="92.9" textAnchor="middle" fill="#30a46c" fontSize="14">1 · +$02</text>
+  <rect x="202" y="34" width="96" height="74" rx="6" fill="#30a46c" fillOpacity="0.1" stroke="#30a46c" strokeWidth="2" />
+  <text x="250" y="58.9" textAnchor="middle" fill="#30a46c" fontSize="14">UART 1</text>
+  <text x="250" y="75.9" textAnchor="middle" fill="#30a46c" fontSize="14">receive</text>
+  <text x="250" y="92.9" textAnchor="middle" fill="#30a46c" fontSize="14">2 · +$04</text>
+  <rect x="302" y="34" width="96" height="74" rx="6" fill="#e8912d" fillOpacity="0.1" stroke="#e8912d" strokeWidth="2" />
+  <text x="350" y="58.9" textAnchor="middle" fill="#e8912d" fontSize="14">CTC 0</text>
+  <text x="350" y="75.9" textAnchor="middle" fill="#e8912d" fontSize="14"> </text>
+  <text x="350" y="92.9" textAnchor="middle" fill="#e8912d" fontSize="14">3 · +$06</text>
+  <rect x="402" y="34" width="96" height="74" rx="6" fill="#e8912d" fillOpacity="0.1" stroke="#e8912d" strokeWidth="2" />
+  <text x="450" y="58.9" textAnchor="middle" fill="#e8912d" fontSize="14">CTC 1</text>
+  <text x="450" y="75.9" textAnchor="middle" fill="#e8912d" fontSize="14"> </text>
+  <text x="450" y="92.9" textAnchor="middle" fill="#e8912d" fontSize="14">4 · +$08</text>
+  <rect x="502" y="34" width="96" height="74" rx="6" fill="#e8912d" fillOpacity="0.1" stroke="#e8912d" strokeWidth="2" />
+  <text x="550" y="58.9" textAnchor="middle" fill="#e8912d" fontSize="14">CTC 2</text>
+  <text x="550" y="75.9" textAnchor="middle" fill="#e8912d" fontSize="14"> </text>
+  <text x="550" y="92.9" textAnchor="middle" fill="#e8912d" fontSize="14">5 · +$0A</text>
+  <rect x="602" y="34" width="96" height="74" rx="6" fill="#e8912d" fillOpacity="0.1" stroke="#e8912d" strokeWidth="2" />
+  <text x="650" y="58.9" textAnchor="middle" fill="#e8912d" fontSize="14">CTC 3</text>
+  <text x="650" y="75.9" textAnchor="middle" fill="#e8912d" fontSize="14"> </text>
+  <text x="650" y="92.9" textAnchor="middle" fill="#e8912d" fontSize="14">6 · +$0C</text>
+  <rect x="2" y="166" width="96" height="74" rx="6" fill="none" stroke="#e8912d" strokeWidth="2" strokeDasharray="5 4" />
+  <text x="50" y="190.9" textAnchor="middle" fill="#e8912d" fontSize="14">CTC 4</text>
+  <text x="50" y="207.9" textAnchor="middle" fill="#e8912d" fontSize="14">reserved</text>
+  <text x="50" y="224.9" textAnchor="middle" fill="#e8912d" fontSize="14">7 · +$0E</text>
+  <rect x="102" y="166" width="96" height="74" rx="6" fill="none" stroke="#e8912d" strokeWidth="2" strokeDasharray="5 4" />
+  <text x="150" y="190.9" textAnchor="middle" fill="#e8912d" fontSize="14">CTC 5</text>
+  <text x="150" y="207.9" textAnchor="middle" fill="#e8912d" fontSize="14">reserved</text>
+  <text x="150" y="224.9" textAnchor="middle" fill="#e8912d" fontSize="14">8 · +$10</text>
+  <rect x="202" y="166" width="96" height="74" rx="6" fill="none" stroke="#e8912d" strokeWidth="2" strokeDasharray="5 4" />
+  <text x="250" y="190.9" textAnchor="middle" fill="#e8912d" fontSize="14">CTC 6</text>
+  <text x="250" y="207.9" textAnchor="middle" fill="#e8912d" fontSize="14">reserved</text>
+  <text x="250" y="224.9" textAnchor="middle" fill="#e8912d" fontSize="14">9 · +$12</text>
+  <rect x="302" y="166" width="96" height="74" rx="6" fill="none" stroke="#e8912d" strokeWidth="2" strokeDasharray="5 4" />
+  <text x="350" y="190.9" textAnchor="middle" fill="#e8912d" fontSize="14">CTC 7</text>
+  <text x="350" y="207.9" textAnchor="middle" fill="#e8912d" fontSize="14">reserved</text>
+  <text x="350" y="224.9" textAnchor="middle" fill="#e8912d" fontSize="14">10 · +$14</text>
+  <rect x="402" y="166" width="96" height="74" rx="6" fill="#3b82f6" fillOpacity="0.1" stroke="#3b82f6" strokeWidth="2" />
+  <text x="450" y="190.9" textAnchor="middle" fill="#3b82f6" fontSize="14">ULA</text>
+  <text x="450" y="207.9" textAnchor="middle" fill="#3b82f6" fontSize="14">frame</text>
+  <text x="450" y="224.9" textAnchor="middle" fill="#3b82f6" fontSize="14">11 · +$16</text>
+  <rect x="502" y="166" width="96" height="74" rx="6" fill="#30a46c" fillOpacity="0.1" stroke="#30a46c" strokeWidth="2" />
+  <text x="550" y="190.9" textAnchor="middle" fill="#30a46c" fontSize="14">UART 0</text>
+  <text x="550" y="207.9" textAnchor="middle" fill="#30a46c" fontSize="14">transmit</text>
+  <text x="550" y="224.9" textAnchor="middle" fill="#30a46c" fontSize="14">12 · +$18</text>
+  <rect x="602" y="166" width="96" height="74" rx="6" fill="#30a46c" fillOpacity="0.1" stroke="#30a46c" strokeWidth="2" />
+  <text x="650" y="190.9" textAnchor="middle" fill="#30a46c" fontSize="14">UART 1</text>
+  <text x="650" y="207.9" textAnchor="middle" fill="#30a46c" fontSize="14">transmit</text>
+  <text x="650" y="224.9" textAnchor="middle" fill="#30a46c" fontSize="14">13 · +$1A</text>
+  <path d="M650,108 L650,130 L50,130 L50,162" fill="none" stroke="currentColor" strokeWidth="1.6" markerEnd="url(#int-chain-0)" strokeLinejoin="round" />
+  <text x="0" y="274" fill="currentColor" fontSize="13.5">index · vector offset;  dashed: no such channel in this core;  then the expansion bus</text>
+</svg>
+{/* /fig:chain */}
+<figcaption>The fourteen maskable sources in priority order, highest first, with each one's index and the offset it adds to the vector. CTC channels 4 to 7 have places but do not exist in this core.</figcaption>
+</figure>
+
+Two things in that list surprise people, and I like both of them. First, **the alarm clock beats the
+veteran**: the line interrupt, index 0, outranks the ULA's frame interrupt, index 11. That is the right way
+round. A raster split must land on its line or it is visibly wrong, while a once-a-frame job can start a few
+microseconds late and nobody notices. Second, the CTC has eight places but only **four channels**: channels
+4 to 7 are reserved, never fire, and their enable and status bits read 0.
+
+## Pulse mode: one pulse for everybody
+
+After a reset the Next drives `/INT` in **pulse mode**, the way the Spectrum always did: when a source asks
+for attention, `/INT` goes low for a fixed time and then lets go, whatever the CPU did meanwhile. The time is
+counted in CPU clocks: **32 T-states** in 48K and +3 timing, **36** in 128K and Pentagon timing, at every
+CPU speed. So at 28 MHz the pulse is eight times shorter in real time than at 3.5 MHz.
+
+<figure>
+{/* fig:pulse */}
+<svg viewBox="-2 -2 704 304" role="img" aria-label="Two timelines drawn to scale over 72 T-states, with /INT low for 32 T-states from T-state 8 to 40 in both. Above, interrupts enabled: instructions end at T-states 4, 15, 23 and 34, and the CPU takes the interrupt at the first end inside the pulse, at 15. Below, interrupts disabled until T-state 50: the instruction ends inside the pulse are ignored, the pulse ends at 40, and when EI takes effect at 50 nothing is left: the interrupt is lost, and only its status bit remembers it." style={{ width: "100%", height: "auto" }}>
+  <defs>
+    <marker id="int-pulse-0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
+    </marker>
+    <marker id="int-pulse-1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#e5484d" />
+    </marker>
+  </defs>
+  <line x1="130" y1="30" x2="130" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="130" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">0</text>
+  <line x1="193.3" y1="30" x2="193.3" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="193.3" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">8</text>
+  <line x1="256.7" y1="30" x2="256.7" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="256.7" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">16</text>
+  <line x1="320" y1="30" x2="320" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="320" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">24</text>
+  <line x1="383.3" y1="30" x2="383.3" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="383.3" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">32</text>
+  <line x1="446.7" y1="30" x2="446.7" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="446.7" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">40</text>
+  <line x1="510" y1="30" x2="510" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="510" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">48</text>
+  <line x1="573.3" y1="30" x2="573.3" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="573.3" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">56</text>
+  <line x1="636.7" y1="30" x2="636.7" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="636.7" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">64</text>
+  <line x1="700" y1="30" x2="700" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="700" y="22" textAnchor="end" fill="currentColor" fontSize="13.5">72</text>
+  <text x="0" y="22" fill="currentColor" fontSize="13.5">T-states</text>
+  <text x="0" y="86" fill="currentColor" fontSize="15" fontWeight="bold">EI</text>
+  <path d="M130,66 L193.33333333333334,66 L193.33333333333334,94 L446.6666666666667,94 L446.6666666666667,66 L700,66" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+  <text x="454.7" y="99" fill="currentColor" fontSize="13.5">← /INT low for 32 T</text>
+  <line x1="161.7" y1="52" x2="161.7" y2="108" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" />
+  <line x1="248.8" y1="52" x2="248.8" y2="108" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" />
+  <line x1="312.1" y1="52" x2="312.1" y2="108" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" />
+  <line x1="399.2" y1="52" x2="399.2" y2="108" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" />
+  <path d="M248.75,134 L248.75,112" fill="none" stroke="#e5484d" strokeWidth="1.8" markerEnd="url(#int-pulse-1)" strokeLinejoin="round" />
+  <text x="256.8" y="132" fill="#e5484d" fontSize="13.5">taken at the first instruction end inside the pulse</text>
+  <text x="0" y="216" fill="currentColor" fontSize="15" fontWeight="bold">DI</text>
+  <path d="M130,196 L193.33333333333334,196 L193.33333333333334,224 L446.6666666666667,224 L446.6666666666667,196 L700,196" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+  <text x="533.8" y="229" fill="currentColor" fontSize="13.5">← /INT low for 32 T</text>
+  <rect x="130" y="176" width="395.8" height="62" fill="#e5484d" fillOpacity="0.08" stroke="#e5484d" strokeWidth="1.2" strokeDasharray="5 4" />
+  <line x1="161.7" y1="182" x2="161.7" y2="238" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.5" />
+  <line x1="248.8" y1="182" x2="248.8" y2="238" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.5" />
+  <line x1="312.1" y1="182" x2="312.1" y2="238" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.5" />
+  <line x1="399.2" y1="182" x2="399.2" y2="238" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.5" />
+  <line x1="525.8" y1="172" x2="525.8" y2="242" stroke="#e5484d" strokeWidth="1.8" />
+  <text x="700" y="266" textAnchor="end" fill="#e5484d" fontSize="13.5">EI takes effect at 50: the pulse is over, the interrupt is lost</text>
+  <text x="136" y="290" fill="currentColor" fontSize="13.5">dashed: instruction ends</text>
+</svg>
+{/* /fig:pulse */}
+<figcaption>Pulse mode, to scale in T-states. With interrupts on, the CPU answers at the first instruction end inside the 32-T pulse. With interrupts off past the pulse's end, the interrupt is lost.</figcaption>
+</figure>
+
+The pulse is a moment, not a promise, and here is what follows from that:
+
+- **The pulse is shared.** Every enabled source in pulse mode starts the same pulse. A second request while
+  the pulse is low starts nothing new, so two sources that fire close together give the CPU one interrupt.
+- **A pulse can be missed.** If interrupts stay disabled for longer than the pulse, or the DMA holds the bus
+  across it, the CPU never sees it. Nothing holds the request; only its **status bit** remembers that it
+  happened.
+- **The CPU cannot tell who rang.** In IM 1 it calls `$0038` whatever the source. In IM 2 the data bus
+  carries **`$FF`**, so the CPU reads its handler's address from `I` × 256 + `$FF`. And IM 0, which so much
+  folklore warns about, is perfectly predictable on the Next: the FPGA drives `$FF` itself, and `$FF` is
+  `RST $38`, so IM 0 behaves exactly like IM 1. (A device on an enabled expansion bus may put its own byte
+  there instead.)
+
+Since the vector says nothing, a pulse-mode handler that serves several sources reads the status bits to
+find out who rang. I find this the most practical trick of pulse mode:
+
+```z80klive
+Isr:    push af
+        push bc
+        ld bc,$243b           ; select INT Status 0
+        ld a,$c8
+        out (c),a
+        inc b
+        in a,(c)              ; bit 1: line, bit 0: ULA
+        nextreg $c8,a         ; write the 1s back: clears them
+        ; ... test bits 1 and 0, do the work ...
+        pop bc
+        pop af
+        ei
+        reti
+```
+
+If that handler can ever run late, it can still tell a missed pulse from no pulse at all: the status bit was
+set even though the doorbell rang while nobody was listening.
+
+## Hardware IM2 mode: a vector for every voice
+
+Set bit 0 of the **Interrupt Control register, NextReg `$C0`**, and the Next drives `/INT` in **hardware
+IM2 mode**. Now a source holds `/INT` low until the CPU acknowledges it, so nothing is missed, and during
+the acknowledge the Next puts a vector on the data bus that says exactly who called:
+
+<figure>
+{/* fig:vector */}
+<svg viewBox="-2 -2 704 254" role="img" aria-label="The vector byte, bit 7 on the left. Bits 7 to 5 come from NextReg $C0 bits 7 to 5; bits 4 to 1 are the source's index, 0 to 13; bit 0 is always 0. The worked example: NextReg $C0 holds $A1, so bits 7 to 5 are 101; CTC channel 0 has index 3, 0011; the vector is $A6, and with the I register at $BE the CPU reads the handler's address from $BEA6 and $BEA7." style={{ width: "100%", height: "auto" }}>
+  <text x="165.6" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">7</text>
+  <text x="236.9" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">6</text>
+  <text x="308.1" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">5</text>
+  <text x="379.4" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">4</text>
+  <text x="450.6" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">3</text>
+  <text x="521.9" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">2</text>
+  <text x="593.1" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">1</text>
+  <text x="664.4" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">0</text>
+  <text x="0" y="52" fill="currentColor" fontSize="15" fontWeight="bold">vector</text>
+  <text x="0" y="70" fill="currentColor" fontSize="15" fontWeight="bold">byte</text>
+  <rect x="131" y="28" width="211.8" height="52" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="236.9" y="50.3" textAnchor="middle" fill="currentColor" fontSize="15" fontWeight="bold">NextReg $C0</text>
+  <text x="236.9" y="68.3" textAnchor="middle" fill="currentColor" fontSize="15" fontWeight="bold">bits 7–5</text>
+  <rect x="344.8" y="28" width="283" height="52" rx="6" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="2" />
+  <text x="486.3" y="50.3" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">source index</text>
+  <text x="486.3" y="68.3" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">0–13</text>
+  <rect x="629.8" y="28" width="69.3" height="52" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="664.4" y="59.3" textAnchor="middle" fill="currentColor" fontSize="15" fontWeight="bold">0</text>
+  <text x="0" y="124" fill="currentColor" fontSize="15" fontWeight="bold">example</text>
+  <text x="0" y="142" fill="currentColor" fontSize="15" fontWeight="bold">CTC 0</text>
+  <rect x="131" y="104" width="69.3" height="44" rx="4" fill="none" stroke="currentColor" strokeWidth="1.4" />
+  <text x="165.6" y="132" textAnchor="middle" fill="currentColor" fontSize="15" fontWeight="bold">1</text>
+  <rect x="202.3" y="104" width="69.3" height="44" rx="4" fill="none" stroke="currentColor" strokeWidth="1.4" />
+  <text x="236.9" y="132" textAnchor="middle" fill="currentColor" fontSize="15" fontWeight="bold">0</text>
+  <rect x="273.5" y="104" width="69.3" height="44" rx="4" fill="none" stroke="currentColor" strokeWidth="1.4" />
+  <text x="308.1" y="132" textAnchor="middle" fill="currentColor" fontSize="15" fontWeight="bold">1</text>
+  <rect x="344.8" y="104" width="69.3" height="44" rx="4" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="2" />
+  <text x="379.4" y="132" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">0</text>
+  <rect x="416" y="104" width="69.3" height="44" rx="4" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="2" />
+  <text x="450.6" y="132" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">0</text>
+  <rect x="487.3" y="104" width="69.3" height="44" rx="4" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="2" />
+  <text x="521.9" y="132" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">1</text>
+  <rect x="558.5" y="104" width="69.3" height="44" rx="4" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="2" />
+  <text x="593.1" y="132" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">1</text>
+  <rect x="629.8" y="104" width="69.3" height="44" rx="4" fill="none" stroke="currentColor" strokeWidth="1.4" />
+  <text x="664.4" y="132" textAnchor="middle" fill="currentColor" fontSize="15" fontWeight="bold">0</text>
+  <text x="130" y="176" fill="currentColor" fontSize="15">$C0 = $A1 gives 101;  CTC 0 is index 3, 0011;  vector $A6</text>
+  <text x="130" y="202" fill="currentColor" fontSize="15">I = $BE: the handler's address is read from $BEA6 and $BEA7</text>
+  <text x="0" y="238" fill="currentColor" fontSize="13.5">the highest vector is $C0's top bits + $1A, so a table needs only 28 bytes</text>
+</svg>
+{/* /fig:vector */}
+<figcaption>The hardware IM2 vector: three bits from NextReg $C0, the source's index, and a 0. With $C0 = $A1, CTC channel 0 gives $A6, and with I = $BE its handler's address is read from $BEA6.</figcaption>
+</figure>
+
+Bits 7 to 5 come from NextReg `$C0`, bits 4 to 1 are the source's index from the priority list, and bit 0 is
+always 0, so every source gets a two-byte slot in a table of 28 bytes. Here is a setup with the table at
+`$BE00`, the vectors from `$A0`, and handlers for the ULA and CTC channel 0:
+
+```z80klive
+        di
+        ld a,$be              ; vector table page: $BE00
+        ld i,a
+        im 2
+        ld hl,UlaIsr
+        ld ($beb6),hl         ; ULA: $A0 + 11 x 2 = $B6
+        ld hl,CtcIsr
+        ld ($bea6),hl         ; CTC 0: $A0 + 3 x 2 = $A6
+        nextreg $c0,$a1       ; vectors from $A0, hardware IM2
+        ei
+```
+
+My advice: once a program has more than one source, use hardware IM2 mode. No 257-byte tables of identical
+bytes, no guessing who rang, and no interrupt lost because a long `LDIR` happened to run under `DI`.
+
+## The daisy chain
+
+Behind hardware IM2 mode sits a **daisy chain**, the scheme Zilog designed for its own peripherals: the
+fourteen sources stand in a row in priority order, and each one passes a permission to the next. A source
+may interrupt only while the permission reaches it, and it withholds the permission from everybody behind it
+while it is busy. I call it **the queue**, and it is a very polite one. Each source goes through four
+states:
+
+1. **Idle.** The source passes the permission on unchanged.
+2. **Requesting.** Something happened; the source pulls `/INT` low if the permission reaches it and the CPU
+   is in IM 2. From now on it withholds the permission, so the sources behind it cannot jump the queue.
+3. **Acknowledged.** The CPU's acknowledge cycle reached it; it puts its vector on the bus.
+4. **In service.** The CPU runs its handler. The source still withholds the permission, until a `RETI`
+   releases it.
+
+<figure>
+{/* fig:daisy */}
+<svg viewBox="-2 -2 704 202" role="img" aria-label="Eight devices of the chain in a row, from the line interrupt on the left to the ULA on the right, with CTC 0 in service, marked. The chain's permission passes from left to right: it reaches CTC 0 as 1, and leaves it as 0. The three devices before CTC 0, the line interrupt and the two UART receivers, may still interrupt, so a handler can be nested; the devices after it, CTC 1 to 3 and the ULA, are greyed out and must wait for CTC 0's RETI." style={{ width: "100%", height: "auto" }}>
+  <rect x="6" y="64" width="75.5" height="64" rx="6" fill="none" stroke="#3b82f6" strokeWidth="2" />
+  <text x="43.8" y="101.3" textAnchor="middle" fill="#3b82f6" fontSize="15">line</text>
+  <text x="87.5" y="54" textAnchor="middle" fill="currentColor" fontSize="15" fontWeight="bold">1</text>
+  <rect x="93.5" y="64" width="75.5" height="64" rx="6" fill="none" stroke="#30a46c" strokeWidth="2" />
+  <text x="131.3" y="92.3" textAnchor="middle" fill="#30a46c" fontSize="15">UART 0</text>
+  <text x="131.3" y="110.3" textAnchor="middle" fill="#30a46c" fontSize="15">Rx</text>
+  <text x="175" y="54" textAnchor="middle" fill="currentColor" fontSize="15" fontWeight="bold">1</text>
+  <rect x="181" y="64" width="75.5" height="64" rx="6" fill="none" stroke="#30a46c" strokeWidth="2" />
+  <text x="218.8" y="92.3" textAnchor="middle" fill="#30a46c" fontSize="15">UART 1</text>
+  <text x="218.8" y="110.3" textAnchor="middle" fill="#30a46c" fontSize="15">Rx</text>
+  <text x="262.5" y="54" textAnchor="middle" fill="currentColor" fontSize="15" fontWeight="bold">1</text>
+  <rect x="268.5" y="64" width="75.5" height="64" rx="6" fill="#e5484d" fillOpacity="0.14" stroke="#e5484d" strokeWidth="2" />
+  <text x="306.3" y="92.3" textAnchor="middle" fill="#e5484d" fontSize="15" fontWeight="bold">CTC 0</text>
+  <text x="306.3" y="110.3" textAnchor="middle" fill="#e5484d" fontSize="15" fontWeight="bold">in service</text>
+  <text x="350" y="54" textAnchor="middle" fill="#e5484d" fontSize="15" fontWeight="bold">0</text>
+  <rect x="356" y="64" width="75.5" height="64" rx="6" fill="none" stroke="#e8912d" strokeWidth="2" strokeOpacity="0.45" />
+  <text x="393.8" y="101.3" textAnchor="middle" fill="#e8912d" fontSize="15">CTC 1</text>
+  <text x="437.5" y="54" textAnchor="middle" fill="#e5484d" fontSize="15" fontWeight="bold">0</text>
+  <rect x="443.5" y="64" width="75.5" height="64" rx="6" fill="none" stroke="#e8912d" strokeWidth="2" strokeOpacity="0.45" />
+  <text x="481.3" y="101.3" textAnchor="middle" fill="#e8912d" fontSize="15">CTC 2</text>
+  <text x="525" y="54" textAnchor="middle" fill="#e5484d" fontSize="15" fontWeight="bold">0</text>
+  <rect x="531" y="64" width="75.5" height="64" rx="6" fill="none" stroke="#e8912d" strokeWidth="2" strokeOpacity="0.45" />
+  <text x="568.8" y="101.3" textAnchor="middle" fill="#e8912d" fontSize="15">CTC 3</text>
+  <text x="612.5" y="54" textAnchor="middle" fill="#e5484d" fontSize="15" fontWeight="bold">0</text>
+  <rect x="618.5" y="64" width="75.5" height="64" rx="6" fill="none" stroke="#3b82f6" strokeWidth="2" strokeOpacity="0.45" />
+  <text x="656.3" y="101.3" textAnchor="middle" fill="#3b82f6" fontSize="15">ULA</text>
+  <text x="0" y="22" fill="currentColor" fontSize="13.5">permission passed along the chain:</text>
+  <path d="M6,144 L6,154 L256.5,154 L256.5,144" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+  <text x="131.3" y="178" textAnchor="middle" fill="currentColor" fontSize="13.5">may still interrupt:</text>
+  <text x="131.3" y="194" textAnchor="middle" fill="currentColor" fontSize="13.5">a nested handler</text>
+  <path d="M356,144 L356,154 L694,154 L694,144" fill="none" stroke="#e5484d" strokeWidth="1.5" strokeLinejoin="round" />
+  <text x="525" y="178" textAnchor="middle" fill="#e5484d" fontSize="13.5">must wait for CTC 0's RETI</text>
+</svg>
+{/* /fig:daisy */}
+<figcaption>The chain with CTC channel 0 in service. The sources before it still have the permission and may interrupt its handler; the ones after it wait for its RETI.</figcaption>
+</figure>
+
+That is how **nesting** works. If CTC channel 0's handler executes `EI`, the line interrupt and the UART
+receivers, which stand before it, can still interrupt it; CTC channels 1 to 3, the ULA and the transmitters
+must wait for its `RETI`. A source that asks again while it is still in service gets nothing new: one
+outstanding request per source, and a repeat during its own handler is folded into the first. Its status
+bit, at least, records that it happened.
+
+## RETI releases, RETN does not
+
+The chain learns that a handler has finished by watching the instructions the CPU fetches: when it sees
+**`RETI`**, the opcode pair `ED 4D`, the highest-priority source in service goes back to idle and the
+permission flows again. The rules are strict, and I would learn them by heart:
+
+- **Only `RETI` releases.** `RETN` (`ED 45` and its aliases) releases nothing. A maskable handler that ends
+  with `RETN` leaves its source in service, and that source and everything behind it are blocked for good.
+- **Only in IM 2.** A `RETI` executed while the CPU is not in IM 2 releases nothing either. The chain knows
+  the CPU's mode because it watches the `IM` instructions go by, and NextReg `$C0` bits 2–1 read back what
+  it saw.
+- **Only a real `RETI`.** The chain follows prefixes, so a `CB 4D` or a `DD ED 4D` is not mistaken for one.
+
+What if the CPU is in IM 1 while hardware IM2 mode is on? Then the chain cannot interrupt at all, with one
+exception: **the veteran still rings in the old way**. The ULA's frame interrupt alone falls back to a pulse,
+so a program that switches hardware IM2 mode on but stays in IM 1 still gets its fifty interrupts a second.
+The other sources move to "requesting" and wait there. The moment the CPU executes `IM 2`, they all ring at
+once, in priority order. I find that a lovely piece of backward compatibility, and a great way to be very
+surprised.
+
+## Switches and status bits
+
+Every source has an **enable**, and the enables sit in three registers, the **INT EN 0, INT EN 1 and INT EN
+2 registers, NextRegs `$C4`, `$C5` and `$C6`**:
+
+- **NextReg `$C4`**: bit 0 the ULA, bit 1 the line interrupt, bit 7 the expansion bus. It reads `$81` after
+  a reset: the ULA and the bus on, the line interrupt off.
+- **NextReg `$C5`**: bits 3–0 the CTC channels. A channel's enable is the same flip-flop as bit 7 of its own
+  control word, so writing either one overwrites the other.
+- **NextReg `$C6`**: for each UART, receive (bit 0 for UART 0, bit 4 for UART 1), receive "near full only"
+  (bits 1 and 5) and transmit (bits 2 and 6).
+
+The ULA's switch is shared by three doors, all leading to one flip-flop: port `$FF` bit 6 (1 = off), bit 2
+of the **Line Interrupt Control register, NextReg `$22`** (1 = off), and bit 0 of NextReg `$C4` (1 = on, the
+other way round). The line interrupt's enable is bit 1 of both NextReg `$22` and NextReg `$C4`. Whichever you
+wrote last wins, so pick one register and stick to it.
+
+Every source also has a **status bit**, in the **INT Status 0, 1 and 2 registers, NextRegs `$C8`, `$C9` and
+`$CA`**, laid out like the enables. A status bit is set by the source's event, and **writing a 1 clears it**;
+writing a 0 leaves it alone, so a handler clears exactly what it served and nothing else. Three details
+matter:
+
+- **The CTC and the UARTs set their status even when their interrupt is disabled.** That is "polled mode":
+  leave the interrupt off and watch the bit. The ULA and the line interrupt are different: switched off,
+  they raise nothing, not even a status bit.
+- **In hardware IM2 mode a status bit reads 1 while its source is requesting or in service**, and writing
+  a 1 cannot clear it until the `RETI`.
+- **NextReg `$22` bit 7 reads the pulse.** It is 1 while the pulse-mode `/INT` is low, from any source, not
+  only the ULA. Writing it does nothing.
+
+And a program can ring the doorbell itself. The **Generate Maskable Interrupt register, NextReg `$20`**,
+raises a request when you write a 1: bit 7 the line interrupt, bit 6 the ULA, bits 3–0 the CTC channels.
+These requests ignore the enables, set the status bit and behave like the real thing in either mode. I use
+it to test a handler without waiting for the hardware.
+
+## The sources up close
+
+**The ULA's frame interrupt** comes once a frame at a fixed point of the beam: on line 0 in 48K timing and
+at 60 Hz, on line 1 in 128K and +3 timing at 50 Hz, and on the last line in Pentagon timing, which has no
+60 Hz frame. The frame-and-beam chapter's [frame
+interrupt](/en/under-the-hood/emulator-internals/next-display/timing/#the-frame-interrupt) has the details.
+
+**The line interrupt**, the alarm clock, rings for line *n* near the end of line *n* − 1's display area, in
+the line numbers the frame-and-beam chapter's [line
+interrupt](/en/under-the-hood/emulator-internals/next-display/timing/#the-line-interrupt) explains. A line
+number one past the last line of the frame rings like line 0; anything higher never rings.
+
+**The CTC**, the metronome of the DAC chapter, raises a channel's interrupt when the channel's count
+reaches zero. Its timer counts the 28 MHz master clock through a prescaler of 16 or 256, so its rate does not
+change with the CPU's speed. On a Zilog CTC a program writes an interrupt vector into the chip; the Next
+decodes that write and throws it away, because the vector comes from the chain.
+
+**The UARTs** have two receive conditions and one transmit condition:
+
+- **Receive, data available**: the receive buffer holds at least one byte.
+- **Receive, near full**: the 512-byte buffer holds 384 bytes, three quarters. With the "near full only"
+  bit set in NextReg `$C6`, only this one interrupts.
+- **Transmit**: the transmit buffer has become empty. That is about one character's time before the line
+  falls silent, because the last byte is still being sent.
+
+All requests are **edges**: a source asks once when its condition becomes true, not for as long as it stays
+true. For the UART that means a byte arriving into a buffer that is not empty raises nothing new, so my
+advice is to drain the whole buffer in the handler, not to take one byte per interrupt.
+
+## How fast the CPU answers
+
+Between a source's request and its handler's first instruction there are two delays: the instruction that
+is running must end, and then the acknowledge itself takes its time.
+
+<figure>
+{/* fig:latency */}
+<svg viewBox="-2 -2 704 254" role="img" aria-label="A timeline drawn to scale over 48 T-states. The request arrives at T-state 0, at the start of the longest instruction, 23 T-states long, which runs to its end; the CPU decides one T-state before the end, so up to 22 T-states pass before the answer starts. Then the IM 2 acknowledge takes 19 T-states: 7 for the acknowledge cycle with its two waits, 6 for pushing the return address, 6 for reading the handler's address. The handler's first instruction starts at T-state 42." style={{ width: "100%", height: "auto" }}>
+  <line x1="130" y1="30" x2="130" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="130" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">0</text>
+  <line x1="201.3" y1="30" x2="201.3" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="201.3" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">6</text>
+  <line x1="272.5" y1="30" x2="272.5" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="272.5" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">12</text>
+  <line x1="343.8" y1="30" x2="343.8" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="343.8" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">18</text>
+  <line x1="415" y1="30" x2="415" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="415" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">24</text>
+  <line x1="486.3" y1="30" x2="486.3" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="486.3" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">30</text>
+  <line x1="557.5" y1="30" x2="557.5" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="557.5" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">36</text>
+  <line x1="628.8" y1="30" x2="628.8" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="628.8" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">42</text>
+  <line x1="700" y1="30" x2="700" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="700" y="22" textAnchor="end" fill="currentColor" fontSize="13.5">48</text>
+  <text x="0" y="22" fill="currentColor" fontSize="13.5">T-states</text>
+  <rect x="130" y="52" width="273.1" height="40" rx="4" fill="none" stroke="currentColor" strokeWidth="1.4" />
+  <text x="266.6" y="77" textAnchor="middle" fill="currentColor" fontSize="13.5">an instruction of 23 T</text>
+  <text x="0" y="77" fill="currentColor" fontSize="15" fontWeight="bold">CPU</text>
+  <rect x="403.1" y="52" width="83.1" height="40" rx="4" fill="#e5484d" fillOpacity="0.12" stroke="#e5484d" strokeWidth="2" />
+  <text x="444.7" y="77" textAnchor="middle" fill="#e5484d" fontSize="13.5" fontWeight="bold">ack</text>
+  <rect x="486.3" y="52" width="71.3" height="40" rx="4" fill="#e5484d" fillOpacity="0.12" stroke="#e5484d" strokeWidth="2" />
+  <text x="521.9" y="77" textAnchor="middle" fill="#e5484d" fontSize="13.5" fontWeight="bold">push PC</text>
+  <rect x="557.5" y="52" width="71.3" height="40" rx="4" fill="#e5484d" fillOpacity="0.12" stroke="#e5484d" strokeWidth="2" />
+  <text x="593.1" y="77" textAnchor="middle" fill="#e5484d" fontSize="13.5" fontWeight="bold">vector</text>
+  <rect x="628.8" y="52" width="71.3" height="40" rx="4" fill="#3b82f6" fillOpacity="0.12" stroke="#3b82f6" strokeWidth="2" />
+  <text x="664.4" y="77" textAnchor="middle" fill="#3b82f6" fontSize="13.5" fontWeight="bold">handler</text>
+  <path d="M130,116 L130,100" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+  <text x="130" y="136" fill="currentColor" fontSize="13.5">request</text>
+  <path d="M391.25,130 L391.25,100" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+  <text x="391.3" y="150" textAnchor="middle" fill="currentColor" fontSize="13.5">decision, 1 T before the end</text>
+  <path d="M403.125,170 L403.125,178 L628.75,178 L628.75,170" fill="none" stroke="#e5484d" strokeWidth="1.5" strokeLinejoin="round" />
+  <text x="515.9" y="200" textAnchor="middle" fill="#e5484d" fontSize="13.5">IM 2 acknowledge: 19 T (IM 1: 13 T)</text>
+  <text x="0" y="238" fill="currentColor" fontSize="13.5">waiting for the instruction to end: 0 to 22 T, 0 to 44 dots at 3.5 MHz (without waits)</text>
+</svg>
+{/* /fig:latency */}
+<figcaption>How fast the CPU answers, to scale in T-states: up to 22 T for the running instruction to end, then 19 T of IM 2 acknowledge before the handler starts.</figcaption>
+</figure>
+
+- **The running instruction ends.** The longest Z80N instruction takes 23 T-states, and the CPU decides one
+  T-state before an instruction ends, so the wait is anything from 0 to 22 T. That is the jitter of the
+  raster effects chapter's line interrupt: up to 44 dots at 3.5 MHz, as long as no contention or wait state
+  stretches the instruction.
+- **The acknowledge.** In IM 1 it takes **13 T-states**: an acknowledge cycle of 7 and the two writes that
+  push the return address. In IM 2 it takes **19**: the same, and two reads that fetch the handler's address.
+- **`HALT` helps, but not completely.** A halted CPU executes NOP cycles of 4 T-states each and can answer
+  only at the end of one, so a program waiting in `HALT` still sees 0 to 3 T of jitter.
+
+## The DMA steps aside
+
+The DMA can hold the bus for a long transfer, and in pulse mode an interrupt that comes and goes during it is
+simply lost. In hardware IM2 mode the Next can do better: the **DMA INT EN 0, 1 and 2 registers, NextRegs
+`$CC`, `$CD` and `$CE`**, laid out like the enables, choose which sources may interrupt the DMA. While such a
+source is requesting or in service, the DMA stops asking for the bus between bytes, the CPU takes the
+interrupt and runs the handler, and the DMA carries on after the `RETI`. Bit 7 of NextReg `$CC` does the same
+for the NMI. This works only in hardware IM2 mode, and the DMA itself raises no interrupt when it finishes.
+I like this arrangement: the transfer gives way to the doorbell instead of making it wait in the rain.
+
+## The fire alarm
+
+The NMI cannot be switched off with `DI`, and on the Next it belongs to two devices you met in the memory
+chapter: **the fire brigade**, the Multiface, and **the butler**, the DivMMC. Its sources are:
+
+- **The M1 button** (F9 on a PS/2 keyboard) asks for a Multiface NMI, allowed by bit 3 of the **Peripheral
+  2 Setting register, NextReg `$06`**.
+- **The DRIVE button** (F10) asks for a DivMMC NMI, allowed by bit 4 of NextReg `$06`. It works only while
+  the DivMMC's port is switched on.
+- **The Reset register, NextReg `$02`**: writing bit 3 asks for a Multiface NMI, bit 2 for a DivMMC NMI,
+  under the same enables. The Copper can write it too.
+- **An I/O trap**: with the **I/O Traps register, NextReg `$D8`**, bit 0 set, touching the +3's disk ports
+  `$2FFD` and `$3FFD` asks for a Multiface NMI, so a program can emulate the +3's disk drive in software.
+- **The expansion bus**, for a device on the edge connector.
+
+Only one NMI can be under way at a time, and an **arbiter** picks the source:
+
+<figure>
+{/* fig:nmi */}
+<svg viewBox="-2 -2 704 384" role="img" aria-label="The NMI's sources on the left: the M1 button, a NextReg $02 bit 3 write and an I/O trap ask for a Multiface NMI, allowed by NextReg $06 bit 3; the DRIVE button and a NextReg $02 bit 2 write ask for a DivMMC NMI, allowed by NextReg $06 bit 4; the expansion bus can ask too. The arbiter takes the Multiface first, unless the DivMMC is mapped in or port $E3 bit 7 is set; then the DivMMC, unless the Multiface is active; then the bus. Then /NMI goes low, through the states idle, fetch until the fetch at $0066, hold while the device holds, and end." style={{ width: "100%", height: "auto" }}>
+  <defs>
+    <marker id="int-nmi-0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
+    </marker>
+    <marker id="int-nmi-1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#a855f7" />
+    </marker>
+  </defs>
+  <rect x="0" y="6" width="196" height="96" rx="6" fill="none" stroke="#a855f7" strokeWidth="2" />
+  <text x="98" y="41.9" textAnchor="middle" fill="#a855f7" fontSize="14">M1 button (F9)</text>
+  <text x="98" y="58.9" textAnchor="middle" fill="#a855f7" fontSize="14">NextReg $02 bit 3</text>
+  <text x="98" y="75.9" textAnchor="middle" fill="#a855f7" fontSize="14">I/O trap</text>
+  <rect x="0" y="124" width="196" height="72" rx="6" fill="none" stroke="#a855f7" strokeWidth="2" />
+  <text x="98" y="156.4" textAnchor="middle" fill="#a855f7" fontSize="14">DRIVE button (F10)</text>
+  <text x="98" y="173.4" textAnchor="middle" fill="#a855f7" fontSize="14">NextReg $02 bit 2</text>
+  <rect x="0" y="218" width="196" height="40" rx="6" fill="none" stroke="#a855f7" strokeWidth="2" />
+  <text x="98" y="242.9" textAnchor="middle" fill="#a855f7" fontSize="14">expansion bus</text>
+  <rect x="236" y="30" width="120" height="48" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="296" y="58.9" textAnchor="middle" fill="currentColor" fontSize="14">$06 bit 3</text>
+  <rect x="236" y="136" width="120" height="48" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="296" y="164.9" textAnchor="middle" fill="currentColor" fontSize="14">$06 bit 4</text>
+  <path d="M196,54 L232,54" fill="none" stroke="#a855f7" strokeWidth="1.8" markerEnd="url(#int-nmi-1)" strokeLinejoin="round" />
+  <path d="M196,160 L232,160" fill="none" stroke="#a855f7" strokeWidth="1.8" markerEnd="url(#int-nmi-1)" strokeLinejoin="round" />
+  <rect x="396" y="6" width="304" height="252" rx="6" fill="#a855f7" fillOpacity="0.08" stroke="#a855f7" strokeWidth="2" />
+  <text x="548" y="85.9" textAnchor="middle" fill="#a855f7" fontSize="14">arbiter, in this order:</text>
+  <text x="548" y="102.9" textAnchor="middle" fill="#a855f7" fontSize="14">1. Multiface, unless the</text>
+  <text x="548" y="119.9" textAnchor="middle" fill="#a855f7" fontSize="14">DivMMC is mapped in or</text>
+  <text x="548" y="136.9" textAnchor="middle" fill="#a855f7" fontSize="14">port $E3 bit 7 is set</text>
+  <text x="548" y="153.9" textAnchor="middle" fill="#a855f7" fontSize="14">2. DivMMC, unless the</text>
+  <text x="548" y="170.9" textAnchor="middle" fill="#a855f7" fontSize="14">Multiface is active</text>
+  <text x="548" y="187.9" textAnchor="middle" fill="#a855f7" fontSize="14">3. the expansion bus</text>
+  <path d="M356,54 L392,54" fill="none" stroke="#a855f7" strokeWidth="1.8" markerEnd="url(#int-nmi-1)" strokeLinejoin="round" />
+  <path d="M356,160 L392,160" fill="none" stroke="#a855f7" strokeWidth="1.8" markerEnd="url(#int-nmi-1)" strokeLinejoin="round" />
+  <path d="M196,238 L392,238" fill="none" stroke="#a855f7" strokeWidth="1.8" markerEnd="url(#int-nmi-1)" strokeLinejoin="round" />
+  <rect x="8" y="300" width="135" height="44" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="75.5" y="327.3" textAnchor="middle" fill="currentColor" fontSize="15" fontWeight="bold">idle</text>
+  <path d="M143,322 L179,322" fill="none" stroke="currentColor" strokeWidth="1.8" markerEnd="url(#int-nmi-0)" strokeLinejoin="round" />
+  <rect x="183" y="300" width="135" height="44" rx="6" fill="none" stroke="#e5484d" strokeWidth="2" />
+  <text x="250.5" y="327.3" textAnchor="middle" fill="#e5484d" fontSize="15" fontWeight="bold">fetch</text>
+  <path d="M318,322 L354,322" fill="none" stroke="currentColor" strokeWidth="1.8" markerEnd="url(#int-nmi-0)" strokeLinejoin="round" />
+  <rect x="358" y="300" width="135" height="44" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="425.5" y="327.3" textAnchor="middle" fill="currentColor" fontSize="15" fontWeight="bold">hold</text>
+  <path d="M493,322 L529,322" fill="none" stroke="currentColor" strokeWidth="1.8" markerEnd="url(#int-nmi-0)" strokeLinejoin="round" />
+  <rect x="533" y="300" width="135" height="44" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="600.5" y="327.3" textAnchor="middle" fill="currentColor" fontSize="15" fontWeight="bold">end</text>
+  <path d="M548,258 L548,280 L68,280 L68,296" fill="none" stroke="#a855f7" strokeWidth="1.8" markerEnd="url(#int-nmi-1)" strokeLinejoin="round" />
+  <text x="0" y="372" fill="#e5484d" fontSize="13.5">/NMI is low from the moment a source is taken until the fetch at $0066</text>
+</svg>
+{/* /fig:nmi */}
+<figcaption>The NMI arbiter: the Multiface first, then the DivMMC, then the expansion bus, each with the conditions that refuse it; then /NMI runs through idle, fetch, hold and end.</figcaption>
+</figure>
+
+1. **The Multiface first**, unless the DivMMC is mapped in for any reason (an esxDOS call is enough) or port
+   `$E3` bit 7 holds the DivMMC in by hand.
+2. **Then the DivMMC**, unless the Multiface is active.
+3. **Then the expansion bus.**
+
+A request that loses is gone; it does not wait. Once a source is taken, `/NMI` goes low at once and the
+arbiter walks four states: **idle**, **fetch** until the CPU fetches the opcode at `$0066`, **hold** while
+the device that answered says it is busy, and **end**, before it takes the next request. While the arbiter is
+past fetch, a new request changes nothing, not even the flags of NextReg `$02`.
+
+## Who answers at $0066
+
+The NMI sends the CPU to `$0066`, and whoever the arbiter chose appears there to answer:
+
+- **The fire brigade** pages itself in during that very fetch: the Multiface's ROM at `$0000`, its RAM at
+  `$2000`. It leaves on a `RETN` or when the program touches its ports, which depend on the Multiface type
+  chosen in the **Peripheral 5 Setting register, NextReg `$0A`**.
+- **The butler** comes in through his `$0066` entry point, instant or delayed as bits 1 and 0 of the
+  **Divmmc Entry Points 1 register, NextReg `$BB`**, say. It needs no ROM 3; it needs only a DivMMC NMI.
+  He leaves on a `RETN` or through `$1FF8–$1FFF`.
+
+For both, only the plain `RETN`, `ED 45`, counts as "the NMI is over"; its aliases and `RETI` do not.
+
+## The stackless NMI
+
+An ordinary NMI pushes its return address onto the stack, wherever the stack happens to be. That is
+awkward when the interrupted program has its stack in a page the NMI handler is about to swap out, or no
+sensible stack at all. Set bit 3 of the Interrupt Control register, **NextReg `$C0`**, and the NMI becomes
+**stackless**:
+
+<figure>
+{/* fig:stackless */}
+<svg viewBox="-2 -2 704 304" role="img" aria-label="Two columns. Left, an ordinary NMI: the CPU pushes the return address, $8123, to the stack, SP goes down by 2, and the two bytes are written to memory; RETN pops them back. Right, a stackless NMI, NextReg $C0 bit 3 set: the CPU runs the same two push cycles and SP still goes down by 2, but the memory request is held off, so nothing is written; the return address is in NextRegs $C2 and $C3, and the first RETN reads it from there." style={{ width: "100%", height: "auto" }}>
+  <defs>
+    <marker id="int-stk-0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
+    </marker>
+    <marker id="int-stk-1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#a855f7" />
+    </marker>
+  </defs>
+  <text x="0" y="22" fill="currentColor" fontSize="16.5" fontWeight="bold">ordinary NMI</text>
+  <rect x="90" y="40" width="150" height="50" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="165" y="70.3" textAnchor="middle" fill="currentColor" fontSize="15" fontWeight="bold">PC = $8123</text>
+  <path d="M140,90 L140,110 L75,110 L75,128" fill="none" stroke="currentColor" strokeWidth="1.8" markerEnd="url(#int-stk-0)" strokeLinejoin="round" />
+  <path d="M190,90 L190,110 L260,110 L260,128" fill="none" stroke="#a855f7" strokeWidth="1.8" markerEnd="url(#int-stk-1)" strokeLinejoin="round" />
+  <rect x="0" y="132" width="150" height="70" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="75" y="163.3" textAnchor="middle" fill="currentColor" fontSize="15">stack:</text>
+  <text x="75" y="181.3" textAnchor="middle" fill="currentColor" fontSize="15">$23, $81</text>
+  <rect x="190" y="132" width="140" height="70" rx="6" fill="#a855f7" fillOpacity="0.12" stroke="#a855f7" strokeWidth="2" />
+  <text x="260" y="163.3" textAnchor="middle" fill="#a855f7" fontSize="15">$C2 = $23</text>
+  <text x="260" y="181.3" textAnchor="middle" fill="#a855f7" fontSize="15">$C3 = $81</text>
+  <text x="0" y="232" fill="currentColor" fontSize="13.5">SP − 2; the address is pushed,</text>
+  <text x="0" y="250" fill="currentColor" fontSize="13.5">and $C2/$C3 record it too;</text>
+  <text x="0" y="268" fill="currentColor" fontSize="13.5">RETN pops the stack</text>
+  <text x="360" y="22" fill="currentColor" fontSize="16.5" fontWeight="bold">stackless NMI</text>
+  <rect x="450" y="40" width="150" height="50" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="525" y="70.3" textAnchor="middle" fill="currentColor" fontSize="15" fontWeight="bold">PC = $8123</text>
+  <path d="M500,90 L500,110 L435,110 L435,128" fill="none" stroke="#a855f7" strokeWidth="1.8" markerEnd="url(#int-stk-1)" strokeLinejoin="round" />
+  <path d="M550,90 L550,110 L620,110 L620,128" fill="none" stroke="#a855f7" strokeWidth="1.8" markerEnd="url(#int-stk-1)" strokeLinejoin="round" />
+  <rect x="360" y="132" width="150" height="70" rx="6" fill="#a855f7" fillOpacity="0.08" stroke="#a855f7" strokeWidth="2" />
+  <text x="435" y="163.3" textAnchor="middle" fill="#a855f7" fontSize="15">memory</text>
+  <text x="435" y="181.3" textAnchor="middle" fill="#a855f7" fontSize="15">untouched</text>
+  <rect x="550" y="132" width="140" height="70" rx="6" fill="#a855f7" fillOpacity="0.12" stroke="#a855f7" strokeWidth="2" />
+  <text x="620" y="163.3" textAnchor="middle" fill="#a855f7" fontSize="15">$C2 = $23</text>
+  <text x="620" y="181.3" textAnchor="middle" fill="#a855f7" fontSize="15">$C3 = $81</text>
+  <text x="360" y="232" fill="currentColor" fontSize="13.5">SP − 2 as well, but the push</text>
+  <text x="360" y="250" fill="currentColor" fontSize="13.5">writes no memory; the first</text>
+  <text x="360" y="268" fill="currentColor" fontSize="13.5">RETN reads $C2/$C3</text>
+</svg>
+{/* /fig:stackless */}
+<figcaption>An ordinary NMI pushes the return address and records it in NextRegs $C2/$C3; a stackless one runs the same push cycles without writing memory, and the first RETN reads the address back from $C2/$C3.</figcaption>
+</figure>
+
+- The CPU still runs both push cycles and `SP` still goes down by 2, but the memory request is held off, so
+  **nothing is written**.
+- The return address goes to the **NMI Return Address LSB and MSB registers, NextRegs `$C2` and `$C3`**. In
+  fact they record it on **every** NMI, stackless or not, and a handler may read or rewrite them.
+- **The first `RETN`** after the NMI takes its return address from NextRegs `$C2`/`$C3` instead of the stack,
+  and `SP` goes up by 2 as usual. A `RETI` in the handler does not: it pops the real stack, like any return.
+  Clear bit 3 inside the handler, and its `RETN` pops the stack after all.
+
+I find this one of the Next's quietly brilliant additions. A debugger or a snapshot tool can stop any program
+at any moment without leaving a single footprint in its memory.
+
+## Resets
+
+A reset puts the interrupt system back into the Spectrum's shape: NextReg `$C0` becomes 0 (pulse mode, the
+stackless NMI off), NextReg `$C4` becomes `$81` (the ULA and the expansion bus on, the line interrupt off),
+NextRegs `$C5`, `$C6` and `$CC`–`$CE` become 0, NextReg `$22` and `$23` become 0, and every status bit and
+every pending request is cleared. Leaving hardware IM2 mode does the same to the chain: every request and every
+handler in service is forgotten. So here is my last piece of advice: set the interrupt registers yourself at
+the start of your program, and do not inherit them from whoever ran before you.
+
+## What to take home
+
+Two wires, then, and a well-organised crowd behind them. **`/INT`**, the doorbell, is shared by fourteen
+sources in a fixed order: the line interrupt, the UART receivers, CTC channels 0 to 3 (4 to 7 have places but
+no hardware), the ULA's frame interrupt and the UART transmitters, with the expansion bus behind them. **`/NMI`**,
+the fire alarm, belongs to the Multiface and the DivMMC.
+
+In **pulse mode**, the default, `/INT` is a pulse of 32 or 36 T-states that anybody can start and nobody can
+hold: miss it under `DI` and it is gone, and the vector is always `$FF`, so IM 0 is just IM 1 in disguise. In
+**hardware IM2 mode**, NextReg `$C0` bit 0, every source holds `/INT` until it is served and supplies its
+vector: NextReg `$C0` bits 7–5, its index, and a 0. The daisy chain makes each source wait behind the ones
+before it, lets higher ones nest, and releases a source only on a real `RETI` executed in IM 2; `RETN`
+releases nothing, and in IM 1 only the ULA still rings.
+
+Enables live in NextRegs `$C4`–`$C6`, status in `$C8`–`$CA` (write 1 to clear, set even when disabled for the
+CTC and the UARTs), and NextReg `$20` rings the doorbell by software. The CPU answers within 0 to 22 T plus 13
+or 19 T of acknowledge, and the DMA can be told to step aside.
+
+The NMI's arbiter takes the Multiface before the DivMMC before the bus, its devices answer at `$0066`, and
+the stackless NMI keeps the return address in NextRegs `$C2`/`$C3` instead of the stack. Every one of these rules
+has a reason, and once you know them, the crowd behind the two wires turns into a queue that never pushes.
