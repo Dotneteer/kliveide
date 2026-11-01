@@ -1,0 +1,570 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T811e,---
+description: "How the ZX Spectrum Next stores and reads its files: an SPI master with five devices behind two ports, choosing a device with port $E7, a byte in sixteen CPU clocks and the byte that comes back, the SD card's SPI conversation, reading a sector by hand and with the DMA, the flash and the Raspberry Pi, the DivMMC's side of the job with its MAPRAM, tape and +3 disks, and resets."
+---
+
+import { Callout } from 'nextra/components'
+
+# Storage: an SD Card on a Serial Bus
+
+A Spectrum loaded its games from a cassette, at 1,000 to 2,000 bits a second, and you could make a cup of tea
+while it did. A Next keeps gigabytes on an SD card and loads a whole level before you have reached for the
+kettle. Yet the CPU still talks to that card through a single 8-bit port, one byte at a time, as if it were a
+humble peripheral. How does a byte get from a flash chip inside the card into your program, and why is it
+so fast?
+
+I think storage is the part of the Next most programs use and fewest programmers look at. NextZXOS and
+esxDOS hide it behind a file API, and most of the time that is exactly right. But the day you want to stream
+a sample from the card, load a level while the music plays, or understand why a loader works at 3.5 MHz and
+fails at 28, you need to know what sits under that API. It is a surprisingly small piece of hardware, and a
+very clever one.
+
+You should know three chapters first. [Memory, Ports and NextRegs: How the Z80N Reaches the
+Machine](/en/under-the-hood/emulator-internals/next-memory-io/) introduces the DivMMC, the butler who maps
+the SD card's operating system in when it is needed. [DMA: One Bus, Two
+Masters](/en/under-the-hood/emulator-internals/next-dma/) explains the DMA, which can read the card for you.
+[The Beeper: EAR, MIC and the Tape](/en/under-the-hood/emulator-internals/next-audio/beeper/) covers the
+cassette, which the Next keeps too.
+
+## The road ahead
+
+We start with the bus the card hangs on, SPI, and the five devices that share it. Then come the two ports
+that drive it: `$E7`, which chooses a device, and `$EB`, which moves a byte, with the timing of one byte and
+the curious fact that every read returns the byte from the exchange before. The heart of the chapter is the
+conversation with an SD card: its commands, its answers, and a sector read written out by hand; if you read
+only one section, read that one. After that we look at streaming with the DMA, the flash chip and the
+Raspberry Pi, the DivMMC's part in all this, the tape and the +3's disks, and resets.
+
+<Callout type="info">
+The facts are for **core 3.02.01**. Timings are in CPU clocks, and in T-states for a CPU at **3.5 MHz**
+where a section gives them. The FPGA's side was checked against the Next's hardware design; the card's side
+follows the SD card specification's SPI mode.
+</Callout>
+
+## Five devices on one bus
+
+An SD card can talk in two ways: its own fast four-bit bus, and **SPI**, the Serial Peripheral Interface,
+a simple serial bus that almost every microcontroller speaks. The Next uses SPI. An SPI bus has a
+**master**, which runs the show, and **slaves**, which answer. Four wires are enough:
+
+- **SCK**, the clock, driven by the master. One bit moves in each direction per clock pulse.
+- **MOSI**, master out, slave in: the master's data, one bit at a time, the most significant bit first.
+- **MISO**, master in, slave out: the slave's data, at the same time, on the same clock.
+- **A select line** per slave, active low. Only the selected slave listens and drives MISO; the others stay
+  quiet.
+
+The Next's FPGA is always the master, and I call its SPI master **the telegraphist**: it taps a byte out bit
+by bit, and while it taps, it listens to the byte coming back on the other wire. Five slaves share its bus:
+
+<figure>
+{/* fig:bus */}
+<svg viewBox="-2 -2 704 294" role="img" aria-label="On the left, the FPGA's SPI master, with port $E7 choosing a device and port $EB moving the data. From it the bus, SCK and MOSI out and MISO back, runs to five devices on the right, each with the $E7 value that selects it: SD card 0, low bits 10; SD card 1, low bits 01; the Pi's SPI device 0, $FB; the Pi's device 1, $F7; the FPGA's flash, $7F, in config mode or after power-on only." style={{ width: "100%", height: "auto" }}>
+  <defs>
+    <marker id="st-bus-0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
+    </marker>
+    <marker id="st-bus-1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#3b82f6" />
+    </marker>
+  </defs>
+  <rect x="0" y="85" width="190" height="110" rx="6" fill="#3b82f6" fillOpacity="0.12" stroke="#3b82f6" strokeWidth="2" />
+  <text x="95" y="127.3" textAnchor="middle" fill="#3b82f6" fontSize="15">SPI master</text>
+  <text x="95" y="145.3" textAnchor="middle" fill="#3b82f6" fontSize="15">$E7: select</text>
+  <text x="95" y="163.3" textAnchor="middle" fill="#3b82f6" fontSize="15">$EB: data</text>
+  <line x1="190" y1="140" x2="380" y2="140" stroke="#3b82f6" strokeWidth="2.5" />
+  <text x="206" y="130" fill="#3b82f6" fontSize="13.5">SCK, MOSI →</text>
+  <text x="206" y="162" fill="#3b82f6" fontSize="13.5">← MISO</text>
+  <line x1="380" y1="26" x2="380" y2="262" stroke="#3b82f6" strokeWidth="2.5" />
+  <path d="M380,26 L446,26" fill="none" stroke="#3b82f6" strokeWidth="1.8" markerEnd="url(#st-bus-1)" strokeLinejoin="round" />
+  <rect x="450" y="4" width="250" height="44" rx="6" fill="#30a46c" fillOpacity="0.1" stroke="#30a46c" strokeWidth="2" />
+  <text x="462" y="31" fill="#30a46c" fontSize="15" fontWeight="bold">SD card 0</text>
+  <text x="690" y="31" textAnchor="end" fill="#30a46c" fontSize="13.5">$E7 = xxxxxx10</text>
+  <path d="M380,84 L446,84" fill="none" stroke="#3b82f6" strokeWidth="1.8" markerEnd="url(#st-bus-1)" strokeLinejoin="round" />
+  <rect x="450" y="62" width="250" height="44" rx="6" fill="#30a46c" fillOpacity="0.1" stroke="#30a46c" strokeWidth="2" />
+  <text x="462" y="89" fill="#30a46c" fontSize="15" fontWeight="bold">SD card 1</text>
+  <text x="690" y="89" textAnchor="end" fill="#30a46c" fontSize="13.5">$E7 = xxxxxx01</text>
+  <path d="M380,142 L446,142" fill="none" stroke="#3b82f6" strokeWidth="1.8" markerEnd="url(#st-bus-1)" strokeLinejoin="round" />
+  <rect x="450" y="120" width="250" height="44" rx="6" fill="#a855f7" fillOpacity="0.1" stroke="#a855f7" strokeWidth="2" />
+  <text x="462" y="147" fill="#a855f7" fontSize="15" fontWeight="bold">Pi SPI 0</text>
+  <text x="690" y="147" textAnchor="end" fill="#a855f7" fontSize="13.5">$E7 = $FB</text>
+  <path d="M380,200 L446,200" fill="none" stroke="#3b82f6" strokeWidth="1.8" markerEnd="url(#st-bus-1)" strokeLinejoin="round" />
+  <rect x="450" y="178" width="250" height="44" rx="6" fill="#a855f7" fillOpacity="0.1" stroke="#a855f7" strokeWidth="2" />
+  <text x="462" y="205" fill="#a855f7" fontSize="15" fontWeight="bold">Pi SPI 1</text>
+  <text x="690" y="205" textAnchor="end" fill="#a855f7" fontSize="13.5">$E7 = $F7</text>
+  <path d="M380,258 L446,258" fill="none" stroke="#3b82f6" strokeWidth="1.8" markerEnd="url(#st-bus-1)" strokeLinejoin="round" />
+  <rect x="450" y="236" width="250" height="44" rx="6" fill="#a855f7" fillOpacity="0.1" stroke="#a855f7" strokeWidth="2" />
+  <text x="462" y="263" fill="#a855f7" fontSize="15" fontWeight="bold">flash (cores)</text>
+  <text x="690" y="263" textAnchor="end" fill="#a855f7" fontSize="13.5">$E7 = $7F, locked</text>
+</svg>
+{/* /fig:bus */}
+<figcaption>The SPI bus. The FPGA's SPI master drives SCK and MOSI and reads MISO, shared by five slaves; port $E7 chooses which one is selected, and port $EB moves the bytes.</figcaption>
+</figure>
+
+- **Two SD cards**, card 0 and card 1. The FPGA has a select line for each.
+- **Two SPI devices on the Raspberry Pi's connector**, once the **PI Peripheral Enable register, NextReg
+  `$A0`**, bit 0, turns those GPIO pins into an SPI bus.
+- **The FPGA's flash chip**, which holds the cores the machine starts from.
+
+Notice the property that makes SPI so simple, and that will come back in every section: it is
+**full duplex**. Every byte the master sends brings a byte back, whether anyone wanted it or not. To read,
+the master sends a byte that means nothing, `$FF`; to write, it ignores what comes back.
+
+## Choosing a device
+
+Port **`$E7`**, the SPI chip select, chooses the slave. You write it, and its low bits decide:
+
+- **Low bits `10`**, such as `$FE`, select **SD card 0**, whatever the other six bits are.
+- **Low bits `01`**, such as `$FD`, select **SD card 1**, likewise.
+- **`$FB`** selects the Pi's SPI device 0, and **`$F7`** its device 1. These need the exact value.
+- **`$7F`** selects the flash, but only in config mode, when the machine type in NextReg `$03` is 0, or
+  after a power-on until the first soft reset. At any other time it deselects everything.
+- **Anything else** deselects every slave.
+
+Why are the SD cards so forgiving and the others so strict? Because SD card software from other machines
+writes junk into the upper bits, and the Next's designers chose to let it work; I appreciate that kind of
+politeness in hardware. The selection cannot be read back, so keep your own copy if you need it. After a
+reset nothing is selected, and bit 3 of NextReg `$83` switches both ports, `$E7` and `$EB`, off: they then
+do nothing, and a read gives `$FF`.
+
+## One byte, sixteen clocks
+
+Port **`$EB`**, SPI data, moves the bytes. The telegraphist runs on the **CPU's clock**, and SCK is half of
+it, so one byte takes **16 CPU clocks**, which is 16 T-states at every CPU speed: eight pulses of SCK, each
+two clocks long. The bus works in what
+SPI calls mode 0: SCK rests low, the master changes MOSI while SCK is low, and the slave's MISO is sampled
+as SCK rises.
+
+<figure>
+{/* fig:byte */}
+<svg viewBox="-2 -2 704 242" role="img" aria-label="Sixteen CPU clocks, to scale. SCK rests low and is high in every second clock, eight pulses. MOSI carries bits b7 to b0, each for two clocks, changing while SCK is low. Each MISO bit is taken as SCK rises. The byte that came in on MISO is what the next read of port $EB returns." style={{ width: "100%", height: "auto" }}>
+  <line x1="130" y1="30" x2="130" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="130" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">0</text>
+  <line x1="201.3" y1="30" x2="201.3" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="201.3" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">2</text>
+  <line x1="272.5" y1="30" x2="272.5" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="272.5" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">4</text>
+  <line x1="343.8" y1="30" x2="343.8" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="343.8" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">6</text>
+  <line x1="415" y1="30" x2="415" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="415" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">8</text>
+  <line x1="486.3" y1="30" x2="486.3" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="486.3" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">10</text>
+  <line x1="557.5" y1="30" x2="557.5" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="557.5" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">12</text>
+  <line x1="628.8" y1="30" x2="628.8" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="628.8" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">14</text>
+  <line x1="700" y1="30" x2="700" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="700" y="22" textAnchor="end" fill="currentColor" fontSize="13.5">16</text>
+  <text x="0" y="22" fill="currentColor" fontSize="13.5">CPU clocks</text>
+  <text x="0" y="76" fill="#3b82f6" fontSize="15" fontWeight="bold">SCK</text>
+  <path d="M130,80 L165.625,80 L165.625,56 L201.25,56 L201.25,80 L236.875,80 L236.875,56 L272.5,56 L272.5,80 L308.125,80 L308.125,56 L343.75,56 L343.75,80 L379.375,80 L379.375,56 L415,56 L415,80 L450.625,80 L450.625,56 L486.25,56 L486.25,80 L521.875,80 L521.875,56 L557.5,56 L557.5,80 L593.125,80 L593.125,56 L628.75,56 L628.75,80 L664.375,80 L664.375,56 L700,56 L700,80" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinejoin="round" />
+  <text x="0" y="121" fill="#e8912d" fontSize="15" fontWeight="bold">MOSI</text>
+  <text x="0" y="139" fill="currentColor" fontSize="13.5">master</text>
+  <rect x="130" y="100" width="71.3" height="30" rx="3" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="165.6" y="120" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">b7</text>
+  <rect x="201.3" y="100" width="71.3" height="30" rx="3" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="236.9" y="120" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">b6</text>
+  <rect x="272.5" y="100" width="71.3" height="30" rx="3" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="308.1" y="120" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">b5</text>
+  <rect x="343.8" y="100" width="71.3" height="30" rx="3" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="379.4" y="120" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">b4</text>
+  <rect x="415" y="100" width="71.3" height="30" rx="3" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="450.6" y="120" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">b3</text>
+  <rect x="486.3" y="100" width="71.3" height="30" rx="3" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="521.9" y="120" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">b2</text>
+  <rect x="557.5" y="100" width="71.3" height="30" rx="3" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="593.1" y="120" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">b1</text>
+  <rect x="628.8" y="100" width="71.3" height="30" rx="3" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="664.4" y="120" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">b0</text>
+  <text x="0" y="177" fill="#30a46c" fontSize="15" fontWeight="bold">MISO</text>
+  <text x="0" y="195" fill="currentColor" fontSize="13.5">slave</text>
+  <rect x="130" y="156" width="71.3" height="30" rx="3" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="1.4" />
+  <text x="165.6" y="176" textAnchor="middle" fill="#30a46c" fontSize="13.5" fontWeight="bold">b7</text>
+  <rect x="201.3" y="156" width="71.3" height="30" rx="3" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="1.4" />
+  <text x="236.9" y="176" textAnchor="middle" fill="#30a46c" fontSize="13.5" fontWeight="bold">b6</text>
+  <rect x="272.5" y="156" width="71.3" height="30" rx="3" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="1.4" />
+  <text x="308.1" y="176" textAnchor="middle" fill="#30a46c" fontSize="13.5" fontWeight="bold">b5</text>
+  <rect x="343.8" y="156" width="71.3" height="30" rx="3" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="1.4" />
+  <text x="379.4" y="176" textAnchor="middle" fill="#30a46c" fontSize="13.5" fontWeight="bold">b4</text>
+  <rect x="415" y="156" width="71.3" height="30" rx="3" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="1.4" />
+  <text x="450.6" y="176" textAnchor="middle" fill="#30a46c" fontSize="13.5" fontWeight="bold">b3</text>
+  <rect x="486.3" y="156" width="71.3" height="30" rx="3" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="1.4" />
+  <text x="521.9" y="176" textAnchor="middle" fill="#30a46c" fontSize="13.5" fontWeight="bold">b2</text>
+  <rect x="557.5" y="156" width="71.3" height="30" rx="3" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="1.4" />
+  <text x="593.1" y="176" textAnchor="middle" fill="#30a46c" fontSize="13.5" fontWeight="bold">b1</text>
+  <rect x="628.8" y="156" width="71.3" height="30" rx="3" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="1.4" />
+  <text x="664.4" y="176" textAnchor="middle" fill="#30a46c" fontSize="13.5" fontWeight="bold">b0</text>
+  <path d="M165.625,140 L165.625,154" fill="none" stroke="#e5484d" strokeWidth="1.8" strokeLinejoin="round" />
+  <path d="M236.875,140 L236.875,154" fill="none" stroke="#e5484d" strokeWidth="1.8" strokeLinejoin="round" />
+  <path d="M308.125,140 L308.125,154" fill="none" stroke="#e5484d" strokeWidth="1.8" strokeLinejoin="round" />
+  <path d="M379.375,140 L379.375,154" fill="none" stroke="#e5484d" strokeWidth="1.8" strokeLinejoin="round" />
+  <path d="M450.625,140 L450.625,154" fill="none" stroke="#e5484d" strokeWidth="1.8" strokeLinejoin="round" />
+  <path d="M521.875,140 L521.875,154" fill="none" stroke="#e5484d" strokeWidth="1.8" strokeLinejoin="round" />
+  <path d="M593.125,140 L593.125,154" fill="none" stroke="#e5484d" strokeWidth="1.8" strokeLinejoin="round" />
+  <path d="M664.375,140 L664.375,154" fill="none" stroke="#e5484d" strokeWidth="1.8" strokeLinejoin="round" />
+  <text x="700" y="226" textAnchor="end" fill="#e5484d" fontSize="13.5">red ticks: a MISO bit is taken as SCK rises</text>
+</svg>
+{/* /fig:byte */}
+<figcaption>One byte on the SPI bus, to scale in CPU clocks. SCK is the CPU clock halved and rests low; MOSI carries the master's bits b7 to b0, each for two clocks; the slave's MISO bits are taken as SCK rises. The byte that came in is what the next read of $EB returns.</figcaption>
+</figure>
+
+Now the rules that follow from it, and I would learn them by heart:
+
+- **A write to `$EB` sends the byte** you wrote. The byte that comes back is kept.
+- **A read of `$EB` returns the byte that came back during the previous exchange**, and starts a new
+  exchange that sends `$FF`. So a read is always one exchange behind: you get the answer to what was sent
+  before. This sounds awkward, but it is what makes `INIR` work, as the next section shows.
+- **A new exchange starts only when the last one is finished**, or in its very last clock. An access to `$EB`
+  sooner than that is simply lost: a write sends nothing, and a read returns the old byte and starts nothing.
+  The CPU gets no wait state to warn it.
+
+The last rule is the one that bites, because the telegraphist counts the CPU's own clocks. Two `OUT (C),r`
+in a row come 12 T-states apart, and 12 is less than 16: the second byte is lost, at 3.5 MHz just as at 28.
+Two `IN r,(C)` in a row lose the second exchange the same way. `OTIR` and `INIR`, at 21 T-states a byte, are
+fine, and so is a polling loop. My rule of thumb: never two accesses to `$EB` with nothing between them; send
+a command from a table with `OTIR`, and put a `NOP` between two lone `IN`s.
+
+The speed follows the CPU. SCK is 1.75 MHz at 3.5 MHz and 14 MHz at 28 MHz, so the bus can move about 219K
+to 1.75 MB a second; in practice the program around it decides. This is also the answer to the opening
+puzzle: the bytes go one at a time, but at 28 MHz the bus that carries them is some ten thousand times faster
+than a tape.
+
+## Talking to an SD card
+
+The card is not part of the FPGA; it is a small computer of its own, with a controller that speaks the SD
+card specification. In SPI mode the conversation goes like this:
+
+- **A command is six bytes**: `$40` plus the command's number, a 32-bit argument, most significant byte
+  first, and a CRC byte. The CRC is checked only for the first two commands, CMD0 and CMD8; after that a
+  card in SPI mode ignores it.
+- **The card answers after a pause.** Between zero and eight `$FF` bytes come first, then a one-byte
+  response, **R1**. `$00` means "done, no error"; bit 0, `$01`, means "still in the idle state"; any other bit
+  is an error.
+- **`$FF` is silence.** Between commands the master keeps sending `$FF`, and the card answers `$FF`. A command
+  always starts with the bits `01`, so `$FF` can never be mistaken for one.
+
+Starting a card takes a handful of commands, which the driver sends once:
+
+1. **CMD0**, go idle. The card first gets at least 74 clocks with nothing selected; then CMD0 with its select
+   line low puts it into SPI mode, and it answers `$01`.
+2. **CMD8**, check the voltage: the card echoes the pattern it was sent, which tells the driver it is a
+   modern card.
+3. **CMD55** then **ACMD41**, repeated until the card answers `$00`: it has finished its own start-up.
+4. **CMD58**, read the operating conditions: one bit says whether the card is **SDHC** or larger. Such a card
+   is addressed in **sectors** of 512 bytes, not in bytes.
+
+After that, reading and writing are one command each:
+
+<figure>
+{/* fig:cmd17 */}
+<svg viewBox="-2 -2 704 194" role="img" aria-label="Two rows of bytes, not to scale. The host row: the six-byte command, $51, four bytes of the sector number and the CRC, then $FF bytes for as long as the read goes on. The card row: $FF while the command arrives and for up to eight bytes more, R1 = $00, $FF while it fetches the sector, the data token $FE, 512 data bytes and two CRC bytes." style={{ width: "100%", height: "auto" }}>
+  <text x="0" y="24" fill="#e8912d" fontSize="15" fontWeight="bold">host</text>
+  <text x="0" y="42" fill="#e8912d" fontSize="13.5">MOSI</text>
+  <text x="0" y="110" fill="#30a46c" fontSize="15" fontWeight="bold">card</text>
+  <text x="0" y="128" fill="#30a46c" fontSize="13.5">MISO</text>
+  <rect x="80" y="8" width="150" height="40" rx="4" fill="#e8912d" fillOpacity="0.16" stroke="#e8912d" strokeWidth="2" />
+  <text x="155" y="33" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">$51  sector  CRC</text>
+  <rect x="232" y="8" width="468" height="40" rx="4" fill="none" stroke="#e8912d" strokeWidth="1.4" strokeDasharray="5 4" />
+  <text x="466" y="33" textAnchor="middle" fill="#e8912d" fontSize="13.5">$FF  $FF  $FF  …  for as long as the card talks</text>
+  <rect x="80" y="94" width="150" height="40" rx="4" fill="none" stroke="#30a46c" strokeWidth="1.4" strokeDasharray="5 4" />
+  <text x="155" y="119" textAnchor="middle" fill="#30a46c" fontSize="13.5">$FF …</text>
+  <rect x="232" y="94" width="54" height="40" rx="4" fill="none" stroke="#30a46c" strokeWidth="1.4" strokeDasharray="5 4" />
+  <text x="259" y="111" textAnchor="middle" fill="#30a46c" fontSize="13.5">$FF</text>
+  <text x="259" y="127" textAnchor="middle" fill="#30a46c" fontSize="13.5">0–8</text>
+  <rect x="288" y="94" width="54" height="40" rx="4" fill="#30a46c" fillOpacity="0.16" stroke="#30a46c" strokeWidth="2" />
+  <text x="315" y="111" textAnchor="middle" fill="#30a46c" fontSize="13.5" fontWeight="bold">R1</text>
+  <text x="315" y="127" textAnchor="middle" fill="#30a46c" fontSize="13.5" fontWeight="bold">$00</text>
+  <rect x="344" y="94" width="70" height="40" rx="4" fill="none" stroke="#30a46c" strokeWidth="1.4" strokeDasharray="5 4" />
+  <text x="379" y="111" textAnchor="middle" fill="#30a46c" fontSize="13.5">$FF …</text>
+  <text x="379" y="127" textAnchor="middle" fill="#30a46c" fontSize="13.5">wait</text>
+  <rect x="416" y="94" width="54" height="40" rx="4" fill="#e5484d" fillOpacity="0.16" stroke="#e5484d" strokeWidth="2" />
+  <text x="443" y="119" textAnchor="middle" fill="#e5484d" fontSize="13.5" fontWeight="bold">$FE</text>
+  <rect x="472" y="94" width="170" height="40" rx="4" fill="#30a46c" fillOpacity="0.16" stroke="#30a46c" strokeWidth="2" />
+  <text x="557" y="119" textAnchor="middle" fill="#30a46c" fontSize="13.5" fontWeight="bold">512 data bytes</text>
+  <rect x="644" y="94" width="56" height="40" rx="4" fill="none" stroke="#30a46c" strokeWidth="1.4" />
+  <text x="672" y="111" textAnchor="middle" fill="#30a46c" fontSize="13.5">CRC</text>
+  <text x="672" y="127" textAnchor="middle" fill="#30a46c" fontSize="13.5">2</text>
+  <text x="443" y="160" textAnchor="middle" fill="#e5484d" fontSize="13.5">token</text>
+  <text x="0" y="184" fill="currentColor" fontSize="13.5">each byte the host sends brings back the card's byte below it</text>
+</svg>
+{/* /fig:cmd17 */}
+<figcaption>Reading one sector with CMD17, byte by byte (not to scale). The host sends the six-byte command, then $FF; the card answers R1 after a few $FF bytes, waits while it fetches the sector, sends the data token $FE, the 512 bytes and a two-byte CRC.</figcaption>
+</figure>
+
+- **CMD17 reads one sector.** After R1 the card sends `$FF` while it fetches the data, then the **data token**
+  `$FE`, the 512 bytes and a 16-bit CRC.
+- **CMD24 writes one sector.** After R1 the host sends `$FE`, the 512 bytes and a CRC; the card answers a
+  **data response** byte, `xxx00101` when it accepted the block, and then `$00` while it is busy writing.
+- **CMD18 reads sector after sector**, each with its own `$FE` and CRC, until the host sends **CMD12**. That
+  is how a file of many sectors streams without a command per sector.
+
+Let's read a sector. This routine assumes a card that is started, selected, and SDHC:
+
+```z80klive
+; read sector DE (high word 0) of an SDHC card to (HL)
+ReadSec: ld a,d
+        ld (Cmd17+3),a         ; sector bits 15-8
+        ld a,e
+        ld (Cmd17+4),a         ; sector bits 7-0
+        push hl
+        ld hl,Cmd17
+        ld bc,$06eb            ; 6 bytes to the SPI data port
+        otir
+        pop hl
+Resp:   in a,(c)               ; $FF until R1 comes
+        cp $ff
+        jr z,Resp
+        or a
+        ret nz                 ; R1 not 0: an error
+Token:  in a,(c)               ; $FF until the token
+        cp $fe
+        jr nz,Token
+        ld b,0
+        inir                   ; bytes 0-255
+        inir                   ; bytes 256-511
+        in a,(c)               ; CRC, high byte
+        nop                    ; keep 16 T-states apart
+        in a,(c)               ; CRC, low byte
+        ret
+Cmd17:  .defb $51,0,0,0,0,$01  ; CMD17, sector, CRC
+```
+
+How it works:
+
+- The sector number goes into bytes 3 and 4 of the command at `Cmd17`, most significant byte first, as SD
+  commands want it; bytes 1 and 2 stay 0. The table lives in RAM, so the routine can patch it.
+- `OTIR` sends the six bytes, 21 T-states apart, so none is lost. Each brings a byte back, `$FF` here, which
+  nobody reads. The CRC byte, `$01`, is ignored by a card in SPI mode after CMD8.
+- `Resp` polls with `IN`. Each read returns the byte of the exchange before and starts the next, so the loop
+  sees the card's bytes in order, a step late, and stops at R1.
+- `Token` polls the same way until `$FE`. The read that returned `$FE` has already started the exchange that
+  brings the first data byte, so the next `IN`, the first of `INIR`, returns byte 0. That is the read-behind
+  rule doing exactly what we want.
+- The two `INIR`s read 512 bytes, and the two last `IN`s the CRC, with a `NOP` between them so that the
+  second one is not lost. A real driver also gives up after a while in both polling loops, and checks the
+  CRC if it cares.
+
+## Streaming with the DMA
+
+The DMA can do the `INIR` part for you, and the SD card's port is the one I/O port the DMA treats with special
+care: the telegraphist holds the DMA with **wait states** until the byte under way has finished. So a DMA
+transfer from port `$EB`, fixed, to memory, incrementing, never reads too early and never loses a byte, at
+any CPU speed. Each of its reads returns the byte before and starts the next exchange, just as the CPU's do,
+so the DMA starts after the data token, as `INIR` did.
+
+That makes a lovely pattern for loading while a game runs: the CPU sends the command and waits for the token,
+then hands the 512 bytes to the DMA in burst mode, or in continuous mode for the fastest load. The [DMA
+chapter](/en/under-the-hood/emulator-internals/next-dma/) has the details of both modes.
+
+## The flash and the Pi
+
+**The flash chip** holds the FPGA's cores. The board loads the FPGA from it when the power comes on, before
+any Z80 code runs. The Next's programs reach it only to update a core, which is why `$E7` selects it only in
+config mode or straight after a power-on: an ordinary program cannot select it by accident and talk to the
+chip that the machine starts from. I like that lock. It is the one place where a stray `OUT` could turn a
+computer into a brick.
+
+**The Raspberry Pi's connector** carries an SPI bus too, once NextReg `$A0` bit 0 gives it the GPIO pins, with
+two selects, `$FB` and `$F7`. The Next is the master there as well, so a Pi, or any SPI device on that
+connector, is a slave the program talks to exactly as it talks to the card.
+
+## The butler's part
+
+The SPI master moves bytes; it knows nothing of files. Files are the DivMMC's business, the butler of the
+memory chapter, and his tools are mostly memory. His 8K ROM holds the start of the SD card's operating
+system, and he has **128K of RAM**, sixteen banks of 8K, for the rest of its code,
+its buffers and its tables. Port **`$E3`**, the DivMMC control port, sets him up:
+
+- **Bit 7, CONMEM**, maps the DivMMC in by hand: its ROM at `$0000`, read-only, and a RAM bank at `$2000`.
+- **Bits 3–0** choose that bank, 0 to 15.
+- **Bit 6, MAPRAM**, replaces the ROM with **RAM bank 3**: the operating system runs from RAM, and bank 3
+  becomes read-only, at `$0000` and also at `$2000` if bits 3–0 select it there. MAPRAM can only be set:
+  writing 0 leaves it on, as on the original DivMMC. On the Next, a reset or a 1 written to NextReg `$09` bit 3
+  clears it.
+- **Reading `$E3`** gives bits 7, 6 and 3–0, with bits 5 and 4 reading 0.
+
+The butler's other way in is the **automap** at his entry points, `RST $08` above all: a program calls the
+operating system with `RST $08`, the DivMMC maps itself in, its code drives `$E7` and `$EB`, and it leaves on a
+`RETN`. The [memory chapter's DivMMC
+section](/en/under-the-hood/emulator-internals/next-memory-io/#the-divmmcs-entry-points) tells that story in
+full, including the master switch, NextReg `$0A` bit 4. So the whole stack is short: your program calls
+`RST $08`, the butler's code turns the call into SD commands, and the telegraphist turns the commands into
+bits.
+
+## Tape and disks
+
+The Next keeps the Spectrum's **tape**: the EAR input and MIC output of port `$FE`, which the [beeper
+chapter](/en/under-the-hood/emulator-internals/next-audio/beeper/#loading-from-tape) describes, so a real
+cassette still loads. And the butler can stand in for the cassette: four of his entry points sit inside the
+48K ROM's tape routines, so a `LOAD ""` can be served from a tape image on the SD card instead.
+
+The +3's **floppy disk** is a different case. The Next has no disk controller at all. What it has is an
+**I/O trap**: with bit 0 of the **I/O Traps register, NextReg `$D8`**, set, an access to the +3's disk ports
+`$2FFD` and `$3FFD` raises a Multiface NMI, and the handler can do what the disk controller would have done,
+from a disk image on the card. The [interrupts
+chapter](/en/under-the-hood/emulator-internals/next-interrupts/#the-fire-alarm) lists the trap among the NMI's
+sources.
+
+## Resets
+
+A reset, hard or soft, deselects every SPI device, so `$E7` behaves as if `$FF` had been written. The
+telegraphist itself is not reset: a byte under way finishes, and the next one waits for a program. It clears port `$E3`, MAPRAM included, so the DivMMC is mapped out with RAM bank
+0 selected. An SD card, being outside the FPGA, is not reset at all: it keeps whatever state it was in, and
+its driver starts it again with CMD0, as on every power-on.
+
+## What to take home
+
+Under the file API sits an SPI bus with the FPGA as its master, the telegraphist, and five slaves: two SD
+cards, two SPI devices on the Pi's connector, and the flash with the cores. Port `$E7` chooses one: low bits
+`10` card 0, `01` card 1, `$FB` and `$F7` the Pi, `$7F` the flash only in config mode or after a power-on, and
+anything else none.
+
+Port `$EB` moves a byte in 16 CPU clocks, 16 T-states at any speed, SCK being the CPU clock halved. A write
+sends its byte; a read returns the byte of the exchange before and sends `$FF`; an access during a byte is
+lost, so two `OUT`s or two `IN`s in a row, 12 T-states apart, lose the second. The DMA gets wait states instead, so it can stream from the
+card at any speed.
+
+The card speaks the SD specification's SPI mode: six-byte commands, an R1 response after some `$FF`s, CMD0,
+CMD8, ACMD41 and CMD58 to start, CMD17 and CMD18 to read and CMD24 to write, with `$FE` before each block of
+512 bytes. Files are the DivMMC's job: his ROM and 128K of RAM, port `$E3` with CONMEM, the bank and the sticky
+MAPRAM, and his entry points, `RST $08` first. Tape still works and can come from the card; the +3's disks are
+emulated by software through an I/O trap. A small bus, a polite select port and a careful butler: that is all
+it takes to put a filing cabinet behind a single port.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"The road ahead","id":"the-road-ahead","depth":2},{"value":"Five devices on one bus","id":"five-devices-on-one-bus","depth":2},{"value":"Choosing a device","id":"choosing-a-device","depth":2},{"value":"One byte, sixteen clocks","id":"one-byte-sixteen-clocks","depth":2},{"value":"Talking to an SD card","id":"talking-to-an-sd-card","depth":2},{"value":"Streaming with the DMA","id":"streaming-with-the-dma","depth":2},{"value":"The flash and the Pi","id":"the-flash-and-the-pi","depth":2},{"value":"The butler’s part","id":"the-butlers-part","depth":2},{"value":"Tape and disks","id":"tape-and-disks","depth":2},{"value":"Resets","id":"resets","depth":2},{"value":"What to take home","id":"what-to-take-home","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"How the ZX Spectrum Next stores and reads its files: an SPI master with five devices behind two ports, choosing a device with port $E7, a byte in sixteen CPU clocks and the byte that comes back, the SD card's SPI conversation, reading a sector by hand and with the DMA, the flash and the Raspberry Pi, the DivMMC's side of the job with its MAPRAM, tape and +3 disks, and resets.","title":"Storage: an SD Card on a Serial Bus","filePath":"content/en/under-the-hood/emulator-internals/next-storage.mdx","timestamp":1793369525000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"under-the-hood/emulator-internals/next-storage","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Storage: an SD Card on a Serial Bus - Klive IDE"}],["$","meta","1",{"name":"description","content":"How the ZX Spectrum Next stores and reads its files: an SPI master with five devices behind two ports, choosing a device with port $E7, a byte in sixteen CPU clocks and the byte that comes back, the SD card's SPI conversation, reading a sector by hand and with the DMA, the flash and the Raspberry Pi, the DivMMC's side of the job with its MAPRAM, tape and +3 disks, and resets."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/under-the-hood/emulator-internals/next-storage/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"PCZAuL2hRwkZfrNjWctZa"}
+20:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+21:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+54:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Storage: an SD Card on a Serial Bus","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A Spectrum loaded its games from a cassette, at 1,000 to 2,000 bits a second, and you could make a cup of tea\nwhile it did. A Next keeps gigabytes on an SD card and loads a whole level before you have reached for the\nkettle. Yet the CPU still talks to that card through a single 8-bit port, one byte at a time, as if it were a\nhumble peripheral. How does a byte get from a flash chip inside the card into your program, and why is it\nso fast?"}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"I think storage is the part of the Next most programs use and fewest programmers look at. NextZXOS and\nesxDOS hide it behind a file API, and most of the time that is exactly right. But the day you want to stream\na sample from the card, load a level while the music plays, or understand why a loader works at 3.5 MHz and\nfails at 28, you need to know what sits under that API. It is a surprisingly small piece of hardware, and a\nvery clever one."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["You should know three chapters first. ",["$","$L20",null,{"href":"/en/under-the-hood/emulator-internals/next-memory-io/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Memory, Ports and NextRegs: How the Z80N Reaches the\nMachine"}]," introduces the DivMMC, the butler who maps\nthe SD card’s operating system in when it is needed. ",["$","$L20",null,{"href":"/en/under-the-hood/emulator-internals/next-dma/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"DMA: One Bus, Two\nMasters"}]," explains the DMA, which can read the card for you.\n",["$","$L20",null,{"href":"/en/under-the-hood/emulator-internals/next-audio/beeper/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"The Beeper: EAR, MIC and the Tape"}]," covers the\ncassette, which the Next keeps too."]}],"\n",["$","h2",null,{"id":"the-road-ahead","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The road ahead",["$","$L21",null,{"id":"the-road-ahead"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["We start with the bus the card hangs on, SPI, and the five devices that share it. Then come the two ports\nthat drive it: ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$E7"}],", which chooses a device, and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$EB"}],", which moves a byte, with the timing of one byte and\nthe curious fact that every read returns the byte from the exchange before. The heart of the chapter is the\nconversation with an SD card: its commands, its answers, and a sector read written out by hand; if you read\nonly one section, read that one. After that we look at streaming with the DMA, the flash chip and the\nRaspberry Pi, the DivMMC’s part in all this, the tape and the +3’s disks, and resets."]}],"\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49","\n","$L4a","\n","$L4b","\n","$L4c","\n","$L4d","\n","$L4e","\n","$L4f","\n","$L50","\n","$L51","\n","$L52","\n","$L53"]]}]
+15:["$","$L54",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@55"}]}]
+1f:true
+77:"ToggleWordWrapButton"
+78:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$77"]
+79:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+9:300
+22:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The facts are for ",["$","strong",null,{"children":"core 3.02.01"}],". Timings are in CPU clocks, and in T-states for a CPU at ",["$","strong",null,{"children":"3.5 MHz"}],"\nwhere a section gives them. The FPGA’s side was checked against the Next’s hardware design; the card’s side\nfollows the SD card specification’s SPI mode."]}]}]]}]
+23:["$","h2",null,{"id":"five-devices-on-one-bus","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Five devices on one bus",["$","$L21",null,{"id":"five-devices-on-one-bus"}]]}]
+24:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["An SD card can talk in two ways: its own fast four-bit bus, and ",["$","strong",null,{"children":"SPI"}],", the Serial Peripheral Interface,\na simple serial bus that almost every microcontroller speaks. The Next uses SPI. An SPI bus has a\n",["$","strong",null,{"children":"master"}],", which runs the show, and ",["$","strong",null,{"children":"slaves"}],", which answer. Four wires are enough:"]}]
+25:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"SCK"}],", the clock, driven by the master. One bit moves in each direction per clock pulse."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"MOSI"}],", master out, slave in: the master’s data, one bit at a time, the most significant bit first."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"MISO"}],", master in, slave out: the slave’s data, at the same time, on the same clock."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"A select line"}]," per slave, active low. Only the selected slave listens and drives MISO; the others stay\nquiet."]}],"\n"]}]
+26:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The Next’s FPGA is always the master, and I call its SPI master ",["$","strong",null,{"children":"the telegraphist"}],": it taps a byte out bit\nby bit, and while it taps, it listens to the byte coming back on the other wire. Five slaves share its bus:"]}]
+27:["$","figure",null,{"children":[["$","svg",null,{"viewBox":"-2 -2 704 294","role":"img","aria-label":"On the left, the FPGA's SPI master, with port $E7 choosing a device and port $EB moving the data. From it the bus, SCK and MOSI out and MISO back, runs to five devices on the right, each with the $E7 value that selects it: SD card 0, low bits 10; SD card 1, low bits 01; the Pi's SPI device 0, $FB; the Pi's device 1, $F7; the FPGA's flash, $7F, in config mode or after power-on only.","style":{"width":"100%","height":"auto"},"children":[["$","defs",null,{"children":[["$","marker",null,{"id":"st-bus-0","viewBox":"0 0 10 10","refX":"9","refY":"5","markerWidth":"7","markerHeight":"7","orient":"auto-start-reverse","children":["$","path",null,{"d":"M0,0 L10,5 L0,10 z","fill":"currentColor"}]}],["$","marker",null,{"id":"st-bus-1","viewBox":"0 0 10 10","refX":"9","refY":"5","markerWidth":"7","markerHeight":"7","orient":"auto-start-reverse","children":["$","path",null,{"d":"M0,0 L10,5 L0,10 z","fill":"#3b82f6"}]}]]}],["$","rect",null,{"x":"0","y":"85","width":"190","height":"110","rx":"6","fill":"#3b82f6","fillOpacity":"0.12","stroke":"#3b82f6","strokeWidth":"2"}],["$","text",null,{"x":"95","y":"127.3","textAnchor":"middle","fill":"#3b82f6","fontSize":"15","children":"SPI master"}],["$","text",null,{"x":"95","y":"145.3","textAnchor":"middle","fill":"#3b82f6","fontSize":"15","children":"$$E7: select"}],["$","text",null,{"x":"95","y":"163.3","textAnchor":"middle","fill":"#3b82f6","fontSize":"15","children":"$$EB: data"}],["$","line",null,{"x1":"190","y1":"140","x2":"380","y2":"140","stroke":"#3b82f6","strokeWidth":"2.5"}],["$","text",null,{"x":"206","y":"130","fill":"#3b82f6","fontSize":"13.5","children":"SCK, MOSI →"}],["$","text",null,{"x":"206","y":"162","fill":"#3b82f6","fontSize":"13.5","children":"← MISO"}],["$","line",null,{"x1":"380","y1":"26","x2":"380","y2":"262","stroke":"#3b82f6","strokeWidth":"2.5"}],["$","path",null,{"d":"M380,26 L446,26","fill":"none","stroke":"#3b82f6","strokeWidth":"1.8","markerEnd":"url(#st-bus-1)","strokeLinejoin":"round"}],["$","rect",null,{"x":"450","y":"4","width":"250","height":"44","rx":"6","fill":"#30a46c","fillOpacity":"0.1","stroke":"#30a46c","strokeWidth":"2"}],["$","text",null,{"x":"462","y":"31","fill":"#30a46c","fontSize":"15","fontWeight":"bold","children":"SD card 0"}],["$","text",null,{"x":"690","y":"31","textAnchor":"end","fill":"#30a46c","fontSize":"13.5","children":"$$E7 = xxxxxx10"}],["$","path",null,{"d":"M380,84 L446,84","fill":"none","stroke":"#3b82f6","strokeWidth":"1.8","markerEnd":"url(#st-bus-1)","strokeLinejoin":"round"}],["$","rect",null,{"x":"450","y":"62","width":"250","height":"44","rx":"6","fill":"#30a46c","fillOpacity":"0.1","stroke":"#30a46c","strokeWidth":"2"}],["$","text",null,{"x":"462","y":"89","fill":"#30a46c","fontSize":"15","fontWeight":"bold","children":"SD card 1"}],["$","text",null,{"x":"690","y":"89","textAnchor":"end","fill":"#30a46c","fontSize":"13.5","children":"$$E7 = xxxxxx01"}],["$","path",null,{"d":"M380,142 L446,142","fill":"none","stroke":"#3b82f6","strokeWidth":"1.8","markerEnd":"url(#st-bus-1)","strokeLinejoin":"round"}],["$","rect",null,{"x":"450","y":"120","width":"250","height":"44","rx":"6","fill":"#a855f7","fillOpacity":"0.1","stroke":"#a855f7","strokeWidth":"2"}],["$","text",null,{"x":"462","y":"147","fill":"#a855f7","fontSize":"15","fontWeight":"bold","children":"Pi SPI 0"}],["$","text",null,{"x":"690","y":"147","textAnchor":"end","fill":"#a855f7","fontSize":"13.5","children":"$$E7 = $FB"}],["$","path",null,{"d":"M380,200 L446,200","fill":"none","stroke":"#3b82f6","strokeWidth":"1.8","markerEnd":"url(#st-bus-1)","strokeLinejoin":"round"}],["$","rect",null,{"x":"450","y":"178","width":"250","height":"44","rx":"6","fill":"#a855f7","fillOpacity":"0.1","stroke":"#a855f7","strokeWidth":"2"}],["$","text",null,{"x":"462","y":"205","fill":"#a855f7","fontSize":"15","fontWeight":"bold","children":"Pi SPI 1"}],["$","text",null,{"x":"690","y":"205","textAnchor":"end","fill":"#a855f7","fontSize":"13.5","children":"$$E7 = $F7"}],["$","path",null,{"d":"M380,258 L446,258","fill":"none","stroke":"#3b82f6","strokeWidth":"1.8","markerEnd":"url(#st-bus-1)","strokeLinejoin":"round"}],["$","rect",null,{"x":"450","y":"236","width":"250","height":"44","rx":"6","fill":"#a855f7","fillOpacity":"0.1","stroke":"#a855f7","strokeWidth":"2"}],["$","text",null,{"x":"462","y":"263","fill":"#a855f7","fontSize":"15","fontWeight":"bold","children":"flash (cores)"}],["$","text",null,{"x":"690","y":"263","textAnchor":"end","fill":"#a855f7","fontSize":"13.5","children":"$$E7 = $7F, locked"}]]}],["$","figcaption",null,{"children":"The SPI bus. The FPGA’s SPI master drives SCK and MOSI and reads MISO, shared by five slaves; port $E7 chooses which one is selected, and port $EB moves the bytes."}]]}]
+28:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Two SD cards"}],", card 0 and card 1. The FPGA has a select line for each."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Two SPI devices on the Raspberry Pi’s connector"}],", once the ",["$","strong",null,{"children":["PI Peripheral Enable register, NextReg\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$A0"}]]}],", bit 0, turns those GPIO pins into an SPI bus."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"The FPGA’s flash chip"}],", which holds the cores the machine starts from."]}],"\n"]}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Notice the property that makes SPI so simple, and that will come back in every section: it is\n",["$","strong",null,{"children":"full duplex"}],". Every byte the master sends brings a byte back, whether anyone wanted it or not. To read,\nthe master sends a byte that means nothing, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FF"}],"; to write, it ignores what comes back."]}]
+2a:["$","h2",null,{"id":"choosing-a-device","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Choosing a device",["$","$L21",null,{"id":"choosing-a-device"}]]}]
+2b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Port ",["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$E7"}]}],", the SPI chip select, chooses the slave. You write it, and its low bits decide:"]}]
+2c:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":["Low bits ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"10"}]]}],", such as ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FE"}],", select ",["$","strong",null,{"children":"SD card 0"}],", whatever the other six bits are."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":["Low bits ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"01"}]]}],", such as ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FD"}],", select ",["$","strong",null,{"children":"SD card 1"}],", likewise."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FB"}]}]," selects the Pi’s SPI device 0, and ",["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$F7"}]}]," its device 1. These need the exact value."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$7F"}]}]," selects the flash, but only in config mode, when the machine type in NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$03"}]," is 0, or\nafter a power-on until the first soft reset. At any other time it deselects everything."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Anything else"}]," deselects every slave."]}],"\n"]}]
+2d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Why are the SD cards so forgiving and the others so strict? Because SD card software from other machines\nwrites junk into the upper bits, and the Next’s designers chose to let it work; I appreciate that kind of\npoliteness in hardware. The selection cannot be read back, so keep your own copy if you need it. After a\nreset nothing is selected, and bit 3 of NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$83"}]," switches both ports, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$E7"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$EB"}],", off: they then\ndo nothing, and a read gives ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FF"}],"."]}]
+2e:["$","h2",null,{"id":"one-byte-sixteen-clocks","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["One byte, sixteen clocks",["$","$L21",null,{"id":"one-byte-sixteen-clocks"}]]}]
+2f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Port ",["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$EB"}]}],", SPI data, moves the bytes. The telegraphist runs on the ",["$","strong",null,{"children":"CPU’s clock"}],", and SCK is half of\nit, so one byte takes ",["$","strong",null,{"children":"16 CPU clocks"}],", which is 16 T-states at every CPU speed: eight pulses of SCK, each\ntwo clocks long. The bus works in what\nSPI calls mode 0: SCK rests low, the master changes MOSI while SCK is low, and the slave’s MISO is sampled\nas SCK rises."]}]
+30:["$","figure",null,{"children":[["$","svg",null,{"viewBox":"-2 -2 704 242","role":"img","aria-label":"Sixteen CPU clocks, to scale. SCK rests low and is high in every second clock, eight pulses. MOSI carries bits b7 to b0, each for two clocks, changing while SCK is low. Each MISO bit is taken as SCK rises. The byte that came in on MISO is what the next read of port $EB returns.","style":{"width":"100%","height":"auto"},"children":[["$","line",null,{"x1":"130","y1":"30","x2":"130","y2":"36","stroke":"currentColor","strokeWidth":"1.2"}],["$","text",null,{"x":"130","y":"22","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"0"}],["$","line",null,{"x1":"201.3","y1":"30","x2":"201.3","y2":"36","stroke":"currentColor","strokeWidth":"1.2"}],["$","text",null,{"x":"201.3","y":"22","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"2"}],["$","line",null,{"x1":"272.5","y1":"30","x2":"272.5","y2":"36","stroke":"currentColor","strokeWidth":"1.2"}],["$","text",null,{"x":"272.5","y":"22","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"4"}],["$","line",null,{"x1":"343.8","y1":"30","x2":"343.8","y2":"36","stroke":"currentColor","strokeWidth":"1.2"}],["$","text",null,{"x":"343.8","y":"22","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"6"}],["$","line",null,{"x1":"415","y1":"30","x2":"415","y2":"36","stroke":"currentColor","strokeWidth":"1.2"}],["$","text",null,{"x":"415","y":"22","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"8"}],["$","line",null,{"x1":"486.3","y1":"30","x2":"486.3","y2":"36","stroke":"currentColor","strokeWidth":"1.2"}],["$","text",null,{"x":"486.3","y":"22","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"10"}],["$","line",null,{"x1":"557.5","y1":"30","x2":"557.5","y2":"36","stroke":"currentColor","strokeWidth":"1.2"}],["$","text",null,{"x":"557.5","y":"22","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"12"}],["$","line",null,{"x1":"628.8","y1":"30","x2":"628.8","y2":"36","stroke":"currentColor","strokeWidth":"1.2"}],["$","text",null,{"x":"628.8","y":"22","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"14"}],["$","line",null,{"x1":"700","y1":"30","x2":"700","y2":"36","stroke":"currentColor","strokeWidth":"1.2"}],["$","text",null,{"x":"700","y":"22","textAnchor":"end","fill":"currentColor","fontSize":"13.5","children":"16"}],["$","text",null,{"x":"0","y":"22","fill":"currentColor","fontSize":"13.5","children":"CPU clocks"}],["$","text",null,{"x":"0","y":"76","fill":"#3b82f6","fontSize":"15","fontWeight":"bold","children":"SCK"}],["$","path",null,{"d":"M130,80 L165.625,80 L165.625,56 L201.25,56 L201.25,80 L236.875,80 L236.875,56 L272.5,56 L272.5,80 L308.125,80 L308.125,56 L343.75,56 L343.75,80 L379.375,80 L379.375,56 L415,56 L415,80 L450.625,80 L450.625,56 L486.25,56 L486.25,80 L521.875,80 L521.875,56 L557.5,56 L557.5,80 L593.125,80 L593.125,56 L628.75,56 L628.75,80 L664.375,80 L664.375,56 L700,56 L700,80","fill":"none","stroke":"#3b82f6","strokeWidth":"2","strokeLinejoin":"round"}],["$","text",null,{"x":"0","y":"121","fill":"#e8912d","fontSize":"15","fontWeight":"bold","children":"MOSI"}],["$","text",null,{"x":"0","y":"139","fill":"currentColor","fontSize":"13.5","children":"master"}],["$","rect",null,{"x":"130","y":"100","width":"71.3","height":"30","rx":"3","fill":"#e8912d","fillOpacity":"0.12","stroke":"#e8912d","strokeWidth":"1.4"}],["$","text",null,{"x":"165.6","y":"120","textAnchor":"middle","fill":"#e8912d","fontSize":"13.5","fontWeight":"bold","children":"b7"}],["$","rect",null,{"x":"201.3","y":"100","width":"71.3","height":"30","rx":"3","fill":"#e8912d","fillOpacity":"0.12","stroke":"#e8912d","strokeWidth":"1.4"}],["$","text",null,{"x":"236.9","y":"120","textAnchor":"middle","fill":"#e8912d","fontSize":"13.5","fontWeight":"bold","children":"b6"}],["$","rect",null,{"x":"272.5","y":"100","width":"71.3","height":"30","rx":"3","fill":"#e8912d","fillOpacity":"0.12","stroke":"#e8912d","strokeWidth":"1.4"}],["$","text",null,{"x":"308.1","y":"120","textAnchor":"middle","fill":"#e8912d","fontSize":"13.5","fontWeight":"bold","children":"b5"}],["$","rect",null,{"x":"343.8","y":"100","width":"71.3","height":"30","rx":"3","fill":"#e8912d","fillOpacity":"0.12","stroke":"#e8912d","strokeWidth":"1.4"}],["$","text",null,{"x":"379.4","y":"120","textAnchor":"middle","fill":"#e8912d","fontSize":"13.5","fontWeight":"bold","children":"b4"}],["$","rect",null,{"x":"415","y":"100","width":"71.3","height":"30","rx":"3","fill":"#e8912d","fillOpacity":"0.12","stroke":"#e8912d","strokeWidth":"1.4"}],["$","text",null,{"x":"450.6","y":"120","textAnchor":"middle","fill":"#e8912d","fontSize":"13.5","fontWeight":"bold","children":"b3"}],["$","rect",null,{"x":"486.3","y":"100","width":"71.3","height":"30","rx":"3","fill":"#e8912d","fillOpacity":"0.12","stroke":"#e8912d","strokeWidth":"1.4"}],"$L56","$L57","$L58","$L59","$L5a","$L5b","$L5c","$L5d","$L5e","$L5f","$L60","$L61","$L62","$L63","$L64","$L65","$L66","$L67","$L68","$L69","$L6a","$L6b","$L6c","$L6d","$L6e","$L6f","$L70","$L71","$L72","$L73","$L74","$L75"]}],"$L76"]}]
+31:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Now the rules that follow from it, and I would learn them by heart:"}]
+32:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":["A write to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$EB"}]," sends the byte"]}]," you wrote. The byte that comes back is kept."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":["A read of ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$EB"}]," returns the byte that came back during the previous exchange"]}],", and starts a new\nexchange that sends ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FF"}],". So a read is always one exchange behind: you get the answer to what was sent\nbefore. This sounds awkward, but it is what makes ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"INIR"}]," work, as the next section shows."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"A new exchange starts only when the last one is finished"}],", or in its very last clock. An access to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$EB"}],"\nsooner than that is simply lost: a write sends nothing, and a read returns the old byte and starts nothing.\nThe CPU gets no wait state to warn it."]}],"\n"]}]
+33:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The last rule is the one that bites, because the telegraphist counts the CPU’s own clocks. Two ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"OUT (C),r"}],"\nin a row come 12 T-states apart, and 12 is less than 16: the second byte is lost, at 3.5 MHz just as at 28.\nTwo ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"IN r,(C)"}]," in a row lose the second exchange the same way. ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"OTIR"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"INIR"}],", at 21 T-states a byte, are\nfine, and so is a polling loop. My rule of thumb: never two accesses to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$EB"}]," with nothing between them; send\na command from a table with ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"OTIR"}],", and put a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"NOP"}]," between two lone ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"IN"}],"s."]}]
+34:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The speed follows the CPU. SCK is 1.75 MHz at 3.5 MHz and 14 MHz at 28 MHz, so the bus can move about 219K\nto 1.75 MB a second; in practice the program around it decides. This is also the answer to the opening\npuzzle: the bytes go one at a time, but at 28 MHz the bus that carries them is some ten thousand times faster\nthan a tape."}]
+35:["$","h2",null,{"id":"talking-to-an-sd-card","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Talking to an SD card",["$","$L21",null,{"id":"talking-to-an-sd-card"}]]}]
+36:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The card is not part of the FPGA; it is a small computer of its own, with a controller that speaks the SD\ncard specification. In SPI mode the conversation goes like this:"}]
+37:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"A command is six bytes"}],": ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$40"}]," plus the command’s number, a 32-bit argument, most significant byte\nfirst, and a CRC byte. The CRC is checked only for the first two commands, CMD0 and CMD8; after that a\ncard in SPI mode ignores it."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"The card answers after a pause."}]," Between zero and eight ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FF"}]," bytes come first, then a one-byte\nresponse, ",["$","strong",null,{"children":"R1"}],". ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$00"}]," means “done, no error”; bit 0, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$01"}],", means “still in the idle state”; any other bit\nis an error."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FF"}]," is silence."]}]," Between commands the master keeps sending ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FF"}],", and the card answers ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FF"}],". A command\nalways starts with the bits ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"01"}],", so ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FF"}]," can never be mistaken for one."]}],"\n"]}]
+38:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Starting a card takes a handful of commands, which the driver sends once:"}]
+39:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"CMD0"}],", go idle. The card first gets at least 74 clocks with nothing selected; then CMD0 with its select\nline low puts it into SPI mode, and it answers ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$01"}],"."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"CMD8"}],", check the voltage: the card echoes the pattern it was sent, which tells the driver it is a\nmodern card."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"CMD55"}]," then ",["$","strong",null,{"children":"ACMD41"}],", repeated until the card answers ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$00"}],": it has finished its own start-up."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"CMD58"}],", read the operating conditions: one bit says whether the card is ",["$","strong",null,{"children":"SDHC"}]," or larger. Such a card\nis addressed in ",["$","strong",null,{"children":"sectors"}]," of 512 bytes, not in bytes."]}],"\n"]}]
+3a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"After that, reading and writing are one command each:"}]
+3b:["$","figure",null,{"children":[["$","svg",null,{"viewBox":"-2 -2 704 194","role":"img","aria-label":"Two rows of bytes, not to scale. The host row: the six-byte command, $51, four bytes of the sector number and the CRC, then $FF bytes for as long as the read goes on. The card row: $FF while the command arrives and for up to eight bytes more, R1 = $00, $FF while it fetches the sector, the data token $FE, 512 data bytes and two CRC bytes.","style":{"width":"100%","height":"auto"},"children":[["$","text",null,{"x":"0","y":"24","fill":"#e8912d","fontSize":"15","fontWeight":"bold","children":"host"}],["$","text",null,{"x":"0","y":"42","fill":"#e8912d","fontSize":"13.5","children":"MOSI"}],["$","text",null,{"x":"0","y":"110","fill":"#30a46c","fontSize":"15","fontWeight":"bold","children":"card"}],["$","text",null,{"x":"0","y":"128","fill":"#30a46c","fontSize":"13.5","children":"MISO"}],["$","rect",null,{"x":"80","y":"8","width":"150","height":"40","rx":"4","fill":"#e8912d","fillOpacity":"0.16","stroke":"#e8912d","strokeWidth":"2"}],["$","text",null,{"x":"155","y":"33","textAnchor":"middle","fill":"#e8912d","fontSize":"13.5","fontWeight":"bold","children":"$$51  sector  CRC"}],["$","rect",null,{"x":"232","y":"8","width":"468","height":"40","rx":"4","fill":"none","stroke":"#e8912d","strokeWidth":"1.4","strokeDasharray":"5 4"}],["$","text",null,{"x":"466","y":"33","textAnchor":"middle","fill":"#e8912d","fontSize":"13.5","children":"$$FF  $FF  $FF  …  for as long as the card talks"}],["$","rect",null,{"x":"80","y":"94","width":"150","height":"40","rx":"4","fill":"none","stroke":"#30a46c","strokeWidth":"1.4","strokeDasharray":"5 4"}],["$","text",null,{"x":"155","y":"119","textAnchor":"middle","fill":"#30a46c","fontSize":"13.5","children":"$$FF …"}],["$","rect",null,{"x":"232","y":"94","width":"54","height":"40","rx":"4","fill":"none","stroke":"#30a46c","strokeWidth":"1.4","strokeDasharray":"5 4"}],["$","text",null,{"x":"259","y":"111","textAnchor":"middle","fill":"#30a46c","fontSize":"13.5","children":"$$FF"}],["$","text",null,{"x":"259","y":"127","textAnchor":"middle","fill":"#30a46c","fontSize":"13.5","children":"0–8"}],["$","rect",null,{"x":"288","y":"94","width":"54","height":"40","rx":"4","fill":"#30a46c","fillOpacity":"0.16","stroke":"#30a46c","strokeWidth":"2"}],["$","text",null,{"x":"315","y":"111","textAnchor":"middle","fill":"#30a46c","fontSize":"13.5","fontWeight":"bold","children":"R1"}],["$","text",null,{"x":"315","y":"127","textAnchor":"middle","fill":"#30a46c","fontSize":"13.5","fontWeight":"bold","children":"$$00"}],["$","rect",null,{"x":"344","y":"94","width":"70","height":"40","rx":"4","fill":"none","stroke":"#30a46c","strokeWidth":"1.4","strokeDasharray":"5 4"}],["$","text",null,{"x":"379","y":"111","textAnchor":"middle","fill":"#30a46c","fontSize":"13.5","children":"$$FF …"}],["$","text",null,{"x":"379","y":"127","textAnchor":"middle","fill":"#30a46c","fontSize":"13.5","children":"wait"}],["$","rect",null,{"x":"416","y":"94","width":"54","height":"40","rx":"4","fill":"#e5484d","fillOpacity":"0.16","stroke":"#e5484d","strokeWidth":"2"}],["$","text",null,{"x":"443","y":"119","textAnchor":"middle","fill":"#e5484d","fontSize":"13.5","fontWeight":"bold","children":"$$FE"}],["$","rect",null,{"x":"472","y":"94","width":"170","height":"40","rx":"4","fill":"#30a46c","fillOpacity":"0.16","stroke":"#30a46c","strokeWidth":"2"}],["$","text",null,{"x":"557","y":"119","textAnchor":"middle","fill":"#30a46c","fontSize":"13.5","fontWeight":"bold","children":"512 data bytes"}],["$","rect",null,{"x":"644","y":"94","width":"56","height":"40","rx":"4","fill":"none","stroke":"#30a46c","strokeWidth":"1.4"}],["$","text",null,{"x":"672","y":"111","textAnchor":"middle","fill":"#30a46c","fontSize":"13.5","children":"CRC"}],["$","text",null,{"x":"672","y":"127","textAnchor":"middle","fill":"#30a46c","fontSize":"13.5","children":"2"}],["$","text",null,{"x":"443","y":"160","textAnchor":"middle","fill":"#e5484d","fontSize":"13.5","children":"token"}],["$","text",null,{"x":"0","y":"184","fill":"currentColor","fontSize":"13.5","children":"each byte the host sends brings back the card’s byte below it"}]]}],["$","figcaption",null,{"children":"Reading one sector with CMD17, byte by byte (not to scale). The host sends the six-byte command, then $FF; the card answers R1 after a few $FF bytes, waits while it fetches the sector, sends the data token $FE, the 512 bytes and a two-byte CRC."}]]}]
+3c:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"CMD17 reads one sector."}]," After R1 the card sends ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FF"}]," while it fetches the data, then the ",["$","strong",null,{"children":"data token"}],"\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FE"}],", the 512 bytes and a 16-bit CRC."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"CMD24 writes one sector."}]," After R1 the host sends ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FE"}],", the 512 bytes and a CRC; the card answers a\n",["$","strong",null,{"children":"data response"}]," byte, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"xxx00101"}]," when it accepted the block, and then ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$00"}]," while it is busy writing."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"CMD18 reads sector after sector"}],", each with its own ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FE"}]," and CRC, until the host sends ",["$","strong",null,{"children":"CMD12"}],". That\nis how a file of many sectors streams without a command per sector."]}],"\n"]}]
+3d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Let’s read a sector. This routine assumes a card that is started, selected, and SDHC:"}]
+3e:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L78",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L79",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"; read sector DE (high word 0) of an SDHC card to (HL)"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"ReadSec"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":" ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"d"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#B5890F"},"children":"Cmd17"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":"+"}],["$","span",null,{"style":{"color":"#4D8061"},"children":"3"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"         ; sector bits 15-8"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"e"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#B5890F"},"children":"Cmd17"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":"+"}],["$","span",null,{"style":{"color":"#4D8061"},"children":"4"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"         ; sector bits 7-0"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        push"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" hl"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" hl"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#B5890F"},"children":"Cmd17"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" bc"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$06eb"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"            ; 6 bytes to the SPI data port"}]]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        otir"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        pop"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" hl"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"Resp"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"   in"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":",("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":")               "}],"$L7a"]}],"\n","$L7b","\n","$L7c","\n","$L7d","\n","$L7e","\n","$L7f","\n","$L80","\n","$L81","\n","$L82","\n","$L83","\n","$L84","\n","$L85","\n","$L86","\n","$L87","\n","$L88","\n","$L89"]}]]}]]}]
+3f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"How it works:"}]
+40:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["The sector number goes into bytes 3 and 4 of the command at ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Cmd17"}],", most significant byte first, as SD\ncommands want it; bytes 1 and 2 stay 0. The table lives in RAM, so the routine can patch it."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"OTIR"}]," sends the six bytes, 21 T-states apart, so none is lost. Each brings a byte back, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FF"}]," here, which\nnobody reads. The CRC byte, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$01"}],", is ignored by a card in SPI mode after CMD8."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Resp"}]," polls with ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"IN"}],". Each read returns the byte of the exchange before and starts the next, so the loop\nsees the card’s bytes in order, a step late, and stops at R1."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Token"}]," polls the same way until ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FE"}],". The read that returned ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FE"}]," has already started the exchange that\nbrings the first data byte, so the next ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"IN"}],", the first of ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"INIR"}],", returns byte 0. That is the read-behind\nrule doing exactly what we want."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["The two ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"INIR"}],"s read 512 bytes, and the two last ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"IN"}],"s the CRC, with a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"NOP"}]," between them so that the\nsecond one is not lost. A real driver also gives up after a while in both polling loops, and checks the\nCRC if it cares."]}],"\n"]}]
+41:["$","h2",null,{"id":"streaming-with-the-dma","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Streaming with the DMA",["$","$L21",null,{"id":"streaming-with-the-dma"}]]}]
+42:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The DMA can do the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"INIR"}]," part for you, and the SD card’s port is the one I/O port the DMA treats with special\ncare: the telegraphist holds the DMA with ",["$","strong",null,{"children":"wait states"}]," until the byte under way has finished. So a DMA\ntransfer from port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$EB"}],", fixed, to memory, incrementing, never reads too early and never loses a byte, at\nany CPU speed. Each of its reads returns the byte before and starts the next exchange, just as the CPU’s do,\nso the DMA starts after the data token, as ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"INIR"}]," did."]}]
+43:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["That makes a lovely pattern for loading while a game runs: the CPU sends the command and waits for the token,\nthen hands the 512 bytes to the DMA in burst mode, or in continuous mode for the fastest load. The ",["$","$L20",null,{"href":"/en/under-the-hood/emulator-internals/next-dma/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"DMA\nchapter"}]," has the details of both modes."]}]
+44:["$","h2",null,{"id":"the-flash-and-the-pi","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The flash and the Pi",["$","$L21",null,{"id":"the-flash-and-the-pi"}]]}]
+45:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"The flash chip"}]," holds the FPGA’s cores. The board loads the FPGA from it when the power comes on, before\nany Z80 code runs. The Next’s programs reach it only to update a core, which is why ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$E7"}]," selects it only in\nconfig mode or straight after a power-on: an ordinary program cannot select it by accident and talk to the\nchip that the machine starts from. I like that lock. It is the one place where a stray ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"OUT"}]," could turn a\ncomputer into a brick."]}]
+46:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"The Raspberry Pi’s connector"}]," carries an SPI bus too, once NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$A0"}]," bit 0 gives it the GPIO pins, with\ntwo selects, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FB"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$F7"}],". The Next is the master there as well, so a Pi, or any SPI device on that\nconnector, is a slave the program talks to exactly as it talks to the card."]}]
+47:["$","h2",null,{"id":"the-butlers-part","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The butler’s part",["$","$L21",null,{"id":"the-butlers-part"}]]}]
+48:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The SPI master moves bytes; it knows nothing of files. Files are the DivMMC’s business, the butler of the\nmemory chapter, and his tools are mostly memory. His 8K ROM holds the start of the SD card’s operating\nsystem, and he has ",["$","strong",null,{"children":"128K of RAM"}],", sixteen banks of 8K, for the rest of its code,\nits buffers and its tables. Port ",["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$E3"}]}],", the DivMMC control port, sets him up:"]}]
+49:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Bit 7, CONMEM"}],", maps the DivMMC in by hand: its ROM at ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$0000"}],", read-only, and a RAM bank at ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$2000"}],"."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Bits 3–0"}]," choose that bank, 0 to 15."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Bit 6, MAPRAM"}],", replaces the ROM with ",["$","strong",null,{"children":"RAM bank 3"}],": the operating system runs from RAM, and bank 3\nbecomes read-only, at ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$0000"}]," and also at ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$2000"}]," if bits 3–0 select it there. MAPRAM can only be set:\nwriting 0 leaves it on, as on the original DivMMC. On the Next, a reset or a 1 written to NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$09"}]," bit 3\nclears it."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":["Reading ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$E3"}]]}]," gives bits 7, 6 and 3–0, with bits 5 and 4 reading 0."]}],"\n"]}]
+4a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The butler’s other way in is the ",["$","strong",null,{"children":"automap"}]," at his entry points, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RST $08"}]," above all: a program calls the\noperating system with ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RST $08"}],", the DivMMC maps itself in, its code drives ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$E7"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$EB"}],", and it leaves on a\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RETN"}],". The ",["$","$L20",null,{"href":"/en/under-the-hood/emulator-internals/next-memory-io/#the-divmmcs-entry-points","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"memory chapter’s DivMMC\nsection"}]," tells that story in\nfull, including the master switch, NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$0A"}]," bit 4. So the whole stack is short: your program calls\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RST $08"}],", the butler’s code turns the call into SD commands, and the telegraphist turns the commands into\nbits."]}]
+4b:["$","h2",null,{"id":"tape-and-disks","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Tape and disks",["$","$L21",null,{"id":"tape-and-disks"}]]}]
+4c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The Next keeps the Spectrum’s ",["$","strong",null,{"children":"tape"}],": the EAR input and MIC output of port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FE"}],", which the ",["$","$L20",null,{"href":"/en/under-the-hood/emulator-internals/next-audio/beeper/#loading-from-tape","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"beeper\nchapter"}]," describes, so a real\ncassette still loads. And the butler can stand in for the cassette: four of his entry points sit inside the\n48K ROM’s tape routines, so a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"LOAD \"\""}]," can be served from a tape image on the SD card instead."]}]
+4d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The +3’s ",["$","strong",null,{"children":"floppy disk"}]," is a different case. The Next has no disk controller at all. What it has is an\n",["$","strong",null,{"children":"I/O trap"}],": with bit 0 of the ",["$","strong",null,{"children":["I/O Traps register, NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$D8"}]]}],", set, an access to the +3’s disk ports\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$2FFD"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$3FFD"}]," raises a Multiface NMI, and the handler can do what the disk controller would have done,\nfrom a disk image on the card. The ",["$","$L20",null,{"href":"/en/under-the-hood/emulator-internals/next-interrupts/#the-fire-alarm","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"interrupts\nchapter"}]," lists the trap among the NMI’s\nsources."]}]
+4e:["$","h2",null,{"id":"resets","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Resets",["$","$L21",null,{"id":"resets"}]]}]
+4f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A reset, hard or soft, deselects every SPI device, so ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$E7"}]," behaves as if ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FF"}]," had been written. The\ntelegraphist itself is not reset: a byte under way finishes, and the next one waits for a program. It clears port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$E3"}],", MAPRAM included, so the DivMMC is mapped out with RAM bank\n0 selected. An SD card, being outside the FPGA, is not reset at all: it keeps whatever state it was in, and\nits driver starts it again with CMD0, as on every power-on."]}]
+50:["$","h2",null,{"id":"what-to-take-home","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["What to take home",["$","$L21",null,{"id":"what-to-take-home"}]]}]
+51:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Under the file API sits an SPI bus with the FPGA as its master, the telegraphist, and five slaves: two SD\ncards, two SPI devices on the Pi’s connector, and the flash with the cores. Port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$E7"}]," chooses one: low bits\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"10"}]," card 0, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"01"}]," card 1, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FB"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$F7"}]," the Pi, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$7F"}]," the flash only in config mode or after a power-on, and\nanything else none."]}]
+52:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$EB"}]," moves a byte in 16 CPU clocks, 16 T-states at any speed, SCK being the CPU clock halved. A write\nsends its byte; a read returns the byte of the exchange before and sends ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FF"}],"; an access during a byte is\nlost, so two ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"OUT"}],"s or two ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"IN"}],"s in a row, 12 T-states apart, lose the second. The DMA gets wait states instead, so it can stream from the\ncard at any speed."]}]
+53:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The card speaks the SD specification’s SPI mode: six-byte commands, an R1 response after some ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FF"}],"s, CMD0,\nCMD8, ACMD41 and CMD58 to start, CMD17 and CMD18 to read and CMD24 to write, with ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FE"}]," before each block of\n512 bytes. Files are the DivMMC’s job: his ROM and 128K of RAM, port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$E3"}]," with CONMEM, the bank and the sticky\nMAPRAM, and his entry points, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RST $08"}]," first. Tape still works and can come from the card; the +3’s disks are\nemulated by software through an I/O trap. A small bus, a polite select port and a careful butler: that is all\nit takes to put a filing cabinet behind a single port."]}]
+55:null
+9:C
+56:["$","text",null,{"x":"521.9","y":"120","textAnchor":"middle","fill":"#e8912d","fontSize":"13.5","fontWeight":"bold","children":"b2"}]
+57:["$","rect",null,{"x":"557.5","y":"100","width":"71.3","height":"30","rx":"3","fill":"#e8912d","fillOpacity":"0.12","stroke":"#e8912d","strokeWidth":"1.4"}]
+58:["$","text",null,{"x":"593.1","y":"120","textAnchor":"middle","fill":"#e8912d","fontSize":"13.5","fontWeight":"bold","children":"b1"}]
+59:["$","rect",null,{"x":"628.8","y":"100","width":"71.3","height":"30","rx":"3","fill":"#e8912d","fillOpacity":"0.12","stroke":"#e8912d","strokeWidth":"1.4"}]
+5a:["$","text",null,{"x":"664.4","y":"120","textAnchor":"middle","fill":"#e8912d","fontSize":"13.5","fontWeight":"bold","children":"b0"}]
+5b:["$","text",null,{"x":"0","y":"177","fill":"#30a46c","fontSize":"15","fontWeight":"bold","children":"MISO"}]
+5c:["$","text",null,{"x":"0","y":"195","fill":"currentColor","fontSize":"13.5","children":"slave"}]
+5d:["$","rect",null,{"x":"130","y":"156","width":"71.3","height":"30","rx":"3","fill":"#30a46c","fillOpacity":"0.12","stroke":"#30a46c","strokeWidth":"1.4"}]
+5e:["$","text",null,{"x":"165.6","y":"176","textAnchor":"middle","fill":"#30a46c","fontSize":"13.5","fontWeight":"bold","children":"b7"}]
+5f:["$","rect",null,{"x":"201.3","y":"156","width":"71.3","height":"30","rx":"3","fill":"#30a46c","fillOpacity":"0.12","stroke":"#30a46c","strokeWidth":"1.4"}]
+60:["$","text",null,{"x":"236.9","y":"176","textAnchor":"middle","fill":"#30a46c","fontSize":"13.5","fontWeight":"bold","children":"b6"}]
+61:["$","rect",null,{"x":"272.5","y":"156","width":"71.3","height":"30","rx":"3","fill":"#30a46c","fillOpacity":"0.12","stroke":"#30a46c","strokeWidth":"1.4"}]
+62:["$","text",null,{"x":"308.1","y":"176","textAnchor":"middle","fill":"#30a46c","fontSize":"13.5","fontWeight":"bold","children":"b5"}]
+63:["$","rect",null,{"x":"343.8","y":"156","width":"71.3","height":"30","rx":"3","fill":"#30a46c","fillOpacity":"0.12","stroke":"#30a46c","strokeWidth":"1.4"}]
+64:["$","text",null,{"x":"379.4","y":"176","textAnchor":"middle","fill":"#30a46c","fontSize":"13.5","fontWeight":"bold","children":"b4"}]
+65:["$","rect",null,{"x":"415","y":"156","width":"71.3","height":"30","rx":"3","fill":"#30a46c","fillOpacity":"0.12","stroke":"#30a46c","strokeWidth":"1.4"}]
+66:["$","text",null,{"x":"450.6","y":"176","textAnchor":"middle","fill":"#30a46c","fontSize":"13.5","fontWeight":"bold","children":"b3"}]
+67:["$","rect",null,{"x":"486.3","y":"156","width":"71.3","height":"30","rx":"3","fill":"#30a46c","fillOpacity":"0.12","stroke":"#30a46c","strokeWidth":"1.4"}]
+68:["$","text",null,{"x":"521.9","y":"176","textAnchor":"middle","fill":"#30a46c","fontSize":"13.5","fontWeight":"bold","children":"b2"}]
+69:["$","rect",null,{"x":"557.5","y":"156","width":"71.3","height":"30","rx":"3","fill":"#30a46c","fillOpacity":"0.12","stroke":"#30a46c","strokeWidth":"1.4"}]
+6a:["$","text",null,{"x":"593.1","y":"176","textAnchor":"middle","fill":"#30a46c","fontSize":"13.5","fontWeight":"bold","children":"b1"}]
+6b:["$","rect",null,{"x":"628.8","y":"156","width":"71.3","height":"30","rx":"3","fill":"#30a46c","fillOpacity":"0.12","stroke":"#30a46c","strokeWidth":"1.4"}]
+6c:["$","text",null,{"x":"664.4","y":"176","textAnchor":"middle","fill":"#30a46c","fontSize":"13.5","fontWeight":"bold","children":"b0"}]
+6d:["$","path",null,{"d":"M165.625,140 L165.625,154","fill":"none","stroke":"#e5484d","strokeWidth":"1.8","strokeLinejoin":"round"}]
+6e:["$","path",null,{"d":"M236.875,140 L236.875,154","fill":"none","stroke":"#e5484d","strokeWidth":"1.8","strokeLinejoin":"round"}]
+6f:["$","path",null,{"d":"M308.125,140 L308.125,154","fill":"none","stroke":"#e5484d","strokeWidth":"1.8","strokeLinejoin":"round"}]
+70:["$","path",null,{"d":"M379.375,140 L379.375,154","fill":"none","stroke":"#e5484d","strokeWidth":"1.8","strokeLinejoin":"round"}]
+71:["$","path",null,{"d":"M450.625,140 L450.625,154","fill":"none","stroke":"#e5484d","strokeWidth":"1.8","strokeLinejoin":"round"}]
+72:["$","path",null,{"d":"M521.875,140 L521.875,154","fill":"none","stroke":"#e5484d","strokeWidth":"1.8","strokeLinejoin":"round"}]
+73:["$","path",null,{"d":"M593.125,140 L593.125,154","fill":"none","stroke":"#e5484d","strokeWidth":"1.8","strokeLinejoin":"round"}]
+74:["$","path",null,{"d":"M664.375,140 L664.375,154","fill":"none","stroke":"#e5484d","strokeWidth":"1.8","strokeLinejoin":"round"}]
+75:["$","text",null,{"x":"700","y":"226","textAnchor":"end","fill":"#e5484d","fontSize":"13.5","children":"red ticks: a MISO bit is taken as SCK rises"}]
+76:["$","figcaption",null,{"children":"One byte on the SPI bus, to scale in CPU clocks. SCK is the CPU clock halved and rests low; MOSI carries the master’s bits b7 to b0, each for two clocks; the slave’s MISO bits are taken as SCK rises. The byte that came in is what the next read of $EB returns."}]
+7a:["$","span",null,{"style":{"color":"#6A9955"},"children":"; $FF until R1 comes"}]
+7b:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        cp"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" $ff"}]]}]
+7c:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        jr"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" z"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#B5890F"},"children":"Resp"}]]}]
+7d:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        or"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}]]}]
+7e:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ret"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" nz"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"                 ; R1 not 0: an error"}]]}]
+7f:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"Token"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"  in"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":",("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":")               "}],["$","span",null,{"style":{"color":"#6A9955"},"children":"; $FF until the token"}]]}]
+80:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        cp"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" $fe"}]]}]
+81:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        jr"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" nz"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#B5890F"},"children":"Token"}]]}]
+82:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" b"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"0"}]]}]
+83:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        inir"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"                   ; bytes 0-255"}]]}]
+84:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        inir"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"                   ; bytes 256-511"}]]}]
+85:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        in"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":",("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":")               "}],["$","span",null,{"style":{"color":"#6A9955"},"children":"; CRC, high byte"}]]}]
+86:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        nop"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"                    ; keep 16 T-states apart"}]]}]
+87:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        in"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":",("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":")               "}],["$","span",null,{"style":{"color":"#6A9955"},"children":"; CRC, low byte"}]]}]
+88:["$","span",null,{"children":["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ret"}]}]
+89:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"Cmd17"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}],["$","span",null,{"style":{"color":"#C586C0"},"children":"  .defb"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" $51"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"0"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"0"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"0"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"0"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$01"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"  ; CMD17, sector, CRC"}]]}]
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

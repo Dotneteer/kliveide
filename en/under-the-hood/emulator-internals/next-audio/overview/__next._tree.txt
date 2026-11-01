@@ -6,10 +6,10 @@
 :HL["/_next/static/media/cf9548a654a0290e-s.p.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
 :HL["/_next/static/css/0f6f87e08ec092cb.css","style"]
 :HL["/_next/static/css/11c59cc40cabfed8.css","style"]
-:HL["/_next/static/css/08e0ea915b8c2511.css","style"]
+:HL["/_next/static/css/f1a939cc83147393.css","style"]
 :HL["/images/klive-logo.svg","image"]
 4:[["children",{"s":"__PAGE__","h":160}]]
 3:[["children",{"s":{"n":"mdxPath","t":"c","k":"under-the-hood/emulator-internals/next-audio/overview","s":[]},"h":65600,"c":"$Q4"}]]
 2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
 1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
-0:{"b":"IrilwYnmaoZSNozQqS0Di","t":{"t":{"s":"","h":131152,"c":"$Q1"}}}
+0:{"b":"PCZAuL2hRwkZfrNjWctZa","t":{"t":{"s":"","h":131152,"c":"$Q1"}}}

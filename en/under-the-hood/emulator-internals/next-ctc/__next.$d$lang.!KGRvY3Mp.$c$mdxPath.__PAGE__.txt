@@ -1,0 +1,651 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T9734,---
+description: "How the ZX Spectrum Next's CTC works: four Zilog-style channels on the 28 MHz master clock, the prescaler and the down-counter, the zero count and its reload, the control word and the channel's states, timer and counter mode, the ring that chains the channels, exact rates from chained channels, a 16-bit stopwatch, interrupts, resets, and what core 3.02.04 changed."
+---
+
+import { Callout } from 'nextra/components'
+
+# CTC: Four Timers in a Ring
+
+Switch a Next from 3.5 MHz to 28 MHz and every delay loop in your program runs eight times faster. The music
+player that counted T-states between two notes now plays like a chipmunk, the sample that took a second takes
+an eighth of one, and the stopwatch you wrote out of `DJNZ` measures nothing at all. Yet some things on the
+Next keep their pace whatever the CPU does. Who is keeping time for them?
+
+I think every serious Next program needs a clock it can trust, and the CPU is not one. The CPU's speed is a
+setting, contention stretches it, the DMA stops it. The **CTC**, the counter/timer circuit, counts the
+machine's master clock instead, and it is the piece I reach for whenever something must happen at a rate: a
+sample clock, a game tick independent of the display, a timeout, or a stopwatch to see how long a routine
+really takes.
+
+You should know one chapter first. [Interrupts: Fourteen Voices, Two
+Wires](/en/under-the-hood/emulator-internals/next-interrupts/) explains how a CTC channel's interrupt reaches
+the CPU, its vector, its status bit and the daisy chain; here we look at what makes the channel ring. [The
+Frame and the Beam](/en/under-the-hood/emulator-internals/next-display/timing/) explains the master clock the
+CTC counts.
+
+## The road ahead
+
+We start with the chip the CTC copies and the ports of its four channels. Then we open one channel up: a
+prescaler, a down-counter and the pulse that comes out when the count runs out. The control word comes next,
+with the channel's four states, and then the two ways a channel can count, by time or by events. The heart of
+the chapter is the ring that joins the four channels, and what you can build with it: exact rates and a
+16-bit stopwatch. Last come interrupts, resets, and what a later core version changed.
+
+<Callout type="info">
+The facts are for **core 3.02.01**, except where a section says otherwise. The master clock is **28 MHz**, as
+in VGA mode 0 and HDMI, and T-states are for a CPU at **3.5 MHz**. Every fact was checked against the Next's
+hardware design.
+</Callout>
+
+## A Zilog chip in the FPGA
+
+The Next's CTC is a copy of the Z80 CTC, the counter/timer chip Zilog made as a companion for the Z80, and
+programs written for it on other Z80 machines speak the same language here. I call it **the metronome**, as
+the interrupts chapter does: it beats a steady rate, and it does not care how fast the musician plays.
+
+The Zilog chip has four channels, and so does the Next, at four ports:
+
+- **Channel 0** at port `$183B`, **channel 1** at `$193B`, **channel 2** at `$1A3B` and **channel 3** at
+  `$1B3B`. The low byte is `$3B`, bits 15–11 of the address are `00011`, and bits 10–8 pick the channel.
+- **Ports `$1C3B` to `$1F3B`** belong to channels 4 to 7, which have no hardware: reading them gives `$00`,
+  and writing them does nothing.
+- **Writing** a channel's port sends it a control word or a time constant; **reading** it gives the channel's
+  current count.
+- The ports can be switched off with bit 3 of NextReg `$85`, and they are on after a reset. A channel that
+  runs keeps running while its port is off.
+
+There is one thing the Next leaves out. A Zilog CTC has pins for an outside clock or trigger on each
+channel; the Next's channels have no outside pins. Their trigger inputs are wired to each other, in a ring,
+and that ring is the most interesting thing about them.
+
+## One channel inside
+
+Each channel is a small machine of three parts:
+
+<figure>
+{/* fig:channel */}
+<svg viewBox="-2 -2 704 304" role="img" aria-label="One CTC channel. The 28 MHz master clock feeds the prescaler, which divides by 16 or 256 as bit 5 of the control word says. The trigger input, the previous channel's ZC/TO, goes through an edge detector, rising or falling as bit 4 says. A mode switch, bit 6, picks the prescaler's pulses in timer mode or the trigger's edges in counter mode, and each one counts the 8-bit down-counter down. At zero the counter sends a ZC/TO pulse, to the interrupt controller and the next channel, and reloads from the time constant register." style={{ width: "100%", height: "auto" }}>
+  <defs>
+    <marker id="ctc-ch-0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
+    </marker>
+    <marker id="ctc-ch-1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#3b82f6" />
+    </marker>
+    <marker id="ctc-ch-2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#30a46c" />
+    </marker>
+    <marker id="ctc-ch-3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#e8912d" />
+    </marker>
+    <marker id="ctc-ch-4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#e5484d" />
+    </marker>
+  </defs>
+  <rect x="0" y="20" width="150" height="60" rx="6" fill="none" stroke="#3b82f6" strokeWidth="2" />
+  <text x="75" y="46.3" textAnchor="middle" fill="#3b82f6" fontSize="15">master clock</text>
+  <text x="75" y="64.3" textAnchor="middle" fill="#3b82f6" fontSize="15">28 MHz</text>
+  <rect x="190" y="20" width="150" height="60" rx="6" fill="#3b82f6" fillOpacity="0.12" stroke="#3b82f6" strokeWidth="2" />
+  <text x="265" y="46.3" textAnchor="middle" fill="#3b82f6" fontSize="15">prescaler</text>
+  <text x="265" y="64.3" textAnchor="middle" fill="#3b82f6" fontSize="15">÷16 or ÷256</text>
+  <path d="M150,50 L186,50" fill="none" stroke="#3b82f6" strokeWidth="1.8" markerEnd="url(#ctc-ch-1)" strokeLinejoin="round" />
+  <rect x="0" y="200" width="150" height="60" rx="6" fill="none" stroke="#30a46c" strokeWidth="2" />
+  <text x="75" y="226.4" textAnchor="middle" fill="#30a46c" fontSize="14">trigger in:</text>
+  <text x="75" y="243.4" textAnchor="middle" fill="#30a46c" fontSize="14">previous ZC/TO</text>
+  <rect x="190" y="200" width="150" height="60" rx="6" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="2" />
+  <text x="265" y="226.4" textAnchor="middle" fill="#30a46c" fontSize="14">edge</text>
+  <text x="265" y="243.4" textAnchor="middle" fill="#30a46c" fontSize="14">rising or falling</text>
+  <path d="M150,230 L186,230" fill="none" stroke="#30a46c" strokeWidth="1.8" markerEnd="url(#ctc-ch-2)" strokeLinejoin="round" />
+  <rect x="370" y="110" width="120" height="60" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="430" y="136.5" textAnchor="middle" fill="currentColor" fontSize="13.5">mode</text>
+  <text x="430" y="153" textAnchor="middle" fill="currentColor" fontSize="13.5">timer/counter</text>
+  <path d="M340,50 L430,50 L430,106" fill="none" stroke="#3b82f6" strokeWidth="1.8" markerEnd="url(#ctc-ch-1)" strokeLinejoin="round" />
+  <path d="M340,230 L430,230 L430,174" fill="none" stroke="#30a46c" strokeWidth="1.8" markerEnd="url(#ctc-ch-2)" strokeLinejoin="round" />
+  <rect x="520" y="110" width="180" height="60" rx="6" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="2" />
+  <text x="610" y="136.3" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">down-counter</text>
+  <text x="610" y="154.3" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">8 bits</text>
+  <path d="M490,140 L516,140" fill="none" stroke="currentColor" strokeWidth="1.8" markerEnd="url(#ctc-ch-0)" strokeLinejoin="round" />
+  <rect x="520" y="230" width="180" height="56" rx="6" fill="none" stroke="#e8912d" strokeWidth="2" />
+  <text x="610" y="263.3" textAnchor="middle" fill="#e8912d" fontSize="15">time constant</text>
+  <path d="M610,230 L610,174" fill="none" stroke="#e8912d" strokeWidth="1.8" markerEnd="url(#ctc-ch-3)" strokeLinejoin="round" />
+  <text x="600" y="208" textAnchor="end" fill="#e8912d" fontSize="13.5">reload at zero</text>
+  <rect x="520" y="0" width="180" height="60" rx="6" fill="none" stroke="#e5484d" strokeWidth="2" />
+  <text x="610" y="26.4" textAnchor="middle" fill="#e5484d" fontSize="14">ZC/TO: interrupt,</text>
+  <text x="610" y="43.4" textAnchor="middle" fill="#e5484d" fontSize="14">next channel</text>
+  <path d="M610,110 L610,64" fill="none" stroke="#e5484d" strokeWidth="1.8" markerEnd="url(#ctc-ch-4)" strokeLinejoin="round" />
+</svg>
+{/* /fig:channel */}
+<figcaption>One channel. In timer mode the prescaler divides the 28 MHz master clock by 16 or 256 and each of its pulses counts the counter down; in counter mode the trigger input, the previous channel's ZC/TO, does. At zero the channel sends a ZC/TO pulse and reloads its time constant.</figcaption>
+</figure>
+
+- The **prescaler** is an 8-bit counter that counts every clock of the 28 MHz master clock. It gives a pulse
+  each time its low four bits are all ones, every **16** clocks, or, when bit 5 of the control word asks for
+  it, each time all eight are ones, every **256** clocks.
+- The **down-counter** holds the channel's count, 8 bits. In timer mode each prescaler pulse counts it down
+  by one; in counter mode each edge on the trigger input does.
+- The **time constant register** holds the value the count starts from. When the count reaches zero, the
+  channel sends one pulse on its output, **ZC/TO** ("zero count / time out"), and reloads the count from the
+  time constant on the next clock. Then it counts down again, with no help from your program. A time
+  constant of 0 means **256**, in both modes: the first tick, a prescaler pulse or a trigger edge, takes the
+  count from 0 to 255, and the zero count comes after 256 ticks.
+
+So a timer channel's period is simply the prescaler times the time constant, in master clocks, with 0
+counting as 256. The same numbers in time:
+
+- **Prescaler 16**: a count every 16 clocks, 0.571 µs, which is exactly **2 T-states** at 3.5 MHz. Periods
+  from 16 clocks (time constant 1) to 4,096 clocks (time constant 0), 146 µs.
+- **Prescaler 256**: a count every 256 clocks, 9.14 µs, **32 T-states** at 3.5 MHz. Periods from 256 clocks
+  to 65,536 clocks, 2.34 ms.
+
+Let's watch a channel with prescaler 16 and time constant 3:
+
+<figure>
+{/* fig:tick */}
+<svg viewBox="-2 -2 704 290" role="img" aria-label="A timeline to scale over 112 master clocks, with four numbered steps. Step 1, at clock 0: the count starts at 3 and the prescaler at 0. Step 2, from clock 16: the prescaler pulses every 16 clocks and the count goes to 2, 1, and 0 at clock 48. Step 3, at clock 48: for the one clock the count reads 0, ZC/TO is high. Step 4, from the next clock: the count is 3 again, the next pulse comes at clock 64, and the next zero count at 96, 48 clocks after the first." style={{ width: "100%", height: "auto" }}>
+  <line x1="130" y1="72" x2="130" y2="168" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.6" />
+  <circle cx="130.0" cy="16" r="12" fill="#e5484d" />
+  <text x="130" y="21" textAnchor="middle" fill="#ffffff" fontSize="13.5" fontWeight="bold">1</text>
+  <line x1="211.4" y1="72" x2="211.4" y2="168" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.6" />
+  <circle cx="211.4" cy="16" r="12" fill="#e5484d" />
+  <text x="211.4" y="21" textAnchor="middle" fill="#ffffff" fontSize="13.5" fontWeight="bold">2</text>
+  <line x1="374.3" y1="72" x2="374.3" y2="168" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.6" />
+  <circle cx="374.3" cy="16" r="12" fill="#e5484d" />
+  <text x="374.3" y="21" textAnchor="middle" fill="#ffffff" fontSize="13.5" fontWeight="bold">3</text>
+  <line x1="455.7" y1="72" x2="455.7" y2="168" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.6" />
+  <circle cx="455.7" cy="16" r="12" fill="#e5484d" />
+  <text x="455.7" y="21" textAnchor="middle" fill="#ffffff" fontSize="13.5" fontWeight="bold">4</text>
+  <g transform="translate(0,36)">
+  <line x1="130" y1="30" x2="130" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="130" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">0</text>
+  <line x1="211.4" y1="30" x2="211.4" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="211.4" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">16</text>
+  <line x1="292.9" y1="30" x2="292.9" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="292.9" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">32</text>
+  <line x1="374.3" y1="30" x2="374.3" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="374.3" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">48</text>
+  <line x1="455.7" y1="30" x2="455.7" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="455.7" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">64</text>
+  <line x1="537.1" y1="30" x2="537.1" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="537.1" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">80</text>
+  <line x1="618.6" y1="30" x2="618.6" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="618.6" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">96</text>
+  <line x1="700" y1="30" x2="700" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="700" y="22" textAnchor="end" fill="currentColor" fontSize="13.5">112</text>
+  <text x="0" y="22" fill="currentColor" fontSize="13.5">clocks</text>
+  <text x="0" y="66" fill="#3b82f6" fontSize="15" fontWeight="bold">prescaler</text>
+  <line x1="130" y1="70" x2="700" y2="70" stroke="#3b82f6" strokeWidth="1.2" strokeOpacity="0.6" />
+  <rect x="208.4" y="48" width="6" height="22" fill="#3b82f6" fillOpacity="0.6" stroke="#3b82f6" strokeWidth="1.2" />
+  <rect x="289.9" y="48" width="6" height="22" fill="#3b82f6" fillOpacity="0.6" stroke="#3b82f6" strokeWidth="1.2" />
+  <rect x="371.3" y="48" width="6" height="22" fill="#3b82f6" fillOpacity="0.6" stroke="#3b82f6" strokeWidth="1.2" />
+  <rect x="452.7" y="48" width="6" height="22" fill="#3b82f6" fillOpacity="0.6" stroke="#3b82f6" strokeWidth="1.2" />
+  <rect x="534.1" y="48" width="6" height="22" fill="#3b82f6" fillOpacity="0.6" stroke="#3b82f6" strokeWidth="1.2" />
+  <rect x="615.6" y="48" width="6" height="22" fill="#3b82f6" fillOpacity="0.6" stroke="#3b82f6" strokeWidth="1.2" />
+  <rect x="697" y="48" width="6" height="22" fill="#3b82f6" fillOpacity="0.6" stroke="#3b82f6" strokeWidth="1.2" />
+  <text x="0" y="116" fill="#e8912d" fontSize="15" fontWeight="bold">count</text>
+  <rect x="130" y="96" width="81.4" height="30" rx="3" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="170.7" y="116" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">3</text>
+  <rect x="211.4" y="96" width="81.4" height="30" rx="3" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="252.1" y="116" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">2</text>
+  <rect x="292.9" y="96" width="81.4" height="30" rx="3" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="333.6" y="116" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">1</text>
+  <rect x="374.3" y="96" width="5.1" height="30" fill="#e5484d" fillOpacity="0.6" stroke="#e5484d" strokeWidth="1.4" />
+  <rect x="379.4" y="96" width="76.3" height="30" rx="3" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="417.5" y="116" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">3</text>
+  <rect x="455.7" y="96" width="81.4" height="30" rx="3" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="496.4" y="116" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">2</text>
+  <rect x="537.1" y="96" width="81.4" height="30" rx="3" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="577.9" y="116" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">1</text>
+  <rect x="618.6" y="96" width="5.1" height="30" fill="#e5484d" fillOpacity="0.6" stroke="#e5484d" strokeWidth="1.4" />
+  <rect x="623.7" y="96" width="76.3" height="30" rx="3" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="661.8" y="116" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">3</text>
+  <text x="376.8" y="90" textAnchor="middle" fill="#e5484d" fontSize="13.5" fontWeight="bold">0</text>
+  <text x="621.1" y="90" textAnchor="middle" fill="#e5484d" fontSize="13.5" fontWeight="bold">0</text>
+  <text x="0" y="172" fill="#e5484d" fontSize="15" fontWeight="bold">ZC/TO</text>
+  <path d="M130,176 L374.2857142857143,176 L374.2857142857143,154 L379.375,154 L379.375,176 L618.5714285714286,176 L618.5714285714286,154 L623.6607142857142,154 L623.6607142857142,176 L700,176" fill="none" stroke="#e5484d" strokeWidth="1.8" strokeLinejoin="round" />
+  <path d="M374.2857142857143,196 L374.2857142857143,206 L618.5714285714286,206 L618.5714285714286,196" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+  <text x="496.4" y="228" textAnchor="middle" fill="currentColor" fontSize="13.5">48 clocks: prescaler × time constant</text>
+  </g>
+</svg>
+{/* /fig:tick */}
+<figcaption>Prescaler 16, time constant 3, to scale in master clocks. The prescaler pulses every 16 clocks; the count goes 3, 2, 1, 0; at 0 the channel sends a one-clock ZC/TO pulse and reloads 3 on the next clock. A ZC/TO every 48 clocks. The numbered badges mark the steps below.</figcaption>
+</figure>
+
+1. The channel starts with the count at 3 and the prescaler at 0.
+2. Every 16 clocks the prescaler pulses, and the count goes to 2, then 1, then 0, at clock 48.
+3. For that one clock the count reads 0, and ZC/TO is high: one pulse 36 ns long.
+4. On the next clock the count is 3 again. The prescaler never stopped, so the next pulse comes at clock 64,
+   and the next zero count at clock 96: exactly 48 clocks after the first.
+
+Notice the first step, because the Zilog datasheet and some books leave it vague: while a channel is not
+running, its prescaler is held at 0 and its count at the time constant. So a timer's first count comes
+exactly one prescaler period after it starts, and its first zero count one full period after it. There is no
+random phase to average out. I like that a lot: a timer you start at a known moment beats at known moments.
+
+And this is the answer to the opening puzzle. The CPU's clock is made from the same master clock, so whatever
+its speed, it changes nothing for the metronome. A channel that beats 17,500 times a second at 3.5 MHz beats
+17,500 times a second at 28 MHz.
+
+There is one exception, and it comes from the monitor, not from your program. Some VGA monitors refuse the
+Next's 50 Hz frame, so the machine has seven **VGA modes**, 0 to 6, chosen in the **Video Timing register,
+NextReg `$11`**. Mode 0 runs the master clock at exactly 28 MHz; the others run it faster, in steps up to
+33 MHz in mode 6, so that the whole picture comes a little faster and the monitor accepts it. The register
+can be written only in config mode, so the machine's set-up picks the mode, not your program; the frame and
+beam chapter's [scan doubler and VGA](/en/under-the-hood/emulator-internals/next-display/timing/#the-scan-doubler-and-vga)
+section tells the story. In a faster mode the metronome speeds up with the master clock, but so does the CPU:
+one count of prescaler 16 is still exactly 2 T-states at 3.5 MHz, and only the rate in seconds changes, by
+up to 18%.
+
+## The control word
+
+A channel is programmed with a **control word**, a byte with bit 0 set, and often a **time constant** after
+it:
+
+```text
+control word:  I M P E T C R 1
+  I = 1: interrupt on every zero count
+  M = mode: 0 timer, 1 counter
+  P = prescaler: 0 divides by 16, 1 by 256
+  E = trigger edge: 0 falling, 1 rising
+  T = 1: a timer waits for a trigger to start
+  C = 1: a time constant follows
+  R = 1: software reset
+```
+
+A byte with bit 0 clear, when no time constant is expected, is an **interrupt vector** on the Zilog chip.
+The Next throws it away: its vectors come from the interrupt controller, not from the CTC. And the byte after
+a control word with C set is always the time constant, whatever its bit 0.
+
+A channel is always in one of four states, and the control word moves it between them:
+
+1. **Reset.** After a reset, the channel holds still with its count at the time constant, which is 0. Only a
+   control word with **C** set wakes it; one without C is stored, but the channel stays where it is. This
+   catches people out: the first control word must announce a time constant.
+2. **Waiting for a time constant.** The next byte is the constant, and the channel moves on.
+3. **Waiting for a trigger.** A timer with **T** set waits here for an edge on its trigger input; any other
+   channel passes straight through, on the next clock.
+4. **Running.** The channel counts, as long as nothing stops it.
+
+The **software reset**, **R**, stops a channel from any state: with C clear it goes back to state 1, with C
+set to state 2, and it starts again from the new constant. Without R, a control word does not stop a running
+channel. Its settings change at once, the prescaler, the mode and the interrupt enable, and the count goes
+on. With C set, the next byte becomes the new time constant, and the channel uses it from its next zero
+count; the period under way finishes at the old one. I find that a lovely property for a sample player: you
+can change the rate between two samples without a click.
+
+Here is channel 0 set up as a timer of prescaler 16 and time constant 100, a zero count every 1,600 clocks,
+17,500 times a second, with its interrupt on:
+
+```z80klive
+        ld bc,$183b            ; channel 0
+        ld a,%10000101         ; interrupt, timer, /16,
+        out (c),a              ; constant follows
+        ld a,100
+        out (c),a              ; starts on the next clock
+```
+
+If you inherit a channel in an unknown state, my advice is to write `$03`, a software reset without C, twice.
+If the channel happened to expect a time constant, the first byte is taken as one; the second is then
+certainly a control word, and it leaves the channel in state 1, ready for your setup.
+
+## Timer and counter
+
+In **timer mode**, bit 6 clear, a channel counts the prescaler's pulses: it measures time. In **counter
+mode**, bit 6 set, it ignores the prescaler and counts edges on its trigger input instead: it counts events.
+On a Zilog chip the event could be anything wired to the pin; on the Next, it is always the previous
+channel's zero count.
+
+The trigger input matters in timer mode too. A timer with bit 3, **T**, set does not start when it gets its
+time constant: it waits for the first edge on its trigger input, and then starts, with the prescaler at 0. So
+one channel can start another at an exact moment, its own zero count.
+
+Bit 4, **E**, chooses the edge. The ZC/TO pulse is one master clock long, so its rising edge comes as the
+upstream count reaches zero and its falling edge one clock later. Either way the channel counts once per
+upstream zero count; the edge only moves the moment by 36 ns. But one detail of E deserves a warning:
+**writing a control word that changes E counts as an edge**. A counter counts one down, and a timer waiting
+for its trigger starts. My rule: choose the edge when you set a channel up, and do not touch it afterwards.
+
+## The ring
+
+The four trigger inputs are wired in a ring. Channel 1 counts channel 0's zero counts, channel 2 counts
+channel 1's, channel 3 counts channel 2's, and channel 0 counts channel 3's:
+
+<figure>
+{/* fig:ring */}
+<svg viewBox="-2 -2 704 310" role="img" aria-label="Four boxes in a square: channel 0 at port $183B top left, channel 1 at $193B top right, channel 2 at $1A3B bottom right, channel 3 at $1B3B bottom left. Arrows labelled ZC/TO run from channel 0 to 1, 1 to 2, 2 to 3 and 3 back to 0. In the middle: every ZC/TO also sets a status bit and is an interrupt request. Below channel 3, its ZC/TO can also clock joystick pin 7." style={{ width: "100%", height: "auto" }}>
+  <defs>
+    <marker id="ctc-ring-0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#e5484d" />
+    </marker>
+  </defs>
+  <rect x="0" y="6" width="220" height="70" rx="6" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="2" />
+  <text x="110" y="37.3" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">channel 0</text>
+  <text x="110" y="55.3" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">$183B</text>
+  <rect x="480" y="6" width="220" height="70" rx="6" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="2" />
+  <text x="590" y="37.3" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">channel 1</text>
+  <text x="590" y="55.3" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">$193B</text>
+  <rect x="480" y="176" width="220" height="70" rx="6" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="2" />
+  <text x="590" y="207.3" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">channel 2</text>
+  <text x="590" y="225.3" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">$1A3B</text>
+  <rect x="0" y="176" width="220" height="70" rx="6" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="2" />
+  <text x="110" y="207.3" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">channel 3</text>
+  <text x="110" y="225.3" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">$1B3B</text>
+  <path d="M220,41 L476,41" fill="none" stroke="#e5484d" strokeWidth="1.8" markerEnd="url(#ctc-ring-0)" strokeLinejoin="round" />
+  <text x="350" y="31" textAnchor="middle" fill="#e5484d" fontSize="13.5" fontWeight="bold">ZC/TO</text>
+  <path d="M590,76 L590,172" fill="none" stroke="#e5484d" strokeWidth="1.8" markerEnd="url(#ctc-ring-0)" strokeLinejoin="round" />
+  <text x="600" y="130" fill="#e5484d" fontSize="13.5" fontWeight="bold">ZC/TO</text>
+  <path d="M480,211 L224,211" fill="none" stroke="#e5484d" strokeWidth="1.8" markerEnd="url(#ctc-ring-0)" strokeLinejoin="round" />
+  <text x="350" y="231" textAnchor="middle" fill="#e5484d" fontSize="13.5" fontWeight="bold">ZC/TO</text>
+  <path d="M110,176 L110,80" fill="none" stroke="#e5484d" strokeWidth="1.8" markerEnd="url(#ctc-ring-0)" strokeLinejoin="round" />
+  <text x="120" y="130" fill="#e5484d" fontSize="13.5" fontWeight="bold">ZC/TO</text>
+  <text x="350" y="122" textAnchor="middle" fill="currentColor" fontSize="13.5">every ZC/TO also sets a status</text>
+  <text x="350" y="140" textAnchor="middle" fill="currentColor" fontSize="13.5">bit and requests an interrupt</text>
+  <path d="M110,246 L110,274" fill="none" stroke="#e5484d" strokeWidth="1.8" markerEnd="url(#ctc-ring-0)" strokeLinejoin="round" />
+  <text x="122" y="294" fill="#e5484d" fontSize="13.5">channel 3 can also clock joystick pin 7</text>
+</svg>
+{/* /fig:ring */}
+<figcaption>The four channels in a ring: each one's ZC/TO is the next one's trigger, and channel 3's goes back to channel 0. Every ZC/TO is also an interrupt request, and channel 3's can clock a joystick pin.</figcaption>
+</figure>
+
+A chain of channels is a chain of dividers. A timer divides the master clock by its prescaler and its time
+constant, and each counter after it divides by its own constant. That gives you rates no single channel can
+reach, and exact ones. Here is my favourite example, a 50 Hz tick that does not come from the display:
+
+<figure>
+{/* fig:divider */}
+<svg viewBox="-2 -2 704 134" role="img" aria-label="A chain of dividers from left to right: the 28 MHz master clock; the prescaler divides by 16, giving 1.75 MHz; channel 0, a timer with time constant 140, gives 12.5 kHz; channel 1, a counter with time constant 250, gives 50 Hz. 16 times 140 times 250 is 560,000 clocks, 20 ms." style={{ width: "100%", height: "auto" }}>
+  <defs>
+    <marker id="ctc-div-0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
+    </marker>
+  </defs>
+  <text x="34" y="46" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">28 MHz</text>
+  <text x="34" y="64" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">clock</text>
+  <rect x="96" y="20" width="124" height="60" rx="6" fill="#3b82f6" fillOpacity="0.12" stroke="#3b82f6" strokeWidth="2" />
+  <text x="158" y="46.3" textAnchor="middle" fill="#3b82f6" fontSize="15">prescaler</text>
+  <text x="158" y="64.3" textAnchor="middle" fill="#3b82f6" fontSize="15">÷16</text>
+  <rect x="316" y="20" width="124" height="60" rx="6" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="2" />
+  <text x="378" y="46.3" textAnchor="middle" fill="#e8912d" fontSize="15">channel 0</text>
+  <text x="378" y="64.3" textAnchor="middle" fill="#e8912d" fontSize="15">timer ÷140</text>
+  <rect x="536" y="20" width="124" height="60" rx="6" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="2" />
+  <text x="598" y="46.3" textAnchor="middle" fill="#e8912d" fontSize="15">channel 1</text>
+  <text x="598" y="64.3" textAnchor="middle" fill="#e8912d" fontSize="15">counter ÷250</text>
+  <path d="M72,50 L92,50" fill="none" stroke="currentColor" strokeWidth="1.8" markerEnd="url(#ctc-div-0)" strokeLinejoin="round" />
+  <path d="M220,50 L312,50" fill="none" stroke="currentColor" strokeWidth="1.8" markerEnd="url(#ctc-div-0)" strokeLinejoin="round" />
+  <path d="M440,50 L532,50" fill="none" stroke="currentColor" strokeWidth="1.8" markerEnd="url(#ctc-div-0)" strokeLinejoin="round" />
+  <text x="266" y="40" textAnchor="middle" fill="currentColor" fontSize="13.5">1.75 MHz</text>
+  <text x="486" y="40" textAnchor="middle" fill="currentColor" fontSize="13.5">12.5 kHz</text>
+  <path d="M660,50 L672,50 L672,96" fill="none" stroke="currentColor" strokeWidth="1.8" markerEnd="url(#ctc-div-0)" strokeLinejoin="round" />
+  <text x="700" y="118" textAnchor="end" fill="#e5484d" fontSize="15" fontWeight="bold">50 Hz</text>
+  <text x="0" y="118" fill="currentColor" fontSize="13.5">16 × 140 × 250 = 560,000 clocks = 20 ms</text>
+</svg>
+{/* /fig:divider */}
+<figcaption>An exact 50 Hz from the master clock: the prescaler divides 28 MHz by 16, channel 0 by 140, and channel 1, in counter mode, by 250. 16 × 140 × 250 = 560,000 clocks, 20 ms.</figcaption>
+</figure>
+
+```z80klive
+        ld bc,$183b            ; channel 0: timer, /16
+        ld a,%00000101
+        out (c),a
+        ld a,140               ; 2,240 clocks: 12.5 kHz
+        out (c),a
+        inc b                  ; $193B: channel 1
+        ld a,%11000101         ; interrupt, counter
+        out (c),a
+        ld a,250               ; 560,000 clocks: 50 Hz
+        out (c),a
+```
+
+Only channel 1 interrupts, every 20 ms, and the display's frame rate, which is close to 50 Hz but never exactly
+50 Hz, has nothing to do with it. A game whose logic runs on this tick runs at the same speed on every
+display. Two counters in the chain stretch the period further still: three channels with constants of 0 and
+prescaler 256 make a zero count about every 153 seconds.
+
+Watch the ring's one trap: it is a ring. Channel 0 in counter mode counts channel 3's zero counts, so a
+chain may start at any channel, but four counters and no timer count nothing. Start every chain with a
+timer; a timer ignores its trigger input once it runs, so the ring is cut there.
+
+## A stopwatch
+
+Reading a channel gives its count at that moment, and that makes the CTC the best stopwatch the Next has.
+Read before, read after, subtract: the count goes down, so the elapsed time is the first reading minus the
+second. One channel with prescaler 16 and time constant 0 measures up to 256 counts of 2 T-states, 512
+T-states at 3.5 MHz.
+
+For longer code, chain two channels into a **16-bit counter**: channel 0 as a timer with prescaler 16 and
+time constant 0, the low byte, and channel 1 in counter mode with time constant 0, the high byte. That counts
+65,536 times 16 clocks, 37.4 ms, nearly two frames, with a resolution of 2 T-states.
+
+There is a catch in reading it: the two bytes are two `IN` instructions, and the low byte can wrap between
+them. The fix is old and simple. Read the high byte, then the low byte, then the high byte again; if the two
+high bytes differ, the low byte wrapped in between, so read again. Read again too when the low byte is 0,
+because that is the moment channel 0 reaches zero and channel 1 counts, and a reading taken there cannot
+tell which side of the count it is on:
+
+```z80klive
+; channel 0: timer, /16, constant 0; channel 1: counter, 0
+; returns the 16-bit count in HL; changes A, BC
+Read:   ld bc,$193b
+        in h,(c)               ; high byte: channel 1
+        dec b                  ; $183B: channel 0
+        in l,(c)               ; low byte
+        inc b
+        in a,(c)               ; high byte again
+        cp h
+        jr nz,Read             ; it counted: read again
+        inc l
+        dec l
+        jr z,Read              ; low byte 0: read again
+        ret
+```
+
+Call `Read` before and after the code you measure, subtract the second count from the first, and double the
+difference for T-states at 3.5 MHz. The difference includes part of the reading itself, so measure an empty
+block once and take that off. At 28 MHz the same count is 16 T-states, so the stopwatch is
+coarser in T-states but just as exact in time; for a routine that takes less than a count, count its
+T-states from the instruction tables instead.
+
+## Interrupts
+
+Every zero count of a channel is an interrupt request, and the [interrupts
+chapter](/en/under-the-hood/emulator-internals/next-interrupts/) tells the rest of the story. From the
+CTC's side, a few facts to keep together:
+
+- **The enable is bit 7 of the control word**, and also bit *n* of the **INT EN 1 register, NextReg
+  `$C5`**, for channel *n*. They are the same flip-flop: whichever you wrote last wins, and a control word
+  without bit 7 switches the interrupt off.
+- **The status is set on every zero count**, enabled or not, in bit *n* of the **INT Status 1 register,
+  NextReg `$C9`**, and writing a 1 clears it. That is the polled mode: leave the interrupt off and watch the
+  bit. The status bit is only a record; one you forget to clear blocks nothing.
+- **In hardware IM2 mode** channels 0 to 3 are sources 3 to 6 of the chain, after the line interrupt and the
+  UART receivers and before the ULA, with vector offsets `$06` to `$0C`. **In pulse mode** a zero count
+  starts the shared pulse, and the vector is `$FF`.
+- **NextReg `$20` bits 3–0** request a CTC interrupt by software, without a zero count.
+- **NextReg `$CD` bits 3–0** let a channel's interrupt break into a DMA transfer. The CTC cannot start or
+  pace the DMA; the DMA has its own prescaler for that.
+
+A zero count is also edges for other hardware: channel 3's can clock a joystick pin. In the joystick's I/O
+mode, NextReg `$0B` with bit 7 set, bits 5–4 = 01 and bit 0 set, pin 7 of the joystick port toggles on every
+zero count of channel 3: a square wave at half its rate, for a device that wants a clock.
+
+## Resets
+
+A reset, hard or soft, puts every channel into the reset state: control word 0, time constant 0, interrupt
+off, and a count that reads 0. NextReg `$C5` reads 0 too, and the status bits in `$C9` are cleared. Nothing
+runs until a program writes a control word with a time constant. So the metronome is silent after a reset,
+and, as the interrupts chapter advises, a program should set up every channel it uses itself.
+
+## What core 3.02.04 changed
+
+Later cores rewrote the channel's state machine, and two differences can be seen from a program:
+
+- **The count skips 0.** On the clock where a count of 1 would become 0, the channel reloads the time
+  constant directly, so a channel with time constant 100 reads 100 down to 1, never 0. ZC/TO still comes on
+  the same clock as before, so periods, chains and interrupts are unchanged; only a reading at that one clock
+  differs. A time constant of 0 still means 256.
+- **A control word with C while a timer waits for its trigger** now makes the channel wait for a new time
+  constant. In 3.02.01 the channel kept waiting with its old constant, and a trigger could start it before
+  the new one arrived.
+
+Neither changes how you should program the CTC: send the time constant after every control word that
+announces one, and nothing in your program will notice which core it runs on.
+
+## What to take home
+
+The CTC, the metronome, is a Zilog Z80 CTC with four channels at ports `$183B` to `$1B3B`; channels 4 to 7
+have ports but no hardware. Each channel counts the 28 MHz master clock, not the CPU's clock, so its rates
+hold at every CPU speed.
+
+A channel is a prescaler of 16 or 256, an 8-bit down-counter and a time constant. At zero it sends a
+one-clock ZC/TO pulse and reloads, so its period is the prescaler times the constant, with 0 meaning 256:
+from 16 clocks, 2 T-states at 3.5 MHz, to 65,536 clocks, 2.34 ms. While it is not running, its prescaler and
+count are held, so a timer beats at exact moments from the time it starts.
+
+The control word, bit 0 set, chooses the interrupt, the mode, the prescaler, the edge, a triggered start, a
+time constant to follow and a software reset; the first one after a reset must announce a constant. A
+control word without a reset changes a running channel's settings at once and its constant from the next
+zero count. In counter mode a channel counts the previous channel's zero counts, in a ring 0 → 1 → 2 → 3 →
+0, which makes the channels a chain of dividers: exact rates such as 50 Hz, long periods, and a 16-bit
+stopwatch with a resolution of 2 T-states, read high, low, high again.
+
+Every zero count sets its bit in NextReg `$C9` and interrupts if bit 7 of the control word or NextReg `$C5`
+allows. A reset silences every channel. Keep the beat, and the CPU can be as fast or as slow as it likes.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"The road ahead","id":"the-road-ahead","depth":2},{"value":"A Zilog chip in the FPGA","id":"a-zilog-chip-in-the-fpga","depth":2},{"value":"One channel inside","id":"one-channel-inside","depth":2},{"value":"The control word","id":"the-control-word","depth":2},{"value":"Timer and counter","id":"timer-and-counter","depth":2},{"value":"The ring","id":"the-ring","depth":2},{"value":"A stopwatch","id":"a-stopwatch","depth":2},{"value":"Interrupts","id":"interrupts","depth":2},{"value":"Resets","id":"resets","depth":2},{"value":"What core 3.02.04 changed","id":"what-core-30204-changed","depth":2},{"value":"What to take home","id":"what-to-take-home","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"How the ZX Spectrum Next's CTC works: four Zilog-style channels on the 28 MHz master clock, the prescaler and the down-counter, the zero count and its reload, the control word and the channel's states, timer and counter mode, the ring that chains the channels, exact rates from chained channels, a 16-bit stopwatch, interrupts, resets, and what core 3.02.04 changed.","title":"CTC: Four Timers in a Ring","filePath":"content/en/under-the-hood/emulator-internals/next-ctc.mdx","timestamp":1793369525000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"under-the-hood/emulator-internals/next-ctc","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"CTC: Four Timers in a Ring - Klive IDE"}],["$","meta","1",{"name":"description","content":"How the ZX Spectrum Next's CTC works: four Zilog-style channels on the 28 MHz master clock, the prescaler and the down-counter, the zero count and its reload, the control word and the channel's states, timer and counter mode, the ring that chains the channels, exact rates from chained channels, a 16-bit stopwatch, interrupts, resets, and what core 3.02.04 changed."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/under-the-hood/emulator-internals/next-ctc/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"PCZAuL2hRwkZfrNjWctZa"}
+20:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+21:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+60:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["CTC: Four Timers in a Ring","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Switch a Next from 3.5 MHz to 28 MHz and every delay loop in your program runs eight times faster. The music\nplayer that counted T-states between two notes now plays like a chipmunk, the sample that took a second takes\nan eighth of one, and the stopwatch you wrote out of ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"DJNZ"}]," measures nothing at all. Yet some things on the\nNext keep their pace whatever the CPU does. Who is keeping time for them?"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["I think every serious Next program needs a clock it can trust, and the CPU is not one. The CPU’s speed is a\nsetting, contention stretches it, the DMA stops it. The ",["$","strong",null,{"children":"CTC"}],", the counter/timer circuit, counts the\nmachine’s master clock instead, and it is the piece I reach for whenever something must happen at a rate: a\nsample clock, a game tick independent of the display, a timeout, or a stopwatch to see how long a routine\nreally takes."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["You should know one chapter first. ",["$","$L20",null,{"href":"/en/under-the-hood/emulator-internals/next-interrupts/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Interrupts: Fourteen Voices, Two\nWires"}]," explains how a CTC channel’s interrupt reaches\nthe CPU, its vector, its status bit and the daisy chain; here we look at what makes the channel ring. ",["$","$L20",null,{"href":"/en/under-the-hood/emulator-internals/next-display/timing/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"The\nFrame and the Beam"}]," explains the master clock the\nCTC counts."]}],"\n",["$","h2",null,{"id":"the-road-ahead","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The road ahead",["$","$L21",null,{"id":"the-road-ahead"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"We start with the chip the CTC copies and the ports of its four channels. Then we open one channel up: a\nprescaler, a down-counter and the pulse that comes out when the count runs out. The control word comes next,\nwith the channel’s four states, and then the two ways a channel can count, by time or by events. The heart of\nthe chapter is the ring that joins the four channels, and what you can build with it: exact rates and a\n16-bit stopwatch. Last come interrupts, resets, and what a later core version changed."}],"\n",["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":"$L22"}],"$L23"]}],"\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49","\n","$L4a","\n","$L4b","\n","$L4c","\n","$L4d","\n","$L4e","\n","$L4f","\n","$L50","\n","$L51","\n","$L52","\n","$L53","\n","$L54","\n","$L55","\n","$L56","\n","$L57","\n","$L58","\n","$L59","\n","$L5a","\n","$L5b","\n","$L5c","\n","$L5d","\n","$L5e","\n","$L5f"]]}]
+15:["$","$L60",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@61"}]}]
+1f:true
+84:"ToggleWordWrapButton"
+85:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$84"]
+86:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+9:300
+22:["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"}]}]
+23:["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The facts are for ",["$","strong",null,{"children":"core 3.02.01"}],", except where a section says otherwise. The master clock is ",["$","strong",null,{"children":"28 MHz"}],", as\nin VGA mode 0 and HDMI, and T-states are for a CPU at ",["$","strong",null,{"children":"3.5 MHz"}],". Every fact was checked against the Next’s\nhardware design."]}]}]
+24:["$","h2",null,{"id":"a-zilog-chip-in-the-fpga","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["A Zilog chip in the FPGA",["$","$L21",null,{"id":"a-zilog-chip-in-the-fpga"}]]}]
+25:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The Next’s CTC is a copy of the Z80 CTC, the counter/timer chip Zilog made as a companion for the Z80, and\nprograms written for it on other Z80 machines speak the same language here. I call it ",["$","strong",null,{"children":"the metronome"}],", as\nthe interrupts chapter does: it beats a steady rate, and it does not care how fast the musician plays."]}]
+26:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The Zilog chip has four channels, and so does the Next, at four ports:"}]
+27:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Channel 0"}]," at port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$183B"}],", ",["$","strong",null,{"children":"channel 1"}]," at ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$193B"}],", ",["$","strong",null,{"children":"channel 2"}]," at ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$1A3B"}]," and ",["$","strong",null,{"children":"channel 3"}]," at\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$1B3B"}],". The low byte is ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$3B"}],", bits 15–11 of the address are ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"00011"}],", and bits 10–8 pick the channel."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":["Ports ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$1C3B"}]," to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$1F3B"}]]}]," belong to channels 4 to 7, which have no hardware: reading them gives ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$00"}],",\nand writing them does nothing."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Writing"}]," a channel’s port sends it a control word or a time constant; ",["$","strong",null,{"children":"reading"}]," it gives the channel’s\ncurrent count."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["The ports can be switched off with bit 3 of NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$85"}],", and they are on after a reset. A channel that\nruns keeps running while its port is off."]}],"\n"]}]
+28:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"There is one thing the Next leaves out. A Zilog CTC has pins for an outside clock or trigger on each\nchannel; the Next’s channels have no outside pins. Their trigger inputs are wired to each other, in a ring,\nand that ring is the most interesting thing about them."}]
+29:["$","h2",null,{"id":"one-channel-inside","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["One channel inside",["$","$L21",null,{"id":"one-channel-inside"}]]}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Each channel is a small machine of three parts:"}]
+2b:["$","figure",null,{"children":[["$","svg",null,{"viewBox":"-2 -2 704 304","role":"img","aria-label":"One CTC channel. The 28 MHz master clock feeds the prescaler, which divides by 16 or 256 as bit 5 of the control word says. The trigger input, the previous channel's ZC/TO, goes through an edge detector, rising or falling as bit 4 says. A mode switch, bit 6, picks the prescaler's pulses in timer mode or the trigger's edges in counter mode, and each one counts the 8-bit down-counter down. At zero the counter sends a ZC/TO pulse, to the interrupt controller and the next channel, and reloads from the time constant register.","style":{"width":"100%","height":"auto"},"children":[["$","defs",null,{"children":[["$","marker",null,{"id":"ctc-ch-0","viewBox":"0 0 10 10","refX":"9","refY":"5","markerWidth":"7","markerHeight":"7","orient":"auto-start-reverse","children":["$","path",null,{"d":"M0,0 L10,5 L0,10 z","fill":"currentColor"}]}],["$","marker",null,{"id":"ctc-ch-1","viewBox":"0 0 10 10","refX":"9","refY":"5","markerWidth":"7","markerHeight":"7","orient":"auto-start-reverse","children":["$","path",null,{"d":"M0,0 L10,5 L0,10 z","fill":"#3b82f6"}]}],["$","marker",null,{"id":"ctc-ch-2","viewBox":"0 0 10 10","refX":"9","refY":"5","markerWidth":"7","markerHeight":"7","orient":"auto-start-reverse","children":["$","path",null,{"d":"M0,0 L10,5 L0,10 z","fill":"#30a46c"}]}],["$","marker",null,{"id":"ctc-ch-3","viewBox":"0 0 10 10","refX":"9","refY":"5","markerWidth":"7","markerHeight":"7","orient":"auto-start-reverse","children":["$","path",null,{"d":"M0,0 L10,5 L0,10 z","fill":"#e8912d"}]}],["$","marker",null,{"id":"ctc-ch-4","viewBox":"0 0 10 10","refX":"9","refY":"5","markerWidth":"7","markerHeight":"7","orient":"auto-start-reverse","children":["$","path",null,{"d":"M0,0 L10,5 L0,10 z","fill":"#e5484d"}]}]]}],["$","rect",null,{"x":"0","y":"20","width":"150","height":"60","rx":"6","fill":"none","stroke":"#3b82f6","strokeWidth":"2"}],["$","text",null,{"x":"75","y":"46.3","textAnchor":"middle","fill":"#3b82f6","fontSize":"15","children":"master clock"}],["$","text",null,{"x":"75","y":"64.3","textAnchor":"middle","fill":"#3b82f6","fontSize":"15","children":"28 MHz"}],["$","rect",null,{"x":"190","y":"20","width":"150","height":"60","rx":"6","fill":"#3b82f6","fillOpacity":"0.12","stroke":"#3b82f6","strokeWidth":"2"}],["$","text",null,{"x":"265","y":"46.3","textAnchor":"middle","fill":"#3b82f6","fontSize":"15","children":"prescaler"}],["$","text",null,{"x":"265","y":"64.3","textAnchor":"middle","fill":"#3b82f6","fontSize":"15","children":"÷16 or ÷256"}],["$","path",null,{"d":"M150,50 L186,50","fill":"none","stroke":"#3b82f6","strokeWidth":"1.8","markerEnd":"url(#ctc-ch-1)","strokeLinejoin":"round"}],["$","rect",null,{"x":"0","y":"200","width":"150","height":"60","rx":"6","fill":"none","stroke":"#30a46c","strokeWidth":"2"}],["$","text",null,{"x":"75","y":"226.4","textAnchor":"middle","fill":"#30a46c","fontSize":"14","children":"trigger in:"}],["$","text",null,{"x":"75","y":"243.4","textAnchor":"middle","fill":"#30a46c","fontSize":"14","children":"previous ZC/TO"}],["$","rect",null,{"x":"190","y":"200","width":"150","height":"60","rx":"6","fill":"#30a46c","fillOpacity":"0.12","stroke":"#30a46c","strokeWidth":"2"}],["$","text",null,{"x":"265","y":"226.4","textAnchor":"middle","fill":"#30a46c","fontSize":"14","children":"edge"}],["$","text",null,{"x":"265","y":"243.4","textAnchor":"middle","fill":"#30a46c","fontSize":"14","children":"rising or falling"}],["$","path",null,{"d":"M150,230 L186,230","fill":"none","stroke":"#30a46c","strokeWidth":"1.8","markerEnd":"url(#ctc-ch-2)","strokeLinejoin":"round"}],["$","rect",null,{"x":"370","y":"110","width":"120","height":"60","rx":"6","fill":"none","stroke":"currentColor","strokeWidth":"1.5"}],["$","text",null,{"x":"430","y":"136.5","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"mode"}],["$","text",null,{"x":"430","y":"153","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"timer/counter"}],["$","path",null,{"d":"M340,50 L430,50 L430,106","fill":"none","stroke":"#3b82f6","strokeWidth":"1.8","markerEnd":"url(#ctc-ch-1)","strokeLinejoin":"round"}],["$","path",null,{"d":"M340,230 L430,230 L430,174","fill":"none","stroke":"#30a46c","strokeWidth":"1.8","markerEnd":"url(#ctc-ch-2)","strokeLinejoin":"round"}],["$","rect",null,{"x":"520","y":"110","width":"180","height":"60","rx":"6","fill":"#e8912d","fillOpacity":"0.12","stroke":"#e8912d","strokeWidth":"2"}],["$","text",null,{"x":"610","y":"136.3","textAnchor":"middle","fill":"#e8912d","fontSize":"15","fontWeight":"bold","children":"down-counter"}],["$","text",null,{"x":"610","y":"154.3","textAnchor":"middle","fill":"#e8912d","fontSize":"15","fontWeight":"bold","children":"8 bits"}],["$","path",null,{"d":"M490,140 L516,140","fill":"none","stroke":"currentColor","strokeWidth":"1.8","markerEnd":"url(#ctc-ch-0)","strokeLinejoin":"round"}],"$L62","$L63","$L64","$L65","$L66","$L67","$L68","$L69"]}],"$L6a"]}]
+2c:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["The ",["$","strong",null,{"children":"prescaler"}]," is an 8-bit counter that counts every clock of the 28 MHz master clock. It gives a pulse\neach time its low four bits are all ones, every ",["$","strong",null,{"children":"16"}]," clocks, or, when bit 5 of the control word asks for\nit, each time all eight are ones, every ",["$","strong",null,{"children":"256"}]," clocks."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["The ",["$","strong",null,{"children":"down-counter"}]," holds the channel’s count, 8 bits. In timer mode each prescaler pulse counts it down\nby one; in counter mode each edge on the trigger input does."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["The ",["$","strong",null,{"children":"time constant register"}]," holds the value the count starts from. When the count reaches zero, the\nchannel sends one pulse on its output, ",["$","strong",null,{"children":"ZC/TO"}]," (“zero count / time out”), and reloads the count from the\ntime constant on the next clock. Then it counts down again, with no help from your program. A time\nconstant of 0 means ",["$","strong",null,{"children":"256"}],", in both modes: the first tick, a prescaler pulse or a trigger edge, takes the\ncount from 0 to 255, and the zero count comes after 256 ticks."]}],"\n"]}]
+2d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"So a timer channel’s period is simply the prescaler times the time constant, in master clocks, with 0\ncounting as 256. The same numbers in time:"}]
+2e:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Prescaler 16"}],": a count every 16 clocks, 0.571 µs, which is exactly ",["$","strong",null,{"children":"2 T-states"}]," at 3.5 MHz. Periods\nfrom 16 clocks (time constant 1) to 4,096 clocks (time constant 0), 146 µs."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Prescaler 256"}],": a count every 256 clocks, 9.14 µs, ",["$","strong",null,{"children":"32 T-states"}]," at 3.5 MHz. Periods from 256 clocks\nto 65,536 clocks, 2.34 ms."]}],"\n"]}]
+2f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Let’s watch a channel with prescaler 16 and time constant 3:"}]
+30:["$","figure",null,{"children":[["$","svg",null,{"viewBox":"-2 -2 704 290","role":"img","aria-label":"A timeline to scale over 112 master clocks, with four numbered steps. Step 1, at clock 0: the count starts at 3 and the prescaler at 0. Step 2, from clock 16: the prescaler pulses every 16 clocks and the count goes to 2, 1, and 0 at clock 48. Step 3, at clock 48: for the one clock the count reads 0, ZC/TO is high. Step 4, from the next clock: the count is 3 again, the next pulse comes at clock 64, and the next zero count at 96, 48 clocks after the first.","style":{"width":"100%","height":"auto"},"children":[["$","line",null,{"x1":"130","y1":"72","x2":"130","y2":"168","stroke":"currentColor","strokeWidth":"1","strokeDasharray":"3 3","strokeOpacity":"0.6"}],["$","circle",null,{"cx":"130.0","cy":"16","r":"12","fill":"#e5484d"}],["$","text",null,{"x":"130","y":"21","textAnchor":"middle","fill":"#ffffff","fontSize":"13.5","fontWeight":"bold","children":"1"}],["$","line",null,{"x1":"211.4","y1":"72","x2":"211.4","y2":"168","stroke":"currentColor","strokeWidth":"1","strokeDasharray":"3 3","strokeOpacity":"0.6"}],["$","circle",null,{"cx":"211.4","cy":"16","r":"12","fill":"#e5484d"}],["$","text",null,{"x":"211.4","y":"21","textAnchor":"middle","fill":"#ffffff","fontSize":"13.5","fontWeight":"bold","children":"2"}],["$","line",null,{"x1":"374.3","y1":"72","x2":"374.3","y2":"168","stroke":"currentColor","strokeWidth":"1","strokeDasharray":"3 3","strokeOpacity":"0.6"}],["$","circle",null,{"cx":"374.3","cy":"16","r":"12","fill":"#e5484d"}],["$","text",null,{"x":"374.3","y":"21","textAnchor":"middle","fill":"#ffffff","fontSize":"13.5","fontWeight":"bold","children":"3"}],["$","line",null,{"x1":"455.7","y1":"72","x2":"455.7","y2":"168","stroke":"currentColor","strokeWidth":"1","strokeDasharray":"3 3","strokeOpacity":"0.6"}],["$","circle",null,{"cx":"455.7","cy":"16","r":"12","fill":"#e5484d"}],["$","text",null,{"x":"455.7","y":"21","textAnchor":"middle","fill":"#ffffff","fontSize":"13.5","fontWeight":"bold","children":"4"}],["$","g",null,{"transform":"translate(0,36)","children":[["$","line",null,{"x1":"130","y1":"30","x2":"130","y2":"36","stroke":"currentColor","strokeWidth":"1.2"}],["$","text",null,{"x":"130","y":"22","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"0"}],["$","line",null,{"x1":"211.4","y1":"30","x2":"211.4","y2":"36","stroke":"currentColor","strokeWidth":"1.2"}],["$","text",null,{"x":"211.4","y":"22","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"16"}],["$","line",null,{"x1":"292.9","y1":"30","x2":"292.9","y2":"36","stroke":"currentColor","strokeWidth":"1.2"}],["$","text",null,{"x":"292.9","y":"22","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"32"}],["$","line",null,{"x1":"374.3","y1":"30","x2":"374.3","y2":"36","stroke":"currentColor","strokeWidth":"1.2"}],["$","text",null,{"x":"374.3","y":"22","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"48"}],["$","line",null,{"x1":"455.7","y1":"30","x2":"455.7","y2":"36","stroke":"currentColor","strokeWidth":"1.2"}],["$","text",null,{"x":"455.7","y":"22","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"64"}],["$","line",null,{"x1":"537.1","y1":"30","x2":"537.1","y2":"36","stroke":"currentColor","strokeWidth":"1.2"}],["$","text",null,{"x":"537.1","y":"22","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"80"}],["$","line",null,{"x1":"618.6","y1":"30","x2":"618.6","y2":"36","stroke":"currentColor","strokeWidth":"1.2"}],["$","text",null,{"x":"618.6","y":"22","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"96"}],["$","line",null,{"x1":"700","y1":"30","x2":"700","y2":"36","stroke":"currentColor","strokeWidth":"1.2"}],["$","text",null,{"x":"700","y":"22","textAnchor":"end","fill":"currentColor","fontSize":"13.5","children":"112"}],["$","text",null,{"x":"0","y":"22","fill":"currentColor","fontSize":"13.5","children":"clocks"}],["$","text",null,{"x":"0","y":"66","fill":"#3b82f6","fontSize":"15","fontWeight":"bold","children":"prescaler"}],["$","line",null,{"x1":"130","y1":"70","x2":"700","y2":"70","stroke":"#3b82f6","strokeWidth":"1.2","strokeOpacity":"0.6"}],["$","rect",null,{"x":"208.4","y":"48","width":"6","height":"22","fill":"#3b82f6","fillOpacity":"0.6","stroke":"#3b82f6","strokeWidth":"1.2"}],["$","rect",null,{"x":"289.9","y":"48","width":"6","height":"22","fill":"#3b82f6","fillOpacity":"0.6","stroke":"#3b82f6","strokeWidth":"1.2"}],["$","rect",null,{"x":"371.3","y":"48","width":"6","height":"22","fill":"#3b82f6","fillOpacity":"0.6","stroke":"#3b82f6","strokeWidth":"1.2"}],["$","rect",null,{"x":"452.7","y":"48","width":"6","height":"22","fill":"#3b82f6","fillOpacity":"0.6","stroke":"#3b82f6","strokeWidth":"1.2"}],["$","rect",null,{"x":"534.1","y":"48","width":"6","height":"22","fill":"#3b82f6","fillOpacity":"0.6","stroke":"#3b82f6","strokeWidth":"1.2"}],["$","rect",null,{"x":"615.6","y":"48","width":"6","height":"22","fill":"#3b82f6","fillOpacity":"0.6","stroke":"#3b82f6","strokeWidth":"1.2"}],"$L6b","$L6c","$L6d","$L6e","$L6f","$L70","$L71","$L72","$L73","$L74","$L75","$L76","$L77","$L78","$L79","$L7a","$L7b","$L7c","$L7d","$L7e","$L7f","$L80","$L81","$L82"]}]]}],"$L83"]}]
+31:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"The channel starts with the count at 3 and the prescaler at 0."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Every 16 clocks the prescaler pulses, and the count goes to 2, then 1, then 0, at clock 48."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"For that one clock the count reads 0, and ZC/TO is high: one pulse 36 ns long."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"On the next clock the count is 3 again. The prescaler never stopped, so the next pulse comes at clock 64,\nand the next zero count at clock 96: exactly 48 clocks after the first."}],"\n"]}]
+32:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Notice the first step, because the Zilog datasheet and some books leave it vague: while a channel is not\nrunning, its prescaler is held at 0 and its count at the time constant. So a timer’s first count comes\nexactly one prescaler period after it starts, and its first zero count one full period after it. There is no\nrandom phase to average out. I like that a lot: a timer you start at a known moment beats at known moments."}]
+33:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"And this is the answer to the opening puzzle. The CPU’s clock is made from the same master clock, so whatever\nits speed, it changes nothing for the metronome. A channel that beats 17,500 times a second at 3.5 MHz beats\n17,500 times a second at 28 MHz."}]
+34:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["There is one exception, and it comes from the monitor, not from your program. Some VGA monitors refuse the\nNext’s 50 Hz frame, so the machine has seven ",["$","strong",null,{"children":"VGA modes"}],", 0 to 6, chosen in the ",["$","strong",null,{"children":["Video Timing register,\nNextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$11"}]]}],". Mode 0 runs the master clock at exactly 28 MHz; the others run it faster, in steps up to\n33 MHz in mode 6, so that the whole picture comes a little faster and the monitor accepts it. The register\ncan be written only in config mode, so the machine’s set-up picks the mode, not your program; the frame and\nbeam chapter’s ",["$","$L20",null,{"href":"/en/under-the-hood/emulator-internals/next-display/timing/#the-scan-doubler-and-vga","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"scan doubler and VGA"}],"\nsection tells the story. In a faster mode the metronome speeds up with the master clock, but so does the CPU:\none count of prescaler 16 is still exactly 2 T-states at 3.5 MHz, and only the rate in seconds changes, by\nup to 18%."]}]
+35:["$","h2",null,{"id":"the-control-word","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The control word",["$","$L21",null,{"id":"the-control-word"}]]}]
+36:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A channel is programmed with a ",["$","strong",null,{"children":"control word"}],", a byte with bit 0 set, and often a ",["$","strong",null,{"children":"time constant"}]," after\nit:"]}]
+37:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L85",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L86",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"control word:  I M P E T C R 1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  I = 1: interrupt on every zero count"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  M = mode: 0 timer, 1 counter"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  P = prescaler: 0 divides by 16, 1 by 256"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  E = trigger edge: 0 falling, 1 rising"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  T = 1: a timer waits for a trigger to start"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  C = 1: a time constant follows"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  R = 1: software reset"}]}]]}]]}]]}]
+38:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A byte with bit 0 clear, when no time constant is expected, is an ",["$","strong",null,{"children":"interrupt vector"}]," on the Zilog chip.\nThe Next throws it away: its vectors come from the interrupt controller, not from the CTC. And the byte after\na control word with C set is always the time constant, whatever its bit 0."]}]
+39:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A channel is always in one of four states, and the control word moves it between them:"}]
+3a:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Reset."}]," After a reset, the channel holds still with its count at the time constant, which is 0. Only a\ncontrol word with ",["$","strong",null,{"children":"C"}]," set wakes it; one without C is stored, but the channel stays where it is. This\ncatches people out: the first control word must announce a time constant."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Waiting for a time constant."}]," The next byte is the constant, and the channel moves on."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Waiting for a trigger."}]," A timer with ",["$","strong",null,{"children":"T"}]," set waits here for an edge on its trigger input; any other\nchannel passes straight through, on the next clock."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Running."}]," The channel counts, as long as nothing stops it."]}],"\n"]}]
+3b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","strong",null,{"children":"software reset"}],", ",["$","strong",null,{"children":"R"}],", stops a channel from any state: with C clear it goes back to state 1, with C\nset to state 2, and it starts again from the new constant. Without R, a control word does not stop a running\nchannel. Its settings change at once, the prescaler, the mode and the interrupt enable, and the count goes\non. With C set, the next byte becomes the new time constant, and the channel uses it from its next zero\ncount; the period under way finishes at the old one. I find that a lovely property for a sample player: you\ncan change the rate between two samples without a click."]}]
+3c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Here is channel 0 set up as a timer of prescaler 16 and time constant 100, a zero count every 1,600 clocks,\n17,500 times a second, with its interrupt on:"}]
+3d:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L85",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L86",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" bc"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$183b"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"            ; channel 0"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"%10000101"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"         ; interrupt, timer, /16,"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        out"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"              ; constant follows"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"100"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        out"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"              ; starts on the next clock"}]]}]]}]]}]]}]
+3e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["If you inherit a channel in an unknown state, my advice is to write ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$03"}],", a software reset without C, twice.\nIf the channel happened to expect a time constant, the first byte is taken as one; the second is then\ncertainly a control word, and it leaves the channel in state 1, ready for your setup."]}]
+3f:["$","h2",null,{"id":"timer-and-counter","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Timer and counter",["$","$L21",null,{"id":"timer-and-counter"}]]}]
+40:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["In ",["$","strong",null,{"children":"timer mode"}],", bit 6 clear, a channel counts the prescaler’s pulses: it measures time. In ",["$","strong",null,{"children":"counter\nmode"}],", bit 6 set, it ignores the prescaler and counts edges on its trigger input instead: it counts events.\nOn a Zilog chip the event could be anything wired to the pin; on the Next, it is always the previous\nchannel’s zero count."]}]
+41:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The trigger input matters in timer mode too. A timer with bit 3, ",["$","strong",null,{"children":"T"}],", set does not start when it gets its\ntime constant: it waits for the first edge on its trigger input, and then starts, with the prescaler at 0. So\none channel can start another at an exact moment, its own zero count."]}]
+42:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Bit 4, ",["$","strong",null,{"children":"E"}],", chooses the edge. The ZC/TO pulse is one master clock long, so its rising edge comes as the\nupstream count reaches zero and its falling edge one clock later. Either way the channel counts once per\nupstream zero count; the edge only moves the moment by 36 ns. But one detail of E deserves a warning:\n",["$","strong",null,{"children":"writing a control word that changes E counts as an edge"}],". A counter counts one down, and a timer waiting\nfor its trigger starts. My rule: choose the edge when you set a channel up, and do not touch it afterwards."]}]
+43:["$","h2",null,{"id":"the-ring","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The ring",["$","$L21",null,{"id":"the-ring"}]]}]
+44:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The four trigger inputs are wired in a ring. Channel 1 counts channel 0’s zero counts, channel 2 counts\nchannel 1’s, channel 3 counts channel 2’s, and channel 0 counts channel 3’s:"}]
+45:["$","figure",null,{"children":[["$","svg",null,{"viewBox":"-2 -2 704 310","role":"img","aria-label":"Four boxes in a square: channel 0 at port $183B top left, channel 1 at $193B top right, channel 2 at $1A3B bottom right, channel 3 at $1B3B bottom left. Arrows labelled ZC/TO run from channel 0 to 1, 1 to 2, 2 to 3 and 3 back to 0. In the middle: every ZC/TO also sets a status bit and is an interrupt request. Below channel 3, its ZC/TO can also clock joystick pin 7.","style":{"width":"100%","height":"auto"},"children":[["$","defs",null,{"children":["$","marker",null,{"id":"ctc-ring-0","viewBox":"0 0 10 10","refX":"9","refY":"5","markerWidth":"7","markerHeight":"7","orient":"auto-start-reverse","children":["$","path",null,{"d":"M0,0 L10,5 L0,10 z","fill":"#e5484d"}]}]}],["$","rect",null,{"x":"0","y":"6","width":"220","height":"70","rx":"6","fill":"#e8912d","fillOpacity":"0.12","stroke":"#e8912d","strokeWidth":"2"}],["$","text",null,{"x":"110","y":"37.3","textAnchor":"middle","fill":"#e8912d","fontSize":"15","fontWeight":"bold","children":"channel 0"}],["$","text",null,{"x":"110","y":"55.3","textAnchor":"middle","fill":"#e8912d","fontSize":"15","fontWeight":"bold","children":"$$183B"}],["$","rect",null,{"x":"480","y":"6","width":"220","height":"70","rx":"6","fill":"#e8912d","fillOpacity":"0.12","stroke":"#e8912d","strokeWidth":"2"}],["$","text",null,{"x":"590","y":"37.3","textAnchor":"middle","fill":"#e8912d","fontSize":"15","fontWeight":"bold","children":"channel 1"}],["$","text",null,{"x":"590","y":"55.3","textAnchor":"middle","fill":"#e8912d","fontSize":"15","fontWeight":"bold","children":"$$193B"}],["$","rect",null,{"x":"480","y":"176","width":"220","height":"70","rx":"6","fill":"#e8912d","fillOpacity":"0.12","stroke":"#e8912d","strokeWidth":"2"}],["$","text",null,{"x":"590","y":"207.3","textAnchor":"middle","fill":"#e8912d","fontSize":"15","fontWeight":"bold","children":"channel 2"}],["$","text",null,{"x":"590","y":"225.3","textAnchor":"middle","fill":"#e8912d","fontSize":"15","fontWeight":"bold","children":"$$1A3B"}],["$","rect",null,{"x":"0","y":"176","width":"220","height":"70","rx":"6","fill":"#e8912d","fillOpacity":"0.12","stroke":"#e8912d","strokeWidth":"2"}],["$","text",null,{"x":"110","y":"207.3","textAnchor":"middle","fill":"#e8912d","fontSize":"15","fontWeight":"bold","children":"channel 3"}],["$","text",null,{"x":"110","y":"225.3","textAnchor":"middle","fill":"#e8912d","fontSize":"15","fontWeight":"bold","children":"$$1B3B"}],["$","path",null,{"d":"M220,41 L476,41","fill":"none","stroke":"#e5484d","strokeWidth":"1.8","markerEnd":"url(#ctc-ring-0)","strokeLinejoin":"round"}],["$","text",null,{"x":"350","y":"31","textAnchor":"middle","fill":"#e5484d","fontSize":"13.5","fontWeight":"bold","children":"ZC/TO"}],["$","path",null,{"d":"M590,76 L590,172","fill":"none","stroke":"#e5484d","strokeWidth":"1.8","markerEnd":"url(#ctc-ring-0)","strokeLinejoin":"round"}],["$","text",null,{"x":"600","y":"130","fill":"#e5484d","fontSize":"13.5","fontWeight":"bold","children":"ZC/TO"}],["$","path",null,{"d":"M480,211 L224,211","fill":"none","stroke":"#e5484d","strokeWidth":"1.8","markerEnd":"url(#ctc-ring-0)","strokeLinejoin":"round"}],["$","text",null,{"x":"350","y":"231","textAnchor":"middle","fill":"#e5484d","fontSize":"13.5","fontWeight":"bold","children":"ZC/TO"}],["$","path",null,{"d":"M110,176 L110,80","fill":"none","stroke":"#e5484d","strokeWidth":"1.8","markerEnd":"url(#ctc-ring-0)","strokeLinejoin":"round"}],["$","text",null,{"x":"120","y":"130","fill":"#e5484d","fontSize":"13.5","fontWeight":"bold","children":"ZC/TO"}],["$","text",null,{"x":"350","y":"122","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"every ZC/TO also sets a status"}],["$","text",null,{"x":"350","y":"140","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"bit and requests an interrupt"}],["$","path",null,{"d":"M110,246 L110,274","fill":"none","stroke":"#e5484d","strokeWidth":"1.8","markerEnd":"url(#ctc-ring-0)","strokeLinejoin":"round"}],["$","text",null,{"x":"122","y":"294","fill":"#e5484d","fontSize":"13.5","children":"channel 3 can also clock joystick pin 7"}]]}],["$","figcaption",null,{"children":"The four channels in a ring: each one’s ZC/TO is the next one’s trigger, and channel 3’s goes back to channel 0. Every ZC/TO is also an interrupt request, and channel 3’s can clock a joystick pin."}]]}]
+46:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A chain of channels is a chain of dividers. A timer divides the master clock by its prescaler and its time\nconstant, and each counter after it divides by its own constant. That gives you rates no single channel can\nreach, and exact ones. Here is my favourite example, a 50 Hz tick that does not come from the display:"}]
+47:["$","figure",null,{"children":[["$","svg",null,{"viewBox":"-2 -2 704 134","role":"img","aria-label":"A chain of dividers from left to right: the 28 MHz master clock; the prescaler divides by 16, giving 1.75 MHz; channel 0, a timer with time constant 140, gives 12.5 kHz; channel 1, a counter with time constant 250, gives 50 Hz. 16 times 140 times 250 is 560,000 clocks, 20 ms.","style":{"width":"100%","height":"auto"},"children":[["$","defs",null,{"children":["$","marker",null,{"id":"ctc-div-0","viewBox":"0 0 10 10","refX":"9","refY":"5","markerWidth":"7","markerHeight":"7","orient":"auto-start-reverse","children":["$","path",null,{"d":"M0,0 L10,5 L0,10 z","fill":"currentColor"}]}]}],["$","text",null,{"x":"34","y":"46","textAnchor":"middle","fill":"#3b82f6","fontSize":"15","fontWeight":"bold","children":"28 MHz"}],["$","text",null,{"x":"34","y":"64","textAnchor":"middle","fill":"#3b82f6","fontSize":"15","fontWeight":"bold","children":"clock"}],["$","rect",null,{"x":"96","y":"20","width":"124","height":"60","rx":"6","fill":"#3b82f6","fillOpacity":"0.12","stroke":"#3b82f6","strokeWidth":"2"}],["$","text",null,{"x":"158","y":"46.3","textAnchor":"middle","fill":"#3b82f6","fontSize":"15","children":"prescaler"}],["$","text",null,{"x":"158","y":"64.3","textAnchor":"middle","fill":"#3b82f6","fontSize":"15","children":"÷16"}],["$","rect",null,{"x":"316","y":"20","width":"124","height":"60","rx":"6","fill":"#e8912d","fillOpacity":"0.12","stroke":"#e8912d","strokeWidth":"2"}],["$","text",null,{"x":"378","y":"46.3","textAnchor":"middle","fill":"#e8912d","fontSize":"15","children":"channel 0"}],["$","text",null,{"x":"378","y":"64.3","textAnchor":"middle","fill":"#e8912d","fontSize":"15","children":"timer ÷140"}],["$","rect",null,{"x":"536","y":"20","width":"124","height":"60","rx":"6","fill":"#e8912d","fillOpacity":"0.12","stroke":"#e8912d","strokeWidth":"2"}],["$","text",null,{"x":"598","y":"46.3","textAnchor":"middle","fill":"#e8912d","fontSize":"15","children":"channel 1"}],["$","text",null,{"x":"598","y":"64.3","textAnchor":"middle","fill":"#e8912d","fontSize":"15","children":"counter ÷250"}],["$","path",null,{"d":"M72,50 L92,50","fill":"none","stroke":"currentColor","strokeWidth":"1.8","markerEnd":"url(#ctc-div-0)","strokeLinejoin":"round"}],["$","path",null,{"d":"M220,50 L312,50","fill":"none","stroke":"currentColor","strokeWidth":"1.8","markerEnd":"url(#ctc-div-0)","strokeLinejoin":"round"}],["$","path",null,{"d":"M440,50 L532,50","fill":"none","stroke":"currentColor","strokeWidth":"1.8","markerEnd":"url(#ctc-div-0)","strokeLinejoin":"round"}],["$","text",null,{"x":"266","y":"40","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"1.75 MHz"}],["$","text",null,{"x":"486","y":"40","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"12.5 kHz"}],["$","path",null,{"d":"M660,50 L672,50 L672,96","fill":"none","stroke":"currentColor","strokeWidth":"1.8","markerEnd":"url(#ctc-div-0)","strokeLinejoin":"round"}],["$","text",null,{"x":"700","y":"118","textAnchor":"end","fill":"#e5484d","fontSize":"15","fontWeight":"bold","children":"50 Hz"}],["$","text",null,{"x":"0","y":"118","fill":"currentColor","fontSize":"13.5","children":"16 × 140 × 250 = 560,000 clocks = 20 ms"}]]}],["$","figcaption",null,{"children":"An exact 50 Hz from the master clock: the prescaler divides 28 MHz by 16, channel 0 by 140, and channel 1, in counter mode, by 250. 16 × 140 × 250 = 560,000 clocks, 20 ms."}]]}]
+48:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L85",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L86",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" bc"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$183b"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"            ; channel 0: timer, /16"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"%00000101"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        out"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"140"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"               ; 2,240 clocks: 12.5 kHz"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        out"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        inc"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" b"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"                  ; $193B: channel 1"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"%11000101"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"         ; interrupt, counter"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        out"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"250"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"               ; 560,000 clocks: 50 Hz"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        out"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}]]}]]}]]}]]}]
+49:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Only channel 1 interrupts, every 20 ms, and the display’s frame rate, which is close to 50 Hz but never exactly\n50 Hz, has nothing to do with it. A game whose logic runs on this tick runs at the same speed on every\ndisplay. Two counters in the chain stretch the period further still: three channels with constants of 0 and\nprescaler 256 make a zero count about every 153 seconds."}]
+4a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Watch the ring’s one trap: it is a ring. Channel 0 in counter mode counts channel 3’s zero counts, so a\nchain may start at any channel, but four counters and no timer count nothing. Start every chain with a\ntimer; a timer ignores its trigger input once it runs, so the ring is cut there."}]
+4b:["$","h2",null,{"id":"a-stopwatch","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["A stopwatch",["$","$L21",null,{"id":"a-stopwatch"}]]}]
+4c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Reading a channel gives its count at that moment, and that makes the CTC the best stopwatch the Next has.\nRead before, read after, subtract: the count goes down, so the elapsed time is the first reading minus the\nsecond. One channel with prescaler 16 and time constant 0 measures up to 256 counts of 2 T-states, 512\nT-states at 3.5 MHz."}]
+4d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["For longer code, chain two channels into a ",["$","strong",null,{"children":"16-bit counter"}],": channel 0 as a timer with prescaler 16 and\ntime constant 0, the low byte, and channel 1 in counter mode with time constant 0, the high byte. That counts\n65,536 times 16 clocks, 37.4 ms, nearly two frames, with a resolution of 2 T-states."]}]
+4e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["There is a catch in reading it: the two bytes are two ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"IN"}]," instructions, and the low byte can wrap between\nthem. The fix is old and simple. Read the high byte, then the low byte, then the high byte again; if the two\nhigh bytes differ, the low byte wrapped in between, so read again. Read again too when the low byte is 0,\nbecause that is the moment channel 0 reaches zero and channel 1 counts, and a reading taken there cannot\ntell which side of the count it is on:"]}]
+4f:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L85",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L86",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"; channel 0: timer, /16, constant 0; channel 1: counter, 0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"; returns the 16-bit count in HL; changes A, BC"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"Read"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"   ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" bc"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$193b"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        in"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" h"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":",("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":")               "}],["$","span",null,{"style":{"color":"#6A9955"},"children":"; high byte: channel 1"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        dec"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" b"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"                  ; $183B: channel 0"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        in"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" l"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":",("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":")               "}],["$","span",null,{"style":{"color":"#6A9955"},"children":"; low byte"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        inc"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" b"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        in"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":",("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":")               "}],["$","span",null,{"style":{"color":"#6A9955"},"children":"; high byte again"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        cp"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" h"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        jr"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" nz"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#B5890F"},"children":"Read"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"             ; it counted: read again"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        inc"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" l"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        dec"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" l"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        jr"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" z"}],"$L87","$L88","$L89"]}],"\n","$L8a"]}]]}]]}]
+50:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Call ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Read"}]," before and after the code you measure, subtract the second count from the first, and double the\ndifference for T-states at 3.5 MHz. The difference includes part of the reading itself, so measure an empty\nblock once and take that off. At 28 MHz the same count is 16 T-states, so the stopwatch is\ncoarser in T-states but just as exact in time; for a routine that takes less than a count, count its\nT-states from the instruction tables instead."]}]
+51:["$","h2",null,{"id":"interrupts","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Interrupts",["$","$L21",null,{"id":"interrupts"}]]}]
+52:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Every zero count of a channel is an interrupt request, and the ",["$","$L20",null,{"href":"/en/under-the-hood/emulator-internals/next-interrupts/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"interrupts\nchapter"}]," tells the rest of the story. From the\nCTC’s side, a few facts to keep together:"]}]
+53:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"The enable is bit 7 of the control word"}],", and also bit ",["$","em",null,{"children":"n"}]," of the ",["$","strong",null,{"children":["INT EN 1 register, NextReg\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$C5"}]]}],", for channel ",["$","em",null,{"children":"n"}],". They are the same flip-flop: whichever you wrote last wins, and a control word\nwithout bit 7 switches the interrupt off."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"The status is set on every zero count"}],", enabled or not, in bit ",["$","em",null,{"children":"n"}]," of the ",["$","strong",null,{"children":["INT Status 1 register,\nNextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$C9"}]]}],", and writing a 1 clears it. That is the polled mode: leave the interrupt off and watch the\nbit. The status bit is only a record; one you forget to clear blocks nothing."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"In hardware IM2 mode"}]," channels 0 to 3 are sources 3 to 6 of the chain, after the line interrupt and the\nUART receivers and before the ULA, with vector offsets ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$06"}]," to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$0C"}],". ",["$","strong",null,{"children":"In pulse mode"}]," a zero count\nstarts the shared pulse, and the vector is ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FF"}],"."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":["NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$20"}]," bits 3–0"]}]," request a CTC interrupt by software, without a zero count."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":["NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$CD"}]," bits 3–0"]}]," let a channel’s interrupt break into a DMA transfer. The CTC cannot start or\npace the DMA; the DMA has its own prescaler for that."]}],"\n"]}]
+54:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A zero count is also edges for other hardware: channel 3’s can clock a joystick pin. In the joystick’s I/O\nmode, NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$0B"}]," with bit 7 set, bits 5–4 = 01 and bit 0 set, pin 7 of the joystick port toggles on every\nzero count of channel 3: a square wave at half its rate, for a device that wants a clock."]}]
+55:["$","h2",null,{"id":"resets","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Resets",["$","$L21",null,{"id":"resets"}]]}]
+56:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A reset, hard or soft, puts every channel into the reset state: control word 0, time constant 0, interrupt\noff, and a count that reads 0. NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$C5"}]," reads 0 too, and the status bits in ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$C9"}]," are cleared. Nothing\nruns until a program writes a control word with a time constant. So the metronome is silent after a reset,\nand, as the interrupts chapter advises, a program should set up every channel it uses itself."]}]
+57:["$","h2",null,{"id":"what-core-30204-changed","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["What core 3.02.04 changed",["$","$L21",null,{"id":"what-core-30204-changed"}]]}]
+58:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Later cores rewrote the channel’s state machine, and two differences can be seen from a program:"}]
+59:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"The count skips 0."}]," On the clock where a count of 1 would become 0, the channel reloads the time\nconstant directly, so a channel with time constant 100 reads 100 down to 1, never 0. ZC/TO still comes on\nthe same clock as before, so periods, chains and interrupts are unchanged; only a reading at that one clock\ndiffers. A time constant of 0 still means 256."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"A control word with C while a timer waits for its trigger"}]," now makes the channel wait for a new time\nconstant. In 3.02.01 the channel kept waiting with its old constant, and a trigger could start it before\nthe new one arrived."]}],"\n"]}]
+5a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Neither changes how you should program the CTC: send the time constant after every control word that\nannounces one, and nothing in your program will notice which core it runs on."}]
+5b:["$","h2",null,{"id":"what-to-take-home","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["What to take home",["$","$L21",null,{"id":"what-to-take-home"}]]}]
+5c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The CTC, the metronome, is a Zilog Z80 CTC with four channels at ports ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$183B"}]," to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$1B3B"}],"; channels 4 to 7\nhave ports but no hardware. Each channel counts the 28 MHz master clock, not the CPU’s clock, so its rates\nhold at every CPU speed."]}]
+5d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A channel is a prescaler of 16 or 256, an 8-bit down-counter and a time constant. At zero it sends a\none-clock ZC/TO pulse and reloads, so its period is the prescaler times the constant, with 0 meaning 256:\nfrom 16 clocks, 2 T-states at 3.5 MHz, to 65,536 clocks, 2.34 ms. While it is not running, its prescaler and\ncount are held, so a timer beats at exact moments from the time it starts."}]
+5e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The control word, bit 0 set, chooses the interrupt, the mode, the prescaler, the edge, a triggered start, a\ntime constant to follow and a software reset; the first one after a reset must announce a constant. A\ncontrol word without a reset changes a running channel’s settings at once and its constant from the next\nzero count. In counter mode a channel counts the previous channel’s zero counts, in a ring 0 → 1 → 2 → 3 →\n0, which makes the channels a chain of dividers: exact rates such as 50 Hz, long periods, and a 16-bit\nstopwatch with a resolution of 2 T-states, read high, low, high again."}]
+5f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Every zero count sets its bit in NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$C9"}]," and interrupts if bit 7 of the control word or NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$C5"}],"\nallows. A reset silences every channel. Keep the beat, and the CPU can be as fast or as slow as it likes."]}]
+61:null
+9:C
+62:["$","rect",null,{"x":"520","y":"230","width":"180","height":"56","rx":"6","fill":"none","stroke":"#e8912d","strokeWidth":"2"}]
+63:["$","text",null,{"x":"610","y":"263.3","textAnchor":"middle","fill":"#e8912d","fontSize":"15","children":"time constant"}]
+64:["$","path",null,{"d":"M610,230 L610,174","fill":"none","stroke":"#e8912d","strokeWidth":"1.8","markerEnd":"url(#ctc-ch-3)","strokeLinejoin":"round"}]
+65:["$","text",null,{"x":"600","y":"208","textAnchor":"end","fill":"#e8912d","fontSize":"13.5","children":"reload at zero"}]
+66:["$","rect",null,{"x":"520","y":"0","width":"180","height":"60","rx":"6","fill":"none","stroke":"#e5484d","strokeWidth":"2"}]
+67:["$","text",null,{"x":"610","y":"26.4","textAnchor":"middle","fill":"#e5484d","fontSize":"14","children":"ZC/TO: interrupt,"}]
+68:["$","text",null,{"x":"610","y":"43.4","textAnchor":"middle","fill":"#e5484d","fontSize":"14","children":"next channel"}]
+69:["$","path",null,{"d":"M610,110 L610,64","fill":"none","stroke":"#e5484d","strokeWidth":"1.8","markerEnd":"url(#ctc-ch-4)","strokeLinejoin":"round"}]
+6a:["$","figcaption",null,{"children":"One channel. In timer mode the prescaler divides the 28 MHz master clock by 16 or 256 and each of its pulses counts the counter down; in counter mode the trigger input, the previous channel’s ZC/TO, does. At zero the channel sends a ZC/TO pulse and reloads its time constant."}]
+6b:["$","rect",null,{"x":"697","y":"48","width":"6","height":"22","fill":"#3b82f6","fillOpacity":"0.6","stroke":"#3b82f6","strokeWidth":"1.2"}]
+6c:["$","text",null,{"x":"0","y":"116","fill":"#e8912d","fontSize":"15","fontWeight":"bold","children":"count"}]
+6d:["$","rect",null,{"x":"130","y":"96","width":"81.4","height":"30","rx":"3","fill":"#e8912d","fillOpacity":"0.12","stroke":"#e8912d","strokeWidth":"1.4"}]
+6e:["$","text",null,{"x":"170.7","y":"116","textAnchor":"middle","fill":"#e8912d","fontSize":"15","fontWeight":"bold","children":"3"}]
+6f:["$","rect",null,{"x":"211.4","y":"96","width":"81.4","height":"30","rx":"3","fill":"#e8912d","fillOpacity":"0.12","stroke":"#e8912d","strokeWidth":"1.4"}]
+70:["$","text",null,{"x":"252.1","y":"116","textAnchor":"middle","fill":"#e8912d","fontSize":"15","fontWeight":"bold","children":"2"}]
+71:["$","rect",null,{"x":"292.9","y":"96","width":"81.4","height":"30","rx":"3","fill":"#e8912d","fillOpacity":"0.12","stroke":"#e8912d","strokeWidth":"1.4"}]
+72:["$","text",null,{"x":"333.6","y":"116","textAnchor":"middle","fill":"#e8912d","fontSize":"15","fontWeight":"bold","children":"1"}]
+73:["$","rect",null,{"x":"374.3","y":"96","width":"5.1","height":"30","fill":"#e5484d","fillOpacity":"0.6","stroke":"#e5484d","strokeWidth":"1.4"}]
+74:["$","rect",null,{"x":"379.4","y":"96","width":"76.3","height":"30","rx":"3","fill":"#e8912d","fillOpacity":"0.12","stroke":"#e8912d","strokeWidth":"1.4"}]
+75:["$","text",null,{"x":"417.5","y":"116","textAnchor":"middle","fill":"#e8912d","fontSize":"15","fontWeight":"bold","children":"3"}]
+76:["$","rect",null,{"x":"455.7","y":"96","width":"81.4","height":"30","rx":"3","fill":"#e8912d","fillOpacity":"0.12","stroke":"#e8912d","strokeWidth":"1.4"}]
+77:["$","text",null,{"x":"496.4","y":"116","textAnchor":"middle","fill":"#e8912d","fontSize":"15","fontWeight":"bold","children":"2"}]
+78:["$","rect",null,{"x":"537.1","y":"96","width":"81.4","height":"30","rx":"3","fill":"#e8912d","fillOpacity":"0.12","stroke":"#e8912d","strokeWidth":"1.4"}]
+79:["$","text",null,{"x":"577.9","y":"116","textAnchor":"middle","fill":"#e8912d","fontSize":"15","fontWeight":"bold","children":"1"}]
+7a:["$","rect",null,{"x":"618.6","y":"96","width":"5.1","height":"30","fill":"#e5484d","fillOpacity":"0.6","stroke":"#e5484d","strokeWidth":"1.4"}]
+7b:["$","rect",null,{"x":"623.7","y":"96","width":"76.3","height":"30","rx":"3","fill":"#e8912d","fillOpacity":"0.12","stroke":"#e8912d","strokeWidth":"1.4"}]
+7c:["$","text",null,{"x":"661.8","y":"116","textAnchor":"middle","fill":"#e8912d","fontSize":"15","fontWeight":"bold","children":"3"}]
+7d:["$","text",null,{"x":"376.8","y":"90","textAnchor":"middle","fill":"#e5484d","fontSize":"13.5","fontWeight":"bold","children":"0"}]
+7e:["$","text",null,{"x":"621.1","y":"90","textAnchor":"middle","fill":"#e5484d","fontSize":"13.5","fontWeight":"bold","children":"0"}]
+7f:["$","text",null,{"x":"0","y":"172","fill":"#e5484d","fontSize":"15","fontWeight":"bold","children":"ZC/TO"}]
+80:["$","path",null,{"d":"M130,176 L374.2857142857143,176 L374.2857142857143,154 L379.375,154 L379.375,176 L618.5714285714286,176 L618.5714285714286,154 L623.6607142857142,154 L623.6607142857142,176 L700,176","fill":"none","stroke":"#e5484d","strokeWidth":"1.8","strokeLinejoin":"round"}]
+81:["$","path",null,{"d":"M374.2857142857143,196 L374.2857142857143,206 L618.5714285714286,206 L618.5714285714286,196","fill":"none","stroke":"currentColor","strokeWidth":"1.4","strokeLinejoin":"round"}]
+82:["$","text",null,{"x":"496.4","y":"228","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"48 clocks: prescaler × time constant"}]
+83:["$","figcaption",null,{"children":"Prescaler 16, time constant 3, to scale in master clocks. The prescaler pulses every 16 clocks; the count goes 3, 2, 1, 0; at 0 the channel sends a one-clock ZC/TO pulse and reloads 3 on the next clock. A ZC/TO every 48 clocks. The numbered badges mark the steps below."}]
+87:["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}]
+88:["$","span",null,{"style":{"color":"#B5890F"},"children":"Read"}]
+89:["$","span",null,{"style":{"color":"#6A9955"},"children":"              ; low byte 0: read again"}]
+8a:["$","span",null,{"children":["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ret"}]}]
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"
