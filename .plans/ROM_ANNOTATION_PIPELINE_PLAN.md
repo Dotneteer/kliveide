@@ -36,7 +36,7 @@ it, what a table means. Everything else is a program, run as often as needed at 
   - the `.ann` header and the output sidecar record the CPU; the postprocessor refuses `.ann` files whose
     CPU differs from the image's.
 - **D3. ROMs first; other binaries later.** The pipeline is built for ROM annotations and proves itself on
-  them. Larger Z80/Z80N binaries (`.nex` files first) are a future extension (§12), taken up only after
+  them. Larger Z80/Z80N binaries (`.nex` files first) are a future extension (§13), taken up only after
   that. The design keeps the door open without building for it now: the core works on a small "image"
   (banks, entries, CPU) that the ROM adapter fills, so another adapter can be added later; ROM-specific
   parts (ROM kinds, `.rom.dis` sidecars, the ROM profile recipes) stay in that adapter.
@@ -56,7 +56,7 @@ it, what a table means. Everything else is a program, run as often as needed at 
   `export-ann` regenerates `.ann` files from any sidecar, and P1's round trip (sidecar → `.ann` → sidecar,
   byte-identical) proves nothing is lost. Committing them can be reconsidered later if their diffs prove
   useful in review.
-- **D7. Cards carry facts only.** A card states what the tools can establish: boundaries, callers, callees,
+- **D7. Cards carry facts only** (for jump targets inside a routine, D14 now lets the tools name them). A card states what the tools can establish: boundaries, callers, callees,
   RAM, ports, coverage, decoded texts and error messages (a decoded string is a fact). It never suggests a
   name, a synopsis or a purpose; that is the AI's understanding, and a guess on a card would be copied as
   if it were a fact.
@@ -541,9 +541,20 @@ question 0C40 "Does A come back 0 for a missing drive? Needs a run with no disk"
 
 ## 8. Measuring it
 
-To be measured on the first ROM annotated with the pipeline: AI tokens per ROM, rounds of check/fix per
-helper, and the time spent merging. The metric is fixed before that ROM starts. The D11 signals are part of
-it: listing requests and `missing`/`wrong` feedback per routine should fall from one ROM to the next.
+Measured on EXDOS 1.3 (D8), the first ROM annotated with the pipeline, and shown in that run's summary (a
+decision of the project author):
+
+- **the total time**: from the start of the run (`timings start`) to the installed sidecar;
+- **the time of the preprocessor and postprocessor** (and the other tools): every `rom:pipeline` command
+  logs its own duration to `.rom-annotations/work/timings.jsonl`, by command;
+- **the time used by the AI**: the total less the tools' time (the helpers' own times are recorded too; they
+  overlap when helpers run in parallel);
+- **the tokens used by the AI**: the CLI cannot see them, so the driving session records them with
+  `timings ai <label> --tokens n --ms n --what "..."`: each helper's usage from its result, and the session's
+  own from its usage before and after the run.
+
+`npm run rom:pipeline -- timings report <label>` prints all four. The D11 signals are part of it too:
+listing requests and `missing`/`wrong` feedback per routine should fall from one ROM to the next.
 
 ## 9. Phases (first cut)
 
@@ -557,8 +568,9 @@ it: listing requests and `missing`/`wrong` feedback per routine should fall from
 | P5 | **Done.** Convention plug-ins: hidden entries, inline texts, packed-text decoders (Enterprise first) | P2 |
 | P6 | **Done.** Version alignment with a RAM map; the carry logic moved in, plus "same / shifted / different" | P2 |
 | P7 | **Done.** Naming pass, lint (with the D10 contract checks), the problem list and `feedback.md` with the measured signals (D11); the backlog file; retire the replaced `.ai/rom-annotations/tools/` scripts; update the helper brief and the authoring guides | P1 |
-| P8 | Try it on a ROM; measure §8; review its feedback and fix the backlog before the next ROM | all |
-| P9 | The "Under the Hood" article on AI-assisted reverse engineering (§11) | P8 |
+| P8 | **Done.** Try it on a ROM; measure §8; review its feedback and fix the backlog before the next ROM | all |
+| P9 | The "Under the Hood" article on AI-assisted reverse engineering (§11); written after P14, so it describes the pipeline that cuts the AI's cost | P14 |
+| P10-P14 | Cutting the AI's cost: programs do the mechanical work, the AI reads once and writes once (§12) | P8 |
 
 ### 9.1 As built: P0
 
@@ -725,12 +737,40 @@ it: listing requests and `missing`/`wrong` feedback per routine should fall from
   `PUSH`/`POP`), the comment rules, the hedge, and wrapped the long synopsis line; its feedback grouped the
   `feedback` line, the listing request and the contradiction by stage.
 
+### 9.9 As built: P8 (EXDOS 1.3)
+
+EXDOS 1.3 (`ep-exdos13.rom`, D8) went from no sidecar to level 2 on both pages, reassembling byte for byte, in
+one measured run (`timings report p8-exdos`):
+
+| Measure | Value |
+|---|---|
+| Total time | 48 min 16 s |
+| Preprocessor, postprocessor and other tools | 49.8 s (1.7 %): `prepare` 7 runs 23.8 s, `compile` 35 runs 23.1 s, `listing` 203 runs 2.9 s |
+| AI | 47 min 26 s (98.3 %) of wall time; the 13 helpers' own times add up to 159 min 49 s, run six at a time |
+| AI tokens | 3,263,968: the regions helper 220,806, the twelve range helpers 143,889-285,713 each (2,926,028), the session 117,174 (its context's growth) |
+
+How the run went: a profile on the 128 with the EXDOS card; `prepare` on both pages; one helper for the regions
+(page 1 is two counted message tables and $FF fill; page 0's header, function table, device tables, command
+table and the inline byte after every `CALL $00F2`); twelve range helpers in parallel; the merge (33 conflicts
+the compiler reported instead of resolving, settled by which range owns the routine); four labels and one fix by
+the session; the install. Fixes to the tools made during the run (counted in the AI time): the counted-text and
+fill detectors, the unknown-facts weight cap, tool hashing in `inputs.json`, `compile --report`, and the
+paragraph reflow in the text pass (130 synopses had a word left alone by the old wrap).
+
+The comparison §7 asked for: the EXOS 2.0 session used 33 helpers of 125-350k tokens for three pages carried
+from 2.1; EXDOS, two pages of new code, took 13 helpers of 144-286k. The cards' measured weakness is the D11
+review below.
+
+**Feedback (`feedback-page-0.md` of the merge):** 79 `feedback` lines (29 missing, 20 wrong, 15 pattern, 15
+listing), 203 listing requests, 135 data regions no detector proposed, 96 routines whose unknown register facts
+the AI settled. The proposals for the backlog review are in `pipeline-backlog.md` ("Proposed by EXDOS 1.3").
+
 ## 10. Details still to settle
 
 The open questions are decided (§2, D4-D11). What is left is detail, settled while building the phase named:
 
 1. ~~Marking a number that must stay a number~~: settled in P7 as `$0B40!` (§9.8).
-2. **The measurement** (§8): what is recorded per helper and where, fixed before EXDOS 1.3 starts (P8).
+2. ~~The measurement~~: fixed in §8 (total time, tool time, AI time, AI tokens; `timings`).
 3. **EXDOS page 1**: which commands reach it (the `ep128-exdos` recipe runs page 0 only), before
    EXDOS 1.3 is annotated (P8).
 
@@ -744,7 +784,7 @@ built and shows real output from EXDOS 1.3, not this plan's sketches.
   entry in `under-the-hood/_meta.ts` and a card on `under-the-hood/index.mdx`. It is not an emulator
   internal, so it does not go in `emulator-internals/`. One article first
   (`ai-rom-annotations.mdx`, "How Klive's ROM annotations are made with AI"); it can grow into a series if
-  the `.nex` extension (§12) comes.
+  the `.nex` extension (§13) comes.
 - **What it tells, in order:**
   1. what a ROM annotation is and what the reader gets from it in the IDE (labels, synopses, comments,
      regions in the Disassembly view), linking to the Guides pages that show it rather than repeating them
@@ -775,7 +815,104 @@ built and shows real output from EXDOS 1.3, not this plan's sketches.
 - **Kept current:** a later change to the pipeline that changes what the article says (a new stage, a new
   `.ann` line kind, the `.nex` extension) updates the article in the same change.
 
-## 12. Future extension: `.nex` and other binaries
+## 12. Cutting the AI's cost (after P8)
+
+P8 reached level 2 on EXDOS 1.3, but the project author judged the cost too high: 3,263,968 AI tokens for 32K
+of ROM (§9.9). This part changes how the work is split: **programs do everything that follows from the code's
+structure, and the AI only does what needs understanding, reading its material once and writing once.**
+
+### 12.1 Where P8's tokens went (measured)
+
+From the 14 helper transcripts and the written `.ann` files:
+
+| Measure | Value |
+|---|---|
+| Harness token count | 3,146,794 helpers + 117,174 session; ~243k per range helper |
+| Tool calls | 698 (~50 per helper): 391 grep/sed/awk searches, 132 listings, 41 compiles |
+| Cached context re-read across the calls | 89.7M (~6.4M per helper): every call re-reads the whole context |
+| Output | 911k, of which the `.ann` text is 96k (11%): the rest is reasoning, much of it navigation |
+| Material read per helper | documents 14.8k, cards ~21k (read in slices: ~32k), listings ~9k, problem lists ~17k |
+| What was written | labels 5k; synopses 54k (285 subroutines 30k, 770 other labels 24k; D10 lines 14.6k); 5,086 comments 37.6k (56% of 9,044 instructions) |
+
+What a program can do instead (page 0):
+- **770 of 1,055 labels** (73%) are jump targets inside routines (loops, shared exits, pieces), not subroutines.
+- **205 of 285 subroutines** (72%) have fully settled register facts: their `Changes:`/`Keeps:` lines follow.
+- **Comments** with a mechanical answer: calls to named routines 564 (11%), `PUSH`/`POP`/`EX` 774 (15%), workspace
+  accesses 468 (9%, once the variables have names), error codes, EXOS calls and ports 192 (4%).
+- What needs understanding: subroutine names and synopses, the meaning of `Entry:`/`Exit:`/`Error:`, variable
+  names, and the comments on tests, arithmetic and jumps whose purpose is not obvious.
+
+### 12.2 Decisions
+
+- **D12. Read once, write once.** A range helper gets its range document in its prompt (or reads it in one
+  call), writes its `.ann` in one go, compiles once and fixes once: at most five tool calls. It does not grep
+  cards, other ranges or sidecars. The listing stays available for a case the document cannot settle, and every
+  use of it is a `feedback listing` line: a gap in the document to close.
+- **D13. Programs draft, the AI completes.** `prepare` writes a draft `.ann` per range, already holding every
+  entry a program can derive (§12.3). The AI edits the draft: it adds meaning and may correct a drafted entry; a
+  correction is a `feedback wrong` line. Drafted entries carry `observed` provenance like any entry from the
+  bytes (no schema change); the drafts are kept in the work folder, so a review can see which text a program
+  wrote.
+- **D14. Jump targets get mechanical names** (*accepted by the project author, 2026-11-01; it changes D7 and the
+  house rule that a name comes from what the code does, for jump targets only*). A jump target inside a routine is named from its routine and its
+  place (`UNIT_CHK_1`, `UNIT_CHK_2`; the routine's name cut to fit 16 characters) with a one-line synopsis the
+  structure gives ("Loop: back from $0C52; leaves to $0C54", "Shared exit of UNIT_CHECK_DISK: restores BC, DE,
+  AF"). The AI renames one only where a name says something the structure does not.
+- **D15. Comments only where the purpose is not obvious**, as level 2 already says. Programs write the mechanical
+  ones: the error text of an error code (from the ROM's own message table), the EXOS function, the port, the
+  workspace variable's name, and a stack pair where the `POP` is far from its `PUSH`. A call's operand already
+  names its routine: it gets no comment unless its arguments need one. The AI writes the rest.
+- **D16. Range helpers on a cheaper model.** The range work runs on Sonnet; the session (Opus) settles the regions,
+  names the workspace variables, merges and reviews. Tokens are unchanged by this; cost per token is lower. Kept
+  only if the measurement (§12.5) shows the quality holds.
+
+### 12.3 What the programs draft
+
+| Entry | Source |
+|---|---|
+| Regions | the accepted proposals; the session still judges them (§7 step 2), with the detectors' backlog fixes (pointer-table precision, counted texts) |
+| Jump-target labels and synopses | D14: the routine they belong to, back jumps (loops), the shared exits, the fall-throughs |
+| `Changes:`/`Keeps:` | the register facts, when they are settled (no unknowns); otherwise left for the AI with the facts in the document |
+| `Entry:` registers, exit flags | the inputs and the exits' known carry/zero/A; the AI adds what each value means |
+| Comments | D15's mechanical ones |
+| Skip tricks, hidden entries | "never taken: its operand hides an entry at $xxxx" (the known flags show the jump cannot be taken), the hidden entry's first instruction |
+| Inline-data calls | the flow and the register pass step over a short data region after a `CALL`/`RST` where code resumes (the top unknown of P8: 28 x `CALL $00F2`) |
+| Text in carried routines | `carry`'s alignment: a same or shifted routine needs no AI unless its text names something that moved |
+
+### 12.4 Phases
+
+| Phase | What | Depends on |
+|---|---|---|
+| P10 | **The range document.** One card per routine, its jump targets inline (P8: the targets' headers were ~40% of the card text); callees' names and contracts on the card; ranges that keep a routine's pieces together; the inline-data calls and the never-taken jumps; `compile --own` (only the file's entries, no page-wide "may change" lists); one short brief (~3k tokens) instead of four documents (14.8k) | P8 |
+| P11 | **The draft.** `prepare` writes `draft/range-NN.ann` (§12.3) and a `variables` card: every `(IX+d)`/`(IY+d)` use grouped by base and offset, for one naming pass; the variable names then feed the drafted comments | P10 |
+| P12 | **The helper.** The read-once brief (D12), a compile-and-fix limit, and the session's merge rules (range ownership: `compile` warns when a file writes inside another range's routine) | P11 |
+| P13 | **Measure on one range** (§12.5) | P12 |
+| P14 | **The next ROM** with the new split, if P13 meets its target: IS-BASIC 2.0 (a carried ROM: §4.7's alignment also cuts the work) | P13 |
+
+### 12.5 Expected saving and how it is measured
+
+Estimates from P8's measurements (per range helper; the reasoning saving is the least certain part):
+
+| | P8 | P10-P12 (D12, D13, D15) | with D14 |
+|---|---|---|---|
+| Harness token count | ~243k | ~75-100k | ~50-70k |
+| Tool calls | ~50 | ~4 | ~4 |
+| Cached re-reads | ~6.4M | ~0.3-0.4M | ~0.2-0.3M |
+| Whole ROM (12 ranges, the regions, the session) | 3.26M | ~1.0-1.3M | ~0.6-0.85M |
+
+D16 does not change these counts; it lowers the price per token.
+
+**The baseline** is P8's run, kept in `.ai/rom-annotations/pipeline-baselines/exdos13-p8/` (its measurements,
+timing log, token breakdown, the helpers' `.ann` files and the feedback). Not implemented yet: the project author
+deferred P10-P14 (2026-11-01).
+
+**P13's measurement:** one EXDOS page 0 range, the same cards, a fresh helper, run with the new document, draft
+and brief, and compared with that range's P8 helper (`timings` as in §8): tokens, tool calls, and quality (the
+compile's problems, the `feedback wrong` count, and a spot check of five routines against the code by the
+session). **Target: at most 40% of the P8 helper's tokens with no loss of quality.** If it is missed, the
+feedback says which material the helper still went looking for, and P10 closes that gap before P14.
+
+## 13. Future extension: `.nex` and other binaries
 
 Taken up only once the pipeline has proved itself on ROMs (D3). Notes kept so the ROM design does not close
 the door:

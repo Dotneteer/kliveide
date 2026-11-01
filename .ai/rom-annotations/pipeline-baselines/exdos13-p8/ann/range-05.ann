@@ -1,0 +1,798 @@
+rom ep-exdos13.rom page 0 cpu z80
+default observed
+
+# ---------------------------------------------------------------------------------------------
+# The rest of the name-field copy that starts at $14A5 (C = the field length, HL = where it goes)
+
+@14A7 NAMEF_FULL
+  The field is full: C goes back to 1, so the characters that follow are read and dropped.
+  .14A7 C = 1: the next stored character only counts down
+
+@14A8 NAMEF_NEXT
+  Takes the next character of the name text into the field at HL.
+  .14A8 A = the next character (upper case); Z at the end
+  .14AB End of the text? Pad the field
+  .14AD A separator?
+  .14B0 Yes: give it back and pad the field
+  .14B2 "*"?
+  .14B6 "?"?
+
+@14BA NAMEF_WILD
+  Marks the name as holding a wildcard (B bit 5).
+
+@14BC NAMEF_STORE
+  Stores the character, unless the field is full.
+  .14BC B bit 0: the name has a character
+  .14BE D = 1: this field has a character
+  .14C0 Field full? Drop the character
+  .14C3 Store it
+
+@14C7 NAMEF_STAR
+  "*": fills the rest of the field with "?" and marks a wildcard.
+
+@14C8 NAMEF_STARFILL
+  Writes "?" until one position is left in C's count.
+  .14C9 Last position? Mark the wildcard and go on
+  .14CC Fill with "?"
+
+@14D1 NAMEF_UNREAD
+  Gives the separator back to the text, then pads the field.
+  .14D1 Step the text pointer back over it
+
+@14D4 NAMEF_PAD
+  Pads the rest of the field with spaces and returns Z.
+  .14D5 Field done: return Z
+
+@14E4 NOT_LETTER
+  Not an upper-case letter: returns NZ and NC (A is not 0 here).
+
+@14EC SEP_ALL19
+  Searches all 19 separator characters at $1500 for A.
+  .14EE The 19 characters
+  .14F3 No caller: the same search for space and tab only
+  .14F5 Space and tab, the table's first two
+
+@14F8 SEP_SEARCH
+  Searches the separator table at $1500 for A; Z when A is in it.
+  .14F8 HL = the separator characters
+  .14FB Z when found
+
+# ---------------------------------------------------------------------------------------------
+# The character filter of the name reader at $1513 (it runs in the other register set)
+
+@1527 NCH_FILTER
+  The next character of the text: 0 ends it (Z); C bit 1 asks for it unchanged; otherwise lower
+  case becomes upper case and "!" or "'" become "\".
+  .1527 End of the text?
+  .152A Step past the character
+  .152B Raw characters wanted?
+  .152F Below "a"?
+  .1533 Above "z"?
+  .1537 Upper case
+
+@1539 NCH_SEPCHK
+  "!" and "'" stand for the "\" separator.
+  .1539 "!"?
+  .153D "'"?
+
+@1541 NCH_BACKSLASH
+  Replaces the character with "\".
+
+@1543 NCH_GOT
+  Returns the character with NZ and NC.
+
+@1544 NCH_EXIT
+  Back to the caller's register set.
+
+# ---------------------------------------------------------------------------------------------
+# Walking a drive's stored current directory again (from $154A)
+
+@156C PATH_REWALK
+  Starts at the root and walks the drive's stored path text component by component, with the
+  disk searched when no cluster was stored.
+  .156C Save the caller's BC and DE
+  .156F Begin at the root, the path text empty
+
+@1573 PATH_REWALK_LP
+  One component: parse it, find it, and go on while the text has more.
+  .1573 Parse the next component into the 11-byte name
+  .1576 Append it to the path text and find it
+  .1579 Failed?
+  .157C Text left?
+  .157F Yes: the next component
+  .1581 Never jumps (Z here): hides LD D,$FF at $1582, reached from $157A
+  .1584 Restore the caller's BC
+  .1586 Restore the other set's DE and BC
+  .1589 HL = the drive block's directory word + 1
+  .158A Store the directory's cluster in the drive block
+  .158D Walked it all? Make it the current directory
+  .158F Failed: empty the stored path text
+  .1593 Then start again at the root
+
+@1594 DIR_SET_ROOT
+  Makes the root the current directory and empties the path text being built.
+  1. Puts ":" after the 64-byte path text at IY+$06DE (the end mark) and points HL' one byte
+     before the text.
+  2. Sets the current directory word (IY+$30) to $FF00 + E: the root.
+  3. When C' bit 2 is set and that word equals IY+$5E's, sets IY+$5D bit 6.
+  Entry: E = the low byte for the directory word; C' bit 2 = compare with IY+$5E.
+  Exit: A = 0, Z; HL' = IY+$06DD; IY+$30-$31 = $FF00 + E.
+  Error: none (every path returns A = 0).
+  Changes: AF, D, HL'.
+  Keeps: BC, E, HL, IX, IY.
+
+@1595 DIR_ROOT_BODY
+  The body of DIR_SET_ROOT; $154D and $1558 also enter here, with HL pushed.
+  .1597 HL' = IY + $071E: the byte after the path text
+  .159E ":" marks the end of the path text
+  .15A0 HL' = IY + $06DD: the text's start - 1
+
+@15A6 DIR_ROOT_WORD
+  D = $FF: the directory word names the root.
+
+@15A8 DIR_SET_CUR
+  Stores DE as the current directory (IY+$30) and returns A = 0.
+  .15A8 The current directory's cluster
+  .15AF Compare it with IY+$5E?
+  .15B4 HL = the word at IY+$5E
+  .15BB The same directory?
+  .15BF Yes: IY+$5D bit 6
+
+@15C3 DIR_SET_DONE
+  Returns A = 0 and Z.
+
+# ---------------------------------------------------------------------------------------------
+# One path component
+
+@15D4 PATH_STEP
+  Adds one parsed path component to the path text and, when asked, finds it on the disk.
+  1. "." keeps the directory, ".." cuts the text back to the separator before the last name,
+     any other name is appended as "\" + name, then "." + extension when it has one.
+  2. A name with a wildcard, or without B bit 3, is refused.
+  3. When C' bit 7 is set, the current directory is searched for a directory of that name,
+     which becomes the current directory (IY+$30).
+  Entry: B = the component's flags from the parse (bit 3 a name, bit 4 an extension, bit 5 a
+  wildcard, bit 6 "." or "..", bit 7 ".."); the name at IY+$06D1 (11 bytes); HL' = the end of
+  the path text; C' bit 7 = search the disk; HL = the drive parameter block.
+  Exit: A = 0, Z; HL' = the new end of the path text; when searched, DE = the found entry.
+  Error: A = $A8 ("Invalid pathname string": the text is full, or the name is not allowed)
+  or $AA ("Directory not found"), NZ.
+  Changes: AF, DE, all alternates; the scan state IY+$30-$3B.
+  Keeps: BC, HL, IX, IY.
+  .15D5 HL = the 11-byte name
+  .15D9 Keep the caller's DE, restore HL
+  .15DA Skips PUSH DE at $15DB, an entry from $3C65
+  .15DC A = the component's flags
+  .15DE Save the text pointers
+  .15E0 DE' = the end of the path text
+  .15E1 C' = the flags
+  .15E2 "." or ".."?
+  .15E6 ".."?
+
+@15EA PATH_UP_SCAN
+  "..": steps back through the path text to the separator before the last name.
+  .15ED A = the separator character
+  .15F2 Reached it?
+  .15F5 The start of the text?
+
+@15F8 PATH_TOO_LONG
+  The path text is full: error $A8.
+  .15F9 Restore the text pointers
+
+@15FB PATH_BAD_NAME
+  Returns error $A8 ("Invalid pathname string").
+  .15FE Restore the caller's DE
+
+@1600 PATH_APPEND
+  Appends "\" + the name (spaces dropped), then "." + the extension when there is one.
+  .1603 HL = the 11-byte name
+  .1604 The separator and up to 8 name characters
+  .1606 A = the separator character
+  .160C The text full?
+  .160E An extension?
+  .1610 "." and up to 3 extension characters
+  .1617 The text full?
+
+@161A PATH_STEP_CHK
+  Checks the component's flags and, when asked, searches the disk for it.
+  .161A HL' = the end of the path text
+  .161B A = the component's flags
+  .161C Restore DE' and C' (bit 7: search the disk)
+  .161E A name (bit 3) without a wildcard (bit 5)?
+  .1624 Search the disk?
+  .1628 No: done, A = 0
+  .1629 Start the scan of the current directory
+
+@162C PATH_FIND_LP
+  Compares each entry with the name until a directory of that name is found.
+  .162C The end of the directory?
+  .1630 HL = the 11-byte name
+  .1633 Does the entry match?
+  .163A A directory (attribute bit 4)?
+
+@163E PATH_FIND_NEXT
+  Steps to the next entry; C at the end of the directory.
+
+@1643 PATH_NOT_FOUND
+  Returns error $AA ("Directory not found").
+
+# ---------------------------------------------------------------------------------------------
+# Copying a name into the path text
+
+@1656 COPY_NAME_LP
+  Copies the name's next character, skipping spaces.
+  .1658 Spaces are dropped
+
+@165C COPY_NAME_PUT
+  Stores A and copies up to B - 1 more characters from the name at HL into the path text at DE,
+  skipping spaces; stops when the text is full (the ":" end mark is next).
+  Entry: A = the first character to store; B = 1 + the characters to copy; HL = the name;
+  DE = where the text goes.
+  Exit: NZ, NC; DE = past the copied text; HL = past the name.
+  Error: Z, A = 0 when the text is full.
+  Changes: AF, B, DE, HL.
+  Keeps: C, IX, IY.
+  .165E The next text byte the ":" end mark?
+
+@1662 COPY_NAME_SKIP
+  Counts the name character; the end returns NZ (A is not 0 here).
+
+# ---------------------------------------------------------------------------------------------
+# Comparing a directory entry with a name
+
+@1670 DIR_ENT_MATCH
+  Compares the directory entry at DE with the 11-byte name at HL: "?" in the name matches any
+  character, letters match in either case, and bit 7 is ignored. When IX+6 bit 3 asks for the
+  volume label, any name matches. The entry's volume bit (attribute bit 3) must agree with IX+6
+  bit 3.
+  Entry: DE = the directory entry; HL = the name; IX = the request block.
+  Exit: C set when it matches: A = the entry's attribute byte, HL = the entry + $0B.
+  Error: NC: Z when the entry is free (A = 0, the end of the directory, or $E5, deleted), NZ
+  when it does not match.
+  Changes: AF, BC, HL.
+  Keeps: DE, IX, IY.
+  .1670 The end of the directory?
+  .1673 A deleted entry?
+  .1677 11 characters
+  .1679 C = the request's flags (bit 3: volume label)
+  .167C $05 in an entry stands for a first character $E5
+  .1680 Compare $E5 then
+
+@1682 DIR_MATCH_LP
+  Compares one character.
+  .1682 Volume label: any name
+  .1686 The same, bit 7 aside?
+  .168B Only the case differs?
+  .168F And a letter?
+
+@1693 DIR_MATCH_WILD
+  "?" in the name matches anything.
+  .1693 "?"?
+
+@1698 DIR_MATCH_NEXT
+  Steps to the next character; after 11 checks the volume bit.
+  .169D HL = the entry's attribute byte
+  .169F Both volume labels, or neither?
+  .16A4 A = the attribute; C: a match
+  .16A6 Skips OR A at $16A7, the no-match exit (NC)
+
+# ---------------------------------------------------------------------------------------------
+# The directory scan (state in IY+$32-$3B: $32 the cluster, $34 the next cluster, $36 the
+# sector, $38 the sectors left, $39 the entries left in the sector, $3A the entries in it, $3B
+# the entries of a last part-sector of the root)
+
+@16AE DSCAN_ROOT_CHK
+  The rest of the scan start at $16AA, with DE = the current directory's word (IY+$30): the
+  root ($FFxx) takes its place from the drive parameter block, another directory is walked
+  from its cluster.
+  .16AE The root?
+  .16B4 HL = the parameter block + $0F
+  .16B8 C = the root's last part-sector entries (+$0F)
+  .16BA A = the root's whole sectors (+$10)
+  .16BD DE = the root's first sector (+$12)
+  .16C1 $FF + C for both cluster words: no next cluster
+
+@16D0 DIR_NEXT_ENTRY
+  Steps the directory scan to the next 32-byte entry, reading the next sector, and the next
+  cluster from the FAT, when needed.
+  Entry: DE = the current entry; HL = the drive parameter block; IY+$32-$3B = the scan state.
+  Exit: NC; DE = the next entry; A = its first byte, Z when 0 (the end mark).
+  Error: C set (NZ) when the directory has no more entries (its sectors or chain ended).
+  Changes: AF, DE, all alternates; the scan state.
+  Keeps: BC, HL, IX, IY.
+  .16D1 The next entry: 32 bytes on
+
+@16D4 DIR_STEP_ENTRY
+  Moves DE on by BC and loads the current sector number.
+  .16D5 HL = the entry + BC
+  .16D7 DE = the sector (IY+$36)
+
+@16DB DIR_STEP_COUNT
+  Counts the entry; the sector's last one moves on to the next sector.
+  .16DB A = the entries left in the sector - 1
+  .16DF The sector done?
+  .16E1 The sector buffer still valid (IY+$63 bit 2 clear)?
+  .16E8 No: read the sector again
+
+@16EA DIR_NEXT_SECTOR
+  Releases the sector buffer and moves to the next sector of the cluster, then of the chain.
+  .16EA IX = the drive parameter block
+  .16F4 HL = the drive parameter block
+  .16F5 The next sector
+  .16F6 Sectors left in the cluster?
+  .16FC A last part-sector (the root)?
+  .1701 DE = the next cluster (IY+$34)
+
+@1705 DIR_END_CHK
+  $FFxx as the next cluster ends the directory: C set.
+  .1705 No next cluster?
+  .1707 C: the end of the directory
+
+@170A DIR_NEXT_CLUST
+  Enters cluster DE: finds the one after it in the FAT and its first sector.
+  .170C DE = the next cluster from the FAT
+  .170F BC = the next cluster
+  .1714 DE = the cluster's first sector
+  .1719 HL = the parameter block + $0A
+  .171D A = the sectors in a cluster (the byte + 1)
+  .1722 No last part-sector
+
+@1724 DSCAN_SET_RUN
+  Stores the part-sector count, the next cluster and the cluster.
+  .1724 The last part-sector's entries
+  .1728 The next cluster
+  .172F The cluster
+
+@1735 DSCAN_FULL_SECT
+  A whole sector: 16 entries.
+
+@1737 DSCAN_SECT_CHK
+  No whole sectors left: the last part-sector, counted once.
+  .1737 Whole sectors left?
+  .173A B = the part-sector's entries
+  .173D Counted once
+  .1740 One sector
+
+@1741 DSCAN_STORE
+  Stores the sector count, the sector and its entry count, then reads the sector.
+  .1741 The sectors left
+  .1744 The sector
+  .174A The entries in the sector
+
+@174F DSCAN_READ
+  Reads the sector and points DE at the entry the count gives.
+  .174F IX = the drive parameter block
+  .1751 Keep the entries left
+  .1752 One sector
+  .1754 Read it: HL = the buffer, the data at HL + $0B
+  .1757 B = the entries left
+  .175A Back $15: the first entry is $20 on
+  .175E A = the entry's place in the sector, from 1
+
+@1766 DSCAN_INDEX_LP
+  Steps HL on $20 bytes per entry.
+
+@176F DSCAN_ENTRY
+  Stores the entries left and returns the entry.
+  .176F The entries left in the sector
+  .1772 DE = the entry
+  .1775 A = its first byte; Z when 0 (the end mark)
+
+# ---------------------------------------------------------------------------------------------
+# Function table entries ($0550)
+
+@1778 FN_PARSE_SPEC
+  Function 1 (table $0552): parses a file specification (drive, path and name) for the request
+  block at DE without reading the disk (C bits 2 and 7 cleared), and unless C bit 0 is set
+  copies the parsed 11-byte name into the block at +8.
+  Entry: HL = the specification text (in the caller's segment); DE = the request block; C bit
+  0 = do not copy the name.
+  Exit: A = 0; IX = the block.
+  Error: A = the parse's error code, NZ.
+  Changes: AF, BC, DE, IX, all alternates.
+  Keeps: HL.
+  .177A IX = the request block
+  .177D No IY+$5E check, no disk
+  .1781 HL = the block, DE = the text
+  .1782 Parse the specification
+  .1785 L = the caller's C
+  .1788 Name wanted?
+  .178D DE = the block's name (+8)
+  .1795 HL = the parsed 11-byte name
+
+@179E PARSE_SPEC_OK
+  Returns A = 0.
+
+@179F PARSE_SPEC_EXIT
+  Restores HL and returns.
+
+@17A1 CHANGE_DIR
+  Function 2 (table $0554): resolves a path on the disk and makes it the drive's current
+  directory: its cluster word goes to the drive block's +$1E and its path text to +$20.
+  Entry: HL = the path text (in the caller's segment).
+  Exit: A = 0; HL = the path text at IY+$06DE.
+  Error: A = the parse's error code, or $A8 ("Invalid pathname string") when C is not 0 after
+  the parse, NZ.
+  Changes: AF, BC, DE, HL, IX, all alternates.
+  .17A1 DE = the path text
+  .17A3 Search the disk (bit 7), flag bit 0
+  .17A5 Parse and walk the path with the work block
+  .17A9 Anything left in C?
+  .17AD HL = the drive block + $1E
+  .17B1 DE = the current directory's word (IY+$30)
+
+@17B5 CHDIR_STORE
+  Stores the directory word and copies the path text after it.
+  .17B9 DE = the drive block's path text (+$20)
+  .17BA HL = the path text just built
+
+@17BD CHDIR_COPY_LP
+  Copies the path text up to and with its 0.
+  .17C0 The 0 copied?
+
+@17C3 PATH_TEXT_ADDR
+  Points HL at the path text buffer (IY+$06DE, 64 bytes, ended by 0).
+  Entry: IY = the work area.
+  Exit: HL = IY + $06DE.
+  Changes: F, HL.
+  Keeps: A, BC, DE, IX, IY.
+
+@17CD GET_CUR_DIR
+  Function 3 (table $0556): walks drive B's stored current directory again (an empty path) and
+  returns its path text.
+  Entry: B = the drive.
+  Exit: A = 0; HL = the path text at IY+$06DE.
+  Error: A = $AF ("Invalid drive") with Z; or the walk's error code, NZ.
+  Changes: AF, BC, DE, HL, IX, all alternates.
+  .17CE A = the drive, 0 when there is none
+  .17D3 No such drive?
+  .17D7 Search the disk
+  .17D9 An empty path text
+  .17DC Walk the drive's stored path
+
+@17E2 MAKE_DIR
+  Function 7 (table $055E): creates a directory (attribute $10) through DIR_CREATE_ENT.
+  Entry: DE = the request block (the name at +8); BC = the result buffer.
+  Exit: as DIR_CREATE_ENT.
+  Error: A = $A1 ("Invalid file attributes") for a volume label request (IX+6 bit 3), NZ; or
+  DIR_CREATE_ENT's errors.
+  Changes: AF, BC, DE, HL, IX, all alternates.
+  .17E5 A volume label?
+  .17EC The directory attribute, Z
+
+@17EE DIR_CREATE_ENT
+  Function 6 (table $055C) and the body of 4, 5 and 7: finds the name of the request block in
+  its directory and, when IY+$5D bit 7 is clear, creates an entry for it.
+  1. Checks the name (CHECK_FILENAME) and stores the mode in IY+$5D: the attribute ($00 a
+     file, $10 a directory), or $80 to find only (function 4 enters at $17F8, function 5 at
+     DIR_SEARCH_ON).
+  2. Resolves the path and starts the scan ($12CF), then searches (DIR_FIND_ENT).
+  3. An existing entry is refused, or a file taken over (DELETE_ENTRY); a new one goes in the
+     first free slot seen, or a new cluster of the directory; a directory gets a cleared
+     cluster of its own.
+  4. Writes $FE, the block's bytes 1-7 and the 32-byte entry to the result buffer (BC), saves
+     the scan state at the block's +$17 and returns HL = the path text.
+  Entry: A = the attribute and Z (the dispatcher passes A = 0); DE = the request block; BC = the
+  result buffer (40 bytes).
+  Exit: A = 0; DE = the block; HL = the path text at IY+$06DE.
+  Error: A = $A6 ("Invalid file name"), $97 ("File exists"), $98 ("Directory exists"), $99
+  ("System file exists"), $A7, $95, $AC ("Disk full"), $AD ("Root directory full"), $CF (not
+  found, finding only), or the parse's error, NZ.
+  Changes: AF, BC, DE, HL, IX, all alternates.
+  .17EE Keep the attribute and its Z in AF'
+  .17F0 IX = the request block
+  .17F2 A file name without wildcards?
+  .17F6 A = the attribute, Z
+  .17F7 Never jumps (Z here): hides LD A,$80 at $17F8, function 4's entry
+  .17FA The mode: the attribute, or $80 to find only
+  .17FD Resolve the path and start the scan
+  .1801 NC: the scan goes on from the current entry
+  .1802 Keep the result buffer's address
+
+@1805 DIR_SEARCH_ON
+  Function 5 (table $055A): goes on with the search that the request block's saved scan state
+  (+$17) describes, from the entry after the last one found.
+  Entry: DE = the request block; BC = the result buffer.
+  Exit: A = 0; the next matching entry in the result buffer (as DIR_CREATE_ENT).
+  Error: A = $CF when no more entries match, or the disk's error, NZ.
+  Changes: AF, DE, HL, IX, all alternates.
+  Keeps: BC.
+  .1805 The mode: find only
+  .1809 Restore the saved scan state
+  .180D Keep the result buffer's address
+  .180E The entry after the last one found
+
+@1811 DIR_FIND_ENT
+  Searches the directory; a match goes to FIND_FOUND, no match finds a free slot or fails.
+  .1811 C: a match
+  .1816 Finding only?
+  .181A Not found when finding only
+  .181C Creating: back to the free slot
+  .181F Failed?
+
+@1823 FIND_FOUND
+  The name exists: when finding, return it; when creating, refuse it or take the file over.
+  .1823 Finding only? Return the entry
+  .1829 A system file (attribute bit 2)?
+  .182D A directory?
+  .182F "Directory exists"
+  .1833 Creating a directory?
+  .1837 "File exists"
+  .1839 Never jumps (NC here): hides LD A,$99 at $183A, reached from $182B
+  .183C A file: delete the old entry to reuse it
+  .183F Refused?
+
+@1841 CREATE_NEW
+  Builds the attribute; a directory gets a new cleared cluster.
+  .1841 A directory being made?
+  .1846 BC = 0: no cluster for a file
+  .1848 The archive bit
+  .184C A cluster for the directory, cleared
+  .1855 The directory attribute
+
+@1853 CREATE_ALLOC_CHK
+  Fails when the allocation (or the free slot) failed.
+
+@1857 CREATE_WRITE
+  Writes the new entry: the block's name, the attribute (the volume bit from IX+6), the
+  cluster and the time.
+  .1858 Read the current entry again: DE
+  .185B HL = the request block
+  .1861 The volume bit from the request
+  .1867 HL = the block's name (+8)
+  .186C Write the directory entry
+
+@186F FIND_RET_ENTRY
+  Success: A = 0.
+
+@1870 FIND_COPY_OUT
+  Fills the result buffer: $FE, the block's bytes 1-7, then the 32-byte entry.
+  .1870 HL = the result buffer
+  .1874 DE = the request block
+  .1877 $FE first
+  .187B The block's bytes 1-7
+  .1882 The entry's first byte
+  .1883 $05 stands for $E5
+
+@1889 FIND_COPY_REST
+  Copies the first byte and the other 31.
+  .188C The other 31 bytes
+
+@1891 FIND_SAVE_SCAN
+  Saves the scan state at the block's +$17 and returns with the path text.
+  .1891 HL = IY+$30, DE = IX+$17, BC = 12
+  .1897 DE = the request block
+  .189A Restore BC
+  .189B HL = the path text
+
+# ---------------------------------------------------------------------------------------------
+# Checking and writing names
+
+@189E CHECK_FILENAME
+  Checks the request block's 8.3 name: the name may not start with a space, and no field may
+  hold a separator, "?" or "*", or a character after a space. A volume label is not checked.
+  Entry: IX = the request block (+6 bit 3 volume label, +8 the 11-byte name).
+  Exit: A = 0, Z.
+  Error: A = $A6 ("Invalid file name"), NZ.
+  Changes: AF.
+  Keeps: BC, DE, HL, IX, IY.
+  .189E A volume label?
+  .18A5 HL = the block's name (+8)
+  .18AC 8 name characters; it may not start with a space
+  .18B3 3 extension characters, which may all be spaces
+
+@18BB CHECK_NAME_FLD
+  Checks one field of B characters at HL.
+  Entry: A = the character the field may not start with; B = the field length; HL = the field.
+  Exit: A = 0, Z; HL = past the field.
+  Error: A = $A6 ("Invalid file name"), NZ.
+  Changes: AF, B, HL.
+  Keeps: C, DE, IX, IY.
+  .18BB The first character not allowed?
+
+@18BE CHECK_NAME_LP
+  Checks one character.
+  .18C0 A space: only spaces may follow
+  .18C4 A separator?
+  .18C9 "?"?
+  .18CD "*"?
+
+@18D3 CHECK_NAME_OK
+  Returns A = 0, Z.
+
+@18D5 CHECK_NAME_PADLP
+  Takes the next character after a space.
+
+@18D7 CHECK_NAME_PAD
+  The rest of the field must be spaces.
+  .18D7 Not a space?
+
+@18DE CHECK_NAME_BAD
+  Returns error $A6 ("Invalid file name").
+
+@18E2 WRITE_DIR_ENTRY
+  Writes a new directory entry: the 11-byte name (a first byte $E5 stored as $05), the
+  attribute, zeros, the start cluster, then the time and date; marks the sector buffer
+  changed.
+  Entry: DE = the entry; HL = the name; A = the attribute; BC = the start cluster (bit 7 of B
+  set: none, 0 is written).
+  Exit: AF and AF' swapped ($190C).
+  Changes: AF, BC, HL, AF'.
+  Keeps: DE, IX, IY.
+  .18E4 B = the attribute
+  .18E6 $E5 would read as deleted?
+  .18EA It is stored as $05
+
+@18EC WRITE_ENT_NAME
+  Stores the name and the attribute.
+  .18F0 The other 10 name bytes
+  .18F5 The attribute (+$0B)
+  .18F7 20 bytes, +$0C to +$1F
+
+@18F9 WRITE_ENT_ZERO
+  Clears the rest of the entry (C = 0 after the copy).
+
+@1904 WRITE_ENT_CLUST
+  Stores the start cluster at +$1A and stamps the time.
+  .1904 HL = the entry + $1B
+  .1908 The start cluster
+  .190B Restore DE
+  .190C Swap in AF'
+
+@190D STAMP_ENTRY
+  Writes the current time (+$16) and date (+$18) into the directory entry at DE and marks the
+  sector buffer changed.
+  Entry: DE = the directory entry.
+  Exit: none.
+  Changes: AF.
+  Keeps: BC, DE, HL, IX, IY.
+  .1910 HL = the entry's time field
+  .1917 The sector buffer changed
+
+@191E PACK_TIME_DATE
+  Reads the clock (EXOS 32 and 34) and writes the time and the date in the disk's packed
+  form: hours x 2048 + minutes x 32 + seconds / 2, then (year - 1980) x 512 + month x 32 +
+  day, each least significant byte first.
+  Entry: HL = 4 bytes.
+  Exit: the 4 bytes written; HL = the last.
+  Changes: AF, BC, DE, HL.
+  Keeps: IX, IY.
+  .1920 C = the hours, binary
+  .1925 A = the minutes, binary
+  .1929 Minutes x 4
+  .192B Three more shifts into C
+
+@192D PACK_HOURS_LP
+  Shifts the minutes' top bits into C: C:A = hours x 2048 + minutes x 32; then the seconds
+  and the date.
+  .1932 D = the low byte so far
+  .1933 A = the seconds, binary
+  .1937 Seconds / 2
+  .193A The time, low byte first
+  .193D HL = the date's place
+  .1942 C = the years, binary
+  .1947 A = the month, binary
+  .194B Month bits 0-2 to bits 5-7, bit 3 to carry
+  .194F C = years x 2 + month bit 3
+  .1952 A = the day, binary
+  .1957 The date, low byte first
+
+@195B BCD_TO_BIN
+  Turns a BCD byte into binary: tens x 10 + units.
+  Entry: A = the BCD byte.
+  Exit: A = its value.
+  Changes: AF, B.
+  Keeps: C, DE, HL, IX, IY.
+  .195C B = tens x 8
+  .1960 Tens x 2
+  .1962 + tens x 8
+  .1965 + the units
+
+# ---------------------------------------------------------------------------------------------
+# Searching a directory for the request block's name
+
+@1969 SEARCH_NEXT
+  Steps to the next entry first.
+
+@196C SEARCH_DIR
+  Searches the rest of the directory for the request block's name, remembering the first free
+  slot (a deleted entry, or the end mark) when none is saved yet.
+  Entry: C set when the directory has already ended; DE = the current entry; HL = the drive
+  parameter block; IX = the request block.
+  Exit: C set: DE = the matching entry, A = its attribute.
+  Error: NC, A = 0, Z: no match before the end.
+  Changes: AF, BC, DE, all alternates; the scan state; IY+$3C-$47 and IY+$5D bit 0.
+  Keeps: HL, IX, IY.
+  .196C The end of the directory?
+  .1970 HL = the block's name (+8)
+  .1975 Does the entry match?
+  .1979 Yes: C
+  .197A An entry in use: the next
+  .197C A free slot saved already?
+  .1980 No: save this one
+  .1983 A deleted entry: go on; 0 is the end
+
+@1986 SEARCH_NONE
+  Returns A = 0, NC: not found.
+
+@1988 SAVE_FREE_SLOT
+  Saves the scan state (IY+$30-$3B) at IY+$3C as the free slot and sets IY+$5D bit 0.
+  Entry: IY = the work area.
+  Exit: none.
+  Changes: F, BC.
+  Keeps: A, DE, HL, IX, IY.
+  .198D HL = IY+$30, DE = IY+$3C
+
+@199A USE_FREE_SLOT
+  Moves the scan back to the saved free slot; without one, adds a cluster to the directory
+  and moves into it. The sector buffer must be read again (IY+$63 bit 2).
+  Entry: HL = the drive parameter block; IX = the request block.
+  Exit: A = 0, Z; the scan state at the free slot (or at the new cluster's first entry).
+  Error: A = $AD ("Root directory full") or $AC ("Disk full"), NZ.
+  Changes: AF, BC, DE, all alternates.
+  Keeps: HL, IX, IY.
+  .199E A free slot saved?
+  .19A8 HL = IY+$3C, DE = IY+$30
+
+@19B0 GROW_DIR
+  No free slot: the directory needs a new cluster.
+  .19B0 DE = the directory's cluster (IY+$32)
+
+@19B4 GROW_DIR_SUB
+  The root cannot grow; another directory gets a cleared cluster linked after this one.
+  .19B4 The root?
+  .19B9 A cleared cluster: BC
+  .19BE Link it after cluster DE in the FAT
+  .19C2 The next cluster
+  .19C8 Step into it
+
+@19CB ALLOC_CLEAR_1
+  Allocates one cluster and clears it (IY+$48 bit 1), through ALLOC_CLUSTERS.
+  Entry: HL = the drive parameter block.
+  Exit: A = 0; BC = the new cluster.
+  Error: A = $AC ("Disk full"), NZ.
+  Changes: AF, BC, HL, all alternates.
+  Keeps: DE, IX.
+  .19CB One cluster
+  .19CE Clear it
+
+@19D2 ALLOC_CLUSTERS
+  Allocates BC free clusters as a chain, the search starting from the cluster that FAT entry 1
+  holds (the search goes on at $19DD); IY+$48 bit 1 asks for each to be cleared.
+  Entry: BC = the clusters wanted; HL = the drive parameter block.
+  Exit: A = 0; BC = the new chain's first cluster.
+  Error: A = $AC ("Disk full"), NZ.
+  Changes: AF, BC, HL, all alternates.
+  Keeps: DE, IX.
+  .19D3 FAT entry 1
+  .19D6 DE = its value
+
+# ---------------------------------------------------------------------------------------------
+
+@1AE9 DELETE_ENTRY
+  Deletes the current directory entry: frees its cluster chain and marks it deleted ($E5,
+  its first byte kept at +$0C).
+  Entry: DE = the current entry; HL = the drive parameter block.
+  Exit: A = 0, Z.
+  Error: A = $A7 ("Read only file") for attribute bit 0; A = $95 ("File cannot be copied onto
+  itself") when IY-$37 bit 1 is set and its drive (IY+$2B) and start cluster are those at
+  IY+$60-$62; NZ.
+  Changes: AF, BC, DE, all alternates.
+  Keeps: HL, IX, IY.
+  .1AE9 Read the entry again: DE
+  .1AED HL = the attribute byte
+  .1AF2 Read only?
+  .1AFA HL = the start cluster's place (+$1A)
+  .1AFE DE = the start cluster
+  .1B01 The file open for a copy?
+  .1B07 The same drive?
+  .1B0F The same start cluster?
+
+question 17A9 What does C hold after the parse $1356 returns, which CHANGE_DIR requires to be 0?
+question 19D2 Which cluster does ALLOC_CLUSTERS return in BC: the chain's first, as GROW_DIR uses it?
+question 1778 Does function 1 really parse without reading the disk (C bit 7 cleared)?
+
+feedback missing 17F7 The function table's entry 4 ($0558 = $D7F8) enters inside JP NZ,$803E at $17F7 (LD A,$80); the card lists only the jump-out, not the hidden entry
+feedback missing 16AE The CALL $00F2 inline byte split $16AA/$16D0/$1701/$17B1/$19B0 into "unreached" cards; the routine they continue would read better as one card
+feedback pattern 154A-1627 The name reader $1513 runs in the other register set (EXX), so C and DE swap meaning across calls; cards could say which set a register fact is in
+feedback listing 0505-0550 Opened the dispatcher to learn the flags fn 6 enters with (A = 0, Z, AF' = 2n) for the JP NZ at $17F7

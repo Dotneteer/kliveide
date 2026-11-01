@@ -1,0 +1,1098 @@
+rom ep-exdos13.rom page 0 cpu z80
+default observed
+
+# ------------------------------------------------------------------------------------------
+# The extension ROM header's jumps and the action entry
+
+@000A EXT_ENTRY
+  The extension ROM's entry points after the "EXOS_ROM" header: $C00A is the action entry
+  EXOS calls with C = the action code, $C00D and $C010 are entries for other code (the
+  function dispatcher is $C010).
+.000A Action entry: C = the action code
+.000D Second entry: goes to $1C9F
+.0010 EXDOS function call: A = the function number
+
+@0013 EXT_ACTION
+  Action entry (EXOS calls it with C = the action code, B, DE its parameters, IY = the RAM
+  EXOS gave this ROM, page 1 = that RAM's segment).
+  1. Adds $80 to IY, so IY-$80..IY+$7F reach the first 256 bytes of the workspace.
+  2. Action 7 (RAM allocation) asks for the workspace (ACT7_RAM). Nothing else is done while
+     page 1 holds segment 0 (no RAM yet), and only action 8 (initialise, INIT_ACTION) runs
+     before bit 7 of IY-$37 marks the initialisation done.
+  3. Action 1 (cold start) goes to ACT1_COLD, 2 (command string) to $2BF1, 3 (help string)
+     to $2B5E, 4 (EXOS variable) to ACT4_VAR.
+  4. Action 5 (explain error code, B = the code) takes codes $95-$BF (messages 0-$2A) and
+     $CF (message $2B), unless EXDOS variable $50 (IY-$4E) is not 0; the message is built
+     by MSG_TO_BUFFER and handed back with C = 0, B = $FF, DE = its address.
+  Any other action returns with C unchanged, so EXOS offers it to the next extension.
+.0014 IY + $80: the middle of the workspace's first 256 bytes
+.0017 IY = workspace + $80
+.001A A = the action code
+.001B Action 7 (RAM allocation)?
+.001F A = page 1's segment, the RAM EXOS gave this ROM
+.0022 No RAM yet? Leave the action
+.0024 Action 8 (initialise)?
+.0029 Initialised (bit 7 of IY-$37)? Else leave the action
+.002E Action 1 (cold start)?
+.0032 Action 2 (command string)?
+.0036 Action 3 (help string)?
+.003A Action 4 (EXOS variable)?
+.003D Action 5 (explain error code)? Others: leave
+.003F EXDOS variable $50 not 0? Leave the explaining to others
+.0043 B = the error code: $CF?
+.0046 Error $CF has message $2B
+.004A Codes $95-$BF have messages 0-$2A
+.004D Below $95? Not ours
+.004E Above $BF? Not ours
+
+@0051 ACT5_EXPLAIN
+  Action 5: builds message A in the workspace and hands it back to EXOS.
+.0051 DE = the copy, A = its length
+.0054 Empty message? Leave the action (C = 5)
+.0056 C = 0: action taken; B = $FF, DE = the text
+
+@005A ACT7_RAM
+  Action 7 (RAM allocation): asks for $07D4 bytes of RAM with B = 1, and takes the action
+  (C = 0).
+.005A C = 0: taken; B = 1
+.005D DE = $07D4: the bytes of RAM wanted
+
+@0061 ACT4_VAR
+  Action 4 (an EXOS variable from 40 up, E = its number; B = 0 read, 1 write, 2 toggle,
+  D = the value to write).
+  1. Variable $90: kept by EXDOS only when EXOS has none (IY+$6A = $FF, set at INIT_ACTION);
+     its value is IY+$69.
+  2. Variables $40-$63 are EXDOS's own: the bytes IY-$5E to IY-$3B ($40 is EXDOS's
+     segment, $47 the current drive).
+  Others are left for the next extension (C unchanged). VAR_ACCESS does the access and
+  takes the action.
+.0061 E = the variable's number
+.0062 Variable $90?
+.0066 Does EXDOS keep variable $90 (IY+$6A = $FF)?
+.006B No: EXOS has it, leave the action
+.006C A = the access: 0 read, 1 write, 2 toggle
+.006D HL = IY+$69, variable $90's byte
+
+@0077 ACT4_VAR_RANGE
+  Variables $40-$63: HL = IY-$5E + (number - $40); then VAR_ACCESS.
+.0077 Index from variable $40
+.007A Below $40? Not ours
+.007B Above $63? Not ours
+.007E C = the index
+.007F A = the access
+.0082 HL = IY + index
+.0086 - $5E: variable $40 is at IY-$5E
+
+@008A VAR_ACCESS
+  Reads, writes or toggles the variable byte at HL as the access code in A asks (0 read,
+  1 write, 2 toggle), then returns its value in D with A = 0 and C = 0 (action taken).
+.008A Access 0 (read)?
+.008E Access 1 (write)?
+.0090 Toggle: D = the byte inverted
+
+@0093 VAR_WRITE
+  Writes D to the variable byte, then reads it back.
+.0093 Store the new value
+
+@0094 VAR_READ
+  Returns the variable's value: D = the byte at HL, A = 0, C = 0 (action taken).
+.0094 D = the variable's value
+.0095 A = 0, no error
+.0096 C = 0: action taken
+
+# ------------------------------------------------------------------------------------------
+# Messages
+
+@0098 MSG_TO_BUFFER
+  Copies message A into the workspace as a counted text. Pages segment + 1 (EXDOS's second
+  page) into page 1 and takes the message table whose address is at $4002 when EXOS
+  variable $90 is 0, else the one at $4000. Each entry is a length byte and the text; every
+  "\" in the text becomes CR LF. The copy at IY+$5DB is the length, the text and a 0.
+  Entry: A = the message number; IY = the workspace.
+  Exit: DE = the copy (IY+$5DB); A = its length; page 1 restored.
+  Changes: A, DE.
+  Keeps: F, BC, HL, IX, IY.
+.009A E = the message number
+.009B Keep page 1's segment
+.009E A = this ROM's segment (page 3)
+.00A0 The next segment: EXDOS's second page
+.00A1 In page 1
+.00A4 HL = the table at ($4002)
+.00A7 Read EXOS variable $90
+.00AD D = its value
+.00AE Variable $90 = 0? Keep the table at ($4002)
+.00B2 Else the table at ($4000)
+
+@00B5 MSG_FIND
+  Walks the table at HL to entry E (each entry a length byte and its text).
+.00B5 E = the message number
+.00B6 B = entry counter, D = 0 for the length
+
+@00BA MSG_FIND_LP
+  Skips one entry per pass until the counter in B reaches the message number in A.
+.00BA This entry?
+.00BD Next entry number
+.00BE E = this entry's length
+.00BF Skip the text
+.00C0 And the length byte
+
+@00C3 MSG_COPY_TEXT
+  Copies the entry at HL to the buffer at IY+$5DB, after its length byte.
+.00C3 BC = the entry
+.00C5 A = its length
+.00C9 HL = the buffer, IY+$5DB
+.00CD Keep the buffer's address for the length
+.00CE E = characters to copy + 1, D = the copy's length
+.00D0 + 1 for the first DEC E
+
+@00D1 MSG_COPY_LP
+  Copies one character, ends when the count in E runs out.
+.00D1 Next buffer byte
+.00D2 Next text character
+.00D3 All copied?
+.00D7 "\"? It stands for a new line
+.00DB Copy the character
+
+@00DE MSG_BACKSLASH
+  Writes CR LF for a "\": the copy grows by one byte.
+.00DE CR
+.00E1 LF
+.00E3 One more byte in the copy
+
+@00E6 MSG_COPY_END
+  Ends the copy with a 0, writes its length in front, restores page 1 and returns
+  A = the length, DE = the copy.
+.00E6 A 0 after the text (E = 0)
+.00E7 HL = the copy's start
+.00E8 Its length byte
+.00E9 Page 1's segment as it was
+.00EC A = the copy's length
+.00ED DE = the copy
+
+# ------------------------------------------------------------------------------------------
+# Small helpers
+
+@00F2 IY_WORD_INLINE
+  Reads a workspace word: DE = the word at IY + the signed byte that follows the CALL, and
+  returns past that byte.
+  Entry: the byte after the CALL = an offset from IY (-128 to 127); IY = the workspace.
+  Exit: DE = the word at IY + the offset.
+  Changes: DE.
+  Keeps: AF, BC, HL, IX, IY.
+.00F2 HL = the return address
+.00F3 E = the inline byte
+.00F4 Return past it
+.00F7 HL = IY, the caller's HL kept on the stack
+.00FA D = the byte's sign
+.00FE HL = IY + the offset
+.00FF DE = the word there
+
+@0105 PATH_SEP_CHAR
+  Returns the character that separates the names in a path (the callers look for it in a
+  name): "\" ($5C) when EXOS variable $90 is not 0, "'" ($27) when it is 0.
+  Entry: none.
+  Exit: A = the separator.
+  Changes: A.
+  Keeps: F, BC, DE, HL, IX, IY.
+.0108 Read EXOS variable $90
+.010E D = its value
+.010F Variable $90 = 0?
+.0113 Not 0: "\"
+
+@0117 SEP_QUOTE
+  Variable $90 is 0: the separator is "'".
+.0117 "'"
+
+@0119 SEP_RETURN
+  Returns the separator in A with the caller's flags, BC and DE.
+.0119 The caller's flags
+.011A A = the separator
+
+@011E ACT1_COLD
+  Action 1 (cold start), once (bit 6 of IY-$37): sets bits 6 and 3 of IY-$37, then has
+  ANNOUNCE_DRIVES offer "EXDOS E:", "EXDOS F:", "EXDOS B:" and "EXDOS A:" to the
+  extensions. C stays 1, so the other extensions get the action too.
+.011E A = EXDOS's flags
+.0121 Cold start done before?
+.0124 Mark it done; bit 3 also set
+.012A Offer the drive commands
+.012D Room for a longer call
+
+# ------------------------------------------------------------------------------------------
+# Initialisation (action 8)
+
+@013A INIT_ACTION
+  Action 8 (initialise).
+  1. Makes DISK the default device (EXOS 19, type 1); clears the error hook's segment
+     (IY-$3A), IY-$80 and IY-$20; sets EXDOS variables $4B and $4C and IY+$2E to $FF.
+  2. Already initialised (bit 7 of IY-$37)? The rest is REINIT's.
+  3. First time: variable $47 (the current drive) becomes 1, variables $46 and $53 $FF,
+     IY+$2E $FE; keeps page 0's segment (IY+$2C) and EXDOS's segment (IY+$2F and
+     variable $40).
+  4. Copies the 72 bytes at $04BD (RAM_FARCALL, RAM_SEGCALL and two device descriptors) to
+     IY+$01ED and patches them: both CALL $0000s call the copy's JP (HL), and EXDOS's
+     segment goes into the page-3 restore and both descriptors' table segments.
+  5. Asks for 3 sector buffers and links the DISK device and the buffers (LINK_DISK_DEV);
+     maps every drive to itself (FN26_MAP_DRIVE with B = 0).
+  6. Adds the built-in units: 4 driven by $1FD3 (records from IY+$2BB) and, when that worked,
+     makes drive 2 a copy of drive 1 (FN25_COPY_DRIVE); then 1 driven by $1005 (record at
+     IY+$441). Both are in this segment, IX = IY for them.
+  Goes on at INIT_LAST_UNIT.
+.013A DE = "DISK", the default device's name
+.013D C = the device type
+.0141 No error hook (its segment = 0)
+.014B A = $FF
+.014C EXDOS variable $4B = $FF
+.014F EXDOS variable $4C = $FF
+.0155 Initialised before?
+.015A Yes: only relink and restart
+.015D EXDOS variable $47 (current drive) = 1
+.0160 EXDOS variable $46 = $FF
+.0163 EXDOS variable $53 = $FF
+.0166 IY+$2E = $FE
+.0169 Page 0's segment
+.016E EXDOS's segment (page 3)
+.0173 Is EXDOS variable $40
+.0179 Workspace kept twice for later
+.017B DE = IY+$01ED, where the RAM code goes
+.0180 HL = the code and descriptors to copy
+.0184 72 bytes
+.0189 IX = the copy
+.018B Page 3's segment the copy puts back
+.018E HL = the copy's JP (HL) ($04D4's copy)
+.0192 RAM_FARCALL's CALL goes to it
+.0198 RAM_SEGCALL's CALL goes to it
+.019E The second descriptor's table segment
+.01A1 The DISK descriptor's table segment
+.01A4 3 sector buffers wanted
+.01A8 Link DISK and the buffers
+.01AB B = 0
+.01AD Every drive mapped to itself
+.01B0 IX = IY, the workspace for the units' driver
+.01B2 DE = the driver routine ($1FD3)
+.01B5 Its segment: this ROM
+.01B7 4 units, records from HL (IY+$2BB)
+.01BC Drive 2 = a copy of drive 1, if the units were added
+.01C2 HL = IX = IY
+.01C6 HL = IY+$43E: one more unit's block
+.01CA DE = the driver routine ($1005)
+.01CF 1 unit
+
+@01D1 INIT_LAST_UNIT
+  Adds the last built-in unit (ADD_UNITS), then checks that EXOS has variable $90: if it
+  has not, EXDOS keeps it itself (IY+$6A = $FF), with the value $FF (IY+$69).
+.01D1 Add the unit
+.01D7 Assume EXOS has variable $90
+.01DB Read EXOS variable $90
+.01E1 Exists? EXOS keeps it
+.01E3 No: EXDOS answers for it (ACT4_VAR)
+.01E7 Its value: $FF
+
+@01EB INIT_MARK_DONE
+  Marks the initialisation done (bit 7 of IY-$37).
+.01EE Initialised
+
+@01F2 INIT_SCAN_DRVS
+  Offers the command "EXDOS" + $FF to the extensions (EXOS 26) until none takes it; each
+  one that does hands back B = a segment and DE = a block of units, added by
+  FN24_ADD_DRIVER.
+.01F2 DE = the command "EXDOS" + $FF
+.01F7 Nobody took it? Done
+.01F9 Add the units it gave
+
+@01FE INIT_ANNOUNCE
+  First initialisation done: announces "EXDOS" + $FC with A = 0.
+.01FE DE = the command "EXDOS" + $FC
+.0201 A = 0 for EXDOS_STATE_RST
+
+@0202 ANNOUNCE_EXDOS
+  Resets EXDOS's drive state (EXDOS_STATE_RST with A), offers the command at DE to the
+  extensions (EXOS 26) and leaves action 8 to the others (C = 8).
+.0203 Reset the state
+.0207 Offer the command
+.0209 C = 8: the other extensions get action 8 too
+
+@0221 REINIT
+  Action 8 again (EXDOS initialised before).
+  1. Keeps bits 7, 6, 2 and 1 of IY-$37.
+  2. Links the DISK device and the buffers again unless the device for drive A answers
+     (RELINK_DEVICES), and the drive letter devices.
+  3. Calls function 1 of every driver block in the chain at IY+$1E (REINIT_DRV_LP).
+.0221 Keep bits 7, 6, 2, 1 of the flags
+.0226 Relink the devices
+.0229 Keep B (1: nothing relinked)
+.022A A = the first driver block's segment
+.022D HL = its address
+
+@0233 REINIT_DRV_LP
+  Calls function 1 of each driver block in the chain (link: segment, address in the block's
+  first 3 bytes; segment 0 ends it), then frees the scratch buffer (FN30_SCRATCH_BUF with
+  A = B = 0) and announces "EXDOS" + $FB with A = the B kept at REINIT.
+.0233 Page the block in
+.0236 HL = its first unit record
+.0239 Driver function 1
+.023F A = the next block's segment
+.0241 HL = its address
+.0246 Another block?
+.0248 B = 0, A = 0: release
+.0249 Free the scratch buffer
+.024C DE = the command "EXDOS" + $FB
+.024F A = the B kept at REINIT
+
+@0252 RELINK_DEVICES
+  Checks whether the device for drive A answers (QUERY_DRIVE_DEV); if it does, returns with
+  B = 1. Otherwise links the DISK device and the buffers again (LINK_DISK_DEV) and goes on
+  at RELINK_LETTERS (B = 0).
+  Entry: IY = the workspace.
+  Exit: A = 0, Z; B = 1 when nothing was linked, 0 when the devices were linked again.
+  Error: none (a failed link is not reported).
+  Changes: AF, BC, DE, HL, BC', DE', HL' (RELINK_LET_DEV works in the alternate set).
+  Keeps: IX, IY.
+.0252 Drive A
+.0257 B = 1: nothing relinked
+.0259 Device A answers? Done
+.025A Link DISK and the buffers again
+
+@025D RELINK_LETTERS
+  Makes sure every drive from 26 down to 1 that has a unit has its letter device
+  (ENSURE_DRIVE_DEV); a unit record with byte +9 not 0 gets 1 there.
+.025D From drive 26 down
+
+@025F RELINK_LET_LP
+  One drive: maps it to its unit and pages the unit's record in.
+.025F A = the drive
+.0260 HL = its unit's slot
+.0263 A = the slot's segment
+.0265 No unit? Next drive
+.0267 Page the record in
+.0269 DE = the record's address
+.026D Its byte +9
+.0273 0? Keep it
+.0275 Else 1
+
+@0277 RELINK_LET_DEV
+  Links drive B's letter device unless it answers.
+.0277 A = the drive
+.0278 Keep B, the loop counter
+.0279 Link the letter device if needed
+
+@027D RELINK_LET_NXT
+  Next drive; A = 0 when all are done.
+.027F A = 0, Z
+
+@0281 LINK_DISK_DEV
+  Links the DISK device (the descriptor copied to IY+$01FB) with EXOS 21, empties the buffer
+  list, then links the buffer device "." with as many sector buffers as IY+$21 asks
+  (LINK_DRIVE_DEV), falling back to 3 when the RAM is not there.
+  Entry: IY = the workspace; IY+$21 = the buffers wanted.
+  Exit: Z when the buffers were linked; IY+$21 = their count.
+  Error: NZ and carry when not even 3 buffers could be linked.
+  Changes: AF, BC, DE, HL; IY+$21-$27.
+  Keeps: IX, IY.
+.0281 HL = IY+$229, 3 below the second descriptor's copy
+.0288 Kept for LINK_DRIVE_DEV
+.028E HL - 14: the DISK descriptor's DD_TYPE
+.0293 No device RAM
+.0298 A = 0
+.0299 No buffers in the list
+.029F IY+$24/$25 high byte = 0: no recent buffer
+.02A2 B = the buffers wanted
+
+@02A5 LINK_BUFS_TRY
+  Links the buffer device with B buffers; when that fails and B was 4 or more, tries once
+  more with 3.
+.02A5 None linked yet
+.02A9 The device's name: "."
+.02AC Link it with B buffers
+.02B0 Linked? Done
+.02B2 Fewer than 4 asked? Fail (carry)
+.02B5 Try with 3
+
+@02B9 FN27_SET_BUFS
+  EXDOS function 27: adds sector buffers until there are B (at most 10). Asking for fewer
+  than there are changes nothing.
+  Entry: B = the buffers wanted; IY = the workspace.
+  Exit: A = 0; B = the buffers there are.
+  Error: A = $F7 with carry for more than 10; a failed link's status.
+  Changes: AF, BC, DE, HL.
+  Keeps: IX, IY.
+.02B9 More than 10 buffers?
+.02BC Error $F7
+.02BF B = how many more are wanted
+.02C4 A = 0
+.02C6 None? Done
+.02C8 The buffer device "."
+.02CA More wanted: link them
+
+@02CD BUFS_COUNT_RET
+  Returns B = the number of buffers (IY+$21).
+.02CD B = the buffers there are
+
+# ------------------------------------------------------------------------------------------
+# Drives and units
+
+@02D1 DRIVE_TO_UNIT
+  Maps a drive to its unit: A = the byte at IY+$2A0 + drive (0 for a drive above 26), and
+  HL = that unit's slot (UNIT_SLOT).
+  Entry: A = the drive (1-26); IY = the workspace.
+  Exit: A = the unit's number; HL = its slot (segment, then the record's address).
+  Changes: AF, HL.
+  Keeps: BC, DE, IX, IY.
+.02D1 Above 26?
+.02D5 Taken as 0
+
+@02D6 MAP_DRIVE_TBL
+  Reads the drive's entry in the map at IY+$2A0 and finds the slot of the unit it names.
+.02DA HL = the map, IY+$2A0
+.02DF HL = the drive's entry
+.02E3 A = its unit
+.02E5 HL = the unit's slot
+.02E8 A = the unit
+
+@02EB UNIT_PAGE_IN
+  Pages a unit's record in: A = the unit, its slot gives the segment (put in page 1) and the
+  record's address.
+  Entry: A = the unit (1-26); IY = the workspace.
+  Exit: page 1 = the record's segment (also in A); DE = the record's address; HL = the
+  slot's address high byte.
+  Error: Z (A = 0) when the slot is empty.
+  Changes: AF, DE, HL; page 1.
+  Keeps: BC, IX, IY.
+.02EB HL = the unit's slot
+.02EE A = its segment
+.02F0 No unit? Z
+.02F1 Page the record in
+.02F4 DE = the record's address
+
+@02F8 UNIT_SLOT
+  Finds a unit's slot: HL = IY+$24F + 3 x unit (a unit above 26 is taken as 0). A slot is the
+  segment of the unit's record (0: no unit) and the record's address.
+  Entry: A = the unit; IY = the workspace.
+  Exit: HL = the slot.
+  Changes: AF, DE, HL.
+  Keeps: BC, IX, IY.
+.02F8 Above 26?
+.02FC Taken as 0
+
+@02FD UNIT_SLOT_ADDR
+  HL = IY+$24F + 3 x A.
+.02FD A = unit x 3
+.0303 HL = the slot table (unit 1 at IY+$252)
+
+@030C QUERY_DRIVE_DEV
+  Asks whether the device named after drive A answers: builds the name "<letter>:" (counted)
+  at IY+$6D1 and opens it in query mode (OPEN_QUERY).
+  Entry: A = the drive (1-26); IY = the workspace.
+  Exit: A = 0; Z when the open ended with status $F9 or $F8.
+  Changes: AF, BC, DE, HL.
+  Keeps: IX, IY.
+.030C A = the drive's letter
+.030E HL = IY+$6D3, the name's end
+.0315 ":"
+.0318 E = the letter (L after the swap: bit 7 clear, open)
+.0319 The letter
+.031B The name's length: 2
+.031D DE = the name
+.031E Open it in query mode
+.0321 Status $F9?
+.0324 Z when the status was $F8
+.0326 A = 0
+
+@0329 FN23_OPEN_DISK
+  EXDOS function 23: opens a channel to "DISK:" in query mode, passing BC to the device in
+  IY+$6B/$6C; falls into OPEN_QUERY.
+.0329 DE = "DISK:"
+.032C BC for the device
+
+@0332 OPEN_QUERY
+  Opens a channel (OPEN_FREE_CHAN) with bit 0 of IY-$37 set while it runs, so EXDOS's own
+  devices know the open is a query.
+  Entry: DE = the device name (counted); L bit 7 = 0; IY = the workspace.
+  Exit: A = the last status, flags from OR A; DE = the word at IY+$6B; B = IY+$6D.
+  Changes: AF, BC, DE, H.
+.0332 Query mode on
+
+@0336 OPEN_FREE_CHAN
+  Opens a channel to the name at DE on the first free channel number from 0 up: EXOS 1
+  (open), or EXOS 2 (create) when entered at $0339, which sets bit 7 of L. Status $F9 moves
+  on to the next number; any other error closes the channel. Ends with bit 0 of IY-$37
+  clear, B = IY+$6D and DE = the word at IY+$6B.
+  Entry: DE = the name (counted); L = flags; IY = the workspace.
+  Exit: A = the status, flags from OR A; H = the channel tried last; DE = the word at
+  IY+$6B; B = IY+$6D.
+  Error: A = the error's status (NZ); $F9 when every number was taken.
+  Changes: AF, BC, DE, H; bit 7 of L.
+.0336 Open (bit 7 of L clear)
+.0338 Its bytes CB FD: SET 7,L, the create entry $0339
+.033B From channel 0
+
+@033D OPEN_TRY_CHAN
+  Tries channel H: EXOS 1 (open) or, when bit 7 of L is set, EXOS 2 (create).
+.033D A = the channel
+.033F Create?
+.0345 Its bytes F7 02: EXOS 2 (create), the entry at $0346
+.0349 Opened? Done
+.034B Status $F9: the channel number is taken?
+.034F Try the next number
+.0352 All taken: give up with $F9
+
+@0354 OPEN_CLOSE_FAIL
+  Any other error: closes channel H and keeps the error's status.
+.0355 A = the channel
+
+@0359 QUERY_OPEN_END
+  Leaves query mode and returns B = IY+$6D, DE = the word at IY+$6B, A = the status.
+.0359 Query mode off
+.035D B = IY+$6D
+
+@0360 DE_FROM_IY6B
+  DE = the word at IY+$6B; returns with flags from OR A.
+  Entry: A; IY = the workspace.
+  Exit: DE = the word at IY+$6B; flags from A.
+  Changes: F, DE.
+  Keeps: A, BC, HL, IX, IY.
+.0360 DE = (IY+$6B)
+
+@0364 OR_A_RET
+  Returns with the flags from A (IY_WORD_INLINE comes back here past its byte).
+.0364 Flags from A, carry clear
+
+@036C ENSURE_DRIVE_DEV
+  Makes sure drive A has its letter device: when the query of "<letter>:" ends with status
+  $F9 or $F8 nothing is done; otherwise the device named after the letter is linked with no
+  buffers (LINK_DRIVE_DEV).
+  Entry: A = the drive (1-26); IY = the workspace.
+  Exit: Z, A = 0 when the device answered or was linked.
+  Error: NZ, A = the status when the link failed.
+  Changes: AF, BC, DE, HL.
+  Keeps: IX, IY.
+.036C Does the device answer?
+.036F Yes: nothing to do
+.0370 C = the letter, the device's name
+
+@0372 LINK_DRIVE_DEV
+  Links a device whose name is the one character in C, with RAM for B sector buffers of $20B
+  bytes and a header (B x $20B + 14 bytes), from the descriptor template 3 bytes above the
+  address at IY+$26. The template's 9 bytes are then copied below the device's RAM (whose
+  address is at IY+$6B), IY+$26 points 3 below the copy, and the two bytes under it hold the
+  workspace's distance (IY - copy - 1). With B not 0 the buffers are linked into the list at
+  IY+$22 (LINK_BUF_LOOP).
+  Entry: B = the buffers; C = the name; IY = the workspace.
+  Exit: Z, A = 0 when linked; IY+$21 counts the buffers linked.
+  Error: NZ, A = EXOS 21's status.
+  Changes: AF, BC, DE, HL; IY+$21-$27.
+.0373 A = the name
+.0374 $FE03 + $20B = $000E: the header
+.0377 + $20B per buffer
+.037A B + 1 additions
+.037E BC = the RAM wanted
+.0380 DE = (IY+$26)
+
+@037B LINK_DEV_SIZE
+  Adds $20B per buffer.
+.037B + one buffer
+
+@0384 LINK_DEV_DONE
+  Second half of LINK_DRIVE_DEV: links the device, then copies its descriptor below its RAM.
+.0384 DE = the template's DD_TYPE
+.0387 HL = the name's character
+.038B The device's name
+.038C Link it, BC bytes of RAM
+.038E B = the buffers
+.038F Failed? Return its status
+.0390 A = the buffers
+.0391 DE = (IY+$6B): the device's RAM
+.0394 The 9 bytes below it
+.0398 Copy the descriptor there
+.039D HL = IY - the copy - 1
+.03A0 DE = that distance, HL = below the copy
+.03A3 IY+$26 = 3 below the copy
+.03AA The distance below that
+.03AD No buffers?
+
+@03B0 LINK_BUF_LOOP
+  Puts one buffer ($20C bytes below the last) at the head of the buffer list.
+.03B0 HL = the next buffer, $20C lower
+.03B4 DE = (IY+$22), the list's head
+
+@03B8 LINK_BUF_NEXT
+  Second half of LINK_BUF_LOOP: the buffer becomes the head, its link the old head.
+.03B8 The new head
+.03BE Its link: the old head
+.03C1 One more buffer
+.03C4 More?
+
+@03C8 FN24_ADD_DRIVER
+  EXDOS function 24: adds the units of a driver. The block at DE (in segment B, read in page
+  1) holds the number of units, the driver's routine address and its segment, then room
+  for a record of $60 bytes per unit; ADD_UNITS builds the records over it.
+  Entry: B = the block's segment; DE = its address; IY = the workspace.
+  Exit: A = 0, Z when the block has no units; else as ADD_UNITS.
+  Error: Z when there are no units (nothing added).
+  Changes: AF, BC, DE, HL, IX; page 1.
+.03C8 Page the block in
+.03CB IX = the block's address: the driver's IY
+.03CE In page 1
+.03D3 A = the number of units
+.03D5 None? Done
+.03D6 C = the count
+.03D9 DE = the driver's routine
+.03DD A = the driver's segment
+
+@03DF ADD_UNITS
+  Adds C units of a driver.
+  1. For each unit, writes a record ($60 bytes, the first at HL + 3): +0 the segment for
+     page 1 (B), +1/+2 the driver's IY (IX), +3 its segment (A), +4/+5 its routine (DE),
+     +6 the unit's number within the driver (from 0), +7 and +8 the drive given to it,
+     +9 = 0, +$1F = $FF.
+  2. Gives it the first free drive from 1 to 26: the drive's slot gets the record's segment
+     and address (interrupts off while it is written), and the letter device is linked
+     (ENSURE_DRIVE_DEV). A unit gets no drive when all 26 are taken.
+  3. Links the block at the head of the chain at IY+$1E-$20 (its first 3 bytes get the old
+     head) and calls the driver's function 0 for its first unit (DRV_CALL_FF).
+  Entry: HL = the block; C = the units; DE = the routine; A = the driver's segment; B = the
+  block's segment; IX = the value the driver gets in IY; IY = the workspace.
+  Exit: A = the status of driver function 0, flags from OR A.
+  Changes: AF, BC, DE, HL, AF'; page 1.
+.03DF A' = 0: the first unit's number
+.03E2 The block's address in page 1
+.03E6 Keep the block's start
+.03E7 The first record at +3
+
+@03EA ADD_UNIT_LP
+  Writes one unit's record and looks for a free drive for it.
+.03ED +0: the segment for page 1
+.03EE BC = the driver's IY
+.03F4 +1/+2: the driver's IY
+.03F8 +3: the driver's segment
+.03FA +4/+5: the routine
+.03FE +6: the unit's number in the driver
+.0400 Next unit's number
+.0403 Keep +7, where the drive goes
+.0406 +9 = 0
+.0408 + $16
+.040C +$1F = $FF
+.040E 26 drives
+.0410 HL = drive 1's slot, IY+$252
+.0417 DE = the record's +7
+
+@0418 ADD_UNIT_FREE
+  Looks for the first drive whose slot is empty.
+.0418 A = the slot's segment
+.041A Empty? This drive
+.041D Next slot
+.0421 None free: no drive for the unit
+
+@0423 ADD_UNIT_DRIVE
+  Gives the unit drive 27 - B: writes it in the record (+7 and +8) and the record's segment
+  and address in the drive's slot, then links the drive's letter device.
+.0423 A = the drive's number
+.0426 Record +7
+.0428 And +8
+.0429 C = the drive
+.042A No interrupts while the slot changes
+.042B DE = the record
+.042D A = the record's segment
+.042F The slot's address
+.0434 The slot's segment
+.0436 A = the drive
+.0437 Link its letter device if needed
+
+@043A ADD_UNIT_NEXT
+  Next record ($60 bytes on); after the last, links the block into the chain at IY+$1E and
+  calls driver function 0.
+.043A HL = this record
+.043B The next record
+.0444 One unit fewer
+.0447 HL = IY+$1E, the chain's head
+.044E DE = the block
+.0450 Its first 3 bytes = the old head
+.0455 BC = the block
+.0457 The head = the block's address
+.045B And segment (page 1)
+.045E HL = the first record's +8
+.0462 B = its drive
+.0463 HL = the first record
+.0464 Driver function 0
+
+@0465 DRV_CALL_FF
+  Calls a driver function (DRIVER_CALL) with C = $FF, so page 1 holds segment $FF during
+  the call, and IX = IY + $C4A1.
+.0465 IX = IY + $C4A1
+.046E Segment $FF for page 1
+
+@0470 DRIVER_CALL
+  Calls a unit's driver through the RAM copy of RAM_FARCALL. The unit's record gives: +0 the
+  value for B', +1/+2 for IY, +3 the segment for page 3, +4/+5 the routine, +6 the value
+  for C.
+  1. Keeps IX, IY, HL, the alternate set and AF'; IY = the RAM code (IY+$01ED), whose
+     page-1 restore gets page 1's segment and whose page-3 load the record's segment.
+  2. Pages segment C into page 1 and jumps to RAM_FARCALL with the routine in HL, the
+     record's IY on the stack and A' = the entry A.
+  3. RAM_FARCALL returns to DRV_CALL_RET with the driver's status in A'.
+  Entry: A = the function code; HL = the unit's record; C = the segment for page 1; DE for
+  the driver; IY = the workspace.
+  Exit: A = the driver's status, flags from OR A ($E5 when SOFT_IRQ_CHECK finds $20); BC, DE
+  as the driver left them; pages 1 and 3 restored.
+  Changes: AF, BC, DE.
+  Keeps: HL, IX, IY.
+.0475 Swap to keep the alternates and A' = A
+.047A Keep AF' (the caller's)
+.047C Keep DE
+.047D IY = the RAM code
+.0482 Page 1's segment, restored after the call
+.0487 A = record +0
+.048A Into B'
+.048C DE = record +1/+2: the driver's IY
+.0490 For RAM_FARCALL's POP IY
+.0491 Record +3: the driver's segment
+.0492 Into the RAM code's page-3 load
+.0496 DE = record +4/+5: the routine
+.049A A = the segment for page 1
+.049B C = record +6
+.049C Page it in
+.049E HL = the routine
+.049F To the RAM copy of RAM_FARCALL
+
+@04A1 DRV_CALL_RET
+  The return from a driver call: A = the driver's status (or $E5), the caller's AF', BC',
+  DE', HL', HL, IY and IX back, flags from OR A.
+.04A1 $20 pending? A' = $E5
+.04A4 The caller's AF'
+.04A5 A = the status
+.04B0 Flags from the status
+
+@04B2 SOFT_IRQ_CHECK
+  Checks $BFF2 (EXOS 2.1's FLAG_SOFT_IRQ) for $20: if it is there, A' = $E5 and Z.
+  Entry: none.
+  Exit: Z and A' = $E5 when $BFF2 holds $20; NZ otherwise, A' unchanged.
+  Changes: AF, AF'.
+  Keeps: BC, DE, HL, IX, IY.
+.04B2 A = the pending software interrupt
+.04B5 $20?
+.04B8 Status $E5 instead
+.04BB Z
+
+@04BD RAM_FARCALL
+  Code copied to IY+$01ED at INIT_ACTION and run there (the operands at +4, +9, +$0D and
+  +$11 are patched): DRIVER_CALL's far call. Pops the driver's IY and the caller's DE,
+  pages the driver's segment into page 3, calls the routine in HL with A = the function
+  code, restores pages 1 and 3 and goes back to DRV_CALL_RET with the status in A'.
+.04BD IY = the driver's IY
+.04BF The caller's DE
+.04C0 The driver's segment (patched)
+.04C2 Into page 3
+.04C4 A = the function code
+.04C5 Call HL (patched to the copy's JP (HL))
+.04C8 A' = the status
+.04C9 Page 1's segment (patched)
+.04CD EXDOS's segment (patched)
+.04CF Back into page 3
+.04D1 Back in EXDOS
+
+@04D4 RAM_JP_HL
+  The copy's JP (HL): both copied CALLs come here.
+.04D4 To the routine
+
+@04D5 RAM_SEGCALL
+  Also run in the copy (IY+$0205, called at $0F0C): calls DE with segment A in page 3 and
+  A = IY+$2A, then puts EXDOS's segment (EXDOS variable $40) back in page 3.
+.04D5 Segment A into page 3
+.04D7 A = IY+$2A for the routine
+.04DA HL = the routine
+.04DB Call it (patched to the copy's JP (HL))
+.04DE B = its result
+.04DF EXDOS's segment
+.04E4 A = the result
+
+# ------------------------------------------------------------------------------------------
+# The function dispatcher
+
+@0505 FUNC_DISPATCH
+  EXDOS function call (entry $C010): runs function A (1-30) from the table at $0550 with the
+  caller's BC, DE, HL.
+  1. Keeps the alternate BC, DE, HL and AF', page 1's segment (IY+$2D) and SP (IY+$28, for
+     the error handler's abandon), clears IY+$48.
+  2. Enters the function through FUNC_JUMP with A = 0; it returns to FUNC_RETURN.
+  Entry: A = the function; BC, DE, HL its parameters; IY = the workspace.
+  Exit: A = the status, flags from OR A; BC, DE, HL as the function left them; page 1, BC',
+  DE', HL' and AF' restored.
+  Error: A = $B0 (NZ) for function 0 or above 30.
+  Changes: AF, BC, DE, HL, IX.
+.0505 Above 30?
+.0509 Use the alternate set; the caller's in the other
+.050A Keep the caller's alternates
+.050D BC = the function x 2
+.0511 A' = the function x 2
+.0512 Keep the caller's AF'
+.0513 Keep page 1's segment
+.0518 IY+$48 = 0
+.051B HL = SP
+.051E Kept for an abandoned call
+.0524 HL = the function's table entry
+.0528 DE = the function's address
+.052B A = 0
+.052C Enter it; it returns to FUNC_RETURN
+
+@052F FUNC_RETURN
+  The return from an EXDOS function (also where the error handler abandons one, with the
+  stack put back): restores page 1, checks $BFF2, restores the caller's AF', BC', DE', HL',
+  clears bit 1 of IY-$37 and IY-$80, and returns A = the status with flags from OR A.
+.052F A' = the status
+.0530 Page 1 as it was
+.0535 $20 pending? Status $E5
+.0538 The caller's AF'
+.0539 A = the status
+.053F Clear bit 1 of the flags
+.0543 IY-$80 = 0
+.0547 Flags from the status
+
+@0549 FUNC_JUMP
+  Jumps to DE with the caller's BC, DE, HL back in the main set.
+  Entry: DE = the address (alternate set active).
+  Exit: none: it jumps.
+  Changes: the main and alternate sets swap.
+.0549 The address as the return
+.054A The caller's registers
+.054B To the function
+
+@054C FUNC_BAD
+  Function 0 or a number above 30: A = $B0, NZ.
+  Entry: none.
+  Exit: A = $B0; NZ, carry clear.
+  Changes: AF.
+  Keeps: BC, DE, HL, IX, IY.
+.054C Status $B0
+
+@058E FN28_DRIVE_E
+  EXDOS function 28: maps drive 5 (E:) to itself (FN26_MAP_DRIVE), selects it and drops its
+  buffers (SELECT_DROP), calls its driver with A = $FF (DRIVER_CALL, C = 5); with B not 0
+  goes on at $05BC.
+  Entry: B = the parameter; DE; IY = the workspace.
+  Exit: A = 0, Z when B is 0; else as $05BC.
+  Error: NZ, A = the status from selecting the drive or from the driver.
+  Changes: AF, BC, DE, HL, IX.
+.058E Drive 5
+.0591 B = C = 5: drive 5 to itself
+.0596 Select it, drop its buffers
+.0599 Failed?
+.059B Driver function $FF
+.05A1 Failed?
+.05A2 B = 0? Done
+
+@0608 SELECT_DROP
+  Selects drive C (SELECT_DRIVE with B = 2: its changed buffers written back), drops its
+  buffers (BUF_DROP_DRIVE) and resets the record (+9 = 0, +$1E = $FF at $0DE6).
+  Entry: C = the drive; DE; IY = the workspace.
+  Exit: A = 0, Z; HL = the drive's record; IX = DE.
+  Error: NZ, A = the status from SELECT_DRIVE.
+  Changes: AF, BC, DE, HL, IX.
+.060A B = 2
+.060C Select the drive
+.0610 IX = the caller's DE
+.0613 Failed?
+.0614 Drop its buffers
+.0617 Reset the record
+
+@0AB9 FN30_SCRATCH_BUF
+  EXDOS function 30: with B = $FF gets a buffer for sector A x $101 tagged $80 (a scratch
+  buffer, read in when bit 0 of A is set) and returns its data's address; with any other B
+  gets it and frees it (tag 0). The drive record GET_SECTOR_BUF reads is the code at $0AC9,
+  so its fields are this code's bytes (+8 = $80, the tag).
+  Entry: A = the sector byte (also the flags); B = $FF to keep the buffer; IY = the
+  workspace.
+  Exit: A = 0; with B = $FF, HL = the buffer's data (+$0B) and Z; else HL = the buffer's
+  tag, NZ.
+  Changes: AF, BC, DE, HL.
+.0ABA IX = $0AC9: a record made of code bytes
+.0ABE DE = A x $101: the sector
+.0AC0 B = the flags
+.0AC1 HL = the buffer
+.0AC5 A = 0
+.0AC6 B = $FF? Keep it
+.0AC9 HL = the buffer's tag
+.0ACB Free it
+
+@0AE0 GET_SECTOR_BUF
+  Finds or loads a sector into a buffer with one sector (IY+$68 = 1); $0AE2 continues.
+  1. The tag is the record's +8 (C): the most recent buffer (IY+$24) or one in the list at
+     IY+$22 that holds the same tag and sector is used as it is.
+  2. Otherwise the first buffer of the list (the second when the first is a scratch one,
+     tag bit 7) is written back if changed and filled in: +2 the tag, +3 bit 1 of B, +4/+5
+     the sector, +6 the count, +7 the record's +$11, +8 page 1's segment.
+  3. With bit 0 of B set the sector is read through the driver (function 4); a failed read
+     goes to the error handler ($0ED5), which retries, goes on or abandons the call.
+  4. The buffer becomes the most recent one (IY+$24).
+  Entry: IX = the drive's record; DE = the sector; B = the flags (bit 0: read it); IY = the
+  workspace.
+  Exit: HL = the buffer; A = 0, Z.
+  Error: a failed read reaches the error handler, which may abandon the EXDOS call.
+  Changes: AF, BC, HL.
+  Keeps: DE.
+.0AE0 One sector
+
+@0BBD BUF_DROP_DRIVE
+  Drops a drive's buffers: marks them (BUF_MARK_DRIVE), then unlinks each marked buffer
+  through $09FC and frees it (tag 0). Entered here the tag is the record's +8 (HL); entered
+  at $0BBE (SCF) it is A.
+  Entry: HL = the drive's record, or A = the tag at $0BBE; IY = the workspace.
+  Exit: Z; HL kept.
+  Changes: AF, BC, DE.
+  Keeps: HL.
+.0BBD Carry clear: the tag from the record; $0BBE: SCF
+.0BBF Mark the drive's buffers
+
+@0BD1 BUF_MARK_DRIVE
+  Marks the buffers of one drive: bit 0 of each buffer's flags (+3) is set when its tag (+2)
+  is the drive's, and cleared otherwise. Tag $FF marks every buffer in use whose tag is
+  below $80; free buffers (tag 0) are never marked.
+  Entry: carry set: A = the tag; carry clear: HL = the drive's record (the tag at +8); IY =
+  the workspace.
+  Exit: A = 0; Z, carry clear.
+  Error: none.
+  Changes: AF.
+  Keeps: BC, DE, HL, IX, IY.
+.0BD1 Tag given in A?
+
+@0CC9 SELECT_DRIVE
+  Selects drive C for an operation: maps it to its unit (kept in IY+$2B) and pages the unit's
+  record in. The byte at IY+$234 + record +7 names the unit that last used that physical
+  unit; when it is another one, that one's changed buffers are written back and the error
+  handler is called with $B1 for it. The unit then takes the physical unit over. B says
+  what follows ($0CFD on): 2 writes back the drive's changed buffers and returns A = 0,
+  HL = the record.
+  Entry: C = the drive; B = the operation; IY = the workspace.
+  Exit: A = 0; HL = the record (B = 2).
+  Error: A = $AF, Z when the drive has no unit.
+  Changes: AF, BC, DE, HL, IX.
+.0CC9 A = the drive
+.0CCA HL = its unit's slot
+.0CCD C = the unit
+.0CCE Kept in IY+$2B
+.0CD1 A = the record's segment
+.0CD2 Page it in
+.0CD4 No unit?
+.0CD5 Error $AF
+.0CD8 DE = the record
+.0CDD Its +7: the physical unit
+.0CE4 HL = IY+$234 + that
+.0CEC A = the unit that used it last
+.0CED This one? Go on
+.0CF0 None? Go on
+.0CF3 Write back the other one's buffers
+.0CF6 Code $B1 for the error handler
+.0CF8 HL = the record, the stacked HL kept
+.0CF9 Report it for that record
+
+@0ED4 DRIVE_ERROR
+  The drive error handler entered with carry set (IY+$2A = $FF); $0ED5 takes the carry from
+  the caller. It reports code A for the drive record at HL (through the error hook at IY-$3A
+  when one is set) and acts on the answer: it returns Z to retry, NZ to go on, or abandons
+  the EXDOS call through FUNC_RETURN.
+  Entry: A = the code; HL = the drive's record; IY = the workspace.
+  Exit: Z: retry; NZ: go on.
+  Changes: AF.
+  Keeps: BC, DE, HL, IX, IY.
+.0ED4 IY+$2A will be $FF
+
+@0DB9 FN25_COPY_DRIVE
+  EXDOS function 25: makes drive B use drive C's unit. Copies the first 8 bytes of C's record
+  (the driver call: segments, IY, routine, unit number, physical unit) to IY+$6A1, writes
+  back and drops drive B's buffers, copies the 8 bytes over B's record and resets it (+9 =
+  0, +$1E = $FF at $0DE6).
+  Entry: C = the drive to copy; B = the drive that becomes a copy; IY = the workspace.
+  Exit: A = 0, Z.
+  Error: A = $A2 (Z) when either drive has no unit.
+  Changes: AF, BC, DE, HL; page 1.
+.0DB9 HL = IY+$6A1, an 8-byte store
+.0DC1 A = the drive to copy
+.0DC2 DE = its record
+.0DC5 HL = the record
+.0DC6 DE = the store
+.0DC7 Error $A2: no unit
+.0DCB A = the drive to change
+.0DCC 8 bytes
+.0DD2 Write back its changed buffers
+.0DD5 Drop them
+.0DD8 A = the drive to change
+.0DD9 DE = its record
+.0DDC HL = the store
+.0DDD Error $A2: no unit
+.0DE1 8 bytes
+.0DE5 HL = the changed record
+
+@0DF4 FN26_MAP_DRIVE
+  EXDOS function 26: maps drive B to the unit of drive C (C = 0: to its own), then links
+  drive B's letter device if it does not answer (ENSURE_DRIVE_DEV). B = 0 maps every drive
+  to itself.
+  Entry: B = the drive (0: all); C = the drive whose unit it takes (0: its own); IY = the
+  workspace.
+  Exit: A = 0, Z (ENSURE_DRIVE_DEV's result when B is not 0).
+  Error: A = $AF, carry clear, for a drive above 26.
+  Changes: AF, BC, DE, HL.
+.0DF4 HL = the drive map, IY+$2A0
+.0DFB A = the drive
+.0DFC 0: map every drive to itself
+.0DFF Above 26?
+.0E01 Error $AF
+.0E04 HL = the drive's entry
+.0E08 A = the unit's drive
+.0E09 0: its own
+.0E0C Above 26?
+.0E0E Error $AF
+.0E11 B = the new unit
+
+@2D74 EXDOS_STATE_RST
+  Resets EXDOS's drive state: $FF into IY-$2F, -$30, -$31 and EXDOS variables $4D and $4E
+  (IY-$51, IY-$50); with A not 0 and bit 7 of IY-$2B set, also calls $2F85; then $2D60.
+  Entry: A = 0 on the first initialisation; IY = the workspace.
+  Exit: as $2D60.
+  Changes: AF, BC, DE, HL.
+.2D74 HL = IY-$2F
+.2D7B $FF (D)
+.2D80 EXDOS variable $4D = $FF
+.2D83 EXDOS variable $4E = $FF
+.2D86 First initialisation?
+.2D89 Flag bit 7 of IY-$2B: call $2F85 first?
+
+@3FB2 ANNOUNCE_DRIVES
+  Offers "EXDOS E:", "EXDOS F:", "EXDOS B:" and "EXDOS A:" to the extensions in turn
+  (EXDOS_DRV_CMD), building each at IY+$5DB.
+  Entry: IY = the workspace.
+  Exit: A = the last status; EXDOS variable $47 = 1.
+  Changes: AF, BC, DE, HL.
+  Keeps: IX, IY.
+.3FB2 HL = IY+$5DB, the buffer
+.3FB9 Drive 5 (E:)
+.3FBE Drive 6 (F:)
+.3FC3 Drive 2 (B:)
+.3FC8 Drive 1 (A:)
+
+@3FCA EXDOS_DRV_CMD
+  Makes drive A the current one (EXDOS variable $47) and offers the command "EXDOS
+  <letter>:" to the extensions (EXOS 26), built from the text at $0131 in the buffer at HL.
+  Entry: A = the drive (1-26); HL = a 9-byte buffer; IY = the workspace.
+  Exit: A = EXOS 26's status; HL = the buffer.
+  Changes: AF, BC, DE.
+  Keeps: HL, IX, IY.
+.3FCA EXDOS variable $47: the current drive
+.3FCD The text "EXDOS A:"
+.3FD0 HL = the text, DE = the buffer
+.3FD5 Copy it
+.3FD7 A = the drive's letter
+.3FD9 DE = the letter's place
+.3FDB Over the "A"
+.3FDE Offer the command
+
+question 0321 What do statuses $F9 and $F8 mean when "<letter>:" is opened in query mode?
+question 0465 Is IX = IY + $C4A1 meant, and does a driver read IX in functions 0 and 1?
+question 2D92 Nothing reaches $2D92-$2D99 after the JR at $2D90: dead code or a hidden entry?
+question 0ED4 Which answers of the error hook mean abandon, retry and go on (B = 1, 2, 3)?
+
+feedback missing 00F2-0104 CALL $00F2 returns past its inline byte (EX (SP)); the cards for $0360, $0380, $03B4 and $0F07 say "return cannot be followed" and list $0364, $0384, $03B8 as unreached, though they are the continuations
+feedback missing 013A-01A1 The 72 bytes $04BD-$0504 are copied to IY+$01ED and patched; JP (IY) at $049F and the CALL at $0F0C run that copy, so $04BD-$04E5 is RAM code and $04E6-$0504 two device descriptor templates
+feedback wrong 01D1 "in from: jump $0B78" is false: the JP Z at $0B78 follows a JR Z on the same flag and never jumps; its bytes hide POP DE/POP BC at $0B79
+feedback pattern 01B2-01CA Driver routines are passed as DE to ADD_UNITS ($1FD3, $1005) and called through DRIVER_CALL; their cards say unreached
+feedback wrong 2D74 The card's body includes $2D92-$2D99, which follow an unconditional JR and are reached from nowhere on the card
+feedback missing 0013-0017 IY is the workspace + $80 from $0017 on, and ACT4_VAR shows IY-$5E..IY-$3B are EXDOS's own EXOS variables $40-$63; a card fact naming those would save reading the variable code each time
+feedback pattern 0252-0372 The Changes questions for IX, IY and the alternates on $0252, $0281, $02B9, $030C and $036C come from the unfollowed returns of CALL $00F2; no path through them uses EXX (except RELINK_LET_DEV) or loads IX/IY

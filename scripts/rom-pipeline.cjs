@@ -12,7 +12,7 @@
  *   npm run rom:pipeline -- export-ann <rom> [--page n] [--sidecar <file>] [--out <dir>]
  *                                   the sidecar's pages as .ann files (default: work/<rom>/export/)
  *   npm run rom:pipeline -- compile <rom> <ann-dir|file...> [--sidecar <file>] [--out <file>] [--dry-run]
- *                                   [--no-wrap] [--name-numbers]
+ *                                   [--no-wrap] [--name-numbers] [--report <dir>]
  *                                   lays the .ann files over the sidecar and writes it (default: the
  *                                   working copy); work/<rom>/problems.md lists what to fix (lint, level,
  *                                   questions, each with its fix) and feedback-page-<n>.md what the run
@@ -27,6 +27,11 @@
  *                                   work/<to rom>/carried.rom.dis, alignment.md and alignment-page-<n>.json
  *                                   (which prepare reads: the cards say which routines are the same,
  *                                   shifted or different)
+ *   npm run rom:pipeline -- timings start|end|report <label> [--at <iso>]
+ *   npm run rom:pipeline -- timings ai <label> --tokens n [--ms n] [--what "..."]
+ *                                   measures a run (P8): every command above logs its time to
+ *                                   work/timings.jsonl; the AI's tokens are recorded by the session;
+ *                                   report gives the total time, the tools' time, the AI's time and tokens
  *   npm run rom:pipeline -- profile <recipe> | --list
  *                                   runs a profile recipe on the real machine (test/rom-annotations/
  *                                   profileRecipes.ts) and writes work/<rom>/profile-page-<n>.json for
@@ -51,6 +56,7 @@ const { registerTsRuntime } = require("./lib/ts-runtime.cjs");
 const root = registerTsRuntime();
 const ROMS = join(root, "src/public/roms");
 const WORK = join(root, ".rom-annotations/work");
+const TIMINGS = join(WORK, "timings.jsonl");
 const PIPELINE = join(root, "src/common/reverse/pipeline");
 
 const { imageFromRomPage, romPageBytes, romPageCount } = require(join(PIPELINE, "image/romImage.ts"));
@@ -76,11 +82,17 @@ async function main() {
   const args = process.argv.slice(2);
   const options = takeOptions(
     args,
-    ["--page", "--kind", "--cpu", "--why", "--sidecar", "--out", "--profile", "--range-weight"],
+    ["--page", "--kind", "--cpu", "--why", "--sidecar", "--out", "--profile", "--range-weight", "--tokens", "--ms", "--what", "--report", "--at"],
     ["--no-sidecar", "--no-alignment", "--dry-run", "--force", "--list", "--no-wrap", "--name-numbers", "--help"]
   );
   const [command, ...rest] = args;
   if (!command || options["--help"]) return usage(0);
+  if (command === "timings") return timings(rest, options);
+  // --- Every tool command's time goes to the timing log (P8's measurement: tool time vs. AI time)
+  const started = Date.now();
+  process.on("exit", (code) => {
+    if (code === 0 || code === undefined) logTiming({ kind: "tool", command, args: rest.slice(0, 2), ms: Date.now() - started });
+  });
   if (LATER[command]) {
     console.error(`"${command}" is not built yet (phase ${LATER[command]} of .plans/ROM_ANNOTATION_PIPELINE_PLAN.md).`);
     process.exit(2);
@@ -235,6 +247,72 @@ function profile([recipe], options) {
   console.log(`Profiles written under ${shown(WORK)}/<rom>/; the run's log is ${shown(join(WORK, `${recipe}.log.md`))}`);
 }
 
+// ------------------------------------------------------------------------------------------------
+// Timings (P8's measurement)
+
+function logTiming(entry) {
+  mkdirSync(WORK, { recursive: true });
+  appendFileSync(TIMINGS, `${JSON.stringify({ at: new Date().toISOString(), ...entry })}\n`);
+}
+
+/**
+ * `timings start <label>` marks the start of a measured run; `timings ai <label> --tokens n [--ms n]
+ * --what "..."` records AI work the CLI cannot see (a helper's tokens and time, the session's own); `timings
+ * report <label>` sums the run: total time, the tools' time by command, the AI's time (the rest) and tokens.
+ */
+function timings([action, label], options) {
+  if (!action || !label) usage(2);
+  if (action === "start") {
+    logTiming({ kind: "start", label });
+    return console.log(`Measuring "${label}" from now.`);
+  }
+  if (action === "end") {
+    // --- --at <iso>: the end of a run measured earlier (the report then counts up to it, not up to now)
+    logTiming({ kind: "end", label, ...(options["--at"] ? { endAt: options["--at"] } : {}) });
+    return console.log(`Measured run "${label}" ended.`);
+  }
+  if (action === "ai") {
+    if (options["--tokens"] === undefined) throw new Error("timings ai needs --tokens");
+    logTiming({
+      kind: "ai",
+      label,
+      tokens: Number(options["--tokens"]),
+      ...(options["--ms"] ? { ms: Number(options["--ms"]) } : {}),
+      ...(options["--what"] ? { what: options["--what"] } : {})
+    });
+    return console.log(`Recorded ${options["--tokens"]} AI token(s) for "${label}".`);
+  }
+  if (action !== "report") usage(2);
+  const entries = existsSync(TIMINGS) ? readFileSync(TIMINGS, "utf8").trim().split("\n").filter(Boolean).map((l) => JSON.parse(l)) : [];
+  const startAt = entries.map((e, i) => [e, i]).filter(([e]) => e.kind === "start" && e.label === label).pop();
+  if (!startAt) throw new Error(`No measured run "${label}" (start one with: timings start ${label})`);
+  const after = entries.slice(startAt[1] + 1);
+  const endMark = after.filter((e) => e.kind === "end" && e.label === label).pop();
+  const end = endMark ? Date.parse(endMark.endAt ?? endMark.at) : Date.now();
+  const run = after.filter((e) => (e.kind === "tool" && Date.parse(e.at) <= end) || (e.kind === "ai" && e.label === label));
+  const total = end - Date.parse(startAt[0].at);
+  const tools = run.filter((e) => e.kind === "tool");
+  const toolMs = tools.reduce((sum, e) => sum + e.ms, 0);
+  const byCommand = new Map();
+  for (const e of tools) {
+    const seen = byCommand.get(e.command) ?? { runs: 0, ms: 0 };
+    byCommand.set(e.command, { runs: seen.runs + 1, ms: seen.ms + e.ms });
+  }
+  const ai = run.filter((e) => e.kind === "ai");
+  const tokens = ai.reduce((sum, e) => sum + e.tokens, 0);
+  const helperMs = ai.reduce((sum, e) => sum + (e.ms ?? 0), 0);
+  const minutes = (ms) => (ms < 60000 ? `${(ms / 1000).toFixed(1)} s` : `${Math.floor(ms / 60000)} min ${Math.round((ms % 60000) / 1000)} s`);
+  console.log(`Measured run "${label}" (from ${startAt[0].at}${endMark ? ` to ${new Date(end).toISOString()}` : ", still running"})`);
+  console.log(`  total time:          ${minutes(total)}`);
+  console.log(`  preprocessor/postprocessor and other tools: ${minutes(toolMs)} (${((100 * toolMs) / total).toFixed(1)} %)`);
+  for (const [command, t] of [...byCommand].sort((a, b) => b[1].ms - a[1].ms)) {
+    console.log(`    ${command.padEnd(12)} ${String(t.runs).padStart(4)} run(s)  ${minutes(t.ms)}`);
+  }
+  console.log(`  AI (the rest):       ${minutes(total - toolMs)} (${((100 * (total - toolMs)) / total).toFixed(1)} %)${helperMs ? `; helpers reported ${minutes(helperMs)} of their own, partly in parallel` : ""}`);
+  console.log(`  AI tokens:           ${tokens.toLocaleString("en-US")} in ${ai.length} record(s)`);
+  for (const e of ai) console.log(`    ${String(e.tokens).padStart(9)}  ${e.what ?? ""}`);
+}
+
 /** `prepare <rom>`: the analysis bundle of one page. */
 async function prepare([romArg], options) {
   if (!romArg) usage(2);
@@ -252,8 +330,19 @@ async function prepare([romArg], options) {
   const alignmentPath = join(WORK, rom.workName, `alignment-page-${bankId}.json`);
   const alignmentText = options["--no-alignment"] || !existsSync(alignmentPath) ? undefined : readFileSync(alignmentPath, "utf8");
   const crc = (text) => (text === undefined ? null : romCrc32(new TextEncoder().encode(text)));
+  // --- The pipeline's own sources: a change to the tools makes every bundle stale
+  const sources = [];
+  const collect = (dir) => {
+    for (const name of readdirSync(dir).sort()) {
+      const path = join(dir, name);
+      if (statSync(path).isDirectory()) collect(path);
+      else if (name.endsWith(".ts")) sources.push(readFileSync(path, "utf8"));
+    }
+  };
+  collect(PIPELINE);
   const inputs = {
     pipelineVersion: PIPELINE_VERSION,
+    tools: crc(sources.join("\n")),
     rom: crc(Buffer.from(rom.image.banks[0].bytes).toString("latin1")),
     cpu: rom.image.cpu,
     sidecar: base.label,
@@ -367,15 +456,17 @@ async function compile([romArg, ...annArgs], options) {
 
     // --- The compiled page analysed again: the lint, the problem list with its fixes, the feedback
     const pageFolder = join(WORK, rom.workName);
+    // --- --report <dir>: this compile's reports and history apart (helpers compiling in parallel)
+    const reportFolder = options["--report"] ? resolve(options["--report"]) : pageFolder;
     const readJson = (file) => (existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) : undefined);
     const profile = readJson(join(pageFolder, `profile-page-${page}.json`));
     const analysis = await analyseRomPage({ image: rom.image, bankId: String(page), sidecar, ...(profile ? { profile } : {}) });
     const lintItems = lint({ analysis, touched: result.touched, otherLabels: otherSidecarLabels(rom.workName) });
     report.push(...renderProblems({ page, files: ann.map((a) => a.fileName), result, level, lint: lintItems, analysis, ...(profile ? { flags: profile.flags } : {}) }));
-    const historyFile = join(pageFolder, `compile-history-page-${page}.jsonl`);
+    const historyFile = join(reportFolder, `compile-history-page-${page}.jsonl`);
     const history = existsSync(historyFile) ? readFileSync(historyFile, "utf8").trim().split("\n").filter(Boolean).map((l) => JSON.parse(l)) : [];
     history.push({ at: new Date().toISOString(), keys: problemKeys(lintItems, level) });
-    mkdirSync(pageFolder, { recursive: true });
+    mkdirSync(reportFolder, { recursive: true });
     appendFileSync(historyFile, `${JSON.stringify(history[history.length - 1])}\n`);
     const listingFile = join(pageFolder, "listing-requests.jsonl");
     const listingRequests = existsSync(listingFile)
@@ -383,7 +474,7 @@ async function compile([romArg, ...annArgs], options) {
       : [];
     const facts = readJson(join(pageFolder, `page-${page}`, "facts.json"));
     const signals = feedbackSignals({ result, lint: lintItems, analysis, listingRequests, ...(facts?.proposals ? { proposals: facts.proposals } : {}), history });
-    writeFileSync(join(pageFolder, `feedback-page-${page}.md`), renderFeedback(rom.workName, page, signals, history.length));
+    writeFileSync(join(reportFolder, `feedback-page-${page}.md`), renderFeedback(rom.workName, page, signals, history.length));
     const problems = lintItems.filter((l) => l.severity === "problem").length;
     console.log(
       `page ${page}: ${ann.length} file(s), ${pageErrors} error(s), ${problems} problem(s), ` +
@@ -401,7 +492,7 @@ async function compile([romArg, ...annArgs], options) {
   else report.push(`Yes: the IDE's check finds nothing; levels ${Object.entries(ready.levels).map(([page, level]) => `page ${page}: ${level}`).join(", ")}.`);
   report.push("");
 
-  const folder = join(WORK, probe.workName);
+  const folder = options["--report"] ? resolve(options["--report"]) : join(WORK, probe.workName);
   mkdirSync(folder, { recursive: true });
   writeFileSync(join(folder, "problems.md"), `${report.join("\n")}\n`);
   console.log(`Reports: ${shown(join(folder, "problems.md"))}, ${shown(folder)}/feedback-page-<n>.md`);

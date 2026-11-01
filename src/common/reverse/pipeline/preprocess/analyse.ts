@@ -18,7 +18,7 @@ import { buildRoutines, type Routine, type RoutineMap } from "./routines";
  */
 
 /** Bumped when the analysis changes what it produces, so `inputs.json` can tell a stale bundle. */
-export const PIPELINE_VERSION = 4;
+export const PIPELINE_VERSION = 7;
 
 /** A profile run of the page (P3 writes it): per-offset access flags and the call edges seen. */
 export type RomPageProfile = {
@@ -284,7 +284,9 @@ function workLeft(routine: Routine, facts: RegisterFacts | undefined, synopsis: 
     weight: 0
   };
   work.weight =
-    (work.label ? 4 : 0) + (work.synopsis ? 12 : 0) + work.contractLines.length * 3 + work.uncommented + work.unknownFacts * 2;
+    // --- Unknown facts count a little (they are questions, not work per instruction): a routine decoded
+    // --- from data has one at nearly every row
+    (work.label ? 4 : 0) + (work.synopsis ? 12 : 0) + work.contractLines.length * 3 + work.uncommented + Math.min(work.unknownFacts, 3) * 2;
   return work;
 }
 

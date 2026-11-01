@@ -23,6 +23,16 @@ describe("the text pass", () => {
     expect(wrapSynopsis("A\nB")).toBe("A\nB");
   });
 
+  it("reflows a paragraph rather than leaving a word alone on a line (EXDOS's FAT_ENTRY_ADDR)", () => {
+    const long = `${"word ".repeat(18)}is the`;
+    const wrapped = wrapSynopsis(`${long}\nFAT's first sector.\nEntry: DE = the cluster.`).split("\n");
+    expect(wrapped.some((l) => l.trim() === "the")).toBe(false);
+    expect(wrapped.at(-1)).toBe("Entry: DE = the cluster.");
+    expect(wrapped.every((l) => l.length <= 92)).toBe(true);
+    // --- A stored text with a word left alone is mended too
+    expect(wrapSynopsis(`${"x ".repeat(42)}is\nthe\nFAT's first.`)).not.toMatch(/\nthe\n/);
+  });
+
   it("names labelled offsets, except kept numbers and the offset form, and drops the marks", () => {
     const labels = new Map([[0x0b40, "SEG1_SERVICE"]]);
     const named = nameNumbers("Jumps to $0B40; $0B40! stays; offset $0B40 stays; $8000 is RAM", labels);

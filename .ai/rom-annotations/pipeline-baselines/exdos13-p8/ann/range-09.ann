@@ -1,0 +1,939 @@
+rom ep-exdos13.rom page 0 cpu z80
+default observed
+
+# ---------------------------------------------------------------------------------------------
+# The rest of the block-transfer set-up at $29E4. On the way in: HL = the drive's block, IX =
+# the file's block (IX+$17-$1A its length, IX+$20 flags, IX+$21 its first cluster, IX+$23 a
+# known cluster and IX+$25 that cluster's index in the file); the stack holds the transfer's
+# count - 1, then the 32-bit position of its last byte, then that byte's cluster index.
+
+@2A31 XFER_FILE_LAST
+  The file's last byte (length - 1, in DE:BC; Z when the file is empty) as a cluster index
+  too, then the transfer checked against the file's length:
+  1. The alternate HL:(stack) = (length - 1) - (the transfer's last byte); carry: the
+     transfer runs past the file's end. AF' keeps that carry and NZ for an empty file.
+  2. IY+$48 bit 0 set: a read ($2AD6). Otherwise a write: error $A7 ("Read only file") for
+     IX+$20 bit 5; else IX+$20 bit 6 is set (the file changed) and the clusters the write
+     needs past the file's last one are added to its chain (ALLOC_CLUSTERS).
+  .2A31 Push the file's length - 1
+  .2A33 Not empty: DE = its last cluster index ($2AF8)
+  .2A36 HL', DE' = the file's length - 1
+  .2A3A BC = the transfer's last cluster index
+  .2A3B Index too big ($9A)? Drop the three words and return
+  .2A3E BC' = the transfer's last byte, low word
+  .2A40 The file's last byte - the transfer's, low word
+  .2A42 Low word to the stack; HL' = the last byte's high word
+  .2A44 High word: carry when the transfer runs past the end
+  .2A47 NZ: the file has no cluster (DE = $FFFF)
+  .2A49 Keep those flags in AF'
+  .2A4A A read?
+  .2A51 Read-only file?
+  .2A55 Error $A7: Read only file
+  .2A59 The file has changed
+  .2A5E HL = the transfer's last cluster index
+  .2A60 DE = the clusters the file has
+  .2A64 BC = the clusters to add
+  .2A68 None to add?
+  .2A6A Allocate them as a chain: BC = its first cluster
+  .2A6D Disk full?
+  .2A6F DE = the file's last cluster index
+  .2A70 The file had no cluster?
+  .2A74 Keep the new chain's first cluster
+  .2A75 DE = the file's last cluster ($2B2E)
+  .2A7B Its FAT entry links on to the new chain
+
+@2A80 XFER_DROP3
+  An error: drops the three words the set-up keeps on the stack and returns A (NZ).
+  .2A80 The transfer's last byte, low word
+
+@2A81 XFER_DROP2
+  An error: drops two words and returns A (NZ).
+
+@2A84 XFER_NEW_FIRST
+  The file had no cluster: the new chain's first cluster becomes the file's first cluster and
+  its known one, with index 0 (A = 0 after ALLOC_CLUSTERS).
+  .2A84 IX+$21: the file's first cluster
+  .2A8A IX+$23: the known cluster
+  .2A90 IX+$25: its index, 0
+
+@2A96 XFER_WR_LENGTH
+  A write: the file's length becomes the transfer's last byte + 1 when the file was empty or
+  the transfer runs past its end.
+  .2A96 BC, DE = the transfer's last byte; HL = the high word of the gap
+  .2A97 The flags of step 1
+  .2A98 The file was empty?
+  .2A9A Inside the file: the length stays
+
+@2A9C XFER_LAST_PLUS1
+  DE:BC = the transfer's last byte + 1.
+
+@2AA2 XFER_SET_LENGTH
+  Stores DE:BC as the file's length (IX+$17-$1A).
+
+@2AAE XFER_WR_PAST
+  HL:BC = R - 1, R being the bytes the file had after the transfer's last byte (the gap of
+  step 1, negative when the write runs past the old end).
+  .2AAE BC = the gap's low word
+  .2AAF DE = the count - 1, for the caller
+  .2AB2 Count the 32-bit gap down by one
+
+@2AB6 XFER_PAST_COUNT
+  IY+$59 = the bytes the write puts past the file's old end, plus 1 (1 - R, at most $FFFF);
+  0 when the file has more bytes after the write.
+  Exit: A = 0, Z; the register sets swapped back.
+  .2AB6 R - 1 negative: the write reaches the old end?
+  .2ABA HL = $FFFF?
+  .2ABD $FFFF when R - 1 is below -$10000
+  .2AC2 HL = 1 - R
+  .2AC5 Not 0: that is the count
+  .2AC7 1 - R = $10000: $FFFF
+
+@2ACA XFER_PAST_NONE
+  The write ends inside the old file: 0.
+
+@2ACD XFER_PAST_SET
+  Stores HL in IY+$59 and returns A = 0.
+  .2AD3 The main registers back
+
+@2AD6 XFER_RD_CHECK
+  A read: returns at once when the transfer ends inside the file; error $E4 (end of file) for
+  an empty file.
+  .2AD6 The flags of step 1
+  .2AD7 DE = the gap's low word
+  .2AD8 HL = the count - 1; the drive's block back on the stack
+  .2AD9 The file has no cluster: error $E4
+  .2ADB Inside the file: done, A = 0
+  .2ADE The gap's high word $FFFF (under 64K past the end)?
+
+@2AE2 XFER_RD_CUT
+  A read that runs past the end: when part of it is inside the file, the count (IY+$4B)
+  becomes the bytes up to the end and IY+$48 bit 7 marks the read cut short; otherwise error
+  $E4 (end of file).
+  .2AE2 Error $E4: end of file
+  .2AE4 Too far past the end?
+  .2AE6 HL = the count - 1 + the gap
+  .2AE7 Nothing left inside the file?
+  .2AE9 HL = the bytes up to the end
+  .2AEA The new count
+  .2AF0 Cut short: $E4 after the bytes are read
+
+@2AF5 XFER_RD_DONE
+  Takes the drive's block back into HL and returns A with flags from it.
+
+# ---------------------------------------------------------------------------------------------
+# Inside $2AF8: a byte position in DE:BC split into cluster index, sector and offset
+
+@2B16 XFER_POS_SHIFT
+  Shifts D:E:A (the position's sector number) right by one bit.
+
+@2B1B XFER_POS_NEXT
+  The loop shifts the sector number right once per bit of the drive's sectors per cluster
+  (the count at HL+11, + 1, in B); then DE = the cluster index, which must be under $8000.
+  .2B1B Shift again
+  .2B1D D = 0?
+  .2B1F No: error $9A
+  .2B21 Index $8000 or more?
+  .2B25 DE = the cluster index
+  .2B27 A = the sector in the cluster
+  .2B28 Hides LD A,$9A at $2B29: error $9A, NZ, for a too big index
+  .2B2B BC = the byte in the sector
+  .2B2C HL = the drive's block back
+
+# ---------------------------------------------------------------------------------------------
+# Inside $2B2E: the cluster with a given index in the file, from the known one or the first
+
+@2B4B XFER_WALK_FROM
+  BC = the steps to go (HL on entry); HL = the drive's block again.
+
+@2B4D XFER_CLUS_WALK
+  Follows the chain BC steps from cluster DE. A chain that ends first is error $9A.
+  Exit: Z, A = 0 and DE = the cluster.
+  Error: A = $9A, NZ.
+  .2B4D Steps left?
+  .2B4F No: DE = the cluster
+  .2B51 DE = the next cluster (FAT_GET_ENTRY)
+  .2B54 Not the end of the chain ($FFFF)? Go on
+  .2B58 Hides POP HL at $2B59, the way in when no cluster is known
+  .2B5A Error $9A
+  .2B5C NZ
+
+# ---------------------------------------------------------------------------------------------
+# Action 3 (help string)
+
+@2B5E EXT_HELP
+  Extension action 3 (help string; $0037): HELP alone writes the version line; HELP EXDOS
+  writes the version, the copyright and the command list, and claims the action. Nothing is
+  done when the byte at IY-$46 is not 0.
+  Entry: B = the length of the help word (0 for HELP alone); DE = the help string (counted);
+  C = 3; IY = the workspace + $80.
+  Exit: C = 0 when HELP EXDOS was answered; otherwise C is kept, so the next ROM answers too.
+  Changes: AF, BC, DE, HL, BC', DE', HL'.
+  Keeps: IX, IY.
+  .2B5E Commands and help off?
+  .2B63 A help word given?
+
+@2B66 HELP_EXDOS_VER
+  Writes message $37 ("EXDOS version 1.3" and a new line) to channel $FF. The EXX in front of
+  MSG_TO_DEFCH's own one leaves the register sets as they were.
+  Entry: IY.
+  Exit: A = EXOS's status.
+  Changes: AF, BC', DE'.
+  Keeps: BC, DE, HL, IX, IY.
+  .2B67 Message $37: "EXDOS version 1.3\"
+
+@2B69 MSG_TO_DEFCH
+  Writes message A (MSG_TO_BUFFER: German or English) to channel $FF, then swaps the register
+  sets (EXX): two calls in a row leave them as they were.
+  Entry: A = the message number, IY.
+  Exit: A = EXOS's status; the register sets swapped.
+  Changes: AF, BC, DE, HL, BC', DE', HL'.
+  Keeps: IX, IY.
+  .2B6C DE = the text, past its count byte
+  .2B6D C = its length
+
+@2B6E WRITE_DEFCH
+  Writes C bytes from DE to channel $FF (EXOS 8), then swaps the register sets (EXX).
+  Entry: C = the length (1-255), DE = the bytes.
+  Exit: A = EXOS's status; the register sets swapped.
+  Changes: AF, BC, DE, HL, BC', DE', HL'.
+  Keeps: IX, IY.
+  .2B6F BC = the length
+  .2B70 Channel $FF
+
+@3BE2 CMD_NAME_MATCH
+  Compares a typed word with a counted name of the command table: the lengths and every
+  character (the typed ones in capitals, TO_UPPER) must be the same.
+  Entry: HL = the table entry (its count byte); DE = the word's count position (its characters
+  from DE+1); B = the word's length.
+  Exit: NC, NZ and A = 1 for a match, HL past the name (at the handler's address).
+  Error: C and Z, HL past the name, when the name differs (or the word is longer); C and NZ,
+  HL kept, when the word is shorter than the name.
+  Changes: AF, HL.
+  Keeps: BC, DE, IX, IY.
+  .3BE4 A = the word's length
+  .3BE5 B = the name's length
+  .3BE6 Word shorter than the name?
+  .3BE9 Compare the length and every character
+
+@2B75 HELP_EXDOS
+  HELP with a word: only HELP EXDOS is answered.
+  1. Writes the version line, message $38 (spaces), "Enterprise disk system" ($3A), $38
+     again, the copyright line at $2BBC (32 bytes) and "Commands avaliable:" ($3B).
+  2. Lists the command table from $2C58: every name whose last character has bit 5 clear
+     (a letter), each followed by a space, then a new line, and C = 0.
+  Each call to $2B69 or $2B6E swaps the register sets; the list runs in the other set.
+  .2B75 The table's "EXDOS"
+  .2B78 Is the help word EXDOS?
+  .2B7B No: leave it to other ROMs
+  .2B7F Message $38: spaces
+  .2B84 Message $3A: "Enterprise disk system\"
+  .2B8E The copyright line, 32 bytes
+  .2B96 Message $3B: "\\Commands avaliable:\\"
+  .2B9B HL = the command table
+
+@2FD9 CHAR_TO_DEFCH
+  Writes character B to channel $FF (EXOS 7).
+  Entry: B = the character.
+  Exit: AF and BC as on entry.
+  Changes: DE.
+  Keeps: AF, BC, HL, IX, IY.
+
+@2B9E HELP_CMD_LIST
+  Writes the command names whose last character has bit 5 clear: a name and a space each,
+  then a new line and C = 0 (the help is answered).
+  .2B9E C = the name's length
+  .2B9F DE = its characters
+  .2BA4 HL = its last character
+  .2BA5 A letter (bit 5 clear) is listed
+  .2BA9 HL = the next entry; a name with bit 5 set is skipped
+  .2BAC Channel $FF
+  .2BAF A space after it
+  .2BB4 The table's end (0)?
+  .2BB8 C = 0: the help action is answered
+  .2BB9 A new line
+
+# ---------------------------------------------------------------------------------------------
+# Action 2 (command string)
+
+@3E14 DRIVE_PREFIX
+  Is the command word a drive, a letter and ":"?
+  Entry: DE = the word's count position (its characters from DE+1); B = its length.
+  Exit: NC: A' = the drive (1 = A), HL = past the colon; Z when the word is just "X:".
+  Error: C when the second character is not ":" or the first is not a letter.
+  Changes: AF, HL, AF'.
+  Keeps: BC, DE, IX, IY.
+  .3E16 HL = the second character
+  .3E19 ":"?
+  .3E1B C, NZ: not a drive
+  .3E1E The first character, in capitals
+  .3E24 Above "Z"?
+  .3E28 Below "A"?
+  .3E2B The drive: 1 for A
+  .3E2C A' = the drive
+  .3E2D Z: the word is two characters long
+
+@2BDC CMD_TRY_DRIVE
+  Not a command of the table: a word "X:" (or "X:" followed by a space or a tab) selects the
+  default drive through the handler at $2D92, run like a command; anything else is left to
+  other ROMs.
+  .2BDC A drive?
+  .2BDF No: not EXDOS's
+  .2BE0 Just "X:"?
+  .2BE2 The character after the colon
+  .2BE7 Neither space nor tab: not EXDOS's
+
+@2BEA CMD_DRIVE
+  Runs the drive handler at $2D92 with the word's length taken as 2.
+  .2BEC The handler: drive A' becomes the default drive
+
+@2BF1 EXT_COMMAND
+  Extension action 2 (command string; $0033): looks the command word up in the command table
+  at $2C58 (counted names in order of length, each followed by its handler's address).
+  1. A name whose last character has bit 7 set runs at once (CMD_JUMP); other names run only
+     when IY-$2B bit 0 is set (no EXDOS command running) and through CMD_RUN.
+  2. A word not in the table may be a drive (CMD_TRY_DRIVE).
+  Nothing is done when the byte at IY-$46 is not 0.
+  Entry: B = the command word's length; DE = the command string (counted); C = 2; IY = the
+  workspace + $80.
+  Exit: as the handler leaves it; C kept when the command is not EXDOS's.
+  Changes: AF, BC, DE, HL, IX, AF'.
+  Keeps: IY.
+  .2BF1 Commands and help off?
+  .2BF6 HL + 2 = the table's first entry
+
+@2BF9 CMD_SEARCH
+  The next table entry. A word shorter than the entry's name ends the search: the names that
+  follow are no shorter.
+  .2BF9 Shorter word (from CMD_NAME_MATCH)? Try a drive
+  .2BFB HL = the next entry
+  .2BFD The table's end?
+  .2C01 This name?
+  .2C04 No
+  .2C06 The name's last character
+  .2C08 Bit 7 to carry: a name run at once
+  .2C0C An EXDOS command running? Then not this one
+
+@2C11 CMD_FOUND
+  HL = the handler's address; carry (a bit-7 name) jumps to it at once.
+
+@2C17 CMD_RUN
+  Runs a handler with CMD_FINISH ($2D41) as its return address:
+  1. Clears IY-$2B bit 0 (an EXDOS command is running).
+  2. Moves the text after the command word, its leading spaces and tabs (and 0 bytes)
+     dropped, to the front of the string as a counted, zero-ended text.
+  3. Empties the output buffer, gives the file block at IY+$FD drive 0 ($3D10), marks the
+     channels at IY-$2C and IY-$2D as none ($FF), clears IY-$2B bit 4.
+  4. Enters the handler with HL = the parameters, A = $FF and NZ.
+  .2C17 The handler, under
+  .2C18 the return to CMD_FINISH
+  .2C1D An EXDOS command is running
+  .2C21 C = the characters after the word
+  .2C24 HL = the word's last character
+  .2C29 One more, for SKIP_BLANKS's count
+
+@3D94 SKIP_BLANKS_C
+  Steps HL over spaces and tabs, C counting the characters left.
+  Entry: HL = the text, C = the characters left + 1.
+  Exit: NC, A = the character at HL, Z when it is 0.
+  Error: C and Z when the text ends.
+  Changes: AF, C, HL.
+  Keeps: B, DE, IX, IY.
+  .3D94 Text used up?
+  .3D97 A space?
+  .3D9C A tab? Others end the skip
+
+@2C2A CMD_PARAM_SKIP
+  Skips the blanks (and 0 bytes) in front of the parameters.
+  .2C2E The end: no parameters
+  .2C30 A 0 byte: skip it too
+
+@2C32 CMD_PARAM_MOVE
+  Writes the parameters' length over the string's count byte and copies them behind it.
+  .2C32 C = the characters left
+  .2C35 The parameters' start, for the handler
+  .2C36 None to copy?
+  .2C38 Move them to the front
+
+@3D10 FBLK_SET_DRIVE
+  Gives the file block at IX drive A: IX+$06 = IX+$07 = A, IX+$00 = A - 1.
+  Entry: A = the drive (0 = the default), IX = the block.
+  Exit: DE = IX; C = A on entry; A = A - 1.
+  Changes: AF, C, DE.
+  Keeps: B, HL, IX, IY.
+  .3D16 IX+$07: the drive
+  .3D1A A - 1 into the block's first byte
+
+@2C3A CMD_PARAM_END
+  Ends the parameters with a 0 and prepares the handler's state, then "returns" into it.
+  .2C3B The 0 at the end
+  .2C3C The output buffer at IY+$6E
+  .2C3F Empty (A = 0)
+  .2C40 IX = IY+$FD, a file block for the command
+  .2C47 Drive 0 (the default); A = $FF
+  .2C4A HL = the parameters
+  .2C4B No channel of the command's yet ($FF)
+  .2C55 NZ
+  .2C56 Into the handler; it returns to CMD_FINISH
+
+@2C57 CMD_JUMP
+  Jumps to the handler of a bit-7 name, without CMD_RUN's preparations.
+
+@326F CLOSE_CHAN_IY
+  Closes the channel whose number is in the byte at IY - $100 + E - 1 ($FF: none), then marks
+  it $FF.
+  Entry: E = the low byte of the offset (IY-$100+E points just above the byte), IY.
+  Exit: HL = the byte; Z, A = 0 when there was no channel, else A = EXOS's status.
+  Changes: AF, BC, DE, HL.
+  Keeps: IX, IY.
+  .3272 DE = $FF00 + E
+
+@3275 CLOSE_CHAN_BELOW
+  Closes the channel whose number is in the byte below HL ($FF: none) and marks it $FF.
+  Entry: HL = one above the byte.
+  Exit: HL = the byte; Z, A = 0 when there was no channel, else A = EXOS's status.
+  Changes: AF, BC, DE, HL.
+  Keeps: IX, IY.
+  .3276 The channel number
+  .3277 $FF: none
+  .327A Close it (EXOS 3)
+  .327C None now
+
+@2D41 CMD_FINISH
+  Where an EXDOS command returns (CMD_RUN pushed it):
+  1. Closes the command's channels at IY-$2C and IY-$2D.
+  2. Has every drive's changed buffers written back and dropped (function 14, B = C = $FF).
+  3. Error $E5 (STOP) puts $20 back in FLAG_SOFT_IRQ ($BFF2) for the caller to see.
+  4. Goes on at CMD_READY.
+  Entry: A and the flags = the command's result.
+  Exit: A, B, DE kept.
+  .2D41 The command's result
+  .2D44 IY-$2C, then IY-$2D
+  .2D4C B = C = $FF: all drives, buffers dropped
+  .2D4F EXDOS function 14
+  .2D57 Error $E5 (STOP)?
+  .2D5B FLAG_SOFT_IRQ = $20: the STOP key again
+
+@2D60 CMD_READY
+  Accepts EXDOS commands again (IY-$2B bit 0) and puts back the byte at IY-$58 (the write mode
+  of $0AB0) that $3570 parked in IY-$29: $FE gives $FF, $FF gives 0; 0 there means none.
+  .2D60 EXDOS commands accepted again
+  .2D64 A parked value?
+  .2D6A $FE/$FF become $FF/0
+  .2D70 None parked now
+
+@2D9A CMD_NOTHING
+  The handler of "**" and "REM": does nothing.
+  Entry: none.
+  Exit: A = 0, Z, NC.
+  Changes: AF.
+  Keeps: BC, DE, HL, IX, IY.
+
+@2D9C CMD_EXDOS_INFO
+  The handler of the hidden 6-character name "EXDOS" + $FD (bit 7 set: run at once): hands
+  back the workspace's address and B = $13.
+  Entry: A = the handler address's low byte ($9C), as CMD_FOUND leaves it.
+  Exit: DE = IY (the workspace + $80); B = $13; C = A.
+  Changes: BC, DE.
+  Keeps: AF, HL, IX, IY.
+  .2D9F B = $13 (1.3, the version the help text gives?)
+
+@3DFA COUNT_WORD
+  Makes the word at HL a counted name: writes its length (up to a 0, space, tab or "/") into
+  the byte before it.
+  Entry: HL = the word.
+  Exit: DE = the count byte; HL = the word's end; A = C = the length.
+  Changes: AF, C, DE, HL.
+  Keeps: B, IX, IY.
+  .3DFA The count goes here
+  .3DFC Counts from 0
+
+@3DDB OPEN_PARAM_CHAN
+  The channel a parameter names: "#n" is channel n, already open; any other word is a file
+  name, opened on a free channel (OPEN_FREE_CHAN).
+  Entry: HL = the parameter.
+  Exit: NC, Z: E = channel n, D = 0, A = 0, HL past it (and a ":"); C: E = the channel
+  opened, HL = past the name.
+  Error: NZ, A = the open's status.
+  Changes: AF, BC, DE, HL.
+  Keeps: IX, IY.
+  .3DDB "#"?
+  .3DE0 DE = the name, counted
+  .3DE4 Open it on a free channel
+  .3DE7 E = the channel
+  .3DE9 Failed?
+  .3DEA C: a channel EXDOS opened
+
+# ---------------------------------------------------------------------------------------------
+# The EXDOS command: the command interpreter
+
+@2DA3 CMD_EXDOS_SHELL
+  The handler of "EXDOS": runs EXDOS's command interpreter.
+  1. Closes the input channel an earlier run opened (IY-$31); the input is the editor's
+     channel (IY-$2F) again (IY-$2E), IY-$2B bit 3 clear.
+  2. A parameter names the input instead (OPEN_PARAM_CHAN, IY-$37 bit 4 set meanwhile): "#n"
+     or a file of commands; IY-$2B bit 3 then marks input not from the editor. Nothing may
+     follow it ($9F, "Wrong number of parameters").
+  3. When the interpreter is already running (IY-$2F not $FF) that is all; otherwise it
+     starts (SHELL_START).
+  Entry: HL = the parameters (zero-ended), IY.
+  Exit: A = 0 when only the input changed; else as the interpreter ends (SHELL_CLOSE).
+  Error: NZ, A = the error code.
+  Changes: AF, BC, DE, HL, IX, all alternates.
+  Keeps: IY.
+  .2DA4 Close the channel at IY-$31
+  .2DA9 The editor's channel
+  .2DAC is the input
+  .2DAF The input is the editor's
+  .2DB4 A parameter?
+  .2DBC Its channel: E
+  .2DC7 A channel of ours (C)?
+  .2DC9 Then the command's end closes it if anything fails
+
+@3C14 REST_BLANK_END
+  Checks that nothing but spaces and tabs is left before the text's 0.
+  Entry: DE = the text.
+  Exit: Z, NC, A = 0, DE past the 0.
+  Error: A = $9F ("Wrong number of parameters"), NZ.
+  Changes: AF, C, DE.
+  Keeps: B, HL, IX, IY.
+  .3C14 The next character
+
+@2DCC SHELL_INPUT_SET
+  The parameter's channel becomes the input (IY-$2E); one EXDOS opened is kept in IY-$31
+  until the next run, no longer closed by CMD_FINISH.
+  .2DCC Open failed?
+  .2DCD Carry: a channel of ours
+  .2DCE HL = the channel, DE = the text
+  .2DCF Nothing after it?
+  .2DD3 The input is not the editor
+  .2DD7 The input channel
+  .2DDB An open channel ("#n")?
+  .2DDD Ours: closed by the next EXDOS
+  .2DE0 not by CMD_FINISH
+
+@2F17 SHELL_VARS_PTR
+  DE = the save area for EXOS variables (IY+$F0), HL = the table of variables and their new
+  values at $2FB7 (a variable number and a value each, 0 at the end).
+  Entry: IY.
+  Exit: DE = IY+$F0; HL = $2FB7.
+  Changes: F, DE, HL.
+  Keeps: A, BC, IX, IY.
+
+@2DE4 SHELL_START
+  Starts the interpreter unless it already runs (the editor's channel at IY-$2F is open).
+  .2DE5 The editor's channel
+  .2DE8 Open ($FF: none)? Done, A = 0
+  .2DEA DE = the save area, HL = the table
+
+@2DED SHELL_SET_VARS
+  Sets up the interpreter's channels:
+  1. Each EXOS variable of the table at $2FB7 is saved at IY+$F0 and set: 4 to 0, 22-25 (the
+     video page: MODE_VID 0, 23 0, 24 40, 25 20), VID_EDIT 0, 30 0, 31 4, FLG_EDIT $1C,
+     $4E and $4D $FF, 11 $1E, 10 3. IY-$2B bit 7 records that they need putting back.
+  2. SHELL_CLOSE ($2F45) becomes the return address.
+  3. The keyboard channel is the first that answers @@JOY (FIND_KBD_CHAN), else "KEYBOARD:"
+     opened (IY-$2B bit 2: close it at the end).
+  .2DED C = the variable
+  .2DF0 Read it (B = 0)
+  .2DF3 D = its value
+  .2DF5 into the save area
+  .2DF8 C = the variable again
+  .2DFA D = its new value
+  .2DFC Write it (B = 1)
+  .2E01 The table's end?
+  .2E04 The variables need putting back
+  .2E08 SHELL_CLOSE: where the interpreter returns
+  .2E0C A keyboard channel?
+  .2E11 "KEYBOARD:"
+  .2E14 Open it on a free channel
+  .2E17 Failed
+  .2E18 Ours: close it at the end
+
+@2E1C SHELL_OPEN_CHANS
+  Gives the editor its keyboard (EXOS variable 30), opens "VIDEO:" (IY-$30; variable 29,
+  VID_EDIT) and writes the 10 bytes at $2F3E to it, opens "EDITOR:" (IY-$2F; variable 4),
+  which is the input unless a parameter named one.
+  .2E1C IY-$32: the keyboard channel
+  .2E20 Variable 30 = the keyboard channel
+  .2E25 "VIDEO:"
+  .2E2B Failed
+  .2E2C IY-$30: the video channel
+  .2E30 The 10 bytes at $2F3E (ESC "C" ...)
+  .2E39 VID_EDIT = the video channel
+  .2E3E "EDITOR:"
+  .2E44 Failed
+  .2E45 IY-$2F: the editor's channel
+  .2E49 Variable 4 = the editor's channel
+  .2E4E Input named by a parameter?
+  .2E54 No: the editor is the input
+
+@2E57 SHELL_BANNER
+  Input from the editor: a space and the version line ("EXDOS version 1.3") on channel $FF.
+  .2E57 A space
+
+@2E63 SHELL_LOOP
+  One command line, until IY-$2B bit 1 asks to end:
+  1. The status line (from the word at $BFF6, + 6) shows " EXDOS" (bit 7 set on the letters,
+     the 6 bytes at $2F38) and message $3E ("command interpreter").
+  2. From the editor: a ":" prompt, and the video page shown (EXOS 11, @@DISP).
+  .2E5F EXDOS commands accepted; the loop runs on
+  .2E67 HL = the status line's text
+  .2E6E " EXDOS", bit 7 set on the letters
+  .2E77 Message $3E: "  command interpreter      "
+  .2E7C Past its count byte
+  .2E81 Input from the editor?
+  .2E85 Then a ":" prompt
+  .2E8A The video channel
+  .2E8D B = 1 (@@DISP): its first row at screen row 1
+  .2E90 20 rows
+  .2E95 Failed: end with the error
+
+@2FF0 READ_LINE
+  Reads a line from channel C (EXOS 5) into the output buffer at IY+$6E: a count byte, the
+  characters (codes from $20; at most 128) and a 0. The line ends at CR or ESC; other codes
+  below $20, and characters past the 128th, are dropped. Code $1A (end of text) is error $E4.
+  Entry: C = the channel, IY.
+  Exit: Z, A = 0; B = the code that ended the line; HL = the buffer.
+  Error: NZ, NC, A = EXOS's status, or $E4 for code $1A.
+  Changes: AF, B, DE, HL.
+  Keeps: C, IX, IY.
+  .2FF3 DE = the count byte
+  .2FF5 Count 0
+
+@2E96 SHELL_READ
+  Reads the command line (READ_LINE) from the input channel, FLG_EDIT set to $1C first. A line
+  of 128 characters or more is error $9C ("Command too long").
+  .2E99 FLG_EDIT = $1C
+  .2E9D The input channel
+  .2EA0 Read the line
+  .2EA3 Failed?
+  .2EA5 The count: 128 or more?
+  .2EA8 Then error $9C: Command too long
+
+@2F23 STOP_CHECK
+  Takes the STOP key into a status: A = 0 becomes $E5 when FLAG_SOFT_IRQ ($BFF2) holds $20;
+  $E5 (from a key or given) clears FLAG_SOFT_IRQ.
+  Entry: A = a status, with flags from OR A (Z for 0).
+  Exit: Z, A = 0 when there is no error and no STOP.
+  Error: NZ, A = the status, or $E5 for STOP.
+  Changes: AF.
+  Keeps: BC, DE, HL, IX, IY.
+  .2F23 No error: look at the STOP key
+  .2F25 STOP ($E5)?
+  .2F27 Another error: kept
+
+@2F28 STOP_CLEAR
+  Clears FLAG_SOFT_IRQ and returns error $E5 (NZ).
+  .2F2C NZ, NC
+
+@2F2F STOP_FLAG_TEST
+  FLAG_SOFT_IRQ = $20 (the STOP key)?
+  .2F36 No: A = 0, Z
+
+@2FD2 CRLF_TO_DEFCH
+  Writes CR and LF to channel $FF.
+  Entry: none.
+  Exit: AF, C as on entry.
+  Changes: B, DE.
+  Keeps: AF, C, HL, IX, IY.
+  .2FD2 CR
+  .2FD7 LF
+
+@2EAA SHELL_LINE_STAT
+  The line's status, STOP included: on error, $E4 (the input ended) ends the interpreter;
+  another error goes on a new line and is reported.
+  .2EAA STOP pressed?
+  .2EAF Input ended ($E4)?
+  .2EB3 A new line before the report
+
+@2EB8 SHELL_INPUT_END
+  The input has ended: the interpreter ends after this line.
+
+@2EBC SHELL_LINE_OK
+  A line from the editor ended by ESC leaves the interpreter when the keyboard channel's status
+  (EXOS 9) gives C = 0; otherwise the line is taken as a command line.
+  .2EBC Input from a file or channel?
+  .2EC3 Ended by ESC?
+  .2EC7 The keyboard channel's status
+  .2ECE C = 0?
+  .2ECF No: read the line again
+  .2ED1 End the interpreter
+  .2ED5 A = 0
+
+@2ED7 SHELL_EXEC
+  Runs the line as a command string.
+  .2ED7 C = the line's length
+  .2ED8 + 1, for SKIP_BLANKS
+
+@2ED9 SHELL_SKIP_LEAD
+  Skips the leading spaces, tabs and colons; an empty line is not run.
+  .2ED9 The next character
+  .2EDA Skip blanks
+  .2EDD An empty line
+  .2EDF ":"? Skip it too
+  .2EE3 The count goes in front of the first character
+  .2EE5 DE = the command string
+  .2EE6 To every extension (EXOS 26)
+  .2EE8 STOP pressed meanwhile?
+  .2EEB Done
+  .2EED Error $A4 (Disk operation aborted)?
+  .2EF1 Or STOP ($E5)?
+
+@2EF5 SHELL_ERROR
+  An error from a file of commands, $A4 or STOP ends the interpreter with it.
+  .2EF5 Input from a file or channel?
+
+@2EFA SHELL_ERR_SHOW
+  Reports the error: "***" (message $3C) on channel $FF, then the error's text through the
+  output buffer.
+  .2EFB Message $3C: "\***  "
+  .2F01 HL = IY-$23, for the code's digits
+  .2F08 The error's text into the buffer
+  .2F0B A new line: the buffer goes out
+
+@2F0E SHELL_NEXT
+  Back for the next line unless IY-$2B bit 1 asks to end.
+  .2F0E The end?
+  .2F15 A = 0
+
+@2F44 SHELL_END_STOP
+  STOP during the pause: its status $E5 replaces the saved one.
+  .2F44 Drop the saved status
+
+@2F45 SHELL_CLOSE
+  Where the interpreter returns (SHELL_SET_VARS pushed it). After a file of commands that ran
+  to its end, a pause of 65536 STOP checks; then SHELL_RESTORE.
+  Entry: A, F = the interpreter's status.
+  .2F45 Keep the interpreter's status
+  .2F46 An error?
+  .2F48 Input from the editor?
+  .2F4E The pause: 65536 STOP checks
+
+@2F50 SHELL_PAUSE_ROW
+  B = 0: 256 checks for each count of C.
+
+@2F51 SHELL_PAUSE
+  One STOP check of the pause (after a file of commands).
+  .2F52 STOP pressed?
+  .2F55 Yes: end at once with $E5
+
+@2F5C SHELL_RESTORE
+  Ends the interpreter:
+  1. Blanks the status line's 32 characters.
+  2. Closes the editor's, the video and the input file's channels (IY-$2F, IY-$30, IY-$31),
+     and the keyboard's when EXDOS opened it (IY-$2B bit 2).
+  3. IY-$2B bit 1 set (the end), bit 2 clear; the EXOS variables saved at IY+$F0 get their
+     values back.
+  Exit: A, F = the interpreter's status.
+  .2F5C HL = the status line's text
+  .2F63 32 spaces
+
+@2F66 STATUS_BLANK
+  Writes B spaces from HL.
+  .2F6A IY-$2F: the editor's channel
+  .2F6F IY-$30: the video channel
+  .2F72 IY-$31: the input file's channel
+  .2F75 The keyboard's, if EXDOS opened it
+  .2F7C Not to close again
+  .2F80 The interpreter has ended
+  .2F84 Hides PUSH AF at $2F85, the way in from $2D8D
+  .2F86 The variables are put back now
+  .2F8A DE = the saved values, HL = the table
+
+@2F8D VARS_RESTORE
+  Puts each EXOS variable of the table back to its saved value; then A and the flags come
+  back from the stack.
+  .2F8D C = the variable
+  .2F8E HL = the next entry
+  .2F90 Its saved value
+  .2F93 D = the value
+  .2F94 Write it (B = 1)
+  .2F99 The table's end?
+  .2F9C The status
+
+# ---------------------------------------------------------------------------------------------
+# Line input and output helpers
+
+@2FE2 READ_LINE_IN
+  Sends the output buffer out, sets FLG_EDIT to $1C and reads a line (READ_LINE) from the
+  channel at IY-$51.
+  Entry: IY.
+  Exit: Z, A = 0; B = the code that ended the line; HL = the output buffer.
+  Error: NZ, A = the status ($E4 for code $1A).
+  Changes: AF, BC, DE, HL.
+  Keeps: IX, IY.
+  .2FE2 Send the buffer out
+  .2FE6 FLG_EDIT = $1C
+  .2FED C = the channel
+
+@2FF6 READ_LINE_PUT
+  Stores the character at DE and a 0 after it.
+  .2FF6 The character (0 at the start)
+  .2FF8 The 0 after it
+
+@2FFA READ_LINE_CHAR
+  Reads the next character (EXOS 5).
+  .2FFC A = the channel
+  .2FFF Failed?
+  .3001 B = the character
+  .3002 Code $1A?
+  .3004 Carry: a character
+  .3007 Error $E4, NC
+
+@300A READ_LINE_GOT
+  An error returns (NC); CR and ESC end the line; codes below $20 are dropped, as is any
+  character once 128 are in.
+  .300C An error
+  .300D B = the character
+  .300E CR?
+  .3012 ESC?
+  .3016 A control code: drop it
+  .301A 128 in?
+  .301E One more
+
+@3021 READ_LINE_END
+  The line is complete: A = 0, Z.
+
+@305A OUTBUF_CHAR_END
+  OUTBUF_CHAR's end: a character from $1B up returns; a control code first sends the buffer
+  out (OUTBUF_FLUSH).
+  .305D NC: a character from $1B up
+
+@3077 OUTBUF_TEXT_NEXT
+  Steps DE to the text's next character (OUTBUF_TEXT's loop).
+
+@3080 OUTBUF_FBLK_DRV
+  Writes the drive letter and ":" of the file block at IX (its IX+$07, OUTBUF_DRIVE).
+  Entry: IX = the file block, IY.
+  Exit: A = 0 and Z, or EXOS's status.
+  Changes: AF.
+  Keeps: BC, DE, HL, IX, IY.
+
+@309E OUTBUF_CHARS
+  Writes B characters from HL to the output buffer.
+  Entry: B = the count, HL = the characters, IY.
+  Exit: HL past them; B = 0; A = 0 and Z, or the last write's status.
+  Changes: AF, B, HL.
+  Keeps: C, DE, IX, IY.
+
+@30CF OUTBUF_SPACE
+  Writes a space to the output buffer.
+  Entry: IY.
+  Exit: A = 0 and Z, or EXOS's status.
+  Changes: AF.
+  Keeps: BC, DE, HL, IX, IY.
+
+@308C OUTBUF_NAME
+  Writes a directory entry's 8-character name and 3-character extension (from BC + 8):
+  - Z: as they are, a space between ("NAME     EXT").
+  - NZ and C: the name without its spaces, "." (a space when there is no extension), the
+    extension, a space.
+  - NZ and NC: the same with the name's spaces in front of it (right-aligned in 8).
+  Entry: BC + 8 = the name; F as above; IY.
+  Exit: A = 0 and Z, or EXOS's status.
+  Changes: AF, BC, HL.
+  Keeps: DE, IX, IY.
+  .308D HL = the name
+  .3092 Short form?
+  .3094 The 8 name characters
+  .3099 A space
+
+@309C OUTBUF_CHARS3
+  Writes 3 characters from HL (the extension).
+  Entry: HL = the characters, IY.
+  Exit: HL past them; A = 0 and Z, or the last write's status.
+  Changes: AF, B, HL.
+  Keeps: C, DE, IX, IY.
+
+@30A6 NAME_SHORT
+  The short form; carry: the name without padding.
+  .30A6 8 characters
+  .30A9 Not right-aligned?
+  .30AB HL = past the name; B = 8
+
+@30AD NAME_PAD
+  A space for each space in the name: they go in front.
+  .30AF A space?
+  .30B1 Then one in front
+
+@30B6 NAME_PLAIN
+  B = 8: the name's characters without its spaces.
+
+@30B7 NAME_PLAIN_LOOP
+  Writes the name's characters except spaces, then picks the extension's separator.
+  .30B9 Spaces are left out
+  .30C0 The extension's first character
+  .30C1 None (a space)?
+  .30C5 Else "."
+
+@30C7 NAME_EXT
+  Writes the separator (a space or "."), the extension and a space.
+  .30CA The 3 extension characters
+
+@30CD OUTBUF_ATTR
+  Writes character A for NZ (an attribute that is set), else a space.
+  Entry: A = the character; F: NZ to write it; IY.
+  Exit: A = 0 and Z, or EXOS's status.
+  Changes: AF.
+  Keeps: BC, DE, HL, IX, IY.
+
+@30D3 OUTBUF_SIZE
+  Writes the 4-byte number at HL: below 1024 as "<n> byte(s)" (OUTBUF_COUNTWORD); from 1024 as
+  "<n>K", n = the number / 1024 (the number at HL is shifted in place).
+  Entry: HL = the number (low byte first), IY.
+  Exit: A = 0 and Z, or EXOS's status.
+  Changes: AF, BC, DE, HL, DE', L'.
+  Keeps: IX, IY.
+  .30D4 DE = the low word
+  .30DA The high word not 0?
+  .30DD 1024 or more?
+  .30E2 HL = the number; DE = its address
+  .30E4 Message $36: " byte"
+
+@31E6 OUTBUF_DEC16
+  Writes HL in decimal (no padding) to the output buffer: it goes into IY-$26 as a 4-byte
+  number and $31FD writes that.
+  Entry: HL = the number, IY.
+  Exit: Z.
+  Changes: AF, BC, DE, HL, DE', L'.
+  Keeps: IX, IY.
+  .31E9 BC = the output buffer
+  .31EF HL = IY-$23, the number's top byte
+  .31F8 then HL
+
+@30E6 OUTBUF_COUNTWORD
+  Writes a count and a word: HL in decimal, message A (" byte" or " file"), then the plural
+  unless the count is 1: "s" in English; in German "s" for " byte" and "en" for another
+  word (EXOS variable $90 = 0 chooses German).
+  Entry: A = the word's message number, HL = the count, IY.
+  Exit: A = 0 and Z, or EXOS's status; Z with A = the message number for a count of 1.
+  Changes: AF, BC, DE, HL, DE', L'.
+  Keeps: IX, IY.
+  .30E9 The count in decimal
+  .30ED The word
+  .30F1 A count of 1?
+  .30F5 A = the message number
+  .30F6 Then singular
+  .30F9 Read EXOS variable $90
+  .3100 0: German
+  .3103 A = the message number
+  .3105 English: "s"
+  .3107 German " byte": "s"
+  .310B Otherwise "en"
+
+@3114 PLURAL_S
+  Writes "s".
+
+@3118 SIZE_IN_K
+  The number at HL (pointing at its top byte) is shifted right 10 times (divided by 1024),
+  then written in decimal and "K".
+  .3118 10 shifts
+
+question 2D9C Which program sends the hidden command "EXDOS" + $FD, and does it read B = $13 as EXDOS's version and DE as its workspace?
+question 2E30 What do the 10 bytes at $2F3E (ESC "C" ...) do on the VIDEO: channel, the last four being the code at $2F44?
+question 2EC7 Does EXOS 9 on the keyboard channel give C = 0 when no key waits, so that ESC alone ends the interpreter?
+feedback wrong 3DDB Keeps: none (IY may change) only because $0336's return was not followed; OPEN_FREE_CHAN keeps IX and IY, so $3DDB and $2DA3 keep IY
+feedback missing 2B5E-2BF1 The cards say only "jump $0037"/"jump $0033"; that these are extension actions 3 and 2 of the dispatcher at $0013 (B, DE, C as EXOS hands them) had to come from the listing
+feedback pattern 2B69-2B98 $2B69 and $2B6E end with EXX: every call swaps the register sets, so HELP_EXDOS's list runs in the other set; the register facts cannot show the swap count
+feedback missing 2E30 The write at $2E30 reads 10 bytes from $2F3E, running past the bytes region $2F38-$2F43 into the code at $2F44-$2F47; no card notes a data read that overlaps code
+feedback listing 29E4-2B5D The range starts inside $29E4 and ends inside $2B2E: the stack layout the fragments share (three words, then four) had to be worked out from the listing across ranges 8 and 9

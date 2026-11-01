@@ -19,7 +19,7 @@ import type { DecodedBank } from "./decode";
  * into a `.ann` file (`proposals.ann` lists them ready to uncomment).
  */
 
-export type ProposalKind = "code" | "bytes" | "words" | "text";
+export type ProposalKind = "code" | "bytes" | "words" | "text" | "fill";
 
 export type RegionProposal = {
   start: number;
@@ -126,14 +126,23 @@ export async function proposeRegions(inputs: ProposalInputs): Promise<ProposalRe
     }
   }
   proposals.push(...inlineAfterCalls(inputs, flags, regions));
-  // --- Detectors over bytes no run touched and no walk reaches (the classifier leaves them unknown)
-  const untouched = (o: number) => !staticReach.reached[o] && !flags[o];
+  // --- Detectors over bytes no run executed and no walk reaches (a byte a run only read is data: the
+  // --- length bytes of counted texts are read to step through them)
+  const untouched = (o: number) => !staticReach.reached[o] && !(flags[o] & (PF_CODE | PF_EXECUTED));
   const isCodePointer = (value: number) => value >= bank.origin && reach.starts.has(value - bank.origin);
   // --- (only over bytes still listed as code: a data region an author declared is their decision)
   const loaded = new Set(
     decoded.rows.filter((r) => !r.data && !r.branch && r.bytes.length >= 3).map((r) => r.bytes[r.bytes.length - 2] | (r.bytes[r.bytes.length - 1] << 8))
   );
-  for (const run of runs.filter((r) => r.class === "unknown")) {
+  // --- Consecutive non-code runs are scanned as one stretch: a counted text's read length byte is a
+  // --- run of its own
+  const stretches: { start: number; end: number }[] = [];
+  for (const run of runs.filter((r) => r.class !== "code")) {
+    const last = stretches[stretches.length - 1];
+    if (last && last.end + 1 === run.start) last.end = run.end;
+    else stretches.push({ start: run.start, end: run.end });
+  }
+  for (const run of stretches) {
     for (const found of detectTables(bank.bytes, run.start, run.end, (o) => untouched(o) && isCodeRegion(o), isCodePointer, (o) => loaded.has(bank.origin + o))) {
       proposals.push(describe(inputs, found.start, found.end, found.kind, found.evidence, "code"));
     }
@@ -145,6 +154,7 @@ export async function proposeRegions(inputs: ProposalInputs): Promise<ProposalRe
 const MIN_TEXT = 6;
 const MIN_WORDS = 2;
 const MIN_WORDS_UNLOADED = 4;
+const MIN_FILL = 16;
 
 const printable = (b: number) => b >= 0x20 && b <= 0x7e;
 
@@ -166,6 +176,29 @@ function detectTables(
   while (o <= end) {
     if (!usable(o)) {
       o++;
+      continue;
+    }
+    // --- A fill: 16 or more of one byte
+    let f = o;
+    while (f <= end && usable(f) && bytes[f] === bytes[o]) f++;
+    if (f - o >= MIN_FILL) {
+      found.push({ start: o, end: f - 1, kind: "fill", evidence: `inferred: ${f - o} bytes of $${hex(bytes[o]).slice(2)}` });
+      o = f;
+      continue;
+    }
+    // --- Counted texts: a length byte, then that many mostly printable bytes, two or more in a row
+    let c = o;
+    let counted = 0;
+    while (c <= end && usable(c) && bytes[c] >= 3 && bytes[c] <= 80 && c + bytes[c] <= end) {
+      const body = bytes.subarray(c + 1, c + 1 + bytes[c]);
+      if (!Array.from(body).every((_, i) => usable(c + 1 + i)) || body.filter(printable).length < body.length * 0.9) break;
+      c += 1 + bytes[c];
+      counted++;
+    }
+    if (counted >= 2) {
+      const first = String.fromCharCode(...bytes.subarray(o + 1, o + 1 + Math.min(bytes[o], 24)));
+      found.push({ start: o, end: c - 1, kind: "text", evidence: `inferred: ${counted} counted texts (a length byte first), "${first}"...` });
+      o = c;
       continue;
     }
     // --- Distinct words that point at code (not fill: $0000, $FFFF); a table some code loads needs two,
@@ -293,9 +326,16 @@ function describe(inputs: ProposalInputs, start: number, end: number, kind: Prop
   return { start, end, kind, evidence, current, targetsRemoved, midInstructionRemoved, readers };
 }
 
-/** Where two proposals overlap, the first (the classifier's) wins and the other is cut. */
+/**
+ * Where two proposals overlap, the earlier wins and the other is cut; at one start a detector's (text,
+ * words, fill) wins over plain bytes, and the longer over the shorter.
+ */
 function mergeOverlaps(proposals: RegionProposal[]): RegionProposal[] {
-  const sorted = [...proposals].sort((a, b) => a.start - b.start);
+  const rank = (p: RegionProposal) => (p.kind === "bytes" ? 1 : 0);
+  const covered = proposals.filter((p) => p.kind !== "bytes" && p.kind !== "code");
+  // --- Plain bytes inside a detector's proposal add nothing
+  const kept = proposals.filter((p) => p.kind !== "bytes" || !covered.some((c) => c.start <= p.start && p.end <= c.end));
+  const sorted = [...kept].sort((a, b) => a.start - b.start || rank(a) - rank(b) || b.end - a.end);
   const result: RegionProposal[] = [];
   for (const p of sorted) {
     const last = result[result.length - 1];

@@ -42,6 +42,8 @@
   "c511d3a4": {"sidecar":"zxnext/nextzxos-2.10/enAltZX.rom.dis","page":1},
   "c9a0b748": {"sidecar":"spp3-41-2.rom.dis","page":0},
   "cafb1e32": {"sidecar":"zxnext/nextzxos-2.08/enNextZX.rom.dis","page":2},
+  "d1333188": {"sidecar":"ep-exdos13.rom.dis","page":1},
+  "d1e46955": {"sidecar":"ep-exdos13.rom.dis","page":0},
   "ddee531f": {"sidecar":"sp48.rom.dis","page":0},
   "e4367a35": {"sidecar":"ep-exos20.rom.dis","page":1},
   "e76799d2": {"sidecar":"sp128-0.rom.dis","page":0},

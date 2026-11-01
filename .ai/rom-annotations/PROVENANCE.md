@@ -2460,3 +2460,20 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
 - **Checked:** the decoded tables give the counts and the texts the sidecars state (60 IS-BASIC error texts
   keyed by ERR_NUMBERS, 31 and 28 words, 48 EXOS texts from $FF "invalid EXOS function code" to $D0 "cassette
   CRC error", 28 and 35 WP phrases), in `test/rom-pipeline/conventions.test.ts`.
+
+### 2026-11-01 — Enterprise: `ep-exdos13.rom` (EXDOS 1.3, segments 20h and 21h) to level 2, the pipeline's first ROM
+
+- **Sources:** the ROM bytes through the pipeline (`rom:pipeline prepare`: routine cards, register facts, region
+  proposals; `listing`, 203 requests); a profile run on the 128 with the EXDOS card and an empty 720K disk
+  (`profile ep128-exdos`: `:DIR`, `SAVE`, `LOAD`; observed screens in its log); the EXOS call's register contract
+  from the EXOS technical description §4.1 (`manual`, through the Enterprise convention plug-in); Klive's own EXOS
+  2.1 sidecar (the device entry order, the EXOS special functions) and `ep-authoring-guide.md`. No helper opened
+  `_input/`, the web, an emulator source, or any commented disassembly or listing of EXDOS; the briefs forbade it.
+- **How:** one helper settled the regions of both pages from the proposals and the code that reads the bytes;
+  twelve helpers each annotated one range of page 0's cards (`helper-briefs/pipeline-range.md`) as `.ann` files;
+  the session merged them (`rom:pipeline compile`: 33 conflicts, resolved by which range owns the routine), fixed
+  range 4's dispatch text (function 8, not 7, reaches $241D: two helpers read it from the code), labelled four
+  jump targets no range had, and reflowed 130 synopses a wrapping bug had left with a word alone on a line.
+- **Level:** 2 on both pages (page 0: 9,044 instructions, 35 targets inside an instruction; page 1: the two
+  message tables, no code). Reassembles byte for byte. 37 `question` lines are left for runs (listed in the
+  merge's problem list).

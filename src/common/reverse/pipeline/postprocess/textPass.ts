@@ -4,8 +4,9 @@
  *
  * - **Kept numbers:** `$0B40!` is a number that must stay a number (a constant that looks like an
  *   address): the naming pass leaves it alone, and the `!` is dropped.
- * - **Wrapping:** a synopsis line longer than 92 columns is wrapped at 92, a numbered step's lines
- *   indented under its text. Lines are never joined, so text already in the house style is unchanged.
+ * - **Wrapping:** a paragraph with a line longer than 92 columns (or a word left alone by an earlier
+ *   wrap) is reflowed at 92, a numbered step's lines indented under its text; other paragraphs are kept
+ *   as written, so text already in the house style is unchanged.
  * - **Naming** (only when asked: `compile --name-numbers`): `$XXXX` that is a labelled offset of the
  *   page becomes the label, except a kept number and the explicit form "offset $XXXX". On a page
  *   that runs above $0000 a page offset can also be a RAM address ($0228 is IS-BASIC's stack pointer,
@@ -21,11 +22,31 @@ export function dropKeptMarks(text: string): string {
   return text.replace(KEPT, "$1");
 }
 
-/** Wraps every line longer than the width; a numbered or dashed step keeps its hanging indent. */
+/** A line that starts a paragraph of its own: a step, a contract line. */
+const PARAGRAPH_START = /^(\s*\d+\. |\s*- |Entry:|Exit:|Error:|Changes:|Keeps:|Observed:)/;
+
+/**
+ * Wraps a synopsis at the width. A paragraph (a run of lines up to a step, a contract line or a blank
+ * line) is reflowed only when one of its lines is too long, or when a wrap left a word or two alone
+ * on a line; any other paragraph is kept as written, so text already in the house style is unchanged.
+ */
 export function wrapSynopsis(text: string, width = WRAP_WIDTH): string {
-  return text
-    .split("\n")
-    .flatMap((line) => (line.length <= width ? [line] : wrapLine(line, width)))
+  const lines = text.split("\n");
+  const paragraphs: string[][] = [];
+  for (const line of lines) {
+    const last = paragraphs[paragraphs.length - 1];
+    if (!last || line.trim() === "" || PARAGRAPH_START.test(line) || last[last.length - 1].trim() === "") paragraphs.push([line]);
+    else last.push(line);
+  }
+  return paragraphs
+    .flatMap((paragraph) => {
+      const tooLong = paragraph.some((l) => l.length > width);
+      const stranded = paragraph.some((l, i) => i > 0 && i < paragraph.length - 1 && l.trim().split(/\s+/).length <= 2 && paragraph[i - 1].length >= width - 12);
+      if (!tooLong && !stranded) return paragraph;
+      const lead = /^(\s*)(\d+\. |- )?/.exec(paragraph[0])![0];
+      const joined = lead + paragraph.map((l, i) => (i === 0 ? l.slice(lead.length) : l.trim())).join(" ");
+      return wrapLine(joined, width);
+    })
     .join("\n");
 }
 

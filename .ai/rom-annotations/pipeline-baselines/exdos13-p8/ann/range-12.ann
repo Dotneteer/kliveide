@@ -1,0 +1,305 @@
+rom ep-exdos13.rom page 0 cpu z80
+default observed
+
+# Range 12: pieces of the command-line helpers at $3BE2-$3E13 (name compare, blank check, the
+# directory search with its attribute filter, option letters, numbers, words) and the unreached
+# copy of $3DBA-$3DFF at $3E3A-$3E7F.
+
+@3BEF NAME_CMP_NEXT
+  The compare loop's step: moves both pointers on, takes the next given character in capitals
+  and loops; a mismatch seen earlier (carry) skips the compare. At the end turns the carry into
+  A: 1 (NZ, NC) when every character matched, 0 (Z, carry) when one did not.
+  .3BEF Next character of the table's name
+  .3BF0 Next character of the given name
+  .3BF2 In capitals
+  .3BF5 Compare it, unless a mismatch was already seen
+  .3BF7 A = $FF after a mismatch, else 0
+  .3BF8 A = 0 (Z, carry) mismatch; 1 (NZ, NC) match
+
+@3BF9 NAME_CMP_EXIT
+  Restores the DE and BC pushed at $3BE3 and $3BE2 and returns A and the flags as they are.
+  .3BF9 The caller's DE
+  .3BFA The caller's BC
+
+@3C05 REST_BLANK
+  Checks that only blanks (spaces, tabs) are left before the 0 that ends the text at DE; a
+  character that is not blank stops it, with C = that character (a "/" starts an option).
+  Entry: DE = the text; Z: C = the character at DE, already read; NZ: read it from DE.
+  Exit: A = 0, Z: only blanks were left; DE = past the 0.
+  Error: A = $9F ("Wrong number of parameters"), NZ: C = the character that is not blank,
+  DE = past it.
+  Changes: AF, C, DE.
+  Keeps: B, HL, IX, IY.
+  .3C05 NZ: read the character at DE first
+
+@3C08 REST_BLANK_LP
+  The loop: passes the character in A (and C), ends at the 0 or at a character that is not a
+  space or a tab, and reads the next one through $3C14.
+  .3C08 Past the character
+  .3C09 The end (0)?
+  .3C0B A space?
+  .3C0D Yes: read the next
+  .3C0F A tab?
+  .3C11 $9F: "Wrong number of parameters"; flags kept
+  .3C13 Another character: NZ
+
+@3C18 FIND_DIRS_ONLY
+  The first search ran for a caller that asked for directories (the carry kept in F' by
+  $3C95): drops the BC kept at $3C2D, sets bit 4 of IY-$2A (directories let through) and
+  returns the search's status to $3CDC, the return address pushed at $3C22.
+  .3C18 Drop the BC kept at $3C2D
+  .3C19 Directories pass the attribute filter
+  .3C1D A, F = the search's status
+  .3C1E To $3CDC
+
+@3C5D PATH_END_SCAN
+  The given name is a directory: finds the 0 that ends the path text (HL', from the HL pushed
+  at $3C50), adds the name to the text through PATH_STEP's entry $15DB (DE = IY+$135), ends the
+  text with two 0 bytes and goes on to $3C71 with carry, to search inside that directory.
+  .3C5D Next character of the path text
+  .3C5F The end (0)?
+  .3C63 HL' = the 0 at the end
+  .3C64 Main set: DE = IY+$135, B = the parse's flags
+  .3C65 Add the name to the path text
+  .3C68 The path text's address (pushed at $3C50)
+  .3C69 Failed?
+  .3C6A Yes: return the error to $3CDC
+  .3C6C Two 0 bytes at the text's new end (HL')
+  .3C70 Carry: search inside the directory
+
+@3C71 FIND_FIRST_END
+  Ends the first search: runs $329D when C (the byte at IY+$6E) is not 0, then returns the
+  search's status (to $3CDC). With carry (the name is a directory, $3C70) it swaps the request
+  block and the found entry ($3CBA, which makes the name all "?"), sets bit 5 of IX+$13 and
+  searches again with function 4 ($3C83), inside the directory.
+  .3C71 Keep the status and the carry
+  .3C72 C = the byte at IY+$6E: 0?
+  .3C74 No: $329D
+  .3C77 DE = the request block, BC = the result buffer
+  .3C7B No directory to enter: return the status
+  .3C7C Swap the blocks; the name all "?"
+  .3C7F Set bit 5 of IX+$13
+
+@3C95 PARSE_KEEP_FLAGS
+  Keeps the caller's A and flags in AF' (its carry, directories only, is tested again at
+  $3C34), then takes the path apart with function 1 ($3C96).
+  .3C95 The caller's carry into F'
+
+@3CA0 NAME_ALL_WILD
+  Fills the request block's 11-character name (IX+$08) with "?", so that a search matches every
+  entry, and marks it in bit 5 of B.
+  Entry: IX = the request block.
+  Exit: A = 0, Z, NC; bit 5 of B set.
+  Changes: AF, B.
+  Keeps: C, DE, HL, IX, IY.
+  .3CA2 DE = the request block
+  .3CA5 DE = its name, at +$08
+
+@3CAC NAME_WILD_FILL
+  Writes 11 "?" from DE.
+  .3CAC "?"
+  .3CAE The name's 8 + 3 characters
+
+@3CB0 NAME_WILD_LP
+  The fill loop; then restores DE and BC (pushed at $3CA1 and $3CA0) and sets bit 5 of B.
+  .3CB4 The caller's DE
+  .3CB5 The caller's BC
+  .3CB6 Bit 5: the name was made all "?"
+
+@3CB8 RET_A0_Z
+  Returns A = 0, Z, NC.
+  .3CB8 A = 0, Z, NC
+
+@3CC3 BLOCK_SWAP_LP
+  Swaps the $30 bytes at DE and HL (the request block and the result buffer), then makes the
+  request block's name all "?" (NAME_ALL_WILD) and returns BC = the result buffer. The pops take
+  the DE and BC pushed at $3CBD and $3CBE.
+  .3CC3 Swap one byte of the two blocks
+  .3CCA $30 bytes
+  .3CCC HL = the result buffer (BC kept at $3CBE)
+  .3CCD DE = the request block (kept at $3CBD)
+  .3CCE Its name all "?"
+  .3CD1 BC = the result buffer again
+
+@3CD7 FIND_NEXT_LP
+  Searches on with function 5 until an entry passes the attribute filter (ATTR_FILTER), then
+  counts it in the word at IY-$28 and returns A = 0, Z. $3CDC is also where the first search's
+  status arrives (the return address pushed at $3C22). A failed search goes to $3CF2.
+  .3CD7 Function 5: the next matching entry
+  .3CDC Found?
+  .3CDD Yes: test its attribute
+  .3CE0 Not let through: search on
+  .3CE2 HL = the count of entries found
+  .3CE8 The search failed: $3CF2
+  .3CEA One more found
+  .3CF1 A = 0, Z
+
+@3CF2 FIND_ENDED
+  A search failed: an error other than $CF is returned with carry. $CF ("File not found", no
+  more entries) becomes A = 0, Z, carry when entries were counted before, and stays $CF, NZ,
+  carry when none was.
+  .3CF2 "File not found": no more entries?
+  .3CF5 Another error: return it, carry
+  .3CF6 Were entries found before?
+  .3CF8 Carry when none was
+  .3CFA A = $FF when none, else 0
+  .3CFB A = $CF when none, else 0 (Z)
+  .3CFD Carry: the search is over
+
+@3D34 OPT_ADD_BIT
+  An option letter matched: ORs its bit (at HL) into the options at IY-$2A, steps past the
+  letter and checks the rest of the text (REST_BLANK); a "/" goes on to the next letter.
+  The hidden entry $3D3B (from $32B3, $3A4F, $3B49, $3D27, $3D2C, $3D32), with HL = the option
+  table (letter, bit pairs, 0 ended), DE = the text and C = the character at DE, starts the
+  options at bit 0 alone. IY-$2A bits 0-4 are the attributes a search lets through (bit 0
+  read-only, always set); a copy goes to C'. Returns A = 0 when the options end ($3D5D).
+  .3D34 The options so far
+  .3D37 Add this option's bit
+  .3D38 Past the option letter
+  .3D39 HL = the option table (pushed at $3D44)
+  .3D3A C is read again; hides XOR A at $3D3B, the entry
+  .3D3C Read-only files always let through
+  .3D3E Store the options
+  .3D41 C' = the options too
+  .3D44 Keep the option table's address
+  .3D45 Only blanks left, or C = the next character
+  .3D48 A "/": another option?
+  .3D4B No: DE back on it, A = 0 ($3D5D)
+
+@3D4D OPT_FIND_LP
+  Looks the letter after a "/" up in the option table at HL, in capitals; a letter it does not
+  hold returns A = $AE ("Invalid parameter"), NZ. The jump at $3D5C never runs: its bytes hide
+  the exit $3D5D (DEC DE, XOR A), which steps DE back and returns A = 0, Z.
+  .3D4D The option letter, in capitals
+  .3D51 This entry's letter?
+  .3D53 Yes: add its bit
+  .3D55 Past its bit
+  .3D57 The table's end?
+  .3D58 No: try the next entry
+  .3D5A $AE: "Invalid parameter", NZ
+  .3D5C Never jumps (NZ); hides DEC DE, XOR A at $3D5D
+  .3D5F The option table's address (pushed at $3D44)
+
+@3D61 ATTR_FILTER
+  Tests the attribute of the entry a search found (IX+$43) against the options: a read-only,
+  hidden, system or directory bit that IY-$2A does not let through rejects it, and so does an
+  entry that is not a directory when IY-$2B bit 4 asks for directories only.
+  Entry: IX = the request block, the found entry's attribute at +$43; IY = the workspace.
+  Exit: A = 0, Z, NC: the entry passes.
+  Error: A = $CF ("File not found"), NZ, carry: the entry is skipped.
+  Changes: AF, L.
+  Keeps: BC, DE, H, IX, IY.
+  .3D61 The found entry's attribute
+  .3D65 L = the bits it does not have
+  .3D66 Clear the bits the options let through
+  .3D69 A = its bits the options do not let through
+  .3D6A Read-only, hidden, system or directory left?
+
+@3D6C ATTR_REJECT
+  Returns A = $CF with carry when the test before it gave NZ; then the directories-only test.
+  .3D6C $CF: "File not found"
+  .3D6F A bit not let through: skip the entry
+  .3D70 L bit 4 set: not a directory
+  .3D71 Directories only (IY-$2B bit 4)?
+  .3D74 And this is not one?
+  .3D76 Yes: skip it
+  .3D78 A = 0, Z, NC: the entry passes
+
+@3D82 RET_NC_A
+  Returns A as it is, with carry clear and Z when A is 0.
+  .3D82 Carry clear; Z when A is 0
+
+@3D91 SEP_PASS
+  Steps past the separator (":" or "," to "/") and skips the blanks after it ($3D92).
+  .3D91 Past the separator
+
+@3DA0 BLANK_PASS
+  Steps past a space or a tab and goes on counting blanks ($3D94).
+  .3DA0 Past the blank
+  .3DA1 Count it, look at the next
+
+@3DA4 DEC_DIGIT_LP
+  Reads decimal digits from HL into C (8 bits, C x 10 + the digit each time) until a character
+  that is not a digit: returns with carry, C = the number and HL on that character.
+  .3DA4 C = the number so far
+  .3DA5 A = the next digit, HL past it?
+  .3DA8 Not a digit: C = the number, carry
+  .3DAA C x 2
+  .3DAD C x 8
+  .3DAF C x 10
+  .3DB2 Add the digit
+  .3DB3 Next digit
+
+@3DBD ZEROS_SKIP
+  The first digit was 0: skips any more "0" characters, leaving HL on the first other one.
+  .3DBD Next character
+  .3DBF Another "0"?
+  .3DC1 Yes: skip it
+  .3DC3 HL back on the character after them
+
+@3DC4 BCD_SECOND
+  Reads a second digit: with none, A = the first digit (E); with one, A = the two digits as a
+  BCD byte (E x 16 + D). Carry is clear either way.
+  .3DC4 A second digit?
+  .3DC7 D = it
+  .3DC8 A = the first digit
+  .3DC9 Carry now when there is a second digit
+  .3DCA None: A = the first digit, NC
+  .3DCB The first digit to the high half
+  .3DCF A = the two digits as BCD, NC
+
+@3DF6 CHAN_NUM_RET
+  Returns the number read after "#" (in C) as DE, with A = 0, Z.
+  .3DF6 E = the channel number
+  .3DF7 A = 0, Z, NC
+  .3DF8 D = 0
+
+@3DFE WORD_LEN_LP
+  Counts the characters of the word at HL up to a 0, a space, a tab or a "/".
+  .3DFE Next character
+  .3E00 Count it
+  .3E01 The end (0)?
+  .3E04 A space?
+  .3E08 A tab?
+  .3E0C A "/"?
+  .3E0E No: count on
+
+@3E10 WORD_LEN_STORE
+  Writes the count into the byte before the word (the address pushed at $3DFB), which makes
+  the word a counted text at DE; A = its length, HL on the character that ended it.
+  .3E10 DE = the byte before the word (pushed at $3DFB)
+  .3E11 A = the length
+  .3E12 The word is now a counted text
+
+@3E3D OLD_ZEROS_SKIP
+  Part of an unreached copy of $3DBA-$3DFF, $80 bytes higher, that runs into the $FF fill at
+  $3E80: the bytes match ZEROS_SKIP. Its calls still go to $3DD1 and $3DFA.
+  .3E3D As ZEROS_SKIP, not reached
+
+@3E44 OLD_BCD_SECOND
+  The unreached copy of BCD_SECOND ($3DC4); then copies of the digit reader $3DD1 ($3E51) and
+  of the "#" number or name reader $3DDB ($3E5B).
+  .3E44 As BCD_SECOND, not reached
+
+@3E51 OLD_DIGIT
+  The unreached copy of the digit reader at $3DD1.
+  .3E51 As $3DD1, not reached
+
+@3E5B OLD_CHAN_READ
+  The unreached copy of the "#" number or name reader at $3DDB.
+  .3E5B As $3DDB, not reached
+
+@3E6C OLD_CHAN_NUM
+  The unreached copy of $3DEC, the "#" number.
+  .3E6C As $3DEC, not reached
+
+@3E76 OLD_CHAN_RET
+  The unreached copy of CHAN_NUM_RET; from $3E7A the start of a copy of $3DFA, cut off by the
+  $FF fill at $3E80.
+  .3E76 As CHAN_NUM_RET, not reached
+  .3E7A Copy of $3DFA, cut off at $3E80
+
+feedback wrong 3D5C The card says $3D5C jumps out of the page to $AF1B: OR $AE before it always gives NZ, so the JP Z never runs; its bytes only hide the exit $3D5D (DEC DE, XOR A)
+feedback missing 3C18 The return address the routine at $3C1F pushes (ld de,$FCDC / push de) is not shown: $3C18, $3C6A and $3C7B all return to $3CDC, not to $3C1F's caller
+feedback pattern 3E3A-3E7F $3E3A-$3E7F repeats $3DBA-$3DFF byte for byte (the absolute calls unchanged); a "same bytes as code elsewhere on the page" fact would have said so at once
+feedback listing 3BC0-3E90 The cards here are inner pieces of routines whose heads are on ranges 9-11; the pushes they pop ($3BE2, $3C2D, $3C50, $3CBD, $3D44, $3DFB) and the entries' flags needed the listing

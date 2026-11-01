@@ -1,0 +1,949 @@
+rom ep-exdos13.rom page 0 cpu z80
+default observed
+
+# ---------------------------------------------------------------------------------------------
+# Number, size, time and date printing (into the output buffer, OUTBUF_CHAR)
+
+@311A SIZEK_SHIFT_LP
+  One pass of the size-in-K printer begun at $3118: shifts the 4-byte number whose top byte
+  is at HL one bit right; C counts the 10 passes (a divide by 1024).
+  .311A Keep the top byte's address
+  .311B B = 4 bytes
+  .311D Clear carry: a 0 enters at the top
+
+@311E SIZEK_SHR_BYTE
+  Shifts one byte of the number right through carry, top byte first; after 10 passes prints
+  the quotient (PRINT_DEC32, no padding) and a "K".
+  .3123 HL = the top byte again
+  .3124 10 passes done?
+  .3127 DE = the number's first byte, pushed by the caller at $30D3
+  .3128 A = 0: no padding
+
+@312C OUT_K
+  Writes "K" to the output buffer (a tail jump to OUTBUF_CHAR).
+  Entry: IY = EXDOS's base.
+  Exit: as OUTBUF_CHAR: A = 0 and Z, or EXOS's status.
+  Changes: AF.
+  Keeps: BC, DE, HL, IX, IY.
+
+@312E OUT_A_TAIL
+  Writes A to the output buffer: a shared tail jump to OUTBUF_CHAR.
+
+@3131 PRINT_TIME
+  Writes a space and the time held in a directory entry's time word (hours in bits 15-11,
+  minutes in bits 10-5) as "hh:mm". With bit 7 of IY-$4F clear the hours run 12-11 and an "a"
+  or "p" follows; with it set they run 0-23.
+  The minute bits are shifted out of the word in place: the entry's time word is changed.
+  Entry: HL = the time word's high byte (its low byte at HL-1); IY = EXDOS's base.
+  Exit: A = 0 and Z.
+  Error: NZ, A = EXOS's status when a full buffer could not be written.
+  Changes: AF, B, DE, HL; the time word.
+  Keeps: C, IX, IY.
+  .3136 B = 0: no suffix yet
+  .3137 A = the hours (bits 7-3 of the high byte)
+  .313D 24-hour clock?
+  .3143 B = "a"
+  .3145 Afternoon?
+  .3149 Hours 12-23 become 0-11
+  .314B B = "p"
+
+@314D TIME_HOUR_ZERO
+  Hour 0 of a 12-hour clock is shown as 12.
+  .314D Hour 0?
+  .3150 Then 12
+
+@3152 TIME_PRINT_HM
+  Writes the hours as two digits, a colon, the minutes as two digits and, for the 12-hour
+  clock, the "a" or "p" kept in B.
+  .3155 ":"
+  .315A A = the high byte; the low byte's top 3 bits are rotated in below
+  .315B HL = the low byte
+  .3165 A = the minutes
+  .316A B = 0 (24-hour clock)?
+
+@316D OUT_A_SHORT
+  Writes A to the output buffer (on to OUT_A_TAIL).
+
+@316F PRINT_DATE
+  Writes a space and the date held in a directory entry's date word (year - 1980 in bits
+  15-9, month in bits 8-5, day in bits 4-0) as three two-digit fields joined by "-". The order
+  comes from bits 5-0 of IY-$4F, two bits per field (1 = day, 2 = month, 3 = year); 0 there
+  means day-month-year ($6C). The year is shown as its last two digits.
+  Entry: HL = the date word (low byte first); IY = EXDOS's base.
+  Exit: NC; A = the format byte rotated.
+  Changes: AF, BC, DE, HL.
+  Keeps: IX, IY.
+  .316F C = the day
+  .3175 H = the year - 1980 (bit 8 of the word goes to carry)
+  .3178 A = the month, its top bit from carry
+  .317E L = the month
+  .317F A = the field order, moved to bits 7-2
+  .3184 Order set?
+  .3186 Else day, month, year
+
+@3188 DATE_FIELDS
+  Three fields, the first one after a space.
+  .3188 B = 3 fields
+  .318A E = " ", the separator before the first field
+
+@318C DATE_FIELD_LP
+  Takes the next field's two bits from the top of A and picks its value: day (C), month (L)
+  or year (H + 80).
+  .318C Next two bits to the bottom
+  .318E Keep the rest for the next field
+  .318F D = the field's selector
+  .3192 Selector 0: the value is 0
+  .3194 Selector 1: the day
+  .3198 Selector 2: the month
+  .319C Selector 3: the year
+  .319D Years count from 1980
+
+@319F DATE_PUT_FIELD
+  Writes the separator, then the field's value below 100.
+  .319F D = the value
+  .31A0 Separator first
+  .31A5 From 2000 on?
+  .31A9 Two digits only
+
+@31AB DATE_NEXT_FIELD
+  Writes the value as two digits; the next field is preceded by "-".
+  .31AE A = the remaining selectors
+  .31AF E = "-" from the second field on
+  .31B3 NC
+
+@31B5 PRINT_2DIGITS
+  Writes A (0-99) as two decimal digits.
+  Entry: A = the value; IY = EXDOS's base.
+  Exit: A = 0 and Z.
+  Error: NZ, A = EXOS's status when a full buffer could not be written.
+  Changes: AF, DE.
+  Keeps: BC, HL, IX, IY.
+  .31B5 E = "0" - 1
+
+@31B7 TWODIG_TENS_LP
+  Counts the tens in E, writes them, then the units.
+  .31B7 Take off 10
+  .31B9 One more ten
+  .31BC D = the units - 10
+  .31BD The tens digit
+  .31C2 The units digit: units - 10 + "0" + 10
+
+@31F4 PRINT_DE_DEC
+  Writes DE in decimal without padding, building the 4-byte number in the 4 bytes that end at
+  HL (the caller's $31E6 and OUTBUF_ERRTEXT enter here).
+  Entry: DE = the value; HL = the last of 4 free bytes; IY = EXDOS's base.
+  Exit: as PRINT_DEC32.
+  Changes: AF, BC, DE, HL, DE', L'; the 4 bytes.
+  .31F4 The high word is 0
+  .31F9 The low word is DE
+  .31FC DE = the number; A = 0: no padding
+
+@31FD PRINT_DEC32
+  Writes the 4-byte number at DE in decimal, by subtracting the powers of ten in the table at
+  $3233 ($FF ends it): each power's count is one digit. Leading zeros are left out when A is
+  0, or written as A (a space right-aligns the number in 10 columns); the units digit always
+  shows. The number is used up: it is 0 at the end.
+  Entry: A = the padding character, 0 for none; DE = the number (low byte first); IY =
+  EXDOS's base.
+  Exit: A = 0 and Z.
+  Changes: AF, BC, HL, DE', L'; the number.
+  Keeps: DE, IX, IY.
+  .31FE E' = the padding character
+  .31FF D' = "0"
+  .3202 HL = the powers of ten, 1000000000 first
+
+@3205 DEC32_POWER_LP
+  The next power; from the last one (1) on, a zero is written as "0".
+  .3205 The power 1?
+  .3209 Then the units digit always shows
+
+@320C DEC32_DIGIT
+  C counts the subtractions; carry is clear for the first.
+  .320C C = 0, NC
+
+@320E DEC32_SUB_LP
+  Subtracts the power once (4 bytes).
+  .320E Keep the power and the number
+  .3210 B = 4 bytes
+
+@3212 DEC32_SUB_BYTE
+  Subtracts byte by byte until the number goes below 0, then adds the power back (ADD32,
+  which also moves HL to the next power), and writes the digit: C - 1, through E' while
+  it is 0. A JR into $3228 runs its operand ($B3) as OR E: the zero digit's character.
+  .3212 Number byte - power byte - borrow
+  .3219 Back to the number's first byte
+  .321A Back to the power's first byte
+  .321B One more subtraction
+  .321C Not below 0 yet?
+  .321E Add the power back; HL = the next power
+  .3221 A = the count
+  .3223 Digit 0?
+  .3226 A = the digit's character
+  .3227 Every later 0 is written as "0"
+  .3228 Its operand ($B3), entered by JR: OR E, the zero's character or 0
+  .322A Write the digit, unless a leading zero is dropped
+  .322E The $FF end mark?
+
+@3254 ADD32
+  Adds the 4-byte number at HL to the one at DE (low bytes first).
+  Entry: DE = the sum; HL = the number to add.
+  Exit: the sum at DE; HL = HL + 4; B = 0; carry = the carry out of the top byte.
+  Changes: AF, B, HL; the sum.
+  Keeps: C, DE, IX, IY.
+  .3255 B = 4 bytes
+
+@3258 ADD32_LOOP
+  Adds one byte with carry.
+
+@3263 KBD_CHAN_TRY
+  Tries channel H: EXOS 11 special function 9; channels up to $FF are tried.
+  .3264 B = 9 (@@JOY), C = 0
+  .3269 It answered: Z, H = the channel
+  .326A Next channel
+  .326D None: H = $FF, NZ
+
+# ---------------------------------------------------------------------------------------------
+# Command-line helpers: argument parsing and EXDOS function calls on the request block
+
+@3BFC NEED_PARAM
+  Checks that the parse found something (B bit 0 or 2 set): the error otherwise is $9F
+  (Wrong number of parameters).
+  Entry: B = the parse's flags.
+  Exit: A = 0 and Z, NC.
+  Error: A = $9F, NZ.
+  Changes: AF.
+  Keeps: BC, DE, HL, IX, IY.
+  .3BFD Anything given?
+  .3C01 A = 0 when it was, else $FF
+  .3C02 A = 0 or $9F
+
+@3C07 ARGS_END
+  Checks that only spaces and tabs are left after an argument: C is the character that ended
+  it and DE points at it; the code from $3C08 steps over spaces and tabs to the next one. A 0
+  ends the command line. $3C05 enters with Z to check C first.
+  Entry: C = the character; DE = its address.
+  Exit: A = 0 and Z, NC.
+  Error: A = $9F (Wrong number of parameters), NZ.
+  Changes: AF, C, DE.
+  Keeps: B, HL, IX, IY.
+  .3C07 A = the character
+
+@3C1F FIND_FIRST_ARG
+  Starts the search for the request block's name (EXDOS function 4) and returns the first
+  entry its attributes allow. The search's return goes through $3CDC (pushed first), which
+  filters by attribute ($3D61) and goes on with function 5 until an entry passes, counting
+  the entries found at IY-$28.
+  1. In directory mode (carry kept in F' by PARSE_ARG_MODE, see $3C18) bit 4 of IY-$2A is set
+     and the search's result returned as it is.
+  2. Else, when a single name (B bit 5 clear) was found and it is a directory (entry
+     attribute bit 4, IX+$43), the name is appended to the path text at IY+$135 ($15DB) and
+     the path's text is cut there.
+  3. When the output buffer already holds text ("Directory of "), the drive and path are
+     written after it (PRINT_DRV_PATH).
+  4. For a directory found in step 2 the result becomes the request block ($3CBA, the name
+     all "?"), bit 5 of IX+$13 is set and the search starts again inside it (FN4_FIND).
+  Entry: B = the parse's flags; IX = the request block; F' carry = directory mode; IY =
+  EXDOS's base.
+  Exit: NC, A = 0 and Z; the entry's descriptor at IX+$30 (BC); DE = IX.
+  Error: C with A = $CF when nothing matched, or A = the error code; C with A = 0 when the
+  search ran out after some matches.
+  Changes: AF, BC, DE, HL, IY, AF', BC', DE', HL'; IY-$28, IY-$27.
+  Keeps: IX.
+  .3C1F The search's return: the attribute filter at $3CDC
+  .3C23 No entry found yet
+  .3C2A DE = the request block
+  .3C2E BC = the result buffer
+  .3C31 Function 4: find the first entry
+  .3C34 Directory mode?
+  .3C38 Keep the result
+  .3C39 HL = the path text the search returns
+  .3C3A A = the output buffer's count
+  .3C3E DE = the path text
+  .3C3F HL = the kept result (H = the status)
+  .3C41 C = the count of characters waiting
+  .3C42 Found?
+  .3C46 The name was all "?" (none given)?
+  .3C4A A directory?
+  .3C50 Append the directory's name to the path at IY+$135
+  .3C59 HL' = the path text; find its 0 end
+  .3C5C Next character
+
+@3C83 FN4_FIND
+  Runs EXDOS function 4 (find the first entry) through EXDOS_FN_CALL.
+  Entry: DE = the request block; BC = its result buffer; IY = EXDOS's base.
+  Exit: as EXDOS_FN_CALL.
+  Error: as EXDOS_FN_CALL.
+  Changes: AF, BC, DE, HL, IY.
+  Keeps: IX.
+  .3C83 Function 4
+
+@3C85 EXDOS_FN_CALL
+  Runs EXDOS function A through FUNC_DISPATCH, keeping IX.
+  Entry: A = the function; BC, DE, HL its parameters; IY = EXDOS's base.
+  Exit: A = 0, Z, NC; BC, DE, HL as the function left them.
+  Error: C and NZ, A = the error code.
+  Changes: AF, BC, DE, HL, IY.
+  Keeps: IX.
+  .3C8C Done?
+  .3C8D C: an error
+
+@3C8F PARSE_ARG_MODE
+  PARSE_ARG for a command that may work on directories: carry on entry (RD, MVDIR, RNDIR)
+  sets bit 4 of IY-$2B (directories only); A and the flags are kept in AF' for the command
+  ($3C95).
+  Entry: AF = the command's mode; C = function 1's flags; HL = the text; IX = the request
+  block; IY = EXDOS's base.
+  Exit: as PARSE_ARG; AF' = the entry AF.
+  Changes: AF, BC, DE, HL, IY, AF'.
+  Keeps: IX.
+  .3C8F Directories?
+  .3C91 Only directories
+
+@3C96 PARSE_ARG
+  Takes an argument apart into the request block (EXDOS function 1, FN_PARSE_SPEC). When B
+  comes back with bits 3 and 4 clear (no name in it), the block's name (+8) is filled with 11
+  "?" and B bit 5 is set ($3CA0).
+  Entry: HL = the argument text; C = function 1's flags (bit 0 = do not copy the name); IX =
+  the request block; IY = EXDOS's base.
+  Exit: A = 0, Z; B = the parse's flags; C = the character that ended the path, DE its
+  address; HL kept.
+  Error: C and NZ, A = the parse's error code.
+  Changes: AF, BC, DE, IY.
+  Keeps: HL, IX.
+  .3C96 Function 1: parse the specification
+  .3C9B A name given?
+
+@3CD4 FIND_NEXT_ARG
+  Goes on with the search (EXDOS function 5 from $3CD7) to the next entry that passes the
+  attribute filter, as FIND_FIRST_ARG's return does.
+  Entry: IX = the request block; IY = EXDOS's base.
+  Exit: as FIND_FIRST_ARG.
+  Error: as FIND_FIRST_ARG.
+  Changes: AF, BC, DE, HL, IY.
+  Keeps: IX.
+  .3CD4 BC = the result buffer, DE = the block
+
+@3CFF IX_RESULT_BUF
+  DE = the request block (IX), BC = its result buffer (IX+$30).
+  Entry: IX = the request block.
+  Exit: DE = IX; BC = IX+$30.
+  Changes: F, BC, DE.
+  Keeps: A, HL, IX, IY.
+
+@3D0B NEXT_REQ_BLOCK
+  Moves IX to the next request block ($60 bytes on) and prepares it (the code from $3D10, the
+  one the command dispatcher runs at $2C47): flags (+6) and drive (+7) = A, first byte A - 1.
+  Entry: A = the value (0); IX = the request block.
+  Exit: IX = DE = the new block; C = A; A = A - 1.
+  Changes: AF, C, DE, IX.
+  .3D0B The next block is $60 bytes on
+
+@3D1D PARSE_NAME_OPTS
+  Takes the first argument apart (PARSE_ARG_MODE), requires one (NEED_PARAM) and reads the
+  "/H" option ($3D3B with the table at $33BB).
+  Entry: AF = the command's mode (carry = directories); C = function 1's flags; HL = the text;
+  IX = the request block; IY = EXDOS's base.
+  Exit: A = 0, Z; B = the parse's flags.
+  Error: NZ, A = the error code ($9F with no argument).
+  Changes: AF, BC, DE, HL, IX, IY, AF', BC', DE', HL'.
+  .3D24 The options: "/H" only
+
+@3D2C OPTS_BY_KIND
+  Reads the options from the table at HL for a file operand (carry), else from the table at
+  HL + 4 (the options a channel or device may take); then $3D3B.
+  Entry: carry = a file operand; HL = the option table.
+  Exit: as $3D3B.
+  Changes: AF, C, DE, HL, C'.
+  .3D2C A file: every option
+  .3D2E Else the table's later part
+
+@3D92 SKIP_BLANKS
+  Steps HL over spaces and tabs (at most 255).
+  Entry: HL = the text.
+  Exit: HL = the first other character, A = it; Z when it is the 0 end; NC.
+  Changes: AF, C, HL.
+  Keeps: B, DE, IX, IY.
+  .3D92 C counts down from 255
+
+@3DA3 READ_DECIMAL
+  Reads the decimal digits at HL into C (modulo 256).
+  Entry: HL = the text.
+  Exit: C = the number; HL = the first non-digit; carry set.
+  Changes: AF, C, HL.
+  Keeps: B, DE, IX, IY.
+  .3DA3 C = 0
+
+@3DEC PARSE_CHAN_NUM
+  Reads a channel number written "#n" or "#n:".
+  Entry: HL = the "#".
+  Exit: DE = the channel number; A = 0, Z; HL after the number (and its colon).
+  Changes: AF, C, DE, HL.
+  .3DEC Over the "#"
+  .3DF0 A colon after it?
+
+# ---------------------------------------------------------------------------------------------
+# The commands (the table at $2C58). The dispatcher enters each with HL = the argument text,
+# IX = DE = the request block (IY+$FD), C = 0 and A = $FF (NZ, NC).
+
+@327F CMD_CD
+  The CD and CHDIR commands: with a path, makes it the current directory (EXDOS function 2,
+  CHANGE_DIR); without one, writes the drive's current directory (function 3, GET_CUR_DIR)
+  as "A:\path" and a new line.
+  Entry: HL = the argument text; IX = the request block; IY = EXDOS's base.
+  Exit: A = 0, Z.
+  Error: NZ, A = the error code ($9F for a second argument).
+  Changes: AF, BC, DE, HL, IX, IY, all alternates.
+  .327F C bit 0: the last element is entered too, its name not copied
+  .3284 Nothing after it?
+  .3288 A path given?
+  .328A Function 2: make it the current directory
+  .328F B = the drive
+  .3292 Function 3: the current directory's text
+  .3298 The text is followed by a new line
+  .329C DE = the path text
+
+@329D PRINT_DRV_PATH
+  Writes the request block's drive (IX+7) as "A:", the path separator and the path text at DE.
+  Entry: DE = the path text; IX = the request block; IY = EXDOS's base.
+  Exit: A = 0 and Z; C = the path's first character.
+  Error: NZ, A = EXOS's status.
+  Changes: AF, C, DE.
+  Keeps: B, HL, IX, IY.
+  .32A0 "\" or "'", by the language
+
+@32AB CMD_DIR
+  The DIR command: lists the files matching the argument (all with none), with the "/W"
+  (wide: names only, six to a line) and "/H" (hidden files too) options.
+  1. Takes the argument apart and reads the options (IY-$2A: bit 7 /W, bit 1 /H).
+  2. Writes the volume line (VOL_LABEL), then "Directory of " and the path (FIND_FIRST_ARG).
+  3. Each entry: its name and, in the long form, "h"/"r" marks, the size (or "<dir>"), the
+     date and the time; the sizes are added up at IX-$123 (IY-$26).
+  4. The summary: the total size, " in ", the number of files, and the drive's free space
+     in K (EXDOS function 21).
+  Entry: HL = the argument text; IX = the request block; IY = EXDOS's base.
+  Exit: A = 0, Z.
+  Error: NZ, A = the error code.
+  Changes: AF, BC, DE, HL, IX, IY, all alternates.
+  .32B0 The options: "/W" and "/H"
+  .32B6 Nothing else after them?
+  .32BB An empty path text: the root
+  .32BE Read the name raw
+  .32C2 The volume line
+
+@32C9 DIR_EXIT_POP
+  The end of DIR's start: drops the kept BC and HL; an error returns.
+
+@32CA DIR_EXIT_HL
+  Drops the kept HL (or the kept result) and returns on an error.
+
+@32D6 DIR_HEADER
+  C' = 0 (the wide form's column), then "Directory of " and the first entry.
+  .32D6 Column 0
+  .32D8 "Directory of "
+  .32DD The first entry, and the path after the text
+  .32E0 Found one?
+  .32E3 $CF (nothing found) is not an error here
+
+@32E8 DIR_LISTING
+  Ends the header line with a blank line and clears the total size (IX-$123).
+  .32E8 F' carry: nothing found
+  .32E9 End the line
+  .32EC And a blank line
+  .32F0 HL = the total size (4 bytes)
+
+@32FC DIR_ENTRY_LP
+  One entry: its name, then the wide or the long form; the entry's size is added to the
+  total.
+  .32FC No more entries?
+  .32FE Z: the long form (/W not given)
+  .3305 The name: padded columns, or compact with /W
+  .3308 DE = the entry's size (descriptor +$24)
+  .330E DE = the total
+  .3313 Add the size to the total
+  .3316 DE = the size
+  .3317 /W?
+  .331D C = the entry's attributes
+  .3320 Read-only?
+  .3325 "h" when hidden, else a space
+  .332C "r" when read-only
+  .3334 A directory?
+  .333A The size in 10 columns
+  .333F Z: no "<dir>"
+
+@3340 DIR_SIZE_DATE
+  Writes "<dir>" for a directory, then the entry's date and time and a new line.
+  .3340 " <dir>  "
+  .3347 HL = the date word (entry +$18)
+  .334C The date
+  .3350 HL = the time word's high byte
+  .3351 The time
+
+@335A DIR_WIDE_COL
+  The wide form: counts the columns in C' and starts a new line after six names.
+  .335B One more column
+  .335D Six on the line?
+  .3361 Column 0 again
+
+@3366 DIR_WIDE_NEXT
+  Back to the main registers.
+
+@3367 DIR_NEXT
+  Finds the next entry and loops.
+
+@336C DIR_SUMMARY
+  Ends the listing: a new line after a part-filled wide line, then the total size, " in ",
+  the file count ("file" or "files"), and the free space: function 21's free clusters times
+  the sectors per cluster, halved (512-byte sectors), in K with " free".
+  .336C An error ended the search?
+  .336E A partly filled wide line?
+  .3374 A space
+  .3377 HL = the number of files
+  .3378 HL = the total size
+  .337C The total, in bytes or K
+  .337F " in "
+  .3385 The count and " file", with its plural
+  .338A Four spaces
+  .338F B = the drive
+  .3392 Function 21: the free space
+  .3398 A = $29 (unused); a JR into its operand runs ADD HL,HL
+  .339A Shift once more for each power of 2 in the sectors per cluster
+  .339E Halve: sectors to K
+  .33A2 The free space
+  .33A5 "K"
+  .33A8 " free"
+
+@33BE CMD_RD
+  The RD and RMDIR commands: DEL for directories (carry set).
+  Entry: as CMD_DEL.
+  Exit: as CMD_DEL.
+  Error: as CMD_DEL.
+  Changes: AF, BC, DE, HL, IX, IY, all alternates.
+  .33BE Carry: directories
+
+@33BF CMD_DEL
+  The DEL, ERA and ERASE commands (and RD): deletes every matching entry (EXDOS function 8),
+  read-only ones left out; the "/H" option takes hidden ones too. A name of all "?" asks
+  "Erase all files (Y/N)?" first.
+  Entry: AF = the mode (carry for directories); HL = the argument text; IX = the request
+  block; IY = EXDOS's base.
+  Exit: A = 0, C after the last one.
+  Error: C and NZ, A = the error code ($CF when nothing matched).
+  Changes: AF, BC, DE, HL, IX, IY, all alternates.
+  .33BF The name and "/H"
+  .33C2 Nothing else after them?
+  .33C6 Read-only entries are not taken
+  .33CA The first entry
+  .33CE HL = the name (+8)
+  .33D2 B = 11 characters
+  .33D4 "?"
+
+@33D6 DEL_ALL_Q_LP
+  Is every character of the name "?"; then asks first.
+  .33D6 "?" here?
+  .33DC "Erase all files"
+  .33E1 Ask; not "yes" returns
+
+@33E5 DEL_START
+  BC = the result buffer.
+
+@33E8 DEL_LOOP
+  Deletes the entry found, then finds the next.
+  .33E8 HL = the request block
+  .33E9 DE = the entry's descriptor
+  .33EB Function 8: delete
+  .33F0 Then the next one
+  .33F3 Until the search ends
+
+@33F6 YES_NO_REPLY
+  Writes " (Y/N)? ", writes out the buffer and reads a line ($2FE2); the answer is yes when it
+  is one character, the yes letter: "J" when EXOS variable $90 is 0 (German), else "Y".
+  Entry: the question in the output buffer; IY = EXDOS's base.
+  Exit: A = 0; Z for yes, NZ for anything else.
+  Changes: AF, BC, DE, HL.
+  .33F6 " (Y/N)? "
+  .33FE One character?
+  .3403 In capitals
+  .3407 Read EXOS variable $90
+  .340D D = its value
+  .340E "J"
+  .3410 German?
+  .3414 Else "Y"
+
+@3416 YN_COMPARE
+  The answer against the yes letter.
+  .3417 Yes?
+
+@3418 YN_EXIT_A0
+  A = 0, the flags kept.
+
+@341B CMD_MD
+  The MD and MKDIR commands: makes a directory (EXDOS function 7, MAKE_DIR).
+  Entry: HL = the argument text; IX = the request block; IY = EXDOS's base.
+  Exit: A = 0, Z.
+  Error: NZ, A = the error code ($9F without a name or with a second argument).
+  Changes: AF, BC, DE, HL, IX, IY, all alternates.
+  .341E A name given?
+  .3422 Nothing after it?
+  .342A Function 7: make the directory
+
+@342F CMD_MVDIR
+  The MVDIR command: MOVE for directories (carry set, A = 0 after the INC).
+  Entry: as CMD_REN.
+  Exit: as CMD_REN.
+  Error: as CMD_REN.
+  Changes: AF, BC, DE, HL, IX, IY, all alternates.
+  .342F Carry: directories
+
+@3430 CMD_MOVE
+  The MOVE command: A = 0 (Z) makes CMD_REN move. The operand of LD B,$37 at $3431 is SCF,
+  the RNDIR command's entry ($3432: REN for directories).
+  Entry: as CMD_REN.
+  Exit: as CMD_REN.
+  Error: as CMD_REN.
+  Changes: AF, BC, DE, HL, IX, IY, all alternates.
+  .3430 A = 0: move
+  .3431 Its operand ($37) is SCF, RNDIR's entry
+
+@3433 CMD_REN
+  The REN and RENAME commands (A = $FF, NZ), MOVE, MVDIR and RNDIR: the first argument's
+  matching entries are renamed (EXDOS function 9) to the second argument's name, or moved
+  (function 10) to the directory the second argument names. "/H" takes hidden entries too.
+  1. Takes the first argument apart and finds its first entry; the character the parse cut
+     off is put back.
+  2. A second request block (NEXT_REQ_BLOCK) on the same drive takes the second argument:
+     a name to rename to (no path: B bit 1 clear), or a directory path to move to (parsed
+     with its last element entered).
+  3. Each matching entry: function 9 with BC = the second block, or 10 with BC = the path text.
+  Entry: AF = the mode (Z: move; carry: directories); HL = the argument text; IX = the
+  request block; IY = EXDOS's base.
+  Exit: A = 0 (C) after the last one.
+  Error: NZ, A = the error code ($AE for a path in the new name, $9F for a missing argument).
+  Changes: AF, BC, DE, HL, IX, IY, all alternates.
+  .3433 The first name and "/H"
+  .3439 Its first entry
+  .343C HL = where the parse stopped
+  .343F Put back the character the parse replaced
+  .3441 The second request block
+  .3444 Its drive = the first block's
+  .344B HL' = the second block
+  .344F The second argument
+  .3452 C = 0: copy the name
+  .3454 Rename?
+  .3457 Move: enter the path's last element
+
+@3459 REN_PARSE_NEW
+  Takes the second argument apart into the second block, back to the first block.
+  .345A The second argument
+  .345D Nothing after it?
+  .3461 IX = the first block again
+  .3466 AF = the command's mode, AF' kept
+  .346A Rename?
+  .346C Move: HL' = the path text
+
+@3472 REN_CHECK_NEW
+  The new name may have no path (B bit 1) and must be given.
+  .3472 A path in the new name?
+  .3474 Then $AE (Invalid parameter)
+
+@347A REN_MOVE_START
+  BC = the result buffer, DE = the block.
+
+@347D REN_MOVE_LOOP
+  Function 9 for REN, 10 for MOVE.
+  .347D AF = the command's mode
+  .347E Function 10: move
+  .3480 Move?
+  .3482 Else function 9: rename
+
+@3483 REN_MOVE_CALL
+  Runs the function on the entry found, then finds the next.
+  .3485 HL = the request block
+  .3486 DE = the entry's descriptor
+  .3488 BC = the second block or the path text
+  .348C Rename or move it
+  .348F Then the next one
+  .3492 Until the search ends
+
+@3495 CMD_VOL
+  The VOL command: with a name, writes it as the drive's volume label (EXDOS function 6 on
+  the raw name, IX+6 bit 3); without one, writes "Volume in drive A: is NAME" or "... has no
+  name".
+  Entry: HL = the argument text; IX = the request block; IY = EXDOS's base.
+  Exit: A = 0, Z.
+  Error: NZ, A = the error code.
+  Changes: AF, BC, DE, HL, IX, IY, all alternates.
+  .3495 Read the name raw
+  .349A Nothing after it?
+  .34A0 A = the parse's flags
+
+@34A1 VOL_LABEL
+  Sets the volume label (A bit 0 set: a name given, function 6) or finds and writes it
+  (function 4 on the root, from DIR too).
+  Entry: A bit 0 = a name given; IX = the request block; IY = EXDOS's base.
+  Exit: A = 0, Z.
+  Error: NZ, A = the error code.
+  Changes: AF, BC, DE, HL, IX, IY, all alternates.
+  .34A1 BC = the result buffer, DE = the block
+  .34A4 A name?
+  .34A6 Function 6: write it
+  .34AB Function 4: find the label
+  .34B0 $CF: no label
+  .34B4 Another error?
+
+@34B6 VOL_SHOW
+  Writes "Volume in drive A:" and " has no name", or " is " and the 11-character name.
+  .34B6 Keep the result
+  .34B7 "Volume in drive "
+  .34BC "A:"
+  .34C0 No label?
+  .34C1 " has no name"
+  .34C6 " is "
+  .34CA DE = the entry's name
+  .34CF End it after 11 characters
+  .34D4 The name
+  .34D7 A new line
+
+@34DA CMD_CLS
+  The CLS command: writes code $1A and writes out the buffer.
+  Entry: IY = EXDOS's base.
+  Exit: A = EXOS's status, flags from it.
+  Changes: AF.
+  .34DA Code $1A
+
+@34E2 CMD_ECHO
+  The ECHO command: writes its argument text and a new line.
+  Entry: HL = the argument text; IY = EXDOS's base.
+  Exit: A = 0 and Z.
+  Error: NZ, A = EXOS's status.
+  Changes: AF, DE, HL.
+  .34E2 DE = the text
+
+@34E9 CMD_TYPE
+  The TYPE command: COPY to the default channel (bit 5 of IY-$2B clear).
+  Entry: as COPY_TYPE.
+  Exit: as COPY_TYPE.
+  Error: as COPY_TYPE.
+  Changes: AF, BC, DE, HL, IX, IY, all alternates.
+  .34E9 Not COPY
+
+@34EF CMD_COPY
+  The COPY command (bit 5 of IY-$2B set); goes on at COPY_TYPE.
+  Entry: as COPY_TYPE.
+  Exit: as COPY_TYPE.
+  Error: as COPY_TYPE.
+  Changes: AF, BC, DE, HL, IX, IY, all alternates.
+  .34EF COPY
+
+@34F3 COPY_TYPE
+  COPY and TYPE: a source and (for COPY) a destination, each a file specification, a
+  "#n" channel or a device name ("NAME:").
+  1. The source (PARSE_OPERAND) and its options from $36D4: "/A", and "/H" for a file.
+  2. TYPE: the destination is channel $FF (B' bit 6 set). COPY: the second operand in the
+     next request block and its options from $36DB ("/V", "/T", "/A" for a file, "/A" else).
+  3. IY-$2A = the options of both. A file source is searched for (FIND_FIRST_ARG); a device
+     is opened (OPEN_FREE_CHAN), its channel kept at IY-$2C.
+  4. The copy itself from $3566 on.
+  Entry: HL = the argument text; IX = the request block; IY = EXDOS's base.
+  Exit: A = 0, Z.
+  Error: NZ, A = the error code.
+  Changes: AF, BC, DE, HL, IX, IY, all alternates.
+  .34F3 The source
+  .34F8 Its options
+  .34FE A name given?
+  .3503 B' = the source's options
+  .3506 HL = the text after it
+  .3507 The second request block
+  .350A The next argument
+  .350E COPY?
+  .3515 TYPE: B' bit 6
+  .3517 C' = 0
+  .3519 The destination: channel $FF
+  .351F Nothing after it?
+
+@3521 COPY_DEST
+  COPY's destination: the second operand and its options.
+  .3521 C = 0: copy the name
+  .3522 The destination
+  .3526 DE' = the text after it
+  .3529 Its options
+
+@352F COPY_ARGS_END
+  Nothing may follow.
+
+@3532 COPY_ARGS_DONE
+  Back to the source block; IY-$2A = the options of both; a file source is searched for.
+  .3532 IX = the source block
+  .353B The options of both
+  .3541 D = the source's first byte: $FF for a file
+  .3544 A file?
+  .3548 Its first entry
+
+@354E COPY_SRC_CHAN
+  The source is a channel or a device: refused with an all-"?" destination name ($AE);
+  a device (D not 0) is opened, its channel kept at IY-$2C and the block's +2.
+  .354E The destination's name all "?"?
+  .3552 Then $AE (Invalid parameter)
+  .3555 D = 0: a channel number
+  .3559 DE = the device's name
+  .355C Open it
+  .3560 Close it at the end
+
+@3566 COPY_VERIFY_OPT
+  With "/V" (IY-$2A bit 7), IY-$29 = $FE when IY-$58 was not 0, else $FF, and IY-$58 is
+  cleared.
+  .356A /V?
+  .3570 A = IY-$58
+  .3575 A = $FF when it was not 0
+  .3576 $FE or $FF
+  .357A Clear it
+
+@357E COPY_DEST_DEV
+  A device destination (first byte not $FF or 0) is created (EXOS 2, $0339); its channel
+  goes to IY-$2D and the block's +$62.
+  .357E D = the destination's first byte
+  .3582 A file ($FF) or a channel (0)?
+  .3587 DE = the device's name
+  .358A Create the channel
+  .358E Close it at the end
+
+@3594 COPY_SRC_OPEN
+  A file source is opened (EXDOS function 12).
+  .3594 BC = the result buffer, DE = the block
+  .3597 HL = the block
+  .3598 DE = the entry's descriptor
+  .359A A file?
+  .35A0 Function 12
+
+@35A6 COPY_ALLOC
+  Allocates up to four segments for the copy's buffer; HL' adds up DE from each EXOS 24.
+  .35A6 HL' = 0
+  .35AB HL = the segment list (IX-$133)
+  .35B0 B = 4 tries
+
+@35B2 COPY_ALLOC_LP
+  One EXOS 24 (allocate a segment).
+  .35B5 A = the segment
+  .35B7 Got one?
+  .35B9 A shared segment: its boundary
+  .35BD None: segment 0, size 0
+
+@35C0 COPY_ALLOC_STO
+  Stores the segment and adds DE to HL'.
+  .35C0 The segment number
+
+@35D2 COPY_BUF_SIZE
+  The buffer's size, rounded down to an even page, at most $FE00; without a segment, EXDOS
+  function 30's scratch buffer (512 bytes) is used.
+  .35D2 L = 0
+  .35D4 Any space?
+  .35D8 No segments
+  .35DD Function 30: the scratch buffer
+  .35E4 Its address in place of the kept word
+  .35E6 512 bytes
+
+@35E9 COPY_TYPE_CAP
+  TYPE moves at most $2000 bytes at a time.
+  .35E9 COPY?
+  .35EF $20 pages at most
+
+@35F5 COPY_FILE_LP
+  Writes the source's name for a copy out of a named directory ($36E2), checks the stop
+  ($2F23), points IX at the destination block and, for a file destination, creates it:
+  $3884, code $1A at DE, with "/A" EXDOS function 16 ($3862), then function 13.
+  .35F7 The name, when copying a directory's files
+  .35FA Stop pressed?
+  .3601 HL = IY
+  .3605 DE = IY+$18D
+  .360B IX = the destination block (IY+$15D)
+  .360E A file ($FD-$FF)?
+  .3613 Already open?
+  .361D C = 1
+  .361F Code $1A
+  .3622 /A?
+  .362A Function 13: create the file
+
+@362F COPY_DEST_CHK
+  An error goes to $3699; with the stop status kept from $2F23, the new file is deleted
+  (function 8).
+  .3631 The kept status
+  .3633 Not stopped?
+  .3635 HL = the destination block
+  .3638 Function 8: delete it
+
+@36E2 COPY_SHOW_NAME
+  When the source was a directory named on the command line (IX+$13 bit 5), writes the
+  entry's name and a new line.
+  Entry: IX = the source block; IY = EXDOS's base.
+  Exit: A = 0, Z.
+  Error: NZ, A = EXOS's status.
+  Changes: AF, BC, DE, HL, IX, IY, AF', DE'.
+  .36E5 Destination +$14 = the block's high byte
+  .36E8 A directory's files?
+  .36EE The compact name
+
+@382E PARSE_OPERAND
+  Takes one COPY or TYPE operand apart into the request block at IX: "#n" is a channel
+  number, else a file specification (PARSE_ARG), or a device when the parse stops at ":"
+  ($3DFA finds the name). A file ends at $3859, inside the JP NZ at $3858 (never taken: A
+  is 0): XOR A, SCF, so carry marks a file.
+  Entry: HL = the text; C = function 1's flags; IX = the request block; IY = EXDOS's base.
+  Exit: carry for a file (IX+$13 = the parse's flags), NC for a channel or a device (IX+0 =
+  the name's high byte or 0, IX+1 its low byte, IX+2 the channel, IX+$13 = 1); A = 0; IX+$14
+  = D; DE = the text after it; AF' = the entry AF.
+  Error: NZ, A = the error code.
+  Changes: AF, BC, DE, HL, IY, AF', L'.
+  Keeps: IX.
+  .382F A "#"?
+  .3832 The channel number
+  .3837 L' = the first character
+  .383A A file specification?
+  .383D A = the character that ended it
+  .383E A device name?
+  .3842 Put back the ":"
+  .3846 And the first character
+  .3847 Find the device's name
+  .384A Its low byte
+
+@384D OPERAND_CHAN
+  A channel or device operand: IX+0/IX+1 = DE (the name, or 0 and the channel), IX+2 = E.
+  TYPE's destination enters here with DE = $00FF.
+  Entry: DE = the device's name, or D = 0 and E = the channel; HL = the text after it; IX =
+  the request block.
+  Exit: A = 0, Z, NC; C = the next character; DE = the text; IX+$13 = 1; IX+$14 = D.
+  Changes: AF, BC, DE, HL.
+  .384D The channel number
+  .3850 The name's high byte, 0 for a channel
+  .3853 C = the next character
+  .3854 DE = the text
+  .3856 B = 1, the mark for IX+$13
+  .3858 Never taken (Z): its operand ($AF $37) is the file path's XOR A, SCF
+  .385B IX+$14 = D
+  .385E IX+$13 = B
+
+@3862 FN16_SETUP
+  Runs EXDOS function 16 ($3864 on) with IX = BC' and IY-$80 = 3; status $E4 becomes 0.
+  Entry: BC = passed on; BC' = the block for IX; IX = the request block; IY = EXDOS's base.
+  Exit: A = 0, Z (also for $E4, with A' = $E4 and NZ).
+  Error: NZ, A = the error code.
+  Changes: AF, BC, DE, HL, IY, AF'.
+  .3862 Function 16
+
+@3884 DE_FROM_BC_ALT
+  DE = BC', then $3888.
+  Entry: BC' = the value.
+  Exit: as $3888.
+  Changes: AF, B, DE; as $3888.
+  .3887 DE = BC'
+
+# ---------------------------------------------------------------------------------------------
+# Questions and notes
+
+question 3858 What is IX+$14 (set to D, the text pointer's high byte, at $385B) for: only bit 7 is tested ($3613)?
+question 35A6 Does EXOS 24 return DE as the space a segment gives, so that HL' is the buffer size?
+question 3566 Is IY-$58 EXDOS's verify flag, saved and cleared by COPY's "/V"?
+question 3D0B Is the request block always $60 bytes, so that COPY's two blocks and REN's are at IY+$FD and IY+$15D?
+
+feedback missing 327F-34EF The command handlers' entry state comes from $2C47-$2C55 (A = $FF with NZ, NC; HL = the text; IX = DE = IY+$FD; C = 0): a card for a table-entered handler should carry it
+feedback pattern 3858-385A JP NZ,nn after XOR A (and JP Z after OR $AE at $3D5A) is never taken and hides an entry in its operand; the card calls it "jumps out of the page"
+feedback listing 3118-3131 Had to read $30D3-$3118 to see what $3127's POP takes (the number pushed at $30D3)
+feedback listing 2B9B-2C58 Had to read the command dispatcher and decode the command table by hand to know which handler is which command

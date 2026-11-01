@@ -70,6 +70,25 @@ describe("region proposals", () => {
     expect(document.regions).toMatchObject([{ kind: "words", start: 0x40, end: 0x43 }]);
   });
 
+  it("propose counted texts (a length byte first) and fills, through bytes a run only read (EXDOS's page 1)", async () => {
+    const bytes = new Uint8Array(0x80).fill(0xff);
+    const texts = ["File exists", "Disk full", "Bad name"];
+    let at = 0x08;
+    for (const t of texts) {
+      bytes[at] = t.length;
+      bytes.set(Array.from(t).map((c) => c.charCodeAt(0)), at + 1);
+      at += 1 + t.length;
+    }
+    const flags = new Array<number>(bytes.length).fill(0);
+    // --- The code that walks the table reads each length byte
+    flags[0x08] = PF_READ;
+    flags[0x08 + 12] = PF_READ;
+    const analysis = await analyseRomPage({ image: imageFromRomPage(bytes, { name: "t.rom", kind: "ep-ext" }), bankId: "0", profile: { page: 0, flags } });
+    const found = analysis.proposals.map((p) => [p.kind, p.start, p.end]);
+    expect(found).toContainEqual(["text", 0x08, at - 1]);
+    expect(found).toContainEqual(["fill", at, 0x7f]);
+  });
+
   it("propose no code/data flips on finished sidecars, and list weak evidence as questions", async () => {
     for (const [rom, page] of [
       ["sp48.rom", 0],
