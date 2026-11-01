@@ -1,0 +1,35 @@
+// A throwaway Enterprise probe: copy to test/ep-hw/zz-<name>-probe.test.ts (that folder is in the e2e-cores
+// tier; a core test anywhere else fails in the unit tier), run it, read OUT, delete it.
+//   npx vitest run --config build/vitest.config.ts --project e2e-cores test/ep-hw/zz-<name>-probe.test.ts
+// vitest swallows console.log in this config: write results to a file. Record only what you observed
+// (the values) in PROVENANCE.md; never keep the probe.
+import { it } from "vitest";
+import { appendFileSync, writeFileSync } from "node:fs";
+import { createEpSession } from "../harness/enterprise";
+import { EpKeyCode } from "@emu/machines/enterprise/EpKeyCode";
+const OUT = "<scratchpad>/probe.txt";
+
+it("probes something", async () => {
+  writeFileSync(OUT, "");
+  const s = await createEpSession(); // the 128 (EXOS 2.1); { model: "ep64" } is EXOS 2.0
+  s.bootToBasic(); // about 440 frames
+  const m: any = s.machine; // m.pc, m.sp, m.af, m.bc, m.de, m.hl, m.ix, m.iy ...
+  const page3 = () => s.wasm.epGetPageRegister(3); // the segment in page 3 ($C000-$FFFF)
+
+  // IS-BASIC runs a typed line at once; read the screen as NICK shows it
+  s.typeKeys("PRINT 1+2\n", { settle: 80 });
+  appendFileSync(OUT, s.screenText() + "\n");
+
+  // Stop at an EXOS segment 0 routine (offset + $C000). The same address runs in other segments too
+  // (IS-BASIC is in page 3 most of the time): check page3() === 0 after the stop, and go on if not.
+  s.typeKeys("PRINT 2", { settle: 10 });
+  s.keyDown(EpKeyCode.Enter);
+  for (let i = 0; i < 20; i++) {
+    s.runTo(0xc000 + 0x14d0, { maxFrames: 50 });
+    if (page3() === 0) break;
+    s.step(1);
+  }
+  appendFileSync(OUT, `pc=${m.pc.toString(16)} a=${(m.af >> 8).toString(16)} hl=${m.hl.toString(16)} seg3=${page3()}\n`);
+  s.keyUp(EpKeyCode.Enter);
+  // s.peek(address) reads through the paging; s.physical(address) reads the 4 MB space (segment s at s*$4000)
+});

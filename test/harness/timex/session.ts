@@ -9,6 +9,7 @@ import { MEDIA_DOCK } from "@common/structs/project-const";
 import type { DckImage } from "@common/timex/dckFile";
 
 import { Sp48TestSession } from "../sp48/session";
+import { buildCoreOnce } from "../coreBuild";
 import { buildTimexWasm, productionOutput } from "../../../scripts/build-timex-wasm.cjs";
 
 /** The Sinclair 48K ROM the app ships: the TC2048 boots it when no TC2048 ROM is named */
@@ -64,7 +65,6 @@ class HarnessTimexMachine extends TimexWasmV2Machine {
   }
 }
 
-let wasmBuilt = false;
 
 export type TimexSessionOptions = {
   /** The model (the TC2048 when omitted) */
@@ -82,10 +82,7 @@ export type TimexSessionOptions = {
  * the Sinclair 48K ROM unless the options name the model's own ROM.
  */
 export async function createTimexSession(options: TimexSessionOptions = {}): Promise<TimexTestSession> {
-  if (!wasmBuilt) {
-    buildTimexWasm();
-    wasmBuilt = true;
-  }
+  buildCoreOnce(productionOutput, buildTimexWasm);
   const model = options.model ?? "tc2048";
   const romOption = options.rom === "tc2048" ? "own" : options.rom;
   let rom: Uint8Array;

@@ -52,6 +52,7 @@ import { AssemblerOptions } from "@main/compiler-common/assembler-in-out";
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
 import { Z80Assembler } from "@main/z80-compiler/z80-assembler";
 
+import { buildCoreOnce } from "../coreBuild";
 import { buildSp48Wasm, productionOutput as sp48Output } from "../../../scripts/build-sp48-wasm.cjs";
 import { buildSp128Wasm, productionOutput as sp128Output } from "../../../scripts/build-sp128-wasm.cjs";
 import { buildSpP3eWasm, productionOutput as spp3eOutput } from "../../../scripts/build-spp3e-wasm.cjs";
@@ -129,8 +130,6 @@ class HarnessSpp3eMachine extends ZxSpectrumP3eWasmV2Machine {
   }
 }
 
-const built: Record<string, boolean> = {};
-
 class HarnessSp48Machine extends ZxSpectrum48WasmV2Machine {
   constructor(model: MachineModel | undefined, config: MachineConfigSet) {
     super(model, config, {
@@ -160,22 +159,13 @@ export async function createHarnessSpectrumMachine(
   const info = machineRegistry.find((m) => m.machineId === machineId)?.models?.find((m) => m.modelId === modelId);
   let machine: ZxSpectrum48WasmV2Machine | ZxSpectrum128WasmV2Machine | ZxSpectrumP3eWasmV2Machine;
   if (machineId === MI_SPECTRUM_48) {
-    if (!built.sp48) {
-      buildSp48Wasm();
-      built.sp48 = true;
-    }
+    buildCoreOnce(sp48Output, buildSp48Wasm);
     machine = new HarnessSp48Machine(info, { ...(info?.config ?? {}), ...config });
   } else if (machineId === MI_SPECTRUM_3E) {
-    if (!built.spp3e) {
-      buildSpP3eWasm();
-      built.spp3e = true;
-    }
+    buildCoreOnce(spp3eOutput, buildSpP3eWasm);
     machine = new HarnessSpp3eMachine({ ...info!, config: { ...(info?.config ?? {}), ...config } });
   } else {
-    if (!built.sp128) {
-      buildSp128Wasm();
-      built.sp128 = true;
-    }
+    buildCoreOnce(sp128Output, buildSp128Wasm);
     machine = new HarnessSp128Machine(getSp128Model(modelId) ?? info, undefined, config);
   }
   await machine.setup();
@@ -211,22 +201,13 @@ export async function createSp128Session(
   let machine: ZxSpectrum128WasmV2Machine | ZxSpectrumP3eWasmV2Machine;
   const sp128Model = getSp128Model(model);
   if (model === "scorpion") {
-    if (!built.sp128) {
-      buildSp128Wasm();
-      built.sp128 = true;
-    }
+    buildCoreOnce(sp128Output, buildSp128Wasm);
     machine = new HarnessScorpionMachine(options.scorpionRom, options.trdosRom);
   } else if (sp128Model) {
-    if (!built.sp128) {
-      buildSp128Wasm();
-      built.sp128 = true;
-    }
+    buildCoreOnce(sp128Output, buildSp128Wasm);
     machine = new HarnessSp128Machine(sp128Model, options.trdosRom);
   } else {
-    if (!built.spp3e) {
-      buildSpP3eWasm();
-      built.spp3e = true;
-    }
+    buildCoreOnce(spp3eOutput, buildSpP3eWasm);
     const info = machineRegistry
       .find((m) => m.machineId === MI_SPECTRUM_3E)!
       .models!.find((m) => m.modelId === model);

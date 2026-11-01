@@ -1,5 +1,5 @@
 import { NEXT_ROM_SETS, nextRomAnnotationFile, type NextRomSet } from "@common/zxnext/romSets";
-import { MI_HT1080Z, MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48, MI_TVC, MI_ZX80, MI_ZX81, MI_ZXNEXT } from "@common/machines/constants";
+import { MI_ENTERPRISE, MI_HT1080Z, MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48, MI_TVC, MI_ZX80, MI_ZX81, MI_ZXNEXT } from "@common/machines/constants";
 
 /*
  * The ROMs the Debug › ROM Annotations menu offers, by machine type (`.plans/ROM_ANNOTATIONS_MENU_PLAN.md`
@@ -67,6 +67,15 @@ export const ROM_ANNOTATION_CATALOG: readonly RomCatalogMachine[] = [
   {
     machineId: MI_TVC,
     groups: [files("tvc12-d4.rom", "tvc12-d3.rom", "tvc12-d7.rom"), files("tvc22-d6.rom", "tvc22-d4.rom", "tvc22-d7.rom")]
+  },
+  {
+    machineId: MI_ENTERPRISE,
+    // --- The 128's EXOS 2.1 and IS-BASIC 2.1, the 64's EXOS 2.0 and IS-BASIC 2.0, then the EXDOS card's ROM
+    groups: [
+      [...pages("ep-exos21.rom", 2), ...files("ep-basic21.rom")],
+      [...pages("ep-exos20.rom", 2), ...files("ep-basic20.rom")],
+      pages("ep-exdos13.rom", 2)
+    ]
   }
 ];
 

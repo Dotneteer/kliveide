@@ -14,6 +14,7 @@ import { FAST_LOAD, SAVED_TO_TAPE } from "@emu/machines/machine-props";
 import { MEDIA_TAPE } from "@common/structs/project-const";
 import { HT1080Z_MODELS, HT1080Z_VIDEO_RAM_START } from "@emu/machines/ht1080z/ht1080zMachineInfo";
 
+import { buildCoreOnce } from "../coreBuild";
 import { buildHt1080zWasm, productionOutput } from "../../../scripts/build-ht1080z-wasm.cjs";
 
 export const REPO_ROOT = join(__dirname, "../../..");
@@ -42,17 +43,13 @@ class HarnessHt1080zMachine extends Ht1080zWasmV2Machine {
   }
 }
 
-let wasmBuilt = false;
 
 /**
  * Creates an HT-1080Z on the real WASM core with the model's real ROMs, powered on. Builds the core
  * once per test process.
  */
 export async function createHtSession(options: Ht1080zSessionOptions = {}): Promise<Ht1080zTestSession> {
-  if (!wasmBuilt) {
-    buildHt1080zWasm();
-    wasmBuilt = true;
-  }
+  buildCoreOnce(productionOutput, buildHt1080zWasm);
   const machine = new HarnessHt1080zMachine(options.model ?? "ht1080z-s2");
   await machine.setup();
   return new Ht1080zTestSession(machine);

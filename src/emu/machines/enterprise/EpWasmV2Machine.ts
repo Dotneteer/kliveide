@@ -27,6 +27,7 @@ import { fillCoreBytes, writeCoreBytes } from "@emu/machines/reverse/coreMemoryW
 import { loadEpWasmV2 } from "./wasm/EpWasmV2Loader";
 import { EpWasmHost } from "./EpWasmHost";
 import { EP_EXDOS_ROM_IMAGE, EP_FILEIO_ROM_NAME, EP_ROM_SETS } from "./EpRoms";
+import { EP_ROM_SEGMENTS } from "@common/annotations/bankSpace";
 import { EpExdosDisks } from "./EpExdosDisks";
 import { EpHostFs, type EpHostFileStore, type EpHostFsAsync } from "./EpHostFs";
 import { EpMainFileStore } from "./EpMainFileStore";
@@ -1032,6 +1033,28 @@ export class EpWasmV2Machine extends EpWasmHost implements IExecutionHistorySour
     const wanted = label.trim().toUpperCase();
     if (!/^[0-9A-F]{1,2}$/.test(wanted)) return undefined;
     return parseInt(wanted, 16);
+  }
+
+  /**
+   * The ROM segments as the ROM annotations see them: each fitted one its own page, by its segment
+   * number (EXOS 00h-01h always; the cartridge 04h, the FILE: ROM 10h and EXDOS 20h-21h when fitted),
+   * so the sidecar of the file whose page it holds applies to it. An empty ROM slot is no page.
+   */
+  protected override getRomPartitionImages(): Map<number, Uint8Array> {
+    const hw = this.hardware;
+    const fitted: Record<number, boolean> = {
+      0x00: true,
+      0x01: true,
+      0x04: hw.cartridge,
+      0x10: hw.hostFs,
+      0x20: hw.exdos,
+      0x21: hw.exdos
+    };
+    const images = new Map<number, Uint8Array>();
+    for (const segment of EP_ROM_SEGMENTS) {
+      if (fitted[segment]) images.set(segment, this.getMemoryPartition(segment).slice());
+    }
+    return images;
   }
 
   /** A segment's 16K, straight from the core's physical memory (an empty one reads FFh) */

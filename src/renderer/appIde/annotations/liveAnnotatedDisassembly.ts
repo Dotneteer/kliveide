@@ -3,7 +3,7 @@ import type {
   DisassemblyOperandLabelResolver
 } from "@renderer/appIde/disassemblers/common-types";
 import type { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z80-disassembler";
-import type { BankSpace, MemorySite, SlotPaging } from "@common/annotations/bankSpace";
+import { isRomPartitionOf, type BankSpace, type MemorySite, type SlotPaging } from "@common/annotations/bankSpace";
 
 import { createAnnotatedDisassemblyItems } from "./annotatedDisassembly";
 import { ANNOTATION_BANK_SIZE } from "./programAnnotations";
@@ -65,7 +65,7 @@ function continues(previous: LivePiece, site: MemorySite, address: number): bool
 
 /** The site a whole partition view shows (the panel's bank view), with its first offset. */
 export function partitionSite(partition: number, space: BankSpace): MemorySite | undefined {
-  if (partition < 0) return { kind: "rom", partition, offset: 0 };
+  if (isRomPartitionOf(space, partition)) return { kind: "rom", partition, offset: 0 };
   if (space.id === "next") return { kind: "bank", bank: partition >> 1, offset: (partition & 1) * 0x2000 };
   return { kind: "bank", bank: partition, offset: 0 };
 }
