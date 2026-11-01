@@ -2368,3 +2368,80 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
   Checked in the running IDE (Playwright harness): `dis $D4D0` at a breakpoint shows VID_WRITE_CHAR with its
   operands named, `dis $C410` shows KERNEL_ENTRY; `ann-info` finds the shipped sidecar for segment 0 and lists
   segments 01h, 04h and 10h by file; the ROM annotation editor reports "Ready to ship · level 2".
+
+### 2026-11-01 — Enterprise 128: `ep-exos21.rom` page 1 (EXOS 2.1, segment 01h) to level 2
+
+- **Sources:** the ROM bytes through Klive's disassembler (`tools/ep-dis.cjs`, now with IS-BASIC's call lists
+  decoded on this page, kind `ep-exos-basic`); the IS-BASIC 2.1 cartridge's bytes (`ep-basic21.rom`) where this
+  page calls it; runs on the real core (`test/harness/enterprise/`); and, for interface facts only (marked
+  `manual`, 325 entries), the EXOS 2.1 kernel specification (`_input/enterprise128/docs/Exos.htm`): action codes,
+  EXOS variable numbers and names, error codes and names, special functions, descriptor formats, escape
+  sequences. Hardware facts (ports) from Klive's own core notes. No commented disassembly, symbol file or name
+  list of EXOS or IS-BASIC was opened; ep128emu, Xep128 and other GPL sources were not read; no helper opened
+  `_input/` or the web.
+- **How:** a profile run, then probes that dumped the null segment's low RAM after the boot (the cartridge's gate:
+  `RST 08h`/`10h`/`18h`/`20h`) and logged every step of the call lists over 56 commands (only $92 moved the list
+  pointer, by one byte; $93 and $96 read a word, from their code). The decoder was written from that and checked
+  against the profile: all 164 lists that ran end where the code goes on. Two helpers wrote the call dictionary
+  (the cartridge's 65 routines and this page's 64), eleven drafted ranges under `helper-briefs/ep-draft-a-range.md`
+  with the D4 rule. Merged with `merge-drafts.py`; the session renamed two clashing labels (from the code),
+  labelled one more target (`WP_JP_HL`), swapped 83 numeric references to labelled code for names and settled
+  every "probably" from the code or a probe.
+- **Runs (observed):** the profile (about 100 typed IS-BASIC commands and the WP's keys; 4,818 bytes ran, 3,934
+  were read as data after the boot). A probe at SERIAL's write character showed descriptor byte IX+11 = 4 for
+  channel 3 (the channel number + 1). Helper probes: VER$ (66 characters), function results (EXP, LOG10, SQR,
+  ROUND, TRUNCATE, RND, MOD, REM, SIZE, UBOUND, LBOUND, POS, RTRIM$, MAXLEN, EPS, HEX$), EXSTRING$ for each error
+  number, `:HELP WP`, `:HELP ISL1985`, an unknown command, the WP's screens and function keys, DATE's 8-digit form.
+- **Read from the bytes and confirmed in runs:** POS misses a match after a partial one; RTRIM$ trims nothing past
+  128 characters; MOD with a negative divisor gives 0; MAXLEN of a string-array element gives 0. The tamper check
+  (one tick in eight) passes on the ROM as shipped (computed). The 32K ROM's words add up to 0.
+- **Level:** 2, measured and recorded (923 labels, 519 data regions, 7,184 instructions; 23 targets inside an
+  instruction, each explained on the instruction that hides it). Reassembles byte for byte (the source export).
+  Checked in the running IDE (Playwright harness): `dis $E47A` at a breakpoint shows SVC_TICK with its operands
+  named; `ann-info` finds the shipped sidecar for segment 01h; the ROM annotation editor reports "Ready to ship ·
+  level 2". The live gating of the call lists is covered by a test over the real page bytes and the panel's
+  context function.
+
+### 2026-11-01 — Enterprise 128: `ep-basic21.rom` (the IS-BASIC 2.1 cartridge) to level 2
+
+- **Sources:** the ROM bytes through Klive's disassembler (`tools/ep-dis.cjs`, the call lists decoded: kind
+  `ep-basic`); EXOS 2.1's finished sidecar for the routines the cartridge reaches; runs on the real core; Klive's
+  `src/common/enterprise/basicTokens.ts` for token numbers the BASIC listing view decodes (interface facts); and,
+  for interface facts only (marked `manual`), the EXOS 2.1 kernel specification. No commented disassembly or
+  name list of IS-BASIC was opened; GPL emulator sources were not read; no helper opened `_input/` or the web.
+- **How:** the 65 routine names of the cartridge's call table came from the call dictionary written for EXOS's
+  segment 01h (from the bytes and probes). A profile over ~140 typed commands and two programs, then ten helpers
+  drafted ranges under `helper-briefs/ep-draft-a-range.md` with the D4 rule. Merged with `merge-drafts.py`; the
+  session renamed three clashing labels, listed the restarts' two RAM `JR`s as data (their targets differ in the
+  ROM listing), settled every "probably" from the code, and swapped 298 numeric references to labelled code for
+  names.
+- **Runs (observed):** the profile (8,976 bytes ran after the boot, 1,268 read as data); helper probes of
+  EXSTRING$ for many error numbers, statements (SELECT/CASE, slices, logical operators, ASK, CLOSE, CALL,
+  CONTINUE, INFO); a probe that typed a line of 70 "1+" terms: error 20073 "Statement not allowed after THEN"
+  from the line-buffer resize at $0504.
+- **Level:** 2, measured and recorded (1,021 labels, 493 data regions, 7,770 instructions; 38 targets inside an
+  instruction, each explained on the instruction that hides it). Reassembles byte for byte. In the running IDE
+  `ann-info` finds the shipped sidecar for segment 04h and the ROM annotation editor reports "Ready to ship ·
+  level 2".
+
+### 2026-11-01 — Enterprise 64: `ep-exos20.rom` (EXOS 2.0, segments 00h and 01h) to level 2
+
+- **Sources:** Klive's own EXOS 2.1 sidecar, carried onto 2.0's bytes with `npm run rom:annotations:carry`
+  (579 of 1,132 labels on page 0, 630 of 923 on page 1; provenance `derived`); the ROM bytes through
+  `tools/ep-dis.cjs` (page 1 with IS-BASIC's call lists decoded, kind `ep-exos-basic`); runs on the 64
+  (`createEpSession({ model: "ep64" })`); and, for interface facts only (marked `manual`), the EXOS 2.1 kernel
+  specification, each checked against 2.0's code. No commented disassembly or name list of EXOS was opened; GPL
+  emulator sources were not read; no helper opened `_input/` or the web.
+- **How:** a script compared each carried label's routine with 2.1's (317 DIFFERS); ten helpers aligned 2.0
+  with 2.1 instruction by instruction, carried the remaining text with every ROM and RAM address translated, and
+  rewrote every routine that really differs from 2.0's bytes (`replace` and `rename` lists, new in
+  `merge-drafts.py`). The session then flagged every RAM address in the text that 2.1's code uses and 2.0's does
+  not (8, all correct on reading), settled the last "probably" by computing the 32K word sum (0), and swapped 38
+  numeric references for names.
+- **Runs (observed):** a profile on the 64 over ~145 typed commands and two programs; helper probes: CSC(1)
+  printed blank lines and never returned to "ok", ANGLE(-1,0) under OPTION ANGLE DEGREES gave 3.141592654,
+  MOD(5,-3) and MOD(-7,-3) gave -1, VER$ and VERNUM (2), TIME$ and DATE$ after the boot.
+- **Level:** 2 on both pages, measured and recorded (1,142 and 899 labels; 21 and 23 targets inside an
+  instruction). Reassembles byte for byte. On the 64 in the running IDE `dis $E471` at a breakpoint shows
+  SVC_TICK with its targets named, `ann-info` finds the shipped sidecar for segments 00h and 01h, and the ROM
+  annotation editor reports "Ready to ship · level 2".

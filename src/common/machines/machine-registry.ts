@@ -62,7 +62,8 @@ import {
   ChainedCustomDisassembler,
   gateOnRom,
   RomGatedCustomDisassembler,
-  type CustomDisassemblerFactory
+  type CustomDisassemblerFactory,
+  type CustomDisassemblyContext
 } from "@renderer/appIde/disassemblers/z80-disassembler/rom-gated-disassembler";
 import { ZX80_MODELS, ZX81_MODELS } from "@emu/machines/zx8081/zx8081MachineInfo";
 import {
@@ -75,7 +76,10 @@ import {
 import { HT1080Z_MODELS } from "@emu/machines/ht1080z/ht1080zMachineInfo";
 import { TVC_MODELS } from "@emu/machines/tvc/tvcMachineInfo";
 import { EP_MODELS } from "@emu/machines/enterprise/epMachineInfo";
-import { EpCustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/ep-disassembler";
+import {
+  EpBasicCustomDisassembler,
+  EpCustomDisassembler
+} from "@renderer/appIde/disassemblers/z80-disassembler/ep-disassembler";
 import { SCORPION_MODELS, SP128_MODELS } from "@emu/machines/zxSpectrum128/sp128Timings";
 import { P3_MODELS } from "@emu/machines/zxSpectrumP3e/p3RomSets";
 import { TIMEX_MODELS } from "@emu/machines/timex/timexModels";
@@ -758,8 +762,17 @@ export const machineRegistry: MachineInfo[] = [
         partitionLabels?: string[],
         options?: DisassemblyOptions
       ) => new Z80Disassembler(memorySections, memoryContents, partitionLabels, options),
-      // --- RST 30h's function byte: EXOS's call (`ep-disassembler.ts`)
-      [CT_CUSTOM_DISASSEMBLER]: () => new EpCustomDisassembler(),
+      // --- RST 30h's function byte: EXOS's call (`ep-disassembler.ts`), everywhere; RST 10h's byte:
+      // --- IS-BASIC's far call, only in the ROM pages that hold IS-BASIC
+      [CT_CUSTOM_DISASSEMBLER]: (context?: CustomDisassemblyContext) =>
+        new ChainedCustomDisassembler([
+          new EpCustomDisassembler(),
+          new RomGatedCustomDisassembler(new EpBasicCustomDisassembler(), (address) =>
+            context
+              ? !!context.inRomOfKind?.(address, "ep-exos-basic") || !!context.inRomOfKind?.(address, "ep-basic")
+              : false
+          )
+        ]),
       [CT_DISASSEMBLER_VIEW]: {
         showRamOption: false,
         showScreenOption: false

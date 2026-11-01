@@ -6,6 +6,12 @@ import { romDecoderFor } from "@renderer/appIde/annotations/romDecoder";
 import { partitionSite } from "@renderer/appIde/annotations/liveAnnotatedDisassembly";
 import { KNOWN_ROM_PAGES, knownRomPageKind, romKindOrigin, romPageIdentity } from "@common/roms/romIdentity";
 import { epBankSpace, isRomPartitionOf, sp128BankSpace } from "@common/annotations/bankSpace";
+import { customDisassemblyContextFor } from "@renderer/appIde/annotations/romDisassemblyGate";
+import { machineRegistry } from "@common/machines/machine-registry";
+import { CT_CUSTOM_DISASSEMBLER, MI_ENTERPRISE } from "@common/machines/constants";
+import type { ICustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/custom-disassembly";
+import { MemoryMap, MemorySection } from "@renderer/appIde/disassemblers/common-types";
+import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z80-disassembler";
 
 /*
  * The Enterprise's ROMs as the ROM annotation tools read them (`.ai/rom-annotations/ep-authoring-guide.md`):
@@ -21,11 +27,11 @@ describe("the Enterprise ROM pages", () => {
   it("are known by their bytes, each with its kind and run address", () => {
     const expected: [string, number, string][] = [
       ["ep-exos21.rom", 0, "ep-exos"],
-      ["ep-exos21.rom", 1, "ep-exos"],
+      ["ep-exos21.rom", 1, "ep-exos-basic"],
       ["ep-exos20.rom", 0, "ep-exos"],
-      ["ep-exos20.rom", 1, "ep-exos"],
-      ["ep-basic21.rom", 0, "ep-ext"],
-      ["ep-basic20.rom", 0, "ep-ext"],
+      ["ep-exos20.rom", 1, "ep-exos-basic"],
+      ["ep-basic21.rom", 0, "ep-basic"],
+      ["ep-basic20.rom", 0, "ep-basic"],
       ["ep-exdos13.rom", 0, "ep-ext"],
       ["ep-exdos13.rom", 1, "ep-ext"]
     ];
@@ -54,6 +60,76 @@ describe("the Enterprise ROM pages", () => {
     expect(decoded.find((i) => i.offset === 0x3fad)?.length).toBe(1);
     expect(decoded.find((i) => i.offset === 0x3fae)).toBeDefined();
     expect(decoded.find((i) => i.offset === 0x3faf)).toBeDefined();
+  });
+});
+
+describe("EXOS 2.1's segment 01h", () => {
+  it("lists IS-BASIC's call list after RST 10h as data", async () => {
+    const bytes = page("ep-exos21.rom", 1);
+    // --- $0316: RST 10h / $8C $20 $00 (segment 1's entry 12, the BASIC ROM's entry 32, the end), then BIT 1,C
+    expect(Array.from(bytes.subarray(0x316, 0x31c))).toEqual([0xd7, 0x8c, 0x20, 0x00, 0xcb, 0x49]);
+    const decoded = await romDecoderFor("ep-exos-basic")(bytes, 0x316, 0x31c);
+    expect(decoded.filter((i) => i.offset >= 0x317 && i.offset <= 0x319).map((i) => i.length)).toEqual([1, 1, 1]);
+    expect(decoded.find((i) => i.offset === 0x31a)?.length).toBe(2);
+  });
+
+  it("lists the IS-BASIC cartridge's call lists as data too", async () => {
+    const bytes = page("ep-basic21.rom", 0);
+    // --- $0823: RST 10h / $BB $00 (segment 1's AUTO), then RET
+    expect(Array.from(bytes.subarray(0x823, 0x827))).toEqual([0xd7, 0xbb, 0x00, 0xc9]);
+    const decoded = await romDecoderFor("ep-basic")(bytes, 0x823, 0x827);
+    expect(decoded.filter((i) => i.offset >= 0x824 && i.offset <= 0x825).map((i) => i.length)).toEqual([1, 1]);
+    expect(decoded.find((i) => i.offset === 0x826)?.length).toBe(1);
+  });
+
+  it("keeps RST 10h an instruction on EXOS's segment 00h", async () => {
+    const bytes = new Uint8Array(0x4000);
+    // --- RST 10h / LD A,5: in a BASIC page the $3E would be a routine byte
+    bytes.set([0xd7, 0x3e, 0x05, 0x00], 0x100);
+    expect((await romDecoderFor("ep-exos")(bytes, 0x100, 0x103)).find((i) => i.offset === 0x101)?.length).toBe(2);
+    expect((await romDecoderFor("ep-exos-basic")(bytes, 0x100, 0x103)).find((i) => i.offset === 0x101)?.length).toBe(1);
+  });
+});
+
+describe("the live disassembly of segment 01h", () => {
+  // --- What the Disassembly panel does: the machine's custom disassembler, gated by the context the
+  // --- bank space and the ROM sources give for this paging (page 3 = segment 1, the others RAM)
+  async function listAt(page3: number, start: number, end: number, bytesOf = page3) {
+    const memory = new Uint8Array(0x10000);
+    memory.set(page("ep-exos21.rom", bytesOf), 0xc000);
+    const slots = [0xf8, 0xf8, 0xf9, 0xf9, 0xff, 0xff, page3, page3];
+    const context = customDisassemblyContextFor(MI_ENTERPRISE, epBankSpace(true), slots, (rom) =>
+      rom <= 1 ? romPageIdentity(page("ep-exos21.rom", rom)) : undefined
+    );
+    const factory = machineRegistry.find((m) => m.machineId === MI_ENTERPRISE)!.toolInfo![CT_CUSTOM_DISASSEMBLER] as (
+      context?: unknown
+    ) => ICustomDisassembler;
+    const map = new MemoryMap();
+    map.add(new MemorySection(start, end));
+    const disassembler = new Z80Disassembler(map.sections, memory, undefined, { getRomPage: () => -1 });
+    disassembler.setCustomDisassembler(factory(context));
+    return (await disassembler.disassemble())!.outputItems.map((i) => i.instruction?.toLowerCase());
+  }
+
+  it("lists IS-BASIC's call lists as data when segment 1 is in page 3", async () => {
+    // --- $C5F0: FP_EXP, RST 10h / $15 $92 $23 $0E $AE $0A $00, then JR Z
+    expect((await listAt(1, 0xc5f0, 0xc5f8)).slice(0, 9)).toEqual([
+      "rst $10",
+      ".defb $15",
+      ".defb $92",
+      ".defb $23",
+      ".defb $0e",
+      ".defb $ae",
+      ".defb $0a",
+      ".defb $00",
+      "jr z,lc603"
+    ]);
+  });
+
+  it("keeps RST 10h an instruction when the paging shows segment 0", async () => {
+    // --- The same bytes, but the slots say segment 0 is in page 3: no IS-BASIC decoding
+    const listed = await listAt(0, 0xc5f0, 0xc5f2, 1);
+    expect(listed.slice(0, 3)).toEqual(["rst $10", "dec d", "sub d"]);
   });
 });
 

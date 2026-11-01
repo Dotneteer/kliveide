@@ -1,5 +1,7 @@
 # Merges helper drafts (JSON: labels, synopses, comments, regions, manual, facts) into a copy of a ROM sidecar.
 # "manual" lists "$xxxx:label" / "$xxxx:line" keys whose name or text is an interface fact from a manual.
+# For a carried sidecar (rom:annotations:carry), "replace" (["$xxxx:synopsis", "$xxxx:comment"]) lets a draft's
+# synopsis or comment overwrite the one already there, and "rename" ({"$xxxx": "NEW_NAME"}) renames an existing label.
 # Usage: [PAGE=<n>] python3 .ai/rom-annotations/tools/merge-drafts.py <workdir> <in.dis> <out.dis> <draft.json>...
 # Existing labels and synopses win (reported); a name that clashes gets _2 (reported); a region that
 # overlaps a data region is skipped (reported); synopses are wrapped at 92 columns. Then canonicalise
@@ -31,7 +33,17 @@ for f in drafts:
         if any(not(e<x['start'] or s>x['end']) for x in regions): report.append(f"{tag}: region {r['start']}-{r['end']} overlaps, skipped"); continue
         nr={"start":s,"end":e,"type":r.get('type','bytes')}
         if r.get('decode'): nr['decode']=r['decode']
+        if r.get('rowBytes'): nr['rowBytes']=r['rowBytes']
         regions.append(nr); pv[f'{PAGE}:{s}:region']='observed'
+    for k,n in dr.get('rename',{}).items():
+        a=H(k); old=[l for l in b['localLabels'] if l['value']==a]
+        if not old: report.append(f"{tag}: rename {k} names no label"); continue
+        if n in names and names[n]!=a: report.append(f"{tag}: rename {k} to {n}: name taken"); continue
+        names.pop(old[0]['name'],None); old[0]['name']=n; names[n]=a; pv[f'{PAGE}:{a}:label']='observed'
+    rep=set(dr.get('replace',[]))
+    for key in rep:
+        at,kind=key.split(':'); e=A.get(str(H(at)))
+        if e is not None and kind in ('synopsis','comment'): e.pop(kind,None)
     for k,n in dr.get('labels',{}).items():
         a=H(k)
         if a in vals: report.append(f"{tag}: {k} already labelled, {n} skipped"); continue
