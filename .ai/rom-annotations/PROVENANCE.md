@@ -2445,3 +2445,18 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
   instruction). Reassembles byte for byte. On the 64 in the running IDE `dis $E471` at a breakpoint shows
   SVC_TICK with its targets named, `ann-info` finds the shipped sidecar for segments 00h and 01h, and the ROM
   annotation editor reports "Ready to ship · level 2".
+
+### 2026-11-01 — Annotation pipeline: the Enterprise convention plug-in (no sidecar changed)
+
+- **What:** `src/common/reverse/pipeline/conventions/enterprise.ts` (`.plans/ROM_ANNOTATION_PIPELINE_PLAN.md`
+  P5, D4). It adds facts to the pipeline's routine cards; it writes nothing into a sidecar.
+- **Sources:** the EXOS call's register contract (A, BC, DE in; A = status; AF, BC, DE not kept; HL, IX, IY
+  and the alternate set kept) is an interface fact from the EXOS technical description §4.1
+  (`_input/enterprise128/docs/Exos.htm`), marked `manual` on the cards, with its chapter 11 exceptions not
+  modelled. IS-BASIC's restarts and the packed-text formats (TEXT_UNPACK's 4-bit codes, the WP's bit stream in
+  2.1 and byte-and-phrase packing in 2.0) are taken from Klive's own EXOS 2.1 and 2.0 sidecars and
+  `ep-authoring-guide.md`, which were written from the ROMs' code. The decoders find their tables through those
+  sidecars' labels. No commented disassembly, symbol file or emulator source was opened.
+- **Checked:** the decoded tables give the counts and the texts the sidecars state (60 IS-BASIC error texts
+  keyed by ERR_NUMBERS, 31 and 28 words, 48 EXOS texts from $FF "invalid EXOS function code" to $D0 "cassette
+  CRC error", 28 and 35 WP phrases), in `test/rom-pipeline/conventions.test.ts`.

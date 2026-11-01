@@ -17,7 +17,9 @@ profile and its sidecar into routine cards and facts, and a **postprocessor** th
   `registers.ts` (the register facts), `analyse.ts` (the stages in order) and `cards.ts` (the outputs).
 - `profile/romPageProfile.ts`: a run cut into one page's profile. The recipes that make runs need cores,
   so they are test code: `test/rom-annotations/profileRecipes.ts`.
-- Later phases add `conventions/` (P5) and the detectors (P4).
+- `preprocess/proposals.ts`: region proposals from the walk, the run and the detectors (P4).
+- `conventions/`: the plug-in shape, the registry, and the Enterprise plug-in (P5). A plug-in names the
+  source of every fact it adds (D4), and gets a `PROVENANCE.md` entry.
 
 Rules:
 

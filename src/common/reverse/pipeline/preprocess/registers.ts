@@ -60,18 +60,28 @@ export type RegisterFacts = {
   exits: ExitFact[];
   /** What the pass could not follow, with the instruction. */
   unknowns: { offset: number; reason: string }[];
+  /** Calls out of the page whose effects a convention's contract supplied (with its source, D4). */
+  assumed: { offset: number; name: string; source: string }[];
+};
+
+/** A call's register contract, from a convention plug-in (`conventions/`). */
+export type ExternalContract = { inputs: readonly Reg[]; keeps: readonly Reg[]; name: string; source: string };
+
+export type RegisterOptions = {
+  /** The contract of a `CALL`/`RST` row whose target is outside the page, when a convention knows it. */
+  contractOf?: (row: DecodedRow) => ExternalContract | undefined;
 };
 
 export type RegisterAnalysis = Map<number, RegisterFacts>;
 
 /** Register facts for every entry, callees before callers, iterated over recursion. */
-export function analyseRegisters(decoded: DecodedBank, entries: readonly number[]): RegisterAnalysis {
+export function analyseRegisters(decoded: DecodedBank, entries: readonly number[], options: RegisterOptions = {}): RegisterAnalysis {
   const facts: RegisterAnalysis = new Map();
   const order = bottomUp(decoded, entries);
   for (let round = 0; round < 4; round++) {
     let pending = false;
     for (const entry of order) {
-      const result = analyse(decoded, entry, facts);
+      const result = analyse(decoded, entry, facts, options);
       pending ||= result.usedPending;
       facts.set(entry, result.facts);
     }
@@ -143,7 +153,12 @@ function cloneState(state: State): State {
   return { regs: { ...state.regs }, stack: [...state.stack], known: { ...state.known }, ...(state.lost ? { lost: true } : {}) };
 }
 
-function analyse(decoded: DecodedBank, entry: number, facts: RegisterAnalysis): { facts: RegisterFacts; usedPending: boolean } {
+function analyse(
+  decoded: DecodedBank,
+  entry: number,
+  facts: RegisterAnalysis,
+  options: RegisterOptions
+): { facts: RegisterFacts; usedPending: boolean } {
   const states = new Map<number, State>();
   const inputs = new Set<Reg>();
   const exitsAt = new Map<string, { fact: ExitFact; state: State }>();
@@ -159,6 +174,7 @@ function analyse(decoded: DecodedBank, entry: number, facts: RegisterAnalysis): 
     exitsAt.set(key, { fact: { ...seen.fact, known: joined.known }, state: joined });
   };
   const unknowns = new Map<number, string>();
+  const assumed = new Map<number, { name: string; source: string }>();
   let usedPending = false;
   const work: number[] = [];
 
@@ -255,8 +271,14 @@ function analyse(decoded: DecodedBank, entry: number, facts: RegisterAnalysis): 
           usedPending = true;
           after = unknownState(state);
         } else {
-          unknown(offset, `calls $${hex(branch.address ?? 0)}, outside the page: its effects are not known`);
-          after = unknownState(state);
+          const contract = options.contractOf?.(row);
+          if (contract) {
+            assumed.set(offset, { name: contract.name, source: contract.source });
+            after = applyContract(state, contract, inputs);
+          } else {
+            unknown(offset, `calls $${hex(branch.address ?? 0)}, outside the page: its effects are not known`);
+            after = unknownState(state);
+          }
         }
         const notTaken = branch.condition ? refine(state, branch.condition, false) : undefined;
         const result = after && notTaken ? join(after, notTaken, () => unknown(offset, "the call changes the stack depth")) : after ?? notTaken;
@@ -303,7 +325,8 @@ function analyse(decoded: DecodedBank, entry: number, facts: RegisterAnalysis): 
       moved: returns ? REGS.filter((r) => exitValues[r] !== r && exitValues[r] !== "?").map((r) => ({ reg: r, from: exitValues[r] as Reg })) : [],
       returns,
       exits: exits.map((e) => e.fact).sort((a, b) => a.offset - b.offset),
-      unknowns: [...unknowns].map(([offset, reason]) => ({ offset, reason })).sort((a, b) => a.offset - b.offset)
+      unknowns: [...unknowns].map(([offset, reason]) => ({ offset, reason })).sort((a, b) => a.offset - b.offset),
+      assumed: [...assumed].map(([offset, a]) => ({ offset, ...a })).sort((a, b) => a.offset - b.offset)
     }
   };
 }
@@ -384,6 +407,18 @@ function applyCallee(state: State, callee: RegisterFacts, inputs: Set<Reg>): Sta
     else if (moved.has(reg)) after.regs[reg] = state.regs[moved.get(reg)!];
     else after.regs[reg] = "?";
   }
+  after.known = {};
+  return after;
+}
+
+/** The state after a call whose contract a convention gives: its inputs read, the rest of it kept or not. */
+function applyContract(state: State, contract: ExternalContract, inputs: Set<Reg>): State {
+  for (const reg of contract.inputs) {
+    const sym = state.regs[reg];
+    if (sym !== "?") inputs.add(sym);
+  }
+  const after = cloneState(state);
+  for (const reg of REGS) if (!contract.keeps.includes(reg)) after.regs[reg] = "?";
   after.known = {};
   return after;
 }

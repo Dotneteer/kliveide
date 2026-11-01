@@ -1,8 +1,11 @@
 import { PF_CODE, PF_EXECUTED, PF_READ, PF_WRITTEN } from "@common/profile/profileTypes";
 import type { RawRomSidecar } from "@common/roms/romAnnotationTools";
+import type { DecodedTextTable } from "../conventions/convention";
+import { conventionsFor } from "../conventions/registry";
 import { imageBank, type BinaryImage } from "../image/binaryImage";
 import { decodeBank, type DecodedBank } from "./decode";
 import { analyseRegisters, type RegisterAnalysis, type RegisterFacts } from "./registers";
+import { proposeRegions, type RegionProposal } from "./proposals";
 import { buildRoutines, type Routine, type RoutineMap } from "./routines";
 
 /*
@@ -15,7 +18,7 @@ import { buildRoutines, type Routine, type RoutineMap } from "./routines";
  */
 
 /** Bumped when the analysis changes what it produces, so `inputs.json` can tell a stale bundle. */
-export const PIPELINE_VERSION = 1;
+export const PIPELINE_VERSION = 3;
 
 /** A profile run of the page (P3 writes it): per-offset access flags and the call edges seen. */
 export type RomPageProfile = {
@@ -72,6 +75,16 @@ export type RomAnalysis = {
   ranges: number[][];
   questions: string[];
   labels: Map<number, string>;
+  /** Region changes the evidence supports (P4). */
+  proposals: RegionProposal[];
+  /** The convention plug-ins that applied (P5), with their sources. */
+  conventions: { id: string; description: string; source: string }[];
+  /** A convention's note for a row (what a restart does). */
+  notes: Map<number, string>;
+  /** Packed text tables the conventions decoded. */
+  texts: DecodedTextTable[];
+  /** Hidden entries: a jump into an instruction, and the first instruction found there. */
+  hiddenEntries: { offset: number; from: number[]; first: string }[];
 };
 
 export type AnalyseOptions = {
@@ -99,7 +112,42 @@ export async function analyseRomPage(options: AnalyseOptions): Promise<RomAnalys
     // --- Only the starts a run entered, not every executed row: callees of the call edges
     profileEntries: [...new Set((options.profile?.edges ?? []).map((e) => e.callee))].filter((o) => o >= 0 && o < decoded.size)
   });
-  const registers = analyseRegisters(decoded, routineMap.routines.map((r) => r.start));
+  const conventions = conventionsFor(image.romKind);
+  const registers = analyseRegisters(
+    decoded,
+    routineMap.routines.map((r) => r.start),
+    {
+      contractOf: (row) => {
+        for (const c of conventions) {
+          const contract = c.callContract?.(row);
+          if (contract) return contract;
+        }
+        return undefined;
+      }
+    }
+  );
+  const notes = new Map<number, string>();
+  for (const row of [...decoded.rows, ...decoded.hidden.values()]) {
+    for (const c of conventions) {
+      const note = c.explain?.(row, image.romKind);
+      if (note) {
+        notes.set(row.offset, note);
+        break;
+      }
+    }
+  }
+  const labelsByName = new Map(labelsList.map((l) => [l.name, l.value]));
+  const texts = conventions.flatMap(
+    (c) => c.texts?.({ bytes: imageBank(image, bankId).bytes, labels: labelsByName, regions: bank?.regions }) ?? []
+  );
+  const hiddenEntries = [...new Set(routineMap.midInstructionTargets.map((t) => t.target))]
+    .filter((target) => decoded.hidden.has(target))
+    .sort((a, b) => a - b)
+    .map((target) => ({
+      offset: target,
+      from: routineMap.midInstructionTargets.filter((t) => t.target === target).map((t) => t.from),
+      first: decoded.hidden.get(target)!.text
+    }));
   const lines: Record<string, { synopsis?: string; comment?: string }> = bank?.lineAnnotations ?? {};
 
   const routines = routineMap.routines.map((routine): RoutineAnalysis => {
@@ -116,7 +164,31 @@ export async function analyseRomPage(options: AnalyseOptions): Promise<RomAnalys
   });
 
   const ranges = groupRanges(routines, options.rangeWeight ?? 600);
-  return { image, bankId, decoded, routineMap, registers, routines, ranges, questions: questionsOf(routineMap, routines), labels };
+  const { proposals, conflicts } = await proposeRegions({
+    image,
+    bankId,
+    decoded,
+    regions: bank?.regions,
+    labels,
+    ...(flags ? { flags } : {}),
+    profileEntries: (options.profile?.edges ?? []).map((e) => e.callee).filter((o) => o >= 0 && o < decoded.size)
+  });
+  return {
+    image,
+    bankId,
+    decoded,
+    routineMap,
+    registers,
+    routines,
+    ranges,
+    questions: [...questionsOf(routineMap, routines), ...conflicts],
+    labels,
+    proposals,
+    conventions: conventions.map((c) => ({ id: c.id, description: c.description, source: c.source })),
+    notes,
+    texts,
+    hiddenEntries
+  };
 }
 
 function memoryFacts(routine: Routine): MemoryFacts {

@@ -552,8 +552,8 @@ it: listing requests and `missing`/`wrong` feedback per routine should fall from
 | P1 | **Done.** The `.ann` format (parse, write, `sidecarPageToAnn`) and the postprocessor's core (merge, provenance, formatting, level); round trip of every shipped sidecar to `.ann` and back as a test | P0 |
 | P2 | **Done.** Routine cards from the decoder plus the existing sidecar (entries, callers, callees, RAM, coverage, "still needed"), for both CPUs; a Z80N test that covers every extended opcode; the subroutine marking and the register-facts pass (D10), tested on hand-made routines and on finished sidecars' routines | P0 |
 | P3 | **Done.** Profile recipes per machine and the `profile` command; profile offsets known per core | P0 |
-| P4 | Data and table detectors; region proposals with their effect on false targets | P2 |
-| P5 | Convention plug-ins: hidden entries, inline texts, packed-text decoders (Enterprise first) | P2 |
+| P4 | **Done.** Data and table detectors; region proposals with their effect on false targets | P2 |
+| P5 | **Done.** Convention plug-ins: hidden entries, inline texts, packed-text decoders (Enterprise first) | P2 |
 | P6 | Version alignment with a RAM map; the carry logic moved in, plus "same / shifted / different" | P2 |
 | P7 | Naming pass, lint (with the D10 contract checks), the problem list and `feedback.md` with the measured signals (D11); the backlog file; retire the replaced `.ai/rom-annotations/tools/` scripts; update the helper brief and the authoring guides | P1 |
 | P8 | Try it on a ROM; measure §8; review its feedback and fix the backlog before the next ROM | all |
@@ -637,6 +637,44 @@ it: listing requests and `missing`/`wrong` feedback per routine should fall from
 - EXDOS: page 0 runs 4,050 instruction starts in `ep128-exdos`; **page 1 is never reached** by it.
 - No recipe yet for the ZX80/81, HT-1080Z, TVC, Spectrum 128/+3 or Next ROMs: each is written when one of
   them is next annotated with the pipeline.
+
+### 9.5 As built: P4
+
+- `preprocess/proposals.ts`: the walk (`reach.ts`) from trusted starts only (the CPU vectors, the run's
+  executed starts and callees, the sidecar's labels in its code) and the classifier (`classify.ts`) over the
+  run's flags give code and data; every part that differs from the page's regions is a **proposal**, with its
+  evidence, the false targets it removes, and the rows that load its address (`LD HL,table`).
+- **The evidence rules that keep finished sidecars quiet:** only a run turns declared data into code (a walk
+  falls through into a table after a call that never returns, as at sp48's $046E); bytes a run only read but a
+  flag-free walk reaches as code are a conflict, not data (EXOS reading its own header). Both go to
+  `questions.md`. The test holds sp48, EXOS 2.1 (both pages) and the ZX81 at no code/data flips.
+- **Detectors** over bytes no run touched and no walk reaches, still listed as code (an author's data region
+  is their decision): pointer tables (distinct words that point at reached code, no fill values; two if code
+  loads the table's address, else four) and texts (six or more printable characters, mostly letters, ended
+  by 0, CR or bit 7). **Inline data after calls** is observed: bytes right after a `CALL`/`RST` that the run
+  read and never ran (EXDOS's `CALL $C0F2` takes such bytes).
+- Outputs: `proposals.md` and `proposals.ann` (region lines commented out: uncomment to accept, then compile).
+  EXDOS 1.3 page 0 gets 57 proposals with its profile; a finished sidecar gets none or a text refinement.
+- Not built: fixed-size record and BCD number detectors; repeating stages 3-5 automatically (the session
+  accepts proposals and runs `prepare` again, §7 step 2, which does the same with a person in the loop).
+
+### 9.6 As built: P5
+
+- `conventions/`: the plug-in shape (`convention.ts`: a call contract, a row note, packed texts, and the
+  `source` every fact is printed with), the registry (`registry.ts`) and the Enterprise plug-in
+  (`enterprise.ts`, recorded in `PROVENANCE.md`).
+- **The EXOS call contract** (manual §4.1: A, BC, DE in; A = status; HL, IX, IY and the alternate set kept)
+  is applied by the register pass to `RST 30h`, so a routine that makes an EXOS call has register facts
+  again; the card lists it as `assumed:` with its source, never as the routine's own code.
+- **IS-BASIC's restarts** (`RST 08h/10h/18h/20h`) are explained on the rows of the pages that hold IS-BASIC.
+- **Packed texts:** TEXT_UNPACK's 4-bit codes (ERR_MESSAGES keyed by ERR_NUMBERS, TEXT_WORDS, ERR_TEXT_PACKED
+  keyed by status code) and the WP's phrases (2.1's bit stream, 2.0's byte-and-phrase packing) decode into
+  `texts.md`, to exactly the counts and texts the EXOS 2.1 and 2.0 sidecars state. The tables are found
+  through the sidecar's labels, so a page nobody has labelled gets none yet.
+- **Hidden entries** were built in P2 (generic); the overview now lists each with the instruction found
+  there ("$0BEA (from $0B82): ld a,$FB").
+- Not built: the chapter 11 exceptions to the EXOS contract; IS-BASIC's restarts' register contracts; the
+  WP's own packed texts (only its phrase table is located). Each is a backlog candidate for D11's review.
 
 ## 10. Details still to settle
 

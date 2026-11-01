@@ -16,7 +16,7 @@
  *                                   working copy), with work/<rom>/problems.md; errors write nothing
  *   npm run rom:pipeline -- prepare <rom> [--page n] [--cpu z80|z80n] [--sidecar <file> | --no-sidecar]
  *                                   [--profile <file>] [--range-weight n] [--force]
- *                                   the routine cards, overview, questions and facts of a page, in
+ *                                   the routine cards, overview, questions, region proposals and facts of a page, in
  *                                   work/<rom>/page-<n>/ (skipped when its inputs have not changed)
  *   npm run rom:pipeline -- profile <recipe> | --list
  *                                   runs a profile recipe on the real machine (test/rom-annotations/
@@ -151,7 +151,9 @@ function profile([recipe], options) {
 async function prepare([romArg], options) {
   if (!romArg) usage(2);
   const { analyseRomPage, PIPELINE_VERSION } = require(join(PIPELINE, "preprocess/analyse.ts"));
-  const { factsJson, renderCardFiles, renderOverview, renderQuestions } = require(join(PIPELINE, "preprocess/cards.ts"));
+  const { factsJson, renderCardFiles, renderOverview, renderProposals, renderProposalsAnn, renderQuestions, renderTexts } = require(
+    join(PIPELINE, "preprocess/cards.ts")
+  );
   const { romCrc32 } = require(join(root, "src/common/roms/romIdentity.ts"));
   const rom = loadRom(romArg, options);
   const bankId = rom.image.banks[0].id;
@@ -189,6 +191,9 @@ async function prepare([romArg], options) {
   for (const card of cards) writeFileSync(join(folder, "cards", card.name), card.text);
   writeFileSync(join(folder, "overview.md"), renderOverview(analysis));
   writeFileSync(join(folder, "questions.md"), renderQuestions(analysis));
+  writeFileSync(join(folder, "proposals.md"), renderProposals(analysis));
+  writeFileSync(join(folder, "proposals.ann"), renderProposalsAnn(analysis));
+  writeFileSync(join(folder, "texts.md"), renderTexts(analysis));
   writeFileSync(join(folder, "facts.json"), `${JSON.stringify(factsJson(analysis))}\n`);
   writeFileSync(inputsFile, `${JSON.stringify(inputs, null, 2)}\n`);
   const kinds = (kind) => analysis.routines.filter((r) => r.routine.kind === kind).length;
@@ -198,9 +203,9 @@ async function prepare([romArg], options) {
   console.log(
     `  ${analysis.routines.length} routines (${kinds("subroutine")} subroutines, ${kinds("jump-target")} jump targets, ` +
       `${kinds("entry-point")} entry points, ${kinds("unreached")} unreached); ${cards.length} range(s); ` +
-      `${analysis.questions.length} question(s); ${Date.now() - started} ms`
+      `${analysis.questions.length} question(s); ${analysis.proposals.length} region proposal(s); ${Date.now() - started} ms`
   );
-  console.log(`  ${shown(folder)}/: overview.md, questions.md, facts.json, cards/`);
+  console.log(`  ${shown(folder)}/: overview.md, questions.md, proposals.md, proposals.ann, texts.md, facts.json, cards/`);
 }
 
 /** `export-ann <rom>`: the base sidecar's pages as .ann files. */

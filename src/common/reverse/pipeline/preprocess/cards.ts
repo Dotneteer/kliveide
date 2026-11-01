@@ -68,7 +68,8 @@ export function renderCard(analysis: RomAnalysis, item: RoutineAnalysis): string
     const bytes = row.bytes.map((b) => hex2(b)).join(" ");
     const addr = origin ? `@${hex(origin + row.offset)} ` : "";
     const text = nameOperands(analysis, row.text, row.branch?.target);
-    const decoder = row.comment ? `  ; ${row.comment}` : "";
+    const note = analysis.notes.get(row.offset);
+    const decoder = [row.comment ? `  ; ${row.comment}` : "", note ? `  ; ${note}` : ""].join("");
     const comment = item.comments.get(row.offset);
     lines.push(`   ${hex(row.offset)} ${addr}${bytes.padEnd(12)} ${text}${decoder}${comment ? `  ;; ${comment.replace(/\n/g, " / ")}` : ""}`);
   }
@@ -128,6 +129,10 @@ function registerLines(facts: RegisterFacts): string[] {
   });
   if (exits.length) lines.push(`   exits:    ${exits.join("; ")}`);
   for (const u of facts.unknowns) lines.push(`   unknown:  $${hex(u.offset)} ${u.reason}`);
+  // --- A contract is a convention's, not this routine's code: name it and its source (D4)
+  const contracts = new Map<string, number[]>();
+  for (const a of facts.assumed) contracts.set(`${a.name} (${a.source})`, [...(contracts.get(`${a.name} (${a.source})`) ?? []), a.offset]);
+  for (const [what, offsets] of contracts) lines.push(`   assumed:  ${what} at ${offsets.map((o) => `$${hex(o)}`).join(", ")}`);
   return lines;
 }
 
@@ -194,8 +199,20 @@ export function renderOverview(analysis: RomAnalysis): string {
     "",
     `CPU ${analysis.image.cpu}; ROM kind ${analysis.image.romKind ?? "unknown"}; decoded at $${hex(analysis.decoded.origin)}; ${analysis.decoded.size} bytes.`,
     `${routines.length} routines: ${count("subroutine")} subroutines, ${count("jump-target")} jump targets, ${count("entry-point")} entry points, ${count("unreached")} unreached.`,
-    `Work left (weight): ${work}, in ${analysis.ranges.length} range(s). Open questions: ${analysis.questions.length} (questions.md).`,
+    `Work left (weight): ${work}, in ${analysis.ranges.length} range(s). Open questions: ${analysis.questions.length} (questions.md). Region proposals: ${analysis.proposals.length} (proposals.md).`,
     "",
+    ...(analysis.conventions.length
+      ? ["## Conventions applied", "", ...analysis.conventions.map((c) => `- ${c.id}: ${c.description} (source: ${c.source})`), ""]
+      : []),
+    ...(analysis.texts.length ? [`Packed text tables decoded: ${analysis.texts.map((t) => `${t.name} (${t.texts.length})`).join(", ")} (texts.md).`, ""] : []),
+    ...(analysis.hiddenEntries.length
+      ? [
+          "## Hidden entries",
+          "",
+          ...analysis.hiddenEntries.map((h) => `- $${hex(h.offset)} (from ${h.from.map((f) => `$${hex(f)}`).join(", ")}): ${h.first}`),
+          ""
+        ]
+      : []),
     "## Code regions",
     "",
     ...analysis.decoded.code.map((r) => `- $${hex(r.start)}-$${hex(r.end)}`),
@@ -224,6 +241,49 @@ export function renderQuestions(analysis: RomAnalysis): string {
   return `${lines.join("\n")}\n`;
 }
 
+/** The packed texts the conventions decoded, numbered as the code indexes them. */
+export function renderTexts(analysis: RomAnalysis): string {
+  const lines = [`# ${analysis.image.name} page ${analysis.bankId}: decoded texts`, ""];
+  if (!analysis.texts.length) lines.push("None: no convention found a packed text table on this page.");
+  for (const table of analysis.texts) {
+    lines.push(`## ${table.name} ($${hex(table.start)}): ${table.texts.length} text(s), ${table.packing}`, "");
+    if (table.problem) lines.push(`Decoding stopped: ${table.problem}`, "");
+    table.texts.forEach((text, i) => lines.push(`${String(i).padStart(3)}  ${table.keys ? `${table.keys[i].padStart(5)}  ` : ""}${JSON.stringify(text)}`));
+    lines.push("");
+  }
+  return `${lines.join("\n")}\n`;
+}
+
+/** The region proposals for the session to judge (§7 step 2), with their evidence and effect. */
+export function renderProposals(analysis: RomAnalysis): string {
+  const lines = [`# ${analysis.image.name} page ${analysis.bankId}: region proposals`, ""];
+  if (!analysis.proposals.length) lines.push("None: the evidence agrees with the page's regions.");
+  for (const p of analysis.proposals) {
+    const effect = p.targetsRemoved
+      ? `; removes ${p.targetsRemoved} false target(s)${p.midInstructionRemoved ? `, ${p.midInstructionRemoved} of them inside an instruction` : ""}`
+      : "";
+    lines.push(`- **${p.kind} $${hex(p.start)}-$${hex(p.end)}** (now ${p.current}, ${p.end - p.start + 1} byte(s)): ${p.evidence}${effect}`);
+    if (p.readers.length) lines.push(`  - loaded by ${p.readers.join("; ")}`);
+  }
+  return `${lines.join("\n")}\n`;
+}
+
+/**
+ * The proposals as a `.ann` file whose region lines are commented out: uncomment the ones you accept,
+ * then `compile` it (§7 step 2).
+ */
+export function renderProposalsAnn(analysis: RomAnalysis): string {
+  const lines = [
+    `# Region proposals for ${analysis.image.name} page ${analysis.bankId} (proposals.md has the evidence).`,
+    "# Uncomment the lines you accept, then compile this file with the others.",
+    `rom ${analysis.image.name.split("/").pop()} page ${analysis.bankId} cpu ${analysis.image.cpu}`,
+    "default observed",
+    ""
+  ];
+  for (const p of analysis.proposals) lines.push(`# ${p.kind} ${hex(p.start)}-${hex(p.end)}`);
+  return `${lines.join("\n")}\n`;
+}
+
 /** Everything as JSON, without the decoded rows: for the postprocessor and the tests. */
 export function factsJson(analysis: RomAnalysis): unknown {
   return {
@@ -247,6 +307,10 @@ export function factsJson(analysis: RomAnalysis): unknown {
       work: r.work
     })),
     midInstructionTargets: analysis.routineMap.midInstructionTargets,
+    proposals: analysis.proposals,
+    conventions: analysis.conventions,
+    hiddenEntries: analysis.hiddenEntries,
+    texts: analysis.texts,
     ranges: analysis.ranges
   };
 }
