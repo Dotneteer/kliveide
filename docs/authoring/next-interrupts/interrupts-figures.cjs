@@ -174,6 +174,29 @@ const figures = {};
 }
 
 // ---------------------------------------------------------------------------------------------
+// Figure: a nested handler and a waiting one (not to scale: the order of events)
+{
+  const rows = [["main", GREY, 52], ["ULA (11)", SCR, 112], ["line (0)", SCR, 172], ["UART 0 Tx (12)", SER, 232]];
+  const ev = [[180, 1], [300, 2], [350, 3], [420, 4], [500, 5], [580, 6]];
+  const out = [svgOpen(700, 270, "Four rows, the main program, the ULA, the line interrupt and UART 0 transmit, along a line of time with six numbered moments. 1: the ULA rings and its handler starts; the main program stops. 2: the line interrupt rings and its handler runs inside the ULA's, which is paused but still in service. 3: UART 0 transmit rings and waits. 4: the line handler's RETI; the ULA's handler goes on. 5: the ULA handler's RETI; UART 0 transmit is taken at once and its handler runs. 6: its RETI; the main program goes on.")];
+  for (const [label, c, y] of rows) out.push(text(0, y + 20, label, { size: FS + 0.5, bold: true, fill: c }));
+  for (const [x, n] of ev) {
+    out.push(line(x, 32, x, 262, { width: 1, dash: "3 3", opacity: 0.6 }));
+    out.push(`  <circle cx="${x}" cy="16" r="12" fill="${WIN}" />`);
+    out.push(text(x, 21, String(n), { anchor: "middle", size: FS, bold: true, fill: "#ffffff" }));
+  }
+  const bar = (x0, x1, y, c, label, o = {}) => {
+    out.push(rect(x0, y, x1 - x0, 32, { rx: 4, stroke: c, width: o.dash ? 1.6 : 2, dash: o.dash, fill: o.dash ? "none" : c, fillOpacity: o.dash ? undefined : (c === GREY ? 0.12 : 0.16) }));
+    out.push(text(o.lx ?? (x0 + x1) / 2, y + 21, label, { anchor: "middle", size: FS, fill: c === GREY ? GREY : c, bold: !o.dash }));
+  };
+  bar(130, 180, 52, GREY, "runs"); bar(580, 700, 52, GREY, "runs on");
+  bar(180, 300, 112, SCR, "handler"); bar(300, 420, 112, SCR, "paused", { dash: "5 4", lx: 385 }); bar(420, 500, 112, SCR, "handler");
+  bar(300, 420, 172, SCR, "handler");
+  bar(350, 500, 232, WIN, "waiting", { dash: "5 4", lx: 460 }); bar(500, 580, 232, SER, "handler");
+  figures.nesting = [...out, "</svg>"];
+}
+
+// ---------------------------------------------------------------------------------------------
 // Figure: how fast the CPU answers (to scale in T-states)
 {
   const x0 = 130, T = 48, k = (700 - x0) / T;
