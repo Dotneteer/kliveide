@@ -66,14 +66,14 @@ by bit, and while it taps, it listens to the byte coming back on the other wire.
       <path d="M0,0 L10,5 L0,10 z" fill="#3b82f6" />
     </marker>
   </defs>
-  <rect x="0" y="85" width="190" height="110" rx="6" fill="#3b82f6" fillOpacity="0.12" stroke="#3b82f6" strokeWidth="2" />
-  <text x="95" y="127.3" textAnchor="middle" fill="#3b82f6" fontSize="15">SPI master</text>
-  <text x="95" y="145.3" textAnchor="middle" fill="#3b82f6" fontSize="15">$E7: select</text>
-  <text x="95" y="163.3" textAnchor="middle" fill="#3b82f6" fontSize="15">$EB: data</text>
-  <line x1="190" y1="140" x2="380" y2="140" stroke="#3b82f6" strokeWidth="2.5" />
-  <text x="206" y="130" fill="#3b82f6" fontSize="13.5">SCK, MOSI →</text>
-  <text x="206" y="162" fill="#3b82f6" fontSize="13.5">← MISO</text>
-  <line x1="380" y1="26" x2="380" y2="262" stroke="#3b82f6" strokeWidth="2.5" />
+  <rect x="0" y="87" width="190" height="110" rx="6" fill="#3b82f6" fillOpacity="0.12" stroke="#3b82f6" strokeWidth="2" />
+  <text x="95" y="129.3" textAnchor="middle" fill="#3b82f6" fontSize="15">SPI master</text>
+  <text x="95" y="147.3" textAnchor="middle" fill="#3b82f6" fontSize="15">$E7: select</text>
+  <text x="95" y="165.3" textAnchor="middle" fill="#3b82f6" fontSize="15">$EB: data</text>
+  <line x1="190" y1="142" x2="380" y2="142" stroke="#3b82f6" strokeWidth="2.5" />
+  <text x="206" y="132" fill="#3b82f6" fontSize="13.5">SCK, MOSI →</text>
+  <text x="206" y="164" fill="#3b82f6" fontSize="13.5">← MISO</text>
+  <line x1="380" y1="25.1" x2="380" y2="258.9" stroke="#3b82f6" strokeWidth="2.5" />
   <path d="M380,26 L446,26" fill="none" stroke="#3b82f6" strokeWidth="1.8" markerEnd="url(#st-bus-1)" strokeLinejoin="round" />
   <rect x="450" y="4" width="250" height="44" rx="6" fill="#30a46c" fillOpacity="0.1" stroke="#30a46c" strokeWidth="2" />
   <text x="462" y="31" fill="#30a46c" fontSize="15" fontWeight="bold">SD card 0</text>
@@ -207,6 +207,83 @@ as SCK rises.
 <figcaption>One byte on the SPI bus, to scale in CPU clocks. SCK is the CPU clock halved and rests low; MOSI carries the master's bits b7 to b0, each for two clocks; the slave's MISO bits are taken as SCK rises. The byte that came in is what the next read of $EB returns.</figcaption>
 </figure>
 
+Here is a real byte. The host writes `$51`, the first byte of the read command we meet below, to `$EB`;
+the card, which has nothing to say while a command arrives, answers with `$FF`:
+
+<figure>
+{/* fig:bytewave */}
+<svg viewBox="-2 -2 704 304" role="img" aria-label="Sixteen CPU clocks, to scale, while the host sends $51 and the card answers $FF. The CPU clock ticks sixteen times; SCK, the CPU clock halved, rests low and rises in the middle of every bit. MOSI carries $51, most significant bit first: 0, 1, 0, 1, 0, 0, 0, 1, each level held for two clocks and changing as SCK falls. MISO stays high: the card sends $FF, eight 1s. Red ticks mark the rising edges of SCK, where each bit is taken." style={{ width: "100%", height: "auto" }}>
+  <line x1="130" y1="30" x2="130" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="130" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">0</text>
+  <line x1="201.3" y1="30" x2="201.3" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="201.3" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">2</text>
+  <line x1="272.5" y1="30" x2="272.5" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="272.5" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">4</text>
+  <line x1="343.8" y1="30" x2="343.8" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="343.8" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">6</text>
+  <line x1="415" y1="30" x2="415" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="415" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">8</text>
+  <line x1="486.3" y1="30" x2="486.3" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="486.3" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">10</text>
+  <line x1="557.5" y1="30" x2="557.5" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="557.5" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">12</text>
+  <line x1="628.8" y1="30" x2="628.8" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="628.8" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">14</text>
+  <line x1="700" y1="30" x2="700" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="700" y="22" textAnchor="end" fill="currentColor" fontSize="13.5">16</text>
+  <text x="0" y="22" fill="currentColor" fontSize="13.5">CPU clocks</text>
+  <text x="0" y="66" fill="currentColor" fontSize="15" fontWeight="bold">CPU clock</text>
+  <path d="M130,50 L130,50 L147.8125,50 L147.8125,72 L165.625,72 L165.625,50 L183.4375,50 L183.4375,72 L201.25,72 L201.25,50 L219.0625,50 L219.0625,72 L236.875,72 L236.875,50 L254.6875,50 L254.6875,72 L272.5,72 L272.5,50 L290.3125,50 L290.3125,72 L308.125,72 L308.125,50 L325.9375,50 L325.9375,72 L343.75,72 L343.75,50 L361.5625,50 L361.5625,72 L379.375,72 L379.375,50 L397.1875,50 L397.1875,72 L415,72 L415,50 L432.8125,50 L432.8125,72 L450.625,72 L450.625,50 L468.4375,50 L468.4375,72 L486.25,72 L486.25,50 L504.0625,50 L504.0625,72 L521.875,72 L521.875,50 L539.6875,50 L539.6875,72 L557.5,72 L557.5,50 L575.3125,50 L575.3125,72 L593.125,72 L593.125,50 L610.9375,50 L610.9375,72 L628.75,72 L628.75,50 L646.5625,50 L646.5625,72 L664.375,72 L664.375,50 L682.1875,50 L682.1875,72 L700,72" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+  <text x="0" y="116" fill="#3b82f6" fontSize="15" fontWeight="bold">SCK</text>
+  <path d="M130,120 L130,120 L165.625,120 L165.625,98 L201.25,98 L201.25,120 L236.875,120 L236.875,98 L272.5,98 L272.5,120 L308.125,120 L308.125,98 L343.75,98 L343.75,120 L379.375,120 L379.375,98 L415,98 L415,120 L450.625,120 L450.625,98 L486.25,98 L486.25,120 L521.875,120 L521.875,98 L557.5,98 L557.5,120 L593.125,120 L593.125,98 L628.75,98 L628.75,120 L664.375,120 L664.375,98 L700,98" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinejoin="round" />
+  <text x="0" y="162" fill="#e8912d" fontSize="15" fontWeight="bold">MOSI</text>
+  <text x="0" y="180" fill="#e8912d" fontSize="13.5">host: $51</text>
+  <path d="M130,172 L130,172 L201.25,172 L201.25,146 L272.5,146 L272.5,172 L343.75,172 L343.75,146 L415,146 L415,172 L486.25,172 L486.25,172 L557.5,172 L557.5,172 L628.75,172 L628.75,146 L700,146" fill="none" stroke="#e8912d" strokeWidth="2" strokeLinejoin="round" />
+  <text x="165.6" y="196" textAnchor="middle" fill="#e8912d" fontSize="13.5">b7 = 0</text>
+  <text x="236.9" y="196" textAnchor="middle" fill="#e8912d" fontSize="13.5">b6 = 1</text>
+  <text x="308.1" y="196" textAnchor="middle" fill="#e8912d" fontSize="13.5">b5 = 0</text>
+  <text x="379.4" y="196" textAnchor="middle" fill="#e8912d" fontSize="13.5">b4 = 1</text>
+  <text x="450.6" y="196" textAnchor="middle" fill="#e8912d" fontSize="13.5">b3 = 0</text>
+  <text x="521.9" y="196" textAnchor="middle" fill="#e8912d" fontSize="13.5">b2 = 0</text>
+  <text x="593.1" y="196" textAnchor="middle" fill="#e8912d" fontSize="13.5">b1 = 0</text>
+  <text x="664.4" y="196" textAnchor="middle" fill="#e8912d" fontSize="13.5">b0 = 1</text>
+  <text x="0" y="238" fill="#30a46c" fontSize="15" fontWeight="bold">MISO</text>
+  <text x="0" y="256" fill="#30a46c" fontSize="13.5">card: $FF</text>
+  <path d="M130,222 L130,222 L201.25,222 L201.25,222 L272.5,222 L272.5,222 L343.75,222 L343.75,222 L415,222 L415,222 L486.25,222 L486.25,222 L557.5,222 L557.5,222 L628.75,222 L628.75,222 L700,222" fill="none" stroke="#30a46c" strokeWidth="2" strokeLinejoin="round" />
+  <text x="165.6" y="268" textAnchor="middle" fill="#30a46c" fontSize="13.5">1</text>
+  <text x="236.9" y="268" textAnchor="middle" fill="#30a46c" fontSize="13.5">1</text>
+  <text x="308.1" y="268" textAnchor="middle" fill="#30a46c" fontSize="13.5">1</text>
+  <text x="379.4" y="268" textAnchor="middle" fill="#30a46c" fontSize="13.5">1</text>
+  <text x="450.6" y="268" textAnchor="middle" fill="#30a46c" fontSize="13.5">1</text>
+  <text x="521.9" y="268" textAnchor="middle" fill="#30a46c" fontSize="13.5">1</text>
+  <text x="593.1" y="268" textAnchor="middle" fill="#30a46c" fontSize="13.5">1</text>
+  <text x="664.4" y="268" textAnchor="middle" fill="#30a46c" fontSize="13.5">1</text>
+  <line x1="165.6" y1="138" x2="165.6" y2="178" stroke="#e5484d" strokeWidth="1.6" strokeDasharray="3 3" />
+  <line x1="165.6" y1="214" x2="165.6" y2="254" stroke="#e5484d" strokeWidth="1.6" strokeDasharray="3 3" />
+  <line x1="236.9" y1="138" x2="236.9" y2="178" stroke="#e5484d" strokeWidth="1.6" strokeDasharray="3 3" />
+  <line x1="236.9" y1="214" x2="236.9" y2="254" stroke="#e5484d" strokeWidth="1.6" strokeDasharray="3 3" />
+  <line x1="308.1" y1="138" x2="308.1" y2="178" stroke="#e5484d" strokeWidth="1.6" strokeDasharray="3 3" />
+  <line x1="308.1" y1="214" x2="308.1" y2="254" stroke="#e5484d" strokeWidth="1.6" strokeDasharray="3 3" />
+  <line x1="379.4" y1="138" x2="379.4" y2="178" stroke="#e5484d" strokeWidth="1.6" strokeDasharray="3 3" />
+  <line x1="379.4" y1="214" x2="379.4" y2="254" stroke="#e5484d" strokeWidth="1.6" strokeDasharray="3 3" />
+  <line x1="450.6" y1="138" x2="450.6" y2="178" stroke="#e5484d" strokeWidth="1.6" strokeDasharray="3 3" />
+  <line x1="450.6" y1="214" x2="450.6" y2="254" stroke="#e5484d" strokeWidth="1.6" strokeDasharray="3 3" />
+  <line x1="521.9" y1="138" x2="521.9" y2="178" stroke="#e5484d" strokeWidth="1.6" strokeDasharray="3 3" />
+  <line x1="521.9" y1="214" x2="521.9" y2="254" stroke="#e5484d" strokeWidth="1.6" strokeDasharray="3 3" />
+  <line x1="593.1" y1="138" x2="593.1" y2="178" stroke="#e5484d" strokeWidth="1.6" strokeDasharray="3 3" />
+  <line x1="593.1" y1="214" x2="593.1" y2="254" stroke="#e5484d" strokeWidth="1.6" strokeDasharray="3 3" />
+  <line x1="664.4" y1="138" x2="664.4" y2="178" stroke="#e5484d" strokeWidth="1.6" strokeDasharray="3 3" />
+  <line x1="664.4" y1="214" x2="664.4" y2="254" stroke="#e5484d" strokeWidth="1.6" strokeDasharray="3 3" />
+  <text x="700" y="294" textAnchor="end" fill="#e5484d" fontSize="13.5">red: each bit is taken as SCK rises, in the middle of its two clocks</text>
+</svg>
+{/* /fig:bytewave */}
+<figcaption>The host sends $51 while the card answers $FF, to scale in CPU clocks. MOSI changes as SCK falls and holds each bit for two clocks: 0, 1, 0, 1, 0, 0, 0, 1, which is $51 read from b7 down. MISO stays high: eight 1s, $FF. Each bit is taken as SCK rises, in the middle of its two clocks.</figcaption>
+</figure>
+
+Read the MOSI row at the red marks, left to right, and you get `0101 0001`, `$51`, with the most significant
+bit first. Read the MISO row the same way and you get eight 1s. When the sixteenth clock ends, the `$51` has
+left and the `$FF` has arrived, and the next read of `$EB` will return that `$FF`.
+
 Now the rules that follow from it, and I would learn them by heart:
 
 - **A write to `$EB` sends the byte** you wrote. The byte that comes back is kept.
@@ -234,23 +311,31 @@ The card is not part of the FPGA; it is a small computer of its own, with a cont
 card specification. In SPI mode the conversation goes like this:
 
 - **A command is six bytes**: `$40` plus the command's number, a 32-bit argument, most significant byte
-  first, and a CRC byte. The CRC is checked only for the first two commands, CMD0 and CMD8; after that a
-  card in SPI mode ignores it.
+  first, and a CRC byte. The specification names each command after its number: **CMD*n*** is the command
+  whose first byte is `$40` + *n*, so CMD17 starts with `$51`. The CRC is checked only for the first two
+  commands a card gets when it starts, CMD0 and CMD8 below; after that a card in SPI mode ignores it.
 - **The card answers after a pause.** Between zero and eight `$FF` bytes come first, then a one-byte
   response, **R1**. `$00` means "done, no error"; bit 0, `$01`, means "still in the idle state"; any other bit
   is an error.
 - **`$FF` is silence.** Between commands the master keeps sending `$FF`, and the card answers `$FF`. A command
   always starts with the bits `01`, so `$FF` can never be mistaken for one.
 
-Starting a card takes a handful of commands, which the driver sends once:
+Some commands are **application commands**, named **ACMD*n***. They are sent in two parts: first CMD55,
+whose only job is to say "the next command is an application command", then the command itself, with its
+number *n*. Starting a card takes a handful of commands, which the driver sends once:
 
-1. **CMD0**, go idle. The card first gets at least 74 clocks with nothing selected; then CMD0 with its select
-   line low puts it into SPI mode, and it answers `$01`.
-2. **CMD8**, check the voltage: the card echoes the pattern it was sent, which tells the driver it is a
-   modern card.
-3. **CMD55** then **ACMD41**, repeated until the card answers `$00`: it has finished its own start-up.
-4. **CMD58**, read the operating conditions: one bit says whether the card is **SDHC** or larger. Such a card
-   is addressed in **sectors** of 512 bytes, not in bytes.
+1. **CMD0, go to the idle state**, resets the card. The card first gets at least 74 clocks with nothing
+   selected; then CMD0 with its select line low makes it leave its own bus and speak SPI from then on, and it
+   answers `$01`, idle.
+2. **CMD8, send the interface condition**, tells the card the voltage the host supplies and a check pattern.
+   A card that understands it echoes both back, and that tells the driver it is a modern card, version 2.0
+   of the specification or later; an older card answers that the command is illegal.
+3. **CMD55** then **ACMD41, send the operating condition**, starts the card's own start-up, and its argument
+   says that the host can handle a high-capacity card. The card answers `$01` while it is still busy with its
+   start-up, so the driver repeats the pair until the answer is `$00`: the card is ready.
+4. **CMD58, read the OCR**, reads the card's 32-bit **operating conditions register**. One of its bits says
+   whether the card is **SDHC** or larger, a high-capacity card. Such a card is addressed in **sectors** of
+   512 bytes, not in bytes, so sector 5 is argument 5, where an older card would need byte address 2,560.
 
 After that, reading and writing are one command each:
 
@@ -290,11 +375,12 @@ After that, reading and writing are one command each:
 <figcaption>Reading one sector with CMD17, byte by byte (not to scale). The host sends the six-byte command, then $FF; the card answers R1 after a few $FF bytes, waits while it fetches the sector, sends the data token $FE, the 512 bytes and a two-byte CRC.</figcaption>
 </figure>
 
-- **CMD17 reads one sector.** After R1 the card sends `$FF` while it fetches the data, then the **data token**
+- **CMD17, read a single block, reads one sector.** After R1 the card sends `$FF` while it fetches the data, then the **data token**
   `$FE`, the 512 bytes and a 16-bit CRC.
-- **CMD24 writes one sector.** After R1 the host sends `$FE`, the 512 bytes and a CRC; the card answers a
+- **CMD24, write a block, writes one sector.** After R1 the host sends `$FE`, the 512 bytes and a CRC; the card answers a
   **data response** byte, `xxx00101` when it accepted the block, and then `$00` while it is busy writing.
-- **CMD18 reads sector after sector**, each with its own `$FE` and CRC, until the host sends **CMD12**. That
+- **CMD18, read multiple blocks, reads sector after sector**, each with its own `$FE` and CRC, until the host
+  sends **CMD12, stop transmission**. That
   is how a file of many sectors streams without a command per sector.
 
 Let's read a sector. This routine assumes a card that is started, selected, and SDHC:
@@ -343,6 +429,202 @@ How it works:
   second one is not lost. A real driver also gives up after a while in both polling loops, and checks the
   CRC if it cares.
 
+The read-behind rule is easier to see than to describe, so here is the whole conversation, exchange by
+exchange. The listing reads sector 5 from a card that answers R1 after one `$FF` and sends its token after
+two more; the CPU's instructions are on top, then the two wires, and at the bottom what each `IN` gets:
+
+<figure>
+{/* fig:conversation */}
+<svg viewBox="-2 -2 704 506" role="img" aria-label="The sector read of the chapter's listing as 526 exchanges in two bands, each exchange a column: the CPU's instruction, the byte the host sends on MOSI, the byte the card sends on MISO, and what the IN returns. Exchanges 1 to 6: OTIR sends $51, $00, $00, $00, $05 and the CRC $01; the card sends $FF. Exchanges 7 to 9: the Resp loop's INs send $FF; the card sends $FF, then R1 = $00 in exchange 8, then $FF; the INs return $FF, $FF and, in exchange 9, the $00. Exchanges 10 to 12: the Token loop; the card sends $FF, the token $FE in exchange 11, and data byte D0 in 12; the INs return $FF, $FF and, in exchange 12, the $FE. From exchange 13, INIR: each IN returns the data byte of the exchange before, D0 in 13, up to D511 in 524; exchanges 525 and 526 return the two CRC bytes C1 and C2. Arrows show every IN returning the card's byte from the exchange before." style={{ width: "100%", height: "auto" }}>
+  <defs>
+    <marker id="st-conv-0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
+    </marker>
+  </defs>
+  <path d="M154,28 L154,22 L512.6666666666667,22 L512.6666666666667,28" fill="none" stroke="#e8912d" strokeWidth="1.4" strokeLinejoin="round" />
+  <text x="333.3" y="14" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">OTIR: CMD17, sector 5, CRC</text>
+  <path d="M520.6666666666667,28 L520.6666666666667,22 L696,22 L696,28" fill="none" stroke="#30a46c" strokeWidth="1.4" strokeLinejoin="round" />
+  <text x="608.3" y="14" textAnchor="middle" fill="#30a46c" fontSize="13.5" fontWeight="bold">Resp: polls for R1</text>
+  <text x="0" y="50" fill="currentColor" fontSize="13.5">exchange</text>
+  <text x="0" y="72" fill="currentColor" fontSize="13.5">instruction</text>
+  <text x="0" y="104" fill="#e8912d" fontSize="13.5" fontWeight="bold">MOSI: host</text>
+  <text x="0" y="140" fill="#30a46c" fontSize="13.5" fontWeight="bold">MISO: card</text>
+  <text x="0" y="212" fill="currentColor" fontSize="13.5" fontWeight="bold">the IN returns</text>
+  <text x="180.6" y="50" textAnchor="middle" fill="currentColor" fontSize="13.5">1</text>
+  <text x="180.6" y="72" textAnchor="middle" fill="currentColor" fontSize="13.5" fontWeight="bold">OUT</text>
+  <rect x="153" y="84" width="55.1" height="30" rx="3" fill="#e8912d" fillOpacity="0.16" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="180.6" y="104" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">$51</text>
+  <rect x="153" y="120" width="55.1" height="30" rx="3" fill="#30a46c" fillOpacity="0.04" stroke="#30a46c" strokeWidth="1.4" />
+  <text x="180.6" y="140" textAnchor="middle" fill="#30a46c" fontSize="13.5">$FF</text>
+  <text x="180.6" y="212" textAnchor="middle" fill="currentColor" fontSize="13.5">–</text>
+  <text x="241.7" y="50" textAnchor="middle" fill="currentColor" fontSize="13.5">2</text>
+  <text x="241.7" y="72" textAnchor="middle" fill="currentColor" fontSize="13.5" fontWeight="bold">OUT</text>
+  <rect x="214.1" y="84" width="55.1" height="30" rx="3" fill="#e8912d" fillOpacity="0.16" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="241.7" y="104" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">$00</text>
+  <rect x="214.1" y="120" width="55.1" height="30" rx="3" fill="#30a46c" fillOpacity="0.04" stroke="#30a46c" strokeWidth="1.4" />
+  <text x="241.7" y="140" textAnchor="middle" fill="#30a46c" fontSize="13.5">$FF</text>
+  <text x="241.7" y="212" textAnchor="middle" fill="currentColor" fontSize="13.5">–</text>
+  <text x="302.8" y="50" textAnchor="middle" fill="currentColor" fontSize="13.5">3</text>
+  <text x="302.8" y="72" textAnchor="middle" fill="currentColor" fontSize="13.5" fontWeight="bold">OUT</text>
+  <rect x="275.2" y="84" width="55.1" height="30" rx="3" fill="#e8912d" fillOpacity="0.16" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="302.8" y="104" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">$00</text>
+  <rect x="275.2" y="120" width="55.1" height="30" rx="3" fill="#30a46c" fillOpacity="0.04" stroke="#30a46c" strokeWidth="1.4" />
+  <text x="302.8" y="140" textAnchor="middle" fill="#30a46c" fontSize="13.5">$FF</text>
+  <text x="302.8" y="212" textAnchor="middle" fill="currentColor" fontSize="13.5">–</text>
+  <text x="363.9" y="50" textAnchor="middle" fill="currentColor" fontSize="13.5">4</text>
+  <text x="363.9" y="72" textAnchor="middle" fill="currentColor" fontSize="13.5" fontWeight="bold">OUT</text>
+  <rect x="336.3" y="84" width="55.1" height="30" rx="3" fill="#e8912d" fillOpacity="0.16" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="363.9" y="104" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">$00</text>
+  <rect x="336.3" y="120" width="55.1" height="30" rx="3" fill="#30a46c" fillOpacity="0.04" stroke="#30a46c" strokeWidth="1.4" />
+  <text x="363.9" y="140" textAnchor="middle" fill="#30a46c" fontSize="13.5">$FF</text>
+  <text x="363.9" y="212" textAnchor="middle" fill="currentColor" fontSize="13.5">–</text>
+  <text x="425" y="50" textAnchor="middle" fill="currentColor" fontSize="13.5">5</text>
+  <text x="425" y="72" textAnchor="middle" fill="currentColor" fontSize="13.5" fontWeight="bold">OUT</text>
+  <rect x="397.4" y="84" width="55.1" height="30" rx="3" fill="#e8912d" fillOpacity="0.16" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="425" y="104" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">$05</text>
+  <rect x="397.4" y="120" width="55.1" height="30" rx="3" fill="#30a46c" fillOpacity="0.04" stroke="#30a46c" strokeWidth="1.4" />
+  <text x="425" y="140" textAnchor="middle" fill="#30a46c" fontSize="13.5">$FF</text>
+  <text x="425" y="212" textAnchor="middle" fill="currentColor" fontSize="13.5">–</text>
+  <text x="486.1" y="50" textAnchor="middle" fill="currentColor" fontSize="13.5">6</text>
+  <text x="486.1" y="72" textAnchor="middle" fill="currentColor" fontSize="13.5" fontWeight="bold">OUT</text>
+  <rect x="458.6" y="84" width="55.1" height="30" rx="3" fill="#e8912d" fillOpacity="0.16" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="486.1" y="104" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">$01</text>
+  <rect x="458.6" y="120" width="55.1" height="30" rx="3" fill="#30a46c" fillOpacity="0.04" stroke="#30a46c" strokeWidth="1.4" />
+  <text x="486.1" y="140" textAnchor="middle" fill="#30a46c" fontSize="13.5">$FF</text>
+  <text x="486.1" y="212" textAnchor="middle" fill="currentColor" fontSize="13.5">–</text>
+  <text x="547.2" y="50" textAnchor="middle" fill="currentColor" fontSize="13.5">7</text>
+  <text x="547.2" y="72" textAnchor="middle" fill="currentColor" fontSize="13.5" fontWeight="bold">IN</text>
+  <rect x="519.7" y="84" width="55.1" height="30" rx="3" fill="#e8912d" fillOpacity="0.04" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="547.2" y="104" textAnchor="middle" fill="#e8912d" fontSize="13.5">$FF</text>
+  <rect x="519.7" y="120" width="55.1" height="30" rx="3" fill="#30a46c" fillOpacity="0.04" stroke="#30a46c" strokeWidth="1.4" />
+  <text x="547.2" y="140" textAnchor="middle" fill="#30a46c" fontSize="13.5">$FF</text>
+  <rect x="519.7" y="192" width="55.1" height="30" rx="3" fill="currentColor" fillOpacity="0.04" stroke="currentColor" strokeWidth="1.4" />
+  <text x="547.2" y="212" textAnchor="middle" fill="currentColor" fontSize="13.5">$FF</text>
+  <path d="M499.55555555555554,150 L499.55555555555554,164 L533.7777777777778,164 L533.7777777777778,190" fill="none" stroke="currentColor" strokeWidth="1.4" markerEnd="url(#st-conv-0)" strokeLinejoin="round" />
+  <text x="608.3" y="50" textAnchor="middle" fill="currentColor" fontSize="13.5">8</text>
+  <text x="608.3" y="72" textAnchor="middle" fill="currentColor" fontSize="13.5" fontWeight="bold">IN</text>
+  <rect x="580.8" y="84" width="55.1" height="30" rx="3" fill="#e8912d" fillOpacity="0.04" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="608.3" y="104" textAnchor="middle" fill="#e8912d" fontSize="13.5">$FF</text>
+  <rect x="580.8" y="120" width="55.1" height="30" rx="3" fill="#30a46c" fillOpacity="0.2" stroke="#30a46c" strokeWidth="2" />
+  <text x="608.3" y="140" textAnchor="middle" fill="#30a46c" fontSize="13.5" fontWeight="bold">$00</text>
+  <rect x="580.8" y="192" width="55.1" height="30" rx="3" fill="currentColor" fillOpacity="0.04" stroke="currentColor" strokeWidth="1.4" />
+  <text x="608.3" y="212" textAnchor="middle" fill="currentColor" fontSize="13.5">$FF</text>
+  <path d="M560.6666666666667,150 L560.6666666666667,164 L594.8888888888889,164 L594.8888888888889,190" fill="none" stroke="currentColor" strokeWidth="1.4" markerEnd="url(#st-conv-0)" strokeLinejoin="round" />
+  <text x="669.4" y="50" textAnchor="middle" fill="currentColor" fontSize="13.5">9</text>
+  <text x="669.4" y="72" textAnchor="middle" fill="currentColor" fontSize="13.5" fontWeight="bold">IN</text>
+  <rect x="641.9" y="84" width="55.1" height="30" rx="3" fill="#e8912d" fillOpacity="0.04" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="669.4" y="104" textAnchor="middle" fill="#e8912d" fontSize="13.5">$FF</text>
+  <rect x="641.9" y="120" width="55.1" height="30" rx="3" fill="#30a46c" fillOpacity="0.04" stroke="#30a46c" strokeWidth="1.4" />
+  <text x="669.4" y="140" textAnchor="middle" fill="#30a46c" fontSize="13.5">$FF</text>
+  <rect x="641.9" y="192" width="55.1" height="30" rx="3" fill="#30a46c" fillOpacity="0.2" stroke="#30a46c" strokeWidth="2" />
+  <text x="669.4" y="212" textAnchor="middle" fill="#30a46c" fontSize="13.5" fontWeight="bold">$00</text>
+  <path d="M621.7777777777778,150 L621.7777777777778,164 L656,164 L656,190" fill="none" stroke="currentColor" strokeWidth="1.4" markerEnd="url(#st-conv-0)" strokeLinejoin="round" />
+  <path d="M154,272 L154,266 L329.33333333333337,266 L329.33333333333337,272" fill="none" stroke="#e5484d" strokeWidth="1.4" strokeLinejoin="round" />
+  <text x="241.7" y="258" textAnchor="middle" fill="#e5484d" fontSize="13.5" fontWeight="bold">Token: polls for $FE</text>
+  <path d="M337.33333333333337,272 L337.33333333333337,266 L573.7777777777778,266 L573.7777777777778,272" fill="none" stroke="#30a46c" strokeWidth="1.4" strokeLinejoin="round" />
+  <text x="455.6" y="258" textAnchor="middle" fill="#30a46c" fontSize="13.5" fontWeight="bold">INIR × 2: 512 bytes</text>
+  <path d="M581.7777777777778,272 L581.7777777777778,266 L696,266 L696,272" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+  <text x="638.9" y="258" textAnchor="middle" fill="currentColor" fontSize="13.5" fontWeight="bold">the CRC</text>
+  <text x="0" y="294" fill="currentColor" fontSize="13.5">exchange</text>
+  <text x="0" y="316" fill="currentColor" fontSize="13.5">instruction</text>
+  <text x="0" y="348" fill="#e8912d" fontSize="13.5" fontWeight="bold">MOSI: host</text>
+  <text x="0" y="384" fill="#30a46c" fontSize="13.5" fontWeight="bold">MISO: card</text>
+  <text x="0" y="456" fill="currentColor" fontSize="13.5" fontWeight="bold">the IN returns</text>
+  <text x="180.6" y="294" textAnchor="middle" fill="currentColor" fontSize="13.5">10</text>
+  <text x="180.6" y="316" textAnchor="middle" fill="currentColor" fontSize="13.5" fontWeight="bold">IN</text>
+  <rect x="153" y="328" width="55.1" height="30" rx="3" fill="#e8912d" fillOpacity="0.04" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="180.6" y="348" textAnchor="middle" fill="#e8912d" fontSize="13.5">$FF</text>
+  <rect x="153" y="364" width="55.1" height="30" rx="3" fill="#30a46c" fillOpacity="0.04" stroke="#30a46c" strokeWidth="1.4" />
+  <text x="180.6" y="384" textAnchor="middle" fill="#30a46c" fontSize="13.5">$FF</text>
+  <rect x="153" y="436" width="55.1" height="30" rx="3" fill="currentColor" fillOpacity="0.04" stroke="currentColor" strokeWidth="1.4" />
+  <text x="180.6" y="456" textAnchor="middle" fill="currentColor" fontSize="13.5">$FF</text>
+  <path d="M146,408 L167.1111111111111,408 L167.1111111111111,434" fill="none" stroke="currentColor" strokeWidth="1.4" markerEnd="url(#st-conv-0)" strokeLinejoin="round" />
+  <text x="142" y="413" textAnchor="end" fill="currentColor" fontSize="13.5">from 9</text>
+  <text x="241.7" y="294" textAnchor="middle" fill="currentColor" fontSize="13.5">11</text>
+  <text x="241.7" y="316" textAnchor="middle" fill="currentColor" fontSize="13.5" fontWeight="bold">IN</text>
+  <rect x="214.1" y="328" width="55.1" height="30" rx="3" fill="#e8912d" fillOpacity="0.04" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="241.7" y="348" textAnchor="middle" fill="#e8912d" fontSize="13.5">$FF</text>
+  <rect x="214.1" y="364" width="55.1" height="30" rx="3" fill="#e5484d" fillOpacity="0.2" stroke="#e5484d" strokeWidth="2" />
+  <text x="241.7" y="384" textAnchor="middle" fill="#e5484d" fontSize="13.5" fontWeight="bold">$FE</text>
+  <rect x="214.1" y="436" width="55.1" height="30" rx="3" fill="currentColor" fillOpacity="0.04" stroke="currentColor" strokeWidth="1.4" />
+  <text x="241.7" y="456" textAnchor="middle" fill="currentColor" fontSize="13.5">$FF</text>
+  <path d="M194,394 L194,408 L228.22222222222223,408 L228.22222222222223,434" fill="none" stroke="currentColor" strokeWidth="1.4" markerEnd="url(#st-conv-0)" strokeLinejoin="round" />
+  <text x="302.8" y="294" textAnchor="middle" fill="currentColor" fontSize="13.5">12</text>
+  <text x="302.8" y="316" textAnchor="middle" fill="currentColor" fontSize="13.5" fontWeight="bold">IN</text>
+  <rect x="275.2" y="328" width="55.1" height="30" rx="3" fill="#e8912d" fillOpacity="0.04" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="302.8" y="348" textAnchor="middle" fill="#e8912d" fontSize="13.5">$FF</text>
+  <rect x="275.2" y="364" width="55.1" height="30" rx="3" fill="#30a46c" fillOpacity="0.2" stroke="#30a46c" strokeWidth="2" />
+  <text x="302.8" y="384" textAnchor="middle" fill="#30a46c" fontSize="13.5" fontWeight="bold">D0</text>
+  <rect x="275.2" y="436" width="55.1" height="30" rx="3" fill="#e5484d" fillOpacity="0.2" stroke="#e5484d" strokeWidth="2" />
+  <text x="302.8" y="456" textAnchor="middle" fill="#e5484d" fontSize="13.5" fontWeight="bold">$FE</text>
+  <path d="M255.11111111111114,394 L255.11111111111114,408 L289.3333333333333,408 L289.3333333333333,434" fill="none" stroke="currentColor" strokeWidth="1.4" markerEnd="url(#st-conv-0)" strokeLinejoin="round" />
+  <text x="363.9" y="294" textAnchor="middle" fill="currentColor" fontSize="13.5">13</text>
+  <text x="363.9" y="316" textAnchor="middle" fill="currentColor" fontSize="13.5" fontWeight="bold">IN</text>
+  <rect x="336.3" y="328" width="55.1" height="30" rx="3" fill="#e8912d" fillOpacity="0.04" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="363.9" y="348" textAnchor="middle" fill="#e8912d" fontSize="13.5">$FF</text>
+  <rect x="336.3" y="364" width="55.1" height="30" rx="3" fill="#30a46c" fillOpacity="0.2" stroke="#30a46c" strokeWidth="2" />
+  <text x="363.9" y="384" textAnchor="middle" fill="#30a46c" fontSize="13.5" fontWeight="bold">D1</text>
+  <rect x="336.3" y="436" width="55.1" height="30" rx="3" fill="#30a46c" fillOpacity="0.2" stroke="#30a46c" strokeWidth="2" />
+  <text x="363.9" y="456" textAnchor="middle" fill="#30a46c" fontSize="13.5" fontWeight="bold">D0</text>
+  <path d="M316.22222222222223,394 L316.22222222222223,408 L350.44444444444446,408 L350.44444444444446,434" fill="none" stroke="currentColor" strokeWidth="1.4" markerEnd="url(#st-conv-0)" strokeLinejoin="round" />
+  <text x="425" y="294" textAnchor="middle" fill="currentColor" fontSize="13.5">14</text>
+  <text x="425" y="316" textAnchor="middle" fill="currentColor" fontSize="13.5" fontWeight="bold">IN</text>
+  <rect x="397.4" y="328" width="55.1" height="30" rx="3" fill="#e8912d" fillOpacity="0.04" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="425" y="348" textAnchor="middle" fill="#e8912d" fontSize="13.5">$FF</text>
+  <rect x="397.4" y="364" width="55.1" height="30" rx="3" fill="#30a46c" fillOpacity="0.2" stroke="#30a46c" strokeWidth="2" />
+  <text x="425" y="384" textAnchor="middle" fill="#30a46c" fontSize="13.5" fontWeight="bold">D2</text>
+  <rect x="397.4" y="436" width="55.1" height="30" rx="3" fill="#30a46c" fillOpacity="0.2" stroke="#30a46c" strokeWidth="2" />
+  <text x="425" y="456" textAnchor="middle" fill="#30a46c" fontSize="13.5" fontWeight="bold">D1</text>
+  <path d="M377.33333333333337,394 L377.33333333333337,408 L411.55555555555554,408 L411.55555555555554,434" fill="none" stroke="currentColor" strokeWidth="1.4" markerEnd="url(#st-conv-0)" strokeLinejoin="round" />
+  <text x="486.1" y="294" textAnchor="middle" fill="currentColor" fontSize="13.5">…</text>
+  <text x="486.1" y="384" textAnchor="middle" fill="currentColor" fontSize="15">…</text>
+  <text x="547.2" y="294" textAnchor="middle" fill="currentColor" fontSize="13.5">524</text>
+  <text x="547.2" y="316" textAnchor="middle" fill="currentColor" fontSize="13.5" fontWeight="bold">IN</text>
+  <rect x="519.7" y="328" width="55.1" height="30" rx="3" fill="#e8912d" fillOpacity="0.04" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="547.2" y="348" textAnchor="middle" fill="#e8912d" fontSize="13.5">$FF</text>
+  <rect x="519.7" y="364" width="55.1" height="30" rx="3" fill="#30a46c" fillOpacity="0.2" stroke="#30a46c" strokeWidth="2" />
+  <text x="547.2" y="384" textAnchor="middle" fill="#30a46c" fontSize="13.5" fontWeight="bold">C1</text>
+  <rect x="519.7" y="436" width="55.1" height="30" rx="3" fill="#30a46c" fillOpacity="0.2" stroke="#30a46c" strokeWidth="2" />
+  <text x="547.2" y="456" textAnchor="middle" fill="#30a46c" fontSize="13.5" fontWeight="bold">D511</text>
+  <path d="M486.1111111111111,408 L533.7777777777778,408 L533.7777777777778,434" fill="none" stroke="currentColor" strokeWidth="1.4" strokeDasharray="3 3" markerEnd="url(#st-conv-0)" strokeLinejoin="round" />
+  <text x="608.3" y="294" textAnchor="middle" fill="currentColor" fontSize="13.5">525</text>
+  <text x="608.3" y="316" textAnchor="middle" fill="currentColor" fontSize="13.5" fontWeight="bold">IN</text>
+  <rect x="580.8" y="328" width="55.1" height="30" rx="3" fill="#e8912d" fillOpacity="0.04" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="608.3" y="348" textAnchor="middle" fill="#e8912d" fontSize="13.5">$FF</text>
+  <rect x="580.8" y="364" width="55.1" height="30" rx="3" fill="#30a46c" fillOpacity="0.2" stroke="#30a46c" strokeWidth="2" />
+  <text x="608.3" y="384" textAnchor="middle" fill="#30a46c" fontSize="13.5" fontWeight="bold">C2</text>
+  <rect x="580.8" y="436" width="55.1" height="30" rx="3" fill="#30a46c" fillOpacity="0.2" stroke="#30a46c" strokeWidth="2" />
+  <text x="608.3" y="456" textAnchor="middle" fill="#30a46c" fontSize="13.5" fontWeight="bold">C1</text>
+  <path d="M560.6666666666667,394 L560.6666666666667,408 L594.8888888888889,408 L594.8888888888889,434" fill="none" stroke="currentColor" strokeWidth="1.4" markerEnd="url(#st-conv-0)" strokeLinejoin="round" />
+  <text x="669.4" y="294" textAnchor="middle" fill="currentColor" fontSize="13.5">526</text>
+  <text x="669.4" y="316" textAnchor="middle" fill="currentColor" fontSize="13.5" fontWeight="bold">IN</text>
+  <rect x="641.9" y="328" width="55.1" height="30" rx="3" fill="#e8912d" fillOpacity="0.04" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="669.4" y="348" textAnchor="middle" fill="#e8912d" fontSize="13.5">$FF</text>
+  <rect x="641.9" y="364" width="55.1" height="30" rx="3" fill="#30a46c" fillOpacity="0.04" stroke="#30a46c" strokeWidth="1.4" />
+  <text x="669.4" y="384" textAnchor="middle" fill="#30a46c" fontSize="13.5">$FF</text>
+  <rect x="641.9" y="436" width="55.1" height="30" rx="3" fill="#30a46c" fillOpacity="0.2" stroke="#30a46c" strokeWidth="2" />
+  <text x="669.4" y="456" textAnchor="middle" fill="#30a46c" fontSize="13.5" fontWeight="bold">C2</text>
+  <path d="M621.7777777777778,394 L621.7777777777778,408 L656,408 L656,434" fill="none" stroke="currentColor" strokeWidth="1.4" markerEnd="url(#st-conv-0)" strokeLinejoin="round" />
+  <text x="0" y="498" fill="currentColor" fontSize="13.5">D0 … D511: the sector's bytes; C1, C2: its CRC; every IN sends $FF and returns the byte before</text>
+</svg>
+{/* /fig:conversation */}
+<figcaption>The listing's sector read, one column per exchange. The host's bytes go out on MOSI; the card's come back on MISO; each IN returns the card's byte of the exchange before, as the arrows show. R1 arrives in exchange 8 and is read in 9; the token arrives in 11 and is read in 12; INIR then reads data byte n in exchange 13 + n.</figcaption>
+</figure>
+
+- **Exchanges 1–6** are the command: `$51` (CMD17), the sector number `$00 $00 $00 $05`, and the CRC byte.
+  The card sends `$FF` all the while, and no instruction reads it: an `OUT` only sends.
+- **Exchanges 7–9** are `Resp`. Each `IN` sends `$FF`. The card sends R1, `$00`, in exchange 8, but the `IN`
+  of exchange 8 returns what came in during exchange 7, `$FF`. Only exchange 9's `IN` returns the `$00`, and
+  the loop ends.
+- **Exchanges 10–12** are `Token`. The card sends `$FE` in exchange 11, exchange 12's `IN` returns it, and
+  that same exchange has already brought in the first data byte, D0.
+- **From exchange 13** `INIR` reads one data byte per exchange, each one an exchange late: D0 in 13, D511 in
+  524. The two last `IN`s, 525 and 526, return the CRC.
+
+Notice that the conversation is one exchange longer than the bytes it carries: the last `IN` sends a `$FF`
+that brings back a byte nobody reads. That is the price of reading behind, and the reason the data comes out
+in the right order at all.
+
 ## Streaming with the DMA
 
 The DMA can do the `INIR` part for you, and the SD card's port is the one I/O port the DMA treats with special
@@ -382,13 +664,24 @@ its buffers and its tables. Port **`$E3`**, the DivMMC control port, sets him up
   clears it.
 - **Reading `$E3`** gives bits 7, 6 and 3–0, with bits 5 and 4 reading 0.
 
-The butler's other way in is the **automap** at his entry points, `RST $08` above all: a program calls the
-operating system with `RST $08`, the DivMMC maps itself in, its code drives `$E7` and `$EB`, and it leaves on a
-`RETN`. The [memory chapter's DivMMC
+The butler's other way in is the **automap** at his entry points, and the one that matters for files is
+`$0008`, the address `RST $08` calls. But the Next has several ROMs, and each of them has its own code at
+`$0008`, so which `RST $08` reaches the butler? With the entry-point settings after a reset, NextReg `$B8` to
+`$BA`, `$0008` maps the DivMMC **only when the 48K BASIC ROM is at `$0000`**: ROM 3 on a +3 or Next machine
+type, ROM 1 on a 128K one. In the 128K editor's ROM, the +3DOS ROM or RAM, `RST $08` simply runs whatever is
+at `$0008` there, and the butler does not come. The mapping is also **delayed**: the 48K ROM's own opcode at
+`$0008` is fetched first, and the DivMMC's code takes over from the next fetch.
+
+So "calling the operating system" means something precise: a program with the 48K BASIC ROM paged in executes
+`RST $08` followed by a byte that names the function, and the code that answers is the one in the butler's
+memory. That is **esxDOS** on a machine set up with it, or, on NextZXOS, the part of NextZXOS that is loaded
+into the DivMMC and offers the same esxDOS calls. That code drives `$E7` and `$EB`, and it leaves on a `RETN`.
+The [memory chapter's DivMMC
 section](/en/under-the-hood/emulator-internals/next-memory-io/#the-divmmcs-entry-points) tells that story in
-full, including the master switch, NextReg `$0A` bit 4. So the whole stack is short: your program calls
-`RST $08`, the butler's code turns the call into SD commands, and the telegraphist turns the commands into
-bits.
+full: what "the 48K BASIC ROM is at `$0000`" means exactly, how NextRegs `$B8` to `$BB` move the entry
+points, and the master switch, NextReg `$0A` bit 4. So the whole stack is short: your program calls
+`RST $08` from the 48K ROM, the butler's code turns the call into SD commands, and the telegraphist turns the
+commands into bits.
 
 ## Tape and disks
 
