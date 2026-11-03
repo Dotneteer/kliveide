@@ -52,6 +52,14 @@
         ]
       }
     },
+    "fpgaRoms": {
+      "bootrom_ab.bin": {
+        "core": "3.02.01",
+        "source": "src/rom/bootrom_ab.vhd",
+        "size": 8192,
+        "sha256": "41d8f328c0e0e7ea050bd783b322b5902177b6eeed7bec4b994529d88e8297a8"
+      }
+    },
     "sdBaseImage": {
       "file": "mmc/ks2-base.cim",
       "sha256": "66138b425599135f5aeafe5af6ba15f261e4218e5bb29a3d524f474009edab2a"
@@ -121,6 +129,14 @@
           "fcabc6c7",
           "9ced2dbc"
         ]
+      }
+    },
+    "fpgaRoms": {
+      "bootrom_ab.bin": {
+        "core": "3.02.04",
+        "source": "src/rom/bootrom_ab.vhd",
+        "size": 8192,
+        "sha256": "1f1cb74e33d3707bec358a55e58f80d39699acd167c4a180abea0f32e32a946c"
       }
     },
     "sdBaseImage": {

@@ -20,6 +20,19 @@ describe("the Next ROM sets", () => {
     expect(sets.map((set) => set.id)).toContain("nextzxos-2.08");
   });
 
+  describe.each(sets.flatMap((set) => Object.entries(set.fpgaRoms).map(([file, info]) => ({ set, file, info }))))(
+    "$set.id/$file (from core $info.core)",
+    ({ set, file, info }) => {
+      it("is committed with the manifest's size and sha256", () => {
+        const path = join(ROMS, nextRomAnnotationFile(set.id, file));
+        expect(existsSync(path)).toBe(true);
+        const bytes = readFileSync(path);
+        expect(bytes.length).toBe(info.size);
+        expect(createHash("sha256").update(bytes).digest("hex")).toBe(info.sha256);
+      });
+    }
+  );
+
   describe.each(sets.flatMap((set) => Object.entries(set.files).map(([file, info]) => ({ set, file, info }))))(
     "$set.id/$file",
     ({ set, file, info }) => {
