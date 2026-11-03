@@ -35,7 +35,7 @@ const figures = {};
 // ---------------------------------------------------------------------------------------------
 // Figure: the flash slots on the two boards
 {
-  const out = [svgOpen(700, 250, "Two bars, each a flash chip to scale within itself. Above, Issue 2 and Issue 3: 16 MB in 32 slots of 512K; slot 0 the anti-brick core, slot 1 the Next core, slots 2 to 7 reserved, slots 8 to 31 extra cores. Below, Issue 4: 32 MB in 15 slots of 2,176K; slot 0 the anti-brick core, slot 1 the Next core, slots 2 to 7 reserved, slots 8 to 14 unused by firmware 1.44.")];
+  const out = [svgOpen(700, 250, "Two bars, each a flash chip to scale within itself. Above, Issue 2 and Issue 3: 16 MB in 32 slots of 512K; slot 0 the anti-brick core, slot 1 the Next core, slots 2 to 7 reserved, slots 8 to 31 extra cores. Below, Issue 4 and Issue 5: 32 MB in 15 slots of 2,176K; slot 0 the anti-brick core, slot 1 the Next core, slots 2 to 7 reserved, slots 8 to 14 unused by firmware 1.44.")];
   const bar = (y, title, n, extraLabel) => {
     out.push(text(0, y - 12, title, { size: FT, bold: true }));
     const w = 700 / n;
@@ -55,7 +55,7 @@ const figures = {};
     });
   };
   bar(30, "Issue 2 and Issue 3: 16 MB, 32 slots of 512K", 32, "8–31: extra cores");
-  bar(160, "Issue 4: 32 MB, 15 slots of 2,176K", 15, "8–14: unused by firmware 1.44");
+  bar(160, "Issue 4 and Issue 5: 32 MB, 15 slots of 2,176K", 15, "8–14: unused by firmware 1.44");
   figures.flash = [...out, "</svg>"];
 }
 
@@ -127,6 +127,40 @@ const figures = {};
   blk(out, 642, 238, 58, 42, ["…"], { size: FS });
   out.push(text(0, 312, "version byte: major in bits 7–4, minor in bits 3–0; start and size are little-endian", { size: FS }));
   figures.tbu = [...out, "</svg>"];
+}
+
+// ---------------------------------------------------------------------------------------------
+// Figure: one logic cell, a LUT and its flip-flop
+{
+  const out = [svgOpen(700, 280, "Six inputs, a to f, enter a look-up table drawn as a box with an eight-by-eight grid: its 64 bits, one answer for each combination of the inputs. The table's output goes two ways: straight to a selector, and through a flip-flop, clocked from below, to the selector's other input. The selector's output leaves to the routing on the right.")];
+  out.push(arrows("boot-cell", [GREY, NEXT]));
+  for (let i = 0; i < 6; i++) {
+    const y = 62 + i * 28;
+    out.push(text(0, y + 5, "abcdef"[i], { size: FT, bold: true }));
+    out.push(pathEl(`M24,${y} L96,${y}`, { width: 1.6, marker: "boot-cell-0" }));
+  }
+  blk(out, 100, 30, 200, 200, [], { c: NEXT, fill: true, op: 0.06 });
+  out.push(text(200, 52, "LUT", { anchor: "middle", size: FH, bold: true, fill: NEXT }));
+  for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+    const on = ((r * 8 + c) * 37) % 5 < 2;
+    out.push(rect(140 + c * 15, 64 + r * 15, 13, 13, { rx: 1, stroke: NEXT, width: 1, fill: on ? NEXT : "none", fillOpacity: on ? 0.5 : undefined }));
+  }
+  out.push(text(200, 200, "64 bits", { anchor: "middle", size: FS, fill: NEXT }));
+  out.push(text(200, 218, "one per input combination", { anchor: "middle", size: FS, fill: NEXT }));
+  // --- output: direct, and through the flip-flop
+  out.push(line(300, 130, 330, 130, { width: 1.8 }));
+  out.push(pathEl("M330,130 L330,92 L536,92", { width: 1.8, marker: "boot-cell-0" }));
+  out.push(pathEl("M330,130 L330,168 L396,168", { width: 1.8, marker: "boot-cell-0" }));
+  blk(out, 400, 138, 100, 60, ["flip-flop"], { c: EXTRA, fill: true, op: 0.12, size: FS });
+  out.push(pathEl("M500,168 L536,168", { width: 1.8, marker: "boot-cell-0" }));
+  out.push(pathEl("M450,252 L450,202", { width: 1.8, marker: "boot-cell-0" }));
+  out.push(text(462, 250, "clock", { size: FS }));
+  out.push(pathEl("M540,72 L580,90 L580,170 L540,188 Z", { width: 1.6 }));
+  out.push(text(560, 135, "or", { anchor: "middle", size: FS }));
+  out.push(pathEl("M580,130 L696,130", { width: 1.8, marker: "boot-cell-0" }));
+  out.push(text(700, 118, "to the routing", { anchor: "end", size: FS }));
+  out.push(text(350, 80, "direct", { size: FS }));
+  figures.cell = [...out, "</svg>"];
 }
 
 writeFigures(PAGE, figures);
