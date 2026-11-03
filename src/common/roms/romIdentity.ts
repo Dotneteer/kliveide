@@ -72,7 +72,9 @@ export type RomPageKind =
   | "next-alt0"
   | "next-alt1"
   | "next-divmmc"
-  | "next-multiface";
+  | "next-multiface"
+  // --- The anti-brick core's boot ROM (`bootrom_ab.bin`), extracted from the FPGA core's VHDL
+  | "next-boot";
 
 /** A known ROM page: its file (relative to `src/public/roms`), what it holds, and its 16K page. */
 export type KnownRomPage = {
@@ -93,7 +95,8 @@ const NEXT_PAGE_KINDS: Readonly<Record<string, readonly (RomPageKind | undefined
   "enNextLG.rom": [undefined, undefined, "next-os2", undefined],
   "enAltZX.rom": ["next-alt0", "next-alt1"],
   "enNxtmmc.rom": ["next-divmmc"],
-  "enNextMf.rom": ["next-multiface"]
+  "enNextMf.rom": ["next-multiface"],
+  "bootrom_ab.bin": ["next-boot"]
 };
 
 /**
@@ -104,7 +107,8 @@ const NEXT_PAGE_KINDS: Readonly<Record<string, readonly (RomPageKind | undefined
 function nextRomPages(): Record<string, KnownRomPage> {
   const result: Record<string, KnownRomPage> = {};
   for (const set of Object.values(NEXT_ROM_SETS)) {
-    for (const [file, info] of Object.entries(set.files)) {
+    // --- The FPGA ROMs (the anti-brick boot ROM) have their own page CRCs, like the distribution's files
+    for (const [file, info] of [...Object.entries(set.files), ...Object.entries(set.fpgaRoms)]) {
       const kinds = NEXT_PAGE_KINDS[file];
       info.pages.forEach((crc, page) => {
         const kind = kinds?.[page];

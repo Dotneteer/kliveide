@@ -41,12 +41,30 @@ export type NextRomFacts = {
   ldBytes: { loadBytes: number; loadBytesInvalidHeader: number; loadBytesResume: number; saveBytes: number };
 };
 
+/** A ROM image extracted from an FPGA core's VHDL (a `romgen` table) */
+export type NextFpgaRomInfo = {
+  /** The core version it comes from (`3.02.01`) */
+  core: string;
+  /** Its VHDL file, relative to `vendor/next-fpga/<core>/` */
+  source: string;
+  size: number;
+  sha256: string;
+  /** The CRC-32 of each 16K page, as `NextRomFileInfo.pages` (the ROM annotations find a page by it) */
+  pages: string[];
+};
+
 export type NextRomSet = {
   id: NextRomSetId;
   /** The NextZXOS version the set carries */
   nextZxOs: string;
   source: { project: string; ref: string; commit: string; dir: string };
   files: Readonly<Record<string, NextRomFileInfo>>;
+  /**
+   * ROM images that live inside the FPGA core rather than in the distribution (the anti-brick core's
+   * boot ROM), extracted from the core version's VHDL (`vendor/next-fpga/<core>/<source>`); shipped
+   * beside the set's files so they can be annotated
+   */
+  fpgaRoms: Readonly<Record<string, NextFpgaRomInfo>>;
   /** The SD card image a new working copy is made from, relative to `src/public` */
   sdBaseImage: { file: string; sha256: string };
   facts: NextRomFacts;
@@ -70,6 +88,7 @@ function toRomSet(id: NextRomSetId): NextRomSet {
     nextZxOs: raw.nextZxOs,
     source: raw.source,
     files: raw.files,
+    fpgaRoms: raw.fpgaRoms ?? {},
     sdBaseImage: raw.sdBaseImage,
     facts: {
       keyWaitLoop: [hex(facts.keyWaitLoop[0]), hex(facts.keyWaitLoop[1])],

@@ -19,7 +19,7 @@ function shippedSidecars(dir = ROMS): string[] {
   return readdirSync(dir).flatMap((name) => {
     const path = join(dir, name);
     if (statSync(path).isDirectory()) return shippedSidecars(path);
-    return name.endsWith(".rom.dis") ? [relative(ROMS, path)] : [];
+    return /\.(rom|bin)\.dis$/.test(name) ? [relative(ROMS, path)] : [];
   });
 }
 
@@ -30,7 +30,14 @@ const pageSizeOf = (sidecar: RawRomSidecar, page: string) =>
 /** The sidecar with one page's annotations removed: what a page looks like before anyone wrote it. */
 function withEmptiedPage(sidecar: RawRomSidecar, page: string): RawRomSidecar {
   const copy = structuredClone(sidecar);
-  copy.banks[page] = { ...copy.banks[page], regions: [], localLabels: [], lineAnnotations: {} };
+  // --- Only the containers the page has: a sidecar nobody has started (level 0) has none to empty
+  const bank = copy.banks[page];
+  copy.banks[page] = {
+    ...bank,
+    regions: [],
+    ...(bank.localLabels ? { localLabels: [] } : {}),
+    ...(bank.lineAnnotations ? { lineAnnotations: {} } : {})
+  };
   for (const key of Object.keys(copy.provenance ?? {})) if (key.startsWith(`${page}:`)) delete copy.provenance[key];
   return copy;
 }

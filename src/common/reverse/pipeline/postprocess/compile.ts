@@ -106,6 +106,12 @@ export function compileAnnotations(input: CompileInput): CompileResult {
     };
   }
   bank.regions ??= [];
+  // --- What the base page has: a container it lacks and the files leave empty is not added
+  const baseHad = {
+    labels: bank.localLabels !== undefined,
+    lines: bank.lineAnnotations !== undefined,
+    provenance: sidecar.provenance !== undefined
+  };
   bank.localLabels ??= [];
   bank.lineAnnotations ??= {};
   const last = input.pageSize - 1;
@@ -145,6 +151,10 @@ export function compileAnnotations(input: CompileInput): CompileResult {
   }
   checkCoverage();
   settleProvenance(inherited);
+  // --- A page nobody has annotated yet (a level 0 sidecar) keeps its shape: no empty containers added
+  if (!baseHad.labels && bank.localLabels.length === 0) delete (bank as Partial<typeof bank>).localLabels;
+  if (!baseHad.lines && Object.keys(bank.lineAnnotations).length === 0) delete (bank as Partial<typeof bank>).lineAnnotations;
+  if (!baseHad.provenance && sidecar.provenance && Object.keys(sidecar.provenance).length === 0) delete sidecar.provenance;
 
   const questions = files.flatMap(({ name, document }) => document.questions.map((q) => ({ ...q, file: name })));
   const feedback = files.flatMap(({ name, document }) => document.feedback.map((f) => ({ ...f, file: name })));

@@ -21,7 +21,12 @@ to and replace what it supersedes.
   quoted source or "the VHDL says", anywhere: text, tables, figures, captions, alt texts. State each fact
   as a fact about the machine. The FPGA as a chip may be named. Klive's own source is not named in a
   chapter about the hardware. Before publishing, search the page for `vhd`, `VHDL`, `_input`, `next-fpga` and
-  `snake_case` names.
+  `snake_case` names, and check that every `VHDL` left names the language, not a source.
+  What the rule protects, in the project author's words: never say that a fact was worked out from the
+  FPGA's VHDL source. Naming the language is fine: any chapter may say that FPGA designs are written in a
+  hardware description language such as VHDL or Verilog, and that the Next is written mostly in VHDL. What
+  stays banned is presenting the design as the source of a fact ("the VHDL says", file, signal or process
+  names, line numbers).
 - **Where Klive and the hardware differ, fix the core.** The chapters describe the machine, not Klive, so a
   difference is no longer stated in the text: it is fixed, or recorded in the core's own README. A core fix is its own
   commit with a `fix` changeset, before the article's commit; the article commit gets an `internal`

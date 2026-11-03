@@ -72,7 +72,9 @@ describe("createRomAnnotationsMenu", () => {
       "enAltZX.rom, page 1",
       "---",
       "enNxtmmc.rom",
-      "enNextMf.rom"
+      "enNextMf.rom",
+      "---",
+      "bootrom_ab.bin"
     ]);
     // --- A Next item is labelled by the file name, and its id carries the set's path
     expect(next[0].id).toBe("rom_ann_zxnext_zxnext/nextzxos-2.08/enNextZX.rom_0");

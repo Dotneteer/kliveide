@@ -20,6 +20,25 @@ describe("the Next ROM sets", () => {
     expect(sets.map((set) => set.id)).toContain("nextzxos-2.08");
   });
 
+  describe.each(sets.flatMap((set) => Object.entries(set.fpgaRoms).map(([file, info]) => ({ set, file, info }))))(
+    "$set.id/$file (from core $info.core)",
+    ({ set, file, info }) => {
+      it("is committed with the manifest's size and sha256", () => {
+        const path = join(ROMS, nextRomAnnotationFile(set.id, file));
+        expect(existsSync(path)).toBe(true);
+        const bytes = readFileSync(path);
+        expect(bytes.length).toBe(info.size);
+        expect(createHash("sha256").update(bytes).digest("hex")).toBe(info.sha256);
+      });
+
+      it("has the manifest's page CRC, known as the Next's boot ROM", () => {
+        const bytes = new Uint8Array(readFileSync(join(ROMS, nextRomAnnotationFile(set.id, file))));
+        expect([romCrc32(bytes)]).toEqual(info.pages);
+        expect(KNOWN_ROM_PAGES[info.pages[0]]).toEqual({ file: nextRomAnnotationFile(set.id, file), kind: "next-boot" });
+      });
+    }
+  );
+
   describe.each(sets.flatMap((set) => Object.entries(set.files).map(([file, info]) => ({ set, file, info }))))(
     "$set.id/$file",
     ({ set, file, info }) => {

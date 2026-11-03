@@ -67,7 +67,7 @@ async function main() {
 function sidecarFiles() {
   return readdirSync(ROMS, { recursive: true })
     .map((name) => String(name).split(sep).join("/"))
-    .filter((name) => name.endsWith(".rom.dis"))
+    .filter((name) => /\.(rom|bin)\.dis$/.test(name))
     .sort();
 }
 
