@@ -192,6 +192,7 @@
 /en/guides/next/next-models/index.html
 /en/guides/next/next-registers/index.html
 /en/guides/next/picture-troubleshooting/index.html
+/en/guides/next/real-time-clock/index.html
 /en/guides/next/sd-card/index.html
 /en/guides/next/sprite-inspector/index.html
 /en/guides/next/sprite-palette-editors/index.html
@@ -851,8 +852,10 @@
 /en/under-the-hood/emulator-internals/next-display/timing/index.html
 /en/under-the-hood/emulator-internals/next-display/ula/index.html
 /en/under-the-hood/emulator-internals/next-dma/index.html
+/en/under-the-hood/emulator-internals/next-input/index.html
 /en/under-the-hood/emulator-internals/next-interrupts/index.html
 /en/under-the-hood/emulator-internals/next-memory-io/index.html
+/en/under-the-hood/emulator-internals/next-rtc/index.html
 /en/under-the-hood/emulator-internals/next-storage/index.html
 /en/under-the-hood/emulator-internals/next-uart/index.html
 /en/under-the-hood/emulator-internals/reverse-debugging/index.html

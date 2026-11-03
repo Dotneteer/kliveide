@@ -1,4 +1,5 @@
 import type { KeyMapping } from "@abstractions/KeyMapping";
+import type { NextRtcKeptState } from "@common/zxnext/nextRtcKept";
 import type { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
 import type { LogpointGroupState, SourceCommentSwitches } from "@abstractions/BreakpointInfo";
 
@@ -56,6 +57,11 @@ export type AppState = {
   compilation?: CompilationState;
   projectSettings?: Record<string, any>;
   keyMappingFile?: string;
+  /**
+   * The ZX Spectrum Next's kept real-time clocks, by model: when each was last saved (main keeps it up
+   * to date with `zxnext-rtc.json`; the Settings dialog's Kept clock row shows the active model's)
+   */
+  nextRtcKept?: NextRtcKeptState;
   keyMappings?: { mapping: KeyMapping; merge: boolean };
   userSettings?: Record<string, any>;
   menuVersion?: number;

@@ -77,11 +77,15 @@ import { ZxNextWasmHost } from "./ZxNextWasmHost";
 import { NEXT_ROM_FLAGS } from "./nextMachineInfo";
 import { NEXT_ROM_FILES, NEXT_ROM_SETS, nextRomPageCrcs, nextRomPath } from "@common/zxnext/romSets";
 import { nextModelDisplayName, profileOfStateCoreId, stateCoreIdOf } from "./nextProfiles";
-import { rtcRegistersFromDate } from "./nextRtc";
+import { NextRtcHost, type NextRtcClockMode, type NextRtcExports, type NextRtcStore } from "./nextRtcHost";
 import {
   AUDIO_SAMPLE_RATE,
   FAST_LOAD,
   NEXT_AUDIO_OUTPUT,
+  NEXT_RTC_CLOCK,
+  NEXT_RTC_HOST_CLOCK,
+  NEXT_RTC_KEEP,
+  NEXT_RTC_STORE,
   REWIND_REQUESTED,
   SAVED_TO_TAPE,
   TAPE_MODE
@@ -220,6 +224,12 @@ export class ZxNextWasmV2Machine
   private piI2sScratch = new Int16Array(0);
   /** The core's since-pause contention count when the IDE last restarted it (see resetContentionDelaySincePause). */
   private wasmV2ContentionPauseBase = 0;
+  /** The DS1307's host side: which clock it follows, and keeping it (`.plans/ZXNEXT_RTC_OPTIONS_PLAN.md`) */
+  readonly rtcHost = new NextRtcHost(
+    () => this.wasmV2Runtime?.exports as unknown as NextRtcExports | undefined,
+    () => this.profile.id,
+    () => ((this.getMachineProperty(NEXT_RTC_HOST_CLOCK) as (() => number) | undefined) ?? Date.now)()
+  );
   constructor(
     public readonly requestedModelInfo?: MachineModel,
     public readonly requestedConfig?: MachineConfigSet,
@@ -549,8 +559,9 @@ export class ZxNextWasmV2Machine
       artifactName: this.wasmV2LoaderOptions?.artifactName ?? this.profile.wasmArtifact
     });
     this.hardResetWasmV2(this.wasmV2Runtime);
-    // --- The DS1307 holds the host's time, as the battery-backed clock of a machine set up before
-    this.wasmV2Runtime.exports.zxnextRtcSetTime(...rtcRegistersFromDate(new Date()));
+    // --- The DS1307: the kept clock, or the host's time, as the battery-backed clock of a machine set up before
+    this.syncRtcPropertiesToHost();
+    await this.rtcHost.seed();
     this.syncAudioSampleRateToWasmV2(this.wasmV2Runtime);
     this.syncTapeStateToWasmV2(this.wasmV2Runtime);
     this.syncCpuFromWasmV2(this.wasmV2Runtime);
@@ -587,6 +598,10 @@ export class ZxNextWasmV2Machine
     if (runtime != null && key === NEXT_AUDIO_OUTPUT) {
       this.syncAudioOutputToWasmV2(runtime);
     }
+    // --- The clock's options apply live (plan D7); before setup they only wait for it
+    if (runtime != null && (key === NEXT_RTC_CLOCK || key === NEXT_RTC_KEEP || key === NEXT_RTC_STORE)) {
+      this.syncRtcPropertiesToHost();
+    }
     if (runtime != null) this.syncTapePropertyToWasmV2(runtime, key, value);
   }
 
@@ -596,6 +611,8 @@ export class ZxNextWasmV2Machine
     // --- The machine draws again: the paused debug preview is over
     this.layerPreviewShown = false;
     this.beamPreviewShown = false;
+    // --- The real-time clock follows the host and is saved between frames, never inside one
+    this.rtcHost.beforeFrame();
 
     if (
       this.executionContext.debugStepMode !== DebugStepMode.NoDebug ||
@@ -627,6 +644,15 @@ export class ZxNextWasmV2Machine
   /** Forgets what was last pushed into the core, so the next frame pushes the live state (D8) */
   invalidateHostSync(): void {
     this.wasmV2AudioSampleRate = -1;
+    this.rtcHost.rebase();
+  }
+
+  /** Pushes the clock's options (unset: emulated time, not kept, no store) into its host side */
+  private syncRtcPropertiesToHost(): void {
+    const clock: NextRtcClockMode = this.getMachineProperty(NEXT_RTC_CLOCK) === "host" ? "host" : "emulated";
+    this.rtcHost.setStore(this.getMachineProperty(NEXT_RTC_STORE) as NextRtcStore | undefined);
+    this.rtcHost.setClockMode(clock);
+    this.rtcHost.setKeep(this.getMachineProperty(NEXT_RTC_KEEP) === true);
   }
 
   executeWasmV2DebugStep(): FrameTerminationMode {
@@ -717,6 +743,7 @@ export class ZxNextWasmV2Machine
     this.setFrameCommand(null);
     this.wasmV2AudioSamples.length = 0;
     this.syncCpuFromWasmV2(runtime);
+    this.rtcHost.rebase();
   }
 
   private applyHostFields(state: unknown): void {
@@ -762,6 +789,7 @@ export class ZxNextWasmV2Machine
     this.invalidateCheckpoints();
     this.syncCpuFromWasmV2(runtime);
     this.reapplyLayerDebug(runtime);
+    this.rtcHost.rebase();
   }
 
 
@@ -1543,6 +1571,15 @@ export class ZxNextWasmV2Machine
    */
   override async executeCustomCommand(command: string): Promise<any> {
     const runtime = this.wasmV2Runtime;
+    // --- The Settings dialog's Kept clock buttons (`.plans/ZXNEXT_RTC_OPTIONS_PLAN.md` D8)
+    if (runtime != null && command === "rtcSetToHost") {
+      this.rtcHost.setToHost();
+      return;
+    }
+    if (runtime != null && command === "rtcForget") {
+      this.rtcHost.forget();
+      return;
+    }
     if (runtime != null && command === "multifaceNmi") {
       runtime.exports.zxnextPressMultifaceNmiButton();
       return;

@@ -10,5 +10,9 @@ void zxnextI2cWriteSclPort(uint32_t value);
 void zxnextI2cWriteSdaPort(uint32_t value);
 void zxnextRtcSetTime(uint32_t seconds, uint32_t minutes, uint32_t hours, uint32_t day, uint32_t date,
                       uint32_t month, uint32_t year);
+uint32_t zxnextRtcPeekRegister(uint32_t index);
+uint32_t zxnextRtcGetWriteCount(void);
+uint32_t zxnextRtcGetTimeWriteCount(void);
+void zxnextRtcSetRegister(uint32_t index, uint32_t value);
 
 #endif

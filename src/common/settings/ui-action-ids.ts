@@ -39,6 +39,8 @@ export type UiActionId =
   | "rom:timex:forget"
   | "rom:scorpion:select"
   | "rom:scorpion:forget"
+  | "rtc:next:host"
+  | "rtc:next:forget"
   | "keymap:select"
   | "keymap:reset"
   | "dialog:joystick-bindings"

@@ -17,7 +17,8 @@ import { KliveGlobalSettings } from "./setting-definitions";
 import { getMonospaceFontOptions } from "./monospace-fonts";
 import { EDITOR_FONT_SIZES, PANEL_FONT_SIZES } from "./font-sizes";
 import { ZOOM_STEPS } from "./zoom-steps";
-import { t } from "@common/i18n/i18n";
+import { t, uiLocale } from "@common/i18n/i18n";
+import { nextModelDisplayName, nextProfileOf } from "@emu/machines/zxNext/nextProfiles";
 import { SOURCE_CATALOG } from "@common/i18n/catalogs";
 import { labelled } from "@common/i18n/labels";
 import { TRANSLATION_STATUS } from "@common/i18n/translations.generated";
@@ -30,6 +31,7 @@ import {
 } from "@common/i18n/languages";
 import { MOUSE_POINTER_DISPLAYS, MOUSE_SENSITIVITIES } from "./mouse-capture";
 import { NEXT_AUDIO_OUTPUTS } from "./next-audio-output";
+import { NEXT_RTC_CLOCKS } from "./next-rtc-clock";
 import { ACCENT_MENU_ITEMS, DEFAULT_ACCENT } from "@common/theming/accents";
 import { machineRegistry } from "@common/machines/machine-registry";
 import {
@@ -87,6 +89,8 @@ import {
   SETTING_EMU_ULA_LATE_TIMING,
   SETTING_EMU_ULA_SNOW,
   SETTING_EMU_NEXT_AUDIO_OUTPUT,
+  SETTING_EMU_NEXT_RTC_CLOCK,
+  SETTING_EMU_NEXT_RTC_KEEP,
   SETTING_EMU_SCORPION_ROM,
   SETTING_EMU_SHOW_BEAM_POSITION,
   SETTING_EMU_SHOW_INSTANT_SCREEN,
@@ -167,7 +171,8 @@ export type SettingsStateKey =
   | "z88dkInstallation"
   | "z88dkCompiler"
   | "z88dkClib"
-  | "z88dkOptimise";
+  | "z88dkOptimise"
+  | "nextRtcKept";
 
 export type SettingsRowSource =
   | { kind: "setting"; settingId: string }
@@ -219,6 +224,11 @@ export type SettingsRow = {
   descriptionKey?: MessageKey;
   /** A help text computed when shown; wins over `descriptionKey` when it returns one */
   describe?: (env: SettingsPlatform) => string | undefined;
+  /**
+   * A help text that says what the row's value is (the Kept clock's last save): computed from the
+   * value its `source` reads, and wins over the others
+   */
+  describeValue?: (value: unknown, appState: AppState | undefined) => string | undefined;
   /**
    * The menu path the row replaces: the search finds the new place by the old one. English on
    * purpose: it names the old menus, which were English.
@@ -974,6 +984,42 @@ export const SETTINGS_ROWS: SettingsRow[] = [
     options: tableOptions(() => NEXT_AUDIO_OUTPUTS),
     when: { kind: "machine", machineIds: [MI_ZXNEXT] }
   },
+  // --- The ZX Spectrum Next's real-time clock (`.plans/ZXNEXT_RTC_OPTIONS_PLAN.md` P5)
+  {
+    id: "nextRtcClock",
+    page: "machine",
+    groupKey: "settings.group.realTimeClock",
+    titleKey: "settings.machine.nextRtcClock.title",
+    descriptionKey: "settings.machine.nextRtcClock.description",
+    editor: "select",
+    source: setting(SETTING_EMU_NEXT_RTC_CLOCK),
+    options: tableOptions(() => NEXT_RTC_CLOCKS),
+    when: { kind: "machine", machineIds: [MI_ZXNEXT] }
+  },
+  {
+    id: "nextRtcKeep",
+    page: "machine",
+    groupKey: "settings.group.realTimeClock",
+    titleKey: "settings.machine.nextRtcKeep.title",
+    descriptionKey: "settings.machine.nextRtcKeep.description",
+    editor: "switch",
+    source: setting(SETTING_EMU_NEXT_RTC_KEEP),
+    when: { kind: "machine", machineIds: [MI_ZXNEXT] }
+  },
+  {
+    id: "nextRtcKept",
+    page: "machine",
+    groupKey: "settings.group.realTimeClock",
+    titleKey: "settings.machine.nextRtcKept.title",
+    describeValue: nextRtcKeptText,
+    editor: "button",
+    source: state("nextRtcKept"),
+    buttons: [
+      { labelKey: "settings.button.setToHostTime", action: "rtc:next:host" },
+      { labelKey: "settings.button.forget", action: "rtc:next:forget", needsValue: true }
+    ],
+    when: { kind: "machine", machineIds: [MI_ZXNEXT] }
+  },
   {
     id: "z88KeyboardLayout",
     page: "machine",
@@ -1355,6 +1401,9 @@ export function readSettingsRowValue(row: SettingsRow, appState: AppState | unde
       return z88dkProjectOption(appState, Z88DK_CLIB, "classic");
     case "z88dkOptimise":
       return z88dkProjectOption(appState, Z88DK_OPTIMISE, "O2");
+    case "nextRtcKept":
+      // --- The running Next model's kept clock (its last save), or nothing
+      return emu?.machineId === MI_ZXNEXT ? appState?.nextRtcKept?.[nextProfileOf(emu.modelId).id] : undefined;
     default:
       return undefined;
   }
@@ -1437,6 +1486,24 @@ export function settingsRowDescription(row: SettingsRow, env?: SettingsPlatform)
   const computed = env && row.describe?.(env);
   if (computed) return computed;
   return row.descriptionKey ? t(row.descriptionKey) : undefined;
+}
+
+/**
+ * The Kept clock row's text: when the running Next model's clock was last saved, and for which model
+ * ("Last saved 3 Nov 2026, 10:42 · ZX Spectrum Next (KS2, core 3.02.01)"), or that none is kept
+ */
+export function nextRtcKeptText(value: unknown, appState: AppState | undefined): string {
+  const savedAt = (value as { savedAt?: number } | undefined)?.savedAt;
+  if (typeof savedAt !== "number") return t("settings.machine.nextRtcKept.none");
+  const date = new Intl.DateTimeFormat(uiLocale(), {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(new Date(savedAt));
+  const model = nextModelDisplayName(nextProfileOf(appState?.emulatorState?.modelId).id);
+  return t("settings.machine.nextRtcKept.value", { date, model });
 }
 
 /**

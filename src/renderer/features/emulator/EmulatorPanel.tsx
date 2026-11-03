@@ -4,7 +4,17 @@ import { getGlobalSetting, useGlobalSetting, useSelector, useStore } from "@rend
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { EmulatorOverlay } from "./EmulatorOverlay";
-import { FAST_LOAD, HT_VIDEO_CUT, HT_VIDEO_DASH, NEXT_AUDIO_OUTPUT, ULA_LATE_TIMING, ULA_SNOW } from "@emu/machines/machine-props";
+import {
+  FAST_LOAD,
+  HT_VIDEO_CUT,
+  HT_VIDEO_DASH,
+  NEXT_AUDIO_OUTPUT,
+  NEXT_RTC_CLOCK,
+  NEXT_RTC_KEEP,
+  ULA_LATE_TIMING,
+  ULA_SNOW
+} from "@emu/machines/machine-props";
+import { normalizeNextRtcClock } from "@common/settings/next-rtc-clock";
 import { FrameCompletedArgs, IMachineController } from "../../abstractions/IMachineController";
 import { reportMessagingError } from "@renderer/reportError";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
@@ -19,6 +29,8 @@ import {
   SETTING_EMU_ULA_LATE_TIMING,
   SETTING_EMU_ULA_SNOW,
   SETTING_EMU_NEXT_AUDIO_OUTPUT,
+  SETTING_EMU_NEXT_RTC_CLOCK,
+  SETTING_EMU_NEXT_RTC_KEEP,
   SETTING_EMU_MOUSE_SHOW_POINTER,
   SETTING_EMU_SHOW_BEAM_POSITION,
   SETTING_EMU_SHOW_INSTANT_SCREEN
@@ -108,6 +120,8 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   const ulaLateTiming = useGlobalSetting(SETTING_EMU_ULA_LATE_TIMING);
   const ulaSnow = useGlobalSetting(SETTING_EMU_ULA_SNOW);
   const nextAudioOutput = useGlobalSetting(SETTING_EMU_NEXT_AUDIO_OUTPUT);
+  const nextRtcClock = useGlobalSetting(SETTING_EMU_NEXT_RTC_CLOCK);
+  const nextRtcKeep = useGlobalSetting(SETTING_EMU_NEXT_RTC_KEEP);
   const showInstantScreen = useGlobalSetting(SETTING_EMU_SHOW_INSTANT_SCREEN);
   const showBeamPosition = !!useGlobalSetting(SETTING_EMU_SHOW_BEAM_POSITION);
   // --- Counts the stops, so the beam overlay redraws at each one, stepping included (T9)
@@ -503,6 +517,12 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   useEffect(() => {
     controller?.machine?.setMachineProperty(NEXT_AUDIO_OUTPUT, nextAudioOutput);
   }, [controller, nextAudioOutput]);
+
+  // --- The ZX Spectrum Next's real-time clock options, live (other machines ignore them)
+  useEffect(() => {
+    controller?.machine?.setMachineProperty(NEXT_RTC_CLOCK, normalizeNextRtcClock(nextRtcClock));
+    controller?.machine?.setMachineProperty(NEXT_RTC_KEEP, nextRtcKeep !== false);
+  }, [controller, nextRtcClock, nextRtcKeep]);
 
   // --- Respond to shadow screen changes
   useEffect(() => {

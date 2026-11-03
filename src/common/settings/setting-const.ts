@@ -30,6 +30,9 @@ export const SETTING_EMU_ULA_LATE_TIMING = "emuOptions.ulaLateTiming";
 export const SETTING_EMU_ULA_SNOW = "emuOptions.ulaSnow";
 // --- The ZX Spectrum Next output Klive plays: "jack", "speaker" or "hdmi" (`next-audio-output.ts`)
 export const SETTING_EMU_NEXT_AUDIO_OUTPUT = "emuOptions.nextAudioOutput";
+// --- The ZX Spectrum Next's real-time clock: what it follows, and keeping it between sessions
+export const SETTING_EMU_NEXT_RTC_CLOCK = "emuOptions.nextRtcClock";
+export const SETTING_EMU_NEXT_RTC_KEEP = "emuOptions.nextRtcKeep";
 /** Reverse debugging in debug sessions (`.plans/REVERSE_DEBUGGING_PLAN.md` D2): on by default */
 export const SETTING_EMU_REVERSE_DEBUGGING = "emuOptions.reverseDebugging";
 /** The reverse-debugging keyframe budget in MB (D6); 0: the smaller of 512 MB and 1/16 of memory */

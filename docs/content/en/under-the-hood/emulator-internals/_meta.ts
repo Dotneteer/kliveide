@@ -17,6 +17,8 @@ export default {
   "next-ctc": "ZX Spectrum Next: the CTC",
   "next-storage": "ZX Spectrum Next: storage",
   "next-uart": "ZX Spectrum Next: the UARTs",
+  "next-rtc": "ZX Spectrum Next: the real-time clock",
+  "next-input": "ZX Spectrum Next: keyboard, joysticks and mouse",
   "ht1080z-video": "HT-1080Z: how the screen is drawn",
   "tvc-video": "Videoton TVC: how the picture is made",
   "ep-nick": "Enterprise: how NICK draws the picture"

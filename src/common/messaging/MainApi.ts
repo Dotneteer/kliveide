@@ -11,6 +11,7 @@ import type {
   FmTransferRequest
 } from "@common/fileManager/fmJobTypes";
 import type { SdCardFingerprint } from "@common/machineState/machineStateTypes";
+import type { NextRtcKeptEntry } from "@common/zxnext/nextRtcKept";
 import { buildMessagingProxy } from "./MessageProxy";
 import type { UnitTestRunRequest, UnitTestRunResponse } from "@common/unit-tests/unitTestTypes";
 import type { AddUnitTestSupportResult } from "@main/unit-tests/addUnitTestSupport";
@@ -952,6 +953,23 @@ class MainApiImpl {
    * Returns the total number of 512-byte sectors on the mounted SD card image.
    */
   async getSdCardInfo(): Promise<{ totalSectors: number }> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * A ZX Spectrum Next model's kept real-time clock (`zxnext-rtc.json`), or undefined.
+   * @param _profileId The Next model (`nextProfiles.ts`)
+   */
+  async getNextRtcState(_profileId: string): Promise<NextRtcKeptEntry | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Keeps a ZX Spectrum Next model's real-time clock in `zxnext-rtc.json`.
+   * @param _profileId The Next model (`nextProfiles.ts`)
+   * @param _entry The clock
+   */
+  async saveNextRtcState(_profileId: string, _entry: NextRtcKeptEntry): Promise<void> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 

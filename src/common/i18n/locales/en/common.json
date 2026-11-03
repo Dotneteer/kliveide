@@ -273,5 +273,13 @@
   "common.nextAudioOutput.hdmi": "HDMI",
   "@common.nextAudioOutput.hdmi": {
     "context": "Choice of which ZX Spectrum Next sound output the emulator plays: the sound sent over the HDMI cable. HDMI is a name: keep it. Shown in the Machine menu and the Settings dialog."
+  },
+  "common.nextRtcClock.host": "The host's clock",
+  "@common.nextRtcClock.host": {
+    "context": "Choice of what the ZX Spectrum Next's real-time clock (the battery-backed clock chip) follows: the computer's own clock, so it shows the real time. Shown in the Settings dialog, Machine page, 'Real-time clock' group."
+  },
+  "common.nextRtcClock.emulated": "Emulated time",
+  "@common.nextRtcClock.emulated": {
+    "context": "Choice of what the ZX Spectrum Next's real-time clock follows: the emulated machine's own time, which stops while the debugger pauses the machine and runs fast or slow with the emulator. Shown in the Settings dialog, Machine page."
   }
 }

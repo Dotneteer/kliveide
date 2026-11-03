@@ -33,7 +33,7 @@ export { JOY_BUTTONS, type JoyButton, type JoySide } from "./script/joystick";
 export { MATRIX_KEYS, NEXT_EXTRA_KEYS, type ExtraKey, type MatrixKey, type NextKey } from "./script/keys";
 
 // --- Machines and low-level helpers
-export { createCore, readNextRegDirect, runDisplayedFrame, type NextMachine } from "./core/machines";
+export { createCore, readNextRegDirect, runDisplayedFrame, type NextMachine, type NextRtcOptions } from "./core/machines";
 export { nextRomFile, readNextRom, readNextRomImages } from "./core/roms";
 export { captureFrame, pixelHex, rowRuns, summarizeRows, type Frame, type RowRun } from "./core/frame";
 export { frameHash, framePng } from "./core/capture";

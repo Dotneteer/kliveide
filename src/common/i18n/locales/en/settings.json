@@ -1050,6 +1050,52 @@
   "@settings.emulator.nextAudioOutput.description": {
     "context": "Help text under the setting 'ZX Spectrum Next sound output' (Settings dialog, Machine page). Wraps over several lines."
   },
+  "settings.group.realTimeClock": "Real-time clock",
+  "@settings.group.realTimeClock": {
+    "context": "Group heading in the Settings dialog (Machine page), shown for the ZX Spectrum Next: the options of its battery-backed clock chip (RTC), which keeps the date and time. The style shows it in capitals; write it in your language's normal case."
+  },
+  "settings.machine.nextRtcClock.title": "The clock follows",
+  "@settings.machine.nextRtcClock.title": {
+    "context": "Settings dialog, Machine page, 'Real-time clock' group: label of a drop-down list saying what the ZX Spectrum Next's clock follows. Its choices: 'The host's clock', 'Emulated time'."
+  },
+  "settings.machine.nextRtcClock.description": "The host's clock shows the real time, as the battery-backed chip (RTC) does. Emulated time stops while the debugger pauses and runs fast or slow with the emulator.",
+  "@settings.machine.nextRtcClock.description": {
+    "context": "Help text under 'The clock follows' (Settings dialog, Machine page, ZX Spectrum Next). RTC is the usual abbreviation of real-time clock: keep it, as people search for it. Wraps over several lines."
+  },
+  "settings.machine.nextRtcKeep.title": "Keep the time and the clock's RAM between sessions",
+  "@settings.machine.nextRtcKeep.title": {
+    "context": "Settings dialog, Machine page, 'Real-time clock' group: label of an on/off switch. On, the ZX Spectrum Next's clock and the clock chip's small memory are saved and restored the next time Klive starts."
+  },
+  "settings.machine.nextRtcKeep.description": "Like the battery on a real board: a date and time set with .time or .date, and the 56 bytes of the clock's RAM, are still there next time. Each Next model keeps its own.",
+  "@settings.machine.nextRtcKeep.description": {
+    "context": "Help text under 'Keep the time and the clock's RAM between sessions'. '.time' and '.date' are NextZXOS commands: keep them as they are. Wraps over several lines."
+  },
+  "settings.machine.nextRtcKept.title": "Kept clock",
+  "@settings.machine.nextRtcKept.title": {
+    "context": "Settings dialog, Machine page, 'Real-time clock' group: label of the row that shows when the ZX Spectrum Next's clock was last saved, with the buttons 'Set to host time' and 'Forget'."
+  },
+  "settings.machine.nextRtcKept.value": "Last saved {date} · {model}",
+  "@settings.machine.nextRtcKept.value": {
+    "context": "The 'Kept clock' row's value: when the clock was last saved, and for which ZX Spectrum Next model.",
+    "placeholders": {
+      "date": {
+        "description": "The date and time of the save, already formatted for the language, e.g. '3 Nov 2026, 10:42'."
+      },
+      "model": {
+        "description": "The Next model's name, e.g. 'ZX Spectrum Next (KS2, core 3.02.01)'."
+      }
+    }
+  },
+  "settings.machine.nextRtcKept.none": "No clock kept yet",
+  "@settings.machine.nextRtcKept.none": {
+    "context": "The 'Kept clock' row's value when the running ZX Spectrum Next model has no saved clock.",
+    "maxChars": 40
+  },
+  "settings.button.setToHostTime": "Set to host time",
+  "@settings.button.setToHostTime": {
+    "context": "Button on the Settings dialog's 'Kept clock' row: sets the ZX Spectrum Next's clock to the computer's current time.",
+    "maxChars": 24
+  },
   "settings.group.fileManager": "File Manager",
   "@settings.group.fileManager": {
     "context": "Settings dialog, General page: heading of the group of File Manager (two-pane file manager) options."

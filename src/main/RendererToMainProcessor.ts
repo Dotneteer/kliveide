@@ -38,6 +38,8 @@ import { createHash } from "node:crypto";
 import { Z80Assembler } from "@main/z80-compiler/z80-assembler";
 import { AssemblerOptions } from "@main/compiler-common/assembler-in-out";
 import type { SdCardFingerprint } from "@common/machineState/machineStateTypes";
+import type { NextRtcKeptEntry } from "@common/zxnext/nextRtcKept";
+import { nextRtcStore } from "./zxnext-rtc";
 import {
   applyProjectSettingAction,
   dimMenuAction,
@@ -1439,6 +1441,20 @@ class MainMessageProcessor {
    */
   async getSdCardInfo(): Promise<{ totalSectors: number }> {
     return withSdCardAccess(() => ({ totalSectors: getSdCardDevice().totalSectors }));
+  }
+
+  /**
+   * A ZX Spectrum Next model's kept real-time clock, or undefined.
+   */
+  async getNextRtcState(profileId: string): Promise<NextRtcKeptEntry | undefined> {
+    return nextRtcStore.load(profileId);
+  }
+
+  /**
+   * Keeps a ZX Spectrum Next model's real-time clock.
+   */
+  async saveNextRtcState(profileId: string, entry: NextRtcKeptEntry): Promise<void> {
+    nextRtcStore.save(profileId, entry);
   }
 
   /**

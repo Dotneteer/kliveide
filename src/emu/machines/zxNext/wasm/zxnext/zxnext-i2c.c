@@ -39,6 +39,10 @@ static uint8_t zxnextRtcPointer;
 static ZxNextClock28 zxnextRtcClock;
 static uint64_t zxnextRtcCountdownStart;
 static uint8_t zxnextRtcCountdownStarted;
+/* Register writes from the bus, all and those to the time registers 0-6: the host compares them
+   between frames to save a kept clock and to take a time the program set (ZXNEXT_RTC_OPTIONS_PLAN) */
+static uint32_t zxnextRtcWriteCount;
+static uint32_t zxnextRtcTimeWriteCount;
 
 static uint8_t zxnextRtcToBcd(uint32_t v) { return (uint8_t)(((v / 10u) << 4) | (v % 10u)); }
 static uint32_t zxnextRtcFromBcd(uint8_t b) { return ((b >> 4) & 0x0fu) * 10u + (b & 0x0fu); }
@@ -113,6 +117,37 @@ void zxnextRtcSetTime(uint32_t seconds, uint32_t minutes, uint32_t hours, uint32
   zxnextRtcCountdownStarted = 1;
 }
 
+/*
+ * A register as it reads now, without changing anything (a pure export): the time registers come from
+ * a copy of the counter chain brought up to the machine's clock, as the next START would bring them
+ */
+uint32_t zxnextRtcPeekRegister(uint32_t index) {
+  uint32_t i = index & 0x3fu;
+  if (i >= 7u) return zxnextRtcRegs[i];
+  uint8_t r[7];
+  for (uint32_t k = 0; k < 7u; k++) r[k] = zxnextRtcRegs[k];
+  if (zxnextRtcCountdownStarted && (zxnextRtcRegs[0] & 0x80u) == 0u) {
+    ZxNextClock28 clock = zxnextRtcClock;
+    uint64_t seconds = (zxnextClock28Now(&clock) - zxnextRtcCountdownStart) / ZXNEXT_CLOCK28_PER_SECOND;
+    for (uint64_t s = 0; s < seconds; s++) zxnextRtcAdvanceOneSecond(r);
+  }
+  return r[i];
+}
+
+uint32_t zxnextRtcGetWriteCount(void) { return zxnextRtcWriteCount; }
+uint32_t zxnextRtcGetTimeWriteCount(void) { return zxnextRtcTimeWriteCount; }
+
+/*
+ * Sets one register from the host (a kept clock's control byte and RAM), not counted as a bus write.
+ * The pointer stays; a time register catches the chain up first, so no elapsed second is lost.
+ */
+void zxnextRtcSetRegister(uint32_t index, uint32_t value) {
+  uint32_t i = index & 0x3fu;
+  if (i < 7u) zxnextRtcSync();
+  zxnextRtcRegs[i] = (uint8_t)value;
+  if (i < 7u) zxnextRtcUser[i] = (uint8_t)value;
+}
+
 /* A Next reset releases SCL and SDA (zxnext.vhd ~3232); the DS1307 keeps everything */
 void zxnextI2cReset(void) {
   zxnextI2cSclOut = 1;
@@ -141,6 +176,8 @@ static void zxnextRtcWriteRegister(uint8_t data) {
   uint8_t p = zxnextRtcPointer;
   zxnextRtcPointer = (uint8_t)((p + 1u) & 0x3fu);
   zxnextRtcSync();
+  zxnextRtcWriteCount++;
+  if (p < 7u) zxnextRtcTimeWriteCount++;
   zxnextRtcRegs[p] = data;
   if (p < 7u) zxnextRtcUser[p] = data;
   if (p == 0u) zxnextRtcCountdownStart = zxnextClock28Now(&zxnextRtcClock);

@@ -68,6 +68,9 @@ export function appStateFlagsReducer (
         keyMappings: payload?.value
       };
 
+    case "SET_NEXT_RTC_KEPT":
+      return { ...state, nextRtcKept: payload?.value };
+
     case "INC_MENU_VERSION":
       return { ...state, menuVersion: (state?.menuVersion ?? 0) + 1 };
 

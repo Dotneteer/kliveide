@@ -1,6 +1,21 @@
 import { describe, expect, it } from "vitest";
 
-import { createSession, type NextTestSession, type RtcTime } from "../../harness/zxnext";
+import { createSession, type RtcTime } from "../../harness/zxnext";
+import {
+  SCL,
+  SDA,
+  I2C_LIB,
+  DRIVER,
+  regs,
+  hexes,
+  UNDER_ONE_SECOND,
+  OVER_ONE_SECOND,
+  boot,
+  driver,
+  rtcRead,
+  rtcWrite,
+  addressAck
+} from "./_i2c-helpers";
 
 /*
  * The I2C bus and the DS1307 real-time clock (catalogue I2C-001 - I2C-006).
@@ -24,231 +39,6 @@ import { createSession, type NextTestSession, type RtcTime } from "../../harness
  * Frames are 1/49.4 - 1/50.1 s depending on the timing; the tests keep 10% away from each second.
  */
 
-const SCL = 0x103b;
-const SDA = 0x113b;
-
-/** Bit-banged I2C master routines (BC, DE, A, F; HL preserved). */
-const I2C_LIB = `
-; --- START (also repeated START): SDA and SCL high, SDA low, SCL low
-I2cStart:
-        ld bc,$113b
-        ld a,1
-        out (c),a
-        ld b,$10
-        out (c),a
-        ld b,$11
-        xor a
-        out (c),a
-        ld b,$10
-        out (c),a
-        ret
-
-; --- STOP: SDA low, SCL high, SDA high
-I2cStop:
-        ld bc,$113b
-        xor a
-        out (c),a
-        ld b,$10
-        inc a
-        out (c),a
-        ld b,$11
-        out (c),a
-        ret
-
-; --- Sends A, MSB first; returns A = the ACK bit (0 = ACK)
-I2cWrite:
-        ld e,a
-        ld d,8
-WrBit:  ld bc,$113b
-        xor a
-        rl e
-        rla
-        out (c),a
-        ld b,$10
-        ld a,1
-        out (c),a
-        xor a
-        out (c),a
-        dec d
-        jr nz,WrBit
-        ld bc,$113b
-        ld a,1
-        out (c),a
-        ld b,$10
-        out (c),a
-        ld b,$11
-        in a,(c)
-        and 1
-        ld e,a
-        ld b,$10
-        xor a
-        out (c),a
-        ld a,e
-        ret
-
-; --- Receives a byte into A; answers NACK when carry is set, ACK otherwise
-I2cRead:
-        push af
-        ld bc,$113b
-        ld a,1
-        out (c),a
-        ld d,8
-        ld e,0
-RdBit:  ld b,$10
-        ld a,1
-        out (c),a
-        ld b,$11
-        in a,(c)
-        rra
-        rl e
-        ld b,$10
-        xor a
-        out (c),a
-        dec d
-        jr nz,RdBit
-        pop af
-        ld a,0
-        rla
-        ld b,$11
-        out (c),a
-        ld b,$10
-        ld a,1
-        out (c),a
-        xor a
-        out (c),a
-        ld b,$11
-        inc a
-        out (c),a
-        ld a,e
-        ret
-
-; --- Reads (Cnt) registers from pointer (Ptr) into Buf: pointer write, repeated START, read
-RtcRead:
-        call I2cStart
-        ld a,$d0
-        call I2cWrite
-        ld a,(Ptr)
-        call I2cWrite
-        call I2cStart
-        ld a,$d1
-        call I2cWrite
-        ld hl,Buf
-        ld a,(Cnt)
-        ld (Left),a
-RdLoop: ld a,(Left)
-        dec a
-        ld (Left),a
-        scf
-        jr z,RdLast
-        or a
-RdLast: call I2cRead
-        ld (hl),a
-        inc hl
-        ld a,(Left)
-        or a
-        jr nz,RdLoop
-        jp I2cStop
-
-; --- Writes (Cnt) bytes from Buf from pointer (Ptr); no bytes: sets the pointer only
-RtcWrite:
-        call I2cStart
-        ld a,$d0
-        call I2cWrite
-        ld a,(Ptr)
-        call I2cWrite
-        ld hl,Buf
-        ld a,(Cnt)
-        ld (Left),a
-        or a
-        jp z,I2cStop
-WrLoop: ld a,(hl)
-        inc hl
-        call I2cWrite
-        ld a,(Left)
-        dec a
-        ld (Left),a
-        jr nz,WrLoop
-        jp I2cStop
-
-; --- START, the address in (Ptr), STOP; the ACK bit into Buf
-AddrProbe:
-        call I2cStart
-        ld a,(Ptr)
-        call I2cWrite
-        ld (Buf),a
-        jp I2cStop
-`;
-
-/**
- * A command loop: the harness pokes Ptr/Cnt/Buf and Cmd (1 read, 2 write, 3 address probe) and the
- * program runs it at once and clears Cmd. Each command takes one frame of the harness's time.
- */
-const DRIVER = `
-        .org $8000
-Start:  di
-        nextreg $7f,$a5
-Loop:   ld a,(Cmd)
-        or a
-        jr z,Loop
-        cp 1
-        call z,RtcRead
-        ld a,(Cmd)
-        cp 2
-        call z,RtcWrite
-        ld a,(Cmd)
-        cp 3
-        call z,AddrProbe
-        xor a
-        ld (Cmd),a
-        jr Loop
-${I2C_LIB}
-Cmd:    .defb 0
-Ptr:    .defb 0
-Cnt:    .defb 0
-Left:   .defb 0
-Buf:    .defs 64
-`;
-
-async function boot(s: NextTestSession): Promise<NextTestSession> {
-  s.setNextReg(0x7f, 0); // --- $7F survives a soft reset
-  await s.loadCode(DRIVER, { entry: "Start" });
-  return s.runUntilReady();
-}
-
-async function driver(): Promise<NextTestSession> {
-  return boot(await createSession());
-}
-
-function command(s: NextTestSession, cmd: number, ptr: number, cnt: number): void {
-  s.poke(s.symbol("Ptr"), ptr).poke(s.symbol("Cnt"), cnt).poke(s.symbol("Cmd"), cmd);
-  s.runUntil((t) => t.peek(t.symbol("Cmd")) === 0, "the I2C command", { maxFrames: 3 });
-}
-
-function rtcRead(s: NextTestSession, pointer: number, count: number): number[] {
-  command(s, 1, pointer, count);
-  return Array.from(s.peekBytes(s.symbol("Buf"), count));
-}
-
-function rtcWrite(s: NextTestSession, pointer: number, bytes: number[]): void {
-  s.poke(s.symbol("Buf"), bytes);
-  command(s, 2, pointer, bytes.length);
-}
-
-/** The ACK bit the addressed device returns (0 = ACK). */
-function addressAck(s: NextTestSession, address: number): number {
-  command(s, 3, address, 0);
-  return s.peek(s.symbol("Buf"));
-}
-
-/** The time registers 0-6 as BCD: [sec, min, hour, day, date, month, year]. */
-const regs = (t: RtcTime) =>
-  [t.seconds, t.minutes, t.hours, t.day, t.date, t.month, t.year % 100].map((v, i) => (i === 3 ? v : ((v / 10) << 4) | v % 10));
-
-const hexes = (bytes: number[]) => bytes.map((b) => "$" + b.toString(16).padStart(2, "0"));
-
-/** 0.9 s and 1.1 s in frames at 50.1 and 49.4 frames per second */
-const UNDER_ONE_SECOND = 44;
-const OVER_ONE_SECOND = 55;
 
 describe("I2C and the DS1307", () => {
   // -------------------------------------------------------------------------------------------------
@@ -403,6 +193,76 @@ Buf:    .defs 64`,
     s.runUntil((t) => t.peek(t.symbol("Cmd")) === 0, "the rest of the read", { maxFrames: 3 });
     expect(hexes(Array.from(s.peekBytes(s.symbol("Held"), 3))), "one START").toEqual(["$59", "$59", "$12"]);
     expect(hexes(Array.from(s.peekBytes(s.symbol("Buf"), 3))), "the next START").toEqual(["$00", "$00", "$13"]);
+  });
+
+  it("I2C-003: the RTC chapter's SetTime and ReadTime listings, and how long they take at 3.5 MHz", async () => {
+    // --- The listings of docs/content/en/under-the-hood/emulator-internals/next-rtc.mdx, on I2C_LIB
+    const s = await createSession();
+    await s.loadCode(
+      `
+        .org $8000
+Start:  di
+        nextreg $7f,$a5
+        jr $
+SetTime:
+        call I2cStart
+        ld a,$d0
+        call I2cWrite
+        xor a
+        call I2cWrite
+        ld hl,Time
+        ld b,7
+WrNext: push bc
+        ld a,(hl)
+        call I2cWrite
+        inc hl
+        pop bc
+        djnz WrNext
+        jp I2cStop
+ReadTime:
+        call I2cStart
+        ld a,$d0
+        call I2cWrite
+        xor a
+        call I2cWrite
+        call I2cStart
+        ld a,$d1
+        call I2cWrite
+        ld hl,Time
+        ld b,6
+RdNext: push bc
+        or a
+        call I2cRead
+        ld (hl),a
+        inc hl
+        pop bc
+        djnz RdNext
+        scf
+        call I2cRead
+        ld (hl),a
+        jp I2cStop
+${I2C_LIB}
+Ptr:    .defb 0
+Cnt:    .defb 0
+Left:   .defb 0
+Buf:    .defs 1
+Time:   .defb $56,$34,$12,$06,$18,$09,$26`,
+      { entry: "Start" }
+    );
+    s.runUntilReady();
+    const time = s.symbol("Time");
+    let t0 = s.tacts;
+    s.call("SetTime");
+    const setTacts = s.tacts - t0;
+    s.poke(time, [0, 0, 0, 0, 0, 0, 0]);
+    t0 = s.tacts;
+    s.call("ReadTime");
+    const readTacts = s.tacts - t0;
+    expect(hexes(Array.from(s.peekBytes(time, 7))), "Friday, 18 September 2026, 12:34:56").toEqual(
+      hexes([0x56, 0x34, 0x12, 0x06, 0x18, 0x09, 0x26])
+    );
+    // --- The chapter quotes these: 8,711 T-states (2.5 ms) to set, 10,058 (2.9 ms) to read
+    expect([setTacts, readTacts]).toEqual([8711, 10058]);
   });
 
   // -------------------------------------------------------------------------------------------------

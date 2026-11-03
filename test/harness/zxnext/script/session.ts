@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
-import type { NextMachine } from "../core/machines";
+import type { NextMachine, NextRtcOptions } from "../core/machines";
 import { toBcd } from "@emu/machines/zxNext/nextRtc";
 import type { NextProfileId } from "@emu/machines/zxNext/nextProfiles";
 import { isZxNextIdeMachine } from "@emu/machines/zxNext/IZxNextIdeMachine";
@@ -34,7 +34,8 @@ import { decodeHistoryPage, type HistoryRecord } from "@common/history/historyRe
 import type { ExecutionHistoryInfo } from "@common/history/historyTypes";
 import type { ProfileCounts, ProfileEdge, ProfileInfo, ProfileTouchedByte } from "@common/profile/profileTypes";
 import { DebugSupport } from "@emu/machines/DebugSupport";
-import { FAST_LOAD, NEXT_AUDIO_OUTPUT, SAVED_TO_TAPE, TAPE_MODE } from "@emu/machines/machine-props";
+import { FAST_LOAD, NEXT_AUDIO_OUTPUT, NEXT_RTC_CLOCK, NEXT_RTC_KEEP, SAVED_TO_TAPE, TAPE_MODE } from "@emu/machines/machine-props";
+import type { NextRtcClockMode } from "@emu/machines/zxNext/nextRtcHost";
 import { MEDIA_TAPE } from "@common/structs/project-const";
 import type { TapeDataBlock } from "@common/structs/TapeDataBlock";
 import {
@@ -90,6 +91,12 @@ export type SessionOptions = {
    * one (`ks2-30201`) by default; `forEachProfile` runs a test on several.
    */
   profile?: NextProfileId;
+  /**
+   * The real-time clock's host side, set before the clock is seeded: what it follows, keeping it, the
+   * store and a fake host clock. Unset: emulated time, not kept (deterministic). Change it live with
+   * `setRtcOptions`.
+   */
+  rtc?: NextRtcOptions;
 };
 
 /** A NextReg write the core caught for an armed watch, as `takeNextRegHit` reports it. */
@@ -194,7 +201,7 @@ export class NextTestSession {
 
   static async create(options: SessionOptions = {}): Promise<NextTestSession> {
     return new NextTestSession(
-      await createCore({ audioSampleRate: options.audioSampleRate, hardReset: true, profile: options.profile }),
+      await createCore({ audioSampleRate: options.audioSampleRate, hardReset: true, profile: options.profile, rtc: options.rtc }),
       options
     );
   }
@@ -548,6 +555,39 @@ export class NextTestSession {
     const [sec, min, hour, day, date, month, year] = regs;
     this.machine.wasmV2Runtime!.exports.zxnextRtcSetTime(sec, min, hour, day, date, month, year);
     return this;
+  }
+
+  /**
+   * A DS1307 register ($00-$3F) as a read starting now would see it, without a bus transaction and
+   * without changing the chip: the time registers are brought up to the machine's clock on a copy.
+   */
+  rtcRegister(index: number): number {
+    return this.machine.wasmV2Runtime!.exports.zxnextRtcPeekRegister(index & 0x3f);
+  }
+
+  /**
+   * Changes the clock's options live, as the Settings dialog does through the emulator panel: what it
+   * follows (the time it shows does not change) and keeping it (turned on, it saves at once).
+   */
+  setRtcOptions({ clock, keep }: { clock?: NextRtcClockMode; keep?: boolean }): this {
+    if (clock) this.machine.setMachineProperty(NEXT_RTC_CLOCK, clock);
+    if (keep !== undefined) this.machine.setMachineProperty(NEXT_RTC_KEEP, keep);
+    return this;
+  }
+
+  /**
+   * The Settings dialog's Kept clock buttons, as the main process sends them: "setToHost" (the host's
+   * time now) or "forget" (RAM cleared, time from the host; the store's entry is main's to delete).
+   */
+  async rtcCommand(command: "setToHost" | "forget"): Promise<this> {
+    await this.machine.executeCustomCommand(command === "setToHost" ? "rtcSetToHost" : "rtcForget");
+    return this;
+  }
+
+  /** How many registers the bus has written to the DS1307: all of them, and those of the time (0-6) */
+  rtcWriteCounts(): { all: number; time: number } {
+    const ex = this.machine.wasmV2Runtime!.exports;
+    return { all: ex.zxnextRtcGetWriteCount() >>> 0, time: ex.zxnextRtcGetTimeWriteCount() >>> 0 };
   }
 
   // ==========================================================================================

@@ -446,6 +446,33 @@ Cmd:    .defb $51,0,0,0,3,$01`;
     expect([s.readNextReg(0xb0), s.in(0x00fe) & 0x1f], "released").toEqual([0x00, 0x1f]);
   });
 
+  it("rtcRegister / rtcWriteCounts: the chip seen without the bus; host writes are not counted", async () => {
+    const s = await createSession();
+    await s.loadCode(" .org $8000\n di\n jr $");
+    s.setRtcTime({ year: 26, month: 9, date: 18, day: 6, hours: 23, minutes: 59, seconds: 59 });
+    expect(s.rtcRegister(6), "the year").toBe(0x26);
+    s.runFrames(55);
+    // --- Over a second later the copy has rolled over to the next day; the chip itself is unchanged
+    expect([s.rtcRegister(0), s.rtcRegister(2), s.rtcRegister(4)], "00:00, the 19th").toEqual([0x00, 0x00, 0x19]);
+    expect(s.rtcWriteCounts(), "setRtcTime is no bus write").toEqual({ all: 0, time: 0 });
+  });
+
+  it("rtc options / setRtcOptions / rtcCommand: the clock follows a fake host clock", async () => {
+    let now = new Date(2026, 10, 3, 10, 0, 0).getTime();
+    const s = await createSession({ rtc: { clock: "host", now: () => now } });
+    await s.loadCode(" .org $8000\n di\n jr $");
+    expect(s.rtcRegister(2), "seeded at 10 o'clock").toBe(0x10);
+    now += 3600_000;
+    s.runFrames(1);
+    expect(s.rtcRegister(2), "followed the host").toBe(0x11);
+    s.setRtcOptions({ clock: "emulated" });
+    now += 3600_000;
+    s.runFrames(1);
+    expect(s.rtcRegister(2), "emulated time").toBe(0x11);
+    await s.rtcCommand("setToHost");
+    expect(s.rtcRegister(2), "set to the host's time").toBe(0x12);
+  });
+
   it("setRtcTime: the DS1307 on the I2C bus reports the set year", async () => {
     // --- Minimal bit-banged read of register 6 (year): START $D0 $06, START $D1, 8 bits, NACK, STOP
     const program = `

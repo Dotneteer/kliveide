@@ -227,3 +227,51 @@ describe("the automation rows (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D4, D7)"
     expect(row("automationLevel").page).toBe("general");
   });
 });
+
+describe("the ZX Spectrum Next's real-time clock rows (`.plans/ZXNEXT_RTC_OPTIONS_PLAN.md` P5)", () => {
+  const RTC_ROWS = ["nextRtcClock", "nextRtcKeep", "nextRtcKept"];
+
+  it("show on the Machine page for the Next only, in one group after Sound", () => {
+    for (const id of RTC_ROWS) {
+      expect(isSettingsRowApplicable(row(id), running("zxnext", "ks2-30201")), id).toBe(true);
+      expect(isSettingsRowApplicable(row(id), running("sp48")), id).toBe(false);
+      expect(row(id).page).toBe("machine");
+      expect(row(id).groupKey).toBe("settings.group.realTimeClock");
+    }
+    const machineRows = SETTINGS_ROWS.filter((r) => r.page === "machine").map((r) => r.id);
+    const sound = machineRows.indexOf("nextAudioOutput");
+    expect(machineRows.slice(sound + 1, sound + 4)).toEqual(RTC_ROWS);
+  });
+
+  it("default to the host's clock, kept", () => {
+    expect(settingsRowDefault(row("nextRtcClock"), undefined)).toBe("host");
+    expect(settingsRowDefault(row("nextRtcKeep"), undefined)).toBe(true);
+    expect(settingsRowOptions(row("nextRtcClock"), { isWindows: false }).map((o) => o.value)).toEqual(["host", "emulated"]);
+  });
+
+  it("the Kept clock reads the running model's entry, aliases resolved", () => {
+    const kept = { nextRtcKept: { "ks2-30201": { savedAt: 1 } } };
+    expect(readSettingsRowValue(row("nextRtcKept"), stateOf({ ...kept, emulatorState: { machineId: "zxnext", modelId: "ks2-30201" } }))).toEqual({ savedAt: 1 });
+    expect(readSettingsRowValue(row("nextRtcKept"), stateOf({ ...kept, emulatorState: { machineId: "zxnext", modelId: "ks2-30204" } }))).toBeUndefined();
+    expect(readSettingsRowValue(row("nextRtcKept"), stateOf({ ...kept, emulatorState: { machineId: "sp48" } }))).toBeUndefined();
+  });
+
+  it("the Kept clock says when and for which model it was saved, or that none is kept", () => {
+    const state = running("zxnext", "ks2-30201");
+    const text = row("nextRtcKept").describeValue!({ savedAt: new Date(2026, 10, 3, 10, 42).getTime() }, state)!;
+    expect(text).toMatch(/^Last saved .*2026.* · ZX Spectrum Next \(KS2, core 3\.02\.01\)$/);
+    expect(row("nextRtcKept").describeValue!(undefined, state)).toBe("No clock kept yet");
+  });
+
+  it("Forget needs a kept clock; Set to host time does not", () => {
+    const [host, forget] = row("nextRtcKept").buttons!;
+    expect([host.action, host.needsValue]).toEqual(["rtc:next:host", undefined]);
+    expect([forget.action, forget.needsValue]).toEqual(["rtc:next:forget", true]);
+  });
+
+  it("the search finds the group by RTC, date and time", () => {
+    for (const query of ["RTC", "date", "time", "clock"]) {
+      expect(RTC_ROWS.some((id) => settingsRowMatches(row(id), query)), query).toBe(true);
+    }
+  });
+});
