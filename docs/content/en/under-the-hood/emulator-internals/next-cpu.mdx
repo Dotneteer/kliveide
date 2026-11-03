@@ -1,0 +1,1147 @@
+---
+description: "How the ZX Spectrum Next's Z80N works as a CPU: machine cycles and T-states, the opcode fetch and its refresh, memory and I/O cycles, the wait state at 28 MHz, sharing the bus with the DMA, HALT and the interrupt response, the undocumented flags and instructions and where the Next's CPU differs from a Zilog chip, and the twenty-nine Z80N instructions with their timings."
+---
+
+import { Callout } from 'nextra/components'
+
+# The Z80N: A Familiar Heart and Twenty-Nine New Tricks
+
+Take a Z80 program written for the Spectrum in 1983, load it on a Next, and it runs. Every instruction
+takes the same number of T-states, every flag lands where it did, and the music player's carefully counted
+loops still keep time. Yet there is no Z80 chip anywhere on the Next's board. The CPU is a description of a
+Z80, written in a hardware language and built into the FPGA beside the ULA, the sprites and everything else.
+So how faithful is that copy, where does it quietly differ from the original, and what did its authors add
+while they were at it?
+
+I think the CPU is the one part of the Next that every program meets in every cycle. Your raster effect
+lives or dies by T-states, your music player by the length of a loop, your copy routine by how many bytes a
+cycle can move. Knowing what the CPU does on the bus explains why an instruction takes as long as it does,
+why the same loop is slightly slower per T-state at 28 MHz, and which of the old undocumented tricks still
+work. And the Z80N's new instructions are a gift: a multiply, barrel shifts and screen arithmetic in eight
+T-states each, where a Z80 needs a subroutine.
+
+You can read this chapter first among the Next's chapters; the others build on it. [Memory, Ports and
+NextRegs: How the Z80N Reaches the Machine](/en/under-the-hood/emulator-internals/next-memory-io/) takes
+the CPU's addresses into the Next's 2 MB, and [Interrupts: Fourteen Voices, Two
+Wires](/en/under-the-hood/emulator-internals/next-interrupts/) takes its two interrupt inputs into the
+Next's interrupt system.
+
+## The road ahead
+
+We start with what the Next's CPU is and why a copy in an FPGA can be a perfect one, then take a quick look
+at its registers, including the two you cannot see. Then we go down to the bus: how an instruction breaks
+into machine cycles, how the opcode fetch works and what its refresh half is for, how memory and I/O cycles
+look, and the one place where the Next's timing differs from the Spectrum's, the wait state at 28 MHz. After
+that come the CPU's dealings with others: the DMA borrowing the bus, `HALT`, and the interrupt response. The
+second half is about behaviour Zilog never wrote down: the two undocumented flags, the undocumented
+instructions, and the places where the Next's CPU and a Zilog chip part ways; if you read only one section,
+make it the one called "Where the copy departs from the original". Last come the twenty-nine Z80N
+instructions, group by group, with their timings.
+
+<Callout type="info">
+The facts are for **core 3.02.01**. Timings are in CPU **T-states**, at **3.5 MHz** unless a section says
+otherwise, and without contention. Every fact about the Next was checked against its hardware design.
+</Callout>
+
+## A Z80 without a chip
+
+The Z80 appeared in 1976, made by Zilog in NMOS, the transistor process of its day; a CMOS version, which
+uses less power, followed in the 1980s. The two behave the same in every documented way and differ in a few
+undocumented ones, which will matter later. The ZX Spectrum used the NMOS chip.
+
+The Next's CPU, the **Z80N**, is neither. It began life as an open-source description of a Z80 written for
+FPGAs, and the Next's designers corrected its timing, completed its undocumented behaviour and added the
+new instructions. In the FPGA it is one more block of logic, clocked from the same 28 MHz master clock as
+the picture, so a CPU T-state always lasts a whole number of master-clock ticks.
+
+I like to call the Z80N **the understudy**. It learned the lead's part so well that the audience cannot tell
+who is on stage: the same instructions, the same T-states, the same documented flags. But an understudy
+also brings a few habits of its own, and the Z80N improvises a handful of lines that the original never
+spoke. You will meet them in the second half.
+
+What being a description rather than a chip means in practice:
+
+- **No analogue behaviour.** An NMOS chip has electrical quirks, such as how long a floating bus keeps its
+  last value. The Z80N has none of its own; whatever the Next shows on an undriven bus comes from the
+  machine around the CPU, as the memory chapter's
+  [What you read when nobody answers](/en/under-the-hood/emulator-internals/next-memory-io/#what-you-read-when-nobody-answers)
+  explains.
+- **The same T-states.** Every Z80 instruction takes exactly as many T-states as on a Zilog chip, including
+  the undocumented ones and the conditional ones taken or not taken.
+- **Four speeds.** The CPU Speed register, **NextReg `$07`**, runs it at 3.5, 7, 14 or 28 MHz.
+
+## Registers, and one you cannot see
+
+The Z80N has the Z80's registers and not one more; none of its new instructions needed a new register.
+
+- **The main set**: `A` and `F`, and the pairs `BC`, `DE` and `HL`.
+- **The alternate set**: `A'`, `F'`, `BC'`, `DE'` and `HL'`, swapped in with `EX AF,AF'` and `EXX`.
+- **The index registers** `IX` and `IY`, the stack pointer `SP` and the program counter `PC`.
+- **`I`**, the high byte of the IM 2 table, and **`R`**, the refresh counter: its low seven bits count every
+  opcode fetch, and bit 7 keeps whatever `LD R,A` last put there.
+- **The interrupt state**: the two flip-flops **IFF1** and **IFF2**, and the interrupt mode, 0, 1 or 2.
+
+The one you cannot see is a scratch register. **WZ**, also
+called **MEMPTR**, is a 16-bit register the CPU uses to build addresses: `LD A,(nn)`, `JP nn`, `CALL nn` and
+many others leave a value in it. No instruction reads it, but on a Zilog chip it leaks out through the flags
+of `BIT n,(HL)`. On the Next it does not, and we will come back to that.
+
+## Machine cycles and T-states
+
+The Z80 does nothing in one go. Every instruction is a short series of **machine cycles**, M-cycles for
+short, and each M-cycle is one of a few kinds of conversation with the bus, a few T-states long. A
+**T-state** is one tick of the CPU's clock, 286 nanoseconds at 3.5 MHz. There are four kinds of M-cycle you
+need to know:
+
+- **The opcode fetch, M1**: 4 T-states. It reads an opcode byte at `PC` and refreshes memory.
+- **The memory read**: 3 T-states, for operands and data.
+- **The memory write**: 3 T-states.
+- **The I/O cycle**: 4 T-states, a read or a write on a port.
+
+Some instructions add a few T-states of **internal work** to one of their cycles, while nothing happens on
+the bus. Take `LD A,(nn)`: an opcode fetch (4), two operand reads for the address (3 + 3), and a data read
+(3) make 13 T-states. `LD (nn),A` is the same, with a write in place of the last read, and also takes 13.
+
+Prefixes are opcodes too. `CB`, `ED`, `DD` and `FD` each take an opcode fetch of their own, so an `ED`
+instruction is at least 8 T-states long and counts `R` up by two. The `DD CB` and `FD CB` instructions are
+the exception: after the two prefixes, the displacement and the final opcode are read as plain memory reads,
+so `R` counts only two.
+
+## The opcode fetch
+
+The first M-cycle of every instruction does two jobs, one after the other. Here it is, signal by signal:
+
+<figure>
+{/* fig:m1 */}
+<svg viewBox="-2 -2 704 376" role="img" aria-label="The opcode fetch over four T-states, T1 to T4, drawn to scale. The address bus carries PC during T1 and T2 and the refresh address, I in the high half and R in the low half, during T3 and T4. /M1 is low from the start of T1 to the start of T3. /MREQ and /RD go low half way through T1 and rise at the start of T3, where the CPU takes the opcode from the data bus. /RFSH is low through T3 and T4, and /MREQ gives a second, short pulse from the middle of T3 to the middle of T4 for the refresh." style={{ width: "100%", height: "auto" }}>
+  <line x1="130" y1="26" x2="130" y2="340" stroke="currentColor" strokeWidth="1" strokeDasharray="3 4" strokeOpacity="0.5" />
+  <line x1="272.5" y1="26" x2="272.5" y2="340" stroke="currentColor" strokeWidth="1" strokeDasharray="3 4" strokeOpacity="0.5" />
+  <line x1="415" y1="26" x2="415" y2="340" stroke="currentColor" strokeWidth="1" strokeDasharray="3 4" strokeOpacity="0.5" />
+  <line x1="557.5" y1="26" x2="557.5" y2="340" stroke="currentColor" strokeWidth="1" strokeDasharray="3 4" strokeOpacity="0.5" />
+  <line x1="700" y1="26" x2="700" y2="340" stroke="currentColor" strokeWidth="1" strokeDasharray="3 4" strokeOpacity="0.5" />
+  <text x="201.3" y="18" textAnchor="middle" fill="currentColor" fontSize="15" fontWeight="bold">T1</text>
+  <text x="343.8" y="18" textAnchor="middle" fill="currentColor" fontSize="15" fontWeight="bold">T2</text>
+  <text x="486.3" y="18" textAnchor="middle" fill="currentColor" fontSize="15" fontWeight="bold">T3</text>
+  <text x="628.8" y="18" textAnchor="middle" fill="currentColor" fontSize="15" fontWeight="bold">T4</text>
+  <text x="0" y="59" fill="currentColor" fontSize="15">address</text>
+  <rect x="130" y="38" width="285" height="32" rx="4" fill="#3b82f6" fillOpacity="0.12" stroke="#3b82f6" strokeWidth="2" />
+  <text x="272.5" y="59.3" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">PC</text>
+  <rect x="415" y="38" width="285" height="32" rx="4" fill="#a855f7" fillOpacity="0.12" stroke="#a855f7" strokeWidth="2" />
+  <text x="557.5" y="59.3" textAnchor="middle" fill="#a855f7" fontSize="15" fontWeight="bold">I (high) : R (low)</text>
+  <text x="0" y="117" fill="currentColor" fontSize="15" fontWeight="bold">/M1</text>
+  <path d="M130,124 L415,124 L415,100 L700,100" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinejoin="round" />
+  <text x="0" y="169" fill="currentColor" fontSize="15" fontWeight="bold">/MREQ</text>
+  <path d="M130,152 L201.25,152 L201.25,176 L415,176 L415,152 L486.25,152 L486.25,176 L628.75,176 L628.75,152 L700,152" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+  <text x="0" y="221" fill="currentColor" fontSize="15" fontWeight="bold">/RD</text>
+  <path d="M130,204 L201.25,204 L201.25,228 L415,228 L415,204 L700,204" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinejoin="round" />
+  <text x="0" y="273" fill="currentColor" fontSize="15" fontWeight="bold">/RFSH</text>
+  <path d="M130,256 L415,256 L415,280 L700,280 L700,256 L700,256" fill="none" stroke="#a855f7" strokeWidth="2" strokeLinejoin="round" />
+  <text x="0" y="327" fill="currentColor" fontSize="15">data</text>
+  <rect x="301" y="308" width="114" height="28" rx="4" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="2" />
+  <text x="358" y="326.7" textAnchor="middle" fill="#30a46c" fontSize="13.5">opcode</text>
+  <line x1="415" y1="290" x2="415" y2="340" stroke="#e5484d" strokeWidth="2" />
+  <text x="423" y="292" fill="#e5484d" fontSize="13.5">taken here</text>
+  <text x="272.5" y="356" textAnchor="middle" fill="currentColor" fontSize="13.5">fetch</text>
+  <text x="557.5" y="356" textAnchor="middle" fill="currentColor" fontSize="13.5">refresh, R + 1</text>
+</svg>
+{/* /fig:m1 */}
+<figcaption>The opcode fetch, M1, to scale in T-states. T1 and T2 read the opcode at PC; T3 and T4 put I and R on the address bus for the refresh. The CPU takes the byte at the start of T3.</figcaption>
+</figure>
+
+1. **T1**: the CPU puts `PC` on the address bus and pulls **`/M1`** low, so the world knows this is an opcode
+   fetch. Half a T-state later it pulls **`/MREQ`** (memory request) and **`/RD`** (read) low.
+2. **T2**: the memory has until the end of this T-state to put the byte on the data bus.
+3. **Start of T3**: the CPU takes the byte, lets `/M1`, `/MREQ` and `/RD` go, and starts decoding.
+4. **T3 and T4**: the **refresh**. The CPU puts `I` in the address bus's high half and `R` in its low half,
+   pulls **`/RFSH`** low, gives a short `/MREQ` pulse, and adds 1 to `R`'s low seven bits.
+
+Why refresh? The Spectrum's RAM was **dynamic**: each bit is a tiny capacitor that forgets in a few
+milliseconds unless something reads its row. The Z80 does that for free in the half of the M1 cycle where it
+is busy decoding anyway. I find it one of the cleverest ideas in the chip: a chore done in time nobody else
+wanted.
+
+The Next's memory is **static RAM**, which never forgets, so it needs no refresh. The Z80N still runs the
+refresh half, because it is part of the cycle's timing, and `R` still counts. The Next keeps its memory out
+of the refresh cycle and passes `/RFSH` to the expansion bus, for a peripheral that might want it.
+
+## Reading, writing and talking to ports
+
+A **memory read** is the opcode fetch's first half with one T-state more: T1 sets the address, `/MREQ` and
+`/RD` fall, and the CPU takes the byte at the end of T3. A **memory write** puts the address out in T1, the
+byte on the data bus soon after, and pulls **`/WR`** low in T2 for the memory to take it.
+
+An **I/O cycle** uses **`/IORQ`** instead of `/MREQ`, and it has one T-state more, an automatic wait state,
+because the peripherals of 1976 needed the time. Two of its details shape the Next:
+
+- **The port address is 16 bits.** Zilog's manual talks about 256 ports, but the CPU always drives the whole
+  address bus: `IN r,(C)` and `OUT (C),r` put `BC` on it, and `IN A,(n)` and `OUT (n),A` put `A` in the high
+  half and `n` in the low half. The Next decodes most of its ports with all 16 bits, which the memory
+  chapter's [Ports: which bits count](/en/under-the-hood/emulator-internals/next-memory-io/#ports-which-bits-count)
+  goes through.
+- **A device can ask for more time.** Any cycle stretches while **`/WAIT`** is low, a T-state at a time. On
+  the Next, four things hold it: contention at 3.5 MHz, the memory at 28 MHz, a palette read that must wait
+  for the Copper, and a peripheral on the expansion bus.
+
+**Contention**, the ULA holding the CPU back while both want the screen memory, exists only at 3.5 MHz, in
+the 48K, 128K and +3 timings; the memory chapter's
+[Contention](/en/under-the-hood/emulator-internals/next-memory-io/#contention) has the rules. The 28 MHz
+wait state is the Next's own, and it deserves a section.
+
+## Four speeds and one wait state
+
+At 3.5, 7 and 14 MHz, an instruction takes exactly the T-states of the Zilog tables; a T-state only gets
+shorter. At **28 MHz** a T-state lasts 36 nanoseconds, and the Next adds **one wait state to every memory
+read**: every opcode fetch, every operand byte and every byte of data read. Memory writes and I/O cycles get
+none. Here are two instructions that look alike, at both ends of the speed range:
+
+<figure>
+{/* fig:wait */}
+<svg viewBox="-2 -2 704 304" role="img" aria-label="Four bars to scale in T-states. LD A,(nn) at 3.5 MHz: an opcode fetch of 4, two operand reads of 3 and a data read of 3, 13 T-states. LD A,(nn) at 28 MHz: each of the four reads gets one wait state, 5, 4, 4 and 4, 17 T-states. LD (nn),A at 3.5 MHz: fetch 4, two reads of 3 and a write of 3, 13. LD (nn),A at 28 MHz: the three reads get a wait state each and the write none, 5, 4, 4 and 3, 16 T-states." style={{ width: "100%", height: "auto" }}>
+  <line x1="150" y1="30" x2="150" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="150" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">0</text>
+  <line x1="178.9" y1="30" x2="178.9" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="178.9" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">1</text>
+  <line x1="207.9" y1="30" x2="207.9" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="207.9" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">2</text>
+  <line x1="236.8" y1="30" x2="236.8" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="236.8" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">3</text>
+  <line x1="265.8" y1="30" x2="265.8" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="265.8" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">4</text>
+  <line x1="294.7" y1="30" x2="294.7" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="294.7" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">5</text>
+  <line x1="323.7" y1="30" x2="323.7" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="323.7" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">6</text>
+  <line x1="352.6" y1="30" x2="352.6" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="352.6" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">7</text>
+  <line x1="381.6" y1="30" x2="381.6" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="381.6" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">8</text>
+  <line x1="410.5" y1="30" x2="410.5" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="410.5" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">9</text>
+  <line x1="439.5" y1="30" x2="439.5" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="439.5" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">10</text>
+  <line x1="468.4" y1="30" x2="468.4" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="468.4" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">11</text>
+  <line x1="497.4" y1="30" x2="497.4" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="497.4" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">12</text>
+  <line x1="526.3" y1="30" x2="526.3" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="526.3" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">13</text>
+  <line x1="555.3" y1="30" x2="555.3" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="555.3" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">14</text>
+  <line x1="584.2" y1="30" x2="584.2" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="584.2" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">15</text>
+  <line x1="613.2" y1="30" x2="613.2" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="613.2" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">16</text>
+  <line x1="642.1" y1="30" x2="642.1" y2="36" stroke="currentColor" strokeWidth="1.2" />
+  <text x="642.1" y="22" textAnchor="middle" fill="currentColor" fontSize="13.5">17</text>
+  <text x="0" y="22" fill="currentColor" fontSize="13.5">T-states</text>
+  <text x="0" y="66" fill="currentColor" fontSize="15" fontWeight="bold">LD A,(nn)</text>
+  <text x="0" y="84" fill="currentColor" fontSize="13.5">3.5 MHz</text>
+  <rect x="150" y="48" width="115.8" height="42" rx="4" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="2" />
+  <text x="207.9" y="73.7" textAnchor="middle" fill="#30a46c" fontSize="13.5">M1</text>
+  <rect x="265.8" y="48" width="86.8" height="42" rx="4" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="2" />
+  <text x="309.2" y="73.7" textAnchor="middle" fill="#30a46c" fontSize="13.5">read</text>
+  <rect x="352.6" y="48" width="86.8" height="42" rx="4" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="2" />
+  <text x="396.1" y="73.7" textAnchor="middle" fill="#30a46c" fontSize="13.5">read</text>
+  <rect x="439.5" y="48" width="86.8" height="42" rx="4" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="2" />
+  <text x="482.9" y="73.7" textAnchor="middle" fill="#30a46c" fontSize="13.5">read</text>
+  <text x="532.3" y="74" fill="currentColor" fontSize="15" fontWeight="bold">13 T</text>
+  <text x="0" y="126" fill="currentColor" fontSize="15" fontWeight="bold">LD A,(nn)</text>
+  <text x="0" y="144" fill="currentColor" fontSize="13.5">28 MHz</text>
+  <rect x="150" y="108" width="115.8" height="42" rx="4" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="2" />
+  <text x="207.9" y="133.7" textAnchor="middle" fill="#30a46c" fontSize="13.5">M1</text>
+  <rect x="265.8" y="108" width="28.9" height="42" rx="4" fill="#e5484d" fillOpacity="0.2" stroke="#e5484d" strokeWidth="2" />
+  <text x="280.3" y="133.7" textAnchor="middle" fill="#e5484d" fontSize="13.5" fontWeight="bold">W</text>
+  <rect x="294.7" y="108" width="86.8" height="42" rx="4" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="2" />
+  <text x="338.2" y="133.7" textAnchor="middle" fill="#30a46c" fontSize="13.5">read</text>
+  <rect x="381.6" y="108" width="28.9" height="42" rx="4" fill="#e5484d" fillOpacity="0.2" stroke="#e5484d" strokeWidth="2" />
+  <text x="396.1" y="133.7" textAnchor="middle" fill="#e5484d" fontSize="13.5" fontWeight="bold">W</text>
+  <rect x="410.5" y="108" width="86.8" height="42" rx="4" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="2" />
+  <text x="453.9" y="133.7" textAnchor="middle" fill="#30a46c" fontSize="13.5">read</text>
+  <rect x="497.4" y="108" width="28.9" height="42" rx="4" fill="#e5484d" fillOpacity="0.2" stroke="#e5484d" strokeWidth="2" />
+  <text x="511.8" y="133.7" textAnchor="middle" fill="#e5484d" fontSize="13.5" fontWeight="bold">W</text>
+  <rect x="526.3" y="108" width="86.8" height="42" rx="4" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="2" />
+  <text x="569.7" y="133.7" textAnchor="middle" fill="#30a46c" fontSize="13.5">read</text>
+  <rect x="613.2" y="108" width="28.9" height="42" rx="4" fill="#e5484d" fillOpacity="0.2" stroke="#e5484d" strokeWidth="2" />
+  <text x="627.6" y="133.7" textAnchor="middle" fill="#e5484d" fontSize="13.5" fontWeight="bold">W</text>
+  <text x="648.1" y="134" fill="currentColor" fontSize="15" fontWeight="bold">17 T</text>
+  <text x="0" y="196" fill="currentColor" fontSize="15" fontWeight="bold">LD (nn),A</text>
+  <text x="0" y="214" fill="currentColor" fontSize="13.5">3.5 MHz</text>
+  <rect x="150" y="178" width="115.8" height="42" rx="4" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="2" />
+  <text x="207.9" y="203.7" textAnchor="middle" fill="#30a46c" fontSize="13.5">M1</text>
+  <rect x="265.8" y="178" width="86.8" height="42" rx="4" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="2" />
+  <text x="309.2" y="203.7" textAnchor="middle" fill="#30a46c" fontSize="13.5">read</text>
+  <rect x="352.6" y="178" width="86.8" height="42" rx="4" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="2" />
+  <text x="396.1" y="203.7" textAnchor="middle" fill="#30a46c" fontSize="13.5">read</text>
+  <rect x="439.5" y="178" width="86.8" height="42" rx="4" fill="#3b82f6" fillOpacity="0.12" stroke="#3b82f6" strokeWidth="2" />
+  <text x="482.9" y="203.7" textAnchor="middle" fill="#3b82f6" fontSize="13.5">write</text>
+  <text x="532.3" y="204" fill="currentColor" fontSize="15" fontWeight="bold">13 T</text>
+  <text x="0" y="256" fill="currentColor" fontSize="15" fontWeight="bold">LD (nn),A</text>
+  <text x="0" y="274" fill="currentColor" fontSize="13.5">28 MHz</text>
+  <rect x="150" y="238" width="115.8" height="42" rx="4" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="2" />
+  <text x="207.9" y="263.7" textAnchor="middle" fill="#30a46c" fontSize="13.5">M1</text>
+  <rect x="265.8" y="238" width="28.9" height="42" rx="4" fill="#e5484d" fillOpacity="0.2" stroke="#e5484d" strokeWidth="2" />
+  <text x="280.3" y="263.7" textAnchor="middle" fill="#e5484d" fontSize="13.5" fontWeight="bold">W</text>
+  <rect x="294.7" y="238" width="86.8" height="42" rx="4" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="2" />
+  <text x="338.2" y="263.7" textAnchor="middle" fill="#30a46c" fontSize="13.5">read</text>
+  <rect x="381.6" y="238" width="28.9" height="42" rx="4" fill="#e5484d" fillOpacity="0.2" stroke="#e5484d" strokeWidth="2" />
+  <text x="396.1" y="263.7" textAnchor="middle" fill="#e5484d" fontSize="13.5" fontWeight="bold">W</text>
+  <rect x="410.5" y="238" width="86.8" height="42" rx="4" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="2" />
+  <text x="453.9" y="263.7" textAnchor="middle" fill="#30a46c" fontSize="13.5">read</text>
+  <rect x="497.4" y="238" width="28.9" height="42" rx="4" fill="#e5484d" fillOpacity="0.2" stroke="#e5484d" strokeWidth="2" />
+  <text x="511.8" y="263.7" textAnchor="middle" fill="#e5484d" fontSize="13.5" fontWeight="bold">W</text>
+  <rect x="526.3" y="238" width="86.8" height="42" rx="4" fill="#3b82f6" fillOpacity="0.12" stroke="#3b82f6" strokeWidth="2" />
+  <text x="569.7" y="263.7" textAnchor="middle" fill="#3b82f6" fontSize="13.5">write</text>
+  <text x="619.2" y="264" fill="currentColor" fontSize="15" fontWeight="bold">16 T</text>
+</svg>
+{/* /fig:wait */}
+<figcaption>LD A,(nn) and LD (nn),A at 3.5 MHz and 28 MHz, to scale in T-states. At 28 MHz each read cycle gets one wait state (W); the write does not, so the store ends up one T-state faster than the load.</figcaption>
+</figure>
+
+So the rule is easy to apply: at 28 MHz, add one T-state for every byte the instruction reads, its opcode
+bytes included. A few examples:
+
+- `NOP` takes 5 T-states instead of 4: one fetch.
+- `LD A,(HL)` takes 9 instead of 7, and `LD (HL),A` takes 8 instead of 7.
+- `PUSH BC` takes 12 instead of 11 (one fetch, two writes), and `POP BC` 13 instead of 10 (one fetch, two
+  reads).
+- `OUT (n),A` takes 13 instead of 11: the opcode and `n` are read, the I/O cycle waits for nobody.
+- `LD (IX+d),n` takes 23 instead of 19: two opcode fetches (`DD` and `36`), the displacement and `n`.
+
+I read the wait state as the price of asking the memory for an answer in 36 nanoseconds. It is a fair
+price: 28 MHz is still roughly six to seven times as fast as 3.5 MHz, not eight. My advice is to count the
+T-states of a timed loop at the speed it will run at, and never to scale a 3.5 MHz count by eight.
+
+## Sharing the bus
+
+The CPU is not the only master of the Next's bus. The **DMA** can move memory and ports on its own, and to do
+that it asks the CPU for the bus with **`/BUSRQ`**. The CPU lets go at the end of the **M-cycle** it is in,
+not at the end of the instruction, and says so with **`/BUSAK`**. While the DMA holds the bus, the CPU stands
+still in the middle of its instruction, does no refresh, and cannot take an interrupt. When the DMA lets
+go, the instruction carries on as if nothing had happened, only later.
+
+That last point is why the DMA can make an interrupt pulse vanish, and why the Next has a way to make the
+DMA step aside. Both are in [The DMA: A Second Master on the
+Bus](/en/under-the-hood/emulator-internals/next-dma/) and in the interrupts chapter's
+[The DMA steps aside](/en/under-the-hood/emulator-internals/next-interrupts/#the-dma-steps-aside).
+
+**`HALT`** is the other way the CPU stops, but it stops working, not fetching. A halted CPU runs opcode
+fetches of 4 T-states each and executes them as `NOP`s, so `R` keeps counting and the refresh keeps going,
+while `PC` already points past the `HALT`. When an interrupt comes, the CPU leaves the halt and the
+interrupt returns to the instruction after it.
+
+## Interrupts, from the CPU's side
+
+The CPU has two interrupt inputs, and the Next's interrupt system gives each a large cast of sources;
+[Interrupts: Fourteen Voices, Two Wires](/en/under-the-hood/emulator-internals/next-interrupts/) tells that
+story. Here is what the CPU itself does:
+
+- **`/INT`** is a level. The CPU looks at it when an instruction ends, and answers if IFF1 is set. It never
+  answers between a prefix and its opcode, and never right after `EI`: the instruction after `EI` always
+  runs, which is what makes `EI` followed by `RETI` safe at the end of a handler.
+- **Answering `/INT`** clears IFF1 and IFF2, then runs an **acknowledge cycle**: an M1 with `/IORQ` instead
+  of `/MREQ` and two automatic wait states, 7 T-states in all, in which the interrupting device can put a
+  byte on the data bus.
+- **The interrupt mode** decides what that byte means. **IM 0** executes it as an instruction. **IM 1**
+  ignores it and calls `$0038`, 13 T-states in all. **IM 2** uses it as the low byte, and `I` as the high byte,
+  of an address in a table, and calls the address stored there, 19 T-states in all.
+- **`/NMI`** is an edge, answered whatever IFF1 says. The CPU clears IFF1, keeps IFF2 as it was, so the
+  handler can find out whether interrupts were on, and calls `$0066`.
+- **`RETN`** and **`RETI`** both pop the return address and copy IFF2 back into IFF1.
+
+Two Next details fit here. In the Next's default pulse mode, no device drives the data bus during the
+acknowledge, and the Next answers with **`$FF`**: in IM 0 the CPU executes `$FF`, which is `RST $38`, so IM 0
+behaves exactly like IM 1. And the Next's interrupt controller learns when the CPU executes `RETI` or `RETN`,
+which is how it knows a handler has finished; the interrupts chapter's
+[The daisy chain](/en/under-the-hood/emulator-internals/next-interrupts/#the-daisy-chain) explains it.
+
+## The flags, documented and not
+
+The flag register `F` has eight bits, and Zilog documented six of them. The other two were marked "not used",
+and they are used all the time:
+
+<figure>
+{/* fig:flags */}
+<svg viewBox="-2 -2 704 180" role="img" aria-label="The flag register's eight bits, bit 7 on the left. Bit 7 S, the sign; bit 6 Z, zero; bit 5 Y, undocumented, usually bit 5 of the result; bit 4 H, half carry; bit 3 X, undocumented, usually bit 3 of the result; bit 2 P/V, parity or overflow; bit 1 N, subtract; bit 0 C, carry." style={{ width: "100%", height: "auto" }}>
+  <text x="43.8" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">bit 7</text>
+  <rect x="2" y="30" width="83.5" height="52" rx="4" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="2" />
+  <text x="43.8" y="61.8" textAnchor="middle" fill="#3b82f6" fontSize="16.5" fontWeight="bold">S</text>
+  <text x="43.8" y="106" textAnchor="middle" fill="currentColor" fontSize="13.5">sign</text>
+  <text x="131.3" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">bit 6</text>
+  <rect x="89.5" y="30" width="83.5" height="52" rx="4" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="2" />
+  <text x="131.3" y="61.8" textAnchor="middle" fill="#3b82f6" fontSize="16.5" fontWeight="bold">Z</text>
+  <text x="131.3" y="106" textAnchor="middle" fill="currentColor" fontSize="13.5">zero</text>
+  <text x="218.8" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">bit 5</text>
+  <rect x="177" y="30" width="83.5" height="52" rx="4" fill="#a855f7" fillOpacity="0.18" stroke="#a855f7" strokeWidth="2" strokeDasharray="5 4" />
+  <text x="218.8" y="61.8" textAnchor="middle" fill="#a855f7" fontSize="16.5" fontWeight="bold">Y</text>
+  <text x="218.8" y="106" textAnchor="middle" fill="#a855f7" fontSize="13.5">bit 5 of</text>
+  <text x="218.8" y="123" textAnchor="middle" fill="#a855f7" fontSize="13.5">the result</text>
+  <text x="306.3" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">bit 4</text>
+  <rect x="264.5" y="30" width="83.5" height="52" rx="4" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="2" />
+  <text x="306.3" y="61.8" textAnchor="middle" fill="#3b82f6" fontSize="16.5" fontWeight="bold">H</text>
+  <text x="306.3" y="106" textAnchor="middle" fill="currentColor" fontSize="13.5">half</text>
+  <text x="306.3" y="123" textAnchor="middle" fill="currentColor" fontSize="13.5">carry</text>
+  <text x="393.8" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">bit 3</text>
+  <rect x="352" y="30" width="83.5" height="52" rx="4" fill="#a855f7" fillOpacity="0.18" stroke="#a855f7" strokeWidth="2" strokeDasharray="5 4" />
+  <text x="393.8" y="61.8" textAnchor="middle" fill="#a855f7" fontSize="16.5" fontWeight="bold">X</text>
+  <text x="393.8" y="106" textAnchor="middle" fill="#a855f7" fontSize="13.5">bit 3 of</text>
+  <text x="393.8" y="123" textAnchor="middle" fill="#a855f7" fontSize="13.5">the result</text>
+  <text x="481.3" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">bit 2</text>
+  <rect x="439.5" y="30" width="83.5" height="52" rx="4" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="2" />
+  <text x="481.3" y="61.8" textAnchor="middle" fill="#3b82f6" fontSize="16.5" fontWeight="bold">P/V</text>
+  <text x="481.3" y="106" textAnchor="middle" fill="currentColor" fontSize="13.5">parity or</text>
+  <text x="481.3" y="123" textAnchor="middle" fill="currentColor" fontSize="13.5">overflow</text>
+  <text x="568.8" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">bit 1</text>
+  <rect x="527" y="30" width="83.5" height="52" rx="4" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="2" />
+  <text x="568.8" y="61.8" textAnchor="middle" fill="#3b82f6" fontSize="16.5" fontWeight="bold">N</text>
+  <text x="568.8" y="106" textAnchor="middle" fill="currentColor" fontSize="13.5">subtract</text>
+  <text x="656.3" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">bit 0</text>
+  <rect x="614.5" y="30" width="83.5" height="52" rx="4" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="2" />
+  <text x="656.3" y="61.8" textAnchor="middle" fill="#3b82f6" fontSize="16.5" fontWeight="bold">C</text>
+  <text x="656.3" y="106" textAnchor="middle" fill="currentColor" fontSize="13.5">carry</text>
+  <text x="0" y="166" fill="#a855f7" fontSize="13.5">dashed: undocumented by Zilog</text>
+</svg>
+{/* /fig:flags */}
+<figcaption>The flag register. Zilog documented six flags; bits 5 and 3, here Y and X, are undocumented, and most instructions copy bits 5 and 3 of their result into them.</figcaption>
+</figure>
+
+I will call bit 5 **Y** and bit 3 **X**; you will also meet them as F5 and F3. The general rule is simple:
+an instruction that changes the flags copies **bits 5 and 3 of its result** into Y and X. `ADD A,B` that
+gives `$28` sets Y (bit 5 of `$28` is 1) and X (bit 3 is 1). The exceptions are where it gets interesting:
+
+- **`CP n`** takes Y and X from the operand, not from the subtraction it did, on both the Zilog chip and the
+  Next. So `CP $28` sets both, whatever `A` holds.
+- **`BIT n,r`** takes them from the register it tested.
+- **`BIT n,(HL)`** on a Zilog chip takes them from the high byte of **WZ**, the hidden register. This is how
+  WZ was discovered, and the only way a program can see it.
+- **`SCF` and `CCF`** on a Zilog chip take them from `A`, mixed with the old flags in a way that depends on
+  whether the instruction before changed the flags.
+
+The Next agrees with a Zilog chip on the documented flags of every instruction, and on Y and X of most of
+them. Where it does not agree is the subject of the next section but one.
+
+## Undocumented instructions
+
+The Z80's opcode tables have holes, and most of the holes do something. Programs found them, used them, and
+shipped with them, so the Next runs every one of them as a Zilog chip does:
+
+- **The index registers' halves.** A `DD` or `FD` prefix before an instruction that uses `H` or `L` makes it
+  use the high or low half of `IX` or `IY` instead: `LD A,IXH`, `INC IYL`, `ADD A,IXL`. Assemblers call them
+  `IXH`, `IXL`, `IYH` and `IYL` (or `XH`, `XL`, `YH`, `YL`).
+- **`SLL`**, the opcodes `CB 30` to `CB 37`: shift left and put a **1** into bit 0, where `SLA` puts a 0.
+  Some assemblers call it `SL1` or `SLI`.
+- **The indexed bit instructions with a copy.** `DD CB d xx` with a register in its low bits, such as
+  `RLC (IX+d),B`, rotates the byte in memory and also copies the result into `B`. `RES` and `SET` do the same.
+- **`IN (C)`**, also written `IN F,(C)`, opcode `ED 70`: reads the port, sets the flags as `IN r,(C)` would,
+  and throws the byte away. A handy way to test bit 7 of a port in `S` without spending a register.
+- **`OUT (C),0`**, opcode `ED 71`: writes a byte to port `BC`. On an NMOS Zilog chip that byte is 0, on a CMOS
+  one it is `$FF`. On the Next it is **0**.
+- **Duplicates.** `NEG` has eight opcodes (`ED 44`, `4C`, ... `7C`), `RETN` seven (`ED 45`, `55`, ... `7D`,
+  next to `RETI` at `ED 4D`). `ED 4E`, `66` and `6E` set IM 0, `ED 76` IM 1, `ED 7E` IM 2. `ED 63` and
+  `ED 6B` are long forms of `LD (nn),HL` and `LD HL,(nn)`, 4 T-states slower than the usual ones.
+- **Everything else in the `ED` page** does nothing and takes 8 T-states: two opcode fetches.
+- **Prefix chains.** A `DD` or `FD` before an instruction that uses no `HL` costs 4 T-states and changes
+  nothing, and in a chain of them the last one wins.
+
+The `ED` page is also where the Z80N put its new instructions, in holes no Zilog program ever used:
+
+<figure>
+{/* fig:edmap */}
+<svg viewBox="-2 -2 704 476" role="img" aria-label="A grid of 16 by 16 cells, the opcodes ED 00 to ED FF, the high digit by row and the low digit by column. Zilog's documented instructions fill most of rows 4 to 7 and the block instructions at A0 to A3, A8 to AB, B0 to B3 and B8 to BB. Zilog's undocumented ones fill the rest of rows 4 to 7 except 77 and 7F. The Z80N's 29 instructions are at 23, 24, 27, 28 to 2C, 30 to 36, 8A, 90 to 95, 98, A4, A5, AC, B4, B7 and BC. ED B6, off the list, acts as LDIRX. Every other cell is an 8 T-state NOP." style={{ width: "100%", height: "auto" }}>
+  <text x="56.8" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">x0</text>
+  <text x="98.3" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">x1</text>
+  <text x="139.8" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">x2</text>
+  <text x="181.3" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">x3</text>
+  <text x="222.8" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">x4</text>
+  <text x="264.3" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">x5</text>
+  <text x="305.8" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">x6</text>
+  <text x="347.3" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">x7</text>
+  <text x="388.8" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">x8</text>
+  <text x="430.3" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">x9</text>
+  <text x="471.8" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">xA</text>
+  <text x="513.3" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">xB</text>
+  <text x="554.8" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">xC</text>
+  <text x="596.3" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">xD</text>
+  <text x="637.8" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">xE</text>
+  <text x="679.3" y="20" textAnchor="middle" fill="currentColor" fontSize="13.5">xF</text>
+  <text x="0" y="47" fill="currentColor" fontSize="13.5">0x</text>
+  <rect x="37" y="31" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="78.5" y="31" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="120" y="31" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="161.5" y="31" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="203" y="31" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="244.5" y="31" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="286" y="31" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="327.5" y="31" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="369" y="31" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="410.5" y="31" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="452" y="31" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="493.5" y="31" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="535" y="31" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="576.5" y="31" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="618" y="31" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="659.5" y="31" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <text x="0" y="71" fill="currentColor" fontSize="13.5">1x</text>
+  <rect x="37" y="55" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="78.5" y="55" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="120" y="55" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="161.5" y="55" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="203" y="55" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="244.5" y="55" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="286" y="55" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="327.5" y="55" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="369" y="55" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="410.5" y="55" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="452" y="55" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="493.5" y="55" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="535" y="55" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="576.5" y="55" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="618" y="55" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="659.5" y="55" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <text x="0" y="95" fill="currentColor" fontSize="13.5">2x</text>
+  <rect x="37" y="79" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="78.5" y="79" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="120" y="79" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="161.5" y="79" width="39.5" height="22" rx="2" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="2" />
+  <text x="181.3" y="94.7" textAnchor="middle" fill="currentColor" fontSize="13.5">23</text>
+  <rect x="203" y="79" width="39.5" height="22" rx="2" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="2" />
+  <text x="222.8" y="94.7" textAnchor="middle" fill="currentColor" fontSize="13.5">24</text>
+  <rect x="244.5" y="79" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="286" y="79" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="327.5" y="79" width="39.5" height="22" rx="2" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="2" />
+  <text x="347.3" y="94.7" textAnchor="middle" fill="currentColor" fontSize="13.5">27</text>
+  <rect x="369" y="79" width="39.5" height="22" rx="2" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="2" />
+  <text x="388.8" y="94.7" textAnchor="middle" fill="currentColor" fontSize="13.5">28</text>
+  <rect x="410.5" y="79" width="39.5" height="22" rx="2" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="2" />
+  <text x="430.3" y="94.7" textAnchor="middle" fill="currentColor" fontSize="13.5">29</text>
+  <rect x="452" y="79" width="39.5" height="22" rx="2" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="2" />
+  <text x="471.8" y="94.7" textAnchor="middle" fill="currentColor" fontSize="13.5">2A</text>
+  <rect x="493.5" y="79" width="39.5" height="22" rx="2" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="2" />
+  <text x="513.3" y="94.7" textAnchor="middle" fill="currentColor" fontSize="13.5">2B</text>
+  <rect x="535" y="79" width="39.5" height="22" rx="2" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="2" />
+  <text x="554.8" y="94.7" textAnchor="middle" fill="currentColor" fontSize="13.5">2C</text>
+  <rect x="576.5" y="79" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="618" y="79" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="659.5" y="79" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <text x="0" y="119" fill="currentColor" fontSize="13.5">3x</text>
+  <rect x="37" y="103" width="39.5" height="22" rx="2" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="2" />
+  <text x="56.8" y="118.7" textAnchor="middle" fill="currentColor" fontSize="13.5">30</text>
+  <rect x="78.5" y="103" width="39.5" height="22" rx="2" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="2" />
+  <text x="98.3" y="118.7" textAnchor="middle" fill="currentColor" fontSize="13.5">31</text>
+  <rect x="120" y="103" width="39.5" height="22" rx="2" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="2" />
+  <text x="139.8" y="118.7" textAnchor="middle" fill="currentColor" fontSize="13.5">32</text>
+  <rect x="161.5" y="103" width="39.5" height="22" rx="2" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="2" />
+  <text x="181.3" y="118.7" textAnchor="middle" fill="currentColor" fontSize="13.5">33</text>
+  <rect x="203" y="103" width="39.5" height="22" rx="2" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="2" />
+  <text x="222.8" y="118.7" textAnchor="middle" fill="currentColor" fontSize="13.5">34</text>
+  <rect x="244.5" y="103" width="39.5" height="22" rx="2" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="2" />
+  <text x="264.3" y="118.7" textAnchor="middle" fill="currentColor" fontSize="13.5">35</text>
+  <rect x="286" y="103" width="39.5" height="22" rx="2" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="2" />
+  <text x="305.8" y="118.7" textAnchor="middle" fill="currentColor" fontSize="13.5">36</text>
+  <rect x="327.5" y="103" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="369" y="103" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="410.5" y="103" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="452" y="103" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="493.5" y="103" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="535" y="103" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="576.5" y="103" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="618" y="103" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="659.5" y="103" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <text x="0" y="143" fill="currentColor" fontSize="13.5">4x</text>
+  <rect x="37" y="127" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="56.8" y="142.7" textAnchor="middle" fill="currentColor" fontSize="13.5">40</text>
+  <rect x="78.5" y="127" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="98.3" y="142.7" textAnchor="middle" fill="currentColor" fontSize="13.5">41</text>
+  <rect x="120" y="127" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="139.8" y="142.7" textAnchor="middle" fill="currentColor" fontSize="13.5">42</text>
+  <rect x="161.5" y="127" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="181.3" y="142.7" textAnchor="middle" fill="currentColor" fontSize="13.5">43</text>
+  <rect x="203" y="127" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="222.8" y="142.7" textAnchor="middle" fill="currentColor" fontSize="13.5">44</text>
+  <rect x="244.5" y="127" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="264.3" y="142.7" textAnchor="middle" fill="currentColor" fontSize="13.5">45</text>
+  <rect x="286" y="127" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="305.8" y="142.7" textAnchor="middle" fill="currentColor" fontSize="13.5">46</text>
+  <rect x="327.5" y="127" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="347.3" y="142.7" textAnchor="middle" fill="currentColor" fontSize="13.5">47</text>
+  <rect x="369" y="127" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="388.8" y="142.7" textAnchor="middle" fill="currentColor" fontSize="13.5">48</text>
+  <rect x="410.5" y="127" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="430.3" y="142.7" textAnchor="middle" fill="currentColor" fontSize="13.5">49</text>
+  <rect x="452" y="127" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="471.8" y="142.7" textAnchor="middle" fill="currentColor" fontSize="13.5">4A</text>
+  <rect x="493.5" y="127" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="513.3" y="142.7" textAnchor="middle" fill="currentColor" fontSize="13.5">4B</text>
+  <rect x="535" y="127" width="39.5" height="22" rx="2" fill="#a855f7" fillOpacity="0.22" stroke="#a855f7" strokeWidth="2" />
+  <text x="554.8" y="142.7" textAnchor="middle" fill="currentColor" fontSize="13.5">4C</text>
+  <rect x="576.5" y="127" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="596.3" y="142.7" textAnchor="middle" fill="currentColor" fontSize="13.5">4D</text>
+  <rect x="618" y="127" width="39.5" height="22" rx="2" fill="#a855f7" fillOpacity="0.22" stroke="#a855f7" strokeWidth="2" />
+  <text x="637.8" y="142.7" textAnchor="middle" fill="currentColor" fontSize="13.5">4E</text>
+  <rect x="659.5" y="127" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="679.3" y="142.7" textAnchor="middle" fill="currentColor" fontSize="13.5">4F</text>
+  <text x="0" y="167" fill="currentColor" fontSize="13.5">5x</text>
+  <rect x="37" y="151" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="56.8" y="166.7" textAnchor="middle" fill="currentColor" fontSize="13.5">50</text>
+  <rect x="78.5" y="151" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="98.3" y="166.7" textAnchor="middle" fill="currentColor" fontSize="13.5">51</text>
+  <rect x="120" y="151" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="139.8" y="166.7" textAnchor="middle" fill="currentColor" fontSize="13.5">52</text>
+  <rect x="161.5" y="151" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="181.3" y="166.7" textAnchor="middle" fill="currentColor" fontSize="13.5">53</text>
+  <rect x="203" y="151" width="39.5" height="22" rx="2" fill="#a855f7" fillOpacity="0.22" stroke="#a855f7" strokeWidth="2" />
+  <text x="222.8" y="166.7" textAnchor="middle" fill="currentColor" fontSize="13.5">54</text>
+  <rect x="244.5" y="151" width="39.5" height="22" rx="2" fill="#a855f7" fillOpacity="0.22" stroke="#a855f7" strokeWidth="2" />
+  <text x="264.3" y="166.7" textAnchor="middle" fill="currentColor" fontSize="13.5">55</text>
+  <rect x="286" y="151" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="305.8" y="166.7" textAnchor="middle" fill="currentColor" fontSize="13.5">56</text>
+  <rect x="327.5" y="151" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="347.3" y="166.7" textAnchor="middle" fill="currentColor" fontSize="13.5">57</text>
+  <rect x="369" y="151" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="388.8" y="166.7" textAnchor="middle" fill="currentColor" fontSize="13.5">58</text>
+  <rect x="410.5" y="151" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="430.3" y="166.7" textAnchor="middle" fill="currentColor" fontSize="13.5">59</text>
+  <rect x="452" y="151" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="471.8" y="166.7" textAnchor="middle" fill="currentColor" fontSize="13.5">5A</text>
+  <rect x="493.5" y="151" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="513.3" y="166.7" textAnchor="middle" fill="currentColor" fontSize="13.5">5B</text>
+  <rect x="535" y="151" width="39.5" height="22" rx="2" fill="#a855f7" fillOpacity="0.22" stroke="#a855f7" strokeWidth="2" />
+  <text x="554.8" y="166.7" textAnchor="middle" fill="currentColor" fontSize="13.5">5C</text>
+  <rect x="576.5" y="151" width="39.5" height="22" rx="2" fill="#a855f7" fillOpacity="0.22" stroke="#a855f7" strokeWidth="2" />
+  <text x="596.3" y="166.7" textAnchor="middle" fill="currentColor" fontSize="13.5">5D</text>
+  <rect x="618" y="151" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="637.8" y="166.7" textAnchor="middle" fill="currentColor" fontSize="13.5">5E</text>
+  <rect x="659.5" y="151" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="679.3" y="166.7" textAnchor="middle" fill="currentColor" fontSize="13.5">5F</text>
+  <text x="0" y="191" fill="currentColor" fontSize="13.5">6x</text>
+  <rect x="37" y="175" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="56.8" y="190.7" textAnchor="middle" fill="currentColor" fontSize="13.5">60</text>
+  <rect x="78.5" y="175" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="98.3" y="190.7" textAnchor="middle" fill="currentColor" fontSize="13.5">61</text>
+  <rect x="120" y="175" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="139.8" y="190.7" textAnchor="middle" fill="currentColor" fontSize="13.5">62</text>
+  <rect x="161.5" y="175" width="39.5" height="22" rx="2" fill="#a855f7" fillOpacity="0.22" stroke="#a855f7" strokeWidth="2" />
+  <text x="181.3" y="190.7" textAnchor="middle" fill="currentColor" fontSize="13.5">63</text>
+  <rect x="203" y="175" width="39.5" height="22" rx="2" fill="#a855f7" fillOpacity="0.22" stroke="#a855f7" strokeWidth="2" />
+  <text x="222.8" y="190.7" textAnchor="middle" fill="currentColor" fontSize="13.5">64</text>
+  <rect x="244.5" y="175" width="39.5" height="22" rx="2" fill="#a855f7" fillOpacity="0.22" stroke="#a855f7" strokeWidth="2" />
+  <text x="264.3" y="190.7" textAnchor="middle" fill="currentColor" fontSize="13.5">65</text>
+  <rect x="286" y="175" width="39.5" height="22" rx="2" fill="#a855f7" fillOpacity="0.22" stroke="#a855f7" strokeWidth="2" />
+  <text x="305.8" y="190.7" textAnchor="middle" fill="currentColor" fontSize="13.5">66</text>
+  <rect x="327.5" y="175" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="347.3" y="190.7" textAnchor="middle" fill="currentColor" fontSize="13.5">67</text>
+  <rect x="369" y="175" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="388.8" y="190.7" textAnchor="middle" fill="currentColor" fontSize="13.5">68</text>
+  <rect x="410.5" y="175" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="430.3" y="190.7" textAnchor="middle" fill="currentColor" fontSize="13.5">69</text>
+  <rect x="452" y="175" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="471.8" y="190.7" textAnchor="middle" fill="currentColor" fontSize="13.5">6A</text>
+  <rect x="493.5" y="175" width="39.5" height="22" rx="2" fill="#a855f7" fillOpacity="0.22" stroke="#a855f7" strokeWidth="2" />
+  <text x="513.3" y="190.7" textAnchor="middle" fill="currentColor" fontSize="13.5">6B</text>
+  <rect x="535" y="175" width="39.5" height="22" rx="2" fill="#a855f7" fillOpacity="0.22" stroke="#a855f7" strokeWidth="2" />
+  <text x="554.8" y="190.7" textAnchor="middle" fill="currentColor" fontSize="13.5">6C</text>
+  <rect x="576.5" y="175" width="39.5" height="22" rx="2" fill="#a855f7" fillOpacity="0.22" stroke="#a855f7" strokeWidth="2" />
+  <text x="596.3" y="190.7" textAnchor="middle" fill="currentColor" fontSize="13.5">6D</text>
+  <rect x="618" y="175" width="39.5" height="22" rx="2" fill="#a855f7" fillOpacity="0.22" stroke="#a855f7" strokeWidth="2" />
+  <text x="637.8" y="190.7" textAnchor="middle" fill="currentColor" fontSize="13.5">6E</text>
+  <rect x="659.5" y="175" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="679.3" y="190.7" textAnchor="middle" fill="currentColor" fontSize="13.5">6F</text>
+  <text x="0" y="215" fill="currentColor" fontSize="13.5">7x</text>
+  <rect x="37" y="199" width="39.5" height="22" rx="2" fill="#a855f7" fillOpacity="0.22" stroke="#a855f7" strokeWidth="2" />
+  <text x="56.8" y="214.7" textAnchor="middle" fill="currentColor" fontSize="13.5">70</text>
+  <rect x="78.5" y="199" width="39.5" height="22" rx="2" fill="#a855f7" fillOpacity="0.22" stroke="#a855f7" strokeWidth="2" />
+  <text x="98.3" y="214.7" textAnchor="middle" fill="currentColor" fontSize="13.5">71</text>
+  <rect x="120" y="199" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="139.8" y="214.7" textAnchor="middle" fill="currentColor" fontSize="13.5">72</text>
+  <rect x="161.5" y="199" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="181.3" y="214.7" textAnchor="middle" fill="currentColor" fontSize="13.5">73</text>
+  <rect x="203" y="199" width="39.5" height="22" rx="2" fill="#a855f7" fillOpacity="0.22" stroke="#a855f7" strokeWidth="2" />
+  <text x="222.8" y="214.7" textAnchor="middle" fill="currentColor" fontSize="13.5">74</text>
+  <rect x="244.5" y="199" width="39.5" height="22" rx="2" fill="#a855f7" fillOpacity="0.22" stroke="#a855f7" strokeWidth="2" />
+  <text x="264.3" y="214.7" textAnchor="middle" fill="currentColor" fontSize="13.5">75</text>
+  <rect x="286" y="199" width="39.5" height="22" rx="2" fill="#a855f7" fillOpacity="0.22" stroke="#a855f7" strokeWidth="2" />
+  <text x="305.8" y="214.7" textAnchor="middle" fill="currentColor" fontSize="13.5">76</text>
+  <rect x="327.5" y="199" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="369" y="199" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="388.8" y="214.7" textAnchor="middle" fill="currentColor" fontSize="13.5">78</text>
+  <rect x="410.5" y="199" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="430.3" y="214.7" textAnchor="middle" fill="currentColor" fontSize="13.5">79</text>
+  <rect x="452" y="199" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="471.8" y="214.7" textAnchor="middle" fill="currentColor" fontSize="13.5">7A</text>
+  <rect x="493.5" y="199" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="513.3" y="214.7" textAnchor="middle" fill="currentColor" fontSize="13.5">7B</text>
+  <rect x="535" y="199" width="39.5" height="22" rx="2" fill="#a855f7" fillOpacity="0.22" stroke="#a855f7" strokeWidth="2" />
+  <text x="554.8" y="214.7" textAnchor="middle" fill="currentColor" fontSize="13.5">7C</text>
+  <rect x="576.5" y="199" width="39.5" height="22" rx="2" fill="#a855f7" fillOpacity="0.22" stroke="#a855f7" strokeWidth="2" />
+  <text x="596.3" y="214.7" textAnchor="middle" fill="currentColor" fontSize="13.5">7D</text>
+  <rect x="618" y="199" width="39.5" height="22" rx="2" fill="#a855f7" fillOpacity="0.22" stroke="#a855f7" strokeWidth="2" />
+  <text x="637.8" y="214.7" textAnchor="middle" fill="currentColor" fontSize="13.5">7E</text>
+  <rect x="659.5" y="199" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <text x="0" y="239" fill="currentColor" fontSize="13.5">8x</text>
+  <rect x="37" y="223" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="78.5" y="223" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="120" y="223" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="161.5" y="223" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="203" y="223" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="244.5" y="223" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="286" y="223" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="327.5" y="223" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="369" y="223" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="410.5" y="223" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="452" y="223" width="39.5" height="22" rx="2" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="2" />
+  <text x="471.8" y="238.7" textAnchor="middle" fill="currentColor" fontSize="13.5">8A</text>
+  <rect x="493.5" y="223" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="535" y="223" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="576.5" y="223" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="618" y="223" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="659.5" y="223" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <text x="0" y="263" fill="currentColor" fontSize="13.5">9x</text>
+  <rect x="37" y="247" width="39.5" height="22" rx="2" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="2" />
+  <text x="56.8" y="262.7" textAnchor="middle" fill="currentColor" fontSize="13.5">90</text>
+  <rect x="78.5" y="247" width="39.5" height="22" rx="2" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="2" />
+  <text x="98.3" y="262.7" textAnchor="middle" fill="currentColor" fontSize="13.5">91</text>
+  <rect x="120" y="247" width="39.5" height="22" rx="2" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="2" />
+  <text x="139.8" y="262.7" textAnchor="middle" fill="currentColor" fontSize="13.5">92</text>
+  <rect x="161.5" y="247" width="39.5" height="22" rx="2" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="2" />
+  <text x="181.3" y="262.7" textAnchor="middle" fill="currentColor" fontSize="13.5">93</text>
+  <rect x="203" y="247" width="39.5" height="22" rx="2" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="2" />
+  <text x="222.8" y="262.7" textAnchor="middle" fill="currentColor" fontSize="13.5">94</text>
+  <rect x="244.5" y="247" width="39.5" height="22" rx="2" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="2" />
+  <text x="264.3" y="262.7" textAnchor="middle" fill="currentColor" fontSize="13.5">95</text>
+  <rect x="286" y="247" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="327.5" y="247" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="369" y="247" width="39.5" height="22" rx="2" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="2" />
+  <text x="388.8" y="262.7" textAnchor="middle" fill="currentColor" fontSize="13.5">98</text>
+  <rect x="410.5" y="247" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="452" y="247" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="493.5" y="247" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="535" y="247" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="576.5" y="247" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="618" y="247" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="659.5" y="247" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <text x="0" y="287" fill="currentColor" fontSize="13.5">Ax</text>
+  <rect x="37" y="271" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="56.8" y="286.7" textAnchor="middle" fill="currentColor" fontSize="13.5">A0</text>
+  <rect x="78.5" y="271" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="98.3" y="286.7" textAnchor="middle" fill="currentColor" fontSize="13.5">A1</text>
+  <rect x="120" y="271" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="139.8" y="286.7" textAnchor="middle" fill="currentColor" fontSize="13.5">A2</text>
+  <rect x="161.5" y="271" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="181.3" y="286.7" textAnchor="middle" fill="currentColor" fontSize="13.5">A3</text>
+  <rect x="203" y="271" width="39.5" height="22" rx="2" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="2" />
+  <text x="222.8" y="286.7" textAnchor="middle" fill="currentColor" fontSize="13.5">A4</text>
+  <rect x="244.5" y="271" width="39.5" height="22" rx="2" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="2" />
+  <text x="264.3" y="286.7" textAnchor="middle" fill="currentColor" fontSize="13.5">A5</text>
+  <rect x="286" y="271" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="327.5" y="271" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="369" y="271" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="388.8" y="286.7" textAnchor="middle" fill="currentColor" fontSize="13.5">A8</text>
+  <rect x="410.5" y="271" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="430.3" y="286.7" textAnchor="middle" fill="currentColor" fontSize="13.5">A9</text>
+  <rect x="452" y="271" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="471.8" y="286.7" textAnchor="middle" fill="currentColor" fontSize="13.5">AA</text>
+  <rect x="493.5" y="271" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="513.3" y="286.7" textAnchor="middle" fill="currentColor" fontSize="13.5">AB</text>
+  <rect x="535" y="271" width="39.5" height="22" rx="2" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="2" />
+  <text x="554.8" y="286.7" textAnchor="middle" fill="currentColor" fontSize="13.5">AC</text>
+  <rect x="576.5" y="271" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="618" y="271" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="659.5" y="271" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <text x="0" y="311" fill="currentColor" fontSize="13.5">Bx</text>
+  <rect x="37" y="295" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="56.8" y="310.7" textAnchor="middle" fill="currentColor" fontSize="13.5">B0</text>
+  <rect x="78.5" y="295" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="98.3" y="310.7" textAnchor="middle" fill="currentColor" fontSize="13.5">B1</text>
+  <rect x="120" y="295" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="139.8" y="310.7" textAnchor="middle" fill="currentColor" fontSize="13.5">B2</text>
+  <rect x="161.5" y="295" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="181.3" y="310.7" textAnchor="middle" fill="currentColor" fontSize="13.5">B3</text>
+  <rect x="203" y="295" width="39.5" height="22" rx="2" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="2" />
+  <text x="222.8" y="310.7" textAnchor="middle" fill="currentColor" fontSize="13.5">B4</text>
+  <rect x="244.5" y="295" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="286" y="295" width="39.5" height="22" rx="2" fill="none" stroke="#e5484d" strokeWidth="2" strokeDasharray="4 3" />
+  <text x="305.8" y="310.7" textAnchor="middle" fill="currentColor" fontSize="13.5">B6</text>
+  <rect x="327.5" y="295" width="39.5" height="22" rx="2" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="2" />
+  <text x="347.3" y="310.7" textAnchor="middle" fill="currentColor" fontSize="13.5">B7</text>
+  <rect x="369" y="295" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="388.8" y="310.7" textAnchor="middle" fill="currentColor" fontSize="13.5">B8</text>
+  <rect x="410.5" y="295" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="430.3" y="310.7" textAnchor="middle" fill="currentColor" fontSize="13.5">B9</text>
+  <rect x="452" y="295" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="471.8" y="310.7" textAnchor="middle" fill="currentColor" fontSize="13.5">BA</text>
+  <rect x="493.5" y="295" width="39.5" height="22" rx="2" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeWidth="2" />
+  <text x="513.3" y="310.7" textAnchor="middle" fill="currentColor" fontSize="13.5">BB</text>
+  <rect x="535" y="295" width="39.5" height="22" rx="2" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="2" />
+  <text x="554.8" y="310.7" textAnchor="middle" fill="currentColor" fontSize="13.5">BC</text>
+  <rect x="576.5" y="295" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="618" y="295" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="659.5" y="295" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <text x="0" y="335" fill="currentColor" fontSize="13.5">Cx</text>
+  <rect x="37" y="319" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="78.5" y="319" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="120" y="319" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="161.5" y="319" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="203" y="319" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="244.5" y="319" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="286" y="319" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="327.5" y="319" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="369" y="319" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="410.5" y="319" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="452" y="319" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="493.5" y="319" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="535" y="319" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="576.5" y="319" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="618" y="319" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="659.5" y="319" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <text x="0" y="359" fill="currentColor" fontSize="13.5">Dx</text>
+  <rect x="37" y="343" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="78.5" y="343" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="120" y="343" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="161.5" y="343" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="203" y="343" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="244.5" y="343" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="286" y="343" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="327.5" y="343" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="369" y="343" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="410.5" y="343" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="452" y="343" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="493.5" y="343" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="535" y="343" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="576.5" y="343" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="618" y="343" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="659.5" y="343" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <text x="0" y="383" fill="currentColor" fontSize="13.5">Ex</text>
+  <rect x="37" y="367" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="78.5" y="367" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="120" y="367" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="161.5" y="367" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="203" y="367" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="244.5" y="367" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="286" y="367" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="327.5" y="367" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="369" y="367" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="410.5" y="367" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="452" y="367" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="493.5" y="367" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="535" y="367" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="576.5" y="367" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="618" y="367" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="659.5" y="367" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <text x="0" y="407" fill="currentColor" fontSize="13.5">Fx</text>
+  <rect x="37" y="391" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="78.5" y="391" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="120" y="391" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="161.5" y="391" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="203" y="391" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="244.5" y="391" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="286" y="391" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="327.5" y="391" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="369" y="391" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="410.5" y="391" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="452" y="391" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="493.5" y="391" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="535" y="391" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="576.5" y="391" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="618" y="391" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="659.5" y="391" width="39.5" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <rect x="0" y="438" width="20" height="18" rx="4" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" strokeWidth="2" />
+  <text x="26" y="452" fill="currentColor" fontSize="13.5">Zilog</text>
+  <rect x="90" y="438" width="20" height="18" rx="4" fill="#a855f7" fillOpacity="0.25" stroke="#a855f7" strokeWidth="2" />
+  <text x="116" y="452" fill="currentColor" fontSize="13.5">Zilog, undocumented</text>
+  <rect x="280" y="438" width="20" height="18" rx="4" fill="#e8912d" fillOpacity="0.25" stroke="#e8912d" strokeWidth="2" />
+  <text x="306" y="452" fill="currentColor" fontSize="13.5">Z80N</text>
+  <rect x="360" y="438" width="20" height="18" rx="4" fill="none" stroke="#e5484d" strokeWidth="2" strokeDasharray="4 3" />
+  <text x="386" y="452" fill="currentColor" fontSize="13.5">ED B6: acts as LDIRX</text>
+  <rect x="560" y="438" width="20" height="18" rx="4" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.25" />
+  <text x="586" y="452" fill="currentColor" fontSize="13.5">empty: 8 T NOP</text>
+</svg>
+{/* /fig:edmap */}
+<figcaption>The ED page of the Next's CPU, opcodes ED 00 to ED FF. Zilog's instructions sit in $40–$7F and in four columns of block instructions; the Z80N's fill holes around them. Every empty cell is an 8-T-state NOP.</figcaption>
+</figure>
+
+## Where the copy departs from the original
+
+Here are the understudy's own lines. Every one of them is about the two undocumented flags, the hidden
+register or a byte the CPU puts on the bus; none changes a documented flag, a register or a T-state.
+
+- **`BIT n,(HL)` and `BIT n,(IX+d)`** clear Y and X on the Next. A Zilog chip fills them from WZ's high
+  byte. The consequence is bigger than it looks: **WZ is invisible on the Next.** The register exists, the CPU
+  uses it to build addresses, but no program can ever observe it.
+- **`SCF` and `CCF`** copy Y and X from `A`, always. A Zilog chip does so only after an instruction that
+  changed the flags; otherwise it mixes in the old Y and X.
+- **`IN r,(C)`, `IN (C)`, `LD A,I` and `LD A,R`** keep Y and X as they were. A Zilog chip copies them from the
+  byte read or loaded.
+- **`CPI`, `CPD`, `CPIR` and `CPDR`** copy Y and X from the byte they compared. A Zilog chip takes them from
+  bits 3 and 1 of `A` minus the byte, minus the half carry.
+- **`INI`, `IND`, `OUTI`, `OUTD` and their repeating forms** set the flags of decrementing `B`: `N` set, `S`
+  and `Z` from the new `B`, `H` when the decrement borrowed from bit 4, `P/V` when `B` was `$80`, and `C`
+  when `B` was 0. A Zilog chip computes `N`, `H`, `C` and `P/V` from the byte moved and from `C` or `L`, in
+  a formula people found by testing the chip.
+- **A repeating block instruction** (`LDIR`, `CPIR`, `INIR`, `OTIR` and the others) sets the same flags on
+  every repetition as on the last one. A Zilog chip, while it repeats, takes Y and X from the program counter.
+- **`LD A,I` and `LD A,R`** copy IFF2 into `P/V`, correctly, even when an interrupt is taken right after.
+  An NMOS Zilog chip reports 0 there, a known fault that the CMOS chip fixed.
+
+So which chip is the Next, NMOS or CMOS? Neither, and that is the honest answer. It writes 0 with `OUT
+(C),0`, like the NMOS chip; it gets `LD A,I` right, like the CMOS one; and its Y and X follow rules of their
+own. If you ask me, none of this harms a real program: I have never met a game that depended on Y after
+`CPIR`. But a test program that checks the undocumented flags will fail on a real Next, and a copy
+protection that hides a key in WZ will not find it. My rule of thumb: never let a Next program depend on Y,
+X or WZ.
+
+## Twenty-nine new instructions
+
+The Z80N's additions all live in the `ED` page, behind the prefix, so each costs at least 8 T-states. A Zilog
+chip runs every one of them as an 8-T-state `NOP`, so a program that uses them does nothing useful on a
+Spectrum, and does it quietly. They come in groups, and I will take them one group at a time. Unless a
+group says otherwise, an instruction leaves the flags alone.
+
+### Arithmetic
+
+| Instruction | Opcode | T-states | What it does |
+|---|---|---|---|
+| `MUL D,E` | `ED 30` | 8 | `DE` = `D` × `E`, unsigned |
+| `ADD HL,A` | `ED 31` | 8 | `HL` = `HL` + `A`, unsigned; clears carry |
+| `ADD DE,A` | `ED 32` | 8 | the same for `DE` |
+| `ADD BC,A` | `ED 33` | 8 | the same for `BC` |
+| `ADD HL,nn` | `ED 34 lo hi` | 16 | `HL` = `HL` + `nn` |
+| `ADD DE,nn` | `ED 35 lo hi` | 16 | `DE` = `DE` + `nn` |
+| `ADD BC,nn` | `ED 36 lo hi` | 16 | `BC` = `BC` + `nn` |
+| `TEST n` | `ED 27 n` | 11 | the flags of `AND n`, and `A` stays |
+
+**`MUL D,E`** is the one I would miss most if it went away: an 8 × 8 multiply in 8 T-states, where a Z80 loop
+needs well over a hundred. Its result fits `DE` exactly, so it never overflows.
+
+**`ADD rr,A`** adds `A` as an unsigned byte, so it moves a pointer forward by up to 255, and it wraps from
+`$FFFF` to 0. Let me warn you about its carry: it is **always cleared**, even when the sum wraps. Do not test
+the carry after it to detect a wrap; compare the result instead. The other flags stay. **`ADD rr,nn`** leaves
+every flag alone, carry included, and wraps the same way.
+
+**`TEST n`** is to `AND n` what `CP n` is to `SUB n`: the flags without the result, so you can test bits of `A`
+without a copy.
+
+### Bits and shifts
+
+| Instruction | Opcode | T-states | What it does |
+|---|---|---|---|
+| `SWAPNIB` | `ED 23` | 8 | swaps the two halves of `A` |
+| `MIRROR A` | `ED 24` | 8 | reverses the order of `A`'s bits |
+| `BSLA DE,B` | `ED 28` | 8 | `DE` shifted left by `B`, zeros in |
+| `BSRA DE,B` | `ED 29` | 8 | `DE` shifted right by `B`, copies of bit 15 in |
+| `BSRL DE,B` | `ED 2A` | 8 | `DE` shifted right by `B`, zeros in |
+| `BSRF DE,B` | `ED 2B` | 8 | `DE` shifted right by `B`, ones in |
+| `BRLC DE,B` | `ED 2C` | 8 | `DE` rotated left by `B` |
+
+A **barrel shift** moves a value any number of places in one step, where `SLA` moves it one. The shifts use
+bits 4 to 0 of `B`, so a count from 0 to 31: 16 or more shifts every bit out, and `BSRA DE,B` then leaves
+`$0000` or `$FFFF` by the sign. `BRLC` uses bits 3 to 0, because rotating by 16 changes nothing. `MIRROR A`
+is a gift for sprites: flip a row of 1-bit graphics horizontally in one instruction.
+
+### The stack and a jump
+
+| Instruction | Opcode | T-states | What it does |
+|---|---|---|---|
+| `PUSH nn` | `ED 8A hi lo` | 23 | pushes the value `nn` |
+| `JP (C)` | `ED 98` | 13 | jumps by a byte read from port `BC` |
+
+**`PUSH nn`** saves loading a register to push a constant, for a return address or a parameter. Notice its
+operand: unlike every other 16-bit operand of the Z80, it is stored **high byte first**. Your assembler takes
+care of that, but a disassembler that does not know the Z80N will show nonsense.
+
+**`JP (C)`** reads a byte from port `BC` and jumps to it, times 64, inside the 16K block the next instruction
+is in. If `JP (C)` sits at `$8000` and the port answers `$10`, it jumps to `$8000` + `$10` × 64 = `$8400`. It
+was made for jump tables driven by hardware, such as a byte read from the expansion bus.
+
+### The screen
+
+| Instruction | Opcode | T-states | What it does |
+|---|---|---|---|
+| `PIXELAD` | `ED 94` | 8 | `HL` = the ULA screen address of the dot at `E`, `D` |
+| `PIXELDN` | `ED 93` | 8 | `HL` = the address one dot row down |
+| `SETAE` | `ED 95` | 8 | `A` = the bit of the dot in its byte |
+
+The Spectrum's screen layout, with its thirds and its interleaved rows, takes a Z80 a dozen instructions to
+turn a dot's position into an address. **`PIXELAD`** does it in one: `E` is the dot's column (x, 0 to 255),
+`D` its row (y, 0 to 191), and here is where their bits go:
+
+<figure>
+{/* fig:pixelad */}
+<svg viewBox="-2 -2 704 258" role="img" aria-label="Above, the sixteen bits of D and E: D holds the row, y7 to y0, E the column, x7 to x0. Below, the sixteen bits of HL that PIXELAD builds. H is 0, 1, 0, then y7, y6, then y2, y1, y0. L is y5, y4, y3, then x7, x6, x5, x4, x3. The column's low bits x2, x1 and x0 are not in the address; SETAE turns them into the dot's bit in the byte." style={{ width: "100%", height: "auto" }}>
+  <text x="0" y="18" fill="#30a46c" fontSize="15" fontWeight="bold">D: the row (y)</text>
+  <text x="350" y="18" fill="#e8912d" fontSize="15" fontWeight="bold">E: the column (x)</text>
+  <rect x="1" y="28" width="41.8" height="36" rx="4" fill="#30a46c" fillOpacity="0.16" stroke="#30a46c" strokeWidth="2" />
+  <text x="21.9" y="50.7" textAnchor="middle" fill="#30a46c" fontSize="13.5">y7</text>
+  <rect x="44.8" y="28" width="41.8" height="36" rx="4" fill="#30a46c" fillOpacity="0.16" stroke="#30a46c" strokeWidth="2" />
+  <text x="65.6" y="50.7" textAnchor="middle" fill="#30a46c" fontSize="13.5">y6</text>
+  <rect x="88.5" y="28" width="41.8" height="36" rx="4" fill="#30a46c" fillOpacity="0.16" stroke="#30a46c" strokeWidth="2" />
+  <text x="109.4" y="50.7" textAnchor="middle" fill="#30a46c" fontSize="13.5">y5</text>
+  <rect x="132.3" y="28" width="41.8" height="36" rx="4" fill="#30a46c" fillOpacity="0.16" stroke="#30a46c" strokeWidth="2" />
+  <text x="153.1" y="50.7" textAnchor="middle" fill="#30a46c" fontSize="13.5">y4</text>
+  <rect x="176" y="28" width="41.8" height="36" rx="4" fill="#30a46c" fillOpacity="0.16" stroke="#30a46c" strokeWidth="2" />
+  <text x="196.9" y="50.7" textAnchor="middle" fill="#30a46c" fontSize="13.5">y3</text>
+  <rect x="219.8" y="28" width="41.8" height="36" rx="4" fill="#30a46c" fillOpacity="0.16" stroke="#30a46c" strokeWidth="2" />
+  <text x="240.6" y="50.7" textAnchor="middle" fill="#30a46c" fontSize="13.5">y2</text>
+  <rect x="263.5" y="28" width="41.8" height="36" rx="4" fill="#30a46c" fillOpacity="0.16" stroke="#30a46c" strokeWidth="2" />
+  <text x="284.4" y="50.7" textAnchor="middle" fill="#30a46c" fontSize="13.5">y1</text>
+  <rect x="307.3" y="28" width="41.8" height="36" rx="4" fill="#30a46c" fillOpacity="0.16" stroke="#30a46c" strokeWidth="2" />
+  <text x="328.1" y="50.7" textAnchor="middle" fill="#30a46c" fontSize="13.5">y0</text>
+  <rect x="351" y="28" width="41.8" height="36" rx="4" fill="#e8912d" fillOpacity="0.16" stroke="#e8912d" strokeWidth="2" />
+  <text x="371.9" y="50.7" textAnchor="middle" fill="#e8912d" fontSize="13.5">x7</text>
+  <rect x="394.8" y="28" width="41.8" height="36" rx="4" fill="#e8912d" fillOpacity="0.16" stroke="#e8912d" strokeWidth="2" />
+  <text x="415.6" y="50.7" textAnchor="middle" fill="#e8912d" fontSize="13.5">x6</text>
+  <rect x="438.5" y="28" width="41.8" height="36" rx="4" fill="#e8912d" fillOpacity="0.16" stroke="#e8912d" strokeWidth="2" />
+  <text x="459.4" y="50.7" textAnchor="middle" fill="#e8912d" fontSize="13.5">x5</text>
+  <rect x="482.3" y="28" width="41.8" height="36" rx="4" fill="#e8912d" fillOpacity="0.16" stroke="#e8912d" strokeWidth="2" />
+  <text x="503.1" y="50.7" textAnchor="middle" fill="#e8912d" fontSize="13.5">x4</text>
+  <rect x="526" y="28" width="41.8" height="36" rx="4" fill="#e8912d" fillOpacity="0.16" stroke="#e8912d" strokeWidth="2" />
+  <text x="546.9" y="50.7" textAnchor="middle" fill="#e8912d" fontSize="13.5">x3</text>
+  <rect x="569.8" y="28" width="41.8" height="36" rx="4" fill="#e5484d" fillOpacity="0.16" stroke="#e5484d" strokeWidth="2" />
+  <text x="590.6" y="50.7" textAnchor="middle" fill="#e5484d" fontSize="13.5">x2</text>
+  <rect x="613.5" y="28" width="41.8" height="36" rx="4" fill="#e5484d" fillOpacity="0.16" stroke="#e5484d" strokeWidth="2" />
+  <text x="634.4" y="50.7" textAnchor="middle" fill="#e5484d" fontSize="13.5">x1</text>
+  <rect x="657.3" y="28" width="41.8" height="36" rx="4" fill="#e5484d" fillOpacity="0.16" stroke="#e5484d" strokeWidth="2" />
+  <text x="678.1" y="50.7" textAnchor="middle" fill="#e5484d" fontSize="13.5">x0</text>
+  <text x="0" y="112" fill="currentColor" fontSize="15" fontWeight="bold">H</text>
+  <text x="350" y="112" fill="currentColor" fontSize="15" fontWeight="bold">L</text>
+  <rect x="1" y="122" width="41.8" height="36" rx="4" fill="none" stroke="currentColor" strokeWidth="1.4" />
+  <text x="21.9" y="144.7" textAnchor="middle" fill="currentColor" fontSize="13.5">0</text>
+  <rect x="44.8" y="122" width="41.8" height="36" rx="4" fill="none" stroke="currentColor" strokeWidth="1.4" />
+  <text x="65.6" y="144.7" textAnchor="middle" fill="currentColor" fontSize="13.5">1</text>
+  <rect x="88.5" y="122" width="41.8" height="36" rx="4" fill="none" stroke="currentColor" strokeWidth="1.4" />
+  <text x="109.4" y="144.7" textAnchor="middle" fill="currentColor" fontSize="13.5">0</text>
+  <rect x="132.3" y="122" width="41.8" height="36" rx="4" fill="#30a46c" fillOpacity="0.16" stroke="#30a46c" strokeWidth="2" />
+  <text x="153.1" y="144.7" textAnchor="middle" fill="#30a46c" fontSize="13.5">y7</text>
+  <rect x="176" y="122" width="41.8" height="36" rx="4" fill="#30a46c" fillOpacity="0.16" stroke="#30a46c" strokeWidth="2" />
+  <text x="196.9" y="144.7" textAnchor="middle" fill="#30a46c" fontSize="13.5">y6</text>
+  <rect x="219.8" y="122" width="41.8" height="36" rx="4" fill="#30a46c" fillOpacity="0.16" stroke="#30a46c" strokeWidth="2" />
+  <text x="240.6" y="144.7" textAnchor="middle" fill="#30a46c" fontSize="13.5">y2</text>
+  <rect x="263.5" y="122" width="41.8" height="36" rx="4" fill="#30a46c" fillOpacity="0.16" stroke="#30a46c" strokeWidth="2" />
+  <text x="284.4" y="144.7" textAnchor="middle" fill="#30a46c" fontSize="13.5">y1</text>
+  <rect x="307.3" y="122" width="41.8" height="36" rx="4" fill="#30a46c" fillOpacity="0.16" stroke="#30a46c" strokeWidth="2" />
+  <text x="328.1" y="144.7" textAnchor="middle" fill="#30a46c" fontSize="13.5">y0</text>
+  <rect x="351" y="122" width="41.8" height="36" rx="4" fill="#30a46c" fillOpacity="0.16" stroke="#30a46c" strokeWidth="2" />
+  <text x="371.9" y="144.7" textAnchor="middle" fill="#30a46c" fontSize="13.5">y5</text>
+  <rect x="394.8" y="122" width="41.8" height="36" rx="4" fill="#30a46c" fillOpacity="0.16" stroke="#30a46c" strokeWidth="2" />
+  <text x="415.6" y="144.7" textAnchor="middle" fill="#30a46c" fontSize="13.5">y4</text>
+  <rect x="438.5" y="122" width="41.8" height="36" rx="4" fill="#30a46c" fillOpacity="0.16" stroke="#30a46c" strokeWidth="2" />
+  <text x="459.4" y="144.7" textAnchor="middle" fill="#30a46c" fontSize="13.5">y3</text>
+  <rect x="482.3" y="122" width="41.8" height="36" rx="4" fill="#e8912d" fillOpacity="0.16" stroke="#e8912d" strokeWidth="2" />
+  <text x="503.1" y="144.7" textAnchor="middle" fill="#e8912d" fontSize="13.5">x7</text>
+  <rect x="526" y="122" width="41.8" height="36" rx="4" fill="#e8912d" fillOpacity="0.16" stroke="#e8912d" strokeWidth="2" />
+  <text x="546.9" y="144.7" textAnchor="middle" fill="#e8912d" fontSize="13.5">x6</text>
+  <rect x="569.8" y="122" width="41.8" height="36" rx="4" fill="#e8912d" fillOpacity="0.16" stroke="#e8912d" strokeWidth="2" />
+  <text x="590.6" y="144.7" textAnchor="middle" fill="#e8912d" fontSize="13.5">x5</text>
+  <rect x="613.5" y="122" width="41.8" height="36" rx="4" fill="#e8912d" fillOpacity="0.16" stroke="#e8912d" strokeWidth="2" />
+  <text x="634.4" y="144.7" textAnchor="middle" fill="#e8912d" fontSize="13.5">x4</text>
+  <rect x="657.3" y="122" width="41.8" height="36" rx="4" fill="#e8912d" fillOpacity="0.16" stroke="#e8912d" strokeWidth="2" />
+  <text x="678.1" y="144.7" textAnchor="middle" fill="#e8912d" fontSize="13.5">x3</text>
+  <text x="0" y="190" fill="currentColor" fontSize="13.5">H starts with 010: the screen begins at $4000. The row's bits</text>
+  <text x="0" y="208" fill="currentColor" fontSize="13.5">are split into its third, its character row and its dot row.</text>
+  <text x="0" y="244" fill="#e5484d" fontSize="13.5">x2–x0 (red) are not in the address: SETAE makes them A = $80 &gt;&gt; (x &amp; 7).</text>
+</svg>
+{/* /fig:pixelad */}
+<figcaption>PIXELAD builds the screen address from D (the row, y) and E (the column, x). The row's bits are split between H and L the way the Spectrum's screen interleaves them; SETAE turns the column's low three bits into the dot's bit in the byte.</figcaption>
+</figure>
+
+**`SETAE`** gives the dot's bit: `$80` for column 0, `$40` for column 1, down to `$01` for column 7, from
+`E`'s low three bits. **`PIXELDN`** moves `HL` one dot row down, across the character rows and the thirds,
+without you counting them. Together they draw a vertical line:
+
+```z80klive
+; Draws a vertical line of B dots down from column E, row D
+VLine:  pixelad          ; HL = address of the dot (E, D)
+        setae            ; A = the dot's bit in its byte
+        ld c,a           ; keep it in C
+Dot:    ld a,c
+        or (hl)          ; set the dot
+        ld (hl),a
+        pixeldn          ; HL = same column, one row down
+        djnz Dot
+        ret
+```
+
+How it works:
+
+- `PIXELAD` and `SETAE` turn the starting position into an address and a bit, once.
+- Every dot is the classic read, set, write of a byte.
+- `PIXELDN` replaces the twelve or so instructions a Z80 needs to step down a row, which is where the time
+  went in the Spectrum's line-drawing routines.
+
+A small warning: below row 191, `PIXELDN` goes on past the screen, into the attributes. Count your rows.
+
+### Block copies and an output
+
+| Instruction | Opcode | T-states | What it does |
+|---|---|---|---|
+| `LDIX` | `ED A4` | 16 | `LDI`, but skips the write if the byte equals `A` |
+| `LDIRX` | `ED B4` | 21 / 16 | repeats `LDIX` while `BC` is not 0 |
+| `LDDX` | `ED AC` | 16 | as `LDIX`, with `HL` going down and `DE` up |
+| `LDDRX` | `ED BC` | 21 / 16 | repeats `LDDX` while `BC` is not 0 |
+| `LDPIRX` | `ED B7` | 21 / 16 | repeats a copy from an 8-byte pattern |
+| `LDWS` | `ED A5` | 14 | copies `(HL)` to `(DE)`, then `L` + 1 and `D` + 1 |
+| `OUTINB` | `ED 90` | 16 | sends `(HL)` to port `BC`, then `HL` + 1 |
+
+The repeating forms take 21 T-states for a byte after which they repeat and 16 for the last, like `LDIR`.
+
+The **`X`** in the names means **exclude**: the byte equal to `A` is not written. That is a transparent
+colour, in hardware. Set `A` to the colour your sprite uses for "nothing here", and `LDIRX` copies the sprite
+over a background without wiping it. `HL`, `DE` and `BC` move on for a skipped byte as for a written one.
+
+Look closely at `LDDX`: `HL` goes **down** but `DE` goes **up**. That is not a slip; it copies a row of bytes in
+reverse order, which mirrors a row of a 256-colour picture horizontally.
+
+**`LDPIRX`** fills memory from an 8-byte pattern. It reads its byte from `HL` with the low three bits
+replaced by those of `E`, writes it to `DE` unless it equals `A`, and moves `DE` on, leaving `HL` alone. As
+`DE` walks forward, the pattern repeats every 8 bytes, lined up with the destination: a dithered fill, a
+striped background, a texture.
+
+**`LDWS`** copies a byte and moves to the next column of the source and the next row of the destination,
+as `INC L` and `INC D` would; the flags are those of `INC D`. It was made for the Layer 2 screen, where `D` is
+a row and `E` a column. **`OUTINB`** is `OUTI` without touching `B`, so `B` keeps the port's high byte and
+`HL` streams a table to it.
+
+The flags after the block copies follow `LDI`'s rules, more or less, and I would not rely on them: test `BC`
+yourself.
+
+### NextRegs
+
+| Instruction | Opcode | T-states | What it does |
+|---|---|---|---|
+| `NEXTREG r,n` | `ED 91 r n` | 20 | writes `n` to NextReg `r` |
+| `NEXTREG r,A` | `ED 92 r` | 17 | writes `A` to NextReg `r` |
+
+These write a NextReg without the two ports. The usual way, through port `$243B` to select a register and
+port `$253B` to write it, takes two `OUT`s and a register to hold the port. More important to me than the
+speed: **`NEXTREG` leaves port `$243B`'s selection alone**. An interrupt handler that writes NextRegs with
+`NEXTREG` can never confuse a main program that selected a register and is about to write it. The memory
+chapter's [Two ways into the NextRegs](/en/under-the-hood/emulator-internals/next-memory-io/#two-ways-into-the-nextregs)
+compares the two.
+
+### One instruction off the list
+
+`ED B6` is in no list of the Z80N's instructions, yet it is not a `NOP`: on core 3.02.01 it behaves exactly
+like `LDIRX`, timing included. I mention it so it does not surprise you in a disassembly, not so you use it.
+Every other empty cell of the `ED` page is a plain 8-T-state `NOP`.
+
+## What to take home
+
+The Z80N is a Z80 rebuilt in logic, and a faithful one: the same registers, the same instructions, documented
+and undocumented, and the same T-states, down to the opcode fetch's refresh half that the Next's static memory
+does not need. Every instruction is a string of machine cycles, an opcode fetch of 4 T-states, memory reads
+and writes of 3 and I/O cycles of 4, and the clock behind them runs at 3.5, 7, 14 or 28 MHz as NextReg `$07`
+says.
+
+The timing has one Next rule of its own: at 28 MHz every memory read gets one wait state, writes and I/O none.
+Count one extra T-state per byte read, opcodes included. Contention exists only at 3.5 MHz. The DMA takes
+the bus between M-cycles, `HALT` keeps fetching `NOP`s, and an interrupt costs 13 T-states in IM 1 and 19 in
+IM 2 once the running instruction ends.
+
+The understudy's own lines are all in the corners Zilog never documented. Y and X, bits 5 and 3 of `F`,
+follow the Zilog rules for most instructions but not for `BIT n,(HL)`, `SCF`, `CCF`, `IN r,(C)`, `LD A,I`,
+the block compares and block I/O, or repeating block instructions; WZ never shows; `OUT (C),0` writes 0, and
+`LD A,I` reports IFF2 correctly. None of it touches a documented flag.
+
+And the twenty-nine new instructions sit in the holes of the `ED` page: `MUL D,E` and the 16-bit additions,
+`TEST`, `SWAPNIB`, `MIRROR` and the barrel shifts, `PUSH nn` with its high byte first and `JP (C)`, the three
+screen helpers, the block copies that skip a transparent byte, `OUTINB`, and the two `NEXTREG`s that leave
+port `$243B` alone. A Spectrum runs them all as `NOP`s; a Next runs them in 8 to 23 T-states. Old heart, new
+tricks, and not a single old program broken.
