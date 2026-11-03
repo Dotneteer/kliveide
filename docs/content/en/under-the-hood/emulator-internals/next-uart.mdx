@@ -1,0 +1,450 @@
+---
+description: "How the ZX Spectrum Next's two UARTs work: one set of ports for two serial ports, the Wi-Fi module and the Raspberry Pi, a frame on the wire, the 17-bit prescaler and baud rates from the master clock, the frame register, the 64-byte transmit and 512-byte receive buffers, the status bits and errors, break, hardware flow control, interrupts, the joystick port, and resets."
+---
+
+import { Callout } from 'nextra/components'
+
+# UARTs: Two Serial Ports Behind One Door
+
+A Next can fetch a web page, chat over the Internet and talk to a Raspberry Pi, yet it has no network chip
+of the kind a PC has. What it has is older than the Spectrum itself: a serial port, a wire on which bits
+follow one another at an agreed pace. Behind that wire sits a Wi-Fi module that does the networking, and
+behind another one a Pi that can do almost anything. How does a Z80 keep up with a line that delivers a
+byte every 87 microseconds, and what happens when it doesn't?
+
+I think the serial port is the most practical piece of the Next for anyone who wants it to talk to the
+world. A file from the Internet, a game played across two machines, a MIDI keyboard, a debugger on a PC:
+all of them arrive as bytes on a serial line. The hardware that receives them is simple, but its buffers,
+flags and timing decide whether your program gets every byte or silently loses some, and that is worth
+understanding before you write the loop that reads them.
+
+You should know two chapters first. [Interrupts: Fourteen Voices, Two
+Wires](/en/under-the-hood/emulator-internals/next-interrupts/) explains the UARTs' interrupts and their
+place in the daisy chain, which this chapter only sums up. [CTC: Four Timers in a
+Ring](/en/under-the-hood/emulator-internals/next-ctc/) explains the master clock and the VGA modes that the
+baud rate is counted from.
+
+## The road ahead
+
+We start with the two UARTs and the four ports they share, then look at what actually travels on the wire:
+a frame of bits. Next comes the baud rate, set by a prescaler of the master clock, and the frame register
+that chooses the frame's shape. The heart of the chapter is the two buffers and the status register: how
+bytes wait to be sent, how they wait to be read, and what the hardware does when a buffer fills or a frame
+arrives broken; if you read only one section, read that one. After that we look at break, hardware flow
+control, interrupts, the joystick port and resets.
+
+<Callout type="info">
+The facts are for **core 3.02.01**. The master clock is **28 MHz**, as in VGA mode 0, and the examples use
+**115,200 baud, 8 data bits, no parity, one stop bit**, the setting after power-on. Every fact was checked
+against the Next's hardware design.
+</Callout>
+
+## Two UARTs, four ports
+
+A **UART**, a universal asynchronous receiver-transmitter, turns bytes into a stream of bits on one wire and
+a stream of bits on another wire back into bytes. The Next has two of them, identical in every way, and I
+call them **the twins**:
+
+- **UART 0** is wired to the **Wi-Fi module**, an ESP chip on the board, which does the networking and
+  talks to the Next through text commands on this line.
+- **UART 1** is wired to the **Raspberry Pi's connector**, on GPIO 14 and 15, once bit 5 of the **PI
+  Peripheral Enable register, NextReg `$A0`**, gives those pins to the UART.
+
+The twins share one door: four ports, and a switch that says which twin is behind it.
+
+- **Port `$153B`, UART select.** Bit 6 chooses the twin: 0 for UART 0, 1 for UART 1. Every other port talks
+  to the chosen one. Bit 4 and bits 2–0 are part of the baud rate, as the next sections explain.
+- **Port `$163B`, UART frame**: the shape of the frame, and three switches.
+- **Port `$133B`, UART TX**: a write sends a byte; a read gives the **status**.
+- **Port `$143B`, UART RX**: a read takes a received byte; a write sets part of the baud rate.
+
+Bit 4 of NextReg `$83` switches all four ports off: they then read `$FF` and ignore writes.
+
+<figure>
+{/* fig:twins */}
+<svg viewBox="-2 -2 704 296" role="img" aria-label="On the left, the CPU's ports $133B, $143B and $163B, and the UART select port $153B, whose bit 6 chooses which UART they reach. Two rows, UART 0 above and UART 1 below. In each, the CPU's bytes go into a 64-byte transmit buffer and on to the transmitter, which sends them to the device; the device's bytes come into the receiver and on into a 512-byte receive buffer, which the CPU reads. UART 0's device is the Wi-Fi module, UART 1's the Raspberry Pi's connector." style={{ width: "100%", height: "auto" }}>
+  <defs>
+    <marker id="ua-tw-0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
+    </marker>
+    <marker id="ua-tw-1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#30a46c" />
+    </marker>
+    <marker id="ua-tw-2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#a855f7" />
+    </marker>
+  </defs>
+  <rect x="0" y="96" width="120" height="100" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="60" y="133.9" textAnchor="middle" fill="currentColor" fontSize="14">ports</text>
+  <text x="60" y="150.9" textAnchor="middle" fill="currentColor" fontSize="14">$133B</text>
+  <text x="60" y="167.9" textAnchor="middle" fill="currentColor" fontSize="14">$143B, $163B</text>
+  <rect x="150" y="116" width="100" height="60" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="200" y="142.4" textAnchor="middle" fill="currentColor" fontSize="14" fontWeight="bold">$153B</text>
+  <text x="200" y="159.4" textAnchor="middle" fill="currentColor" fontSize="14" fontWeight="bold">bit 6</text>
+  <line x1="120" y1="146" x2="150" y2="146" stroke="currentColor" strokeWidth="1.8" />
+  <text x="290" y="22" fill="#30a46c" fontSize="15" fontWeight="bold">UART 0</text>
+  <rect x="290" y="28" width="130" height="44" rx="6" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="2" />
+  <text x="355" y="54.9" textAnchor="middle" fill="#30a46c" fontSize="14">TX buffer, 64</text>
+  <rect x="440" y="28" width="110" height="44" rx="6" fill="none" stroke="#30a46c" strokeWidth="2" />
+  <text x="495" y="54.9" textAnchor="middle" fill="#30a46c" fontSize="14">transmitter</text>
+  <rect x="290" y="84" width="130" height="44" rx="6" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="2" />
+  <text x="355" y="110.9" textAnchor="middle" fill="#30a46c" fontSize="14">RX buffer, 512</text>
+  <rect x="440" y="84" width="110" height="44" rx="6" fill="none" stroke="#30a46c" strokeWidth="2" />
+  <text x="495" y="110.9" textAnchor="middle" fill="#30a46c" fontSize="14">receiver</text>
+  <rect x="590" y="28" width="110" height="100" rx="6" fill="#a855f7" fillOpacity="0.12" stroke="#a855f7" strokeWidth="2" />
+  <text x="645" y="65.9" textAnchor="middle" fill="#a855f7" fontSize="14">Wi-Fi</text>
+  <text x="645" y="82.9" textAnchor="middle" fill="#a855f7" fontSize="14">module</text>
+  <text x="645" y="99.9" textAnchor="middle" fill="#a855f7" fontSize="14">(ESP)</text>
+  <path d="M420,50 L436,50" fill="none" stroke="#30a46c" strokeWidth="1.8" markerEnd="url(#ua-tw-1)" strokeLinejoin="round" />
+  <path d="M550,50 L586,50" fill="none" stroke="#a855f7" strokeWidth="1.8" markerEnd="url(#ua-tw-2)" strokeLinejoin="round" />
+  <path d="M590,106 L554,106" fill="none" stroke="#a855f7" strokeWidth="1.8" markerEnd="url(#ua-tw-2)" strokeLinejoin="round" />
+  <path d="M440,106 L424,106" fill="none" stroke="#30a46c" strokeWidth="1.8" markerEnd="url(#ua-tw-1)" strokeLinejoin="round" />
+  <path d="M266,50 L286,50" fill="none" stroke="currentColor" strokeWidth="1.8" markerEnd="url(#ua-tw-0)" strokeLinejoin="round" />
+  <line x1="266" y1="106" x2="290" y2="106" stroke="currentColor" strokeWidth="1.8" />
+  <text x="290" y="182" fill="#30a46c" fontSize="15" fontWeight="bold">UART 1</text>
+  <rect x="290" y="188" width="130" height="44" rx="6" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="2" />
+  <text x="355" y="214.9" textAnchor="middle" fill="#30a46c" fontSize="14">TX buffer, 64</text>
+  <rect x="440" y="188" width="110" height="44" rx="6" fill="none" stroke="#30a46c" strokeWidth="2" />
+  <text x="495" y="214.9" textAnchor="middle" fill="#30a46c" fontSize="14">transmitter</text>
+  <rect x="290" y="244" width="130" height="44" rx="6" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="2" />
+  <text x="355" y="270.9" textAnchor="middle" fill="#30a46c" fontSize="14">RX buffer, 512</text>
+  <rect x="440" y="244" width="110" height="44" rx="6" fill="none" stroke="#30a46c" strokeWidth="2" />
+  <text x="495" y="270.9" textAnchor="middle" fill="#30a46c" fontSize="14">receiver</text>
+  <rect x="590" y="188" width="110" height="100" rx="6" fill="#a855f7" fillOpacity="0.12" stroke="#a855f7" strokeWidth="2" />
+  <text x="645" y="225.9" textAnchor="middle" fill="#a855f7" fontSize="14">Pi's</text>
+  <text x="645" y="242.9" textAnchor="middle" fill="#a855f7" fontSize="14">connector</text>
+  <text x="645" y="259.9" textAnchor="middle" fill="#a855f7" fontSize="14">GPIO 14, 15</text>
+  <path d="M420,210 L436,210" fill="none" stroke="#30a46c" strokeWidth="1.8" markerEnd="url(#ua-tw-1)" strokeLinejoin="round" />
+  <path d="M550,210 L586,210" fill="none" stroke="#a855f7" strokeWidth="1.8" markerEnd="url(#ua-tw-2)" strokeLinejoin="round" />
+  <path d="M590,266 L554,266" fill="none" stroke="#a855f7" strokeWidth="1.8" markerEnd="url(#ua-tw-2)" strokeLinejoin="round" />
+  <path d="M440,266 L424,266" fill="none" stroke="#30a46c" strokeWidth="1.8" markerEnd="url(#ua-tw-1)" strokeLinejoin="round" />
+  <path d="M266,210 L286,210" fill="none" stroke="currentColor" strokeWidth="1.8" markerEnd="url(#ua-tw-0)" strokeLinejoin="round" />
+  <line x1="266" y1="266" x2="290" y2="266" stroke="currentColor" strokeWidth="1.8" />
+  <line x1="250" y1="146" x2="266" y2="146" stroke="currentColor" strokeWidth="1.8" />
+  <line x1="266" y1="50" x2="266" y2="266" stroke="currentColor" strokeWidth="1.8" />
+</svg>
+{/* /fig:twins */}
+<figcaption>The twins behind one door. Port $153B bit 6 chooses which UART the other three ports reach. Each UART has a 64-byte transmit buffer in front of its transmitter and a 512-byte receive buffer behind its receiver; UART 0 talks to the Wi-Fi module, UART 1 to the Raspberry Pi's connector.</figcaption>
+</figure>
+
+## A frame on the wire
+
+A serial line has no clock wire. The two ends agree on a speed, the **baud rate**, in bits a second, and
+the receiver times the bits itself. A line at rest is high, at 1. A byte travels as a **frame**:
+
+<figure>
+{/* fig:frame */}
+<svg viewBox="-2 -2 704 180" role="img" aria-label="The letter A, $41, in an 8N1 frame over twelve bit periods. One period of rest at 1; the start bit at 0; the data bits least significant first, b0 = 1, b1 to b5 = 0, b6 = 1, b7 = 0; the stop bit at 1; rest at 1. A red tick marks the middle of every bit from the start bit to the stop bit, where the receiver samples it." style={{ width: "100%", height: "auto" }}>
+  <text x="0" y="21" fill="currentColor" fontSize="13.5">1</text>
+  <text x="0" y="71" fill="currentColor" fontSize="13.5">0</text>
+  <text x="30" y="46" fill="#3b82f6" fontSize="15" fontWeight="bold">line</text>
+  <path d="M130,16 L130,16 L177.5,16 L177.5,66 L225,66 L225,16 L272.5,16 L272.5,66 L320,66 L320,66 L367.5,66 L367.5,66 L415,66 L415,66 L462.5,66 L462.5,66 L510,66 L510,16 L557.5,16 L557.5,66 L605,66 L605,16 L652.5,16 L652.5,16 L700,16" fill="none" stroke="#3b82f6" strokeWidth="2.2" strokeLinejoin="round" />
+  <line x1="130" y1="4" x2="130" y2="78" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.4" />
+  <line x1="177.5" y1="4" x2="177.5" y2="78" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.4" />
+  <line x1="225" y1="4" x2="225" y2="78" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.4" />
+  <line x1="272.5" y1="4" x2="272.5" y2="78" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.4" />
+  <line x1="320" y1="4" x2="320" y2="78" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.4" />
+  <line x1="367.5" y1="4" x2="367.5" y2="78" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.4" />
+  <line x1="415" y1="4" x2="415" y2="78" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.4" />
+  <line x1="462.5" y1="4" x2="462.5" y2="78" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.4" />
+  <line x1="510" y1="4" x2="510" y2="78" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.4" />
+  <line x1="557.5" y1="4" x2="557.5" y2="78" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.4" />
+  <line x1="605" y1="4" x2="605" y2="78" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.4" />
+  <line x1="652.5" y1="4" x2="652.5" y2="78" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.4" />
+  <line x1="700" y1="4" x2="700" y2="78" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.4" />
+  <text x="153.8" y="102" textAnchor="middle" fill="currentColor" fontSize="13.5">rest</text>
+  <text x="201.3" y="102" textAnchor="middle" fill="#30a46c" fontSize="13.5" fontWeight="bold">start</text>
+  <line x1="201.3" y1="80" x2="201.3" y2="88" stroke="#e5484d" strokeWidth="2" />
+  <text x="248.8" y="102" textAnchor="middle" fill="#30a46c" fontSize="13.5" fontWeight="bold">b0</text>
+  <line x1="248.8" y1="80" x2="248.8" y2="88" stroke="#e5484d" strokeWidth="2" />
+  <text x="296.3" y="102" textAnchor="middle" fill="#30a46c" fontSize="13.5" fontWeight="bold">b1</text>
+  <line x1="296.3" y1="80" x2="296.3" y2="88" stroke="#e5484d" strokeWidth="2" />
+  <text x="343.8" y="102" textAnchor="middle" fill="#30a46c" fontSize="13.5" fontWeight="bold">b2</text>
+  <line x1="343.8" y1="80" x2="343.8" y2="88" stroke="#e5484d" strokeWidth="2" />
+  <text x="391.3" y="102" textAnchor="middle" fill="#30a46c" fontSize="13.5" fontWeight="bold">b3</text>
+  <line x1="391.3" y1="80" x2="391.3" y2="88" stroke="#e5484d" strokeWidth="2" />
+  <text x="438.8" y="102" textAnchor="middle" fill="#30a46c" fontSize="13.5" fontWeight="bold">b4</text>
+  <line x1="438.8" y1="80" x2="438.8" y2="88" stroke="#e5484d" strokeWidth="2" />
+  <text x="486.3" y="102" textAnchor="middle" fill="#30a46c" fontSize="13.5" fontWeight="bold">b5</text>
+  <line x1="486.3" y1="80" x2="486.3" y2="88" stroke="#e5484d" strokeWidth="2" />
+  <text x="533.8" y="102" textAnchor="middle" fill="#30a46c" fontSize="13.5" fontWeight="bold">b6</text>
+  <line x1="533.8" y1="80" x2="533.8" y2="88" stroke="#e5484d" strokeWidth="2" />
+  <text x="581.3" y="102" textAnchor="middle" fill="#30a46c" fontSize="13.5" fontWeight="bold">b7</text>
+  <line x1="581.3" y1="80" x2="581.3" y2="88" stroke="#e5484d" strokeWidth="2" />
+  <text x="628.8" y="102" textAnchor="middle" fill="#30a46c" fontSize="13.5" fontWeight="bold">stop</text>
+  <line x1="628.8" y1="80" x2="628.8" y2="88" stroke="#e5484d" strokeWidth="2" />
+  <text x="676.3" y="102" textAnchor="middle" fill="currentColor" fontSize="13.5">rest</text>
+  <text x="248.8" y="126" textAnchor="middle" fill="currentColor" fontSize="13.5">1</text>
+  <text x="296.3" y="126" textAnchor="middle" fill="currentColor" fontSize="13.5">0</text>
+  <text x="343.8" y="126" textAnchor="middle" fill="currentColor" fontSize="13.5">0</text>
+  <text x="391.3" y="126" textAnchor="middle" fill="currentColor" fontSize="13.5">0</text>
+  <text x="438.8" y="126" textAnchor="middle" fill="currentColor" fontSize="13.5">0</text>
+  <text x="486.3" y="126" textAnchor="middle" fill="currentColor" fontSize="13.5">0</text>
+  <text x="533.8" y="126" textAnchor="middle" fill="currentColor" fontSize="13.5">1</text>
+  <text x="581.3" y="126" textAnchor="middle" fill="currentColor" fontSize="13.5">0</text>
+  <text x="0" y="126" fill="currentColor" fontSize="13.5">$41, b0 first:</text>
+  <text x="0" y="164" fill="currentColor" fontSize="13.5">red: the receiver samples each bit in its middle; a bit is 243 master clocks at 115,200 baud</text>
+</svg>
+{/* /fig:frame */}
+<figcaption>The letter A, $41, in a frame of 8 data bits, no parity and one stop bit, to scale in bit periods. The line rests high; the start bit is low; the data bits follow with the least significant first; the stop bit is high. The receiver samples every bit in its middle. At 115,200 baud a bit lasts 243 master clocks and the frame 2,430, 86.8 µs.</figcaption>
+</figure>
+
+1. The **start bit**, a 0, ends the rest and tells the receiver that a frame begins.
+2. The **data bits**, 5 to 8 of them, **least significant first**.
+3. A **parity bit**, if the two ends agreed on one: it makes the number of 1s even or odd, so that one
+   flipped bit is noticed.
+4. One or two **stop bits**, 1s, before the next start bit can come.
+
+The receiver's part is the clever one. It sees the falling edge of the start bit, waits half a bit, checks
+that the line is still low, and then takes each bit one bit period later, in its middle, as far as possible
+from the edges where the level changes. The Next's receiver does better still: every time the line changes
+level, it moves its sampling moment back to the middle of the bit, so a sender whose clock is a little fast
+or slow is followed through the whole frame. It also ignores pulses shorter than 4 master clocks, 143 ns,
+which are noise, not bits. I find this a lovely piece of engineering for so small a block.
+
+With 8 data bits, no parity and one stop bit, written **8N1**, a frame is 10 bits, so 115,200 baud carries
+11,520 bytes a second, one every 86.8 µs. That is the answer to the opening puzzle: at 3.5 MHz the CPU has
+about 300 T-states per byte, which is plenty for a loop, and nothing like enough if the loop has to wait for
+the screen or a disk.
+
+## The baud rate
+
+Each twin times its bits with a **prescaler**: a bit lasts exactly the prescaler's number of master clocks,
+so the baud rate is 28,000,000 ÷ prescaler. The prescaler has 17 bits, written in three pieces:
+
+```text
+port $143B, bit 7 = 0:  bits 6-0 -> prescaler bits 6-0
+port $143B, bit 7 = 1:  bits 6-0 -> prescaler bits 13-7
+port $153B, bit 4 = 1:  bits 2-0 -> prescaler bits 16-14
+```
+
+The `$143B` writes go to the twin that is selected. The `$153B` write is a little different: its bits 2–0
+go to the twin that **bit 6 of the same byte** selects, so one write can choose a twin and set its top bits
+together. A read of `$153B` gives bit 6, which twin is selected, and that twin's bits 16–14; the lower 14
+bits cannot be read back.
+
+The prescaler is a whole number, so the rate is rarely exact. Here are some common ones at 28 MHz:
+
+- **9,600 baud**: prescaler 2,917, 9,599 baud.
+- **31,250 baud**, MIDI's rate: prescaler 896, exact.
+- **115,200 baud**: prescaler **243**, 115,226 baud, 0.02% fast. This is the value after power-on.
+- **230,400 baud**: prescaler 122, 229,508 baud, 0.4% slow.
+- **921,600 baud**: prescaler 30, 933,333 baud, 1.3% fast, about as far as I would trust a serial line.
+- **2,000,000 baud**: prescaler 14, exact.
+
+The largest prescaler, 131,071, gives about 214 baud. A UART at the other end is happy with an error of a
+couple of per cent, and the re-centring receiver tolerates more. Two more facts matter in practice. The
+prescaler counts the **master clock**, not the CPU's, so the baud rate does not change with the CPU speed;
+but it does change with the VGA mode, which runs the master clock faster, so a program that cares reads
+NextReg `$11` and computes its prescaler from that mode's clock. And both ends of a frame take the prescaler
+when the frame starts, so a new one applies from the next frame, never to the middle of one.
+
+Here is UART 0 set to 230,400 baud:
+
+```z80klive
+        ld bc,$153b
+        ld a,%00010000         ; UART 0, bits 16-14 follow:
+        out (c),a              ; 000
+        ld b,$14               ; $143B
+        ld a,122               ; bit 7 = 0: bits 6-0
+        out (c),a
+        ld a,%10000000         ; bit 7 = 1: bits 13-7 = 0
+        out (c),a
+```
+
+## The frame register
+
+Port `$163B` holds the frame's shape for the selected twin, and three switches. It reads back all eight
+bits:
+
+```text
+$163B:  R B F N N P O S
+  R   = 1: reset the twin and hold it while the bit is set
+  B   = 1: send a break once the transmitter is idle
+  F   = 1: hardware flow control
+  N N = data bits: 11 8, 10 7, 01 6, 00 5
+  P   = 1: a parity bit
+  O   = parity: 0 even, 1 odd
+  S   = stop bits: 0 one, 1 two
+```
+
+The value after power-on is `$18`: 8 data bits, no parity, one stop bit, everything else off.
+
+Bit 7 deserves a warning, because it does more than its name suggests. While it is 1, both buffers are
+empty and **both state machines are held in reset**: a byte being sent stops in the middle, nothing is
+received and nothing can be sent. It is not a pulse. Write the register with bit 7 set to clear the twin,
+then write it again with bit 7 clear, or the twin stays dead. My habit: `$98`, then `$18`.
+
+## Two buffers and the status
+
+Between the CPU and each wire sits a buffer, a **FIFO**, first in, first out:
+
+- **The transmit buffer holds 64 bytes.** A write to `$133B` puts a byte in it, and the transmitter takes
+  them out one by one, as fast as the baud rate allows. A byte written while the buffer is full is lost.
+- **The receive buffer holds 512 bytes**, and one more waits behind it while it is full. A read of `$143B`
+  takes the oldest; a read of an empty buffer gives 0, which could also be a byte, so check the status
+  first.
+
+The **status**, read from `$133B`, says how both buffers and the line are doing:
+
+- **Bit 0**: the receive buffer has at least one byte.
+- **Bit 1**: the transmit buffer is full. Wait before writing.
+- **Bit 2**: the receive buffer **overflowed**: a byte arrived while the 512 bytes and the one waiting behind
+  them were all there, and it was lost.
+- **Bit 3**: the receive buffer is **near full**, at least 384 bytes, three quarters.
+- **Bit 4**: the transmit buffer is empty **and** the transmitter has finished its last frame: the line is
+  quiet. This is the bit to wait for before changing the baud rate or the frame.
+- **Bit 5**: the byte at the head of the receive buffer arrived after an error, an overflow or a broken
+  frame. Bytes are stored with this mark, so you can tell exactly where data went missing.
+- **Bit 6**: a **framing error** (a stop bit that was 0) or a **parity error** happened.
+- **Bit 7**: the line is in **break**, as the next section explains.
+
+Bits 6 and 2 are cleared by reading the status: each read reports what happened since the last one. And
+here is the rule that surprises people: **a frame with an error is thrown away**. A byte whose stop bit or
+parity is wrong never reaches the buffer. Bit 6 tells you it existed, and bit 5 marks the next byte that
+made it through.
+
+<figure>
+{/* fig:fifo */}
+<svg viewBox="-2 -2 704 200" role="img" aria-label="Left, a bar to scale from 0 to 512 bytes, the receive buffer, with a mark at 384 bytes, three quarters. Right, its last bytes enlarged, 508 to 512 and one more: marks at 510 and 512, and the extra byte that waits behind a full buffer. A key below: 384, near full, status bit 3 and the near-full interrupt; 510, the flow control raises RTR and the sender stops; 512 full and one held, the next byte is lost, the overflow, status bit 2." style={{ width: "100%", height: "auto" }}>
+  <rect x="0" y="30" width="470" height="40" rx="3" fill="#30a46c" fillOpacity="0.1" stroke="#30a46c" strokeWidth="2" />
+  <rect x="352.5" y="31" width="116.5" height="38" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" strokeWidth="0" />
+  <text x="0" y="18" fill="currentColor" fontSize="13.5">0</text>
+  <text x="352.5" y="18" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">384</text>
+  <line x1="352.5" y1="24" x2="352.5" y2="76" stroke="#e8912d" strokeWidth="2" />
+  <text x="470" y="18" textAnchor="end" fill="currentColor" fontSize="13.5">512</text>
+  <text x="176.3" y="56" textAnchor="middle" fill="#30a46c" fontSize="15">bytes waiting to be read</text>
+  <rect x="520" y="30" width="30" height="40" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="1.4" />
+  <rect x="550" y="30" width="30" height="40" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="1.4" />
+  <rect x="580" y="30" width="30" height="40" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="1.4" />
+  <rect x="610" y="30" width="30" height="40" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="1.4" />
+  <rect x="640" y="30" width="30" height="40" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="1.4" />
+  <rect x="670" y="30" width="30" height="40" fill="#30a46c" fillOpacity="0.3" stroke="currentColor" strokeWidth="1.6" strokeDasharray="4 3" />
+  <text x="610" y="18" textAnchor="middle" fill="#e5484d" fontSize="13.5" fontWeight="bold">510</text>
+  <line x1="610" y1="24" x2="610" y2="76" stroke="#e5484d" strokeWidth="2.2" />
+  <text x="670" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5" fontWeight="bold">512</text>
+  <line x1="670" y1="24" x2="670" y2="76" stroke="currentColor" strokeWidth="2.2" />
+  <text x="685" y="56" textAnchor="middle" fill="currentColor" fontSize="13.5" fontWeight="bold">+1</text>
+  <text x="610" y="94" textAnchor="middle" fill="currentColor" fontSize="13.5">the last bytes, enlarged</text>
+  <text x="0" y="128" fill="#e8912d" fontSize="13.5">384: near full, status bit 3, and the near-full interrupt</text>
+  <text x="0" y="150" fill="#e5484d" fontSize="13.5">510: with flow control, RTR goes high and the sender stops</text>
+  <text x="0" y="172" fill="currentColor" fontSize="13.5">512: full; one more byte waits behind it, and the next is lost: overflow, status bit 2</text>
+</svg>
+{/* /fig:fifo */}
+<figcaption>The receive buffer's levels, to scale, with its last bytes enlarged on the right. At 384 bytes, three quarters, it is near full; at 510 the flow control asks the sender to stop; at 512 it is full, one more byte waits behind it, and the byte after that is lost and sets the overflow bit.</figcaption>
+</figure>
+
+Two loops do most of the work. This one sends a text, waiting whenever the transmit buffer is full:
+
+```z80klive
+; send the zero-terminated text at HL on UART 0
+Send:   ld bc,$153b
+        xor a                  ; UART 0, prescaler untouched
+        out (c),a
+        ld b,$13               ; $133B: TX and status
+Next:   ld a,(hl)
+        or a
+        ret z                  ; end of the text
+Full:   in a,(c)               ; status
+        bit 1,a                ; TX buffer full?
+        jr nz,Full
+        ld a,(hl)
+        out (c),a              ; into the TX buffer
+        inc hl
+        jr Next
+```
+
+And this one empties the receive buffer into memory at DE, as long as it has bytes:
+
+```z80klive
+; copy what the selected UART has received to (DE)
+Drain:  ld bc,$133b
+Loop:   in a,(c)               ; status
+        rra                    ; bit 0 into carry
+        ret nc                 ; the buffer is empty
+        inc b                  ; $143B: RX
+        in a,(c)               ; the oldest byte
+        dec b
+        ld (de),a
+        inc de
+        jr Loop
+```
+
+My advice for receiving is to drain the whole buffer every time you look, not to take one byte. At 115,200
+baud the 512 bytes fill in 44 ms, a little over two frames, so a program that reads the UART once a frame has
+time to spare, and one that stops reading while it loads a level or waits for a key does not.
+
+## Break
+
+A **break** is the line held low for longer than a frame: no start bit, data and stop bit can look like
+that, so both ends know it is a signal, not data. It is how some devices are reset or woken.
+
+- **Sending a break**: set bit 6 of the frame register. The transmitter finishes the frame it is sending,
+  then holds the line low and sends nothing more until the bit is cleared.
+- **Receiving a break**: the frame fails its stop bit, a framing error that sets status bit 6, and when the
+  line stays low for eight more bit periods, status bit 7 says **break** for as long as it stays low.
+
+## Hardware flow control
+
+The receive buffer can fill, so a fast sender needs a way to be told to wait. **Hardware flow control**,
+bit 5 of the frame register, adds two signals beside the data lines, both active low:
+
+- **CTS**, clear to send, is an input. The twin starts a frame only while the other end holds it low; while
+  it is high, the transmitter takes the next byte from its buffer and waits with it in hand.
+- **RTR**, ready to receive, is an output. The twin drops it when its receive buffer holds **510 bytes**, two
+  short of full, so that a sender who stops at once loses nothing.
+
+With flow control, a program can stop reading for as long as it likes, and no byte is lost: the sender is
+paused instead. For the Pi, the two signals are GPIO 16 and 17. The Wi-Fi module takes part in flow control
+only on issue 4 boards, so on an earlier board a program must read fast enough.
+
+## Interrupts
+
+Each twin can ring the CPU, and the [interrupts
+chapter](/en/under-the-hood/emulator-internals/next-interrupts/#the-sources-up-close) tells the whole story.
+In short, from the UART's side:
+
+- **Receive**: when the buffer gets its first byte, or, with the "near full only" bit, when it reaches 384.
+  The enables are bits 0 and 1 of NextReg `$C6` for UART 0, bits 4 and 5 for UART 1.
+- **Transmit**: when the transmit buffer becomes empty, which is a frame before the line falls silent,
+  because the last byte is still being sent. The enables are bit 2 for UART 0 and bit 6 for UART 1.
+- The receivers stand high in the daisy chain, right after the line interrupt, and the transmitters last,
+  after the ULA: a byte arriving is urgent, a buffer to refill is not.
+- **The requests are edges**: a byte arriving into a buffer that is not empty raises nothing new. That is the
+  second reason to drain the whole buffer in the handler.
+
+## The joystick port
+
+Either twin can leave its own pins and use a joystick port instead, through the **Joystick I/O Mode
+register, NextReg `$0B`**: bit 7 turns the I/O mode on, bits 5–4 = 10 choose the left port and 11 the right
+one, and bit 0 chooses the twin, 0 for UART 0 and 1 for UART 1. The twin then sends on pin 7 and receives on
+pin 9, and with flow control it takes CTS from pin 6; there is no pin for RTR. Its own lines rest high
+meanwhile. A cable from a joystick port to another machine is then a serial link with no expansion at all.
+
+## Resets
+
+A **soft reset** selects UART 0, empties both buffers in both twins, clears their errors and stops whatever
+was being sent. It keeps each twin's prescaler and frame register. Only loading the core, which a hard
+reset through NextReg `$02` does, sets them back to 115,200 baud and `$18`. So a program that changed the
+baud rate leaves it changed for the next program after a soft reset, and here is my last piece of advice:
+set the prescaler and the frame yourself, even when you want the defaults.
+
+## What to take home
+
+The Next has two identical UARTs, the twins: UART 0 to the Wi-Fi module and UART 1 to the Pi's connector,
+behind one set of ports. Port `$153B` bit 6 chooses the twin; `$163B` is its frame register; `$133B` sends
+a byte and reads the status; `$143B` takes a received byte. A byte travels as a frame: a start bit, 5 to 8
+data bits with the least significant first, an optional parity bit and one or two stop bits, sampled in the
+middle of each bit by a receiver that re-centres on every edge and ignores short glitches.
+
+The baud rate is the master clock divided by a 17-bit prescaler, written in pieces to `$143B` and `$153B`:
+243 gives 115,200 baud at 28 MHz, the power-on value. It does not follow the CPU's speed, but it does follow
+the VGA mode. The frame register's bit 7 holds the twin in reset for as long as it is set, bit 6 sends a
+break and bit 5 switches on hardware flow control.
+
+The transmit buffer holds 64 bytes; the receive buffer 512 and one more, near full at 384, with RTR raised
+at 510. A frame with an error is thrown away, and the status says so: bit 6 for the error, bit 5 for the next
+good byte, bit 2 for an overflow, bit 7 for a break. Interrupts come on the first byte or at near full, and
+when the transmit buffer empties; they are edges, so a handler drains everything. Either twin can move to a
+joystick port. A soft reset empties the buffers but keeps the baud rate. Read fast, or let flow control make
+the other end wait, and the twins will not lose a byte.

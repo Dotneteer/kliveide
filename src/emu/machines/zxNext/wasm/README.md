@@ -174,3 +174,11 @@ Storage (`docs/content/en/under-the-hood/emulator-internals/next-storage.mdx`):
   `$FF` bytes before every response make look the same to a program.
 - **Only the SD cards answer.** The Raspberry Pi's two SPI selects (`$E7` = `$FB`, `$F7`) and the flash
   (`$7F`) select nothing that answers: reads give `$FF`.
+
+The UARTs (`docs/content/en/under-the-hood/emulator-internals/next-uart.mdx`):
+
+- **The lines carry frames, not levels.** Klive's peer sends and takes whole frames on the 28 MHz clock; the
+  receiver's noise filter (pulses under 4 clocks, uart.vhd `NOISE_REJECTION_BITS`), its re-centring on every
+  edge (uart_rx.vhd ~150-160) and a baud-rate mismatch between the two ends are not modelled.
+- **No ESP and no Pi.** Nothing answers on UART 0 or UART 1 but the harness's peer; the redirect of either
+  UART to the joystick ports (NextReg `$0B` modes 10 and 11) is not modelled.
