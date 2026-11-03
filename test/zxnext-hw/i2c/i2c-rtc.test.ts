@@ -405,6 +405,76 @@ Buf:    .defs 64`,
     expect(hexes(Array.from(s.peekBytes(s.symbol("Buf"), 3))), "the next START").toEqual(["$00", "$00", "$13"]);
   });
 
+  it("I2C-003: the RTC chapter's SetTime and ReadTime listings, and how long they take at 3.5 MHz", async () => {
+    // --- The listings of docs/content/en/under-the-hood/emulator-internals/next-rtc.mdx, on I2C_LIB
+    const s = await createSession();
+    await s.loadCode(
+      `
+        .org $8000
+Start:  di
+        nextreg $7f,$a5
+        jr $
+SetTime:
+        call I2cStart
+        ld a,$d0
+        call I2cWrite
+        xor a
+        call I2cWrite
+        ld hl,Time
+        ld b,7
+WrNext: push bc
+        ld a,(hl)
+        call I2cWrite
+        inc hl
+        pop bc
+        djnz WrNext
+        jp I2cStop
+ReadTime:
+        call I2cStart
+        ld a,$d0
+        call I2cWrite
+        xor a
+        call I2cWrite
+        call I2cStart
+        ld a,$d1
+        call I2cWrite
+        ld hl,Time
+        ld b,6
+RdNext: push bc
+        or a
+        call I2cRead
+        ld (hl),a
+        inc hl
+        pop bc
+        djnz RdNext
+        scf
+        call I2cRead
+        ld (hl),a
+        jp I2cStop
+${I2C_LIB}
+Ptr:    .defb 0
+Cnt:    .defb 0
+Left:   .defb 0
+Buf:    .defs 1
+Time:   .defb $56,$34,$12,$06,$18,$09,$26`,
+      { entry: "Start" }
+    );
+    s.runUntilReady();
+    const time = s.symbol("Time");
+    let t0 = s.tacts;
+    s.call("SetTime");
+    const setTacts = s.tacts - t0;
+    s.poke(time, [0, 0, 0, 0, 0, 0, 0]);
+    t0 = s.tacts;
+    s.call("ReadTime");
+    const readTacts = s.tacts - t0;
+    expect(hexes(Array.from(s.peekBytes(time, 7))), "Friday, 18 September 2026, 12:34:56").toEqual(
+      hexes([0x56, 0x34, 0x12, 0x06, 0x18, 0x09, 0x26])
+    );
+    // --- The chapter quotes these: 8,711 T-states (2.5 ms) to set, 10,058 (2.9 ms) to read
+    expect([setTacts, readTacts]).toEqual([8711, 10058]);
+  });
+
   // -------------------------------------------------------------------------------------------------
   // I2C-004 Writing
   // -------------------------------------------------------------------------------------------------

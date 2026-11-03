@@ -1,0 +1,645 @@
+---
+description: "How the ZX Spectrum Next keeps the time: the DS1307 real-time clock outside the FPGA, its crystal and battery, the two-wire I2C bus and its open-drain lines, ports $103B and $113B, START, STOP, bits and acknowledgements driven by the CPU, the bus's speed limit, the clock's BCD registers, reading through a snapshot, setting the time, 56 bytes of battery-backed RAM, and resets."
+---
+
+import { Callout } from 'nextra/components'
+
+# Real-Time Clock: A Watchman on Two Wires
+
+Switch your Next off, put it in a drawer for a month, and switch it on again: it knows the date. The FPGA
+forgot everything the moment the power went, the SRAM is blank, the core has been loaded from flash all
+over again. So who was counting the seconds in the dark? The answer is the Next's **Real-Time Clock**, the
+**RTC**: a clock that keeps the time and the date whether the machine is running or not.
+
+A clock that survives the power switch matters more than it seems. An operating system that writes a file
+wants to stamp it with the date. A game can offer a puzzle of the day, a logger wants to say when
+something happened, and a program that needs a random seed has one ticking right there. None of this works
+with a clock that starts at midnight on 1 January every time you switch on, and the Spectrum never had any
+other kind.
+
+You should know one chapter first. [Memory, Ports and NextRegs: How the Z80N Reaches the
+Machine](/en/under-the-hood/emulator-internals/next-memory-io/) explains how the Next decodes its ports and
+how a NextReg switches a group of them off. [Storage: an SD Card on a Serial
+Bus](/en/under-the-hood/emulator-internals/next-storage/) is worth a look too: it shows a serial bus that the
+hardware clocks for you, and this chapter shows one where you do the clocking yourself.
+
+## The road ahead
+
+We start with the clock chip itself, which lives outside the FPGA on its own battery, and the two wires that
+connect it to the machine. Then come the two ports that hold those wires, and the rules of the conversation
+on them: how a message starts and stops, how bits travel and how the listener says "got it". The heart of
+the chapter is the part where your program speaks those rules itself, one wire at a time, and the speed
+limit it must respect; if you read only one section, read that one. After that we open the clock's
+registers, read the time through a snapshot, set it, use its spare memory, and see what a reset does to it.
+
+<Callout type="info">
+The facts are for **core 3.02.01** and the **DS1307** real-time clock on the Next's bus. The listings run at
+**3.5 MHz**, the CPU's speed after a reset, and every time given for them is for that speed.
+</Callout>
+
+## A clock outside the machine
+
+The Next's clock is a small chip of its own, a **DS1307**, sitting on the board beside the FPGA. I like to
+call it **the watchman**: it stays awake on its own lamp while the house sleeps, and when you come down in
+the morning it tells you what time it is. It is not part of the core and no reset of the FPGA reaches it.
+
+Three things keep it going:
+
+- **A 32,768 Hz crystal.** The number is 2<sup>15</sup>, so fifteen halvings make exactly one pulse a
+  second. Many quartz watches count from the same frequency for the same reason, which keeps the crystal
+  cheap and easy to find, though some watches use other frequencies.
+- **A battery input** for a 3 V lithium cell, between 2.0 and 3.5 V. When the board's own supply falls
+  below the battery's voltage, the chip switches over and keeps counting on less than half a microamp. A
+  48 mAh cell keeps it alive for more than ten years.
+- **A guard at the door.** While the supply is below 1.25 times the battery's voltage, the chip ignores the
+  bus altogether, so a machine that is powering up or down cannot scribble garbage over the time.
+
+The watchman is only as good as his crystal. A crystal that is 20 parts in a million off gains or loses
+about 1.7 seconds a day, nearly a minute a month, so do not be surprised if the clock wants setting now and
+then.
+
+## Two wires, and nobody pushes
+
+The watchman talks over **I2C**, the inter-integrated circuit bus: two wires that many chips can share. One
+wire, **SCL**, is the clock, which says *when* a bit is valid. The other, **SDA**, is the data, which says
+*what* the bit is.
+
+The trick that makes sharing possible is that no chip ever drives a wire high. Each wire has a **pull-up**, a
+resistor to the supply, that holds it high when it is left alone. A chip can only do two things to a wire:
+pull it low, or let go. This is called **open drain**, and it means two chips can never fight, one pushing
+up while the other pulls down. If anybody pulls, the wire is low; it is high only when nobody pulls. An
+engineer would say the wire is the AND of everyone's wishes.
+
+<figure>
+{/* fig:bus */}
+<svg viewBox="-2 -2 704 304" role="img" aria-label="Two horizontal lines, SCL above and SDA below, run across the figure. At the right, a pull-up resistor ties each line to the supply. Below the lines hang three devices, each wired to both lines: the FPGA with ports $103B and $113B, the DS1307 real-time clock, and an internal connector. At the far left, the Raspberry Pi's GPIO 2 and 3 connect only to the FPGA, through its own pair of wires, once NextReg $A0 bit 3 joins them. A key says that any device can pull a line low, none drives it high, and the line is high only when nobody pulls." style={{ width: "100%", height: "auto" }}>
+  <text x="160" y="115" textAnchor="end" fill="#3b82f6" fontSize="15" fontWeight="bold">SCL</text>
+  <text x="160" y="155" textAnchor="end" fill="#3b82f6" fontSize="15" fontWeight="bold">SDA</text>
+  <line x1="170" y1="110" x2="700" y2="110" stroke="#3b82f6" strokeWidth="2.4" />
+  <line x1="170" y1="150" x2="700" y2="150" stroke="#3b82f6" strokeWidth="2.4" />
+  <line x1="600" y1="24" x2="700" y2="24" stroke="currentColor" strokeWidth="2" />
+  <text x="590" y="29" textAnchor="end" fill="currentColor" fontSize="13.5">supply</text>
+  <line x1="630" y1="24" x2="630" y2="38" stroke="currentColor" strokeWidth="1.8" />
+  <rect x="623" y="38" width="14" height="36" fill="none" stroke="currentColor" strokeWidth="1.8" />
+  <line x1="630" y1="74" x2="630" y2="110" stroke="currentColor" strokeWidth="1.8" />
+  <circle cx="630" cy="110" r="3.5" fill="currentColor" />
+  <line x1="680" y1="24" x2="680" y2="38" stroke="currentColor" strokeWidth="1.8" />
+  <rect x="673" y="38" width="14" height="36" fill="none" stroke="currentColor" strokeWidth="1.8" />
+  <line x1="680" y1="74" x2="680" y2="150" stroke="currentColor" strokeWidth="1.8" />
+  <circle cx="680" cy="150" r="3.5" fill="currentColor" />
+  <text x="530" y="70" textAnchor="middle" fill="currentColor" fontSize="13.5">pull-ups</text>
+  <rect x="170" y="200" width="150" height="70" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="245" y="231.4" textAnchor="middle" fill="currentColor" fontSize="14">FPGA</text>
+  <text x="245" y="248.4" textAnchor="middle" fill="currentColor" fontSize="14">ports $103B, $113B</text>
+  <line x1="215" y1="110" x2="215" y2="200" stroke="#3b82f6" strokeWidth="1.8" />
+  <circle cx="215" cy="110" r="3.5" fill="#3b82f6" />
+  <line x1="275" y1="150" x2="275" y2="200" stroke="#3b82f6" strokeWidth="1.8" />
+  <circle cx="275" cy="150" r="3.5" fill="#3b82f6" />
+  <rect x="370" y="200" width="150" height="70" rx="6" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="2" />
+  <text x="445" y="231.4" textAnchor="middle" fill="#e8912d" fontSize="14">DS1307</text>
+  <text x="445" y="248.4" textAnchor="middle" fill="#e8912d" fontSize="14">the watchman</text>
+  <line x1="415" y1="110" x2="415" y2="200" stroke="#3b82f6" strokeWidth="1.8" />
+  <circle cx="415" cy="110" r="3.5" fill="#3b82f6" />
+  <line x1="475" y1="150" x2="475" y2="200" stroke="#3b82f6" strokeWidth="1.8" />
+  <circle cx="475" cy="150" r="3.5" fill="#3b82f6" />
+  <rect x="570" y="200" width="130" height="70" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="635" y="231.4" textAnchor="middle" fill="currentColor" fontSize="14">internal</text>
+  <text x="635" y="248.4" textAnchor="middle" fill="currentColor" fontSize="14">connector</text>
+  <line x1="609" y1="110" x2="609" y2="200" stroke="#3b82f6" strokeWidth="1.8" />
+  <circle cx="609" cy="110" r="3.5" fill="#3b82f6" />
+  <line x1="661" y1="150" x2="661" y2="200" stroke="#3b82f6" strokeWidth="1.8" />
+  <circle cx="661" cy="150" r="3.5" fill="#3b82f6" />
+  <rect x="0" y="200" width="110" height="70" rx="6" fill="#a855f7" fillOpacity="0.12" stroke="#a855f7" strokeWidth="2" />
+  <text x="55" y="231.4" textAnchor="middle" fill="#a855f7" fontSize="14">Pi's</text>
+  <text x="55" y="248.4" textAnchor="middle" fill="#a855f7" fontSize="14">GPIO 2, 3</text>
+  <line x1="110" y1="222" x2="170" y2="222" stroke="#a855f7" strokeWidth="1.8" />
+  <line x1="110" y1="248" x2="170" y2="248" stroke="#a855f7" strokeWidth="1.8" />
+  <text x="0" y="192" fill="#a855f7" fontSize="13.5">NextReg $A0 bit 3</text>
+  <text x="0" y="296" fill="currentColor" fontSize="13.5">any device pulls a line low; none drives it high; a line is high only when nobody pulls</text>
+</svg>
+{/* /fig:bus */}
+<figcaption>The Next's I2C bus. The FPGA, the DS1307 and an internal connector each hang on both lines; pull-ups hold the lines high when nobody pulls them low. The Raspberry Pi's GPIO 2 and 3 reach only the FPGA, through a pair of their own, once NextReg $A0 bit 3 joins them.</figcaption>
+</figure>
+
+Three things share the bus on the board: the FPGA, the watchman and an internal connector for whatever an
+owner wants to add. The Raspberry Pi's connector can join in too, though in a cleverer way than it looks.
+Bit 3 of the **PI Peripheral Enable register, NextReg `$A0`**, gives the Pi's GPIO 2 (data) and GPIO 3
+(clock) to the bus. The FPGA then pulls the Pi's pins low whenever it pulls its own, and the lines your
+program reads are the AND of both sides. The Pi's pins are not wired to the watchman, though: the FPGA
+stands between two buses and runs them both at once.
+
+There is one more rule: **the Next is always the master**. It makes the clock, it starts every
+conversation and it ends it. The watchman only answers.
+
+## Two ports, one bit each
+
+Each wire has its own port, and only bit 0 of each counts:
+
+- **Port `$103B`** is SCL, the clock.
+- **Port `$113B`** is SDA, the data.
+
+A write of bit 0 = 0 makes the FPGA pull the wire low; bit 0 = 1 lets it go. A read gives `$FE` or `$FF`:
+bits 7–1 are always 1, and bit 0 is **the wire itself**, not what you wrote. That difference is the whole
+point. Write 1 to `$113B` and read it back, and you read 0 when the watchman is pulling the wire low: that is
+how you hear him. The same goes for the clock wire, so a program can see if another chip holds SCL low to
+ask for more time.
+
+A reset, soft or hard, lets go of both wires. Bit 2 of the **Internal Port Decoding Enables register,
+NextReg `$83`**, switches both ports off: they then read `$FF` and ignore writes.
+
+I find these two ports a lovely piece of minimalism. Many I2C controllers in other machines are whole
+chips, with shift registers, state machines and a page of registers. The Next gives you two wires and
+says: the protocol is your business.
+
+## The rules of the conversation
+
+Since both wires rest high and anyone may pull, the chips need rules about who touches what, and when.
+There is one simple rule and two exceptions.
+
+**The rule: SDA changes only while SCL is low.** The master puts a bit on SDA, raises SCL, and the
+listener reads SDA while SCL is high. Then the master lowers SCL and may change SDA for the next bit.
+
+**The exceptions are the brackets around a message**, and they break the rule on purpose:
+
+- **START**: SDA falls while SCL is high. Every chip on the bus wakes up and listens.
+- **STOP**: SDA rises while SCL is high. The message is over and the bus is free.
+
+Because a normal bit never changes SDA while SCL is high, nobody can mistake data for a bracket. A START
+inside a message, before any STOP, is a **repeated START**: it begins a new message without letting
+anybody else grab the bus in between.
+
+Bytes go **most significant bit first**, and each byte gets a ninth clock pulse, the **acknowledge**. For
+that pulse the sender lets go of SDA and the receiver answers: pulled low is an **ACK**, "got it"; left
+high is a **NACK**, "no", or "no more". The first byte after a START is the **address**: seven bits saying
+which chip the master wants, and an eighth saying the direction, 0 for write and 1 for read. The watchman's
+address is `$68`, so `$D0` means "watchman, listen" and `$D1` means "watchman, talk".
+
+<figure>
+{/* fig:wave */}
+<svg viewBox="-2 -2 704 218" role="img" aria-label="Two waveforms over eleven and a half clock periods, SCL above, SDA below. Both lines rest high. START: SDA falls while SCL is high. Then nine clock pulses: during each, SDA holds a bit, changing only while SCL is low. The first eight carry the address byte $D0: 1, 1, 0, 1, 0, 0, 0 for address $68, then 0 for write. On the ninth pulse the watchman pulls SDA low: the ACK, drawn in orange. STOP: SDA rises while SCL is high. Red marks show the two moments SDA changes while SCL is high." style={{ width: "100%", height: "auto" }}>
+  <text x="0" y="43" fill="#3b82f6" fontSize="15" fontWeight="bold">SCL</text>
+  <text x="0" y="117" fill="#3b82f6" fontSize="15" fontWeight="bold">SDA</text>
+  <path d="M80,18 L133.9,18 L133.9,58 L160.9,58 L160.9,18 L187.8,18 L187.8,58 L214.8,58 L214.8,18 L241.7,18 L241.7,58 L268.7,58 L268.7,18 L295.7,18 L295.7,58 L322.6,58 L322.6,18 L349.6,18 L349.6,58 L376.5,58 L376.5,18 L403.5,18 L403.5,58 L430.4,58 L430.4,18 L457.4,18 L457.4,58 L484.3,58 L484.3,18 L511.3,18 L511.3,58 L538.3,58 L538.3,18 L565.2,18 L565.2,58 L592.2,58 L592.2,18 L619.1,18 L619.1,58 L646.1,58 L646.1,18 L700,18" fill="none" stroke="#3b82f6" strokeWidth="2.2" strokeLinejoin="round" />
+  <path d="M80,92 L107,92 L107,132 L133.9,132 L142,132 L142,92 L187.8,92 L195.9,92 L195.9,92 L241.7,92 L249.8,92 L249.8,132 L295.7,132 L303.7,132 L303.7,92 L349.6,92 L357.7,92 L357.7,132 L403.5,132 L411.6,132 L411.6,132 L457.4,132 L465.5,132 L465.5,132 L511.3,132 L519.4,132 L519.4,132 L565.2,132" fill="none" stroke="#3b82f6" strokeWidth="2.2" strokeLinejoin="round" />
+  <path d="M565.2,132 L573.3,132 L619.1,132" fill="none" stroke="#e8912d" strokeWidth="3.2" strokeLinejoin="round" />
+  <path d="M619.1,132 L659.6,132 L659.6,92 L700,92" fill="none" stroke="#3b82f6" strokeWidth="2.2" strokeLinejoin="round" />
+  <line x1="133.9" y1="8" x2="133.9" y2="140" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.35" />
+  <line x1="187.8" y1="8" x2="187.8" y2="140" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.35" />
+  <line x1="241.7" y1="8" x2="241.7" y2="140" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.35" />
+  <line x1="295.7" y1="8" x2="295.7" y2="140" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.35" />
+  <line x1="349.6" y1="8" x2="349.6" y2="140" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.35" />
+  <line x1="403.5" y1="8" x2="403.5" y2="140" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.35" />
+  <line x1="457.4" y1="8" x2="457.4" y2="140" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.35" />
+  <line x1="511.3" y1="8" x2="511.3" y2="140" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.35" />
+  <line x1="565.2" y1="8" x2="565.2" y2="140" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.35" />
+  <line x1="619.1" y1="8" x2="619.1" y2="140" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.35" />
+  <line x1="107" y1="8" x2="107" y2="140" stroke="#e5484d" strokeWidth="2" />
+  <line x1="659.6" y1="8" x2="659.6" y2="140" stroke="#e5484d" strokeWidth="2" />
+  <text x="107" y="160" textAnchor="middle" fill="#e5484d" fontSize="13.5" fontWeight="bold">START</text>
+  <text x="667.7" y="160" textAnchor="middle" fill="#e5484d" fontSize="13.5" fontWeight="bold">STOP</text>
+  <text x="160.9" y="160" textAnchor="middle" fill="#3b82f6" fontSize="13.5" fontWeight="bold">1</text>
+  <text x="214.8" y="160" textAnchor="middle" fill="#3b82f6" fontSize="13.5" fontWeight="bold">1</text>
+  <text x="268.7" y="160" textAnchor="middle" fill="#3b82f6" fontSize="13.5" fontWeight="bold">0</text>
+  <text x="322.6" y="160" textAnchor="middle" fill="#3b82f6" fontSize="13.5" fontWeight="bold">1</text>
+  <text x="376.5" y="160" textAnchor="middle" fill="#3b82f6" fontSize="13.5" fontWeight="bold">0</text>
+  <text x="430.4" y="160" textAnchor="middle" fill="#3b82f6" fontSize="13.5" fontWeight="bold">0</text>
+  <text x="484.3" y="160" textAnchor="middle" fill="#3b82f6" fontSize="13.5" fontWeight="bold">0</text>
+  <text x="538.3" y="160" textAnchor="middle" fill="#3b82f6" fontSize="13.5" fontWeight="bold">0</text>
+  <text x="592.2" y="160" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">ACK</text>
+  <path d="M136.9,170 L136.9,176 L508.3,176 L508.3,170" fill="none" stroke="#3b82f6" strokeWidth="1.6" strokeLinejoin="round" />
+  <text x="322.6" y="194" textAnchor="middle" fill="#3b82f6" fontSize="13.5">address $68</text>
+  <path d="M514.3,170 L514.3,176 L562.2,176 L562.2,170" fill="none" stroke="#3b82f6" strokeWidth="1.6" strokeLinejoin="round" />
+  <text x="538.3" y="194" textAnchor="middle" fill="#3b82f6" fontSize="13.5">write</text>
+  <path d="M568.2,170 L568.2,176 L616.1,176 L616.1,170" fill="none" stroke="#e8912d" strokeWidth="1.6" strokeLinejoin="round" />
+  <text x="592.2" y="194" textAnchor="middle" fill="#e8912d" fontSize="13.5">watchman</text>
+</svg>
+{/* /fig:wave */}
+<figcaption>START, the address byte $D0 and STOP, to scale in clock periods. SDA changes only while SCL is low, except at START and STOP, marked red, where it changes while SCL is high. The first seven bits are the address $68, most significant first; the eighth, 0, asks to write. On the ninth pulse the watchman pulls SDA low: the ACK, in orange.</figcaption>
+</figure>
+
+A chip that is not addressed answers nothing, and nothing means a high SDA on the ninth pulse, a NACK. So
+the address byte doubles as a roll call: if nobody acknowledges `$D0`, there is no watchman on your bus.
+I always check that ACK before believing anything else the bus tells me.
+
+## Speaking the protocol yourself
+
+The Next has no hardware that sends an I2C byte for you. Your program raises and lowers the two wires one
+`OUT` at a time, a technique called **bit-banging**. It sounds primitive, and it is, but it takes a page of
+code, and here it is. The routines use BC, DE, A and the flags, and keep HL.
+
+START and STOP are three or four writes each. Both begin with the wires in a known state:
+
+```z80klive
+; START (also a repeated START): SDA, SCL high,
+; SDA low while SCL is high, then SCL low
+I2cStart:
+        ld bc,$113b            ; SDA
+        ld a,1
+        out (c),a              ; let SDA go
+        ld b,$10               ; SCL
+        out (c),a              ; let SCL go
+        ld b,$11
+        xor a
+        out (c),a              ; SDA low: START
+        ld b,$10
+        out (c),a              ; SCL low
+        ret
+
+; STOP: SDA low, SCL high, then SDA high
+I2cStop:
+        ld bc,$113b
+        xor a
+        out (c),a              ; SDA low
+        ld b,$10
+        inc a
+        out (c),a              ; let SCL go
+        ld b,$11
+        out (c),a              ; SDA high: STOP
+        ret
+```
+
+Sending a byte is eight bits and a listen:
+
+```z80klive
+; send A, MSB first; A = the ACK bit (0 = ACK)
+I2cWrite:
+        ld e,a
+        ld d,8                 ; eight bits
+WrBit:  ld bc,$113b
+        xor a
+        rl e                   ; next bit into carry
+        rla                    ; and into bit 0
+        out (c),a              ; SDA = the bit
+        ld b,$10
+        ld a,1
+        out (c),a              ; SCL high: read me
+        xor a
+        out (c),a              ; SCL low
+        dec d
+        jr nz,WrBit
+        ld bc,$113b
+        ld a,1
+        out (c),a              ; let SDA go
+        ld b,$10
+        out (c),a              ; the ninth pulse
+        ld b,$11
+        in a,(c)               ; the answer
+        and 1
+        ld e,a
+        ld b,$10
+        xor a
+        out (c),a              ; SCL low
+        ld a,e
+        ret
+```
+
+And receiving one is the mirror image: you let go of SDA, clock eight times and read the wire at every
+pulse, then answer yourself.
+
+```z80klive
+; receive a byte into A; answer NACK if carry is
+; set, ACK otherwise
+I2cRead:
+        push af                ; keep the carry
+        ld bc,$113b
+        ld a,1
+        out (c),a              ; let SDA go
+        ld d,8
+        ld e,0
+RdBit:  ld b,$10
+        ld a,1
+        out (c),a              ; SCL high
+        ld b,$11
+        in a,(c)               ; read SDA
+        rra                    ; bit 0 into carry
+        rl e                   ; and into E
+        ld b,$10
+        xor a
+        out (c),a              ; SCL low
+        dec d
+        jr nz,RdBit
+        pop af
+        ld a,0
+        rla                    ; A = carry: 0 ACK, 1 NACK
+        ld b,$11
+        out (c),a              ; our answer on SDA
+        ld b,$10
+        ld a,1
+        out (c),a              ; the ninth pulse
+        xor a
+        out (c),a
+        ld b,$11
+        inc a
+        out (c),a              ; let SDA go
+        ld a,e
+        ret
+```
+
+How it works, the parts worth a second look:
+
+- **Every bit of `I2cWrite` sets SDA first, then pulses SCL.** The data is steady before the clock rises and
+  stays steady until it falls: the rule, kept by the order of the `OUT`s.
+- **For the acknowledge, the sender lets go.** `I2cWrite` writes 1 to SDA before the ninth pulse, which does
+  not make the wire high: it only stops pulling. The `IN` then reads whatever the watchman does.
+- **`I2cRead` writes 1 to SDA once, at the start**, and never touches it during the eight bits. The watchman
+  pulls the wire for every 0 he sends; the 1s are the pull-up's work.
+- **The carry chooses the answer.** Clear for ACK, "go on"; set for NACK, "that was the last one". The
+  watchman stops talking after a NACK and leaves SDA to you for the STOP.
+
+## How fast is too fast
+
+The watchman is a 100 kHz chip: it runs I2C's standard mode only, never the faster ones. For every pulse
+it asks for at least **4.0 µs with SCL high** and **4.7 µs with SCL low**. A START needs SCL high for 4.7 µs
+before SDA falls and 4.0 µs after; a STOP needs 4.7 µs of SCL high before SDA rises; and between a STOP
+and the next START the bus must rest for 4.7 µs.
+
+Now look at `I2cWrite` at 3.5 MHz. A bit takes 96 T-states, 27.4 µs, which is about 36,500 bits a second,
+well under the limit. The tight spot is the clock's high time: from the `OUT` that raises SCL to the one that
+lowers it there is an `XOR A` and an `OUT`, 16 T-states, **4.6 µs**. That clears the 4.0 µs, but not by
+much. The ACK pulse of `I2cRead` is as short; no gap in these routines is shorter.
+
+Here is the catch: the same 16 T-states last 2.3 µs at 7 MHz and **0.57 µs at 28 MHz**, seven times too
+short. A Next running at full speed outruns the watchman with the very same code. My advice is the boring
+one: switch the CPU to 3.5 MHz with the **CPU Speed register, NextReg `$07`**, before you talk to the bus,
+and switch it back afterwards. A read of the whole time takes under 3 ms, so you lose almost nothing. If
+you would rather keep the speed, keep SCL high for at least 112 T-states and low for at least 132 at
+28 MHz, and measure what you wrote.
+
+## The watchman's registers
+
+The watchman has 64 bytes, numbered `$00` to `$3F`. The first eight hold the time and a control byte; the
+other **56 bytes are RAM**, kept by the battery with the time.
+
+The time is in **BCD**, binary-coded decimal: each 4-bit half of a byte holds one decimal digit, so 45
+seconds is `$45`, not `$2D`. It is wasteful, but a program that prints the time only has to print two hex
+digits, and I suspect that was the whole idea. The spare bits carry switches:
+
+```text
+reg   7    6    5    4    3    2    1    0
+$00   CH  [ tens of sec ][ seconds          ]
+$01   0   [ tens of min ][ minutes          ]
+$02   0   12   PM/20 10h [ hours            ]
+$03   0    0    0    0    0  [ day 1-7      ]
+$04   0    0  [ tens   ][ date             ]
+$05   0    0    0   10m  [ month            ]
+$06  [ tens of year     ][ year             ]
+$07   OUT  0    0   SQWE  0    0   RS1  RS0
+```
+
+- **CH, clock halt, bit 7 of the seconds.** When it is 1 the crystal stops and so does the time. A fresh
+  chip comes up with CH set, so the first thing any program that sets the clock does is clear it.
+- **The hours, bit 6, choose 12- or 24-hour mode.** With bit 6 = 0, bit 5 is the second tens digit, for
+  20 to 23. With bit 6 = 1, bit 5 is **PM**, and the hours count 12, 1, 2 to 11; PM flips when 11 becomes
+  12, and the date moves on when 11 PM becomes 12 AM. After changing bit 6, write the hours again: the chip
+  does not convert them.
+- **The day of the week, 1 to 7**, steps at midnight. Which day is 1 is up to the software: the watchman
+  only counts, so pick a convention (Sunday = 1 is common) and stick to it.
+- **The date, month and year** roll over as a calendar should: 30 or 31 days, February 28 or 29, and the
+  year from 99 to 00. The year is two digits, and every year divisible by four is a leap year, which is
+  right for every year from 2000 to 2099. Somebody in 2100 will have to fix it.
+- **The control register** drives the chip's square-wave pin: SQWE = 1 makes a square wave of 1 Hz,
+  4,096 Hz, 8,192 Hz or 32,768 Hz by RS1–RS0 (00 to 11); with SQWE = 0, the pin follows OUT. On the Next the
+  watchman reaches the FPGA only through the two bus wires, so that pin cannot interrupt the Z80.
+
+## Reading the time
+
+Reading a clock has a classic trap. Suppose it is 12:59:59 and you read the seconds, then the minutes, then
+the hours, and between the minutes and the hours the clock ticks: you get 13:59:59, an hour out. Every
+programmer of an old PC clock has met this bug.
+
+The watchman avoids it with a **snapshot**. His counters run on their own, and on every START he copies them
+into a second set of registers. Everything you read over the bus comes from the snapshot, so all seven bytes
+belong to the same moment, however slowly you read them, while the real counters keep running underneath.
+
+<figure>
+{/* fig:chain */}
+<svg viewBox="-2 -2 704 172" role="img" aria-label="Across the top, a chain of boxes linked by arrows: a 32,768 Hz crystal divided by 32,768, giving one pulse a second, then the counters for seconds, minutes, hours, day and date, month and year, each carrying into the next. Below the six counters, a band: the snapshot, copied from the counters on every START. Every read over the bus comes from the snapshot, while the counters keep running." style={{ width: "100%", height: "auto" }}>
+  <defs>
+    <marker id="rt-ch-0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
+    </marker>
+    <marker id="rt-ch-1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#e8912d" />
+    </marker>
+  </defs>
+  <rect x="0" y="10" width="92" height="56" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="46" y="34.5" textAnchor="middle" fill="currentColor" fontSize="13.5">32,768 Hz</text>
+  <text x="46" y="51" textAnchor="middle" fill="currentColor" fontSize="13.5">÷ 32,768</text>
+  <rect x="110" y="10" width="83.3" height="56" rx="6" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="2" />
+  <text x="151.7" y="42.9" textAnchor="middle" fill="#e8912d" fontSize="14">seconds</text>
+  <rect x="211.3" y="10" width="83.3" height="56" rx="6" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="2" />
+  <text x="253" y="42.9" textAnchor="middle" fill="#e8912d" fontSize="14">minutes</text>
+  <rect x="312.7" y="10" width="83.3" height="56" rx="6" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="2" />
+  <text x="354.3" y="42.9" textAnchor="middle" fill="#e8912d" fontSize="14">hours</text>
+  <rect x="414" y="10" width="83.3" height="56" rx="6" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="2" />
+  <text x="455.7" y="34.4" textAnchor="middle" fill="#e8912d" fontSize="14">day,</text>
+  <text x="455.7" y="51.4" textAnchor="middle" fill="#e8912d" fontSize="14">date</text>
+  <rect x="515.3" y="10" width="83.3" height="56" rx="6" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="2" />
+  <text x="557" y="42.9" textAnchor="middle" fill="#e8912d" fontSize="14">month</text>
+  <rect x="616.7" y="10" width="83.3" height="56" rx="6" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="2" />
+  <text x="658.3" y="42.9" textAnchor="middle" fill="#e8912d" fontSize="14">year</text>
+  <path d="M92,38 L108,38" fill="none" stroke="currentColor" strokeWidth="1.8" markerEnd="url(#rt-ch-0)" strokeLinejoin="round" />
+  <path d="M193.3,38 L209.3,38" fill="none" stroke="#e8912d" strokeWidth="1.8" markerEnd="url(#rt-ch-1)" strokeLinejoin="round" />
+  <path d="M294.7,38 L310.7,38" fill="none" stroke="#e8912d" strokeWidth="1.8" markerEnd="url(#rt-ch-1)" strokeLinejoin="round" />
+  <path d="M396,38 L412,38" fill="none" stroke="#e8912d" strokeWidth="1.8" markerEnd="url(#rt-ch-1)" strokeLinejoin="round" />
+  <path d="M497.3,38 L513.3,38" fill="none" stroke="#e8912d" strokeWidth="1.8" markerEnd="url(#rt-ch-1)" strokeLinejoin="round" />
+  <path d="M598.7,38 L614.7,38" fill="none" stroke="#e8912d" strokeWidth="1.8" markerEnd="url(#rt-ch-1)" strokeLinejoin="round" />
+  <text x="46" y="86" textAnchor="middle" fill="currentColor" fontSize="13.5">1 Hz</text>
+  <path d="M151.7,66 L151.7,104" fill="none" stroke="#e8912d" strokeWidth="1.6" strokeDasharray="4 3" markerEnd="url(#rt-ch-1)" strokeLinejoin="round" />
+  <path d="M253,66 L253,104" fill="none" stroke="#e8912d" strokeWidth="1.6" strokeDasharray="4 3" markerEnd="url(#rt-ch-1)" strokeLinejoin="round" />
+  <path d="M354.3,66 L354.3,104" fill="none" stroke="#e8912d" strokeWidth="1.6" strokeDasharray="4 3" markerEnd="url(#rt-ch-1)" strokeLinejoin="round" />
+  <path d="M455.7,66 L455.7,104" fill="none" stroke="#e8912d" strokeWidth="1.6" strokeDasharray="4 3" markerEnd="url(#rt-ch-1)" strokeLinejoin="round" />
+  <path d="M557,66 L557,104" fill="none" stroke="#e8912d" strokeWidth="1.6" strokeDasharray="4 3" markerEnd="url(#rt-ch-1)" strokeLinejoin="round" />
+  <path d="M658.3,66 L658.3,104" fill="none" stroke="#e8912d" strokeWidth="1.6" strokeDasharray="4 3" markerEnd="url(#rt-ch-1)" strokeLinejoin="round" />
+  <rect x="110" y="106" width="590" height="40" rx="6" fill="#e8912d" fillOpacity="0.06" stroke="#e8912d" strokeWidth="2" />
+  <text x="405" y="130.9" textAnchor="middle" fill="#e8912d" fontSize="14">the snapshot: copied on every START, read over the bus</text>
+  <text x="0" y="164" fill="currentColor" fontSize="13.5">the counters keep running while a read takes its bytes from the snapshot</text>
+</svg>
+{/* /fig:chain */}
+<figcaption>Inside the watchman. The crystal divided by 32,768 gives one pulse a second; each counter carries into the next. On every START the counters are copied into the snapshot, and a read over the bus takes its bytes from there, so the seven bytes of one read always belong to one moment.</figcaption>
+</figure>
+
+A read is two messages joined by a repeated START. The first, addressed to `$D0`, writes one byte: the
+**register pointer**, the number of the register to start from. The second, addressed to `$D1`, reads:
+the watchman sends the register at the pointer, steps the pointer, and goes on for as long as you
+acknowledge. Your NACK on the last byte tells him to stop.
+
+<figure>
+{/* fig:read */}
+<svg viewBox="-2 -2 704 234" role="img" aria-label="Two rows of cells, read left to right, blue for what the Next sends and orange for what the watchman sends. The first row sets the register pointer: START, the address $D0 to write, the watchman's ACK, the pointer $00, the watchman's ACK. The second row reads: a repeated START, the address $D1 to read, the watchman's ACK, then the seconds $56 with the Next's ACK, the minutes $34 with ACK, the hours $12 with ACK, three more bytes, the year $26, the Next's NACK, and STOP." style={{ width: "100%", height: "auto" }}>
+  <text x="0" y="18" fill="currentColor" fontSize="13.5" fontWeight="bold">set the pointer to $00</text>
+  <rect x="0" y="26" width="40" height="40" rx="6" fill="#3b82f6" fillOpacity="0.1" stroke="#3b82f6" strokeWidth="2" />
+  <text x="20" y="50.7" textAnchor="middle" fill="#3b82f6" fontSize="13.5" fontWeight="bold">S</text>
+  <rect x="40" y="26" width="66" height="40" rx="6" fill="#3b82f6" fillOpacity="0.1" stroke="#3b82f6" strokeWidth="2" />
+  <text x="73" y="50.7" textAnchor="middle" fill="#3b82f6" fontSize="13.5" fontWeight="bold">$D0</text>
+  <rect x="106" y="26" width="40" height="40" rx="6" fill="#e8912d" fillOpacity="0.18" stroke="#e8912d" strokeWidth="2" />
+  <text x="126" y="50.7" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">A</text>
+  <rect x="146" y="26" width="66" height="40" rx="6" fill="#3b82f6" fillOpacity="0.1" stroke="#3b82f6" strokeWidth="2" />
+  <text x="179" y="50.7" textAnchor="middle" fill="#3b82f6" fontSize="13.5" fontWeight="bold">$00</text>
+  <rect x="212" y="26" width="40" height="40" rx="6" fill="#e8912d" fillOpacity="0.18" stroke="#e8912d" strokeWidth="2" />
+  <text x="232" y="50.7" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">A</text>
+  <text x="0" y="98" fill="currentColor" fontSize="13.5" fontWeight="bold">read from $00 on</text>
+  <rect x="0" y="106" width="40" height="40" rx="6" fill="#3b82f6" fillOpacity="0.1" stroke="#3b82f6" strokeWidth="2" />
+  <text x="20" y="130.7" textAnchor="middle" fill="#3b82f6" fontSize="13.5" fontWeight="bold">Sr</text>
+  <rect x="40" y="106" width="66" height="40" rx="6" fill="#3b82f6" fillOpacity="0.1" stroke="#3b82f6" strokeWidth="2" />
+  <text x="73" y="130.7" textAnchor="middle" fill="#3b82f6" fontSize="13.5" fontWeight="bold">$D1</text>
+  <rect x="106" y="106" width="40" height="40" rx="6" fill="#e8912d" fillOpacity="0.18" stroke="#e8912d" strokeWidth="2" />
+  <text x="126" y="130.7" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">A</text>
+  <rect x="146" y="106" width="66" height="40" rx="6" fill="#e8912d" fillOpacity="0.18" stroke="#e8912d" strokeWidth="2" />
+  <text x="179" y="130.7" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">$56</text>
+  <rect x="212" y="106" width="40" height="40" rx="6" fill="#3b82f6" fillOpacity="0.1" stroke="#3b82f6" strokeWidth="2" />
+  <text x="232" y="130.7" textAnchor="middle" fill="#3b82f6" fontSize="13.5" fontWeight="bold">A</text>
+  <rect x="252" y="106" width="66" height="40" rx="6" fill="#e8912d" fillOpacity="0.18" stroke="#e8912d" strokeWidth="2" />
+  <text x="285" y="130.7" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">$34</text>
+  <rect x="318" y="106" width="40" height="40" rx="6" fill="#3b82f6" fillOpacity="0.1" stroke="#3b82f6" strokeWidth="2" />
+  <text x="338" y="130.7" textAnchor="middle" fill="#3b82f6" fontSize="13.5" fontWeight="bold">A</text>
+  <rect x="358" y="106" width="66" height="40" rx="6" fill="#e8912d" fillOpacity="0.18" stroke="#e8912d" strokeWidth="2" />
+  <text x="391" y="130.7" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">$12</text>
+  <rect x="424" y="106" width="40" height="40" rx="6" fill="#3b82f6" fillOpacity="0.1" stroke="#3b82f6" strokeWidth="2" />
+  <text x="444" y="130.7" textAnchor="middle" fill="#3b82f6" fontSize="13.5" fontWeight="bold">A</text>
+  <rect x="464" y="106" width="40" height="40" rx="6" fill="currentColor" fillOpacity="0.1" stroke="currentColor" strokeWidth="2" />
+  <text x="484" y="130.7" textAnchor="middle" fill="currentColor" fontSize="13.5" fontWeight="bold">…</text>
+  <rect x="504" y="106" width="66" height="40" rx="6" fill="#e8912d" fillOpacity="0.18" stroke="#e8912d" strokeWidth="2" />
+  <text x="537" y="130.7" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">$26</text>
+  <rect x="570" y="106" width="40" height="40" rx="6" fill="#3b82f6" fillOpacity="0.1" stroke="#3b82f6" strokeWidth="2" />
+  <text x="590" y="130.7" textAnchor="middle" fill="#3b82f6" fontSize="13.5" fontWeight="bold">N</text>
+  <rect x="610" y="106" width="40" height="40" rx="6" fill="#3b82f6" fillOpacity="0.1" stroke="#3b82f6" strokeWidth="2" />
+  <text x="630" y="130.7" textAnchor="middle" fill="#3b82f6" fontSize="13.5" fontWeight="bold">P</text>
+  <text x="179" y="166" textAnchor="middle" fill="#e8912d" fontSize="13.5">seconds</text>
+  <text x="285" y="166" textAnchor="middle" fill="#e8912d" fontSize="13.5">minutes</text>
+  <text x="391" y="166" textAnchor="middle" fill="#e8912d" fontSize="13.5">hours</text>
+  <text x="537" y="166" textAnchor="middle" fill="#e8912d" fontSize="13.5">year</text>
+  <text x="0" y="200" fill="currentColor" fontSize="13.5">S START, Sr repeated START, P STOP, A ACK (pulled low), N NACK (left high)</text>
+  <text x="0" y="222" fill="currentColor" fontSize="13.5">blue: the Next sends; orange: the watchman sends</text>
+</svg>
+{/* /fig:read */}
+<figcaption>Reading the seven time registers. The first message sets the pointer to $00 and gets the watchman's ACK for both bytes. A repeated START begins the second, addressed to read: the watchman sends the seconds, minutes, hours and so on, and the Next acknowledges every byte except the year, which gets a NACK before the STOP.</figcaption>
+</figure>
+
+Here it is as code, on the routines above. It reads the seconds to the year into `Time`, in the
+registers' order:
+
+```z80klive
+; read registers $00-$06 into Time (7 bytes)
+ReadTime:
+        call I2cStart
+        ld a,$d0               ; watchman, listen
+        call I2cWrite
+        xor a                  ; the pointer: $00
+        call I2cWrite
+        call I2cStart          ; repeated START
+        ld a,$d1               ; watchman, talk
+        call I2cWrite
+        ld hl,Time
+        ld b,6                 ; six bytes with ACK
+RdNext: push bc
+        or a                   ; carry clear: ACK
+        call I2cRead
+        ld (hl),a
+        inc hl
+        pop bc
+        djnz RdNext
+        scf                    ; carry set: NACK
+        call I2cRead           ; the year
+        ld (hl),a
+        jp I2cStop
+```
+
+At 3.5 MHz the whole read takes 10,058 T-states, 2.9 ms, about a seventh of a frame. On Friday, 18 September
+2026 at 12:34:56, in 24-hour mode with Sunday as day 1, `Time` holds:
+
+```text
+$56 $34 $12 $06 $18 $09 $26
+sec min hr  day dt  mon yr
+```
+
+Notice the snapshot at work in a slower read. Start at 12:59:59, take the seconds and the minutes, then
+pause for over a second before the hours. You still get `$12`, because the hours came from the snapshot
+taken at the START; the next read, with its own START, gets 13:00:00.
+
+## Setting the clock
+
+Setting is one message: START, `$D0`, the pointer, and then the bytes, each written to the register at the
+pointer before the pointer steps. With `Time` holding the seven bytes in the same order:
+
+```z80klive
+; write Time (7 bytes) into registers $00-$06
+SetTime:
+        call I2cStart
+        ld a,$d0               ; watchman, listen
+        call I2cWrite
+        xor a                  ; from register $00
+        call I2cWrite
+        ld hl,Time
+        ld b,7
+WrNext: push bc
+        ld a,(hl)
+        call I2cWrite
+        inc hl
+        pop bc
+        djnz WrNext
+        jp I2cStop
+```
+
+It takes 8,711 T-states, 2.5 ms. Two details make this the right way to do it:
+
+- **Writing the seconds restarts the second.** The divider that halves the crystal fifteen times is cleared,
+  so the next tick comes a whole second after the write. Set the clock at 12:34:56 and it says 12:34:57
+  exactly one second later, not at some random moment within the second.
+- **Write everything within one second of the seconds.** A tick between your seconds and your hours could
+  carry into the minutes you have not written yet. One message from register `$00` up takes 2.5 ms, which
+  settles it. The bytes are stored as each one is acknowledged, so a message broken off halfway keeps what it
+  wrote.
+
+And remember CH: the seconds byte you write has bit 7 clear, so the clock runs. Write `$80` or more and it
+stops, which is also how you would freeze the time on purpose.
+
+## Fifty-six bytes that remember
+
+Registers `$08` to `$3F` are plain RAM, 56 bytes, read and written like the time and kept by the same
+battery. It is not much, but it is the only memory in the Next that survives the power switch without a
+file system: a high score, a setting, the date a program last ran. I would keep a byte or two of it as a
+signature, so your program can tell its own data from another program's.
+
+The pointer has two habits worth knowing:
+
+- **It wraps from `$3F` to `$00`.** Read four bytes from `$3E` and you get `$3E`, `$3F`, then the seconds
+  and the minutes.
+- **It stays where it was between messages.** A read that starts with `$D1` straight after the START, with
+  no pointer written first, continues from the last pointer: a **current address read**. Useful, but I
+  prefer writing the pointer every time; it costs one byte and guesses nothing.
+
+## Resets
+
+No Next reset touches the watchman. A soft reset, a hard reset, loading a new core: the time keeps running
+and the RAM keeps its bytes, because the chip is not part of the FPGA and has its own power.
+
+The FPGA's side is another matter. A reset lets go of both wires, so the bus goes high, and it does not care
+what the watchman was doing at that moment. If he was in the middle of sending a 0, he is still holding SDA
+low, waiting for clock pulses that the reset will not send. He is not broken, only patient. Here is my
+advice for the first thing a program does on the bus: if SDA reads 0, pulse SCL until it reads 1 (nine
+pulses are always enough to finish any byte and its acknowledge), then send a STOP. After that the
+watchman is listening again, and your START will be heard.
+
+## What to take home
+
+The Next's real-time clock is a DS1307, the watchman, a chip outside the FPGA with a 32,768 Hz crystal and
+its own battery, so it keeps counting through power-off and every kind of reset. It talks over I2C: two
+open-drain wires, SCL and SDA, held high by pull-ups and pulled low by anyone who wants to, so a wire is
+the AND of everyone on it. Port `$103B` is SCL and port `$113B` is SDA; bit 0 of a write pulls or lets go,
+and bit 0 of a read is the wire itself. The Raspberry Pi's GPIO 2 and 3 can join the bus through NextReg
+`$A0` bit 3, and NextReg `$83` bit 2 switches the ports off.
+
+The Next is always the master, and the CPU does every step itself. SDA changes only while SCL is low,
+except for START and STOP, which change it while SCL is high. Bytes go most significant bit first, and a
+ninth pulse carries the acknowledge, low for yes. The watchman's address is `$68`: `$D0` to write, `$D1`
+to read. He is a 100 kHz chip that wants 4.0 µs of SCL high and 4.7 µs low, which the routines here meet at
+3.5 MHz and miss by a factor of seven at 28 MHz, so slow the CPU down or slow the code.
+
+The registers are BCD: seconds with the clock-halt bit, minutes, hours with a 12/24-hour switch, a day of
+the week from 1 to 7, date, month, a two-digit year whose leap years are right until 2099, and a control
+byte for the square-wave pin. A read writes the pointer, then a repeated START reads on from it; every
+START takes a snapshot, so one read never mixes two moments. A write of the seconds restarts the second,
+and a whole time written in one message takes 2.5 ms. The other 56 bytes are RAM that survives everything,
+and the pointer wraps from `$3F` to `$00`. Clear CH, write the time in one go, read it in one go, and the
+watchman will tell you the hour for years on his little battery.

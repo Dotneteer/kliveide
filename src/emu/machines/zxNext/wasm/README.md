@@ -182,3 +182,15 @@ The UARTs (`docs/content/en/under-the-hood/emulator-internals/next-uart.mdx`):
   edge (uart_rx.vhd ~150-160) and a baud-rate mismatch between the two ends are not modelled.
 - **No ESP and no Pi.** Nothing answers on UART 0 or UART 1 but the harness's peer; the redirect of either
   UART to the joystick ports (NextReg `$0B` modes 10 and 11) is not modelled.
+
+The real-time clock (`docs/content/en/under-the-hood/emulator-internals/next-rtc.mdx`):
+
+- **A Next reset puts the DS1307's bus logic back to idle** (`zxnextI2cReset`). The real chip is not reset
+  with the FPGA: one caught sending a 0 keeps holding SDA low until it gets clock pulses, which is why the
+  chapter advises clocking SCL and sending a STOP first. In Klive the bus is always free after a reset.
+- **No bus timing.** Klive's DS1307 acts on every edge however close together; the chip's 100 kHz limits
+  (4.0 µs SCL high, 4.7 µs low and the START/STOP set-up and hold times) are not checked, so code that is
+  too fast at 28 MHz works in Klive.
+- **The Pi's I2C pins are not modelled.** NextReg `$A0` bit 3 joins GPIO 2 and 3 to the bus on the
+  hardware (zxnext.vhd ~2265-2274: the Next pulls them, the ports read the AND of both sides); in Klive the
+  ports read only the board's bus.

@@ -853,6 +853,7 @@
 /en/under-the-hood/emulator-internals/next-dma/index.html
 /en/under-the-hood/emulator-internals/next-interrupts/index.html
 /en/under-the-hood/emulator-internals/next-memory-io/index.html
+/en/under-the-hood/emulator-internals/next-rtc/index.html
 /en/under-the-hood/emulator-internals/next-storage/index.html
 /en/under-the-hood/emulator-internals/next-uart/index.html
 /en/under-the-hood/emulator-internals/reverse-debugging/index.html
