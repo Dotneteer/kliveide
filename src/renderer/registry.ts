@@ -1043,6 +1043,16 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     icon: "note",
     isReadOnly: true
   },
+  // --- The ZX Spectrum Next anti-brick core's boot ROM (`zxnext/<set>/bootrom_ab.bin`) is the one
+  // --- shipped ROM not named `.rom`; matched by its name (the path's end: the Explorer passes full
+  // --- paths), so other `.bin.dis` files stay annotation sets
+  {
+    matchType: "ends",
+    pattern: "bootrom_ab.bin.dis",
+    editor: ROM_ANNOTATION_EDITOR,
+    icon: "note",
+    isReadOnly: true
+  },
   /*
    * Annotation sidecars of every kind (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §4.6):
    * `game.nex.dis`, `game.z80.dis`, a project's `annotations.dis`, a ROM's `sp48.rom.dis`. Read-only

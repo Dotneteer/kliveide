@@ -454,7 +454,8 @@ export function referenceSubjectsFor(
   state: NexAnnotationEditorState,
   rowIndex?: number
 ): ReferenceSubject[] {
-  if (!isAnnotationEnabled(state)) return [];
+  // --- Reading, not editing: a read-only sidecar (a shipped ROM's) searches like any other
+  if (!isAnnotationShown(state)) return [];
   const index = rowIndex ?? state.contextTarget?.rowIndex ?? state.selection?.activeIndex;
   if (index === undefined) return [];
   return referenceSubjectsOf(state.annotations, state.env.bank, state.items[index], state.env.disassOffset);
@@ -470,7 +471,8 @@ export function goToDefinitionTargetFor(
   state: NexAnnotationEditorState,
   rowIndex?: number
 ): GoToDefinitionTarget {
-  if (!isAnnotationEnabled(state)) return { kind: "none" };
+  // --- Reading, not editing: a read-only sidecar (a shipped ROM's) navigates like any other
+  if (!isAnnotationShown(state)) return { kind: "none" };
   const index = rowIndex ?? state.contextTarget?.rowIndex ?? state.selection?.activeIndex;
   if (index === undefined) return { kind: "none" };
 

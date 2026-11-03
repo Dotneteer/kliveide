@@ -57,7 +57,10 @@
         "core": "3.02.01",
         "source": "src/rom/bootrom_ab.vhd",
         "size": 8192,
-        "sha256": "41d8f328c0e0e7ea050bd783b322b5902177b6eeed7bec4b994529d88e8297a8"
+        "sha256": "41d8f328c0e0e7ea050bd783b322b5902177b6eeed7bec4b994529d88e8297a8",
+        "pages": [
+          "1d16e9d4"
+        ]
       }
     },
     "sdBaseImage": {
@@ -136,7 +139,10 @@
         "core": "3.02.04",
         "source": "src/rom/bootrom_ab.vhd",
         "size": 8192,
-        "sha256": "1f1cb74e33d3707bec358a55e58f80d39699acd167c4a180abea0f32e32a946c"
+        "sha256": "1f1cb74e33d3707bec358a55e58f80d39699acd167c4a180abea0f32e32a946c",
+        "pages": [
+          "85d69a61"
+        ]
       }
     },
     "sdBaseImage": {

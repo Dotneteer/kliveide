@@ -538,7 +538,7 @@ function otherSidecarLabels(own) {
     for (const name of readdirSync(dir)) {
       const path = join(dir, name);
       if (statSync(path).isDirectory()) walk(path);
-      else if (name.endsWith(".rom.dis")) {
+      else if (/\.(rom|bin)\.dis$/.test(name)) {
         const rel = relative(ROMS, path).split(sep).join("/");
         if (rel === `${own}.dis`) continue;
         const json = JSON.parse(readFileSync(path, "utf8"));

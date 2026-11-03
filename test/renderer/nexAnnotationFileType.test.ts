@@ -38,6 +38,22 @@ describe("NEX annotation file type", () => {
     }
   });
 
+  it("opens the Next's boot ROM sidecar, the one shipped ROM not named .rom, in the ROM annotation editor", () => {
+    // --- By its full name, with a folder in front as the Explorer passes it
+    for (const name of ["bootrom_ab.bin.dis", "/roms/zxnext/nextzxos-2.10/bootrom_ab.bin.dis"]) {
+      expect(getFileTypeEntry(name, createStoreMock() as never)).toMatchObject({
+        pattern: "bootrom_ab.bin.dis",
+        editor: ROM_ANNOTATION_EDITOR,
+        isReadOnly: true
+      });
+    }
+    // --- Any other .bin.dis stays an annotation set
+    expect(getFileTypeEntry("game.bin.dis", createStoreMock() as never)).toMatchObject({
+      pattern: ".dis",
+      editor: CODE_EDITOR
+    });
+  });
+
   it("keeps .nex files on the binary NEX viewer", () => {
     const entry = getFileTypeEntry("ScrollNutter.nex", createStoreMock() as never);
 

@@ -2477,3 +2477,52 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
 - **Level:** 2 on both pages (page 0: 9,044 instructions, 35 targets inside an instruction; page 1: the two
   message tables, no code). Reassembles byte for byte. 37 `question` lines are left for runs (listed in the
   merge's problem list).
+
+### 2026-11-03 — ZX Spectrum Next: the anti-brick boot ROM (`zxnext/nextzxos-2.08/bootrom_ab.bin`, core 3.02.01) to level 2
+
+- **What:** the 8K boot ROM of the anti-brick core, extracted from core 3.02.01's VHDL (`src/rom/bootrom_ab.vhd`),
+  added to the ROM annotations menu with a new `next-boot` page kind (Z80N decoding) and annotated from an empty
+  sidecar. It is a small C program built with z88dk (its name and "2.20" are in the bytes at $000B and $0013): it
+  sets up the SD card over SPI, mounts FAT16 or FAT32, finds TBBLUE.FW, and either restarts the Next from flash
+  or, with both buttons held, loads the update module to $6000.
+- **Sources:** the ROM bytes only, through the pipeline (`rom:pipeline prepare`, one `listing` of $0000-$1029) and
+  `xxd` for the data area; every boundary (code to $1029, the font at $102B-$132A for codes 32-127, the texts, the
+  palette at $13E6, the six start values at $1406 the start-up code copies, $FF from $140C) was read from the
+  bytes and the code that uses them. Interface facts, marked `manual`: NextReg $10's button bits from Klive's own
+  `nextRegDescriptors.ts`; the meaning of the $81 written to it (bit 7 flash boot, bits 4-0 core id) and the SPI
+  ports $E7/$EB from core 3.02.01's `zxnext.vhd`; the SD card's SPI commands (CMD0/1/8/12/16/17/55/58, ACMD41,
+  the OCR's CCS bit, the $FE data token) and the FAT boot sector's field offsets from the SD and FAT
+  specifications. The upstream boot ROM's source and any listing of it were not opened; no name came from
+  z88dk's library (its helpers are named after what their code does: SDIV16, MUL32, UDIV32, MEMCMP, DELAY_T).
+- **Level:** 2, measured and recorded (2,360 instructions, 195 labels, every one with a synopsis; the
+  subroutines with their contracts). Reassembles byte for byte. The compile's remaining questions are label names
+  shared with other sidecars, kept where the job is the same (RESET, START, JP_HL, DELAY_MS, SET_BORDER, PRINT_CHAR).
+- **Not done then:** the nextzxos-2.10 set's boot ROM; done in the next session.
+
+### 2026-11-03 — ZX Spectrum Next: the anti-brick boot ROM of core 3.02.04 (`zxnext/nextzxos-2.10/bootrom_ab.bin`) to level 2
+
+- **What:** not a few changed bytes, as first expected: 7,994 of the 8,192 bytes differ. The program is a
+  rewrite with z88dk 2.30 that fills the 8K: a proportional font and a text window (clipping, attribute colouring,
+  a plot routine called through the window's own JP), a formatted-print engine with streams ("%s" and "%u" with
+  flags, width and precision), an error screen with the board's issue and the core's version, both SD cards (the
+  swap is NextReg $0A bit 5), the flash's settings sector searched for "COREBOOT" for the core to start, and a
+  34-byte record ending "ZX NEXT AB MAGIC" left in 8K page $22.
+- **How:** `rom:pipeline -- carry` from the 2.08 sidecar placed 162 of its 195 labels (16 routines the same, 99
+  shifted) but translated several RAM addresses two ways, so its file was used only as a map. The sidecar was
+  written from four `.ann` files: the regions from the bytes and the code that reads them (the format tables
+  inside the code at $05CF, $06C6 and $0770, the font's header, entries and bitmaps, the texts, the 78 start
+  values at $1F9F); the 2.08 text of the delay and FAT routines moved by a script that applied the alignment and
+  added $48 to every RAM address, each moved comment checked against the 2.10 instruction it lands on; everything
+  else read from the 2.10 listing. One mistake was caught on the reread: the I key only changes the order the
+  cards are woken in; the 1 key alone swaps them for good.
+- **Sources:** the ROM bytes only (one raw listing of $0000-$19E8, `xxd` for the data). Interface facts,
+  marked `manual`: NextReg $0A bits 5 and 2 (the SD swap and its write enable) from Klive's
+  `nextRegSets/30204.ts`; NextReg $0F's board IDs, $01's and $0E's version fields and $10's buttons from
+  `nextRegDescriptors.ts`; the keyboard matrix (row $DF bit 2 = I, row $F7 bit 0 = 1); the SD commands as for
+  2.08. The upstream boot ROM's source, z88dk's library sources and any listing were not opened; no name came
+  from them.
+- **Found in the code:** SD_WAIT_TOKEN loops back above its DJNZ, so it waits for the data token for ever; the
+  DELAY_MS counts assume 3.5 MHz but MAIN calls it at 28 MHz too; APPLY_ESSENTIAL ($181E) is never called.
+- **Level:** 2, measured and recorded (3,828 instructions, 365 labels). Reassembles byte for byte. The compile's
+  remaining questions are register facts the tool cannot follow through `CALL $0033` (JP (IY)) and label names
+  shared with other sidecars.

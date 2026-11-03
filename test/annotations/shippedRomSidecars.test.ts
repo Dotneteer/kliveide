@@ -26,7 +26,7 @@ const ROMS = join(__dirname, "../../src/public/roms");
 // --- By their paths under src/public/roms: the Next's are in zxnext/<setId>/
 const sidecars = readdirSync(ROMS, { recursive: true })
   .map((name) => String(name).split(sep).join("/"))
-  .filter((name) => name.endsWith(".rom.dis"))
+  .filter((name) => /\.(rom|bin)\.dis$/.test(name))
   .sort();
 // --- An `inherits` may name a Next sidecar by its bare, pre-set-folder name (`romSidecarPaths.ts`)
 const romOf = (sidecar: string) =>

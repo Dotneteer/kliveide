@@ -25,17 +25,18 @@ const p3Set = (stem: string): RomCatalogEntry[] =>
   Array.from({ length: 4 }, (_, index) => ({ file: `${stem}-${index}.rom` }));
 
 /**
- * A Next ROM set's groups: NextZXOS, its LG variant, the alternate ROM, then the DivMMC and Multiface
- * ROMs. A file of the set is listed once per 16K page it has.
+ * A Next ROM set's groups: NextZXOS, its LG variant, the alternate ROM, the DivMMC and Multiface
+ * ROMs, then the anti-brick core's boot ROM (an FPGA ROM shipped beside the set's files). A file of
+ * the set is listed once per 16K page it has.
  */
 function nextSetGroups(set: NextRomSet): RomCatalogEntry[][] {
   const entriesOf = (file: string): RomCatalogEntry[] => {
-    const info = set.files[file];
+    const info = set.files[file] ?? set.fpgaRoms[file];
     if (!info) return [];
     const path = nextRomAnnotationFile(set.id, file);
     return info.pages.length > 1 ? pages(path, info.pages.length) : files(path);
   };
-  return [["enNextZX.rom"], ["enNextLG.rom"], ["enAltZX.rom"], ["enNxtmmc.rom", "enNextMf.rom"]]
+  return [["enNextZX.rom"], ["enNextLG.rom"], ["enAltZX.rom"], ["enNxtmmc.rom", "enNextMf.rom"], ["bootrom_ab.bin"]]
     .map((group) => group.flatMap(entriesOf))
     .filter((group) => group.length > 0);
 }

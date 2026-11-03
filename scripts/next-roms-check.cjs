@@ -4,7 +4,7 @@
  * (`.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` D9.3).
  *
  *   npm run next-roms:check              the committed files: present, size, sha256, page CRCs; the
- *                                         FPGA ROMs (`fpgaRoms`): size, sha256, and, when
+ *                                         FPGA ROMs (`fpgaRoms`): size, sha256, page CRCs, and, when
  *                                         `vendor/next-fpga/<core>/` is fetched, the bytes of its VHDL table
  *   npm run next-roms:check -- --online  also re-downloads each file at its recorded commit and
  *                                         confirms it is the committed bytes (by hand, never in CI)
@@ -53,7 +53,8 @@ async function main() {
     for (const [file, expected] of Object.entries(set.fpgaRoms ?? {})) {
       const bytes = readFileSync(join(ROM_ROOT, setId, file));
       const sha256 = createHash("sha256").update(bytes).digest("hex");
-      let ok = bytes.length === expected.size && sha256 === expected.sha256;
+      const pages = describe(new Uint8Array(bytes)).pages;
+      let ok = bytes.length === expected.size && sha256 === expected.sha256 && pages.join() === (expected.pages ?? []).join();
       let line = `${setId}/${file}: ${ok ? "ok" : "MISMATCH"}`;
       const vhdl = join(VENDOR, expected.core, expected.source);
       if (existsSync(vhdl)) {

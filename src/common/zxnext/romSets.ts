@@ -49,6 +49,8 @@ export type NextFpgaRomInfo = {
   source: string;
   size: number;
   sha256: string;
+  /** The CRC-32 of each 16K page, as `NextRomFileInfo.pages` (the ROM annotations find a page by it) */
+  pages: string[];
 };
 
 export type NextRomSet = {

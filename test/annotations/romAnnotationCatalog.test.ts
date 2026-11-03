@@ -73,17 +73,20 @@ describe("ROM_ANNOTATION_CATALOG", () => {
     expect(romAnnotationOpenCommand({ file: next, page: 2 })).toBe(`rom-ann-open ${next} -page 2 -create`);
   });
 
-  it("lists each Next ROM set's files by their paths, in the four groups of a set", () => {
+  it("lists each Next ROM set's files by their paths, in the five groups of a set", () => {
     const next = ROM_ANNOTATION_CATALOG.find((machine) => machine.machineId === "zxnext")!;
     const sets = Object.keys(NEXT_ROM_SETS);
-    expect(next.groups.length).toBe(4 * sets.length);
-    expect(next.groups.slice(0, 4).map((group) => group.map((entry) => romCatalogFileName(entry)))).toEqual([
+    expect(next.groups.length).toBe(5 * sets.length);
+    expect(next.groups.slice(0, 5).map((group) => group.map((entry) => romCatalogFileName(entry)))).toEqual([
       ["enNextZX.rom", "enNextZX.rom", "enNextZX.rom", "enNextZX.rom"],
       ["enNextLG.rom", "enNextLG.rom", "enNextLG.rom", "enNextLG.rom"],
       ["enAltZX.rom", "enAltZX.rom"],
-      ["enNxtmmc.rom", "enNextMf.rom"]
+      ["enNxtmmc.rom", "enNextMf.rom"],
+      ["bootrom_ab.bin"]
     ]);
     expect(next.groups[0][3]).toEqual({ file: "zxnext/nextzxos-2.08/enNextZX.rom", page: 3 });
-    for (const entry of next.groups.flat()) expect(entry.file).toMatch(/^zxnext\/[^/]+\/[^/]+\.rom$/);
+    for (const entry of next.groups.flat()) expect(entry.file).toMatch(/^zxnext\/[^/]+\/[^/]+\.(rom|bin)$/);
+    // --- The anti-brick boot ROM of each set, an FPGA ROM, is listed with the set's files
+    expect(next.groups[4]).toEqual([{ file: "zxnext/nextzxos-2.08/bootrom_ab.bin" }]);
   });
 });

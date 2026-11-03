@@ -537,6 +537,22 @@ describe("go to definition", () => {
     const menu = menuFor({ machineRunning: true });
     expect(menuEntryFor(menu, "goto-definition")!.disabled).toEqual(true);
   });
+
+  it("stays available in a read-only sidecar (a shipped ROM's), whose editing entries are disabled", () => {
+    // --- Reading is not editing: a shipped ROM sidecar opens read-only and must still navigate
+    const state = aState({
+      env: anEnvironment({ readOnly: true }),
+      annotations: anAnnotationModelWithLabels(),
+      items: [aLabelledOperandRow(0x0010, 0x4100)],
+      selection: { anchorIndex: 0, activeIndex: 0 }
+    });
+    const menu = selectViewModel(state).menu;
+    expect(menuEntryFor(menu, "goto-definition")!.disabled).toEqual(false);
+    expect(menuEntryFor(menu, "find-references")!.disabled).toEqual(false);
+    for (const id of ["synopsis", "comment", "local-label", "manage-labels", "bank-comment", "mark-bytes", "clear"] as const) {
+      expect(menuEntryFor(menu, id)!.disabled, id).toEqual(true);
+    }
+  });
 });
 
 describe("bank comment", () => {

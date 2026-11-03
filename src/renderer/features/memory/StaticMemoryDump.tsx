@@ -1363,13 +1363,15 @@ const StaticMemoryDump = ({
     index: number,
     event: MouseEvent<HTMLDivElement>
   ) => {
-    if (!annotationVm.annotationsAvailable) return;
+    // --- Shown, not only editable: a read-only sidecar's menu still offers Go to Definition and
+    // --- Go to References, its editing entries disabled
+    if (!annotationVm.annotationsShown) return;
     // --- Only a row that carries annotation metadata can be acted on.
     if (!disassemblyItems[index]?.annotation) return;
     event.preventDefault();
     dispatchAnnotation({ type: "contextMenuRequested", rowIndex: index });
     contextMenuApi.show(event);
-  }, [annotationVm.annotationsAvailable, contextMenuApi, disassemblyItems, dispatchAnnotation]);
+  }, [annotationVm.annotationsShown, contextMenuApi, disassemblyItems, dispatchAnnotation]);
 
   const openToolbarAnnotationContextMenu = useCallback((
     event: MouseEvent<HTMLElement>
