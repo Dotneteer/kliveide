@@ -473,6 +473,11 @@ export const startScreenDisplayedAction: ActionCreator = () => ({
   type: "START_SCREEN_DISPLAYED"
 });
 
+export const setNextRtcKeptAction: ActionCreator = (value) => ({
+  type: "SET_NEXT_RTC_KEPT",
+  payload: { value }
+});
+
 export const setKeyMappingsAction: ActionCreator = (file, value) => ({
   type: "SET_KEY_MAPPINGS",
   payload: { file, value }

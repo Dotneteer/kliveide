@@ -10,5 +10,6 @@ export default {
   "layers": "Video layers",
   "picture-troubleshooting": "Why does my picture look wrong?",
   "sprite-palette-editors": "Sprite and palette editors",
-  "sd-card": "The SD card"
+  "sd-card": "The SD card",
+  "real-time-clock": "The real-time clock"
 };

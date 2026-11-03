@@ -142,6 +142,9 @@ Options that apply to only some machines are here, not on the Emulator page.
 | Show the snow effect | ZX Spectrum 16K, 48K, 128K | With the I register in contended memory, the CPU's memory refresh disturbs the ULA's screen reads and the picture shows "snow", as on the real machine. On by default. Also **Machine › ZX Spectrum 48K / 128K › Snow Effect**. |
 | Late ULA timing | ZX Spectrum 16K, 48K, 128K | Runs the ULA one T-state later against the interrupt, as many real machines do: contention, the screen reads, the border and the floating bus all move by one T-state. Off by default (the documented timings). Also **Machine › ZX Spectrum 48K / 128K › Late ULA Timing**. An `.szx` snapshot sets it to the timing its machine ran. |
 | ZX Spectrum Next sound output | ZX Spectrum Next | Which of the Next's outputs Klive plays: the audio jack (the default), the internal speaker or HDMI, each as the real machine builds it. Also **Machine › Sound › Output**. See [From the Machine to Your Speakers](/en/under-the-hood/emulator-internals/next-audio/klive-audio/#one-stream-three-outputs). |
+| The clock follows | ZX Spectrum Next | What the Next's real-time clock (RTC) shows: the host's clock (the default; the real time) or emulated time, which stops while the debugger pauses. See [The real-time clock](/en/guides/next/real-time-clock/). |
+| Keep the time and the clock's RAM between sessions | ZX Spectrum Next | Keeps a time set with `.time` or `.date`, and the clock's 56 bytes of RAM, until the next start, as the battery on a real board does. Each Next model keeps its own. On by default. |
+| Kept clock | ZX Spectrum Next | When the running model's clock was last saved. **Set to host time** sets it to the computer's time; **Forget** deletes the kept clock and clears its RAM. |
 
 The ROM files have **Browse...** and **Forget** (or **Reset**) buttons; [Custom ROMs](/en/guides/emulator/custom-roms/)
 explains each.

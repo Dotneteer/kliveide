@@ -1,7 +1,15 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { isAbsolute, join, resolve } from "node:path";
 
-import { AUDIO_SAMPLE_RATE, FILE_PROVIDER } from "@emu/machines/machine-props";
+import {
+  AUDIO_SAMPLE_RATE,
+  FILE_PROVIDER,
+  NEXT_RTC_CLOCK,
+  NEXT_RTC_HOST_CLOCK,
+  NEXT_RTC_KEEP,
+  NEXT_RTC_STORE
+} from "@emu/machines/machine-props";
+import type { NextRtcClockMode, NextRtcStore } from "@emu/machines/zxNext/nextRtcHost";
 import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
 import type { IFileProvider } from "@renderer/core/IFileProvider";
 import {
@@ -86,6 +94,20 @@ export type CreateCoreOptions = {
   hardReset?: boolean;
   /** The Next model (`nextProfiles.ts`): its artifact, ROM set and identity. The implicit one by default. */
   profile?: NextProfileId;
+  /**
+   * The real-time clock's host side (`.plans/ZXNEXT_RTC_OPTIONS_PLAN.md`), set before `setup()` seeds
+   * the clock: what it follows, keeping it, the store and a fake host clock. Unset: emulated time,
+   * not kept - every test that does not ask stays deterministic.
+   */
+  rtc?: NextRtcOptions;
+};
+
+export type NextRtcOptions = {
+  clock?: NextRtcClockMode;
+  keep?: boolean;
+  store?: NextRtcStore;
+  /** Host milliseconds (`Date.now` by default) */
+  now?: () => number;
 };
 
 export async function createCore(options: CreateCoreOptions = {}): Promise<NextMachine> {
@@ -98,6 +120,10 @@ export async function createCore(options: CreateCoreOptions = {}): Promise<NextM
   });
   machine.setMachineProperty(FILE_PROVIDER, new HarnessFileProvider());
   if (options.audioSampleRate) machine.setMachineProperty(AUDIO_SAMPLE_RATE, options.audioSampleRate);
+  if (options.rtc?.now) machine.setMachineProperty(NEXT_RTC_HOST_CLOCK, options.rtc.now);
+  if (options.rtc?.store) machine.setMachineProperty(NEXT_RTC_STORE, options.rtc.store);
+  if (options.rtc?.clock) machine.setMachineProperty(NEXT_RTC_CLOCK, options.rtc.clock);
+  if (options.rtc?.keep !== undefined) machine.setMachineProperty(NEXT_RTC_KEEP, options.rtc.keep);
   await machine.setup();
   if (options.hardReset || options.audioSampleRate) machine.hardReset();
   return machine;

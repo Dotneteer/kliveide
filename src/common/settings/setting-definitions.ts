@@ -13,6 +13,7 @@ import {
 } from "@common/settings/mouse-capture";
 import { DEFAULT_JOYSTICK_BINDINGS } from "@common/settings/joystick-bindings";
 import { DEFAULT_NEXT_AUDIO_OUTPUT } from "@common/settings/next-audio-output";
+import { DEFAULT_NEXT_RTC_CLOCK } from "@common/settings/next-rtc-clock";
 import {
   SETTING_EMU_FAST_LOAD,
   SETTING_EMU_HT_CPU_DASH,
@@ -20,6 +21,8 @@ import {
   SETTING_EMU_ULA_LATE_TIMING,
   SETTING_EMU_ULA_SNOW,
   SETTING_EMU_NEXT_AUDIO_OUTPUT,
+  SETTING_EMU_NEXT_RTC_CLOCK,
+  SETTING_EMU_NEXT_RTC_KEEP,
   SETTING_EMU_REVERSE_DEBUGGING,
   SETTING_EMU_REVERSE_DEBUG_MEMORY_MB,
   SETTING_EMU_PROFILE_RESET_ON_START,
@@ -215,6 +218,29 @@ const settingDefinitions: Setting[] = [
       "$09 bit 2).",
     type: "string",
     defaultValue: DEFAULT_NEXT_AUDIO_OUTPUT,
+    saveWithIde: true,
+    boundTo: "emu"
+  },
+  {
+    id: SETTING_EMU_NEXT_RTC_CLOCK,
+    title: "ZX Spectrum Next Real-Time Clock",
+    description:
+      "What the Next's real-time clock follows: the host's clock (the default; the real time, as the " +
+      "battery-backed chip shows it) or emulated time (stops while the debugger pauses, runs fast or " +
+      "slow with the emulator).",
+    type: "string",
+    defaultValue: DEFAULT_NEXT_RTC_CLOCK,
+    saveWithIde: true,
+    boundTo: "emu"
+  },
+  {
+    id: SETTING_EMU_NEXT_RTC_KEEP,
+    title: "Keep the ZX Spectrum Next's Clock",
+    description:
+      "Keep the Next's real-time clock (a time set with .time or .date, and its 56 bytes of RAM) " +
+      "between sessions, as the battery on a real board does. Each Next model keeps its own.",
+    type: "boolean",
+    defaultValue: true,
     saveWithIde: true,
     boundTo: "emu"
   },

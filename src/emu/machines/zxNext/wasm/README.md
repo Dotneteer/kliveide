@@ -194,3 +194,36 @@ The real-time clock (`docs/content/en/under-the-hood/emulator-internals/next-rtc
 - **The Pi's I2C pins are not modelled.** NextReg `$A0` bit 3 joins GPIO 2 and 3 to the bus on the
   hardware (zxnext.vhd ~2265-2274: the Next pulls them, the ports read the AND of both sides); in Klive the
   ports read only the board's bus.
+- **The time base is emulated time; the host makes it the real time between frames.** The core counts
+  the DS1307's seconds from the 28 MHz clock (28M clocks a second), so on its own the clock stops while
+  the debugger pauses and runs fast or slow with the emulator; a real chip runs on its own crystal. With
+  the Settings option "The clock follows: The host's clock" (the default), `NextRtcHost`
+  (`zxNext/nextRtcHost.ts`) compares registers 0-6 with the host's time plus an offset before each
+  frame, at most once a second, and rewrites them through `zxnextRtcSetTime` when a second or more
+  apart. The core decides nothing here and reads no host clock: the write is a journaled input, so a
+  reverse-debugging replay applies it where it happened (`.plans/ZXNEXT_RTC_OPTIONS_PLAN.md` D3, D4).
+  With "Emulated time" it is the core's count alone.
+
+The host's view of the DS1307 (`.plans/ZXNEXT_RTC_OPTIONS_PLAN.md` P1): `zxnextRtcPeekRegister(i)` reads
+register `i` as a read starting now would (the time on a copy of the counter chain, so it is a pure
+export); `zxnextRtcGetWriteCount()` / `zxnextRtcGetTimeWriteCount()` count the bus's register writes, all
+and to registers 0-6 (host writes are not counted), which the host compares between frames to take a
+time the program set and to save a kept clock; `zxnextRtcSetRegister(i, v)` sets one register from the
+host (a kept clock's control byte and RAM). The kept clocks live in `~/Klive/zxnext-rtc.json`, written
+by the main process (`src/main/zxnext-rtc-store.ts`).
+
+Keyboard, joysticks and mouse (`docs/content/en/under-the-hood/emulator-internals/next-input.mdx`):
+
+- **No membrane scan.** The hardware scans one row every 512 master clocks and copies the matrix after
+  each 9-step scan (membrane.vhd; CLK_28_MEMBRANE_EN, zxnext_top_issue4 ~1045); port `$FE` reads that copy.
+  Klive's reads see a key the moment the host presses it.
+- **No shift lead and hold.** The hardware enters an extra key's CAPS/SYMBOL SHIFT one scan before its other
+  key and keeps it two scans after (membrane.vhd matrix_state_ex_0/_1); Klive enters and removes both
+  together.
+- **No PS/2 path.** The host's keys are matrix and extra keys directly. The PS/2 keymap (NextReg `$28` bit 7
+  = 0, `$29`, `$2B`), its shift counting, typematic filter, Pause reset and F-key entries are not modelled;
+  keymap writes only step the address.
+- **No joystick reader.** Klive sets the 12 button bits of each connector directly; the select-line script
+  on pin 7, the shared pins and the 2.34 ms cycle (md6_joystick_connector_x2.vhd) are not modelled.
+- **The case's buttons.** The NMI button's function keys (emu_fnkeys.vhd: NMI + 1-0 = F1-F10, the rows
+  forced while it is held) are not modelled.

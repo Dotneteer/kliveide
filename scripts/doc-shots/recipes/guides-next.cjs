@@ -4,7 +4,8 @@
  * - `copper/copper-view.webp` — the Copper view with a Copper list and its raster ruler;
  * - `next-registers/nextreg-panel.webp` and `next-registers/memory-mapping.webp` — the Next
  *   Registers and Next Memory Mapping side-bar panels;
- * - `nex-files/nex-viewer.webp` — a `.nex` file in the NEX viewer, its banks listed.
+ * - `nex-files/nex-viewer.webp` — a `.nex` file in the NEX viewer, its banks listed;
+ * - `next-models/rtc-settings.webp` — Settings › Machine with the real-time clock's group.
  *
  * Like the layer recipes it pokes a program into a paused Next (no NextZXOS needed): the program
  * is `layers-demo.kz80.asm`'s, whose bytes are read from `layers.cjs` so the two cannot drift; it
@@ -102,6 +103,14 @@ module.exports = {
           displayWidth: 320,
           maxHeight: 620
         });
+      });
+
+      await step(klive, "rtc-settings", async () => {
+        // --- Settings › Machine with the real-time clock group (`.plans/ZXNEXT_RTC_OPTIONS_PLAN.md` P6)
+        await klive.cmd("settings machine", 1800);
+        await klive.shot('[role="dialog"]', "en/guides/next/next-models/rtc-settings.webp", { displayWidth: 640 });
+        await ide.keyboard.press("Escape");
+        await klive.sleep(600);
       });
 
       await klive.cmd("em-stop", 2000);

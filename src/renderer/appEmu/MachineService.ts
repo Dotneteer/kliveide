@@ -11,8 +11,14 @@ import {
   TRDOS_ROM_FILE,
   TS2068_ROM_FILE,
   ESXDOS_ROM_FILE,
-  IF1_ROM_FILE
+  IF1_ROM_FILE,
+  NEXT_RTC_CLOCK,
+  NEXT_RTC_KEEP,
+  NEXT_RTC_STORE
 } from "@emu/machines/machine-props";
+import { createMainApi } from "@messaging/MainApi";
+import type { NextRtcStore } from "@emu/machines/zxNext/nextRtcHost";
+import { normalizeNextRtcClock } from "@common/settings/next-rtc-clock";
 import { getGlobalSetting } from "@renderer/core/RendererProvider";
 import {
   SETTING_EMU_TC2048_ROM,
@@ -21,7 +27,9 @@ import {
   SETTING_EMU_ESXDOS_ROM,
   SETTING_EMU_IF1_ROM,
   SETTING_EMU_TS2068_ROM,
-  SETTING_EMU_SCORPION_ROM
+  SETTING_EMU_SCORPION_ROM,
+  SETTING_EMU_NEXT_RTC_CLOCK,
+  SETTING_EMU_NEXT_RTC_KEEP
 } from "@common/settings/setting-const";
 import { LiteEvent } from "@emu/utils/lite-event";
 import { MessageSource } from "@messaging/messages-core";
@@ -156,6 +164,11 @@ class MachineService implements IMachineService {
     machine.setMachineProperty(TC2068_ROM_FILE, getGlobalSetting(this.store, SETTING_EMU_TC2068_ROM) || undefined);
     machine.setMachineProperty(TS2068_ROM_FILE, getGlobalSetting(this.store, SETTING_EMU_TS2068_ROM) || undefined);
     machine.setMachineProperty(SCORPION_ROM_FILE, getGlobalSetting(this.store, SETTING_EMU_SCORPION_ROM) || undefined);
+    // --- The ZX Spectrum Next's real-time clock seeds at setup: its options and its store come first
+    // --- (the emulator panel keeps them current afterwards; other machines ignore them)
+    machine.setMachineProperty(NEXT_RTC_STORE, this.nextRtcStore());
+    machine.setMachineProperty(NEXT_RTC_CLOCK, normalizeNextRtcClock(getGlobalSetting(this.store, SETTING_EMU_NEXT_RTC_CLOCK)));
+    machine.setMachineProperty(NEXT_RTC_KEEP, getGlobalSetting(this.store, SETTING_EMU_NEXT_RTC_KEEP) !== false);
     await machine.setup();
     await machine.hardReset();
 
@@ -177,6 +190,15 @@ class MachineService implements IMachineService {
     this.store.dispatch(setModelTypeAction(modelId), this.messageSource);
     this.store.dispatch(setMachineConfigAction(config || modelInfo?.config), this.messageSource);
     return true;
+  }
+
+  /** Where a kept ZX Spectrum Next clock lives: the main process's `zxnext-rtc.json` */
+  private nextRtcStore(): NextRtcStore {
+    const api = () => createMainApi(this.messenger);
+    return {
+      load: (profileId) => api().getNextRtcState(profileId),
+      save: (profileId, entry) => api().saveNextRtcState(profileId, entry)
+    };
   }
 
   /**

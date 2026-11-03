@@ -68,6 +68,7 @@ import { forgetTimexRom, selectTimexRom } from "./machine-menus/timex-menus";
 import { forgetEsxDosRom, selectEsxDosRomFile } from "./machine-menus/divmmc-menus";
 import { forgetInterface1Rom, selectInterface1RomFile } from "./machine-menus/interface1-menus";
 import { forgetScorpionRom, selectScorpionRomFile } from "./machine-menus/scorpion-menus";
+import { nextRtcForget, nextRtcSetToHost } from "./zxnext-rtc";
 import { toggleWindowRecording } from "./recording/window-recording/windowRecordingController";
 import { focusEmuWindow, getAppWindows, isIdeWindowFocused, isIdeWindowVisible, showIdeWindow } from ".";
 import { t } from "@common/i18n/i18n";
@@ -325,6 +326,12 @@ export async function runUiAction(actionId: UiActionId, value?: unknown): Promis
       return undefined;
     case "rom:scorpion:select":
       await selectScorpionRomFile(owner);
+      return undefined;
+    case "rtc:next:host":
+      await nextRtcSetToHost();
+      return undefined;
+    case "rtc:next:forget":
+      await nextRtcForget();
       return undefined;
     case "rom:scorpion:forget":
       await forgetScorpionRom();

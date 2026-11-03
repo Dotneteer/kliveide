@@ -391,6 +391,10 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Z
   zxnextI2cWriteSclPort: ZxNextWasmV2ExportFunction;
   zxnextI2cWriteSdaPort: ZxNextWasmV2ExportFunction;
   zxnextRtcSetTime: ZxNextWasmV2ExportFunction;
+  zxnextRtcPeekRegister: ZxNextWasmV2ExportFunction;
+  zxnextRtcGetWriteCount: ZxNextWasmV2ExportFunction;
+  zxnextRtcGetTimeWriteCount: ZxNextWasmV2ExportFunction;
+  zxnextRtcSetRegister: ZxNextWasmV2ExportFunction;
   zxnextPiI2sConnect: ZxNextWasmV2ExportFunction;
   zxnextPiI2sDisconnect: ZxNextWasmV2ExportFunction;
   zxnextPiI2sAppend: ZxNextWasmV2ExportFunction;
@@ -867,6 +871,10 @@ const requiredV2Exports = [
   "zxnextI2cWriteSclPort",
   "zxnextI2cWriteSdaPort",
   "zxnextRtcSetTime",
+  "zxnextRtcPeekRegister",
+  "zxnextRtcGetWriteCount",
+  "zxnextRtcGetTimeWriteCount",
+  "zxnextRtcSetRegister",
   "zxnextPiI2sConnect",
   "zxnextPiI2sDisconnect",
   "zxnextPiI2sAppend",

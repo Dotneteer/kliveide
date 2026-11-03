@@ -2,7 +2,8 @@
 
 **Status:** proposed 2026-11-03, revised the same day: the options moved from a Machine-menu submenu to
 the Settings dialog's Machine page (mockup: `.plans/ZXNEXT_RTC_OPTIONS_MOCKUP.html`). **D1-D8 confirmed
-by the project author, 2026-11-03**; P0 is next.
+by the project author, 2026-11-03.** **Implemented 2026-11-03 (P0-P6)**, uncommitted at the time of
+writing; see "As built" at the top of P1 for where it differs from the text below.
 **Goal:** two options for the Next's DS1307: what its clock follows (the host's clock, or emulated
 time), and whether it keeps its time and its 56 bytes of RAM from one session to the next, like the
 battery on a real board. Plus a way to reset a kept clock.
@@ -132,6 +133,55 @@ machine-config route (`setEpConfig`, `setTvcHbf`), which D1 drops.
 - Choose how the Kept clock row shows its last-saved text (D8): a value editor, or app state for
   `describe`.
 - Record the findings as an "As built" note at the top of P1.
+
+### As built (2026-11-03): P0's findings and the differences from this plan
+
+- **Replays need no flag of their own.** Every write the host side makes goes through a journaled export
+  (`zxnextRtcSetTime`, `zxnextRtcSetRegister`: the `Rtc` noun in `reverse/exportContract.ts`), and the
+  reads are pure (`Peek`/`Get`). A reverse-debugging replay calls the raw frame export with the journal
+  muted, so `NextRtcHost.beforeFrame` (called from `executeMachineFrame`) never runs during one; the
+  journal applies the recorded writes where they happened. After the core changed under the machine
+  (`restoreHostState`, `loadMachineState`) and when live input resumes (`invalidateHostSync`), the host
+  side only takes the write counts again (`rebase`): what the bus wrote there was saved when it happened.
+  `customCommand` clears the history cursor before the Kept clock buttons act (D12 of the reverse
+  debugging plan).
+- **D6's save on dispose is replaced by a drift check.** No machine is ever disposed (`dispose()` has no
+  caller), and an app quit cannot wait for an emulator-to-main message. A host-following clock changes
+  its kept state only through bus writes, which are saved a second after the last one; an emulated
+  clock that is kept is compared with its kept offset every 30 s while frames run and saved when it moved
+  two seconds or more. At most 30 s of emulated-time lag can be lost at a quit.
+- **D5's entry shape:** `{ time?: { offsetSeconds, dayOffset, hours12 }, regs, control, ram, savedAt }`
+  (`src/common/zxnext/nextRtcKept.ts`): `time` is absent for a stopped clock or a time that is no valid
+  date, and `regs` (always saved) then loads as it was. On disk the RAM is base64; a file of another
+  version, a broken file or an invalid entry holds nothing for that model.
+- **The host side is one class**, `NextRtcHost` (`zxNext/nextRtcHost.ts`); the machine delegates to it.
+  Two more machine properties beside D1's: `NEXT_RTC_STORE` (the load/save port, wired by
+  `MachineService` to `MainApi.getNextRtcState`/`saveNextRtcState`) and `NEXT_RTC_HOST_CLOCK` (a fake
+  clock for tests). `MachineService` sets the clock's options and the store *before* `setup()`, because
+  the clock is seeded there and the emulator panel's effect runs only after the machine is published.
+  Nothing is read, followed or saved before the clock is seeded (turning keep on before setup would
+  otherwise save an empty chip).
+- **Forget** leaves nothing to save until the program writes the chip again (otherwise the drift check
+  would recreate the entry at once); **Set to host time** saves at once when keep is on.
+- **D8's text:** a row gets `describeValue(value, appState)`, which wins over its description; the
+  Kept clock row's value is the running model's entry from `nextRtcKept`, an app-state record of every
+  kept entry's save time by model (so a model switch needs no new dispatch). Main publishes it at startup
+  and after every save and forget.
+- **Tests:** `test/zxnext-hw/i2c/rtc-host.test.ts` (P1, P3, P4 on the real core, fake host clock and
+  store), `test/zxnext-shared/nextRtc.test.ts` (P2), `test/main/zxnext-rtc-store.test.ts`,
+  `test/settings/settings-pages.test.ts` and `test/dialogs/settings/settings-rtc-rows.test.ts` (P5). The
+  I2C driver moved to `test/zxnext-hw/i2c/_i2c-helpers.ts`, shared with `i2c-rtc.test.ts`. The harness
+  gained `rtcRegister`, `rtcWriteCounts`, `setRtcOptions`, `rtcCommand` and the `rtc` session option.
+  The panel's effect (a changed setting reaching `setMachineProperty`) has no unit test: it was checked in
+  the running IDE.
+- **Checked in the running IDE** (doc-shots driver, scratch home): the page in both themes; the NextZXOS
+  menu showing the host's time; a kept clock 25 hours ahead loaded at start (the menu showed the next
+  day, an hour on); *Set to host time* writing `zxnext-rtc.json` and the row's "Last saved"; *Forget*
+  emptying it and disabling itself. Not checked there, covered by the core tests: the catch-up after a
+  debugger pause, and switching modes live.
+- **P6:** the guide is a page of its own, `guides/next/real-time-clock.mdx`, plus three rows in the
+  Settings page's Machine table; the `guides-next` recipe captures `next-models/rtc-settings.webp`. The
+  RTC chapter's "In Klive" note is left to the author.
 
 ### P1 — Core: read the chip, count writes
 

@@ -89,6 +89,7 @@ import {
   settingsFileLoaded
 } from "./settings-utils";
 import { KLIVE_HOME_FOLDER } from "./settings";
+import { nextRtcStore } from "./zxnext-rtc";
 import { KLIVE_APP_VERSION } from "./app-version";
 import { EMU_INITIAL_MIN_HEIGHT, EMU_MIN_CONTENT_WIDTH } from "@common/utils/emu-window-size";
 import { emuMachineSizeStore } from "./emu-machine-sizes";
@@ -466,6 +467,13 @@ async function createAppWindows() {
       const dockFile = appSettings.media?.[MEDIA_DOCK];
       if (typeof dockFile === "string" && dockFile) {
         await setDockFile(dockFile, false);
+      }
+
+      // --- The ZX Spectrum Next's kept real-time clocks, for the Settings dialog's Kept clock row
+      try {
+        nextRtcStore.publish();
+      } catch {
+        // --- Intentionally ignored: the row then shows no kept clock
       }
 
       // --- Set key mappings
