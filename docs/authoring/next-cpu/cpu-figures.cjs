@@ -23,6 +23,13 @@ const READ = "#30a46c"; // reads (the y bits in PIXELAD)
 const GREY = "currentColor";
 const FH = 16.5, FT = 15, FS = 13.5;
 
+// A numbered step marker, drawn like the badges of the list under the figure (custom.css,
+// "article figure + ol"): the site's accent square with the number in the accent's text colour.
+function badge(out, cx, cy, n) {
+  out.push(`  <rect x="${cx - 12}" y="${cy - 12}" width="24" height="24" rx="4" style={{ fill: "var(--site-accent)" }} />`);
+  out.push(`  <text x="${cx}" y="${cy + 5}" textAnchor="middle" fontSize="${FS}" fontWeight="bold" style={{ fill: "var(--site-on-accent)" }}>${n}</text>`);
+}
+
 function blk(out, x, y, w, h, t, o = {}) {
   const size = o.size ?? FT;
   const lh = size + 3;
@@ -36,7 +43,7 @@ const figures = {};
 // Figure: the opcode fetch, signal by signal, in half T-states
 {
   const x0 = 130, T = 4, k = (700 - x0) / T, X = (t) => x0 + t * k;
-  const out = [svgOpen(700, 372, "The opcode fetch over four T-states, T1 to T4, drawn to scale. The address bus carries PC during T1 and T2 and the refresh address, I in the high half and R in the low half, during T3 and T4. /M1 is low from the start of T1 to the start of T3. /MREQ and /RD go low half way through T1 and rise at the start of T3, where the CPU takes the opcode from the data bus. /RFSH is low through T3 and T4, and /MREQ gives a second, short pulse from the middle of T3 to the middle of T4 for the refresh.")];
+  const out = [svgOpen(700, 376, "The opcode fetch over four T-states, T1 to T4, drawn to scale. The address bus carries PC during T1 and T2 and the refresh address, I in the high half and R in the low half, during T3 and T4. /M1 is low from the start of T1 to the start of T3. /MREQ and /RD go low half way through T1 and rise at the start of T3, where the CPU takes the opcode from the data bus. /RFSH is low through T3 and T4, and /MREQ gives a second, short pulse from the middle of T3 to the middle of T4 for the refresh.")];
   // --- T-state grid
   for (let t = 0; t <= T; t++) out.push(line(X(t), 26, X(t), 340, { width: 1, dash: "3 4", opacity: 0.5 }));
   for (let t = 0; t < T; t++) out.push(text(X(t + 0.5), 18, `T${t + 1}`, { anchor: "middle", size: FT, bold: true }));
@@ -69,12 +76,104 @@ const figures = {};
   const yd = 322;
   out.push(text(0, yd + 5, "data", { size: FT }));
   blk(out, X(1.2), yd - 14, X(2) - X(1.2), 28, ["opcode"], { c: READ, fill: true, size: FS });
-  out.push(line(X(2), 290, X(2), yd + 18, { stroke: WAIT, width: 2 }));
+  out.push(line(X(2), 290, X(2), 348, { stroke: WAIT, width: 2 }));
   out.push(text(X(2) + 8, 292, "taken here", { size: FS, fill: WAIT }));
-  out.push(text(X(1), 356, "fetch", { anchor: "middle", size: FS }));
-  out.push(text(X(3), 356, "refresh, R + 1", { anchor: "middle", size: FS }));
+  // --- the steps of the list under the figure: 1 is T1, 2 is T2, 3 the moment the byte is taken,
+  // 4 the refresh in T3 and T4
+  const yb = 360;
+  badge(out, X(0.5), yb, 1);
+  badge(out, X(1.5), yb, 2);
+  badge(out, X(2), yb, 3);
+  badge(out, X(3), yb, 4);
+  out.push(text(X(1), yb + 5, "fetch", { anchor: "middle", size: FS }));
+  out.push(text(X(3) + 20, yb + 5, "refresh, R + 1", { size: FS }));
   figures.m1 = [...out, "</svg>"];
 }
+
+// ---------------------------------------------------------------------------------------------
+// Figures: memory read, memory write and I/O, drawn like the opcode fetch. Edges are on the clock's
+// half T-states, as in Zilog's timing figures: t = 1.5 is the falling edge in the middle of T2.
+//   states: the T-state names; address: [label, colour], or bands: [[label, from, to, colour]];
+//   wait: null leaves the /WAIT row out; sig: [name, [[from, to] low], colour];
+//   data: [name, from, to, colour, label]; take: the moment the CPU takes the byte, or null;
+//   wait: when /WAIT is sampled; takeLeft: a short label left of the line, where the right has no room; badges: the moment of each numbered step of the list below.
+function busCycle(label, o) {
+  const x0 = 130, T = o.states.length, k = (700 - x0) / T, X = (t) => x0 + t * k;
+  const rows = o.sig.length + (o.wait === null ? 0 : 1) + o.data.length;
+  const y0 = 112, step = 52, yEnd = y0 + (rows - 1) * step + 18;
+  const yb = yEnd + 20, H = yb + 16;
+  const out = [svgOpen(700, H, label)];
+  for (let t = 0; t <= T; t++) out.push(line(X(t), 26, X(t), yEnd, { width: 1, dash: "3 4", opacity: 0.5 }));
+  o.states.forEach((n, t) => out.push(text(X(t + 0.5), 18, n, { anchor: "middle", size: FT, bold: true, fill: n === "TW" ? WAIT : GREY })));
+  const ya = 54;
+  out.push(text(0, ya + 5, "address", { size: FT }));
+  for (const [t, a, b, c] of o.bands ?? [[o.address[0], 0, T, o.address[1]]])
+    blk(out, X(a), ya - 16, X(b) - X(a), 32, [t], { c, fill: true, bold: true });
+  let y = y0;
+  for (const [name, lows, c] of o.sig) {
+    const hi = y - 12, lo = y + 12;
+    out.push(text(0, y + 5, name, { size: FT, bold: true }));
+    let d = `M${X(0)},${hi}`;
+    for (const [a, b] of lows) d += ` L${X(a)},${hi} L${X(a)},${lo} L${X(b)},${lo} L${X(b)},${hi}`;
+    out.push(pathEl(d + ` L${X(T)},${hi}`, { stroke: c, width: 2 }));
+    y += step;
+  }
+  // /WAIT: high (nobody asks for time), with the moment the CPU looks at it
+  if (o.wait !== null) {
+    out.push(text(0, y + 5, "/WAIT", { size: FT, bold: true }));
+    out.push(line(X(0), y - 12, X(T), y - 12, { width: 2, opacity: 0.5 }));
+    out.push(line(X(o.wait), y - 22, X(o.wait), y + 4, { stroke: WAIT, width: 2 }));
+    out.push(text(X(o.wait) + 8, y + 6, "sampled", { size: FS, fill: WAIT }));
+    y += step;
+  }
+  const yData = y;
+  for (const [name, a, b, c, t] of o.data) {
+    out.push(text(0, y + 5, name, { size: FT }));
+    blk(out, X(a), y - 14, X(b) - X(a), 28, [t], { c, fill: true, size: FS });
+    y += step;
+  }
+  if (o.take !== null) {
+    const yt = yData + (o.takeRow ?? 0) * step;
+    out.push(line(X(o.take), yt - 32, X(o.take), yb - 12, { stroke: WAIT, width: 2 }));
+    out.push(o.takeLeft
+      ? text(X(o.take) - 8, yt - 20, "taken", { anchor: "end", size: FS, fill: WAIT })
+      : text(X(o.take) + 8, yt - 30, "taken here", { size: FS, fill: WAIT }));
+  }
+  o.badges.forEach((t, i) => badge(out, X(t), yb, i + 1));
+  return [...out, "</svg>"];
+}
+
+figures.mread = busCycle("A memory read over three T-states, T1 to T3, drawn to scale. The address is on the bus for all three. /MREQ and /RD go low half way through T1 and rise half way through T3. The CPU samples /WAIT half way through T2 and takes the byte from the data bus half way through T3.", {
+  states: ["T1", "T2", "T3"],
+  address: ["memory address", ZILOG],
+  sig: [["/MREQ", [[0.5, 2.5]], GREY], ["/RD", [[0.5, 2.5]], ZILOG]],
+  wait: 1.5,
+  data: [["data in", 1.6, 2.5, READ, "byte"]],
+  take: 2.5,
+  badges: [0.5, 1.5, 2.5]
+});
+
+figures.mwrite = busCycle("A memory write over three T-states, T1 to T3, drawn to scale. The address is on the bus for all three. /MREQ goes low half way through T1 and the byte goes on the data bus at the same time, staying to the end of T3. /WR goes low half way through T2, when the CPU also samples /WAIT, and rises with /MREQ half way through T3.", {
+  states: ["T1", "T2", "T3"],
+  address: ["memory address", ZILOG],
+  sig: [["/MREQ", [[0.5, 2.5]], GREY], ["/WR", [[1.5, 2.5]], ZILOG]],
+  wait: 1.5,
+  data: [["data out", 0.5, 3, ZILOG, "byte"]],
+  take: null,
+  badges: [0.5, 1.5, 2.5]
+});
+
+figures.io = busCycle("An I/O cycle over four T-states, T1, T2, the automatic wait state TW and T3, drawn to scale. The 16-bit port address is on the bus for all four. /IORQ goes low at the start of T2, with /RD for an IN or /WR for an OUT, and they rise half way through T3. The CPU samples /WAIT half way through TW. An IN takes the byte half way through T3; an OUT puts its byte on the data bus half way through T1 and keeps it there to the end of T3.", {
+  states: ["T1", "T2", "TW", "T3"],
+  address: ["port address: BC, or A : n", ZILOG],
+  sig: [["/IORQ", [[1, 3.5]], GREY], ["/RD (IN)", [[1, 3.5]], READ], ["/WR (OUT)", [[1, 3.5]], ZILOG]],
+  wait: 2.5,
+  data: [["data, OUT", 0.5, 4, ZILOG, "byte"], ["data, IN", 2.6, 3.5, READ, "byte"]],
+  take: 3.5,
+  takeRow: 1,
+  takeLeft: true,
+  badges: [0.5, 1, 2.5, 3.5]
+});
 
 // ---------------------------------------------------------------------------------------------
 // Figure: LD A,(nn) and LD (nn),A at 3.5 MHz and 28 MHz
@@ -109,6 +208,80 @@ const figures = {};
     out.push(text(X(t) + 6, y + 26, `${t} T`, { size: FT, bold: true }));
   });
   figures.wait = [...out, "</svg>"];
+}
+
+// ---------------------------------------------------------------------------------------------
+// Figures: the interrupt acknowledge, the three responses to scale, and the instruction after EI
+figures.intack = busCycle("The interrupt acknowledge cycle over six T-states, T1, T2, two automatic wait states and T3 and T4, drawn to scale. The address bus carries PC up to T3 and the refresh address, I and R, in T3 and T4. /M1 is low from the start of T1 to the start of T3. /MREQ and /RD stay high until the refresh, so no memory is read; /MREQ gives only the refresh pulse in T3 and T4. /IORQ goes low half way through the first wait state and rises at the start of T3, where the CPU takes the vector byte from the data bus. /RFSH is low in T3 and T4.", {
+  states: ["T1", "T2", "TW", "TW", "T3", "T4"],
+  bands: [["PC", 0, 4, ZILOG], ["I : R", 4, 6, UNDOC]],
+  sig: [["/M1", [[0, 4]], ZILOG], ["/MREQ", [[4.5, 5.5]], GREY], ["/IORQ", [[2.5, 4]], WAIT], ["/RFSH", [[4, 6]], UNDOC]],
+  wait: null,
+  data: [["data in", 3.1, 4, READ, "vector"]],
+  take: 4,
+  takeLeft: true,
+  badges: [0.5, 2.5, 4, 5]
+});
+
+{
+  const x0 = 150, T = 21, k = (700 - x0) / T, X = (t) => x0 + t * k;
+  const out = [svgOpen(700, 270, "Three bars to scale in T-states. IM 0 with the Next's $FF, and IM 1: an acknowledge of 7 and two writes of 3 that push the return address, 13 T-states, then $0038. IM 2: the same 13, and two reads of 3 that fetch the handler's address from the table at I and the vector, 19 T-states. NMI: an opcode fetch of 5 whose byte is ignored and the two pushes, 11 T-states, then $0066.")];
+  for (let t = 0; t <= 20; t += 1) {
+    out.push(line(X(t), 30, X(t), 36, { width: 1.2 }));
+    if (t % 2 === 0) out.push(text(X(t), 22, String(t), { anchor: "middle", size: FS }));
+  }
+  out.push(text(0, 22, "T-states", { size: FS }));
+  const rows = [
+    ["IM 0, IM 1", "then $0038", [["acknowledge", 7, ZILOG], ["push", 3, UNDOC], ["push", 3, UNDOC]]],
+    ["IM 2", "then (I : vector)", [["acknowledge", 7, ZILOG], ["push", 3, UNDOC], ["push", 3, UNDOC], ["read", 3, READ], ["read", 3, READ]]],
+    ["NMI", "then $0066", [["fetch", 5, GREY], ["push", 3, UNDOC], ["push", 3, UNDOC]]]
+  ];
+  rows.forEach(([name, dest, cyc], i) => {
+    const y = 50 + i * 72;
+    out.push(text(0, y + 18, name, { size: FT, bold: true }));
+    out.push(text(0, y + 37, dest, { size: FS }));
+    let t = 0;
+    for (const [label, n, c] of cyc) {
+      blk(out, X(t), y, n * k, 44, [label], { c: c === GREY ? undefined : c, fill: c !== GREY, size: FS });
+      t += n;
+    }
+    out.push(text(X(t) + 8, y + 27, `${t} T`, { size: FT, bold: true }));
+  });
+  out.push(text(0, 262, "push: a memory write of the return address; read: the handler's address from the table", { size: FS }));
+  figures.intresp = [...out, "</svg>"];
+}
+
+{
+  const x0 = 130, T = 48, k = (700 - x0) / T, X = (t) => x0 + t * k;
+  const out = [svgOpen(700, 226, "A timeline to scale over 48 T-states at the end of an interrupt handler. /INT is held low by a 32 T-state pulse from T-state 1 to 33. The instructions are POP HL, 10 T-states, EI, 4, and RETI, 14. The CPU looks at /INT one T-state before each instruction ends: at 9 it ignores it, because IFF1 is 0; at 13 it ignores it, because the instruction just ending is EI; at 27, after RETI, it takes it, and answers the interrupt when RETI ends at 28.")];
+  for (let t = 0; t <= T; t += 4) {
+    out.push(line(X(t), 30, X(t), 36, { width: 1.2 }));
+    if (t < T) out.push(text(X(t), 22, String(t), { anchor: "middle", size: FS }));
+  }
+  out.push(text(0, 22, "T-states", { size: FS }));
+  // /INT, a 32-T pulse
+  const yi = 70;
+  out.push(text(0, yi + 5, "/INT", { size: FT, bold: true }));
+  out.push(pathEl(`M${X(0)},${yi - 12} L${X(1)},${yi - 12} L${X(1)},${yi + 12} L${X(33)},${yi + 12} L${X(33)},${yi - 12} L${X(T)},${yi - 12}`, { stroke: WAIT, width: 2 }));
+  // the instructions
+  const yr = 110;
+  out.push(text(0, yr + 26, "instructions", { size: FT }));
+  const ins = [["POP HL", 10, ZILOG], ["EI", 4, ZILOG], ["RETI", 14, ZILOG]];
+  let t = 0;
+  for (const [label, n, c] of ins) {
+    blk(out, X(t), yr, n * k, 42, [label], { c, fill: true, size: FS });
+    t += n;
+  }
+  // the moments the CPU looks at /INT
+  const looks = [[9, "IFF1 is 0: ignored", GREY], [13, "just after EI: ignored", GREY], [27, "taken: answered as soon as RETI ends", WAIT]];
+  looks.forEach(([at, label, c], i) => {
+    const y = 176 + i * 22;
+    out.push(line(X(at), yi + 14, X(at), y - 4, { stroke: c === GREY ? WAIT : c, width: 2, dash: c === GREY ? "4 3" : undefined }));
+    out.push(i !== 1
+      ? text(X(at) - 6, y, label, { anchor: "end", size: FS, fill: c === GREY ? GREY : c })
+      : text(X(at) + 6, y, label, { size: FS, fill: c === GREY ? GREY : c }));
+  });
+  figures.eishadow = [...out, "</svg>"];
 }
 
 // ---------------------------------------------------------------------------------------------
