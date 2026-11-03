@@ -1,0 +1,136 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:Tfb7,---
+description: "Choose what the ZX Spectrum Next's real-time clock follows, keep a time set with .time and .date between sessions, and bring the clock back to the real time."
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# The Real-Time Clock
+
+The ZX Spectrum Next has a battery-backed clock chip, a DS1307, that NextZXOS reads for the date and
+time on its menu and for the time stamps of the files it writes. Klive emulates the chip and keeps it
+like the real one: it shows the real time, and a time you set stays set when you start Klive again.
+Three options on the Settings dialog decide how.
+
+*Applies to: ZX Spectrum Next.*
+
+<Shot src="guides/next/next-models/rtc-settings.webp" alt="The Settings dialog's Machine page for the ZX Spectrum Next, with the Real-time clock group: The clock follows, Keep the time and the clock's RAM between sessions, and the Kept clock row with its Set to host time and Forget buttons" caption="Settings › Machine for the ZX Spectrum Next: the Real-time clock group under Sound." width={640} />
+
+## Open the clock's options
+
+<Steps>
+### Start a ZX Spectrum Next
+
+The options appear only while a Next is the running machine.
+
+### Open the Machine page
+
+Choose **Machine › Configure ZX Spectrum Next...**, or the **Machine settings** button on the emulator
+toolbar. The **Real-time clock** group is under **Sound**. You can also type `rtc` in the dialog's
+search box.
+</Steps>
+
+Every change applies at once to the running machine; nothing restarts it.
+
+## What the clock follows
+
+**The clock follows** has two choices:
+
+| Choice | What the clock shows |
+|---|---|
+| **The host's clock** (the default) | The real time, as the battery-backed chip does. A time a program sets is kept as a difference from your computer's clock, and the clock runs on from there. |
+| **Emulated time** | The emulated machine's own time. It stops while the debugger pauses the machine, and runs fast or slow with the emulator. |
+
+Use emulated time when a program's behaviour depends on the clock and you want every run to see the
+same seconds, for example while you step through code that reads the time.
+
+Switching between the two never changes the time the clock shows: it follows the new choice from
+the time it shows now. **Set to host time** brings back the real time in either mode.
+
+## Keep the clock between sessions
+
+With **Keep the time and the clock's RAM between sessions** on (the default), Klive saves the clock
+the way the battery on a real board keeps it:
+
+- a date and time set with `.time` or `.date` in NextZXOS, or by any program;
+- the clock's control register and its 56 bytes of RAM, which programs can use as a small store that
+  survives a power cycle.
+
+The time is kept as a difference from your computer's clock, so it keeps running while Klive is
+closed. Each Next model keeps its own clock
+([ZX Spectrum Next models](/en/guides/next/next-models/)). The clocks are in `zxnext-rtc.json` in the
+Klive folder of your home folder.
+
+With the switch off, every start sets the clock to your computer's time and clears its RAM, and
+nothing is saved.
+
+## The kept clock
+
+The **Kept clock** row says when the running model's clock was last saved. Its buttons:
+
+| Button | What it does |
+|---|---|
+| **Set to host time** | Sets the clock to your computer's time now. With keep on, it saves the clock too. |
+| **Forget** | Deletes the model's kept clock, clears the clock's 56 bytes of RAM and sets it to your computer's time. Enabled only while the model has a kept clock. |
+
+<Callout type="info">
+A program that stops the clock (the CH bit of its seconds register) keeps it stopped: Klive does not
+move a stopped clock, and keeps it stopped between sessions.
+</Callout>
+
+## Related
+
+- [ZX Spectrum Next models](/en/guides/next/next-models/)
+- [The Next's SD card](/en/guides/next/sd-card/)
+- [The Settings dialog](/en/guides/customizing/settings/)
+- [Real-Time Clock: A Watchman on Two Wires](/en/under-the-hood/emulator-internals/next-rtc/): how the chip and its I2C bus worka:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Open the clock’s options","id":"open-the-clocks-options","depth":2},{"value":"Start a ZX Spectrum Next","id":"start-a-zx-spectrum-next","depth":3},{"value":"Open the Machine page","id":"open-the-machine-page","depth":3},{"value":"What the clock follows","id":"what-the-clock-follows","depth":2},{"value":"Keep the clock between sessions","id":"keep-the-clock-between-sessions","depth":2},{"value":"The kept clock","id":"the-kept-clock","depth":2},{"value":"Related","id":"related","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"Choose what the ZX Spectrum Next's real-time clock follows, keep a time set with .time and .date between sessions, and bring the clock back to the real time.","title":"The Real-Time Clock","filePath":"content/en/guides/next/real-time-clock.mdx","timestamp":1793369525000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"guides/next/real-time-clock","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"The Real-Time Clock - Klive IDE"}],["$","meta","1",{"name":"description","content":"Choose what the ZX Spectrum Next's real-time clock follows, keep a time set with .time and .date between sessions, and bring the clock back to the real time."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/guides/next/real-time-clock/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"50Y0BUmhGKiclaio4jMH2"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+2f:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["The Real-Time Clock","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The ZX Spectrum Next has a battery-backed clock chip, a DS1307, that NextZXOS reads for the date and\ntime on its menu and for the time stamps of the files it writes. Klive emulates the chip and keeps it\nlike the real one: it shows the real time, and a time you set stays set when you start Klive again.\nThree options on the Settings dialog decide how."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","em",null,{"children":"Applies to: ZX Spectrum Next."}]}],"\n",["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":[["$","figcaption",null,{"className":"Shot_label__LxtzD","children":["$undefined",["$","span",null,{"children":"Settings › Machine for the ZX Spectrum Next: the Real-time clock group under Sound."}]]}],["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/guides/next/next-models/rtc-settings.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/guides/next/next-models/rtc-settings.webp","alt":"The Settings dialog's Machine page for the ZX Spectrum Next, with the Real-time clock group: The clock follows, Keep the time and the clock's RAM between sessions, and the Kept clock row with its Set to host time and Forget buttons","loading":"lazy","decoding":"async"}],[]]}]]}],"\n",["$","h2",null,{"id":"open-the-clocks-options","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Open the clock’s options",["$","$L20",null,{"id":"open-the-clocks-options"}]]}],"\n",["$","div",null,{"className":"nextra-steps x:ms-4 x:mb-12 x:border-s x:border-gray-200 x:ps-6 x:dark:border-neutral-800","style":{"--counter-id":"_S_1_"},"children":[["$","h3",null,{"id":"start-a-zx-spectrum-next","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Start a ZX Spectrum Next",["$","$L20",null,{"id":"start-a-zx-spectrum-next"}]]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The options appear only while a Next is the running machine."}],["$","h3",null,{"id":"open-the-machine-page","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Open the Machine page",["$","$L20",null,{"id":"open-the-machine-page"}]]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Choose ",["$","strong",null,{"children":"Machine › Configure ZX Spectrum Next…"}],", or the ",["$","strong",null,{"children":"Machine settings"}]," button on the emulator\ntoolbar. The ",["$","strong",null,{"children":"Real-time clock"}]," group is under ",["$","strong",null,{"children":"Sound"}],". You can also type ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"rtc"}]," in the dialog’s\nsearch box."]}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Every change applies at once to the running machine; nothing restarts it."}],"\n",["$","h2",null,{"id":"what-the-clock-follows","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["What the clock follows",["$","$L20",null,{"id":"what-the-clock-follows"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"The clock follows"}]," has two choices:"]}],"\n","$L21","\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e"]]}]
+15:["$","$L2f",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@30"}]}]
+1f:true
+31:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+9:300
+21:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Choice","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"What the clock shows","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":[["$","strong",null,{"children":"The host’s clock"}]," (the default)"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The real time, as the battery-backed chip does. A time a program sets is kept as a difference from your computer’s clock, and the clock runs on from there.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"Emulated time"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The emulated machine’s own time. It stops while the debugger pauses the machine, and runs fast or slow with the emulator.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}]
+22:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Use emulated time when a program’s behaviour depends on the clock and you want every run to see the\nsame seconds, for example while you step through code that reads the time."}]
+23:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Switching between the two never changes the time the clock shows: it follows the new choice from\nthe time it shows now. ",["$","strong",null,{"children":"Set to host time"}]," brings back the real time in either mode."]}]
+24:["$","h2",null,{"id":"keep-the-clock-between-sessions","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Keep the clock between sessions",["$","$L20",null,{"id":"keep-the-clock-between-sessions"}]]}]
+25:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["With ",["$","strong",null,{"children":"Keep the time and the clock’s RAM between sessions"}]," on (the default), Klive saves the clock\nthe way the battery on a real board keeps it:"]}]
+26:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["a date and time set with ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".time"}]," or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".date"}]," in NextZXOS, or by any program;"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"the clock’s control register and its 56 bytes of RAM, which programs can use as a small store that\nsurvives a power cycle."}],"\n"]}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The time is kept as a difference from your computer’s clock, so it keeps running while Klive is\nclosed. Each Next model keeps its own clock\n(",["$","$L31",null,{"href":"/en/guides/next/next-models/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"ZX Spectrum Next models"}],"). The clocks are in ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"zxnext-rtc.json"}]," in the\nKlive folder of your home folder."]}]
+28:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"With the switch off, every start sets the clock to your computer’s time and clears its RAM, and\nnothing is saved."}]
+29:["$","h2",null,{"id":"the-kept-clock","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The kept clock",["$","$L20",null,{"id":"the-kept-clock"}]]}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","strong",null,{"children":"Kept clock"}]," row says when the running model’s clock was last saved. Its buttons:"]}]
+2b:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Button","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"What it does","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"Set to host time"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Sets the clock to your computer’s time now. With keep on, it saves the clock too.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"Forget"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Deletes the model’s kept clock, clears the clock’s 56 bytes of RAM and sets it to your computer’s time. Enabled only while the model has a kept clock.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}]
+2c:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A program that stops the clock (the CH bit of its seconds register) keeps it stopped: Klive does not\nmove a stopped clock, and keeps it stopped between sessions."}]}]]}]
+2d:["$","h2",null,{"id":"related","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Related",["$","$L20",null,{"id":"related"}]]}]
+2e:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L31",null,{"href":"/en/guides/next/next-models/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"ZX Spectrum Next models"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L31",null,{"href":"/en/guides/next/sd-card/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"The Next’s SD card"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L31",null,{"href":"/en/guides/customizing/settings/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"The Settings dialog"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","$L31",null,{"href":"/en/under-the-hood/emulator-internals/next-rtc/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Real-Time Clock: A Watchman on Two Wires"}],": how the chip and its I2C bus work"]}],"\n"]}]
+30:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

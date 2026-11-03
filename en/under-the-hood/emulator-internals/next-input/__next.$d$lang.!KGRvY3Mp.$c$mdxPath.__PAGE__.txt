@@ -1,0 +1,930 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:Td3b4,---
+description: "How the ZX Spectrum Next reads its keyboard, joysticks and mouse: the 8 by 7 membrane matrix and its scanner, the copy port $FE reads, the sixteen extra keys and NextRegs $B0, $B1 and $68, the PS/2 keyboard and its keymap, joysticks as keys, Kempston ports and Mega Drive pads, the joystick reader's select protocol, the Kempston mouse and its counters, the NMI and reset buttons, and resets."
+---
+
+import { Callout } from 'nextra/components'
+
+# Input: One Matrix, Many Hands
+
+Plug a PC keyboard into a Next, press the up arrow, and a program written in 1983 sees CAPS SHIFT and 7, as
+if your fingers had found both keys on a rubber Spectrum. Plug in a joystick, set it to Sinclair mode, push
+it left, and the same old program sees the key 6. Neither the PC keyboard nor the joystick knows anything
+about the Spectrum. So who is doing the translating, and how does the program never notice?
+
+Input is the part of a machine that everybody uses and nobody looks at. Yet it decides whether an old game
+works at all, whether a new one can tell a cursor key from CAPS SHIFT and 7, and whether a player with a
+Mega Drive pad gets all six buttons or only two. The Next keeps every old convention and adds a handful of
+new ones on top, and the way it does that is one of the neatest pieces of design in the machine.
+
+You should know two chapters first. [Memory, Ports and NextRegs: How the Z80N Reaches the
+Machine](/en/under-the-hood/emulator-internals/next-memory-io/) explains how ports are decoded and how a
+NextReg switches a group of them off. [The Beeper: EAR, MIC and the
+Tape](/en/under-the-hood/emulator-internals/next-audio/beeper/) explains bit 6 of port `$FE`, the tape input,
+which shares its byte with the keyboard.
+
+## The road ahead
+
+We start with the keyboard as the Spectrum knew it, eight half-rows of five keys behind port `$FE`, and the
+Next's own keyboard, which has seven columns instead of five. Then comes the clerk, the scanner that walks
+the membrane and keeps a copy of it for the CPU, and the key idea of the chapter: the PS/2 keyboard and the
+joysticks do not talk to the CPU at all, they press keys in the clerk's scan. If you read only one section,
+read that one. After it we look at the sixteen extra keys and the timing trick behind them, the PS/2
+keyboard, the joystick modes, the reader that asks every joystick whether it is a Mega Drive pad, the
+Kempston mouse, the two buttons on the side of the case, and resets.
+
+<Callout type="info">
+The facts are for **core 3.02.01**. Times are for the **28 MHz master clock** of VGA mode 0, which paces the
+keyboard scanner and the joystick reader.
+</Callout>
+
+## The Spectrum's keyboard
+
+The Spectrum's 40 keys sit in a **matrix**: eight rows of five keys, each key a switch at the crossing of one
+row wire and one column wire. To read it, the CPU executes an `IN` from port `$FE`, any port with address
+line A0 low. The upper half of the address chooses the rows: every one of A8 to A15 that is 0 selects its
+**half-row**, and bits 0 to 4 of the byte read are the five columns. A pressed key reads **0**; bits 5 and 7
+always read 1, and bit 6 is the tape input.
+
+So `IN A,($FE)` with `$FB` in A reads the row of Q, W, E, R and T, and a program that puts `$00` in the
+upper byte reads all eight rows at once: each column bit is then 0 if a key in that column is down in any
+row. That is how a ROM checks "is any key pressed?" in one instruction.
+
+The Next keeps every bit of this. But its own keyboard has **seven** columns, not five:
+
+<figure>
+{/* fig:matrix */}
+<svg viewBox="-2 -2 704 302" role="img" aria-label="The Next's keyboard matrix: eight rows, selected by address lines A8 to A15, and seven columns. Columns 0 to 4, drawn in blue, are the Spectrum's 40 keys, read in bits 0 to 4 of port $FE: A8 CAPS SHIFT Z X C V, A9 A S D F G, A10 Q W E R T, A11 1 2 3 4 5, A12 0 9 8 7 6, A13 P O I U Y, A14 ENTER L K J H, A15 SPACE SYMBOL SHIFT M N B. Columns 5 and 6, drawn in orange, hold the sixteen extra keys: EXTEND and UP, CAPS LOCK and GRAPH, TRUE VIDEO and INV VIDEO, BREAK and EDIT, semicolon and quote, comma and full stop, DELETE and RIGHT, LEFT and DOWN." style={{ width: "100%", height: "auto" }}>
+  <text x="291.1" y="16" textAnchor="middle" fill="#3b82f6" fontSize="13.5" fontWeight="bold">port $FE, bits 0-4</text>
+  <text x="609.1" y="16" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">extra columns</text>
+  <text x="109.4" y="38" textAnchor="middle" fill="#3b82f6" fontSize="13.5">bit 0</text>
+  <text x="200.3" y="38" textAnchor="middle" fill="#3b82f6" fontSize="13.5">bit 1</text>
+  <text x="291.1" y="38" textAnchor="middle" fill="#3b82f6" fontSize="13.5">bit 2</text>
+  <text x="382" y="38" textAnchor="middle" fill="#3b82f6" fontSize="13.5">bit 3</text>
+  <text x="472.9" y="38" textAnchor="middle" fill="#3b82f6" fontSize="13.5">bit 4</text>
+  <text x="563.7" y="38" textAnchor="middle" fill="#e8912d" fontSize="13.5">col 5</text>
+  <text x="654.6" y="38" textAnchor="middle" fill="#e8912d" fontSize="13.5">col 6</text>
+  <text x="0" y="66" fill="currentColor" fontSize="13.5" fontWeight="bold">A8</text>
+  <rect x="65.5" y="47.5" width="87.9" height="27" rx="3" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="1.4" />
+  <text x="109.4" y="66" textAnchor="middle" fill="currentColor" fontSize="13.5">CAPS</text>
+  <rect x="156.4" y="47.5" width="87.9" height="27" rx="3" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="1.4" />
+  <text x="200.3" y="66" textAnchor="middle" fill="currentColor" fontSize="13.5">Z</text>
+  <rect x="247.2" y="47.5" width="87.9" height="27" rx="3" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="1.4" />
+  <text x="291.1" y="66" textAnchor="middle" fill="currentColor" fontSize="13.5">X</text>
+  <rect x="338.1" y="47.5" width="87.9" height="27" rx="3" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="1.4" />
+  <text x="382" y="66" textAnchor="middle" fill="currentColor" fontSize="13.5">C</text>
+  <rect x="428.9" y="47.5" width="87.9" height="27" rx="3" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="1.4" />
+  <text x="472.9" y="66" textAnchor="middle" fill="currentColor" fontSize="13.5">V</text>
+  <rect x="519.8" y="47.5" width="87.9" height="27" rx="3" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="563.7" y="66" textAnchor="middle" fill="currentColor" fontSize="13.5">EXTEND</text>
+  <rect x="610.6" y="47.5" width="87.9" height="27" rx="3" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="654.6" y="66" textAnchor="middle" fill="currentColor" fontSize="13.5">UP</text>
+  <text x="0" y="96" fill="currentColor" fontSize="13.5" fontWeight="bold">A9</text>
+  <rect x="65.5" y="77.5" width="87.9" height="27" rx="3" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="1.4" />
+  <text x="109.4" y="96" textAnchor="middle" fill="currentColor" fontSize="13.5">A</text>
+  <rect x="156.4" y="77.5" width="87.9" height="27" rx="3" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="1.4" />
+  <text x="200.3" y="96" textAnchor="middle" fill="currentColor" fontSize="13.5">S</text>
+  <rect x="247.2" y="77.5" width="87.9" height="27" rx="3" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="1.4" />
+  <text x="291.1" y="96" textAnchor="middle" fill="currentColor" fontSize="13.5">D</text>
+  <rect x="338.1" y="77.5" width="87.9" height="27" rx="3" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="1.4" />
+  <text x="382" y="96" textAnchor="middle" fill="currentColor" fontSize="13.5">F</text>
+  <rect x="428.9" y="77.5" width="87.9" height="27" rx="3" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="1.4" />
+  <text x="472.9" y="96" textAnchor="middle" fill="currentColor" fontSize="13.5">G</text>
+  <rect x="519.8" y="77.5" width="87.9" height="27" rx="3" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="563.7" y="96" textAnchor="middle" fill="currentColor" fontSize="13.5">CAPS LOCK</text>
+  <rect x="610.6" y="77.5" width="87.9" height="27" rx="3" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="654.6" y="96" textAnchor="middle" fill="currentColor" fontSize="13.5">GRAPH</text>
+  <text x="0" y="126" fill="currentColor" fontSize="13.5" fontWeight="bold">A10</text>
+  <rect x="65.5" y="107.5" width="87.9" height="27" rx="3" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="1.4" />
+  <text x="109.4" y="126" textAnchor="middle" fill="currentColor" fontSize="13.5">Q</text>
+  <rect x="156.4" y="107.5" width="87.9" height="27" rx="3" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="1.4" />
+  <text x="200.3" y="126" textAnchor="middle" fill="currentColor" fontSize="13.5">W</text>
+  <rect x="247.2" y="107.5" width="87.9" height="27" rx="3" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="1.4" />
+  <text x="291.1" y="126" textAnchor="middle" fill="currentColor" fontSize="13.5">E</text>
+  <rect x="338.1" y="107.5" width="87.9" height="27" rx="3" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="1.4" />
+  <text x="382" y="126" textAnchor="middle" fill="currentColor" fontSize="13.5">R</text>
+  <rect x="428.9" y="107.5" width="87.9" height="27" rx="3" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="1.4" />
+  <text x="472.9" y="126" textAnchor="middle" fill="currentColor" fontSize="13.5">T</text>
+  <rect x="519.8" y="107.5" width="87.9" height="27" rx="3" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="563.7" y="126" textAnchor="middle" fill="currentColor" fontSize="13.5">TRUE VID</text>
+  <rect x="610.6" y="107.5" width="87.9" height="27" rx="3" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="654.6" y="126" textAnchor="middle" fill="currentColor" fontSize="13.5">INV VID</text>
+  <text x="0" y="156" fill="currentColor" fontSize="13.5" fontWeight="bold">A11</text>
+  <rect x="65.5" y="137.5" width="87.9" height="27" rx="3" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="1.4" />
+  <text x="109.4" y="156" textAnchor="middle" fill="currentColor" fontSize="13.5">1</text>
+  <rect x="156.4" y="137.5" width="87.9" height="27" rx="3" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="1.4" />
+  <text x="200.3" y="156" textAnchor="middle" fill="currentColor" fontSize="13.5">2</text>
+  <rect x="247.2" y="137.5" width="87.9" height="27" rx="3" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="1.4" />
+  <text x="291.1" y="156" textAnchor="middle" fill="currentColor" fontSize="13.5">3</text>
+  <rect x="338.1" y="137.5" width="87.9" height="27" rx="3" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="1.4" />
+  <text x="382" y="156" textAnchor="middle" fill="currentColor" fontSize="13.5">4</text>
+  <rect x="428.9" y="137.5" width="87.9" height="27" rx="3" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="1.4" />
+  <text x="472.9" y="156" textAnchor="middle" fill="currentColor" fontSize="13.5">5</text>
+  <rect x="519.8" y="137.5" width="87.9" height="27" rx="3" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="563.7" y="156" textAnchor="middle" fill="currentColor" fontSize="13.5">BREAK</text>
+  <rect x="610.6" y="137.5" width="87.9" height="27" rx="3" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="654.6" y="156" textAnchor="middle" fill="currentColor" fontSize="13.5">EDIT</text>
+  <text x="0" y="186" fill="currentColor" fontSize="13.5" fontWeight="bold">A12</text>
+  <rect x="65.5" y="167.5" width="87.9" height="27" rx="3" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="1.4" />
+  <text x="109.4" y="186" textAnchor="middle" fill="currentColor" fontSize="13.5">0</text>
+  <rect x="156.4" y="167.5" width="87.9" height="27" rx="3" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="1.4" />
+  <text x="200.3" y="186" textAnchor="middle" fill="currentColor" fontSize="13.5">9</text>
+  <rect x="247.2" y="167.5" width="87.9" height="27" rx="3" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="1.4" />
+  <text x="291.1" y="186" textAnchor="middle" fill="currentColor" fontSize="13.5">8</text>
+  <rect x="338.1" y="167.5" width="87.9" height="27" rx="3" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="1.4" />
+  <text x="382" y="186" textAnchor="middle" fill="currentColor" fontSize="13.5">7</text>
+  <rect x="428.9" y="167.5" width="87.9" height="27" rx="3" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="1.4" />
+  <text x="472.9" y="186" textAnchor="middle" fill="currentColor" fontSize="13.5">6</text>
+  <rect x="519.8" y="167.5" width="87.9" height="27" rx="3" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="563.7" y="186" textAnchor="middle" fill="currentColor" fontSize="13.5">;</text>
+  <rect x="610.6" y="167.5" width="87.9" height="27" rx="3" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="654.6" y="186" textAnchor="middle" fill="currentColor" fontSize="13.5">&quot;</text>
+  <text x="0" y="216" fill="currentColor" fontSize="13.5" fontWeight="bold">A13</text>
+  <rect x="65.5" y="197.5" width="87.9" height="27" rx="3" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="1.4" />
+  <text x="109.4" y="216" textAnchor="middle" fill="currentColor" fontSize="13.5">P</text>
+  <rect x="156.4" y="197.5" width="87.9" height="27" rx="3" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="1.4" />
+  <text x="200.3" y="216" textAnchor="middle" fill="currentColor" fontSize="13.5">O</text>
+  <rect x="247.2" y="197.5" width="87.9" height="27" rx="3" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="1.4" />
+  <text x="291.1" y="216" textAnchor="middle" fill="currentColor" fontSize="13.5">I</text>
+  <rect x="338.1" y="197.5" width="87.9" height="27" rx="3" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="1.4" />
+  <text x="382" y="216" textAnchor="middle" fill="currentColor" fontSize="13.5">U</text>
+  <rect x="428.9" y="197.5" width="87.9" height="27" rx="3" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="1.4" />
+  <text x="472.9" y="216" textAnchor="middle" fill="currentColor" fontSize="13.5">Y</text>
+  <rect x="519.8" y="197.5" width="87.9" height="27" rx="3" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="563.7" y="216" textAnchor="middle" fill="currentColor" fontSize="13.5">,</text>
+  <rect x="610.6" y="197.5" width="87.9" height="27" rx="3" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="654.6" y="216" textAnchor="middle" fill="currentColor" fontSize="13.5">.</text>
+  <text x="0" y="246" fill="currentColor" fontSize="13.5" fontWeight="bold">A14</text>
+  <rect x="65.5" y="227.5" width="87.9" height="27" rx="3" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="1.4" />
+  <text x="109.4" y="246" textAnchor="middle" fill="currentColor" fontSize="13.5">ENTER</text>
+  <rect x="156.4" y="227.5" width="87.9" height="27" rx="3" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="1.4" />
+  <text x="200.3" y="246" textAnchor="middle" fill="currentColor" fontSize="13.5">L</text>
+  <rect x="247.2" y="227.5" width="87.9" height="27" rx="3" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="1.4" />
+  <text x="291.1" y="246" textAnchor="middle" fill="currentColor" fontSize="13.5">K</text>
+  <rect x="338.1" y="227.5" width="87.9" height="27" rx="3" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="1.4" />
+  <text x="382" y="246" textAnchor="middle" fill="currentColor" fontSize="13.5">J</text>
+  <rect x="428.9" y="227.5" width="87.9" height="27" rx="3" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="1.4" />
+  <text x="472.9" y="246" textAnchor="middle" fill="currentColor" fontSize="13.5">H</text>
+  <rect x="519.8" y="227.5" width="87.9" height="27" rx="3" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="563.7" y="246" textAnchor="middle" fill="currentColor" fontSize="13.5">DELETE</text>
+  <rect x="610.6" y="227.5" width="87.9" height="27" rx="3" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="654.6" y="246" textAnchor="middle" fill="currentColor" fontSize="13.5">RIGHT</text>
+  <text x="0" y="276" fill="currentColor" fontSize="13.5" fontWeight="bold">A15</text>
+  <rect x="65.5" y="257.5" width="87.9" height="27" rx="3" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="1.4" />
+  <text x="109.4" y="276" textAnchor="middle" fill="currentColor" fontSize="13.5">SPACE</text>
+  <rect x="156.4" y="257.5" width="87.9" height="27" rx="3" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="1.4" />
+  <text x="200.3" y="276" textAnchor="middle" fill="currentColor" fontSize="13.5">SYM</text>
+  <rect x="247.2" y="257.5" width="87.9" height="27" rx="3" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="1.4" />
+  <text x="291.1" y="276" textAnchor="middle" fill="currentColor" fontSize="13.5">M</text>
+  <rect x="338.1" y="257.5" width="87.9" height="27" rx="3" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="1.4" />
+  <text x="382" y="276" textAnchor="middle" fill="currentColor" fontSize="13.5">N</text>
+  <rect x="428.9" y="257.5" width="87.9" height="27" rx="3" fill="#3b82f6" fillOpacity="0.08" stroke="#3b82f6" strokeWidth="1.4" />
+  <text x="472.9" y="276" textAnchor="middle" fill="currentColor" fontSize="13.5">B</text>
+  <rect x="519.8" y="257.5" width="87.9" height="27" rx="3" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="563.7" y="276" textAnchor="middle" fill="currentColor" fontSize="13.5">LEFT</text>
+  <rect x="610.6" y="257.5" width="87.9" height="27" rx="3" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="654.6" y="276" textAnchor="middle" fill="currentColor" fontSize="13.5">DOWN</text>
+</svg>
+{/* /fig:matrix */}
+<figcaption>The Next's keyboard matrix. Address lines A8 to A15 select the rows; columns 0 to 4, in blue, are the Spectrum's 40 keys and read in bits 0 to 4 of port $FE. Columns 5 and 6, in orange, hold the Next's sixteen extra keys, which port $FE cannot see directly.</figcaption>
+</figure>
+
+The two extra columns hold the sixteen keys a Spectrum+ or a 128 had as separate keys but the 48K made with
+shifts: the arrows, DELETE, EDIT, BREAK, the punctuation that needed SYMBOL SHIFT, and a few more. A Spectrum
+program reads only bits 0 to 4, so it cannot see columns 5 and 6. How the extra keys still reach it is the
+story of the next three sections.
+
+## The clerk
+
+On a 48K, the CPU's address lines drive the keyboard's rows directly: the read happens while the `IN` is on
+the bus. The Next does not work that way. The FPGA has its own scanner, which I call **the clerk**: it walks
+the membrane one row at a time, writes down what it finds, and hands the CPU its notes.
+
+1. The clerk pulls one row wire low and reads the seven column wires: a pressed key on that row pulls its
+   column low too.
+2. It moves to the next row **every 18.3 µs**, 512 clocks of the master clock.
+3. After the eighth row it takes one more step, in which it copies its eight rows of notes into the
+   **matrix copy**, all at once. A whole scan is nine steps, **164.6 µs**: about 120 scans in a 50 Hz frame.
+4. A read of port `$FE` never touches the membrane. The row lines of the `IN` select rows of the matrix copy,
+   the selected rows are combined, and the result is on the bus at once.
+
+So a key pressed now shows up in a read at most one scan later, about a sixth of a millisecond, which no
+program can tell from "at once". And because the copy is updated all at once, a program that reads the eight
+rows one after another can never catch half of an old scan and half of a new one in the same row.
+
+## One matrix, many hands
+
+Here is the idea I like best in the whole input design. The clerk's column wires do not come only from the
+membrane. Two more sources press keys **in the clerk's scan**, at the very moment he reads a row:
+
+- The **PS/2 keyboard**. Its keys are translated into membrane keys by a table, and while the clerk reads row
+  3, the PS/2 side pulls low the columns of every row-3 key that a PS/2 key is holding.
+- The **joysticks** in the key modes (Sinclair, Cursor, user-defined). Pushing a joystick left in Sinclair
+  mode pulls the column of key 6 while the clerk reads row 4.
+
+All three are combined before the clerk writes anything down: a key is down when **any** of them presses it.
+
+<figure>
+{/* fig:hands */}
+<svg viewBox="-2 -2 704 256" role="img" aria-label="Three sources on the left feed the same eight-by-seven matrix: the membrane keyboard, the PS/2 keyboard through its keymap, and joysticks in the key modes through the joystick map. A key counts as pressed when any of them presses it. In the middle the clerk scans the matrix one row every 18.3 microseconds and copies the whole matrix at the end of each scan. On the right, two readers take from that copy: port $FE, whose address lines A15 to A8 select rows and whose bits 0 to 4 give the columns, with the extra keys entering their two Spectrum keys unless NextReg $68 bit 4 stops it; and NextRegs $B0 and $B1, which report the sixteen extra keys themselves." style={{ width: "100%", height: "auto" }}>
+  <defs>
+    <marker id="in-h-0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
+    </marker>
+    <marker id="in-h-1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#30a46c" />
+    </marker>
+    <marker id="in-h-2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#a855f7" />
+    </marker>
+    <marker id="in-h-3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#3b82f6" />
+    </marker>
+    <marker id="in-h-4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#e8912d" />
+    </marker>
+  </defs>
+  <rect x="0" y="20" width="170" height="56" rx="6" fill="#3b82f6" fillOpacity="0.12" stroke="#3b82f6" strokeWidth="2" />
+  <text x="85" y="44.4" textAnchor="middle" fill="#3b82f6" fontSize="14">membrane</text>
+  <text x="85" y="61.4" textAnchor="middle" fill="#3b82f6" fontSize="14">8 rows, 7 columns</text>
+  <rect x="0" y="98" width="170" height="56" rx="6" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="2" />
+  <text x="85" y="122.4" textAnchor="middle" fill="#30a46c" fontSize="14">PS/2 keyboard</text>
+  <text x="85" y="139.4" textAnchor="middle" fill="#30a46c" fontSize="14">via the keymap</text>
+  <rect x="0" y="176" width="170" height="56" rx="6" fill="#a855f7" fillOpacity="0.12" stroke="#a855f7" strokeWidth="2" />
+  <text x="85" y="200.4" textAnchor="middle" fill="#a855f7" fontSize="14">joysticks, key modes</text>
+  <text x="85" y="217.4" textAnchor="middle" fill="#a855f7" fontSize="14">via the joystick map</text>
+  <rect x="230" y="20" width="180" height="212" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="320" y="96.9" textAnchor="middle" fill="currentColor" fontSize="14">the clerk</text>
+  <text x="320" y="113.9" textAnchor="middle" fill="currentColor" fontSize="14">scans a row</text>
+  <text x="320" y="130.9" textAnchor="middle" fill="currentColor" fontSize="14">every 18.3 µs,</text>
+  <text x="320" y="147.9" textAnchor="middle" fill="currentColor" fontSize="14">copies the matrix</text>
+  <text x="320" y="164.9" textAnchor="middle" fill="currentColor" fontSize="14">after each scan</text>
+  <path d="M170,48 L228,48" fill="none" stroke="#3b82f6" strokeWidth="1.8" markerEnd="url(#in-h-3)" strokeLinejoin="round" />
+  <path d="M170,126 L228,126" fill="none" stroke="#30a46c" strokeWidth="1.8" markerEnd="url(#in-h-1)" strokeLinejoin="round" />
+  <path d="M170,204 L228,204" fill="none" stroke="#a855f7" strokeWidth="1.8" markerEnd="url(#in-h-2)" strokeLinejoin="round" />
+  <rect x="470" y="20" width="230" height="96" rx="6" fill="none" stroke="#3b82f6" strokeWidth="2" />
+  <text x="585" y="47.4" textAnchor="middle" fill="#3b82f6" fontSize="14">port $FE</text>
+  <text x="585" y="64.4" textAnchor="middle" fill="#3b82f6" fontSize="14">rows by A15-A8,</text>
+  <text x="585" y="81.4" textAnchor="middle" fill="#3b82f6" fontSize="14">columns in bits 0-4,</text>
+  <text x="585" y="98.4" textAnchor="middle" fill="#3b82f6" fontSize="14">extra keys as pairs</text>
+  <rect x="470" y="136" width="230" height="96" rx="6" fill="none" stroke="#e8912d" strokeWidth="2" />
+  <text x="585" y="171.9" textAnchor="middle" fill="#e8912d" fontSize="14">NextRegs $B0, $B1</text>
+  <text x="585" y="188.9" textAnchor="middle" fill="#e8912d" fontSize="14">the 16 extra keys</text>
+  <text x="585" y="205.9" textAnchor="middle" fill="#e8912d" fontSize="14">themselves</text>
+  <path d="M410,68 L468,68" fill="none" stroke="#3b82f6" strokeWidth="1.8" markerEnd="url(#in-h-3)" strokeLinejoin="round" />
+  <path d="M410,184 L468,184" fill="none" stroke="#e8912d" strokeWidth="1.8" markerEnd="url(#in-h-4)" strokeLinejoin="round" />
+  <text x="0" y="250" fill="currentColor" fontSize="13.5">a key is down when any of the three presses it</text>
+</svg>
+{/* /fig:hands */}
+<figcaption>One matrix, many hands. The membrane, the PS/2 keyboard and the joysticks in their key modes all press keys in the same scan. The clerk copies the result, and two readers take from the copy: port $FE, which sees the Spectrum's five columns, and NextRegs $B0 and $B1, which see the sixteen extra keys.</figcaption>
+</figure>
+
+Hey, notice what this buys. Everything that comes after the clerk (port `$FE`, the extra keys, the NMI
+button's function keys) works the same for every hand. A Sinclair joystick and a finger on the membrane are
+the same key to the machine, so a program written before the Next existed works with all of them, without
+knowing any of them. If you ask me, this is how you add hardware to an old machine: by making the new
+hardware pretend to be the old one, as early as possible.
+
+## The sixteen extra keys
+
+An extra key on its own would be invisible to a Spectrum program, so each one also **enters two matrix
+keys**, the pair a 48K owner would have pressed:
+
+- **CAPS SHIFT** and a key: EXTEND = CAPS + SYMBOL SHIFT, EDIT = CAPS + 1, CAPS LOCK = CAPS + 2, TRUE VIDEO =
+  CAPS + 3, INV VIDEO = CAPS + 4, LEFT = CAPS + 5, DOWN = CAPS + 6, UP = CAPS + 7, RIGHT = CAPS + 8, GRAPH =
+  CAPS + 9, DELETE = CAPS + 0, BREAK = CAPS + SPACE.
+- **SYMBOL SHIFT** and a key: `;` = SYM + O, `"` = SYM + P, `,` = SYM + N, `.` = SYM + M.
+
+A new program can do better than decode those pairs. The **Extended Keys 0 and 1 registers, NextRegs `$B0`
+and `$B1`**, report the sixteen keys themselves, one bit each, 1 for pressed:
+
+```text
+$B0:  ;  "  ,  .  UP DOWN LEFT RIGHT        (bit 7 ... bit 0)
+$B1:  DELETE EDIT BREAK INV TRUE GRAPH CAPSLOCK EXTEND
+```
+
+And bit 4 of the **ULA Control register, NextReg `$68`**, stops the extra keys from entering their pairs. A
+game that reads the arrows from `$B0` sets it, and then an arrow is just an arrow: no stray CAPS SHIFT, no
+stray 7. The real CAPS SHIFT and 7 on the membrane are not affected. Here is the whole job:
+
+```z80klive
+; The arrows from NextReg $B0, without CAPS SHIFT
+Arrows:
+        ld bc,$243b
+        ld a,$68               ; ULA Control
+        out (c),a
+        inc b
+        in a,(c)
+        or %00010000           ; bit 4: no matrix entries
+        out (c),a
+        dec b
+        ld a,$b0               ; Extended Keys 0
+        out (c),a
+        inc b
+        in a,(c)
+        and %00001111          ; UP DOWN LEFT RIGHT
+        ret
+```
+
+How it works:
+
+- Ports `$243B` and `$253B` select and access a NextReg, so the first half reads NextReg `$68`, sets bit 4
+  and writes it back, keeping the ULA's other settings.
+- The second half reads NextReg `$B0` and keeps the four arrow bits. With UP and LEFT held, A is `$0A`.
+- A soft reset clears bit 4 of `$68`, so the next program gets the pairs back. Set it again after a reset if
+  you rely on it.
+
+## Why CAPS SHIFT comes early
+
+There is a subtle trap in "UP is CAPS SHIFT and 7". A program that reads the rows one at a time may read
+row 0 (CAPS SHIFT) in one copy and row 4 (the 7) in the next. If the two keys arrived in the same scan, a read
+straddling them could see 7 without CAPS SHIFT, and the cursor key would type a 7. I always remember this
+one because it is so easy to dismiss and so annoying to meet.
+
+The clerk prevents it by treating the shift as the senior partner. For every extra key, the shift enters the
+matrix **one scan before** the other key and leaves **two scans after** it:
+
+<figure>
+{/* fig:shift */}
+<svg viewBox="-2 -2 704 200" role="img" aria-label="Three rows over ten scans. The UP key is held during scans 2, 3 and 4. In the copies the CPU reads, CAPS SHIFT is down after scans 2 to 7, and 7 is down after scans 3 to 5: CAPS SHIFT arrives one scan before the 7 and leaves two scans after it." style={{ width: "100%", height: "auto" }}>
+  <line x1="150" y1="8" x2="150" y2="140" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.35" />
+  <line x1="205" y1="8" x2="205" y2="140" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.35" />
+  <line x1="260" y1="8" x2="260" y2="140" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.35" />
+  <line x1="315" y1="8" x2="315" y2="140" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.35" />
+  <line x1="370" y1="8" x2="370" y2="140" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.35" />
+  <line x1="425" y1="8" x2="425" y2="140" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.35" />
+  <line x1="480" y1="8" x2="480" y2="140" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.35" />
+  <line x1="535" y1="8" x2="535" y2="140" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.35" />
+  <line x1="590" y1="8" x2="590" y2="140" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.35" />
+  <line x1="645" y1="8" x2="645" y2="140" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.35" />
+  <line x1="700" y1="8" x2="700" y2="140" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.35" />
+  <text x="177.5" y="158" textAnchor="middle" fill="currentColor" fontSize="13.5">0</text>
+  <text x="232.5" y="158" textAnchor="middle" fill="currentColor" fontSize="13.5">1</text>
+  <text x="287.5" y="158" textAnchor="middle" fill="currentColor" fontSize="13.5">2</text>
+  <text x="342.5" y="158" textAnchor="middle" fill="currentColor" fontSize="13.5">3</text>
+  <text x="397.5" y="158" textAnchor="middle" fill="currentColor" fontSize="13.5">4</text>
+  <text x="452.5" y="158" textAnchor="middle" fill="currentColor" fontSize="13.5">5</text>
+  <text x="507.5" y="158" textAnchor="middle" fill="currentColor" fontSize="13.5">6</text>
+  <text x="562.5" y="158" textAnchor="middle" fill="currentColor" fontSize="13.5">7</text>
+  <text x="617.5" y="158" textAnchor="middle" fill="currentColor" fontSize="13.5">8</text>
+  <text x="672.5" y="158" textAnchor="middle" fill="currentColor" fontSize="13.5">9</text>
+  <text x="0" y="158" fill="currentColor" fontSize="13.5">scan</text>
+  <text x="0" y="27" fill="#e8912d" fontSize="13.5" fontWeight="bold">UP held</text>
+  <line x1="150" y1="34" x2="700" y2="34" stroke="currentColor" strokeWidth="1" strokeOpacity="0.35" />
+  <rect x="262" y="14" width="161" height="20" rx="3" fill="#e8912d" fillOpacity="0.3" stroke="#e8912d" strokeWidth="1.6" />
+  <text x="0" y="71" fill="#3b82f6" fontSize="13.5" fontWeight="bold">CAPS SHIFT</text>
+  <line x1="150" y1="78" x2="700" y2="78" stroke="currentColor" strokeWidth="1" strokeOpacity="0.35" />
+  <rect x="262" y="58" width="326" height="20" rx="3" fill="#3b82f6" fillOpacity="0.3" stroke="#3b82f6" strokeWidth="1.6" />
+  <text x="0" y="115" fill="#3b82f6" fontSize="13.5" fontWeight="bold">7</text>
+  <line x1="150" y1="122" x2="700" y2="122" stroke="currentColor" strokeWidth="1" strokeOpacity="0.35" />
+  <rect x="317" y="102" width="161" height="20" rx="3" fill="#3b82f6" fillOpacity="0.3" stroke="#3b82f6" strokeWidth="1.6" />
+  <line x1="260" y1="4" x2="260" y2="140" stroke="#e5484d" strokeWidth="2" />
+  <line x1="590" y1="4" x2="590" y2="140" stroke="#e5484d" strokeWidth="2" />
+  <text x="0" y="190" fill="currentColor" fontSize="13.5">each column is one copy of the matrix, 164.6 µs; the CPU reads the latest</text>
+</svg>
+{/* /fig:shift */}
+<figcaption>UP held during scans 2 to 4, as the CPU sees it in the matrix copies. CAPS SHIFT is down from the copy after scan 2 to the copy after scan 7; the 7 only from the copy after scan 3 to the copy after scan 5. Any read that sees the 7 also sees CAPS SHIFT.</figcaption>
+</figure>
+
+So whatever order a program reads the rows in, and however slowly, it cannot see the 7 without its CAPS
+SHIFT, in either direction. The price is one scan of delay on the 7, 165 µs, which nobody will ever notice.
+
+## The PS/2 keyboard
+
+A PS/2 keyboard does not have rows and columns; it sends a **scan code** when a key goes down and another
+when it comes up. The Next turns those codes into membrane keys with a **keymap**, a table of 512 entries:
+one for each scan code, plain and with the `$E0` prefix that marks the extended keys of a PC keyboard. Each
+entry names a membrane row and column, and two flags: add CAPS SHIFT, add SYMBOL SHIFT. A US-layout `/`, for
+example, is SYMBOL SHIFT and V; the PC's arrow keys are the Next's arrow keys in column 6; Backspace is
+DELETE, Esc is BREAK, Tab is TRUE VIDEO.
+
+Three details make it work like a keyboard and not like a list of codes:
+
+- **The shifts are counted, not switched.** Hold `/` (SYM + V) and `,` (SYM + N) together, release `/`, and
+  SYMBOL SHIFT must stay down for the `,`. The PS/2 side keeps a count of the keys that ask for each shift,
+  and the shift is down while the count is above zero.
+- **Repeats are ignored.** A PC keyboard repeats the code of a held key, but a membrane key does not repeat,
+  so a code identical to the last one is thrown away. The Spectrum ROM does its own key repeat, as it always
+  did.
+- **Pause clears everything.** If a key ever seems stuck, the Pause/Break key resets the PS/2 side's state.
+
+Some entries are not keys at all but **function keys**, the machine's own controls. In the US table F3
+switches between 50 and 60 Hz, F4 is a soft reset, F8 changes the CPU speed, and F11 and F12 switch the
+expansion bus on and off; F9 and F10 stand in for the NMI and DivMMC buttons. NextReg `$06` can disable the
+speed, 50/60 Hz and expansion bus hotkeys. What matters here is that they come from the same table, so a
+rewritten table can move them.
+
+The table can be rewritten. NextReg `$28` bit 7 = 0 selects the keymap, bit 0 is the top bit of the address
+(the `$E0` flag) and **NextReg `$29`** the other eight; each write of **NextReg `$2B`** stores an entry and
+steps the address. That is how a keyboard with another national layout can be made to type what its
+keycaps say. And bit 2 of NextReg `$06`
+says which pins of the PS/2 connector carry the keyboard and which the mouse, so a splitter cable can bring
+both; it can only be changed in config mode, at boot.
+
+## Joysticks as keys
+
+The Next has two joystick connectors, and the **Peripheral 1 Setting register, NextReg `$05`**, gives each a
+three-bit **mode**: joystick 1 in bits 7–6 with bit 3 on top, joystick 2 in bits 5–4 with bit 1 on top. A
+strange packing, I admit; it grew one bit at a time. The other bits are the 50/60 Hz and scandoubler
+settings, so always read `$05` and change only your bits. The modes are:
+
+- `000` **Sinclair 2**: RIGHT 2, LEFT 1, DOWN 3, UP 4, fire 5.
+- `011` **Sinclair 1**: RIGHT 7, LEFT 6, DOWN 8, UP 9, fire 0.
+- `010` **Cursor**: RIGHT 8, LEFT 5, DOWN 6, UP 7, fire 0, the keys a Protek or AGF interface pressed, and
+  without CAPS SHIFT, as those interfaces did.
+- `111` **user-defined keys**: each of the twelve buttons presses a key you choose.
+- `001` and `100` **Kempston 1** and **Kempston 2**, and `101` and `110` **MD 1** and **MD 2**: the port
+  modes of the next section.
+
+The first four are pure key presses in the clerk's scan, from a table I call the **joystick map**: 64
+entries, twelve buttons and a few presets for each connector. A user-defined joystick is programmed through
+the keymap registers with NextReg `$28` bit 7 = 1, NextReg `$29` = 0 for the left connector or 16 for the
+right, and twelve writes of NextReg `$2B`, one per button in the order R, L, D, U, B, C, A, START, Y, Z, X,
+MODE. Each byte is a membrane key, row in bits 5–3 and column in bits 2–0; column 7 means no key. Here is
+the left joystick as the classic Q, A, O, P and SPACE:
+
+```z80klive
+; Left joystick as Q A O P and SPACE (mode 111)
+SetQaop:
+        nextreg $28,$80        ; the key joystick's map
+        nextreg $29,$00        ; left connector, button 0
+        ld hl,Qaop
+        ld b,12
+QNext:  ld a,(hl)
+        nextreg $2b,a          ; store, step to next button
+        inc hl
+        djnz QNext
+        ld bc,$243b            ; read NextReg $05
+        ld a,$05
+        out (c),a
+        inc b                  ; $253B
+        in a,(c)
+        or %11001000           ; joystick 1: mode 111
+        nextreg $05,a
+        ret
+Qaop:   .defb $28,$29,$08,$10  ; R=P L=O D=A U=Q
+        .defb $38,$07,$07,$07  ; B=SPACE; C A START: none
+        .defb $07,$07,$07,$07  ; Y Z X MODE: none
+```
+
+How it works:
+
+- P is row 5, column 0, so its entry is `%101000`, `$28`; O is `$29`, A `$08`, Q `$10` and SPACE, row 7, `$38`.
+  `$07` is column 7 of row 0: no key.
+- The `OR` sets joystick 1's three mode bits to `111` and leaves joystick 2's bits, the 50/60 Hz bit and the
+  scandoubler bit as they were.
+- A key can also be one of the extra keys in columns 5 and 6: a joystick can press UP, and the clerk then
+  enters CAPS SHIFT and 7 as for the key itself.
+
+The map survives a soft reset; only loading the core, a hard reset, restores its presets. And it does one
+more job, which I find clever: in the Kempston and MD modes, a button that the port does not report (C, A,
+START on a Kempston, X, Y, Z, MODE on an MD pad) presses the user-defined key of that button. So a six-button
+pad on a Kempston port can still have a pause key.
+
+## Kempston ports and Mega Drive pads
+
+The port modes do not press keys; a program reads the joystick as a byte, **1 for pressed**:
+
+- **Kempston 1**, mode `001`, reads on port `$1F`; **Kempston 2**, mode `100`, on port `$37`. Bits 0–5 are
+  RIGHT, LEFT, DOWN, UP, fire (B) and second fire (C); bits 6–7 read 0.
+- **MD 1**, mode `101`, and **MD 2**, mode `110`, use the same ports and add **A in bit 6 and START in bit 7**.
+  A six-button pad's X, Y, Z and MODE are in the **Extended MD Pad Buttons register, NextReg `$B2`**: the
+  left pad in bits 3–0 (X, Z, Y, MODE), the right pad in bits 7–4.
+
+Both connectors can be set to the same port, and their bits are then OR-ed: two players on one Kempston port,
+whichever pushes. A port that no connector uses does not answer at all, so it reads `$FF`, which a careful
+program can take as "no Kempston joystick here". Bits 6 and 7 of NextReg `$82` switch ports `$1F` and `$37`
+off. After the core is loaded, joystick 1 is Kempston 1 and joystick 2 is Sinclair 2.
+
+## The interviewer
+
+Behind the ports sits a part of the FPGA I call **the interviewer**, because it questions every joystick in
+the same way, whatever is plugged in. Two facts shape it.
+
+First, the board reads both connectors through **one set of input pins**. A switch chooses which connector
+the pins see, and the interviewer flips it at every step: left, right, left, right.
+
+Second, a Mega Drive pad has more buttons than wires. It shows a different set of buttons depending on its
+**select** line, pin 7, which the Next drives: with select high, the pad reports UP, DOWN, LEFT, RIGHT, B and
+C on the six input pins; with select low, it reports A and START, and marks itself as a pad by pulling the
+LEFT and RIGHT pins low together, something no joystick can do. A six-button pad goes further: on the third
+low pulse it pulls UP and DOWN low together, and on the third high pulse it reports X, Y, Z and MODE.
+
+So the interviewer runs a fixed script, sixteen steps of 4.57 µs:
+
+<figure>
+{/* fig:md */}
+<svg viewBox="-2 -2 704 226" role="img" aria-label="The active part of the joystick reader's cycle, sixteen steps of 4.57 microseconds, to scale. Pin 7, the select line, is low for two steps, high for two, four times over. Each pair of steps reads the left connector, then the right. The first low reading starts afresh. The second low reading checks for a Mega Drive pad, pins 3 and 4 low, and then takes A and START. The second high reading takes up, down, left, right, B and C, which is all an ordinary joystick has. The third low reading looks for a six-button pad, pins 1 and 2 low; the third high reading then takes X, Y, Z and MODE. After the sixteen steps the reader rests for 496 steps, about 2.27 milliseconds, so the pads can reset." style={{ width: "100%", height: "auto" }}>
+  <text x="0" y="30" fill="#a855f7" fontSize="15" fontWeight="bold">pin 7</text>
+  <text x="0" y="47" fill="#a855f7" fontSize="13.5">(select)</text>
+  <path d="M110,50 L183.8,50 L183.8,14 L183.8,14 L257.5,14 L257.5,50 L257.5,50 L331.3,50 L331.3,14 L331.3,14 L405,14 L405,50 L405,50 L478.8,50 L478.8,14 L478.8,14 L552.5,14 L552.5,50 L552.5,50 L626.3,50 L626.3,14 L626.3,14 L700,14" fill="none" stroke="#a855f7" strokeWidth="2.2" strokeLinejoin="round" />
+  <line x1="110" y1="6" x2="110" y2="72" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.35" />
+  <line x1="183.8" y1="6" x2="183.8" y2="72" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.35" />
+  <line x1="257.5" y1="6" x2="257.5" y2="72" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.35" />
+  <line x1="331.3" y1="6" x2="331.3" y2="72" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.35" />
+  <line x1="405" y1="6" x2="405" y2="72" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.35" />
+  <line x1="478.8" y1="6" x2="478.8" y2="72" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.35" />
+  <line x1="552.5" y1="6" x2="552.5" y2="72" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.35" />
+  <line x1="626.3" y1="6" x2="626.3" y2="72" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.35" />
+  <line x1="700" y1="6" x2="700" y2="72" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.35" />
+  <text x="0" y="92" fill="currentColor" fontSize="13.5">connector</text>
+  <text x="128.4" y="92" textAnchor="middle" fill="currentColor" fontSize="13.5">L</text>
+  <text x="165.3" y="92" textAnchor="middle" fill="currentColor" fontSize="13.5">R</text>
+  <text x="202.2" y="92" textAnchor="middle" fill="currentColor" fontSize="13.5">L</text>
+  <text x="239.1" y="92" textAnchor="middle" fill="currentColor" fontSize="13.5">R</text>
+  <text x="275.9" y="92" textAnchor="middle" fill="currentColor" fontSize="13.5">L</text>
+  <text x="312.8" y="92" textAnchor="middle" fill="currentColor" fontSize="13.5">R</text>
+  <text x="349.7" y="92" textAnchor="middle" fill="currentColor" fontSize="13.5">L</text>
+  <text x="386.6" y="92" textAnchor="middle" fill="currentColor" fontSize="13.5">R</text>
+  <text x="423.4" y="92" textAnchor="middle" fill="currentColor" fontSize="13.5">L</text>
+  <text x="460.3" y="92" textAnchor="middle" fill="currentColor" fontSize="13.5">R</text>
+  <text x="497.2" y="92" textAnchor="middle" fill="currentColor" fontSize="13.5">L</text>
+  <text x="534.1" y="92" textAnchor="middle" fill="currentColor" fontSize="13.5">R</text>
+  <text x="570.9" y="92" textAnchor="middle" fill="currentColor" fontSize="13.5">L</text>
+  <text x="607.8" y="92" textAnchor="middle" fill="currentColor" fontSize="13.5">R</text>
+  <text x="644.7" y="92" textAnchor="middle" fill="currentColor" fontSize="13.5">L</text>
+  <text x="681.6" y="92" textAnchor="middle" fill="currentColor" fontSize="13.5">R</text>
+  <path d="M113,104 L113,110 L180.8,110 L180.8,104" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+  <text x="146.9" y="128" textAnchor="middle" fill="currentColor" fontSize="13.5">start</text>
+  <text x="146.9" y="145" textAnchor="middle" fill="currentColor" fontSize="13.5">afresh</text>
+  <path d="M260.5,104 L260.5,110 L328.3,110 L328.3,104" fill="none" stroke="#e5484d" strokeWidth="1.6" strokeLinejoin="round" />
+  <text x="294.4" y="128" textAnchor="middle" fill="#e5484d" fontSize="13.5">pad?</text>
+  <text x="294.4" y="145" textAnchor="middle" fill="#e5484d" fontSize="13.5">A, START</text>
+  <path d="M334.3,104 L334.3,110 L402,110 L402,104" fill="none" stroke="#a855f7" strokeWidth="1.6" strokeLinejoin="round" />
+  <text x="368.1" y="128" textAnchor="middle" fill="#a855f7" fontSize="13.5">U D L R</text>
+  <text x="368.1" y="145" textAnchor="middle" fill="#a855f7" fontSize="13.5">B, C</text>
+  <path d="M408,104 L408,110 L475.8,110 L475.8,104" fill="none" stroke="#e5484d" strokeWidth="1.6" strokeLinejoin="round" />
+  <text x="441.9" y="128" textAnchor="middle" fill="#e5484d" fontSize="13.5">six</text>
+  <text x="441.9" y="145" textAnchor="middle" fill="#e5484d" fontSize="13.5">buttons?</text>
+  <path d="M481.8,104 L481.8,110 L549.5,110 L549.5,104" fill="none" stroke="#e5484d" strokeWidth="1.6" strokeLinejoin="round" />
+  <text x="515.6" y="128" textAnchor="middle" fill="#e5484d" fontSize="13.5">X Y Z</text>
+  <text x="515.6" y="145" textAnchor="middle" fill="#e5484d" fontSize="13.5">MODE</text>
+  <text x="0" y="184" fill="currentColor" fontSize="13.5">16 steps of 4.57 µs, 73 µs; then a rest of 496 steps, 2.27 ms; the cycle repeats every 2.34 ms</text>
+  <text x="0" y="206" fill="currentColor" fontSize="13.5">purple: what any joystick answers; red: questions only a Mega Drive pad answers</text>
+</svg>
+{/* /fig:md */}
+<figcaption>The joystick reader's script, to scale in steps of 4.57 µs. Pin 7 goes low and high four times, each level lasting two steps, one for each connector. The second low asks "are you a pad?" and takes A and START; the second high takes the directions, B and C; the third low asks "six buttons?", and the third high takes X, Y, Z and MODE. Then the reader rests for 2.27 ms so the pads can reset.</figcaption>
+</figure>
+
+1. The first low pulse clears the answers and starts afresh.
+2. The second low pulse: if LEFT and RIGHT both read pressed, the connector holds a pad, and pins 6 and 9 are
+   A and START.
+3. The second high pulse: pins 1, 2, 3, 4, 6 and 9 are UP, DOWN, LEFT, RIGHT, B and C. This is the reading
+   every joystick gives.
+4. The third low pulse: if UP and DOWN both read pressed, the pad has six buttons.
+5. The third high pulse, only for a six-button pad: X, Y, Z and MODE.
+6. A rest of 496 steps, **2.27 ms**, before the next script. A six-button pad needs that pause to know that
+   the next pulse starts a new count, and the select pulses stay at 9.1 µs, well under the 15 µs a pad
+   allows before it gets confused.
+
+Here is the charm of it: an ordinary Atari-style joystick ignores pin 7 altogether. It never pulls LEFT and
+RIGHT together, so it never "answers" the pad questions, and the interviewer just takes its directions and
+fire buttons from step 3. One script reads everything, and every joystick is read 427 times a second.
+
+The interviewer also has a second job. The **Joystick I/O Mode register, NextReg `$0B`**, can take pin 7 for
+other uses (a bit you set, a clock from the CTC, a UART's transmit line), and while it does, the interviewer
+stops its script, presses no keys, and only reports the six raw pins on the Kempston ports. The [UARTs
+chapter](/en/under-the-hood/emulator-internals/next-uart/#the-joystick-port) tells the serial side of that
+story.
+
+## The Kempston mouse
+
+The mouse is a PS/2 mouse, and the Next presents it the way the Kempston mouse interface did: as counters.
+At power-on the FPGA resets the mouse, sends it the sequence of sample rates (200, 100, 80) that switches a
+wheel mouse into reporting its wheel, and asks it to report. From then on, every packet the mouse sends,
+up to 80 a second, **adds its movement** to three counters:
+
+- **Port `$FBDF`**: X, an 8-bit count that goes up as the mouse moves right and wraps from 255 to 0.
+- **Port `$FFDF`**: Y, which goes **up** as the mouse moves **up**, the opposite of screen rows.
+- **Port `$FADF`**: the buttons and the wheel. Bit 0 is the right button, bit 1 the left, bit 2 the middle,
+  and a pressed button reads **0**, unlike the joysticks; bit 3 always reads 1; bits 7–4 are a 4-bit wheel
+  count that wraps.
+
+Only the low byte and A8 to A11 of the address are decoded, so `$xBDF` works for any x. A counter is not a
+position: it says how far the mouse has moved since you last looked, and only the difference matters. The
+nice part is that an 8-bit subtraction gives the right signed answer even across the wrap, as long as the
+mouse moves less than 128 counts between two reads:
+
+```z80klive
+; A = the mouse's X movement since the last call
+MouseDx:
+        ld bc,$fbdf            ; the X counter
+        in a,(c)
+        ld hl,LastX
+        ld c,(hl)              ; the count read last time
+        ld (hl),a              ; keep this one for next time
+        sub c                  ; the difference, wrapped
+        ret
+LastX:  .defb 0
+```
+
+From a count of 2 to a count of 250, it returns `$F8`, minus 8: eight counts to the left, across the wrap.
+Y works the same way with port `$FFDF`, except that positive means up, so negate it for screen rows.
+
+The **Peripheral 5 Setting register, NextReg `$0A`**, adjusts the mouse as each packet arrives. Bit 3 swaps
+the left and right buttons. Bits 1–0 scale the movement: `00` doubles it, `01`, the default, keeps it, `10`
+halves it and `11` quarters it. My advice: leave the scaling to the user's menu, and read differences.
+
+Bit 5 of NextReg `$83` switches the mouse ports off. Then port `$DF`, which a Kempston mouse decodes loosely,
+can become a third address for Kempston joystick 1, as some old programs expect, when the Specdrum's port is
+on too.
+
+## The two buttons on the side
+
+The Next's case has three buttons: reset, NMI and Drive, the DivMMC's NMI. The first two have a part to play
+in input. Each is first **debounced**: it must stay in its new state for about 75 ms before it counts.
+
+- **Reset**: a short press, under about 0.94 s, is a **soft reset**; a long one is a **hard reset**, which
+  reloads the core.
+- **NMI**: held on its own and released within about 0.94 s, it is the Multiface's NMI, when bit 3 of
+  NextReg `$06` allows it. Held while you press a number key, it turns the number keys into **function
+  keys**: 1 to 0 are F1 to F10 (F1 a hard reset, F4 a soft reset, and so on). While the NMI button is down,
+  its logic reads rows 3 and 4 of the clerk's copy for those numbers, and a program reading the keyboard sees
+  no key at all, so the number you press never leaks into the game.
+
+## Resets
+
+A **soft reset** clears NextReg `$68` bit 4, so the extra keys enter their pairs again, and sets NextReg
+`$0B` back to `$01`, I/O mode off. It keeps the joystick modes in NextReg `$05`, the joystick map, the PS/2
+keymap and the mouse's scaling in NextReg `$0A`.
+The mouse's counters are cleared only at power-on, so a program that starts after a reset sees whatever count
+the last one left; one more reason to work with differences. A **hard reset** loads the core again, which
+restores the joystick map's presets, the US keymap, and the joystick modes Kempston 1 and Sinclair 2.
+
+## What to take home
+
+The Next keeps the Spectrum's keyboard exactly: port `$FE`, rows chosen by A8 to A15, five columns in bits 0
+to 4, 0 for pressed, rows combined when several are selected. But the matrix behind it is 8 by 7, and the
+CPU never touches the membrane. The clerk scans one row every 18.3 µs and copies the whole matrix after each
+164.6 µs scan; port `$FE` reads that copy.
+
+The PS/2 keyboard and the joysticks in their key modes press keys in the clerk's scan, so every hand looks the
+same to every program. The sixteen extra keys in columns 5 and 6 enter their CAPS SHIFT or SYMBOL SHIFT pairs,
+with the shift arriving one scan early and leaving two scans late, and NextRegs `$B0` and `$B1` report them on
+their own; NextReg `$68` bit 4 stops the pairs. The PS/2 keymap has 512 entries with shift flags, counts its
+shifts, ignores repeats, and can be rewritten through NextRegs `$28`, `$29` and `$2B`.
+
+NextReg `$05` gives each joystick a mode: Sinclair 2 and 1, Cursor and user-defined keys press keys through
+the joystick map; Kempston and MD modes report on ports `$1F` and `$37`, 1 for pressed, with A and START in
+bits 6–7 for a pad and X, Y, Z and MODE in NextReg `$B2`. The interviewer reads both connectors through one
+set of pins, asks every joystick the Mega Drive questions in 73 µs, and rests 2.27 ms. The mouse is three
+counters on `$FBDF`, `$FFDF` and `$FADF`, buttons 0 for pressed, scaled and swapped by NextReg `$0A`. Read
+differences, not positions; read `$05` before you write it; and when you want arrows, ask `$B0`, not CAPS
+SHIFT.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"The road ahead","id":"the-road-ahead","depth":2},{"value":"The Spectrum’s keyboard","id":"the-spectrums-keyboard","depth":2},{"value":"The clerk","id":"the-clerk","depth":2},{"value":"One matrix, many hands","id":"one-matrix-many-hands","depth":2},{"value":"The sixteen extra keys","id":"the-sixteen-extra-keys","depth":2},{"value":"Why CAPS SHIFT comes early","id":"why-caps-shift-comes-early","depth":2},{"value":"The PS/2 keyboard","id":"the-ps2-keyboard","depth":2},{"value":"Joysticks as keys","id":"joysticks-as-keys","depth":2},{"value":"Kempston ports and Mega Drive pads","id":"kempston-ports-and-mega-drive-pads","depth":2},{"value":"The interviewer","id":"the-interviewer","depth":2},{"value":"The Kempston mouse","id":"the-kempston-mouse","depth":2},{"value":"The two buttons on the side","id":"the-two-buttons-on-the-side","depth":2},{"value":"Resets","id":"resets","depth":2},{"value":"What to take home","id":"what-to-take-home","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"How the ZX Spectrum Next reads its keyboard, joysticks and mouse: the 8 by 7 membrane matrix and its scanner, the copy port $FE reads, the sixteen extra keys and NextRegs $B0, $B1 and $68, the PS/2 keyboard and its keymap, joysticks as keys, Kempston ports and Mega Drive pads, the joystick reader's select protocol, the Kempston mouse and its counters, the NMI and reset buttons, and resets.","title":"Input: One Matrix, Many Hands","filePath":"content/en/under-the-hood/emulator-internals/next-input.mdx","timestamp":1793369525000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"under-the-hood/emulator-internals/next-input","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Input: One Matrix, Many Hands - Klive IDE"}],["$","meta","1",{"name":"description","content":"How the ZX Spectrum Next reads its keyboard, joysticks and mouse: the 8 by 7 membrane matrix and its scanner, the copy port $FE reads, the sixteen extra keys and NextRegs $B0, $B1 and $68, the PS/2 keyboard and its keymap, joysticks as keys, Kempston ports and Mega Drive pads, the joystick reader's select protocol, the Kempston mouse and its counters, the NMI and reset buttons, and resets."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/under-the-hood/emulator-internals/next-input/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"50Y0BUmhGKiclaio4jMH2"}
+20:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+21:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+6e:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Input: One Matrix, Many Hands","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Plug a PC keyboard into a Next, press the up arrow, and a program written in 1983 sees CAPS SHIFT and 7, as\nif your fingers had found both keys on a rubber Spectrum. Plug in a joystick, set it to Sinclair mode, push\nit left, and the same old program sees the key 6. Neither the PC keyboard nor the joystick knows anything\nabout the Spectrum. So who is doing the translating, and how does the program never notice?"}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Input is the part of a machine that everybody uses and nobody looks at. Yet it decides whether an old game\nworks at all, whether a new one can tell a cursor key from CAPS SHIFT and 7, and whether a player with a\nMega Drive pad gets all six buttons or only two. The Next keeps every old convention and adds a handful of\nnew ones on top, and the way it does that is one of the neatest pieces of design in the machine."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["You should know two chapters first. ",["$","$L20",null,{"href":"/en/under-the-hood/emulator-internals/next-memory-io/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Memory, Ports and NextRegs: How the Z80N Reaches the\nMachine"}]," explains how ports are decoded and how a\nNextReg switches a group of them off. ",["$","$L20",null,{"href":"/en/under-the-hood/emulator-internals/next-audio/beeper/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"The Beeper: EAR, MIC and the\nTape"}]," explains bit 6 of port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FE"}],", the tape input,\nwhich shares its byte with the keyboard."]}],"\n",["$","h2",null,{"id":"the-road-ahead","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The road ahead",["$","$L21",null,{"id":"the-road-ahead"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["We start with the keyboard as the Spectrum knew it, eight half-rows of five keys behind port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FE"}],", and the\nNext’s own keyboard, which has seven columns instead of five. Then comes the clerk, the scanner that walks\nthe membrane and keeps a copy of it for the CPU, and the key idea of the chapter: the PS/2 keyboard and the\njoysticks do not talk to the CPU at all, they press keys in the clerk’s scan. If you read only one section,\nread that one. After it we look at the sixteen extra keys and the timing trick behind them, the PS/2\nkeyboard, the joystick modes, the reader that asks every joystick whether it is a Mega Drive pad, the\nKempston mouse, the two buttons on the side of the case, and resets."]}],"\n",["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":["$L22","$L23"]}],"\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49","\n","$L4a","\n","$L4b","\n","$L4c","\n","$L4d","\n","$L4e","\n","$L4f","\n","$L50","\n","$L51","\n","$L52","\n","$L53","\n","$L54","\n","$L55","\n","$L56","\n","$L57","\n","$L58","\n","$L59","\n","$L5a","\n","$L5b","\n","$L5c","\n","$L5d","\n","$L5e","\n","$L5f","\n","$L60","\n","$L61","\n","$L62","\n","$L63","\n","$L64","\n","$L65","\n","$L66","\n","$L67","\n","$L68","\n","$L69","\n","$L6a","\n","$L6b","\n","$L6c","\n","$L6d"]]}]
+15:["$","$L6e",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@6f"}]}]
+1f:true
+dc:"ToggleWordWrapButton"
+dd:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$dc"]
+de:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+9:300
+22:["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"}]}]}]
+23:["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The facts are for ",["$","strong",null,{"children":"core 3.02.01"}],". Times are for the ",["$","strong",null,{"children":"28 MHz master clock"}]," of VGA mode 0, which paces the\nkeyboard scanner and the joystick reader."]}]}]
+24:["$","h2",null,{"id":"the-spectrums-keyboard","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The Spectrum’s keyboard",["$","$L21",null,{"id":"the-spectrums-keyboard"}]]}]
+25:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The Spectrum’s 40 keys sit in a ",["$","strong",null,{"children":"matrix"}],": eight rows of five keys, each key a switch at the crossing of one\nrow wire and one column wire. To read it, the CPU executes an ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"IN"}]," from port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FE"}],", any port with address\nline A0 low. The upper half of the address chooses the rows: every one of A8 to A15 that is 0 selects its\n",["$","strong",null,{"children":"half-row"}],", and bits 0 to 4 of the byte read are the five columns. A pressed key reads ",["$","strong",null,{"children":"0"}],"; bits 5 and 7\nalways read 1, and bit 6 is the tape input."]}]
+26:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["So ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"IN A,($FE)"}]," with ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FB"}]," in A reads the row of Q, W, E, R and T, and a program that puts ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$00"}]," in the\nupper byte reads all eight rows at once: each column bit is then 0 if a key in that column is down in any\nrow. That is how a ROM checks “is any key pressed?” in one instruction."]}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The Next keeps every bit of this. But its own keyboard has ",["$","strong",null,{"children":"seven"}]," columns, not five:"]}]
+28:["$","figure",null,{"children":[["$","svg",null,{"viewBox":"-2 -2 704 302","role":"img","aria-label":"The Next's keyboard matrix: eight rows, selected by address lines A8 to A15, and seven columns. Columns 0 to 4, drawn in blue, are the Spectrum's 40 keys, read in bits 0 to 4 of port $FE: A8 CAPS SHIFT Z X C V, A9 A S D F G, A10 Q W E R T, A11 1 2 3 4 5, A12 0 9 8 7 6, A13 P O I U Y, A14 ENTER L K J H, A15 SPACE SYMBOL SHIFT M N B. Columns 5 and 6, drawn in orange, hold the sixteen extra keys: EXTEND and UP, CAPS LOCK and GRAPH, TRUE VIDEO and INV VIDEO, BREAK and EDIT, semicolon and quote, comma and full stop, DELETE and RIGHT, LEFT and DOWN.","style":{"width":"100%","height":"auto"},"children":[["$","text",null,{"x":"291.1","y":"16","textAnchor":"middle","fill":"#3b82f6","fontSize":"13.5","fontWeight":"bold","children":"port $FE, bits 0-4"}],["$","text",null,{"x":"609.1","y":"16","textAnchor":"middle","fill":"#e8912d","fontSize":"13.5","fontWeight":"bold","children":"extra columns"}],["$","text",null,{"x":"109.4","y":"38","textAnchor":"middle","fill":"#3b82f6","fontSize":"13.5","children":"bit 0"}],["$","text",null,{"x":"200.3","y":"38","textAnchor":"middle","fill":"#3b82f6","fontSize":"13.5","children":"bit 1"}],["$","text",null,{"x":"291.1","y":"38","textAnchor":"middle","fill":"#3b82f6","fontSize":"13.5","children":"bit 2"}],["$","text",null,{"x":"382","y":"38","textAnchor":"middle","fill":"#3b82f6","fontSize":"13.5","children":"bit 3"}],["$","text",null,{"x":"472.9","y":"38","textAnchor":"middle","fill":"#3b82f6","fontSize":"13.5","children":"bit 4"}],["$","text",null,{"x":"563.7","y":"38","textAnchor":"middle","fill":"#e8912d","fontSize":"13.5","children":"col 5"}],["$","text",null,{"x":"654.6","y":"38","textAnchor":"middle","fill":"#e8912d","fontSize":"13.5","children":"col 6"}],["$","text",null,{"x":"0","y":"66","fill":"currentColor","fontSize":"13.5","fontWeight":"bold","children":"A8"}],["$","rect",null,{"x":"65.5","y":"47.5","width":"87.9","height":"27","rx":"3","fill":"#3b82f6","fillOpacity":"0.08","stroke":"#3b82f6","strokeWidth":"1.4"}],["$","text",null,{"x":"109.4","y":"66","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"CAPS"}],["$","rect",null,{"x":"156.4","y":"47.5","width":"87.9","height":"27","rx":"3","fill":"#3b82f6","fillOpacity":"0.08","stroke":"#3b82f6","strokeWidth":"1.4"}],["$","text",null,{"x":"200.3","y":"66","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"Z"}],["$","rect",null,{"x":"247.2","y":"47.5","width":"87.9","height":"27","rx":"3","fill":"#3b82f6","fillOpacity":"0.08","stroke":"#3b82f6","strokeWidth":"1.4"}],["$","text",null,{"x":"291.1","y":"66","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"X"}],["$","rect",null,{"x":"338.1","y":"47.5","width":"87.9","height":"27","rx":"3","fill":"#3b82f6","fillOpacity":"0.08","stroke":"#3b82f6","strokeWidth":"1.4"}],["$","text",null,{"x":"382","y":"66","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"C"}],["$","rect",null,{"x":"428.9","y":"47.5","width":"87.9","height":"27","rx":"3","fill":"#3b82f6","fillOpacity":"0.08","stroke":"#3b82f6","strokeWidth":"1.4"}],["$","text",null,{"x":"472.9","y":"66","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"V"}],["$","rect",null,{"x":"519.8","y":"47.5","width":"87.9","height":"27","rx":"3","fill":"#e8912d","fillOpacity":"0.14","stroke":"#e8912d","strokeWidth":"1.4"}],["$","text",null,{"x":"563.7","y":"66","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"EXTEND"}],["$","rect",null,{"x":"610.6","y":"47.5","width":"87.9","height":"27","rx":"3","fill":"#e8912d","fillOpacity":"0.14","stroke":"#e8912d","strokeWidth":"1.4"}],["$","text",null,{"x":"654.6","y":"66","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"UP"}],["$","text",null,{"x":"0","y":"96","fill":"currentColor","fontSize":"13.5","fontWeight":"bold","children":"A9"}],["$","rect",null,{"x":"65.5","y":"77.5","width":"87.9","height":"27","rx":"3","fill":"#3b82f6","fillOpacity":"0.08","stroke":"#3b82f6","strokeWidth":"1.4"}],["$","text",null,{"x":"109.4","y":"96","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"A"}],["$","rect",null,{"x":"156.4","y":"77.5","width":"87.9","height":"27","rx":"3","fill":"#3b82f6","fillOpacity":"0.08","stroke":"#3b82f6","strokeWidth":"1.4"}],["$","text",null,{"x":"200.3","y":"96","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"S"}],["$","rect",null,{"x":"247.2","y":"77.5","width":"87.9","height":"27","rx":"3","fill":"#3b82f6","fillOpacity":"0.08","stroke":"#3b82f6","strokeWidth":"1.4"}],["$","text",null,{"x":"291.1","y":"96","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"D"}],["$","rect",null,{"x":"338.1","y":"77.5","width":"87.9","height":"27","rx":"3","fill":"#3b82f6","fillOpacity":"0.08","stroke":"#3b82f6","strokeWidth":"1.4"}],"$L70","$L71","$L72","$L73","$L74","$L75","$L76","$L77","$L78","$L79","$L7a","$L7b","$L7c","$L7d","$L7e","$L7f","$L80","$L81","$L82","$L83","$L84","$L85","$L86","$L87","$L88","$L89","$L8a","$L8b","$L8c","$L8d","$L8e","$L8f","$L90","$L91","$L92","$L93","$L94","$L95","$L96","$L97","$L98","$L99","$L9a","$L9b","$L9c","$L9d","$L9e","$L9f","$La0","$La1","$La2","$La3","$La4","$La5","$La6","$La7","$La8","$La9","$Laa","$Lab","$Lac","$Lad","$Lae","$Laf","$Lb0","$Lb1","$Lb2","$Lb3","$Lb4","$Lb5","$Lb6","$Lb7","$Lb8","$Lb9","$Lba","$Lbb","$Lbc","$Lbd","$Lbe","$Lbf","$Lc0","$Lc1","$Lc2","$Lc3","$Lc4","$Lc5","$Lc6","$Lc7","$Lc8","$Lc9","$Lca","$Lcb","$Lcc","$Lcd","$Lce","$Lcf","$Ld0"]}],"$Ld1"]}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The two extra columns hold the sixteen keys a Spectrum+ or a 128 had as separate keys but the 48K made with\nshifts: the arrows, DELETE, EDIT, BREAK, the punctuation that needed SYMBOL SHIFT, and a few more. A Spectrum\nprogram reads only bits 0 to 4, so it cannot see columns 5 and 6. How the extra keys still reach it is the\nstory of the next three sections."}]
+2a:["$","h2",null,{"id":"the-clerk","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The clerk",["$","$L21",null,{"id":"the-clerk"}]]}]
+2b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["On a 48K, the CPU’s address lines drive the keyboard’s rows directly: the read happens while the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"IN"}]," is on\nthe bus. The Next does not work that way. The FPGA has its own scanner, which I call ",["$","strong",null,{"children":"the clerk"}],": it walks\nthe membrane one row at a time, writes down what it finds, and hands the CPU its notes."]}]
+2c:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"The clerk pulls one row wire low and reads the seven column wires: a pressed key on that row pulls its\ncolumn low too."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["It moves to the next row ",["$","strong",null,{"children":"every 18.3 µs"}],", 512 clocks of the master clock."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["After the eighth row it takes one more step, in which it copies its eight rows of notes into the\n",["$","strong",null,{"children":"matrix copy"}],", all at once. A whole scan is nine steps, ",["$","strong",null,{"children":"164.6 µs"}],": about 120 scans in a 50 Hz frame."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["A read of port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FE"}]," never touches the membrane. The row lines of the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"IN"}]," select rows of the matrix copy,\nthe selected rows are combined, and the result is on the bus at once."]}],"\n"]}]
+2d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"So a key pressed now shows up in a read at most one scan later, about a sixth of a millisecond, which no\nprogram can tell from “at once”. And because the copy is updated all at once, a program that reads the eight\nrows one after another can never catch half of an old scan and half of a new one in the same row."}]
+2e:["$","h2",null,{"id":"one-matrix-many-hands","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["One matrix, many hands",["$","$L21",null,{"id":"one-matrix-many-hands"}]]}]
+2f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Here is the idea I like best in the whole input design. The clerk’s column wires do not come only from the\nmembrane. Two more sources press keys ",["$","strong",null,{"children":"in the clerk’s scan"}],", at the very moment he reads a row:"]}]
+30:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["The ",["$","strong",null,{"children":"PS/2 keyboard"}],". Its keys are translated into membrane keys by a table, and while the clerk reads row\n3, the PS/2 side pulls low the columns of every row-3 key that a PS/2 key is holding."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["The ",["$","strong",null,{"children":"joysticks"}]," in the key modes (Sinclair, Cursor, user-defined). Pushing a joystick left in Sinclair\nmode pulls the column of key 6 while the clerk reads row 4."]}],"\n"]}]
+31:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["All three are combined before the clerk writes anything down: a key is down when ",["$","strong",null,{"children":"any"}]," of them presses it."]}]
+32:["$","figure",null,{"children":[["$","svg",null,{"viewBox":"-2 -2 704 256","role":"img","aria-label":"Three sources on the left feed the same eight-by-seven matrix: the membrane keyboard, the PS/2 keyboard through its keymap, and joysticks in the key modes through the joystick map. A key counts as pressed when any of them presses it. In the middle the clerk scans the matrix one row every 18.3 microseconds and copies the whole matrix at the end of each scan. On the right, two readers take from that copy: port $FE, whose address lines A15 to A8 select rows and whose bits 0 to 4 give the columns, with the extra keys entering their two Spectrum keys unless NextReg $68 bit 4 stops it; and NextRegs $B0 and $B1, which report the sixteen extra keys themselves.","style":{"width":"100%","height":"auto"},"children":[["$","defs",null,{"children":[["$","marker",null,{"id":"in-h-0","viewBox":"0 0 10 10","refX":"9","refY":"5","markerWidth":"7","markerHeight":"7","orient":"auto-start-reverse","children":["$","path",null,{"d":"M0,0 L10,5 L0,10 z","fill":"currentColor"}]}],["$","marker",null,{"id":"in-h-1","viewBox":"0 0 10 10","refX":"9","refY":"5","markerWidth":"7","markerHeight":"7","orient":"auto-start-reverse","children":["$","path",null,{"d":"M0,0 L10,5 L0,10 z","fill":"#30a46c"}]}],["$","marker",null,{"id":"in-h-2","viewBox":"0 0 10 10","refX":"9","refY":"5","markerWidth":"7","markerHeight":"7","orient":"auto-start-reverse","children":["$","path",null,{"d":"M0,0 L10,5 L0,10 z","fill":"#a855f7"}]}],["$","marker",null,{"id":"in-h-3","viewBox":"0 0 10 10","refX":"9","refY":"5","markerWidth":"7","markerHeight":"7","orient":"auto-start-reverse","children":["$","path",null,{"d":"M0,0 L10,5 L0,10 z","fill":"#3b82f6"}]}],["$","marker",null,{"id":"in-h-4","viewBox":"0 0 10 10","refX":"9","refY":"5","markerWidth":"7","markerHeight":"7","orient":"auto-start-reverse","children":["$","path",null,{"d":"M0,0 L10,5 L0,10 z","fill":"#e8912d"}]}]]}],["$","rect",null,{"x":"0","y":"20","width":"170","height":"56","rx":"6","fill":"#3b82f6","fillOpacity":"0.12","stroke":"#3b82f6","strokeWidth":"2"}],["$","text",null,{"x":"85","y":"44.4","textAnchor":"middle","fill":"#3b82f6","fontSize":"14","children":"membrane"}],["$","text",null,{"x":"85","y":"61.4","textAnchor":"middle","fill":"#3b82f6","fontSize":"14","children":"8 rows, 7 columns"}],["$","rect",null,{"x":"0","y":"98","width":"170","height":"56","rx":"6","fill":"#30a46c","fillOpacity":"0.12","stroke":"#30a46c","strokeWidth":"2"}],["$","text",null,{"x":"85","y":"122.4","textAnchor":"middle","fill":"#30a46c","fontSize":"14","children":"PS/2 keyboard"}],["$","text",null,{"x":"85","y":"139.4","textAnchor":"middle","fill":"#30a46c","fontSize":"14","children":"via the keymap"}],["$","rect",null,{"x":"0","y":"176","width":"170","height":"56","rx":"6","fill":"#a855f7","fillOpacity":"0.12","stroke":"#a855f7","strokeWidth":"2"}],["$","text",null,{"x":"85","y":"200.4","textAnchor":"middle","fill":"#a855f7","fontSize":"14","children":"joysticks, key modes"}],["$","text",null,{"x":"85","y":"217.4","textAnchor":"middle","fill":"#a855f7","fontSize":"14","children":"via the joystick map"}],["$","rect",null,{"x":"230","y":"20","width":"180","height":"212","rx":"6","fill":"none","stroke":"currentColor","strokeWidth":"1.5"}],["$","text",null,{"x":"320","y":"96.9","textAnchor":"middle","fill":"currentColor","fontSize":"14","children":"the clerk"}],["$","text",null,{"x":"320","y":"113.9","textAnchor":"middle","fill":"currentColor","fontSize":"14","children":"scans a row"}],["$","text",null,{"x":"320","y":"130.9","textAnchor":"middle","fill":"currentColor","fontSize":"14","children":"every 18.3 µs,"}],["$","text",null,{"x":"320","y":"147.9","textAnchor":"middle","fill":"currentColor","fontSize":"14","children":"copies the matrix"}],["$","text",null,{"x":"320","y":"164.9","textAnchor":"middle","fill":"currentColor","fontSize":"14","children":"after each scan"}],["$","path",null,{"d":"M170,48 L228,48","fill":"none","stroke":"#3b82f6","strokeWidth":"1.8","markerEnd":"url(#in-h-3)","strokeLinejoin":"round"}],["$","path",null,{"d":"M170,126 L228,126","fill":"none","stroke":"#30a46c","strokeWidth":"1.8","markerEnd":"url(#in-h-1)","strokeLinejoin":"round"}],["$","path",null,{"d":"M170,204 L228,204","fill":"none","stroke":"#a855f7","strokeWidth":"1.8","markerEnd":"url(#in-h-2)","strokeLinejoin":"round"}],["$","rect",null,{"x":"470","y":"20","width":"230","height":"96","rx":"6","fill":"none","stroke":"#3b82f6","strokeWidth":"2"}],["$","text",null,{"x":"585","y":"47.4","textAnchor":"middle","fill":"#3b82f6","fontSize":"14","children":"port $FE"}],["$","text",null,{"x":"585","y":"64.4","textAnchor":"middle","fill":"#3b82f6","fontSize":"14","children":"rows by A15-A8,"}],"$Ld2","$Ld3","$Ld4","$Ld5","$Ld6","$Ld7","$Ld8","$Ld9","$Lda"]}],"$Ldb"]}]
+33:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Hey, notice what this buys. Everything that comes after the clerk (port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FE"}],", the extra keys, the NMI\nbutton’s function keys) works the same for every hand. A Sinclair joystick and a finger on the membrane are\nthe same key to the machine, so a program written before the Next existed works with all of them, without\nknowing any of them. If you ask me, this is how you add hardware to an old machine: by making the new\nhardware pretend to be the old one, as early as possible."]}]
+34:["$","h2",null,{"id":"the-sixteen-extra-keys","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The sixteen extra keys",["$","$L21",null,{"id":"the-sixteen-extra-keys"}]]}]
+35:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["An extra key on its own would be invisible to a Spectrum program, so each one also ",["$","strong",null,{"children":"enters two matrix\nkeys"}],", the pair a 48K owner would have pressed:"]}]
+36:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"CAPS SHIFT"}]," and a key: EXTEND = CAPS + SYMBOL SHIFT, EDIT = CAPS + 1, CAPS LOCK = CAPS + 2, TRUE VIDEO =\nCAPS + 3, INV VIDEO = CAPS + 4, LEFT = CAPS + 5, DOWN = CAPS + 6, UP = CAPS + 7, RIGHT = CAPS + 8, GRAPH =\nCAPS + 9, DELETE = CAPS + 0, BREAK = CAPS + SPACE."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"SYMBOL SHIFT"}]," and a key: ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":";"}]," = SYM + O, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"\""}]," = SYM + P, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":","}]," = SYM + N, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"."}]," = SYM + M."]}],"\n"]}]
+37:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A new program can do better than decode those pairs. The ",["$","strong",null,{"children":["Extended Keys 0 and 1 registers, NextRegs ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$B0"}],"\nand ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$B1"}]]}],", report the sixteen keys themselves, one bit each, 1 for pressed:"]}]
+38:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Ldd",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$Lde",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"$$B0:  ;  \"  ,  .  UP DOWN LEFT RIGHT        (bit 7 ... bit 0)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$B1:  DELETE EDIT BREAK INV TRUE GRAPH CAPSLOCK EXTEND"}]}]]}]]}]]}]
+39:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["And bit 4 of the ",["$","strong",null,{"children":["ULA Control register, NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$68"}]]}],", stops the extra keys from entering their pairs. A\ngame that reads the arrows from ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$B0"}]," sets it, and then an arrow is just an arrow: no stray CAPS SHIFT, no\nstray 7. The real CAPS SHIFT and 7 on the membrane are not affected. Here is the whole job:"]}]
+3a:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Ldd",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$Lde",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"; The arrows from NextReg $B0, without CAPS SHIFT"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"Arrows"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" bc"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$243b"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$68"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"               ; ULA Control"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        out"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        inc"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" b"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        in"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":",("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":")"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        or"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" %00010000"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"           ; bit 4: no matrix entries"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        out"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        dec"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" b"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$b0"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"               ; Extended Keys 0"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        out"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        inc"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" b"}]]}],"\n",["$","span",null,{"children":["$Ldf","$Le0","$Le1","$Le2","$Le3"]}],"\n","$Le4","\n","$Le5"]}]]}]]}]
+3b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"How it works:"}]
+3c:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["Ports ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$243B"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$253B"}]," select and access a NextReg, so the first half reads NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$68"}],", sets bit 4\nand writes it back, keeping the ULA’s other settings."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["The second half reads NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$B0"}]," and keeps the four arrow bits. With UP and LEFT held, A is ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$0A"}],"."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["A soft reset clears bit 4 of ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$68"}],", so the next program gets the pairs back. Set it again after a reset if\nyou rely on it."]}],"\n"]}]
+3d:["$","h2",null,{"id":"why-caps-shift-comes-early","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Why CAPS SHIFT comes early",["$","$L21",null,{"id":"why-caps-shift-comes-early"}]]}]
+3e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"There is a subtle trap in “UP is CAPS SHIFT and 7”. A program that reads the rows one at a time may read\nrow 0 (CAPS SHIFT) in one copy and row 4 (the 7) in the next. If the two keys arrived in the same scan, a read\nstraddling them could see 7 without CAPS SHIFT, and the cursor key would type a 7. I always remember this\none because it is so easy to dismiss and so annoying to meet."}]
+3f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The clerk prevents it by treating the shift as the senior partner. For every extra key, the shift enters the\nmatrix ",["$","strong",null,{"children":"one scan before"}]," the other key and leaves ",["$","strong",null,{"children":"two scans after"}]," it:"]}]
+40:["$","figure",null,{"children":[["$","svg",null,{"viewBox":"-2 -2 704 200","role":"img","aria-label":"Three rows over ten scans. The UP key is held during scans 2, 3 and 4. In the copies the CPU reads, CAPS SHIFT is down after scans 2 to 7, and 7 is down after scans 3 to 5: CAPS SHIFT arrives one scan before the 7 and leaves two scans after it.","style":{"width":"100%","height":"auto"},"children":[["$","line",null,{"x1":"150","y1":"8","x2":"150","y2":"140","stroke":"currentColor","strokeWidth":"1","strokeDasharray":"3 3","strokeOpacity":"0.35"}],["$","line",null,{"x1":"205","y1":"8","x2":"205","y2":"140","stroke":"currentColor","strokeWidth":"1","strokeDasharray":"3 3","strokeOpacity":"0.35"}],["$","line",null,{"x1":"260","y1":"8","x2":"260","y2":"140","stroke":"currentColor","strokeWidth":"1","strokeDasharray":"3 3","strokeOpacity":"0.35"}],["$","line",null,{"x1":"315","y1":"8","x2":"315","y2":"140","stroke":"currentColor","strokeWidth":"1","strokeDasharray":"3 3","strokeOpacity":"0.35"}],["$","line",null,{"x1":"370","y1":"8","x2":"370","y2":"140","stroke":"currentColor","strokeWidth":"1","strokeDasharray":"3 3","strokeOpacity":"0.35"}],["$","line",null,{"x1":"425","y1":"8","x2":"425","y2":"140","stroke":"currentColor","strokeWidth":"1","strokeDasharray":"3 3","strokeOpacity":"0.35"}],["$","line",null,{"x1":"480","y1":"8","x2":"480","y2":"140","stroke":"currentColor","strokeWidth":"1","strokeDasharray":"3 3","strokeOpacity":"0.35"}],["$","line",null,{"x1":"535","y1":"8","x2":"535","y2":"140","stroke":"currentColor","strokeWidth":"1","strokeDasharray":"3 3","strokeOpacity":"0.35"}],["$","line",null,{"x1":"590","y1":"8","x2":"590","y2":"140","stroke":"currentColor","strokeWidth":"1","strokeDasharray":"3 3","strokeOpacity":"0.35"}],["$","line",null,{"x1":"645","y1":"8","x2":"645","y2":"140","stroke":"currentColor","strokeWidth":"1","strokeDasharray":"3 3","strokeOpacity":"0.35"}],["$","line",null,{"x1":"700","y1":"8","x2":"700","y2":"140","stroke":"currentColor","strokeWidth":"1","strokeDasharray":"3 3","strokeOpacity":"0.35"}],["$","text",null,{"x":"177.5","y":"158","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"0"}],["$","text",null,{"x":"232.5","y":"158","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"1"}],["$","text",null,{"x":"287.5","y":"158","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"2"}],["$","text",null,{"x":"342.5","y":"158","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"3"}],["$","text",null,{"x":"397.5","y":"158","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"4"}],["$","text",null,{"x":"452.5","y":"158","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"5"}],["$","text",null,{"x":"507.5","y":"158","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"6"}],["$","text",null,{"x":"562.5","y":"158","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"7"}],["$","text",null,{"x":"617.5","y":"158","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"8"}],["$","text",null,{"x":"672.5","y":"158","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"9"}],["$","text",null,{"x":"0","y":"158","fill":"currentColor","fontSize":"13.5","children":"scan"}],["$","text",null,{"x":"0","y":"27","fill":"#e8912d","fontSize":"13.5","fontWeight":"bold","children":"UP held"}],["$","line",null,{"x1":"150","y1":"34","x2":"700","y2":"34","stroke":"currentColor","strokeWidth":"1","strokeOpacity":"0.35"}],["$","rect",null,{"x":"262","y":"14","width":"161","height":"20","rx":"3","fill":"#e8912d","fillOpacity":"0.3","stroke":"#e8912d","strokeWidth":"1.6"}],["$","text",null,{"x":"0","y":"71","fill":"#3b82f6","fontSize":"13.5","fontWeight":"bold","children":"CAPS SHIFT"}],["$","line",null,{"x1":"150","y1":"78","x2":"700","y2":"78","stroke":"currentColor","strokeWidth":"1","strokeOpacity":"0.35"}],["$","rect",null,{"x":"262","y":"58","width":"326","height":"20","rx":"3","fill":"#3b82f6","fillOpacity":"0.3","stroke":"#3b82f6","strokeWidth":"1.6"}],["$","text",null,{"x":"0","y":"115","fill":"#3b82f6","fontSize":"13.5","fontWeight":"bold","children":"7"}],["$","line",null,{"x1":"150","y1":"122","x2":"700","y2":"122","stroke":"currentColor","strokeWidth":"1","strokeOpacity":"0.35"}],["$","rect",null,{"x":"317","y":"102","width":"161","height":"20","rx":"3","fill":"#3b82f6","fillOpacity":"0.3","stroke":"#3b82f6","strokeWidth":"1.6"}],["$","line",null,{"x1":"260","y1":"4","x2":"260","y2":"140","stroke":"#e5484d","strokeWidth":"2"}],["$","line",null,{"x1":"590","y1":"4","x2":"590","y2":"140","stroke":"#e5484d","strokeWidth":"2"}],["$","text",null,{"x":"0","y":"190","fill":"currentColor","fontSize":"13.5","children":"each column is one copy of the matrix, 164.6 µs; the CPU reads the latest"}]]}],["$","figcaption",null,{"children":"UP held during scans 2 to 4, as the CPU sees it in the matrix copies. CAPS SHIFT is down from the copy after scan 2 to the copy after scan 7; the 7 only from the copy after scan 3 to the copy after scan 5. Any read that sees the 7 also sees CAPS SHIFT."}]]}]
+41:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"So whatever order a program reads the rows in, and however slowly, it cannot see the 7 without its CAPS\nSHIFT, in either direction. The price is one scan of delay on the 7, 165 µs, which nobody will ever notice."}]
+42:["$","h2",null,{"id":"the-ps2-keyboard","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The PS/2 keyboard",["$","$L21",null,{"id":"the-ps2-keyboard"}]]}]
+43:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A PS/2 keyboard does not have rows and columns; it sends a ",["$","strong",null,{"children":"scan code"}]," when a key goes down and another\nwhen it comes up. The Next turns those codes into membrane keys with a ",["$","strong",null,{"children":"keymap"}],", a table of 512 entries:\none for each scan code, plain and with the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$E0"}]," prefix that marks the extended keys of a PC keyboard. Each\nentry names a membrane row and column, and two flags: add CAPS SHIFT, add SYMBOL SHIFT. A US-layout ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"/"}],", for\nexample, is SYMBOL SHIFT and V; the PC’s arrow keys are the Next’s arrow keys in column 6; Backspace is\nDELETE, Esc is BREAK, Tab is TRUE VIDEO."]}]
+44:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Three details make it work like a keyboard and not like a list of codes:"}]
+45:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"The shifts are counted, not switched."}]," Hold ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"/"}]," (SYM + V) and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":","}]," (SYM + N) together, release ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"/"}],", and\nSYMBOL SHIFT must stay down for the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":","}],". The PS/2 side keeps a count of the keys that ask for each shift,\nand the shift is down while the count is above zero."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Repeats are ignored."}]," A PC keyboard repeats the code of a held key, but a membrane key does not repeat,\nso a code identical to the last one is thrown away. The Spectrum ROM does its own key repeat, as it always\ndid."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Pause clears everything."}]," If a key ever seems stuck, the Pause/Break key resets the PS/2 side’s state."]}],"\n"]}]
+46:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Some entries are not keys at all but ",["$","strong",null,{"children":"function keys"}],", the machine’s own controls. In the US table F3\nswitches between 50 and 60 Hz, F4 is a soft reset, F8 changes the CPU speed, and F11 and F12 switch the\nexpansion bus on and off; F9 and F10 stand in for the NMI and DivMMC buttons. NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$06"}]," can disable the\nspeed, 50/60 Hz and expansion bus hotkeys. What matters here is that they come from the same table, so a\nrewritten table can move them."]}]
+47:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The table can be rewritten. NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$28"}]," bit 7 = 0 selects the keymap, bit 0 is the top bit of the address\n(the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$E0"}]," flag) and ",["$","strong",null,{"children":["NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$29"}]]}]," the other eight; each write of ",["$","strong",null,{"children":["NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$2B"}]]}]," stores an entry and\nsteps the address. That is how a keyboard with another national layout can be made to type what its\nkeycaps say. And bit 2 of NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$06"}],"\nsays which pins of the PS/2 connector carry the keyboard and which the mouse, so a splitter cable can bring\nboth; it can only be changed in config mode, at boot."]}]
+48:["$","h2",null,{"id":"joysticks-as-keys","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Joysticks as keys",["$","$L21",null,{"id":"joysticks-as-keys"}]]}]
+49:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The Next has two joystick connectors, and the ",["$","strong",null,{"children":["Peripheral 1 Setting register, NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$05"}]]}],", gives each a\nthree-bit ",["$","strong",null,{"children":"mode"}],": joystick 1 in bits 7–6 with bit 3 on top, joystick 2 in bits 5–4 with bit 1 on top. A\nstrange packing, I admit; it grew one bit at a time. The other bits are the 50/60 Hz and scandoubler\nsettings, so always read ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$05"}]," and change only your bits. The modes are:"]}]
+4a:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"000"}]," ",["$","strong",null,{"children":"Sinclair 2"}],": RIGHT 2, LEFT 1, DOWN 3, UP 4, fire 5."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"011"}]," ",["$","strong",null,{"children":"Sinclair 1"}],": RIGHT 7, LEFT 6, DOWN 8, UP 9, fire 0."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"010"}]," ",["$","strong",null,{"children":"Cursor"}],": RIGHT 8, LEFT 5, DOWN 6, UP 7, fire 0, the keys a Protek or AGF interface pressed, and\nwithout CAPS SHIFT, as those interfaces did."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"111"}]," ",["$","strong",null,{"children":"user-defined keys"}],": each of the twelve buttons presses a key you choose."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"001"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"100"}]," ",["$","strong",null,{"children":"Kempston 1"}]," and ",["$","strong",null,{"children":"Kempston 2"}],", and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"101"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"110"}]," ",["$","strong",null,{"children":"MD 1"}]," and ",["$","strong",null,{"children":"MD 2"}],": the port\nmodes of the next section."]}],"\n"]}]
+4b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The first four are pure key presses in the clerk’s scan, from a table I call the ",["$","strong",null,{"children":"joystick map"}],": 64\nentries, twelve buttons and a few presets for each connector. A user-defined joystick is programmed through\nthe keymap registers with NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$28"}]," bit 7 = 1, NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$29"}]," = 0 for the left connector or 16 for the\nright, and twelve writes of NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$2B"}],", one per button in the order R, L, D, U, B, C, A, START, Y, Z, X,\nMODE. Each byte is a membrane key, row in bits 5–3 and column in bits 2–0; column 7 means no key. Here is\nthe left joystick as the classic Q, A, O, P and SPACE:"]}]
+4c:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Ldd",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$Lde",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"; Left joystick as Q A O P and SPACE (mode 111)"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"SetQaop"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        nextreg"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" $28"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$80"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"        ; the key joystick's map"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        nextreg"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" $29"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$00"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"        ; left connector, button 0"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" hl"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#B5890F"},"children":"Qaop"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" b"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"12"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"QNext"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"  ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":",("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"hl"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":")"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        nextreg"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" $2b"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"          ; store, step to next button"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        inc"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" hl"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        djnz"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" QNext"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" bc"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$243b"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"            ; read NextReg $05"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$05"}]]}],"\n","$Le6","\n","$Le7","\n","$Le8","\n","$Le9","\n","$Lea","\n","$Leb","\n","$Lec","\n","$Led","\n","$Lee"]}]]}]]}]
+4d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"How it works:"}]
+4e:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["P is row 5, column 0, so its entry is ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"%101000"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$28"}],"; O is ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$29"}],", A ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$08"}],", Q ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$10"}]," and SPACE, row 7, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$38"}],".\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$07"}]," is column 7 of row 0: no key."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["The ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"OR"}]," sets joystick 1’s three mode bits to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"111"}]," and leaves joystick 2’s bits, the 50/60 Hz bit and the\nscandoubler bit as they were."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"A key can also be one of the extra keys in columns 5 and 6: a joystick can press UP, and the clerk then\nenters CAPS SHIFT and 7 as for the key itself."}],"\n"]}]
+4f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The map survives a soft reset; only loading the core, a hard reset, restores its presets. And it does one\nmore job, which I find clever: in the Kempston and MD modes, a button that the port does not report (C, A,\nSTART on a Kempston, X, Y, Z, MODE on an MD pad) presses the user-defined key of that button. So a six-button\npad on a Kempston port can still have a pause key."}]
+50:["$","h2",null,{"id":"kempston-ports-and-mega-drive-pads","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Kempston ports and Mega Drive pads",["$","$L21",null,{"id":"kempston-ports-and-mega-drive-pads"}]]}]
+51:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The port modes do not press keys; a program reads the joystick as a byte, ",["$","strong",null,{"children":"1 for pressed"}],":"]}]
+52:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Kempston 1"}],", mode ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"001"}],", reads on port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$1F"}],"; ",["$","strong",null,{"children":"Kempston 2"}],", mode ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"100"}],", on port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$37"}],". Bits 0–5 are\nRIGHT, LEFT, DOWN, UP, fire (B) and second fire (C); bits 6–7 read 0."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"MD 1"}],", mode ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"101"}],", and ",["$","strong",null,{"children":"MD 2"}],", mode ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"110"}],", use the same ports and add ",["$","strong",null,{"children":"A in bit 6 and START in bit 7"}],".\nA six-button pad’s X, Y, Z and MODE are in the ",["$","strong",null,{"children":["Extended MD Pad Buttons register, NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$B2"}]]}],": the\nleft pad in bits 3–0 (X, Z, Y, MODE), the right pad in bits 7–4."]}],"\n"]}]
+53:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Both connectors can be set to the same port, and their bits are then OR-ed: two players on one Kempston port,\nwhichever pushes. A port that no connector uses does not answer at all, so it reads ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FF"}],", which a careful\nprogram can take as “no Kempston joystick here”. Bits 6 and 7 of NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$82"}]," switch ports ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$1F"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$37"}],"\noff. After the core is loaded, joystick 1 is Kempston 1 and joystick 2 is Sinclair 2."]}]
+54:["$","h2",null,{"id":"the-interviewer","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The interviewer",["$","$L21",null,{"id":"the-interviewer"}]]}]
+55:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Behind the ports sits a part of the FPGA I call ",["$","strong",null,{"children":"the interviewer"}],", because it questions every joystick in\nthe same way, whatever is plugged in. Two facts shape it."]}]
+56:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["First, the board reads both connectors through ",["$","strong",null,{"children":"one set of input pins"}],". A switch chooses which connector\nthe pins see, and the interviewer flips it at every step: left, right, left, right."]}]
+57:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Second, a Mega Drive pad has more buttons than wires. It shows a different set of buttons depending on its\n",["$","strong",null,{"children":"select"}]," line, pin 7, which the Next drives: with select high, the pad reports UP, DOWN, LEFT, RIGHT, B and\nC on the six input pins; with select low, it reports A and START, and marks itself as a pad by pulling the\nLEFT and RIGHT pins low together, something no joystick can do. A six-button pad goes further: on the third\nlow pulse it pulls UP and DOWN low together, and on the third high pulse it reports X, Y, Z and MODE."]}]
+58:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"So the interviewer runs a fixed script, sixteen steps of 4.57 µs:"}]
+59:["$","figure",null,{"children":[["$","svg",null,{"viewBox":"-2 -2 704 226","role":"img","aria-label":"The active part of the joystick reader's cycle, sixteen steps of 4.57 microseconds, to scale. Pin 7, the select line, is low for two steps, high for two, four times over. Each pair of steps reads the left connector, then the right. The first low reading starts afresh. The second low reading checks for a Mega Drive pad, pins 3 and 4 low, and then takes A and START. The second high reading takes up, down, left, right, B and C, which is all an ordinary joystick has. The third low reading looks for a six-button pad, pins 1 and 2 low; the third high reading then takes X, Y, Z and MODE. After the sixteen steps the reader rests for 496 steps, about 2.27 milliseconds, so the pads can reset.","style":{"width":"100%","height":"auto"},"children":[["$","text",null,{"x":"0","y":"30","fill":"#a855f7","fontSize":"15","fontWeight":"bold","children":"pin 7"}],["$","text",null,{"x":"0","y":"47","fill":"#a855f7","fontSize":"13.5","children":"(select)"}],["$","path",null,{"d":"M110,50 L183.8,50 L183.8,14 L183.8,14 L257.5,14 L257.5,50 L257.5,50 L331.3,50 L331.3,14 L331.3,14 L405,14 L405,50 L405,50 L478.8,50 L478.8,14 L478.8,14 L552.5,14 L552.5,50 L552.5,50 L626.3,50 L626.3,14 L626.3,14 L700,14","fill":"none","stroke":"#a855f7","strokeWidth":"2.2","strokeLinejoin":"round"}],["$","line",null,{"x1":"110","y1":"6","x2":"110","y2":"72","stroke":"currentColor","strokeWidth":"1","strokeDasharray":"3 3","strokeOpacity":"0.35"}],["$","line",null,{"x1":"183.8","y1":"6","x2":"183.8","y2":"72","stroke":"currentColor","strokeWidth":"1","strokeDasharray":"3 3","strokeOpacity":"0.35"}],["$","line",null,{"x1":"257.5","y1":"6","x2":"257.5","y2":"72","stroke":"currentColor","strokeWidth":"1","strokeDasharray":"3 3","strokeOpacity":"0.35"}],["$","line",null,{"x1":"331.3","y1":"6","x2":"331.3","y2":"72","stroke":"currentColor","strokeWidth":"1","strokeDasharray":"3 3","strokeOpacity":"0.35"}],["$","line",null,{"x1":"405","y1":"6","x2":"405","y2":"72","stroke":"currentColor","strokeWidth":"1","strokeDasharray":"3 3","strokeOpacity":"0.35"}],["$","line",null,{"x1":"478.8","y1":"6","x2":"478.8","y2":"72","stroke":"currentColor","strokeWidth":"1","strokeDasharray":"3 3","strokeOpacity":"0.35"}],["$","line",null,{"x1":"552.5","y1":"6","x2":"552.5","y2":"72","stroke":"currentColor","strokeWidth":"1","strokeDasharray":"3 3","strokeOpacity":"0.35"}],["$","line",null,{"x1":"626.3","y1":"6","x2":"626.3","y2":"72","stroke":"currentColor","strokeWidth":"1","strokeDasharray":"3 3","strokeOpacity":"0.35"}],["$","line",null,{"x1":"700","y1":"6","x2":"700","y2":"72","stroke":"currentColor","strokeWidth":"1","strokeDasharray":"3 3","strokeOpacity":"0.35"}],["$","text",null,{"x":"0","y":"92","fill":"currentColor","fontSize":"13.5","children":"connector"}],["$","text",null,{"x":"128.4","y":"92","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"L"}],["$","text",null,{"x":"165.3","y":"92","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"R"}],["$","text",null,{"x":"202.2","y":"92","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"L"}],["$","text",null,{"x":"239.1","y":"92","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"R"}],["$","text",null,{"x":"275.9","y":"92","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"L"}],["$","text",null,{"x":"312.8","y":"92","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"R"}],["$","text",null,{"x":"349.7","y":"92","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"L"}],["$","text",null,{"x":"386.6","y":"92","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"R"}],["$","text",null,{"x":"423.4","y":"92","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"L"}],["$","text",null,{"x":"460.3","y":"92","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"R"}],["$","text",null,{"x":"497.2","y":"92","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"L"}],["$","text",null,{"x":"534.1","y":"92","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"R"}],["$","text",null,{"x":"570.9","y":"92","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"L"}],["$","text",null,{"x":"607.8","y":"92","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"R"}],["$","text",null,{"x":"644.7","y":"92","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"L"}],["$","text",null,{"x":"681.6","y":"92","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"R"}],"$Lef","$Lf0","$Lf1","$Lf2","$Lf3","$Lf4","$Lf5","$Lf6","$Lf7","$Lf8","$Lf9","$Lfa","$Lfb","$Lfc","$Lfd","$Lfe","$Lff"]}],"$L100"]}]
+5a:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"The first low pulse clears the answers and starts afresh."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"The second low pulse: if LEFT and RIGHT both read pressed, the connector holds a pad, and pins 6 and 9 are\nA and START."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"The second high pulse: pins 1, 2, 3, 4, 6 and 9 are UP, DOWN, LEFT, RIGHT, B and C. This is the reading\nevery joystick gives."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"The third low pulse: if UP and DOWN both read pressed, the pad has six buttons."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"The third high pulse, only for a six-button pad: X, Y, Z and MODE."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["A rest of 496 steps, ",["$","strong",null,{"children":"2.27 ms"}],", before the next script. A six-button pad needs that pause to know that\nthe next pulse starts a new count, and the select pulses stay at 9.1 µs, well under the 15 µs a pad\nallows before it gets confused."]}],"\n"]}]
+5b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Here is the charm of it: an ordinary Atari-style joystick ignores pin 7 altogether. It never pulls LEFT and\nRIGHT together, so it never “answers” the pad questions, and the interviewer just takes its directions and\nfire buttons from step 3. One script reads everything, and every joystick is read 427 times a second."}]
+5c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The interviewer also has a second job. The ",["$","strong",null,{"children":["Joystick I/O Mode register, NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$0B"}]]}],", can take pin 7 for\nother uses (a bit you set, a clock from the CTC, a UART’s transmit line), and while it does, the interviewer\nstops its script, presses no keys, and only reports the six raw pins on the Kempston ports. The ",["$","$L20",null,{"href":"/en/under-the-hood/emulator-internals/next-uart/#the-joystick-port","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"UARTs\nchapter"}]," tells the serial side of that\nstory."]}]
+5d:["$","h2",null,{"id":"the-kempston-mouse","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The Kempston mouse",["$","$L21",null,{"id":"the-kempston-mouse"}]]}]
+5e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The mouse is a PS/2 mouse, and the Next presents it the way the Kempston mouse interface did: as counters.\nAt power-on the FPGA resets the mouse, sends it the sequence of sample rates (200, 100, 80) that switches a\nwheel mouse into reporting its wheel, and asks it to report. From then on, every packet the mouse sends,\nup to 80 a second, ",["$","strong",null,{"children":"adds its movement"}]," to three counters:"]}]
+5f:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":["Port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FBDF"}]]}],": X, an 8-bit count that goes up as the mouse moves right and wraps from 255 to 0."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":["Port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FFDF"}]]}],": Y, which goes ",["$","strong",null,{"children":"up"}]," as the mouse moves ",["$","strong",null,{"children":"up"}],", the opposite of screen rows."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":["Port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FADF"}]]}],": the buttons and the wheel. Bit 0 is the right button, bit 1 the left, bit 2 the middle,\nand a pressed button reads ",["$","strong",null,{"children":"0"}],", unlike the joysticks; bit 3 always reads 1; bits 7–4 are a 4-bit wheel\ncount that wraps."]}],"\n"]}]
+60:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Only the low byte and A8 to A11 of the address are decoded, so ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$xBDF"}]," works for any x. A counter is not a\nposition: it says how far the mouse has moved since you last looked, and only the difference matters. The\nnice part is that an 8-bit subtraction gives the right signed answer even across the wrap, as long as the\nmouse moves less than 128 counts between two reads:"]}]
+61:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Ldd",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$Lde",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"; A = the mouse's X movement since the last call"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"MouseDx"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" bc"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$fbdf"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"            ; the X counter"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        in"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":",("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":")"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" hl"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#B5890F"},"children":"LastX"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":",("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"hl"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":")              "}],["$","span",null,{"style":{"color":"#6A9955"},"children":"; the count read last time"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"hl"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"              ; keep this one for next time"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        sub"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" c"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"                  ; the difference, wrapped"}]]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ret"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"LastX"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}],["$","span",null,{"style":{"color":"#C586C0"},"children":"  .defb"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" 0"}]]}]]}]]}]]}]
+62:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["From a count of 2 to a count of 250, it returns ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$F8"}],", minus 8: eight counts to the left, across the wrap.\nY works the same way with port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FFDF"}],", except that positive means up, so negate it for screen rows."]}]
+63:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","strong",null,{"children":["Peripheral 5 Setting register, NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$0A"}]]}],", adjusts the mouse as each packet arrives. Bit 3 swaps\nthe left and right buttons. Bits 1–0 scale the movement: ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"00"}]," doubles it, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"01"}],", the default, keeps it, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"10"}],"\nhalves it and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"11"}]," quarters it. My advice: leave the scaling to the user’s menu, and read differences."]}]
+64:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Bit 5 of NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$83"}]," switches the mouse ports off. Then port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$DF"}],", which a Kempston mouse decodes loosely,\ncan become a third address for Kempston joystick 1, as some old programs expect, when the Specdrum’s port is\non too."]}]
+65:["$","h2",null,{"id":"the-two-buttons-on-the-side","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The two buttons on the side",["$","$L21",null,{"id":"the-two-buttons-on-the-side"}]]}]
+66:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The Next’s case has three buttons: reset, NMI and Drive, the DivMMC’s NMI. The first two have a part to play\nin input. Each is first ",["$","strong",null,{"children":"debounced"}],": it must stay in its new state for about 75 ms before it counts."]}]
+67:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Reset"}],": a short press, under about 0.94 s, is a ",["$","strong",null,{"children":"soft reset"}],"; a long one is a ",["$","strong",null,{"children":"hard reset"}],", which\nreloads the core."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"NMI"}],": held on its own and released within about 0.94 s, it is the Multiface’s NMI, when bit 3 of\nNextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$06"}]," allows it. Held while you press a number key, it turns the number keys into ",["$","strong",null,{"children":"function\nkeys"}],": 1 to 0 are F1 to F10 (F1 a hard reset, F4 a soft reset, and so on). While the NMI button is down,\nits logic reads rows 3 and 4 of the clerk’s copy for those numbers, and a program reading the keyboard sees\nno key at all, so the number you press never leaks into the game."]}],"\n"]}]
+68:["$","h2",null,{"id":"resets","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Resets",["$","$L21",null,{"id":"resets"}]]}]
+69:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A ",["$","strong",null,{"children":"soft reset"}]," clears NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$68"}]," bit 4, so the extra keys enter their pairs again, and sets NextReg\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$0B"}]," back to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$01"}],", I/O mode off. It keeps the joystick modes in NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$05"}],", the joystick map, the PS/2\nkeymap and the mouse’s scaling in NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$0A"}],".\nThe mouse’s counters are cleared only at power-on, so a program that starts after a reset sees whatever count\nthe last one left; one more reason to work with differences. A ",["$","strong",null,{"children":"hard reset"}]," loads the core again, which\nrestores the joystick map’s presets, the US keymap, and the joystick modes Kempston 1 and Sinclair 2."]}]
+6a:["$","h2",null,{"id":"what-to-take-home","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["What to take home",["$","$L21",null,{"id":"what-to-take-home"}]]}]
+6b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The Next keeps the Spectrum’s keyboard exactly: port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FE"}],", rows chosen by A8 to A15, five columns in bits 0\nto 4, 0 for pressed, rows combined when several are selected. But the matrix behind it is 8 by 7, and the\nCPU never touches the membrane. The clerk scans one row every 18.3 µs and copies the whole matrix after each\n164.6 µs scan; port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FE"}]," reads that copy."]}]
+6c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The PS/2 keyboard and the joysticks in their key modes press keys in the clerk’s scan, so every hand looks the\nsame to every program. The sixteen extra keys in columns 5 and 6 enter their CAPS SHIFT or SYMBOL SHIFT pairs,\nwith the shift arriving one scan early and leaving two scans late, and NextRegs ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$B0"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$B1"}]," report them on\ntheir own; NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$68"}]," bit 4 stops the pairs. The PS/2 keymap has 512 entries with shift flags, counts its\nshifts, ignores repeats, and can be rewritten through NextRegs ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$28"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$29"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$2B"}],"."]}]
+6d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$05"}]," gives each joystick a mode: Sinclair 2 and 1, Cursor and user-defined keys press keys through\nthe joystick map; Kempston and MD modes report on ports ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$1F"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$37"}],", 1 for pressed, with A and START in\nbits 6–7 for a pad and X, Y, Z and MODE in NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$B2"}],". The interviewer reads both connectors through one\nset of pins, asks every joystick the Mega Drive questions in 73 µs, and rests 2.27 ms. The mouse is three\ncounters on ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FBDF"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FFDF"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FADF"}],", buttons 0 for pressed, scaled and swapped by NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$0A"}],". Read\ndifferences, not positions; read ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$05"}]," before you write it; and when you want arrows, ask ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$B0"}],", not CAPS\nSHIFT."]}]
+6f:null
+9:C
+70:["$","text",null,{"x":"382","y":"96","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"F"}]
+71:["$","rect",null,{"x":"428.9","y":"77.5","width":"87.9","height":"27","rx":"3","fill":"#3b82f6","fillOpacity":"0.08","stroke":"#3b82f6","strokeWidth":"1.4"}]
+72:["$","text",null,{"x":"472.9","y":"96","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"G"}]
+73:["$","rect",null,{"x":"519.8","y":"77.5","width":"87.9","height":"27","rx":"3","fill":"#e8912d","fillOpacity":"0.14","stroke":"#e8912d","strokeWidth":"1.4"}]
+74:["$","text",null,{"x":"563.7","y":"96","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"CAPS LOCK"}]
+75:["$","rect",null,{"x":"610.6","y":"77.5","width":"87.9","height":"27","rx":"3","fill":"#e8912d","fillOpacity":"0.14","stroke":"#e8912d","strokeWidth":"1.4"}]
+76:["$","text",null,{"x":"654.6","y":"96","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"GRAPH"}]
+77:["$","text",null,{"x":"0","y":"126","fill":"currentColor","fontSize":"13.5","fontWeight":"bold","children":"A10"}]
+78:["$","rect",null,{"x":"65.5","y":"107.5","width":"87.9","height":"27","rx":"3","fill":"#3b82f6","fillOpacity":"0.08","stroke":"#3b82f6","strokeWidth":"1.4"}]
+79:["$","text",null,{"x":"109.4","y":"126","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"Q"}]
+7a:["$","rect",null,{"x":"156.4","y":"107.5","width":"87.9","height":"27","rx":"3","fill":"#3b82f6","fillOpacity":"0.08","stroke":"#3b82f6","strokeWidth":"1.4"}]
+7b:["$","text",null,{"x":"200.3","y":"126","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"W"}]
+7c:["$","rect",null,{"x":"247.2","y":"107.5","width":"87.9","height":"27","rx":"3","fill":"#3b82f6","fillOpacity":"0.08","stroke":"#3b82f6","strokeWidth":"1.4"}]
+7d:["$","text",null,{"x":"291.1","y":"126","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"E"}]
+7e:["$","rect",null,{"x":"338.1","y":"107.5","width":"87.9","height":"27","rx":"3","fill":"#3b82f6","fillOpacity":"0.08","stroke":"#3b82f6","strokeWidth":"1.4"}]
+7f:["$","text",null,{"x":"382","y":"126","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"R"}]
+80:["$","rect",null,{"x":"428.9","y":"107.5","width":"87.9","height":"27","rx":"3","fill":"#3b82f6","fillOpacity":"0.08","stroke":"#3b82f6","strokeWidth":"1.4"}]
+81:["$","text",null,{"x":"472.9","y":"126","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"T"}]
+82:["$","rect",null,{"x":"519.8","y":"107.5","width":"87.9","height":"27","rx":"3","fill":"#e8912d","fillOpacity":"0.14","stroke":"#e8912d","strokeWidth":"1.4"}]
+83:["$","text",null,{"x":"563.7","y":"126","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"TRUE VID"}]
+84:["$","rect",null,{"x":"610.6","y":"107.5","width":"87.9","height":"27","rx":"3","fill":"#e8912d","fillOpacity":"0.14","stroke":"#e8912d","strokeWidth":"1.4"}]
+85:["$","text",null,{"x":"654.6","y":"126","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"INV VID"}]
+86:["$","text",null,{"x":"0","y":"156","fill":"currentColor","fontSize":"13.5","fontWeight":"bold","children":"A11"}]
+87:["$","rect",null,{"x":"65.5","y":"137.5","width":"87.9","height":"27","rx":"3","fill":"#3b82f6","fillOpacity":"0.08","stroke":"#3b82f6","strokeWidth":"1.4"}]
+88:["$","text",null,{"x":"109.4","y":"156","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"1"}]
+89:["$","rect",null,{"x":"156.4","y":"137.5","width":"87.9","height":"27","rx":"3","fill":"#3b82f6","fillOpacity":"0.08","stroke":"#3b82f6","strokeWidth":"1.4"}]
+8a:["$","text",null,{"x":"200.3","y":"156","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"2"}]
+8b:["$","rect",null,{"x":"247.2","y":"137.5","width":"87.9","height":"27","rx":"3","fill":"#3b82f6","fillOpacity":"0.08","stroke":"#3b82f6","strokeWidth":"1.4"}]
+8c:["$","text",null,{"x":"291.1","y":"156","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"3"}]
+8d:["$","rect",null,{"x":"338.1","y":"137.5","width":"87.9","height":"27","rx":"3","fill":"#3b82f6","fillOpacity":"0.08","stroke":"#3b82f6","strokeWidth":"1.4"}]
+8e:["$","text",null,{"x":"382","y":"156","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"4"}]
+8f:["$","rect",null,{"x":"428.9","y":"137.5","width":"87.9","height":"27","rx":"3","fill":"#3b82f6","fillOpacity":"0.08","stroke":"#3b82f6","strokeWidth":"1.4"}]
+90:["$","text",null,{"x":"472.9","y":"156","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"5"}]
+91:["$","rect",null,{"x":"519.8","y":"137.5","width":"87.9","height":"27","rx":"3","fill":"#e8912d","fillOpacity":"0.14","stroke":"#e8912d","strokeWidth":"1.4"}]
+92:["$","text",null,{"x":"563.7","y":"156","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"BREAK"}]
+93:["$","rect",null,{"x":"610.6","y":"137.5","width":"87.9","height":"27","rx":"3","fill":"#e8912d","fillOpacity":"0.14","stroke":"#e8912d","strokeWidth":"1.4"}]
+94:["$","text",null,{"x":"654.6","y":"156","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"EDIT"}]
+95:["$","text",null,{"x":"0","y":"186","fill":"currentColor","fontSize":"13.5","fontWeight":"bold","children":"A12"}]
+96:["$","rect",null,{"x":"65.5","y":"167.5","width":"87.9","height":"27","rx":"3","fill":"#3b82f6","fillOpacity":"0.08","stroke":"#3b82f6","strokeWidth":"1.4"}]
+97:["$","text",null,{"x":"109.4","y":"186","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"0"}]
+98:["$","rect",null,{"x":"156.4","y":"167.5","width":"87.9","height":"27","rx":"3","fill":"#3b82f6","fillOpacity":"0.08","stroke":"#3b82f6","strokeWidth":"1.4"}]
+99:["$","text",null,{"x":"200.3","y":"186","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"9"}]
+9a:["$","rect",null,{"x":"247.2","y":"167.5","width":"87.9","height":"27","rx":"3","fill":"#3b82f6","fillOpacity":"0.08","stroke":"#3b82f6","strokeWidth":"1.4"}]
+9b:["$","text",null,{"x":"291.1","y":"186","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"8"}]
+9c:["$","rect",null,{"x":"338.1","y":"167.5","width":"87.9","height":"27","rx":"3","fill":"#3b82f6","fillOpacity":"0.08","stroke":"#3b82f6","strokeWidth":"1.4"}]
+9d:["$","text",null,{"x":"382","y":"186","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"7"}]
+9e:["$","rect",null,{"x":"428.9","y":"167.5","width":"87.9","height":"27","rx":"3","fill":"#3b82f6","fillOpacity":"0.08","stroke":"#3b82f6","strokeWidth":"1.4"}]
+9f:["$","text",null,{"x":"472.9","y":"186","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"6"}]
+a0:["$","rect",null,{"x":"519.8","y":"167.5","width":"87.9","height":"27","rx":"3","fill":"#e8912d","fillOpacity":"0.14","stroke":"#e8912d","strokeWidth":"1.4"}]
+a1:["$","text",null,{"x":"563.7","y":"186","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":";"}]
+a2:["$","rect",null,{"x":"610.6","y":"167.5","width":"87.9","height":"27","rx":"3","fill":"#e8912d","fillOpacity":"0.14","stroke":"#e8912d","strokeWidth":"1.4"}]
+a3:["$","text",null,{"x":"654.6","y":"186","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"“"}]
+a4:["$","text",null,{"x":"0","y":"216","fill":"currentColor","fontSize":"13.5","fontWeight":"bold","children":"A13"}]
+a5:["$","rect",null,{"x":"65.5","y":"197.5","width":"87.9","height":"27","rx":"3","fill":"#3b82f6","fillOpacity":"0.08","stroke":"#3b82f6","strokeWidth":"1.4"}]
+a6:["$","text",null,{"x":"109.4","y":"216","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"P"}]
+a7:["$","rect",null,{"x":"156.4","y":"197.5","width":"87.9","height":"27","rx":"3","fill":"#3b82f6","fillOpacity":"0.08","stroke":"#3b82f6","strokeWidth":"1.4"}]
+a8:["$","text",null,{"x":"200.3","y":"216","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"O"}]
+a9:["$","rect",null,{"x":"247.2","y":"197.5","width":"87.9","height":"27","rx":"3","fill":"#3b82f6","fillOpacity":"0.08","stroke":"#3b82f6","strokeWidth":"1.4"}]
+aa:["$","text",null,{"x":"291.1","y":"216","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"I"}]
+ab:["$","rect",null,{"x":"338.1","y":"197.5","width":"87.9","height":"27","rx":"3","fill":"#3b82f6","fillOpacity":"0.08","stroke":"#3b82f6","strokeWidth":"1.4"}]
+ac:["$","text",null,{"x":"382","y":"216","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"U"}]
+ad:["$","rect",null,{"x":"428.9","y":"197.5","width":"87.9","height":"27","rx":"3","fill":"#3b82f6","fillOpacity":"0.08","stroke":"#3b82f6","strokeWidth":"1.4"}]
+ae:["$","text",null,{"x":"472.9","y":"216","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"Y"}]
+af:["$","rect",null,{"x":"519.8","y":"197.5","width":"87.9","height":"27","rx":"3","fill":"#e8912d","fillOpacity":"0.14","stroke":"#e8912d","strokeWidth":"1.4"}]
+b0:["$","text",null,{"x":"563.7","y":"216","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":","}]
+b1:["$","rect",null,{"x":"610.6","y":"197.5","width":"87.9","height":"27","rx":"3","fill":"#e8912d","fillOpacity":"0.14","stroke":"#e8912d","strokeWidth":"1.4"}]
+b2:["$","text",null,{"x":"654.6","y":"216","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"."}]
+b3:["$","text",null,{"x":"0","y":"246","fill":"currentColor","fontSize":"13.5","fontWeight":"bold","children":"A14"}]
+b4:["$","rect",null,{"x":"65.5","y":"227.5","width":"87.9","height":"27","rx":"3","fill":"#3b82f6","fillOpacity":"0.08","stroke":"#3b82f6","strokeWidth":"1.4"}]
+b5:["$","text",null,{"x":"109.4","y":"246","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"ENTER"}]
+b6:["$","rect",null,{"x":"156.4","y":"227.5","width":"87.9","height":"27","rx":"3","fill":"#3b82f6","fillOpacity":"0.08","stroke":"#3b82f6","strokeWidth":"1.4"}]
+b7:["$","text",null,{"x":"200.3","y":"246","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"L"}]
+b8:["$","rect",null,{"x":"247.2","y":"227.5","width":"87.9","height":"27","rx":"3","fill":"#3b82f6","fillOpacity":"0.08","stroke":"#3b82f6","strokeWidth":"1.4"}]
+b9:["$","text",null,{"x":"291.1","y":"246","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"K"}]
+ba:["$","rect",null,{"x":"338.1","y":"227.5","width":"87.9","height":"27","rx":"3","fill":"#3b82f6","fillOpacity":"0.08","stroke":"#3b82f6","strokeWidth":"1.4"}]
+bb:["$","text",null,{"x":"382","y":"246","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"J"}]
+bc:["$","rect",null,{"x":"428.9","y":"227.5","width":"87.9","height":"27","rx":"3","fill":"#3b82f6","fillOpacity":"0.08","stroke":"#3b82f6","strokeWidth":"1.4"}]
+bd:["$","text",null,{"x":"472.9","y":"246","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"H"}]
+be:["$","rect",null,{"x":"519.8","y":"227.5","width":"87.9","height":"27","rx":"3","fill":"#e8912d","fillOpacity":"0.14","stroke":"#e8912d","strokeWidth":"1.4"}]
+bf:["$","text",null,{"x":"563.7","y":"246","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"DELETE"}]
+c0:["$","rect",null,{"x":"610.6","y":"227.5","width":"87.9","height":"27","rx":"3","fill":"#e8912d","fillOpacity":"0.14","stroke":"#e8912d","strokeWidth":"1.4"}]
+c1:["$","text",null,{"x":"654.6","y":"246","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"RIGHT"}]
+c2:["$","text",null,{"x":"0","y":"276","fill":"currentColor","fontSize":"13.5","fontWeight":"bold","children":"A15"}]
+c3:["$","rect",null,{"x":"65.5","y":"257.5","width":"87.9","height":"27","rx":"3","fill":"#3b82f6","fillOpacity":"0.08","stroke":"#3b82f6","strokeWidth":"1.4"}]
+c4:["$","text",null,{"x":"109.4","y":"276","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"SPACE"}]
+c5:["$","rect",null,{"x":"156.4","y":"257.5","width":"87.9","height":"27","rx":"3","fill":"#3b82f6","fillOpacity":"0.08","stroke":"#3b82f6","strokeWidth":"1.4"}]
+c6:["$","text",null,{"x":"200.3","y":"276","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"SYM"}]
+c7:["$","rect",null,{"x":"247.2","y":"257.5","width":"87.9","height":"27","rx":"3","fill":"#3b82f6","fillOpacity":"0.08","stroke":"#3b82f6","strokeWidth":"1.4"}]
+c8:["$","text",null,{"x":"291.1","y":"276","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"M"}]
+c9:["$","rect",null,{"x":"338.1","y":"257.5","width":"87.9","height":"27","rx":"3","fill":"#3b82f6","fillOpacity":"0.08","stroke":"#3b82f6","strokeWidth":"1.4"}]
+ca:["$","text",null,{"x":"382","y":"276","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"N"}]
+cb:["$","rect",null,{"x":"428.9","y":"257.5","width":"87.9","height":"27","rx":"3","fill":"#3b82f6","fillOpacity":"0.08","stroke":"#3b82f6","strokeWidth":"1.4"}]
+cc:["$","text",null,{"x":"472.9","y":"276","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"B"}]
+cd:["$","rect",null,{"x":"519.8","y":"257.5","width":"87.9","height":"27","rx":"3","fill":"#e8912d","fillOpacity":"0.14","stroke":"#e8912d","strokeWidth":"1.4"}]
+ce:["$","text",null,{"x":"563.7","y":"276","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"LEFT"}]
+cf:["$","rect",null,{"x":"610.6","y":"257.5","width":"87.9","height":"27","rx":"3","fill":"#e8912d","fillOpacity":"0.14","stroke":"#e8912d","strokeWidth":"1.4"}]
+d0:["$","text",null,{"x":"654.6","y":"276","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"DOWN"}]
+d1:["$","figcaption",null,{"children":"The Next’s keyboard matrix. Address lines A8 to A15 select the rows; columns 0 to 4, in blue, are the Spectrum’s 40 keys and read in bits 0 to 4 of port $FE. Columns 5 and 6, in orange, hold the Next’s sixteen extra keys, which port $FE cannot see directly."}]
+d2:["$","text",null,{"x":"585","y":"81.4","textAnchor":"middle","fill":"#3b82f6","fontSize":"14","children":"columns in bits 0-4,"}]
+d3:["$","text",null,{"x":"585","y":"98.4","textAnchor":"middle","fill":"#3b82f6","fontSize":"14","children":"extra keys as pairs"}]
+d4:["$","rect",null,{"x":"470","y":"136","width":"230","height":"96","rx":"6","fill":"none","stroke":"#e8912d","strokeWidth":"2"}]
+d5:["$","text",null,{"x":"585","y":"171.9","textAnchor":"middle","fill":"#e8912d","fontSize":"14","children":"NextRegs $B0, $B1"}]
+d6:["$","text",null,{"x":"585","y":"188.9","textAnchor":"middle","fill":"#e8912d","fontSize":"14","children":"the 16 extra keys"}]
+d7:["$","text",null,{"x":"585","y":"205.9","textAnchor":"middle","fill":"#e8912d","fontSize":"14","children":"themselves"}]
+d8:["$","path",null,{"d":"M410,68 L468,68","fill":"none","stroke":"#3b82f6","strokeWidth":"1.8","markerEnd":"url(#in-h-3)","strokeLinejoin":"round"}]
+d9:["$","path",null,{"d":"M410,184 L468,184","fill":"none","stroke":"#e8912d","strokeWidth":"1.8","markerEnd":"url(#in-h-4)","strokeLinejoin":"round"}]
+da:["$","text",null,{"x":"0","y":"250","fill":"currentColor","fontSize":"13.5","children":"a key is down when any of the three presses it"}]
+db:["$","figcaption",null,{"children":"One matrix, many hands. The membrane, the PS/2 keyboard and the joysticks in their key modes all press keys in the same scan. The clerk copies the result, and two readers take from the copy: port $FE, which sees the Spectrum’s five columns, and NextRegs $B0 and $B1, which see the sixteen extra keys."}]
+df:["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        in"}]
+e0:["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}]
+e1:["$","span",null,{"style":{"color":"#A4A4A4"},"children":",("}]
+e2:["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}]
+e3:["$","span",null,{"style":{"color":"#A4A4A4"},"children":")"}]
+e4:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        and"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" %00001111"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"          ; UP DOWN LEFT RIGHT"}]]}]
+e5:["$","span",null,{"children":["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ret"}]}]
+e6:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        out"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}]]}]
+e7:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        inc"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" b"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"                  ; $253B"}]]}]
+e8:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        in"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":",("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":")"}]]}]
+e9:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        or"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" %11001000"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"           ; joystick 1: mode 111"}]]}]
+ea:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        nextreg"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" $05"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}]]}]
+eb:["$","span",null,{"children":["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ret"}]}]
+ec:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"Qaop"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}],["$","span",null,{"style":{"color":"#C586C0"},"children":"   .defb"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" $28"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$29"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$08"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$10"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"  ; R=P L=O D=A U=Q"}]]}]
+ed:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":"        .defb"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" $38"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$07"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$07"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$07"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"  ; B=SPACE; C A START: none"}]]}]
+ee:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":"        .defb"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" $07"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$07"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$07"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$07"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"  ; Y Z X MODE: none"}]]}]
+ef:["$","path",null,{"d":"M113,104 L113,110 L180.8,110 L180.8,104","fill":"none","stroke":"currentColor","strokeWidth":"1.6","strokeLinejoin":"round"}]
+f0:["$","text",null,{"x":"146.9","y":"128","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"start"}]
+f1:["$","text",null,{"x":"146.9","y":"145","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"afresh"}]
+f2:["$","path",null,{"d":"M260.5,104 L260.5,110 L328.3,110 L328.3,104","fill":"none","stroke":"#e5484d","strokeWidth":"1.6","strokeLinejoin":"round"}]
+f3:["$","text",null,{"x":"294.4","y":"128","textAnchor":"middle","fill":"#e5484d","fontSize":"13.5","children":"pad?"}]
+f4:["$","text",null,{"x":"294.4","y":"145","textAnchor":"middle","fill":"#e5484d","fontSize":"13.5","children":"A, START"}]
+f5:["$","path",null,{"d":"M334.3,104 L334.3,110 L402,110 L402,104","fill":"none","stroke":"#a855f7","strokeWidth":"1.6","strokeLinejoin":"round"}]
+f6:["$","text",null,{"x":"368.1","y":"128","textAnchor":"middle","fill":"#a855f7","fontSize":"13.5","children":"U D L R"}]
+f7:["$","text",null,{"x":"368.1","y":"145","textAnchor":"middle","fill":"#a855f7","fontSize":"13.5","children":"B, C"}]
+f8:["$","path",null,{"d":"M408,104 L408,110 L475.8,110 L475.8,104","fill":"none","stroke":"#e5484d","strokeWidth":"1.6","strokeLinejoin":"round"}]
+f9:["$","text",null,{"x":"441.9","y":"128","textAnchor":"middle","fill":"#e5484d","fontSize":"13.5","children":"six"}]
+fa:["$","text",null,{"x":"441.9","y":"145","textAnchor":"middle","fill":"#e5484d","fontSize":"13.5","children":"buttons?"}]
+fb:["$","path",null,{"d":"M481.8,104 L481.8,110 L549.5,110 L549.5,104","fill":"none","stroke":"#e5484d","strokeWidth":"1.6","strokeLinejoin":"round"}]
+fc:["$","text",null,{"x":"515.6","y":"128","textAnchor":"middle","fill":"#e5484d","fontSize":"13.5","children":"X Y Z"}]
+fd:["$","text",null,{"x":"515.6","y":"145","textAnchor":"middle","fill":"#e5484d","fontSize":"13.5","children":"MODE"}]
+fe:["$","text",null,{"x":"0","y":"184","fill":"currentColor","fontSize":"13.5","children":"16 steps of 4.57 µs, 73 µs; then a rest of 496 steps, 2.27 ms; the cycle repeats every 2.34 ms"}]
+ff:["$","text",null,{"x":"0","y":"206","fill":"currentColor","fontSize":"13.5","children":"purple: what any joystick answers; red: questions only a Mega Drive pad answers"}]
+100:["$","figcaption",null,{"children":"The joystick reader’s script, to scale in steps of 4.57 µs. Pin 7 goes low and high four times, each level lasting two steps, one for each connector. The second low asks “are you a pad?” and takes A and START; the second high takes the directions, B and C; the third low asks “six buttons?”, and the third high takes X, Y, Z and MODE. Then the reader rests for 2.27 ms so the pads can reset."}]
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

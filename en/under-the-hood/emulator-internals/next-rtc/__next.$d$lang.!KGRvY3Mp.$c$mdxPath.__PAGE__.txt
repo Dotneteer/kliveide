@@ -1,0 +1,864 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:Tad32,---
+description: "How the ZX Spectrum Next keeps the time: the DS1307 real-time clock outside the FPGA, its crystal and battery, the two-wire I2C bus and its open-drain lines, ports $103B and $113B, START, STOP, bits and acknowledgements driven by the CPU, the bus's speed limit, the clock's BCD registers, reading through a snapshot, setting the time, 56 bytes of battery-backed RAM, and resets."
+---
+
+import { Callout } from 'nextra/components'
+
+# Real-Time Clock: A Watchman on Two Wires
+
+Switch your Next off, put it in a drawer for a month, and switch it on again: it knows the date. The FPGA
+forgot everything the moment the power went, the SRAM is blank, the core has been loaded from flash all
+over again. So who was counting the seconds in the dark? The answer is the Next's **Real-Time Clock**, the
+**RTC**: a clock that keeps the time and the date whether the machine is running or not.
+
+A clock that survives the power switch matters more than it seems. An operating system that writes a file
+wants to stamp it with the date. A game can offer a puzzle of the day, a logger wants to say when
+something happened, and a program that needs a random seed has one ticking right there. None of this works
+with a clock that starts at midnight on 1 January every time you switch on, and the Spectrum never had any
+other kind.
+
+You should know one chapter first. [Memory, Ports and NextRegs: How the Z80N Reaches the
+Machine](/en/under-the-hood/emulator-internals/next-memory-io/) explains how the Next decodes its ports and
+how a NextReg switches a group of them off. [Storage: an SD Card on a Serial
+Bus](/en/under-the-hood/emulator-internals/next-storage/) is worth a look too: it shows a serial bus that the
+hardware clocks for you, and this chapter shows one where you do the clocking yourself.
+
+## The road ahead
+
+We start with the clock chip itself, which lives outside the FPGA on its own battery, and the two wires that
+connect it to the machine. Then come the two ports that hold those wires, and the rules of the conversation
+on them: how a message starts and stops, how bits travel and how the listener says "got it". The heart of
+the chapter is the part where your program speaks those rules itself, one wire at a time, and the speed
+limit it must respect; if you read only one section, read that one. After that we open the clock's
+registers, read the time through a snapshot, set it, use its spare memory, and see what a reset does to it.
+
+<Callout type="info">
+The facts are for **core 3.02.01** and the **DS1307** real-time clock on the Next's bus. The listings run at
+**3.5 MHz**, the CPU's speed after a reset, and every time given for them is for that speed.
+</Callout>
+
+## A clock outside the machine
+
+The Next's clock is a small chip of its own, a **DS1307**, sitting on the board beside the FPGA. I like to
+call it **the watchman**: it stays awake on its own lamp while the house sleeps, and when you come down in
+the morning it tells you what time it is. It is not part of the core and no reset of the FPGA reaches it.
+
+Three things keep it going:
+
+- **A 32,768 Hz crystal.** The number is 2<sup>15</sup>, so fifteen halvings make exactly one pulse a
+  second. Many quartz watches count from the same frequency for the same reason, which keeps the crystal
+  cheap and easy to find, though some watches use other frequencies.
+- **A battery input** for a 3 V lithium cell, between 2.0 and 3.5 V. When the board's own supply falls
+  below the battery's voltage, the chip switches over and keeps counting on less than half a microamp. A
+  48 mAh cell keeps it alive for more than ten years.
+- **A guard at the door.** While the supply is below 1.25 times the battery's voltage, the chip ignores the
+  bus altogether, so a machine that is powering up or down cannot scribble garbage over the time.
+
+The watchman is only as good as his crystal. A crystal that is 20 parts in a million off gains or loses
+about 1.7 seconds a day, nearly a minute a month, so do not be surprised if the clock wants setting now and
+then.
+
+## Two wires, and nobody pushes
+
+The watchman talks over **I2C**, the inter-integrated circuit bus: two wires that many chips can share. One
+wire, **SCL**, is the clock, which says *when* a bit is valid. The other, **SDA**, is the data, which says
+*what* the bit is.
+
+The trick that makes sharing possible is that no chip ever drives a wire high. Each wire has a **pull-up**, a
+resistor to the supply, that holds it high when it is left alone. A chip can only do two things to a wire:
+pull it low, or let go. This is called **open drain**, and it means two chips can never fight, one pushing
+up while the other pulls down. If anybody pulls, the wire is low; it is high only when nobody pulls. An
+engineer would say the wire is the AND of everyone's wishes.
+
+<figure>
+{/* fig:bus */}
+<svg viewBox="-2 -2 704 304" role="img" aria-label="Two horizontal lines, SCL above and SDA below, run across the figure. At the right, a pull-up resistor ties each line to the supply. Below the lines hang three devices, each wired to both lines: the FPGA with ports $103B and $113B, the DS1307 real-time clock, and an internal connector. At the far left, the Raspberry Pi's GPIO 2 and 3 connect only to the FPGA, through its own pair of wires, once NextReg $A0 bit 3 joins them. A key says that any device can pull a line low, none drives it high, and the line is high only when nobody pulls." style={{ width: "100%", height: "auto" }}>
+  <text x="160" y="115" textAnchor="end" fill="#3b82f6" fontSize="15" fontWeight="bold">SCL</text>
+  <text x="160" y="155" textAnchor="end" fill="#3b82f6" fontSize="15" fontWeight="bold">SDA</text>
+  <line x1="170" y1="110" x2="700" y2="110" stroke="#3b82f6" strokeWidth="2.4" />
+  <line x1="170" y1="150" x2="700" y2="150" stroke="#3b82f6" strokeWidth="2.4" />
+  <line x1="600" y1="24" x2="700" y2="24" stroke="currentColor" strokeWidth="2" />
+  <text x="590" y="29" textAnchor="end" fill="currentColor" fontSize="13.5">supply</text>
+  <line x1="630" y1="24" x2="630" y2="38" stroke="currentColor" strokeWidth="1.8" />
+  <rect x="623" y="38" width="14" height="36" fill="none" stroke="currentColor" strokeWidth="1.8" />
+  <line x1="630" y1="74" x2="630" y2="110" stroke="currentColor" strokeWidth="1.8" />
+  <circle cx="630" cy="110" r="3.5" fill="currentColor" />
+  <line x1="680" y1="24" x2="680" y2="38" stroke="currentColor" strokeWidth="1.8" />
+  <rect x="673" y="38" width="14" height="36" fill="none" stroke="currentColor" strokeWidth="1.8" />
+  <line x1="680" y1="74" x2="680" y2="150" stroke="currentColor" strokeWidth="1.8" />
+  <circle cx="680" cy="150" r="3.5" fill="currentColor" />
+  <text x="530" y="70" textAnchor="middle" fill="currentColor" fontSize="13.5">pull-ups</text>
+  <rect x="170" y="200" width="150" height="70" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="245" y="231.4" textAnchor="middle" fill="currentColor" fontSize="14">FPGA</text>
+  <text x="245" y="248.4" textAnchor="middle" fill="currentColor" fontSize="14">ports $103B, $113B</text>
+  <line x1="215" y1="110" x2="215" y2="200" stroke="#3b82f6" strokeWidth="1.8" />
+  <circle cx="215" cy="110" r="3.5" fill="#3b82f6" />
+  <line x1="275" y1="150" x2="275" y2="200" stroke="#3b82f6" strokeWidth="1.8" />
+  <circle cx="275" cy="150" r="3.5" fill="#3b82f6" />
+  <rect x="370" y="200" width="150" height="70" rx="6" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="2" />
+  <text x="445" y="231.4" textAnchor="middle" fill="#e8912d" fontSize="14">DS1307</text>
+  <text x="445" y="248.4" textAnchor="middle" fill="#e8912d" fontSize="14">the watchman</text>
+  <line x1="415" y1="110" x2="415" y2="200" stroke="#3b82f6" strokeWidth="1.8" />
+  <circle cx="415" cy="110" r="3.5" fill="#3b82f6" />
+  <line x1="475" y1="150" x2="475" y2="200" stroke="#3b82f6" strokeWidth="1.8" />
+  <circle cx="475" cy="150" r="3.5" fill="#3b82f6" />
+  <rect x="570" y="200" width="130" height="70" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="635" y="231.4" textAnchor="middle" fill="currentColor" fontSize="14">internal</text>
+  <text x="635" y="248.4" textAnchor="middle" fill="currentColor" fontSize="14">connector</text>
+  <line x1="609" y1="110" x2="609" y2="200" stroke="#3b82f6" strokeWidth="1.8" />
+  <circle cx="609" cy="110" r="3.5" fill="#3b82f6" />
+  <line x1="661" y1="150" x2="661" y2="200" stroke="#3b82f6" strokeWidth="1.8" />
+  <circle cx="661" cy="150" r="3.5" fill="#3b82f6" />
+  <rect x="0" y="200" width="110" height="70" rx="6" fill="#a855f7" fillOpacity="0.12" stroke="#a855f7" strokeWidth="2" />
+  <text x="55" y="231.4" textAnchor="middle" fill="#a855f7" fontSize="14">Pi's</text>
+  <text x="55" y="248.4" textAnchor="middle" fill="#a855f7" fontSize="14">GPIO 2, 3</text>
+  <line x1="110" y1="222" x2="170" y2="222" stroke="#a855f7" strokeWidth="1.8" />
+  <line x1="110" y1="248" x2="170" y2="248" stroke="#a855f7" strokeWidth="1.8" />
+  <text x="0" y="192" fill="#a855f7" fontSize="13.5">NextReg $A0 bit 3</text>
+  <text x="0" y="296" fill="currentColor" fontSize="13.5">any device pulls a line low; none drives it high; a line is high only when nobody pulls</text>
+</svg>
+{/* /fig:bus */}
+<figcaption>The Next's I2C bus. The FPGA, the DS1307 and an internal connector each hang on both lines; pull-ups hold the lines high when nobody pulls them low. The Raspberry Pi's GPIO 2 and 3 reach only the FPGA, through a pair of their own, once NextReg $A0 bit 3 joins them.</figcaption>
+</figure>
+
+Three things share the bus on the board: the FPGA, the watchman and an internal connector for whatever an
+owner wants to add. The Raspberry Pi's connector can join in too, though in a cleverer way than it looks.
+Bit 3 of the **PI Peripheral Enable register, NextReg `$A0`**, gives the Pi's GPIO 2 (data) and GPIO 3
+(clock) to the bus. The FPGA then pulls the Pi's pins low whenever it pulls its own, and the lines your
+program reads are the AND of both sides. The Pi's pins are not wired to the watchman, though: the FPGA
+stands between two buses and runs them both at once.
+
+There is one more rule: **the Next is always the master**. It makes the clock, it starts every
+conversation and it ends it. The watchman only answers.
+
+## Two ports, one bit each
+
+Each wire has its own port, and only bit 0 of each counts:
+
+- **Port `$103B`** is SCL, the clock.
+- **Port `$113B`** is SDA, the data.
+
+A write of bit 0 = 0 makes the FPGA pull the wire low; bit 0 = 1 lets it go. A read gives `$FE` or `$FF`:
+bits 7–1 are always 1, and bit 0 is **the wire itself**, not what you wrote. That difference is the whole
+point. Write 1 to `$113B` and read it back, and you read 0 when the watchman is pulling the wire low: that is
+how you hear him. The same goes for the clock wire, so a program can see if another chip holds SCL low to
+ask for more time.
+
+A reset, soft or hard, lets go of both wires. Bit 2 of the **Internal Port Decoding Enables register,
+NextReg `$83`**, switches both ports off: they then read `$FF` and ignore writes.
+
+I find these two ports a lovely piece of minimalism. Many I2C controllers in other machines are whole
+chips, with shift registers, state machines and a page of registers. The Next gives you two wires and
+says: the protocol is your business.
+
+## The rules of the conversation
+
+Since both wires rest high and anyone may pull, the chips need rules about who touches what, and when.
+There is one simple rule and two exceptions.
+
+**The rule: SDA changes only while SCL is low.** The master puts a bit on SDA, raises SCL, and the
+listener reads SDA while SCL is high. Then the master lowers SCL and may change SDA for the next bit.
+
+**The exceptions are the brackets around a message**, and they break the rule on purpose:
+
+- **START**: SDA falls while SCL is high. Every chip on the bus wakes up and listens.
+- **STOP**: SDA rises while SCL is high. The message is over and the bus is free.
+
+Because a normal bit never changes SDA while SCL is high, nobody can mistake data for a bracket. A START
+inside a message, before any STOP, is a **repeated START**: it begins a new message without letting
+anybody else grab the bus in between.
+
+Bytes go **most significant bit first**, and each byte gets a ninth clock pulse, the **acknowledge**. For
+that pulse the sender lets go of SDA and the receiver answers: pulled low is an **ACK**, "got it"; left
+high is a **NACK**, "no", or "no more". The first byte after a START is the **address**: seven bits saying
+which chip the master wants, and an eighth saying the direction, 0 for write and 1 for read. The watchman's
+address is `$68`, so `$D0` means "watchman, listen" and `$D1` means "watchman, talk".
+
+<figure>
+{/* fig:wave */}
+<svg viewBox="-2 -2 704 218" role="img" aria-label="Two waveforms over eleven and a half clock periods, SCL above, SDA below. Both lines rest high. START: SDA falls while SCL is high. Then nine clock pulses: during each, SDA holds a bit, changing only while SCL is low. The first eight carry the address byte $D0: 1, 1, 0, 1, 0, 0, 0 for address $68, then 0 for write. On the ninth pulse the watchman pulls SDA low: the ACK, drawn in orange. STOP: SDA rises while SCL is high. Red marks show the two moments SDA changes while SCL is high." style={{ width: "100%", height: "auto" }}>
+  <text x="0" y="43" fill="#3b82f6" fontSize="15" fontWeight="bold">SCL</text>
+  <text x="0" y="117" fill="#3b82f6" fontSize="15" fontWeight="bold">SDA</text>
+  <path d="M80,18 L133.9,18 L133.9,58 L160.9,58 L160.9,18 L187.8,18 L187.8,58 L214.8,58 L214.8,18 L241.7,18 L241.7,58 L268.7,58 L268.7,18 L295.7,18 L295.7,58 L322.6,58 L322.6,18 L349.6,18 L349.6,58 L376.5,58 L376.5,18 L403.5,18 L403.5,58 L430.4,58 L430.4,18 L457.4,18 L457.4,58 L484.3,58 L484.3,18 L511.3,18 L511.3,58 L538.3,58 L538.3,18 L565.2,18 L565.2,58 L592.2,58 L592.2,18 L619.1,18 L619.1,58 L646.1,58 L646.1,18 L700,18" fill="none" stroke="#3b82f6" strokeWidth="2.2" strokeLinejoin="round" />
+  <path d="M80,92 L107,92 L107,132 L133.9,132 L142,132 L142,92 L187.8,92 L195.9,92 L195.9,92 L241.7,92 L249.8,92 L249.8,132 L295.7,132 L303.7,132 L303.7,92 L349.6,92 L357.7,92 L357.7,132 L403.5,132 L411.6,132 L411.6,132 L457.4,132 L465.5,132 L465.5,132 L511.3,132 L519.4,132 L519.4,132 L565.2,132" fill="none" stroke="#3b82f6" strokeWidth="2.2" strokeLinejoin="round" />
+  <path d="M565.2,132 L573.3,132 L619.1,132" fill="none" stroke="#e8912d" strokeWidth="3.2" strokeLinejoin="round" />
+  <path d="M619.1,132 L659.6,132 L659.6,92 L700,92" fill="none" stroke="#3b82f6" strokeWidth="2.2" strokeLinejoin="round" />
+  <line x1="133.9" y1="8" x2="133.9" y2="140" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.35" />
+  <line x1="187.8" y1="8" x2="187.8" y2="140" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.35" />
+  <line x1="241.7" y1="8" x2="241.7" y2="140" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.35" />
+  <line x1="295.7" y1="8" x2="295.7" y2="140" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.35" />
+  <line x1="349.6" y1="8" x2="349.6" y2="140" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.35" />
+  <line x1="403.5" y1="8" x2="403.5" y2="140" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.35" />
+  <line x1="457.4" y1="8" x2="457.4" y2="140" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.35" />
+  <line x1="511.3" y1="8" x2="511.3" y2="140" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.35" />
+  <line x1="565.2" y1="8" x2="565.2" y2="140" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.35" />
+  <line x1="619.1" y1="8" x2="619.1" y2="140" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.35" />
+  <line x1="107" y1="8" x2="107" y2="140" stroke="#e5484d" strokeWidth="2" />
+  <line x1="659.6" y1="8" x2="659.6" y2="140" stroke="#e5484d" strokeWidth="2" />
+  <text x="107" y="160" textAnchor="middle" fill="#e5484d" fontSize="13.5" fontWeight="bold">START</text>
+  <text x="667.7" y="160" textAnchor="middle" fill="#e5484d" fontSize="13.5" fontWeight="bold">STOP</text>
+  <text x="160.9" y="160" textAnchor="middle" fill="#3b82f6" fontSize="13.5" fontWeight="bold">1</text>
+  <text x="214.8" y="160" textAnchor="middle" fill="#3b82f6" fontSize="13.5" fontWeight="bold">1</text>
+  <text x="268.7" y="160" textAnchor="middle" fill="#3b82f6" fontSize="13.5" fontWeight="bold">0</text>
+  <text x="322.6" y="160" textAnchor="middle" fill="#3b82f6" fontSize="13.5" fontWeight="bold">1</text>
+  <text x="376.5" y="160" textAnchor="middle" fill="#3b82f6" fontSize="13.5" fontWeight="bold">0</text>
+  <text x="430.4" y="160" textAnchor="middle" fill="#3b82f6" fontSize="13.5" fontWeight="bold">0</text>
+  <text x="484.3" y="160" textAnchor="middle" fill="#3b82f6" fontSize="13.5" fontWeight="bold">0</text>
+  <text x="538.3" y="160" textAnchor="middle" fill="#3b82f6" fontSize="13.5" fontWeight="bold">0</text>
+  <text x="592.2" y="160" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">ACK</text>
+  <path d="M136.9,170 L136.9,176 L508.3,176 L508.3,170" fill="none" stroke="#3b82f6" strokeWidth="1.6" strokeLinejoin="round" />
+  <text x="322.6" y="194" textAnchor="middle" fill="#3b82f6" fontSize="13.5">address $68</text>
+  <path d="M514.3,170 L514.3,176 L562.2,176 L562.2,170" fill="none" stroke="#3b82f6" strokeWidth="1.6" strokeLinejoin="round" />
+  <text x="538.3" y="194" textAnchor="middle" fill="#3b82f6" fontSize="13.5">write</text>
+  <path d="M568.2,170 L568.2,176 L616.1,176 L616.1,170" fill="none" stroke="#e8912d" strokeWidth="1.6" strokeLinejoin="round" />
+  <text x="592.2" y="194" textAnchor="middle" fill="#e8912d" fontSize="13.5">watchman</text>
+</svg>
+{/* /fig:wave */}
+<figcaption>START, the address byte $D0 and STOP, to scale in clock periods. SDA changes only while SCL is low, except at START and STOP, marked red, where it changes while SCL is high. The first seven bits are the address $68, most significant first; the eighth, 0, asks to write. On the ninth pulse the watchman pulls SDA low: the ACK, in orange.</figcaption>
+</figure>
+
+A chip that is not addressed answers nothing, and nothing means a high SDA on the ninth pulse, a NACK. So
+the address byte doubles as a roll call: if nobody acknowledges `$D0`, there is no watchman on your bus.
+I always check that ACK before believing anything else the bus tells me.
+
+## Speaking the protocol yourself
+
+The Next has no hardware that sends an I2C byte for you. Your program raises and lowers the two wires one
+`OUT` at a time, a technique called **bit-banging**. It sounds primitive, and it is, but it takes a page of
+code, and here it is. The routines use BC, DE, A and the flags, and keep HL.
+
+START and STOP are three or four writes each. Both begin with the wires in a known state:
+
+```z80klive
+; START (also a repeated START): SDA, SCL high,
+; SDA low while SCL is high, then SCL low
+I2cStart:
+        ld bc,$113b            ; SDA
+        ld a,1
+        out (c),a              ; let SDA go
+        ld b,$10               ; SCL
+        out (c),a              ; let SCL go
+        ld b,$11
+        xor a
+        out (c),a              ; SDA low: START
+        ld b,$10
+        out (c),a              ; SCL low
+        ret
+
+; STOP: SDA low, SCL high, then SDA high
+I2cStop:
+        ld bc,$113b
+        xor a
+        out (c),a              ; SDA low
+        ld b,$10
+        inc a
+        out (c),a              ; let SCL go
+        ld b,$11
+        out (c),a              ; SDA high: STOP
+        ret
+```
+
+Sending a byte is eight bits and a listen:
+
+```z80klive
+; send A, MSB first; A = the ACK bit (0 = ACK)
+I2cWrite:
+        ld e,a
+        ld d,8                 ; eight bits
+WrBit:  ld bc,$113b
+        xor a
+        rl e                   ; next bit into carry
+        rla                    ; and into bit 0
+        out (c),a              ; SDA = the bit
+        ld b,$10
+        ld a,1
+        out (c),a              ; SCL high: read me
+        xor a
+        out (c),a              ; SCL low
+        dec d
+        jr nz,WrBit
+        ld bc,$113b
+        ld a,1
+        out (c),a              ; let SDA go
+        ld b,$10
+        out (c),a              ; the ninth pulse
+        ld b,$11
+        in a,(c)               ; the answer
+        and 1
+        ld e,a
+        ld b,$10
+        xor a
+        out (c),a              ; SCL low
+        ld a,e
+        ret
+```
+
+And receiving one is the mirror image: you let go of SDA, clock eight times and read the wire at every
+pulse, then answer yourself.
+
+```z80klive
+; receive a byte into A; answer NACK if carry is
+; set, ACK otherwise
+I2cRead:
+        push af                ; keep the carry
+        ld bc,$113b
+        ld a,1
+        out (c),a              ; let SDA go
+        ld d,8
+        ld e,0
+RdBit:  ld b,$10
+        ld a,1
+        out (c),a              ; SCL high
+        ld b,$11
+        in a,(c)               ; read SDA
+        rra                    ; bit 0 into carry
+        rl e                   ; and into E
+        ld b,$10
+        xor a
+        out (c),a              ; SCL low
+        dec d
+        jr nz,RdBit
+        pop af
+        ld a,0
+        rla                    ; A = carry: 0 ACK, 1 NACK
+        ld b,$11
+        out (c),a              ; our answer on SDA
+        ld b,$10
+        ld a,1
+        out (c),a              ; the ninth pulse
+        xor a
+        out (c),a
+        ld b,$11
+        inc a
+        out (c),a              ; let SDA go
+        ld a,e
+        ret
+```
+
+How it works, the parts worth a second look:
+
+- **Every bit of `I2cWrite` sets SDA first, then pulses SCL.** The data is steady before the clock rises and
+  stays steady until it falls: the rule, kept by the order of the `OUT`s.
+- **For the acknowledge, the sender lets go.** `I2cWrite` writes 1 to SDA before the ninth pulse, which does
+  not make the wire high: it only stops pulling. The `IN` then reads whatever the watchman does.
+- **`I2cRead` writes 1 to SDA once, at the start**, and never touches it during the eight bits. The watchman
+  pulls the wire for every 0 he sends; the 1s are the pull-up's work.
+- **The carry chooses the answer.** Clear for ACK, "go on"; set for NACK, "that was the last one". The
+  watchman stops talking after a NACK and leaves SDA to you for the STOP.
+
+## How fast is too fast
+
+The watchman is a 100 kHz chip: it runs I2C's standard mode only, never the faster ones. For every pulse
+it asks for at least **4.0 µs with SCL high** and **4.7 µs with SCL low**. A START needs SCL high for 4.7 µs
+before SDA falls and 4.0 µs after; a STOP needs 4.7 µs of SCL high before SDA rises; and between a STOP
+and the next START the bus must rest for 4.7 µs.
+
+Now look at `I2cWrite` at 3.5 MHz. A bit takes 96 T-states, 27.4 µs, which is about 36,500 bits a second,
+well under the limit. The tight spot is the clock's high time: from the `OUT` that raises SCL to the one that
+lowers it there is an `XOR A` and an `OUT`, 16 T-states, **4.6 µs**. That clears the 4.0 µs, but not by
+much. The ACK pulse of `I2cRead` is as short; no gap in these routines is shorter.
+
+Here is the catch: the same 16 T-states last 2.3 µs at 7 MHz and **0.57 µs at 28 MHz**, seven times too
+short. A Next running at full speed outruns the watchman with the very same code. My advice is the boring
+one: switch the CPU to 3.5 MHz with the **CPU Speed register, NextReg `$07`**, before you talk to the bus,
+and switch it back afterwards. A read of the whole time takes under 3 ms, so you lose almost nothing. If
+you would rather keep the speed, keep SCL high for at least 112 T-states and low for at least 132 at
+28 MHz, and measure what you wrote.
+
+## The watchman's registers
+
+The watchman has 64 bytes, numbered `$00` to `$3F`. The first eight hold the time and a control byte; the
+other **56 bytes are RAM**, kept by the battery with the time.
+
+The time is in **BCD**, binary-coded decimal: each 4-bit half of a byte holds one decimal digit, so 45
+seconds is `$45`, not `$2D`. It is wasteful, but a program that prints the time only has to print two hex
+digits, and I suspect that was the whole idea. The spare bits carry switches:
+
+```text
+reg   7    6    5    4    3    2    1    0
+$00   CH  [ tens of sec ][ seconds          ]
+$01   0   [ tens of min ][ minutes          ]
+$02   0   12   PM/20 10h [ hours            ]
+$03   0    0    0    0    0  [ day 1-7      ]
+$04   0    0  [ tens   ][ date             ]
+$05   0    0    0   10m  [ month            ]
+$06  [ tens of year     ][ year             ]
+$07   OUT  0    0   SQWE  0    0   RS1  RS0
+```
+
+- **CH, clock halt, bit 7 of the seconds.** When it is 1 the crystal stops and so does the time. A fresh
+  chip comes up with CH set, so the first thing any program that sets the clock does is clear it.
+- **The hours, bit 6, choose 12- or 24-hour mode.** With bit 6 = 0, bit 5 is the second tens digit, for
+  20 to 23. With bit 6 = 1, bit 5 is **PM**, and the hours count 12, 1, 2 to 11; PM flips when 11 becomes
+  12, and the date moves on when 11 PM becomes 12 AM. After changing bit 6, write the hours again: the chip
+  does not convert them.
+- **The day of the week, 1 to 7**, steps at midnight. Which day is 1 is up to the software: the watchman
+  only counts, so pick a convention (Sunday = 1 is common) and stick to it.
+- **The date, month and year** roll over as a calendar should: 30 or 31 days, February 28 or 29, and the
+  year from 99 to 00. The year is two digits, and every year divisible by four is a leap year, which is
+  right for every year from 2000 to 2099. Somebody in 2100 will have to fix it.
+- **The control register** drives the chip's square-wave pin: SQWE = 1 makes a square wave of 1 Hz,
+  4,096 Hz, 8,192 Hz or 32,768 Hz by RS1–RS0 (00 to 11); with SQWE = 0, the pin follows OUT. On the Next the
+  watchman reaches the FPGA only through the two bus wires, so that pin cannot interrupt the Z80.
+
+## Reading the time
+
+Reading a clock has a classic trap. Suppose it is 12:59:59 and you read the seconds, then the minutes, then
+the hours, and between the minutes and the hours the clock ticks: you get 13:59:59, an hour out. Every
+programmer of an old PC clock has met this bug.
+
+The watchman avoids it with a **snapshot**. His counters run on their own, and on every START he copies them
+into a second set of registers. Everything you read over the bus comes from the snapshot, so all seven bytes
+belong to the same moment, however slowly you read them, while the real counters keep running underneath.
+
+<figure>
+{/* fig:chain */}
+<svg viewBox="-2 -2 704 172" role="img" aria-label="Across the top, a chain of boxes linked by arrows: a 32,768 Hz crystal divided by 32,768, giving one pulse a second, then the counters for seconds, minutes, hours, day and date, month and year, each carrying into the next. Below the six counters, a band: the snapshot, copied from the counters on every START. Every read over the bus comes from the snapshot, while the counters keep running." style={{ width: "100%", height: "auto" }}>
+  <defs>
+    <marker id="rt-ch-0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
+    </marker>
+    <marker id="rt-ch-1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#e8912d" />
+    </marker>
+  </defs>
+  <rect x="0" y="10" width="92" height="56" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="46" y="34.5" textAnchor="middle" fill="currentColor" fontSize="13.5">32,768 Hz</text>
+  <text x="46" y="51" textAnchor="middle" fill="currentColor" fontSize="13.5">÷ 32,768</text>
+  <rect x="110" y="10" width="83.3" height="56" rx="6" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="2" />
+  <text x="151.7" y="42.9" textAnchor="middle" fill="#e8912d" fontSize="14">seconds</text>
+  <rect x="211.3" y="10" width="83.3" height="56" rx="6" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="2" />
+  <text x="253" y="42.9" textAnchor="middle" fill="#e8912d" fontSize="14">minutes</text>
+  <rect x="312.7" y="10" width="83.3" height="56" rx="6" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="2" />
+  <text x="354.3" y="42.9" textAnchor="middle" fill="#e8912d" fontSize="14">hours</text>
+  <rect x="414" y="10" width="83.3" height="56" rx="6" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="2" />
+  <text x="455.7" y="34.4" textAnchor="middle" fill="#e8912d" fontSize="14">day,</text>
+  <text x="455.7" y="51.4" textAnchor="middle" fill="#e8912d" fontSize="14">date</text>
+  <rect x="515.3" y="10" width="83.3" height="56" rx="6" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="2" />
+  <text x="557" y="42.9" textAnchor="middle" fill="#e8912d" fontSize="14">month</text>
+  <rect x="616.7" y="10" width="83.3" height="56" rx="6" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="2" />
+  <text x="658.3" y="42.9" textAnchor="middle" fill="#e8912d" fontSize="14">year</text>
+  <path d="M92,38 L108,38" fill="none" stroke="currentColor" strokeWidth="1.8" markerEnd="url(#rt-ch-0)" strokeLinejoin="round" />
+  <path d="M193.3,38 L209.3,38" fill="none" stroke="#e8912d" strokeWidth="1.8" markerEnd="url(#rt-ch-1)" strokeLinejoin="round" />
+  <path d="M294.7,38 L310.7,38" fill="none" stroke="#e8912d" strokeWidth="1.8" markerEnd="url(#rt-ch-1)" strokeLinejoin="round" />
+  <path d="M396,38 L412,38" fill="none" stroke="#e8912d" strokeWidth="1.8" markerEnd="url(#rt-ch-1)" strokeLinejoin="round" />
+  <path d="M497.3,38 L513.3,38" fill="none" stroke="#e8912d" strokeWidth="1.8" markerEnd="url(#rt-ch-1)" strokeLinejoin="round" />
+  <path d="M598.7,38 L614.7,38" fill="none" stroke="#e8912d" strokeWidth="1.8" markerEnd="url(#rt-ch-1)" strokeLinejoin="round" />
+  <text x="46" y="86" textAnchor="middle" fill="currentColor" fontSize="13.5">1 Hz</text>
+  <path d="M151.7,66 L151.7,104" fill="none" stroke="#e8912d" strokeWidth="1.6" strokeDasharray="4 3" markerEnd="url(#rt-ch-1)" strokeLinejoin="round" />
+  <path d="M253,66 L253,104" fill="none" stroke="#e8912d" strokeWidth="1.6" strokeDasharray="4 3" markerEnd="url(#rt-ch-1)" strokeLinejoin="round" />
+  <path d="M354.3,66 L354.3,104" fill="none" stroke="#e8912d" strokeWidth="1.6" strokeDasharray="4 3" markerEnd="url(#rt-ch-1)" strokeLinejoin="round" />
+  <path d="M455.7,66 L455.7,104" fill="none" stroke="#e8912d" strokeWidth="1.6" strokeDasharray="4 3" markerEnd="url(#rt-ch-1)" strokeLinejoin="round" />
+  <path d="M557,66 L557,104" fill="none" stroke="#e8912d" strokeWidth="1.6" strokeDasharray="4 3" markerEnd="url(#rt-ch-1)" strokeLinejoin="round" />
+  <path d="M658.3,66 L658.3,104" fill="none" stroke="#e8912d" strokeWidth="1.6" strokeDasharray="4 3" markerEnd="url(#rt-ch-1)" strokeLinejoin="round" />
+  <rect x="110" y="106" width="590" height="40" rx="6" fill="#e8912d" fillOpacity="0.06" stroke="#e8912d" strokeWidth="2" />
+  <text x="405" y="130.9" textAnchor="middle" fill="#e8912d" fontSize="14">the snapshot: copied on every START, read over the bus</text>
+  <text x="0" y="164" fill="currentColor" fontSize="13.5">the counters keep running while a read takes its bytes from the snapshot</text>
+</svg>
+{/* /fig:chain */}
+<figcaption>Inside the watchman. The crystal divided by 32,768 gives one pulse a second; each counter carries into the next. On every START the counters are copied into the snapshot, and a read over the bus takes its bytes from there, so the seven bytes of one read always belong to one moment.</figcaption>
+</figure>
+
+A read is two messages joined by a repeated START. The first, addressed to `$D0`, writes one byte: the
+**register pointer**, the number of the register to start from. The second, addressed to `$D1`, reads:
+the watchman sends the register at the pointer, steps the pointer, and goes on for as long as you
+acknowledge. Your NACK on the last byte tells him to stop.
+
+<figure>
+{/* fig:read */}
+<svg viewBox="-2 -2 704 234" role="img" aria-label="Two rows of cells, read left to right, blue for what the Next sends and orange for what the watchman sends. The first row sets the register pointer: START, the address $D0 to write, the watchman's ACK, the pointer $00, the watchman's ACK. The second row reads: a repeated START, the address $D1 to read, the watchman's ACK, then the seconds $56 with the Next's ACK, the minutes $34 with ACK, the hours $12 with ACK, three more bytes, the year $26, the Next's NACK, and STOP." style={{ width: "100%", height: "auto" }}>
+  <text x="0" y="18" fill="currentColor" fontSize="13.5" fontWeight="bold">set the pointer to $00</text>
+  <rect x="0" y="26" width="40" height="40" rx="6" fill="#3b82f6" fillOpacity="0.1" stroke="#3b82f6" strokeWidth="2" />
+  <text x="20" y="50.7" textAnchor="middle" fill="#3b82f6" fontSize="13.5" fontWeight="bold">S</text>
+  <rect x="40" y="26" width="66" height="40" rx="6" fill="#3b82f6" fillOpacity="0.1" stroke="#3b82f6" strokeWidth="2" />
+  <text x="73" y="50.7" textAnchor="middle" fill="#3b82f6" fontSize="13.5" fontWeight="bold">$D0</text>
+  <rect x="106" y="26" width="40" height="40" rx="6" fill="#e8912d" fillOpacity="0.18" stroke="#e8912d" strokeWidth="2" />
+  <text x="126" y="50.7" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">A</text>
+  <rect x="146" y="26" width="66" height="40" rx="6" fill="#3b82f6" fillOpacity="0.1" stroke="#3b82f6" strokeWidth="2" />
+  <text x="179" y="50.7" textAnchor="middle" fill="#3b82f6" fontSize="13.5" fontWeight="bold">$00</text>
+  <rect x="212" y="26" width="40" height="40" rx="6" fill="#e8912d" fillOpacity="0.18" stroke="#e8912d" strokeWidth="2" />
+  <text x="232" y="50.7" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">A</text>
+  <text x="0" y="98" fill="currentColor" fontSize="13.5" fontWeight="bold">read from $00 on</text>
+  <rect x="0" y="106" width="40" height="40" rx="6" fill="#3b82f6" fillOpacity="0.1" stroke="#3b82f6" strokeWidth="2" />
+  <text x="20" y="130.7" textAnchor="middle" fill="#3b82f6" fontSize="13.5" fontWeight="bold">Sr</text>
+  <rect x="40" y="106" width="66" height="40" rx="6" fill="#3b82f6" fillOpacity="0.1" stroke="#3b82f6" strokeWidth="2" />
+  <text x="73" y="130.7" textAnchor="middle" fill="#3b82f6" fontSize="13.5" fontWeight="bold">$D1</text>
+  <rect x="106" y="106" width="40" height="40" rx="6" fill="#e8912d" fillOpacity="0.18" stroke="#e8912d" strokeWidth="2" />
+  <text x="126" y="130.7" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">A</text>
+  <rect x="146" y="106" width="66" height="40" rx="6" fill="#e8912d" fillOpacity="0.18" stroke="#e8912d" strokeWidth="2" />
+  <text x="179" y="130.7" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">$56</text>
+  <rect x="212" y="106" width="40" height="40" rx="6" fill="#3b82f6" fillOpacity="0.1" stroke="#3b82f6" strokeWidth="2" />
+  <text x="232" y="130.7" textAnchor="middle" fill="#3b82f6" fontSize="13.5" fontWeight="bold">A</text>
+  <rect x="252" y="106" width="66" height="40" rx="6" fill="#e8912d" fillOpacity="0.18" stroke="#e8912d" strokeWidth="2" />
+  <text x="285" y="130.7" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">$34</text>
+  <rect x="318" y="106" width="40" height="40" rx="6" fill="#3b82f6" fillOpacity="0.1" stroke="#3b82f6" strokeWidth="2" />
+  <text x="338" y="130.7" textAnchor="middle" fill="#3b82f6" fontSize="13.5" fontWeight="bold">A</text>
+  <rect x="358" y="106" width="66" height="40" rx="6" fill="#e8912d" fillOpacity="0.18" stroke="#e8912d" strokeWidth="2" />
+  <text x="391" y="130.7" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">$12</text>
+  <rect x="424" y="106" width="40" height="40" rx="6" fill="#3b82f6" fillOpacity="0.1" stroke="#3b82f6" strokeWidth="2" />
+  <text x="444" y="130.7" textAnchor="middle" fill="#3b82f6" fontSize="13.5" fontWeight="bold">A</text>
+  <rect x="464" y="106" width="40" height="40" rx="6" fill="currentColor" fillOpacity="0.1" stroke="currentColor" strokeWidth="2" />
+  <text x="484" y="130.7" textAnchor="middle" fill="currentColor" fontSize="13.5" fontWeight="bold">…</text>
+  <rect x="504" y="106" width="66" height="40" rx="6" fill="#e8912d" fillOpacity="0.18" stroke="#e8912d" strokeWidth="2" />
+  <text x="537" y="130.7" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">$26</text>
+  <rect x="570" y="106" width="40" height="40" rx="6" fill="#3b82f6" fillOpacity="0.1" stroke="#3b82f6" strokeWidth="2" />
+  <text x="590" y="130.7" textAnchor="middle" fill="#3b82f6" fontSize="13.5" fontWeight="bold">N</text>
+  <rect x="610" y="106" width="40" height="40" rx="6" fill="#3b82f6" fillOpacity="0.1" stroke="#3b82f6" strokeWidth="2" />
+  <text x="630" y="130.7" textAnchor="middle" fill="#3b82f6" fontSize="13.5" fontWeight="bold">P</text>
+  <text x="179" y="166" textAnchor="middle" fill="#e8912d" fontSize="13.5">seconds</text>
+  <text x="285" y="166" textAnchor="middle" fill="#e8912d" fontSize="13.5">minutes</text>
+  <text x="391" y="166" textAnchor="middle" fill="#e8912d" fontSize="13.5">hours</text>
+  <text x="537" y="166" textAnchor="middle" fill="#e8912d" fontSize="13.5">year</text>
+  <text x="0" y="200" fill="currentColor" fontSize="13.5">S START, Sr repeated START, P STOP, A ACK (pulled low), N NACK (left high)</text>
+  <text x="0" y="222" fill="currentColor" fontSize="13.5">blue: the Next sends; orange: the watchman sends</text>
+</svg>
+{/* /fig:read */}
+<figcaption>Reading the seven time registers. The first message sets the pointer to $00 and gets the watchman's ACK for both bytes. A repeated START begins the second, addressed to read: the watchman sends the seconds, minutes, hours and so on, and the Next acknowledges every byte except the year, which gets a NACK before the STOP.</figcaption>
+</figure>
+
+Here it is as code, on the routines above. It reads the seconds to the year into `Time`, in the
+registers' order:
+
+```z80klive
+; read registers $00-$06 into Time (7 bytes)
+ReadTime:
+        call I2cStart
+        ld a,$d0               ; watchman, listen
+        call I2cWrite
+        xor a                  ; the pointer: $00
+        call I2cWrite
+        call I2cStart          ; repeated START
+        ld a,$d1               ; watchman, talk
+        call I2cWrite
+        ld hl,Time
+        ld b,6                 ; six bytes with ACK
+RdNext: push bc
+        or a                   ; carry clear: ACK
+        call I2cRead
+        ld (hl),a
+        inc hl
+        pop bc
+        djnz RdNext
+        scf                    ; carry set: NACK
+        call I2cRead           ; the year
+        ld (hl),a
+        jp I2cStop
+```
+
+At 3.5 MHz the whole read takes 10,058 T-states, 2.9 ms, about a seventh of a frame. On Friday, 18 September
+2026 at 12:34:56, in 24-hour mode with Sunday as day 1, `Time` holds:
+
+```text
+$56 $34 $12 $06 $18 $09 $26
+sec min hr  day dt  mon yr
+```
+
+Notice the snapshot at work in a slower read. Start at 12:59:59, take the seconds and the minutes, then
+pause for over a second before the hours. You still get `$12`, because the hours came from the snapshot
+taken at the START; the next read, with its own START, gets 13:00:00.
+
+## Setting the clock
+
+Setting is one message: START, `$D0`, the pointer, and then the bytes, each written to the register at the
+pointer before the pointer steps. With `Time` holding the seven bytes in the same order:
+
+```z80klive
+; write Time (7 bytes) into registers $00-$06
+SetTime:
+        call I2cStart
+        ld a,$d0               ; watchman, listen
+        call I2cWrite
+        xor a                  ; from register $00
+        call I2cWrite
+        ld hl,Time
+        ld b,7
+WrNext: push bc
+        ld a,(hl)
+        call I2cWrite
+        inc hl
+        pop bc
+        djnz WrNext
+        jp I2cStop
+```
+
+It takes 8,711 T-states, 2.5 ms. Two details make this the right way to do it:
+
+- **Writing the seconds restarts the second.** The divider that halves the crystal fifteen times is cleared,
+  so the next tick comes a whole second after the write. Set the clock at 12:34:56 and it says 12:34:57
+  exactly one second later, not at some random moment within the second.
+- **Write everything within one second of the seconds.** A tick between your seconds and your hours could
+  carry into the minutes you have not written yet. One message from register `$00` up takes 2.5 ms, which
+  settles it. The bytes are stored as each one is acknowledged, so a message broken off halfway keeps what it
+  wrote.
+
+And remember CH: the seconds byte you write has bit 7 clear, so the clock runs. Write `$80` or more and it
+stops, which is also how you would freeze the time on purpose.
+
+## Fifty-six bytes that remember
+
+Registers `$08` to `$3F` are plain RAM, 56 bytes, read and written like the time and kept by the same
+battery. It is not much, but it is the only memory in the Next that survives the power switch without a
+file system: a high score, a setting, the date a program last ran. I would keep a byte or two of it as a
+signature, so your program can tell its own data from another program's.
+
+The pointer has two habits worth knowing:
+
+- **It wraps from `$3F` to `$00`.** Read four bytes from `$3E` and you get `$3E`, `$3F`, then the seconds
+  and the minutes.
+- **It stays where it was between messages.** A read that starts with `$D1` straight after the START, with
+  no pointer written first, continues from the last pointer: a **current address read**. Useful, but I
+  prefer writing the pointer every time; it costs one byte and guesses nothing.
+
+## Resets
+
+No Next reset touches the watchman. A soft reset, a hard reset, loading a new core: the time keeps running
+and the RAM keeps its bytes, because the chip is not part of the FPGA and has its own power.
+
+The FPGA's side is another matter. A reset lets go of both wires, so the bus goes high, and it does not care
+what the watchman was doing at that moment. If he was in the middle of sending a 0, he is still holding SDA
+low, waiting for clock pulses that the reset will not send. He is not broken, only patient. Here is my
+advice for the first thing a program does on the bus: if SDA reads 0, pulse SCL until it reads 1 (nine
+pulses are always enough to finish any byte and its acknowledge), then send a STOP. After that the
+watchman is listening again, and your START will be heard.
+
+## What to take home
+
+The Next's real-time clock is a DS1307, the watchman, a chip outside the FPGA with a 32,768 Hz crystal and
+its own battery, so it keeps counting through power-off and every kind of reset. It talks over I2C: two
+open-drain wires, SCL and SDA, held high by pull-ups and pulled low by anyone who wants to, so a wire is
+the AND of everyone on it. Port `$103B` is SCL and port `$113B` is SDA; bit 0 of a write pulls or lets go,
+and bit 0 of a read is the wire itself. The Raspberry Pi's GPIO 2 and 3 can join the bus through NextReg
+`$A0` bit 3, and NextReg `$83` bit 2 switches the ports off.
+
+The Next is always the master, and the CPU does every step itself. SDA changes only while SCL is low,
+except for START and STOP, which change it while SCL is high. Bytes go most significant bit first, and a
+ninth pulse carries the acknowledge, low for yes. The watchman's address is `$68`: `$D0` to write, `$D1`
+to read. He is a 100 kHz chip that wants 4.0 µs of SCL high and 4.7 µs low, which the routines here meet at
+3.5 MHz and miss by a factor of seven at 28 MHz, so slow the CPU down or slow the code.
+
+The registers are BCD: seconds with the clock-halt bit, minutes, hours with a 12/24-hour switch, a day of
+the week from 1 to 7, date, month, a two-digit year whose leap years are right until 2099, and a control
+byte for the square-wave pin. A read writes the pointer, then a repeated START reads on from it; every
+START takes a snapshot, so one read never mixes two moments. A write of the seconds restarts the second,
+and a whole time written in one message takes 2.5 ms. The other 56 bytes are RAM that survives everything,
+and the pointer wraps from `$3F` to `$00`. Clear CH, write the time in one go, read it in one go, and the
+watchman will tell you the hour for years on his little battery.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"The road ahead","id":"the-road-ahead","depth":2},{"value":"A clock outside the machine","id":"a-clock-outside-the-machine","depth":2},{"value":"Two wires, and nobody pushes","id":"two-wires-and-nobody-pushes","depth":2},{"value":"Two ports, one bit each","id":"two-ports-one-bit-each","depth":2},{"value":"The rules of the conversation","id":"the-rules-of-the-conversation","depth":2},{"value":"Speaking the protocol yourself","id":"speaking-the-protocol-yourself","depth":2},{"value":"How fast is too fast","id":"how-fast-is-too-fast","depth":2},{"value":"The watchman’s registers","id":"the-watchmans-registers","depth":2},{"value":"Reading the time","id":"reading-the-time","depth":2},{"value":"Setting the clock","id":"setting-the-clock","depth":2},{"value":"Fifty-six bytes that remember","id":"fifty-six-bytes-that-remember","depth":2},{"value":"Resets","id":"resets","depth":2},{"value":"What to take home","id":"what-to-take-home","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"How the ZX Spectrum Next keeps the time: the DS1307 real-time clock outside the FPGA, its crystal and battery, the two-wire I2C bus and its open-drain lines, ports $103B and $113B, START, STOP, bits and acknowledgements driven by the CPU, the bus's speed limit, the clock's BCD registers, reading through a snapshot, setting the time, 56 bytes of battery-backed RAM, and resets.","title":"Real-Time Clock: A Watchman on Two Wires","filePath":"content/en/under-the-hood/emulator-internals/next-rtc.mdx","timestamp":1793369525000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"under-the-hood/emulator-internals/next-rtc","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Real-Time Clock: A Watchman on Two Wires - Klive IDE"}],["$","meta","1",{"name":"description","content":"How the ZX Spectrum Next keeps the time: the DS1307 real-time clock outside the FPGA, its crystal and battery, the two-wire I2C bus and its open-drain lines, ports $103B and $113B, START, STOP, bits and acknowledgements driven by the CPU, the bus's speed limit, the clock's BCD registers, reading through a snapshot, setting the time, 56 bytes of battery-backed RAM, and resets."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/under-the-hood/emulator-internals/next-rtc/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"50Y0BUmhGKiclaio4jMH2"}
+20:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+21:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+6d:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Real-Time Clock: A Watchman on Two Wires","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Switch your Next off, put it in a drawer for a month, and switch it on again: it knows the date. The FPGA\nforgot everything the moment the power went, the SRAM is blank, the core has been loaded from flash all\nover again. So who was counting the seconds in the dark? The answer is the Next’s ",["$","strong",null,{"children":"Real-Time Clock"}],", the\n",["$","strong",null,{"children":"RTC"}],": a clock that keeps the time and the date whether the machine is running or not."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A clock that survives the power switch matters more than it seems. An operating system that writes a file\nwants to stamp it with the date. A game can offer a puzzle of the day, a logger wants to say when\nsomething happened, and a program that needs a random seed has one ticking right there. None of this works\nwith a clock that starts at midnight on 1 January every time you switch on, and the Spectrum never had any\nother kind."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["You should know one chapter first. ",["$","$L20",null,{"href":"/en/under-the-hood/emulator-internals/next-memory-io/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Memory, Ports and NextRegs: How the Z80N Reaches the\nMachine"}]," explains how the Next decodes its ports and\nhow a NextReg switches a group of them off. ",["$","$L20",null,{"href":"/en/under-the-hood/emulator-internals/next-storage/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Storage: an SD Card on a Serial\nBus"}]," is worth a look too: it shows a serial bus that the\nhardware clocks for you, and this chapter shows one where you do the clocking yourself."]}],"\n",["$","h2",null,{"id":"the-road-ahead","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The road ahead",["$","$L21",null,{"id":"the-road-ahead"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"We start with the clock chip itself, which lives outside the FPGA on its own battery, and the two wires that\nconnect it to the machine. Then come the two ports that hold those wires, and the rules of the conversation\non them: how a message starts and stops, how bits travel and how the listener says “got it”. The heart of\nthe chapter is the part where your program speaks those rules itself, one wire at a time, and the speed\nlimit it must respect; if you read only one section, read that one. After that we open the clock’s\nregisters, read the time through a snapshot, set it, use its spare memory, and see what a reset does to it."}],"\n",["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":["$L22","$L23"]}],"\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49","\n","$L4a","\n","$L4b","\n","$L4c","\n","$L4d","\n","$L4e","\n","$L4f","\n","$L50","\n","$L51","\n","$L52","\n","$L53","\n","$L54","\n","$L55","\n","$L56","\n","$L57","\n","$L58","\n","$L59","\n","$L5a","\n","$L5b","\n","$L5c","\n","$L5d","\n","$L5e","\n","$L5f","\n","$L60","\n","$L61","\n","$L62","\n","$L63","\n","$L64","\n","$L65","\n","$L66","\n","$L67","\n","$L68","\n","$L69","\n","$L6a","\n","$L6b","\n","$L6c"]]}]
+15:["$","$L6d",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@6e"}]}]
+1f:true
+7e:"ToggleWordWrapButton"
+7f:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$7e"]
+80:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+9:300
+22:["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"}]}]}]
+23:["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The facts are for ",["$","strong",null,{"children":"core 3.02.01"}]," and the ",["$","strong",null,{"children":"DS1307"}]," real-time clock on the Next’s bus. The listings run at\n",["$","strong",null,{"children":"3.5 MHz"}],", the CPU’s speed after a reset, and every time given for them is for that speed."]}]}]
+24:["$","h2",null,{"id":"a-clock-outside-the-machine","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["A clock outside the machine",["$","$L21",null,{"id":"a-clock-outside-the-machine"}]]}]
+25:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The Next’s clock is a small chip of its own, a ",["$","strong",null,{"children":"DS1307"}],", sitting on the board beside the FPGA. I like to\ncall it ",["$","strong",null,{"children":"the watchman"}],": it stays awake on its own lamp while the house sleeps, and when you come down in\nthe morning it tells you what time it is. It is not part of the core and no reset of the FPGA reaches it."]}]
+26:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Three things keep it going:"}]
+27:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"A 32,768 Hz crystal."}]," The number is 2",["$","sup",null,{"children":"15"}],", so fifteen halvings make exactly one pulse a\nsecond. Many quartz watches count from the same frequency for the same reason, which keeps the crystal\ncheap and easy to find, though some watches use other frequencies."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"A battery input"}]," for a 3 V lithium cell, between 2.0 and 3.5 V. When the board’s own supply falls\nbelow the battery’s voltage, the chip switches over and keeps counting on less than half a microamp. A\n48 mAh cell keeps it alive for more than ten years."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"A guard at the door."}]," While the supply is below 1.25 times the battery’s voltage, the chip ignores the\nbus altogether, so a machine that is powering up or down cannot scribble garbage over the time."]}],"\n"]}]
+28:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The watchman is only as good as his crystal. A crystal that is 20 parts in a million off gains or loses\nabout 1.7 seconds a day, nearly a minute a month, so do not be surprised if the clock wants setting now and\nthen."}]
+29:["$","h2",null,{"id":"two-wires-and-nobody-pushes","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Two wires, and nobody pushes",["$","$L21",null,{"id":"two-wires-and-nobody-pushes"}]]}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The watchman talks over ",["$","strong",null,{"children":"I2C"}],", the inter-integrated circuit bus: two wires that many chips can share. One\nwire, ",["$","strong",null,{"children":"SCL"}],", is the clock, which says ",["$","em",null,{"children":"when"}]," a bit is valid. The other, ",["$","strong",null,{"children":"SDA"}],", is the data, which says\n",["$","em",null,{"children":"what"}]," the bit is."]}]
+2b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The trick that makes sharing possible is that no chip ever drives a wire high. Each wire has a ",["$","strong",null,{"children":"pull-up"}],", a\nresistor to the supply, that holds it high when it is left alone. A chip can only do two things to a wire:\npull it low, or let go. This is called ",["$","strong",null,{"children":"open drain"}],", and it means two chips can never fight, one pushing\nup while the other pulls down. If anybody pulls, the wire is low; it is high only when nobody pulls. An\nengineer would say the wire is the AND of everyone’s wishes."]}]
+2c:["$","figure",null,{"children":[["$","svg",null,{"viewBox":"-2 -2 704 304","role":"img","aria-label":"Two horizontal lines, SCL above and SDA below, run across the figure. At the right, a pull-up resistor ties each line to the supply. Below the lines hang three devices, each wired to both lines: the FPGA with ports $103B and $113B, the DS1307 real-time clock, and an internal connector. At the far left, the Raspberry Pi's GPIO 2 and 3 connect only to the FPGA, through its own pair of wires, once NextReg $A0 bit 3 joins them. A key says that any device can pull a line low, none drives it high, and the line is high only when nobody pulls.","style":{"width":"100%","height":"auto"},"children":[["$","text",null,{"x":"160","y":"115","textAnchor":"end","fill":"#3b82f6","fontSize":"15","fontWeight":"bold","children":"SCL"}],["$","text",null,{"x":"160","y":"155","textAnchor":"end","fill":"#3b82f6","fontSize":"15","fontWeight":"bold","children":"SDA"}],["$","line",null,{"x1":"170","y1":"110","x2":"700","y2":"110","stroke":"#3b82f6","strokeWidth":"2.4"}],["$","line",null,{"x1":"170","y1":"150","x2":"700","y2":"150","stroke":"#3b82f6","strokeWidth":"2.4"}],["$","line",null,{"x1":"600","y1":"24","x2":"700","y2":"24","stroke":"currentColor","strokeWidth":"2"}],["$","text",null,{"x":"590","y":"29","textAnchor":"end","fill":"currentColor","fontSize":"13.5","children":"supply"}],["$","line",null,{"x1":"630","y1":"24","x2":"630","y2":"38","stroke":"currentColor","strokeWidth":"1.8"}],["$","rect",null,{"x":"623","y":"38","width":"14","height":"36","fill":"none","stroke":"currentColor","strokeWidth":"1.8"}],["$","line",null,{"x1":"630","y1":"74","x2":"630","y2":"110","stroke":"currentColor","strokeWidth":"1.8"}],["$","circle",null,{"cx":"630","cy":"110","r":"3.5","fill":"currentColor"}],["$","line",null,{"x1":"680","y1":"24","x2":"680","y2":"38","stroke":"currentColor","strokeWidth":"1.8"}],["$","rect",null,{"x":"673","y":"38","width":"14","height":"36","fill":"none","stroke":"currentColor","strokeWidth":"1.8"}],["$","line",null,{"x1":"680","y1":"74","x2":"680","y2":"150","stroke":"currentColor","strokeWidth":"1.8"}],["$","circle",null,{"cx":"680","cy":"150","r":"3.5","fill":"currentColor"}],["$","text",null,{"x":"530","y":"70","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"pull-ups"}],["$","rect",null,{"x":"170","y":"200","width":"150","height":"70","rx":"6","fill":"none","stroke":"currentColor","strokeWidth":"1.5"}],["$","text",null,{"x":"245","y":"231.4","textAnchor":"middle","fill":"currentColor","fontSize":"14","children":"FPGA"}],["$","text",null,{"x":"245","y":"248.4","textAnchor":"middle","fill":"currentColor","fontSize":"14","children":"ports $103B, $113B"}],["$","line",null,{"x1":"215","y1":"110","x2":"215","y2":"200","stroke":"#3b82f6","strokeWidth":"1.8"}],["$","circle",null,{"cx":"215","cy":"110","r":"3.5","fill":"#3b82f6"}],["$","line",null,{"x1":"275","y1":"150","x2":"275","y2":"200","stroke":"#3b82f6","strokeWidth":"1.8"}],["$","circle",null,{"cx":"275","cy":"150","r":"3.5","fill":"#3b82f6"}],["$","rect",null,{"x":"370","y":"200","width":"150","height":"70","rx":"6","fill":"#e8912d","fillOpacity":"0.12","stroke":"#e8912d","strokeWidth":"2"}],["$","text",null,{"x":"445","y":"231.4","textAnchor":"middle","fill":"#e8912d","fontSize":"14","children":"DS1307"}],["$","text",null,{"x":"445","y":"248.4","textAnchor":"middle","fill":"#e8912d","fontSize":"14","children":"the watchman"}],["$","line",null,{"x1":"415","y1":"110","x2":"415","y2":"200","stroke":"#3b82f6","strokeWidth":"1.8"}],["$","circle",null,{"cx":"415","cy":"110","r":"3.5","fill":"#3b82f6"}],["$","line",null,{"x1":"475","y1":"150","x2":"475","y2":"200","stroke":"#3b82f6","strokeWidth":"1.8"}],["$","circle",null,{"cx":"475","cy":"150","r":"3.5","fill":"#3b82f6"}],["$","rect",null,{"x":"570","y":"200","width":"130","height":"70","rx":"6","fill":"none","stroke":"currentColor","strokeWidth":"1.5"}],["$","text",null,{"x":"635","y":"231.4","textAnchor":"middle","fill":"currentColor","fontSize":"14","children":"internal"}],["$","text",null,{"x":"635","y":"248.4","textAnchor":"middle","fill":"currentColor","fontSize":"14","children":"connector"}],["$","line",null,{"x1":"609","y1":"110","x2":"609","y2":"200","stroke":"#3b82f6","strokeWidth":"1.8"}],["$","circle",null,{"cx":"609","cy":"110","r":"3.5","fill":"#3b82f6"}],["$","line",null,{"x1":"661","y1":"150","x2":"661","y2":"200","stroke":"#3b82f6","strokeWidth":"1.8"}],["$","circle",null,{"cx":"661","cy":"150","r":"3.5","fill":"#3b82f6"}],["$","rect",null,{"x":"0","y":"200","width":"110","height":"70","rx":"6","fill":"#a855f7","fillOpacity":"0.12","stroke":"#a855f7","strokeWidth":"2"}],["$","text",null,{"x":"55","y":"231.4","textAnchor":"middle","fill":"#a855f7","fontSize":"14","children":"Pi’s"}],["$","text",null,{"x":"55","y":"248.4","textAnchor":"middle","fill":"#a855f7","fontSize":"14","children":"GPIO 2, 3"}],["$","line",null,{"x1":"110","y1":"222","x2":"170","y2":"222","stroke":"#a855f7","strokeWidth":"1.8"}],["$","line",null,{"x1":"110","y1":"248","x2":"170","y2":"248","stroke":"#a855f7","strokeWidth":"1.8"}],["$","text",null,{"x":"0","y":"192","fill":"#a855f7","fontSize":"13.5","children":"NextReg $A0 bit 3"}],"$L6f"]}],"$L70"]}]
+2d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Three things share the bus on the board: the FPGA, the watchman and an internal connector for whatever an\nowner wants to add. The Raspberry Pi’s connector can join in too, though in a cleverer way than it looks.\nBit 3 of the ",["$","strong",null,{"children":["PI Peripheral Enable register, NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$A0"}]]}],", gives the Pi’s GPIO 2 (data) and GPIO 3\n(clock) to the bus. The FPGA then pulls the Pi’s pins low whenever it pulls its own, and the lines your\nprogram reads are the AND of both sides. The Pi’s pins are not wired to the watchman, though: the FPGA\nstands between two buses and runs them both at once."]}]
+2e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["There is one more rule: ",["$","strong",null,{"children":"the Next is always the master"}],". It makes the clock, it starts every\nconversation and it ends it. The watchman only answers."]}]
+2f:["$","h2",null,{"id":"two-ports-one-bit-each","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Two ports, one bit each",["$","$L21",null,{"id":"two-ports-one-bit-each"}]]}]
+30:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Each wire has its own port, and only bit 0 of each counts:"}]
+31:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":["Port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$103B"}]]}]," is SCL, the clock."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":["Port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$113B"}]]}]," is SDA, the data."]}],"\n"]}]
+32:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A write of bit 0 = 0 makes the FPGA pull the wire low; bit 0 = 1 lets it go. A read gives ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FE"}]," or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FF"}],":\nbits 7–1 are always 1, and bit 0 is ",["$","strong",null,{"children":"the wire itself"}],", not what you wrote. That difference is the whole\npoint. Write 1 to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$113B"}]," and read it back, and you read 0 when the watchman is pulling the wire low: that is\nhow you hear him. The same goes for the clock wire, so a program can see if another chip holds SCL low to\nask for more time."]}]
+33:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A reset, soft or hard, lets go of both wires. Bit 2 of the ",["$","strong",null,{"children":["Internal Port Decoding Enables register,\nNextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$83"}]]}],", switches both ports off: they then read ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FF"}]," and ignore writes."]}]
+34:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"I find these two ports a lovely piece of minimalism. Many I2C controllers in other machines are whole\nchips, with shift registers, state machines and a page of registers. The Next gives you two wires and\nsays: the protocol is your business."}]
+35:["$","h2",null,{"id":"the-rules-of-the-conversation","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The rules of the conversation",["$","$L21",null,{"id":"the-rules-of-the-conversation"}]]}]
+36:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Since both wires rest high and anyone may pull, the chips need rules about who touches what, and when.\nThere is one simple rule and two exceptions."}]
+37:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"The rule: SDA changes only while SCL is low."}]," The master puts a bit on SDA, raises SCL, and the\nlistener reads SDA while SCL is high. Then the master lowers SCL and may change SDA for the next bit."]}]
+38:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"The exceptions are the brackets around a message"}],", and they break the rule on purpose:"]}]
+39:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"START"}],": SDA falls while SCL is high. Every chip on the bus wakes up and listens."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"STOP"}],": SDA rises while SCL is high. The message is over and the bus is free."]}],"\n"]}]
+3a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Because a normal bit never changes SDA while SCL is high, nobody can mistake data for a bracket. A START\ninside a message, before any STOP, is a ",["$","strong",null,{"children":"repeated START"}],": it begins a new message without letting\nanybody else grab the bus in between."]}]
+3b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Bytes go ",["$","strong",null,{"children":"most significant bit first"}],", and each byte gets a ninth clock pulse, the ",["$","strong",null,{"children":"acknowledge"}],". For\nthat pulse the sender lets go of SDA and the receiver answers: pulled low is an ",["$","strong",null,{"children":"ACK"}],", “got it”; left\nhigh is a ",["$","strong",null,{"children":"NACK"}],", “no”, or “no more”. The first byte after a START is the ",["$","strong",null,{"children":"address"}],": seven bits saying\nwhich chip the master wants, and an eighth saying the direction, 0 for write and 1 for read. The watchman’s\naddress is ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$68"}],", so ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$D0"}]," means “watchman, listen” and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$D1"}]," means “watchman, talk”."]}]
+3c:["$","figure",null,{"children":[["$","svg",null,{"viewBox":"-2 -2 704 218","role":"img","aria-label":"Two waveforms over eleven and a half clock periods, SCL above, SDA below. Both lines rest high. START: SDA falls while SCL is high. Then nine clock pulses: during each, SDA holds a bit, changing only while SCL is low. The first eight carry the address byte $D0: 1, 1, 0, 1, 0, 0, 0 for address $68, then 0 for write. On the ninth pulse the watchman pulls SDA low: the ACK, drawn in orange. STOP: SDA rises while SCL is high. Red marks show the two moments SDA changes while SCL is high.","style":{"width":"100%","height":"auto"},"children":[["$","text",null,{"x":"0","y":"43","fill":"#3b82f6","fontSize":"15","fontWeight":"bold","children":"SCL"}],["$","text",null,{"x":"0","y":"117","fill":"#3b82f6","fontSize":"15","fontWeight":"bold","children":"SDA"}],["$","path",null,{"d":"M80,18 L133.9,18 L133.9,58 L160.9,58 L160.9,18 L187.8,18 L187.8,58 L214.8,58 L214.8,18 L241.7,18 L241.7,58 L268.7,58 L268.7,18 L295.7,18 L295.7,58 L322.6,58 L322.6,18 L349.6,18 L349.6,58 L376.5,58 L376.5,18 L403.5,18 L403.5,58 L430.4,58 L430.4,18 L457.4,18 L457.4,58 L484.3,58 L484.3,18 L511.3,18 L511.3,58 L538.3,58 L538.3,18 L565.2,18 L565.2,58 L592.2,58 L592.2,18 L619.1,18 L619.1,58 L646.1,58 L646.1,18 L700,18","fill":"none","stroke":"#3b82f6","strokeWidth":"2.2","strokeLinejoin":"round"}],["$","path",null,{"d":"M80,92 L107,92 L107,132 L133.9,132 L142,132 L142,92 L187.8,92 L195.9,92 L195.9,92 L241.7,92 L249.8,92 L249.8,132 L295.7,132 L303.7,132 L303.7,92 L349.6,92 L357.7,92 L357.7,132 L403.5,132 L411.6,132 L411.6,132 L457.4,132 L465.5,132 L465.5,132 L511.3,132 L519.4,132 L519.4,132 L565.2,132","fill":"none","stroke":"#3b82f6","strokeWidth":"2.2","strokeLinejoin":"round"}],["$","path",null,{"d":"M565.2,132 L573.3,132 L619.1,132","fill":"none","stroke":"#e8912d","strokeWidth":"3.2","strokeLinejoin":"round"}],["$","path",null,{"d":"M619.1,132 L659.6,132 L659.6,92 L700,92","fill":"none","stroke":"#3b82f6","strokeWidth":"2.2","strokeLinejoin":"round"}],["$","line",null,{"x1":"133.9","y1":"8","x2":"133.9","y2":"140","stroke":"currentColor","strokeWidth":"1","strokeDasharray":"3 3","strokeOpacity":"0.35"}],["$","line",null,{"x1":"187.8","y1":"8","x2":"187.8","y2":"140","stroke":"currentColor","strokeWidth":"1","strokeDasharray":"3 3","strokeOpacity":"0.35"}],["$","line",null,{"x1":"241.7","y1":"8","x2":"241.7","y2":"140","stroke":"currentColor","strokeWidth":"1","strokeDasharray":"3 3","strokeOpacity":"0.35"}],["$","line",null,{"x1":"295.7","y1":"8","x2":"295.7","y2":"140","stroke":"currentColor","strokeWidth":"1","strokeDasharray":"3 3","strokeOpacity":"0.35"}],["$","line",null,{"x1":"349.6","y1":"8","x2":"349.6","y2":"140","stroke":"currentColor","strokeWidth":"1","strokeDasharray":"3 3","strokeOpacity":"0.35"}],["$","line",null,{"x1":"403.5","y1":"8","x2":"403.5","y2":"140","stroke":"currentColor","strokeWidth":"1","strokeDasharray":"3 3","strokeOpacity":"0.35"}],["$","line",null,{"x1":"457.4","y1":"8","x2":"457.4","y2":"140","stroke":"currentColor","strokeWidth":"1","strokeDasharray":"3 3","strokeOpacity":"0.35"}],["$","line",null,{"x1":"511.3","y1":"8","x2":"511.3","y2":"140","stroke":"currentColor","strokeWidth":"1","strokeDasharray":"3 3","strokeOpacity":"0.35"}],["$","line",null,{"x1":"565.2","y1":"8","x2":"565.2","y2":"140","stroke":"currentColor","strokeWidth":"1","strokeDasharray":"3 3","strokeOpacity":"0.35"}],["$","line",null,{"x1":"619.1","y1":"8","x2":"619.1","y2":"140","stroke":"currentColor","strokeWidth":"1","strokeDasharray":"3 3","strokeOpacity":"0.35"}],["$","line",null,{"x1":"107","y1":"8","x2":"107","y2":"140","stroke":"#e5484d","strokeWidth":"2"}],["$","line",null,{"x1":"659.6","y1":"8","x2":"659.6","y2":"140","stroke":"#e5484d","strokeWidth":"2"}],["$","text",null,{"x":"107","y":"160","textAnchor":"middle","fill":"#e5484d","fontSize":"13.5","fontWeight":"bold","children":"START"}],["$","text",null,{"x":"667.7","y":"160","textAnchor":"middle","fill":"#e5484d","fontSize":"13.5","fontWeight":"bold","children":"STOP"}],["$","text",null,{"x":"160.9","y":"160","textAnchor":"middle","fill":"#3b82f6","fontSize":"13.5","fontWeight":"bold","children":"1"}],["$","text",null,{"x":"214.8","y":"160","textAnchor":"middle","fill":"#3b82f6","fontSize":"13.5","fontWeight":"bold","children":"1"}],["$","text",null,{"x":"268.7","y":"160","textAnchor":"middle","fill":"#3b82f6","fontSize":"13.5","fontWeight":"bold","children":"0"}],"$L71","$L72","$L73","$L74","$L75","$L76","$L77","$L78","$L79","$L7a","$L7b","$L7c"]}],"$L7d"]}]
+3d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A chip that is not addressed answers nothing, and nothing means a high SDA on the ninth pulse, a NACK. So\nthe address byte doubles as a roll call: if nobody acknowledges ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$D0"}],", there is no watchman on your bus.\nI always check that ACK before believing anything else the bus tells me."]}]
+3e:["$","h2",null,{"id":"speaking-the-protocol-yourself","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Speaking the protocol yourself",["$","$L21",null,{"id":"speaking-the-protocol-yourself"}]]}]
+3f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The Next has no hardware that sends an I2C byte for you. Your program raises and lowers the two wires one\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"OUT"}]," at a time, a technique called ",["$","strong",null,{"children":"bit-banging"}],". It sounds primitive, and it is, but it takes a page of\ncode, and here it is. The routines use BC, DE, A and the flags, and keep HL."]}]
+40:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"START and STOP are three or four writes each. Both begin with the wires in a known state:"}]
+41:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L7f",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L80",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"; START (also a repeated START): SDA, SCL high,"}]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"; SDA low while SCL is high, then SCL low"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"I2cStart"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" bc"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$113b"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"            ; SDA"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"1"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        out"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"              ; let SDA go"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" b"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$10"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"               ; SCL"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        out"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"              ; let SCL go"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" b"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$11"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        xor"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        out"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"              ; SDA low: START"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" b"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$10"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        out"}],"$L81","$L82","$L83","$L84","$L85"]}],"\n","$L86","\n","$L87","\n","$L88","\n","$L89","\n","$L8a","\n","$L8b","\n","$L8c","\n","$L8d","\n","$L8e","\n","$L8f","\n","$L90","\n","$L91","\n","$L92"]}]]}]]}]
+42:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Sending a byte is eight bits and a listen:"}]
+43:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L7f",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L80",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"; send A, MSB first; A = the ACK bit (0 = ACK)"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"I2cWrite"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" e"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" d"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"8"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"                 ; eight bits"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"WrBit"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"  ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" bc"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$113b"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        xor"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        rl"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" e"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"                   ; next bit into carry"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        rla"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"                    ; and into bit 0"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        out"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"              ; SDA = the bit"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" b"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$10"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"1"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        out"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"              ; SCL high: read me"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        xor"}],"$L93"]}],"\n","$L94","\n","$L95","\n","$L96","\n","$L97","\n","$L98","\n","$L99","\n","$L9a","\n","$L9b","\n","$L9c","\n","$L9d","\n","$L9e","\n","$L9f","\n","$La0","\n","$La1","\n","$La2","\n","$La3","\n","$La4"]}]]}]]}]
+44:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"And receiving one is the mirror image: you let go of SDA, clock eight times and read the wire at every\npulse, then answer yourself."}]
+45:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L7f",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L80",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"; receive a byte into A; answer NACK if carry is"}]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"; set, ACK otherwise"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"I2cRead"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        push"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" af"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"                ; keep the carry"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" bc"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$113b"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"1"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        out"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"              ; let SDA go"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" d"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"8"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" e"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"0"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"RdBit"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"  ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" b"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$10"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"1"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        out"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"              ; SCL high"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" b"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],"$La5"]}],"\n","$La6","\n","$La7","\n","$La8","\n","$La9","\n","$Laa","\n","$Lab","\n","$Lac","\n","$Lad","\n","$Lae","\n","$Laf","\n","$Lb0","\n","$Lb1","\n","$Lb2","\n","$Lb3","\n","$Lb4","\n","$Lb5","\n","$Lb6","\n","$Lb7","\n","$Lb8","\n","$Lb9","\n","$Lba","\n","$Lbb","\n","$Lbc"]}]]}]]}]
+46:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"How it works, the parts worth a second look:"}]
+47:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":["Every bit of ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"I2cWrite"}]," sets SDA first, then pulses SCL."]}]," The data is steady before the clock rises and\nstays steady until it falls: the rule, kept by the order of the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"OUT"}],"s."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"For the acknowledge, the sender lets go."}]," ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"I2cWrite"}]," writes 1 to SDA before the ninth pulse, which does\nnot make the wire high: it only stops pulling. The ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"IN"}]," then reads whatever the watchman does."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"I2cRead"}]," writes 1 to SDA once, at the start"]}],", and never touches it during the eight bits. The watchman\npulls the wire for every 0 he sends; the 1s are the pull-up’s work."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"The carry chooses the answer."}]," Clear for ACK, “go on”; set for NACK, “that was the last one”. The\nwatchman stops talking after a NACK and leaves SDA to you for the STOP."]}],"\n"]}]
+48:["$","h2",null,{"id":"how-fast-is-too-fast","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["How fast is too fast",["$","$L21",null,{"id":"how-fast-is-too-fast"}]]}]
+49:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The watchman is a 100 kHz chip: it runs I2C’s standard mode only, never the faster ones. For every pulse\nit asks for at least ",["$","strong",null,{"children":"4.0 µs with SCL high"}]," and ",["$","strong",null,{"children":"4.7 µs with SCL low"}],". A START needs SCL high for 4.7 µs\nbefore SDA falls and 4.0 µs after; a STOP needs 4.7 µs of SCL high before SDA rises; and between a STOP\nand the next START the bus must rest for 4.7 µs."]}]
+4a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Now look at ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"I2cWrite"}]," at 3.5 MHz. A bit takes 96 T-states, 27.4 µs, which is about 36,500 bits a second,\nwell under the limit. The tight spot is the clock’s high time: from the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"OUT"}]," that raises SCL to the one that\nlowers it there is an ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"XOR A"}]," and an ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"OUT"}],", 16 T-states, ",["$","strong",null,{"children":"4.6 µs"}],". That clears the 4.0 µs, but not by\nmuch. The ACK pulse of ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"I2cRead"}]," is as short; no gap in these routines is shorter."]}]
+4b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Here is the catch: the same 16 T-states last 2.3 µs at 7 MHz and ",["$","strong",null,{"children":"0.57 µs at 28 MHz"}],", seven times too\nshort. A Next running at full speed outruns the watchman with the very same code. My advice is the boring\none: switch the CPU to 3.5 MHz with the ",["$","strong",null,{"children":["CPU Speed register, NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$07"}]]}],", before you talk to the bus,\nand switch it back afterwards. A read of the whole time takes under 3 ms, so you lose almost nothing. If\nyou would rather keep the speed, keep SCL high for at least 112 T-states and low for at least 132 at\n28 MHz, and measure what you wrote."]}]
+4c:["$","h2",null,{"id":"the-watchmans-registers","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The watchman’s registers",["$","$L21",null,{"id":"the-watchmans-registers"}]]}]
+4d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The watchman has 64 bytes, numbered ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$00"}]," to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$3F"}],". The first eight hold the time and a control byte; the\nother ",["$","strong",null,{"children":"56 bytes are RAM"}],", kept by the battery with the time."]}]
+4e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The time is in ",["$","strong",null,{"children":"BCD"}],", binary-coded decimal: each 4-bit half of a byte holds one decimal digit, so 45\nseconds is ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$45"}],", not ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$2D"}],". It is wasteful, but a program that prints the time only has to print two hex\ndigits, and I suspect that was the whole idea. The spare bits carry switches:"]}]
+4f:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L7f",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L80",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"reg   7    6    5    4    3    2    1    0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$00   CH  [ tens of sec ][ seconds          ]"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$01   0   [ tens of min ][ minutes          ]"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$02   0   12   PM/20 10h [ hours            ]"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$03   0    0    0    0    0  [ day 1-7      ]"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$04   0    0  [ tens   ][ date             ]"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$05   0    0    0   10m  [ month            ]"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$06  [ tens of year     ][ year             ]"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$07   OUT  0    0   SQWE  0    0   RS1  RS0"}]}]]}]]}]]}]
+50:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"CH, clock halt, bit 7 of the seconds."}]," When it is 1 the crystal stops and so does the time. A fresh\nchip comes up with CH set, so the first thing any program that sets the clock does is clear it."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"The hours, bit 6, choose 12- or 24-hour mode."}]," With bit 6 = 0, bit 5 is the second tens digit, for\n20 to 23. With bit 6 = 1, bit 5 is ",["$","strong",null,{"children":"PM"}],", and the hours count 12, 1, 2 to 11; PM flips when 11 becomes\n12, and the date moves on when 11 PM becomes 12 AM. After changing bit 6, write the hours again: the chip\ndoes not convert them."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"The day of the week, 1 to 7"}],", steps at midnight. Which day is 1 is up to the software: the watchman\nonly counts, so pick a convention (Sunday = 1 is common) and stick to it."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"The date, month and year"}]," roll over as a calendar should: 30 or 31 days, February 28 or 29, and the\nyear from 99 to 00. The year is two digits, and every year divisible by four is a leap year, which is\nright for every year from 2000 to 2099. Somebody in 2100 will have to fix it."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"The control register"}]," drives the chip’s square-wave pin: SQWE = 1 makes a square wave of 1 Hz,\n4,096 Hz, 8,192 Hz or 32,768 Hz by RS1–RS0 (00 to 11); with SQWE = 0, the pin follows OUT. On the Next the\nwatchman reaches the FPGA only through the two bus wires, so that pin cannot interrupt the Z80."]}],"\n"]}]
+51:["$","h2",null,{"id":"reading-the-time","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Reading the time",["$","$L21",null,{"id":"reading-the-time"}]]}]
+52:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Reading a clock has a classic trap. Suppose it is 12:59:59 and you read the seconds, then the minutes, then\nthe hours, and between the minutes and the hours the clock ticks: you get 13:59:59, an hour out. Every\nprogrammer of an old PC clock has met this bug."}]
+53:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The watchman avoids it with a ",["$","strong",null,{"children":"snapshot"}],". His counters run on their own, and on every START he copies them\ninto a second set of registers. Everything you read over the bus comes from the snapshot, so all seven bytes\nbelong to the same moment, however slowly you read them, while the real counters keep running underneath."]}]
+54:["$","figure",null,{"children":[["$","svg",null,{"viewBox":"-2 -2 704 172","role":"img","aria-label":"Across the top, a chain of boxes linked by arrows: a 32,768 Hz crystal divided by 32,768, giving one pulse a second, then the counters for seconds, minutes, hours, day and date, month and year, each carrying into the next. Below the six counters, a band: the snapshot, copied from the counters on every START. Every read over the bus comes from the snapshot, while the counters keep running.","style":{"width":"100%","height":"auto"},"children":[["$","defs",null,{"children":[["$","marker",null,{"id":"rt-ch-0","viewBox":"0 0 10 10","refX":"9","refY":"5","markerWidth":"7","markerHeight":"7","orient":"auto-start-reverse","children":["$","path",null,{"d":"M0,0 L10,5 L0,10 z","fill":"currentColor"}]}],["$","marker",null,{"id":"rt-ch-1","viewBox":"0 0 10 10","refX":"9","refY":"5","markerWidth":"7","markerHeight":"7","orient":"auto-start-reverse","children":["$","path",null,{"d":"M0,0 L10,5 L0,10 z","fill":"#e8912d"}]}]]}],["$","rect",null,{"x":"0","y":"10","width":"92","height":"56","rx":"6","fill":"none","stroke":"currentColor","strokeWidth":"1.5"}],["$","text",null,{"x":"46","y":"34.5","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"32,768 Hz"}],["$","text",null,{"x":"46","y":"51","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"÷ 32,768"}],["$","rect",null,{"x":"110","y":"10","width":"83.3","height":"56","rx":"6","fill":"#e8912d","fillOpacity":"0.12","stroke":"#e8912d","strokeWidth":"2"}],["$","text",null,{"x":"151.7","y":"42.9","textAnchor":"middle","fill":"#e8912d","fontSize":"14","children":"seconds"}],["$","rect",null,{"x":"211.3","y":"10","width":"83.3","height":"56","rx":"6","fill":"#e8912d","fillOpacity":"0.12","stroke":"#e8912d","strokeWidth":"2"}],["$","text",null,{"x":"253","y":"42.9","textAnchor":"middle","fill":"#e8912d","fontSize":"14","children":"minutes"}],["$","rect",null,{"x":"312.7","y":"10","width":"83.3","height":"56","rx":"6","fill":"#e8912d","fillOpacity":"0.12","stroke":"#e8912d","strokeWidth":"2"}],["$","text",null,{"x":"354.3","y":"42.9","textAnchor":"middle","fill":"#e8912d","fontSize":"14","children":"hours"}],["$","rect",null,{"x":"414","y":"10","width":"83.3","height":"56","rx":"6","fill":"#e8912d","fillOpacity":"0.12","stroke":"#e8912d","strokeWidth":"2"}],["$","text",null,{"x":"455.7","y":"34.4","textAnchor":"middle","fill":"#e8912d","fontSize":"14","children":"day,"}],["$","text",null,{"x":"455.7","y":"51.4","textAnchor":"middle","fill":"#e8912d","fontSize":"14","children":"date"}],["$","rect",null,{"x":"515.3","y":"10","width":"83.3","height":"56","rx":"6","fill":"#e8912d","fillOpacity":"0.12","stroke":"#e8912d","strokeWidth":"2"}],["$","text",null,{"x":"557","y":"42.9","textAnchor":"middle","fill":"#e8912d","fontSize":"14","children":"month"}],["$","rect",null,{"x":"616.7","y":"10","width":"83.3","height":"56","rx":"6","fill":"#e8912d","fillOpacity":"0.12","stroke":"#e8912d","strokeWidth":"2"}],["$","text",null,{"x":"658.3","y":"42.9","textAnchor":"middle","fill":"#e8912d","fontSize":"14","children":"year"}],["$","path",null,{"d":"M92,38 L108,38","fill":"none","stroke":"currentColor","strokeWidth":"1.8","markerEnd":"url(#rt-ch-0)","strokeLinejoin":"round"}],["$","path",null,{"d":"M193.3,38 L209.3,38","fill":"none","stroke":"#e8912d","strokeWidth":"1.8","markerEnd":"url(#rt-ch-1)","strokeLinejoin":"round"}],["$","path",null,{"d":"M294.7,38 L310.7,38","fill":"none","stroke":"#e8912d","strokeWidth":"1.8","markerEnd":"url(#rt-ch-1)","strokeLinejoin":"round"}],["$","path",null,{"d":"M396,38 L412,38","fill":"none","stroke":"#e8912d","strokeWidth":"1.8","markerEnd":"url(#rt-ch-1)","strokeLinejoin":"round"}],["$","path",null,{"d":"M497.3,38 L513.3,38","fill":"none","stroke":"#e8912d","strokeWidth":"1.8","markerEnd":"url(#rt-ch-1)","strokeLinejoin":"round"}],["$","path",null,{"d":"M598.7,38 L614.7,38","fill":"none","stroke":"#e8912d","strokeWidth":"1.8","markerEnd":"url(#rt-ch-1)","strokeLinejoin":"round"}],["$","text",null,{"x":"46","y":"86","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"1 Hz"}],["$","path",null,{"d":"M151.7,66 L151.7,104","fill":"none","stroke":"#e8912d","strokeWidth":"1.6","strokeDasharray":"4 3","markerEnd":"url(#rt-ch-1)","strokeLinejoin":"round"}],["$","path",null,{"d":"M253,66 L253,104","fill":"none","stroke":"#e8912d","strokeWidth":"1.6","strokeDasharray":"4 3","markerEnd":"url(#rt-ch-1)","strokeLinejoin":"round"}],["$","path",null,{"d":"M354.3,66 L354.3,104","fill":"none","stroke":"#e8912d","strokeWidth":"1.6","strokeDasharray":"4 3","markerEnd":"url(#rt-ch-1)","strokeLinejoin":"round"}],["$","path",null,{"d":"M455.7,66 L455.7,104","fill":"none","stroke":"#e8912d","strokeWidth":"1.6","strokeDasharray":"4 3","markerEnd":"url(#rt-ch-1)","strokeLinejoin":"round"}],"$Lbd","$Lbe","$Lbf","$Lc0","$Lc1"]}],"$Lc2"]}]
+55:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A read is two messages joined by a repeated START. The first, addressed to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$D0"}],", writes one byte: the\n",["$","strong",null,{"children":"register pointer"}],", the number of the register to start from. The second, addressed to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$D1"}],", reads:\nthe watchman sends the register at the pointer, steps the pointer, and goes on for as long as you\nacknowledge. Your NACK on the last byte tells him to stop."]}]
+56:["$","figure",null,{"children":[["$","svg",null,{"viewBox":"-2 -2 704 234","role":"img","aria-label":"Two rows of cells, read left to right, blue for what the Next sends and orange for what the watchman sends. The first row sets the register pointer: START, the address $D0 to write, the watchman's ACK, the pointer $00, the watchman's ACK. The second row reads: a repeated START, the address $D1 to read, the watchman's ACK, then the seconds $56 with the Next's ACK, the minutes $34 with ACK, the hours $12 with ACK, three more bytes, the year $26, the Next's NACK, and STOP.","style":{"width":"100%","height":"auto"},"children":[["$","text",null,{"x":"0","y":"18","fill":"currentColor","fontSize":"13.5","fontWeight":"bold","children":"set the pointer to $00"}],["$","rect",null,{"x":"0","y":"26","width":"40","height":"40","rx":"6","fill":"#3b82f6","fillOpacity":"0.1","stroke":"#3b82f6","strokeWidth":"2"}],["$","text",null,{"x":"20","y":"50.7","textAnchor":"middle","fill":"#3b82f6","fontSize":"13.5","fontWeight":"bold","children":"S"}],["$","rect",null,{"x":"40","y":"26","width":"66","height":"40","rx":"6","fill":"#3b82f6","fillOpacity":"0.1","stroke":"#3b82f6","strokeWidth":"2"}],["$","text",null,{"x":"73","y":"50.7","textAnchor":"middle","fill":"#3b82f6","fontSize":"13.5","fontWeight":"bold","children":"$$D0"}],["$","rect",null,{"x":"106","y":"26","width":"40","height":"40","rx":"6","fill":"#e8912d","fillOpacity":"0.18","stroke":"#e8912d","strokeWidth":"2"}],["$","text",null,{"x":"126","y":"50.7","textAnchor":"middle","fill":"#e8912d","fontSize":"13.5","fontWeight":"bold","children":"A"}],["$","rect",null,{"x":"146","y":"26","width":"66","height":"40","rx":"6","fill":"#3b82f6","fillOpacity":"0.1","stroke":"#3b82f6","strokeWidth":"2"}],["$","text",null,{"x":"179","y":"50.7","textAnchor":"middle","fill":"#3b82f6","fontSize":"13.5","fontWeight":"bold","children":"$$00"}],["$","rect",null,{"x":"212","y":"26","width":"40","height":"40","rx":"6","fill":"#e8912d","fillOpacity":"0.18","stroke":"#e8912d","strokeWidth":"2"}],["$","text",null,{"x":"232","y":"50.7","textAnchor":"middle","fill":"#e8912d","fontSize":"13.5","fontWeight":"bold","children":"A"}],["$","text",null,{"x":"0","y":"98","fill":"currentColor","fontSize":"13.5","fontWeight":"bold","children":"read from $00 on"}],["$","rect",null,{"x":"0","y":"106","width":"40","height":"40","rx":"6","fill":"#3b82f6","fillOpacity":"0.1","stroke":"#3b82f6","strokeWidth":"2"}],["$","text",null,{"x":"20","y":"130.7","textAnchor":"middle","fill":"#3b82f6","fontSize":"13.5","fontWeight":"bold","children":"Sr"}],["$","rect",null,{"x":"40","y":"106","width":"66","height":"40","rx":"6","fill":"#3b82f6","fillOpacity":"0.1","stroke":"#3b82f6","strokeWidth":"2"}],["$","text",null,{"x":"73","y":"130.7","textAnchor":"middle","fill":"#3b82f6","fontSize":"13.5","fontWeight":"bold","children":"$$D1"}],["$","rect",null,{"x":"106","y":"106","width":"40","height":"40","rx":"6","fill":"#e8912d","fillOpacity":"0.18","stroke":"#e8912d","strokeWidth":"2"}],["$","text",null,{"x":"126","y":"130.7","textAnchor":"middle","fill":"#e8912d","fontSize":"13.5","fontWeight":"bold","children":"A"}],["$","rect",null,{"x":"146","y":"106","width":"66","height":"40","rx":"6","fill":"#e8912d","fillOpacity":"0.18","stroke":"#e8912d","strokeWidth":"2"}],["$","text",null,{"x":"179","y":"130.7","textAnchor":"middle","fill":"#e8912d","fontSize":"13.5","fontWeight":"bold","children":"$$56"}],["$","rect",null,{"x":"212","y":"106","width":"40","height":"40","rx":"6","fill":"#3b82f6","fillOpacity":"0.1","stroke":"#3b82f6","strokeWidth":"2"}],["$","text",null,{"x":"232","y":"130.7","textAnchor":"middle","fill":"#3b82f6","fontSize":"13.5","fontWeight":"bold","children":"A"}],["$","rect",null,{"x":"252","y":"106","width":"66","height":"40","rx":"6","fill":"#e8912d","fillOpacity":"0.18","stroke":"#e8912d","strokeWidth":"2"}],["$","text",null,{"x":"285","y":"130.7","textAnchor":"middle","fill":"#e8912d","fontSize":"13.5","fontWeight":"bold","children":"$$34"}],["$","rect",null,{"x":"318","y":"106","width":"40","height":"40","rx":"6","fill":"#3b82f6","fillOpacity":"0.1","stroke":"#3b82f6","strokeWidth":"2"}],["$","text",null,{"x":"338","y":"130.7","textAnchor":"middle","fill":"#3b82f6","fontSize":"13.5","fontWeight":"bold","children":"A"}],["$","rect",null,{"x":"358","y":"106","width":"66","height":"40","rx":"6","fill":"#e8912d","fillOpacity":"0.18","stroke":"#e8912d","strokeWidth":"2"}],["$","text",null,{"x":"391","y":"130.7","textAnchor":"middle","fill":"#e8912d","fontSize":"13.5","fontWeight":"bold","children":"$$12"}],["$","rect",null,{"x":"424","y":"106","width":"40","height":"40","rx":"6","fill":"#3b82f6","fillOpacity":"0.1","stroke":"#3b82f6","strokeWidth":"2"}],["$","text",null,{"x":"444","y":"130.7","textAnchor":"middle","fill":"#3b82f6","fontSize":"13.5","fontWeight":"bold","children":"A"}],["$","rect",null,{"x":"464","y":"106","width":"40","height":"40","rx":"6","fill":"currentColor","fillOpacity":"0.1","stroke":"currentColor","strokeWidth":"2"}],["$","text",null,{"x":"484","y":"130.7","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","fontWeight":"bold","children":"…"}],"$Lc3","$Lc4","$Lc5","$Lc6","$Lc7","$Lc8","$Lc9","$Lca","$Lcb","$Lcc","$Lcd","$Lce"]}],"$Lcf"]}]
+57:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Here it is as code, on the routines above. It reads the seconds to the year into ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Time"}],", in the\nregisters’ order:"]}]
+58:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L7f",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L80",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"; read registers $00-$06 into Time (7 bytes)"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"ReadTime"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        call"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" I2cStart"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$d0"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"               ; watchman, listen"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        call"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" I2cWrite"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        xor"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"                  ; the pointer: $00"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        call"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" I2cWrite"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        call"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" I2cStart"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"          ; repeated START"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$d1"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"               ; watchman, talk"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        call"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" I2cWrite"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" hl"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#B5890F"},"children":"Time"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" b"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"6"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"                 ; six bytes with ACK"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"RdNext"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":" push"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" bc"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        or"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"                   ; carry clear: ACK"}]]}],"\n","$Ld0","\n","$Ld1","\n","$Ld2","\n","$Ld3","\n","$Ld4","\n","$Ld5","\n","$Ld6","\n","$Ld7","\n","$Ld8"]}]]}]]}]
+59:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["At 3.5 MHz the whole read takes 10,058 T-states, 2.9 ms, about a seventh of a frame. On Friday, 18 September\n2026 at 12:34:56, in 24-hour mode with Sunday as day 1, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Time"}]," holds:"]}]
+5a:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L7f",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L80",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"$$56 $34 $12 $06 $18 $09 $26"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"sec min hr  day dt  mon yr"}]}]]}]]}]]}]
+5b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Notice the snapshot at work in a slower read. Start at 12:59:59, take the seconds and the minutes, then\npause for over a second before the hours. You still get ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$12"}],", because the hours came from the snapshot\ntaken at the START; the next read, with its own START, gets 13:00:00."]}]
+5c:["$","h2",null,{"id":"setting-the-clock","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Setting the clock",["$","$L21",null,{"id":"setting-the-clock"}]]}]
+5d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Setting is one message: START, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$D0"}],", the pointer, and then the bytes, each written to the register at the\npointer before the pointer steps. With ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Time"}]," holding the seven bytes in the same order:"]}]
+5e:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L7f",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L80",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"; write Time (7 bytes) into registers $00-$06"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"SetTime"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        call"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" I2cStart"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$d0"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"               ; watchman, listen"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        call"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" I2cWrite"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        xor"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"                  ; from register $00"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        call"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" I2cWrite"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" hl"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#B5890F"},"children":"Time"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" b"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"7"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"WrNext"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":" push"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" bc"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":",("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"hl"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":")"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        call"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" I2cWrite"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        inc"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" hl"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        pop"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" bc"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        djnz"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" WrNext"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        jp"}],"$Ld9"]}]]}]]}]]}]
+5f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"It takes 8,711 T-states, 2.5 ms. Two details make this the right way to do it:"}]
+60:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Writing the seconds restarts the second."}]," The divider that halves the crystal fifteen times is cleared,\nso the next tick comes a whole second after the write. Set the clock at 12:34:56 and it says 12:34:57\nexactly one second later, not at some random moment within the second."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Write everything within one second of the seconds."}]," A tick between your seconds and your hours could\ncarry into the minutes you have not written yet. One message from register ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$00"}]," up takes 2.5 ms, which\nsettles it. The bytes are stored as each one is acknowledged, so a message broken off halfway keeps what it\nwrote."]}],"\n"]}]
+61:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["And remember CH: the seconds byte you write has bit 7 clear, so the clock runs. Write ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$80"}]," or more and it\nstops, which is also how you would freeze the time on purpose."]}]
+62:["$","h2",null,{"id":"fifty-six-bytes-that-remember","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Fifty-six bytes that remember",["$","$L21",null,{"id":"fifty-six-bytes-that-remember"}]]}]
+63:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Registers ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$08"}]," to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$3F"}]," are plain RAM, 56 bytes, read and written like the time and kept by the same\nbattery. It is not much, but it is the only memory in the Next that survives the power switch without a\nfile system: a high score, a setting, the date a program last ran. I would keep a byte or two of it as a\nsignature, so your program can tell its own data from another program’s."]}]
+64:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The pointer has two habits worth knowing:"}]
+65:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":["It wraps from ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$3F"}]," to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$00"}],"."]}]," Read four bytes from ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$3E"}]," and you get ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$3E"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$3F"}],", then the seconds\nand the minutes."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"It stays where it was between messages."}]," A read that starts with ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$D1"}]," straight after the START, with\nno pointer written first, continues from the last pointer: a ",["$","strong",null,{"children":"current address read"}],". Useful, but I\nprefer writing the pointer every time; it costs one byte and guesses nothing."]}],"\n"]}]
+66:["$","h2",null,{"id":"resets","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Resets",["$","$L21",null,{"id":"resets"}]]}]
+67:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"No Next reset touches the watchman. A soft reset, a hard reset, loading a new core: the time keeps running\nand the RAM keeps its bytes, because the chip is not part of the FPGA and has its own power."}]
+68:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The FPGA’s side is another matter. A reset lets go of both wires, so the bus goes high, and it does not care\nwhat the watchman was doing at that moment. If he was in the middle of sending a 0, he is still holding SDA\nlow, waiting for clock pulses that the reset will not send. He is not broken, only patient. Here is my\nadvice for the first thing a program does on the bus: if SDA reads 0, pulse SCL until it reads 1 (nine\npulses are always enough to finish any byte and its acknowledge), then send a STOP. After that the\nwatchman is listening again, and your START will be heard."}]
+69:["$","h2",null,{"id":"what-to-take-home","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["What to take home",["$","$L21",null,{"id":"what-to-take-home"}]]}]
+6a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The Next’s real-time clock is a DS1307, the watchman, a chip outside the FPGA with a 32,768 Hz crystal and\nits own battery, so it keeps counting through power-off and every kind of reset. It talks over I2C: two\nopen-drain wires, SCL and SDA, held high by pull-ups and pulled low by anyone who wants to, so a wire is\nthe AND of everyone on it. Port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$103B"}]," is SCL and port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$113B"}]," is SDA; bit 0 of a write pulls or lets go,\nand bit 0 of a read is the wire itself. The Raspberry Pi’s GPIO 2 and 3 can join the bus through NextReg\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$A0"}]," bit 3, and NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$83"}]," bit 2 switches the ports off."]}]
+6b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The Next is always the master, and the CPU does every step itself. SDA changes only while SCL is low,\nexcept for START and STOP, which change it while SCL is high. Bytes go most significant bit first, and a\nninth pulse carries the acknowledge, low for yes. The watchman’s address is ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$68"}],": ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$D0"}]," to write, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$D1"}],"\nto read. He is a 100 kHz chip that wants 4.0 µs of SCL high and 4.7 µs low, which the routines here meet at\n3.5 MHz and miss by a factor of seven at 28 MHz, so slow the CPU down or slow the code."]}]
+6c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The registers are BCD: seconds with the clock-halt bit, minutes, hours with a 12/24-hour switch, a day of\nthe week from 1 to 7, date, month, a two-digit year whose leap years are right until 2099, and a control\nbyte for the square-wave pin. A read writes the pointer, then a repeated START reads on from it; every\nSTART takes a snapshot, so one read never mixes two moments. A write of the seconds restarts the second,\nand a whole time written in one message takes 2.5 ms. The other 56 bytes are RAM that survives everything,\nand the pointer wraps from ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$3F"}]," to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$00"}],". Clear CH, write the time in one go, read it in one go, and the\nwatchman will tell you the hour for years on his little battery."]}]
+6e:null
+9:C
+6f:["$","text",null,{"x":"0","y":"296","fill":"currentColor","fontSize":"13.5","children":"any device pulls a line low; none drives it high; a line is high only when nobody pulls"}]
+70:["$","figcaption",null,{"children":"The Next’s I2C bus. The FPGA, the DS1307 and an internal connector each hang on both lines; pull-ups hold the lines high when nobody pulls them low. The Raspberry Pi’s GPIO 2 and 3 reach only the FPGA, through a pair of their own, once NextReg $A0 bit 3 joins them."}]
+71:["$","text",null,{"x":"322.6","y":"160","textAnchor":"middle","fill":"#3b82f6","fontSize":"13.5","fontWeight":"bold","children":"1"}]
+72:["$","text",null,{"x":"376.5","y":"160","textAnchor":"middle","fill":"#3b82f6","fontSize":"13.5","fontWeight":"bold","children":"0"}]
+73:["$","text",null,{"x":"430.4","y":"160","textAnchor":"middle","fill":"#3b82f6","fontSize":"13.5","fontWeight":"bold","children":"0"}]
+74:["$","text",null,{"x":"484.3","y":"160","textAnchor":"middle","fill":"#3b82f6","fontSize":"13.5","fontWeight":"bold","children":"0"}]
+75:["$","text",null,{"x":"538.3","y":"160","textAnchor":"middle","fill":"#3b82f6","fontSize":"13.5","fontWeight":"bold","children":"0"}]
+76:["$","text",null,{"x":"592.2","y":"160","textAnchor":"middle","fill":"#e8912d","fontSize":"13.5","fontWeight":"bold","children":"ACK"}]
+77:["$","path",null,{"d":"M136.9,170 L136.9,176 L508.3,176 L508.3,170","fill":"none","stroke":"#3b82f6","strokeWidth":"1.6","strokeLinejoin":"round"}]
+78:["$","text",null,{"x":"322.6","y":"194","textAnchor":"middle","fill":"#3b82f6","fontSize":"13.5","children":"address $68"}]
+79:["$","path",null,{"d":"M514.3,170 L514.3,176 L562.2,176 L562.2,170","fill":"none","stroke":"#3b82f6","strokeWidth":"1.6","strokeLinejoin":"round"}]
+7a:["$","text",null,{"x":"538.3","y":"194","textAnchor":"middle","fill":"#3b82f6","fontSize":"13.5","children":"write"}]
+7b:["$","path",null,{"d":"M568.2,170 L568.2,176 L616.1,176 L616.1,170","fill":"none","stroke":"#e8912d","strokeWidth":"1.6","strokeLinejoin":"round"}]
+7c:["$","text",null,{"x":"592.2","y":"194","textAnchor":"middle","fill":"#e8912d","fontSize":"13.5","children":"watchman"}]
+7d:["$","figcaption",null,{"children":"START, the address byte $D0 and STOP, to scale in clock periods. SDA changes only while SCL is low, except at START and STOP, marked red, where it changes while SCL is high. The first seven bits are the address $68, most significant first; the eighth, 0, asks to write. On the ninth pulse the watchman pulls SDA low: the ACK, in orange."}]
+81:["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}]
+82:["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}]
+83:["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}]
+84:["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}]
+85:["$","span",null,{"style":{"color":"#6A9955"},"children":"              ; SCL low"}]
+86:["$","span",null,{"children":["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ret"}]}]
+87:["$","span",null,{"children":" "}]
+88:["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"; STOP: SDA low, SCL high, then SDA high"}]}]
+89:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"I2cStop"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}]]}]
+8a:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" bc"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$113b"}]]}]
+8b:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        xor"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}]]}]
+8c:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        out"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"              ; SDA low"}]]}]
+8d:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" b"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$10"}]]}]
+8e:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        inc"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}]]}]
+8f:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        out"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"              ; let SCL go"}]]}]
+90:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" b"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$11"}]]}]
+91:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        out"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"              ; SDA high: STOP"}]]}]
+92:["$","span",null,{"children":["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ret"}]}]
+93:["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}]
+94:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        out"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"              ; SCL low"}]]}]
+95:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        dec"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" d"}]]}]
+96:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        jr"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" nz"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#B5890F"},"children":"WrBit"}]]}]
+97:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" bc"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$113b"}]]}]
+98:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"1"}]]}]
+99:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        out"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"              ; let SDA go"}]]}]
+9a:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" b"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$10"}]]}]
+9b:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        out"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"              ; the ninth pulse"}]]}]
+9c:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" b"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$11"}]]}]
+9d:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        in"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":",("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":")               "}],["$","span",null,{"style":{"color":"#6A9955"},"children":"; the answer"}]]}]
+9e:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        and"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" 1"}]]}]
+9f:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" e"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}]]}]
+a0:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" b"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$10"}]]}]
+a1:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        xor"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}]]}]
+a2:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        out"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"              ; SCL low"}]]}]
+a3:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"e"}]]}]
+a4:["$","span",null,{"children":["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ret"}]}]
+a5:["$","span",null,{"style":{"color":"#4D8061"},"children":"$$11"}]
+a6:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        in"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":",("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":")               "}],["$","span",null,{"style":{"color":"#6A9955"},"children":"; read SDA"}]]}]
+a7:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        rra"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"                    ; bit 0 into carry"}]]}]
+a8:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        rl"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" e"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"                   ; and into E"}]]}]
+a9:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" b"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$10"}]]}]
+aa:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        xor"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}]]}]
+ab:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        out"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"              ; SCL low"}]]}]
+ac:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        dec"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" d"}]]}]
+ad:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        jr"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" nz"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#B5890F"},"children":"RdBit"}]]}]
+ae:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        pop"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" af"}]]}]
+af:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"0"}]]}]
+b0:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        rla"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"                    ; A = carry: 0 ACK, 1 NACK"}]]}]
+b1:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" b"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$11"}]]}]
+b2:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        out"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"              ; our answer on SDA"}]]}]
+b3:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" b"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$10"}]]}]
+b4:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"1"}]]}]
+b5:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        out"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"              ; the ninth pulse"}]]}]
+b6:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        xor"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}]]}]
+b7:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        out"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}]]}]
+b8:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" b"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$11"}]]}]
+b9:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        inc"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}]]}]
+ba:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        out"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"              ; let SDA go"}]]}]
+bb:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"e"}]]}]
+bc:["$","span",null,{"children":["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ret"}]}]
+bd:["$","path",null,{"d":"M557,66 L557,104","fill":"none","stroke":"#e8912d","strokeWidth":"1.6","strokeDasharray":"4 3","markerEnd":"url(#rt-ch-1)","strokeLinejoin":"round"}]
+be:["$","path",null,{"d":"M658.3,66 L658.3,104","fill":"none","stroke":"#e8912d","strokeWidth":"1.6","strokeDasharray":"4 3","markerEnd":"url(#rt-ch-1)","strokeLinejoin":"round"}]
+bf:["$","rect",null,{"x":"110","y":"106","width":"590","height":"40","rx":"6","fill":"#e8912d","fillOpacity":"0.06","stroke":"#e8912d","strokeWidth":"2"}]
+c0:["$","text",null,{"x":"405","y":"130.9","textAnchor":"middle","fill":"#e8912d","fontSize":"14","children":"the snapshot: copied on every START, read over the bus"}]
+c1:["$","text",null,{"x":"0","y":"164","fill":"currentColor","fontSize":"13.5","children":"the counters keep running while a read takes its bytes from the snapshot"}]
+c2:["$","figcaption",null,{"children":"Inside the watchman. The crystal divided by 32,768 gives one pulse a second; each counter carries into the next. On every START the counters are copied into the snapshot, and a read over the bus takes its bytes from there, so the seven bytes of one read always belong to one moment."}]
+c3:["$","rect",null,{"x":"504","y":"106","width":"66","height":"40","rx":"6","fill":"#e8912d","fillOpacity":"0.18","stroke":"#e8912d","strokeWidth":"2"}]
+c4:["$","text",null,{"x":"537","y":"130.7","textAnchor":"middle","fill":"#e8912d","fontSize":"13.5","fontWeight":"bold","children":"$$26"}]
+c5:["$","rect",null,{"x":"570","y":"106","width":"40","height":"40","rx":"6","fill":"#3b82f6","fillOpacity":"0.1","stroke":"#3b82f6","strokeWidth":"2"}]
+c6:["$","text",null,{"x":"590","y":"130.7","textAnchor":"middle","fill":"#3b82f6","fontSize":"13.5","fontWeight":"bold","children":"N"}]
+c7:["$","rect",null,{"x":"610","y":"106","width":"40","height":"40","rx":"6","fill":"#3b82f6","fillOpacity":"0.1","stroke":"#3b82f6","strokeWidth":"2"}]
+c8:["$","text",null,{"x":"630","y":"130.7","textAnchor":"middle","fill":"#3b82f6","fontSize":"13.5","fontWeight":"bold","children":"P"}]
+c9:["$","text",null,{"x":"179","y":"166","textAnchor":"middle","fill":"#e8912d","fontSize":"13.5","children":"seconds"}]
+ca:["$","text",null,{"x":"285","y":"166","textAnchor":"middle","fill":"#e8912d","fontSize":"13.5","children":"minutes"}]
+cb:["$","text",null,{"x":"391","y":"166","textAnchor":"middle","fill":"#e8912d","fontSize":"13.5","children":"hours"}]
+cc:["$","text",null,{"x":"537","y":"166","textAnchor":"middle","fill":"#e8912d","fontSize":"13.5","children":"year"}]
+cd:["$","text",null,{"x":"0","y":"200","fill":"currentColor","fontSize":"13.5","children":"S START, Sr repeated START, P STOP, A ACK (pulled low), N NACK (left high)"}]
+ce:["$","text",null,{"x":"0","y":"222","fill":"currentColor","fontSize":"13.5","children":"blue: the Next sends; orange: the watchman sends"}]
+cf:["$","figcaption",null,{"children":"Reading the seven time registers. The first message sets the pointer to $00 and gets the watchman’s ACK for both bytes. A repeated START begins the second, addressed to read: the watchman sends the seconds, minutes, hours and so on, and the Next acknowledges every byte except the year, which gets a NACK before the STOP."}]
+d0:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        call"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" I2cRead"}]]}]
+d1:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"hl"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}]]}]
+d2:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        inc"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" hl"}]]}]
+d3:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        pop"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" bc"}]]}]
+d4:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        djnz"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" RdNext"}]]}]
+d5:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        scf"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"                    ; carry set: NACK"}]]}]
+d6:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        call"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" I2cRead"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"           ; the year"}]]}]
+d7:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"hl"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}]]}]
+d8:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        jp"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" I2cStop"}]]}]
+d9:["$","span",null,{"style":{"color":"#B5890F"},"children":" I2cStop"}]
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"
