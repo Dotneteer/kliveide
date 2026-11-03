@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Next RTC Options Mockup</title>
+<style>
+  :root {
+    --canvas: #f3f3f5; --surface-dialog: #ffffff; --surface-panel: #f6f6f8; --surface-hover: #ececf0;
+    --surface-selected: #e4e7fb; --border-default: #cfd0d6; --border-subtle: #e4e4e8;
+    --text-primary: #1d1d22; --text-secondary: #55565f; --text-tertiary: #7b7c86;
+    --accent-solid: #3f51d8; --accent-text: #3343c4; --new: #e8912d; --new-bg: rgba(232,145,45,.12);
+    --shadow: 0 12px 40px rgba(0,0,0,.18);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --canvas: #121214; --surface-dialog: #1e1e22; --surface-panel: #19191c; --surface-hover: #2a2a30;
+      --surface-selected: #272c4a; --border-default: #3a3a42; --border-subtle: #2c2c33;
+      --text-primary: #e8e8ec; --text-secondary: #a9aab3; --text-tertiary: #80818b;
+      --accent-solid: #6574f0; --accent-text: #8f9bff; --new-bg: rgba(232,145,45,.14);
+      --shadow: 0 12px 40px rgba(0,0,0,.6);
+    }
+  }
+  :root[data-theme="dark"] {
+    --canvas: #121214; --surface-dialog: #1e1e22; --surface-panel: #19191c; --surface-hover: #2a2a30;
+    --surface-selected: #272c4a; --border-default: #3a3a42; --border-subtle: #2c2c33;
+    --text-primary: #e8e8ec; --text-secondary: #a9aab3; --text-tertiary: #80818b;
+    --accent-solid: #6574f0; --accent-text: #8f9bff; --new-bg: rgba(232,145,45,.14);
+    --shadow: 0 12px 40px rgba(0,0,0,.6);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--canvas); color: var(--text-primary);
+    font: 13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; padding: 24px 16px 40px; }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  .lead { color: var(--text-secondary); margin: 0 0 20px; max-width: 80ch; }
+  .wrap { display: grid; grid-template-columns: minmax(0, 860px) minmax(0, 340px); gap: 24px; align-items: start; }
+  @media (max-width: 1240px) { .wrap { grid-template-columns: minmax(0, 1fr); } }
+  .toggle { float: right; font: inherit; color: var(--text-primary); background: var(--surface-dialog);
+    border: 1px solid var(--border-default); border-radius: 4px; padding: 4px 10px; cursor: pointer; }
+
+  /* --- the dialog, after SettingsDialog.module.scss */
+  .dialog { background: var(--surface-dialog); border: 1px solid var(--border-default); border-radius: 6px; box-shadow: var(--shadow); overflow: hidden; }
+  .dhead { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px;
+    border-bottom: 1px solid var(--border-default); color: var(--text-secondary); font-weight: 600; }
+  .dhead .x { color: var(--text-tertiary); }
+  .body { display: grid; grid-template-columns: minmax(22ch, 26ch) minmax(0, 1fr); min-height: 30rem; }
+  @media (max-width: 700px) { .body { grid-template-columns: minmax(0, 1fr); } .nav { border-right: none !important; border-bottom: 1px solid var(--border-default); } }
+  .nav { background: var(--surface-panel); border-right: 1px solid var(--border-default); }
+  .search { padding: 8px; border-bottom: 1px solid var(--border-subtle); }
+  .search div { border: 1px solid var(--border-default); border-radius: 4px; padding: 4px 8px; color: var(--text-tertiary); background: var(--surface-dialog); }
+  .pages { list-style: none; margin: 0; padding: 4px 0; }
+  .pages li { padding: 5px 12px; }
+  .pages li.sel { background: var(--surface-selected); box-shadow: inset 2px 0 0 var(--accent-solid); font-weight: 600; }
+  .content { padding: 12px 16px 16px; }
+  .note { margin: 0 0 8px; color: var(--text-secondary); }
+  .group + .group { margin-top: 12px; }
+  .gtitle { margin: 0 0 4px; padding-bottom: 4px; border-bottom: 1px solid var(--border-subtle); color: var(--text-secondary);
+    font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+  .row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(24ch, 30ch); gap: 12px; align-items: center;
+    padding: 6px 0; border-bottom: 1px solid var(--border-subtle); position: relative; }
+  .row.sw { grid-template-columns: minmax(0, 1fr); }
+  @media (max-width: 700px) { .row { grid-template-columns: minmax(0, 1fr); gap: 4px; } }
+  .label { display: flex; flex-direction: column; min-width: 0; }
+  .title { font-weight: 500; }
+  .desc { color: var(--text-tertiary); font-size: 12px; }
+  .control { display: flex; justify-content: flex-end; gap: 4px; }
+  .select { width: 100%; border: 1px solid var(--border-default); border-radius: 4px; padding: 4px 8px; display: flex; justify-content: space-between; background: var(--surface-dialog); }
+  .select::after { content: "▾"; color: var(--text-tertiary); }
+  .btn { border: 1px solid var(--border-default); border-radius: 4px; padding: 4px 10px; background: transparent; color: var(--text-primary); font: inherit; white-space: nowrap; }
+  .cb { display: flex; gap: 8px; align-items: center; }
+  .box { width: 14px; height: 14px; border-radius: 3px; border: 1.5px solid var(--accent-solid); display: grid; place-items: center; flex: none; }
+  .box.on { background: var(--accent-solid); color: #fff; font-size: 11px; line-height: 1; }
+  .swtext { padding-left: 22px; }
+  .new { outline: 2px dashed var(--new); outline-offset: 3px; border-radius: 3px; background: var(--new-bg); }
+  .tag { background: var(--new); color: #1d1d22; font-size: 10px; font-weight: 700; letter-spacing: .04em; border-radius: 3px; padding: 0 5px; text-transform: none; }
+  .pin { position: absolute; left: -28px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; border-radius: 50%;
+    background: var(--new); color: #1d1d22; font-weight: 700; font-size: 11px; display: grid; place-items: center; }
+  .dfoot { display: flex; justify-content: space-between; padding: 10px 16px; border-top: 1px solid var(--border-default); }
+  .primary { background: var(--accent-solid); color: #fff; border-color: transparent; }
+  .menu { position: absolute; right: 0; top: calc(100% - 4px); z-index: 2; width: 30ch; background: var(--surface-dialog);
+    border: 1px solid var(--border-default); border-radius: 4px; box-shadow: var(--shadow); padding: 4px 0; }
+  .menu div { padding: 4px 10px; }
+  .menu .on { background: var(--surface-selected); }
+  .stage { padding-left: 32px; }
+
+  /* --- the notes beside it */
+  .notes { background: var(--surface-dialog); border: 1px solid var(--border-default); border-radius: 6px; padding: 14px 16px; }
+  .notes h2 { font-size: 14px; margin: 0 0 8px; }
+  .notes ol { margin: 0; padding-left: 20px; }
+  .notes li { margin-bottom: 10px; }
+  .notes li::marker { color: var(--new); font-weight: 700; }
+  .notes p { margin: 0 0 10px; color: var(--text-secondary); }
+  code { font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
+</style>
+</head>
+<body>
+<button class="toggle" id="t" type="button">Light / dark</button>
+<h1>ZX Spectrum Next: real-time clock options</h1>
+<p class="lead">Mockup for <code>.plans/ZXNEXT_RTC_OPTIONS_PLAN.md</code>. The options go on the <b>Settings dialog's Machine page</b>
+(Machine › Configure ZX Spectrum Next...), in a new group after Sound. Orange marks what is new; everything else is the page as it is today.</p>
+
+<div class="wrap">
+  <div class="stage">
+    <div class="dialog" role="img" aria-label="The Settings dialog on its Machine page for the ZX Spectrum Next, with a new Real-time clock group">
+      <div class="dhead"><span>Settings</span><span class="x">✕</span></div>
+      <div class="body">
+        <nav class="nav">
+          <div class="search"><div>Search settings</div></div>
+          <ul class="pages">
+            <li>General</li><li>Language</li><li>Appearance</li><li>Editor</li><li>Emulator</li><li>Debugging</li>
+            <li class="sel">Machine</li><li>Input</li><li>Recording</li><li>Integrations</li>
+          </ul>
+        </nav>
+        <div class="content">
+          <p class="note">The options of the running machine, the ZX Spectrum Next.</p>
+
+          <div class="group">
+            <h4 class="gtitle">Sound</h4>
+            <div class="row">
+              <div class="label"><span class="title">ZX Spectrum Next sound output</span>
+                <span class="desc">The Next sends its sound to three outputs, each built differently; Klive plays the one chosen here</span></div>
+              <div class="control"><div class="select">Audio jack</div></div>
+            </div>
+          </div>
+
+          <div class="group new">
+            <h4 class="gtitle">Real-time clock <span class="tag">new</span></h4>
+            <div class="row">
+              <span class="pin">1</span>
+              <div class="label"><span class="title">The clock follows</span>
+                <span class="desc">The host's clock shows the real time, as the battery-backed chip does. Emulated time stops while the debugger pauses and runs fast or slow with the emulator.</span></div>
+              <div class="control" style="position:relative">
+                <div class="select">The host's clock</div>
+                              </div>
+            </div>
+            <div class="row sw">
+              <span class="pin">2</span>
+              <div>
+                <div class="cb"><span class="box on">✓</span><span class="title">Keep the time and the clock's RAM between sessions</span></div>
+                <div class="swtext"><span class="desc">Like the battery on a real board: a time set with <code>.time</code> or <code>.date</code>, and the 56 bytes of the clock's RAM, are still there next time. Each Next model keeps its own.</span></div>
+              </div>
+            </div>
+            <div class="row">
+              <span class="pin">3</span>
+              <div class="label"><span class="title">Kept clock</span>
+                <span class="desc">Last saved 3 Nov 2026, 10:42 · ZX Spectrum Next (KS2, core 3.02.01)</span></div>
+              <div class="control"><button class="btn" type="button">Set to host time</button><button class="btn" type="button">Forget</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="dfoot"><button class="btn" type="button">Reset Page to Defaults</button><button class="btn primary" type="button">Close</button></div>
+    </div>
+  </div>
+
+  <aside class="notes">
+    <h2>Why here, and what each row does</h2>
+    <p>The Machine menu's own header comment reserves it for actions; set-once options (ROMs, the Z88's LCD) live on this page, shown only for the running machine. The Next's sound output is on both, because people switch it while they listen; nobody switches the clock's mode mid-session. The plan's first draft put a submenu under the Next's hardware items; the revised plan uses this page.</p>
+    <ol>
+      <li><b>The clock follows</b>, a select (plan D1 <code>nextRtcClock</code>). Default: the host's clock (D2). Two choices, <i>The host&#39;s clock</i> and <i>Emulated time</i>: a select rather than a switch, because neither is "off".</li>
+      <li><b>Keep between sessions</b>, a switch (D1 <code>nextRtcKeep</code>). Default on (D2). Off: every start seeds from the host and the RAM is zero, today's behaviour.</li>
+      <li><b>Kept clock</b>, buttons (plan D8). <i>Set to host time</i> brings back the real time in either mode; <i>Forget</i> deletes the model's kept clock and zeroes its 56 bytes, and is enabled only while one exists (<code>needsValue</code>, like the ROM rows' Forget).</li>
+    </ol>
+    <p><b>How it is wired (plan D1, D7):</b></p>
+    <p>• <b>App settings</b>, saved with the user's IDE settings like the sound output, not machine config saved with a project: a Settings row cannot read machine config, and the clock belongs to the user's machine.</p>
+    <p>• <b>Live, no restart.</b> The emulator panel pushes both settings into the running machine, as it does the sound output. Switching the mode never changes the time shown.</p>
+    <p>Search should find the group by "RTC", "date" and "time".</p>
+  </aside>
+</div>
+<script>
+  document.getElementById("t").addEventListener("click", () => {
+    const r = document.documentElement;
+    const dark = r.dataset.theme ? r.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+    r.dataset.theme = dark ? "light" : "dark";
+  });
+</script>
+</body>
+</html>
