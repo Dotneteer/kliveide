@@ -179,6 +179,7 @@ describe("beam position (Next)", () => {
     const a = await createSession();
     const b = await createSession();
     for (const s of [a, b]) {
+      s.setRtcTime({ year: 26, month: 9, date: 18, day: 6, hours: 12, minutes: 34, seconds: 56 });
       await s.loadCode(WRITER, { entry: "Start" });
       s.runFrames(3);
       stepToTact(s, 140 * 456 + 300);
