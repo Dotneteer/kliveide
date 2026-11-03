@@ -10,6 +10,7 @@ export default {
   "spectrum-display": "ZX Spectrum: how the screen is drawn",
   "spectrum-accuracy": "ZX Spectrum: how Klive's accuracy is tested",
   "next-cpu": "ZX Spectrum Next: the Z80N CPU",
+  "next-fpga-boot": "ZX Spectrum Next: the FPGA, cores and updates",
   "next-display": "ZX Spectrum Next: how the screen is drawn",
   "next-audio": "ZX Spectrum Next: how the sound is made",
   "next-memory-io": "ZX Spectrum Next: memory, ports and NextRegs",

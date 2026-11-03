@@ -1,0 +1,511 @@
+---
+description: "How the ZX Spectrum Next's FPGA becomes a computer every time it is switched on: the flash chip and its core slots on the Issue 2 and Issue 4 boards, the anti-brick core, reconfiguring the FPGA from a NextReg, the boot ROM and the TBBLUE.FW firmware, config mode and the ROMs loaded from the SD card, the TBBLUE.TBU update file and how the updater writes a core, and the extra cores."
+---
+
+import { Callout } from 'nextra/components'
+
+# The FPGA and Its Cores: How a Blank Chip Becomes a Next
+
+Switch a Spectrum on, and its ULA is a ULA from the first microsecond: the chip was made that way at the
+factory and will never be anything else. Switch a Next on, and for a short moment there is no ULA, no Z80N,
+no Copper and no sprites. There is a large blank chip, waiting to be told what to be. A fraction of a second
+later it is a ZX Spectrum Next, and it can be told to become a different machine, or a newer version of
+itself, from a file on the SD card. So where does the machine come from at every power-on, who decides which
+machine it becomes, and how can you replace it without turning your Next into a doorstop?
+
+I think this is the part of the Next that most owners use without ever looking at it, and the part that
+scares them most when they must. Every core update, every "please update your core" message, every extra
+core for another computer goes through the mechanisms in this chapter. Know them, and an update stops being
+a ritual of held keys and crossed fingers: you will know what each step does, which steps can go wrong, and
+why the machine can almost always be rescued when one does.
+
+You should know two chapters first. [The ZX Spectrum Next Core and the
+FPGA](/en/under-the-hood/emulator-internals/next-core/) explains that the Next's hardware is a design for an
+FPGA, and [Memory, Ports and NextRegs: How the Z80N Reaches the
+Machine](/en/under-the-hood/emulator-internals/next-memory-io/) explains the boot ROM, the config bank and the
+SRAM map, which come back here as the start-up's working tools.
+
+## The road ahead
+
+We start with the FPGA itself, what a core is, and the flash chip that keeps the cores, slot by slot, on the
+two generations of boards. Then we follow a power-on from the first instant: the anti-brick core that always
+comes first, the jump to the Next core, the boot ROM that reads the firmware from the SD card, and the
+firmware that builds the machine you chose and steps aside. The heart of the chapter is the mechanism behind
+all of it, a NextReg write that makes the FPGA forget what it is and load another core; if you read only one
+section, make it "Changing its mind". After that come the updates: the `TBBLUE.TBU` file, what the updater
+checks and writes, and how the anti-brick core gets you out of trouble. Last come the extra cores that turn
+the Next into other machines.
+
+<Callout type="info">
+The facts are for **core 3.02.01** and the system distribution's **firmware 1.44**, which shipped together.
+Board facts are for the **Issue 2** board (the first Kickstarter's, often called KS1) and the **Issue 4**
+board (the second Kickstarter's, KS2). Every fact was checked against the Next's hardware design and the
+firmware's own code.
+</Callout>
+
+## A chip that forgets
+
+An **FPGA**, a field-programmable gate array, is a chip full of small logic blocks, memories and wires whose
+connections are not fixed. A long string of bits, the **bitstream**, says how to connect them: which block
+computes what, which wire goes where. Load one bitstream and the chip is a Spectrum Next; load another and the
+same chip is an Amiga, or a test pattern generator.
+
+The bitstream lives in the FPGA's configuration memory, and that memory is **volatile**: when the power goes,
+the chip forgets everything and is blank again. So every power-on starts with the FPGA reading a bitstream
+from somewhere and configuring itself from it. In the Next's world a bitstream that makes a whole machine is a
+**core**, and "the Next core" is the bitstream of the ZX Spectrum Next.
+
+The two board generations use two FPGA families:
+
+- **Issue 2 and Issue 3**: a Xilinx Spartan-6 (XC6SLX16) with a 16 MB flash chip.
+- **Issue 4**: a Xilinx Artix-7 (XC7A15T) with a 32 MB flash chip.
+
+The **Board ID register, NextReg `$0F`**, tells a program which board it runs on: 0 for Issue 2, 1 for Issue 3,
+2 for Issue 4. The same design is built for each board separately, because a bitstream fits only the chip it
+was made for. That is the first rule of updates, and we will see the updater enforce it.
+
+## The flash and its slots
+
+The bitstreams are kept in a **flash chip** beside the FPGA, a memory that keeps its contents without power,
+talked to over SPI. The flash is divided into equal **slots**, one core each, and the slot size depends on the
+board:
+
+<figure>
+{/* fig:flash */}
+<svg viewBox="-2 -2 704 254" role="img" aria-label="Two bars, each a flash chip to scale within itself. Above, Issue 2 and Issue 3: 16 MB in 32 slots of 512K; slot 0 the anti-brick core, slot 1 the Next core, slots 2 to 7 reserved, slots 8 to 31 extra cores. Below, Issue 4: 32 MB in 15 slots of 2,176K; slot 0 the anti-brick core, slot 1 the Next core, slots 2 to 7 reserved, slots 8 to 14 unused by firmware 1.44." style={{ width: "100%", height: "auto" }}>
+  <text x="0" y="18" fill="currentColor" fontSize="15" fontWeight="bold">Issue 2 and Issue 3: 16 MB, 32 slots of 512K</text>
+  <rect x="1" y="30" width="19.9" height="40" rx="2" fill="#e5484d" fillOpacity="0.3" stroke="#e5484d" strokeWidth="2" />
+  <rect x="22.9" y="30" width="19.9" height="40" rx="2" fill="#3b82f6" fillOpacity="0.3" stroke="#3b82f6" strokeWidth="2" />
+  <rect x="44.8" y="30" width="19.9" height="40" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" strokeOpacity="0.5" />
+  <rect x="66.6" y="30" width="19.9" height="40" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" strokeOpacity="0.5" />
+  <rect x="88.5" y="30" width="19.9" height="40" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" strokeOpacity="0.5" />
+  <rect x="110.4" y="30" width="19.9" height="40" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" strokeOpacity="0.5" />
+  <rect x="132.3" y="30" width="19.9" height="40" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" strokeOpacity="0.5" />
+  <rect x="154.1" y="30" width="19.9" height="40" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" strokeOpacity="0.5" />
+  <rect x="176" y="30" width="19.9" height="40" rx="2" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="2" />
+  <rect x="197.9" y="30" width="19.9" height="40" rx="2" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="2" />
+  <rect x="219.8" y="30" width="19.9" height="40" rx="2" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="2" />
+  <rect x="241.6" y="30" width="19.9" height="40" rx="2" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="2" />
+  <rect x="263.5" y="30" width="19.9" height="40" rx="2" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="2" />
+  <rect x="285.4" y="30" width="19.9" height="40" rx="2" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="2" />
+  <rect x="307.3" y="30" width="19.9" height="40" rx="2" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="2" />
+  <rect x="329.1" y="30" width="19.9" height="40" rx="2" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="2" />
+  <rect x="351" y="30" width="19.9" height="40" rx="2" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="2" />
+  <rect x="372.9" y="30" width="19.9" height="40" rx="2" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="2" />
+  <rect x="394.8" y="30" width="19.9" height="40" rx="2" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="2" />
+  <rect x="416.6" y="30" width="19.9" height="40" rx="2" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="2" />
+  <rect x="438.5" y="30" width="19.9" height="40" rx="2" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="2" />
+  <rect x="460.4" y="30" width="19.9" height="40" rx="2" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="2" />
+  <rect x="482.3" y="30" width="19.9" height="40" rx="2" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="2" />
+  <rect x="504.1" y="30" width="19.9" height="40" rx="2" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="2" />
+  <rect x="526" y="30" width="19.9" height="40" rx="2" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="2" />
+  <rect x="547.9" y="30" width="19.9" height="40" rx="2" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="2" />
+  <rect x="569.8" y="30" width="19.9" height="40" rx="2" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="2" />
+  <rect x="591.6" y="30" width="19.9" height="40" rx="2" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="2" />
+  <rect x="613.5" y="30" width="19.9" height="40" rx="2" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="2" />
+  <rect x="635.4" y="30" width="19.9" height="40" rx="2" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="2" />
+  <rect x="657.3" y="30" width="19.9" height="40" rx="2" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="2" />
+  <rect x="679.1" y="30" width="19.9" height="40" rx="2" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="2" />
+  <rect x="0" y="86" width="18" height="16" rx="2" fill="#e5484d" fillOpacity="0.25" stroke="#e5484d" strokeWidth="2" />
+  <text x="25" y="99" fill="#e5484d" fontSize="13.5">0: anti-brick core</text>
+  <rect x="170" y="86" width="18" height="16" rx="2" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" strokeWidth="2" />
+  <text x="195" y="99" fill="#3b82f6" fontSize="13.5">1: Next core</text>
+  <rect x="300" y="86" width="18" height="16" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" strokeOpacity="0.6" />
+  <text x="325" y="99" fill="currentColor" fontSize="13.5">2–7: reserved</text>
+  <rect x="435" y="86" width="18" height="16" rx="2" fill="#e8912d" fillOpacity="0.25" stroke="#e8912d" strokeWidth="2" />
+  <text x="460" y="99" fill="#e8912d" fontSize="13.5">8–31: extra cores</text>
+  <text x="0" y="148" fill="currentColor" fontSize="15" fontWeight="bold">Issue 4: 32 MB, 15 slots of 2,176K</text>
+  <rect x="1" y="160" width="44.7" height="40" rx="2" fill="#e5484d" fillOpacity="0.3" stroke="#e5484d" strokeWidth="2" />
+  <text x="23.3" y="184.7" textAnchor="middle" fill="currentColor" fontSize="13.5">0</text>
+  <rect x="47.7" y="160" width="44.7" height="40" rx="2" fill="#3b82f6" fillOpacity="0.3" stroke="#3b82f6" strokeWidth="2" />
+  <text x="70" y="184.7" textAnchor="middle" fill="currentColor" fontSize="13.5">1</text>
+  <rect x="94.3" y="160" width="44.7" height="40" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" strokeOpacity="0.5" />
+  <text x="116.7" y="184.7" textAnchor="middle" fill="currentColor" fontSize="13.5">2</text>
+  <rect x="141" y="160" width="44.7" height="40" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" strokeOpacity="0.5" />
+  <text x="163.3" y="184.7" textAnchor="middle" fill="currentColor" fontSize="13.5">3</text>
+  <rect x="187.7" y="160" width="44.7" height="40" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" strokeOpacity="0.5" />
+  <text x="210" y="184.7" textAnchor="middle" fill="currentColor" fontSize="13.5">4</text>
+  <rect x="234.3" y="160" width="44.7" height="40" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" strokeOpacity="0.5" />
+  <text x="256.7" y="184.7" textAnchor="middle" fill="currentColor" fontSize="13.5">5</text>
+  <rect x="281" y="160" width="44.7" height="40" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" strokeOpacity="0.5" />
+  <text x="303.3" y="184.7" textAnchor="middle" fill="currentColor" fontSize="13.5">6</text>
+  <rect x="327.7" y="160" width="44.7" height="40" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" strokeOpacity="0.5" />
+  <text x="350" y="184.7" textAnchor="middle" fill="currentColor" fontSize="13.5">7</text>
+  <rect x="374.3" y="160" width="44.7" height="40" rx="2" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="2" />
+  <text x="396.7" y="184.7" textAnchor="middle" fill="currentColor" fontSize="13.5">8</text>
+  <rect x="421" y="160" width="44.7" height="40" rx="2" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="2" />
+  <text x="443.3" y="184.7" textAnchor="middle" fill="currentColor" fontSize="13.5">9</text>
+  <rect x="467.7" y="160" width="44.7" height="40" rx="2" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="2" />
+  <text x="490" y="184.7" textAnchor="middle" fill="currentColor" fontSize="13.5">10</text>
+  <rect x="514.3" y="160" width="44.7" height="40" rx="2" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="2" />
+  <text x="536.7" y="184.7" textAnchor="middle" fill="currentColor" fontSize="13.5">11</text>
+  <rect x="561" y="160" width="44.7" height="40" rx="2" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="2" />
+  <text x="583.3" y="184.7" textAnchor="middle" fill="currentColor" fontSize="13.5">12</text>
+  <rect x="607.7" y="160" width="44.7" height="40" rx="2" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="2" />
+  <text x="630" y="184.7" textAnchor="middle" fill="currentColor" fontSize="13.5">13</text>
+  <rect x="654.3" y="160" width="44.7" height="40" rx="2" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="2" />
+  <text x="676.7" y="184.7" textAnchor="middle" fill="currentColor" fontSize="13.5">14</text>
+  <rect x="0" y="216" width="18" height="16" rx="2" fill="#e5484d" fillOpacity="0.25" stroke="#e5484d" strokeWidth="2" />
+  <text x="25" y="229" fill="#e5484d" fontSize="13.5">0: anti-brick core</text>
+  <rect x="170" y="216" width="18" height="16" rx="2" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" strokeWidth="2" />
+  <text x="195" y="229" fill="#3b82f6" fontSize="13.5">1: Next core</text>
+  <rect x="300" y="216" width="18" height="16" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" strokeOpacity="0.6" />
+  <text x="325" y="229" fill="currentColor" fontSize="13.5">2–7: reserved</text>
+  <rect x="435" y="216" width="18" height="16" rx="2" fill="#e8912d" fillOpacity="0.25" stroke="#e8912d" strokeWidth="2" />
+  <text x="460" y="229" fill="#e8912d" fontSize="13.5">8–14: unused by firmware 1.44</text>
+</svg>
+{/* /fig:flash */}
+<figcaption>The flash chip's slots on the two board generations, each bar to scale within its own chip. Slot 0 holds the anti-brick core and slot 1 the Next core on both; on the Issue 2 board, slots 8 to 31 are for extra cores.</figcaption>
+</figure>
+
+- **Issue 2 and Issue 3**: 32 slots of 512K each, 16 MB in all.
+- **Issue 4**: 15 slots of 2,176K each, almost all of the 32 MB. The Artix-7's bitstream is bigger.
+- **Slot 0** holds the **anti-brick core**, slot 1 the **Next core**, on both boards.
+- **Slots 2 to 7** are reserved, and on the Issue 2 board **slots 8 to 31** hold extra cores.
+
+Slot 0 is the one the FPGA reads by itself at power-on: it is the start of the flash, where the chip looks
+for a bitstream when it wakes up. Every other slot is reached only when a running core asks for it, and that
+is the mechanism of this chapter.
+
+I like this layout because it keeps the dangerous part small. Updating the Next core rewrites slot 1 and
+nothing else. If that goes wrong, slot 0 is still intact, and slot 0 is what the chip loads first.
+
+## The doorman: the anti-brick core
+
+The **anti-brick core** is a Next core of its own, built with a few differences: the **Machine ID register,
+NextReg `$00`**, reads `$FA` instead of the Next's `$0A`; it has its own boot ROM; and its function keys are
+almost all off, so F1 (hard reset), F4 (soft reset), the CPU speed key and the NMI buttons' keys do nothing.
+Only F2 and F3, the scan doubler and the 50/60 Hz switch, still work, so you can get a picture out of it.
+
+I call it **the doorman**. It greets every power-on, and almost always it only waves you through: its boot
+ROM looks at the two buttons on the side of the machine, DRIVE and M1, and when they are not both held, it
+starts slot 1. You never see it. When you power on with **DRIVE and M1 held**, the doorman
+takes you to the repair room instead: it loads the updater from the SD card, as we will see in "When slot 1 is
+broken".
+
+Its job explains why it is meant never to change. A Next with a broken slot 1 can be repaired as long as
+slot 0 works; a Next with a broken slot 0 cannot start at all without a programmer cable on its JTAG port.
+
+## Changing its mind
+
+Here is the mechanism behind everything else: a running core can make the FPGA **reconfigure itself** from any
+slot of the flash. The FPGA has an internal configuration port through which logic inside the chip can give
+it commands. The Next's design keeps a short command list for it: synchronise, set the start address in the
+flash, and **reboot from there**. When the list runs, the FPGA throws its whole design away, the CPU, the
+video, every register, and loads the bitstream at that address, exactly as it does at power-on but from a
+different place.
+
+Two things start that list:
+
+- **The Core Boot register, NextReg `$10`**: bits 4 to 0 choose a slot, and writing bit 7 starts it. The slot
+  number can be changed only in **config mode** (more about that below); outside it, a write of bit 7 restarts
+  the slot that is already selected. A write of a slot number that does not exist is ignored, which is
+  the recommended way to find the largest one; the Issue 4 board accepts 0 to 14.
+- **A hard reset**: F1, or bit 1 of the **Reset register, NextReg `$02`**. On the Next core this reloads
+  **slot 1**, the Next core, from the flash. That is why the memory chapter could say that a hard reset is
+  like switching off and on: in the FPGA's eyes it is a fresh start from the flash, only without the doorman.
+
+When the anti-brick core waves you through, it does nothing more than write `$80` to NextReg `$10`: start the
+selected slot, which after a power-on is slot 1.
+
+What survives a reconfiguration? Not the FPGA's contents: those are replaced. But the **SRAM**, the 2 MB of
+memory chips beside the FPGA, keeps its power and its contents. That is how one core leaves a message for the
+next: it writes it into the SRAM and starts the other slot. The firmware uses that channel to pass settings
+to extra cores, and to ask itself to boot one. One caveat from the hardware's own notes: data at an even
+multiple of 256K in the SRAM is not reliable across the change.
+
+I find this the most elegant idea on the board. A machine that can rebuild itself from a NextReg write needs
+no separate boot loader chip, no switch, no jumper. It boots into a small, safe core, and the small core decides
+what the real machine is.
+
+## From power-on to the prompt
+
+Now let's follow a normal start, from the power switch to NextZXOS's menu:
+
+<figure>
+{/* fig:chain */}
+<svg viewBox="-2 -2 704 608" role="img" aria-label="A flow from top to bottom. Power on; the FPGA loads slot 0, the anti-brick core; its boot ROM asks whether DRIVE and M1 are held. Yes leads right to the updater from TBBLUE.FW, which rewrites slot 1. No: NextReg $10 is written with $80, and the FPGA loads slot 1, the Next core, in config mode. A hard reset, F1 or NextReg $02, enters here from the left. The boot ROM loads a module of TBBLUE.FW, chosen by the keys held: Space the editor, U the updater, C the extra cores, shown to the right. Normally the boot module reads config.ini and loads the ROMs into the SRAM through NextReg $04; it writes NextReg $03 to leave config mode, and soft-resets into NextZXOS." style={{ width: "100%", height: "auto" }}>
+  <defs>
+    <marker id="boot-chain-0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
+    </marker>
+    <marker id="boot-chain-1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#a855f7" />
+    </marker>
+    <marker id="boot-chain-2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#3b82f6" />
+    </marker>
+  </defs>
+  <rect x="170" y="0" width="330" height="46" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="335" y="27.9" textAnchor="middle" fill="currentColor" fontSize="14" fontWeight="bold">power on</text>
+  <path d="M335,46 L335,69" fill="none" stroke="currentColor" strokeWidth="1.8" markerEnd="url(#boot-chain-0)" strokeLinejoin="round" />
+  <rect x="170" y="72" width="330" height="46" rx="6" fill="#e5484d" fillOpacity="0.1" stroke="#e5484d" strokeWidth="2" />
+  <text x="335" y="91.4" textAnchor="middle" fill="#e5484d" fontSize="14">FPGA loads slot 0:</text>
+  <text x="335" y="108.4" textAnchor="middle" fill="#e5484d" fontSize="14">the anti-brick core</text>
+  <path d="M335,118 L335,141" fill="none" stroke="currentColor" strokeWidth="1.8" markerEnd="url(#boot-chain-0)" strokeLinejoin="round" />
+  <rect x="170" y="144" width="330" height="46" rx="6" fill="#e5484d" fillOpacity="0.1" stroke="#e5484d" strokeWidth="2" />
+  <text x="335" y="163.4" textAnchor="middle" fill="#e5484d" fontSize="14">its boot ROM:</text>
+  <text x="335" y="180.4" textAnchor="middle" fill="#e5484d" fontSize="14">DRIVE and M1 held?</text>
+  <path d="M335,190 L335,213" fill="none" stroke="currentColor" strokeWidth="1.8" markerEnd="url(#boot-chain-0)" strokeLinejoin="round" />
+  <rect x="170" y="216" width="330" height="46" rx="6" fill="#3b82f6" fillOpacity="0.1" stroke="#3b82f6" strokeWidth="2" />
+  <text x="335" y="235.4" textAnchor="middle" fill="#3b82f6" fontSize="14">NextReg $10 = $80: FPGA loads</text>
+  <text x="335" y="252.4" textAnchor="middle" fill="#3b82f6" fontSize="14">slot 1, the Next core, config mode</text>
+  <path d="M335,262 L335,285" fill="none" stroke="currentColor" strokeWidth="1.8" markerEnd="url(#boot-chain-0)" strokeLinejoin="round" />
+  <rect x="170" y="288" width="330" height="46" rx="6" fill="#30a46c" fillOpacity="0.1" stroke="#30a46c" strokeWidth="2" />
+  <text x="335" y="307.4" textAnchor="middle" fill="#30a46c" fontSize="14">boot ROM loads a module</text>
+  <text x="335" y="324.4" textAnchor="middle" fill="#30a46c" fontSize="14">of TBBLUE.FW from the SD card</text>
+  <path d="M335,334 L335,357" fill="none" stroke="currentColor" strokeWidth="1.8" markerEnd="url(#boot-chain-0)" strokeLinejoin="round" />
+  <rect x="170" y="360" width="330" height="46" rx="6" fill="#30a46c" fillOpacity="0.1" stroke="#30a46c" strokeWidth="2" />
+  <text x="335" y="379.4" textAnchor="middle" fill="#30a46c" fontSize="14">boot module: config.ini, ROMs</text>
+  <text x="335" y="396.4" textAnchor="middle" fill="#30a46c" fontSize="14">into SRAM (NextReg $04), settings</text>
+  <path d="M335,406 L335,429" fill="none" stroke="currentColor" strokeWidth="1.8" markerEnd="url(#boot-chain-0)" strokeLinejoin="round" />
+  <rect x="170" y="432" width="330" height="46" rx="6" fill="#30a46c" fillOpacity="0.1" stroke="#30a46c" strokeWidth="2" />
+  <text x="335" y="451.4" textAnchor="middle" fill="#30a46c" fontSize="14">NextReg $03: machine type,</text>
+  <text x="335" y="468.4" textAnchor="middle" fill="#30a46c" fontSize="14">config mode off</text>
+  <path d="M335,478 L335,501" fill="none" stroke="currentColor" strokeWidth="1.8" markerEnd="url(#boot-chain-0)" strokeLinejoin="round" />
+  <rect x="170" y="504" width="330" height="46" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="335" y="523.4" textAnchor="middle" fill="currentColor" fontSize="14">soft reset: NextZXOS</text>
+  <text x="335" y="540.4" textAnchor="middle" fill="currentColor" fontSize="14">(or the chosen ROM) starts</text>
+  <text x="343" y="208" fill="currentColor" fontSize="13.5" fontWeight="bold">no</text>
+  <path d="M500,167 L547,167" fill="none" stroke="#a855f7" strokeWidth="1.8" markerEnd="url(#boot-chain-1)" strokeLinejoin="round" />
+  <text x="510" y="159" fill="#a855f7" fontSize="13.5" fontWeight="bold">yes</text>
+  <rect x="550" y="134" width="150" height="66" rx="6" fill="#a855f7" fillOpacity="0.12" stroke="#a855f7" strokeWidth="2" />
+  <text x="625" y="155.2" textAnchor="middle" fill="#a855f7" fontSize="13.5">updater from</text>
+  <text x="625" y="171.7" textAnchor="middle" fill="#a855f7" fontSize="13.5">TBBLUE.FW:</text>
+  <text x="625" y="188.2" textAnchor="middle" fill="#a855f7" fontSize="13.5">rewrites slot 1</text>
+  <path d="M500,311 L547,311" fill="none" stroke="#a855f7" strokeWidth="1.8" markerEnd="url(#boot-chain-1)" strokeLinejoin="round" />
+  <text x="510" y="303" fill="#a855f7" fontSize="13.5" fontWeight="bold">keys</text>
+  <rect x="550" y="278" width="150" height="66" rx="6" fill="none" stroke="#a855f7" strokeWidth="2" />
+  <text x="625" y="299.2" textAnchor="middle" fill="#a855f7" fontSize="13.5">Space: editor</text>
+  <text x="625" y="315.7" textAnchor="middle" fill="#a855f7" fontSize="13.5">U: updater</text>
+  <text x="625" y="332.2" textAnchor="middle" fill="#a855f7" fontSize="13.5">C: extra cores</text>
+  <rect x="0" y="210" width="130" height="58" rx="6" fill="none" stroke="#3b82f6" strokeWidth="2" />
+  <text x="65" y="235.5" textAnchor="middle" fill="#3b82f6" fontSize="13.5">hard reset:</text>
+  <text x="65" y="252" textAnchor="middle" fill="#3b82f6" fontSize="13.5">F1, NextReg $02</text>
+  <path d="M130,239 L167,239" fill="none" stroke="#3b82f6" strokeWidth="1.8" markerEnd="url(#boot-chain-2)" strokeLinejoin="round" />
+  <rect x="0" y="571" width="18" height="16" rx="2" fill="#e5484d" fillOpacity="0.15" stroke="#e5484d" strokeWidth="2" />
+  <text x="26" y="584" fill="currentColor" fontSize="13.5">FPGA and slots</text>
+  <rect x="200" y="571" width="18" height="16" rx="2" fill="#3b82f6" fillOpacity="0.15" stroke="#3b82f6" strokeWidth="2" />
+  <text x="226" y="584" fill="currentColor" fontSize="13.5">Next core</text>
+  <rect x="380" y="571" width="18" height="16" rx="2" fill="#30a46c" fillOpacity="0.15" stroke="#30a46c" strokeWidth="2" />
+  <text x="406" y="584" fill="currentColor" fontSize="13.5">firmware on the SD card</text>
+</svg>
+{/* /fig:chain */}
+<figcaption>The start-up chain. The FPGA loads slot 0 by itself; the anti-brick core starts slot 1 unless DRIVE and M1 are held; the Next core's boot ROM loads a module of TBBLUE.FW, which loads the ROMs, sets the machine type and soft-resets into the chosen machine. A hard reset re-enters the chain at slot 1.</figcaption>
+</figure>
+
+1. **The FPGA loads slot 0**, the anti-brick core, by itself.
+2. **The doorman checks the buttons** and, normally, writes NextReg `$10`: the FPGA loads **slot 1**.
+3. **The Next core starts in config mode** with its **boot ROM** in the bottom 16K. The CPU runs the boot ROM,
+   which initialises the SD card, finds a FAT16 or FAT32 file system, and reads **`TBBLUE.FW`** from the root
+   folder.
+4. **The boot ROM loads one module** of the firmware into RAM at `$6000` and jumps to it. Which module
+   depends on the keys held at that moment, as the next section shows; normally it is the **boot module**.
+5. **The firmware takes over.** It switches to 28 MHz, switches the boot ROM off, reads
+   `/machines/next/config.ini` (your settings) and the menu of machines, and shows the start-up screen with its
+   prompts for a while.
+6. **It builds the machine.** It loads the keyboard map, the DivMMC's ROM, the Multiface's ROM and the Spectrum
+   ROMs of the chosen machine from `/machines/next/` into the SRAM, and writes your settings into the
+   peripheral NextRegs.
+7. **It leaves config mode** by writing the machine type and the display timing to NextReg `$03`.
+8. **It soft-resets** with NextReg `$02`, and the CPU starts at `$0000` in the ROM it has just loaded. For the
+   standard menu entry that is NextZXOS.
+
+Notice who does what. The FPGA design knows nothing about files, menus or `config.ini`; it provides only a boot
+ROM of 8K and the switches of config mode. Everything with a user interface is Z80 code on the SD card. That
+is why the firmware can be updated by copying a file, without touching the flash at all.
+
+## The firmware file
+
+`TBBLUE.FW` is not one program but a small library of them. Its first 512-byte block is a **map**: for each
+module, the block it starts at and how many blocks it is long. The boot ROM reads the map and loads only the
+module it needs. The modules are the **boot** module, the **updater**, the settings **editor**, the **extra
+cores** module, a video **test card**, a module that **resets** `config.ini` to its defaults, and the
+start-up **screens**. A module that needs another one loads it the same way and jumps to it.
+
+The keys you hold decide the module. Here is what they do:
+
+- **Nothing**: the boot module, and the machine starts after the start-up screen.
+- **Space**: the settings editor, where you choose the machine from the menu and change `config.ini`.
+- **U**: the updater, if a `TBBLUE.TBU` is on the card.
+- **C**: the extra cores module.
+- **A, D, V or R** on the start-up screen: the video test card for all modes, digital (HDMI), VGA or RGB, which
+  lets you choose a video mode your monitor can show.
+- **N and X together** on the start-up screen: `config.ini` back to its defaults.
+
+The firmware also checks the core it runs on. If the Next core is older than the oldest one it supports
+(3.01.10 for firmware 1.44), it refuses to start the machine and tells you to update the core, with U to enter
+the updater.
+
+## Config mode
+
+**Config mode** is the state the Next core starts in, and it is what makes the firmware's job possible. The
+**Machine Type register, NextReg `$03`**, says it: machine type 0 is config mode. While it lasts:
+
+- **The boot ROM** answers reads of `$0000–$3FFF`, until the first write to NextReg `$03` switches it off.
+- **The Config Mapping register, NextReg `$04`**, maps any 16K bank of the SRAM to `$0000–$3FFF`. The firmware
+  uses it to write the ROM images into the banks where the machine will look for them: the Spectrum ROMs in
+  the first 64K, then the DivMMC's ROM, the Multiface's ROM and RAM, and the alternate ROMs, 128K in all.
+- **The flash can be selected** on the SPI bus (`$7F` on port `$E7`), which the storage chapter's
+  [The flash and the Pi](/en/under-the-hood/emulator-internals/next-storage/#the-flash-and-the-pi) describes.
+  The firmware reads a core's header and writes a core this way.
+- **The slot number** of NextReg `$10` and the **video timing** of NextReg `$11` can be changed.
+- **The soft reset key** F4 does nothing.
+
+The firmware leaves config mode with one write to NextReg `$03`: the machine type (48K, 128K, +3 or
+Pentagon), the display timing, and bit 7 to allow the timing to change. From that moment the machine type is
+fixed, the boot ROM is gone, and the flash and the slot number are locked away.
+
+There is one way back, and the register list does not mention it: writing **7** (`111`) to bits 2 to 0 of
+NextReg `$03` puts the machine back into config mode, from any program. The boot ROM does not return at once,
+but a soft reset in config mode switches it back on, and the CPU starts the boot ROM again. So the lock is
+not a wall; it is a door that opens only to a program that knows the exact knock. I find that a fair
+compromise: no stray write can do it, and a system program that must reach the flash or another slot still
+can. A hard reset, of course, always starts the whole chain over.
+
+## Updating the core
+
+A core update replaces the bitstream in slot 1. It arrives as **`TBBLUE.TBU`**, a file you copy to the root
+of the SD card, and it is written by the firmware's **updater**. You start it by holding **U** while you switch
+on or press F1, then answer **Y** (or press DRIVE) to go ahead. Here is what the updater does:
+
+1. **It reads the file's header**, the first 512 bytes, and checks its magic word.
+2. **It picks the core for your board.** The current files carry several cores, one per board, each with its
+   own record; the updater takes the records whose board ID matches NextReg `$0F` and ignores the rest. A file
+   with no core for your board updates nothing.
+3. **It shows** the board, the slot and the version it is about to write, and asks.
+4. **It checks the image's checksum** by reading the whole image from the card, before it touches the flash.
+   A damaged file stops here, and slot 1 is still the old core.
+5. **It erases the slot** in blocks of 32K, then **writes** the image, 256 bytes at a time.
+6. **It asks you to switch off and on.** On the Issue 2 board it also asks you to unplug the HDMI cable while
+   the power is off.
+
+The header has a fixed layout:
+
+<figure>
+{/* fig:tbu */}
+<svg viewBox="-2 -2 704 334" role="img" aria-label="Three rows. First, the 512-byte header of a TBBLUE.TBU file: bytes 0 to 6 the magic word ZXNFILE, bytes 8 to 23 the text ZX SPECTRUM NEXT, then from byte 25 one record per core, and a byte $FF that ends the list. Second, one record of 15 bytes: byte 0 its length, 1 the slot, 2 the board ID, 3 the version, major and minor, 4 the sub-version, 5 to 8 the image's start and 9 to 12 its size, both in 512-byte sectors counted after the header, and 13 to 14 the checksum. Third, the file: the header followed by the images." style={{ width: "100%", height: "auto" }}>
+  <text x="0" y="18" fill="currentColor" fontSize="15" fontWeight="bold">the header, 512 bytes</text>
+  <rect x="0" y="28" width="150" height="42" rx="6" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="2" />
+  <text x="75" y="53.7" textAnchor="middle" fill="#30a46c" fontSize="13.5">0–6: ZXNFILE</text>
+  <rect x="154" y="28" width="220" height="42" rx="6" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="2" />
+  <text x="264" y="53.7" textAnchor="middle" fill="#30a46c" fontSize="13.5">8–23: ZX SPECTRUM NEXT</text>
+  <rect x="378" y="28" width="250" height="42" rx="6" fill="#a855f7" fillOpacity="0.16" stroke="#a855f7" strokeWidth="2" />
+  <text x="503" y="53.7" textAnchor="middle" fill="#a855f7" fontSize="13.5" fontWeight="bold">from 25: records</text>
+  <rect x="632" y="28" width="68" height="42" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="666" y="53.7" textAnchor="middle" fill="currentColor" fontSize="13.5">$FF</text>
+  <text x="0" y="110" fill="currentColor" fontSize="15" fontWeight="bold">one record, 15 bytes</text>
+  <rect x="1" y="120" width="44.7" height="42" rx="6" fill="#a855f7" fillOpacity="0.12" stroke="#a855f7" strokeWidth="2" />
+  <text x="23.3" y="145.7" textAnchor="middle" fill="#a855f7" fontSize="13.5">len</text>
+  <text x="3" y="180" fill="currentColor" fontSize="13.5">0</text>
+  <rect x="47.7" y="120" width="44.7" height="42" rx="6" fill="#a855f7" fillOpacity="0.12" stroke="#a855f7" strokeWidth="2" />
+  <text x="70" y="145.7" textAnchor="middle" fill="#a855f7" fontSize="13.5">slot</text>
+  <text x="49.7" y="180" fill="currentColor" fontSize="13.5">1</text>
+  <rect x="94.3" y="120" width="44.7" height="42" rx="6" fill="#a855f7" fillOpacity="0.12" stroke="#a855f7" strokeWidth="2" />
+  <text x="116.7" y="145.7" textAnchor="middle" fill="#a855f7" fontSize="13.5">board</text>
+  <text x="96.3" y="180" fill="currentColor" fontSize="13.5">2</text>
+  <rect x="141" y="120" width="44.7" height="42" rx="6" fill="#a855f7" fillOpacity="0.12" stroke="#a855f7" strokeWidth="2" />
+  <text x="163.3" y="145.7" textAnchor="middle" fill="#a855f7" fontSize="13.5">ver.</text>
+  <text x="143" y="180" fill="currentColor" fontSize="13.5">3</text>
+  <rect x="187.7" y="120" width="44.7" height="42" rx="6" fill="#a855f7" fillOpacity="0.12" stroke="#a855f7" strokeWidth="2" />
+  <text x="210" y="145.7" textAnchor="middle" fill="#a855f7" fontSize="13.5">sub</text>
+  <text x="189.7" y="180" fill="currentColor" fontSize="13.5">4</text>
+  <rect x="234.3" y="120" width="184.7" height="42" rx="6" fill="#a855f7" fillOpacity="0.12" stroke="#a855f7" strokeWidth="2" />
+  <text x="326.7" y="145.7" textAnchor="middle" fill="#a855f7" fontSize="13.5">start (sectors)</text>
+  <text x="236.3" y="180" fill="currentColor" fontSize="13.5">5–8</text>
+  <rect x="421" y="120" width="184.7" height="42" rx="6" fill="#a855f7" fillOpacity="0.12" stroke="#a855f7" strokeWidth="2" />
+  <text x="513.3" y="145.7" textAnchor="middle" fill="#a855f7" fontSize="13.5">size (sectors)</text>
+  <text x="423" y="180" fill="currentColor" fontSize="13.5">9–12</text>
+  <rect x="607.7" y="120" width="91.3" height="42" rx="6" fill="#a855f7" fillOpacity="0.12" stroke="#a855f7" strokeWidth="2" />
+  <text x="653.3" y="145.7" textAnchor="middle" fill="#a855f7" fontSize="13.5">checksum</text>
+  <text x="609.7" y="180" fill="currentColor" fontSize="13.5">13–14</text>
+  <text x="0" y="228" fill="currentColor" fontSize="15" fontWeight="bold">the file</text>
+  <rect x="0" y="238" width="150" height="42" rx="6" fill="none" stroke="#30a46c" strokeWidth="2" />
+  <text x="75" y="263.7" textAnchor="middle" fill="#30a46c" fontSize="13.5">header</text>
+  <rect x="154" y="238" width="270" height="42" rx="6" fill="#3b82f6" fillOpacity="0.12" stroke="#3b82f6" strokeWidth="2" />
+  <text x="289" y="263.7" textAnchor="middle" fill="#3b82f6" fontSize="13.5">image of record 1</text>
+  <rect x="428" y="238" width="210" height="42" rx="6" fill="#3b82f6" fillOpacity="0.12" stroke="#3b82f6" strokeWidth="2" />
+  <text x="533" y="263.7" textAnchor="middle" fill="#3b82f6" fontSize="13.5">image of record 2</text>
+  <rect x="642" y="238" width="58" height="42" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="671" y="263.7" textAnchor="middle" fill="currentColor" fontSize="13.5">…</text>
+  <text x="0" y="312" fill="currentColor" fontSize="13.5">version byte: major in bits 7–4, minor in bits 3–0; start and size are little-endian</text>
+</svg>
+{/* /fig:tbu */}
+<figcaption>The header of a TBBLUE.TBU file with several cores: a magic word, the product name, then one record per core with its slot, board, version, the image's position and size in 512-byte sectors after the header, and its checksum. A record of $FF ends the list; the images follow the header.</figcaption>
+</figure>
+
+Older files, with the magic word `TBUFILE`, carry one core with a simpler checksum, and the updater checks
+their machine ID and their exact size instead. Both kinds end the same way: in slot 1.
+
+Let me warn you about the one moment that matters. Between the erase and the end of the writing, slot 1 holds
+half a core. Switch off then, and the Next core is gone. That is not the end of the machine, because of the
+doorman, but it is the end of an ordinary start-up until you repair it. So my advice is the boring one: a good
+power supply, no cats near the cable, and no hurry.
+
+Why switch off after the update, and not only press F1? The updater does not say. My guess is the plain one:
+a hard reset would load the new slot 1 but skip the doorman, while a real power-on runs the whole chain from
+slot 0, exactly as it will every day from now on. If you ask me, that is the honest test of an update.
+
+A record can also name **slot 0**, to update the anti-brick core itself. The updater then shows a red warning
+that this can brick the machine, and goes ahead only if you hold **A and B** together. I have never needed it,
+and I hope you never do.
+
+## When slot 1 is broken
+
+If slot 1 does not start, because an update was interrupted or a core is faulty, the doorman is still there.
+Power on with **DRIVE and M1 held**. The anti-brick core then does not start slot 1: its own boot ROM loads the
+**updater** module from `TBBLUE.FW`, and the updater runs on the anti-brick core, at 3.5 MHz and with default
+settings, possibly with a VGA picture only. It reads `TBBLUE.TBU` and writes slot 1 exactly as before. The
+anti-brick core's boot ROM needs only the SD card, `TBBLUE.FW` and `TBBLUE.TBU`; nothing of the broken core is
+used.
+
+This is why the updater module keeps its place in the firmware file, and why the anti-brick core keeps its
+own boot ROM: both are part of a rescue path that must work when everything else does not.
+
+## Extra cores
+
+The flash has room for more than the Next. An **extra core** is a bitstream for another machine, built for
+the Next's board, kept in a folder of its own on the SD card: `/machines/<name>/core.bit`, often with a
+`core.cfg` that lists the files the core wants. Press **C** at start-up, and the extra cores module lists the
+slots and the folders:
+
+- **It recognises a slot's core** by reading the bitstream's header from the flash, the design name, the date
+  and the time the core was built, and matching it with the `core.bit` files on the card.
+- **It writes a core** into a slot you choose, from slot 8 up, with the same erase and write as the updater.
+  Slots 0 to 7 are never offered.
+- **It starts a core** by writing your basic settings (timing, scan doubler, 50/60 Hz, scanlines, and a few
+  more), the folder name and any files you chose into the SRAM, dropping to 3.5 MHz, and writing `$80` plus the
+  slot number to NextReg `$10`. The FPGA becomes the other machine, and the other machine finds its settings in
+  the SRAM, which survived the change.
+
+A core can also be started without the menu. At every start the boot module looks for a 128-byte **core boot
+request** in the SRAM: the magic word `COREBOOT`, the core's folder and a file name, protected by a checksum.
+When it finds a valid one, it starts that core at once. Since the SRAM survives a hard reset, a program can
+write the request and hard-reset, and the firmware does the rest.
+
+Firmware 1.44's extra cores module runs only on the Issue 2 board; on the other boards it stops with a message
+saying so. The Issue 4 board has fewer, larger slots, and the hardware is ready for them: NextReg `$10` takes
+slots 0 to 14 there.
+
+The Next core is not tied to the Next's board either. NextReg `$00` has values for the Next core running on
+other FPGA boards, such as `$DA` on a MiSTer, and `$08` for emulators. A program that reads it learns where it
+runs, and the firmware does exactly that.
+
+## What to take home
+
+The Next is a blank FPGA until a bitstream tells it what to be, and the bitstreams live in a flash chip of
+slots: 32 slots of 512K on the Issue 2 board, 15 of 2,176K on the Issue 4. Slot 0 is the anti-brick core, the
+doorman that the chip loads at every power-on and that normally waves you on to slot 1, the Next core. One
+NextReg makes it possible: writing bit 7 of NextReg `$10` makes the FPGA reload itself from the selected slot,
+and only config mode may choose the slot. A hard reset does the same for slot 1. The SRAM survives the change,
+which is how one core leaves messages for the next.
+
+The Next core starts in config mode, with an 8K boot ROM that loads one module of `TBBLUE.FW` from the SD card:
+normally the boot module, which reads `config.ini`, loads the ROMs into the SRAM through NextReg `$04`, sets the
+peripherals, writes NextReg `$03` to leave config mode, and soft-resets into NextZXOS. Space opens the
+settings, U the updater, C the extra cores.
+
+The updater reads `TBBLUE.TBU`, picks the core for the board NextReg `$0F` reports, checks its checksum before
+erasing anything, and writes slot 1. If that ever leaves slot 1 broken, power on with DRIVE and M1 held, and
+the doorman runs the updater for you. A machine that rebuilds itself from a file, and keeps a small, unchanging
+copy of itself to rebuild from: I cannot think of a better way to make a computer you can update without fear.
