@@ -1,0 +1,594 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T808d,---
+description: "How the ZX Spectrum Next's two UARTs work: one set of ports for two serial ports, the Wi-Fi module and the Raspberry Pi, a frame on the wire, the 17-bit prescaler and baud rates from the master clock, the frame register, the 64-byte transmit and 512-byte receive buffers, the status bits and errors, break, hardware flow control, interrupts, the joystick port, and resets."
+---
+
+import { Callout } from 'nextra/components'
+
+# UARTs: Two Serial Ports Behind One Door
+
+A Next can fetch a web page, chat over the Internet and talk to a Raspberry Pi, yet it has no network chip
+of the kind a PC has. What it has is older than the Spectrum itself: a serial port, a wire on which bits
+follow one another at an agreed pace. Behind that wire sits a Wi-Fi module that does the networking, and
+behind another one a Pi that can do almost anything. How does a Z80 keep up with a line that delivers a
+byte every 87 microseconds, and what happens when it doesn't?
+
+I think the serial port is the most practical piece of the Next for anyone who wants it to talk to the
+world. A file from the Internet, a game played across two machines, a MIDI keyboard, a debugger on a PC:
+all of them arrive as bytes on a serial line. The hardware that receives them is simple, but its buffers,
+flags and timing decide whether your program gets every byte or silently loses some, and that is worth
+understanding before you write the loop that reads them.
+
+You should know two chapters first. [Interrupts: Fourteen Voices, Two
+Wires](/en/under-the-hood/emulator-internals/next-interrupts/) explains the UARTs' interrupts and their
+place in the daisy chain, which this chapter only sums up. [CTC: Four Timers in a
+Ring](/en/under-the-hood/emulator-internals/next-ctc/) explains the master clock and the VGA modes that the
+baud rate is counted from.
+
+## The road ahead
+
+We start with the two UARTs and the four ports they share, then look at what actually travels on the wire:
+a frame of bits. Next comes the baud rate, set by a prescaler of the master clock, and the frame register
+that chooses the frame's shape. The heart of the chapter is the two buffers and the status register: how
+bytes wait to be sent, how they wait to be read, and what the hardware does when a buffer fills or a frame
+arrives broken; if you read only one section, read that one. After that we look at break, hardware flow
+control, interrupts, the joystick port and resets.
+
+<Callout type="info">
+The facts are for **core 3.02.01**. The master clock is **28 MHz**, as in VGA mode 0, and the examples use
+**115,200 baud, 8 data bits, no parity, one stop bit**, the setting after power-on. Every fact was checked
+against the Next's hardware design.
+</Callout>
+
+## Two UARTs, four ports
+
+A **UART**, a universal asynchronous receiver-transmitter, turns bytes into a stream of bits on one wire and
+a stream of bits on another wire back into bytes. The Next has two of them, identical in every way, and I
+call them **the twins**:
+
+- **UART 0** is wired to the **Wi-Fi module**, an ESP chip on the board, which does the networking and
+  talks to the Next through text commands on this line.
+- **UART 1** is wired to the **Raspberry Pi's connector**, on GPIO 14 and 15, once bit 5 of the **PI
+  Peripheral Enable register, NextReg `$A0`**, gives those pins to the UART.
+
+The twins share one door: four ports, and a switch that says which twin is behind it.
+
+- **Port `$153B`, UART select.** Bit 6 chooses the twin: 0 for UART 0, 1 for UART 1. Every other port talks
+  to the chosen one. Bit 4 and bits 2–0 are part of the baud rate, as the next sections explain.
+- **Port `$163B`, UART frame**: the shape of the frame, and three switches.
+- **Port `$133B`, UART TX**: a write sends a byte; a read gives the **status**.
+- **Port `$143B`, UART RX**: a read takes a received byte; a write sets part of the baud rate.
+
+Bit 4 of NextReg `$83` switches all four ports off: they then read `$FF` and ignore writes.
+
+<figure>
+{/* fig:twins */}
+<svg viewBox="-2 -2 704 296" role="img" aria-label="On the left, the CPU's ports $133B, $143B and $163B, and the UART select port $153B, whose bit 6 chooses which UART they reach. Two rows, UART 0 above and UART 1 below. In each, the CPU's bytes go into a 64-byte transmit buffer and on to the transmitter, which sends them to the device; the device's bytes come into the receiver and on into a 512-byte receive buffer, which the CPU reads. UART 0's device is the Wi-Fi module, UART 1's the Raspberry Pi's connector." style={{ width: "100%", height: "auto" }}>
+  <defs>
+    <marker id="ua-tw-0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
+    </marker>
+    <marker id="ua-tw-1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#30a46c" />
+    </marker>
+    <marker id="ua-tw-2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#a855f7" />
+    </marker>
+  </defs>
+  <rect x="0" y="96" width="120" height="100" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="60" y="133.9" textAnchor="middle" fill="currentColor" fontSize="14">ports</text>
+  <text x="60" y="150.9" textAnchor="middle" fill="currentColor" fontSize="14">$133B</text>
+  <text x="60" y="167.9" textAnchor="middle" fill="currentColor" fontSize="14">$143B, $163B</text>
+  <rect x="150" y="116" width="100" height="60" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="200" y="142.4" textAnchor="middle" fill="currentColor" fontSize="14" fontWeight="bold">$153B</text>
+  <text x="200" y="159.4" textAnchor="middle" fill="currentColor" fontSize="14" fontWeight="bold">bit 6</text>
+  <line x1="120" y1="146" x2="150" y2="146" stroke="currentColor" strokeWidth="1.8" />
+  <text x="290" y="22" fill="#30a46c" fontSize="15" fontWeight="bold">UART 0</text>
+  <rect x="290" y="28" width="130" height="44" rx="6" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="2" />
+  <text x="355" y="54.9" textAnchor="middle" fill="#30a46c" fontSize="14">TX buffer, 64</text>
+  <rect x="440" y="28" width="110" height="44" rx="6" fill="none" stroke="#30a46c" strokeWidth="2" />
+  <text x="495" y="54.9" textAnchor="middle" fill="#30a46c" fontSize="14">transmitter</text>
+  <rect x="290" y="84" width="130" height="44" rx="6" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="2" />
+  <text x="355" y="110.9" textAnchor="middle" fill="#30a46c" fontSize="14">RX buffer, 512</text>
+  <rect x="440" y="84" width="110" height="44" rx="6" fill="none" stroke="#30a46c" strokeWidth="2" />
+  <text x="495" y="110.9" textAnchor="middle" fill="#30a46c" fontSize="14">receiver</text>
+  <rect x="590" y="28" width="110" height="100" rx="6" fill="#a855f7" fillOpacity="0.12" stroke="#a855f7" strokeWidth="2" />
+  <text x="645" y="65.9" textAnchor="middle" fill="#a855f7" fontSize="14">Wi-Fi</text>
+  <text x="645" y="82.9" textAnchor="middle" fill="#a855f7" fontSize="14">module</text>
+  <text x="645" y="99.9" textAnchor="middle" fill="#a855f7" fontSize="14">(ESP)</text>
+  <path d="M420,50 L436,50" fill="none" stroke="#30a46c" strokeWidth="1.8" markerEnd="url(#ua-tw-1)" strokeLinejoin="round" />
+  <path d="M550,50 L586,50" fill="none" stroke="#a855f7" strokeWidth="1.8" markerEnd="url(#ua-tw-2)" strokeLinejoin="round" />
+  <path d="M590,106 L554,106" fill="none" stroke="#a855f7" strokeWidth="1.8" markerEnd="url(#ua-tw-2)" strokeLinejoin="round" />
+  <path d="M440,106 L424,106" fill="none" stroke="#30a46c" strokeWidth="1.8" markerEnd="url(#ua-tw-1)" strokeLinejoin="round" />
+  <path d="M266,50 L286,50" fill="none" stroke="currentColor" strokeWidth="1.8" markerEnd="url(#ua-tw-0)" strokeLinejoin="round" />
+  <line x1="266" y1="106" x2="290" y2="106" stroke="currentColor" strokeWidth="1.8" />
+  <text x="290" y="182" fill="#30a46c" fontSize="15" fontWeight="bold">UART 1</text>
+  <rect x="290" y="188" width="130" height="44" rx="6" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="2" />
+  <text x="355" y="214.9" textAnchor="middle" fill="#30a46c" fontSize="14">TX buffer, 64</text>
+  <rect x="440" y="188" width="110" height="44" rx="6" fill="none" stroke="#30a46c" strokeWidth="2" />
+  <text x="495" y="214.9" textAnchor="middle" fill="#30a46c" fontSize="14">transmitter</text>
+  <rect x="290" y="244" width="130" height="44" rx="6" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="2" />
+  <text x="355" y="270.9" textAnchor="middle" fill="#30a46c" fontSize="14">RX buffer, 512</text>
+  <rect x="440" y="244" width="110" height="44" rx="6" fill="none" stroke="#30a46c" strokeWidth="2" />
+  <text x="495" y="270.9" textAnchor="middle" fill="#30a46c" fontSize="14">receiver</text>
+  <rect x="590" y="188" width="110" height="100" rx="6" fill="#a855f7" fillOpacity="0.12" stroke="#a855f7" strokeWidth="2" />
+  <text x="645" y="225.9" textAnchor="middle" fill="#a855f7" fontSize="14">Pi's</text>
+  <text x="645" y="242.9" textAnchor="middle" fill="#a855f7" fontSize="14">connector</text>
+  <text x="645" y="259.9" textAnchor="middle" fill="#a855f7" fontSize="14">GPIO 14, 15</text>
+  <path d="M420,210 L436,210" fill="none" stroke="#30a46c" strokeWidth="1.8" markerEnd="url(#ua-tw-1)" strokeLinejoin="round" />
+  <path d="M550,210 L586,210" fill="none" stroke="#a855f7" strokeWidth="1.8" markerEnd="url(#ua-tw-2)" strokeLinejoin="round" />
+  <path d="M590,266 L554,266" fill="none" stroke="#a855f7" strokeWidth="1.8" markerEnd="url(#ua-tw-2)" strokeLinejoin="round" />
+  <path d="M440,266 L424,266" fill="none" stroke="#30a46c" strokeWidth="1.8" markerEnd="url(#ua-tw-1)" strokeLinejoin="round" />
+  <path d="M266,210 L286,210" fill="none" stroke="currentColor" strokeWidth="1.8" markerEnd="url(#ua-tw-0)" strokeLinejoin="round" />
+  <line x1="266" y1="266" x2="290" y2="266" stroke="currentColor" strokeWidth="1.8" />
+  <line x1="250" y1="146" x2="266" y2="146" stroke="currentColor" strokeWidth="1.8" />
+  <line x1="266" y1="50" x2="266" y2="266" stroke="currentColor" strokeWidth="1.8" />
+</svg>
+{/* /fig:twins */}
+<figcaption>The twins behind one door. Port $153B bit 6 chooses which UART the other three ports reach. Each UART has a 64-byte transmit buffer in front of its transmitter and a 512-byte receive buffer behind its receiver; UART 0 talks to the Wi-Fi module, UART 1 to the Raspberry Pi's connector.</figcaption>
+</figure>
+
+## A frame on the wire
+
+A serial line has no clock wire. The two ends agree on a speed, the **baud rate**, in bits a second, and
+the receiver times the bits itself. A line at rest is high, at 1. A byte travels as a **frame**:
+
+<figure>
+{/* fig:frame */}
+<svg viewBox="-2 -2 704 180" role="img" aria-label="The letter A, $41, in an 8N1 frame over twelve bit periods. One period of rest at 1; the start bit at 0; the data bits least significant first, b0 = 1, b1 to b5 = 0, b6 = 1, b7 = 0; the stop bit at 1; rest at 1. A red tick marks the middle of every bit from the start bit to the stop bit, where the receiver samples it." style={{ width: "100%", height: "auto" }}>
+  <text x="0" y="21" fill="currentColor" fontSize="13.5">1</text>
+  <text x="0" y="71" fill="currentColor" fontSize="13.5">0</text>
+  <text x="30" y="46" fill="#3b82f6" fontSize="15" fontWeight="bold">line</text>
+  <path d="M130,16 L130,16 L177.5,16 L177.5,66 L225,66 L225,16 L272.5,16 L272.5,66 L320,66 L320,66 L367.5,66 L367.5,66 L415,66 L415,66 L462.5,66 L462.5,66 L510,66 L510,16 L557.5,16 L557.5,66 L605,66 L605,16 L652.5,16 L652.5,16 L700,16" fill="none" stroke="#3b82f6" strokeWidth="2.2" strokeLinejoin="round" />
+  <line x1="130" y1="4" x2="130" y2="78" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.4" />
+  <line x1="177.5" y1="4" x2="177.5" y2="78" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.4" />
+  <line x1="225" y1="4" x2="225" y2="78" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.4" />
+  <line x1="272.5" y1="4" x2="272.5" y2="78" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.4" />
+  <line x1="320" y1="4" x2="320" y2="78" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.4" />
+  <line x1="367.5" y1="4" x2="367.5" y2="78" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.4" />
+  <line x1="415" y1="4" x2="415" y2="78" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.4" />
+  <line x1="462.5" y1="4" x2="462.5" y2="78" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.4" />
+  <line x1="510" y1="4" x2="510" y2="78" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.4" />
+  <line x1="557.5" y1="4" x2="557.5" y2="78" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.4" />
+  <line x1="605" y1="4" x2="605" y2="78" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.4" />
+  <line x1="652.5" y1="4" x2="652.5" y2="78" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.4" />
+  <line x1="700" y1="4" x2="700" y2="78" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.4" />
+  <text x="153.8" y="102" textAnchor="middle" fill="currentColor" fontSize="13.5">rest</text>
+  <text x="201.3" y="102" textAnchor="middle" fill="#30a46c" fontSize="13.5" fontWeight="bold">start</text>
+  <line x1="201.3" y1="80" x2="201.3" y2="88" stroke="#e5484d" strokeWidth="2" />
+  <text x="248.8" y="102" textAnchor="middle" fill="#30a46c" fontSize="13.5" fontWeight="bold">b0</text>
+  <line x1="248.8" y1="80" x2="248.8" y2="88" stroke="#e5484d" strokeWidth="2" />
+  <text x="296.3" y="102" textAnchor="middle" fill="#30a46c" fontSize="13.5" fontWeight="bold">b1</text>
+  <line x1="296.3" y1="80" x2="296.3" y2="88" stroke="#e5484d" strokeWidth="2" />
+  <text x="343.8" y="102" textAnchor="middle" fill="#30a46c" fontSize="13.5" fontWeight="bold">b2</text>
+  <line x1="343.8" y1="80" x2="343.8" y2="88" stroke="#e5484d" strokeWidth="2" />
+  <text x="391.3" y="102" textAnchor="middle" fill="#30a46c" fontSize="13.5" fontWeight="bold">b3</text>
+  <line x1="391.3" y1="80" x2="391.3" y2="88" stroke="#e5484d" strokeWidth="2" />
+  <text x="438.8" y="102" textAnchor="middle" fill="#30a46c" fontSize="13.5" fontWeight="bold">b4</text>
+  <line x1="438.8" y1="80" x2="438.8" y2="88" stroke="#e5484d" strokeWidth="2" />
+  <text x="486.3" y="102" textAnchor="middle" fill="#30a46c" fontSize="13.5" fontWeight="bold">b5</text>
+  <line x1="486.3" y1="80" x2="486.3" y2="88" stroke="#e5484d" strokeWidth="2" />
+  <text x="533.8" y="102" textAnchor="middle" fill="#30a46c" fontSize="13.5" fontWeight="bold">b6</text>
+  <line x1="533.8" y1="80" x2="533.8" y2="88" stroke="#e5484d" strokeWidth="2" />
+  <text x="581.3" y="102" textAnchor="middle" fill="#30a46c" fontSize="13.5" fontWeight="bold">b7</text>
+  <line x1="581.3" y1="80" x2="581.3" y2="88" stroke="#e5484d" strokeWidth="2" />
+  <text x="628.8" y="102" textAnchor="middle" fill="#30a46c" fontSize="13.5" fontWeight="bold">stop</text>
+  <line x1="628.8" y1="80" x2="628.8" y2="88" stroke="#e5484d" strokeWidth="2" />
+  <text x="676.3" y="102" textAnchor="middle" fill="currentColor" fontSize="13.5">rest</text>
+  <text x="248.8" y="126" textAnchor="middle" fill="currentColor" fontSize="13.5">1</text>
+  <text x="296.3" y="126" textAnchor="middle" fill="currentColor" fontSize="13.5">0</text>
+  <text x="343.8" y="126" textAnchor="middle" fill="currentColor" fontSize="13.5">0</text>
+  <text x="391.3" y="126" textAnchor="middle" fill="currentColor" fontSize="13.5">0</text>
+  <text x="438.8" y="126" textAnchor="middle" fill="currentColor" fontSize="13.5">0</text>
+  <text x="486.3" y="126" textAnchor="middle" fill="currentColor" fontSize="13.5">0</text>
+  <text x="533.8" y="126" textAnchor="middle" fill="currentColor" fontSize="13.5">1</text>
+  <text x="581.3" y="126" textAnchor="middle" fill="currentColor" fontSize="13.5">0</text>
+  <text x="0" y="126" fill="currentColor" fontSize="13.5">$41, b0 first:</text>
+  <text x="0" y="164" fill="currentColor" fontSize="13.5">red: the receiver samples each bit in its middle; a bit is 243 master clocks at 115,200 baud</text>
+</svg>
+{/* /fig:frame */}
+<figcaption>The letter A, $41, in a frame of 8 data bits, no parity and one stop bit, to scale in bit periods. The line rests high; the start bit is low; the data bits follow with the least significant first; the stop bit is high. The receiver samples every bit in its middle. At 115,200 baud a bit lasts 243 master clocks and the frame 2,430, 86.8 µs.</figcaption>
+</figure>
+
+1. The **start bit**, a 0, ends the rest and tells the receiver that a frame begins.
+2. The **data bits**, 5 to 8 of them, **least significant first**.
+3. A **parity bit**, if the two ends agreed on one: it makes the number of 1s even or odd, so that one
+   flipped bit is noticed.
+4. One or two **stop bits**, 1s, before the next start bit can come.
+
+The receiver's part is the clever one. It sees the falling edge of the start bit, waits half a bit, checks
+that the line is still low, and then takes each bit one bit period later, in its middle, as far as possible
+from the edges where the level changes. The Next's receiver does better still: every time the line changes
+level, it moves its sampling moment back to the middle of the bit, so a sender whose clock is a little fast
+or slow is followed through the whole frame. It also ignores pulses shorter than 4 master clocks, 143 ns,
+which are noise, not bits. I find this a lovely piece of engineering for so small a block.
+
+With 8 data bits, no parity and one stop bit, written **8N1**, a frame is 10 bits, so 115,200 baud carries
+11,520 bytes a second, one every 86.8 µs. That is the answer to the opening puzzle: at 3.5 MHz the CPU has
+about 300 T-states per byte, which is plenty for a loop, and nothing like enough if the loop has to wait for
+the screen or a disk.
+
+## The baud rate
+
+Each twin times its bits with a **prescaler**: a bit lasts exactly the prescaler's number of master clocks,
+so the baud rate is 28,000,000 ÷ prescaler. The prescaler has 17 bits, written in three pieces:
+
+```text
+port $143B, bit 7 = 0:  bits 6-0 -> prescaler bits 6-0
+port $143B, bit 7 = 1:  bits 6-0 -> prescaler bits 13-7
+port $153B, bit 4 = 1:  bits 2-0 -> prescaler bits 16-14
+```
+
+The `$143B` writes go to the twin that is selected. The `$153B` write is a little different: its bits 2–0
+go to the twin that **bit 6 of the same byte** selects, so one write can choose a twin and set its top bits
+together. A read of `$153B` gives bit 6, which twin is selected, and that twin's bits 16–14; the lower 14
+bits cannot be read back.
+
+The prescaler is a whole number, so the rate is rarely exact. Here are some common ones at 28 MHz:
+
+- **9,600 baud**: prescaler 2,917, 9,599 baud.
+- **31,250 baud**, MIDI's rate: prescaler 896, exact.
+- **115,200 baud**: prescaler **243**, 115,226 baud, 0.02% fast. This is the value after power-on.
+- **230,400 baud**: prescaler 122, 229,508 baud, 0.4% slow.
+- **921,600 baud**: prescaler 30, 933,333 baud, 1.3% fast, about as far as I would trust a serial line.
+- **2,000,000 baud**: prescaler 14, exact.
+
+The largest prescaler, 131,071, gives about 214 baud. A UART at the other end is happy with an error of a
+couple of per cent, and the re-centring receiver tolerates more. Two more facts matter in practice. The
+prescaler counts the **master clock**, not the CPU's, so the baud rate does not change with the CPU speed;
+but it does change with the VGA mode, which runs the master clock faster, so a program that cares reads
+NextReg `$11` and computes its prescaler from that mode's clock. And both ends of a frame take the prescaler
+when the frame starts, so a new one applies from the next frame, never to the middle of one.
+
+Here is UART 0 set to 230,400 baud:
+
+```z80klive
+        ld bc,$153b
+        ld a,%00010000         ; UART 0, bits 16-14 follow:
+        out (c),a              ; 000
+        ld b,$14               ; $143B
+        ld a,122               ; bit 7 = 0: bits 6-0
+        out (c),a
+        ld a,%10000000         ; bit 7 = 1: bits 13-7 = 0
+        out (c),a
+```
+
+## The frame register
+
+Port `$163B` holds the frame's shape for the selected twin, and three switches. It reads back all eight
+bits:
+
+```text
+$163B:  R B F N N P O S
+  R   = 1: reset the twin and hold it while the bit is set
+  B   = 1: send a break once the transmitter is idle
+  F   = 1: hardware flow control
+  N N = data bits: 11 8, 10 7, 01 6, 00 5
+  P   = 1: a parity bit
+  O   = parity: 0 even, 1 odd
+  S   = stop bits: 0 one, 1 two
+```
+
+The value after power-on is `$18`: 8 data bits, no parity, one stop bit, everything else off.
+
+Bit 7 deserves a warning, because it does more than its name suggests. While it is 1, both buffers are
+empty and **both state machines are held in reset**: a byte being sent stops in the middle, nothing is
+received and nothing can be sent. It is not a pulse. Write the register with bit 7 set to clear the twin,
+then write it again with bit 7 clear, or the twin stays dead. My habit: `$98`, then `$18`.
+
+## Two buffers and the status
+
+Between the CPU and each wire sits a buffer, a **FIFO**, first in, first out:
+
+- **The transmit buffer holds 64 bytes.** A write to `$133B` puts a byte in it, and the transmitter takes
+  them out one by one, as fast as the baud rate allows. A byte written while the buffer is full is lost.
+- **The receive buffer holds 512 bytes**, and one more waits behind it while it is full. A read of `$143B`
+  takes the oldest; a read of an empty buffer gives 0, which could also be a byte, so check the status
+  first.
+
+The **status**, read from `$133B`, says how both buffers and the line are doing:
+
+- **Bit 0**: the receive buffer has at least one byte.
+- **Bit 1**: the transmit buffer is full. Wait before writing.
+- **Bit 2**: the receive buffer **overflowed**: a byte arrived while the 512 bytes and the one waiting behind
+  them were all there, and it was lost.
+- **Bit 3**: the receive buffer is **near full**, at least 384 bytes, three quarters.
+- **Bit 4**: the transmit buffer is empty **and** the transmitter has finished its last frame: the line is
+  quiet. This is the bit to wait for before changing the baud rate or the frame.
+- **Bit 5**: the byte at the head of the receive buffer arrived after an error, an overflow or a broken
+  frame. Bytes are stored with this mark, so you can tell exactly where data went missing.
+- **Bit 6**: a **framing error** (a stop bit that was 0) or a **parity error** happened.
+- **Bit 7**: the line is in **break**, as the next section explains.
+
+Bits 6 and 2 are cleared by reading the status: each read reports what happened since the last one. And
+here is the rule that surprises people: **a frame with an error is thrown away**. A byte whose stop bit or
+parity is wrong never reaches the buffer. Bit 6 tells you it existed, and bit 5 marks the next byte that
+made it through.
+
+<figure>
+{/* fig:fifo */}
+<svg viewBox="-2 -2 704 200" role="img" aria-label="Left, a bar to scale from 0 to 512 bytes, the receive buffer, with a mark at 384 bytes, three quarters. Right, its last bytes enlarged, 508 to 512 and one more: marks at 510 and 512, and the extra byte that waits behind a full buffer. A key below: 384, near full, status bit 3 and the near-full interrupt; 510, the flow control raises RTR and the sender stops; 512 full and one held, the next byte is lost, the overflow, status bit 2." style={{ width: "100%", height: "auto" }}>
+  <rect x="0" y="30" width="470" height="40" rx="3" fill="#30a46c" fillOpacity="0.1" stroke="#30a46c" strokeWidth="2" />
+  <rect x="352.5" y="31" width="116.5" height="38" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" strokeWidth="0" />
+  <text x="0" y="18" fill="currentColor" fontSize="13.5">0</text>
+  <text x="352.5" y="18" textAnchor="middle" fill="#e8912d" fontSize="13.5" fontWeight="bold">384</text>
+  <line x1="352.5" y1="24" x2="352.5" y2="76" stroke="#e8912d" strokeWidth="2" />
+  <text x="470" y="18" textAnchor="end" fill="currentColor" fontSize="13.5">512</text>
+  <text x="176.3" y="56" textAnchor="middle" fill="#30a46c" fontSize="15">bytes waiting to be read</text>
+  <rect x="520" y="30" width="30" height="40" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="1.4" />
+  <rect x="550" y="30" width="30" height="40" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="1.4" />
+  <rect x="580" y="30" width="30" height="40" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="1.4" />
+  <rect x="610" y="30" width="30" height="40" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="1.4" />
+  <rect x="640" y="30" width="30" height="40" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="1.4" />
+  <rect x="670" y="30" width="30" height="40" fill="#30a46c" fillOpacity="0.3" stroke="currentColor" strokeWidth="1.6" strokeDasharray="4 3" />
+  <text x="610" y="18" textAnchor="middle" fill="#e5484d" fontSize="13.5" fontWeight="bold">510</text>
+  <line x1="610" y1="24" x2="610" y2="76" stroke="#e5484d" strokeWidth="2.2" />
+  <text x="670" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5" fontWeight="bold">512</text>
+  <line x1="670" y1="24" x2="670" y2="76" stroke="currentColor" strokeWidth="2.2" />
+  <text x="685" y="56" textAnchor="middle" fill="currentColor" fontSize="13.5" fontWeight="bold">+1</text>
+  <text x="610" y="94" textAnchor="middle" fill="currentColor" fontSize="13.5">the last bytes, enlarged</text>
+  <text x="0" y="128" fill="#e8912d" fontSize="13.5">384: near full, status bit 3, and the near-full interrupt</text>
+  <text x="0" y="150" fill="#e5484d" fontSize="13.5">510: with flow control, RTR goes high and the sender stops</text>
+  <text x="0" y="172" fill="currentColor" fontSize="13.5">512: full; one more byte waits behind it, and the next is lost: overflow, status bit 2</text>
+</svg>
+{/* /fig:fifo */}
+<figcaption>The receive buffer's levels, to scale, with its last bytes enlarged on the right. At 384 bytes, three quarters, it is near full; at 510 the flow control asks the sender to stop; at 512 it is full, one more byte waits behind it, and the byte after that is lost and sets the overflow bit.</figcaption>
+</figure>
+
+Two loops do most of the work. This one sends a text, waiting whenever the transmit buffer is full:
+
+```z80klive
+; send the zero-terminated text at HL on UART 0
+Send:   ld bc,$153b
+        xor a                  ; UART 0, prescaler untouched
+        out (c),a
+        ld b,$13               ; $133B: TX and status
+Next:   ld a,(hl)
+        or a
+        ret z                  ; end of the text
+Full:   in a,(c)               ; status
+        bit 1,a                ; TX buffer full?
+        jr nz,Full
+        ld a,(hl)
+        out (c),a              ; into the TX buffer
+        inc hl
+        jr Next
+```
+
+And this one empties the receive buffer into memory at DE, as long as it has bytes:
+
+```z80klive
+; copy what the selected UART has received to (DE)
+Drain:  ld bc,$133b
+Loop:   in a,(c)               ; status
+        rra                    ; bit 0 into carry
+        ret nc                 ; the buffer is empty
+        inc b                  ; $143B: RX
+        in a,(c)               ; the oldest byte
+        dec b
+        ld (de),a
+        inc de
+        jr Loop
+```
+
+My advice for receiving is to drain the whole buffer every time you look, not to take one byte. At 115,200
+baud the 512 bytes fill in 44 ms, a little over two frames, so a program that reads the UART once a frame has
+time to spare, and one that stops reading while it loads a level or waits for a key does not.
+
+## Break
+
+A **break** is the line held low for longer than a frame: no start bit, data and stop bit can look like
+that, so both ends know it is a signal, not data. It is how some devices are reset or woken.
+
+- **Sending a break**: set bit 6 of the frame register. The transmitter finishes the frame it is sending,
+  then holds the line low and sends nothing more until the bit is cleared.
+- **Receiving a break**: the frame fails its stop bit, a framing error that sets status bit 6, and when the
+  line stays low for eight more bit periods, status bit 7 says **break** for as long as it stays low.
+
+## Hardware flow control
+
+The receive buffer can fill, so a fast sender needs a way to be told to wait. **Hardware flow control**,
+bit 5 of the frame register, adds two signals beside the data lines, both active low:
+
+- **CTS**, clear to send, is an input. The twin starts a frame only while the other end holds it low; while
+  it is high, the transmitter takes the next byte from its buffer and waits with it in hand.
+- **RTR**, ready to receive, is an output. The twin drops it when its receive buffer holds **510 bytes**, two
+  short of full, so that a sender who stops at once loses nothing.
+
+With flow control, a program can stop reading for as long as it likes, and no byte is lost: the sender is
+paused instead. For the Pi, the two signals are GPIO 16 and 17. The Wi-Fi module takes part in flow control
+only on issue 4 boards, so on an earlier board a program must read fast enough.
+
+## Interrupts
+
+Each twin can ring the CPU, and the [interrupts
+chapter](/en/under-the-hood/emulator-internals/next-interrupts/#the-sources-up-close) tells the whole story.
+In short, from the UART's side:
+
+- **Receive**: when the buffer gets its first byte, or, with the "near full only" bit, when it reaches 384.
+  The enables are bits 0 and 1 of NextReg `$C6` for UART 0, bits 4 and 5 for UART 1.
+- **Transmit**: when the transmit buffer becomes empty, which is a frame before the line falls silent,
+  because the last byte is still being sent. The enables are bit 2 for UART 0 and bit 6 for UART 1.
+- The receivers stand high in the daisy chain, right after the line interrupt, and the transmitters last,
+  after the ULA: a byte arriving is urgent, a buffer to refill is not.
+- **The requests are edges**: a byte arriving into a buffer that is not empty raises nothing new. That is the
+  second reason to drain the whole buffer in the handler.
+
+## The joystick port
+
+Either twin can leave its own pins and use a joystick port instead, through the **Joystick I/O Mode
+register, NextReg `$0B`**: bit 7 turns the I/O mode on, bits 5–4 = 10 choose the left port and 11 the right
+one, and bit 0 chooses the twin, 0 for UART 0 and 1 for UART 1. The twin then sends on pin 7 and receives on
+pin 9, and with flow control it takes CTS from pin 6; there is no pin for RTR. Its own lines rest high
+meanwhile. A cable from a joystick port to another machine is then a serial link with no expansion at all.
+
+## Resets
+
+A **soft reset** selects UART 0, empties both buffers in both twins, clears their errors and stops whatever
+was being sent. It keeps each twin's prescaler and frame register. Only loading the core, which a hard
+reset through NextReg `$02` does, sets them back to 115,200 baud and `$18`. So a program that changed the
+baud rate leaves it changed for the next program after a soft reset, and here is my last piece of advice:
+set the prescaler and the frame yourself, even when you want the defaults.
+
+## What to take home
+
+The Next has two identical UARTs, the twins: UART 0 to the Wi-Fi module and UART 1 to the Pi's connector,
+behind one set of ports. Port `$153B` bit 6 chooses the twin; `$163B` is its frame register; `$133B` sends
+a byte and reads the status; `$143B` takes a received byte. A byte travels as a frame: a start bit, 5 to 8
+data bits with the least significant first, an optional parity bit and one or two stop bits, sampled in the
+middle of each bit by a receiver that re-centres on every edge and ignores short glitches.
+
+The baud rate is the master clock divided by a 17-bit prescaler, written in pieces to `$143B` and `$153B`:
+243 gives 115,200 baud at 28 MHz, the power-on value. It does not follow the CPU's speed, but it does follow
+the VGA mode. The frame register's bit 7 holds the twin in reset for as long as it is set, bit 6 sends a
+break and bit 5 switches on hardware flow control.
+
+The transmit buffer holds 64 bytes; the receive buffer 512 and one more, near full at 384, with RTR raised
+at 510. A frame with an error is thrown away, and the status says so: bit 6 for the error, bit 5 for the next
+good byte, bit 2 for an overflow, bit 7 for a break. Interrupts come on the first byte or at near full, and
+when the transmit buffer empties; they are edges, so a handler drains everything. Either twin can move to a
+joystick port. A soft reset empties the buffers but keeps the baud rate. Read fast, or let flow control make
+the other end wait, and the twins will not lose a byte.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"The road ahead","id":"the-road-ahead","depth":2},{"value":"Two UARTs, four ports","id":"two-uarts-four-ports","depth":2},{"value":"A frame on the wire","id":"a-frame-on-the-wire","depth":2},{"value":"The baud rate","id":"the-baud-rate","depth":2},{"value":"The frame register","id":"the-frame-register","depth":2},{"value":"Two buffers and the status","id":"two-buffers-and-the-status","depth":2},{"value":"Break","id":"break","depth":2},{"value":"Hardware flow control","id":"hardware-flow-control","depth":2},{"value":"Interrupts","id":"interrupts","depth":2},{"value":"The joystick port","id":"the-joystick-port","depth":2},{"value":"Resets","id":"resets","depth":2},{"value":"What to take home","id":"what-to-take-home","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"How the ZX Spectrum Next's two UARTs work: one set of ports for two serial ports, the Wi-Fi module and the Raspberry Pi, a frame on the wire, the 17-bit prescaler and baud rates from the master clock, the frame register, the 64-byte transmit and 512-byte receive buffers, the status bits and errors, break, hardware flow control, interrupts, the joystick port, and resets.","title":"UARTs: Two Serial Ports Behind One Door","filePath":"content/en/under-the-hood/emulator-internals/next-uart.mdx","timestamp":1793369525000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"under-the-hood/emulator-internals/next-uart","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"UARTs: Two Serial Ports Behind One Door - Klive IDE"}],["$","meta","1",{"name":"description","content":"How the ZX Spectrum Next's two UARTs work: one set of ports for two serial ports, the Wi-Fi module and the Raspberry Pi, a frame on the wire, the 17-bit prescaler and baud rates from the master clock, the frame register, the 64-byte transmit and 512-byte receive buffers, the status bits and errors, break, hardware flow control, interrupts, the joystick port, and resets."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/under-the-hood/emulator-internals/next-uart/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"M0x1FAUVmWS14PcaNqohV"}
+20:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+21:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+5d:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["UARTs: Two Serial Ports Behind One Door","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A Next can fetch a web page, chat over the Internet and talk to a Raspberry Pi, yet it has no network chip\nof the kind a PC has. What it has is older than the Spectrum itself: a serial port, a wire on which bits\nfollow one another at an agreed pace. Behind that wire sits a Wi-Fi module that does the networking, and\nbehind another one a Pi that can do almost anything. How does a Z80 keep up with a line that delivers a\nbyte every 87 microseconds, and what happens when it doesn’t?"}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"I think the serial port is the most practical piece of the Next for anyone who wants it to talk to the\nworld. A file from the Internet, a game played across two machines, a MIDI keyboard, a debugger on a PC:\nall of them arrive as bytes on a serial line. The hardware that receives them is simple, but its buffers,\nflags and timing decide whether your program gets every byte or silently loses some, and that is worth\nunderstanding before you write the loop that reads them."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["You should know two chapters first. ",["$","$L20",null,{"href":"/en/under-the-hood/emulator-internals/next-interrupts/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Interrupts: Fourteen Voices, Two\nWires"}]," explains the UARTs’ interrupts and their\nplace in the daisy chain, which this chapter only sums up. ",["$","$L20",null,{"href":"/en/under-the-hood/emulator-internals/next-ctc/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"CTC: Four Timers in a\nRing"}]," explains the master clock and the VGA modes that the\nbaud rate is counted from."]}],"\n",["$","h2",null,{"id":"the-road-ahead","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The road ahead",["$","$L21",null,{"id":"the-road-ahead"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"We start with the two UARTs and the four ports they share, then look at what actually travels on the wire:\na frame of bits. Next comes the baud rate, set by a prescaler of the master clock, and the frame register\nthat chooses the frame’s shape. The heart of the chapter is the two buffers and the status register: how\nbytes wait to be sent, how they wait to be read, and what the hardware does when a buffer fills or a frame\narrives broken; if you read only one section, read that one. After that we look at break, hardware flow\ncontrol, interrupts, the joystick port and resets."}],"\n",["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":"$L22"}],"$L23"]}],"\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49","\n","$L4a","\n","$L4b","\n","$L4c","\n","$L4d","\n","$L4e","\n","$L4f","\n","$L50","\n","$L51","\n","$L52","\n","$L53","\n","$L54","\n","$L55","\n","$L56","\n","$L57","\n","$L58","\n","$L59","\n","$L5a","\n","$L5b","\n","$L5c"]]}]
+15:["$","$L5d",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@5e"}]}]
+1f:true
+85:"ToggleWordWrapButton"
+86:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$85"]
+87:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+9:300
+22:["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"}]}]
+23:["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The facts are for ",["$","strong",null,{"children":"core 3.02.01"}],". The master clock is ",["$","strong",null,{"children":"28 MHz"}],", as in VGA mode 0, and the examples use\n",["$","strong",null,{"children":"115,200 baud, 8 data bits, no parity, one stop bit"}],", the setting after power-on. Every fact was checked\nagainst the Next’s hardware design."]}]}]
+24:["$","h2",null,{"id":"two-uarts-four-ports","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Two UARTs, four ports",["$","$L21",null,{"id":"two-uarts-four-ports"}]]}]
+25:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A ",["$","strong",null,{"children":"UART"}],", a universal asynchronous receiver-transmitter, turns bytes into a stream of bits on one wire and\na stream of bits on another wire back into bytes. The Next has two of them, identical in every way, and I\ncall them ",["$","strong",null,{"children":"the twins"}],":"]}]
+26:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"UART 0"}]," is wired to the ",["$","strong",null,{"children":"Wi-Fi module"}],", an ESP chip on the board, which does the networking and\ntalks to the Next through text commands on this line."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"UART 1"}]," is wired to the ",["$","strong",null,{"children":"Raspberry Pi’s connector"}],", on GPIO 14 and 15, once bit 5 of the ",["$","strong",null,{"children":["PI\nPeripheral Enable register, NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$A0"}]]}],", gives those pins to the UART."]}],"\n"]}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The twins share one door: four ports, and a switch that says which twin is behind it."}]
+28:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":["Port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$153B"}],", UART select."]}]," Bit 6 chooses the twin: 0 for UART 0, 1 for UART 1. Every other port talks\nto the chosen one. Bit 4 and bits 2–0 are part of the baud rate, as the next sections explain."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":["Port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$163B"}],", UART frame"]}],": the shape of the frame, and three switches."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":["Port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$133B"}],", UART TX"]}],": a write sends a byte; a read gives the ",["$","strong",null,{"children":"status"}],"."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":["Port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$143B"}],", UART RX"]}],": a read takes a received byte; a write sets part of the baud rate."]}],"\n"]}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Bit 4 of NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$83"}]," switches all four ports off: they then read ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FF"}]," and ignore writes."]}]
+2a:["$","figure",null,{"children":[["$","svg",null,{"viewBox":"-2 -2 704 296","role":"img","aria-label":"On the left, the CPU's ports $133B, $143B and $163B, and the UART select port $153B, whose bit 6 chooses which UART they reach. Two rows, UART 0 above and UART 1 below. In each, the CPU's bytes go into a 64-byte transmit buffer and on to the transmitter, which sends them to the device; the device's bytes come into the receiver and on into a 512-byte receive buffer, which the CPU reads. UART 0's device is the Wi-Fi module, UART 1's the Raspberry Pi's connector.","style":{"width":"100%","height":"auto"},"children":[["$","defs",null,{"children":[["$","marker",null,{"id":"ua-tw-0","viewBox":"0 0 10 10","refX":"9","refY":"5","markerWidth":"7","markerHeight":"7","orient":"auto-start-reverse","children":["$","path",null,{"d":"M0,0 L10,5 L0,10 z","fill":"currentColor"}]}],["$","marker",null,{"id":"ua-tw-1","viewBox":"0 0 10 10","refX":"9","refY":"5","markerWidth":"7","markerHeight":"7","orient":"auto-start-reverse","children":["$","path",null,{"d":"M0,0 L10,5 L0,10 z","fill":"#30a46c"}]}],["$","marker",null,{"id":"ua-tw-2","viewBox":"0 0 10 10","refX":"9","refY":"5","markerWidth":"7","markerHeight":"7","orient":"auto-start-reverse","children":["$","path",null,{"d":"M0,0 L10,5 L0,10 z","fill":"#a855f7"}]}]]}],["$","rect",null,{"x":"0","y":"96","width":"120","height":"100","rx":"6","fill":"none","stroke":"currentColor","strokeWidth":"1.5"}],["$","text",null,{"x":"60","y":"133.9","textAnchor":"middle","fill":"currentColor","fontSize":"14","children":"ports"}],["$","text",null,{"x":"60","y":"150.9","textAnchor":"middle","fill":"currentColor","fontSize":"14","children":"$$133B"}],["$","text",null,{"x":"60","y":"167.9","textAnchor":"middle","fill":"currentColor","fontSize":"14","children":"$$143B, $163B"}],["$","rect",null,{"x":"150","y":"116","width":"100","height":"60","rx":"6","fill":"none","stroke":"currentColor","strokeWidth":"1.5"}],["$","text",null,{"x":"200","y":"142.4","textAnchor":"middle","fill":"currentColor","fontSize":"14","fontWeight":"bold","children":"$$153B"}],["$","text",null,{"x":"200","y":"159.4","textAnchor":"middle","fill":"currentColor","fontSize":"14","fontWeight":"bold","children":"bit 6"}],["$","line",null,{"x1":"120","y1":"146","x2":"150","y2":"146","stroke":"currentColor","strokeWidth":"1.8"}],["$","text",null,{"x":"290","y":"22","fill":"#30a46c","fontSize":"15","fontWeight":"bold","children":"UART 0"}],["$","rect",null,{"x":"290","y":"28","width":"130","height":"44","rx":"6","fill":"#30a46c","fillOpacity":"0.12","stroke":"#30a46c","strokeWidth":"2"}],["$","text",null,{"x":"355","y":"54.9","textAnchor":"middle","fill":"#30a46c","fontSize":"14","children":"TX buffer, 64"}],["$","rect",null,{"x":"440","y":"28","width":"110","height":"44","rx":"6","fill":"none","stroke":"#30a46c","strokeWidth":"2"}],["$","text",null,{"x":"495","y":"54.9","textAnchor":"middle","fill":"#30a46c","fontSize":"14","children":"transmitter"}],["$","rect",null,{"x":"290","y":"84","width":"130","height":"44","rx":"6","fill":"#30a46c","fillOpacity":"0.12","stroke":"#30a46c","strokeWidth":"2"}],["$","text",null,{"x":"355","y":"110.9","textAnchor":"middle","fill":"#30a46c","fontSize":"14","children":"RX buffer, 512"}],["$","rect",null,{"x":"440","y":"84","width":"110","height":"44","rx":"6","fill":"none","stroke":"#30a46c","strokeWidth":"2"}],["$","text",null,{"x":"495","y":"110.9","textAnchor":"middle","fill":"#30a46c","fontSize":"14","children":"receiver"}],["$","rect",null,{"x":"590","y":"28","width":"110","height":"100","rx":"6","fill":"#a855f7","fillOpacity":"0.12","stroke":"#a855f7","strokeWidth":"2"}],["$","text",null,{"x":"645","y":"65.9","textAnchor":"middle","fill":"#a855f7","fontSize":"14","children":"Wi-Fi"}],["$","text",null,{"x":"645","y":"82.9","textAnchor":"middle","fill":"#a855f7","fontSize":"14","children":"module"}],["$","text",null,{"x":"645","y":"99.9","textAnchor":"middle","fill":"#a855f7","fontSize":"14","children":"(ESP)"}],["$","path",null,{"d":"M420,50 L436,50","fill":"none","stroke":"#30a46c","strokeWidth":"1.8","markerEnd":"url(#ua-tw-1)","strokeLinejoin":"round"}],["$","path",null,{"d":"M550,50 L586,50","fill":"none","stroke":"#a855f7","strokeWidth":"1.8","markerEnd":"url(#ua-tw-2)","strokeLinejoin":"round"}],["$","path",null,{"d":"M590,106 L554,106","fill":"none","stroke":"#a855f7","strokeWidth":"1.8","markerEnd":"url(#ua-tw-2)","strokeLinejoin":"round"}],["$","path",null,{"d":"M440,106 L424,106","fill":"none","stroke":"#30a46c","strokeWidth":"1.8","markerEnd":"url(#ua-tw-1)","strokeLinejoin":"round"}],["$","path",null,{"d":"M266,50 L286,50","fill":"none","stroke":"currentColor","strokeWidth":"1.8","markerEnd":"url(#ua-tw-0)","strokeLinejoin":"round"}],["$","line",null,{"x1":"266","y1":"106","x2":"290","y2":"106","stroke":"currentColor","strokeWidth":"1.8"}],["$","text",null,{"x":"290","y":"182","fill":"#30a46c","fontSize":"15","fontWeight":"bold","children":"UART 1"}],"$L5f","$L60","$L61","$L62","$L63","$L64","$L65","$L66","$L67","$L68","$L69","$L6a","$L6b","$L6c","$L6d","$L6e","$L6f","$L70","$L71","$L72"]}],"$L73"]}]
+2b:["$","h2",null,{"id":"a-frame-on-the-wire","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["A frame on the wire",["$","$L21",null,{"id":"a-frame-on-the-wire"}]]}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A serial line has no clock wire. The two ends agree on a speed, the ",["$","strong",null,{"children":"baud rate"}],", in bits a second, and\nthe receiver times the bits itself. A line at rest is high, at 1. A byte travels as a ",["$","strong",null,{"children":"frame"}],":"]}]
+2d:["$","figure",null,{"children":[["$","svg",null,{"viewBox":"-2 -2 704 180","role":"img","aria-label":"The letter A, $41, in an 8N1 frame over twelve bit periods. One period of rest at 1; the start bit at 0; the data bits least significant first, b0 = 1, b1 to b5 = 0, b6 = 1, b7 = 0; the stop bit at 1; rest at 1. A red tick marks the middle of every bit from the start bit to the stop bit, where the receiver samples it.","style":{"width":"100%","height":"auto"},"children":[["$","text",null,{"x":"0","y":"21","fill":"currentColor","fontSize":"13.5","children":"1"}],["$","text",null,{"x":"0","y":"71","fill":"currentColor","fontSize":"13.5","children":"0"}],["$","text",null,{"x":"30","y":"46","fill":"#3b82f6","fontSize":"15","fontWeight":"bold","children":"line"}],["$","path",null,{"d":"M130,16 L130,16 L177.5,16 L177.5,66 L225,66 L225,16 L272.5,16 L272.5,66 L320,66 L320,66 L367.5,66 L367.5,66 L415,66 L415,66 L462.5,66 L462.5,66 L510,66 L510,16 L557.5,16 L557.5,66 L605,66 L605,16 L652.5,16 L652.5,16 L700,16","fill":"none","stroke":"#3b82f6","strokeWidth":"2.2","strokeLinejoin":"round"}],["$","line",null,{"x1":"130","y1":"4","x2":"130","y2":"78","stroke":"currentColor","strokeWidth":"1","strokeDasharray":"3 3","strokeOpacity":"0.4"}],["$","line",null,{"x1":"177.5","y1":"4","x2":"177.5","y2":"78","stroke":"currentColor","strokeWidth":"1","strokeDasharray":"3 3","strokeOpacity":"0.4"}],["$","line",null,{"x1":"225","y1":"4","x2":"225","y2":"78","stroke":"currentColor","strokeWidth":"1","strokeDasharray":"3 3","strokeOpacity":"0.4"}],["$","line",null,{"x1":"272.5","y1":"4","x2":"272.5","y2":"78","stroke":"currentColor","strokeWidth":"1","strokeDasharray":"3 3","strokeOpacity":"0.4"}],["$","line",null,{"x1":"320","y1":"4","x2":"320","y2":"78","stroke":"currentColor","strokeWidth":"1","strokeDasharray":"3 3","strokeOpacity":"0.4"}],["$","line",null,{"x1":"367.5","y1":"4","x2":"367.5","y2":"78","stroke":"currentColor","strokeWidth":"1","strokeDasharray":"3 3","strokeOpacity":"0.4"}],["$","line",null,{"x1":"415","y1":"4","x2":"415","y2":"78","stroke":"currentColor","strokeWidth":"1","strokeDasharray":"3 3","strokeOpacity":"0.4"}],["$","line",null,{"x1":"462.5","y1":"4","x2":"462.5","y2":"78","stroke":"currentColor","strokeWidth":"1","strokeDasharray":"3 3","strokeOpacity":"0.4"}],["$","line",null,{"x1":"510","y1":"4","x2":"510","y2":"78","stroke":"currentColor","strokeWidth":"1","strokeDasharray":"3 3","strokeOpacity":"0.4"}],["$","line",null,{"x1":"557.5","y1":"4","x2":"557.5","y2":"78","stroke":"currentColor","strokeWidth":"1","strokeDasharray":"3 3","strokeOpacity":"0.4"}],["$","line",null,{"x1":"605","y1":"4","x2":"605","y2":"78","stroke":"currentColor","strokeWidth":"1","strokeDasharray":"3 3","strokeOpacity":"0.4"}],["$","line",null,{"x1":"652.5","y1":"4","x2":"652.5","y2":"78","stroke":"currentColor","strokeWidth":"1","strokeDasharray":"3 3","strokeOpacity":"0.4"}],["$","line",null,{"x1":"700","y1":"4","x2":"700","y2":"78","stroke":"currentColor","strokeWidth":"1","strokeDasharray":"3 3","strokeOpacity":"0.4"}],["$","text",null,{"x":"153.8","y":"102","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"rest"}],["$","text",null,{"x":"201.3","y":"102","textAnchor":"middle","fill":"#30a46c","fontSize":"13.5","fontWeight":"bold","children":"start"}],["$","line",null,{"x1":"201.3","y1":"80","x2":"201.3","y2":"88","stroke":"#e5484d","strokeWidth":"2"}],["$","text",null,{"x":"248.8","y":"102","textAnchor":"middle","fill":"#30a46c","fontSize":"13.5","fontWeight":"bold","children":"b0"}],["$","line",null,{"x1":"248.8","y1":"80","x2":"248.8","y2":"88","stroke":"#e5484d","strokeWidth":"2"}],["$","text",null,{"x":"296.3","y":"102","textAnchor":"middle","fill":"#30a46c","fontSize":"13.5","fontWeight":"bold","children":"b1"}],["$","line",null,{"x1":"296.3","y1":"80","x2":"296.3","y2":"88","stroke":"#e5484d","strokeWidth":"2"}],["$","text",null,{"x":"343.8","y":"102","textAnchor":"middle","fill":"#30a46c","fontSize":"13.5","fontWeight":"bold","children":"b2"}],["$","line",null,{"x1":"343.8","y1":"80","x2":"343.8","y2":"88","stroke":"#e5484d","strokeWidth":"2"}],["$","text",null,{"x":"391.3","y":"102","textAnchor":"middle","fill":"#30a46c","fontSize":"13.5","fontWeight":"bold","children":"b3"}],["$","line",null,{"x1":"391.3","y1":"80","x2":"391.3","y2":"88","stroke":"#e5484d","strokeWidth":"2"}],["$","text",null,{"x":"438.8","y":"102","textAnchor":"middle","fill":"#30a46c","fontSize":"13.5","fontWeight":"bold","children":"b4"}],["$","line",null,{"x1":"438.8","y1":"80","x2":"438.8","y2":"88","stroke":"#e5484d","strokeWidth":"2"}],["$","text",null,{"x":"486.3","y":"102","textAnchor":"middle","fill":"#30a46c","fontSize":"13.5","fontWeight":"bold","children":"b5"}],["$","line",null,{"x1":"486.3","y1":"80","x2":"486.3","y2":"88","stroke":"#e5484d","strokeWidth":"2"}],["$","text",null,{"x":"533.8","y":"102","textAnchor":"middle","fill":"#30a46c","fontSize":"13.5","fontWeight":"bold","children":"b6"}],"$L74","$L75","$L76","$L77","$L78","$L79","$L7a","$L7b","$L7c","$L7d","$L7e","$L7f","$L80","$L81","$L82","$L83"]}],"$L84"]}]
+2e:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["The ",["$","strong",null,{"children":"start bit"}],", a 0, ends the rest and tells the receiver that a frame begins."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["The ",["$","strong",null,{"children":"data bits"}],", 5 to 8 of them, ",["$","strong",null,{"children":"least significant first"}],"."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["A ",["$","strong",null,{"children":"parity bit"}],", if the two ends agreed on one: it makes the number of 1s even or odd, so that one\nflipped bit is noticed."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["One or two ",["$","strong",null,{"children":"stop bits"}],", 1s, before the next start bit can come."]}],"\n"]}]
+2f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The receiver’s part is the clever one. It sees the falling edge of the start bit, waits half a bit, checks\nthat the line is still low, and then takes each bit one bit period later, in its middle, as far as possible\nfrom the edges where the level changes. The Next’s receiver does better still: every time the line changes\nlevel, it moves its sampling moment back to the middle of the bit, so a sender whose clock is a little fast\nor slow is followed through the whole frame. It also ignores pulses shorter than 4 master clocks, 143 ns,\nwhich are noise, not bits. I find this a lovely piece of engineering for so small a block."}]
+30:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["With 8 data bits, no parity and one stop bit, written ",["$","strong",null,{"children":"8N1"}],", a frame is 10 bits, so 115,200 baud carries\n11,520 bytes a second, one every 86.8 µs. That is the answer to the opening puzzle: at 3.5 MHz the CPU has\nabout 300 T-states per byte, which is plenty for a loop, and nothing like enough if the loop has to wait for\nthe screen or a disk."]}]
+31:["$","h2",null,{"id":"the-baud-rate","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The baud rate",["$","$L21",null,{"id":"the-baud-rate"}]]}]
+32:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Each twin times its bits with a ",["$","strong",null,{"children":"prescaler"}],": a bit lasts exactly the prescaler’s number of master clocks,\nso the baud rate is 28,000,000 ÷ prescaler. The prescaler has 17 bits, written in three pieces:"]}]
+33:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L86",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L87",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"port $143B, bit 7 = 0:  bits 6-0 -> prescaler bits 6-0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"port $143B, bit 7 = 1:  bits 6-0 -> prescaler bits 13-7"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"port $153B, bit 4 = 1:  bits 2-0 -> prescaler bits 16-14"}]}]]}]]}]]}]
+34:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$143B"}]," writes go to the twin that is selected. The ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$153B"}]," write is a little different: its bits 2–0\ngo to the twin that ",["$","strong",null,{"children":"bit 6 of the same byte"}]," selects, so one write can choose a twin and set its top bits\ntogether. A read of ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$153B"}]," gives bit 6, which twin is selected, and that twin’s bits 16–14; the lower 14\nbits cannot be read back."]}]
+35:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The prescaler is a whole number, so the rate is rarely exact. Here are some common ones at 28 MHz:"}]
+36:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"9,600 baud"}],": prescaler 2,917, 9,599 baud."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"31,250 baud"}],", MIDI’s rate: prescaler 896, exact."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"115,200 baud"}],": prescaler ",["$","strong",null,{"children":"243"}],", 115,226 baud, 0.02% fast. This is the value after power-on."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"230,400 baud"}],": prescaler 122, 229,508 baud, 0.4% slow."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"921,600 baud"}],": prescaler 30, 933,333 baud, 1.3% fast, about as far as I would trust a serial line."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"2,000,000 baud"}],": prescaler 14, exact."]}],"\n"]}]
+37:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The largest prescaler, 131,071, gives about 214 baud. A UART at the other end is happy with an error of a\ncouple of per cent, and the re-centring receiver tolerates more. Two more facts matter in practice. The\nprescaler counts the ",["$","strong",null,{"children":"master clock"}],", not the CPU’s, so the baud rate does not change with the CPU speed;\nbut it does change with the VGA mode, which runs the master clock faster, so a program that cares reads\nNextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$11"}]," and computes its prescaler from that mode’s clock. And both ends of a frame take the prescaler\nwhen the frame starts, so a new one applies from the next frame, never to the middle of one."]}]
+38:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Here is UART 0 set to 230,400 baud:"}]
+39:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L86",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L87",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" bc"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$153b"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"%00010000"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"         ; UART 0, bits 16-14 follow:"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        out"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"              ; 000"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" b"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$14"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"               ; $143B"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"122"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"               ; bit 7 = 0: bits 6-0"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        out"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"%10000000"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"         ; bit 7 = 1: bits 13-7 = 0"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        out"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}]]}]]}]]}]]}]
+3a:["$","h2",null,{"id":"the-frame-register","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The frame register",["$","$L21",null,{"id":"the-frame-register"}]]}]
+3b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$163B"}]," holds the frame’s shape for the selected twin, and three switches. It reads back all eight\nbits:"]}]
+3c:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L86",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L87",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"$$163B:  R B F N N P O S"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  R   = 1: reset the twin and hold it while the bit is set"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  B   = 1: send a break once the transmitter is idle"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  F   = 1: hardware flow control"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  N N = data bits: 11 8, 10 7, 01 6, 00 5"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  P   = 1: a parity bit"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  O   = parity: 0 even, 1 odd"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  S   = stop bits: 0 one, 1 two"}]}]]}]]}]]}]
+3d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The value after power-on is ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$18"}],": 8 data bits, no parity, one stop bit, everything else off."]}]
+3e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Bit 7 deserves a warning, because it does more than its name suggests. While it is 1, both buffers are\nempty and ",["$","strong",null,{"children":"both state machines are held in reset"}],": a byte being sent stops in the middle, nothing is\nreceived and nothing can be sent. It is not a pulse. Write the register with bit 7 set to clear the twin,\nthen write it again with bit 7 clear, or the twin stays dead. My habit: ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$98"}],", then ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$18"}],"."]}]
+3f:["$","h2",null,{"id":"two-buffers-and-the-status","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Two buffers and the status",["$","$L21",null,{"id":"two-buffers-and-the-status"}]]}]
+40:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Between the CPU and each wire sits a buffer, a ",["$","strong",null,{"children":"FIFO"}],", first in, first out:"]}]
+41:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"The transmit buffer holds 64 bytes."}]," A write to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$133B"}]," puts a byte in it, and the transmitter takes\nthem out one by one, as fast as the baud rate allows. A byte written while the buffer is full is lost."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"The receive buffer holds 512 bytes"}],", and one more waits behind it while it is full. A read of ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$143B"}],"\ntakes the oldest; a read of an empty buffer gives 0, which could also be a byte, so check the status\nfirst."]}],"\n"]}]
+42:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","strong",null,{"children":"status"}],", read from ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$133B"}],", says how both buffers and the line are doing:"]}]
+43:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Bit 0"}],": the receive buffer has at least one byte."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Bit 1"}],": the transmit buffer is full. Wait before writing."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Bit 2"}],": the receive buffer ",["$","strong",null,{"children":"overflowed"}],": a byte arrived while the 512 bytes and the one waiting behind\nthem were all there, and it was lost."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Bit 3"}],": the receive buffer is ",["$","strong",null,{"children":"near full"}],", at least 384 bytes, three quarters."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Bit 4"}],": the transmit buffer is empty ",["$","strong",null,{"children":"and"}]," the transmitter has finished its last frame: the line is\nquiet. This is the bit to wait for before changing the baud rate or the frame."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Bit 5"}],": the byte at the head of the receive buffer arrived after an error, an overflow or a broken\nframe. Bytes are stored with this mark, so you can tell exactly where data went missing."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Bit 6"}],": a ",["$","strong",null,{"children":"framing error"}]," (a stop bit that was 0) or a ",["$","strong",null,{"children":"parity error"}]," happened."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Bit 7"}],": the line is in ",["$","strong",null,{"children":"break"}],", as the next section explains."]}],"\n"]}]
+44:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Bits 6 and 2 are cleared by reading the status: each read reports what happened since the last one. And\nhere is the rule that surprises people: ",["$","strong",null,{"children":"a frame with an error is thrown away"}],". A byte whose stop bit or\nparity is wrong never reaches the buffer. Bit 6 tells you it existed, and bit 5 marks the next byte that\nmade it through."]}]
+45:["$","figure",null,{"children":[["$","svg",null,{"viewBox":"-2 -2 704 200","role":"img","aria-label":"Left, a bar to scale from 0 to 512 bytes, the receive buffer, with a mark at 384 bytes, three quarters. Right, its last bytes enlarged, 508 to 512 and one more: marks at 510 and 512, and the extra byte that waits behind a full buffer. A key below: 384, near full, status bit 3 and the near-full interrupt; 510, the flow control raises RTR and the sender stops; 512 full and one held, the next byte is lost, the overflow, status bit 2.","style":{"width":"100%","height":"auto"},"children":[["$","rect",null,{"x":"0","y":"30","width":"470","height":"40","rx":"3","fill":"#30a46c","fillOpacity":"0.1","stroke":"#30a46c","strokeWidth":"2"}],["$","rect",null,{"x":"352.5","y":"31","width":"116.5","height":"38","fill":"#e8912d","fillOpacity":"0.2","stroke":"#e8912d","strokeWidth":"0"}],["$","text",null,{"x":"0","y":"18","fill":"currentColor","fontSize":"13.5","children":"0"}],["$","text",null,{"x":"352.5","y":"18","textAnchor":"middle","fill":"#e8912d","fontSize":"13.5","fontWeight":"bold","children":"384"}],["$","line",null,{"x1":"352.5","y1":"24","x2":"352.5","y2":"76","stroke":"#e8912d","strokeWidth":"2"}],["$","text",null,{"x":"470","y":"18","textAnchor":"end","fill":"currentColor","fontSize":"13.5","children":"512"}],["$","text",null,{"x":"176.3","y":"56","textAnchor":"middle","fill":"#30a46c","fontSize":"15","children":"bytes waiting to be read"}],["$","rect",null,{"x":"520","y":"30","width":"30","height":"40","fill":"#30a46c","fillOpacity":"0.12","stroke":"#30a46c","strokeWidth":"1.4"}],["$","rect",null,{"x":"550","y":"30","width":"30","height":"40","fill":"#30a46c","fillOpacity":"0.12","stroke":"#30a46c","strokeWidth":"1.4"}],["$","rect",null,{"x":"580","y":"30","width":"30","height":"40","fill":"#30a46c","fillOpacity":"0.12","stroke":"#30a46c","strokeWidth":"1.4"}],["$","rect",null,{"x":"610","y":"30","width":"30","height":"40","fill":"#30a46c","fillOpacity":"0.12","stroke":"#30a46c","strokeWidth":"1.4"}],["$","rect",null,{"x":"640","y":"30","width":"30","height":"40","fill":"#30a46c","fillOpacity":"0.12","stroke":"#30a46c","strokeWidth":"1.4"}],["$","rect",null,{"x":"670","y":"30","width":"30","height":"40","fill":"#30a46c","fillOpacity":"0.3","stroke":"currentColor","strokeWidth":"1.6","strokeDasharray":"4 3"}],["$","text",null,{"x":"610","y":"18","textAnchor":"middle","fill":"#e5484d","fontSize":"13.5","fontWeight":"bold","children":"510"}],["$","line",null,{"x1":"610","y1":"24","x2":"610","y2":"76","stroke":"#e5484d","strokeWidth":"2.2"}],["$","text",null,{"x":"670","y":"18","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","fontWeight":"bold","children":"512"}],["$","line",null,{"x1":"670","y1":"24","x2":"670","y2":"76","stroke":"currentColor","strokeWidth":"2.2"}],["$","text",null,{"x":"685","y":"56","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","fontWeight":"bold","children":"+1"}],["$","text",null,{"x":"610","y":"94","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"the last bytes, enlarged"}],["$","text",null,{"x":"0","y":"128","fill":"#e8912d","fontSize":"13.5","children":"384: near full, status bit 3, and the near-full interrupt"}],["$","text",null,{"x":"0","y":"150","fill":"#e5484d","fontSize":"13.5","children":"510: with flow control, RTR goes high and the sender stops"}],["$","text",null,{"x":"0","y":"172","fill":"currentColor","fontSize":"13.5","children":"512: full; one more byte waits behind it, and the next is lost: overflow, status bit 2"}]]}],["$","figcaption",null,{"children":"The receive buffer’s levels, to scale, with its last bytes enlarged on the right. At 384 bytes, three quarters, it is near full; at 510 the flow control asks the sender to stop; at 512 it is full, one more byte waits behind it, and the byte after that is lost and sets the overflow bit."}]]}]
+46:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Two loops do most of the work. This one sends a text, waiting whenever the transmit buffer is full:"}]
+47:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L86",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L87",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"; send the zero-terminated text at HL on UART 0"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"Send"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"   ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" bc"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$153b"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        xor"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"                  ; UART 0, prescaler untouched"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        out"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" b"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$13"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"               ; $133B: TX and status"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0","fontWeight":"bold"},"children":"Next"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"   ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":",("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"hl"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":")"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        or"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ret"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" z"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"                  ; end of the text"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"Full"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"   in"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":",("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":")               "}],["$","span",null,{"style":{"color":"#6A9955"},"children":"; status"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        bit"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" 1"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"                ; TX buffer full?"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        jr"}],"$L88","$L89","$L8a"]}],"\n","$L8b","\n","$L8c","\n","$L8d","\n","$L8e"]}]]}]]}]
+48:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"And this one empties the receive buffer into memory at DE, as long as it has bytes:"}]
+49:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L86",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L87",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"; copy what the selected UART has received to (DE)"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"Drain"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"  ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" bc"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$133b"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0","fontWeight":"bold"},"children":"Loop"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"   in"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":",("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":")               "}],["$","span",null,{"style":{"color":"#6A9955"},"children":"; status"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        rra"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"                    ; bit 0 into carry"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ret"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" nc"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"                 ; the buffer is empty"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        inc"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" b"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"                  ; $143B: RX"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        in"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":",("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":")               "}],["$","span",null,{"style":{"color":"#6A9955"},"children":"; the oldest byte"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        dec"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" b"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"de"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        inc"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" de"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        jr"}],["$","span",null,{"style":{"color":"#C586C0","fontWeight":"bold"},"children":" Loop"}]]}]]}]]}]]}]
+4a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"My advice for receiving is to drain the whole buffer every time you look, not to take one byte. At 115,200\nbaud the 512 bytes fill in 44 ms, a little over two frames, so a program that reads the UART once a frame has\ntime to spare, and one that stops reading while it loads a level or waits for a key does not."}]
+4b:["$","h2",null,{"id":"break","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Break",["$","$L21",null,{"id":"break"}]]}]
+4c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A ",["$","strong",null,{"children":"break"}]," is the line held low for longer than a frame: no start bit, data and stop bit can look like\nthat, so both ends know it is a signal, not data. It is how some devices are reset or woken."]}]
+4d:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Sending a break"}],": set bit 6 of the frame register. The transmitter finishes the frame it is sending,\nthen holds the line low and sends nothing more until the bit is cleared."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Receiving a break"}],": the frame fails its stop bit, a framing error that sets status bit 6, and when the\nline stays low for eight more bit periods, status bit 7 says ",["$","strong",null,{"children":"break"}]," for as long as it stays low."]}],"\n"]}]
+4e:["$","h2",null,{"id":"hardware-flow-control","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Hardware flow control",["$","$L21",null,{"id":"hardware-flow-control"}]]}]
+4f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The receive buffer can fill, so a fast sender needs a way to be told to wait. ",["$","strong",null,{"children":"Hardware flow control"}],",\nbit 5 of the frame register, adds two signals beside the data lines, both active low:"]}]
+50:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"CTS"}],", clear to send, is an input. The twin starts a frame only while the other end holds it low; while\nit is high, the transmitter takes the next byte from its buffer and waits with it in hand."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"RTR"}],", ready to receive, is an output. The twin drops it when its receive buffer holds ",["$","strong",null,{"children":"510 bytes"}],", two\nshort of full, so that a sender who stops at once loses nothing."]}],"\n"]}]
+51:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"With flow control, a program can stop reading for as long as it likes, and no byte is lost: the sender is\npaused instead. For the Pi, the two signals are GPIO 16 and 17. The Wi-Fi module takes part in flow control\nonly on issue 4 boards, so on an earlier board a program must read fast enough."}]
+52:["$","h2",null,{"id":"interrupts","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Interrupts",["$","$L21",null,{"id":"interrupts"}]]}]
+53:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Each twin can ring the CPU, and the ",["$","$L20",null,{"href":"/en/under-the-hood/emulator-internals/next-interrupts/#the-sources-up-close","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"interrupts\nchapter"}]," tells the whole story.\nIn short, from the UART’s side:"]}]
+54:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Receive"}],": when the buffer gets its first byte, or, with the “near full only” bit, when it reaches 384.\nThe enables are bits 0 and 1 of NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$C6"}]," for UART 0, bits 4 and 5 for UART 1."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Transmit"}],": when the transmit buffer becomes empty, which is a frame before the line falls silent,\nbecause the last byte is still being sent. The enables are bit 2 for UART 0 and bit 6 for UART 1."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"The receivers stand high in the daisy chain, right after the line interrupt, and the transmitters last,\nafter the ULA: a byte arriving is urgent, a buffer to refill is not."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"The requests are edges"}],": a byte arriving into a buffer that is not empty raises nothing new. That is the\nsecond reason to drain the whole buffer in the handler."]}],"\n"]}]
+55:["$","h2",null,{"id":"the-joystick-port","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The joystick port",["$","$L21",null,{"id":"the-joystick-port"}]]}]
+56:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Either twin can leave its own pins and use a joystick port instead, through the ",["$","strong",null,{"children":["Joystick I/O Mode\nregister, NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$0B"}]]}],": bit 7 turns the I/O mode on, bits 5–4 = 10 choose the left port and 11 the right\none, and bit 0 chooses the twin, 0 for UART 0 and 1 for UART 1. The twin then sends on pin 7 and receives on\npin 9, and with flow control it takes CTS from pin 6; there is no pin for RTR. Its own lines rest high\nmeanwhile. A cable from a joystick port to another machine is then a serial link with no expansion at all."]}]
+57:["$","h2",null,{"id":"resets","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Resets",["$","$L21",null,{"id":"resets"}]]}]
+58:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A ",["$","strong",null,{"children":"soft reset"}]," selects UART 0, empties both buffers in both twins, clears their errors and stops whatever\nwas being sent. It keeps each twin’s prescaler and frame register. Only loading the core, which a hard\nreset through NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$02"}]," does, sets them back to 115,200 baud and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$18"}],". So a program that changed the\nbaud rate leaves it changed for the next program after a soft reset, and here is my last piece of advice:\nset the prescaler and the frame yourself, even when you want the defaults."]}]
+59:["$","h2",null,{"id":"what-to-take-home","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["What to take home",["$","$L21",null,{"id":"what-to-take-home"}]]}]
+5a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The Next has two identical UARTs, the twins: UART 0 to the Wi-Fi module and UART 1 to the Pi’s connector,\nbehind one set of ports. Port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$153B"}]," bit 6 chooses the twin; ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$163B"}]," is its frame register; ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$133B"}]," sends\na byte and reads the status; ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$143B"}]," takes a received byte. A byte travels as a frame: a start bit, 5 to 8\ndata bits with the least significant first, an optional parity bit and one or two stop bits, sampled in the\nmiddle of each bit by a receiver that re-centres on every edge and ignores short glitches."]}]
+5b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The baud rate is the master clock divided by a 17-bit prescaler, written in pieces to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$143B"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$153B"}],":\n243 gives 115,200 baud at 28 MHz, the power-on value. It does not follow the CPU’s speed, but it does follow\nthe VGA mode. The frame register’s bit 7 holds the twin in reset for as long as it is set, bit 6 sends a\nbreak and bit 5 switches on hardware flow control."]}]
+5c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The transmit buffer holds 64 bytes; the receive buffer 512 and one more, near full at 384, with RTR raised\nat 510. A frame with an error is thrown away, and the status says so: bit 6 for the error, bit 5 for the next\ngood byte, bit 2 for an overflow, bit 7 for a break. Interrupts come on the first byte or at near full, and\nwhen the transmit buffer empties; they are edges, so a handler drains everything. Either twin can move to a\njoystick port. A soft reset empties the buffers but keeps the baud rate. Read fast, or let flow control make\nthe other end wait, and the twins will not lose a byte."}]
+5e:null
+9:C
+5f:["$","rect",null,{"x":"290","y":"188","width":"130","height":"44","rx":"6","fill":"#30a46c","fillOpacity":"0.12","stroke":"#30a46c","strokeWidth":"2"}]
+60:["$","text",null,{"x":"355","y":"214.9","textAnchor":"middle","fill":"#30a46c","fontSize":"14","children":"TX buffer, 64"}]
+61:["$","rect",null,{"x":"440","y":"188","width":"110","height":"44","rx":"6","fill":"none","stroke":"#30a46c","strokeWidth":"2"}]
+62:["$","text",null,{"x":"495","y":"214.9","textAnchor":"middle","fill":"#30a46c","fontSize":"14","children":"transmitter"}]
+63:["$","rect",null,{"x":"290","y":"244","width":"130","height":"44","rx":"6","fill":"#30a46c","fillOpacity":"0.12","stroke":"#30a46c","strokeWidth":"2"}]
+64:["$","text",null,{"x":"355","y":"270.9","textAnchor":"middle","fill":"#30a46c","fontSize":"14","children":"RX buffer, 512"}]
+65:["$","rect",null,{"x":"440","y":"244","width":"110","height":"44","rx":"6","fill":"none","stroke":"#30a46c","strokeWidth":"2"}]
+66:["$","text",null,{"x":"495","y":"270.9","textAnchor":"middle","fill":"#30a46c","fontSize":"14","children":"receiver"}]
+67:["$","rect",null,{"x":"590","y":"188","width":"110","height":"100","rx":"6","fill":"#a855f7","fillOpacity":"0.12","stroke":"#a855f7","strokeWidth":"2"}]
+68:["$","text",null,{"x":"645","y":"225.9","textAnchor":"middle","fill":"#a855f7","fontSize":"14","children":"Pi’s"}]
+69:["$","text",null,{"x":"645","y":"242.9","textAnchor":"middle","fill":"#a855f7","fontSize":"14","children":"connector"}]
+6a:["$","text",null,{"x":"645","y":"259.9","textAnchor":"middle","fill":"#a855f7","fontSize":"14","children":"GPIO 14, 15"}]
+6b:["$","path",null,{"d":"M420,210 L436,210","fill":"none","stroke":"#30a46c","strokeWidth":"1.8","markerEnd":"url(#ua-tw-1)","strokeLinejoin":"round"}]
+6c:["$","path",null,{"d":"M550,210 L586,210","fill":"none","stroke":"#a855f7","strokeWidth":"1.8","markerEnd":"url(#ua-tw-2)","strokeLinejoin":"round"}]
+6d:["$","path",null,{"d":"M590,266 L554,266","fill":"none","stroke":"#a855f7","strokeWidth":"1.8","markerEnd":"url(#ua-tw-2)","strokeLinejoin":"round"}]
+6e:["$","path",null,{"d":"M440,266 L424,266","fill":"none","stroke":"#30a46c","strokeWidth":"1.8","markerEnd":"url(#ua-tw-1)","strokeLinejoin":"round"}]
+6f:["$","path",null,{"d":"M266,210 L286,210","fill":"none","stroke":"currentColor","strokeWidth":"1.8","markerEnd":"url(#ua-tw-0)","strokeLinejoin":"round"}]
+70:["$","line",null,{"x1":"266","y1":"266","x2":"290","y2":"266","stroke":"currentColor","strokeWidth":"1.8"}]
+71:["$","line",null,{"x1":"250","y1":"146","x2":"266","y2":"146","stroke":"currentColor","strokeWidth":"1.8"}]
+72:["$","line",null,{"x1":"266","y1":"50","x2":"266","y2":"266","stroke":"currentColor","strokeWidth":"1.8"}]
+73:["$","figcaption",null,{"children":"The twins behind one door. Port $153B bit 6 chooses which UART the other three ports reach. Each UART has a 64-byte transmit buffer in front of its transmitter and a 512-byte receive buffer behind its receiver; UART 0 talks to the Wi-Fi module, UART 1 to the Raspberry Pi’s connector."}]
+74:["$","line",null,{"x1":"533.8","y1":"80","x2":"533.8","y2":"88","stroke":"#e5484d","strokeWidth":"2"}]
+75:["$","text",null,{"x":"581.3","y":"102","textAnchor":"middle","fill":"#30a46c","fontSize":"13.5","fontWeight":"bold","children":"b7"}]
+76:["$","line",null,{"x1":"581.3","y1":"80","x2":"581.3","y2":"88","stroke":"#e5484d","strokeWidth":"2"}]
+77:["$","text",null,{"x":"628.8","y":"102","textAnchor":"middle","fill":"#30a46c","fontSize":"13.5","fontWeight":"bold","children":"stop"}]
+78:["$","line",null,{"x1":"628.8","y1":"80","x2":"628.8","y2":"88","stroke":"#e5484d","strokeWidth":"2"}]
+79:["$","text",null,{"x":"676.3","y":"102","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"rest"}]
+7a:["$","text",null,{"x":"248.8","y":"126","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"1"}]
+7b:["$","text",null,{"x":"296.3","y":"126","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"0"}]
+7c:["$","text",null,{"x":"343.8","y":"126","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"0"}]
+7d:["$","text",null,{"x":"391.3","y":"126","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"0"}]
+7e:["$","text",null,{"x":"438.8","y":"126","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"0"}]
+7f:["$","text",null,{"x":"486.3","y":"126","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"0"}]
+80:["$","text",null,{"x":"533.8","y":"126","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"1"}]
+81:["$","text",null,{"x":"581.3","y":"126","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"0"}]
+82:["$","text",null,{"x":"0","y":"126","fill":"currentColor","fontSize":"13.5","children":"$$41, b0 first:"}]
+83:["$","text",null,{"x":"0","y":"164","fill":"currentColor","fontSize":"13.5","children":"red: the receiver samples each bit in its middle; a bit is 243 master clocks at 115,200 baud"}]
+84:["$","figcaption",null,{"children":"The letter A, $41, in a frame of 8 data bits, no parity and one stop bit, to scale in bit periods. The line rests high; the start bit is low; the data bits follow with the least significant first; the stop bit is high. The receiver samples every bit in its middle. At 115,200 baud a bit lasts 243 master clocks and the frame 2,430, 86.8 µs."}]
+88:["$","span",null,{"style":{"color":"#2B7CB3"},"children":" nz"}]
+89:["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}]
+8a:["$","span",null,{"style":{"color":"#B5890F"},"children":"Full"}]
+8b:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":",("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"hl"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":")"}]]}]
+8c:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        out"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"              ; into the TX buffer"}]]}]
+8d:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        inc"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" hl"}]]}]
+8e:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        jr"}],["$","span",null,{"style":{"color":"#C586C0","fontWeight":"bold"},"children":" Next"}]]}]
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"
