@@ -4,7 +4,7 @@ This folder stores durable notes for future AI-assisted work in this repository.
 
 - Read `../AGENTS.md` first.
 - **Before committing, read `changesets-guide.md`**: when a commit carries a changeset in
-  `.changes/`, when to ask the user, and how to show it. Before releasing, read `release-guide.md`.
+  `dev/changes/`, when to ask the user, and how to show it. Before releasing, read `release-guide.md`.
 - Keep notes concise and oriented toward repeatable future work.
 - **Before planning or writing an "Under the hood" hardware article or series, read
   `hardware-articles-guide.md`**, and fold what a review teaches into it (a standing brief, not a log).

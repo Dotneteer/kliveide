@@ -8,7 +8,7 @@ them. The Klive column is kept current under `AGENTS.md`'s standing rule: when a
 `.plans/CLOSING_THE_GAPS_PLAN.md` is implemented, update §2 (the Klive column) and §4 (the gaps) in
 the same change.
 
-Klive features are released unless marked **(after v0.66.0)**, meaning they wait in `.changes/` for
+Klive features are released unless marked **(after v0.66.0)**, meaning they wait in `dev/changes/` for
 the next release.
 
 ---

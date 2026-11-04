@@ -22,7 +22,7 @@ npm run change -- --type fix --issue 1417 --text "Assembler: a bare \`.dma wr3\`
 Options: `--type`, `--issue` (repeatable, or comma-separated), `--text`, `--highlight "<one line>"`,
 `--key` / `--key "<one line>"` (fixes only), `--bump major|minor|patch`, `--slug <file-name words>`.
 The command prints the file's path, its **kind** (minor, patch or none) and its content.
-`npm run change -- --show .changes/<file>.md` prints the same for an existing file, for example after
+`npm run change -- --show dev/changes/<file>.md` prints the same for an existing file, for example after
 editing it by hand. Editing a changeset by hand is fine; `npm run change:check` validates it.
 
 ## The format

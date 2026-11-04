@@ -2,7 +2,7 @@
  * Klive's release steps (.ai/release-guide.md).
  *
  *   npm run release:prepare [-- --version x.y.z] [--dry-run] [--skip-tests] [--no-push]
- *       Step A, on an up-to-date master: computes the version from .changes/, writes the
+ *       Step A, on an up-to-date master: computes the version from dev/changes/, writes the
  *       CHANGELOG section, consumes the changesets, bumps package.json, runs every gate (the fast
  *       test tiers; it only warns when the slow tier has not passed on these sources), commits
  *       "Release v<version>" on release/v<version>, pushes it and opens the release PR.
@@ -110,7 +110,7 @@ function releaseProblems(version, { remote = true } = {}) {
   if (lib.hasUnreleased(changelog)) problems.push("CHANGELOG.md has a '## Unreleased' section");
   if (!lib.hasSection(changelog, version)) problems.push(`CHANGELOG.md has no '## ${version}' section`);
   const pending = changes.readChangesets();
-  if (pending.length) problems.push(`.changes/ still holds ${pending.length} changeset(s): ${pending.map((c) => c.file).join(", ")}`);
+  if (pending.length) problems.push(`dev/changes/ still holds ${pending.length} changeset(s): ${pending.map((c) => c.file).join(", ")}`);
   const pkg = changes.packageVersion();
   if (pkg !== version) problems.push(`package.json says ${pkg}, not ${version}`);
   const lock = JSON.parse(readFileSync(join(repoRoot, "package-lock.json"), "utf8"));
@@ -172,7 +172,7 @@ function prepare(opts) {
   if (last && lib.compareVersions(version, last) <= 0) fail(`${version} is not above the last release v${last}`);
   if (tagExists(`v${version}`, { remote: !dry })) fail(`tag v${version} already exists`);
   const changelog = readFileSync(changelogPath, "utf8");
-  if (lib.hasUnreleased(changelog)) fail("CHANGELOG.md has a '## Unreleased' section; move its entries into .changes/ first");
+  if (lib.hasUnreleased(changelog)) fail("CHANGELOG.md has a '## Unreleased' section; move its entries into dev/changes/ first");
   if (lib.hasSection(changelog, version)) fail(`CHANGELOG.md already has a section for ${version}`);
   if (!dry && !opts["no-push"]) {
     if (!hasGh()) fail("the GitHub CLI (gh) is needed to open the release PR (or pass --no-push)");
@@ -205,7 +205,7 @@ function prepare(opts) {
   step(`Branch ${releaseBranch}`);
   run("git", ["switch", "-c", releaseBranch]);
 
-  step("CHANGELOG.md, .changes/, package.json");
+  step("CHANGELOG.md, dev/changes/, package.json");
   writeFileSync(changelogPath, lib.insertSection(changelog, section, version));
   for (const cs of pending) run("git", ["rm", "--quiet", cs.file]);
   if (pkg !== version) run("npm", ["version", version, "--no-git-tag-version", "--allow-same-version"]);
@@ -232,7 +232,7 @@ function prepare(opts) {
   }
 
   step("Commit");
-  run("git", ["add", "CHANGELOG.md", "package.json", "package-lock.json", ".changes"]);
+  run("git", ["add", "CHANGELOG.md", "package.json", "package-lock.json", "dev/changes"]);
   run("git", ["commit", "-m", `Release v${version}`]);
   if (opts["no-push"]) {
     console.log(`\nCommitted on ${releaseBranch}; not pushed (--no-push). PR body:\n\n${body}`);

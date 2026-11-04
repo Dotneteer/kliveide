@@ -1,6 +1,6 @@
 # Changesets — a guide for AI assistants
 
-The rules are in `AGENTS.md` ("Changesets"); the format is in `.changes/README.md`. This file is
+The rules are in `AGENTS.md` ("Changesets"); the format is in `dev/changes/README.md`. This file is
 the judgement that goes with them.
 
 ## When a commit gets a changeset
@@ -29,7 +29,7 @@ users.
 Every time you create or edit a changeset, show the user, in your message:
 
 ````markdown
-Changeset `.changes/<file>.md` — **minor** (feature, #1468)
+Changeset `dev/changes/<file>.md` — **minor** (feature, #1468)
 
 ```markdown
 <the whole file>

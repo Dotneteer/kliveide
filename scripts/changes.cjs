@@ -1,5 +1,5 @@
 /**
- * Klive's changesets (.ai/release-guide.md, .changes/README.md).
+ * Klive's changesets (.ai/release-guide.md, dev/changes/README.md).
  *
  *   npm run change                      create one, asking for each field (in a terminal)
  *   npm run change -- --type fix --issue 1417 --text "..." [--highlight "..."] [--key [summary]]
@@ -22,7 +22,7 @@ const { randomBytes } = require("node:crypto");
 const lib = require("./changes-lib.cjs");
 
 const repoRoot = join(__dirname, "..");
-const changesDir = join(repoRoot, ".changes");
+const changesDir = join(repoRoot, "dev", "changes");
 
 function git(args, options = {}) {
   try {
@@ -41,7 +41,7 @@ function lastRelease() {
   return lib.latestReleaseFromTags(git(["tag", "--list", "v*"]).split("\n").filter(Boolean));
 }
 
-/** The pending changeset files (every .md in .changes/ but the README) */
+/** The pending changeset files (every .md in dev/changes/ but the README) */
 function changesetFiles() {
   if (!existsSync(changesDir)) return [];
   return readdirSync(changesDir)
@@ -182,7 +182,7 @@ function check() {
     console.error(`${cs.file}:\n${cs.errors.map((e) => `  - ${e}`).join("\n")}`);
   }
   if (bad.length) {
-    console.error(`\n${bad.length} of ${all.length} changeset(s) are invalid. The format is in .changes/README.md.`);
+    console.error(`\n${bad.length} of ${all.length} changeset(s) are invalid. The format is in dev/changes/README.md.`);
     return false;
   }
   console.log(`changes: ${all.length} pending changeset(s), all valid`);
@@ -249,7 +249,7 @@ function gate(opts) {
       '  npm run change -- --type fix --issue 1234 --text "Assembler: what was wrong, in a full sentence."',
       '  npm run change -- --type feature --text "**Feature name:** what it does."',
       '  npm run change -- --type internal        (no user-visible change; no CHANGELOG entry)',
-      "or set the 'no-changeset' label on the PR. See .changes/README.md."
+      "or set the 'no-changeset' label on the PR. See dev/changes/README.md."
     ].join("\n")
   );
   return false;

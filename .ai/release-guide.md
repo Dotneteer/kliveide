@@ -1,6 +1,6 @@
 # Releasing Klive
 
-Changesets are `.changes/README.md` and `changesets-guide.md`. A release is two steps: prepare a PR
+Changesets are `dev/changes/README.md` and `changesets-guide.md`. A release is two steps: prepare a PR
 locally, then merge it. The pipeline was built from a plan closed on 2026-11-04 (git history:
 `.plans/RELEASE_AUTOMATION_PLAN.md`); every release since v0.64.0 went through it. Its decisions,
 which the scripts and workflows cite by number, are at the end of this file.

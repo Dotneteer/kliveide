@@ -1,4 +1,4 @@
-# Fails a PR that changes the app without a changeset in .changes/ (.ai/release-guide.md,
+# Fails a PR that changes the app without a changeset in dev/changes/ (.ai/release-guide.md,
 # D15). Docs, plans, tests and CI changes pass; so do Dependabot PRs, release PRs (release/v*)
 # and PRs with the `no-changeset` label. The rules are in gateDecision() in scripts/changes-lib.cjs.
 # It only reports: no comments, no commits to the PR.

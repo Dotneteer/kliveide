@@ -211,8 +211,8 @@ describe("CHANGELOG.md", () => {
 describe("display, slugs and the PR gate", () => {
   it("shows the path, kind and content", () => {
     const text = "---\ntype: feature\nissues: [1468]\n---\n\n**X:** y.\n";
-    expect(renderChangesetForDisplay(".changes/x.md", text, parseChangeset(text), "0.63.0")).toBe(
-      "Changeset `.changes/x.md` — **minor** (feature, #1468)\n\n```markdown\n" + text.trimEnd() + "\n```\n"
+    expect(renderChangesetForDisplay("dev/changes/x.md", text, parseChangeset(text), "0.63.0")).toBe(
+      "Changeset `dev/changes/x.md` — **minor** (feature, #1468)\n\n```markdown\n" + text.trimEnd() + "\n```\n"
     );
   });
 
@@ -223,9 +223,9 @@ describe("display, slugs and the PR gate", () => {
 
   it.each([
     [{ files: [{ path: "src/main/a.ts", status: "M" }] }, false],
-    [{ files: [{ path: "src/main/a.ts", status: "M" }, { path: ".changes/a-1234.md", status: "A" }] }, true],
-    [{ files: [{ path: "src/main/a.ts", status: "M" }, { path: ".changes/README.md", status: "M" }] }, false],
-    [{ files: [{ path: "src/main/a.ts", status: "M" }, { path: ".changes/a-1234.md", status: "D" }] }, false],
+    [{ files: [{ path: "src/main/a.ts", status: "M" }, { path: "dev/changes/a-1234.md", status: "A" }] }, true],
+    [{ files: [{ path: "src/main/a.ts", status: "M" }, { path: "dev/changes/README.md", status: "M" }] }, false],
+    [{ files: [{ path: "src/main/a.ts", status: "M" }, { path: "dev/changes/a-1234.md", status: "D" }] }, false],
     [{ files: [{ path: "docs/content/en/x.mdx", status: "M" }, { path: "README.md", status: "M" }, { path: "test/x.test.ts", status: "A" }] }, true],
     [{ files: [{ path: "_input/enterprise128/README.md", status: "A" }, { path: "_input/ht1080z/manual.pdf", status: "A" }] }, true],
     [{ files: [{ path: "src/a.ts", status: "M" }], labels: ["no-changeset"] }, true],

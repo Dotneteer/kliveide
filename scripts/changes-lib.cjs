@@ -1,6 +1,6 @@
 /**
  * The pure logic of Klive's changesets and releases (.ai/release-guide.md): parsing
- * and validating `.changes/*.md`, the version a set of changesets asks for, assembling a
+ * and validating `dev/changes/*.md`, the version a set of changesets asks for, assembling a
  * CHANGELOG section, and reading one back. No file system, git or network here; `changes.cjs`
  * and `release.cjs` do the I/O, and the tests call this module directly.
  *
@@ -367,7 +367,7 @@ function hasSection(changelog, version) {
 /** Inserts a release section above the newest one */
 function insertSection(changelog, section, version) {
   if (hasUnreleased(changelog)) {
-    throw new Error("CHANGELOG.md still has a '## Unreleased' section; pending changes belong in .changes/");
+    throw new Error("CHANGELOG.md still has a '## Unreleased' section; pending changes belong in dev/changes/");
   }
   if (version && hasSection(changelog, version)) throw new Error(`CHANGELOG.md already has a section for ${version}`);
   const lines = changelog.split("\n");
@@ -443,7 +443,7 @@ const GATE_EXEMPT = [
   /^dev\/experiments\//,
   /^_input\//,
   /^i18n-work\//,
-  /^\.changes\//,
+  /^dev\/changes\//,
   /^[^/]+\.md$/
 ];
 
@@ -456,7 +456,7 @@ function gateDecision({ files, labels = [], author = "", headRef = "" }) {
   if (labels.includes("no-changeset")) return { ok: true, reason: "the no-changeset label is set" };
   if (/^release\/v/.test(headRef)) return { ok: true, reason: "release PR: it consumes changesets" };
   const changesets = files.filter(
-    (f) => /^\.changes\/[^/]+\.md$/.test(f.path) && !/README\.md$/i.test(f.path) && /^[AMR]/.test(f.status ?? "A")
+    (f) => /^dev\/changes\/[^/]+\.md$/.test(f.path) && !/README\.md$/i.test(f.path) && /^[AMR]/.test(f.status ?? "A")
   );
   if (changesets.length) {
     return { ok: true, reason: `changeset: ${changesets.map((f) => f.path).join(", ")}` };
