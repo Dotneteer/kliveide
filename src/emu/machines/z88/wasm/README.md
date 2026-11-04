@@ -207,7 +207,7 @@ from 0. Any other code that compares absolute tacts has the same trap.
 **The tact hook is `noinline`** (`Z88_CPU_NOINLINE`), as `sp48CpuTactPlusN` is: it runs the sampler,
 and inlined into every opcode it would more than triple the code (710 KB against 198 KB).
 
-**R counts both M1 cycles of a prefixed instruction** (2026-10-03, `.plans/ZX8081_WASM_PLAN.md` C4,
+**R counts both M1 cycles of a prefixed instruction** (2026-10-03, `.ai/zx8081.md`, "Core decisions", C4,
 the shared core's fix for the Sinclair ZX81). The IDE goldens' `ir` values and the typing sessions'
 memory digests were re-recorded for it: OZ stores R-derived bytes (its interrupt-state save reads
 `LD A,R`). Before re-recording, the typing sessions were recorded with every R-free field - PC, tacts,

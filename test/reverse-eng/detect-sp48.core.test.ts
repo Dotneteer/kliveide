@@ -8,7 +8,7 @@ import { runDetection, type DetectionContext, type DetectionPorts } from "@rende
 import type { RomPartitionInfo } from "@renderer/appIde/annotations/romAnnotationLoader";
 
 /*
- * Code/data detection on the real 48K core (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §8, G7.3):
+ * Code/data detection on the real 48K core (`.docs/reverse-engineering-tools.md`, "Tests worth knowing", G7.3):
  * boot to BASIC with coverage on, print through the ROM, then detect on the ROM page. Known entry
  * points must come out as code and the character set's printed letters as data.
  *

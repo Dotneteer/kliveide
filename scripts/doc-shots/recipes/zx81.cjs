@@ -1,8 +1,7 @@
 /**
- * The Sinclair ZX81 in the running app (`.plans/ZX8081_WASM_PLAN.md` §8.1.7, §13 Phase 7):
+ * The Sinclair ZX81 in the running app (`.ai/zx8081.md`, "The virtual keyboard"):
  *
- * - `zx81/zx81-keyboard.png` — the virtual keyboard panel, for comparison with the approved mockup
- *   (`.plans/zx8081/zx81-keyboard-mockup.html`) and the reference photo;
+ * - `zx81/zx81-keyboard.png` — the virtual keyboard panel, for comparison with the reference photo;
  * - `zx81/zx81-print.png` — the EMU window after typing `PRINT "HELLO"` on the host keyboard;
  * - `zx81/zx81-loaded.png` — after `tape-load <file.p> -r` with `machine-code/dezog-sample.p` (MIT,
  *   from `_input/zx81-tapes/`): LOAD "", the load, the program starting itself, and S pressed - it

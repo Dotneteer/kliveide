@@ -1,5 +1,5 @@
 /*
- * The ZX Spectrum Next's kept real-time clocks (`.plans/ZXNEXT_RTC_OPTIONS_PLAN.md` D5):
+ * The ZX Spectrum Next's kept real-time clocks (`.ai/zxnext-rtc.md` D5):
  * `~/Klive/zxnext-rtc.json`, one entry per Next model. The main process owns the file; the emulator
  * loads and saves through `MainApi`, the Settings dialog's Kept clock row reads the `nextRtcKept`
  * app-state key this module keeps up to date.

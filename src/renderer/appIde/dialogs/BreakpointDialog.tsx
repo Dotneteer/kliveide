@@ -39,7 +39,7 @@ import {
   parseNumericInput,
   validateBreakpointForm
 } from "@renderer/appIde/utils/breakpoint-form";
-// --- Register names: the union of every core's set (`.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` D5)
+// --- Register names: the union of every core's set (`.ai/zxnext-models.md` D5)
 import { nextRegUnion } from "@emu/machines/zxNext/nextRegSets";
 import { SPRITE_ATTRIBUTE_LABELS } from "@common/zxnext/sprites/spriteBreakpoints";
 import styles from "./BreakpointDialog.module.scss";

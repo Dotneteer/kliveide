@@ -224,7 +224,7 @@ export class ZxNextWasmV2Machine
   private piI2sScratch = new Int16Array(0);
   /** The core's since-pause contention count when the IDE last restarted it (see resetContentionDelaySincePause). */
   private wasmV2ContentionPauseBase = 0;
-  /** The DS1307's host side: which clock it follows, and keeping it (`.plans/ZXNEXT_RTC_OPTIONS_PLAN.md`) */
+  /** The DS1307's host side: which clock it follows, and keeping it (`.ai/zxnext-rtc.md`) */
   readonly rtcHost = new NextRtcHost(
     () => this.wasmV2Runtime?.exports as unknown as NextRtcExports | undefined,
     () => this.profile.id,
@@ -768,7 +768,7 @@ export class ZxNextWasmV2Machine
    */
   loadMachineState(parts: MachineStateParts): void {
     const runtime = this.requireWasmV2Runtime();
-    // --- Another Next model's state: say which model saved it (`.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` §4)
+    // --- Another Next model's state: say which model saved it (`.ai/zxnext-models.md`, "As-built details worth knowing")
     const coreId = stateCoreIdOf(this.profile);
     const savedOn = profileOfStateCoreId(parts.coreId);
     if (savedOn && parts.coreId !== coreId) {
@@ -1571,7 +1571,7 @@ export class ZxNextWasmV2Machine
    */
   override async executeCustomCommand(command: string): Promise<any> {
     const runtime = this.wasmV2Runtime;
-    // --- The Settings dialog's Kept clock buttons (`.plans/ZXNEXT_RTC_OPTIONS_PLAN.md` D8)
+    // --- The Settings dialog's Kept clock buttons (`.ai/zxnext-rtc.md` D8)
     if (runtime != null && command === "rtcSetToHost") {
       this.rtcHost.setToHost();
       return;
@@ -2381,7 +2381,7 @@ export class ZxNextWasmV2Machine
   }
 
   /**
-   * The profile's ROM set (`.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` D9), each file checked against the
+   * The profile's ROM set (`.ai/zxnext-models.md` D9), each file checked against the
    * manifest's page CRCs (D9.3): a hand-replaced ROM is reported, not booted
    */
   private async loadWasmV2RomImages(): Promise<ZxNextWasmV2RomImages> {
@@ -2413,7 +2413,7 @@ export class ZxNextWasmV2Machine
     writeCoreBytes(runtime, runtime.memory, roms.divMmcRom, OFFS_DIVMMC_ROM);
     writeCoreBytes(runtime, runtime.memory, roms.multifaceRom, OFFS_MULTIFACE_MEM);
     writeCoreBytes(runtime, runtime.memory, roms.altRom, OFFS_ALT_ROM_0);
-    // --- The ROM set's facts the core depends on (`.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` D6)
+    // --- The ROM set's facts the core depends on (`.ai/zxnext-models.md` D6)
     const tape = NEXT_ROM_SETS[this.profile.romSet].facts.ldBytes;
     runtime.exports.zxnextTapeSetRomRoutines(tape.loadBytes, tape.loadBytesInvalidHeader, tape.loadBytesResume, tape.saveBytes);
   }

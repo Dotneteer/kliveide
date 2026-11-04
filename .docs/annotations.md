@@ -5,7 +5,8 @@ breakpoints — in a JSON sidecar next to the file they describe: `Game.nex.dis`
 `jetpac.z80.dis`, `game.p.dis`, a project's `annotations.dis`, a ROM's
 `sp48.rom.dis`. One model serves every machine with a *bank space*: the ZX Spectrum
 Next, the 48K, 128K/Pentagon, +2A/+3/+3E, Scorpion, Timex (HOME memory), ZX80 and
-ZX81. The plan is `.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md`; the code is in
+ZX81. It was built from a plan closed on 2026-11-04 (git history:
+`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md`); the code is in
 `src/renderer/appIde/annotations/` and `src/common/annotations/bankSpace.ts`.
 
 The NEX-specific behaviour below (the NEX viewer, bank pop-outs, sprites, Copper and
@@ -32,6 +33,33 @@ sidecar's bank breakpoints work on every machine with one; a machine without
 partitions arms its site with `ANY_PARTITION`. `test/annotations/bankSpace.test.ts`
 round-trips every space under every paging, and `test/zx8081-hw/annotation-mirrors.test.ts`
 checks the ZX80/ZX81 folds against the real core.
+
+### The ZX80 and ZX81
+
+One core runs every configuration (`src/emu/machines/zx8081/wasm/`), and one bank space each covers
+them all:
+
+| Model | ROM | RAM |
+|---|---|---|
+| ZX81 1K / 16K | 8K at `$0000`, again at `$2000` | from `$4000`, mirrored up to `$FFFF` |
+| ZX81 64K | 8K at `$0000` | `$2000-$FFFF`; an opcode fetch above 32K reads the lower 32K |
+| ZX80 1K / 16K | 4K at `$0000` | from `$4000` |
+| ZX80 with the 8K ROM | the ZX81's | 16K, as the ZX80 |
+
+A CPU address folds to its canonical address (the profile layout's rule), stored as 16K blocks so the
+sidecar format is unchanged: `$4000-$7FFF` is bank 1, and the 64K model adds blocks 0 (from
+`$2000`), 2 and 3. `addressesOf` returns every mirror under the current model. The 64K model's
+opcode-fetch redirect above 32K is not modelled: the listing shows what a data read sees.
+
+- **Data rows use the machine's character set** (the registry's `charSet`): the `bytes` text column
+  and the `text` region, which only these bank spaces offer, written as `bytes` + `decode: "text"`.
+- **System variables** come from `Zx81SysVars.ts` and `Zx80SysVars.ts`, recorded from the manuals as
+  interface facts (`.ai/rom-annotations/README.md`), so `D_FILE`, `E_LINE` and the rest name their
+  operands and fill the System Variables panel.
+- **Breakpoints:** no partitions, so `bp-set <bank>:+<offset>` is refused; a label breakpoint resolves
+  to the canonical address and stays partitionless.
+- **No bank documents:** annotation happens in the live Disassembly view only. A `.p`/`.o` program's
+  sidecar sits beside it; a program with no file uses the project's default sidecar.
 
 ## Schema Versions
 
@@ -192,6 +220,9 @@ The shipped sidecars are authored under the rules of `.ai/rom-annotations/`.
 `build:check`), `-- level` reports completeness, `-- skeleton` lists unlabelled targets,
 `-- bind` reports a binding, `-- coverage` runs the ROM through BASIC with the access
 profile on.
+
+**Not built (an idea from the original plan):** generating ROM constants (a `rom48.inc`, or a
+BASIC compiler's `ROM` constants) from a shipped ROM sidecar's labels.
 
 ## Viewer Behavior
 
@@ -481,7 +512,8 @@ See `.plans/NEX_DMA_COPPER_REGIONS_PLAN.md`. The decoders are pure shared module
 
 ### The Reverse-Engineering Tools' Keys
 
-`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §3. Every one is a key a shipped build ignores (R2); no
+Added by the reverse-engineering tools (`.docs/reverse-engineering-tools.md`). Every one is a key a
+shipped build ignores (R2); no
 schema bump, and Next files stay at version 2.
 
 - **`text`, `defc`, `fill` and `graphic` regions** are stored as `bytes` + `decode`, like Copper and DMA.

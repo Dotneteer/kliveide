@@ -53,7 +53,7 @@ export abstract class ZxNextWasmHost extends Z80MachineBase {
 
   /**
    * The Next model this machine is: its board, core version, ROM set and SD card
-   * (`nextProfiles.ts`, `.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` D2)
+   * (`nextProfiles.ts`, `.ai/zxnext-models.md` D2)
    */
   readonly profile: NextProfile;
 

@@ -4,7 +4,7 @@
  * Screenshots are the site's heaviest content, and the generated ones multiply by language.
  * The budget keeps a page fast on a phone; a page that needs more images than this should be
  * split, or its images made smaller (`.webp` from the doc-shots harness, or a smaller
- * `displayWidth`). See §5 of .plans/DOCS_SITE_MODERNIZATION_PLAN.md.
+ * `displayWidth`). See .ai/docs-site.md.
  *
  * Usage: node scripts/check-docs-weight.cjs [--budget <MB>]
  */

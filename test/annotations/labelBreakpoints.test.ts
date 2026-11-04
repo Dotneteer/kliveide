@@ -31,7 +31,7 @@ import { sp128BankSpace, zx8081BankSpace } from "@common/annotations/bankSpace";
 
 /*
  * Breakpoints named by annotation labels on every machine
- * (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §4.6, §5.5): `bp-set 7:Main`, `bp-set ROM:CLS`,
+ * (`.docs/annotations.md`, "Commands", "ROM Annotations"): `bp-set 7:Main`, `bp-set ROM:CLS`,
  * and `ROM:<name>` / `<bank>:<name>` in conditions.
  */
 

@@ -13,7 +13,7 @@ export const MI_TIMEX = "timex";
 export const MI_SCORPION = "scorpion";
 /** The HT-1080Z (`.plans/HT1080Z_PLAN.md`): Series I, Series II and the /64 as models */
 export const MI_HT1080Z = "ht1080z";
-/** The Videoton TV Computer (`.plans/VIDEOTON_TVC_PLAN.md`): the 64K and the 64K+ as models */
+/** The Videoton TV Computer (`.ai/videoton-tvc.md`): the 64K and the 64K+ as models */
 export const MI_TVC = "tvc";
 /** The Enterprise 64/128 (`.plans/ENTERPRISE_PLAN.md`): the 128 and the 64 as models */
 export const MI_ENTERPRISE = "ep";

@@ -2,17 +2,22 @@
 
 Boriel BASIC 2.x (`zxbc`, the native rewrite of the ZX BASIC compiler) is integrated into Klive as an
 **external compiler**. Since 2026-11-04 it is the only BASIC compiler: Klive BASIC is switched off
-(`.plans/KLIVE_BASIC_SWITCH_OFF_PLAN.md`). The plan is
-`.plans/BORIEL_BASIC_INTEGRATION_PLAN.md`. This folder holds what Phase B0 observed about the pinned
-kit, so that later phases build on measured facts instead of guesses. B0 measured `2.0.0-beta25`;
-the pin is now `2.0.0-beta29` (re-checked 2026-10-24, see "Version history" below).
+(`.ai/klive-basic-switch.md`). This folder is the integration's record: how it is built
+and why, what zxbc was observed to do (B0 measured `2.0.0-beta25`; the pin is now `2.0.0-beta29`,
+re-checked 2026-10-24, see "Version history" below), and what is still open. The integration plan
+was closed on 2026-11-04; its full text is in git history (`.plans/BORIEL_BASIC_INTEGRATION_PLAN.md`
+before that date).
 
 | File | What it is |
 | --- | --- |
+| `integration.md` | **How the integration is built**: the decisions (provenance, B1-B6, B-L1, B-T1, B-T2), packaging, the offer, the dialog, the installer, the compiler, the `.dbg` adapter, the debugger, banked programs, the UI, and the tests. Read it before changing `src/main/boriel-integration/`. |
+| `technical-debt.md` | **What is still open**: a Windows run, the author's decisions, the readiness gate. |
+| `limitations.md` | What Boriel BASIC cannot do that Klive BASIC could, and why. |
 | `kit.md` | The setup kits: layout, platforms, hashes and download URLs, what an installer must do. The macOS first-launch trap is here. |
 | `cli-and-diagnostics.md` | The command line Klive uses, the diagnostics format, and the traps (`project.ini`, `--debug=`, path forms). |
 | `dbg-observed.md` | The `.dbg` file as zxbc actually writes it, checked against runs on the real 48K: what matches the published format, what the adapter must correct, and the run-time data layouts. |
 | `boriel-issues.md` | Defects and gaps worth reporting to Boriel, each with a minimal program. |
+| `updating.md` | **The action list for updating Klive to a new Boriel BASIC version** (the latest, or one the developer names). Follow it whenever a bump is asked for. |
 
 ## Rules that apply to everything here
 
@@ -20,10 +25,13 @@ the pin is now `2.0.0-beta29` (re-checked 2026-10-24, see "Version history" belo
   published docs (<https://zxbasic.readthedocs.io/en/v2.0/debug_format/>), and **running** zxbc on
   Klive's own small test programs, then inspecting the output files and the program's behaviour on
   Klive's 48K harness. Nobody opened the kit's runtime (`lib/*/runtime`) or stdlib sources. The
-  Klive BASIC provenance rule (`.plans/ZXBASIC_COMPILER_PLAN.md` §0.1) still holds, so none of this
+  Klive BASIC provenance rule (`.ai/kbasic/compiler.md`, "Provenance (hard rule)") still holds, so none of this
   may be used to design Klive BASIC's runtime.
+- **zxbc never runs in CI** (B-T1): CI tests use the committed fixtures in `test/boriel/fixtures/`.
+  **The kit is redistributed on Boriel's written permission for the beta** (B-L1): a production
+  version needs its licence text shipped. Both are in `integration.md`, "Decisions".
 - **Version-specific.** Facts are about the pinned kit, `2.0.0-beta29`, unless a note names
-  another version. A kit update (plan B-T2) means re-running
+  another version. A kit update (B-T2, `integration.md`) means re-running
   the checks in "How to re-check" below and updating these files.
 - **Platform coverage of B0** (2026-10-17, on an Apple Silicon Mac):
 
@@ -35,6 +43,9 @@ the pin is now `2.0.0-beta29` (re-checked 2026-10-24, see "Version history" belo
   | x86_64-linux | **Not run.** Docker's Rosetta emulation refuses the static binary (`rosetta error: bss_size overflow`). That is an emulator limit, not evidence of a broken kit. Check on a real x86_64 Linux machine or a CI runner. |
   | x86_64-win, arm64-win | **Not run.** No Windows host. |
   | armv6-linux | **Not run.** Apple Silicon has no AArch32. Klive ships no armv7l build anyway. |
+
+  Since then the project author installed Klive's kit and ran it on macOS, Windows and Linux
+  (2026-11-04). What is still unverified on Windows is in `technical-debt.md`.
 
 ## How to re-check
 

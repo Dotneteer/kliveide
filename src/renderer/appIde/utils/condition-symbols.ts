@@ -58,7 +58,7 @@ export function setSidecarConditionSymbols(
 
 /**
  * Record the ROM's labels, as `rom:<name>` keys with their ROM address: what `ROM:<name>` reads in
- * a condition (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §5.5). Replaces the previous ROM's.
+ * a condition (`.docs/annotations.md`, "ROM Annotations"). Replaces the previous ROM's.
  */
 export function setRomConditionSymbols(labels: readonly { name: string; address: number }[]): void {
   romSymbols = {};

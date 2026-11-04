@@ -1,5 +1,5 @@
 /**
- * The message catalogs bundled into main and both renderers (LOCALIZATION_PLAN D1).
+ * The message catalogs bundled into main and both renderers (`.ai/localization.md`, D1).
  *
  * The English namespace files are imported by `source.generated.ts`, and the translations by
  * `translations.generated.ts`; `npm run i18n:keys` (and `i18n:merge`) regenerate both, so adding a

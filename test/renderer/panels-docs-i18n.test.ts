@@ -8,8 +8,7 @@ import {
 import { parseTraceColumns } from "@common/history/historyExport";
 
 /*
- * The document panels' non-React texts in the pseudo-locale (`.plans/LOCALIZATION_PLAN.md` step
- * 11): the disassembly row menus and the execution-point readout's prose are pseudo text, and the
+ * The document panels' non-React texts in the pseudo-locale (`.ai/localization.md`): the disassembly row menus and the execution-point readout's prose are pseudo text, and the
  * readout's notation (the short form) is left alone.
  */
 const isPseudo = (text: string) => /^\[.*~+\]$/s.test(text);

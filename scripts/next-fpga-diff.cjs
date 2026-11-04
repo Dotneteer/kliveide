@@ -1,6 +1,6 @@
 /*
- * A structured diff of two pinned ZX Spectrum Next VHDL trees (`.plans/ZXNEXT_CORE_VERSIONS_PLAN.md`
- * P2): which files were added, removed, moved or changed; for each changed VHDL file, the entity
+ * A structured diff of two pinned ZX Spectrum Next VHDL trees (`.ai/zxnext-models.md`,
+ * "Adding a model", step 1): which files were added, removed, moved or changed; for each changed VHDL file, the entity
  * generics and every changed line grouped by the section banner, process / generate block and
  * signals it touches, with line numbers in both versions; and `nextreg.txt` grouped by register.
  *

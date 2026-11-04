@@ -528,7 +528,7 @@ and memory/I/O breakpoints stay per instruction.
 
 ## A New Machine On The Shared Core: The Sinclair ZX80/ZX81
 
-The ZX80/ZX81 (`.plans/ZX8081_WASM_PLAN.md`, `src/emu/machines/zx8081/wasm/README.md`) was the first
+The ZX80/ZX81 (`.ai/zx8081.md`, `src/emu/machines/zx8081/wasm/README.md`) was the first
 machine built on the WASM core from scratch, with no TypeScript machine to port or to hold it to. Its
 ULA lives on four hooks of the shared Z80, three of them new and default-no-op: `Z80_REFRESH`
 (every refresh, with I:R before the increment), `Z80_NMI_ACK_WAIT` (inside the NMI acknowledge,
@@ -609,7 +609,7 @@ models on one artifact. What it taught:
 
 ## A Machine Whose Video Chip Stretches The CPU: The Videoton TVC
 
-The Videoton TVC (`.plans/VIDEOTON_TVC_PLAN.md`, `src/emu/machines/tvc/wasm/README.md`) is the third
+The Videoton TVC (`.ai/videoton-tvc.md`, `src/emu/machines/tvc/wasm/README.md`) is the third
 non-Spectrum machine on the shared Z80. What it taught, for the next one:
 
 - **A new hook goes in as its own phase, proved byte-identical first.** H1, `Z80_DELAY_OPCODE_FETCH`,

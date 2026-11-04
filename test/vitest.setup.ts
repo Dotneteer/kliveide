@@ -15,7 +15,7 @@ beforeEach((context) => {
   const testFile = context.task.file.filepath ?? context.task.file.name ?? "unknown";
   setTestHome(sanitizePathSegment(testFile));
   // --- Tests assert English text: pin it whatever a test (or the developer's setting) chose
-  // --- (.plans/LOCALIZATION_PLAN.md step 1)
+  // --- (`.ai/localization.md`)
   translator.setLanguage("en");
   translator.setShowKeys(false);
 });

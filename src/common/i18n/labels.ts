@@ -1,5 +1,5 @@
 /**
- * Option tables with translated labels (`.plans/LOCALIZATION_PLAN.md` D7: keys at definition, text
+ * Option tables with translated labels (`.ai/localization.md`, D7: keys at definition, text
  * at display).
  *
  * Shared tables such as the sound levels are module-level constants read by the menus, the Settings

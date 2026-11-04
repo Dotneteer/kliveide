@@ -4,7 +4,7 @@ import { createTvcSession, type TvcTestSession } from "../harness/tvc";
 import { bareMachine, ROM_CRTC } from "./bare";
 
 /*
- * The TVC's sound and timer (`.plans/VIDEOTON_TVC_PLAN.md` §10; TVC_HARDWARE_OVERVIEW.md §5): a
+ * The TVC's sound and timer (`src/emu/machines/tvc/wasm/README.md`, "Sound"; TVC_HARDWARE_OVERVIEW.md §5): a
  * 12-bit divider of 4096 - n clocks at 3.125 MHz, then a 4-bit counter whose bit 3 is the square
  * wave and, with port 05h bit 5, the sound interrupt. The cursor interrupt is off here (R10 = 23h,
  * cursor mode 01, as the ROM's tape routines set it), so only the sound can interrupt.
@@ -43,7 +43,7 @@ describe("TVC sound: the divider and the counter", () => {
     expect(s.wasm.tvcGetSoundCounter()).toBe(Math.floor(elapsed / 100) & 15);
   });
 
-  it("raises the shared interrupt 16 divider periods after a restart, then every 16 (plan Q2)", async () => {
+  it("raises the shared interrupt 16 divider periods after a restart, then every 16 (Q2)", async () => {
     const s = await soundMachine();
     setSound(s, 4096 - 100, 0x20);
     s.wasm.tvcReadPort(0x5b);

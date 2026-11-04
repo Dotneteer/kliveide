@@ -45,7 +45,7 @@ export const isWindowsAction: ActionCreator = (flag: boolean) => ({
   payload: { flag }
 });
 
-/** The resolved display language (`.plans/LOCALIZATION_PLAN.md` §5), published by main */
+/** The resolved display language (`.ai/localization.md`, "The runtime"), published by main */
 export const setUiLanguageAction: ActionCreator = (
   value: import("@common/i18n/languages").UiLanguageState
 ) => ({
@@ -522,7 +522,7 @@ export const setExportDialogInfoAction: ActionCreator = (value: ExportDialogSett
 
 /**
  * The project's annotation sidecar, relative to its folder (`.kliveproject`'s `annotations`). Absent
- * means the default, `annotations.dis` (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` Q3).
+ * means the default, `annotations.dis` (`.docs/annotations.md`).
  */
 export const setProjectAnnotationsAction: ActionCreator = (value: string | undefined) => ({
   type: "SET_PROJECT_ANNOTATIONS",

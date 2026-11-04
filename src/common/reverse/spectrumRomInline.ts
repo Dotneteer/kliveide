@@ -1,6 +1,6 @@
 /*
  * The inline bytes after `RST $08` and `RST $28` in the 48K BASIC ROM, as instruction lengths for
- * the reachability walk (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §4.4).
+ * the reachability walk (`.docs/reverse-engineering-tools.md`, "Code/data detection").
  *
  * The same rules Klive's own ZX Spectrum 48 custom disassembler decodes by
  * (`zx-spectrum-48-disassembler.ts`), restated as a length: `RST $08` is followed by one report code;

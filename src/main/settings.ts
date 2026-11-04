@@ -59,7 +59,7 @@ export type AppSettings = {
   keyMappingFile?: string;
   userSettings?: Record<string, any>;
   /**
-   * The answer to the Boriel BASIC setup offer (`.plans/BORIEL_BASIC_INTEGRATION_PLAN.md` §3.2):
+   * The answer to the Boriel BASIC setup offer (`.ai/boriel/integration.md`, "The installation offer"):
    * "Don't ask again" holds for the kit version it was given for.
    */
   borielSetup?: { offeredVersion?: string; declined?: boolean; installedVersion?: string };

@@ -15,7 +15,7 @@ import {
  * The interesting part is what this deliberately does *not* claim. RAM has no provenance: nothing in
  * the machine records that a bank was written by a NEX loader rather than by the program or by
  * another NEX loaded afterwards. So the wording is a fact about the *file*, and the tests below pin
- * that wording as much as the matching. See `.plans/NEX_DEBUGGING_PLAN.md` §11.5.
+ * that wording as much as the matching. See `.ai/nex-debugging.md`.
  */
 
 beforeEach(() => resetNexLoadSessionForTests());

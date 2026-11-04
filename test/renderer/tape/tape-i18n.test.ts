@@ -11,7 +11,7 @@ import {
 } from "@renderer/appIde/DocumentPanels/Tape/tapeView";
 
 /*
- * The tape viewer in the pseudo-locale (`.plans/LOCALIZATION_PLAN.md` step 11): the model words its
+ * The tape viewer in the pseudo-locale (`.ai/localization.md`): the model words its
  * texts when it runs, so in `qps` every block name, group heading, header field and explanation is
  * pseudo text. Literal values - hex, numbers, BASIC keywords - stay as they are.
  */

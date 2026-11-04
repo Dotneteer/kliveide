@@ -8,7 +8,7 @@ import type {
 } from "@abstractions/SourceDebugInfo";
 
 /**
- * Source-level stepping (plan `.plans/ZXBASIC_COMPILER_PLAN.md` §10.2, §10.3): steps one statement
+ * Source-level stepping (`.ai/kbasic/compiler.md`, "Guarantees" and "Source-level debugging as built"): steps one statement
  * at a time, over and out of calls, using a compiler's `SourceLevelDebugInfo` and its extensions.
  *
  * Everything here is a plain function over plain data, so it runs the same in every machine and is
@@ -141,7 +141,7 @@ export class SourceDebugIndex {
    * Every CPU address `entryAt` or `returnSiteAt` can answer for - statement entries and call-site
    * return addresses, in any partition. The statement tracker and a source step act nowhere else
    * (`shouldStopAtSourceStep` returns at once elsewhere), so a debug loop running in the core stops at
-   * these and lets them decide (`.plans/WASM_CORE_LEAN_AND_DEBUG_PLAN.md` D13, Phases 4a and 4d).
+   * these and lets them decide (`.ai/wasm-core-debug.md` D13).
    * Read from the debug info rather than the maps' keys: a banked statement of unknown partition is keyed
    * by no address at all. A superset is harmless - the decision at a stop is the TypeScript one.
    */

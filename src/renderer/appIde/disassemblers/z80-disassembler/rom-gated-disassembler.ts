@@ -8,7 +8,7 @@ import {
 
 /*
  * A machine's custom disassembler, gated on the code being in the ROM it describes
- * (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §4.5, §4.7).
+ * (`.docs/annotations.md`, "The Live Disassembly View", "The ZX80 and ZX81").
  *
  * The 48K custom disassembler reads the bytes after `RST $08` as a report code and after `RST $28`
  * as calculator literals. That is true of the 48K BASIC ROM's code and of nothing else: a program in

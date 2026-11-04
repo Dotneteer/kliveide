@@ -3,7 +3,7 @@
  *
  * - `latestRelease`: the version of the newest `v*` tag. The landing page shows only features
  *   whose `since` version is at most this one, so it never claims something a visitor cannot
- *   download yet (R6 of .plans/DOCS_SITE_MODERNIZATION_PLAN.md).
+ *   download yet (R6 of .ai/docs-site.md).
  * - `releaseDate` and `downloads`: the release's install kits, for the Download button. They come
  *   from the GitHub API when it answers, and otherwise from the asset naming the release
  *   workflow uses (`KliveIdeSetup-<version>-<arch>.<ext>`), so an offline build still works.

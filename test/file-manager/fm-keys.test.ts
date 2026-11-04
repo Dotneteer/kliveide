@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { intentForKey, type KeyContext } from "@renderer/appIde/DocumentPanels/FileManager/fileManagerKeys";
 
-/* The File Manager's keys (.plans/FILE_MANAGER_PLAN.md D8): a key press to an intent */
+/* The File Manager's keys (`.ai/file-manager.md`, D8): a key press to an intent */
 
 const ctx: KeyContext = { side: 1, cursor: 5, rowCount: 40, pageSize: 11, menuOpen: false };
 

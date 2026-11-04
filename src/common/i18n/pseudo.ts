@@ -1,5 +1,5 @@
 /**
- * The `qps` pseudo-locale (LOCALIZATION_PLAN §2).
+ * The `qps` pseudo-locale (`.ai/localization.md`, "The tooling").
  *
  * Every letter of the English text is swapped for an accented look-alike, the text is padded by
  * about 40 % and wrapped in `[…]`. Running Klive in `qps` shows at a glance:

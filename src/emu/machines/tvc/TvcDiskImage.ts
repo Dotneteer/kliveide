@@ -1,5 +1,5 @@
 /*
- * Videoton TVC floppy images (`.plans/VIDEOTON_TVC_PLAN.md` §9.4): a raw `.dsk` - the sectors in
+ * Videoton TVC floppy images (`src/emu/machines/tvc/wasm/README.md`, "The HBF card and VT-DOS"): a raw `.dsk` - the sectors in
  * order, cylinder by cylinder, side 0 then side 1 - of an MS-DOS format disk, which VT-DOS uses. The
  * geometry comes from the FAT12 boot sector: 512-byte sectors, 9 a track, one or two sides, and the
  * total sector count (720K: 80 x 2; the single-sided 360K: 80 x 1). The HBF card's controller holds

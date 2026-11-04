@@ -128,7 +128,8 @@ export async function openEmulatorFile(
 
 /**
  * Puts an HT-1080Z tape into the HT-1080Z's deck (`.plans/HT1080Z_PLAN.md` §9), or a `.cas` into the
- * Videoton TVC's (`.plans/VIDEOTON_TVC_PLAN.md` §9): refused on any other machine, with the reason
+ * Videoton TVC's (`.ai/videoton-tvc.md`, "Tape, disks and files"): refused on any other machine,
+ * with the reason
  * @returns An error message, or undefined when the tape went in
  */
 async function insertHtTape(filename: string): Promise<string | undefined> {

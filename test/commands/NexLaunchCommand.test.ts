@@ -484,6 +484,31 @@ describe("the source-level debug sidecar (plan §8.5)", () => {
     expect(setSourceDebugInfo.mock.calls).toEqual([[undefined], [undefined]]);
   });
 
+  it("uses zxbc's .dbg beside a .nex Boriel BASIC built outside Klive when there is no sidecar", async () => {
+    const { context } = contextFor(MI_ZXNEXT);
+    const nex = nexBytes(0xc123, 20);
+    context.mainApi.readBinaryFile.mockResolvedValue(nex);
+    context.mainApi.readTextFile = vi.fn().mockRejectedValue(new Error("ENOENT"));
+    context.mainApi.borielNexDebug = vi
+      .fn()
+      .mockResolvedValue({ dbgFile: "/p/game.dbg", sidecar: createSourceDebugSidecar(nex, info) });
+    const setSourceDebugInfo = vi.fn().mockResolvedValue(undefined);
+    context.emuApi.setSourceDebugInfo = setSourceDebugInfo;
+    await new LaunchNexCommand().execute(context, { file: "/p/game.nex", "-d": true });
+    expect(context.mainApi.borielNexDebug).toHaveBeenCalledWith("/p/game.nex");
+    expect(setSourceDebugInfo.mock.calls).toEqual([[info], [info]]);
+  });
+
+  it("says why zxbc's .dbg beside the .nex is not used", async () => {
+    const { context } = contextFor(MI_ZXNEXT);
+    context.mainApi.readTextFile = vi.fn().mockRejectedValue(new Error("ENOENT"));
+    context.mainApi.borielNexDebug = vi.fn().mockResolvedValue({ dbgFile: "/p/game.dbg", error: "it belongs to another build" });
+    const setSourceDebugInfo = vi.fn().mockResolvedValue(undefined);
+    context.emuApi.setSourceDebugInfo = setSourceDebugInfo;
+    await new LaunchNexCommand().execute(context, { file: "/p/game.nex", "-d": true });
+    expect(setSourceDebugInfo.mock.calls).toEqual([[undefined], [undefined]]);
+  });
+
   it("is not read for a run without debugging", async () => {
     const { context } = contextFor(MI_ZXNEXT);
     context.mainApi.readTextFile = vi.fn();

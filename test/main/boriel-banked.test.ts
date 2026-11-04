@@ -10,7 +10,7 @@ import {
 
 /*
  * Finding a banked Boriel BASIC program in the 16K banks of zxbc's snapshot or `.nex`
- * (`.plans/BORIEL_BASIC_INTEGRATION_PLAN.md` §7): the resident part from the origin to $C000, then
+ * (`.ai/boriel/integration.md`, "Banked programs"): the resident part from the origin to $C000, then
  * each listed bank, with the `.dbg`'s length and checksum deciding how long each part is.
  */
 

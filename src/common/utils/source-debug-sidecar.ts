@@ -4,7 +4,7 @@ import { SOURCE_DEBUG_MODEL_VERSION } from "@abstractions/SourceDebugInfo";
 import { upgradeSourceLevelDebug } from "./source-debug-upgrade";
 
 /**
- * The source-level debug sidecar of a NEX (plan `.plans/ZXBASIC_COMPILER_PLAN.md` §8.5):
+ * The source-level debug sidecar of a NEX (`.ai/kbasic/compiler.md`, "Source-level debugging as built"):
  * `<name>.nex.kbasic-debug.json`, written beside a NEX exported from a program with source-level
  * debug info. When that NEX is launched on its own (`nex-run`), the IDE sends the sidecar's info to
  * the emulator, so the program can be stepped at source level without rebuilding it.

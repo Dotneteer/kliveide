@@ -316,7 +316,8 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     requireFeature: [MF_ULA]
   },
   withTexts({
-    // --- The Videoton TVC's CRTC, palette, border and video banks (`.plans/VIDEOTON_TVC_PLAN.md` §11)
+    // --- The Videoton TVC's CRTC, palette, border and video banks (`.ai/videoton-tvc.md`, "IDE
+    // --- integration")
     id: "tvcVideoPanel",
     hostActivity: ACTIVITY_DEBUG_ID,
     renderer: TvcVideoPanel,
@@ -518,7 +519,7 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     icon: "gauge"
   },
   {
-    // --- The two-pane File Manager (`.plans/FILE_MANAGER_PLAN.md`, D1)
+    // --- The two-pane File Manager (`.ai/file-manager.md`, D1)
     id: FILE_MANAGER_EDITOR,
     renderer: createFileManagerPanel,
     icon: "columns-2"
@@ -900,9 +901,9 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "ends",
     pattern: ".cas",
-    // --- An HT-1080Z tape (`.plans/HT1080Z_PLAN.md` §9) or a Videoton TVC one (`.plans/VIDEOTON_TVC_PLAN.md`
-    // --- Phase 7): the viewer reads which from the bytes (`detectCasFormat`) and shows either, and
-    // --- Run/Insert/Debug are enabled on that machine only
+    // --- An HT-1080Z tape (`.plans/HT1080Z_PLAN.md` §9) or a Videoton TVC one
+    // --- (`.ai/videoton-tvc.md`, "Tape, disks and files"): the viewer reads which from the bytes
+    // --- (`detectCasFormat`) and shows either, and Run/Insert/Debug are enabled on that machine only
     ignoreCase: true,
     editor: HT1080Z_TAPE_VIEWER,
     icon: "@file-tap-tzx",
@@ -929,7 +930,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "ends",
     pattern: ".p",
-    // --- A ZX80/ZX81 program file, which the machine's tape plays (`.plans/ZX8081_WASM_PLAN.md` §9.1)
+    // --- A ZX80/ZX81 program file, which the machine's tape plays (`.ai/zx8081.md`, "Files, tape and the IDE")
     ignoreCase: true,
     editor: P_FILE_VIEWER,
     icon: "@file-tap-tzx",
@@ -942,7 +943,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "ends",
     pattern: ".81",
-    // --- A ZX80/ZX81 program file, which the machine's tape plays (`.plans/ZX8081_WASM_PLAN.md` §9.1)
+    // --- A ZX80/ZX81 program file, which the machine's tape plays (`.ai/zx8081.md`, "Files, tape and the IDE")
     ignoreCase: true,
     editor: P_FILE_VIEWER,
     icon: "@file-tap-tzx",
@@ -955,7 +956,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "ends",
     pattern: ".o",
-    // --- A ZX80/ZX81 program file, which the machine's tape plays (`.plans/ZX8081_WASM_PLAN.md` §9.1)
+    // --- A ZX80/ZX81 program file, which the machine's tape plays (`.ai/zx8081.md`, "Files, tape and the IDE")
     ignoreCase: true,
     editor: P_FILE_VIEWER,
     icon: "@file-tap-tzx",
@@ -968,7 +969,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "ends",
     pattern: ".80",
-    // --- A ZX80/ZX81 program file, which the machine's tape plays (`.plans/ZX8081_WASM_PLAN.md` §9.1)
+    // --- A ZX80/ZX81 program file, which the machine's tape plays (`.ai/zx8081.md`, "Files, tape and the IDE")
     ignoreCase: true,
     editor: P_FILE_VIEWER,
     icon: "@file-tap-tzx",
@@ -1015,7 +1016,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     openPermanent: true
   })),
   /*
-   * SkoolKit files (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §6.4): plain text in the editor;
+   * SkoolKit files (`.docs/reverse-engineering-tools.md`, "SkoolKit import and export"): plain text in the editor;
    * `skool-import` reads them. `.ctl` is registered only as text, because the extension is generic.
    * Monaco colouring for skool files is a later follow-up.
    */
@@ -1054,7 +1055,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     isReadOnly: true
   },
   /*
-   * Annotation sidecars of every kind (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §4.6):
+   * Annotation sidecars of every kind (`.docs/annotations.md`, "Commands"):
    * `game.nex.dis`, `game.z80.dis`, a project's `annotations.dis`, a ROM's `sp48.rom.dis`. Read-only
    * JSON: they are edited through the annotation dialogs, which keep the file valid.
    */

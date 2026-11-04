@@ -368,7 +368,7 @@ describe("MemoryDumpSection", () => {
  * The row is one text node — the whole hex string — so a byte cannot be wrapped in its own element
  * without giving up the `ch` arithmetic that positions the hover overlay and reads the hovered byte
  * back out of the pointer position. Marking is therefore an overlay per changed byte, laid over the
- * text at the same computed position. See `.plans/NEX_DEBUGGING_PLAN.md` §11.3.
+ * text at the same computed position. See `.ai/nex-debugging.md`.
  */
 describe("MemoryDumpSection: changed bytes", () => {
   async function renderRow(changedBytes?: boolean[], decimalView = false) {

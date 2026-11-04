@@ -5,8 +5,8 @@ import { TvcCustomDisassembler } from "@renderer/appIde/disassemblers/z80-disass
 import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z80-disassembler";
 
 /*
- * The TVC's custom disassembly (`.plans/VIDEOTON_TVC_PLAN.md` §11): the byte after `RST 30h` is the
- * system call's function code, anywhere in memory.
+ * The TVC's custom disassembly (`.ai/videoton-tvc.md`, "IDE integration"): the byte after `RST 30h`
+ * is the system call's function code, anywhere in memory.
  */
 
 async function listing(memory: Uint8Array, start: number, end: number, decimal = false) {

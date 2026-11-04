@@ -151,7 +151,7 @@ export function createDebugMenu(context: MenuContext): MenuItemConstructorOption
               await getIdeApi().executeCommand("coverage reset");
             }
           },
-          // --- Code/data detection from the coverage (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §4.6)
+          // --- Code/data detection from the coverage (`.docs/reverse-engineering-tools.md`, "Code/data detection")
           {
             id: "detect_code_data",
             label: t("menu.debug.detectCodeData"),

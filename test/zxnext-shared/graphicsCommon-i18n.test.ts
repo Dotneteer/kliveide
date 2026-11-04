@@ -18,7 +18,7 @@ import { l2regs } from "./layer2Fixtures";
 import { emptyBanks, regs } from "./tilemapFixtures";
 
 /*
- * The shared graphics texts in the pseudo-locale (`.plans/LOCALIZATION_PLAN.md` steps 11-13): every
+ * The shared graphics texts in the pseudo-locale (`.ai/localization.md`): every
  * text is pseudo text, and the ones computed before the switch follow it (keys at definition, text at
  * display, D7). Hardware names (`SLU`, `ULA`, `$12 = $13`) are the deliberate exceptions.
  */

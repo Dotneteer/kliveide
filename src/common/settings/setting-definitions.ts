@@ -101,7 +101,7 @@ import {
  * developers and are not shown anywhere: the Settings dialog shows its rows' own translated texts
  * (`settings-pages.ts`, `en/settings.json`), and a menu checkbox passes its own label
  * (`createBooleanSettingsMenu`). So they are deliberately not translation keys
- * (`.plans/LOCALIZATION_PLAN.md` step 6).
+ * (`.ai/localization.md`).
  */
 const settingDefinitions: Setting[] = [
   {

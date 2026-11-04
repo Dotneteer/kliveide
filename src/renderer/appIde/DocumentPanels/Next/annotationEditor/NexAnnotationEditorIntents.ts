@@ -16,7 +16,7 @@ import type { DefinitionLabel } from "@renderer/appIde/annotations/goToDefinitio
  * is reachable two ways — from a row's own context menu, which names the row, and from the toolbar,
  * which acts on the current selection.
  *
- * See `.ai/ui-mvc-guide.md` for the Intent/Event split, and `.plans/NEX_DEBUGGING_PLAN.md` §9.
+ * See `.ai/ui-mvc-guide.md` for the Intent/Event split, and `.ai/nex-debugging.md`.
  */
 export type NexAnnotationEditorIntent =
   // --- The document appeared: subscribe to the shared session for this sidecar.

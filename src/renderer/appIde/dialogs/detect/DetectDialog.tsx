@@ -30,7 +30,7 @@ type Props = {
 };
 
 /**
- * *Detect code and data…* (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §4.6). Wiring only: Redux
+ * *Detect code and data…* (`.docs/reverse-engineering-tools.md`, "Code/data detection"). Wiring only: Redux
  * state in, ports built from the renderer services. Every decision lives in the controller and the
  * model.
  */

@@ -1,8 +1,8 @@
 /**
  * The bundled Videoton TVC ROM images (`src/public/roms`, `tvc-roms-readme.txt`): the one place that
- * names them, so that dropping the bundled images for user-supplied ones (`.plans/VIDEOTON_TVC_PLAN.md`
- * D3, §16) is a change here only. `test/machines/tvc-rom-images.test.ts` checks each image's size and
- * CRC32 against this table.
+ * names them, so that dropping the bundled images for user-supplied ones (`.ai/videoton-tvc.md`,
+ * "Decisions", D3) is a change here only. `test/machines/tvc-rom-images.test.ts` checks each
+ * image's size and CRC32 against this table.
  */
 
 /** The TVC ROM sets: BASIC 1.2 (the 64K) and BASIC 2.2 (the 64K+) */

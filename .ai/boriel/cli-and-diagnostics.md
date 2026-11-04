@@ -18,7 +18,7 @@ and a timeout that kills the process.
   `--debug`**: the `.nex`, and the `asm`/`ir` listings. The `.dbg` written beside a `-f nex` run is
   byte-identical to the `-f bin` run's.
 - **`USE` searches only the module path (`-m`), which defaults to the cwd**, not the source's
-  folder, with or without `--split-modules`. `-m` takes a `:`-separated list. Klive passes the
+  folder, with or without `--split-modules`. `-m` takes a `:`-separated list (`;` on Windows, see `options.md`). Klive passes the
   source's folder, then the include folders.
 - **`--split-modules` on zx48k is an argument error** (exit 2: "architecture 'zx48k' declares no
   banks to split into").
@@ -77,4 +77,4 @@ One per line:
 `-F/--config-file` defaults to **`./project.ini` in the working directory**. With a
 `[zxbc]` / `org = 40000` file in the cwd, the program silently compiled at 40000, with no
 message. Klive runs zxbc in its own empty folder, and passes a project's `project.ini` explicitly
-with `-F` only if the user has one (plan §4.1).
+with `-F` only if the user has one (`integration.md`, "The compiler").

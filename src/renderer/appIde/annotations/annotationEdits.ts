@@ -35,7 +35,7 @@ import { countLabelReferencesInListing, labelKey } from "./labelReferences";
  * it. They are moved here unchanged, beside the annotation model they operate on, so the rules can
  * be tested directly and so the dump component can stop owning them.
  *
- * See `.plans/NEX_DEBUGGING_PLAN.md` §9 (step 4a).
+ * See `.ai/nex-debugging.md` (step 4a).
  */
 
 export function countLabelReferences(
@@ -444,7 +444,7 @@ export function withEndOfLineComment(
  *
  * `origin` is for the writers that are not the user — detection, a SkoolKit import. The editor's own
  * edits never pass it, so any region the user touches becomes the user's (§3 of
- * `.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md`).
+ * `.docs/reverse-engineering-tools.md`).
  */
 export function withRegion(
   annotations: ProgramAnnotations,
@@ -739,7 +739,7 @@ export function listLabelsForBank(
 }
 
 /**
- * Name a graphic the finder found (§5.5 of `.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md`, R6): a local
+ * Name a graphic the finder found (`.docs/reverse-engineering-tools.md`, "Graphics finder", R6): a local
  * label at its start, a `graphic` region over its bytes (the user's: no origin) and a `graphics`
  * entry that lays them out — one model, so it is published as one session update.
  *

@@ -40,6 +40,7 @@ import type {
 } from "./Z88dkIntegration";
 import type {
   BorielInstallResult,
+  BorielNexDebug,
   BorielSetupDecision,
   BorielSetupStatus
 } from "./BorielIntegration";
@@ -216,7 +217,7 @@ class MainApiImpl {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 
-  /** The File Manager's drives: this computer's volumes and folders, and the open project (.plans/FILE_MANAGER_PLAN.md §5.1) */
+  /** The File Manager's drives: this computer's volumes and folders, and the open project (`.ai/file-manager.md`) */
   async fmListDrives(): Promise<FmDriveRef[]> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
@@ -439,7 +440,7 @@ class MainApiImpl {
   /**
    * The absolute path of a file in the Klive home folder (`<home>/Klive`, or the portable data
    * folder's `Klive`): where a user's annotations of a shipped ROM are kept
-   * (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §5.2).
+   * (`.docs/annotations.md`, "ROM Annotations").
    * @param _relative The path inside the Klive home folder
    */
   async resolveKliveHomePath(_relative: string): Promise<string> {
@@ -475,7 +476,7 @@ class MainApiImpl {
 
   /**
    * Assembles Klive Z80 source held in memory and returns its segments and errors, with no file
-   * I/O: how source export (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §7.5, R10) proves its output
+   * I/O: how source export (`.docs/reverse-engineering-tools.md`, "Export as source", R10) proves its output
    * reassembles to the bytes it came from.
    * @param _source The source text (it names its own `.model`)
    */
@@ -486,7 +487,7 @@ class MainApiImpl {
   /**
    * Assembles instructions one by one, each at its own address, and returns each one's bytes or
    * why it does not assemble: the byte check of a SkoolKit import
-   * (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` S-T2). The assembler lives in the main process.
+   * (`.docs/reverse-engineering-tools.md`, S-T2). The assembler lives in the main process.
    */
   async assembleLines(
     _lines: { text: string; address: number }[],
@@ -741,6 +742,15 @@ class MainApiImpl {
    * @param _choice "klive" or "boriel".
    */
   async setBasicCompiler(_choice: "klive" | "boriel"): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * The source-level debug sidecar for a `.nex` that zxbc built outside Klive, made from the zxbc
+   * `.dbg` beside it; why that `.dbg` cannot be used; or undefined when there is none.
+   * @param _nexPath The `.nex` file.
+   */
+  async borielNexDebug(_nexPath: string): Promise<BorielNexDebug | undefined> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 
@@ -1173,7 +1183,7 @@ const UNBOUNDED_MAIN_METHODS = [
   "ejectMediaFile",
   // --- File pickers, confirmations and dialogs of their own
   "runUiAction",
-  // --- A File Manager copy runs as long as its files take (`.plans/FILE_MANAGER_PLAN.md` §5.2)
+  // --- A File Manager copy runs as long as its files take (`.ai/file-manager.md`)
   "fmRunTransfer",
   // --- The app is terminating; a response may legitimately never arrive
   "exitApp",

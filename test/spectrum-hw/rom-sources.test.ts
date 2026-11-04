@@ -9,7 +9,7 @@ import { createTimexSession } from "../harness/timex/session";
 
 /*
  * Where each ROM partition came from (`getRomSources`,
- * `.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §5.3), on the real cores: the identity the ROM
+ * `.docs/annotations.md`, "ROM Annotations"), on the real cores: the identity the ROM
  * annotations are found by, and the file and page the user's own annotations of it go beside.
  */
 

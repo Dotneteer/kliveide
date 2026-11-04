@@ -9,7 +9,7 @@ import { tvcDiskGeometryOf } from "@emu/machines/tvc/TvcDiskImage";
 import { createTvcSession, REPO_ROOT, type TvcTestSession } from "../harness/tvc";
 
 /*
- * The HBF floppy interface and VT-DOS (`.plans/VIDEOTON_TVC_PLAN.md` §9.4, Phase 8), on both models:
+ * The HBF floppy interface and VT-DOS (`src/emu/machines/tvc/wasm/README.md`, "The HBF card and VT-DOS"), on both models:
  * VT-DOS's command line lists a directory, a BASIC program goes to disk and comes back - in the same
  * machine and, through the image the drive publishes, in a fresh one - and the cursor interrupt
  * VT-DOS moves still comes where the CRTC puts the cursor. The directory picture was checked by eye

@@ -237,8 +237,8 @@ until they are reworked. A new chapter starts in the new shape.
 - Pages and links: absolute links (`/en/...`); a page not yet written is mentioned in plain text, and
   linked once it exists, so search the series for "article N" and "the X article" after each new page.
   Check every anchor against the built HTML ids (`docs/out/.../index.html`), not a hand-made slug rule.
-- A new page updates its folder's `_meta.ts`, `.plans/docs-routes.golden.txt` and
-  `.plans/docs-assets.golden.txt` (sorted), and the plan's status with an "As built" note of the facts
+- A new page updates its folder's `_meta.ts`, `docs/goldens/docs-routes.golden.txt` and
+  `docs/goldens/docs-assets.golden.txt` (sorted), and the plan's status with an "As built" note of the facts
   the article established.
 - Verify with `npm run doc:build && npm run doc:check`, then look at every figure in the browser
   (`docs-serve` preview) in both colour schemes. After a series is finished, re-check all cross-links and

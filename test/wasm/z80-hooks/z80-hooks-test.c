@@ -1,7 +1,7 @@
 /*
  * A test-only translation unit for the shared Z80 core's machine hooks that no Spectrum, Next or
  * Z88 core defines: Z80_REFRESH, the opcode-substitution contract of Z80_AFTER_OPCODE_FETCH,
- * Z80_NMI_ACK_WAIT and Z80_INT_ACK (`.plans/ZX8081_WASM_PLAN.md` §5, C1-C3). It records what each
+ * Z80_NMI_ACK_WAIT and Z80_INT_ACK (`.ai/zx8081.md`, "Core decisions", C1-C3). It records what each
  * hook sees, so `z80-hooks.test.ts` can pin where the core calls it. It is not a machine.
  */
 #include <stdint.h>

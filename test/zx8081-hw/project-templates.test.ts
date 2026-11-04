@@ -8,7 +8,7 @@ import { Z80Assembler } from "@main/z80-compiler/z80-assembler";
 import { createZx81Session } from "../harness/zx81";
 
 /**
- * The ZX81 and ZX80 project templates (`.plans/ZX8081_CODE_INJECTION_PLAN.md` phase 5) assemble
+ * The ZX81 and ZX80 project templates (`.ai/zx8081.md`, "How code injection works") assemble
  * without errors and do what their comments say when run as the IDE runs them.
  */
 const TEMPLATES = join(__dirname, "../../src/public/project-templates");

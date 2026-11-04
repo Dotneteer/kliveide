@@ -1,6 +1,6 @@
 /**
- * The ZX81 virtual keyboard (`.plans/ZX8081_WASM_PLAN.md` §8.1): every key of the approved design is
- * rendered, and each zone sends what §8.1.5 says - the key face holds the key (SHIFT too on the right
+ * The ZX81 virtual keyboard (`.ai/zx8081.md`, "The virtual keyboard"): every key of the approved
+ * design is rendered, and each zone sends what the design says - the key face holds the key (SHIFT too on the right
  * button), the red legend holds SHIFT with the key, the function and the graphic queue keystrokes
  * with gaps the ROM's debounce accepts.
  */
@@ -119,7 +119,7 @@ describe("ZX81 virtual keyboard", () => {
     expect(machine.setKeyStatus).not.toHaveBeenCalled();
   });
 
-  it("draws the block graphics of §8.1.4, inverse ones with ink and paper swapped", () => {
+  it("draws the block graphics of the approved design, inverse ones with ink and paper swapped", () => {
     expect(zx81GlyphCells(0x01)).toEqual(["i", "p", "p", "p"]);
     expect(zx81GlyphCells(0x87)).toEqual(["p", "p", "p", "i"]);
     expect(zx81GlyphCells(0x0a)).toEqual(["g", "g", "p", "p"]);

@@ -5,7 +5,7 @@ import * as manifestModule from "./nextRomSets.json";
 const manifest: typeof manifestModule = (manifestModule as any).default ?? manifestModule;
 
 /*
- * The ZX Spectrum Next's ROM sets (`.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` D9).
+ * The ZX Spectrum Next's ROM sets (`.ai/zxnext-models.md` D9).
  *
  * A ROM set is one NextZXOS release from the official distribution: its ROM files, the SD card base
  * image built from the same release, and the ROM facts Klive's code depends on (D6). The files are

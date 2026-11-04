@@ -8,8 +8,7 @@ import { convertFile } from "@common/fileManager/fmTransfer";
 import { createSp48Session } from "../harness/sp48";
 
 /*
- * A tape the File Manager writes loads on a real ZX Spectrum 48K (.plans/FILE_MANAGER_PLAN.md,
- * Phase 6): a `.bas` and a `.bin` copied onto an empty `.tap` through the copy's own conversion
+ * A tape the File Manager writes loads on a real ZX Spectrum 48K (`.ai/file-manager.md`): a `.bas` and a `.bin` copied onto an empty `.tap` through the copy's own conversion
  * rules, then `LOAD ""` with the real ROM. The program loads its CODE and pokes what it read.
  */
 

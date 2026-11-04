@@ -2,7 +2,7 @@ const { statSync } = require("node:fs");
 const { buildTvcWasm, output } = require("./build-tvc-wasm.cjs");
 
 /*
- * The ceiling (`.plans/VIDEOTON_TVC_PLAN.md`). The shared Z80 core with the history recorder and the
+ * The ceiling (`.ai/videoton-tvc.md`). The shared Z80 core with the history recorder and the
  * access profile is about 240 KB in the speed build (the HT-1080Z's measurement); the TVC's memory
  * map, CRTC and video add a few KB, and the sound and tape (Phase 4) a few tens. 300,000 leaves room
  * for them; re-measure and lower it in Phase 9.

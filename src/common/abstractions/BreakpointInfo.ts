@@ -10,7 +10,7 @@
  * ownership — there is deliberately no `{ kind: "project" }` member here, so a breakpoint cannot be
  * project-owned in two distinguishable ways, and existing project files stay byte-identical on disk.
  *
- * See `.plans/NEX_DEBUGGING_PLAN.md` §4.3 and §9.4a of the companion ideas document.
+ * See `.ai/nex-debugging.md`.
  */
 export type BreakpointOwner =
   | {
@@ -25,7 +25,7 @@ export type BreakpointOwner =
   | {
       /**
        * The owner's name before the sidecars were for every machine
-       * (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §4.6). Read as `sidecar`: every reader goes
+       * (`.docs/annotations.md`, "Commands"). Read as `sidecar`: every reader goes
        * through `sidecarOfOwner`, and the emulator stores it as `sidecar`.
        */
       kind: "nex";
@@ -116,7 +116,7 @@ export type BreakpointInfo = {
    * Deliberately separate from `partition`: a NEX bank is 16K by definition, while a partition index
    * is an **8K page**. The 8K page actually matched is derived as `bank * 2 + (bankOffset >> 13)`.
    * Conflating the two is the bug that made `bp-set 0A:$C000` and the Memory view's bank `0A` name
-   * different memory; see `.plans/NEX_DEBUGGING_PLAN.md` §4.1.
+   * different memory; see `.ai/nex-debugging.md`.
    */
   bank?: number;
 
@@ -229,7 +229,7 @@ export type BreakpointInfo = {
    * Paired with `labelFile`, which says whose label it is. `bank` narrows it to a bank's **local**
    * label; without a bank it names a **global** one, whose value is a 16-bit address.
    *
-   * See `.plans/NEX_DEBUGGING_PLAN.md` §13.2.
+   * See `.ai/nex-debugging.md`.
    */
   label?: string;
 

@@ -2,7 +2,7 @@
  * Fails when a Guides page shows a screenshot taken before the September 2026 UI redesign.
  *
  * The redesign (#1337-#1342) changed every panel, dialog and toolbar, so these images show an
- * app that no longer exists. `.plans/GUIDES_OVERHAUL_PLAN.md` replaced them with recipe-generated
+ * app that no longer exists. `.ai/docs-site.md` replaced them with recipe-generated
  * shots (`scripts/doc-shots/`); this keeps them from coming back by copy and paste.
  *
  * The list is explicit rather than dated, because git dates of these files record a bulk move,

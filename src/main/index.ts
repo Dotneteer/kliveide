@@ -205,7 +205,7 @@ let lastBuildMenuVersion = 0;
 // --- Track the previous stay-on-top setting to detect changes
 let lastStayOnTopValue: boolean | undefined = undefined;
 
-// --- The display language: resolved here, published to both renderers (LOCALIZATION_PLAN §5)
+// --- The display language: resolved here, published to both renderers (`.ai/localization.md`, "The runtime")
 const syncUiLanguage = createUiLanguageSync({
   getState: () => mainStore.getState(),
   dispatch: (action) => mainStore.dispatch(action),
@@ -672,7 +672,7 @@ async function createAppWindows() {
 app.whenReady().then(() => {
   initializeMachineTypes();
   createAppWindows();
-  // --- Offer to install the bundled Boriel BASIC kit (`.plans/BORIEL_BASIC_INTEGRATION_PLAN.md` §3.2)
+  // --- Offer to install the bundled Boriel BASIC kit (`.ai/boriel/integration.md`, "The installation offer")
   scheduleBorielSetupOffer(() => getEmuApi().displayDialog(BORIEL_SETUP_DIALOG, { mode: "offer" }));
   // --- The automation server, when the settings or `--automation` ask for it (COMMAND_LINE_AUTOMATION_PLAN D4)
   initAutomation();

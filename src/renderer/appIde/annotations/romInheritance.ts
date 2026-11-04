@@ -4,7 +4,7 @@ import type { RomLayer } from "./romLayer";
 import { mergeRomLayers } from "./symbolResolver";
 
 /*
- * A ROM sidecar together with the sidecars it `inherits` (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md`
+ * A ROM sidecar together with the sidecars it `inherits` (`.docs/annotations.md`
  * §5.3-§5.4): `sp128-1.rom.dis` authors only where the 128K's ROM 1 differs from the 48K ROM, and
  * takes the rest from `sp48.rom.dis` by byte binding. The Disassembly view already lays the layers
  * over each other (`mergeRomLayers`); the readiness check, the level measure and Export as source

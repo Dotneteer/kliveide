@@ -6,7 +6,7 @@ import { PF_CODE, PF_EXECUTED, PF_READ, PF_SELF_MODIFIED, PF_WRITTEN } from "@co
 import type { BankAnnotation, ProgramAnnotations } from "@renderer/appIde/annotations/programAnnotations";
 
 /*
- * Code/data auto-detection (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §4, D1/D2) on synthetic
+ * Code/data auto-detection (`.docs/reverse-engineering-tools.md`, "Code/data detection") on synthetic
  * flag arrays.
  */
 

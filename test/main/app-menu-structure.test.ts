@@ -433,7 +433,7 @@ describe("the menu while a dialog is open", () => {
 
 
 /*
- * The menus in another language (`.plans/LOCALIZATION_PLAN.md` step 3): in the pseudo-locale every
+ * The menus in another language (`.ai/localization.md`): in the pseudo-locale every
  * label is pseudo text, except the names that are never translated (D9) - the app name, machine
  * and model names, the Z88's LCD sizes, the ROM file names of Debug › ROM Annotations. Untranslated
  * English here is a label that was missed.

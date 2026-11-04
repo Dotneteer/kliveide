@@ -1,5 +1,5 @@
 /**
- * Klive's message lookup: `t(key, args)` (LOCALIZATION_PLAN D3, D6, §5).
+ * Klive's message lookup: `t(key, args)` (`.ai/localization.md`, D3, D6, "The runtime").
  *
  * The same module runs in main and in both renderers. It holds the current language, looks a key
  * up in that language's catalog, falls back to English for a key the translation lacks (D2), and

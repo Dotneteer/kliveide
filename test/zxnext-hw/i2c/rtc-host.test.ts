@@ -7,7 +7,7 @@ import { createSession, type NextRtcOptions, type NextTestSession } from "../../
 import { boot, driver, hexes, OVER_ONE_SECOND, regs, rtcRead, rtcWrite } from "./_i2c-helpers";
 
 /*
- * The DS1307 as the host sees it (`.plans/ZXNEXT_RTC_OPTIONS_PLAN.md`): the core's view of the chip
+ * The DS1307 as the host sees it (`.ai/zxnext-rtc.md`): the core's view of the chip
  * without a bus transaction, and the counts of what the bus wrote. The hardware itself is
  * i2c-rtc.test.ts's.
  */

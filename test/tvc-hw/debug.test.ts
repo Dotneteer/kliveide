@@ -4,9 +4,9 @@ import { readKliveStateFile, writeKliveStateFile } from "@common/machineState/kl
 import { createTvcSession, type TvcTestSession } from "../harness/tvc";
 
 /**
- * The debugger and state files on the TVC (`.plans/VIDEOTON_TVC_PLAN.md` Phase 6), driven as the IDE
- * drives them: breakpoints in the ROM and in RAM, step into/over/out across `RST 30h` and video RAM,
- * and a state saved to a `.kls` file and restored into another machine of the same model.
+ * The debugger and state files on the TVC (`.ai/videoton-tvc.md`, "IDE integration"), driven as the
+ * IDE drives them: breakpoints in the ROM and in RAM, step into/over/out across `RST 30h` and video
+ * RAM, and a state saved to a `.kls` file and restored into another machine of the same model.
  */
 
 /*

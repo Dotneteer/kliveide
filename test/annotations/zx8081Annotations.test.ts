@@ -21,7 +21,7 @@ import type {
 import { MI_ZX80, MI_ZX81 } from "@common/machines/constants";
 
 /*
- * The ZX80 and ZX81 in the annotation model (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md`
+ * The ZX80 and ZX81 in the annotation model (`.docs/annotations.md`
  * §4.7), and the ROM identity table the ROM annotations are found by (§5.3).
  */
 

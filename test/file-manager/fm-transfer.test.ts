@@ -15,7 +15,7 @@ import {
 } from "@common/fileManager/fmTransfer";
 
 /*
- * What a file becomes on a copy (.plans/FILE_MANAGER_PLAN.md §6, Phase 3): one case per row of the
+ * What a file becomes on a copy (`.ai/file-manager.md`): one case per row of the
  * conversion table, the names, and the plan of a whole copy.
  */
 

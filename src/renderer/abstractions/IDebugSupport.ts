@@ -62,7 +62,7 @@ export interface IDebugSupport {
 
   /**
    * The execution addresses whose conditions an in-core debug loop may decide itself, with their program
-   * slots (`DebugSupport.coreConditionPlan`, WASM_CORE_LEAN_AND_DEBUG_PLAN Phase 4c)
+   * slots (`DebugSupport.coreConditionPlan`, `.ai/wasm-core-debug.md`)
    */
   coreConditionPlan?(): { address: number; slots: number[] }[];
 
@@ -171,7 +171,7 @@ export interface IDebugSupport {
   statementTracker?: {
     observe(pc: number, getPartition?: (address: number) => number | undefined): void;
     current: number;
-    /** The addresses `observe` acts at; a debug loop in the core stops there for it (WASM_CORE_LEAN_AND_DEBUG_PLAN D13) */
+    /** The addresses `observe` acts at; a debug loop in the core stops there for it (`.ai/wasm-core-debug.md` D13) */
     stopAddresses?(): readonly number[];
   };
 
@@ -243,7 +243,7 @@ export interface IDebugSupport {
    *
    * Set for the window in which an injection flow's keystrokes are still in flight: a user
    * breakpoint pausing the machine there would expire every keystroke that has not landed yet and
-   * leave the OS command line half-typed. See `.plans/NEX_DEBUGGING_PLAN.md` §9.5.
+   * leave the OS command line half-typed. See `.ai/nex-debugging.md`.
    */
   suppressUserBreakpoints: boolean;
 

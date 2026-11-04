@@ -6,7 +6,7 @@ import { createZx81Session, Zx81TestSession } from "../harness/zx81";
 import { expectGolden } from "./goldens";
 
 /**
- * The ZX80 on the shared core (`.plans/ZX8081_WASM_PLAN.md` Phase 5): the 4K ROM with the ZX80 ULA (no
+ * The ZX80 on the shared core (`src/emu/machines/zx8081/wasm/README.md`, "Models"): the 4K ROM with the ZX80 ULA (no
  * NMI generator, a line timer that only the INT acknowledge resets), `.O` files, and the ZX80 with
  * the 8K ROM upgrade.
  */

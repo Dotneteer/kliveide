@@ -1,6 +1,6 @@
 /*
  * The Videoton TVC's 16-byte history context (`tvcHistoryContext` in `tvc.c`,
- * `.plans/VIDEOTON_TVC_PLAN.md` §13):
+ * `.ai/videoton-tvc.md`, "Memory partitions, history and profile"):
  *   0    bit 0 the 64K+; bit 1 the video bank the video circuit shows is not 0
  *   1    port 02h, the main paging register
  *   2    port 0Ch, the 64K+'s video paging register

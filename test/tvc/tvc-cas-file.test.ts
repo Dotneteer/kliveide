@@ -11,7 +11,7 @@ import {
 } from "@emu/machines/tvc/TvcCasFile";
 
 /*
- * TVC `.cas` files (`.plans/VIDEOTON_TVC_PLAN.md` §9; the format is documented in
+ * TVC `.cas` files (`src/emu/machines/tvc/wasm/README.md`, "Tape"; the format is documented in
  * `_input/videoton-tvc/rtvc/info/tvc.md`). The core's side - playing and recording - is in
  * `test/tvc-hw/tape.test.ts`.
  */

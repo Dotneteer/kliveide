@@ -622,7 +622,7 @@ who modifies it and runs it as part of a SaaS service must publish the changes.
    this runtime stays MIT. The files with no header are covered only by the README rule, which
    names old folder paths; it is worth asking the author for written confirmation.
    *Project decision (2026-09-26): Klive BASIC does **not** reuse the upstream runtime at all; it
-   writes its own, compatible at the interface level. See `.plans/ZXBASIC_COMPILER_PLAN.md` D2.*
+   writes its own, compatible at the interface level. See `.ai/kbasic/compiler.md`, "Decisions", D2.*
 4. **The docs can be adapted with attribution** (CC BY 4.0), for example as F1 help. Credit the
    source, link the licence, and say what was changed.
 5. **If Klive ever uses an AGPL compiler** (a port, or zxbc or the NextBuild fork bundled in),

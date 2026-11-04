@@ -1,6 +1,6 @@
 /*
  * Memory as monochrome bitmaps: the decoder behind the graphics finder
- * (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §5.2, G7.4).
+ * (`.docs/reverse-engineering-tools.md`, "Graphics finder", G7.4).
  *
  * Pure: `(bytes, look) → pixels`, plus a map from every pixel back to the byte it came from, which
  * is what lets hover name an address and a click select bytes rather than pixels.

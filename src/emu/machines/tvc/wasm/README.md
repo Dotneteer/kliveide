@@ -1,9 +1,10 @@
 # Videoton TVC WASM Core
 
-One C core runs both TVC models (`.plans/VIDEOTON_TVC_PLAN.md`, decision D2): `tvcConfigure` picks
+One C core runs both TVC models (`.ai/videoton-tvc.md`, decision D2): `tvcConfigure` picks
 the 64K or the 64K+ at run time, and the host uploads the model's ROMs. It builds to `dist/tvc.wasm`
-(`npm run build:tvc-wasm`) and is loaded by `TvcWasmV2Loader.ts`. The TypeScript side is
-`../TvcWasmHost.ts` (plumbing) and `../TvcWasmV2Machine.ts` (the adapter). There is no TypeScript
+(`npm run build:tvc-wasm`) and is loaded by `TvcWasmV2Loader.ts`. The decisions (D1-D7) and the
+open hardware questions (Q1-Q9) cited here are listed in `.ai/videoton-tvc.md`. The TypeScript side
+is `../TvcWasmHost.ts` (plumbing) and `../TvcWasmV2Machine.ts` (the adapter). There is no TypeScript
 TVC machine and no second CPU: the core includes the shared Z80 (`src/emu/z80/wasm/z80.c`) through
 its `Z80_*` hooks, including H1, `Z80_DELAY_OPCODE_FETCH`, which was added for this machine.
 
@@ -34,9 +35,9 @@ The hardware facts come from the research pack `_input/videoton-tvc/`: `TVC_HARD
 
 `cpu.tacts` counts whole CPU T-states (320 ns). The CPU clock can be stopped for half a T-state at a
 time, so the core also keeps `tvcHalfClock` in 160 ns units. It is always 2 x tacts plus the half-T
-phase, which is its lowest bit (plan §3.1, D5). The CRTC, the pixel clocks and (in Phase 4) the sound
+phase, which is its lowest bit (D5). The CRTC, the pixel clocks and the sound
 divider run on the fixed clock tree, so they follow `tvcHalfClock`. A CRTC character is 4 half-T
-units, and characters start at multiples of 4: the DEB phase after reset is 0 (plan Q7).
+units, and characters start at multiples of 4: the DEB phase after reset is 0 (Q7).
 
 `tvcAdvanceTacts` runs eagerly, at the start of every character as the CPU clock passes it. So a
 palette, border, mode or video RAM write lands at the character it happens in.
@@ -45,7 +46,7 @@ A machine frame ends where the CRTC starts a new frame. With the ROM's CRTC valu
 (49.76 Hz). A CRTC "frame" shorter than half a nominal frame does not count (the CRTC is not
 programmed yet), and two nominal frames end one whatever the CRTC does.
 
-## The clock stretch (plan §6)
+## The clock stretch
 
 A CPU access to a slot that shows video RAM is stretched by 1-4 half-T-states. The amount depends on
 the phase its T1 starts at in the character (read/write: 2 1 4 3; opcode fetch: 3 2 1 4). Nothing
@@ -58,7 +59,7 @@ locks to the slots. A NOP sled in video RAM settles at phase 3, 6 T per NOP.
 The WAIT circuit (64K only) adds one T to an M1 from the cartridge. The system ROM is not slow by
 default, since the factory jumper setting is open (Q4).
 
-## Video (plan §7)
+## Video
 
 Each character runs these steps in order:
 
@@ -78,7 +79,7 @@ Each character runs these steps in order:
 Colours come from the 270/360 Ω network: a gun is off, dark (`92h`) or bright (`FFh`), and "bright
 black" is black. The aspect ratio is 7/12.5: a TVC dot against Klive's square 7 MHz Spectrum pixel.
 
-## Sound (plan §10)
+## Sound
 
 The divider and its counter run on the fixed clock. So the counter is a function of time,
 `floor((t - anchor) / period) mod 16`, and nothing runs per T-state:
@@ -87,12 +88,12 @@ The divider and its counter run on the fixed clock. So the counter is a function
 
 QD (bit 3) is the square wave and, with port 05h bit 5 set, the sound interrupt input. That input
 meets the cursor in the interrupt flip-flop's NOR gate, so the first interrupt after a restart comes
-16 periods later (plan Q2).
+16 periods later (Q2).
 
 A sample is the output's average over its interval: the square wave integrated in closed form, the
 DAC level otherwise. It is unipolar, then passes a DC high-pass.
 
-## Tape (plan §9)
+## Tape
 
 **Playing.** The host turns a `.cas` into a tape program of 32-bit words (`TvcCasFile.ts`): silence,
 runs of equal cycles, and data bytes the player expands bit by bit. The tape's time advances with
@@ -119,7 +120,7 @@ interrupt, toggle, reload the divider, restart. Its divisors give 42 (pilot), 34
 The ROM reads both, because it calibrates on each tape's pilot. A real recording's frequencies would
 settle Q2.
 
-## The HBF card and VT-DOS (plan §9.4)
+## The HBF card and VT-DOS
 
 `MC_TVC_HBF` plugs the card into slot 0: its 16K VT-DOS ROM shows a 4K page (port 18h bits 5-4) at
 C000h of the EXT page and its 4K RAM at D000h, its controller answers at 10h-13h, the status (DRQ,

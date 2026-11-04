@@ -49,7 +49,7 @@ const store = createAppStore(messageSource, async (action, source) => {
 setCachedStore(store);
 setCachedMessenger(messenger);
 
-// --- Follow the display language main publishes, before anything renders (LOCALIZATION_PLAN §5)
+// --- Follow the display language main publishes, before anything renders (`.ai/localization.md`, "The runtime")
 installUiLanguageSync(store);
 
 // --- Start listening for main-process requests immediately, at module load time - before React

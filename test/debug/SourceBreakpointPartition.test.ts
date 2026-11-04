@@ -16,7 +16,7 @@ import {
  * addresses. On the ZX Spectrum Next that is not an edge case: sharing addresses is the point of
  * `.bank`.
  *
- * See `.plans/NEX_DEBUGGING_PLAN.md` §13.4.
+ * See `.ai/nex-debugging.md`.
  */
 
 /** `.bank 5` with no offset: assembled at `$C000`. */

@@ -4,7 +4,7 @@ import { createZx81Session, type Zx81TestSession } from "../harness/zx81";
 import { expectSameBytes } from "../expectBytes";
 
 /**
- * The ZX81 ULA's timing on the real ROM (`.plans/ZX8081_WASM_PLAN.md` §6, §12): VSYNC per TV frame,
+ * The ZX81 ULA's timing on the real ROM (`src/emu/machines/zx8081/wasm/README.md`, "How the ULA maps onto the shared Z80"): VSYNC per TV frame,
  * the 207-T display line timed by the ROM's own WAIT-INT path (LD R,A / EI / JP (HL) and the INT on
  * A6), and the NMI/WAIT synchronisation that makes the picture jitter-free.
  */

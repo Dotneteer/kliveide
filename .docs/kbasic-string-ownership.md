@@ -1,6 +1,6 @@
 # Klive BASIC: String ownership
 
-Design note R11-3 of `.plans/ZXBASIC_COMPILER_PLAN.md` (§6.7, §17.2 R11). **Status: approved by the project author on 2026-09-26, with every proposal in the decisions table below.**
+Design note R11-3 of the Klive BASIC compiler plan (closed; its record is `.ai/kbasic/compiler.md`, "Readiness (R1-R18)"; "plan §N" below is mapped in its "Section map of the closed plan"). **Status: approved by the project author on 2026-09-26, with every proposal in the decisions table below.**
 
 Strings are the one part of Klive BASIC where a code-generation mistake does not show up as a
 wrong value but as a slow leak, a double free, or a read of freed memory that corrupts the heap

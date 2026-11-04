@@ -3,11 +3,11 @@ import { intToX2 } from "../utils";
 import { CUSTOM_Z80_DISASSEMBLY_TOOL, ICustomDisassembler, IDisassemblyApi } from "./custom-disassembly";
 
 /*
- * The Videoton TVC's custom disassembler (`.plans/VIDEOTON_TVC_PLAN.md` §11). `RST 30h` is the
- * operating system's call: both BASIC ROMs vector it through RAM (0030h: JP 0B23h) to a handler that
- * starts `EX (SP),HL / LD A,(HL) / INC HL / EX (SP),HL`, so the byte after the RST is the function
- * code and execution goes on after it. That holds for every program, not only the ROM, so the decoding
- * is not gated on an address.
+ * The Videoton TVC's custom disassembler (`.ai/videoton-tvc.md`, "IDE integration"). `RST 30h` is
+ * the operating system's call: both BASIC ROMs vector it through RAM (0030h: JP 0B23h) to a handler
+ * that starts `EX (SP),HL / LD A,(HL) / INC HL / EX (SP),HL`, so the byte after the RST is the
+ * function code and execution goes on after it. That holds for every program, not only the ROM, so
+ * the decoding is not gated on an address.
  */
 
 const RST_30 = 0xf7;

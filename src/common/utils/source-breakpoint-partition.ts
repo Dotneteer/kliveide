@@ -9,7 +9,7 @@ import { bankSpaceFor } from "@common/annotations/bankSpace";
  * one, because both are at the same Z80 addresses. On the ZX Spectrum Next that is not an edge
  * case: `.bank` sections routinely share addresses, which is the entire point of them.
  *
- * See `.plans/NEX_DEBUGGING_PLAN.md` §13.4.
+ * See `.ai/nex-debugging.md`.
  */
 
 /** The parts of a compiled segment this needs. Deliberately not `BinarySegment` itself. */

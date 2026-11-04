@@ -5,7 +5,7 @@ import { TvcKeyCode as K } from "@emu/machines/tvc/TvcKeyCode";
 import { bareMachine, PAPER_TOP, pictureHash, pixel, RGB, writeShotIfAsked } from "./bare";
 
 /*
- * Programs on the running machine (`.plans/VIDEOTON_TVC_PLAN.md` Phase 3's exit criteria). The
+ * Programs on the running machine (`src/emu/machines/tvc/wasm/README.md`, "Testing"). The
  * picture hashes were recorded after the pictures were checked by eye (`TVC_SHOTS_PNG=<dir>`): BASIC
  * echoes `print "hello"` and prints `hello` in lower case (its default), then `ok`.
  */

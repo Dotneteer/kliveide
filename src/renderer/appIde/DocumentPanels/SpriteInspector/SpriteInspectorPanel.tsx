@@ -61,7 +61,7 @@ import styles from "./SpriteInspector.module.scss";
  * attribute table and the pattern RAM in one document, with an inspector for the selection. The two
  * views are linked: selecting a sprite highlights its pattern, selecting a pattern its users.
  *
- * The layout follows the document's own width (`.plans/mockups/sprite-inspector-layout.html`):
+ * The layout follows the document's own width:
  * - **narrow**: Sprites and Patterns as tabs, the inspector a band under the list (details | map);
  * - **medium**: tabs, the inspector a rail beside the list;
  * - **wide**: *Both* offered, the table and the sheet side by side, with the rail.

@@ -56,7 +56,7 @@ describe("Boriel BASIC options", () => {
     expect(args.join(" ")).toContain("--opt-strategy size");
     for (const flag of ["--explicit", "--strict", "--debug-memory", "--debug-array", "--enable-break"]) expect(args).toContain(flag);
     expect(args.join(" ")).toContain("-D A -D B=2");
-    // --- One include list: a repeated -I keeps only the last folder (Boriel plan B2)
+    // --- One include list: a repeated -I keeps only the last folder (`.ai/boriel/options.md`)
     expect(args.join(" ")).toContain("-I /x:/y");
     expect(args.join(" ")).toContain("-W 150 +W 170");
     expect(args.join(" ")).toContain("--set:nex:sp 65520");
@@ -302,7 +302,7 @@ describe("BorielCompiler", () => {
 
   it("builds the .nex with --debug, which changes zxbc's code, so it holds the debugged program", async () => {
     // --- zxbc 2.0.0-beta25 generates other code without --debug: the Next ran that while the
-    // --- debugger read the .bin's addresses, so no breakpoint ever fired (plan §6)
+    // --- debugger read the .bin's addresses, so no breakpoint ever fired (`.ai/boriel/integration.md`, "The compiler")
     const { compiler, calls } = compilerWith({ image: [1, 2, 3, 4], imageWithoutDebug: [1, 2, 9, 9, 4] }, "zxnext");
     const output: any = await compiler.compileFile(source);
     expect(calls[1].args.some((a) => a.startsWith("--debug="))).toBe(true);
@@ -446,6 +446,34 @@ describe("BorielCompiler with the real zxbc", () => {
     fs.mkdirSync(path.join(project, "code"), { recursive: true });
     const source = path.join(project, "code", "program.zxbas");
     fs.copyFileSync(path.resolve(__dirname, "../../scripts/doc-shots/fixtures/get-started/bouncing-ball/code/program.zxbas"), source);
+    const compiler = new BorielCompiler();
+    compiler.setAppState({
+      userSettings: { zxbasic: { executablePath: zxbcPath } },
+      projectSettings: {},
+      project: { folderPath: project, isKliveProject: true },
+      emulatorState: { machineId: "sp48" }
+    } as unknown as AppState);
+    const output = await compiler.compileFile(source);
+    expect(output.errors?.filter((e) => !e.isWarning) ?? []).toEqual([]);
+  }, 60_000);
+
+  // --- zxbc's help says "colon-separated" for -I and -m, but Windows paths hold colons: Klive joins
+  // --- them with path.delimiter (";" on Windows). Two absolute folders, an #include from each and a
+  // --- USEd module from the second prove the separator on whichever OS runs this
+  it.skipIf(!available)("finds #includes and USEd modules in two include folders (the path separator)", async () => {
+    const project = path.join(home, "include-paths");
+    for (const folder of ["code", "libA", "libB"]) fs.mkdirSync(path.join(project, folder), { recursive: true });
+    fs.writeFileSync(path.join(project, "libA", "a.bas"), "FUNCTION FromA() As UByte\n  RETURN 1\nEND FUNCTION\n");
+    fs.writeFileSync(path.join(project, "libB", "b.bas"), "FUNCTION FromB() As UByte\n  RETURN 2\nEND FUNCTION\n");
+    fs.writeFileSync(
+      path.join(project, "libB", "helper.bas"),
+      "MODULE helper\nPUBLIC\nFUNCTION Three() As UByte\n  RETURN 3\nEND FUNCTION\nEND MODULE\n"
+    );
+    const source = path.join(project, "code", "program.zxbas");
+    fs.writeFileSync(
+      source,
+      "'@include-path ../libA, ../libB\n#include <a.bas>\n#include <b.bas>\nUSE helper\nPRINT FromA() + FromB() + helper.Three()\n"
+    );
     const compiler = new BorielCompiler();
     compiler.setAppState({
       userSettings: { zxbasic: { executablePath: zxbcPath } },

@@ -320,7 +320,7 @@ export class DebugSupport implements IDebugSupport {
    * during the flow itself the machine runs in `NoDebug`, where the per-instruction callers skip
    * the stop decision entirely and no breakpoint can fire regardless of this flag.
    *
-   * See `.plans/NEX_DEBUGGING_PLAN.md` §10.3.
+   * See `.ai/nex-debugging.md`.
    */
   suppressUserBreakpoints = false;
 
@@ -502,7 +502,7 @@ export class DebugSupport implements IDebugSupport {
 
   /**
    * The execution addresses whose stop an in-core debug loop may decide itself
-   * (`.plans/WASM_CORE_LEAN_AND_DEBUG_PLAN.md` Phase 4c), with the program slots of their conditions.
+   * (`.ai/wasm-core-debug.md`), with the program slots of their conditions.
    *
    * A false condition neither counts a hit, nor stops, nor logs (`passesFilters`, `handleHit`), so where
    * every enabled execution definition claiming an address has a condition compiled into a slot, the

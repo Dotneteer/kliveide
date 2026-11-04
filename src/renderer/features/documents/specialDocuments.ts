@@ -115,14 +115,14 @@ const specialDocumentDefinitions: Record<SpecialDocumentId, SpecialDocumentDefin
     iconName: "gauge",
     workspaceRestorable: true
   }, { name: "panels.document.profiler" }),
-  // --- The graphics finder over the paused machine (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §5.3)
+  // --- The graphics finder over the paused machine (`.docs/reverse-engineering-tools.md`, "Graphics finder")
   [GRAPHICS_PANEL_ID]: withTexts({
     id: GRAPHICS_PANEL_ID,
     type: GRAPHICS_EDITOR,
     iconName: "sprite",
     workspaceRestorable: true
   }, { name: "panels.document.graphics" }),
-  // --- The two-pane File Manager (`.plans/FILE_MANAGER_PLAN.md`, D1)
+  // --- The two-pane File Manager (`.ai/file-manager.md`, D1)
   [FILE_MANAGER_PANEL_ID]: withTexts({
     id: FILE_MANAGER_PANEL_ID,
     type: FILE_MANAGER_EDITOR,

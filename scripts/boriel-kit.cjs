@@ -1,6 +1,6 @@
 /*
  * Boriel BASIC setup kits: fetch them into `vendor/boriel-basic/kits/` and stage the one a package
- * build ships (`.plans/BORIEL_BASIC_INTEGRATION_PLAN.md` §3.1, `vendor/boriel-basic/README.md`).
+ * build ships (`.ai/boriel/integration.md`, "The kits in the build", `vendor/boriel-basic/README.md`).
  *
  *   node scripts/boriel-kit.cjs fetch [--all | --current | --platform <p> --arch <a>] [--optional]
  *   node scripts/boriel-kit.cjs stage --platform <p> --arch <a>

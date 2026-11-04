@@ -1,8 +1,10 @@
 import os from "os";
+import path from "path";
 import { app } from "electron";
 
 import type {
   BorielInstallResult,
+  BorielNexDebug,
   BorielSetupDecision,
   BorielSetupStatus
 } from "@common/messaging/BorielIntegration";
@@ -22,11 +24,13 @@ import {
   type BorielServiceDeps
 } from "./boriel-install-service";
 import { borielKitLocation, borielPlatformKey, locateBundledKit } from "./boriel-kit";
+import { borielNexDebug } from "./boriel-nex-debug";
+import { resolveBorielExecutable } from "./boriel-resolver";
 
 /*
  * The Electron side of the Boriel BASIC setup: builds the service's dependencies from the running
- * app and writes what an installation decided into the settings (`.plans/BORIEL_BASIC_INTEGRATION_PLAN.md`
- * §3.2-§3.4). Everything with logic in it lives in `boriel-install-service.ts`, which the tests drive.
+ * app and writes what an installation decided into the settings (`.ai/boriel/integration.md`
+ * "The installation offer" and "The installer"). Everything with logic in it lives in `boriel-install-service.ts`, which the tests drive.
  */
 
 export function borielServiceDeps(): BorielServiceDeps {
@@ -58,6 +62,12 @@ export async function setEffectiveBasicCompiler(choice: "klive" | "boriel"): Pro
   }
   mainStore.dispatch(applyProjectSettingAction(ZXBC_COMPILER, choice));
   await saveKliveProject();
+}
+
+/** zxbc's `.dbg` beside a `.nex` built outside Klive, with the configured kit's library for its files. */
+export function borielNexDebugForSettings(nexPath: string): BorielNexDebug | undefined {
+  const executable = resolveBorielExecutable(createSettingsReader(mainStore.getState()), process.platform === "win32");
+  return borielNexDebug(nexPath, executable ? path.join(path.dirname(executable), "lib") : "");
 }
 
 export async function borielSetupStatus(): Promise<BorielSetupStatus> {

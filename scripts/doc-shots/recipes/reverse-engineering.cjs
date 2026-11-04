@@ -1,5 +1,5 @@
 /**
- * The running-app check of the reverse-engineering tools (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md`
+ * The running-app check of the reverse-engineering tools (`.docs/reverse-engineering-tools.md`
  * G7.3-G7.6), with staged shots for the four docs pages: detecting code and data, the graphics
  * finder, SkoolKit, and exporting source.
  *

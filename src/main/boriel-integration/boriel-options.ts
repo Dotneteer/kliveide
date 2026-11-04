@@ -4,8 +4,8 @@ import type { HeaderOption } from "@main/kbasic/options/header";
 import type { KBasicOptions } from "@main/kbasic/options/options";
 
 /*
- * Klive's build options, as Boriel BASIC's `zxbc` arguments (`.plans/BORIEL_BASIC_INTEGRATION_PLAN.md`
- * §4.2). The options come from Klive's own pipeline - the `zxbasic.*` settings, then the build root's
+ * Klive's build options, as Boriel BASIC's `zxbc` arguments (`.ai/boriel/options.md`
+ *). The options come from Klive's own pipeline - the `zxbasic.*` settings, then the build root's
  * `'@name value` header (NextBuild's `'!` aliases included) - so one source file builds under both
  * compilers. `.ai/boriel/options.md` is the human-readable table of this mapping.
  */
@@ -118,7 +118,8 @@ export function zxbcArgumentsFor(
   if (options.zxnext && arch !== "zxnext") args.push("-N");
   for (const d of options.defines) args.push("-D", d.value !== undefined ? `${d.name}=${d.value}` : d.name);
   // --- One list: a repeated -I keeps only the last one (B0). zxbc's help says colon-separated;
-  // --- Windows paths hold colons, so there the platform's ";" is used (to verify on Windows)
+  // --- Windows paths hold colons, so there the platform's ";" is used. Not yet run on Windows:
+  // --- test/main/boriel-compiler.test.ts ("the path separator") settles it there
   if (options.includePaths.length) args.push("-I", options.includePaths.join(delimiter));
   for (const code of options.disabledWarnings) args.push("-W", warningNumber(code));
   for (const code of options.enabledWarnings) args.push(`+W`, warningNumber(code));

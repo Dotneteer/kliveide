@@ -48,5 +48,5 @@ export type UiActionId =
   | "dialog:boriel"
   | "dialog:z88dk"
   | "dialog:excluded-items"
-  /** Opens the translators' guide in the browser (`.plans/LOCALIZATION_PLAN.md` §7) */
+  /** Opens the translators' guide in the browser (`.ai/localization.md`, D8) */
   | "open:translation-guide";

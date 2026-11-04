@@ -23,7 +23,7 @@ import { machineConfigOf, useMachineBankSpace } from "./useMachineBankSpace";
 /*
  * The shared resolver (`symbolResolver.ts`) as the views get it: rebuilt when one of its inputs
  * changes — a compilation, a session update, a machine change, a ROM identity change — and not on
- * every refresh (§4.4 of `.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md`).
+ * every refresh (§4.4 of `.docs/annotations.md`).
  */
 
 /** The file name of a path, for a tooltip. */
@@ -98,7 +98,7 @@ export function addressSymbolsForState(
 
 /**
  * The active set's and the ROM's labels as the profiler's routine map takes them: routines between
- * the build's labels and the call targets (§4.4 of the plan).
+ * the build's labels and the call targets (`.docs/annotations.md`, "The Shared Resolver").
  */
 export function annotationRoutineLabelsForState(state: AppState): RoutineLabel[] {
   const emu = state.emulatorState;

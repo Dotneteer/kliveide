@@ -1,5 +1,5 @@
 /*
- * Boriel BASIC in the running IDE (`.plans/BORIEL_BASIC_INTEGRATION_PLAN.md` §8): launches the built
+ * Boriel BASIC in the running IDE (`.ai/boriel/integration.md`, "Tests and checks"): launches the built
  * Klive under Playwright (`scripts/doc-shots/harness.cjs`) with a throwaway home, and checks, part by
  * part:
  *
@@ -9,7 +9,8 @@
  *            zxbc's .nex (needs ~/Klive/ks2.cim, copied);
  *   export - a TAP export of an sp48 build holds the injected code; a Next build's NEX export
  *            writes the debug sidecar beside it, and `nex-run -d` of that file stops at a source
- *            breakpoint (needs the card image too);
+ *            breakpoint; so does `nex-run -d` of a .nex zxbc built outside Klive, through the .dbg
+ *            beside it (needs the card image too);
  *   ui     - the status bar names the compiler of the open BASIC file (a project's choice wins), the
  *            Settings row switches it (writing the project's choice), the Boriel row shows the
  *            installation, and a click on the status bar item opens the Boriel BASIC dialog;
@@ -152,6 +153,28 @@ const PARTS = {
     check(!!(await n.waitPaused(120000)), "export: nex-run -d of the exported NEX stops at a source breakpoint");
     await n.k.ide.screenshot({ path: path.join(n.out, "nex-run.png") });
     await n.k.close();
+
+    // --- A .nex zxbc built outside Klive, with no sidecar: nex-run -d uses the .dbg zxbc wrote beside it
+    const o = await session("export-outside", { card: true });
+    const folder = await o.project("zxnext", ['PRINT "project"']);
+    for (let t = Date.now(); !/ZX Spectrum Next/.test(await o.emuText()) && Date.now() - t < 30000; ) await sleep(500);
+    await sleep(3000);
+    const outside = path.join(folder, "outside");
+    fs.mkdirSync(outside, { recursive: true });
+    const lines = ["FUNCTION Cube(n As UByte) As UInteger", "    RETURN n * n * n", "END FUNCTION", "PRINT AT 11, 2; Cube(3)", "DO", "LOOP"];
+    fs.writeFileSync(path.join(outside, "game.bas"), [...lines, ""].join("\n"));
+    require("node:child_process").execFileSync(
+      path.join(ROOT, process.platform === "win32" ? "zxbc.exe" : "zxbc"),
+      ["game.bas", "--arch", "zxnext", "-O", "1", "-S", "32768", "-f", "nex", "-o", "game.nex", "--debug=game.dbg", "-M", "game.map"],
+      { cwd: outside, timeout: 60000, stdio: ["ignore", "pipe", "pipe"] }
+    );
+    check(fs.existsSync(path.join(outside, "game.nex")) && !fs.existsSync(path.join(outside, "game.nex.kbasic-debug.json")), "export: zxbc built a .nex outside Klive, with no sidecar");
+    await o.k.cmd("bp-set [outside/game.bas]:2", 1200);
+    await o.k.cmd(`nex-run "${path.join(outside, "game.nex")}" -d`, 5000);
+    check(/Source-level debug info loaded from .*game\.dbg/.test(await o.ideText()), "export: nex-run -d reads zxbc's .dbg beside the .nex");
+    check(!!(await o.waitPaused(120000)), "export: nex-run -d of a .nex built outside Klive stops at a source breakpoint");
+    await o.k.ide.screenshot({ path: path.join(o.out, "nex-run.png") });
+    await o.k.close();
   },
 
   async ui() {
@@ -172,7 +195,7 @@ const PARTS = {
     });
     await sleep(500);
     await s.k.cmd("settings integrations", 2000);
-    // --- KLIVE-BASIC-OFF: Boriel BASIC is the only BASIC compiler (`.plans/KLIVE_BASIC_SWITCH_OFF_PLAN.md`):
+    // --- KLIVE-BASIC-OFF: Boriel BASIC is the only BASIC compiler (`.ai/klive-basic-switch.md`):
     // --- no compiler row in Settings and no checkbox in the dialog. The checks of the switch are kept
     // --- below, commented out, for the day it is turned back on.
     check((await s.k.ide.getByTestId("settings-row-basicCompiler").count()) === 0, "ui: Settings offers no choice of BASIC compiler");

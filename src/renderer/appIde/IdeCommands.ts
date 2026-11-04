@@ -244,7 +244,7 @@ export function registerIdeCommands(cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new ProfileStopCommand());
   cmdSrv.registerCommand(new ShowProfilerCommand());
   cmdSrv.registerCommand(new HideProfilerCommand());
-  // --- The two-pane File Manager (`.plans/FILE_MANAGER_PLAN.md`, D1)
+  // --- The two-pane File Manager (`.ai/file-manager.md`, D1)
   cmdSrv.registerCommand(new ShowFileManagerCommand());
   cmdSrv.registerCommand(new MemoryHeatCommand());
   // --- Lite step back (`.plans/LITE_STEP_BACK_PLAN.md` §4.5)

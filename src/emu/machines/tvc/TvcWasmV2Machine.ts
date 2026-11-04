@@ -100,7 +100,7 @@ const TVC_BEAM_TIMING: BeamTiming = {
 };
 
 /**
- * A Videoton TVC on the WASM core (`wasm/tvc/`, `.plans/VIDEOTON_TVC_PLAN.md`): one core for both
+ * A Videoton TVC on the WASM core (`wasm/tvc/`, `.ai/videoton-tvc.md`): one core for both
  * models, configured by the model at setup.
  *
  * The registers are read live from the core and every write is pushed into it; the debugger runs
@@ -544,7 +544,8 @@ export class TvcWasmV2Machine extends TvcWasmHost implements IExecutionHistorySo
   }
 
   // ==========================================================================================
-  // Tape and sound (`.plans/VIDEOTON_TVC_PLAN.md` §9-10, `wasm/tvc/tvc-tape.c`, `tvc-audio.c`)
+  // Tape and sound (`src/emu/machines/tvc/wasm/README.md`, "Tape" and "Sound"; `wasm/tvc/tvc-tape.c`,
+  // `tvc-audio.c`)
 
   /**
    * Puts a tape in the deck: its tape program goes to the core, which plays it while the recorder's
@@ -844,9 +845,9 @@ export class TvcWasmV2Machine extends TvcWasmHost implements IExecutionHistorySo
   }
 
   // ==========================================================================================
-  // Partitions (`.plans/VIDEOTON_TVC_PLAN.md` §11): the physical memory as partitions - U0-U3
-  // and VID0-VID3 (16K) are 0-7, SYS -1, CART -2, EXT -3 (the card window and EXTH, as page 3 shows
-  // them), and the HBF card's ROM pages -4 to -7 and RAM -8 (4K)
+  // Partitions (`.ai/videoton-tvc.md`, "Memory partitions, history and profile"): the physical
+  // memory as partitions - U0-U3 and VID0-VID3 (16K) are 0-7, SYS -1, CART -2, EXT -3 (the card
+  // window and EXTH, as page 3 shows them), and the HBF card's ROM pages -4 to -7 and RAM -8 (4K)
 
   /** The partition a physical offset is in */
   private partitionOfPhysical(physical: number): number {

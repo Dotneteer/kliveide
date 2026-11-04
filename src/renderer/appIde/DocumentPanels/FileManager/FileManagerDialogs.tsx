@@ -15,7 +15,7 @@ import { becomesText, errorText, formatSizeWithUnit } from "./FileManagerViewMod
 import styles from "./FileManagerDialogs.module.scss";
 
 /*
- * The File Manager's dialogs (.plans/FILE_MANAGER_PLAN.md §4.3, §4.4): the copy dialog, which shows
+ * The File Manager's dialogs (`.ai/file-manager.md`): the copy dialog, which shows
  * what each file becomes and plans again when an option changes; the conflict dialog; delete.
  */
 

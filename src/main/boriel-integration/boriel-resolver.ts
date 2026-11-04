@@ -9,7 +9,7 @@ import { BORIEL_INSTALL_FOLDER, BORIEL_MIN_MAJOR_VERSION } from "./boriel-config
 import { parseBorielVersion, versionFromOutput } from "./boriel-version";
 
 /*
- * Finding and checking the Boriel BASIC compiler (`.plans/BORIEL_BASIC_INTEGRATION_PLAN.md` §3.5).
+ * Finding and checking the Boriel BASIC compiler (`.ai/boriel/integration.md`, "Resolver and version probe").
  * Resolution: an explicit `zxbasic.executablePath`, else `zxbasic.root` + `zxbc[.exe]`.
  */
 

@@ -7,11 +7,11 @@ import { useKeyboard } from "./useKeyboard";
 import { TvcKeyCode } from "@emu/machines/tvc/TvcKeyCode";
 
 /*
- * The Videoton TVC virtual keyboard (`.plans/VIDEOTON_TVC_PLAN.md` §8), drawn from a photo of a TVC
- * 64K (https://frescho.hu/wp-content/gallery/tvc-adatlap/IMG_2349.JPG): five rows stepped to the
- * right towards the back, cream keys with the shifted legend above the plain one, dark grey function
- * keys, and the built-in joystick to the right. One SVG holds it all, because the rows are not a
- * grid of equal keys.
+ * The Videoton TVC virtual keyboard (`.ai/videoton-tvc.md`, "Keyboard and typing"), drawn from a
+ * photo of a TVC 64K (https://frescho.hu/wp-content/gallery/tvc-adatlap/IMG_2349.JPG): five rows
+ * stepped to the right towards the back, cream keys with the shifted legend above the plain one,
+ * dark grey function keys, and the built-in joystick to the right. One SVG holds it all, because
+ * the rows are not a grid of equal keys.
  *
  * Zones: the key face presses the key (the right button adds SHIFT); the printed shifted legend
  * presses SHIFT with the key. The joystick's four directions are the cursor keys of matrix row 8 and

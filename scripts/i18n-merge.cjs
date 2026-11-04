@@ -1,5 +1,5 @@
 /**
- * Folds a translator's answer into one language's catalogs (`.plans/LOCALIZATION_PLAN.md` §6).
+ * Folds a translator's answer into one language's catalogs (`.ai/localization.md`, "A translation round").
  *
  * The answer is a JSON object `{ "<key>": "<translation>" }`; text around it (the translator's
  * notes) is ignored, and only the first `{ ... }` is read. Each accepted entry goes into the

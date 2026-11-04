@@ -9,9 +9,9 @@ import { Z80Assembler } from "@main/z80-compiler/z80-assembler";
 import { createTvcSession, type TvcTestSession } from "../harness/tvc";
 
 /*
- * Run, Inject and the .cas export on the TVC (`.plans/VIDEOTON_TVC_PLAN.md` Phase 7): the injection
- * flow played as the command line plays it, and an exported program loaded from tape, on the real
- * ROMs of both models.
+ * Run, Inject and the .cas export on the TVC (`.ai/videoton-tvc.md`, "Run, Debug and export"): the
+ * injection flow played as the command line plays it, and an exported program loaded from tape, on
+ * the real ROMs of both models.
  */
 
 /** TEXT (1722h): where BASIC's program space starts, which `LOMEM` moves */

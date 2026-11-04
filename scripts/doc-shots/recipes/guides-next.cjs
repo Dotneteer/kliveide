@@ -106,7 +106,7 @@ module.exports = {
       });
 
       await step(klive, "rtc-settings", async () => {
-        // --- Settings › Machine with the real-time clock group (`.plans/ZXNEXT_RTC_OPTIONS_PLAN.md` P6)
+        // --- Settings › Machine with the real-time clock group (`.ai/zxnext-rtc.md`)
         await klive.cmd("settings machine", 1800);
         await klive.shot('[role="dialog"]', "en/guides/next/next-models/rtc-settings.webp", { displayWidth: 640 });
         await ide.keyboard.press("Escape");

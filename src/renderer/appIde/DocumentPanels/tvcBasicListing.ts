@@ -6,9 +6,9 @@ import { BasicProgramBuffer, getMemoryWord } from "./BasicLine";
 import type { BasicListing } from "./basicListing";
 
 /*
- * The Videoton TVC's BASIC detokenizer (`.plans/VIDEOTON_TVC_PLAN.md` §11): a program's bytes into
- * the lines the BASIC Listing view shows. The format, observed on the core (`test/tvc-hw/basic-
- * listing.test.ts` types programs and lists them):
+ * The Videoton TVC's BASIC detokenizer (`.ai/videoton-tvc.md`, "IDE integration"): a program's
+ * bytes into the lines the BASIC Listing view shows. The format, observed on the core
+ * (`test/tvc-hw/basic-listing.test.ts` types programs and lists them):
  *
  * - The program starts where the TEXT system variable (1722h) says: 19EFh after a boot on both
  *   models, higher after `LOMEM`. A line is its length (with the length byte and the terminator), a

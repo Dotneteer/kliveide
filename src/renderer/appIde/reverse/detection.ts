@@ -27,7 +27,7 @@ import { applySkoolBank, type SkoolBankImport } from "@common/reverse/skool/skoo
 import { t } from "@common/i18n/i18n";
 
 /*
- * Code/data auto-detection against the running machine (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md`
+ * Code/data auto-detection against the running machine (`.docs/reverse-engineering-tools.md`
  * §4.6, phase D3): what `ann-detect` and the *Detect code and data* dialog share.
  *
  * It reads each target bank's bytes and coverage flags through the bank space — a Next bank is two

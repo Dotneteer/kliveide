@@ -20,7 +20,7 @@ import { mapSymbols, type MapEntry } from "./boriel-map";
 
 /*
  * Boriel BASIC's `.dbg` (format "zx-source-debug" v1) → Klive's source-level debug model and the
- * classic tables (`.plans/BORIEL_BASIC_INTEGRATION_PLAN.md` §5). Pure but for the injected file reader.
+ * classic tables (`.ai/boriel/integration.md`, "The `.dbg` adapter"). Pure but for the injected file reader.
  *
  * The format began as Klive's proposal, so most fields carry over; what zxbc writes differently is
  * corrected here, each correction observed in Phase B0 (`.ai/boriel/dbg-observed.md`):
@@ -429,7 +429,7 @@ export function classicTables(sld: SourceLevelDebugInfo, libraryFiles: number[])
 }
 
 /**
- * The structural checks the converted data must pass (plan §5): sorted, non-overlapping statements
+ * The structural checks the converted data must pass (`.ai/boriel/integration.md`, "The `.dbg` adapter"): sorted, non-overlapping statements
  * inside their routines, and every index pointing somewhere. A non-empty answer means stepping over
  * and out could go wrong (B4 then falls back to stopping at every statement).
  */

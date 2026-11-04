@@ -1,5 +1,5 @@
 /*
- * The TVC memory map (plan §2; rtvc/info/tvc.md "Memory Map"; HW pp.81-95).
+ * The TVC memory map (rtvc/info/tvc.md "Memory Map"; HW pp.81-95).
  *
  * The CPU's 64K is four 16K pages, chosen by port 02h (the main paging register, M):
  *

@@ -8,8 +8,8 @@ import { Z80Compiler } from "@main/z80-compiler/Z80Compiler";
 import { defaultModelTypeForMachine, SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
 
 /**
- * A source with no `.model` is assembled for the running machine (`.plans/ZX8081_CODE_INJECTION_PLAN.md`
- * §7, Q1): the IDE compiles without options, and `Z80Compiler` takes the model from the app state.
+ * A source with no `.model` is assembled for the running machine (`.ai/zx8081.md`,
+ * "Machine code decisions", Q1): the IDE compiles without options, and `Z80Compiler` takes the model from the app state.
  */
 const dir = mkdtempSync(join(tmpdir(), "klive-default-model-"));
 afterAll(() => rmSync(dir, { recursive: true, force: true }));

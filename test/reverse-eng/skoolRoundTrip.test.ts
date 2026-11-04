@@ -13,7 +13,7 @@ import { annotationsToSkool, udgArray } from "@common/reverse/skool/annotationsT
 import type { ProgramAnnotations } from "@renderer/appIde/annotations/programAnnotations";
 
 /*
- * SkoolKit import and export (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §6, §8 G7.5). The fixtures
+ * SkoolKit import and export (`.docs/reverse-engineering-tools.md`, "SkoolKit import and export", "Tests worth knowing", G7.5). The fixtures
  * are written for these tests (R7, R8). The round trip skool -> annotations -> skool is identical
  * for a Klive-style file, modulo the documented normalisations.
  */

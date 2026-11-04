@@ -6,7 +6,7 @@ import { FILE_MANAGER_PANEL_ID } from "@common/state/common-ids";
 import { createSpecialDocument } from "@renderer/features/documents/specialDocuments";
 import { IdeCommandBase, commandSuccess } from "@renderer/appIde/services/ide-commands";
 
-/** `show-file-manager` (`fm`): opens the two-pane File Manager (`.plans/FILE_MANAGER_PLAN.md`, D1) */
+/** `show-file-manager` (`fm`): opens the two-pane File Manager (`.ai/file-manager.md`, D1) */
 export class ShowFileManagerCommand extends IdeCommandBase {
   readonly id = "show-file-manager";
   get description() {

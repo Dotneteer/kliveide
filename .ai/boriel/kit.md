@@ -39,8 +39,12 @@ archives sit in the git-ignored `kits/` (see that folder's `README.md`).
   - Windows: PE32+ console, plus `.pdb` files.
 - `lib/` (runtime and stdlib, the data zxbc links in) is **identical in all seven kits**. `arch/`
   differs only in the tool executables' names.
-- **Windows `.pdb` files are 34.5 MB of the 46 MB unpacked.** zxbc does not need them to run. The
-  installer may skip `*.pdb` (to be confirmed on Windows that nothing loads them).
+- **Windows `.pdb` files are 34.5 MB of the 46 MB unpacked, and nothing loads them**, so the
+  installer leaves them out. Checked without running anything (2026-11-04, beta29, both Windows
+  kits): each of the nine executables imports only `KERNEL32.dll` and `ntdll.dll`, has no CodeView
+  (`RSDS`) record naming a `.pdb`, and contains no `LoadLibrary` or `dbghelp`.
+  `test/main/boriel-install-service.test.ts` ("Boriel BASIC Windows kits") re-checks this on every
+  kit version when the kits are fetched.
 - No LICENSE file. `lib/NOTICE.md` and `lib/UNLICENSED_FILES.txt` describe the licensing (plan
   B-L1).
 - zxbc also searches `~/.local/share/boriel_basic/modules` for `USE` modules (managed by `modman`).

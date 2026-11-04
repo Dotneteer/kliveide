@@ -2,7 +2,7 @@ const { statSync } = require("node:fs");
 const { buildZx8081Wasm, output } = require("./build-zx8081-wasm.cjs");
 
 /*
- * The ceiling, measured on the complete machine (2026-10-03, `.plans/ZX8081_WASM_PLAN.md`): the speed
+ * The ceiling, measured on the complete machine (2026-10-03, `src/emu/machines/zx8081/wasm/README.md`): the speed
  * build is about 186 KB - the whole shared Z80 core plus a small ULA. Its hooks (`zx8081AdvanceTacts`,
  * the memory and port delays, the refresh) are `noinline`, as the Z88's tact hook is: inlined into
  * every opcode, per-tact work multiplies the code (`.ai/wasm-migration-intent-and-lessons.md`). 240,000

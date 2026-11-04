@@ -6,7 +6,7 @@ import {
 } from "@renderer/appIde/disassemblers/z80-disassembler/z80-branch-info";
 
 /*
- * Static reachability from code that was seen to run (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md`
+ * Static reachability from code that was seen to run (`.docs/reverse-engineering-tools.md`
  * §4.4, phase D2).
  *
  * A worklist walk over one bank as it is paged into the 64K view. It follows `JP`, `JR`, `CALL`,

@@ -194,7 +194,7 @@ describe("selectRowBreakpoint tie-breakers", () => {
    * It matters beyond the glyph. `BreakpointIndicator` builds its `bp-del` command from the
    * breakpoint the row hands it, so picking the watchpoint where an execution breakpoint also sits
    * issued `bp-del $8000` for a breakpoint whose key is `$8000 R` — no match, nothing removed, and
-   * a dot the user could not click away. See `.plans/NEX_DEBUGGING_PLAN.md` §10.2.
+   * a dot the user could not click away. See `.ai/nex-debugging.md`.
    */
 
   const exec: BreakpointInfo = { address: 0x8000, exec: true };

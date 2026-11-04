@@ -6,7 +6,7 @@ import { Zx8081WasmV2Machine } from "@emu/machines/zx8081/Zx8081WasmV2Machine";
 
 /*
  * The ZX80/ZX81 machine stands on the shared `Z80MachineBase`, as the Cambridge Z88 does
- * (`.plans/ZX8081_WASM_PLAN.md` §4.2): no Spectrum machine in its class hierarchy, and no TypeScript
+ * (`src/emu/machines/zx8081/wasm/README.md`): no Spectrum machine in its class hierarchy, and no TypeScript
  * machine device - the Spectrum's ULA screen, beeper, keyboard, tape or floating bus, or any other
  * machine's devices - in anything it imports. Its hardware is the WASM core.
  */

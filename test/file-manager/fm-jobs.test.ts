@@ -31,7 +31,7 @@ import {
 } from "@main/file-manager/fmJobs";
 
 /*
- * The File Manager's jobs (.plans/FILE_MANAGER_PLAN.md, Phase 4): copies between every kind of
+ * The File Manager's jobs (`.ai/file-manager.md`): copies between every kind of
  * drive on real images, moves, conflicts, cancelling, a full disk, delete, new folder and rename.
  */
 

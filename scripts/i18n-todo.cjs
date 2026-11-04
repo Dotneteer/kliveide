@@ -1,5 +1,5 @@
 /**
- * Writes the batch of entries one language still needs (`.plans/LOCALIZATION_PLAN.md` §6): every
+ * Writes the batch of entries one language still needs (`.ai/localization.md`, "A translation round"): every
  * English entry the language has no translation for, and every translation whose English changed
  * since it was made (with the old English and the current translation, so a fix is re-translated,
  * not lost). Each entry carries its translator context. Hand the file, `TRANSLATING.md` and

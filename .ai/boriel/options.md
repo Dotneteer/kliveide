@@ -1,7 +1,7 @@
 # Klive build options → zxbc arguments
 
 The mapping `src/main/boriel-integration/boriel-options.ts` implements
-(`.plans/BORIEL_BASIC_INTEGRATION_PLAN.md` §4.2). Options come from Klive's own pipeline: the
+(`.ai/boriel/integration.md`, "The compiler"). Options come from Klive's own pipeline: the
 `zxbasic.*` settings (`optionsFromSettings`), then the build root's `'@name value` header (NextBuild's
 `'!` aliases included), so one source file builds under both compilers. A unit test
 (`test/main/boriel-compiler.test.ts`) fails when a header option is missing from all three groups below.
@@ -23,7 +23,7 @@ The mapping `src/main/boriel-integration/boriel-options.ts` implements
 | `break-key` / `headerless` | `--enable-break` / `--headerless` |
 | `zxnext` | `-N` (not on the Next, where it is implied) |
 | `define` | one `-D NAME[=value]` each |
-| `include-path` | **one** `-I` with the folders joined by `path.delimiter` (a repeated `-I` keeps only the last one; Windows' `;` is assumed, not yet verified) |
+| `include-path` | **one** `-I` with the folders joined by `path.delimiter` (a repeated `-I` keeps only the last one). zxbc's help says "colon-separated" on every platform, Windows included; Klive uses `;` there because Windows paths hold colons. **Not yet run on Windows:** `test/main/boriel-compiler.test.ts` ("the path separator") settles it there |
 | `disable-warning` / `enable-warning` | `-W n` / `+W n` (the code without its `W`) |
 | `expect-warnings` | `--expect-warnings` |
 | `nex-stack` | `--set:nex:sp` (Next only) |

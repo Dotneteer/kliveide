@@ -17,7 +17,7 @@ import {
  *
  * These answers used to live inside `NexFileViewerPanel.tsx`, where the only thing that could check
  * them was a DOM test asserting on rendered labels. They decide where a breakpoint on the NEX's
- * entry point goes, so they are worth pinning directly. See `.plans/NEX_DEBUGGING_PLAN.md` §11.1.
+ * entry point goes, so they are worth pinning directly. See `.ai/nex-debugging.md`.
  */
 
 function header(over: Partial<NexHeader> = {}): NexHeader {

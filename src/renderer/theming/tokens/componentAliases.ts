@@ -4,7 +4,7 @@
  * The ~200 `--bgcolor-*` / `--color-*` names the app has always used, repointed from literal colours
  * onto the L2 semantic layer.
  *
- * This is the migration trick described in §3 of .plans/UI_MODERNIZATION_PLAN.md. Every one of the
+ * This is the migration trick described in `.ai/ui-design-system.md`, "The token architecture". Every one of the
  * 110 stylesheets keeps asking for exactly the token it always asked for, so nothing has to change
  * for the new palette to take effect everywhere at once — and later phases can retire an alias by
  * pointing its component at the L2 name directly, one panel at a time, without a flag day.
@@ -644,7 +644,7 @@ export const componentAliases: Record<string, string> = {
    */
   "--color-annotation-rail": "var(--syntax-label)",
   /*
-   * A ROM label in the live Disassembly view (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md`
+   * A ROM label in the live Disassembly view (`.docs/annotations.md`
    * §5.5): the label hue, because it is a name like any other, distinguished by weight and slant in
    * the stylesheet rather than by a hue of its own — a fourth hue in the row would read as another
    * data column.
@@ -775,7 +775,7 @@ export const componentAliases: Record<string, string> = {
   "--color-sprite-map-outline": "var(--color-state-value)",
   "--bgcolor-sprite-map-selected": "var(--accent-solid)",
 
-  // --- Graphics finder (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §5, G-T3) ----------------------
+  // --- Graphics finder (`.docs/reverse-engineering-tools.md`, "Graphics finder", G-T3) ----------------------
   /*
    * The machine's pixels are hardware colours (ink and paper from the ZX palette); everything drawn
    * over them is chrome, and takes these. The selection is the primary accent, as on every other

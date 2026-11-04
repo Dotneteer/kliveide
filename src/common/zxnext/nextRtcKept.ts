@@ -1,5 +1,5 @@
 /*
- * A ZX Spectrum Next's kept real-time clock (`.plans/ZXNEXT_RTC_OPTIONS_PLAN.md` D5): what the
+ * A ZX Spectrum Next's kept real-time clock (`.ai/zxnext-rtc.md` D5): what the
  * emulator saves and loads through the main process, one per Next model, in `zxnext-rtc.json`.
  */
 

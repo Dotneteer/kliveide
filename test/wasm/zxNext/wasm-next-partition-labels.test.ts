@@ -68,7 +68,7 @@ describe("ZX Spectrum Next WASM partition labels", () => {
    * `OFFS_NEXT_RAM + 0x2000 * index`. So `bp-set 0A:$C000` and selecting bank `0A` in the Memory
    * view named different memory. Four things already said 8K — the 224-entry label map,
    * `MF_BANK: 224`, `getMemoryPartition`, and the docs — so the resolver was the outlier.
-   * See `.plans/NEX_DEBUGGING_PLAN.md` §4.1 (Q9).
+   * See `.ai/nex-debugging.md` (Q9).
    */
   it("reports a positive partition as the 8K page the MMU names", async () => {
     const wasm = await createTestZxNextWasmMachine();

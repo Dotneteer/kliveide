@@ -2,7 +2,7 @@ import { MI_ZX80, MI_ZX81 } from "@common/machines/constants";
 import { machineRegistry } from "@common/machines/machine-registry";
 
 /*
- * How a `text` region reads on a machine (§4.7 of `.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md`).
+ * How a `text` region reads on a machine (§4.7 of `.docs/annotations.md`).
  *
  * The ZX80 and ZX81 do not use ASCII: their text is in the machine's own character set, which the
  * machine registry already describes (`Zx80Chars`, `Zx81Chars`). Every other machine reads text as

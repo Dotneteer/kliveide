@@ -31,7 +31,7 @@ import {
 import { selectViewModel, type CrumbTarget, type FileManagerVm } from "./FileManagerViewModel";
 
 /*
- * The File Manager's controller (.plans/FILE_MANAGER_PLAN.md §5.5): user intents to MainApi calls
+ * The File Manager's controller (`.ai/file-manager.md`): user intents to MainApi calls
  * through `FileManagerPort`, and their results to events. Phase 2 browses; nothing is written.
  */
 

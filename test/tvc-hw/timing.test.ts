@@ -4,7 +4,7 @@ import { createTvcSession, type TvcTestSession } from "../harness/tvc";
 import { bareMachine } from "./bare";
 
 /*
- * The CPU's memory timing (`.plans/VIDEOTON_TVC_PLAN.md` §6; `_input/videoton-tvc/
+ * The CPU's memory timing (`src/emu/machines/tvc/wasm/README.md`, "The clock stretch"; `_input/videoton-tvc/
  * TVC_CLOCK_STRETCH_FIGURES.md`). Every 640 ns character starts with the CPU's 320 ns slot; a CPU
  * access to video RAM is stretched by 1-4 half-T-states, depending on the phase p (half-T units from
  * the CPU slot's start) its T1 starts at:
@@ -13,7 +13,8 @@ import { bareMachine } from "./bare";
  *   read/write stretch       2  1  4  3
  *   opcode fetch stretch     3  2  1  4
  *
- * Characters start at half-T 0 after reset (plan Q7), so p is the half-T clock mod 4.
+ * Characters start at half-T 0 after reset (Q7 in `.ai/videoton-tvc.md`), so p is the half-T clock
+ * mod 4.
  */
 
 const READ_WRITE = [2, 1, 4, 3];

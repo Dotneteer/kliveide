@@ -787,7 +787,7 @@ export function graphicRowBytes(graphic: Pick<BankGraphic, "width" | "layout" | 
 }
 
 /**
- * A `graphic` region (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §3): one `.defb` row per pixel row,
+ * A `graphic` region (`.docs/annotations.md`, "The Reverse-Engineering Tools' Keys"): one `.defb` row per pixel row,
  * in binary when the row is at most two bytes and in hex otherwise, with the pixels drawn in the
  * comment column (`..####..`). Without its `graphics` entry — a file edited by hand — the region's
  * stored row size is used, so the rows still reassemble.

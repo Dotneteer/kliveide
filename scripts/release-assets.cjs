@@ -2,7 +2,7 @@
  * The install kits a Klive release carries: their file names and the platform each one is for.
  * One list, used by the website build (`build-doc-site-info.cjs`, for the Download button) and by
  * the release workflow (`release.cjs publish`, which checks a release has exactly these files), so
- * the two can never disagree about names (.plans/RELEASE_AUTOMATION_PLAN.md §5).
+ * the two can never disagree about names (.ai/release-guide.md).
  *
  * The names come from electron-builder's `artifactName` settings in package.json and the files
  * the jobs of .github/workflows/release-artifacts.yml upload.

@@ -8,7 +8,7 @@ for routine *names* only — a conventional name list (Q1). Every entry records 
 came from (`observed`, `manual`, `derived`). The full rules for authors, human or AI, are
 in `README.md` beside this file.
 
-**SkoolKit files (R8 of `.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md`).** A published skool or
+**SkoolKit files (R8 of `.docs/reverse-engineering-tools.md`).** A published skool or
 control file of a Spectrum ROM is never imported into, compared with, or used for a shipped
 sidecar. A *user* may import any skool file into their own annotation set or their own ROM layer
 (`skool-import`): that is their data, and the import writes only there.
@@ -2263,7 +2263,7 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
 ### 2026-10-31 — ZX Spectrum Next: the nextzxos-2.10 sidecars carried from nextzxos-2.08 (D8)
 
 - **What:** `src/public/roms/zxnext/nextzxos-2.10/{enNextZX,enNxtmmc,enNextMf,enAltZX,enNextLG}.rom.dis`, carried
-  from the same files of the `nextzxos-2.08` set (`.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` D8). Every 2.10 page CRC
+  from the same files of the `nextzxos-2.08` set (`.ai/zxnext-models.md` D8). Every 2.10 page CRC
   differs from 2.08's, so nothing was reused as is. Nothing new was written: every entry is one of Klive's own
   2.08 entries, moved. **Sources:** Klive's 2.08 sidecars and the two sets' ROM bytes, nothing else (no
   disassembly, name list or other annotation of NextZXOS 2.10 was opened).

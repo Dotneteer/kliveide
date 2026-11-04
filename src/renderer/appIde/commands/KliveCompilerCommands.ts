@@ -277,7 +277,7 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
       }
     }
 
-    // --- A ZX80/ZX81 program exports as the machine's own program file (`ZX8081_CODE_INJECTION_PLAN.md` D8)
+    // --- A ZX80/ZX81 program exports as the machine's own program file (`.ai/zx8081.md`, "Machine code decisions", D8)
     const zxFormat = zx8081ExportFormatOf(
       (output as CompilerOutput).modelType,
       emulatorState?.machineId,
@@ -1030,7 +1030,7 @@ export async function injectCode(
   }
 
   // --- Collect files affected by project debugging
-  // --- A compiler without the classic tables has no sourceFileList (plan §1.1 of the Boriel plan)
+  // --- A compiler without the classic tables has no sourceFileList (a Boriel build without debug data)
   const sourceFiles = result.sourceFileList ?? [];
   if (operationType === "debug") {
     context.service.projectService.setLockedFiles(sourceFiles.map((f) => f.filename));

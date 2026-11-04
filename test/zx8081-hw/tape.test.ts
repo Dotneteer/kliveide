@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { createZx81Session, Zx81TestSession } from "../harness/zx81";
 
 /**
- * ZX81 program loading on the real ROM (`.plans/ZX8081_WASM_PLAN.md` §9, §12): the same file loaded
+ * ZX81 program loading on the real ROM (`src/emu/machines/zx8081/wasm/README.md`, "Tape"): the same file loaded
  * through the fast-load traps and in real time from the synthesized pulses, the auto-RUN, the
  * automatic motor control, and the corpus files that test the loader's tolerance.
  */

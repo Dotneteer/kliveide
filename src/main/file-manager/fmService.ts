@@ -62,7 +62,7 @@ import {
 } from "./fmJobs";
 
 /*
- * The File Manager's requests as `MainApi` serves them (.plans/FILE_MANAGER_PLAN.md §5.1, D2). The
+ * The File Manager's requests as `MainApi` serves them (`.ai/file-manager.md`, D2). The
  * renderer names a drive by its id; this keeps the drives it handed out, and rebuilds one it does
  * not know from its id (a pane restored from an earlier session).
  */

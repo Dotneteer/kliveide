@@ -4,7 +4,7 @@ import type { DiskFileKind, DiskFsKind } from "@common/diskfs/types";
 import type { FmDriveRef, FmSpectrumFacts } from "./fmTypes";
 
 /*
- * What a file becomes when the File Manager copies it (.plans/FILE_MANAGER_PLAN.md §6, Phase 3):
+ * What a file becomes when the File Manager copies it (`.ai/file-manager.md`):
  * pure functions of the bytes and the two file systems, so every rule is tested without a drive.
  *
  * Two groups of file system: *file stores* (this computer, FAT cards) keep any bytes under any name;

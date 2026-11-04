@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // The WD1793 floppy disk controller (the FD179X data sheet [DS]), shared by the disk interfaces built
 // on it: the Beta 128 (`zx-spectrum-beta128.c`, `.plans/BETA128_TRDOS_PLAN.md`) and the Videoton
-// TVC's HBF card (`tvc-hbf.c`, `.plans/VIDEOTON_TVC_PLAN.md` §9.4), and as a WD1770 by the Enterprise's
+// TVC's HBF card (`tvc-hbf.c`, `src/emu/machines/tvc/wasm/README.md`, "The HBF card and VT-DOS"), and as a WD1770 by the Enterprise's
 // EXDOS card (`ep-exdos.c`, `.plans/ENTERPRISE_PLAN.md` §10). Extracted from the Beta 128
 // unchanged; its symbols take the prefix the includer chooses, so the Beta 128 keeps its names.
 //

@@ -148,6 +148,7 @@ import {
 import type { BorielSetupDecision } from "@common/messaging/BorielIntegration";
 import {
   borielSetupStatus,
+  borielNexDebugForSettings,
   installBorielKit,
   recordBorielSetupDecision,
   setEffectiveBasicCompiler,
@@ -1124,6 +1125,11 @@ class MainMessageProcessor {
     if (choice !== "klive" && choice !== "boriel") throw new Error("Invalid BASIC compiler choice.");
     // --- The compiler that builds now: the project's choice when it has one, as the Settings row does
     await setEffectiveBasicCompiler(choice);
+  }
+
+  async borielNexDebug(nexPath: string) {
+    if (typeof nexPath !== "string") throw new Error("Invalid NEX file path.");
+    return borielNexDebugForSettings(nexPath);
   }
 
   async recordBorielSetupDecision(decision: BorielSetupDecision) {

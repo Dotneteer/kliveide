@@ -1,5 +1,5 @@
 /**
- * What crosses IPC for the Boriel BASIC setup (`.plans/BORIEL_BASIC_INTEGRATION_PLAN.md` §3). All
+ * What crosses IPC for the Boriel BASIC setup (`.ai/boriel/integration.md`). All
  * plain data; the discriminated unions use string tags (`kind`), which this project's
  * `strictNullChecks: false` build can narrow.
  */
@@ -49,6 +49,12 @@ export type BorielInstallRequest = { folder: string };
 export type BorielInstallResult =
   | { kind: "installed"; folder: string; executablePath: string; version: string; replacedPath?: string }
   | { kind: "failed"; folder: string; error: string };
+
+/**
+ * zxbc's `.dbg` beside a `.nex` built outside Klive: the sidecar text it makes (the same Klive
+ * writes beside its own NEX exports), or why it cannot be used.
+ */
+export type BorielNexDebug = { dbgFile: string; sidecar: string } | { dbgFile: string; error: string };
 
 /** "declined": don't offer this kit version again. "postponed": ask at the next start. */
 export type BorielSetupDecision = "declined" | "postponed";

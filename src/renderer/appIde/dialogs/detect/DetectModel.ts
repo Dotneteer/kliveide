@@ -2,7 +2,7 @@ import type { UiReducer } from "@mvc/core/types";
 import type { DetectionRequest, DetectionRun, DetectionTarget } from "@renderer/appIde/reverse/detection";
 
 /*
- * The *Detect code and data* dialog's model (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §4.6): the
+ * The *Detect code and data* dialog's model (`.docs/reverse-engineering-tools.md`, "Code/data detection"): the
  * options, the per-bank proposals with an *Include* switch each, and where the run stands.
  */
 

@@ -70,7 +70,7 @@ export function exportContextFor(state: AppState, context: IdeCommandContext): E
 
 /**
  * `export-asm`: export an annotated range or bank as Klive Z80 source that reassembles to the same
- * bytes (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §7.5, G7.6). After writing, the file is
+ * bytes (`.docs/reverse-engineering-tools.md`, "Export as source", G7.6). After writing, the file is
  * always assembled and compared with the bytes it came from (R10): the verdict is the command's
  * result, a success only when the bytes are identical, so a button or menu that runs it can show it.
  */

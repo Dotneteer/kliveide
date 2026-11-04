@@ -37,8 +37,8 @@ const lightTheme = tokensFor("light");
  * set of silent failures: `var(--undefined-name)` is not an error in CSS, it simply drops the
  * declaration, so a missing token looks like a design decision rather than a bug.
  *
- * This test closes that gap. It was written before the token layer landed (Phase 0.1 of
- * .plans/UI_MODERNIZATION_PLAN.md) so that its initial failures documented the existing breakage,
+ * This test closes that gap. It was written before the token layer landed (the UI
+ * modernization's first step, `.ai/ui-design-system.md`) so that its initial failures documented the existing breakage,
  * and now guards the layer that replaced it.
  */
 

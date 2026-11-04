@@ -1,6 +1,7 @@
 # ZX81 tape files for testing the Klive ZX80/81 machine
 
-Collected 2026-09-27 as test input for `.plans/ZX8081_WASM_PLAN.md` (§9 files and tape, §12 tests).
+Collected 2026-09-27 as test input for the ZX80/ZX81 WASM core (`.ai/zx8081.md`, "Provenance"; the tests are in
+`test/zx8081-hw/`).
 
 **Every file here is the repository owner's own work, published under a permissive licence
 (MIT, the Unlicense).** Each is pinned to the commit it was taken from. The full licence text of

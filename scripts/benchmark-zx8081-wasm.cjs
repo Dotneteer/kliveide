@@ -1,5 +1,5 @@
 /*
- * Benchmarks the Sinclair ZX80/ZX81 WASM core (`.plans/ZX8081_WASM_PLAN.md` §12): milliseconds per
+ * Benchmarks the Sinclair ZX80/ZX81 WASM core (`src/emu/machines/zx8081/wasm/README.md`, "Building and measuring"): milliseconds per
  * 20 ms (PAL) emulation frame and the multiple of real time, with the real ROM, in three scenarios -
  * SLOW mode at the prompt (the display routine runs every line), SLOW mode running BASIC (`10 GOTO
  * 10`), and FAST mode running the same. The plan's floor is 10x real time in SLOW mode, to catch

@@ -5,7 +5,7 @@ import { parseZxProgramFile } from "@emu/machines/zx8081/ZxPFile";
 import { createZx81Session, type Zx81TestSession } from "../harness/zx81";
 
 /**
- * Program images from the builder (`.plans/ZX8081_CODE_INJECTION_PLAN.md` D3) run on the real
+ * Program images from the builder (`.ai/zx8081.md`, "Machine code decisions", D3) run on the real
  * machines: loaded by the ROM's own LOAD, RUN, the code called through `USR` and returning to BASIC.
  *
  * The code stores $5A in a byte of its own and returns:

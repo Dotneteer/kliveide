@@ -6,8 +6,7 @@ import { KeyboardApi } from "./KeyboardPanel";
 import { useKeyboard } from "./useKeyboard";
 
 /*
- * The ZX81 virtual keyboard (`.plans/ZX8081_WASM_PLAN.md` §8.1), built to the approved mockup
- * `.plans/zx8081/zx81-keyboard-mockup.html`: geometry measured from the reference photo, legends from
+ * The ZX81 virtual keyboard (`.ai/zx8081.md`, "The virtual keyboard"), built to the approved design: geometry measured from the reference photo, legends from
  * the ROM's key tables (K-UNSHIFT $007E, K-SHIFT $00A5, K-FUNCT $00CC, K-GRAPH $00F3).
  */
 
@@ -15,7 +14,7 @@ import { useKeyboard } from "./useKeyboard";
 const DEFAULT_WIDTH = 1382;
 const DEFAULT_HEIGHT = 501;
 
-/** Row stagger against the first row, and the outer margin, in key units (§8.1.3) */
+/** Row stagger against the first row, and the outer margin, in key units */
 const ROW_OFFSETS = [0, 68.1, 98.9, 37.4];
 const OUTER_MARGIN = 15.4;
 
@@ -32,7 +31,7 @@ const KEY_9 = 21;
 const HOLD = 4;
 const STEP = 10;
 
-/** The key table: the mockup's `R` array (§8.1.4) */
+/** The key table of the approved design */
 export const ZX81_KEY_ROWS: Zx81KeyDef[][] = [
   [
     { c: 15, m: "1", s: "EDIT", g: 0x01 },
@@ -123,7 +122,7 @@ export const Zx81Keyboard = ({ width, height, apiLoaded }: Props) => {
   );
 
   /**
-   * A click on a zone (§8.1.5): the key face or keyword holds the key (with SHIFT on the right
+   * A click on a zone: the key face or keyword holds the key (with SHIFT on the right
    * button), the red legend holds SHIFT with the key, the function types FUNCTION mode then the key,
    * the graphic types GRAPHICS on, SHIFT + the key, GRAPHICS off.
    */

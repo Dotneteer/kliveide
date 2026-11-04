@@ -18,7 +18,7 @@ export const FORMAT_OPTIONS: SelectOption[] = withLabels([
   { value: "hex", labelKey: "dialog.exportCode.format.hex" }
 ]);
 
-// --- The ZX80 and ZX81 have their own program files (`.plans/ZX8081_CODE_INJECTION_PLAN.md` D8);
+// --- The ZX80 and ZX81 have their own program files (`.ai/zx8081.md`, "Machine code decisions", D8);
 // --- a ZX80 with the 8K ROM runs ZX81 programs, so it is offered both.
 export const ZX81_PROGRAM_FORMAT = "p";
 export const ZX80_PROGRAM_FORMAT = "o";

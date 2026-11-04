@@ -6,7 +6,7 @@ import { NEXT_ROM_FILES, NEXT_ROM_SETS, type NextRomSetId } from "@common/zxnext
 import { nextRomFile } from "../../harness/zxnext/core/roms";
 
 /*
- * The ROM facts Klive's code depends on (`.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` D6), proved against
+ * The ROM facts Klive's code depends on (`.ai/zxnext-models.md` D6), proved against
  * the bytes of every ROM set it ships, so a new ROM set cannot silently break code injection or tape
  * loading.
  *

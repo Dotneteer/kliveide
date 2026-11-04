@@ -3,7 +3,7 @@
  *
  * They live in `scripts/doc-shots/fixtures/get-started/`, where the screenshot recipes also open
  * them, so the code a page shows, the code in its screenshots and the code tested here are one
- * file (R5 of `.plans/DOCS_SITE_MODERNIZATION_PLAN.md`). A page whose program stops assembling
+ * file (R5 of `.ai/docs-site.md`). A page whose program stops assembling
  * fails here, not in a reader's IDE.
  *
  * The test also checks that each page's code block still matches its fixture, so the two copies

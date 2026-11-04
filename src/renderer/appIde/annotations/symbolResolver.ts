@@ -18,7 +18,7 @@ import {
 import { romLayerApplies, romLayerBank, type RomLayer, type RomLayersOf } from "./romLayer";
 
 /*
- * One address-to-name resolver for every view (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md`
+ * One address-to-name resolver for every view (`.docs/annotations.md`
  * §4.4, A8).
  *
  * Before this, each view built its own: the Disassembly view named operands from a NEX sidecar and

@@ -64,7 +64,7 @@ module.exports = {
       await klive.cmd("em-pause", 1200);
 
       /*
-       * The layout follows the document's own width (.plans/mockups/sprite-inspector-layout.html).
+       * The layout follows the document's own width.
        * With the 200px sidebar and Iosevka at 12px (6px a ch), these window widths put the document
        * in each layout; every one is checked from the DOM before it is photographed.
        */

@@ -15,7 +15,7 @@ import { createEpSession } from "../harness/enterprise";
 
 /**
  * The debugger's in-core loop decides exactly as the instruction-by-instruction loop does
- * (`.plans/WASM_CORE_LEAN_AND_DEBUG_PLAN.md` Phases 4a and 4b, T6).
+ * (`.ai/wasm-core-debug.md` D13, T6).
  *
  * Each machine runs the same program twice, with the same breakpoints, through a sequence of continues,
  * step-overs and step-outs: once as the IDE runs it (in the core wherever it can), once instruction by
@@ -93,7 +93,7 @@ const MACHINES: Record<string, () => Promise<Setup>> = {
     return { machine: s.machine as unknown as Machine, prefix: "zxnext", base: 0x8000, counter: 0x9000, di: true, port: 0x7ffe };
   },
   // --- A Pi streams a square wave routed to EAR: the port reads see bit 6 change (PI_I2S_AUDIO_PLAN §6)
-  // --- One representative case per further Next artifact (`.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` P3)
+  // --- One representative case per further Next artifact (`.ai/zxnext-models.md`, "Rules")
   "zxnext (ks2-30204)": async () => {
     const s = await createNextSession({ profile: "ks2-30204" });
     return { machine: s.machine as unknown as Machine, prefix: "zxnext", base: 0x8000, counter: 0x9000, di: true, port: 0x7ffe };
@@ -118,7 +118,8 @@ const MACHINES: Record<string, () => Promise<Setup>> = {
     return { machine: s.machine as unknown as Machine, prefix: "zx8081", base: 0x6000, counter: 0x6200, di: true, port: 0xfffe };
   },
   // --- The program and its counter in video RAM (page 2, port 02h = 50h): every opcode fetch and
-  // --- counter access is clock-stretched by its half-T phase (`.plans/VIDEOTON_TVC_PLAN.md` §6)
+  // --- counter access is clock-stretched by its half-T phase (`src/emu/machines/tvc/wasm/README.md`,
+  // --- "The clock stretch")
   tvc: async () => {
     const s = await createTvcSession();
     s.runFrames(20);

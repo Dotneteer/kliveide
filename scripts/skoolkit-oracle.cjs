@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /*
- * The SkoolKit oracle (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §8 G7.5, R7).
+ * The SkoolKit oracle (`.docs/reverse-engineering-tools.md`, "Tests worth knowing", G7.5, R7).
  *
  * Runs an *installed* SkoolKit on files Klive exported and records **pass or fail only**: whether
  * `skool2ctl` and `skool2asm` accept a skool export, and whether `sna2skool -c` accepts a control

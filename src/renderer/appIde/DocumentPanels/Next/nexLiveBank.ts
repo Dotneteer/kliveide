@@ -34,7 +34,7 @@ export function machineHasRun(state: MachineControllerState | undefined): boolea
  * compressed source, a bank corrupted by a stray write; all of it looks identical to a clean load.
  *
  * The diff is nearly free because both arrays are already in hand, which is why §11.3 of
- * `.plans/NEX_DEBUGGING_PLAN.md` calls this the only item in Phase 6 that shows something currently
+ * `.ai/nex-debugging.md` calls this the only item in Phase 6 that shows something currently
  * undiscoverable.
  */
 

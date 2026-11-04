@@ -4,7 +4,7 @@
  *
  * The character tables were read off the glyphs in the ROMs' character sets (ZX81 at $1E00, ZX80 at
  * $0E00). The ZX80's token codes were read off its ROM's keyword table ($00BA-$013A) and checked by
- * typing every K-mode key on the emulated ZX80 (`.plans/ZX8081_CODE_INJECTION_PLAN.md` §3).
+ * typing every K-mode key on the emulated ZX80 (`.ai/zx8081.md`, "How code injection works").
  */
 
 /** The ZX81 character set, codes $00-$3F (bit 7 = inverse) */

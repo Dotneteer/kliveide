@@ -20,7 +20,7 @@ import { checkZx8081WasmSize, DEFAULT_MAX_BYTES, parseMaxBytes } from "../../scr
 import { zx8081WasmV2RequiredExports } from "@emu/machines/zx8081/wasm/Zx8081WasmV2Loader";
 import { sharedZ80Functions } from "../wasmSharedExports";
 
-/* The Sinclair ZX80/ZX81 WASM build (`.plans/ZX8081_WASM_PLAN.md`) */
+/* The Sinclair ZX80/ZX81 WASM build (`src/emu/machines/zx8081/wasm/README.md`) */
 
 type Call = { compiler: string; args: string[] };
 const fakeRun = (calls: Call[]) => (compiler: string, args: string[]) => {

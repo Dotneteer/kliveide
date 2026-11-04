@@ -5,9 +5,9 @@ import { canTypeOnTvc } from "@emu/machines/tvc/TvcTyper";
 import { TvcKeyCode as K } from "@emu/machines/tvc/TvcKeyCode";
 
 /*
- * The TVC keyboard and the typer (`.plans/VIDEOTON_TVC_PLAN.md` §8; `TvcTyper.ts`). Each character
- * was first typed key by key and read off the screen by eye; here the typer types them into a BASIC
- * string and the test finds them, unchanged, in the program BASIC stored.
+ * The TVC keyboard and the typer (`.ai/videoton-tvc.md`, "Keyboard and typing"; `TvcTyper.ts`).
+ * Each character was first typed key by key and read off the screen by eye; here the typer types
+ * them into a BASIC string and the test finds them, unchanged, in the program BASIC stored.
  */
 
 const BASIC_TEXT = 0x19ef;

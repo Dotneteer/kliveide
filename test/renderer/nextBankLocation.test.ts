@@ -18,7 +18,7 @@ import {
  * The Next's MMU is eight independent 8K slots, so a 16K bank is two pages that the hardware does
  * not require to be adjacent, in order, or both present. Every one of those cases is reachable and
  * each says something different to someone debugging a NEX, which is why this is a list of
- * placements rather than an address. See `.plans/NEX_DEBUGGING_PLAN.md` §11.2 and §4.6.
+ * placements rather than an address. See `.ai/nex-debugging.md`.
  */
 
 /** A page holding nothing this test cares about: writable, pointing at some other 8K page. */
@@ -209,7 +209,7 @@ describe("formatBankLocation", () => {
 describe("bankOffsetOfAddress", () => {
   /*
    * The inverse question: not "where is the bank" but "is *this* address in it", which is what the
-   * program-counter spotlight asks. See `.plans/NEX_DEBUGGING_PLAN.md` §11.4.
+   * program-counter spotlight asks. See `.ai/nex-debugging.md`.
    */
 
   const contiguous: ReturnType<typeof locateBank16k> = [

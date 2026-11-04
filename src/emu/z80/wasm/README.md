@@ -14,8 +14,8 @@ module. Read this before adding a hook, a debugger feature or a core.
 | `z80-debug-loop.c` | The debugger's in-core loop | `Z80_DEBUG_LOOP_PREFIX`, after `<prefix>ExecuteInstruction` |
 
 The plans behind them: `.plans/EXECUTION_HISTORY_VIEWER_PLAN.md`, `.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`,
-`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md` and, for the cost of debugging and the in-core loop,
-`.plans/WASM_CORE_LEAN_AND_DEBUG_PLAN.md`. `scripts/check-wasm-cpu-contract.cjs` checks the includes.
+`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md` and, for the cost of debugging and the in-core loop's decisions, traps and
+budgets, `.ai/wasm-core-debug.md`. `scripts/check-wasm-cpu-contract.cjs` checks the includes.
 
 ## Contention hooks
 
@@ -30,7 +30,7 @@ The +2A/+3's gate array contends memory cycles only, so its address-bus and port
 An opcode fetch normally goes through `Z80_DELAY_MEMORY_READ` like any read. A core that must time
 M1 cycles on their own defines `Z80_DELAY_OPCODE_FETCH(address)`. The Videoton TVC needs it: its
 clock stretch differs for an M1, and its WAIT circuit adds a wait state to every M1
-(`.plans/VIDEOTON_TVC_PLAN.md` §5, H1).
+(`.ai/videoton-tvc.md`, "The shared Z80 hook H1").
 - It then replaces the memory-read delay of every M1: the unprefixed opcode, the byte after a
   `CB`/`ED`/`DD`/`FD` prefix, a repeated `DD`/`FD`, and each halted cycle. It adds the fetch's three
   tacts itself; the refresh tact follows as usual.

@@ -7,7 +7,7 @@ import type { NextRtcKeptEntry, NextRtcKeptState } from "@common/zxnext/nextRtcK
 import { NEXT_RTC_FILE, NextRtcStoreFile } from "@main/zxnext-rtc-store";
 
 /*
- * `zxnext-rtc.json` (`.plans/ZXNEXT_RTC_OPTIONS_PLAN.md` D5, D8): one kept clock per Next model, and
+ * `zxnext-rtc.json` (`.ai/zxnext-rtc.md` D5, D8): one kept clock per Next model, and
  * the `nextRtcKept` state the Settings dialog's Kept clock row reads.
  */
 

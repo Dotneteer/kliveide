@@ -2512,7 +2512,7 @@
     ]
   },
   "semantics": {
-    "$comment": "The semantics annex (plan R8): one entry per behaviour question the syntax does not answer. status: 'decided' (settled), 'provisional' (implemented and tested, to be confirmed against the zxbc oracle, D12), or 'open' (to settle by the given phase). source: 'docs' (upstream documentation), 'oracle' (observed zxbc behaviour) or 'klive-decision'. Every decided or provisional entry names the test that pins it. 'oracle' records what zxbc 1.19 did where it differs from the decision (scripts/kbasic-oracle.cjs, test/kbasic/oracle/).",
+    "$comment": "The semantics annex (R8 of the compiler, .ai/kbasic/compiler.md): one entry per behaviour question the syntax does not answer. status: 'decided' (settled), 'provisional' (implemented and tested, to be confirmed against the zxbc oracle, D12), or 'open' (to settle by the given phase). source: 'docs' (upstream documentation), 'oracle' (observed zxbc behaviour) or 'klive-decision'. Every decided or provisional entry names the test that pins it. 'oracle' records what zxbc 1.19 did where it differs from the decision (scripts/kbasic-oracle.cjs, test/kbasic/oracle/).",
     "entries": [
       {
         "name": "argument-evaluation-order",
@@ -2596,7 +2596,7 @@
         "test": "test/kbasic/compat/compat.test.ts",
         "name": "codebank-extension",
         "question": "How do #pragma codebank and CODEBANK inside ASM read?",
-        "decision": "As NextBuild CODEBANK extension, which Klive supports (plan section 9): the pragma takes a bank number and CODEBANK in ASM a bank.",
+        "decision": "As NextBuild CODEBANK extension, which Klive supports (.ai/kbasic/compiler.md, \"CODEBANK as built\"): the pragma takes a bank number and CODEBANK in ASM a bank.",
         "source": "klive-decision",
         "oracle": "zxbc has no CODEBANK: it takes the pragma as unknown (a warning) and CODEBANK in ASM as assembler text."
       },

@@ -4,7 +4,7 @@ import { AssemblerOptions } from "@main/compiler-common/assembler-in-out";
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
 
 /**
- * The ZX80/ZX81 models of the Klive assembler (`.plans/ZX8081_CODE_INJECTION_PLAN.md` D2): the
+ * The ZX80/ZX81 models of the Klive assembler (`.ai/zx8081.md`, "Machine code decisions", D2): the
  * `.model` names, `#ifmod`, the pragmas they rule out, `.defzx`, and the warning for code above $7FFF.
  */
 async function compile(source: string, currentModel?: number) {

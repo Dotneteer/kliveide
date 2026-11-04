@@ -85,7 +85,7 @@ export type ConditionEnvironment = {
   isNext?: boolean;
   /**
    * Whether `<bank>:<label>` names an annotation label: every machine with a bank space
-   * (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §4.6). Absent: the Next only, as before.
+   * (`.docs/annotations.md`, "Commands"). Absent: the Next only, as before.
    */
   bankLabels?: boolean;
   /** The machine's partition label parser — the one `bp-set` uses. */

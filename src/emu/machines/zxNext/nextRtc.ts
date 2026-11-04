@@ -86,7 +86,7 @@ export function rtcAdvanceOneSecond(r: Uint8Array | number[]): void {
 
 
 // ==========================================================================================
-// The clock against the host's clock (`.plans/ZXNEXT_RTC_OPTIONS_PLAN.md` D4)
+// The clock against the host's clock (`.ai/zxnext-rtc.md` D4)
 //
 // Times are *wall seconds*: seconds since 2000-01-01 00:00:00 of a calendar with no time zone, so the
 // registers and the host's local time compare directly (the DS1307 knows no zone either). A host that

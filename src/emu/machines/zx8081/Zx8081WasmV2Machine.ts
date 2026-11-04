@@ -53,7 +53,7 @@ function isProgramFile(value: unknown): value is ZxProgramFile {
 }
 
 /**
- * A Sinclair ZX80 or ZX81 on the WASM core (`wasm/zx8081/`, `.plans/ZX8081_WASM_PLAN.md`): one core
+ * A Sinclair ZX80 or ZX81 on the WASM core (`wasm/zx8081/`, `wasm/README.md`): one core
  * for both machines, configured by the model at setup.
  *
  * The registers are read live from the core and every write is pushed into it; the debugger runs

@@ -25,7 +25,7 @@ import {
 import styles from "./GraphicsView.module.scss";
 
 /*
- * The graphics finder's toolbar (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §5.2): the look's
+ * The graphics finder's toolbar (`.docs/reverse-engineering-tools.md`, "Graphics finder"): the look's
  * parameters, the presets, and Go to. A context group in the document's `PanelHeader`, as the
  * Sprites view's toolbar is.
  */

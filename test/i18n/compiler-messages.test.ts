@@ -5,7 +5,7 @@ import { assemblerMessage } from "@main/compiler-common/assembler-errors";
 import { ksxErrorMessage } from "@common/ksx/ParserError";
 
 /*
- * Assembler and KSX messages come from the catalog by code (`.plans/LOCALIZATION_PLAN.md` step 13):
+ * Assembler and KSX messages come from the catalog by code (`.ai/localization.md`):
  * `{0}`, `{1}`... fill in order, and a compile in another language words them in that language.
  */
 describe("assembler messages", () => {

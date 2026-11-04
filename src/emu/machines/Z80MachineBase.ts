@@ -283,7 +283,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
 
   /**
    * Where each ROM partition came from, and what it is
-   * (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §5.3): its CRC-32 and size, and the file and
+   * (`.docs/annotations.md`, "ROM Annotations"): its CRC-32 and size, and the file and
    * 16K page whose bytes it holds. Found by comparing bytes with the ROM files this machine loaded,
    * so a machine that splits a file into pages (the Scorpion's 64K file) or falls back to another
    * (the Timex to `sp48.rom`) needs no bookkeeping of its own. A page whose bytes match no loaded

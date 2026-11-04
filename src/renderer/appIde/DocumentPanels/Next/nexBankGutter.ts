@@ -9,7 +9,7 @@ import type { MessageKey } from "@common/i18n/keys.generated";
  * What a popped-out NEX bank's gutter shows, and what the viewer's bank heading counts.
  *
  * Pure on purpose: both answers are decidable from a list of breakpoints, and neither wants a
- * mounted component to check. See `.plans/NEX_DEBUGGING_PLAN.md` §10.1 and §10.2.
+ * mounted component to check. See `.ai/nex-debugging.md`.
  */
 
 /** Breakpoints in one bank, grouped by the offset they sit at. Several can share one offset. */

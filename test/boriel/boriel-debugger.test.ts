@@ -15,8 +15,8 @@ import { evaluateWatch } from "@renderer/appIde/debugger/source/watch-expression
 import { createSp48Session } from "../harness/sp48";
 
 /*
- * Klive's source-level debugger on Boriel BASIC programs (`.plans/BORIEL_BASIC_INTEGRATION_PLAN.md`
- * §5-§6): each fixture's zxbc-built binary runs on the real 48K with a breakpoint on every statement
+ * Klive's source-level debugger on Boriel BASIC programs (`.ai/boriel/integration.md`
+ * "The `.dbg` adapter" and "The debugger"): each fixture's zxbc-built binary runs on the real 48K with a breakpoint on every statement
  * of the converted debug data, and at each stop the call stack, the Variables panel and watches are
  * built from the machine and checked against each other and against known values.
  */
