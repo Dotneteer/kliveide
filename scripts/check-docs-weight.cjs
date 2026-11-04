@@ -10,8 +10,9 @@
  */
 const { existsSync, readdirSync, readFileSync, statSync } = require("node:fs");
 const { join, relative, sep } = require("node:path");
+const { REPO_ROOT } = require("./repo-root.cjs");
 
-const repoRoot = join(__dirname, "..");
+const repoRoot = REPO_ROOT;
 const outDir = join(repoRoot, "docs", "out");
 const DEFAULT_BUDGET_MB = 1.5;
 

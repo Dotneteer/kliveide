@@ -31,9 +31,10 @@ const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const { launchKlive } = require("./doc-shots/harness.cjs");
+const { REPO_ROOT } = require("./repo-root.cjs");
 
 const ROOT = process.env.Z88DK_ROOT || path.join(os.homedir(), "z88dk");
-const OUT = path.join(__dirname, "..", ".z88dk-ide-check");
+const OUT = path.join(REPO_ROOT, ".z88dk-ide-check");
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /** The NextZXOS SD card image a Next case copies into its own home (as the Klive BASIC and Boriel checks do). */

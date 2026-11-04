@@ -34,8 +34,9 @@ const { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync, renameSync
 const { join, resolve } = require("node:path");
 const { tmpdir } = require("node:os");
 const { execFileSync } = require("node:child_process");
+const { REPO_ROOT } = require("./repo-root.cjs");
 
-const ROOT = resolve(__dirname, "..");
+const ROOT = REPO_ROOT;
 const MANIFEST = join(ROOT, "src/common/zxnext/nextRomSets.json");
 const ROM_ROOT = join(ROOT, "src/public/roms/zxnext");
 const PUBLIC = join(ROOT, "src/public");
@@ -64,9 +65,9 @@ function sha256(bytes) {
 function fat() {
   registerTsRuntime();
   return {
-    ...require("../src/main/fat32/CimFileManager.ts"),
-    ...require("../src/main/fat32/Fat32Volume.ts"),
-    ...require("../src/main/fat32/Fat32Types.ts")
+    ...require(`${REPO_ROOT}/src/main/fat32/CimFileManager.ts`),
+    ...require(`${REPO_ROOT}/src/main/fat32/Fat32Volume.ts`),
+    ...require(`${REPO_ROOT}/src/main/fat32/Fat32Types.ts`)
   };
 }
 
@@ -247,7 +248,7 @@ function checkRoms(src, setId, set) {
 
 async function buildCard(src, files, outPath, label) {
   const { CimFileManager, Fat32Volume } = fat();
-  const { FileManager } = require("../src/main/fat32/FileManager.ts");
+  const { FileManager } = require(`${REPO_ROOT}/src/main/fat32/FileManager.ts`);
   const temp = `${outPath}.partial`;
   await withFixedClock(async () => {
     const cim = new CimFileManager().createFile(temp, CARD_SIZE_MB);

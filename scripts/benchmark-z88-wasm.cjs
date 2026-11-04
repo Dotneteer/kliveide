@@ -17,8 +17,9 @@ const { existsSync, readFileSync } = require("node:fs");
 const { registerTsRuntime } = require("./lib/ts-runtime.cjs");
 const { resolve } = require("node:path");
 const { performance } = require("node:perf_hooks");
+const { REPO_ROOT } = require("./repo-root.cjs");
 
-const root = resolve(__dirname, "..");
+const root = REPO_ROOT;
 
 const DEFAULTS = { frames: 200, runs: 5, warmup: 20 };
 
@@ -263,7 +264,7 @@ async function benchmarkZ88(options, harness) {
   let h = harness;
   if (!h) {
     registerTsRuntime();
-    h = require("../test/harness/z88/index.ts");
+    h = require(`${REPO_ROOT}/test/harness/z88/index.ts`);
   }
   const results = [];
   for (const scenario of SCENARIOS.filter((s) => !options.scenario || s.id === options.scenario)) {

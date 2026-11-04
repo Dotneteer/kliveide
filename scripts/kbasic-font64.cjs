@@ -12,8 +12,9 @@
  */
 const fs = require("fs");
 const path = require("path");
+const { REPO_ROOT } = require("./repo-root.cjs");
 
-const FILE = path.join(__dirname, "..", "src/main/kbasic/stdlib/print64.bas");
+const FILE = path.join(REPO_ROOT, "src/main/kbasic/stdlib/print64.bas");
 
 // prettier-ignore
 const GLYPHS = [

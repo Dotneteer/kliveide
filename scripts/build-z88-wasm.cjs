@@ -7,6 +7,7 @@ const { cpuExports, debugLoopExports, debugLoopVolatileSymbols } = require("./z8
 const { Z80_CONDITION_EXPORTS, Z80_CONDITION_VOLATILE_SYMBOLS } = require("./z80-condition-exports.cjs");
 const { Z80_HISTORY_EXPORTS, Z80_HISTORY_VOLATILE_SYMBOLS } = require("./z80-history-exports.cjs");
 const { Z80_PROFILE_EXPORTS, Z80_PROFILE_VOLATILE_SYMBOLS } = require("./z80-profile-exports.cjs");
+const { REPO_ROOT } = require("./repo-root.cjs");
 const {
   discardWasmOutput,
   layoutMapArgs,
@@ -44,7 +45,7 @@ const Z88_VOLATILE_SYMBOLS = [
  * are serialized with a lock file, because vitest workers build it in parallel.
  */
 
-const root = resolve(__dirname, "..");
+const root = REPO_ROOT;
 const source = resolve(root, "src/emu/machines/z88/wasm/z88/z88.c");
 const wasmDistDirectory = resolve(root, "src/emu/machines/z88/wasm/dist");
 const productionOutput = resolve(wasmDistDirectory, "cambridge-z88.wasm");

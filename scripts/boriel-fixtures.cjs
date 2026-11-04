@@ -16,9 +16,10 @@ const { execFileSync } = require("node:child_process");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
+const { REPO_ROOT } = require("./repo-root.cjs");
 
-const FIXTURES = path.join(__dirname, "..", "test", "boriel", "fixtures");
-const KIT = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "dev", "vendor", "boriel-basic", "kit.json"), "utf8"));
+const FIXTURES = path.join(REPO_ROOT, "test/boriel/fixtures");
+const KIT = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, "dev/vendor/boriel-basic/kit.json"), "utf8"));
 
 function zxbcPath() {
   const exe = process.platform === "win32" ? "zxbc.exe" : "zxbc";

@@ -20,8 +20,9 @@
  */
 const { existsSync, readFileSync, readdirSync, writeFileSync } = require("node:fs");
 const { join, relative, sep } = require("node:path");
+const { REPO_ROOT } = require("./repo-root.cjs");
 
-const repoRoot = join(__dirname, "..");
+const repoRoot = REPO_ROOT;
 const outDir = join(repoRoot, "docs", "out");
 const baselineFile = join(repoRoot, "docs", "goldens", "docs-highlighting.golden.json");
 

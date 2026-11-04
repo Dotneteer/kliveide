@@ -22,8 +22,9 @@
  */
 const fs = require("fs");
 const path = require("path");
+const { REPO_ROOT } = require("./repo-root.cjs");
 
-const ROOT = path.join(__dirname, "..");
+const ROOT = REPO_ROOT;
 const SPEC = path.join(ROOT, "dev/ai/zxbasic-syntax/zxbasic-syntax.json");
 const API = path.join(ROOT, "dev/ai/kbasic/stdlib-api.json");
 const STDLIB_DIR = path.join(ROOT, "src/main/kbasic/stdlib");

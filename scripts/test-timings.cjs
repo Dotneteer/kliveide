@@ -16,7 +16,8 @@ const { spawnSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 
-const root = path.resolve(__dirname, "..");
+const { REPO_ROOT } = require("./repo-root.cjs");
+const root = REPO_ROOT;
 const args = process.argv.slice(2);
 const option = (name, fallback) => {
   const i = args.indexOf(name);

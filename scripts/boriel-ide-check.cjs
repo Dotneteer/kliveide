@@ -31,9 +31,10 @@ const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const { launchKlive } = require("./doc-shots/harness.cjs");
+const { REPO_ROOT } = require("./repo-root.cjs");
 
 const ROOT = process.env.BORIEL_ROOT || path.join(os.homedir(), "zxbasic2");
-const OUT = path.join(__dirname, "..", ".boriel-ide-check");
+const OUT = path.join(REPO_ROOT, ".boriel-ide-check");
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function session(name, { card = false, ideViewOptions = {} } = {}) {
@@ -314,7 +315,7 @@ const PARTS = {
  * breakpoint on Peek3's RETURN in big3.bas (the second bank), then `debug`; true when it pauses there.
  */
 async function bankedPart(s, machine, label) {
-  const fixture = path.join(__dirname, "..", "test", "boriel", "fixtures", "banked-128");
+  const fixture = path.join(REPO_ROOT, "test/boriel/fixtures/banked-128");
   const main = fs.readFileSync(path.join(fixture, "program.bas"), "utf8").split("\n");
   const folder = await s.project(machine, ["'@split-modules", ...main]);
   for (const file of fs.readdirSync(fixture).filter((f) => f.endsWith(".bas") && f !== "program.bas")) {

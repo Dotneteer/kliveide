@@ -21,8 +21,9 @@
  */
 const { readdirSync, readFileSync, existsSync } = require("node:fs");
 const { join, relative, sep } = require("node:path");
+const { REPO_ROOT } = require("./repo-root.cjs");
 
-const repoRoot = join(__dirname, "..");
+const repoRoot = REPO_ROOT;
 const contentDir = join(repoRoot, "docs", "content", "en");
 const AREAS = ["get-started", "guides", "reference", "under-the-hood"];
 // --- Generated at build time from CHANGELOG.md (git-ignored): its wording is the changesets'

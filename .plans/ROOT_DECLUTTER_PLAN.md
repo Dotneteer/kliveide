@@ -305,6 +305,14 @@ failure mode before anything moves.
   clean tree: `npm run change -- --show <a changeset>`, `npm run i18n:keys` (no diff),
   `npm run runtime:bundle` (no diff), `npm run doc:build` (it runs the doc asset scripts).
 
+*Done (2026-11-04):* `scripts/repo-root.cjs` exports `REPO_ROOT`; 63 scripts use it (68 root
+computations). The survey found a second form the plan had missed: four scripts load TypeScript
+from `src/` and `test/` with `require("../test/...")`, which would break the same way; they now
+`` require(`${REPO_ROOT}/test/...`) ``. `test/scripts/repo-root.test.ts` fails on either form
+(checked against the old code). Paths that stay inside `scripts/` (`../fixtures/disks`) stay
+relative. `build-doc-assets.cjs` rebuilds the example zips with new timestamps only; the
+committed zips were kept.
+
 ### Step 11. `scripts/` -> `dev/scripts/`
 
 - `git mv scripts dev/scripts`; the helper from step 10 keeps every root right.

@@ -11,8 +11,9 @@
  */
 const { readdirSync, readFileSync, writeFileSync, existsSync } = require("node:fs");
 const { join } = require("node:path");
+const { REPO_ROOT } = require("./repo-root.cjs");
 
-const outDir = join(__dirname, "..", "docs", "out");
+const outDir = join(REPO_ROOT, "docs/out");
 /** Areas (per language) that search must not find */
 const UNSEARCHED = ["book"];
 

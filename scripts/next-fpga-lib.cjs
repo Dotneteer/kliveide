@@ -12,8 +12,9 @@ const { createHash } = require("node:crypto");
 const { execFileSync } = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
+const { REPO_ROOT } = require("./repo-root.cjs");
 
-const ROOT = path.join(__dirname, "..");
+const ROOT = REPO_ROOT;
 const VENDOR = path.join(ROOT, "dev", "vendor", "next-fpga");
 const MANIFEST = path.join(VENDOR, "sources.json");
 const CACHE = path.join(VENDOR, ".git-cache");

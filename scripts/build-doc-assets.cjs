@@ -14,8 +14,9 @@
 const { execFileSync } = require("node:child_process");
 const { copyFileSync, existsSync, mkdirSync, rmSync, statSync } = require("node:fs");
 const { dirname, join } = require("node:path");
+const { REPO_ROOT } = require("./repo-root.cjs");
 
-const repoRoot = join(__dirname, "..");
+const repoRoot = REPO_ROOT;
 const sourceDir = join(repoRoot, "dev", "experiments", "testprojects", "next");
 const bookDir = join(sourceDir, "book");
 const archive = join(repoRoot, "dev", "experiments", "testprojects", "next-examples.zip");

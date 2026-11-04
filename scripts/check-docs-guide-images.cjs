@@ -13,8 +13,9 @@
  */
 const { readdirSync, readFileSync } = require("node:fs");
 const { join, relative } = require("node:path");
+const { REPO_ROOT } = require("./repo-root.cjs");
 
-const repoRoot = join(__dirname, "..");
+const repoRoot = REPO_ROOT;
 const guidesDir = join(repoRoot, "docs", "content", "en", "guides");
 
 const OBSOLETE = [

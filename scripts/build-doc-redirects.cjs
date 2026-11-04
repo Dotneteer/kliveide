@@ -18,8 +18,9 @@
  */
 const { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } = require("node:fs");
 const { dirname, join } = require("node:path");
+const { REPO_ROOT } = require("./repo-root.cjs");
 
-const repoRoot = join(__dirname, "..");
+const repoRoot = REPO_ROOT;
 const docsDir = join(repoRoot, "docs");
 const outDir = join(docsDir, "out");
 const mapFile = join(docsDir, "redirects.json");

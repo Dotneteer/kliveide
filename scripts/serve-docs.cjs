@@ -14,6 +14,7 @@
 const { createServer } = require("node:http");
 const { existsSync, createReadStream, statSync } = require("node:fs");
 const { join, extname, normalize } = require("node:path");
+const { REPO_ROOT } = require("./repo-root.cjs");
 
 const MIME = {
   ".html": "text/html; charset=utf-8",
@@ -39,7 +40,7 @@ function argValue(flag, fallback) {
   return i !== -1 && process.argv[i + 1] !== undefined ? process.argv[i + 1] : fallback;
 }
 
-const root = join(__dirname, "..", "docs", "out");
+const root = join(REPO_ROOT, "docs/out");
 const prefix = argValue("--prefix", "").replace(/\/$/, "");
 const port = Number(argValue("--port", "3000"));
 

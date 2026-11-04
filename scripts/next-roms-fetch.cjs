@@ -24,8 +24,9 @@ const { createHash } = require("node:crypto");
 const { existsSync, mkdirSync, readFileSync, writeFileSync } = require("node:fs");
 const { join, resolve } = require("node:path");
 const { execFileSync } = require("node:child_process");
+const { REPO_ROOT } = require("./repo-root.cjs");
 
-const ROOT = resolve(__dirname, "..");
+const ROOT = REPO_ROOT;
 const MANIFEST = join(ROOT, "src/common/zxnext/nextRomSets.json");
 const ROM_ROOT = join(ROOT, "src/public/roms/zxnext");
 const PROJECT = "thesmog358/tbblue";

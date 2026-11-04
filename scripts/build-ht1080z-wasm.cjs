@@ -7,6 +7,7 @@ const { cpuExports, debugLoopExports, debugLoopVolatileSymbols, Z80_ACCESS_LOG_V
 const { Z80_CONDITION_EXPORTS, Z80_CONDITION_VOLATILE_SYMBOLS } = require("./z80-condition-exports.cjs");
 const { Z80_HISTORY_EXPORTS, Z80_HISTORY_VOLATILE_SYMBOLS } = require("./z80-history-exports.cjs");
 const { Z80_PROFILE_EXPORTS, Z80_PROFILE_VOLATILE_SYMBOLS } = require("./z80-profile-exports.cjs");
+const { REPO_ROOT } = require("./repo-root.cjs");
 const {
   discardWasmOutput,
   layoutMapArgs,
@@ -45,7 +46,7 @@ const HT1080Z_VOLATILE_SYMBOLS = [
  * serialized with a lock file, because vitest workers build it in parallel.
  */
 
-const root = resolve(__dirname, "..");
+const root = REPO_ROOT;
 const source = resolve(root, "src/emu/machines/ht1080z/wasm/ht1080z/ht1080z.c");
 const wasmDistDirectory = resolve(root, "src/emu/machines/ht1080z/wasm/dist");
 const productionOutput = resolve(wasmDistDirectory, "ht1080z.wasm");

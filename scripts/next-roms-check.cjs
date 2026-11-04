@@ -15,8 +15,9 @@ const { existsSync, readFileSync } = require("node:fs");
 const { createHash } = require("node:crypto");
 const { join } = require("node:path");
 const { describe, download, MANIFEST, ROM_ROOT } = require("./next-roms-fetch.cjs");
+const { REPO_ROOT } = require("./repo-root.cjs");
 
-const VENDOR = join(__dirname, "../dev/vendor/next-fpga");
+const VENDOR = join(REPO_ROOT, "dev/vendor/next-fpga");
 
 /** The bytes of a `romgen` VHDL table: rows of eight `x"NN"` values, each ending in `-- 0xADDR` */
 function romFromVhdl(text) {

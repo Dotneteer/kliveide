@@ -3,6 +3,7 @@
 const { existsSync, readFileSync, statSync } = require("node:fs");
 const { dirname, resolve } = require("node:path");
 const { performance } = require("node:perf_hooks");
+const { REPO_ROOT } = require("./repo-root.cjs");
 
 const {
   buildZxNextWasm,
@@ -11,7 +12,7 @@ const {
   waitForZxNextWasmBuildLock
 } = require("./build-zxnext-wasm.cjs");
 
-const root = resolve(__dirname, "..");
+const root = REPO_ROOT;
 const DEFAULT_FRAMES = 10;
 const DEFAULT_RUNS = 3;
 const DEFAULT_WARMUP = 2;
@@ -269,9 +270,9 @@ function runScenarioOperations(machine, scenario, count, stopReasons) {
 
 async function createWasmMachine(artifact = productionOutput) {
   registerTsRuntime();
-  const { ZxNextWasmV2Machine } = require("../src/emu/machines/zxNext/ZxNextWasmV2Machine.ts");
-  const { FILE_PROVIDER } = require("../src/emu/machines/machine-props.ts");
-  const { FileProvider } = require("../test/wasm/zxNext/FileProvider.ts");
+  const { ZxNextWasmV2Machine } = require(`${REPO_ROOT}/src/emu/machines/zxNext/ZxNextWasmV2Machine.ts`);
+  const { FILE_PROVIDER } = require(`${REPO_ROOT}/src/emu/machines/machine-props.ts`);
+  const { FileProvider } = require(`${REPO_ROOT}/test/wasm/zxNext/FileProvider.ts`);
   const machine = new ZxNextWasmV2Machine(
     undefined,
     undefined,
@@ -499,8 +500,8 @@ function createScenarioMap() {
       maxMillisecondsPerOperation: MAX_MS_PER_CONTROL_OPERATION_FOR_DEFAULT,
       setup(machine) {
         setupNopLoop(machine);
-        const { DebugStepMode } = require("../src/emu/abstractions/DebugStepMode.ts");
-        const { DebugSupport } = require("../src/emu/machines/DebugSupport.ts");
+        const { DebugStepMode } = require(`${REPO_ROOT}/src/emu/abstractions/DebugStepMode.ts`);
+        const { DebugSupport } = require(`${REPO_ROOT}/src/emu/machines/DebugSupport.ts`);
         machine.executionContext.debugStepMode = DebugStepMode.StepInto;
         machine.executionContext.debugSupport = new DebugSupport(undefined, []);
       },

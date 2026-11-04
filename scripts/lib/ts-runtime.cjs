@@ -10,8 +10,9 @@
 
 const { existsSync, readFileSync } = require("node:fs");
 const { dirname, resolve } = require("node:path");
+const { REPO_ROOT } = require("../repo-root.cjs");
 
-const ROOT = resolve(__dirname, "../..");
+const ROOT = REPO_ROOT;
 
 /** The path aliases of `build/tsconfig.web.json` and `build/tsconfig.node.json`. */
 const PATHS = {

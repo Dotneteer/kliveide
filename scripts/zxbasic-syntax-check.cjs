@@ -49,9 +49,10 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const https = require("node:https");
+const { REPO_ROOT } = require("./repo-root.cjs");
 
 const REPO = "boriel-basic/zxbasic";
-const FINGERPRINT_PATH = path.join(__dirname, "..", "dev", "ai", "zxbasic-syntax", "upstream-fingerprint.json");
+const FINGERPRINT_PATH = path.join(REPO_ROOT, "dev/ai/zxbasic-syntax/upstream-fingerprint.json");
 
 /**
  * Folders in which a new file may carry a syntax change, with the extensions that count. A file

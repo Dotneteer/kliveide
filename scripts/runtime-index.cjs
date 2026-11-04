@@ -23,8 +23,9 @@
  */
 const fs = require("fs");
 const path = require("path");
+const { REPO_ROOT } = require("./repo-root.cjs");
 
-const ROOT = path.join(__dirname, "..");
+const ROOT = REPO_ROOT;
 const BACKEND_TYPES = "src/main/z80-backend/runtime/runtime-types";
 const PACKAGES = [
   { name: "core", dir: "src/main/z80-backend/runtime/core", out: "src/main/z80-backend/runtime/generated/core-package.ts", may: ["core"] },

@@ -10,8 +10,9 @@
  */
 const { readFileSync, writeFileSync } = require("node:fs");
 const { join } = require("node:path");
+const { REPO_ROOT } = require("./repo-root.cjs");
 
-const repoRoot = join(__dirname, "..");
+const repoRoot = REPO_ROOT;
 const source = readFileSync(join(repoRoot, "CHANGELOG.md"), "utf8");
 const target = join(repoRoot, "docs", "content", "en", "reference", "whats-new.mdx");
 

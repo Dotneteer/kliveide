@@ -1,7 +1,8 @@
 const { existsSync, readdirSync, readFileSync, statSync } = require("node:fs");
 const { dirname, relative, resolve, sep } = require("node:path");
 
-const root = resolve(__dirname, "..");
+const { REPO_ROOT } = require("./repo-root.cjs");
+const root = REPO_ROOT;
 const sharedCpuSource = resolve(root, "src/emu/z80/wasm/z80.c");
 const { Z80_HISTORY_EXPORTS } = require("./z80-history-exports.cjs");
 const { Z80_PROFILE_EXPORTS } = require("./z80-profile-exports.cjs");

@@ -6,8 +6,9 @@
  */
 const fs = require("node:fs");
 const path = require("node:path");
+const { REPO_ROOT } = require("./repo-root.cjs");
 
-const NEXT_FPGA_ROOT = path.join(__dirname, "..", "dev", "vendor", "next-fpga");
+const NEXT_FPGA_ROOT = path.join(REPO_ROOT, "dev/vendor/next-fpga");
 
 function nextFpgaPath(version, file) {
   const dir = path.join(NEXT_FPGA_ROOT, version);

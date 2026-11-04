@@ -10,6 +10,7 @@ const {
   stampWasmLayout
 } = require("./wasm-layout.cjs");
 const { SP48_VOLATILE_SYMBOLS, productionExports: sp48Exports } = require("./build-sp48-wasm.cjs");
+const { REPO_ROOT } = require("./repo-root.cjs");
 
 /**
  * The Timex core (`.plans/TIMEX_SCORPION_PLAN.md` G9.4a): `timex.c` builds the 48K machine with the
@@ -18,7 +19,7 @@ const { SP48_VOLATILE_SYMBOLS, productionExports: sp48Exports } = require("./bui
  */
 const TIMEX_VOLATILE_SYMBOLS = [...SP48_VOLATILE_SYMBOLS];
 
-const root = resolve(__dirname, "..");
+const root = REPO_ROOT;
 const source = resolve(root, "src/emu/machines/timex/wasm/timex/timex.c");
 const wasmDistDirectory = resolve(root, "src/emu/machines/timex/wasm/dist");
 const productionOutput = resolve(wasmDistDirectory, "zx-timex.wasm");

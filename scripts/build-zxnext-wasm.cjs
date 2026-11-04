@@ -14,6 +14,7 @@ const { Z80_CONDITION_EXPORTS, Z80_CONDITION_VOLATILE_SYMBOLS } = require("./z80
 const { Z80_HISTORY_EXPORTS, Z80_HISTORY_VOLATILE_SYMBOLS } = require("./z80-history-exports.cjs");
 const { Z80_PROFILE_EXPORTS, Z80_PROFILE_VOLATILE_SYMBOLS } = require("./z80-profile-exports.cjs");
 const { ZXNEXT_ARTIFACTS, artifactDefines } = require("./zxnext-artifacts.cjs");
+const { REPO_ROOT } = require("./repo-root.cjs");
 
 /**
  * Statics a Klive state file leaves out (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` trap 10):
@@ -105,7 +106,7 @@ const ZXNEXT_VOLATILE_SYMBOLS = [
   "zxnextProfileTicks28"
 ];
 
-const root = resolve(__dirname, "..");
+const root = REPO_ROOT;
 const source = resolve(root, "src/emu/machines/zxNext/wasm/zxnext/zxnext.c");
 const productionOutput = resolve(root, "src/emu/machines/zxNext/wasm/dist/zx-spectrum-next.wasm");
 const output = productionOutput;

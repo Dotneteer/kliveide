@@ -18,8 +18,9 @@ const { spawnSync } = require("child_process");
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
+const { REPO_ROOT } = require("./repo-root.cjs");
 
-const ROOT = path.join(__dirname, "..");
+const ROOT = REPO_ROOT;
 const COMPAT = path.join(ROOT, "test/kbasic/compat");
 const SUITES = path.join(COMPAT, "suites");
 const RUNNER = "test/kbasic/compat/compat-oracle-run.test.ts";

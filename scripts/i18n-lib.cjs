@@ -11,8 +11,9 @@
  */
 const fs = require("fs");
 const path = require("path");
+const { REPO_ROOT } = require("./repo-root.cjs");
 
-const REPO = path.resolve(__dirname, "..");
+const REPO = REPO_ROOT;
 const LOCALES_DIR = path.join(REPO, "src/common/i18n/locales");
 const SOURCE_LANGUAGE = "en";
 const PSEUDO_LANGUAGE = "qps";

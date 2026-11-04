@@ -22,8 +22,9 @@ const { spawnSync } = require("child_process");
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
+const { REPO_ROOT } = require("./repo-root.cjs");
 
-const ROOT = path.join(__dirname, "..");
+const ROOT = REPO_ROOT;
 const CORPUS = path.join(ROOT, "test/kbasic/corpus");
 const RUNNER = "test/kbasic/oracle/oracle-run.test.ts";
 const DEFAULT_ORG = 32768;

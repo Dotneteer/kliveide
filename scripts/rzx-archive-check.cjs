@@ -15,8 +15,9 @@ const { spawnSync } = require("child_process");
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
+const { REPO_ROOT } = require("./repo-root.cjs");
 
-const ROOT = path.join(__dirname, "..");
+const ROOT = REPO_ROOT;
 const RUNNER = "test/spectrum/rzx/rzx-sp-archive-run.test.ts";
 
 function fail(message) {

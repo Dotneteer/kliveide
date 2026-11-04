@@ -23,7 +23,8 @@ const os = require("os");
 const path = require("path");
 const { spawn, spawnSync } = require("child_process");
 
-const REPO = path.join(__dirname, "..");
+const { REPO_ROOT } = require("./repo-root.cjs");
+const REPO = REPO_ROOT;
 const ELECTRON = require(path.join(REPO, "node_modules", "electron"));
 const MAIN = path.join(REPO, "out", "main", "index.js");
 const CLI = path.join(REPO, "out", "main", "cli.js");

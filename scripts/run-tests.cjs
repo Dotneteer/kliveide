@@ -30,8 +30,9 @@ const { spawnSync } = require("child_process");
 const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
+const { REPO_ROOT } = require("./repo-root.cjs");
 
-const root = path.resolve(__dirname, "..");
+const root = REPO_ROOT;
 const stampDir = path.join(root, "node_modules", ".cache", "klive-tests");
 const vitestArgs = ["vitest", "run", "--config", "build/vitest.config.ts"];
 

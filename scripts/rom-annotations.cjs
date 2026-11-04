@@ -28,7 +28,8 @@ const { registerTsRuntime } = require("./lib/ts-runtime.cjs");
 const { join, relative, resolve, sep } = require("node:path");
 const { spawnSync } = require("node:child_process");
 
-const root = resolve(__dirname, "..");
+const { REPO_ROOT } = require("./repo-root.cjs");
+const root = REPO_ROOT;
 const ROMS = join(root, "src/public/roms");
 const INDEX = join(ROMS, "rom-annotations.index.json");
 

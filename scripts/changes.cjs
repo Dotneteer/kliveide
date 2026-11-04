@@ -20,8 +20,9 @@ const { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } = requ
 const { join, relative, resolve } = require("node:path");
 const { randomBytes } = require("node:crypto");
 const lib = require("./changes-lib.cjs");
+const { REPO_ROOT } = require("./repo-root.cjs");
 
-const repoRoot = join(__dirname, "..");
+const repoRoot = REPO_ROOT;
 const changesDir = join(repoRoot, "dev", "changes");
 
 function git(args, options = {}) {

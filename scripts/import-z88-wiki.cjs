@@ -41,8 +41,9 @@ const { join, dirname } = require("node:path");
 const { execFileSync } = require("node:child_process");
 const { fileURLToPath, pathToFileURL } = require("node:url");
 const os = require("node:os");
+const { REPO_ROOT } = require("./repo-root.cjs");
 
-const repoRoot = join(__dirname, "..");
+const repoRoot = REPO_ROOT;
 const docsRequire = createRequire(join(repoRoot, "docs", "package.json"));
 const parse5 = docsRequire("parse5");
 const sharp = docsRequire("sharp");

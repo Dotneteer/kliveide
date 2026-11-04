@@ -16,8 +16,9 @@
  */
 const { existsSync, readdirSync, readFileSync, statSync } = require("node:fs");
 const { join, normalize, relative, sep } = require("node:path");
+const { REPO_ROOT } = require("./repo-root.cjs");
 
-const repoRoot = join(__dirname, "..");
+const repoRoot = REPO_ROOT;
 const outDir = join(repoRoot, "docs", "out");
 
 /** Reads the basePath the site was built with from any page's asset URLs. */

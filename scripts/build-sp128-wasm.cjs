@@ -16,6 +16,7 @@ const { cpuExports, debugLoopExports, debugLoopVolatileSymbols, Z80_ACCESS_LOG_V
 const { Z80_CONDITION_EXPORTS, Z80_CONDITION_VOLATILE_SYMBOLS } = require("./z80-condition-exports.cjs");
 const { Z80_HISTORY_EXPORTS, Z80_HISTORY_VOLATILE_SYMBOLS } = require("./z80-history-exports.cjs");
 const { Z80_PROFILE_EXPORTS, Z80_PROFILE_VOLATILE_SYMBOLS } = require("./z80-profile-exports.cjs");
+const { REPO_ROOT } = require("./repo-root.cjs");
 
 /**
  * Statics a Klive state file leaves out (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` trap 10):
@@ -36,7 +37,7 @@ const SP128_VOLATILE_SYMBOLS = [
   ...Z80_PROFILE_VOLATILE_SYMBOLS
 ];
 
-const root = resolve(__dirname, "..");
+const root = REPO_ROOT;
 const source = resolve(root, "src/emu/machines/zxSpectrum128/wasm/sp128/sp128.c");
 const productionOutput = resolve(root, "src/emu/machines/zxSpectrum128/wasm/dist/zx-spectrum128.wasm");
 const output = productionOutput;

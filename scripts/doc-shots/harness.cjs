@@ -22,8 +22,9 @@
 const { _electron: electron } = require("playwright");
 const path = require("path");
 const fs = require("fs");
+const { REPO_ROOT } = require("../repo-root.cjs");
 
-const REPO = path.join(__dirname, "..", "..");
+const REPO = REPO_ROOT;
 const MAIN = path.join(REPO, "out", "main", "index.js");
 // --- Staging by default: a recipe is eyeballed against the committed version before it
 // --- replaces anything. `DOC_SHOTS_OUT=docs/public/images` publishes.

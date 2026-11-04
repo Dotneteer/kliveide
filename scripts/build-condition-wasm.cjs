@@ -11,7 +11,8 @@ const { dirname, resolve } = require("node:path");
 const { spawnSync } = require("node:child_process");
 const { acquireWasmBuildLock } = require("./wasm-build-lock.cjs");
 
-const root = resolve(__dirname, "..");
+const { REPO_ROOT } = require("./repo-root.cjs");
+const root = REPO_ROOT;
 const { Z80_CONDITION_EXPORTS } = require("./z80-condition-exports.cjs");
 const source = resolve(root, "src/emu/z80/wasm/z80-condition.c");
 const output = resolve(root, "src/emu/z80/wasm/dist/condition-test.wasm");

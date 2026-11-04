@@ -20,8 +20,9 @@ const { mkdirSync, writeFileSync } = require("node:fs");
 const { join } = require("node:path");
 
 const { REPO, downloadsFrom, expectedAssets } = require("./release-assets.cjs");
+const { REPO_ROOT } = require("./repo-root.cjs");
 
-const repoRoot = join(__dirname, "..");
+const repoRoot = REPO_ROOT;
 const outFile = join(repoRoot, "docs", "generated", "site-info.json");
 
 function latestTag() {

@@ -19,8 +19,9 @@
  */
 const { join } = require("node:path");
 const { statSync } = require("node:fs");
+const { REPO_ROOT } = require("./repo-root.cjs");
 
-const repoRoot = join(__dirname, "..");
+const repoRoot = REPO_ROOT;
 const KIT = join(repoRoot, "dev", "vendor", "spectrum-tests", "halt2int");
 const IMAGES = join(repoRoot, "docs", "public", "images");
 const OUT = join(IMAGES, "spectrum-accuracy");

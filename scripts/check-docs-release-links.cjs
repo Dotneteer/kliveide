@@ -13,8 +13,9 @@
  */
 const { existsSync, readdirSync, readFileSync } = require("node:fs");
 const { join, relative } = require("node:path");
+const { REPO_ROOT } = require("./repo-root.cjs");
 
-const repoRoot = join(__dirname, "..");
+const repoRoot = REPO_ROOT;
 const contentDir = join(repoRoot, "docs", "content");
 const outDir = join(repoRoot, "docs", "out");
 const TOKEN = "@KLIVE_RELEASE@";

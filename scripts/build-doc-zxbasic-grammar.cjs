@@ -12,8 +12,9 @@
  */
 const { readFileSync, writeFileSync, existsSync } = require("node:fs");
 const { join } = require("node:path");
+const { REPO_ROOT } = require("./repo-root.cjs");
 
-const repoRoot = join(__dirname, "..");
+const repoRoot = REPO_ROOT;
 const target = join(repoRoot, "docs", "zxbasic.tmLanguage.json");
 
 function wordLists() {

@@ -28,9 +28,10 @@ const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const zlib = require("node:zlib");
+const { REPO_ROOT } = require("./repo-root.cjs");
 
-const FIXTURES = path.join(__dirname, "..", "test", "z88dk", "fixtures");
-const TEMPLATES = path.join(__dirname, "..", "src", "public", "project-templates");
+const FIXTURES = path.join(REPO_ROOT, "test/z88dk/fixtures");
+const TEMPLATES = path.join(REPO_ROOT, "src/public/project-templates");
 const MIN_BUILD = 23854;
 const NEUTRAL_ROOT = "/opt/z88dk";
 const OUTPUTS = /^program(\.(map|map\.gz|tap|nex|P|O|epr|dsk|63|62|ap0)|_[A-Za-z0-9_]+\.bin)?$/;

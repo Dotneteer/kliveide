@@ -5,6 +5,7 @@ const { tmpdir } = require("node:os");
 const { dirname, relative, resolve } = require("node:path");
 const { performance } = require("node:perf_hooks");
 const { spawnSync } = require("node:child_process");
+const { REPO_ROOT } = require("./repo-root.cjs");
 
 const {
   buildModes: sp48BuildModes,
@@ -19,7 +20,7 @@ const {
   source: sp128Source
 } = require("./build-sp128-wasm.cjs");
 
-const root = resolve(__dirname, "..");
+const root = REPO_ROOT;
 const buildProfiles = {
   o3: {
     label: "o3",

@@ -15,6 +15,7 @@
 const path = require("path");
 const fs = require("fs");
 const { fixtureProjectFolder, IMAGES } = require("../harness.cjs");
+const { REPO_ROOT } = require("../../repo-root.cjs");
 
 /**
  * An element's screenshot through a page clip of its bounding box: on a display with a fractional
@@ -71,7 +72,7 @@ module.exports = {
       await klive.cmd("gfx $3d00 -w 1 -h 8 -layout cells", 3000);
       // --- The first four characters of the ROM's font, drawn top-left: every pixel must match
       // --- the ROM's own bytes (space, "!", the quote, "#")
-      const rom = fs.readFileSync(path.join(__dirname, "..", "..", "..", "src", "public", "roms", "sp48.rom"));
+      const rom = fs.readFileSync(path.join(REPO_ROOT, "src/public/roms/sp48.rom"));
       const points = [];
       const expected = [];
       for (let ch = 0; ch < 4; ch++) {

@@ -37,8 +37,9 @@
 const { spawnSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");
+const { REPO_ROOT } = require("./repo-root.cjs");
 
-const REPO = path.join(__dirname, "..");
+const REPO = REPO_ROOT;
 const BASELINE = path.join(REPO, "build", "type-errors-baseline.json");
 
 /**

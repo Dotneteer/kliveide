@@ -10,8 +10,9 @@
 const { readFileSync } = require("node:fs");
 const { join } = require("node:path");
 const { buildZx8081Wasm, productionOutput } = require("./build-zx8081-wasm.cjs");
+const { REPO_ROOT } = require("./repo-root.cjs");
 
-const ROM = join(__dirname, "../src/public/roms/zx81.rom");
+const ROM = join(REPO_ROOT, "src/public/roms/zx81.rom");
 const FRAMES = 1000;
 const FLOOR = 10;
 

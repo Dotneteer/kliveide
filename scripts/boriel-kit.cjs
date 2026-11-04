@@ -12,8 +12,9 @@
 const { createHash } = require("node:crypto");
 const fs = require("node:fs");
 const path = require("node:path");
+const { REPO_ROOT } = require("./repo-root.cjs");
 
-const VENDOR_FOLDER = path.join(__dirname, "..", "dev", "vendor", "boriel-basic");
+const VENDOR_FOLDER = path.join(REPO_ROOT, "dev/vendor/boriel-basic");
 
 /** Electron-builder's arch names, as the `package:*` scripts pass them, mapped to Node's. */
 const ARCH_ALIASES = { x64: "x64", arm64: "arm64", armv7l: "arm", arm: "arm" };

@@ -30,8 +30,9 @@ const { join, resolve } = require("node:path");
 const { performance } = require("node:perf_hooks");
 const { spawnSync } = require("node:child_process");
 const { createHash } = require("node:crypto");
+const { REPO_ROOT } = require("./repo-root.cjs");
 
-const root = resolve(__dirname, "..");
+const root = REPO_ROOT;
 const ROMS = join(root, "src/public/roms");
 const rom = (name) => readFileSync(join(ROMS, name));
 

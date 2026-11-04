@@ -28,8 +28,9 @@
 const crypto = require("node:crypto");
 const fs = require("node:fs");
 const path = require("node:path");
+const { REPO_ROOT } = require("./repo-root.cjs");
 
-const REPO = path.join(__dirname, "..");
+const REPO = REPO_ROOT;
 const DOCS = path.join(REPO, "docs");
 const I18N = path.join(DOCS, "i18n");
 const CONTENT = path.join(DOCS, "content");

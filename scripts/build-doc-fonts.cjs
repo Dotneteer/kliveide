@@ -16,8 +16,9 @@
  */
 const { mkdirSync, writeFileSync } = require("node:fs");
 const { join } = require("node:path");
+const { REPO_ROOT } = require("./repo-root.cjs");
 
-const repoRoot = join(__dirname, "..");
+const repoRoot = REPO_ROOT;
 const fontsDir = join(repoRoot, "docs", "fonts");
 const fontsModule = join(repoRoot, "docs", "app", "fonts.ts");
 

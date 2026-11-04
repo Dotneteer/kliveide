@@ -25,8 +25,9 @@ const { resolve } = require("node:path");
 const { registerTsRuntime } = require("./lib/ts-runtime.cjs");
 const { performance } = require("node:perf_hooks");
 const { mixedProgram } = require("./benchmark-debug-overhead.cjs");
+const { REPO_ROOT } = require("./repo-root.cjs");
 
-const root = resolve(__dirname, "..");
+const root = REPO_ROOT;
 const NEVER = 0x7000;
 
 // --- FrameTerminationMode / DebugStepMode values (src/emu/abstractions)
@@ -43,35 +44,35 @@ function loadMixed(x, p, di) {
 const HOSTS = {
   sp48: {
     async create() {
-      const s = await require("../test/harness/sp48/index.ts").createSp48Session();
+      const s = await require(`${REPO_ROOT}/test/harness/sp48/index.ts`).createSp48Session();
       s.bootToBasic();
       return { machine: s.machine, prefix: "sp48", di: false };
     }
   },
   sp128: {
     async create() {
-      const s = await require("../test/harness/sp128/index.ts").createSp128Session("sp128");
+      const s = await require(`${REPO_ROOT}/test/harness/sp128/index.ts`).createSp128Session("sp128");
       s.runFrames(150);
       return { machine: s.machine, prefix: "sp128", di: false };
     }
   },
   spp3e: {
     async create() {
-      const s = await require("../test/harness/sp128/index.ts").createSp128Session("nofdd");
+      const s = await require(`${REPO_ROOT}/test/harness/sp128/index.ts`).createSp128Session("nofdd");
       s.runFrames(150);
       return { machine: s.machine, prefix: "spp3e", di: false };
     }
   },
   zxnext: {
     async create() {
-      const s = await require("../test/harness/zxnext/index.ts").createSession();
+      const s = await require(`${REPO_ROOT}/test/harness/zxnext/index.ts`).createSession();
       return { machine: s.machine, prefix: "zxnext", di: true };
     }
   },
   z88: {
     async create() {
-      const s = await require("../test/harness/z88/index.ts").createZ88Session({ audioSampleRate: 44100 });
-      const L = require("../test/harness/z88/index.ts").Z88_FLAT_RAM_LAYOUT;
+      const s = await require(`${REPO_ROOT}/test/harness/z88/index.ts`).createZ88Session({ audioSampleRate: 44100 });
+      const L = require(`${REPO_ROOT}/test/harness/z88/index.ts`).Z88_FLAT_RAM_LAYOUT;
       const x = s.machine.wasmV2Runtime.exports;
       x.z88SetCom(L.COM);
       [L.SR0, L.SR1, L.SR2, L.SR3].forEach((b, i) => x.z88SetSr(i, b));
@@ -82,8 +83,8 @@ const HOSTS = {
   // --- error stops wired as MachineController wires them (D14's BASIC row)
   kbasic: {
     async create() {
-      const { startBasic } = require("../test/kbasic/codegen/run-kit.ts");
-      const { CurrentStatementTracker, SourceDebugIndex } = require("../src/emu/machines/SourceStepDecision.ts");
+      const { startBasic } = require(`${REPO_ROOT}/test/kbasic/codegen/run-kit.ts`);
+      const { CurrentStatementTracker, SourceDebugIndex } = require(`${REPO_ROOT}/src/emu/machines/SourceStepDecision.ts`);
       const source = [
         "DIM i AS UInteger",
         "DIM s AS ULong",
@@ -111,7 +112,7 @@ const HOSTS = {
   },
   zx8081: {
     async create() {
-      const s = await require("../test/harness/zx81/index.ts").createZx81Session();
+      const s = await require(`${REPO_ROOT}/test/harness/zx81/index.ts`).createZx81Session();
       s.bootToBasic();
       // --- The ZX81 runs its own display loop in ROM: the workload is the SLOW-mode prompt
       return { machine: s.machine, prefix: "zx8081", noMixed: true };
@@ -148,8 +149,8 @@ function timeFrames(machine, frames) {
 }
 
 async function benchmarkHost(id, options) {
-  const { DebugSupport } = require("../src/emu/machines/DebugSupport.ts");
-  const { connectConditionSupport } = require("../src/emu/machines/conditionStore.ts");
+  const { DebugSupport } = require(`${REPO_ROOT}/src/emu/machines/DebugSupport.ts`);
+  const { connectConditionSupport } = require(`${REPO_ROOT}/src/emu/machines/conditionStore.ts`);
   const host = await HOSTS[id].create();
   const { machine, prefix } = host;
   if (!host.noMixed) loadMixed(machine.wasmV2Runtime.exports, prefix, host.di);
@@ -198,9 +199,9 @@ async function benchmarkHost(id, options) {
 
 /* Step Over a call to a SUB that loops 2,000 times, on the 48K, in the core and instruction by instruction */
 async function benchmarkSourceStep(rounds) {
-  const { startBasic } = require("../test/kbasic/codegen/run-kit.ts");
-  const { SourceDebugIndex } = require("../src/emu/machines/SourceStepDecision.ts");
-  const { wasmDebugLoopOptions } = require("../src/emu/machines/wasmDebugLoop.ts");
+  const { startBasic } = require(`${REPO_ROOT}/test/kbasic/codegen/run-kit.ts`);
+  const { SourceDebugIndex } = require(`${REPO_ROOT}/src/emu/machines/SourceStepDecision.ts`);
+  const { wasmDebugLoopOptions } = require(`${REPO_ROOT}/src/emu/machines/wasmDebugLoop.ts`);
   const source = [
     "SUB Heavy()",
     "  DIM i AS UInteger",
