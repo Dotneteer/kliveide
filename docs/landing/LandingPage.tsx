@@ -1,6 +1,6 @@
 /**
- * The landing page, in any language: the data-sheet layout of .plans/DOCS_SITE_REDESIGN_PLAN.md
- * (R3), with the app's colour tokens and the site's Overpass type (R1, R2). The Spectrum colours
+ * The landing page, in any language: the data-sheet layout,
+ * with the app's colour tokens and the site's Overpass type. The Spectrum colours
  * appear only as the four-colour rule at the top and the square before each feature's heading.
  *
  * A server component rendered at build time: it reads the dictionary, the release facts and the

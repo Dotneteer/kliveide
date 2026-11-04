@@ -4,7 +4,7 @@ import { MemoryBlockDevice } from "@common/diskfs/blockDevice";
 import { formatIdedos, openIdedosPartition, readIdedos, TYPE_PLUS3DOS } from "@common/diskfs/idedos";
 
 /*
- * IDEDOS hard disks (.plans/FILE_MANAGER_PLAN.md, Phase 9): the partition table as the Sinclair
+ * IDEDOS hard disks (`.ai/file-manager.md`): the partition table as the Sinclair
  * Wiki describes it, and a +3DOS file system on a partition, read and written in place.
  */
 

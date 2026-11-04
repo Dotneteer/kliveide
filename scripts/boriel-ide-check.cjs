@@ -1,5 +1,5 @@
 /*
- * Boriel BASIC in the running IDE (`.plans/BORIEL_BASIC_INTEGRATION_PLAN.md` §8): launches the built
+ * Boriel BASIC in the running IDE (`.ai/boriel/integration.md`, "Tests and checks"): launches the built
  * Klive under Playwright (`scripts/doc-shots/harness.cjs`) with a throwaway home, and checks, part by
  * part:
  *
@@ -9,15 +9,19 @@
  *            zxbc's .nex (needs ~/Klive/ks2.cim, copied);
  *   export - a TAP export of an sp48 build holds the injected code; a Next build's NEX export
  *            writes the debug sidecar beside it, and `nex-run -d` of that file stops at a source
- *            breakpoint (needs the card image too);
+ *            breakpoint; so does `nex-run -d` of a .nex zxbc built outside Klive, through the .dbg
+ *            beside it (needs the card image too);
  *   ui     - the status bar names the compiler of the open BASIC file (a project's choice wins), the
  *            Settings row switches it (writing the project's choice), the Boriel row shows the
  *            installation, and a click on the status bar item opens the Boriel BASIC dialog;
+ *   templates - every shipped zx-basic template, unchanged, on its own machine: it builds, runs
+ *            (its screen saved as emu.png) and pauses at a breakpoint on its first PRINT (the Next
+ *            needs the card image); TEMPLATES=sp48,zxnext picks machines;
  *   banked - a '@split-modules program (test/boriel/fixtures/banked-128) on the 128K and the Next: a
  *            breakpoint in a module that zxbc put in a RAM bank pauses the machine there.
  *
  *   npx electron-vite build --config build/electron.vite.config.ts
- *   node scripts/boriel-ide-check.cjs [run|debug|next|export|ui|banked ...]
+ *   node scripts/boriel-ide-check.cjs [run|debug|next|export|ui|templates|banked ...]
  *
  * Boriel BASIC comes from BORIEL_ROOT, else ~/zxbasic2 (install it from Klive's setup dialog).
  * Screenshots and the throwaway homes go to `.boriel-ide-check/` (git-ignored). Local only: it needs
@@ -149,6 +153,28 @@ const PARTS = {
     check(!!(await n.waitPaused(120000)), "export: nex-run -d of the exported NEX stops at a source breakpoint");
     await n.k.ide.screenshot({ path: path.join(n.out, "nex-run.png") });
     await n.k.close();
+
+    // --- A .nex zxbc built outside Klive, with no sidecar: nex-run -d uses the .dbg zxbc wrote beside it
+    const o = await session("export-outside", { card: true });
+    const folder = await o.project("zxnext", ['PRINT "project"']);
+    for (let t = Date.now(); !/ZX Spectrum Next/.test(await o.emuText()) && Date.now() - t < 30000; ) await sleep(500);
+    await sleep(3000);
+    const outside = path.join(folder, "outside");
+    fs.mkdirSync(outside, { recursive: true });
+    const lines = ["FUNCTION Cube(n As UByte) As UInteger", "    RETURN n * n * n", "END FUNCTION", "PRINT AT 11, 2; Cube(3)", "DO", "LOOP"];
+    fs.writeFileSync(path.join(outside, "game.bas"), [...lines, ""].join("\n"));
+    require("node:child_process").execFileSync(
+      path.join(ROOT, process.platform === "win32" ? "zxbc.exe" : "zxbc"),
+      ["game.bas", "--arch", "zxnext", "-O", "1", "-S", "32768", "-f", "nex", "-o", "game.nex", "--debug=game.dbg", "-M", "game.map"],
+      { cwd: outside, timeout: 60000, stdio: ["ignore", "pipe", "pipe"] }
+    );
+    check(fs.existsSync(path.join(outside, "game.nex")) && !fs.existsSync(path.join(outside, "game.nex.kbasic-debug.json")), "export: zxbc built a .nex outside Klive, with no sidecar");
+    await o.k.cmd("bp-set [outside/game.bas]:2", 1200);
+    await o.k.cmd(`nex-run "${path.join(outside, "game.nex")}" -d`, 5000);
+    check(/Source-level debug info loaded from .*game\.dbg/.test(await o.ideText()), "export: nex-run -d reads zxbc's .dbg beside the .nex");
+    check(!!(await o.waitPaused(120000)), "export: nex-run -d of a .nex built outside Klive stops at a source breakpoint");
+    await o.k.ide.screenshot({ path: path.join(o.out, "nex-run.png") });
+    await o.k.close();
   },
 
   async ui() {
@@ -169,32 +195,81 @@ const PARTS = {
     });
     await sleep(500);
     await s.k.cmd("settings integrations", 2000);
-    const row = s.k.ide.getByTestId("settings-row-basicCompiler");
-    check(/Boriel BASIC/.test(await row.textContent()), "ui: the Settings row shows the project's compiler");
+    // --- KLIVE-BASIC-OFF: Boriel BASIC is the only BASIC compiler (`.ai/klive-basic-switch.md`):
+    // --- no compiler row in Settings and no checkbox in the dialog. The checks of the switch are kept
+    // --- below, commented out, for the day it is turned back on.
+    check((await s.k.ide.getByTestId("settings-row-basicCompiler").count()) === 0, "ui: Settings offers no choice of BASIC compiler");
     const install = await s.k.ide.getByTestId("settings-row-borielBasic").textContent();
     check(install.includes(path.basename(ROOT)), `ui: the Boriel BASIC row shows the installation folder (${path.basename(ROOT)})`);
-    await s.k.ide.getByTestId("settings-select-basicCompiler").click();
-    await s.k.ide.getByRole("option", { name: "Klive BASIC" }).click();
-    await sleep(1500);
     await s.k.ide.keyboard.press("Escape");
     await sleep(800);
-    const saved = JSON.parse(fs.readFileSync(path.join(folder, "klive.project"), "utf8"));
-    check(saved.settings?.zxbasic?.compiler === "klive", "ui: switching in Settings writes the project's choice");
-    check(/Klive BASIC/.test(await statusBar()), "ui: the status bar follows the switch");
-
-    await s.k.ide.getByRole("button", { name: "Klive BASIC" }).click();
+    await s.k.ide.getByRole("button", { name: "Boriel BASIC" }).click();
     await sleep(1500);
-    check(/Use Boriel BASIC to build BASIC programs/.test(await s.ideText()), "ui: a click on the status bar item opens the Boriel BASIC dialog");
+    const dialogText = await s.ideText();
+    check(/Boriel BASIC/.test(dialogText) && !/Use Boriel BASIC to build BASIC programs/.test(dialogText), "ui: the status bar item opens the Boriel BASIC dialog, which offers no compiler switch");
     await s.k.ide.screenshot({ path: path.join(s.out, "boriel-dialog.png") });
-    // --- Its checkbox changes the compiler that builds: here the project's choice, as the Settings row does
-    await s.k.ide.getByRole("checkbox", { name: /Use Boriel BASIC/ }).click();
-    await sleep(1500);
-    const ticked = JSON.parse(fs.readFileSync(path.join(folder, "klive.project"), "utf8"));
-    check(ticked.settings?.zxbasic?.compiler === "boriel", "ui: the dialog's checkbox writes the project's choice");
     await s.k.ide.keyboard.press("Escape");
     await sleep(800);
-    check(/Boriel BASIC/.test(await statusBar()), "ui: the status bar follows the dialog");
+    // const row = s.k.ide.getByTestId("settings-row-basicCompiler");
+    // check(/Boriel BASIC/.test(await row.textContent()), "ui: the Settings row shows the project's compiler");
+    // const install = await s.k.ide.getByTestId("settings-row-borielBasic").textContent();
+    // check(install.includes(path.basename(ROOT)), `ui: the Boriel BASIC row shows the installation folder (${path.basename(ROOT)})`);
+    // await s.k.ide.getByTestId("settings-select-basicCompiler").click();
+    // await s.k.ide.getByRole("option", { name: "Klive BASIC" }).click();
+    // await sleep(1500);
+    // await s.k.ide.keyboard.press("Escape");
+    // await sleep(800);
+    // const saved = JSON.parse(fs.readFileSync(path.join(folder, "klive.project"), "utf8"));
+    // check(saved.settings?.zxbasic?.compiler === "klive", "ui: switching in Settings writes the project's choice");
+    // check(/Klive BASIC/.test(await statusBar()), "ui: the status bar follows the switch");
+
+    // await s.k.ide.getByRole("button", { name: "Klive BASIC" }).click();
+    // await sleep(1500);
+    // check(/Use Boriel BASIC to build BASIC programs/.test(await s.ideText()), "ui: a click on the status bar item opens the Boriel BASIC dialog");
+    // await s.k.ide.screenshot({ path: path.join(s.out, "boriel-dialog.png") });
+    // // --- Its checkbox changes the compiler that builds: here the project's choice, as the Settings row does
+    // await s.k.ide.getByRole("checkbox", { name: /Use Boriel BASIC/ }).click();
+    // await sleep(1500);
+    // const ticked = JSON.parse(fs.readFileSync(path.join(folder, "klive.project"), "utf8"));
+    // check(ticked.settings?.zxbasic?.compiler === "boriel", "ui: the dialog's checkbox writes the project's choice");
+    // await s.k.ide.keyboard.press("Escape");
+    // await sleep(800);
+    // check(/Boriel BASIC/.test(await statusBar()), "ui: the status bar follows the dialog");
     await s.k.close();
+  },
+
+  async templates() {
+    // --- Every shipped zx-basic template, unchanged, as a user gets it: it builds, runs (its welcome
+    // --- text is on the screen, `emu.png`), and a breakpoint on its first PRINT pauses a debug run
+    for (const machine of (process.env.TEMPLATES ?? "sp48,sp128,timex,scorpion,zxnext").split(",")) {
+      const next = machine === "zxnext";
+      const s = await session(`template-${machine}`, { card: next });
+      const projects = path.join(s.out, "projects");
+      await s.k.cmd(`newp ${machine} tpl zx-basic -p "${projects}"`, 5000);
+      const folder = path.join(projects, "tpl");
+      const file = "program.zxbas";
+      const source = fs.readFileSync(path.join(folder, "code", file), "utf8");
+      check(/Boriel BASIC \(beta\)/.test(source), `templates: ${machine}: the template names Boriel BASIC (beta)`);
+      await s.k.cmd(`open "${folder}"`, 8000);
+      await s.k.cmd(`nav code/${file}`, 3000);
+      if (next) {
+        for (let t = Date.now(); !/ZX Spectrum Next/.test(await s.emuText()) && Date.now() - t < 30000; ) await sleep(500);
+        await sleep(3000);
+      }
+      await s.k.cmd("run", next ? 9000 : 6000);
+      check(/Code injected and started/.test(await s.ideText()), `templates: ${machine}: the template builds and starts`);
+      // --- NextZXOS boots and .nexloads the program first
+      const emuWindow = s.k.app.windows().find((w) => w.url().includes("?emu"));
+      await sleep(next ? 90000 : 4000);
+      await emuWindow.screenshot({ path: path.join(s.out, "emu.png") });
+      await s.k.cmd("em-stop", 2000);
+      const line = source.split("\n").findIndex((l) => /^\s*print\b/i.test(l)) + 1;
+      await s.k.cmd(`bp-set [code/${file}]:${line}`, 1500);
+      await s.k.cmd("debug", next ? 5000 : 9000);
+      check(!!(await s.waitPaused(next ? 120000 : 20000)), `templates: ${machine}: a breakpoint on line ${line} pauses a debug run`);
+      await s.k.ide.screenshot({ path: path.join(s.out, "paused.png") });
+      await s.k.close();
+    }
   },
 
   async banked() {

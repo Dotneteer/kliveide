@@ -11,7 +11,7 @@ import { promoteLabelAt } from "@renderer/appIde/DocumentPanels/Next/nexLabelPro
  * This puts the name in from there. Always a **local** label, because the address is only meaningful
  * as "offset X in bank B" — the same routine is elsewhere the next time its bank is paged.
  *
- * See `.plans/NEX_DEBUGGING_PLAN.md` §13.3.
+ * See `.ai/nex-debugging.md`.
  */
 
 function annotations(over: Partial<ProgramAnnotations> = {}): ProgramAnnotations {

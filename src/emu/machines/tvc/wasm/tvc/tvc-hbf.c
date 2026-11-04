@@ -1,5 +1,5 @@
 /*
- * The HBF floppy interface card (`.plans/VIDEOTON_TVC_PLAN.md` §9.4), in expansion slot 0. The
+ * The HBF floppy interface card (`src/emu/machines/tvc/wasm/README.md`, "The HBF card and VT-DOS"), in expansion slot 0. The
  * interface facts are MAME's `bus/tvc/hbf.cpp` (BSD-3-Clause, read for facts only) and rtvc's
  * `hbf.rs` / `info/vt-dos.md` (MIT); the code is Klive's own, on the shared WD1793 (`wd1793.c`).
  *

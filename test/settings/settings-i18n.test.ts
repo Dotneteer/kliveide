@@ -15,7 +15,7 @@ import { t } from "@common/i18n/i18n";
 import { LANGUAGES } from "@common/i18n/languages";
 
 /*
- * The Settings dialog in another language (`.plans/LOCALIZATION_PLAN.md` step 6): in the
+ * The Settings dialog in another language (`.ai/localization.md`): in the
  * pseudo-locale every page, group, row, help text, choice and button is pseudo text. Literal
  * labels - numbers, sizes, product and font names, language names - are the deliberate exceptions.
  */

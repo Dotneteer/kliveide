@@ -92,9 +92,11 @@ describe("source stepping on the Next (§10.2)", () => {
   });
 });
 
-describe("the ZX Spectrum Next project template", () => {
+describe("the ZX Spectrum Next project template of Klive BASIC", () => {
+  // --- The template while Klive BASIC built BASIC programs; the shipped one is Boriel BASIC's now
+  // --- (`.ai/klive-basic-switch.md`), so its CODEBANK version is kept here as a fixture
   it("runs, calling its CODEBANK routine", async () => {
-    const source = readFileSync(join(__dirname, "../../../src/public/project-templates/zxnext/zx-basic/code/program.zxbas"), "utf8");
+    const source = readFileSync(join(__dirname, "fixtures", "next-codebank-template.zxbas"), "utf8");
     const r = await runBasicNext(source);
     expect(r.screen()[10]).toBe("     Welcome to Klive IDE");
     expect(r.screen()[11]).toBe("        (Klive BASIC)");

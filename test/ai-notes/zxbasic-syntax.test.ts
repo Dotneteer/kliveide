@@ -15,7 +15,7 @@
  * - every docs page referenced from the spec is one the fingerprint watches, so a page rename
  *   upstream is noticed;
  * - the `changes` log is newest-first and its newest entry is the fingerprinted release;
- * - every `semantics` (plan R8) entry that is decided or provisional names its decision and a test
+ * - every `semantics` (R8, `.ai/kbasic/compiler.md`) entry that is decided or provisional names its decision and a test
  *   file that exists, and every open one names the phase that must settle it.
  */
 import { describe, expect, it } from "vitest";

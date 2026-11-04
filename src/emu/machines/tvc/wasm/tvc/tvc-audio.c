@@ -1,6 +1,6 @@
 /*
- * The TVC's sound and timer (`.plans/VIDEOTON_TVC_PLAN.md` §10; TVC_HARDWARE_OVERVIEW.md §5; HW
- * pp.99-103; rtvc/info/tvc.md "Sound and Timer").
+ * The TVC's sound and timer (the core README, "Sound"; TVC_HARDWARE_OVERVIEW.md §5; HW pp.99-103;
+ * rtvc/info/tvc.md "Sound and Timer").
  *
  *   3.125 MHz -> 12-bit divider (4096 - n clocks) -> 4-bit counter; bit 3 (QD) is the square wave
  *   n = port 05h bits 3-0 : port 04h
@@ -15,8 +15,9 @@
  * Nothing runs per T-state. A divider change keeps the counter's value and starts the new length
  * from now (the hardware reloads at the next carry; the difference is under one divider period).
  *
- * The first interrupt after a restart comes 16 divider periods later, when the counter wraps (plan
- * Q2: the manual says 8, both emulators 16; `TVC_SOUND_FIRST_IT_PERIODS` holds the choice).
+ * The first interrupt after a restart comes 16 divider periods later, when the counter wraps (Q2 in
+ * `.ai/videoton-tvc.md`: the manual says 8, both emulators 16; `TVC_SOUND_FIRST_IT_PERIODS` holds
+ * the choice).
  *
  * Samples: each is the output's average over its interval (the square wave integrated in closed
  * form), unipolar 0-1 as the DAC is, then a DC high-pass (the output is AC-coupled) and both sides

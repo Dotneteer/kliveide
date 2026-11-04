@@ -1,6 +1,6 @@
 /*
  * Which instruction encodings survive a trip through Klive's disassembler and assembler unchanged
- * (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §7.3, R10).
+ * (`.docs/reverse-engineering-tools.md`, "Export as source", R10).
  *
  * The disassembler names an instruction by what it *does*; the assembler picks one encoding per
  * name. Where the Z80 has several encodings for one operation — the `NEG` and `RETN` mirrors, the

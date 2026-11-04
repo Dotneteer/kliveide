@@ -930,7 +930,7 @@ class EmuApiImpl {
   /**
    * Where each ROM partition came from and what it is, keyed by partition (`-1`, `-2`, ...): its
    * CRC-32 and size, and the file and 16K page holding those bytes
-   * (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §5.3). A machine without partitions reports
+   * (`.docs/annotations.md`, "ROM Annotations"). A machine without partitions reports
    * its one ROM as `-1`. Empty for a machine whose ROMs carry no annotations.
    */
   async getRomSources(_withBytes?: boolean): Promise<Record<number, RomSource>> {
@@ -1521,7 +1521,8 @@ export type UlaState = {
   ramB: number;
 };
 
-/** The Videoton TVC's video circuit, for the TVC Video panel (`.plans/VIDEOTON_TVC_PLAN.md` §11) */
+/** The Videoton TVC's video circuit, for the TVC Video panel (`.ai/videoton-tvc.md`, "IDE
+ * integration") */
 export type TvcVideoState = {
   /** The 6845's R0-R17 and its address register */
   crtc: number[];

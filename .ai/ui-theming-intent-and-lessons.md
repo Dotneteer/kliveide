@@ -1,12 +1,14 @@
 # UI Modernization: Intent And Lessons
 
 Durable notes from the Phase 0–9 UI modernization and the Phase 10 / Phase 11 follow-ups
-(`.plans/UI_MODERNIZATION_PLAN.md`). Read `../AGENTS.md` first. Read this before touching theming,
+(closed 2026-11-04; the plan and its per-phase retrospectives are in git history at
+`.plans/UI_MODERNIZATION_PLAN.md`; the architecture and the numbers are `ui-design-system.md`). Read
+`../AGENTS.md` first. Read this before touching theming,
 tokens, the shared data-display primitives, the Monaco palette, **or the memory dump/disassembly
 colour** (§ "Secondary Accents" and § "View-Scoped Colour" below).
 
-The plan file is the detailed record: every phase has a retrospective written **after** it shipped,
-including the mistakes. This file is the part worth carrying into unrelated work.
+`ui-design-system.md` is the design record (the token layers, the mandates, the accents and their
+numbers, the derived themes). This file is the part worth carrying into unrelated work.
 
 > ## Standing Instruction From The Author
 >
@@ -34,7 +36,7 @@ These were decided by the project author. Changing them is a product decision, n
 | Monaco | The syntax palette is a **fixed multi-hue table**; only the *keyword* colour follows the accent. Comments are green and italic, never grey. Which `.zxbas` words get which class is not hand-kept: the Monarch lists come from the generated BASIC help data (`monarchWordLists()` in `src/common/kbasic/help.ts`), so a word is coloured as a keyword exactly when Klive BASIC knows it — change the spec or the overrides and run `npm run kbasic:help`, never edit the lists. BASIC hovers use Monaco's own markdown (a `zxbas` code fence, plain lines, an italic attribution footer) and add no styling. **Editors set `fixedOverflowWidgets`:** Monaco shifts a hover that does not fit right of its word to the left, past the editor's edge, and the document panel clips whatever lies outside it (a wide BASIC keyword hover near column 1 lost its left side). Hovers, suggestions and parameter hints therefore live in Monaco's fixed overflow layer; do not turn it off, and do not try to fix such clipping with hover widths. **Gutter folding chevrons take the editor's font size** (`font-size: inherit` in `MonacoEditor.module.scss`), not Monaco's 140%, which made them louder than the line numbers and wider than their column. Size gutter glyphs from the editor font, never with a fixed step. **Injected text (`before`/`after` decorations) needs a non-empty range and a scoped colour:** Monaco 0.55 draws no `before` text on an empty-range decoration (the statement-breakpoint markers were invisible for that reason; they now cover the statement's first character), and it gives injected text the token class of the text it stands in (`mtk1`), which beats a bare module class — scope such classes under `:global(.monaco-editor)`. Check injected text in the running app, where both failures are silent. |
 | Window chrome | Frameless/title-bar toolbar: **explicitly deferred.** |
 | Secondary accent | **Yes, added in Phase 10.** Every accent has a second hue (`--accent-secondary-*`), for the specific case one hue can't cover — two things in the same view that must both read as accent-tied and clearly apart. Not a general "add more colour" licence; see below. |
-| Memory dump / disassembly colour | **These two views are exceptions to §5.2's neutral data-panel hierarchy**, added in Phase 10 — hex-editor-style views read better for real colour. |
+| Memory dump / disassembly colour | **These two views are exceptions to the neutral data-panel hierarchy (`ui-design-system.md`, "Accents")**, added in Phase 10 — hex-editor-style views read better for real colour. |
 | Sidebar panel headers | **A shallow top-lit gradient band** (`--surface-header*`), added in Phase 11. Deliberately not a flat fill: the band is 26px and the list rows under it are 22px and also hover-highlight, so a flat strip reads as *a selected row*. A lit strip reads as chrome. |
 | Sprite editor layout | **Document editors are exempt from the `Layout freedom` rule above, which governs the shell.** The sprite editor was rebuilt as one CSS grid — tool rail, pane-fitted canvas with rulers, right inspector, sheet browser — because its canvas was capped at 513px however wide the pane was, so the editor got *emptier* as the window grew. A workspace whose content cannot use its own pane is not fixable by redrawing. |
 | Modal dialogs | **A floating tool panel, not a lifted card.** Header and footer are flat `--surface-chrome` at `--strip-panelHeader` (30px) with `--border-default` seams — the shared `PanelHeader` idiom — an 11px/600 uppercase title, `--radius-md`, and the accent on **one chip** behind an optional header glyph (`ModalProps.iconName`), never a slab. Dialogs were never in the modernization and had to be brought in wholesale; the four treatments were prototyped and the author chose this one. |
@@ -60,8 +62,7 @@ These were decided by the project author. Changing them is a product decision, n
 
 ## Secondary Accents
 
-Full derivation, per-accent numbers and the WCAG accounting are in `.plans/UI_MODERNIZATION_PLAN.md`
-§10.2. What to carry forward:
+The derivation and the per-accent numbers are in `ui-design-system.md`, "Secondary accents". What to carry forward:
 
 - **Each accent has a second hue**: `--accent-secondary-solid`/`-solid-hover`/`-subtle`/`-border`/
   `-text`/`-text-subtle`, generated in `semantic.ts` from `AccentDef.secondary` exactly the way
@@ -99,7 +100,7 @@ Full derivation, per-accent numbers and the WCAG accounting are in `.plans/UI_MO
   primary, not just one.** Sinclair Blue and Deep Teal needed the first fix, Spectrum Magenta the
   second; Ultraviolet and Phosphor Green needed neither because their primaries already sit at a
   lightness that carries over safely.
-- If you add a seventh accent (§5.4 already asks for a `token-contract.test.ts` re-run), it needs a
+- If you add a seventh accent (the token contract already asks for a `token-contract.test.ts` re-run), it needs a
   `secondary`/`onSecondary` pair through the same two checks, not just a hue offset copied from a
   neighbour.
 
@@ -250,18 +251,17 @@ sentence pushes its siblings out of the panel instead of truncating — a flex i
 
 ## View-Scoped Colour: Memory Dump, Disassembly & The Register/State Panels
 
-**§5.2's neutral data-panel hierarchy (`--data-value`/`--data-label`/`--data-secondary`) still
+**The neutral data-panel hierarchy (`--data-value`/`--data-label`/`--data-secondary`) still
 stands for every panel that has not been explicitly excepted.** The
 memory dump, the disassembly view and the converted register/state panels (Z80 CPU, ULA & I/O, Next
 Registers, Next Memory Mapping, Call Stack, Watch, Breakpoints) are the deliberate exceptions, and each has
 its **own** token family in `componentAliases.ts` (`--color-memory-*`/`--bgcolor-memory-*`,
 `--color-disassembly-*`/`--bgcolor-disassembly-*`, `--color-state-value`) rather than a shared one, so
-colouring one never touches the others or the still-neutral panels. Full role tables are in the plan
-§10.3; the pattern to reuse elsewhere is:
+colouring one never touches the others or the still-neutral panels. Full role tables are in git history (the plan's §10.3); the pattern to reuse elsewhere is:
 
 - **One thing anchors the view in the primary accent** (an address column, usually) and **one
   column is the "most legible thing in the row"** in plain bold `--text-primary` — not accent —
-  because legibility of the actual data was the point of §5.2 and still is here.
+  because legibility of the actual data was the point of the data-panel hierarchy and still is here.
 - **A highlight that could be confused with the anchor takes the secondary accent instead of
   echoing the primary.** The memory dump's hovered byte and disassembly's opcode bytes both ended up
   here. Disassembly's labels take neither accent: they are in the syntax label hue, with every other
@@ -525,7 +525,7 @@ colouring one never touches the others or the still-neutral panels. Full role ta
 
 ## The Graphics Finder: Hardware Pixels Under Token Chrome
 
-The graphics finder (`features/graphics/`, `.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §5) draws
+The graphics finder (`features/graphics/`, `.docs/reverse-engineering-tools.md`, "Graphics finder") draws
 memory as ZX bitmaps. The pixels are the machine's: ink and paper are `SPECTRUM_48_COLORS` entries
 the user picks (default `INK 0: PAPER 7`), never tokens. Everything drawn *over* them is chrome, on
 one overlay canvas, from `--color-graphics-*` aliases read off the element: the selection takes the
@@ -685,7 +685,7 @@ in prose.
 The ZX81's keys are light grey (`--device-key-zx81`) with black, red and white print, where every
 earlier keyboard was dark keys with light legends. The 48K's single `--color-key48-highlight`
 (`--accent-solid`) cannot serve both grounds: in the dark tone it is the accent's *light* value,
-which vanishes on a white key, and device surfaces do not change with the tone (§8.2.1), so following
+which vanishes on a white key, and device surfaces do not change with the tone (`ui-design-system.md`, "Themes"), so following
 the tone is wrong anyway. Each accent already carries its two ends as its two tone values, so the
 semantic layer exposes them tone-invariantly: `--accent-on-device-light` (the light tone's value,
 dark enough for a light key face), `--accent-on-device-dark` (the dark tone's value, light enough for
@@ -1439,11 +1439,11 @@ first draft's shortened arrow was the weakest in a family whose whole grammar re
 Say which of the two you did. The temptation is to let a cheap rasterisation check stand in for the
 geometry check it cannot make.
 
-Drive the real thing instead — `.plans/baseline/drive.mjs` against a CDP-enabled launch:
+Drive the real thing instead — `scripts/cdp/drive.mjs` against a CDP-enabled launch:
 
 ```bash
 npx electron-vite dev --config build/electron.vite.config.ts --remoteDebuggingPort=9222
-node .plans/baseline/drive.mjs ide "<expression returning a JSON string>" - -
+node scripts/cdp/drive.mjs ide "<expression returning a JSON string>" - -
 ```
 
 Specifics worth keeping:
@@ -1517,7 +1517,7 @@ works but is outside the supported range is the warning tone (`--status-warning`
 
 ## Translated Text Is ~40 % Longer: Check New UI In The `qps` Locale
 
-UI text goes through `t()` (`.plans/LOCALIZATION_PLAN.md`), and German/Hungarian run about 35-40 %
+UI text goes through `t()` (`.ai/localization.md`), and German/Hungarian run about 35-40 %
 longer than English. In a dev build, the setting `ideViewOptions.language: "qps"` (set in the
 settings file; the Language dropdown no longer lists it) switches the whole
 UI to accented, padded, bracketed text (`[Ðîšþļåý ļåñĝûåĝé~~~~]`): unaccented text was never
@@ -1533,7 +1533,7 @@ header or status-bar item in `qps` before calling it done.
 
 ## A Status-Bar Item That Names A Choice Stays Plain Text
 
-The BASIC compiler item (`IdeStatusBar`, `.plans/BORIEL_BASIC_INTEGRATION_PLAN.md` §8) shows while a
+The BASIC compiler item (`IdeStatusBar`, `.ai/boriel/integration.md`) shows while a
 BASIC file is focused and names the compiler that builds it ("Klive BASIC" / "Boriel BASIC"). It is a
 choice the user made, never news, so it never takes a state colour: plain `--color-statusbar-label`
 text, `--font-size-100`, no border, only the toolbar-button hover background to say it is clickable.
@@ -1694,7 +1694,7 @@ children, so wrapping clickable rows in one means giving up the `button` role th
 on `e.code === "Enter"`, so the numeric keypad's Enter — which reports `NumpadEnter` — did nothing.
 Two of them read `e.key` a few lines further down for the arrows, in the same switch.
 
-**Stripping a type colour needs the glyph checked first, not after.** §5.2's rule is that a hue
+**Stripping a type colour needs the glyph checked first, not after.** The data-panel hierarchy's rule is that a hue
 marking a type is not state and the glyph already says it. In the NEC UPD 765 log the glyph did
 *not*: reading data and reading the status register were the same left arrow, distinguished only by
 cyan versus white, so a straight deletion would have merged two operations into one. Redraw first,
@@ -1735,7 +1735,7 @@ re-enabling one, add the guards its first real input will need — `loadZ80FileC
 **`<svg viewBox="…">` with no `width`/`height` is 300×150.** That is the CSS replaced-element
 default, and it applies inside a 20px swatch as readily as anywhere else; only the absence of a
 background on the overflow keeps it invisible. This is the second time the same defect has been
-found in this codebase (§13.2 was the first), in a file the earlier sweep did not reach — so it is
+found in this codebase (the Next Palettes grid was the first), in a file the earlier sweep did not reach — so it is
 worth grepping for `<svg` without dimensions rather than fixing the reported instance.
 
 **Parsing in the render body costs a re-parse per render, and the cost is invisible in the code.**
@@ -1750,7 +1750,7 @@ being thrown away one line from where it would have been shown.
 
 **Colour that restates the adjacent word is decoration.** The palette editor labelled its channel
 scales "Red", "Green" and "Blue" *in* red, green and blue, borrowed from the console's ANSI palette.
-§5.2's test — does the mark carry information the text does not? — fails here as plainly as it did
+the data-panel hierarchy's test — does the mark carry information the text does not? — fails here as plainly as it did
 for the document icons. The swatches under each heading are what must carry channel colour.
 
 **Prefer the field that was set on purpose over the string that happens to look right.** The
@@ -2045,14 +2045,13 @@ fails ~700 files on module resolution — that is the invocation, not your chang
 npx electron-vite dev --config build/electron.vite.config.ts --remoteDebuggingPort=9222
 ```
 
-`.plans/baseline/` holds `drive.mjs` (evaluate JS in a window), `capture.mjs` (screenshots),
-`imgdiff.py`, and **before-shots of both windows in both tones**, captured at 2x before any of this
-work started. **Keep those scripts in the repo** — they survived a scratchpad wipe between sessions
-and saved the work.
+`scripts/cdp/` holds `drive.mjs` (evaluate JS in a window), `capture.mjs` (screenshots) and
+`imgdiff.py`. **Keep those scripts in the repo**: they survived a scratchpad wipe between sessions and
+saved the work.
 
-**Hunting a visual regression.** The before-shots are the comparison target: re-capture the same view
-with `capture.mjs` and diff. Two cautions learned the hard way — capture at the *same window size* as
-the baseline (a size mismatch produced a 100+ element diff that was pure noise), and always relaunch
+**Hunting a visual regression.** Capture the view before and after with `capture.mjs` (or a
+`scripts/doc-shots/` recipe) and diff. Two cautions learned the hard way: capture both at the *same
+window size* (a size mismatch produced a 100+ element diff that was pure noise), and always relaunch
 rather than trusting HMR. To A/B a suspect file, `git stash push -- <path>`, relaunch, look, then
 `git stash pop`; and `git diff HEAD -- <path>` shows exactly what this work changed in any single
 file.
@@ -3018,10 +3017,7 @@ its text as a shape has the same problem.
 
 1. `../AGENTS.md`
 2. This file.
-3. `.plans/UI_MODERNIZATION_PLAN.md` §3 (token architecture and the five mandates), then the
-   retrospective for whatever area you are touching — §10 for the secondary accent or the memory
-   dump/disassembly colour, §11 for the sidebar, the overflow shadow, or either of the two sidebar
-   extension points (`Activity.commands`, `SideBarPanelInfo.badge`).
+3. `ui-design-system.md` (the token architecture, the five mandates, the accents, the themes).
 4. `src/renderer/theming/tokens/` — the four layers, in order.
 
 ## Non-Negotiable Handoff Message
@@ -3037,7 +3033,7 @@ its text as a shape has the same problem.
 - Do not reach for the secondary accent because something "needs more colour". It exists for one
   case: two things in the same view that must both read as accent-tied and clearly apart from each
   other. One accent-worthy thing in a view is `--accent-*`.
-- Do not give a data panel colour beyond §5.2's neutral hierarchy on your own initiative. The memory
+- Do not give a data panel colour beyond the neutral data-panel hierarchy on your own initiative. The memory
   dump, the disassembly view and the converted register/state panels are the exceptions, and **each
   one was asked for by the author, panel by panel** — none of them by drift.
 - Do not spend the **console's** ANSI palette on a data panel. Two panels did:
@@ -3060,7 +3056,7 @@ its text as a shape has the same problem.
     all ten image formats; and the most-opened tab of all, the code editor, neutral — the loudest
     colour on the rarest tabs. Measured with `contrastRatio`, four of the seven fell at or below
     3:1 on the light tab strip (`bright-green` 1.90:1, `bright-yellow` 1.88:1), and pairs sat
-    within the 1.04:1 that §10.2 already called "the same colour side by side" (dark
+    within the 1.04:1 that the secondary-accent derivation already called "the same colour side by side" (dark
     `bright-blue`/`bright-red` 1.06:1; light `bright-green`/`bright-yellow` 1.01:1). Every fill was
     deleted: the glyph carries the type, the filename beside it carries the rest, and the surface's
     own default — `--color-doc-icon` on tabs, `--fill-explorer-icon` in the tree — carries the
@@ -3162,12 +3158,12 @@ drift. Change a neutral or the default accent in the app, and the site changes w
 `tokens.css` in the same change. Nextra's own chrome takes the same accent and canvas through
 `<Head color backgroundColor>` in `docs/app/[lang]/layout.tsx`.
 
-- **The site must not look AI-generated** (`.plans/DOCS_SITE_REDESIGN_PLAN.md`). The author turned
+- **The site must not look AI-generated**. The author turned
   down the generic landing-page kit: Inter-like fonts, an 800-weight headline with negative letter
   spacing, one headline word in the accent, a mono version pill, uppercase letter-spaced mono
   eyebrows, grey body text, arrow links, pill tags, equal "bento" tiles, a numbered step strip,
   zigzag features and a centred closing call to action. Do not bring any of them back. Nor the
-  ones Hallmark's audit found after that (`.plans/HALLMARK_SITE_POLISH_PLAN.md`, `docs/design.md`):
+  ones Hallmark's audit found after that (`docs/design.md`):
   a label above a heading, middle-dot lists (`A · B · C`), "Not X. Y." headlines, stock lines
   ("What makes X different", "Ready to...?", "Read more", "Get started" as a button), em and en
   dashes in landing texts, and a see-through blurred header.

@@ -27,7 +27,7 @@ const USER_AGENT =
 const SUBSETS = ["latin", "latin-ext"];
 
 /**
- * The typefaces (decision R1 of .plans/DOCS_SITE_REDESIGN_PLAN.md): Overpass for headings and text,
+ * The typefaces: Overpass for headings and text,
  * with its real italic, and Overpass Mono for code. `italic` also fetches the italic files.
  */
 const FAMILIES = [
@@ -123,7 +123,7 @@ async function main() {
   }
 
   const module = `/**
- * The website's typefaces (decision R1 of .plans/DOCS_SITE_REDESIGN_PLAN.md): Overpass for
+ * The website's typefaces: Overpass for
  * headings and text, Overpass Mono for code, served from the site itself, so visitors never fetch
  * from Google - and, since the files are committed (docs/fonts/, SIL Open Font License), neither
  * does the build.

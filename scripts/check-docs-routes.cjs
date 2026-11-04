@@ -25,12 +25,12 @@ const outDir = join(repoRoot, "docs", "out");
 const SNAPSHOTS = [
   {
     name: "routes",
-    golden: join(repoRoot, ".plans", "docs-routes.golden.txt"),
+    golden: join(repoRoot, "docs", "goldens", "docs-routes.golden.txt"),
     collect: () => walk(outDir).filter((p) => p.endsWith(".html"))
   },
   {
     name: "assets",
-    golden: join(repoRoot, ".plans", "docs-assets.golden.txt"),
+    golden: join(repoRoot, "docs", "goldens", "docs-assets.golden.txt"),
     collect: () =>
       walk(outDir).filter((p) => p.startsWith("/images/") || p === "/next-examples.zip")
   }

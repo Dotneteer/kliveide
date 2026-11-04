@@ -1,5 +1,5 @@
 /**
- * Klive's changesets (.plans/RELEASE_AUTOMATION_PLAN.md §3-§4a, .changes/README.md).
+ * Klive's changesets (.ai/release-guide.md, .changes/README.md).
  *
  *   npm run change                      create one, asking for each field (in a terminal)
  *   npm run change -- --type fix --issue 1417 --text "..." [--highlight "..."] [--key [summary]]

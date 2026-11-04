@@ -626,7 +626,7 @@ function createNexWithLayer2AndBank5(): Uint8Array {
  *
  * The rules themselves are covered without a DOM in `test/renderer/nexValidation.test.ts`; what
  * these two check is that the viewer actually shows them, and — the more easily broken half — that
- * it shows nothing for a sound file. See `.plans/NEX_DEBUGGING_PLAN.md` §12.
+ * it shows nothing for a sound file. See `.ai/nex-debugging.md`.
  */
 describe("NexFileViewerPanel: header validation", () => {
   it("warns that the entry bank is not in the file", async () => {

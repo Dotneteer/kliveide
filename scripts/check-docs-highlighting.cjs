@@ -23,7 +23,7 @@ const { join, relative, sep } = require("node:path");
 
 const repoRoot = join(__dirname, "..");
 const outDir = join(repoRoot, "docs", "out");
-const baselineFile = join(repoRoot, ".plans", "docs-highlighting.golden.json");
+const baselineFile = join(repoRoot, "docs", "goldens", "docs-highlighting.golden.json");
 
 /**
  * Token colours from `customTheme` in docs/next.config.mjs. Each is produced only

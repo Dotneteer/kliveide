@@ -21,7 +21,7 @@ import {
 import { withHardDisk } from "../hard-disk-images";
 
 /*
- * The File Manager's drives in the main process (.plans/FILE_MANAGER_PLAN.md §5.1, Phase 1): the
+ * The File Manager's drives in the main process (`.ai/file-manager.md`): the
  * host's volumes and folders, the project, floppy and Microdrive images held in memory while read,
  * and hard-disk images read sector by sector. Read-only in this phase; the jobs of Phase 4 write.
  *

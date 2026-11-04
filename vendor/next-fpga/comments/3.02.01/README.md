@@ -5,7 +5,7 @@ Base: upstream `gitlab.com/SpectrumNext/ZX_Spectrum_Next_FPGA`, commit
 `../../sources.json`). Every patch is a unified diff against that commit's file at the same path,
 applied by `npm run next-fpga:fetch` after the blob-id check. Regenerate them with
 `npm run next-fpga:comments -- --save 3.02.01` after editing `vendor/next-fpga/3.02.01/`; never edit
-a `.patch` by hand. The plan is `.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` D4.1.
+a `.patch` by hand. The rule is `.ai/zxnext-models.md` D4.1.
 
 These patches are what `_input/next-fpga/` carried beyond upstream; applying them to the pinned tree
 reproduces that folder byte for byte, except `src/misc/relaxation.vhd`, whose only difference was

@@ -1,6 +1,6 @@
 "use client";
 /**
- * Shows the landing page's pictures full size (R5 of .plans/DOCS_SITE_REDESIGN_PLAN.md).
+ * Shows the landing page's pictures full size.
  *
  * - The pictures stay server-rendered links to their files (`<a href data-viewer="<group>"
  *   data-caption>`), so without JavaScript a click simply opens the file. With it, a click opens

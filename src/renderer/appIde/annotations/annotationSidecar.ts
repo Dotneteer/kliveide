@@ -112,7 +112,7 @@ function toSidecarAnnotations(annotations: ProgramAnnotations): Record<string, u
  * independently and concurrently. So each reads the file, replaces only its own keys, and writes
  * back — which also means a key this build does not know about survives a round trip.
  *
- * See `.plans/NEX_DEBUGGING_PLAN.md` §4.5.
+ * See `.ai/nex-debugging.md`.
  */
 
 const ANNOTATION_KEYS = ["schemaVersion", "machine", "source", "globalLabels", "banks"] as const;

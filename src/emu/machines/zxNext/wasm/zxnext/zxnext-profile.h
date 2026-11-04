@@ -2,7 +2,7 @@
 #define ZXNEXT_PROFILE_H
 
 /*
- * Which ZX Spectrum Next this artifact emulates (`.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` D3): one C
+ * Which ZX Spectrum Next this artifact emulates (`.ai/zxnext-models.md` D3): one C
  * source tree, one WASM artifact per distinct hardware, chosen by these defines. The build passes
  * them per artifact (`scripts/zxnext-artifacts.cjs`); without them the artifact is KS2 with core
  * 3.02.01, the Next every Klive before Next models emulated.

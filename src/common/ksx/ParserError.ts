@@ -56,7 +56,7 @@ export type ErrorCodes =
   | "K027";
 
 /**
- * The text of a KSX parser error, in the display language (`.plans/LOCALIZATION_PLAN.md` step 13):
+ * The text of a KSX parser error, in the display language (`.ai/localization.md`):
  * `compiler.ksx.<code>` in `src/common/i18n/locales/en/compiler.json`, with `{0}`, `{1}`... filled
  * from `params` in order.
  */

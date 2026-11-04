@@ -1,8 +1,7 @@
 # Writing "Under The Hood" Hardware Articles
 
 How to write an article that explains how a machine works inside, in the style of the ZX Spectrum Next
-screen series (`docs/content/en/under-the-hood/emulator-internals/next-display/`, ten articles, plan
-`.plans/NEXT_SCREEN_ARTICLES_PLAN.md`) and its models `spectrum-display.mdx` and `zx81-display.mdx`.
+screen series (`docs/content/en/under-the-hood/emulator-internals/next-display/`, ten articles) and its models `spectrum-display.mdx` and `zx81-display.mdx`.
 Read this before planning or writing a similar article or series. Every rule below was either a ground
 rule of that series or a correction the project author made while reviewing it: the corrections are the
 part a new session would otherwise repeat.
@@ -238,8 +237,8 @@ until they are reworked. A new chapter starts in the new shape.
 - Pages and links: absolute links (`/en/...`); a page not yet written is mentioned in plain text, and
   linked once it exists, so search the series for "article N" and "the X article" after each new page.
   Check every anchor against the built HTML ids (`docs/out/.../index.html`), not a hand-made slug rule.
-- A new page updates its folder's `_meta.ts`, `.plans/docs-routes.golden.txt` and
-  `.plans/docs-assets.golden.txt` (sorted), and the plan's status with an "As built" note of the facts
+- A new page updates its folder's `_meta.ts`, `docs/goldens/docs-routes.golden.txt` and
+  `docs/goldens/docs-assets.golden.txt` (sorted), and the plan's status with an "As built" note of the facts
   the article established.
 - Verify with `npm run doc:build && npm run doc:check`, then look at every figure in the browser
   (`docs-serve` preview) in both colour schemes. After a series is finished, re-check all cross-links and

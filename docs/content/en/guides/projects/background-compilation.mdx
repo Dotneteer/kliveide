@@ -19,7 +19,7 @@ When you stop typing for about 1.2 seconds, Klive compiles the project quietly. 
 ## What gets compiled
 
 - In a Klive project, Klive compiles the project's **build root**, whichever file you are editing. An error in an included file is reported at its own line.
-- An open `.zxbas` file is also checked on its own when Klive BASIC is the BASIC compiler, so editing a BASIC file the build root does not include still gets the editor's help.
+- A ZX BASIC program is checked with Boriel BASIC's `zxbc --parse-only`. The check reports errors and warnings, marked on the whole line, but gives the editor none of the program's own names; see [Editing ZX BASIC](/en/guides/languages/boriel-basic/#editing-zx-basic).
 - A folder that is not a Klive project is not compiled.
 
 To make a file the build root, right-click it in the [Project Explorer](/en/guides/projects/project-explorer/) and choose **Promote to Build Root**.
@@ -31,8 +31,8 @@ To make a file the build root, right-click it in the [Project Explorer](/en/guid
 - errors and warnings are shown inline, as described above;
 - the external toolchains, such as [sjasmplus](/en/guides/languages/sjasmplus/), are compiled in the background too.
 
-The built-in compilers always compile in the background, whatever the setting says. These are the Klive Z80 Assembler and Klive BASIC, plus Boriel BASIC, whose check (`zxbc --parse-only`) is cheap and writes no files.
+The Klive Z80 Assembler and Boriel BASIC always compile in the background, whatever the setting says. Boriel BASIC's check (`zxbc --parse-only`) is cheap and writes no files.
 
 <Callout type="info" emoji="💡">
-If an external toolchain makes the editor feel slow on a large project, turn the setting off. The built-in compilers keep the editor's intelligence working without it.
+If an external toolchain makes the editor feel slow on a large project, turn the setting off. The Klive Z80 Assembler keeps the editor's intelligence working without it.
 </Callout>

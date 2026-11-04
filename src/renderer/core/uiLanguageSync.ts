@@ -1,5 +1,5 @@
 /**
- * Keeps a renderer's translator on the language main publishes (`.plans/LOCALIZATION_PLAN.md` §5).
+ * Keeps a renderer's translator on the language main publishes (`.ai/localization.md`, "The runtime").
  *
  * Installed at bootstrap, before React renders, as a plain store subscriber: it runs inside the
  * dispatch that delivers the new language, so the re-render that follows already formats text in

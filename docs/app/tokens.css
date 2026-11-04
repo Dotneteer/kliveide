@@ -1,5 +1,5 @@
 /*
- * The website's design tokens (decision D8 of .plans/DOCS_SITE_MODERNIZATION_PLAN.md): the
+ * The website's design tokens (decision D8 of .ai/docs-site.md): the
  * app's own palette, so the site, the docs and the dark screenshots read as one product.
  *
  * Values come from the app's L1 tokens (src/renderer/theming/tokens/palette.ts): the cool neutral

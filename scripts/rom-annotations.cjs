@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /*
- * The shipped ROM sidecars' tools (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §5.4, §6).
+ * The shipped ROM sidecars' tools (`.docs/annotations.md`, "ROM Annotations" and `.ai/rom-annotations/README.md`).
  *
  *   npm run rom:annotations                 format every .rom.dis under src/public/roms and regenerate
  *                                           rom-annotations.index.json (the default)

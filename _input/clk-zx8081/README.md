@@ -5,8 +5,8 @@ Extracted from **Clock Signal (CLK)** by Thomas Harte — <https://github.com/To
 - Upstream branch: `master`
 - Upstream commit: `096de57445920ecf16cf066979422e34aceb843a` (2026-07-28)
 - Licence: **MIT** — see [`LICENCE`](LICENCE) (copied verbatim from upstream). Any Klive file that is
-  ported from these sources must carry the copyright notice (see the plan,
-  `.plans/ZX8081_WASM_PLAN.md`, §0).
+  ported from these sources must carry the copyright notice (see
+  `.ai/zx8081.md`, "Provenance").
 
 The files keep their upstream paths so they can be diffed against a later CLK checkout.
 They are **input only**: nothing in this folder is compiled or imported by Klive.

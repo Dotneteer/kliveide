@@ -4,8 +4,8 @@ import { createZx81Session, Zx81TestSession } from "../harness/zx81";
 import { expectGolden } from "./goldens";
 
 /**
- * The ZX81 picture, built from the ULA's refresh fetches on the real ROM (`.plans/ZX8081_WASM_PLAN.md`
- * §7, §12): the boot screen, the character set (inverse included), PLOT, FAST mode, and a hi-res
+ * The ZX81 picture, built from the ULA's refresh fetches on the real ROM (`src/emu/machines/zx8081/wasm/README.md`,
+ * "The picture"): the boot screen, the character set (inverse included), PLOT, FAST mode, and a hi-res
  * program. The pictures were checked by eye before they were recorded.
  */
 /** A character's 8 x 8 glyph from the ROM's character set ($1E00), as `pixelArt` draws it */

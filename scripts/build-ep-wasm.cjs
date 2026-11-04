@@ -28,7 +28,7 @@ const EP_VOLATILE_SYMBOLS = [
   ...debugLoopVolatileSymbols("ep"),
   ...Z80_ACCESS_LOG_VOLATILE_SYMBOLS,
   // --- The rest of the IDE's bus record, and whether it is being recorded: a fast frame records it only
-  // --- near its end, a debug run always (WASM_CORE_LEAN_AND_DEBUG_PLAN Phase 1), so it is no state
+  // --- near its end, a debug run always (`.ai/wasm-core-debug.md`), so it is no state
   "epOpStartAddress",
   "epCaptureBusEvents",
   // --- The execution-history ring (EXECUTION_HISTORY_ALL_CORES_PLAN)

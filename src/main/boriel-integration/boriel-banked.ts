@@ -1,7 +1,7 @@
 import type { BinarySegment } from "@abstractions/CompilerInfo";
 
 /*
- * A banked Boriel BASIC program (`--split-modules`, `.plans/BORIEL_BASIC_INTEGRATION_PLAN.md` §7) as
+ * A banked Boriel BASIC program (`--split-modules`, `.ai/boriel/integration.md`, "Banked programs") as
  * Klive's segments. zxbc refuses `-f bin` for a banked build, so the program comes out of the file it
  * does write - a `.z80` snapshot on the 128K, the `.nex` on the Next - as 16K RAM banks. What belongs
  * to the program there (`.ai/boriel/dbg-observed.md`, "Banking"):

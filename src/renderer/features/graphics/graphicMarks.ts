@@ -5,7 +5,7 @@ import type { ByteSpan, GraphicMark } from "./GraphicsView";
 
 /*
  * What the graphics finder draws over the pixels from a bank's annotations
- * (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §5.4): the named graphics, and the code band.
+ * (`.docs/reverse-engineering-tools.md`, "Graphics finder"): the named graphics, and the code band.
  */
 
 /** The named graphics of a bank, as overlay marks in bank offsets. */

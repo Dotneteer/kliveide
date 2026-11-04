@@ -1444,7 +1444,7 @@ export class NextTestSession {
   /**
    * Puts a tape in the deck, as the IDE does (`MEDIA_TAPE`): the blocks `tapeBlocksOf` makes from a
    * `.tap` or `.tzx`, fast load on unless asked otherwise. ROM 3's LD-BYTES then plays or fast-loads
-   * them (`.plans/NEXT_TAPE_PLAN.md`).
+   * them.
    */
   insertTape(blocks: TapeDataBlock[], { fastLoad = true }: { fastLoad?: boolean } = {}): this {
     this.machine.setMachineProperty(FAST_LOAD, fastLoad);

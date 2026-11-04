@@ -3,8 +3,7 @@ import { useTheme } from "@renderer/theming/ThemeProvider";
 import { KeyboardButtonClickArgs } from "./keyboard-common";
 
 /*
- * One key of the ZX81 keyboard, built from the approved design (`.plans/ZX8081_WASM_PLAN.md` §8.1,
- * mockup `.plans/zx8081/zx81-keyboard-mockup.html`). All geometry is in key units - a key face is 100
+ * One key of the ZX81 keyboard, built from the approved design (`.ai/zx8081.md`, "The virtual keyboard"). All geometry is in key units - a key face is 100
  * wide - measured from the reference photo; the SVG cell is one row pitch high with the face at y 24,
  * so the keyword printed above the key and the function printed below it fit in the cell.
  */
@@ -15,7 +14,7 @@ export const ZX81_KEY_HEIGHT = 74.7;
 export const ZX81_CELL_HEIGHT = 124.6;
 const FACE_Y = 24;
 
-/** The legends of a key (the mockup's `R` table) */
+/** The legends of a key (a row of the approved design's key table) */
 export type Zx81KeyDef = {
   /** Klive key code: `line * 5 + bit` */
   c: number;
@@ -37,7 +36,7 @@ export type Zx81KeyDef = {
   space?: boolean;
 };
 
-/** Quadrants TL, TR, BL, BR of the ZX81 block graphics $01-$0A: ink, paper, chequer (§8.1.4) */
+/** Quadrants TL, TR, BL, BR of the ZX81 block graphics $01-$0A: ink, paper, chequer */
 const GLYPHS: Record<number, string> = {
   1: "ippp",
   2: "pipp",

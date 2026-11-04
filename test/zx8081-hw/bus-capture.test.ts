@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { createZx81Session, type Zx81TestSession } from "../harness/zx81";
 
 /**
- * The bus record after a fast frame (`.plans/WASM_CORE_LEAN_AND_DEBUG_PLAN.md` Phase 1).
+ * The bus record after a fast frame (`.ai/wasm-core-debug.md`).
  *
  * A fast frame records the CPU's bus activity (the access log, the port event, the instruction's
  * start) only near its end, but the CPU panel of a machine paused from a plain Run reads them: they

@@ -6,8 +6,8 @@ import { HEADLESS_MACHINE_NAMES } from "@common/headless/headlessMachines";
  * their artifact names are the headless machines' (`@common/headless/headlessMachines`); the runner
  * needs a machine whose code can be injected, which the ZX80/ZX81 do not have yet. The HT-1080Z joined
  * with its code injection (`.plans/HT1080Z_CODE_INJECTION_PLAN.md` D9, D-Q6), and the Videoton TVC with
- * its (`.plans/VIDEOTON_TVC_PLAN.md` Phase 7): the runner stops its flow at BASIC's prompt. So does the
- * Enterprise's (`.plans/ENTERPRISE_PLAN.md` Phase 8), at IS-BASIC's.
+ * its (`.ai/videoton-tvc.md`, "Run, Debug and export"): the runner stops its flow at BASIC's
+ * prompt. So does the Enterprise's (`.plans/ENTERPRISE_PLAN.md` Phase 8), at IS-BASIC's.
  */
 
 /** The machines with a runner (D18); the others get `unsupportedMachineMessage` */

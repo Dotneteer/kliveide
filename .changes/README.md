@@ -4,7 +4,7 @@ Every user-visible change is recorded here as one small Markdown file, a **chang
 edits `CHANGELOG.md` during development: the release (`npm run release:prepare`) turns the pending
 changesets into the next CHANGELOG section, works out the version from them, and deletes them.
 
-The design is `.plans/RELEASE_AUTOMATION_PLAN.md`; the release procedure is
+The release procedure and its decisions are
 `.ai/release-guide.md`; how to write a good entry is `.ai/changesets-guide.md`.
 
 ## Creating one

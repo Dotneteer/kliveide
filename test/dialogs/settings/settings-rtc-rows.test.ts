@@ -6,7 +6,7 @@ import { rowViewModel } from "@renderer/appIde/dialogs/settings/SettingsViewMode
 import type { SettingsState } from "@renderer/appIde/dialogs/settings/SettingsModel";
 
 /*
- * The Kept clock row as the Settings dialog shows it (`.plans/ZXNEXT_RTC_OPTIONS_PLAN.md` D8): the
+ * The Kept clock row as the Settings dialog shows it (`.ai/zxnext-rtc.md` D8): the
  * last save as its description, Forget enabled only while the running model has a kept clock.
  */
 

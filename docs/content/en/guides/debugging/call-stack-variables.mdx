@@ -8,14 +8,14 @@ import { Callout, Steps } from 'nextra/components'
 
 When the machine is paused, the **Call Stack** panel answers *who called this code*, and the
 **Variables** panel shows the program's variables by name, with their types. For a program built
-with source-level debug information (Klive BASIC, Boriel BASIC, or C built with z88dk),
+with source-level debug information (BASIC built with Boriel BASIC, or C built with z88dk),
 both work at the level of your source: frames are SUBs, FUNCTIONs and C functions, and
 variables are decoded by type. For an assembly program the Call Stack shows the raw stack.
 
 <Shot
   src="guides/debugging/call-stack-variables/klive-basic-paused.webp"
-  alt="A Klive BASIC program paused inside a SUB: the statement highlighted in the editor, the Call Stack panel with the SUB and the main program, and the Variables panel with locals and globals"
-  caption="A Klive BASIC program paused inside a SUB, with the Call Stack and Variables panels."
+  alt="A BASIC program paused inside a SUB: the statement highlighted in the editor, the Call Stack panel with the SUB and the main program, and the Variables panel with locals and globals"
+  caption="A BASIC program paused inside a SUB, with the Call Stack and Variables panels."
   markers={["current", "callstack", "variables"]}
   width={900}
 />
@@ -30,9 +30,8 @@ variables are decoded by type. For an assembly program the Call Stack shows the 
 
 ### Build a debuggable program
 
-Source-level debug information comes with every [Klive BASIC](/en/guides/languages/klive-basic/)
-build, with [Boriel BASIC](/en/guides/languages/boriel-basic/), and with
-[z88dk](/en/guides/languages/z88dk/) debug builds that use the sccz80 compiler. SDCC builds carry
+Source-level debug information comes with every [Boriel BASIC](/en/guides/languages/boriel-basic/)
+build and with [z88dk](/en/guides/languages/z88dk/) debug builds that use the sccz80 compiler. SDCC builds carry
 no line information, so a C program built with SDCC is debugged in the disassembly only.
 
 ### Stop in your program
@@ -96,7 +95,7 @@ has up to four sections:
 | **Watch** | BASIC expressions you add yourself. |
 
 Arrays and other compound values expand with the chevron beside them. The tooltip of a value gives its
-address (and its CODEBANK bank, for a banked variable).
+address (and its bank, for a banked variable).
 
 - **Change a value**: double-click a number, type the new value and press <kbd>Enter</kbd>
   (<kbd>Esc</kbd> cancels). The value is checked against the variable's type. Strings and banked
@@ -104,6 +103,9 @@ address (and its CODEBANK bank, for a banked variable).
   there, after asking.
 - **Add a BASIC watch**: type an expression in the **Add watch** box at the bottom and press
   <kbd>Enter</kbd>. The trash button on a watch row removes it.
+
+A Boriel BASIC program's `FASTCALL` routine shows no parameter, and an array whose bounds are not
+constant shows only its address (see [Debugging at source level](/en/guides/languages/boriel-basic/#debugging-at-source-level)).
 
 If the selected routine has not set up its frame yet (the machine stopped at its very first
 instruction), the Locals section says so.
@@ -132,7 +134,6 @@ On the **Debugging** page of [Settings](/en/guides/customizing/settings/):
 ## Related
 
 - [Running, pausing and stepping](/en/guides/debugging/run-debug/)
-- [Klive BASIC](/en/guides/languages/klive-basic/)
 - [Boriel BASIC](/en/guides/languages/boriel-basic/)
 - [z88dk (C)](/en/guides/languages/z88dk/)
 - [Watch expressions](/en/guides/debugging/watch/)

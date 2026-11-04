@@ -178,7 +178,7 @@ function writeLoadedByte(machine: ZxNextWasmV2Machine, address: number, value: n
     // --- `getPartition` already answers in the same index space `getMemoryPartition` expects, so
     // --- there is nothing to convert. This used to double a positive partition and add the page's
     // --- low bit, compensating by hand for the two functions disagreeing: the resolver returned a
-    // --- 16K bank while `getMemoryPartition` indexed 8K pages. See `.plans/NEX_DEBUGGING_PLAN.md`
+    // --- 16K bank while `getMemoryPartition` indexed 8K pages. See `.ai/nex-debugging.md`
     // --- §4.1 (Q9), which made the resolver answer in 8K pages and removed the mismatch.
     const memoryPartition = partition;
     const partitionBytes = machine.getMemoryPartition(memoryPartition);

@@ -155,7 +155,7 @@ type MemoryDumpViewState = {
   topAddress?: number;
   /**
    * The annotation sidecar and the bank in it this document lists
-   * (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §4.6): a NEX's, a snapshot's, a paused
+   * (`.docs/annotations.md`, "Commands"): a NEX's, a snapshot's, a paused
    * machine's.
    */
   annotationPath?: string;
@@ -215,7 +215,7 @@ type MemoryDumpViewState = {
    */
   romPageKind?: RomPageKind;
   /**
-   * How the Graphics view reads the bytes (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §5.3). View
+   * How the Graphics view reads the bytes (`.docs/reverse-engineering-tools.md`, "Graphics finder"). View
    * state, never the sidecar: sweeping the width is how graphics are *found*, and a write per step
    * would turn browsing into editing. A graphic that has been found is named, which is a write.
    */
@@ -604,7 +604,7 @@ const StaticMemoryDump = ({
    * here is the *document*: its view state, its scrolling, and generating the listing (which has a
    * path the editor knows nothing about — a dump with no sidecar still disassembles).
    *
-   * See `.plans/NEX_DEBUGGING_PLAN.md` §9 and `.ai/ui-mvc-guide.md`.
+   * See `.ai/nex-debugging.md` and `.ai/ui-mvc-guide.md`.
    */
   /*
    * Mark the tab unsaved only when the sidecar could not be written.
@@ -1048,7 +1048,7 @@ const StaticMemoryDump = ({
     [navigationHistoryService]
   );
 
-  // ─── Graphics view (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §5.3) ──────────
+  // ─── Graphics view (`.docs/reverse-engineering-tools.md`, "Graphics finder") ──────────
 
   const graphicsLook = useMemo<GraphicsLook>(
     () => ({ ...DEFAULT_GRAPHICS_LOOK, ...currentViewState.graphicsLook }),
@@ -1948,7 +1948,7 @@ const StaticMemoryDump = ({
                      *
                      * This is also how a bank **watchpoint** gets made: the gutter click can only
                      * create an execution breakpoint, and the dialog's type selector is what turns
-                     * it into a memory read or write. See `.plans/NEX_DEBUGGING_PLAN.md` §10.2.
+                     * it into a memory read or write. See `.ai/nex-debugging.md`.
                      */
                     onEditBreakpoint={editBreakpoint}
                     partitionLabels={{}}

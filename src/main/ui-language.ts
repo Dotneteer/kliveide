@@ -1,5 +1,5 @@
 /**
- * The display language in the main process (`.plans/LOCALIZATION_PLAN.md` §5, D8).
+ * The display language in the main process (`.ai/localization.md`, "The runtime", D8).
  *
  * Main is the one place that resolves the `ideViewOptions.language` setting: "system" becomes the
  * OS's preferred language (when Klive offers it). The result goes into the app state

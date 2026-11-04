@@ -673,7 +673,7 @@ uint32_t zxnextGetTapeMode(void) { return zxnextTapeGetMode(); }
 uint32_t zxnextGetTapeEarBit(void) { return zxnextTapeGetEarBit(); }
 uint32_t zxnextGetTapeMicBit(void) { return zxnextTapeGetMicBit(); }
 void zxnextProcessTapeMicBit(uint32_t value) { zxnextTapeProcessMicBit(value); }
-/* The tape (zxnext-tape.c, `.plans/NEXT_TAPE_PLAN.md`): the deck's blocks uploaded by the IDE, fast
+/* The tape (zxnext-tape.c): the deck's blocks uploaded by the IDE, fast
    load, rewind, the conditioned EAR input, and the blocks a SAVE captured */
 uint8_t *zxnextTapeDataPtr(void) { return sp48TapeDataPtr(); }
 uint32_t zxnextTapeGetDataCapacity(void) { return sp48TapeGetDataCapacity(); }

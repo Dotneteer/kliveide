@@ -1,18 +1,12 @@
-' Klive BASIC for the ZX Spectrum Next (compatible with Boriel ZX BASIC).
+' Boriel BASIC (beta) for the ZX Spectrum Next: Boriel's ZX BASIC compiler, which comes with Klive.
 '
 ' Build options go in this header, one per line, as '@name value. For example:
 '@optimize 0
 '@heap-size 4768
-'
-' CODEBANK blocks put routines and data into 8K pages that the program pages into a
-' window ($6000-$7FFF by default) when it calls them; a call from anywhere just works.
-' Options such as codebank-window and codebank-first-page choose where they go.
 
-CODEBANK 1
-SUB Greet(row AS UByte)
-  PRINT AT row, 5; PAPER 4; BRIGHT 1; "   (Klive BASIC)    "
-END SUB
-END CODEBANK
+print at 10,5; paper 4; bright 0; "Welcome to Klive IDE"
+print at 11,5; paper 4; bright 1; "  (Boriel's Basic)  "
 
-PRINT AT 10, 5; PAPER 4; BRIGHT 0; "Welcome to Klive IDE"
-Greet 11
+' A .nex program cannot return to NextZXOS: when it ends, the Next resets. So it waits here.
+DO
+LOOP

@@ -21,7 +21,7 @@ type GfxArgs = {
 /**
  * `gfx [<address>] [-w <width>] [-h <height>] [-layout linear|cells|columns|screen] [-bank <n>]`:
  * opens the Graphics document — the graphics finder over the paused machine — at an address
- * (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §5.3). `-bank` shows one partition instead of the
+ * (`.docs/reverse-engineering-tools.md`, "Graphics finder"). `-bank` shows one partition instead of the
  * 64K view.
  */
 export class GraphicsCommand extends IdeCommandBase<GfxArgs> {

@@ -337,7 +337,7 @@ export class Z80Cpu implements IZ80Cpu {
    * PC this way after every instruction of its debug loop (`wasmDebugLoop.ts`): the core already holds
    * the value, so the setter that pushes it back is not wanted, and a `super.pc = ...` store, the other
    * way past it, is not optimized by V8 - it cost the loop a third of its time
-   * (`.plans/WASM_CORE_LEAN_AND_DEBUG_PLAN.md` §10.5).
+   * (`.ai/wasm-core-debug.md`, "What the measurements showed").
    */
   protected setPcMirror(value: number): void {
     this._pc = value & 0xffff;

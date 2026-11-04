@@ -1,11 +1,9 @@
 # Authoring the Videoton TVC ROM Annotations
 
-> **Tools.** New work goes through the ROM annotation pipeline (`npm run rom:pipeline`; README, "The tools"). Most scripts this guide names were retired by it: `tools/README.md` gives the command that replaced each.
-
 Read `README.md` beside this file first (the D4 rule, provenance, the file format, the levels). This
 guide carries what is particular to the TVC: which chip is which, how they are mapped, the order of work,
 the tools and the facts read so far. The machine itself is `src/emu/machines/tvc/wasm/README.md` and
-`.plans/VIDEOTON_TVC_PLAN.md`.
+`.ai/videoton-tvc.md`.
 
 ## D4 here: three sources are off limits
 
@@ -13,15 +11,15 @@ The rule is the README's, unchanged. What makes it sharp on the TVC is that the 
 repository, next to the work:
 
 - **rtvc's ROM listings** - `_input/videoton-tvc/rtvc/roms/*.asm`, `rom_comments_1_2.json`,
-  `rom_symbols_1_2.json` - are never read for this work (plan D1). Neither are rtvc's `coding/*.asm`
+  `rom_symbols_1_2.json` - are never read for this work (D1). Neither are rtvc's `coding/*.asm`
   files that use its symbol names.
 - **`_input/videoton-tvc/TVC_ROM_20190616.pdf` and `tvcrom.pdf`** (476 pages each) are treated as
   commented ROM listings and not opened for this work. If a later session establishes that one of them is
   a manual and not a listing, record that here before using it.
 - **Names already in Klive's own TVC code are not evidence.** Some came from rtvc's symbol file: the
   harness's `TVC12_KEY_WAIT` comment and `tvcMachineInfo.ts` say `KB_CHIN`, which is rtvc's name. Do not
-  carry a name from `src/emu/machines/tvc/`, `test/harness/tvc/` or the plan into a sidecar; name a
-  routine from its code.
+  carry a name from `src/emu/machines/tvc/`, `test/harness/tvc/` or `.ai/videoton-tvc.md` into a
+  sidecar; name a routine from its code.
 
 What may be used, besides the bytes and runs: `_input/videoton-tvc/operaciosrendszer.pdf` (the operating
 system manual) for interface facts - the system calls' function codes and entry conditions, the system

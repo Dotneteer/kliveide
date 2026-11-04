@@ -7,7 +7,7 @@ import { KeyboardApi } from "./KeyboardPanel";
 import { useKeyboard } from "./useKeyboard";
 
 /*
- * The ZX80 virtual keyboard (`.plans/ZX8081_WASM_PLAN.md` §8.1.9): the ZX81's key geometry (§8.1.3)
+ * The ZX80 virtual keyboard (`.ai/zx8081.md`, "The virtual keyboard"): the ZX81's key geometry
  * with the 4K-ROM ZX80's legends. The legends come from the ROM's key tables - unshifted at $006C,
  * shifted at $0093 (tokens from $00BA), keywords by K-mode letter - and their placement from a photo
  * of an original machine.
@@ -17,7 +17,7 @@ import { useKeyboard } from "./useKeyboard";
  * is queued, and a click is a plain press held for as long as the mouse button is.
  */
 
-/** Row stagger against the first row and the outer margin, in key units: the ZX81's (§8.1.3) */
+/** Row stagger against the first row and the outer margin, in key units: the ZX81's */
 const ROW_OFFSETS = [0, 68.1, 98.9, 37.4];
 const OUTER_MARGIN = 15.4;
 

@@ -88,7 +88,7 @@ import {
   decodeCopperWord,
   formatCopperInstruction
 } from "@common/zxnext/copper/copperDecoder";
-// --- Register names: the union of every core's set (`.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` D5)
+// --- Register names: the union of every core's set (`.ai/zxnext-models.md` D5)
 import { nextRegUnion } from "@emu/machines/zxNext/nextRegSets";
 import { formatHitSpec } from "@common/utils/breakpoint-filters";
 import { logGroupOf } from "@common/utils/breakpoint-condition/logpoint-template";

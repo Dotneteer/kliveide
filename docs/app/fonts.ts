@@ -1,5 +1,5 @@
 /**
- * The website's typefaces (decision R1 of .plans/DOCS_SITE_REDESIGN_PLAN.md): Overpass for
+ * The website's typefaces: Overpass for
  * headings and text, Overpass Mono for code, served from the site itself, so visitors never fetch
  * from Google - and, since the files are committed (docs/fonts/, SIL Open Font License), neither
  * does the build.

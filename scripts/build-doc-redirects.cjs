@@ -5,7 +5,7 @@
  * each old URL keeps an `index.html` that sends the visitor (and search engines) to
  * the new one: a `<meta http-equiv="refresh">`, a `<link rel="canonical">`, and a
  * plain link for anyone with meta refresh turned off. See R7 in
- * .plans/DOCS_SITE_MODERNIZATION_PLAN.md.
+ * .ai/docs-site.md.
  *
  * The map is docs/redirects.json: { "/old/path/": "/new/path/" }, site-absolute,
  * without the base path. The stubs are listed in the route golden, so a page that

@@ -1,7 +1,9 @@
 # Releasing Klive
 
-The design is `.plans/RELEASE_AUTOMATION_PLAN.md`; changesets are `.changes/README.md` and
-`changesets-guide.md`. A release is two steps: prepare a PR locally, then merge it.
+Changesets are `.changes/README.md` and `changesets-guide.md`. A release is two steps: prepare a PR
+locally, then merge it. The pipeline was built from a plan closed on 2026-11-04 (git history:
+`.plans/RELEASE_AUTOMATION_PLAN.md`); every release since v0.64.0 went through it. Its decisions,
+which the scripts and workflows cite by number, are at the end of this file.
 
 ## Public release
 
@@ -13,8 +15,7 @@ The design is `.plans/RELEASE_AUTOMATION_PLAN.md`; changesets are `.changes/READ
    commits `Release v<x.y.z>`, pushes and opens the PR. `--version x.y.z` overrides the computed
    version; `--skip-tests` skips `test:fast` (re-runs only); `--no-push` stops after the commit.
    The slow test tier is **not** a gate: run `npm run test:slow` (or the manual "Slow tests"
-   workflow) beforehand; `release:prepare` only warns when it has not passed on these sources
-   (`.plans/FAST_SLOW_TEST_TIERS_PLAN.md`).
+   workflow) beforehand; `release:prepare` only warns when it has not passed on these sources.
    It runs locally on purpose: a PR opened by a workflow token would not trigger `test.yml`.
 3. In the PR: edit **Highlights** in `CHANGELOG.md`, tick the checklist (competitive-analysis
    release note, README, screenshots). Optionally run **Release** (`release.yml`) with
@@ -53,3 +54,34 @@ tagged, released or deployed. `release.yml` reuses its jobs; never add publishin
 release: they write `@KLIVE_RELEASE@`, which `docs/remark-release-version.mjs` replaces on every
 build; `doc:check:release-links` enforces it. `KLIVE_SITE_RELEASE_TAG=v<x.y.z>` builds the site as
 if a release existed (the dry run).
+
+## Decisions (cited as D1-D16)
+
+| # | Decision |
+| --- | --- |
+| D1 | **A home-grown changeset mechanism, not `@changesets/cli`.** Klive is one private app with a curated, prose CHANGELOG; the npm tool's headings and hash prefixes would need undoing. A changeset is a Markdown file with front matter, so an AI can write one without a tool. |
+| D2, D11 | **`package.json` holds the version of the last release** between releases; only the release PR bumps it. The next version is computed from the pending changesets (`max(computed, package.json)` if `package.json` is ahead of the newest tag). Dev builds report the last released version. |
+| D3 | **Two steps:** prepare a PR (the review, where the author writes the Highlights), then merge. Everything irreversible happens after the merge, and only after every build succeeds. |
+| D4 | **The PR is prepared locally**, because a PR opened by a workflow's `GITHUB_TOKEN` triggers no other workflow, so `test.yml` would not run on it. |
+| D5 | **One release workflow with dependent jobs**, because a tag pushed by `GITHUB_TOKEN` triggers nothing either. Trigger: a push to `master` whose head commit starts with `Release v` **and** whose `package.json` version has no tag, so neither a stray message nor a re-run releases twice. |
+| D6 | `fix` → patch, `feature` → minor, `breaking` → minor while 0.x (major after 1.0). `bump:` forces a higher bump; `--version` overrides everything. |
+| D7, D10 | **The website shows released versions only.** No `## Unreleased` in `CHANGELOG.md`; `npm run change:preview` shows the next section. |
+| D8 | **No release version literal in `docs/content/`** (`@KLIVE_RELEASE@`, `doc:check:release-links`). "Klive 0.64.0 and later" is a minimum version, not a release link, and stays. |
+| D9 | Release headings carry the date: `## 0.64.0 (2026-10-25)`. Older sections stay undated; only `## <version>` is parsed. |
+| D12 | **The workflow publishes automatically.** The draft exists only between the upload and the publish, so a half-uploaded release is never visible. |
+| D13 | **No pre-releases.** Plain `x.y.z` only; the pipeline's end-to-end test is the dry run. |
+| D14 | `release-artifacts.yml` stays the private build: run by hand, workflow artifacts only. The release reuses its jobs through an added `workflow_call` trigger. |
+| D15 | **AI assistants create the changeset as part of a commit** (`AGENTS.md`, `changesets-guide.md`). |
+| D16 | Private builds keep their names (after `package.json`), so a private kit may share a file name with a public one. Accepted: private kits never reach a release. |
+
+## Not done, noted for later
+
+- **Code signing and notarization** of the macOS `.pkg` and the Windows installer: it plugs into the
+  publish job (or electron-builder's config in the build jobs), needs certificates and secrets, and
+  is its own plan.
+- **Auto-update feeds** (`electron-updater`'s `latest*.yml`): an asset the publish job would add.
+- **Preparing the release PR from a workflow**, with a GitHub App token instead of `GITHUB_TOKEN`
+  (D4), for releasing without a local checkout.
+- **Translating the CHANGELOG**: English only, like `reference/`.
+- A named risk: the smoke job checks the live landing page after a short retry loop for the Pages
+  CDN; a red smoke undoes nothing, and a master push redeploys the site.

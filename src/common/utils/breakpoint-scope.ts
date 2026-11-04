@@ -92,7 +92,7 @@ export function ownerForScope(
 
 /**
  * The sidecar that owns a breakpoint, or `undefined` when no sidecar does. Reads the former `nex`
- * owner as the `sidecar` one (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §4.6).
+ * owner as the `sidecar` one (`.docs/annotations.md`, "Commands").
  */
 export function sidecarOfOwner(owner: BreakpointOwner | undefined): string | undefined {
   return owner?.kind === "sidecar" || owner?.kind === "nex" ? owner.sidecar : undefined;

@@ -1,12 +1,20 @@
 ---
-description: "Escrever um programa em ZX BASIC, compilá-lo com o compilador Klive BASIC integrado no Klive e depurá-lo instrução a instrução, com a pilha de chamadas e as variáveis."
+description: "Escrever um programa em ZX BASIC, compilá-lo com o Boriel BASIC, o compilador que vem com o Klive, e depurá-lo instrução a instrução, com a pilha de chamadas e as variáveis."
 ---
 
 import { Callout, Steps } from 'nextra/components'
 
 # O primeiro programa em BASIC
 
-O ZX BASIC é um dialeto compilado do próprio BASIC do ZX Spectrum, com sub-rotinas, variáveis locais e variáveis com tipo. O Klive compila-o com o seu compilador integrado, o **Klive BASIC**, que é compatível com o Boriel ZX BASIC e não precisa de instalação. O programa compilado corre muito mais depressa do que o BASIC interpretado, e é possível depurá-lo linha a linha no seu código-fonte BASIC.
+O ZX BASIC é um dialeto compilado do próprio BASIC do ZX Spectrum, com sub-rotinas, variáveis locais e variáveis com tipo. O Klive compila-o com o **Boriel BASIC**, o compilador do autor da linguagem, que vem com o Klive. O programa compilado corre muito mais depressa do que o BASIC interpretado, e é possível depurá-lo linha a linha no seu código-fonte BASIC.
+
+<Callout type="warning">
+O Boriel BASIC 2 é uma versão beta. A maior parte dos programas compila e corre, mas podem surgir algumas imperfeições.
+</Callout>
+
+## Instalar o Boriel BASIC
+
+Da primeira vez que o Klive arranca, propõe a instalação do Boriel BASIC. Se nessa altura escolheu **Agora não**, abra **Definições › Integrações**, clique em **Configurar...** ao lado de **Boriel BASIC** e clique em **Instalar**. O Klive só consegue compilar programas BASIC depois de o instalar.
 
 ## Criar o projeto
 
@@ -102,7 +110,7 @@ Abra a barra lateral **Depurar** e, em seguida, os seus painéis **Pilha de cham
 A execução passo a passo funciona sobre **instruções** BASIC, não sobre instruções Z80: <kbd>F10</kbd> executa a instrução seguinte, <kbd>F11</kbd> (<kbd>F12</kbd> em macOS) entra numa sub-rotina, e <kbd>Shift</kbd>+<kbd>F11</kbd> sai dela. Prima <kbd>F5</kbd> algumas vezes e observe `column` e `x` a mudar.
 
 <Callout type="info" emoji="💡">
-O Klive também consegue compilar os programas BASIC com o compilador do próprio Boriel, o Boriel BASIC 2, e depurá-los da mesma forma. Consulte [ZX BASIC](/en/guides/languages/klive-basic/) para conhecer as opções da linguagem, a biblioteca padrão e a forma de mudar de compilador.
+[Boriel BASIC](/en/guides/languages/boriel-basic/) descreve as opções de compilação, os módulos e o código em bancos, e o que o depurador mostra. A linguagem em si está descrita na [documentação do próprio Boriel BASIC](https://zxbasic.readthedocs.io/en/v2.0/).
 </Callout>
 
 A seguir, escrever [o primeiro programa para o ZX Spectrum Next](/pt-PT/get-started/first-next-program/).

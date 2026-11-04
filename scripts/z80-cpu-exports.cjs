@@ -1,7 +1,7 @@
 /*
  * The exports of `src/emu/z80/wasm/z80-cpu-exports.c` - the shared Z80's registers and debugger state
  * under a core's prefix - and the CPU statics a Klive state file leaves out
- * (`.plans/WASM_CORE_LEAN_AND_DEBUG_PLAN.md` Phase 2, D8). The C file defines every forwarder for every
+ * (`.ai/wasm-core-debug.md` D8). The C file defines every forwarder for every
  * core; this list decides which a core exports, so the options describe what the core's host reads.
  */
 
@@ -70,7 +70,7 @@ function debugLoopExports(prefix) {
 /**
  * The loop's breakpoint flags and the start of the last instruction it ran: debugging state, written by
  * debug runs only, so a restore keeps the live core's bytes and a replay (fast frames) records the same
- * image as the debug run it replays (WASM_CORE_LEAN_AND_DEBUG_PLAN T9)
+ * image as the debug run it replays (`.ai/wasm-core-debug.md` T9)
  * @param {string} prefix The core's export prefix
  */
 function debugLoopVolatileSymbols(prefix) {

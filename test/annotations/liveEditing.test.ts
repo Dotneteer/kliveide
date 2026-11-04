@@ -23,7 +23,7 @@ import { formatRomSidecar } from "@common/roms/romAnnotationTools";
 
 /*
  * Editing annotations from the live Disassembly view
- * (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §4.5): a row is turned into the bank site the
+ * (`.docs/annotations.md`, "The Live Disassembly View"): a row is turned into the bank site the
  * annotation editor works in, and the editor's own controller does the rest. A ROM row is edited in
  * its page's working copy (`.plans/ROM_ANNOTATION_EDITING_PLAN.md`), and only when there is one.
  */

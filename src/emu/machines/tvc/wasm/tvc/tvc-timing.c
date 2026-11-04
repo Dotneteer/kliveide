@@ -1,6 +1,6 @@
 /*
  * The CPU's memory-cycle timing: the clock stretch on video RAM and the WAIT circuit
- * (TVC_CLOCK_STRETCH_FIGURES.md; HW pp.53-55, pp.95-96; plan §6).
+ * (TVC_CLOCK_STRETCH_FIGURES.md; HW pp.53-55, pp.95-96).
  *
  * The CPU and the CRTC share the video RAM in turns: every 640 ns character starts with a 320 ns CPU
  * slot (DEB high) and ends with a 320 ns CRTC slot. A CPU access to video RAM must line up with a CPU
@@ -15,13 +15,14 @@
  * The stretch runs on the fixed clock: the video and sound see the time pass, the CPU's T-state
  * counter only the whole T-states (the half-T phase is `tvcHalfClock`'s lowest bit). The stretch
  * has no input from display enable, sync or blanking, so a video RAM access costs the same wherever
- * the beam is. I/O cycles, interrupt acknowledges and refresh cycles do not stretch (plan Q3).
+ * the beam is. I/O cycles, interrupt acknowledges and refresh cycles do not stretch (Q3 in
+ * `.ai/videoton-tvc.md`).
  *
  * WAIT (64K only; the 64K+ board has no WAIT circuit, HW p.95): one wait state on an M1 from a slow
- * source. The cartridge is taken as slow; the system ROM is not (plan Q4: the factory setting of
+ * source. The cartridge is taken as slow; the system ROM is not (Q4: the factory setting of
  * jumpers TB1/TB9 is open); no expansion card is plugged in.
  *
- * The DEB phase after reset (plan Q7): a character starts at half-T 0.
+ * The DEB phase after reset (Q7): a character starts at half-T 0.
  */
 
 static const uint8_t tvcStretchReadWrite[4] = {2u, 1u, 4u, 3u};

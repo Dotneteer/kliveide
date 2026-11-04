@@ -6,7 +6,7 @@ export type CallStackInfo = {
   frames: number[];
   /**
    * The partition at each 8K slot now (`getPartition`), so the IDE can name each return address
-   * through the bank space (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §4.4).
+   * through the bank space (`.docs/annotations.md`, "The Shared Resolver").
    */
   slotPartitions?: (number | undefined)[];
   /**

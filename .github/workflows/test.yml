@@ -8,7 +8,7 @@ permissions:
   contents: read
 
 # The fast tiers only (`npm run test:fast`), split into parallel jobs so the wall time is the
-# longest job, not the sum (`.plans/FAST_SLOW_TEST_TIERS_PLAN.md`). The slow tier (`e2e-slow`) never
+# longest job, not the sum. The slow tier (`e2e-slow`) never
 # runs here: it is `npm run test:slow` / `test:all` locally and the manual "Slow tests" workflow.
 
 jobs:

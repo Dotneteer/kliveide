@@ -106,7 +106,7 @@ export type UnitTestRunInput = {
  *   `HT1080Z` 7, `TVC` 8, `Enterprise` 9)
  */
 export function bootModelFor(machineId: string, modelType: number | undefined): string {
-  // --- The ZX80/ZX81 flow checks the code's model against the ROM (`ZX8081_CODE_INJECTION_PLAN.md`)
+  // --- The ZX80/ZX81 flow checks the code's model against the ROM (`.ai/zx8081.md`, "Machine code decisions", D4)
   if (modelType === 5) return "zx80";
   if (modelType === 6) return "zx81";
   // --- The HT-1080Z boots through its own flow on every model (`HT1080Z_CODE_INJECTION_PLAN.md` D9)

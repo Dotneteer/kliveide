@@ -3,8 +3,7 @@
  * `npm run test:timings`: run the fast tiers (`npm run test:fast`'s projects) with a JSON report and
  * list the files over the fast-tier budget, slowest first.
  *
- * The fast set has to stay within ~3 minutes locally and ~10 on GitHub
- * (`.plans/FAST_SLOW_TEST_TIERS_PLAN.md`). A file over the budget moves to `E2E_SLOW_TESTS` in
+ * The fast set has to stay within ~3 minutes locally and ~10 on GitHub. A file over the budget moves to `E2E_SLOW_TESTS` in
  * `build/e2e-tests.ts`, or gets cheaper. Times come from a full parallel run, the way the tier
  * actually runs, so they are inflated by contention: the budget is set against that.
  *

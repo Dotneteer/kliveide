@@ -10,8 +10,8 @@ import { createSession, type SdCardBacking } from "../../harness/zxnext";
 import { REPO_ROOT } from "../../harness/zxnext/core/machines";
 
 /*
- * Each Next model boots its own NextZXOS from its own base SD card (`.plans/ZXNEXT_CORE_VERSIONS_PLAN.md`
- * D6, D7, P5) and settles in the key-wait loop its ROM set's facts name: the point the code-injection
+ * Each Next model boots its own NextZXOS from its own base SD card (`.ai/zxnext-models.md`
+ * D6, D7) and settles in the key-wait loop its ROM set's facts name: the point the code-injection
  * flow (`buildNextCodeInjectionFlow`) waits for before it types `.nexload`. A ROM set whose facts were
  * wrong would hang code injection; this catches it before a user does.
  *

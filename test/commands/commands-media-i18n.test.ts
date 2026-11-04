@@ -44,8 +44,7 @@ import type { ProfileStatus } from "@common/profile/profileTypes";
 import { MI_SPECTRUM_48, MI_Z88 } from "@common/machines/constants";
 
 /*
- * The media, build, test and profiling commands in another language (`.plans/LOCALIZATION_PLAN.md`
- * step 12): in the pseudo-locale every description and the status lines built from messages are
+ * The media, build, test and profiling commands in another language (`.ai/localization.md`): in the pseudo-locale every description and the status lines built from messages are
  * pseudo text. Command ids, aliases and usage stay as they are - they are syntax.
  */
 const isPseudo = (text: string) => /^\[.*~+\]$/s.test(text);

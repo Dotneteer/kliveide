@@ -2352,7 +2352,7 @@ describe("StaticMemoryDump", () => {
   });
 
   describe("graphics view", () => {
-    // --- `.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §5.3: the graphics finder as a fourth view mode
+    // --- `.docs/reverse-engineering-tools.md`, "Graphics finder": the graphics finder as a fourth view mode
     beforeEach(() => {
       const noop = () => {};
       vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation((() =>

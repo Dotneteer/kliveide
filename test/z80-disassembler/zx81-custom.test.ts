@@ -3,7 +3,7 @@ import { Z80Tester } from "./z80-tester";
 import { Zx81CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/zx81-disassembler";
 
 /**
- * The ZX81's custom disassembly (`.plans/ZX8081_WASM_PLAN.md` §11): the error code after RST $08 and
+ * The ZX81's custom disassembly (`.ai/zx8081.md`, "Files, tape and the IDE"): the error code after RST $08 and
  * the calculator literals after RST $28, whose numbering (the ROM's table at $1923) differs from the
  * Spectrum's - `end-calc` is $34 here, $38 on the Spectrum.
  */

@@ -165,7 +165,7 @@ describe("closing", () => {
   it("records 'Not now' in the offer, so it asks again", async () => {
     const h = await openDialog({ mode: "offer" });
     expect(h.vm.cancel.label).toBe("Not now");
-    expect(h.vm.intro).toMatch(/comes with Boriel BASIC 2\.0\.0-beta25/);
+    expect(h.vm.intro).toMatch(/with Boriel BASIC 2\.0\.0-beta25, a ZX BASIC compiler \(in beta\)/);
     await h.dispatch({ type: "closeRequested" });
     expect(h.ports.service.recordDecision).toHaveBeenCalledWith("postponed");
     expect(h.ports.close.close).toHaveBeenCalledWith("close");
@@ -205,11 +205,17 @@ describe("closing", () => {
 });
 
 describe("choosing the compiler", () => {
-  it("offers the switch only once Boriel BASIC works", async () => {
+  // --- KLIVE-BASIC-OFF: the checkbox is hidden (`.ai/klive-basic-switch.md`); restore with it
+  it.skip("offers the switch only once Boriel BASIC works", async () => {
     const none = await openDialog();
     expect(none.vm.useBoriel.visible).toBe(false);
     const ready = await openDialog({ statuses: [aStatus({ installation: working() })] });
     expect(ready.vm.useBoriel).toMatchObject({ visible: true, value: false, enabled: true });
+  });
+
+  it("offers no choice of compiler while Klive BASIC is switched off", async () => {
+    const ready = await openDialog({ statuses: [aStatus({ installation: working() })] });
+    expect(ready.vm.useBoriel.visible).toBe(false);
   });
 
   it("makes Boriel BASIC the compiler, then shows the new state", async () => {

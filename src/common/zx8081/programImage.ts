@@ -14,7 +14,7 @@ import {
 
 /**
  * Turns assembled machine code into the memory image a ZX81 `.p` or ZX80 `.o` file holds - the
- * bytes the ROM's LOAD reads (`.plans/ZX8081_CODE_INJECTION_PLAN.md` D3). Running code from the IDE
+ * bytes the ROM's LOAD reads (`.ai/zx8081.md`, "Machine code decisions", D3). Running code from the IDE
  * writes the same image into the machine, and Export writes it to a file, so what runs is byte for
  * byte what is exported.
  *

@@ -13,7 +13,7 @@ import {
 } from "./wasmDebugLoopLayout";
 
 /*
- * The debug loop every WASM machine host runs outside a plain Run (`.plans/WASM_CORE_LEAN_AND_DEBUG_PLAN.md`
+ * The debug loop every WASM machine host runs outside a plain Run (`.ai/wasm-core-debug.md`
  * Phase 3, D9): debug sessions, steps, and runs to an execution point (a project's start).
  *
  * The hosts had the same loop and the same stop order, each written out by hand; this is that loop
@@ -237,7 +237,7 @@ export const CORE_STOP_CANDIDATE = 0x8000;
 const coreStopTable = new Uint16Array(0x1_0000);
 
 /**
- * The stop table an in-core debug loop runs with (`.plans/WASM_CORE_LEAN_AND_DEBUG_PLAN.md` D13): the
+ * The stop table an in-core debug loop runs with (`.ai/wasm-core-debug.md` D13): the
  * breakpoint flags, plus `CORE_STOP_CANDIDATE` wherever `shouldStopAtDebugPoint` acts per instruction
  * without a breakpoint. The core stops at every candidate and the TypeScript policy decides there, so
  * running in the core decides exactly as running instruction by instruction does.

@@ -1,7 +1,7 @@
 # Localization: rules for changing Klive's code
 
 Every user-facing text in Klive goes through the translator. This is the short version for agents
-writing code; the plan and its "as built" notes are `.plans/LOCALIZATION_PLAN.md`, and the guide for
+writing code; how it is built and the pattern for a new language or area are `.ai/localization.md`, and the guide for
 translators is `src/common/i18n/locales/README.md`.
 
 ## The rules

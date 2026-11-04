@@ -12,7 +12,7 @@ import { selectViewModel } from "@renderer/appIde/dialogs/exportCode/ExportCodeV
 import { aState, anEnv } from "./fakes";
 
 /**
- * The Export dialog on a ZX81 or ZX80 (`.plans/ZX8081_CODE_INJECTION_PLAN.md` D8): the machine's own
+ * The Export dialog on a ZX81 or ZX80 (`.ai/zx8081.md`, "Machine code decisions", D8): the machine's own
  * program file, none of the Spectrum's loader options, and auto-run on a `.p`.
  */
 const zx81 = (settings: Record<string, unknown> = {}) =>

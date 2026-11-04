@@ -28,7 +28,7 @@ import { getAnnotationPath } from "./programAnnotations";
  *
  * The live Disassembly view, the condition symbols and the sidecar breakpoint sync follow it, and
  * follow its *session*, so a label added from anywhere reaches them on the next refresh — which
- * closes the stale-labels gap of §2.3 of `.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md`.
+ * closes the stale-labels gap of §2.3 of `.docs/annotations.md`.
  *
  * A module singleton for the reasons `nexLoadSession` gives: one IDE window owns it, and it changes
  * only when a program is put in the machine.

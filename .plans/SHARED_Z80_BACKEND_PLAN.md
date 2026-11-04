@@ -43,7 +43,7 @@ here does not have to be redrawn.
    file is deleted, never left as a re-export. There is no barrel `index.ts` for the back end
    either: §4.4 lists the files a front end may import.
 4. **Provenance carries over.** The back end inherits Klive BASIC's provenance rule
-   (`ZXBASIC_COMPILER_PLAN.md` §0.1): it was written from scratch and stays so. A new front end
+   (`.ai/kbasic/compiler.md`, "Provenance (hard rule)"): it was written from scratch and stays so. A new front end
    brings its own provenance rule; nothing from another compiler's back end is read for design.
 5. **Docs move with the code.** The design notes `.docs/kbasic-mir.md`,
    `kbasic-lir-regalloc.md`, `kbasic-optimiser.md` and `kbasic-debug-builder.md` describe back-end
@@ -427,7 +427,7 @@ closes.
   runtime packages, debug descriptors, problems, the shell, the tests a language must have) and a
   short **Shared Z80 back end** section in AGENTS.md pointing to it, with the rule that a new
   compiler produces MIR and never emits Z80 itself.
-- Update `ZXBASIC_COMPILER_PLAN.md` §3.3 (code layout) and the kbasic READMEs/`.ai/kbasic/` integration
+- Update the Klive BASIC code layout (`.ai/kbasic/compiler.md`, "Architecture as built") and the kbasic READMEs/`.ai/kbasic/` integration
   map to the new paths.
 - Run `npm run test:slow`; the plan is complete. The completing commit carries one `internal`
   changeset (no user-visible change) unless D7 decides otherwise.

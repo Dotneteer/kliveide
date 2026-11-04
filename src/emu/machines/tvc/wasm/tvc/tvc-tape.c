@@ -1,6 +1,6 @@
 /*
- * The TVC's cassette (`.plans/VIDEOTON_TVC_PLAN.md` §9; rtvc/info/tvc.md "Cassette Interface" and
- * "CAS Cassette Representation"). The hardware is plain: the ROM does all the coding.
+ * The TVC's cassette (the core README, "Tape"; rtvc/info/tvc.md "Cassette Interface" and "CAS
+ * Cassette Representation"). The hardware is plain: the ROM does all the coding.
  *
  *   input   port 59h bit 5 (ECIN): the squared tape signal
  *   output  a flip-flop that any access to ports 50h-57h toggles
@@ -20,12 +20,13 @@
  * measures the pilot (a run of equal halves), finds the sync (two halves longer than 1.4 pilot halves)
  * and from the next half on pairs the halves into bits: a cycle longer than 1.03 pilot cycles is a 0,
  * a shorter one a 1. Working on halves keeps the pairing right whatever the signal did before. The thresholds are relative, because the ROM times its cycles with the sound timer: on this
- * core (the first sound interrupt 16 divider periods after a restart, plan Q2) it writes cycles of
- * 1,466 T (pilot), 1,210 T (1), 1,722 T (0) and 2,298 T (sync), where the established converter's
- * are 1,276, 1,134, 1,558 and 2,410 T. Both sit on the same side of every threshold. Bytes go LSB first into the save buffer, each block
- * as a 2-byte length and its bytes, from its first byte after the sync (the 00h before 6Ah
- * included). A pause longer than 4 pilots ends a block. When the motor stops, the blocks are
- * published as a new revision; the host builds the `.cas` from them.
+ * core (the first sound interrupt 16 divider periods after a restart, Q2 in `.ai/videoton-tvc.md`)
+ * it writes cycles of 1,466 T (pilot), 1,210 T (1), 1,722 T (0) and 2,298 T (sync), where the
+ * established converter's are 1,276, 1,134, 1,558 and 2,410 T. Both sit on the same side of every
+ * threshold. Bytes go LSB first into the save buffer, each block as a 2-byte length and its bytes,
+ * from its first byte after the sync (the 00h before 6Ah included). A pause longer than 4 pilots
+ * ends a block. When the motor stops, the blocks are published as a new revision; the host builds
+ * the `.cas` from them.
  */
 
 #define TVC_TAPE_CAPACITY 0x20000u

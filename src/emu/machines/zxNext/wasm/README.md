@@ -48,7 +48,7 @@ applied (`vendor/next-fpga/comments/`). A citation names the version (`zxnext.vh
 an unversioned one means 3.02.01. One C tree builds one artifact per model's hardware
 (`zxnext-profile.h`, `scripts/zxnext-artifacts.cjs`); a behaviour a later core changed is guarded
 with `#if ZXNEXT_CORE_VERSION >= 30204`, and the 3.02.01 artifact's boot traces and goldens prove
-the guard leaked nowhere (`.plans/ZXNEXT_CORE_VERSIONS_PLAN.md`).
+the guard leaked nowhere (`.ai/zxnext-models.md`, "Rules").
 TypeScript changes are for behaviour that is host-owned rather than machine-owned: IDE and UI
 policy, Electron resource lookup, host file and media persistence, test-harness setup. Those may
 call into WASM; they are not a reason to move machine-owned behaviour back out of it.
@@ -201,10 +201,10 @@ The real-time clock (`docs/content/en/under-the-hood/emulator-internals/next-rtc
   (`zxNext/nextRtcHost.ts`) compares registers 0-6 with the host's time plus an offset before each
   frame, at most once a second, and rewrites them through `zxnextRtcSetTime` when a second or more
   apart. The core decides nothing here and reads no host clock: the write is a journaled input, so a
-  reverse-debugging replay applies it where it happened (`.plans/ZXNEXT_RTC_OPTIONS_PLAN.md` D3, D4).
+  reverse-debugging replay applies it where it happened (`.ai/zxnext-rtc.md` D3, D4).
   With "Emulated time" it is the core's count alone.
 
-The host's view of the DS1307 (`.plans/ZXNEXT_RTC_OPTIONS_PLAN.md` P1): `zxnextRtcPeekRegister(i)` reads
+The host's view of the DS1307 (`.ai/zxnext-rtc.md`, "How it is built"): `zxnextRtcPeekRegister(i)` reads
 register `i` as a read starting now would (the time on a copy of the counter chain, so it is a pure
 export); `zxnextRtcGetWriteCount()` / `zxnextRtcGetTimeWriteCount()` count the bus's register writes, all
 and to registers 0-6 (host writes are not counted), which the host compares between frames to take a

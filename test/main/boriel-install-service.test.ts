@@ -16,6 +16,7 @@ import {
   type BorielServiceDeps
 } from "@main/boriel-integration/boriel-install-service";
 import { borielKitLocation, locateBundledKit } from "@main/boriel-integration/boriel-kit";
+import { extractArchive } from "@main/tool-install/archive";
 import { probeBoriel, resolveBorielExecutable, type VersionRunner } from "@main/boriel-integration/boriel-resolver";
 import { compareBorielVersions, versionFromOutput } from "@main/boriel-integration/boriel-version";
 
@@ -29,6 +30,7 @@ function makeKitArchive(): Buffer {
     { name: "kit/", data: "", mode: 0o755, type: "5" },
     { name: "kit/zxbc", data: "#!fake", mode: 0o775 },
     { name: "kit/tools/zxbpack", data: "#!fake", mode: 0o644 },
+    { name: "kit/zxbc.pdb", data: "debug symbols", mode: 0o644 },
     { name: "kit/lib/zx48k/stdlib/a.bas", data: "REM", mode: 0o664 }
   ];
   const blocks: Buffer[] = [];
@@ -122,6 +124,7 @@ describe("Boriel BASIC setup", () => {
     const folder = path.join(home, "zxbasic2");
     expect(result).toMatchObject({ kind: "installed", folder, version: VERSION });
     expect(fs.existsSync(path.join(folder, "lib/zx48k/stdlib/a.bas"))).toBe(true);
+    expect(fs.existsSync(path.join(folder, "zxbc.pdb"))).toBe(false);
     expect(JSON.parse(fs.readFileSync(path.join(folder, BORIEL_MARKER_FILE), "utf8")).version).toBe(VERSION);
     if (!isWindows) {
       expect(fs.statSync(path.join(folder, "zxbc")).mode & 0o111).not.toBe(0);
@@ -246,4 +249,29 @@ describe("Boriel BASIC setup with the real kit", () => {
     // --- The pinned version, as vendor/boriel-basic/kit.json names it
     expect(result).toMatchObject({ kind: "installed", version: available ? bundled.version : "" });
   }, 60_000);
+});
+
+// --- Why the installer may leave out the Windows kits' .pdb files: no executable names one (no
+// --- CodeView "RSDS" record) or loads a library at run time, which is how a program could find one
+describe("Boriel BASIC Windows kits", () => {
+  const vendor = path.resolve(__dirname, "../../vendor/boriel-basic");
+  const manifest = JSON.parse(fs.readFileSync(path.join(vendor, "kit.json"), "utf8"));
+  for (const key of ["win32-x64", "win32-arm64"]) {
+    const archive = path.join(vendor, "kits", manifest.kits[key].file);
+    it.skipIf(!fs.existsSync(archive))(`${key}: no executable can load a .pdb`, () => {
+      const out = fs.mkdtempSync(path.join(os.tmpdir(), "klive-boriel-win-"));
+      try {
+        const exes = extractArchive(archive, out, { include: (p) => p.endsWith(".exe") });
+        expect(exes.length).toBe(9);
+        for (const exe of exes) {
+          const bytes = fs.readFileSync(path.join(out, exe.path)).toString("latin1").toLowerCase();
+          for (const marker of ["rsds", ".pdb", "loadlibrary", "dbghelp"]) {
+            expect(bytes.includes(marker), `${exe.path} contains "${marker}"`).toBe(false);
+          }
+        }
+      } finally {
+        fs.rmSync(out, { recursive: true, force: true });
+      }
+    });
+  }
 });

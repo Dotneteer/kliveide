@@ -3,20 +3,20 @@
  *
  * One translation unit: the machine state below, the TVC parts it includes, and the shared Z80 core
  * (`src/emu/z80/wasm/z80.c`) wired to them through the `Z80_*` hook macros. No heap; every buffer is
- * a static array exposed through a pointer export. The plan is `.plans/VIDEOTON_TVC_PLAN.md`; the
+ * a static array exposed through a pointer export. The decisions are in `.ai/videoton-tvc.md`; the
  * hardware facts come from `_input/videoton-tvc/` (TVC_HARDWARE_OVERVIEW.md, TVC_VIDEO_GENERATION.md,
  * TVC_CLOCK_STRETCH_FIGURES.md). The code is Klive's own.
  *
- * One artifact runs both models (plan §4.3, D2): `tvcConfigure` picks the 64K or the 64K+ at run
+ * One artifact runs both models (D2): `tvcConfigure` picks the 64K or the 64K+ at run
  * time, and the host uploads the model's ROMs.
  *
- * Time (plan §3.1, D5): `cpu.tacts` counts whole CPU T-states (320 ns). The CPU clock can be stopped
+ * Time (D5): `cpu.tacts` counts whole CPU T-states (320 ns). The CPU clock can be stopped
  * for half a T-state at a time on a video RAM access, so the machine also keeps `tvcHalfClock`, the
  * time in 160 ns units: always 2 * tacts plus the half-T phase (its lowest bit). The CRTC, the pixel
  * clocks and the sound divider run from the fixed clock tree, so they follow `tvcHalfClock`.
  *
- * The frame (plan §3.3): a machine frame ends where the CRTC starts a new frame, so it is 62,800 T
- * with the ROM's CRTC values (49.76 Hz). A frame shorter than half a nominal one is not a frame (the
+ * The frame (the core README, "Time"): a machine frame ends where the CRTC starts a new frame, so it
+ * is 62,800 T with the ROM's CRTC values (49.76 Hz). A frame shorter than half a nominal one is not a frame (the
  * CRTC is not programmed yet), and two nominal frames end one whatever the CRTC does.
  *
  * Every name is prefixed `tvc`: `z80.c` defines register macros (`A`, `F`, `HL`, ...).
@@ -30,7 +30,7 @@
 /* The CPU clock: the 25 MHz crystal divided by 8 (HW p.48-49) */
 #define TVC_CLOCK 3125000u
 
-/* The ROM's CRTC values give 100 characters x 314 lines; a character is 2 T (plan §7) */
+/* The ROM's CRTC values give 100 characters x 314 lines; a character is 2 T */
 #define TVC_NOMINAL_FRAME_TACTS 62800u
 /* In half-T units: a frame shorter than half a nominal frame is not a frame; two end one */
 #define TVC_MIN_FRAME_HALVES TVC_NOMINAL_FRAME_TACTS
@@ -39,7 +39,7 @@
 #define TVC_CHAR_HALVES 4u
 
 /*
- * The physical memory, one array: every bank the mapper can show (plan §2; rtvc/info/tvc.md
+ * The physical memory, one array: every bank the mapper can show (rtvc/info/tvc.md
  * "Memory Map"). The CPU sees it through sixteen 4K slots (`tvc-memory.c`). It is eleven 16K
  * partitions in the IDE's numbering (`TvcWasmV2Machine.ts`): U0-U3 and VID0-VID3 are partitions
  * 0-7 at 16K times their number, then SYS, CART, and EXT - the card window and EXTH in the order the
@@ -59,7 +59,7 @@
 #define TVC_PHYS_SIZE 0x31000u
 #define TVC_BANK_SIZE 0x4000u
 
-/* The TV picture (plan §7, D4): 70 characters of 8 dots, 288 lines */
+/* The TV picture (D4): 70 characters of 8 dots, 288 lines */
 #define TVC_SCREEN_WIDTH 560u
 #define TVC_SCREEN_HEIGHT 288u
 
@@ -96,7 +96,7 @@ static uint8_t tvcPort04;
 static uint8_t tvcPort05;
 static uint8_t tvcPort06;
 
-/* The shared interrupt flip-flop: cursor and sound timer (HW p.47; plan §7 "Interrupt") */
+/* The shared interrupt flip-flop: cursor and sound timer (HW p.47; the core README, "Video") */
 static uint8_t tvcItPending;
 
 /* The instruction the debugger shows (`Z80Cpu.opStartAddress`) */
@@ -140,7 +140,7 @@ static void TVC_NOINLINE tvcDelayMemory(uint16_t address, uint32_t m1);
 #define Z80_WRITE_PORT(address, value) tvcCpuWritePort((uint16_t)(address), (uint8_t)(value))
 #define Z80_DELAY_MEMORY_READ(address) tvcDelayMemory((uint16_t)(address), 0u)
 #define Z80_DELAY_MEMORY_WRITE(address) tvcDelayMemory((uint16_t)(address), 0u)
-/* Hook H1 (plan §5): an M1 stretches differently and takes the WAIT circuit's wait state */
+/* Hook H1: an M1 stretches differently and takes the WAIT circuit's wait state */
 #define Z80_DELAY_OPCODE_FETCH(address) tvcDelayMemory((uint16_t)(address), 1u)
 #define Z80_TACT_PLUS_N(value) tvcAdvanceTacts((uint32_t)(value))
 #include "../../../../z80/wasm/z80-history.h"

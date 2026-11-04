@@ -1769,9 +1769,9 @@
     "context": "Confirm button of the unsupported-version question.",
     "maxChars": 12
   },
-  "dialog.boriel.intro": "Klive comes with Boriel BASIC {version}, a ZX BASIC compiler you can use instead of Klive BASIC. Install it now? You can also do it later from Settings › Integrations.",
+  "dialog.boriel.intro": "Klive builds BASIC programs with Boriel BASIC {version}, a ZX BASIC compiler (in beta) that comes with Klive. Install it now? You can also do it later from Settings › Integrations.",
   "@dialog.boriel.intro": {
-    "context": "Opening paragraph of the Boriel BASIC setup dialog (installs or picks the external Boriel BASIC compiler) when it is offered at startup. Boriel BASIC and Klive BASIC are product names. 'Settings › Integrations' names a page of the Settings dialog; use its translated name.",
+    "context": "Opening paragraph of the Boriel BASIC setup dialog (installs or picks the external Boriel BASIC compiler) when it is offered at startup. Boriel BASIC is a product name; 'beta' means a pre-release version. 'Settings › Integrations' names a page of the Settings dialog; use its translated name.",
     "placeholders": {
       "version": "Version of the bundled compiler, shown verbatim, e.g. '2.0.0-beta25'"
     }
@@ -1866,9 +1866,9 @@
     "context": "Status in the Boriel BASIC setup dialog (installs or picks the external Boriel BASIC compiler)'s 'In use' row when Boriel BASIC is not set up.",
     "maxChars": 19
   },
-  "dialog.boriel.status.notInstalledDetail": "Klive BASIC builds your BASIC programs.",
+  "dialog.boriel.status.notInstalledDetail": "Install it to build your BASIC programs.",
   "@dialog.boriel.status.notInstalledDetail": {
-    "context": "Detail under 'Not installed' in the Boriel BASIC setup dialog (installs or picks the external Boriel BASIC compiler)'s 'In use' row: Klive's own compiler is used. Klive BASIC is a product name."
+    "context": "Detail under 'Not installed' in the Boriel BASIC setup dialog (installs or picks the external Boriel BASIC compiler)'s 'In use' row: BASIC programs cannot be built until Boriel BASIC is installed."
   },
   "dialog.boriel.status.notWorking": "Not working",
   "@dialog.boriel.status.notWorking": {

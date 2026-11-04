@@ -1,6 +1,6 @@
 /*
- * The docs' share of the website's design (decision D8, its type replaced by R1-R2 of
- * .plans/DOCS_SITE_REDESIGN_PLAN.md): the site's typefaces over Nextra's, the navbar brand, and the
+ * The docs' share of the website's design:
+ * the site's typefaces over Nextra's, the navbar brand, and the
  * numbered lists that explain screenshot markers. Colours come from Nextra's own variables, which
  * app/[lang]/layout.tsx sets to the app's palette. Headings are bold with no negative tracking, and
  * the mono face is for code only, never for labels or numbers.

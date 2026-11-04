@@ -129,7 +129,7 @@ export function createMenuTemplate(context: MenuContext): MenuItemConstructorOpt
       id: EDIT_MENU_ID,
       label: t("menu.edit.title"),
       // --- Explicit labels: a role item without one is labelled by Electron/the OS in the *OS*
-      // --- language, which would mix languages in one menu (LOCALIZATION_PLAN step 3)
+      // --- language, which would mix languages in one menu (`.ai/localization.md`)
       submenu: [
         { role: "undo", label: t("menu.edit.undo") },
         { role: "redo", label: t("menu.edit.redo") },

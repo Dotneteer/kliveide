@@ -40,7 +40,7 @@ upgraded as it is read (`src/common/utils/source-debug-upgrade.ts`), and the sam
 
 ## 2. What a producer guarantees
 
-The guarantees of Klive BASIC's plan (`.plans/ZXBASIC_COMPILER_PLAN.md` §10.2) hold for every
+The guarantees Klive BASIC was built to (`.ai/kbasic/compiler.md`, "Guarantees") hold for every
 producer: the same SP at every statement entry of an activation (G4), every user call a recorded
 call site (G5), results in their registers at the `ret` (G6), and statement entries the debugger can
 stop at (G1). The engine relies on them; the shared back end keeps them for every MIR language.

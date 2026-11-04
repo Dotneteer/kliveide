@@ -49,6 +49,17 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 /**
  * Launches Klive with an isolated home folder and returns a driver object.
  */
+/**
+ * BASIC programs build only with Boriel BASIC (`.ai/klive-basic-switch.md`): a run
+ * points it at BORIEL_ROOT, else ~/zxbasic2, unless the recipe names an installation itself.
+ */
+function withBorielRoot(userSettings) {
+  if (userSettings?.zxbasic?.root || userSettings?.zxbasic?.executablePath) return userSettings;
+  const root = process.env.BORIEL_ROOT || path.join(require("os").homedir(), "zxbasic2");
+  if (!fs.existsSync(root)) return userSettings;
+  return { ...(userSettings ?? {}), zxbasic: { ...(userSettings?.zxbasic ?? {}), root } };
+}
+
 async function launchKlive({
   home,
   width = 1280,
@@ -97,14 +108,14 @@ async function launchKlive({
   /*
    * The answer to the Boriel BASIC setup offer, as the settings file records it. The default declines
    * every version, so no offer covers the windows a recipe drives; `null` seeds nothing, so a run
-   * that checks the offer itself sees it (`.plans/BORIEL_BASIC_INTEGRATION_PLAN.md` §3.2).
+   * that checks the offer itself sees it (`.ai/boriel/integration.md`, "The installation offer").
    */
   borielSetup = { declined: true, offeredVersion: "*" },
   /*
    * The UI language (an `id` from `src/common/i18n/languages.ts`). A localized recipe runs once per
    * language and its `shot()` paths get the language as their first folder
    * (`images/<lang>/...`), so a translated page shows the IDE in its own language (R4 of
-   * `.plans/DOCS_SITE_MODERNIZATION_PLAN.md`). Unset, English, and paths are left as they are.
+   * `.ai/docs-site.md`). Unset, English, and paths are left as they are.
    */
   lang
 }) {
@@ -129,7 +140,7 @@ async function launchKlive({
         ...(accent ? { accent } : {}),
         windowStates: { showIdeOnStartup: true },
         ...sessionSettings,
-        ...(userSettings ? { userSettings } : {}),
+        ...(withBorielRoot(userSettings) ? { userSettings: withBorielRoot(userSettings) } : {}),
         globalSettings: {
           ideViewOptions: {
             showSidebar: true,
@@ -138,7 +149,7 @@ async function launchKlive({
             sideBarWidth,
             toolPanelHeight,
             // --- English, whatever the OS language, unless the recipe is localized: the docs
-            // --- show the UI in the page's language (`.plans/LOCALIZATION_PLAN.md` step 2)
+            // --- show the UI in the page's language (`.ai/localization.md`)
             language: lang ?? "en",
             i18nShowKeys: false,
             ...ideViewOptions

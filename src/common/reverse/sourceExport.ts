@@ -10,7 +10,7 @@ import { describeNonCanonical, nonCanonicalReason } from "./canonicalEncoding";
 
 /*
  * Export an annotated region as source that reassembles to the same bytes
- * (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §7, G7.6).
+ * (`.docs/reverse-engineering-tools.md`, "Export as source", G7.6).
  *
  * Pure. It walks the annotated listing (G7.1-A3) — the same rows the Disassembly view shows — and
  * turns each into a `SourceLine`; a dialect renders the lines (R11). On the way it makes every row

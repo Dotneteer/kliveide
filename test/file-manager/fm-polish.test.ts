@@ -6,7 +6,7 @@ import { intentForKey, type KeyContext } from "@renderer/appIde/DocumentPanels/F
 import { GAME_DSK, HOME, PROJECT, ROOT, file, openFileManager } from "./fakes";
 
 /*
- * The File Manager's Phase 7 (.plans/FILE_MANAGER_PLAN.md): the viewer, Edit, marking by mask, tape
+ * The File Manager's viewer and polish (`.ai/file-manager.md`): the viewer, Edit, marking by mask, tape
  * order, the right-click menu, drops and the settings.
  */
 

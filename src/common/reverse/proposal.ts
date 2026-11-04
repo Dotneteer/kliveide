@@ -14,7 +14,7 @@ import { t } from "@common/i18n/i18n";
 import { classifiedCounts, type ClassifiedRun, type ClassifyWarning, type Evidence } from "./classify";
 
 /*
- * What a detection run (or a SkoolKit import) would change (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md`
+ * What a detection run (or a SkoolKit import) would change (`.docs/reverse-engineering-tools.md`
  * §4.3, R3).
  *
  * Proposes; never applies on its own. A run counts as a change only where it can be applied:

@@ -1,5 +1,5 @@
 /**
- * Translations of the website (§4 of .plans/DOCS_SITE_MODERNIZATION_PLAN.md). Mirrors the app's
+ * Translations of the website (`.ai/docs-site.md`). Mirrors the app's
  * `i18n:todo` / `i18n:merge` / `i18n:check` workflow (src/common/i18n/locales/README.md):
  *
  *   node scripts/docs-i18n.cjs languages         Export the enabled UI languages (R1) to

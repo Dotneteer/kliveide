@@ -1,10 +1,11 @@
 import { t } from "@common/i18n/i18n";
 
 /*
- * Where injected or exported Videoton TVC code may go (`.plans/VIDEOTON_TVC_PLAN.md` §11). One set
- * of rules for Run, Inject and Export, so what Run executes is what Export writes. The layout is the
- * one TVC machine-code programs are distributed in (rtvc's `BASIC_START`): a one-line BASIC program
- * at 19EFh that calls the code with `USR`, and the code from 1A30h.
+ * Where injected or exported Videoton TVC code may go (`.ai/videoton-tvc.md`, "Run, Debug and
+ * export"). One set of rules for Run, Inject and Export, so what Run executes is what Export
+ * writes. The layout is the one TVC machine-code programs are distributed in (rtvc's
+ * `BASIC_START`): a one-line BASIC program at 19EFh that calls the code with `USR`, and the code
+ * from 1A30h.
  *
  * At BASIC's prompt the CPU sees U0-U2 at 0000h-BFFFh and the system ROM at C000h-FFFFh on both
  * models. The code must lie between 1A30h and BBFFh:

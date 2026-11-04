@@ -5,7 +5,7 @@
  * 4px in both tones.
  *
  * Two rules here are load-bearing, and both come from problems found in the audit
- * (§3.0 of .plans/UI_MODERNIZATION_PLAN.md):
+ * (`.ai/ui-design-system.md`, "The five mandates"):
  *
  * - **M1 — the type scale is absolute, never `em`.** `em` compounds, and it was already producing
  *   wrong sizes: `TapViewerPanel` set `1em` inside a `0.8em` parent and got 12.8px rather than the

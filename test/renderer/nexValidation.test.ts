@@ -13,7 +13,7 @@ import {
  *
  * Each of these turns a silent, baffling failure into a sentence: a NEX whose entry bank it does not
  * contain hands control to whatever was at `$C000` while the loader reports success. All of it is
- * decidable from the 512-byte header. See `.plans/NEX_DEBUGGING_PLAN.md` §12.
+ * decidable from the 512-byte header. See `.ai/nex-debugging.md`.
  */
 
 /** 112 flags, with the named banks present. */

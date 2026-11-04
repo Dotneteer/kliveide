@@ -5,7 +5,7 @@ import { join, relative, sep } from "node:path";
 /**
  * M1 and M2 — the two mandates that were documented as enforced and were not.
  *
- * `AGENTS.md` and `.plans/UI_MODERNIZATION_PLAN.md` §3.4 have said since Phase 0 that three rules
+ * `AGENTS.md` and the UI modernization plan said from its start that three rules
  * "have tests that will fail you": no `em` font sizes (M1), no px column widths (M2), no
  * component-private row heights (M3). Only M3 ever existed (`row-size-contract.test.ts`). Nothing
  * in the suite looked at a `font-size` or a width until this file.

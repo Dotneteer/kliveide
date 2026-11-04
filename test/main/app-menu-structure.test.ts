@@ -241,7 +241,7 @@ describe("the application menu", () => {
       "Restart",
       // --- No Speed: the Next sets its own CPU speed (MF_ALLOW_CLOCK_MULTIPLIER)
       "Sound",
-      // --- The 48K ROM's tape routines through the Next's EAR input (NEXT_TAPE_PLAN)
+      // --- The 48K ROM's tape routines through the Next's EAR input
       "Tape",
       "SD Card",
       "Input",
@@ -275,7 +275,7 @@ describe("the application menu", () => {
     expect(debugLabels).toContain("Save Debug Recording...");
     expect(debugLabels).toContain("Open Debug Recording...");
     expect(labels(menu(buildMenu("c64"), "Debug"))).not.toContain("Open Debug Recording...");
-    // --- ROM Annotations: every machine, whatever runs (ROM_ANNOTATIONS_MENU_PLAN D1)
+    // --- ROM Annotations: every machine, whatever runs
     expect(labels(menu(buildMenu("c64"), "Debug"))).toContain("ROM Annotations");
     expect(labels(menu(buildMenu("zxnext", undefined, "emu", false), "Debug"))).toContain("ROM Annotations");
     const saveItem = (template: MenuItemConstructorOptions[]) => menu(template, "Debug").find((i) => i.id === "save_debug_recording");
@@ -433,7 +433,7 @@ describe("the menu while a dialog is open", () => {
 
 
 /*
- * The menus in another language (`.plans/LOCALIZATION_PLAN.md` step 3): in the pseudo-locale every
+ * The menus in another language (`.ai/localization.md`): in the pseudo-locale every
  * label is pseudo text, except the names that are never translated (D9) - the app name, machine
  * and model names, the Z88's LCD sizes, the ROM file names of Debug › ROM Annotations. Untranslated
  * English here is a label that was missed.

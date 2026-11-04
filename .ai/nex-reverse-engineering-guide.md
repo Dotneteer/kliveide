@@ -856,5 +856,5 @@ Read these rather than trusting this summary when precision matters:
 | Bank ↔ address ↔ paging helpers | `src/renderer/appIde/DocumentPanels/Next/nextBankLocation.ts` |
 | Sidecar read/merge/write | `src/renderer/appIde/DocumentPanels/Next/nexAnnotationSidecar.ts` |
 | Product behaviour of annotations | `../.docs/annotations.md` |
-| Design history and rationale | `../.plans/NEX_DEBUGGING_PLAN.md`, `../.plans/NEX_FILE_ANNOTATIONS_PLAN.md` |
+| Design history and rationale | `../`.ai/nex-debugging.md`, `../.plans/NEX_FILE_ANNOTATIONS_PLAN.md` |
 | Commands (`nex-run`, `nex-label`) | `docs/content/commands-reference.mdx` |

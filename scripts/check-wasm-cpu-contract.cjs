@@ -204,7 +204,8 @@ const wasmCpuContract = [
     cpuAdapterSource: resolve(root, "src/emu/machines/tvc/wasm/tvc/tvc.c"),
     artifact: resolve(root, "src/emu/machines/tvc/wasm/dist/tvc.wasm"),
     include: '#include "../../../../z80/wasm/z80.c"',
-    // --- No Spectrum device: the TVC's sound and tape are its own (`.plans/VIDEOTON_TVC_PLAN.md` §10)
+    // --- No Spectrum device: the TVC's sound and tape are its own
+    // --- (`src/emu/machines/tvc/wasm/README.md`, "Sound")
     forbiddenIncludeFragments: ["zxSpectrum/wasm/common/"],
     requiredExports: ["tvcGetCpuAf", "tvcGetCpuBc", "tvcGetCpuDe", "tvcGetCpuHl", "tvcGetCpuPc", "tvcGetCpuSp"]
   },
@@ -257,14 +258,14 @@ function validateSharedCpuSource() {
       errors.push(`shared CPU source does not export: ${snoozeApi}`);
     }
   }
-  // --- Machine hooks the Sinclair ZX80/ZX81 ULA added (`.plans/ZX8081_WASM_PLAN.md` §5, C1-C3).
+  // --- Machine hooks the Sinclair ZX80/ZX81 ULA added (`.ai/zx8081.md`, "Core decisions", C1-C3).
   // --- Each must default to a no-op, so a core that does not define it is unchanged.
   for (const hookDefault of [
     "#define Z80_REFRESH(address) ((void)(address))",
     "#define Z80_INT_ACK() ((void)0)",
     "#ifdef Z80_NMI_ACK_WAIT",
-    // --- The Videoton TVC's M1 timing hook (`.plans/VIDEOTON_TVC_PLAN.md` §5, H1): compiled only
-    // --- when defined, with the old memory-read delay as the fallback on both M1 paths
+    // --- The Videoton TVC's M1 timing hook (`.ai/videoton-tvc.md`, "The shared Z80 hook H1"):
+    // --- compiled only when defined, with the old memory-read delay as the fallback on both M1 paths
     "#ifdef Z80_DELAY_OPCODE_FETCH",
     "cpu.opCode = readOpcodeMemory(cpu.pc, m1Active);",
     "delayMemoryRead((uint16_t)(cpu.pc + 1));"

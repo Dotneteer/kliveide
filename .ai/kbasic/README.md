@@ -1,12 +1,15 @@
 # Klive BASIC — reference notes for AI sessions
 
-Klive BASIC is Klive's own ZX BASIC compiler (plan: `.plans/ZXBASIC_COMPILER_PLAN.md`). This
-folder holds the facts that plan depends on, gathered once so that no later session has to
+Klive BASIC is Klive's own ZX BASIC compiler, switched off since 2026-11-04 (`../klive-basic-switch.md`).
+Its durable record (provenance rule, decisions, guarantees, as-built facts, what is open) is
+`compiler.md`; the implementation plan was closed and is in git history. This
+folder holds the facts the compiler depends on, gathered once so that no later session has to
 rediscover them — and, above all, so that no session is tempted to read upstream compiler or
 runtime source to find them.
 
 | File | What it is |
 | --- | --- |
+| `compiler.md` | The compiler's durable record: the provenance rule, decisions D1-D12 and D-C1-D-C6, guarantees G1-G6, as-built facts, readiness R1-R18, what is open, and where each section of the closed plan went ("plan §N" in these notes and in code comments). |
 | `runtime-abi.md` | The binary interface a ZX BASIC program and its libraries expect: calling conventions, data layouts, program layout, runtime entry-point contracts, assembler features upstream's runtime relies on. **Facts about interfaces only** — Klive BASIC's runtime is written from scratch to be compatible with them. |
 | `codebank-contract.md` | NextBuild's `CODEBANK` extension: syntax, rules, warnings, the far-call mechanism as a behavioural contract, build outputs, and the scenarios its examples cover. |
 | `klive-integration-map.md` | Where Klive BASIC plugs into Klive: compiler registry and output types, the existing (unused) source-level debug model, breakpoint resolution, stepping, highlighting, watch and call-stack code, language providers, templates, tests and harnesses. With file references. |
@@ -25,7 +28,7 @@ The language itself is described in `../zxbasic-syntax/` (read its README first)
   files.
 - **Running upstream is allowed; reading its code for design is not.** A locally installed `zxbc`
   may compile Klive's own test programs so their observable behaviour (screen, memory, error
-  reports) can be recorded as an oracle (plan D12, R9, `scripts/kbasic-oracle.cjs`). Commit only
+  reports) can be recorded as an oracle (D12, R9 in `compiler.md`, `scripts/kbasic-oracle.cjs`). Commit only
   those results — never the generated code — and never run it in CI. Run it as
   `node scripts/kbasic-oracle.cjs [area/name ...]`: results land in `test/kbasic/oracle/`, and the
   corpus runner then fails on any expectation upstream does not share, unless the program names the
@@ -41,4 +44,4 @@ The language itself is described in `../zxbasic-syntax/` (read its README first)
 - **The notes describe upstream as of v1.19.0** (the release `../zxbasic-syntax/` is pinned to)
   and NextBuild's fork `1.18.7-nb10`. Items marked *(unverified)* were not confirmed directly.
 - Keep these files current: when a decision or a verified fact changes, fold it in and replace
-  what it supersedes; do not keep history here (the plan's status lines are the history).
+  what it supersedes; do not keep history here (git history is the history).

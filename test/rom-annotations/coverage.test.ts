@@ -6,7 +6,7 @@ import { PF_CODE, PF_EXECUTED, PF_READ } from "@common/profile/profileTypes";
 import { createSp48Session, type Sp48TestSession } from "../harness/sp48";
 
 /*
- * The ROM annotation tools' `coverage` (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §6): runs
+ * The ROM annotation tools' `coverage` (`.docs/annotations.md` and `.ai/rom-annotations/README.md`): runs
  * the real 48K ROM through BASIC with the access profile on, and tells the ROM's code from its data
  * by what the CPU did to each byte — fetched as an opcode, or only read. It is *observation*, the
  * provenance the ROM sidecars may cite, and it is how an author finds a table without consulting a

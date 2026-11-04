@@ -1,6 +1,5 @@
 /**
- * The documentation's wording check (scripts/check-docs-prose.cjs, step 4 of
- * .plans/HALLMARK_SITE_POLISH_PLAN.md): what it reports, and the uses it must leave alone - each
+ * The documentation's wording check (scripts/check-docs-prose.cjs): what it reports, and the uses it must leave alone - each
  * exemption here was a false positive on a real page.
  */
 import { createRequire } from "node:module";

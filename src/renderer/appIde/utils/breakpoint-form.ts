@@ -272,7 +272,7 @@ export function isBankRelativeInput(text: string | undefined): boolean {
  * leave the user guessing which end to fix.
  *
  * The bank is plain hexadecimal and deliberately does **not** go through the partition label map:
- * it is a 16K bank, and the map describes 8K pages. See `.plans/NEX_DEBUGGING_PLAN.md` §4.1.
+ * it is a 16K bank, and the map describes 8K pages. See `.ai/nex-debugging.md`.
  */
 export function parseBankRelativeInput(
   text: string | undefined,

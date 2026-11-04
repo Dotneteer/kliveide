@@ -116,7 +116,7 @@ export type TraceMeta = {
 export const HISTORY_EXPORT_FOLDER = "historyExport";
 
 /** The save dialog's file types */
-/** The trace files' Save dialog filters, in the current language (a function: LOCALIZATION_PLAN D7) */
+/** The trace files' Save dialog filters, in the current language (a function: `.ai/localization.md`, D7) */
 export function traceFileFilters(): { name: string; extensions: string[] }[] {
   return [
     { name: t("common.filter.textTrace"), extensions: ["txt", "log", "trace"] },

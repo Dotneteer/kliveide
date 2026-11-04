@@ -389,7 +389,7 @@ class EmuMessageProcessor {
     }
 
     // --- A Videoton TVC tape (.cas on the TVC): turned into the tape program its core plays
-    // --- (`.plans/VIDEOTON_TVC_PLAN.md` §9)
+    // --- (`.ai/videoton-tvc.md`, "Tape, disks and files")
     if (this.machineService.getMachineController()?.machine?.machineId === MI_TVC && isTvcCasFileName(file)) {
       let tvcTape;
       try {

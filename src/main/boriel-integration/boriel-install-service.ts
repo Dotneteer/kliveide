@@ -28,7 +28,7 @@ import { compareBorielVersions } from "./boriel-version";
 
 /*
  * Installing the bundled Boriel BASIC kit and reporting on what is installed
- * (`.plans/BORIEL_BASIC_INTEGRATION_PLAN.md` §3.2-§3.5). It never deletes a folder it did not
+ * (`.ai/boriel/integration.md`, "The installer"). It never deletes a folder it did not
  * create, and an update replaces only a folder that carries Klive's marker.
  */
 
@@ -247,7 +247,13 @@ async function readInstallation(deps: BorielServiceDeps, kitVersion: string | un
 
 function extractKit(located: LocatedKit, folder: string, platform: string): void {
   const isWindows = platform === "win32";
-  extractArchive(located.archiveFile, folder, { stripComponents: 1, applyModes: !isWindows });
+  extractArchive(located.archiveFile, folder, {
+    stripComponents: 1,
+    // --- The Windows kits' .pdb files (34.5 MB of 46 MB) are never loaded: no executable has a
+    // --- CodeView record naming one or loads anything at run time (.ai/boriel/kit.md, "Layout")
+    include: (entryPath) => !entryPath.toLowerCase().endsWith(".pdb"),
+    applyModes: !isWindows
+  });
   if (isWindows) return;
   // --- The archive's own mode bits come first; this list makes sure the tools run regardless
   for (const relative of EXECUTABLES) {

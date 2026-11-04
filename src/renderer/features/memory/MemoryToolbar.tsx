@@ -33,7 +33,7 @@ type MemoryToolbarProps = {
   onGoToAddress: (address: number) => void;
   onRefreshPauseChanged: (paused: boolean) => void;
   onViewModeChanged: (viewMode: DumpViewMode) => void;
-  /** Opens the graphics finder at the top of the view (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §5.3). */
+  /** Opens the graphics finder at the top of the view (`.docs/reverse-engineering-tools.md`, "Graphics finder"). */
   onShowAsGraphics?: () => void;
 };
 

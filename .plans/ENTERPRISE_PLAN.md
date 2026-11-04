@@ -72,7 +72,8 @@ From `.ai/wasm-migration-intent-and-lessons.md` ("Shared CPU Intent", and the TV
 ### 0.3 Documents to read before working on this
 - `src/emu/z80/wasm/README.md`, before touching a hook or the debug loop.
 - `src/emu/machines/tvc/wasm/README.md`: the template core (time base, stretch, sound, tape, HBF).
-- `.plans/VIDEOTON_TVC_PLAN.md` §11–§17: the integration checklist and what was learned.
+- `.ai/videoton-tvc.md`: the integration checklist and what was learned ("Integration checklist",
+  "Open").
 - `.ai/wasm-v2-machine-migration-guide.md`, `.ai/wasm-migration-intent-and-lessons.md`.
 - `.ai/i18n-guide.md` (every UI text), `.ai/ui-theming-intent-and-lessons.md` (the virtual keyboard and
   the panels), `.ai/visual-tests-guide.md` (screen goldens), `.ai/doc-screenshots-guide.md` (Phase 10).

@@ -20,7 +20,7 @@ import { mapSymbols, type MapEntry } from "./boriel-map";
 
 /*
  * Boriel BASIC's `.dbg` (format "zx-source-debug" v1) → Klive's source-level debug model and the
- * classic tables (`.plans/BORIEL_BASIC_INTEGRATION_PLAN.md` §5). Pure but for the injected file reader.
+ * classic tables (`.ai/boriel/integration.md`, "The `.dbg` adapter"). Pure but for the injected file reader.
  *
  * The format began as Klive's proposal, so most fields carry over; what zxbc writes differently is
  * corrected here, each correction observed in Phase B0 (`.ai/boriel/dbg-observed.md`):
@@ -170,11 +170,35 @@ export function adaptBorielDebugInfo(input: DbgAdapterInput): DbgAdapterOutput {
     .sort((a, b) => a.start - b.start);
 
   // --- Statements: sorted by address, re-indexed densely, ends clamped, columns corrected
-  const raw: any[] = (sld.statements ?? []).slice().sort(
+  const sorted: any[] = (sld.statements ?? []).slice().sort(
     (a: any, b: any) => a.startAddress - b.startAddress || (a.partition ?? -1) - (b.partition ?? -1)
   );
+  // --- A block statement (`DO` … `LOOP`, a multi-line `IF`, ...) that starts at the address of the
+  // --- first statement inside it holds that statement's bytes, while the inner one is recorded
+  // --- empty (`dbg-observed.md` 16): the bytes are the inner statement's, so the block's entry is
+  // --- dropped and anything naming it (a call site) names the inner statement instead
+  const enclosedBy = new Map<any, any>();
+  for (const s of sorted) {
+    const inner = sorted.find(
+      (o) =>
+        o !== s &&
+        o.startAddress === s.startAddress &&
+        (o.partition ?? undefined) === (s.partition ?? undefined) &&
+        o.fileIndex === s.fileIndex &&
+        s.startLine <= o.startLine &&
+        s.endLine >= o.endLine &&
+        s.endLine - s.startLine > o.endLine - o.startLine
+    );
+    if (inner) enclosedBy.set(s, inner);
+  }
+  const raw = sorted.filter((s) => !enclosedBy.has(s));
   const indexOf = new Map<number, number>();
   raw.forEach((s, i) => indexOf.set(s.index, i));
+  for (const [block, inner] of enclosedBy) {
+    let target = inner;
+    while (enclosedBy.has(target)) target = enclosedBy.get(target);
+    indexOf.set(block.index, indexOf.get(target.index)!);
+  }
   // --- A modular build (`USE`) records every statement as the main program's: the routine whose
   // --- frame holds the statement's address, in the same bank, is its owner (`dbg-observed.md` 15)
   const mainRaw = entrypointIndex(rawCallables);
@@ -405,7 +429,7 @@ export function classicTables(sld: SourceLevelDebugInfo, libraryFiles: number[])
 }
 
 /**
- * The structural checks the converted data must pass (plan §5): sorted, non-overlapping statements
+ * The structural checks the converted data must pass (`.ai/boriel/integration.md`, "The `.dbg` adapter"): sorted, non-overlapping statements
  * inside their routines, and every index pointing somewhere. A non-empty answer means stepping over
  * and out could go wrong (B4 then falls back to stopping at every statement).
  */

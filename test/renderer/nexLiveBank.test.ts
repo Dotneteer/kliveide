@@ -16,7 +16,7 @@ import {
  * The live bank, and what differs from the file.
  *
  * The popped-out bank has always shown the file, which hides the one thing a debugger most wants:
- * what the program did to the bank after it was loaded. See `.plans/NEX_DEBUGGING_PLAN.md` §11.3.
+ * what the program did to the bank after it was loaded. See `.ai/nex-debugging.md`.
  */
 
 const HALF = 0x2000;

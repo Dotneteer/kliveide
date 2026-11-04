@@ -69,7 +69,7 @@ type FileEntries = {
 
 /**
  * Blocks a +3DOS file system lives in other than a `.dsk`'s tracks: an IDEDOS partition of a hard
- * disk (`idedos.ts`, `.plans/FILE_MANAGER_PLAN.md` Phase 9), read and written in place
+ * disk (`idedos.ts`, `.ai/file-manager.md`), read and written in place
  */
 export interface Plus3BlockStore {
   readonly spec: Plus3DosSpec;

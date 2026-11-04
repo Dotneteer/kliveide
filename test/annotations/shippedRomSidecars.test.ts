@@ -18,7 +18,7 @@ import { canonicalShippedSidecar } from "@common/roms/romSidecarPaths";
 
 /*
  * Every shipped ROM sidecar (`src/public/roms/*.rom.dis`), checked as §7 of
- * `.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` asks. Unit tier: they need the ROM bytes and
+ * `.docs/annotations.md` asks. Unit tier: they need the ROM bytes and
  * Klive's disassembler, not a core.
  */
 

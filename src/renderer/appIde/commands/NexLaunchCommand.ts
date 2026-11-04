@@ -47,7 +47,7 @@ export type LaunchNexCommandArgs = {
  * The command needs no project, which is the point: the Explorer menu and the NEX viewer both reach
  * it, and so does a script.
  *
- * See `.plans/NEX_DEBUGGING_PLAN.md` §8.
+ * See `.ai/nex-debugging.md`.
  */
 export class LaunchNexCommand extends IdeCommandBase<LaunchNexCommandArgs> {
   readonly id = "nex-run";
@@ -192,19 +192,34 @@ export class LaunchNexCommand extends IdeCommandBase<LaunchNexCommandArgs> {
   }
 
   /**
-   * The source-level debug info of the NEX's sidecar (`<name>.nex.kbasic-debug.json`), when there
-   * is one written for this very build; a sidecar that is there but unusable is reported.
+   * The source-level debug info of the NEX's sidecar (`<name>.nex.kbasic-debug.json`), or else of
+   * the zxbc `.dbg` beside a `.nex` Boriel BASIC built outside Klive, when there is one written for
+   * this very build; one that is there but unusable is reported.
    */
   private async readSourceDebug(
     context: IdeCommandContext,
     hostPath: string
   ): Promise<{ info: SourceLevelDebugInfo; program?: SidecarProgram } | undefined> {
-    const sidecarPath = sourceDebugSidecarPath(hostPath);
+    let sidecarPath = sourceDebugSidecarPath(hostPath);
     let text: string;
     try {
       text = await context.mainApi.readTextFile(sidecarPath);
     } catch {
-      return undefined; // --- No sidecar: a NEX from another tool, debugged at Z80 level
+      // --- No Klive sidecar: a .nex zxbc built outside Klive may have its .dbg beside it; else a
+      // --- NEX from another tool, debugged at Z80 level
+      let boriel: Awaited<ReturnType<typeof context.mainApi.borielNexDebug>>;
+      try {
+        boriel = await context.mainApi.borielNexDebug(hostPath);
+      } catch {
+        return undefined;
+      }
+      if (!boriel) return undefined;
+      sidecarPath = boriel.dbgFile;
+      if ("error" in boriel) {
+        writeMessage(context.output, t("commands.nexLaunch.sidecarUnused", { file: sidecarPath, error: boriel.error }), "yellow");
+        return undefined;
+      }
+      text = boriel.sidecar;
     }
     try {
       const nex = await context.mainApi.readBinaryFile(hostPath);

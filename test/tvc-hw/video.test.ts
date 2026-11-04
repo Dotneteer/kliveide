@@ -4,7 +4,7 @@ import { createTvcSession } from "../harness/tvc";
 import { bareMachine, beam, PAL, PAPER_LEFT, PAPER_TOP, paperDots, pixel, pokePaper, RGB, stepUntil, writeCrtc, ROM_CRTC } from "./bare";
 
 /*
- * The TVC video path (`.plans/VIDEOTON_TVC_PLAN.md` §7; every fact from
+ * The TVC video path (`src/emu/machines/tvc/wasm/README.md`, "Video"; every fact from
  * `_input/videoton-tvc/TVC_VIDEO_GENERATION.md`, the part named in each test).
  */
 

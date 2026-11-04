@@ -5,7 +5,7 @@
 
 const fs = require("fs");
 
-// --- One colour per source across the series (.plans/NEXT_AUDIO_ARTICLES_PLAN.md §0.3)
+// --- One colour per source across the series
 const BEEPER = "#3b82f6"; // beeper, EAR, MIC, tape
 const PSG = "#e8912d"; // AY/YM chips (TurboSound)
 const DAC = "#30a46c"; // 8-bit DACs

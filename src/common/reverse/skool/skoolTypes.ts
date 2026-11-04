@@ -1,5 +1,5 @@
 /*
- * The shape a SkoolKit skool or control file is read into (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md`
+ * The shape a SkoolKit skool or control file is read into (`.docs/reverse-engineering-tools.md`
  * §6.1, §6.4).
  *
  * **Provenance (R7).** SkoolKit is GPL-3 Python. These types, the parsers and the writers are

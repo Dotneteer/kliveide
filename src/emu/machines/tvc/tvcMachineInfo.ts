@@ -5,7 +5,7 @@ import type { TvcRomSetId } from "./TvcRoms";
 
 /**
  * The Videoton TV Computer: its models and the facts the host, the core and the renderer share
- * (`.plans/VIDEOTON_TVC_PLAN.md` §4.3, D2).
+ * (`.ai/videoton-tvc.md`, "Decisions", D2).
  */
 
 /** The CPU clock: the 25 MHz crystal divided by 8 */
@@ -52,7 +52,7 @@ export const TVC_PARTITION_HBF_RAM = -8;
 /**
  * The loop BASIC waits for a key in at its prompt, with SYS in page 3: 1.2's at D61Bh (inside KB_CHIN,
  * D618h, which loads HL with 0BE5h first), 2.2's at CA9Fh. Behaviour facts read from the ROMs
- * (`.plans/VIDEOTON_TVC_PLAN.md` §0.1).
+ * (`.ai/videoton-tvc.md`, "Provenance").
  */
 export const TVC12_KEY_WAIT_LOOP = 0xd61b;
 export const TVC22_KEY_WAIT_LOOP = 0xca9f;

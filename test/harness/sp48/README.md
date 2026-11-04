@@ -2,7 +2,7 @@
 
 Scripts one real ZX Spectrum 48K — the WASM core the app runs, with the real 48K ROM
 (`src/public/roms/sp48.rom`) — from a vitest test. Built for Klive BASIC's execution tests
-(`.plans/ZXBASIC_COMPILER_PLAN.md` §13.2), which need a machine whose ROM and system variables are
+(`.ai/kbasic/compiler.md`, "Testing and tools"), which need a machine whose ROM and system variables are
 in the state BASIC leaves them in. Its sibling for the Next is `../zxnext/` (read that README for
 the conventions this one follows).
 

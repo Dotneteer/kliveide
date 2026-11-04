@@ -34,7 +34,7 @@ import { bankPartitions, joinBankHalves, machineHasRun, sameBankBytes } from "./
  * exactly the cadence this wants — the answer only matters when the user is looking at a paused
  * machine, and polling the MMU every frame while it runs would be waste.
  *
- * See `nextBankLocation.ts` for what the answer means, and `.plans/NEX_DEBUGGING_PLAN.md` §11.2.
+ * See `nextBankLocation.ts` for what the answer means, and `.ai/nex-debugging.md`.
  */
 export function useNexBankLocation(bank: number | undefined): BankPlacement[] | undefined {
   const emuApi = useEmuApi();
@@ -150,7 +150,7 @@ export function useNexLiveBankBytes(
  * `placements` comes from `useNexBankLocation`, so this asks nothing of the emulator that the header
  * is not already asking: one cheap CPU-state read per tick, and only while paused.
  *
- * See `.plans/NEX_DEBUGGING_PLAN.md` §11.4.
+ * See `.ai/nex-debugging.md`.
  */
 export function useNexBankPcOffset(
   placements: BankPlacement[] | undefined

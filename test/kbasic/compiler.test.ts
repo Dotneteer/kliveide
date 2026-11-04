@@ -178,7 +178,8 @@ describe("the zxbas compiler", () => {
   });
   afterAll(() => fs.rmSync(folder, { recursive: true, force: true }));
 
-  it("defaults to Klive BASIC; 'boriel' (or the old 'zxbc') selects Boriel BASIC", () => {
+  // --- KLIVE-BASIC-OFF: the switch is off (`.ai/klive-basic-switch.md`); restore with it
+  it.skip("defaults to Klive BASIC; 'boriel' (or the old 'zxbc') selects Boriel BASIC", () => {
     expect(selectedZxBasicCompiler(undefined)).toBe("klive");
     expect(selectedZxBasicCompiler(state({}))).toBe("klive");
     expect(selectedZxBasicCompiler(state({ zxbasic: { compiler: "klive" } }))).toBe("klive");
@@ -186,6 +187,13 @@ describe("the zxbas compiler", () => {
     // --- The removed 1.x integration's value keeps an external compiler: Boriel BASIC 2.x
     expect(selectedZxBasicCompiler(state({ zxbasic: { compiler: " ZXBC " } }))).toBe("boriel");
     expect(selectedZxBasicCompiler(state({ zxbasic: { compiler: "something" } }))).toBe("klive");
+  });
+
+  it("selects Boriel BASIC whatever the setting says while Klive BASIC is switched off", () => {
+    for (const compiler of [undefined, "klive", "boriel", " ZXBC ", "something"]) {
+      expect(selectedZxBasicCompiler(state(compiler === undefined ? {} : { zxbasic: { compiler } }))).toBe("boriel");
+    }
+    expect(selectedZxBasicCompiler(undefined)).toBe("boriel");
   });
 
   it("checks in the background: diagnostics only", async () => {
@@ -290,7 +298,9 @@ describe("the zxbas compiler", () => {
     compiler.setAppState(state({}, machineId));
     const template = path.join(__dirname, "../../src/public/project-templates", templateMachine, "zx-basic/code/program.zxbas");
     const output = (await compiler.compileFile(template)) as DebuggableOutput & { modelType: number; nexConfig?: { filename?: string } };
-    expect(output.errors).toEqual([]);
+    // --- The 128K and Next templates end with an empty DO/LOOP on purpose, so their output stays on
+    // --- the screen (`.ai/boriel/integration.md`, "Editor, settings and status bar"): W130 says so
+    expect(output.errors?.filter((e) => e.errorCode !== "W130")).toEqual([]);
     expect(output.modelType).toBe(modelType);
     if (modelType === 4) expect(output.nexConfig?.filename).toBe("program.nex");
   });
@@ -323,7 +333,8 @@ describe("the zxbas compiler", () => {
     expect(output.errors?.map((e) => e.errorCode)).toEqual(["K002"]);
   });
 
-  it("dispatches to Klive BASIC by default", async () => {
+  // --- KLIVE-BASIC-OFF: the switch is off (`.ai/klive-basic-switch.md`); restore with it
+  it.skip("dispatches to Klive BASIC by default", async () => {
     const dispatcher = new ZxBasicDispatcher();
     dispatcher.setAppState(state({}));
     expect(dispatcher.language).toBe("zxbas");
@@ -332,10 +343,11 @@ describe("the zxbas compiler", () => {
     expect(await dispatcher.lineCanHaveBreakpoint("PRINT 1")).toBe(true);
   });
 
-  it("hands requests to Boriel BASIC when it is selected", async () => {
+  it("hands every request to Boriel BASIC", async () => {
     const dispatcher = new ZxBasicDispatcher();
-    dispatcher.setAppState(state({ zxbasic: { compiler: "boriel" } }));
-    // --- Breakpoints follow Klive BASIC's rule (Boriel plan B3); no zxbc set up, so a check says so
+    dispatcher.setAppState(state({ zxbasic: { compiler: "klive" } }));
+    // --- Klive BASIC is switched off: even a project that asks for it builds with Boriel BASIC
+    // --- Breakpoints follow Klive BASIC's rule; no zxbc set up, so a check says so
     expect(await dispatcher.lineCanHaveBreakpoint("PRINT 1")).toBe(true);
     expect(await dispatcher.lineCanHaveBreakpoint("' a comment")).toBe(false);
     const output = await dispatcher.checkFile(path.join(folder, "bad.bas"));

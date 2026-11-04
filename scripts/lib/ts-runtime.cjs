@@ -3,7 +3,7 @@
  * build sees them: an esbuild transform for `.ts` files, the `@common/...`-style path aliases, and
  * extension-less relative imports resolved to `.ts` (or `/index.ts`).
  *
- * Shared by the scripts that run TypeScript from `src/` (`rom-annotations.cjs`, `rom-pipeline.cjs`,
+ * Shared by the scripts that run TypeScript from `src/` (`rom-annotations.cjs`,
  * `rom-annotations-carry.cjs`, the benchmarks, `build-next-sd-image.cjs`). Registering twice is a
  * no-op. `benchmark-zxnext-wasm.cjs` keeps its own loader: it needs decorators, JSX and DOM shims.
  */

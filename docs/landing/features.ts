@@ -29,7 +29,7 @@ export const FEATURES: Feature[] = [
     id: "basicDebug",
     since: "0.63.0",
     image: { localized: "get-started/basic-debug.webp" },
-    more: { area: "guides", rest: "languages/klive-basic/" }
+    more: { area: "guides", rest: "languages/boriel-basic/" }
   },
   {
     id: "timeTravel",
@@ -80,8 +80,7 @@ export const SHOWN_FEATURES = 5;
  *
  * A slide with a `video` (a path under public/images) plays it, with `image` as its poster: the
  * reverse-debugging loop comes from `scripts/doc-shots/recipes/landing-reverse.cjs`, recorded with
- * Klive's own IDE + Emulator recording. It is the first slide, the page's signature
- * (.plans/HALLMARK_SITE_POLISH_PLAN.md, H9).
+ * Klive's own IDE + Emulator recording. It is the first slide, the page's signature.
  */
 export type HeroSlide = { image: Feature["image"]; video?: string; caption: string; width: number; height: number };
 

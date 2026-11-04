@@ -8,8 +8,9 @@ import { parseTvcCasFile } from "@emu/machines/tvc/TvcCasFile";
 import { aState, anEnv } from "./fakes";
 
 /**
- * The Export dialog and the `.cas` on the Videoton TVC (`.plans/VIDEOTON_TVC_PLAN.md` §11): `.cas`
- * first, then HEX, and none of the Spectrum's loader options; the file is a program LOAD runs.
+ * The Export dialog and the `.cas` on the Videoton TVC (`.ai/videoton-tvc.md`, "Run, Debug and
+ * export"): `.cas` first, then HEX, and none of the Spectrum's loader options; the file is a
+ * program LOAD runs.
  */
 const tvc = (settings: Record<string, unknown> = {}) =>
   aState({ settings: { exportName: "game", ...settings } }, anEnv({ formats: TVC_FORMAT_OPTIONS }));

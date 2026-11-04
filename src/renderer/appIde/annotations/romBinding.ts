@@ -1,7 +1,7 @@
 import type { BankAnnotation } from "./programAnnotations";
 
 /*
- * Byte binding (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §5.3).
+ * Byte binding (`.docs/annotations.md`, "ROM Annotations").
  *
  * A shipped ROM sidecar describes the bytes of one ROM. Applied to another — the 128K's ROM 1, which
  * is mostly the 48K ROM; a user's patched 48K ROM; a TC2048 — a label may only name code that is

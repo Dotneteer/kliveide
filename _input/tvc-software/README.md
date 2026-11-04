@@ -2,7 +2,7 @@
 
 Downloaded 2026-10-30 from the Hungarian TVC community archive,
 <https://tvc.homeserver.hu/cas/> (the "Videoton TVC Game Library" the Wikipedia article links to).
-Test input for `.plans/VIDEOTON_TVC_PLAN.md` (§9 tape and the HBF card).
+Test input for the Videoton TVC (tapes, and disks on the HBF card; `.ai/videoton-tvc.md`).
 
 **This folder is in the repository only for a while, at the project author's decision, for testing
 the TVC.** Most of it is 1980s commercial or magazine software that the community archive

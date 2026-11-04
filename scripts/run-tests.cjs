@@ -8,7 +8,7 @@
  * which it passed on this machine. A tier whose fingerprint still matches is skipped and says so.
  *
  * The slowest e2e files form a tier of their own, `e2e-slow`, which only runs when asked for: when a
- * plan is about to complete and before a release is prepared (`.plans/FAST_SLOW_TEST_TIERS_PLAN.md`).
+ * plan is about to complete and before a release is prepared.
  *
  *   npm test                   unit + changed fast e2e tiers (never the slow tier)
  *   npm test -- <args>         any vitest arguments, run as given across every tier but the slow one
@@ -150,7 +150,7 @@ function projectArgs(list) {
 
 /**
  * Whether the slow tier passed on the current inputs. `release:prepare` warns on a stale one; it
- * does not run the tier itself (`.plans/FAST_SLOW_TEST_TIERS_PLAN.md` D3).
+ * does not run the tier itself.
  */
 function slowStatus() {
   const tier = TIERS.find((t) => t.slow);

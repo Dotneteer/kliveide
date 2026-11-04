@@ -73,7 +73,7 @@ const STK_CONSTS = ["stk-zero", "stk-one", "stk-half", "stk-pi/2", "stk-ten"];
 const ZX81_REPORT_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 /**
- * Custom disassembler for the ZX81 (`.plans/ZX8081_WASM_PLAN.md` §11): `RST $08` is followed by an
+ * Custom disassembler for the ZX81 (`.ai/zx8081.md`, "Files, tape and the IDE"): `RST $08` is followed by an
  * error-code byte, and `RST $28` enters the calculator, whose literals run until `end-calc` ($34).
  */
 export class Zx81CustomDisassembler implements ICustomDisassembler {

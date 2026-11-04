@@ -5,9 +5,9 @@ import { createTvcSession, type TvcTestSession } from "../harness/tvc";
 import { writeShotIfAsked } from "./bare";
 
 /*
- * Booting BASIC 1.2 on the TVC 64K (`.plans/VIDEOTON_TVC_PLAN.md` Phase 2): the ROM tests the RAM,
- * shows the VIDEOTON sign-on, takes a key, and prints its banner and `ok`. The picture hash was
- * recorded after the picture was checked by eye ("TV COMPUTER BASIC 1.2", "Copyright 1985
+ * Booting BASIC 1.2 on the TVC 64K (`.ai/videoton-tvc.md`, "IDE integration"): the ROM tests the
+ * RAM, shows the VIDEOTON sign-on, takes a key, and prints its banner and `ok`. The picture hash
+ * was recorded after the picture was checked by eye ("TV COMPUTER BASIC 1.2", "Copyright 1985
  * VIDEOTON", "42255 bytes free", "ok" and the block cursor, green on black).
  */
 

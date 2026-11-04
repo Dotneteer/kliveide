@@ -1,7 +1,7 @@
 import { NEXT_ROM_SETS, type NextRomSet, type NextRomSetId } from "@common/zxnext/romSets";
 
 /*
- * The ZX Spectrum Next models (`.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` D1, D2).
+ * The ZX Spectrum Next models (`.ai/zxnext-models.md` D1, D2).
  *
  * A model is a *Next profile*: a board and a core version, each with its own WASM artifact, VHDL
  * reference, NextReg set, ROM set and SD card. Everything that depends on "which Next" reads it

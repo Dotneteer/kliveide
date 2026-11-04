@@ -192,7 +192,7 @@ describe("label-anchored breakpoints are not stored as bank offsets", () => {
      * `isBankRelative` would store it as a bare bank and offset — losing the label that is its
      * identity, and reloading as a different kind of breakpoint that no longer follows its label.
      * Storing them properly needs its own sidecar field; being session-lived is honest, a lossy
-     * save is not. See `.plans/NEX_DEBUGGING_PLAN.md` §13.2.
+     * save is not. See `.ai/nex-debugging.md`.
      */
     const labelBp: BreakpointInfo = {
       label: "DrawSprite",
@@ -227,7 +227,7 @@ describe("label-anchored breakpoints are not stored as bank offsets", () => {
  * resolution finds where it points. Storing an offset would make one a bank breakpoint that happened
  * to be named, and it would stop meaning the same thing the moment the code moved.
  *
- * See `.plans/NEX_DEBUGGING_PLAN.md` §13.2.
+ * See `.ai/nex-debugging.md`.
  */
 
 function labelBp(over: Partial<BreakpointInfo> = {}, sidecar = SIDECAR): BreakpointInfo {

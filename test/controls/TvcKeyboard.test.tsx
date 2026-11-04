@@ -1,8 +1,9 @@
 /**
- * The Videoton TVC virtual keyboard (`.plans/VIDEOTON_TVC_PLAN.md` §8), drawn from a photo of a
- * TVC 64K: every matrix key is on it once (SHIFT twice), the legends are the machine's, and each
- * zone sends what it shows - the face holds the key (SHIFT too on the right button), the printed
- * shifted legend holds SHIFT with it, the joystick's directions and knob are the row-8 keys.
+ * The Videoton TVC virtual keyboard (`.ai/videoton-tvc.md`, "Keyboard and typing"), drawn from a
+ * photo of a TVC 64K: every matrix key is on it once (SHIFT twice), the legends are the machine's,
+ * and each zone sends what it shows - the face holds the key (SHIFT too on the right button), the
+ * printed shifted legend holds SHIFT with it, the joystick's directions and knob are the row-8
+ * keys.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent } from "@testing-library/react";

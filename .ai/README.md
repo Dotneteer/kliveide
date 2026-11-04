@@ -22,6 +22,16 @@ This folder stores durable notes for future AI-assisted work in this repository.
   producing raw and annotated listings, the official Next register and I/O port
   references in `vendor/next-fpga/3.02.01/` and how to query them, and the rules that stop a
   hand-written sidecar destroying the breakpoints stored beside the annotations.
+- **Before any style, token or theme work**, after `ui-theming-intent-and-lessons.md`, read `ui-design-system.md` (the token layers, the five mandates, the accents and their numbers, the derived themes).
+- **Before changing the in-core debug loop or a core's debug path, read `wasm-core-debug.md`** (decisions D1-D14, traps T1-T11, the measured budgets) beside `src/emu/z80/wasm/README.md`.
+- **Before changing the ZX80/ZX81, read `zx8081.md`** (the core's and the machine code's decisions, provenance, the virtual keyboard, open items) beside the core's README.
+- **Before changing the Videoton TVC, read `videoton-tvc.md`** (decisions D1-D7, provenance, open hardware questions Q1-Q9, as-built notes, open items) beside the core's README.
+- **Before adding a ZX Spectrum Next model or a behaviour that depends on the core version or board, read `zxnext-models.md`;** for the Next's real-time clock options, `zxnext-rtc.md`.
+- **Before changing NEX debugging (`DebugSupport`, the breakpoint model, `DocumentPanels/Next/`, `nex-run`), read `nex-debugging.md`.**
+- **Before changing the File Manager (`src/main/file-manager/`, `src/common/diskfs/`), read `file-manager.md`.**
+- **Before changing the website or its documentation structure, read `docs-site.md`** (the rules
+  R1-R7 and decisions the docs code and checks cite). **To turn Klive BASIC back on, read
+  `klive-basic-switch.md`.**
 - **Before writing anything into a shipped ROM sidecar (`src/public/roms/*.rom.dis`), read
   `rom-annotations/README.md` and `rom-annotations/PROVENANCE.md`.** The ROM annotations are
   written from scratch (decision D4): no commented ROM disassembly may be copied or consulted,
@@ -48,7 +58,8 @@ This folder stores durable notes for future AI-assisted work in this repository.
   existing sections, replace what it supersedes, and keep no history: that file
   is a standing brief, not a log.
 - **Before any work on ZX BASIC (Boriel BASIC) language support — Klive BASIC (the Klive-native
-  compiler, `.plans/ZXBASIC_COMPILER_PLAN.md`), the Monaco language provider, or checking a new
+  compiler, `kbasic/compiler.md`, switched off since 2026-11-04 by
+  `.ai/klive-basic-switch.md`), the Monaco language provider, or checking a new
   upstream release — read `zxbasic-syntax/README.md` and `kbasic/README.md`.**
   `zxbasic-syntax/zxbasic-syntax.json` is Klive's own description of the language and the only
   language reference to use. `kbasic/` holds the runtime ABI, the CODEBANK contract, the
@@ -57,8 +68,9 @@ This folder stores durable notes for future AI-assisted work in this repository.
   facts. `node scripts/zxbasic-syntax-check.cjs` says whether a new upstream release changed
   anything the spec describes.
 - **Before any work on the external Boriel BASIC 2.x integration (`zxbc`, the `.dbg` adapter, the
-  bundled setup kit, `.plans/BORIEL_BASIC_INTEGRATION_PLAN.md`), read `boriel/README.md`.** It
-  records what the pinned kit actually does: the macOS first-launch trap, the command line and
+  bundled setup kit), read `boriel/README.md`.** `boriel/integration.md` is how the integration
+  is built, `boriel/technical-debt.md` what is still open. The notes record what the pinned kit
+  actually does: the macOS first-launch trap, the command line and
   diagnostics, the `.dbg` corrections the adapter needs, and the run-time data layouts verified on
   the 48K harness.
 - **Before writing any test of ZX Spectrum Next hardware behaviour, read

@@ -17,7 +17,7 @@ export const NEXT_ANNOTATION_SCHEMA_VERSION = 2;
  *
  * **3** added `machine`. A Next sidecar never carries it and stays at 2, byte for byte, so a build
  * that reads only `[1, 2]` keeps opening every NEX sidecar — and refuses a 48K one instead of
- * reading its banks as Next banks. See `.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` A6.
+ * reading its banks as Next banks. See `.docs/annotations.md`.
  */
 export const MACHINE_ANNOTATION_SCHEMA_VERSION = 3;
 
@@ -99,7 +99,7 @@ export type AnnotationRegionType =
  * bit 7 set on its last character, listed as `.defc` rows (the Spectrum ROMs' keyword and message
  * tables); `fill` is runs of one repeated byte, listed as `.fillb count,value` rows (padding and
  * unused space); `graphic` is bytes laid out by the bank's matching `graphics` entry
- * (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §3).
+ * (`.docs/annotations.md`, "The Reverse-Engineering Tools' Keys").
  */
 export type DecodedRegionType = Extract<AnnotationRegionType, "copper" | "dma" | "text" | "defc" | "fill" | "graphic">;
 
@@ -438,7 +438,7 @@ export type SidecarBreakpointFilters = {
  * would make it a bank breakpoint that happened to be named, and it would stop meaning the same
  * thing the moment the code moved.
  *
- * `bank` absent means a **global** label. See `.plans/NEX_DEBUGGING_PLAN.md` §13.2.
+ * `bank` absent means a **global** label. See `.ai/nex-debugging.md`.
  */
 export type SidecarLabelBreakpoint = SidecarBreakpointFilters & {
   label: string;
@@ -453,7 +453,7 @@ export type SidecarLabelBreakpoint = SidecarBreakpointFilters & {
  * Saved **independently of the annotations beside it**, and on a different policy: annotation edits
  * are written when the user asks, while a breakpoint is written the moment it is set — a breakpoint
  * lost because nobody pressed Save is a bug, not a policy. Both writers read-merge-write over
- * disjoint keys, so neither can clobber the other. See `.plans/NEX_DEBUGGING_PLAN.md` §4.5.
+ * disjoint keys, so neither can clobber the other. See `.ai/nex-debugging.md`.
  */
 export type AnnotationDebugState = {
   breakpoints?: SidecarBreakpoint[];

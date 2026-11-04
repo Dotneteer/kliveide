@@ -1,5 +1,5 @@
 /**
- * The pure logic of Klive's changesets and releases (.plans/RELEASE_AUTOMATION_PLAN.md): parsing
+ * The pure logic of Klive's changesets and releases (.ai/release-guide.md): parsing
  * and validating `.changes/*.md`, the version a set of changesets asks for, assembling a
  * CHANGELOG section, and reading one back. No file system, git or network here; `changes.cjs`
  * and `release.cjs` do the I/O, and the tests call this module directly.

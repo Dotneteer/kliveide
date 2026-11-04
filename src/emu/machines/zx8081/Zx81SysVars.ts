@@ -2,7 +2,7 @@ import { SysVar, SysVarType } from "@abstractions/SysVar";
 
 /*
  * The ZX81's system variables, for the System Variables panel and for naming the operands that
- * read them (`ld hl,(E_LINE)`) — `.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §4.7.
+ * read them (`ld hl,(E_LINE)`) — `.docs/annotations.md`, "The ZX80 and ZX81"
  *
  * Recorded from the ZX81 BASIC Programming manual's table of system variables (chapter 28): the
  * addresses, names and sizes are interface facts of the machine, and the descriptions are Klive's

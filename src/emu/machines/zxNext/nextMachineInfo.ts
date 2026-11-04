@@ -21,7 +21,7 @@ const toHexa4 = (value: number) => (value & 0xffff).toString(16).toUpperCase().p
 
 /*
  * The code-injection flow waits in NextZXOS's key-wait loop in ROM 0. Its addresses are facts about
- * the ROM set (`nextRomSets.json`, `.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` D6); in NextZXOS 2.08:
+ * the ROM set (`nextRomSets.json`, `.ai/zxnext-models.md` D6); in NextZXOS 2.08:
  *
  *   $1202: HALT
  *   $1203: LD HL,$5C3B      ; FLAGS

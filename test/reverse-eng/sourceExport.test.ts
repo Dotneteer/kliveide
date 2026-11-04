@@ -6,7 +6,7 @@ import { compareAssembly, exportSource, isAssemblableName, kliveDialect } from "
 import { parseAnnotations, type ProgramAnnotations } from "@renderer/appIde/annotations/programAnnotations";
 
 /*
- * Export as source (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §7, §8 G7.6): every region type,
+ * Export as source (`.docs/reverse-engineering-tools.md`, "Export as source", "Tests worth knowing", G7.6): every region type,
  * names, externals and skip modes — and the round trip on real bytes: export, assemble with
  * Klive's own assembler, get the same bytes.
  */

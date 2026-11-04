@@ -28,7 +28,7 @@ const ZX8081_VOLATILE_SYMBOLS = [
   ...debugLoopVolatileSymbols("zx8081"),
   ...Z80_ACCESS_LOG_VOLATILE_SYMBOLS,
   // --- The rest of the IDE's bus record, and whether it is being recorded: a fast frame records it only
-  // --- near its end, a debug run always (WASM_CORE_LEAN_AND_DEBUG_PLAN Phase 1), so it is no state
+  // --- near its end, a debug run always (`.ai/wasm-core-debug.md`), so it is no state
   "zx8081OpStartAddress",
   "zx8081CaptureBusEvents",
   // --- The execution-history ring, and whether the last M1 read a forced NOP (EXECUTION_HISTORY_ALL_CORES_PLAN)
@@ -39,7 +39,7 @@ const ZX8081_VOLATILE_SYMBOLS = [
 ];
 
 /*
- * Builds the Sinclair ZX80/ZX81 full-machine WASM core (`.plans/ZX8081_WASM_PLAN.md`).
+ * Builds the Sinclair ZX80/ZX81 full-machine WASM core (`src/emu/machines/zx8081/wasm/README.md`).
  *
  * The same shape as the Z88 build: plain clang for wasm32 (no Emscripten), one translation unit, a
  * fixed linear memory, and an explicit export allow-list. Builds of the production artifact are

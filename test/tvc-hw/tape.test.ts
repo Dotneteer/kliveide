@@ -5,7 +5,7 @@ import { buildTvcCasFile, parseTvcCasFile } from "@emu/machines/tvc/TvcCasFile";
 import { pictureHash, writeShotIfAsked } from "./bare";
 
 /*
- * The TVC's tape with the real BASIC 1.2 ROM (`.plans/VIDEOTON_TVC_PLAN.md` §9): SAVE is recorded
+ * The TVC's tape with the real BASIC 1.2 ROM (`src/emu/machines/tvc/wasm/README.md`, "Tape"): SAVE is recorded
  * from the output toggles and decoded to a `.cas`; LOAD reads a `.cas` played as its signal. The
  * ROM does all the coding: nothing is trapped.
  */

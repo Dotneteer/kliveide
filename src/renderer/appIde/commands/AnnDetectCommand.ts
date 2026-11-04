@@ -54,7 +54,7 @@ export function parseDetectionScope(target: string | number | undefined): Detect
 
 /**
  * `ann-detect`: classify bytes as code or data from code coverage, and propose regions for the
- * active annotations (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §4.6, G7.3).
+ * active annotations (`.docs/reverse-engineering-tools.md`, "Code/data detection", G7.3).
  *
  * Without `-apply` it only reports, in the output and a result document. With `-apply` it writes the
  * proposal as one update; `-undo` puts back what the last apply replaced, and `-mode clear` removes

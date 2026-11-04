@@ -2512,7 +2512,7 @@
     ]
   },
   "semantics": {
-    "$comment": "The semantics annex (plan R8): one entry per behaviour question the syntax does not answer. status: 'decided' (settled), 'provisional' (implemented and tested, to be confirmed against the zxbc oracle, D12), or 'open' (to settle by the given phase). source: 'docs' (upstream documentation), 'oracle' (observed zxbc behaviour) or 'klive-decision'. Every decided or provisional entry names the test that pins it. 'oracle' records what zxbc 1.19 did where it differs from the decision (scripts/kbasic-oracle.cjs, test/kbasic/oracle/).",
+    "$comment": "The semantics annex (R8 of the compiler, .ai/kbasic/compiler.md): one entry per behaviour question the syntax does not answer. status: 'decided' (settled), 'provisional' (implemented and tested, to be confirmed against the zxbc oracle, D12), or 'open' (to settle by the given phase). source: 'docs' (upstream documentation), 'oracle' (observed zxbc behaviour) or 'klive-decision'. Every decided or provisional entry names the test that pins it. 'oracle' records what zxbc 1.19 did where it differs from the decision (scripts/kbasic-oracle.cjs, test/kbasic/oracle/).",
     "entries": [
       {
         "name": "argument-evaluation-order",
@@ -2540,7 +2540,7 @@
         "source": "klive-decision",
         "phase": 8,
         "test": "test/kbasic/compat/compat.test.ts",
-        "oracle": "zxbc 1.19 removes a variable that no BASIC code uses even when inline asm names it: '_name' of such a global is an undefined label, and a local's frame bytes hold leftover values. Klive keeps the variable (D-C2 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
+        "oracle": "zxbc 1.19 removes a variable that no BASIC code uses even when inline asm names it: '_name' of such a global is an undefined label, and a local's frame bytes hold leftover values. Klive keeps the variable."
       },
       {
         "name": "beep-limits",
@@ -2559,7 +2559,7 @@
         "decision": "It converts the operand to Long (flooring) and complements it: BNOT 2.5 is -3.",
         "source": "klive-decision",
         "test": "test/kbasic/compat/compat.test.ts",
-        "oracle": "zxbc 1.19 crashes compiling it: compiled as documented (D-C1 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
+        "oracle": "zxbc 1.19 crashes compiling it: compiled as documented."
       },
       {
         "phase": 8,
@@ -2578,7 +2578,7 @@
         "question": "What does a BYREF Float parameter read and write?",
         "decision": "The caller's variable, through its address: reads see its value and writes change it.",
         "test": "test/kbasic/corpus/float/float-routines.zxbas",
-        "oracle": "zxbc 1.19 prints 0 inside the routine and leaves 0.5 in the variable (an upstream fault). Undefined in ZX BASIC: Klive keeps this defined result (D-C2 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md, project author 2026-09-27)."
+        "oracle": "zxbc 1.19 prints 0 inside the routine and leaves 0.5 in the variable (an upstream fault). Undefined in ZX BASIC: Klive keeps this defined result (project author, 2026-09-27)."
       },
       {
         "phase": 8,
@@ -2588,7 +2588,7 @@
         "decision": "The quotient sign: -7 / 2 is -3 (truncated towards zero, as for the other integer types).",
         "source": "klive-decision",
         "test": "test/kbasic/compat/compat.test.ts",
-        "oracle": "zxbc drops the sign when both operands are Byte variables (-7 / 2 is 3; 200 / 2 as Bytes is 28): kept as an upstream fault (project author, 2026-09-27; D-C6 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
+        "oracle": "zxbc drops the sign when both operands are Byte variables (-7 / 2 is 3; 200 / 2 as Bytes is 28): kept as an upstream fault (project author, 2026-09-27)."
       },
       {
         "phase": 8,
@@ -2596,7 +2596,7 @@
         "test": "test/kbasic/compat/compat.test.ts",
         "name": "codebank-extension",
         "question": "How do #pragma codebank and CODEBANK inside ASM read?",
-        "decision": "As NextBuild CODEBANK extension, which Klive supports (plan section 9): the pragma takes a bank number and CODEBANK in ASM a bank.",
+        "decision": "As NextBuild CODEBANK extension, which Klive supports (.ai/kbasic/compiler.md, \"CODEBANK as built\"): the pragma takes a bank number and CODEBANK in ASM a bank.",
         "source": "klive-decision",
         "oracle": "zxbc has no CODEBANK: it takes the pragma as unknown (a warning) and CODEBANK in ASM as assembler text."
       },
@@ -2635,7 +2635,7 @@
         "question": "What does a Float constant beyond the Float range (DIM a AS Float = 1E40) do?",
         "decision": "It is an error (E425, Number too big).",
         "source": "klive-decision",
-        "oracle": "zxbc accepts it and stores a value that is not the number: kept as an upstream fault (D-C6 of (project author, 2026-09-27; .plans/ZXBASIC_COMPATIBILITY_PLAN.md))."
+        "oracle": "zxbc accepts it and stores a value that is not the number: kept as an upstream fault (project author, 2026-09-27)."
       },
       {
         "name": "constant-integer-division-by-zero",
@@ -2645,7 +2645,7 @@
         "source": "klive-decision",
         "phase": 8,
         "test": "test/kbasic/corpus/integers/constant-divide-by-zero.zxbas",
-        "oracle": "zxbc 1.19 crashes compiling 100 / 0 (ZeroDivisionError): compiled as documented (D-C1 of (project author, 2026-09-27; .plans/ZXBASIC_COMPATIBILITY_PLAN.md))."
+        "oracle": "zxbc 1.19 crashes compiling 100 / 0 (ZeroDivisionError): compiled as documented (project author, 2026-09-27)."
       },
       {
         "name": "constant-power",
@@ -2664,7 +2664,7 @@
         "status": "decided",
         "source": "klive-decision",
         "test": "test/kbasic/corpus/strings/ordering.zxbas",
-        "oracle": "zxbc 1.19 crashes compiling it (AttributeError). Compiled as documented (D-C1 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
+        "oracle": "zxbc 1.19 crashes compiling it (AttributeError). Compiled as documented."
       },
       {
         "phase": 8,
@@ -2674,7 +2674,7 @@
         "decision": "The floored remainder, left - INT(left / right) * right, as the ROM n-mod-m and zxbc own constant folding give (-7.5 MOD 2 is 0.5); a Fixed zero divisor gives the dividend magnitude.",
         "source": "klive-decision",
         "test": "test/kbasic/compat/compat.test.ts",
-        "oracle": "zxbc run-time Float and Fixed MOD are faulty (-7.5 MOD 2 is -19.5 for Float and -1.5 for Fixed; Fixed 0.1 MOD 3 is 0): kept as an upstream fault (project author, 2026-09-27; D-C6 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
+        "oracle": "zxbc run-time Float and Fixed MOD are faulty (-7.5 MOD 2 is -19.5 for Float and -1.5 for Fixed; Fixed 0.1 MOD 3 is 0): kept as an upstream fault (project author, 2026-09-27)."
       },
       {
         "phase": 8,
@@ -2693,7 +2693,7 @@
         "question": "Is a program that is only a false #ifdef block, or an empty conditional block, valid?",
         "decision": "Yes: it compiles to an empty program.",
         "source": "klive-decision",
-        "oracle": "zxbc 1.19 rejects them (Unexpected end of file; an unexpected #endif): kept as an upstream fault (D-C6 of (project author, 2026-09-27; .plans/ZXBASIC_COMPATIBILITY_PLAN.md))."
+        "oracle": "zxbc 1.19 rejects them (Unexpected end of file; an unexpected #endif): kept as an upstream fault (project author, 2026-09-27)."
       },
       {
         "name": "do-loop-one-line",
@@ -2721,7 +2721,7 @@
         "question": "Can a FASTCALL routine with a BASIC body use its first parameter?",
         "decision": "Yes: it arrives in registers and the prologue stores it in the frame, so the body reads it like any parameter.",
         "test": "test/kbasic/corpus/routines/fastcall.zxbas",
-        "oracle": "zxbc 1.19 leaves register parameters to inline asm: a BASIC body reads something else (dbl(42) gives 34814). Undefined in ZX BASIC: Klive keeps this defined result (D-C2 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md, project author 2026-09-27)."
+        "oracle": "zxbc 1.19 leaves register parameters to inline asm: a BASIC body reads something else (dbl(42) gives 34814). Undefined in ZX BASIC: Klive keeps this defined result (project author, 2026-09-27)."
       },
       {
         "phase": 8,
@@ -2731,7 +2731,7 @@
         "decision": "The quotient of the 65536ths, rounded towards minus infinity, as constant folding gives.",
         "source": "klive-decision",
         "test": "test/kbasic/compat/compat.test.ts",
-        "oracle": "zxbc run-time Fixed division loses precision or overflows (7 / 0.001 is 7168, 0.5 / 7 is 0, -7.5 / -1 is 2175.003): kept as an upstream fault (project author, 2026-09-27; D-C6 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
+        "oracle": "zxbc run-time Fixed division loses precision or overflows (7 / 0.001 is 7168, 0.5 / 7 is 0, -7.5 / -1 is 2175.003): kept as an upstream fault (project author, 2026-09-27)."
       },
       {
         "status": "decided",
@@ -2741,7 +2741,7 @@
         "question": "What does a Fixed or Float division by zero do?",
         "decision": "It stops with 6 Number too big, as the ROM calculator does.",
         "test": "test/kbasic/compat/compat.test.ts",
-        "oracle": "zxbc gives a value and goes on (Fixed -7.5 / 0 is 0.0000152587890625, Float 7.5 / 0 is 0): kept as an upstream fault (project author, 2026-09-27; D-C6 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
+        "oracle": "zxbc gives a value and goes on (Fixed -7.5 / 0 is 0.0000152587890625, Float 7.5 / 0 is 0): kept as an upstream fault (project author, 2026-09-27)."
       },
       {
         "status": "decided",
@@ -2760,7 +2760,7 @@
         "source": "klive-decision",
         "phase": 8,
         "test": "test/kbasic/compat/compat.test.ts",
-        "oracle": "zxbc 1.19 agrees inside 0-360. Its run-time Fixed MOD is inexact (400 MOD 360 is 39.9957, -30 MOD 360 is -29.998), so for angles outside that range its results are off by a few units in the last places, and fSin(-1) is 0; Klive keeps the exact reduction (D-C6 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
+        "oracle": "zxbc 1.19 agrees inside 0-360. Its run-time Fixed MOD is inexact (400 MOD 360 is 39.9957, -30 MOD 360 is -29.998), so for angles outside that range its results are off by a few units in the last places, and fSin(-1) is 0; Klive keeps the exact reduction."
       },
       {
         "name": "for-loop-evaluation",
@@ -2779,7 +2779,7 @@
         "source": "klive-decision",
         "phase": 8,
         "test": "test/kbasic/compat/compat.test.ts",
-        "oracle": "zxbc drops the whole statement when its constant analysis sees no pass, the assignment of the start included, so i keeps its old value: kept as an upstream fault (project author, 2026-09-27; D-C6 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
+        "oracle": "zxbc drops the whole statement when its constant analysis sees no pass, the assignment of the start included, so i keeps its old value: kept as an upstream fault (project author, 2026-09-27)."
       },
       {
         "status": "decided",
@@ -2798,7 +2798,7 @@
         "status": "decided",
         "source": "klive-decision",
         "test": "test/kbasic/corpus/classic/primes-sieve.zxbas",
-        "oracle": "zxbc 1.19 crashes compiling it (AttributeError); a signed or Float STEP variable compiles. Compiled as documented (D-C1 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
+        "oracle": "zxbc 1.19 crashes compiling it (AttributeError); a signed or Float STEP variable compiles. Compiled as documented."
       },
       {
         "name": "forward-function-call",
@@ -2817,7 +2817,7 @@
         "question": "What does a FUNCTION give when it ends without RETURN?",
         "decision": "0 (the empty String for a String FUNCTION): the result is zeroed on entry.",
         "test": "test/kbasic/corpus/routines/function-result.zxbas",
-        "oracle": "Upstream gives whatever its result register held. Undefined in ZX BASIC: Klive keeps this defined result (D-C2 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md, project author 2026-09-27)."
+        "oracle": "Upstream gives whatever its result register held. Undefined in ZX BASIC: Klive keeps this defined result (project author, 2026-09-27)."
       },
       {
         "phase": 8,
@@ -2836,7 +2836,7 @@
         "source": "oracle",
         "phase": 8,
         "test": "test/kbasic/codegen/core.test.ts",
-        "oracle": "zxbc 1.19 headerless code runs and returns BC (its variables come first, at the origin). Its PRINT shows nothing without the start-up; Klive's PRINT still works, a difference in undefined behaviour kept (D-C2 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
+        "oracle": "zxbc 1.19 headerless code runs and returns BC (its variables come first, at the origin). Its PRINT shows nothing without the start-up; Klive's PRINT still works, a difference in undefined behaviour kept."
       },
       {
         "name": "heap-exhaustion",
@@ -2846,7 +2846,7 @@
         "source": "klive-decision",
         "phase": 8,
         "test": "test/kbasic/compat/compat.test.ts",
-        "oracle": "zxbc 1.19 without --debug-memory writes past the heap (the screen fills with garbage and the program stops): kept as an upstream fault (project author, 2026-09-27; D-C6 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
+        "oracle": "zxbc 1.19 without --debug-memory writes past the heap (the screen fills with garbage and the program stops): kept as an upstream fault (project author, 2026-09-27)."
       },
       {
         "phase": 8,
@@ -3038,7 +3038,7 @@
         "source": "klive-decision",
         "phase": 8,
         "test": "test/kbasic/compat/compat.test.ts",
-        "oracle": "zxbc turns them into a shift and a mask: a / 2 floors (-1 / 2 is -1, -7 / 2 is -4) and a MOD 4 masks (-1 MOD 4 is 3), while a / 4 and a MOD 3 follow its rules: kept as an upstream fault (project author, 2026-09-27; D-C6 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
+        "oracle": "zxbc turns them into a shift and a mask: a / 2 floors (-1 / 2 is -1, -7 / 2 is -4) and a MOD 4 masks (-1 MOD 4 is 3), while a / 4 and a MOD 3 follow its rules: kept as an upstream fault (project author, 2026-09-27)."
       },
       {
         "name": "print-position",
@@ -3121,7 +3121,7 @@
         "source": "oracle",
         "phase": 2,
         "test": "test/kbasic/corpus/integers/shifts.zxbas",
-        "oracle": "zxbc agrees for SHR by more than 1; Integer -100 SHR 1 gives 32718 there (a logical shift): kept as an upstream fault (project author, 2026-09-27; D-C6 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
+        "oracle": "zxbc agrees for SHR by more than 1; Integer -100 SHR 1 gives 32718 there (a logical shift): kept as an upstream fault (project author, 2026-09-27)."
       },
       {
         "phase": 8,
@@ -3131,7 +3131,7 @@
         "question": "Does Klive accept the malformed statements zxbc compiles without a word (PRINT ), NEXT alone, CLS 1, DIM x y, SUB PASCAL s, 1.5 PRINT)?",
         "decision": "No: they stay syntax errors.",
         "source": "klive-decision",
-        "oracle": "zxbc 1.19 drops what it cannot parse there and compiles the rest silently: kept as an upstream fault (D-C6 of (project author, 2026-09-27; .plans/ZXBASIC_COMPATIBILITY_PLAN.md))."
+        "oracle": "zxbc 1.19 drops what it cannot parse there and compiles the rest silently: kept as an upstream fault (project author, 2026-09-27)."
       },
       {
         "phase": 8,
@@ -3195,7 +3195,7 @@
         "source": "klive-decision",
         "phase": 8,
         "test": "test/kbasic/compat/compat.test.ts",
-        "oracle": "zxbc agrees while the range lies inside the String (padding and truncation included); a range past the end, or open-ended (s(6 TO) = ...), makes it write outside the String and corrupt memory: kept as an upstream fault (project author, 2026-09-27; D-C6 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
+        "oracle": "zxbc agrees while the range lies inside the String (padding and truncation included); a range past the end, or open-ended (s(6 TO) = ...), makes it write outside the String and corrupt memory: kept as an upstream fault (project author, 2026-09-27)."
       },
       {
         "name": "tape-data-variable",
@@ -3260,7 +3260,7 @@
         "source": "oracle",
         "phase": 4,
         "test": "test/kbasic/corpus/builtins/val-error.zxbas",
-        "oracle": "zxbc agrees on the value and ERR_NR. After a failed VAL it leaves BASIC state broken (typed as a user does, the command ends with C Nonsense in BASIC, 3331:1); Klive restores CH_ADD and the workspace, an undefined result it keeps (D-C2 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
+        "oracle": "zxbc agrees on the value and ERR_NR. After a failed VAL it leaves BASIC state broken (typed as a user does, the command ends with C Nonsense in BASIC, 3331:1); Klive restores CH_ADD and the workspace, an undefined result it keeps."
       },
       {
         "phase": 8,
@@ -3270,7 +3270,7 @@
         "question": "What about programs zxbc crashes on while compiling (CHR$(65, 66), CHR 65, SIZEOF(LONG), POKE LONG, BNOT of a fraction)?",
         "decision": "Klive compiles them as documented.",
         "source": "klive-decision",
-        "oracle": "zxbc 1.19 stops with an internal exception (D-C1 of (project author, 2026-09-27; .plans/ZXBASIC_COMPATIBILITY_PLAN.md))."
+        "oracle": "zxbc 1.19 stops with an internal exception (project author, 2026-09-27)."
       },
       {
         "name": "zxnext-option",

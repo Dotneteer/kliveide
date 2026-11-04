@@ -1,4 +1,4 @@
-# Publishes a Klive release (.plans/RELEASE_AUTOMATION_PLAN.md §5, .ai/release-guide.md).
+# Publishes a Klive release (.ai/release-guide.md).
 #
 # `npm run release:prepare` opens a "Release v<x.y.z>" PR. Merging it lands here:
 #

@@ -6,7 +6,7 @@ import type { BackendProblem } from "../problems";
 import { KLIVE_FAR_RECORDS } from "@common/utils/source-debug-upgrade";
 
 /**
- * Banked code (Klive BASIC's CODEBANK, plan `.plans/ZXBASIC_COMPILER_PLAN.md` §9.2): where each
+ * Banked code (Klive BASIC's CODEBANK, `.ai/kbasic/compiler.md`, "CODEBANK as built"): where each
  * logical bank goes, the far-call runtime's parameters, and how the debugger sees it.
  */
 export type BankPlan = {

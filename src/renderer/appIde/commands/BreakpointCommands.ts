@@ -211,7 +211,7 @@ export type BreakpointWithAddressArgs = {
   /**
    * The annotation label a `<bank>:<label>` spec anchors the breakpoint to, and the sidecar whose
    * label table it is looked up in: the active annotation set's
-   * (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §4.6).
+   * (`.docs/annotations.md`, "Commands").
    */
   label?: string;
   labelFile?: string;
@@ -409,7 +409,7 @@ export abstract class BreakpointWithAddressCommand extends IdeCommandBase<Breakp
 
               /*
                * `ROM:<name>` and `<bank>:<label>` - a breakpoint named by an annotation label
-               * (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §4.6, §5.5). Told apart from
+               * (`.docs/annotations.md`, "Commands", "ROM Annotations"). Told apart from
                * `<partition>:<address>` by the second part being an identifier: an address literal
                * starts with `$`, `%` or a digit.
                */
@@ -581,7 +581,7 @@ export abstract class BreakpointWithAddressCommand extends IdeCommandBase<Breakp
 
                 // --- The bank is a 16K bank number in plain hex, *not* a partition label: on the
                 // --- Next the label map describes 8K pages, and routing a bank through it is how
-                // --- the two index spaces got confused. See `.plans/NEX_DEBUGGING_PLAN.md` §4.1.
+                // --- the two index spaces got confused. See `.ai/nex-debugging.md`.
                 const bank = parseInt(segments[0], 16);
                 if (!Number.isInteger(bank) || bank < 0 || bank > bankSpace.maxBank) {
                   messages = [
@@ -783,7 +783,7 @@ export class SetBreakpointCommand extends BreakpointWithAddressCommand {
   get description() {
     return t("commands.bp.set.description");
   }
-  // --- The first line is syntax (English); the explanations are translated (LOCALIZATION_PLAN step 12)
+  // --- The first line is syntax (English); the explanations are translated (`.ai/localization.md`)
   get usage(): string[] {
     return [
       "bp-set <address-spec> [-r] [-w] [-i] [-o] [-c] [-m <mask>] [-v <value>] [-len <bytes>] [-attr <bytes>] [-once] [-log \"<template>\"] [-hit <spec>] [-if <condition>]",

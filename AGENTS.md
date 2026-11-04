@@ -46,8 +46,8 @@ Guidance for AI assistants working in this workspace.
   `npm run change -- --show <file>`.
 - Releases: `npm run release:prepare` opens the release PR; merging it runs
   `.github/workflows/release.yml`. Read `.ai/release-guide.md` first. `release-artifacts.yml` is the
-  author's **private** build (workflow artifacts only) and must never tag, release or deploy. The
-  plan is `.plans/RELEASE_AUTOMATION_PLAN.md`.
+  author's **private** build (workflow artifacts only) and must never tag, release or deploy. Its
+  decisions (D1-D16) are at the end of `.ai/release-guide.md`.
 
 ## Documentation Site (`docs/`)
 
@@ -63,8 +63,8 @@ React 19 + Next 16.
 - Pages live under `docs/content/<lang>/` (English in `en/`), in five navbar areas -
   `get-started/`, `guides/`, `reference/`, `under-the-hood/` (Klive's own documentation) and
   `library/` (the machines' own manuals, one folder per machine, always the last tab) - plus the
-  book, which is reachable by URL but deliberately not linked anywhere (decision D6). The plan is
-  `.plans/DOCS_SITE_MODERNIZATION_PLAN.md`.
+  book, which is reachable by URL but deliberately not linked anywhere (decision D6). The site's rules
+  (R1-R7) and decisions are in `.ai/docs-site.md`.
 - **The Library's manuals are imported, not written here.** The Cambridge Z88 User Guide, the
   Z88 Developers' Notes and the BBC BASIC (Z80) Reference Guide
   (`content/en/library/cambridge-z88/{user-guide,developers-notes,bbc-basic}/`) come from the
@@ -118,7 +118,7 @@ React 19 + Next 16.
 - **Guides screenshots are generated, never hand-captured**: the `guides-*` recipes in
   `scripts/doc-shots/recipes/` write `docs/public/images/en/guides/<group>/<page>/*.webp`, shown with
   `<Shot>`. `doc:check:guide-images` fails on the pre-redesign images. The structure and page standard
-  are `.plans/GUIDES_OVERHAUL_PLAN.md` (§2, §3).
+  are `.ai/docs-site.md`, "The Guides".
 - **Links in `docs/content/` are absolute** (`/en/guides/...`): pages are served with a trailing slash,
   so a relative `./sibling` link resolves *under* the page; `doc:check:links` now resolves and fails them.
 - **Klive's own pages pass a wording check** (`doc:check:prose`, part of `doc:check`): no em dashes or
@@ -142,7 +142,7 @@ React 19 + Next 16.
   guard that keeps a recipe away from a real `~/KliveProjects` folder.
 
 Verify a docs change with `npm run doc:build && npm run doc:check`, which
-diffs routes and assets against `.plans/docs-*.golden.txt`, audits every
+diffs routes and assets against `docs/goldens/`, audits every
 internal link, and asserts the Z80 syntax highlighting actually rendered. The
 last of those exists because a lost grammar leaves every page present and
 merely uncoloured, which no route diff can see.
@@ -154,8 +154,8 @@ merely uncoloured, which no route diff can see.
   string concatenation or hand-made plurals; keys at definition, text at display.
 - Run `npm run i18n:keys` after adding keys; `npm run i18n:check` (part of `build:check`) is the gate.
 - Never write translations for other languages in a feature change: they come through
-  `npm run i18n:todo` / `i18n:merge` (`src/common/i18n/locales/README.md`). The plan is
-  `.plans/LOCALIZATION_PLAN.md`.
+  `npm run i18n:todo` / `i18n:merge` (`src/common/i18n/locales/README.md`). How it is built, and the
+  pattern for localizing a new language or area, is `.ai/localization.md`.
 
 ## Feature Roadmap And Competitive Analysis
 
@@ -193,8 +193,13 @@ merely uncoloured, which no route diff can see.
 
 ## Klive BASIC (the ZX BASIC compiler)
 
-- The plan is `.plans/ZXBASIC_COMPILER_PLAN.md`; read its §0 (ground rules and decisions) and §17
-  (readiness) before any work on it.
+- **Switched off (2026-11-04):** Boriel BASIC builds every BASIC program; Klive BASIC stays in the
+  codebase, its tests keep passing, and the switch is commented out at every `KLIVE-BASIC-OFF:`
+  marker (`.ai/klive-basic-switch.md`, which says how to turn it back on). Its user docs
+  are off the site in `docs/authoring/klive-basic/`. User-facing docs name Boriel BASIC (a beta) only.
+- The plan was implemented and closed (2026-11-04); its durable record is `.ai/kbasic/compiler.md`.
+  Read its "Provenance (hard rule)", "Decisions" (D1-D12, D-C1-D-C6) and "Guarantees" (G1-G6)
+  before any work on it; "Readiness (R1-R18)" and "Open" say what is left.
 - **Provenance rule — a hard requirement of the project author:** no code from upstream
   `boriel-basic/zxbasic` (AGPL compiler, runtime, libraries) or from NextBuild's compiler fork is
   copied, converted or translated into Klive, and the upstream compiler is never read for design.
@@ -217,13 +222,18 @@ merely uncoloured, which no route diff can see.
 
 ## Boriel BASIC (the external zxbc 2.x)
 
-- `zxbasic.compiler` picks `klive` (default) or `boriel` for `.zxbas`/`.bas`. The plan is
-  `.plans/BORIEL_BASIC_INTEGRATION_PLAN.md` (each phase opens with an "As built" note); the current
-  state and next steps are in `.plans/BORIEL_BASIC_HANDOFF.md`. Read `.ai/boriel/README.md` before
-  touching `src/main/boriel-integration/`: it records what zxbc 2.0.0-beta25 actually does.
+- Boriel BASIC is **the** BASIC compiler, a beta (`zxbasic.compiler` is ignored while Klive BASIC is
+  switched off; see the Klive BASIC section). Its plan is closed; the record is `.ai/boriel/`.
+  Read `.ai/boriel/README.md` and `.ai/boriel/integration.md` (how it is built, the decisions)
+  before touching `src/main/boriel-integration/`; the other notes record what zxbc 2.0.0-beta29
+  actually does. **What is still open is `.ai/boriel/technical-debt.md`**: when an item there is
+  done or decided, record it and remove it.
 - The setup kits live in `vendor/boriel-basic/` (`kit.json` tracked, archives fetched and
   git-ignored). Test fixtures in `test/boriel/fixtures/` are zxbc output: regenerate them with
   `npm run boriel:fixtures`, never edit them. `scripts/boriel-ide-check.cjs` checks the running IDE.
+- **When the developer asks to update Klive to the latest (or a particular) Boriel BASIC version,
+  follow `.ai/boriel/updating.md`**: the action list for a bump, from finding the version and the
+  licence question to the fixtures, the checks and the records.
 - The Klive BASIC provenance rule still applies: the kit's runtime and stdlib are never read to
   design Klive BASIC.
 
@@ -251,7 +261,7 @@ merely uncoloured, which no route diff can see.
 
 - Each Next model is a profile (`src/emu/machines/zxNext/nextProfiles.ts`): a board and a core
   version, with its own WASM artifact, VHDL version, NextReg set (`nextRegSets/`), ROM set and SD
-  card. Read `.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` before adding a model or a version-dependent
+  card. Read `.ai/zxnext-models.md` before adding a model or a version-dependent
   behaviour. Nothing reads "which Next" from a literal: it comes from the active profile.
 - ROM sets are committed in `src/public/roms/zxnext/<setId>/`, recorded in
   `src/common/zxnext/nextRomSets.json` (`npm run next-roms:fetch`, `next-roms:check`); their facts
@@ -263,22 +273,23 @@ merely uncoloured, which no route diff can see.
 ## Sinclair ZX80 / ZX81
 
 - One C/WASM core runs both machines: `src/emu/machines/zx8081/wasm/` - read its `README.md` (how
-  the ULA maps onto the shared Z80's hooks, the picture, the tape) before changing it. The plan is
-  `.plans/ZX8081_WASM_PLAN.md`; the ULA logic is ported from Clock Signal (MIT), so derived files keep
+  the ULA maps onto the shared Z80's hooks, the picture, the tape) before changing it. The decisions of both
+  ZX80/ZX81 plans (closed 2026-11-04), the provenance rules, the virtual keyboard's design and what is
+  open are in `.ai/zx8081.md`; the ULA logic is ported from Clock Signal (MIT), so derived files keep
   its copyright line and `THIRD_PARTY_NOTICES.md` carries the notice.
 - Test with the harness in `test/harness/zx81/` (real ROM, boot to the K cursor, typing, `.P`/`.O`
   loading, the debugger); hardware tests go in `test/zx8081-hw/`. Screen goldens are recorded only
   after the picture was checked by eye (`ZX8081_GOLDENS_PNG=<dir>` writes them).
 - Typed keys need 4 key-free frames between them (the ROM's debounce); see `Zx8081WasmHost.typeText`.
 - Machine code for them (`.model ZX80`/`ZX81`, `.defzx`, Run/Debug as a `1 REM` program, `.p`/`.o`
-  export) is `.plans/ZX8081_CODE_INJECTION_PLAN.md`; its §8 records how it works. The program image is
+  export) is recorded in `.ai/zx8081.md`, "Machine code decisions" and "How code injection works". The program image is
   built in one place, `src/common/zx8081/programImage.ts`, for injection and export alike.
 
 ## Videoton TVC
 
 - One C/WASM core runs the TVC 64K and 64K+: `src/emu/machines/tvc/wasm/` - read its `README.md`
   (the half-T clock, the clock stretch, the video steps, sound, tape, the HBF card) before changing
-  it. The plan and its as-built record are `.plans/VIDEOTON_TVC_PLAN.md` (§17); the research pack is
+  it. The decisions, as-built notes and what is open are `.ai/videoton-tvc.md` (the plan was closed on 2026-11-04); the research pack is
   `_input/videoton-tvc/` (`TVC_VIDEO_GENERATION.md` for the picture).
 - Provenance (plan D1): Klive's own code. rtvc (MIT) and MAME (BSD) are read for interface facts;
   rtvc's ROM listings never feed shipped `.rom.dis` sidecars.
@@ -328,8 +339,8 @@ merely uncoloured, which no route diff can see.
 
 - **Read `src/emu/z80/wasm/README.md` before adding a hook, a debugger feature or a core.** Every core
   shares the Z80, its export forwarders (`z80-cpu-exports.c`) and the debugger's in-core loop
-  (`z80-debug-loop.c`); the hosts share one debug loop (`src/emu/machines/wasmDebugLoop.ts`). The plan
-  and its measurements are `.plans/WASM_CORE_LEAN_AND_DEBUG_PLAN.md`.
+  (`z80-debug-loop.c`); the hosts share one debug loop (`src/emu/machines/wasmDebugLoop.ts`). Its
+  decisions, traps and measured budgets are `.ai/wasm-core-debug.md`.
 - The rule: the core decides *whether* to stop, TypeScript decides *what a stop means*. A new stop goes
   in as a core candidate, with `test/wasm/debug-loop-equivalence.test.ts` proving the in-core run stops
   exactly where the instruction-by-instruction one does.
@@ -355,7 +366,7 @@ merely uncoloured, which no route diff can see.
     everything) **when a plan is about to complete and before `npm run release:prepare`** - not after
     every step. GitHub runs it only from the manual "Slow tests" workflow; push, PRs and the release
     never do. `release:prepare` warns when it has not passed on the current sources
-    (`npm run test:slow-status`). The plan is `.plans/FAST_SLOW_TEST_TIERS_PLAN.md`.
+    (`npm run test:slow-status`).
   - The tiers are listed in `build/e2e-tests.ts`. **A new test that runs a core goes there**: in the
     unit tier, instantiating a core fails with a message saying so (`test/vitest.setup.ts`).
   - **Keep the fast set fast**: a fast-tier file over 20 s in a full run (`npm run test:timings`)
@@ -403,7 +414,7 @@ merely uncoloured, which no route diff can see.
   **Note `controls/layout`'s `width` prop is px for a number and a CSS length for a string**, so a
   column wants `width="7ch"`, never `width={7}`.
 - The Monaco syntax palette is settled: a **fixed multi-hue table** in which only *keyword* follows
-  the accent. It replaced the accent-derived scheme of §8.1 of `.plans/UI_MODERNIZATION_PLAN.md`,
+  the accent. It replaced an earlier accent-derived scheme (`.ai/ui-design-system.md`, M5),
   which put nine of eleven classes in one blue and comments in neutral grey. Before changing
   `theming/tokens/syntax.ts`, read its own header comment (which records the per-class hue
   choices and why `keyword`/`error` are absent from the table) and the Monaco entry in
@@ -415,14 +426,14 @@ merely uncoloured, which no route diff can see.
   keep no history. That file is how style decisions reach sessions that never saw the work.
 - **Read `.ai/ui-theming-intent-and-lessons.md` before this kind of work.** It records the settled
   product decisions, how to run and visually inspect the app (CDP, the app menu, the
-  `.plans/baseline/` scripts), and the failure modes this work already hit.
+  `scripts/cdp/` scripts), and the failure modes this work already hit.
 - Every accent has a **primary and a secondary hue** (`--accent-*` / `--accent-secondary-*`) — the
   secondary exists for two things in one view that must both read as accent-tied yet stay clearly
   apart (see the memory dump's hovered byte and disassembly's opcode column). The memory dump, the
   disassembly view **and the converted register/state panels** (Z80 CPU, ULA & I/O, Next Registers, Next Memory Mapping, Call Stack, Watch, Breakpoints, Copper, Sprite Inspector, Tilemap Inspector, Layers — one shared
   `--color-state-value`) are the deliberate exceptions to the otherwise-neutral data hierarchy;
   unconverted panels stay neutral. Full detail in `.ai/ui-theming-intent-and-lessons.md` and
-  `.plans/UI_MODERNIZATION_PLAN.md` §10.
+  `.ai/ui-design-system.md`.
 - **A `DataRow` can contain another `DataRow`.** `Bit16Value`/`Bit8Value`/`SimpleValue`/`FlagValue`
   each render their own row for their label/value pair, so a register row is a row inside a row.
   Any horizontal padding put on the row primitive therefore lands *twice* on register rows and once

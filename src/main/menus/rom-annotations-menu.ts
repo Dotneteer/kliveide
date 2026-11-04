@@ -1,5 +1,5 @@
 /*
- * Debug › ROM Annotations (`.plans/ROM_ANNOTATIONS_MENU_PLAN.md`): a submenu per machine type, each
+ * Debug › ROM Annotations: a submenu per machine type, each
  * with the ROMs Klive ships for it (`ROM_ANNOTATION_CATALOG`). An item opens that ROM page's
  * annotations in the IDE through `rom-ann-open ... -create`.
  */

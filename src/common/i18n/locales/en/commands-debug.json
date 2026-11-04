@@ -100,11 +100,11 @@
   "@commands.machine.runToFrame.description": {
     "context": "One-line description of the 'em-rtf' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated."
   },
-  "commands.machine.errorStops.description": "Turns runtime-error stops on or off: a debug run of a Klive BASIC program stops where it raises a BASIC error",
+  "commands.machine.errorStops.description": "Turns runtime-error stops on or off: a debug run of a BASIC program stops where it raises a BASIC error",
   "@commands.machine.errorStops.description": {
     "context": "One-line description of the 'em-err' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated. 'on' and 'off' are the argument values the user types: keep them."
   },
-  "commands.machine.justMyCode.description": "Just My Code: on, source stepping runs through the Klive BASIC standard library; off, it stops in the library's statements too",
+  "commands.machine.justMyCode.description": "Just My Code: on, source stepping runs through the BASIC standard library; off, it stops in the library's statements too",
   "@commands.machine.justMyCode.description": {
     "context": "One-line description of the 'em-jmc' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated. 'Just My Code' is the name of the debugger feature. 'on' and 'off' are the argument values the user types: keep them."
   },
@@ -179,7 +179,7 @@
       "pc": "The program counter before the step, as 4 hex digits (invariant)"
     }
   },
-  "commands.machine.noSourceDebugBuild": "The program has no source-level debug information (build it with Klive BASIC and debug)",
+  "commands.machine.noSourceDebugBuild": "The program has no source-level debug information (build it with Boriel BASIC and debug)",
   "@commands.machine.noSourceDebugBuild": {
     "context": "Error message of the source-level stepping IDE commands (em-stl, em-rtf) when the compiled program carries no source-level debug info."
   },
@@ -226,11 +226,11 @@
   },
   "commands.machine.justMyCode.on": "Stepping runs through the standard library",
   "@commands.machine.justMyCode.on": {
-    "context": "Output line of the 'em-jmc on' IDE command in the interactive command prompt. The Klive BASIC standard library."
+    "context": "Output line of the 'em-jmc on' IDE command in the interactive command prompt. The BASIC standard library."
   },
   "commands.machine.justMyCode.off": "Stepping stops in the standard library too",
   "@commands.machine.justMyCode.off": {
-    "context": "Output line of the 'em-jmc off' IDE command in the interactive command prompt. The Klive BASIC standard library."
+    "context": "Output line of the 'em-jmc off' IDE command in the interactive command prompt. The BASIC standard library."
   },
   "commands.machine.sourceStepping.useOnOff": "Use 'on' (source stepping) or 'off' (Z80 stepping)",
   "@commands.machine.sourceStepping.useOnOff": {

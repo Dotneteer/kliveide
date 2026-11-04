@@ -8,7 +8,7 @@ import {
   WIDE_FROM_CH
 } from "@renderer/appIde/DocumentPanels/SpriteInspector/SpriteInspectorPanel";
 
-// --- The layout follows the document's own width (.plans/mockups/sprite-inspector-layout.html)
+// --- The layout follows the document's own width
 describe("Sprite Inspector layout", () => {
   it("picks narrow, medium and wide by width in ch", () => {
     expect(layoutForWidth(94)).toBe("narrow");

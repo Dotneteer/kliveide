@@ -163,7 +163,7 @@ describe("UiController", () => {
 
   it("builds a fresh view model and notifies subscribers when the display language changes", () => {
     // --- Selectors word their texts with t(): a language switch must reach the view even when the
-    // --- state did not change (.plans/LOCALIZATION_PLAN.md step 7)
+    // --- state did not change (`.ai/localization.md`)
     const { controller } = createController();
     const listener = vi.fn();
     const unsubscribe = controller.subscribe(listener);

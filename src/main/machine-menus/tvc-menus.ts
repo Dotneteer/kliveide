@@ -20,9 +20,9 @@ import { t } from "@common/i18n/i18n";
 const TAPE_FILE_FOLDER = "tapeFileFolder";
 
 /**
- * The Videoton TVC's tape (`.plans/VIDEOTON_TVC_PLAN.md` §9): a `.cas` goes in the deck and plays
- * while the ROM runs the recorder's motor (type `LOAD` in BASIC). Fast load runs the machine faster
- * while the tape plays; without it the tape plays in real time.
+ * The Videoton TVC's tape (`.ai/videoton-tvc.md`, "Tape, disks and files"): a `.cas` goes in the
+ * deck and plays while the ROM runs the recorder's motor (type `LOAD` in BASIC). Fast load runs the
+ * machine faster while the tape plays; without it the tape plays in real time.
  */
 export const tvcTapeMenuRenderer: MachineMenuRenderer = (windowInfo) => {
   const emuWindow = windowInfo.emuWindow;
@@ -71,8 +71,8 @@ export const tvcTapeMenuRenderer: MachineMenuRenderer = (windowInfo) => {
 };
 
 /**
- * The HBF floppy interface (`.plans/VIDEOTON_TVC_PLAN.md` §9.4): a switch that plugs the card into
- * slot 0 (the machine config's `MC_TVC_HBF`, which restarts the machine), and with it the two
+ * The HBF floppy interface (`src/emu/machines/tvc/wasm/README.md`, "The HBF card and VT-DOS"): a
+ * switch that plugs the card into slot 0 (the machine config's `MC_TVC_HBF`, which restarts the machine), and with it the two
  * drives' items - the Spectrum's disk menu, without its "create a disk" (that makes a +3 image).
  */
 export const tvcDiskMenuRenderer: MachineMenuRenderer = (windowInfo, machine, model, config) => {

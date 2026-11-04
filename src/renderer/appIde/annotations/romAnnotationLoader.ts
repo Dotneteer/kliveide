@@ -22,7 +22,7 @@ import { inheritsOf, type InheritedSidecarSource } from "./romInheritance";
 
 /*
  * Finding a ROM page's sidecar (`.plans/ROM_ANNOTATION_EDITING_PLAN.md` §4.2, which amends §5.2-§5.3
- * of `.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md`).
+ * of `.docs/annotations.md`).
  *
  * **One sidecar is in effect for a page**, chosen in this order:
  *

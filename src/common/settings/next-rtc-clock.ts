@@ -1,5 +1,5 @@
 /**
- * What the ZX Spectrum Next's real-time clock follows (`.plans/ZXNEXT_RTC_OPTIONS_PLAN.md` D1): the
+ * What the ZX Spectrum Next's real-time clock follows (`.ai/zxnext-rtc.md` D1): the
  * host's clock (the real time, as the battery-backed DS1307 shows it), or emulated time, which stops
  * while the debugger pauses and runs fast or slow with the emulator. The Settings dialog reads this
  * table; the emulator panel pushes the choice into the running machine (`NEXT_RTC_CLOCK`).

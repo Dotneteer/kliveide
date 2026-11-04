@@ -2,7 +2,7 @@
 
 > **As built in the shared Z80 back end** (`.plans/SHARED_Z80_BACKEND_PLAN.md`, 2026-10-25). Written for Klive BASIC; now the shared Z80 back end's (`src/main/z80-backend/select/`). The register contract of runtime calls comes from the runtime modules' `@abi` header lines (`src/main/z80-backend/runtime/README.md`), not from a table in the selector.
 
-Design note R11-2 of `.plans/ZXBASIC_COMPILER_PLAN.md` (§3.1, §3.2, §6.7, §7.1, §7.3).
+Design note R11-2 of the Klive BASIC compiler plan (closed; its record is `.ai/kbasic/compiler.md`, "Readiness (R1-R18)"; "plan §N" below is mapped in its "Section map of the closed plan").
 **Status: approved by the project author on 2026-09-26, with every proposal in the decisions table below.**
 
 The LIR (low-level IR) is Z80 code as objects: the output of instruction selection, the input of

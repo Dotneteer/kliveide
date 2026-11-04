@@ -1,5 +1,5 @@
 /*
- * Videoton TVC tape files (`.plans/VIDEOTON_TVC_PLAN.md` §9; the container and the signal are
+ * Videoton TVC tape files (`src/emu/machines/tvc/wasm/README.md`, "Tape"; the container and the signal are
  * documented in `_input/videoton-tvc/rtvc/info/tvc.md`, "CAS Cassette Representation").
  *
  * A `.cas` file is a 144-byte header and the payload:

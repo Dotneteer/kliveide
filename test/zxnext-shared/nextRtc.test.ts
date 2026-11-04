@@ -60,7 +60,7 @@ describe("DS1307 counter chain (rtcAdvanceOneSecond)", () => {
   });
 });
 
-describe("DS1307 registers against the host's clock (ZXNEXT_RTC_OPTIONS_PLAN D4)", () => {
+describe("DS1307 registers against the host's clock (`.ai/zxnext-rtc.md` D4)", () => {
   /** Wall seconds of a calendar time */
   const wall = (y: number, mo: number, d: number, h = 0, mi = 0, s = 0) => (Date.UTC(y, mo - 1, d, h, mi, s) - Date.UTC(2000, 0, 1)) / 1000;
   /** Host milliseconds whose local time is the given calendar time */

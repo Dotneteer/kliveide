@@ -1,8 +1,8 @@
 /*
- * Text as TVC keystrokes, for the IDE's typing and the tests (`.plans/VIDEOTON_TVC_PLAN.md` §8). Every
- * character here was typed on the running machine (BASIC 1.2) and read back from its screen
- * (`test/tvc-hw/keyboard.test.ts`): plain keys give lower case, SHIFT upper case and the second
- * symbol. SHIFT+0's symbol is left out: its glyph could not be read with certainty.
+ * Text as TVC keystrokes, for the IDE's typing and the tests (`.ai/videoton-tvc.md`, "Keyboard and
+ * typing"). Every character here was typed on the running machine (BASIC 1.2) and read back from
+ * its screen (`test/tvc-hw/keyboard.test.ts`): plain keys give lower case, SHIFT upper case and the
+ * second symbol. SHIFT+0's symbol is left out: its glyph could not be read with certainty.
  */
 
 /** A keystroke: `TvcKeyCode` names, the key first and its modifier after it */

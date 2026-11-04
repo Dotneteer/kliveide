@@ -88,7 +88,8 @@ that waits 70% of every frame still shows how its working time divides.
 
 Klive names routines from the best information the build has, in this order:
 
-1. **Klive BASIC** `SUB`s and `FUNCTION`s, with their exact extents.
+1. **Source-level routines**: the `SUB`s and `FUNCTION`s of a Boriel BASIC build and the functions
+   of a C build. A Boriel BASIC routine's end is approximate where routines share their exit code.
 2. The Klive assembler's **`.proc` ... `.endp`** blocks.
 3. **Labels**: a routine runs from a global label up to the next one. Local labels never start a
    routine: the Klive assembler's temporary `` `labels`` and labels inside a `.proc`, and sjasmplus's

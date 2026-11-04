@@ -1,5 +1,5 @@
 /*
- * The host's side of the ZX Spectrum Next's DS1307 (`.plans/ZXNEXT_RTC_OPTIONS_PLAN.md`): which clock
+ * The host's side of the ZX Spectrum Next's DS1307 (`.ai/zxnext-rtc.md`): which clock
  * it follows, and keeping it between sessions.
  *
  * The core keeps counting emulated time (D3). In host-clock mode this class rewrites the time

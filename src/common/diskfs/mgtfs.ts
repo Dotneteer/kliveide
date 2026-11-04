@@ -10,8 +10,7 @@ import {
 } from "./types";
 
 /*
- * The MGT +D / DISCiPLE file system (G+DOS) on a `.mgt` image (.plans/FILE_MANAGER_PLAN.md, Phase
- * 9). Written from the format's published description: MGT's DISCiPLE/+D Technical Guide (the
+ * The MGT +D / DISCiPLE file system (G+DOS) on a `.mgt` image (`.ai/file-manager.md`). Written from the format's published description: MGT's DISCiPLE/+D Technical Guide (the
  * directory, the sector address map, the link bytes, the 9-byte header), and the `.mgt` image's
  * track order as MAME's SAM Coupé image format states it (the heads alternate).
  *

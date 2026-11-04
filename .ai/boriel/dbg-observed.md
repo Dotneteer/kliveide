@@ -89,6 +89,13 @@ corrections: they change nothing on beta29 files, and a user may point Klive at 
     (`startAddress` up to the epilogue and exits) holds the statement's address, in the same raw
     partition. Without this, a routine's last statement ran to the next routine.
     **Fixed in beta29:** module routines' statements carry their own `callableIndex`.
+16. **A block statement swallows its first inner statement's bytes** (observed in beta29, the Get
+    Started bouncing ball). `DO` … `LOOP` is recorded as a statement over the block's lines
+    (14-24) that starts at the address of the first statement inside it and ends where that
+    statement's code ends, while the inner statement (line 15) is recorded empty at the same
+    address. The `LOOP` jump back gets a statement of its own. The bytes are the inner statement's:
+    the adapter drops the enclosing entry and points whatever named it at the inner one, so the
+    validator no longer reports "statements 2 and 3 overlap".
 
 All of these corrections live in `src/main/boriel-integration/dbg-adapter.ts`; the fixtures in
 `test/boriel/fixtures/` and `test/boriel/dbg-adapter.test.ts` pin each one.

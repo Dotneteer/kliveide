@@ -3,11 +3,11 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 /*
- * The re-anchoring core (`src/common/reverse/pipeline/align/carry.ts`, used by `scripts/rom-annotations-carry.cjs`) (`.plans/ZXNEXT_CORE_VERSIONS_PLAN.md`
+ * The re-anchoring core (`src/common/roms/romCarry.ts`, used by `scripts/rom-annotations-carry.cjs`) (`.ai/zxnext-models.md`
  * D8): annotated offsets of one ROM page placed in a newer page by byte signature.
  */
 
-import { carryBank, dropMisaligned, operandMask, reanchor } from "@common/reverse/pipeline/align/carry";
+import { carryBank, dropMisaligned, operandMask, reanchor } from "@common/roms/romCarry";
 
 /** Deterministic pseudo-random bytes (no repeats worth speaking of). */
 function noise(length: number, seed: number): Uint8Array {

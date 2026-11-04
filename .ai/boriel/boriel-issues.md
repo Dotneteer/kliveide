@@ -58,4 +58,6 @@ reproduces it. The project author decides what to send.
     - the kits have no LICENSE file;
     - extracting with `tar`/Finder leaves `com.apple.quarantine`, and a quarantined first launch
       blocks a non-interactive caller forever (`kit.md`);
-    - the Windows kits carry 34.5 MB of `.pdb` files.
+    - the Windows kits carry 34.5 MB of `.pdb` files that nothing loads (Klive's installer leaves
+      them out);
+    - the help says "colon-separated" for `-I` and `-m` on Windows too, where a path holds a colon.

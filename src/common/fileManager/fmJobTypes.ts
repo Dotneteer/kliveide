@@ -2,7 +2,7 @@ import type { FmFileSystem, FmPlanItem, FmTransferOptions } from "./fmTransfer";
 import type { FmErrorCode } from "./fmTypes";
 
 /*
- * The File Manager's jobs as MainApi carries them (.plans/FILE_MANAGER_PLAN.md §5.2): a copy or move
+ * The File Manager's jobs as MainApi carries them (`.ai/file-manager.md`): a copy or move
  * is planned first (`fmPlanTransfer`), its conflicts answered, then run (`fmRunTransfer`) while the
  * renderer reads its progress (`fmJobStatus`) and may cancel it (`fmCancelJob`).
  */

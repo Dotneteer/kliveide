@@ -1,7 +1,7 @@
 #include "zxnext-tape.h"
 
 /*
- * The ZX Spectrum Next's tape (`.plans/NEXT_TAPE_PLAN.md`).
+ * The ZX Spectrum Next's tape.
  *
  * The player is the Spectrum cores' (`zx-spectrum-tape.c`): TAP/TZX blocks played while the ROM's
  * LD-BYTES runs, fast load by trapping it, SA-BYTES captured into a saved TZX. Its names stay its own
@@ -49,7 +49,7 @@
 /*
  * The ROM 3 routines the trap watches are facts about the ROM set, not hardware: the host writes them
  * when it uploads the ROMs (`zxnextTapeSetRomRoutines`, from `nextRomSets.json`'s `facts.ldBytes`;
- * `.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` D6). Host-owned, so volatile: a state restore keeps the live
+ * `.ai/zxnext-models.md` D6). Host-owned, so volatile: a state restore keeps the live
  * values. The defaults are the 48K ROM's, which NextZXOS 2.08's ROM 3 has byte for byte.
  */
 static uint32_t zxnextTapeRomLoadBytes = 0x056cu;

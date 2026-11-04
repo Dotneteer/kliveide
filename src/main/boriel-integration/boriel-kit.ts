@@ -5,7 +5,7 @@ import path from "path";
 import type { BorielBundledKit } from "@common/messaging/BorielIntegration";
 
 /*
- * The Boriel BASIC setup kit this Klive carries (`.plans/BORIEL_BASIC_INTEGRATION_PLAN.md` §3.1).
+ * The Boriel BASIC setup kit this Klive carries (`.ai/boriel/integration.md`, "The kits in the build").
  * A packaged app has `<resources>/boriel/kit.json` and the one kit for its platform next to it
  * (staged by `scripts/boriel-kit.cjs stage`). A development run reads `vendor/boriel-basic/kit.json`
  * and the archives in `vendor/boriel-basic/kits/` (fetched by `npm run dev`'s `predev`).

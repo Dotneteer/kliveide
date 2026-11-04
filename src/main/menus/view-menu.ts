@@ -136,7 +136,7 @@ export function createViewMenu(context: MenuContext): MenuItemConstructorOptions
       // --- The window's own zoom (the emulator screen fits its panel by itself)
       id: "zoom",
       label: t("menu.view.zoom"),
-      // --- Explicit labels, or the OS labels these in its own language (LOCALIZATION_PLAN step 3)
+      // --- Explicit labels, or the OS labels these in its own language (`.ai/localization.md`)
       submenu: [
         { role: "resetZoom", label: t("menu.view.actualSize") },
         { role: "zoomIn", label: t("menu.view.zoomIn") },

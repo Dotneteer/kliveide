@@ -17,7 +17,7 @@
 
 /** Tests whose subject is a machine core: its CPU, devices, loaders, debug loop and flows. */
 export const E2E_CORE_TESTS: string[] = [
-  // --- A tape the File Manager writes, loaded by the 48K ROM (`.plans/FILE_MANAGER_PLAN.md`, Phase 6)
+  // --- A tape the File Manager writes, loaded by the 48K ROM (`.ai/file-manager.md`)
   "test/file-manager/fm-tape-load.test.ts",
   // --- Whole folders: every test in them runs a core or checks a core's sources/build
   "test/wasm/**/*.test.ts",
@@ -31,7 +31,7 @@ export const E2E_CORE_TESTS: string[] = [
   "test/spectrum-hw/**/*.test.ts",
   // --- The ZX Spectrum timing test kit (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phase 0); all slow
   "test/spectrum-kit/**/*.test.ts",
-  // --- The ROM annotation tools' coverage run (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §6)
+  // --- The ROM annotation tools' coverage run (`.docs/annotations.md` and `.ai/rom-annotations/README.md`)
   "test/rom-annotations/**/*.test.ts",
   "test/harness/**/self-tests/**/*.test.ts",
   "test/unit-tests/runner-*.test.ts",
@@ -64,7 +64,7 @@ export const E2E_CORE_TESTS: string[] = [
   "test/emu/one-shot-real-machine.test.ts",
   "test/emu/assertion-wpmem-real-machine.test.ts",
   "test/reverse/**/*.test.ts",
-  // --- Code/data detection on the real cores (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §8)
+  // --- Code/data detection on the real cores (`.docs/reverse-engineering-tools.md`, "Tests worth knowing")
   "test/reverse-eng/**/*.core.test.ts",
   "test/machines/hardware-specs-cores.test.ts",
   "test/tape/tape-load-flow.test.ts",
@@ -104,10 +104,11 @@ export const E2E_KBASIC_TESTS: string[] = [
   "test/kbasic/corpus/**/*.test.ts",
   // --- The test-only "mini" language on the shared Z80 back end (`.plans/SHARED_Z80_BACKEND_PLAN.md` Phase 6)
   "test/z80-backend/minilang/mini-run.test.ts",
-  // --- The debugger on zxbc-built Boriel BASIC programs (`.plans/BORIEL_BASIC_INTEGRATION_PLAN.md` §5)
+  // --- The debugger on zxbc-built Boriel BASIC programs (`.ai/boriel/integration.md`, "Tests and checks")
   "test/boriel/boriel-debugger.test.ts",
   "test/boriel/boriel-next.test.ts",
   "test/boriel/boriel-banked.test.ts",
+  "test/boriel/boriel-banked-tape.test.ts",
   "test/kbasic/compat/compat.test.ts",
   "test/kbasic/opt/opt-report.test.ts",
   "test/kbasic/oracle/oracle-script.test.ts",
@@ -152,7 +153,7 @@ export const E2E_KBASIC_TESTS: string[] = [
  * they add to an everyday run - exhaustive sweeps (every ROM, every machine, the whole corpus under
  * the debugger), determinism and contract checks that build the cores twice, and the zxbc
  * compatibility and optimiser reports. They are measured, not guessed: each took 17-143 s of a full
- * local run, ~1090 of its ~2400 test-seconds (`.plans/FAST_SLOW_TEST_TIERS_PLAN.md`).
+ * local run, ~1090 of its ~2400 test-seconds.
  *
  * Every entry must also match one of the lists above (that decides the unit-tier guard and the
  * inputs); being here moves it from its fast tier into `e2e-slow`. `npm test`, CI and

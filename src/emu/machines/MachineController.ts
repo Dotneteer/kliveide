@@ -35,7 +35,7 @@ import type { IRzxSession, RzxInterruptReason, RzxStop } from "@emu/machines/zxS
 import type { ReverseDebugState, RzxState } from "@state/AppState";
 
 import { toHexa4 } from "@appIde/services/ide-commands";
-// --- Register names: the union of every core's set (`.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` D5)
+// --- Register names: the union of every core's set (`.ai/zxnext-models.md` D5)
 import { nextRegUnion } from "@emu/machines/zxNext/nextRegSets";
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
@@ -2289,7 +2289,7 @@ export class MachineController implements IMachineController {
    * - a newer machine operation started — this flow was superseded or cancelled;
    * - the deadline passed — a machine that never drains its queue still gets its breakpoints back.
    *
-   * See `.plans/NEX_DEBUGGING_PLAN.md` §9.5 and §10.3.
+   * See `.ai/nex-debugging.md`.
    */
   private suppressUserBreakpointsUntilKeystrokesLand(operationRevision?: number): void {
     const debugSupport = this.debugSupport;

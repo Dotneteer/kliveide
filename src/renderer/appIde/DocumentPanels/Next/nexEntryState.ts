@@ -13,7 +13,7 @@ import type { NexHeader } from "./nexFileLoader";
  * facts about the file format. They were moved out because three other things need the same answer:
  * the entry-point stop, the pre-launch validation, and the live bank view.
  *
- * See `.plans/NEX_DEBUGGING_PLAN.md` §11.1.
+ * See `.ai/nex-debugging.md`.
  */
 
 /** The 16K bank NextZXOS pages into `$4000` for a NEX. */

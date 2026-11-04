@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /*
  * Builds the ZX Spectrum Next SD card base image of one ROM set
- * (`.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` D9.4).
+ * (`.ai/zxnext-models.md` D9.4).
  *
  *   npm run next-sd:build -- <setId> [--out <file.cim>] [--src <checkout>] [--keep]
  *   npm run next-sd:build -- --list <file.cim>

@@ -1,14 +1,14 @@
 # Design: Klive IDE website
 
 The locked system of the website (`docs/`): the landing page and the documentation. Hallmark reads
-this first when it is run from this folder, and every page shares it; it never deals a theme here
-(`.plans/HALLMARK_SITE_POLISH_PLAN.md`, H1 and H3). Change it on purpose; the file is the rule.
+this first when it is run from this folder, and every page shares it; it never deals a theme here.
+Change it on purpose; the file is the rule.
 The reasons behind each rule are in `.ai/ui-theming-intent-and-lessons.md` ("The Website Wears The
 App's Palette"); where the two differ, that file wins and this one is corrected.
 
 ## System
 - Genre: modern-minimal (a developer tool), with a long-document body for the docs.
-- Shape of the landing page: a data sheet (`.plans/DOCS_SITE_REDESIGN_PLAN.md`, R3): headline
+- Shape of the landing page: a data sheet: a headline
   beside an "At a glance" table, the screenshot carousel full width, tables (machines, also
   included, write/build/run/debug), feature rows always text left and picture right.
 - Theme: custom, the app's own palette (vibe: "the IDE's own colours, a data sheet").
@@ -68,8 +68,7 @@ dark one the way the app derives it; never tune one by hand. The roles:
   pause button pauses it. Under reduced motion, and without script, it stays on its poster.
 
 ## Waivers
-Hallmark rules this site breaks on purpose, each with its reason (the author's decisions H8 in
-`.plans/HALLMARK_SITE_POLISH_PLAN.md`):
+Hallmark rules this site breaks on purpose, each with its reason:
 - **58, about 80 words per screen, and the hero's "headline, one sentence, actions".** Waived: the
   landing page is a data sheet, and its "At a glance" table sits beside the headline on purpose.
   The feature texts are kept to about 30 words each so no screen runs far past the limit.

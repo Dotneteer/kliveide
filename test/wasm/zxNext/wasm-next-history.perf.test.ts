@@ -11,7 +11,7 @@ import { createSession } from "../../harness/zxnext";
  * is noise.
  *
  * - On, in the debug loop (Start with Debugging), it costs at most 25%: the D14 budget of
- *   `.plans/WASM_CORE_LEAN_AND_DEBUG_PLAN.md`. The loop runs in C since that plan's Phase 4a and costs
+ *   `.ai/wasm-core-debug.md`. The loop runs in C since the in-core debug loop and costs
  *   about a plain Run, so the recorder's unchanged cost is a larger fraction of it than the 8% it was
  *   of the old loop, which paid a TypeScript round trip per instruction; it measures about 10%.
  * - Off, the hook is one predictable branch per cycle. A plain Run never records (D8); the second

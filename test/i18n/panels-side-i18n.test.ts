@@ -11,8 +11,7 @@ import {
 import { historyCountText, historyEmptyMessage } from "@renderer/features/history/historyViewModel";
 
 /*
- * The side-bar panels' and feature views' texts in the pseudo-locale (`.plans/LOCALIZATION_PLAN.md`
- * step 11): every message of `panels-side.json` formats, with its placeholders, and the view models
+ * The side-bar panels' and feature views' texts in the pseudo-locale (`.ai/localization.md`): every message of `panels-side.json` formats, with its placeholders, and the view models
  * that build text outside React hand back pseudo text rather than English.
  */
 const isPseudo = (text: string) => /^\[.*~+\]$/s.test(text);

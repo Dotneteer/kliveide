@@ -48,6 +48,8 @@ nex-run game.nex -e       ; debug, stopping at the entry point (-e implies -d)
 Breaking at the entry point is the place to start with a NEX you did not write: the entry point is
 the one address the file itself names. If the file has a source-level debug sidecar written by the
 same build (`<name>.nex.kbasic-debug.json`), a debug run also steps through the program's source.
+So does a NEX file Boriel BASIC built outside Klive, when `zxbc` wrote its debug file beside it with
+`--debug=<name>.dbg` in the same build (and, for runtime names, `-M <name>.map`).
 
 Building a project whose output is a NEX file (`.savenex` in the Klive assembler) runs through the
 same path; see [Running and debugging](/en/guides/debugging/run-debug/).

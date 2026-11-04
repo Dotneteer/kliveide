@@ -15,7 +15,7 @@ import { createSp128Session } from "../harness/sp128";
 import { createSession } from "../harness/zxnext";
 
 /*
- * Banked Boriel BASIC programs (`--split-modules`, `.plans/BORIEL_BASIC_INTEGRATION_PLAN.md` §7) on
+ * Banked Boriel BASIC programs (`--split-modules`, `.ai/boriel/integration.md`, "Banked programs") on
  * the real 128K and Next cores. The fixture's three table modules fill two banks; `Sum` (first bank)
  * and `Peek3` (second bank) start at the same window address, so only the partition tells their
  * breakpoints apart. Every call from the main program into a module is a far call through zxbc's

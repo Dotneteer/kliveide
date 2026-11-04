@@ -1,5 +1,5 @@
 // Replaces @KLIVE_RELEASE@ in the docs with the latest release's version (0.64.0), so no page has
-// to hard-code a release (D8 of .plans/RELEASE_AUTOMATION_PLAN.md). The version comes from
+// to hard-code a release (D8 in .ai/release-guide.md). The version comes from
 // docs/generated/site-info.json, which scripts/build-doc-site-info.cjs writes from the newest v*
 // tag before every docs build; a release redeploys the site, so the pages follow by themselves.
 //

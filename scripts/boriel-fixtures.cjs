@@ -1,5 +1,5 @@
 /*
- * Regenerates the Boriel BASIC test fixtures (`test/boriel/fixtures/`, plan decision B-T1): each
+ * Regenerates the Boriel BASIC test fixtures (`test/boriel/fixtures/`, decision B-T1 in `.ai/boriel/integration.md`): each
  * folder's `program.bas`, compiled by an installed zxbc with the arguments in its `fixture.json`,
  * into `program.bin`, `program.dbg` and `program.map` (and `program.nex` when `fixture.json` says `"nex": true`).
  * `"banked": true` builds with `--split-modules` into `program.z80` (128K) or `program.nex` (Next)

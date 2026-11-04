@@ -34,7 +34,7 @@ indicator (see "As built"). Phase 4 (NextPi commands) is a separate, later plan.
 - **Not done:**
   - a status indicator in the emulator's UI (the command with no argument shows the state)
   - the Guides page with generated screenshots
-  - lines 130-131 and 579 of `.plans/NEXT_AUDIO_ARTICLES_PLAN.md`, which still say I2S is not
+  - lines 130-131 and 579 of `.plans/NEXT_AUDIO_ARTICLES_PLAN.md` (done and removed; see git history), which still say I2S is not
     emulated (that file had uncommitted edits of the author's)
   - checking the change by hand in the running IDE
 - **Tests:**
@@ -255,7 +255,7 @@ cost with no source connected.
 1. The command, the status indicator, i18n (§4).
 2. Docs:
    - a Guides page on feeding Pi audio, with generated screenshots (`guides-*` recipe)
-   - the planned `pi-audio` Under-the-hood article (`.plans/NEXT_AUDIO_ARTICLES_PLAN.md` §7) can now
+   - the planned `pi-audio` Under-the-hood article (`.plans/NEXT_AUDIO_ARTICLES_PLAN.md` (done and removed; see git history) §7) can now
      show Klive. Update that plan's lines 130–131 and 579 ("Pi I2S audio is not emulated").
 3. Changeset (`feature`) with the commit that completes Phase 3, describing the whole plan's result
    (AGENTS.md: no changeset for intermediate phases).

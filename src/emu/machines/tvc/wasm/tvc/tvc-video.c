@@ -1,6 +1,6 @@
 /*
  * The TVC video: from CRTC address to TV picture, one CRTC character (640 ns, 2 T) at a time
- * (TVC_VIDEO_GENERATION.md Parts 4-10; plan §7). `tvcVideoCharacter` runs at the start of every
+ * (TVC_VIDEO_GENERATION.md Parts 4-10). `tvcVideoCharacter` runs at the start of every
  * character, eagerly, as the CPU clock passes it (`tvcAdvanceTacts`): palette, border and mode
  * writes and video RAM writes land at the character they happen in.
  *
@@ -12,11 +12,12 @@
  *  3. Blanking clears the video register (Part 8): a 14.4 us monostable from HS rising (22.5
  *     characters, 180 dots at 12.5 MHz), and a latch set by the VS monostable and cleared while MA9
  *     is 1.
- *  4. The TV (Part 9, plan D4): the line sync starts on HS falling, the frame sync on VS rising. The
- *     picture is 70 characters by 288 lines, placed as a television would with the ROM's values:
- *     21 characters after the line sync and 26 line syncs after the frame sync, which centres the
- *     512 x 240 paper with 24 dots and 24 lines of border around it. The window starts just after
- *     the horizontal blank ends (20.5 characters after the line sync), so no blanked dot shows.
+ *  4. The TV (Part 9, D4 in `.ai/videoton-tvc.md`): the line sync starts on HS falling, the frame
+ *     sync on VS rising. The picture is 70 characters by 288 lines, placed as a television would
+ *     with the ROM's values: 21 characters after the line sync and 26 line syncs after the frame
+ *     sync, which centres the 512 x 240 paper with 24 dots and 24 lines of border around it. The
+ *     window starts just after the horizontal blank ends (20.5 characters after the line sync), so
+ *     no blanked dot shows.
  *  5. The byte for this character is fetched from video RAM (the displayed bank on the 64K+):
  *     address bits 0-5 = MA0-5, 6-7 = RA0-1, 8-13 = MA6-11 (Part 4).
  *  6. The interrupt flip-flop is clocked by NOR(cursor, sound IT): it is set when the cursor pulse

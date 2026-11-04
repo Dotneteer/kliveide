@@ -9,9 +9,9 @@ export const SJASMPLUS_INTEGRATION_DIALOG = 6;
 export const MACHINE_SELECT_DIALOG = 7;
 // --- Shown in whichever window has the focus too (`.plans/MENU_REDESIGN_PLAN.md` §4)
 export const SETTINGS_DIALOG = 8;
-// --- Detect code and data (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §4.6)
+// --- Detect code and data (`.docs/reverse-engineering-tools.md`, "Code/data detection")
 export const DETECT_CODE_DATA_DIALOG = 9;
-// --- Boriel BASIC setup (`.plans/BORIEL_BASIC_INTEGRATION_PLAN.md` §3.3). Both registries render it:
+// --- Boriel BASIC setup (`.ai/boriel/integration.md`, "The setup dialog"). Both registries render it:
 // --- the first-run offer appears in the emulator window, Settings opens it in the IDE window
 export const BORIEL_SETUP_DIALOG = 10;
 // --- z88dk (C) setup (`.plans/Z88DK_INTEGRATION_PLAN.md` §4), opened from Settings, `z88dk-setup` and a C build

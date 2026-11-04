@@ -59,7 +59,7 @@ export function prepareRomDisassembler(
 
 /**
  * A ROM page decoded with Klive's own disassembler, for the ROM annotation tools (§6 of
- * `.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md`: "the ROM bytes themselves, read through Klive's
+ * `.docs/annotations.md`: "the ROM bytes themselves, read through Klive's
  * own disassembler"). The ROM's custom decoding runs over the whole page — report codes after
  * `RST $08`, calculator literals after `RST $28` — so they are not taken for code.
  */

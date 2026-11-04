@@ -13,7 +13,7 @@ import { createZx81Session } from "../harness/zx81";
 
 /*
  * What running with the debugger costs on every core, against a plain Run - the D14 budgets of
- * `.plans/WASM_CORE_LEAN_AND_DEBUG_PLAN.md` (§10.6-§10.8 hold the measurements). `npm run test:perf`; not
+ * `.ai/wasm-core-debug.md` (D14; "What the measurements showed"). `npm run test:perf`; not
  * part of the regular tiers, because a timing ratio on a shared runner is noise.
  *
  * Each bound is the budget plus the ~3% the plan measured as noise between identical builds (T10). The

@@ -36,10 +36,10 @@ const ZXNEXT_VOLATILE_SYMBOLS = [
   ...debugLoopVolatileSymbols("zxnext"),
   ...Z80_ACCESS_LOG_VOLATILE_SYMBOLS,
   "zxnextNextRegWatch",
-  // --- The tape's data: media the IDE uploads, not machine state (`.plans/NEXT_TAPE_PLAN.md` D3);
+  // --- The tape's data: media the IDE uploads, not machine state;
   // --- the playback position and the block table stay in the state
   "sp48TapeData",
-  // --- The ROM set's tape routines: host-owned facts about the ROMs (`.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` D6)
+  // --- The ROM set's tape routines: host-owned facts about the ROMs (`.ai/zxnext-models.md` D6)
   "zxnextTapeRomLoadBytes",
   "zxnextTapeRomLoadBytesInvalidHeader",
   "zxnextTapeRomLoadBytesResume",

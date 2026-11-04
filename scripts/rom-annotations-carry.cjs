@@ -2,7 +2,7 @@
 
 /*
  * Carry a Klive ROM sidecar's annotations to a newer ROM whose bytes moved
- * (`.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` D8).
+ * (`.ai/zxnext-models.md` D8).
  *
  *   npm run rom:annotations:carry -- <fromSidecar> <toRom> [--page n] [--out <sidecar>]
  *                                    [--review <file>] [--force]
@@ -37,7 +37,7 @@
  * `level` is the lower of the old one and the new page's measured level. Everything not carried, and
  * every carried comment that names a ROM address which moved, is listed in the review file.
  *
- * The re-anchoring core is `src/common/reverse/pipeline/align/carry.ts`, which
+ * The re-anchoring core is `src/common/roms/romCarry.ts`, which
  * `test/annotations/romCarry.test.ts` tests.
  */
 
@@ -47,9 +47,9 @@ const { basename, dirname, join, relative, resolve, sep } = require("node:path")
 
 const PAGE = 0x4000;
 
-// --- The re-anchoring core lives in the pipeline (`src/common/reverse/pipeline/align/carry.ts`)
+// --- The re-anchoring core (`src/common/roms/romCarry.ts`)
 const root = registerTsRuntime();
-const { carryBank, dropMisaligned, addressMentions } = require(join(root, "src/common/reverse/pipeline/align/carry.ts"));
+const { carryBank, dropMisaligned, addressMentions } = require(join(root, "src/common/roms/romCarry.ts"));
 const hex4 = (v) => v.toString(16).toUpperCase().padStart(4, "0");
 const hex = (v) => (v === undefined ? "?" : `$${hex4(v)}`);
 const regionText = (r) => `${r.type}${r.decode ? `/${r.decode}` : ""} ${hex(r.start)}-${hex(r.end)}`;

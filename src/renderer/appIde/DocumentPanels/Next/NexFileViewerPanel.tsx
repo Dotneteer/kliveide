@@ -387,7 +387,7 @@ const NexFileViewerContents = ({
    */
   const machineFeatures = appServices.machineService?.getMachineInfo()?.machine?.features;
   // --- The Next model the file would run on: the selected one, or the implicit one when another
-  // --- machine is selected (`.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` P6)
+  // --- machine is selected (`.ai/zxnext-models.md` D2)
   const nextProfile = nextProfileOf(emulatedMachineId === MI_ZXNEXT ? emulatedModelId : undefined);
   // --- Not memoized: a handful of comparisons, and its messages are in the display language, so a
   // --- language change (which re-renders through `useT`) must rewrite them.

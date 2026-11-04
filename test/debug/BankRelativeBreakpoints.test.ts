@@ -73,7 +73,7 @@ describe("bank-relative breakpoint keys", () => {
 
   it("cannot collide with an address, partition-address or source key", () => {
     // --- Ownership is not part of a breakpoint's identity, which is only safe because these key
-    // --- shapes are disjoint by construction. See `.plans/NEX_DEBUGGING_PLAN.md` §4.4.
+    // --- shapes are disjoint by construction. See `.ai/nex-debugging.md`.
     const keys = [
       getBreakpointStorageKey({ address: 0x0100, exec: true }),
       getBreakpointStorageKey({ address: 0x0100, partition: 5, exec: true }),
@@ -312,7 +312,7 @@ describe("suppressing user breakpoints during a launch flow", () => {
    * carries an absolute tact window, so a user breakpoint that pauses the machine while strokes are
    * still queued expires every one that has not been pressed yet, and the command line is left
    * half-written. The flow's own session-owned stop still has to fire, which is what this flag
-   * separates. See `.plans/NEX_DEBUGGING_PLAN.md` §9.5.
+   * separates. See `.ai/nex-debugging.md`.
    */
 
   it("lets a session-owned breakpoint through and holds a user one back", () => {

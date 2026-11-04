@@ -62,7 +62,7 @@ const ZX80_FIRST_KEY_DELAY_FRAMES = 5;
  * The host side of a Sinclair ZX80 or ZX81 whose hardware is emulated in the WASM core: the clock and
  * frame units, the keyboard mapping and the emulated keystroke queue (the typer), the partition and
  * ROM metadata, and the machine-menu commands. It follows the Cambridge Z88's host, the template for
- * a non-Spectrum machine (`.plans/ZX8081_WASM_PLAN.md` §4.2).
+ * a non-Spectrum machine (`test/zx8081/zx8081-separation.test.ts`).
  *
  * The emulating subclass supplies memory, ports, keys, the picture and the frame loop.
  */
@@ -244,7 +244,7 @@ export abstract class Zx8081WasmHost extends Z80MachineBase {
   }
 
   // ==========================================================================================
-  // Code injection (`.plans/ZX8081_CODE_INJECTION_PLAN.md` D4) and tape loading
+  // Code injection (`.ai/zx8081.md`, "Machine code decisions", D4) and tape loading
 
   /**
    * The code model this machine runs: the ROM decides, so a ZX80 with the 8K ROM runs ZX81 code

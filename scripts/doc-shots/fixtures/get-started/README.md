@@ -4,7 +4,7 @@ The programs the Get Started pages ask the reader to type (`docs/content/en/get-
 
 - the source the screenshot recipes open (`scripts/doc-shots/recipes/get-started*.cjs`), and
 - built by `test/docs/get-started-fixtures.test.ts`, so a tutorial whose code stops assembling
-  fails CI rather than a reader (R5 of `.plans/DOCS_SITE_MODERNIZATION_PLAN.md`).
+  fails CI rather than a reader (R5 of `.ai/docs-site.md`).
 
 | Folder | Page | Language |
 |---|---|---|

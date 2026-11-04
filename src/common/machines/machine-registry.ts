@@ -242,7 +242,7 @@ const Z88_MODELS: MachineModel[] = [
 /**
  * The 48K BASIC ROM's report codes (`RST $08`) and calculator literals (`RST $28`), decoded only in
  * a ROM page that is a 48K BASIC ROM — which is what lets the 128K, +3 and Scorpion have it, their
- * other ROM pages being different programs (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §4.5).
+ * other ROM pages being different programs (`.docs/annotations.md`, "The Live Disassembly View").
  */
 const spectrum48CustomDisassembler: CustomDisassemblerFactory = (context) =>
   gateOnRom(new ZxSpectrum48CustomDisassembler(), context, 0x4000);
@@ -445,7 +445,7 @@ export const machineRegistry: MachineInfo[] = [
     charSet: ZxNextChars,
     features: {
       [MF_Z80]: true,
-      // --- The 48K ROM's tape routines in ROM 3, through the Next's EAR input (`.plans/NEXT_TAPE_PLAN.md`)
+      // --- The 48K ROM's tape routines in ROM 3, through the Next's EAR input
       [MF_TAPE_SUPPORT]: true,
       // --- A Next build is delivered as a .nex file the machine loads itself; there is no
       // --- inject-into-memory path, so the Inject button is not offered for it.
@@ -466,7 +466,7 @@ export const machineRegistry: MachineInfo[] = [
       // --- Code coverage and the heat map (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D15)
       [MF_PROFILE]: true
     },
-    // --- One model per Next profile: a board and a core version (`.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` D1)
+    // --- One model per Next profile: a board and a core version (`.ai/zxnext-models.md` D1)
     models: NEXT_PROFILE_IDS.map((modelId) => ({ modelId, displayName: nextModelDisplayName(modelId), config: {} })),
     mediaIds: [MEDIA_TAPE],
     toolInfo: {
@@ -591,7 +591,7 @@ export const machineRegistry: MachineInfo[] = [
     features: {
       [MF_Z80]: true,
       [MF_TAPE_SUPPORT]: true,
-      // --- Built code goes in as a 1 REM program and RUN (`.plans/ZX8081_CODE_INJECTION_PLAN.md`)
+      // --- Built code goes in as a 1 REM program and RUN (`.ai/zx8081.md`, "Machine code decisions", D4)
       [MF_INJECT_SUPPORT]: true,
       [MF_ALLOW_SCAN_LINES]: false,
       // --- The shared execution-history recorder (EXECUTION_HISTORY_ALL_CORES_PLAN)
@@ -624,7 +624,7 @@ export const machineRegistry: MachineInfo[] = [
     features: {
       [MF_Z80]: true,
       [MF_TAPE_SUPPORT]: true,
-      // --- As the ZX81's (`.plans/ZX8081_CODE_INJECTION_PLAN.md`)
+      // --- As the ZX81's (`.ai/zx8081.md`, "Machine code decisions", D4)
       [MF_INJECT_SUPPORT]: true,
       [MF_ALLOW_SCAN_LINES]: false,
       // --- The shared execution-history recorder (EXECUTION_HISTORY_ALL_CORES_PLAN)
@@ -693,7 +693,7 @@ export const machineRegistry: MachineInfo[] = [
     }
   },
   {
-    // --- `.plans/VIDEOTON_TVC_PLAN.md`: the 64K and the 64K+ (D2)
+    // --- `.ai/videoton-tvc.md`, "Decisions": the 64K and the 64K+ (D2)
     machineId: MI_TVC,
     displayName: "Videoton TVC",
     charSet: TvcChars,
@@ -850,7 +850,7 @@ export function getMachineName(machineId: string, modelId?: string): string {
  * The ZX Spectrum Next's "compatibility" model selected the TypeScript emulator, which was removed
  * once the WASM core reached parity (`.plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`, D4), and
  * "standard" was its one model before each Next model became a profile (a board and a core version,
- * `.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` D1). Both open on the model they were made with, KS2 with
+ * `.ai/zxnext-models.md` D1). Both open on the model they were made with, KS2 with
  * core 3.02.01.
  */
 export const modelIdAliases: Readonly<Record<string, Readonly<Record<string, string>>>> = {
@@ -881,7 +881,7 @@ export const implicitModelIds: Readonly<Record<string, string>> = {
 /**
  * The model a new project starts on when nothing else picks one (no running model of the type, no
  * favourite), for machines whose newest model is not their first. The Next's first model is the one
- * old projects mean; new work starts on the newest core (`.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` D7).
+ * old projects mean; new work starts on the newest core (`.ai/zxnext-models.md` D7).
  */
 export const newProjectModelIds: Readonly<Record<string, string>> = {
   [MI_ZXNEXT]: NEW_PROJECT_NEXT_PROFILE_ID

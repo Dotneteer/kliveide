@@ -30,9 +30,9 @@ dev server, and no macOS Screen Recording permission — which matters, because
 `screencapture` is permission-blocked in this environment and window-id targeting is
 fragile besides.
 
-It complements, and does not replace, `.plans/baseline/`:
+It complements, and does not replace, `scripts/cdp/`:
 
-| | `.plans/baseline/` (CDP) | `scripts/doc-shots/` (Playwright) |
+| | `scripts/cdp/` (CDP) | `scripts/doc-shots/` (Playwright) |
 |---|---|---|
 | Target | An app you launched by hand | Launches its own isolated instance |
 | State | Whatever your profile holds | Seeded, reproducible |
@@ -158,7 +158,7 @@ of a machine through the same session and compares them:
 
 ## Localized shots, markers and WebP
 
-Added for the Get Started pages (`.plans/DOCS_SITE_MODERNIZATION_PLAN.md` §5, Phase 2):
+Added for the Get Started pages (`.ai/docs-site.md`, R3-R5):
 
 - **`localized: true`** on a recipe makes `run.cjs` run it once per language of `--lang <id>`,
   `--lang de,hu` or `--lang all` (the `enabled` rows of `src/common/i18n/languages.ts`). The harness
@@ -346,7 +346,7 @@ Eleven recipes; the rest of the pages were deliberately left ungenerated.
   (<kbd>Enter</kbd> in the EMU window), the file the +3 saved appearing in the explorer, the Layout
   view, an SD card image and Settings › Machine's esxDOS row. Rerun it after any change to the
   disk UI; it waits for each state's text before photographing it.
-- `recipes/guides-*.cjs` — the Guides' WebP shots (`images/en/guides/...`, `.plans/GUIDES_OVERHAUL_PLAN.md`
+- `recipes/guides-*.cjs` — the Guides' WebP shots (`images/en/guides/...`, `.ai/docs-site.md`
   Phase 2): `guides-emulator` (EMU window, 48K/128K keyboards), `guides-media` (snapshot and RZX viewers,
   both files made in the recipe by `zx-snapshot-save` and `zx-rzx-record`/`zx-rzx-stop`), `guides-debugging`
   (breakpoints set on source lines with `bp-set [file]:line ...`, the Breakpoint dialog from the margin's
