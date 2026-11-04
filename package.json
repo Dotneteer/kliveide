@@ -260,19 +260,9 @@
       }
     },
     "files": [
-      "**/*",
-      "!dev",
-      "!.vscode",
-      "!_input",
-      "!vendor",
-      "!CHANGELOG.md",
-      "!pages",
-      "!release",
-      "!src",
-      "!test",
-      "!docs",
-      "!docs/**/*",
-      "!tsconfig.tsbuildinfo"
+      "out/**/*",
+      "LICENSE",
+      "THIRD_PARTY_NOTICES.md"
     ],
     "extraResources": [
       {

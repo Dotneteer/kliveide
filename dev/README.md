@@ -1,7 +1,8 @@
 # dev/
 
 Everything here is for the people (and AI assistants) who develop Klive. None of it ships with the
-app: `package.json` excludes the whole folder from the packaged build (`"!dev"` in `build.files`).
+app: `package.json`'s `build.files` is an allowlist (`out/**/*` and the licence files), so nothing
+here reaches the packaged build.
 
 The folder is being filled step by step by `.plans/ROOT_DECLUTTER_PLAN.md`. Until a subfolder has
 moved, it is still at its old place in the repository root, shown in brackets below.

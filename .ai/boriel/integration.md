@@ -33,7 +33,8 @@ Boriel BASIC cannot do compared with Klive BASIC is `limitations.md`.
   verified kit fails instead of shipping none; `predev` runs `fetch --current --optional`, which only
   warns offline.
 - `package.json`'s `build.extraResources` has one entry, `vendor/boriel-basic/stage` → `boriel`.
-  `"!vendor"` keeps the folder out of `files`.
+  `build.files` is an allowlist (`out/**/*` and the licence files), so nothing under `vendor/`
+  reaches the app archive; the kit arrives only through `extraResources`.
 - `borielKitPath()` (`boriel-kit.ts`) finds the kit: `process.resourcesPath/boriel/<file>` packaged,
   `vendor/boriel-basic/kits/<file>` in dev (searching upward from `app.getAppPath()`), or undefined
   when the installer carries no kit, and then no offer is made.

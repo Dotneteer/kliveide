@@ -165,8 +165,10 @@ goes while the recipe is fresh and before the big comment-only rewrites.
   `.claude/`, `.docs/`, `.plans/`, `_experiments/`, `scripts/`, `AGENTS.md`, `tsconfig.json` and,
   on a developer machine, the ignored scratch folders (`.visual-tests/`, `i18n-work/`, ...). `"!dev"`
   drops most of them as the moves land; what it leaves (`.claude/`, `AGENTS.md`, `tsconfig.json`,
-  local scratch) is a follow-up of its own: turn `build.files` into an allowlist (`out/**`,
-  `package.json`, what the app reads at run time) instead of `**/*` minus exclusions.
+  local scratch) was a follow-up of its own. *Done (2026-11-04, between steps 4 and 5):* `build.files`
+  is now the allowlist `out/**/*`, `LICENSE`, `THIRD_PARTY_NOTICES.md` (electron-builder adds
+  `package.json` and the production `node_modules` itself), so no later step needs to touch it: the
+  `"!vendor"` and `"!dev"` exclusions are gone with the old list.
 - Update the "Project Context" section of `AGENTS.md` to describe `dev/` with the paths it will hold,
   marking the not-yet-moved ones.
 
@@ -218,8 +220,10 @@ most of what is in it locally is not tracked.
 - Functional:
   - App: `src/main/boriel-integration/boriel-kit.ts` (finds the kit in a development run),
     `src/common/zxnext/romSets.ts`.
-  - Packaging: `package.json` `build.files` (`"!vendor"` goes; `"!dev"` from step 2 covers it) and
-    `build.extraResources` (`from: "vendor/boriel-basic/stage"` -> `dev/vendor/boriel-basic/stage`).
+  - Packaging: `build.extraResources` (`from: "vendor/boriel-basic/stage"` ->
+    `dev/vendor/boriel-basic/stage`); `build.files` is an allowlist and needs nothing.
+    `test/main/boriel-kit-script.test.ts` finds `package.json` at `VENDOR_FOLDER/../..`: one more
+    `..` after the move.
   - Git: the `vendor/...` rules in `.gitignore` (kits, stage, `next-fpga/*/` with its
     `!next-fpga/comments/` exception) and `.gitattributes` (`spectrum-tests/** -text`, the patches'
     `eol=lf`). Check with `git check-ignore -v` and `git ls-files --eol` that both still apply.

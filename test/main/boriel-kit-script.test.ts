@@ -93,6 +93,9 @@ describe("boriel-kit script", () => {
       expect(manifest.kits[kitKey(platform, arch)]).toBeDefined();
     }
     expect(pkg.build.extraResources[0]).toMatchObject({ from: "vendor/boriel-basic/stage", to: "boriel" });
-    expect(pkg.build.files).toContain("!vendor");
+    // The kits reach the package only through extraResources: build.files is an allowlist (no
+    // "**/*") and names nothing under vendor/.
+    expect(pkg.build.files).not.toContain("**/*");
+    expect(pkg.build.files.some((p: string) => p.replace(/^!/, "").startsWith("vendor"))).toBe(false);
   });
 });
