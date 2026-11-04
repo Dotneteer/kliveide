@@ -94,4 +94,4 @@ The Get Started screenshots are taken in each language by the doc-shots harness:
 DOC_SHOTS_OUT=docs/public/images node scripts/doc-shots/run.cjs get-started --lang de
 ```
 
-A page without its own screenshots shows the English ones. See `.ai/doc-screenshots-guide.md`.
+A page without its own screenshots shows the English ones. See `dev/ai/doc-screenshots-guide.md`.

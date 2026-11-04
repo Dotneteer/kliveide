@@ -12,7 +12,7 @@
  * `line-height` is declared with it, deliberately. A surface that sets `font-size` and nothing else
  * runs on `line-height: normal`, i.e. on the selected font's own metrics — measured at a 12% spread
  * across the three bundled faces, worst on the ZX Spectrum one. See the note in
- * `.ai/ui-theming-intent-and-lessons.md`.
+ * `dev/ai/ui-theming-intent-and-lessons.md`.
  */
 .panelFont {
   font-family: var(--monospace-font);

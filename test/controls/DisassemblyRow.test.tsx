@@ -1093,7 +1093,7 @@ describe("deriveDisassemblyRowViewModel: bank-relative breakpoints", () => {
  * `bp-del $8000` for a breakpoint whose key is `$8000 R`, which matches nothing and leaves a dot
  * that cannot be clicked away. Watchpoints on a NEX bank made that reachable.
  *
- * See `.ai/nex-debugging.md`.
+ * See `dev/ai/nex-debugging.md`.
  */
 describe("DisassemblyRow: the breakpoint kind reaches the indicator", () => {
   function renderWithBreakpoint(breakpoint: any, over: any = {}) {

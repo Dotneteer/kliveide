@@ -122,7 +122,7 @@ const specialDocumentDefinitions: Record<SpecialDocumentId, SpecialDocumentDefin
     iconName: "sprite",
     workspaceRestorable: true
   }, { name: "panels.document.graphics" }),
-  // --- The two-pane File Manager (`.ai/file-manager.md`, D1)
+  // --- The two-pane File Manager (`dev/ai/file-manager.md`, D1)
   [FILE_MANAGER_PANEL_ID]: withTexts({
     id: FILE_MANAGER_PANEL_ID,
     type: FILE_MANAGER_EDITOR,

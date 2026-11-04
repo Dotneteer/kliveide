@@ -1,5 +1,5 @@
 // --- The Boriel BASIC setup dialog: label + value rows, as the SJASMPLUS integration dialog.
-// --- Colours only through tokens (`.ai/ui-theming-intent-and-lessons.md`).
+// --- Colours only through tokens (`dev/ai/ui-theming-intent-and-lessons.md`).
 
 $labelWidth: 78px;
 
@@ -76,7 +76,7 @@ $labelWidth: 78px;
   margin: 3px 0;
 }
 
-// --- The installation's verdict is the only colour (`.ai/ui-theming-intent-and-lessons.md`,
+// --- The installation's verdict is the only colour (`dev/ai/ui-theming-intent-and-lessons.md`,
 // --- "A Pass/Fail List Colours Its Status"). Not --color-secondary-label: that is a grey.
 .working {
   color: var(--status-success);

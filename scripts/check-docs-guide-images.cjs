@@ -2,7 +2,7 @@
  * Fails when a Guides page shows a screenshot taken before the September 2026 UI redesign.
  *
  * The redesign (#1337-#1342) changed every panel, dialog and toolbar, so these images show an
- * app that no longer exists. `.ai/docs-site.md` replaced them with recipe-generated
+ * app that no longer exists. `dev/ai/docs-site.md` replaced them with recipe-generated
  * shots (`scripts/doc-shots/`); this keeps them from coming back by copy and paste.
  *
  * The list is explicit rather than dated, because git dates of these files record a bulk move,
@@ -54,7 +54,7 @@ for (const file of pages(guidesDir)) {
 
 if (found.length) {
   console.error(`${found.length} pre-redesign screenshot reference(s) in Guides:\n${found.join("\n")}`);
-  console.error("Replace them with a recipe-generated shot (scripts/doc-shots/, .ai/doc-screenshots-guide.md).");
+  console.error("Replace them with a recipe-generated shot (scripts/doc-shots/, dev/ai/doc-screenshots-guide.md).");
   process.exit(1);
 }
 console.log("Guides show no pre-redesign screenshots.");

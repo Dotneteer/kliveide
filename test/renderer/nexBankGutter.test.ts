@@ -18,7 +18,7 @@ import {
  * real defect: a `Map` keyed by offset alone kept whichever breakpoint the emulator's list happened
  * to end with, so the glyph — and the `bp-del` command built from it — depended on ordering.
  *
- * See `.ai/nex-debugging.md`.
+ * See `dev/ai/nex-debugging.md`.
  */
 
 function bp(over: Partial<BreakpointInfo> = {}): BreakpointInfo {

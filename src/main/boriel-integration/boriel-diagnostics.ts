@@ -3,7 +3,7 @@ import path from "path";
 import type { AssemblerErrorInfo } from "@abstractions/CompilerInfo";
 
 /*
- * zxbc's diagnostics (`.ai/boriel/cli-and-diagnostics.md`), one per line:
+ * zxbc's diagnostics (`dev/ai/boriel/cli-and-diagnostics.md`), one per line:
  *
  *   <file>:<line>: error: [E342] Unexpected end of line
  *   <file>:<line>: warning: [W150] Variable 'grid' is never used

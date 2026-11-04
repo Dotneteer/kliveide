@@ -87,7 +87,7 @@ export function useAnnotationEditorPorts(args: AnnotationEditorPortArgs): NexAnn
 
   // --- The ports outlive a render, so callbacks the component recreates on every render are read
   // --- through refs. A captured one would go stale after the first render. Trap 5 in
-  // --- `.ai/ui-mvc-guide.md`.
+  // --- `dev/ai/ui-mvc-guide.md`.
   const navigateRef = useRef(args.onNavigateToAddress);
   navigateRef.current = args.onNavigateToAddress;
   const revealRef = useRef(args.onRevealAddressInBank);

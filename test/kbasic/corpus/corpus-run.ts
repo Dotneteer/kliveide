@@ -32,9 +32,9 @@ import { isNextOnly, oracleDifferences, programs, readExpectations, reportChar, 
 const ROOT = __dirname;
 const ORACLE = join(__dirname, "..", "oracle");
 
-/** The semantics annex entries (`.ai/zxbasic-syntax`), which `oracle-differs` must name. */
+/** The semantics annex entries (`dev/ai/zxbasic-syntax`), which `oracle-differs` must name. */
 const ANNEX = new Set<string>(
-  JSON.parse(readFileSync(join(__dirname, "../../../.ai/zxbasic-syntax/zxbasic-syntax.json"), "utf8")).semantics.entries.map((e: { name: string }) => e.name)
+  JSON.parse(readFileSync(join(__dirname, "../../../dev/ai/zxbasic-syntax/zxbasic-syntax.json"), "utf8")).semantics.entries.map((e: { name: string }) => e.name)
 );
 
 function heapUsed(r: Run): number {

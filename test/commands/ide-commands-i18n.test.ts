@@ -37,7 +37,7 @@ import * as mGraphicsCommand from "@renderer/appIde/commands/GraphicsCommand";
 
 /*
  * The IDE's own commands and the command infrastructure in the pseudo-locale
- * (`.ai/localization.md`): every description and the argument-validation messages
+ * (`dev/ai/localization.md`): every description and the argument-validation messages
  * are pseudo text, so none of them is still a hard-coded English string.
  */
 const isPseudo = (text: string) => /^\[.*~+\]$/s.test(text);

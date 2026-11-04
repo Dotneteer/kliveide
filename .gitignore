@@ -73,7 +73,7 @@ dev/vendor/next-fpga/*/
 # Output of scripts/z88dk-ide-check.cjs (throwaway homes and screenshots)
 .z88dk-ide-check/
 
-# Localization work files: i18n:todo batches and translators' answers (`.ai/localization.md`, "A translation round")
+# Localization work files: i18n:todo batches and translators' answers (`dev/ai/localization.md`, "A translation round")
 i18n-work/
 
 # Website facts generated at build time (scripts/build-doc-site-info.cjs)

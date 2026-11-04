@@ -48,7 +48,7 @@ export function annotationsMenuTitle(): string {
  *
  * A string discriminant, not a boolean: this project compiles with `strictNullChecks: false`, under
  * which TypeScript does not narrow a union on a boolean-literal discriminant (trap 2 in
- * `.ai/ui-mvc-guide.md`).
+ * `dev/ai/ui-mvc-guide.md`).
  */
 export type NexAnnotationWarningViewModel =
   | { kind: "none" }

@@ -20,7 +20,7 @@ import { t } from "@common/i18n/i18n";
 /** The settings key of the folder the last recording was saved to or opened from */
 export const DEBUG_RECORDING_FOLDER = "debugRecordingFolder";
 
-/** A function, so the filter name is in the current language (`.ai/localization.md`, D7) */
+/** A function, so the filter name is in the current language (`dev/ai/localization.md`, D7) */
 const filters = () => [{ name: t("common.filter.debugRecordings"), extensions: ["klr"] }];
 
 /** Whether the machine keeps a reverse-debugging timeline now: Save Debug Recording… needs one (D17) */

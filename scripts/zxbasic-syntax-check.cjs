@@ -3,11 +3,11 @@
  *
  * ## What this script is for
  *
- * `.ai/zxbasic-syntax/zxbasic-syntax.json` is Klive's own description of the Boriel ZX BASIC
+ * `dev/ai/zxbasic-syntax/zxbasic-syntax.json` is Klive's own description of the Boriel ZX BASIC
  * language (keywords, statements, operators, preprocessor, CLI options, warning codes). It was
  * written from one upstream release, and it goes stale the moment upstream adds a statement.
  *
- * `.ai/zxbasic-syntax/upstream-fingerprint.json` records *which* upstream release the spec
+ * `dev/ai/zxbasic-syntax/upstream-fingerprint.json` records *which* upstream release the spec
  * describes and the git blob SHA of every upstream file that can carry a syntax change: the lexer,
  * the parser, the keyword table, the preprocessor, the CLI option parser, the error/warning table,
  * and the per-statement documentation pages.
@@ -51,7 +51,7 @@ const path = require("node:path");
 const https = require("node:https");
 
 const REPO = "boriel-basic/zxbasic";
-const FINGERPRINT_PATH = path.join(__dirname, "..", ".ai", "zxbasic-syntax", "upstream-fingerprint.json");
+const FINGERPRINT_PATH = path.join(__dirname, "..", "dev", "ai", "zxbasic-syntax", "upstream-fingerprint.json");
 
 /**
  * Folders in which a new file may carry a syntax change, with the extensions that count. A file
@@ -258,7 +258,7 @@ async function main() {
     for (const f of diff.removed) console.log(`  ${f}`);
   }
   console.log(`\nFull compare: https://github.com/${REPO}/compare/${base.slice(0, 12)}...${target.sha.slice(0, 12)}`);
-  console.log("After updating .ai/zxbasic-syntax/zxbasic-syntax.json, run: node scripts/zxbasic-syntax-check.cjs --update --ref " + ref);
+  console.log("After updating dev/ai/zxbasic-syntax/zxbasic-syntax.json, run: node scripts/zxbasic-syntax-check.cjs --update --ref " + ref);
   return 1;
 }
 

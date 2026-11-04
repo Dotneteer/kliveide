@@ -2,12 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import { parseProgram } from "@main/kbasic/front-end";
 
-import spec from "../../../.ai/zxbasic-syntax/zxbasic-syntax.json";
+import spec from "../../../dev/ai/zxbasic-syntax/zxbasic-syntax.json";
 import { CASES } from "./spec-cases";
 
 /**
  * Every EBNF form of the spec has at least one program the parser accepts and one it rejects
- * (plan §13.1). The table is keyed by the form's exact text in `.ai/zxbasic-syntax/`, so a form
+ * (plan §13.1). The table is keyed by the form's exact text in `dev/ai/zxbasic-syntax/`, so a form
  * added to the spec fails this test until it gets its cases.
  */
 function allForms(): string[] {

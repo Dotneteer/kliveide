@@ -5,7 +5,7 @@ import type {
 import type { UiReducer } from "@mvc/core/types";
 
 /*
- * The Boriel BASIC setup dialog (`.ai/boriel/integration.md`, "The setup dialog"): state, events and
+ * The Boriel BASIC setup dialog (`dev/ai/boriel/integration.md`, "The setup dialog"): state, events and
  * the pure reducer. It opens either as the first-run offer or from Settings › Integrations.
  */
 

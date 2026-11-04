@@ -1,6 +1,6 @@
 /**
  * Shared helpers for the `guides-*.cjs` recipes (the Guides screenshots,
- * `.ai/docs-site.md`, "The Guides"). Lives outside `recipes/` because `run.cjs` treats
+ * `dev/ai/docs-site.md`, "The Guides"). Lives outside `recipes/` because `run.cjs` treats
  * every `.cjs` file there as a recipe.
  */
 const path = require("path");

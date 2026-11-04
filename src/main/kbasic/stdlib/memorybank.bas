@@ -1,5 +1,5 @@
 ' Klive BASIC standard library - memorybank.bas: SetBank, GetBank and SetCodeBank.
-' Klive's own code, written from the documented API (.ai/kbasic/stdlib-api.json). 128K models only:
+' Klive's own code, written from the documented API (dev/ai/kbasic/stdlib-api.json). 128K models only:
 ' the bank at $C000 is chosen through port $7FFD, whose last value the system variable BANKM keeps.
 #pragma once
 #pragma push(case_insensitive)

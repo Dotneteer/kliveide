@@ -53,11 +53,11 @@ same), audio, tape, a floppy card on the shared WD1793, and the most complete ID
   never in CI.
 - **ROMs** are settled (§16 D3): bundled under the rights holder's free-use permission.
 - **ROM annotations:** none in this plan. Writing EXOS or IS-BASIC sidecars is ROM-annotation work
-  under `.ai/rom-annotations/README.md` (rule D4). No commented disassembly, published or remembered,
+  under `dev/ai/rom-annotations/README.md` (rule D4). No commented disassembly, published or remembered,
   feeds them.
 
 ### 0.2 Reuse rules for the CPU
-From `.ai/wasm-migration-intent-and-lessons.md` ("Shared CPU Intent", and the TVC section):
+From `dev/ai/wasm-migration-intent-and-lessons.md` ("Shared CPU Intent", and the TVC section):
 - The machine configures `z80.c` through `#define Z80_*` hooks before the `#include` and never forks it.
 - **No new hook is expected.** The hooks the Enterprise needs already exist:
   - `Z80_DELAY_MEMORY_READ` / `_WRITE` for DAVE's waits and NICK's video-RAM stretch;
@@ -72,11 +72,11 @@ From `.ai/wasm-migration-intent-and-lessons.md` ("Shared CPU Intent", and the TV
 ### 0.3 Documents to read before working on this
 - `src/emu/z80/wasm/README.md`, before touching a hook or the debug loop.
 - `src/emu/machines/tvc/wasm/README.md`: the template core (time base, stretch, sound, tape, HBF).
-- `.ai/videoton-tvc.md`: the integration checklist and what was learned ("Integration checklist",
+- `dev/ai/videoton-tvc.md`: the integration checklist and what was learned ("Integration checklist",
   "Open").
-- `.ai/wasm-v2-machine-migration-guide.md`, `.ai/wasm-migration-intent-and-lessons.md`.
-- `.ai/i18n-guide.md` (every UI text), `.ai/ui-theming-intent-and-lessons.md` (the virtual keyboard and
-  the panels), `.ai/visual-tests-guide.md` (screen goldens), `.ai/doc-screenshots-guide.md` (Phase 10).
+- `dev/ai/wasm-v2-machine-migration-guide.md`, `dev/ai/wasm-migration-intent-and-lessons.md`.
+- `dev/ai/i18n-guide.md` (every UI text), `dev/ai/ui-theming-intent-and-lessons.md` (the virtual keyboard and
+  the panels), `dev/ai/visual-tests-guide.md` (screen goldens), `dev/ai/doc-screenshots-guide.md` (Phase 10).
 
 ---
 
@@ -468,7 +468,7 @@ LM386 speaker path and its mute (VC1). A tone code 0 toggles every tick (125 kHz
   (`EpKeyMappings.ts`) and tested.
 - **Virtual keyboard:** drawn from a photograph of the real keyboard (the TVC's way, §17 of its plan),
   `EpKeyboard.tsx`, with the joystick. Colours as tokens in `palette.ts`; a short entry in
-  `.ai/ui-theming-intent-and-lessons.md`.
+  `dev/ai/ui-theming-intent-and-lessons.md`.
 
 ### 9.2 The `FILE:` device (decision D8)
 The community loads most software as loose files (`.com`, `.bas`), not tapes. Both CLK and ep128emu do
@@ -715,7 +715,7 @@ Each gets one constant or define, its default and its reason in the core README.
 | **7. IDE** | Partitions, the NICK and DAVE panels, disassembler (`RST 30h`), SysVars, charset, menus, state files, history, profile, CLI; the IS-BASIC listing if §11.4 finds the table. | Done 2026-10-31 (§18): history, profile, charset, debug-state, IS-BASIC token and listing tests; the Enterprise in the export contract, journal replay, state determinism, debug recordings and hardware specs suites; `MF_EXEC_HISTORY`, `MF_PROFILE`, `MF_REVERSE_DEBUG` on; the panels, the listing, the menu and the memory view seen in the running app. The CLI moves to Phase 8 with Run. |
 | **8. Assembler and tape** | §12 (`.model ENTERPRISE`, Run/Debug through `FILE:`, `.com` export, project template), §9.3 (tape formats, playing, turbo, SAVE). | Done 2026-10-31 (§18): `code-injection.test.ts`, `project-templates.test.ts` (the picture checked by eye), `tape.test.ts`, `ep-model.test.ts`; `klive run` (`klive-run-e2e.test.ts`) and the unit-test runner on the Enterprise; in the running app, a new project from the template runs. |
 | **9. EXDOS** | §10: the WD1770 variant (its own commit, Beta 128 and TVC byte-identical), the card, disks. | Done 2026-10-31 (§18): `exdos.test.ts`, `ep-disk-image.test.ts`; the 128K and TVC cores byte-identical; EXDOS lists a disk in the running app. |
-| **10. Ship** | Notices (`THIRD_PARTY_NOTICES.md`: CLK files if any were ported; the ROM readme), docs pages, an `AGENTS.md` section, the landing page's machine table (`docs/landing/LandingPage.tsx`, gated by release version), `README.md`'s machine list, the lessons in `.ai/wasm-migration-intent-and-lessons.md`, one `feature` changeset. `npm run test:slow` before release. | Done 2026-10-31 (§18): gates, `test:fast`, `test:slow`, `doc:build` + `doc:check` green; both models, Run, tape and EXDOS checked in the built app. |
+| **10. Ship** | Notices (`THIRD_PARTY_NOTICES.md`: CLK files if any were ported; the ROM readme), docs pages, an `AGENTS.md` section, the landing page's machine table (`docs/landing/LandingPage.tsx`, gated by release version), `README.md`'s machine list, the lessons in `dev/ai/wasm-migration-intent-and-lessons.md`, one `feature` changeset. `npm run test:slow` before release. | Done 2026-10-31 (§18): gates, `test:fast`, `test:slow`, `doc:build` + `doc:check` green; both models, Run, tape and EXDOS checked in the built app. |
 
 The changeset comes with the commit that completes the plan (AGENTS.md); phase commits carry none.
 Docs for Phase 10:
@@ -723,12 +723,12 @@ Docs for Phase 10:
   `reference/z80-assembler/enterprise.mdx`; screenshots from a `scripts/doc-shots/recipes/guides-enterprise.cjs`
   recipe;
 - an "Under the hood" series on NICK (the slot, the LPT, the pipeline, contention) adapted from the
-  research under `.ai/hardware-articles-guide.md`: sources unnamed, facts proved on the emulated machine.
+  research under `dev/ai/hardware-articles-guide.md`: sources unnamed, facts proved on the emulated machine.
 
 ### Follow-ups (not in this plan)
 - A woven interlaced picture; expansion RAM; EXOS 2.2–2.4 and the language ROMs; EXDOS 1.4 + IS-DOS.
 - SDEXT, IDE, RTC, EnterMice; printer, serial and network.
-- ROM annotations for EXOS and IS-BASIC written from scratch (`.ai/rom-annotations/` rules).
+- ROM annotations for EXOS and IS-BASIC written from scratch (`dev/ai/rom-annotations/` rules).
 - A turbo (6 MHz) option, timing DAVE from its own input clock.
 - The IS-BASIC listing, if Phase 7 does not find the token table.
 
@@ -1065,7 +1065,7 @@ The core's README (`src/emu/machines/enterprise/wasm/README.md`) is the referenc
   Enterprise in `machine-types.mdx`, `pragmas.mdx` and `basic-listing.mdx`, and an "Under the hood" article
   on NICK (`under-the-hood/emulator-internals/ep-nick.mdx`). The landing page's machine table lists the
   Enterprise from 0.67.0; `README.md`, an `AGENTS.md` section, the lessons in
-  `.ai/wasm-migration-intent-and-lessons.md`, and the competitive analysis's machine row.
+  `dev/ai/wasm-migration-intent-and-lessons.md`, and the competitive analysis's machine row.
 - **Notices:** `THIRD_PARTY_NOTICES.md` names the ROMs and the rights holder's permission; no emulator
   code was ported (D1), so there is no code notice. Klive's `FILE:` ROM is Klive's own.
 - **The screenshot recipe** opens the BASIC Listing with the View menu, or, when the OS gives the app no

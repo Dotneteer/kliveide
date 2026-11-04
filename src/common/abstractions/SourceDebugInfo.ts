@@ -1,6 +1,6 @@
 /**
  * Extensions to `SourceLevelDebugInfo` (`CompilerInfo.ts`) for source stepping over calls, the
- * symbolic call stack and the Variables panel (`.ai/kbasic/compiler.md`, "Source-level debugging as built";
+ * symbolic call stack and the Variables panel (`dev/ai/kbasic/compiler.md`, "Source-level debugging as built";
  * made language-neutral by `.plans/SHARED_Z80_BACKEND_PLAN.md` Part B, model version 2).
  *
  * The vocabulary is the machine's and the calling convention's, never a language's: statements,
@@ -179,7 +179,7 @@ export type SourceDebugExtensions = {
   mainBaselineSymbol: number;
   /**
    * A frame pointer kept in memory instead of IX: the address of the word that holds it. sccz80's
-   * debug builds (z88dk, `.ai/z88dk/cdb-records.md`, "Frames") keep the same layout as an IX frame -
+   * debug builds (z88dk, `dev/ai/z88dk/cdb-records.md`, "Frames") keep the same layout as an IX frame -
    * the caller's frame pointer at FP, the return address at FP+2 - in the word `__debug_framepointer`.
    * The frame locator reads it wherever it would read IX.
    */
@@ -200,7 +200,7 @@ export type SourceDebugExtensions = {
 /**
  * How the far-call runtime records a cross-bank call still running: one record per call, the newest
  * at the shadow stack pointer's end. Klive's runtime: 3-byte records `[bank, return]` growing up from
- * `shadowStack`. Boriel BASIC's (`.ai/boriel/dbg-observed.md`, "Far calls"): 4-byte records
+ * `shadowStack`. Boriel BASIC's (`dev/ai/boriel/dbg-observed.md`, "Far calls"): 4-byte records
  * `[return, flags, paging]` pushed downwards from `shadowStack` (the area's end), the bank being the
  * paging byte masked with `bankMask`.
  */

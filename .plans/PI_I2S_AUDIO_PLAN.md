@@ -209,11 +209,11 @@ What the Pi *does* to make sound (NextPi's software and its UART commands) is a 
 
 - An IDE command to connect a source, e.g. `pi-audio <file.wav>` / `pi-audio tone 440` /
   `pi-audio off`. Before naming it, check the existing command vocabulary for conventions (the
-  `.ai/doc-screenshots-guide.md` vocabulary lists them). The file reaches the machine the way tape
+  `dev/ai/doc-screenshots-guide.md` vocabulary lists them). The file reaches the machine the way tape
   files do today; find that path and reuse it, do not add a second one.
 - A status indicator while a source is connected (its name, position, "ended").
-- All text through `t()` with translator context (`.ai/i18n-guide.md`), then `npm run i18n:keys`.
-- Any visual element follows `.ai/ui-theming-intent-and-lessons.md` and updates it in the same change.
+- All text through `t()` with translator context (`dev/ai/i18n-guide.md`), then `npm run i18n:keys`.
+- Any visual element follows `dev/ai/ui-theming-intent-and-lessons.md` and updates it in the same change.
 
 ## 5. Phases
 

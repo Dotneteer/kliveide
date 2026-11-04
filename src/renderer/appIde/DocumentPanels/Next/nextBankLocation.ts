@@ -10,7 +10,7 @@ import { nextBankSpace } from "@common/annotations/bankSpace";
  * A popped-out NEX bank shows a 16K bank's bytes, and until this existed nothing on screen said
  * whether that bank was paged in at all, let alone where — so a breakpoint set in it appeared to do
  * nothing whenever the bank was not currently visible. That is the paging subtlety behind bank-
- * relative breakpoints (`.ai/nex-debugging.md`), and §11.2 is about making it visible
+ * relative breakpoints (`dev/ai/nex-debugging.md`), and §11.2 is about making it visible
  * instead of surprising.
  *
  * The Next's MMU is eight independent 8K slots, so a 16K bank is **two** 8K pages and the hardware

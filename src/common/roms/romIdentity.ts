@@ -100,7 +100,7 @@ const NEXT_PAGE_KINDS: Readonly<Record<string, readonly (RomPageKind | undefined
 };
 
 /**
- * The Next's pages, generated from the ROM set manifest (`.ai/zxnext-models.md` D9.3):
+ * The Next's pages, generated from the ROM set manifest (`dev/ai/zxnext-models.md` D9.3):
  * every page of every set, named by its path (`zxnext/<setId>/enNextZX.rom`). A page whose CRC is
  * already listed (the same bytes in another file or set) keeps its first entry.
  */

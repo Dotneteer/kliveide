@@ -1521,7 +1521,7 @@ export type UlaState = {
   ramB: number;
 };
 
-/** The Videoton TVC's video circuit, for the TVC Video panel (`.ai/videoton-tvc.md`, "IDE
+/** The Videoton TVC's video circuit, for the TVC Video panel (`dev/ai/videoton-tvc.md`, "IDE
  * integration") */
 export type TvcVideoState = {
   /** The 6845's R0-R17 and its address register */

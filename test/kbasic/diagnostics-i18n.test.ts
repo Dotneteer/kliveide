@@ -8,7 +8,7 @@ import { defaultOptions } from "@main/kbasic/options/options";
 import { bind } from "@main/kbasic/semantics/binder";
 
 /*
- * Klive BASIC's compiler messages in another language (`.ai/localization.md`): every
+ * Klive BASIC's compiler messages in another language (`dev/ai/localization.md`): every
  * message is a `compiler.basic.*` key, formatted when the diagnostic is made, and the code stays as
  * it is. In the pseudo-locale every message is pseudo text.
  */

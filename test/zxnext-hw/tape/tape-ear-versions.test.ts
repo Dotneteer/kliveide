@@ -6,7 +6,7 @@ import { NEXT_PROFILES, type NextProfileId } from "@emu/machines/zxNext/nextProf
 import { createSession, forEachProfile, type NextTestSession } from "../../harness/zxnext";
 
 /*
- * The EAR input stage and the issue 2 MIC bit (core 3.02.02, `.ai/zxnext-cores/30201-to-30204.md` 1.4),
+ * The EAR input stage and the issue 2 MIC bit (core 3.02.02, `dev/ai/zxnext-cores/30201-to-30204.md` 1.4),
  * on both profiles.
  *
  * Hardware:

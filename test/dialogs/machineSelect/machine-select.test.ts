@@ -63,7 +63,7 @@ describe("Select Machine dialog", () => {
     const sections = h.vm.sections.filter((s) => s.kind !== "favorites");
     expect(sections.map((s) => s.id)).toEqual(machineRegistry.map((m) => m.machineId));
     // --- The Enterprise has two models, the 128 and the 64 (`.plans/ENTERPRISE_PLAN.md` Phase 6), and the
-    // --- Next one per board and core version (`.ai/zxnext-models.md` D1)
+    // --- Next one per board and core version (`dev/ai/zxnext-models.md` D1)
     expect(sections.filter((s) => s.kind === "leaf").map((s) => s.id)).toEqual(["scorpion"]);
     const ep = sections.find((s) => s.id === "ep")!;
     expect(ep.kind === "machine" && ep.rows.map((r) => r.name)).toEqual(["Enterprise 128", "Enterprise 64"]);

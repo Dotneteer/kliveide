@@ -43,7 +43,7 @@ export type AppState = {
   /** Selected accent id (see theming/tokens/palette.ts). */
   accent?: string;
   /**
-   * The display language every window shows (`.ai/localization.md`, "The runtime"): main resolves the
+   * The display language every window shows (`dev/ai/localization.md`, "The runtime"): main resolves the
    * `ideViewOptions.language` setting (and "system") and publishes the result, so main and both
    * renderers agree.
    */

@@ -1,5 +1,5 @@
 /*
- * The main process's one `zxnext-rtc.json` (`.ai/zxnext-rtc.md` D5, D8), in the
+ * The main process's one `zxnext-rtc.json` (`dev/ai/zxnext-rtc.md` D5, D8), in the
  * Klive home, with the `nextRtcKept` app state following it.
  */
 

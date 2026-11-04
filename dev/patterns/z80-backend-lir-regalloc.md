@@ -2,7 +2,7 @@
 
 > **As built in the shared Z80 back end** (`.plans/SHARED_Z80_BACKEND_PLAN.md`, 2026-10-25). Written for Klive BASIC; now the shared Z80 back end's (`src/main/z80-backend/select/`). The register contract of runtime calls comes from the runtime modules' `@abi` header lines (`src/main/z80-backend/runtime/README.md`), not from a table in the selector.
 
-Design note R11-2 of the Klive BASIC compiler plan (closed; its record is `.ai/kbasic/compiler.md`, "Readiness (R1-R18)"; "plan §N" below is mapped in its "Section map of the closed plan").
+Design note R11-2 of the Klive BASIC compiler plan (closed; its record is `dev/ai/kbasic/compiler.md`, "Readiness (R1-R18)"; "plan §N" below is mapped in its "Section map of the closed plan").
 **Status: approved by the project author on 2026-09-26, with every proposal in the decisions table below.**
 
 The LIR (low-level IR) is Z80 code as objects: the output of instruction selection, the input of
@@ -14,7 +14,7 @@ that nothing Phase 3 builds has to be undone.
 
 ## 1. The ABI this must produce
 
-Fixed by plan §6.7 and `.ai/kbasic/runtime-abi.md` §2–§3 (the user-visible contract):
+Fixed by plan §6.7 and `dev/ai/kbasic/runtime-abi.md` §2–§3 (the user-visible contract):
 
 - STDCALL: arguments pushed last first (8-bit as `push af`, value in the high byte; 32-bit high
   word first; Float as 6 bytes), `call`; the callee builds `push ix; ld ix,0; add ix,sp`, saved IX

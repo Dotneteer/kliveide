@@ -5,7 +5,7 @@ import { createTvcSession } from "../harness/tvc";
 
 /*
  * The TVC's ROM chips as the ROM annotations find them (`getRomSources`,
- * `.ai/rom-annotations/tvc-authoring-guide.md`): SYS's two halves and EXTH, each its own 8K page known by
+ * `dev/ai/rom-annotations/tvc-authoring-guide.md`): SYS's two halves and EXTH, each its own 8K page known by
  * its bytes and named by its file, so the file's sidecar applies to it. CART stays a whole partition.
  */
 describe("the TVC's ROM sources", () => {

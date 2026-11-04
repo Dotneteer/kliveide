@@ -33,7 +33,7 @@ code injection, frame pacing, four IDE panels - quietly kept running TypeScript 
 core ran beside them. `test/wasm/zxNext/wasm-next-separation.test.ts` fails if an emulated device
 class becomes reachable from this machine or its loader again, even through a type import, and if
 any of the deleted files reappears. Read
-`.ai/wasm-migration-intent-and-lessons.md` before starting the next machine's migration.
+`dev/ai/wasm-migration-intent-and-lessons.md` before starting the next machine's migration.
 
 `ZxNextWasmV2Machine.getWasmV2Diagnostics()` reports the runtime's sizes, frame and tact counters,
 and the last stop reason.
@@ -48,7 +48,7 @@ applied (`dev/vendor/next-fpga/comments/`). A citation names the version (`zxnex
 an unversioned one means 3.02.01. One C tree builds one artifact per model's hardware
 (`zxnext-profile.h`, `scripts/zxnext-artifacts.cjs`); a behaviour a later core changed is guarded
 with `#if ZXNEXT_CORE_VERSION >= 30204`, and the 3.02.01 artifact's boot traces and goldens prove
-the guard leaked nowhere (`.ai/zxnext-models.md`, "Rules").
+the guard leaked nowhere (`dev/ai/zxnext-models.md`, "Rules").
 TypeScript changes are for behaviour that is host-owned rather than machine-owned: IDE and UI
 policy, Electron resource lookup, host file and media persistence, test-harness setup. Those may
 call into WASM; they are not a reason to move machine-owned behaviour back out of it.
@@ -71,7 +71,7 @@ does not require Emscripten.
 
 ## Known Differences From The Hardware
 
-The "Under the hood" chapters describe the machine, not Klive (`.ai/hardware-articles-guide.md`), so a
+The "Under the hood" chapters describe the machine, not Klive (`dev/ai/hardware-articles-guide.md`), so a
 difference that is not fixed is recorded here. Each is a candidate for a fix.
 
 Memory and I/O (`docs/content/en/under-the-hood/emulator-internals/next-memory-io.mdx`):
@@ -201,10 +201,10 @@ The real-time clock (`docs/content/en/under-the-hood/emulator-internals/next-rtc
   (`zxNext/nextRtcHost.ts`) compares registers 0-6 with the host's time plus an offset before each
   frame, at most once a second, and rewrites them through `zxnextRtcSetTime` when a second or more
   apart. The core decides nothing here and reads no host clock: the write is a journaled input, so a
-  reverse-debugging replay applies it where it happened (`.ai/zxnext-rtc.md` D3, D4).
+  reverse-debugging replay applies it where it happened (`dev/ai/zxnext-rtc.md` D3, D4).
   With "Emulated time" it is the core's count alone.
 
-The host's view of the DS1307 (`.ai/zxnext-rtc.md`, "How it is built"): `zxnextRtcPeekRegister(i)` reads
+The host's view of the DS1307 (`dev/ai/zxnext-rtc.md`, "How it is built"): `zxnextRtcPeekRegister(i)` reads
 register `i` as a read starting now would (the time on a copy of the counter chain, so it is a pure
 export); `zxnextRtcGetWriteCount()` / `zxnextRtcGetTimeWriteCount()` count the bus's register writes, all
 and to registers 0-6 (host writes are not counted), which the host compares between frames to take a

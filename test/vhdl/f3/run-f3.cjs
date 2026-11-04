@@ -19,7 +19,7 @@ const crypto = require("crypto");
 const { spawn, execFileSync, spawnSync } = require("child_process");
 
 const ROOT = path.resolve(__dirname, "../../..");
-// --- The 3.02.01 reference, fetched (`npm run next-fpga:fetch`, `.ai/zxnext-models.md` D4)
+// --- The 3.02.01 reference, fetched (`npm run next-fpga:fetch`, `dev/ai/zxnext-models.md` D4)
 const SRC = path.dirname(require(path.join(ROOT, "scripts/next-fpga-path.cjs")).nextFpgaPath("3.02.01", "src/zxnext.vhd"));
 const F3 = __dirname;
 const args = process.argv.slice(2);

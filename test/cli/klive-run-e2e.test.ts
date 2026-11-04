@@ -130,7 +130,7 @@ describe("klive run: stop conditions on the 48K", () => {
   }, 60_000);
 
   it("builds a ZX81 project into a 1 REM program and runs it through RUN", async () => {
-    // --- `.ai/zx8081.md`, "Machine code decisions", D4: the machine's own flow types RUN, RAND USR calls the code
+    // --- `dev/ai/zx8081.md`, "Machine code decisions", D4: the machine's own flow types RUN, RAND USR calls the code
     const run = await kliveJson(["run", "runzx81", "--until-pc", "Done", "--dump-mem", `Counter:1=${file("zx81.bin")}`]);
     expect(run.code).toBe(0);
     expect(run.result.stop).toBe("pc");

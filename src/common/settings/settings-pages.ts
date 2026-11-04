@@ -133,7 +133,7 @@ import {
 /**
  * The pages, in display order. `titleKey` is what the dialog shows; `title` stays as the page's
  * English name, which the search matches too and tests and docs refer to
- * (`.ai/localization.md`, D7: keys at definition, text at display).
+ * (`dev/ai/localization.md`, D7: keys at definition, text at display).
  */
 export const SETTINGS_PAGES = [
   { id: "general", title: "General", titleKey: "settings.page.general" },
@@ -209,14 +209,14 @@ export type SettingsRowCondition =
    * advanced-debugging group also needs the switch): the coverage rows key on `MF_PROFILE`
    */
   | { kind: "feature"; feature: string }
-  /** A dev build (the pseudo-locale and the show-keys switch, `.ai/localization.md`, D8) */
+  /** A dev build (the pseudo-locale and the show-keys switch, `dev/ai/localization.md`, D8) */
   | { kind: "i18nDevTools" };
 
 export type SettingsRow = {
   id: string;
   page: SettingsPageId;
   /**
-   * Translation keys (`.ai/localization.md`, D7); read the texts through `settingsRowGroup`,
+   * Translation keys (`dev/ai/localization.md`, D7); read the texts through `settingsRowGroup`,
    * `settingsRowTitle` and `settingsRowDescription`. English lives in `en/settings.json`.
    */
   groupKey: MessageKey;
@@ -379,8 +379,8 @@ export const SETTINGS_ROWS: SettingsRow[] = [
     defaultValue: DEFAULT_AUTOMATION_LEVEL
   },
 
-  // --- Language (`.ai/localization.md`, D8)
-  // --- The File Manager (`.ai/file-manager.md`, D7)
+  // --- Language (`dev/ai/localization.md`, D8)
+  // --- The File Manager (`dev/ai/file-manager.md`, D7)
   {
     id: "fileManagerShowHidden",
     page: "general",
@@ -984,7 +984,7 @@ export const SETTINGS_ROWS: SettingsRow[] = [
     options: tableOptions(() => NEXT_AUDIO_OUTPUTS),
     when: { kind: "machine", machineIds: [MI_ZXNEXT] }
   },
-  // --- The ZX Spectrum Next's real-time clock (`.ai/zxnext-rtc.md`)
+  // --- The ZX Spectrum Next's real-time clock (`dev/ai/zxnext-rtc.md`)
   {
     id: "nextRtcClock",
     page: "machine",
@@ -1217,7 +1217,7 @@ export const SETTINGS_ROWS: SettingsRow[] = [
     buttons: [{ labelKey: "settings.button.configure", action: "dialog:sjasmplus", closesDialog: true }],
     replaces: "IDE › Integrations › SjasmPlus Assembler"
   },
-  // --- KLIVE-BASIC-OFF: Klive BASIC is switched off (`.ai/klive-basic-switch.md`), so
+  // --- KLIVE-BASIC-OFF: Klive BASIC is switched off (`dev/ai/klive-basic-switch.md`), so
   // --- the BASIC compiler choice is hidden; Boriel BASIC builds every BASIC program.
   // {
   //   // --- The compiler that actually builds: a project's `zxbasic.compiler` wins over the user's, and

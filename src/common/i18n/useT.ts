@@ -1,5 +1,5 @@
 /**
- * The renderer hook for translated text (`.ai/localization.md`, "The runtime").
+ * The renderer hook for translated text (`dev/ai/localization.md`, "The runtime").
  *
  * `const t = useT();` re-renders the component whenever the language changes and returns the
  * module-level `t`. Step 2 connects the language to the shared store (`ide.language`), which then

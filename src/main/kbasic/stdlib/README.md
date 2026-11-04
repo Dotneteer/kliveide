@@ -1,7 +1,7 @@
 # Klive BASIC standard library
 
 `#include <name.bas>` finds these files before the user's include path (plan §6.4). They are Klive's
-own code, written from the documented API in `.ai/kbasic/stdlib-api.json`; nothing here is taken
+own code, written from the documented API in `dev/ai/kbasic/stdlib-api.json`; nothing here is taken
 from upstream ZX BASIC (see the provenance rule in `AGENTS.md`). `npm run runtime:bundle` bundles
 every `*.bas` file here into `stdlib/generated/stdlib-bundle.ts`; they are served under the path
 `<kbasic-stdlib>/name.bas`.

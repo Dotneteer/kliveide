@@ -1,6 +1,6 @@
 /**
  * Keeps release versions out of the documentation's sources (D8 of
- * .ai/release-guide.md):
+ * dev/ai/release-guide.md):
  *
  * 1. No page under docs/content/ links a particular release (`releases/download/v1.2.3/...`,
  *    `releases/tag/v1.2.3`). Write `@KLIVE_RELEASE@` instead; docs/remark-release-version.mjs

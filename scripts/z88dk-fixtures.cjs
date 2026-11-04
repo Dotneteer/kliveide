@@ -15,7 +15,7 @@
  *   npm run z88dk:fixtures [-- <z88dk root>]
  *
  * The root comes from the argument, else `Z88DK_ROOT`, else `~/z88dk`. It must be a supported
- * release (v2.4, build 23854, or newer; `.ai/z88dk/README.md`).
+ * release (v2.4, build 23854, or newer; `dev/ai/z88dk/README.md`).
  *
  * zcc runs inside each fixture folder with relative source names, so the project's own records name
  * `main.c`, not this machine's path. The map is otherwise zcc's output with two normalisations, and
@@ -40,7 +40,7 @@ function z88dkRoot() {
 }
 
 /**
- * The map's escapings of a name (`.ai/z88dk/map-format.md`): line records write every character but
+ * The map's escapings of a name (`dev/ai/z88dk/map-format.md`): line records write every character but
  * [A-Za-z0-9] as `_xx`; `__CDBINFO__` records escape digits too.
  */
 function escapeName(text, digitsToo = false) {

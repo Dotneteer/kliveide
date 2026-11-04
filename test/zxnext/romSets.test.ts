@@ -7,7 +7,7 @@ import { KNOWN_ROM_PAGES, romCrc32 } from "@common/roms/romIdentity";
 import { NEXT_ROM_SETS, nextRomAnnotationFile } from "@common/zxnext/romSets";
 
 /*
- * The ZX Spectrum Next's ROM sets (`.ai/zxnext-models.md` D9.3): every set in the
+ * The ZX Spectrum Next's ROM sets (`dev/ai/zxnext-models.md` D9.3): every set in the
  * manifest against the committed files, and the ROM identity table generated from it. No network:
  * `npm run next-roms:check -- --online` is the provenance check.
  */

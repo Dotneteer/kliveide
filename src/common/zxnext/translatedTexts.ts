@@ -1,5 +1,5 @@
 /*
- * Translated text fields for the pure ZX Spectrum Next modules (`.ai/localization.md`, D7:
+ * Translated text fields for the pure ZX Spectrum Next modules (`dev/ai/localization.md`, D7:
  * keys at definition, text at display).
  *
  * The diagnostics and the layer tables are built in pure code and read by view models and

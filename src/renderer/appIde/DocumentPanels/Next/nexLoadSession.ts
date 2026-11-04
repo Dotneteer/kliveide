@@ -21,7 +21,7 @@ import { hostFileName } from "@common/utils/nex-launch-paths";
  * panel live in the IDE renderer. `nexAnnotationSession` and `useNexBankBreakpoints` use the same
  * pattern for the same reason.
  *
- * See `.ai/nex-debugging.md`.
+ * See `dev/ai/nex-debugging.md`.
  */
 
 /** The NEX launched in this session. */

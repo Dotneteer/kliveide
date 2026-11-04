@@ -2,8 +2,8 @@
 
 Klive bundles Boriel BASIC (the `zxbc` compiler, 2.x) with its installers and offers to install it
 on first run. This folder is where the setup kits live in the source tree. How the integration
-uses them is `.ai/boriel/integration.md`; the observed facts about the kits are in
-`.ai/boriel/kit.md`.
+uses them is `dev/ai/boriel/integration.md`; the observed facts about the kits are in
+`dev/ai/boriel/kit.md`.
 
 | Path | Tracked | What it is |
 | --- | --- | --- |
@@ -19,15 +19,15 @@ and verify each SHA-256; `node scripts/boriel-kit.cjs fetch --all` fetches all s
 download each `file` named in `kit.json` from `urlBase` into `kits/` and check it with
 `shasum -a 256 kits/*`. Do not unpack
 them here. Do not run anything from an archive extracted with `tar` or Finder on macOS without
-first removing `com.apple.quarantine` (`.ai/boriel/kit.md`, "The macOS first-launch trap").
+first removing `com.apple.quarantine` (`dev/ai/boriel/kit.md`, "The macOS first-launch trap").
 
 ## Licence
 
-Version `2.0.0-beta29` is redistributed with Boriel's written permission (B-L1, `.ai/boriel/integration.md`). The kits
+Version `2.0.0-beta29` is redistributed with Boriel's written permission (B-L1, `dev/ai/boriel/integration.md`). The kits
 contain no LICENSE file. A production version needs its licence text shipped with Klive and an
 entry in `THIRD_PARTY_NOTICES.md`.
 
 ## Changing the version
 
-Follow `.ai/boriel/updating.md`, the action list for a version bump: the licence question, the
+Follow `dev/ai/boriel/updating.md`, the action list for a version bump: the licence question, the
 double download and layout check, `kit.json`, the re-checks, the fixtures, the tests and the records.

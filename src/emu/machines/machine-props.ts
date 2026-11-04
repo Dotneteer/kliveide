@@ -46,7 +46,7 @@ export const ULA_SNOW = "UlaSnow";
 // --- The ZX Spectrum Next output the audio stream plays: "jack", "speaker" or "hdmi"
 export const NEXT_AUDIO_OUTPUT = "NextAudioOutput";
 /**
- * The ZX Spectrum Next's real-time clock (`.ai/zxnext-rtc.md`): what it follows
+ * The ZX Spectrum Next's real-time clock (`dev/ai/zxnext-rtc.md`): what it follows
  * ("host" or "emulated"; unset is "emulated"), whether it is kept between sessions (unset is off), the
  * store a kept clock lives in (`NextRtcStore`), and the host clock (`() => number`, `Date.now` unset)
  */

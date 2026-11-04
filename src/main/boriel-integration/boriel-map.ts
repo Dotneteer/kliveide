@@ -1,5 +1,5 @@
 /*
- * zxbc's `-M` memory map (`.ai/boriel/dbg-observed.md`, "The -M memory map"): one `HHHH: .name` per
+ * zxbc's `-M` memory map (`dev/ai/boriel/dbg-observed.md`, "The -M memory map"): one `HHHH: .name` per
  * line, or `BB::HHHH: .name` in a banked build (BB the physical bank). Klive takes from it what the
  * `.dbg` does not carry: the runtime's entry points, the user's line labels and the error routine.
  */

@@ -8,7 +8,7 @@ import { initialState } from "@renderer/appIde/DocumentPanels/Next/annotationEdi
 import type { AnnotationSessionSnapshot } from "@renderer/appIde/DocumentPanels/Next/annotationEditor/NexAnnotationEditorPorts";
 
 /*
- * Deep-merged builders, per `.ai/ui-mvc-guide.md`: a test names only the fields it cares about, and
+ * Deep-merged builders, per `dev/ai/ui-mvc-guide.md`: a test names only the fields it cares about, and
  * a new field on the state cannot be missed because the builder starts from the real `initialState`.
  */
 

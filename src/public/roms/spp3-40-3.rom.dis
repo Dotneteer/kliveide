@@ -2,7 +2,7 @@
   "schemaVersion": 3,
   "machine": "rom",
   "source": {"fileName":"spp3-40-3.rom"},
-  "authoring": ".ai/rom-annotations/README.md",
+  "authoring": "dev/ai/rom-annotations/README.md",
   "level": 2,
   "pages": {
     "0": {"crc32":"04448eaa","name":"ZX Spectrum +2A/+3 v4.0 and +3E ROM 3 (48K BASIC)"}

@@ -1,6 +1,6 @@
 # Sinclair ZX80 / ZX81 WASM Core
 
-One C core runs both machines (`.ai/zx8081.md`, "Core decisions", D2 and D6): `zx8081Configure`
+One C core runs both machines (`dev/ai/zx8081.md`, "Core decisions", D2 and D6): `zx8081Configure`
 picks the ZX81 or ZX80 ULA, the 8K or 4K ROM, 1K/16K/64K RAM and PAL or NTSC at run time. It builds
 to `dist/zx8081.wasm` and is loaded by `Zx8081WasmV2Loader.ts`; the TypeScript side is
 `../Zx8081WasmHost.ts` (plumbing) and `../Zx8081WasmV2Machine.ts` (the adapter). There is no
@@ -9,7 +9,7 @@ through its `Z80_*` hooks.
 
 The ULA logic and its constants are ported from Clock Signal (CLK) by Thomas Harte (MIT; the notice is
 in `zx8081/zx8081.c` and `THIRD_PARTY_NOTICES.md`). The plumbing is Klive's own. The decisions, the
-provenance rules, the as-built notes and what is open are in `.ai/zx8081.md`.
+provenance rules, the as-built notes and what is open are in `dev/ai/zx8081.md`.
 
 ## Layout
 

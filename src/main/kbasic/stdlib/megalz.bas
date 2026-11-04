@@ -1,5 +1,5 @@
 ' Klive BASIC standard library - megalz.bas: megaLZDepack.
-' Klive's own code, written from the documented API (.ai/kbasic/stdlib-api.json) and the MegaLZ
+' Klive's own code, written from the documented API (dev/ai/kbasic/stdlib-api.json) and the MegaLZ
 ' format as lvd's mhmt packer describes it (https://github.com/lvd2/mhmt).
 '
 ' The format: the first byte as is, then codes read a bit at a time from bit bytes met in the data

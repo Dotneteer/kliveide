@@ -6,7 +6,7 @@ import { describeHistoryCore, history } from "./historyCoreSuite";
 import { tvcDriver } from "./drivers";
 
 /*
- * The Videoton TVC's execution history (`.ai/videoton-tvc.md`, "Memory partitions, history and
+ * The Videoton TVC's execution history (`dev/ai/videoton-tvc.md`, "Memory partitions, history and
  * profile"): the shared suite on both models, and the machine's own context - port 02h and the
  * 64K+'s port 0Ch.
  */

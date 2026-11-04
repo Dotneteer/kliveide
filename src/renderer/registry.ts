@@ -316,7 +316,7 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     requireFeature: [MF_ULA]
   },
   withTexts({
-    // --- The Videoton TVC's CRTC, palette, border and video banks (`.ai/videoton-tvc.md`, "IDE
+    // --- The Videoton TVC's CRTC, palette, border and video banks (`dev/ai/videoton-tvc.md`, "IDE
     // --- integration")
     id: "tvcVideoPanel",
     hostActivity: ACTIVITY_DEBUG_ID,
@@ -519,7 +519,7 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     icon: "gauge"
   },
   {
-    // --- The two-pane File Manager (`.ai/file-manager.md`, D1)
+    // --- The two-pane File Manager (`dev/ai/file-manager.md`, D1)
     id: FILE_MANAGER_EDITOR,
     renderer: createFileManagerPanel,
     icon: "columns-2"
@@ -902,7 +902,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     matchType: "ends",
     pattern: ".cas",
     // --- An HT-1080Z tape (`.plans/HT1080Z_PLAN.md` §9) or a Videoton TVC one
-    // --- (`.ai/videoton-tvc.md`, "Tape, disks and files"): the viewer reads which from the bytes
+    // --- (`dev/ai/videoton-tvc.md`, "Tape, disks and files"): the viewer reads which from the bytes
     // --- (`detectCasFormat`) and shows either, and Run/Insert/Debug are enabled on that machine only
     ignoreCase: true,
     editor: HT1080Z_TAPE_VIEWER,
@@ -930,7 +930,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "ends",
     pattern: ".p",
-    // --- A ZX80/ZX81 program file, which the machine's tape plays (`.ai/zx8081.md`, "Files, tape and the IDE")
+    // --- A ZX80/ZX81 program file, which the machine's tape plays (`dev/ai/zx8081.md`, "Files, tape and the IDE")
     ignoreCase: true,
     editor: P_FILE_VIEWER,
     icon: "@file-tap-tzx",
@@ -943,7 +943,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "ends",
     pattern: ".81",
-    // --- A ZX80/ZX81 program file, which the machine's tape plays (`.ai/zx8081.md`, "Files, tape and the IDE")
+    // --- A ZX80/ZX81 program file, which the machine's tape plays (`dev/ai/zx8081.md`, "Files, tape and the IDE")
     ignoreCase: true,
     editor: P_FILE_VIEWER,
     icon: "@file-tap-tzx",
@@ -956,7 +956,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "ends",
     pattern: ".o",
-    // --- A ZX80/ZX81 program file, which the machine's tape plays (`.ai/zx8081.md`, "Files, tape and the IDE")
+    // --- A ZX80/ZX81 program file, which the machine's tape plays (`dev/ai/zx8081.md`, "Files, tape and the IDE")
     ignoreCase: true,
     editor: P_FILE_VIEWER,
     icon: "@file-tap-tzx",
@@ -969,7 +969,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "ends",
     pattern: ".80",
-    // --- A ZX80/ZX81 program file, which the machine's tape plays (`.ai/zx8081.md`, "Files, tape and the IDE")
+    // --- A ZX80/ZX81 program file, which the machine's tape plays (`dev/ai/zx8081.md`, "Files, tape and the IDE")
     ignoreCase: true,
     editor: P_FILE_VIEWER,
     icon: "@file-tap-tzx",

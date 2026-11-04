@@ -16,7 +16,7 @@
  * from now (the hardware reloads at the next carry; the difference is under one divider period).
  *
  * The first interrupt after a restart comes 16 divider periods later, when the counter wraps (Q2 in
- * `.ai/videoton-tvc.md`: the manual says 8, both emulators 16; `TVC_SOUND_FIRST_IT_PERIODS` holds
+ * `dev/ai/videoton-tvc.md`: the manual says 8, both emulators 16; `TVC_SOUND_FIRST_IT_PERIODS` holds
  * the choice).
  *
  * Samples: each is the output's average over its interval (the square wave integrated in closed

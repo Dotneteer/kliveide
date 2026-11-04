@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { GAME_DSK, HOME, PROJECT, ROOT, TREES, file, openFileManager } from "./fakes";
 
 /*
- * The File Manager browsing (`.ai/file-manager.md`), driven through its controller
+ * The File Manager browsing (`dev/ai/file-manager.md`), driven through its controller
  * against a fake main process: what a user does, and what the panes then show.
  */
 

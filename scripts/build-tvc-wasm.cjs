@@ -28,7 +28,7 @@ const TVC_VOLATILE_SYMBOLS = [
   ...debugLoopVolatileSymbols("tvc"),
   ...Z80_ACCESS_LOG_VOLATILE_SYMBOLS,
   // --- The rest of the IDE's bus record, and whether it is being recorded: a fast frame records it only
-  // --- near its end, a debug run always (`.ai/wasm-core-debug.md`), so it is no state
+  // --- near its end, a debug run always (`dev/ai/wasm-core-debug.md`), so it is no state
   "tvcOpStartAddress",
   "tvcCaptureBusEvents",
   // --- The execution-history ring (EXECUTION_HISTORY_ALL_CORES_PLAN)
@@ -38,7 +38,7 @@ const TVC_VOLATILE_SYMBOLS = [
 ];
 
 /*
- * Builds the Videoton TVC full-machine WASM core (`.ai/videoton-tvc.md`).
+ * Builds the Videoton TVC full-machine WASM core (`dev/ai/videoton-tvc.md`).
  *
  * The same shape as the HT-1080Z build: plain clang for wasm32 (no Emscripten), one translation unit, a
  * fixed linear memory, and an explicit export allow-list. Builds of the production artifact are

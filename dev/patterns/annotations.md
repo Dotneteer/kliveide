@@ -54,7 +54,7 @@ opcode-fetch redirect above 32K is not modelled: the listing shows what a data r
 - **Data rows use the machine's character set** (the registry's `charSet`): the `bytes` text column
   and the `text` region, which only these bank spaces offer, written as `bytes` + `decode: "text"`.
 - **System variables** come from `Zx81SysVars.ts` and `Zx80SysVars.ts`, recorded from the manuals as
-  interface facts (`.ai/rom-annotations/README.md`), so `D_FILE`, `E_LINE` and the rest name their
+  interface facts (`dev/ai/rom-annotations/README.md`), so `D_FILE`, `E_LINE` and the rest name their
   operands and fill the System Variables panel.
 - **Breakpoints:** no partitions, so `bp-set <bank>:+<offset>` is refused; a label breakpoint resolves
   to the canonical address and stays partitionless.
@@ -215,7 +215,7 @@ run the assertions of `shippedRomSidecars.test.ts` in process (`romSidecarCheck.
 `rom-ann-provenance` sets an entry's provenance. When the check passes, the working copy is
 copied into `src/public/roms/` by hand.
 
-The shipped sidecars are authored under the rules of `.ai/rom-annotations/`.
+The shipped sidecars are authored under the rules of `dev/ai/rom-annotations/`.
 `npm run rom:annotations` formats them and regenerates the index (`-- --check` runs in
 `build:check`), `-- level` reports completeness, `-- skeleton` lists unlabelled targets,
 `-- bind` reports a binding, `-- coverage` runs the ROM through BASIC with the access

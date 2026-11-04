@@ -135,7 +135,7 @@ export function createFileMenu(context: MenuContext): MenuItemConstructorOptions
       click: async () => await pickAndOpenEmulatorFile(context.focusedWindow())
     },
     {
-      // --- The two-pane File Manager (`.ai/file-manager.md`, D1); opens in the IDE window
+      // --- The two-pane File Manager (`dev/ai/file-manager.md`, D1); opens in the IDE window
       id: "show_file_manager",
       label: t("menu.file.fileManager"),
       click: async () => {

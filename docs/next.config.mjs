@@ -378,7 +378,7 @@ const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 const withNextra = nextra({
   // Static export has no middleware, so Nextra writes the locale into every page-map link
-  // itself. See D1 in .ai/docs-site.md.
+  // itself. See D1 in dev/ai/docs-site.md.
   unstable_shouldAddLocaleToLinks: true,
   // Every code block gets Nextra's copy button (shown when the block is hovered or focused)
   defaultShowCopyCode: true,

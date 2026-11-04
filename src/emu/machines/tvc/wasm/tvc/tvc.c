@@ -3,7 +3,7 @@
  *
  * One translation unit: the machine state below, the TVC parts it includes, and the shared Z80 core
  * (`src/emu/z80/wasm/z80.c`) wired to them through the `Z80_*` hook macros. No heap; every buffer is
- * a static array exposed through a pointer export. The decisions are in `.ai/videoton-tvc.md`; the
+ * a static array exposed through a pointer export. The decisions are in `dev/ai/videoton-tvc.md`; the
  * hardware facts come from `dev/research/videoton-tvc/` (TVC_HARDWARE_OVERVIEW.md, TVC_VIDEO_GENERATION.md,
  * TVC_CLOCK_STRETCH_FIGURES.md). The code is Klive's own.
  *

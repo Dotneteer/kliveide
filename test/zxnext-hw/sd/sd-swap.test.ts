@@ -4,7 +4,7 @@ import { NEXT_PROFILES, type NextProfileId } from "@emu/machines/zxNext/nextProf
 import { createSession, forEachProfile, type NextTestSession } from "../../harness/zxnext";
 
 /*
- * NextReg $0A bit 5: swap SD0 and SD1 (core 3.02.03, `.ai/zxnext-cores/30201-to-30204.md` 1.5), on
+ * NextReg $0A bit 5: swap SD0 and SD1 (core 3.02.03, `dev/ai/zxnext-cores/30201-to-30204.md` 1.5), on
  * both profiles.
  *
  * Hardware:

@@ -4,7 +4,7 @@ import { KeyboardButtonClickArgs } from "./keyboard-common";
 import { ZX81_KEY_HEIGHT, ZX81_KEY_WIDTH } from "./Zx81Key";
 
 /*
- * One key of the ZX80 keyboard (`.ai/zx8081.md`, "The virtual keyboard"). The key face is the ZX81's
+ * One key of the ZX80 keyboard (`dev/ai/zx8081.md`, "The virtual keyboard"). The key face is the ZX81's
  * (100 x 74.7 key units); the legends follow a photo of an original 4K-ROM ZX80 and the ROM's own key
  * tables. Unlike the ZX81, nothing is printed under a key: the amber shifted legend of a number key
  * and the white keyword of a letter key both sit in the band above it, so the cell is the band (24)

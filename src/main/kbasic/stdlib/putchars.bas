@@ -1,5 +1,5 @@
 ' Klive BASIC standard library - putchars.bas: putChars, paint and paintData.
-' Klive's own code, written from the documented API (.ai/kbasic/stdlib-api.json). x is the column,
+' Klive's own code, written from the documented API (dev/ai/kbasic/stdlib-api.json). x is the column,
 ' y the row, both in character cells; nothing is checked against the screen's edges.
 #pragma once
 #pragma push(case_insensitive)

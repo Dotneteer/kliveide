@@ -13,7 +13,7 @@ import { bareMachine } from "./bare";
  *   read/write stretch       2  1  4  3
  *   opcode fetch stretch     3  2  1  4
  *
- * Characters start at half-T 0 after reset (Q7 in `.ai/videoton-tvc.md`), so p is the half-T clock
+ * Characters start at half-T 0 after reset (Q7 in `dev/ai/videoton-tvc.md`), so p is the half-T clock
  * mod 4.
  */
 

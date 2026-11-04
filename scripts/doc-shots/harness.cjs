@@ -11,7 +11,7 @@
  *     `src/main/settings-path.ts`), so a developer's own window geometry, theme and
  *     recent-project list never leak into a screenshot.
  *   - That file is *seeded* before launch, which pins theme, accent, panel sizes and
- *     fonts. See `.ai/doc-screenshots-guide.md` for why this works.
+ *     fonts. See `dev/ai/doc-screenshots-guide.md` for why this works.
  *   - The IDE window's content size is set explicitly, so layout does not depend on the
  *     display the shots happen to be generated on.
  *   - The EMU window is hidden; only the IDE is photographed.
@@ -50,7 +50,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
  * Launches Klive with an isolated home folder and returns a driver object.
  */
 /**
- * BASIC programs build only with Boriel BASIC (`.ai/klive-basic-switch.md`): a run
+ * BASIC programs build only with Boriel BASIC (`dev/ai/klive-basic-switch.md`): a run
  * points it at BORIEL_ROOT, else ~/zxbasic2, unless the recipe names an installation itself.
  */
 function withBorielRoot(userSettings) {
@@ -108,14 +108,14 @@ async function launchKlive({
   /*
    * The answer to the Boriel BASIC setup offer, as the settings file records it. The default declines
    * every version, so no offer covers the windows a recipe drives; `null` seeds nothing, so a run
-   * that checks the offer itself sees it (`.ai/boriel/integration.md`, "The installation offer").
+   * that checks the offer itself sees it (`dev/ai/boriel/integration.md`, "The installation offer").
    */
   borielSetup = { declined: true, offeredVersion: "*" },
   /*
    * The UI language (an `id` from `src/common/i18n/languages.ts`). A localized recipe runs once per
    * language and its `shot()` paths get the language as their first folder
    * (`images/<lang>/...`), so a translated page shows the IDE in its own language (R4 of
-   * `.ai/docs-site.md`). Unset, English, and paths are left as they are.
+   * `dev/ai/docs-site.md`). Unset, English, and paths are left as they are.
    */
   lang
 }) {
@@ -149,7 +149,7 @@ async function launchKlive({
             sideBarWidth,
             toolPanelHeight,
             // --- English, whatever the OS language, unless the recipe is localized: the docs
-            // --- show the UI in the page's language (`.ai/localization.md`)
+            // --- show the UI in the page's language (`dev/ai/localization.md`)
             language: lang ?? "en",
             i18nShowKeys: false,
             ...ideViewOptions

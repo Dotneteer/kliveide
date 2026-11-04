@@ -376,7 +376,7 @@ Drawing it:
 - Fill or flash it while a mouse button is held: that is the only feedback that clicks are reaching
   the machine when nothing consumes them.
 - Colours from tokens, no literals; and per the standing rule the change updates
-  `.ai/ui-theming-intent-and-lessons.md` in the same commit.
+  `dev/ai/ui-theming-intent-and-lessons.md` in the same commit.
 
 For the "captured — press Esc to release" indicator, note what the overlay stack actually is.
 `EmulatorOverlay` (`EmulatorOverlay.tsx:5-16`) holds two pills: `ExecutionStateOverlay`, whose text
@@ -495,7 +495,7 @@ rather than inventing a shape.
 | Toolbar button | `ViewControls.tsx` (the `!ide` group), an `IconButton` like Stay-on-top: `iconName` follows the capture flag, `selected` lights it. §3.1.2 — **captures only, never releases** |
 | Toolbar icons | `mouse.svg` / `mouse-off.svg` (Lucide) dropped into `src/renderer/assets/icons/`; the filename is the id, never an `icon-defs.ts` entry (that folder's `README.md`) |
 | Bindings dialog | **Plain pattern** (`dev/patterns/dialog-pattern.md`), not MVC — see §5.1. It belongs to the **emu** renderer: `src/renderer/appEmu/dialogs/joystick/`, an id from `EMU_DIALOG_BASE` (`dialog-ids.ts`), opened from main with `emuApi.displayDialog(id)`. Adding an id means updating the registry guard in `test/controls/AppShellStartup.test.tsx` |
-| Dialog styling | tokens only, no colour literals; and per the standing rule, any visual change updates `.ai/ui-theming-intent-and-lessons.md` in the same commit |
+| Dialog styling | tokens only, no colour literals; and per the standing rule, any visual change updates `dev/ai/ui-theming-intent-and-lessons.md` in the same commit |
 
 ### 5.1 Why the bindings dialog is not an MVC dialog
 

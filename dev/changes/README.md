@@ -5,7 +5,7 @@ edits `CHANGELOG.md` during development: the release (`npm run release:prepare`)
 changesets into the next CHANGELOG section, works out the version from them, and deletes them.
 
 The release procedure and its decisions are
-`.ai/release-guide.md`; how to write a good entry is `.ai/changesets-guide.md`.
+`dev/ai/release-guide.md`; how to write a good entry is `dev/ai/changesets-guide.md`.
 
 ## Creating one
 
@@ -69,6 +69,6 @@ within one, entries follow the order the changesets were added to git.
 ## The PR check
 
 `.github/workflows/changeset-check.yml` fails a PR that changes files outside `docs/`, `.plans/`,
-`.ai/`, `dev/patterns/`, `.github/`, `test/`, `dev/research/` (reference material) and root `*.md` files
+`dev/ai/`, `dev/patterns/`, `.github/`, `test/`, `dev/research/` (reference material) and root `*.md` files
 without adding or editing a changeset.
 Dependabot PRs, release PRs (`release/v*`) and PRs with the `no-changeset` label pass.

@@ -4,7 +4,7 @@ import { MgtFileSystem, MGT_IMAGE_SIZE } from "@common/diskfs/mgtfs";
 import { openDiskFileSystem } from "@common/diskfs/open";
 
 /*
- * The MGT +D / DISCiPLE file system (`.ai/file-manager.md`), checked against the
+ * The MGT +D / DISCiPLE file system (`dev/ai/file-manager.md`), checked against the
  * layout MGT's DISCiPLE/+D Technical Guide gives: the directory on tracks 0-3, 256-byte entries,
  * the sector count high byte first, the sector address map from track 4 sector 1, 510 data bytes
  * and a (track, sector) link per sector, the 9-byte header first in a ZX file, side 1 as 128+.

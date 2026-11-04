@@ -4,7 +4,7 @@ import { createEpSession } from "../harness/enterprise";
 
 /*
  * The Enterprise's ROM segments as the ROM annotations find them (`getRomSources`,
- * `.ai/rom-annotations/ep-authoring-guide.md`): each fitted ROM segment its own 16K page, by its segment
+ * `dev/ai/rom-annotations/ep-authoring-guide.md`): each fitted ROM segment its own 16K page, by its segment
  * number, known by its bytes and named by its file and page, so the file's sidecar applies to it.
  */
 describe("the Enterprise's ROM sources", () => {

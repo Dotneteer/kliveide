@@ -24,7 +24,7 @@ export const PROFILER_EDITOR = "Profiler";
 // --- The graphics finder over the paused machine (`dev/patterns/reverse-engineering-tools.md`, "Graphics finder")
 export const GRAPHICS_PANEL_ID = "$graphics";
 export const GRAPHICS_EDITOR = "GraphicsFinder";
-// --- The two-pane File Manager (`.ai/file-manager.md`, D1)
+// --- The two-pane File Manager (`dev/ai/file-manager.md`, D1)
 export const FILE_MANAGER_PANEL_ID = "$fileManager";
 export const FILE_MANAGER_EDITOR = "FileManager";
 export const UNKNOWN_EDITOR = "Unknown";

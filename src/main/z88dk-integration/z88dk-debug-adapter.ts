@@ -18,7 +18,7 @@ import { mapValue, unescapeMapName, type Z88dkLineDebug, type Z88dkMapSymbol } f
 
 /*
  * Map + CDB records + image → `SourceLevelDebugInfo` with `language: "c"` (`.plans/Z88DK_INTEGRATION_PLAN.md`
- * §8, phase Z5). Everything comes from zcc's output, as `.ai/z88dk/cdb-records.md` records it:
+ * §8, phase Z5). Everything comes from zcc's output, as `dev/ai/z88dk/cdb-records.md` records it:
  *
  * - statements: one per address the line records give (the lowest line at a shared address);
  * - callables: the startup code (the entry point, no statements) and each C function of the project;
@@ -320,7 +320,7 @@ export function adaptZ88dkDebugInfo(input: Z88dkDebugAdapterInput): Z88dkDebugAd
         variables,
         callSites,
         frames,
-        // --- The crt0 stores its entry SP into its own `ld sp,nn` (`.ai/z88dk/targets.md`)
+        // --- The crt0 stores its entry SP into its own `ld sp,nn` (`dev/ai/z88dk/targets.md`)
         mainBaselineSymbol: restoreSp !== undefined ? restoreSp + 1 : 0,
         framePointerAddress: framePointer,
         runtimeSymbols: [],
@@ -381,7 +381,7 @@ type CdbVariable = {
   offset: number;
 };
 
-/** The `__CDBINFO__` records (`.ai/z88dk/cdb-records.md`): functions by name, and variables. */
+/** The `__CDBINFO__` records (`dev/ai/z88dk/cdb-records.md`): functions by name, and variables. */
 export function cdbRecords(symbols: Z88dkMapSymbol[]): { functions: Map<string, { returnsVoid: boolean }>; variables: CdbVariable[] } {
   const functions = new Map<string, { returnsVoid: boolean }>();
   const variables: CdbVariable[] = [];

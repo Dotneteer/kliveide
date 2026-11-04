@@ -535,7 +535,7 @@ Z80_ALWAYS_INLINE uint8_t readCodeMemory(uint16_t address) {
 /*
  * An M1 opcode fetch, for a machine that times it differently from a data read (the Videoton TVC's
  * clock stretch holds the clock in T2 of an M1 but in T3 of a read, and its WAIT circuit adds a wait
- * state to every M1; `.ai/videoton-tvc.md`, "The shared Z80 hook H1"). The hook replaces the
+ * state to every M1; `dev/ai/videoton-tvc.md`, "The shared Z80 hook H1"). The hook replaces the
  * fetch's memory-read delay: it must add the fetch's first three tacts itself, as
  * `Z80_DELAY_MEMORY_READ` does; the refresh tact follows as usual. Only a core that defines it
  * compiles this path.

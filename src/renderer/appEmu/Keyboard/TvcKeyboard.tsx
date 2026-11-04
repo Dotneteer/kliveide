@@ -7,7 +7,7 @@ import { useKeyboard } from "./useKeyboard";
 import { TvcKeyCode } from "@emu/machines/tvc/TvcKeyCode";
 
 /*
- * The Videoton TVC virtual keyboard (`.ai/videoton-tvc.md`, "Keyboard and typing"), drawn from a
+ * The Videoton TVC virtual keyboard (`dev/ai/videoton-tvc.md`, "Keyboard and typing"), drawn from a
  * photo of a TVC 64K (https://frescho.hu/wp-content/gallery/tvc-adatlap/IMG_2349.JPG): five rows
  * stepped to the right towards the back, cream keys with the shifted legend above the plain one,
  * dark grey function keys, and the built-in joystick to the right. One SVG holds it all, because

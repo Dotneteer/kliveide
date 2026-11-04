@@ -10,7 +10,7 @@ import type { ProgramAnnotations } from "@renderer/appIde/annotations/programAnn
  * The sidecar's two subtrees are saved independently, on two different policies — annotations when
  * the user asks, breakpoints the moment they change. Neither writer may clobber the other, and
  * getting that wrong loses user data silently rather than loudly. See
- * `.ai/nex-debugging.md`.
+ * `dev/ai/nex-debugging.md`.
  */
 
 const PATH = "/p/Game.nex.dis";
@@ -194,7 +194,7 @@ describe("the debug subtree's label breakpoints", () => {
   /*
    * Label-anchored breakpoints live in their own `debug.labelBreakpoints` field. Additive within
    * `debug` rather than a schema bump: bumping to 3 would make a build reading only `[1, 2]` reject
-   * the whole file and lose the annotations too. See `.ai/nex-debugging.md`.
+   * the whole file and lose the annotations too. See `dev/ai/nex-debugging.md`.
    */
 
   it("writes both halves of the debug subtree together", () => {

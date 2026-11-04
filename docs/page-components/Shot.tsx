@@ -1,5 +1,5 @@
 /**
- * An annotated, localized screenshot (R3/R4 of .ai/docs-site.md).
+ * An annotated, localized screenshot (R3/R4 of dev/ai/docs-site.md).
  *
  *   <Shot src="get-started/debug-breakpoint.webp" figure="7.1" caption="Paused at a breakpoint"
  *         markers={["breakpoint", "registers"]} width={900} alt="..." />

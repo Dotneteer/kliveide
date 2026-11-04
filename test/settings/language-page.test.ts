@@ -18,7 +18,7 @@ import { createInitialState } from "@renderer/appIde/dialogs/settings/SettingsMo
 import { selectViewModel } from "@renderer/appIde/dialogs/settings/SettingsViewModel";
 
 /*
- * The Language page of the Settings dialog (`.ai/localization.md`, D8).
+ * The Language page of the Settings dialog (`dev/ai/localization.md`, D8).
  */
 
 const row = (id: string) => SETTINGS_ROWS.find((r) => r.id === id)!;

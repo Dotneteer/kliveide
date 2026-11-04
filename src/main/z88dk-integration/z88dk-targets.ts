@@ -16,7 +16,7 @@ import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
 
 /*
  * Klive machine → zcc target (`.plans/Z88DK_INTEGRATION_PLAN.md` §5.2, decision C5; the facts are
- * `.ai/z88dk/targets.md`). The machine decides the target; the project's options only refine it.
+ * `dev/ai/z88dk/targets.md`). The machine decides the target; the project's options only refine it.
  */
 
 /** How Run delivers the program. */
@@ -31,7 +31,7 @@ export type Z88dkRunRoute =
   | "card";
 
 export type Z88dkTarget = {
-  /** The zcc target arguments, one per element (`.ai/z88dk/README.md`: never one string). */
+  /** The zcc target arguments, one per element (`dev/ai/z88dk/README.md`: never one string). */
   args: string[];
   /** The model Klive injects into; undefined where Klive does not inject. */
   model?: SpectrumModelType;
@@ -104,7 +104,7 @@ export function z88dkTargetFor(
       });
     }
     case MI_ZXNEXT:
-      // --- The default +zxn library (sdcc_iy) cannot build with -debug (`.ai/z88dk/targets.md`)
+      // --- The default +zxn library (sdcc_iy) cannot build with -debug (`dev/ai/z88dk/targets.md`)
       return {
         args: ["+zxn", `-subtype=${subtype || "nex"}`],
         model: SpectrumModelType.Next,

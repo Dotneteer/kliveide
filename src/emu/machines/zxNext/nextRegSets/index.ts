@@ -3,7 +3,7 @@ import type { NextProfile } from "../nextProfiles";
 import { NEXT_REG_DELTA_30204 } from "./30204";
 
 /*
- * The NextReg description sets (`.ai/zxnext-models.md` D5): core 3.02.01's is the base
+ * The NextReg description sets (`dev/ai/zxnext-models.md` D5): core 3.02.01's is the base
  * (`nextRegDescriptors.ts`); a later core's set is the base with its delta applied, a file here that
  * lists only the registers it adds, removes or re-means. A profile names its set (`nextRegSet`), and
  * the machine exposes it to the IDE (`IZxNextIdeMachine.getNextRegDescriptors`).

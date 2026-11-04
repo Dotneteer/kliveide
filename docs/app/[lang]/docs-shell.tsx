@@ -4,7 +4,7 @@
  *
  * Nextra 4 removed `theme.config.tsx`; everything it configured is now props on
  * <Layout>, <Navbar>, <Footer> and <Search>. The chrome's text comes from docs/i18n/ui/<lang>.json
- * (`.ai/docs-site.md`).
+ * (`dev/ai/docs-site.md`).
  */
 import type { Metadata } from "next";
 import { Footer, Layout, Navbar } from "nextra-theme-docs";

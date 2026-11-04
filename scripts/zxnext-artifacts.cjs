@@ -1,5 +1,5 @@
 /*
- * The ZX Spectrum Next WASM artifacts (`.ai/zxnext-models.md` D3): one per distinct
+ * The ZX Spectrum Next WASM artifacts (`dev/ai/zxnext-models.md` D3): one per distinct
  * hardware, built from the one C tree with the defines of `zxnext-profile.h`. Two profiles with the
  * same hardware share an artifact. `test/wasm/zxNext/wasm-next-artifacts.test.ts` keeps this list in
  * step with `NEXT_PROFILES` (`src/emu/machines/zxNext/nextProfiles.ts`).

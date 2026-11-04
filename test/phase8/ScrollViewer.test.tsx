@@ -77,7 +77,7 @@ describe("ScrollViewer — Phase 8", () => {
    * This asserts the *option*, not the appearance, because appearance is untestable here: the whole
    * of `overlayscrollbars-react` is mocked out above, so nothing in jsdom exercises the real
    * show/hide at all. Verify the behaviour itself in the running app (see
-   * `.ai/ui-theming-intent-and-lessons.md`); this test only stops the mechanism being swapped back.
+   * `dev/ai/ui-theming-intent-and-lessons.md`); this test only stops the mechanism being swapped back.
    */
   it("delegates auto-hide to OverlayScrollbars rather than React hover state", () => {
     const { container } = renderWithProviders(

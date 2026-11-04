@@ -1,5 +1,5 @@
 ' Klive BASIC standard library - keys.bas: GetKey, GetKeyScanCode, MultiKeys and the KEY constants.
-' Klive's own code, written from the documented API (.ai/kbasic/stdlib-api.json). The keyboard is
+' Klive's own code, written from the documented API (dev/ai/kbasic/stdlib-api.json). The keyboard is
 ' read through port $FE, without the ROM.
 #pragma once
 #pragma push(case_insensitive)

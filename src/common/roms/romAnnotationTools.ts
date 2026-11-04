@@ -6,7 +6,7 @@ import { romCrc32 } from "./romIdentity";
  * reports an author works from. Pure — the CLI (`scripts/rom-annotations.cjs`) reads and writes the
  * files, and the tests run the same functions.
  *
- * The rules an author follows are in `.ai/rom-annotations/README.md`; this module only measures.
+ * The rules an author follows are in `dev/ai/rom-annotations/README.md`; this module only measures.
  */
 
 /** A shipped sidecar as raw JSON: the model plus the ROM sidecar's own keys (§5.1). */

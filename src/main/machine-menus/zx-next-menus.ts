@@ -29,7 +29,7 @@ import { NEXT_PROFILE_IDS, nextProfileOf, romSetOf } from "@emu/machines/zxNext/
 export const SD_CARD_FILE_FOLDER = "sdCardFileFolder";
 
 /**
- * The active Next model's default SD card (`.ai/zxnext-models.md` D7): each model has
+ * The active Next model's default SD card (`dev/ai/zxnext-models.md` D7): each model has
  * its own working copy in the Klive home folder (`ks2.cim` for KS2 with core 3.02.01, the file every
  * earlier Klive wrote) and its ROM set's base image, so switching models never boots NextZXOS from a
  * card of another release. A user-selected card (`MEDIA_SD_CARD`) still overrides it.

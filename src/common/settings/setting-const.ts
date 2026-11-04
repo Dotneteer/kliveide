@@ -76,7 +76,7 @@ export const SETTING_EMU_KEYBOARD_LAYOUT = "emuOptions.keyboardLayout";
 export const SETTING_EMU_KEYBOARD_HEIGHT = "emuOptions.keyboardPanelHeight";
 export const SETTING_EMU_KEYBOARD_HEIGHTS = "emuOptions.keyboardPanelHeights";
 export const SETTING_IDE_SHOW_TOOLBAR = "ideViewOptions.showToolbar";
-// --- The File Manager (`.ai/file-manager.md`, D7)
+// --- The File Manager (`dev/ai/file-manager.md`, D7)
 export const SETTING_FM_SHOW_HIDDEN = "ideViewOptions.fileManagerShowHidden";
 export const SETTING_FM_DELETE_PERMANENTLY = "ideViewOptions.fileManagerDeletePermanently";
 export const SETTING_IDE_SHOW_STATUS_BAR = "ideViewOptions.showStatusBar";
@@ -94,9 +94,9 @@ export const SETTING_IDE_ACTIVE_OUTPUT_PANE = "ideViewOptions.activeOutputPane";
 export const SETTING_IDE_OPEN_LAST_PROJECT = "ideBehavior.openLastProject";
 export const SETTING_IDE_CLOSE_EMU = "ideBehavior.closeEmuWithIde";
 export const SETTING_IDE_NAV_RECORD_TAB_SWITCH = "ideBehavior.navRecordTabSwitches";
-// --- The display language (`.ai/localization.md`, D8): "system" or a `languages.ts` id
+// --- The display language (`dev/ai/localization.md`, D8): "system" or a `languages.ts` id
 export const SETTING_IDE_LANGUAGE = "ideViewOptions.language";
-// --- Every text shows its translation key (`.ai/localization.md`, "The tooling")
+// --- Every text shows its translation key (`dev/ai/localization.md`, "The tooling")
 export const SETTING_IDE_I18N_SHOW_KEYS = "ideViewOptions.i18nShowKeys";
 export const SETTING_PANEL_FONT_FAMILY = "panelOptions.fontFamily";
 export const SETTING_PANEL_FONT_SIZE = "panelOptions.fontSize";

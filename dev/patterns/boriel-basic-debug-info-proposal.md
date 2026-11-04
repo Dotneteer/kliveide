@@ -10,7 +10,7 @@ treat it as an outbound proposal, not a design note.
 - Boriel side: `boriel-basic/zxbasic` v1.19.0, commit `ac9081d` (2026-09-24). Paths below are
   relative to that repository. They locate where a change would go; no upstream code is copied
   here, and nothing in this document was used to design Klive (provenance rule,
-  `.ai/kbasic/compiler.md`, "Provenance (hard rule)").
+  `dev/ai/kbasic/compiler.md`, "Provenance (hard rule)").
 
 ## 1. Why one shared format
 

@@ -1,6 +1,6 @@
 /*
  * A test-only translation unit for the shared Z80 core's M1 timing hook, Z80_DELAY_OPCODE_FETCH
- * (`.ai/videoton-tvc.md`, "The shared Z80 hook H1"). No production core defines it yet. The hook
+ * (`dev/ai/videoton-tvc.md`, "The shared Z80 hook H1"). No production core defines it yet. The hook
  * records each address it is called with and adds the fetch's three tacts plus a configurable
  * extra, so
  * `z80-opcode-fetch.test.ts` can pin which fetches the core treats as M1 cycles. It is not a machine.

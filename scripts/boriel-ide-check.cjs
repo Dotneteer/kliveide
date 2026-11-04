@@ -1,5 +1,5 @@
 /*
- * Boriel BASIC in the running IDE (`.ai/boriel/integration.md`, "Tests and checks"): launches the built
+ * Boriel BASIC in the running IDE (`dev/ai/boriel/integration.md`, "Tests and checks"): launches the built
  * Klive under Playwright (`scripts/doc-shots/harness.cjs`) with a throwaway home, and checks, part by
  * part:
  *
@@ -195,7 +195,7 @@ const PARTS = {
     });
     await sleep(500);
     await s.k.cmd("settings integrations", 2000);
-    // --- KLIVE-BASIC-OFF: Boriel BASIC is the only BASIC compiler (`.ai/klive-basic-switch.md`):
+    // --- KLIVE-BASIC-OFF: Boriel BASIC is the only BASIC compiler (`dev/ai/klive-basic-switch.md`):
     // --- no compiler row in Settings and no checkbox in the dialog. The checks of the switch are kept
     // --- below, commented out, for the day it is turned back on.
     check((await s.k.ide.getByTestId("settings-row-basicCompiler").count()) === 0, "ui: Settings offers no choice of BASIC compiler");

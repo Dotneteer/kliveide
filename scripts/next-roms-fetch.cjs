@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /*
  * Fetches one ZX Spectrum Next ROM set from the official distribution and records it in the
- * manifest (`.ai/zxnext-models.md` D9.2).
+ * manifest (`dev/ai/zxnext-models.md` D9.2).
  *
  *   npm run next-roms:fetch -- <setId> --ref <branch|commit> [--replace] [--files a.rom,b.rom]
  *

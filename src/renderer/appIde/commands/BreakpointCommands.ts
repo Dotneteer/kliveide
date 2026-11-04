@@ -581,7 +581,7 @@ export abstract class BreakpointWithAddressCommand extends IdeCommandBase<Breakp
 
                 // --- The bank is a 16K bank number in plain hex, *not* a partition label: on the
                 // --- Next the label map describes 8K pages, and routing a bank through it is how
-                // --- the two index spaces got confused. See `.ai/nex-debugging.md`.
+                // --- the two index spaces got confused. See `dev/ai/nex-debugging.md`.
                 const bank = parseInt(segments[0], 16);
                 if (!Number.isInteger(bank) || bank < 0 || bank > bankSpace.maxBank) {
                   messages = [
@@ -783,7 +783,7 @@ export class SetBreakpointCommand extends BreakpointWithAddressCommand {
   get description() {
     return t("commands.bp.set.description");
   }
-  // --- The first line is syntax (English); the explanations are translated (`.ai/localization.md`)
+  // --- The first line is syntax (English); the explanations are translated (`dev/ai/localization.md`)
   get usage(): string[] {
     return [
       "bp-set <address-spec> [-r] [-w] [-i] [-o] [-c] [-m <mask>] [-v <value>] [-len <bytes>] [-attr <bytes>] [-once] [-log \"<template>\"] [-hit <spec>] [-if <condition>]",

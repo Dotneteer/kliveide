@@ -1,5 +1,5 @@
 /**
- * Klive's release steps (.ai/release-guide.md).
+ * Klive's release steps (dev/ai/release-guide.md).
  *
  *   npm run release:prepare [-- --version x.y.z] [--dry-run] [--skip-tests] [--no-push]
  *       Step A, on an up-to-date master: computes the version from dev/changes/, writes the

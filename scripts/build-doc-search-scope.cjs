@@ -1,6 +1,6 @@
 /**
  * Keeps the unlinked area out of the site search (decision D6 of
- * .ai/docs-site.md: the book is available at its URLs but not linked, and
+ * dev/ai/docs-site.md: the book is available at its URLs but not linked, and
  * search must not lead to it either).
  *
  * Nextra marks each page's content with `data-pagefind-body`; once any page has it, Pagefind

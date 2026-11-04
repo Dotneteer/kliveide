@@ -1,9 +1,9 @@
 # Videoton TVC WASM Core
 
-One C core runs both TVC models (`.ai/videoton-tvc.md`, decision D2): `tvcConfigure` picks
+One C core runs both TVC models (`dev/ai/videoton-tvc.md`, decision D2): `tvcConfigure` picks
 the 64K or the 64K+ at run time, and the host uploads the model's ROMs. It builds to `dist/tvc.wasm`
 (`npm run build:tvc-wasm`) and is loaded by `TvcWasmV2Loader.ts`. The decisions (D1-D7) and the
-open hardware questions (Q1-Q9) cited here are listed in `.ai/videoton-tvc.md`. The TypeScript side
+open hardware questions (Q1-Q9) cited here are listed in `dev/ai/videoton-tvc.md`. The TypeScript side
 is `../TvcWasmHost.ts` (plumbing) and `../TvcWasmV2Machine.ts` (the adapter). There is no TypeScript
 TVC machine and no second CPU: the core includes the shared Z80 (`src/emu/z80/wasm/z80.c`) through
 its `Z80_*` hooks, including H1, `Z80_DELAY_OPCODE_FETCH`, which was added for this machine.

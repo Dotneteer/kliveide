@@ -3,7 +3,7 @@ import { useTheme } from "@renderer/theming/ThemeProvider";
 import { KeyboardButtonClickArgs } from "./keyboard-common";
 
 /*
- * One key of the ZX81 keyboard, built from the approved design (`.ai/zx8081.md`, "The virtual keyboard"). All geometry is in key units - a key face is 100
+ * One key of the ZX81 keyboard, built from the approved design (`dev/ai/zx8081.md`, "The virtual keyboard"). All geometry is in key units - a key face is 100
  * wide - measured from the reference photo; the SVG cell is one row pitch high with the face at y 24,
  * so the keyword printed above the key and the function printed below it fit in the cell.
  */

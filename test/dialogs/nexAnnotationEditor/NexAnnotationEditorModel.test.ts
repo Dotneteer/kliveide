@@ -36,7 +36,7 @@ describe("NexAnnotationEditor initialState", () => {
 describe("reduce: envReplaced", () => {
   it("returns the same state object for an equal environment", () => {
     // --- The container derives the environment fresh on every render, so an equal one must be a
-    // --- no-op or `useSyncExternalStore` re-renders forever. See trap 4 in `.ai/ui-mvc-guide.md`.
+    // --- no-op or `useSyncExternalStore` re-renders forever. See trap 4 in `dev/ai/ui-mvc-guide.md`.
     const state = aState();
     expect(reduce(state, { type: "envReplaced", env: anEnvironment() })).toBe(state);
   });

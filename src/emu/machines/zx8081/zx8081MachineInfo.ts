@@ -4,7 +4,7 @@ import { MC_MEM_SIZE, MC_SCREEN_FREQ, MC_ZX80_ROM8K, MI_ZX80, MI_ZX81 } from "@c
 
 /**
  * The Sinclair ZX80 and ZX81: their models and the facts the host and the renderer share
- * (`.ai/zx8081.md`, "Core decisions", D2 - two machine ids, one host and one core).
+ * (`dev/ai/zx8081.md`, "Core decisions", D2 - two machine ids, one host and one core).
  */
 
 /** 3.25 MHz on both machines and both TV standards */

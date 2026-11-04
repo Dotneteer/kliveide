@@ -17,7 +17,7 @@ import { intentForKey } from "./fileManagerKeys";
 import styles from "./FileManagerPanel.module.scss";
 
 /*
- * The File Manager's view (`.ai/file-manager.md`): two panes side by side, each a header
+ * The File Manager's view (`dev/ai/file-manager.md`): two panes side by side, each a header
  * (drive button, path, buttons), the column headers, the virtualized rows and a status line. Dumb:
  * it renders the view model and dispatches intents.
  */

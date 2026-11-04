@@ -10,7 +10,7 @@ import { mapValue, parseZ88dkMap } from "@main/z88dk-integration/z88dk-map";
 
 /*
  * z88dk programs on the real cores (`.plans/Z88DK_INTEGRATION_PLAN.md` §3, spike 1): the committed
- * fixtures are zcc output, so these prove the entry and exit conventions `.ai/z88dk/targets.md`
+ * fixtures are zcc output, so these prove the entry and exit conventions `dev/ai/z88dk/targets.md`
  * records - the +zx crt0 runs as a subroutine and returns to BASIC, the ZX81 `.P` loads and runs.
  */
 

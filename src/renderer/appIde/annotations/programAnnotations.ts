@@ -438,7 +438,7 @@ export type SidecarBreakpointFilters = {
  * would make it a bank breakpoint that happened to be named, and it would stop meaning the same
  * thing the moment the code moved.
  *
- * `bank` absent means a **global** label. See `.ai/nex-debugging.md`.
+ * `bank` absent means a **global** label. See `dev/ai/nex-debugging.md`.
  */
 export type SidecarLabelBreakpoint = SidecarBreakpointFilters & {
   label: string;
@@ -453,7 +453,7 @@ export type SidecarLabelBreakpoint = SidecarBreakpointFilters & {
  * Saved **independently of the annotations beside it**, and on a different policy: annotation edits
  * are written when the user asks, while a breakpoint is written the moment it is set — a breakpoint
  * lost because nobody pressed Save is a bug, not a policy. Both writers read-merge-write over
- * disjoint keys, so neither can clobber the other. See `.ai/nex-debugging.md`.
+ * disjoint keys, so neither can clobber the other. See `dev/ai/nex-debugging.md`.
  */
 export type AnnotationDebugState = {
   breakpoints?: SidecarBreakpoint[];

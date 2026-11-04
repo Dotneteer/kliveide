@@ -1698,7 +1698,7 @@
       "name": "The label as written"
     }
   },
-  "commands.romAnn.imported": "Added {added, plural, one {# label} other {# labels}} to {path} as manual; skipped {skipped, number}. Name the list's source in .ai/rom-annotations/PROVENANCE.md.",
+  "commands.romAnn.imported": "Added {added, plural, one {# label} other {# labels}} to {path} as manual; skipped {skipped, number}. Name the list's source in dev/ai/rom-annotations/PROVENANCE.md.",
   "@commands.romAnn.imported": {
     "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Result of 'rom-ann-import-names'. 'manual' is a provenance value; the file path is literal.",
     "placeholders": {

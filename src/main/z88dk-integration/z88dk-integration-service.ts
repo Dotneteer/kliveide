@@ -38,7 +38,7 @@ export const Z88DK_RELEASES_URL = "https://api.github.com/repos/z88dk/z88dk/rele
 export const Z88DK_RELEASES_PAGE = "https://github.com/z88dk/z88dk/releases";
 const USER_AGENT = "klive-ide-z88dk-integration";
 
-/** The marker an install made by Klive carries (`.ai/z88dk/README.md`). */
+/** The marker an install made by Klive carries (`dev/ai/z88dk/README.md`). */
 export const Z88DK_INSTALL_MARKER = ".klive-z88dk.json";
 
 /** The smoke test's program: proves the driver, ZCCCFG, the compiler, the assembler and the libraries. */
@@ -102,7 +102,7 @@ export async function readZ88dkVersion(
   }
 }
 
-/** The installs found on this machine (`.ai/z88dk/README.md`, "Detection"), each with its version. */
+/** The installs found on this machine (`dev/ai/z88dk/README.md`, "Detection"), each with its version. */
 export async function getZ88dkPathSuggestions(
   env: NodeJS.ProcessEnv = process.env,
   options: { isWindows?: boolean; home?: string; downloadFolders?: string[] } = {}
@@ -312,7 +312,7 @@ function mapAsset(asset: GithubAsset, targetPlatform: Z88dkReleasePlatform): Z88
 }
 
 /**
- * What a release asset is (`.ai/z88dk/releases.md`): `z88dk-osx-<v>.zip` is the macOS build
+ * What a release asset is (`dev/ai/z88dk/releases.md`): `z88dk-osx-<v>.zip` is the macOS build
  * (universal), `z88dk-win32-<v>.zip` the Windows build, `z88dk-src-<v>.tgz` the source.
  */
 export function classifyZ88dkAsset(name: string): { kind: Z88dkReleaseAssetKind; platform: Z88dkReleasePlatform } {

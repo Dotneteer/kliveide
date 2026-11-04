@@ -1,5 +1,5 @@
 /**
- * The Sinclair ZX81 in the running app (`.ai/zx8081.md`, "The virtual keyboard"):
+ * The Sinclair ZX81 in the running app (`dev/ai/zx8081.md`, "The virtual keyboard"):
  *
  * - `zx81/zx81-keyboard.png` — the virtual keyboard panel, for comparison with the reference photo;
  * - `zx81/zx81-print.png` — the EMU window after typing `PRINT "HELLO"` on the host keyboard;

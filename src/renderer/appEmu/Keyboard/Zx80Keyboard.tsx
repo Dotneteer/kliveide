@@ -7,7 +7,7 @@ import { KeyboardApi } from "./KeyboardPanel";
 import { useKeyboard } from "./useKeyboard";
 
 /*
- * The ZX80 virtual keyboard (`.ai/zx8081.md`, "The virtual keyboard"): the ZX81's key geometry
+ * The ZX80 virtual keyboard (`dev/ai/zx8081.md`, "The virtual keyboard"): the ZX81's key geometry
  * with the 4K-ROM ZX80's legends. The legends come from the ROM's key tables - unshifted at $006C,
  * shifted at $0093 (tokens from $00BA), keywords by K-mode letter - and their placement from a photo
  * of an original machine.

@@ -1,6 +1,6 @@
 /*
  * Klive's own comments on the ZX Spectrum Next VHDL, kept as patches in
- * `dev/vendor/next-fpga/comments/<version>/` (`.ai/zxnext-models.md` D4.1).
+ * `dev/vendor/next-fpga/comments/<version>/` (`dev/ai/zxnext-models.md` D4.1).
  *
  *   npm run next-fpga:comments -- --save <version>
  *     Rewrites that version's patches from the fetched tree (`dev/vendor/next-fpga/<version>/`)

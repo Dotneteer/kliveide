@@ -5,7 +5,7 @@ import { openDiskFileSystem } from "@common/diskfs/open";
 import { TapeFileSystem, tapeFileBlocks } from "@common/diskfs/tapefs";
 
 /*
- * A tape as a file system (`.ai/file-manager.md`): `.tap` read and written,
+ * A tape as a file system (`dev/ai/file-manager.md`): `.tap` read and written,
  * `.tzx` read from its standard-speed blocks.
  */
 

@@ -1,7 +1,7 @@
 import type { NextRegSetDelta } from "./index";
 
 /*
- * Core 3.02.04's NextReg changes against 3.02.01 (`.ai/zxnext-cores/30201-to-30204.md`, D5): no new
+ * Core 3.02.04's NextReg changes against 3.02.01 (`dev/ai/zxnext-cores/30201-to-30204.md`, D5): no new
  * register numbers; the registers whose bits were re-meant are listed here with their 3.02.04
  * description (`nextreg.txt@3.02.04`). Each is the base descriptor (`nextRegDescriptors.ts`) with only
  * the re-meant bits changed.

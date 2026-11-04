@@ -2,7 +2,7 @@
 
 **Status:** proposed (2026-11-04). Nothing started.
 
-NEX debugging is built (`.ai/nex-debugging.md` is the record: decisions Q1-Q9, the breakpoint model,
+NEX debugging is built (`dev/ai/nex-debugging.md` is the record: decisions Q1-Q9, the breakpoint model,
 the sidecar, the launch, the paused machine). This plan holds what the first round left. It was
 written from the two closed documents (`.plans/NEX_DEBUGGING_IDEAS.md`, `.plans/NEX_DEBUGGING_PLAN.md`,
 in git history) after checking each open item against the code on 2026-11-04. Items done since those
@@ -11,7 +11,7 @@ Disassembly row menu and its label editing, the annotation regions shaping the l
 labels in the Call Stack, "Debug (break at entry)" in the menus, `DebuggerState.schemaVersion`, the
 sidecar's IO split.
 
-The decisions and non-goals of `.ai/nex-debugging.md` bind this plan unchanged.
+The decisions and non-goals of `dev/ai/nex-debugging.md` bind this plan unchanged.
 
 ---
 
@@ -59,7 +59,7 @@ The Call Stack, profiler and execution history name addresses through the annota
 1. **A component test that a gutter click issues the right command** (`bp-set 05:+$0100`, then
    `bp-del` on the second click, `bp-en` on a disabled one), and that a watchpoint row's name has no
    `:W` suffix. `test/renderer/nexBankGutter.test.ts` covers only which breakpoint a row shows.
-2. **Re-partition the `StaticMemoryDump` DOM suite** (step 6 of `.ai/ui-mvc-guide.md`'s recipe): the
+2. **Re-partition the `StaticMemoryDump` DOM suite** (step 6 of `dev/ai/ui-mvc-guide.md`'s recipe): the
    DOM tests still assert rules the headless layers own (region algebra, label bookkeeping, menu
    enablement). Move each such assertion to the headless test that owns the rule, keep in the DOM
    suite only what needs React, and name in the commit every DOM test removed and the test that
@@ -77,7 +77,7 @@ break-at-entry exists, as a menu choice and `nex-run -e`. The ideas named two mo
 | Break at entry | as `-e` | off |
 
 - Stored as `debug.launch` in the sidecar, written immediately like `debug.breakpoints` (the
-  read-merge-write rule of `.ai/nex-debugging.md`, "The sidecar"); `nex-run` options override them.
+  read-merge-write rule of `dev/ai/nex-debugging.md`, "The sidecar"); `nex-run` options override them.
 - A cold boot is also the fix for the named, never-observed stale-checkpoint risk (a checkpoint taken
   before the card changed): offer it, do not change the default.
 - **Decide before building:** whether a launch-options UI is worth it (a small form in the NEX
@@ -88,7 +88,7 @@ break-at-entry exists, as a menu choice and `nex-run -e`. The ideas named two mo
 ## 5. Documentation screenshots
 
 The NEX guide (`docs/content/en/guides/next/nex-files.mdx`) has one shot, the viewer. Add, through a
-`guides-*` recipe (`.ai/doc-screenshots-guide.md`; generated, never hand-captured; dark theme):
+`guides-*` recipe (`dev/ai/doc-screenshots-guide.md`; generated, never hand-captured; dark theme):
 
 - a popped-out bank paused at a gutter breakpoint, with the PC spotlight and the "Bank at" readout;
 - the bank's changed bytes marked against the file;
@@ -109,7 +109,7 @@ Uses §1's fixture. Within the page's 1.5 MB budget.
 
 ## 7. Not in this plan
 
-The non-goals of `.ai/nex-debugging.md` stand: no direct NEX loader (so `ZxSpectrumBase`'s banked
+The non-goals of `dev/ai/nex-debugging.md` stand: no direct NEX loader (so `ZxSpectrumBase`'s banked
 injection TODO stays), no machine but the Next, not a NextZXOS/esxDOS debugger, not a NEX editor, no
 8K-bank NEX files, no automated reverse engineering.
 

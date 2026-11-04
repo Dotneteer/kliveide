@@ -640,7 +640,7 @@ type DebuggerState = {
    *
    * It exists so the **next** such change is migratable, and so a project written by a newer Klive
    * announces itself instead of loading breakpoints that quietly mean something else. See
-   * `.ai/nex-debugging.md`, item 0.
+   * `dev/ai/nex-debugging.md`, item 0.
    */
   schemaVersion?: number;
   breakpoints: BreakpointInfo[];

@@ -1,5 +1,5 @@
 /*
- * Settings keys of the Boriel BASIC 2.x integration (`.ai/boriel/integration.md`, "Decisions", B3).
+ * Settings keys of the Boriel BASIC 2.x integration (`dev/ai/boriel/integration.md`, "Decisions", B3).
  * The executable comes from `zxbasic.executablePath` when set (`ZXBC_EXECUTABLE_PATH`), otherwise
  * from the install folder below. Both are user settings; a project may override them.
  */
@@ -16,5 +16,5 @@ export const BORIEL_MARKER_FILE = ".klive-boriel.json";
 /** The folder name a new installation gets under the user's home folder. */
 export const BORIEL_DEFAULT_FOLDER_NAME = "zxbasic2";
 
-/** The oldest major version Klive accepts: 2.x writes the `.dbg` debug file (`.ai/boriel/integration.md`, B1). */
+/** The oldest major version Klive accepts: 2.x writes the `.dbg` debug file (`dev/ai/boriel/integration.md`, B1). */
 export const BORIEL_MIN_MAJOR_VERSION = 2;

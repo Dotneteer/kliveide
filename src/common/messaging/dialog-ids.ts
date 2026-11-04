@@ -11,7 +11,7 @@ export const MACHINE_SELECT_DIALOG = 7;
 export const SETTINGS_DIALOG = 8;
 // --- Detect code and data (`dev/patterns/reverse-engineering-tools.md`, "Code/data detection")
 export const DETECT_CODE_DATA_DIALOG = 9;
-// --- Boriel BASIC setup (`.ai/boriel/integration.md`, "The setup dialog"). Both registries render it:
+// --- Boriel BASIC setup (`dev/ai/boriel/integration.md`, "The setup dialog"). Both registries render it:
 // --- the first-run offer appears in the emulator window, Settings opens it in the IDE window
 export const BORIEL_SETUP_DIALOG = 10;
 // --- z88dk (C) setup (`.plans/Z88DK_INTEGRATION_PLAN.md` §4), opened from Settings, `z88dk-setup` and a C build

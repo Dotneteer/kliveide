@@ -3,7 +3,7 @@
 The locked system of the website (`docs/`): the landing page and the documentation. Hallmark reads
 this first when it is run from this folder, and every page shares it; it never deals a theme here.
 Change it on purpose; the file is the rule.
-The reasons behind each rule are in `.ai/ui-theming-intent-and-lessons.md` ("The Website Wears The
+The reasons behind each rule are in `dev/ai/ui-theming-intent-and-lessons.md` ("The Website Wears The
 App's Palette"); where the two differ, that file wins and this one is corrected.
 
 ## System

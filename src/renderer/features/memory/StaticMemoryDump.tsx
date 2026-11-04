@@ -604,7 +604,7 @@ const StaticMemoryDump = ({
    * here is the *document*: its view state, its scrolling, and generating the listing (which has a
    * path the editor knows nothing about — a dump with no sidecar still disassembles).
    *
-   * See `.ai/nex-debugging.md` and `.ai/ui-mvc-guide.md`.
+   * See `dev/ai/nex-debugging.md` and `dev/ai/ui-mvc-guide.md`.
    */
   /*
    * Mark the tab unsaved only when the sidecar could not be written.
@@ -1948,7 +1948,7 @@ const StaticMemoryDump = ({
                      *
                      * This is also how a bank **watchpoint** gets made: the gutter click can only
                      * create an execution breakpoint, and the dialog's type selector is what turns
-                     * it into a memory read or write. See `.ai/nex-debugging.md`.
+                     * it into a memory read or write. See `dev/ai/nex-debugging.md`.
                      */
                     onEditBreakpoint={editBreakpoint}
                     partitionLabels={{}}

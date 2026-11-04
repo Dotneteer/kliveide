@@ -63,7 +63,7 @@ export function freshRomSidecar(target: WorkingCopyTarget): string {
     schemaVersion: 3,
     machine: "rom",
     source: { fileName: target.romName },
-    authoring: ".ai/rom-annotations/README.md",
+    authoring: "dev/ai/rom-annotations/README.md",
     level: 0,
     pages: { [page]: { crc32: target.crc32, name: target.romName } },
     banks: {

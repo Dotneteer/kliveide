@@ -7,7 +7,7 @@ import type { HistoryServiceSpan } from "@common/history/serviceSpans";
 /*
  * The Execution History document's model (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.6, §6.3):
  * which records are loaded, which one is selected, the filter and the empty states. Pure - no React,
- * no Emu API - so the decisions are tested without rendering (`.ai/ui-mvc-guide.md`).
+ * no Emu API - so the decisions are tested without rendering (`dev/ai/ui-mvc-guide.md`).
  *
  * Rows are identified by sequence number, never by position: the ring overwrites its oldest record
  * on every instruction, so "row 12" means something else after each stop, while sequence 4711 is the

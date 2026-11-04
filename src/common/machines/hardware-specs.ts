@@ -14,7 +14,7 @@
  *    A fact no source pins down (ZX81 lines per frame, the ZX80's line length) is left out and the
  *    sheet shows "—"; nothing here is written from memory.
  *
- * Texts (`.ai/localization.md`, D7): a plain string is a technical value shown as it is (chip,
+ * Texts (`dev/ai/localization.md`, D7): a plain string is a technical value shown as it is (chip,
  * CPU and product names, `4 MB`, `KERNAL`); a sentence or plain word is a `tx(key)` message, which
  * `getHardwareSpec` translates when the dialog reads the spec.
  *
@@ -540,7 +540,7 @@ export const HARDWARE_SPECS: Readonly<Record<string, MachineSpecs>> = {
     }
   },
   [MI_TVC]: {
-    // --- tvcMachineInfo.ts, TvcRoms.ts, wasm/tvc/tvc.c (`.ai/videoton-tvc.md`)
+    // --- tvcMachineInfo.ts, TvcRoms.ts, wasm/tvc/tvc.c (`dev/ai/videoton-tvc.md`)
     base: {
       cpu: "Zilog Z80",
       clockHz: TVC_CLOCK,

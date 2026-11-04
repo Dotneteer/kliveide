@@ -4,7 +4,7 @@
  * The ~200 `--bgcolor-*` / `--color-*` names the app has always used, repointed from literal colours
  * onto the L2 semantic layer.
  *
- * This is the migration trick described in `.ai/ui-design-system.md`, "The token architecture". Every one of the
+ * This is the migration trick described in `dev/ai/ui-design-system.md`, "The token architecture". Every one of the
  * 110 stylesheets keeps asking for exactly the token it always asked for, so nothing has to change
  * for the new palette to take effect everywhere at once — and later phases can retire an alias by
  * pointing its component at the L2 name directly, one panel at a time, without a flag day.

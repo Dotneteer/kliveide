@@ -299,7 +299,7 @@ export const BreakpointIndicator = ({
    * A modifier-click rather than a menu item because the indicator is where the other
    * address-specific gestures already live, and one handler here gives the gesture to both the live
    * disassembly view and every NEX bank dump. A proper row context menu is the better home
-   * eventually; see `.ai/nex-debugging.md`.
+   * eventually; see `dev/ai/nex-debugging.md`.
    */
   const runToHere = async () => {
     if (!canRunTo) return;

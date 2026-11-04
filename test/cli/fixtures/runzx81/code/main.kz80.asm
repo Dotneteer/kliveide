@@ -1,4 +1,4 @@
-; klive run's ZX81 fixture (.ai/zx8081.md, "How code injection works"): the code goes into a 1 REM line,
+; klive run's ZX81 fixture (dev/ai/zx8081.md, "How code injection works"): the code goes into a 1 REM line,
 ; RUN calls it through RAND USR, it counts ten loops in Counter and returns to BASIC.
   .model ZX81
 Main:

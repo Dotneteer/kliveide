@@ -94,7 +94,7 @@ describe("bp-set bank-relative grammar", () => {
 
   it("does not route the bank through the partition label map", async () => {
     // --- A bank is 16K; a partition index is an 8K page. Routing one through the other's names is
-    // --- how the two index spaces got confused. See `.ai/nex-debugging.md`.
+    // --- how the two index spaces got confused. See `dev/ai/nex-debugging.md`.
     await validate("05:+$0100");
     expect(parsePartitionLabel).not.toHaveBeenCalled();
   });

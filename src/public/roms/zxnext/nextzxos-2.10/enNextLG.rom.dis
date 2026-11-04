@@ -2,7 +2,7 @@
   "schemaVersion": 3,
   "machine": "rom",
   "source": {"fileName":"enNextLG.rom"},
-  "authoring": ".ai/rom-annotations/README.md",
+  "authoring": "dev/ai/rom-annotations/README.md",
   "level": 2,
   "pages": {
     "2": {"crc32":"fcabc6c7","name":"ZX Spectrum Next NextZXOS ROM 2 (enNextLG)"}

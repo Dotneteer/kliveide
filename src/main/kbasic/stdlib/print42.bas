@@ -1,5 +1,5 @@
 ' Klive BASIC standard library - print42.bas: print42 and printat42.
-' Klive's own code, written from the documented API (.ai/kbasic/stdlib-api.json). The characters
+' Klive's own code, written from the documented API (dev/ai/kbasic/stdlib-api.json). The characters
 ' are the machine's own font (CHARS), squeezed to five pixels and a gap: its six columns keep their
 ' outer four, and the middle two are merged into one. A font in ROM is read from the 48K BASIC ROM
 ' whichever ROM is paged in (__kbRomPeek).

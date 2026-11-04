@@ -59,7 +59,7 @@ const RULES = [
   },
   {
     // --- Under the Hood speaks to the reader on purpose, "let's" for a worked example included: the
-    // --- project author asked for that voice (.ai/hardware-articles-guide.md, "Wording rules")
+    // --- project author asked for that voice (dev/ai/hardware-articles-guide.md, "Wording rules")
     id: "lets",
     why: "say it directly",
     notIn: ["under-the-hood"],

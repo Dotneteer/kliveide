@@ -1,6 +1,6 @@
 /**
  * Guides screenshots of the File Manager (`docs/content/en/guides/media/file-manager.mdx`,
- * `.ai/file-manager.md`):
+ * `dev/ai/file-manager.md`):
  *
  * - `file-manager/panes.webp` — the project on the left (two files marked), a +3 disk entered on
  *   the right;

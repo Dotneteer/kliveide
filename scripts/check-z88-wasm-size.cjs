@@ -8,7 +8,7 @@ const { buildZ88Wasm, output } = require("./build-z88-wasm.cjs");
  * has to be explained. The Z88 is smaller than the 48K (201 KB) on purpose, not by omission: it has no
  * contention, so none of the 48K's memory/port delay hooks is inlined into every opcode, and its one
  * tact hook (the audio sampler) is `noinline`. A jump past the ceiling usually means something hot
- * became inlined into the opcodes again (see `.ai/wasm-migration-intent-and-lessons.md`).
+ * became inlined into the opcodes again (see `dev/ai/wasm-migration-intent-and-lessons.md`).
  */
 const DEFAULT_MAX_BYTES = 200_000;
 

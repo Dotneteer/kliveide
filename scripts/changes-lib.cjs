@@ -1,5 +1,5 @@
 /**
- * The pure logic of Klive's changesets and releases (.ai/release-guide.md): parsing
+ * The pure logic of Klive's changesets and releases (dev/ai/release-guide.md): parsing
  * and validating `dev/changes/*.md`, the version a set of changesets asks for, assembling a
  * CHANGELOG section, and reading one back. No file system, git or network here; `changes.cjs`
  * and `release.cjs` do the I/O, and the tests call this module directly.
@@ -434,7 +434,7 @@ function slugFrom(text, fallback = "change") {
 const GATE_EXEMPT = [
   /^docs\//,
   /^\.plans\//,
-  /^\.ai\//,
+  /^dev\/ai\//,
   /^dev\/patterns\//,
   /^\.github\//,
   /^\.vscode\//,
@@ -502,7 +502,7 @@ function releasePrBody({ version, lastRelease, section, reason, unlocks, consume
     "",
     "Merging this PR runs `.github/workflows/release.yml`: it builds the five install kits, tags",
     `\`v${version}\`, publishes the GitHub release with the section below as its notes, and redeploys`,
-    "kliveide.net. See `.ai/release-guide.md`.",
+    "kliveide.net. See `dev/ai/release-guide.md`.",
     "",
     "## Before merging",
     "",

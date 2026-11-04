@@ -25,7 +25,7 @@ import { BreakpointWithAddressCommand, type BreakpointWithAddressArgs } from "./
  * makes this work on a ZX Spectrum Next bank that is not paged in yet. That is the case worth having
  * it for: running to an offset inside a NEX's bank, wherever NextZXOS ends up paging that bank.
  *
- * See `.ai/nex-debugging.md`.
+ * See `dev/ai/nex-debugging.md`.
  */
 export class RunToCursorCommand extends BreakpointWithAddressCommand {
   readonly id = "run-to";

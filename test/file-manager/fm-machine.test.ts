@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { HOME, NEXT_SD, PROJECT, ROOT, openFileManager } from "./fakes";
 
 /*
- * The machine's own storage in the File Manager (`.ai/file-manager.md`, D4): a drive
+ * The machine's own storage in the File Manager (`dev/ai/file-manager.md`, D4): a drive
  * only while the machine is stopped; a pane on it blocks while the machine runs and comes back after.
  */
 

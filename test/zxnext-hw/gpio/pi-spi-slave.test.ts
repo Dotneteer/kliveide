@@ -4,7 +4,7 @@ import { NEXT_PROFILES, type NextProfileId } from "@emu/machines/zxNext/nextProf
 import { createSession, forEachProfile } from "../../harness/zxnext";
 
 /*
- * NextReg $A0 bit 1: the Pi SPI slave enable (core 3.02.04, `.ai/zxnext-cores/30201-to-30204.md` 1.7),
+ * NextReg $A0 bit 1: the Pi SPI slave enable (core 3.02.04, `dev/ai/zxnext-cores/30201-to-30204.md` 1.7),
  * on both profiles.
  *
  * Hardware:

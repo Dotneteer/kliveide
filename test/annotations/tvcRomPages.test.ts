@@ -8,7 +8,7 @@ import { TVC_ROM_PAGE_SYS_HIGH, tvcBankSpace } from "@common/annotations/bankSpa
 
 /*
  * The Videoton TVC's BASIC ROM chips as the ROM annotation tools read them
- * (`.ai/rom-annotations/tvc-authoring-guide.md`): known by their bytes, each decoded where BASIC runs it,
+ * (`dev/ai/rom-annotations/tvc-authoring-guide.md`): known by their bytes, each decoded where BASIC runs it,
  * with the function code after `RST $30` as data; and the bank space naming each 8K chip its own ROM page.
  */
 

@@ -6,7 +6,7 @@ import { romDecoderFor } from "@renderer/appIde/annotations/romDecoder";
 import { knownRomPageKind, romKindOrigin, romPageIdentity } from "@common/roms/romIdentity";
 
 /*
- * The HT-1080Z's BASIC ROM as the ROM annotation tools read it (`.ai/rom-annotations/ht1080z-authoring-guide.md`):
+ * The HT-1080Z's BASIC ROM as the ROM annotation tools read it (`dev/ai/rom-annotations/ht1080z-authoring-guide.md`):
  * known by its bytes, and decoded with the byte after `RST $08` as data, as the IDE's disassembly shows it.
  */
 

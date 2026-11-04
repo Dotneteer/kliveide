@@ -5,7 +5,7 @@ import { join, resolve } from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
 
 /**
- * The shared Z80 core's hooks for the Sinclair ZX80/ZX81 ULA (`.ai/zx8081.md`, "Core decisions"):
+ * The shared Z80 core's hooks for the Sinclair ZX80/ZX81 ULA (`dev/ai/zx8081.md`, "Core decisions"):
  *
  * - C1 `Z80_REFRESH(address)`: every refresh, with I:R before the increment, immediately before the
  *   refresh tact on the fetch paths;

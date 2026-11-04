@@ -2,7 +2,7 @@
 
 /*
  * Carry a Klive ROM sidecar's annotations to a newer ROM whose bytes moved
- * (`.ai/zxnext-models.md` D8).
+ * (`dev/ai/zxnext-models.md` D8).
  *
  *   npm run rom:annotations:carry -- <fromSidecar> <toRom> [--page n] [--out <sidecar>]
  *                                    [--review <file>] [--force]

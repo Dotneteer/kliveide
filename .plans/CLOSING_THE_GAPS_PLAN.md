@@ -26,7 +26,7 @@ From the project author, 2026-10-02:
   macros, and the ASSERTION, LOGPOINT and WPMEM source comments, so a DeZog-annotated project debugs
   and tests in Klive unchanged.
 - **D4. ROM annotations are written from scratch**, under Klive BASIC's provenance discipline
-  (`.ai/rom-annotations/README.md`).
+  (`dev/ai/rom-annotations/README.md`).
 
 ## Status
 
@@ -39,7 +39,7 @@ From the project author, 2026-10-02:
 | G5 | Coverage, profiling and unit tests | ✅ done (2026-10-08 to 10-09): coverage and heat map, flat and call-graph profiler, DeZog-compatible unit tests, `klive test` in CI |
 | G6 | Remote, hardware and external integration | ◐ G6.1 done (automation API, `klive ide`, headless `klive run`/`build`/`test`); G6.2/G6.3 dropped (D1); **G6.4 deferred; G6.5 open** |
 | G7 | Reverse-engineering depth | ✅ done: annotations on every machine with a bank space, code/data detection, graphics finder, SkoolKit import/export, export as source (2026-10-09); every shipped ROM annotated to level 2 (48K, 128K, every +2A/+3/+3E, the ZX80 and ZX81, every Next ROM set, the HT-1080Z, and since then the Enterprise and Videoton TVC ROMs) |
-| G8 | BASIC editor intelligence | ✅ built for Klive BASIC (2026-10-03). **Reopened in effect:** while Klive BASIC is switched off (`.ai/klive-basic-switch.md`), Boriel BASIC builds get keyword help, completion and folding only. Turning Klive BASIC back on restores it; giving Boriel builds more would need a binder for Boriel 2.0's syntax |
+| G8 | BASIC editor intelligence | ✅ built for Klive BASIC (2026-10-03). **Reopened in effect:** while Klive BASIC is switched off (`dev/ai/klive-basic-switch.md`), Boriel BASIC builds get keyword help, completion and folding only. Turning Klive BASIC back on restores it; giving Boriel builds more would need a binder for Boriel 2.0's syntax |
 | G9 | Machine breadth | ✅ done: Pentagon 128 and Beta 128/TR-DOS, +2A/+3 with the Amstrad ROMs, ZX80/ZX81, Timex TC2048/TC2068/TS2068, Scorpion ZS-256, disk images and file systems (DSK, TR-DOS, FAT, DivMMC/esxDOS), Interface 1 and Microdrives. Beyond the original list: z88dk C, the HT-1080Z, the Videoton TVC, the Enterprise 64/128 |
 | G10 | Proof points | ◐ G10.1's ZX Spectrum part and G10.4 done; **G10.1's Z80 exercisers, G10.2 and G10.3's IDE check open** |
 

@@ -2,7 +2,7 @@
 #
 # Run by hand (workflow_dispatch), it is the author's PRIVATE build: the kits stay workflow
 # artifacts, named after package.json's version, and are never tagged, released or deployed (D14 and
-# D16 in .ai/release-guide.md). Keep it that way: all publishing lives in release.yml,
+# D16 in dev/ai/release-guide.md). Keep it that way: all publishing lives in release.yml,
 # which reuses these jobs through workflow_call and publishes their artifacts itself.
 
 name: Build artifacts

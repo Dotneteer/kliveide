@@ -1,5 +1,5 @@
 /*
- * Resolves a file of a fetched ZX Spectrum Next VHDL tree (`.ai/zxnext-models.md`
+ * Resolves a file of a fetched ZX Spectrum Next VHDL tree (`dev/ai/zxnext-models.md`
  * D4): `nextFpgaPath("3.02.01", "src/zxnext.vhd")` -> `dev/vendor/next-fpga/3.02.01/src/zxnext.vhd`.
  * Paths are relative to upstream's `cores/zxnext/`. Throws, naming the command to run, when the
  * tree or the file is not there. No dependencies, so tests and scripts can import it cheaply.

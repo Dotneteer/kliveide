@@ -3,7 +3,7 @@
  * code blocks (```zxbasic), registered in docs/next.config.mjs.
  *
  * The keyword lists are the IDE editor's own: `monarchWordLists()` from src/common/kbasic/help.ts,
- * which reads the generated help data (from .ai/zxbasic-syntax/ and Klive's stdlib). So the site
+ * which reads the generated help data (from dev/ai/zxbasic-syntax/ and Klive's stdlib). So the site
  * and the editor agree on what is a statement, an operator, a function, a type or a directive;
  * test/docs/zxbasic-grammar.test.ts fails when the committed grammar falls behind them. Regenerate
  * with `npm run doc:grammar` after `npm run kbasic:help`.

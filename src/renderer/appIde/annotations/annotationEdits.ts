@@ -35,7 +35,7 @@ import { countLabelReferencesInListing, labelKey } from "./labelReferences";
  * it. They are moved here unchanged, beside the annotation model they operate on, so the rules can
  * be tested directly and so the dump component can stop owning them.
  *
- * See `.ai/nex-debugging.md` (step 4a).
+ * See `dev/ai/nex-debugging.md` (step 4a).
  */
 
 export function countLabelReferences(

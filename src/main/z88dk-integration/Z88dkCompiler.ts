@@ -265,7 +265,7 @@ export class Z88dkCompiler implements IKliveCompiler {
     const image = fs.readFileSync(imageFile);
     const mapText = fs.existsSync(`${output}.map`) ? fs.readFileSync(`${output}.map`, "utf8") : "";
     const symbols = parseZ88dkMap(mapText);
-    // --- z88dk v2.4's classic Next startup runs into printf's format table (`.ai/z88dk/targets.md`)
+    // --- z88dk v2.4's classic Next startup runs into printf's format table (`dev/ai/z88dk/targets.md`)
     if (printfTableInStartupCode(symbols)) {
       diagnostics.push({ ...z88dkBuildError(filename, t("compiler.z88dk.printfTableInStartup"), "ZCC-PRINTF"), isWarning: true });
     }
@@ -447,7 +447,7 @@ export class Z88dkCompiler implements IKliveCompiler {
     if (run.error) return { errors: [z88dkBuildError(filename, `zcc could not be started: ${run.error}`)] };
     const output = `${run.stderr}\n${run.stdout}`;
     const diagnostics = parseZccDiagnostics(output, cwd, filename);
-    // --- A Z88 application without its DOR fails to link on `applname` (`.ai/z88dk/targets.md`)
+    // --- A Z88 application without its DOR fails to link on `applname` (`dev/ai/z88dk/targets.md`)
     if (/undefined symbol: applname/.test(output)) {
       diagnostics.push({
         ...z88dkBuildError(

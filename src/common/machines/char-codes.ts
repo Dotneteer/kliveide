@@ -658,7 +658,7 @@ export function ht1080zCharsFor(set: Ht1080zCharSetId): Record<number, CharDescr
 export const Ht1080zChars: Record<number, CharDescriptor> = ht1080zCharsFor("s2");
 
 /*
- * The Videoton TVC's character set for the memory panel (`.ai/videoton-tvc.md`, "Keyboard and
+ * The Videoton TVC's character set for the memory panel (`dev/ai/videoton-tvc.md`, "Keyboard and
  * typing"): ASCII at 20h-7Eh, and the Hungarian accented letters where both BASIC ROMs store them -
  * Á É Í Ó Ö Ő Ú Ü Ű at 00h-08h and the lowercase ones at 10h-18h (typed into a BASIC string and
  * read back from the program, `test/tvc-hw/charset.test.ts`). Other codes have no glyph here.

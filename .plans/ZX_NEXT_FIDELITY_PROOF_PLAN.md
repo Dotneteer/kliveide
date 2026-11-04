@@ -138,7 +138,7 @@ Goal: a machine-readable answer to "what is covered, by which oracle".
    - which oracle backs the expectation (O4 today; O2/O3/O1 as later phases land).
 2. **Report** `npm run next:fidelity-report`: per area, bits covered / total, oracle mix, open rows. This
    is the number the published page (Phase 7) shows, and it makes W6 visible.
-3. **Version ledger** `.ai/zxnext/core-versions.md`: the pinned VHDL version, and for each behaviour a
+3. **Version ledger** `dev/ai/zxnext/core-versions.md`: the pinned VHDL version, and for each behaviour a
    later phase finds version-dependent, the versions where it differs (W5).
 
 Exit: the report runs, and lists the untouched bits/processes. Those become catalogue rows.
@@ -303,7 +303,7 @@ automatically. Reference board: KS2 (issue 4), firmware v1.44, core 3.02.00.
    The 3.02.01 KS2 core also changed HDMI timing (`config.ini` `timing=0/1/7`; on it HDMI behaves
    like VGA-0), which matters for the capture in step 4. The 3.02 cores changed ULA timing (MiSTer port discussion), so timing rows are
    compared first. Record the decision and the board's `$01`/`$0E`/`$0F` readings in
-   `.ai/zxnext/core-versions.md`. Keep the board's previous core image so it can be restored.
+   `dev/ai/zxnext/core-versions.md`. Keep the board's previous core image so it can be restored.
 1. **Board runner** `scripts/next-board/`: packs a batch of result-protocol tests (Phase 2b.1) into one
    `.nex` that runs them in sequence, resetting the hardware state between them as the harness's
    `hardReset` does (NextReg `$02`), and writes each test's results area to a file on the SD card
@@ -391,7 +391,7 @@ per row, with core version.
 3. Standing instructions: mark G10.2 done in `.plans/CLOSING_THE_GAPS_PLAN.md` and update §2/§4 of
    `.plans/LANDING_PAGE_COMPETITIVE_ANALYSIS.md` in the same change; one changeset (`feature`) for the
    published page when the plan completes, none for intermediate phases.
-4. `.ai/zxnext/fidelity-guide.md`: how to run each oracle, how to add a test to the ledger, how to
+4. `dev/ai/zxnext/fidelity-guide.md`: how to run each oracle, how to add a test to the ledger, how to
    resolve an oracle disagreement — so later sessions keep the evidence current.
 
 ---

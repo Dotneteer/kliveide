@@ -20,7 +20,7 @@
  * measures the pilot (a run of equal halves), finds the sync (two halves longer than 1.4 pilot halves)
  * and from the next half on pairs the halves into bits: a cycle longer than 1.03 pilot cycles is a 0,
  * a shorter one a 1. Working on halves keeps the pairing right whatever the signal did before. The thresholds are relative, because the ROM times its cycles with the sound timer: on this
- * core (the first sound interrupt 16 divider periods after a restart, Q2 in `.ai/videoton-tvc.md`)
+ * core (the first sound interrupt 16 divider periods after a restart, Q2 in `dev/ai/videoton-tvc.md`)
  * it writes cycles of 1,466 T (pilot), 1,210 T (1), 1,722 T (0) and 2,298 T (sync), where the
  * established converter's are 1,276, 1,134, 1,558 and 2,410 T. Both sit on the same side of every
  * threshold. Bytes go LSB first into the save buffer, each block as a 2-byte length and its bytes,

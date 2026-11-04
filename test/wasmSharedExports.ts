@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 /**
- * The functions the shared prefix-pasted C files define for a core (`.ai/wasm-core-debug.md`
+ * The functions the shared prefix-pasted C files define for a core (`dev/ai/wasm-core-debug.md`
  * Phase 2): `src/emu/z80/wasm/z80-cpu-exports.c` and `z80-debug-loop.c`, read from their source the way
  * the build tests read a core's own C.
  *

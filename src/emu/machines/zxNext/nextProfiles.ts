@@ -1,7 +1,7 @@
 import { NEXT_ROM_SETS, type NextRomSet, type NextRomSetId } from "@common/zxnext/romSets";
 
 /*
- * The ZX Spectrum Next models (`.ai/zxnext-models.md` D1, D2).
+ * The ZX Spectrum Next models (`dev/ai/zxnext-models.md` D1, D2).
  *
  * A model is a *Next profile*: a board and a core version, each with its own WASM artifact, VHDL
  * reference, NextReg set, ROM set and SD card. Everything that depends on "which Next" reads it
@@ -122,7 +122,7 @@ export function coreVersionText(profile: NextProfile): string {
 
 /**
  * A Next model's display name: the board and the core version. Machine and model names are not
- * translated (`.ai/i18n-guide.md`, D9).
+ * translated (`dev/ai/i18n-guide.md`, D9).
  */
 export function nextModelDisplayName(modelId: string): string {
   const profile = nextProfileOf(modelId);

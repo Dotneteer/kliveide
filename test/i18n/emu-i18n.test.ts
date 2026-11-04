@@ -4,7 +4,7 @@ import { describeSpectrumMedia } from "@renderer/appEmu/machines/spectrumMedia";
 import { cardTypes } from "@renderer/appEmu/machines/z88Cards";
 
 /*
- * The emulator window's texts in the pseudo-locale (`.ai/localization.md`): the
+ * The emulator window's texts in the pseudo-locale (`dev/ai/localization.md`): the
  * tables built at module load translate when read, so a language switch reaches them.
  */
 const isPseudo = (text: string) => /^\[.*~+\]$/s.test(text);

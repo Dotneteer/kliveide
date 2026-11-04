@@ -1,5 +1,5 @@
 /**
- * ZX81 machine code in the running IDE (`.ai/zx8081.md`, "Machine code decisions", D7): a Klive
+ * ZX81 machine code in the running IDE (`dev/ai/zx8081.md`, "Machine code decisions", D7): a Klive
  * assembler project on the ZX81, debugged from its source.
  *
  * Launches Klive under Playwright's Electron driver (the doc-shots harness), creates a ZX81 project

@@ -9,7 +9,7 @@ moved, it is still at its old place in the repository root, shown in brackets be
 
 | Folder | What it holds | Who reads it |
 |---|---|---|
-| `ai/` (`.ai/`) | Guides, decisions and as-built records for each area of the code | AI assistants first, then contributors; `AGENTS.md` points into it |
+| `ai/` | Guides, decisions and as-built records for each area of the code | AI assistants first, then contributors; `AGENTS.md` points into it |
 | `patterns/` | Implementation pattern docs: the dialog MVC pattern, the Z80 back end, the source-level debugging model | Contributors and AI assistants before changing an established pattern |
 | `plans/` (`.plans/`) | Current and archived implementation plans | Whoever works on the plan's area |
 | `changes/` | Pending changesets, one per user-visible change | `npm run change`, `release:prepare` and the changeset-check workflow |

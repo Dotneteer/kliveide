@@ -4,7 +4,7 @@ import { IDEDOS_PARTITION_BASE, openIdedosPartition } from "./idedos";
 import type { DiskFileSystem } from "./types";
 
 /*
- * The file system of a hard-disk image's partition (`.ai/file-manager.md`): a FAT
+ * The file system of a hard-disk image's partition (`dev/ai/file-manager.md`): a FAT
  * partition by its MBR index, or an IDEDOS +3DOS partition by `IDEDOS_PARTITION_BASE` + its table
  * index, so the two kinds never share a number on one image.
  */

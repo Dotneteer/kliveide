@@ -8,12 +8,13 @@ Guidance for AI assistants working in this workspace.
 - Renderer code lives mainly under `src/renderer`.
 - Future and archived implementation plans live in `.plans/`.
 - Human- and AI-readable implementation pattern docs live in `dev/patterns/`; read the relevant docs before changing established patterns.
-- Additional AI-oriented notes live in `.ai/`; read them before related work.
+- Additional AI-oriented notes live in `dev/ai/`; read them before related work.
 - `dev/` is becoming the one home for everything that is for Klive's developers and never ships
-  (`dev/README.md`): `.ai/`, `.plans/` and `scripts/` move into it one step at a time
+  (`dev/README.md`): `.plans/` and `scripts/` move into it one step at a time
   (`.plans/ROOT_DECLUTTER_PLAN.md`). Until a folder has moved, use its old path. Moved so far:
   `_experiments/` (now `dev/experiments/`), `.changes/` (now `dev/changes/`), `vendor/` (now
-  `dev/vendor/`), `_input/` (now `dev/research/`), `.docs/` (now `dev/patterns/`).
+  `dev/vendor/`), `_input/` (now `dev/research/`), `.docs/` (now `dev/patterns/`),
+  `.ai/` (now `dev/ai/`).
 
 ## Working Rules
 
@@ -28,7 +29,7 @@ Guidance for AI assistants working in this workspace.
 ## Changesets And Releases
 
 - User-visible changes are recorded as changesets in `dev/changes/`, **never by editing
-  `CHANGELOG.md`** (it has no `## Unreleased` section any more). Read `.ai/changesets-guide.md`
+  `CHANGELOG.md`** (it has no `## Unreleased` section any more). Read `dev/ai/changesets-guide.md`
   before writing one; the format is `dev/changes/README.md`.
 - **Whenever the user asks for a commit, the commit includes a changeset** — create it with
   `npm run change -- --type <feature|fix|breaking|known-issue|internal> [--issue <n>] --text "..."`
@@ -50,9 +51,9 @@ Guidance for AI assistants working in this workspace.
   fenced block. `npm run change` prints exactly this; after a hand edit, run
   `npm run change -- --show <file>`.
 - Releases: `npm run release:prepare` opens the release PR; merging it runs
-  `.github/workflows/release.yml`. Read `.ai/release-guide.md` first. `release-artifacts.yml` is the
+  `.github/workflows/release.yml`. Read `dev/ai/release-guide.md` first. `release-artifacts.yml` is the
   author's **private** build (workflow artifacts only) and must never tag, release or deploy. Its
-  decisions (D1-D16) are at the end of `.ai/release-guide.md`.
+  decisions (D1-D16) are at the end of `dev/ai/release-guide.md`.
 
 ## Documentation Site (`docs/`)
 
@@ -69,7 +70,7 @@ React 19 + Next 16.
   `get-started/`, `guides/`, `reference/`, `under-the-hood/` (Klive's own documentation) and
   `library/` (the machines' own manuals, one folder per machine, always the last tab) - plus the
   book, which is reachable by URL but deliberately not linked anywhere (decision D6). The site's rules
-  (R1-R7) and decisions are in `.ai/docs-site.md`.
+  (R1-R7) and decisions are in `dev/ai/docs-site.md`.
 - **The Library's manuals are imported, not written here.** The Cambridge Z88 User Guide, the
   Z88 Developers' Notes and the BBC BASIC (Z80) Reference Guide
   (`content/en/library/cambridge-z88/{user-guide,developers-notes,bbc-basic}/`) come from the
@@ -123,18 +124,18 @@ React 19 + Next 16.
 - **Guides screenshots are generated, never hand-captured**: the `guides-*` recipes in
   `scripts/doc-shots/recipes/` write `docs/public/images/en/guides/<group>/<page>/*.webp`, shown with
   `<Shot>`. `doc:check:guide-images` fails on the pre-redesign images. The structure and page standard
-  are `.ai/docs-site.md`, "The Guides".
+  are `dev/ai/docs-site.md`, "The Guides".
 - **Links in `docs/content/` are absolute** (`/en/guides/...`): pages are served with a trailing slash,
   so a relative `./sibling` link resolves *under* the page; `doc:check:links` now resolves and fails them.
 - **Klive's own pages pass a wording check** (`doc:check:prose`, part of `doc:check`): no em dashes or
   spaced en dashes, no buzzwords ("powerful", "seamless"), no filler ("simply", "easily", "let's",
   "Note that", "just" that adds nothing). Under the Hood keeps "let's", "simply", "just" and "easily":
-  its voice is the author's (`.ai/hardware-articles-guide.md`). A line that must keep one says why
+  its voice is the author's (`dev/ai/hardware-articles-guide.md`). A line that must keep one says why
   with `{/* prose-ok: <why> */}`. The landing page's design rules are `docs/design.md`.
 
 - **Before planning or writing an "Under the hood" article about how a machine works** (like the ZX
   Spectrum Next screen series in `docs/content/en/under-the-hood/emulator-internals/next-display/`),
-  **read `.ai/hardware-articles-guide.md`**: the structure, the explaining and figure rules, and the
+  **read `dev/ai/hardware-articles-guide.md`**: the structure, the explaining and figure rules, and the
   corrections the project author made while reviewing that series. Fold any new lesson from a review into
   that file.
 
@@ -142,7 +143,7 @@ React 19 + Next 16.
   Klive under Playwright's Electron driver, drives it through the IDE's own command prompt,
   and captures element-scoped PNGs — no manual cropping, no window chrome. Output stages to
   `.doc-shots/` for review; `DOC_SHOTS_OUT=docs/public/images` publishes. Read
-  `.ai/doc-screenshots-guide.md` before using or extending it: it carries the command
+  `dev/ai/doc-screenshots-guide.md` before using or extending it: it carries the command
   vocabulary, the settings-seeding that makes runs reproducible, and the fixture-project
   guard that keeps a recipe away from a real `~/KliveProjects` folder.
 
@@ -155,12 +156,12 @@ merely uncoloured, which no route diff can see.
 ## Localization (UI languages)
 
 - **Every new user-facing text goes through `t()`** with an English entry and translator context in
-  `src/common/i18n/locales/en/`; read `.ai/i18n-guide.md` before adding or changing UI text. No
+  `src/common/i18n/locales/en/`; read `dev/ai/i18n-guide.md` before adding or changing UI text. No
   string concatenation or hand-made plurals; keys at definition, text at display.
 - Run `npm run i18n:keys` after adding keys; `npm run i18n:check` (part of `build:check`) is the gate.
 - Never write translations for other languages in a feature change: they come through
   `npm run i18n:todo` / `i18n:merge` (`src/common/i18n/locales/README.md`). How it is built, and the
-  pattern for localizing a new language or area, is `.ai/localization.md`.
+  pattern for localizing a new language or area, is `dev/ai/localization.md`.
 
 ## Feature Roadmap And Competitive Analysis
 
@@ -200,9 +201,9 @@ merely uncoloured, which no route diff can see.
 
 - **Switched off (2026-11-04):** Boriel BASIC builds every BASIC program; Klive BASIC stays in the
   codebase, its tests keep passing, and the switch is commented out at every `KLIVE-BASIC-OFF:`
-  marker (`.ai/klive-basic-switch.md`, which says how to turn it back on). Its user docs
+  marker (`dev/ai/klive-basic-switch.md`, which says how to turn it back on). Its user docs
   are off the site in `docs/authoring/klive-basic/`. User-facing docs name Boriel BASIC (a beta) only.
-- The plan was implemented and closed (2026-11-04); its durable record is `.ai/kbasic/compiler.md`.
+- The plan was implemented and closed (2026-11-04); its durable record is `dev/ai/kbasic/compiler.md`.
   Read its "Provenance (hard rule)", "Decisions" (D1-D12, D-C1-D-C6) and "Guarantees" (G1-G6)
   before any work on it; "Readiness (R1-R18)" and "Open" say what is left.
 - **Provenance rule — a hard requirement of the project author:** no code from upstream
@@ -211,11 +212,11 @@ merely uncoloured, which no route diff can see.
   Upstream may be read only to discover language and interface facts, recorded in Klive's own words.
   **Running** an installed upstream `zxbc` as a behavioural oracle is allowed (plan D12): only the
   observed results of Klive's own test programs are recorded, never generated code, and never in CI.
-- References: `.ai/zxbasic-syntax/` (the language spec, the only language reference; refresh with
-  `node scripts/zxbasic-syntax-check.cjs`) and `.ai/kbasic/` (runtime ABI, CODEBANK contract,
+- References: `dev/ai/zxbasic-syntax/` (the language spec, the only language reference; refresh with
+  `node scripts/zxbasic-syntax-check.cjs`) and `dev/ai/kbasic/` (runtime ABI, CODEBANK contract,
   integration map, documented library API).
 - The standard library is Klive BASIC source in `src/main/kbasic/stdlib/` (read its `README.md`),
-  written only from the documented API in `.ai/kbasic/stdlib-api.json`. Regenerate the bundle with
+  written only from the documented API in `dev/ai/kbasic/stdlib-api.json`. Regenerate the bundle with
   `npm run runtime:bundle` after changing it.
 - Execution tests run on the real WASM cores: `test/harness/sp48/` (48K with the real ROM, booted
   to BASIC; read its README) and `test/harness/zxnext/`.
@@ -228,16 +229,16 @@ merely uncoloured, which no route diff can see.
 ## Boriel BASIC (the external zxbc 2.x)
 
 - Boriel BASIC is **the** BASIC compiler, a beta (`zxbasic.compiler` is ignored while Klive BASIC is
-  switched off; see the Klive BASIC section). Its plan is closed; the record is `.ai/boriel/`.
-  Read `.ai/boriel/README.md` and `.ai/boriel/integration.md` (how it is built, the decisions)
+  switched off; see the Klive BASIC section). Its plan is closed; the record is `dev/ai/boriel/`.
+  Read `dev/ai/boriel/README.md` and `dev/ai/boriel/integration.md` (how it is built, the decisions)
   before touching `src/main/boriel-integration/`; the other notes record what zxbc 2.0.0-beta29
-  actually does. **What is still open is `.ai/boriel/technical-debt.md`**: when an item there is
+  actually does. **What is still open is `dev/ai/boriel/technical-debt.md`**: when an item there is
   done or decided, record it and remove it.
 - The setup kits live in `dev/vendor/boriel-basic/` (`kit.json` tracked, archives fetched and
   git-ignored). Test fixtures in `test/boriel/fixtures/` are zxbc output: regenerate them with
   `npm run boriel:fixtures`, never edit them. `scripts/boriel-ide-check.cjs` checks the running IDE.
 - **When the developer asks to update Klive to the latest (or a particular) Boriel BASIC version,
-  follow `.ai/boriel/updating.md`**: the action list for a bump, from finding the version and the
+  follow `dev/ai/boriel/updating.md`**: the action list for a bump, from finding the version and the
   licence question to the fixtures, the checks and the records.
 - The Klive BASIC provenance rule still applies: the kit's runtime and stdlib are never read to
   design Klive BASIC.
@@ -251,7 +252,7 @@ merely uncoloured, which no route diff can see.
     TurboSound, DAC, CTC, DMA, interrupts, MMU. They live in `test/zxnext-hw/<component>/`.
   - Screen cases (`test/visual/<suite>/<case>/`): pixel tests judged by probes, goldens and AI
     review, optionally through real NextZXOS `.nexload` in Chrome - `npm run test:visual`.
-    Read `.ai/visual-tests-guide.md` before writing one.
+    Read `dev/ai/visual-tests-guide.md` before writing one.
 - New tests for Next hardware behaviour go in `test/zxnext-hw/` through the harness. The mock-based
   device tests are gone: there is one Next machine, the WASM core, and its reference is the VHDL of
   the model's core version, fetched by `npm run next-fpga:fetch` into `dev/vendor/next-fpga/<version>/`
@@ -266,7 +267,7 @@ merely uncoloured, which no route diff can see.
 
 - Each Next model is a profile (`src/emu/machines/zxNext/nextProfiles.ts`): a board and a core
   version, with its own WASM artifact, VHDL version, NextReg set (`nextRegSets/`), ROM set and SD
-  card. Read `.ai/zxnext-models.md` before adding a model or a version-dependent
+  card. Read `dev/ai/zxnext-models.md` before adding a model or a version-dependent
   behaviour. Nothing reads "which Next" from a literal: it comes from the active profile.
 - ROM sets are committed in `src/public/roms/zxnext/<setId>/`, recorded in
   `src/common/zxnext/nextRomSets.json` (`npm run next-roms:fetch`, `next-roms:check`); their facts
@@ -280,21 +281,21 @@ merely uncoloured, which no route diff can see.
 - One C/WASM core runs both machines: `src/emu/machines/zx8081/wasm/` - read its `README.md` (how
   the ULA maps onto the shared Z80's hooks, the picture, the tape) before changing it. The decisions of both
   ZX80/ZX81 plans (closed 2026-11-04), the provenance rules, the virtual keyboard's design and what is
-  open are in `.ai/zx8081.md`; the ULA logic is ported from Clock Signal (MIT), so derived files keep
+  open are in `dev/ai/zx8081.md`; the ULA logic is ported from Clock Signal (MIT), so derived files keep
   its copyright line and `THIRD_PARTY_NOTICES.md` carries the notice.
 - Test with the harness in `test/harness/zx81/` (real ROM, boot to the K cursor, typing, `.P`/`.O`
   loading, the debugger); hardware tests go in `test/zx8081-hw/`. Screen goldens are recorded only
   after the picture was checked by eye (`ZX8081_GOLDENS_PNG=<dir>` writes them).
 - Typed keys need 4 key-free frames between them (the ROM's debounce); see `Zx8081WasmHost.typeText`.
 - Machine code for them (`.model ZX80`/`ZX81`, `.defzx`, Run/Debug as a `1 REM` program, `.p`/`.o`
-  export) is recorded in `.ai/zx8081.md`, "Machine code decisions" and "How code injection works". The program image is
+  export) is recorded in `dev/ai/zx8081.md`, "Machine code decisions" and "How code injection works". The program image is
   built in one place, `src/common/zx8081/programImage.ts`, for injection and export alike.
 
 ## Videoton TVC
 
 - One C/WASM core runs the TVC 64K and 64K+: `src/emu/machines/tvc/wasm/` - read its `README.md`
   (the half-T clock, the clock stretch, the video steps, sound, tape, the HBF card) before changing
-  it. The decisions, as-built notes and what is open are `.ai/videoton-tvc.md` (the plan was closed on 2026-11-04); the research pack is
+  it. The decisions, as-built notes and what is open are `dev/ai/videoton-tvc.md` (the plan was closed on 2026-11-04); the research pack is
   `dev/research/videoton-tvc/` (`TVC_VIDEO_GENERATION.md` for the picture).
 - Provenance (plan D1): Klive's own code. rtvc (MIT) and MAME (BSD) are read for interface facts;
   rtvc's ROM listings never feed shipped `.rom.dis` sidecars.
@@ -332,10 +333,10 @@ merely uncoloured, which no route diff can see.
 ## ROM Annotations (reverse engineering the ROMs)
 
 - The shipped ROM sidecars (`src/public/roms/*.rom.dis`) are written from scratch: **read
-  `.ai/rom-annotations/README.md` first** — the D4 provenance rule (nothing from a remembered or
+  `dev/ai/rom-annotations/README.md` first** — the D4 provenance rule (nothing from a remembered or
   published commented disassembly, names included), the levels and the tools. Then the per-ROM
   guide: `sp48-authoring-guide.md` (the 48K ROM, done to level 2, and the method to reuse) or
-  `zx81-authoring-guide.md`. Every session appends to `.ai/rom-annotations/PROVENANCE.md`.
+  `zx81-authoring-guide.md`. Every session appends to `dev/ai/rom-annotations/PROVENANCE.md`.
 - Work happens in the working copy (`~/Klive/RomAnnotations/<rom>.dis`), written back only if the
   file is unchanged since read (the IDE may be editing it); shipping copies it over the shipped
   file, and some tests pin the shipped file's content.
@@ -345,7 +346,7 @@ merely uncoloured, which no route diff can see.
 - **Read `src/emu/z80/wasm/README.md` before adding a hook, a debugger feature or a core.** Every core
   shares the Z80, its export forwarders (`z80-cpu-exports.c`) and the debugger's in-core loop
   (`z80-debug-loop.c`); the hosts share one debug loop (`src/emu/machines/wasmDebugLoop.ts`). Its
-  decisions, traps and measured budgets are `.ai/wasm-core-debug.md`.
+  decisions, traps and measured budgets are `dev/ai/wasm-core-debug.md`.
 - The rule: the core decides *whether* to stop, TypeScript decides *what a stop means*. A new stop goes
   in as a core candidate, with `test/wasm/debug-loop-equivalence.test.ts` proving the in-core run stops
   exactly where the instruction-by-instruction one does.
@@ -419,17 +420,17 @@ merely uncoloured, which no route diff can see.
   **Note `controls/layout`'s `width` prop is px for a number and a CSS length for a string**, so a
   column wants `width="7ch"`, never `width={7}`.
 - The Monaco syntax palette is settled: a **fixed multi-hue table** in which only *keyword* follows
-  the accent. It replaced an earlier accent-derived scheme (`.ai/ui-design-system.md`, M5),
+  the accent. It replaced an earlier accent-derived scheme (`dev/ai/ui-design-system.md`, M5),
   which put nine of eleven classes in one blue and comments in neutral grey. Before changing
   `theming/tokens/syntax.ts`, read its own header comment (which records the per-class hue
   choices and why `keyword`/`error` are absent from the table) and the Monaco entry in
-  `.ai/ui-theming-intent-and-lessons.md`. Three tests guard it: a comment saturation floor, hue
+  `dev/ai/ui-theming-intent-and-lessons.md`. Three tests guard it: a comment saturation floor, hue
   spread, and every class held clear of the keyword for all six accents.
-- **Any style, theming or visual change must update `.ai/ui-theming-intent-and-lessons.md` in the
+- **Any style, theming or visual change must update `dev/ai/ui-theming-intent-and-lessons.md` in the
   same change** — a standing instruction from the project author. Record the durable rule the change
   taught, not what happened: fold it into the existing sections, replace anything it supersedes, and
   keep no history. That file is how style decisions reach sessions that never saw the work.
-- **Read `.ai/ui-theming-intent-and-lessons.md` before this kind of work.** It records the settled
+- **Read `dev/ai/ui-theming-intent-and-lessons.md` before this kind of work.** It records the settled
   product decisions, how to run and visually inspect the app (CDP, the app menu, the
   `scripts/cdp/` scripts), and the failure modes this work already hit.
 - Every accent has a **primary and a secondary hue** (`--accent-*` / `--accent-secondary-*`) — the
@@ -437,22 +438,22 @@ merely uncoloured, which no route diff can see.
   apart (see the memory dump's hovered byte and disassembly's opcode column). The memory dump, the
   disassembly view **and the converted register/state panels** (Z80 CPU, ULA & I/O, Next Registers, Next Memory Mapping, Call Stack, Watch, Breakpoints, Copper, Sprite Inspector, Tilemap Inspector, Layers — one shared
   `--color-state-value`) are the deliberate exceptions to the otherwise-neutral data hierarchy;
-  unconverted panels stay neutral. Full detail in `.ai/ui-theming-intent-and-lessons.md` and
-  `.ai/ui-design-system.md`.
+  unconverted panels stay neutral. Full detail in `dev/ai/ui-theming-intent-and-lessons.md` and
+  `dev/ai/ui-design-system.md`.
 - **A `DataRow` can contain another `DataRow`.** `Bit16Value`/`Bit8Value`/`SimpleValue`/`FlagValue`
   each render their own row for their label/value pair, so a register row is a row inside a row.
   Any horizontal padding put on the row primitive therefore lands *twice* on register rows and once
-  on rows built from bare divs. See the alignment traps in `.ai/ui-theming-intent-and-lessons.md`.
+  on rows built from bare divs. See the alignment traps in `dev/ai/ui-theming-intent-and-lessons.md`.
 - **Verify panel geometry in the running app, not in a standalone HTML replica.** A replica that
   omits one wrapper "proves" an alignment that is wrong on screen; this cost two failed rounds. Use
-  the CDP recipe in `.ai/ui-theming-intent-and-lessons.md`.
+  the CDP recipe in `dev/ai/ui-theming-intent-and-lessons.md`.
 - Type-check with `npx tsc --noEmit -p build/tsconfig.web.json`; tests need an explicit project
   (`--project=jsdom` or `--project='!perf'`) and the `build/vitest.config.ts` config.
 
 ## Notes For React Refactors
 
 - Dialogs with async orchestration use a Model/Controller/View split so their behavior can be
-  tested without rendering. Read `.ai/ui-mvc-guide.md` before adding or migrating one; the full
+  tested without rendering. Read `dev/ai/ui-mvc-guide.md` before adding or migrating one; the full
   pattern is in `dev/patterns/dialog-mvc-pattern.md` and the reference implementation is
   `src/renderer/appIde/dialogs/sjasmplus/`.
 - Fix conditional hook calls before tuning dependency arrays.

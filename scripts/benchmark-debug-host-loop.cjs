@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /*
- * What "running with debugging" costs on the real machine hosts (`.ai/wasm-core-debug.md`
+ * What "running with debugging" costs on the real machine hosts (`dev/ai/wasm-core-debug.md`
  * Phase 0, §1.2): the production cores driven through their TypeScript machines (`*WasmV2Machine`),
  * built by the test harnesses, timing `executeMachineFrame()` in three modes:
  *   - run:        NoDebug + Normal - a plain Run, one core call per frame;

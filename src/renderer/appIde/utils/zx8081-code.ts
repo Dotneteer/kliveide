@@ -4,7 +4,7 @@ import { resolveZx8081Hardware } from "@emu/machines/zx8081/zx8081MachineInfo";
 
 /**
  * Checks, before anything is sent to the emulator, that built code can go into the running ZX80 or
- * ZX81 (`.ai/zx8081.md`, "Machine code decisions", D4): the machine lays it out as a `1 REM` program the
+ * ZX81 (`dev/ai/zx8081.md`, "Machine code decisions", D4): the machine lays it out as a `1 REM` program the
  * same way, so a layout the machine would refuse is reported here as a plain command error.
  * @returns undefined when the machine is not a ZX80/ZX81 or the code fits; otherwise the reason
  */
@@ -34,7 +34,7 @@ const MODEL_ZX80 = 5;
 const MODEL_ZX81 = 6;
 
 /**
- * Which ZX80/ZX81 program file a build exports as (`.ai/zx8081.md`, "Machine code decisions", D8): the
+ * Which ZX80/ZX81 program file a build exports as (`dev/ai/zx8081.md`, "Machine code decisions", D8): the
  * build's `.model`, else the running machine's ROM (a ZX80 with the 8K ROM runs ZX81 programs).
  * @returns "p", "o", or undefined for a build that is not ZX80/ZX81 code
  */

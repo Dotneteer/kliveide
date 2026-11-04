@@ -488,7 +488,7 @@ describe("applyKindChange", () => {
  *
  * `05:+$0100` is spelled into the address field rather than given controls of its own, because that
  * is what `bp-set` accepts — one syntax, one parser — and because the Type selector above it is then
- * all a bank *watchpoint* needs. See `.ai/nex-debugging.md`.
+ * all a bank *watchpoint* needs. See `dev/ai/nex-debugging.md`.
  */
 
 const nextEnv = (over: Partial<BreakpointEnvironment> = {}): BreakpointEnvironment =>

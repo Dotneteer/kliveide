@@ -49,7 +49,7 @@
 /*
  * The ROM 3 routines the trap watches are facts about the ROM set, not hardware: the host writes them
  * when it uploads the ROMs (`zxnextTapeSetRomRoutines`, from `nextRomSets.json`'s `facts.ldBytes`;
- * `.ai/zxnext-models.md` D6). Host-owned, so volatile: a state restore keeps the live
+ * `dev/ai/zxnext-models.md` D6). Host-owned, so volatile: a state restore keeps the live
  * values. The defaults are the 48K ROM's, which NextZXOS 2.08's ROM 3 has byte for byte.
  */
 static uint32_t zxnextTapeRomLoadBytes = 0x056cu;

@@ -1,5 +1,5 @@
 ' Klive BASIC standard library - input42.bas: INPUT42.
-' Klive's own code, written from the documented API (.ai/kbasic/stdlib-api.json).
+' Klive's own code, written from the documented API (dev/ai/kbasic/stdlib-api.json).
 #pragma once
 #include <__kbase.bas>
 #include <print42.bas>

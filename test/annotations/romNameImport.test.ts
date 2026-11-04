@@ -10,7 +10,7 @@ import { romPageIdentity } from "@common/roms/romIdentity";
 
 /*
  * `rom-ann-import-names`: a list of conventional routine names becomes `manual` labels in a ROM's
- * working copy (`.ai/rom-annotations/README.md`, Q1). The names below are invented: the test needs
+ * working copy (`dev/ai/rom-annotations/README.md`, Q1). The names below are invented: the test needs
  * the shapes of names, not anybody's list.
  */
 

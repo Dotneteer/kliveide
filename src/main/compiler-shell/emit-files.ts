@@ -13,7 +13,7 @@ import { mirText } from "../z80-backend/mir/print";
  * | `ir` | `<name>.<tag>.ir` — the MIR of every routine |
  * | `map` | `<name>.<tag>.map` — every label with its address (and `B<n>:` for a bank's); with banked code also `<name>.banks.json` and `<name>.bank<n>.bin` |
  *
- * The banks manifest follows the shape NextBuild's tools read (`.ai/kbasic/codebank-contract.md` §5):
+ * The banks manifest follows the shape NextBuild's tools read (`dev/ai/kbasic/codebank-contract.md` §5):
  * `{window, window_size, banks: [{bank, file, org, size, page, pages}]}` sorted by bank, each bank's
  * code and data in its `.bin`, assembled at the window.
  */

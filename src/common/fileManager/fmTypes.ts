@@ -1,7 +1,7 @@
 import type { DiskFileAttributes, DiskFileKind } from "@common/diskfs/types";
 
 /*
- * The File Manager's drives and listings (`.ai/file-manager.md`). Process-agnostic: the
+ * The File Manager's drives and listings (`dev/ai/file-manager.md`). Process-agnostic: the
  * main process builds these, the renderer shows them. Texts are not here - a drive carries its
  * `role` and the renderer words it with `t()` at display time.
  */

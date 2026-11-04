@@ -57,7 +57,7 @@ export function getTapeLaunchContextMenuInfo(services: AppServices): ContextMenu
 
 /**
  * The Explorer's entries for a ZX80/ZX81 program file (`.p`, `.81`, `.o`, `.80`): the same `tape-load`
- * command, enabled on a ZX80 or ZX81 (`.ai/zx8081.md`, "Files, tape and the IDE").
+ * command, enabled on a ZX80 or ZX81 (`dev/ai/zx8081.md`, "Files, tape and the IDE").
  * @param services The app services
  */
 export function getProgramLaunchContextMenuInfo(services: AppServices): ContextMenuInfo[] {

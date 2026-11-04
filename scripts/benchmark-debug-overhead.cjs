@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /*
- * What the debugging support costs the WASM cores (`.ai/wasm-core-debug.md`).
+ * What the debugging support costs the WASM cores (`dev/ai/wasm-core-debug.md`).
  *
  * Every core is compiled three ways from the same sources, with the production flags:
  *   - baseline:    the production build, as shipped;

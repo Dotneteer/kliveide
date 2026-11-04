@@ -18,7 +18,7 @@ import {
 /*
  * `nex-label` — naming the address you are stopped at, in the launched NEX's annotations.
  *
- * See `.ai/nex-debugging.md`.
+ * See `dev/ai/nex-debugging.md`.
  */
 
 /** A sidecar on disk with bank 5 described and one label already in it. */

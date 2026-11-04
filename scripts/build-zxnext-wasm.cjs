@@ -39,7 +39,7 @@ const ZXNEXT_VOLATILE_SYMBOLS = [
   // --- The tape's data: media the IDE uploads, not machine state;
   // --- the playback position and the block table stay in the state
   "sp48TapeData",
-  // --- The ROM set's tape routines: host-owned facts about the ROMs (`.ai/zxnext-models.md` D6)
+  // --- The ROM set's tape routines: host-owned facts about the ROMs (`dev/ai/zxnext-models.md` D6)
   "zxnextTapeRomLoadBytes",
   "zxnextTapeRomLoadBytesInvalidHeader",
   "zxnextTapeRomLoadBytesResume",

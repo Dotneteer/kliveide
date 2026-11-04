@@ -4,7 +4,7 @@ import { Plus3DosFileSystem, type Plus3BlockStore, type Plus3DosSpec } from "./p
 import { DiskFsError } from "./types";
 
 /*
- * IDEDOS hard disks, the +3e's (`.ai/file-manager.md`): the partition table and its
+ * IDEDOS hard disks, the +3e's (`dev/ai/file-manager.md`): the partition table and its
  * +3DOS partitions, each a +3DOS file system on the disk's sectors, read and written in place.
  *
  * Written from the format's description on the Sinclair Wiki (IDEDOS) and the +3DOS XDPB of the +3

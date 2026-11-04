@@ -10,7 +10,7 @@
  *        rejects or crashes on the same way (compatibility plan C1); writes nothing
  *
  * `KBASIC_ORACLE_ZXBC` names the zxbc executable (default `~/zxbasic/.venv/bin/zxbc`; see
- * `.ai/kbasic/README.md`). Guard rails, as the plan requires:
+ * `dev/ai/kbasic/README.md`). Guard rails, as the plan requires:
  * - it refuses to run when `CI` is set: the oracle is a developer tool, never part of CI;
  * - zxbc's output goes to a temporary folder that is deleted afterwards; the only files written in
  *   the repository are `test/kbasic/oracle/<area>/<name>.json`, which hold observed results (screen
@@ -157,7 +157,7 @@ function corpusPrograms(dir) {
 function main() {
   if (process.env.CI) fail("refusing to run with CI set: the oracle never runs in CI (plan D12)");
   const zxbc = process.env.KBASIC_ORACLE_ZXBC || path.join(os.homedir(), "zxbasic/.venv/bin/zxbc");
-  if (!fs.existsSync(zxbc)) fail(`no zxbc at ${zxbc}: install it (.ai/kbasic/README.md) or set KBASIC_ORACLE_ZXBC`);
+  if (!fs.existsSync(zxbc)) fail(`no zxbc at ${zxbc}: install it (dev/ai/kbasic/README.md) or set KBASIC_ORACLE_ZXBC`);
   const version = spawnSync(zxbc, ["--version"], { encoding: "utf8" });
   if (version.status !== 0) fail(`${zxbc} --version failed: ${version.stderr || version.error}`);
   const zxbcVersion = (version.stdout || version.stderr).trim();

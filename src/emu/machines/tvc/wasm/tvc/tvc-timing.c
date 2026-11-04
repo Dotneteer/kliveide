@@ -16,7 +16,7 @@
  * counter only the whole T-states (the half-T phase is `tvcHalfClock`'s lowest bit). The stretch
  * has no input from display enable, sync or blanking, so a video RAM access costs the same wherever
  * the beam is. I/O cycles, interrupt acknowledges and refresh cycles do not stretch (Q3 in
- * `.ai/videoton-tvc.md`).
+ * `dev/ai/videoton-tvc.md`).
  *
  * WAIT (64K only; the 64K+ board has no WAIT circuit, HW p.95): one wait state on an M1 from a slow
  * source. The cartridge is taken as slow; the system ROM is not (Q4: the factory setting of

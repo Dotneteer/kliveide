@@ -6,7 +6,7 @@ import type { ISourceFileItem } from "@main/compiler-common/abstractions";
 
 /*
  * The z88dk linker map (`zcc -m -debug`) as Klive's debug tables (`.plans/Z88DK_INTEGRATION_PLAN.md`
- * §6, decision C8). The format is recorded in `.ai/z88dk/map-format.md`; everything here is a pure
+ * §6, decision C8). The format is recorded in `dev/ai/z88dk/map-format.md`; everything here is a pure
  * function of the map's text, tested against the committed fixtures.
  */
 
@@ -130,7 +130,7 @@ export type Z88dkLineDebug = {
 
 /**
  * Klive's line tables from the line records. sccz80 reads one line ahead, so two lines can share an
- * address whose code is the lower line's (`.ai/z88dk/map-format.md`): the address maps to the
+ * address whose code is the lower line's (`dev/ai/z88dk/map-format.md`): the address maps to the
  * **lowest** line, while every recorded line still gets its list item, so a breakpoint on the higher
  * line binds.
  * @param partitionOf the memory partition of an address in a bank (the 128K's bank, the Next's 8K page)
@@ -232,7 +232,7 @@ export function z88dkSymbols(
 /**
  * True when printf's format table is linked into the startup's init code (`code_crt_init`), where
  * the CPU runs into it as instructions: z88dk v2.4's classic Next crt does this
- * (`.ai/z88dk/targets.md`, "z88dk v2.4 bug"). Whether such a program starts then depends on where the
+ * (`dev/ai/z88dk/targets.md`, "z88dk v2.4 bug"). Whether such a program starts then depends on where the
  * linker put the `%d` handler, so the build warns.
  */
 export function printfTableInStartupCode(symbols: Z88dkMapSymbol[]): boolean {

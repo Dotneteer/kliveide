@@ -22,7 +22,7 @@ import { bankRelativePartition } from "@common/utils/breakpoint-scope";
  * failure is silent in both directions — a breakpoint that stops when it should not, or stops
  * mattering for good.
  *
- * See `.ai/nex-debugging.md`.
+ * See `dev/ai/nex-debugging.md`.
  */
 
 /** Bank 5 offset $0100 arms $0100, $2100, ... $E100; its partition is bank 5's low 8K page. */

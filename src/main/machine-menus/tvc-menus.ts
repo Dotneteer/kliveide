@@ -20,7 +20,7 @@ import { t } from "@common/i18n/i18n";
 const TAPE_FILE_FOLDER = "tapeFileFolder";
 
 /**
- * The Videoton TVC's tape (`.ai/videoton-tvc.md`, "Tape, disks and files"): a `.cas` goes in the
+ * The Videoton TVC's tape (`dev/ai/videoton-tvc.md`, "Tape, disks and files"): a `.cas` goes in the
  * deck and plays while the ROM runs the recorder's motor (type `LOAD` in BASIC). Fast load runs the
  * machine faster while the tape plays; without it the tape plays in real time.
  */

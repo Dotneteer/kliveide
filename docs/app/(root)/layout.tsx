@@ -1,6 +1,6 @@
 /**
  * Root layout for "/", the English landing page. The other languages' landing pages render the
- * same component under `app/[lang]` (.ai/docs-site.md).
+ * same component under `app/[lang]` (dev/ai/docs-site.md).
  *
  * No Nextra here: navigating to the docs is a full page load, as between any two root layouts.
  */

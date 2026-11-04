@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /*
  * Checks the committed ZX Spectrum Next ROM sets against the manifest
- * (`.ai/zxnext-models.md` D9.3).
+ * (`dev/ai/zxnext-models.md` D9.3).
  *
  *   npm run next-roms:check              the committed files: present, size, sha256, page CRCs; the
  *                                         FPGA ROMs (`fpgaRoms`): size, sha256, page CRCs, and, when

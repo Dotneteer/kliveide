@@ -5,7 +5,7 @@
  * outside `tokens/` should import from here: components read the L2 semantic names produced by
  * `semantic.ts`, which is what makes the accent and tone axes swappable.
  *
- * See `.ai/ui-design-system.md`, "The token architecture" and "Accents".
+ * See `dev/ai/ui-design-system.md`, "The token architecture" and "Accents".
  */
 
 import { ACCENT_IDS, DEFAULT_ACCENT, isAccentId, type AccentId } from "@common/theming/accents";
@@ -295,7 +295,7 @@ export const DEVICE = {
   legendBelow: "#d02000",
   /*
    * The Sinclair ZX81's keyboard: a pure black body and light-grey keys with black legends, red
-   * shifted legends and white keyword/function print (`.ai/zx8081.md`, "The virtual keyboard", the approved
+   * shifted legends and white keyword/function print (`dev/ai/zx8081.md`, "The virtual keyboard", the approved
    * design). A light key face is new among Klive's device
    * keyboards; its highlight comes from the accent's dark end (`--accent-on-device-light`).
    */
@@ -307,7 +307,7 @@ export const DEVICE = {
   /*
    * The Sinclair ZX80's keyboard: blue keys on the same black case, white main legends and keyword
    * print, amber shifted legends and graphics, and BREAK in a dark blue that barely shows (sampled from
-   * a photo of an original machine and lifted for its underexposure; `.ai/zx8081.md`,
+   * a photo of an original machine and lifted for its underexposure; `dev/ai/zx8081.md`,
    * "The virtual keyboard"). The key face is dark, so its highlight is the accent's light end.
    */
   keyZx80: "#1c45b0",

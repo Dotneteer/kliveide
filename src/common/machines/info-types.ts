@@ -168,7 +168,7 @@ export type MachineMenuRenderer = (
  */
 /** A Help-menu link; an entry with neither label nor key is a separator */
 export type HelpLinkInfo = {
-  /** Translation key of the link's text (`.ai/localization.md`, D7) */
+  /** Translation key of the link's text (`dev/ai/localization.md`, D7) */
   labelKey?: MessageKey;
   /** Untranslated text, for a link that has no key */
   label?: string;

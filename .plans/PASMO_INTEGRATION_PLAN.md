@@ -26,7 +26,7 @@ different about PASMO, and those differences drive the decisions in §3. §4 to 
 | Registry | `src/main/compiler-integration/compiler-registry.ts` | `registerCompiler(new SjasmPCompiler())` |
 | Editor language | `src/renderer/appIde/project/sjasmZ80LanguageProvider.ts` (registered in `src/renderer/registry.ts`) | Monaco tokens, `compiler: "SjasmPCompiler"`, breakpoints, build root |
 | File types | `src/renderer/registry.ts` (`.sjasm` → `subType: "sjasmp"`, `canBeBuildRoot`), icon `src/renderer/assets/icons/file-sjasmp.svg` | the explorer and editor binding |
-| Integration dialog (MVC) | `src/renderer/appIde/dialogs/sjasmplus/` (Model, Intents, Ports, Controller, ViewModel, View, Dialog container, `parts/`) | local / online setup, user / project scope, Test and Apply; the reference implementation of `.ai/ui-mvc-guide.md` |
+| Integration dialog (MVC) | `src/renderer/appIde/dialogs/sjasmplus/` (Model, Intents, Ports, Controller, ViewModel, View, Dialog container, `parts/`) | local / online setup, user / project scope, Test and Apply; the reference implementation of `dev/ai/ui-mvc-guide.md` |
 | Dialog plumbing | `src/common/messaging/dialog-ids.ts` (`SJASMPLUS_INTEGRATION_DIALOG = 6`), `ideDialogRegistry.tsx`, `commands/DialogCommands.ts` | open the dialog |
 | Settings page | `src/common/settings/settings-pages.ts` (`integrations` / "Assemblers" row, button `dialog:sjasmplus`), `src/common/settings/ui-action-ids.ts`, `src/main/ui-actions.ts` | entry point from Settings |
 | IDE command | `src/renderer/appIde/commands/SjasmPlusCommands.ts` (`sjasmp-reset`), registered in `IdeCommands.ts` | set or clear the install folder from the prompt |
@@ -105,7 +105,7 @@ are not documented. Phase 0 settles them by running the real executable.
   which the user approves.
 - Confirm that Z80N mnemonics (e.g. `nextreg $07,3`, `mul d,e`) are rejected, and record the error
   (§2.5).
-- Record facts in Klive's own words in `.ai/pasmo/cli-facts.md`:
+- Record facts in Klive's own words in `dev/ai/pasmo/cli-facts.md`:
   - the exact `-d` trace format;
   - the error and warning text, on stderr and with `--err`;
   - exit codes;
@@ -149,7 +149,7 @@ are not documented. Phase 0 settles them by running the real executable.
   `src/renderer/assets/icons/` (see that folder's README; theme-coloured, not a colour literal).
 - Dialog (D4): `PASMO_INTEGRATION_DIALOG = 10` in `dialog-ids.ts`, a registry entry,
   `DialogCommands.ts` `pasmoIntegration`, `ui-action-ids.ts` `"dialog:pasmo"`, a `ui-actions.ts`
-  case, and a `settings-pages.ts` "Assemblers" row "PASMO". Follow `.ai/ui-mvc-guide.md` and
+  case, and a `settings-pages.ts` "Assemblers" row "PASMO". Follow `dev/ai/ui-mvc-guide.md` and
   `dev/patterns/dialog-mvc-pattern.md`.
 - `commands/PasmoCommands.ts`: `pasmo-reset [path] [-p]`, registered in `IdeCommands.ts`.
 
@@ -165,9 +165,9 @@ are not documented. Phase 0 settles them by running the real executable.
   The page states near the top that the **ZX Spectrum Next is not supported**: no Z80N instructions,
   no banking, no `.nex` output, with sjasmplus as the Next alternative (see §2.5).
   Update `docs/goldens/docs-routes.golden.txt`. Run `npm run doc:build && npm run doc:check`.
-- Generated screenshots of the dialog with `scripts/doc-shots/` (read `.ai/doc-screenshots-guide.md`).
+- Generated screenshots of the dialog with `scripts/doc-shots/` (read `dev/ai/doc-screenshots-guide.md`).
 - Add PASMO to the "External toolchains" row of `.plans/LANDING_PAGE_COMPETITIVE_ANALYSIS.md`.
-- Any style or icon change → `.ai/ui-theming-intent-and-lessons.md`.
+- Any style or icon change → `dev/ai/ui-theming-intent-and-lessons.md`.
 
 ## 5. Tests
 

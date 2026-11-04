@@ -1,10 +1,10 @@
 import type { BinarySegment } from "@abstractions/CompilerInfo";
 
 /*
- * A banked Boriel BASIC program (`--split-modules`, `.ai/boriel/integration.md`, "Banked programs") as
+ * A banked Boriel BASIC program (`--split-modules`, `dev/ai/boriel/integration.md`, "Banked programs") as
  * Klive's segments. zxbc refuses `-f bin` for a banked build, so the program comes out of the file it
  * does write - a `.z80` snapshot on the 128K, the `.nex` on the Next - as 16K RAM banks. What belongs
- * to the program there (`.ai/boriel/dbg-observed.md`, "Banking"):
+ * to the program there (`dev/ai/boriel/dbg-observed.md`, "Banking"):
  *
  *   - the resident part, from the origin up to the paging window at $C000 (banks 5 and 2);
  *   - each bank `codebank.banks` lists that holds anything, from the window's start.
@@ -22,7 +22,7 @@ const BANK_SIZE = 0x4000;
 /** One part of a banked program. `bank` is the 16K RAM bank; undefined for the resident part. */
 export type BankedPart = { bank?: number; startAddress: number; bytes: Uint8Array };
 
-/** The 32-bit FNV-1a hash zxbc records as `binaryChecksum` (`.ai/boriel/dbg-observed.md`). */
+/** The 32-bit FNV-1a hash zxbc records as `binaryChecksum` (`dev/ai/boriel/dbg-observed.md`). */
 export function fnv1a32(bytes: Uint8Array): number {
   let hash = 0x811c9dc5;
   for (const b of bytes) hash = Math.imul(hash ^ b, 0x01000193) >>> 0;

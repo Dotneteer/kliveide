@@ -1,5 +1,5 @@
 /**
- * One entry per EBNF form in the spec (`.ai/zxbasic-syntax/zxbasic-syntax.json`), keyed by the exact
+ * One entry per EBNF form in the spec (`dev/ai/zxbasic-syntax/zxbasic-syntax.json`), keyed by the exact
  * form string: programs the parser must accept and ones it must reject. Used by the parser's
  * spec-form test and by the binder's robustness test.
  */

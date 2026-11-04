@@ -1,5 +1,5 @@
 /*
- * Carrying a ROM sidecar's annotations to another version of the ROM (`.ai/zxnext-models.md`
+ * Carrying a ROM sidecar's annotations to another version of the ROM (`dev/ai/zxnext-models.md`
  * D8): the core of `scripts/rom-annotations-carry.cjs` (`npm run rom:annotations:carry`), which keeps its
  * command line on top of it.
  *

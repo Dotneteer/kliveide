@@ -22,7 +22,7 @@ const ROMS = join(REPO_ROOT, "src/public/roms");
 /**
  * BASIC 1.2's keyboard-read routine (KB_CHIN, D618h-D62Ch with SYS in page 3): BASIC loops inside it
  * (D61Bh-D61Dh) while it waits for a key at its prompt. A behaviour fact read from the ROM
- * (`.ai/videoton-tvc.md`, "Provenance").
+ * (`dev/ai/videoton-tvc.md`, "Provenance").
  */
 export const TVC12_KEY_WAIT = 0xd618;
 export const TVC12_KEY_WAIT_END = 0xd62d;

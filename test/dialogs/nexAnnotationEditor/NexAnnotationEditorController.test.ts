@@ -1124,7 +1124,7 @@ describe("lifecycle", () => {
 
   it("comes back alive and re-subscribed after a StrictMode teardown", async () => {
     // --- React runs every effect setup → cleanup → setup in development. A controller that could
-    // --- only be disposed would return deaf to the session. Trap 1 in `.ai/ui-mvc-guide.md`.
+    // --- only be disposed would return deaf to the session. Trap 1 in `dev/ai/ui-mvc-guide.md`.
     const controller = await opened();
     controller.dispose();
     controller.activate();

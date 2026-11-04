@@ -258,13 +258,13 @@ function validateSharedCpuSource() {
       errors.push(`shared CPU source does not export: ${snoozeApi}`);
     }
   }
-  // --- Machine hooks the Sinclair ZX80/ZX81 ULA added (`.ai/zx8081.md`, "Core decisions", C1-C3).
+  // --- Machine hooks the Sinclair ZX80/ZX81 ULA added (`dev/ai/zx8081.md`, "Core decisions", C1-C3).
   // --- Each must default to a no-op, so a core that does not define it is unchanged.
   for (const hookDefault of [
     "#define Z80_REFRESH(address) ((void)(address))",
     "#define Z80_INT_ACK() ((void)0)",
     "#ifdef Z80_NMI_ACK_WAIT",
-    // --- The Videoton TVC's M1 timing hook (`.ai/videoton-tvc.md`, "The shared Z80 hook H1"):
+    // --- The Videoton TVC's M1 timing hook (`dev/ai/videoton-tvc.md`, "The shared Z80 hook H1"):
     // --- compiled only when defined, with the old memory-read delay as the fallback on both M1 paths
     "#ifdef Z80_DELAY_OPCODE_FETCH",
     "cpu.opCode = readOpcodeMemory(cpu.pc, m1Active);",

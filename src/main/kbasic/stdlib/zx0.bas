@@ -1,5 +1,5 @@
 ' Klive BASIC standard library - zx0.bas: the ZX0 decompressors.
-' Klive's own code, written from the documented API (.ai/kbasic/stdlib-api.json) and the published
+' Klive's own code, written from the documented API (dev/ai/kbasic/stdlib-api.json) and the published
 ' ZX0 and RCS formats by Einar Saukas (https://github.com/einar-saukas/ZX0), whose author asks that
 ' programs using ZX0 mention it in their documentation. Data in ZX0's current format (version 2).
 '

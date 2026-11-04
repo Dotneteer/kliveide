@@ -7,7 +7,7 @@ import type { DetectionRun, DetectionTarget } from "@renderer/appIde/reverse/det
 import type { BankProposal } from "@common/reverse/proposal";
 
 /*
- * The Detect dialog, driven headless through its controller (`.ai/ui-mvc-guide.md`).
+ * The Detect dialog, driven headless through its controller (`dev/ai/ui-mvc-guide.md`).
  */
 
 const proposal = (patch: Partial<BankProposal> = {}): BankProposal => ({

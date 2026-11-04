@@ -1,5 +1,5 @@
 /*
- * Shared plumbing for the ZX Spectrum Next VHDL reference (`.ai/zxnext-models.md`
+ * Shared plumbing for the ZX Spectrum Next VHDL reference (`dev/ai/zxnext-models.md`
  * D4, D4.1): the manifest, git blob ids, the local git object cache, and a small unified-diff
  * applier with fuzz (so the scripts need neither `patch` nor a GNU toolchain).
  *

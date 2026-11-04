@@ -1,5 +1,5 @@
 /*
- * The Videoton TVC's BASIC tokens (`.ai/videoton-tvc.md`, "IDE integration"), as the ROMs' keyword
+ * The Videoton TVC's BASIC tokens (`dev/ai/videoton-tvc.md`, "IDE integration"), as the ROMs' keyword
  * tables hold them: BASIC 1.2's at DE6Dh (SYS, `tvc12-d4.rom` offset 1E6Dh) and BASIC 2.2's at
  * D73Ah (`tvc22-d6.rom` offset 173Ah). Each word ends with bit 7 set; the table opens with FFh (the
  * end of a line) and closes with FFh again (7Fh | 80h), and the words between are tokens FEh down

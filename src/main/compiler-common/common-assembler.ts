@@ -1396,7 +1396,7 @@ export abstract class CommonAssembler<
 
   /**
    * Where code with no `.org` goes: $8000, except on the ZX80/ZX81, where nothing executes there and
-   * code lives in the `1 REM` line (`.ai/zx8081.md`, "Machine code decisions", D3)
+   * code lives in the `1 REM` line (`dev/ai/zx8081.md`, "Machine code decisions", D3)
    */
   private modelDefaultStartAddress(): number {
     switch (this._output.modelType ?? this._options?.currentModel) {
@@ -2702,7 +2702,7 @@ export abstract class CommonAssembler<
 
   /**
    * Processes the .defzx pragma: text in the ZX80's or ZX81's character set, a lower-case letter
-   * giving the inverse-video capital (`.ai/zx8081.md`, "Machine code decisions", D2)
+   * giving the inverse-video capital (`dev/ai/zx8081.md`, "Machine code decisions", D2)
    * @param pragma Pragma to process
    * @param emitAction Action to emit a code byte
    */

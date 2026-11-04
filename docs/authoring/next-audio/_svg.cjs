@@ -35,7 +35,7 @@ function sampleStairs(b, values, t0, dt) {
 }
 
 /* The drawing runs from 0 to w: the viewBox keeps EDGE units of room around it, so a box drawn at an edge
-   keeps the outer half of its border (.ai/hardware-articles-guide.md, Figures) */
+   keeps the outer half of its border (dev/ai/hardware-articles-guide.md, Figures) */
 const EDGE = 2;
 const svgOpen = (w, h, label) =>
   `<svg viewBox="${-EDGE} ${-EDGE} ${w + 2 * EDGE} ${h + 2 * EDGE}" role="img" aria-label="${esc(label)}" style={{ width: "100%", height: "auto" }}>`;

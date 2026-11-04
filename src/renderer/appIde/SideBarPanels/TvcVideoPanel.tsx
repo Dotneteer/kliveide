@@ -42,7 +42,7 @@ const REGISTER_TOOLTIPS: MessageKey[] = [
 const MODE_COLOURS = [2, 4, 16, 16];
 
 /**
- * The Videoton TVC's video circuit (`.ai/videoton-tvc.md`, "IDE integration"): the 6845's registers
+ * The Videoton TVC's video circuit (`dev/ai/videoton-tvc.md`, "IDE integration"): the 6845's registers
  * and counters, the mode, palette and border, the vertical blank latch and the interrupt line, and
  * the paging ports with the 64K+'s video banks.
  */

@@ -10,9 +10,9 @@ import {
 import { parseZxProgramFile } from "@emu/machines/zx8081/ZxPFile";
 
 /**
- * The ZX80/ZX81 program image builder (`.ai/zx8081.md`, "Machine code decisions", D3). The expected
+ * The ZX80/ZX81 program image builder (`dev/ai/zx8081.md`, "Machine code decisions", D3). The expected
  * bytes of the BASIC lines are what the machines themselves stored when the same lines were typed
- * on them (recorded in `.ai/zx8081.md`, "How code injection works"); `test/zx8081-hw/program-image.test.ts` runs the
+ * on them (recorded in `dev/ai/zx8081.md`, "How code injection works"); `test/zx8081-hw/program-image.test.ts` runs the
  * images on the real cores.
  */
 const seg = (startAddress: number, ...code: number[]) => ({ startAddress, emittedCode: code });

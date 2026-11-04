@@ -5,7 +5,7 @@
  *
  * It deliberately matches the Z88 slot strip (`Z88ToolArea.module.scss`): a **device surface**, so
  * `--bgcolor-display` / `--color-display` are correct here — what belongs to the machine does not
- * follow the app's tone (`.ai/ui-theming-intent-and-lessons.md`).
+ * follow the app's tone (`dev/ai/ui-theming-intent-and-lessons.md`).
  *
  * Unlike a Z88 slot card, a media card is a single line: the medium's icon (a drive letter beside a
  * floppy), the file name, then the write-protect badge and the eject/change buttons.

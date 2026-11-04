@@ -23,7 +23,7 @@
 >
 > Where the text below says SUB/FUNCTION, GOSUB or `main`, read the neutral names above.
 
-Design note R11-1 of the Klive BASIC compiler plan (closed; its record is `.ai/kbasic/compiler.md`, "Readiness (R1-R18)"; "plan §N" below is mapped in its "Section map of the closed plan"). **Status: approved by the project author on 2026-09-26, with every proposal in the decisions table below.**
+Design note R11-1 of the Klive BASIC compiler plan (closed; its record is `dev/ai/kbasic/compiler.md`, "Readiness (R1-R18)"; "plan §N" below is mapped in its "Section map of the closed plan"). **Status: approved by the project author on 2026-09-26, with every proposal in the decisions table below.**
 
 The MIR sits between the typed tree the binder produces (`src/main/kbasic/semantics/bound.ts`)
 and instruction selection (`z80-backend-lir-regalloc.md`). Lowering turns each routine into a MIR

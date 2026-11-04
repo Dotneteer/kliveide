@@ -1,5 +1,5 @@
 /**
- * The localization gate (`.ai/localization.md`, "The tooling").
+ * The localization gate (`dev/ai/localization.md`, "The tooling").
  *
  * Reads the message catalogs in `src/common/i18n/locales/` and the TypeScript sources, and fails
  * (exit 1) on:

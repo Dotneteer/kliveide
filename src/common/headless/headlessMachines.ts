@@ -68,7 +68,7 @@ export function artifactNameOf(machineId: string, modelId?: string): string {
     case MI_SPECTRUM_3E:
       return SPP3E_WASM_V2_ARTIFACT_NAME;
     case MI_ZXNEXT:
-      // --- One artifact per Next model's hardware (`.ai/zxnext-models.md` D3)
+      // --- One artifact per Next model's hardware (`dev/ai/zxnext-models.md` D3)
       return nextProfileOf(modelId).wasmArtifact;
     case MI_ZX80:
     case MI_ZX81:

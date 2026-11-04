@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /*
- * The shipped ROM sidecars' tools (`dev/patterns/annotations.md`, "ROM Annotations" and `.ai/rom-annotations/README.md`).
+ * The shipped ROM sidecars' tools (`dev/patterns/annotations.md`, "ROM Annotations" and `dev/ai/rom-annotations/README.md`).
  *
  *   npm run rom:annotations                 format every .rom.dis under src/public/roms and regenerate
  *                                           rom-annotations.index.json (the default)
@@ -15,7 +15,7 @@
  *                                           write which bytes are code and which data
  *                                           (.rom-annotations/coverage-sp48.json)
  *
- * The rules authors follow, and the provenance log, are in `.ai/rom-annotations/`. This script only
+ * The rules authors follow, and the provenance log, are in `dev/ai/rom-annotations/`. This script only
  * formats and measures; the logic is `src/common/roms/romAnnotationTools.ts`, which the tests run.
  *
  * A sidecar is named by its path relative to src/public/roms (`sp48.rom.dis`,

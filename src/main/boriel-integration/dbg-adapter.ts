@@ -20,10 +20,10 @@ import { mapSymbols, type MapEntry } from "./boriel-map";
 
 /*
  * Boriel BASIC's `.dbg` (format "zx-source-debug" v1) → Klive's source-level debug model and the
- * classic tables (`.ai/boriel/integration.md`, "The `.dbg` adapter"). Pure but for the injected file reader.
+ * classic tables (`dev/ai/boriel/integration.md`, "The `.dbg` adapter"). Pure but for the injected file reader.
  *
  * The format began as Klive's proposal, so most fields carry over; what zxbc writes differently is
- * corrected here, each correction observed in Phase B0 (`.ai/boriel/dbg-observed.md`):
+ * corrected here, each correction observed in Phase B0 (`dev/ai/boriel/dbg-observed.md`):
  *   - statements are unsorted and their indexes have gaps (removed statements): re-indexed densely;
  *   - an `endAddress` runs into the next routine: clamped to the owning routine's epilogue or the
  *     next routine's start, so prologues, epilogues and a dynamic DIM's code map to glue (-1);
@@ -91,7 +91,7 @@ const BANKM = 0x5b5c;
 
 /**
  * zxbc's far calls (`--split-modules`) in Klive's CODEBANK model, so the call stack walks through
- * bank switches (`.ai/boriel/dbg-observed.md`, "Far calls"). A call site runs the `callFar` template,
+ * bank switches (`dev/ai/boriel/dbg-observed.md`, "Far calls"). A call site runs the `callFar` template,
  * which ends `CALL helper`; the helper replaces the return slot with its own return path (its
  * `LD HL,nn` at helper + 4) and pushes the real return and the caller's paging onto a shadow stack
  * whose pointer is `core.PAGE_STACK`. Undefined, with a note, when the build is not banked or the
@@ -429,7 +429,7 @@ export function classicTables(sld: SourceLevelDebugInfo, libraryFiles: number[])
 }
 
 /**
- * The structural checks the converted data must pass (`.ai/boriel/integration.md`, "The `.dbg` adapter"): sorted, non-overlapping statements
+ * The structural checks the converted data must pass (`dev/ai/boriel/integration.md`, "The `.dbg` adapter"): sorted, non-overlapping statements
  * inside their routines, and every index pointing somewhere. A non-empty answer means stepping over
  * and out could go wrong (B4 then falls back to stopping at every statement).
  */

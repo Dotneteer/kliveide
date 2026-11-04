@@ -88,7 +88,7 @@ export abstract class Ht1080zWasmHost extends Z80MachineBase {
   /**
    * The reset button, and the end of every power-on (`hardReset` resets too). The frame length is set
    * here: `Z80Cpu.hardReset` leaves it at 1,000,000 tacts, and the controller paces the UI by it
-   * (`.ai/wasm-migration-intent-and-lessons.md`, the ZX80/81 section).
+   * (`dev/ai/wasm-migration-intent-and-lessons.md`, the ZX80/81 section).
    */
   reset(): void {
     super.reset();

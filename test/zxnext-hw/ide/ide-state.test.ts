@@ -9,7 +9,7 @@ import { createSession } from "../../harness/zxnext";
  * `IZxNextIdeMachine` (`s.ideState()`, no side effects). The program writes every palette, the palette
  * control and transparency registers, MMU slots 6 and 7, the border and EAR/MIC, and a key is held;
  * every expectation below follows from those writes. (Until 2026-09-19 this compared the two cores'
- * panels, and found five differences on both - `.ai/wasm-migration-intent-and-lessons.md`.)
+ * panels, and found five differences on both - `dev/ai/wasm-migration-intent-and-lessons.md`.)
  */
 
 /** Writes every one of the 8 palettes (`$43` bits 6-4) with a distinct pattern, then the control registers. */

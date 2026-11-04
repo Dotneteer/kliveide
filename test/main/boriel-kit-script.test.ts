@@ -8,7 +8,7 @@ import { ensureKit, kitKey, readKitManifest, stageKit, VENDOR_FOLDER } from "../
 
 /*
  * `scripts/boriel-kit.cjs`: a fresh clone re-creates the kits from `kit.json`
- * (`.ai/boriel/integration.md`, "The kits in the build"). Downloads go through an injected fetch.
+ * (`dev/ai/boriel/integration.md`, "The kits in the build"). Downloads go through an injected fetch.
  */
 
 const BYTES = Buffer.from("a kit archive");

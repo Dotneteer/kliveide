@@ -277,7 +277,7 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
       }
     }
 
-    // --- A ZX80/ZX81 program exports as the machine's own program file (`.ai/zx8081.md`, "Machine code decisions", D8)
+    // --- A ZX80/ZX81 program exports as the machine's own program file (`dev/ai/zx8081.md`, "Machine code decisions", D8)
     const zxFormat = zx8081ExportFormatOf(
       (output as CompilerOutput).modelType,
       emulatorState?.machineId,

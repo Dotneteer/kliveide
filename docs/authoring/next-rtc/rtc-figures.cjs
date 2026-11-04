@@ -6,7 +6,7 @@
 // diagrams. Run:
 //   node docs/authoring/next-rtc/rtc-figures.cjs
 //
-// Sized for print (.ai/hardware-articles-guide.md, Figures): the drawings use the whole 700-unit width, no
+// Sized for print (dev/ai/hardware-articles-guide.md, Figures): the drawings use the whole 700-unit width, no
 // text is smaller than 13.5 units, and the shared helper keeps 2 units of room around the viewBox.
 "use strict";
 

@@ -17,7 +17,7 @@
 
 /** Tests whose subject is a machine core: its CPU, devices, loaders, debug loop and flows. */
 export const E2E_CORE_TESTS: string[] = [
-  // --- A tape the File Manager writes, loaded by the 48K ROM (`.ai/file-manager.md`)
+  // --- A tape the File Manager writes, loaded by the 48K ROM (`dev/ai/file-manager.md`)
   "test/file-manager/fm-tape-load.test.ts",
   // --- Whole folders: every test in them runs a core or checks a core's sources/build
   "test/wasm/**/*.test.ts",
@@ -31,7 +31,7 @@ export const E2E_CORE_TESTS: string[] = [
   "test/spectrum-hw/**/*.test.ts",
   // --- The ZX Spectrum timing test kit (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phase 0); all slow
   "test/spectrum-kit/**/*.test.ts",
-  // --- The ROM annotation tools' coverage run (`dev/patterns/annotations.md` and `.ai/rom-annotations/README.md`)
+  // --- The ROM annotation tools' coverage run (`dev/patterns/annotations.md` and `dev/ai/rom-annotations/README.md`)
   "test/rom-annotations/**/*.test.ts",
   "test/harness/**/self-tests/**/*.test.ts",
   "test/unit-tests/runner-*.test.ts",
@@ -104,7 +104,7 @@ export const E2E_KBASIC_TESTS: string[] = [
   "test/kbasic/corpus/**/*.test.ts",
   // --- The test-only "mini" language on the shared Z80 back end (`.plans/SHARED_Z80_BACKEND_PLAN.md` Phase 6)
   "test/z80-backend/minilang/mini-run.test.ts",
-  // --- The debugger on zxbc-built Boriel BASIC programs (`.ai/boriel/integration.md`, "Tests and checks")
+  // --- The debugger on zxbc-built Boriel BASIC programs (`dev/ai/boriel/integration.md`, "Tests and checks")
   "test/boriel/boriel-debugger.test.ts",
   "test/boriel/boriel-next.test.ts",
   "test/boriel/boriel-banked.test.ts",

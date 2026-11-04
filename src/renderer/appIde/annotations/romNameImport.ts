@@ -5,7 +5,7 @@ import { romSidecarText } from "./romSidecarWriter";
 
 /*
  * Importing a list of conventional routine names into a ROM's working copy
- * (`.ai/rom-annotations/README.md`, "Routine names (Q1)"; `rom-ann-import-names`).
+ * (`dev/ai/rom-annotations/README.md`, "Routine names (Q1)"; `rom-ann-import-names`).
  *
  * A name list is an interface vocabulary: the names, and the addresses they name — never the
  * comments, region boundaries or descriptions that come with them. So the input is nothing but

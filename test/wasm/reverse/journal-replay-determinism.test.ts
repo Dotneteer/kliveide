@@ -492,7 +492,7 @@ async function ht1080zMachine(): Promise<Driver> {
 }
 
 /**
- * The Videoton TVC 64K+ at BASIC 2.2's prompt (`.ai/videoton-tvc.md`, "Memory partitions, history and
+ * The Videoton TVC 64K+ at BASIC 2.2's prompt (`dev/ai/videoton-tvc.md`, "Memory partitions, history and
  * profile"): the cursor and
  * sound interrupts, the clock stretch on video RAM. Inputs besides keys: memory edits, the border
  * and palette ports, the paging ports 02h/0Ch and the sound divider and its restart.
@@ -629,7 +629,7 @@ const cores: [SpikeCoreId, MachineFactory, string[], string?][] = [
   ["zxnext", () => nextMachine(), NEXT_KEYS],
   ["zxnext", () => nextMachine(true), NEXT_KEYS, "zxnext (Pi I2S)"],
   ["zxnext", () => nextMachine(false, true), NEXT_KEYS, "zxnext (tape)"],
-  // --- One representative case per further Next artifact (`.ai/zxnext-models.md`, "Rules")
+  // --- One representative case per further Next artifact (`dev/ai/zxnext-models.md`, "Rules")
   ["zxnext", () => nextMachine(false, false, "ks2-30204"), NEXT_KEYS, "zxnext (ks2-30204)"],
   ["sp128", sp128FamilyMachine("sp128", "sp128"), SP128_KEYS],
   ["sp128", sp128FamilyMachine("pentagon", "sp128"), SP128_KEYS, "pentagon"],

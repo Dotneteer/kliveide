@@ -33,7 +33,7 @@ export const IdeStatusBar = ({ show }: IdeStatusBarProps) => {
   const cursorColumn = useSelector((s) => s.ideView?.cursorColumn);
   const automation = useSelector((s) => s.automation);
   // --- The compiler BASIC files build with (a project's choice wins over the user's), so the switch
-  // --- between Klive BASIC and Boriel BASIC is never invisible (`.ai/boriel/integration.md`, "Editor, settings and status bar")
+  // --- between Klive BASIC and Boriel BASIC is never invisible (`dev/ai/boriel/integration.md`, "Editor, settings and status bar")
   const basicCompiler = useSelector((s) => selectedZxBasicCompiler(s));
   const mainApi = useMainApi();
   useSelector((s) => s.ideView?.documentHubState);

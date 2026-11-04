@@ -1,7 +1,7 @@
 ' Klive BASIC standard library - farmem.bas: FarPeek, FarPeekW, FarPoke, FarPokeW, FarCopy, FarCopyTo
 ' and FarStr, CODEBANK's far-memory access (ZX Spectrum Next).
-' Klive's own code, written from the documented API (.ai/kbasic/stdlib-api.json, recorded from
-' .ai/kbasic/codebank-contract.md §1).
+' Klive's own code, written from the documented API (dev/ai/kbasic/stdlib-api.json, recorded from
+' dev/ai/kbasic/codebank-contract.md §1).
 '
 ' A FARPTR value holds a logical bank in bits 16-23 and an address in bits 0-15. Each routine maps
 ' the bank into the CODEBANK window for the access and then puts back what the window held (the

@@ -7,7 +7,7 @@ import { modelTypeToMachineType } from "@renderer/appIde/utils/compile-code";
 import { bootModelFor } from "@main/unit-tests/UnitTestRunner";
 
 /**
- * The Videoton TVC model of the Klive assembler (`.ai/videoton-tvc.md`, "Run, Debug and export"):
+ * The Videoton TVC model of the Klive assembler (`dev/ai/videoton-tvc.md`, "Run, Debug and export"):
  * the `.model` name, `#ifmod`, no banks, the default address, and the warnings for code Run and
  * Export refuse.
  */

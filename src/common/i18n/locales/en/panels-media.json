@@ -2354,7 +2354,7 @@
       "file": "The sidecar's file name"
     }
   },
-  "panels.rom.rule": "Write only what the code in front of you does: no comment, name or region from a published disassembly (.ai/rom-annotations/README.md).",
+  "panels.rom.rule": "Write only what the code in front of you does: no comment, name or region from a published disassembly (dev/ai/rom-annotations/README.md).",
   "@panels.rom.rule": {
     "context": "Standing rule shown in the ROM annotation editor (a document listing a ROM annotation sidecar file's pages) for editable files. The path in brackets stays as it is."
   },

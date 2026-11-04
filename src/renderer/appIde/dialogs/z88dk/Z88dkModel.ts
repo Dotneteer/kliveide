@@ -385,7 +385,7 @@ function verdictMessage(origin: ValidationOrigin, merged: Z88dkProbeResult): str
 
 // ─── Shared derivations ──────────────────────────────────────────────────────
 
-/** Downloads exist for Windows and macOS only (`.ai/z88dk/releases.md`). */
+/** Downloads exist for Windows and macOS only (`dev/ai/z88dk/releases.md`). */
 export function onlineAvailable(env: Z88dkEnvironment): boolean {
   return env.platform === "windows" || env.platform === "macos";
 }

@@ -1,7 +1,7 @@
 import { Z88DK_MIN_SUPPORTED_BUILD, Z88DK_MIN_SUPPORTED_TAG } from "./z88dk-config";
 
 /*
- * z88dk versions (`.ai/z88dk/README.md`, "Versions"). `zcc` has no `--version`: run with no arguments
+ * z88dk versions (`dev/ai/z88dk/README.md`, "Versions"). `zcc` has no `--version`: run with no arguments
  * it prints `zcc - Frontend for the z88dk Cross-C Compiler - v23854-4d530b6eb7-20251002` on stderr.
  * An install is judged by that build number; a GitHub release by its tag.
  */

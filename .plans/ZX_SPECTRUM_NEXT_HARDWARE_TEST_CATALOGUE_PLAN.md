@@ -14,7 +14,7 @@ All tests use the harness in `test/harness/zxnext/` (read its `README.md` first)
 - **Scripted tests** – `createSession(core)`, `describe.each(ALL_CORES)`, in
   `test/zxnext-hw/<area>/<id-lower>-<slug>.test.ts`.
 - **Screen cases** – `test/visual/<suite>/<ID>-<slug>/` with `program.asm`, `case.json`, `expect.md`
-  (read `.ai/visual-tests-guide.md` first).
+  (read `dev/ai/visual-tests-guide.md` first).
 
 The reference for every expectation is the VHDL in `dev/research/next-fpga/src` (file names are given per
 area). **Never derive an expectation from emulator output.** Where a description says "per `x.vhd`",

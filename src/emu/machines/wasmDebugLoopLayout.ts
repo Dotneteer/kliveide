@@ -1,6 +1,6 @@
 /*
  * The layout the in-core debug loop shares with its hosts (`src/emu/z80/wasm/z80-debug-loop.c`,
- * `.ai/wasm-core-debug.md`). A module of its own so the loaders can size their
+ * `dev/ai/wasm-core-debug.md`). A module of its own so the loaders can size their
  * views without importing the debug loop.
  */
 

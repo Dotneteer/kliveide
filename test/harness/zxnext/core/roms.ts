@@ -7,7 +7,7 @@ import { nextProfileOf } from "@emu/machines/zxNext/nextProfiles";
 import { REPO_ROOT } from "./machines";
 
 /*
- * The ZX Spectrum Next's ROM files for a test, by ROM set (`.ai/zxnext-models.md`
+ * The ZX Spectrum Next's ROM files for a test, by ROM set (`dev/ai/zxnext-models.md`
  * D9.5): the one place the tests find them. Without a set, the implicit model's (`ks2-30201`).
  */
 

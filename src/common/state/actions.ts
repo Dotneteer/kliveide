@@ -45,7 +45,7 @@ export const isWindowsAction: ActionCreator = (flag: boolean) => ({
   payload: { flag }
 });
 
-/** The resolved display language (`.ai/localization.md`, "The runtime"), published by main */
+/** The resolved display language (`dev/ai/localization.md`, "The runtime"), published by main */
 export const setUiLanguageAction: ActionCreator = (
   value: import("@common/i18n/languages").UiLanguageState
 ) => ({

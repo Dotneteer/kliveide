@@ -4,10 +4,10 @@ import type { HeaderOption } from "@main/kbasic/options/header";
 import type { KBasicOptions } from "@main/kbasic/options/options";
 
 /*
- * Klive's build options, as Boriel BASIC's `zxbc` arguments (`.ai/boriel/options.md`
+ * Klive's build options, as Boriel BASIC's `zxbc` arguments (`dev/ai/boriel/options.md`
  *). The options come from Klive's own pipeline - the `zxbasic.*` settings, then the build root's
  * `'@name value` header (NextBuild's `'!` aliases included) - so one source file builds under both
- * compilers. `.ai/boriel/options.md` is the human-readable table of this mapping.
+ * compilers. `dev/ai/boriel/options.md` is the human-readable table of this mapping.
  */
 
 /** zxbc's `--arch` for Klive's targets. The +3 runs zxbc's generic 128K code. */

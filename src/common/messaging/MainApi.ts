@@ -217,7 +217,7 @@ class MainApiImpl {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 
-  /** The File Manager's drives: this computer's volumes and folders, and the open project (`.ai/file-manager.md`) */
+  /** The File Manager's drives: this computer's volumes and folders, and the open project (`dev/ai/file-manager.md`) */
   async fmListDrives(): Promise<FmDriveRef[]> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
@@ -1183,7 +1183,7 @@ const UNBOUNDED_MAIN_METHODS = [
   "ejectMediaFile",
   // --- File pickers, confirmations and dialogs of their own
   "runUiAction",
-  // --- A File Manager copy runs as long as its files take (`.ai/file-manager.md`)
+  // --- A File Manager copy runs as long as its files take (`dev/ai/file-manager.md`)
   "fmRunTransfer",
   // --- The app is terminating; a response may legitimately never arrive
   "exitApp",

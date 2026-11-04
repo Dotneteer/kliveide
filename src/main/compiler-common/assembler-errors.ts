@@ -227,7 +227,7 @@ export type ErrorCodes =
 
 /**
  * The text of an assembler error or warning, in the display language
- * (`.ai/localization.md`). The English is `compiler.asm.<code>` in
+ * (`dev/ai/localization.md`). The English is `compiler.asm.<code>` in
  * `src/common/i18n/locales/en/compiler.json`; `{0}`, `{1}`... are the parameters, in order. A
  * compile in the worker thread sets the worker's language from the app state it receives.
  * @returns undefined for a code without a message

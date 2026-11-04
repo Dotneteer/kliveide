@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { TVC_HBF_ROM_IMAGE, TVC_ROM_SETS, type TvcRomImage } from "@emu/machines/tvc/TvcRoms";
 
 /*
- * The Videoton TVC ROM images (`.ai/videoton-tvc.md`, "Decisions", D3). A replaced or corrupted
+ * The Videoton TVC ROM images (`dev/ai/videoton-tvc.md`, "Decisions", D3). A replaced or corrupted
  * image fails here instead of booting to a garbled screen. The CRC32s are `TvcRoms.ts`'s, which
  * match MAME's tvc64 and tvc64p sets (`src/public/roms/tvc-roms-readme.txt`).
  */

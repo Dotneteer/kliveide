@@ -7,7 +7,7 @@ const { buildHt1080zWasm, output } = require("./build-ht1080z-wasm.cjs");
  * the speed build, about the ZX80/81 core's size. Phases 3-6 add the video renderer, the AY
  * (`zx-spectrum-psg.c`) and the tape, which the ZX80/81 and 128K cores show to be a few tens of KB.
  * The tact hook is `noinline`, as the Z88's and the ZX81's are: inlined into every opcode, per-tact
- * work multiplies the code (`.ai/wasm-migration-intent-and-lessons.md`). 300,000 leaves room for those
+ * work multiplies the code (`dev/ai/wasm-migration-intent-and-lessons.md`). 300,000 leaves room for those
  * phases; re-measure and lower it in Phase 9.
  */
 const DEFAULT_MAX_BYTES = 300_000;

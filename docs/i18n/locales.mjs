@@ -1,5 +1,5 @@
 /**
- * The site's languages (R1 of .ai/docs-site.md): the enabled UI languages
+ * The site's languages (R1 of dev/ai/docs-site.md): the enabled UI languages
  * of the app, exported to languages.json by `node scripts/docs-i18n.cjs languages` (and checked
  * by `doc:i18n:check`). A language is *published* once it has a content/<id>/ folder - that is,
  * once its first translation is merged - so an enabled language without translations yet does

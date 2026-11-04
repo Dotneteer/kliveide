@@ -18,7 +18,7 @@ import { nextBankSpace, type BankSpace } from "@common/annotations/bankSpace";
  * site — plus the lookup that turns a site into a name.
  *
  * Pure, so the whole decision is testable without a machine, a document or a listing. See
- * `.ai/nex-debugging.md`.
+ * `dev/ai/nex-debugging.md`.
  */
 
 /** Where a Z80 address falls, in the NEX's own terms. */

@@ -36,7 +36,7 @@ const UPDATE = process.env.KBASIC_COMPAT_UPDATE === "1";
 const baseline: Baseline = existsSync(BASELINE_FILE) ? JSON.parse(readFileSync(BASELINE_FILE, "utf8")) : {};
 const faults: Record<string, Record<string, Diff & { fault: string }>> = JSON.parse(readFileSync(join(DIR, "faults.json"), "utf8"));
 const ANNEX = new Set<string>(
-  (JSON.parse(readFileSync(join(DIR, "..", "..", "..", ".ai", "zxbasic-syntax", "zxbasic-syntax.json"), "utf8")).semantics.entries as { name: string }[]).map((e) => e.name)
+  (JSON.parse(readFileSync(join(DIR, "..", "..", "..", "dev", "ai", "zxbasic-syntax", "zxbasic-syntax.json"), "utf8")).semantics.entries as { name: string }[]).map((e) => e.name)
 );
 const next: Baseline = {};
 

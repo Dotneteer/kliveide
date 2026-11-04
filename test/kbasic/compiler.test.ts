@@ -178,7 +178,7 @@ describe("the zxbas compiler", () => {
   });
   afterAll(() => fs.rmSync(folder, { recursive: true, force: true }));
 
-  // --- KLIVE-BASIC-OFF: the switch is off (`.ai/klive-basic-switch.md`); restore with it
+  // --- KLIVE-BASIC-OFF: the switch is off (`dev/ai/klive-basic-switch.md`); restore with it
   it.skip("defaults to Klive BASIC; 'boriel' (or the old 'zxbc') selects Boriel BASIC", () => {
     expect(selectedZxBasicCompiler(undefined)).toBe("klive");
     expect(selectedZxBasicCompiler(state({}))).toBe("klive");
@@ -299,7 +299,7 @@ describe("the zxbas compiler", () => {
     const template = path.join(__dirname, "../../src/public/project-templates", templateMachine, "zx-basic/code/program.zxbas");
     const output = (await compiler.compileFile(template)) as DebuggableOutput & { modelType: number; nexConfig?: { filename?: string } };
     // --- The 128K and Next templates end with an empty DO/LOOP on purpose, so their output stays on
-    // --- the screen (`.ai/boriel/integration.md`, "Editor, settings and status bar"): W130 says so
+    // --- the screen (`dev/ai/boriel/integration.md`, "Editor, settings and status bar"): W130 says so
     expect(output.errors?.filter((e) => e.errorCode !== "W130")).toEqual([]);
     expect(output.modelType).toBe(modelType);
     if (modelType === 4) expect(output.nexConfig?.filename).toBe("program.nex");
@@ -333,7 +333,7 @@ describe("the zxbas compiler", () => {
     expect(output.errors?.map((e) => e.errorCode)).toEqual(["K002"]);
   });
 
-  // --- KLIVE-BASIC-OFF: the switch is off (`.ai/klive-basic-switch.md`); restore with it
+  // --- KLIVE-BASIC-OFF: the switch is off (`dev/ai/klive-basic-switch.md`); restore with it
   it.skip("dispatches to Klive BASIC by default", async () => {
     const dispatcher = new ZxBasicDispatcher();
     dispatcher.setAppState(state({}));

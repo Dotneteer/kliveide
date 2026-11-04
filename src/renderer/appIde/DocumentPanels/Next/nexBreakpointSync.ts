@@ -17,7 +17,7 @@ import type {
  * conversion here — and pure — is what lets the round trip be tested without an emulator.
  *
  * The emulator is the runtime authority and the sidecar is the only persistence for these
- * breakpoints; see `.ai/nex-debugging.md`.
+ * breakpoints; see `dev/ai/nex-debugging.md`.
  */
 
 /** The sidecar's one-word kind, from a breakpoint's flags. */

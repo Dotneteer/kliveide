@@ -33,7 +33,7 @@ export const CreateDiskView = ({ vm, dispatch }: CreateDiskViewProps) => {
             placeholder={t("dialog.createDisk.selectPlaceholder")}
             options={vm.diskType.options}
             initialValue={vm.diskType.value}
-            // --- As wide as its widest label (`.ai/ui-theming-intent-and-lessons.md`, "A Dialog Field
+            // --- As wide as its widest label (`dev/ai/ui-theming-intent-and-lessons.md`, "A Dialog Field
             // --- Is As Wide As Its Widest Legal Value"), from the options themselves: the machine
             // --- picks them (CPC on the +3, TR-DOS on the Pentagon), and a fixed 200px clipped the
             // --- TR-DOS ones. The extra 4ch hold the chevron; the open list takes this width too.

@@ -10,7 +10,7 @@ const golden = goldens("wasm-z88-debug-step");
  * CALL, and landing on one), step-out (also across an interrupt), breakpoints, and stepping a
  * snoozing CPU. Driven as the IDE drives it (`Z88TestSession.debug` = `MachineController.run`).
  *
- * The lessons behind these cases are in `.ai/wasm-migration-intent-and-lessons.md` ("Debugger
+ * The lessons behind these cases are in `dev/ai/wasm-migration-intent-and-lessons.md` ("Debugger
  * Behaviour Is Part Of The Port"): step-out needs the core's shadow stack, including interrupt
  * entries, and step-over must not execute an instruction it only just landed on.
  * Step 5 of `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`.

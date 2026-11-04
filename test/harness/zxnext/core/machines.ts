@@ -37,7 +37,7 @@ function findRepoRoot(start: string): string {
   }
   return dir;
 }
-/** A profile's WASM artifact (`.ai/zxnext-models.md` D3) */
+/** A profile's WASM artifact (`dev/ai/zxnext-models.md` D3) */
 export function wasmArtifactOf(profile: NextProfileId = IMPLICIT_NEXT_PROFILE_ID): string {
   return join(REPO_ROOT, "src/emu/machines/zxNext/wasm/dist", NEXT_PROFILES[profile].wasmArtifact);
 }
@@ -95,7 +95,7 @@ export type CreateCoreOptions = {
   /** The Next model (`nextProfiles.ts`): its artifact, ROM set and identity. The implicit one by default. */
   profile?: NextProfileId;
   /**
-   * The real-time clock's host side (`.ai/zxnext-rtc.md`), set before `setup()` seeds
+   * The real-time clock's host side (`dev/ai/zxnext-rtc.md`), set before `setup()` seeds
    * the clock: what it follows, keeping it, the store and a fake host clock. Unset: emulated time,
    * not kept - every test that does not ask stays deterministic.
    */

@@ -50,7 +50,7 @@ export function createAppMenu(context: MenuContext): MenuItemConstructorOptions 
         click: async () => await installCommandLineTool(context.focusedWindow())
       },
       { type: "separator" },
-      // --- Explicit labels, or the OS labels these in its own language (`.ai/localization.md`)
+      // --- Explicit labels, or the OS labels these in its own language (`dev/ai/localization.md`)
       { role: "hide", label: t("menu.app.hide", { appName: app.name }) },
       { role: "hideOthers", label: t("menu.app.hideOthers") },
       { role: "unhide", label: t("menu.app.showAll") },

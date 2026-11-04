@@ -20,7 +20,7 @@ import {
 } from "./z80-completion-data";
 import { lookupTstates } from "./z80-tstates-data";
 import type { DocumentOutlineEntry, SymbolDefinitionInfo } from "@abstractions/CompilerInfo";
-// --- Register names: the union of every core's set (`.ai/zxnext-models.md` D5)
+// --- Register names: the union of every core's set (`dev/ai/zxnext-models.md` D5)
 import { nextRegUnion } from "@emu/machines/zxNext/nextRegSets";
 import {
   decodeCopperWord,

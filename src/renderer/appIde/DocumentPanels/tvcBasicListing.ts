@@ -6,7 +6,7 @@ import { BasicProgramBuffer, getMemoryWord } from "./BasicLine";
 import type { BasicListing } from "./basicListing";
 
 /*
- * The Videoton TVC's BASIC detokenizer (`.ai/videoton-tvc.md`, "IDE integration"): a program's
+ * The Videoton TVC's BASIC detokenizer (`dev/ai/videoton-tvc.md`, "IDE integration"): a program's
  * bytes into the lines the BASIC Listing view shows. The format, observed on the core
  * (`test/tvc-hw/basic-listing.test.ts` types programs and lists them):
  *

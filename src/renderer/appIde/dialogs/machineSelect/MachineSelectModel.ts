@@ -2,7 +2,7 @@
  * The Select Machine dialog's state and its pure reducer (`.plans/MACHINE_SELECT_DIALOG_PLAN.md` §4).
  *
  * Model + ViewModel without a Controller: the dialog has rich derived rules but no async work and
- * no ports - main applies the result - so per `.ai/ui-mvc-guide.md` the Controller would be ceremony.
+ * no ports - main applies the result - so per `dev/ai/ui-mvc-guide.md` the Controller would be ceremony.
  * Every user action is an `Event` here, so the tests drive the dialog without rendering it.
  */
 import type { MachineInfo } from "@common/machines/info-types";

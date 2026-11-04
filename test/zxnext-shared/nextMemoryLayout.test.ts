@@ -8,7 +8,7 @@ import { allRamBanksFor, bank16kForPartition } from "@emu/machines/zxNext/nextMe
  * This was a method on the interpreted `MemoryDevice` only, so the WASM Next — the machine people
  * actually run — reported `undefined` and the Memory Mapping panel's "All RAM" row read `Off`
  * whatever the program had done. It is a pure function of the reported `$1FFD` value now, so both
- * machines answer from the same table. See `.ai/nex-debugging.md`.
+ * machines answer from the same table. See `dev/ai/nex-debugging.md`.
  *
  * The encoding under test is the one `MemoryDevice.port1ffdValue` *reports*: all-RAM mode in bit 0,
  * the configuration in bits 1-2. NextReg `$8E` lays those out differently and
@@ -52,7 +52,7 @@ describe("allRamBanksFor", () => {
  * `MemoryDevice` has always reported it that way — `setPageInfo(..., bank8k >> 1, bank8k)` — but the
  * WASM Next passed the partition index straight through. Since `bank8k` is also the 8K page, its
  * page rows printed the same number twice, and the Memory Mapping panel labels the second one
- * "16K bank". See `.ai/nex-debugging.md`.
+ * "16K bank". See `dev/ai/nex-debugging.md`.
  */
 
 describe("bank16kForPartition", () => {

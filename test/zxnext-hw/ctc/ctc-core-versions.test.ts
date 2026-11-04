@@ -4,7 +4,7 @@ import { NEXT_PROFILES, type NextProfileId } from "@emu/machines/zxNext/nextProf
 import { createSession, forEachProfile, type NextTestSession } from "../../harness/zxnext";
 
 /*
- * Z80 CTC: the 3.02.02 state machine (`.ai/zxnext-cores/30201-to-30204.md` 1.1), on both profiles.
+ * Z80 CTC: the 3.02.02 state machine (`dev/ai/zxnext-cores/30201-to-30204.md` 1.1), on both profiles.
  *
  * Hardware:
  * - device/ctc_chan.vhd@3.02.01 ~183-217, ~229-249: S_CONTROL_WORD / S_TIME_CONSTANT / S_WAIT /

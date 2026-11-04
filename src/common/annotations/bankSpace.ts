@@ -43,7 +43,7 @@ import {
  * - `ht1080z`: no partitions, no mirrors. Two ROM pages at fixed addresses, the BASIC (`-1`,
  *   $0000-$2FFF) and the extension (`-2`, $3000-$37FF), each counted from its own start; RAM from
  *   $4000 as 16K blocks 1-3. The keyboard and the video RAM ($3800-$3FFF) cannot be annotated.
- * - `tvc`: the Videoton TVC's 16K partitions, as the 128K's (`.ai/videoton-tvc.md`, "Memory
+ * - `tvc`: the Videoton TVC's 16K partitions, as the 128K's (`dev/ai/videoton-tvc.md`, "Memory
  *   partitions, history and profile"): U0-U3 are banks 0-3, the video banks 4 (and 5-7 on the
  *   64K+). The ROM is named by chip, each its own file and so its own sidecar (`TVC_ROM_PAGES`):
  *   SYS's low half (-1) and high half (-9), and EXTH (-3, the high half of EXT; the card window
