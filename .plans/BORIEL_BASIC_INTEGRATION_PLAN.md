@@ -1,6 +1,6 @@
 # Boriel BASIC (zxbc 2.0) Integration — Implementation Plan
 
-Status: **approved for implementation; Phases B0-B6 done** (2026-10-17, HEAD `2cebbd732`). Decisions B1, B-L1, B-T1 and B-T2 are settled (§0).
+Status: **Phases B0-B6 done** (2026-10-17, HEAD `2cebbd732`); **not complete**: the readiness gate (§11) and the items in §13 are open. Decisions B1, B-L1, B-T1 and B-T2 are settled (§0).
 Inputs: the setup kits, now in `vendor/boriel-basic/` (`kit.json` + git-ignored `kits/`; see §3.1) and the debug
 format published at <https://zxbasic.readthedocs.io/en/v2.0/debug_format/> (pages *Statements &
 Addresses*, *Callables*, *Call Sites*, *Variables*, *Banking*).
@@ -732,8 +732,12 @@ The following need no Boriel-specific code beyond the adapter, once the frame-lo
     So a banked 128K build also runs `-f tap -B -a` (with `--debug`) and hands the tape over as
     `prebuiltTape`; the TAP/TZX export saves its blocks unchanged, and says that `-as`, `-n`, `-b`,
     `-scr` and the other loader options have no effect on it. `boriel-ide-check.cjs banked` exports,
-    loads and runs it (the program's `total` read from a snapshot). Why Klive's loader fails with
-    zxbc's runtime was not investigated further.
+    loads and runs it (the program's `total` read from a snapshot). **Cause found (2026-11-04):**
+    the loader did not CLEAR without `-c`, so the machine stack stayed under BASIC's default RAMTOP
+    ($FF4A), inside the $C000 window; the loader's own paging and zxbc's far calls swapped it out.
+    Klive's banked 128K loader now always CLEARs below the code (`spectrumTapeBlocks.ts`), and
+    `test/boriel/boriel-banked-tape.test.ts` loads the fixture through it on the 128K core. The Boriel
+    export still hands over zxbc's own tape.
 
 1. **128K.** zxbc refuses `bin` and `sna` for a banked build. It writes only `tap`, `tzx` or `z80`
    (B0). Build `-f z80 -B -a`, read the snapshot with Klive's own `.z80` reader, and turn its RAM banks
@@ -963,3 +967,30 @@ All of these are needed before anyone proposes making Boriel the default:
 
 The extractor refactor (B1, step 1) and the `sourceFileList` guard (B2) are independent of
 everything else and can land first.
+
+---
+
+## 13. Remaining work (state as of 2026-11-04)
+
+Carried over from the handoff note written at the end of B6 (removed 2026-11-04, in git history at
+`361b2b1fe1~1:.plans/BORIEL_BASIC_HANDOFF.md`). In order:
+
+0. **New versions and `.dbg` format changes** are tracked by
+   `.plans/BORIEL_BASIC_UPDATE_TRACKING_PLAN.md` (proposed, not built). The pin moved from beta25 to
+   **`2.0.0-beta29`** on 2026-10-24 by hand (#1510); what changed is in `.ai/boriel/README.md`,
+   "Version history".
+1. **Unverified platforms.** The x86_64 Linux and Windows kits have never been run, and no CI
+   workflow runs a Boriel install test yet (§2 planned them as part of B1's CI install tests).
+   Unchecked on Windows: `;` as the `-I`/`-m` separator (`boriel-options.ts`), and skipping the
+   34.5 MB of `.pdb` files (§3.4).
+2. **Klive sometimes does not quit** under the IDE check's Playwright driver: seen twice, once after
+   the `ui` part and once after a Next session paused at a breakpoint. The check ends such a
+   process after 20 s and says so. Not Boriel-specific as far as known.
+3. **The readiness gate** (§11) before anyone proposes Boriel as the default: a production licence
+   for a non-beta version, installs on every platform from a fresh `HOME`, and every template and
+   the debugger corpus through `boriel-ide-check.cjs`. The Next template
+   (`src/public/project-templates/zxnext/zx-basic/code/program.zxbas`) cannot pass while it uses
+   CODEBANK; a Boriel variant of it (a `MODULE` with `'@split-modules`) would.
+4. **Small leftovers:** debugging a `.nex` built outside Klive from zxbc's raw `.dbg` (§6.4). The
+   128K tape loader crash is fixed (§7); whether a banked Boriel export should go back to Klive's
+   loader (so `-as`, `-n`, `-b`, `-scr` work again) instead of zxbc's tape is still to decide.

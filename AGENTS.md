@@ -218,8 +218,9 @@ merely uncoloured, which no route diff can see.
 ## Boriel BASIC (the external zxbc 2.x)
 
 - `zxbasic.compiler` picks `klive` (default) or `boriel` for `.zxbas`/`.bas`. The plan is
-  `.plans/BORIEL_BASIC_INTEGRATION_PLAN.md` (each phase opens with an "As built" note). Read `.ai/boriel/README.md` before
-  touching `src/main/boriel-integration/`: it records what zxbc 2.0.0-beta25 actually does.
+  `.plans/BORIEL_BASIC_INTEGRATION_PLAN.md` (each phase opens with an "As built" note);
+  what is still open is its §13. Read `.ai/boriel/README.md` before
+  touching `src/main/boriel-integration/`: it records what zxbc 2.0.0-beta29 actually does.
 - The setup kits live in `vendor/boriel-basic/` (`kit.json` tracked, archives fetched and
   git-ignored). Test fixtures in `test/boriel/fixtures/` are zxbc output: regenerate them with
   `npm run boriel:fixtures`, never edit them. `scripts/boriel-ide-check.cjs` checks the running IDE.

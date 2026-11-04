@@ -1,7 +1,7 @@
 # Boriel BASIC — tracking new versions and the `.dbg` format
 
 Status: **proposed** (2026-10-17). Builds on `.plans/BORIEL_BASIC_INTEGRATION_PLAN.md` (Phases
-B0-B6 done) and its handoff, `.plans/BORIEL_BASIC_HANDOFF.md` (done and removed; see git history). Decisions B-L1, B-T1 and B-T2 there
+B0-B6 done) and its handoff, now §13 of that plan. Decisions B-L1, B-T1 and B-T2 there
 stay binding. This plan adds no automatic upgrade: it finds changes and prepares the upgrade, and a
 person (or an AI session started by one) makes it.
 
