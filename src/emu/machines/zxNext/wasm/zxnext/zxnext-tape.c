@@ -1,7 +1,7 @@
 #include "zxnext-tape.h"
 
 /*
- * The ZX Spectrum Next's tape (`.plans/NEXT_TAPE_PLAN.md`).
+ * The ZX Spectrum Next's tape.
  *
  * The player is the Spectrum cores' (`zx-spectrum-tape.c`): TAP/TZX blocks played while the ROM's
  * LD-BYTES runs, fast load by trapping it, SA-BYTES captured into a saved TZX. Its names stay its own

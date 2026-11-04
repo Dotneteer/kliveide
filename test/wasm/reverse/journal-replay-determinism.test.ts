@@ -298,7 +298,7 @@ handler:
     s.setNextReg(0xa2, 0xc1).piI2sConnect({ rate: 44_100, sample: (k) => (k % 50 < 25 ? [0x7fff, 0x6000] : [-0x8000, -0x6000]) });
   }
   if (tape) {
-    // --- A tape playing in real time (NEXT_TAPE_PLAN): the input stage steps lazily, the program reads
+    // --- A tape playing in real time: the input stage steps lazily, the program reads
     // --- it through port $FE every frame, and its edges reach the MIC line
     s.insertTape(FLOAT_SPY_BLOCKS, { fastLoad: false }).tapeMode("load");
   }

@@ -203,7 +203,7 @@ export function createDebugMenu(context: MenuContext): MenuItemConstructorOption
           }
         ]
       : []),
-    // --- The ROMs' annotations by machine type (`.plans/ROM_ANNOTATIONS_MENU_PLAN.md` D1): no machine
+    // --- The ROMs' annotations by machine type: no machine
     // --- needs to run, so every machine shows it; the editor opens in the IDE
     createRomAnnotationsMenu(machineRegistry, (entry) =>
       openRomAnnotations(entry, context.ensureIdeWindow, context.focusedWindow())

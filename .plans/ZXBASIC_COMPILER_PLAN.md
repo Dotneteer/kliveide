@@ -52,7 +52,7 @@ level 3 is 17.3% smaller and 6.3% faster than level 0 on the corpus, every level
 the debugger corpus and the step tests. **Phase 8 in progress** (2026-09-27): the zxbc oracle has run
 over the whole corpus and the semantics annex is settled (38 entries decided, one open) — see "Phase 8
 state" in the Handoff. **Compatibility (2026-09-27, project author):** Klive BASIC is to be 100%
-compatible with ZX BASIC; that work is `.plans/ZXBASIC_COMPATIBILITY_PLAN.md`, which supersedes this
+compatible with ZX BASIC; that work is `.plans/ZXBASIC_COMPATIBILITY_PLAN.md` (done and removed; see git history), which supersedes this
 plan where they disagree. **Compatibility done** (2026-09-28, stages C0–C8): the language, the
 options and pragmas, the documented standard library and zxbasm-dialect inline asm agree with zxbc
 1.19 across the compatibility suites and the corpus, apart from the recorded deliberate differences
@@ -361,7 +361,7 @@ debuggable at source level, in the emulator tests and in the running IDE.
   with A Invalid argument; PRINT of a Fixed writes every decimal digit (`PrintFixed`). K407 is gone
   (VAL of a constant that is not a number now runs).
 - **Kept as Klive decisions** (project author) — **reversed later the same day**: Klive BASIC is to
-  be 100% compatible with ZX BASIC, `.plans/ZXBASIC_COMPATIBILITY_PLAN.md`; those annex entries are
+  be 100% compatible with ZX BASIC, `.plans/ZXBASIC_COMPATIBILITY_PLAN.md` (done and removed; see git history); those annex entries are
   `open` again. Kept at the time: MOD and division of negatives (one rule for every
   type), the documented literal typing (`integers/literal-typing.zxbas`), FOR evaluating its limit
   once. The annex's new `oracle` field says what upstream does; each program that differs carries
@@ -375,7 +375,7 @@ debuggable at source level, in the emulator tests and in the running IDE.
   `preprocessor/{elif,keyword-macro}`, `strings/escape-unknown`, `routines/implicit-global`,
   `print/udg-codes`, `builtins/val-error` (166 programs). Signed division by zero was not pinned
   before: it gives the quotient's sign (-7 / 0 = 1), which is also upstream's.
-- **Next: the compatibility plan** (`.plans/ZXBASIC_COMPATIBILITY_PLAN.md`), stage C1 onwards; its
+- **Next: the compatibility plan** (`.plans/ZXBASIC_COMPATIBILITY_PLAN.md` (done and removed; see git history)), stage C1 onwards; its
   stage C0 (DO…LOOP: `DO LOOP UNTIL c` accepted, a bare DO's LOOP on the body's only line rejected with
   E315, as zxbc) is done. Its C5–C7 cover §6.5 (zxbasm dialect, nextlib), §6.4 (the library) and the
   options. Still open besides: `string-concatenation-overflow` (no practical test). Then the rest of
@@ -587,7 +587,7 @@ preference.
 | --- | --- | --- |
 | D8 (was P1) | Header options use the `'@name value` form (§5.1). | `'!` belongs to NextBuild and is kept as a compatibility alias; `'#` looks like a preprocessor line. |
 | D9 (was P2) | Klive BASIC takes over the `zxbas` language id; the external `zxbc` integration stays selectable through a setting (§12.1). | One file type, one editor, no user migration. |
-| D10 (was P3) | Stdlib `.bas` files and user inline asm written in zxbasm dialect are accepted through the same converter that imports the runtime, behind `'@asm-dialect zxbasm` (§6.5). **Superseded by D-C4 of `.plans/ZXBASIC_COMPATIBILITY_PLAN.md`: zxbasm is the default, Klive's dialect is opted into.** | Keeps D4 while still compiling existing libraries such as NextBuild's `nextlib`. |
+| D10 (was P3) | Stdlib `.bas` files and user inline asm written in zxbasm dialect are accepted through the same converter that imports the runtime, behind `'@asm-dialect zxbasm` (§6.5). **Superseded by D-C4 of `.plans/ZXBASIC_COMPATIBILITY_PLAN.md` (done and removed; see git history): zxbasm is the default, Klive's dialect is opted into.** | Keeps D4 while still compiling existing libraries such as NextBuild's `nextlib`. |
 | D11 (was P4) | `klive.debug` compiles with a **debug profile** that caps optimisation at level 1 unless the source asks otherwise (§8.6). | Source stepping stays trustworthy by default. |
 | D12 | **Upstream `zxbc` may be run as a behavioural oracle** (2026-09-26, resolves R9). A developer may run a locally installed `zxbc` on Klive's own test programs and record the **observable results** (screen text, memory values, error reports). Running the tool is allowed; reading its source for design, or copying its output code, tests or libraries into Klive, is not. The oracle never runs in CI. |
 

@@ -152,7 +152,7 @@ export const E2E_KBASIC_TESTS: string[] = [
  * they add to an everyday run - exhaustive sweeps (every ROM, every machine, the whole corpus under
  * the debugger), determinism and contract checks that build the cores twice, and the zxbc
  * compatibility and optimiser reports. They are measured, not guessed: each took 17-143 s of a full
- * local run, ~1090 of its ~2400 test-seconds (`.plans/FAST_SLOW_TEST_TIERS_PLAN.md`).
+ * local run, ~1090 of its ~2400 test-seconds.
  *
  * Every entry must also match one of the lists above (that decides the unit-tier guard and the
  * inputs); being here moves it from its fast tier into `e2e-slow`. `npm test`, CI and

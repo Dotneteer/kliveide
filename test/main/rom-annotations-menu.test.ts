@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { MenuItemConstructorOptions } from "electron";
 
 /*
- * Debug › ROM Annotations (`.plans/ROM_ANNOTATIONS_MENU_PLAN.md`): a submenu per machine type with
+ * Debug › ROM Annotations: a submenu per machine type with
  * ROMs, in registry order, its ROM sets separated; an item runs `rom-ann-open ... -create` in the IDE.
  */
 

@@ -80,7 +80,7 @@ i18n-work/
 docs/generated/
 docs/content/en/reference/whats-new.mdx
 
-# Hallmark (.plans/HALLMARK_SITE_POLISH_PLAN.md, H2/H5): the pinned clone, its
+# Hallmark: the pinned clone, its
 # browser driver, run logs and reports stay local, never committed.
 .hallmark/
 .claude/skills/hallmark/

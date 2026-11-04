@@ -12,7 +12,7 @@ import {
 import { NEXT_ROM_SETS } from "@common/zxnext/romSets";
 
 /*
- * The Debug › ROM Annotations menu's table (`.plans/ROM_ANNOTATIONS_MENU_PLAN.md` D2), kept in step
+ * The Debug › ROM Annotations menu's table, kept in step
  * with the ROMs Klive knows (`KNOWN_ROM_PAGES`), the shipped sidecars' index and the shipped files.
  */
 

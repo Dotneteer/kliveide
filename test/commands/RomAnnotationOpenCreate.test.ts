@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 /*
- * `rom-ann-open -create` (`.plans/ROM_ANNOTATIONS_MENU_PLAN.md` D4): a ROM with neither a working copy
+ * `rom-ann-open -create`: a ROM with neither a working copy
  * nor shipped annotations gets an empty working copy, as `rom-ann-new` would make, and it opens.
  * Without the option the command still says the ROM has no annotations.
  */

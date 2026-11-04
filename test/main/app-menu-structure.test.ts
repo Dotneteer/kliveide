@@ -241,7 +241,7 @@ describe("the application menu", () => {
       "Restart",
       // --- No Speed: the Next sets its own CPU speed (MF_ALLOW_CLOCK_MULTIPLIER)
       "Sound",
-      // --- The 48K ROM's tape routines through the Next's EAR input (NEXT_TAPE_PLAN)
+      // --- The 48K ROM's tape routines through the Next's EAR input
       "Tape",
       "SD Card",
       "Input",
@@ -275,7 +275,7 @@ describe("the application menu", () => {
     expect(debugLabels).toContain("Save Debug Recording...");
     expect(debugLabels).toContain("Open Debug Recording...");
     expect(labels(menu(buildMenu("c64"), "Debug"))).not.toContain("Open Debug Recording...");
-    // --- ROM Annotations: every machine, whatever runs (ROM_ANNOTATIONS_MENU_PLAN D1)
+    // --- ROM Annotations: every machine, whatever runs
     expect(labels(menu(buildMenu("c64"), "Debug"))).toContain("ROM Annotations");
     expect(labels(menu(buildMenu("zxnext", undefined, "emu", false), "Debug"))).toContain("ROM Annotations");
     const saveItem = (template: MenuItemConstructorOptions[]) => menu(template, "Debug").find((i) => i.id === "save_debug_recording");

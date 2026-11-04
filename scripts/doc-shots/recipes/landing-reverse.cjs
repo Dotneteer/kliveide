@@ -1,5 +1,5 @@
 /**
- * The landing page's first carousel item (step 3 of .plans/HALLMARK_SITE_POLISH_PLAN.md): a short
+ * The landing page's first carousel item: a short
  * loop of reverse debugging, recorded with Klive's own IDE + Emulator recording
  * (Machine › Record › Start IDE + Emulator recording), not with a screen grabber.
  *

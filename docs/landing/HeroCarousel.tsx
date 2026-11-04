@@ -13,8 +13,8 @@
  *   often rests on it and a clicked arrow keeps the focus.
  * - Buttons, dots and the arrow keys change slides; each slide has a caption, which is also the
  *   image's description for screen readers.
- * - Each picture is a link to its file, which ImageViewer opens full size over the page (R5 of
- *   .plans/DOCS_SITE_REDESIGN_PLAN.md). While the viewer is open the carousel stands still; it
+ * - Each picture is a link to its file, which ImageViewer opens full size over the page.
+ *   While the viewer is open the carousel stands still; it
  *   tells us through the VIEWER_EVENT it sends on the document.
  * - A slide with a `video` shows it muted, with the picture as its poster. Script starts it when
  *   the slide shows, and the carousel moves on when it ends rather than after five seconds; the

@@ -218,8 +218,7 @@ merely uncoloured, which no route diff can see.
 ## Boriel BASIC (the external zxbc 2.x)
 
 - `zxbasic.compiler` picks `klive` (default) or `boriel` for `.zxbas`/`.bas`. The plan is
-  `.plans/BORIEL_BASIC_INTEGRATION_PLAN.md` (each phase opens with an "As built" note); the current
-  state and next steps are in `.plans/BORIEL_BASIC_HANDOFF.md`. Read `.ai/boriel/README.md` before
+  `.plans/BORIEL_BASIC_INTEGRATION_PLAN.md` (each phase opens with an "As built" note). Read `.ai/boriel/README.md` before
   touching `src/main/boriel-integration/`: it records what zxbc 2.0.0-beta25 actually does.
 - The setup kits live in `vendor/boriel-basic/` (`kit.json` tracked, archives fetched and
   git-ignored). Test fixtures in `test/boriel/fixtures/` are zxbc output: regenerate them with
@@ -355,7 +354,7 @@ merely uncoloured, which no route diff can see.
     everything) **when a plan is about to complete and before `npm run release:prepare`** - not after
     every step. GitHub runs it only from the manual "Slow tests" workflow; push, PRs and the release
     never do. `release:prepare` warns when it has not passed on the current sources
-    (`npm run test:slow-status`). The plan is `.plans/FAST_SLOW_TEST_TIERS_PLAN.md`.
+    (`npm run test:slow-status`).
   - The tiers are listed in `build/e2e-tests.ts`. **A new test that runs a core goes there**: in the
     unit tier, instantiating a core fails with a message saying so (`test/vitest.setup.ts`).
   - **Keep the fast set fast**: a fast-tier file over 20 s in a full run (`npm run test:timings`)

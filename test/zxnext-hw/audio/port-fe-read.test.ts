@@ -4,8 +4,8 @@ import { createSession, type NextTestSession } from "../../harness/zxnext";
 
 /*
  * What a program reads back from port $FE bit 6 with no tape playing: the EAR output bit and, with the
- * issue 2 keyboard, the MIC bit (the audio series' beeper article, plan
- * `.plans/NEXT_AUDIO_ARTICLES_PLAN.md` §4).
+ * issue 2 keyboard, the MIC bit (the audio series'
+ * beeper article).
  *
  * Hardware (`vendor/next-fpga/3.02.01/src`):
  * - zxnext.vhd ~3456: port_fe_dat_0 = '1' & ((i_AUDIO_EAR xor pi_fe_ear) or (port_fe_ear or

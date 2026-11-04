@@ -1,8 +1,7 @@
 # Writing "Under The Hood" Hardware Articles
 
 How to write an article that explains how a machine works inside, in the style of the ZX Spectrum Next
-screen series (`docs/content/en/under-the-hood/emulator-internals/next-display/`, ten articles, plan
-`.plans/NEXT_SCREEN_ARTICLES_PLAN.md`) and its models `spectrum-display.mdx` and `zx81-display.mdx`.
+screen series (`docs/content/en/under-the-hood/emulator-internals/next-display/`, ten articles) and its models `spectrum-display.mdx` and `zx81-display.mdx`.
 Read this before planning or writing a similar article or series. Every rule below was either a ground
 rule of that series or a correction the project author made while reviewing it: the corrections are the
 part a new session would otherwise repeat.

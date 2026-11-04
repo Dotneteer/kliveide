@@ -6,7 +6,7 @@ import { createTestZxNextWasmMachine } from "./wasm-next-test-helpers";
 
 /*
  * The Next's tape lines as the host sees them (`ZxNextWasmV2Machine.tapeDevice`): the player is the
- * Spectrum cores' (`zx-spectrum-tape.c`, `.plans/NEXT_TAPE_PLAN.md`), so the device follows its
+ * Spectrum cores' (`zx-spectrum-tape.c`), so the device follows its
  * conventions - the socket's level rests high (1) between and without tapes, the SAVE capture's MIC
  * line starts high and follows port $FE bit 3 only while the deck records. What the machine reads is
  * the conditioned input, `test/zxnext-hw/tape/tape.test.ts`.

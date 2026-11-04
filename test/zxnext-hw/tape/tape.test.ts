@@ -6,9 +6,9 @@ import { createSession, type NextTestSession } from "../../harness/zxnext";
 import { edgeStep, side } from "../audio/_audio-helpers";
 
 /*
- * The Next's tape (`.plans/NEXT_TAPE_PLAN.md`; catalogue TAPE-001 - TAPE-008).
+ * The Next's tape (catalogue TAPE-001 - TAPE-008).
  *
- * (TAPE-009 is the audio series' beeper article, `.plans/NEXT_AUDIO_ARTICLES_PLAN.md` §4.)
+ * (TAPE-009 is the audio series' beeper article.)
  *
  * Hardware (`vendor/next-fpga/3.02.01/src`):
  * - zxnext_top_issue4.vhd ~620-690: the EAR socket goes through `debounce` (COUNTER_SIZE 1 on the

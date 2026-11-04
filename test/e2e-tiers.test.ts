@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { E2E_CORE_TESTS, E2E_KBASIC_TESTS, E2E_SLOW_TESTS } from "../build/e2e-tests";
 
 /*
- * The slow tier is carved out of the two fast e2e lists (`.plans/FAST_SLOW_TEST_TIERS_PLAN.md`). An
+ * The slow tier is carved out of the two fast e2e lists. An
  * entry that names a missing file silently stops excluding anything, and one outside both lists
  * would run in the unit tier as well - so both are checked here.
  */

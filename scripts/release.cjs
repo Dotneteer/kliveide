@@ -187,8 +187,7 @@ function prepare(opts) {
   });
   const body = lib.releasePrBody({ version, lastRelease: last, section, reason, unlocks, consumed: pending.length });
 
-  // --- The slow test tier is never a release gate; a stale one is worth a warning, not a stop
-  // --- (.plans/FAST_SLOW_TEST_TIERS_PLAN.md D3).
+  // --- The slow test tier is never a release gate; a stale one is worth a warning, not a stop.
   if (!run("node", ["scripts/run-tests.cjs", "--slow-status"], { allowFail: true }).ok) {
     console.warn(
       "Warning: the slow test tier has not passed on these sources. The release runs only the fast tiers;\n" +

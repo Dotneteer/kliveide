@@ -1,6 +1,6 @@
 /**
- * Reports the wording habits that make a documentation page read as machine-written
- * (step 4 of .plans/HALLMARK_SITE_POLISH_PLAN.md, H4): buzzwords, filler, em and en dashes,
+ * Reports the wording habits that make a documentation page read as machine-written:
+ * buzzwords, filler, em and en dashes,
  * middle-dot meta strings and arrows glued to link text. The list is Klive's own, written for
  * documentation and informed by Hallmark's copy rule (19) and punctuation rule (63).
  *

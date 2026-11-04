@@ -2,8 +2,8 @@ import { NEXT_ROM_SETS, nextRomAnnotationFile, type NextRomSet } from "@common/z
 import { MI_ENTERPRISE, MI_HT1080Z, MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48, MI_TVC, MI_ZX80, MI_ZX81, MI_ZXNEXT } from "@common/machines/constants";
 
 /*
- * The ROMs the Debug › ROM Annotations menu offers, by machine type (`.plans/ROM_ANNOTATIONS_MENU_PLAN.md`
- * D2). Every ROM page Klive ships and knows — the pages of `KNOWN_ROM_PAGES` and every page with a
+ * The ROMs the Debug › ROM Annotations menu offers, by machine type.
+ * Every ROM page Klive ships and knows — the pages of `KNOWN_ROM_PAGES` and every page with a
  * shipped sidecar — is listed here, under each ROM set that has it (a page two sets share opens the
  * same annotations: they are found by the page's bytes). `test/annotations/romAnnotationCatalog.test.ts`
  * keeps the table in step with both sources and with the files in `src/public/roms`.

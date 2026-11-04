@@ -3162,12 +3162,12 @@ drift. Change a neutral or the default accent in the app, and the site changes w
 `tokens.css` in the same change. Nextra's own chrome takes the same accent and canvas through
 `<Head color backgroundColor>` in `docs/app/[lang]/layout.tsx`.
 
-- **The site must not look AI-generated** (`.plans/DOCS_SITE_REDESIGN_PLAN.md`). The author turned
+- **The site must not look AI-generated**. The author turned
   down the generic landing-page kit: Inter-like fonts, an 800-weight headline with negative letter
   spacing, one headline word in the accent, a mono version pill, uppercase letter-spaced mono
   eyebrows, grey body text, arrow links, pill tags, equal "bento" tiles, a numbered step strip,
   zigzag features and a centred closing call to action. Do not bring any of them back. Nor the
-  ones Hallmark's audit found after that (`.plans/HALLMARK_SITE_POLISH_PLAN.md`, `docs/design.md`):
+  ones Hallmark's audit found after that (`docs/design.md`):
   a label above a heading, middle-dot lists (`A · B · C`), "Not X. Y." headlines, stock lines
   ("What makes X different", "Ready to...?", "Read more", "Get started" as a button), em and en
   dashes in landing texts, and a see-through blurred header.

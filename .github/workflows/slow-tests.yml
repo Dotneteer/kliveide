@@ -3,7 +3,7 @@
 #
 # Run it by hand ("Run workflow", any branch) when a plan is about to complete and before
 # `npm run release:prepare` - the GitHub counterpart of `npm run test:slow`. Push, pull requests and
-# the Release workflow never run it (`.plans/FAST_SLOW_TEST_TIERS_PLAN.md` D1).
+# the Release workflow never run it.
 
 name: Slow tests
 

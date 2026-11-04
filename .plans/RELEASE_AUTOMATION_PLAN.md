@@ -256,7 +256,7 @@ Then:
 8. Run the gates: `npm run build:check`, `npm run lint:renderer`, `npm run test:fast`,
    `npm run doc:build && npm run doc:check`. These are the same as CI's, run up front so a release
    PR is never the first place a failure shows up. (Was `test:all`; the slow test tier is run before
-   `release:prepare`, which only warns when it is stale - `.plans/FAST_SLOW_TEST_TIERS_PLAN.md`.) (`--skip-tests` exists for re-runs, never for a
+   `release:prepare`, which only warns when it is stale - `.plans/FAST_SLOW_TEST_TIERS_PLAN.md` (done and removed; see git history).) (`--skip-tests` exists for re-runs, never for a
    first run.)
 9. Commit `Release v<version>`, push, and open the PR with `gh pr create`. The PR body is
    generated and contains:

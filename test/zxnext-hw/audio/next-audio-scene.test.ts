@@ -8,8 +8,8 @@ import { ay, edgeStep, frequency, MASTER_CLOCK, relativeError, side, swing } fro
 
 /*
  * The machine captures of the audio series "ZX Spectrum Next: how the sound is made"
- * (docs/content/en/under-the-hood/emulator-internals/next-audio/, plan
- * `.plans/NEXT_AUDIO_ARTICLES_PLAN.md` §0.4). Each scene drives a sound source through ports and
+ * (docs/content/en/under-the-hood/emulator-internals/next-audio/).
+ * Each scene drives a sound source through ports and
  * NextRegs as a program would, checks the facts the article states about it, and only then, with
  * NEXT_AUDIO_SHOTS=<dir>, writes the captured samples as `<dir>/<article>/<scene>.json`. The usual
  * <dir> is `docs/authoring/next-audio/captures`; the article's figure generator

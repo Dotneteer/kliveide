@@ -2420,7 +2420,7 @@ export class ZxNextWasmV2Machine
 
 
 
-  // --- The tape (`.plans/NEXT_TAPE_PLAN.md`): the core plays the deck's blocks while ROM 3's LD-BYTES
+  // --- The tape: the core plays the deck's blocks while ROM 3's LD-BYTES
   // --- runs, fast-loads by trapping it, and captures what SA-BYTES writes. This side uploads the
   // --- inserted tape and publishes a SAVE, as the Spectrum machines do.
   private wasmV2SavedTapeRevision = 0;
