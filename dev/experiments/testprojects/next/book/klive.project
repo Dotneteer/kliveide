@@ -1,19 +1,16 @@
 {
-  "kliveVersion": "0.58.2",
-  "machineType": "sp48",
-  "modelId": "pal",
-  "config": {},
+  "kliveVersion": "0.59.0",
+  "machineType": "zxnext",
+  "modelId": "standard",
+  "config": {
+    "zxnextImplementation": "wasm"
+  },
   "clockMultiplier": 1,
-  "soundLevel": 1,
+  "soundLevel": 0.8,
   "soundMuted": false,
-  "savedSoundLevel": 1,
+  "savedSoundLevel": 0.8,
   "media": {
-    "sdCard": "/Users/dotneteer/Klive/ks2.cim",
-    "tape": "/Users/dotneteer/Downloads/LTK128/LTK128.TAP",
-    "diskA": {
-      "diskFile": "/Users/dotneteer/disk1.dsk",
-      "writeProtected": false
-    }
+    "sdCard": "/Users/dotneteer/Klive/ks2.cim"
   },
   "machineSpecific": {},
   "ide": {
@@ -23,10 +20,20 @@
     "theme": "dark"
   },
   "debugger": {
-    "breakpoints": []
+    "breakpoints": [
+      {
+        "resource": "next/book/main.kz80.asm",
+        "line": 9,
+        "exec": true,
+        "ioMask": 65535
+      }
+    ],
+    "watchExpressions": []
   },
   "builder": {
-    "roots": []
+    "roots": [
+      "main.kz80.asm"
+    ]
   },
   "workspaceSettings": {
     "docsWorkspace": {
@@ -42,22 +49,22 @@
           "documents": [
             {
               "type": "CodeEditor",
-              "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/screen-tests/klive.project",
+              "id": "/Users/dotneteer/source/kliveide/dev/experiments/testprojects/next/book/main.kz80.asm",
               "position": {
-                "line": 0,
-                "column": 0
+                "line": 6,
+                "column": 7
               },
               "viewState": {
                 "cursorState": [
                   {
                     "inSelectionMode": false,
                     "selectionStart": {
-                      "lineNumber": 1,
-                      "column": 1
+                      "lineNumber": 6,
+                      "column": 7
                     },
                     "position": {
-                      "lineNumber": 1,
-                      "column": 1
+                      "lineNumber": 6,
+                      "column": 7
                     }
                   }
                 ],
@@ -79,7 +86,7 @@
               }
             }
           ],
-          "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/screen-tests/klive.project"
+          "activeDocumentId": "/Users/dotneteer/source/kliveide/dev/experiments/testprojects/next/book/main.kz80.asm"
         }
       ]
     }

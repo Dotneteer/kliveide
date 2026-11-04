@@ -3,7 +3,7 @@
  * English. Shots go to `images/landing/`.
  *
  * Everything shows one program running: ScrollNutter.nex, the annotated ZX Spectrum Next demo in
- * `_experiments/testprojects/disann/` (its `.nex.dis` holds labels, synopses and comments). The
+ * `dev/experiments/testprojects/disann/` (its `.nex.dis` holds labels, synopses and comments). The
  * recipe runs it with `nex-run`, then photographs:
  *
  * - `emulator-scrollnutter.webp` - the emulator running the demo;
@@ -22,7 +22,7 @@ const fs = require("fs");
 const os = require("os");
 const { fixtureProjectFolder, REPO } = require("../harness.cjs");
 
-const DEMO = path.join(REPO, "_experiments", "testprojects", "disann");
+const DEMO = path.join(REPO, "dev", "experiments", "testprojects", "disann");
 const USER_HOME = path.join(os.tmpdir(), "klive-landing-home");
 const IDE = "#themeRoot";
 

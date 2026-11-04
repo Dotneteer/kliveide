@@ -62,14 +62,14 @@
           "documents": [
             {
               "type": "Z88SnapshotViewer",
-              "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/oz5-08/mm+jsw-oz5.z88",
+              "id": "/Users/dotneteer/source/kliveide/dev/experiments/testprojects/oz5-08/mm+jsw-oz5.z88",
               "position": {
                 "line": 0,
                 "column": 0
               }
             }
           ],
-          "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/oz5-08/mm+jsw-oz5.z88"
+          "activeDocumentId": "/Users/dotneteer/source/kliveide/dev/experiments/testprojects/oz5-08/mm+jsw-oz5.z88"
         }
       ]
     }

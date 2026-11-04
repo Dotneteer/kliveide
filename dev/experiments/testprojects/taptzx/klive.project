@@ -7,7 +7,7 @@
   "savedSoundLevel": 0.8,
   "media": {
     "sdCard": "/Users/dotneteer/Klive/ks2.cim",
-    "tape": "/Users/dotneteer/source/kliveide/_experiments/testprojects/taptzx/LTK128.TAP"
+    "tape": "/Users/dotneteer/source/kliveide/dev/experiments/testprojects/taptzx/LTK128.TAP"
   },
   "machineSpecific": {},
   "ide": {
@@ -46,7 +46,7 @@
           "documents": [
             {
               "type": "TapViewer",
-              "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/taptzx/floatspy.tap",
+              "id": "/Users/dotneteer/source/kliveide/dev/experiments/testprojects/taptzx/floatspy.tap",
               "position": {
                 "line": 0,
                 "column": 0
@@ -63,7 +63,7 @@
             },
             {
               "type": "TapViewer",
-              "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/taptzx/test.tzx",
+              "id": "/Users/dotneteer/source/kliveide/dev/experiments/testprojects/taptzx/test.tzx",
               "position": {
                 "line": 0,
                 "column": 0
@@ -79,7 +79,7 @@
             },
             {
               "type": "TapViewer",
-              "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/taptzx/LTK128.TAP",
+              "id": "/Users/dotneteer/source/kliveide/dev/experiments/testprojects/taptzx/LTK128.TAP",
               "position": {
                 "line": 0,
                 "column": 0
@@ -93,7 +93,7 @@
             },
             {
               "type": "CodeEditor",
-              "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/taptzx/code/code.kz80.asm",
+              "id": "/Users/dotneteer/source/kliveide/dev/experiments/testprojects/taptzx/code/code.kz80.asm",
               "position": {
                 "line": 0,
                 "column": 0
@@ -131,7 +131,7 @@
               }
             }
           ],
-          "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/taptzx/LTK128.TAP"
+          "activeDocumentId": "/Users/dotneteer/source/kliveide/dev/experiments/testprojects/taptzx/LTK128.TAP"
         }
       ]
     }

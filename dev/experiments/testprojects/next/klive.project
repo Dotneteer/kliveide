@@ -42,7 +42,7 @@
           "documents": [
             {
               "type": "CodeEditor",
-              "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/screen-tests/klive.project",
+              "id": "/Users/dotneteer/source/kliveide/dev/experiments/testprojects/next/screen-tests/klive.project",
               "position": {
                 "line": 0,
                 "column": 0
@@ -80,7 +80,7 @@
               }
             }
           ],
-          "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/screen-tests/klive.project"
+          "activeDocumentId": "/Users/dotneteer/source/kliveide/dev/experiments/testprojects/next/screen-tests/klive.project"
         }
       ]
     }

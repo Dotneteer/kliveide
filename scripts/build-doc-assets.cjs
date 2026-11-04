@@ -16,9 +16,9 @@ const { copyFileSync, existsSync, mkdirSync, rmSync, statSync } = require("node:
 const { dirname, join } = require("node:path");
 
 const repoRoot = join(__dirname, "..");
-const sourceDir = join(repoRoot, "_experiments", "testprojects", "next");
+const sourceDir = join(repoRoot, "dev", "experiments", "testprojects", "next");
 const bookDir = join(sourceDir, "book");
-const archive = join(repoRoot, "_experiments", "testprojects", "next-examples.zip");
+const archive = join(repoRoot, "dev", "experiments", "testprojects", "next-examples.zip");
 const published = join(repoRoot, "docs", "public", "next-examples.zip");
 
 // An external archiver is used rather than a Node library so the archive stays

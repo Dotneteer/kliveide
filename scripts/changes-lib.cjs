@@ -440,7 +440,7 @@ const GATE_EXEMPT = [
   /^\.vscode\//,
   /^\.claude\//,
   /^test\//,
-  /^_experiments\//,
+  /^dev\/experiments\//,
   /^_input\//,
   /^i18n-work\//,
   /^\.changes\//,

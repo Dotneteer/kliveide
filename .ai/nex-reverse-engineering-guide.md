@@ -53,8 +53,8 @@ read and when you write. This is the single most common way to corrupt a sidecar
 
 | What | Where |
 |---|---|
-| The NEX | `_experiments/testprojects/disann/ScrollNutter.nex` |
-| Its sidecar | `_experiments/testprojects/disann/ScrollNutter.nex.dis` |
+| The NEX | `dev/experiments/testprojects/disann/ScrollNutter.nex` |
+| Its sidecar | `dev/experiments/testprojects/disann/ScrollNutter.nex.dis` |
 | Next register reference | `vendor/next-fpga/3.02.01/nextreg.txt` |
 | I/O port reference | `vendor/next-fpga/3.02.01/ports.txt` |
 
@@ -267,7 +267,7 @@ import { loadNexFileContents } from "@renderer/appIde/DocumentPanels/Next/nexFil
 import { createAnnotatedNexDisassemblyItems } from "@renderer/appIde/DocumentPanels/Next/nexAnnotatedDisassembly";
 import { parseNexAnnotations } from "@renderer/appIde/DocumentPanels/Next/nexAnnotations";
 
-const NEX = resolve(__dirname, "../../_experiments/testprojects/disann/ScrollNutter.nex");
+const NEX = resolve(__dirname, "../../dev/experiments/testprojects/disann/ScrollNutter.nex");
 const BANK = 2;
 const BASE = 0x8000;   // offsetIndex * 0x4000 for this bank
 const FROM = 0x2600;   // bank-relative
