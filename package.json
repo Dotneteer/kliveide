@@ -75,7 +75,7 @@
     "visual:serve": "node test/harness/zxnext/cli/serve.cjs",
     "test:zxnext-wasm-acceptance": "npm test -- --project e2e-cores test/wasm/zxNext/wasm-next-factory-setup.test.ts test/wasm/zxNext/wasm-next-rollout.test.ts test/wasm/zxNext/wasm-next-public-adapter.test.ts test/wasm/zxNext/wasm-next-debug-step.test.ts test/wasm/zxNext/wasm-next-start-menu.test.ts test/wasm/zxNext/wasm-next-frame-runner.test.ts test/wasm/zxNext/wasm-next-performance-boundary.test.ts",
     "test:zxnext-wasm-matrix": "npm test -- --project e2e-cores test/wasm/zxNext",
-    "lint:renderer": "eslint src/renderer --ext .ts,.tsx",
+    "lint:renderer": "eslint --config build/eslint.config.cjs src/renderer --ext .ts,.tsx",
     "build:win": "npm run build:all-wasm && npm run build:app && npm run package:win",
     "prepackage:win": "node scripts/boriel-kit.cjs stage --platform win32 --arch x64",
     "package:win": "electron-builder build --win --x64 --publish never",
@@ -208,6 +208,12 @@
     "virtua": "^0.54.0",
     "vite-plugin-copy": "^0.1.6"
   },
+  "prettier": {
+    "singleQuote": false,
+    "semi": true,
+    "printWidth": 100,
+    "trailingComma": "none"
+  },
   "build": {
     "appId": "dotneteer.kliveide",
     "productName": "Klive IDE",
@@ -255,8 +261,6 @@
     },
     "files": [
       "**/*",
-      "!.prettierrc",
-      "!.prettierrc.yaml",
       "!.vscode",
       "!_input",
       "!vendor",
