@@ -9,6 +9,10 @@ Guidance for AI assistants working in this workspace.
 - Future and archived implementation plans live in `.plans/`.
 - Human- and AI-readable implementation pattern docs live in `.docs/`; read the relevant docs before changing established patterns.
 - Additional AI-oriented notes live in `.ai/`; read them before related work.
+- `dev/` is becoming the one home for everything that is for Klive's developers and never ships
+  (`dev/README.md`): `.ai/`, `.docs/` (as `dev/patterns/`), `.plans/`, `.changes/`, `_input/` (as
+  `dev/research/`), `_experiments/`, `vendor/` and `scripts/` move into it one step at a time
+  (`.plans/ROOT_DECLUTTER_PLAN.md`). Until a folder has moved, use its old path.
 
 ## Working Rules
 

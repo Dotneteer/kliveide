@@ -261,6 +261,7 @@
     },
     "files": [
       "**/*",
+      "!dev",
       "!.vscode",
       "!_input",
       "!vendor",
