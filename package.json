@@ -266,7 +266,7 @@
     ],
     "extraResources": [
       {
-        "from": "vendor/boriel-basic/stage",
+        "from": "dev/vendor/boriel-basic/stage",
         "to": "boriel",
         "filter": [
           "**/*"

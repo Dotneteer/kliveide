@@ -5,7 +5,7 @@
  *
  *   npm run next-roms:check              the committed files: present, size, sha256, page CRCs; the
  *                                         FPGA ROMs (`fpgaRoms`): size, sha256, page CRCs, and, when
- *                                         `vendor/next-fpga/<core>/` is fetched, the bytes of its VHDL table
+ *                                         `dev/vendor/next-fpga/<core>/` is fetched, the bytes of its VHDL table
  *   npm run next-roms:check -- --online  also re-downloads each file at its recorded commit and
  *                                         confirms it is the committed bytes (by hand, never in CI)
  *
@@ -16,7 +16,7 @@ const { createHash } = require("node:crypto");
 const { join } = require("node:path");
 const { describe, download, MANIFEST, ROM_ROOT } = require("./next-roms-fetch.cjs");
 
-const VENDOR = join(__dirname, "../vendor/next-fpga");
+const VENDOR = join(__dirname, "../dev/vendor/next-fpga");
 
 /** The bytes of a `romgen` VHDL table: rows of eight `x"NN"` values, each ending in `-- 0xADDR` */
 function romFromVhdl(text) {

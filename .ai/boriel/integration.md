@@ -19,11 +19,11 @@ Boriel BASIC cannot do compared with Klive BASIC is `limitations.md`.
 | B6 | Boriel builds read Klive's `'@name value` header options and translate them to zxbc flags (`options.md`), so one `program.zxbas` builds under both compilers. |
 | B-L1 | **Redistribution.** The project author holds Boriel's written permission (email) to bundle the beta kit. The kit ships no LICENSE file (`lib/NOTICE.md` names a proprietary licence for the binaries and calls `lib/` MIT apart from 216 header-less files), so a **production version needs its licence text in the installer and in `THIRD_PARTY_NOTICES.md`**. The UI says "Boriel BASIC 2.0 beta, redistributed with the author's permission". |
 | B-T1 | **zxbc never runs in CI.** zxbc's output for Klive's own small programs is committed as fixtures in `test/boriel/fixtures/` (regenerated with `npm run boriel:fixtures`, never edited); CI tests the adapter and the debugger on them. This is an exception to Klive BASIC's D12, limited to that folder. Tests that run the real zxbc skip when no kit is installed. |
-| B-T2 | **The version is pinned** in `vendor/boriel-basic/kit.json` (now `2.0.0-beta29`). A version change is deliberate and follows `updating.md`. |
+| B-T2 | **The version is pinned** in `dev/vendor/boriel-basic/kit.json` (now `2.0.0-beta29`). A version change is deliberate and follows `updating.md`. |
 
 ## The kits in the build
 
-- `vendor/boriel-basic/kit.json` (tracked) is the single source: `version`, `urlBase`, `mirrors`
+- `dev/vendor/boriel-basic/kit.json` (tracked) is the single source: `version`, `urlBase`, `mirrors`
   (empty today; tried after `urlBase` with the same hash check) and, per
   `process.platform`-`process.arch` key, the kit's `file`, `size` and `sha256`. `kits/` (all seven
   archives under Boriel's names) and `stage/` (the one kit a package includes) are git-ignored.
@@ -32,11 +32,11 @@ Boriel BASIC cannot do compared with Klive BASIC is `limitations.md`.
   `stage/`, fetching it first. The `prepackage:*` scripts run `stage`, so a package build without a
   verified kit fails instead of shipping none; `predev` runs `fetch --current --optional`, which only
   warns offline.
-- `package.json`'s `build.extraResources` has one entry, `vendor/boriel-basic/stage` → `boriel`.
-  `build.files` is an allowlist (`out/**/*` and the licence files), so nothing under `vendor/`
+- `package.json`'s `build.extraResources` has one entry, `dev/vendor/boriel-basic/stage` → `boriel`.
+  `build.files` is an allowlist (`out/**/*` and the licence files), so nothing under `dev/vendor/`
   reaches the app archive; the kit arrives only through `extraResources`.
 - `borielKitPath()` (`boriel-kit.ts`) finds the kit: `process.resourcesPath/boriel/<file>` packaged,
-  `vendor/boriel-basic/kits/<file>` in dev (searching upward from `app.getAppPath()`), or undefined
+  `dev/vendor/boriel-basic/kits/<file>` in dev (searching upward from `app.getAppPath()`), or undefined
   when the installer carries no kit, and then no offer is made.
 - Klive ships no Windows arm64 or armv7l build, so the `arm64-win` and `armv6-linux` kits are pinned
   but never shipped. Windows x64 Klive on ARM gets the x64 kit.

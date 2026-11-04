@@ -11,9 +11,10 @@ Guidance for AI assistants working in this workspace.
 - Additional AI-oriented notes live in `.ai/`; read them before related work.
 - `dev/` is becoming the one home for everything that is for Klive's developers and never ships
   (`dev/README.md`): `.ai/`, `.docs/` (as `dev/patterns/`), `.plans/`, `_input/` (as
-  `dev/research/`), `vendor/` and `scripts/` move into it one step at a time
+  `dev/research/`) and `scripts/` move into it one step at a time
   (`.plans/ROOT_DECLUTTER_PLAN.md`). Until a folder has moved, use its old path. Moved so far:
-  `_experiments/` (now `dev/experiments/`), `.changes/` (now `dev/changes/`).
+  `_experiments/` (now `dev/experiments/`), `.changes/` (now `dev/changes/`), `vendor/` (now
+  `dev/vendor/`).
 
 ## Working Rules
 
@@ -233,7 +234,7 @@ merely uncoloured, which no route diff can see.
   before touching `src/main/boriel-integration/`; the other notes record what zxbc 2.0.0-beta29
   actually does. **What is still open is `.ai/boriel/technical-debt.md`**: when an item there is
   done or decided, record it and remove it.
-- The setup kits live in `vendor/boriel-basic/` (`kit.json` tracked, archives fetched and
+- The setup kits live in `dev/vendor/boriel-basic/` (`kit.json` tracked, archives fetched and
   git-ignored). Test fixtures in `test/boriel/fixtures/` are zxbc output: regenerate them with
   `npm run boriel:fixtures`, never edit them. `scripts/boriel-ide-check.cjs` checks the running IDE.
 - **When the developer asks to update Klive to the latest (or a particular) Boriel BASIC version,
@@ -254,8 +255,8 @@ merely uncoloured, which no route diff can see.
     Read `.ai/visual-tests-guide.md` before writing one.
 - New tests for Next hardware behaviour go in `test/zxnext-hw/` through the harness. The mock-based
   device tests are gone: there is one Next machine, the WASM core, and its reference is the VHDL of
-  the model's core version, fetched by `npm run next-fpga:fetch` into `vendor/next-fpga/<version>/`
-  (never committed; Klive's VHDL comments are patches in `vendor/next-fpga/comments/`), not a second
+  the model's core version, fetched by `npm run next-fpga:fetch` into `dev/vendor/next-fpga/<version>/`
+  (never committed; Klive's VHDL comments are patches in `dev/vendor/next-fpga/comments/`), not a second
   emulator.
   `test/wasm/zxNext/` keeps what the harness cannot reach - the loader, the machine lifecycle,
   checkpoints, the debug loop, boot traces, IDE-facing state.

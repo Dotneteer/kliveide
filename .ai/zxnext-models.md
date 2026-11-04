@@ -37,14 +37,14 @@ Shipped profiles:
   the same hardware share an artifact. Hot paths pay nothing for another profile.
 - **D4 - The VHDL reference is downloaded, versioned and never committed.** The pins (upstream
   `gitlab.com/SpectrumNext/ZX_Spectrum_Next_FPGA`, full commit SHA, expected upstream blob ids) are
-  in `vendor/next-fpga/sources.json`; `npm run next-fpga:fetch` puts each version in the git-ignored
-  `vendor/next-fpga/<version>/`. Upstream has no tags; versions are branches, except 3.02.01, which
+  in `dev/vendor/next-fpga/sources.json`; `npm run next-fpga:fetch` puts each version in the git-ignored
+  `dev/vendor/next-fpga/<version>/`. Upstream has no tags; versions are branches, except 3.02.01, which
   is pinned to commit `5ad7546d` (the last before "Bump core number to 3.02.02"). Pin commits, not
   branch names. Readers resolve files through `nextFpgaPath(version, file)`
   (`scripts/next-fpga-path.cjs`), which names the fetch command when the tree is missing. A
   citation names the version (`zxnext.vhd@3.02.04 ~5186`); an unversioned one means 3.02.01. Nothing
   in CI reads the VHDL.
-- **D4.1 - Klive's VHDL comments are tracked patches** in `vendor/next-fpga/comments/<version>/`,
+- **D4.1 - Klive's VHDL comments are tracked patches** in `dev/vendor/next-fpga/comments/<version>/`,
   mirroring the upstream tree, applied by the fetch after the blob-id check (stamp
   `.klive-comments`). Edit the fetched file, then `npm run next-fpga:comments -- --save <version>`;
   never hand-edit a `.patch`. `--carry <from> <to>` starts a new version's patches from an older
@@ -108,7 +108,7 @@ Shipped profiles:
 | Compile-time defines | `src/emu/machines/zxNext/wasm/zxnext/zxnext-profile.h` |
 | Artifact list (must match `NEXT_PROFILES`) | `scripts/zxnext-artifacts.cjs`, checked by `test/wasm/zxNext/wasm-next-artifacts.test.ts` |
 | NextReg sets | `src/emu/machines/zxNext/nextRegDescriptors.ts` (base), `nextRegSets/` |
-| VHDL pins and comments | `vendor/next-fpga/sources.json`, `vendor/next-fpga/comments/<version>/` |
+| VHDL pins and comments | `dev/vendor/next-fpga/sources.json`, `dev/vendor/next-fpga/comments/<version>/` |
 | VHDL scripts | `npm run next-fpga:{fetch,comments,diff}` (`scripts/next-fpga-*.cjs`) |
 | ROM set manifest (provenance, hashes, page CRCs, facts, SD image) | `src/common/zxnext/nextRomSets.json`, typed by `src/common/zxnext/romSets.ts` (`nextRomPath`, `nextRomFolder`) |
 | ROMs and sidecars | `src/public/roms/zxnext/<setId>/` |
@@ -158,7 +158,7 @@ Shipped profiles:
 
 ## Adding a model
 
-1. **Reference material.** Add the core's pin to `vendor/next-fpga/sources.json` (full commit SHA,
+1. **Reference material.** Add the core's pin to `dev/vendor/next-fpga/sources.json` (full commit SHA,
    upstream blob ids), `npm run next-fpga:fetch`, carry the comments
    (`npm run next-fpga:comments -- --carry <old> <new>`), and classify the delta with
    `npm run next-fpga:diff` into `.ai/zxnext-cores/<old>-to-<new>.md`.

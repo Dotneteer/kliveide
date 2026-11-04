@@ -86,16 +86,16 @@ describe("boriel-kit script", () => {
     const manifest = readKitManifest(VENDOR_FOLDER);
     expect(manifest.urlBase).toBe("https://files.boriel-basic.net/v2/");
     for (const kit of Object.values(manifest.kits)) expect(kit.sha256).toMatch(/^[0-9a-f]{64}$/);
-    const pkg = JSON.parse(fs.readFileSync(path.join(VENDOR_FOLDER, "../../package.json"), "utf8"));
+    const pkg = JSON.parse(fs.readFileSync(path.join(VENDOR_FOLDER, "../../../package.json"), "utf8"));
     for (const name of ["package:win", "package:mac", "package:mac:arm64", "package:linux", "package:linux:arm64"]) {
       expect(pkg.scripts[`pre${name}`]).toMatch(/^node scripts\/boriel-kit\.cjs stage --platform \S+ --arch \S+$/);
       const [, platform, arch] = /--platform (\S+) --arch (\S+)/.exec(pkg.scripts[`pre${name}`])!;
       expect(manifest.kits[kitKey(platform, arch)]).toBeDefined();
     }
-    expect(pkg.build.extraResources[0]).toMatchObject({ from: "vendor/boriel-basic/stage", to: "boriel" });
+    expect(pkg.build.extraResources[0]).toMatchObject({ from: "dev/vendor/boriel-basic/stage", to: "boriel" });
     // The kits reach the package only through extraResources: build.files is an allowlist (no
-    // "**/*") and names nothing under vendor/.
+    // "**/*") and names nothing under dev/.
     expect(pkg.build.files).not.toContain("**/*");
-    expect(pkg.build.files.some((p: string) => p.replace(/^!/, "").startsWith("vendor"))).toBe(false);
+    expect(pkg.build.files.some((p: string) => p.replace(/^!/, "").startsWith("dev"))).toBe(false);
   });
 });

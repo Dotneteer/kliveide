@@ -1,7 +1,7 @@
 /*
- * Fetches the pinned ZX Spectrum Next VHDL trees (`vendor/next-fpga/sources.json`) into the
- * git-ignored `vendor/next-fpga/<version>/`, then applies Klive's comments from
- * `vendor/next-fpga/comments/<version>/` (`.ai/zxnext-models.md` D4, D4.1).
+ * Fetches the pinned ZX Spectrum Next VHDL trees (`dev/vendor/next-fpga/sources.json`) into the
+ * git-ignored `dev/vendor/next-fpga/<version>/`, then applies Klive's comments from
+ * `dev/vendor/next-fpga/comments/<version>/` (`.ai/zxnext-models.md` D4, D4.1).
  *
  *   npm run next-fpga:fetch [-- <version>...] [--check] [--force]
  *

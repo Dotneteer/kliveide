@@ -9,7 +9,7 @@
  *   npm run boriel:fixtures [-- <path to zxbc>]
  *
  * The zxbc comes from the argument, else `BORIEL_ZXBC`, else `~/zxbasic2/zxbc`. It must be the
- * version `vendor/boriel-basic/kit.json` pins. zxbc runs inside each fixture folder with a relative
+ * version `dev/vendor/boriel-basic/kit.json` pins. zxbc runs inside each fixture folder with a relative
  * program name, so no absolute path of this machine ends up in the committed `.dbg`.
  */
 const { execFileSync } = require("node:child_process");
@@ -18,7 +18,7 @@ const os = require("node:os");
 const path = require("node:path");
 
 const FIXTURES = path.join(__dirname, "..", "test", "boriel", "fixtures");
-const KIT = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "vendor", "boriel-basic", "kit.json"), "utf8"));
+const KIT = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "dev", "vendor", "boriel-basic", "kit.json"), "utf8"));
 
 function zxbcPath() {
   const exe = process.platform === "win32" ? "zxbc.exe" : "zxbc";

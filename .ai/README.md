@@ -20,7 +20,7 @@ This folder stores durable notes for future AI-assisted work in this repository.
   the bank/offset/address model that every offset depends on, the NEX container layout,
   the full sidecar schema and the rules its loader enforces, a verified recipe for
   producing raw and annotated listings, the official Next register and I/O port
-  references in `vendor/next-fpga/3.02.01/` and how to query them, and the rules that stop a
+  references in `dev/vendor/next-fpga/3.02.01/` and how to query them, and the rules that stop a
   hand-written sidecar destroying the breakpoints stored beside the annotations.
 - **Before any style, token or theme work**, after `ui-theming-intent-and-lessons.md`, read `ui-design-system.md` (the token layers, the five mandates, the accents and their numbers, the derived themes).
 - **Before changing the in-core debug loop or a core's debug path, read `wasm-core-debug.md`** (decisions D1-D14, traps T1-T11, the measured budgets) beside `src/emu/z80/wasm/README.md`.

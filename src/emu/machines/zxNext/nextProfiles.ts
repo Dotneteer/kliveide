@@ -32,7 +32,7 @@ export type NextProfile = {
   sdWorkingCopy: string;
   /** Which NextReg description set the IDE shows (D5) */
   nextRegSet: string;
-  /** The version key of the VHDL reference in `vendor/next-fpga/sources.json` (D4) */
+  /** The version key of the VHDL reference in `dev/vendor/next-fpga/sources.json` (D4) */
   vhdlRef: string;
 };
 

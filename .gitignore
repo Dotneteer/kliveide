@@ -60,14 +60,14 @@ test/vhdl/f1/results/
 # Runs of the whole-core replay (test/vhdl/f3/run-f3.cjs): programs, simulator inputs and outputs
 test/vhdl/f3/results/
 
-# Boriel BASIC setup kits: archives are downloaded (see vendor/boriel-basic/README.md), never committed
-vendor/boriel-basic/kits/
-vendor/boriel-basic/stage/
+# Boriel BASIC setup kits: archives are downloaded (see dev/vendor/boriel-basic/README.md), never committed
+dev/vendor/boriel-basic/kits/
+dev/vendor/boriel-basic/stage/
 
 # ZX Spectrum Next VHDL reference: fetched by `npm run next-fpga:fetch`, never committed; only the
 # pins (sources.json) and Klive's comment patches (comments/) are tracked
-vendor/next-fpga/*/
-!vendor/next-fpga/comments/
+dev/vendor/next-fpga/*/
+!dev/vendor/next-fpga/comments/
 # Output of scripts/boriel-ide-check.cjs (throwaway homes and screenshots)
 .boriel-ide-check/
 # Output of scripts/z88dk-ide-check.cjs (throwaway homes and screenshots)

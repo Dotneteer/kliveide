@@ -3,10 +3,10 @@
  * D4, D4.1): the manifest, git blob ids, the local git object cache, and a small unified-diff
  * applier with fuzz (so the scripts need neither `patch` nor a GNU toolchain).
  *
- *   vendor/next-fpga/sources.json          tracked: the pins and the upstream blob ids
- *   vendor/next-fpga/comments/<version>/   tracked: Klive's comments, one `<file>.patch` each
- *   vendor/next-fpga/<version>/            git-ignored: the fetched tree, comments applied
- *   vendor/next-fpga/.git-cache/           git-ignored: a bare partial clone holding the blobs
+ *   dev/vendor/next-fpga/sources.json          tracked: the pins and the upstream blob ids
+ *   dev/vendor/next-fpga/comments/<version>/   tracked: Klive's comments, one `<file>.patch` each
+ *   dev/vendor/next-fpga/<version>/            git-ignored: the fetched tree, comments applied
+ *   dev/vendor/next-fpga/.git-cache/           git-ignored: a bare partial clone holding the blobs
  */
 const { createHash } = require("node:crypto");
 const { execFileSync } = require("node:child_process");
@@ -14,7 +14,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const ROOT = path.join(__dirname, "..");
-const VENDOR = path.join(ROOT, "vendor", "next-fpga");
+const VENDOR = path.join(ROOT, "dev", "vendor", "next-fpga");
 const MANIFEST = path.join(VENDOR, "sources.json");
 const CACHE = path.join(VENDOR, ".git-cache");
 const COMMENTS = path.join(VENDOR, "comments");

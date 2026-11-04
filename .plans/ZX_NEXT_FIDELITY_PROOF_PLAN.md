@@ -71,7 +71,7 @@ simulated VHDL is a misread, and the test is corrected (with a comment citing th
 - **The CPU** in isolation: `test/z80/` (81 files, instruction by instruction). The Z80 exercisers
   (ZEXALL/ZEXDOC, z80test) are **not** run on the Next core (G10.1 lists them as open).
 - **Precedent:** the ZX Spectrum got exactly this treatment in the archived
-  `SPECTRUM_ULA_ACCURACY_PLAN.md`: a vendored kit of community test programs (`vendor/spectrum-tests/`,
+  `SPECTRUM_ULA_ACCURACY_PLAN.md`: a vendored kit of community test programs (`dev/vendor/spectrum-tests/`,
   `test/spectrum-kit/`) in the slow tier, results checked against real-machine photos, a published
   accuracy page (`docs/.../under-the-hood/emulator-internals/spectrum-accuracy`). This plan reuses that
   machinery and shape.
@@ -266,7 +266,7 @@ manual "VHDL oracle" GitHub workflow in Docker.
 
 Goal: independent, real-board evidence without owning hardware (W3 partly, W4).
 
-1. `vendor/next-tests/` with `kit.json` (like `vendor/spectrum-tests/`): `MrKWatkins/ZXSpectrumNextTests`
+1. `dev/vendor/next-tests/` with `kit.json` (like `dev/vendor/spectrum-tests/`): `MrKWatkins/ZXSpectrumNextTests`
    pinned by commit, fetched and git-ignored, licence kept beside it; README records each program's
    board photos and the core version on each.
 2. `test/next-kit/` in the slow tier: each program runs headless on the harness (direct NEX load) and,
@@ -1009,14 +1009,14 @@ loosely, and can start alongside.
    pinned `ghdl/ghdl` release image? GHDL stays off the Mac unless you choose to override Gatekeeper
    for it.
 4. **Corpus:** which Next titles may be used for the real-software tier (and published as pictures)?
-5. **Vendoring:** OK to pin `MrKWatkins/ZXSpectrumNextTests` (MIT) in `vendor/next-tests/` like the
+5. **Vendoring:** OK to pin `MrKWatkins/ZXSpectrumNextTests` (MIT) in `dev/vendor/next-tests/` like the
    Spectrum kit, and to show its board photos (with credit) on the docs page?
 
 ## 10. Sources
 
 - `_input/next-fpga/src/` (core 3.02.01), `_input/next-fpga/nextreg.txt`, `ports.txt`.
 - `.plans/ZX_SPECTRUM_NEXT_HARDWARE_TEST_CATALOGUE_PLAN.md`, `test/harness/zxnext/README.md`.
-- Archived `SPECTRUM_ULA_ACCURACY_PLAN.md` (git `0b98eaa49a`), `vendor/spectrum-tests/`, `test/spectrum-kit/`.
+- Archived `SPECTRUM_ULA_ACCURACY_PLAN.md` (git `0b98eaa49a`), `dev/vendor/spectrum-tests/`, `test/spectrum-kit/`.
 - MrKWatkins, ZX Spectrum Next tests: https://github.com/MrKWatkins/ZXSpectrumNextTests
 - Patrik Rak's Z80 test suite and its use as an emulator reference: https://github.com/redcode/Z80/wiki/Z80-Test-Suite
 - The Next core source layout and its ISE build: https://github.com/avlixa/zx_spectrum_next_03.01.09

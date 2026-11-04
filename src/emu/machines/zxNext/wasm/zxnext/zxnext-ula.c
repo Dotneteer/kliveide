@@ -606,7 +606,7 @@ static uint32_t zxnextUlaSignExtendScale9(uint32_t value8, uint32_t scale) {
  * (`zxnextResolveSpritesForIde`), so reading the sprite table never writes machine state
  * (`.plans/SPRITE_INSPECTOR_PLAN.md` trap T3).
  *
- * Follows `vendor/next-fpga/3.02.01/src/video/sprites.vhd` ("sort out relative sprite characteristics" and
+ * Follows `dev/vendor/next-fpga/3.02.01/src/video/sprites.vhd` ("sort out relative sprite characteristics" and
  * the anchor latch in `S_QUALIFY`):
  *
  * - A sprite is **relative** when it has five attribute bytes and attr4 bits 7:6 are `01`. Every

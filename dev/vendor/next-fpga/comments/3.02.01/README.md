@@ -4,7 +4,7 @@ Base: upstream `gitlab.com/SpectrumNext/ZX_Spectrum_Next_FPGA`, commit
 `5ad7546d19d7e1b60645c11086c8407f238280df` (2023-09-06), path `cores/zxnext/` (the pin in
 `../../sources.json`). Every patch is a unified diff against that commit's file at the same path,
 applied by `npm run next-fpga:fetch` after the blob-id check. Regenerate them with
-`npm run next-fpga:comments -- --save 3.02.01` after editing `vendor/next-fpga/3.02.01/`; never edit
+`npm run next-fpga:comments -- --save 3.02.01` after editing `dev/vendor/next-fpga/3.02.01/`; never edit
 a `.patch` by hand. The rule is `.ai/zxnext-models.md` D4.1.
 
 These patches are what `_input/next-fpga/` carried beyond upstream; applying them to the pinned tree

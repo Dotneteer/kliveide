@@ -7,8 +7,8 @@ import type { BorielBundledKit } from "@common/messaging/BorielIntegration";
 /*
  * The Boriel BASIC setup kit this Klive carries (`.ai/boriel/integration.md`, "The kits in the build").
  * A packaged app has `<resources>/boriel/kit.json` and the one kit for its platform next to it
- * (staged by `scripts/boriel-kit.cjs stage`). A development run reads `vendor/boriel-basic/kit.json`
- * and the archives in `vendor/boriel-basic/kits/` (fetched by `npm run dev`'s `predev`).
+ * (staged by `scripts/boriel-kit.cjs stage`). A development run reads `dev/vendor/boriel-basic/kit.json`
+ * and the archives in `dev/vendor/boriel-basic/kits/` (fetched by `npm run dev`'s `predev`).
  */
 
 export type BorielKitEntry = { file: string; size: number; sha256: string };
@@ -34,20 +34,20 @@ export function borielKitLocation(isPackaged: boolean, resourcesPath: string, ap
 }
 
 /**
- * The repository's `vendor/boriel-basic`, searched upward from the app path: `npm run dev` runs
+ * The repository's `dev/vendor/boriel-basic`, searched upward from the app path: `npm run dev` runs
  * from the repository root, while Electron started on the built `out/main/index.js` (the
  * Playwright harnesses) reports `out/main`.
  */
 function findVendorFolder(appPath: string): string {
   let folder = path.resolve(appPath);
   for (let level = 0; level < 4; level++) {
-    const candidate = path.join(folder, "vendor", "boriel-basic");
+    const candidate = path.join(folder, "dev", "vendor", "boriel-basic");
     if (fs.existsSync(path.join(candidate, "kit.json"))) return candidate;
     const parent = path.dirname(folder);
     if (parent === folder) break;
     folder = parent;
   }
-  return path.join(path.resolve(appPath), "vendor", "boriel-basic");
+  return path.join(path.resolve(appPath), "dev", "vendor", "boriel-basic");
 }
 
 /** Node's platform and arch as a `kit.json` key ("darwin-arm64"). */

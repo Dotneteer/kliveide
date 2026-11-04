@@ -1,6 +1,6 @@
 /*
- * Boriel BASIC setup kits: fetch them into `vendor/boriel-basic/kits/` and stage the one a package
- * build ships (`.ai/boriel/integration.md`, "The kits in the build", `vendor/boriel-basic/README.md`).
+ * Boriel BASIC setup kits: fetch them into `dev/vendor/boriel-basic/kits/` and stage the one a package
+ * build ships (`.ai/boriel/integration.md`, "The kits in the build", `dev/vendor/boriel-basic/README.md`).
  *
  *   node scripts/boriel-kit.cjs fetch [--all | --current | --platform <p> --arch <a>] [--optional]
  *   node scripts/boriel-kit.cjs stage --platform <p> --arch <a>
@@ -13,7 +13,7 @@ const { createHash } = require("node:crypto");
 const fs = require("node:fs");
 const path = require("node:path");
 
-const VENDOR_FOLDER = path.join(__dirname, "..", "vendor", "boriel-basic");
+const VENDOR_FOLDER = path.join(__dirname, "..", "dev", "vendor", "boriel-basic");
 
 /** Electron-builder's arch names, as the `package:*` scripts pass them, mapped to Node's. */
 const ARCH_ALIASES = { x64: "x64", arm64: "arm64", armv7l: "arm", arm: "arm" };

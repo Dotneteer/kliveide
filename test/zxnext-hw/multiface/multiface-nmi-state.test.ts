@@ -9,7 +9,7 @@ import { createSession, type NextTestSession, readNextRom } from "../../harness/
  * "D5: enable gating") and `test/zxnext/MultifaceMemory.test.ts` (write priority over DivMMC); the rest
  * of those files is covered by `multiface.test.ts`.
  *
- * Hardware (`vendor/next-fpga/3.02.01/src`):
+ * Hardware (`dev/vendor/next-fpga/3.02.01/src`):
  * - device/multiface.vhd
  *   - `nmi_active` (= `nmi_disable_o`, zxnext.vhd's `mf_nmi_hold`): set by the button, cleared by RETN
  *     and by *any* write to the enable or disable port, in every mode (MF+3 also by a disable-port

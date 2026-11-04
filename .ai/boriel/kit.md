@@ -7,7 +7,7 @@ The kits are public: `https://files.boriel-basic.net/v2/<file>`. The URL is reco
 the copies Boriel sent; the beta29 kits were downloaded twice on 2026-10-24 and both copies hashed
 the same. CI fetches by pinned URL and verifies the SHA-256, so the archives need not be committed.
 
-In the source tree the kits live in **`vendor/boriel-basic/`**. `kit.json` there is the
+In the source tree the kits live in **`dev/vendor/boriel-basic/`**. `kit.json` there is the
 authoritative copy of the table below (keys are `process.platform`-`process.arch`), and the
 archives sit in the git-ignored `kits/` (see that folder's `README.md`).
 

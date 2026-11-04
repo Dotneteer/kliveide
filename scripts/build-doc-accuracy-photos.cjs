@@ -4,7 +4,7 @@
  * accuracy feature from one of them.
  *
  * The photos are Mark Woodmass's, of his own 48Ks running HALT2INT v3, shipped with the program
- * under GPLv2 (`vendor/spectrum-tests/halt2int/COPYING`). As they come they are too heavy for a page
+ * under GPLv2 (`dev/vendor/spectrum-tests/halt2int/COPYING`). As they come they are too heavy for a page
  * (464 KB and 1.6 MB), so each is cropped to the screen area and written as a ~700 px wide `.webp`:
  *
  *   docs/public/images/spectrum-accuracy/real-48k-early.webp
@@ -21,7 +21,7 @@ const { join } = require("node:path");
 const { statSync } = require("node:fs");
 
 const repoRoot = join(__dirname, "..");
-const KIT = join(repoRoot, "vendor", "spectrum-tests", "halt2int");
+const KIT = join(repoRoot, "dev", "vendor", "spectrum-tests", "halt2int");
 const IMAGES = join(repoRoot, "docs", "public", "images");
 const OUT = join(IMAGES, "spectrum-accuracy");
 

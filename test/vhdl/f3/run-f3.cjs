@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /*
  * F3 of .plans/ZX_NEXT_FIDELITY_PROOF_PLAN.md (§8): every program the Next hardware tests load,
- * replayed on Klive's Next core and on the whole FPGA core simulated from vendor/next-fpga/3.02.01/src (nvc),
+ * replayed on Klive's Next core and on the whole FPGA core simulated from dev/vendor/next-fpga/3.02.01/src (nvc),
  * compared right after the instruction that writes the ready marker ($A5 to NextReg $7F).
  *
  *   node test/vhdl/f3/run-f3.cjs [--sample N] [--jobs N] [--klive N] [--out DIR] [--programs FILE]
@@ -361,7 +361,7 @@ Times: phase 3 (Klive) ${summary.seconds.phase3.toFixed(0)} s, phase 4 (simulato
 | Input | SHA-256 |
 |---|---|
 ${inputs}
-| vendor/next-fpga/3.02.01/src/zxnext.vhd | \`${sha(path.join(SRC, "zxnext.vhd"))}\` |
+| dev/vendor/next-fpga/3.02.01/src/zxnext.vhd | \`${sha(path.join(SRC, "zxnext.vhd"))}\` |
 | src/emu/machines/zxNext/wasm/dist/zx-spectrum-next.wasm | \`${sha(path.join(ROOT, "src/emu/machines/zxNext/wasm/dist/zx-spectrum-next.wasm"))}\` |
 `;
   fs.writeFileSync(path.join(out, "report.md"), report);

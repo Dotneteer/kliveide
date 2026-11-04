@@ -1,5 +1,5 @@
 {
-  "$comment": "Pinned upstream ZX Spectrum Next FPGA sources (the VHDL reference). Fetched into the git-ignored vendor/next-fpga/<version>/ by `npm run next-fpga:fetch`; Klive's own comments are applied from comments/<version>/ afterwards. Blob ids are the upstream (pre-comment) git blob ids. Rules: .ai/zxnext-models.md D4/D4.1.",
+  "$comment": "Pinned upstream ZX Spectrum Next FPGA sources (the VHDL reference). Fetched into the git-ignored dev/vendor/next-fpga/<version>/ by `npm run next-fpga:fetch`; Klive's own comments are applied from comments/<version>/ afterwards. Blob ids are the upstream (pre-comment) git blob ids. Rules: .ai/zxnext-models.md D4/D4.1.",
   "repository": {
     "url": "https://gitlab.com/SpectrumNext/ZX_Spectrum_Next_FPGA.git",
     "web": "https://gitlab.com/SpectrumNext/ZX_Spectrum_Next_FPGA",

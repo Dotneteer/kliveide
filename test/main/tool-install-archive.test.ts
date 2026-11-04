@@ -140,9 +140,9 @@ describe("tool-install archive extraction", () => {
     expect(() => extractArchive(write("kit.rar", Buffer.alloc(4)), out())).toThrow(/Unsupported/);
   });
 
-  // --- The real kit that vendor/boriel-basic/kit.json pins, when this checkout has fetched it
-  // --- (vendor/boriel-basic/README.md)
-  const vendorFolder = path.resolve(__dirname, "../../vendor/boriel-basic");
+  // --- The real kit that dev/vendor/boriel-basic/kit.json pins, when this checkout has fetched it
+  // --- (dev/vendor/boriel-basic/README.md)
+  const vendorFolder = path.resolve(__dirname, "../../dev/vendor/boriel-basic");
   const pinned = JSON.parse(fs.readFileSync(path.join(vendorFolder, "kit.json"), "utf8"));
   const realKit = path.join(vendorFolder, "kits", pinned.kits["darwin-arm64"].file);
   it.skipIf(!fs.existsSync(realKit))("extracts the Boriel BASIC kit with its nine executables", () => {

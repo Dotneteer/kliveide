@@ -1,9 +1,9 @@
 /*
  * Klive's own comments on the ZX Spectrum Next VHDL, kept as patches in
- * `vendor/next-fpga/comments/<version>/` (`.ai/zxnext-models.md` D4.1).
+ * `dev/vendor/next-fpga/comments/<version>/` (`.ai/zxnext-models.md` D4.1).
  *
  *   npm run next-fpga:comments -- --save <version>
- *     Rewrites that version's patches from the fetched tree (`vendor/next-fpga/<version>/`)
+ *     Rewrites that version's patches from the fetched tree (`dev/vendor/next-fpga/<version>/`)
  *     against the pinned upstream files: one `<file>.patch` per file that differs. Files that
  *     differ only in CRLF/LF line endings get no patch (their upstream bytes are restored); patches of files that no longer differ
  *     are removed.
@@ -23,7 +23,7 @@ const { treeProblems } = require("./next-fpga-fetch.cjs");
 
 function requireFetched(manifest, version) {
   if (!fs.existsSync(path.join(lib.VENDOR, version, lib.SOURCE_STAMP))) {
-    throw new Error(`vendor/next-fpga/${version} is not fetched: run \`npm run next-fpga:fetch\``);
+    throw new Error(`dev/vendor/next-fpga/${version} is not fetched: run \`npm run next-fpga:fetch\``);
   }
   lib.ensureObjects(manifest, lib.versionEntry(manifest, version), Object.values(lib.versionEntry(manifest, version).files));
 }
@@ -41,7 +41,7 @@ function save(manifest, version, { only } = {}) {
       const patchFile = path.join(outDir, `${rel}.patch`);
       const file = path.join(dir, rel);
       const current = fs.existsSync(file) ? fs.readFileSync(file) : null;
-      if (!current) throw new Error(`${rel} is missing from vendor/next-fpga/${version}`);
+      if (!current) throw new Error(`${rel} is missing from dev/vendor/next-fpga/${version}`);
       const upstream = lib.readBlob(id);
       const patch =
         Buffer.compare(upstream, current) === 0 || lib.onlyLineEndings(upstream, current)

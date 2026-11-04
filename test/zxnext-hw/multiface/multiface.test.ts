@@ -5,7 +5,7 @@ import { createSession, type NextTestSession, readNextRom } from "../../harness/
 /*
  * Multiface (catalogue MF-001 - MF-007; MF-002 is RST-005 in `reset/reset-register`).
  *
- * Hardware (`vendor/next-fpga/3.02.01/src`):
+ * Hardware (`dev/vendor/next-fpga/3.02.01/src`):
  * - device/multiface.vhd (mode: $0A bits 7-6 - 00 MF+3, 11 MF48, else MF128):
  *   - `mf_enable` (memory paged in): set by the fetch at $0066 while `nmi_active`, cleared by a
  *     disable-port read or RETN, and an enable-port read sets it to `not invisible_eff`.

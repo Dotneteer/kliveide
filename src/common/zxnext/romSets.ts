@@ -45,7 +45,7 @@ export type NextRomFacts = {
 export type NextFpgaRomInfo = {
   /** The core version it comes from (`3.02.01`) */
   core: string;
-  /** Its VHDL file, relative to `vendor/next-fpga/<core>/` */
+  /** Its VHDL file, relative to `dev/vendor/next-fpga/<core>/` */
   source: string;
   size: number;
   sha256: string;
@@ -61,7 +61,7 @@ export type NextRomSet = {
   files: Readonly<Record<string, NextRomFileInfo>>;
   /**
    * ROM images that live inside the FPGA core rather than in the distribution (the anti-brick core's
-   * boot ROM), extracted from the core version's VHDL (`vendor/next-fpga/<core>/<source>`); shipped
+   * boot ROM), extracted from the core version's VHDL (`dev/vendor/next-fpga/<core>/<source>`); shipped
    * beside the set's files so they can be annotated
    */
   fpgaRoms: Readonly<Record<string, NextFpgaRomInfo>>;

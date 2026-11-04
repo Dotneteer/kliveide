@@ -30,7 +30,7 @@ read that commit's diff to see a complete bump.
 2. "Latest" means the highest version in the ordering of `compareBorielVersions`
    (`src/main/boriel-integration/boriel-version.ts`): `beta3` < `beta25`, and a release ranks above
    its betas.
-3. Map each `<target>` to a `vendor/boriel-basic/kit.json` key:
+3. Map each `<target>` to a `dev/vendor/boriel-basic/kit.json` key:
 
    | Target | Key |
    | --- | --- |
@@ -67,9 +67,9 @@ read that commit's diff to see a complete bump.
      `test/main/boriel-install-service.test.ts` ("Boriel BASIC Windows kits") checks it once the
      kits are in `kits/`.
    Report every difference from `kit.md`.
-3. Update `vendor/boriel-basic/kit.json`: `version`, and every kit's `file`, `size` and `sha256`.
+3. Update `dev/vendor/boriel-basic/kit.json`: `version`, and every kit's `file`, `size` and `sha256`.
    Keep the key order, so the diff stays small.
-4. Copy the archives into `vendor/boriel-basic/kits/` (git-ignored). Then run
+4. Copy the archives into `dev/vendor/boriel-basic/kits/` (git-ignored). Then run
    `node scripts/boriel-kit.cjs fetch --all`, which must verify every kit without downloading.
 
 ## 3. Re-check what zxbc does
@@ -115,7 +115,7 @@ leaving out the fixtures' generated files. Then update:
 - `.ai/boriel/README.md`: a new row in "Version history" saying what the re-check found, and the
   pinned version under "Rules that apply to everything here";
 - every other version-specific sentence in `.ai/boriel/*.md`;
-- `vendor/boriel-basic/README.md` (the licence line) and `test/boriel/fixtures/README.md`;
+- `dev/vendor/boriel-basic/README.md` (the licence line) and `test/boriel/fixtures/README.md`;
 - `docs/content/en/guides/languages/boriel-basic.mdx`, which names the bundled version. Then run
   `npm run doc:build && npm run doc:check`. Leave `whats-new.mdx`'s old entries alone: the release
   writes it from the changesets.

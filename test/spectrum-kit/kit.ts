@@ -5,7 +5,7 @@ import { createSp48Session, type Sp48TestSession } from "../harness/sp48";
 import { createSp128Session, type Sp128TestSession } from "../harness/sp128";
 
 /*
- * The ZX Spectrum timing test kit (`vendor/spectrum-tests/`, `.plans/SPECTRUM_ULA_ACCURACY_PLAN.md`
+ * The ZX Spectrum timing test kit (`dev/vendor/spectrum-tests/`, `.plans/SPECTRUM_ULA_ACCURACY_PLAN.md`
  * Phase 0): runs the community's test programs on Klive's cores. Each program has a test file of its
  * own here, in the slow tier (`npm run test:slow`).
  *
@@ -19,7 +19,7 @@ import { createSp128Session, type Sp128TestSession } from "../harness/sp128";
  */
 
 /** The kit's folder */
-export const KIT = join(__dirname, "../../vendor/spectrum-tests");
+export const KIT = join(__dirname, "../../dev/vendor/spectrum-tests");
 
 /** Where the runs' pictures go */
 export const OUT = join(__dirname, "../../.spectrum-kit");

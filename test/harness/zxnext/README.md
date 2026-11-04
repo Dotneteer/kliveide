@@ -139,7 +139,7 @@ colour conversions) are exported from `index.ts` too.
 ### Rules for a good hardware test
 
 1. **Expectations come from the hardware, never from emulator output.** Cite the VHDL
-   (`vendor/next-fpga/<version>/src`, `npm run next-fpga:fetch`) or the official docs in a comment next to the assertion.
+   (`dev/vendor/next-fpga/<version>/src`, `npm run next-fpga:fetch`) or the official docs in a comment next to the assertion.
 2. **Drive through the hardware interface.** Z80 code, `out`, `setNextReg`, `poke`. Setting state a
    program could not set hides bugs in the path that sets it.
 3. **Observe through the hardware interface.** `in`, `peek`, registers, pixels, audio;
