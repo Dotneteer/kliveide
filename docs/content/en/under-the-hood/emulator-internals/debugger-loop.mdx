@@ -114,7 +114,7 @@ hit counts.
 
 ### Source-level stepping
 
-Klive BASIC's source debugger steps by statement. A statement step only ever stops at a statement
+The BASIC source debugger steps by statement. A statement step only ever stops at a statement
 entry or at the return address of a call site. The stop table marks those addresses as candidates, so
 the core stops only there, and the step's own logic (the stack pointer and interrupt-depth checks)
 runs only there.
@@ -139,7 +139,7 @@ After the change, measured the same way:
 
 Other cases improved as much. A conditional breakpoint whose condition is never true, on the
 hottest instruction of a test loop, cost 1.64x on the 48K and costs 1.07x now. A Step Over of a call to
-a Klive BASIC SUB that loops 2,000 times takes about 4.0 ms in the core, against 15.6 ms instruction by
+a BASIC SUB that loops 2,000 times takes about 4.0 ms in the core, against 15.6 ms instruction by
 instruction.
 
 The Z88 is the exception, and the reason is simple arithmetic. The host rebuilds and copies the stop

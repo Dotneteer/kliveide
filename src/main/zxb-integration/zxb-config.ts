@@ -32,8 +32,14 @@ export function selectedZxBasicCompiler(state: AppState | undefined): ZxBasicCom
   return compilerChoiceOf(state ? createSettingsReader(state).readSetting(ZXBC_COMPILER) : undefined);
 }
 
-/** The compiler a `zxbasic.compiler` value selects. */
-export function compilerChoiceOf(value: unknown): ZxBasicCompilerChoice {
-  const choice = typeof value === "string" ? value.trim().toLowerCase() : "";
-  return choice === "boriel" || choice === "zxbc" ? "boriel" : "klive";
+/**
+ * The compiler a `zxbasic.compiler` value selects.
+ *
+ * KLIVE-BASIC-OFF: Klive BASIC is switched off (`.plans/KLIVE_BASIC_SWITCH_OFF_PLAN.md`): every
+ * value selects Boriel BASIC. Restore the commented lines to bring the switch back.
+ */
+export function compilerChoiceOf(_value: unknown): ZxBasicCompilerChoice {
+  // const choice = typeof _value === "string" ? _value.trim().toLowerCase() : "";
+  // return choice === "boriel" || choice === "zxbc" ? "boriel" : "klive";
+  return "boriel";
 }

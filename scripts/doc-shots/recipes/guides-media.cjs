@@ -4,7 +4,7 @@
  * - `snapshots/snapshot-viewer.webp` — a `.z80` snapshot open in the snapshot viewer;
  * - `rzx-recordings/rzx-viewer.webp` — an `.rzx` recording open in its viewer.
  *
- * Both files are made by Klive itself, in the recipe: a Klive BASIC program
+ * Both files are made by Klive itself, in the recipe: a BASIC program
  * (`fixtures/guides/stripes.zxbas`) runs on the 48K, `zx-snapshot-save` writes the snapshot and
  * `zx-rzx-record` / `zx-rzx-stop` record a few seconds of it. Nothing is downloaded.
  */

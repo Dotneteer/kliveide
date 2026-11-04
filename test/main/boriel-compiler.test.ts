@@ -424,11 +424,11 @@ describe("BorielCompiler with the real zxbc", () => {
     expect(checked.errors?.[0]).toMatchObject({ errorCode: "E342", line: 2 });
   }, 60_000);
 
-  it.skipIf(!available)("explains why the Next BASIC template, which uses CODEBANK, does not build", async () => {
+  it.skipIf(!available)("explains why a CODEBANK program (Klive BASIC's old Next template) does not build", async () => {
     const project = path.join(home, "next-template");
     fs.mkdirSync(path.join(project, "code"), { recursive: true });
     const source = path.join(project, "code", "program.zxbas");
-    fs.copyFileSync(path.resolve(__dirname, "../../src/public/project-templates/zxnext/zx-basic/code/program.zxbas"), source);
+    fs.copyFileSync(path.resolve(__dirname, "../kbasic/codegen/fixtures/next-codebank-template.zxbas"), source);
     const compiler = new BorielCompiler();
     compiler.setAppState({
       userSettings: { zxbasic: { executablePath: zxbcPath } },
@@ -440,6 +440,46 @@ describe("BorielCompiler with the real zxbc", () => {
     const line = fs.readFileSync(source, "utf8").split("\n").findIndex((l) => /^\s*CODEBANK\s/i.test(l)) + 1;
     expect(errors.find((e) => e.errorCode === "ZXBC-K")).toMatchObject({ line });
   }, 60_000);
+
+  it.skipIf(!available)("builds the Get Started BASIC program (the bouncing ball) without an error", async () => {
+    const project = path.join(home, "bouncing-ball");
+    fs.mkdirSync(path.join(project, "code"), { recursive: true });
+    const source = path.join(project, "code", "program.zxbas");
+    fs.copyFileSync(path.resolve(__dirname, "../../scripts/doc-shots/fixtures/get-started/bouncing-ball/code/program.zxbas"), source);
+    const compiler = new BorielCompiler();
+    compiler.setAppState({
+      userSettings: { zxbasic: { executablePath: zxbcPath } },
+      projectSettings: {},
+      project: { folderPath: project, isKliveProject: true },
+      emulatorState: { machineId: "sp48" }
+    } as unknown as AppState);
+    const output = await compiler.compileFile(source);
+    expect(output.errors?.filter((e) => !e.isWarning) ?? []).toEqual([]);
+  }, 60_000);
+
+  it.skipIf(!available)("builds every shipped BASIC project template without an error", async () => {
+    for (const [template, machineId] of [
+      ["sp48", "sp48"],
+      ["sp128", "sp128"],
+      ["timex", "timex"],
+      ["scorpion", "scorpion"],
+      ["zxnext", "zxnext"]
+    ]) {
+      const project = path.join(home, `template-${template}`);
+      fs.mkdirSync(path.join(project, "code"), { recursive: true });
+      const source = path.join(project, "code", "program.zxbas");
+      fs.copyFileSync(path.resolve(__dirname, `../../src/public/project-templates/${template}/zx-basic/code/program.zxbas`), source);
+      const compiler = new BorielCompiler();
+      compiler.setAppState({
+        userSettings: { zxbasic: { executablePath: zxbcPath } },
+        projectSettings: {},
+        project: { folderPath: project, isKliveProject: true },
+        emulatorState: { machineId }
+      } as unknown as AppState);
+      const output = await compiler.compileFile(source);
+      expect(output.errors?.filter((e) => !e.isWarning) ?? [], template).toEqual([]);
+    }
+  }, 120_000);
 
   it.skipIf(!available)("builds a banked program (--split-modules) for the 128K and the Next", async () => {
     // --- The banked fixture's sources, in a project of their own, with the option in the header

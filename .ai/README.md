@@ -48,7 +48,8 @@ This folder stores durable notes for future AI-assisted work in this repository.
   existing sections, replace what it supersedes, and keep no history: that file
   is a standing brief, not a log.
 - **Before any work on ZX BASIC (Boriel BASIC) language support — Klive BASIC (the Klive-native
-  compiler, `.plans/ZXBASIC_COMPILER_PLAN.md`), the Monaco language provider, or checking a new
+  compiler, `.plans/ZXBASIC_COMPILER_PLAN.md`, switched off since 2026-11-04 by
+  `.plans/KLIVE_BASIC_SWITCH_OFF_PLAN.md`), the Monaco language provider, or checking a new
   upstream release — read `zxbasic-syntax/README.md` and `kbasic/README.md`.**
   `zxbasic-syntax/zxbasic-syntax.json` is Klive's own description of the language and the only
   language reference to use. `kbasic/` holds the runtime ABI, the CODEBANK contract, the

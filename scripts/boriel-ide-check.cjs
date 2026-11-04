@@ -169,31 +169,46 @@ const PARTS = {
     });
     await sleep(500);
     await s.k.cmd("settings integrations", 2000);
-    const row = s.k.ide.getByTestId("settings-row-basicCompiler");
-    check(/Boriel BASIC/.test(await row.textContent()), "ui: the Settings row shows the project's compiler");
+    // --- KLIVE-BASIC-OFF: Boriel BASIC is the only BASIC compiler (`.plans/KLIVE_BASIC_SWITCH_OFF_PLAN.md`):
+    // --- no compiler row in Settings and no checkbox in the dialog. The checks of the switch are kept
+    // --- below, commented out, for the day it is turned back on.
+    check((await s.k.ide.getByTestId("settings-row-basicCompiler").count()) === 0, "ui: Settings offers no choice of BASIC compiler");
     const install = await s.k.ide.getByTestId("settings-row-borielBasic").textContent();
     check(install.includes(path.basename(ROOT)), `ui: the Boriel BASIC row shows the installation folder (${path.basename(ROOT)})`);
-    await s.k.ide.getByTestId("settings-select-basicCompiler").click();
-    await s.k.ide.getByRole("option", { name: "Klive BASIC" }).click();
-    await sleep(1500);
     await s.k.ide.keyboard.press("Escape");
     await sleep(800);
-    const saved = JSON.parse(fs.readFileSync(path.join(folder, "klive.project"), "utf8"));
-    check(saved.settings?.zxbasic?.compiler === "klive", "ui: switching in Settings writes the project's choice");
-    check(/Klive BASIC/.test(await statusBar()), "ui: the status bar follows the switch");
-
-    await s.k.ide.getByRole("button", { name: "Klive BASIC" }).click();
+    await s.k.ide.getByRole("button", { name: "Boriel BASIC" }).click();
     await sleep(1500);
-    check(/Use Boriel BASIC to build BASIC programs/.test(await s.ideText()), "ui: a click on the status bar item opens the Boriel BASIC dialog");
+    const dialogText = await s.ideText();
+    check(/Boriel BASIC/.test(dialogText) && !/Use Boriel BASIC to build BASIC programs/.test(dialogText), "ui: the status bar item opens the Boriel BASIC dialog, which offers no compiler switch");
     await s.k.ide.screenshot({ path: path.join(s.out, "boriel-dialog.png") });
-    // --- Its checkbox changes the compiler that builds: here the project's choice, as the Settings row does
-    await s.k.ide.getByRole("checkbox", { name: /Use Boriel BASIC/ }).click();
-    await sleep(1500);
-    const ticked = JSON.parse(fs.readFileSync(path.join(folder, "klive.project"), "utf8"));
-    check(ticked.settings?.zxbasic?.compiler === "boriel", "ui: the dialog's checkbox writes the project's choice");
     await s.k.ide.keyboard.press("Escape");
     await sleep(800);
-    check(/Boriel BASIC/.test(await statusBar()), "ui: the status bar follows the dialog");
+    // const row = s.k.ide.getByTestId("settings-row-basicCompiler");
+    // check(/Boriel BASIC/.test(await row.textContent()), "ui: the Settings row shows the project's compiler");
+    // const install = await s.k.ide.getByTestId("settings-row-borielBasic").textContent();
+    // check(install.includes(path.basename(ROOT)), `ui: the Boriel BASIC row shows the installation folder (${path.basename(ROOT)})`);
+    // await s.k.ide.getByTestId("settings-select-basicCompiler").click();
+    // await s.k.ide.getByRole("option", { name: "Klive BASIC" }).click();
+    // await sleep(1500);
+    // await s.k.ide.keyboard.press("Escape");
+    // await sleep(800);
+    // const saved = JSON.parse(fs.readFileSync(path.join(folder, "klive.project"), "utf8"));
+    // check(saved.settings?.zxbasic?.compiler === "klive", "ui: switching in Settings writes the project's choice");
+    // check(/Klive BASIC/.test(await statusBar()), "ui: the status bar follows the switch");
+
+    // await s.k.ide.getByRole("button", { name: "Klive BASIC" }).click();
+    // await sleep(1500);
+    // check(/Use Boriel BASIC to build BASIC programs/.test(await s.ideText()), "ui: a click on the status bar item opens the Boriel BASIC dialog");
+    // await s.k.ide.screenshot({ path: path.join(s.out, "boriel-dialog.png") });
+    // // --- Its checkbox changes the compiler that builds: here the project's choice, as the Settings row does
+    // await s.k.ide.getByRole("checkbox", { name: /Use Boriel BASIC/ }).click();
+    // await sleep(1500);
+    // const ticked = JSON.parse(fs.readFileSync(path.join(folder, "klive.project"), "utf8"));
+    // check(ticked.settings?.zxbasic?.compiler === "boriel", "ui: the dialog's checkbox writes the project's choice");
+    // await s.k.ide.keyboard.press("Escape");
+    // await sleep(800);
+    // check(/Boriel BASIC/.test(await statusBar()), "ui: the status bar follows the dialog");
     await s.k.close();
   },
 

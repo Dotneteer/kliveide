@@ -1,4 +1,4 @@
-' Klive BASIC (compatible with Boriel ZX BASIC).
+' Boriel BASIC (beta): Boriel's ZX BASIC compiler, which comes with Klive.
 '
 ' Build options go in this header, one per line, as '@name value. For example:
 '@optimize 0

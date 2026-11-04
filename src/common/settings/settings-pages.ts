@@ -1217,22 +1217,24 @@ export const SETTINGS_ROWS: SettingsRow[] = [
     buttons: [{ labelKey: "settings.button.configure", action: "dialog:sjasmplus", closesDialog: true }],
     replaces: "IDE › Integrations › SjasmPlus Assembler"
   },
-  {
-    // --- The compiler that actually builds: a project's `zxbasic.compiler` wins over the user's, and
-    // --- it is the one this row changes then (`set:basicCompiler`)
-    id: "basicCompiler",
-    page: "integrations",
-    groupKey: "settings.group.basicCompilers",
-    titleKey: "settings.integrations.basicCompiler.title",
-    descriptionKey: "settings.integrations.basicCompiler.description",
-    editor: "select",
-    source: state("basicCompiler"),
-    options: [
-      { label: "Klive BASIC", value: "klive" },
-      { label: "Boriel BASIC", value: "boriel" }
-    ],
-    defaultValue: "klive"
-  },
+  // --- KLIVE-BASIC-OFF: Klive BASIC is switched off (`.plans/KLIVE_BASIC_SWITCH_OFF_PLAN.md`), so
+  // --- the BASIC compiler choice is hidden; Boriel BASIC builds every BASIC program.
+  // {
+  //   // --- The compiler that actually builds: a project's `zxbasic.compiler` wins over the user's, and
+  //   // --- it is the one this row changes then (`set:basicCompiler`)
+  //   id: "basicCompiler",
+  //   page: "integrations",
+  //   groupKey: "settings.group.basicCompilers",
+  //   titleKey: "settings.integrations.basicCompiler.title",
+  //   descriptionKey: "settings.integrations.basicCompiler.description",
+  //   editor: "select",
+  //   source: state("basicCompiler"),
+  //   options: [
+  //     { label: "Klive BASIC", value: "klive" },
+  //     { label: "Boriel BASIC", value: "boriel" }
+  //   ],
+  //   defaultValue: "klive"
+  // },
   {
     id: "borielBasic",
     page: "integrations",

@@ -193,6 +193,10 @@ merely uncoloured, which no route diff can see.
 
 ## Klive BASIC (the ZX BASIC compiler)
 
+- **Switched off (2026-11-04):** Boriel BASIC builds every BASIC program; Klive BASIC stays in the
+  codebase, its tests keep passing, and the switch is commented out at every `KLIVE-BASIC-OFF:`
+  marker (`.plans/KLIVE_BASIC_SWITCH_OFF_PLAN.md`, which says how to turn it back on). Its user docs
+  are off the site in `docs/authoring/klive-basic/`. User-facing docs name Boriel BASIC (a beta) only.
 - The plan is `.plans/ZXBASIC_COMPILER_PLAN.md`; read its §0 (ground rules and decisions) and §17
   (readiness) before any work on it.
 - **Provenance rule — a hard requirement of the project author:** no code from upstream
@@ -217,7 +221,8 @@ merely uncoloured, which no route diff can see.
 
 ## Boriel BASIC (the external zxbc 2.x)
 
-- `zxbasic.compiler` picks `klive` (default) or `boriel` for `.zxbas`/`.bas`. The plan is
+- Boriel BASIC is **the** BASIC compiler, a beta (`zxbasic.compiler` is ignored while Klive BASIC is
+  switched off; see the Klive BASIC section). The plan is
   `.plans/BORIEL_BASIC_INTEGRATION_PLAN.md` (each phase opens with an "As built" note);
   what is still open is its §13. Read `.ai/boriel/README.md` before
   touching `src/main/boriel-integration/`: it records what zxbc 2.0.0-beta29 actually does.

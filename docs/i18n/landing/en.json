@@ -211,13 +211,13 @@
   "@loop.build.label": {
     "context": "Column heading in the table of the four steps. One word."
   },
-  "loop.build.title": "Assembler and BASIC built in",
+  "loop.build.title": "Assembler built in, BASIC included",
   "@loop.build.title": {
     "context": "Bold first sentence of the 'Build' column."
   },
-  "loop.build.text": "Or sjasmplus, Boriel BASIC, z88dk and PASTA/80.",
+  "loop.build.text": "BASIC with Boriel BASIC (beta). Or sjasmplus, z88dk and PASTA/80.",
   "@loop.build.text": {
-    "context": "One-line description. The four tool names are never translated."
+    "context": "One-line description. The four tool names are never translated. 'beta' means a pre-release version of Boriel BASIC."
   },
   "loop.run.label": "Run",
   "@loop.run.label": {
@@ -271,19 +271,19 @@
   "@feature.basicDebug.title": {
     "context": "Feature heading: source-level debugging of compiled BASIC programs."
   },
-  "feature.basicDebug.text": "The built-in ZX BASIC compiler debugs at the source level: breakpoints on statements, Step Over and Step Into, a real call stack, live variables and stops on runtime errors.",
+  "feature.basicDebug.text": "ZX BASIC programs built with Boriel BASIC, the compiler that comes with Klive (in beta), debug at the source level: breakpoints on statements, Step Over and Step Into, a real call stack, live variables and stops on runtime errors.",
   "@feature.basicDebug.text": {
-    "context": "The feature's paragraph. 'Step Over' and 'Step Into' are command names: use the translation the Klive app uses for them."
+    "context": "The feature's paragraph. 'Step Over' and 'Step Into' are command names: use the translation the Klive app uses for them. Boriel BASIC is a product name; 'in beta' means a pre-release version."
   },
-  "feature.basicDebug.point1": "No installation: the compiler is built in",
+  "feature.basicDebug.point1": "Comes with Klive and installs on the first start",
   "@feature.basicDebug.point1": {
     "context": "Bullet point."
   },
-  "feature.basicDebug.point2": "Compatible with Boriel ZX BASIC and NextBuild's CODEBANK",
+  "feature.basicDebug.point2": "Modules in their own RAM banks on the 128K and the Next",
   "@feature.basicDebug.point2": {
-    "context": "Bullet point. Product names and CODEBANK are never translated."
+    "context": "Bullet point. A module is a separately compiled part of a BASIC program; RAM banks are the machines' 16K memory banks."
   },
-  "feature.basicDebug.point3": "Editor help: completion, go to definition, rename",
+  "feature.basicDebug.point3": "Breakpoints and stepping across the banks, too",
   "@feature.basicDebug.point3": {
     "context": "Bullet point."
   },

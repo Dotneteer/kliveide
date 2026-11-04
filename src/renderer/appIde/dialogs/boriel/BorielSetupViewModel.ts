@@ -65,7 +65,10 @@ export function selectViewModel(state: BorielSetupState): BorielSetupViewModel {
     },
     dontAskAgain: { visible: state.mode === "offer", value: state.dontAskAgain, enabled: working },
     useBoriel: {
-      visible: installation?.kind === "working",
+      // --- KLIVE-BASIC-OFF: Boriel BASIC is the only BASIC compiler
+      // --- (`.plans/KLIVE_BASIC_SWITCH_OFF_PLAN.md`), so the choice is not offered
+      // visible: installation?.kind === "working",
+      visible: false,
       value: state.status?.compiler === "boriel",
       enabled: ready,
       note: state.status?.compilerFromProject

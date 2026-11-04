@@ -1,7 +1,8 @@
 # Boriel BASIC 2.x — reference notes for AI sessions
 
 Boriel BASIC 2.x (`zxbc`, the native rewrite of the ZX BASIC compiler) is integrated into Klive as an
-**external compiler**, switchable against Klive BASIC. The plan is
+**external compiler**. Since 2026-11-04 it is the only BASIC compiler: Klive BASIC is switched off
+(`.plans/KLIVE_BASIC_SWITCH_OFF_PLAN.md`). The plan is
 `.plans/BORIEL_BASIC_INTEGRATION_PLAN.md`. This folder holds what Phase B0 observed about the pinned
 kit, so that later phases build on measured facts instead of guesses. B0 measured `2.0.0-beta25`;
 the pin is now `2.0.0-beta29` (re-checked 2026-10-24, see "Version history" below).

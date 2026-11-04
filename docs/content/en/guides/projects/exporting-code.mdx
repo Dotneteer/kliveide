@@ -86,7 +86,7 @@ build one and have NextZXOS load it. To write one yourself, use the `.savenex` p
 or the `expc` command with `-f nex`, for example `expc "game.nex" -f nex`. See
 [NEX files](/en/guides/next/nex-files/) and [ZX Spectrum Next development](/en/reference/z80-assembler/zx-next/).
 
-A Klive BASIC or Boriel BASIC program exported as a NEX file also gets a
+A ZX BASIC program exported as a NEX file also gets a
 `<name>.nex.kbasic-debug.json` file beside it, so `nex-run <file> -d` can debug it at source level.
 
 ### C programs (z88dk)
@@ -101,7 +101,10 @@ from Klive. See [z88dk (C)](/en/guides/languages/z88dk/).
 With **Create BASIC loader** ticked, a ZX Spectrum export starts with a BASIC program that loads the
 rest of the file in the right order and to the right addresses, then starts your code. On the 128K
 and later models, code compiled into several banks (with the `.bank` pragma) is loaded into its
-banks. The options:
+banks. A ZX BASIC program that banks its modules on the 128K (`'@split-modules`) is the exception:
+its TAP or TZX export is `zxbc`'s own tape, with `zxbc`'s own loader, and the options below do not
+apply to it ([Modules and banked code](/en/guides/languages/boriel-basic/#modules-and-banked-code)).
+The options:
 
 | Option | What it does |
 | --- | --- |

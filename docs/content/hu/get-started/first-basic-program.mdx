@@ -1,12 +1,20 @@
 ---
-description: "ZX BASIC program írása, fordítása a Klive beépített Klive BASIC fordítójával, és hibakeresése utasításról utasításra, a hívási verem és a változók segítségével."
+description: "ZX BASIC program írása, fordítása a Klive-val együtt érkező Boriel BASIC fordítóval, és hibakeresése utasításról utasításra, a hívási verem és a változók segítségével."
 ---
 
 import { Callout, Steps } from 'nextra/components'
 
 # Az első BASIC program
 
-A ZX BASIC a ZX Spectrum saját BASIC nyelvének gépi kódra fordítható dialektusa, szubrutinokkal, lokális és típusos változókkal. A Klive a beépített fordítójával, a **Klive BASIC**-kel fordítja le, amely kompatibilis a Boriel ZX BASIC-kel, és nem igényel telepítést. A lefordított program sokkal gyorsabban fut, mint az értelmezett BASIC, és soronként, a BASIC forráskódban követhetjük a hibakeresővel.
+A ZX BASIC a ZX Spectrum saját BASIC nyelvének gépi kódra fordítható dialektusa, szubrutinokkal, lokális és típusos változókkal. A Klive a **Boriel BASIC** fordítóval, a nyelv szerzőjének fordítójával fordítja le, amely a Klive-val együtt érkezik. A lefordított program sokkal gyorsabban fut, mint az értelmezett BASIC, és soronként, a BASIC forráskódban követhetjük a hibakeresővel.
+
+<Callout type="warning">
+A Boriel BASIC 2 béta változat. A legtöbb program lefordul és fut, de számítani kell kisebb hibákra.
+</Callout>
+
+## A Boriel BASIC telepítése
+
+Az első indításkor a Klive felajánlja a Boriel BASIC telepítését. Ha akkor a **Most nem** lehetőséget választottuk, nyissuk meg a **Beállítások › Integrációk** oldalt, kattintsunk a **Boriel BASIC** melletti **Beállítás...** gombra, majd a **Telepítés** gombra. Amíg a fordító nincs telepítve, a Klive nem tud BASIC programokat fordítani.
 
 ## Projekt létrehozása
 
@@ -102,7 +110,7 @@ Nyissuk meg a **Hibakeresés** oldalsávot, majd a címükre kattintva nyissuk m
 A léptetés BASIC **utasításokon** működik, nem Z80 utasításokon: az <kbd>F10</kbd> végrehajtja a következő utasítást, az <kbd>F11</kbd> (macOS-en <kbd>F12</kbd>) belép egy szubrutinba, a <kbd>Shift</kbd>+<kbd>F11</kbd> pedig kilép belőle. Nyomjuk meg néhányszor az <kbd>F5</kbd> billentyűt, és figyeljük, hogyan változik a `column` és az `x` értéke.
 
 <Callout type="info" emoji="💡">
-A Klive a BASIC programokat a Boriel saját fordítójával, a Boriel BASIC 2-vel is le tudja fordítani, és ugyanígy lehet bennük hibát keresni. A nyelvi beállításokról, a standard könyvtárról és a fordítók közötti váltásról a [ZX BASIC (angolul)](/en/guides/languages/klive-basic/) oldal szól.
+A [Boriel BASIC (angolul)](/en/guides/languages/boriel-basic/) oldal leírja a fordítási beállításokat, a modulokat és a bankokba szervezett kódot, valamint azt, hogy mit mutat a hibakereső. Magát a nyelvet a [Boriel BASIC saját dokumentációja (angolul)](https://zxbasic.readthedocs.io/en/v2.0/) írja le.
 </Callout>
 
 Következő lépésként írjuk meg [az első ZX Spectrum Next programot](/hu/get-started/first-next-program/).

@@ -30,7 +30,7 @@ A machine's models share its templates: the Pentagon 128 is a model of the ZX Sp
 | Template | Language | Build root | Needs |
 | --- | --- | --- | --- |
 | `default` | Klive Z80 assembly | `code/code.kz80.asm` (on the Z88, `code/code.z88.asm`, not set as the build root) | Nothing: the assembler is built in. |
-| `zx-basic` | ZX BASIC | `code/program.zxbas` | Nothing: Klive BASIC is built in. [Klive BASIC](/en/guides/languages/klive-basic/) explains the options; [Boriel BASIC](/en/guides/languages/boriel-basic/) how to build with zxbc instead. |
+| `zx-basic` | ZX BASIC | `code/program.zxbas` | Boriel BASIC (a beta), which comes with Klive; [Boriel BASIC](/en/guides/languages/boriel-basic/#set-up-boriel-basic) describes setting it up and the build options. |
 | `sjasmplus` | sjasmplus assembly | `code/code.asm` | sjasmplus, set up as [sjasmplus](/en/guides/languages/sjasmplus/) describes. |
 | `pasta-80` | Pascal | `main.pas` | The PASTA/80 compiler, set up as [PASTA/80](/en/guides/languages/pasta80/) describes. |
 | `z88-dk` | C | `code/main.c` | z88dk, set up as [z88dk (C)](/en/guides/languages/z88dk/) describes. |
@@ -41,7 +41,7 @@ A few details:
 - The ZX Spectrum Next's `default` template is a Next program (`.model next`): Klive builds it into a `.nex` file, which Run and Debug have NextZXOS load. It switches the CPU to 28 MHz, prints with the Next's pixel instructions (`pixelad`, `pixeldn`) and ends in a loop, because a `.nex` program has nothing to return to. [ZX Spectrum Next development](/en/reference/z80-assembler/zx-next/) explains `.model next` and the `.savenex` pragma.
 - On the ZX81 and ZX80, the program runs as a BASIC program: Klive puts the code into a `1 REM` line and calls it. See [ZX80 and ZX81](/en/reference/z80-assembler/zx80-zx81/).
 - On the HT-1080Z, the `default` template prints a welcome in the middle of the screen through the ROM's display routine, draws a block-graphics bar under it and goes back to BASIC. Run starts it from RAM at $7000; Export writes a `.cmd` file that loads with `SYSTEM`. See [HT-1080Z Development](/en/reference/z80-assembler/ht1080z/).
-- The ZX Spectrum Next's `zx-basic` template shows how `CODEBANK` blocks put routines into 8K pages.
+- The `zx-basic` templates print a welcome and start with a header for the build options. On the ZX Spectrum Next, Run and Debug load the `.nex` file that `zxbc` writes.
 - The Cambridge Z88's `default` template has no program yet; it gives you the project structure to start from. Its `z88-dk` template is a complete card application: Run puts the card in slot 3, restarts the Z88 and starts the application.
 - The `z88-dk` templates call a small function in a loop and keep a global counter, so breakpoints, the call stack and the Variables panel have something to show. The Spectrum ones print with `printf` after clearing the screen and setting the border.
 - The ZX Spectrum Next's `z88-dk` template prints with `putchar` instead of `printf` and never returns from `main`: a `.nex` program has no system to return to, and z88dk's Next startup code may fail to start a program that uses `printf`. [The ZX Spectrum Next](/en/guides/languages/z88dk/#the-zx-spectrum-next) explains both.

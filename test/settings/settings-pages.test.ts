@@ -185,13 +185,19 @@ describe("settingsRowMatches", () => {
 });
 
 describe("the BASIC compiler rows (`.plans/BORIEL_BASIC_INTEGRATION_PLAN.md` §8)", () => {
-  it("show the compiler that builds now: the project's choice wins over the user's", () => {
+  // --- KLIVE-BASIC-OFF: the compiler row is commented out (`.plans/KLIVE_BASIC_SWITCH_OFF_PLAN.md`)
+  it.skip("show the compiler that builds now: the project's choice wins over the user's", () => {
     expect(readSettingsRowValue(row("basicCompiler"), stateOf({}))).toBe("klive");
     expect(readSettingsRowValue(row("basicCompiler"), stateOf({ userSettings: { zxbasic: { compiler: "boriel" } } }))).toBe("boriel");
     const overridden = stateOf({ userSettings: { zxbasic: { compiler: "boriel" } }, projectSettings: { zxbasic: { compiler: "klive" } } });
     expect(readSettingsRowValue(row("basicCompiler"), overridden)).toBe("klive");
     expect(settingsRowOptions(row("basicCompiler"), { isWindows: false }).map((o) => o.value)).toEqual(["klive", "boriel"]);
     expect(settingsRowDefault(row("basicCompiler"), stateOf({}))).toBe("klive");
+  });
+
+  it("offer no choice of BASIC compiler while Klive BASIC is switched off", () => {
+    expect(SETTINGS_ROWS.some((r) => r.id === "basicCompiler")).toBe(false);
+    expect(settingsRowMatches(row("borielBasic"), "basic")).toBe(true);
   });
 
   it("show where Boriel BASIC is installed, or nothing when it is not set up", () => {
@@ -204,7 +210,8 @@ describe("the BASIC compiler rows (`.plans/BORIEL_BASIC_INTEGRATION_PLAN.md` §8
     expect(readSettingsRowValue(boriel, explicit)).toBe("C:\\tools\\zxb");
   });
 
-  it("are found by the words a user would search for", () => {
+  // --- KLIVE-BASIC-OFF: the compiler row is commented out (`.plans/KLIVE_BASIC_SWITCH_OFF_PLAN.md`)
+  it.skip("are found by the words a user would search for", () => {
     expect(settingsRowMatches(row("basicCompiler"), "compiler")).toBe(true);
     expect(settingsRowMatches(row("basicCompiler"), "basic")).toBe(true);
     expect(row("basicCompiler").page).toBe("integrations");

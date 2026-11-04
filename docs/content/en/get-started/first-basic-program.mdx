@@ -1,12 +1,20 @@
 ---
-description: "Write a ZX BASIC program, compile it with Klive's built-in Klive BASIC compiler, and debug it statement by statement, with its call stack and variables."
+description: "Write a ZX BASIC program, compile it with Boriel BASIC, the compiler that comes with Klive, and debug it statement by statement, with its call stack and variables."
 ---
 
 import { Callout, Steps } from 'nextra/components'
 
 # Your first BASIC program
 
-ZX BASIC is a compiled dialect of the ZX Spectrum's own BASIC, with subroutines, local variables and typed variables. Klive compiles it with its built-in compiler, **Klive BASIC**, which is compatible with Boriel ZX BASIC and needs no installation. The compiled program runs far faster than interpreted BASIC, and you can debug it line by line in its BASIC source.
+ZX BASIC is a compiled dialect of the ZX Spectrum's own BASIC, with subroutines, local variables and typed variables. Klive compiles it with **Boriel BASIC**, the compiler of the language's author, which comes with Klive. The compiled program runs far faster than interpreted BASIC, and you can debug it line by line in its BASIC source.
+
+<Callout type="warning">
+Boriel BASIC 2 is a beta. Most programs build and run, but expect rough edges.
+</Callout>
+
+## Install Boriel BASIC
+
+The first time Klive starts, it offers to install Boriel BASIC. If you chose **Not now** then, open **Settings › Integrations**, click **Configure...** next to **Boriel BASIC**, and click **Install**. Klive cannot build BASIC programs until it is installed.
 
 ## Create the project
 
@@ -102,7 +110,7 @@ Open the **Debug** side bar, then open its **Call Stack** and **Variables** pane
 Stepping works on BASIC **statements**, not on Z80 instructions: <kbd>F10</kbd> runs the next statement, <kbd>F11</kbd> (<kbd>F12</kbd> on macOS) steps into a subroutine, and <kbd>Shift</kbd>+<kbd>F11</kbd> steps out of it. Press <kbd>F5</kbd> a few times, and watch `column` and `x` change.
 
 <Callout type="info" emoji="💡">
-Klive can also build your BASIC programs with Boriel's own compiler, Boriel BASIC 2, and debug them the same way. See [ZX BASIC](/en/guides/languages/klive-basic/) for the language options, the standard library, and how to switch compilers.
+[Boriel BASIC](/en/guides/languages/boriel-basic/) describes the build options, modules and banked code, and what the debugger shows. The language itself is described in [Boriel BASIC's own documentation](https://zxbasic.readthedocs.io/en/v2.0/).
 </Callout>
 
 Next, write [your first ZX Spectrum Next program](/en/get-started/first-next-program/).

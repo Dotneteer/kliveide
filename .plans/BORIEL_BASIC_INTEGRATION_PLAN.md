@@ -941,6 +941,10 @@ zxbc's own `tap`/`tzx`/`sna`/`z80` writers.
 
 ## 11. Readiness gate — when Boriel BASIC counts as "sound and safe"
 
+> **Set aside (2026-11-04):** the project author made Boriel BASIC the only BASIC compiler before
+> this gate passed (`.plans/KLIVE_BASIC_SWITCH_OFF_PLAN.md`, S1). The items below stay as the work
+> that makes the beta sound; the documentation calls Boriel BASIC a beta until they are done.
+
 All of these are needed before anyone proposes making Boriel the default:
 
 1. **Production licence (B-L1):** for any non-beta Boriel version, the licence text ships in the installer and in `THIRD_PARTY_NOTICES.md`. The beta goes ahead on the author's written permission.
@@ -994,3 +998,7 @@ Carried over from the handoff note written at the end of B6 (removed 2026-11-04,
 4. **Small leftovers:** debugging a `.nex` built outside Klive from zxbc's raw `.dbg` (§6.4). The
    128K tape loader crash is fixed (§7); whether a banked Boriel export should go back to Klive's
    loader (so `-as`, `-n`, `-b`, `-scr` work again) instead of zxbc's tape is still to decide.
+5. **The debug-info check warns on the Get Started program** (`scripts/doc-shots/fixtures/get-started/bouncing-ball`):
+   `ZXBC-D`, "statements 2 and 3 overlap" (its first `DIM ... = value` lines). Seen 2026-11-04, when
+   Boriel BASIC became the only compiler (`.plans/KLIVE_BASIC_SWITCH_OFF_PLAN.md`); the program builds,
+   runs and debugs. Every reader of Get Started sees the warning, so it is the first beta issue to fix.

@@ -38,12 +38,15 @@ page covers the editing basics and the editor's preferences.
 
 What Klive adds depends on the language of the file (see [File types](/en/guides/projects/file-types/)):
 
-- **Klive Z80 assembly** and **Klive BASIC** have the most: hovers with symbol information, go to
-  definition (<kbd>F12</kbd>), find references, rename (<kbd>F2</kbd>), semantic colouring, block
-  folding and inline errors. See [Klive Z80 Assembler](/en/guides/languages/klive-z80-assembler/#editor-features)
-  and [Klive BASIC](/en/guides/languages/klive-basic/#editing-zx-basic).
-- **C, sjasmplus and BASIC with Boriel BASIC** get colouring, breakpoints in the gutter and the
-  compiler's errors.
+- **Klive Z80 assembly** has the most: hovers with symbol information, go to definition
+  (<kbd>F12</kbd>), find references, rename (<kbd>F2</kbd>), semantic colouring, block folding and
+  inline errors. See [Klive Z80 Assembler](/en/guides/languages/klive-z80-assembler/#editor-features).
+- **ZX BASIC** (built with Boriel BASIC) gets colouring, keyword help, keyword and library
+  completion, signature help for the built-in functions, folding and block highlights. The editor
+  does not know your program's own names: there is no hover on them, no go to definition, find
+  references, rename or symbol outline. Errors mark the whole line. See
+  [Editing ZX BASIC](/en/guides/languages/boriel-basic/#editing-zx-basic).
+- **C and sjasmplus** get colouring, breakpoints in the gutter and the compiler's errors.
 - Every source language can show breakpoints in the gutter and the execution point while you debug,
   where its compiler gives Klive the line information
   ([Breakpoints](/en/guides/debugging/breakpoints/)).

@@ -1,5 +1,5 @@
 /**
- * Guides screenshot of the Klive BASIC source-level debugger
+ * Guides screenshot of the BASIC source-level debugger (a Boriel BASIC build)
  * (`docs/content/en/guides/debugging/call-stack-variables`):
  *
  * - `klive-basic-paused.webp` — the Get Started bouncing ball (`fixtures/get-started/bouncing-ball`)

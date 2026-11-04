@@ -382,6 +382,9 @@ async function steps(klive) {
         await klive.ide.locator('[class*="_activityButton_"] >> nth=1').click();
         await klive.sleep(800);
         await klive.cmd("debug", 9000);
+        // --- Boriel BASIC (beta) writes build details and a debug-info check warning naming the
+        // --- project's full path (in the user's home): the shot shows the debugger, not the log
+        await klive.cmd("cls", 500);
         await focusIde(klive);
         await debugSections(klive.ide, [1, 3]);
         await park(klive.ide);

@@ -49,6 +49,17 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 /**
  * Launches Klive with an isolated home folder and returns a driver object.
  */
+/**
+ * BASIC programs build only with Boriel BASIC (`.plans/KLIVE_BASIC_SWITCH_OFF_PLAN.md`): a run
+ * points it at BORIEL_ROOT, else ~/zxbasic2, unless the recipe names an installation itself.
+ */
+function withBorielRoot(userSettings) {
+  if (userSettings?.zxbasic?.root || userSettings?.zxbasic?.executablePath) return userSettings;
+  const root = process.env.BORIEL_ROOT || path.join(require("os").homedir(), "zxbasic2");
+  if (!fs.existsSync(root)) return userSettings;
+  return { ...(userSettings ?? {}), zxbasic: { ...(userSettings?.zxbasic ?? {}), root } };
+}
+
 async function launchKlive({
   home,
   width = 1280,
@@ -129,7 +140,7 @@ async function launchKlive({
         ...(accent ? { accent } : {}),
         windowStates: { showIdeOnStartup: true },
         ...sessionSettings,
-        ...(userSettings ? { userSettings } : {}),
+        ...(withBorielRoot(userSettings) ? { userSettings: withBorielRoot(userSettings) } : {}),
         globalSettings: {
           ideViewOptions: {
             showSidebar: true,
