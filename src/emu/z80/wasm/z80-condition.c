@@ -1,7 +1,7 @@
 /*
  * Breakpoint condition evaluator - the one evaluator of Klive's breakpoint condition language.
  *
- * `.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`. The language (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md`
+ * `dev/plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`. The language (`dev/plans/CONDITIONAL_BREAKPOINTS_PLAN.md`
  * §3) is parsed and checked in TypeScript (`src/common/utils/breakpoint-condition/`), which emits the
  * bytecode below; this file runs it. It is `#include`d at the end of every Z80 core's translation
  * unit, after `z80.c` (it reads `cpu`), so registers are read in place - no copy crosses the WASM
@@ -59,7 +59,7 @@
 #define COND_OP_ANDJ 29u /* target: if the top is 0, keep it and jump; else drop it */
 #define COND_OP_ORJ 30u /* target: if the top is not 0, make it 1 and jump; else drop it */
 #define COND_OP_BOOL 31u
-/* `.plans/LOGPOINTS_PLAN.md` §3.4-§3.5: multiplicative operators and the machine specials */
+/* `dev/plans/LOGPOINTS_PLAN.md` §3.4-§3.5: multiplicative operators and the machine specials */
 #define COND_OP_MUL 32u
 #define COND_OP_DIV 33u /* integer, truncating toward zero; a zero divisor is COND_RESULT_DIVZERO */
 #define COND_OP_MOD 34u /* C's remainder; a zero divisor is COND_RESULT_DIVZERO */

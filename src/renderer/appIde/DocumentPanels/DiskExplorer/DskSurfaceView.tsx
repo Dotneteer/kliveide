@@ -29,7 +29,7 @@ import { readErrorText } from "./diskErrorText";
 
 /*
  * The DSK's tracks as stored and as laid on the disk's surface (the raw MFM view). It was the whole
- * `.dsk` viewer; the Disk Explorer (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, B5) shows it in its
+ * `.dsk` viewer; the Disk Explorer (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, B5) shows it in its
  * Layout view behind the "Surface" switch.
  */
 export const DskSurfaceView = ({ document, contents: data }: Pick<DocumentProps, "document" | "contents">) => {

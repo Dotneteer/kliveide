@@ -1,6 +1,6 @@
 /**
  * Converts HALT2INT's real-machine photos for the documentation site
- * (`.plans/SPECTRUM_ACCURACY_DOCS_PLAN.md` §4.4), and builds the landing page's picture of the
+ * (`dev/plans/SPECTRUM_ACCURACY_DOCS_PLAN.md` §4.4), and builds the landing page's picture of the
  * accuracy feature from one of them.
  *
  * The photos are Mark Woodmass's, of his own 48Ks running HALT2INT v3, shipped with the program

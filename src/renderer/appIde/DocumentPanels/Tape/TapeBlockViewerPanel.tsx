@@ -30,7 +30,7 @@ import { Zx81ScreenView } from "../PFile/Zx81ScreenView";
 import { useT } from "@common/i18n/useT";
 
 /*
- * A tape block popped out as a BASIC listing or a screen (`.plans/TAPE_VIEWER_PLAN.md` §4.5): the
+ * A tape block popped out as a BASIC listing or a screen (`dev/plans/TAPE_VIEWER_PLAN.md` §4.5): the
  * one document type the tape viewer added.
  *
  * Its own type rather than a "bytes" mode on `BasicPanel`, because that panel is built around the

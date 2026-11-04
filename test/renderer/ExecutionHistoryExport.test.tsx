@@ -9,7 +9,7 @@ import { encodeHistoryRecord, HistoryKind, type HistoryRecord } from "@common/hi
 import { HISTORY_RECORD_SIZE, type ExecutionHistoryInfo } from "@common/history/historyTypes";
 
 /*
- * The Execution History document's export (`.plans/TRACE_EXPORT_PLAN.md` §4.3, Phase 3): the
+ * The Execution History document's export (`dev/plans/TRACE_EXPORT_PLAN.md` §4.3, Phase 3): the
  * Export button and "Export rows from here to the newest..." ask for a file, then run
  * `history-export` with the document's filter and fold state, so the file holds what the user sees.
  */

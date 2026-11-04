@@ -29,7 +29,7 @@ import {
 import type { Layer2Source } from "./layer2Reveal";
 
 /*
- * The Layer 2 Inspector's view model (`.plans/LAYER2_INSPECTOR_PLAN.md` §4.4-§4.5). Pure: the document
+ * The Layer 2 Inspector's view model (`dev/plans/LAYER2_INSPECTOR_PLAN.md` §4.4-§4.5). Pure: the document
  * turns a snapshot into this once per version and renders from it. The text it returns is translated
  * when the functions run, which is at render time; text meant to be pasted (`coordinatesText`, the
  * `bp-set` commands) stays invariant.

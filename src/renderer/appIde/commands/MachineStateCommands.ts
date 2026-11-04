@@ -57,7 +57,7 @@ export type StateSaveCommandArgs = { file: string; "-f"?: boolean };
 
 /**
  * Saves the machine's complete state as a Klive state file
- * (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.8). Any WASM machine; a running machine runs
+ * (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.8). Any WASM machine; a running machine runs
  * on afterwards. An existing file is replaced only with `-f`.
  */
 export class StateSaveCommand extends IdeCommandBase<StateSaveCommandArgs> {
@@ -138,7 +138,7 @@ export type StateLoadCommandArgs = {
 
 /**
  * Loads a Klive state file, switching to the machine it was saved on
- * (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.8). With no option (or `-d`) it debugs,
+ * (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.8). With no option (or `-d`) it debugs,
  * stopping at the saved PC; `-r` runs. A Next state saved with another SD card content needs `-y`.
  */
 export class StateLoadCommand extends IdeCommandBase<StateLoadCommandArgs> {

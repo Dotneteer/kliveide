@@ -3,7 +3,7 @@
 Read `README.md` beside this file first (the D4 rule, provenance, the file format, the levels). This guide
 carries what is particular to the Enterprise: which ROM page is which, how the machine names them, the order
 of work, the tools, the sources that are off limits and the facts read so far. The machine itself is
-`src/emu/machines/enterprise/wasm/README.md`; the plan is `.plans/ENTERPRISE_PLAN.md`.
+`src/emu/machines/enterprise/wasm/README.md`; the plan is `dev/plans/ENTERPRISE_PLAN.md`.
 
 ## Sources
 

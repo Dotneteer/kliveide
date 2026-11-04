@@ -7,7 +7,7 @@ import { createSp128Session, type Sp128TestSession } from "../../harness/sp128";
 import { buildTestTrdosRom, ENTRY } from "../beta128/test-rom";
 
 /*
- * The Scorpion ZS-256 (`.plans/TIMEX_SCORPION_PLAN.md` G9.4c, §8), on the 128K's core. Its
+ * The Scorpion ZS-256 (`dev/plans/TIMEX_SCORPION_PLAN.md` G9.4c, §8), on the 128K's core. Its
  * programmer's guide: $7FFD answers with A0, A2, A5, A12, A14 high and A1, A15 low; $1FFD with A0,
  * A2, A5, A12 high and A1, A14, A15 low; $1FFD bit 0 puts RAM bank 0 at $0000, bit 1 the service ROM,
  * bit 4 adds 8 to the bank at $C000. $0000 shows RAM 0, else the service ROM, else TR-DOS, else ROM 0/1.

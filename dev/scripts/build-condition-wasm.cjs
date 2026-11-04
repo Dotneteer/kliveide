@@ -2,7 +2,7 @@
  * Builds the breakpoint condition evaluator alone - `src/emu/z80/wasm/z80-condition.c` with
  * `COND_TEST_HOST` - as `src/emu/z80/wasm/dist/condition-test.wasm`.
  *
- * Test-only (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md` §4.2): registers, memory, paging and Next
+ * Test-only (`dev/plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md` §4.2): registers, memory, paging and Next
  * registers come from WebAssembly imports, so the condition language is tested against the very C
  * code every Z80 core includes, without a machine. Nothing ships this module.
  */

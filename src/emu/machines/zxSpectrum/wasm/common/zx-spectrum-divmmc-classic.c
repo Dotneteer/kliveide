@@ -1,5 +1,5 @@
 /*
- * The DivMMC on a classic Spectrum (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, C4): the 48K, the
+ * The DivMMC on a classic Spectrum (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, C4): the 48K, the
  * 128K and the +2A/+3 cores include this once, before z80.c. It holds the interface's 8K ROM (the
  * user's esxDOS) and its 128K of RAM, pages them over $0000-$3FFF while the DivMMC is mapped, and
  * puts the shared DivMMC (zx-spectrum-divmmc.c) and SD card (zx-spectrum-sd.c) on the machine.

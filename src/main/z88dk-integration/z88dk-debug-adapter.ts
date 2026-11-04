@@ -17,7 +17,7 @@ import type {
 import { mapValue, unescapeMapName, type Z88dkLineDebug, type Z88dkMapSymbol } from "./z88dk-map";
 
 /*
- * Map + CDB records + image → `SourceLevelDebugInfo` with `language: "c"` (`.plans/Z88DK_INTEGRATION_PLAN.md`
+ * Map + CDB records + image → `SourceLevelDebugInfo` with `language: "c"` (`dev/plans/Z88DK_INTEGRATION_PLAN.md`
  * §8, phase Z5). Everything comes from zcc's output, as `dev/ai/z88dk/cdb-records.md` records it:
  *
  * - statements: one per address the line records give (the lowest line at a shared address);

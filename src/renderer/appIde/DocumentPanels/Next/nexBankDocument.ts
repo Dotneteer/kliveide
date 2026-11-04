@@ -9,7 +9,7 @@ import { documentSourceName } from "../helpers/documentSourceName";
  * "go to definition" leaving the bank on screen (`StaticMemoryDump.revealAddressInBank`). They must
  * agree on the id, or one bank opens as two documents — a reveal then scrolls a copy the user is not
  * looking at, and anything keyed by document id (navigation history, see
- * `.plans/NAVIGATION_HISTORY_PLAN.md` §2) sees two unrelated documents.
+ * `dev/plans/NAVIGATION_HISTORY_PLAN.md` §2) sees two unrelated documents.
  *
  * They did not: the viewer built the id from the node's *project-relative* path, the two reveals from
  * the host path `nex-run` recorded, which is the node's *full* path. The key is the full path because

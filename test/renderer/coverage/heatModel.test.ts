@@ -12,7 +12,7 @@ import {
   rampStep
 } from "@renderer/features/coverage/heatModel";
 
-/* The memory heat map's model (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D14, T6) */
+/* The memory heat map's model (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D14, T6) */
 
 function view(flags: number[], counts?: { exec: number[]; read: number[]; write: number[]; counted?: number[] }): ProfileView {
   const n = flags.length;

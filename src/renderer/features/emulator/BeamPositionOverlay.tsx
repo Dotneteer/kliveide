@@ -18,7 +18,7 @@ type Props = {
 };
 
 /**
- * Where the raster is on the paused screen (`.plans/BEAM_POSITION_OVERLAY_PLAN.md` D1, D2, D5-D7): a
+ * Where the raster is on the paused screen (`dev/plans/BEAM_POSITION_OVERLAY_PLAN.md` D1, D2, D5-D7): a
  * line across the beam's row and a tick at its pixel (or an edge marker in blanking), the previous
  * frame's part of the picture hatched, the Copper's hit in the secondary accent, and on hover the
  * pixel's line and tact and how far the beam is from it. Never changes a pixel of the picture.

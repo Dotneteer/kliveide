@@ -10,7 +10,7 @@ import { historicalCpuState } from "@renderer/appEmu/MainToEmuProcessor";
 import { createSp48Session, type Sp48TestSession } from "../harness/sp48";
 
 /*
- * Lite step back on a real core (`.plans/LITE_STEP_BACK_PLAN.md` §6.2): the 48K runs a program with
+ * Lite step back on a real core (`dev/plans/LITE_STEP_BACK_PLAN.md` §6.2): the 48K runs a program with
  * a known call tree with the history recorder on, and the controller's cursor walks back through
  * what it recorded. The machine is never touched by a navigation; any machine command returns to
  * the present (D5).

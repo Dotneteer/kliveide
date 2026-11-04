@@ -1,7 +1,7 @@
 import type { ScreenImage } from "@common/messaging/EmuApi";
 
 /*
- * The emulated picture as RGBA bytes (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D16): the visible part
+ * The emulated picture as RGBA bytes (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` D16): the visible part
  * of a machine's pixel buffer, exactly what the emulator panel draws (before its scan-line effect).
  * The emulator's `getScreenImage` (the automation server's `screen.capture`) and `klive run
  * --screenshot` both take it from here, so the live and the headless picture are the same bytes.

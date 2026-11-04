@@ -532,7 +532,7 @@ export const BreakpointsPanel = () => {
   };
 
   /**
-   * Switch one log group (`.plans/LOGPOINTS_PLAN.md` §4.5): the DeZog model keeps a list of the
+   * Switch one log group (`dev/plans/LOGPOINTS_PLAN.md` §4.5): the DeZog model keeps a list of the
    * groups that log, so switching one off lists the rest, and switching the last one on drops the
    * list again. Persisted with the project; the emulator reads it from the shared store.
    */

@@ -7,7 +7,7 @@ import { describeHistoryCore, history, loadRecording } from "./historyCoreSuite"
 import { sp128Driver } from "./drivers";
 
 /*
- * The +2A/+3/+2E/+3E core's execution history (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` Phase 3).
+ * The +2A/+3/+2E/+3E core's execution history (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` Phase 3).
  * The partition check steps through $7FFD paging, the four ROMs ($1FFD bit 2) and the special
  * all-RAM mode whose configuration keeps bank 2 at $8000, where the program runs.
  */

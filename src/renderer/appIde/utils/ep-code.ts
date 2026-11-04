@@ -9,7 +9,7 @@ import {
 } from "@common/enterprise/codePlacement";
 
 /*
- * Exporting Enterprise code (`.plans/ENTERPRISE_PLAN.md` §12): a `.com` file, an EXOS `$$APP` module -
+ * Exporting Enterprise code (`dev/plans/ENTERPRISE_PLAN.md` §12): a `.com` file, an EXOS `$$APP` module -
  * the 16-byte header and the code from 0100h (`common/enterprise/codePlacement.ts`) - which
  * `LOAD "FILE:name.COM"` (or from a disk) loads and starts.
  */

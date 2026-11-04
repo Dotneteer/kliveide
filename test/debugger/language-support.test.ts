@@ -11,7 +11,7 @@ import { variableNode } from "@renderer/appIde/debugger/source/variables-model";
 import { evaluateWatch } from "@renderer/appIde/debugger/source/watch-expression";
 
 /**
- * The language-neutral presentation core and its language plugins (`.plans/SHARED_Z80_BACKEND_PLAN.md`
+ * The language-neutral presentation core and its language plugins (`dev/plans/SHARED_Z80_BACKEND_PLAN.md`
  * §12.3, §12.4): representations decode without a language; a plugin decides how values, arrays and
  * local activations are written, and what a watch means.
  */

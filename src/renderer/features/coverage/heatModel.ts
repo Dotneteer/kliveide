@@ -8,7 +8,7 @@ import {
 import { t } from "@common/i18n/i18n";
 
 /*
- * The memory view's heat map (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D14). Pure: a profile view
+ * The memory view's heat map (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D14). Pure: a profile view
  * (flags and counts of the 64K, or of a partition) becomes one byte per address - a step on a
  * five-step ramp and the hue it is drawn in.
  *

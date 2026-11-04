@@ -1,5 +1,5 @@
 /*
- * The one model every ZX Spectrum snapshot format parses into (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md`
+ * The one model every ZX Spectrum snapshot format parses into (`dev/plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md`
  * §4.1, decision D1). Mapping, machine loading, orchestration and the viewer's machine sections all
  * work on this model and never on a file format; format-specific detail survives only as
  * `header` items (and `chunks` for `.szx`) for the viewer's "File" section.
@@ -147,7 +147,7 @@ export type SpectrumSnapshotPeripherals = {
   joystick?: string;
   /** Interface 1 was present (or its ROM paged); `if1` has its state when the file records it */
   interface1?: boolean;
-  /** The Interface 1 and its Microdrives (`.plans/MICRODRIVE_PLAN.md` Phase 5) */
+  /** The Interface 1 and its Microdrives (`dev/plans/MICRODRIVE_PLAN.md` Phase 5) */
   if1?: SnapshotInterface1;
   /** An M.G.T. (Disciple/Plus D) interface was present */
   mgt?: boolean;
@@ -155,7 +155,7 @@ export type SpectrumSnapshotPeripherals = {
   multiface?: boolean;
   /** The TR-DOS ROM was paged (`.sna` 128K, or the `.szx` B128 block) */
   trdosPaged?: boolean;
-  /** The Beta 128 disk interface (`.szx` B128 and BDSK blocks; `.plans/BETA128_TRDOS_PLAN.md`) */
+  /** The Beta 128 disk interface (`.szx` B128 and BDSK blocks; `dev/plans/BETA128_TRDOS_PLAN.md`) */
   beta128?: SnapshotBeta128;
   /** A custom ROM (`.szx` ROM block), which Klive does not install */
   customRomSize?: number;

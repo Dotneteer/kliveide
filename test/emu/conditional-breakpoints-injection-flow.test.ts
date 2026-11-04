@@ -18,7 +18,7 @@ import { createSp48Session } from "../harness/sp48";
  * step runs the per-instruction loop in `NoDebug` mode. That run used to carry the breakpoint store,
  * so the IM 1 handler at $38 - which runs every frame of the boot - was counted there: `-hit 4` was
  * spent (and silently stopped the boot) before the program ever ran, and the breakpoint never fired
- * in the debug session. Breakpoints belong to debug runs only (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md`
+ * in the debug session. Breakpoints belong to debug runs only (`dev/plans/CONDITIONAL_BREAKPOINTS_PLAN.md`
  * C19).
  */
 

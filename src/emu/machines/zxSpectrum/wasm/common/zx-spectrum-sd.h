@@ -1,5 +1,5 @@
 /*
- * An SD card on the SPI bus (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, C3): port $E7 selects the
+ * An SD card on the SPI bus (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, C3): port $E7 selects the
  * card, port $EB moves the bytes; the sectors come from the host - shared by the Next's two cards and
  * the classic machines' DivMMC.
  */

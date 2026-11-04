@@ -33,9 +33,9 @@ export const STATIC_MEMORY_DUMP_VIEWER = "StaticMemoryDumpViewer";
 export const SPRITE_PATTERN_SNAPSHOT_VIEWER = "SpritePatternSnapshot";
 export const TILE_SNAPSHOT_VIEWER = "TileSnapshot";
 export const TAP_VIEWER = "TapViewer";
-// --- A tape block popped out as a BASIC listing or a screen (`.plans/TAPE_VIEWER_PLAN.md` §4.5)
+// --- A tape block popped out as a BASIC listing or a screen (`dev/plans/TAPE_VIEWER_PLAN.md` §4.5)
 export const TAPE_BLOCK_VIEWER = "TapeBlockViewer";
-// --- An HT-1080Z .cas, .cmd or tokenised .bas (`.plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D5)
+// --- An HT-1080Z .cas, .cmd or tokenised .bas (`dev/plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D5)
 export const HT1080Z_TAPE_VIEWER = "Ht1080zTapeViewer";
 /** The ZX81 `.P` program file viewer */
 export const P_FILE_VIEWER = "PFileViewer";
@@ -44,7 +44,7 @@ export const DISK_EXPLORER = "DiskExplorer";
 /** The Disk Explorer for hard-disk images: `.img`, `.hdf`, `.cim` (DISK_IMAGES_AND_FILE_SYSTEMS_PLAN C2) */
 export const HARD_DISK_EXPLORER = "HardDiskExplorer";
 export const NEX_VIEWER = "NexViewer";
-// --- A ROM sidecar opened for editing (`.plans/ROM_ANNOTATION_EDITING_PLAN.md` R4)
+// --- A ROM sidecar opened for editing (`dev/plans/ROM_ANNOTATION_EDITING_PLAN.md` R4)
 export const ROM_ANNOTATION_EDITOR = "RomAnnotationEditor";
 export const Z88_SNAPSHOT_VIEWER = "Z88SnapshotViewer";
 export const SPECTRUM_SNAPSHOT_VIEWER = "SpectrumSnapshotViewer";

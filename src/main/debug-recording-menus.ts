@@ -1,5 +1,5 @@
 /*
- * Debug › Save Debug Recording… and Debug › Open Debug Recording… (`.plans/DEBUG_SESSION_RECORDING_PLAN.md`
+ * Debug › Save Debug Recording… and Debug › Open Debug Recording… (`dev/plans/DEBUG_SESSION_RECORDING_PLAN.md`
  * §4.5, D2): dialogs in main, then the IDE's `debug-recording-save` / `debug-recording-load` commands -
  * the state menus' pattern. File › Open File… and a dropped `.klr` come here too.
  */

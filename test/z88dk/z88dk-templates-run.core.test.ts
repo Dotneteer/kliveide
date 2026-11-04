@@ -8,7 +8,7 @@ import { buildTemplate } from "./zccReplay";
 import { globalAddress, runSpectrumTemplate, runUntilCounterDone, topRowsHaveInk, withTemp, type TemplateSession } from "./templateRun";
 
 /*
- * Run on the real cores, one representative per route (`.plans/ZX_SPECTRUM_C_TEMPLATES_PLAN.md` T3,
+ * Run on the real cores, one representative per route (`dev/plans/ZX_SPECTRUM_C_TEMPLATES_PLAN.md` T3,
  * fast tier): the 48K's own injection, the 128K and +3 family's 48 BASIC injection, the TC2048 (+zx on
  * the Timex core), and the Next's .nex. Every other model is in `z88dk-templates-run-models.core.test.ts`
  * (slow tier).

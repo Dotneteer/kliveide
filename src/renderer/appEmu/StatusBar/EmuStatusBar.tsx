@@ -64,7 +64,7 @@ export const EmuStatusBar = ({ show, showPerformanceInfo = true }: EmuStatusBarP
   const showNextLayers = useGlobalSetting(SETTING_EMU_SHOW_NEXT_LAYERS);
   const canMultiply =
     machineRegistry.find((m) => m.machineId === machineId)?.features?.[MF_ALLOW_CLOCK_MULTIPLIER] !== false;
-  // --- The status bar's own parts are toggled from the status bar (`.plans/MENU_REDESIGN_PLAN.md` §5)
+  // --- The status bar's own parts are toggled from the status bar (`dev/plans/MENU_REDESIGN_PLAN.md` §5)
   const [barMenu, barMenuApi] = useContextMenuState();
   const [speedMenu, speedMenuApi] = useContextMenuState();
   const speedChip = useRef<HTMLButtonElement>(null);
@@ -294,7 +294,7 @@ const LabelSeparator = () => <div className={styles.labelSeparator} />;
 const SectionSeparator = () => <div className={styles.sectionSeparator} />;
 
 /**
- * The RZX badge (`.plans/RZX_PLAN.md` §4.6): PLAY with the frame counter while a recording plays,
+ * The RZX badge (`dev/plans/RZX_PLAN.md` §4.6): PLAY with the frame counter while a recording plays,
  * REC while one records, VIDEO while one renders, and REC in the warning colour while a stopped
  * recording waits to be saved. The colours are status tokens: state, not decoration.
  */

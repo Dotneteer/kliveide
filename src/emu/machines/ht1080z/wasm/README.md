@@ -1,6 +1,6 @@
 # HT-1080Z WASM Core
 
-One C core runs every HT-1080Z model (`.plans/HT1080Z_PLAN.md`, decision D1): `ht1080zConfigure`
+One C core runs every HT-1080Z model (`dev/plans/HT1080Z_PLAN.md`, decision D1): `ht1080zConfigure`
 picks Series I, Series II or the /64 (the clock follows) and 16K or 48K of RAM at run time, and the
 host uploads the model's three ROMs. It builds to `dist/ht1080z.wasm` and is loaded by
 `Ht1080zWasmV2Loader.ts`; the TypeScript side is `../Ht1080zWasmHost.ts` (plumbing) and

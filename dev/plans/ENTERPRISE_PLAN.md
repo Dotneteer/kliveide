@@ -592,7 +592,7 @@ Grouped as in the TVC's §11; **(2×)** marks a list kept in two places.
 - **CLI:** `src/cli/run/inputs.ts`, `src/cli/verbs/run.ts` `--machine ep`, `unitTestMachines.ts`.
 - **i18n:** every new UI text through `t()` with an English entry and translator context, then
   `npm run i18n:keys`.
-- **Feature roadmap:** if `.plans/CLOSING_THE_GAPS_PLAN.md` or the competitive analysis lists machine
+- **Feature roadmap:** if `dev/plans/CLOSING_THE_GAPS_PLAN.md` or the competitive analysis lists machine
   coverage, update its tables in the same change (AGENTS.md's standing instruction).
 
 ### 11.4 IS-BASIC listing (conditional)

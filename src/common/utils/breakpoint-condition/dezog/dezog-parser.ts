@@ -4,7 +4,7 @@ import { ConditionSyntaxError } from "../condition-lexer";
 import type { AccessType, SyntaxNode } from "../condition-parser";
 
 /*
- * The DeZog expression dialect (`.plans/LOGPOINTS_PLAN.md` §3.4): what a `LOGPOINT` source comment's
+ * The DeZog expression dialect (`dev/plans/LOGPOINTS_PLAN.md` §3.4): what a `LOGPOINT` source comment's
  * `${...}` placeholders hold, and what G1.5's ASSERTION conditions will hold.
  *
  * A second *front end*, not a second engine: this parser builds the same syntax tree as Klive's own

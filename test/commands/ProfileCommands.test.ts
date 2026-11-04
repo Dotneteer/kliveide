@@ -21,7 +21,7 @@ import {
 import { PROFILER_PANEL_ID } from "@common/state/common-ids";
 
 /*
- * The profiler's commands (`.plans/PROFILER_PLAN.md` D16, Phase 4) against a faked Emu API: the
+ * The profiler's commands (`dev/plans/PROFILER_PLAN.md` D16, Phase 4) against a faked Emu API: the
  * gates, start with its window markers resolved from labels, stop, status, `top` and the exports.
  */
 

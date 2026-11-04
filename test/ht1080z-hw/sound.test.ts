@@ -4,7 +4,7 @@ import { createHtSession, type Ht1080zTestSession } from "../harness/ht1080z";
 import { AUDIO_SAMPLE_RATE } from "@emu/machines/machine-props";
 
 /*
- * The Phase 5 sound tests (`.plans/HT1080Z_PLAN.md` §10, §13; `dev/research/ht1080z/SOUND_AY.md`): the AY's
+ * The Phase 5 sound tests (`dev/plans/HT1080Z_PLAN.md` §10, §13; `dev/research/ht1080z/SOUND_AY.md`): the AY's
  * ports, its clock (the CPU clock, measured as a tone's pitch in the sample buffer), the beeper and
  * its relay mute, the user manual's sea program, the PSG panel, and when the AY is reset.
  */

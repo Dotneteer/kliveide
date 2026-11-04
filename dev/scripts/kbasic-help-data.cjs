@@ -1,7 +1,7 @@
 /**
  * Generates `src/common/kbasic/help-data.generated.ts`: the static help the `.zxbas` editor shows
  * for keywords, built-in functions, directives, pragmas and library routines
- * (`.plans/BASIC_EDITOR_INTELLIGENCE_PLAN.md` §4.4, E8).
+ * (`dev/plans/BASIC_EDITOR_INTELLIGENCE_PLAN.md` §4.4, E8).
  *
  * Sources, all Klive's own:
  * - `dev/ai/zxbasic-syntax/zxbasic-syntax.json` (keywords, statements, functions, types, operators,

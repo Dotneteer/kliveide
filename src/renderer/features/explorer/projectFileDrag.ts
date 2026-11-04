@@ -1,5 +1,5 @@
 /*
- * Project files dragged out of the explorer (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, B4): the
+ * Project files dragged out of the explorer (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, B4): the
  * row puts the file's full path on the drag under its own type, so a drop target (the Disk Explorer)
  * tells a project file from text or an OS file.
  */

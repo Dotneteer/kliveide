@@ -11,7 +11,7 @@ import { copyHostFolderToHardDisk, editHardDisk } from "./hard-disk-images";
 
 /*
  * Edits to a hard-disk image the running machine may be using as its SD card
- * (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, D4 for hard disks). The card is read on demand, a
+ * (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, D4 for hard disks). The card is read on demand, a
  * sector at a time, so there is nothing to re-insert: the edit takes the card's lock, so no machine
  * read or write runs beside it, pauses a running machine (its operating system may cache what it
  * read), writes, and drops the emulator's open handle to the card so the next read sees the change.

@@ -29,7 +29,7 @@ import {
 } from "@renderer/appIde/services/ide-commands";
 
 /*
- * Code coverage and the heat map (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D15, D16): one command
+ * Code coverage and the heat map (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D15, D16): one command
  * family, `coverage on|off|reset|status|export|load|smc`, and `memory-heat <mode>` for scripts. They
  * gate on the `MF_PROFILE` capability, not on a machine id, and on the advanced-debugging switch.
  */

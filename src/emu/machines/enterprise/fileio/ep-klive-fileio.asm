@@ -1,5 +1,5 @@
 ; =============================================================================
-; Klive's FILE: device for the Enterprise 64/128 (`.plans/ENTERPRISE_PLAN.md` §9.2, D8)
+; Klive's FILE: device for the Enterprise 64/128 (`dev/plans/ENTERPRISE_PLAN.md` §9.2, D8)
 ;
 ; An EXOS extension ROM that adds the device FILE:, whose files are files of the host. Klive's own
 ; code, written from the EXOS 2.1 kernel specification (the extension ROM header, the device

@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { HT1080Z_BASIC_SNIFF_BYTES, isTokenisedHt1080zBasic } from "@common/ht1080z/basContent";
 
 /*
- * A `.bas` is an HT-1080Z program by its content (`.plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D1): an FFh,
+ * A `.bas` is an HT-1080Z program by its content (`dev/plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D1): an FFh,
  * then lines whose links agree with their lengths.
  */
 const DEMO = new Uint8Array(readFileSync(join(__dirname, "../../dev/scripts/doc-shots/recipes/ht1080z-demo.bas")));

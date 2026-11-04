@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { createSp48Session } from "../harness/sp48";
 
 /*
- * One-shot breakpoints on the real 48K core (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md`
+ * One-shot breakpoints on the real 48K core (`dev/plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md`
  * Phase 1): a one-shot stops once and is gone, a filtered one waits for its own filters, a run-to
  * target leaves the user's breakpoint alone, and a memory one-shot is spent at its stop. The harness
  * has no machine controller, so where the controller spends a memory stop's one-shots the test

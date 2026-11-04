@@ -7,7 +7,7 @@ import type { NextLayer2State } from "@common/messaging/EmuApi";
 import { LAYER2_READ_BYTES } from "@common/zxnext/layer2/layer2Decode";
 
 /*
- * The Layer 2 Inspector document shell (`.plans/LAYER2_INSPECTOR_PLAN.md` Phase 3-5): the empty
+ * The Layer 2 Inspector document shell (`dev/plans/LAYER2_INSPECTOR_PLAN.md` Phase 3-5): the empty
  * state, the globals strip with the write window in words, the Banks strip, a clicked pixel in the
  * inspector, and the shadow banks read only when the Shadow source is chosen (T9).
  */

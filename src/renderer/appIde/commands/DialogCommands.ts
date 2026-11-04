@@ -21,7 +21,7 @@ type DialogCommandArgs = {
 
 export class DisplayDialogCommand extends IdeCommandBase<DialogCommandArgs> {
   readonly id = "display-dialog";
-  // --- Opens a modal dialog: never through automation (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` T5)
+  // --- Opens a modal dialog: never through automation (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` T5)
   readonly automation = "deny" as const;
   get description() {
     return t("commands.displayDialog.description");

@@ -13,7 +13,7 @@ import styles from "./NexBankCommentViews.module.scss";
 /*
  * How a popped-out bank shows its comment without spending a row of the listing on it.
  *
- * Two views of one comment (`.plans/NEX_BANK_COMMENTS_PLAN.md` §4.2):
+ * Two views of one comment (`dev/plans/NEX_BANK_COMMENTS_PLAN.md` §4.2):
  *
  * - **The chip** sits in the toolbar and shows as much of the comment as fits in a short, fixed
  *   width. Clicking it opens a popover with the whole text, from which it can be edited or *pinned*.

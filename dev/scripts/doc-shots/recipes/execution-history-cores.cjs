@@ -1,7 +1,7 @@
 /**
  * Screenshot for the "Folding interrupts" section of
  * `docs/content/working-with-ide/execution-history.mdx`, and the running-app check of execution
- * history on the cores other than the Next (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` Phase 6).
+ * history on the cores other than the Next (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` Phase 6).
  *
  * - The ZX81 boots in a debug session; paused at the editor, the history has 65,536 records, folds
  *   interrupt service by default (its NMIs and the display it draws from one), and a folded row

@@ -38,7 +38,7 @@ vi.mock("@common/messaging/EmuApi", () => ({
 }));
 
 /*
- * Conditional breakpoints from the command line, Phase 4 of `.plans/CONDITIONAL_BREAKPOINTS_PLAN.md`
+ * Conditional breakpoints from the command line, Phase 4 of `dev/plans/CONDITIONAL_BREAKPOINTS_PLAN.md`
  * (§4.3): `-if` as a raw tail, `-hit` specs, the caret output, warnings, `bp-list` lines that paste
  * back into `bp-set`, and `bp-reset-hits`.
  */

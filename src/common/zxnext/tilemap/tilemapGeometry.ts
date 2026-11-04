@@ -1,5 +1,5 @@
 /*
- * Where the tilemap lands (`.plans/TILEMAP_INSPECTOR_PLAN.md` §4.1, T6). Pure.
+ * Where the tilemap lands (`dev/plans/TILEMAP_INSPECTOR_PLAN.md` §4.1, T6). Pure.
  *
  * Coordinates are **layer pixels**: 320 x 256 at 40 columns, 640 x 256 at 80 (T6), with (0, 0) the
  * top left of the 320 x 256 layer space (the paper starts at (32, 32) in 320-wide units). The map is

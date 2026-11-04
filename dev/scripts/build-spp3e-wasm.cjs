@@ -18,7 +18,7 @@ const { Z80_PROFILE_EXPORTS, Z80_PROFILE_VOLATILE_SYMBOLS } = require("./z80-pro
 const { REPO_ROOT } = require("./repo-root.cjs");
 
 /**
- * Statics a Klive state file leaves out (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` trap 10):
+ * Statics a Klive state file leaves out (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` trap 10):
  * debugging state and buffers the core rewrites before it reads them, so a restore keeps the live
  * core's bytes there.
  */
@@ -256,7 +256,7 @@ const productionExports = [
   "spp3eGetLastUlaReadValue",
   "spp3eSetLastContendedValue",
   "spp3eSetLastUlaReadValue",
-  // --- RZX playback and recording (`.plans/RZX_PLAN.md` §4.2)
+  // --- RZX playback and recording (`dev/plans/RZX_PLAN.md` §4.2)
   ...rzxExports("spp3e"),
   // --- The DivMMC and its SD card (`zx-spectrum-divmmc-classic.c`)
   ...divMmcClassicExports("spp3e")

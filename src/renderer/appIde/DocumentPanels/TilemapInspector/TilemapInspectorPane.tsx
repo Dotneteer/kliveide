@@ -22,7 +22,7 @@ import type { DecodedCell } from "@common/zxnext/tilemap/tilemapDecode";
 import styles from "./TilemapInspector.module.scss";
 
 /*
- * The inspector (`.plans/TILEMAP_INSPECTOR_PLAN.md` §4.5.3): for a cell, the tile as stored and as
+ * The inspector (`dev/plans/TILEMAP_INSPECTOR_PLAN.md` §4.5.3): for a cell, the tile as stored and as
  * shown, the field-by-field decode with the raw bytes (D5), the entry's three addresses (T1), the
  * colours used and why it might be invisible; for a tile, its bytes and the cells that use it.
  */

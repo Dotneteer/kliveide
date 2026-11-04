@@ -383,7 +383,7 @@ describe("sameSidecarLabelBreakpoints", () => {
 });
 
 /*
- * Conditional breakpoints, Phase 1 (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.7): a sidecar
+ * Conditional breakpoints, Phase 1 (`dev/plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.7): a sidecar
  * stores a breakpoint's condition and hit rule beside its place, for both stored shapes, and never
  * the runtime state `listBreakpoints` reports.
  */

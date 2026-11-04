@@ -10,7 +10,7 @@ import type {
 } from "@abstractions/SourceDebugInfo";
 
 /**
- * Version 1 of the source-level debug model, read into version 2 (`.plans/SHARED_Z80_BACKEND_PLAN.md`
+ * Version 1 of the source-level debug model, read into version 2 (`dev/plans/SHARED_Z80_BACKEND_PLAN.md`
  * §12.1, "Compatibility"): NEX debug sidecars written by older Klive versions, and the `.dbg` files
  * of zxbc, whose vocabulary is version 1's. Every function here passes version-2 data through, so a
  * reader need not know which version it holds.

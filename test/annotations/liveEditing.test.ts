@@ -25,7 +25,7 @@ import { formatRomSidecar } from "@common/roms/romAnnotationTools";
  * Editing annotations from the live Disassembly view
  * (`dev/patterns/annotations.md`, "The Live Disassembly View"): a row is turned into the bank site the
  * annotation editor works in, and the editor's own controller does the rest. A ROM row is edited in
- * its page's working copy (`.plans/ROM_ANNOTATION_EDITING_PLAN.md`), and only when there is one.
+ * its page's working copy (`dev/plans/ROM_ANNOTATION_EDITING_PLAN.md`), and only when there is one.
  */
 
 function fileSystem(files: Record<string, string> = {}) {

@@ -475,7 +475,7 @@ describe("StaticMemoryDump", () => {
      * The rows are addressed by `disassOffset` while the virtual list is indexed from the start of
      * the dump. Without subtracting it, a bank shown at $1000 asked for row $1234/16 = 291 for an
      * address only 35 rows in. In a bank shown at $4000 the request ran past the end of the list
-     * entirely. See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.15a.
+     * entirely. See `dev/plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.15a.
      */
     const harness = await renderStaticMemoryDump({ disassOffset: 0x1000 });
 
@@ -504,7 +504,7 @@ describe("StaticMemoryDump", () => {
      * View state is read once, on mount, so re-pointing an open document by writing to it does
      * nothing — which is why the listing stopped following the program counter as soon as it stayed
      * inside a bank that was already showing. The document exposes `revealAddress` for this.
-     * See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.18.
+     * See `dev/plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.18.
      */
     const harness = await renderStaticMemoryDump({ disassOffset: 0x8000 });
 
@@ -814,7 +814,7 @@ describe("StaticMemoryDump", () => {
   });
 
   /*
-   * A bank from a `.z88` snapshot (`.plans/Z88_SLOT_BROWSER_PLAN.md` §4.5). The bytes are Z88 code
+   * A bank from a `.z88` snapshot (`dev/plans/Z88_SLOT_BROWSER_PLAN.md` §4.5). The bytes are Z88 code
    * whichever machine runs, so the listing must not read them as ZX Next code.
    */
   describe("a Z88 listing", () => {
@@ -853,7 +853,7 @@ describe("StaticMemoryDump", () => {
   });
 
   /*
-   * A ROM page document (`.plans/ROM_ANNOTATION_EDITING_PLAN.md` §10) names the variables of the
+   * A ROM page document (`dev/plans/ROM_ANNOTATION_EDITING_PLAN.md` §10) names the variables of the
    * machine the ROM belongs to. The selected machine here reports the Spectrum's `LAST-K` at `$5C08`.
    */
   describe("a ROM page listing", () => {

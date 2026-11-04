@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /*
- * The Cambridge Z88 manual app pass, scripted (Step 13 of `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`).
+ * The Cambridge Z88 manual app pass, scripted (Step 13 of `dev/plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`).
  *
  * Launches the built app (`out/`) under Playwright's Electron driver - `dev/scripts/doc-shots/harness.cjs`,
  * an isolated settings file - once per model, and drives the same session through the menus, the
@@ -13,7 +13,7 @@
  * checks; console errors of both windows are collected, and each model's pictures and
  * `report.json` land in `.local/doc-shots/z88-app-pass/<model>/`. It is a smoke test of the app around the
  * one Z88 machine: until the TypeScript machine was removed
- * (`.plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`) it also ran each model's TypeScript twin and put
+ * (`dev/plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`) it also ran each model's TypeScript twin and put
  * the two side by side.
  *
  * One model per run is reliable; all ten in one run are not yet - the app rebuilds its menu after
@@ -133,7 +133,7 @@ async function runModel(modelId) {
     await emu.getByRole("option", { name: text, exact: false }).first().click();
     await sleep(300);
   };
-  // --- Machine options are in Settings › Machine (`.plans/MENU_REDESIGN_PLAN.md` §4): open the
+  // --- Machine options are in Settings › Machine (`dev/plans/MENU_REDESIGN_PLAN.md` §4): open the
   // --- dialog in the EMU window, pick the option, close it
   const machineSetting = async (rowId, optionText, wait = 1500) => {
     await menu("open_settings", 800);

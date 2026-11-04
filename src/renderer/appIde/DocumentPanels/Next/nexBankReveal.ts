@@ -27,7 +27,7 @@ import { getAnnotationPath } from "@renderer/appIde/annotations/programAnnotatio
  * — which bank, based at what, scrolled where, and when to do nothing — is testable without a
  * machine, an IDE, or a React tree.
  *
- * See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.17.
+ * See `dev/plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.17.
  */
 
 export type NexBankRevealDeps = {

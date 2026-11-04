@@ -10,7 +10,7 @@ import { writeDiskData } from "@emu/machines/disk/disk-writer";
 import { PRINT_42 } from "./fixtures";
 
 /*
- * +3DOS (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, B1/B2), without a machine: Klive's own
+ * +3DOS (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, B1/B2), without a machine: Klive's own
  * reads of what Klive writes. What the +3 itself makes of them is
  * `test/sp128-hw/plus3-disk/plus3dos-oracle.test.ts`.
  */

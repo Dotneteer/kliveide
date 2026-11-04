@@ -16,7 +16,7 @@ import { buildTimexWasm, productionOutput } from "../../../dev/scripts/build-tim
 const SP48_ROM_PATH = join(__dirname, "../../../src/public/roms/sp48.rom");
 
 /**
- * The Timex ROMs for the ROM-gated tests. Klive cannot ship them (`.plans/TIMEX_SCORPION_PLAN.md`
+ * The Timex ROMs for the ROM-gated tests. Klive cannot ship them (`dev/plans/TIMEX_SCORPION_PLAN.md`
  * P5), so a developer who has them names them in `KLIVE_TC2048_ROM`, `KLIVE_TC2068_ROM` and
  * `KLIVE_TS2068_ROM` (the 2068s' as one 24K file, HOME then EXROM); without them those tests are
  * skipped.

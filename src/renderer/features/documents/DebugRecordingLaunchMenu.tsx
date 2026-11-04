@@ -10,7 +10,7 @@ import { debugRecordingLoadCommandText } from "@common/debugRecording/debugRecor
 
 /*
  * **Open** / **Open at start** for a debug recording (`.klr`): the Explorer's context menu entries
- * and the buttons in the recording viewer's tab bar (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` D19),
+ * and the buttons in the recording viewer's tab bar (`dev/plans/DEBUG_SESSION_RECORDING_PLAN.md` D19),
  * copied from `MachineStateLaunchMenu.tsx`. Both run `debug-recording-load`, which makes the project
  * check once it has read the file's machine.
  */

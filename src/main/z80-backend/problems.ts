@@ -3,7 +3,7 @@ import { t as tr } from "@common/i18n/i18n";
 import type { Span } from "./mir/mir";
 
 /**
- * What can stop the shared Z80 back end (`.plans/SHARED_Z80_BACKEND_PLAN.md` §3.1), as data: the
+ * What can stop the shared Z80 back end (`dev/plans/SHARED_Z80_BACKEND_PLAN.md` §3.1), as data: the
  * front end turns each into a diagnostic of its own (Klive BASIC keeps its E455-E458, E503 and E599),
  * or uses `problemMessage`'s wording. A `span` points into the front end's sources where the problem
  * belongs to a place in them.

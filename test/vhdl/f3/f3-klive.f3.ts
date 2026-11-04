@@ -5,7 +5,7 @@ import { it, expect } from "vitest";
 import { createSession } from "../../harness/zxnext";
 
 /*
- * F3, the Klive side (.plans/ZX_NEXT_FIDELITY_PROOF_PLAN.md §8): replays captured catalogue programs
+ * F3, the Klive side (dev/plans/ZX_NEXT_FIDELITY_PROOF_PLAN.md §8): replays captured catalogue programs
  * on Klive's Next core. For each program it writes the simulated core's inputs - the memory right
  * after `loadCode` (SRAM image, banks 5 and 7), the entry point, a clock limit - and Klive's own
  * result: the state right after the instruction that writes the ready marker ($A5 to NextReg $7F),

@@ -9,7 +9,7 @@ type Props = {
 };
 
 /**
- * The pill that announces the ZX Spectrum Next layer debug view (`.plans/LAYER_COMPOSITION_PLAN.md`
+ * The pill that announces the ZX Spectrum Next layer debug view (`dev/plans/LAYER_COMPOSITION_PLAN.md`
  * D3): while any layer is hidden or soloed, or transparency is marked, the screen says so, so a
  * forgotten toggle is never mistaken for a program bug (T2). It cannot be dismissed, unlike the
  * execution-state pill: the reminder is the point.

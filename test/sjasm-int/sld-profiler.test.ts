@@ -8,7 +8,7 @@ import {
 } from "@renderer/appIde/annotations/symbolResolver";
 
 /*
- * sjasmplus debug info as the profiler needs it (`.plans/PROFILER_PLAN.md` D8): `L` lines are
+ * sjasmplus debug info as the profiler needs it (`dev/plans/PROFILER_PLAN.md` D8): `L` lines are
  * labels the Execution History and the routine rollup see (D8a), local labels say so, and on a
  * banked device a label's SLD page is its partition (D8b). The fixture follows sjasmplus's SLD
  * version 1 format.

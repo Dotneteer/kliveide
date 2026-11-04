@@ -1,5 +1,5 @@
 /*
- * The execution history's shapes as they cross the Emu API (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md`
+ * The execution history's shapes as they cross the Emu API (`dev/plans/EXECUTION_HISTORY_VIEWER_PLAN.md`
  * §4.4). The records stay raw 64-byte blocks until `decodeHistoryRecord` reads them.
  */
 

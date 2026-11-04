@@ -7,7 +7,7 @@ import { buildLogpoints } from "@common/utils/breakpoints";
 import type { KliveCompilerOutput } from "@abstractions/CompilerInfo";
 
 /*
- * DeZog `LOGPOINT` comments in the Klive assembler (`.plans/LOGPOINTS_PLAN.md` §4.7, Phase 4): every
+ * DeZog `LOGPOINT` comments in the Klive assembler (`dev/plans/LOGPOINTS_PLAN.md` §4.7, Phase 4): every
  * assembled line is scanned; the annotation fires at the line's address, or at the next instruction
  * for a line that emits nothing; false IF branches yield nothing; each macro expansion yields its own.
  */

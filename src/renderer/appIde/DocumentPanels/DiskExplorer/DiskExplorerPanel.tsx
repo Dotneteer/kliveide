@@ -53,7 +53,7 @@ import {
 import styles from "./DiskExplorerPanel.module.scss";
 
 /*
- * The Disk Explorer (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, B4/B5): a `.dsk`, `.trd` or `.scl`
+ * The Disk Explorer (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, B4/B5): a `.dsk`, `.trd` or `.scl`
  * as its files - listed, previewed, added, extracted, deleted, renamed, their attributes set - and,
  * in the Layout view, as its tracks and sectors, each sector named by what it holds. It replaced
  * `DskViewerPanel`, whose track-by-track view is the Layout view's "Surface" switch.

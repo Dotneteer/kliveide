@@ -11,7 +11,7 @@ import { Z88WasmV2Machine } from "@emu/machines/z88/Z88WasmV2Machine";
 
 /*
  * The Cambridge Z88 factory and models. The WASM core is the only Z88 emulation since the TypeScript
- * one was removed (`.plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`); the model ids of the comparison
+ * one was removed (`dev/plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`); the model ids of the comparison
  * period (`<id>-ts`, and the `<id>-wasm` "WASM preview" ids before them) are aliases of the originals,
  * so a saved project or last session that names one still opens.
  */

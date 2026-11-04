@@ -13,7 +13,7 @@ export type SpriteBreakpointState = { disabled: boolean; bp: BreakpointInfo };
 
 /**
  * The `sp:` breakpoints the Sprite Inspector shows and edits (G3.8, sprite half;
- * `.plans/SPRITE_ATTRIBUTE_BREAKPOINTS_PLAN.md`), keyed by sprite. Every action goes through the
+ * `dev/plans/SPRITE_ATTRIBUTE_BREAKPOINTS_PLAN.md`), keyed by sprite. Every action goes through the
  * command layer, as the Copper List's gutter does, so the command line, the dialog and the views
  * cannot disagree about what a breakpoint is.
  */

@@ -1,6 +1,6 @@
 /*
  * What the IDE and the emulator exchange about the ZX Spectrum Next's Raspberry Pi I2S input
- * (`.plans/PI_I2S_AUDIO_PLAN.md` §3, §4).
+ * (`dev/plans/PI_I2S_AUDIO_PLAN.md` §3, §4).
  */
 
 /** Which side(s) of the link a tone plays on */

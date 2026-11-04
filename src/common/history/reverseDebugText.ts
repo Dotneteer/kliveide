@@ -1,5 +1,5 @@
 /*
- * The words of full reverse debugging's UI (`.plans/REVERSE_DEBUGGING_PLAN.md` §4.4), in one place so
+ * The words of full reverse debugging's UI (`dev/plans/REVERSE_DEBUGGING_PLAN.md` §4.4), in one place so
  * the status bar, the commands and the docs say the same thing - and a test can pin them.
  */
 
@@ -40,7 +40,7 @@ export function reverseStatusText(state: ReverseDebugState | undefined, historyS
       : historyStep
         ? t("statusbar.reverse.step", { time, step: historyStep })
         : t("statusbar.reverse.behind", { time });
-    // --- A timeline opened from a debug recording names its file (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` D10)
+    // --- A timeline opened from a debug recording names its file (`dev/plans/DEBUG_SESSION_RECORDING_PLAN.md` D10)
     return state.recording ? t("statusbar.reverse.withFile", { status, file: state.recording }) : status;
   }
   return state.recording ? t("statusbar.reverse.recording", { file: state.recording }) : undefined;

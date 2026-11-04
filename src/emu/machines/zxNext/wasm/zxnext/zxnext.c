@@ -44,7 +44,7 @@ static uint8_t zxnextNextRegWritten[ZXNEXT_NEXT_REG_COUNT];
 
 /*
  * The NextReg write-breakpoint watch table, pushed whole from the host, and the latch a watched
- * write leaves behind. See `.plans/NEXTREG_WRITE_BREAKPOINTS_PLAN.md` §4.2.
+ * write leaves behind. See `dev/plans/NEXTREG_WRITE_BREAKPOINTS_PLAN.md` §4.2.
  *
  * The core does the matching rather than mirroring every write out for the host to test, because a
  * single instruction can write NextRegs many times - `OTIR` to `$253B` is the palette-upload idiom -
@@ -93,7 +93,7 @@ static uint8_t zxnextNextRegHitNew;
 static uint8_t zxnextNextRegHitOrigin;
 
 /*
- * The Copper-instruction breakpoint watch and its hit latch. See `.plans/COPPER_DEBUGGING_PLAN.md`
+ * The Copper-instruction breakpoint watch and its hit latch. See `dev/plans/COPPER_DEBUGGING_PLAN.md`
  * §4.6.
  *
  * One bit per Copper list index, pushed whole by the host. `zxnextCopperWatchArmed` guards the hot
@@ -111,7 +111,7 @@ static uint32_t zxnextCopperHit;
 
 /*
  * The sprite-attribute breakpoint watch and its hit latch (G3.8, sprite half; see
- * `.plans/SPRITE_ATTRIBUTE_BREAKPOINTS_PLAN.md`).
+ * `dev/plans/SPRITE_ATTRIBUTE_BREAKPOINTS_PLAN.md`).
  *
  * One byte per sprite, pushed whole by the host: bits 0-4 select which of the five attribute bytes
  * are watched, and 0 means the sprite is not watched. `zxnextSpriteWatchArmed` keeps the attribute
@@ -154,7 +154,7 @@ static uint32_t frames;
 static uint32_t tacts;
 static uint32_t frameTacts28;
 /*
- * The access profile's clock (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D8): 28 MHz ticks, like
+ * The access profile's clock (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D8): 28 MHz ticks, like
  * `frameTacts28`, but never wrapped at a frame end, so a 32-bit difference is a duration even across
  * a frame boundary or a speed change. Advanced wherever `frameTacts28` is advanced by time passing
  * (CPU cycles and DMA holds), never by the frame-position setters. Volatile, like the profile itself.
@@ -720,7 +720,7 @@ uint32_t zxnextGetUlaScrollY(void) { return zxnextUlaGetScrollY(); }
 uint32_t zxnextGetUlaClip(uint32_t index) { return zxnextUlaGetClip(index); }
 
 /*
- * Layer debugging (`.plans/LAYER_COMPOSITION_PLAN.md` §4.1-§4.3). None of these changes the machine:
+ * Layer debugging (`dev/plans/LAYER_COMPOSITION_PLAN.md` §4.1-§4.3). None of these changes the machine:
  * the mask acts in the mixer only (D1), and all of the state they touch is volatile (D2, T8).
  */
 /* mask: ZXNEXT_LAYER_BIT_* hidden; solo: 0 or one layer bit; flags: bit 0 show transparency */
@@ -770,7 +770,7 @@ uint32_t zxnextGetLayerCaptureStatus(void) {
 /* The first buffer pixel of this frame the beam has not drawn yet */
 uint32_t zxnextGetRasterPixel(void) { return zxnextRasterPixel; }
 /*
- * The beam position overlay (`.plans/BEAM_POSITION_OVERLAY_PLAN.md` §4.2). Neither changes the machine:
+ * The beam position overlay (`dev/plans/BEAM_POSITION_OVERLAY_PLAN.md` §4.2). Neither changes the machine:
  * the info is read from the raster's own counters, and the preview renders into the volatile preview
  * buffer with every rewritten static restored (T2).
  */
@@ -798,7 +798,7 @@ uint32_t zxnextGetLayer2ScrollX(void) { return zxnextLayer2GetScrollX(); }
 uint32_t zxnextGetLayer2ScrollY(void) { return zxnextLayer2GetScrollY(); }
 uint32_t zxnextGetLayer2Clip(uint32_t index) { return zxnextLayer2GetClip(index); }
 /*
- * The Layer 2 Inspector's reads (`.plans/LAYER2_INSPECTOR_PLAN.md` §4.2). Side-effect free: the port
+ * The Layer 2 Inspector's reads (`dev/plans/LAYER2_INSPECTOR_PLAN.md` §4.2). Side-effect free: the port
  * value comes from the module state, never through a port access (D8).
  */
 /* $12 */
@@ -839,7 +839,7 @@ uint32_t zxnextGetTilemapDefinitionAddressUseBank7(void) {
 }
 uint32_t zxnextGetTilemapDefinitionAddressMsb(void) { return zxnextTilemapGetDefinitionAddressMsb(); }
 /*
- * The Tilemap Inspector's reads (`.plans/TILEMAP_INSPECTOR_PLAN.md` §4.2). Side-effect free.
+ * The Tilemap Inspector's reads (`dev/plans/TILEMAP_INSPECTOR_PLAN.md` §4.2). Side-effect free.
  */
 /* $6B: bit 7 (enable) and bit 4 (second tilemap palette, kept by the palette module) re-ORed */
 uint32_t zxnextGetTilemapControl(void) { return zxnextGetTilemapNextReg(0x6bu); }
@@ -871,7 +871,7 @@ uint32_t zxnextGetSpritePatternByte4(uint32_t variant, uint32_t offset) {
 uint32_t zxnextGetLastVisibleSpriteIndex(void) { return zxnextSpritesGetLastVisibleSpriteIndex(); }
 
 /*
- * The Sprite Inspector's reads (`.plans/SPRITE_INSPECTOR_PLAN.md` §4.2). None of them changes the
+ * The Sprite Inspector's reads (`dev/plans/SPRITE_INSPECTOR_PLAN.md` §4.2). None of them changes the
  * machine: the status is peeked, not read through $303B (T1), and the IDE resolves into its own
  * buffer, never the render's cache (T3).
  */
@@ -1001,7 +1001,7 @@ int32_t zxnextGetAudioMixerSampleLeft(uint32_t index) { return zxnextAudioMixerG
 int32_t zxnextGetAudioMixerSampleRight(uint32_t index) { return zxnextAudioMixerGetSampleRight(index); }
 
 // -----------------------------------------------------------------------------
-// Breakpoint conditions (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`): the shared evaluator, with
+// Breakpoint conditions (`dev/plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`): the shared evaluator, with
 // this machine's side-effect-free reads. `zxnextMemoryPeekMapped` is the CPU view with no contention
 // or bus-mirror update. The partition layout mirrors `getMemoryPartition` in `ZxNextWasmV2Machine.ts`;
 // which partition a slot holds is decided here only (`zxnextPartitionOfPage`), and `getPartition`
@@ -1092,7 +1092,7 @@ int32_t zxnextGetPartitionOfPage(uint32_t page) {
 #include "../../../../z80/wasm/z80-condition.c"
 
 // -----------------------------------------------------------------------------
-// Execution history (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.2-§4.3): the shared recorder,
+// Execution history (`dev/plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.2-§4.3): the shared recorder,
 // with this machine's side-effect-free peek, its frame position in 28 MHz ticks, and its context.
 //
 // The instruction context (`zxnextContext.ts` decodes it):
@@ -1217,7 +1217,7 @@ static void zxnextHistoryDmaHold(uint32_t cpuTacts, uint16_t src, uint16_t dest,
 }
 
 // -----------------------------------------------------------------------------
-// The access profile (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §2.2, D4): the shared module, with
+// The access profile (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §2.2, D4): the shared module, with
 // this machine's physical layout. The profile offset is the offset into `zxnextMemory` - Next ROM,
 // DivMMC ROM, Multiface, Alt ROMs, DivMMC RAM, then the 224 Next RAM pages (`nextMemoryLayout.ts`);
 // `src/common/profile/layouts/zxnext.ts` names them by partition. Time is in 28 MHz ticks (D8), from

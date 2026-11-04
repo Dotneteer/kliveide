@@ -82,7 +82,7 @@ describe("ZX Spectrum Next WASM rollout", () => {
 
 describe("ZX Spectrum Next: the retired \"compatibility\" model id", () => {
   /*
-   * D4 of `.plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`: the model that selected the
+   * D4 of `dev/plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`: the model that selected the
    * TypeScript emulator is gone, but settings files and `klive.project` files on disk still name
    * it. Opening one must land on the remaining Next model, never throw at startup.
    */

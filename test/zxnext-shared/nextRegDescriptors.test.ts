@@ -6,7 +6,7 @@ import { NEXT_REG_DESCRIPTORS, getNextRegDescriptor } from "@emu/machines/zxNext
  * The static NextReg documentation (`nextRegDescriptors.ts`) is what the machine's IDE interface,
  * the disassembler and the panels read. It was generated from the TypeScript `NextRegDevice`'s own
  * descriptor table, and an equivalence test held the two in step until that device was deleted
- * (`.plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`, Steps 3 and 13). The table is now the
+ * (`dev/plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`, Steps 3 and 13). The table is now the
  * single source; what is left to check is its shape, which the panels and the disassembler assume.
  */
 

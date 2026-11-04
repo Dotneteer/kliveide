@@ -4,7 +4,7 @@ import type { Sp128TestSession } from "../harness/sp128";
 
 /*
  * A program that exercises everything the 128K/Pentagon timing touches, and a recorder that hashes
- * what it does frame by frame (`sp128-golden.test.ts`, `.plans/PENTAGON_128_PLAN.md` P7).
+ * what it does frame by frame (`sp128-golden.test.ts`, `dev/plans/PENTAGON_128_PLAN.md` P7).
  */
 
 /** The program; it runs from $8000 (bank 2, uncontended) with the ROM's IM 1 handler */

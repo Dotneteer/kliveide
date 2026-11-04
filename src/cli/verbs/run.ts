@@ -16,7 +16,7 @@ import { BP_SYNTAX, parseBreakpointOption, resolveAddress } from "../run/breakpo
 import { loadRunInput, type LoadedInput } from "../run/inputs";
 
 /*
- * `klive run` (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D15): start a project's build or a file on a
+ * `klive run` (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` D15): start a project's build or a file on a
  * machine of its own, headless, run it until a stop condition, then write what the run asked for -
  * memory, registers, the picture, a state file. Everything is emulated time, so identical inputs give
  * byte-identical outputs (T10).

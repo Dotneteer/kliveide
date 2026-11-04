@@ -1,7 +1,7 @@
 /*
  * The types of the emulator's Klive state calls (`EmuApi.saveMachineStateFile`,
  * `EmuApi.loadMachineStateFile`), shared by the IDE, the main process and the emulator. See
- * `.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.8.
+ * `dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.8.
  */
 
 /** What happens after a state is loaded: run, or debug, stopping at PC before it runs */

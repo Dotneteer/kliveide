@@ -25,7 +25,7 @@ import { bankAtLine, codebankDebugInfo, planBanks, type BankPlan } from "./banki
 import { MODEL_NAMES, nexHeader, START_LABEL } from "./nex";
 
 /**
- * The shared Z80 back end's driver (`.plans/SHARED_Z80_BACKEND_PLAN.md` §3.1, §4.3): a verified MIR
+ * The shared Z80 back end's driver (`dev/plans/SHARED_Z80_BACKEND_PLAN.md` §3.1, §4.3): a verified MIR
  * module becomes an assembled program and its debug tables — the MIR passes, instruction selection,
  * the LIR rules, emission, runtime linking, assembly, branch shaping, bank placement and the debug
  * builders. A front end lowers its language to MIR and calls this; nothing here knows which language

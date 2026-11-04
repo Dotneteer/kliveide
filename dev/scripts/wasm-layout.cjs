@@ -1,6 +1,6 @@
 /*
  * The memory-layout fingerprint of a WASM machine core
- * (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.6, D7).
+ * (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.6, D7).
  *
  * A Klive state file is an image of a core's linear memory. It is only valid for a core build whose
  * memory has the same layout, so every build stamps its layout into the `.wasm` it produces, as a
@@ -178,7 +178,7 @@ function readWasmLayoutFacts(bytes) {
 }
 
 /**
- * SHA-256 over a module's code and data sections (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` D3, T1):
+ * SHA-256 over a module's code and data sections (`dev/plans/DEBUG_SESSION_RECORDING_PLAN.md` D3, T1):
  * unlike the fingerprint, it changes with any edit inside a function body, so a debug recording - a
  * replay of the exact code that made it - opens only in the build that wrote it. Custom sections
  * (the stamp itself, names) are left out.

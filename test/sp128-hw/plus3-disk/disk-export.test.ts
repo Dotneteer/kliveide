@@ -8,7 +8,7 @@ import { createSp128Session, trdosRomFromEnvironment } from "../../harness/sp128
 import { memory, ORACLE_MODEL } from "./plus3Disk";
 
 /*
- * Klive's disk export (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, B6), booted by the machines
+ * Klive's disk export (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, B6), booted by the machines
  * themselves: the +3's Loader runs `DISK`, which loads the code and starts it; with the developer's
  * own TR-DOS ROM (KLIVE_TRDOS_ROM), TR-DOS boots `boot` the same way.
  */

@@ -107,7 +107,7 @@ export function normalizeBreakpointOwner(
 
 /**
  * Is this a logpoint read from a `LOGPOINT` source comment - owned by the build, read-only to the
- * user (`.plans/LOGPOINTS_PLAN.md` L10)?
+ * user (`dev/plans/LOGPOINTS_PLAN.md` L10)?
  */
 export function isAnnotationBreakpoint(bp: BreakpointInfo): boolean {
   return bp?.owner?.kind === "annotation";

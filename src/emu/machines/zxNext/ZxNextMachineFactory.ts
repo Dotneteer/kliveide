@@ -8,7 +8,7 @@ import { ZxNextWasmV2Machine } from "./ZxNextWasmV2Machine";
  *
  * There is one backend: the WASM core. The TypeScript emulator that used to sit behind a
  * `zxnextImplementation` config key was removed once the WASM core reached parity
- * (`.plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`).
+ * (`dev/plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`).
  */
 export function createZxNextMachine(
   model?: MachineModel,

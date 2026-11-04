@@ -9,7 +9,7 @@ import { createZ88Session } from "../../harness/z88";
 import { createZx81Session } from "../../harness/zx81";
 
 /*
- * The execution-history recorder's cost on every core (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`
+ * The execution-history recorder's cost on every core (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`
  * trap T5). `npm run test:perf`; not part of the regular tiers, because a timing ratio on a shared CI
  * runner is noise.
  *

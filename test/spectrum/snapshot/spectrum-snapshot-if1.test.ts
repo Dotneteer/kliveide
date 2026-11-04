@@ -1,5 +1,5 @@
 /*
- * The Interface 1 in snapshots (`.plans/MICRODRIVE_PLAN.md` Phase 5): `.z80` hardware modes 1 and 5
+ * The Interface 1 in snapshots (`dev/plans/MICRODRIVE_PLAN.md` Phase 5): `.z80` hardware modes 1 and 5
  * with byte 36, the `.szx` IF1 and MDRV blocks, the losses of `.sna` and `.z80`, the mapping and the
  * loader's machine fit.
  */

@@ -1,5 +1,5 @@
 /*
- * The RZX format layer (`.plans/RZX_PLAN.md` Phase 1): reader, writer, segments and finalising.
+ * The RZX format layer (`dev/plans/RZX_PLAN.md` Phase 1): reader, writer, segments and finalising.
  * Every fixture is built by the tests themselves; no third-party file is used.
  */
 

@@ -1,5 +1,5 @@
 /**
- * The Interface 1 and its Microdrives in the running IDE (`.plans/MICRODRIVE_PLAN.md` Phase 3), on a
+ * The Interface 1 and its Microdrives in the running IDE (`dev/plans/MICRODRIVE_PLAN.md` Phase 3), on a
  * ZX Spectrum 128K: Machine › Interfaces connects the interface and puts a cartridge into
  * Microdrive 1, the media strip shows it (with the motor running during CAT), and a SAVE * from 128
  * BASIC reaches the `.mdr` file on disk.

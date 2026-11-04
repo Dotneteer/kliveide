@@ -8,7 +8,7 @@ import { hex8 } from "../ula/_ula-helpers";
 import { L2_DEFAULT, layer2Index, layer2Screen, pokeBank, randomBank, type L2 } from "./_layer2-helpers";
 
 /*
- * What the Layer 2 Inspector reads (`.plans/LAYER2_INSPECTOR_PLAN.md` Phase 2, D3): the snapshot is
+ * What the Layer 2 Inspector reads (`dev/plans/LAYER2_INSPECTOR_PLAN.md` Phase 2, D3): the snapshot is
  * the registers a program wrote and the bytes it stored; the *As displayed* image `layer2Decode` and
  * `layer2Geometry` make from that snapshot equals both the layer2.vhd transcription in
  * `_layer2-helpers.ts` and the core's rendered Layer 2 pixels; reading never changes the machine.

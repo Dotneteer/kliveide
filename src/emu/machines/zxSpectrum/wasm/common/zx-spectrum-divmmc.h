@@ -1,5 +1,5 @@
 /*
- * The DivMMC (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, C3): port $E3, the automap traps and the
+ * The DivMMC (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, C3): port $E3, the automap traps and the
  * paging of its 8K ROM and RAM banks - one implementation for the Next and the classic machines.
  * Written from the Next FPGA's divmmc.vhd / zxnext.vhd (see zx-spectrum-divmmc.c).
  */

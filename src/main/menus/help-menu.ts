@@ -1,6 +1,6 @@
 /*
  * The Help menu, and the macOS application menu that takes About and Settings…
- * (`.plans/MENU_REDESIGN_PLAN.md` §3).
+ * (`dev/plans/MENU_REDESIGN_PLAN.md` §3).
  */
 import os from "os";
 import { app, type MenuItemConstructorOptions, shell } from "electron";
@@ -44,7 +44,7 @@ export function createAppMenu(context: MenuContext): MenuItemConstructorOptions 
       settingsMenuItem(context),
       ...automationMenuItems(context),
       {
-        // --- `/usr/local/bin/klive` (`.plans/UNIT_TESTS_CLI_PLAN.md` D12)
+        // --- `/usr/local/bin/klive` (`dev/plans/UNIT_TESTS_CLI_PLAN.md` D12)
         id: "install_cli",
         label: t("menu.app.installCli"),
         click: async () => await installCommandLineTool(context.focusedWindow())

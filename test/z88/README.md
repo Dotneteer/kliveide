@@ -2,8 +2,8 @@
 
 The Z88 tests run on the one Z88 emulation, the WASM core (`src/emu/machines/z88/wasm/`, adapter
 `Z88WasmV2Machine`). Until 2026-09-25 every hardware test ran on the TypeScript `Z88Machine` too,
-with identical assertions (`.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`); that machine was removed
-once the core matched it (`.plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`, tag
+with identical assertions (`dev/plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`); that machine was removed
+once the core matched it (`dev/plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`, tag
 `z88-typescript-last`), and each suite kept exactly its WASM cases.
 
 ## Two kinds of suites
@@ -37,9 +37,9 @@ Once a finding *is* settled as a behaviour change, re-record with `Z88_GOLDENS_R
 the JSON diff key by key before committing. The first time was the RTC fixes of issue #1374
 (TSTA latching, TMK kept across RESTIM). Those changed Blink TSTA/TMK values, the OZ execution that
 follows from them, and every running digest over them. They changed no LCD picture. The evidence is
-in `.plans/CAMBRIDGE_Z88_ISSUE_1374_PLAN.md`, Step 4.
+in `dev/plans/CAMBRIDGE_Z88_ISSUE_1374_PLAN.md`, Step 4.
 
-The second time was the OZvm parity work (`.plans/Z88_OZVM_PARITY_PLAN.md`; the list of changes is in
+The second time was the OZvm parity work (`dev/plans/Z88_OZVM_PARITY_PLAN.md`; the list of changes is in
 the core's `README.md`). Before re-recording, the running digests were recorded once with the Blink
 state's renamed `SBF` key hashed under its old name, `SBR`, so the diff showed only behaviour. Every
 changed entry followed from a settled change:

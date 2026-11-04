@@ -3,7 +3,7 @@ import { classifyFlow } from "./flowKind";
 import { HistoryKind, type HistoryRecord } from "./historyRecord";
 
 /*
- * Interrupt service spans (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` D10): the viewer folds each
+ * Interrupt service spans (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` D10): the viewer folds each
  * INT or NMI and the instructions that serviced it into one expandable row, so a ZX81 in SLOW mode -
  * an NMI every scan line - still reads as the program it runs. Nothing is hidden for good and the
  * step numbering stays continuous: a span is a range of sequence numbers.

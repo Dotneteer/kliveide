@@ -59,7 +59,7 @@ export function sourceWatchReducer(state: string[] = [], { type, payload }: Acti
   }
 }
 /**
- * The logpoint group switch (`.plans/LOGPOINTS_PLAN.md` §4.2). Normalised so two states that behave
+ * The logpoint group switch (`dev/plans/LOGPOINTS_PLAN.md` §4.2). Normalised so two states that behave
  * alike are equal: group names upper-case, sorted, without duplicates; "on, no list" is the default.
  */
 /**

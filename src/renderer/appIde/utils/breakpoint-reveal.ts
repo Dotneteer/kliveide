@@ -1,5 +1,5 @@
 /*
- * "Reveal this breakpoint in the Breakpoints panel" (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md`
+ * "Reveal this breakpoint in the Breakpoints panel" (`dev/plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md`
  * W4): a Watch row's watchpoint indicator asks, the panel - when mounted - scrolls to the row and
  * marks it. A plain listener set: the request is a UI gesture, not state to persist or share.
  */

@@ -1,5 +1,5 @@
 /*
- * Where Layer 2 lands (`.plans/LAYER2_INSPECTOR_PLAN.md` §4.1, T3, T4, T8). Pure.
+ * Where Layer 2 lands (`dev/plans/LAYER2_INSPECTOR_PLAN.md` §4.1, T3, T4, T8). Pure.
  *
  * Coordinates are layer pixels of the resolution (`layer2Decode.ts`). The scroll rules copy
  * `zxnext-ula.c` (`zxnextUlaLayer2WrappedY`, `zxnextUlaLayer2WideWrappedX`), the clip goes through the

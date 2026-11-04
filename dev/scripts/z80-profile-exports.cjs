@@ -1,6 +1,6 @@
 /*
  * The access profile's exports and statics, the same in every core that profiles
- * (`src/emu/z80/wasm/z80-profile.c`, `.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §4.1). A core's
+ * (`src/emu/z80/wasm/z80-profile.c`, `dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §4.1). A core's
  * build script adds both lists, as it adds `z80-history-exports.cjs`'s; `WasmProfileReader.ts` reads
  * these exports by the same names on every core.
  */
@@ -16,7 +16,7 @@ const Z80_PROFILE_EXPORTS = [
   // --- `coverage load` (D16): a saved run merged into the live one
   "z80ProfileMergeByte",
   "z80ProfileMergeTotals",
-  // --- The call tracker and the armed window (`.plans/PROFILER_PLAN.md` D2, D9-D12)
+  // --- The call tracker and the armed window (`dev/plans/PROFILER_PLAN.md` D2, D9-D12)
   "z80ProfileSetCalls",
   "z80ProfileArm",
   "z80ProfileGetEdgesOffset",

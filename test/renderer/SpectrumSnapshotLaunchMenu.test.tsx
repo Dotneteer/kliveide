@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MI_SPECTRUM_128, MI_SPECTRUM_48, MI_Z88 } from "@common/machines/constants";
 
 /*
- * The ZX Spectrum snapshot launch entries (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.9, Phase 7): the
+ * The ZX Spectrum snapshot launch entries (`dev/plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.9, Phase 7): the
  * Explorer's context menu and the viewer's tab-bar buttons. Both only run the `zx-snapshot`
  * command, which `test/commands/SpectrumSnapshotCommand.test.ts` covers.
  */

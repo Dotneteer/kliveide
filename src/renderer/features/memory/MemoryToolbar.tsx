@@ -9,7 +9,7 @@ import type { HeatMode } from "@renderer/features/coverage/heatModel";
 import { useT } from "@common/i18n/useT";
 import { withLabels } from "@common/i18n/labels";
 
-/** The Heat selector's choices (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D14) */
+/** The Heat selector's choices (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D14) */
 export const heatModeOptions = withLabels([
   { value: "off", labelKey: "panels.feature.memory.heat.off" },
   { value: "exec", labelKey: "panels.feature.memory.heat.executed" },

@@ -4,7 +4,7 @@ import type { Z88TestSurface } from "./z88-test-surface";
 import { COMFlags, INTFlags, TSTAFlags } from "./z88-blink-flags";
 
 /*
- * The core changes of `.plans/Z88_OZVM_PARITY_PLAN.md` that the older suites do not reach: each case
+ * The core changes of `dev/plans/Z88_OZVM_PARITY_PLAN.md` that the older suites do not reach: each case
  * names the OZvm behaviour it holds the core to. OZvm (https://gitlab.com/b4works/ozvm) was read for
  * behaviour only.
  */

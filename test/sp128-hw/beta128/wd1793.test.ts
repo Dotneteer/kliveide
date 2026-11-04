@@ -8,7 +8,7 @@ import { createSp128Session, type Sp128TestSession } from "../../harness/sp128";
 import { BUFFER, buildTestTrdosRom, callRom, ENTRY, RESULT } from "./test-rom";
 
 /*
- * The Beta 128 and its WD1793 on the real core (`.plans/BETA128_TRDOS_PLAN.md` Phase 2), driven by a
+ * The Beta 128 and its WD1793 on the real core (`dev/plans/BETA128_TRDOS_PLAN.md` Phase 2), driven by a
  * test ROM entered through the interface's own paging trap. Each test names what it checks; the
  * sources are in §9 of the plan: [DS] the FD179X data sheet, [BK] the Beta 128 documentation.
  *

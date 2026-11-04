@@ -1,6 +1,6 @@
 /**
  * Screenshots for `docs/content/getting-started/tapes.mdx`: the `.tap`/`.tzx` viewer
- * (`.plans/TAPE_VIEWER_PLAN.md`).
+ * (`dev/plans/TAPE_VIEWER_PLAN.md`).
  *
  * - `getting-started/tape-viewer.png` — the viewer with its summary, timeline strip and block
  *   browser, a BASIC program block selected.

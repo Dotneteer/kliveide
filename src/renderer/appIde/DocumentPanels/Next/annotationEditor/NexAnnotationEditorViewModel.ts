@@ -101,7 +101,7 @@ export type NexAnnotationMenuAction =
   | "mark-fill"
   | "mark-skip"
   | "clear"
-  // --- The live Disassembly view's ROM rows only (`.plans/ROM_ANNOTATION_EDITING_PLAN.md` §4.1):
+  // --- The live Disassembly view's ROM rows only (`dev/plans/ROM_ANNOTATION_EDITING_PLAN.md` §4.1):
   // --- open the page's working copy in the ROM annotation editor, or make one first
   | "open-rom-annotations"
   | "start-rom-annotations";

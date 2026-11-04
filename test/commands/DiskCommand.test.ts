@@ -8,7 +8,7 @@ import { createBlankTrd } from "@emu/machines/disk/trd/trdImage";
 import { createMockContextWithProject } from "./test-helpers/mock-context";
 
 /*
- * `disk` (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, B6) against a main process held in memory:
+ * `disk` (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, B6) against a main process held in memory:
  * files by path, and the begin/commit edit pair.
  */
 

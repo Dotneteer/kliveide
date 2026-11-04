@@ -195,7 +195,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
     // --- per-frame setup that `onInitNewFrame()` performs. On the ZX Next that meant
     // --- `lastRenderedFrameTact` stayed `undefined`, so `while (lastRenderedFrameTact <
     // --- currentFrameTact)` never ran and neither the screen nor the copper advanced for the whole
-    // --- of frame 1. See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.11.
+    // --- of frame 1. See `dev/plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.11.
     this.frameCompleted = true;
     this._machineFrameRunner.reset();
     this._queuedEvents = [];

@@ -2,7 +2,7 @@ import type { SyntaxNode } from "../condition-parser";
 import { parseDezogExpression } from "./dezog-parser";
 
 /*
- * The Klive-dialect reading of a DeZog expression (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md`
+ * The Klive-dialect reading of a DeZog expression (`dev/plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md`
  * §4.5): what the Breakpoints panel's tooltip and `bp-list` show beside an `ASSERTION` comment's own
  * text, so a user who reads the comment with Klive's precedence (C3) sees how it is really read.
  *

@@ -8,7 +8,7 @@ import { createEpSession, type EpTestSession } from "../harness/enterprise";
 import { bareMachine } from "./bare";
 
 /*
- * The Enterprise's access profile and history partitions (`.plans/ENTERPRISE_PLAN.md` §11): a byte's
+ * The Enterprise's access profile and history partitions (`dev/plans/ENTERPRISE_PLAN.md` §11): a byte's
  * profile offset is its offset in the core's physical memory, so a byte reached through a page lands in
  * the segment the page register showed, and the layout names it back as that segment.
  */

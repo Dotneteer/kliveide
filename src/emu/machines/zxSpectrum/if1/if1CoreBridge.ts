@@ -1,5 +1,5 @@
 /*
- * The TypeScript side of the cores' Interface 1 (`zx-spectrum-if1.c`, `.plans/MICRODRIVE_PLAN.md`).
+ * The TypeScript side of the cores' Interface 1 (`zx-spectrum-if1.c`, `dev/plans/MICRODRIVE_PLAN.md`).
  * The 48K and 128K cores export the same functions under their own prefix (`sp48If1SetPresent`, ...),
  * as the DivMMC's do; `dev/scripts/if1-exports.cjs` keeps the build side of the list.
  *

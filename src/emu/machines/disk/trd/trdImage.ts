@@ -1,6 +1,6 @@
 /*
  * TR-DOS disk images: `.trd` files, `.scl` containers, and the canonical layout the Beta 128 core
- * holds (`.plans/BETA128_TRDOS_PLAN.md` B3, B4). The facts and their sources are in §9 of the plan:
+ * holds (`dev/plans/BETA128_TRDOS_PLAN.md` B3, B4). The facts and their sources are in §9 of the plan:
  * the TRD layout from Kaitai Struct's `tr_dos_image.ksy` (CC0), the filesystem and SCL details from
  * the Sinclair Wiki.
  *

@@ -1,6 +1,6 @@
 /*
  * Test builders: write `.sna`, `.z80` and `.szx` bytes for a machine state, from the format specs
- * (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` D8). No snapshot file is committed; every test makes its own.
+ * (`dev/plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` D8). No snapshot file is committed; every test makes its own.
  *
  * Writers of real files differ in details the specs leave open; these builders write the plainest
  * spec-conforming file and take options for the variants the tests need.

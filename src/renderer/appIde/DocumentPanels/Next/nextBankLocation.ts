@@ -82,7 +82,7 @@ export function locateBank16k(
  * `undefined` outside the bank, which a correctly numbered listing never produces but a mismatched
  * `listingOffset` can.
  *
- * See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.20.
+ * See `dev/plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.20.
  */
 export function listedBankOffset(
   address: number,
@@ -105,7 +105,7 @@ export function listedBankOffset(
  * Requires the ordinary contiguous, aligned placement: a bank split across non-adjacent slots has no
  * single base for a listing to agree with.
  *
- * See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.19.
+ * See `dev/plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.19.
  */
 export function isListedWhereItIsPaged(
   placements: BankPlacement[] | undefined,

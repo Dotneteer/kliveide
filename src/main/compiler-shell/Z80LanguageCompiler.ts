@@ -9,7 +9,7 @@ import type { BackendTarget } from "../z80-backend/options";
 import { emittedFiles, type EmitRequest } from "./emit-files";
 
 /**
- * The IDE side of every language the shared Z80 back end compiles (`.plans/SHARED_Z80_BACKEND_PLAN.md`
+ * The IDE side of every language the shared Z80 back end compiles (`dev/plans/SHARED_Z80_BACKEND_PLAN.md`
  * §5, Phase 6): an `IKliveCompiler` whose subclass supplies the front end — reading the source, its
  * options, its diagnostics, lowering to MIR and calling the back end — and gets here what every such
  * compiler does the same way: the artefacts written beside the source, and the compiled program as

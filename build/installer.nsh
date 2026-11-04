@@ -1,6 +1,6 @@
 ; Klive's additions to electron-builder's NSIS installer (package.json build.nsis.include).
 ;
-; The `klive` command line (.plans/UNIT_TESTS_CLI_PLAN.md D12): the installer puts the launcher's
+; The `klive` command line (dev/plans/UNIT_TESTS_CLI_PLAN.md D12): the installer puts the launcher's
 ; folder, $INSTDIR\resources\cli, on the user's PATH, and the uninstaller takes it off again. Both
 ; first remove any copy of the entry, so an update or a repair never adds it twice.
 

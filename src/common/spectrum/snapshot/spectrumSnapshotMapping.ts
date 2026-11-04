@@ -1,6 +1,6 @@
 /*
  * Decides whether, and as what, Klive can load a parsed ZX Spectrum snapshot
- * (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.3, decisions D2 and D3):
+ * (`dev/plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.3, decisions D2 and D3):
  *  - the snapshot's machine picks the Klive machine, never the current one;
  *  - near-misses (grey +2, a +2A/+3 opened on the +E ROMs, add-ons) load with a warning;
  *  - machines Klive has no core for are refused.
@@ -148,7 +148,7 @@ export function mapSpectrumSnapshotToKlive(snapshot: SpectrumSnapshot): Spectrum
   if (snapshot.ay?.on48k) {
     warnings.push(t("media.snapshot.warning.ayOn48k"));
   }
-  // --- The Interface 1 is the 16K/48K's and the 128K/+2's (`.plans/MICRODRIVE_PLAN.md` Q2), not the Pentagon's
+  // --- The Interface 1 is the 16K/48K's and the 128K/+2's (`dev/plans/MICRODRIVE_PLAN.md` Q2), not the Pentagon's
   if (p.interface1) {
     if (target.machineId === MI_SPECTRUM_128 && machine !== "pentagon") {
       modelIds = ["sp128", ...modelIds.filter((m) => m !== "sp128")];
@@ -166,7 +166,7 @@ export function mapSpectrumSnapshotToKlive(snapshot: SpectrumSnapshot): Spectrum
     }
   }
   if (p.issue2) warnings.push(t("media.snapshot.warning.issue2"));
-  // --- The 16K, 48K and 128K run it (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phase 4); other targets cannot
+  // --- The 16K, 48K and 128K run it (`dev/plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phase 4); other targets cannot
   if (snapshot.ula.alternateTimings && !ULA_TIMING_MACHINE_IDS.includes(target.machineId)) {
     warnings.push(t("media.snapshot.warning.alternateTimings"));
   }
@@ -175,7 +175,7 @@ export function mapSpectrumSnapshotToKlive(snapshot: SpectrumSnapshot): Spectrum
   }
   if (machine === "plus3e" && snapshot.format === "szx" && !p.plus3) {
     // --- A +3e zx-state without a +3 block has no drives: Klive writes its +2E that way
-    // --- (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.1)
+    // --- (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.1)
     modelIds = ["nofdd", ...modelIds];
   }
   if (p.plus3) {

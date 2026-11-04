@@ -1,6 +1,6 @@
 /*
  * A WASM machine core's whole state as a memory image
- * (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.5, D6).
+ * (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.5, D6).
  *
  * Every Klive core keeps its entire world - CPU, RAM, ROM, devices, inserted media - in its fixed
  * linear memory, and between exported calls the C shadow stack is unwound, so a copy of that memory

@@ -4,7 +4,7 @@ import { colours, displayFileAddress, hex, ink, paper, scldScreen, xsOf } from "
 import type { TimexTestSession } from "../harness/timex";
 
 /*
- * The SCLD's screen modes on the TC2048 (`.plans/TIMEX_SCORPION_PLAN.md` G9.4a, §8).
+ * The SCLD's screen modes on the TC2048 (`dev/plans/TIMEX_SCORPION_PLAN.md` G9.4a, §8).
  *
  * Documented (TS2068 Technical Manual 2.1.13.1, 5.2): mode 0 the primary display file, 1 the second
  * file at $6000, 2 extended colour (an attribute per 8 x 1 pixels at $6000 + the pixel offset), 6 the

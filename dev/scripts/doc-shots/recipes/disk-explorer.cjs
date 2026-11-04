@@ -1,5 +1,5 @@
 /**
- * Screenshots of the Disk Explorer (`.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md` B4/B5, C2): a +3
+ * Screenshots of the Disk Explorer (`dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md` B4/B5, C2): a +3
  * disk's files with a BASIC program's listing, its Layout view, a TR-DOS disk, and a FAT16
  * hard-disk image the `disk` command makes and fills (its folder and its volume map).
  *

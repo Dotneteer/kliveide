@@ -1,5 +1,5 @@
 /*
- * The z88dk settings (`.plans/Z88DK_INTEGRATION_PLAN.md` §4.2, decision C6). The install is set up
+ * The z88dk settings (`dev/plans/Z88DK_INTEGRATION_PLAN.md` §4.2, decision C6). The install is set up
  * through the Z88DK integration dialog; the build options live in `klive.project` and are read by
  * `Z88dkCompiler` through the settings reader (project settings win over user settings).
  */

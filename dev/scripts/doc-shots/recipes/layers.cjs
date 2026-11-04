@@ -1,6 +1,6 @@
 /**
  * Screenshots for `docs/content/working-with-ide/layers.mdx`, and the running-app check of the ZX
- * Spectrum Next layer debug view (`.plans/LAYER_COMPOSITION_PLAN.md` Phases 3, 5 and 6).
+ * Spectrum Next layer debug view (`dev/plans/LAYER_COMPOSITION_PLAN.md` Phases 3, 5 and 6).
  *
  * Like the inspector recipes, it pokes a program into a paused Next (no NextZXOS needed):
  * `layers-demo.kz80.asm` beside this file, assembled by Klive's own assembler into `PROGRAM` below. It

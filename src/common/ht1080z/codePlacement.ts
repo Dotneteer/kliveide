@@ -1,7 +1,7 @@
 import { t } from "@common/i18n/i18n";
 
 /*
- * Where injected or exported HT-1080Z code may go (`.plans/HT1080Z_CODE_INJECTION_PLAN.md` D2-D6).
+ * Where injected or exported HT-1080Z code may go (`dev/plans/HT1080Z_CODE_INJECTION_PLAN.md` D2-D6).
  * One set of rules for Run, Inject and Export, so what Run executes is what Export writes.
  *
  * - Below 3C00h is ROM, the extension ROM and the keyboard: nothing can be written there.

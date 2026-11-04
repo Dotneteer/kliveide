@@ -3,7 +3,7 @@
  *
  * One pure module (no React, no Node) shared by everything that shows a Copper word: the Copper
  * side-bar panel, the Copper List document, the debugger's stop message, the Breakpoints panel and
- * the assembler's `.copper` hover. See `.plans/COPPER_DEBUGGING_PLAN.md` §4.1.
+ * the assembler's `.copper` hover. See `dev/plans/COPPER_DEBUGGING_PLAN.md` §4.1.
  *
  * Encoding (`dev/vendor/next-fpga/3.02.01/src/video/copper.vhd`; the C core mirrors it in `zxnext-copper.c`):
  *

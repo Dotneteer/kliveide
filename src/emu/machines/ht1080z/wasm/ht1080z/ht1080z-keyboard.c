@@ -1,6 +1,6 @@
 /*
  * The HT-1080Z keyboard: the TRS-80 Model I 8 x 8 matrix at 3800-3BFF (HARDWARE.md §7.2; the /64
- * keyboard schematic shows exactly this matrix, `.plans/HT1080Z_PLAN.md` §17).
+ * keyboard schematic shows exactly this matrix, `dev/plans/HT1080Z_PLAN.md` §17).
  *
  * Address bits A0-A7 select rows 0-7; a pressed key in a selected row reads as 1 on its column bit
  * D0-D7, and the selected rows are ORed. A key code is `row * 8 + column`:

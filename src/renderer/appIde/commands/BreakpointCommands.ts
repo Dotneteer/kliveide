@@ -200,7 +200,7 @@ export type BreakpointWithAddressArgs = {
   "-hit"?: string;
   /** The condition: the raw rest of the line after `-if`. */
   "-if"?: string;
-  /** A logpoint's message template (`.plans/LOGPOINTS_PLAN.md` §4.4), quotes removed. */
+  /** A logpoint's message template (`dev/plans/LOGPOINTS_PLAN.md` §4.4), quotes removed. */
   "-log"?: string;
   /** A one-shot: removed the first time it stops the machine (G1.6, O1). `bp-set` only. */
   "-once"?: boolean;
@@ -444,7 +444,7 @@ export abstract class BreakpointWithAddressCommand extends IdeCommandBase<Breakp
                * none of those - `n` and `r` are not hex digits.
                */
               /*
-               * `cu:<index>` - a Copper-instruction breakpoint (`.plans/COPPER_DEBUGGING_PLAN.md`
+               * `cu:<index>` - a Copper-instruction breakpoint (`dev/plans/COPPER_DEBUGGING_PLAN.md`
                * §4.8). Before the partition gate for the same reason as `nr:`; `cu` cannot shadow a
                * partition label either (`u` is not a hex digit).
                */
@@ -470,7 +470,7 @@ export abstract class BreakpointWithAddressCommand extends IdeCommandBase<Breakp
 
               /*
                * `sp:<sprite>` - a sprite-attribute breakpoint
-               * (`.plans/SPRITE_ATTRIBUTE_BREAKPOINTS_PLAN.md`). Before the partition gate for the
+               * (`dev/plans/SPRITE_ATTRIBUTE_BREAKPOINTS_PLAN.md`). Before the partition gate for the
                * same reason as `nr:`; `sp` cannot shadow a partition label (`s`, `p` are not hex).
                */
               if (segments[0] === "sp") {
@@ -1002,7 +1002,7 @@ export function unescapeLogOption(value: string): string {
 }
 
 // ================================================================================================
-// Logpoint groups (`.plans/LOGPOINTS_PLAN.md` §4.4)
+// Logpoint groups (`dev/plans/LOGPOINTS_PLAN.md` §4.4)
 
 /** Every group the current logpoints name, with how many each holds. */
 function knownLogGroups(bps: BreakpointInfo[]): Map<string, number> {

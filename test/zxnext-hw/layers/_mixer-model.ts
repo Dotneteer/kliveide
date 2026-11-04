@@ -24,7 +24,7 @@ export type MixerConfig = {
   /** $4A. */
   fallback: number;
   /**
-   * The IDE's layer debug mask (`.plans/LAYER_COMPOSITION_PLAN.md` D1): bit 0 ULA, 1 tilemap,
+   * The IDE's layer debug mask (`dev/plans/LAYER_COMPOSITION_PLAN.md` D1): bit 0 ULA, 1 tilemap,
    * 2 Layer 2, 3 sprites. A hidden layer's pixels are transparent; nothing else changes - a hidden
    * tile keeps its "below" bit and stencil mode stays on (T4). Not hardware: the IDE's own view.
    */
@@ -58,7 +58,7 @@ export function mixPixel(c: MixerConfig, p: MixerPixel): number {
 
 /**
  * Which rule chose a pixel's colour - the IDE's pixel probe vocabulary
- * (`.plans/LAYER_COMPOSITION_PLAN.md` D7, `src/common/zxnext/layers/layerMix.ts` `WHY_*`): the layer
+ * (`dev/plans/LAYER_COMPOSITION_PLAN.md` D7, `src/common/zxnext/layers/layerMix.ts` `WHY_*`): the layer
  * the priority case took, with the ULA/tilemap pair named by its source (ULA, tilemap or stencil),
  * a sprite that won over an opaque ULA border pixel as "border", and a blended Layer 2 by its mode.
  */

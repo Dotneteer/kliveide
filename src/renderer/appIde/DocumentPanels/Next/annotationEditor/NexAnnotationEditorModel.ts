@@ -48,7 +48,7 @@ export type NexAnnotationEditorEnvironment = {
   machineRunning: boolean;
   /**
    * The annotations are shown but never written: a shipped ROM sidecar, which is edited only through
-   * a working copy (`.plans/ROM_ANNOTATION_EDITING_PLAN.md`). Every editing action is unavailable;
+   * a working copy (`dev/plans/ROM_ANNOTATION_EDITING_PLAN.md`). Every editing action is unavailable;
    * Go to Definition, which only reads, still works.
    */
   readOnly?: boolean;

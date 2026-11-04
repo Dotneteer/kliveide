@@ -6,7 +6,7 @@ import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { createSession } from "../../harness/zxnext";
 
 /*
- * The execution-history recorder's cost (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` trap T14, Phase 8).
+ * The execution-history recorder's cost (`dev/plans/EXECUTION_HISTORY_VIEWER_PLAN.md` trap T14, Phase 8).
  * `npm run test:perf`; not part of the regular tiers, because a timing ratio on a shared CI runner
  * is noise.
  *

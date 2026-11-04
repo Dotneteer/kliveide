@@ -2,7 +2,7 @@
 
 Pixel-level tests of what the emulator *shows*: a Z80N program (`.savenex`) runs for known frames, the
 frames are saved as PNG and judged by probes, golden hashes and an AI review. Built first for the Copper.
-Design, hardware facts and the findings so far: `.plans/COPPER_VISUAL_TEST_HARNESS_PLAN.md`.
+Design, hardware facts and the findings so far: `dev/plans/COPPER_VISUAL_TEST_HARNESS_PLAN.md`.
 The cases run on the ZX Spectrum Next test harness (`test/harness/zxnext/`, see its `README.md`); for
 tests that assert on registers, ports, memory or audio rather than whole pictures, use its scripted
 sessions instead.

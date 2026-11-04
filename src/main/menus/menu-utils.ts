@@ -1,5 +1,5 @@
 /*
- * Helpers shared by the menu builders (`.plans/MENU_REDESIGN_PLAN.md` §7 Phase 1).
+ * Helpers shared by the menu builders (`dev/plans/MENU_REDESIGN_PLAN.md` §7 Phase 1).
  */
 import type { MenuItem, MenuItemConstructorOptions } from "electron";
 import type { MachineMenuItem } from "@common/machines/info-types";

@@ -8,7 +8,7 @@ const RANDOM_SEQ = [0xe2, 0xc5, 0x62];
 
 /**
  * A ROM card inserted without an image is blank: every byte $FF, as OZvm's `RomBank` starts (the
- * TypeScript machine's blank ROM read $00; `.plans/Z88_OZVM_PARITY_PLAN.md` Phase 5.7)
+ * TypeScript machine's blank ROM read $00; `dev/plans/Z88_OZVM_PARITY_PLAN.md` Phase 5.7)
  */
 const BLANK_ROM = 0xff;
 

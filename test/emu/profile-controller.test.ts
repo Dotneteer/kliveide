@@ -10,7 +10,7 @@ import type { ProfileTouchedByte } from "@common/profile/profileTypes";
 import { createSp48Session } from "../harness/sp48";
 
 /*
- * The access profile through the machine controller (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`
+ * The access profile through the machine controller (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`
  * D6, D10, T4), on the real 48K core with the reverse-debugging timeline:
  *
  * - stepping back 1,000 instructions and forward again (replays) leaves every flag and count alone;

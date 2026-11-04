@@ -9,7 +9,7 @@ import { projectMethods } from "./handlers/project";
 import { ideMethods } from "./handlers/ide";
 
 /*
- * The method table (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D7, D8): every method of protocol 1,
+ * The method table (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` D7, D8): every method of protocol 1,
  * the level it needs, whether it runs in the queue, and its handler. One table, so the level of
  * every method is visible in one place - and `test/automation/methods.test.ts` checks that it lists
  * exactly `AUTOMATION_METHODS`, so no method can exist without a level.

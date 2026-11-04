@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-/* The Next's side of the Raspberry Pi I2S link (zxnext-pi-i2s.c, .plans/PI_I2S_AUDIO_PLAN.md) */
+/* The Next's side of the Raspberry Pi I2S link (zxnext-pi-i2s.c, dev/plans/PI_I2S_AUDIO_PLAN.md) */
 
 static void zxnextPiI2sHardReset(void);
 static void zxnextPiI2sSync(void);

@@ -1,6 +1,6 @@
 /**
  * Screenshot for `docs/content/working-with-ide/execution-history.mdx`, and the running-app check of
- * the Execution History (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` Phase 9).
+ * the Execution History (`dev/plans/EXECUTION_HISTORY_VIEWER_PLAN.md` Phase 9).
  *
  * On the Next it pokes a small program into a paused machine - a loop that calls a routine, with
  * interrupts on - starts it with debugging, and stops at a breakpoint inside the routine. Then it

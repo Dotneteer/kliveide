@@ -43,13 +43,13 @@ export type BreakpointOwner =
        * Owned by the last successful build: a breakpoint read from a DeZog `LOGPOINT`, `ASSERTION` or
        * `WPMEM` source comment.
        * Never persisted, replaced as a set after every successful build, dropped when the machine
-       * changes. See `.plans/LOGPOINTS_PLAN.md` L10.
+       * changes. See `dev/plans/LOGPOINTS_PLAN.md` L10.
        */
       kind: "annotation";
     }
   | {
       /**
-       * Owned by a unit-test run (`.plans/Z80_UNIT_TESTS_PLAN.md` D9): the private stack's guards and
+       * Owned by a unit-test run (`dev/plans/Z80_UNIT_TESTS_PLAN.md` D9): the private stack's guards and
        * the success stop. Never persisted, never shown in the Breakpoints panel, removed when the
        * test ends.
        */
@@ -85,7 +85,7 @@ export type BreakpointScope =
       kind: "annotation";
     }
   | {
-      /** The breakpoints a unit-test run installed (`.plans/Z80_UNIT_TESTS_PLAN.md` D9). */
+      /** The breakpoints a unit-test run installed (`dev/plans/Z80_UNIT_TESTS_PLAN.md` D9). */
       kind: "unitTest";
     };
 
@@ -130,7 +130,7 @@ export type BreakpointInfo = {
 
   /**
    * A **one-shot**: removed automatically the first time it actually stops the machine, and never
-   * persisted (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §4.1).
+   * persisted (`dev/plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §4.1).
    *
    * Always paired with `owner: { kind: "session" }`. A *user* one-shot is a normal breakpoint of any
    * kind and binding - filters allowed - with this flag; it shares its storage key with the regular
@@ -168,14 +168,14 @@ export type BreakpointInfo = {
 
   /**
    * For a comment inside a macro body: the line that invoked the macro (`SourceAnnotation.invokedAt`,
-   * `.plans/Z80_UNIT_TESTS_PLAN.md` T2), as a project resource and line. A stop report names it,
+   * `dev/plans/Z80_UNIT_TESTS_PLAN.md` T2), as a project resource and line. A stop report names it,
    * since the comment's own line is the macro's. Not part of the identity.
    */
   annotationInvokedAt?: { resource: string; line: number };
 
   /**
    * The language `condition` is written in: `"klive"` (absent; what users type) or `"dezog"` (an
-   * `ASSERTION` comment's negated expression, `.plans/LOGPOINTS_PLAN.md` §3.4). Not part of the
+   * `ASSERTION` comment's negated expression, `dev/plans/LOGPOINTS_PLAN.md` §3.4). Not part of the
    * identity.
    */
   conditionDialect?: LogDialect;
@@ -270,7 +270,7 @@ export type BreakpointInfo = {
    * false for the rest. That is not a discriminator, it is a second copy of one, and the two can
    * fall out of step. Use `isNextRegBreakpoint` in `@common/utils/breakpoint-scope`.
    *
-   * See `.plans/NEXTREG_WRITE_BREAKPOINTS_PLAN.md` §4.1.
+   * See `dev/plans/NEXTREG_WRITE_BREAKPOINTS_PLAN.md` §4.1.
    */
   nextReg?: number;
 
@@ -304,7 +304,7 @@ export type BreakpointInfo = {
   /**
    * The ZX Spectrum Next **Copper list index** (`$000`-`$3FF`) this breakpoint watches: the machine
    * stops when the Copper completes that instruction - a MOVE or NOP when it is issued, a WAIT when
-   * its condition is satisfied (`.plans/COPPER_DEBUGGING_PLAN.md` D3, D4).
+   * its condition is satisfied (`dev/plans/COPPER_DEBUGGING_PLAN.md` D3, D4).
    *
    * Like `nextReg`, the index is the binding and the discriminator; there is no kind flag. Use
    * `isCopperBreakpoint` in `@common/utils/breakpoint-scope`. It has no Z80 address, no partition
@@ -316,7 +316,7 @@ export type BreakpointInfo = {
    * The ZX Spectrum Next **sprite** (`$00`-`$7F`) whose attribute writes this breakpoint watches:
    * the machine stops after the instruction during which a watched attribute byte of that sprite is
    * written - through port `$57` (by the CPU or the DMA) or the `$35`-`$39`/`$75`-`$79` NextReg
-   * mirrors (by the CPU or the Copper) (`.plans/SPRITE_ATTRIBUTE_BREAKPOINTS_PLAN.md`).
+   * mirrors (by the CPU or the Copper) (`dev/plans/SPRITE_ATTRIBUTE_BREAKPOINTS_PLAN.md`).
    *
    * Like `copperIndex`, the sprite is the binding and the discriminator. Use `isSpriteBreakpoint`
    * in `@common/utils/breakpoint-scope`. It has no Z80 address, no partition and no gutter.
@@ -370,7 +370,7 @@ export type BreakpointInfo = {
    * (the IDE to validate, the emulator to arm) parses it when the breakpoint is created or modified.
    * Like `disabled`, **not part of the breakpoint's identity**. Absent or empty means "always".
    *
-   * See `.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §3 for the language, C1 and C13 for the rules.
+   * See `dev/plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §3 for the language, C1 and C13 for the rules.
    */
   condition?: string;
 
@@ -412,7 +412,7 @@ export type BreakpointInfo = {
 
   /**
    * The message template of a **logpoint**: a breakpoint whose action is "log this message and
-   * continue" instead of "stop" (`.plans/LOGPOINTS_PLAN.md` L1). Its presence is what makes the
+   * continue" instead of "stop" (`dev/plans/LOGPOINTS_PLAN.md` L1). Its presence is what makes the
    * breakpoint a logpoint; it binds, filters (condition, hit rule) and persists like any other.
    *
    * Stored as typed, in the dialect `logDialect` names. Like `condition`, **not part of the
@@ -446,11 +446,11 @@ export type SourceCommentSwitches = {
   wpmem?: boolean;
 };
 
-/** The two logpoint template languages (`.plans/LOGPOINTS_PLAN.md` L6). */
+/** The two logpoint template languages (`dev/plans/LOGPOINTS_PLAN.md` L6). */
 export type LogDialect = "klive" | "dezog";
 
 /**
- * Which logpoint groups log (`.plans/LOGPOINTS_PLAN.md` §4.2, the DeZog model): everything, nothing,
+ * Which logpoint groups log (`dev/plans/LOGPOINTS_PLAN.md` §4.2, the DeZog model): everything, nothing,
  * or - with `groups` - only the listed ones. Persisted in the project file when not "all on".
  */
 export type LogpointGroupState = {

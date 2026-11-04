@@ -6,7 +6,7 @@ import { mapZ88SnapshotToKlive } from "@common/z88/z88SnapshotMapping";
 import { z88ViewedCards } from "./z88SnapshotView";
 
 /*
- * The identity of a `.z88` snapshot bank's pop-out document (`.plans/Z88_SLOT_BROWSER_PLAN.md` §4.4).
+ * The identity of a `.z88` snapshot bank's pop-out document (`dev/plans/Z88_SLOT_BROWSER_PLAN.md` §4.4).
  *
  * Keyed by the file's **full path**, not its project path: the lesson of `Next/nexBankDocument.ts`,
  * where openers keyed by different paths opened one bank as two documents. Only the viewer opens a

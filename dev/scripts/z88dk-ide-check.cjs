@@ -1,5 +1,5 @@
 /*
- * z88dk (C) in the running IDE (`.plans/Z88DK_INTEGRATION_PLAN.md` §10): launches the built Klive under
+ * z88dk (C) in the running IDE (`dev/plans/Z88DK_INTEGRATION_PLAN.md` §10): launches the built Klive under
  * Playwright (`dev/scripts/doc-shots/harness.cjs`) with a throwaway home, and checks, part by part:
  *
  *   run    - an sp48 project from the z88-dk template builds and runs; a syntax error reports zcc's
@@ -11,7 +11,7 @@
  *   setup  - z88dk-setup opens the z88dk Integration dialog, which reports the configured install
  *            (screenshot);
  *   nosetup - with no z88dk configured, a build says so and offers the Set up z88dk... link.
- *   templates - every ZX Spectrum family z88-dk template (`.plans/ZX_SPECTRUM_C_TEMPLATES_PLAN.md`
+ *   templates - every ZX Spectrum family z88-dk template (`dev/plans/ZX_SPECTRUM_C_TEMPLATES_PLAN.md`
  *            T5), one fresh app per machine and model: Build (zcc's result, no errors), Run (the
  *            loop leaves `counter` at 6 in the Watch panel), Debug (a breakpoint in `square` pauses
  *            on its line; the Call Stack and Variables panels show square <- main, `value` and
@@ -126,7 +126,7 @@ async function session(name, { configured = true, globalSettings = {}, card = fa
 }
 
 /*
- * The ZX Spectrum family's z88-dk templates in the IDE (`.plans/ZX_SPECTRUM_C_TEMPLATES_PLAN.md` T5).
+ * The ZX Spectrum family's z88-dk templates in the IDE (`dev/plans/ZX_SPECTRUM_C_TEMPLATES_PLAN.md` T5).
  * `machine` is what `newp` takes; `target` and `org` are what the build output names; `ext` is the
  * native file Export copies. The +2A/+3/+2E/+3E family's other models, the 48K NTSC and the TC2048 on
  * its own ROM differ from these only in ROM or timing: the slow core sweep covers them.

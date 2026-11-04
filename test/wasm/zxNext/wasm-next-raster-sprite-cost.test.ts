@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { createSession, type NextTestSession } from "../../harness/zxnext";
 
 /*
- * Guard for bug B80 (.plans/ZX_NEXT_EMULATOR_BUGS_HANDOVER.md).
+ * Guard for bug B80 (dev/plans/ZX_NEXT_EMULATOR_BUGS_HANDOVER.md).
  *
  * The beam-racing raster re-renders the pixels the beam has drawn at every picture-changing port write,
  * including each byte written to the sprite ports $57/$5B. That partial render used to recompute the

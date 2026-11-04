@@ -1,5 +1,5 @@
 /*
- * The emulator-side RZX flows (`.plans/RZX_PLAN.md` Phases 5-7) on a real `MachineController`
+ * The emulator-side RZX flows (`dev/plans/RZX_PLAN.md` Phases 5-7) on a real `MachineController`
  * driving the real 48K core: record and save, play to the end (D12), a desync pausing the machine
  * (D11), an IDE edit ending playback (trap 4), rollback, and render to video with a stubbed screen
  * recorder - one video frame per picture (D19), stopping at the end and at a desync.

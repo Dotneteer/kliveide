@@ -19,7 +19,7 @@ import { t } from "@common/i18n/i18n";
 import { SD_CARD_FILE_FOLDER, setSelectedSdCardFile } from "./zx-next-menus";
 
 /*
- * The DivMMC on the 48K, the 128K and the +2A/+3/+2E/+3E (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md,
+ * The DivMMC on the 48K, the 128K and the +2A/+3/+2E/+3E (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md,
  * C5): Machine › SD Card connects it (the machine config's `MC_DIVMMC`, which restarts the machine),
  * names the card it reads - the same media slot the Next's card uses, so a `.cim`, `.img` or `.hdf` -
  * and presses its NMI button. Its esxDOS ROM is the user's (Settings › Machine), as the TR-DOS ROM is.

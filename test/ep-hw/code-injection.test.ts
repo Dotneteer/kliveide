@@ -8,7 +8,7 @@ import { Z80Assembler } from "@main/z80-compiler/z80-assembler";
 import { createEpSession, type EpTestSession } from "../harness/enterprise";
 
 /*
- * Run on the Enterprise (`.plans/ENTERPRISE_PLAN.md` §12): the injection flow played as the command line
+ * Run on the Enterprise (`dev/plans/ENTERPRISE_PLAN.md` §12): the injection flow played as the command line
  * plays it, on the real ROMs of both models. Run stages the program as KLIVE.COM and types
  * `LOAD "FILE:KLIVE.COM"`: EXOS loads the `$$APP` at 0100h and starts it there.
  */

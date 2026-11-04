@@ -1,6 +1,6 @@
 # Enterprise 64/128 WASM Core
 
-One C core runs both Enterprise models (`.plans/ENTERPRISE_PLAN.md`, decision D2): `epConfigure` picks
+One C core runs both Enterprise models (`dev/plans/ENTERPRISE_PLAN.md`, decision D2): `epConfigure` picks
 128K or 64K of RAM and the ROMs present, and the host uploads the model's ROMs. It builds to
 `dist/ep.wasm` (`npm run build:ep-wasm`) and is loaded by `EpWasmV2Loader.ts`. The TypeScript side is
 `../EpWasmHost.ts` (plumbing) and `../EpWasmV2Machine.ts` (the adapter). There is no TypeScript

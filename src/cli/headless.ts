@@ -8,7 +8,7 @@ import { findWasmArtifact } from "@main/unit-tests/wasmArtifacts";
 import { CliError, EXIT_INTERNAL, usageError } from "./exit-codes";
 
 /*
- * The machine a headless verb runs (`.plans/UNIT_TESTS_CLI_PLAN.md` D6, T3): G5.5's factory, the
+ * The machine a headless verb runs (`dev/plans/UNIT_TESTS_CLI_PLAN.md` D6, T3): G5.5's factory, the
  * core's bytes read from a real file path and the ROMs from the app's public folder, with
  * `--rom <name>=<file>` and the project's `unitTests.roms` taking a ROM's place. Nothing here reads
  * the IDE's settings.

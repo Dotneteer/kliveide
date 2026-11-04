@@ -5,7 +5,7 @@ import { join, resolve } from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
 
 /**
- * The RZX module's fetch counter, IN tap and playback interrupt rule (`.plans/RZX_PLAN.md` Phase 2,
+ * The RZX module's fetch counter, IN tap and playback interrupt rule (`dev/plans/RZX_PLAN.md` Phase 2,
  * D4, D7, D8, D9), on the shared Z80 core in a test-only translation unit (`rzx-counter-test.c`)
  * wired as the Spectrum cores wire it. The machine-level behaviour is covered by the harness tests.
  */

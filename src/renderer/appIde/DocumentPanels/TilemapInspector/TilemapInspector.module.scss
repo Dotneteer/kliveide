@@ -1,7 +1,7 @@
 @use "@styles/core.scss" as *;
 
 /*
- * The Tilemap Inspector (`.plans/TILEMAP_INSPECTOR_PLAN.md` §4.4-§4.5). It shares the Sprite
+ * The Tilemap Inspector (`dev/plans/TILEMAP_INSPECTOR_PLAN.md` §4.4-§4.5). It shares the Sprite
  * Inspector's frame: a one-line toolbar, a one-line globals strip (flags first, "+n more"), and a
  * layout picked from the document's own width (`data-layout`): the inspector a band under the views
  * (narrow) or a rail beside them. Values take the state panels' `--color-state-value`; overlays on

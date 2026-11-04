@@ -4,7 +4,7 @@ import { createHtSession, type Ht1080zTestSession } from "../harness/ht1080z";
 import { expectGolden } from "./goldens";
 
 /*
- * Screen goldens (`.plans/HT1080Z_PLAN.md` §13, Phase 3): the boot screen and the character set of
+ * Screen goldens (`dev/plans/HT1080Z_PLAN.md` §13, Phase 3): the boot screen and the character set of
  * every model, drawn by the core's renderer from the real character ROMs. Each was checked by eye
  * before it was recorded (`goldens.ts`).
  */

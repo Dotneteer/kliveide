@@ -11,7 +11,7 @@ import {
 import { HT1080Z_PROGRAM_START } from "@common/ht1080z/codePlacement";
 
 /*
- * The HT-1080Z tape file viewer's model (`.plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D4): a `.cas`, `.cmd` or
+ * The HT-1080Z tape file viewer's model (`dev/plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D4): a `.cas`, `.cmd` or
  * tokenised `.bas` taken apart into the parts the viewer lists - where each starts, its bytes, what it
  * loads where, its checksum and when it plays. No React and no texts: the field explanations are
  * worded at display time (`ht1080zTapeFields.ts`), so this is tested on the bytes alone.

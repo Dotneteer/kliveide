@@ -10,7 +10,7 @@ export interface CodeToInject {
   segments: InjectedSegment[];
   options: { [key: string]: boolean };
   /**
-   * Debug one unit test (`.plans/Z80_UNIT_TESTS_PLAN.md` D12): after the injection the controller
+   * Debug one unit test (`dev/plans/Z80_UNIT_TESTS_PLAN.md` D12): after the injection the controller
    * runs the init code, patches the wrapper's CALL with the test's address and starts the debugger
    * at the wrapper.
    */

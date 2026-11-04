@@ -56,7 +56,7 @@ export class AssemblySymbolInfo implements IAssemblySymbolInfo {
 
   /**
    * The name as the source wrote it, when a case-insensitive build stored it lower-case: the
-   * profiler names routines with it (`.plans/PROFILER_PLAN.md` D6)
+   * profiler names routines with it (`dev/plans/PROFILER_PLAN.md` D6)
    */
   writtenName?: string;
 

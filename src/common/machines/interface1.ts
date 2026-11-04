@@ -3,7 +3,7 @@ import type { MachineConfigSet } from "./info-types";
 import { getModelConfig } from "./machine-registry";
 
 /*
- * Which machines can have a ZX Interface 1 (`.plans/MICRODRIVE_PLAN.md` Q2): the 16K/48K and the
+ * Which machines can have a ZX Interface 1 (`dev/plans/MICRODRIVE_PLAN.md` Q2): the 16K/48K and the
  * 128K/+2 with its own timing - not the Pentagon or the Scorpion, not the +2A/+3 (no ROMCS), not the
  * Timex. Whether one is connected is the machine config's `MC_INTERFACE1`.
  */

@@ -34,7 +34,7 @@ import {
 } from "@common/unit-tests/unitTestGuards";
 
 /*
- * The unit-test runner (`.plans/Z80_UNIT_TESTS_PLAN.md` D3, D6-D11, D20, §4.2).
+ * The unit-test runner (`dev/plans/Z80_UNIT_TESTS_PLAN.md` D3, D6-D11, D20, §4.2).
  *
  * Pure TypeScript, no Electron: it gets a machine that is set up (`HeadlessMachineFactory`), a
  * compilation and its discovered tests, and streams `UnitTestEvent`s. It builds the base state once

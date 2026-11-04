@@ -8,7 +8,7 @@ import {
 import type { TilemapModel } from "./tilemapViewModel";
 
 /*
- * What the Map and Tiles views draw over their images (`.plans/TILEMAP_INSPECTOR_PLAN.md` §4.5),
+ * What the Map and Tiles views draw over their images (`dev/plans/TILEMAP_INSPECTOR_PLAN.md` §4.5),
  * as a list of shapes in image pixels. Pure, so the overlay model is tested without a canvas; the
  * views scale it by the zoom and paint it with the `--color-tilemap-*` tokens.
  */

@@ -13,7 +13,7 @@ const golden = goldens("wasm-z88-debug-step");
  * The lessons behind these cases are in `dev/ai/wasm-migration-intent-and-lessons.md` ("Debugger
  * Behaviour Is Part Of The Port"): step-out needs the core's shadow stack, including interrupt
  * entries, and step-over must not execute an instruction it only just landed on.
- * Step 5 of `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`.
+ * Step 5 of `dev/plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`.
  */
 
 const PROGRAM = `

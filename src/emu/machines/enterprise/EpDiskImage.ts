@@ -1,5 +1,5 @@
 /*
- * Enterprise floppy images for the EXDOS card (`.plans/ENTERPRISE_PLAN.md` §10): a raw `.img`/`.dsk` -
+ * Enterprise floppy images for the EXDOS card (`dev/plans/ENTERPRISE_PLAN.md` §10): a raw `.img`/`.dsk` -
  * the sectors in order, cylinder by cylinder, side 0 then side 1 - of an MS-DOS format (FAT12) disk,
  * which EXDOS uses. The geometry comes from the boot sector: 512-byte sectors, nine a track, one or
  * two sides, and the total sector count (720K: 80 x 2; 360K: 40 x 2 or 80 x 1; 180K: 40 x 1).

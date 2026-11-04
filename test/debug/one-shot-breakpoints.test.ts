@@ -5,7 +5,7 @@ import { breakpointMatchesScope } from "@common/utils/breakpoint-scope";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 
 /*
- * One-shot breakpoints (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §4.1, G1.6).
+ * One-shot breakpoints (`dev/plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §4.1, G1.6).
  *
  * The decision itself needs no machine: a condition with no condition store fails safe (it counts
  * as true), so the tests that need a *false* condition use a hit rule instead, which is evaluated

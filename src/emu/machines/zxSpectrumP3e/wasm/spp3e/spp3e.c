@@ -14,7 +14,7 @@
 #define SPP3E_BASE_CLOCK_FREQUENCY 3546900u
 #define SPP3E_DISK_DRIVE_COUNT 2u
 /*
- * The floppy drives (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, A3). A disk lives in the core as
+ * The floppy drives (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, A3). A disk lives in the core as
  * a per-track sector table over a data area, uploaded by the host from the DSK file: every sector
  * keeps its own ID (C, H, R, N), the status bytes the dump recorded (ST1, ST2), its stored length
  * and, for a weak sector, the number of stored copies. The data area holds 1 MB per drive (an
@@ -153,7 +153,7 @@ typedef struct Spp3eScreenConfig {
   uint8_t contentionValues[8];
   /*
    * How many T-states the ULA's real memory reads come after the T-states this table fetches at
-   * (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` §1.2): 4 on the 48K, 2 on the 128K/+2 - the offset the
+   * (`dev/plans/SPECTRUM_ULA_ACCURACY_PLAN.md` §1.2): 4 on the 48K, 2 on the 128K/+2 - the offset the
    * floating bus already used (its byte is the table's fetch of `delay + 1` T-states before the
    * port read). A CPU write and an `OUT` to the border take effect against the real reads; 0 keeps
    * the old behaviour on the machines no measurement covers yet (+2A/+3, Timex, Pentagon, Scorpion).
@@ -444,7 +444,7 @@ static const Spp3eScreenConfig spp3eUlaConfig = {
 };
 
 /*
- * The DivMMC (`zx-spectrum-divmmc-classic.c`; .plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md C4): the host
+ * The DivMMC (`zx-spectrum-divmmc-classic.c`; dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md C4): the host
  * connects it (`spp3eDivMmcSetPresent`). Its ROM-3 entry points need the 48K BASIC ROM (ROM 3) paged in.
  */
 static void spp3eDivMmcRemapped(void);
@@ -919,10 +919,10 @@ static inline void rzxIntAck(void);
 #define Z80_INT_ACK() rzxIntAck()
 #endif
 /* The execution-history recorder's hooks; the recorder and this machine's macros for it are at the
-   end of this file (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` Phase 3) */
+   end of this file (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` Phase 3) */
 #include "../../../../z80/wasm/z80-history.h"
 /* The access profile's hooks; the module and this machine's mapping for it are at the end of this
-   file (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` Phase 2) */
+   file (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` Phase 2) */
 #include "../../../../z80/wasm/z80-profile.h"
 #include "../../../../z80/wasm/z80.c"
 /* The CPU's registers and debugger state, exported as `spp3eGetCpuAf` ... (WASM_CORE_LEAN_AND_DEBUG_PLAN D8) */
@@ -1503,7 +1503,7 @@ static void spp3eFdcSelectFromHdUs(uint32_t value) {
 
 /* ---------------------------------------------------------------------------------------------
  * The uPD765A's read, write, format and scan commands, over the per-track sector table
- * (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, A3). Written from the NEC uPD765 data sheet
+ * (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, A3). Written from the NEC uPD765 data sheet
  * (`dev/research/765.pdf`):
  *
  * - A sector is found by comparing its ID field with the command's C, H, R and N, on the track
@@ -2364,7 +2364,7 @@ static void spp3eCompleteMachineFrame(void) {
  * tact 14,364 on the top line). The published sources disagree: the WoS 128K reference puts it at
  * 14,367 (+3), the Sinclair Wiki at 14,363 (-1). ULA 128E +3 Test draws the same picture with either,
  * and so does Klive with 0, where its table always had it; no real-machine result in the kit decides
- * it (`.plans/SPECTRUM_ACCURACY_DOCS_PLAN.md`, "Not yet proven").
+ * it (`dev/plans/SPECTRUM_ACCURACY_DOCS_PLAN.md`, "Not yet proven").
  */
 static const uint32_t spp3eContentionPeakOffset = 0u;
 
@@ -2583,7 +2583,7 @@ uint32_t spp3eReadScreenMemoryOffset(uint32_t offset) {
  * The host's reads (memory panels, watches, the debugger): the same bytes as `spp3eReadMemory` and
  * `spp3eReadScreenMemoryOffset`, without the floating-bus latches those update for the CPU and the
  * ULA. A host read must change nothing, or looking at memory would change what the +3 does next
- * (`.plans/REVERSE_DEBUGGING_PLAN.md` Phase 1, the export contract).
+ * (`dev/plans/REVERSE_DEBUGGING_PLAN.md` Phase 1, the export contract).
  */
 uint32_t spp3ePeekMemory(uint32_t address) {
   const uint32_t maskedAddress = address & 0xffffu;
@@ -3133,7 +3133,7 @@ uint32_t spp3eGetRenderingPixelAddress(uint32_t tact) { return spp3eRenderingPix
 uint32_t spp3eGetRenderingAttributeAddress(uint32_t tact) { return spp3eRenderingAttributeAddress[tact % SPP3E_TACTS_PER_FRAME]; }
 uint32_t spp3eGetRenderingPixelIndex(uint32_t tact) { return spp3eRenderingPixelIndex[tact % SPP3E_TACTS_PER_FRAME]; }
 
-/* The beam position overlay (`.plans/BEAM_POSITION_OVERLAY_PLAN.md` §4.3): the beam, one field per call
+/* The beam position overlay (`dev/plans/BEAM_POSITION_OVERLAY_PLAN.md` §4.3): the beam, one field per call
    (see ulaBeamInfo), and rendering the paused picture up to it, which changes nothing later (T2) */
 uint32_t spp3eGetBeamInfo(uint32_t field) { return ulaBeamInfo(field); }
 void spp3eRenderToBeam(void) { spp3eUlaRenderUntilCurrentTact(); }
@@ -3176,7 +3176,7 @@ void spp3eSetLastContendedValue(uint32_t value) { spp3eLastContendedValue = (uin
 void spp3eSetLastUlaReadValue(uint32_t value) { spp3eLastUlaReadValue = (uint8_t)value; }
 
 // -----------------------------------------------------------------------------
-// Breakpoint conditions (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`): the shared evaluator, with
+// Breakpoint conditions (`dev/plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`): the shared evaluator, with
 // this machine's side-effect-free reads. The CPU view reads the slot bases directly:
 // `spp3eReadMemory` latches the floating-bus value on a contended address, which a condition must
 // never do. The partition reads mirror `getMemoryPartition` in `ZxSpectrumP3eWasmV2Machine.ts`.
@@ -3199,7 +3199,7 @@ static uint32_t condSpp3ePeekPartition(int32_t partition, uint32_t address) {
 #include "../../../../z80/wasm/z80-condition.c"
 
 // -----------------------------------------------------------------------------
-// Execution history (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` §3, Phase 3): the shared recorder,
+// Execution history (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` §3, Phase 3): the shared recorder,
 // with this machine's side-effect-free peek (the slot map, without the floating-bus latch
 // `spp3eReadMemory` keeps), its frame position in T-states (trap T4) and its context.
 //
@@ -3227,7 +3227,7 @@ static inline void spp3eHistoryContext(uint32_t kind, uint8_t *out) {
 #include "../../../../z80/wasm/z80-history.c"
 
 // -----------------------------------------------------------------------------
-// The access profile (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §2.2, D4): the shared module, with
+// The access profile (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §2.2, D4): the shared module, with
 // this machine's physical layout. Time is in CPU T-states (D8).
 //
 // One linear offset space over the physical arrays: RAM banks 0-7 ($00000-$1FFFF), then ROMs 0-3

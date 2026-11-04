@@ -1,6 +1,6 @@
 /*
  * The ZX80/ZX81's 16-byte history context (`zx8081HistoryContext` at the end of `zx8081.c`,
- * `.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` §3):
+ * `dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` §3):
  *   0    bits 0-1 the RAM (0 1K, 1 16K, 3 64K), bit 4 the ZX81 ULA, bit 5 the 8K ZX81 ROM, bit 6 NTSC
  *   1    bit 0 the ZX81's NMI generator is on (the ROM's SLOW mode while it shows a picture)
  * There is no banking: no address is in a partition, as the live machine's `getPartition` says (D4).

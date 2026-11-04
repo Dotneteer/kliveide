@@ -11,7 +11,7 @@ import { addWatchAction } from "@state/actions";
  * scattered into the panels' own suites because what they have in common is the *reason* they
  * existed: a panel that looks finished stops being read closely.
  *
- * See `.plans/UI_MODERNIZATION_BATCH_2_PLAN.md` Phase 16.
+ * See `dev/plans/UI_MODERNIZATION_BATCH_2_PLAN.md` Phase 16.
  */
 
 /*

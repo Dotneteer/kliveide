@@ -4,8 +4,8 @@ Klive debugs a ZX Spectrum Next `.nex` file at the bank level: launch any `.nex`
 breakpoints and watchpoints relative to a NEX 16K bank, stop at the entry point, run to a cursor,
 see where a bank is paged and how it differs from the file, name addresses with the file's
 annotations, and break on annotation labels. It was built in nine phases from an idea collection and
-a plan, both closed on 2026-11-04 (git history: `.plans/NEX_DEBUGGING_IDEAS.md`,
-`.plans/NEX_DEBUGGING_PLAN.md`). What is left is `.plans/NEX_DEBUGGING_FOLLOWUP_PLAN.md`. Read this
+a plan, both closed on 2026-11-04 (git history: `dev/plans/NEX_DEBUGGING_IDEAS.md`,
+`dev/plans/NEX_DEBUGGING_PLAN.md`). What is left is `dev/plans/NEX_DEBUGGING_FOLLOWUP_PLAN.md`. Read this
 before changing `DebugSupport`, the breakpoint model, `src/renderer/appIde/DocumentPanels/Next/` or
 the NEX launch. Source-level debugging of a compiled NEX (its sidecar) is
 `dev/patterns/source-debugging-model.md`.

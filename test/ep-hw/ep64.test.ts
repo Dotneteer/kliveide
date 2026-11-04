@@ -4,7 +4,7 @@ import { createEpSession } from "../harness/enterprise";
 import { pictureHash, writeShotIfAsked } from "./bare";
 
 /*
- * The Enterprise 64 (`.plans/ENTERPRISE_PLAN.md` Phase 6, D2): EXOS 2.0 and IS-BASIC 2.0 in 64K, the
+ * The Enterprise 64 (`dev/plans/ENTERPRISE_PLAN.md` Phase 6, D2): EXOS 2.0 and IS-BASIC 2.0 in 64K, the
  * four segments FCh-FFh that are also NICK's video RAM. EXOS tests and counts them itself; segments
  * F8h-FBh, the 128's extra RAM, are not there.
  */

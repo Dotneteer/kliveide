@@ -2,7 +2,7 @@
  * The length of a Z80 (and Z80N) instruction from its first bytes. Coverage needs the instruction
  * starts inside a line that emitted several instructions - a Klive BASIC statement, an sjasmplus
  * fake instruction - to tell a fully covered line from a partly covered one
- * (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` T8).
+ * (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` T8).
  */
 
 /** Unprefixed opcodes followed by one operand byte */

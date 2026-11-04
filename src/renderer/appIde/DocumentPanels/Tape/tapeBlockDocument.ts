@@ -3,7 +3,7 @@ import { documentSourceName } from "../helpers/documentSourceName";
 import { analyzeTape, blockPayload, type TapeBlockInfo } from "./tapeView";
 
 /*
- * The identity of a tape block's pop-out documents (`.plans/TAPE_VIEWER_PLAN.md` §4.5).
+ * The identity of a tape block's pop-out documents (`dev/plans/TAPE_VIEWER_PLAN.md` §4.5).
  *
  * Keyed by the tape's **full path**, not its project path - the lesson of `Next/nexBankDocument.ts`,
  * where openers keyed by different paths opened one bank as two documents.

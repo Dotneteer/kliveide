@@ -2,7 +2,7 @@
  * Decides whether, and as what, Klive can load a parsed `.z88` snapshot: OZvm's card type codes
  * become Klive cards, and the internal RAM size becomes an `MC_Z88_INTRAM` chip mask.
  *
- * `.plans/Z88_SNAPSHOT_PLAN.md` §4.2 holds the table and decisions D1, D5 and D8:
+ * `dev/plans/Z88_SNAPSHOT_PLAN.md` §4.2 holds the table and decisions D1, D5 and D8:
  *  - hybrid RAM+Flash cards (8, 9, 12) are rejected;
  *  - the AMD-compatible chips (AMD, AMIC, STM, SST, Macronix) become Klive AMD cards;
  *  - Intel SA (14) becomes the Klive Intel card;

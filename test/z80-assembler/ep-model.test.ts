@@ -8,7 +8,7 @@ import { bootModelFor } from "@main/unit-tests/UnitTestRunner";
 import { epComFile, placeEpCode, isEpPlacementProblem } from "@common/enterprise/codePlacement";
 
 /**
- * The Enterprise model of the Klive assembler (`.plans/ENTERPRISE_PLAN.md` §12): the `.model` name,
+ * The Enterprise model of the Klive assembler (`dev/plans/ENTERPRISE_PLAN.md` §12): the `.model` name,
  * `#ifmod`, the default address (where EXOS loads a `$$APP`), the warnings for code Run and Export
  * refuse, and the `.com` file Run and Export make.
  */

@@ -9,7 +9,7 @@ import { t } from "@common/i18n/i18n";
 import type { DefinitionLabel } from "@renderer/appIde/annotations/goToDefinition";
 
 /*
- * The live disassembly view's row menu (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §4.2): the
+ * The live disassembly view's row menu (`dev/plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §4.2): the
  * gutter's gestures, named and discoverable. Each item is an IDE command, so the menu adds no
  * second path to the breakpoint set. No React, so the items are tested without a view.
  */

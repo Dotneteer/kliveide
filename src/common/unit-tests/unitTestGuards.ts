@@ -2,7 +2,7 @@ import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import type { UnitTestAddress, UnitTestLabels } from "./discovery";
 
 /*
- * The breakpoints a unit test runs under (`.plans/Z80_UNIT_TESTS_PLAN.md` D9, D12, T8): owned by
+ * The breakpoints a unit test runs under (`dev/plans/Z80_UNIT_TESTS_PLAN.md` D9, D12, T8): owned by
  * `unitTest`, so they never reach the Breakpoints panel or a project file, and each names its purpose
  * in `resource`, which no user breakpoint has. Shared by the headless runner and the emulator's
  * Debug-a-test flow, so both classify a stop the same way.

@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { formatRomSidecar } from "@common/roms/romAnnotationTools";
 
 /*
- * The ROM annotation editor (`.plans/ROM_ANNOTATION_EDITING_PLAN.md` R4, R7, §4.1): a selected ROM
+ * The ROM annotation editor (`dev/plans/ROM_ANNOTATION_EDITING_PLAN.md` R4, R7, §4.1): a selected ROM
  * sidecar is matched to its ROM, its pages open as bank documents that edit it, and a file with no
  * matching ROM is only a message.
  */

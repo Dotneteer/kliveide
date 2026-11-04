@@ -15,7 +15,7 @@ import {
 } from "@common/history/reverseStep";
 
 /*
- * G4.3's walkers (`.plans/LITE_STEP_BACK_PLAN.md` §4.2, §6.1) over hand-built records. A trace is
+ * G4.3's walkers (`dev/plans/LITE_STEP_BACK_PLAN.md` §4.2, §6.1) over hand-built records. A trace is
  * written as the program ran it - one entry per record, each with the PC and SP *before* it ran and
  * its bytes - so every fixture reads like the disassembly it stands for.
  */

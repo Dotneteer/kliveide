@@ -10,7 +10,7 @@ import {
 } from "@emu/machines/ht1080z/Ht1080zTapeFile";
 
 /*
- * The HT-1080Z tape files (`Ht1080zTapeFile.ts`, `.plans/HT1080Z_PLAN.md` §9): `.cas` recognition,
+ * The HT-1080Z tape files (`Ht1080zTapeFile.ts`, `dev/plans/HT1080Z_PLAN.md` §9): `.cas` recognition,
  * `.cmd` and `.bas` turned into the tapes the ROM would have written. Loading them on the machine is
  * `test/ht1080z-hw/tape.test.ts`.
  */

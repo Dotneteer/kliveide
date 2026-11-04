@@ -1,6 +1,6 @@
 /**
  * Screenshots for `docs/content/working-with-ide/tilemap-inspector.mdx`, and the running-app check of
- * the Tilemap Inspector (`.plans/TILEMAP_INSPECTOR_PLAN.md` Phases 5-7).
+ * the Tilemap Inspector (`dev/plans/TILEMAP_INSPECTOR_PLAN.md` Phases 5-7).
  *
  * Like the Sprite Inspector's recipe, it pokes a small program into a paused ZX Spectrum Next (no
  * NextZXOS needed): `tilemap-demo.kz80.asm` beside this file, assembled by Klive's own assembler into

@@ -6,7 +6,7 @@ import { optionalString, requireSingleLine } from "../method-types";
 import { commandRunResult, runIdeCommand } from "./commands";
 
 /*
- * `screen.capture`, `ide.command` and `events.*` (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` §4.2,
+ * `screen.capture`, `ide.command` and `events.*` (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` §4.2,
  * D9, D11, Q7).
  */
 

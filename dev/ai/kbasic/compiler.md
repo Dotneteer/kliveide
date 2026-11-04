@@ -4,10 +4,10 @@
 > is commented out at every `KLIVE-BASIC-OFF:` marker. The compiler, runtime, stdlib, tests and corpus
 > stay and keep passing. How to turn it back on: `dev/ai/klive-basic-switch.md`.
 
-This note replaces the compiler's implementation plan, `.plans/ZXBASIC_COMPILER_PLAN.md`, which was
+This note replaces the compiler's implementation plan, `dev/plans/ZXBASIC_COMPILER_PLAN.md`, which was
 implemented and closed on 2026-11-04. The full plan, with its phase history, is in git history at
-that path (`git log -- .plans/ZXBASIC_COMPILER_PLAN.md`). The compatibility plan that followed it,
-`.plans/ZXBASIC_COMPATIBILITY_PLAN.md`, was closed earlier (commit `361b2b1fe1`); its decisions are
+that path (`git log -- dev/plans/ZXBASIC_COMPILER_PLAN.md`). The compatibility plan that followed it,
+`dev/plans/ZXBASIC_COMPATIBILITY_PLAN.md`, was closed earlier (commit `361b2b1fe1`); its decisions are
 kept here too.
 
 What is already written elsewhere is not repeated here:
@@ -16,7 +16,7 @@ What is already written elsewhere is not repeated here:
 | --- | --- |
 | The language (the only language reference) and the semantics annex (R8) | `dev/ai/zxbasic-syntax/` |
 | Runtime interfaces, CODEBANK contract, integration map, library API | `dev/ai/kbasic/` (`README.md` and its files) |
-| The shared back end a front end lowers to | `dev/patterns/z80-backend-frontend-guide.md`, `dev/patterns/z80-backend-{mir,lir-regalloc,optimiser,debug-builder}.md`, `.plans/SHARED_Z80_BACKEND_PLAN.md` |
+| The shared back end a front end lowers to | `dev/patterns/z80-backend-frontend-guide.md`, `dev/patterns/z80-backend-{mir,lir-regalloc,optimiser,debug-builder}.md`, `dev/plans/SHARED_Z80_BACKEND_PLAN.md` |
 | Lowering BASIC to MIR | `dev/patterns/kbasic-lowering.md` |
 | String ownership | `dev/patterns/kbasic-string-ownership.md` |
 | The language-neutral source-level debugger | `dev/patterns/source-debugging-model.md` |

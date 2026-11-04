@@ -15,7 +15,7 @@ import {
  * Having nowhere to go is not an error: these run from shortcuts and toolbar buttons, where a
  * failure dialog for "already at the oldest location" would be noise.
  *
- * See `.plans/NAVIGATION_HISTORY_PLAN.md` §5.
+ * See `dev/plans/NAVIGATION_HISTORY_PLAN.md` §5.
  */
 
 export class NavigateBackCommand extends IdeCommandBase {

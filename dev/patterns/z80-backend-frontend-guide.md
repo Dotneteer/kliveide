@@ -1,7 +1,7 @@
 # Adding a language to the shared Z80 back end
 
 Klive compiles every language it implements itself through one back end
-(`src/main/z80-backend/`, `.plans/SHARED_Z80_BACKEND_PLAN.md`). A language is **a front end that
+(`src/main/z80-backend/`, `dev/plans/SHARED_Z80_BACKEND_PLAN.md`). A language is **a front end that
 produces MIR**: it never optimises, selects instructions, writes Z80 text, runs the assembler or
 builds debug tables of its own. Klive BASIC (`src/main/kbasic/`) is the first front end; the test-only
 "mini" language (`test/z80-backend/minilang/mini.ts`, ~300 lines) is the smallest complete one and the
@@ -61,7 +61,7 @@ MIR types are representations (`mir/representations.ts`): the integers, `bool` (
 `str` (Klive BASIC's owned heap string). Map your language's types onto them; what your language
 *means* by an operation is stated on the operation. A type that needs a new representation (a 6-byte
 real, an inline short string) is a new entry in the table, with its runtime package and selector
-support for its register class (`.plans/SHARED_Z80_BACKEND_PLAN.md` §8).
+support for its register class (`dev/plans/SHARED_Z80_BACKEND_PLAN.md` §8).
 
 ## 5. The runtime
 

@@ -1,6 +1,6 @@
 # Klive BASIC: the optimiser (Phase 7)
 
-> **As built in the shared Z80 back end** (`.plans/SHARED_Z80_BACKEND_PLAN.md`, 2026-10-25). Written for Klive BASIC; now the shared Z80 back end's (`src/main/z80-backend/opt/`). The MIR folder folds an operation only by the meaning it states (`dev/patterns/z80-backend-mir.md`, as-built note).
+> **As built in the shared Z80 back end** (`dev/plans/SHARED_Z80_BACKEND_PLAN.md`, 2026-10-25). Written for Klive BASIC; now the shared Z80 back end's (`src/main/z80-backend/opt/`). The MIR folder folds an operation only by the meaning it states (`dev/patterns/z80-backend-mir.md`, as-built note).
 
 Design note for plan §7 (optimisation), §8.6 (the debug profile) and §7.5 / §10.3 (optimisation and
 debug information), written before any Phase 7 code as R11 asks. It builds on the approved notes:

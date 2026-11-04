@@ -13,7 +13,7 @@ const { SP48_VOLATILE_SYMBOLS, productionExports: sp48Exports } = require("./bui
 const { REPO_ROOT } = require("./repo-root.cjs");
 
 /**
- * The Timex core (`.plans/TIMEX_SCORPION_PLAN.md` G9.4a): `timex.c` builds the 48K machine with the
+ * The Timex core (`dev/plans/TIMEX_SCORPION_PLAN.md` G9.4a): `timex.c` builds the 48K machine with the
  * SCLD switched on, so it exports everything the 48K core does (under the same `sp48` names, which
  * lets the host reuse the 48K's loader) plus the SCLD's own `timex*` functions.
  */

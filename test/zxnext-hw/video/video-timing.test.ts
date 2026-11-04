@@ -177,7 +177,7 @@ Stop:   jr Stop
 
     // --- VT-007: $22 bit 7 is the pulse; it lasts pulseCycles CPU cycles. A pulse that falls on an odd
     // --- HC starts mid-cycle and still ends on the last count's CPU edge, half a T-state short (63 HC
-    // --- for 32 cycles, measured on the simulated FPGA core: .plans/ZX_NEXT_FIDELITY_PROOF_PLAN.md,
+    // --- for 32 cycles, measured on the simulated FPGA core: dev/plans/ZX_NEXT_FIDELITY_PROOF_PLAN.md,
     // --- F3-2), which whole-T sampling sees as one T less. Only Pentagon's falls on an even HC.
     it(`VT-007: ${t.name} INT pulse lasts ${t.pulseCycles} tacts`, async () => {
       const s = await createSession();

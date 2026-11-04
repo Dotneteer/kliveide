@@ -15,7 +15,7 @@ import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
  * exactly a gap in a sampled table: `test/memory/partition-parsing.test.ts` checks `X0` and `DM`
  * but no `M`-label, which is how sixteen unparseable DivMMC RAM names went unnoticed.
  *
- * See `.plans/PARTITION_NAMING_UNIFICATION_PLAN.md` §3.
+ * See `dev/plans/PARTITION_NAMING_UNIFICATION_PLAN.md` §3.
  */
 
 type LabelledMachine = {

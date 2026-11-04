@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Plays every `.rzx` file in a local folder headless on the real cores and reports how each one ends
- * (`.plans/RZX_PLAN.md` Phase 8): pass, desync (frame, creator), refused (the reader's or the
+ * (`dev/plans/RZX_PLAN.md` Phase 8): pass, desync (frame, creator), refused (the reader's or the
  * mapping's reason) or error, with a summary by creator. It is the yardstick for the real-world long
  * tail (§7) and for whether a per-creator compatibility workaround is worth adding.
  *

@@ -4,7 +4,7 @@ import type { MemoryView } from "./value-decoder";
 import type { WatchExpr, WatchValue } from "./watch-ast";
 
 /**
- * What the source-level debugger asks of a language (`.plans/SHARED_Z80_BACKEND_PLAN.md` §12.4).
+ * What the source-level debugger asks of a language (`dev/plans/SHARED_Z80_BACKEND_PLAN.md` §12.4).
  *
  * The debugger's core — the debug model, stepping, the call stack, the Variables panel, value
  * decoding and watch evaluation — knows machine and calling-convention facts only. Everything a

@@ -2,7 +2,7 @@
 
 This is the ZX Spectrum Next emulator. There is no other one: the TypeScript Next machine and its
 ~25 devices were removed once this core reached parity with them
-(`.plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`; the last commit that still had both is tagged
+(`dev/plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`; the last commit that still had both is tagged
 `pre-zxnext-ts-removal-2026-09-19`). The production artifact is `zx-spectrum-next.wasm`, built from
 this folder and loaded by `ZxNextWasmV2Loader.ts`.
 

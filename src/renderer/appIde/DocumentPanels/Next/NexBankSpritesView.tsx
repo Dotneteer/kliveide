@@ -56,7 +56,7 @@ import styles from "./NexBankSpritesView.module.scss";
 
 /*
  * The Sprites view of a popped-out NEX bank: the bank's bytes as a sheet of 16×16 sprite patterns,
- * with an inspector for the selected one. See `.plans/NEX_BANK_SPRITES_VIEW_PLAN.md`.
+ * with an inspector for the selected one. See `dev/plans/NEX_BANK_SPRITES_VIEW_PLAN.md`.
  *
  * Two kinds of setting, kept in two places on purpose:
  *

@@ -8,7 +8,7 @@ import { zxSpectrum128SysVars } from "@emu/machines/zxSpectrum128/ZxSpectrum128S
 
 /*
  * The system variables a ROM page's code works with, by the page's kind
- * (`.plans/ROM_ANNOTATION_EDITING_PLAN.md` §10).
+ * (`dev/plans/ROM_ANNOTATION_EDITING_PLAN.md` §10).
  *
  * A ROM page document lists a ROM, not the machine that happens to be selected: a ZX81 ROM opened
  * while a Spectrum is running must name `$4029` after the ZX81's `NXTLIN`, not the Spectrum's

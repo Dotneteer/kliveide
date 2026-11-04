@@ -11,7 +11,7 @@ import { comparePositions, type TimelinePosition } from "@emu/machines/reverse/t
 import { createSp48Session } from "../harness/sp48";
 
 /*
- * Hit counts and reverse debugging (`.plans/REVERSE_DEBUGGING_PLAN.md` D15, D16), on the real 48K:
+ * Hit counts and reverse debugging (`dev/plans/REVERSE_DEBUGGING_PLAN.md` D15, D16), on the real 48K:
  *
  * - a step through a breakpoint with a hit-count rule counts each visit once (it counted twice: the
  *   step decided at the breakpoint's PC, and the next step decided there again);

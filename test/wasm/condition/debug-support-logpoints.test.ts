@@ -11,7 +11,7 @@ import { logLineOutput } from "@emu/machines/logOutput";
 import { conditionTestStore } from "./condition-host";
 
 /*
- * Logpoints in the emulator's breakpoint store (`.plans/LOGPOINTS_PLAN.md` Phase 3): the "log and
+ * Logpoints in the emulator's breakpoint store (`dev/plans/LOGPOINTS_PLAN.md` Phase 3): the "log and
  * continue" outcome of the slow path, the arrival rule through the real stop decision (§4.2's six
  * cases), the queue and its cap, groups, and the error and inactive states. Templates run on the C
  * evaluator every Z80 core includes, built standalone over a fake machine.

@@ -12,9 +12,9 @@ import { conditionTestStore } from "./condition-host";
 
 /*
  * Conditional breakpoints in the emulator's breakpoint store, Phase 3 of
- * `.plans/CONDITIONAL_BREAKPOINTS_PLAN.md`: the slow path, per-definition counters, the hit rules,
+ * `dev/plans/CONDITIONAL_BREAKPOINTS_PLAN.md`: the slow path, per-definition counters, the hit rules,
  * resets, symbol binding, and the fail-safe and inactive states. Conditions run on the C evaluator
- * every Z80 core includes (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`), here built standalone over
+ * every Z80 core includes (`dev/plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`), here built standalone over
  * a fake machine; `DebugSupport` sees the same program store a core gives it.
  */
 
@@ -382,7 +382,7 @@ describe("machine facts", () => {
   });
 });
 
-describe("the core's program store (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md` §4.4)", () => {
+describe("the core's program store (`dev/plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md` §4.4)", () => {
   it("rebuilds when the core's store was replaced (a freshly instantiated core)", () => {
     const { ds, fake } = setup();
     ds.addBreakpoint({ address: 0x8000, exec: true, condition: "B == 3" });

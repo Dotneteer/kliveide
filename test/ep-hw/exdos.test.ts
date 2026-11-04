@@ -5,7 +5,7 @@ import { EP_PHYS_EXDOS } from "@emu/machines/enterprise/epMachineInfo";
 import { buildFat12Image, readFat12Files } from "../ep/fat12Image";
 
 /*
- * The EXDOS floppy interface (`.plans/ENTERPRISE_PLAN.md` §10, `ep-exdos.c`) on the real EXOS 2.1,
+ * The EXDOS floppy interface (`dev/plans/ENTERPRISE_PLAN.md` §10, `ep-exdos.c`) on the real EXOS 2.1,
  * IS-BASIC 2.1 and EXDOS 1.3: the card's ports and ROM, the WD1770's motor and spin-up on the shared
  * controller, a directory listing, a SAVE published as the whole image and LOADed back in a fresh
  * machine, write protection, a 40-track disk, and EXDOS.INI. The disks are built by the test's own

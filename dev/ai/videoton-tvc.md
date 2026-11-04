@@ -3,7 +3,7 @@
 The Videoton TV Computer plan was closed on 2026-11-04, with every phase done: both models (64K with
 BASIC 1.2, 64K+ with BASIC 2.2) run in the app with tapes, VT-DOS disks on the HBF card,
 Run/Debug/Export, the debugger, history, profiling, reverse debugging and a virtual keyboard. The
-plan, with its design discussion and phase log, is in git history at `.plans/VIDEOTON_TVC_PLAN.md`.
+plan, with its design discussion and phase log, is in git history at `dev/plans/VIDEOTON_TVC_PLAN.md`.
 
 This note keeps what a later session needs and the two READMEs do not say:
 - `src/emu/machines/tvc/wasm/README.md`: the core. Its layout, the time base, the clock stretch, the

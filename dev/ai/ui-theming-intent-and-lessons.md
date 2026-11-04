@@ -2,7 +2,7 @@
 
 Durable notes from the Phase 0–9 UI modernization and the Phase 10 / Phase 11 follow-ups
 (closed 2026-11-04; the plan and its per-phase retrospectives are in git history at
-`.plans/UI_MODERNIZATION_PLAN.md`; the architecture and the numbers are `ui-design-system.md`). Read
+`dev/plans/UI_MODERNIZATION_PLAN.md`; the architecture and the numbers are `ui-design-system.md`). Read
 `../../AGENTS.md` first. Read this before touching theming,
 tokens, the shared data-display primitives, the Monaco palette, **or the memory dump/disassembly
 colour** (§ "Secondary Accents" and § "View-Scoped Colour" below).
@@ -57,7 +57,7 @@ These were decided by the project author. Changing them is a product decision, n
 > The replacement is a fixed multi-hue table with only the keyword following the accent, and three
 > tests now guard it (comment saturation floor, hue spread, and every class held clear of the
 > keyword for all six accents). Before touching `theming/tokens/syntax.ts`, read
-> **`.plans/SYNTAX_PALETTE_REVISION_PLAN.md`** — including its retrospective, which records that the
+> **`dev/plans/SYNTAX_PALETTE_REVISION_PLAN.md`** — including its retrospective, which records that the
 > two tightest accent pairings were reviewed and **deliberately left as they are**.
 
 ## Secondary Accents
@@ -1183,7 +1183,7 @@ accents cannot supply four, and the status hues can. Three further rules:
 
 ## The Past Is Outlined In The Secondary Accent; The Present Stays Solid
 
-Lite step back (`.plans/LITE_STEP_BACK_PLAN.md` D7) shows registers from the past while memory stays at
+Lite step back (`dev/plans/LITE_STEP_BACK_PLAN.md` D7) shows registers from the past while memory stays at
 the present, so two rules carry the whole visual vocabulary:
 
 - **Where the view shows the past, it says where - in the secondary accent, as an outline or a band,
@@ -1383,7 +1383,7 @@ the fallback, or "not known yet" with why - rather than a flag, because the usef
 
 ## A Share Is A Wash Behind Its Figure; Time That Is Nobody's Recedes In Italics
 
-The Profiler (`.plans/PROFILER_PLAN.md` D3, D4, D14) set three rules for tables of measured time:
+The Profiler (`dev/plans/PROFILER_PLAN.md` D3, D4, D14) set three rules for tables of measured time:
 
 - **A percentage of a whole is drawn as a bar behind the figure**, in `--bgcolor-profiler-bar`
   (the primary accent's subtle wash), never as a coloured number or a status hue. The figure stays
@@ -2560,7 +2560,7 @@ a grouped catalogue while reading its facts.
 ## A Preference Goes To Settings; A Strip's Parts Are Toggled From The Strip
 
 The application menu holds commands; set-once preferences live in the Settings dialog
-(`appIde/dialogs/settings/`, `.plans/MENU_REDESIGN_PLAN.md`). A value changed during a session
+(`appIde/dialogs/settings/`, `dev/plans/MENU_REDESIGN_PLAN.md`). A value changed during a session
 (sound, speed, the machine) may *also* get a control where the user is already looking, but the menu
 keeps the command as the keyboard path.
 

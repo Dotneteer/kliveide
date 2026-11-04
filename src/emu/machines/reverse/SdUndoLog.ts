@@ -1,5 +1,5 @@
 /*
- * The Next SD card's undo log (`.plans/REVERSE_DEBUGGING_PLAN.md` D14, T3, Phase 6).
+ * The Next SD card's undo log (`dev/plans/REVERSE_DEBUGGING_PLAN.md` D14, T3, Phase 6).
  *
  * The SD card is a host file outside the core's image, so a timeline cannot rewind it the way it
  * rewinds the machine. Reads need nothing here: the sector data the host answered with is journaled

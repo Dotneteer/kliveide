@@ -1,5 +1,5 @@
 /*
- * Structured clone → JSON, at one boundary (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` T7).
+ * Structured clone → JSON, at one boundary (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` T7).
  *
  * Results from `EmuApi` and `IdeApi` cross Electron's IPC by structured clone, so they carry
  * `Uint8Array`s, `Map`s and `undefined`s that `JSON.stringify` would mangle (a typed array becomes

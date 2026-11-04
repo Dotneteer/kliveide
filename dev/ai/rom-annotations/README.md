@@ -149,7 +149,7 @@ backed by the coverage run. A file never records a level higher than the tool me
 
 ## Authoring in the IDE
 
-The shipped files can be authored in Klive itself (`.plans/ROM_ANNOTATION_EDITING_PLAN.md`)
+The shipped files can be authored in Klive itself (`dev/plans/ROM_ANNOTATION_EDITING_PLAN.md`)
 instead of by editing JSON:
 
 1. `rom-ann-new sp48.rom` copies `src/public/roms/sp48.rom.dis` unchanged into

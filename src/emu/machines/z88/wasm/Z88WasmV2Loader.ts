@@ -3,7 +3,7 @@
  * `dev/scripts/build-z88-wasm.cjs`): compiles it once per artifact name, instantiates it without imports,
  * checks every export the machine needs, and creates the typed views over the core's buffers.
  *
- * The shape follows `Sp48WasmV2Loader.ts`. See `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`.
+ * The shape follows `Sp48WasmV2Loader.ts`. See `dev/plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`.
  */
 
 import { WASM_CORE_CONDITION_PLAN_WORDS } from "@emu/machines/wasmDebugLoopLayout";

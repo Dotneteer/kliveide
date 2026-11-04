@@ -1961,7 +1961,7 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
 - **Level:** 2 for all four, recorded; each reassembles byte for byte. Every +2A/+3/+3E ROM now ships
   at level 2 (R4 done).
 
-### 2026-10-21 — ZX Spectrum Next: preparation (N0 of `.plans/NEXT_ROM_ANNOTATIONS_PLAN.md`)
+### 2026-10-21 — ZX Spectrum Next: preparation (N0 of `dev/plans/NEXT_ROM_ANNOTATIONS_PLAN.md`)
 
 - **Machine:** the Next now reports its ROM pages to the annotations (`getRomSources`: R0-R3, X0, X1
   and the DivMMC ROM; the DivMMC RAM is left out), each with its file and page, so a working copy
@@ -2448,7 +2448,7 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
 
 ### 2026-11-01 — Annotation pipeline: the Enterprise convention plug-in (no sidecar changed)
 
-- **What:** `src/common/reverse/pipeline/conventions/enterprise.ts` (`.plans/ROM_ANNOTATION_PIPELINE_PLAN.md`
+- **What:** `src/common/reverse/pipeline/conventions/enterprise.ts` (`dev/plans/ROM_ANNOTATION_PIPELINE_PLAN.md`
   P5, D4). It adds facts to the pipeline's routine cards; it writes nothing into a sidecar.
 - **Sources:** the EXOS call's register contract (A, BC, DE in; A = status; AF, BC, DE not kept; HL, IX, IY
   and the alternate set kept) is an interface fact from the EXOS technical description §4.1

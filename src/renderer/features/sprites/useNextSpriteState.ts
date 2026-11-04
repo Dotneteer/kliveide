@@ -6,7 +6,7 @@ import { useEmuStateListener } from "@renderer/appIde/useStateRefresh";
 import { hashBytes } from "./spriteViewModel";
 
 /*
- * The Sprite Inspector's read path (`.plans/SPRITE_INSPECTOR_PLAN.md` §4.3, D9, T9).
+ * The Sprite Inspector's read path (`dev/plans/SPRITE_INSPECTOR_PLAN.md` §4.3, D9, T9).
  *
  * - One `getNextSpriteState()` call per refresh, at the state panels' cadence.
  * - Nothing is read while disabled. The document area mounts only the active document, so a hidden

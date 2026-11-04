@@ -66,7 +66,7 @@ exists (add it per README "Adding a method", with a self-test on both cores).
 4. Write every palette entry the test relies on; do not assume reset values NextZXOS changes (`$07`,
    `$15`, `$43`, …) when the case also runs in the browser tier.
 5. A core that fails for a known reason gets `it.fails` / `knownFailures` naming the bug (B-number in
-   `.plans/ZX_NEXT_EMULATOR_BUGS_HANDOVER.md`) – never a loosened expectation.
+   `dev/plans/ZX_NEXT_EMULATOR_BUGS_HANDOVER.md`) – never a loosened expectation.
 
 ### 2.5 Priority (column **Pri**)
 
@@ -101,7 +101,7 @@ exists (add it per README "Adding a method", with a self-test on both cores).
 | `AY` | AY-3-8912 / TurboSound | `audio/turbosound.vhd`, `audio/ym2149.vhd` | `test/zxnext-hw/audio/ay-psg.test.ts`, `ay-stereo-mode.test.ts` (shared measurements in `audio/_audio-helpers.ts`) |
 | `DAC` | Soundrive / Covox / Specdrum DACs | `audio/soundrive.vhd` | `test/zxnext-hw/audio/dac.test.ts`, `dac-enable.test.ts` |
 | `BEEP` | Beeper, MIC, EAR, audio mixer | `audio/audio_mixer.vhd` | `test/zxnext-hw/audio/beeper-mixer.test.ts` |
-| `I2S` | Raspberry Pi I2S audio input | `audio/i2s.vhd`, `audio/i2s/`, `zxnext.vhd` ~2239-2330 | `test/zxnext-hw/audio/pi-i2s.test.ts` (2026-10-27, `.plans/PI_I2S_AUDIO_PLAN.md`) |
+| `I2S` | Raspberry Pi I2S audio input | `audio/i2s.vhd`, `audio/i2s/`, `zxnext.vhd` ~2239-2330 | `test/zxnext-hw/audio/pi-i2s.test.ts` (2026-10-27, `dev/plans/PI_I2S_AUDIO_PLAN.md`) |
 | `CTC` | Z80 CTC (4 channels) | `device/ctc*.vhd` | `test/zxnext-hw/ctc/ctc.test.ts` (replaced the machine-level half of the mock `test/zxnext/CtcDevice.test.ts` and two of the three `test/wasm/zxNext/wasm-next-ctc.test.ts` tests, 2026-09-18; the per-clock channel test stays in `wasm-next-ctc`, on the WASM CTC clock export since 2026-09-19) |
 | `DMA` | ZXN DMA / Z80 DMA | `device/dma.vhd` | `test/zxnext-hw/dma/dma.test.ts` (replaced the 30 MAME-model mocks `test/zxnext/DmaDevice*.test.ts`, 2026-09-18; bug B82) |
 | `DIV` | DivMMC paging and automap | `device/divmmc.vhd` | `test/zxnext-hw/divmmc/divmmc.test.ts` (2026-09-18, bug B83); the mocks `test/zxnext/DivMmcDevice-*.test.ts`, `DivMmmc.test.ts` still pass and stay (NMI/Multiface interplay) |
@@ -821,7 +821,7 @@ keep their hardware tests.
 
 ### 4.39 `I2S` – Raspberry Pi I2S audio input
 
-The Pi is replaced by a sample source fed into the core (`.plans/PI_I2S_AUDIO_PLAN.md`); nothing of the
+The Pi is replaced by a sample source fed into the core (`dev/plans/PI_I2S_AUDIO_PLAN.md`); nothing of the
 Pi itself is emulated. Hardware: `audio/i2s.vhd`, `audio/i2s/i2s_receive.vhd`, `zxnext.vhd` ~2239-2330,
 ~3456, ~5952-5961, ~6410; `audio/audio_mixer.vhd`:89-100.
 
@@ -880,7 +880,7 @@ Every catalogue row carries a **Status** cell. Test files are named relative to 
 |---|---|
 | ✅ | Implemented, passes on both cores (or on the core named). |
 | ◐ | Partly covered: an existing test checks part of the description; the rest is still to write. |
-| ❌ (Bn) | The test exists and is a known failure (`it.fails` / `knownFailures`) on the named core, for the bug `Bn` in `.plans/ZX_NEXT_EMULATOR_BUGS_HANDOVER.md`. |
+| ❌ (Bn) | The test exists and is a known failure (`it.fails` / `knownFailures`) on the named core, for the bug `Bn` in `dev/plans/ZX_NEXT_EMULATOR_BUGS_HANDOVER.md`. |
 | — | Not started. |
 
 When a test lands, update its row in the same change. Open known failures right now: none.

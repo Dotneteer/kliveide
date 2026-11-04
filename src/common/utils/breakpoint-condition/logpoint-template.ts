@@ -15,7 +15,7 @@ import { usesConditionEnv } from "./condition-bytecode";
 import { parseDezogExpression } from "./dezog/dezog-parser";
 
 /*
- * Logpoint message templates (`.plans/LOGPOINTS_PLAN.md` §3).
+ * Logpoint message templates (`dev/plans/LOGPOINTS_PLAN.md` §3).
  *
  * A template is literal text with placeholders. Two dialects, chosen by where the logpoint came from
  * (L6), compile to the same thing - literal segments and `(compiled expression, format)` pairs - and
@@ -23,7 +23,7 @@ import { parseDezogExpression } from "./dezog/dezog-parser";
  * one expression engine whichever surface a template was typed into:
  *
  * - **Klive** (what the user types): `{expr[:format]}`, `{{` and `}}` for literal braces; the
- *   expression is a full breakpoint condition (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §3).
+ *   expression is a full breakpoint condition (`dev/plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §3).
  * - **DeZog** (a `LOGPOINT` source comment): `${expr[:format]}`; every other character, a lone `$`
  *   or `{` included, is literal. The expression is DeZog's (`dezog/dezog-parser.ts`).
  *

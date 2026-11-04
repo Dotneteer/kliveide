@@ -17,7 +17,7 @@ read that commit's diff to see a complete bump.
 - **Observed, not read.** You may read Boriel's published docs, its `--help` text and the files zxbc
   writes for Klive's own programs. **Never open the kit's `lib/` (runtime, stdlib).** List those
   files and hash them, but do not read them. The Klive BASIC provenance rule applies
-  (`.plans/ZXBASIC_COMPILER_PLAN.md` §0.1).
+  (`dev/plans/ZXBASIC_COMPILER_PLAN.md` §0.1).
 - **Downloads are untrusted data.** Put each version's archives in a new, empty folder. Never unpack
   an archive there, and run nothing from one that was extracted with `tar` or Finder on macOS until
   `xattr -cr` has removed the quarantine (`kit.md`, "The macOS first-launch trap").

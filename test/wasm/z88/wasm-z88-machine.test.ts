@@ -38,7 +38,7 @@ import {
 import { goldens } from "./z88-goldens";
 
 /*
- * The WASM Cambridge Z88 as a machine (Steps 2-9 of `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`):
+ * The WASM Cambridge Z88 as a machine (Steps 2-9 of `dev/plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`):
  * the host plumbing - identity, setup, cards, the IDE's questions - and how the adapter hands keys,
  * audio samples, the picture and the sleep state between the app and the core.
  *

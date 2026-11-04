@@ -7,7 +7,7 @@ import type { BlinkState } from "@common/messaging/EmuApi";
  * (`blinkDevice`, `keyboardDevice`, `beeperDevice`, `screenDevice`). A WASM machine has no such
  * objects, so the machine answers from its own state - the core's exports - and the IDE never reaches
  * into the emulation (the lesson of `IZxNextIdeMachine`; see
- * `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`, Step 0.2).
+ * `dev/plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`, Step 0.2).
  */
 export interface IZ88IdeMachine {
   readonly machineId: "z88";

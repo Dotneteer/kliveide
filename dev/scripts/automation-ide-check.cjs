@@ -1,6 +1,6 @@
 /**
  * The automation server and the `klive ide` command line against the real app
- * (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` Phase 3–5 exit criteria).
+ * (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` Phase 3–5 exit criteria).
  *
  * Starts the built Klive with `--automation --noide` and an isolated `KLIVE_SETTINGS_FILE` (so it
  * never touches, or answers for, the developer's own Klive: T6), then drives it only through the

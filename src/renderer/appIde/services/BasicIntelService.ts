@@ -10,7 +10,7 @@ import type {
 } from "@abstractions/BasicIntel";
 
 /**
- * The renderer's view of Klive BASIC intel snapshots (`.plans/BASIC_EDITOR_INTELLIGENCE_PLAN.md`
+ * The renderer's view of Klive BASIC intel snapshots (`dev/plans/BASIC_EDITOR_INTELLIGENCE_PLAN.md`
  * §4.3): indexes over each `BasicIntelData`, and the queries the `.zxbas` providers ask.
  *
  * Positions in and out are Monaco's: 1-based lines and 1-based columns (end columns exclusive).

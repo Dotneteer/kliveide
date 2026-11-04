@@ -231,7 +231,7 @@
 }
 
 /*
- * The heat map's cells (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D14). Unlike the changed-byte
+ * The heat map's cells (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D14). Unlike the changed-byte
  * mark above, a heat cell *fills*: the information is the pattern a region's bytes make together, and
  * a band of fills is that pattern. It sits behind the row's one text node (z-index -1 inside
  * `.hexValues`' stacking context), so the text stays `--color-memory-value` on every step - the ramp

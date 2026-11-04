@@ -7,7 +7,7 @@ import { z88BankStorageOffset, type Z88WasmV2Machine } from "@emu/machines/z88/Z
 import { createZ88Session, Z88_FLAT_RAM_LAYOUT, type Z88TestSession } from "../../harness/z88";
 
 /*
- * The access profile on the Cambridge Z88 (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` Phase 2): the
+ * The access profile on the Cambridge Z88 (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` Phase 2): the
  * flags of a known program (D3, D9), the read and write mappings through the Blink's paging - COM.RAMS,
  * SR0's half bank, SR1-SR3, a mirrored small card, ROM, an EPROM, a flash chip's command cycles and an
  * empty slot (trap T2) - every T-state charged to an address or a bucket, and the snooze in its own

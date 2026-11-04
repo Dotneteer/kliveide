@@ -7,7 +7,7 @@ import { buildTestTrdosRom, ENTRY } from "../../sp128-hw/beta128/test-rom";
 import { checkCallEdge, checkMapping, checkTimeSums, jump, out, profiled } from "./pagedSpectrumProfile";
 
 /*
- * The access profile on the 128K core (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` Phase 2): the ZX
+ * The access profile on the 128K core (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` Phase 2): the ZX
  * Spectrum 128K, the Pentagon 128 and the Scorpion ZS-256. The offsets are physical - RAM, the ROMs,
  * TR-DOS - mapped through the slot map, never the flat `sp128Memory` copy (trap T3).
  */

@@ -7,7 +7,7 @@ Since 2026-11-04 Boriel BASIC (the bundled zxbc 2.x, a beta) builds every BASIC 
 `ZxBasicDispatcher` still holds both compilers. The switch is commented out at every
 `KLIVE-BASIC-OFF:` marker. **The whole change is one commit, `fe2da21b53`** ("Switch Klive BASIC
 off"): `git show fe2da21b53` is the complete list of what to restore, and the plan that described it
-is in git history (`.plans/KLIVE_BASIC_SWITCH_OFF_PLAN.md` before the plan was closed).
+is in git history (`dev/plans/KLIVE_BASIC_SWITCH_OFF_PLAN.md` before the plan was closed).
 
 Turn it back on only when the developer asks. Klive BASIC's provenance rule still applies
 (`AGENTS.md`, "Klive BASIC").
@@ -57,7 +57,7 @@ Turn it back on only when the developer asks. Klive BASIC's provenance rule stil
    - Regenerate the screenshots that show BASIC with the `dev/scripts/doc-shots/recipes/` recipes.
 8. **Records.** `AGENTS.md` ("Klive BASIC", "Boriel BASIC": remove "switched off"),
    `dev/ai/boriel/README.md` and `integration.md` (decision B1: the setting works again), `dev/ai/README.md`,
-   and `.plans/LANDING_PAGE_COMPETITIVE_ANALYSIS.md` §2 (the editor row says Klive BASIC's symbol
+   and `dev/plans/LANDING_PAGE_COMPETITIVE_ANALYSIS.md` §2 (the editor row says Klive BASIC's symbol
    intelligence is off with it). Add a changeset.
 
 ## Verify

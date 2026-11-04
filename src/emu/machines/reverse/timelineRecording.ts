@@ -1,6 +1,6 @@
 /*
  * A timeline snapshot as the parts of a debug recording, and back
- * (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` §4.2, D11, T5). The shapes match field for field; what
+ * (`dev/plans/DEBUG_SESSION_RECORDING_PLAN.md` §4.2, D11, T5). The shapes match field for field; what
  * this adds is the breakpoint re-keying a load needs.
  */
 

@@ -1,5 +1,5 @@
 /*
- * Klive's unit-test include in sjasmplus syntax (`.plans/Z80_UNIT_TESTS_PLAN.md` D5).
+ * Klive's unit-test include in sjasmplus syntax (`dev/plans/Z80_UNIT_TESTS_PLAN.md` D5).
  *
  * Written from scratch for Klive, like the Klive-assembler one (`kliveInclude.ts`): the same labels,
  * macro names and behaviour, in sjasmplus syntax. A DeZog project keeps the include it already has;

@@ -41,7 +41,7 @@ static inline uint32_t zxnextCopperIsActive(void) {
 // exactly — same ULA tact domain (`currentFrameTact`), same per-frame reset — so the two
 // cores stay comparable.
 //
-// See .plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md 15.5c / 15.10.
+// See dev/plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md 15.5c / 15.10.
 // ---------------------------------------------------------------------------
 
 // 311 lines at 50Hz, which is the geometry this core is fixed to
@@ -276,7 +276,7 @@ static void zxnextCopperCheckWatch(uint32_t kind, uint32_t cvc, uint32_t hc) {
 // `zxula_timing.vhd`, not the raw ULA vertical counter: `zxnext.vhd` wires
 // `vcount_i => cvc`, and `copper.vhd` has no offset input of its own. The caller supplies
 // the already-rebased line (see NextComposedScreenDevice.vcToCopperLine).
-// See .plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md 15.5.
+// See dev/plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md 15.5.
 static void zxnextCopperExecuteTick(uint32_t cvc, uint32_t hc) {
   /* zxnext.vhd ~4689-4714, on this edge, from the values before it: copper_req (latched on the previous
    * edge) makes the NextReg write; a rising copper_dout latches the next request. */

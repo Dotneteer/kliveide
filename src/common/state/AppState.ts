@@ -71,21 +71,21 @@ export type AppState = {
   /** Source-level watch expressions of the Variables panel (plan §10.8), as the user typed them. */
   sourceWatches?: string[];
   /**
-   * Which logpoint groups log (`.plans/LOGPOINTS_PLAN.md` §4.2). In the shared store so the IDE
+   * Which logpoint groups log (`dev/plans/LOGPOINTS_PLAN.md` §4.2). In the shared store so the IDE
    * (commands, the Breakpoints panel), the emulator (`DebugSupport`) and the project save all read
    * one value; persisted with the project when it is not "everything on" (§4.6).
    */
   logpointGroups?: LogpointGroupState;
   /**
    * Which DeZog comment kinds a build turns into breakpoints
-   * (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` S6): only a switch that is off is present.
+   * (`dev/plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` S6): only a switch that is off is present.
    * Persisted with the project next to `logpointGroups`.
    */
   sourceComments?: SourceCommentSwitches;
-  /** The unit-test results and the run in progress (`.plans/Z80_UNIT_TESTS_PLAN.md` §4.3) */
+  /** The unit-test results and the run in progress (`dev/plans/Z80_UNIT_TESTS_PLAN.md` §4.3) */
   unitTests?: UnitTestsState;
   /**
-   * The automation server (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D4): whether it listens and
+   * The automation server (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` D4): whether it listens and
    * how many clients are connected, for the status-bar item. Absent while it is off.
    */
   automation?: AutomationStatusState;
@@ -135,7 +135,7 @@ export type IdeView = {
   /** The source-level call-stack frame selected in the Call Stack panel (0: innermost); the Variables panel shows its locals. */
   sourceFrame?: number;
   /**
-   * The memory view's heat map (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D14): "off", "exec",
+   * The memory view's heat map (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D14): "off", "exec",
    * "read", "write" or "all". Shared by the toolbar's Heat selector and `memory-heat`.
    */
   memoryHeatMode?: string;
@@ -182,11 +182,11 @@ export type RecordingFormat = "mp4" | "webm" | "mkv";
 export type ScreenRecordingState = "idle" | "armed" | "recording" | "paused";
 
 /**
- * An RZX session on the emulator (`.plans/RZX_PLAN.md` §4.6): playing a recording, recording one,
+ * An RZX session on the emulator (`dev/plans/RZX_PLAN.md` §4.6): playing a recording, recording one,
  * or rendering one to video
  */
 /**
- * What the IDE shows of a reverse-debugging timeline (`.plans/REVERSE_DEBUGGING_PLAN.md` §4.4): the
+ * What the IDE shows of a reverse-debugging timeline (`dev/plans/REVERSE_DEBUGGING_PLAN.md` §4.4): the
  * status bar's "in the past" and "replaying" states, the reverse range, the deep-landing marker, a
  * Reverse Continue search's progress and why a timeline ended. Undefined while no timeline runs and
  * none ended with something to say.
@@ -208,7 +208,7 @@ export type ReverseDebugState = {
   searchedIntervals?: number;
   /** Why the last timeline ended early (a desync, D9) */
   desync?: string;
-  /** The debug recording the timeline was opened from (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` D10) */
+  /** The debug recording the timeline was opened from (`dev/plans/DEBUG_SESSION_RECORDING_PLAN.md` D10) */
   recording?: string;
 };
 
@@ -256,7 +256,7 @@ export type EmulatorState = {
   /** Bumped when breakpoint hit counters moved; see `incBreakpointHitsVersionAction`. */
   breakpointHitsVersion?: number;
   /**
-   * The access profile's switch (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D6): coverage and the
+   * The access profile's switch (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D6): coverage and the
    * heat map are recorded while `enabled`; `counters` keeps the counts as well as the flags
    */
   profiling?: { enabled: boolean; counters: boolean; calls?: boolean };
@@ -273,7 +273,7 @@ export type EmulatorState = {
    */
   mouseCaptured?: boolean;
   /**
-   * The ZX Spectrum Next layer debug view (`.plans/LAYER_COMPOSITION_PLAN.md`): hidden and solo
+   * The ZX Spectrum Next layer debug view (`dev/plans/LAYER_COMPOSITION_PLAN.md`): hidden and solo
    * layers, "show transparency", the clip outlines, the probe. Debugging state of this session only
    * (D2): never a setting, never saved, never in a machine state file.
    */
@@ -287,7 +287,7 @@ export type EmulatorState = {
   /** A quick-saved machine state is held for the current machine (D19 of the state-files plan) */
   quickStateAvailable?: boolean;
   /**
-   * The history cursor (`.plans/LITE_STEP_BACK_PLAN.md` D3): steps back from the present (1 = the
+   * The history cursor (`dev/plans/LITE_STEP_BACK_PLAN.md` D3): steps back from the present (1 = the
    * newest record); undefined at the present. The IDE's effects keyed on the execution point re-run
    * when it moves.
    */
@@ -300,15 +300,15 @@ export type EmulatorState = {
    */
   historyMemoryIsHistorical?: boolean;
   screenRecordingState?: ScreenRecordingState;
-  /** The RZX session, if any (`.plans/RZX_PLAN.md` §4.6) */
+  /** The RZX session, if any (`dev/plans/RZX_PLAN.md` §4.6) */
   rzx?: RzxState;
-  /** The reverse-debugging timeline, while the debug session has one (`.plans/REVERSE_DEBUGGING_PLAN.md` §4.4) */
+  /** The reverse-debugging timeline, while the debug session has one (`dev/plans/REVERSE_DEBUGGING_PLAN.md` §4.4) */
   reverseDebug?: ReverseDebugState;
   screenRecordingFile?: string;
   screenRecordingFps?: RecordingFps;
   screenRecordingQuality?: RecordingQuality;
   screenRecordingFormat?: RecordingFormat;
-  /** IDE + Emulator recording (see .plans/IDE_EMU_RECORDING_PLAN.md) */
+  /** IDE + Emulator recording (see dev/plans/IDE_EMU_RECORDING_PLAN.md) */
   windowRecordingState?: WindowRecordingState;
   windowRecordingFile?: string;
   windowRecordingIdePosition?: RecordingIdePosition;
@@ -365,7 +365,7 @@ export type CompilationState = {
   languageIntel?: LanguageIntelData;
   /**
    * Klive BASIC intel, by the root file each snapshot was checked from: the build root's, and the
-   * open file's when the build root does not include it (`.plans/BASIC_EDITOR_INTELLIGENCE_PLAN.md`
+   * open file's when the build root does not include it (`dev/plans/BASIC_EDITOR_INTELLIGENCE_PLAN.md`
    * E3, E14). Each entry is the last good snapshot of its root.
    */
   basicIntel?: Record<string, BasicIntelData>;

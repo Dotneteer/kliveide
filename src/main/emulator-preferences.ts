@@ -1,6 +1,6 @@
 /*
  * Emulator preferences that live in the app state and the project, changed from the menu, the
- * Settings dialog, the toolbar and the status bar alike (`.plans/MENU_REDESIGN_PLAN.md` §5).
+ * Settings dialog, the toolbar and the status bar alike (`dev/plans/MENU_REDESIGN_PLAN.md` §5).
  */
 import { CLOCK_MULTIPLIERS, SOUND_LEVELS } from "@common/machines/emulator-levels";
 import { setClockMultiplierAction, setSoundLevelAction } from "@state/actions";

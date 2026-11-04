@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { readKliveStateFile, writeKliveStateFile, type KliveStateFile } from "@common/machineState/kliveStateFile";
 
 /*
- * `.plans/DEBUG_SESSION_RECORDING_PLAN.md` D4: the `.kls` container moved onto the shared
+ * `dev/plans/DEBUG_SESSION_RECORDING_PLAN.md` D4: the `.kls` container moved onto the shared
  * `chunkedContainer.ts`, and its bytes must not change. The hash was taken from the writer before
  * the move.
  */

@@ -3,7 +3,7 @@
 The Klive website (`docs/`: landing page plus Nextra documentation) was rebuilt in October 2026 by
 the "Website and Documentation Modernization" plan, all eight phases (structure, illustration
 tooling, Get Started, landing page, i18n, translations, book and Under the Hood, gap writing). The
-plan was closed on 2026-11-04 (git history: `.plans/DOCS_SITE_MODERNIZATION_PLAN.md`). The build
+plan was closed on 2026-11-04 (git history: `dev/plans/DOCS_SITE_MODERNIZATION_PLAN.md`). The build
 and the commands are in `AGENTS.md`, "Documentation Site"; the screenshot pipeline is
 `dev/ai/doc-screenshots-guide.md`; the page standard and screenshot policy for the guides are in "The Guides" below;
 the translation workflow is `docs/i18n/TRANSLATING.md`. This note keeps the rules that the code and
@@ -32,7 +32,7 @@ the checks cite by number.
 - **R6 Claim only what is released.** Landing-page features carry a `since` version
   (`docs/landing/features.ts`) and appear only when the latest release tag (read at build time by
   `dev/scripts/build-doc-site-info.cjs`) has them. Re-check the claims against the "Deliberately not
-  claimed" list of `.plans/LANDING_PAGE_COMPETITIVE_ANALYSIS.md` every release.
+  claimed" list of `dev/plans/LANDING_PAGE_COMPETITIVE_ANALYSIS.md` every release.
 - **R7 Old URLs keep working.** A static export cannot send 301s, so every moved page leaves a
   generated redirect stub (`docs/redirects.json`, `dev/scripts/build-doc-redirects.cjs`, which refuses
   targets that are not pages and stubs that would replace a real page). The route golden lists the
@@ -54,7 +54,7 @@ the checks cite by number.
 ## The Guides (`docs/content/en/guides/`)
 
 The Guides were reviewed page by page and rewritten on 2026-10-24 by the "Guides Overhaul" plan
-(closed 2026-11-04; git history: `.plans/GUIDES_OVERHAUL_PLAN.md`). Eleven groups follow the reader's
+(closed 2026-11-04; git history: `dev/plans/GUIDES_OVERHAUL_PLAN.md`). Eleven groups follow the reader's
 journey, as `guides/_meta.ts` lists them: Overview (a task index, "I want to..." → page), The Emulator,
 Tapes, Disks and Snapshots, Other Machines, Projects and Building, Editing Code, Languages and
 Toolchains, Debugging, ZX Spectrum Next, Analysis and Reverse Engineering, Testing and Automation,
@@ -88,7 +88,7 @@ a recipe), the seeded preset (dark, fixed accent, 1280×820 at 2x), element-scop
 the point is the whole window, WebP shown with `<Shot>` (R3), at
 `docs/public/images/en/guides/<group>/<page>/<name>.webp`, typically one to four per page within
 `doc:check:weight`'s 1.5 MB. A recipe that cannot reach a state is a bug report about the page or the
-app. `doc:check:guide-images` fails on the pre-redesign images, and `.plans/docs-assets.golden.txt` is
+app. `doc:check:guide-images` fails on the pre-redesign images, and `dev/plans/docs-assets.golden.txt` is
 updated with every published or deleted image. **Before a release, re-run the `guides-*` recipes into
 `.local/doc-shots/` and review the diff.**
 

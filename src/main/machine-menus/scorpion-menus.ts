@@ -11,7 +11,7 @@ import { SCORPION_ROM_SIZE } from "@emu/machines/zxSpectrum128/ScorpionWasmV2Mac
 import { t } from "@common/i18n/i18n";
 
 /**
- * The Scorpion ZS-256's 64K ROM (`.plans/TIMEX_SCORPION_PLAN.md` P5): Klive cannot ship it, so the
+ * The Scorpion ZS-256's 64K ROM (`dev/plans/TIMEX_SCORPION_PLAN.md` P5): Klive cannot ship it, so the
  * user names their own copy; without one the Scorpion boots the 128K ROMs and takes TR-DOS from the
  * TR-DOS ROM setting. Chosen in Settings › Machine; choosing or forgetting it restarts the machine.
  */

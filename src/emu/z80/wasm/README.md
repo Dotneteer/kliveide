@@ -13,8 +13,8 @@ module. Read this before adding a hook, a debugger feature or a core.
 | `z80-cpu-exports.c` | Register, step-out, interrupt-depth, access-log and last-port exports | `Z80_EXPORT_PREFIX`, after `z80.c` |
 | `z80-debug-loop.c` | The debugger's in-core loop | `Z80_DEBUG_LOOP_PREFIX`, after `<prefix>ExecuteInstruction` |
 
-The plans behind them: `.plans/EXECUTION_HISTORY_VIEWER_PLAN.md`, `.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`,
-`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md` and, for the cost of debugging and the in-core loop's decisions, traps and
+The plans behind them: `dev/plans/EXECUTION_HISTORY_VIEWER_PLAN.md`, `dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`,
+`dev/plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md` and, for the cost of debugging and the in-core loop's decisions, traps and
 budgets, `dev/ai/wasm-core-debug.md`. `dev/scripts/check-wasm-cpu-contract.cjs` checks the includes.
 
 ## Contention hooks
@@ -24,7 +24,7 @@ A core with memory contention defines `Z80_DELAY_MEMORY_READ`/`_WRITE` (a memory
 with an address on the bus, the timing tables' `ir:1`, `hl:1`, `pc+1:1` entries). The second T-state
 of an M1's refresh, with IR on the bus, goes through `Z80_DELAY_REFRESH_BUS_ACCESS`, which defaults to
 the address-bus hook; the 48K and 128K define it as nothing, because the ULA halts the CPU only on an
-M-cycle's first T-state (IR Contention's real-machine pictures, `.plans/SPECTRUM_ACCURACY_DOCS_PLAN.md`).
+M-cycle's first T-state (IR Contention's real-machine pictures, `dev/plans/SPECTRUM_ACCURACY_DOCS_PLAN.md`).
 The +2A/+3's gate array contends memory cycles only, so its address-bus and port hooks add no delay.
 
 An opcode fetch normally goes through `Z80_DELAY_MEMORY_READ` like any read. A core that must time

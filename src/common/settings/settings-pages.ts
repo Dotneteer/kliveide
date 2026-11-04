@@ -1,5 +1,5 @@
 /*
- * The Settings dialog's content (`.plans/MENU_REDESIGN_PLAN.md` §4): its pages, and one row per
+ * The Settings dialog's content (`dev/plans/MENU_REDESIGN_PLAN.md` §4): its pages, and one row per
  * option, each naming where its value lives and how it is written. Everything here is pure, so the
  * rules — which rows a machine shows, what a row reads, what a search finds — are tested without
  * React (`test/settings/settings-pages.test.ts`).
@@ -353,7 +353,7 @@ export const SETTINGS_ROWS: SettingsRow[] = [
   },
 
   {
-    // --- `.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D4, D7: user settings only, never a project's
+    // --- `dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` D4, D7: user settings only, never a project's
     id: "automationEnabled",
     page: "general",
     groupKey: "settings.group.automation",
@@ -770,7 +770,7 @@ export const SETTINGS_ROWS: SettingsRow[] = [
     editor: "switch",
     source: setting(SETTING_IDE_BP_GROUP_BY_KIND)
   },
-  // --- Full reverse debugging (`.plans/REVERSE_DEBUGGING_PLAN.md` D2, D6)
+  // --- Full reverse debugging (`dev/plans/REVERSE_DEBUGGING_PLAN.md` D2, D6)
   {
     id: "reverseDebugging",
     page: "debugging",
@@ -800,7 +800,7 @@ export const SETTINGS_ROWS: SettingsRow[] = [
     ])
   },
 
-  // --- Code coverage and the heat map (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §4.3)
+  // --- Code coverage and the heat map (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §4.3)
   {
     id: "profileResetOnStart",
     page: "debugging",
@@ -1246,7 +1246,7 @@ export const SETTINGS_ROWS: SettingsRow[] = [
     buttons: [{ labelKey: "settings.button.configure", action: "dialog:boriel", closesDialog: true }]
   },
   {
-    // --- `.plans/Z88DK_INTEGRATION_PLAN.md` §4.2: the install, set up through its dialog
+    // --- `dev/plans/Z88DK_INTEGRATION_PLAN.md` §4.2: the install, set up through its dialog
     id: "z88dk",
     page: "integrations",
     groupKey: "settings.group.cCompiler",

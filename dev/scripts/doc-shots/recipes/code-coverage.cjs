@@ -1,5 +1,5 @@
 /**
- * The running-app check of code coverage and the heat map (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`
+ * The running-app check of code coverage and the heat map (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`
  * Phases 4-5), with staged shots for `docs/content/working-with-ide/code-coverage.mdx`.
  *
  * On the 48K it writes a program with a branch that is never taken and a byte it modifies after

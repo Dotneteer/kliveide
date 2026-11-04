@@ -1,5 +1,5 @@
 /*
- * The access profile's shapes as they cross the Emu API (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`
+ * The access profile's shapes as they cross the Emu API (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`
  * §4.2): code coverage (G5.1), the memory heat map (G5.2) and the flat profiler's time (G5.3).
  *
  * Everything is indexed by the core's *profile offset*: one linear space laid over its physical ROM
@@ -13,7 +13,7 @@ export const PF_READ = 0x04;
 export const PF_WRITTEN = 0x08;
 export const PF_SELF_MODIFIED = 0x10;
 export const PF_INTERRUPT = 0x20;
-/** A HALT waited here: the byte's time is mostly waiting (`.plans/PROFILER_PLAN.md` D4) */
+/** A HALT waited here: the byte's time is mostly waiting (`dev/plans/PROFILER_PLAN.md` D4) */
 export const PF_HALT = 0x40;
 
 /** The pool's page size: counters are kept per 8K physical page */
@@ -21,7 +21,7 @@ export const PROFILE_PAGE_SIZE = 0x2000;
 /** The size of one counter entry, and of the header, in bytes (`z80-profile.c`) */
 export const PROFILE_ENTRY_SIZE = 24;
 export const PROFILE_HEADER_SIZE = 192;
-/** The call tracker's edge and frame sizes (`.plans/PROFILER_PLAN.md` §4.2) */
+/** The call tracker's edge and frame sizes (`dev/plans/PROFILER_PLAN.md` §4.2) */
 export const PROFILE_EDGE_SIZE = 32;
 export const PROFILE_FRAME_SIZE = 48;
 
@@ -98,7 +98,7 @@ export type ProfileInfo = {
   generation: number;
   /** What the time counts in ("T-states", or the Next's "28 MHz ticks") */
   timeUnit: string;
-  // --- The call tracker (`.plans/PROFILER_PLAN.md` D1, D9-D12)
+  // --- The call tracker (`dev/plans/PROFILER_PLAN.md` D1, D9-D12)
   /** Whether the call tracker runs */
   callsOn: boolean;
   /** Frames open now */
@@ -185,7 +185,7 @@ export type ProfileSample = {
   flags: Uint8Array;
   /** Execution counts per requested address, when asked for and kept */
   exec?: Uint32Array;
-  /** The time of the instructions starting at each address, with `exec` (`.plans/PROFILER_PLAN.md` D15) */
+  /** The time of the instructions starting at each address, with `exec` (`dev/plans/PROFILER_PLAN.md` D15) */
   time?: Float64Array;
 };
 

@@ -10,7 +10,7 @@ import { isIntegerType, isRealType } from "../mir/representations";
  * - S2 (levels 0 and 1): a virtual register is used only by its own statement's instructions.
  * - Every jump target is a block of the function.
  * - S3: every operation whose meaning differs between languages states it, and states one instruction
- *   selection implements (`.plans/SHARED_Z80_BACKEND_PLAN.md` §3.4; `semanticProblems`).
+ *   selection implements (`dev/plans/SHARED_Z80_BACKEND_PLAN.md` §3.4; `semanticProblems`).
  */
 export function verifyModule(mir: MModule, level: number): string[] {
   const problems: string[] = [];

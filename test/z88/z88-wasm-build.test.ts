@@ -24,7 +24,7 @@ import { z88WasmArtifactBytes } from "../harness/z88";
 import { sharedZ80Functions } from "../wasmSharedExports";
 
 /*
- * The Cambridge Z88 WASM build (Step 1 of `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`).
+ * The Cambridge Z88 WASM build (Step 1 of `dev/plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`).
  */
 
 type Call = { compiler: string; args: string[] };

@@ -8,7 +8,7 @@ import {
 } from "@common/automation/protocol";
 
 /*
- * The connection file (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D5, T6): where a running Klive's
+ * The connection file (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` D5, T6): where a running Klive's
  * automation server listens and the token it expects, in `<klive-home>/run/automation.json`.
  *
  * `<klive-home>` is the folder of the settings file, so an instance started with

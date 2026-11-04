@@ -1,6 +1,6 @@
 /*
  * 16K of bytes read as ZX Spectrum Next sprite patterns: a NEX bank, a `.spr` file, or the live
- * pattern RAM the Sprite Inspector reads (`.plans/SPRITE_INSPECTOR_PLAN.md` D5).
+ * pattern RAM the Sprite Inspector reads (`dev/plans/SPRITE_INSPECTOR_PLAN.md` D5).
  *
  * Pure: bytes in, palette indices out. The NEX Sprites view and the Sprite Inspector draw what this
  * returns, and the tests pin the layout without a canvas.

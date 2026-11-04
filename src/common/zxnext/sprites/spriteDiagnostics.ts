@@ -1,5 +1,5 @@
 /*
- * "Why can't I see sprite N?" - one short reason per slot (`.plans/SPRITE_INSPECTOR_PLAN.md` §4.1).
+ * "Why can't I see sprite N?" - one short reason per slot (`dev/plans/SPRITE_INSPECTOR_PLAN.md` §4.1).
  * The Sprites table shows the first one as a chip, the inspector as a sentence. Pure.
  */
 

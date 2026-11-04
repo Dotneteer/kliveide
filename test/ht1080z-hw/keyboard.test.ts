@@ -6,7 +6,7 @@ import { ht1080zKeyMappings } from "@emu/machines/ht1080z/Ht1080zKeyMappings";
 import { ht1080zStrokesForText } from "@emu/machines/ht1080z/Ht1080zTyper";
 
 /*
- * The Phase 4 keyboard tests (`.plans/HT1080Z_PLAN.md` §7, §13): the typer against the real ROMs,
+ * The Phase 4 keyboard tests (`dev/plans/HT1080Z_PLAN.md` §7, §13): the typer against the real ROMs,
  * the accents of Series II and the /64 (the extension ROM's), the RESET key and PAGE.
  */
 
@@ -77,7 +77,7 @@ describe("HT-1080Z keyboard: accents", () => {
     s.typeKeys("PRINT CHR$(21)\n");
     s.typeKeys("■λ∞πΣΨΩ√μαγ∫βω");
     // --- The codes are the /64 character ROM's, read off its glyphs; the HS page's code column is
-    // --- wrong for these (its keys are right) - `.plans/HT1080Z_PLAN.md` §17, Phase 4
+    // --- wrong for these (its keys are right) - `dev/plans/HT1080Z_PLAN.md` §17, Phase 4
     expect(s.lineCodes(0, 15)).toEqual([0x3e, 9, 10, 11, 12, 13, 14, 15, 25, 26, 27, 28, 29, 30, 31]);
   });
 });

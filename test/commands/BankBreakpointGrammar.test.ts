@@ -18,7 +18,7 @@ import { ValidationMessageType } from "@renderer/abstractions/ValidationMessageT
  * The `+` is what separates it from the absolute `<partition>:<address>` form. It is safe because no
  * address literal can begin with one, so no existing spelling changes meaning — which matters,
  * because `bp-set`'s grammar is public API that appears in the docs and in users' scripts
- * (`.plans/PARTITION_NAMING_UNIFICATION_PLAN.md` §2).
+ * (`dev/plans/PARTITION_NAMING_UNIFICATION_PLAN.md` §2).
  */
 function contextFor(machineId: string): any {
   return {

@@ -30,7 +30,7 @@ import { loadProject } from "../project";
 import { machineOf, parseMachineOption } from "../verbs/test";
 
 /*
- * What `klive run` starts (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D15): a project's build, injected
+ * What `klive run` starts (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` D15): a project's build, injected
  * as the IDE's `run` does it, or a file - a tape, a snapshot, a Klive state, a NEX file, a ZX80/81
  * program, an HT-1080Z tape (`.cas`, `.cmd`, `.bas`) or, with `--machine tvc`, a Videoton TVC `.cas`. The loads are the IDE's own where they do not need the emulator window: the snapshot and
  * state loaders (`spectrumSnapshotLoad.ts`, `machineStateFile.ts`) run against a headless controller,

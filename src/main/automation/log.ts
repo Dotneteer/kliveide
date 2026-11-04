@@ -1,5 +1,5 @@
 /*
- * The Automation pane's lines (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D13, T11).
+ * The Automation pane's lines (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` D13, T11).
  *
  * One line per connection event and per method call, arguments summarised. The token is never
  * printed, and neither is a memory or picture payload: the `token` key is redacted wherever it

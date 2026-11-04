@@ -31,7 +31,7 @@ import { goldens } from "../wasm/z88/z88-goldens";
 
 /*
  * The Z88 machine info and card catalog the machine and the renderer share (Step 0.1 of
- * `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`).
+ * `dev/plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`).
  */
 
 describe("z88MachineInfo", () => {
@@ -150,7 +150,7 @@ describe("z88CardSpec / z88SlotHasCard / z88RomImageCardSpec (the slot rules)", 
   /*
    * What the TypeScript card factory (`createZ88MemoryCard`) made of every card id and size - the
    * card kind and size, or its error - recorded before it was removed
-   * (`test/wasm/z88/goldens/z88-card-factory.json`, `.plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`).
+   * (`test/wasm/z88/goldens/z88-card-factory.json`, `dev/plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`).
    */
   const factory = goldens("z88-card-factory");
 
@@ -194,7 +194,7 @@ describe("z88CardSpec / z88SlotHasCard / z88RomImageCardSpec (the slot rules)", 
 
 describe("z88LcdSizeRegisters (the LCD size rule)", () => {
   // --- SCW is $FF on the Z88's own LCD (the real Blink has no SCW) and 80 on the larger ones, as
-  // --- OZvm reports them (`.plans/Z88_OZVM_PARITY_PLAN.md` Phase 5.1)
+  // --- OZvm reports them (`dev/plans/Z88_OZVM_PARITY_PLAN.md` Phase 5.1)
   it.each([
     [undefined, 0xff, 8],
     ["640x64", 0xff, 8],

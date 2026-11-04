@@ -1,6 +1,6 @@
 /**
  * Screenshots for `docs/content/working-with-ide/layer2-inspector.mdx`, and the running-app check of
- * the Layer 2 Inspector (`.plans/LAYER2_INSPECTOR_PLAN.md` Phases 4-6).
+ * the Layer 2 Inspector (`dev/plans/LAYER2_INSPECTOR_PLAN.md` Phases 4-6).
  *
  * Like the Tilemap Inspector's recipe, it pokes a small program into a paused ZX Spectrum Next (no
  * NextZXOS needed): `layer2-demo.kz80.asm` beside this file, assembled by Klive's own assembler into

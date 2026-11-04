@@ -5,7 +5,7 @@ import { createSp48Session, type Sp48TestSession } from "../harness/sp48";
 import { createSp128Session, type Sp128TestSession } from "../harness/sp128";
 
 /*
- * The ZX Spectrum timing test kit (`dev/vendor/spectrum-tests/`, `.plans/SPECTRUM_ULA_ACCURACY_PLAN.md`
+ * The ZX Spectrum timing test kit (`dev/vendor/spectrum-tests/`, `dev/plans/SPECTRUM_ULA_ACCURACY_PLAN.md`
  * Phase 0): runs the community's test programs on Klive's cores. Each program has a test file of its
  * own here, in the slow tier (`npm run test:slow`).
  *
@@ -15,7 +15,7 @@ import { createSp128Session, type Sp128TestSession } from "../harness/sp128";
  * never a golden recorded from Klive's own output (the plan's ground rules).
  *
  * Some runs' pictures are published on the documentation site and checked against it on every run
- * (`PublishedPictures` in `pictures.ts`, `.plans/SPECTRUM_ACCURACY_DOCS_PLAN.md`).
+ * (`PublishedPictures` in `pictures.ts`, `dev/plans/SPECTRUM_ACCURACY_DOCS_PLAN.md`).
  */
 
 /** The kit's folder */

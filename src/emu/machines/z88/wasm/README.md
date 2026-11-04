@@ -2,8 +2,8 @@
 
 The Cambridge Z88 WASM implementation is the full-machine C core under this folder. It builds to
 `dist/cambridge-z88.wasm` and is loaded by `Z88WasmV2Loader.ts`, and it is the only Z88 emulation.
-The migration was `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`; the TypeScript machine it replaced
-was removed by `.plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md` (the last commit that has it is
+The migration was `dev/plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`; the TypeScript machine it replaced
+was removed by `dev/plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md` (the last commit that has it is
 tagged `z88-typescript-last`).
 
 **Status.** The whole machine is emulated: the memory map and every card type - RAM, ROM, UV EPROM,
@@ -120,7 +120,7 @@ as the low byte they push, so the CPU panel showed a 16-bit "last write value" a
 
 ## Brought to OZvm's behaviour (2026-10-04)
 
-`.plans/Z88_OZVM_PARITY_PLAN.md` compared the core with OZvm (https://gitlab.com/b4works/ozvm, read
+`dev/plans/Z88_OZVM_PARITY_PLAN.md` compared the core with OZvm (https://gitlab.com/b4works/ozvm, read
 for behaviour only) after users reported "noise" on the larger LCDs under OZ 5. The goldens were
 re-recorded for it, the second settled change to them, after every changed entry had been traced to
 one of these:
@@ -187,7 +187,7 @@ cannot time out with:
 
 The Z88 goldens were re-recorded for this, the one settled change to them. The ROM traces, the
 Developers' Notes passages and the review of the diff are in
-`.plans/CAMBRIDGE_Z88_ISSUE_1374_PLAN.md` (Step 4), and `test/z88/z88-timeout-coma.test.ts` holds
+`dev/plans/CAMBRIDGE_Z88_ISSUE_1374_PLAN.md` (Step 4), and `test/z88/z88-timeout-coma.test.ts` holds
 the behaviour.
 
 **The Z80 is a CMOS part** (`#define Z80_CMOS 1` before `z80.c` is included). The shared core

@@ -13,7 +13,7 @@ import {
 import type { ProgramAnnotations } from "@renderer/appIde/annotations/programAnnotations";
 
 /*
- * The symbol table breakpoint conditions bind to (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §3.6, F3).
+ * The symbol table breakpoint conditions bind to (`dev/plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §3.6, F3).
  */
 
 const annotations: ProgramAnnotations = {

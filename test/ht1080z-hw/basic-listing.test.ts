@@ -5,7 +5,7 @@ import { decodeHt1080zProgram, ht1080zProgramArea } from "@renderer/appIde/Docum
 import { createHtSession, type Ht1080zTestSession as HtSession } from "../harness/ht1080z";
 
 /*
- * The BASIC Listing view's HT-1080Z decoder against the ROM's own LIST (`.plans/HT1080Z_PLAN.md` §13,
+ * The BASIC Listing view's HT-1080Z decoder against the ROM's own LIST (`dev/plans/HT1080Z_PLAN.md` §13,
  * Phase 8): a program is typed, LISTed on the machine, and decoded from the same memory; both must
  * give the same lines. Screen codes are compared through the model's character set.
  */

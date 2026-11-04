@@ -2,7 +2,7 @@
 
 Third-party test programs for the ZX Spectrum's ULA, contention, floating bus, snow and interrupt
 timing, kept here so they can be run in Klive at any time. They are the test kit of
-`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` (Phase 0).
+`dev/plans/SPECTRUM_ULA_ACCURACY_PLAN.md` (Phase 0).
 
 They are **not** part of Klive and are never packaged with it (the app ships only `out/`). Each one
 belongs to its author; Klive's MIT licence does not apply to anything in this folder.
@@ -12,7 +12,7 @@ belongs to its author; Klive's MIT licence does not apply to anything in this fo
 `test/spectrum-kit/` runs every program on Klive's cores in the slow test tier (`npm run test:slow`):
 the programs that report their own result are asserted, the others write their picture to
 `.local/spectrum-kit/` for a by-eye check against the real-machine photos and videos on their wiki pages.
-`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` ("As built") has the results.
+`dev/plans/SPECTRUM_ULA_ACCURACY_PLAN.md` ("As built") has the results.
 
 Some runs' pictures are published on the documentation site, on "ZX Spectrum: how Klive's accuracy
 is tested" (`docs/content/en/under-the-hood/emulator-internals/spectrum-accuracy.mdx`), from

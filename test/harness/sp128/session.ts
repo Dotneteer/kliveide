@@ -91,7 +91,7 @@ class HarnessSp128Machine extends ZxSpectrum128WasmV2Machine {
 }
 
 /**
- * The Scorpion ZS-256 (`.plans/TIMEX_SCORPION_PLAN.md` G9.4c): the 128K ROMs (as the machine boots
+ * The Scorpion ZS-256 (`dev/plans/TIMEX_SCORPION_PLAN.md` G9.4c): the 128K ROMs (as the machine boots
  * without its own), or a 64K Scorpion ROM image; TR-DOS from the image, or the TR-DOS ROM given
  */
 class HarnessScorpionMachine extends ScorpionWasmV2Machine {
@@ -179,7 +179,7 @@ export async function createHarnessSpectrumMachine(
  */
 /**
  * The TR-DOS ROM named by the `KLIVE_TRDOS_ROM` environment variable, if any. Klive cannot ship the
- * ROM (`.plans/BETA128_TRDOS_PLAN.md` Q1), so the tests that need the real one run only when a
+ * ROM (`dev/plans/BETA128_TRDOS_PLAN.md` Q1), so the tests that need the real one run only when a
  * developer names their own copy.
  */
 export function trdosRomFromEnvironment(): Uint8Array | undefined {
@@ -251,7 +251,7 @@ export class Sp128TestSession {
     return this.machine.loadSnapshotState(parseSpectrumSnapshot(name, bytes));
   }
 
-  // --- RZX (`.plans/RZX_PLAN.md`): see `../spectrumRzx.ts`
+  // --- RZX (`dev/plans/RZX_PLAN.md`): see `../spectrumRzx.ts`
 
   /** Starts recording an RZX file at the machine's current state; returns the recorder */
   startRzxRecording(options?: RzxRecorderOptions): RzxRecorder {
@@ -863,7 +863,7 @@ export class Sp128TestSession {
   }
 
   // ==========================================================================================
-  // Execution history (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`): the core's recorder, as the
+  // Execution history (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`): the core's recorder, as the
   // IDE reads it through `IExecutionHistorySource`
 
   /** Turns the execution-history recorder on or off, as a debug session does */

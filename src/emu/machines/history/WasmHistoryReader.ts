@@ -8,7 +8,7 @@ import {
 
 /*
  * Reads the execution-history ring of any WASM core (`src/emu/z80/wasm/z80-history.c`,
- * `.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` D11): the same three exports on every core, and a
+ * `dev/plans/EXECUTION_HISTORY_VIEWER_PLAN.md` D11): the same three exports on every core, and a
  * header that says everything else.
  *
  * Reads are by sequence number. The ring overwrites its oldest record, so a sequence the caller
@@ -21,7 +21,7 @@ export const Z80_HISTORY_CORE_EXPORTS = [
   "z80HistoryGetHeaderOffset",
   "z80HistorySetEnabled",
   "z80HistoryClear",
-  // --- Reverse debugging's replay runs (`.plans/REVERSE_DEBUGGING_PLAN.md` D11)
+  // --- Reverse debugging's replay runs (`dev/plans/REVERSE_DEBUGGING_PLAN.md` D11)
   "z80HistoryCheckStop"
 ] as const;
 
@@ -118,7 +118,7 @@ export class WasmHistoryReader {
 
   /**
    * The outermost interrupt service spans of every held record (`serviceSpans.ts`,
-   * `.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` D10). Scanned here, beside the ring, so the viewer
+   * `dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` D10). Scanned here, beside the ring, so the viewer
    * folds services without copying the whole ring across the Emu API.
    */
   serviceSpans(): HistoryServiceSpan[] {

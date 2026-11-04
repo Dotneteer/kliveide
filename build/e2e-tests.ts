@@ -29,17 +29,17 @@ export const E2E_CORE_TESTS: string[] = [
   "test/sp128-hw/**/*.test.ts",
   "test/timex-hw/**/*.test.ts",
   "test/spectrum-hw/**/*.test.ts",
-  // --- The ZX Spectrum timing test kit (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phase 0); all slow
+  // --- The ZX Spectrum timing test kit (`dev/plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phase 0); all slow
   "test/spectrum-kit/**/*.test.ts",
   // --- The ROM annotation tools' coverage run (`dev/patterns/annotations.md` and `dev/ai/rom-annotations/README.md`)
   "test/rom-annotations/**/*.test.ts",
   "test/harness/**/self-tests/**/*.test.ts",
   "test/unit-tests/runner-*.test.ts",
-  // --- `klive test` on the fixture projects (`.plans/UNIT_TESTS_CLI_PLAN.md` §6)
+  // --- `klive test` on the fixture projects (`dev/plans/UNIT_TESTS_CLI_PLAN.md` §6)
   "test/cli/klive-test-e2e.test.ts",
-  // --- `klive run` on the fixtures, every machine and stop condition (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` §6)
+  // --- `klive run` on the fixtures, every machine and stop condition (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` §6)
   "test/cli/klive-run-e2e.test.ts",
-  // --- z88dk programs (committed zcc output) on the cores (`.plans/Z88DK_INTEGRATION_PLAN.md` §3)
+  // --- z88dk programs (committed zcc output) on the cores (`dev/plans/Z88DK_INTEGRATION_PLAN.md` §3)
   "test/z88dk/**/*.core.test.ts",
 
   // --- Mixed folders: the files that run a core
@@ -102,7 +102,7 @@ export const E2E_CORE_TESTS: string[] = [
  */
 export const E2E_KBASIC_TESTS: string[] = [
   "test/kbasic/corpus/**/*.test.ts",
-  // --- The test-only "mini" language on the shared Z80 back end (`.plans/SHARED_Z80_BACKEND_PLAN.md` Phase 6)
+  // --- The test-only "mini" language on the shared Z80 back end (`dev/plans/SHARED_Z80_BACKEND_PLAN.md` Phase 6)
   "test/z80-backend/minilang/mini-run.test.ts",
   // --- The debugger on zxbc-built Boriel BASIC programs (`dev/ai/boriel/integration.md`, "Tests and checks")
   "test/boriel/boriel-debugger.test.ts",
@@ -164,7 +164,7 @@ export const E2E_KBASIC_TESTS: string[] = [
  */
 export const E2E_SLOW_TESTS: string[] = [
   // --- The ZX Spectrum timing test kit: the community's test programs on the cores
-  // --- (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phase 0)
+  // --- (`dev/plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phase 0)
   "test/spectrum-kit/timing-tests-48k.test.ts",
   "test/spectrum-kit/timing-tests-128k.test.ts",
   "test/spectrum-kit/halt2int.test.ts",
@@ -173,7 +173,7 @@ export const E2E_SLOW_TESTS: string[] = [
   "test/spectrum-kit/timing-test.test.ts",
   "test/spectrum-kit/visual.test.ts",
   "test/spectrum-kit/ula-pictures.test.ts",
-  // --- The z88dk templates on every Spectrum family model (`.plans/ZX_SPECTRUM_C_TEMPLATES_PLAN.md` T3;
+  // --- The z88dk templates on every Spectrum family model (`dev/plans/ZX_SPECTRUM_C_TEMPLATES_PLAN.md` T3;
   // --- one per route stays fast in `z88dk-templates-run.core.test.ts`)
   "test/z88dk/z88dk-templates-run-models.core.test.ts",
   // --- Klive BASIC: the zxbc compatibility suites, the optimiser report, the corpus beyond levels 0 and 3 on the 48K

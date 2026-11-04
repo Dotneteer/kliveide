@@ -9,7 +9,7 @@ import { t } from "@common/i18n/i18n";
 /*
  * How a breakpoint's condition, hit rule and their runtime state read to a person - one wording for
  * the Breakpoints panel, the disassembly gutter and the editor margin
- * (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.4.2, §4.9).
+ * (`dev/plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.4.2, §4.9).
  */
 
 /** Draw the conditional glyph (the dot with an "=")? */
@@ -26,7 +26,7 @@ export function isInactiveBreakpoint(bp: BreakpointInfo | undefined): boolean {
 }
 
 /**
- * The glyph a breakpoint draws (`.plans/LOGPOINTS_PLAN.md` §4.5): a dot for one that stops, a
+ * The glyph a breakpoint draws (`dev/plans/LOGPOINTS_PLAN.md` §4.5): a dot for one that stops, a
  * diamond for a logpoint (the VS Code convention), each with the conditional ("=") and inactive
  * (hollow) variants; and a hollow diamond with a centre dot for a `LOGPOINT` comment - read-only,
  * owned by the build. Shape only: the colour still says which kind of breakpoint and whether it can
@@ -46,7 +46,7 @@ export type BreakpointGlyph =
   | "watchpoint";
 
 /**
- * A one-shot (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` O6) draws the dot with a "1" knocked
+ * A one-shot (`dev/plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` O6) draws the dot with a "1" knocked
  * out, or - with a condition or hit rule - the "1" over a single bar. **Inactive (hollow) still
  * wins**: whether a breakpoint can fire at all matters most. An `ASSERTION` or `WPMEM` comment
  * draws its own mark (S12).

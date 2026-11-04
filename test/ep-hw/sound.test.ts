@@ -5,7 +5,7 @@ import { createEpSession, type EpTestSession } from "../harness/enterprise";
 import { bareMachine } from "./bare";
 
 /*
- * DAVE's sound (`.plans/ENTERPRISE_PLAN.md` Phase 4, §8.2-§8.3): the tone channels' pitch, the
+ * DAVE's sound (`dev/plans/ENTERPRISE_PLAN.md` Phase 4, §8.2-§8.3): the tone channels' pitch, the
  * polynomial counters' periods, the noise clock, sync, the high-pass and ring modulator, D/A mode,
  * the two sides, BFh bit 1, and the samples the host gets. The CPU sits in `DI; HALT`; a halted cycle
  * is 4 T, a quarter of a DAVE tick, so stepping sees every tick.

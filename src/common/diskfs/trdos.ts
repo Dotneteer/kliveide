@@ -36,7 +36,7 @@ import {
 } from "./types";
 
 /*
- * TR-DOS (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, B3), over `trdImage.ts`'s catalogue
+ * TR-DOS (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, B3), over `trdImage.ts`'s catalogue
  * functions. The facts are the ones BETA128_TRDOS_PLAN §9 records: a 16-byte catalogue entry (name
  * 8, type letter, two parameters, sector count, first sector and track), a deleted file's first
  * name byte $01, files laid down one after another from the disk-info sector's first free sector.

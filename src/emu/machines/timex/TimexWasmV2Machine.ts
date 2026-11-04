@@ -43,7 +43,7 @@ const CHUNK_EXROM = 2;
 const CHUNK_NONE = 3;
 
 /*
- * The 8K partitions (`.plans/TIMEX_SCORPION_PLAN.md` Q5): HOME chunks H0-H7, DOCK chunks D0-D7,
+ * The 8K partitions (`dev/plans/TIMEX_SCORPION_PLAN.md` Q5): HOME chunks H0-H7, DOCK chunks D0-D7,
  * EXROM-bank chunks X0-X7. ROMs are numbered downwards from -1, as on every machine: H0 -1, H1 -2,
  * X0-X7 -3 to -10; RAM upwards: H2-H7 2-7, D0-D7 8-15 (a DOCK chunk may be ROM; `getRomFlags` says).
  */
@@ -54,7 +54,7 @@ export const timexDockPartition = (chunk: number): number => 8 + chunk;
 export const timexExromPartition = (chunk: number): number => -(3 + chunk);
 
 /**
- * The Timex machines (`.plans/TIMEX_SCORPION_PLAN.md` G9.4a, G9.4b) on the Timex core: the TC2048,
+ * The Timex machines (`dev/plans/TIMEX_SCORPION_PLAN.md` G9.4a, G9.4b) on the Timex core: the TC2048,
  * the TC2068 and the TS2068.
  *
  * The core is the 48K machine built with Timex's SCLD (`timex.c`), so this is the 48K's machine with

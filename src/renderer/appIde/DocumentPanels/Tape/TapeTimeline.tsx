@@ -10,7 +10,7 @@ import { TimelineStrip } from "./TimelineStrip";
 import { useT } from "@common/i18n/useT";
 
 /*
- * The tape in play order, one thin bar (`.plans/TAPE_VIEWER_PLAN.md` §4.4.1).
+ * The tape in play order, one thin bar (`dev/plans/TAPE_VIEWER_PLAN.md` §4.4.1).
  *
  * It adds the one thing the block list cannot show - where each block sits in time, and how much of
  * the tape it takes - without being a second way to browse: it is not a tab stop (the list's

@@ -5,7 +5,7 @@ import { ExpressionValueType, type FileLine, type ListFileItem } from "@abstract
 import type { ISourceFileItem } from "@main/compiler-common/abstractions";
 
 /*
- * The z88dk linker map (`zcc -m -debug`) as Klive's debug tables (`.plans/Z88DK_INTEGRATION_PLAN.md`
+ * The z88dk linker map (`zcc -m -debug`) as Klive's debug tables (`dev/plans/Z88DK_INTEGRATION_PLAN.md`
  * §6, decision C8). The format is recorded in `dev/ai/z88dk/map-format.md`; everything here is a pure
  * function of the map's text, tested against the committed fixtures.
  */

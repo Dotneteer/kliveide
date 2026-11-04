@@ -3,7 +3,7 @@ import { writeDiskData } from "./disk-writer";
 
 /*
  * Blank +3DOS disks for the Create Disk dialog and the `crd` command
- * (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, A2).
+ * (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, A2).
  *
  * Every type is 9 sectors of 512 bytes per track (IDs 1..9), filled with $E5 - an empty CP/M
  * directory and free data blocks. The single-sided types are exactly what the +3's own FORMAT lays

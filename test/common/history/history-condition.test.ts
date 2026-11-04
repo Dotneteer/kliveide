@@ -6,7 +6,7 @@ import type { HistoryRegisters } from "@common/history/historyRecord";
 import { evaluateHistoryCondition } from "@common/history/historyCondition";
 
 /*
- * The register-only condition evaluator Reverse Continue uses (`.plans/LITE_STEP_BACK_PLAN.md` D11,
+ * The register-only condition evaluator Reverse Continue uses (`dev/plans/LITE_STEP_BACK_PLAN.md` D11,
  * T5). Its agreement with the C evaluator is checked operator by operator in
  * `test/wasm/condition/history-condition-differential.test.ts`; this file checks what it refuses.
  */

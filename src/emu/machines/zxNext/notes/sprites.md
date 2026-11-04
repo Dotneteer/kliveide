@@ -9,7 +9,7 @@ The ZX Spectrum Next sprite engine is a high-performance hardware renderer suppo
 > as implementation guidance for the TypeScript sprite renderer that Klive used to have — TypeScript
 > pseudo-code against `SpriteDevice`, `patternMemory8bit[]`, `NextComposedScreenDevice`, references
 > to pre-transformed pattern variants. That renderer was removed
-> (`.plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`); the sprite engine is
+> (`dev/plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`); the sprite engine is
 > `wasm/zxnext/zxnext-sprites.c`. Read those passages as one worked way of implementing the
 > hardware, not as a description of the code.
 

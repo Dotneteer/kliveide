@@ -40,7 +40,7 @@ import { useT } from "@common/i18n/useT";
 import type { MessageKey } from "@common/i18n/keys.generated";
 
 /**
- * The Profiler document (`$profiler`, `.plans/PROFILER_PLAN.md` D14): where the time went, as a
+ * The Profiler document (`$profiler`, `dev/plans/PROFILER_PLAN.md` D14): where the time went, as a
  * flat "top routines" table (G5.3), the raw per-instruction view, and - when the call tracker ran -
  * the call tree and a routine's callers (G5.4). It re-reads the profile whenever the machine
  * controller says it moved (`profileVersion`), and rolls it up with `src/common/profile/`.

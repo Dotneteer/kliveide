@@ -2,7 +2,7 @@ const { statSync } = require("node:fs");
 const { buildEpWasm, output } = require("./build-ep-wasm.cjs");
 
 /*
- * The ceiling (`.plans/ENTERPRISE_PLAN.md`). Phase 1-2's core (the shared Z80 with the history recorder and
+ * The ceiling (`dev/plans/ENTERPRISE_PLAN.md`). Phase 1-2's core (the shared Z80 with the history recorder and
  * the access profile, DAVE's interrupts, NICK's LPT walker) is 175 KB in the speed build; the renderers
  * (Phase 3), the sound (Phase 4) and EXDOS (Phase 9) add to it. 300,000 leaves room; re-measure and lower
  * it in Phase 10.

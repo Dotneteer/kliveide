@@ -10,7 +10,7 @@ import { createEpSession, type EpTestSession } from "../harness/enterprise";
 import { pictureHash, writeShotIfAsked } from "./bare";
 
 /**
- * The Enterprise project template (`.plans/ENTERPRISE_PLAN.md` Phase 8) assembles without errors and
+ * The Enterprise project template (`dev/plans/ENTERPRISE_PLAN.md` Phase 8) assembles without errors and
  * does what its comments say, run as the IDE runs it and loaded from its `.com` export. The picture -
  * the two lines in green at the top of a black page, the cursor under them - was checked by eye
  * (`EP_SHOTS_PNG=<dir>` writes it).

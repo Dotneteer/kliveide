@@ -1,5 +1,5 @@
 /*
- * A reverse-debugging timeline (`.plans/REVERSE_DEBUGGING_PLAN.md` §4.2, D2, D5, D9, D12, D13, D16).
+ * A reverse-debugging timeline (`dev/plans/REVERSE_DEBUGGING_PLAN.md` §4.2, D2, D5, D9, D12, D13, D16).
  *
  * One per debug session on a machine that has `MF_REVERSE_DEBUG`: the keyframe store, the input
  * journal, the hit log and the mode.
@@ -145,7 +145,7 @@ export type TimelineOptions = {
 };
 
 /**
- * A timeline as plain data (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` §4.2, D1): what a debug
+ * A timeline as plain data (`dev/plans/DEBUG_SESSION_RECORDING_PLAN.md` §4.2, D1): what a debug
  * recording saves and what `fromSnapshot` rebuilds a timeline from. Pages are references into the
  * pool - immutable, so a save can write them while the machine runs on (T10).
  */
@@ -255,7 +255,7 @@ export class Timeline {
 
   /**
    * For a timeline opened from a debug recording: the file's name, and the present it was last
-   * opened or saved at (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` D10, Q7)
+   * opened or saved at (`dev/plans/DEBUG_SESSION_RECORDING_PLAN.md` D10, Q7)
    */
   recording?: { name: string; savedPresent: TimelinePosition };
 

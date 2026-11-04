@@ -1,5 +1,5 @@
 /*
- * The historical-state provider of full reverse debugging (`.plans/REVERSE_DEBUGGING_PLAN.md` D10):
+ * The historical-state provider of full reverse debugging (`dev/plans/REVERSE_DEBUGGING_PLAN.md` D10):
  * G4.3's history cursor chooses where to go, and this puts the machine there by replay. Every panel
  * then shows the past - memory, devices, the screen - because the machine *is* in the past, and the
  * "memory shows the present" banners go (`memoryIsHistorical`).

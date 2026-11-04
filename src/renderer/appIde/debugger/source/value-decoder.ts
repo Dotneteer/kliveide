@@ -13,7 +13,7 @@ import { formatRaw, NEUTRAL_LANGUAGE, type DebugLanguageSupport, type RawValue, 
 
 /**
  * Decoding values from emulator memory or registers by their **representation**
- * (`@abstractions/SourceDebugInfo` `SourceValueType`, plan §10.7, `.plans/SHARED_Z80_BACKEND_PLAN.md`
+ * (`@abstractions/SourceDebugInfo` `SourceValueType`, plan §10.7, `dev/plans/SHARED_Z80_BACKEND_PLAN.md`
  * §12.3): the Variables panel, returned values and watch expressions all read values through here.
  * A decoder knows bytes only; how a value is written is the language's (`formatRaw`).
  */

@@ -7,7 +7,7 @@ import { locateSource } from "@renderer/appIde/utils/source-location";
 import type { HistoryDisassemblyCache } from "./historyDisassembly";
 
 /*
- * What the trace exporter needs from the renderer (`.plans/TRACE_EXPORT_PLAN.md` D12): the
+ * What the trace exporter needs from the renderer (`dev/plans/TRACE_EXPORT_PLAN.md` D12): the
  * disassembly with the current compilation's labels, the source line, the partition label and the
  * memory map of a record - the same answers the Execution History document gives.
  */

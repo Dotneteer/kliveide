@@ -1,6 +1,6 @@
 /**
  * The scripts find the repository root through one helper (`dev/scripts/repo-root.cjs`), so the scripts
- * folder can live at any depth (`.plans/ROOT_DECLUTTER_PLAN.md`, steps 10-11).
+ * folder can live at any depth (`dev/plans/ROOT_DECLUTTER_PLAN.md`, steps 10-11).
  */
 import fs from "node:fs";
 import path from "node:path";

@@ -1,5 +1,5 @@
 /*
- * The segments of an RZX file (`.plans/RZX_PLAN.md` §4.1): a snapshot plus the input blocks that
+ * The segments of an RZX file (`dev/plans/RZX_PLAN.md` §4.1): a snapshot plus the input blocks that
  * follow it, up to the next snapshot. Playback walks segments, and the viewer lists them as jump
  * points. Pure: no Node, no DOM.
  */

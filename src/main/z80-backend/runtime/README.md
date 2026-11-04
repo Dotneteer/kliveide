@@ -1,7 +1,7 @@
 # The runtime of the shared Z80 back end
 
 The runtime every compiled program links: Klive-written Z80 in Klive's assembler dialect, one file
-per module, in **packages** (`.plans/SHARED_Z80_BACKEND_PLAN.md` §3.2). It was written for Klive
+per module, in **packages** (`dev/plans/SHARED_Z80_BACKEND_PLAN.md` §3.2). It was written for Klive
 BASIC (`dev/ai/kbasic/compiler.md`, "Runtime and ROM policy") and is **written from scratch** — no upstream runtime
 file is opened, copied or converted (`dev/ai/kbasic/compiler.md`, "Provenance (hard rule)"); interfaces come from `dev/ai/kbasic/runtime-abi.md`,
 behaviour from the spec and the ROM documentation.

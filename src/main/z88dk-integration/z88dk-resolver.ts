@@ -5,7 +5,7 @@ import path from "path";
 import { Z88DK_CONFIGURED_FAILED_MESSAGE, Z88DK_INSTALL_FOLDER } from "./z88dk-config";
 
 /*
- * Where z88dk is and how to run it (`.plans/Z88DK_INTEGRATION_PLAN.md` §4.1–4.2). Every zcc run -
+ * Where z88dk is and how to run it (`dev/plans/Z88DK_INTEGRATION_PLAN.md` §4.1–4.2). Every zcc run -
  * the dialog's smoke test, a build, a background check - gets its environment from
  * `z88dkRunEnvironment`, so they all run zcc the same way (`dev/ai/z88dk/README.md`: zcc needs ZCCCFG and
  * its tools on PATH).

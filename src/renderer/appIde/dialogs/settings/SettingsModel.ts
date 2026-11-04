@@ -1,5 +1,5 @@
 /*
- * The Settings dialog's state and its pure reducer (`.plans/MENU_REDESIGN_PLAN.md` §4).
+ * The Settings dialog's state and its pure reducer (`dev/plans/MENU_REDESIGN_PLAN.md` §4).
  *
  * The values themselves are not here: they live in the app state (settings, theme, recording
  * preferences), which the container pushes in as the environment. The dialog's own state is only

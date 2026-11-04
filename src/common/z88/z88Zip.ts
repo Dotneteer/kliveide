@@ -3,7 +3,7 @@ import { unzipSync } from "fflate";
 /**
  * Reads every file entry of a ZIP archive (STORED or DEFLATE), keyed by its exact name.
  *
- * A `.z88` snapshot is a plain ZIP (`.plans/Z88_SNAPSHOT_PLAN.md` §4.1). Directory entries are
+ * A `.z88` snapshot is a plain ZIP (`dev/plans/Z88_SNAPSHOT_PLAN.md` §4.1). Directory entries are
  * dropped: the format has none, and a name ending in "/" can never match a member it defines.
  * @param bytes The archive
  * @throws "Not a ZIP archive" when the bytes are not a readable ZIP

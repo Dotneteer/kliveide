@@ -302,7 +302,7 @@ export class Ht1080zTestSession {
    *
    * On Series I/II codes 00h-1Fh read as 40h-5Fh: the BASIC's display driver (0471h) stores every
    * letter there - 40h-7Fh folded to 00h-1Fh - and the /64's BASIC removes that fold
-   * (`.plans/HT1080Z_PLAN.md` §17, "Phase 2" - an open question against D10).
+   * (`dev/plans/HT1080Z_PLAN.md` §17, "Phase 2" - an open question against D10).
    */
   screenText(): string[] {
     const foldsLetters = this.machine.hardware.romSet !== "s64";

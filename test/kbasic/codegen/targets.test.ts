@@ -95,7 +95,7 @@ describe("the 128K target", () => {
 });
 
 /**
- * The 128K target on the Pentagon 128 (`.plans/PENTAGON_128_PLAN.md` Phase 5): the same ROMs, so
+ * The 128K target on the Pentagon 128 (`dev/plans/PENTAGON_128_PLAN.md` Phase 5): the same ROMs, so
  * the same runtime; and a program whose result depends on the machine's timing proves the model
  * reached the core. Booted to the 128K menu (ROM 0 paged in), then called as above.
  */
@@ -149,7 +149,7 @@ describe("the 128K target on the Pentagon 128", () => {
 const FLOAT_PROGRAM_128 = "DIM f AS Float = 2\nPRINT AT 0, 0; SQR(f) * 1000; \" \"; STR$(PI)\n";
 
 /**
- * The +3 target on the +2A/+3's own Amstrad ROMs (`.plans/PLUS3_AMSTRAD_ROMS_PLAN.md` Phase 4), and
+ * The +3 target on the +2A/+3's own Amstrad ROMs (`dev/plans/PLUS3_AMSTRAD_ROMS_PLAN.md` Phase 4), and
  * on the +3E's for comparison: booted through the IDE's `spp3e` flow into +3 BASIC, then called as
  * the 128K test above calls it. Its Float output needs the 48K BASIC ROM, which the runtime pages
  * in through BANKM ($7FFD) and BANK678 ($1FFD) and back out - so those system variables must mean

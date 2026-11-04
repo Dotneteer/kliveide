@@ -664,7 +664,7 @@ describe("BreakpointDialog - NextReg write breakpoints", () => {
 });
 
 /*
- * Conditions and hit counts (Phase 5 of `.plans/CONDITIONAL_BREAKPOINTS_PLAN.md`, §4.4). The rules
+ * Conditions and hit counts (Phase 5 of `dev/plans/CONDITIONAL_BREAKPOINTS_PLAN.md`, §4.4). The rules
  * are `breakpoint-form.ts`'s and tested there; these check what the view shows and emits.
  */
 describe("BreakpointDialog - conditions and hit counts", () => {
@@ -820,7 +820,7 @@ describe("BreakpointDialog - source mode", () => {
   });
 });
 
-// --- `.plans/LOGPOINTS_PLAN.md` §4.5: the Action row and the log message field
+// --- `dev/plans/LOGPOINTS_PLAN.md` §4.5: the Action row and the log message field
 describe("BreakpointDialog - logpoints", () => {
   it("shows the message field only for the Log message action, and emits the template", async () => {
     const controls = someControls();

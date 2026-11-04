@@ -7,7 +7,7 @@ import { parseCommand } from "@renderer/appIde/services/command-parser";
 import { ValidationMessageType } from "@renderer/abstractions/ValidationMessageType";
 
 /*
- * The `zx-snapshot-save` IDE command (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.3,
+ * The `zx-snapshot-save` IDE command (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.3,
  * Phase 3). The emulator side is mocked here; `test/spectrum/snapshot/spectrum-snapshot-flow.test.ts`
  * and `spectrum-snapshot-save.test.ts` cover it on the real machines.
  */

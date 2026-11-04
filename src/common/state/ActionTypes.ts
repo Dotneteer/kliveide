@@ -110,12 +110,12 @@ export interface ActionTypes {
   REMOVE_SOURCE_WATCH: null;
   SET_SOURCE_WATCHES: null;
 
-  // --- Logpoint groups (`.plans/LOGPOINTS_PLAN.md` §4.2)
+  // --- Logpoint groups (`dev/plans/LOGPOINTS_PLAN.md` §4.2)
   SET_LOGPOINT_GROUPS: null;
-  // --- ASSERTION / WPMEM comment switches (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` S6)
+  // --- ASSERTION / WPMEM comment switches (`dev/plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` S6)
   SET_SOURCE_COMMENTS: null;
 
-  // --- Unit tests (`.plans/Z80_UNIT_TESTS_PLAN.md` §4.3)
+  // --- Unit tests (`dev/plans/Z80_UNIT_TESTS_PLAN.md` §4.3)
   UNIT_TESTS_RUN_STARTED: null;
   UNIT_TEST_EVENT: null;
   UNIT_TESTS_RUN_ENDED: null;
@@ -125,16 +125,16 @@ export interface ActionTypes {
 
   // --- Screen recording
   SET_MOUSE_CAPTURED: null;
-  // --- The ZX Spectrum Next layer debug view (`.plans/LAYER_COMPOSITION_PLAN.md` §4.4)
+  // --- The ZX Spectrum Next layer debug view (`dev/plans/LAYER_COMPOSITION_PLAN.md` §4.4)
   SET_NEXT_LAYERS: null;
   SET_SCREEN_RECORDING_AVAILABLE: null;
   SET_ADVANCED_DEBUGGING: null;
   SET_QUICK_STATE_AVAILABLE: null;
-  // --- The history cursor (`.plans/LITE_STEP_BACK_PLAN.md` D3)
+  // --- The history cursor (`dev/plans/LITE_STEP_BACK_PLAN.md` D3)
   SET_HISTORY_POSITION: null;
   SET_SCREEN_RECORDING_STATE: null;
   SET_RZX_STATE: null;
-  // --- Full reverse debugging (`.plans/REVERSE_DEBUGGING_PLAN.md` §4.4)
+  // --- Full reverse debugging (`dev/plans/REVERSE_DEBUGGING_PLAN.md` §4.4)
   SET_REVERSE_DEBUG_STATE: null;
   SET_SCREEN_RECORDING_QUALITY: null;
   SET_SCREEN_RECORDING_FORMAT: null;

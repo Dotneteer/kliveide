@@ -78,7 +78,7 @@ export type AnnotationOffsetIndex = 0 | 1 | 2 | 3;
 /**
  * What a region of a bank is. `copper` and `dma` exist only in memory: on disk they are `bytes`
  * regions with a `decode` key, which shipped builds ignore — see `toSidecarRegion` and
- * `.plans/NEX_DMA_COPPER_REGIONS_PLAN.md` D3.
+ * `dev/plans/NEX_DMA_COPPER_REGIONS_PLAN.md` D3.
  */
 export type AnnotationRegionType =
   | "disassemble"
@@ -394,7 +394,7 @@ export type BankAnnotation = {
    *
    * LF line breaks, trailing whitespace trimmed, and never empty — an emptied comment is removed
    * rather than stored as `""`. Additive within the bank, not a schema bump; see
-   * `.plans/NEX_BANK_COMMENTS_PLAN.md` §3 for what that costs a previously shipped build.
+   * `dev/plans/NEX_BANK_COMMENTS_PLAN.md` §3 for what that costs a previously shipped build.
    */
   comment?: string;
   /** How the Sprites view reads this bank. See `BankSprites`. */
@@ -418,13 +418,13 @@ export type SidecarBreakpoint = SidecarBreakpointFilters & {
 /**
  * A breakpoint's condition and hit-count rule, stored under the names `BreakpointInfo` uses. Shared
  * by both stored shapes; absent fields mean "always stop". Additive fields, like
- * `labelBreakpoints` — not a schema bump. See `.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.7.
+ * `labelBreakpoints` — not a schema bump. See `dev/plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.7.
  */
 export type SidecarBreakpointFilters = {
   condition?: string;
   hitMode?: BreakpointHitMode;
   hitCount?: number;
-  /** A logpoint's template (`.plans/LOGPOINTS_PLAN.md` §4.6). */
+  /** A logpoint's template (`dev/plans/LOGPOINTS_PLAN.md` §4.6). */
   logMessage?: string;
   /** Absent means the Klive dialect. */
   logDialect?: LogDialect;

@@ -17,7 +17,7 @@ import { tvcExportFile } from "@renderer/appIde/utils/tvc-code";
 import { buildZxNextWasmArtifact } from "../wasm/zxNext/wasm-next-test-helpers";
 
 /*
- * `klive run` end to end (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` Phase 1, §6, D15, T10): the real
+ * `klive run` end to end (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` Phase 1, §6, D15, T10): the real
  * command line, in this process, on the real cores - a 48K, a 128K, a ZX81 and a Next - with every
  * stop condition, --keys, every output, the inputs (a project, a tape, a snapshot, a Klive state, a
  * NEX file, a ZX81 program), the exit codes 0/2/3/4/5 and two runs compared byte for byte.
@@ -265,7 +265,7 @@ describe("klive run: inputs", () => {
   }, 120_000);
 
   it("builds an HT-1080Z project and starts it after the power-on question", async () => {
-    // --- `.plans/HT1080Z_CODE_INJECTION_PLAN.md` D4, D9: BASIC keeps below the code, PC starts at it
+    // --- `dev/plans/HT1080Z_CODE_INJECTION_PLAN.md` D4, D9: BASIC keeps below the code, PC starts at it
     const run = await kliveJson(["run", "runht1080z", "--until-pc", "Done", "--dump-mem", `Counter:1=${file("ht.bin")}`]);
     expect(run.code).toBe(0);
     expect(run.result.stop).toBe("pc");

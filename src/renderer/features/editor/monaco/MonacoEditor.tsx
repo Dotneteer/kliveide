@@ -241,7 +241,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
   const breakpoints = useRef<BreakpointInfo[]>([]);
   const compilation = useSelector((s) => s.compilation);
   const execState = useSelector((s) => s.emulatorState?.machineState);
-  // --- The history cursor (`.plans/LITE_STEP_BACK_PLAN.md` D2, D7): the execution marker follows it
+  // --- The history cursor (`dev/plans/LITE_STEP_BACK_PLAN.md` D2, D7): the execution marker follows it
   const historyPosition = useSelector((s) => s.emulatorState?.historyPosition);
   const isProjectDebugging = useSelector((s) => s.emulatorState?.isProjectDebugging ?? false);
 
@@ -432,9 +432,9 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
     }
   };
 
-  // --- Code coverage's strip (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D12): its own collection
+  // --- Code coverage's strip (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D12): its own collection
   useCoverageDecorations(editor, editorReady, document.id, COVERAGE_CLASSES);
-  // --- The profiler's hints (`.plans/PROFILER_PLAN.md` D15), behind their setting
+  // --- The profiler's hints (`dev/plans/PROFILER_PLAN.md` D15), behind their setting
   useProfilerInlays(editor, editorReady, document.id);
 
   // --- Refresh breakpoints when they may change
@@ -1178,7 +1178,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
     const resourceName = getResourceName();
     bps.forEach(async (bp) => {
       /*
-       * A `LOGPOINT` comment's logpoint (`.plans/LOGPOINTS_PLAN.md` §4.5): the hollow diamond on
+       * A `LOGPOINT` comment's logpoint (`dev/plans/LOGPOINTS_PLAN.md` §4.5): the hollow diamond on
        * its line, read-only. A user breakpoint on the same line owns the margin - Monaco merges a
        * line's glyph classes into one box, and the comment's mask would reshape the user's dot - so
        * the comment then shows only in the hover.
@@ -1360,7 +1360,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
   }
 
   /**
-   * "Stop Here Once" (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §4.2): a one-shot on the
+   * "Stop Here Once" (`dev/plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §4.2): a one-shot on the
    * statement under the cursor when the build knows statements there, else on the line. An
    * existing breakpoint there becomes a one-shot; nothing is removed.
    */
@@ -1521,7 +1521,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
       : null;
 
     // --- An inline statement marker (plan §10.3): toggles that statement's breakpoint; Shift+click
-    // --- makes it a one-shot (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` O1)
+    // --- makes it a one-shot (`dev/plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` O1)
     const markerClasses = [
       styles.statementBpMarker,
       styles.statementBpSet,
@@ -1615,7 +1615,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
 
   /**
    * A gutter click on a `.copper` line while a ZX Spectrum Next runs: sets a `cu:` breakpoint on
-   * every list index the line occupies in the live Copper RAM (`.plans/COPPER_DEBUGGING_PLAN.md`
+   * every list index the line occupies in the live Copper RAM (`dev/plans/COPPER_DEBUGGING_PLAN.md`
    * D12). The `.copper` words are data the Z80 never executes, so an execution breakpoint there
    * could not fire. Returns false for any other line, which then takes the usual path.
    */
@@ -1928,7 +1928,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
 };
 
 /**
- * The execution marker in the past (`.plans/LITE_STEP_BACK_PLAN.md` D7, Q1): outlined in the
+ * The execution marker in the past (`dev/plans/LITE_STEP_BACK_PLAN.md` D7, Q1): outlined in the
  * secondary accent instead of the solid current-line fill, with a hollow arrow in the gutter, so a
  * historical point is never mistaken for where the machine is.
  */
@@ -2218,7 +2218,7 @@ async function startBackgroundCompile(
     return true;
   }
   // --- The open `.zxbas` file gets Klive BASIC intel even when the build root does not include it
-  // --- (`.plans/BASIC_EDITOR_INTELLIGENCE_PLAN.md` E14); without a build root it is checked itself
+  // --- (`dev/plans/BASIC_EDITOR_INTELLIGENCE_PLAN.md` E14); without a build root it is checked itself
   const basicActiveFile =
     activeDocument?.language === "zxbas" &&
     !activeDocument.id.startsWith("<") &&

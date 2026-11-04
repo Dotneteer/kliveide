@@ -14,7 +14,7 @@ import { parseCommand } from "@renderer/appIde/services/command-parser";
 import { ValidationMessageType } from "@renderer/abstractions/ValidationMessageType";
 
 /*
- * The `z88-snapshot` IDE command (`.plans/Z88_SNAPSHOT_PLAN.md` §4.6, Phase 4). The emulator side is
+ * The `z88-snapshot` IDE command (`dev/plans/Z88_SNAPSHOT_PLAN.md` §4.6, Phase 4). The emulator side is
  * mocked here; `test/z88/snapshot/z88-snapshot-flow.test.ts` covers it on the real machine.
  */
 

@@ -9,7 +9,7 @@ import { upgradeActivationKind, upgradeSourceLevelDebug } from "@common/utils/so
 
 /**
  * The version-1 -> version-2 upgrade of the source-level debug model
- * (`.plans/SHARED_Z80_BACKEND_PLAN.md` §12.1, "Compatibility"). `goldens-v1/` holds what every
+ * (`dev/plans/SHARED_Z80_BACKEND_PLAN.md` §12.1, "Compatibility"). `goldens-v1/` holds what every
  * producer wrote before the model became language-neutral; upgraded, each must be exactly what the
  * producer writes now (`goldens/`, checked by `producer-goldens.test.ts`).
  */

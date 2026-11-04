@@ -22,7 +22,7 @@ export const OFFS_ERR_PAGE = 2048 * 1024;
  * The label for an 8K page that is not backed by any partition.
  *
  * Not a partition, so it has no index and no entry in `getPartitionLabels()`; this is the bank
- * column's empty state. See `.plans/PARTITION_NAMING_UNIFICATION_PLAN.md` §8, decision 1.
+ * column's empty state. See `dev/plans/PARTITION_NAMING_UNIFICATION_PLAN.md` §8, decision 1.
  */
 export const UNPAGED_PARTITION_LABEL = "UN";
 

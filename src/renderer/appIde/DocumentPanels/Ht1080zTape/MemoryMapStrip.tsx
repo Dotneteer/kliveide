@@ -3,7 +3,7 @@ import { useT } from "@common/i18n/useT";
 import styles from "./Ht1080zTapeViewer.module.scss";
 
 /*
- * The HT-1080Z's 64K and what a file loads into it (`.plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D5): the
+ * The HT-1080Z's 64K and what a file loads into it (`dev/plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D5): the
  * ROM, the keyboard and video RAM, the system area, the RAM every model has and the RAM only the 48K
  * models have, with each part that loads drawn where it lands. A block past 7FFFh is visibly in the
  * 48K-only zone, which is what the "Fits" fact says in words.

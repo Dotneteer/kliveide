@@ -1,5 +1,5 @@
 /*
- * Plays an RZX file on a ZX Spectrum machine (`.plans/RZX_PLAN.md` §4.3, D8, D10–D12).
+ * Plays an RZX file on a ZX Spectrum machine (`dev/plans/RZX_PLAN.md` §4.3, D8, D10–D12).
  *
  * The player walks the file's segments. At a segment's start it loads the snapshot with
  * `loadSnapshotState` - a normal transition that does not end playback - puts the core into PLAY,

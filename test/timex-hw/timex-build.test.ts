@@ -12,7 +12,7 @@ import { TIMEX_OWN_EXPORTS } from "@emu/machines/timex/wasm/TimexWasmV2Loader";
 import pkg from "../../package.json";
 
 /*
- * The Timex core's build (`.plans/TIMEX_SCORPION_PLAN.md` P2): the 48K's exports under their own
+ * The Timex core's build (`dev/plans/TIMEX_SCORPION_PLAN.md` P2): the 48K's exports under their own
  * names plus the SCLD's, its own artifact, and a place in the packaged app.
  */
 describe("Timex WASM build", () => {

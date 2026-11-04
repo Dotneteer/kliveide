@@ -31,7 +31,7 @@ export function copperMarkerOf(machine: IAnyMachine, beam: BeamPosition): Copper
 }
 
 /**
- * Drives the beam position overlay (`.plans/BEAM_POSITION_OVERLAY_PLAN.md` §4.4): at every stop - and
+ * Drives the beam position overlay (`dev/plans/BEAM_POSITION_OVERLAY_PLAN.md` §4.4): at every stop - and
  * when the paused picture is redrawn or the setting changes - brings the picture up to the beam
  * (D3, unless Instant Screen is on), redraws it, and reads where the beam is. Hooks into the same
  * points as the paused redraw, never a timer (T9). Returns nothing while running or switched off.

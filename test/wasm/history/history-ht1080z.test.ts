@@ -7,7 +7,7 @@ import { describeHistoryCore, history } from "./historyCoreSuite";
 import { ht1080zDriver } from "./drivers";
 
 /*
- * The HT-1080Z's execution history (`.plans/HT1080Z_PLAN.md` §11): the shared suite, and the
+ * The HT-1080Z's execution history (`dev/plans/HT1080Z_PLAN.md` §11): the shared suite, and the
  * machine's own context. There are no interrupts; the RESET key is an NMI.
  */
 

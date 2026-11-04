@@ -4,7 +4,7 @@ import { DiskFsError, type DiskFileEntry, type DiskFsKind } from "@common/diskfs
 import { applyDiskEdit, readDiskFile, type DiskEdit } from "@common/diskfs/edit";
 
 /*
- * What the Disk Explorer does with the user's actions (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md,
+ * What the Disk Explorer does with the user's actions (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md,
  * B4), React-free: every edit goes through the main process's begin/commit pair (D4: a running
  * machine with the disk in a drive is paused, the file re-read, the edit written safely and the disk
  * inserted again), and every outside effect is a port, so the flows are tested without rendering.

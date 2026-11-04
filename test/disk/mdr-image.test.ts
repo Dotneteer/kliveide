@@ -20,7 +20,7 @@ import {
 } from "@emu/machines/microdrive/mdrImage";
 
 /*
- * The .mdr image (`.plans/MICRODRIVE_PLAN.md` Phase 3.1). The worked example is
+ * The .mdr image (`dev/plans/MICRODRIVE_PLAN.md` Phase 3.1). The worked example is
  * `dev/research/microdrive/mdr-and-file-formats.md` §8.
  */
 

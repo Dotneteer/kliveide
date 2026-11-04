@@ -8,7 +8,7 @@ import { createSp128Session } from "../../harness/sp128";
 import { runBasic, screenLines, sp48WithInterface1 } from "./if1TestSupport";
 
 /*
- * The IDE's flows with the Interface 1 connected (`.plans/MICRODRIVE_PLAN.md` Phase 4.4-4.5): code
+ * The IDE's flows with the Interface 1 connected (`dev/plans/MICRODRIVE_PLAN.md` Phase 4.4-4.5): code
  * injection, which waits for the ROMs' main loops and returns to them, and tape loading, whose
  * traps are the 48K ROM's - the IF1 inserts its system variables (PROG moves) and pages its ROM over
  * the 48K's after every direct command.

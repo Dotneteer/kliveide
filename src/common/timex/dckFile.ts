@@ -1,5 +1,5 @@
 /*
- * `.dck` cartridge images for the Timex 2068s (`.plans/TIMEX_SCORPION_PLAN.md` G9.4b).
+ * `.dck` cartridge images for the Timex 2068s (`dev/plans/TIMEX_SCORPION_PLAN.md` G9.4b).
  *
  * A `.dck` file is one or more bank records, each a 9-byte header and the chunk images it announces:
  * - byte 0: the bank - 0 the DOCK (the cartridge), 254 the EXROM bank, 255 the HOME bank (1-253 are

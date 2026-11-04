@@ -19,7 +19,7 @@ const { Z80_PROFILE_EXPORTS, Z80_PROFILE_VOLATILE_SYMBOLS } = require("./z80-pro
 const { REPO_ROOT } = require("./repo-root.cjs");
 
 /**
- * Statics a Klive state file leaves out (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` trap 10):
+ * Statics a Klive state file leaves out (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` trap 10):
  * debugging state and buffers the core rewrites before it reads them, so a restore keeps the live
  * core's bytes there.
  */
@@ -89,7 +89,7 @@ const productionExports = [
   "sp128SetContentionValue",
   "sp128GetMemorySize",
   "sp128GetRamSize",
-  // --- The Scorpion ZS-256 (`.plans/TIMEX_SCORPION_PLAN.md` G9.4c)
+  // --- The Scorpion ZS-256 (`dev/plans/TIMEX_SCORPION_PLAN.md` G9.4c)
   "sp128GetPort1ffd",
   "sp128SetPort1ffd",
   "sp128GetScorpion",
@@ -266,7 +266,7 @@ const productionExports = [
   "sp128TapeClearSavedBlocks",
   "sp128TapeAppendSavedByte",
   "sp128GetDiagnosticFlags",
-  // --- RZX playback and recording (`.plans/RZX_PLAN.md` §4.2)
+  // --- RZX playback and recording (`dev/plans/RZX_PLAN.md` §4.2)
   ...rzxExports("sp128"),
   // --- The DivMMC and its SD card (`zx-spectrum-divmmc-classic.c`)
   ...divMmcClassicExports("sp128")

@@ -1,6 +1,6 @@
 /*
  * `show-tilemap <col> <row>` and `show-tiles <n>` ask the Tilemap Inspector to show a view and select
- * a cell or a tile (`.plans/TILEMAP_INSPECTOR_PLAN.md` §4.4, Q2). The document may not be mounted yet
+ * a cell or a tile (`dev/plans/TILEMAP_INSPECTOR_PLAN.md` §4.4, Q2). The document may not be mounted yet
  * when the command runs, so the request is held until a listener takes it.
  */
 

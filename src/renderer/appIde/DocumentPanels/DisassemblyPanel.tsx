@@ -100,7 +100,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
   );
 
   /*
-   * The row menu (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §4.2): the gutter's gestures,
+   * The row menu (`dev/plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §4.2): the gutter's gestures,
    * named, on a right-click anywhere on the row outside the gutter (which keeps its own right-click
    * toggle). Stable, so the memoized rows are not re-rendered by it.
    */
@@ -387,7 +387,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
    *
    * Where the listing is, for the history, is `pendingScrollTopAddress` — the top row as of the last
    * scroll frame, which a jump also sets synchronously so the location recorded right after it is
-   * the address asked for, not the one before. See `.plans/NAVIGATION_HISTORY_PLAN.md` §4.2.
+   * the address asked for, not the one before. See `dev/plans/NAVIGATION_HISTORY_PLAN.md` §4.2.
    *
    * Follow PC moves the listing too, but through `setFollowPcTopAddress`, never through a recorded
    * jump: that is the view following the machine, not the user going somewhere.
@@ -646,7 +646,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
   }, [showBranchGutter, cpuSnapshot, items, pausedPc]);
 
   /*
-   * Code coverage's cell (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D13): reserved on every row
+   * Code coverage's cell (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D13): reserved on every row
    * once coverage has recorded anything, so the columns after it line up (the branch gutter's
    * pattern). Each row's own partition decides which bank's byte is asked about (D11). One number
    * per row - undefined: no data; 0: never started; -1: started, count not kept; n: started n
@@ -661,7 +661,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
   );
   const profileVersion = useSelector((s) => s.emulatorState?.profileVersion);
   const [coverageMarks, setCoverageMarks] = useState<Map<number, number> | undefined>();
-  // --- The profiler's share of the time per row, in tenths of a percent (`.plans/PROFILER_PLAN.md` D15)
+  // --- The profiler's share of the time per row, in tenths of a percent (`dev/plans/PROFILER_PLAN.md` D15)
   const [timeShares, setTimeShares] = useState<Map<number, number> | undefined>();
   useEffect(() => {
     if (!coverageAvailable || items.length === 0) {

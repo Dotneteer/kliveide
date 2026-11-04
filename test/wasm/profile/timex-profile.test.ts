@@ -5,7 +5,7 @@ import { PF_CODE, PF_EXECUTED, PF_READ, PF_WRITTEN, PROFILE_KEY_ROOT } from "@co
 import { createTimexSession } from "../../harness/timex";
 
 /*
- * The access profile on the Timex core (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §2.2, T2): the
+ * The access profile on the Timex core (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §2.2, T2): the
  * 48K core built with the SCLD, whose 8K chunks come from HOME, the DOCK or the EXROM. A read and a
  * write land on the chunk's own source - HOME $00000, EXROM $10000, DOCK $12000 - and a write to a
  * read-only chunk (the EXROM, the HOME ROM) lands nowhere.

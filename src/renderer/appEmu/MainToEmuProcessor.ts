@@ -146,7 +146,7 @@ export function setEmuRecordingManager(mgr: RecordingManager | null): void {
 }
 
 /**
- * The CPU state at the history cursor (`.plans/LITE_STEP_BACK_PLAN.md` D2, T9): the record's
+ * The CPU state at the history cursor (`dev/plans/LITE_STEP_BACK_PLAN.md` D2, T9): the record's
  * registers, interrupt state and partition over the live state's shape. What a record does not hold
  * - the T-state counter, the last memory and I/O accesses, the stop events - must not pass for
  * historical, so `history` tells the views to show it as unknown and the stop events are dropped.
@@ -337,7 +337,7 @@ class EmuMessageProcessor {
     }
 
     // --- An Enterprise tape (.tap or .wav on the Enterprise): decoded into the tape program its core
-    // --- plays (`.plans/ENTERPRISE_PLAN.md` §9.3); before the Spectrum's .tap handling
+    // --- plays (`dev/plans/ENTERPRISE_PLAN.md` §9.3); before the Spectrum's .tap handling
     if (this.machineService.getMachineController()?.machine?.machineId === MI_ENTERPRISE && isEpTapeFileName(file)) {
       let epTape;
       try {
@@ -538,7 +538,7 @@ class EmuMessageProcessor {
     );
   }
 
-  // --- RZX (`.plans/RZX_PLAN.md` §4.5-4.7)
+  // --- RZX (`dev/plans/RZX_PLAN.md` §4.5-4.7)
 
   /** The services the RZX calls use */
   private rzxPorts(): RzxPlaybackPorts {
@@ -696,7 +696,7 @@ class EmuMessageProcessor {
 
   /**
    * Runs a command that ends the timeline - unless the timeline came from a debug recording, was run
-   * on past its end, and the user keeps it (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` Q7, T12)
+   * on past its end, and the user keeps it (`dev/plans/DEBUG_SESSION_RECORDING_PLAN.md` Q7, T12)
    */
   private async unlessKeepingRecording(
     action: "stop" | "reset" | "restart",
@@ -848,7 +848,7 @@ class EmuMessageProcessor {
     return machine?.exportBetaDiskAsTrd?.(index);
   }
 
-  /** A Microdrive cartridge in or out (`.plans/MICRODRIVE_PLAN.md`): as a disk, through the media store */
+  /** A Microdrive cartridge in or out (`dev/plans/MICRODRIVE_PLAN.md`): as a disk, through the media store */
   /**
    * A cartridge a snapshot links (`.szx` MDRV): the main process records it as the drive's file, so
    * the guest's writes reach it, as a cartridge the user inserts does
@@ -929,7 +929,7 @@ class EmuMessageProcessor {
 
   /**
    * Gets the current CPU state: the state at the history cursor while it is in the past
-   * (`.plans/LITE_STEP_BACK_PLAN.md` D2), unless `present` asks for the live one.
+   * (`dev/plans/LITE_STEP_BACK_PLAN.md` D2), unless `present` asks for the live one.
    */
   getCpuState(options?: { present?: boolean }): CpuState {
     const controller = this.machineService.getMachineController();
@@ -972,7 +972,7 @@ class EmuMessageProcessor {
       ramB = pagingMachine.getSelectedRamBank?.() ?? pagingMachine.selectedBank ?? 0;
     }
     // --- RAS/POS: the raster line and the tact in it, from the machine's own raster timing
-    // --- (`.plans/BEAM_POSITION_OVERLAY_PLAN.md` T6). Neither `screenWidthInPixels` nor
+    // --- (`dev/plans/BEAM_POSITION_OVERLAY_PLAN.md` T6). Neither `screenWidthInPixels` nor
     // --- `tactsInDisplayLine` is the length of a raster line: dividing by them was wrong everywhere.
     const { ras, pos } = ulaRasterPosition(machine);
     return {
@@ -1127,7 +1127,7 @@ class EmuMessageProcessor {
     // --- With the runtime state (live hit count, condition error/inactive); copies already
     const execBreakpoints = controller.debugSupport
       .listBreakpointsWithState()
-      // --- A unit-test run's own stops are not the user's (`.plans/Z80_UNIT_TESTS_PLAN.md` D9)
+      // --- A unit-test run's own stops are not the user's (`dev/plans/Z80_UNIT_TESTS_PLAN.md` D9)
       .filter((bp) => bp.owner?.kind !== "unitTest")
       .sort((a, b) => {
         if (a.address !== undefined) {
@@ -1539,7 +1539,7 @@ class EmuMessageProcessor {
     if (isExecutionHistorySource(machine)) machine.clearHistory();
   }
 
-  // --- The access profile (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §4.2): the controller owns
+  // --- The access profile (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §4.2): the controller owns
   // --- the switch and the status, the machine's profile source the data
 
   /** The controller and its machine's profile source, when the machine profiles */
@@ -1611,7 +1611,7 @@ class EmuMessageProcessor {
     return target.controller.getProfileStatus?.();
   }
 
-  // --- The profiler (`.plans/PROFILER_PLAN.md` D1, D2, D12)
+  // --- The profiler (`dev/plans/PROFILER_PLAN.md` D1, D2, D12)
 
   startProfiling(options?: { calls?: boolean; at?: number; until?: number }) {
     const controller = this.machineService.getMachineController();
@@ -1649,7 +1649,7 @@ class EmuMessageProcessor {
   }
 
   /**
-   * Moves the history cursor (`.plans/LITE_STEP_BACK_PLAN.md` D4).
+   * Moves the history cursor (`dev/plans/LITE_STEP_BACK_PLAN.md` D4).
    */
   navigateHistory(op: HistoryNavigationOp, options?: HistoryNavigationOptions): HistoryNavigationResult {
     const controller = this.machineService.getMachineController();
@@ -1660,7 +1660,7 @@ class EmuMessageProcessor {
   }
 
   /**
-   * Take over here (`.plans/REVERSE_DEBUGGING_PLAN.md` D12).
+   * Take over here (`dev/plans/REVERSE_DEBUGGING_PLAN.md` D12).
    */
   async takeOverHere(): Promise<boolean> {
     const controller = this.machineService.getMachineController();
@@ -2108,7 +2108,7 @@ class EmuMessageProcessor {
 
   /**
    * Writes bytes to memory: the CPU's current view, or one partition whatever is paged in
-   * (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` T8).
+   * (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` T8).
    * @param address The address, or the offset within the partition.
    * @param bytes The bytes to write.
    * @param partition The partition, or undefined for the CPU's view.
@@ -2537,7 +2537,7 @@ function requireZxNextIdeMachine(machine: unknown): IZxNextIdeMachine {
 }
 
 /**
- * The ULA panel's RAS and POS (`.plans/BEAM_POSITION_OVERLAY_PLAN.md` T6): the beam's raster line and
+ * The ULA panel's RAS and POS (`dev/plans/BEAM_POSITION_OVERLAY_PLAN.md` T6): the beam's raster line and
  * its tact within the line, as the machine reports them; 0 and 0 for a machine without a beam.
  */
 export function ulaRasterPosition(machine: Pick<IAnyMachine, "getBeamPosition">): { ras: number; pos: number } {

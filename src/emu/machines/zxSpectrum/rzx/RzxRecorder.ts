@@ -1,5 +1,5 @@
 /*
- * Records an RZX file on a ZX Spectrum machine (`.plans/RZX_PLAN.md` §4.3, D3, D9, D15, D16).
+ * Records an RZX file on a ZX Spectrum machine (`dev/plans/RZX_PLAN.md` §4.3, D3, D9, D15, D16).
  *
  * The recording is a list of segments: a `.szx` snapshot (D15) and the frames recorded after it.
  *  - The first segment starts where the machine stood when recording started (D16: anywhere the

@@ -1,5 +1,5 @@
 /**
- * The HT-1080Z in the running app (`.plans/HT1080Z_PLAN.md` §11, Phase 9):
+ * The HT-1080Z in the running app (`dev/plans/HT1080Z_PLAN.md` §11, Phase 9):
  *
  * - `ht1080z/ht1080z-keyboard.png` — the virtual keyboard panel (black legends on white keys, from
  *   the approved mockup);
@@ -7,9 +7,9 @@
  *   and the program's semigraphics frame with `HT-1080Z` and `ÜDVÖZÖLJÜK!` (Series II's accents);
  * - `ht1080z/ht1080z-basic-listing.png` — the IDE with the BASIC Listing view of that program;
  * - `ht1080z/ht1080z-debug.png` — a project from the `default` template paused at a source
- *   breakpoint (`.plans/HT1080Z_CODE_INJECTION_PLAN.md` Phase 5);
+ *   breakpoint (`dev/plans/HT1080Z_CODE_INJECTION_PLAN.md` Phase 5);
  * - `ht1080z/ht1080z-tape-viewer-cas.png` and `ht1080z-tape-viewer-cmd.png` — the tape file viewer
- *   (`.plans/HT1080Z_TAPE_VIEWERS_PLAN.md` Phase 4) on the demo program as a CLOAD tape, and on a
+ *   (`dev/plans/HT1080Z_TAPE_VIEWERS_PLAN.md` Phase 4) on the demo program as a CLOAD tape, and on a
  *   load module that copies "HELLO" to the screen.
  *
  * `ht1080z-demo.bas` is a tokenised `.bas` the Series II itself made: its lines were typed on the

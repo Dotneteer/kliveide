@@ -2,7 +2,7 @@ import { HISTORY_RECORD_SIZE, type ExecutionHistoryPage } from "./historyTypes";
 
 /*
  * Decodes the 64-byte execution-history record (`src/emu/z80/wasm/z80-history.c`,
- * `.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.2). Pure: no React, no Node.
+ * `dev/plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.2). Pure: no React, no Node.
  */
 
 /** The record kinds; the numbers are `Z80_HISTORY_KIND_*` in `z80.c` */

@@ -1,7 +1,7 @@
 # Enterprise 64/128 test harness
 
 Runs the real Enterprise WASM core (`src/emu/machines/enterprise/wasm/`) with the bundled ROMs, through
-the same machine class the IDE uses (`EpWasmV2Machine`). The plan is `.plans/ENTERPRISE_PLAN.md`.
+the same machine class the IDE uses (`EpWasmV2Machine`). The plan is `dev/plans/ENTERPRISE_PLAN.md`.
 
 ```ts
 import { createEpSession } from "../harness/enterprise";

@@ -24,7 +24,7 @@ import { labelRecord } from "@common/i18n/labels";
  * toggle controls headers, not order, because reverting to insertion order would hand back the
  * reshuffling along with the flat list.
  *
- * See `.plans/NEXTREG_WRITE_BREAKPOINTS_PLAN.md` §4.9a.
+ * See `dev/plans/NEXTREG_WRITE_BREAKPOINTS_PLAN.md` §4.9a.
  */
 
 /** The eight groups, which are the eight breakpoint kinds. */
@@ -86,13 +86,13 @@ export const BREAKPOINT_GROUP_ICONS: Record<BreakpointGroup, string> = {
 export type BreakpointListItem<T extends BreakpointInfo = BreakpointInfo> =
   | { kind: "header"; group: BreakpointGroup; count: number }
   | { kind: "row"; bp: T }
-  // --- The logpoint sections (`.plans/LOGPOINTS_PLAN.md` §4.5)
+  // --- The logpoint sections (`dev/plans/LOGPOINTS_PLAN.md` §4.5)
   | {
       kind: "sectionHeader";
       section: "logGroups" | "comments" | "assertions" | "wpmem";
       count: number;
       /**
-       * The section's switch (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` S6): present on the
+       * The section's switch (`dev/plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` S6): present on the
        * ASSERTION and WPMEM comment sections, whose header row carries the checkbox.
        */
       on?: boolean;
@@ -225,7 +225,7 @@ export function isLogGroupOn(state: LogpointGroupState | undefined, group: strin
 }
 
 /**
- * The panel's logpoint sections, after the breakpoints (`.plans/LOGPOINTS_PLAN.md` §4.5): one switch
+ * The panel's logpoint sections, after the breakpoints (`dev/plans/LOGPOINTS_PLAN.md` §4.5): one switch
  * row per log group any logpoint names, then the logpoints read from `LOGPOINT` comments, ordered
  * by source location. Shown whether or not the kind headers are, because the comment rows are
  * read-only and must not mix with the user's own.

@@ -43,7 +43,7 @@ export type IdeCommandInfo = {
 
   /**
    * "deny": the automation server's `ide.command` refuses this command
-   * (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` T5) because it would deadlock an unattended run: it
+   * (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` T5) because it would deadlock an unattended run: it
    * opens a modal dialog, waits for a confirmation, or quits the app.
    */
   readonly automation?: "deny";

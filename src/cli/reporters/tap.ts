@@ -3,7 +3,7 @@ import { junitErrorType, type JUnitResult } from "@common/unit-tests/junit";
 import { locationText, type ConsoleReporter, type RunTotals } from "./reporter";
 
 /*
- * TAP 13 (`.plans/UNIT_TESTS_CLI_PLAN.md` D4): the plan line first (the tests are known before the
+ * TAP 13 (`dev/plans/UNIT_TESTS_CLI_PLAN.md` D4): the plan line first (the tests are known before the
  * run), one `ok`/`not ok` line per test, and a YAML block under a failure. A test that never ran is
  * `ok … # SKIP`.
  */

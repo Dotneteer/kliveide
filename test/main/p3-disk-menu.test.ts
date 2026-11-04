@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { MachineMenuItem } from "@common/machines/info-types";
 
 /*
- * Machine | Floppy Disks on the +2A/+3/+2E/+3E models (`.plans/PLUS3_AMSTRAD_ROMS_PLAN.md` Phase 4):
+ * Machine | Floppy Disks on the +2A/+3/+2E/+3E models (`dev/plans/PLUS3_AMSTRAD_ROMS_PLAN.md` Phase 4):
  * the menu follows the model's drives, so it appears on the Amstrad +3 models and not on the +2As,
  * exactly as on the +3E and the +2E.
  */

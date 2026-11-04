@@ -4,7 +4,7 @@ import { createSession } from "../../harness/zxnext";
 
 /*
  * The core half of NextReg write breakpoints: the watch table, the origin discriminator and the
- * latch. See `.plans/NEXTREG_WRITE_BREAKPOINTS_PLAN.md` §4.2.
+ * latch. See `dev/plans/NEXTREG_WRITE_BREAKPOINTS_PLAN.md` §4.2.
  *
  * This is debugger machinery rather than emulated hardware, so there is no VHDL to cite. What it
  * must not do is change the machine: every case that arms a watch also checks the register ended

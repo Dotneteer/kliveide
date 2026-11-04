@@ -72,7 +72,7 @@
 }
 
 /*
- * The execution marker in the past (`.plans/LITE_STEP_BACK_PLAN.md` D7, Q1): an outline in the
+ * The execution marker in the past (`dev/plans/LITE_STEP_BACK_PLAN.md` D7, Q1): an outline in the
  * secondary accent, no fill, and a hollow arrow in the gutter. The present's marker is a solid fill
  * in the primary accent; the two never look alike, whichever accent the user picked.
  */
@@ -151,7 +151,7 @@
 }
 
 /*
- * The logpoint variants (`.plans/LOGPOINTS_PLAN.md` §4.5): a diamond instead of the dot, with the
+ * The logpoint variants (`dev/plans/LOGPOINTS_PLAN.md` §4.5): a diamond instead of the dot, with the
  * same "=" and hollow variants, and a hollow diamond with a centre dot for a `LOGPOINT` comment
  * (owned by the build). The masks are the shapes of the `bp-logpoint*.svg` icons, so the margin,
  * the disassembly gutter and the Breakpoints panel draw one vocabulary; the colour stays a token.
@@ -183,7 +183,7 @@
 }
 
 /*
- * The one-shot variants (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` O6): a "1" knocked out of
+ * The one-shot variants (`dev/plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` O6): a "1" knocked out of
  * the dot, and the "1" over a single bar for a conditional one-shot. The shapes of `bp-once.svg`
  * and `bp-once-conditional.svg`; the inactive (hollow) mask wins over both (the glyph chooser).
  */
@@ -417,7 +417,7 @@
 }
 
 /*
- * Code coverage's strip (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D12), drawn in Monaco's line
+ * Code coverage's strip (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D12), drawn in Monaco's line
  * decorations column - between the line numbers and the text - so the glyph margin stays the
  * breakpoints'. A filled bar ran, a hollow bar emitted code that never ran, a half bar ran only in
  * part (a statement with a branch never taken, T8). Inset from the column's edges so it never touches

@@ -11,9 +11,9 @@ import { describeZx8081Context, zx8081PartitionFor } from "./zx8081Context";
 import { describeZxNextContext, describeZxNextDmaHold, zxNextPartitionFor } from "./zxnextContext";
 
 /*
- * The per-machine context decoders (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` D4, D14). A machine
+ * The per-machine context decoders (`dev/plans/EXECUTION_HISTORY_VIEWER_PLAN.md` D4, D14). A machine
  * that records history names its decoder by `historyMachineId` - its machine id. G4.2
- * (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`) added one per core; models share their machine's.
+ * (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`) added one per core; models share their machine's.
  */
 
 export type HistoryContextDecoder = {
@@ -23,7 +23,7 @@ export type HistoryContextDecoder = {
   describe(context: Uint8Array, partitionLabels?: Record<number, string>): string;
   /**
    * The row text of a machine-specific event record (the Next's DMA hold), or ""; `withTime: false`
-   * leaves out how long it took (a diff-friendly trace, `.plans/TRACE_EXPORT_PLAN.md` T2)
+   * leaves out how long it took (a diff-friendly trace, `dev/plans/TRACE_EXPORT_PLAN.md` T2)
    */
   describeEvent?(record: Pick<HistoryRecord, "repeat" | "context" | "kind">, withTime?: boolean): string;
   /** What a record's frame tact counts in */

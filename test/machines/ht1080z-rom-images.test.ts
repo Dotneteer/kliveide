@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { HT1080Z_ROM_SETS, type Ht1080zRomImage } from "@emu/machines/ht1080z/Ht1080zRoms";
 
 /*
- * The HT-1080Z ROM images (`.plans/HT1080Z_PLAN.md` §11, D2). A replaced or corrupted image fails
+ * The HT-1080Z ROM images (`dev/plans/HT1080Z_PLAN.md` §11, D2). A replaced or corrupted image fails
  * here instead of booting to a garbled screen. The CRC32s are the plan's §17 (and `Ht1080zRoms.ts`'s),
  * recorded when the images were taken from ht.homeserver.hu (`src/public/roms/ht1080z-roms-readme.txt`).
  */

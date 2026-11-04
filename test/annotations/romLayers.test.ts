@@ -16,7 +16,7 @@ import { createAddressSymbols } from "@renderer/appIde/annotations/symbolResolve
 import { sp48BankSpace } from "@common/annotations/bankSpace";
 
 /*
- * Finding a paged ROM page's annotations (`.plans/ROM_ANNOTATION_EDITING_PLAN.md` §4.2, amending
+ * Finding a paged ROM page's annotations (`dev/plans/ROM_ANNOTATION_EDITING_PLAN.md` §4.2, amending
  * §5.2-§5.3 of the reverse-engineering plan): by its bytes; a working copy *replacing* the shipped
  * sidecar when there is one; byte binding where the bytes are another ROM's.
  */

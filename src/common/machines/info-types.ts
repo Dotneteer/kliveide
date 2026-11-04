@@ -209,7 +209,7 @@ export const MACHINE_DEVICE_MENU_LABELS: Readonly<Record<MachineDeviceMenuId, st
  */
 export type MachineMenuInfo = {
   /**
-   * One submenu per device the machine has, under Machine (`.plans/MENU_REDESIGN_PLAN.md` P4). A
+   * One submenu per device the machine has, under Machine (`dev/plans/MENU_REDESIGN_PLAN.md` P4). A
    * renderer that returns a single submenu item (such as "Floppy Disks") is unwrapped, so its items
    * become the device submenu's items. An empty result hides the submenu.
    */

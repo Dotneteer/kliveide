@@ -1,5 +1,5 @@
 /*
- * The RZX exports and statics every ZX Spectrum core shares (`.plans/RZX_PLAN.md` §4.2,
+ * The RZX exports and statics every ZX Spectrum core shares (`dev/plans/RZX_PLAN.md` §4.2,
  * `src/emu/machines/zxSpectrum/wasm/common/zx-spectrum-rzx.c`). The 48K, 128K and +2E/+3E build
  * scripts add them with their own prefix; `src/emu/machines/zxSpectrum/rzx/rzxCoreBridge.ts` keeps
  * the TypeScript side of the same list.

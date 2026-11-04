@@ -20,7 +20,7 @@ import { useT } from "@common/i18n/useT";
 import styles from "./Layer2FileViewerPanel.module.scss";
 
 /*
- * The `.sl2` and `.nxi` viewer (`.plans/LAYER2_INSPECTOR_PLAN.md` Phase 7): a Layer 2 picture decoded
+ * The `.sl2` and `.nxi` viewer (`dev/plans/LAYER2_INSPECTOR_PLAN.md` Phase 7): a Layer 2 picture decoded
  * by `layer2Decode` - the Layer 2 Inspector's decoder - from a file. The size picks the resolution;
  * an 80K file is 320×256 or 640×256, which only the reader can tell, so the toolbar switches. The
  * palette is the file's own when it has one, the Next's default otherwise, and the toolbar says which.

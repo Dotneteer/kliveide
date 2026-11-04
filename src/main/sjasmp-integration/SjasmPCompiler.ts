@@ -138,7 +138,7 @@ export class SjasmPCompiler implements IKliveCompiler {
       // --- Extract the SLD file content
       const sldLines = extractSldInfo(fs.readFileSync(sldFileName, "utf-8"));
 
-      // --- The device decides whether an SLD page is a partition (`.plans/PROFILER_PLAN.md` D8b)
+      // --- The device decides whether an SLD page is a partition (`dev/plans/PROFILER_PLAN.md` D8b)
       const sourceContent = fs.readFileSync(filename, "utf-8");
       const modelType = getSjasmModelType(sourceContent, this.state?.emulatorState?.machineId);
       const banked = sldPagesArePartitions(modelType);
@@ -179,7 +179,7 @@ export class SjasmPCompiler implements IKliveCompiler {
         });
       }
 
-      // --- Labels (`L` lines) and DeZog keyword comments (`K` lines), `.plans/LOGPOINTS_PLAN.md` §4.7
+      // --- Labels (`L` lines) and DeZog keyword comments (`K` lines), `dev/plans/LOGPOINTS_PLAN.md` §4.7
       const symbols = sldSymbols(sldLines, { banked, fileIndexOf });
       const debugAnnotations = sldAnnotations(sldLines, fileIndexOf);
 
@@ -213,7 +213,7 @@ export class SjasmPCompiler implements IKliveCompiler {
         debugMessages: result.debugMessages,
         errors: warnings,
         injectOptions: { subroutine: true },
-        // --- Names the compiler in the profiler's routine header (`.plans/PROFILER_PLAN.md` D6)
+        // --- Names the compiler in the profiler's routine header (`dev/plans/PROFILER_PLAN.md` D6)
         sourceType: "sjasmp",
         segments,
         modelType,
@@ -419,7 +419,7 @@ export function extractSldInfo(content: string): SldLine[] {
 const NON_VALUE_TRAITS = new Set(["+macro", "+module", "+endmod", "+struct_def", "+sizeof"]);
 
 /**
- * Whether an SLD line's `page` names a Klive partition (`.plans/PROFILER_PLAN.md` D8b): with the
+ * Whether an SLD line's `page` names a Klive partition (`dev/plans/PROFILER_PLAN.md` D8b): with the
  * 128K, +3 and Next devices a page is a 16K bank (128K, +3) or an 8K page (Next) - exactly those
  * machines' partitions. The 48K device's pages are its fixed slots, which name no partition.
  */
@@ -437,12 +437,12 @@ const SYMBOL_VAR = 2;
 const SYMBOL_EQU = 3;
 
 /**
- * The integer symbols of an SLD file's `L` lines (`.plans/LOGPOINTS_PLAN.md` Q7), keyed lower-case
+ * The integer symbols of an SLD file's `L` lines (`dev/plans/LOGPOINTS_PLAN.md` Q7), keyed lower-case
  * by module, main and local name joined with dots - the full global name DeZog expects labels to be
  * written with. Shaped like the Klive assembler's symbol table, so conditions, logpoints and the
  * Watch panel read it the same way. The deprecated `F` and `D` lines are read as `L` ones.
  *
- * `type` follows the Klive assembler's (`.plans/PROFILER_PLAN.md` D8a): a label (`L`, `F`) is a
+ * `type` follows the Klive assembler's (`dev/plans/PROFILER_PLAN.md` D8a): a label (`L`, `F`) is a
  * Label, so the Execution History and the profiler see it; `+equ` is an Equ and a `D` line a Var,
  * which neither treats as a code address. A label with a local part (`main.local`) is `isLocal`: it
  * never starts a routine. With `banked`, a label's page is its partition (D8b).

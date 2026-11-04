@@ -1,6 +1,6 @@
 /*
  * RZX recording and playback for the Spectrum harnesses (`sp48/`, `sp128/`), as the emulator runs
- * them (`.plans/RZX_PLAN.md`): a recorder or player attached to the machine as its RZX session,
+ * them (`dev/plans/RZX_PLAN.md`): a recorder or player attached to the machine as its RZX session,
  * driven by the machine's own frame loop.
  */
 

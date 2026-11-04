@@ -1,7 +1,7 @@
 /**
  * Extensions to `SourceLevelDebugInfo` (`CompilerInfo.ts`) for source stepping over calls, the
  * symbolic call stack and the Variables panel (`dev/ai/kbasic/compiler.md`, "Source-level debugging as built";
- * made language-neutral by `.plans/SHARED_Z80_BACKEND_PLAN.md` Part B, model version 2).
+ * made language-neutral by `dev/plans/SHARED_Z80_BACKEND_PLAN.md` Part B, model version 2).
  *
  * The vocabulary is the machine's and the calling convention's, never a language's: statements,
  * callables, activations, call sites, value *representations*, memory locations, banks. What belongs

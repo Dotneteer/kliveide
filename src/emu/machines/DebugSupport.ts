@@ -99,14 +99,14 @@ export const DIS_IOR_BP = 0x400;
 export const DIS_IOW_BP = 0x800;
 /*
  * At least one breakpoint here has a condition or a hit-count rule
- * (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.5). The stop decision for such an address takes the
+ * (`dev/plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.5). The stop decision for such an address takes the
  * slow path - every claiming definition is evaluated and counted - while every other address keeps
  * the flag-only fast path, with no context, no register sync and no allocation.
  *
  * May be left stale on a port address after an I/O breakpoint is removed (the bulk I/O paths do
  * not re-derive). That only costs speed: the slow path decides from the definitions.
  *
- * A logpoint (`.plans/LOGPOINTS_PLAN.md` §4.2) sets it too: "log and continue" is one more outcome
+ * A logpoint (`dev/plans/LOGPOINTS_PLAN.md` §4.2) sets it too: "log and continue" is one more outcome
  * of the same per-definition walk.
  */
 export const COND_BP = 0x1000;
@@ -129,7 +129,7 @@ export type LogLine = {
 /** Which access a stop decision is about; selects the definitions that can match. */
 type DecisionKind = "exec" | "memRead" | "memWrite" | "ioRead" | "ioWrite";
 
-/** What a reverse-debugging keyframe keeps of the breakpoints (`.plans/REVERSE_DEBUGGING_PLAN.md` D16) */
+/** What a reverse-debugging keyframe keeps of the breakpoints (`dev/plans/REVERSE_DEBUGGING_PLAN.md` D16) */
 export type DebugTimelineState = {
   /** Hit counters that are not zero, by storage key */
   hits: [string, number][];
@@ -159,7 +159,7 @@ type BreakpointRuntimeState = {
   /** The condition reads a fact written before evaluation (`cpufreq()`, `frame()`). */
   conditionUsesEnv?: boolean;
 
-  // --- A logpoint's template (`.plans/LOGPOINTS_PLAN.md` §4.2), built like the condition
+  // --- A logpoint's template (`dev/plans/LOGPOINTS_PLAN.md` §4.2), built like the condition
   templateFor?: string;
   templateDialect?: LogDialect;
   templateKind?: ConditionAccessKind;
@@ -229,7 +229,7 @@ export class DebugSupport implements IDebugSupport {
   /**
    * Called with a definition's storage key whenever its hit counter moves: the reverse-debugging
    * timeline logs it with the position, so a replay - which runs without breakpoints - can put the
-   * counters where the recorded run had them (`.plans/REVERSE_DEBUGGING_PLAN.md` D16, T8).
+   * counters where the recorded run had them (`dev/plans/REVERSE_DEBUGGING_PLAN.md` D16, T8).
    */
   onHitCounted?: (key: string) => void;
 
@@ -271,7 +271,7 @@ export class DebugSupport implements IDebugSupport {
   /**
    * The machine's condition evaluator: the program store of its core, where the shared C evaluator
    * (`src/emu/z80/wasm/z80-condition.c`) runs a condition next to the registers - no copy crosses
-   * the WASM boundary (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`). Set once per machine
+   * the WASM boundary (`dev/plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`). Set once per machine
    * (`connectConditionSupport`); absent on a machine without one, where a condition fails safe.
    */
   conditionStoreProvider?: () => ConditionStore | undefined;
@@ -283,7 +283,7 @@ export class DebugSupport implements IDebugSupport {
 
   /**
    * The machine facts the core does not keep itself - the clock, the frame counter, the slot map
-   * (`.plans/LOGPOINTS_PLAN.md` §3.5). Set with the condition store (`connectConditionSupport`).
+   * (`dev/plans/LOGPOINTS_PLAN.md` §3.5). Set with the condition store (`connectConditionSupport`).
    */
   machineInfo?: ConditionMachineInfo;
 
@@ -931,7 +931,7 @@ export class DebugSupport implements IDebugSupport {
          * would arm a breakpoint that was added disabled. The definition has to be complete.
          */
         disabled: bp.disabled,
-        // --- The breakpoint's filters (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.1), normalised
+        // --- The breakpoint's filters (`dev/plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.1), normalised
         // --- so a blank condition or a mode without a count is not stored. The runtime-only fields
         // --- (`currentHits`, `conditionError`, `conditionInactive`) are deliberately absent: they
         // --- are computed when listed, never accepted from a caller.
@@ -1467,7 +1467,7 @@ export class DebugSupport implements IDebugSupport {
   }
 
   // ==============================================================================================
-  // Conditions and hit counts (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.5)
+  // Conditions and hit counts (`dev/plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.5)
 
   /**
    * The slow-path decision at an address carrying `COND_BP`: every enabled definition of `kind`
@@ -1505,7 +1505,7 @@ export class DebugSupport implements IDebugSupport {
 
   /**
    * One definition reached: a breakpoint votes "stop" if its filters pass; a logpoint
-   * (`.plans/LOGPOINTS_PLAN.md` §4.2) logs if they pass and never stops (L3).
+   * (`dev/plans/LOGPOINTS_PLAN.md` §4.2) logs if they pass and never stops (L3).
    *
    * A logpoint whose group is switched off, that is inactive (a missing label, C14), or - at an
    * execution address - that is not being *arrived at* (L5), is skipped before its filters run, so
@@ -1788,7 +1788,7 @@ export class DebugSupport implements IDebugSupport {
       }
     }
 
-    // --- A logpoint's template, compiled the same way (`.plans/LOGPOINTS_PLAN.md` §4.2)
+    // --- A logpoint's template, compiled the same way (`dev/plans/LOGPOINTS_PLAN.md` §4.2)
     const template = bp.logMessage || undefined;
     const dialect = effectiveLogDialect(bp);
     if (
@@ -1824,7 +1824,7 @@ export class DebugSupport implements IDebugSupport {
 
   /**
    * The core's program store, rebuilt when it is stale: every active condition's program written
-   * into its own slot (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md` §4.4). Rebuilt whole rather than
+   * into its own slot (`dev/plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md` §4.4). Rebuilt whole rather than
    * patched - the store is a cache of the definitions, and a cache patched in place is the kind of
    * thing this file has learned not to trust (R5). Stale means a program changed since the last
    * build, or the store does not carry the last build's token: a core instantiated since then has
@@ -1954,7 +1954,7 @@ export class DebugSupport implements IDebugSupport {
 
   /**
    * The breakpoints that would stop at an execution address in the past
-   * (`.plans/LITE_STEP_BACK_PLAN.md` D11): Reverse Continue's search. Enabled execution breakpoints
+   * (`dev/plans/LITE_STEP_BACK_PLAN.md` D11): Reverse Continue's search. Enabled execution breakpoints
    * claiming the address in the partition the record was made in, with their compiled conditions for
    * the caller to evaluate against the record's registers. Hit counts are ignored, logpoints neither
    * stop nor print, and a condition waiting for a missing label does not stop - as live.
@@ -2349,7 +2349,7 @@ export class DebugSupport implements IDebugSupport {
     // --- A one-shot takes the slow path too: only there is the definition that fired known, and
     // --- only that definition may be consumed (O3). Annotation breakpoints are named in the stop
     // --- report (S11), which needs the same knowledge.
-    // --- A unit-test run's own stops (`.plans/Z80_UNIT_TESTS_PLAN.md` D9) are classified by the
+    // --- A unit-test run's own stops (`dev/plans/Z80_UNIT_TESTS_PLAN.md` D9) are classified by the
     // --- definition that fired, so they take it as well.
     if (
       hasBreakpointFilters(bp) ||

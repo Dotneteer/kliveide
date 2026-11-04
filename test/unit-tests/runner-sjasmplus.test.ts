@@ -19,7 +19,7 @@ import type { UnitTestEvent, UnitTestResult } from "@common/unit-tests/unitTestT
 import { MI_SPECTRUM_48, createTestMachine } from "./unitTestSupport";
 
 /*
- * The compatibility fixture (`.plans/Z80_UNIT_TESTS_PLAN.md` §6, D5, T1): a program in DeZog's
+ * The compatibility fixture (`dev/plans/Z80_UNIT_TESTS_PLAN.md` §6, D5, T1): a program in DeZog's
  * conventions - modules, TC_END, assertion macros, init code - assembled by an installed sjasmplus
  * with Klive's sjasmplus include, read through the SLD exactly as the IDE reads it, run on the 48K.
  *

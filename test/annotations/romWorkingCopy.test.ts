@@ -19,7 +19,7 @@ import { romPageIdentity } from "@common/roms/romIdentity";
 
 /*
  * Making a ROM page's working copy, and finding the ROM a sidecar describes
- * (`.plans/ROM_ANNOTATION_EDITING_PLAN.md` R8, T5, §4.2-§4.3).
+ * (`dev/plans/ROM_ANNOTATION_EDITING_PLAN.md` R8, T5, §4.2-§4.3).
  */
 
 const ROMS = join(__dirname, "../../src/public/roms");

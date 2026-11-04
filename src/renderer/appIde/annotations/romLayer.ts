@@ -2,7 +2,7 @@ import type { BankAnnotation, ProgramAnnotations } from "./programAnnotations";
 
 /*
  * One layer of a ROM page's annotations: a ROM sidecar (`<rom file>.dis`, `machine: "rom"`) seen
- * from the page it describes (`.plans/ROM_ANNOTATION_EDITING_PLAN.md` §4.2).
+ * from the page it describes (`dev/plans/ROM_ANNOTATION_EDITING_PLAN.md` §4.2).
  *
  * A page has **one** sidecar of its own: its **working** copy (editable, in
  * `<Klive home>/RomAnnotations/` or beside a custom ROM file) when there is one, otherwise the

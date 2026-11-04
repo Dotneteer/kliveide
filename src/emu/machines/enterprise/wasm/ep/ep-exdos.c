@@ -1,5 +1,5 @@
 /*
- * The EXDOS floppy interface card (`.plans/ENTERPRISE_PLAN.md` §10): a WD1770 on the shared
+ * The EXDOS floppy interface card (`dev/plans/ENTERPRISE_PLAN.md` §10): a WD1770 on the shared
  * controller (`wd1793.c` with `WD1793_VARIANT 1770`), the card's control register, and the EXDOS 1.3
  * ROM in segments 20h-21h (`epConfigure`'s EP_ROM_EXDOS; ep-memory.c maps it). The interface facts are
  * the research pack's (DAVE_MEMORY_IO.md §9.2, STORAGE_FIRMWARE_SOFTWARE.md §5.1); the code is Klive's

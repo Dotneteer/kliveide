@@ -55,7 +55,7 @@ import {
  *
  * `Z88Machine`, `Z88BankedMemory` and the `Z88...Device` classes named below are the TypeScript Z88
  * this host was ported from, to the letter; they were removed once the WASM core had matched them
- * (`.plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`) and live on at the tag `z88-typescript-last`.
+ * (`dev/plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`) and live on at the tag `z88-typescript-last`.
  *
  * The emulating subclass supplies memory, ports, keys, the Blink, the LCD, audio and the frame loop.
  */

@@ -19,12 +19,12 @@ const { Z80_PROFILE_EXPORTS, Z80_PROFILE_VOLATILE_SYMBOLS } = require("./z80-pro
 const { REPO_ROOT } = require("./repo-root.cjs");
 
 /**
- * Statics a Klive state file leaves out (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` trap 10):
+ * Statics a Klive state file leaves out (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` trap 10):
  * debugging state and buffers the core rewrites before it reads them, so a restore keeps the live
  * core's bytes there.
  */
 /*
- * Frame-boundary scratch (`.plans/REVERSE_DEBUGGING_PLAN.md` T5): the frame's audio samples, which
+ * Frame-boundary scratch (`dev/plans/REVERSE_DEBUGGING_PLAN.md` T5): the frame's audio samples, which
  * the core rewrites before it reads them. Keyframes taken at a frame boundary leave them out; the T5
  * proof in `test/wasm/reverse/journal-replay-determinism.test.ts` checks every keyframe interval.
  * Not scratch: the picture, which a step back shows half drawn (D18), and the beeper's transition
@@ -213,7 +213,7 @@ const productionExports = [
   "sp48GetEarBitChangedFrom0Tacts",
   "sp48GetEarBitChangedFrom1Tacts",
   "sp48GetDiagnosticFlags",
-  // --- RZX playback and recording (`.plans/RZX_PLAN.md` §4.2)
+  // --- RZX playback and recording (`dev/plans/RZX_PLAN.md` §4.2)
   ...rzxExports("sp48")
 ];
 

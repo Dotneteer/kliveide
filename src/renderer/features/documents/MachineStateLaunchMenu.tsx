@@ -11,7 +11,7 @@ import { machineStateLoadCommandText } from "@common/machineState/machineStateTy
 
 /*
  * **Run** / **Debug** for a Klive state file (`.kls`): the Explorer's context menu entries and the
- * buttons in the state viewer's tab bar (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.9),
+ * buttons in the state viewer's tab bar (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.9),
  * copied from `SpectrumSnapshotLaunchMenu.tsx`. All of them run the `state-load` command, which
  * makes the project check (D10) once it has read the file's machine.
  */

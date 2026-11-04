@@ -491,7 +491,7 @@ export class Sp48TestSession {
   }
 
   // ==========================================================================================
-  // RZX (`.plans/RZX_PLAN.md`)
+  // RZX (`dev/plans/RZX_PLAN.md`)
 
   /**
    * Starts recording an RZX file at the machine's current state, as the emulator does: a `.szx`
@@ -597,7 +597,7 @@ export class Sp48TestSession {
   }
 
   // ==========================================================================================
-  // The DivMMC (`.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md` C4/C6)
+  // The DivMMC (`dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md` C4/C6)
 
   private sdCard?: HarnessSdCard;
   private if1?: Interface1Support;
@@ -701,7 +701,7 @@ export class Sp48TestSession {
   }
 
   // ==========================================================================================
-  // Execution history (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`): the core's recorder, as the
+  // Execution history (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`): the core's recorder, as the
   // IDE reads it through `IExecutionHistorySource`
 
   /** Turns the execution-history recorder on or off, as a debug session does */

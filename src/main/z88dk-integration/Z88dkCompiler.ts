@@ -49,7 +49,7 @@ import { z88dkTargetFor, type Z88dkTarget } from "./z88dk-targets";
 import { adaptZ88dkDebugInfo } from "./z88dk-debug-adapter";
 
 /*
- * z88dk as Klive's compiler for C (`.plans/Z88DK_INTEGRATION_PLAN.md` §5, decision C1). It runs `zcc`
+ * z88dk as Klive's compiler for C (`dev/plans/Z88DK_INTEGRATION_PLAN.md` §5, decision C1). It runs `zcc`
  * for the machine's target (C5) with the project's options (C6), and turns its outputs into Klive's:
  * diagnostics, the image as segments, the line tables from the map (C8), and the native file
  * `-create-app` wrote (a `.nex` the Next runs, a `.P`/`.O` the ZX81/ZX80 load, what Export copies).

@@ -1,7 +1,7 @@
 /*
  * Locations the navigation history (Go Back / Go Forward) records.
  *
- * See `.plans/NAVIGATION_HISTORY_PLAN.md` §3.1.
+ * See `dev/plans/NAVIGATION_HISTORY_PLAN.md` §3.1.
  */
 
 /**
@@ -47,9 +47,9 @@ export type NavigationReason =
   | "tabSwitch"
   | "explorer"
   | "command"
-  /** The Profiler document's double-click on a routine (`.plans/PROFILER_PLAN.md` D14). */
+  /** The Profiler document's double-click on a routine (`dev/plans/PROFILER_PLAN.md` D14). */
   | "profiler"
-  /** The Unit Tests panel: a test's label or a failure's line (`.plans/Z80_UNIT_TESTS_PLAN.md` D13). */
+  /** The Unit Tests panel: a test's label or a failure's line (`dev/plans/Z80_UNIT_TESTS_PLAN.md` D13). */
   | "unitTest";
 
 /** Every reason, for validating the `nav -r <reason>` option. */

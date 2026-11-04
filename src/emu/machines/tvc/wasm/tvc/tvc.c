@@ -378,7 +378,7 @@ uint32_t tvcGetItPending(void) { return tvcItPending; }
 #include "../../../../z80/wasm/z80-condition.c"
 
 // -----------------------------------------------------------------------------
-// Execution history (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` §3): the shared recorder. The
+// Execution history (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` §3): the shared recorder. The
 // context:
 //   0    bit 0 the 64K+; bit 1 the video bank shown on the 64K+ is not 0
 //   1    port 02h (the main paging register)
@@ -405,7 +405,7 @@ static inline void tvcHistoryContext(uint32_t kind, uint8_t *out) {
 #include "../../../../z80/wasm/z80-history.c"
 
 // -----------------------------------------------------------------------------
-// The access profile (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §2.2): a byte's profile offset is
+// The access profile (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §2.2): a byte's profile offset is
 // its physical address in `tvcMemory`. ROM and an empty card window take no writes.
 // -----------------------------------------------------------------------------
 

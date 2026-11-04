@@ -20,7 +20,7 @@ import { tilemapDiagnostics, type TilemapDiagnostic } from "@common/zxnext/tilem
 import { paletteOffsetFromMap, tileUsage, usageCount, type TileUsage } from "@common/zxnext/tilemap/tilemapUsage";
 
 /*
- * The Tilemap Inspector's view model (`.plans/TILEMAP_INSPECTOR_PLAN.md` §4.4-§4.5). Pure: the
+ * The Tilemap Inspector's view model (`dev/plans/TILEMAP_INSPECTOR_PLAN.md` §4.4-§4.5). Pure: the
  * document turns a snapshot into this once per version and renders from it. The text it returns is
  * translated when the functions run, which is at render time.
  */

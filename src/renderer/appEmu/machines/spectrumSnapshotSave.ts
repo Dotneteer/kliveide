@@ -1,6 +1,6 @@
 /*
  * Saves the running ZX Spectrum as a `.sna`, `.z80` or `.szx` snapshot: the orchestration of
- * `.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.3 (decision D4).
+ * `dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.3 (decision D4).
  *
  *  1. A machine with no state (stopped, or never started) cannot be saved.
  *  2. A running machine is paused, captured and started again, so a save never leaves it paused; a

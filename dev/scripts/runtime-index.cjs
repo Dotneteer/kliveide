@@ -1,6 +1,6 @@
 /**
  * Generates the runtime packages of the shared Z80 back end and its languages
- * (`.plans/SHARED_Z80_BACKEND_PLAN.md` §3.2), and Klive BASIC's standard-library bundle:
+ * (`dev/plans/SHARED_Z80_BACKEND_PLAN.md` §3.2), and Klive BASIC's standard-library bundle:
  *
  * | Package | Modules | Generated |
  * | --- | --- | --- |

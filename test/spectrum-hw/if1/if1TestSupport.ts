@@ -3,7 +3,7 @@ import { IF1_SLOT_SIZE } from "@emu/machines/zxSpectrum/if1/if1CoreBridge";
 import { createSp48Session, type Sp48TestSession } from "../../harness/sp48";
 
 /*
- * Shared by the Interface 1 hardware tests (`.plans/MICRODRIVE_PLAN.md` Phase 2). The cartridge
+ * Shared by the Interface 1 hardware tests (`dev/plans/MICRODRIVE_PLAN.md` Phase 2). The cartridge
  * layout and checksum are `dev/research/microdrive/mdr-and-file-formats.md` §2-§3 and §7.
  */
 

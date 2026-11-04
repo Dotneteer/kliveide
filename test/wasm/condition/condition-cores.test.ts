@@ -15,7 +15,7 @@ import { createHarnessZ88Machine } from "../../harness/z88";
 
 /*
  * The breakpoint condition evaluator wired into each Z80 core
- * (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md` Phase 2): the C hooks must read exactly what the
+ * (`dev/plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md` Phase 2): the C hooks must read exactly what the
  * machine's TypeScript views read - every partition at its boundaries, the CPU view, the paging -
  * and the registers come from the core's own CPU.
  */

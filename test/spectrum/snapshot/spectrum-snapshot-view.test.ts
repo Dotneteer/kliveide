@@ -13,7 +13,7 @@ import {
 import { buildSna48, buildSzx, state128, state48 } from "./builders";
 
 /*
- * The React-free part of the snapshot viewer (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.8, Phase 6).
+ * The React-free part of the snapshot viewer (`dev/plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.8, Phase 6).
  */
 
 const snap48 = () => parseSpectrumSnapshot("a.sna", buildSna48(state48()));

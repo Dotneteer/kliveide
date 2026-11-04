@@ -15,7 +15,7 @@ import type { Z88TestFlashCard, Z88TestSurface } from "./z88-test-surface";
  * keeps: two $40 reads on success, then read-array mode again; $60/$20 repeating on failure until
  * $F0 is written.
  *
- * Added in Step 0.3 of `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`; there was no AMD flash test.
+ * Added in Step 0.3 of `dev/plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`; there was no AMD flash test.
  */
 
 // --- The card sits in slot 1; SR3 maps one of its banks at $C000-$FFFF

@@ -1,6 +1,6 @@
 /*
  * Saves and opens debug recordings (`.klr`): the orchestration of
- * `.plans/DEBUG_SESSION_RECORDING_PLAN.md` §4.4.
+ * `dev/plans/DEBUG_SESSION_RECORDING_PLAN.md` §4.4.
  *
  * Save:
  *  1. Recordings come from reverse debugging: the machine needs a live timeline (D17).

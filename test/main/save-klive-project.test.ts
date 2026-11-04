@@ -185,7 +185,7 @@ describe("saveKliveProject", () => {
   });
 
   it("saves a breakpoint's condition and hit rule, but not its runtime state", async () => {
-    // --- `.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.1: the live counter restarts with the machine,
+    // --- `dev/plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.1: the live counter restarts with the machine,
     // --- and storing it would also make every save after a run rewrite the file for nothing.
     listBreakpoints.mockResolvedValue({
       breakpoints: [
@@ -277,7 +277,7 @@ describe("saveKliveProject", () => {
     expect(projectFileVersionDispatches()).toBe(1);
   });
 
-  // --- `.plans/LOGPOINTS_PLAN.md` Phase 1 (§4.6)
+  // --- `dev/plans/LOGPOINTS_PLAN.md` Phase 1 (§4.6)
   it("saves a logpoint's template and dialect, but neither its error nor the build's LOGPOINT comments", async () => {
     listBreakpoints.mockResolvedValue({
       breakpoints: [

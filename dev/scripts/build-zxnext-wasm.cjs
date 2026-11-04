@@ -17,12 +17,12 @@ const { ZXNEXT_ARTIFACTS, artifactDefines } = require("./zxnext-artifacts.cjs");
 const { REPO_ROOT } = require("./repo-root.cjs");
 
 /**
- * Statics a Klive state file leaves out (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` trap 10):
+ * Statics a Klive state file leaves out (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` trap 10):
  * debugging state and buffers the core rewrites before it reads them, so a restore keeps the live
  * core's bytes there.
  */
 /*
- * Frame-boundary scratch (`.plans/REVERSE_DEBUGGING_PLAN.md` T5): the ULA/sprite coverage map, which
+ * Frame-boundary scratch (`dev/plans/REVERSE_DEBUGGING_PLAN.md` T5): the ULA/sprite coverage map, which
  * the core rewrites before it reads it. Keyframes taken at a frame boundary leave it out; the T5 proof
  * in `test/wasm/reverse/journal-replay-determinism.test.ts` checks every keyframe interval. Not
  * scratch: the picture and the four layer buffers, which a step back shows half drawn (D18) and the

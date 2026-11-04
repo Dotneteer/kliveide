@@ -18,7 +18,7 @@ import { createZ88Session } from "../harness/z88";
 import { createZx81Session } from "../harness/zx81";
 
 /*
- * Reverse debugging on the machines Phase 7 enabled (`.plans/REVERSE_DEBUGGING_PLAN.md` D19), through
+ * Reverse debugging on the machines Phase 7 enabled (`dev/plans/REVERSE_DEBUGGING_PLAN.md` D19), through
  * the real machine controller - the part the journal-replay determinism test (which drives the cores
  * directly) does not reach: each machine's `TimelineMachine` wiring, its debug loop's replay stop, and
  * its host state. Each machine runs its own ROM (the 128 menu, BASIC, OZ, the ZX80/81 editor):

@@ -2,7 +2,7 @@
  * Loads the HT-1080Z WASM core (`dist/ht1080z.wasm`, built by `dev/scripts/build-ht1080z-wasm.cjs`):
  * compiles it once per artifact name, instantiates it without imports, checks every export the
  * machine needs, and creates the typed views over the core's buffers. The shape follows
- * `Ht1080zWasmV2Loader.ts`. See `.plans/HT1080Z_PLAN.md`.
+ * `Ht1080zWasmV2Loader.ts`. See `dev/plans/HT1080Z_PLAN.md`.
  */
 
 import { WASM_CORE_CONDITION_PLAN_WORDS } from "@emu/machines/wasmDebugLoopLayout";

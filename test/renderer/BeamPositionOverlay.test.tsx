@@ -7,7 +7,7 @@ import { beamAt, type BeamTiming } from "@common/utils/beamGeometry";
 import { BeamPositionOverlay, BeamPositionPill } from "@renderer/features/emulator/BeamPositionOverlay";
 
 /*
- * The beam position overlay as the emulator window renders it (`.plans/BEAM_POSITION_OVERLAY_PLAN.md`
+ * The beam position overlay as the emulator window renders it (`dev/plans/BEAM_POSITION_OVERLAY_PLAN.md`
  * D1, D2, D6): shapes in the buffer's own coordinates, the "previous frame" legend, the pill, and the
  * hover readout.
  */

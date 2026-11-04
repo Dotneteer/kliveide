@@ -1,5 +1,5 @@
 /*
- * The Machine menu (`.plans/MENU_REDESIGN_PLAN.md` §3): the machine type, running it, speed and
+ * The Machine menu (`dev/plans/MENU_REDESIGN_PLAN.md` §3): the machine type, running it, speed and
  * sound, one submenu per device the machine has, the machine's own hardware actions, and Record.
  * Debugging is the Debug menu; set-once options (ROMs, the Z88's keyboard and LCD, key mapping,
  * scanlines, recording formats) are in Settings. The first item opens Settings on the Machine page,
@@ -130,7 +130,7 @@ export function createRecordMenu(context: MenuContext): MenuItemConstructorOptio
           )
       },
       { type: "separator" },
-      // --- IDE + Emulator recording (.plans/IDE_EMU_RECORDING_PLAN.md §5.2)
+      // --- IDE + Emulator recording (dev/plans/IDE_EMU_RECORDING_PLAN.md §5.2)
       ...createWindowRecordingMenuItems({
         state: appState,
         ideWindowVisible: context.ideWindowVisible,
@@ -164,7 +164,7 @@ export function createMachineMenu(context: MenuContext): MenuItemConstructorOpti
   const machineRestartable = machineRuns || machinePaused;
 
   // --- Machine types submenu: the favourites, then "Select machine…"
-  // --- (.plans/MACHINE_SELECT_DIALOG_PLAN.md §3)
+  // --- (dev/plans/MACHINE_SELECT_DIALOG_PLAN.md §3)
   const machineFavorites = normalizeMachineFavorites(
     getSettingValue(SETTING_EMU_MACHINE_FAVORITES),
     machineRegistry

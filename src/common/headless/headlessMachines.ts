@@ -13,8 +13,8 @@ import {
 } from "@common/machines/constants";
 
 /*
- * Which machines run headless and which core each loads (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md`
- * D15, D16; `.plans/Z80_UNIT_TESTS_PLAN.md` D18). Kept apart from `HeadlessMachineFactory`, which
+ * Which machines run headless and which core each loads (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md`
+ * D15, D16; `dev/plans/Z80_UNIT_TESTS_PLAN.md` D18). Kept apart from `HeadlessMachineFactory`, which
  * imports the machine classes: the main process needs only these facts, and only a worker or the
  * command line loads the cores.
  */

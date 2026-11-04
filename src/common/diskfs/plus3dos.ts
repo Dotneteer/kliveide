@@ -14,7 +14,7 @@ import {
 } from "./types";
 
 /*
- * +3DOS (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, B1/B2), written from Amstrad's description of
+ * +3DOS (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, B1/B2), written from Amstrad's description of
  * the format in the +3 manual and the CP/M 2.2 directory format it builds on (D8):
  *
  * - The disk specification is the first 10 bytes of the first sector of track 0 - unless the

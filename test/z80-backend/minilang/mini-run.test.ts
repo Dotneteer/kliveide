@@ -10,7 +10,7 @@ import { createSp48Session } from "../../harness/sp48";
 import { compileMini } from "./mini";
 
 /**
- * The "mini" language run on the real 48K core (`.plans/SHARED_Z80_BACKEND_PLAN.md` §5, Phase 6):
+ * The "mini" language run on the real 48K core (`dev/plans/SHARED_Z80_BACKEND_PLAN.md` §5, Phase 6):
  * its program prints, and the source-level debugger — which has no plugin for mini — stops at its
  * statements with the right call stack and variables, at every optimisation level.
  */

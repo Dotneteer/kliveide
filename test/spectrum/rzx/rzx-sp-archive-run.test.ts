@@ -11,7 +11,7 @@ import type { IRzxMachine } from "@emu/machines/zxSpectrum/rzx/rzxSession";
 import { createHarnessSpectrumMachine } from "../../harness/sp128";
 
 /**
- * The RZX archive check's runner (`.plans/RZX_PLAN.md` Phase 8). `dev/scripts/rzx-archive-check.cjs`
+ * The RZX archive check's runner (`dev/plans/RZX_PLAN.md` Phase 8). `dev/scripts/rzx-archive-check.cjs`
  * starts this file with `RZX_ARCHIVE_DIR` naming a local folder of `.rzx` files and
  * `RZX_ARCHIVE_REPORT` naming the JSON report to write; otherwise there is nothing to do. Every file
  * plays headless on the real core of the machine it maps to, until it ends, desyncs or is refused.

@@ -5,7 +5,7 @@ Boriel BASIC 2.x (`zxbc`, the native rewrite of the ZX BASIC compiler) is integr
 (`dev/ai/klive-basic-switch.md`). This folder is the integration's record: how it is built
 and why, what zxbc was observed to do (B0 measured `2.0.0-beta25`; the pin is now `2.0.0-beta29`,
 re-checked 2026-10-24, see "Version history" below), and what is still open. The integration plan
-was closed on 2026-11-04; its full text is in git history (`.plans/BORIEL_BASIC_INTEGRATION_PLAN.md`
+was closed on 2026-11-04; its full text is in git history (`dev/plans/BORIEL_BASIC_INTEGRATION_PLAN.md`
 before that date).
 
 | File | What it is |

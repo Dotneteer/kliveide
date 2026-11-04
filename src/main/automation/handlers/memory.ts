@@ -5,7 +5,7 @@ import type { MethodContext, MethodTable } from "../method-types";
 import { optionalInt, requireInt } from "../method-types";
 
 /*
- * `memory.read` and `memory.write` (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` §4.2, T8).
+ * `memory.read` and `memory.write` (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` §4.2, T8).
  *
  * "Read memory at $C000" is ambiguous on a 128K or the Next, so a request names either an
  * `address` (the CPU's current view: what is paged in now) or a `partition` and an `offset` (one

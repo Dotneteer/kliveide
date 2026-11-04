@@ -77,7 +77,7 @@ const HT1080Z_BEAM_TIMING: BeamTiming = {
 const CORE_MODEL = { s1: 0, s2: 1, s64: 2 } as const;
 
 /**
- * An HT-1080Z on the WASM core (`wasm/ht1080z/`, `.plans/HT1080Z_PLAN.md`): one core for every
+ * An HT-1080Z on the WASM core (`wasm/ht1080z/`, `dev/plans/HT1080Z_PLAN.md`): one core for every
  * model, configured by the model at setup.
  *
  * The registers are read live from the core and every write is pushed into it; the debugger runs
@@ -89,7 +89,7 @@ const CORE_MODEL = { s1: 0, s2: 1, s64: 2 } as const;
  */
 export class Ht1080zWasmV2Machine extends Ht1080zWasmHost implements IExecutionHistorySource, IAccessProfileSource {
   // ==============================================================================================
-  // Execution history (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`): the shared recorder in the
+  // Execution history (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`): the shared recorder in the
   // core, read through the shared reader; the machine id names the context decoder
 
   get historyMachineId(): string {
@@ -122,7 +122,7 @@ export class Ht1080zWasmV2Machine extends Ht1080zWasmHost implements IExecutionH
   }
 
   // ==============================================================================================
-  // The access profile (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`): the shared module in the core,
+  // The access profile (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`): the shared module in the core,
   // read through the shared reader; every model shares one layout (`layouts/ht1080z.ts`)
 
   get profileMachineId(): string {
@@ -534,7 +534,7 @@ export class Ht1080zWasmV2Machine extends Ht1080zWasmHost implements IExecutionH
   }
 
   // ==========================================================================================
-  // Tape (`.plans/HT1080Z_PLAN.md` §8-9, `wasm/ht1080z/ht1080z-tape.c`)
+  // Tape (`dev/plans/HT1080Z_PLAN.md` §8-9, `wasm/ht1080z/ht1080z-tape.c`)
 
   /**
    * Puts a tape in the deck: its `.cas` bit stream goes to the core, which plays it while the
@@ -913,7 +913,7 @@ export class Ht1080zWasmV2Machine extends Ht1080zWasmHost implements IExecutionH
   }
 
   /**
-   * The beam position overlay (`.plans/BEAM_POSITION_OVERLAY_PLAN.md` §4.3). One T-state is one
+   * The beam position overlay (`dev/plans/BEAM_POSITION_OVERLAY_PLAN.md` §4.3). One T-state is one
    * character slot of 6 dots; slot `s` of a line shows the byte read at slot `s - 2`, so visible slots
    * 2-65 of lines 0-191 are the picture, which sits 72 dots and 48 lines into the 528 x 288 buffer
    * (`ht1080z-video.c`). Buffer pixel (0, 0) is therefore drawn 48 lines and 12 slots before the
@@ -938,8 +938,8 @@ export class Ht1080zWasmV2Machine extends Ht1080zWasmHost implements IExecutionH
   }
 
   // ==========================================================================================
-  // State files and reverse debugging (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.5,
-  // `.plans/REVERSE_DEBUGGING_PLAN.md` §4.2)
+  // State files and reverse debugging (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.5,
+  // `dev/plans/REVERSE_DEBUGGING_PLAN.md` §4.2)
 
   /**
    * Captures the machine's whole state: the core's memory image, which holds the tape deck, the

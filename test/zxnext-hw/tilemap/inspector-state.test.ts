@@ -12,7 +12,7 @@ import { hex8 } from "../ula/_ula-helpers";
 import { control6B, randomBank5, TM_DEFAULT, tilemapIndex, tilemapScreen, type TM } from "./_tilemap-helpers";
 
 /*
- * What the Tilemap Inspector reads (`.plans/TILEMAP_INSPECTOR_PLAN.md` Phase 2, D3): the snapshot is
+ * What the Tilemap Inspector reads (`dev/plans/TILEMAP_INSPECTOR_PLAN.md` Phase 2, D3): the snapshot is
  * the registers a program wrote and the bytes it stored; the image `tilemapDecode` makes from that
  * snapshot equals both the VHDL-derived model in `_tilemap-helpers.ts` and the core's rendered
  * tilemap pixels; reading never changes the machine.

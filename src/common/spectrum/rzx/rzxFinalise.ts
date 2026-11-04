@@ -1,5 +1,5 @@
 /*
- * Finalises a recording (`.plans/RZX_PLAN.md` §4.1, D3): keeps the first snapshot, drops every later
+ * Finalises a recording (`dev/plans/RZX_PLAN.md` §4.1, D3): keeps the first snapshot, drops every later
  * one (the autosave and rollback points) and merges the input blocks into one. Pure.
  *
  * Dropping a snapshot between two input blocks does not change what plays: the snapshot was taken

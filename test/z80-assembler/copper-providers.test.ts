@@ -1,5 +1,5 @@
 /**
- * Language-support unit tests for the .copper pragma (`.plans/COPPER_DEBUGGING_PLAN.md` §4.9).
+ * Language-support unit tests for the .copper pragma (`dev/plans/COPPER_DEBUGGING_PLAN.md` §4.9).
  *
  *   AC-1  Z80_PRAGMA_ITEMS contains .copper with next: true
  *   AC-2  getCopperCompletionContext() identifies the completion phase

@@ -1,7 +1,7 @@
 import type { PiI2sStatus, PiI2sToneChannels } from "@common/zxnext/piI2s";
 
 /*
- * What stands in for the Raspberry Pi on the Next's I2S link (`.plans/PI_I2S_AUDIO_PLAN.md` §3).
+ * What stands in for the Raspberry Pi on the Next's I2S link (`dev/plans/PI_I2S_AUDIO_PLAN.md` §3).
  *
  * A source is a stream of stereo signed 16-bit samples at a fixed rate. The machine asks it for the
  * samples a frame needs, by index, and writes them into the core (`ZxNextWasmV2Machine.feedPiI2s`).

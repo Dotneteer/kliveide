@@ -1,5 +1,5 @@
 /*
- * The Klive automation protocol, version 1 (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D2, D8, §4.2).
+ * The Klive automation protocol, version 1 (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` D2, D8, §4.2).
  *
  * JSON-RPC 2.0 over a local stream socket (a Unix domain socket, or a named pipe on Windows), one
  * JSON message per line, UTF-8. This module is the contract the server in the main process

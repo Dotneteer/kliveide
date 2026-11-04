@@ -5,7 +5,7 @@ landing-page drafts are in git history). The field (§1) and the competitor colu
 web research of 2026-10-02 (official docs, READMEs, release notes, forums); facts that could not be
 checked against a page are marked **(unverified)** and must be checked before a public page says
 them. The Klive column is kept current under `AGENTS.md`'s standing rule: when a feature from
-`.plans/CLOSING_THE_GAPS_PLAN.md` is implemented, update §2 (the Klive column) and §4 (the gaps) in
+`dev/plans/CLOSING_THE_GAPS_PLAN.md` is implemented, update §2 (the Klive column) and §4 (the gaps) in
 the same change.
 
 Klive features are released unless marked **(after v0.66.0)**, meaning they wait in `dev/changes/` for

@@ -13,7 +13,7 @@ import { HistoryPresentBanner } from "./HistoryPresentBanner";
 import { useT } from "@common/i18n/useT";
 
 /*
- * The Call Stack panel while the history cursor is in the past (`.plans/LITE_STEP_BACK_PLAN.md` D6,
+ * The Call Stack panel while the history cursor is in the past (`dev/plans/LITE_STEP_BACK_PLAN.md` D6,
  * D10). The memory above SP is the present's, so reading it at a historical SP would show frames
  * that were not there; the frames are rebuilt from the records instead, by pairing calls with
  * returns. They are exact as far back as the ring reaches, and the last row says where that ends.

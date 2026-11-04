@@ -10,7 +10,7 @@ import { createSession, MemorySdCard, SD_SECTOR_BYTES } from "../harness/zxnext"
 import { InMemorySdMessenger } from "../harness/zxnext/script/sd-card";
 
 /*
- * The Next's SD card in a reverse-debugging timeline (`.plans/REVERSE_DEBUGGING_PLAN.md` D14, T3,
+ * The Next's SD card in a reverse-debugging timeline (`dev/plans/REVERSE_DEBUGGING_PLAN.md` D14, T3,
  * Phase 6), on the real Next through the machine controller. A program reads one sector and writes
  * another on every pass, through the SPI ports, so the card's host image changes all the time:
  *

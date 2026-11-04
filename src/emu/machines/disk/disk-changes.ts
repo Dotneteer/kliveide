@@ -6,7 +6,7 @@ import { DiskImageError } from "./DiskImageError";
 import { TRD_SECTOR_SIZE } from "./trd/trdImage";
 
 /*
- * The write-back contract for disk images (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, D2/A2).
+ * The write-back contract for disk images (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, D2/A2).
  *
  * A DSK change is keyed by the sector's **physical position**: its track's index in the file
  * (cylinder * sides + side) and its index within that track's sector list, as `dskSectorKey` packs

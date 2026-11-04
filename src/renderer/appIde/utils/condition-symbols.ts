@@ -5,7 +5,7 @@ import type { ProgramAnnotations } from "@renderer/appIde/annotations/programAnn
 import { bankLocalSymbolKey, romSymbolKey } from "@common/utils/breakpoint-condition/condition-types";
 
 /*
- * The symbol table breakpoint conditions bind their labels to (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md`
+ * The symbol table breakpoint conditions bind their labels to (`dev/plans/CONDITIONAL_BREAKPOINTS_PLAN.md`
  * §3.6): the integer symbols of the last successful build, joined by the labels of every loaded
  * `.nex.dis` sidecar (F3). The emulator gets the whole table in one call whenever either changes.
  *

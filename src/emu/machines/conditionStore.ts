@@ -1,6 +1,6 @@
 /*
  * The breakpoint condition evaluator as every Z80 core exports it
- * (`src/emu/z80/wasm/z80-condition.c`, `.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md` §4.2).
+ * (`src/emu/z80/wasm/z80-condition.c`, `dev/plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md` §4.2).
  *
  * The names are the same in all five cores (E8), so one binding serves them all: the loaders add
  * `CONDITION_CORE_EXPORTS` to their required exports and `ConditionCoreExports` to their export
@@ -129,7 +129,7 @@ export type ConditionMachine = {
 
 /**
  * The machine facts a logpoint or condition reads that the core does not keep itself
- * (`.plans/LOGPOINTS_PLAN.md` §3.5): the CPU clock, the frame counter and the slot map.
+ * (`dev/plans/LOGPOINTS_PLAN.md` §3.5): the CPU clock, the frame counter and the slot map.
  */
 export type ConditionMachineInfo = {
   /** Base clock times the multiplier, in Hz (Next turbo included). */

@@ -27,7 +27,7 @@
  * Then the NEX debug sidecar (plan §8.5): a fresh Klive opens that project without building it and
  * runs the exported NEX with `nex-run -d`; its breakpoint and the panels come from the sidecar.
  *
- * Then editor intelligence (`.plans/BASIC_EDITOR_INTELLIGENCE_PLAN.md` §7): hover on a local, a
+ * Then editor intelligence (`dev/plans/BASIC_EDITOR_INTELLIGENCE_PLAN.md` §7): hover on a local, a
  * global, a FUNCTION with a doc comment, PRINT and a header option; Go to Definition into a library
  * file; the references of a shadowed name; completion after AS, after GOTO, of a library routine
  * that adds its #include and of a header option's value; signature help in a nested call; a rename

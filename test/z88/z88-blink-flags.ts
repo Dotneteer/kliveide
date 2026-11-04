@@ -1,7 +1,7 @@
 /*
  * The Blink register bits the Z88 core suites set and test, as the Blink documentation names them.
  * They lived beside the TypeScript Blink device (`IZ88BlinkDevice.ts`) until it was removed
- * (`.plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`); the WASM core names the same bits in C
+ * (`dev/plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`); the WASM core names the same bits in C
  * (`Z88_COM_SRUN`, ...).
  */
 

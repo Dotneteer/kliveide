@@ -1,5 +1,5 @@
 /*
- * A test-only translation unit for the RZX module (`zx-spectrum-rzx.c`, `.plans/RZX_PLAN.md`
+ * A test-only translation unit for the RZX module (`zx-spectrum-rzx.c`, `dev/plans/RZX_PLAN.md`
  * Phase 2): the shared Z80 core with the fetch counter and the IN tap wired exactly as the Spectrum
  * cores wire them, and a fixed live port value. `rzx-counter.test.ts` drives it. It is not a machine.
  */

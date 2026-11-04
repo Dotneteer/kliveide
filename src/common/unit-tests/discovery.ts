@@ -2,7 +2,7 @@ import { flattenSymbolEntries, type SymbolTables } from "@common/utils/flatten-s
 import { resolvedPartitionFor } from "@common/utils/source-breakpoint-partition";
 
 /*
- * Unit-test discovery (`.plans/Z80_UNIT_TESTS_PLAN.md` §4.1, D1, T3, T4).
+ * Unit-test discovery (`dev/plans/Z80_UNIT_TESTS_PLAN.md` §4.1, D1, T3, T4).
  *
  * DeZog's conventions, exactly: a test is a code label whose last segment starts with `UT_` - on
  * the source spelling, so `ut_x` is not a test - and its suite is the label's module (or dotted)

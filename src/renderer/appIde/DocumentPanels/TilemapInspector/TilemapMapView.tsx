@@ -14,7 +14,7 @@ import { OverlayCanvas } from "./OverlayCanvas";
 import styles from "./TilemapInspector.module.scss";
 
 /*
- * The Map view (`.plans/TILEMAP_INSPECTOR_PLAN.md` §4.5.1): the tilemap as one image (T9), *Whole
+ * The Map view (`dev/plans/TILEMAP_INSPECTOR_PLAN.md` §4.5.1): the tilemap as one image (T9), *Whole
  * map* (unscrolled, the visible window outlined, D4) or *As displayed* (scrolled and clipped, the clip
  * window outlined), with the overlays and a hover line.
  */

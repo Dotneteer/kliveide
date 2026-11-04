@@ -6,7 +6,7 @@ import { MachineControllerState } from "@abstractions/MachineControllerState";
 import type { NextTilemapState } from "@common/messaging/EmuApi";
 
 /*
- * The Tilemap Inspector document shell (`.plans/TILEMAP_INSPECTOR_PLAN.md` Phase 4-6): the empty
+ * The Tilemap Inspector document shell (`dev/plans/TILEMAP_INSPECTOR_PLAN.md` Phase 4-6): the empty
  * state, the globals strip with its overlap chip, a cell selected on the map, the tile it shows.
  */
 

@@ -8,7 +8,7 @@ import { createZ88Session, type Z88Key, type Z88TestSession } from "../../harnes
 import { Digest, goldens } from "./z88-goldens";
 
 /*
- * The IDE's view of the Cambridge Z88 (Step 11 of `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`).
+ * The IDE's view of the Cambridge Z88 (Step 11 of `dev/plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`).
  *
  * The IDE talks to the emulator only through `MainToEmuProcessor`, so this test drives exactly that:
  * the requests the panels make - the CPU, Blink and memory panels, the partition labels the memory and
@@ -17,7 +17,7 @@ import { Digest, goldens } from "./z88-goldens";
  *
  * The answers are checked against `goldens/wasm-z88-ide-parity.json`: what the TypeScript machine
  * answered in the same state, recorded before it was removed
- * (`.plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`, `z88-goldens.ts`).
+ * (`dev/plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`, `z88-goldens.ts`).
  *
  * One deliberate departure: the memory answers were re-recorded once the memory views began reading
  * what the CPU reads - a card smaller than its slot mirrored across it, and the upper half of an odd

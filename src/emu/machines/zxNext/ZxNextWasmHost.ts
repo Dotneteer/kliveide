@@ -33,7 +33,7 @@ import { writeCodeSegments } from "../writeCodeSegments";
  * that boots NextZXOS and types `.nexload`, the emulated keystroke queue, the system variables, the
  * step-over instruction lengths. It shares the neutral `nextMachineInfo.ts` with the TypeScript
  * `ZxNextMachine`, and nothing else: it constructs no TypeScript Next device and never falls back to
- * TypeScript emulation (see `.plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`, Step 5).
+ * TypeScript emulation (see `dev/plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`, Step 5).
  *
  * The emulating subclass supplies memory, ports, keys, the screen, audio and the frame loop.
  */
@@ -209,7 +209,7 @@ export abstract class ZxNextWasmHost extends Z80MachineBase {
 
     // --- Chain onto the end of the queue rather than anchoring every keystroke to "now": the queue
     // --- then plays back at the machine's own pace however fast the host filled it, and nothing
-    // --- expires unplayed (`.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.12).
+    // --- expires unplayed (`dev/plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.12).
     const queue = this.emulatedKeyStrokes;
     const lastEndTact = queue.length > 0 ? queue[queue.length - 1].endTact : this.tacts;
     // --- In the 32-bit counter's range, as the core reports the tacts that reach them
@@ -250,7 +250,7 @@ export abstract class ZxNextWasmHost extends Z80MachineBase {
       }
     }
     // --- Banked segments go into their 16K bank (two 8K pages) whatever the MMU maps
-    // --- (`.plans/Z80_UNIT_TESTS_PLAN.md` T5); they were silently dropped before
+    // --- (`dev/plans/Z80_UNIT_TESTS_PLAN.md` T5); they were silently dropped before
     writeCodeSegments(this, codeToInject.segments, true);
 
     // --- Prepare the run mode

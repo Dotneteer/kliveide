@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /*
- * F1 of .plans/ZX_NEXT_FIDELITY_PROOF_PLAN.md (§8, "F1 run specification"): runs the T80N
+ * F1 of dev/plans/ZX_NEXT_FIDELITY_PROOF_PLAN.md (§8, "F1 run specification"): runs the T80N
  * single-instruction differential end to end and writes the evidence.
  *
  *   node test/vhdl/f1/run-f1.cjs --sample            the 1,775-case bring-up sample
@@ -271,7 +271,7 @@ async function main() {
 
 Run ${new Date(start).toISOString()} · verdict **${summaryJson.verdict}**
 
-Specification: \`.plans/ZX_NEXT_FIDELITY_PROOF_PLAN.md\` §8, "F1 run specification".
+Specification: \`dev/plans/ZX_NEXT_FIDELITY_PROOF_PLAN.md\` §8, "F1 run specification".
 
 ## Result
 

@@ -18,7 +18,7 @@ const {
 } = require("./wasm-layout.cjs");
 
 /**
- * Statics a Klive state file leaves out (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` trap 10):
+ * Statics a Klive state file leaves out (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` trap 10):
  * debugging state and buffers the core rewrites before it reads them, so a restore keeps the live
  * core's bytes there.
  */
@@ -39,7 +39,7 @@ const HT1080Z_VOLATILE_SYMBOLS = [
 ];
 
 /*
- * Builds the HT-1080Z full-machine WASM core (`.plans/HT1080Z_PLAN.md`).
+ * Builds the HT-1080Z full-machine WASM core (`dev/plans/HT1080Z_PLAN.md`).
  *
  * The same shape as the Z88 build: plain clang for wasm32 (no Emscripten), one translation unit, a
  * fixed linear memory, and an explicit export allow-list. Builds of the production artifact are
@@ -161,9 +161,9 @@ const productionExports = [
 
 /*
  * The 64K memory, the 2K character ROM and the 528 x 288 picture (600 KB) fit in 1 MiB with room for
- * the stack; the 4 MiB execution-history ring (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` D2, D3)
+ * the stack; the 4 MiB execution-history ring (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` D2, D3)
  * and the access profile's 64 KB of flags and 1.5 MB counter pool
- * (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D5) make it 8 MiB, as the ZX80/81 core's. Phases 5-6
+ * (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D5) make it 8 MiB, as the ZX80/81 core's. Phases 5-6
  * add the audio and tape buffers. Raise this only with a recorded reason.
  */
 const HT1080Z_WASM_MEMORY_BYTES = 8 * 1024 * 1024;

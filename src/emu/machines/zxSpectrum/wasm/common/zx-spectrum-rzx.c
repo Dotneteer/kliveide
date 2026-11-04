@@ -1,6 +1,6 @@
 /*
  * RZX input recording: the fetch counter, the IN tap, and the playback interrupt rule
- * (`.plans/RZX_PLAN.md` §4.2, D4, D7, D8, D9).
+ * (`dev/plans/RZX_PLAN.md` §4.2, D4, D7, D8, D9).
  *
  * Shared by the 48K, 128K and +2E/+3E cores. Each core:
  *  - declares `rzxCountFetch` and `rzxIntAck` and maps `Z80_REFRESH` / `Z80_INT_ACK` to them before it

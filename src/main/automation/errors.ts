@@ -10,7 +10,7 @@ import { MACHINE_NOT_AVAILABLE_MESSAGE } from "@common/messaging/EmuApi";
 
 /**
  * An error a method reports to its caller as a JSON-RPC error with `data.kind`
- * (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` §4.2).
+ * (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` §4.2).
  */
 export class AutomationError extends Error {
   constructor(

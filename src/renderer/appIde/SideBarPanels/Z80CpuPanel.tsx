@@ -39,7 +39,7 @@ export const Z80CpuPanel = () => {
     setPresent(state?.history ? ((await emuApi.getCpuState({ present: true })) as Z80CpuState) : undefined);
   });
 
-  // --- In the past (`.plans/LITE_STEP_BACK_PLAN.md` D7, Q2, T9): what the instruction just before
+  // --- In the past (`dev/plans/LITE_STEP_BACK_PLAN.md` D7, Q2, T9): what the instruction just before
   // --- this point changed is marked, the present value is in the tooltip, and what a record does
   // --- not hold (the T-state counter, the last accesses) is unknown rather than the present's
   const history = cpuState?.history;

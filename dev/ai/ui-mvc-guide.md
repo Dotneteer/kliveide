@@ -129,4 +129,4 @@ A new path alias must be added to **six** files: `tsconfig.json`, `test/tsconfig
 New coverage the DOM suite could not express at all: in-flight busy states, out-of-order async
 resolution, port rejections, teardown races, and render-loop guards.
 
-Plan and history: `.plans/DIALOG_MVC_REFACTOR_PLAN.md`.
+Plan and history: `dev/plans/DIALOG_MVC_REFACTOR_PLAN.md`.

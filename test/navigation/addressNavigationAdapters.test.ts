@@ -228,7 +228,7 @@ describe("static dump navigation adapter", () => {
   });
 
   /*
-   * A popped-out `.z88` snapshot bank (`.plans/Z88_SLOT_BROWSER_PLAN.md`): reopened from the file,
+   * A popped-out `.z88` snapshot bank (`dev/plans/Z88_SLOT_BROWSER_PLAN.md`): reopened from the file,
    * as Z88 code, where it was left.
    */
   describe("a closed .z88 snapshot bank", () => {
@@ -292,7 +292,7 @@ describe("static dump navigation adapter", () => {
   });
 
   /*
-   * A popped-out ZX Spectrum snapshot RAM bank (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §9): reopened
+   * A popped-out ZX Spectrum snapshot RAM bank (`dev/plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §9): reopened
    * from the snapshot file, where it was left.
    */
   describe("a closed ZX Spectrum snapshot bank", () => {
@@ -353,7 +353,7 @@ describe("static dump navigation adapter", () => {
   });
 
   /*
-   * A popped-out tape block (`.plans/TAPE_VIEWER_PLAN.md` §4.5): reopened from the tape file, at
+   * A popped-out tape block (`dev/plans/TAPE_VIEWER_PLAN.md` §4.5): reopened from the tape file, at
    * the address it was listed at.
    */
   describe("a closed tape block", () => {

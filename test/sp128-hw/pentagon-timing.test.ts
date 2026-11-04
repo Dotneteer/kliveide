@@ -10,7 +10,7 @@ import { SP128_TIMINGS, type Sp128Timing, type Sp128TimingId } from "@emu/machin
 import { createSp128Session, type Sp128TestSession } from "../harness/sp128";
 
 /*
- * The Pentagon 128 on the real core (`.plans/PENTAGON_128_PLAN.md` Phase 3). Every check runs on the
+ * The Pentagon 128 on the real core (`dev/plans/PENTAGON_128_PLAN.md` Phase 3). Every check runs on the
  * Pentagon *and* the 128K: the 128K's results are known, so they prove each measurement method before
  * the Pentagon's are trusted.
  *

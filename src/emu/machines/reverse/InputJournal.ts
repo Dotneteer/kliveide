@@ -1,5 +1,5 @@
 /*
- * The input journal (`.plans/REVERSE_DEBUGGING_PLAN.md` D7, D8, T1): everything the host fed into a
+ * The input journal (`dev/plans/REVERSE_DEBUGGING_PLAN.md` D7, D8, T1): everything the host fed into a
  * core during a timeline, in order, each with the position it arrived at. `JournalingExports.ts`
  * fills it; replay applies it.
  *

@@ -56,7 +56,7 @@ const CORE_INPUTS = [
   "test/emu",
   "build/e2e-tests.ts",
   // --- The condition front end emits the bytecode the cores' evaluator runs
-  //     (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md` §6)
+  //     (`dev/plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md` §6)
   "src/common/utils/breakpoint-condition"
 ];
 

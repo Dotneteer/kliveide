@@ -5,7 +5,7 @@ import type { HistoryRecord } from "@common/history/historyRecord";
 import type { HistoryServiceSpan } from "@common/history/serviceSpans";
 
 /*
- * The Execution History document's model (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.6, §6.3):
+ * The Execution History document's model (`dev/plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.6, §6.3):
  * which records are loaded, which one is selected, the filter and the empty states. Pure - no React,
  * no Emu API - so the decisions are tested without rendering (`dev/ai/ui-mvc-guide.md`).
  *
@@ -173,7 +173,7 @@ export function missingHistoryPages(state: HistoryViewState, from: number, to: n
 }
 
 // ------------------------------------------------------------------------------------------------
-// Folded interrupt service (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` D10)
+// Folded interrupt service (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` D10)
 
 /** The machines whose interrupt service is folded until the user says otherwise (D10) */
 const FOLD_BY_DEFAULT = new Set(["zx80", "zx81"]);

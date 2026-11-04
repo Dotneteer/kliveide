@@ -88,7 +88,7 @@ const asciiToNextKeyCodeMap: Record<string, NextKeyCode> = {
   // --- `.`, which is why injecting `.nexload ScrollNutter.nex` typed a comma where the `N` of
   // --- `ScrollNutter` belonged. SYMBOL SHIFT stays correct for the punctuation entries below,
   // --- where the symbol *is* what is wanted. See
-  // --- `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.13.
+  // --- `dev/plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.13.
   A: { primaryCode: SpectrumKeyCode.A, secondaryCode: SpectrumKeyCode.CShift },
   B: { primaryCode: SpectrumKeyCode.B, secondaryCode: SpectrumKeyCode.CShift },
   C: { primaryCode: SpectrumKeyCode.C, secondaryCode: SpectrumKeyCode.CShift },

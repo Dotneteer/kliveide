@@ -6,7 +6,7 @@ import { AssemblerOptions } from "@main/compiler-common/assembler-in-out";
 import { Z80Assembler } from "@main/z80-compiler/z80-assembler";
 
 /*
- * Klive's FILE: ROM (`.plans/ENTERPRISE_PLAN.md` §9.2): the shipped image is exactly what Klive's
+ * Klive's FILE: ROM (`dev/plans/ENTERPRISE_PLAN.md` §9.2): the shipped image is exactly what Klive's
  * assembler makes of its source, padded to 16K with FFh. `EP_FILEIO_ROM_WRITE=1` writes the image.
  */
 

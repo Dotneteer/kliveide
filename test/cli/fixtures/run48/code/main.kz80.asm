@@ -1,4 +1,4 @@
-; klive run's 48K fixture (.plans/COMMAND_LINE_AUTOMATION_PLAN.md §6): fills the top third of the
+; klive run's 48K fixture (dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md §6): fills the top third of the
 ; screen, turns the border red, counts ten loops in Counter (calling Step each time) and ends in
 ; DI; HALT, so every stop condition has something to stop at.
   .org $8000

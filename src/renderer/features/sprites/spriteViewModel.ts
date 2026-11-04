@@ -1,5 +1,5 @@
 /*
- * The Sprite Inspector's view model (`.plans/SPRITE_INSPECTOR_PLAN.md` §4.4-§4.5). Pure: a snapshot
+ * The Sprite Inspector's view model (`dev/plans/SPRITE_INSPECTOR_PLAN.md` §4.4-§4.5). Pure: a snapshot
  * in, rows, cells, strip items and map shapes out, so the document's logic is tested without React.
  * The text it returns is translated when the functions run, which is at render time; the logic
  * keys off the `id` fields, never the text.

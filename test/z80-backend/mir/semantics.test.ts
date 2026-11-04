@@ -7,7 +7,7 @@ import { moduleSemanticProblems, verifyModule } from "@main/z80-backend/opt/veri
 import { selectFunction } from "@main/z80-backend/select/select0";
 
 /**
- * Operation meanings in the shared back end (`.plans/SHARED_Z80_BACKEND_PLAN.md` §3.4), built with
+ * Operation meanings in the shared back end (`dev/plans/SHARED_Z80_BACKEND_PLAN.md` §3.4), built with
  * the MIR builder — no front end involved: an operation whose meaning differs between languages must
  * state it, and state one the back end implements; the folder and the selector follow what it states.
  */

@@ -2,7 +2,7 @@ import type { CliIo } from "../../io";
 import type { AutomationClient } from "../../rpc/client";
 
 /*
- * What every `klive ide` verb gets (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D12).
+ * What every `klive ide` verb gets (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` D12).
  */
 export type IdeVerbContext = {
   client: AutomationClient;

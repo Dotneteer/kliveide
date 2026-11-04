@@ -1,5 +1,5 @@
 /**
- * The running-app check of the profiler (`.plans/PROFILER_PLAN.md` Phases 4-5), with staged shots
+ * The running-app check of the profiler (`dev/plans/PROFILER_PLAN.md` Phases 4-5), with staged shots
  * for `docs/content/working-with-ide/profiler.mdx`.
  *
  * On the 48K it writes a frame loop - HALT, then Draw (which calls Plot 200 times) and Music -

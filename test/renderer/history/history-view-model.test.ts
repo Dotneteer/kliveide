@@ -24,7 +24,7 @@ import {
   type HistoryViewState
 } from "@renderer/features/history/historyViewModel";
 
-/* `.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §6.3: the Execution History document's model */
+/* `dev/plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §6.3: the Execution History document's model */
 
 function info(overrides: Partial<ExecutionHistoryInfo> = {}): ExecutionHistoryInfo {
   const count = overrides.count ?? 1000;

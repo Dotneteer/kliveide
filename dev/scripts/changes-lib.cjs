@@ -433,7 +433,7 @@ function slugFrom(text, fallback = "change") {
 
 const GATE_EXEMPT = [
   /^docs\//,
-  /^\.plans\//,
+  /^dev\/plans\//,
   /^dev\/ai\//,
   /^dev\/patterns\//,
   /^\.github\//,
@@ -507,7 +507,7 @@ function releasePrBody({ version, lastRelease, section, reason, unlocks, consume
     "## Before merging",
     "",
     "- [ ] Highlights reviewed and edited in `CHANGELOG.md`",
-    "- [ ] Release status note in `.plans/LANDING_PAGE_COMPETITIVE_ANALYSIS.md` §4 updated to this version",
+    "- [ ] Release status note in `dev/plans/LANDING_PAGE_COMPETITIVE_ANALYSIS.md` §4 updated to this version",
     "- [ ] README machine table and roadmap reviewed",
     "- [ ] Screenshots refreshed if the UI changed (`npm run doc:shots`)",
     "- [ ] Optional: dry run — run *Release* (`release.yml`) with `dry_run: true` on this branch",

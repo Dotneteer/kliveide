@@ -24,7 +24,7 @@ describe("Export dialog on the ZX80/ZX81", () => {
   it("offers formats by machine", () => {
     expect(formatOptionsFor("zx81").map((o) => o.value)).toEqual(["p", "hex"]);
     expect(formatOptionsFor("zx80").map((o) => o.value)).toEqual(["o", "p", "hex"]);
-    // --- The 48K adds a Microdrive cartridge (`.plans/MICRODRIVE_PLAN.md` Q7)
+    // --- The 48K adds a Microdrive cartridge (`dev/plans/MICRODRIVE_PLAN.md` Q7)
     expect(formatOptionsFor("sp48").map((o) => o.value)).toEqual([...FORMAT_OPTIONS.map((o) => o.value), "mdr"]);
   });
 

@@ -1,6 +1,6 @@
 /*
  * The TypeScript side of the classic cores' DivMMC (`zx-spectrum-divmmc-classic.c`,
- * `.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md` C4). The 48K, 128K and +2A/+3 cores export the same
+ * `dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md` C4). The 48K, 128K and +2A/+3 cores export the same
  * functions under their own prefix (`sp48DivMmcSetPresent`, ...), as the RZX module does;
  * `dev/scripts/divmmc-classic-exports.cjs` keeps the build side of the list.
  *

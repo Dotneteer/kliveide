@@ -5,7 +5,7 @@ import { beamOverlayModel, copperHitTact } from "@renderer/features/emulator/bea
 import { pointerToBuffer } from "@renderer/features/emulator/EmulatorScreenOverlay";
 
 /*
- * The beam overlay's shape model and the screen mapping (`.plans/BEAM_POSITION_OVERLAY_PLAN.md`
+ * The beam overlay's shape model and the screen mapping (`dev/plans/BEAM_POSITION_OVERLAY_PLAN.md`
  * Phase 4/5): the fresh/stale split, the blanking edge markers, Instant Screen, the Copper's hit,
  * and buffer pixels under the pointer at several zooms.
  */

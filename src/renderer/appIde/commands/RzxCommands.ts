@@ -20,7 +20,7 @@ import { spectrumSnapshotProjectGuard } from "./SpectrumSnapshotCommand";
 import { t } from "@common/i18n/i18n";
 
 /*
- * The RZX commands (`.plans/RZX_PLAN.md` §1.6, §4.6):
+ * The RZX commands (`dev/plans/RZX_PLAN.md` §1.6, §4.6):
  *  - `zx-rzx <file> [-d] [-s n]`: play a recording, or play it under the debugger, from segment n;
  *  - `zx-rzx-record`: record from the machine's current state (D16);
  *  - `zx-rzx-stop <file> [-f]`: stop recording, finalise and save;

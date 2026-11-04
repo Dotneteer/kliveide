@@ -17,7 +17,7 @@ import {
 
 /*
  * The editor margin's breakpoint menu and the shared filter wording (Phase 6 of
- * `.plans/CONDITIONAL_BREAKPOINTS_PLAN.md`, §4.4.2).
+ * `dev/plans/CONDITIONAL_BREAKPOINTS_PLAN.md`, §4.4.2).
  */
 
 const ports = (editResult = true): MarginActionPorts & Record<string, any> => ({
@@ -174,7 +174,7 @@ describe("breakpoint filter wording", () => {
   });
 });
 
-// --- `.plans/LOGPOINTS_PLAN.md` §4.5
+// --- `dev/plans/LOGPOINTS_PLAN.md` §4.5
 describe("logpoint items", () => {
   const LP = { ...BP, logMessage: "[G] A={A}" };
   const onLp = { ...onBp, breakpoint: LP };

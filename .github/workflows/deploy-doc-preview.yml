@@ -7,7 +7,7 @@
 # https://kliveide.net/preview/<branch>/ and the production deploy
 # in deploy-doc.yml carries `clean-exclude: preview/**` so it can never wipe it.
 #
-# See .plans/NEXTRA_4_NEXT_16_DOCS_MIGRATION_PLAN.md, Phase 3.
+# See dev/plans/NEXTRA_4_NEXT_16_DOCS_MIGRATION_PLAN.md, Phase 3.
 
 name: GitHub Pages preview deploy
 

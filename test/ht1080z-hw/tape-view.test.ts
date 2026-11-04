@@ -5,7 +5,7 @@ import { basToBasicTape } from "@emu/machines/ht1080z/Ht1080zTapeFile";
 import { createHtSession, Ht1080zTestSession } from "../harness/ht1080z";
 
 /*
- * The tape viewer's model against the machine (`.plans/HT1080Z_TAPE_VIEWERS_PLAN.md` Phase 2): a tape
+ * The tape viewer's model against the machine (`dev/plans/HT1080Z_TAPE_VIEWERS_PLAN.md` Phase 2): a tape
  * the ROM saved with CSAVE reads as its program, and the play time the viewer shows is how long the
  * core's tape player takes to play the tape.
  */

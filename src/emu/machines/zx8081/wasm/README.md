@@ -92,7 +92,7 @@ prompt (74x real time), 0.30 ms running BASIC (66x), 0.26 ms in FAST mode (77x).
 
 ## The access profile
 
-Code coverage, the heat map and the profiler's time (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`) use
+Code coverage, the heat map and the profiler's time (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`) use
 the shared `z80-profile.c`; the mapping is at the end of `zx8081.c`. A byte's profile offset is its
 canonical address (the ROM at $0000-$1FFF through its mirrors, the 1K/16K RAM at $4000 up through its
 echoes, the 64K RAM at its address), plus $10000-$11FFF for the 64K's lowest 8K, which only an opcode

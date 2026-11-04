@@ -25,7 +25,7 @@ import {
 } from "./types";
 
 /*
- * A Microdrive cartridge (`.plans/MICRODRIVE_PLAN.md` Phase 3.2), over `mdrImage.ts`.
+ * A Microdrive cartridge (`dev/plans/MICRODRIVE_PLAN.md` Phase 3.2), over `mdrImage.ts`.
  *
  * - There is no directory: a file is the records that share a name. Names are 1-10 characters,
  *   kept as typed (the ROM compares them exactly).

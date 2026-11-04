@@ -2,7 +2,7 @@ import type { BinarySegment } from "@abstractions/CompilerInfo";
 
 /*
  * Writing a compilation's segments into a machine's memory, banked segments included
- * (`.plans/Z80_UNIT_TESTS_PLAN.md` T5). A segment with a `bank` goes into that bank whatever is
+ * (`dev/plans/Z80_UNIT_TESTS_PLAN.md` T5). A segment with a `bank` goes into that bank whatever is
  * paged in: on the 128K and the +2A/+3 a bank is a 16K partition; on the Next, `.bank n` is the
  * 16K bank n, which is the two 8K pages 2n and 2n+1. Writes go straight to the emulated memory:
  * loading is not something the emulated CPU does, so it takes no contention and no machine time.

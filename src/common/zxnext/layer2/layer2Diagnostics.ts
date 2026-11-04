@@ -1,5 +1,5 @@
 /*
- * Layer 2 diagnostics (`.plans/LAYER2_INSPECTOR_PLAN.md` §4.1, T1, T5, T6). Pure: one-line states for
+ * Layer 2 diagnostics (`dev/plans/LAYER2_INSPECTOR_PLAN.md` §4.1, T1, T5, T6). Pure: one-line states for
  * the globals strip, each with a sentence for its tooltip.
  */
 import { isOutsideRam, LAYER2_NO_PIXEL, layer2Size, writeTarget, type Layer2Regs } from "./layer2Decode";

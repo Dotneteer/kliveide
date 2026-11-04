@@ -10,7 +10,7 @@ import { benchmarkZ88, parseArgs } from "../../../dev/scripts/benchmark-z88-wasm
  * measured through the same public machine API the app uses.
  *
  * Until the TypeScript machine was removed this gate asked for WASM to be at least 1.5x faster than it
- * (`.plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`). The budgets are about ten times the figures in
+ * (`dev/plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`). The budgets are about ten times the figures in
  * `src/emu/machines/z88/wasm/README.md` (Apple M4 Pro), and below what the TypeScript machine took for
  * the heavier scenarios; a 5 ms machine frame must never cost a real-time frame's worth.
  *

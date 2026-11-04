@@ -1,12 +1,12 @@
 /*
- * Regenerates the z88dk test fixtures (`test/z88dk/fixtures/`, `.plans/Z88DK_INTEGRATION_PLAN.md`
+ * Regenerates the z88dk test fixtures (`test/z88dk/fixtures/`, `dev/plans/Z88DK_INTEGRATION_PLAN.md`
  * §0.1, as Boriel's B-T1): each folder's sources, compiled by an installed z88dk with the arguments
  * in its `fixture.json`, into `program` (the raw image), `program.map` (`program.map.gz` with
  * `"map": "gzip"`, none with `"map": false`) and whatever `-create-app` writes (`program.tap`,
  * `program.nex`, `program.P`, `program.epr`, `program_BANK_n.bin`). Run locally only - CI uses the
  * committed files, and never runs zcc.
  *
- * A **template fixture** (`.plans/ZX_SPECTRUM_C_TEMPLATES_PLAN.md`, T1) names a shipped project
+ * A **template fixture** (`dev/plans/ZX_SPECTRUM_C_TEMPLATES_PLAN.md`, T1) names a shipped project
  * template (`"template": "<machineId>"`): its `main.c` is copied from
  * `src/public/project-templates/<machineId>/z88-dk/code/main.c` first, and `"zccArgs"` is the complete
  * argument list Klive's debug build passes (`zccArgumentsFor`), used verbatim; `test/z88dk/templates.test.ts`

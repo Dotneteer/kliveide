@@ -71,7 +71,7 @@ const INSPECTOR: Partial<Record<NextLayerId, "sprites" | "tilemap" | "layer2">> 
 };
 
 /**
- * Draws over the ZX Spectrum Next screen (`.plans/LAYER_COMPOSITION_PLAN.md` D7, D8): the four clip
+ * Draws over the ZX Spectrum Next screen (`dev/plans/LAYER_COMPOSITION_PLAN.md` D7, D8): the four clip
  * windows, each in its layer's colour, and the pixel probe, which explains the paused pixel under the
  * pointer and opens the owning inspector on a click. Chrome over a machine picture: it never changes
  * a pixel of it.

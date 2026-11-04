@@ -1,6 +1,6 @@
 # Klive BASIC: LIR, instruction selection and register allocation
 
-> **As built in the shared Z80 back end** (`.plans/SHARED_Z80_BACKEND_PLAN.md`, 2026-10-25). Written for Klive BASIC; now the shared Z80 back end's (`src/main/z80-backend/select/`). The register contract of runtime calls comes from the runtime modules' `@abi` header lines (`src/main/z80-backend/runtime/README.md`), not from a table in the selector.
+> **As built in the shared Z80 back end** (`dev/plans/SHARED_Z80_BACKEND_PLAN.md`, 2026-10-25). Written for Klive BASIC; now the shared Z80 back end's (`src/main/z80-backend/select/`). The register contract of runtime calls comes from the runtime modules' `@abi` header lines (`src/main/z80-backend/runtime/README.md`), not from a table in the selector.
 
 Design note R11-2 of the Klive BASIC compiler plan (closed; its record is `dev/ai/kbasic/compiler.md`, "Readiness (R1-R18)"; "plan §N" below is mapped in its "Section map of the closed plan").
 **Status: approved by the project author on 2026-09-26, with every proposal in the decisions table below.**

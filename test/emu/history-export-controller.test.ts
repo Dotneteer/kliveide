@@ -9,7 +9,7 @@ import { createMockContext } from "../commands/test-helpers/mock-context";
 import { createSp48Session, type Sp48TestSession } from "../harness/sp48";
 
 /*
- * `history-export` on the real 48K core (`.plans/TRACE_EXPORT_PLAN.md` Phase 4): the command reads
+ * `history-export` on the real 48K core (`dev/plans/TRACE_EXPORT_PLAN.md` Phase 4): the command reads
  * the ring through an Emu API backed by the machine, as the IDE's emulator answers it. Two runs of
  * the same program stopped at the same breakpoint give traces a diff tool compares line by line.
  */

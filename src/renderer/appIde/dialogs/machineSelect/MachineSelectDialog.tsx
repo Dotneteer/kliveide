@@ -25,7 +25,7 @@ type Props = {
 };
 
 /**
- * Machine › Machine type › Select machine… (`.plans/MACHINE_SELECT_DIALOG_PLAN.md`).
+ * Machine › Machine type › Select machine… (`dev/plans/MACHINE_SELECT_DIALOG_PLAN.md`).
  *
  * Wiring only: the rules live in `MachineSelectModel` / `MachineSelectViewModel`, and the dialog has
  * no side effects - it returns the edited favourites and the model to switch to, and the main

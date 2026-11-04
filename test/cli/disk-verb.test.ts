@@ -7,7 +7,7 @@ import { runCli } from "../../src/cli/run-cli";
 import type { CliIo } from "../../src/cli/io";
 import { Plus3DosFileSystem } from "@common/diskfs/plus3dos";
 
-/* `klive disk` (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, B6), in-process on a scratch folder */
+/* `klive disk` (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, B6), in-process on a scratch folder */
 
 function io (cwd: string) {
   const out: string[] = [];

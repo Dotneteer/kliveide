@@ -7,7 +7,7 @@ import { parkedSession } from "../ula/_ula-helpers";
 import { apply, configs, describeConfig, hex9, makeScene, mismatches, sceneSession, type Config } from "./_scene";
 
 /*
- * The IDE's layer debug mask (`.plans/LAYER_COMPOSITION_PLAN.md` Phase 2): hide, solo and "show
+ * The IDE's layer debug mask (`dev/plans/LAYER_COMPOSITION_PLAN.md` Phase 2): hide, solo and "show
  * transparency" act in the mixer only (D1).
  *
  * - With layers hidden, every cell of the random compositing scene still matches the mixer model,

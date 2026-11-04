@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 
 /*
- * Files dropped onto the emulator window (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.10, D10). The
+ * Files dropped onto the emulator window (`dev/plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.10, D10). The
  * window takes the drop (so Electron does not navigate to the file) and hands the first file's path
  * to the main process, which routes it by extension (`droppedFileAction`) and reports problems.
  */

@@ -48,7 +48,7 @@ export type Payload = {
   symbol: string;
   /** When a build ended (`END_COMPILE`) */
   endedAt: number;
-  /** Unit tests (`.plans/Z80_UNIT_TESTS_PLAN.md` §4.3) */
+  /** Unit tests (`dev/plans/Z80_UNIT_TESTS_PLAN.md` §4.3) */
   ids: string[];
   startedAt: number;
   finishedAt: number;

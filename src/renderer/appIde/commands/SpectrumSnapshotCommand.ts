@@ -42,7 +42,7 @@ export function isSpectrumSnapshotPath(path: string | undefined): boolean {
 }
 
 /**
- * Loads a ZX Spectrum `.sna`, `.z80` or `.szx` snapshot (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md`
+ * Loads a ZX Spectrum `.sna`, `.z80` or `.szx` snapshot (`dev/plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md`
  * §4.6).
  *
  * With no option (or `-d`) it debugs the snapshot, stopping at its PC before that instruction runs

@@ -439,7 +439,7 @@ export class Z88TestSession {
 
   /**
    * Loads a `.z88` snapshot into the machine, as the app does once the machine fits it
-   * (`.plans/Z88_SNAPSHOT_PLAN.md` §4.4): parse, map to Klive cards, restore the state.
+   * (`dev/plans/Z88_SNAPSHOT_PLAN.md` §4.4): parse, map to Klive cards, restore the state.
    * @param bytes The `.z88` file
    * @param nowMs The host time for the RTC catch-up; the snapshot's own stop time by default, so
    * the RTC is restored unchanged
@@ -511,7 +511,7 @@ export class Z88TestSession {
   }
 
   // ==========================================================================================
-  // Execution history (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`): the core's recorder, as the
+  // Execution history (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`): the core's recorder, as the
   // IDE reads it through `IExecutionHistorySource`
 
   /** Turns the execution-history recorder on or off, as a debug session does */

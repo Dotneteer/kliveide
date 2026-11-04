@@ -8,7 +8,7 @@ import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import type { FrameMachine } from "./frameRunner";
 
 /*
- * Runs a headless machine until a stop condition (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D15): a
+ * Runs a headless machine until a stop condition (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` D15): a
  * number of frames or T-states, an execution address, a dead HALT, a breakpoint, or the emulated-time
  * budget. Everything is counted in emulated time, so a run stops at the same instruction on every
  * computer (T10).

@@ -243,7 +243,7 @@ export class NextTestSession {
   lastHotkeyResult: unknown;
 
   // ==========================================================================================
-  // Execution history (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md`): the core's recorder, as the IDE
+  // Execution history (`dev/plans/EXECUTION_HISTORY_VIEWER_PLAN.md`): the core's recorder, as the IDE
   // reads it through `IExecutionHistorySource`
 
   /**
@@ -290,13 +290,13 @@ export class NextTestSession {
   }
 
   // ==========================================================================================
-  // Access profile (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`): code coverage, the heat map and the
+  // Access profile (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`): code coverage, the heat map and the
   // profiler's time, as the IDE reads them through `IAccessProfileSource`. Offsets are physical
   // offsets into the Next's memory (`src/common/profile/layouts/zxnext.ts` names them).
 
   /**
    * Turns the access profile on or off; `counters` keeps counts and time as well as the flags (D2),
-   * `calls` runs the call tracker too (`.plans/PROFILER_PLAN.md` D1), which an off leaves as it is.
+   * `calls` runs the call tracker too (`dev/plans/PROFILER_PLAN.md` D1), which an off leaves as it is.
    */
   profile(on = true, { counters = true, calls }: { counters?: boolean; calls?: boolean } = {}): this {
     this.machine.setProfiling(on, counters);
@@ -330,7 +330,7 @@ export class NextTestSession {
     return this.machine.readProfileTouched(mask)!;
   }
 
-  /** The call graph's edges (`.plans/PROFILER_PLAN.md` D12), keyed by physical offset, open frames folded in. */
+  /** The call graph's edges (`dev/plans/PROFILER_PLAN.md` D12), keyed by physical offset, open frames folded in. */
   profileEdges(): ProfileEdge[] {
     return this.machine.readProfileEdges()!;
   }
@@ -1065,7 +1065,7 @@ export class NextTestSession {
    *
    * Not "setting device state the hardware could not set": the watch table is the debugger's, not
    * the machine's - the emulated Next cannot see it and behaves identically either way. It is here
-   * for the same reason `.plans/NEXTREG_WRITE_BREAKPOINTS_PLAN.md` §4.2 puts the matching in the
+   * for the same reason `dev/plans/NEXTREG_WRITE_BREAKPOINTS_PLAN.md` §4.2 puts the matching in the
    * core: several NextReg writes can happen inside one Z80 instruction, and only the core sees
    * them all.
    *
@@ -1118,7 +1118,7 @@ export class NextTestSession {
 
   /**
    * Arms the core's Copper-instruction watch, as `cu:` breakpoints and the IDE's "Step Copper" do
-   * (`.plans/COPPER_DEBUGGING_PLAN.md` §4.6). `indexes` are list indexes `$000..$3FF`; `any` makes
+   * (`dev/plans/COPPER_DEBUGGING_PLAN.md` §4.6). `indexes` are list indexes `$000..$3FF`; `any` makes
    * every completed instruction a hit. Replaces any earlier watch and clears a latched hit.
    *
    * Like `watchNextRegWrite`, a run through the debug loop (`call`, `runTo`, `step`) re-pushes the
@@ -1241,7 +1241,7 @@ export class NextTestSession {
   }
 
   // ==========================================================================================
-  // Layer debugging (`.plans/LAYER_COMPOSITION_PLAN.md`): the IDE's debug view of the mixer. None of
+  // Layer debugging (`dev/plans/LAYER_COMPOSITION_PLAN.md`): the IDE's debug view of the mixer. None of
   // these changes the machine; they are what the emulator window and the Layers document call.
 
   private ideMachine() {
@@ -1301,7 +1301,7 @@ export class NextTestSession {
   }
 
   // ==========================================================================================
-  // The beam position overlay (`.plans/BEAM_POSITION_OVERLAY_PLAN.md`): where the raster is and the
+  // The beam position overlay (`dev/plans/BEAM_POSITION_OVERLAY_PLAN.md`): where the raster is and the
   // paused picture rendered up to it. Neither changes the machine.
 
   /** Where the raster is now, as the overlay reads it (D4). */

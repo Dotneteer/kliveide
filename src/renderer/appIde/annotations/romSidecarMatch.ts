@@ -6,7 +6,7 @@ import { managedSidecarOf } from "@common/roms/romSidecarPaths";
 import { readShippedIndex, SHIPPED_ROM_FOLDER } from "./romAnnotationLoader";
 
 /*
- * Matching a selected ROM sidecar to the ROM it describes (`.plans/ROM_ANNOTATION_EDITING_PLAN.md`
+ * Matching a selected ROM sidecar to the ROM it describes (`dev/plans/ROM_ANNOTATION_EDITING_PLAN.md`
  * §4.3). A sidecar names each page by CRC (`pages`); the editor needs the bytes with that CRC, and
  * looks for them in this order:
  *

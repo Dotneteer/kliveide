@@ -3,7 +3,7 @@ import type { ProfileSample, ProfileStatus, ProfileView } from "@common/profile/
 import type { IAccessProfileSource } from "@emu/abstractions/IAccessProfileSource";
 
 /*
- * The views the Emu API hands the IDE (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §4.2), assembled
+ * The views the Emu API hands the IDE (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §4.2), assembled
  * from a machine's profile source and its core's layout. Pure apart from the source, so they are
  * tested with a fake one.
  */

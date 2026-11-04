@@ -13,7 +13,7 @@ import { z88SnapshotProjectGuard } from "@renderer/appIde/commands/Z88SnapshotCo
 
 /*
  * **Run** / **Debug** for a `.z88` snapshot: the Explorer's context menu entries and the buttons in
- * the `.z88` viewer's tab bar (`.plans/Z88_SNAPSHOT_PLAN.md` §4.9). There is no "Load (paused)": it
+ * the `.z88` viewer's tab bar (`dev/plans/Z88_SNAPSHOT_PLAN.md` §4.9). There is no "Load (paused)": it
  * stopped at the snapshot's PC exactly as Debug does, and differed only in Continue then ignoring
  * breakpoints, which nothing on screen told apart. All of them run the
  * `z88-snapshot` command, as the `.nex` launch entries run `nex-run`, so the Explorer, the viewer,

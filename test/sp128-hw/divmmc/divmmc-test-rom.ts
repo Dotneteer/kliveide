@@ -4,7 +4,7 @@ import { Z80Assembler } from "@main/z80-compiler/z80-assembler";
 
 /*
  * An 8K stand-in for the DivMMC's esxDOS ROM, written for these tests: Klive cannot ship esxDOS
- * (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, C5 - the user names their copy). It answers the
+ * (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, C5 - the user names their copy). It answers the
  * automap's entry points by counting them in the interface's RAM bank 0 (which the ROM sees at $2000
  * while it is mapped) and leaving through the $1FF8-$1FFF unmap area:
  *

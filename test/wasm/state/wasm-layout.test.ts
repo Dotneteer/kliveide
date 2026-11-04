@@ -1,5 +1,5 @@
 /*
- * The memory-layout fingerprint (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` Phase 4).
+ * The memory-layout fingerprint (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` Phase 4).
  *
  * A small C program is linked the way the cores are, then changed: an added static or a renumbered
  * function table must change the fingerprint; an edit inside a function body must not. Then every

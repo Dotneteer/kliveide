@@ -1,5 +1,5 @@
 /*
- * Which cells use which tile, and which cells changed (`.plans/TILEMAP_INSPECTOR_PLAN.md` §4.1). Pure.
+ * Which cells use which tile, and which cells changed (`dev/plans/TILEMAP_INSPECTOR_PLAN.md` §4.1). Pure.
  */
 import type { DecodedCell } from "./tilemapDecode";
 

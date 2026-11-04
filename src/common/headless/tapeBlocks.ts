@@ -7,7 +7,7 @@ import { TzxReader } from "@emu/machines/tape/TzxReader";
 /*
  * A `.tap` or `.tzx` file as the blocks a Spectrum's tape deck plays. The emulator's tape insert
  * (`MainToEmuProcessor.setTapeFile`) and `klive run` read tapes here
- * (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D16).
+ * (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` D16).
  */
 
 /** The tape's blocks, or why the file is not a tape: TZX is tried first, then TAP */

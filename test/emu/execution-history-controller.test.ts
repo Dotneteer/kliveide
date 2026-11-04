@@ -16,7 +16,7 @@ import { createZ88Session } from "../harness/z88";
 import { createZx81Session } from "../harness/zx81";
 
 /*
- * The controller's half of the execution history (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` D8, D9),
+ * The controller's half of the execution history (`dev/plans/EXECUTION_HISTORY_VIEWER_PLAN.md` D8, D9),
  * on the real ZX Spectrum Next core: recording only in debug sessions, history kept across pauses and
  * steps, and cleared on a start from Stopped and on a state restore.
  */
@@ -123,7 +123,7 @@ describe("execution history through the machine controller", () => {
 });
 
 /*
- * Every other core (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`): the same controller code, no
+ * Every other core (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`): the same controller code, no
  * machine-specific handler. The 48K's debugger runs instructions from TypeScript; the ZX81's and the
  * Z88's run them in C (`…ExecuteUntilStop`), which records too.
  */

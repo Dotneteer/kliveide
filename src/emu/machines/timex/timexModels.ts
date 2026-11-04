@@ -2,7 +2,7 @@ import type { MachineModel } from "@common/machines/info-types";
 import { MC_TIMEX_MODEL, MC_SCREEN_FREQ } from "@common/machines/constants";
 
 /*
- * The models of the Timex core (`.plans/TIMEX_SCORPION_PLAN.md`, P2): the TC2048 (G9.4a), the TC2068
+ * The models of the Timex core (`dev/plans/TIMEX_SCORPION_PLAN.md`, P2): the TC2048 (G9.4a), the TC2068
  * and the TS2068 (G9.4b). This is the TypeScript side of `timexHardReset` (timex.c);
  * `test/timex-hw/` keeps the two equal.
  *
@@ -98,7 +98,7 @@ export const TC2048_ROM_SIZE = 0x4000;
 export const TIMEX_2068_ROM_SIZE = 0x6000;
 
 /**
- * What Klive knows about a ROM's code (`.plans/TIMEX_SCORPION_PLAN.md` P6): where its BASIC main
+ * What Klive knows about a ROM's code (`dev/plans/TIMEX_SCORPION_PLAN.md` P6): where its BASIC main
  * loop is (the code-injection and tape-load flows wait there) and where its tape routines are (the
  * tape device traps them). Found by running each ROM and comparing it with the 48K ROM, never
  * from a disassembly.

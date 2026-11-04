@@ -2,7 +2,7 @@ import { SpectrumKeyCode } from "@emu/machines/zxSpectrum/SpectrumKeyCode";
 import { runFrames, type FrameMachine } from "./frameRunner";
 
 /*
- * Typing at an emulated keyboard without the emulator window (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md`
+ * Typing at an emulated keyboard without the emulator window (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md`
  * D15, T10). The Spectrum family (and the Next, whose matrix is the Spectrum's) types chords: each held
  * `hold` frames, then released for `gap` key-free frames, short of the ROM's auto-repeat delay and long
  * enough for its debounce - the timing the test harnesses use. The ZX80/ZX81 type through their own

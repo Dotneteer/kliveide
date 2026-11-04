@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { createHtSession, type Ht1080zTestSession } from "../harness/ht1080z";
 
 /*
- * The Phase 3 video probes (`.plans/HT1080Z_PLAN.md` §6, §13): the beam against the CPU at T-state
+ * The Phase 3 video probes (`dev/plans/HT1080Z_PLAN.md` §6, §13): the beam against the CPU at T-state
  * precision. One instruction is started at a chosen frame tact; its memory cycle's T1 is 10 T later
  * (`LD A,(nn)` and `LD (nn),A`: opcode 4 T, operands 3 + 3 T). The picture of that frame then shows
  * where the beam was:

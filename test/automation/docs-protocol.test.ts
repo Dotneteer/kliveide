@@ -7,7 +7,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createFakeHost, startFakeServer } from "./fake-host";
 
 /*
- * The protocol test (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D17, §6): every request/response
+ * The protocol test (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` D17, §6): every request/response
  * example in `docs/content/en/guides/testing/automation.mdx` is replayed against a real server, and
  * the page's Node and Python clients run against it, so the documentation cannot drift from the
  * protocol. The examples run in order on one connection, as a reader would type them.

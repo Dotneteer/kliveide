@@ -4,7 +4,7 @@ import type { LogLine } from "./DebugSupport";
 import { PANE_ID_LOG } from "@common/integration/constants";
 
 /*
- * How logpoint lines look in the Log pane (`.plans/LOGPOINTS_PLAN.md` §4.3): `[GROUP] message`, the
+ * How logpoint lines look in the Log pane (`dev/plans/LOGPOINTS_PLAN.md` §4.3): `[GROUP] message`, the
  * group in the logpoint colour, then a dimmed `@ $8012` - where it fired. Colours are output-pane
  * colour names, which the pane maps to theme tokens; no literal here.
  */

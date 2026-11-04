@@ -15,7 +15,7 @@ import {
  * exists for every partition a machine names, and it is never mistaken for a name — nothing here
  * asserts that a description parses, because none of them should.
  *
- * See `.plans/PARTITION_NAMING_UNIFICATION_PLAN.md` §3 and §5.1.
+ * See `dev/plans/PARTITION_NAMING_UNIFICATION_PLAN.md` §3 and §5.1.
  */
 
 type DescribedMachine = {

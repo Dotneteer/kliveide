@@ -5,7 +5,7 @@ import { DIVMMC_ROM_SIZE } from "@emu/machines/zxSpectrum/divmmc/divMmcCoreBridg
 import { buildDivMmcTestRom, COUNTER, TRAP_3D_CODE } from "./divmmc-test-rom";
 
 /*
- * The DivMMC on the classic machines (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, C4), on the real
+ * The DivMMC on the classic machines (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, C4), on the real
  * 128K and +2A cores: port $E3, the automap's entry points with the VHDL's reset configuration, the
  * NMI button and RETN, and the SD card over SPI with the host answering its sectors. The interface's
  * ROM is a test ROM (`divmmc-test-rom.ts`) that counts the entries in its RAM bank 0.

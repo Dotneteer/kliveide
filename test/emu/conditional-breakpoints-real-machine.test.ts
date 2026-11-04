@@ -15,7 +15,7 @@ import {
 
 /*
  * Conditional breakpoints on the real machines (the WASM cores), Phase 3 of
- * `.plans/CONDITIONAL_BREAKPOINTS_PLAN.md`: conditions read the core's registers and memory, hit
+ * `dev/plans/CONDITIONAL_BREAKPOINTS_PLAN.md`: conditions read the core's registers and memory, hit
  * rules count real hits, and the access specials carry each access's own byte. Every program ends
  * in a plain breakpoint, so a condition that never fires fails the test at `Done` rather than by
  * running out of frames.

@@ -30,11 +30,11 @@ premise, not in its physics. Since then:
 - **They are covered by hardware tests.** `test/zxnext-hw/joystick/joystick.test.ts` (JOY-001 -
   JOY-008, KEY-007) and `test/zxnext-hw/mouse/mouse.test.ts` (MOU-001 - MOU-005) drive the real
   machine through ports and NextRegs. The catalogue rows are
-  `.plans/ZX_SPECTRUM_NEXT_HARDWARE_TEST_CATALOGUE_PLAN.md:113` and §4.33.
+  `dev/plans/ZX_SPECTRUM_NEXT_HARDWARE_TEST_CATALOGUE_PLAN.md:113` and §4.33.
 - **The NR `$83` gating the old Steps 1-3 were about is done**, in the port decoder rather than in a
   device: `zxnext-ports.c:79-88` gates `$xADF`/`$xBDF`/`$xFDF` on port group (1,5) and turns `$DF`
   into the Kempston-joystick-1 alias when the mouse port is off. Fixed under bug B94
-  (`.plans/ZX_NEXT_EMULATOR_BUGS_HANDOVER.md`, 2026-09-19). Button polarity was B31.
+  (`dev/plans/ZX_NEXT_EMULATOR_BUGS_HANDOVER.md`, 2026-09-19). Button polarity was B31.
 
 So **old Steps 1, 2, 3, 4 and 7 are dead**, and §5.1's mock-based test list is dead with them.
 

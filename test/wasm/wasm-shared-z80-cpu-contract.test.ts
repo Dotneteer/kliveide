@@ -67,7 +67,7 @@ describe("WASM machines: shared Z80/Z80N CPU contract", () => {
     expect(zx8081?.forbiddenIncludeFragments).toEqual(["zxSpectrum/wasm/common/"]);
     expect(zx8081?.allowedIncludeFragments).toEqual(["zxSpectrum/wasm/common/zx-spectrum-keyboard.c"]);
     expect(zx8081?.ok).toBe(true);
-    // --- The HT-1080Z may share the Spectrum's AY (`.plans/HT1080Z_PLAN.md` §5), nothing else
+    // --- The HT-1080Z may share the Spectrum's AY (`dev/plans/HT1080Z_PLAN.md` §5), nothing else
     const ht1080z = report.models.find(model => model.id === "ht1080z");
     expect(ht1080z?.forbiddenIncludeFragments).toEqual(["zxSpectrum/wasm/common/"]);
     expect(ht1080z?.allowedIncludeFragments).toEqual(["zxSpectrum/wasm/common/zx-spectrum-psg.c"]);

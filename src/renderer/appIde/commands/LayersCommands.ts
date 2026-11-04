@@ -24,7 +24,7 @@ import {
 import { t } from "@common/i18n/i18n";
 
 /*
- * The ZX Spectrum Next layer commands (`.plans/LAYER_COMPOSITION_PLAN.md` D4, D9).
+ * The ZX Spectrum Next layer commands (`dev/plans/LAYER_COMPOSITION_PLAN.md` D4, D9).
  */
 
 const isNext = (context: IdeCommandContext) =>

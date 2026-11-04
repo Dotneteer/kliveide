@@ -18,7 +18,7 @@ const {
 } = require("./wasm-layout.cjs");
 
 /**
- * Statics a Klive state file leaves out (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` trap 10):
+ * Statics a Klive state file leaves out (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` trap 10):
  * debugging state and buffers the core rewrites before it reads them, so a restore keeps the live
  * core's bytes there.
  */
@@ -147,8 +147,8 @@ const productionExports = [
 /*
  * 64K RAM, the 416 x 400 raw raster (650 KB), the 352 x 288 picture (400 KB) and the tape buffer fit
  * in 2 MiB with room for the stack; the 4 MiB execution-history ring
- * (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` D2, D3) makes it 6 MiB; the access profile's 72 KB
- * of flags and its 1.7 MB counter pool, which covers all of it (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`
+ * (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` D2, D3) makes it 6 MiB; the access profile's 72 KB
+ * of flags and its 1.7 MB counter pool, which covers all of it (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`
  * D5), make it 8 MiB. Raise this only with a recorded reason.
  */
 const ZX8081_WASM_MEMORY_BYTES = 8 * 1024 * 1024;

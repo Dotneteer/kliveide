@@ -1,5 +1,5 @@
 /*
- * The Z88DK integration dialog's messages (`.plans/Z88DK_INTEGRATION_PLAN.md` §4). Shaped like
+ * The Z88DK integration dialog's messages (`dev/plans/Z88DK_INTEGRATION_PLAN.md` §4). Shaped like
  * `SjasmplusIntegration.ts`; the differences are an install *folder* instead of an executable, a
  * supported-version mark (decision C3), and a download that reports progress and can be cancelled.
  */

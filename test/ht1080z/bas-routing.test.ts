@@ -11,7 +11,7 @@ import {
 import { CODE_EDITOR, HT1080Z_TAPE_VIEWER } from "@state/common-ids";
 
 /*
- * A `.bas` opens by its content (`.plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D2, D3, D7): the tree carries the
+ * A `.bas` opens by its content (`dev/plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D2, D3, D7): the tree carries the
  * kind the main process sniffed, and the file type entry follows it.
  */
 const store: any = { getState: () => ({}) };

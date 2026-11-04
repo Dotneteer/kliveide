@@ -3,7 +3,7 @@
  *
  * One translation unit: the machine state below, the ZX80/ZX81 parts it includes, and the shared Z80
  * core (`src/emu/z80/wasm/z80.c`) wired to them through the `Z80_*` hook macros. No heap; every buffer
- * is a static array exposed through a pointer export. The plan is `.plans/ZX8081_WASM_PLAN.md`.
+ * is a static array exposed through a pointer export. The plan is `dev/plans/ZX8081_WASM_PLAN.md`.
  *
  * The ULA logic and its constants are ported from Clock Signal (CLK) by Thomas Harte,
  * `Machines/Sinclair/ZX8081/ZX8081.cpp`; the video raster builder replaces CLK's `Video.cpp` and the
@@ -108,7 +108,7 @@ static uint8_t zx8081LastSigInt;
 
 /*
  * Whether an instruction records its bus activity for the IDE: the shared Z80's access log and port
- * event, and `zx8081OpStartAddress` (`.plans/WASM_CORE_LEAN_AND_DEBUG_PLAN.md` Phase 1). On in the
+ * event, and `zx8081OpStartAddress` (`dev/plans/WASM_CORE_LEAN_AND_DEBUG_PLAN.md` Phase 1). On in the
  * debugger's paths. A fast frame turns it on only for its last `ZX8081_CAPTURE_WINDOW` T-states - longer
  * than any instruction, the ULA's WAIT included - so the CPU panel of a machine paused from a plain Run
  * still shows the frame's last instruction.
@@ -169,10 +169,10 @@ static void zx8081IntAck(void);
 #define Z80_NMI_ACK_WAIT() zx8081NmiAckWait()
 #define Z80_INT_ACK() zx8081IntAck()
 /* The execution-history recorder's hooks; the recorder and this machine's macros for it are at the
-   end of this file (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` Phase 5) */
+   end of this file (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` Phase 5) */
 #include "../../../../z80/wasm/z80-history.h"
 /* The access profile's hooks; the module and this machine's mapping for it are at the end of this
-   file (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §2.2) */
+   file (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §2.2) */
 #include "../../../../z80/wasm/z80-profile.h"
 #include "../../../../z80/wasm/z80.c"
 /* The CPU's registers and debugger state, exported as `zx8081GetCpuAf` ... (WASM_CORE_LEAN_AND_DEBUG_PLAN D8) */
@@ -400,7 +400,7 @@ uint32_t zx8081GetOpStartAddress(void) { return zx8081OpStartAddress; }
 #include "../../../../z80/wasm/z80-condition.c"
 
 // -----------------------------------------------------------------------------
-// Execution history (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` §3, Phase 5): the shared recorder,
+// Execution history (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` §3, Phase 5): the shared recorder,
 // with this machine's side-effect-free peek, its frame position in T-states and its context.
 // `zx8081ExecuteUntilStop` loops the CPU in C, so the debugger's fast path records too.
 //
@@ -432,7 +432,7 @@ static inline void zx8081HistoryContext(uint32_t kind, uint8_t *out) {
 #include "../../../../z80/wasm/z80-history.c"
 
 // -----------------------------------------------------------------------------
-// The access profile (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §2.2, D4): the shared module, with
+// The access profile (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §2.2, D4): the shared module, with
 // this machine's physical layout. Time is in CPU T-states (D8).
 //
 // The profile offset of a byte is its *canonical address* - the lowest CPU address a data access

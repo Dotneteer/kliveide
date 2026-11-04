@@ -15,7 +15,7 @@ import { mapValue, parseZ88dkMap } from "@main/z88dk-integration/z88dk-map";
 import { appKeyOf } from "@main/z88dk-integration/Z88dkCompiler";
 
 /*
- * A z88dk application card on the real Z88 (`.plans/Z88DK_INTEGRATION_PLAN.md` §7): what
+ * A z88dk application card on the real Z88 (`dev/plans/Z88DK_INTEGRATION_PLAN.md` §7): what
  * `z88AppStartFlow` does - the card into the application slot, a soft reset (the Z88's start), then
  * □ + the application's key once OZ is ready - reaches the program's `main`. Without the reset OZ
  * does not list the hot-plugged application (checked while the flow was designed).

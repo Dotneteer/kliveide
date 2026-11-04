@@ -2,7 +2,7 @@ import crypto from "crypto";
 import path from "path";
 
 /*
- * Where the automation server listens (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D6, T3).
+ * Where the automation server listens (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` D6, T3).
  *
  * POSIX: a Unix domain socket in the private `<klive-home>/run/` folder. A socket path must fit in
  * `sun_path` - 104 bytes on macOS, 108 on Linux, the terminating NUL included - and a longer one

@@ -20,7 +20,7 @@ import {
 afterEach(() => cleanup());
 
 /*
- * The shared bank browser shell (`.plans/Z88_SLOT_BROWSER_PLAN.md` §4.1). The NEX viewer's content
+ * The shared bank browser shell (`dev/plans/Z88_SLOT_BROWSER_PLAN.md` §4.1). The NEX viewer's content
  * is covered by `NexBankBrowser.test.tsx`; this covers what the shell adds for any caller - group
  * headers in particular, which only the `.z88` viewer uses.
  */

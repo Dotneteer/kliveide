@@ -28,7 +28,7 @@ import {
 import { t, uiLocale } from "@common/i18n/i18n";
 
 /*
- * Debug recordings (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` §4.5): `debug-recording-save` writes the
+ * Debug recordings (`dev/plans/DEBUG_SESSION_RECORDING_PLAN.md` §4.5): `debug-recording-save` writes the
  * reverse-debugging timeline to a `.klr` file, `debug-recording-load` opens one - the machine it was
  * made on, paused where it was saved, with Step Back, Reverse Continue and reverse watchpoints
  * reaching back to its start.

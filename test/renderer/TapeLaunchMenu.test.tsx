@@ -16,7 +16,7 @@ import {
 } from "@common/machines/constants";
 
 /*
- * The tape launch entries (`.plans/TAPE_VIEWER_PLAN.md` §4.6, §7 Q1): the Explorer's context menu and
+ * The tape launch entries (`dev/plans/TAPE_VIEWER_PLAN.md` §4.6, §7 Q1): the Explorer's context menu and
  * the tape viewer's tab-bar buttons. Both only run the `tape-load` command, which
  * `test/commands/TapeLoadCommand.test.ts` covers.
  */

@@ -14,7 +14,7 @@ import type { UiReducer } from "@mvc/core/types";
 import { isSamePath, normalizeSeparators, removeTrailingSeparators } from "@utils/path-compare";
 
 /*
- * The Z88DK integration dialog (`.plans/Z88DK_INTEGRATION_PLAN.md` §4), copied from the SJASMPLUS
+ * The Z88DK integration dialog (`dev/plans/Z88DK_INTEGRATION_PLAN.md` §4), copied from the SJASMPLUS
  * dialog and adapted, not generalised (§4): what is configured is an install *folder*, the online
  * source has a supported-version mark and a download with progress and Cancel, and Apply on an
  * unsupported version asks first (C3).

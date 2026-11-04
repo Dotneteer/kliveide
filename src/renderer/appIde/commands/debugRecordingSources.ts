@@ -5,7 +5,7 @@ import { sha256Hex } from "@common/debugRecording/debugRecordingFile";
 import { t } from "@common/i18n/i18n";
 
 /*
- * A debug recording's sources (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` D13): identified by their
+ * A debug recording's sources (`dev/plans/DEBUG_SESSION_RECORDING_PLAN.md` D13): identified by their
  * project-relative path and SHA-256, embedded only with `-sources`. On load the project's files are
  * compared with them, so nobody steps through source lines that are not the ones that ran.
  */

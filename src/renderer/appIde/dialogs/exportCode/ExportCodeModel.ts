@@ -34,7 +34,7 @@ const HEX_OPTION: SelectOption = labelled({ value: "hex", labelKey: "dialog.expo
 export const ZX81_FORMAT_OPTIONS: SelectOption[] = [ZX81_OPTION, HEX_OPTION];
 
 // --- The HT-1080Z's code goes into a .cmd load module or a .cas SYSTEM tape
-// --- (`.plans/HT1080Z_CODE_INJECTION_PLAN.md` D6); `.cmd` comes first, the default (D-Q4)
+// --- (`dev/plans/HT1080Z_CODE_INJECTION_PLAN.md` D6); `.cmd` comes first, the default (D-Q4)
 export const HT1080Z_CMD_FORMAT = "cmd";
 export const HT1080Z_CAS_FORMAT = "cas";
 export const HT1080Z_FORMAT_OPTIONS: SelectOption[] = [
@@ -59,13 +59,13 @@ export const EP_FORMAT_OPTIONS: SelectOption[] = [
   HEX_OPTION
 ];
 
-// --- A bootable disk (`.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md` B6): a +3DOS `.dsk` on the
+// --- A bootable disk (`dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md` B6): a +3DOS `.dsk` on the
 // --- +2A/+3, a TR-DOS `.trd` on the machines with a Beta 128 (the Pentagon, the Scorpion)
 export const DSK_FORMAT = "dsk";
 export const TRD_FORMAT = "trd";
 const DSK_OPTION: SelectOption = labelled({ value: DSK_FORMAT, labelKey: "dialog.exportCode.format.dsk" });
 const TRD_OPTION: SelectOption = labelled({ value: TRD_FORMAT, labelKey: "dialog.exportCode.format.trd" });
-// --- A Microdrive cartridge on the machines that can have an Interface 1 (`.plans/MICRODRIVE_PLAN.md` Q7)
+// --- A Microdrive cartridge on the machines that can have an Interface 1 (`dev/plans/MICRODRIVE_PLAN.md` Q7)
 export const MDR_FORMAT = "mdr";
 const MDR_OPTION: SelectOption = labelled({ value: MDR_FORMAT, labelKey: "dialog.exportCode.format.mdr" });
 

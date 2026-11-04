@@ -1,5 +1,5 @@
 /**
- * The exports of `zx-spectrum-if1.c` (.plans/MICRODRIVE_PLAN.md, Phase 1): the Interface 1 and its
+ * The exports of `zx-spectrum-if1.c` (dev/plans/MICRODRIVE_PLAN.md, Phase 1): the Interface 1 and its
  * Microdrives on the 48K and 128K cores, under the core's prefix.
  */
 function if1Exports(prefix) {

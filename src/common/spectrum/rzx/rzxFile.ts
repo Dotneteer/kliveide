@@ -1,5 +1,5 @@
 /*
- * Reads an RZX input recording (`.plans/RZX_PLAN.md` §4.1, D5, D6). Pure: no Node, no DOM.
+ * Reads an RZX input recording (`dev/plans/RZX_PLAN.md` §4.1, D5, D6). Pure: no Node, no DOM.
  *
  * Written from the RZX v0.13 description (https://worldofspectrum.net/RZXformat.html). The reader:
  *  - validates every length against the file;

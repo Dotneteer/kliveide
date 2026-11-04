@@ -110,7 +110,7 @@ typedef struct Sp48ScreenConfig {
   uint8_t contentionValues[8];
   /*
    * How many T-states the ULA's real memory reads come after the T-states this table fetches at
-   * (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` §1.2): 4 on the 48K, 2 on the 128K/+2 - the offset the
+   * (`dev/plans/SPECTRUM_ULA_ACCURACY_PLAN.md` §1.2): 4 on the 48K, 2 on the 128K/+2 - the offset the
    * floating bus already used (its byte is the table's fetch of `delay + 1` T-states before the
    * port read). A CPU write and an `OUT` to the border take effect against the real reads; 0 keeps
    * the old behaviour on the machines no measurement covers yet (+2A/+3, Timex, Pentagon, Scorpion).
@@ -328,7 +328,7 @@ static uint32_t normalizeClockMultiplier(uint32_t value);
 #endif
 #ifndef SP48_SCLD
 /*
- * The DivMMC (`zx-spectrum-divmmc-classic.c`; .plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md C4): the 48K's
+ * The DivMMC (`zx-spectrum-divmmc-classic.c`; dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md C4): the 48K's
  * only, not the Timex build's - the host connects it (`sp48DivMmcSetPresent`). The ROM is always the
  * 48K BASIC ROM, so every entry point is live. `sp48Memory` holds the ROM itself at $0000, so while
  * the DivMMC is mapped its view replaces those bytes and `sp48RomShadow` keeps the ROM.
@@ -336,7 +336,7 @@ static uint32_t normalizeClockMultiplier(uint32_t value);
 static uint8_t sp48RomShadow[0x4000u];
 static void sp48RomSlotRemapped(void);
 /*
- * The Interface 1 (`zx-spectrum-if1.c`; .plans/MICRODRIVE_PLAN.md): the 48K's only, not the Timex
+ * The Interface 1 (`zx-spectrum-if1.c`; dev/plans/MICRODRIVE_PLAN.md): the 48K's only, not the Timex
  * build's - the host connects it (`sp48If1SetPresent`). While its ROM is paged, its view replaces the
  * ROM's bytes in `sp48Memory`, as the DivMMC's does; the host never connects both.
  */
@@ -462,10 +462,10 @@ static inline void rzxIntAck(void);
   } while (0)
 #endif
 /* The execution-history recorder's hooks; the recorder and this machine's macros for it are at the
-   end of this file (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` Phase 1) */
+   end of this file (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` Phase 1) */
 #include "../../../../z80/wasm/z80-history.h"
 /* The access profile's hooks; the module and this machine's mapping for it are at the end of this
-   file (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` Phase 0) */
+   file (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` Phase 0) */
 #include "../../../../z80/wasm/z80-profile.h"
 #include "../../../../z80/wasm/z80.c"
 /* The CPU's registers and debugger state, exported as `sp48GetCpuAf` ... (WASM_CORE_LEAN_AND_DEBUG_PLAN D8) */
@@ -805,7 +805,7 @@ void sp48RenderInstantScreen(void) {
 }
 
 /*
- * Late ("alternate") ULA timing (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phase 4): 1 makes every
+ * Late ("alternate") ULA timing (`dev/plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phase 4): 1 makes every
  * timing one T-state later against the interrupt. A setting of the machine, not of its state: it
  * survives resets and rebuilds the tables at once.
  */
@@ -1115,7 +1115,7 @@ uint32_t sp48GetRenderingPixelIndex(uint32_t tact) {
   return sp48RenderingPixelIndex[tact % sp48TactsInFrame];
 }
 
-/* The beam position overlay (`.plans/BEAM_POSITION_OVERLAY_PLAN.md` §4.3): the beam, one field per call
+/* The beam position overlay (`dev/plans/BEAM_POSITION_OVERLAY_PLAN.md` §4.3): the beam, one field per call
    (see ulaBeamInfo), and rendering the paused picture up to it, which changes nothing later (T2) */
 uint32_t sp48GetBeamInfo(uint32_t field) {
   return ulaBeamInfo(field);
@@ -1194,7 +1194,7 @@ uint32_t sp48GetDiagnosticFlags(void) {
 }
 
 // -----------------------------------------------------------------------------
-// Breakpoint conditions (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`): the shared evaluator, with
+// Breakpoint conditions (`dev/plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`): the shared evaluator, with
 // this machine's side-effect-free reads. The 48K has no partitions, so the defaults stand for them.
 // -----------------------------------------------------------------------------
 
@@ -1206,7 +1206,7 @@ uint32_t sp48GetDiagnosticFlags(void) {
 #include "../../../../z80/wasm/z80-condition.c"
 
 // -----------------------------------------------------------------------------
-// Execution history (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` §3, Phase 1): the shared recorder,
+// Execution history (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` §3, Phase 1): the shared recorder,
 // with this machine's side-effect-free peek (the IDE's view of memory), its frame position in
 // T-states (never an absolute tact: the counter is rebased, trap T4) and its context.
 //
@@ -1232,7 +1232,7 @@ static inline void sp48HistoryContext(uint32_t kind, uint8_t *out) {
   out[4] = sp48HistoryModel;
 #else
   out[0] = sp48HistoryModel;
-  /* 1: the Interface 1's ROM is paged in (.plans/MICRODRIVE_PLAN.md) */
+  /* 1: the Interface 1's ROM is paged in (dev/plans/MICRODRIVE_PLAN.md) */
   out[1] = zxIf1Paged;
 #endif
 }
@@ -1245,7 +1245,7 @@ static inline void sp48HistoryContext(uint32_t kind, uint8_t *out) {
 #include "../../../../z80/wasm/z80-history.c"
 
 // -----------------------------------------------------------------------------
-// The access profile (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §2.2, D4): the shared module, with
+// The access profile (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §2.2, D4): the shared module, with
 // this machine's physical layout. Time is in CPU T-states (D8).
 //
 // The 48K/16K: the profile offset is the address - `sp48Memory` is the whole machine. A write to the

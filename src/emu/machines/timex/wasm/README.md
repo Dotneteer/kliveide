@@ -1,6 +1,6 @@
 # Timex WASM Core
 
-The Timex core (`.plans/TIMEX_SCORPION_PLAN.md`, P2) runs the Timex Computer 2048 (G9.4a), the
+The Timex core (`dev/plans/TIMEX_SCORPION_PLAN.md`, P2) runs the Timex Computer 2048 (G9.4a), the
 Timex Computer 2068 and the Timex Sinclair 2068 (G9.4b), chosen by `timexHardReset(model)`. It builds
 to `dist/zx-timex.wasm` (`npm run build:timex-wasm`).
 

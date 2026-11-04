@@ -7,7 +7,7 @@ import { JOY_B, JOY_UP } from "@emu/machines/zxNext/IZxNextHostInputMachine";
 import { createEpSession } from "../harness/enterprise";
 
 /*
- * The keyboard (`.plans/ENTERPRISE_PLAN.md` §9.1): the typer's characters, typed at IS-BASIC's prompt
+ * The keyboard (`dev/plans/ENTERPRISE_PLAN.md` §9.1): the typer's characters, typed at IS-BASIC's prompt
  * and read back from the screen; a program typed and run; the host mapping's targets; the joysticks.
  */
 

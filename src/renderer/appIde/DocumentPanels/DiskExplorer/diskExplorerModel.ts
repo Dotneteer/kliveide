@@ -15,7 +15,7 @@ import {
 } from "@common/diskfs/types";
 
 /*
- * The Disk Explorer's model (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, B4/B5), React-free: an
+ * The Disk Explorer's model (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, B4/B5), React-free: an
  * image read into its files (the Files view) and its tracks and sectors with what each holds (the
  * Layout view); its edits are `@common/diskfs/edit`'s.
  */

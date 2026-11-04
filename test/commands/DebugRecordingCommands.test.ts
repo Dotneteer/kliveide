@@ -14,7 +14,7 @@ import { parseCommand } from "@renderer/appIde/services/command-parser";
 import type { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
 import { createMockContext } from "./test-helpers/mock-context";
 
-/* `.plans/DEBUG_SESSION_RECORDING_PLAN.md` Phase 3: `drsave` and `drload` against faked APIs */
+/* `dev/plans/DEBUG_SESSION_RECORDING_PLAN.md` Phase 3: `drsave` and `drload` against faked APIs */
 
 function recordingBytes(machineId = "sp48"): Promise<Uint8Array> {
   const r: DebugRecording = {

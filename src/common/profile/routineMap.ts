@@ -4,7 +4,7 @@ import { profileLocationOf, type ProfileLayout } from "./layouts/profileLayout";
 import { isProfileRootKey, PROFILE_KEY_UNMAPPED, type ProfileEdge } from "./profileTypes";
 
 /*
- * The profiler's routines (`.plans/PROFILER_PLAN.md` D6, §4.1): what a profile offset's time rolls
+ * The profiler's routines (`dev/plans/PROFILER_PLAN.md` D6, §4.1): what a profile offset's time rolls
  * up into. Pure, so the IDE, the CLI (G5.6) and KSX share it.
  *
  * A routine comes from the best debug info available, in this order: source-level callables (any compiler with source-level debug info), the

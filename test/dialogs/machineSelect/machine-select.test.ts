@@ -19,7 +19,7 @@ import {
 
 /*
  * The Select Machine dialog, driven by its events without rendering
- * (.plans/MACHINE_SELECT_DIALOG_PLAN.md §4).
+ * (dev/plans/MACHINE_SELECT_DIALOG_PLAN.md §4).
  */
 
 const catalogue = buildCatalogue(machineRegistry);
@@ -62,7 +62,7 @@ describe("Select Machine dialog", () => {
     const h = open();
     const sections = h.vm.sections.filter((s) => s.kind !== "favorites");
     expect(sections.map((s) => s.id)).toEqual(machineRegistry.map((m) => m.machineId));
-    // --- The Enterprise has two models, the 128 and the 64 (`.plans/ENTERPRISE_PLAN.md` Phase 6), and the
+    // --- The Enterprise has two models, the 128 and the 64 (`dev/plans/ENTERPRISE_PLAN.md` Phase 6), and the
     // --- Next one per board and core version (`dev/ai/zxnext-models.md` D1)
     expect(sections.filter((s) => s.kind === "leaf").map((s) => s.id)).toEqual(["scorpion"]);
     const ep = sections.find((s) => s.id === "ep")!;

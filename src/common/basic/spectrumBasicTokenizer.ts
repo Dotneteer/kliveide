@@ -2,7 +2,7 @@ import { ZxSpectrumChars } from "@common/machines/char-codes";
 
 /*
  * Spectrum BASIC text to the tokenised form the ROM stores
- * (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, B4): the inverse of `basicListing.ts`'s decoder,
+ * (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, B4): the inverse of `basicListing.ts`'s decoder,
  * for putting a `.bas` file on a disk and for the disk export's loader.
  *
  * A line is its number (2 bytes, high first), the length of the rest (2 bytes, low first), the

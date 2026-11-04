@@ -17,7 +17,7 @@ import { t } from "@common/i18n/i18n";
 const TAPE_FILE_FOLDER = "tapeFileFolder";
 
 /**
- * The HT-1080Z's tape (`.plans/HT1080Z_PLAN.md` §9): a `.cas`, a `.cmd` or a tokenised `.bas` goes in
+ * The HT-1080Z's tape (`dev/plans/HT1080Z_PLAN.md` §9): a `.cas`, a `.cmd` or a tokenised `.bas` goes in
  * the deck (the emulator turns the last two into the tapes the ROM would have written); "Load and Run"
  * powers the machine on and has it type `CLOAD` and `RUN`, or `SYSTEM`, the name and `/`. Fast load
  * reads the tape through the ROM's own cassette routines; without it the tape plays in real time.
@@ -77,7 +77,7 @@ export const ht1080zTapeMenuRenderer: MachineMenuRenderer = (windowInfo) => {
 };
 
 /**
- * The HT-1080Z's hardware items (`.plans/HT1080Z_PLAN.md` §6, §7, §11): the RESET key on the back
+ * The HT-1080Z's hardware items (`dev/plans/HT1080Z_PLAN.md` §6, §7, §11): the RESET key on the back
  * panel, an NMI that takes BASIC back to READY with the memory kept (not the IDE's reset, which powers
  * the machine on again); the PAGE key, which latches the right half of each row in 32-column mode; and
  * the video switches - VIDEO CUT, which blanks the picture, and the dash a CPU access to video RAM

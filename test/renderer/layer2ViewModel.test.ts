@@ -21,7 +21,7 @@ import {
   withTransparency
 } from "@renderer/features/layer2/layer2ViewModel";
 
-/* The Layer 2 Inspector's view model (`.plans/LAYER2_INSPECTOR_PLAN.md` §4.4-§4.5, Phase 3-5). */
+/* The Layer 2 Inspector's view model (`dev/plans/LAYER2_INSPECTOR_PLAN.md` §4.4-§4.5, Phase 3-5). */
 
 function regs(patch: Partial<Layer2Regs> = {}): Layer2Regs {
   return {

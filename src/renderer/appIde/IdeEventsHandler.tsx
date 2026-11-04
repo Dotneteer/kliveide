@@ -148,7 +148,7 @@ export const IdeEventsHandler = () => {
    * Failures are silent by design: this is a convenience on top of a stop that has already happened
    * and been reported, and an error box because a file moved would be worse than not scrolling.
    *
-   * See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.17.
+   * See `dev/plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.17.
    */
   async function revealNexBankForPc(): Promise<void> {
     const documentHubService = projectService.getActiveDocumentHubService();

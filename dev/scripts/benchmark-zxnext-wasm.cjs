@@ -22,7 +22,7 @@ const DEFAULT_WARMUP = 2;
 // --- deliberately loose - roughly an order of magnitude above what a development machine measures
 // --- (2026-09-20: ~5 ms/frame, ~0.01 ms/control operation) - because this guard exists to catch a
 // --- collapse, not to police run-to-run noise on slower CI hardware.
-// --- See .plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md, step 13.
+// --- See dev/plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md, step 13.
 const MAX_MS_PER_FRAME_FOR_DEFAULT = 50;
 const MAX_MS_PER_CONTROL_OPERATION_FOR_DEFAULT = 5;
 const SAFETY_GUARD_STOP_REASONS = new Set(["safetyGuard", "frameSafetyGuard", "instructionSafetyGuard"]);

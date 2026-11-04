@@ -2,7 +2,7 @@
 
 How Klive runs Boriel BASIC 2.x (`zxbc`) as its BASIC compiler: the decisions behind it, then each
 part as it is built. It was implemented in phases B0-B6 (2026-10-17) of the integration plan, which
-was closed on 2026-11-04 (git history: `.plans/BORIEL_BASIC_INTEGRATION_PLAN.md`). What zxbc
+was closed on 2026-11-04 (git history: `dev/plans/BORIEL_BASIC_INTEGRATION_PLAN.md`). What zxbc
 itself does is in the other files of this folder; what is still open is `technical-debt.md`; what
 Boriel BASIC cannot do compared with Klive BASIC is `limitations.md`.
 

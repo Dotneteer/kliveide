@@ -7,7 +7,7 @@ import { OutputPaneBuffer } from "@renderer/appIde/ToolArea/OutputPaneBuffer";
 import { buildDiagnosticsValue } from "@renderer/appIde/utils/compile-code";
 
 /*
- * The IDE side of automation (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D9, D10, T5).
+ * The IDE side of automation (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` D9, D10, T5).
  */
 
 describe("automation: commands that cannot run unattended (T5)", () => {

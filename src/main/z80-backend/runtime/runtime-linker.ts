@@ -30,7 +30,7 @@ export type RuntimeLayout = {
   codebank?: { slot: number; slots: number; depth: number; pages: number[] };
 };
 
-/** The back end's own packages (`.plans/SHARED_Z80_BACKEND_PLAN.md` §3.2): every program may link them. */
+/** The back end's own packages (`dev/plans/SHARED_Z80_BACKEND_PLAN.md` §3.2): every program may link them. */
 export const BACKEND_PACKAGES: readonly RuntimePackage[] = [corePackage, zxPackage];
 
 /**

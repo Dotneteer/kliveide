@@ -1,5 +1,5 @@
 /*
- * The file-system layer over disk images (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, D1/B0).
+ * The file-system layer over disk images (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, D1/B0).
  *
  * React-free and process-agnostic: the Disk Explorer, the `disk` IDE commands, the CLI and the
  * compilers' disk export all work through `DiskFileSystem`. A file system holds the image in memory;

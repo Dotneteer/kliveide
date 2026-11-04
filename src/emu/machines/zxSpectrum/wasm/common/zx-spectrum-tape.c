@@ -11,7 +11,7 @@
 
 /*
  * 1 while the fast-load trap must not run, though the user's setting allows it: the trap writes RAM
- * and registers without an IN, which an RZX recording cannot carry (`.plans/RZX_PLAN.md` trap 3).
+ * and registers without an IN, which an RZX recording cannot carry (`dev/plans/RZX_PLAN.md` trap 3).
  */
 #ifndef SP48_TAPE_FAST_LOAD_BLOCKED
 #define SP48_TAPE_FAST_LOAD_BLOCKED() 0

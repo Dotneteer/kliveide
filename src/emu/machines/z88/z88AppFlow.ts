@@ -2,7 +2,7 @@ import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import { Z88KeyCode } from "./Z88KeyCode";
 
 /*
- * Starting a card application on the Z88 (`.plans/Z88DK_INTEGRATION_PLAN.md` §7: a z88dk C program
+ * Starting a card application on the Z88 (`dev/plans/Z88DK_INTEGRATION_PLAN.md` §7: a z88dk C program
  * built with `+z88 -subtype=app`). The card goes into a slot first (`applyCardStateChange`); then the
  * machine starts - a soft reset on the Z88 (`softResetOnFirstStart`), which is what makes OZ list an
  * application on a card inserted while it ran - and, once OZ is idle in the Index, □ + the

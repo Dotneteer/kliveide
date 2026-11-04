@@ -30,7 +30,7 @@ static const Sp48ScreenConfig sp48NtscConfig = {
 
 /*
  * Buffer pixels per Spectrum pixel. The Timex core (`zx-spectrum-scld.c`) draws two, so its 512-wide
- * mode fits without a size change mid-frame (`.plans/TIMEX_SCORPION_PLAN.md` P4); the timing tables
+ * mode fits without a size change mid-frame (`dev/plans/TIMEX_SCORPION_PLAN.md` P4); the timing tables
  * stay in Spectrum pixels and the renderer scales their indexes.
  */
 #ifndef SP48_PIXEL_SCALE
@@ -38,7 +38,7 @@ static const Sp48ScreenConfig sp48NtscConfig = {
 #endif
 
 /*
- * The ULA's memory reads and the CPU (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phases 1, 2, 4, 5).
+ * The ULA's memory reads and the CPU (`dev/plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phases 1, 2, 4, 5).
  *
  * The timing tables fetch each screen byte `ulaFetchDelay` T-states before the real ULA reads it
  * (the screen config's `ulaFetchDelay`): on the 48K the bitmap of $4000 is fetched at 14,334, the
@@ -437,7 +437,7 @@ static void beginBorderFrame(uint32_t frameStartTact) {
 }
 
 #ifdef SP48_SCLD
-/* The Timex SCLD's screen modes draw the picture (`.plans/TIMEX_SCORPION_PLAN.md` G9.4a) */
+/* The Timex SCLD's screen modes draw the picture (`dev/plans/TIMEX_SCORPION_PLAN.md` G9.4a) */
 #include "zx-spectrum-scld.c"
 #define SP48_FILL_BORDER_PIXEL() scldBorderPixel()
 /* The Timex's SCLD keeps the old border and snow behaviour (its delay is 0) */
@@ -673,7 +673,7 @@ static void renderUlaBeforeWrite(void) {
 }
 
 /*
- * The beam, for the IDE's beam position overlay (`.plans/BEAM_POSITION_OVERLAY_PLAN.md` §4.3), one
+ * The beam, for the IDE's beam position overlay (`dev/plans/BEAM_POSITION_OVERLAY_PLAN.md` §4.3), one
  * field per call so no static is needed:
  *   0 the current frame tact   1 tacts per raster line   2 raster lines per frame
  *   3 the first visible line   4 the first display (paper) line   5 the first visible border tact

@@ -1,5 +1,5 @@
 /*
- * The `.kls` container (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` Phase 7): pure, no core.
+ * The `.kls` container (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` Phase 7): pure, no core.
  */
 import { describe, expect, it } from "vitest";
 import {

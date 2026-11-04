@@ -1,6 +1,6 @@
 /**
  * Screenshots for `docs/content/working-with-ide/sprite-inspector.mdx`, and the running-app check of
- * the Sprite Inspector (`.plans/SPRITE_INSPECTOR_PLAN.md` Phases 5-8).
+ * the Sprite Inspector (`dev/plans/SPRITE_INSPECTOR_PLAN.md` Phases 5-8).
  *
  * A ZX Spectrum Next cannot run IDE-built code without NextZXOS on a card, so the recipe pokes a
  * small program into a paused machine instead: `sprite-demo.kz80.asm` beside this file, assembled

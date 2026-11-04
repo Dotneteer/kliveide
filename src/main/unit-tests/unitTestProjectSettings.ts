@@ -5,7 +5,7 @@ import type { UnitTestProjectSettings } from "@common/unit-tests/unitTestTypes";
 import { PROJECT_FILE } from "@common/structs/project-const";
 
 /*
- * The `unitTests` section of `klive.project` (`.plans/Z80_UNIT_TESTS_PLAN.md` D19). The IDE has no
+ * The `unitTests` section of `klive.project` (`dev/plans/Z80_UNIT_TESTS_PLAN.md` D19). The IDE has no
  * editor for it: users write it by hand, so the main process reads it from the file at every run and
  * a project save carries it over unchanged.
  */

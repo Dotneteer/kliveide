@@ -19,7 +19,7 @@ import {
 import { t } from "@common/i18n/i18n";
 
 /*
- * The Tilemap Inspector's commands (`.plans/TILEMAP_INSPECTOR_PLAN.md` §4.4, Q2): two commands, one
+ * The Tilemap Inspector's commands (`dev/plans/TILEMAP_INSPECTOR_PLAN.md` §4.4, Q2): two commands, one
  * document. Both open `$tilemap`, each focused on its own view.
  */
 

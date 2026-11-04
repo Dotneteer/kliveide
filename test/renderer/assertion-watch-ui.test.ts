@@ -25,7 +25,7 @@ import { sourceCommentsReducer } from "@common/state/watch-reducer";
 import { setSourceCommentsAction } from "@common/state/actions";
 
 /*
- * The UI logic of `.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` Phases 2, 4 and 5: glyphs, the
+ * The UI logic of `dev/plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` Phases 2, 4 and 5: glyphs, the
  * disassembly row menu, the panel's comment sections, the session disabled map, the switches, and
  * the Watch <-> watchpoint link.
  */

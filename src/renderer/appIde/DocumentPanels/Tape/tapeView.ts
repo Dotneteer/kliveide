@@ -34,7 +34,7 @@ import type { MessageKey } from "@common/i18n/keys.generated";
 import { zxText } from "./zxText";
 
 /*
- * The tape viewer's model (`.plans/TAPE_VIEWER_PLAN.md` §4.2): what a `.tap` or `.tzx` file holds,
+ * The tape viewer's model (`dev/plans/TAPE_VIEWER_PLAN.md` §4.2): what a `.tap` or `.tzx` file holds,
  * block by block, as plain data - no React, so every rule here is unit-tested on its own.
  *
  * Three things are worked out here that the file does not state:

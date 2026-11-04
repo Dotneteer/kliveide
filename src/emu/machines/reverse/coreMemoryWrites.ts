@@ -1,5 +1,5 @@
 /*
- * The journaled way to write straight into a core's linear memory (`.plans/REVERSE_DEBUGGING_PLAN.md`
+ * The journaled way to write straight into a core's linear memory (`dev/plans/REVERSE_DEBUGGING_PLAN.md`
  * D7, Phase 1).
  *
  * Most host input reaches a core through its exports, which the journal wraps. Some arrives as bytes

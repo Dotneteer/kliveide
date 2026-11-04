@@ -11,7 +11,7 @@ import { Z80Assembler } from "@main/z80-compiler/z80-assembler";
 import { assembleWithInclude, INCLUDE_LINES } from "./unitTestSupport";
 
 /*
- * Klive's unit-test includes (`.plans/Z80_UNIT_TESTS_PLAN.md` D4, D5, T2, T9).
+ * Klive's unit-test includes (`dev/plans/Z80_UNIT_TESTS_PLAN.md` D4, D5, T2, T9).
  */
 
 /** Every assertion macro of the Klive include, with arguments */

@@ -14,7 +14,7 @@ type MockIdeCommandContext = IdeCommandContext & {
 
 /*
  * The `sp:<sprite>` address spec and its `-attr` filter: a ZX Spectrum Next sprite-attribute
- * breakpoint (`.plans/SPRITE_ATTRIBUTE_BREAKPOINTS_PLAN.md`). It goes through the shared
+ * breakpoint (`dev/plans/SPRITE_ATTRIBUTE_BREAKPOINTS_PLAN.md`). It goes through the shared
  * `BreakpointWithAddressCommand.validateCommandArgs`, so `bp-set`, `bp-del` and `bp-en` all take it.
  */
 describe("Sprite breakpoints - the `sp:` address spec", () => {

@@ -6,7 +6,7 @@ import { selectViewModel } from "@renderer/appIde/dialogs/exportCode/ExportCodeV
 import { aState, anEnv } from "./fakes";
 
 /**
- * The Export dialog on the HT-1080Z (`.plans/HT1080Z_CODE_INJECTION_PLAN.md` D6, D-Q4): `.cmd` first,
+ * The Export dialog on the HT-1080Z (`dev/plans/HT1080Z_CODE_INJECTION_PLAN.md` D6, D-Q4): `.cmd` first,
  * then `.cas` and HEX, the program name as the module name, and none of the Spectrum's loader options.
  */
 const ht = (settings: Record<string, unknown> = {}) =>

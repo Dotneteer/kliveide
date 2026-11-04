@@ -1,6 +1,6 @@
 /*
  * The shared Z80's registers and debugger state, exported under a core's prefix
- * (`.plans/WASM_CORE_LEAN_AND_DEBUG_PLAN.md` Phase 2, D8).
+ * (`dev/plans/WASM_CORE_LEAN_AND_DEBUG_PLAN.md` Phase 2, D8).
  *
  * Every core used to repeat these forwarders by hand. A core now defines `Z80_EXPORT_PREFIX` (its
  * export prefix: `sp48`, `zxnext`, ...) and includes this file after `z80.c`, the way the RZX module
@@ -44,7 +44,7 @@ Z80X_REGISTER(Sp)
 Z80X_REGISTER(Iff1)
 Z80X_REGISTER(Iff2)
 Z80X_REGISTER(InterruptMode)
-/* The HALT state and the EI delay: snapshot loading (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.4) */
+/* The HALT state and the EI delay: snapshot loading (`dev/plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.4) */
 Z80X_REGISTER(Halted)
 Z80X_REGISTER(EiBacklog)
 

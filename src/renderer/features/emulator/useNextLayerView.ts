@@ -21,7 +21,7 @@ export type NextLayerView = {
 };
 
 /**
- * Applies the ZX Spectrum Next layer debug view (`.plans/LAYER_COMPOSITION_PLAN.md`) from the app
+ * Applies the ZX Spectrum Next layer debug view (`dev/plans/LAYER_COMPOSITION_PLAN.md`) from the app
  * state to the machine the emulator window owns: the mask, and the capture while something needs it
  * (T6). While paused, a change recomposes the picture into the preview and redraws it (D6). The view
  * itself lives in the app state, so the strip, the Machine menu and the `layers` command stay one (D4).

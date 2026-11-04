@@ -5,7 +5,7 @@ import { MI_HT1080Z } from "@common/machines/constants";
 import { Ht1080zWasmV2Machine } from "./Ht1080zWasmV2Machine";
 
 /**
- * Creates an HT-1080Z: one WASM core for every model (`.plans/HT1080Z_PLAN.md`, D1).
+ * Creates an HT-1080Z: one WASM core for every model (`dev/plans/HT1080Z_PLAN.md`, D1).
  * @param model The machine model
  * @param config The machine configuration; it overrides the model's configuration
  * @param messenger The messenger to the main process

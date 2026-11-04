@@ -12,7 +12,7 @@ import { trdosDiskBootFlow } from "@emu/machines/zxSpectrum128/trdosFlows";
 import { createSp128Session, trdosRomFromEnvironment } from "../../harness/sp128";
 
 /*
- * TR-DOS itself on the Pentagon's Beta 128 (`.plans/BETA128_TRDOS_PLAN.md` Phase 4). Klive cannot
+ * TR-DOS itself on the Pentagon's Beta 128 (`dev/plans/BETA128_TRDOS_PLAN.md` Phase 4). Klive cannot
  * ship the TR-DOS ROM (Q1), so these run only when `KLIVE_TRDOS_ROM` names a developer's own copy:
  *
  *   KLIVE_TRDOS_ROM=/path/to/trdos.rom npm test -- test/sp128-hw/beta128/trdos.test.ts

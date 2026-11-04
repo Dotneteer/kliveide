@@ -5,7 +5,7 @@ import { createMockContext, createMockStore } from "../commands/test-helpers/moc
 import { assembleWithInclude, INCLUDE_LINES } from "./unitTestSupport";
 
 /*
- * `test-junit <file>`, the Test panel's "Export results as JUnit…" (`.plans/UNIT_TESTS_CLI_PLAN.md`
+ * `test-junit <file>`, the Test panel's "Export results as JUnit…" (`dev/plans/UNIT_TESTS_CLI_PLAN.md`
  * D14): the command line's JUnit writer on the store's last results. That the file equals
  * `klive test --junit`'s is checked end to end in `test/cli/klive-test-e2e.test.ts`.
  */

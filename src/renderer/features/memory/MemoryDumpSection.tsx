@@ -35,7 +35,7 @@ export type MemoryDumpSectionProps = {
   changedBytes?: readonly boolean[];
   /**
    * One heat byte per byte of `bytes` (`heatModel.ts`: a ramp step, a hue, the SMC mark), or
-   * undefined with the heat map off (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D14)
+   * undefined with the heat map off (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D14)
    */
   heatSteps?: ArrayLike<number>;
   /** The heat map's tooltip line for an address (`E 12 · R 340 · W 2`); stable across refreshes */

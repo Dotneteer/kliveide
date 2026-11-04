@@ -10,7 +10,7 @@ import { z88WasmArtifactBytes } from "../harness/z88";
  *
  * `createZ88TestSurface()` answers every member from the exports of a fresh instance of the WASM
  * core. The member names are those of the TypeScript memory, cards and Blink device the suites were
- * first written against (removed with the TypeScript Z88, `.plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`),
+ * first written against (removed with the TypeScript Z88, `dev/plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`),
  * so the assertions did not have to change.
  */
 

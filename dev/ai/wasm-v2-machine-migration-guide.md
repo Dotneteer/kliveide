@@ -20,8 +20,8 @@ Read these files before changing code:
 - `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128.c`
 - `dev/scripts/build-sp48-wasm.cjs`
 - `dev/scripts/build-sp128-wasm.cjs`
-- `.plans/ZX_SPECTRUM_48_WASM_V2_MIGRATION_PLAN.md`
-- `.plans/ZX_SPECTRUM_128_WASM_MIGRATION_PLAN.md`
+- `dev/plans/ZX_SPECTRUM_48_WASM_V2_MIGRATION_PLAN.md`
+- `dev/plans/ZX_SPECTRUM_128_WASM_MIGRATION_PLAN.md`
 
 The old hybrid SP48 WASM path, old layout ABI, standalone Z80 WASM harness, and
 comparison-only model picker entries were intentionally removed. Do not restore
@@ -187,7 +187,7 @@ converted later: if the hardware description answers the question, assert the
 value and cite the source, and keep the comparison as a second assertion. What
 survives the removal is a claim about the machine; what does not is the
 comparison. When the ZX Spectrum Next's TypeScript core went
-(`.plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`, Step 10), every one of its
+(`dev/plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`, Step 10), every one of its
 37 oracle tests had to be decided one `it` at a time - deleted where the hardware
 harness already covered the scenario, otherwise converted to a fixed expectation
 derived from the VHDL, from the scenario, or (saying so in the file) pinned to
@@ -460,8 +460,8 @@ been converted to `SectorChanges`.
 
 ## A Non-Spectrum Machine: The Cambridge Z88
 
-The Z88 (`.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`, default since 2026-09-19; the TypeScript
-machine removed on 2026-09-25 by `.plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`, tag
+The Z88 (`dev/plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`, default since 2026-09-19; the TypeScript
+machine removed on 2026-09-25 by `dev/plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`, tag
 `z88-typescript-last`) is the first machine migrated that shares nothing with the Spectrum but the
 Z80. What it established:
 

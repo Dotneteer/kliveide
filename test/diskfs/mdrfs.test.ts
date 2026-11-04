@@ -5,7 +5,7 @@ import { diskImageKind, openDiskFileSystem } from "@common/diskfs/open";
 import { DiskFsError } from "@common/diskfs/types";
 import { createBlankMdr, createFormattedMdr, readMdrCatalog, readMdrSector } from "@emu/machines/microdrive/mdrImage";
 
-/* The Microdrive file system (`.plans/MICRODRIVE_PLAN.md` Phase 3.2) */
+/* The Microdrive file system (`dev/plans/MICRODRIVE_PLAN.md` Phase 3.2) */
 
 describe("MicrodriveFileSystem", () => {
   it("opens an .mdr by its name", () => {

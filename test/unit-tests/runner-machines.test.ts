@@ -4,7 +4,7 @@ import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
 import { MI_HT1080Z, MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_TVC, MI_ZXNEXT, MI_ENTERPRISE, runProgram } from "./unitTestSupport";
 
 /*
- * The unit-test runner on the 128K, the +2A/+3/+3E and the Next (`.plans/Z80_UNIT_TESTS_PLAN.md`
+ * The unit-test runner on the 128K, the +2A/+3/+3E and the Next (`dev/plans/Z80_UNIT_TESTS_PLAN.md`
  * D18, T5, T6): banked test code, written into its bank whatever is paged in, and paged in by the
  * program's own init code.
  */
@@ -120,7 +120,7 @@ UT_SecondPage:
 });
 
 describe("unit-test runner, HT-1080Z", () => {
-  // --- `.plans/HT1080Z_CODE_INJECTION_PLAN.md` D9, D-Q6: booted by the machine's own flow, code at $7000
+  // --- `dev/plans/HT1080Z_CODE_INJECTION_PLAN.md` D9, D-Q6: booted by the machine's own flow, code at $7000
   it.each(["ht1080z-s2", "ht1080z-64"])("runs tests that call the ROM on %s", async (modelId) => {
     const { results, summary, problems } = await runProgram(
       `

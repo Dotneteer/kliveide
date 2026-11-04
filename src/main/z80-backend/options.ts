@@ -1,5 +1,5 @@
 /**
- * What a front end tells the shared Z80 back end about a build (`.plans/SHARED_Z80_BACKEND_PLAN.md`
+ * What a front end tells the shared Z80 back end about a build (`dev/plans/SHARED_Z80_BACKEND_PLAN.md`
  * §3.1). A language translates its own option syntax (Klive BASIC's header comments, a Pascal
  * compiler's directives) into this.
  */

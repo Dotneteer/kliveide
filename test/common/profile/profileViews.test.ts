@@ -4,7 +4,7 @@ import type { ProfileCounts, ProfileStatus } from "@common/profile/profileTypes"
 import type { IAccessProfileSource } from "@emu/abstractions/IAccessProfileSource";
 import { buildProfileView, resolveProfileOffsets, sampleProfile } from "@emu/machines/profile/profileViews";
 
-/* The Emu API's profile views over a fake source (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §4.2) */
+/* The Emu API's profile views over a fake source (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §4.2) */
 
 const sp128 = profileLayoutOf("sp128")!;
 

@@ -89,7 +89,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
 
   const loadedViewState = useLoadedMemoryViewState(documentHubService, document);
 
-  // --- The heat map (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D14): its mode is shared with the
+  // --- The heat map (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D14): its mode is shared with the
   // --- `memory-heat` command through the IDE view state; its data is the profile of what is shown
   const storedHeatMode = useSelector((s) => s.ideView?.memoryHeatMode);
   const heatMode: HeatMode = HEAT_MODES.includes(storedHeatMode as HeatMode) ? (storedHeatMode as HeatMode) : "off";
@@ -339,7 +339,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
    * The history asks where the view is at the moment of a jump — just before and just after it — so
    * the answer is kept in refs updated synchronously, not read from state that only settles on the
    * next render. The top row is committed only when scrolling stops, and a jump pins the exact address
-   * asked for until the user scrolls away from its row. See `.plans/NAVIGATION_HISTORY_PLAN.md` §4.2.
+   * asked for until the user scrolls away from its row. See `dev/plans/NAVIGATION_HISTORY_PLAN.md` §4.2.
    */
   const navAddress = useRef(topIndex * bytesPerRow);
   const navSegment = useRef(currentSegment);

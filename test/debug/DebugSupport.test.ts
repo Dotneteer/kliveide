@@ -208,7 +208,7 @@ describe("DebugSupport", () => {
     ds.addBreakpoint(bp);
 
     // --- Assert: the hit rule lives on the definition and its counter per definition, not in
-    // --- per-address data (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.5)
+    // --- per-address data (`dev/plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.5)
     expect(ds.breakpointData.size).toEqual(0);
     expect(ds.breakpointFlags[1234] & COND_BP).toBeTruthy();
     expect(ds.listBreakpointsWithState()[0]).toMatchObject({ hitCount: 12, currentHits: 0 });

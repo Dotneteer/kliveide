@@ -6,7 +6,7 @@ import { Ht1080zWasmV2Machine } from "@emu/machines/ht1080z/Ht1080zWasmV2Machine
 
 /*
  * The HT-1080Z machine stands on the shared `Z80MachineBase`, as the ZX80/ZX81 does
- * (`.plans/HT1080Z_PLAN.md` §4.2): no Spectrum machine in its class hierarchy, and no TypeScript
+ * (`dev/plans/HT1080Z_PLAN.md` §4.2): no Spectrum machine in its class hierarchy, and no TypeScript
  * machine device - the Spectrum's ULA screen, beeper, keyboard, tape or floating bus, or any other
  * machine's devices - in anything it imports. Its hardware is the WASM core.
  */

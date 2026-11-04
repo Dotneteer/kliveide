@@ -12,7 +12,7 @@ import { t } from "@common/i18n/i18n";
 import { buildCoverageModel, lineCoverage, type CoverageModel, type LineCoverage } from "@common/profile/coverageModel";
 
 /*
- * The editor's coverage strip (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D12): its own decorations
+ * The editor's coverage strip (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D12): its own decorations
  * collection in `linesDecorationsClassName` - the narrow strip between the line numbers and the text
  * - so the glyph margin stays the breakpoints'. Covered, partial and not-covered lines; a line that
  * emitted no code has nothing. An optional line tint (a setting) gives DeZog's background too.

@@ -7,7 +7,7 @@ import { useKeyboard } from "./useKeyboard";
 import { EpKeyCode } from "@emu/machines/enterprise/EpKeyCode";
 
 /*
- * The Enterprise 64/128 virtual keyboard (`.plans/ENTERPRISE_PLAN.md` §9.1), drawn from a photo of an
+ * The Enterprise 64/128 virtual keyboard (`dev/plans/ENTERPRISE_PLAN.md` §9.1), drawn from a photo of an
  * Enterprise 128 (https://frescho.hu/wp-content/gallery/enterprise-128/IMG_2033.JPG) and the layout the
  * project author approved from a mockup: dark grey character keys, green control keys, eight blue
  * function keys under the word processor's label strip, a red STOP, the L-shaped ENTER and the built-in

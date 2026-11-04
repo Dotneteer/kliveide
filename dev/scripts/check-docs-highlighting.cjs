@@ -12,7 +12,7 @@
  * A route/asset diff cannot catch that - the pages still exist, they just lose
  * their colours - so this checks the rendered token colours directly.
  *
- * See R1 in .plans/NEXTRA_4_NEXT_16_DOCS_MIGRATION_PLAN.md.
+ * See R1 in dev/plans/NEXTRA_4_NEXT_16_DOCS_MIGRATION_PLAN.md.
  *
  * Usage:
  *   node dev/scripts/check-docs-highlighting.cjs

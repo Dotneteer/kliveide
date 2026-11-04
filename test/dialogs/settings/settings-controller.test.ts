@@ -13,7 +13,7 @@ import {
 import { MC_TIMEX_MODEL } from "@common/machines/constants";
 
 /*
- * The Settings dialog, driven headlessly (`.plans/MENU_REDESIGN_PLAN.md` §4): its pages and search,
+ * The Settings dialog, driven headlessly (`dev/plans/MENU_REDESIGN_PLAN.md` §4): its pages and search,
  * and the writes each kind of row makes.
  */
 

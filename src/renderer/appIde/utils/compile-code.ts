@@ -63,7 +63,7 @@ export function modelTypeToMachineType(model: SpectrumModelType): string | null 
 
 /**
  * A build's diagnostics as the commands' structured result value
- * (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D10): what `compile`, `run`, `debug`, `inject` and
+ * (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` D10): what `compile`, `run`, `debug`, `inject` and
  * `expc` return in `value`, so a script reads the errors without parsing the Build pane's text.
  */
 export function buildDiagnosticsValue(result?: KliveCompilerOutput): { errors: BuildDiagnostic[] } {

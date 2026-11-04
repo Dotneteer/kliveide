@@ -1,6 +1,6 @@
 /**
  * Screenshots for `docs/content/working-with-ide/beam-position.mdx`, and the
- * running-app check of the beam position overlay (`.plans/BEAM_POSITION_OVERLAY_PLAN.md` Phases 4-6).
+ * running-app check of the beam position overlay (`dev/plans/BEAM_POSITION_OVERLAY_PLAN.md` Phases 4-6).
  *
  * On the Next it pokes `beam-demo.kz80.asm` (beside this file, assembled by Klive's own assembler into
  * `PROGRAM` below) into a paused machine: the Layers demo's Copper split, and a loop that changes the

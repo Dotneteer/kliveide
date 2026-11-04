@@ -187,7 +187,7 @@ export function useNexBankPcOffset(
    * up, and the execution-point marker then took up to five seconds to appear while everything else
    * on screen was already correct.
    *
-   * See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.18.
+   * See `dev/plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.18.
    */
   useEffect(() => {
     let cancelled = false;
@@ -223,7 +223,7 @@ export function useNexBankPcOffset(
  * fires when the machine's state, PC or tacts change, and its fallback on an idle paused machine is
  * five seconds — long enough for a freshly opened document to look broken.
  *
- * See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.19.
+ * See `dev/plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.19.
  */
 export function useNexBranchCpuSnapshot(enabled: boolean): BranchCpuSnapshot | undefined {
   const emuApi = useEmuApi();

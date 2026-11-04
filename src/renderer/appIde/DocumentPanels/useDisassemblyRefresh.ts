@@ -159,7 +159,7 @@ export type DisassemblyRefreshResult = {
   mem64kLabels: string[];
   pausedPc: number;
   /**
-   * While the history cursor is in the past (`.plans/LITE_STEP_BACK_PLAN.md` T2): its step, and the
+   * While the history cursor is in the past (`dev/plans/LITE_STEP_BACK_PLAN.md` T2): its step, and the
    * bytes the CPU decoded at `pausedPc` then. Undefined at the present.
    */
   history?: { position: number; bytes: number[] };

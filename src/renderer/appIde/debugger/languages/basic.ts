@@ -12,7 +12,7 @@ import type { WatchBinaryOp, WatchExpr } from "../source/watch-ast";
 
 /**
  * The source-level debugger's ZX BASIC (`language: "basic"`: Klive BASIC and Boriel BASIC; plan
- * §10.7, §10.8, `.plans/SHARED_Z80_BACKEND_PLAN.md` §12.4). Watches are parsed by Klive BASIC's own
+ * §10.7, §10.8, `dev/plans/SHARED_Z80_BACKEND_PLAN.md` §12.4). Watches are parsed by Klive BASIC's own
  * expression parser and turned into the neutral watch AST with BASIC's meanings: `/` divides
  * exactly, `MOD` is the remainder of the magnitudes (`-100 MOD 3` is 1, as the compiled program
  * computes it), `+` joins strings, comparisons and logic give 1 or 0. Values are written

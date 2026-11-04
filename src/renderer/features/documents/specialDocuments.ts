@@ -66,49 +66,49 @@ const specialDocumentDefinitions: Record<SpecialDocumentId, SpecialDocumentDefin
     type: BASIC_EDITOR,
     workspaceRestorable: true
   }, { name: "panels.document.basicListing" }),
-  // --- The ZX Spectrum Next Copper list (`.plans/COPPER_DEBUGGING_PLAN.md` §4.5)
+  // --- The ZX Spectrum Next Copper list (`dev/plans/COPPER_DEBUGGING_PLAN.md` §4.5)
   [COPPER_PANEL_ID]: withTexts({
     id: COPPER_PANEL_ID,
     type: COPPER_EDITOR,
     iconName: "bp-copper",
     workspaceRestorable: true
   }, { name: "panels.document.copperList" }),
-  // --- The ZX Spectrum Next sprites and pattern RAM (`.plans/SPRITE_INSPECTOR_PLAN.md` §4.4)
+  // --- The ZX Spectrum Next sprites and pattern RAM (`dev/plans/SPRITE_INSPECTOR_PLAN.md` §4.4)
   [SPRITES_PANEL_ID]: withTexts({
     id: SPRITES_PANEL_ID,
     type: SPRITES_EDITOR,
     iconName: "sprites",
     workspaceRestorable: true
   }, { name: "panels.document.spriteInspector" }),
-  // --- The ZX Spectrum Next tilemap and its tile definitions (`.plans/TILEMAP_INSPECTOR_PLAN.md` §4.4)
+  // --- The ZX Spectrum Next tilemap and its tile definitions (`dev/plans/TILEMAP_INSPECTOR_PLAN.md` §4.4)
   [TILEMAP_PANEL_ID]: withTexts({
     id: TILEMAP_PANEL_ID,
     type: TILEMAP_EDITOR,
     iconName: "tilemap",
     workspaceRestorable: true
   }, { name: "panels.document.tilemapInspector" }),
-  // --- The ZX Spectrum Next's Layer 2 image, banks and windows (`.plans/LAYER2_INSPECTOR_PLAN.md` §4.4)
+  // --- The ZX Spectrum Next's Layer 2 image, banks and windows (`dev/plans/LAYER2_INSPECTOR_PLAN.md` §4.4)
   [LAYER2_PANEL_ID]: withTexts({
     id: LAYER2_PANEL_ID,
     type: LAYER2_EDITOR,
     iconName: "layer2",
     workspaceRestorable: true
   }, { name: "panels.document.layer2Inspector" }),
-  // --- The ZX Spectrum Next's layer composition (`.plans/LAYER_COMPOSITION_PLAN.md` D9)
+  // --- The ZX Spectrum Next's layer composition (`dev/plans/LAYER_COMPOSITION_PLAN.md` D9)
   [LAYERS_PANEL_ID]: withTexts({
     id: LAYERS_PANEL_ID,
     type: LAYERS_EDITOR,
     iconName: "layers",
     workspaceRestorable: true
   }, { name: "panels.document.layers" }),
-  // --- The execution history (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.6, D13)
+  // --- The execution history (`dev/plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.6, D13)
   [HISTORY_PANEL_ID]: withTexts({
     id: HISTORY_PANEL_ID,
     type: HISTORY_EDITOR,
     iconName: "history",
     workspaceRestorable: true
   }, { name: "panels.document.executionHistory" }),
-  // --- The profiler (`.plans/PROFILER_PLAN.md` D14)
+  // --- The profiler (`dev/plans/PROFILER_PLAN.md` D14)
   [PROFILER_PANEL_ID]: withTexts({
     id: PROFILER_PANEL_ID,
     type: PROFILER_EDITOR,

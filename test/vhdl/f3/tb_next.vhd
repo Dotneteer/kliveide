@@ -1,4 +1,4 @@
--- F3 of .plans/ZX_NEXT_FIDELITY_PROOF_PLAN.md: the whole ZX Spectrum Next core (zxnext.vhd,
+-- F3 of dev/plans/ZX_NEXT_FIDELITY_PROOF_PLAN.md: the whole ZX Spectrum Next core (zxnext.vhd,
 -- unchanged) on an issue 4 board, as zxnext_top_issue4.vhd wires it: the four aligned clocks, the
 -- CPU clock chosen by the core's speed output, the AY clock enable, the reset sequencer's soft reset,
 -- and the SRAM controller (one 16-bit SRAM, synchronised to the 28 MHz clock). Every other input sits

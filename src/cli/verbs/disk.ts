@@ -21,7 +21,7 @@ import { CliError, EXIT_FAILED, EXIT_OK, usageError } from "../exit-codes";
 import type { CliIo } from "../io";
 
 /*
- * `klive disk` (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, B6): the `disk` IDE command's
+ * `klive disk` (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, B6): the `disk` IDE command's
  * operations on image files, headless - for scripts and CI that build or inspect disks without a
  * running Klive. It edits the file directly; to edit a disk in a running machine's drive, use
  * `klive ide cmd "disk ..."`, which goes through the IDE (D4).

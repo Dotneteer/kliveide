@@ -1,5 +1,5 @@
 /*
- * Test support for reverse debugging (`.plans/REVERSE_DEBUGGING_PLAN.md`): wires a harness machine's
+ * Test support for reverse debugging (`dev/plans/REVERSE_DEBUGGING_PLAN.md`): wires a harness machine's
  * core to a position port, the contract-driven input journal (Phase 1), a keyframe store and a replay
  * engine. Shared by the journal-replay determinism test and the spike's measurements.
  */

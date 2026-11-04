@@ -1,6 +1,6 @@
 # z88dk — what Klive relies on
 
-Facts about z88dk that the C integration (`.plans/Z88DK_INTEGRATION_PLAN.md`) depends on, recorded in
+Facts about z88dk that the C integration (`dev/plans/Z88DK_INTEGRATION_PLAN.md`) depends on, recorded in
 Klive's own words from **observed output** of the released binaries (v2.4 and v2.3, macOS) and the
 public wiki. No z88dk source is translated into Klive (plan §0.1): Klive runs `zcc` and parses the
 files it writes.

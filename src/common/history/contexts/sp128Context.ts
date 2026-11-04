@@ -1,6 +1,6 @@
 /*
  * The 16-byte history context of the 128K core (`sp128HistoryContext` at the end of `sp128.c`,
- * `.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` §3), shared by the ZX Spectrum 128K, the Pentagon 128
+ * `dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` §3), shared by the ZX Spectrum 128K, the Pentagon 128
  * and the Scorpion ZS-256 (D5):
  *   0    port $7FFD   1 the selected ROM   2 the selected RAM bank
  *   3    bit 0 the Beta 128 has TR-DOS paged in, bit 1 paging is locked

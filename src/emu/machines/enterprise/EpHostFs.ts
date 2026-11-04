@@ -1,5 +1,5 @@
 /*
- * The host side of Klive's FILE: device (`.plans/ENTERPRISE_PLAN.md` §9.2, D8; the ROM is
+ * The host side of Klive's FILE: device (`dev/plans/ENTERPRISE_PLAN.md` §9.2, D8; the ROM is
  * `fileio/ep-klive-fileio.asm`).
  *
  * The ROM turns each EXOS device call into a request on port BCh and the emulated CPU waits for the

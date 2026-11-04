@@ -15,7 +15,7 @@ import { parseKcov, parseLcov } from "@common/profile/coverageExport";
 import { sp48ProfileLayout } from "@common/profile/layouts/sp48";
 
 /*
- * The coverage commands (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D15, D16, Phase 3) against a
+ * The coverage commands (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D15, D16, Phase 3) against a
  * faked Emu API: the gates, the switch, the status (pool use and dropped pages, T6), the exports and
  * the SMC report.
  */

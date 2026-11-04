@@ -39,7 +39,7 @@ import {
  * The decision logic behind the breakpoint dialog, with no React and no I/O in it.
  *
  * This module owns every rule the dialog enforces, so the rules can be tested in the fast `node`
- * project instead of through a mounted form. See `.plans/BREAKPOINT_MANAGEMENT_UI_PLAN.md` §5.1.
+ * project instead of through a mounted form. See `dev/plans/BREAKPOINT_MANAGEMENT_UI_PLAN.md` §5.1.
  *
  * **Binary breakpoints are authored; source breakpoints are only edited.** A `BreakpointInfo` is
  * address-bound (`address`, optionally `partition`), **bank-relative** (`bank` + `bankOffset`), or
@@ -47,7 +47,7 @@ import {
  * dialog authors the first two. Source-code breakpoints stay *placed* by the editor's glyph margin,
  * which tracks them as lines move and has its own undo/redo; the dialog's **source mode**
  * (`BreakpointFormState.source`) edits only their condition, hit rule and enabled state, and never
- * writes `resource`/`line` (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.4.2).
+ * writes `resource`/`line` (`dev/plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.4.2).
  *
  * The bank-relative kind is spelled into the **address field** — `05:+$0100` — rather than given
  * controls of its own. That is what `bp-set` accepts, so there is one spelling to learn and one
@@ -124,14 +124,14 @@ export type BreakpointFormState = {
   spriteAttrMask: number;
   disabled: boolean;
   /**
-   * "Remove after it stops" (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §4.2): a one-shot,
+   * "Remove after it stops" (`dev/plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §4.2): a one-shot,
    * session-owned and never saved (O2). Unticking it makes the breakpoint project-owned again.
    */
   oneShot: boolean;
   /** Raw input, memory kinds only: how many bytes the watchpoint covers (S10). Empty means one. */
   length: string;
   /**
-   * The condition as typed (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.4.1). Empty means none.
+   * The condition as typed (`dev/plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.4.1). Empty means none.
    * Every kind carries one, source breakpoints included.
    */
   condition: string;
@@ -140,7 +140,7 @@ export type BreakpointFormState = {
   /** Raw input: the rule's N. Meaningful unless `hitMode` is `"always"`. */
   hitCount: string;
   /**
-   * What the breakpoint does when its filters pass (`.plans/LOGPOINTS_PLAN.md` §4.5): stop the
+   * What the breakpoint does when its filters pass (`dev/plans/LOGPOINTS_PLAN.md` §4.5): stop the
    * machine, or log `logMessage` and continue - a logpoint.
    */
   action: "stop" | "log";

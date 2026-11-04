@@ -6,7 +6,7 @@ import type { HistoryServiceSpan } from "./serviceSpans";
 import { t, t as translate } from "@common/i18n/i18n";
 
 /*
- * The execution history as a text or CSV trace (`.plans/TRACE_EXPORT_PLAN.md`, G4.5). One pure
+ * The execution history as a text or CSV trace (`dev/plans/TRACE_EXPORT_PLAN.md`, G4.5). One pure
  * exporter turns decoded records into lines; the renderer supplies what it owns (the disassembly,
  * source locations, partition labels) through resolvers. The `history` command, "Copy rows as text"
  * and `history-export` all write their lines with it (D14), so there is one formatter.

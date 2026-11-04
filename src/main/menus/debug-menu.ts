@@ -1,6 +1,6 @@
 import { DETECT_CODE_DATA_DIALOG } from "@messaging/dialog-ids";
 /*
- * The Debug menu (`.plans/MENU_REDESIGN_PLAN.md` §3): starting with the debugger, stepping, the
+ * The Debug menu (`dev/plans/MENU_REDESIGN_PLAN.md` §3): starting with the debugger, stepping, the
  * Execution History, the machine's own debugging commands (Step Copper on the Next), and the source
  * sync. The debugger's
  * preferences are in Settings › Debugging.
@@ -81,7 +81,7 @@ export function createDebugMenu(context: MenuContext): MenuItemConstructorOption
         await getEmuApi().sourceStep("overLine");
       }
     },
-    // --- Reverse stepping through the recorded history (`.plans/LITE_STEP_BACK_PLAN.md` §4.5): IDE
+    // --- Reverse stepping through the recorded history (`dev/plans/LITE_STEP_BACK_PLAN.md` §4.5): IDE
     // --- commands, so the output pane says where each one went; never a machine command (D4)
     ...(hasMachineFeature(context.currentMachine, MF_EXEC_HISTORY, context.appState)
       ? [
@@ -108,7 +108,7 @@ export function createDebugMenu(context: MenuContext): MenuItemConstructorOption
       : []),
     { type: "separator" },
     // --- Every machine that records history, so G4.2 lights it up without moving it
-    // --- (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.5, D12)
+    // --- (`dev/plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.5, D12)
     ...(hasMachineFeature(context.currentMachine, MF_EXEC_HISTORY, context.appState)
       ? [
           {
@@ -118,7 +118,7 @@ export function createDebugMenu(context: MenuContext): MenuItemConstructorOption
               await getIdeApi().executeCommand("show-history");
             }
           },
-          // --- A trace for a diff tool (`.plans/TRACE_EXPORT_PLAN.md` D13): not while running (D10)
+          // --- A trace for a diff tool (`dev/plans/TRACE_EXPORT_PLAN.md` D13): not while running (D10)
           {
             id: "export_execution_history",
             label: t("menu.debug.exportHistory"),
@@ -129,7 +129,7 @@ export function createDebugMenu(context: MenuContext): MenuItemConstructorOption
           }
         ]
       : []),
-    // --- Code coverage and the heat map (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D15): the
+    // --- Code coverage and the heat map (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D15): the
     // --- user's switch for the session, not tied to debugging (D6); its state is in the store
     ...(hasMachineFeature(context.currentMachine, MF_PROFILE, context.appState)
       ? [
@@ -159,7 +159,7 @@ export function createDebugMenu(context: MenuContext): MenuItemConstructorOption
               await getIdeApi().displayDialog(DETECT_CODE_DATA_DIALOG);
             }
           },
-          // --- The profiler (`.plans/PROFILER_PLAN.md` D1): Start turns the flat profile and the
+          // --- The profiler (`dev/plans/PROFILER_PLAN.md` D1): Start turns the flat profile and the
           // --- call graph on and resets them; Stop freezes the data and opens the Profiler
           { type: "separator" as const },
           {
@@ -208,7 +208,7 @@ export function createDebugMenu(context: MenuContext): MenuItemConstructorOption
     createRomAnnotationsMenu(machineRegistry, (entry) =>
       openRomAnnotations(entry, context.ensureIdeWindow, context.focusedWindow())
     ),
-    // --- Debug recordings (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` D2): a reverse-debugging session
+    // --- Debug recordings (`dev/plans/DEBUG_SESSION_RECORDING_PLAN.md` D2): a reverse-debugging session
     // --- to a file and back; saving needs a timeline, opening switches to the recording's machine
     ...(hasMachineFeature(context.currentMachine, MF_REVERSE_DEBUG, context.appState)
       ? [

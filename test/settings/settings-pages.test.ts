@@ -21,7 +21,7 @@ import {
 } from "@common/settings/setting-const";
 
 /*
- * The Settings dialog's content (`.plans/MENU_REDESIGN_PLAN.md` §4): what each row reads, where it
+ * The Settings dialog's content (`dev/plans/MENU_REDESIGN_PLAN.md` §4): what each row reads, where it
  * applies, and what the search finds.
  */
 
@@ -218,7 +218,7 @@ describe("the BASIC compiler rows (`dev/ai/boriel/integration.md`, 'Editor, sett
   });
 });
 
-describe("the automation rows (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D4, D7)", () => {
+describe("the automation rows (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` D4, D7)", () => {
   it("read the user settings set -u writes, never a project's", () => {
     const on = stateOf({ userSettings: { automation: { enabled: "1", level: "full" } } });
     expect(readSettingsRowValue(row("automationEnabled"), on)).toBe(true);

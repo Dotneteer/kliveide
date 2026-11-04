@@ -17,7 +17,7 @@ import type { SyntaxNode } from "@common/utils/breakpoint-condition/condition-pa
 
 /*
  * Logpoint templates and the DeZog expression dialect - the front end only: parsing, checking,
- * groups, formats and the tree each dialect builds (`.plans/LOGPOINTS_PLAN.md` §3, Phase 2).
+ * groups, formats and the tree each dialect builds (`dev/plans/LOGPOINTS_PLAN.md` §3, Phase 2).
  * Evaluation runs on the C evaluator, in `test/wasm/condition/logpoint-evaluation.test.ts`.
  */
 

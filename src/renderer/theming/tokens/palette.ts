@@ -245,7 +245,7 @@ export const FAVORITE: Record<Tone, string> = {
 };
 
 /**
- * The memory heat map's three hues (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D14, T9): executed,
+ * The memory heat map's three hues (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D14, T9): executed,
  * read, written. Fixed across accents, like the status hues: a ramp built from the accent would run
  * into the changed-byte mark (the secondary accent) and the selection, which share the same rows.
  * `semantic.ts` derives the five ramp steps from each by mixing it into the panel surface, so both
@@ -317,7 +317,7 @@ export const DEVICE = {
    * The HT-1080Z's keyboard: cream keys with near-black legends in a dark charcoal recess, set in an
    * off-white case; PAGE and F1 are small light-grey keys (sampled from a photo of a Series I/II
    * machine, https://frescho.hu/ht-1080z-adatlap/; the approved mockup
-   * `.plans/ht1080z/ht1080z-keyboard-mockup.html`). The Hungarian hint legends are Klive's, not
+   * `dev/plans/ht1080z/ht1080z-keyboard-mockup.html`). The Hungarian hint legends are Klive's, not
    * printed on the machine, in a burnt orange that stays readable on cream.
    */
   keyHt1080z: "#e6dfcb",

@@ -22,7 +22,7 @@ import {
 /*
  * The host half of sprite-attribute breakpoints (`sp:`): the key, the predicates, the definition
  * `DebugSupport` stores, the per-sprite attribute mask it hands the ZX Spectrum Next core, the
- * decision, and the stop message. See `.plans/SPRITE_ATTRIBUTE_BREAKPOINTS_PLAN.md`.
+ * decision, and the stop message. See `dev/plans/SPRITE_ATTRIBUTE_BREAKPOINTS_PLAN.md`.
  */
 
 const support = (...bps: BreakpointInfo[]): DebugSupport => new DebugSupport(undefined, bps);

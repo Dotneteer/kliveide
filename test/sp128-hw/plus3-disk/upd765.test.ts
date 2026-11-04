@@ -7,7 +7,7 @@ import { createSp128Session } from "../../harness/sp128";
 import { ORACLE_MODEL } from "./plus3Disk";
 
 /*
- * The +3's uPD765 over the per-sector disk model (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, A3),
+ * The +3's uPD765 over the per-sector disk model (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, A3),
  * driven through its ports on the corpus disks. The expected results come from the controller's
  * data sheet (`dev/research/765.pdf`): sectors found by their whole ID, runs to EOT ending with End of
  * Cylinder (the +3 has no TC), the dump's status bytes reproduced.

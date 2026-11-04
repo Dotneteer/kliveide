@@ -1,5 +1,5 @@
 /*
- * The ZX Interface 1 and its Microdrives (`.plans/MICRODRIVE_PLAN.md`, Phase 1; the facts and their
+ * The ZX Interface 1 and its Microdrives (`dev/plans/MICRODRIVE_PLAN.md`, Phase 1; the facts and their
  * sources are in `dev/research/microdrive/`). The 48K and the 128K cores include this once, before z80.c.
  * It holds the interface's 8K ROM, pages it over $0000-$3FFF (mirrored) on the M1 fetches the
  * hardware traps, decodes the interface's three ports, and runs up to eight drives.

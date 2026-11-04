@@ -3,7 +3,7 @@ const { buildZ88Wasm, output } = require("./build-z88-wasm.cjs");
 
 /*
  * The ceiling, measured on the complete machine (2026-09-19, Step 12 of
- * `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`): the speed build is 151,854 bytes, 141 KB of it code
+ * `dev/plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`): the speed build is 151,854 bytes, 141 KB of it code
  * (1,025 functions - the whole shared Z80 core). 200,000 leaves about 30% for fixes before a jump
  * has to be explained. The Z88 is smaller than the 48K (201 KB) on purpose, not by omission: it has no
  * contention, so none of the 48K's memory/port delay hooks is inlined into every opcode, and its one

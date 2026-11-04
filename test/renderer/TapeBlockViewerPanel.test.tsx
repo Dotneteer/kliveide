@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { zx80VarsFile } from "./pfile/zx80VarsFile";
 
 /*
- * A tape block popped out as a BASIC listing or a screen (`.plans/TAPE_VIEWER_PLAN.md` §4.5).
+ * A tape block popped out as a BASIC listing or a screen (`dev/plans/TAPE_VIEWER_PLAN.md` §4.5).
  */
 
 const FLOAT_SPY = new Uint8Array(readFileSync(join(__dirname, "../testfiles/floatspy.tap")));

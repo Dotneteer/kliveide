@@ -12,7 +12,7 @@ import type { RomPartitionInfo } from "./romAnnotationLoader";
  * row is a Z80 address under the current paging. This turns one into the other:
  *
  * - a row in a RAM bank goes to the **active annotation set**, at that bank and offset;
- * - a row in a ROM page goes to the page's **working copy** (`.plans/ROM_ANNOTATION_EDITING_PLAN.md`)
+ * - a row in a ROM page goes to the page's **working copy** (`dev/plans/ROM_ANNOTATION_EDITING_PLAN.md`)
  *   — and only when one exists: a ROM page without one is shown from its shipped sidecar, read-only;
  * - a row nowhere annotatable (a Timex DOCK chunk, a machine without a bank space) or with no set
  *   active gets a reason instead, which the menu shows on its disabled entries.

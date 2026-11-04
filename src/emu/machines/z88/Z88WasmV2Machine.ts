@@ -105,12 +105,12 @@ const toHexa2 = (value: number) => value.toString(16).toUpperCase().padStart(2, 
  *
  * It is the only Z88 emulation: the TypeScript `Z88Machine` it was held to in lockstep - named in the
  * comments below with its `Z88BankedMemory`, devices and `AudioDeviceBase` beeper - was removed once
- * the core had matched it (`.plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`, tag
+ * the core had matched it (`dev/plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`, tag
  * `z88-typescript-last`); its recorded behaviour is in `test/wasm/z88/goldens/`.
  */
 export class Z88WasmV2Machine extends Z88WasmHost implements IExecutionHistorySource, IAccessProfileSource {
   // ==============================================================================================
-  // Execution history (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`): the shared recorder in the
+  // Execution history (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`): the shared recorder in the
   // core, read through the shared reader; the machine id names the context decoder
 
   get historyMachineId(): string {
@@ -143,7 +143,7 @@ export class Z88WasmV2Machine extends Z88WasmHost implements IExecutionHistorySo
   }
 
   // ==============================================================================================
-  // The access profile (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`): the shared module in the core,
+  // The access profile (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`): the shared module in the core,
   // read through the shared reader; the machine id names the layout (`layouts/z88.ts`). Its offsets
   // are physical (`z88Memory`), so a byte is one byte whichever bank or mirror the CPU reached it by.
 
@@ -758,7 +758,7 @@ export class Z88WasmV2Machine extends Z88WasmHost implements IExecutionHistorySo
 
   /**
    * Captures the machine's whole state: the core's memory image plus this wrapper's own fields
-   * (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.5). The machine must be paused.
+   * (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.5). The machine must be paused.
    */
   saveMachineState(): MachineStateParts {
     const runtime = this.requireWasmV2Runtime();
@@ -769,7 +769,7 @@ export class Z88WasmV2Machine extends Z88WasmHost implements IExecutionHistorySo
   }
 
   // ------------------------------------------------------------------------------------------------
-  // Reverse debugging (`.plans/REVERSE_DEBUGGING_PLAN.md` §4.2, `reverse/Timeline.ts`)
+  // Reverse debugging (`dev/plans/REVERSE_DEBUGGING_PLAN.md` §4.2, `reverse/Timeline.ts`)
 
   /** The core, as the export contract names it */
   get reverseCoreId(): string {
@@ -839,7 +839,7 @@ export class Z88WasmV2Machine extends Z88WasmHost implements IExecutionHistorySo
 
 
   /**
-   * Replaces the whole machine state with a `.z88` snapshot's (`.plans/Z88_SNAPSHOT_PLAN.md` §4.4).
+   * Replaces the whole machine state with a `.z88` snapshot's (`dev/plans/Z88_SNAPSHOT_PLAN.md` §4.4).
    *
    * The machine is reset first, as OZvm resets the Blink and wipes memory before a load: that clears
    * what the snapshot does not store (HALT, the keyboard matrix, EPR, a snooze, sleep, queued keys).
@@ -1174,7 +1174,7 @@ export class Z88WasmV2Machine extends Z88WasmHost implements IExecutionHistorySo
    */
   /**
    * The core's breakpoint condition evaluator: its program store. The shared C evaluator reads the
-   * registers and memory inside the core (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`).
+   * registers and memory inside the core (`dev/plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`).
    */
   getConditionStore(): ConditionStore | undefined {
     return this.wasmV2Runtime ? conditionStoreOf(this.wasmV2Runtime) : undefined;

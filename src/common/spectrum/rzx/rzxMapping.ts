@@ -1,5 +1,5 @@
 /*
- * Which Klive machine plays an RZX file (`.plans/RZX_PLAN.md` §4.5, trap 6): the machine of its first
+ * Which Klive machine plays an RZX file (`dev/plans/RZX_PLAN.md` §4.5, trap 6): the machine of its first
  * snapshot, mapped as a snapshot load maps it (`spectrumSnapshotMapping.ts`), with one difference.
  *
  * The ROM is not in the file. A program that calls a ROM routine at an address the +E ROMs moved

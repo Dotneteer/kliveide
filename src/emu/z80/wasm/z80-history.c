@@ -1,6 +1,6 @@
 /*
  * The execution-history recorder: a ring of the most recent instructions and CPU events, each with
- * the machine state *before* it ran (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.2, D1-D10).
+ * the machine state *before* it ran (`dev/plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.2, D1-D10).
  *
  * One file for every Z80 core. The core includes `z80-history.h` before `z80.c` (which turns the
  * CPU's history hooks on) and this file after everything its machine macros use, after defining:
@@ -20,7 +20,7 @@
  * - optionally `Z80_HISTORY_FORCED_NOP()`: nonzero when the opcode fetch just committed did not
  *   read the byte at PC but had the hardware force a NOP onto the bus (the ZX80/81 ULA's display
  *   fetches above 32K). Such fetches coalesce into one *forced-NOP run* record per run of
- *   consecutive addresses, whose repeat count is the run's length (`.plans/
+ *   consecutive addresses, whose repeat count is the run's length (`dev/plans/
  *   EXECUTION_HISTORY_ALL_CORES_PLAN.md` D6, T2): a display line is one record, not 32.
  *
  * An instruction is recorded in two phases (trap T4): `z80HistoryBegin` writes the registers into
@@ -115,7 +115,7 @@ _Static_assert(offsetof(Z80State, iy) - offsetof(Z80State, af) == 18u, "AF..IY a
 _Static_assert(offsetof(Z80HistoryRecord, iy) - offsetof(Z80HistoryRecord, af) == 18u, "AF..IY are contiguous in a record");
 
 /*
- * Replay's self-check (`.plans/REVERSE_DEBUGGING_PLAN.md` D9): the slot about to be written may still
+ * Replay's self-check (`dev/plans/REVERSE_DEBUGGING_PLAN.md` D9): the slot about to be written may still
  * hold the record the recorded run wrote for the same sequence (a rewound ring keeps them). If it
  * does and the CPU disagrees with it, the replay has diverged - once the staged record is published
  * (`z80HistoryPublish` marks it and stops at once). A forced NOP that extends a run stages a record
@@ -297,7 +297,7 @@ void z80HistoryClear(void) {
 }
 
 // -----------------------------------------------------------------------------
-// Positions and the stop target (`.plans/REVERSE_DEBUGGING_PLAN.md` D3, D4, T6)
+// Positions and the stop target (`dev/plans/REVERSE_DEBUGGING_PLAN.md` D3, D4, T6)
 //
 // A position is `(sequence, sub, phase)`: the newest record's sequence, the units it holds - its
 // repeat count, which grows while HALTed cycles, forced NOPs or DMA-hold T-states coalesce into it -
@@ -440,7 +440,7 @@ void z80HistorySetPosition(uint32_t sequenceLo, uint32_t sequenceHi, uint32_t ha
  * CPU writes them only while its core captures bus events: in the per-instruction debug loop, never
  * in a fast frame. They are what the debugger observed, not machine state, so a fast-path replay
  * leaves them as they were and a comparison with a debug-loop run masks them
- * (`.plans/REVERSE_DEBUGGING_PLAN.md` T15).
+ * (`dev/plans/REVERSE_DEBUGGING_PLAN.md` T15).
  */
 uint32_t z80HistoryBusEventFieldsPtr(void) {
   return (uint32_t)(uintptr_t)&cpu.lastPortAddress;
@@ -452,7 +452,7 @@ uint32_t z80HistoryBusEventFieldsSize(void) {
 
 /*
  * The host's per-instruction loops (the TypeScript debug loop) ask this after every instruction while
- * a replay run toward the present is armed (`.plans/REVERSE_DEBUGGING_PLAN.md` D11): nonzero once the
+ * a replay run toward the present is armed (`dev/plans/REVERSE_DEBUGGING_PLAN.md` D11): nonzero once the
  * stop target is reached, at an instruction boundary - the same check the frame loops make.
  */
 uint32_t z80HistoryCheckStop(void) {

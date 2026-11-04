@@ -4,7 +4,7 @@ import { createSession, type NextTestSession } from "../../harness/zxnext";
 
 /*
  * The sprite-attribute watch behind `sp:` breakpoints (G3.8, sprite half;
- * `.plans/SPRITE_ATTRIBUTE_BREAKPOINTS_PLAN.md`).
+ * `dev/plans/SPRITE_ATTRIBUTE_BREAKPOINTS_PLAN.md`).
  *
  * Every path that stores an attribute byte reports through one latch, with the byte it replaces:
  * - port $57 (sprites.vhd ~641-664): the upload index advances through attr0-attr4, and a 4-byte

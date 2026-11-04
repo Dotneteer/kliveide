@@ -8,9 +8,9 @@ import { buildTemplate, codeToInjectOf } from "./zccReplay";
 import { runSpectrumTemplate, withTemp } from "./templateRun";
 
 /*
- * Run on the real cores for every other ZX Spectrum family model (`.plans/ZX_SPECTRUM_C_TEMPLATES_PLAN.md`
+ * Run on the real cores for every other ZX Spectrum family model (`dev/plans/ZX_SPECTRUM_C_TEMPLATES_PLAN.md`
  * T3, slow tier: `build/e2e-tests.ts`). One representative per route is in the fast
- * `z88dk-templates-run.core.test.ts`. The Timex ROMs cannot ship (`.plans/TIMEX_SCORPION_PLAN.md` P5):
+ * `z88dk-templates-run.core.test.ts`. The Timex ROMs cannot ship (`dev/plans/TIMEX_SCORPION_PLAN.md` P5):
  * their cases run when `KLIVE_TC2048_ROM` / `KLIVE_TC2068_ROM` / `KLIVE_TS2068_ROM` name them.
  */
 

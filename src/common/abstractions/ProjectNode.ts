@@ -72,7 +72,7 @@ export type ProjectNode = {
 
   /**
    * What the file holds when its extension does not say (a tokenised HT-1080Z `.bas`), sniffed by
-   * the main process when it lists the folder (`.plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D2)
+   * the main process when it lists the folder (`dev/plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D2)
    */
   contentKind?: FileContentKind;
 };

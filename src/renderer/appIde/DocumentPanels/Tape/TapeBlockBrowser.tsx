@@ -39,7 +39,7 @@ import {
 import styles from "./TapeViewerPanel.module.scss";
 
 /*
- * The tape viewer's blocks (`.plans/TAPE_VIEWER_PLAN.md` §4.4): every block in one list, grouped by
+ * The tape viewer's blocks (`dev/plans/TAPE_VIEWER_PLAN.md` §4.4): every block in one list, grouped by
  * file, with the selected block's details beside it and the timeline strip above. The list, keyboard
  * and pop-out are the shared `BankBrowser` shell, numbered `#n` rather than `$NN`.
  *

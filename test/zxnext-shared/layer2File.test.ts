@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { defaultLayer2Palette, parseLayer2File, readPaletteBlock } from "@common/zxnext/layer2/layer2File";
 
-/* `.sl2` / `.nxi` (`.plans/LAYER2_INSPECTOR_PLAN.md` Phase 7). */
+/* `.sl2` / `.nxi` (`dev/plans/LAYER2_INSPECTOR_PLAN.md` Phase 7). */
 
 describe("Layer 2 picture files", () => {
   it("reads a 48K file as 256x192 with the default palette", () => {

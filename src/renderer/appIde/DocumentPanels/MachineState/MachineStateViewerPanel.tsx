@@ -17,7 +17,7 @@ import { readKliveStateFile } from "@common/machineState/kliveStateFile";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_SD_CARD, MEDIA_TAPE } from "@common/structs/project-const";
 
 /*
- * The Klive state file (`.kls`) viewer (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.9): the
+ * The Klive state file (`.kls`) viewer (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.9): the
  * screen as it was saved, the machine, when and by which Klive it was saved, the media it had, and
  * whether it carries a portable .szx part. It reads the file without inflating the memory image and
  * runs no core. Built only from the shared viewer primitives - no stylesheet, no colour.

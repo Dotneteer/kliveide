@@ -5,7 +5,7 @@ import { Z88WasmV2Machine } from "./Z88WasmV2Machine";
 
 /**
  * Creates a Cambridge Z88 machine: the WASM core (`wasm/`), the only Z88 emulation since the
- * TypeScript one was removed (`.plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`).
+ * TypeScript one was removed (`dev/plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`).
  * @param model The machine model
  * @param config The machine configuration; it overrides the model's configuration
  * @param messenger The messenger to the main process

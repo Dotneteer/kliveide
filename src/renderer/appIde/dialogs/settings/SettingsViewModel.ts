@@ -1,5 +1,5 @@
 /*
- * What the Settings dialog shows, derived from its state (`.plans/MENU_REDESIGN_PLAN.md` §4).
+ * What the Settings dialog shows, derived from its state (`dev/plans/MENU_REDESIGN_PLAN.md` §4).
  */
 import {
   SETTINGS_PAGES,

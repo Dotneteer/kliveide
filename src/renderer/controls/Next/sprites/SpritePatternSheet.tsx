@@ -7,7 +7,7 @@ import styles from "./SpritePatternSheet.module.scss";
 /*
  * A sheet of 16×16 sprite patterns: the grid, its cells and their canvases, and the zoom buttons.
  * Shared by the NEX bank Sprites view and the Sprite Inspector's Patterns view
- * (`.plans/SPRITE_INSPECTOR_PLAN.md` D5, §4.6).
+ * (`dev/plans/SPRITE_INSPECTOR_PLAN.md` D5, §4.6).
  *
  * The sheet draws what it is given; it does not decode bytes. Each caller turns its bytes into pixels
  * (`patternPixels`) in the format and palette offset it wants per cell, so a per-slot format

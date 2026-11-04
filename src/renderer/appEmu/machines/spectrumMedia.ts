@@ -76,7 +76,7 @@ export function describeSpectrumMedia(
       writeProtected: diskPath ? !!state.writeProtected : undefined
     });
   }
-  // --- The Interface 1's two Microdrives (`.plans/MICRODRIVE_PLAN.md`), as `{ diskFile, writeProtected }`
+  // --- The Interface 1's two Microdrives (`dev/plans/MICRODRIVE_PLAN.md`), as `{ diskFile, writeProtected }`
   if (microdrives) {
     MEDIA_MICRODRIVES.forEach((mediaId, i) => {
       const state = media?.[mediaId];

@@ -1,5 +1,5 @@
 /*
- * Detects a snapshot's format and parses it (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.2).
+ * Detects a snapshot's format and parses it (`dev/plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.2).
  *
  * The extension decides the format; the content must agree with it, or the error says which check
  * failed. A `.z80` has no magic, so "not a snapshot" shows up as a parse error.

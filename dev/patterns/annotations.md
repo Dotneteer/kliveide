@@ -6,7 +6,7 @@ breakpoints — in a JSON sidecar next to the file they describe: `Game.nex.dis`
 `sp48.rom.dis`. One model serves every machine with a *bank space*: the ZX Spectrum
 Next, the 48K, 128K/Pentagon, +2A/+3/+3E, Scorpion, Timex (HOME memory), ZX80 and
 ZX81. It was built from a plan closed on 2026-11-04 (git history:
-`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md`); the code is in
+`dev/plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md`); the code is in
 `src/renderer/appIde/annotations/` and `src/common/annotations/bankSpace.ts`.
 
 The NEX-specific behaviour below (the NEX viewer, bank pop-outs, sprites, Copper and
@@ -172,7 +172,7 @@ the ZX81's on the ZX81 ROM, the ZX80 upgrade included.
 A ROM's annotations are a ROM sidecar: the same model with `machine: "rom"`, `banks`
 keyed by the 16K page within the ROM file, a `pages` map of each page's CRC-32, and no
 `globalLabels` or `debug`. **One sidecar is in effect for a page**
-(`.plans/ROM_ANNOTATION_EDITING_PLAN.md`):
+(`dev/plans/ROM_ANNOTATION_EDITING_PLAN.md`):
 
 - **a working copy**, when there is one — `<Klive home>/RomAnnotations/<sidecar>` for a ROM
   Klive ships, named exactly like the shipped file (`RomAnnotations/sp48.rom.dis`), or
@@ -481,7 +481,7 @@ changes require confirmation.
 
 ### Copper and DMA Regions
 
-See `.plans/NEX_DMA_COPPER_REGIONS_PLAN.md`. The decoders are pure shared modules:
+See `dev/plans/NEX_DMA_COPPER_REGIONS_PLAN.md`. The decoders are pure shared modules:
 `src/common/zxnext/copper/copperDecoder.ts` and `src/common/zxnext/dma/dmaDecoder.ts`.
 
 - **Every row reassembles.** A row's text assembles (with `.model next`) to exactly the bytes it

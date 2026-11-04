@@ -37,7 +37,7 @@ type Props = {
   valueXclass?: string;
   /**
    * The value differs from a baseline (the history cursor's previous step,
-   * `.plans/LITE_STEP_BACK_PLAN.md` Q2): the data hierarchy's changed wash, which reads on an
+   * `dev/plans/LITE_STEP_BACK_PLAN.md` Q2): the data hierarchy's changed wash, which reads on an
    * accent-coloured value
    */
   changed?: boolean;

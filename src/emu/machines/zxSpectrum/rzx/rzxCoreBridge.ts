@@ -1,5 +1,5 @@
 /*
- * The TypeScript side of the RZX core module (`zx-spectrum-rzx.c`, `.plans/RZX_PLAN.md` §4.2–4.3).
+ * The TypeScript side of the RZX core module (`zx-spectrum-rzx.c`, `dev/plans/RZX_PLAN.md` §4.2–4.3).
  * The 48K, 128K and +2E/+3E cores export the same functions under their own prefix
  * (`sp48RzxSetMode`, `sp128RzxSetMode`, `spp3eRzxSetMode`); the bridge addresses them through it, as
  * `spectrumSnapshotRestore.ts` does. `dev/scripts/rzx-core-exports.cjs` keeps the build side of the list.

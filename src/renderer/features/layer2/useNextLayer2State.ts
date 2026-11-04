@@ -5,7 +5,7 @@ import { useEmuStateListener } from "@renderer/appIde/useStateRefresh";
 import { layer2StateHash } from "./layer2ViewModel";
 
 /*
- * The Layer 2 Inspector's read path (`.plans/LAYER2_INSPECTOR_PLAN.md` §4.3, D9, T9).
+ * The Layer 2 Inspector's read path (`dev/plans/LAYER2_INSPECTOR_PLAN.md` §4.3, D9, T9).
  *
  * - One `getNextLayer2State()` call per refresh, at the state panels' cadence.
  * - Nothing is read while disabled. The document area mounts only the active document, so a hidden

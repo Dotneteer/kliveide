@@ -1,7 +1,7 @@
 # Klive's UI design system: tokens, accents, themes
 
 The record of the UI modernization's design decisions (Phases 0-13, September 2026; the plan was
-closed on 2026-11-04 and is in git history at `.plans/UI_MODERNIZATION_PLAN.md`, where every phase's
+closed on 2026-11-04 and is in git history at `dev/plans/UI_MODERNIZATION_PLAN.md`, where every phase's
 retrospective is kept). The working rules and the lessons are `dev/ai/ui-theming-intent-and-lessons.md`,
 which `AGENTS.md` requires reading before style work; this file holds the architecture and the numbers
 behind it. The code is `src/renderer/theming/tokens/`.

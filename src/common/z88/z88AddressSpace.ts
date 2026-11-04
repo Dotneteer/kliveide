@@ -1,6 +1,6 @@
 /*
  * The Z88's 64K address space as the Blink pages it, computed from saved state rather than a running
- * core: the `.z88` viewer's "what will execute" view (`.plans/Z88_SNAPSHOT_PLAN.md` §4.8).
+ * core: the `.z88` viewer's "what will execute" view (`dev/plans/Z88_SNAPSHOT_PLAN.md` §4.8).
  *
  * The paging follows the core (`z88SetMemoryPageInfo` / `z88BankOffset` in `z88-memory.c`):
  *  - $0000-$1FFF: the lower 8K of bank $20 (internal RAM) with COM.RAMS set, else of bank $00;

@@ -2,7 +2,7 @@ import type { ExecutionHistoryInfo, ExecutionHistoryPage } from "@common/history
 import type { HistoryServiceSpan } from "@common/history/serviceSpans";
 
 /**
- * A machine that records execution history (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.4): the
+ * A machine that records execution history (`dev/plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.4): the
  * ZX Spectrum Next and every other Z80 core (G4.2). The Emu API's history handlers and the controller
  * reach it only through `isExecutionHistorySource`, so a core that starts recording needs no new
  * handler.
@@ -16,7 +16,7 @@ export interface IExecutionHistorySource {
   readHistory(fromSequence: number, count: number): ExecutionHistoryPage | undefined;
   /**
    * The outermost interrupt service spans of the held records, for the viewer to fold
-   * (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` D10); undefined until the core is loaded
+   * (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` D10); undefined until the core is loaded
    */
   getHistoryServiceSpans(): HistoryServiceSpan[] | undefined;
   /** Empties the ring */

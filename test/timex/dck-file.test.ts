@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { DCK_BANK_DOCK, DCK_BANK_EXROM, dockBankOf, parseDckFile, writeDckFile } from "@common/timex/dckFile";
 
-/* `.dck` cartridge images (`.plans/TIMEX_SCORPION_PLAN.md` G9.4b) */
+/* `.dck` cartridge images (`dev/plans/TIMEX_SCORPION_PLAN.md` G9.4b) */
 describe(".dck files", () => {
   it("reads a header and the images of the chunks that carry one", () => {
     const bytes = new Uint8Array(9 + 2 * 0x2000);

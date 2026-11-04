@@ -21,7 +21,7 @@ import { SnapshotView, type SpectrumSnapshotViewState } from "./SpectrumSnapshot
 import type { SpectrumSnapshotFileInfo } from "./spectrumSnapshotView";
 
 /*
- * The RZX recording viewer (`.plans/RZX_PLAN.md` §4.6): the file's version, creator and notes, its
+ * The RZX recording viewer (`dev/plans/RZX_PLAN.md` §4.6): the file's version, creator and notes, its
  * segments (each embedded snapshot is a jump point, "Play from this segment"), and the first
  * segment's snapshot through the snapshot viewer's own sections - screen, registers, paging, banks.
  * Play, Debug and Render to video sit in the document tab bar (`RzxLaunchMenu.tsx`).

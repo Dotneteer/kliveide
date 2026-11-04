@@ -1,6 +1,6 @@
 /*
  * The Enterprise 64/128's 16-byte history context (`epHistoryContext` in `ep.c`,
- * `.plans/ENTERPRISE_PLAN.md` §11):
+ * `dev/plans/ENTERPRISE_PLAN.md` §11):
  *   0-3  the page registers B0h-B3h: the segment each 16K page showed
  *   4    bit 0 the Enterprise 128
  *   5    DAVE's BFh as last written

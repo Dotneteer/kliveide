@@ -12,7 +12,7 @@ import { spectrumSnapshotProjectGuard } from "@renderer/appIde/commands/Spectrum
 
 /*
  * **Play** / **Debug** / **Render to video** for an RZX recording: the Explorer's context menu
- * entries and the buttons in the RZX viewer's tab bar (`.plans/RZX_PLAN.md` §4.6), following
+ * entries and the buttons in the RZX viewer's tab bar (`dev/plans/RZX_PLAN.md` §4.6), following
  * `SpectrumSnapshotLaunchMenu.tsx`. All of them run the `zx-rzx` / `zx-rzx-video` commands, which
  * make the precise checks once they have read the file.
  */

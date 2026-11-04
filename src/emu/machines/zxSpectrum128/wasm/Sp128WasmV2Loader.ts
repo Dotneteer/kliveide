@@ -46,7 +46,7 @@ export type Sp128WasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Z8
   sp128SetContentionValue: Sp128WasmV2ExportFunction;
   sp128GetMemorySize: Sp128WasmV2ExportFunction;
   sp128GetRamSize: Sp128WasmV2ExportFunction;
-  /** The Scorpion ZS-256's $1FFD, and its tape-trap switch (`.plans/TIMEX_SCORPION_PLAN.md` G9.4c) */
+  /** The Scorpion ZS-256's $1FFD, and its tape-trap switch (`dev/plans/TIMEX_SCORPION_PLAN.md` G9.4c) */
   sp128GetPort1ffd: Sp128WasmV2ExportFunction;
   sp128SetPort1ffd: Sp128WasmV2ExportFunction;
   sp128GetScorpion: Sp128WasmV2ExportFunction;

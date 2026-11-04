@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { forkConfirmation, formatReverseSeconds, reverseStatusText, reverseStatusTooltip } from "@common/history/reverseDebugText";
 
 /*
- * The words of full reverse debugging's UI (`.plans/REVERSE_DEBUGGING_PLAN.md` §4.4): the status
+ * The words of full reverse debugging's UI (`dev/plans/REVERSE_DEBUGGING_PLAN.md` §4.4): the status
  * bar's states and the fork confirmation (D12, T4).
  */
 describe("reverse debugging: the status bar and the fork confirmation", () => {

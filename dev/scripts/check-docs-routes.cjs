@@ -1,6 +1,6 @@
 /**
  * Diffs the built documentation site against the golden snapshots captured in
- * Phase 0 of .plans/NEXTRA_4_NEXT_16_DOCS_MIGRATION_PLAN.md.
+ * Phase 0 of dev/plans/NEXTRA_4_NEXT_16_DOCS_MIGRATION_PLAN.md.
  *
  * The golden files are the machine-checkable definition of "the docs site still
  * works". Every phase of the Nextra 4 / Next 16 migration diffs against them, so a

@@ -4,7 +4,7 @@ import { WasmHistoryReader, type WasmHistoryExports } from "./WasmHistoryReader"
 
 /*
  * The `IExecutionHistorySource` methods of a machine on a WASM core that records history
- * (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` §1, step 3): one reader per loaded core instance,
+ * (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` §1, step 3): one reader per loaded core instance,
  * rebuilt when the core is reloaded. A machine class owns one and delegates its four methods to it.
  */
 export class WasmHistorySource {

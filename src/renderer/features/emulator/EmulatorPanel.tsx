@@ -140,7 +140,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
      * The machine's own picture from just before Instant Screen replaced it while paused, put back
      * when Instant Screen is switched off again. Taken only then: restoring a saved picture at every
      * pause wrote the previous frame over the part of the buffer the raster had already drawn, inside
-     * the machine (`.plans/BEAM_POSITION_OVERLAY_PLAN.md` T1).
+     * the machine (`dev/plans/BEAM_POSITION_OVERLAY_PLAN.md` T1).
      */
     instantSnapshot: null as Uint32Array | null,
     /** Instant Screen's value when the effect that applies it last ran */
@@ -230,7 +230,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     }
   }, [mainApi]);
 
-  // --- Sends a Microdrive cartridge's written slots to the main process (`.plans/MICRODRIVE_PLAN.md`)
+  // --- Sends a Microdrive cartridge's written slots to the main process (`dev/plans/MICRODRIVE_PLAN.md`)
   const saveMicrodriveChanges = useCallback(async (drive: number, changes: SectorChanges): Promise<void> => {
     // --- The media store's copy is the machine's too: patched in place, it stays the same cartridge
     const contents = mediaStore.getMedia(MEDIA_MICRODRIVES[drive])?.mediaContents;
@@ -432,7 +432,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     machineFrameCompleted
   );
 
-  // --- The ZX Spectrum Next layer debug view (`.plans/LAYER_COMPOSITION_PLAN.md`): mask, capture, pill
+  // --- The ZX Spectrum Next layer debug view (`dev/plans/LAYER_COMPOSITION_PLAN.md`): mask, capture, pill
   const layerView = useNextLayerView(controller, displayScreenData);
   const layerState = useNextLayerRegs(
     layerView.machine,
@@ -570,7 +570,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     }
   }, [controller?.machine, displayScreenData, emuViewVersion, store]);
 
-  // --- The beam position overlay (`.plans/BEAM_POSITION_OVERLAY_PLAN.md`). Declared after the
+  // --- The beam position overlay (`dev/plans/BEAM_POSITION_OVERLAY_PLAN.md`). Declared after the
   // --- Instant Screen effects on purpose: effects run in order, and the picture it renders to the
   // --- beam must be drawn after theirs.
   const paused = machineState === MachineControllerState.Paused;

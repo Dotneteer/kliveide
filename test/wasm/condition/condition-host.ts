@@ -17,7 +17,7 @@ const { buildConditionWasm } = require("../../../dev/scripts/build-condition-was
 
 /*
  * The breakpoint condition evaluator - the C code every Z80 core includes - run standalone for tests
- * (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md` §6).
+ * (`dev/plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md` §6).
  *
  * Its machine facts are WebAssembly imports bound to whatever `ConditionContext` the test supplies,
  * so a test describes registers, memory and paging exactly as it did when the evaluator was

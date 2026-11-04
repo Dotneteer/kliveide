@@ -15,14 +15,14 @@ export const TRDOS_ROM_FILE = "TrdosRomFile";
 export const ESXDOS_ROM_FILE = "EsxDosRomFile";
 /** A user Interface 1 ROM file's path, from the `SETTING_EMU_IF1_ROM` setting; absent means the shipped v2 ROM */
 export const IF1_ROM_FILE = "If1RomFile";
-/** Microdrive 1 / 2's write protection (`.plans/MICRODRIVE_PLAN.md` Phase 3) */
+/** Microdrive 1 / 2's write protection (`dev/plans/MICRODRIVE_PLAN.md` Phase 3) */
 export const MICRODRIVE_1_WP = "Microdrive1Wp";
 export const MICRODRIVE_2_WP = "Microdrive2Wp";
 /** The slots the guest wrote, per drive: `(SectorChanges | undefined)[]`, keyed by slot (543 bytes each) */
 export const MICRODRIVE_CHANGES = "MicrodriveChanges";
 /** Per drive: the guest wrote a cartridge that is not written back (it came with a Klive state) */
 export const MICRODRIVE_UNSAVED = "MicrodriveUnsaved";
-/** The TC2048 ROM file's path, from the `SETTING_EMU_TC2048_ROM` setting (`.plans/TIMEX_SCORPION_PLAN.md` P5) */
+/** The TC2048 ROM file's path, from the `SETTING_EMU_TC2048_ROM` setting (`dev/plans/TIMEX_SCORPION_PLAN.md` P5) */
 export const TIMEX_ROM_FILE = "TimexRomFile";
 /** The TC2068's and TS2068's 24K ROM files, from `SETTING_EMU_TC2068_ROM` / `SETTING_EMU_TS2068_ROM` */
 export const TC2068_ROM_FILE = "Tc2068RomFile";
@@ -34,13 +34,13 @@ export const DISK_A_UNSAVED = "DiskAUnsaved";
 export const DISK_B_UNSAVED = "DiskBUnsaved";
 export const FILE_PROVIDER = "FileProvider";
 /**
- * The HT-1080Z's video switches (`.plans/HT1080Z_PLAN.md` §6): VIDEO CUT (32 columns), PAGE (the
+ * The HT-1080Z's video switches (`dev/plans/HT1080Z_PLAN.md` §6): VIDEO CUT (32 columns), PAGE (the
  * right half of each row in 32 columns) and the CPU-access black dash (D7, on by default)
  */
 export const HT_VIDEO_CUT = "HtVideoCut";
 export const HT_VIDEO_PAGE = "HtVideoPage";
 export const HT_VIDEO_DASH = "HtVideoDash";
-/** The ZX Spectrum ULA's late timing and snow effect (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phases 4, 5) */
+/** The ZX Spectrum ULA's late timing and snow effect (`dev/plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phases 4, 5) */
 export const ULA_LATE_TIMING = "UlaLateTiming";
 export const ULA_SNOW = "UlaSnow";
 // --- The ZX Spectrum Next output the audio stream plays: "jack", "speaker" or "hdmi"

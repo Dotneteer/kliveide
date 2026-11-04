@@ -1,6 +1,6 @@
 /*
  * A little-endian byte builder the snapshot writers share
- * (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.2). Pure: no Node, no DOM.
+ * (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.2). Pure: no Node, no DOM.
  */
 
 /** Collects bytes and hands them back as one array */
@@ -91,7 +91,7 @@ export type SnapshotWriteResult = {
 
 /**
  * Thrown when a snapshot cannot be written in a format at all, because the file would load into a
- * different machine state (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` D3)
+ * different machine state (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` D3)
  */
 export class SnapshotRefusedError extends Error {
   /**

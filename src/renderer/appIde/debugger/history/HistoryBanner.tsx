@@ -5,7 +5,7 @@ import { useT, type TFunction } from "@common/i18n/useT";
 import styles from "./HistoryBanner.module.scss";
 
 /*
- * The history cursor's banners (`.plans/LITE_STEP_BACK_PLAN.md` D6, D7). Where a view shows the
+ * The history cursor's banners (`dev/plans/LITE_STEP_BACK_PLAN.md` D6, D7). Where a view shows the
  * past, its band says where; where a view reads memory, which lite step back leaves at the present,
  * its band says that. Both disappear when G4.4 makes memory historical (D14): the present band keys
  * off `memoryIsHistorical`, never off "a cursor is set".

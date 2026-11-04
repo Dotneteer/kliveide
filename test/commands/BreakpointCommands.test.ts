@@ -360,7 +360,7 @@ describe("NextReg write breakpoints - the `nr:` address spec", () => {
    * so `bp-set`, `bp-del` and `bp-en` all get it at once - which is why the round-trip case at the
    * bottom matters more than it looks.
    *
-   * See `.plans/NEXTREG_WRITE_BREAKPOINTS_PLAN.md` §4.7.
+   * See `dev/plans/NEXTREG_WRITE_BREAKPOINTS_PLAN.md` §4.7.
    */
   let command: SetBreakpointCommand;
   let context: MockIdeCommandContext;

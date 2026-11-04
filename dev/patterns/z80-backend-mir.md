@@ -1,6 +1,6 @@
 # The shared Z80 back end: the MIR (mid-level intermediate representation)
 
-> **As built in the shared Z80 back end** (`.plans/SHARED_Z80_BACKEND_PLAN.md`, 2026-10-25). This note
+> **As built in the shared Z80 back end** (`dev/plans/SHARED_Z80_BACKEND_PLAN.md`, 2026-10-25). This note
 > was written for Klive BASIC; its MIR is now the input of the back end every language shares
 > (`src/main/z80-backend/mir/mir.ts`), and the parts that named BASIC are neutral:
 >

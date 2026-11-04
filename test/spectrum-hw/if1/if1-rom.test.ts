@@ -6,7 +6,7 @@ import { createSp128Session } from "../../harness/sp128";
 import { formattedMdr, runBasic, screenLines, sp48WithInterface1 } from "./if1TestSupport";
 
 /*
- * The Interface 1 with the shipped v2 ROM, at the tape's real speed (`.plans/MICRODRIVE_PLAN.md`
+ * The Interface 1 with the shipped v2 ROM, at the tape's real speed (`dev/plans/MICRODRIVE_PLAN.md`
  * Phases 1-2; the scripts are `dev/research/microdrive/test-material.md` §3). The ROM drives the drives
  * through the ports alone.
  */

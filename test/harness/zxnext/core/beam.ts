@@ -1,7 +1,7 @@
 /**
  * Hardware beam coordinates -> Klive pixel-buffer coordinates.
  *
- * Hardware (see .plans/COPPER_VISUAL_TEST_HARNESS_PLAN.md "Hardware facts"):
+ * Hardware (see dev/plans/COPPER_VISUAL_TEST_HARNESS_PLAN.md "Hardware facts"):
  * - The copper line `cvc` is reloaded with NextReg $64 at the first paper line and wraps after
  *   310 (+3/128K 50Hz timing, 311 lines), so paper row r has cvc = (r + $64) mod 311.
  *   zxula_timing.vhd, cvc process.

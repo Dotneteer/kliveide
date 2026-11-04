@@ -2,7 +2,7 @@ import type { ProfileCounts, ProfileEdge, ProfileInfo, ProfileTouchedByte } from
 import { hasProfileExports, WasmProfileReader } from "./WasmProfileReader";
 
 /*
- * The `IAccessProfileSource` methods of a machine on a WASM core (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`
+ * The `IAccessProfileSource` methods of a machine on a WASM core (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`
  * §4.2): one reader per loaded core instance, rebuilt when the core is reloaded. A machine class owns
  * one and delegates to it, as it does with `WasmHistorySource`. A core built without the profile
  * reads as "no profile" rather than failing.

@@ -28,7 +28,7 @@ import {
 import { formatZ88dkVersion, isSupportedBuild, isSupportedTag, compareTags, parseZccBanner } from "./z88dk-version";
 
 /*
- * The main-process half of the Z88DK integration dialog (`.plans/Z88DK_INTEGRATION_PLAN.md` §4.2),
+ * The main-process half of the Z88DK integration dialog (`dev/plans/Z88DK_INTEGRATION_PLAN.md` §4.2),
  * the counterpart of `sjasmplus-integration-service.ts`: probing a folder, detecting installs,
  * listing and installing GitHub releases, and the smoke test. Every zcc run uses
  * `z88dkRunEnvironment`, so the test runs zcc exactly as a build does.

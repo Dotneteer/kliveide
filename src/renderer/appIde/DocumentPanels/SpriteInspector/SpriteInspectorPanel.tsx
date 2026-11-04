@@ -57,7 +57,7 @@ import { SpriteInspectorPane } from "./SpriteInspectorPane";
 import styles from "./SpriteInspector.module.scss";
 
 /**
- * The Sprite Inspector (`$sprites`, `.plans/SPRITE_INSPECTOR_PLAN.md`, G3.2 + G3.3): the sprite
+ * The Sprite Inspector (`$sprites`, `dev/plans/SPRITE_INSPECTOR_PLAN.md`, G3.2 + G3.3): the sprite
  * attribute table and the pattern RAM in one document, with an inspector for the selection. The two
  * views are linked: selecting a sprite highlights its pattern, selecting a pattern its users.
  *

@@ -3,7 +3,7 @@ import { useCallback, useRef, type ReactNode } from "react";
 import styles from "./EmulatorScreenOverlay.module.scss";
 
 /*
- * Chrome over the emulator screen (`.plans/BEAM_POSITION_OVERLAY_PLAN.md` D10): shapes in the
+ * Chrome over the emulator screen (`dev/plans/BEAM_POSITION_OVERLAY_PLAN.md` D10): shapes in the
  * picture's own buffer pixels, mapped onto the canvas by an SVG `viewBox` of the buffer's size.
  *
  * The overlay covers the canvas exactly, so the `viewBox` is the whole mapping: no zoom, resize or

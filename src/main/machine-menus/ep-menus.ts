@@ -17,7 +17,7 @@ import { shell } from "electron";
 import { diskMenuRenderer } from "./zx-specrum-menus";
 
 /**
- * The Enterprise 64/128's hardware items (`.plans/ENTERPRISE_PLAN.md` §4.3, §11): the IS-BASIC
+ * The Enterprise 64/128's hardware items (`dev/plans/ENTERPRISE_PLAN.md` §4.3, §11): the IS-BASIC
  * cartridge in its slot (`MC_EP_CARTRIDGE`; without it EXOS boots to the word processor), Klive's
  * FILE: device ROM (`MC_EP_HOSTFS`) and the folder its files live in, and the palette's levels
  * (`MC_EP_PALETTE`: the board's resistor DAC, or the guide's linear formula). Each switch restarts
@@ -73,7 +73,7 @@ export const epHardwareRenderer: MachineMenuRenderer = (_windowInfo, _machine, m
 };
 
 /**
- * The EXDOS floppy interface (`.plans/ENTERPRISE_PLAN.md` §10): a switch that fits the card with its
+ * The EXDOS floppy interface (`dev/plans/ENTERPRISE_PLAN.md` §10): a switch that fits the card with its
  * EXDOS 1.3 ROM (the machine config's `MC_EP_EXDOS`, which restarts the machine), and with it the
  * two drives' items - the Spectrum's disk menu, without its "create a disk" (that makes a +3 image).
  */

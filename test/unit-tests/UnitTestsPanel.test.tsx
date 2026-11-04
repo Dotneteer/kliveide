@@ -15,7 +15,7 @@ import {
 import { assembleWithInclude } from "./unitTestSupport";
 
 /*
- * The Unit Tests panel and its badge (`.plans/Z80_UNIT_TESTS_PLAN.md` D13, D14, Phase 2): the tree of
+ * The Unit Tests panel and its badge (`dev/plans/Z80_UNIT_TESTS_PLAN.md` D13, D14, Phase 2): the tree of
  * suites and tests from the last build, statuses from the store, click-to-source, and the actions
  * running through the `test-*` commands.
  */

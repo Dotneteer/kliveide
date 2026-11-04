@@ -6,7 +6,7 @@ import { pixelToTact, tactToPixel } from "@common/utils/beamGeometry";
 import { apply, makeScene, sceneSession } from "../layers/_scene";
 
 /*
- * The beam position overlay on the ZX Spectrum Next core (`.plans/BEAM_POSITION_OVERLAY_PLAN.md`
+ * The beam position overlay on the ZX Spectrum Next core (`dev/plans/BEAM_POSITION_OVERLAY_PLAN.md`
  * Phase 1).
  *
  * - The reported beam agrees with the raster's own counters and with each timing's size

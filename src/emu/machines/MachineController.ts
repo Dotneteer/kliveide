@@ -235,7 +235,7 @@ export class MachineController implements IMachineController {
   }
 
   // ------------------------------------------------------------------------------------------------
-  // The access profile: code coverage and the heat map (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`)
+  // The access profile: code coverage and the heat map (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`)
 
   /**
    * Instructions the profile counted in a future that Take over here abandoned (D10, Q4): they really
@@ -253,7 +253,7 @@ export class MachineController implements IMachineController {
 
   /**
    * What the profile holds, with what the controller adds: the abandoned-future note and the frame
-   * length and clock in the profile's time unit (`.plans/PROFILER_PLAN.md` D5) - on the Next its 28
+   * length and clock in the profile's time unit (`dev/plans/PROFILER_PLAN.md` D5) - on the Next its 28
    * MHz reference, whatever the CPU speed; elsewhere the CPU's T-states at the current multiplier
    */
   getProfileStatus(): ProfileStatus | undefined {
@@ -289,7 +289,7 @@ export class MachineController implements IMachineController {
   }
 
   /**
-   * A profiling window (`.plans/PROFILER_PLAN.md` D1, D2): resets the profile and turns it on, with
+   * A profiling window (`dev/plans/PROFILER_PLAN.md` D1, D2): resets the profile and turns it on, with
    * counters (the flat profile needs them) and, when asked, the call tracker; `at`/`until` arm the
    * one-shot markers that start and stop the window at those CPU addresses
    * @returns false when the machine has no profile
@@ -442,7 +442,7 @@ export class MachineController implements IMachineController {
   beforeFrameDelay?: () => Promise<void>;
 
   // ==============================================================================================
-  // RZX sessions (`.plans/RZX_PLAN.md` §4.4). The session lives on the machine
+  // RZX sessions (`dev/plans/RZX_PLAN.md` §4.4). The session lives on the machine
   // (`IRzxMachine.rzxSession`), whose frame loop drives it; the controller attaches it, reports
   // how it ends, ends it when the IDE changes the machine from outside the CPU (trap 4), pins the
   // clock multiplier (D14), and runs unthrottled while a recording is rendered to video (D18).
@@ -953,7 +953,7 @@ export class MachineController implements IMachineController {
 
     // --- `run()` attaches the stored media when it starts from a stop; this restore takes the
     // --- place of that start. A Klive state brings its own media inside the core's memory, which
-    // --- an attach would overwrite (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` trap 12).
+    // --- an attach would overwrite (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` trap 12).
     if (options.attachMedia !== false) {
       attachStoredMedia(this.machine, this._machineInfo.mediaIds);
     }
@@ -999,7 +999,7 @@ export class MachineController implements IMachineController {
 
   /**
    * Resets the machine and starts the tape in its deck loading: `LOAD ""` on a 48K, the Tape Loader
-   * on a 128K or +2/+3 (`tapeLoadFlows.ts`, `.plans/TAPE_VIEWER_PLAN.md` §4.6). Nothing is
+   * on a 128K or +2/+3 (`tapeLoadFlows.ts`, `dev/plans/TAPE_VIEWER_PLAN.md` §4.6). Nothing is
    * injected - the ROM loads whatever the tape holds.
    * @param debug Arm the breakpoints once the keystrokes are typed
    */
@@ -1016,7 +1016,7 @@ export class MachineController implements IMachineController {
 
   /**
    * Resets the machine and boots the disk in drive A (the Pentagon's Beta 128: `trdosFlows.ts`,
-   * `.plans/BETA128_TRDOS_PLAN.md` Phase 4).
+   * `dev/plans/BETA128_TRDOS_PLAN.md` Phase 4).
    * @param debug Arm the breakpoints once the keystrokes are typed
    */
   async runDiskBoot(debug: boolean): Promise<void> {
@@ -1074,7 +1074,7 @@ export class MachineController implements IMachineController {
 
     let entryPoint = 0;
     let keepPc = false;
-    // --- A previous Debug-a-test's stops end with any new program (`.plans/Z80_UNIT_TESTS_PLAN.md` D12)
+    // --- A previous Debug-a-test's stops end with any new program (`dev/plans/Z80_UNIT_TESTS_PLAN.md` D12)
     this.debugSupport?.resetBreakpointsTo([], { kind: "unitTest" });
     this._unitTestDebug = undefined;
     for (const step of injectionFlow) {
@@ -1307,7 +1307,7 @@ export class MachineController implements IMachineController {
   }
 
   // ==============================================================================================
-  // The history cursor (`.plans/LITE_STEP_BACK_PLAN.md`, G4.3): the paused machine looked at in its
+  // The history cursor (`dev/plans/LITE_STEP_BACK_PLAN.md`, G4.3): the paused machine looked at in its
   // recorded past. The machine itself never changes; `getCpuState()` answers from the cursor (D2).
 
   private _historyCursor?: HistoryCursor;
@@ -1374,7 +1374,7 @@ export class MachineController implements IMachineController {
   }
 
   /**
-   * Reverse Continue by replay (`.plans/REVERSE_DEBUGGING_PLAN.md` D15): the keyframe interval that
+   * Reverse Continue by replay (`dev/plans/REVERSE_DEBUGGING_PLAN.md` D15): the keyframe interval that
    * ends where the machine stands is replayed with breakpoints in *collect* mode - every stop is noted
    * and the run goes on - and the last hit before that point wins; with none, the interval before it.
    * Every breakpoint kind works, because the machine is really there: conditions that read memory,
@@ -1566,7 +1566,7 @@ export class MachineController implements IMachineController {
 
   /**
    * The machine as an execution-history recorder, when it is one
-   * (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.4)
+   * (`dev/plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.4)
    */
   private historySource(): IExecutionHistorySource | undefined {
     return isExecutionHistorySource(this.machine) ? this.machine : undefined;
@@ -1595,7 +1595,7 @@ export class MachineController implements IMachineController {
   }
 
   // ------------------------------------------------------------------------------------------------
-  // Reverse debugging (`.plans/REVERSE_DEBUGGING_PLAN.md` D2, D13; `reverse/Timeline.ts`)
+  // Reverse debugging (`dev/plans/REVERSE_DEBUGGING_PLAN.md` D2, D13; `reverse/Timeline.ts`)
 
   private _timeline?: Timeline;
 
@@ -1634,7 +1634,7 @@ export class MachineController implements IMachineController {
   }
 
   /**
-   * Opens a saved timeline - a debug recording (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` §4.4, D1,
+   * Opens a saved timeline - a debug recording (`dev/plans/DEBUG_SESSION_RECORDING_PLAN.md` §4.4, D1,
    * D10): the machine takes the present's state, the timeline is rebuilt around it by replaying from
    * its last keyframe (which checks itself, D9), and the machine stands paused in a debug session -
    * at the present, or, with `land`, at the recording's start or the point it was saved at. Every
@@ -1979,7 +1979,7 @@ export class MachineController implements IMachineController {
     this.context.terminationPoint = terminationPoint;
     this.context.canceled = false;
     /*
-     * Breakpoints only in a debug run (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` C19).
+     * Breakpoints only in a debug run (`dev/plans/CONDITIONAL_BREAKPOINTS_PLAN.md` C19).
      *
      * A `NoDebug` run reaches the per-instruction loops too - a code-injection flow's
      * `ReachExecPoint` boots the ROM through them - and those loops ask the breakpoint store at every
@@ -2052,7 +2052,7 @@ export class MachineController implements IMachineController {
         }
         const cpuTime = performance.now() - frameStartTime;
         // --- Logpoint lines of this frame: one IPC call, sent before anything else this frame
-        // --- reports (`.plans/LOGPOINTS_PLAN.md` L4, L8). Not awaited, to keep the frame rate;
+        // --- reports (`dev/plans/LOGPOINTS_PLAN.md` L4, L8). Not awaited, to keep the frame rate;
         // --- awaited below before a stop message, so the lines come first.
         const logFlush = this.suppressingSideEffects ? Promise.resolve() : this.flushLogLines();
         const frameCompleted =
@@ -2242,7 +2242,7 @@ export class MachineController implements IMachineController {
    * sequence that may still be waiting on ROM execution, queued keys, or startup delays.
    */
   private beginMachineOperation(): number {
-    // --- Any machine command returns to the present first (`.plans/LITE_STEP_BACK_PLAN.md` D5) -
+    // --- Any machine command returns to the present first (`dev/plans/LITE_STEP_BACK_PLAN.md` D5) -
     // --- unless the machine itself is in the past: then `run` decides (REVERSE_DEBUGGING_PLAN D11)
     this.clearCursorForCommand();
     return ++this._operationRevision;
@@ -2458,7 +2458,7 @@ export class MachineController implements IMachineController {
    * is the entire content of the stop. The register's documented name comes from the same table
    * the Next Registers panel reads.
    */
-  /** The unit test being debugged (`.plans/Z80_UNIT_TESTS_PLAN.md` D12) */
+  /** The unit test being debugged (`dev/plans/Z80_UNIT_TESTS_PLAN.md` D12) */
   private _unitTestDebug: UnitTestDebugInfo | undefined;
 
   /**
@@ -2531,7 +2531,7 @@ export class MachineController implements IMachineController {
 
   /**
    * The report of a stop an `ASSERTION` or `WPMEM` comment caused
-   * (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` S11), or `undefined` for any other stop:
+   * (`dev/plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` S11), or `undefined` for any other stop:
    *
    * - `ASSERTION failed at main.asm:42: A < 5  (A=$07)`
    * - `WPMEM write at $8002 (fill_colors+2) by PC $8123, main.asm:40`
@@ -2563,7 +2563,7 @@ export class MachineController implements IMachineController {
       const file = s ? this.sourceIndex.info.files[s.fileIndex]?.filename.split(/[\\/]/).pop() : undefined;
       return `Runtime error ${stop?.error?.report ?? ""}${s ? ` at ${file}:${s.startLine}` : ""} (continue to let the ROM report it)`;
     }
-    // --- A Debug-a-test stop says what it means for the test (`.plans/Z80_UNIT_TESTS_PLAN.md` D12)
+    // --- A Debug-a-test stop says what it means for the test (`dev/plans/Z80_UNIT_TESTS_PLAN.md` D12)
     const unitTestStop = this.describeUnitTestStop();
     if (unitTestStop) return unitTestStop;
     // --- A stop a DeZog comment caused names the comment (S11)
@@ -2610,7 +2610,7 @@ export class MachineController implements IMachineController {
 }
 
 /**
- * The stop message of a Copper breakpoint or a Copper step (`.plans/COPPER_DEBUGGING_PLAN.md` §4.7).
+ * The stop message of a Copper breakpoint or a Copper step (`dev/plans/COPPER_DEBUGGING_PLAN.md` §4.7).
  * It names the **hit** - the instruction and the beam where it completed - because the Copper has
  * run on to the end of the Z80 instruction by the time the machine stops (T1):
  *

@@ -18,7 +18,7 @@ export function isInThePast(store: Store<AppState>): boolean {
 }
 
 /**
- * Asks before forking (`.plans/REVERSE_DEBUGGING_PLAN.md` D12, T4) - naming what the discarded future
+ * Asks before forking (`dev/plans/REVERSE_DEBUGGING_PLAN.md` D12, T4) - naming what the discarded future
  * takes with it - and forks when the user agrees
  * @param action What forks: Take over here, or an edit (an id: the dialog's question is a whole message per action)
  * @returns true when the machine forked, false when the user declined

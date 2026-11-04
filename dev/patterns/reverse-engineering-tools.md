@@ -3,7 +3,7 @@
 Four tools over the annotation model (`dev/patterns/annotations.md`): **code/data detection** from
 coverage (G7.3), the **graphics finder** (G7.4), **SkoolKit import and export** (G7.5) and **export
 as source** (G7.6). They were built on 2026-10-09 from a plan closed on 2026-11-04 (git history:
-`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md`). The model keys they added (`text`, `defc`, `fill`,
+`dev/plans/REVERSE_ENGINEERING_TOOLS_PLAN.md`). The model keys they added (`text`, `defc`, `fill`,
 `graphic` regions, `origin`, `graphics`, `endComment`, `interop.skool`) are in
 `dev/patterns/annotations.md`, "The Reverse-Engineering Tools' Keys"; their commands are in its "Commands".
 This file holds their rules, and the traps the rules exist for.

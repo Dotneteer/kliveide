@@ -1,7 +1,7 @@
 import type { ProfileCounts, ProfileEdge, ProfileInfo, ProfileTouchedByte } from "@common/profile/profileTypes";
 
 /**
- * A machine whose core keeps an access profile (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §4.2):
+ * A machine whose core keeps an access profile (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §4.2):
  * code coverage, the memory heat map and the flat profiler's time. The Emu API's profile handlers and
  * the controller reach it only through `isAccessProfileSource`, so a core that starts profiling needs
  * no new handler.
@@ -32,7 +32,7 @@ export interface IAccessProfileSource {
   /** Merges a saved run into the profile (D16, `coverage load`): flags OR-ed, counts added */
   mergeProfile(bytes: readonly ProfileTouchedByte[], totals: { instructions: number; timeTotal: number }): void;
   /**
-   * The call tracker (`.plans/PROFILER_PLAN.md` D1, D9): on starts an empty call stack, off closes
+   * The call tracker (`dev/plans/PROFILER_PLAN.md` D1, D9): on starts an empty call stack, off closes
    * the open frames. Optional: a source without it has the flat profile only.
    */
   setProfileCalls?(on: boolean): void;

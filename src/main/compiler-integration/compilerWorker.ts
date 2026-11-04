@@ -27,7 +27,7 @@ async function compileFile(state: AppState, filename: string, language: string, 
 
 /**
  * The open `.zxbas` file, checked as a root of its own when the build root's snapshot does not
- * include it (`.plans/BASIC_EDITOR_INTELLIGENCE_PLAN.md` E14): one extra front-end run, only then.
+ * include it (`dev/plans/BASIC_EDITOR_INTELLIGENCE_PLAN.md` E14): one extra front-end run, only then.
  */
 function addActiveFileIntel(state: AppState, result: KliveCompilerOutput, activeFile: string | undefined): KliveCompilerOutput {
   if (!activeFile || !result || typeof result !== "object") return result;

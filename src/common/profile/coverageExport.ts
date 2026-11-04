@@ -10,7 +10,7 @@ import {
 } from "./profileTypes";
 
 /*
- * The coverage exports (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D16): LCOV for Codecov, Coveralls
+ * The coverage exports (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D16): LCOV for Codecov, Coveralls
  * and GitLab (and G5.6's CLI), CSV for a spreadsheet, and Klive's own `.kcov`, which `coverage load`
  * merges back. Pure: the IDE gathers the data, these write the text.
  */

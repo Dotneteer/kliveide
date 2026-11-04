@@ -24,7 +24,7 @@ import {
 import styles from "./SpriteInspector.module.scss";
 
 /*
- * The Sprites view (`.plans/SPRITE_INSPECTOR_PLAN.md` §4.5.1, G3.2): one row per attribute slot,
+ * The Sprites view (`dev/plans/SPRITE_INSPECTOR_PLAN.md` §4.5.1, G3.2): one row per attribute slot,
  * decoded, with the pattern each one shows.
  *
  * One scroller holds the header and the rows: the header is sticky to the top, so it moves sideways

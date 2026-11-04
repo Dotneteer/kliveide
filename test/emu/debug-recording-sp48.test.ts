@@ -24,7 +24,7 @@ import type { MachineStatePorts } from "@renderer/appEmu/machines/machineStateFi
 import { createSp48Session, type Sp48TestSession } from "../harness/sp48";
 
 /*
- * Debug recordings on the real 48K core (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` Phase 2): a session
+ * Debug recordings on the real 48K core (`dev/plans/DEBUG_SESSION_RECORDING_PLAN.md` Phase 2): a session
  * with keys, a tape upload and a memory edit is saved, opened into a fresh machine and controller,
  * and the opened timeline must be the recorded one - every one of 1,000 step backs the same machine,
  * Reverse Continue with a memory watchpoint landing on the same write, hit counts as recorded. A

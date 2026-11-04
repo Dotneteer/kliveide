@@ -1,6 +1,6 @@
 /*
  * The types of the emulator's RZX calls (`EmuApi`) and the text of the IDE's RZX commands, shared by
- * the IDE, the main process and the emulator (`.plans/RZX_PLAN.md` §1.6, §4.6).
+ * the IDE, the main process and the emulator (`dev/plans/RZX_PLAN.md` §1.6, §4.6).
  */
 
 /** What to do once a recording's snapshot is loaded */

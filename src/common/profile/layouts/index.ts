@@ -11,7 +11,7 @@ import { zx8081ProfileLayout } from "./zx8081";
 import { zxnextProfileLayout } from "./zxnext";
 
 /*
- * The per-core profile layouts (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §4.2), by machine id:
+ * The per-core profile layouts (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §4.2), by machine id:
  * models share their core's layout, as they share its history context decoder.
  */
 const layouts: Record<string, ProfileLayout> = {

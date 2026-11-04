@@ -1,6 +1,6 @@
 /*
  * The types of the emulator's `loadZ88Snapshot` call (`EmuApi`), shared by the IDE, the main process
- * and the emulator. See `.plans/Z88_SNAPSHOT_PLAN.md` §4.5.
+ * and the emulator. See `dev/plans/Z88_SNAPSHOT_PLAN.md` §4.5.
  */
 
 /**

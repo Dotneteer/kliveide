@@ -7,7 +7,7 @@ import { Z80Assembler } from "@main/z80-compiler/z80-assembler";
 import { createHtSession, Ht1080zTestSession } from "../harness/ht1080z";
 
 /*
- * Run, Debug and Inject on the HT-1080Z (`.plans/HT1080Z_CODE_INJECTION_PLAN.md` Phase 2): the
+ * Run, Debug and Inject on the HT-1080Z (`dev/plans/HT1080Z_CODE_INJECTION_PLAN.md` Phase 2): the
  * injection flow, played as the command line plays it, on the real ROMs.
  */
 

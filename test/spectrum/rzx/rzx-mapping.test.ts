@@ -5,7 +5,7 @@ import { RzxError, type RzxFile } from "@common/spectrum/rzx/rzxModel";
 import { MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48 } from "@common/machines/constants";
 import { buildSzx, state128, state48 } from "../snapshot/builders";
 
-/* Which machine plays a recording (`.plans/RZX_PLAN.md` trap 6) */
+/* Which machine plays a recording (`dev/plans/RZX_PLAN.md` trap 6) */
 
 function fileWith(snapshot: Uint8Array, extension = "szx"): RzxFile {
   return {

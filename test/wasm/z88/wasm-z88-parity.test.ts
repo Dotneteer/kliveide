@@ -12,7 +12,7 @@ import { audioDigest, Digest, goldens, machineState, sha256 } from "./z88-golden
  * memory at every size, and the cards programmed from Z80 code.
  *
  * Until the TypeScript machine was removed these suites ran it and the WASM core in lockstep and
- * compared them (`.plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`); the TypeScript side's values
+ * compared them (`dev/plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`); the TypeScript side's values
  * at every checkpoint - CPU registers, tacts and frames, the Blink state, snooze and sleep, and the
  * hashes of all 4 MB of memory, the LCD picture and the frame's audio samples - are the goldens in
  * `goldens/wasm-z88-parity.json` (`z88-goldens.ts`). Checkpoints that were compared after every frame

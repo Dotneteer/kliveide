@@ -2,7 +2,7 @@ const { statSync } = require("node:fs");
 const { buildHt1080zWasm, output } = require("./build-ht1080z-wasm.cjs");
 
 /*
- * The ceiling (`.plans/HT1080Z_PLAN.md`). The Phase 2 skeleton - the whole shared Z80 core with the
+ * The ceiling (`dev/plans/HT1080Z_PLAN.md`). The Phase 2 skeleton - the whole shared Z80 core with the
  * history recorder and the access profile, the memory map, the keyboard and the ports - is 241 KB in
  * the speed build, about the ZX80/81 core's size. Phases 3-6 add the video renderer, the AY
  * (`zx-spectrum-psg.c`) and the tape, which the ZX80/81 and 128K cores show to be a few tens of KB.

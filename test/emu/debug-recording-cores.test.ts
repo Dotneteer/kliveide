@@ -32,7 +32,7 @@ import { createEpSession } from "../harness/enterprise";
 import { createCore, createSession as createNextSession } from "../harness/zxnext";
 
 /*
- * Debug recordings on every machine with reverse debugging (`.plans/DEBUG_SESSION_RECORDING_PLAN.md`
+ * Debug recordings on every machine with reverse debugging (`dev/plans/DEBUG_SESSION_RECORDING_PLAN.md`
  * Phases 4 and 5): each machine's debug session is saved and opened into a fresh machine and
  * controller, through the emulator's own save and open flow, and the opened timeline must be the
  * recorded one - the present byte for byte, step backs the forward run's states, and a full replay

@@ -55,7 +55,7 @@ export abstract class ZxSpectrum128WasmHost extends ZxSpectrumBase {
 
   /**
    * The model has the Beta 128 disk interface (the Pentagon: `MC_DISK_SUPPORT`). It works only with a
-   * TR-DOS ROM, which the user supplies (`.plans/BETA128_TRDOS_PLAN.md` Q1).
+   * TR-DOS ROM, which the user supplies (`dev/plans/BETA128_TRDOS_PLAN.md` Q1).
    */
   get beta128Model(): boolean {
     const drives = this.config?.[MC_DISK_SUPPORT];

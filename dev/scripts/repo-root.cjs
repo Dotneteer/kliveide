@@ -2,7 +2,7 @@
  * The repository root, for every script that needs a path outside its own folder.
  *
  * Scripts used to compute it as "one level above `__dirname`", which silently breaks when a script moves
- * to another depth (`.plans/ROOT_DECLUTTER_PLAN.md`, step 10). This walks up from this file to the
+ * to another depth (`dev/plans/ROOT_DECLUTTER_PLAN.md`, step 10). This walks up from this file to the
  * first folder whose `package.json` is Klive's own (`docs/package.json` belongs to the docs site and
  * never matches), so it is right wherever the scripts folder lives.
  *

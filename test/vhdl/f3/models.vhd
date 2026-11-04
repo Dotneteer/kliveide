@@ -1,4 +1,4 @@
--- F3 of .plans/ZX_NEXT_FIDELITY_PROOF_PLAN.md: simulation models for the parts of the ZX Spectrum
+-- F3 of dev/plans/ZX_NEXT_FIDELITY_PROOF_PLAN.md: simulation models for the parts of the ZX Spectrum
 -- Next core that have no VHDL source in dev/vendor/next-fpga/3.02.01/src (Xilinx CORE Generator RAMs, the boot
 -- ROM's BRAM), plus a dpram2 that can be preloaded. Written for the testbench, not taken from the
 -- core: each states the behaviour it assumes.

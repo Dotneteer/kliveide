@@ -62,7 +62,7 @@
 }
 
 /*
- * The history cursor's chip (`.plans/LITE_STEP_BACK_PLAN.md` D7): the secondary accent, as the
+ * The history cursor's chip (`dev/plans/LITE_STEP_BACK_PLAN.md` D7): the secondary accent, as the
  * editor's historical marker. A chip because it is state that needs undoing, and a button because
  * the undo is one click.
  */
@@ -117,7 +117,7 @@
 }
 
 /*
- * The automation item (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D4): shown only while the server
+ * The automation item (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` D4): shown only while the server
  * listens. Quiet while nobody is connected; an accent chip while a client is, because then
  * something outside the IDE can drive it. A click opens the Automation output pane.
  */

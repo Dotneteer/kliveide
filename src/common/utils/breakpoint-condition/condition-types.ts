@@ -2,7 +2,7 @@
  * The breakpoint condition language: the types every part of the engine shares.
  *
  * One engine, imported by the IDE (to validate what the user types) and by the emulator (to arm and
- * evaluate it); see `.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §3 for the language and C1/C2 for why it
+ * evaluate it); see `dev/plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §3 for the language and C1/C2 for why it
  * is parsed on both sides. No imports: the main process and both renderers can load it.
  */
 
@@ -38,7 +38,7 @@ export type ConditionUnaryOp = "!" | "~" | "-";
 export type ConditionFunction = "page" | "nr" | "s8" | "s16" | "s32";
 
 /**
- * The zero-argument machine specials (`.plans/LOGPOINTS_PLAN.md` §3.5): T-states since the machine
+ * The zero-argument machine specials (`dev/plans/LOGPOINTS_PLAN.md` §3.5): T-states since the machine
  * started, the CPU clock in Hz, frames since the machine started, and the slot map (text, so only a
  * whole logpoint placeholder may be `slots()`).
  */

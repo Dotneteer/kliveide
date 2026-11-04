@@ -35,7 +35,7 @@ import { helloResult } from "./handlers/session";
 import { machineStateOf } from "./handlers/machine";
 
 /*
- * The automation server (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D2–D7, D11, D13, D14).
+ * The automation server (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` D2–D7, D11, D13, D14).
  *
  * - **Transport** (D2, D3, D6): JSON-RPC 2.0, one message per line, over a Unix domain socket in the
  *   private run folder (or a named pipe on Windows). Never TCP, never HTTP.

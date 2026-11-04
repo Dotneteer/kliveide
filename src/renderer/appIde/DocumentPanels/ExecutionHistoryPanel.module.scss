@@ -1,7 +1,7 @@
 @use "@styles/core.scss" as *;
 
 /*
- * The Execution History document (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.6): the record list
+ * The Execution History document (`dev/plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.6): the record list
  * and the detail pane. Columns are `ch` (M2); rows take their height from their padding and line box
  * (M3), as a listing pane does. Colours are the `--*-history-*` aliases.
  */
@@ -161,7 +161,7 @@
 }
 
 /*
- * The history cursor's row (`.plans/LITE_STEP_BACK_PLAN.md` D13, D7): the secondary accent's rail
+ * The history cursor's row (`dev/plans/LITE_STEP_BACK_PLAN.md` D13, D7): the secondary accent's rail
  * and outline, as the editor's historical marker, so it reads apart from the selection's wash.
  */
 .cursorRow {

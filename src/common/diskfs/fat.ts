@@ -22,7 +22,7 @@ import {
 } from "./types";
 
 /*
- * FAT16 and FAT32 (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, C1): the file system of DivMMC SD
+ * FAT16 and FAT32 (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, C1): the file system of DivMMC SD
  * cards and of most hard-disk images, on a block device. Written from Microsoft's FAT specification
  * (D8), as a file system of the shared layer rather than as a change to the Next's `.cim` driver
  * (`src/main/fat32/`), which stays as `ncp` uses it:

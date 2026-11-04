@@ -342,7 +342,7 @@ describe("pcSpotlightAddress", () => {
 
 /*
  * The branch gutter has to know whether a listing's addresses are real before it resolves any
- * destination from them. See .plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md §15.19.
+ * destination from them. See dev/plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md §15.19.
  */
 describe("isListedWhereItIsPaged", () => {
   const at = (base: number) => [

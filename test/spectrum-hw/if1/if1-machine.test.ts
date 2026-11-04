@@ -13,7 +13,7 @@ import { createHarnessSpectrumMachine } from "../../harness/sp128";
 import { runBasic, screenLines } from "./if1TestSupport";
 
 /*
- * The Interface 1 on the machine classes (`.plans/MICRODRIVE_PLAN.md` Phase 3): the config connects
+ * The Interface 1 on the machine classes (`dev/plans/MICRODRIVE_PLAN.md` Phase 3): the config connects
  * it with the shipped ROM, the media properties put cartridges into the drives, and the slots the
  * guest writes come back as `MICRODRIVE_CHANGES` for the controller to write to the `.mdr` files.
  */

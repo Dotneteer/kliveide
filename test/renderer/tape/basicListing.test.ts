@@ -7,7 +7,7 @@ import { analyzeTape, blockPayload } from "@renderer/appIde/DocumentPanels/Tape/
 
 /*
  * The BASIC detokenizer shared by the live BASIC panel and the tape viewer
- * (`.plans/TAPE_VIEWER_PLAN.md` §4.3).
+ * (`dev/plans/TAPE_VIEWER_PLAN.md` §4.3).
  */
 
 const tape = analyzeTape(

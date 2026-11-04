@@ -8,7 +8,7 @@ import { createSp128Session } from "../../harness/sp128";
 import { BUFFER, buildTestTrdosRom, callRom, ENTRY } from "./test-rom";
 
 /*
- * The Beta 128 in snapshots and Klive state files (`.plans/BETA128_TRDOS_PLAN.md` Phase 5): the
+ * The Beta 128 in snapshots and Klive state files (`dev/plans/BETA128_TRDOS_PLAN.md` Phase 5): the
  * `.szx` B128 / BDSK blocks (zx-state), the `.sna` TR-DOS byte, and the core's memory image.
  */
 

@@ -1,5 +1,5 @@
 /**
- * The exports of `zx-spectrum-divmmc-classic.c` (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, C4):
+ * The exports of `zx-spectrum-divmmc-classic.c` (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, C4):
  * the DivMMC and its SD card on the 48K, 128K and +2A/+3 cores, under the core's prefix.
  */
 function divMmcClassicExports(prefix) {

@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { formattedMdr, SELECT, sp48WithInterface1, standInRom } from "./if1TestSupport";
 
 /*
- * The Interface 1's ports and its drive-select chain (`.plans/MICRODRIVE_PLAN.md` §3 M3, M7, M8;
+ * The Interface 1's ports and its drive-select chain (`dev/plans/MICRODRIVE_PLAN.md` §3 M3, M7, M8;
  * `dev/research/microdrive/interface1-hardware.md` §2, §5), driven from RAM with interrupts off.
  */
 

@@ -1,6 +1,6 @@
 /*
  * The execution-history recorder's exports and statics, the same in every core that records history
- * (`src/emu/z80/wasm/z80-history.c`, `.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.2). A core's build
+ * (`src/emu/z80/wasm/z80-history.c`, `dev/plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.2). A core's build
  * script adds both lists, as it adds `rzx-core-exports.cjs`'s; `WasmHistoryReader.ts` reads these
  * exports by the same names on every core (D11).
  */
@@ -10,7 +10,7 @@ const Z80_HISTORY_EXPORTS = [
   "z80HistoryGetHeaderOffset",
   "z80HistorySetEnabled",
   "z80HistoryClear",
-  // --- Positions and the stop target (`.plans/REVERSE_DEBUGGING_PLAN.md` D3, D4)
+  // --- Positions and the stop target (`dev/plans/REVERSE_DEBUGGING_PLAN.md` D3, D4)
   "z80HistorySetTarget",
   "z80HistoryClearTarget",
   "z80HistoryGetSub",

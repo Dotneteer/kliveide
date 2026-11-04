@@ -5,7 +5,7 @@ import { parseNumber } from "../args";
 import { usageError } from "../exit-codes";
 
 /*
- * `klive run --bp` (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D15): a breakpoint in the IDE's `bp-set`
+ * `klive run --bp` (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` D15): a breakpoint in the IDE's `bp-set`
  * syntax, the part of it a headless run can use - an address or a label of the build, the access
  * kinds, a byte range, an I/O mask, a hit rule, a one-shot, a logpoint and a condition (last: it takes
  * the rest of the text). The conditions and log templates are the emulator's own; they are checked

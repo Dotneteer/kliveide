@@ -14,7 +14,7 @@ import { mergeZxSpectrum128Config } from "@emu/machines/zxSpectrum128/ZxSpectrum
 
 /*
  * The ZX Spectrum 128K machine's two models, the 128K and the Pentagon 128
- * (`.plans/PENTAGON_128_PLAN.md` P1, P2), and how references from before the models resolve.
+ * (`dev/plans/PENTAGON_128_PLAN.md` P1, P2), and how references from before the models resolve.
  */
 
 describe("ZX Spectrum 128K models", () => {
@@ -25,7 +25,7 @@ describe("ZX Spectrum 128K models", () => {
       ["sp128", "ZX Spectrum 128K"],
       ["pentagon", "Pentagon 128"]
     ]);
-    // --- The Pentagon has the Beta 128's two drives (`.plans/BETA128_TRDOS_PLAN.md` B1)
+    // --- The Pentagon has the Beta 128's two drives (`dev/plans/BETA128_TRDOS_PLAN.md` B1)
     expect(getModelConfig(MI_SPECTRUM_128, "pentagon")).toEqual({ [MC_SP128_TIMING]: "pentagon", [MC_DISK_SUPPORT]: 2 });
     expect(getModelConfig(MI_SPECTRUM_128, "sp128")).toEqual({ [MC_SP128_TIMING]: "sp128" });
   });

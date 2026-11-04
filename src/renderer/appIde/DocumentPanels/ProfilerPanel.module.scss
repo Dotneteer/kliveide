@@ -1,7 +1,7 @@
 @use "@styles/core.scss" as *;
 
 /*
- * The Profiler document (`.plans/PROFILER_PLAN.md` D14): tabs, the window's facts, and one table per
+ * The Profiler document (`dev/plans/PROFILER_PLAN.md` D14): tabs, the window's facts, and one table per
  * tab. Columns are `ch` (M2); rows take their height from their padding and line box (M3). Colours
  * are the `--*-profiler-*` aliases and the data hierarchy's inks.
  */

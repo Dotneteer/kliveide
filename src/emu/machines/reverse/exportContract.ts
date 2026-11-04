@@ -1,5 +1,5 @@
 /*
- * The export contract (`.plans/REVERSE_DEBUGGING_PLAN.md` D7, Phase 1).
+ * The export contract (`dev/plans/REVERSE_DEBUGGING_PLAN.md` D7, Phase 1).
  *
  * Replay is exact only if every way the host changes a core is in the input journal. Every export of
  * every WASM core therefore has a class:
@@ -41,7 +41,7 @@ const SHARED: [RegExp, ExportClass][] = [
   // --- The execution-history recorder: volatile ring, header and stop target
   [/^z80History/, "debug"],
   // --- The access profile: volatile flags, page map, counter pool and header
-  // --- (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` T4, T7)
+  // --- (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` T4, T7)
   [/^z80Profile/, "debug"],
   // --- The breakpoint condition evaluator: volatile arena, slots and environment
   [/^cond/, "debug"]
@@ -258,7 +258,7 @@ export function unclassifiedExports(coreId: string, names: readonly string[]): s
 
 /**
  * A core's journaled exports, sorted: a debug recording's journal names them, so two builds whose
- * lists differ cannot replay each other's recordings (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` D3, T2)
+ * lists differ cannot replay each other's recordings (`dev/plans/DEBUG_SESSION_RECORDING_PLAN.md` D3, T2)
  * @param names The module's export names (`WebAssembly.Module.exports`)
  */
 export function journaledExportNames(coreId: string, names: readonly string[]): string[] {

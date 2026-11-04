@@ -23,7 +23,7 @@ import { parseCommand } from "@renderer/appIde/services/command-parser";
 import { ValidationMessageType } from "@renderer/abstractions/ValidationMessageType";
 
 /*
- * The `tape-load` IDE command (`.plans/TAPE_VIEWER_PLAN.md` §4.6). The main process and the emulator
+ * The `tape-load` IDE command (`dev/plans/TAPE_VIEWER_PLAN.md` §4.6). The main process and the emulator
  * are mocked here; the keystroke flows run on the real machine in
  * `test/tape/tape-load-flow.test.ts`.
  */
@@ -144,7 +144,7 @@ describe("tape-load command", () => {
   });
 
   it("decides a .bas by its content: a tokenised program is an HT tape anywhere, text is not a tape", async () => {
-    // --- `.plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D1, D6
+    // --- `dev/plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D1, D6
     const tokenised = new Uint8Array(readFileSync(join(__dirname, "../../dev/scripts/doc-shots/recipes/ht1080z-demo.bas")));
     const text = new TextEncoder().encode('10 PRINT "HI"\n');
     const validateWith = async (bytes: Uint8Array, machineId: string) => {

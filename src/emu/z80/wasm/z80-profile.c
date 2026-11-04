@@ -1,7 +1,7 @@
 /*
  * The access profile: per physical byte, whether it was executed, fetched as code, read, written or
  * self-modified, and - in a pool of 8K pages allocated on first touch - how often, and how much time
- * the instructions starting there took (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §4.1, D1-D10).
+ * the instructions starting there took (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §4.1, D1-D10).
  *
  * One file for every Z80 core. The core includes `z80-profile.h` before `z80.c` (which turns the
  * CPU's profile hooks on) and this file after everything its machine macros use, after defining:
@@ -63,7 +63,7 @@ _Static_assert(sizeof(Z80ProfileEntry) == 24, "a profile entry is 24 bytes");
 _Static_assert(sizeof(Z80ProfileHeader) == 192, "the profile header is 192 bytes");
 
 /*
- * The call tracker (`.plans/PROFILER_PLAN.md` §4.2, D9-D12): a shadow stack of open calls and a
+ * The call tracker (`dev/plans/PROFILER_PLAN.md` §4.2, D9-D12): a shadow stack of open calls and a
  * table of call edges, aggregated here so it never allocates and a CALL/RET costs a hash and an add.
  *
  * Keys are profile offsets (T3: one logical address in two banks is two routines). A caller key
@@ -354,7 +354,7 @@ static void z80ProfileChargeBucket(uint32_t bucket, uint32_t ticks) {
 
 
 // -----------------------------------------------------------------------------
-// The call tracker (`.plans/PROFILER_PLAN.md` §4.2, D9-D12)
+// The call tracker (`dev/plans/PROFILER_PLAN.md` §4.2, D9-D12)
 // -----------------------------------------------------------------------------
 
 Z80_ALWAYS_INLINE uint32_t z80ProfileEdgeHash(uint32_t caller, uint32_t callee) {

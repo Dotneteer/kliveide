@@ -7,7 +7,7 @@ import { buildCoverageModel, lcovFilesOf, lineCoverage } from "@common/profile/c
 import { resolveProfileOffsets } from "@emu/machines/profile/profileViews";
 
 /*
- * `klive test --coverage` (`.plans/UNIT_TESTS_CLI_PLAN.md` D8): the runner's merged coverage of the
+ * `klive test --coverage` (`dev/plans/UNIT_TESTS_CLI_PLAN.md` D8): the runner's merged coverage of the
  * tests (G5.5 D17) as LCOV - the IDE's `coverage export` exporter over the compilation's source
  * lines - or as Klive's own `.kcov`, which `coverage load` merges into the IDE.
  */

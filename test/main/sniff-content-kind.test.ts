@@ -7,7 +7,7 @@ import { sniffFileContentKind } from "@main/sniff-content-kind";
 
 /*
  * The main process reads the first bytes of a `.bas` to tell a tokenised HT-1080Z program from source
- * text (`.plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D2).
+ * text (`dev/plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D2).
  */
 const dir = mkdtempSync(join(tmpdir(), "klive-sniff-"));
 afterAll(() => rmSync(dir, { recursive: true, force: true }));

@@ -29,7 +29,7 @@ import { uiLocale } from "@common/i18n/i18n";
 import type { MessageKey } from "@common/i18n/keys.generated";
 
 /*
- * The Unit Tests panel of the Testing activity (`.plans/Z80_UNIT_TESTS_PLAN.md` D13, D14): the
+ * The Unit Tests panel of the Testing activity (`dev/plans/Z80_UNIT_TESTS_PLAN.md` D13, D14): the
  * tests of the last successful build as a tree of suites, each test with its status, T-states and,
  * when it did not pass, its message. A click on a test goes to its label, a click on a message to
  * the failing line. Running goes through the `test-*` commands, so the panel and the prompt do
@@ -98,7 +98,7 @@ export const UnitTestsPanel = () => {
     await ideCommandsService.executeCommand(command, pane);
     await ideCommandsService.executeCommand(`outp ${PANE_ID_TESTS}`);
   };
-  /** Export results as JUnit… (`.plans/UNIT_TESTS_CLI_PLAN.md` D14): the command line's format */
+  /** Export results as JUnit… (`dev/plans/UNIT_TESTS_CLI_PLAN.md` D14): the command line's format */
   const exportJUnit = async () => {
     const file = await mainApi.showSaveFileDialog({
       title: t("panels.side.unitTests.exportDialogTitle"),

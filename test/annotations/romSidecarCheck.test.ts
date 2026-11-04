@@ -7,7 +7,7 @@ import { formatRomSidecar } from "@common/roms/romAnnotationTools";
 import { parseAnnotations } from "@renderer/appIde/annotations/programAnnotations";
 
 /*
- * `rom-ann-check` and the editor's readiness chip (`.plans/ROM_ANNOTATION_EDITING_PLAN.md` R7): the
+ * `rom-ann-check` and the editor's readiness chip (`dev/plans/ROM_ANNOTATION_EDITING_PLAN.md` R7): the
  * assertions of `shippedRomSidecars.test.ts`, in process. Kept in step with that test here — every
  * shipped sidecar must pass — and each rule is shown to bite.
  */

@@ -4,7 +4,7 @@ import { t } from "@common/i18n/i18n";
 
 /*
  * The two-way link between a *watch* (a value display) and a *watchpoint* (a memory breakpoint),
- * `.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §3.3 and §4.7. No React, so the size-by-type
+ * `dev/plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §3.3 and §4.7. No React, so the size-by-type
  * mapping, the overlap test and the reverse direction are tested on their own.
  */
 

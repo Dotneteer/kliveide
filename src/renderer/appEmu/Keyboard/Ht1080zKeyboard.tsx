@@ -9,8 +9,8 @@ import type { Ht1080zRomSetId } from "@emu/machines/ht1080z/Ht1080zRoms";
 import { HT_VIDEO_PAGE } from "@emu/machines/machine-props";
 
 /*
- * The HT-1080Z virtual keyboard (`.plans/HT1080Z_PLAN.md` §7), built to the approved mockup
- * `.plans/ht1080z/ht1080z-keyboard-mockup.html`: geometry measured from the user manual's keyboard
+ * The HT-1080Z virtual keyboard (`dev/plans/HT1080Z_PLAN.md` §7), built to the approved mockup
+ * `dev/plans/ht1080z/ht1080z-keyboard-mockup.html`: geometry measured from the user manual's keyboard
  * drawing (§4.1, p. 8), colours sampled from a photo of a Series I/II machine. One SVG holds the whole
  * keyboard, because its rows are not a grid of equal keys.
  *

@@ -8,7 +8,7 @@ import {
 
 /*
  * Shape-based matching of live Copper RAM against assembled `.copper` blocks
- * (`.plans/COPPER_DEBUGGING_PLAN.md` D8, T10).
+ * (`dev/plans/COPPER_DEBUGGING_PLAN.md` D8, T10).
  */
 
 const MOVE = (reg: number, value: number) => ((reg & 0x7f) << 8) | (value & 0xff);

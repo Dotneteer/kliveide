@@ -19,7 +19,7 @@ import type { SpriteInspectorViewState } from "./SpriteInspectorPanel";
 import styles from "./SpriteInspector.module.scss";
 
 /*
- * The Patterns view (`.plans/SPRITE_INSPECTOR_PLAN.md` §4.5.2, G3.3): all 16K of pattern RAM through
+ * The Patterns view (`dev/plans/SPRITE_INSPECTOR_PLAN.md` §4.5.2, G3.3): all 16K of pattern RAM through
  * the NEX view's sheet (D5). Its controls (format, palette offset, export) live in the document's
  * toolbar and its ⋯ menu, so the sheet starts right under its header. *As used* draws each slot the way the sprites read it (D17); a usage
  * badge counts its users, a warning corner flags a slot read both ways, and a bar under a cell is

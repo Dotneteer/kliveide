@@ -23,7 +23,7 @@ import { AssemblerOptions } from "@main/compiler-common/assembler-in-out";
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
 
 /*
- * Copper and DMA regions (`.plans/NEX_DMA_COPPER_REGIONS_PLAN.md`): the sidecar form that shipped
+ * Copper and DMA regions (`dev/plans/NEX_DMA_COPPER_REGIONS_PLAN.md`): the sidecar form that shipped
  * builds can read (D3), the listing rows (D1, D4, D5, D6), and the dialog helpers (D8).
  */
 

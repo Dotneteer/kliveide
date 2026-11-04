@@ -2,7 +2,7 @@ import { HistoryKind, type HistoryRecord } from "../historyRecord";
 
 /*
  * The ZX Spectrum Next's 16-byte history context (written by `zxnextHistoryContext` and
- * `zxnextHistoryDmaHold` at the end of `zxnext.c`; `.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.3).
+ * `zxnextHistoryDmaHold` at the end of `zxnext.c`; `dev/plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.3).
  *
  * An instruction's context carries the *partition* of each 8K slot as the Next's `getPartition`
  * returns it, not the raw MMU registers: ROM, DivMMC, Multiface and Alt ROM overlay slots 0-1
@@ -110,7 +110,7 @@ export function describeZxNextDmaHold(
   if (record.kind !== HistoryKind.DmaHold) return "";
   const d = decodeZxNextDmaHold(record.context);
   const port = (address: number, io: boolean) => (io ? `port $${hex4(address)}` : `$${hex4(address)}`);
-  // --- Without the held T-states for a diff-friendly trace (`.plans/TRACE_EXPORT_PLAN.md` T2)
+  // --- Without the held T-states for a diff-friendly trace (`dev/plans/TRACE_EXPORT_PLAN.md` T2)
   return (
     `DMA held the bus${withTime ? ` for ${record.repeat.toLocaleString("en-US")} T` : ""} ` +
     `(${port(d.source, d.sourceIsIo)} → ${port(d.destination, d.destinationIsIo)}, ${d.left.toLocaleString("en-US")} left)`

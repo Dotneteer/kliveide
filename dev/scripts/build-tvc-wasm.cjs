@@ -18,7 +18,7 @@ const {
 } = require("./wasm-layout.cjs");
 
 /**
- * Statics a Klive state file leaves out (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` trap 10):
+ * Statics a Klive state file leaves out (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` trap 10):
  * debugging state and buffers the core rewrites before it reads them, so a restore keeps the live
  * core's bytes there.
  */
@@ -178,8 +178,8 @@ const productionExports = [
 
 /*
  * The 176K of physical memory and the 560 x 288 picture (645 KB) fit in 2 MiB with room for the
- * stack; the 4 MiB execution-history ring (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` D2, D3) and
- * the access profile's flags and counter pool (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D5) make
+ * stack; the 4 MiB execution-history ring (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` D2, D3) and
+ * the access profile's flags and counter pool (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D5) make
  * it 8 MiB, as the HT-1080Z's. Raise this only with a recorded reason.
  *
  * 10 MiB since Phase 8: the HBF card's two drives hold their 720K disks in the core's memory

@@ -3,7 +3,7 @@ import type { UnitTestResult, UnitTestSummary } from "@common/unit-tests/unitTes
 import { t } from "@common/i18n/i18n";
 
 /*
- * The rows of the Unit Tests panel (`.plans/Z80_UNIT_TESTS_PLAN.md` D13): suites, each followed by
+ * The rows of the Unit Tests panel (`dev/plans/Z80_UNIT_TESTS_PLAN.md` D13): suites, each followed by
  * its tests, each test followed by its message line when it did not pass. Pure, so the tree, the
  * statuses and the filter are tested without rendering.
  */

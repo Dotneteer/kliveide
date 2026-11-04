@@ -7,8 +7,8 @@ the machine through its API (`IZ88Machine`, `IZ88IdeMachine`), never the core's 
 The machine is the WASM core (`Z88WasmV2Machine`). `z88WasmArtifactBytes()` rebuilds the artifact
 from the C sources when it is missing or older than any of them (or the build script), and otherwise
 uses the one on disk. The harness was built for the TypeScript-to-WASM migration
-(`.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`) and ran every test on both machines until the
-TypeScript one was removed (`.plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`).
+(`dev/plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`) and ran every test on both machines until the
+TypeScript one was removed (`dev/plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`).
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -69,7 +69,7 @@ Methods returning `this` chain.
 | LCD | `lcdWidth` `lcdHeight` `pixel(x, y)` `screen()` | ABGR words; compare with `Z88_LCD.ON/OFF/GREY/SCREEN_OFF`. The LCD renders every 8th frame. |
 | Audio | `startAudio()` `audio()` | Samples of every completed frame (DC-filtered: level changes show as jumps) |
 | Snapshots | `loadSnapshot(bytes, nowMs?)` `insertedCards()` | Parses and maps a `.z88` file, then `loadSnapshotState`; `nowMs` defaults to the file's stop time (no RTC catch-up). Returns the snapshot, its mapping and the restored TIM0-4. |
-| History | `recordHistory(on)` `clearHistory()` `historyInfo()` `history(count?)` `historyFrom(sequence, count)` | The execution-history recorder (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`), shared with every harness (`../historySupport.ts`). A snoozed CPU records nothing. |
+| History | `recordHistory(on)` `clearHistory()` `historyInfo()` `history(count?)` `historyFrom(sequence, count)` | The execution-history recorder (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`), shared with every harness (`../historySupport.ts`). A snoozed CPU records nothing. |
 | Escape hatch | `s.machine` | Avoid in tests; add a method instead |
 
 ## Rules

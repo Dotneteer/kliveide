@@ -4,7 +4,7 @@ import { bytesFromJson, bytesToBase64, toJsonValue } from "@main/automation/enco
 import { formatCallLine, redactSecrets, summarizeParams } from "@main/automation/log";
 
 /*
- * The structured-clone → JSON boundary (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` T7) and the
+ * The structured-clone → JSON boundary (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` T7) and the
  * Automation pane's redaction (D13, T11).
  */
 

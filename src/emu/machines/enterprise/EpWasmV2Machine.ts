@@ -97,7 +97,7 @@ const FAST_LOAD_FRAMES = 25;
 const LOAD_SCRIPT_TIMEOUT_FRAMES = 6000;
 
 /**
- * An Enterprise 64/128 on the WASM core (`wasm/ep/`, `.plans/ENTERPRISE_PLAN.md`): one core for both
+ * An Enterprise 64/128 on the WASM core (`wasm/ep/`, `dev/plans/ENTERPRISE_PLAN.md`): one core for both
  * models, configured by the model at setup.
  *
  * The registers are read live from the core and every write is pushed into it; the debugger runs
@@ -518,7 +518,7 @@ export class EpWasmV2Machine extends EpWasmHost implements IExecutionHistorySour
   }
 
   // ==========================================================================================
-  // The EXDOS card's disks (`.plans/ENTERPRISE_PLAN.md` §10, `EpExdosDisks.ts`, `wasm/ep/ep-exdos.c`)
+  // The EXDOS card's disks (`dev/plans/ENTERPRISE_PLAN.md` §10, `EpExdosDisks.ts`, `wasm/ep/ep-exdos.c`)
 
   /** The card's drives (`MEDIA_DISK_A/B`), once the core is loaded; they hold disks with or without the card */
   private exdosDisks?: EpExdosDisks;
@@ -550,7 +550,7 @@ export class EpWasmV2Machine extends EpWasmHost implements IExecutionHistorySour
   }
 
   // ==========================================================================================
-  // Sound (`.plans/ENTERPRISE_PLAN.md` §8, `wasm/ep/ep-audio.c`)
+  // Sound (`dev/plans/ENTERPRISE_PLAN.md` §8, `wasm/ep/ep-audio.c`)
 
   /** The host's audio rate (`AUDIO_SAMPLE_RATE`) and the DC filter's coefficient for it */
   private syncAudioSampleRate(runtime: EpWasmV2Runtime): void {
@@ -770,7 +770,7 @@ export class EpWasmV2Machine extends EpWasmHost implements IExecutionHistorySour
   }
 
   // ==========================================================================================
-  // The external joysticks (`.plans/ENTERPRISE_PLAN.md` §9.1)
+  // The external joysticks (`dev/plans/ENTERPRISE_PLAN.md` §9.1)
 
   /** Each connector's J-column contacts, as rows 0-4 (`left`, joystick 1) and 5-9 (`right`, joystick 2) */
   private joystickRows: Record<JoystickConnector, number> = { left: 0, right: 0 };
@@ -788,7 +788,7 @@ export class EpWasmV2Machine extends EpWasmHost implements IExecutionHistorySour
   }
 
   // ==========================================================================================
-  // Klive's FILE: device (`.plans/ENTERPRISE_PLAN.md` §9.2, `EpHostFs.ts`)
+  // Klive's FILE: device (`dev/plans/ENTERPRISE_PLAN.md` §9.2, `EpHostFs.ts`)
 
   /** The device's channels */
   readonly hostFs = new EpHostFs();
@@ -864,7 +864,7 @@ export class EpWasmV2Machine extends EpWasmHost implements IExecutionHistorySour
   }
 
   // ==========================================================================================
-  // Tape (`.plans/ENTERPRISE_PLAN.md` §9.3, `wasm/ep/ep-tape.c`, `EpTapeFile.ts`)
+  // Tape (`dev/plans/ENTERPRISE_PLAN.md` §9.3, `wasm/ep/ep-tape.c`, `EpTapeFile.ts`)
 
   /** Decodes the core's SAVE recording as it grows */
   private readonly tapeRecorder = new EpTapeRecorder();
@@ -999,7 +999,7 @@ export class EpWasmV2Machine extends EpWasmHost implements IExecutionHistorySour
   }
 
   // ==========================================================================================
-  // Partitions (`.plans/ENTERPRISE_PLAN.md` §11): the 256 segments, numbered as DAVE numbers them and
+  // Partitions (`dev/plans/ENTERPRISE_PLAN.md` §11): the 256 segments, numbered as DAVE numbers them and
   // labelled by that number in hex; the chooser describes and groups them (`epMachineInfo.ts`).
 
   /** The segment each 8K slot shows (a 16K page's register, twice), as the IDE's slot paging counts */
@@ -1173,8 +1173,8 @@ export class EpWasmV2Machine extends EpWasmHost implements IExecutionHistorySour
   }
 
   // ==========================================================================================
-  // State files and reverse debugging (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.5,
-  // `.plans/REVERSE_DEBUGGING_PLAN.md` §4.2)
+  // State files and reverse debugging (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.5,
+  // `dev/plans/REVERSE_DEBUGGING_PLAN.md` §4.2)
 
   /**
    * Captures the machine's whole state: the core's memory image. The machine must be paused.
@@ -1238,7 +1238,7 @@ export class EpWasmV2Machine extends EpWasmHost implements IExecutionHistorySour
 
 
   // ==========================================================================================
-  // The NICK and DAVE panels (`.plans/ENTERPRISE_PLAN.md` §11, `EpDebugState.ts`)
+  // The NICK and DAVE panels (`dev/plans/ENTERPRISE_PLAN.md` §11, `EpDebugState.ts`)
 
   /** NICK's ports, counters, current LPB and LPT, for the NICK panel */
   getEpNickState(): EpNickDebugState {

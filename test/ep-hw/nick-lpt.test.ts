@@ -4,7 +4,7 @@ import { createEpSession, type EpTestSession } from "../harness/enterprise";
 import { bareMachine, forceLptBase, loadLpt, lpbBytes, standardLpt, stepUntil, type Lpb } from "./bare";
 
 /*
- * NICK's Line Parameter Table walker (`.plans/ENTERPRISE_PLAN.md` §7.1; NICK_VIDEO.md §3,
+ * NICK's Line Parameter Table walker (`dev/plans/ENTERPRISE_PLAN.md` §7.1; NICK_VIDEO.md §3,
  * NICK_VIDEO_BACKGROUND.md §2.4-§2.7): the LPB fetched on every line, LD1/LD2 counting, margins that
  * run on, port 83h's reload sequence, the floating data bus, and the frame ending at vertical sync.
  *

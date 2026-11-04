@@ -15,7 +15,7 @@ import { getTimexModel } from "@emu/machines/timex/timexModels";
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
 
 /*
- * Klive machine → zcc target (`.plans/Z88DK_INTEGRATION_PLAN.md` §5.2, decision C5; the facts are
+ * Klive machine → zcc target (`dev/plans/Z88DK_INTEGRATION_PLAN.md` §5.2, decision C5; the facts are
  * `dev/ai/z88dk/targets.md`). The machine decides the target; the project's options only refine it.
  */
 

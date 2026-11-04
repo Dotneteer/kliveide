@@ -3,7 +3,7 @@ import { intToX2, intToX4 } from "../utils";
 import { CUSTOM_Z80_DISASSEMBLY_TOOL, ICustomDisassembler, IDisassemblyApi } from "./custom-disassembly";
 
 /*
- * The Enterprise 64/128's custom disassembler (`.plans/ENTERPRISE_PLAN.md` §11). `RST 30h` is the
+ * The Enterprise 64/128's custom disassembler (`dev/plans/ENTERPRISE_PLAN.md` §11). `RST 30h` is the
  * EXOS call: the byte after it is the function code, and execution goes on after that byte (the
  * machine's `getCallInstructionLength` gives 2 for it, so Step Over agrees). Every program calls EXOS
  * this way, not only the ROM, so the decoding is not gated on an address.

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /*
- * F3 of .plans/ZX_NEXT_FIDELITY_PROOF_PLAN.md (§8): every program the Next hardware tests load,
+ * F3 of dev/plans/ZX_NEXT_FIDELITY_PROOF_PLAN.md (§8): every program the Next hardware tests load,
  * replayed on Klive's Next core and on the whole FPGA core simulated from dev/vendor/next-fpga/3.02.01/src (nvc),
  * compared right after the instruction that writes the ready marker ($A5 to NextReg $7F).
  *

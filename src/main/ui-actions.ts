@@ -1,6 +1,6 @@
 /*
  * The main-process actions the Settings dialog and the in-window controls run
- * (`.plans/MENU_REDESIGN_PLAN.md` §4–§5). Every action calls the code its old menu item called, so
+ * (`dev/plans/MENU_REDESIGN_PLAN.md` §4–§5). Every action calls the code its old menu item called, so
  * moving a command out of the menu changes where it is, not what it does. The renderers reach these
  * through `MainApi.runUiAction`; the ids are listed in `@common/settings/ui-action-ids`.
  */
@@ -273,7 +273,7 @@ export async function runUiAction(actionId: UiActionId, value?: unknown): Promis
     case "set:z88Lcd":
       await setZ88Lcd(String(value));
       return undefined;
-    // --- The automation server reads these two user settings (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md`
+    // --- The automation server reads these two user settings (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md`
     // --- D4, D7) and starts, stops or re-levels itself when they change
     case "set:automationEnabled":
       applyUserSetting(AUTOMATION_ENABLED_SETTING, value ? "1" : "0");

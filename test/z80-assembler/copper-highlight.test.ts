@@ -1,5 +1,5 @@
 /**
- * Syntax highlighting unit tests for the .copper pragma (`.plans/COPPER_DEBUGGING_PLAN.md` §4.9).
+ * Syntax highlighting unit tests for the .copper pragma (`dev/plans/COPPER_DEBUGGING_PLAN.md` §4.9).
  *
  * These tests validate the structure of the Monaco Monarch language definition exported by
  * `asmKz80LanguageProvider`:

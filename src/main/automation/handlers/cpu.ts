@@ -4,7 +4,7 @@ import type { MethodContext, MethodTable } from "../method-types";
 import { requireInt, requireString } from "../method-types";
 
 /*
- * `cpu.get` and `cpu.set` (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` §4.2): `EmuApi.getCpuState`
+ * `cpu.get` and `cpu.set` (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` §4.2): `EmuApi.getCpuState`
  * and `setRegisterValue`.
  */
 

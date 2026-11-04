@@ -127,7 +127,7 @@ const MACHINES: Record<string, () => Promise<Setup>> = {
     return { machine: s.machine as unknown as Machine, prefix: "tvc", base: 0x8000, counter: 0x9000, di: true, port: 0x0058 };
   },
   // --- The program and its counter in video RAM (page 2 = segment FCh) and the port NICK's (80h): every
-  // --- fetch, counter access and port read is held for NICK's slot grid (`.plans/ENTERPRISE_PLAN.md` §6)
+  // --- fetch, counter access and port read is held for NICK's slot grid (`dev/plans/ENTERPRISE_PLAN.md` §6)
   ep: async () => {
     const s = await createEpSession();
     s.runFrames(20);

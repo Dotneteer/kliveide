@@ -5,7 +5,7 @@ import { createBlankTrd, isSclImage } from "@emu/machines/disk/trd/trdImage";
 import { PRINT_42 } from "./fixtures";
 
 /*
- * TR-DOS (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, B3). The real TR-DOS ROM cannot ship, so its
+ * TR-DOS (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, B3). The real TR-DOS ROM cannot ship, so its
  * view of these disks is checked only where the user's ROM is at hand (KLIVE_TRDOS_ROM).
  */
 

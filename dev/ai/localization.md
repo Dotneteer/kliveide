@@ -3,7 +3,7 @@
 Klive's UI is localized: every user-facing text comes from per-language message catalogs, English
 carries translator context, AI translates English into the other languages, and the app shows the
 language chosen in Settings. It was built in thirteen steps in October 2026 and the plan was closed
-on 2026-11-04 (git history: `.plans/LOCALIZATION_PLAN.md`). Shipped: English plus Spanish,
+on 2026-11-04 (git history: `dev/plans/LOCALIZATION_PLAN.md`). Shipped: English plus Spanish,
 Brazilian and European Portuguese, German and Hungarian, every key translated, **awaiting
 native-speaker review**.
 

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { MenuItemConstructorOptions } from "electron";
 
 /*
- * The shape of the application menu (`.plans/MENU_REDESIGN_PLAN.md` §3, §7 Phase 1 step 7): the
+ * The shape of the application menu (`dev/plans/MENU_REDESIGN_PLAN.md` §3, §7 Phase 1 step 7): the
  * menus and their first-level items for the machines whose menus differ most, and — because macOS
  * fires an accelerator only for an item that is in the menu — every keyboard shortcut.
  */
@@ -182,7 +182,7 @@ describe("the application menu", () => {
     // --- The DivMMC (DISK_IMAGES_AND_FILE_SYSTEMS_PLAN C5) and the Interface 1 (MICRODRIVE_PLAN): off
     // --- until one is connected
     expect(labels(submenu(machine, "Interfaces"))).toEqual(["DivMMC Interface", "Interface 1"]);
-    // --- The ULA's snow and late timing (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phases 4, 5)
+    // --- The ULA's snow and late timing (`dev/plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phases 4, 5)
     expect(labels(submenu(machine, "ZX Spectrum 48K"))).toEqual(["Snow Effect", "Late ULA Timing"]);
     expect(labels(submenu(machine, "Record"))).toEqual([
       "Start Video Recording",

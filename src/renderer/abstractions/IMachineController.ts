@@ -98,7 +98,7 @@ export interface IMachineController {
    */
   beforeFrameDelay?: () => Promise<void>;
 
-  // --- RZX sessions (`.plans/RZX_PLAN.md` §4.4)
+  // --- RZX sessions (`dev/plans/RZX_PLAN.md` §4.4)
 
   /** Skip the frame delay (render to video, D18) */
   unthrottled: boolean;
@@ -121,14 +121,14 @@ export interface IMachineController {
   /** Ends an active RZX session because the IDE changed the machine from outside the CPU (trap 4) */
   interruptRzx(reason: RzxInterruptReason, register?: string): Promise<void>;
 
-  /** Ends the reverse-debugging timeline (`.plans/REVERSE_DEBUGGING_PLAN.md` D2): code injection does */
+  /** Ends the reverse-debugging timeline (`dev/plans/REVERSE_DEBUGGING_PLAN.md` D2): code injection does */
   endTimeline?(): void;
 
   /** The reverse-debugging timeline of the current debug session, if the machine keeps one */
   readonly timeline?: Timeline;
 
   /**
-   * Opens a saved timeline - a debug recording (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` §4.4): the
+   * Opens a saved timeline - a debug recording (`dev/plans/DEBUG_SESSION_RECORDING_PLAN.md` §4.4): the
    * machine takes the present's state, the timeline is rebuilt around it, and the machine stands
    * paused in a debug session at `land` (the present when omitted)
    */
@@ -195,7 +195,7 @@ export interface IMachineController {
   getSourceCallStack(): SourceActivationInfo[] | undefined;
 
   /**
-   * The history cursor (`.plans/LITE_STEP_BACK_PLAN.md` D1): the paused machine looked at in its
+   * The history cursor (`dev/plans/LITE_STEP_BACK_PLAN.md` D1): the paused machine looked at in its
    * recorded past. Optional so test doubles need not provide it.
    */
   readonly historyCursor?: HistoryCursor;
@@ -203,10 +203,10 @@ export interface IMachineController {
   /** Moves the history cursor (D4); the machine is not touched */
   navigateHistory?(op: HistoryNavigationOp, options?: HistoryNavigationOptions): HistoryNavigationResult;
 
-  /** Take over here (`.plans/REVERSE_DEBUGGING_PLAN.md` D12); false when the machine is not in the past */
+  /** Take over here (`dev/plans/REVERSE_DEBUGGING_PLAN.md` D12); false when the machine is not in the past */
   takeOverHere?(): Promise<boolean>;
 
-  /** What Take over here would leave behind (`.plans/REVERSE_DEBUGGING_PLAN.md` T4) */
+  /** What Take over here would leave behind (`dev/plans/REVERSE_DEBUGGING_PLAN.md` T4) */
   forkPreview?(): { sdWrites: number; hostFiles: string[] } | undefined;
 
   /** Reverse Continue with progress and cancel (D15) */
@@ -219,7 +219,7 @@ export interface IMachineController {
   clearHistoryCursor?(): void;
 
   /**
-   * The access profile (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §4.2): its status, undefined
+   * The access profile (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §4.2): its status, undefined
    * when the machine does not profile. Optional so test doubles need not provide them.
    */
   getProfileStatus?(): ProfileStatus | undefined;
@@ -228,7 +228,7 @@ export interface IMachineController {
   /** Clears the profile */
   resetProfile?(): void;
   /**
-   * A profiling window (`.plans/PROFILER_PLAN.md` D1, D2): reset, counters on, the call tracker when
+   * A profiling window (`dev/plans/PROFILER_PLAN.md` D1, D2): reset, counters on, the call tracker when
    * asked, and the optional start/stop markers; false when the machine does not profile
    */
   startProfiling?(options?: { calls?: boolean; at?: number; until?: number }): boolean;
@@ -326,7 +326,7 @@ export type FrameCompletedArgs = {
   savedFileInfo?: SavedFileInfo;
   diskAChanges?: SectorChanges;
   diskBChanges?: SectorChanges;
-  /** Microdrive 1 and 2's written slots (`.plans/MICRODRIVE_PLAN.md`), keyed by slot */
+  /** Microdrive 1 and 2's written slots (`dev/plans/MICRODRIVE_PLAN.md`), keyed by slot */
   microdriveChanges?: (SectorChanges | undefined)[];
   clockMultiplier?: number;
 };

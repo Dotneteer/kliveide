@@ -1,5 +1,5 @@
 /*
- * Timeline positions over the execution-history recorder (`.plans/REVERSE_DEBUGGING_PLAN.md` D3, D4,
+ * Timeline positions over the execution-history recorder (`dev/plans/REVERSE_DEBUGGING_PLAN.md` D3, D4,
  * T6). Phase 0 spike: used by the spike's tests and measurements only, not by the IDE.
  *
  * A position is `(sequence, sub, phase)`: the newest history record's sequence, the units it holds
@@ -161,7 +161,7 @@ export class HistoryPositionPort {
    * What the ring header says it holds. A navigation replay rewinds the ring; putting the present's
    * view back afterwards keeps the history document and G4.3's walkers on the whole recorded run -
    * the records after the replay point are still in their slots, and the ones before it were rewritten
-   * byte for byte (`.plans/REVERSE_DEBUGGING_PLAN.md` D17, Phase 4).
+   * byte for byte (`dev/plans/REVERSE_DEBUGGING_PLAN.md` D17, Phase 4).
    */
   captureView(): RingView {
     return {

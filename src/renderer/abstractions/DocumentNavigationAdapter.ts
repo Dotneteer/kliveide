@@ -22,7 +22,7 @@ export type NavigationAdapterEnvironment = {
  * is no instance to ask. A document type without an adapter never becomes a history entry — that is
  * how a type opts out.
  *
- * See `.plans/NAVIGATION_HISTORY_PLAN.md` §3.2.
+ * See `dev/plans/NAVIGATION_HISTORY_PLAN.md` §3.2.
  */
 export type DocumentNavigationAdapter = {
   /**

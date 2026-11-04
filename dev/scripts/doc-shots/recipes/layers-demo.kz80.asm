@@ -1,4 +1,4 @@
-; A four-layer scene for the Layers screenshots (`.plans/LAYER_COMPOSITION_PLAN.md` Phase 7): blue ULA
+; A four-layer scene for the Layers screenshots (`dev/plans/LAYER_COMPOSITION_PLAN.md` Phase 7): blue ULA
 ; paper and border; Layer 2 at 256x192 from bank 9 with a diagonal ramp and a transparent band down its
 ; left 96 columns; four red sprites (scaled x2) across the middle; and a Copper list that shows
 ; sprites over Layer 2 (SLU) above line 96 and Layer 2 over sprites (LSU) below it. The tilemap stays

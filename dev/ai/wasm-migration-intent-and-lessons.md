@@ -54,7 +54,7 @@ but later ULA parity debugging proved the broader Next migration was
 overstated. The Next WASM diagnostics must not report full default readiness
 while ULA/screen parity is still incomplete. (The blockers were re-audited
 against the VHDL and closed with dual-core tests on 2026-09-19 -
-`.plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md` Step 0 - after which the
+`dev/plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md` Step 0 - after which the
 rollout constants and their diagnostics fields were removed in Step 10.)
 
 Rollout completion on 2026-08-22: the normal ZX Spectrum Next factory default
@@ -133,7 +133,7 @@ separate Next CPU unless there is a very explicit reason and an oracle test that
 proves the shared core cannot satisfy it.
 
 The same holds beyond the Spectrum family. The Cambridge Z88 migration
-(`.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`) needed the Blink's CPU *snooze*,
+(`dev/plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`) needed the Blink's CPU *snooze*,
 which only the TypeScript `Z80Cpu` modelled. It went into `z80.c` as a generic
 facility that mirrors `Z80Cpu` name for name (`z80SnoozeCpu`, `z80AwakeCpu`,
 `z80IsCpuSnoozed`, `z80SnoozeCycle`): the core carries the flag, the machine's
@@ -299,7 +299,7 @@ needs to be extended.
 Keep the old TypeScript backend available as an explicit fallback and parity
 oracle until a separate deprecation plan removes it. Do not delete the fallback
 just because WASM becomes the default. For the ZX Spectrum Next that plan was
-`.plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`, and it is done: separation
+`dev/plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`, and it is done: separation
 first, then a ten-condition parity gate, then removal. Two things about it are
 worth carrying to the next machine.
 
@@ -318,7 +318,7 @@ that is what it is*. Tag the last commit that has both (here
 `pre-zxnext-ts-removal-2026-09-19`) before the first deletion.
 
 **Where no hardware description settles a value, record the oracle's.** The Cambridge Z88 has no
-VHDL, so its removal (`.plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`, tag `z88-typescript-last`)
+VHDL, so its removal (`dev/plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`, tag `z88-typescript-last`)
 turned every lockstep comparison into goldens: the TypeScript machine alone re-ran each scenario and
 its state at every checkpoint went into `test/wasm/z88/goldens/` (hashes for the 4 MB, the picture
 and the samples; one digest per stretch where the comparison ran every frame or instruction). Record
@@ -572,7 +572,7 @@ taught:
 
 ## A Machine With No Interrupts: The HT-1080Z
 
-The HT-1080Z (`.plans/HT1080Z_PLAN.md`, `src/emu/machines/ht1080z/wasm/README.md`) is the second
+The HT-1080Z (`dev/plans/HT1080Z_PLAN.md`, `src/emu/machines/ht1080z/wasm/README.md`) is the second
 machine built from scratch on the shared core: a TRS-80 Model I relative with no INT, no wait states,
 a video circuit that draws against the CPU clock, an AY borrowed from the Spectrum cores, and five
 models on one artifact. What it taught:
@@ -634,7 +634,7 @@ non-Spectrum machine on the shared Z80. What it taught, for the next one:
 
 ## Two Clocks That Never Line Up: The Enterprise 64/128
 
-The Enterprise (`.plans/ENTERPRISE_PLAN.md` §18, `src/emu/machines/enterprise/wasm/README.md`) is the
+The Enterprise (`dev/plans/ENTERPRISE_PLAN.md` §18, `src/emu/machines/enterprise/wasm/README.md`) is the
 fourth non-Spectrum machine on the shared Z80, and the first whose video chip runs from its own
 oscillator. What it taught:
 
@@ -674,7 +674,7 @@ Before touching ZX Spectrum Next WASM work, read:
 - `dev/ai/wasm-migration-intent-and-lessons.md`
 - `dev/ai/wasm-v2-machine-migration-guide.md`
 - `dev/ai/zx-spectrum-next-wasm-parity-audit.md`
-- `.plans/ZX_SPECTRUM_NEXT_WASM_MIGRATION_PLAN.md`
+- `dev/plans/ZX_SPECTRUM_NEXT_WASM_MIGRATION_PLAN.md`
 - `src/emu/machines/zxNext/ZxNextMachine.ts`
 - `src/emu/machines/zxNext/MemoryDevice.ts`
 - `src/emu/machines/zxNext/NextRegDevice.ts`

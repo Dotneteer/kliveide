@@ -1,5 +1,5 @@
 /*
- * The journal-replay determinism test (`.plans/REVERSE_DEBUGGING_PLAN.md` T12, Phase 0 (d)), on the
+ * The journal-replay determinism test (`dev/plans/REVERSE_DEBUGGING_PLAN.md` T12, Phase 0 (d)), on the
  * 48K and the Next. It is the gate a core passes before it gets reverse debugging (D19).
  *
  *   1. Machine A runs a scripted workload with randomly timed inputs - keys and, through the
@@ -454,7 +454,7 @@ function zx8081Machine(machineId: string): MachineFactory {
 }
 
 /**
- * The HT-1080Z at the `>` prompt (`.plans/HT1080Z_PLAN.md` §11): no interrupts, the video drawn
+ * The HT-1080Z at the `>` prompt (`dev/plans/HT1080Z_PLAN.md` §11): no interrupts, the video drawn
  * against the CPU clock, the AY beside the beeper. Inputs besides keys: memory edits, the clock
  * multiplier, AY register writes through ports 1Fh/1Eh, and the RESET key's NMI.
  */
@@ -536,7 +536,7 @@ async function tvcMachine(): Promise<Driver> {
 }
 
 /**
- * The Enterprise 128 at IS-BASIC's prompt (`.plans/ENTERPRISE_PLAN.md` §11): the video and 1 Hz
+ * The Enterprise 128 at IS-BASIC's prompt (`dev/plans/ENTERPRISE_PLAN.md` §11): the video and 1 Hz
  * interrupts, DAVE's waits and NICK's stretch. Inputs besides keys: memory edits, NICK's border and
  * FIXBIAS ports, DAVE's sound registers and the keyboard row select.
  */
@@ -650,7 +650,7 @@ const cores: [SpikeCoreId, MachineFactory, string[], string?][] = [
 const SCRATCH_CORES: SpikeCoreId[] = ["sp48", "zxnext"];
 
 /*
- * T5's proof (`.plans/REVERSE_DEBUGGING_PLAN.md` Phase 3): a lean keyframe - one that leaves the
+ * T5's proof (`dev/plans/REVERSE_DEBUGGING_PLAN.md` Phase 3): a lean keyframe - one that leaves the
  * frame-boundary scratch the layout stamp names out - restored with that scratch full of garbage
  * replays every interval into the next keyframe exactly. Garbage that reached anything the keyframe
  * keeps would show as a differing page.

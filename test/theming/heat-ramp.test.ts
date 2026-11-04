@@ -4,7 +4,7 @@ import { componentAliases } from "@renderer/theming/tokens/componentAliases";
 import { ACCENT_IDS, DEFAULT_ACCENT } from "@common/theming/accents";
 
 /*
- * The memory heat map's ramp (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` T9): in both tones and
+ * The memory heat map's ramp (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` T9): in both tones and
  * whatever the accent, each kind's five steps move monotonically away from the panel surface, the
  * row's text stays legible (≥ 3:1) over the hottest step, and the ramp does not follow the accent.
  */

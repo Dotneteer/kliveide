@@ -1,5 +1,5 @@
 /*
- * Klive's chunked file container (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` D4), shared by the state
+ * Klive's chunked file container (`dev/plans/DEBUG_SESSION_RECORDING_PLAN.md` D4), shared by the state
  * file (`.kls`, magic `KLIVESTA`) and the debug recording (`.klr`, magic `KLIVEREC`). Pure: no Node,
  * no DOM.
  *

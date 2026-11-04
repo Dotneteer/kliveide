@@ -476,7 +476,7 @@ export function getDmaCompletionItems(ctx: DmaCompletionContext): CompletionResu
 }
 
 // ---------------------------------------------------------------------------
-// Copper context-aware completion helpers (`.plans/COPPER_DEBUGGING_PLAN.md` §4.9)
+// Copper context-aware completion helpers (`dev/plans/COPPER_DEBUGGING_PLAN.md` §4.9)
 // ---------------------------------------------------------------------------
 
 /** Where the cursor is within a `.copper` pragma line. */

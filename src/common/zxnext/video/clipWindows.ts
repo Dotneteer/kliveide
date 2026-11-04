@@ -1,6 +1,6 @@
 /*
  * The ZX Spectrum Next's layer clip windows in one coordinate space
- * (`.plans/TILEMAP_INSPECTOR_PLAN.md` §4.6): the 320 x 256 layer space, whose paper's top left is
+ * (`dev/plans/TILEMAP_INSPECTOR_PLAN.md` §4.6): the 320 x 256 layer space, whose paper's top left is
  * (32, 32). Every rule copies the core's renderer (`zxnext-ula.c`), which follows `zxnext.vhd`.
  *
  * Each register holds four 8-bit values, x1, x2, y1, y2, written in turn; the units differ:

@@ -10,7 +10,7 @@ import type { MethodContext, MethodTable } from "../method-types";
 import { optionalInt, optionalString } from "../method-types";
 
 /*
- * `machine.*` (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` §4.2): `EmuApi.issueMachineCommand`, and
+ * `machine.*` (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` §4.2): `EmuApi.issueMachineCommand`, and
  * `machine.wait` on the store subscription (D11). Results report the state *after* the call (T9).
  */
 

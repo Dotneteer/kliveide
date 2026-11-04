@@ -1,7 +1,7 @@
 import type { SourceValueType } from "@abstractions/SourceDebugInfo";
 
 /**
- * The neutral watch AST (`.plans/SHARED_Z80_BACKEND_PLAN.md` §12.3). A language plugin parses a
+ * The neutral watch AST (`dev/plans/SHARED_Z80_BACKEND_PLAN.md` §12.3). A language plugin parses a
  * watch into it; `watch-expression.ts` evaluates it, for every language. As in the compiler's MIR,
  * no node has a hidden default meaning where languages disagree: the parser states it.
  */

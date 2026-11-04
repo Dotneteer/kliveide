@@ -26,7 +26,7 @@ import { layerCards, priorityStack, type LayerCard } from "@renderer/features/la
 import styles from "./LayersDocument.module.scss";
 
 /*
- * The Layers document (`.plans/LAYER_COMPOSITION_PLAN.md` D9): the priority stack for the current
+ * The Layers document (`dev/plans/LAYER_COMPOSITION_PLAN.md` D9): the priority stack for the current
  * `$15`, one card per layer (on or off, clip, why it might be invisible, the debug view) and one
  * picture per layer from the capture, each clickable to solo that layer on the emulator screen.
  */

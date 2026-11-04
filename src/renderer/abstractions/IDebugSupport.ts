@@ -277,7 +277,7 @@ export interface IDebugSupport {
 
   /**
    * The machine's condition evaluator: its core's program store
-   * (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`). Set once per machine.
+   * (`dev/plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`). Set once per machine.
    */
   conditionStoreProvider?: () => ConditionStore | undefined;
 
@@ -300,7 +300,7 @@ export interface IDebugSupport {
   listBreakpointsWithState(): BreakpointInfo[];
 
   /**
-   * Reverse Continue (`.plans/LITE_STEP_BACK_PLAN.md` D11): the enabled execution breakpoints at an
+   * Reverse Continue (`dev/plans/LITE_STEP_BACK_PLAN.md` D11): the enabled execution breakpoints at an
    * address in a partition, with their compiled conditions. Optional: test doubles may omit it.
    */
   historicalExecBreakpoints?(
@@ -308,7 +308,7 @@ export interface IDebugSupport {
     partition: number | undefined
   ): { bp: BreakpointInfo; compiled?: CompiledCondition; error?: string }[];
 
-  // --- Logpoints (`.plans/LOGPOINTS_PLAN.md` §4.2)
+  // --- Logpoints (`dev/plans/LOGPOINTS_PLAN.md` §4.2)
 
   /** The clock, frame counter and slot map logpoints and conditions read. */
   machineInfo?: ConditionMachineInfo;

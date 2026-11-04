@@ -4,7 +4,7 @@ import os from "os";
 import path from "path";
 
 /*
- * Editing a disk image from the IDE (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, D4/D5): a running
+ * Editing a disk image from the IDE (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, D4/D5): a running
  * machine with the disk in a drive is paused and resumed around the edit, the file is replaced
  * safely, the first edit keeps a `.bak`, and a mounted disk goes back into its drive.
  */

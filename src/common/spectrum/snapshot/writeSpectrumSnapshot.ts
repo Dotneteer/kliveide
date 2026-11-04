@@ -1,6 +1,6 @@
 /*
  * Writes a snapshot model in one of the three formats
- * (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.2, D1–D3). Callers pick the format from the
+ * (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.2, D1–D3). Callers pick the format from the
  * file extension with `snapshotFormatOfName`; `.szx` is the one that keeps everything Klive captures.
  */
 

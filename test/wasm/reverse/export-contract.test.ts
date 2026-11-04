@@ -1,5 +1,5 @@
 /*
- * The export contract (`.plans/REVERSE_DEBUGGING_PLAN.md` D7, Phase 1), on every WASM core:
+ * The export contract (`dev/plans/REVERSE_DEBUGGING_PLAN.md` D7, Phase 1), on every WASM core:
  *
  * - every function export of every core has a class (`exportContract.ts`); a core with an export the
  *   contract does not know fails here, so a new input path cannot silently break replay;

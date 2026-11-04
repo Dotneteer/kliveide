@@ -1,5 +1,5 @@
 /*
- * The `.mdr` Microdrive cartridge image (`.plans/MICRODRIVE_PLAN.md` Phase 3; the facts are
+ * The `.mdr` Microdrive cartridge image (`dev/plans/MICRODRIVE_PLAN.md` Phase 3; the facts are
  * `dev/research/microdrive/mdr-and-file-formats.md` and `microdrive-media.md`).
  *
  * An image is up to 254 slots of 543 bytes in tape order, then (usually) one write-protect byte. A

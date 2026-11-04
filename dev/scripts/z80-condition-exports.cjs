@@ -1,6 +1,6 @@
 /*
  * The exports and statics of the shared breakpoint-condition evaluator (`src/emu/z80/wasm/z80-condition.c`,
- * `.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`). Every core and the evaluator's own test module export the
+ * `dev/plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`). Every core and the evaluator's own test module export the
  * same functions (`dev/ai/wasm-core-debug.md` D8).
  */
 

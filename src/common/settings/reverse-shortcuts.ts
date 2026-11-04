@@ -1,5 +1,5 @@
 /*
- * The reverse stepping keys (`.plans/LITE_STEP_BACK_PLAN.md` Q3, T11): the forward step's key plus
+ * The reverse stepping keys (`dev/plans/LITE_STEP_BACK_PLAN.md` Q3, T11): the forward step's key plus
  * Alt, one rule rather than a list, every one a setting. GNOME binds Alt+F5/F7/F8/F10 to window
  * actions, so on Linux the defaults use Ctrl+Alt instead.
  */

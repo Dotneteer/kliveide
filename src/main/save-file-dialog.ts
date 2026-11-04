@@ -1,6 +1,6 @@
 /*
  * A save dialog that remembers its folder (`MainApi.showSaveFileDialog`,
- * `.plans/TRACE_EXPORT_PLAN.md` §4.3): the renderer's features and the menus share it.
+ * `dev/plans/TRACE_EXPORT_PLAN.md` §4.3): the renderer's features and the menus share it.
  */
 import path from "path";
 import { app, dialog, type BrowserWindow } from "electron";

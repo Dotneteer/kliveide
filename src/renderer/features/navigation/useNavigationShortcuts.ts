@@ -27,7 +27,7 @@ const MOUSE_FORWARD = 4;
  * The shortcuts are read on every key press rather than captured once, so a changed
  * `shortcuts.navigateBack` setting applies without a reload.
  *
- * See `.plans/NAVIGATION_HISTORY_PLAN.md` §5.
+ * See `dev/plans/NAVIGATION_HISTORY_PLAN.md` §5.
  */
 export function useNavigationShortcuts(): void {
   const { store } = useRendererContext();

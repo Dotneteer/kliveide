@@ -1,6 +1,6 @@
 /*
  * `show-layer2 [displayed|shadow|window]` asks the Layer 2 Inspector to show a source
- * (`.plans/LAYER2_INSPECTOR_PLAN.md` §4.4). The document may not be mounted yet when the command runs,
+ * (`dev/plans/LAYER2_INSPECTOR_PLAN.md` §4.4). The document may not be mounted yet when the command runs,
  * so the request is held until a listener takes it.
  */
 

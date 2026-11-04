@@ -3,7 +3,7 @@ import type { CompiledCondition, CondNode, ConditionBinaryOp, ConditionRegister 
 /*
  * The bytecode a compiled condition runs as, and the emitter that produces it.
  *
- * `.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md` §4.1. The evaluator is C
+ * `dev/plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md` §4.1. The evaluator is C
  * (`src/emu/z80/wasm/z80-condition.c`), included in every Z80 core; TypeScript only emits. **Keep
  * every number here in step with the `COND_*` defines there** - the format word guards against a
  * program from a different front end, nothing guards against a renumbered op.

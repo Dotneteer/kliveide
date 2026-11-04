@@ -3,7 +3,7 @@ import type { ExecutionHistoryInfo } from "@common/history/historyTypes";
 import type { IExecutionHistorySource } from "@emu/abstractions/IExecutionHistorySource";
 
 /*
- * The execution-history recorder as every harness reads it (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`
+ * The execution-history recorder as every harness reads it (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`
  * §6): through the machine's `IExecutionHistorySource`, as the IDE does. Each session's
  * `recordHistory`, `clearHistory`, `historyInfo`, `history` and `historyFrom` delegate here.
  */

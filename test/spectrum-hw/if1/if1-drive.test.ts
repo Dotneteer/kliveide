@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { formattedMdr, mdrChecksum, READ_BLOCK, SELECT, sp48WithInterface1, standInRom } from "./if1TestSupport";
 
 /*
- * Reading a cartridge (`.plans/MICRODRIVE_PLAN.md` §3 M4, M5, §4.4-4.5;
+ * Reading a cartridge (`dev/plans/MICRODRIVE_PLAN.md` §3 M4, M5, §4.4-4.5;
  * `dev/research/microdrive/interface1-hardware.md` §4, §7): the GAP/SYNC sequence, the bytes after the
  * preamble, their pace, the sector order, and WAIT's hang.
  */

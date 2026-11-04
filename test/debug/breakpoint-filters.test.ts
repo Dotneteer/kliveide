@@ -15,7 +15,7 @@ import { getBreakpointStorageKey } from "@common/utils/breakpoints";
 /*
  * Conditional breakpoints, Phase 1: the model and its persistence. Nothing evaluates a condition yet;
  * these pin which fields are stored, which are not, and that neither filter is part of the identity.
- * See `.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.1, §4.7, C13.
+ * See `dev/plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.1, §4.7, C13.
  */
 
 describe("the breakpoint's identity", () => {

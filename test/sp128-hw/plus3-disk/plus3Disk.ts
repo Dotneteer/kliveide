@@ -2,7 +2,7 @@ import { p3ModelRomSet, type P3ModelId } from "@emu/machines/zxSpectrumP3e/p3Rom
 import { createSp128Session, type Sp128TestSession } from "../../harness/sp128";
 
 /*
- * Shared steps for the +3 disk tests (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, D9): the real
+ * Shared steps for the +3 disk tests (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, D9): the real
  * Amstrad ROMs are the oracle for +3DOS, driving Klive's floppy controller.
  */
 

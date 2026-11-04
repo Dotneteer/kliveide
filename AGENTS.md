@@ -6,15 +6,15 @@ Guidance for AI assistants working in this workspace.
 
 - This is `klive-ide`, an Electron shell application with React renderers.
 - Renderer code lives mainly under `src/renderer`.
-- Future and archived implementation plans live in `.plans/`.
+- Future and archived implementation plans live in `dev/plans/`.
 - Human- and AI-readable implementation pattern docs live in `dev/patterns/`; read the relevant docs before changing established patterns.
 - Additional AI-oriented notes live in `dev/ai/`; read them before related work.
-- `dev/` is becoming the one home for everything that is for Klive's developers and never ships
-  (`dev/README.md`): `.plans/` moves into it as the last step
-  (`.plans/ROOT_DECLUTTER_PLAN.md`). Until a folder has moved, use its old path. Moved so far:
-  `_experiments/` (now `dev/experiments/`), `.changes/` (now `dev/changes/`), `vendor/` (now
-  `dev/vendor/`), `_input/` (now `dev/research/`), `.docs/` (now `dev/patterns/`),
-  `.ai/` (now `dev/ai/`), `scripts/` (now `dev/scripts/`).
+- Everything that is for Klive's developers and never ships lives in `dev/` (`dev/README.md`):
+  `dev/ai/`, `dev/patterns/`, `dev/plans/`, `dev/changes/`, `dev/scripts/`, `dev/vendor/`,
+  `dev/research/` and `dev/experiments/`. These were root folders until 2026-11-04 (`.ai/`,
+  `.docs/`, `.plans/`, `.changes/`, `scripts/`, `vendor/`, `_input/`, `_experiments/`); an old
+  path in a commit message, an old branch or the CHANGELOG means the `dev/` one. Keep the root
+  short: a new developer-only folder goes in `dev/`, not next to `src/`.
 - Local output of the checks and tools (doc-shot staging, visual-test runs, IDE-check homes,
   `i18n:todo` batches, ...) goes to the git-ignored `.local/`, one subfolder per tool.
 
@@ -167,11 +167,11 @@ merely uncoloured, which no route diff can see.
 
 ## Feature Roadmap And Competitive Analysis
 
-- `.plans/CLOSING_THE_GAPS_PLAN.md` is the roadmap for features where Klive is weaker than other
+- `dev/plans/CLOSING_THE_GAPS_PLAN.md` is the roadmap for features where Klive is weaker than other
   Spectrum/Next tools; its Decisions section (standalone IDE, DeZog-compatible conventions, ROM
   annotations written from scratch) is binding.
 - **Whenever a feature from that plan is implemented, update the comparison table (§2) and the
-  gap table (§4) in `.plans/LANDING_PAGE_COMPETITIVE_ANALYSIS.md` in the same change**, and mark
+  gap table (§4) in `dev/plans/LANDING_PAGE_COMPETITIVE_ANALYSIS.md` in the same change**, and mark
   the feature as done in the roadmap. This is a standing instruction from the project author.
 
 ## Shared Z80 back end and source-level debugging
@@ -180,7 +180,7 @@ merely uncoloured, which no route diff can see.
   it lowers to MIR and calls `compileModule` (`link/compile-module.ts`); it never optimises, selects
   instructions, writes Z80 text (only the source's own inline asm), runs the assembler or builds debug
   tables of its own. Read `dev/patterns/z80-backend-frontend-guide.md` before adding or changing a language;
-  the plan is `.plans/SHARED_Z80_BACKEND_PLAN.md` (Part A, with its as-built notes).
+  the plan is `dev/plans/SHARED_Z80_BACKEND_PLAN.md` (Part A, with its as-built notes).
 - MIR types are representations (`mir/representations.ts`), and **every operation whose meaning
   differs between languages states it** (`rounding`, `overflow`, `toInt`, `shift`, `truth`); the
   verifier rejects a missing one and one not implemented yet. Klive BASIC states its own in
@@ -314,7 +314,7 @@ merely uncoloured, which no route diff can see.
 - One C/WASM core runs the Enterprise 128 and 64 (machine `ep`, models `ep128`, `ep64`):
   `src/emu/machines/enterprise/wasm/` - read its `README.md` (the half-T clock and NICK's exact
   rational phase, the slot stepper and the LPT, the stretch, DAVE, sound, `FILE:`, tape) before
-  changing it. The plan and its as-built record are `.plans/ENTERPRISE_PLAN.md` (§18); the research
+  changing it. The plan and its as-built record are `dev/plans/ENTERPRISE_PLAN.md` (§18); the research
   pack is `dev/research/enterprise128/`.
 - Provenance (plan D1): Klive's own code, written from the research pack. Clock Signal (MIT) and MAME
   (BSD) may be read for interface facts; GPL sources (ep128emu, Xep128, the FPGA core) are not read for

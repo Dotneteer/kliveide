@@ -1045,8 +1045,8 @@ export class TvcWasmV2Machine extends TvcWasmHost implements IExecutionHistorySo
   }
 
   // ==========================================================================================
-  // State files and reverse debugging (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.5,
-  // `.plans/REVERSE_DEBUGGING_PLAN.md` §4.2)
+  // State files and reverse debugging (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.5,
+  // `dev/plans/REVERSE_DEBUGGING_PLAN.md` §4.2)
 
   /**
    * Captures the machine's whole state: the core's memory image, which holds the tape deck and its

@@ -1,5 +1,5 @@
 /**
- * Z80 unit tests in the running IDE (`.plans/Z80_UNIT_TESTS_PLAN.md` Phase 2 and 3 exit criteria).
+ * Z80 unit tests in the running IDE (`dev/plans/Z80_UNIT_TESTS_PLAN.md` Phase 2 and 3 exit criteria).
  *
  * Launches Klive under Playwright's Electron driver (the doc-shots harness), creates a ZX Spectrum
  * 48K project with the Klive assembler in a temporary folder, adds unit-test support with `test-init`,

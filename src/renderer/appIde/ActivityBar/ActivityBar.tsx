@@ -25,7 +25,7 @@ export const ActivityBar = ({ order, activities }: Props) => {
   const activeActitity = useSelector((s) => s.ideView?.activity);
   const sideBarVisible = useGlobalSetting(SETTING_IDE_SHOW_SIDEBAR);
   const sideBarToRight = useGlobalSetting(SETTING_IDE_SIDEBAR_TO_RIGHT);
-  // --- The layout is changed where the layout is (`.plans/MENU_REDESIGN_PLAN.md` §5)
+  // --- The layout is changed where the layout is (`dev/plans/MENU_REDESIGN_PLAN.md` §5)
   const [menuState, menuApi] = useContextMenuState();
 
   return (

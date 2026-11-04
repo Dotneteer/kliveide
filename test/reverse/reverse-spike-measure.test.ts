@@ -1,11 +1,11 @@
 /*
- * The reverse-debugging spike's measurements (`.plans/REVERSE_DEBUGGING_PLAN.md` Phase 0 (a)-(c)):
+ * The reverse-debugging spike's measurements (`dev/plans/REVERSE_DEBUGGING_PLAN.md` Phase 0 (a)-(c)):
  * page-shared keyframe cost, T5's render-buffer classification and replay time, on three workloads
  * per machine. Behind a dev flag - it runs only with `KLIVE_REVERSE_SPIKE=1`:
  *
  *   KLIVE_REVERSE_SPIKE=1 npm test -- test/reverse/reverse-spike-measure.test.ts
  *
- * The debug recording's Phase 0 (`.plans/DEBUG_SESSION_RECORDING_PLAN.md`) runs with
+ * The debug recording's Phase 0 (`dev/plans/DEBUG_SESSION_RECORDING_PLAN.md`) runs with
  * `KLIVE_RECORDING_MEASURE=1` (`KLIVE_RECORDING_OUT=<file.json>` writes its results).
  *
  * Optional: `KLIVE_WASM_MAP_DIR=<folder>` (set it for the core builds as well) attributes changed
@@ -660,7 +660,7 @@ describe.skipIf(!SESSION_ENABLED)("reverse debugging: a 10-minute session (Phase
 });
 
 // ------------------------------------------------------------------------------------------------
-// Debug recordings, Phase 0 (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` §5): what a recording of each
+// Debug recordings, Phase 0 (`dev/plans/DEBUG_SESSION_RECORDING_PLAN.md` §5): what a recording of each
 // workload costs on disk and to save and open, full and sparse, at deflate levels 1, 6 and 9.
 // KLIVE_RECORDING_MEASURE=1; KLIVE_RECORDING_FRAMES sets the session length (60 s by default).
 

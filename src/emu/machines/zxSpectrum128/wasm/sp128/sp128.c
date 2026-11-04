@@ -17,13 +17,13 @@
 #define SP128_AUDIO_TRANSITION_CAPACITY 8192u
 #define SP128_AUDIO_SAMPLE_SCALE 24576.0
 /*
- * Two timings share this core (`.plans/PENTAGON_128_PLAN.md`): the ZX Spectrum 128K and the
+ * Two timings share this core (`dev/plans/PENTAGON_128_PLAN.md`): the ZX Spectrum 128K and the
  * Pentagon 128. `sp128HardReset(timing)` picks one; `sp128Timings.ts` is the TypeScript side of the
  * same table, and a test keeps the two equal.
  */
 #define SP128_TIMING_128K 0u
 #define SP128_TIMING_PENTAGON 1u
-/* The Scorpion ZS-256 (`.plans/TIMEX_SCORPION_PLAN.md` G9.4c): its own machine on this core */
+/* The Scorpion ZS-256 (`dev/plans/TIMEX_SCORPION_PLAN.md` G9.4c): its own machine on this core */
 #define SP128_TIMING_SCORPION 2u
 #define SP128_BASE_CLOCK_FREQUENCY 3546900.0
 #define SP128_PENTAGON_CLOCK_FREQUENCY 3500000.0
@@ -34,7 +34,7 @@
 /*
  * The 128K's INT pulse: 35 T-states (the ZXE wiki's Timings table, "14364/35"; 32 is the 48K's).
  * ZX Spectrum Timing Tests 128K fails all its uncontended tests with 32, whose sync sequences run
- * EI and HALT while the pulse is still active (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phase 0). The
+ * EI and HALT while the pulse is still active (`dev/plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phase 0). The
  * Pentagon's comes from the Next VHDL (zxnext.vhd ~1989).
  */
 #define SP128_INTERRUPT_TACTS 35u
@@ -159,7 +159,7 @@ typedef struct Sp128ScreenConfig {
   uint8_t contentionValues[8];
   /*
    * How many T-states the ULA's real memory reads come after the T-states this table fetches at
-   * (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` §1.2): 4 on the 48K, 2 on the 128K/+2 - the offset the
+   * (`dev/plans/SPECTRUM_ULA_ACCURACY_PLAN.md` §1.2): 4 on the 48K, 2 on the 128K/+2 - the offset the
    * floating bus already used (its byte is the table's fetch of `delay + 1` T-states before the
    * port read). A CPU write and an `OUT` to the border take effect against the real reads; 0 keeps
    * the old behaviour on the machines no measurement covers yet (+2A/+3, Timex, Pentagon, Scorpion).
@@ -169,7 +169,7 @@ typedef struct Sp128ScreenConfig {
 
 static uint8_t sp128Ram[SP128_RAM_SIZE];
 static uint8_t sp128Rom[SP128_ROM_SIZE];
-/* The Beta 128's TR-DOS ROM (`.plans/BETA128_TRDOS_PLAN.md`); in at $0000 while `beta128Paged` */
+/* The Beta 128's TR-DOS ROM (`dev/plans/BETA128_TRDOS_PLAN.md`); in at $0000 while `beta128Paged` */
 static uint8_t sp128TrdosRom[0x4000u];
 static uint8_t sp128Memory[SP128_MEMORY_SIZE];
 static uint8_t sp128KeyboardLines[SP128_KEYBOARD_LINE_COUNT];
@@ -348,7 +348,7 @@ static void sp128WriteNonFePort(uint32_t address, uint32_t value);
 #undef BETA128_TACTS_PER_MS
 #undef BETA128_NOW
 /*
- * The DivMMC (`zx-spectrum-divmmc-classic.c`; .plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md C4): the
+ * The DivMMC (`zx-spectrum-divmmc-classic.c`; dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md C4): the
  * 128K model only - the host connects it (`sp128DivMmcSetPresent`). Its ROM-3 entry points need the
  * 48K BASIC ROM (ROM 1) paged in.
  */
@@ -359,7 +359,7 @@ static void sp128DivMmcRemapped(void);
 #define ZXDC_REMAPPED() sp128DivMmcRemapped()
 #include "../../../zxSpectrum/wasm/common/zx-spectrum-divmmc-classic.c"
 /*
- * The Interface 1 (`zx-spectrum-if1.c`; .plans/MICRODRIVE_PLAN.md): the 128K model only - the host
+ * The Interface 1 (`zx-spectrum-if1.c`; dev/plans/MICRODRIVE_PLAN.md): the 128K model only - the host
  * connects it (`sp128If1SetPresent`), never with the DivMMC. Its ROM takes the ROM slot whichever
  * 128K ROM is selected: the hardware decodes the fetch address alone.
  */
@@ -1023,10 +1023,10 @@ static inline void sp128BetaBeforeFetch(uint16_t pc) {
   rebuildFlatRomSlot();
 }
 /* The execution-history recorder's hooks; the recorder and this machine's macros for it are at the
-   end of this file (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` Phase 2) */
+   end of this file (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` Phase 2) */
 #include "../../../../z80/wasm/z80-history.h"
 /* The access profile's hooks; the module and this machine's mapping for it are at the end of this
-   file (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` Phase 2) */
+   file (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` Phase 2) */
 #include "../../../../z80/wasm/z80-profile.h"
 #include "../../../../z80/wasm/z80.c"
 /* The CPU's registers and debugger state, exported as `sp128GetCpuAf` ... (WASM_CORE_LEAN_AND_DEBUG_PLAN D8) */
@@ -2173,7 +2173,7 @@ uint32_t sp128GetRamSize(void) {
   return SP128_RAM_SIZE;
 }
 
-/* --- The Scorpion ZS-256 (`.plans/TIMEX_SCORPION_PLAN.md` G9.4c) */
+/* --- The Scorpion ZS-256 (`dev/plans/TIMEX_SCORPION_PLAN.md` G9.4c) */
 uint32_t sp128GetPort1ffd(void) {
   return sp128Port1ffd;
 }
@@ -2476,7 +2476,7 @@ uint32_t sp128GetRenderingPixelIndex(uint32_t tact) {
   return sp128RenderingPixelIndex[tact % sp128TactsInFrame];
 }
 
-/* The beam position overlay (`.plans/BEAM_POSITION_OVERLAY_PLAN.md` §4.3): the beam, one field per call
+/* The beam position overlay (`dev/plans/BEAM_POSITION_OVERLAY_PLAN.md` §4.3): the beam, one field per call
    (see ulaBeamInfo), and rendering the paused picture up to it, which changes nothing later (T2) */
 uint32_t sp128GetBeamInfo(uint32_t field) {
   /* The Pentagon's tables are the raster rotated SP128_PENTAGON_RASTER_SHIFT tacts later */
@@ -2484,7 +2484,7 @@ uint32_t sp128GetBeamInfo(uint32_t field) {
   return ulaBeamInfo(field);
 }
 
-/* Late ("alternate") ULA timing (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phase 4); the 128K only */
+/* Late ("alternate") ULA timing (`dev/plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phase 4); the 128K only */
 void sp128SetLateTiming(uint32_t late) {
   if ((late != 0u ? 1u : 0u) == ulaLateTiming) return;
   ulaSetLateTiming(late);
@@ -2627,7 +2627,7 @@ uint32_t sp128GetDiagnosticFlags(void) {
 }
 
 // -----------------------------------------------------------------------------
-// Breakpoint conditions (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`): the shared evaluator, with
+// Breakpoint conditions (`dev/plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`): the shared evaluator, with
 // this machine's side-effect-free reads. The partition reads mirror `getMemoryPartition` in
 // `ZxSpectrum128WasmV2Machine.ts` exactly (a test compares them), and the paging `getPartition`.
 // -----------------------------------------------------------------------------
@@ -2647,7 +2647,7 @@ static uint32_t condSp128PeekPartition(int32_t partition, uint32_t address) {
 #include "../../../../z80/wasm/z80-condition.c"
 
 // -----------------------------------------------------------------------------
-// Execution history (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` §3, Phase 2): the shared recorder,
+// Execution history (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` §3, Phase 2): the shared recorder,
 // with this machine's side-effect-free peek through the current map, its frame position in T-states
 // (never an absolute tact: the counter is rebased, trap T4) and its context. The context is captured
 // after the opcode fetch (the recorder's default), so an instruction the Beta 128 paged TR-DOS in
@@ -2685,7 +2685,7 @@ static inline void sp128HistoryContext(uint32_t kind, uint8_t *out) {
 #include "../../../../z80/wasm/z80-history.c"
 
 // -----------------------------------------------------------------------------
-// The access profile (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §2.2, D4): the shared module, with
+// The access profile (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §2.2, D4): the shared module, with
 // this machine's physical layout. Time is in CPU T-states (D8).
 //
 // One linear offset space over the physical arrays, shared by the 128K, the Pentagon and the

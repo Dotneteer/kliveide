@@ -5,7 +5,7 @@ import path from "path";
 import { diskFileName, hostFileToDiskFiles } from "@common/diskfs/importFiles";
 import { PRINT_42 } from "./fixtures";
 
-/* Host files put on a disk (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, B4) */
+/* Host files put on a disk (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, B4) */
 
 describe("host files as disk files", () => {
   it("splits a .tap into its files, with their headers' kinds and parameters", () => {

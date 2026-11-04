@@ -1,5 +1,5 @@
 /**
- * The Enterprise 64/128 virtual keyboard (`.plans/ENTERPRISE_PLAN.md` §9.1), drawn from a photo of an
+ * The Enterprise 64/128 virtual keyboard (`dev/plans/ENTERPRISE_PLAN.md` §9.1), drawn from a photo of an
  * Enterprise 128: every matrix key is on it once, each cap prints what the photographed (German-layout)
  * machine prints there, every key but ENTER is one unit high, and each zone sends its matrix key - the face holds the key (SHIFT too on the right button), the printed
  * shifted legend holds SHIFT with it, the joystick's directions are the cursor keys and its knob SPACE.

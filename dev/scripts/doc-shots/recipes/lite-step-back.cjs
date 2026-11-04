@@ -1,6 +1,6 @@
 /**
  * Screenshots for `docs/content/working-with-ide/execution-history.mdx` ("Stepping back"), and the
- * running-app check of lite step back (`.plans/LITE_STEP_BACK_PLAN.md` Phase 7).
+ * running-app check of lite step back (`dev/plans/LITE_STEP_BACK_PLAN.md` Phase 7).
  *
  * On the 48K it pokes a program with a known call tree into a paused machine, runs it with
  * debugging to a breakpoint, then walks back through the recorded history with the IDE's own

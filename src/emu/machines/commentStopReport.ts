@@ -2,8 +2,8 @@ import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 
 /*
  * The text of a stop a DeZog `ASSERTION` or `WPMEM` comment caused
- * (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` S11). Shared by the emulator's machine controller
- * and the headless unit-test runner (`.plans/Z80_UNIT_TESTS_PLAN.md` D8), so a failing test says
+ * (`dev/plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` S11). Shared by the emulator's machine controller
+ * and the headless unit-test runner (`dev/plans/Z80_UNIT_TESTS_PLAN.md` D8), so a failing test says
  * exactly what the debugger says when the same assertion stops it. No renderer imports.
  */
 

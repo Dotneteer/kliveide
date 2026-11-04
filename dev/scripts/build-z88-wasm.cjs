@@ -18,7 +18,7 @@ const {
 } = require("./wasm-layout.cjs");
 
 /**
- * Statics a Klive state file leaves out (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` trap 10):
+ * Statics a Klive state file leaves out (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` trap 10):
  * debugging state and buffers the core rewrites before it reads them, so a restore keeps the live
  * core's bytes there.
  */
@@ -38,7 +38,7 @@ const Z88_VOLATILE_SYMBOLS = [
 ];
 
 /*
- * Builds the Cambridge Z88 full-machine WASM core (`.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`).
+ * Builds the Cambridge Z88 full-machine WASM core (`dev/plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`).
  *
  * The same shape as the ZX Spectrum builds: plain clang for wasm32 (no Emscripten), one translation
  * unit, a fixed linear memory, and an explicit export allow-list. Builds of the production artifact
@@ -186,9 +186,9 @@ const productionExports = [
 
 /*
  * 4 MB of physical memory, an 800x480 pixel buffer (1.5 MB), the audio buffer and the 4 MB
- * execution-history ring (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` D2, D3) fit in 12 MiB; the
+ * execution-history ring (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` D2, D3) fit in 12 MiB; the
  * access profile adds 16 MB - a flag byte per physical byte (4 MB) and a 64-page counter pool (12 MB)
- * (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D2, D5). `z88.c` asserts the sum at compile time.
+ * (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D2, D5). `z88.c` asserts the sum at compile time.
  * Raise this only with a recorded reason.
  */
 const Z88_WASM_MEMORY_BYTES = 28 * 1024 * 1024;

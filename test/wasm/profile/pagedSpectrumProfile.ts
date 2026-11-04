@@ -4,7 +4,7 @@ import { profileOffsetOf, type ProfileLayout } from "@common/profile/layouts/pro
 import type { Sp128TestSession } from "../../harness/sp128";
 
 /*
- * What the paged Spectrum cores' profile tests share (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`
+ * What the paged Spectrum cores' profile tests share (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`
  * Phase 2): the 128K/Pentagon/Scorpion core and the +2A/+3/+2E/+3E core.
  *
  * The mapping check (traps T2, T3): with the machine in one paging state, a program reads one byte and
@@ -122,7 +122,7 @@ export function checkTimeSums(s: Sp128TestSession, frames = 5): void {
 }
 
 /*
- * The call tracker's smoke test (`.plans/PROFILER_PLAN.md` Phase 3): `call Sub / jr $ / Sub: nop /
+ * The call tracker's smoke test (`dev/plans/PROFILER_PLAN.md` Phase 3): `call Sub / jr $ / Sub: nop /
  * ret` at $8000 gives one edge from the root to Sub, whose inclusive time is Sub's own instructions'
  */
 export const CALL_SMOKE_PROGRAM = [0xcd, 0x05, 0x80, 0x18, 0xfe, 0x00, 0xc9];

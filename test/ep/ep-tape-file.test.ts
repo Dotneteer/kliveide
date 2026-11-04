@@ -19,7 +19,7 @@ import {
 } from "@emu/machines/enterprise/EpTapeFile";
 
 /*
- * Enterprise tape files (`EpTapeFile.ts`, `.plans/ENTERPRISE_PLAN.md` §9.3): the CRC, the chunks, the
+ * Enterprise tape files (`EpTapeFile.ts`, `dev/plans/ENTERPRISE_PLAN.md` §9.3): the CRC, the chunks, the
  * three formats read, the two written, and the SAVE recording's decoder. `test/ep-hw/tape.test.ts` runs
  * them against EXOS itself.
  */

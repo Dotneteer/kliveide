@@ -16,7 +16,7 @@ import { t } from "@common/i18n/i18n";
 const TAPE_FILE_FOLDER = "tapeFileFolder";
 
 /**
- * The Enterprise 64/128's tape (`.plans/ENTERPRISE_PLAN.md` §9.3): a `.tap` (ep128emu's or EPTE's) or a
+ * The Enterprise 64/128's tape (`dev/plans/ENTERPRISE_PLAN.md` §9.3): a `.tap` (ep128emu's or EPTE's) or a
  * `.wav` goes in the deck and plays while EXOS runs a remote relay (`LOAD` in IS-BASIC). Load and Run
  * starts the machine and types the command; fast load runs the machine faster while the tape plays,
  * without it the tape plays in real time. A SAVE to tape is handed over as an ep128emu `.tap`.

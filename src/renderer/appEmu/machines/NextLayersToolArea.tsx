@@ -25,7 +25,7 @@ import { useNextLayerRegs } from "@renderer/features/emulator/useNextLayerView";
 import styles from "./NextLayersToolArea.module.scss";
 
 /**
- * The ZX Spectrum Next Layers strip under the emulator screen (`.plans/LAYER_COMPOSITION_PLAN.md`
+ * The ZX Spectrum Next Layers strip under the emulator screen (`dev/plans/LAYER_COMPOSITION_PLAN.md`
  * §4.5): the four layers as chips in the priority order `$15` selects now, re-ordered live, each
  * with hide and solo; then "show transparency", the clip outlines and the pixel probe, and the
  * priority mode. Everything here changes the one shared view in the app state (D4), which the

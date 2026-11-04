@@ -6,7 +6,7 @@ const root = REPO_ROOT;
 const sharedCpuSource = resolve(root, "src/emu/z80/wasm/z80.c");
 const { Z80_HISTORY_EXPORTS } = require("./z80-history-exports.cjs");
 const { Z80_PROFILE_EXPORTS } = require("./z80-profile-exports.cjs");
-/* The execution-history recorder (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.1) */
+/* The execution-history recorder (`dev/plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.1) */
 const historyHeaderInclude = '#include "../../../../z80/wasm/z80-history.h"';
 const historySourceInclude = '#include "../../../../z80/wasm/z80-history.c"';
 /* What a core that records history defines for the recorder */
@@ -17,7 +17,7 @@ const historyMachineMacros = [
   "Z80_HISTORY_FRAME",
   "Z80_HISTORY_FRAME_TACT"
 ];
-/* The access profile (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §4.1, D1) */
+/* The access profile (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §4.1, D1) */
 const profileHeaderInclude = '#include "../../../../z80/wasm/z80-profile.h"';
 const profileSourceInclude = '#include "../../../../z80/wasm/z80-profile.c"';
 /* What a core that profiles defines for the module: its physical span, pool and mapping (D4, D5, D8) */
@@ -36,7 +36,7 @@ const sharedSpectrumDeviceSources = {
   ports: resolve(root, "src/emu/machines/zxSpectrum/wasm/common/zx-spectrum-ports.c"),
   tape: resolve(root, "src/emu/machines/zxSpectrum/wasm/common/zx-spectrum-tape.c"),
   psg: resolve(root, "src/emu/machines/zxSpectrum/wasm/common/zx-spectrum-psg.c"),
-  // --- The Timex SCLD, included by the ULA in the Timex core (`.plans/TIMEX_SCORPION_PLAN.md` P2)
+  // --- The Timex SCLD, included by the ULA in the Timex core (`dev/plans/TIMEX_SCORPION_PLAN.md` P2)
   scld: resolve(root, "src/emu/machines/zxSpectrum/wasm/common/zx-spectrum-scld.c")
 };
 
@@ -64,7 +64,7 @@ const wasmCpuContract = [
     requiredExports: ["sp48GetCpuAf", "sp48GetCpuBc", "sp48GetCpuDe", "sp48GetCpuHl", "sp48GetCpuPc", "sp48GetCpuSp"]
   },
   {
-    // --- The Timex core (`.plans/TIMEX_SCORPION_PLAN.md` P2): `timex.c` builds the 48K machine with
+    // --- The Timex core (`dev/plans/TIMEX_SCORPION_PLAN.md` P2): `timex.c` builds the 48K machine with
     // --- the SCLD switched on, so its CPU adapter is the 48K's
     id: "timex",
     label: "Timex Computer 2048",
@@ -183,7 +183,7 @@ const wasmCpuContract = [
     cpuAdapterSource: resolve(root, "src/emu/machines/ht1080z/wasm/ht1080z/ht1080z.c"),
     artifact: resolve(root, "src/emu/machines/ht1080z/wasm/dist/ht1080z.wasm"),
     include: '#include "../../../../z80/wasm/z80.c"',
-    // --- The AY is the Spectrum's PSG through aliases (`.plans/HT1080Z_PLAN.md` §5, §10, from
+    // --- The AY is the Spectrum's PSG through aliases (`dev/plans/HT1080Z_PLAN.md` §5, §10, from
     // --- Phase 5); every other Spectrum device is not
     forbiddenIncludeFragments: ["zxSpectrum/wasm/common/"],
     allowedIncludeFragments: ["zxSpectrum/wasm/common/zx-spectrum-psg.c"],
@@ -219,7 +219,7 @@ const wasmCpuContract = [
     cpuAdapterSource: resolve(root, "src/emu/machines/enterprise/wasm/ep/ep.c"),
     artifact: resolve(root, "src/emu/machines/enterprise/wasm/dist/ep.wasm"),
     include: '#include "../../../../z80/wasm/z80.c"',
-    // --- No Spectrum device: NICK and DAVE are the Enterprise's own (`.plans/ENTERPRISE_PLAN.md` §4.1)
+    // --- No Spectrum device: NICK and DAVE are the Enterprise's own (`dev/plans/ENTERPRISE_PLAN.md` §4.1)
     forbiddenIncludeFragments: ["zxSpectrum/wasm/common/"],
     requiredExports: ["epGetCpuAf", "epGetCpuBc", "epGetCpuDe", "epGetCpuHl", "epGetCpuPc", "epGetCpuSp"]
   }
@@ -294,7 +294,7 @@ function validateSharedCpuSource() {
     "#define Z80_PROFILE_MARK() ((void)0)",
     "#define Z80_PROFILE_ACK_END(nmi) ((void)0)",
     "#define Z80_PROFILE_HALT_END() ((void)0)",
-    // --- The call tracker's (`.plans/PROFILER_PLAN.md` D9)
+    // --- The call tracker's (`dev/plans/PROFILER_PLAN.md` D9)
     "#define Z80_PROFILE_CALL(rst) ((void)0)",
     "#define Z80_PROFILE_RET() ((void)0)",
     "#define Z80_PROFILE_INT(nmi) ((void)0)"

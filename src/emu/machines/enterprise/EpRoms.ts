@@ -1,6 +1,6 @@
 /**
  * The bundled Enterprise ROM images (`src/public/roms`, `ep-roms-readme.txt`): the one place that names
- * them, so that dropping the bundled images for user-supplied ones (`.plans/ENTERPRISE_PLAN.md` §17)
+ * them, so that dropping the bundled images for user-supplied ones (`dev/plans/ENTERPRISE_PLAN.md` §17)
  * is a change here only. `test/machines/ep-rom-images.test.ts` checks each image's size and CRC32
  * against this table.
  */

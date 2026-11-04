@@ -61,11 +61,11 @@ static inline void zxnextCpuDelayContendedMemory(uint32_t address, uint32_t memo
 #define Z80_DELAY_PORT_WRITE(address) zxnextCpuDelayPortReadHead(address)
 #define Z80_DELAY_PORT_WRITE_TAIL(address) zxnextCpuDelayPortReadTail(address)
 
-/* The execution-history recorder's hooks (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md`); the recorder
+/* The execution-history recorder's hooks (`dev/plans/EXECUTION_HISTORY_VIEWER_PLAN.md`); the recorder
    itself and this machine's macros for it are at the end of zxnext.c */
 #include "../../../../z80/wasm/z80-history.h"
 static void zxnextHistoryDmaHold(uint32_t cpuTacts, uint16_t src, uint16_t dest, uint32_t frame, uint32_t frameTact);
-/* The access profile's hooks (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`); the module and this
+/* The access profile's hooks (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`); the module and this
    machine's mapping for it are at the end of zxnext.c */
 #include "../../../../z80/wasm/z80-profile.h"
 

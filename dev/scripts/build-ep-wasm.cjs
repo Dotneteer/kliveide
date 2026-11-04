@@ -18,7 +18,7 @@ const {
 } = require("./wasm-layout.cjs");
 
 /**
- * Statics a Klive state file leaves out (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` trap 10):
+ * Statics a Klive state file leaves out (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` trap 10):
  * debugging state and buffers the core rewrites before it reads them, so a restore keeps the live
  * core's bytes there.
  */
@@ -39,7 +39,7 @@ const EP_VOLATILE_SYMBOLS = [
 ];
 
 /*
- * Builds the Enterprise 64/128 full-machine WASM core (`.plans/ENTERPRISE_PLAN.md`).
+ * Builds the Enterprise 64/128 full-machine WASM core (`dev/plans/ENTERPRISE_PLAN.md`).
  *
  * The same shape as the TVC and HT-1080Z builds: plain clang for wasm32 (no Emscripten), one translation unit, a
  * fixed linear memory, and an explicit export allow-list. Builds of the production artifact are
@@ -191,8 +191,8 @@ const productionExports = [
 
 /*
  * The 240K of physical memory and the 736 x 288 picture (848 KB) fit in 2 MiB with room for the
- * stack; the 4 MiB execution-history ring (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` D2, D3) and
- * the access profile's flags and counter pool (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D5) make
+ * stack; the 4 MiB execution-history ring (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` D2, D3) and
+ * the access profile's flags and counter pool (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D5) make
  * it 8 MiB, as the HT-1080Z's and the TVC's before its disks. Raise this only with a recorded reason
  * (EXDOS's drives will, in Phase 9).
  *

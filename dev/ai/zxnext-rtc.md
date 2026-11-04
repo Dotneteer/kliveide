@@ -4,7 +4,7 @@ The Next's DS1307 (bit-banged I2C on `$103B`/`$113B`, address `$68`, `zxnext-i2c
 options on Settings › Machine (Next only, group *Real-time clock*): what the clock follows, and whether
 it keeps its time and its 56 RAM bytes between sessions, like the battery on a real board. A third row
 resets a kept clock. Built 2026-11-03 from a plan closed on 2026-11-04 (git history:
-`.plans/ZXNEXT_RTC_OPTIONS_PLAN.md`). User guide: `docs/content/en/guides/next/real-time-clock.mdx`.
+`dev/plans/ZXNEXT_RTC_OPTIONS_PLAN.md`). User guide: `docs/content/en/guides/next/real-time-clock.mdx`.
 
 ## Decisions (cited as D1-D8)
 

@@ -1,7 +1,7 @@
 import type { NexFileContents } from "@renderer/appIde/DocumentPanels/Next/nexFileLoader";
 
 /*
- * Starting a NEX file without NextZXOS (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D16): moved here from
+ * Starting a NEX file without NextZXOS (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` D16): moved here from
  * the Next harness, which uses it for its pixel tests, so `klive run game.nex` starts a program the
  * same way. The IDE's `nex-run` boots NextZXOS and types `.nexload` instead (see below).
  */

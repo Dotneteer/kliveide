@@ -3,7 +3,7 @@ import { memo, type MouseEvent, type ReactNode, useLayoutEffect, useRef } from "
 import styles from "./IndexedImageCanvas.module.scss";
 
 /*
- * An indexed-colour image (`.plans/TILEMAP_INSPECTOR_PLAN.md` §4.6, T9): palette indices drawn into
+ * An indexed-colour image (`dev/plans/TILEMAP_INSPECTOR_PLAN.md` §4.6, T9): palette indices drawn into
  * **one** `ImageData`, scaled by CSS with `image-rendering: pixelated`, with a checkerboard behind
  * transparent pixels and a slot for overlays sized to the scaled image. The Tilemap Inspector's map,
  * tile sheet and tile previews use it; a Layer 2 or layer-composition view can.

@@ -1,5 +1,5 @@
 /*
- * A WAV (RIFF/WAVE) decoder for the Pi I2S sample source (`.plans/PI_I2S_AUDIO_PLAN.md` §3): PCM at
+ * A WAV (RIFF/WAVE) decoder for the Pi I2S sample source (`dev/plans/PI_I2S_AUDIO_PLAN.md` §3): PCM at
  * 8, 16, 24 or 32 bits and IEEE float at 32 bits, any number of channels, any rate. Channels beyond
  * the second are ignored; a mono file plays on both sides. Compressed formats are out of scope.
  */

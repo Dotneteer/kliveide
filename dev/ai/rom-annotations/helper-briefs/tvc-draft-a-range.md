@@ -17,7 +17,7 @@ emulator's repository and in scanned books); you may have seen one in training. 
 - **Never open anything under `/Users/dotneteer/source/kliveide/dev/research/`.** Do not search the web.
 - **Names in Klive's own TVC code are not evidence**: some came from rtvc's symbol file (`KB_CHIN` in
   `test/harness/tvc/session.ts` and `src/emu/machines/tvc/tvcMachineInfo.ts` is one). Never copy a routine name
-  from `src/emu/machines/tvc/`, `test/harness/tvc/` or `.plans/`. Hardware facts there (ports, paging, the CRTC,
+  from `src/emu/machines/tvc/`, `test/harness/tvc/` or `dev/plans/`. Hardware facts there (ports, paging, the CRTC,
   the interrupt) you may use.
 - RAM addresses (system variables around $0B00-$0BFF and elsewhere) have no names here: describe them by address
   and by the use the code makes of them ("$0B19, the top of RAM found at reset"). Meaning only from code.

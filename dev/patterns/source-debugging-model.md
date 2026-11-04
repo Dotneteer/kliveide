@@ -1,7 +1,7 @@
 # The source-level debugging model
 
 Klive debugs every compiled language at source level through one model and one engine
-(`.plans/SHARED_Z80_BACKEND_PLAN.md` Part B). The core knows machine and calling-convention facts only;
+(`dev/plans/SHARED_Z80_BACKEND_PLAN.md` Part B). The core knows machine and calling-convention facts only;
 language specifics are data from the producer or a small plugin.
 
 ```

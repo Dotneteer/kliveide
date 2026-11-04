@@ -49,7 +49,7 @@ export function isZx8081ModelType(modelType: number | undefined): boolean {
 }
 
 /**
- * Whether a model type is the HT-1080Z's, every model of it (`.plans/HT1080Z_CODE_INJECTION_PLAN.md`
+ * Whether a model type is the HT-1080Z's, every model of it (`dev/plans/HT1080Z_CODE_INJECTION_PLAN.md`
  * D1, D-Q1)
  */
 export function isHt1080zModelType(modelType: number | undefined): boolean {
@@ -62,7 +62,7 @@ export function isTvcModelType(modelType: number | undefined): boolean {
   return modelType === SpectrumModelType.TVC;
 }
 
-/** Whether a model type is the Enterprise 64/128's, both models (`.plans/ENTERPRISE_PLAN.md` §12) */
+/** Whether a model type is the Enterprise 64/128's, both models (`dev/plans/ENTERPRISE_PLAN.md` §12) */
 export function isEnterpriseModelType(modelType: number | undefined): boolean {
   return modelType === SpectrumModelType.Enterprise;
 }

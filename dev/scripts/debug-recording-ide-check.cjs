@@ -1,5 +1,5 @@
 /**
- * Debug recordings in the running IDE (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` Phase 3): on the
+ * Debug recordings in the running IDE (`dev/plans/DEBUG_SESSION_RECORDING_PLAN.md` Phase 3): on the
  * ZX Spectrum 48K, a debug session is saved with `drsave` and opened again with `drload`, through the
  * IDE's command prompt, as a user would. Checks the output of both, Debug › Save Debug Recording...
  * following the timeline, the status bar naming the recording, and Step Back working on the opened

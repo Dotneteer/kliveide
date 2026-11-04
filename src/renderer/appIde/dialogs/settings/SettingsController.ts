@@ -1,5 +1,5 @@
 /*
- * The Settings dialog's controller (`.plans/MENU_REDESIGN_PLAN.md` §4.2): it turns the user's
+ * The Settings dialog's controller (`dev/plans/MENU_REDESIGN_PLAN.md` §4.2): it turns the user's
  * changes into writes, through ports the tests fake. Changes apply at once, as the menu checkboxes
  * did, so there is no draft to keep or discard.
  */

@@ -4,7 +4,7 @@
 
 NEX debugging is built (`dev/ai/nex-debugging.md` is the record: decisions Q1-Q9, the breakpoint model,
 the sidecar, the launch, the paused machine). This plan holds what the first round left. It was
-written from the two closed documents (`.plans/NEX_DEBUGGING_IDEAS.md`, `.plans/NEX_DEBUGGING_PLAN.md`,
+written from the two closed documents (`dev/plans/NEX_DEBUGGING_IDEAS.md`, `dev/plans/NEX_DEBUGGING_PLAN.md`,
 in git history) after checking each open item against the code on 2026-11-04. Items done since those
 documents were last updated are not here: the `bp-set <bank>:<label>` grammar, the live
 Disassembly row menu and its label editing, the annotation regions shaping the live disassembly,

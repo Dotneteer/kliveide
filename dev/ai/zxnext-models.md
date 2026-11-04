@@ -1,7 +1,7 @@
 # ZX Spectrum Next models: boards and core versions
 
 Read this before adding a Next model or a behaviour that depends on the core version or the board.
-It replaces `.plans/ZXNEXT_CORE_VERSIONS_PLAN.md`, which was fully implemented and closed on
+It replaces `dev/plans/ZXNEXT_CORE_VERSIONS_PLAN.md`, which was fully implemented and closed on
 2026-11-04; the plan, with its survey and phase list, is in git history at that path. Code cites
 the decision IDs below (D1, D2, ...); they keep their meaning.
 

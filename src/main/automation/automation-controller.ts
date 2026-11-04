@@ -20,7 +20,7 @@ import { automationRunDir } from "./connection-file";
 import type { AutomationEmuApi, AutomationHost, AutomationIdeApi } from "./host";
 
 /*
- * Starts and stops the automation server (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D4, D13).
+ * Starts and stops the automation server (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` D4, D13).
  *
  * - On while the user setting `automation.enabled` is on, or for this run when Klive was started
  *   with `--automation`. Off by default. A change of the setting takes effect at once, no restart.

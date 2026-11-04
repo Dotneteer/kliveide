@@ -17,7 +17,7 @@ static uint32_t pageReadOffset[8];
 /*
  * The execution-history context's MMU partition of each slot, kept up to date from `pageBank8` and
  * `pageReadOffset` by `zxnextMemorySetPageInfo` whether or not history is recorded - so the bytes do
- * not depend on recording (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` T10). Deliberately NOT
+ * not depend on recording (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` T10). Deliberately NOT
  * volatile: a state file or checkpoint restores it together with the page tables it derives from.
  */
 static uint8_t zxnextHistorySlots[8];

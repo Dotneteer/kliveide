@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { createEpSession } from "../harness/enterprise";
 
 /*
- * Klive's FILE: device (`.plans/ENTERPRISE_PLAN.md` §9.2): its ROM in segment 10h, the host's files
+ * Klive's FILE: device (`dev/plans/ENTERPRISE_PLAN.md` §9.2): its ROM in segment 10h, the host's files
  * through IS-BASIC's own SAVE and LOAD, an EXOS application module started with LOAD, and the errors.
  * The files are the harness's in-memory folder (`session.files`).
  */

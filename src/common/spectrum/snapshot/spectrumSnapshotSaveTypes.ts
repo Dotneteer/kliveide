@@ -1,6 +1,6 @@
 /*
  * The types of the emulator's `saveSpectrumSnapshot` call (`EmuApi`), shared by the IDE, the main
- * process and the emulator. See `.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.3.
+ * process and the emulator. See `dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.3.
  */
 
 /** The result of a save; it crosses the process boundary, so it is plain data */

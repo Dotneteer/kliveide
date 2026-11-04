@@ -47,7 +47,7 @@ const ENTER_SETTLE_FRAMES = 6;
 /**
  * The host side of an Enterprise 64/128 whose hardware is emulated in the WASM core: the clock and
  * frame units, the keyboard mapping and the emulated keystroke queue. It follows the TVC host
- * (`TvcWasmHost.ts`; `.plans/ENTERPRISE_PLAN.md` §4.2). The emulating subclass supplies memory, ports,
+ * (`TvcWasmHost.ts`; `dev/plans/ENTERPRISE_PLAN.md` §4.2). The emulating subclass supplies memory, ports,
  * keys, the picture and the frame loop.
  *
  * Run and Debug come in Phase 8 (through Klive's `FILE:` ROM, plan §12).
@@ -191,10 +191,10 @@ export abstract class EpWasmHost extends Z80MachineBase {
   }
 
   // ==========================================================================================
-  // Code injection: Phase 8 (`.plans/ENTERPRISE_PLAN.md` §12)
+  // Code injection: Phase 8 (`dev/plans/ENTERPRISE_PLAN.md` §12)
 
   // ==========================================================================================
-  // Run and Debug (`.plans/ENTERPRISE_PLAN.md` §12, `common/enterprise/codePlacement.ts`)
+  // Run and Debug (`dev/plans/ENTERPRISE_PLAN.md` §12, `common/enterprise/codePlacement.ts`)
 
   /**
    * Files the FILE: device serves before it asks the file store: Run puts the program here, so it

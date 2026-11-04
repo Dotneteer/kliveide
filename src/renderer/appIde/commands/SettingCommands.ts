@@ -169,11 +169,11 @@ type SettingsDialogArgs = {
 };
 
 /**
- * Opens the Settings dialog (`.plans/MENU_REDESIGN_PLAN.md` §4), optionally on one page.
+ * Opens the Settings dialog (`dev/plans/MENU_REDESIGN_PLAN.md` §4), optionally on one page.
  */
 export class SettingsDialogCommand extends IdeCommandBase<SettingsDialogArgs> {
   readonly id = "settings";
-  // --- Opens the Settings dialog: never through automation (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` T5)
+  // --- Opens the Settings dialog: never through automation (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` T5)
   readonly automation = "deny" as const;
   get description() {
     return t("commands.settings.description", { pages: SETTINGS_PAGES.map((p) => p.id).join(", ") });

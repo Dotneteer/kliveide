@@ -14,7 +14,7 @@ import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler
 import type { ICustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/custom-disassembly";
 
 /*
- * The Enterprise's custom disassembly (`.plans/ENTERPRISE_PLAN.md` §11): the byte after `RST 30h` is
+ * The Enterprise's custom disassembly (`dev/plans/ENTERPRISE_PLAN.md` §11): the byte after `RST 30h` is
  * the EXOS function's code, anywhere in memory.
  */
 

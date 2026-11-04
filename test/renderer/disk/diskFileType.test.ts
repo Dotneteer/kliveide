@@ -4,7 +4,7 @@ import { getFileTypeEntry } from "@renderer/appIde/project/project-node";
 
 /*
  * Disk images and Microdrive cartridges open in the Disk Explorer, not in the text editor
- * (`.plans/MICRODRIVE_PLAN.md`: an `.mdr` once opened as text, its bytes shown as NULs)
+ * (`dev/plans/MICRODRIVE_PLAN.md`: an `.mdr` once opened as text, its bytes shown as NULs)
  */
 
 const store = { getState: () => ({}) } as never;

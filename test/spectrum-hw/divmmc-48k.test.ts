@@ -5,7 +5,7 @@ import { DIVMMC_ROM_SIZE } from "@emu/machines/zxSpectrum/divmmc/divMmcCoreBridg
 import { buildDivMmcTestRom, COUNTER } from "../sp128-hw/divmmc/divmmc-test-rom";
 
 /*
- * The DivMMC on the 48K (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, C4). The 48K's flat memory
+ * The DivMMC on the 48K (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, C4). The 48K's flat memory
  * holds the ROM at $0000, so while the interface is mapped its view replaces those bytes and the
  * core keeps the ROM aside: these tests check that the ROM comes back every time it unmaps.
  */

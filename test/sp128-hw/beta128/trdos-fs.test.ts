@@ -6,7 +6,7 @@ import { trdosDiskBootFlow } from "@emu/machines/zxSpectrum128/trdosFlows";
 import { createSp128Session, trdosRomFromEnvironment } from "../../harness/sp128";
 
 /*
- * The Disk Explorer's TR-DOS edits judged by TR-DOS itself (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md,
+ * The Disk Explorer's TR-DOS edits judged by TR-DOS itself (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md,
  * B3). Like `trdos.test.ts`, only with the developer's own ROM:
  *
  *   KLIVE_TRDOS_ROM=/path/to/trdos.rom npm test -- test/sp128-hw/beta128/trdos-fs.test.ts

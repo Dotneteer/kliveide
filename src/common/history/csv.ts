@@ -1,5 +1,5 @@
 /*
- * RFC 4180 cells and rows for the exported trace (`.plans/TRACE_EXPORT_PLAN.md` D1, T6): comma
+ * RFC 4180 cells and rows for the exported trace (`dev/plans/TRACE_EXPORT_PLAN.md` D1, T6): comma
  * separated, `"`-quoted, CRLF line ends (the caller joins the rows). Pure.
  */
 

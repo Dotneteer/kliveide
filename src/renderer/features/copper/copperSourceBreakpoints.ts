@@ -1,5 +1,5 @@
 /*
- * Source-line Copper breakpoints (`.plans/COPPER_DEBUGGING_PLAN.md` D12): a gutter click on a
+ * Source-line Copper breakpoints (`dev/plans/COPPER_DEBUGGING_PLAN.md` D12): a gutter click on a
  * `.copper` line sets a `cu:` breakpoint on the list index that line was uploaded to, found by
  * matching the live Copper RAM against the compilation's `copperBlocks` (D8). Pure helpers; the
  * editor does the I/O.

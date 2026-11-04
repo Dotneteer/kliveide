@@ -8,7 +8,7 @@ vi.mock("electron", () => ({ app: { isPackaged: false }, dialog: {} }));
 import { cliLauncherPath, installAppleScript, linkPointsTo, shellQuote } from "@main/cli-install";
 
 /*
- * Klive › Install Command Line Tool… (`.plans/UNIT_TESTS_CLI_PLAN.md` D12): the pieces that do not
+ * Klive › Install Command Line Tool… (`dev/plans/UNIT_TESTS_CLI_PLAN.md` D12): the pieces that do not
  * need the administrator prompt.
  */
 describe("Install Command Line Tool", () => {

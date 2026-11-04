@@ -2,8 +2,8 @@
 
 The two-pane File Manager (a Total Commander style commander, opened as an IDE document) was built
 in nine phases on 2026-10-31 and its plan was closed on 2026-11-04 (git history:
-`.plans/FILE_MANAGER_PLAN.md`). The user guide is `docs/content/en/guides/media/file-manager.mdx`;
-the plan's UI mockup is in git history (`.plans/mockups/file-manager.html`). Read this before changing
+`dev/plans/FILE_MANAGER_PLAN.md`). The user guide is `docs/content/en/guides/media/file-manager.mdx`;
+the plan's UI mockup is in git history (`dev/plans/mockups/file-manager.html`). Read this before changing
 `src/main/file-manager/`, `src/common/fileManager/`, `src/common/diskfs/` or
 `src/renderer/appIde/DocumentPanels/FileManager/`.
 

@@ -1,6 +1,6 @@
 // ----------------------------------------------------------------------------
 // Beta 128 disk interface: a WD1793 floppy disk controller, the interface's system register and two
-// drives (`.plans/BETA128_TRDOS_PLAN.md`; every fact used here is listed with its source in §9 of
+// drives (`dev/plans/BETA128_TRDOS_PLAN.md`; every fact used here is listed with its source in §9 of
 // that plan: the FD179X data sheet [DS] and the Beta 128 documentation [BK]).
 //
 // The includer defines, before including this file:

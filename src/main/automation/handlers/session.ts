@@ -7,7 +7,7 @@ import type { AutomationHost } from "../host";
 import type { MethodContext, MethodTable } from "../method-types";
 
 /*
- * `session.*` (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` §4.2). The server itself checks the token
+ * `session.*` (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` §4.2). The server itself checks the token
  * of `session.hello` before this handler runs; the handler only describes the session.
  */
 

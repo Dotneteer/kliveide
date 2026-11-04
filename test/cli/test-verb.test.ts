@@ -18,7 +18,7 @@ import { toFlatBinary, toIntelHex } from "../../src/cli/verbs/build";
 import { machineOf, parseMachineOption, totalsOf } from "../../src/cli/verbs/test";
 
 /*
- * The pure parts of `klive test` and `klive build` (`.plans/UNIT_TESTS_CLI_PLAN.md` §6): the JUnit
+ * The pure parts of `klive test` and `klive build` (`dev/plans/UNIT_TESTS_CLI_PLAN.md` §6): the JUnit
  * mapping (D7, T2), the reporters (D4, T6), the project loader and option precedence (D2, D6), the
  * sjasmplus search (T4) and the code writers. The end-to-end runs are `klive-test-e2e.test.ts`.
  */

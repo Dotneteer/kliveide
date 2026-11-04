@@ -2,7 +2,7 @@ import { SysVar, SysVarType } from "@abstractions/SysVar";
 
 /*
  * The Enterprise's EXOS system variables, for the System Variables panel and for naming the operands
- * that read them (`ld hl,(LP_POINTER)`) — `.plans/ENTERPRISE_PLAN.md` §11.
+ * that read them (`ld hl,(LP_POINTER)`) — `dev/plans/ENTERPRISE_PLAN.md` §11.
  *
  * Recorded from the EXOS 2.1 kernel specification (`dev/research/enterprise128/docs/Exos.htm`, §5.4 "Using
  * the system segment", and part II, §1 "System segment addresses"): the addresses, names and sizes

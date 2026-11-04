@@ -5,7 +5,7 @@ import { createTimexSession, SPECTRUM_COLORS, type TimexTestSession } from "../h
 import { displayFileAddress } from "./_timex-helpers";
 
 /*
- * The 2068s' AY and joysticks, and each model's frame (`.plans/TIMEX_SCORPION_PLAN.md` G9.4b, §8).
+ * The 2068s' AY and joysticks, and each model's frame (`dev/plans/TIMEX_SCORPION_PLAN.md` G9.4b, §8).
  * TS2068 Technical Manual: the AY's register select on $F5, its data on $F6 (2.1.6, 2.1.13.4), its
  * clock 14.112 MHz / 8 = CPU / 2 (2.1.6); the joysticks on the AY's port A, read as register 14 from
  * $F6 with A8 (player 1) or A9 (player 2) high, low active: bit 0 up, 1 down, 2 left, 3 right, 7 the

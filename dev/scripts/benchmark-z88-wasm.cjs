@@ -5,9 +5,9 @@
  *
  * The machine is driven through the Z88 test harness (`test/harness/z88`) - the same public machine
  * API the app's emulator loop uses (`executeMachineFrame`, keys, audio, the LCD), so a figure includes
- * the adapter's work, not only the core's. Step 12 of `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`
+ * the adapter's work, not only the core's. Step 12 of `dev/plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`
  * compared it with the TypeScript machine until that was removed
- * (`.plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`); the results are recorded in
+ * (`dev/plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`); the results are recorded in
  * `src/emu/machines/z88/wasm/README.md`.
  *
  *   node dev/scripts/benchmark-z88-wasm.cjs [--frames 200] [--runs 5] [--scenario id] [--json]

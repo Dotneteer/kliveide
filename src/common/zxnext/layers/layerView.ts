@@ -14,7 +14,7 @@ import {
 } from "./layerMix";
 
 /*
- * The layer debug view's model (`.plans/LAYER_COMPOSITION_PLAN.md` §4.5): what the Layers strip, the
+ * The layer debug view's model (`dev/plans/LAYER_COMPOSITION_PLAN.md` §4.5): what the Layers strip, the
  * Machine menu's Layers submenu and the `layers` command do to the one shared state (D4), and what
  * the strip shows. Pure, so it is tested without the emulator.
  */

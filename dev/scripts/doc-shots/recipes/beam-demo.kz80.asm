@@ -1,4 +1,4 @@
-; The beam position screenshots (`.plans/BEAM_POSITION_OVERLAY_PLAN.md` Phase 6): the Layers demo's
+; The beam position screenshots (`dev/plans/BEAM_POSITION_OVERLAY_PLAN.md` Phase 6): the Layers demo's
 ; scene (`layers-demo.kz80.asm`: blue paper, a Layer 2 ramp, four red sprites, and a Copper list that
 ; switches the layer order from SLU to LSU at line 96), ending in a loop that changes the border every
 ; ~20 lines instead of `jr $`. A breakpoint on `Mark` stops the machine somewhere mid-frame, with the

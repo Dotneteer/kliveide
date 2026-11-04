@@ -1,13 +1,13 @@
 /*
  * The Timex machines' 16-byte history context (`sp48HistoryContext` at the end of `sp48.c`, built
- * with `SP48_SCLD`; `.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` §3):
+ * with `SP48_SCLD`; `dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` §3):
  *   0    port $F4 (bit n: chunk n is external)
  *   1    port $FF (bit 7: the external chunks are the EXROM bank's, not the DOCK's)
  *   2-3  the source of each 8K chunk, 2 bits each, chunk 0 in bits 0-1 of byte 2:
  *        0 HOME, 1 DOCK, 2 EXROM, 3 nothing behind it (reads $FF)
  *   4    the Timex model (0 TC2048, 1 TC2068, 2 TS2068)
  *
- * The partition numbering is `TimexWasmV2Machine`'s (`.plans/TIMEX_SCORPION_PLAN.md` Q5): HOME
+ * The partition numbering is `TimexWasmV2Machine`'s (`dev/plans/TIMEX_SCORPION_PLAN.md` Q5): HOME
  * H0 -1, H1 -2, H2-H7 2-7; DOCK D0-D7 8-15; EXROM X0-X7 -3 to -10. A chunk with nothing behind it
  * is named after the bank port $FF selects, as `getCurrentPartitions` names it (D4).
  */

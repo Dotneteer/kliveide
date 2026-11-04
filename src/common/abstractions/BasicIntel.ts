@@ -1,7 +1,7 @@
 /**
  * Language intelligence for Klive BASIC (`.zxbas`): what one background check of a build root
  * knows about its symbols, for hover, definition, references, completion, rename and the outline
- * (`.plans/BASIC_EDITOR_INTELLIGENCE_PLAN.md` §3).
+ * (`dev/plans/BASIC_EDITOR_INTELLIGENCE_PLAN.md` §3).
  *
  * Unlike the assembler's `LanguageIntelData`, which is keyed by name, every symbol has an id and
  * every occurrence points at one: BASIC has scopes (a local `x` shadows a global `x`) and the binder

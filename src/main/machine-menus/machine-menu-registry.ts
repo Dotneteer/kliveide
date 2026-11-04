@@ -43,7 +43,7 @@ function combine(...renderers: MachineMenuRenderer[]): MachineMenuRenderer {
 }
 
 /**
- * Machine-specific menu information (`.plans/MENU_REDESIGN_PLAN.md`): where each machine's own
+ * Machine-specific menu information (`dev/plans/MENU_REDESIGN_PLAN.md`): where each machine's own
  * items appear in the menu. Machine options that are set once (ROM files, the Z88's keyboard layout
  * and LCD) are in Settings › Machine, not here.
  */
@@ -72,7 +72,7 @@ export const machineMenuRegistry: Record<string, MachineMenuInfo> = {
   [MI_HT1080Z]: {
     devices: { tape: ht1080zTapeMenuRenderer },
     hardwareItems: ht1080zHardwareRenderer,
-    // --- The BASIC Listing view lists Level II BASIC programs (`.plans/HT1080Z_PLAN.md` §11)
+    // --- The BASIC Listing view lists Level II BASIC programs (`dev/plans/HT1080Z_PLAN.md` §11)
     viewItems: spectrumIdeRenderer
   },
   [MI_SPECTRUM_48]: {

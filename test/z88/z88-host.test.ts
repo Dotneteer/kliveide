@@ -15,7 +15,7 @@ import { expectConsole } from "../expectedConsole";
 /*
  * Host-level behaviour of the Cambridge Z88 machine: what the IDE and the card dialogs rely on,
  * independent of how the hardware is emulated. Step 0.1 of
- * `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`.
+ * `dev/plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`.
  */
 
 const SLOT_BASE = 0x10_0000;

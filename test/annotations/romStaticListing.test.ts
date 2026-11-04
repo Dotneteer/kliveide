@@ -7,7 +7,7 @@ import { parseAnnotations } from "@renderer/appIde/annotations/programAnnotation
 import { prepareRomDisassembler, romDecoderFor } from "@renderer/appIde/annotations/romDecoder";
 
 /*
- * A ROM page document lists through the ROM's own decoding (`.plans/ROM_ANNOTATION_EDITING_PLAN.md`
+ * A ROM page document lists through the ROM's own decoding (`dev/plans/ROM_ANNOTATION_EDITING_PLAN.md`
  * W-0): the byte after `RST $08` is a report code, not an instruction. `StaticMemoryDump` passes
  * `prepareRomDisassembler` to the annotated listing for `disassemblyFlavor: "rom"`.
  */

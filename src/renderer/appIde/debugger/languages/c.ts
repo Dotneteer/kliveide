@@ -4,7 +4,7 @@ import type { DebugLanguageSupport } from "../source/language-support";
 import type { WatchBinaryOp, WatchExpr } from "../source/watch-ast";
 
 /**
- * The source-level debugger's C (`language: "c"`: z88dk, `.plans/SHARED_Z80_BACKEND_PLAN.md`
+ * The source-level debugger's C (`language: "c"`: z88dk, `dev/plans/SHARED_Z80_BACKEND_PLAN.md`
  * §12.4). A small C-expression parser, written for Klive: identifiers, decimal, hex, octal and
  * character literals, strings, `[]` subscripts, `&` (address of), unary `- + ! ~`, and the binary
  * operators by C's precedence. Its meanings are C's: `/` truncates two whole numbers, `%` truncates,

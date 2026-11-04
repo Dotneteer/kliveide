@@ -19,7 +19,7 @@ import { summaryText } from "./unitTestTree";
 import { t, uiLocale } from "@common/i18n/i18n";
 
 /*
- * The IDE's side of a unit-test run (`.plans/Z80_UNIT_TESTS_PLAN.md` D13-D17): build first (D15),
+ * The IDE's side of a unit-test run (`dev/plans/Z80_UNIT_TESTS_PLAN.md` D13-D17): build first (D15),
  * run in the main process's worker, report to an output buffer - the Tests pane - with
  * click-to-source links. The Unit Tests panel and the `test-*` commands share it.
  */
@@ -105,7 +105,7 @@ export async function buildAndRunUnitTests(
 
 async function mergeCoverage(context: IdeCommandContext, response: UnitTestRunResponse): Promise<boolean> {
   const coverage = response.coverage!;
-  // --- Coverage is shown only with advanced debugging on (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`)
+  // --- Coverage is shown only with advanced debugging on (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`)
   if (!isAdvancedDebuggingEnabled(context.store.getState())) return false;
   if (context.store.getState().emulatorState?.machineId !== response.machineId) return false;
   try {

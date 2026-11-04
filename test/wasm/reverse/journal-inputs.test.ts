@@ -1,5 +1,5 @@
 /*
- * The input journal captures the inputs trap T2 lists (`.plans/REVERSE_DEBUGGING_PLAN.md` Phase 1):
+ * The input journal captures the inputs trap T2 lists (`dev/plans/REVERSE_DEBUGGING_PLAN.md` Phase 1):
  * each reaches its core through the machine's own API - as the IDE drives it - and must arrive in the
  * contract-driven journal (`JournalingExports.ts`), exports and direct memory writes alike. A
  * program-requested NextReg $02 hard reset (T11), which TypeScript carries out with a ROM re-upload,

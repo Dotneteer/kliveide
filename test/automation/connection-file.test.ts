@@ -15,7 +15,7 @@ import { resolveConnectionFile } from "../../src/cli/rpc/client";
 import { makeTempHome } from "./fake-host";
 
 /*
- * The connection file (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D5, T6).
+ * The connection file (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` D5, T6).
  */
 
 const TOKEN = "a".repeat(64);

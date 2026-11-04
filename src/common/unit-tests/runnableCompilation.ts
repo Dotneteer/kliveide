@@ -1,7 +1,7 @@
 import type { SourceAnnotation } from "@abstractions/CompilerInfo";
 
 /*
- * The part of a compilation a unit-test run needs, as plain data (`.plans/Z80_UNIT_TESTS_PLAN.md`
+ * The part of a compilation a unit-test run needs, as plain data (`dev/plans/Z80_UNIT_TESTS_PLAN.md`
  * D6): it crosses into a `worker_threads` worker by structured clone, which a live
  * `AssemblerOutput` - class instances, parent links, a `Map` keyed by objects - does not survive
  * intact. Symbols keep only what discovery and conditions read.

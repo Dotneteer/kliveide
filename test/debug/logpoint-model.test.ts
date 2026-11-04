@@ -26,7 +26,7 @@ import { logpointGroupsReducer } from "@common/state/watch-reducer";
 import { setLogpointGroupsAction } from "@common/state/actions";
 
 /*
- * The logpoint model (`.plans/LOGPOINTS_PLAN.md` Phase 1): `logMessage` / `logDialect` beside the
+ * The logpoint model (`dev/plans/LOGPOINTS_PLAN.md` Phase 1): `logMessage` / `logDialect` beside the
  * filters and out of the identity, the `annotation` owner and scope, the `LP:` key, the sidecar
  * round trip, and the group switch's reducer.
  */

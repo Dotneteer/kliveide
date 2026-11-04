@@ -5,7 +5,7 @@ import { compileModule, type BackendResult } from "@main/z80-backend/link/compil
 import type { BackendOptions } from "@main/z80-backend/options";
 
 /**
- * "mini": a test-only language on the shared Z80 back end (`.plans/SHARED_Z80_BACKEND_PLAN.md` §5,
+ * "mini": a test-only language on the shared Z80 back end (`dev/plans/SHARED_Z80_BACKEND_PLAN.md` §5,
  * Phase 6). It exists to fail the day the back end grows an assumption of Klive BASIC's: it is
  * written only against the front-end API (plan §4.4) — the MIR, its builder, `compileModule` and
  * `BackendOptions` — and links only the back end's `core` and `zx` runtime packages.

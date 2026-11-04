@@ -1,5 +1,5 @@
 /*
- * The HT-1080Z video: a catch-up raster renderer against the CPU clock (`.plans/HT1080Z_PLAN.md` §6;
+ * The HT-1080Z video: a catch-up raster renderer against the CPU clock (`dev/plans/HT1080Z_PLAN.md` §6;
  * `dev/research/ht1080z/VIDEO_TIMING.md`).
  *
  * One T-state is one character slot: a frame is 312 lines of 112 slots, and slot `s` of the frame is

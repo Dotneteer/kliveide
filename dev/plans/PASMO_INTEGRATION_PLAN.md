@@ -94,7 +94,7 @@ are not documented. Phase 0 settles them by running the real executable.
 | D3 | Binary output | Assemble with `--hex` and parse the Intel HEX into `BinarySegment`s. This gives exact segments with no listing heuristics (unlike `extractSegmentsFromListFile`) and does not overwrite the gaps between ORGs. |
 | D4 | Setup dialog | **Make the sjasmplus dialog generic rather than copying it.** It is about 1,700 lines plus about 1,000 lines of tests, and most of it does not depend on the tool. Move it to `dialogs/assemblerIntegration/` behind a `ToolIntegrationDescriptor`: display name, executable name(s), settings keys, repository URL, an **optional** release source, and the service port. Migrate sjasmplus first, with its tests unchanged and green. PASMO then needs only a descriptor with no release source: the online panel is hidden and a "Get PASMO" link opens the author's page. The alternative is a pruned copy with local setup only. It is faster, but it doubles code that must change in step. |
 | D5 | Model and banking | Use the running machine (`getSjasmModelType`'s fallback branch, moved to a shared helper). Never emit partitions. Next projects are not offered (no Z80N). Templates: sp48, sp128, spp3e, timex, scorpion. |
-| D6 | Symbol kinds | All symbol-file entries are `EQU` lines. Classify a name as a **Label** when the source defines it as `name:` or as a bare label at column 0 (a cheap scan of the files the source map names), and as an **Equ** otherwise. Drop the 8-digit hex local names, or keep them as `isLocal` when D2 gives their definition line. This matters to the profiler and Execution History (`.plans/PROFILER_PLAN.md` D8a). |
+| D6 | Symbol kinds | All symbol-file entries are `EQU` lines. Classify a name as a **Label** when the source defines it as `name:` or as a bare label at column 0 (a cheap scan of the files the source map names), and as an **Equ** otherwise. Drop the 8-digit hex local names, or keep them as `isLocal` when D2 gives their definition line. This matters to the profiler and Execution History (`dev/plans/PROFILER_PLAN.md` D8a). |
 | D7 | DeZog comments (`LOGPOINT`/`ASSERTION`/`WPMEM`) and unit tests | Out of scope for v1. Comments can come later by scanning source comments and mapping line → address through the source map. sjasmplus gets them from SLD `K` lines, which PASMO does not have. DeZog unit tests depend on sjasmplus macros: leave `UNIT_TEST_LANGUAGES` unchanged. |
 | D8 | Provenance | PASMO is GPL. Integrate by **running** it only. Copy no code from it, as with sjasmplus. |
 
@@ -166,7 +166,7 @@ are not documented. Phase 0 settles them by running the real executable.
   no banking, no `.nex` output, with sjasmplus as the Next alternative (see §2.5).
   Update `docs/goldens/docs-routes.golden.txt`. Run `npm run doc:build && npm run doc:check`.
 - Generated screenshots of the dialog with `dev/scripts/doc-shots/` (read `dev/ai/doc-screenshots-guide.md`).
-- Add PASMO to the "External toolchains" row of `.plans/LANDING_PAGE_COMPETITIVE_ANALYSIS.md`.
+- Add PASMO to the "External toolchains" row of `dev/plans/LANDING_PAGE_COMPETITIVE_ANALYSIS.md`.
 - Any style or icon change → `dev/ai/ui-theming-intent-and-lessons.md`.
 
 ## 5. Tests

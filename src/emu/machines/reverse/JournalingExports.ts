@@ -1,5 +1,5 @@
 /*
- * The journaling wrapper over a core's exports (`.plans/REVERSE_DEBUGGING_PLAN.md` D7, D8, Phase 1).
+ * The journaling wrapper over a core's exports (`dev/plans/REVERSE_DEBUGGING_PLAN.md` D7, D8, Phase 1).
  *
  * `installJournal` replaces `runtime.exports` with an object that passes `pure`, `debug` and
  * `execution` exports straight through and routes every `journaled` one (`exportContract.ts`)

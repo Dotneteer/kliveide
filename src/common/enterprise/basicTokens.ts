@@ -1,5 +1,5 @@
 /*
- * IS-BASIC 2.1's stored program (Enterprise 128, `.plans/ENTERPRISE_PLAN.md` §11.4): the statement
+ * IS-BASIC 2.1's stored program (Enterprise 128, `dev/plans/ENTERPRISE_PLAN.md` §11.4): the statement
  * tokens and a detokeniser that turns a program's bytes into the lines LIST prints.
  *
  * Nothing here comes from a published listing or another emulator. It was found by running the ROM on

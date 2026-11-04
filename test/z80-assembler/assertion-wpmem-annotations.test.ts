@@ -14,7 +14,7 @@ import { compileCondition } from "@common/utils/breakpoint-condition/condition-c
 import type { KliveCompilerOutput } from "@abstractions/CompilerInfo";
 
 /*
- * DeZog `ASSERTION` and `WPMEM` comments (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` Phases 3-4):
+ * DeZog `ASSERTION` and `WPMEM` comments (`dev/plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` Phases 3-4):
  * the comment scan, the WPMEM arguments, the Klive reading of an expression, the Klive assembler's
  * annotations and the breakpoints a build installs from them.
  */

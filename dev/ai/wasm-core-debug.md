@@ -4,7 +4,7 @@ Every Z80 core shares the CPU, its export forwarders and an in-core debug loop
 (`src/emu/z80/wasm/README.md` has the working contract: what a fast frame may do, the stop table, how
 to add a stop or a core). This note keeps the decisions the code cites by number, the traps found on
 the way, and the measured budgets. It was built on 2026-10-09 from a plan closed on 2026-11-04 (git
-history: `.plans/WASM_CORE_LEAN_AND_DEBUG_PLAN.md`; some C comments still name it, left alone because
+history: `dev/plans/WASM_CORE_LEAN_AND_DEBUG_PLAN.md`; some C comments still name it, left alone because
 editing a shared core source rebuilds every core).
 
 **The rule:** the core decides **whether** to stop; TypeScript decides **what a stop means**.

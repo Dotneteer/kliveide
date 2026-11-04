@@ -10,7 +10,7 @@ import { createZ88Session } from "../harness/z88";
  * until a key is pressed (or an RTC/flap event wakes it). With INT.KEY set, a key press sets STA.KEY.
  *
  * Where the TypeScript oracle simplifies the hardware, the test says so: it pins the oracle so the
- * WASM core reproduces it (Step 0.3 of `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`).
+ * WASM core reproduces it (Step 0.3 of `dev/plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`).
  */
 describe("Z88 keyboard", () => {
   it.each([

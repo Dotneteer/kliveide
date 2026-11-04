@@ -15,7 +15,7 @@ import { evaluateWatch } from "@renderer/appIde/debugger/source/watch-expression
 import { createSp48Session } from "../harness/sp48";
 
 /*
- * Klive's source-level debugger on a z88dk C program (`.plans/Z88DK_INTEGRATION_PLAN.md` §8): the
+ * Klive's source-level debugger on a z88dk C program (`dev/plans/Z88DK_INTEGRATION_PLAN.md` §8): the
  * committed zcc output runs on the real 48K with a breakpoint on every statement of the adapted
  * debug data; at each stop the call stack and the Variables panel are built from the machine through
  * sccz80's memory frame pointer (`framePointerAddress`) and checked against the program's values.

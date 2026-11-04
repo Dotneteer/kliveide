@@ -56,7 +56,7 @@ class LeadKeyStroke extends EmulatedKeyStroke {
  * The host side of an HT-1080Z whose hardware is emulated in the WASM core: the clock and frame
  * units, the keyboard mapping and the emulated keystroke queue, the partition and ROM metadata. It
  * follows the ZX80/ZX81 host (`Zx8081WasmHost.ts`), the template for a non-Spectrum machine
- * (`.plans/HT1080Z_PLAN.md` §4.2): `ZxSpectrumBase` carries Spectrum-only concerns.
+ * (`dev/plans/HT1080Z_PLAN.md` §4.2): `ZxSpectrumBase` carries Spectrum-only concerns.
  *
  * The emulating subclass supplies memory, ports, keys, the picture and the frame loop.
  */
@@ -239,7 +239,7 @@ export abstract class Ht1080zWasmHost extends Z80MachineBase {
   }
 
   // ==========================================================================================
-  // Code injection (`.plans/HT1080Z_CODE_INJECTION_PLAN.md` D3-D5)
+  // Code injection (`dev/plans/HT1080Z_CODE_INJECTION_PLAN.md` D3-D5)
 
   /** The ROM's wait-for-key loop (`JR 0049h` at 004Eh): idle at the power-on question and at `>` */
   static readonly KEY_WAIT_LOOP = 0x004e;

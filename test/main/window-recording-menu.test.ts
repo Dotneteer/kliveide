@@ -13,8 +13,8 @@ import {
 } from "@common/utils/recordingShortcuts";
 
 /*
- * Machine › Record: the IDE + Emulator recording item (.plans/IDE_EMU_RECORDING_PLAN.md §5.2), and
- * the actions Settings › Recording stores its preferences with (.plans/MENU_REDESIGN_PLAN.md §4.1).
+ * Machine › Record: the IDE + Emulator recording item (dev/plans/IDE_EMU_RECORDING_PLAN.md §5.2), and
+ * the actions Settings › Recording stores its preferences with (dev/plans/MENU_REDESIGN_PLAN.md §4.1).
  */
 
 function stateWith(emulatorState: Record<string, unknown>): AppState {

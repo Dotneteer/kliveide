@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { buildSna128, buildSna48, buildSzx, buildZ80, state128, state48 } from "../spectrum/snapshot/builders";
 
 /*
- * The ZX Spectrum snapshot viewer panel (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.8, Phase 6): its
+ * The ZX Spectrum snapshot viewer panel (`dev/plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.8, Phase 6): its
  * sections per format, the screen picture, an unloadable file still shown, an invalid file, the
  * "at PC" dumps and the RAM bank browser. The values it computes are tested without a DOM in
  * `test/spectrum/snapshot/spectrum-snapshot-view.test.ts`.
