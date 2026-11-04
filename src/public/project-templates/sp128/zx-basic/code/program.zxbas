@@ -6,3 +6,7 @@
 
 print at 10,5; paper 4; bright 0; "Welcome to Klive IDE"
 print at 11,5; paper 4; bright 1; "  (Boriel's Basic)  "
+
+' When the program ends, 128 BASIC's editor takes the screen back. So it waits here.
+DO
+LOOP

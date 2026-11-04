@@ -944,6 +944,20 @@ zxbc's own `tap`/`tzx`/`sna`/`z80` writers.
 > **Set aside (2026-11-04):** the project author made Boriel BASIC the only BASIC compiler before
 > this gate passed (`.plans/KLIVE_BASIC_SWITCH_OFF_PLAN.md`, S1). The items below stay as the work
 > that makes the beta sound; the documentation calls Boriel BASIC a beta until they are done.
+>
+> **The project author's answers (2026-11-04):**
+> - **Item 1:** the production licence is on its way.
+> - **Item 2:** the author checked the install on every platform (macOS, Windows, Linux): it works.
+>   This also covers §13 item 1's kit runs; the Windows `-I`/`-m` separator and the `.pdb` question
+>   stay unverified by a test.
+> - **Item 3:** every `zx-basic` template (48K, 128K, Timex, Scorpion, Next) builds, runs with its
+>   welcome text on the screen, and pauses at a breakpoint in a debug run in the IDE
+>   (`boriel-ide-check.cjs templates`, 15/15, 2026-11-04). The Boriel debugger corpus is not part of
+>   that run.
+> - **Item 4:** done: a `.dbg` whose `binaryLength`/`binaryChecksum` does not match the code is
+>   rejected ("checksum mismatch", `BorielCompiler.ts`).
+> - **Item 5:** the §10 losses are accepted: the author does not require Boriel BASIC to do what
+>   Klive BASIC did. The direction is to remove Klive BASIC and use only Boriel BASIC in Klive.
 
 All of these are needed before anyone proposes making Boriel the default:
 
@@ -983,7 +997,7 @@ Carried over from the handoff note written at the end of B6 (removed 2026-11-04,
    `.plans/BORIEL_BASIC_UPDATE_TRACKING_PLAN.md` (proposed, not built). The pin moved from beta25 to
    **`2.0.0-beta29`** on 2026-10-24 by hand (#1510); what changed is in `.ai/boriel/README.md`,
    "Version history".
-1. **Unverified platforms.** The x86_64 Linux and Windows kits have never been run, and no CI
+1. **Platforms.** The author checked the install on every platform (2026-11-04). Still no CI
    workflow runs a Boriel install test yet (§2 planned them as part of B1's CI install tests).
    Unchecked on Windows: `;` as the `-I`/`-m` separator (`boriel-options.ts`), and skipping the
    34.5 MB of `.pdb` files (§3.4).
@@ -992,13 +1006,17 @@ Carried over from the handoff note written at the end of B6 (removed 2026-11-04,
    process after 20 s and says so. Not Boriel-specific as far as known.
 3. **The readiness gate** (§11) before anyone proposes Boriel as the default: a production licence
    for a non-beta version, installs on every platform from a fresh `HOME`, and every template and
-   the debugger corpus through `boriel-ide-check.cjs`. The Next template
-   (`src/public/project-templates/zxnext/zx-basic/code/program.zxbas`) cannot pass while it uses
-   CODEBANK; a Boriel variant of it (a `MODULE` with `'@split-modules`) would.
+   the debugger corpus through `boriel-ide-check.cjs`. Since 2026-11-04 every `zx-basic` template is a
+   plain Boriel program (the Next one no longer uses CODEBANK), and `test/main/boriel-compiler.test.ts`
+   builds all five with the real zxbc. In the IDE all five build, run and debug
+   (`boriel-ide-check.cjs templates`, 15/15). The run found that a program which ends loses its
+   output on three machines, so the Next, 128K and Scorpion templates end with an endless
+   `DO`/`LOOP`: a `.nex` cannot return to NextZXOS (the format has no way back), so the Next
+   soft-resets into its welcome pages; on the 128K and the Scorpion, 128 BASIC's editor takes the
+   screen back. The 48K and Timex return to BASIC with the output kept.
 4. **Small leftovers:** debugging a `.nex` built outside Klive from zxbc's raw `.dbg` (§6.4). The
    128K tape loader crash is fixed (§7); whether a banked Boriel export should go back to Klive's
    loader (so `-as`, `-n`, `-b`, `-scr` work again) instead of zxbc's tape is still to decide.
-5. ~~**The debug-info check warns on the Get Started program**~~ **Fixed 2026-11-04** (`dbg-observed.md` 16: a block statement swallowed its first inner statement's bytes; the adapter drops the block's entry; fixture `do-loop`). (`scripts/doc-shots/fixtures/get-started/bouncing-ball`):
-   `ZXBC-D`, "statements 2 and 3 overlap" (its first `DIM ... = value` lines). Seen 2026-11-04, when
-   Boriel BASIC became the only compiler (`.plans/KLIVE_BASIC_SWITCH_OFF_PLAN.md`); the program builds,
-   runs and debugs. Every reader of Get Started sees the warning, so it is the first beta issue to fix.
+5. ~~**The debug-info check warned on the Get Started program**~~ (`ZXBC-D`, "statements 2 and 3
+   overlap"). **Fixed 2026-11-04:** a block statement swallowed its first inner statement's bytes
+   (`.ai/boriel/dbg-observed.md` 16); the adapter drops the block's entry (fixture `do-loop`).

@@ -13,11 +13,14 @@
  *   ui     - the status bar names the compiler of the open BASIC file (a project's choice wins), the
  *            Settings row switches it (writing the project's choice), the Boriel row shows the
  *            installation, and a click on the status bar item opens the Boriel BASIC dialog;
+ *   templates - every shipped zx-basic template, unchanged, on its own machine: it builds, runs
+ *            (its screen saved as emu.png) and pauses at a breakpoint on its first PRINT (the Next
+ *            needs the card image); TEMPLATES=sp48,zxnext picks machines;
  *   banked - a '@split-modules program (test/boriel/fixtures/banked-128) on the 128K and the Next: a
  *            breakpoint in a module that zxbc put in a RAM bank pauses the machine there.
  *
  *   npx electron-vite build --config build/electron.vite.config.ts
- *   node scripts/boriel-ide-check.cjs [run|debug|next|export|ui|banked ...]
+ *   node scripts/boriel-ide-check.cjs [run|debug|next|export|ui|templates|banked ...]
  *
  * Boriel BASIC comes from BORIEL_ROOT, else ~/zxbasic2 (install it from Klive's setup dialog).
  * Screenshots and the throwaway homes go to `.boriel-ide-check/` (git-ignored). Local only: it needs
@@ -210,6 +213,40 @@ const PARTS = {
     // await sleep(800);
     // check(/Boriel BASIC/.test(await statusBar()), "ui: the status bar follows the dialog");
     await s.k.close();
+  },
+
+  async templates() {
+    // --- Every shipped zx-basic template, unchanged, as a user gets it: it builds, runs (its welcome
+    // --- text is on the screen, `emu.png`), and a breakpoint on its first PRINT pauses a debug run
+    for (const machine of (process.env.TEMPLATES ?? "sp48,sp128,timex,scorpion,zxnext").split(",")) {
+      const next = machine === "zxnext";
+      const s = await session(`template-${machine}`, { card: next });
+      const projects = path.join(s.out, "projects");
+      await s.k.cmd(`newp ${machine} tpl zx-basic -p "${projects}"`, 5000);
+      const folder = path.join(projects, "tpl");
+      const file = "program.zxbas";
+      const source = fs.readFileSync(path.join(folder, "code", file), "utf8");
+      check(/Boriel BASIC \(beta\)/.test(source), `templates: ${machine}: the template names Boriel BASIC (beta)`);
+      await s.k.cmd(`open "${folder}"`, 8000);
+      await s.k.cmd(`nav code/${file}`, 3000);
+      if (next) {
+        for (let t = Date.now(); !/ZX Spectrum Next/.test(await s.emuText()) && Date.now() - t < 30000; ) await sleep(500);
+        await sleep(3000);
+      }
+      await s.k.cmd("run", next ? 9000 : 6000);
+      check(/Code injected and started/.test(await s.ideText()), `templates: ${machine}: the template builds and starts`);
+      // --- NextZXOS boots and .nexloads the program first
+      const emuWindow = s.k.app.windows().find((w) => w.url().includes("?emu"));
+      await sleep(next ? 90000 : 4000);
+      await emuWindow.screenshot({ path: path.join(s.out, "emu.png") });
+      await s.k.cmd("em-stop", 2000);
+      const line = source.split("\n").findIndex((l) => /^\s*print\b/i.test(l)) + 1;
+      await s.k.cmd(`bp-set [code/${file}]:${line}`, 1500);
+      await s.k.cmd("debug", next ? 5000 : 9000);
+      check(!!(await s.waitPaused(next ? 120000 : 20000)), `templates: ${machine}: a breakpoint on line ${line} pauses a debug run`);
+      await s.k.ide.screenshot({ path: path.join(s.out, "paused.png") });
+      await s.k.close();
+    }
   },
 
   async banked() {
