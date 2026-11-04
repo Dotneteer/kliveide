@@ -41,7 +41,7 @@ Shipped profiles:
   `dev/vendor/next-fpga/<version>/`. Upstream has no tags; versions are branches, except 3.02.01, which
   is pinned to commit `5ad7546d` (the last before "Bump core number to 3.02.02"). Pin commits, not
   branch names. Readers resolve files through `nextFpgaPath(version, file)`
-  (`scripts/next-fpga-path.cjs`), which names the fetch command when the tree is missing. A
+  (`dev/scripts/next-fpga-path.cjs`), which names the fetch command when the tree is missing. A
   citation names the version (`zxnext.vhd@3.02.04 ~5186`); an unversioned one means 3.02.01. Nothing
   in CI reads the VHDL.
 - **D4.1 - Klive's VHDL comments are tracked patches** in `dev/vendor/next-fpga/comments/<version>/`,
@@ -70,7 +70,7 @@ Shipped profiles:
   model-less references still mean `ks2-30201` (D1).
 - **D8 - ROM annotations follow the annotation provenance rule** (`dev/ai/rom-annotations/README.md`,
   D4 there). A page whose CRC is unchanged reuses its sidecar. For changed pages,
-  `npm run rom:annotations:carry -- <fromSidecar> <toRom>` (`scripts/rom-annotations-carry.cjs`,
+  `npm run rom:annotations:carry -- <fromSidecar> <toRom>` (`dev/scripts/rom-annotations-carry.cjs`,
   core in `src/common/roms/romCarry.ts`, tested by `test/annotations/romCarry.test.ts`) re-anchors
   each annotation by a byte signature and lists what it cannot place for hand review. Nothing is
   taken from a published commented disassembly. The 2.10 set was carried, then authored from its
@@ -93,7 +93,7 @@ Shipped profiles:
     manifest; the ROM loader checks page CRCs at load. `npm run next-roms:check -- --online` re-downloads
     and compares, by hand only, never in CI.
   - **D9.4** The SD base image is built from the distribution at the set's commit by
-    `npm run next-sd:build -- <setId>` (`scripts/build-next-sd-image.cjs`, deterministic) into
+    `npm run next-sd:build -- <setId>` (`dev/scripts/build-next-sd-image.cjs`, deterministic) into
     `src/public/mmc/<setId>-base.cim`, committed, its sha256 in the set's `sdBaseImage`.
   - **D9.5** Layout: one folder per set, `src/public/roms/zxnext/<setId>/` (ROMs and their `.rom.dis`
     sidecars). Every reader finds a file through one helper, `nextRomPath(setId, file)`
@@ -106,10 +106,10 @@ Shipped profiles:
 | Profiles, aliases, implicit and new-project model, display name, state core id | `src/emu/machines/zxNext/nextProfiles.ts` |
 | Machine models in the registry | `src/common/machines/machine-registry.ts` (`MI_ZXNEXT`) |
 | Compile-time defines | `src/emu/machines/zxNext/wasm/zxnext/zxnext-profile.h` |
-| Artifact list (must match `NEXT_PROFILES`) | `scripts/zxnext-artifacts.cjs`, checked by `test/wasm/zxNext/wasm-next-artifacts.test.ts` |
+| Artifact list (must match `NEXT_PROFILES`) | `dev/scripts/zxnext-artifacts.cjs`, checked by `test/wasm/zxNext/wasm-next-artifacts.test.ts` |
 | NextReg sets | `src/emu/machines/zxNext/nextRegDescriptors.ts` (base), `nextRegSets/` |
 | VHDL pins and comments | `dev/vendor/next-fpga/sources.json`, `dev/vendor/next-fpga/comments/<version>/` |
-| VHDL scripts | `npm run next-fpga:{fetch,comments,diff}` (`scripts/next-fpga-*.cjs`) |
+| VHDL scripts | `npm run next-fpga:{fetch,comments,diff}` (`dev/scripts/next-fpga-*.cjs`) |
 | ROM set manifest (provenance, hashes, page CRCs, facts, SD image) | `src/common/zxnext/nextRomSets.json`, typed by `src/common/zxnext/romSets.ts` (`nextRomPath`, `nextRomFolder`) |
 | ROMs and sidecars | `src/public/roms/zxnext/<setId>/` |
 | SD base images | `src/public/mmc/` (`ks2-base.cim` for 2.08, `nextzxos-2.10-base.cim`) |
@@ -168,7 +168,7 @@ Shipped profiles:
 3. **ROM facts.** Fill in the set's `facts` by hand from the ROM bytes; extend `rom-facts.test.ts`
    and the ROM decoder's inline-data addresses.
 4. **Profile.** Add the record to `NEXT_PROFILES` (new id, never reuse one), the artifact to
-   `scripts/zxnext-artifacts.cjs` (or share one), the model to the registry.
+   `dev/scripts/zxnext-artifacts.cjs` (or share one), the model to the registry.
 5. **NextReg set.** Add `nextRegSets/<core>.ts` with the delta and register it in `index.ts`.
 6. **Hardware.** One delta item at a time, behind `#if ZXNEXT_CORE_VERSION >= <new>` (or the board
    define), each with a harness test on every profile; check the older artifacts stay unchanged.

@@ -7,12 +7,12 @@ import type { CliIo } from "../../src/cli/io";
 import { runCli } from "../../src/cli/run-cli";
 import { ZX81_CHARSET } from "@common/zx8081/charset";
 import { compileNexFile } from "../harness/zxnext/core/compile-nex";
-import { buildSp48Wasm } from "../../scripts/build-sp48-wasm.cjs";
-import { buildSp128Wasm } from "../../scripts/build-sp128-wasm.cjs";
-import { buildZx8081Wasm } from "../../scripts/build-zx8081-wasm.cjs";
-import { buildHt1080zWasm } from "../../scripts/build-ht1080z-wasm.cjs";
-import { buildTvcWasm } from "../../scripts/build-tvc-wasm.cjs";
-import { buildEpWasm } from "../../scripts/build-ep-wasm.cjs";
+import { buildSp48Wasm } from "../../dev/scripts/build-sp48-wasm.cjs";
+import { buildSp128Wasm } from "../../dev/scripts/build-sp128-wasm.cjs";
+import { buildZx8081Wasm } from "../../dev/scripts/build-zx8081-wasm.cjs";
+import { buildHt1080zWasm } from "../../dev/scripts/build-ht1080z-wasm.cjs";
+import { buildTvcWasm } from "../../dev/scripts/build-tvc-wasm.cjs";
+import { buildEpWasm } from "../../dev/scripts/build-ep-wasm.cjs";
 import { tvcExportFile } from "@renderer/appIde/utils/tvc-code";
 import { buildZxNextWasmArtifact } from "../wasm/zxNext/wasm-next-test-helpers";
 

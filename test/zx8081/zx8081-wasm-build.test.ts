@@ -15,8 +15,8 @@ import {
   source,
   wasmDistDirectoryRelative,
   ZX8081_WASM_MEMORY_BYTES
-} from "../../scripts/build-zx8081-wasm.cjs";
-import { checkZx8081WasmSize, DEFAULT_MAX_BYTES, parseMaxBytes } from "../../scripts/check-zx8081-wasm-size.cjs";
+} from "../../dev/scripts/build-zx8081-wasm.cjs";
+import { checkZx8081WasmSize, DEFAULT_MAX_BYTES, parseMaxBytes } from "../../dev/scripts/check-zx8081-wasm-size.cjs";
 import { zx8081WasmV2RequiredExports } from "@emu/machines/zx8081/wasm/Zx8081WasmV2Loader";
 import { sharedZ80Functions } from "../wasmSharedExports";
 
@@ -91,8 +91,8 @@ describe("ZX80/ZX81 WASM build", () => {
       ])
     );
     expect(packageJson.scripts["build:all-wasm"]).toContain("npm run build:zx8081-wasm");
-    expect(packageJson.scripts["build:zx8081-wasm"]).toBe("node scripts/build-zx8081-wasm.cjs");
-    expect(packageJson.scripts["check:zx8081-wasm-size"]).toBe("node scripts/check-zx8081-wasm-size.cjs");
+    expect(packageJson.scripts["build:zx8081-wasm"]).toBe("node dev/scripts/build-zx8081-wasm.cjs");
+    expect(packageJson.scripts["check:zx8081-wasm-size"]).toBe("node dev/scripts/check-zx8081-wasm-size.cjs");
   });
 
   it("releases the build lock and instantiates the artifact", async () => {

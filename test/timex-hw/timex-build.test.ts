@@ -6,8 +6,8 @@ import {
   packagedArtifactRelative,
   productionExports,
   timexOwnExports
-} from "../../scripts/build-timex-wasm.cjs";
-import { productionExports as sp48Exports } from "../../scripts/build-sp48-wasm.cjs";
+} from "../../dev/scripts/build-timex-wasm.cjs";
+import { productionExports as sp48Exports } from "../../dev/scripts/build-sp48-wasm.cjs";
 import { TIMEX_OWN_EXPORTS } from "@emu/machines/timex/wasm/TimexWasmV2Loader";
 import pkg from "../../package.json";
 

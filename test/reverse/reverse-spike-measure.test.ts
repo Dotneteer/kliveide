@@ -85,7 +85,7 @@ function loadSymbols(prefixes: string[], check: { symbol: string; address: numbe
   const dir = process.env.KLIVE_WASM_MAP_DIR;
   if (!dir || !existsSync(dir)) return undefined;
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { parseLinkerMap } = require(join(ROOT, "scripts/wasm-layout.cjs"));
+  const { parseLinkerMap } = require(join(ROOT, "dev/scripts/wasm-layout.cjs"));
   for (const prefix of prefixes) {
     for (const file of readdirSync(dir).filter((f) => f.startsWith(prefix))) {
       const symbols = (parseLinkerMap(readFileSync(join(dir, file), "utf8")).symbols as Sym[]).filter((s) => !s.symbol.startsWith("."));

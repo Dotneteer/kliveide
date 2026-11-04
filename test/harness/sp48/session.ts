@@ -36,7 +36,7 @@ import type { Interface1DriveState, Interface1State, Interface1Support } from "@
 import { connectInterface1, insertCartridge, interface1Of, type HarnessCartridge } from "../interface1Support";
 
 import { buildCoreOnce } from "../coreBuild";
-import { buildSp48Wasm, productionOutput } from "../../../scripts/build-sp48-wasm.cjs";
+import { buildSp48Wasm, productionOutput } from "../../../dev/scripts/build-sp48-wasm.cjs";
 
 /** The real 48K BASIC ROM the app ships (`src/public/roms/sp48.rom`). */
 const ROM_PATH = join(__dirname, "../../../src/public/roms/sp48.rom");

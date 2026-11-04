@@ -69,7 +69,7 @@ describe("Cambridge Z88: the TypeScript emulation is removed", () => {
     const importRe = /(?:import|export)\s+(?:type\s+)?(?:[^"';]*?\s+from\s+)?["']([^"']+)["']|require\(\s*["']([^"']+)["']\s*\)/g;
     const deleted = new Set(DELETED.map((m) => `${Z88}/${m}`));
     const leaks: string[] = [];
-    for (const file of ["src", "test", "scripts"].flatMap((d) => sources(d))) {
+    for (const file of ["src", "test", "dev/scripts"].flatMap((d) => sources(d))) {
       for (const match of readFileSync(join(REPO_ROOT, file), "utf8").matchAll(importRe)) {
         const spec = (match[1] ?? match[2]).replace(/\.(ts|tsx|js)$/, "");
         const target = spec.startsWith("@emu/")

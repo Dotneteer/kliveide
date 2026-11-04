@@ -63,7 +63,7 @@ jobs:
       # package.json and the lockfile at the version.
       - name: Check the release commit
         id: verify
-        run: node scripts/release.cjs verify
+        run: node dev/scripts/release.cjs verify
 
   build:
     needs: verify
@@ -96,7 +96,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: >-
-          node scripts/release.cjs publish
+          node dev/scripts/release.cjs publish
           --version "${{ needs.verify.outputs.version }}"
           --dir kits
           --target "${{ github.sha }}"
@@ -135,4 +135,4 @@ jobs:
 
       # GitHub Pages takes a minute or two to serve a deploy; the script retries.
       - name: Check kliveide.net and the downloads
-        run: node scripts/release.cjs smoke --version "${{ needs.verify.outputs.version }}"
+        run: node dev/scripts/release.cjs smoke --version "${{ needs.verify.outputs.version }}"

@@ -1,5 +1,5 @@
 /**
- * One runtime module, as `scripts/runtime-index.cjs` reads it from the header of a
+ * One runtime module, as `dev/scripts/runtime-index.cjs` reads it from the header of a
  * `<package folder>/<name>.kz80.asm` (see `README.md` next to this file).
  */
 export type RuntimeModule = {

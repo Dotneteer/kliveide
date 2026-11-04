@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   validateWasmCpuContract,
   wasmCpuContract
-} from "../../scripts/check-wasm-cpu-contract.cjs";
+} from "../../dev/scripts/check-wasm-cpu-contract.cjs";
 
 describe("WASM machines: shared Z80/Z80N CPU contract", () => {
   it("requires every WASM machine artifact to be built around the shared CPU source", () => {

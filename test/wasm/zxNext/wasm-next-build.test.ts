@@ -6,7 +6,7 @@ import {
   productionExports,
   productionOutput,
   waitForZxNextWasmBuildLock
-} from "../../../scripts/build-zxnext-wasm.cjs";
+} from "../../../dev/scripts/build-zxnext-wasm.cjs";
 import { describe, expect, it } from "vitest";
 
 describe("ZX Spectrum Next WASM build", () => {

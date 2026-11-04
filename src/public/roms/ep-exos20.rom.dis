@@ -23378,5 +23378,5 @@
     "1:16382:line": "observed",
     "1:16382:region": "observed"
   },
-  "carriedFrom": {"sidecar":"ep-exos21.rom.dis","method":"byte signature (scripts/rom-annotations-carry.cjs)"}
+  "carriedFrom": {"sidecar":"ep-exos21.rom.dis","method":"byte signature (dev/scripts/rom-annotations-carry.cjs)"}
 }

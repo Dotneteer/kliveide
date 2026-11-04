@@ -1,7 +1,7 @@
 import * as manifestModule from "./nextRomSets.json";
 
 // --- Vite and vitest give a JSON module a default export; the plain CommonJS transpile some scripts
-// --- load TypeScript through (`scripts/benchmark-zxnext-wasm.cjs`) gives the object itself
+// --- load TypeScript through (`dev/scripts/benchmark-zxnext-wasm.cjs`) gives the object itself
 const manifest: typeof manifestModule = (manifestModule as any).default ?? manifestModule;
 
 /*

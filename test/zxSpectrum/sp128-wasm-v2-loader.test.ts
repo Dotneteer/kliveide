@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 
-import { buildSp128Wasm, productionOutput } from "../../scripts/build-sp128-wasm.cjs";
+import { buildSp128Wasm, productionOutput } from "../../dev/scripts/build-sp128-wasm.cjs";
 import {
   loadSp128WasmV2,
   resetSp128WasmV2ModuleCache,

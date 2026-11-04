@@ -5,7 +5,7 @@ import { DEFAULT_LOCALE, LOCALES } from "./i18n/locales.mjs";
 import remarkReleaseVersion from "./remark-release-version.mjs";
 
 // ZX BASIC (```zxbasic), generated from the IDE's own word lists by
-// scripts/build-doc-zxbasic-grammar.cjs; test/docs/zxbasic-grammar.test.ts keeps it current.
+// dev/scripts/build-doc-zxbasic-grammar.cjs; test/docs/zxbasic-grammar.test.ts keeps it current.
 const zxbasicLanguage = JSON.parse(readFileSync(new URL("./zxbasic.tmLanguage.json", import.meta.url), "utf8"));
 
 // Z80 assembly language grammar embedded directly to avoid file system operations

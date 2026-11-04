@@ -1,5 +1,5 @@
 {
-  "$comment": "Upstream snapshot the spec in zxbasic-syntax.json describes. Hashes only; see scripts/zxbasic-syntax-check.cjs.",
+  "$comment": "Upstream snapshot the spec in zxbasic-syntax.json describes. Hashes only; see dev/scripts/zxbasic-syntax-check.cjs.",
   "repo": "boriel-basic/zxbasic",
   "snapshot": {
     "ref": "v1.19.0",

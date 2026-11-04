@@ -112,7 +112,7 @@ integration changes.
   line breakpoint resolves to the line's first statement); `sourceMap` maps each statement entry to
   its line and columns (0-based start, exclusive end, the assembler's convention). The `zxbas`
   provider has `fullLineBreakpoints: true`, so the execution point is drawn on the whole line.
-  Verified in the running app by `scripts/kbasic-ide-check.cjs`.
+  Verified in the running app by `dev/scripts/kbasic-ide-check.cjs`.
 - **Statement breakpoints** (Phase 5, plan §10.3): `BreakpointInfo.column` (0-based) makes a
   source breakpoint a statement's; its key is `[resource]:line:column`. `refreshSourceCodeBreakpoints`
   resolves it with `statementAtColumn` (the statement holding the column, else the next one on the
@@ -206,4 +206,4 @@ integration changes.
   and run it to its return, peek/poke, symbols, screen-text reading, breakpoint runs. See its
   README.
 - 48K machine in tests: `test/wasm/zxSpectrum/wasm-test-helpers.ts` (`TestSp48WasmMachine`,
-  `buildSp48WasmArtifact`); the WASM build uses clang 17 + wasm-ld (`scripts/build-sp48-wasm.cjs`).
+  `buildSp48WasmArtifact`); the WASM build uses clang 17 + wasm-ld (`dev/scripts/build-sp48-wasm.cjs`).

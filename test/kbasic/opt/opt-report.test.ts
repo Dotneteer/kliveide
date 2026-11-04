@@ -14,7 +14,7 @@ import { isNextOnly, programs, readExpectations } from "../corpus/expectations";
  * program that waits (PAUSE, BEEP) can shift by a frame when its code changes. The emulator is
  * deterministic, so there is no other noise.
  *
- * `KBASIC_OPT_UPDATE=1` rewrites the baseline (`node scripts/kbasic-opt-report.cjs` does, and prints
+ * `KBASIC_OPT_UPDATE=1` rewrites the baseline (`node dev/scripts/kbasic-opt-report.cjs` does, and prints
  * the totals); lowering a figure is the normal way a baseline changes, raising one needs a reason.
  */
 const LEVELS = [0, 1, 2, 3];

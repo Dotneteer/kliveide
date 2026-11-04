@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import * as harness from "../../harness/z88";
-import { benchmarkZ88, parseArgs } from "../../../scripts/benchmark-z88-wasm.cjs";
+import { benchmarkZ88, parseArgs } from "../../../dev/scripts/benchmark-z88-wasm.cjs";
 
 /*
  * A performance regression gate for the Cambridge Z88: every scenario of
- * `scripts/benchmark-z88-wasm.cjs` - OZ idle and at the keyboard, CPU, LCD, beeper and flash-heavy
+ * `dev/scripts/benchmark-z88-wasm.cjs` - OZ idle and at the keyboard, CPU, LCD, beeper and flash-heavy
  * code, running under the debugger, and single debugger steps - stays within an absolute budget,
  * measured through the same public machine API the app uses.
  *

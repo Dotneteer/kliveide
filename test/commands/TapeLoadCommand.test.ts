@@ -145,7 +145,7 @@ describe("tape-load command", () => {
 
   it("decides a .bas by its content: a tokenised program is an HT tape anywhere, text is not a tape", async () => {
     // --- `.plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D1, D6
-    const tokenised = new Uint8Array(readFileSync(join(__dirname, "../../scripts/doc-shots/recipes/ht1080z-demo.bas")));
+    const tokenised = new Uint8Array(readFileSync(join(__dirname, "../../dev/scripts/doc-shots/recipes/ht1080z-demo.bas")));
     const text = new TextEncoder().encode('10 PRINT "HI"\n');
     const validateWith = async (bytes: Uint8Array, machineId: string) => {
       const { context } = contextFor(machineId, bytes);

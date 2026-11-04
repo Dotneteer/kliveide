@@ -20,7 +20,7 @@ import {
   serializeChangeset,
   slugFrom,
   type Changeset
-} from "../../scripts/changes-lib.cjs";
+} from "../../dev/scripts/changes-lib.cjs";
 
 function cs(frontMatter: string, body = "Some entry.", file = "x.md", addedAt = 0): Changeset {
   const parsed = parseChangeset(`---\n${frontMatter}\n---\n\n${body}\n`, file);

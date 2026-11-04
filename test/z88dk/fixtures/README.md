@@ -9,7 +9,7 @@ The `tpl-*` folders are the **shipped project templates** (`.plans/ZX_SPECTRUM_C
 `"zccArgs"` is the complete argument list Klive's debug build passes, used verbatim.
 `test/z88dk/templates.test.ts` fails when a template's source or Klive's arguments drift from them. `npm run z88dk:fixtures [-- <z88dk root>]`
 rebuilds every folder with `zcc <args> -debug -m -create-app -o program <sources>`; read the header
-of `scripts/z88dk-fixtures.cjs` for the two path normalisations it applies to the maps.
+of `dev/scripts/z88dk-fixtures.cjs` for the two path normalisations it applies to the maps.
 
 Generated with z88dk v2.4 (build 23854).
 

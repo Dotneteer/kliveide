@@ -107,4 +107,4 @@ executed, and as self-modified once the ROM writes it.
 - `test/harness/zx81/` - the session (real ROM, boot to the K cursor, typing, program loading, the
   debugger); `test/zx8081-hw/` - ULA timing, screen goldens, tape, ZX80, debugger; `test/zx8081/` -
   file recognition, characters, typing, the build, the separation from TypeScript machines.
-- `scripts/doc-shots/recipes/zx81.cjs` - the machine in the running app.
+- `dev/scripts/doc-shots/recipes/zx81.cjs` - the machine in the running app.

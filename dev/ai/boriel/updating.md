@@ -70,7 +70,7 @@ read that commit's diff to see a complete bump.
 3. Update `dev/vendor/boriel-basic/kit.json`: `version`, and every kit's `file`, `size` and `sha256`.
    Keep the key order, so the diff stays small.
 4. Copy the archives into `dev/vendor/boriel-basic/kits/` (git-ignored). Then run
-   `node scripts/boriel-kit.cjs fetch --all`, which must verify every kit without downloading.
+   `node dev/scripts/boriel-kit.cjs fetch --all`, which must verify every kit without downloading.
 
 ## 3. Re-check what zxbc does
 
@@ -103,7 +103,7 @@ read that commit's diff to see a complete bump.
 1. `npm test`, `npm run test:e2e` (the Boriel core tests run in `e2e-kbasic`), `npm run build:check`
    and `npm run lint:renderer`.
 2. `npx electron-vite build --config build/electron.vite.config.ts`, then
-   `node scripts/boriel-ide-check.cjs` with **every** part passing, including `templates` and `next`
+   `node dev/scripts/boriel-ide-check.cjs` with **every** part passing, including `templates` and `next`
    (these need a NextZXOS card image).
 
 ## 5. Update the records

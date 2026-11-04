@@ -6,12 +6,12 @@ import { describe, it } from "vitest";
 import { runBinary } from "../codegen/run-kit";
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const { itemResult } = require("../../../scripts/kbasic-compat.cjs") as {
+const { itemResult } = require("../../../dev/scripts/kbasic-compat.cjs") as {
   itemResult(item: { rows?: number; err?: boolean }, row: number, line: (row: number) => string, peek?: (address: number) => number): string;
 };
 
 /**
- * The compatibility suites' oracle runner (compatibility plan C2). `scripts/kbasic-compat.cjs oracle`
+ * The compatibility suites' oracle runner (compatibility plan C2). `dev/scripts/kbasic-compat.cjs oracle`
  * compiles the suites' programs with zxbc into a temporary folder and starts this file with
  * `KBASIC_COMPAT_MANIFEST` naming them; otherwise there is nothing to do. Each program runs on the
  * 48K harness, and what each row shows becomes its item's result in

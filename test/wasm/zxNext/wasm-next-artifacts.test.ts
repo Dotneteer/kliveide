@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { NEXT_PROFILE_IDS, NEXT_PROFILES, nextProfileOf } from "@emu/machines/zxNext/nextProfiles";
 import { MachineStateMismatchError } from "@emu/machines/state/wasmStateImage";
-import { ZXNEXT_ARTIFACTS } from "../../../scripts/zxnext-artifacts.cjs";
+import { ZXNEXT_ARTIFACTS } from "../../../dev/scripts/zxnext-artifacts.cjs";
 import { createSession } from "../../harness/zxnext";
 
 /*

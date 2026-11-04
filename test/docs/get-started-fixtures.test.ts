@@ -1,7 +1,7 @@
 /**
  * The programs the Get Started pages ask the reader to type must build.
  *
- * They live in `scripts/doc-shots/fixtures/get-started/`, where the screenshot recipes also open
+ * They live in `dev/scripts/doc-shots/fixtures/get-started/`, where the screenshot recipes also open
  * them, so the code a page shows, the code in its screenshots and the code tested here are one
  * file (R5 of `dev/ai/docs-site.md`). A page whose program stops assembling
  * fails here, not in a reader's IDE.
@@ -17,7 +17,7 @@ import { Z80Compiler } from "@main/z80-compiler/Z80Compiler";
 import { KBasicCompiler } from "@main/kbasic/KBasicCompiler";
 
 const REPO = join(__dirname, "..", "..");
-const FIXTURES = join(REPO, "scripts", "doc-shots", "fixtures", "get-started");
+const FIXTURES = join(REPO, "dev", "scripts", "doc-shots", "fixtures", "get-started");
 const PAGES = join(REPO, "docs", "content", "en", "get-started");
 
 type Output = { errors?: { errorCode: string; message: string; isWarning?: boolean }[]; segments?: { emittedCode: number[] }[] };

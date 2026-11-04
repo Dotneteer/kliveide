@@ -160,7 +160,7 @@ Phase 1 facts); compilers that do not know it ignore it (O6).
 - **Per pass**: MIR before/after goldens; the verifier after every pass.
 - **Per rule**: before/after LIR and an execution check.
 - **The §10.2/§10.3 step scenarios** run at levels 0 and 1 (they already run at 0).
-- **Measurement**: a script (`scripts/kbasic-opt-report.cjs`) builds every corpus program at each
+- **Measurement**: a script (`dev/scripts/kbasic-opt-report.cjs`) builds every corpus program at each
   level and records code size and the T-states to the program's end on the harness into
   `test/kbasic/opt-baseline.json`; a test fails when a level gets worse than the recorded figures
   (a ratchet, like the type-error baseline). The plan's exit criterion "measurable size/speed gains
@@ -215,7 +215,7 @@ Approved as proposed (O1–O9). Done:
   CODEBANK step tests run at levels 0 and 1; `test/kbasic/opt/rules.test.ts` (each rule, the engine's
   protections, the MIR verifier on the corpus, every rule fires somewhere in it — the two rules that
   never did, `ld r,r` and push/pop folding, were dropped); `test/kbasic/opt/opt-report.test.ts` with
-  `opt-baseline.json` and `scripts/kbasic-opt-report.cjs`; the IDE check passes on level-1 code.
+  `opt-baseline.json` and `dev/scripts/kbasic-opt-report.cjs`; the IDE check passes on level-1 code.
 - First figures (147 48K programs): level 0 31,360 bytes, level 1 29,283 bytes (−6.6%); T-states
   −0.3% (these programs spend their time in the runtime, the ROM and waits).
 

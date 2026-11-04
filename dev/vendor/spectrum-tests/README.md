@@ -19,7 +19,7 @@ is tested" (`docs/content/en/under-the-hood/emulator-internals/spectrum-accuracy
 `docs/public/images/spectrum-accuracy/`. Every slow-tier run compares them with what Klive draws and
 fails when one differs; after an intended change, re-publish them with `KIT_PUBLISH=1 npm run
 test:slow` and re-read the page (`test/spectrum-kit/pictures.ts`). HALT2INT's photos are converted
-for the site by `node scripts/build-doc-accuracy-photos.cjs`.
+for the site by `node dev/scripts/build-doc-accuracy-photos.cjs`.
 
 ## Where they come from
 

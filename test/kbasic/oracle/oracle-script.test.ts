@@ -7,7 +7,7 @@ import { compileBasic, runBasic, runBinary, runBinaryThroughBasic } from "../cod
 import { oracleDifferences, readExpectations } from "../corpus/expectations";
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const oracle = require("../../../scripts/kbasic-oracle.cjs");
+const oracle = require("../../../dev/scripts/kbasic-oracle.cjs");
 
 /** The behavioural oracle's parts that run without an installed zxbc (plan D12, R9). */
 describe("behavioural oracle", () => {
@@ -25,7 +25,7 @@ describe("behavioural oracle", () => {
   });
 
   it("refuses to run in CI", () => {
-    const run = spawnSync(process.execPath, [path.join(__dirname, "../../../scripts/kbasic-oracle.cjs")], {
+    const run = spawnSync(process.execPath, [path.join(__dirname, "../../../dev/scripts/kbasic-oracle.cjs")], {
       env: { ...process.env, CI: "1" },
       encoding: "utf8"
     });

@@ -17,7 +17,7 @@ import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
 import {
   productionOutput,
   waitForZxNextWasmBuildLock
-} from "../../../scripts/build-zxnext-wasm.cjs";
+} from "../../../dev/scripts/build-zxnext-wasm.cjs";
 import { buildZxNextWasmArtifact } from "./wasm-next-test-helpers";
 import { FileProvider } from "./FileProvider";
 import { describe, expect, it } from "vitest";

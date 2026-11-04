@@ -14,7 +14,7 @@ This file holds their rules, and the traps the rules exist for.
 `exportRun`, `skoolRun`, `ReverseToolsMenu`); the Detect dialog in
 `src/renderer/appIde/dialogs/detect/` (MVC); the finder in `src/renderer/features/graphics/`. Tests:
 `test/reverse-eng/` (the `*.core.test.ts` files run the 48K and Next cores in the e2e tier) and
-`test/dialogs/detect/`. Docs shots: `scripts/doc-shots/recipes/reverse-engineering.cjs`.
+`test/dialogs/detect/`. Docs shots: `dev/scripts/doc-shots/recipes/reverse-engineering.cjs`.
 
 ## Decisions
 
@@ -26,7 +26,7 @@ This file holds their rules, and the traps the rules exist for.
 | R4 | **Three evidence levels:** *observed* (coverage flags), *reached* (static reachability from observed code), *inferred* (heuristics), each switchable and counted. |
 | R5 | **The graphics finder is one component** (`GraphicsView`): a view mode of `StaticMemoryDump` and a live *Graphics* document. |
 | R6 | **A named graphic is a label, a `graphic` region and a `graphics` entry**, so every view and export shows it the same way. |
-| R7 | **SkoolKit provenance:** SkoolKit is GPL-3 Python. Klive's parsers and writers are written from SkoolKit's **documented formats** only; no SkoolKit code is read, copied or translated. Running an installed SkoolKit as a local oracle on Klive's own files is allowed (`scripts/skoolkit-oracle.cjs`), never in CI. No published skool or ctl file is checked in. |
+| R7 | **SkoolKit provenance:** SkoolKit is GPL-3 Python. Klive's parsers and writers are written from SkoolKit's **documented formats** only; no SkoolKit code is read, copied or translated. Running an installed SkoolKit as a local oracle on Klive's own files is allowed (`dev/scripts/skoolkit-oracle.cjs`), never in CI. No published skool or ctl file is checked in. |
 | R8 | **D4 holds for ROMs:** a published skool/ctl file of a ROM never feeds a shipped ROM sidecar (`dev/ai/rom-annotations/README.md`). A user may import any file into their own set or ROM layer. |
 | R9 | **A skool import binds to bytes Klive already has.** It brings structure and text and checks them against memory; it never builds memory from instruction text. |
 | R10 | **Source export is verified:** every encoding the assembler would not reproduce is written as `.defb`, the table is checked exhaustively, and the export is assembled and compared. |

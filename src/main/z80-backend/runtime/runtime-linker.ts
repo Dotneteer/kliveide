@@ -36,7 +36,7 @@ export const BACKEND_PACKAGES: readonly RuntimePackage[] = [corePackage, zxPacka
 /**
  * The runtime a program links from: the back end's packages and its language's. Every module
  * links into the one assembler module `core` (labels `core.<label>`), so names and labels are
- * unique across all of them (`scripts/runtime-index.cjs` checks it).
+ * unique across all of them (`dev/scripts/runtime-index.cjs` checks it).
  */
 export class RuntimeLibrary {
   private readonly modulesByName = new Map<string, RuntimeModule>();

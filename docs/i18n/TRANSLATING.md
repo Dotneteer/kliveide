@@ -34,7 +34,7 @@ The answer is one JSON object with only what you translated:
 
 Rather than escaping whole pages inside JSON, you can write plain files into a folder -
 `i18n-work/docs-de/landing.json`, `ui.json` (key -> text) and `pages/get-started/<page>.mdx` - and
-run `node scripts/docs-i18n.cjs pack i18n-work/docs-de`, which writes `i18n-work/docs-de.answer.json`.
+run `node dev/scripts/docs-i18n.cjs pack i18n-work/docs-de`, which writes `i18n-work/docs-de.answer.json`.
 
 `merge` checks everything before it writes anything for an item. A rejected item is listed with
 the reason and stays in the next todo. `merge` also writes the language's navigation
@@ -91,7 +91,7 @@ translated again.
 The Get Started screenshots are taken in each language by the doc-shots harness:
 
 ```bash
-DOC_SHOTS_OUT=docs/public/images node scripts/doc-shots/run.cjs get-started --lang de
+DOC_SHOTS_OUT=docs/public/images node dev/scripts/doc-shots/run.cjs get-started --lang de
 ```
 
 A page without its own screenshots shows the English ones. See `dev/ai/doc-screenshots-guide.md`.

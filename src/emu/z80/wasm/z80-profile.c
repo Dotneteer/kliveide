@@ -552,7 +552,7 @@ static void z80ProfileCallClear(void) {
 }
 
 // -----------------------------------------------------------------------------
-// Exports (`scripts/z80-profile-exports.cjs`): the same names in every core
+// Exports (`dev/scripts/z80-profile-exports.cjs`): the same names in every core
 // -----------------------------------------------------------------------------
 
 /* Where the header is; the header says where the flags, the page map and the pool are */

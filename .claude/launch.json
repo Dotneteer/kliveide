@@ -14,7 +14,7 @@
       "name": "docs-serve",
       "runtimeExecutable": "node",
       "runtimeArgs": [
-        "scripts/serve-docs.cjs",
+        "dev/scripts/serve-docs.cjs",
         "--port",
         "4000"
       ],

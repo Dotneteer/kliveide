@@ -17,7 +17,7 @@ import {
  * history reader views its ring.
  */
 
-/** The exports every profiling core has (`scripts/z80-profile-exports.cjs`) */
+/** The exports every profiling core has (`dev/scripts/z80-profile-exports.cjs`) */
 export const Z80_PROFILE_CORE_EXPORTS = [
   "z80ProfileGetHeaderOffset",
   "z80ProfileGetFlagsOffset",

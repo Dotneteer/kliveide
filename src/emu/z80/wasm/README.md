@@ -15,7 +15,7 @@ module. Read this before adding a hook, a debugger feature or a core.
 
 The plans behind them: `.plans/EXECUTION_HISTORY_VIEWER_PLAN.md`, `.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`,
 `.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md` and, for the cost of debugging and the in-core loop's decisions, traps and
-budgets, `dev/ai/wasm-core-debug.md`. `scripts/check-wasm-cpu-contract.cjs` checks the includes.
+budgets, `dev/ai/wasm-core-debug.md`. `dev/scripts/check-wasm-cpu-contract.cjs` checks the includes.
 
 ## Contention hooks
 
@@ -122,7 +122,7 @@ Copper and sprite watches (`canRunInCore`), and anything a test forces with
 ### Adding a core
 
 Include `z80-cpu-exports.c` and `z80-debug-loop.c`, export `cpuExports(...)` and `debugLoopExports(...)`
-(`scripts/z80-cpu-exports.cjs`) and list `debugLoopVolatileSymbols(...)` as volatile, give the loader the
+(`dev/scripts/z80-cpu-exports.cjs`) and list `debugLoopVolatileSymbols(...)` as volatile, give the loader the
 `breakpointFlags` and `condPlan` views, and give the host's `WasmDebugLoopHost` its `executeUntilStop`,
 `lastOpStart`, `pushBreakpointFlags` and `conditionPlan` hooks. If the core's bus record is not the shared
 Z80's, define `Z80_DEBUG_LOOP_ACCESS_HIT` (the Z88 and the Next do).

@@ -513,7 +513,7 @@ Three things to carry forward:
    them, because it consumes operand bytes. `test/emu/z80n-step-over-lengths.test.ts` now checks
    every entry of the table against it; that test would have caught `ED 92` the day it was written.
 3. **Drive the debugger, not just the emulation, when verifying a machine.** Both bugs are
-   reproducible in about a minute with `scripts/doc-shots/harness.cjs`: breakpoint, `em-debug`, a
+   reproducible in about a minute with `dev/scripts/doc-shots/harness.cjs`: breakpoint, `em-debug`, a
    handful of `em-sto`, and read PC off the disassembly view after each. Emulation parity says
    nothing about whether stepping works.
 

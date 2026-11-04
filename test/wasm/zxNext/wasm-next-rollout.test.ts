@@ -16,7 +16,7 @@ import {
   packagedArtifactRelative,
   packagedResourceDirectory,
   wasmDistDirectoryRelative
-} from "../../../scripts/build-zxnext-wasm.cjs";
+} from "../../../dev/scripts/build-zxnext-wasm.cjs";
 
 describe("ZX Spectrum Next WASM rollout", () => {
   it("creates the WASM machine whatever the configuration says", () => {

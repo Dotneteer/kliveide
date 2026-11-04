@@ -7,7 +7,7 @@
  * takes `RZX_CORE_PREFIX`. Each function only forwards to `z80.c`.
  *
  * Every forwarder is defined for every core; the core's build script decides which are exported
- * (`scripts/z80-cpu-exports.cjs`), and the linker drops the rest. A core that needs its own version
+ * (`dev/scripts/z80-cpu-exports.cjs`), and the linker drops the rest. A core that needs its own version
  * of one turns the group off:
  *   - `Z80_EXPORT_NO_LAST_PORT`: the core keeps its own last-port record (the Next).
  * `<prefix>GetCpuTacts` and `<prefix>GetCpuSigInt` are not here: cores differ in what they report

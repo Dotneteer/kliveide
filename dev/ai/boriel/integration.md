@@ -27,7 +27,7 @@ Boriel BASIC cannot do compared with Klive BASIC is `limitations.md`.
   (empty today; tried after `urlBase` with the same hash check) and, per
   `process.platform`-`process.arch` key, the kit's `file`, `size` and `sha256`. `kits/` (all seven
   archives under Boriel's names) and `stage/` (the one kit a package includes) are git-ignored.
-- `scripts/boriel-kit.cjs`: `fetch` downloads missing kits and verifies each hash, never overwriting
+- `dev/scripts/boriel-kit.cjs`: `fetch` downloads missing kits and verifies each hash, never overwriting
   a file that verifies; `stage --platform --arch` copies the target's kit and `kit.json` into a clean
   `stage/`, fetching it first. The `prepackage:*` scripts run `stage`, so a package build without a
   verified kit fails instead of shipping none; `predev` runs `fetch --current --optional`, which only
@@ -50,8 +50,8 @@ zxbc; `~/zxbasic2` has no working install (if it has one, Klive records that fol
 user has not declined this kit version. The state is the top-level `AppSettings.borielSetup`
 (`{ offeredVersion, declined, installedVersion? }`, `src/main/settings.ts`). An installed version
 older than the kit brings the offer back as "Update"; `declined` is per offered version.
-`offeredVersion: "*"` declines every version: the Playwright harnesses (`scripts/doc-shots/harness.cjs`,
-`scripts/automation-ide-check.cjs`) seed it, and `launchKlive({ borielSetup: null })` seeds nothing.
+`offeredVersion: "*"` declines every version: the Playwright harnesses (`dev/scripts/doc-shots/harness.cjs`,
+`dev/scripts/automation-ide-check.cjs`) seed it, and `launchKlive({ borielSetup: null })` seeds nothing.
 
 ## The setup dialog
 
@@ -209,4 +209,4 @@ output are listed in `dbg-observed.md` ("What the adapter must correct"). Beyond
 | `test/main/boriel-compiler.test.ts` | Options, diagnostics, and builds with the real zxbc (all five templates, banked builds, include and module paths). |
 | `test/boriel/dbg-adapter.test.ts`, `test/main/boriel-banked.test.ts`, `test/main/boriel-nex-debug.test.ts` | The adapter, banked parts and the outside-built NEX on the fixtures. |
 | `test/boriel/boriel-debugger.test.ts`, `boriel-next.test.ts`, `boriel-banked.test.ts`, `boriel-banked-tape.test.ts` | The debugger on the real 48K, 128K and Next cores (`e2e-kbasic` tier, `build/e2e-tests.ts`). |
-| `scripts/boriel-ide-check.cjs [run debug next export ui templates banked]` | The running IDE (local only, needs the kit; `next`, `export`, `templates`, `banked` need a NextZXOS card). All parts passed on 2026-11-04 (36 checks). |
+| `dev/scripts/boriel-ide-check.cjs [run debug next export ui templates banked]` | The running IDE (local only, needs the kit; `next`, `export`, `templates`, `banked` need a NextZXOS card). All parts passed on 2026-11-04 (36 checks). |

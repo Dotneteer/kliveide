@@ -67,7 +67,7 @@ support for its register class (`.plans/SHARED_Z80_BACKEND_PLAN.md` §8).
 
 Every program may link the back end's `core` and `zx` packages (`src/main/z80-backend/runtime/`,
 README there). A language adds its own package — a folder of `*.kz80.asm` modules registered in
-`scripts/runtime-index.cjs` — and passes it as `FrontEndInfo.packages`. A language module may require
+`dev/scripts/runtime-index.cjs` — and passes it as `FrontEndInfo.packages`. A language module may require
 `core` and `zx` modules; never the other way round.
 
 ## 6. Debug information

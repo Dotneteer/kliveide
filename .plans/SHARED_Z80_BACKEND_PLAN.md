@@ -93,7 +93,7 @@ These import only `ir/mir.ts` and each other. The exceptions are listed in §2.2
 | L4 | Terminators `gosub` / `ongosub` (BASIC subroutines), `end` / `raise` (jump to `core.End` / `core.RaiseError`) | `ir/mir.ts`, `select0.ts` `terminator()` |
 | L5 | `CallSite.kind` `sub / function / gosub / on-gosub / far / read`; mirrored in `CallSiteDebugInfo.kind` and `SourceActivationInfo.kind` (`@abstractions/SourceDebugInfo`) | `ir/mir.ts`, abstractions |
 | L6 | The runtime's register contract — which register each `core.X` argument arrives in — is a hand-kept table of BASIC runtime routines (`RUNTIME_ARGS`: `PrintU8`, `StrConcat`, `ArrayAlloc`, `Beep`, ...) inside the selector | `backend/select0.ts` |
-| L7 | One runtime folder mixes language-neutral modules (`arith16`, `arith32`, `fixed`, `float`, `heap`, `rom`, `program`, `errors`, `banking`) with Spectrum-platform ones (`print`, `attributes`, `graphics`, `sound`, `tape`, `keyboard`, `random`) and BASIC-only ones (`strings`, `arrays`, `data`, `usr`); one bundle also carries the BASIC stdlib | `runtime/`, `scripts/kbasic-runtime-index.cjs` |
+| L7 | One runtime folder mixes language-neutral modules (`arith16`, `arith32`, `fixed`, `float`, `heap`, `rom`, `program`, `errors`, `banking`) with Spectrum-platform ones (`print`, `attributes`, `graphics`, `sound`, `tape`, `keyboard`, `random`) and BASIC-only ones (`strings`, `arrays`, `data`, `usr`); one bundle also carries the BASIC stdlib | `runtime/`, `dev/scripts/kbasic-runtime-index.cjs` |
 | L8 | The driver mixes back-end steps with BASIC: `lowerProgram`, `KBasicOptions`, `compiler.basic.*` diagnostics (E455–E458, E503, E599), the NEX start stub, `.model` names, assembler options | `codegen.ts` |
 | L9 | Debug builders read BASIC's `Scope`, `KType`, `globalName`, `isLibraryPath` and `float40` constants | `debug/builder.ts`, `debug/source-level.ts` |
 | L10 | `'@emit-ir` / `'@emit-asm` / `'@emit-map` writers take `KBasicOptions` | `emit-files.ts` |
@@ -169,7 +169,7 @@ module header declares them:
 ; @abi      Beep(stack, aedcb)
 ```
 
-`scripts/…-runtime-index.cjs` turns these into the bundle, and the selector reads a
+`dev/scripts/…-runtime-index.cjs` turns these into the bundle, and the selector reads a
 `RuntimeContract` (name -> argument registers, `stack` positions) built from the linked packages.
 The register vocabulary (`a`, `hl`, `dehl`, `aedcb`, `stack`, `!addressFirst` variants) stays what
 `RUNTIME_ARGS` uses today. Runtime packages:
@@ -407,7 +407,7 @@ closes.
   `MModule` (with descriptors), the emitted program, the listing and the hooks. `globalName`,
   `Scope`, `KType`, `isLibraryPath` and `float40` disappear from them.
 - `dev/patterns/kbasic-debug-builder.md` becomes `dev/patterns/z80-backend-debug-builder.md`.
-- Exit: snapshot identical (debug JSON is part of it); `scripts/kbasic-ide-check.cjs` passes in the
+- Exit: snapshot identical (debug JSON is part of it); `dev/scripts/kbasic-ide-check.cjs` passes in the
   running IDE (stepping, call stack, Variables panel, CODEBANK).
 
 ### Phase 6 — The shared compiler shell, and a proof without BASIC
@@ -442,7 +442,7 @@ closes.
 | Boundary test (baseline shrinking, empty after Phase 6) | every phase |
 | `npm run test:fast`, `npm run build:check`, `npm run lint:renderer` (Phase 2 touches the renderer) | every phase |
 | `npx electron-vite build --config build/electron.vite.config.ts` | every phase that moves files |
-| `scripts/kbasic-ide-check.cjs`, `scripts/boriel-ide-check.cjs` (the dispatcher still works) | Phases 4–6 |
+| `dev/scripts/kbasic-ide-check.cjs`, `dev/scripts/boriel-ide-check.cjs` (the dispatcher still works) | Phases 4–6 |
 | `npm run test:slow` | end of Phase 6 |
 
 ---
@@ -665,8 +665,8 @@ type DebugLanguageSupport = {
 ## 13. Phases (Part B)
 
 Each phase keeps every existing debugger test green for all three producers, plus `npm run test:fast`,
-`npm run build:check`, `npm run lint:renderer`; B4–B5 also run `scripts/kbasic-ide-check.cjs`,
-`scripts/boriel-ide-check.cjs` and the z88dk debugger test in the running IDE.
+`npm run build:check`, `npm run lint:renderer`; B4–B5 also run `dev/scripts/kbasic-ide-check.cjs`,
+`dev/scripts/boriel-ide-check.cjs` and the z88dk debugger test in the running IDE.
 
 - **B0 — Guard.** The debug boundary test with a baseline of today's leaks (B-L1…B-L12). A golden
   of the source-level debug JSON for a representative set per producer (Part A's snapshot covers
@@ -738,7 +738,7 @@ corpus programs × levels 0-3: program text, bytes, both debug tables, diagnosti
 - `truth` sits only on `bool` conversions (a `bool` in a vreg is always 0 or 1), not on comparisons.
 
 **Runtime (§3.2).** Packages `core` (10 modules), `zx` (8) and `kbasic` (4); one generated file per
-package and one for Klive BASIC's standard library, by `scripts/runtime-index.cjs` (`npm run
+package and one for Klive BASIC's standard library, by `dev/scripts/runtime-index.cjs` (`npm run
 runtime:bundle`, D8), which also checks the package rule and the `@abi` lines. The runtime tests stay
 in `test/kbasic/runtime/` (they use Klive BASIC's runtime kit). The virtual runtime folder keeps its
 name, `<kbasic-runtime>` (it is in every listing), like the `__kb…` labels (D2).

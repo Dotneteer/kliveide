@@ -5,9 +5,9 @@ import type { AudioSample } from "@emu/abstractions/IAudioDevice";
 
 import { MC_DISK_SUPPORT } from "@common/machines/constants";
 import { expect } from "vitest";
-import { buildSp128Wasm, productionOutput as sp128WasmOutput } from "../../../scripts/build-sp128-wasm.cjs";
-import { buildSp48Wasm, productionOutput as sp48WasmOutput } from "../../../scripts/build-sp48-wasm.cjs";
-import { buildSpP3eWasm, productionOutput as spp3eWasmOutput } from "../../../scripts/build-spp3e-wasm.cjs";
+import { buildSp128Wasm, productionOutput as sp128WasmOutput } from "../../../dev/scripts/build-sp128-wasm.cjs";
+import { buildSp48Wasm, productionOutput as sp48WasmOutput } from "../../../dev/scripts/build-sp48-wasm.cjs";
+import { buildSpP3eWasm, productionOutput as spp3eWasmOutput } from "../../../dev/scripts/build-spp3e-wasm.cjs";
 import { ZxSpectrum128WasmV2Machine } from "@emu/machines/zxSpectrum128/ZxSpectrum128WasmV2Machine";
 import { ZxSpectrum48WasmV2Machine } from "@emu/machines/zxSpectrum48/ZxSpectrum48WasmV2Machine";
 import { ZxSpectrumP3eWasmV2Machine } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP3eWasmV2Machine";

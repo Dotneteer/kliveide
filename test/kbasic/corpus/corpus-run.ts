@@ -23,7 +23,7 @@ import { isNextOnly, oracleDifferences, programs, readExpectations, reportChar, 
  * | `'@expect keys <key> ...` | hold these keys (`SpectrumKeyCode` names) from the start |
  * | `'@expect oracle-differs <entry>` | the upstream oracle's result differs on purpose: the semantics annex entry that decides it (one line per entry; a mark on a program upstream agrees with fails) |
  *
- * When `test/kbasic/oracle/<area>/<name>.json` exists (written by `scripts/kbasic-oracle.cjs` from a
+ * When `test/kbasic/oracle/<area>/<name>.json` exists (written by `dev/scripts/kbasic-oracle.cjs` from a
  * locally installed `zxbc`, plan D12), the screen rows, error report and peeks the program expects
  * must be what upstream showed too, unless the program names the annex entry that differs.
  *

@@ -75,11 +75,11 @@ export const SHOWN_FEATURES = 5;
 
 /**
  * The hero carousel's pictures, in order. Localized ones come from the Get Started screenshots;
- * the others from `scripts/doc-shots/recipes/landing.cjs` (ScrollNutter.nex on the Next). `caption`
+ * the others from `dev/scripts/doc-shots/recipes/landing.cjs` (ScrollNutter.nex on the Next). `caption`
  * is a key of docs/i18n/landing/<lang>.json.
  *
  * A slide with a `video` (a path under public/images) plays it, with `image` as its poster: the
- * reverse-debugging loop comes from `scripts/doc-shots/recipes/landing-reverse.cjs`, recorded with
+ * reverse-debugging loop comes from `dev/scripts/doc-shots/recipes/landing-reverse.cjs`, recorded with
  * Klive's own IDE + Emulator recording. It is the first slide, the page's signature.
  */
 export type HeroSlide = { image: Feature["image"]; video?: string; caption: string; width: number; height: number };

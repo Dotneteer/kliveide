@@ -10,7 +10,7 @@ import type { DckImage } from "@common/timex/dckFile";
 
 import { Sp48TestSession } from "../sp48/session";
 import { buildCoreOnce } from "../coreBuild";
-import { buildTimexWasm, productionOutput } from "../../../scripts/build-timex-wasm.cjs";
+import { buildTimexWasm, productionOutput } from "../../../dev/scripts/build-timex-wasm.cjs";
 
 /** The Sinclair 48K ROM the app ships: the TC2048 boots it when no TC2048 ROM is named */
 const SP48_ROM_PATH = join(__dirname, "../../../src/public/roms/sp48.rom");

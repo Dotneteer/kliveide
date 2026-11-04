@@ -65,7 +65,7 @@ This folder stores durable notes for future AI-assisted work in this repository.
   language reference to use. `kbasic/` holds the runtime ABI, the CODEBANK contract, the
   integration map and the documented library API. **No upstream code is copied, converted or
   translated — compiler or runtime**; upstream is read only to discover language and interface
-  facts. `node scripts/zxbasic-syntax-check.cjs` says whether a new upstream release changed
+  facts. `node dev/scripts/zxbasic-syntax-check.cjs` says whether a new upstream release changed
   anything the spec describes.
 - **Before any work on the external Boriel BASIC 2.x integration (`zxbc`, the `.dbg` adapter, the
   bundled setup kit), read `boriel/README.md`.** `boriel/integration.md` is how the integration
@@ -83,7 +83,7 @@ This folder stores durable notes for future AI-assisted work in this repository.
   display file, NextZXOS-changed NextRegs, `.ent`, IM2 tables) that already cost a session.
 - **Before capturing documentation screenshots, or whenever you need the app driven
   programmatically into a known state, read `doc-screenshots-guide.md`.** It covers the
-  Playwright-over-Electron harness in `scripts/doc-shots/`, driving the IDE through its own
+  Playwright-over-Electron harness in `dev/scripts/doc-shots/`, driving the IDE through its own
   command prompt rather than the mouse, and seeding `KLIVE_SETTINGS_FILE` to pin theme,
   accent, panel sizes and fonts — which **corrects** the claim in
   `ui-theming-intent-and-lessons.md` that the settings file cannot set theme or accent.

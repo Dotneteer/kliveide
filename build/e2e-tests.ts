@@ -3,7 +3,7 @@
  *
  * They are most of the suite's time (≈1350 of ≈1590 test-seconds when this was written), and a
  * change that touches none of their inputs cannot change their outcome. `npm test`
- * (`scripts/run-tests.cjs`) therefore always runs the unit tier and runs each tier below only when
+ * (`dev/scripts/run-tests.cjs`) therefore always runs the unit tier and runs each tier below only when
  * its inputs changed since it last passed; `npm run test:e2e` and `npm run test:fast` run them
  * regardless (CI and `release:prepare` run `test:fast`). The slowest of them are carved out into a
  * slow tier, `E2E_SLOW_TESTS` at the end of this file, which only `test:slow` and `test:all` run.
@@ -98,7 +98,7 @@ export const E2E_CORE_TESTS: string[] = [
 
 /**
  * Klive BASIC programs compiled and run on the cores. Their subject is the compiler and its runtime,
- * so their tier also runs when those change (`scripts/run-tests.cjs`).
+ * so their tier also runs when those change (`dev/scripts/run-tests.cjs`).
  */
 export const E2E_KBASIC_TESTS: string[] = [
   "test/kbasic/corpus/**/*.test.ts",

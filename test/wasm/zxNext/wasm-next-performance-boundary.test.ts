@@ -12,14 +12,14 @@ import {
 } from "@emu/machines/zxNext/wasm/ZxNextWasmV2Loader";
 import { ZXNEXT_FRAME_TRACE_CAPACITY, ZXNEXT_FRAME_TRACE_HEADER_SIZE, ZXNEXT_FRAME_TRACE_RECORD_SIZE } from "@emu/machines/zxNext/wasm/frameTraceLayout";
 import { createTestZxNextWasmMachine } from "./wasm-next-test-helpers";
-import { checkZxNextWasmSize, DEFAULT_MAX_BYTES } from "../../../scripts/check-zxnext-wasm-size.cjs";
+import { checkZxNextWasmSize, DEFAULT_MAX_BYTES } from "../../../dev/scripts/check-zxnext-wasm-size.cjs";
 import {
   assertNoSafetyGuardStops,
   MAX_MS_PER_CONTROL_OPERATION_FOR_DEFAULT,
   MAX_MS_PER_FRAME_FOR_DEFAULT,
   benchmarkZxNextWasm,
   summarizeRuns
-} from "../../../scripts/benchmark-zxnext-wasm.cjs";
+} from "../../../dev/scripts/benchmark-zxnext-wasm.cjs";
 
 describe("ZX Spectrum Next WASM performance and boundary audit", () => {
   it("keeps exported memory views inside the fixed production layout with stable backing buffers", async () => {

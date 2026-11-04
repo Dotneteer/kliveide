@@ -4,10 +4,10 @@ import os from "os";
 import path from "path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { ensureKit, kitKey, readKitManifest, stageKit, VENDOR_FOLDER } from "../../scripts/boriel-kit.cjs";
+import { ensureKit, kitKey, readKitManifest, stageKit, VENDOR_FOLDER } from "../../dev/scripts/boriel-kit.cjs";
 
 /*
- * `scripts/boriel-kit.cjs`: a fresh clone re-creates the kits from `kit.json`
+ * `dev/scripts/boriel-kit.cjs`: a fresh clone re-creates the kits from `kit.json`
  * (`dev/ai/boriel/integration.md`, "The kits in the build"). Downloads go through an injected fetch.
  */
 
@@ -88,7 +88,7 @@ describe("boriel-kit script", () => {
     for (const kit of Object.values(manifest.kits)) expect(kit.sha256).toMatch(/^[0-9a-f]{64}$/);
     const pkg = JSON.parse(fs.readFileSync(path.join(VENDOR_FOLDER, "../../../package.json"), "utf8"));
     for (const name of ["package:win", "package:mac", "package:mac:arm64", "package:linux", "package:linux:arm64"]) {
-      expect(pkg.scripts[`pre${name}`]).toMatch(/^node scripts\/boriel-kit\.cjs stage --platform \S+ --arch \S+$/);
+      expect(pkg.scripts[`pre${name}`]).toMatch(/^node dev\/scripts\/boriel-kit\.cjs stage --platform \S+ --arch \S+$/);
       const [, platform, arch] = /--platform (\S+) --arch (\S+)/.exec(pkg.scripts[`pre${name}`])!;
       expect(manifest.kits[kitKey(platform, arch)]).toBeDefined();
     }

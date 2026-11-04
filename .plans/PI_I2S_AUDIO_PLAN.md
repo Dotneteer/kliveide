@@ -229,7 +229,7 @@ What the Pi *does* to make sound (NextPi's software and its UART commands) is a 
    - `zxnext-ula.c` `zxnextUlaReadPortFe`: OR in `pi_fe_ear`
    - the beeper: XOR `pi_fe_ear` into the MIC level
 3. `$A2` writes reset the receiver when both enables go to 0.
-4. Exports in `zxnext.c`, `scripts/build-zxnext-wasm.cjs`, `ZxNextWasmV2Loader.ts`: connect (rate,
+4. Exports in `zxnext.c`, `dev/scripts/build-zxnext-wasm.cjs`, `ZxNextWasmV2Loader.ts`: connect (rate,
    start), fill a span, end, disconnect, and a read of the raw latches for tests.
 5. Harness: a session method that connects a test stream and fills it from a function of `k`
    (README "Adding a method": name it after the hardware action, add a self-test, and add a row to the

@@ -22,7 +22,7 @@ import { ZX80_CHARSET, ZX81_CHARSET } from "@common/zx8081/charset";
 import { parseZxProgramFile, type ZxProgramFile } from "@emu/machines/zx8081/ZxPFile";
 
 import { buildCoreOnce } from "../coreBuild";
-import { buildZx8081Wasm, productionOutput } from "../../../scripts/build-zx8081-wasm.cjs";
+import { buildZx8081Wasm, productionOutput } from "../../../dev/scripts/build-zx8081-wasm.cjs";
 
 export const REPO_ROOT = join(__dirname, "../../..");
 const ROMS = join(REPO_ROOT, "src/public/roms");

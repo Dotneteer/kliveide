@@ -13,7 +13,7 @@ import { buildTvcCasFile } from "@emu/machines/tvc/TvcCasFile";
  * The model is tested without a DOM in `test/ht1080z/tape-view.test.ts`.
  */
 
-const DEMO = new Uint8Array(readFileSync(join(__dirname, "../../scripts/doc-shots/recipes/ht1080z-demo.bas")));
+const DEMO = new Uint8Array(readFileSync(join(__dirname, "../../dev/scripts/doc-shots/recipes/ht1080z-demo.bas")));
 const DEMO_CAS = basToBasicTape(DEMO, "D");
 const CODE = [0x21, 0x00, 0x3c, 0x36, 0x48, 0xc9];
 const HELLO_CMD = buildHt1080zCmd([{ startAddress: 0x7000, emittedCode: CODE }], 0x7000, "HELLO");

@@ -15,7 +15,7 @@ import { MEDIA_TAPE } from "@common/structs/project-const";
 import { HT1080Z_MODELS, HT1080Z_VIDEO_RAM_START } from "@emu/machines/ht1080z/ht1080zMachineInfo";
 
 import { buildCoreOnce } from "../coreBuild";
-import { buildHt1080zWasm, productionOutput } from "../../../scripts/build-ht1080z-wasm.cjs";
+import { buildHt1080zWasm, productionOutput } from "../../../dev/scripts/build-ht1080z-wasm.cjs";
 
 export const REPO_ROOT = join(__dirname, "../../..");
 const ROMS = join(REPO_ROOT, "src/public/roms");

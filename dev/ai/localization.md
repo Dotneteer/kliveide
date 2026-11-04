@@ -89,7 +89,7 @@ native-speaker review**.
 - **Show translation keys** (`ideViewOptions.i18nShowKeys`, dev builds): every text shows its key.
 - **Tests pin English** (`test/vitest.setup.ts` resets the translator before every test). Scripts
   that drive the app and read its text must seed `ideViewOptions.language: "en"`, as
-  `scripts/doc-shots/harness.cjs` does: "System default" really resolves to German on a German OS.
+  `dev/scripts/doc-shots/harness.cjs` does: "System default" really resolves to German on a German OS.
 
 ## Localizing a new area (the pattern the thirteen steps followed)
 

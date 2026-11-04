@@ -5,7 +5,7 @@ import { join } from "node:path";
  * Building a WASM core for the test harnesses, once per test process and only when it is out of date.
  *
  * Every test file that runs a core is its own vitest process, and each one used to rebuild the core
- * before its first session. The builds are serialised by the build lock (`scripts/wasm-build-lock.cjs`),
+ * before its first session. The builds are serialised by the build lock (`dev/scripts/wasm-build-lock.cjs`),
  * so with twenty-odd files for one machine a worker's first test could wait for all the others' clang
  * runs and pass its 30-second timeout (the HT-1080Z's sample-file test did, in a full `npm test`). A
  * core that is newer than every input is used as it is.
@@ -19,7 +19,7 @@ const REPO_ROOT = join(__dirname, "../..");
  */
 const CORE_INPUTS: readonly { dir: string; pattern: RegExp }[] = [
   { dir: "src/emu", pattern: /\.(c|h)$/ },
-  { dir: "scripts", pattern: /\.cjs$/ }
+  { dir: "dev/scripts", pattern: /\.cjs$/ }
 ];
 
 /** Whether `output` exists and is newer than every input. */

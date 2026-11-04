@@ -114,7 +114,7 @@ npm run build:check
 
 **Use `build:check`, not bare `tsc`.** The root `tsconfig.json` is solution-style (`"files": []` plus
 references), so plain `npx tsc --noEmit` resolves no inputs and exits 0 —
-`npx tsc --noEmit --listFiles | grep -c "src/renderer"` still prints 0. `scripts/check-types.cjs`
+`npx tsc --noEmit --listFiles | grep -c "src/renderer"` still prints 0. `dev/scripts/check-types.cjs`
 exists for exactly that reason: it runs `build/tsconfig.node.json` and `build/tsconfig.web.json`
 explicitly and compares against a baseline, so it does catch renderer errors and is what "type-checked"
 should mean here.

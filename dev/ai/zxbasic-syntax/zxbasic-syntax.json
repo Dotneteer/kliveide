@@ -1,6 +1,6 @@
 {
   "meta": {
-    "$comment": "Klive's own description of the Boriel ZX BASIC language. Read dev/ai/zxbasic-syntax/README.md before editing. Arrays keyed by 'name' are kept sorted; run `node scripts/zxbasic-syntax-check.cjs` to see whether upstream changed since this was written.",
+    "$comment": "Klive's own description of the Boriel ZX BASIC language. Read dev/ai/zxbasic-syntax/README.md before editing. Arrays keyed by 'name' are kept sorted; run `node dev/scripts/zxbasic-syntax-check.cjs` to see whether upstream changed since this was written.",
     "format": 1,
     "language": "Boriel ZX BASIC",
     "upstream": {
@@ -2512,7 +2512,7 @@
     ]
   },
   "semantics": {
-    "$comment": "The semantics annex (R8 of the compiler, dev/ai/kbasic/compiler.md): one entry per behaviour question the syntax does not answer. status: 'decided' (settled), 'provisional' (implemented and tested, to be confirmed against the zxbc oracle, D12), or 'open' (to settle by the given phase). source: 'docs' (upstream documentation), 'oracle' (observed zxbc behaviour) or 'klive-decision'. Every decided or provisional entry names the test that pins it. 'oracle' records what zxbc 1.19 did where it differs from the decision (scripts/kbasic-oracle.cjs, test/kbasic/oracle/).",
+    "$comment": "The semantics annex (R8 of the compiler, dev/ai/kbasic/compiler.md): one entry per behaviour question the syntax does not answer. status: 'decided' (settled), 'provisional' (implemented and tested, to be confirmed against the zxbc oracle, D12), or 'open' (to settle by the given phase). source: 'docs' (upstream documentation), 'oracle' (observed zxbc behaviour) or 'klive-decision'. Every decided or provisional entry names the test that pins it. 'oracle' records what zxbc 1.19 did where it differs from the decision (dev/scripts/kbasic-oracle.cjs, test/kbasic/oracle/).",
     "entries": [
       {
         "name": "argument-evaluation-order",

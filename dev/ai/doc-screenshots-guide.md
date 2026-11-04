@@ -10,13 +10,13 @@ Everything below was verified in a working session, not inferred. Where somethin
 
 ## The harness
 
-`scripts/doc-shots/` — `harness.cjs` (launch, drive, capture), `run.cjs` (runner),
+`dev/scripts/doc-shots/` — `harness.cjs` (launch, drive, capture), `run.cjs` (runner),
 `recipes/` (one file per docs page). Requires a build in `out/`; it does not build for
 you, and a stale `out/` silently screenshots old code.
 
 ```bash
 npx electron-vite build --config build/electron.vite.config.ts   # out/ must be current
-node scripts/doc-shots/run.cjs scripting                         # one recipe, or all
+node dev/scripts/doc-shots/run.cjs scripting                         # one recipe, or all
 ```
 
 Output stages to `.doc-shots/` (gitignored) for review. `DOC_SHOTS_OUT=docs/public/images`
@@ -30,9 +30,9 @@ dev server, and no macOS Screen Recording permission — which matters, because
 `screencapture` is permission-blocked in this environment and window-id targeting is
 fragile besides.
 
-It complements, and does not replace, `scripts/cdp/`:
+It complements, and does not replace, `dev/scripts/cdp/`:
 
-| | `scripts/cdp/` (CDP) | `scripts/doc-shots/` (Playwright) |
+| | `dev/scripts/cdp/` (CDP) | `dev/scripts/doc-shots/` (Playwright) |
 |---|---|---|
 | Target | An app you launched by hand | Launches its own isolated instance |
 | State | Whatever your profile holds | Seeded, reproducible |
@@ -118,7 +118,7 @@ instead of being a pixel rectangle that silently goes wrong.
 
 ## Driving the emulator itself
 
-Learned scripting the Cambridge Z88 app pass (`scripts/z88-app-pass.cjs`), which drives both backends
+Learned scripting the Cambridge Z88 app pass (`dev/scripts/z88-app-pass.cjs`), which drives both backends
 of a machine through the same session and compares them:
 
 - **The EMU window is a second `Page`.** `app.windows().find(w => w.url().includes("?emu"))`. Show
@@ -137,7 +137,7 @@ of a machine through the same session and compares them:
   `app.evaluate`. Machine-specific items (`z88_reset`, `z88_battery_low`, ...) are there too; set-once
   machine options (the Z88's LCD and keyboard layout, ROM files) are in the Settings dialog
   (`open_settings`, then `settings-page-machine` and `settings-select-<rowId>`), as
-  `scripts/z88-app-pass.cjs` does. **The app rebuilds its menu after state changes**, so an item can be missing or disabled for a
+  `dev/scripts/z88-app-pass.cjs` does. **The app rebuilds its menu after state changes**, so an item can be missing or disabled for a
   moment: poll for it (the pass retries for 10 s) instead of failing on the first look.
 - **Hold emulated keys for several frames.** `keyboard.press` releases at once, and a machine that
   scans its keyboard on an interrupt (the Z88: every 10 ms) never sees it. `keyboard.down`, wait

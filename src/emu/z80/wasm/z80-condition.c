@@ -8,7 +8,7 @@
  * boundary. What differs between machines - memory, paging, Next registers - is behind the `COND_*`
  * hooks, which each core defines before the include, the way `z80.c` takes its `Z80_*` hooks.
  *
- * The same file built alone with `COND_TEST_HOST` (`scripts/build-condition-wasm.cjs`) reads
+ * The same file built alone with `COND_TEST_HOST` (`dev/scripts/build-condition-wasm.cjs`) reads
  * registers and memory through WebAssembly imports, so the language is tested without a machine.
  *
  * Values are `int64_t`: exact integers, as the language requires (C4). `& | ^ ~` produce unsigned

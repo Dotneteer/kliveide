@@ -1,5 +1,5 @@
 /**
- * The scripts find the repository root through one helper (`scripts/repo-root.cjs`), so the scripts
+ * The scripts find the repository root through one helper (`dev/scripts/repo-root.cjs`), so the scripts
  * folder can live at any depth (`.plans/ROOT_DECLUTTER_PLAN.md`, steps 10-11).
  */
 import fs from "node:fs";
@@ -7,7 +7,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 const REPO = path.resolve(__dirname, "../..");
-const SCRIPTS = path.join(REPO, "scripts");
+const SCRIPTS = path.join(REPO, "dev", "scripts");
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { REPO_ROOT, findRepoRoot } = require(path.join(SCRIPTS, "repo-root.cjs"));
 
@@ -19,7 +19,7 @@ function scriptFiles(folder: string): string[] {
   });
 }
 
-describe("scripts/repo-root.cjs", () => {
+describe("dev/scripts/repo-root.cjs", () => {
   it("finds the folder holding Klive's package.json", () => {
     expect(REPO_ROOT).toBe(REPO);
     expect(JSON.parse(fs.readFileSync(path.join(REPO_ROOT, "package.json"), "utf8")).name).toBe("klive-ide");

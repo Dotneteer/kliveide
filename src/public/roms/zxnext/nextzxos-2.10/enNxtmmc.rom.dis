@@ -6591,5 +6591,5 @@
     "0:8189:line": "derived",
     "0:8190:line": "derived"
   },
-  "carriedFrom": {"sidecar":"zxnext/nextzxos-2.08/enNxtmmc.rom.dis","method":"byte signature (scripts/rom-annotations-carry.cjs)"}
+  "carriedFrom": {"sidecar":"zxnext/nextzxos-2.08/enNxtmmc.rom.dis","method":"byte signature (dev/scripts/rom-annotations-carry.cjs)"}
 }

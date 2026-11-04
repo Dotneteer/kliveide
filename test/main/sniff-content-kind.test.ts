@@ -11,7 +11,7 @@ import { sniffFileContentKind } from "@main/sniff-content-kind";
  */
 const dir = mkdtempSync(join(tmpdir(), "klive-sniff-"));
 afterAll(() => rmSync(dir, { recursive: true, force: true }));
-const DEMO = readFileSync(join(__dirname, "../../scripts/doc-shots/recipes/ht1080z-demo.bas"));
+const DEMO = readFileSync(join(__dirname, "../../dev/scripts/doc-shots/recipes/ht1080z-demo.bas"));
 
 describe("sniffFileContentKind", () => {
   it("names a tokenised .bas, any case, and nothing else", () => {

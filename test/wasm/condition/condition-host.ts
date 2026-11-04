@@ -13,7 +13,7 @@ import {
 import { ConditionStore, type ConditionCoreExports } from "@emu/machines/conditionStore";
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const { buildConditionWasm } = require("../../../scripts/build-condition-wasm.cjs");
+const { buildConditionWasm } = require("../../../dev/scripts/build-condition-wasm.cjs");
 
 /*
  * The breakpoint condition evaluator - the C code every Z80 core includes - run standalone for tests

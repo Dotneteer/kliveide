@@ -39,7 +39,7 @@ Z80 core and the absence of the Spectrum devices.
 `npm run build:z88-wasm` (compiler: `clang`, or `Z88_WASM_CC`; profile: `Z88_WASM_OPTIMIZATION`
 = `speed` (default), `size` or `lto`). `npm run check:z88-wasm-size` checks the size ceiling. The
 build uses the portable `wasm32` target and `wasm-ld`, not Emscripten. Builds of the production
-artifact are serialized with a lock file (`scripts/wasm-build-lock.cjs`), because test workers build
+artifact are serialized with a lock file (`dev/scripts/wasm-build-lock.cjs`), because test workers build
 it in parallel.
 
 ## The CPU's bus record

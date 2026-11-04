@@ -354,7 +354,7 @@ that disagree are worse than none.
 
 Hiding it while software is consuming the coordinates is therefore *offered*, not imposed. The
 detection is a read counter on `zxnextMouseReadPortFbdf` / `...Ffdf` / `...Fadf` in `zxnext-input.c`
-with one export (new exports also go in `scripts/build-zxnext-wasm.cjs` and
+with one export (new exports also go in `dev/scripts/build-zxnext-wasm.cjs` and
 `ZxNextWasmV2Loader.ts`, then `npm run build:zxnext-wasm`); if the guest has read those ports within
 roughly the last second, an app owns the mouse.
 

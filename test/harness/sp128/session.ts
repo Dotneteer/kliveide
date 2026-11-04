@@ -53,9 +53,9 @@ import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
 import { Z80Assembler } from "@main/z80-compiler/z80-assembler";
 
 import { buildCoreOnce } from "../coreBuild";
-import { buildSp48Wasm, productionOutput as sp48Output } from "../../../scripts/build-sp48-wasm.cjs";
-import { buildSp128Wasm, productionOutput as sp128Output } from "../../../scripts/build-sp128-wasm.cjs";
-import { buildSpP3eWasm, productionOutput as spp3eOutput } from "../../../scripts/build-spp3e-wasm.cjs";
+import { buildSp48Wasm, productionOutput as sp48Output } from "../../../dev/scripts/build-sp48-wasm.cjs";
+import { buildSp128Wasm, productionOutput as sp128Output } from "../../../dev/scripts/build-sp128-wasm.cjs";
+import { buildSpP3eWasm, productionOutput as spp3eOutput } from "../../../dev/scripts/build-spp3e-wasm.cjs";
 
 /** The real ROMs the app ships (`src/public/roms/`) */
 const ROM_DIR = join(__dirname, "../../../src/public/roms");

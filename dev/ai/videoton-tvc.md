@@ -88,7 +88,7 @@ stretches differently from a data read and takes the 64K's WAIT. It replaces the
 every M1 (the unprefixed opcode, the opcode after a `CB`/`ED`/`DD`/`FD` prefix, each repeated
 `DD`/`FD`, and the halted cycle), not operand bytes, displacements or the `DDCB`/`FDCB` opcode read.
 It is compiled only under `#ifdef`, so every other core rebuilt byte-identical. It is documented in
-`src/emu/z80/wasm/README.md`, listed in `scripts/check-wasm-cpu-contract.cjs`, and tested by
+`src/emu/z80/wasm/README.md`, listed in `dev/scripts/check-wasm-cpu-contract.cjs`, and tested by
 `test/wasm/z80-hooks/z80-opcode-fetch.test.ts` (call counts 1, 2, 2, 3, 2 for `NOP`, `CB 00`,
 `DD 21 nn nn`, `DD DD 00`, `DD CB d 06`).
 
@@ -191,10 +191,10 @@ The files a new machine touched, kept for the next one. **(2x)** marks a list ke
   `machine-renderer-registry.ts`, `hardware-specs.ts` (+ `hardware.*` i18n keys),
   `NewProjectModel.ts` `MACHINE_FAMILIES`, a template in `src/public/project-templates/tvc/`.
 - Build: `package.json` `build:tvc-wasm`, `check:tvc-wasm-size`, `build:all-wasm` **and**
-  `extraResources` **(2x)**; `scripts/check-wasm-cpu-contract.cjs`, `src/main/unit-tests/wasmArtifacts.ts`,
+  `extraResources` **(2x)**; `dev/scripts/check-wasm-cpu-contract.cjs`, `src/main/unit-tests/wasmArtifacts.ts`,
   `src/common/headless/headlessMachines.ts` + `HeadlessMachineFactory.ts`,
   `src/emu/machines/reverse/exportContract.ts`.
-- Tests: `test/vitest.setup.ts` `CORE_EXPORT`, `build/e2e-tests.ts`; `scripts/run-tests.cjs` now counts
+- Tests: `test/vitest.setup.ts` `CORE_EXPORT`, `build/e2e-tests.ts`; `dev/scripts/run-tests.cjs` now counts
   every `test/*-hw` folder as a core input.
 - State: `STATE_MACHINES` in `state-menus.ts` **and** `MachineStateCommands.ts` **(2x)**, plus
   `coreIdOfMachine` in `machineStateFile.ts`.

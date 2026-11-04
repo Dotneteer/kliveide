@@ -31,7 +31,7 @@ function sourceFile(lang: string, mdxPath: string[]): string | undefined {
 
 /**
  * True when the English original changed after this translation was made: the hash recorded at
- * merge time (docs/i18n/sources/<lang>.json, scripts/docs-i18n.cjs) no longer matches.
+ * merge time (docs/i18n/sources/<lang>.json, dev/scripts/docs-i18n.cjs) no longer matches.
  */
 function isOutdated(lang: string, mdxPath: string[]): boolean {
   if (lang === DEFAULT_LOCALE) return false;

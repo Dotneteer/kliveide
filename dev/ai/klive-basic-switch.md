@@ -36,7 +36,7 @@ Turn it back on only when the developer asks. Klive BASIC's provenance rule stil
 4. **Tests.** Restore what the markers say in `test/settings/settings-pages.test.ts`,
    `test/dialogs/boriel/BorielSetupController.test.ts` and `test/kbasic/compiler.test.ts` (the
    dispatcher test "hands every request to Boriel BASIC" goes back to testing the switch), and the
-   switch checks kept commented out in `scripts/boriel-ide-check.cjs` (`ui` part). Klive BASIC's own
+   switch checks kept commented out in `dev/scripts/boriel-ide-check.cjs` (`ui` part). Klive BASIC's own
    tests call `KBasicCompiler` directly and never changed.
 5. **UI texts.** The English texts that named Klive BASIC as the compiler you build with (error stops,
    Just My Code, "no source-level debug information") were reworded; `git show fe2da21b53 --
@@ -54,7 +54,7 @@ Turn it back on only when the developer asks. Klive BASIC's provenance rule stil
    - Rewrite the get-started pages, guides, the reference index and the landing texts
      (`feature.basicDebug.*`, "At a glance") that were changed to name Boriel BASIC. The translations
      go through `npm run doc:i18n:todo` / `doc:i18n:merge` (`docs/i18n/TRANSLATING.md`).
-   - Regenerate the screenshots that show BASIC with the `scripts/doc-shots/recipes/` recipes.
+   - Regenerate the screenshots that show BASIC with the `dev/scripts/doc-shots/recipes/` recipes.
 8. **Records.** `AGENTS.md` ("Klive BASIC", "Boriel BASIC": remove "switched off"),
    `dev/ai/boriel/README.md` and `integration.md` (decision B1: the setting works again), `dev/ai/README.md`,
    and `.plans/LANDING_PAGE_COMPETITIVE_ANALYSIS.md` §2 (the editor row says Klive BASIC's symbol
@@ -64,8 +64,8 @@ Turn it back on only when the developer asks. Klive BASIC's provenance rule stil
 
 Focused tests, `npm test`, `npm run build:check`, `npm run lint:renderer`,
 `npx electron-vite build --config build/electron.vite.config.ts`,
-`npm run doc:build && npm run doc:check`, and `node scripts/boriel-ide-check.cjs` plus
-`node scripts/kbasic-ide-check.cjs` in the running app.
+`npm run doc:build && npm run doc:check`, and `node dev/scripts/boriel-ide-check.cjs` plus
+`node dev/scripts/kbasic-ide-check.cjs` in the running app.
 
 ## What is not affected while it is off
 

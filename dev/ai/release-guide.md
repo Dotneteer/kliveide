@@ -49,8 +49,8 @@ tagged, released or deployed. `release.yml` reuses its jobs; never add publishin
 
 ## Where the website gets the release from
 
-`scripts/build-doc-site-info.cjs` reads the newest `v*` tag and its assets (the asset list is
-`scripts/release-assets.cjs`, shared with `release.cjs publish`). Docs pages never hard-code a
+`dev/scripts/build-doc-site-info.cjs` reads the newest `v*` tag and its assets (the asset list is
+`dev/scripts/release-assets.cjs`, shared with `release.cjs publish`). Docs pages never hard-code a
 release: they write `@KLIVE_RELEASE@`, which `docs/remark-release-version.mjs` replaces on every
 build; `doc:check:release-links` enforces it. `KLIVE_SITE_RELEASE_TAG=v<x.y.z>` builds the site as
 if a release existed (the dry run).

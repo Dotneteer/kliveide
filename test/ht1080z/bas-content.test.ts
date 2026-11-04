@@ -8,7 +8,7 @@ import { HT1080Z_BASIC_SNIFF_BYTES, isTokenisedHt1080zBasic } from "@common/ht10
  * A `.bas` is an HT-1080Z program by its content (`.plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D1): an FFh,
  * then lines whose links agree with their lengths.
  */
-const DEMO = new Uint8Array(readFileSync(join(__dirname, "../../scripts/doc-shots/recipes/ht1080z-demo.bas")));
+const DEMO = new Uint8Array(readFileSync(join(__dirname, "../../dev/scripts/doc-shots/recipes/ht1080z-demo.bas")));
 const utf16 = (text: string, bigEndian: boolean, bom: boolean) => {
   const out: number[] = bom ? (bigEndian ? [0xfe, 0xff] : [0xff, 0xfe]) : [];
   for (const c of text) {

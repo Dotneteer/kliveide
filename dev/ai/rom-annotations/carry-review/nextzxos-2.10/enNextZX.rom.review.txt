@@ -1,4 +1,4 @@
-Carried by scripts/rom-annotations-carry.cjs (byte signature), for hand review.
+Carried by dev/scripts/rom-annotations-carry.cjs (byte signature), for hand review.
 From: zxnext/nextzxos-2.08/enNextZX.rom.dis
 To:   zxnext/nextzxos-2.10/enNextZX.rom.dis  (level 0)
 

@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 
-import { buildSpP3eWasm, productionOutput } from "../../scripts/build-spp3e-wasm.cjs";
+import { buildSpP3eWasm, productionOutput } from "../../dev/scripts/build-spp3e-wasm.cjs";
 import {
   createSpP3eWasmV2Views,
   loadSpP3eWasmV2,

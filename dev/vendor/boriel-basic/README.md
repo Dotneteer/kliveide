@@ -14,8 +14,8 @@ uses them is `dev/ai/boriel/integration.md`; the observed facts about the kits a
 ## Getting the kits
 
 After a fresh clone `kits/` is empty, and that is expected. `npm run package:*` and `npm run dev`
-fetch what they need through `scripts/boriel-kit.cjs`, from `urlBase` (then the listed `mirrors`),
-and verify each SHA-256; `node scripts/boriel-kit.cjs fetch --all` fetches all seven. By hand,
+fetch what they need through `dev/scripts/boriel-kit.cjs`, from `urlBase` (then the listed `mirrors`),
+and verify each SHA-256; `node dev/scripts/boriel-kit.cjs fetch --all` fetches all seven. By hand,
 download each `file` named in `kit.json` from `urlBase` into `kits/` and check it with
 `shasum -a 256 kits/*`. Do not unpack
 them here. Do not run anything from an archive extracted with `tar` or Finder on macOS without

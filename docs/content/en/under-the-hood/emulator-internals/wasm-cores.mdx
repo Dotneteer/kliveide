@@ -66,7 +66,7 @@ devices and the shared files from `src/emu/z80/wasm/`:
 Because everything is in one unit, the compiler sees the CPU and the machine together and can inline
 a hook into the opcode that calls it. The export names carry a per-core prefix (`sp48`, `sp128`,
 `spp3e`, `zxnext`, `z88`, `zx8081`), which the shared files paste on. A script,
-`scripts/check-wasm-cpu-contract.cjs`, checks that every core includes the shared files the way it
+`dev/scripts/check-wasm-cpu-contract.cjs`, checks that every core includes the shared files the way it
 should.
 
 ## Hooks: how a machine plugs into the Z80

@@ -15,7 +15,7 @@ a session: fold new learning in, replace what it supersedes, keep no history (th
 - `src/public/roms/zx81.rom.dis` is the author's own uncommitted file (the character set's
   synopses). Until it is indexed, `test/annotations/shippedRomSidecars.test.ts` ("has an index
   that is up to date") fails and `npm run build:check` stops before its type check; run
-  `node scripts/check-types.cjs` directly for types. Do not run the indexer for the author
+  `node dev/scripts/check-types.cjs` directly for types. Do not run the indexer for the author
   unasked.
 - Session log: `PROVENANCE.md`, one entry per piece of work (sidecar, what was added, the method,
   the runs, the manual facts, provenance). It is uncommitted with the working copy; commit it
@@ -40,7 +40,7 @@ file on every edit. So:
 ## The tools (`tools/`)
 
 Run from the repository root; they load Klive's TypeScript through esbuild, as
-`scripts/rom-annotations.cjs` does.
+`dev/scripts/rom-annotations.cjs` does.
 
 | Tool | What it does |
 |---|---|

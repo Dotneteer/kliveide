@@ -79,5 +79,5 @@
     "2:8436:region": "observed",
     "2:8473:region": "observed"
   },
-  "carriedFrom": {"sidecar":"zxnext/nextzxos-2.08/enNextLG.rom.dis","method":"byte signature (scripts/rom-annotations-carry.cjs)"}
+  "carriedFrom": {"sidecar":"zxnext/nextzxos-2.08/enNextLG.rom.dis","method":"byte signature (dev/scripts/rom-annotations-carry.cjs)"}
 }

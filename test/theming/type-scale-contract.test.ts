@@ -18,7 +18,7 @@ import { join, relative, sep } from "node:path";
  * ## Why a baseline rather than zero
  *
  * Failing on all 57 would fail the build before a single panel could be converted, so this follows
- * `scripts/check-types.cjs`: the known offenders live in `build/style-mandate-baseline.json` and the
+ * `dev/scripts/check-types.cjs`: the known offenders live in `build/style-mandate-baseline.json` and the
  * suite fails on anything *new*. Unlike that script, a count that has *dropped* also fails — with a
  * message saying exactly what to run. That is deliberate. This file exists to be a ratchet, and a
  * ratchet that lets the baseline drift above reality lets a fix be silently undone later.

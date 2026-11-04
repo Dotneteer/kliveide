@@ -18,6 +18,6 @@ hashes below are the record of what was fetched.
 | `auto1.cmd` | A `.cmd` load module from the site's EDI project: 7 blocks at $7000-$76FF, starts at $7000 | [projekt/edi/auto1.cmd](https://ht.homeserver.hu/projekt/edi/auto1.cmd) | 1,824 | `7baa548ba769f6b07d5e8bb5dd4f3fec3578d0a45883bd4c59378b92f3d095e5` |
 
 The archive has no tokenised `.bas` files; the one the tests use is
-`scripts/doc-shots/recipes/ht1080z-demo.bas`, which the emulated Series II saved.
+`dev/scripts/doc-shots/recipes/ht1080z-demo.bas`, which the emulated Series II saved.
 
 Do not edit these files: the tests pin what is in them.

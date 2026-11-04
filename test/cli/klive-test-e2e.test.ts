@@ -16,7 +16,7 @@ import { junitOfLastRun } from "@renderer/appIde/unit-tests/unitTestJUnit";
 import { compileProject } from "../../src/cli/compile";
 import { createCliMachine } from "../../src/cli/headless";
 import { loadProject } from "../../src/cli/project";
-import { buildSp48Wasm } from "../../scripts/build-sp48-wasm.cjs";
+import { buildSp48Wasm } from "../../dev/scripts/build-sp48-wasm.cjs";
 
 /*
  * `klive test` and `klive build` end to end (`.plans/UNIT_TESTS_CLI_PLAN.md` Phase 1, §6): the real

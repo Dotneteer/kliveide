@@ -22,7 +22,7 @@ behaviour from the spec and the ROM documentation.
   `.proc`), and the program calls `core.<label>`.
 - The linker also defines, in `core`: `HeapStart` and `HeapSize` (the heap area).
 - Units are parsed once and cached (`RuntimeUnitCache`), keyed by module, target model and defines.
-- `scripts/runtime-index.cjs` embeds every module's text and header in its package's generated file
+- `dev/scripts/runtime-index.cjs` embeds every module's text and header in its package's generated file
   (`generated/core-package.ts`, `generated/zx-package.ts`, and the language's own). **Run
   `npm run runtime:bundle` after changing a module**; `npm run build:check` fails while a generated
   file is stale.

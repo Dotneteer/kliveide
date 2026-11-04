@@ -273,18 +273,18 @@ BASIC's facts.
   run on the Next harness (`corpus-next.test.ts`), which also checks, for CODEBANK, that the bank is
   back at 0 and the shadow stack empty. `corpus-debugger.test.ts` checks the Call Stack, Variables
   and watches against each other.
-- **The oracle** (D12): `node scripts/kbasic-oracle.cjs [area/name ...]` writes
+- **The oracle** (D12): `node dev/scripts/kbasic-oracle.cjs [area/name ...]` writes
   `test/kbasic/oracle/<area>/<name>.json` (178 results from zxbc 1.19.0); the corpus runner fails on
   an expectation upstream does not share unless the program says
   `'@expect oracle-differs <annex entry>`, and a mark on a program upstream agrees with fails too.
-- **The compatibility suites**: `node scripts/kbasic-compat.cjs gen` / `oracle [suite]` with results
+- **The compatibility suites**: `node dev/scripts/kbasic-compat.cjs gen` / `oracle [suite]` with results
   in `test/kbasic/compat/` (`faults.json` lists upstream faults Klive does not copy, D-C6).
   `compat.test.ts` runs Klive over them in CI.
 - **Execution tests** run on the real WASM cores: `test/harness/sp48/` (48K, real ROM, booted to
   BASIC) and `test/harness/zxnext/` (`prepareBasic()` for ROM-using code, `loadOutput` for banked
   segments). Stop the 48K harness at the program's return (`runTo(done)`): a deep stack can overwrite
   the $FF00 stub after it. Press two keys a frame apart.
-- **The IDE check**: `node scripts/kbasic-ide-check.cjs` (build `out/` first; `KBASIC_IDE_ONLY=next|classic`).
+- **The IDE check**: `node dev/scripts/kbasic-ide-check.cjs` (build `out/` first; `KBASIC_IDE_ONLY=next|classic`).
   Each part runs in a fresh Klive with its own home; the Next part needs a copy of `~/Klive/ks2.cim`.
   While Klive BASIC is switched off, read `dev/ai/klive-basic-switch.md` before relying on it.
 - The zxbc oracle install (the author's machine only) is described in `dev/ai/kbasic/README.md`.
@@ -297,20 +297,20 @@ The plan's readiness items, as they stand at close.
 | --- | --- | --- |
 | R1 | Persist the interface research | Done: `dev/ai/kbasic/`. Keep it current. |
 | R2 | Spike converting upstream runtime | Superseded by D2. |
-| R3 | Walking skeleton | Done and retired; its checks live in `test/kbasic/codegen/debugger.test.ts` and `scripts/kbasic-ide-check.cjs`. |
+| R3 | Walking skeleton | Done and retired; its checks live in `test/kbasic/codegen/debugger.test.ts` and `dev/scripts/kbasic-ide-check.cjs`. |
 | R4 | ROM mapping facts, Next BASIC-ready mode | Done (`prepareBasic()`, harness README "Direct load"). |
 | R5 | 48K execution harness | Done (`test/harness/sp48/`). |
 | R6 | Debug-info transport | Done as plain JSON; compact encoding not needed at the sizes seen. |
 | R7 | Runtime and stdlib packaging | Done; `npm run runtime:bundle`, staleness checked by `build:check`. |
 | R8 | Semantics annex | Done: 82 entries, all `decided`, in `dev/ai/zxbasic-syntax/zxbasic-syntax.json`; checked by `test/ai-notes/zxbasic-syntax.test.ts`. |
-| R9 | Behavioural oracle | Done (D12): `scripts/kbasic-oracle.cjs`, results committed. |
+| R9 | Behavioural oracle | Done (D12): `dev/scripts/kbasic-oracle.cjs`, results committed. |
 | R10 | Test corpus | Done (192 programs). |
 | R11 | Stage design notes | Done and approved: `dev/patterns/z80-backend-mir.md` (R11-1), `z80-backend-lir-regalloc.md` (R11-2), `kbasic-string-ownership.md` (R11-3), `z80-backend-debug-builder.md` (R11-4), `z80-backend-optimiser.md`. |
 | R12 | UI within Klive's theming rules | Done (Variables, Call Stack, toggles on the data-panel primitives). |
 | R13 | Settings and templates | Done; the templates now target Boriel BASIC while Klive BASIC is off. |
 | R14 | Ask upstream to confirm the runtime licence | Dropped (D2). |
 | R15 | Point `AGENTS.md` and `dev/ai/README.md` at the rule | Done; they now point here. |
-| R16 | Scheduled upstream check (`node scripts/zxbasic-syntax-check.cjs`) | Open: run by hand; on a new release refresh the spec, then review `runtime-abi.md` and `stdlib-api.json`. |
+| R16 | Scheduled upstream check (`node dev/scripts/zxbasic-syntax-check.cjs`) | Open: run by hand; on a new release refresh the spec, then review `runtime-abi.md` and `stdlib-api.json`. |
 | R17 | Release milestones | Overtaken: everything shipped, then switched off. |
 | R18 | User documentation | Done; now in `docs/authoring/klive-basic/`, off the site. |
 

@@ -14,7 +14,7 @@ import { FAST_LOAD, SAVED_TO_TAPE } from "@emu/machines/machine-props";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-const";
 
 import { buildCoreOnce } from "../coreBuild";
-import { buildTvcWasm, productionOutput } from "../../../scripts/build-tvc-wasm.cjs";
+import { buildTvcWasm, productionOutput } from "../../../dev/scripts/build-tvc-wasm.cjs";
 
 export const REPO_ROOT = join(__dirname, "../../..");
 const ROMS = join(REPO_ROOT, "src/public/roms");

@@ -165,7 +165,7 @@ are not documented. Phase 0 settles them by running the real executable.
   The page states near the top that the **ZX Spectrum Next is not supported**: no Z80N instructions,
   no banking, no `.nex` output, with sjasmplus as the Next alternative (see §2.5).
   Update `docs/goldens/docs-routes.golden.txt`. Run `npm run doc:build && npm run doc:check`.
-- Generated screenshots of the dialog with `scripts/doc-shots/` (read `dev/ai/doc-screenshots-guide.md`).
+- Generated screenshots of the dialog with `dev/scripts/doc-shots/` (read `dev/ai/doc-screenshots-guide.md`).
 - Add PASMO to the "External toolchains" row of `.plans/LANDING_PAGE_COMPETITIVE_ANALYSIS.md`.
 - Any style or icon change → `dev/ai/ui-theming-intent-and-lessons.md`.
 

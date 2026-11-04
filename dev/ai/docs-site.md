@@ -26,15 +26,15 @@ the checks cite by number.
 - **R4 Screenshots match the page's language.** The harness seeds the UI language just as it seeds the
   theme (`--lang`), so a Spanish page shows the Spanish IDE. Dark theme only (decision D4).
 - **R5 Tutorial code is tested.** Every program a Get Started page asks the reader to type lives as a
-  fixture (`scripts/doc-shots/fixtures/get-started/`), is built by a test
+  fixture (`dev/scripts/doc-shots/fixtures/get-started/`), is built by a test
   (`test/docs/get-started-fixtures.test.ts`), and is the file the screenshot recipe opens. A tutorial
   whose code stops assembling fails CI, not a reader.
 - **R6 Claim only what is released.** Landing-page features carry a `since` version
   (`docs/landing/features.ts`) and appear only when the latest release tag (read at build time by
-  `scripts/build-doc-site-info.cjs`) has them. Re-check the claims against the "Deliberately not
+  `dev/scripts/build-doc-site-info.cjs`) has them. Re-check the claims against the "Deliberately not
   claimed" list of `.plans/LANDING_PAGE_COMPETITIVE_ANALYSIS.md` every release.
 - **R7 Old URLs keep working.** A static export cannot send 301s, so every moved page leaves a
-  generated redirect stub (`docs/redirects.json`, `scripts/build-doc-redirects.cjs`, which refuses
+  generated redirect stub (`docs/redirects.json`, `dev/scripts/build-doc-redirects.cjs`, which refuses
   targets that are not pages and stubs that would replace a real page). The route golden lists the
   stubs, so a forgotten one fails `doc:check`.
 
@@ -47,7 +47,7 @@ the checks cite by number.
 | D3 | **Tutorial programs:** border stripes or a moving character (assembly), a small game loop (BASIC), a sprite on the Next. |
 | D4 | **Screenshots: dark theme only**, one seeded preset (fixed accent, window 1280×820 at 2x). |
 | D5 | Get Started's BASIC page used Klive BASIC with Boriel as a closing note. Since 2026-11-04 it names Boriel BASIC only (`dev/ai/klive-basic-switch.md`). |
-| D6 | **The book** (*Inside the ZX Spectrum Next*) is reachable at its URLs and linked nowhere; `scripts/build-doc-search-scope.cjs` keeps it out of Pagefind. |
+| D6 | **The book** (*Inside the ZX Spectrum Next*) is reachable at its URLs and linked nowhere; `dev/scripts/build-doc-search-scope.cjs` keeps it out of Pagefind. |
 | D7 | "Try Klive in the browser" is not part of this work; it needs its own plan. |
 | D8 | **Visual design:** the app's tokens and type everywhere, a hero stripe band and Spectrum-colour feature blocks on the landing page only, numbered figure markers on screenshots. The later redesign is in `docs/design.md`. |
 
@@ -82,8 +82,8 @@ for orientation (the first view of a panel, dialog or editor), for state that is
 paused session, a heat map, a media strip with a cartridge), or for a result. Text, a table or a code
 block is better, and survives restyles, for single icons and glyph tables, key close-ups, tooltips,
 register values, command output, a menu a path already names, and settings pages beyond one overview.
-Rules: one recipe per page or per group in `scripts/doc-shots/recipes/guides-*.cjs` (helpers in
-`scripts/doc-shots/guides-helpers.cjs`, outside `recipes/` because `run.cjs` treats every file there as
+Rules: one recipe per page or per group in `dev/scripts/doc-shots/recipes/guides-*.cjs` (helpers in
+`dev/scripts/doc-shots/guides-helpers.cjs`, outside `recipes/` because `run.cjs` treats every file there as
 a recipe), the seeded preset (dark, fixed accent, 1280×820 at 2x), element-scoped crops except where
 the point is the whole window, WebP shown with `<Shot>` (R3), at
 `docs/public/images/en/guides/<group>/<page>/<name>.webp`, typically one to four per page within

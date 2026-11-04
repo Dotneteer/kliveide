@@ -274,7 +274,7 @@ static void z80HistoryCommit(void) {
 }
 
 // -----------------------------------------------------------------------------
-// Exports (`scripts/z80-history-exports.cjs`): the same names in every core
+// Exports (`dev/scripts/z80-history-exports.cjs`): the same names in every core
 // -----------------------------------------------------------------------------
 
 /* Where the header is; the header says where the ring is (`WasmHistoryReader.ts`) */

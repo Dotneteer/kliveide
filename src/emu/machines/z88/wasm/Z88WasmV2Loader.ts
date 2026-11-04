@@ -1,6 +1,6 @@
 /*
  * Loads the Cambridge Z88 WASM core (`dist/cambridge-z88.wasm`, built by
- * `scripts/build-z88-wasm.cjs`): compiles it once per artifact name, instantiates it without imports,
+ * `dev/scripts/build-z88-wasm.cjs`): compiles it once per artifact name, instantiates it without imports,
  * checks every export the machine needs, and creates the typed views over the core's buffers.
  *
  * The shape follows `Sp48WasmV2Loader.ts`. See `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`.

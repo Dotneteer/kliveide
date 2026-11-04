@@ -43221,5 +43221,5 @@
     "3:16368:line": "derived",
     "3:16376:line": "derived"
   },
-  "carriedFrom": {"sidecar":"zxnext/nextzxos-2.08/enNextZX.rom.dis","method":"byte signature (scripts/rom-annotations-carry.cjs)"}
+  "carriedFrom": {"sidecar":"zxnext/nextzxos-2.08/enNextZX.rom.dis","method":"byte signature (dev/scripts/rom-annotations-carry.cjs)"}
 }

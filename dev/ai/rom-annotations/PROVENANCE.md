@@ -2267,7 +2267,7 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
   differs from 2.08's, so nothing was reused as is. Nothing new was written: every entry is one of Klive's own
   2.08 entries, moved. **Sources:** Klive's 2.08 sidecars and the two sets' ROM bytes, nothing else (no
   disassembly, name list or other annotation of NextZXOS 2.10 was opened).
-- **How:** `npm run rom:annotations:carry -- <fromSidecar> <toRom>` (`scripts/rom-annotations-carry.cjs`, its
+- **How:** `npm run rom:annotations:carry -- <fromSidecar> <toRom>` (`dev/scripts/rom-annotations-carry.cjs`, its
   header has the rules). Each annotated offset (label, line annotation, data region start and end) is re-anchored
   by a byte signature of the 2.08 page that occurs once in the 2.10 page: forward, centred and backward windows
   of 8-128 bytes, cut at instruction boundaries, with the address operands of CALL/JP/LD/PUSH nn and of a

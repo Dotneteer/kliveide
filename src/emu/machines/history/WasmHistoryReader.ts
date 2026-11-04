@@ -16,7 +16,7 @@ import {
  * rather than handing back the newer record in that slot (trap T11).
  */
 
-/** The exports every history-recording core has (`scripts/z80-history-exports.cjs`) */
+/** The exports every history-recording core has (`dev/scripts/z80-history-exports.cjs`) */
 export const Z80_HISTORY_CORE_EXPORTS = [
   "z80HistoryGetHeaderOffset",
   "z80HistorySetEnabled",

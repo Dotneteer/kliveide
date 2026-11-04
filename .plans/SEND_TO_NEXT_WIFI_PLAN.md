@@ -165,7 +165,7 @@ New and changed code:
 | `src/renderer/appIde/commands/NextSendCommand.ts` | `next-send`; reuses the export step of the run path and `nexSdCardTarget()` |
 | `src/renderer/appIde/dialogs/sendToNext/` | MVC dialog (D11) |
 | `test/harness/zxnext/esp-at-peer.ts` + a session method | The fake ESP (D12), added the README's "Adding a method" way |
-| `scripts/next-wifi-check.md` | Manual real-hardware checklist |
+| `dev/scripts/next-wifi-check.md` | Manual real-hardware checklist |
 
 **Building the dot command.** A dot command is a raw binary, loaded at `$2000` and at most 8K. ⚑
 Klive asm has no "dot command" output today. Phase 0 checks whether the existing export can emit a
@@ -231,7 +231,7 @@ who write their own dot commands.
   - `-s` writes and reads back `klive.cfg`.
 - **The stock `.http` route** is covered by a server test that replays the request `.http` sends (as
   recorded in Phase 0).
-- **Real hardware**: `scripts/next-wifi-check.md`: set-up with `WIFI.BAS`; bootstrap with `.http`;
+- **Real hardware**: `dev/scripts/next-wifi-check.md`: set-up with `WIFI.BAS`; bootstrap with `.http`;
   pair; send and run a NEX from the ZX Next project template; the cases from T1, T3 and T4; timing of
   a 200 KB NEX.
 
@@ -244,7 +244,7 @@ who write their own dot commands.
 | **0. Spike** (≈3–4 days, on the author's Next and MacBook Pro) | Record the module's `AT+GMR`, and AT transcripts for CIPSTART/CIPSEND/+IPD/CLOSED. Confirm the `.http` options and its file-size limits. Fetch a 300 KB file from a throwaway Node server with `.http` and time it. Confirm `M_EXECCMD` → `.nexload` from inside a dot command, and the page-allocation call. Confirm Klive asm can emit a `$2000` raw binary. Choose the harness route for dot commands. Confirm `.espbaud` and `C:/DEMOS/ESP/WIFI.BAS` on the current distribution, and capture its screens for the guide. Note the macOS firewall prompt text. | **Go** if `.http` fetches a NEX from a Mac over Wi-Fi and `.nexload` runs it. That alone proves the zero-install path; the rest decides the dot command's details. |
 | **1. Server and IDE** (≈1 week) | `NextLinkServer`, LAN addresses, settings, MainApi, `next-send`, the Send to Next dialog with the `.http` lines, the status bar. **First usable release: send-to-Next works with stock `.http` + `.nexload`.** | Node tests green. On hardware: a project built in Klive runs on the Next through the lines the dialog shows. |
 | **2. The `.klive` dot command** (≈1.5–2 weeks) | AT driver, HTTP client with ranges and CRC, temp file and rename, `.nexload` hand-over, `-s/-w/-n/-t/-v`, `/klive.dot` bootstrap; the fake ESP, the harness method and the e2e tests. | The e2e suite is green, including the fault cases. On hardware: `.klive -w` + Send to Next starts the NEX with no typing per send. |
-| **3. Polish** (≈2–3 days) | `done` reporting to the status bar; better error texts from the Phase 0 failure cases; optional D10 speed-up if Phase 0 showed it safe; an optional NextZXOS menu entry tip (`enMenus.cfg`). | Checklist in `scripts/next-wifi-check.md` passes on hardware. |
+| **3. Polish** (≈2–3 days) | `done` reporting to the status bar; better error texts from the Phase 0 failure cases; optional D10 speed-up if Phase 0 showed it safe; an optional NextZXOS menu entry tip (`enMenus.cfg`). | Checklist in `dev/scripts/next-wifi-check.md` passes on hardware. |
 | **4. Docs and roadmap** (≈2–3 days) | The two pages of §8; `_meta.ts` entries; route goldens; links from book chapter 20 (UART and ESP); `LANDING_PAGE_COMPETITIVE_ANALYSIS.md` §2 and §4; mark G6.5 done in `CLOSING_THE_GAPS_PLAN.md`. | `npm run doc:build && npm run doc:check` pass. |
 
 **Effort: M, about 3–4 weeks**, which matches the roadmap's rating. Phase 1 alone delivers a working
@@ -257,7 +257,7 @@ feature after the spike.
 Both pages are user-facing and live under `docs/content/`. Next-side command lines go in code fences
 **without a language tag**: `text` is not registered in `mdxOptions…langs` (`docs/next.config.mjs`),
 and an unregistered language fails the build (AGENTS.md). Klive-side screenshots come from
-`scripts/doc-shots/` (read `dev/ai/doc-screenshots-guide.md`). Next-side screens are captured by the
+`dev/scripts/doc-shots/` (read `dev/ai/doc-screenshots-guide.md`). Next-side screens are captured by the
 author in Phase 0 (HDMI capture or photos), or the page goes without them.
 
 ### 8.1 `docs/content/howto/next-wifi-setup.mdx` — "Setting up Wi-Fi on the ZX Spectrum Next"

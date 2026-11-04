@@ -37,7 +37,7 @@
 
 /*
  * Benchmark-only switches (`.plans/WASM_CORE_LEAN_AND_DEBUG_PLAN.md` Phase 0). No production build
- * defines them; `scripts/benchmark-debug-overhead.cjs` passes them with `-D` to measure what the
+ * defines them; `dev/scripts/benchmark-debug-overhead.cjs` passes them with `-D` to measure what the
  * debugging support costs a fast frame. Builds with them emulate identically but cannot debug:
  * - `Z80_BENCH_STRIP_STEP_OUT`: no shadow step-out stack (D5's measurement);
  * - `Z80_BENCH_STRIP_DEBUG`: no debug work at all - the stack, the history and profile hooks, bus

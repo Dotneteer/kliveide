@@ -21,8 +21,8 @@ The decisions and non-goals of `dev/ai/nex-debugging.md` bind this plan unchange
 layer is tested, but the original plan's own acceptance test was never run: *set a breakpoint in a
 popped-out bank, launch, and stop there.* A defect found here changes what the other phases are worth.
 
-1. Write `scripts/nex-ide-check.cjs` in the style of `scripts/boriel-ide-check.cjs` (Playwright through
-   `scripts/doc-shots/harness.cjs`, a throwaway home, a NextZXOS card image, a fixture `.nex` with a
+1. Write `dev/scripts/nex-ide-check.cjs` in the style of `dev/scripts/boriel-ide-check.cjs` (Playwright through
+   `dev/scripts/doc-shots/harness.cjs`, a throwaway home, a NextZXOS card image, a fixture `.nex` with a
    `.nex.dis` sidecar). Build the fixture with Klive's own assembler (`.model Next`, a `.bank` section,
    a global and a local label), so the test owns its input.
 2. Parts, each printing PASS/FAIL:
@@ -103,7 +103,7 @@ Uses §1's fixture. Within the page's 1.5 MB budget.
    deliberately does not use it.
 2. **Type-check `test/`** (found by the first round: three tests passed a bare string where a
    `BreakpointScope` is required, and nothing told them). Measure the cleanup first: add a third
-   project to `scripts/check-types.cjs` over `test/**`, record the error count in
+   project to `dev/scripts/check-types.cjs` over `test/**`, record the error count in
    `build/type-errors-baseline.json`, and decide with the author whether to burn it down here or in
    its own change. It is project-wide, not NEX work, and may well become its own plan.
 

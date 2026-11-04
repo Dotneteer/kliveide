@@ -175,7 +175,7 @@ When a test needs something the session cannot do, add it to `script/session.ts`
    `getAudioSamples`, `setKeyStatus`, ...) and `IZxNextIdeMachine` (what the IDE panels read; see
    `ideState`). A hardware input the IDE has no path for (the mouse, the joysticks, the UART peer, the
    RTC) goes through a core export on `machine.wasmV2Runtime!.exports`, as `readNextRegDirect` in
-   `core/machines.ts` does; a missing export is added to `zxnext.c`, `scripts/build-zxnext-wasm.cjs`
+   `core/machines.ts` does; a missing export is added to `zxnext.c`, `dev/scripts/build-zxnext-wasm.cjs`
    and `ZxNextWasmV2Loader.ts`.
 2. **Keep the rules** in the header of `session.ts`: hardware-level input; no hidden state setting;
    every wait has a frame limit and its error names the PC and what it waited for.

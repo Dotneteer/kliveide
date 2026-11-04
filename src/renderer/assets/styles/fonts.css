@@ -2,7 +2,7 @@
  * Bundled application fonts.
  *
  * All faces ship inside the app (no network access at runtime) and are built by
- * scripts/build-fonts.py from the @fontsource packages. Both families are
+ * dev/scripts/build-fonts.py from the @fontsource packages. Both families are
  * licensed under the SIL Open Font License 1.1.
  *
  *   Inter   - UI / display text. Variable weight 100-900.
@@ -93,7 +93,7 @@
 /* --- Editor fonts offered in View | Editor Options | Font Family ---------- *
  * Fontsource variable builds: one file spans the whole weight range. Each family is split into a
  * `latin` half (copied verbatim) and a `latin-ext` half (subset to Latin Extended-A/B by
- * scripts/build-fonts.py). Both halves come from the same source font and therefore share its
+ * dev/scripts/build-fonts.py). Both halves come from the same source font and therefore share its
  * advance width, so accented text stays column-aligned - it would not if the ext range fell
  * through to the next family in the stack.
  *
@@ -231,7 +231,7 @@ pre,
  *
  * The file was repaired in place: `x` shipped with a 2124 advance against the
  * 2023 every other glyph uses, with an identical outline - a bad metric, not a
- * wide letter. See fix_zxspectrum() in scripts/build-fonts.py.
+ * wide letter. See fix_zxspectrum() in dev/scripts/build-fonts.py.
  */
 @font-face {
   font-family: 'ZxSpectrum';

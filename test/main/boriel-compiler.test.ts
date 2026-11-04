@@ -445,7 +445,7 @@ describe("BorielCompiler with the real zxbc", () => {
     const project = path.join(home, "bouncing-ball");
     fs.mkdirSync(path.join(project, "code"), { recursive: true });
     const source = path.join(project, "code", "program.zxbas");
-    fs.copyFileSync(path.resolve(__dirname, "../../scripts/doc-shots/fixtures/get-started/bouncing-ball/code/program.zxbas"), source);
+    fs.copyFileSync(path.resolve(__dirname, "../../dev/scripts/doc-shots/fixtures/get-started/bouncing-ball/code/program.zxbas"), source);
     const compiler = new BorielCompiler();
     compiler.setAppState({
       userSettings: { zxbasic: { executablePath: zxbcPath } },

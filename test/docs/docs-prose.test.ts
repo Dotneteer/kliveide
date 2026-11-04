@@ -1,12 +1,12 @@
 /**
- * The documentation's wording check (scripts/check-docs-prose.cjs): what it reports, and the uses it must leave alone - each
+ * The documentation's wording check (dev/scripts/check-docs-prose.cjs): what it reports, and the uses it must leave alone - each
  * exemption here was a false positive on a real page.
  */
 import { createRequire } from "node:module";
 import { describe, expect, it } from "vitest";
 
 const require = createRequire(import.meta.url);
-const { proseFindings } = require("../../scripts/check-docs-prose.cjs");
+const { proseFindings } = require("../../dev/scripts/check-docs-prose.cjs");
 
 type Finding = { line: number; column: number; rule: string; match: string };
 const rules = (source: string) => (proseFindings(source) as Finding[]).map((f) => `${f.rule}:${f.match}`);

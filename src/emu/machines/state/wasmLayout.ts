@@ -1,6 +1,6 @@
 /*
  * Reads the memory-layout stamp a core's build put into its `.wasm`
- * (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.6, D7; written by `scripts/wasm-layout.cjs`).
+ * (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.6, D7; written by `dev/scripts/wasm-layout.cjs`).
  *
  * A Klive state file's memory image is valid only for a core whose layout fingerprint is the same.
  */

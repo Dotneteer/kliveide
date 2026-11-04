@@ -9,7 +9,7 @@
  *   written in MDX: the docs route binds it (`app/[lang]/(docs)/[...mdxPath]/page.tsx`).
  * - Markers are numbered badges drawn in HTML over the image, never into its pixels, so the text
  *   they point to stays translatable. A marker is either a name from the recipe's sidecar file
- *   (`<image>.json`, written by `scripts/doc-shots/harness.cjs`; positions follow the layout) or
+ *   (`<image>.json`, written by `dev/scripts/doc-shots/harness.cjs`; positions follow the layout) or
  *   an explicit `{ x, y }` in percent. They are numbered in the order given; the page explains
  *   them in an ordinary numbered list under the image.
  * - `figure` and `caption` make the figure label above the image ("FIG. 7.1 · Paused at a

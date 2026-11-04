@@ -76,7 +76,7 @@ export function assertWasmArtifactFresh(profile?: NextProfileId): void {
     (f) => (f.endsWith(".c") || f.endsWith(".h")) && statSync(join(WASM_SOURCES, f)).mtimeMs > artifactTime
   );
   // --- What the layout stamp holds (the code hash of debug recordings) changes with its writer too
-  if (statSync(join(REPO_ROOT, "scripts/wasm-layout.cjs")).mtimeMs > artifactTime) stale.push("scripts/wasm-layout.cjs");
+  if (statSync(join(REPO_ROOT, "dev/scripts/wasm-layout.cjs")).mtimeMs > artifactTime) stale.push("dev/scripts/wasm-layout.cjs");
   if (stale.length) {
     throw new Error(
       `The ZX Next WASM artifact is older than ${stale.join(", ")}. Run \`npm run build:zxnext-wasm\`.`

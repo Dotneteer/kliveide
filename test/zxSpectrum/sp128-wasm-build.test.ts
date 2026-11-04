@@ -13,8 +13,8 @@ import {
   productionExports,
   source,
   wasmDistDirectoryRelative
-} from "../../scripts/build-sp128-wasm.cjs";
-import { DEFAULT_MAX_BYTES, parseMaxBytes } from "../../scripts/check-sp128-wasm-size.cjs";
+} from "../../dev/scripts/build-sp128-wasm.cjs";
+import { DEFAULT_MAX_BYTES, parseMaxBytes } from "../../dev/scripts/check-sp128-wasm-size.cjs";
 import { describe, expect, it } from "vitest";
 
 describe("ZX Spectrum 128K WASM build", () => {

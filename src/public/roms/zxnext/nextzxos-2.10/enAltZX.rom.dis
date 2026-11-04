@@ -18234,5 +18234,5 @@
     "1:15035:line": "observed",
     "1:15035:region": "observed"
   },
-  "carriedFrom": {"sidecar":"zxnext/nextzxos-2.08/enAltZX.rom.dis","method":"byte signature (scripts/rom-annotations-carry.cjs)"}
+  "carriedFrom": {"sidecar":"zxnext/nextzxos-2.08/enAltZX.rom.dis","method":"byte signature (dev/scripts/rom-annotations-carry.cjs)"}
 }

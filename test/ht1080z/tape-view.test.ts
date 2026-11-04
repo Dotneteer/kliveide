@@ -22,7 +22,7 @@ import { ht1080zPartAnatomy } from "@renderer/appIde/DocumentPanels/Ht1080zTape/
  * makes of them.
  */
 const REPO = join(__dirname, "../..");
-const DEMO = new Uint8Array(readFileSync(join(REPO, "scripts/doc-shots/recipes/ht1080z-demo.bas")));
+const DEMO = new Uint8Array(readFileSync(join(REPO, "dev/scripts/doc-shots/recipes/ht1080z-demo.bas")));
 const S2 = ht1080zCharsFor("s2");
 
 async function templateCmd(): Promise<{ cmd: Uint8Array; code: number[] }> {

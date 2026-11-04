@@ -5,23 +5,23 @@ import { machineRegistry } from "@common/machines/machine-registry";
 import { getHardwareSpec } from "@common/machines/hardware-specs";
 import { ZxSpectrum48WasmV2Machine } from "@emu/machines/zxSpectrum48/ZxSpectrum48WasmV2Machine";
 import { ZxSpectrum128WasmV2Machine } from "@emu/machines/zxSpectrum128/ZxSpectrum128WasmV2Machine";
-import { buildSp48Wasm, productionOutput as sp48Wasm } from "../../scripts/build-sp48-wasm.cjs";
-import { buildSp128Wasm, productionOutput as sp128Wasm } from "../../scripts/build-sp128-wasm.cjs";
+import { buildSp48Wasm, productionOutput as sp48Wasm } from "../../dev/scripts/build-sp48-wasm.cjs";
+import { buildSp128Wasm, productionOutput as sp128Wasm } from "../../dev/scripts/build-sp128-wasm.cjs";
 import { TimexWasmV2Machine } from "@emu/machines/timex/TimexWasmV2Machine";
 import { ScorpionWasmV2Machine } from "@emu/machines/zxSpectrum128/ScorpionWasmV2Machine";
-import { buildTimexWasm, productionOutput as timexWasm } from "../../scripts/build-timex-wasm.cjs";
+import { buildTimexWasm, productionOutput as timexWasm } from "../../dev/scripts/build-timex-wasm.cjs";
 import { Ht1080zWasmV2Machine } from "@emu/machines/ht1080z/Ht1080zWasmV2Machine";
 import { HT1080Z_MODELS } from "@emu/machines/ht1080z/ht1080zMachineInfo";
 import { MI_HT1080Z } from "@common/machines/constants";
-import { buildHt1080zWasm, productionOutput as ht1080zWasm } from "../../scripts/build-ht1080z-wasm.cjs";
+import { buildHt1080zWasm, productionOutput as ht1080zWasm } from "../../dev/scripts/build-ht1080z-wasm.cjs";
 import { TvcWasmV2Machine } from "@emu/machines/tvc/TvcWasmV2Machine";
 import { TVC_MODELS } from "@emu/machines/tvc/tvcMachineInfo";
 import { MI_TVC } from "@common/machines/constants";
-import { buildTvcWasm, productionOutput as tvcWasm } from "../../scripts/build-tvc-wasm.cjs";
+import { buildTvcWasm, productionOutput as tvcWasm } from "../../dev/scripts/build-tvc-wasm.cjs";
 import { EpWasmV2Machine } from "@emu/machines/enterprise/EpWasmV2Machine";
 import { EP_MODELS } from "@emu/machines/enterprise/epMachineInfo";
 import { MI_ENTERPRISE } from "@common/machines/constants";
-import { buildEpWasm, productionOutput as epWasm } from "../../scripts/build-ep-wasm.cjs";
+import { buildEpWasm, productionOutput as epWasm } from "../../dev/scripts/build-ep-wasm.cjs";
 
 /*
  * The hardware sheet's figures against the running cores, for the machines that only report their

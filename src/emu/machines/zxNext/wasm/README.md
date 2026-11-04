@@ -46,7 +46,7 @@ expected to cite it. The VHDL is fetched, never committed: `npm run next-fpga:fe
 version (`dev/vendor/next-fpga/sources.json`) in `dev/vendor/next-fpga/<version>/`, with Klive's own comments
 applied (`dev/vendor/next-fpga/comments/`). A citation names the version (`zxnext.vhd@3.02.04 ~5186`);
 an unversioned one means 3.02.01. One C tree builds one artifact per model's hardware
-(`zxnext-profile.h`, `scripts/zxnext-artifacts.cjs`); a behaviour a later core changed is guarded
+(`zxnext-profile.h`, `dev/scripts/zxnext-artifacts.cjs`); a behaviour a later core changed is guarded
 with `#if ZXNEXT_CORE_VERSION >= 30204`, and the 3.02.01 artifact's boot traces and goldens prove
 the guard leaked nowhere (`dev/ai/zxnext-models.md`, "Rules").
 TypeScript changes are for behaviour that is host-owned rather than machine-owned: IDE and UI

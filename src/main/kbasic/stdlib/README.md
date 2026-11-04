@@ -18,7 +18,7 @@ every `*.bas` file here into `stdlib/generated/stdlib-bundle.ts`; they are serve
   `library-coverage` lists them and the ones left out). A name upstream's documentation only shows
   as a listing gives E216 saying so; the list of documented names comes from `stdlib-api.json` at
   bundle time. Each library's behaviour is checked against zxbc by the `library` suite of
-  `scripts/kbasic-compat.cjs`, which covers edges the documentation does not state.
+  `dev/scripts/kbasic-compat.cjs`, which covers edges the documentation does not state.
 - `sinclair-compatible` includes `sinclair.bas` (ATTR, POINT, SCREEN$) before the program's first
   line. A program that uses DRAW gets `__drawarc.bas` after its last line: DRAW's arc form calls
   `__kbDrawArc`.
@@ -39,13 +39,13 @@ every `*.bas` file here into `stdlib/generated/stdlib-bundle.ts`; they are serve
   and `csrlin.bas` rely on; `test/kbasic/codegen/stdlib.test.ts` would catch a change of frame.
 - Data goes in a global array with explicit bounds (`DIM t(0 TO n) AS UByte => {...}`), so the
   program's `array_base` does not move it. `print64.bas`'s font is Klive's own 3 x 7 design, kept in
-  `scripts/kbasic-font64.cjs`, which rewrites the table (`--check` verifies it). `print42.bas` needs no
+  `dev/scripts/kbasic-font64.cjs`, which rewrites the table (`--check` verifies it). `print42.bas` needs no
   font: it squeezes the machine's own (CHARS) from six columns to five.
 - **Read the font at CHARS with `__kbRomPeek` (`__kbase.bas`), never `PEEK`.** CHARS points into the
   48K BASIC ROM, and on the 128K, the +3 and the Next another ROM may be paged in (the +3's editor
   runs with ROM 0), so `PEEK` reads something else there. `__kbRomPeek` pages the 48K BASIC ROM in for
   an address below $4000 (the runtime's `RomPeek`); `screen.bas` and `print42.bas` use it.
 - Test each routine in `test/kbasic/codegen/stdlib.test.ts` on the 48K harness, and add its
-  behaviour to the `library` compatibility suite (`node scripts/kbasic-compat.cjs gen`, then
+  behaviour to the `library` compatibility suite (`node dev/scripts/kbasic-compat.cjs gen`, then
   `oracle library` where zxbc is installed). Test data for `zx0.bas` and `megalz.bas` comes from
-  `scripts/kbasic-packers.cjs`.
+  `dev/scripts/kbasic-packers.cjs`.

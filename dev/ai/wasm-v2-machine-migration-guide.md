@@ -18,8 +18,8 @@ Read these files before changing code:
 - `src/emu/machines/zxSpectrum128/ZxSpectrum128WasmV2Machine.ts`
 - `src/emu/machines/zxSpectrum128/wasm/Sp128WasmV2Loader.ts`
 - `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128.c`
-- `scripts/build-sp48-wasm.cjs`
-- `scripts/build-sp128-wasm.cjs`
+- `dev/scripts/build-sp48-wasm.cjs`
+- `dev/scripts/build-sp128-wasm.cjs`
 - `.plans/ZX_SPECTRUM_48_WASM_V2_MIGRATION_PLAN.md`
 - `.plans/ZX_SPECTRUM_128_WASM_MIGRATION_PLAN.md`
 

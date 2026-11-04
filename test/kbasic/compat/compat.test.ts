@@ -24,7 +24,7 @@ type Diff = { klive: string; zxbc: string };
 type Baseline = Record<string, Record<string, Diff>>;
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const compat = require("../../../scripts/kbasic-compat.cjs") as {
+const compat = require("../../../dev/scripts/kbasic-compat.cjs") as {
   buildProgram(items: Item[]): string;
   chunk(items: Item[], size: number): Item[][];
   itemResult(item: Item, row: number, line: (row: number) => string, peek?: (address: number) => number): string;

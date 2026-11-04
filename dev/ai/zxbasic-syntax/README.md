@@ -9,7 +9,7 @@ for syntax changes mechanically.
 | --- | --- |
 | `zxbasic-syntax.json` | The specification: lexical rules, keywords, types, every statement and function with its own EBNF, operators and precedence, preprocessor directives and pragmas, inline-asm interface, CLI options, warning codes, and the NextBuild `CODEBANK` extension. Written in Klive's own words and own EBNF. |
 | `upstream-fingerprint.json` | Which upstream release the spec describes (tag, commit, date, version) and the git blob SHA + size of every upstream file that can carry a syntax change. **Hashes only** — no upstream content. |
-| `../../../scripts/zxbasic-syntax-check.cjs` | Compares the fingerprint with upstream now and lists exactly which files to re-read. |
+| `../../scripts/zxbasic-syntax-check.cjs` | Compares the fingerprint with upstream now and lists exactly which files to re-read. |
 
 ## The licence rule — read this before touching the spec
 
@@ -51,14 +51,14 @@ every item is one object so that a change touches one hunk.
 | `extensions` | Syntax that is not upstream: currently `codebank` (NextBuild's `CODEBANK … END CODEBANK`, `#pragma codebank`, `FARPTR`, `<farmem.bas>`, CLI flags, `banks.json`). Each extension names its origin and version. |
 | `changes` | A log of upstream releases reviewed, newest first: release, date, and the syntax-relevant changes found (or "none"). This is how a session sees what changed since the spec was last touched without reading upstream's changelog again. |
 | `docs_errata` | Places where upstream's documentation disagrees with itself or with the implementation (for example the Float return registers). The spec follows the implementation; this list stops a later session from "correcting" the spec back to a wrong docs page. |
-| `semantics` | The semantics annex (R8 of the compiler, `dev/ai/kbasic/compiler.md`): behaviour questions the syntax leaves open (literal types, constant folding, division by zero, FOR details...), each with a `status` (`decided`, `provisional` until the zxbc oracle confirms it, or `open` until a named `phase`), a `source` (`docs`, `oracle`, `klive-decision`), the decision, the test that pins it, and — where zxbc 1.19 behaves differently — an `oracle` note saying what it did (from `scripts/kbasic-oracle.cjs`; the corpus program carries `'@expect oracle-differs <entry>`). Not an upstream description: it records what Klive BASIC does and why. |
+| `semantics` | The semantics annex (R8 of the compiler, `dev/ai/kbasic/compiler.md`): behaviour questions the syntax leaves open (literal types, constant folding, division by zero, FOR details...), each with a `status` (`decided`, `provisional` until the zxbc oracle confirms it, or `open` until a named `phase`), a `source` (`docs`, `oracle`, `klive-decision`), the decision, the test that pins it, and — where zxbc 1.19 behaves differently — an `oracle` note saying what it did (from `dev/scripts/kbasic-oracle.cjs`; the corpus program carries `'@expect oracle-differs <entry>`). Not an upstream description: it records what Klive BASIC does and why. |
 
 ## Refreshing the spec when upstream releases
 
 1. Run the checker. It needs network access and nothing else:
 
    ```bash
-   node scripts/zxbasic-syntax-check.cjs
+   node dev/scripts/zxbasic-syntax-check.cjs
    ```
 
    Exit code 0 means the latest upstream release matches the fingerprint and the spec is current.
@@ -81,7 +81,7 @@ every item is one object so that a change touches one hunk.
    so do it last:
 
    ```bash
-   node scripts/zxbasic-syntax-check.cjs --update --ref vX.Y.Z
+   node dev/scripts/zxbasic-syntax-check.cjs --update --ref vX.Y.Z
    ```
 
 5. Run the spec's own test (`test/ai-notes/zxbasic-syntax.test.ts`): it checks the JSON parses,
