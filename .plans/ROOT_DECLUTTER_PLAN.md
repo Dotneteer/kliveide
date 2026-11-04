@@ -268,6 +268,12 @@ most of what is in it locally is not tracked.
 
 ### Step 9. `.ai/` -> `dev/ai/`
 
+- **Watch out (found during step 7):** the UI text `panels.rom.rule` names
+  `.ai/rom-annotations/README.md`, in `src/common/i18n/locales/en/panels-media.json` and in every
+  translated catalog and `.source.json`. Change the English entry only and let the translations come
+  through `npm run i18n:todo` / `i18n:merge` (AGENTS.md: no hand-written translations); check what
+  `npm run i18n:check` says about the stale ones before committing.
+
 - ~590 code files, nearly all comments. Functional: the ROM annotation tools
   (`scripts/rom-annotations*.cjs`, `PROVENANCE.md`), `scripts/zxbasic-syntax-check.cjs`
   (`.ai/zxbasic-syntax/`), tests that read `.ai/kbasic/stdlib-api.json`, `npm run runtime:bundle`
