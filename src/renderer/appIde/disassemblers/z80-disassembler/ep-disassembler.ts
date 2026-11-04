@@ -8,7 +8,7 @@ import { CUSTOM_Z80_DISASSEMBLY_TOOL, ICustomDisassembler, IDisassemblyApi } fro
  * machine's `getCallInstructionLength` gives 2 for it, so Step Over agrees). Every program calls EXOS
  * this way, not only the ROM, so the decoding is not gated on an address.
  *
- * The function codes are the EXOS 2.1 kernel specification's list (`_input/enterprise128/docs/Exos.htm`,
+ * The function codes are the EXOS 2.1 kernel specification's list (`dev/research/enterprise128/docs/Exos.htm`,
  * part II, §2 "EXOS function codes"); the names are Klive's own words for them. Codes 12-15 and
  * anything above 34 are not functions: EXOS answers them with the .IFUNC error.
  */

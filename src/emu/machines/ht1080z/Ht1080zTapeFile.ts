@@ -1,5 +1,5 @@
 /*
- * HT-1080Z tape files (`.plans/HT1080Z_PLAN.md` §9; `_input/ht1080z/STORAGE_FIRMWARE_SOFTWARE.md` §3):
+ * HT-1080Z tape files (`.plans/HT1080Z_PLAN.md` §9; `dev/research/ht1080z/STORAGE_FIRMWARE_SOFTWARE.md` §3):
  * `.cas`, `.cmd` and `.bas`, each turned into the `.cas` bit stream the core plays and reads.
  *
  * The `.cas` header detection - 00 bytes then the A5h sync, at any bit offset, and the 1500-baud

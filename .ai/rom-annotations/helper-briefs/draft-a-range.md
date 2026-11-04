@@ -10,7 +10,7 @@ sidecar. You only WRITE ONE DRAFT FILE (given in your task); you do not edit the
 ## The hard rule (D4) — read `.ai/rom-annotations/README.md` "The rule (decision D4)" first
 Write only from the bytes in front of you. Do NOT use, recall or paraphrase any published commented
 disassembly of any Spectrum ROM, nor remembered routine names or descriptions. Name routines after what
-their code does. **Never open any file in `/Users/dotneteer/source/kliveide/_input/`**: it holds commented
+their code does. **Never open any file in `/Users/dotneteer/source/kliveide/dev/research/`**: it holds commented
 disassemblies of exactly these ROMs and is forbidden.
 
 ## Files (read-only for you)

@@ -26,7 +26,7 @@ library). Each target option is a **separate argument** (`+zx`, `-subtype=plus3`
 - **`+ts2068`** uses the same crt0 (`lib/config/ts2068.cfg` names `target/zx/classic/spec_crt0`).
   **`+zxn -subtype=nex -clib=classic`** links `target/zxn/classic/ram_crt0.asm`, which has the same
   shape (`ld (__restore_sp_onexit+1),sp`, `call _main`, restore SP, `ret`).
-- **A `.nex` must not return from `main`.** `.nexload` (`_input/nexload.asm`, `.go`) loads SP from the
+- **A `.nex` must not return from `main`.** `.nexload` (`dev/research/nexload.asm`, `.go`) loads SP from the
   NEX header, discards its own stack and enters the program with `rst $20`; it pushes no return
   address. Its only way back to BASIC is a header PC of 0 (load without running). The classic Next
   crt0 above restores the entry SP and `ret`s, which under `.nexload` jumps to a garbage address

@@ -4,7 +4,7 @@ import { formattedMdr, mdrChecksum, READ_BLOCK, SELECT, sp48WithInterface1, stan
 
 /*
  * Writing a cartridge (`.plans/MICRODRIVE_PLAN.md` §3 M4, §4.6;
- * `_input/microdrive/interface1-rom-behaviour.md` §5.2 SEND-BLK): a record written ~2.7 ms after a
+ * `dev/research/microdrive/interface1-rom-behaviour.md` §5.2 SEND-BLK): a record written ~2.7 ms after a
  * header was read replaces that sector's record, whatever the gap's exact length.
  */
 

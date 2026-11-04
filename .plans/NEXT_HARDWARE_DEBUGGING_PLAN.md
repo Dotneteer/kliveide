@@ -30,7 +30,7 @@ a real Next with a serial cable and a resident program on the Next. Its document
 checked in Phase 0, but the existence of a working tool settles the "is it possible at all" question.
 Klive's open questions are about effort and design, not possibility:
 
-| Need | What the Next provides (`_input/next-fpga/`) |
+| Need | What the Next provides (`dev/research/next-fpga/`) |
 |---|---|
 | A byte link to a PC | Two UARTs (ESP and Pi) on ports `$133B`–`$163B`, each with a 512-byte Rx and 64-byte Tx FIFO. Their baud rate is a 17-bit prescaler on the system clock (`Fsys / baud`; Fsys depends on NextReg `$11`). **NextReg `$0B` can route either UART to a joystick port**: Tx out on pin 7, Rx in on pin 9, CTS_n in on pin 6. |
 | A way to stop a running program from outside | The NMI. The **M1 (Multiface) and DRIVE (divMMC) buttons**, or NextReg `$02` from software. NextReg `$C0` bit 3 gives a **stackless NMI**: the return address goes to NextRegs `$C2`/`$C3` instead of the user's stack. |

@@ -10,11 +10,10 @@ Guidance for AI assistants working in this workspace.
 - Human- and AI-readable implementation pattern docs live in `.docs/`; read the relevant docs before changing established patterns.
 - Additional AI-oriented notes live in `.ai/`; read them before related work.
 - `dev/` is becoming the one home for everything that is for Klive's developers and never ships
-  (`dev/README.md`): `.ai/`, `.docs/` (as `dev/patterns/`), `.plans/`, `_input/` (as
-  `dev/research/`) and `scripts/` move into it one step at a time
-  (`.plans/ROOT_DECLUTTER_PLAN.md`). Until a folder has moved, use its old path. Moved so far:
+  (`dev/README.md`): `.ai/`, `.docs/` (as `dev/patterns/`), `.plans/` and `scripts/` move into it
+  one step at a time (`.plans/ROOT_DECLUTTER_PLAN.md`). Until a folder has moved, use its old path. Moved so far:
   `_experiments/` (now `dev/experiments/`), `.changes/` (now `dev/changes/`), `vendor/` (now
-  `dev/vendor/`).
+  `dev/vendor/`), `_input/` (now `dev/research/`).
 
 ## Working Rules
 
@@ -296,7 +295,7 @@ merely uncoloured, which no route diff can see.
 - One C/WASM core runs the TVC 64K and 64K+: `src/emu/machines/tvc/wasm/` - read its `README.md`
   (the half-T clock, the clock stretch, the video steps, sound, tape, the HBF card) before changing
   it. The decisions, as-built notes and what is open are `.ai/videoton-tvc.md` (the plan was closed on 2026-11-04); the research pack is
-  `_input/videoton-tvc/` (`TVC_VIDEO_GENERATION.md` for the picture).
+  `dev/research/videoton-tvc/` (`TVC_VIDEO_GENERATION.md` for the picture).
 - Provenance (plan D1): Klive's own code. rtvc (MIT) and MAME (BSD) are read for interface facts;
   rtvc's ROM listings never feed shipped `.rom.dis` sidecars.
 - Test with the harness in `test/harness/tvc/` (real ROMs, `bootToBasic`, typing, tapes, disks, the
@@ -313,7 +312,7 @@ merely uncoloured, which no route diff can see.
   `src/emu/machines/enterprise/wasm/` - read its `README.md` (the half-T clock and NICK's exact
   rational phase, the slot stepper and the LPT, the stretch, DAVE, sound, `FILE:`, tape) before
   changing it. The plan and its as-built record are `.plans/ENTERPRISE_PLAN.md` (§18); the research
-  pack is `_input/enterprise128/`.
+  pack is `dev/research/enterprise128/`.
 - Provenance (plan D1): Klive's own code, written from the research pack. Clock Signal (MIT) and MAME
   (BSD) may be read for interface facts; GPL sources (ep128emu, Xep128, the FPGA core) are not read for
   design, and ep128emu is only run as an oracle, recording observed results. The ROMs are bundled under

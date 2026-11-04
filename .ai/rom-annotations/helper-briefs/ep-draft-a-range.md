@@ -18,7 +18,7 @@ community sites, in books and in emulator sources); you may have seen one in tra
 forbidden.**
 - Never write a routine name, a RAM variable's meaning, a table boundary or a description that arrives before you
   have read the code. If a name "just comes", reject it and derive another from the code.
-- **Never open anything under `/Users/dotneteer/source/kliveide/_input/`.** Do not search the web. GPL emulator
+- **Never open anything under `/Users/dotneteer/source/kliveide/dev/research/`.** Do not search the web. GPL emulator
   sources (ep128emu, Xep128) are off limits for anything.
 - **Names in Klive's own Enterprise code are not evidence** for routine names. Hardware facts there (ports,
   paging, NICK, DAVE) you may use: `src/emu/machines/enterprise/wasm/README.md` and the C files' comments.

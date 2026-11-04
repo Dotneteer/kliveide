@@ -54,7 +54,7 @@ This document provides context about the C64 emulator implementation in the Kliv
 
 ## Reference Materials
 
-- C64 hardware documentation in `_input/` folder
+- C64 hardware documentation in `dev/research/` folder
 - Memory map: [Wiki Link TBD]
 - VIC-II timing details: [Reference TBD]
 - Detailed technical information and emulation challenges available in `/docs/implementation/c64/c64-overview.md`

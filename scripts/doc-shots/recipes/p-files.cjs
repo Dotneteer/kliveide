@@ -1,7 +1,7 @@
 /**
  * The ZX81 `.P` viewer in the running app (`src/renderer/appIde/DocumentPanels/PFile/`):
  *
- * - `zx81/p-file-viewer.png` — the viewer on `basic/Characters.P` (MIT, from `_input/zx81-tapes/`)
+ * - `zx81/p-file-viewer.png` — the viewer on `basic/Characters.P` (MIT, from `dev/research/zx81-tapes/`)
  *   with its display file selected: the summary, the parts and the screen drawn with the ROM's
  *   characters;
  * - `zx81/p-file-listing.png` — the program popped out as a ZX81 BASIC listing.
@@ -17,7 +17,7 @@ const fs = require("fs");
 const { fixtureProjectFolder, REPO } = require("../harness.cjs");
 
 const VIEWER = '[class*="_viewer_"]';
-const TAPES = path.join(REPO, "_input/zx81-tapes");
+const TAPES = path.join(REPO, "dev/research/zx81-tapes");
 
 module.exports = {
   name: "p-files",

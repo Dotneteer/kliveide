@@ -319,7 +319,7 @@ function tapBlocks(path: string) {
   return reader.dataBlocks;
 }
 
-const YANKEE = join(ROOT, "_input/A Yankee in Iraq v1.3.3.tap");
+const YANKEE = join(ROOT, "dev/research/A Yankee in Iraq v1.3.3.tap");
 const GAME_KEYS_48 = ["Q", "A", "O", "P", "Space", "M", "N1", "Enter"];
 
 /** A player: a key goes down or up every few frames */

@@ -6,8 +6,8 @@ Created: 2026-08-29
 
 This note extends the beeper-focused comparison in:
 
-- `_input/zx_go/002-beeper-audio-sample-generation.md`
-- `_input/zx_go/003-klive-beeper-sample-generation-improvement-plan.md`
+- `dev/research/zx_go/002-beeper-audio-sample-generation.md`
+- `dev/research/zx_go/003-klive-beeper-sample-generation-improvement-plan.md`
 
 The new focus is PSG/AY/TurboSound generation and how PSG audio is combined
 with beeper and other sources. The earlier beeper plan is useful background,

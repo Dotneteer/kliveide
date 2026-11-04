@@ -7,7 +7,7 @@ One C core runs both Enterprise models (`.plans/ENTERPRISE_PLAN.md`, decision D2
 Enterprise machine and no second CPU: the core includes the shared Z80 (`src/emu/z80/wasm/z80.c`)
 through its `Z80_*` hooks. It needed no new hook.
 
-The hardware facts come from the research pack `_input/enterprise128/` (`NICK_VIDEO.md`,
+The hardware facts come from the research pack `dev/research/enterprise128/` (`NICK_VIDEO.md`,
 `NICK_VIDEO_BACKGROUND.md`, `DAVE_MEMORY_IO.md`, `DAVE_AUDIO_BACKGROUND.md`). The code is Klive's own;
 no emulator's code was ported (plan D1).
 

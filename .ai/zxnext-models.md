@@ -186,7 +186,7 @@ KS3 fits the same steps: the board is a profile field and a compile-time define,
   recorded only after checking by eye). The current visual suites (`copper`, `parity`) do not boot
   NextZXOS, so nothing needs them yet.
 - **`nextreg.txt.patch`** (3.02.01 and its 3.02.04 carry) holds two stray edits, not comments; drop
-  it now that `_input/next-fpga/` is gone and nothing compares against it.
+  it now that `dev/research/next-fpga/` is gone and nothing compares against it.
 - **`t80na.vhd.patch`**: its pin descriptions should be checked for provenance.
 - **ULA I/O contention** (delta item 3) is modelled in neither version; a separate fidelity item.
 - **EAR polarity** on 3.02.04 (delta item 4) is unconfirmed on hardware.

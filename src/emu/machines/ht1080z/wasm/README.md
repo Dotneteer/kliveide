@@ -7,7 +7,7 @@ host uploads the model's three ROMs. It builds to `dist/ht1080z.wasm` and is loa
 `../Ht1080zWasmV2Machine.ts` (the adapter). There is no TypeScript HT machine and no second CPU: the
 core includes the shared Z80 (`src/emu/z80/wasm/z80.c`) through its `Z80_*` hooks.
 
-The hardware facts come from the research pack `_input/ht1080z/` (HARDWARE.md, VIDEO_TIMING.md),
+The hardware facts come from the research pack `dev/research/ht1080z/` (HARDWARE.md, VIDEO_TIMING.md),
 with the values recorded in the plan's §17. The code is Klive's own.
 
 ## Layout

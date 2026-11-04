@@ -8,7 +8,7 @@ import { analyzeOFile } from "@renderer/appIde/DocumentPanels/PFile/oFileView";
 import { createZx81Session, REPO_ROOT, type Zx81TestSession } from "../harness/zx81";
 
 /*
- * The ZX80 sample programs in `_input/zx80-tapes/klive/` (its README lists them): made on Klive's own
+ * The ZX80 sample programs in `dev/research/zx80-tapes/klive/` (its README lists them): made on Klive's own
  * ZX80 - the WASM core with the real 4K ROM - by typing each program and writing out memory from
  * $4000 up to E_LINE, the bytes a ZX80 SAVE writes. No third-party program is in them.
  *
@@ -16,7 +16,7 @@ import { createZx81Session, REPO_ROOT, type Zx81TestSession } from "../harness/z
  * checks that the files there still load on the ROM and read in the `.O` viewer's model.
  */
 
-const SAMPLES = join(REPO_ROOT, "_input/zx80-tapes/klive");
+const SAMPLES = join(REPO_ROOT, "dev/research/zx80-tapes/klive");
 const E_LINE = 0x400a;
 const VARS = 0x4008;
 

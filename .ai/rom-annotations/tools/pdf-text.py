@@ -1,6 +1,6 @@
 # Extracts the text of an interface-document PDF (the NextZXOS/esxDOS API document: the D4 rule allows it)
 # without poppler: inflates the content streams and maps glyphs through each font's ToUnicode CMap.
-# Usage: python3 .ai/rom-annotations/tools/pdf-text.py _input/NextZXOS_and_esxDOS_APIs.pdf <scratchpad>/api.txt
+# Usage: python3 .ai/rom-annotations/tools/pdf-text.py dev/research/NextZXOS_and_esxDOS_APIs.pdf <scratchpad>/api.txt
 import re,zlib,sys
 d=open(sys.argv[1],'rb').read()
 objs={}

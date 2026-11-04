@@ -4,7 +4,7 @@ import { formattedMdr, SELECT, sp48WithInterface1, standInRom } from "./if1TestS
 
 /*
  * The Interface 1's ports and its drive-select chain (`.plans/MICRODRIVE_PLAN.md` §3 M3, M7, M8;
- * `_input/microdrive/interface1-hardware.md` §2, §5), driven from RAM with interrupts off.
+ * `dev/research/microdrive/interface1-hardware.md` §2, §5), driven from RAM with interrupts off.
  */
 
 async function session() {

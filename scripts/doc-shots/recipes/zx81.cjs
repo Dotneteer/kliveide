@@ -4,7 +4,7 @@
  * - `zx81/zx81-keyboard.png` — the virtual keyboard panel, for comparison with the reference photo;
  * - `zx81/zx81-print.png` — the EMU window after typing `PRINT "HELLO"` on the host keyboard;
  * - `zx81/zx81-loaded.png` — after `tape-load <file.p> -r` with `machine-code/dezog-sample.p` (MIT,
- *   from `_input/zx81-tapes/`): LOAD "", the load, the program starting itself, and S pressed - it
+ *   from `dev/research/zx81-tapes/`): LOAD "", the load, the program starting itself, and S pressed - it
  *   fills the screen.
  *
  * Verifies before it photographs: the machine must be the ZX81 the menu selected, and the status bar
@@ -102,7 +102,7 @@ module.exports = {
     await save(await emu.screenshot(), "zx81/zx81-print.png", 480);
 
     // --- A program file, loaded and run as the IDE's tape-load -r does it
-    const program = path.join(REPO, "_input/zx81-tapes/machine-code/dezog-sample.p");
+    const program = path.join(REPO, "dev/research/zx81-tapes/machine-code/dezog-sample.p");
     await klive.cmd(`tape-load "${program}" -r`, 12000);
     await emuWindow(klive);
     await emu.mouse.move(20, 400);

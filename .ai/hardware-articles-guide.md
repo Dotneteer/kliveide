@@ -19,7 +19,7 @@ to and replace what it supersedes.
 - **The article never names its reference.** No VHDL, file names, signal or process names, line numbers,
   quoted source or "the VHDL says", anywhere: text, tables, figures, captions, alt texts. State each fact
   as a fact about the machine. The FPGA as a chip may be named. Klive's own source is not named in a
-  chapter about the hardware. Before publishing, search the page for `vhd`, `VHDL`, `_input`, `next-fpga` and
+  chapter about the hardware. Before publishing, search the page for `vhd`, `VHDL`, `dev/research`, `next-fpga` and
   `snake_case` names, and check that every `VHDL` left names the language, not a source.
   What the rule protects, in the project author's words: never say that a fact was worked out from the
   FPGA's VHDL source. Naming the language is fine: any chapter may say that FPGA designs are written in a

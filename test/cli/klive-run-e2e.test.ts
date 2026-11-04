@@ -256,7 +256,7 @@ describe("klive run: inputs", () => {
   }, 120_000);
 
   it("loads a ZX81 program file and lets it RUN", async () => {
-    const program = path.join(REPO, "_input/zx81-tapes/basic/Characters.P");
+    const program = path.join(REPO, "dev/research/zx81-tapes/basic/Characters.P");
     const run = await klive(["run", program, "--frames", "300", "--dump-mem", `$4000:$4000=${file("zx81.bin")}`]);
     expect(run.code).toBe(0);
     expect(run.out[0]).toMatch(/^Characters\.P \(ZX81 program\): stopped/);

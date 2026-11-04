@@ -30,8 +30,8 @@ supersedes, keep no history (that is `PROVENANCE.md`'s job).
 - **+3DOS (ROM 2) ships at level 2** (2026-10-20) for v4.1, v4.0 and Spanish (the last two inherit
   v4.1). Next in R4: ROMs 0 and 1 of each version (they differ between versions by moved code, so
   author v4.1 and inherit by copying entries with the measured shifts, as for the Spanish ROM 2), and
-  the +3E's ROMs. `_input/` holds commented disassemblies of these ROMs: never open them; only
-  `_input/765.pdf`, the floppy controller's datasheet, is allowed (interface facts).
+  the +3E's ROMs. `dev/research/` holds commented disassemblies of these ROMs: never open them; only
+  `dev/research/765.pdf`, the floppy controller's datasheet, is allowed (interface facts).
 - **A ROM whose code was reworked and moved throughout** (the +3E's ROM 2) is mapped, not
   inherited: align the two listings instruction by instruction with address operands masked
   (difflib on normalised mnemonics), map data regions by their exact bytes, and remap ROM

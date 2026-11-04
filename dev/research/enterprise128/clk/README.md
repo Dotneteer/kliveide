@@ -5,7 +5,7 @@ Extracted from **Clock Signal (CLK)** by Thomas Harte — <https://github.com/To
 - Upstream branch: `main`
 - Upstream commit: `0f49993b4d0992ebba1fad5032d96637f3a84d1f` (2026-10-21), also recorded in `COMMIT`
 - Licence: **MIT**. See [`LICENCE`](LICENCE), copied unchanged from upstream. The per-file headers
-  still read "All rights reserved", as they do in the ZX80/81 sources in `_input/clk-zx8081/`; the
+  still read "All rights reserved", as they do in the ZX80/81 sources in `dev/research/clk-zx8081/`; the
   repository `LICENCE` is the grant. Any Klive file ported from these sources must carry the
   copyright notice.
 
@@ -33,7 +33,7 @@ The files keep their upstream paths, so they can be diffed against a later CLK c
 | `Analyser/Static/Enterprise/*` | The machine configuration: model, EXOS/BASIC/EXDOS versions, RAM size, speed. It also chooses the configuration from a loaded file. |
 
 Not copied: the Z80 (`Processors/Z80/`), whose bus-cycle model is already described in
-`_input/clk-zx8081/reference/`, and the generic CRT, speaker, clocking and file infrastructure.
+`dev/research/clk-zx8081/reference/`, and the generic CRT, speaker, clocking and file infrastructure.
 Klive has its own versions of these.
 
 **Known limitations** (from `../EXISTING_EMULATORS.md`): there is no tape, joystick, printer or

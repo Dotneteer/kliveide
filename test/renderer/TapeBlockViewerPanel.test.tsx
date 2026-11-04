@@ -13,7 +13,7 @@ const FLOAT_SPY = new Uint8Array(readFileSync(join(__dirname, "../testfiles/floa
 // --- Block 1's payload: the flag and checksum stripped; the program is its first 5,476 bytes
 const PROGRAM = FLOAT_SPY.subarray(2 + 19 + 2 + 1, 2 + 19 + 2 + 1 + 5476);
 // --- A ZX81 program's parts, as the `.P` viewer pops them out: the BASIC lines and the display file
-const CHARACTERS = new Uint8Array(readFileSync(join(__dirname, "../../_input/zx81-tapes/basic/Characters.P")));
+const CHARACTERS = new Uint8Array(readFileSync(join(__dirname, "../../dev/research/zx81-tapes/basic/Characters.P")));
 const ZX81_PROGRAM = CHARACTERS.subarray(0x407d - 0x4009, 0x40f3 - 0x4009);
 const ZX81_DISPLAY = CHARACTERS.subarray(0x40f3 - 0x4009, 0x440c - 0x4009);
 // --- A ZX80 `.O` file's program: $4028 up to VARS ($406C)

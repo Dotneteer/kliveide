@@ -8,7 +8,7 @@ is `../TvcWasmHost.ts` (plumbing) and `../TvcWasmV2Machine.ts` (the adapter). Th
 TVC machine and no second CPU: the core includes the shared Z80 (`src/emu/z80/wasm/z80.c`) through
 its `Z80_*` hooks, including H1, `Z80_DELAY_OPCODE_FETCH`, which was added for this machine.
 
-The hardware facts come from the research pack `_input/videoton-tvc/`: `TVC_HARDWARE_OVERVIEW.md`,
+The hardware facts come from the research pack `dev/research/videoton-tvc/`: `TVC_HARDWARE_OVERVIEW.md`,
 `TVC_VIDEO_GENERATION.md` (the video path, checked against the manual and the board schematics) and
 `TVC_CLOCK_STRETCH_FIGURES.md`. The code is Klive's own.
 

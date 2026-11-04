@@ -10,10 +10,10 @@ the tools and the facts read so far. The machine itself is `src/emu/machines/tvc
 The rule is the README's, unchanged. What makes it sharp on the TVC is that the research pack sits in the
 repository, next to the work:
 
-- **rtvc's ROM listings** - `_input/videoton-tvc/rtvc/roms/*.asm`, `rom_comments_1_2.json`,
+- **rtvc's ROM listings** - `dev/research/videoton-tvc/rtvc/roms/*.asm`, `rom_comments_1_2.json`,
   `rom_symbols_1_2.json` - are never read for this work (D1). Neither are rtvc's `coding/*.asm`
   files that use its symbol names.
-- **`_input/videoton-tvc/TVC_ROM_20190616.pdf` and `tvcrom.pdf`** (476 pages each) are treated as
+- **`dev/research/videoton-tvc/TVC_ROM_20190616.pdf` and `tvcrom.pdf`** (476 pages each) are treated as
   commented ROM listings and not opened for this work. If a later session establishes that one of them is
   a manual and not a listing, record that here before using it.
 - **Names already in Klive's own TVC code are not evidence.** Some came from rtvc's symbol file: the
@@ -21,7 +21,7 @@ repository, next to the work:
   carry a name from `src/emu/machines/tvc/`, `test/harness/tvc/` or `.ai/videoton-tvc.md` into a
   sidecar; name a routine from its code.
 
-What may be used, besides the bytes and runs: `_input/videoton-tvc/operaciosrendszer.pdf` (the operating
+What may be used, besides the bytes and runs: `dev/research/videoton-tvc/operaciosrendszer.pdf` (the operating
 system manual) for interface facts - the system calls' function codes and entry conditions, the system
 variables - recorded in Klive's own words and marked `manual`, the page named in `PROVENANCE.md`.
 `TVC_HARDWARE_OVERVIEW.md` and the hardware manuals give ports and the memory map.

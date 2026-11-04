@@ -4,7 +4,7 @@ import { createSp48Session, type Sp48TestSession } from "../../harness/sp48";
 
 /*
  * Shared by the Interface 1 hardware tests (`.plans/MICRODRIVE_PLAN.md` Phase 2). The cartridge
- * layout and checksum are `_input/microdrive/mdr-and-file-formats.md` §2-§3 and §7.
+ * layout and checksum are `dev/research/microdrive/mdr-and-file-formats.md` §2-§3 and §7.
  */
 
 /** The byte sum mod 255 every block's checksum is (`microdrive-media.md` §4) */

@@ -4,7 +4,7 @@ import { formattedMdr, mdrChecksum, READ_BLOCK, SELECT, sp48WithInterface1, stan
 
 /*
  * Reading a cartridge (`.plans/MICRODRIVE_PLAN.md` §3 M4, M5, §4.4-4.5;
- * `_input/microdrive/interface1-hardware.md` §4, §7): the GAP/SYNC sequence, the bytes after the
+ * `dev/research/microdrive/interface1-hardware.md` §4, §7): the GAP/SYNC sequence, the bytes after the
  * preamble, their pace, the sector order, and WAIT's hang.
  */
 

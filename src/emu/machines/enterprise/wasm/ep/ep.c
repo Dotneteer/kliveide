@@ -4,7 +4,7 @@
  * One translation unit: the machine state below, the Enterprise parts it includes, and the shared Z80
  * core (`src/emu/z80/wasm/z80.c`) wired to them through the `Z80_*` hook macros. No heap; every buffer
  * is a static array exposed through a pointer export. The plan is `.plans/ENTERPRISE_PLAN.md`; the
- * hardware facts come from the research pack `_input/enterprise128/`. The code is Klive's own.
+ * hardware facts come from the research pack `dev/research/enterprise128/`. The code is Klive's own.
  *
  * One artifact runs both models (plan §4.3, D2): `epConfigure` picks the RAM size, and the host
  * uploads the model's ROMs.

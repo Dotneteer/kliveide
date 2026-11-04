@@ -104,7 +104,7 @@ function build() {
   const patched = path.join(out, "patched");
   fs.mkdirSync(patched, { recursive: true });
   // fifop.vhd's to_unsigned(-1, n) (ISE accepts it, nvc does not): an all-ones aggregate instead,
-  // written to the run folder; _input/ is never changed
+  // written to the run folder; dev/research/ is never changed
   const fifop = fs.readFileSync(path.join(SRC, "serial/fifop.vhd"), "utf8")
     .replace("std_logic_vector(to_unsigned(-1,stored'length-1))", "(stored'length-2 downto 0 => '1')");
   fs.writeFileSync(path.join(patched, "fifop.vhd"), fifop);

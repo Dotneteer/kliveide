@@ -441,7 +441,7 @@ const GATE_EXEMPT = [
   /^\.claude\//,
   /^test\//,
   /^dev\/experiments\//,
-  /^_input\//,
+  /^dev\/research\//,
   /^i18n-work\//,
   /^dev\/changes\//,
   /^[^/]+\.md$/

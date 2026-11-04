@@ -196,7 +196,7 @@ describe("machine state: save, load into another machine, run = keep running", (
   });
 
   it("Videoton TVC with the HBF card, reading its disk", async () => {
-    const disk = new Uint8Array(readFileSync(join(__dirname, "../../../_input/videoton-tvc/rtvc/progs/VTDOS-SYSTEM.DSK")));
+    const disk = new Uint8Array(readFileSync(join(__dirname, "../../../dev/research/videoton-tvc/rtvc/progs/VTDOS-SYSTEM.DSK")));
     const a = await createTvcSession({ hbf: true });
     const b = await createTvcSession({ hbf: true });
     a.insertDisk(0, disk);

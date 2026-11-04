@@ -19,7 +19,7 @@ you have very probably read them in training. **That memory is forbidden.** Conc
   derive another from the code.
 - RAM addresses ($4000-$43FF workspace) have no official names here: describe them by address and by the use the
   code makes of them ("$40A7, the line buffer's address"). Give one a meaning only from code that uses it.
-- **Never open anything under `/Users/dotneteer/source/kliveide/_input/`**: it holds commented disassemblies of
+- **Never open anything under `/Users/dotneteer/source/kliveide/dev/research/`**: it holds commented disassemblies of
   exactly this ROM. Do not search the web.
 - What you may use: the bytes (the listing), the IDE's decoder output, Klive's own source (the emulator core
   `src/emu/machines/ht1080z/`, its key map, `src/common/ht1080z/basicTokens.ts` for token names), runs on the real

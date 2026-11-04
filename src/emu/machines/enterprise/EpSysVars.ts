@@ -4,7 +4,7 @@ import { SysVar, SysVarType } from "@abstractions/SysVar";
  * The Enterprise's EXOS system variables, for the System Variables panel and for naming the operands
  * that read them (`ld hl,(LP_POINTER)`) — `.plans/ENTERPRISE_PLAN.md` §11.
  *
- * Recorded from the EXOS 2.1 kernel specification (`_input/enterprise128/docs/Exos.htm`, §5.4 "Using
+ * Recorded from the EXOS 2.1 kernel specification (`dev/research/enterprise128/docs/Exos.htm`, §5.4 "Using
  * the system segment", and part II, §1 "System segment addresses"): the addresses, names and sizes
  * are interface facts of EXOS, and the descriptions are Klive's own words. These are the variables at
  * fixed addresses at the top of the system segment (segment FFh); the rest of that segment moves

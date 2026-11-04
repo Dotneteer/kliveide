@@ -4,7 +4,7 @@
  * One translation unit: the machine state below, the HT parts it includes, and the shared Z80 core
  * (`src/emu/z80/wasm/z80.c`) wired to them through the `Z80_*` hook macros. No heap; every buffer is
  * a static array exposed through a pointer export. The plan is `.plans/HT1080Z_PLAN.md`; the
- * hardware facts come from `_input/ht1080z/` (HARDWARE.md, VIDEO_TIMING.md), with the values the
+ * hardware facts come from `dev/research/ht1080z/` (HARDWARE.md, VIDEO_TIMING.md), with the values the
  * plan's §17 records.
  *
  * One artifact runs every model (decision D1): `ht1080zConfigure` picks the clock and the RAM size at

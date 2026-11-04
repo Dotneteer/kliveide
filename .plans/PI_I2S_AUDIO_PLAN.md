@@ -66,7 +66,7 @@ What the Pi *does* to make sound (NextPi's software and its UART commands) is a 
   `$A3` clock divider are commented out; see §1). The Next therefore observes only *when* each word's
   value becomes visible. The core models one event per channel per sample and does not toggle SCK, WS
   or SD.
-- **D3 — The reference is the VHDL** (`_input/next-fpga/src/audio/i2s*.vhd`,
+- **D3 — The reference is the VHDL** (`dev/research/next-fpga/src/audio/i2s*.vhd`,
   `audio/audio_mixer.vhd`, `zxnext.vhd`). Line numbers below are from that copy.
 - **D4 — Replay-exact.** Samples change machine-visible state: port `$FE` bit 6, NextRegs `$2C`–`$2E`
   and the mix. Everything that decides what the Next sees therefore lives in the core's linear memory

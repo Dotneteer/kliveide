@@ -12,7 +12,7 @@ import {
 
 /*
  * The Interface 1's ROM paging (`.plans/MICRODRIVE_PLAN.md` §3 M2, §4.1;
- * `_input/microdrive/interface1-hardware.md` §3): in on an M1 fetch from $0008 or $1708 - whatever
+ * `dev/research/microdrive/interface1-hardware.md` §3): in on an M1 fetch from $0008 or $1708 - whatever
  * reached it - out after the M1 fetch from $0700. A stand-in ROM shows which ROM ran.
  */
 

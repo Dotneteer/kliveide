@@ -228,9 +228,9 @@ export class Zx81TestSession {
     return this;
   }
 
-  /** Reads a program file from `_input/zx81-tapes/` (or a path) */
+  /** Reads a program file from `dev/research/zx81-tapes/` (or a path) */
   static readProgram(path: string): ZxProgramFile {
-    const full = path.startsWith("/") ? path : join(REPO_ROOT, "_input/zx81-tapes", path);
+    const full = path.startsWith("/") ? path : join(REPO_ROOT, "dev/research/zx81-tapes", path);
     const file = parseZxProgramFile(new Uint8Array(readFileSync(full)), full);
     if (!file) throw new Error(`Not a ZX80/ZX81 program: ${path}`);
     return file;

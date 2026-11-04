@@ -6,7 +6,7 @@ Test input for the Videoton TVC (tapes, and disks on the HBF card; `.ai/videoton
 
 **This folder is in the repository only for a while, at the project author's decision, for testing
 the TVC.** Most of it is 1980s commercial or magazine software that the community archive
-preserves; Klive does not hold the rights to it. Unlike `_input/zx81-tapes/` (permissively licensed
+preserves; Klive does not hold the rights to it. Unlike `dev/research/zx81-tapes/` (permissively licensed
 files only), nothing here may be copied into `test/` fixtures, `src/public/` or the docs site, and
 nothing here may be shipped. The `homebrew/` folder is new work published freely by its authors on
 the same site, but without a stated licence, so the same rule applies.
@@ -18,7 +18,7 @@ CP437/CP852 characters).
 **Checked:** 959 of 960 `.cas` files start with the `0x11` buffered-file header
 (`cassette/games/ten_brick.cas` starts with `0x0D`: a good malformed-file case). Every `.dsk` starts
 with an `EB` FAT12 boot sector. The CRC32s match 1,072 of the 1,132 tape/disk entries in MAME's
-software lists (`_input/videoton-tvc/mame/hash/tvc_{cass,flop}.xml`), which also give titles,
+software lists (`dev/research/videoton-tvc/mame/hash/tvc_{cass,flop}.xml`), which also give titles,
 publishers and years.
 
 ## Layout

@@ -14,7 +14,7 @@ Annotations are written from the bytes and from runs only. A commented listing o
 emulator's repository and in scanned books); you may have seen one in training. **That memory is forbidden.**
 - Never write a routine name, a RAM variable's meaning, a table boundary or a description that arrives before you
   have read the code. If a name "just comes", reject it and derive another from the code.
-- **Never open anything under `/Users/dotneteer/source/kliveide/_input/`.** Do not search the web.
+- **Never open anything under `/Users/dotneteer/source/kliveide/dev/research/`.** Do not search the web.
 - **Names in Klive's own TVC code are not evidence**: some came from rtvc's symbol file (`KB_CHIN` in
   `test/harness/tvc/session.ts` and `src/emu/machines/tvc/tvcMachineInfo.ts` is one). Never copy a routine name
   from `src/emu/machines/tvc/`, `test/harness/tvc/` or `.plans/`. Hardware facts there (ports, paging, the CRTC,
@@ -31,7 +31,7 @@ emulator's repository and in scanned books); you may have seen one in training. 
 - `<WORKDIR>/facts.md` (what is established, with evidence), `<WORKDIR>/dispatch.txt` (every routine the ROM's own
   tables reach), `<WORKDIR>/coverage.txt` (what a run executed: C code, R read as data, . untouched).
 - The emulator core's hardware description: `src/emu/machines/tvc/wasm/README.md`, the comment at the top of
-  `src/emu/machines/tvc/wasm/tvc/tvc-memory.c` (paging, port 02h), `_input` excepted.
+  `src/emu/machines/tvc/wasm/tvc/tvc-memory.c` (paging, port 02h), `dev/research` excepted.
 - House style: `.ai/rom-annotations/README.md` ("The tools") and the synopses in `src/public/roms/zx81.rom.dis`
   and `src/public/roms/ht1080z-s1.rom.dis` for tone.
 

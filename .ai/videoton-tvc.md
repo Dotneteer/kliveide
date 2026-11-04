@@ -10,7 +10,7 @@ This note keeps what a later session needs and the two READMEs do not say:
   video steps, sound, tape, the HBF card and the test files. Read it first.
 - `test/harness/tvc/` (`session.ts`, `bare.ts`): the harness. It has no README; its header comments
   are the reference.
-- The research pack `_input/videoton-tvc/`: `TVC_HARDWARE_OVERVIEW.md`, `TVC_VIDEO_GENERATION.md` and
+- The research pack `dev/research/videoton-tvc/`: `TVC_HARDWARE_OVERVIEW.md`, `TVC_VIDEO_GENERATION.md` and
   `TVC_CLOCK_STRETCH_FIGURES.md`. Every hardware fact in the core comes from these.
 - The ROM annotations: `.ai/rom-annotations/tvc-authoring-guide.md`.
 - Lessons for the next non-Spectrum machine: `.ai/wasm-migration-intent-and-lessons.md`, "A Machine
@@ -48,7 +48,7 @@ Accepted by the project author on 2026-10-27. Code cites them by ID.
 
 ## Provenance
 
-- **rtvc** (`_input/videoton-tvc/rtvc/`, MIT) and **MAME's TVC files** (BSD-3-Clause) were read only
+- **rtvc** (`dev/research/videoton-tvc/rtvc/`, MIT) and **MAME's TVC files** (BSD-3-Clause) were read only
   for interface facts: the CAS container and pulse rules, the HBF register map, the keyboard matrix.
   No code was ported, so no Klive file carries their notice. rtvc's CRTC and video generator are not
   a model: `TVC_VIDEO_GENERATION.md` Part 12 lists where they differ from the hardware.
@@ -62,7 +62,7 @@ Accepted by the project author on 2026-10-27. Code cites them by ID.
   (the key waits, the sign-on loops, the token tables, `RST 30h`). That is allowed under D1.
 - **GPL emulators** (ep128emu) may be run as oracles only, recording observed results in Klive's
   words. Their source is not read.
-- **`rtvc/progs/`** and **`_input/tvc-software/`** have no usable licence: never test fixtures, never in
+- **`rtvc/progs/`** and **`dev/research/tvc-software/`** have no usable licence: never test fixtures, never in
   `src/public/` or the docs site. Test programs are written for Klive.
 
 ## Open hardware questions

@@ -10,7 +10,7 @@ anything outside your draft (a throwaway probe excepted, below).
 
 ## The hard rule (D4) — read `.ai/rom-annotations/README.md` "The rule (decision D4)" first
 Write only from the bytes in front of you and from Klive's own runs and source. **Never open anything under
-`/Users/dotneteer/source/kliveide/_input/`** (it holds commented disassemblies of these ROMs), do not search the
+`/Users/dotneteer/source/kliveide/dev/research/`** (it holds commented disassemblies of these ROMs), do not search the
 web, and never write a name, a meaning or a description that comes from memory of a published listing. Name a
 routine after what your reading of its code shows. RAM addresses ($4000-$43FF) have no official names: describe
 them by address and by use, or cite the BASIC sidecar's description of them.

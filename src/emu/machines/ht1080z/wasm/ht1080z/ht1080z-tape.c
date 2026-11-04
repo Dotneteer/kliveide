@@ -1,5 +1,5 @@
 /*
- * The HT-1080Z tape (`.plans/HT1080Z_PLAN.md` §8-9; `_input/ht1080z/STORAGE_FIRMWARE_SOFTWARE.md` §3):
+ * The HT-1080Z tape (`.plans/HT1080Z_PLAN.md` §8-9; `dev/research/ht1080z/STORAGE_FIRMWARE_SOFTWARE.md` §3):
  * a `.cas` image played as real-time pulses into the cassette-in latch, the ROM-trap fast load, and
  * SAVE captured as a `.cas`.
  *

@@ -293,7 +293,7 @@ Purpose: leave a durable audit trail after the plan is executed.
 
 Tasks:
 
-- Add a follow-up note under `/Users/dotneteer/source/kliveide/_input/zx_go`
+- Add a follow-up note under `/Users/dotneteer/source/kliveide/dev/research/zx_go`
   summarizing:
   - files changed;
   - algorithm chosen;

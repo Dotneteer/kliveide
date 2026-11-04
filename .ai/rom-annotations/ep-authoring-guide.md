@@ -8,7 +8,7 @@ of work, the tools, the sources that are off limits and the facts read so far. T
 ## Sources
 
 - **Allowed:** the ROM bytes through Klive's disassembler, runs on the real core (`test/harness/enterprise/`),
-  and the **EXOS 2.1 kernel specification** (`_input/enterprise128/docs/Exos.htm`, the Hungarian translation of
+  and the **EXOS 2.1 kernel specification** (`dev/research/enterprise128/docs/Exos.htm`, the Hungarian translation of
   the official technical specification) for interface facts only: function and action codes, the fixed
   system-segment variables, EXOS variable numbers and names, error codes and names, descriptor formats, escape
   sequences and special functions. Such an entry is `manual`. The spec never gives a routine boundary, a RAM
@@ -16,7 +16,7 @@ of work, the tools, the sources that are off limits and the facts read so far. T
 - **Off limits** (plan D1): GPL sources (ep128emu, Xep128, the FPGA core) for anything, and every commented
   disassembly of EXOS or IS-BASIC (community sites, books, an AI's memory of them). Names in Klive's own
   Enterprise code are not evidence for routine names.
-- A helper never opens `_input/`: the session extracts the specification's text into its work folder and
+- A helper never opens `dev/research/`: the session extracts the specification's text into its work folder and
   writes a `facts.md` with what it read.
 
 ## The pages, and the order of work

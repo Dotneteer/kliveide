@@ -16,7 +16,7 @@ import { createTvcSession, REPO_ROOT, type TvcTestSession } from "../harness/tvc
  * (`TVC_HBF_PNG=<dir>` writes it).
  */
 
-const SYSTEM_DISK = new Uint8Array(readFileSync(join(REPO_ROOT, "_input/videoton-tvc/rtvc/progs/VTDOS-SYSTEM.DSK")));
+const SYSTEM_DISK = new Uint8Array(readFileSync(join(REPO_ROOT, "dev/research/videoton-tvc/rtvc/progs/VTDOS-SYSTEM.DSK")));
 
 /** The directory listing's picture, checked by eye */
 const DIR_PICTURE = "a2537818cc2d2a5cb46b8d91148288d4509d1a6a";

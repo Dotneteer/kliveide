@@ -49,7 +49,7 @@ describe("z88dk templates run (one per route)", () => {
       await s.loadProgramFile(nexFile);
       runUntilCounterDone(s as unknown as TemplateSession, out);
       expect(topRowsHaveInk(s as unknown as TemplateSession), "the template's text in the top rows").toBe(true);
-      // --- `.nexload` leaves no return address (`_input/nexload.asm`: SP from the header, `rst $20`
+      // --- `.nexload` leaves no return address (`dev/research/nexload.asm`: SP from the header, `rst $20`
       // --- to PC), so the template must not return from main: it stays in its own code. A `return`
       // --- there went to a garbage address and reset the machine.
       const { startAddress, emittedCode } = out.segments[0];

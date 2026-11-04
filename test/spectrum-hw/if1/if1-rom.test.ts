@@ -7,7 +7,7 @@ import { formattedMdr, runBasic, screenLines, sp48WithInterface1 } from "./if1Te
 
 /*
  * The Interface 1 with the shipped v2 ROM, at the tape's real speed (`.plans/MICRODRIVE_PLAN.md`
- * Phases 1-2; the scripts are `_input/microdrive/test-material.md` §3). The ROM drives the drives
+ * Phases 1-2; the scripts are `dev/research/microdrive/test-material.md` §3). The ROM drives the drives
  * through the ports alone.
  */
 

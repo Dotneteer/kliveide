@@ -7,7 +7,7 @@ applied by `npm run next-fpga:fetch` after the blob-id check. Regenerate them wi
 `npm run next-fpga:comments -- --save 3.02.01` after editing `dev/vendor/next-fpga/3.02.01/`; never edit
 a `.patch` by hand. The rule is `.ai/zxnext-models.md` D4.1.
 
-These patches are what `_input/next-fpga/` carried beyond upstream; applying them to the pinned tree
+These patches are what `dev/research/next-fpga/` carried beyond upstream; applying them to the pinned tree
 reproduces that folder byte for byte, except `src/misc/relaxation.vhd`, whose only difference was
 CRLF vs LF line endings and which therefore has no patch.
 
@@ -16,4 +16,4 @@ CRLF vs LF line endings and which therefore has no patch.
 | `src/cpu/t80na.vhd.patch` | Explanatory comments on the `T80Na` entity's ports (one paragraph per Z80 pin: what it means and its polarity) and on the internal signals `CEN`, `Reset_s`, `IntCycle_n`, `IORQ`, `TState`; the `Mode` generic's comment reduced to "Standard Z80 CPU". No logic change. |
 | `src/cpu/t80n.vhd.patch` | Removes six commented-out lines (Fabio Belavenuto's old IRQ-acknowledge `M1_n` timing, superseded by the 30/10/19 fix just above them) near the end of the `M1_n` process. No logic change. |
 | `src/device/divmmc.vhd.patch` | Comments on each port of the `divmmc` entity: which NextReg bit or signal drives it (`i_en` = NextReg $84 bit 7, `i_automap_reset`, the instant/delayed automap entry points, the ROM/RAM enable outputs, the RAM bank). No logic change. |
-| `nextreg.txt.patch` | Two stray edits, kept only so the old folder is reproduced exactly: a line holding two spaces after NextReg $6B bit 3, and `applied0` for `applied` in NextReg $8F bits 1:0. Neither is a comment worth keeping; drop this patch (and its 3.02.04 carry) once nothing compares against `_input/next-fpga/`. |
+| `nextreg.txt.patch` | Two stray edits, kept only so the old folder is reproduced exactly: a line holding two spaces after NextReg $6B bit 3, and `applied0` for `applied` in NextReg $8F bits 1:0. Neither is a comment worth keeping; drop this patch (and its 3.02.04 carry) once nothing compares against `dev/research/next-fpga/`. |

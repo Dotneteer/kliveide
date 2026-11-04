@@ -6,7 +6,7 @@ joysticks work, Klive's `FILE:` device loads and saves host files, the IDE's deb
 Enterprise, `.model ENTERPRISE` code runs and exports as a `.com`, tapes load and save, the EXDOS card runs
 EXDOS 1.3 on FAT12 disks, and the documentation, notices and changeset ship it (§18). Follow-ups below.
 D1–D9 accepted (§16). Still open in Phase 0: reading EP64 schematic sheet 1 for Q1 (the VINT edge).
-**Input:** the research pack `_input/enterprise128/`. Read these first:
+**Input:** the research pack `dev/research/enterprise128/`. Read these first:
 - `README.md`: the machine at a glance, the disagreements table and the ROM decision;
 - `NICK_VIDEO.md`, then `NICK_VIDEO_BACKGROUND.md` §1–§2 (the original design documents settle most
   of the first file's open questions);
@@ -33,7 +33,7 @@ same), audio, tape, a floppy card on the shared WD1793, and the most complete ID
 ### 0.1 Licence and provenance (decision D1)
 - **The default is Klive's own code**, written from the hardware facts in the research pack. That is
   how the HT-1080Z and the TVC were built.
-- **Clock Signal (CLK) is MIT** (`_input/enterprise128/clk/`). Porting from it is allowed: a derived
+- **Clock Signal (CLK) is MIT** (`dev/research/enterprise128/clk/`). Porting from it is allowed: a derived
   file keeps "Copyright (c) 2015 Thomas Harte" and the permission notice in a header comment naming
   the upstream file, and `THIRD_PARTY_NOTICES.md` already has a CLK section (the ZX80/81 port) that
   gains the Enterprise files. **But CLK is a weak model of this machine**, and the research shows it
@@ -122,7 +122,7 @@ From `.ai/wasm-migration-intent-and-lessons.md` ("Shared CPU Intent", and the TV
 
 ## 2. Inventory: what the research pack gives and where it goes
 
-| Topic | Source in `_input/enterprise128/` | Klive destination |
+| Topic | Source in `dev/research/enterprise128/` | Klive destination |
 |---|---|---|
 | Segment map, B0h–B3h, ROM/cart/RAM layout, unmapped reads | DAVE_MEMORY_IO §2 | `ep-memory.c` |
 | Reset, DAVE register reset values | DAVE_MEMORY_IO §3; DAVE_AUDIO_BACKGROUND §1 L | `ep.c` |

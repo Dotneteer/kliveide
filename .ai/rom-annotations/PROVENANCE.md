@@ -967,7 +967,7 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
   bit 7 of port $FE is the tape signal); the ROM addresses that README's tape section gives were not
   used. LD_COUNT's decision traced with C wrapping past 0, which a first reading missed and the run
   below showed.
-- **Runs** (a throwaway probe in `test/zx8081-hw/`, deleted; `zx80-16k`): `_input/zx80-tapes/klive/hello.o`
+- **Runs** (a throwaway probe in `test/zx8081-hw/`, deleted; `zx80-16k`): `dev/research/zx80-tapes/klive/hello.o`
   inserted for a real-time load (no fast-load trap), LOAD typed, breakpoints at `$021A`, `$023E`,
   `$0242` and `$0203`: the quiet wait ended at `$021A`; the first byte's eight 1 bits reached
   `$0242` with C = `$D6`/`$D7` and carry clear, the 0 bits with C = `$37`/`$38`, carry set at `$0242`
@@ -1855,8 +1855,8 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
 ### 2026-10-20 — +3DOS: `spp3-41-2`, `spp3-40-2`, `spp3-41es-2` (shipped, level 2)
 
 - **Sources:** the bytes only. No +3 manual was available, so the jump table's routines are named
-  from their code; the uPD765's datasheet (`_input/765.pdf`) was allowed for command codes and status
-  bits (interface facts). The commented +3 and 128K disassemblies in `_input/` were not opened.
+  from their code; the uPD765's datasheet (`dev/research/765.pdf`) was allowed for command codes and status
+  bits (interface facts). The commented +3 and 128K disassemblies in `dev/research/` were not opened.
 - **v4.1 (`spp3-41-2`), 747 labels, 3,658 comments, 74 regions:** a skeleton by hand (the frame
   interrupt with the same motor time-out as ROM 3, the "PLUS3DOS" text, the 53-entry jump table
   `DOS_JUMPS` with `DOS_xxxx` entry labels, `CALL_ROM0` at $3E00 with a words region for its inline
@@ -1894,7 +1894,7 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
   (provenance `derived`). The first mapping put the +3's table at $0100 onto this ROM's second
   table at $00A0 and remapped port $1FFD as an address; the helper of $0000-$23FF corrected those
   (165 fixes, labels moved as one batch). Three helpers authored the rest from the bytes (D4; no
-  file of `_input/` but the 765 datasheet; interface commands described by value): the 56-entry
+  file of `dev/research/` but the 765 datasheet; interface commands described by value): the 56-entry
   `DOS_JUMPS` and a second 32-entry table at $00A0, a hard disk driver on ports $xxEF (256-byte
   sectors), partitions and their table, drive letters mapped to partitions or floppy/RAM devices,
   a snapshot loader, BASIC streams, coloured messages (`SHOW_MESSAGE` through ROM 0's $3FF7). Read
@@ -1912,7 +1912,7 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
   $05AC is a stack switch, so nothing after its calls is data), in the tools and in the +3/+3E live
   view (`spectrumP3CustomDisassembler`). `CALL $3E80` + word (into ROM 1) is marked with words regions.
 - **v4.1 (`spp3-41-0`), 833 labels, 3,628 comments:** a skeleton (filler), then five ranges drafted by
-  helpers from the bytes (D4; `_input/` holds commented disassemblies of these ROMs and was not
+  helpers from the bytes (D4; `dev/research/` holds commented disassemblies of these ROMs and was not
   opened). Much of the ROM is the 128K editor ROM's code moved, so those routines carry the 128K
   names (renamed where the 128K name says something wrong here: TITLE_P3_BASIC, MENU_LOADER ...);
   the rest is new: restarts and RAM paging copies, start-up, the factory test program with its
@@ -1944,7 +1944,7 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
   followed by an error code byte; they sit at a different address in each version, so every such
   byte is a one-byte region in the sidecars (an `errfix` pass added any a draft missed).
 - **v4.1 (`spp3-41-1`), 812 labels, 3,681 comments:** five ranges drafted by helpers from the bytes
-  (D4; `_input/` not opened): the 128K editor ROM's syntax machinery, commands and PLAY moved here
+  (D4; `dev/research/` not opened): the 128K editor ROM's syntax machinery, commands and PLAY moved here
   under its names; tape and disk SAVE/LOAD/VERIFY/MERGE; FORMAT (the disk, LPRINT and LINE forms:
   FORMAT LINE joins the 128K's FORMAT "p" code at FORMAT_LINE_BAUD, while FORMAT "p" itself has no
   caller); ERASE, MOVE, CAT, COPY (screen, EXP, files, SPECTRUM FORMAT); the report table and
@@ -2139,7 +2139,7 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
 ### 2026-10-23 — HT-1080Z BASIC to level 2 (`ht1080z-s1.rom`, shipped file)
 
 - **Method:** eight helper agents drafted $0000-$2FFF in $600 ranges from the listing alone
-  (`helper-briefs/ht1080z-draft-a-range.md`: no `_input/` file — it holds commented disassemblies of this ROM —
+  (`helper-briefs/ht1080z-draft-a-range.md`: no `dev/research/` file — it holds commented disassemblies of this ROM —
   no web, no remembered Level II or Microsoft names). They had the IDE decoder's output, `dispatch.txt` (the
   routines the ROM's own function and statement tables reach, with Klive's token names), Klive's core and key
   map, and the facts of the first session. Merged with `merge-drafts.py` (three name clashes renamed:
@@ -2170,7 +2170,7 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
   text change cut.
 - **Extension ROMs**: a page kind `ht1080z-ext` with an origin of $3000 (`romKindOrigin`), so the tools decode
   them where they run. Series I's and the /64's drafted by helpers (`helper-briefs/ht1080z-draft-extension.md`:
-  no `_input/`, no web, no remembered names), the /64's reusing Series I's names where the bytes match; both ran
+  no `dev/research/`, no web, no remembered names), the /64's reusing Series I's names where the bytes match; both ran
   probes (deleted) for the RAM vectors /12288 sets, the workspace, blink, auto-repeat, the renumber command, the
   monitor and the /64's accent mode. Series II's `inherits` Series I's and authors its accent code; probe: no
   message after /12288, $4016 = $303A, CLEAR+A typed $5D, CLEAR+E $40, a plain O $4F, CLEAR alone nothing.
@@ -2187,13 +2187,13 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
 - **Sources:** the ROM bytes through Klive's disassembler (`tools/tvc-dis.cjs`, the `tvc-sys-low` kind decoded at
   $C000 with `RST $30`'s code byte as data); the SYS high chip's and EXTH's bytes where this chip calls them;
   Klive's TVC core (`tvc-memory.c` paging, ports) for hardware facts; runs on the real core. Not used: anything
-  under `_input/` (rtvc's ROM listings and symbols, `TVC_ROM_20190616.pdf`, `tvcrom.pdf`), the web, and the
+  under `dev/research/` (rtvc's ROM listings and symbols, `TVC_ROM_20190616.pdf`, `tvcrom.pdf`), the web, and the
   routine names in Klive's own TVC code (`KB_CHIN` there is rtvc's; $1618 is KBD_READ_KEY from its code). The OS
   manual (`operaciosrendszer.pdf`) has no text layer and was not used. No `manual` entries.
 - **Coverage probe** (throwaway, deleted): the core's profile over boot and ~60 typed commands marked code
   ($0229-$0478, $098F-$1E6C) and data (the times table, statement words, constants, CRTC values, device table,
   font, key maps, token table, inline strings) before drafting; 51 regions from it and the bytes.
-- **Helpers:** six, one per range, with `helper-briefs/tvc-draft-a-range.md` (no `_input/`, no web, no names from
+- **Helpers:** six, one per range, with `helper-briefs/tvc-draft-a-range.md` (no `dev/research/`, no web, no names from
   Klive's TVC code), `dispatch.txt` (built from the bytes) and the coverage map. Two ran probes (deleted): the
   flood fill ($0D48, reached only by `PLOT PAINT`; with put mode AND it filled a box), SET CHARACTER's RAM glyphs,
   the cursor-to-cell function. A helper found the dispatch file's statement tokens off by one: $1B97 indexes
@@ -2213,7 +2213,7 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
 ### 2026-10-28 — Videoton TVC: `tvc12-d3.rom` (BASIC 1.2, SYS high chip) to level 2
 
 - **Sources:** as for tvc12-d4 (the bytes through `tools/tvc-dis.cjs`, the SYS low and EXTH chips' bytes where
-  this chip calls them, Klive's TVC core, runs). Not used: anything under `_input/`, the web, routine names from
+  this chip calls them, Klive's TVC core, runs). Not used: anything under `dev/research/`, the web, routine names from
   Klive's TVC code. No `manual` entries. Names from the SYS low chip's sidecar are cited, not copied as labels.
 - **Base regions** from the bytes and the earlier profile run (which covered the whole SYS bank): the built-in
   function chain (23 entries, walked from VERNUM's, whose head the SYS low chip stores at $DD0F), every
@@ -2242,7 +2242,7 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
 
 - **Sources:** as for the SYS chips (the bytes through `tools/tvc-dis.cjs`, the SYS chips' sidecars for the
   routines EXTH calls and is called from, Klive's TVC core and its README's tape description, `TvcCasFile.ts`,
-  runs). Not used: anything under `_input/`, the web, routine names from Klive's TVC code. No `manual` entries.
+  runs). Not used: anything under `dev/research/`, the web, routine names from Klive's TVC code. No `manual` entries.
 - **Base regions** from the bytes and the earlier profile run (which covered EXTH): the $FF filler
   ($0000-$0FFF), the RAM table defaults, the card names, the RAM glyphs (320 bytes and the fill glyph, read
   from the boot's copy loop) and the tail. No inline restarts or `CALL $FE79` sites (the $CF/$DF bytes are
@@ -2340,7 +2340,7 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
   helper brief; `merge-drafts.py` takes a draft's `"manual"` list.
 - **Sources:** the ROM bytes through Klive's disassembler (`tools/ep-dis.cjs`); runs on the real core
   (`test/harness/enterprise/`); and, for interface facts only (marked `manual`, 443 entries), the EXOS 2.1 kernel
-  specification (`_input/enterprise128/docs/Exos.htm`, the Hungarian translation of the official technical
+  specification (`dev/research/enterprise128/docs/Exos.htm`, the Hungarian translation of the official technical
   specification): function codes and names, the fixed system-segment variable names, EXOS variable numbers and
   names, error codes and names, action codes, descriptor formats, special function codes, video modes and escape
   sequences. Hardware facts (ports) from Klive's own `DAVE_MEMORY_IO.md` notes. No commented disassembly, symbol
@@ -2349,7 +2349,7 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
 - **How:** the session read the reset code, the RAM copies, the dispatcher and the device chain into a facts file
   and a dispatch list (built from the indexing code: the function table at $000A for codes 17-34, the chain at
   $0008, each device's entry table), extracted the specification's text, then nine helpers drafted one range
-  each under `helper-briefs/ep-draft-a-range.md` with the D4 rule; no helper opened `_input/` or the web. Merged
+  each under `helper-briefs/ep-draft-a-range.md` with the D4 rule; no helper opened `dev/research/` or the web. Merged
   with `merge-drafts.py`; the session then renamed six labels two helpers had both chosen (from the code), swapped
   226 numeric references to labelled code for names, turned run-address references to this page into offsets,
   and settled every "probably" from the code or a probe.
@@ -2374,11 +2374,11 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
 - **Sources:** the ROM bytes through Klive's disassembler (`tools/ep-dis.cjs`, now with IS-BASIC's call lists
   decoded on this page, kind `ep-exos-basic`); the IS-BASIC 2.1 cartridge's bytes (`ep-basic21.rom`) where this
   page calls it; runs on the real core (`test/harness/enterprise/`); and, for interface facts only (marked
-  `manual`, 325 entries), the EXOS 2.1 kernel specification (`_input/enterprise128/docs/Exos.htm`): action codes,
+  `manual`, 325 entries), the EXOS 2.1 kernel specification (`dev/research/enterprise128/docs/Exos.htm`): action codes,
   EXOS variable numbers and names, error codes and names, special functions, descriptor formats, escape
   sequences. Hardware facts (ports) from Klive's own core notes. No commented disassembly, symbol file or name
   list of EXOS or IS-BASIC was opened; ep128emu, Xep128 and other GPL sources were not read; no helper opened
-  `_input/` or the web.
+  `dev/research/` or the web.
 - **How:** a profile run, then probes that dumped the null segment's low RAM after the boot (the cartridge's gate:
   `RST 08h`/`10h`/`18h`/`20h`) and logged every step of the call lists over 56 commands (only $92 moved the list
   pointer, by one byte; $93 and $96 read a word, from their code). The decoder was written from that and checked
@@ -2408,7 +2408,7 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
   `ep-basic`); EXOS 2.1's finished sidecar for the routines the cartridge reaches; runs on the real core; Klive's
   `src/common/enterprise/basicTokens.ts` for token numbers the BASIC listing view decodes (interface facts); and,
   for interface facts only (marked `manual`), the EXOS 2.1 kernel specification. No commented disassembly or
-  name list of IS-BASIC was opened; GPL emulator sources were not read; no helper opened `_input/` or the web.
+  name list of IS-BASIC was opened; GPL emulator sources were not read; no helper opened `dev/research/` or the web.
 - **How:** the 65 routine names of the cartridge's call table came from the call dictionary written for EXOS's
   segment 01h (from the bytes and probes). A profile over ~140 typed commands and two programs, then ten helpers
   drafted ranges under `helper-briefs/ep-draft-a-range.md` with the D4 rule. Merged with `merge-drafts.py`; the
@@ -2431,7 +2431,7 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
   `tools/ep-dis.cjs` (page 1 with IS-BASIC's call lists decoded, kind `ep-exos-basic`); runs on the 64
   (`createEpSession({ model: "ep64" })`); and, for interface facts only (marked `manual`), the EXOS 2.1 kernel
   specification, each checked against 2.0's code. No commented disassembly or name list of EXOS was opened; GPL
-  emulator sources were not read; no helper opened `_input/` or the web.
+  emulator sources were not read; no helper opened `dev/research/` or the web.
 - **How:** a script compared each carried label's routine with 2.1's (317 DIFFERS); ten helpers aligned 2.0
   with 2.1 instruction by instruction, carried the remaining text with every ROM and RAM address translated, and
   rewrote every routine that really differs from 2.0's bytes (`replace` and `rename` lists, new in
@@ -2452,7 +2452,7 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
   P5, D4). It adds facts to the pipeline's routine cards; it writes nothing into a sidecar.
 - **Sources:** the EXOS call's register contract (A, BC, DE in; A = status; AF, BC, DE not kept; HL, IX, IY
   and the alternate set kept) is an interface fact from the EXOS technical description §4.1
-  (`_input/enterprise128/docs/Exos.htm`), marked `manual` on the cards, with its chapter 11 exceptions not
+  (`dev/research/enterprise128/docs/Exos.htm`), marked `manual` on the cards, with its chapter 11 exceptions not
   modelled. IS-BASIC's restarts and the packed-text formats (TEXT_UNPACK's 4-bit codes, the WP's bit stream in
   2.1 and byte-and-phrase packing in 2.0) are taken from Klive's own EXOS 2.1 and 2.0 sidecars and
   `ep-authoring-guide.md`, which were written from the ROMs' code. The decoders find their tables through those
@@ -2468,7 +2468,7 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
   (`profile ep128-exdos`: `:DIR`, `SAVE`, `LOAD`; observed screens in its log); the EXOS call's register contract
   from the EXOS technical description §4.1 (`manual`, through the Enterprise convention plug-in); Klive's own EXOS
   2.1 sidecar (the device entry order, the EXOS special functions) and `ep-authoring-guide.md`. No helper opened
-  `_input/`, the web, an emulator source, or any commented disassembly or listing of EXDOS; the briefs forbade it.
+  `dev/research/`, the web, an emulator source, or any commented disassembly or listing of EXDOS; the briefs forbade it.
 - **How:** one helper settled the regions of both pages from the proposals and the code that reads the bytes;
   twelve helpers each annotated one range of page 0's cards (`helper-briefs/pipeline-range.md`) as `.ann` files;
   the session merged them (`rom:pipeline compile`: 33 conflicts, resolved by which range owns the routine), fixed

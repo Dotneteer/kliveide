@@ -1504,7 +1504,7 @@ static void spp3eFdcSelectFromHdUs(uint32_t value) {
 /* ---------------------------------------------------------------------------------------------
  * The uPD765A's read, write, format and scan commands, over the per-track sector table
  * (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, A3). Written from the NEC uPD765 data sheet
- * (`_input/765.pdf`):
+ * (`dev/research/765.pdf`):
  *
  * - A sector is found by comparing its ID field with the command's C, H, R and N, on the track
  *   under the selected head, starting where the disk has rotated to. No match in a revolution:
