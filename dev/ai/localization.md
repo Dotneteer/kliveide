@@ -77,7 +77,7 @@ native-speaker review**.
   `translations.generated.ts` (with `TRANSLATION_STATUS`, the Language page's "N % translated").
 - `npm run i18n:todo -- <lang> [--ns] [--limit] [--out]` writes the missing and outdated entries,
   with their English, context, `maxChars` and placeholders (and the old English for outdated ones),
-  to the git-ignored `i18n-work/`. `npm run i18n:merge -- <lang> <answer>` reads the first JSON object
+  to the git-ignored `.local/i18n-work/`. `npm run i18n:merge -- <lang> <answer>` reads the first JSON object
   of the answer, rejects unknown keys, bad ICU and changed placeholders, and writes in English's
   order. `<lang>/.source.json` stores the English text each entry was translated from, which is how
   an English change is detected and shown to the translator.

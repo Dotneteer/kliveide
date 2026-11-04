@@ -15,6 +15,8 @@ Guidance for AI assistants working in this workspace.
   `_experiments/` (now `dev/experiments/`), `.changes/` (now `dev/changes/`), `vendor/` (now
   `dev/vendor/`), `_input/` (now `dev/research/`), `.docs/` (now `dev/patterns/`),
   `.ai/` (now `dev/ai/`), `scripts/` (now `dev/scripts/`).
+- Local output of the checks and tools (doc-shot staging, visual-test runs, IDE-check homes,
+  `i18n:todo` batches, ...) goes to the git-ignored `.local/`, one subfolder per tool.
 
 ## Working Rules
 
@@ -142,7 +144,7 @@ React 19 + Next 16.
 - **Screenshots can be generated rather than hand-captured.** `dev/scripts/doc-shots/` launches
   Klive under Playwright's Electron driver, drives it through the IDE's own command prompt,
   and captures element-scoped PNGs — no manual cropping, no window chrome. Output stages to
-  `.doc-shots/` for review; `DOC_SHOTS_OUT=docs/public/images` publishes. Read
+  `.local/doc-shots/` for review; `DOC_SHOTS_OUT=docs/public/images` publishes. Read
   `dev/ai/doc-screenshots-guide.md` before using or extending it: it carries the command
   vocabulary, the settings-seeding that makes runs reproducible, and the fixture-project
   guard that keeps a recipe away from a real `~/KliveProjects` folder.

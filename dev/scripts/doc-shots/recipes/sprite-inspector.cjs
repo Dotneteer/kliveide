@@ -158,7 +158,7 @@ module.exports = {
         };
       });
       await klive.ide.mouse.move(5, 5);
-      // --- Photographed before the checks, so a failure leaves a picture of itself in .doc-shots/
+      // --- Photographed before the checks, so a failure leaves a picture of itself in .local/doc-shots/
       await klive.shot(DOC, "working-with-ide/sprite-inspector-narrow.png", { displayWidth: 680 });
       if (narrow.layout !== "narrow") throw new Error(`Expected the narrow layout at 860px; got ${narrow.layout}`);
       if (narrow.tabs.includes("Both")) throw new Error("Both is offered in the narrow layout");

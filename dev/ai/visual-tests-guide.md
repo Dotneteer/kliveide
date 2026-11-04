@@ -21,7 +21,7 @@ npm test -- test/harness/zxnext  # the harness's own tests (mutation tests of ev
                                             # and raster/$1F/WAIT-H/border/$68/$14/line-interrupt/Layer 2/compositing regressions)
 ```
 
-Output goes to `.visual-tests/<timestamp>/` (gitignored; `.visual-tests/LATEST` names the newest):
+Output goes to `.local/visual-tests/<timestamp>/` (gitignored; `.local/visual-tests/LATEST` names the newest):
 `<case>/{wasm,browser}/frame-NNNNN.png`, `rows-NNNNN.json` (run-length colour spans per row - read
 these instead of counting pixels), contact sheets, `motion-*.json`, `result.json`, `review.md`.
 

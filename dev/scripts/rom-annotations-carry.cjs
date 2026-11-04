@@ -14,7 +14,7 @@
  *                existing output keeps its other pages
  *   --out        the sidecar written (default: `<toRom>.dis`); refused when it exists, unless --force
  *                or --page
- *   --review     the review list (default: `.rom-annotations/carry/<file>.review.txt`)
+ *   --review     the review list (default: `.local/rom-annotations/carry/<file>.review.txt`)
  *
  * How an entry is placed. Every annotated offset (a label, a line annotation, a data region's first
  * and last byte) is re-anchored on its own by a byte signature: a window of the old page's bytes
@@ -235,7 +235,7 @@ async function main() {
   writeFileSync(out, tools.formatRomSidecar(sidecar));
 
   const review =
-    reviewArg ? resolve(reviewArg) : join(root, ".rom-annotations/carry", `${(outRel ?? basename(out)).replace(/\//g, "_")}.review.txt`);
+    reviewArg ? resolve(reviewArg) : join(root, ".local/rom-annotations/carry", `${(outRel ?? basename(out)).replace(/\//g, "_")}.review.txt`);
   mkdirSync(dirname(review), { recursive: true });
   const header = [
     `Carried by dev/scripts/rom-annotations-carry.cjs (byte signature), for hand review.`,

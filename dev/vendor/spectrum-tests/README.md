@@ -11,7 +11,7 @@ belongs to its author; Klive's MIT licence does not apply to anything in this fo
 
 `test/spectrum-kit/` runs every program on Klive's cores in the slow test tier (`npm run test:slow`):
 the programs that report their own result are asserted, the others write their picture to
-`.spectrum-kit/` for a by-eye check against the real-machine photos and videos on their wiki pages.
+`.local/spectrum-kit/` for a by-eye check against the real-machine photos and videos on their wiki pages.
 `.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` ("As built") has the results.
 
 Some runs' pictures are published on the documentation site, on "ZX Spectrum: how Klive's accuracy

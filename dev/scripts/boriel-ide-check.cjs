@@ -24,7 +24,7 @@
  *   node dev/scripts/boriel-ide-check.cjs [run|debug|next|export|ui|templates|banked ...]
  *
  * Boriel BASIC comes from BORIEL_ROOT, else ~/zxbasic2 (install it from Klive's setup dialog).
- * Screenshots and the throwaway homes go to `.boriel-ide-check/` (git-ignored). Local only: it needs
+ * Screenshots and the throwaway homes go to `.local/boriel-ide-check/` (git-ignored). Local only: it needs
  * the kit and, for `next`, a NextZXOS card image.
  */
 const fs = require("node:fs");
@@ -34,7 +34,7 @@ const { launchKlive } = require("./doc-shots/harness.cjs");
 const { REPO_ROOT } = require("./repo-root.cjs");
 
 const ROOT = process.env.BORIEL_ROOT || path.join(os.homedir(), "zxbasic2");
-const OUT = path.join(REPO_ROOT, ".boriel-ide-check");
+const OUT = path.join(REPO_ROOT, ".local", "boriel-ide-check");
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function session(name, { card = false, ideViewOptions = {} } = {}) {

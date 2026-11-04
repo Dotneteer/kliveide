@@ -46,14 +46,15 @@ _pagefind/
 # Local venv used by dev/scripts/build-fonts.py
 .fontenv/
 
-# Staging output of dev/scripts/doc-shots/run.cjs, reviewed before publishing into docs/
-.doc-shots/
-# Output of `npm run rom:annotations -- coverage`, read by the ROM annotation authors
-.rom-annotations/
-# Output of test/harness/zxnext (PNG frames, review prompts, verdicts); see .plans/COPPER_VISUAL_TEST_HARNESS_PLAN.md
-.visual-tests/
-# Pictures of the ZX Spectrum test kit's runs (test/spectrum-kit/), for a by-eye check
-.spectrum-kit/
+# Local output of the checks and tools, never committed (dev/README.md):
+#   .local/doc-shots/        doc-shots staging, reviewed before publishing into docs/
+#   .local/rom-annotations/  `npm run rom:annotations -- coverage`, for the ROM annotation authors
+#   .local/visual-tests/     test/harness/zxnext runs (frames, review prompts, verdicts)
+#   .local/spectrum-kit/     pictures of the ZX Spectrum test kit's runs, for a by-eye check
+#   .local/boriel-ide-check/ and .local/z88dk-ide-check/: throwaway homes and screenshots
+#   .local/i18n-work/        i18n:todo batches and translators' answers (dev/ai/localization.md)
+.local/
+
 # Runs of the T80N differential (test/vhdl/f1/run-f1.cjs): case files, results, reports. Large and
 # reproducible from the seed; the plan records each measured run's outcome
 test/vhdl/f1/results/
@@ -68,13 +69,6 @@ dev/vendor/boriel-basic/stage/
 # pins (sources.json) and Klive's comment patches (comments/) are tracked
 dev/vendor/next-fpga/*/
 !dev/vendor/next-fpga/comments/
-# Output of dev/scripts/boriel-ide-check.cjs (throwaway homes and screenshots)
-.boriel-ide-check/
-# Output of dev/scripts/z88dk-ide-check.cjs (throwaway homes and screenshots)
-.z88dk-ide-check/
-
-# Localization work files: i18n:todo batches and translators' answers (`dev/ai/localization.md`, "A translation round")
-i18n-work/
 
 # Website facts generated at build time (dev/scripts/build-doc-site-info.cjs)
 docs/generated/

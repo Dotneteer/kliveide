@@ -90,7 +90,7 @@ the point is the whole window, WebP shown with `<Shot>` (R3), at
 `doc:check:weight`'s 1.5 MB. A recipe that cannot reach a state is a bug report about the page or the
 app. `doc:check:guide-images` fails on the pre-redesign images, and `.plans/docs-assets.golden.txt` is
 updated with every published or deleted image. **Before a release, re-run the `guides-*` recipes into
-`.doc-shots/` and review the diff.**
+`.local/doc-shots/` and review the diff.**
 
 **Corrections the rewrite found, worth knowing when editing:** run-to-line by Ctrl/Cmd-click works only
 in the Disassembly gutter (the editor has **Run to Cursor**); the assembly Call Stack is the top 16 raw

@@ -13,7 +13,7 @@
  *                                           which of a sidecar's labels survive on another ROM's bytes
  *   npm run rom:annotations -- coverage     run the ROM through BASIC with the access profile on and
  *                                           write which bytes are code and which data
- *                                           (.rom-annotations/coverage-sp48.json)
+ *                                           (.local/rom-annotations/coverage-sp48.json)
  *
  * The rules authors follow, and the provenance log, are in `dev/ai/rom-annotations/`. This script only
  * formats and measures; the logic is `src/common/roms/romAnnotationTools.ts`, which the tests run.
@@ -209,7 +209,7 @@ function bind(name, romFile, page) {
 }
 
 function coverage() {
-  const out = join(root, ".rom-annotations/coverage-sp48.json");
+  const out = join(root, ".local/rom-annotations/coverage-sp48.json");
   const result = spawnSync(
     "npx",
     ["vitest", "run", "--config", "build/vitest.config.ts", "--project", "e2e-cores", "test/rom-annotations/coverage.test.ts"],

@@ -19,7 +19,7 @@ npx electron-vite build --config build/electron.vite.config.ts   # out/ must be 
 node dev/scripts/doc-shots/run.cjs scripting                         # one recipe, or all
 ```
 
-Output stages to `.doc-shots/` (gitignored) for review. `DOC_SHOTS_OUT=docs/public/images`
+Output stages to `.local/doc-shots/` (gitignored) for review. `DOC_SHOTS_OUT=docs/public/images`
 publishes over the committed assets; git diff is then the review.
 
 ## Why Playwright's Electron driver
@@ -356,14 +356,14 @@ Eleven recipes; the rest of the pages were deliberately left ungenerated.
   (Copper, NextReg/memory-mapping panels, NEX viewer). `microdrives`, `p-files`, `code-coverage` and
   `reverse-engineering` also emit their Guides WebPs. Shared helpers live outside `recipes/` (run.cjs treats
   every file there as a recipe): `guides-helpers.cjs` and `guides-helpers-shot.cjs` (`step` keeps going
-  after one failed shot and saves window pictures to `.doc-shots/debug/`; `tag` marks an element without a
+  after one failed shot and saves window pictures to `.local/doc-shots/debug/`; `tag` marks an element without a
   class for capture; `panelShot` crops a side-bar panel to its last row). Lessons: **`shot()` takes `crop`**
   (`{ x, y, width, height }` in CSS px of the element) for a tight crop without a wrapper; **clicking the
   selected activity hides the side bar** (check `aria-selected` first); **`outp <pane>` removes the prompt**
   until the Commands tab is clicked again; **a file written into an open project may never reach the project
   tree**, even after `close`/`open` (write it while the project is closed); and Monaco's glyph decorations have
   no stable selector, so a marker on a breakpoint glyph points at a 1px pin placed over the glyph margin.
-  Publish by copying `.doc-shots/en/guides` over `docs/public/images/en/`: running the adapted older recipes
+  Publish by copying `.local/doc-shots/en/guides` over `docs/public/images/en/`: running the adapted older recipes
   with `DOC_SHOTS_OUT` would also overwrite their legacy PNGs.
   `guides-mouse` photographs the Next's toolbar with the mouse capture button; it starts on the Next
   through `sessionSettings` and types nothing. **`sessionSettings` needs a `modelId` that the machine
@@ -379,7 +379,7 @@ Eleven recipes; the rest of the pages were deliberately left ungenerated.
   like a hung app: give clicks a `timeout`. Folders of a reopened project come back expanded, so clicking
   one collapses it.
   **Every Guides image comes from a recipe**, and `doc:check:guide-images` fails on the screenshots taken
-  before the Sept 2026 redesign. **Before a release, re-run the `guides-*` recipes** into `.doc-shots/` and
+  before the Sept 2026 redesign. **Before a release, re-run the `guides-*` recipes** into `.local/doc-shots/` and
   compare them with the published ones: a shot that differs is a page whose picture (and maybe text) a UI
   change made stale.
 - `recipes/readme.cjs` — the project README's `readme/klive-ide.webp`: the IDE with

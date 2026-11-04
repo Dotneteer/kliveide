@@ -4,7 +4,7 @@
  *
  *   node dev/scripts/docs-i18n.cjs languages         Export the enabled UI languages (R1) to
  *                                                 docs/i18n/languages.json.
- *   node dev/scripts/docs-i18n.cjs todo <lang>        Write i18n-work/docs-<lang>.todo.json: what is
+ *   node dev/scripts/docs-i18n.cjs todo <lang>        Write .local/i18n-work/docs-<lang>.todo.json: what is
  *                                                 missing or outdated, with context, the glossary,
  *                                                 and the app's own translation of every UI label
  *                                                 a page names.
@@ -221,7 +221,7 @@ function todo(lang) {
       work.pages[page] = { mdx, uiLabels: uiLabels(mdx, lang), ...(fs.existsSync(target) ? { previous: fs.readFileSync(target, "utf8") } : {}) };
     }
   }
-  const out = path.join(REPO, "i18n-work", `docs-${lang}.todo.json`);
+  const out = path.join(REPO, ".local", "i18n-work", `docs-${lang}.todo.json`);
   writeJson(out, work);
   console.log(
     `${path.relative(REPO, out)}: ${Object.keys(work.landing).length} landing, ${Object.keys(work.ui).length} UI, ` +

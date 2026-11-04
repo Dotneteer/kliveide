@@ -13,7 +13,7 @@ const { REPO } = require("../harness.cjs");
 
 const SLOT = 543;
 /** The cartridge: in the staging folder, never in a real project; written before the app starts */
-const CARTRIDGE = path.join(REPO, ".doc-shots", "fixtures", "games.mdr");
+const CARTRIDGE = path.join(REPO, ".local", "doc-shots", "fixtures", "games.mdr");
 fs.mkdirSync(path.dirname(CARTRIDGE), { recursive: true });
 
 /** The byte sum mod 255 of a Microdrive block */
@@ -110,7 +110,7 @@ module.exports = {
 
   async run(klive) {
     const cartridge = CARTRIDGE;
-    const out = path.join(REPO, ".doc-shots");
+    const out = path.join(REPO, ".local", "doc-shots");
     fs.mkdirSync(out, { recursive: true });
 
     // --- 2. The media strip shows the Microdrives

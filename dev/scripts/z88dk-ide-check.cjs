@@ -25,7 +25,7 @@
  *
  * z88dk comes from Z88DK_ROOT, else ~/z88dk (v2.4 or newer); Klive's own download goes to
  * ~/KliveTools/z88dk/<version>, so set Z88DK_ROOT for it. Screenshots and the throwaway homes go
- * to `.z88dk-ide-check/` (git-ignored). Local only: it needs a z88dk installation.
+ * to `.local/z88dk-ide-check/` (git-ignored). Local only: it needs a z88dk installation.
  */
 const fs = require("node:fs");
 const os = require("node:os");
@@ -34,7 +34,7 @@ const { launchKlive } = require("./doc-shots/harness.cjs");
 const { REPO_ROOT } = require("./repo-root.cjs");
 
 const ROOT = process.env.Z88DK_ROOT || path.join(os.homedir(), "z88dk");
-const OUT = path.join(REPO_ROOT, ".z88dk-ide-check");
+const OUT = path.join(REPO_ROOT, ".local", "z88dk-ide-check");
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /** The NextZXOS SD card image a Next case copies into its own home (as the Klive BASIC and Boriel checks do). */

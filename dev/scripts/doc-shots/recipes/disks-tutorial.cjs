@@ -73,8 +73,8 @@ async function waitForText(locator, text, what, timeout = 20000) {
   }
   // --- What was there instead, for the failure report
   const page = locator.page();
-  await page.screenshot({ path: path.join(REPO, ".doc-shots", "disks-tutorial-failure.png") }).catch(() => {});
-  throw new Error(`${what}: "${text}" never appeared (see .doc-shots/disks-tutorial-failure.png)`);
+  await page.screenshot({ path: path.join(REPO, ".local", "doc-shots", "disks-tutorial-failure.png") }).catch(() => {});
+  throw new Error(`${what}: "${text}" never appeared (see .local/doc-shots/disks-tutorial-failure.png)`);
 }
 
 /**
@@ -208,7 +208,7 @@ module.exports = {
       try {
         await waitForText(klive.ide.locator(EXPLORER), "COPY.SCR", "the file the +3 wrote", 60000);
       } catch (err) {
-        await emu.screenshot({ path: path.join(REPO, ".doc-shots", "disks-tutorial-emu.png") });
+        await emu.screenshot({ path: path.join(REPO, ".local", "doc-shots", "disks-tutorial-emu.png") });
         throw err;
       }
       await klive.sleep(3000);

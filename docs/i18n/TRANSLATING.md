@@ -12,9 +12,9 @@ commands, file extensions, keyboard shortcuts) are the same here.
 ## The workflow
 
 ```bash
-npm run doc:i18n:todo -- de          # writes i18n-work/docs-de.todo.json
-# translate it into i18n-work/docs-de.answer.json
-npm run doc:i18n:merge -- de i18n-work/docs-de.answer.json
+npm run doc:i18n:todo -- de          # writes .local/i18n-work/docs-de.todo.json
+# translate it into .local/i18n-work/docs-de.answer.json
+npm run doc:i18n:merge -- de .local/i18n-work/docs-de.answer.json
 npm run doc:build && npm run doc:check
 ```
 
@@ -33,8 +33,8 @@ The answer is one JSON object with only what you translated:
 ```
 
 Rather than escaping whole pages inside JSON, you can write plain files into a folder -
-`i18n-work/docs-de/landing.json`, `ui.json` (key -> text) and `pages/get-started/<page>.mdx` - and
-run `node dev/scripts/docs-i18n.cjs pack i18n-work/docs-de`, which writes `i18n-work/docs-de.answer.json`.
+`.local/i18n-work/docs-de/landing.json`, `ui.json` (key -> text) and `pages/get-started/<page>.mdx` - and
+run `node dev/scripts/docs-i18n.cjs pack .local/i18n-work/docs-de`, which writes `.local/i18n-work/docs-de.answer.json`.
 
 `merge` checks everything before it writes anything for an item. A rejected item is listed with
 the reason and stays in the next todo. `merge` also writes the language's navigation

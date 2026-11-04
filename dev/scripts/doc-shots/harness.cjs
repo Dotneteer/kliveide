@@ -30,7 +30,7 @@ const MAIN = path.join(REPO, "out", "main", "index.js");
 // --- replaces anything. `DOC_SHOTS_OUT=docs/public/images` publishes.
 const IMAGES = process.env.DOC_SHOTS_OUT
   ? path.resolve(REPO, process.env.DOC_SHOTS_OUT)
-  : path.join(REPO, ".doc-shots");
+  : path.join(REPO, ".local", "doc-shots");
 
 // --- `sharp` lives in the docs workspace; these scripts are docs tooling, so it is
 // --- resolved from there rather than duplicated as a root dependency.

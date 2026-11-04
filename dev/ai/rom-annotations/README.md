@@ -117,7 +117,7 @@ npm run rom:annotations -- --check         # what build:check runs
 npm run rom:annotations -- level           # each page's level and what keeps it from the next
 npm run rom:annotations -- skeleton sp48.rom.dis
 npm run rom:annotations -- bind sp48.rom.dis sp128-1.rom
-npm run rom:annotations -- coverage        # writes .rom-annotations/coverage-sp48.json
+npm run rom:annotations -- coverage        # writes .local/rom-annotations/coverage-sp48.json
 npm run rom:annotations:carry -- zxnext/nextzxos-2.08/enNextZX.rom.dis zxnext/nextzxos-2.10/enNextZX.rom
 ```
 

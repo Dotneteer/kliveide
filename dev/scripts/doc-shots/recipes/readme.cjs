@@ -6,7 +6,7 @@
  * side with sharp. The program is `readme-demo.kz80.asm` (moving colour bands and a greeting
  * printed through the 48K ROM), run with the IDE's `run` command.
  *
- *   node dev/scripts/doc-shots/run.cjs readme                  # stages to .doc-shots/readme/
+ *   node dev/scripts/doc-shots/run.cjs readme                  # stages to .local/doc-shots/readme/
  *   DOC_SHOTS_OUT=docs/public/images node dev/scripts/doc-shots/run.cjs readme
  */
 const path = require("path");

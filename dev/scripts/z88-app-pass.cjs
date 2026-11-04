@@ -11,7 +11,7 @@
  *
  * Each step records the LCD picture, the EMU status bar (which names the model) and the IDE text it
  * checks; console errors of both windows are collected, and each model's pictures and
- * `report.json` land in `.doc-shots/z88-app-pass/<model>/`. It is a smoke test of the app around the
+ * `report.json` land in `.local/doc-shots/z88-app-pass/<model>/`. It is a smoke test of the app around the
  * one Z88 machine: until the TypeScript machine was removed
  * (`.plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`) it also ran each model's TypeScript twin and put
  * the two side by side.
@@ -27,7 +27,7 @@ const path = require("path");
 const fs = require("fs");
 const { launchKlive, REPO } = require("./doc-shots/harness.cjs");
 
-const OUT = path.join(REPO, ".doc-shots", "z88-app-pass");
+const OUT = path.join(REPO, ".local", "doc-shots", "z88-app-pass");
 
 /* Host keys for a character (the Z88's UK mapping, `Z88KeyMappings.ts`) */
 function keysFor(ch) {

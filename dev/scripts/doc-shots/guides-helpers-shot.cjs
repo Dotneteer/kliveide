@@ -9,14 +9,14 @@ const { REPO } = require("./harness.cjs");
 
 const failures = [];
 
-/** Runs one shot's steps; on failure saves a window picture to `.doc-shots/debug/` and goes on. */
+/** Runs one shot's steps; on failure saves a window picture to `.local/doc-shots/debug/` and goes on. */
 async function step(klive, name, fn) {
   try {
     await fn();
   } catch (e) {
     failures.push(name);
     console.log(`  ✗ ${name}: ${String(e.message ?? e).split("\n")[0]}`);
-    const dir = path.join(REPO, ".doc-shots", "debug");
+    const dir = path.join(REPO, ".local", "doc-shots", "debug");
     fs.mkdirSync(dir, { recursive: true });
     for (const page of klive.app.windows()) {
       const kind = page.url().includes("?emu") ? "emu" : "ide";

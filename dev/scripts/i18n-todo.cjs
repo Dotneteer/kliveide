@@ -8,7 +8,7 @@
  *
  * Usage:
  *   npm run i18n:todo -- <lang> [--ns <namespace>] [--out <file>] [--limit <n>]
- * Default output: i18n-work/<lang>[.<ns>].todo.json (git-ignored).
+ * Default output: .local/i18n-work/<lang>[.<ns>].todo.json (git-ignored).
  */
 const path = require("path");
 const lib = require("./i18n-lib.cjs");
@@ -64,7 +64,7 @@ function main() {
   }
   const todo = buildTodo({ lang: args.lang, ns: args.ns, limit: args.limit });
   const out =
-    args.out ?? path.join(lib.REPO, "i18n-work", `${args.lang}${args.ns ? `.${args.ns}` : ""}.todo.json`);
+    args.out ?? path.join(lib.REPO, ".local", "i18n-work", `${args.lang}${args.ns ? `.${args.ns}` : ""}.todo.json`);
   lib.writeJson(out, todo);
   const outdated = todo.entries.filter((e) => e.status === "outdated").length;
   console.log(`${lib.rel(out)}: ${todo.entries.length} entries (${outdated} outdated)`);
