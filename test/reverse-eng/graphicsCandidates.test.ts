@@ -4,7 +4,7 @@ import { findGraphicCandidates } from "@common/reverse/graphicsCandidates";
 import { PF_EXECUTED, PF_CODE, PF_READ, PF_WRITTEN } from "@common/profile/profileTypes";
 
 /*
- * The graphics finder's candidates (`.docs/reverse-engineering-tools.md`, "Graphics finder", "Tests worth knowing", G7.4): the
+ * The graphics finder's candidates (`dev/patterns/reverse-engineering-tools.md`, "Graphics finder", "Tests worth knowing", G7.4): the
  * 48K ROM's character set is found, random data is not.
  */
 

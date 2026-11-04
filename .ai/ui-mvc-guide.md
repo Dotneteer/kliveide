@@ -1,7 +1,7 @@
 # UI MVC — Session Starter
 
 Read this before adding or migrating a dialog (or any stateful UI part) to the MVC pattern.
-Full reference: [`../.docs/dialog-mvc-pattern.md`](../.docs/dialog-mvc-pattern.md).
+Full reference: [`../dev/patterns/dialog-mvc-pattern.md`](../dev/patterns/dialog-mvc-pattern.md).
 Reference implementation: `src/renderer/appIde/dialogs/sjasmplus/` + `test/dialogs/sjasmplus/`.
 
 **Read the reference implementation before writing anything.** It is small, complete, and every

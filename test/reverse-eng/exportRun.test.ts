@@ -7,7 +7,7 @@ import { buildExport } from "@renderer/appIde/reverse/exportRun";
 import type { MemoryInfo } from "@common/messaging/EmuApi";
 
 /*
- * `export-asm`'s orchestration (`.docs/reverse-engineering-tools.md`, "Export as source"): a range of the 64K
+ * `export-asm`'s orchestration (`dev/patterns/reverse-engineering-tools.md`, "Export as source"): a range of the 64K
  * view is cut at bank boundaries, each piece exported with its own `.org`, and the whole file still
  * reassembles to the bytes.
  */

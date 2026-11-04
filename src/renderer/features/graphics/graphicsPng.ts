@@ -9,7 +9,7 @@ import {
 } from "@common/reverse/graphicsDecode";
 
 /*
- * *Save as PNG* (`.docs/reverse-engineering-tools.md`, "Graphics finder"): a span of bytes, or a named
+ * *Save as PNG* (`dev/patterns/reverse-engineering-tools.md`, "Graphics finder"): a span of bytes, or a named
  * graphic, drawn with the look and scaled 1:1 or at the view's zoom.
  */
 

@@ -88,7 +88,7 @@ export function patchForResolution(
 
 /**
  * A bank resolution on a machine without banks (the ZX80/ZX81, §4.7 of
- * `.docs/annotations.md`): the label's canonical address, and the
+ * `dev/patterns/annotations.md`): the label's canonical address, and the
  * breakpoint stays partitionless. Elsewhere the resolution is kept as it is.
  */
 export function withoutBanks(

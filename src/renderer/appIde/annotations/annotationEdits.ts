@@ -444,7 +444,7 @@ export function withEndOfLineComment(
  *
  * `origin` is for the writers that are not the user — detection, a SkoolKit import. The editor's own
  * edits never pass it, so any region the user touches becomes the user's (§3 of
- * `.docs/reverse-engineering-tools.md`).
+ * `dev/patterns/reverse-engineering-tools.md`).
  */
 export function withRegion(
   annotations: ProgramAnnotations,
@@ -739,7 +739,7 @@ export function listLabelsForBank(
 }
 
 /**
- * Name a graphic the finder found (`.docs/reverse-engineering-tools.md`, "Graphics finder", R6): a local
+ * Name a graphic the finder found (`dev/patterns/reverse-engineering-tools.md`, "Graphics finder", R6): a local
  * label at its start, a `graphic` region over its bytes (the user's: no origin) and a `graphics`
  * entry that lays them out — one model, so it is published as one session update.
  *

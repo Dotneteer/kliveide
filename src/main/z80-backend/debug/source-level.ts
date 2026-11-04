@@ -20,7 +20,7 @@ import type { StatementAddresses } from "./builder";
 import type { SourceFiles } from "./sources";
 
 /**
- * The source-level tables (`.docs/z80-backend-debug-builder.md` §4): `SourceLevelDebugInfo` and its
+ * The source-level tables (`dev/patterns/z80-backend-debug-builder.md` §4): `SourceLevelDebugInfo` and its
  * extensions (plan §8.4), which source stepping, the call stack and the Variables panel read. It
  * reads the MIR, the emitted program, the assembler's listing and the front end's descriptors only:
  * no language's symbols or types (`.plans/SHARED_Z80_BACKEND_PLAN.md` §3.3).

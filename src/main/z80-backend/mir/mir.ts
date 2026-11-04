@@ -4,7 +4,7 @@ import type { VariableDebugInfo } from "@abstractions/SourceDebugInfo";
 import { representationOf, type RegClass } from "./representations";
 
 /**
- * The MIR (`.docs/z80-backend-mir.md`): the shared Z80 back end's input. Per function, a control-flow
+ * The MIR (`dev/patterns/z80-backend-mir.md`): the shared Z80 back end's input. Per function, a control-flow
  * graph of blocks whose instructions compute into single-assignment virtual registers and read and
  * write variables through slots. Every instruction and terminator carries the statement id (sid) it
  * belongs to.
@@ -113,7 +113,7 @@ export type CallSite = {
 };
 
 export type Instr = { sid: number } & (
-  /** The entry of statement `sid` (a zero-size marker, `.docs/z80-backend-mir.md` §6). */
+  /** The entry of statement `sid` (a zero-size marker, `dev/patterns/z80-backend-mir.md` §6). */
   | { op: "stmt" }
   | { op: "prologue.end" }
   | { op: "epilogue.begin" }

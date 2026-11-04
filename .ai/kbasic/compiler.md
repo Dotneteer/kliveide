@@ -16,10 +16,10 @@ What is already written elsewhere is not repeated here:
 | --- | --- |
 | The language (the only language reference) and the semantics annex (R8) | `.ai/zxbasic-syntax/` |
 | Runtime interfaces, CODEBANK contract, integration map, library API | `.ai/kbasic/` (`README.md` and its files) |
-| The shared back end a front end lowers to | `.docs/z80-backend-frontend-guide.md`, `.docs/z80-backend-{mir,lir-regalloc,optimiser,debug-builder}.md`, `.plans/SHARED_Z80_BACKEND_PLAN.md` |
-| Lowering BASIC to MIR | `.docs/kbasic-lowering.md` |
-| String ownership | `.docs/kbasic-string-ownership.md` |
-| The language-neutral source-level debugger | `.docs/source-debugging-model.md` |
+| The shared back end a front end lowers to | `dev/patterns/z80-backend-frontend-guide.md`, `dev/patterns/z80-backend-{mir,lir-regalloc,optimiser,debug-builder}.md`, `.plans/SHARED_Z80_BACKEND_PLAN.md` |
+| Lowering BASIC to MIR | `dev/patterns/kbasic-lowering.md` |
+| String ownership | `dev/patterns/kbasic-string-ownership.md` |
+| The language-neutral source-level debugger | `dev/patterns/source-debugging-model.md` |
 | Runtime packages | `src/main/z80-backend/runtime/README.md`, `src/main/kbasic/runtime/` |
 | The standard library | `src/main/kbasic/stdlib/README.md` |
 | The 48K harness | `test/harness/sp48/README.md` |
@@ -103,7 +103,7 @@ Not required: identical binaries, addresses, timing or diagnostic wording. Klive
 ## Guarantees
 
 The debug-info validator and the corpus runner check these on every compiled test program. They
-hold for every MIR language (`.docs/source-debugging-model.md` §2).
+hold for every MIR language (`dev/patterns/source-debugging-model.md` §2).
 
 | # | Guarantee |
 | --- | --- |
@@ -240,7 +240,7 @@ The design is Klive's own, from `codebank-contract.md` §4.
 
 ## Source-level debugging as built
 
-The engine and model are language-neutral (`.docs/source-debugging-model.md`); these are Klive
+The engine and model are language-neutral (`dev/patterns/source-debugging-model.md`); these are Klive
 BASIC's facts.
 
 - Source-level info reaches the emulator as plain JSON (`emuApi.setSourceDebugInfo`), sent before a
@@ -305,7 +305,7 @@ The plan's readiness items, as they stand at close.
 | R8 | Semantics annex | Done: 82 entries, all `decided`, in `.ai/zxbasic-syntax/zxbasic-syntax.json`; checked by `test/ai-notes/zxbasic-syntax.test.ts`. |
 | R9 | Behavioural oracle | Done (D12): `scripts/kbasic-oracle.cjs`, results committed. |
 | R10 | Test corpus | Done (192 programs). |
-| R11 | Stage design notes | Done and approved: `.docs/z80-backend-mir.md` (R11-1), `z80-backend-lir-regalloc.md` (R11-2), `kbasic-string-ownership.md` (R11-3), `z80-backend-debug-builder.md` (R11-4), `z80-backend-optimiser.md`. |
+| R11 | Stage design notes | Done and approved: `dev/patterns/z80-backend-mir.md` (R11-1), `z80-backend-lir-regalloc.md` (R11-2), `kbasic-string-ownership.md` (R11-3), `z80-backend-debug-builder.md` (R11-4), `z80-backend-optimiser.md`. |
 | R12 | UI within Klive's theming rules | Done (Variables, Call Stack, toggles on the data-panel primitives). |
 | R13 | Settings and templates | Done; the templates now target Boriel BASIC while Klive BASIC is off. |
 | R14 | Ask upstream to confirm the runtime licence | Dropped (D2). |
@@ -330,7 +330,7 @@ Not built when the plan closed; none blocks anything while Klive BASIC is switch
 - An interrupt-handler warning for banked routines; NEX asset packing (`'@nex-include`), future work.
 - Optimiser work measured and not built for lack of gain: cross-block rules, further Z80N rules,
   Strings in the tree selector, tail calls, loop strength reduction, FASTCALL conversion, CSE, LICM
-  (the census is in `.docs/z80-backend-optimiser.md` §15-§16).
+  (the census is in `dev/patterns/z80-backend-optimiser.md` §15-§16).
 - R16 (above).
 - Known limits: a module-level ASM block under `#pragma codebank = n` without a CODEBANK block stays
   resident; FARPTR with constant subscripts is not lowered; interrupt handlers must not far-call
@@ -350,10 +350,10 @@ lives now:
 | §4 (assembler: `compileProgram`, `.page`, `#line`) | the assembler itself; `docs/content/z80-assembly/{pragmas,directives}.mdx` |
 | §5 (options) | "Options as built" |
 | §6 (runtime, stdlib, ABI §6.7) | "Runtime and ROM policy"; `.ai/kbasic/runtime-abi.md`; the runtime and stdlib READMEs |
-| §7 (optimisation) | `.docs/z80-backend-optimiser.md` |
-| §8 (debug information, §8.4 names and extensions, §8.5 sidecar, §8.6 debug profile) | "Guarantees", "Source-level debugging as built", D11; `.docs/z80-backend-debug-builder.md`; `src/common/abstractions/SourceDebugInfo.ts` |
+| §7 (optimisation) | `dev/patterns/z80-backend-optimiser.md` |
+| §8 (debug information, §8.4 names and extensions, §8.5 sidecar, §8.6 debug profile) | "Guarantees", "Source-level debugging as built", D11; `dev/patterns/z80-backend-debug-builder.md`; `src/common/abstractions/SourceDebugInfo.ts` |
 | §9 (CODEBANK) | "CODEBANK as built"; `.ai/kbasic/codebank-contract.md` |
-| §10 (debugger: §10.2 stepping and G4-G6, §10.3 statements on a line, §10.4 partitions, §10.6-§10.8 panels, §10.10 error stops, §10.12 Just My Code) | "Guarantees", "Source-level debugging as built"; `.docs/source-debugging-model.md`; `src/emu/machines/SourceStepDecision.ts` |
+| §10 (debugger: §10.2 stepping and G4-G6, §10.3 statements on a line, §10.4 partitions, §10.6-§10.8 panels, §10.10 error stops, §10.12 Just My Code) | "Guarantees", "Source-level debugging as built"; `dev/patterns/source-debugging-model.md`; `src/emu/machines/SourceStepDecision.ts` |
 | §11 (editor) | done; language intelligence by the closed BASIC editor intelligence plan (`src/main/kbasic/intel/`) |
 | §12 (integration, D9) | "Architecture as built" |
 | §13 (testing, §13.2 harnesses, §13.5 validator) | "Testing and tools" |

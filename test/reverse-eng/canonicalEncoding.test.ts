@@ -6,7 +6,7 @@ import { AssemblerOptions } from "@main/compiler-common/assembler-in-out";
 import { isReassemblable, nonCanonicalReason } from "@common/reverse/canonicalEncoding";
 
 /*
- * The exhaustive check behind source export's R10 (`.docs/reverse-engineering-tools.md`
+ * The exhaustive check behind source export's R10 (`dev/patterns/reverse-engineering-tools.md`
  * §7.3): every opcode pattern — unprefixed, CB, ED, DD/FD and DD CB/FD CB, with fixed operand
  * bytes, with and without the Next's set — is disassembled, its text assembled, and
  * `isReassemblable` must predict exactly whether the bytes came back.

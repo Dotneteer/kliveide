@@ -85,7 +85,7 @@ export type RoutineMapInput = {
   partitionLabel?: (partition: number) => string;
   /**
    * The labels of the active annotation set and the ROM's annotations (D6 (3b),
-   * `.docs/annotations.md`, "The Shared Resolver"): routines between the compilation's
+   * `dev/patterns/annotations.md`, "The Shared Resolver"): routines between the compilation's
    * labels and the call targets, each up to the next one in its partition or the end of its 16K slot.
    */
   annotationLabels?: readonly RoutineLabel[];

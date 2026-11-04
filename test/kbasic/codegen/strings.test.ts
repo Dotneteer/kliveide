@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { runBasic, type Run } from "./run-kit";
 
 /**
- * Strings on the 48K, and the heap check of `.docs/kbasic-string-ownership.md` §6: when a program
+ * Strings on the 48K, and the heap check of `dev/patterns/kbasic-string-ownership.md` §6: when a program
  * ends, the heap holds exactly the blocks of its global Strings, nothing else.
  */
 function heapUsed(r: Run): number {

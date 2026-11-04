@@ -155,7 +155,7 @@ type MemoryDumpViewState = {
   topAddress?: number;
   /**
    * The annotation sidecar and the bank in it this document lists
-   * (`.docs/annotations.md`, "Commands"): a NEX's, a snapshot's, a paused
+   * (`dev/patterns/annotations.md`, "Commands"): a NEX's, a snapshot's, a paused
    * machine's.
    */
   annotationPath?: string;
@@ -215,7 +215,7 @@ type MemoryDumpViewState = {
    */
   romPageKind?: RomPageKind;
   /**
-   * How the Graphics view reads the bytes (`.docs/reverse-engineering-tools.md`, "Graphics finder"). View
+   * How the Graphics view reads the bytes (`dev/patterns/reverse-engineering-tools.md`, "Graphics finder"). View
    * state, never the sidecar: sweeping the width is how graphics are *found*, and a write per step
    * would turn browsing into editing. A graphic that has been found is named, which is a write.
    */
@@ -1048,7 +1048,7 @@ const StaticMemoryDump = ({
     [navigationHistoryService]
   );
 
-  // ─── Graphics view (`.docs/reverse-engineering-tools.md`, "Graphics finder") ──────────
+  // ─── Graphics view (`dev/patterns/reverse-engineering-tools.md`, "Graphics finder") ──────────
 
   const graphicsLook = useMemo<GraphicsLook>(
     () => ({ ...DEFAULT_GRAPHICS_LOOK, ...currentViewState.graphicsLook }),

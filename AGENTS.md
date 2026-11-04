@@ -7,13 +7,13 @@ Guidance for AI assistants working in this workspace.
 - This is `klive-ide`, an Electron shell application with React renderers.
 - Renderer code lives mainly under `src/renderer`.
 - Future and archived implementation plans live in `.plans/`.
-- Human- and AI-readable implementation pattern docs live in `.docs/`; read the relevant docs before changing established patterns.
+- Human- and AI-readable implementation pattern docs live in `dev/patterns/`; read the relevant docs before changing established patterns.
 - Additional AI-oriented notes live in `.ai/`; read them before related work.
 - `dev/` is becoming the one home for everything that is for Klive's developers and never ships
-  (`dev/README.md`): `.ai/`, `.docs/` (as `dev/patterns/`), `.plans/` and `scripts/` move into it
-  one step at a time (`.plans/ROOT_DECLUTTER_PLAN.md`). Until a folder has moved, use its old path. Moved so far:
+  (`dev/README.md`): `.ai/`, `.plans/` and `scripts/` move into it one step at a time
+  (`.plans/ROOT_DECLUTTER_PLAN.md`). Until a folder has moved, use its old path. Moved so far:
   `_experiments/` (now `dev/experiments/`), `.changes/` (now `dev/changes/`), `vendor/` (now
-  `dev/vendor/`), `_input/` (now `dev/research/`).
+  `dev/vendor/`), `_input/` (now `dev/research/`), `.docs/` (now `dev/patterns/`).
 
 ## Working Rules
 
@@ -176,7 +176,7 @@ merely uncoloured, which no route diff can see.
 - **Every language Klive compiles itself is a front end on one back end** (`src/main/z80-backend/`):
   it lowers to MIR and calls `compileModule` (`link/compile-module.ts`); it never optimises, selects
   instructions, writes Z80 text (only the source's own inline asm), runs the assembler or builds debug
-  tables of its own. Read `.docs/z80-backend-frontend-guide.md` before adding or changing a language;
+  tables of its own. Read `dev/patterns/z80-backend-frontend-guide.md` before adding or changing a language;
   the plan is `.plans/SHARED_Z80_BACKEND_PLAN.md` (Part A, with its as-built notes).
 - MIR types are representations (`mir/representations.ts`), and **every operation whose meaning
   differs between languages states it** (`rounding`, `overflow`, `toInt`, `shift`, `truth`); the
@@ -190,7 +190,7 @@ merely uncoloured, which no route diff can see.
   language construct). `test/z80-backend/snapshot/` pins every corpus program's output at every level:
   a back-end refactoring keeps it byte-identical (`BACKEND_SNAPSHOT_UPDATE=1` re-records it, a reviewed
   change). The test-only "mini" language (`test/z80-backend/minilang/`) must keep compiling and running.
-- **The source-level debugger is language-neutral** (`.docs/source-debugging-model.md`, plan Part B):
+- **The source-level debugger is language-neutral** (`dev/patterns/source-debugging-model.md`, plan Part B):
   the model (version 2) speaks in representations and neutral call/activation kinds; language
   specifics come from the producer (`typeLabel`, `errorStop`, labels) or a plugin in
   `src/renderer/appIde/debugger/languages/` (watch parser, value formatting), which only `registry.ts`
@@ -453,7 +453,7 @@ merely uncoloured, which no route diff can see.
 
 - Dialogs with async orchestration use a Model/Controller/View split so their behavior can be
   tested without rendering. Read `.ai/ui-mvc-guide.md` before adding or migrating one; the full
-  pattern is in `.docs/dialog-mvc-pattern.md` and the reference implementation is
+  pattern is in `dev/patterns/dialog-mvc-pattern.md` and the reference implementation is
   `src/renderer/appIde/dialogs/sjasmplus/`.
 - Fix conditional hook calls before tuning dependency arrays.
 - Prefer extracting hooks/components over broad rewrites.

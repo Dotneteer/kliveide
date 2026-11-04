@@ -494,12 +494,12 @@ rather than inventing a shape.
 | Next-only items | `machine-menu-registry.ts:73-81` `MI_ZXNEXT.machineItems` — add a `nextInputMenuRenderer` beside `hotkeyMenuRenderer` and `sdCardMenuRenderer` |
 | Toolbar button | `ViewControls.tsx` (the `!ide` group), an `IconButton` like Stay-on-top: `iconName` follows the capture flag, `selected` lights it. §3.1.2 — **captures only, never releases** |
 | Toolbar icons | `mouse.svg` / `mouse-off.svg` (Lucide) dropped into `src/renderer/assets/icons/`; the filename is the id, never an `icon-defs.ts` entry (that folder's `README.md`) |
-| Bindings dialog | **Plain pattern** (`.docs/dialog-pattern.md`), not MVC — see §5.1. It belongs to the **emu** renderer: `src/renderer/appEmu/dialogs/joystick/`, an id from `EMU_DIALOG_BASE` (`dialog-ids.ts`), opened from main with `emuApi.displayDialog(id)`. Adding an id means updating the registry guard in `test/controls/AppShellStartup.test.tsx` |
+| Bindings dialog | **Plain pattern** (`dev/patterns/dialog-pattern.md`), not MVC — see §5.1. It belongs to the **emu** renderer: `src/renderer/appEmu/dialogs/joystick/`, an id from `EMU_DIALOG_BASE` (`dialog-ids.ts`), opened from main with `emuApi.displayDialog(id)`. Adding an id means updating the registry guard in `test/controls/AppShellStartup.test.tsx` |
 | Dialog styling | tokens only, no colour literals; and per the standing rule, any visual change updates `.ai/ui-theming-intent-and-lessons.md` in the same commit |
 
 ### 5.1 Why the bindings dialog is not an MVC dialog
 
-`.docs/dialog-mvc-pattern.md` is explicit about when it applies: **async orchestration plus derived
+`dev/patterns/dialog-mvc-pattern.md` is explicit about when it applies: **async orchestration plus derived
 display rules** — several service calls that can interleave or fail. It says in as many words that
 for a dialog without orchestration the Intent/Event split "would be pure ceremony".
 

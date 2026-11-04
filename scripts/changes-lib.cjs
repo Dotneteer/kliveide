@@ -435,7 +435,7 @@ const GATE_EXEMPT = [
   /^docs\//,
   /^\.plans\//,
   /^\.ai\//,
-  /^\.docs\//,
+  /^dev\/patterns\//,
   /^\.github\//,
   /^\.vscode\//,
   /^\.claude\//,

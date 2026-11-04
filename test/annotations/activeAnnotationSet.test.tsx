@@ -28,7 +28,7 @@ import { MI_SPECTRUM_128, MI_SPECTRUM_48, MI_ZX81 } from "@common/machines/const
 
 /*
  * The active annotation set: one `.dis` file whose annotations are live, whichever way the program
- * got into the machine (`.docs/annotations.md`, "The Active Annotation Set").
+ * got into the machine (`dev/patterns/annotations.md`, "The Active Annotation Set").
  */
 
 function fileSystem(files: Record<string, string> = {}) {

@@ -19,7 +19,7 @@ import { exportContextFor } from "./ExportAsmCommand";
 import { t } from "@common/i18n/i18n";
 
 /*
- * SkoolKit import and export (`.docs/reverse-engineering-tools.md`, "SkoolKit import and export", G7.5). The formats
+ * SkoolKit import and export (`dev/patterns/reverse-engineering-tools.md`, "SkoolKit import and export", G7.5). The formats
  * are read and written from SkoolKit's documentation only (R7). A skool file of a Spectrum ROM is
  * the user's own data when they import it into their own ROM layer; nothing here writes a shipped
  * sidecar (R8).

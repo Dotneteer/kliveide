@@ -211,7 +211,7 @@ export type BreakpointWithAddressArgs = {
   /**
    * The annotation label a `<bank>:<label>` spec anchors the breakpoint to, and the sidecar whose
    * label table it is looked up in: the active annotation set's
-   * (`.docs/annotations.md`, "Commands").
+   * (`dev/patterns/annotations.md`, "Commands").
    */
   label?: string;
   labelFile?: string;
@@ -409,7 +409,7 @@ export abstract class BreakpointWithAddressCommand extends IdeCommandBase<Breakp
 
               /*
                * `ROM:<name>` and `<bank>:<label>` - a breakpoint named by an annotation label
-               * (`.docs/annotations.md`, "Commands", "ROM Annotations"). Told apart from
+               * (`dev/patterns/annotations.md`, "Commands", "ROM Annotations"). Told apart from
                * `<partition>:<address>` by the second part being an identifier: an address literal
                * starts with `$`, `%` or a digit.
                */

@@ -9,7 +9,7 @@ import {
 } from "@common/profile/profileTypes";
 
 /*
- * Code/data classification from coverage (`.docs/reverse-engineering-tools.md`, "Code/data detection", G7.3).
+ * Code/data classification from coverage (`dev/patterns/reverse-engineering-tools.md`, "Code/data detection", G7.3).
  *
  * Pure: one bank's (or ROM page's) flags and bytes in, classified runs out, each with the evidence
  * behind it (R4). It decides nothing about the annotations — `proposal.ts` compares the runs with

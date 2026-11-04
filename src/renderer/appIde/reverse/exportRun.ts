@@ -18,7 +18,7 @@ import { loadAnnotationSidecar } from "@renderer/appIde/annotations/annotationSi
 import { readBankBytes } from "./detection";
 
 /*
- * Export as source against the running machine (`.docs/reverse-engineering-tools.md`, "Export as source",
+ * Export as source against the running machine (`dev/patterns/reverse-engineering-tools.md`, "Export as source",
  * §7.5): what `export-asm` runs.
  *
  * A bank export lists one bank at its address. A range of the 64K view under the current paging is

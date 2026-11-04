@@ -31,7 +31,7 @@ export const E2E_CORE_TESTS: string[] = [
   "test/spectrum-hw/**/*.test.ts",
   // --- The ZX Spectrum timing test kit (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phase 0); all slow
   "test/spectrum-kit/**/*.test.ts",
-  // --- The ROM annotation tools' coverage run (`.docs/annotations.md` and `.ai/rom-annotations/README.md`)
+  // --- The ROM annotation tools' coverage run (`dev/patterns/annotations.md` and `.ai/rom-annotations/README.md`)
   "test/rom-annotations/**/*.test.ts",
   "test/harness/**/self-tests/**/*.test.ts",
   "test/unit-tests/runner-*.test.ts",
@@ -64,7 +64,7 @@ export const E2E_CORE_TESTS: string[] = [
   "test/emu/one-shot-real-machine.test.ts",
   "test/emu/assertion-wpmem-real-machine.test.ts",
   "test/reverse/**/*.test.ts",
-  // --- Code/data detection on the real cores (`.docs/reverse-engineering-tools.md`, "Tests worth knowing")
+  // --- Code/data detection on the real cores (`dev/patterns/reverse-engineering-tools.md`, "Tests worth knowing")
   "test/reverse-eng/**/*.core.test.ts",
   "test/machines/hardware-specs-cores.test.ts",
   "test/tape/tape-load-flow.test.ts",

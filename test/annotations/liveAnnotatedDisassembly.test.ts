@@ -22,7 +22,7 @@ import type { RomLayer } from "@renderer/appIde/annotations/romLayer";
 
 /*
  * The live Disassembly view as an annotated listing
- * (`.docs/annotations.md`, "The Live Disassembly View").
+ * (`dev/patterns/annotations.md`, "The Live Disassembly View").
  */
 
 const PAGING_128 = [-1, -1, 5, 5, 2, 2, 7, 7];

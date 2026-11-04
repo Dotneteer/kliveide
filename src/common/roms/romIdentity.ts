@@ -10,7 +10,7 @@ import {
 import { NEXT_ROM_SETS, nextRomAnnotationFile } from "@common/zxnext/romSets";
 
 /*
- * Which ROM a ROM page is (`.docs/annotations.md`, "ROM Annotations").
+ * Which ROM a ROM page is (`dev/patterns/annotations.md`, "ROM Annotations").
  *
  * A partition label names a *slot*, not the ROM in it: the 128K's `R1`, a +3's `R3` and a custom 48K
  * ROM all look alike from the label (T6). What identifies a page is its bytes, and the CRC-32 of

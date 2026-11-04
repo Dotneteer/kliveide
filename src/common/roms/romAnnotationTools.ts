@@ -1,7 +1,7 @@
 import { romCrc32 } from "./romIdentity";
 
 /*
- * The authoring tools of the shipped ROM sidecars (`.docs/annotations.md`
+ * The authoring tools of the shipped ROM sidecars (`dev/patterns/annotations.md`
  * §5.4, §6): the formatter that keeps them diffable, the CRC index the IDE finds them by, and the
  * reports an author works from. Pure — the CLI (`scripts/rom-annotations.cjs`) reads and writes the
  * files, and the tests run the same functions.

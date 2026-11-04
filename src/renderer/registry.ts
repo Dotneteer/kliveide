@@ -1016,7 +1016,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     openPermanent: true
   })),
   /*
-   * SkoolKit files (`.docs/reverse-engineering-tools.md`, "SkoolKit import and export"): plain text in the editor;
+   * SkoolKit files (`dev/patterns/reverse-engineering-tools.md`, "SkoolKit import and export"): plain text in the editor;
    * `skool-import` reads them. `.ctl` is registered only as text, because the extension is generic.
    * Monaco colouring for skool files is a later follow-up.
    */
@@ -1055,7 +1055,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     isReadOnly: true
   },
   /*
-   * Annotation sidecars of every kind (`.docs/annotations.md`, "Commands"):
+   * Annotation sidecars of every kind (`dev/patterns/annotations.md`, "Commands"):
    * `game.nex.dis`, `game.z80.dis`, a project's `annotations.dis`, a ROM's `sp48.rom.dis`. Read-only
    * JSON: they are edited through the annotation dialogs, which keep the file valid.
    */

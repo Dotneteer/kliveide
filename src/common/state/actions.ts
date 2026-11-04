@@ -522,7 +522,7 @@ export const setExportDialogInfoAction: ActionCreator = (value: ExportDialogSett
 
 /**
  * The project's annotation sidecar, relative to its folder (`.kliveproject`'s `annotations`). Absent
- * means the default, `annotations.dis` (`.docs/annotations.md`).
+ * means the default, `annotations.dis` (`dev/patterns/annotations.md`).
  */
 export const setProjectAnnotationsAction: ActionCreator = (value: string | undefined) => ({
   type: "SET_PROJECT_ANNOTATIONS",

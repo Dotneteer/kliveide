@@ -37,7 +37,7 @@ This folder stores durable notes for future AI-assisted work in this repository.
   written from scratch (decision D4): no commented ROM disassembly may be copied or consulted,
   from memory included, and every entry records its provenance. Log each authoring session in
   `PROVENANCE.md`. The machine-neutral annotation model (every machine's bank space, the active
-  annotation set, ROM sidecars) is described in `../.docs/annotations.md`.
+  annotation set, ROM sidecars) is described in `../dev/patterns/annotations.md`.
   **For the ZX81 ROM, also read `rom-annotations/zx81-authoring-guide.md`**: the working copy and
   the IDE open on it, the disassembly/apply/check tools in `rom-annotations/tools/`, harness
   probes, the traps already met, and what is left to annotate.

@@ -1,7 +1,7 @@
 import { symText, vregText, type Block, type Instr, type MFunction, type MModule, type Slot, type Terminator } from "./mir";
 
 /**
- * The MIR's text form (`.docs/z80-backend-mir.md` §9): what `'@emit-ir` writes and tests compare.
+ * The MIR's text form (`dev/patterns/z80-backend-mir.md` §9): what `'@emit-ir` writes and tests compare.
  * An operation's stated meaning is shown after it in braces (`div %1, %2 {trunc}`).
  */
 export function mirText(mir: MModule): string {

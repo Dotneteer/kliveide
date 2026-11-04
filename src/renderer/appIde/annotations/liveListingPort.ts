@@ -6,7 +6,7 @@ import type { RomPartitionInfo } from "./romAnnotationLoader";
 
 /*
  * The live Disassembly view's rows, in the terms the annotation editor works in
- * (`.docs/annotations.md`, "The Live Disassembly View").
+ * (`dev/patterns/annotations.md`, "The Live Disassembly View").
  *
  * The editor's controller edits one bank of one sidecar, with rows numbered by bank offset. A live
  * row is a Z80 address under the current paging. This turns one into the other:

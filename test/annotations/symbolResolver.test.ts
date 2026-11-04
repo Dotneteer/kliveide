@@ -18,7 +18,7 @@ import { profileOffsetOf } from "@common/profile/layouts/profileLayout";
 import { routineText } from "@renderer/appIde/SideBarPanels/CallStackPanel";
 
 /*
- * The shared resolver (`.docs/annotations.md`, "The Shared Resolver"): one answer to "what
+ * The shared resolver (`dev/patterns/annotations.md`, "The Shared Resolver"): one answer to "what
  * is this address called", for every view, from four sources in a fixed order.
  */
 

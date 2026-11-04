@@ -930,7 +930,7 @@ class EmuApiImpl {
   /**
    * Where each ROM partition came from and what it is, keyed by partition (`-1`, `-2`, ...): its
    * CRC-32 and size, and the file and 16K page holding those bytes
-   * (`.docs/annotations.md`, "ROM Annotations"). A machine without partitions reports
+   * (`dev/patterns/annotations.md`, "ROM Annotations"). A machine without partitions reports
    * its one ROM as `-1`. Empty for a machine whose ROMs carry no annotations.
    */
   async getRomSources(_withBytes?: boolean): Promise<Record<number, RomSource>> {

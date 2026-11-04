@@ -45,9 +45,9 @@ here does not have to be redrawn.
 4. **Provenance carries over.** The back end inherits Klive BASIC's provenance rule
    (`.ai/kbasic/compiler.md`, "Provenance (hard rule)"): it was written from scratch and stays so. A new front end
    brings its own provenance rule; nothing from another compiler's back end is read for design.
-5. **Docs move with the code.** The design notes `.docs/kbasic-mir.md`,
+5. **Docs move with the code.** The design notes `dev/patterns/kbasic-mir.md`,
    `kbasic-lir-regalloc.md`, `kbasic-optimiser.md` and `kbasic-debug-builder.md` describe back-end
-   machinery; each moves to a `.docs/z80-backend-*.md` name in the phase that moves its code, with
+   machinery; each moves to a `dev/patterns/z80-backend-*.md` name in the phase that moves its code, with
    the BASIC-specific parts (lowering of each BASIC construct, string ownership) staying in kbasic
    notes. `kbasic-string-ownership.md` stays a kbasic note.
 6. **Tests move with the code, and gain a front-end-free form.** Back-end unit tests are rewritten to
@@ -344,7 +344,7 @@ closes.
 - Move `test/kbasic/opt/*` and the selector/emitter tests to `test/z80-backend/`; rewrite the ones that
   compile BASIC only to reach MIR so they build MIR with `MirBuilder`. Keep a few BASIC-driven ones in
   `test/kbasic/codegen/` as integration tests.
-- Move `.docs/kbasic-lir-regalloc.md` and `.docs/kbasic-optimiser.md` to `z80-backend-*` names.
+- Move `dev/patterns/kbasic-lir-regalloc.md` and `dev/patterns/kbasic-optimiser.md` to `z80-backend-*` names.
 - Exit: snapshot identical; boundary baseline unchanged or smaller.
 
 ### Phase 2 — A language-neutral MIR
@@ -358,8 +358,8 @@ closes.
   attribute. New MIR-level tests cover every implemented attribute value, through `MirBuilder`.
 - Move `semantics/float40.ts` to `z80-backend/numeric/float40.ts`; update the binder, lowering, the
   renderer's value decoder and their tests.
-- Split `.docs/kbasic-mir.md`: the IR itself becomes `.docs/z80-backend-mir.md`; §8 (lowering of
-  every BASIC construct) stays as `.docs/kbasic-lowering.md`.
+- Split `dev/patterns/kbasic-mir.md`: the IR itself becomes `dev/patterns/z80-backend-mir.md`; §8 (lowering of
+  every BASIC construct) stays as `dev/patterns/kbasic-lowering.md`.
 - The `'@emit-ir` text shows the new names (`localcall` for `gosub`, ...): the only user-visible change
   in this plan. It is an `internal`-level note unless the author wants it in the CHANGELOG (D7).
 - Exit: no back-end file imports `kbasic/`; snapshot identical (the IR-text artefact is excluded from
@@ -406,7 +406,7 @@ closes.
 - `debug/builder.ts` and `debug/source-level.ts` move to `z80-backend/debug/` and read only
   `MModule` (with descriptors), the emitted program, the listing and the hooks. `globalName`,
   `Scope`, `KType`, `isLibraryPath` and `float40` disappear from them.
-- `.docs/kbasic-debug-builder.md` becomes `.docs/z80-backend-debug-builder.md`.
+- `dev/patterns/kbasic-debug-builder.md` becomes `dev/patterns/z80-backend-debug-builder.md`.
 - Exit: snapshot identical (debug JSON is part of it); `scripts/kbasic-ide-check.cjs` passes in the
   running IDE (stepping, call stack, Variables panel, CODEBANK).
 
@@ -423,7 +423,7 @@ closes.
   (`test/harness/sp48/`) and stop at statement breakpoints with correct call stacks. It exists to fail
   the day the back end grows a BASIC assumption; it is not a product.
 - Boundary baseline is empty and deleted; the test stays as a plain rule.
-- Add `.docs/z80-backend-frontend-guide.md` ("adding a language": the contract, the MIR builder, the
+- Add `dev/patterns/z80-backend-frontend-guide.md` ("adding a language": the contract, the MIR builder, the
   runtime packages, debug descriptors, problems, the shell, the tests a language must have) and a
   short **Shared Z80 back end** section in AGENTS.md pointing to it, with the rule that a new
   compiler produces MIR and never emits Z80 itself.
@@ -684,7 +684,7 @@ Each phase keeps every existing debugger test green for all three producers, plu
   (B-L13: a `fix` changeset of its own, since it is user-visible).
 - **B5 — Plugins.** The neutral watch AST and evaluator; the `basic` plugin (behaviour identical:
   every existing watch test passes unchanged); the `c` plugin; the registry. The boundary baseline is
-  empty and deleted. Add `.docs/source-debugging-model.md` (the model, the guarantees G1–G6 a producer
+  empty and deleted. Add `dev/patterns/source-debugging-model.md` (the model, the guarantees G1–G6 a producer
   must meet, the plugin contract, the tests a new language must have) and a line in AGENTS.md; the
   front-end guide of Part A links to it.
 

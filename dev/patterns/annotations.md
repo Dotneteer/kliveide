@@ -512,7 +512,7 @@ See `.plans/NEX_DMA_COPPER_REGIONS_PLAN.md`. The decoders are pure shared module
 
 ### The Reverse-Engineering Tools' Keys
 
-Added by the reverse-engineering tools (`.docs/reverse-engineering-tools.md`). Every one is a key a
+Added by the reverse-engineering tools (`dev/patterns/reverse-engineering-tools.md`). Every one is a key a
 shipped build ignores (R2); no
 schema bump, and Next files stay at version 2.
 

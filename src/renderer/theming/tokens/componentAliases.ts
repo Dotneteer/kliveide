@@ -644,7 +644,7 @@ export const componentAliases: Record<string, string> = {
    */
   "--color-annotation-rail": "var(--syntax-label)",
   /*
-   * A ROM label in the live Disassembly view (`.docs/annotations.md`
+   * A ROM label in the live Disassembly view (`dev/patterns/annotations.md`
    * §5.5): the label hue, because it is a name like any other, distinguished by weight and slant in
    * the stylesheet rather than by a hue of its own — a fourth hue in the row would read as another
    * data column.
@@ -775,7 +775,7 @@ export const componentAliases: Record<string, string> = {
   "--color-sprite-map-outline": "var(--color-state-value)",
   "--bgcolor-sprite-map-selected": "var(--accent-solid)",
 
-  // --- Graphics finder (`.docs/reverse-engineering-tools.md`, "Graphics finder", G-T3) ----------------------
+  // --- Graphics finder (`dev/patterns/reverse-engineering-tools.md`, "Graphics finder", G-T3) ----------------------
   /*
    * The machine's pixels are hardware colours (ink and paper from the ZX palette); everything drawn
    * over them is chrome, and takes these. The selection is the primary accent, as on every other

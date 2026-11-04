@@ -99,7 +99,10 @@ follows the same recipe, so a step can be reviewed as
 2. Rewrite references with a one-off script (kept in the scratchpad, not committed): replace the
    old path prefix with the new one in every tracked text file **except** the moved folder's own
    history-like content that must stay verbatim (`CHANGELOG.md`, `test/boriel/fixtures/`, zxbc
-   output, binary files). Match the prefix as a path (`.ai/` with the trailing slash, `` `.plans/ ``,
+   output, binary files) **and the Klive BASIC corpus programs** (`test/kbasic/corpus/**/*.zxbas`):
+   `test/z80-backend/snapshot/` pins their compiled output and diagnostics, and a longer path in a
+   comment shifts every offset after it (found in step 8; re-recording is a reviewed change). Their
+   comments keep the old paths. Match the prefix as a path (`.ai/` with the trailing slash, `` `.plans/ ``,
    `"_input/`), never the bare word.
 3. Fix the functional references by hand and check them (they are listed per step below); the rest
    are comments and Markdown links, where the script is enough.

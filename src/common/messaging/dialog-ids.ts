@@ -9,7 +9,7 @@ export const SJASMPLUS_INTEGRATION_DIALOG = 6;
 export const MACHINE_SELECT_DIALOG = 7;
 // --- Shown in whichever window has the focus too (`.plans/MENU_REDESIGN_PLAN.md` §4)
 export const SETTINGS_DIALOG = 8;
-// --- Detect code and data (`.docs/reverse-engineering-tools.md`, "Code/data detection")
+// --- Detect code and data (`dev/patterns/reverse-engineering-tools.md`, "Code/data detection")
 export const DETECT_CODE_DATA_DIALOG = 9;
 // --- Boriel BASIC setup (`.ai/boriel/integration.md`, "The setup dialog"). Both registries render it:
 // --- the first-run offer appears in the emulator window, Settings opens it in the IDE window

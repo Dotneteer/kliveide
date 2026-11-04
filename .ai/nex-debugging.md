@@ -8,7 +8,7 @@ a plan, both closed on 2026-11-04 (git history: `.plans/NEX_DEBUGGING_IDEAS.md`,
 `.plans/NEX_DEBUGGING_PLAN.md`). What is left is `.plans/NEX_DEBUGGING_FOLLOWUP_PLAN.md`. Read this
 before changing `DebugSupport`, the breakpoint model, `src/renderer/appIde/DocumentPanels/Next/` or
 the NEX launch. Source-level debugging of a compiled NEX (its sidecar) is
-`.docs/source-debugging-model.md`.
+`dev/patterns/source-debugging-model.md`.
 
 ## Decisions (Q1-Q9)
 

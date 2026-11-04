@@ -227,7 +227,7 @@ Plan §7.2 gives the passes per level. The MIR adds what they need:
 ## 8. Lowering a language
 
 How Klive BASIC lowers each of its constructs to MIR is Klive BASIC's, not the back end's: it is in
-`.docs/kbasic-lowering.md`. A new front end writes its own (`.docs/z80-backend-frontend-guide.md`).
+`dev/patterns/kbasic-lowering.md`. A new front end writes its own (`dev/patterns/z80-backend-frontend-guide.md`).
 
 ## 9. Text form and tests
 

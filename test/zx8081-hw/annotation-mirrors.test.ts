@@ -9,7 +9,7 @@ import { ZX80_MODELS, ZX81_MODELS } from "@emu/machines/zx8081/zx8081MachineInfo
 import { createZx81Session } from "../harness/zx81";
 
 /*
- * The ZX80/ZX81 bank spaces against the real core (`.docs/annotations.md`
+ * The ZX80/ZX81 bank spaces against the real core (`dev/patterns/annotations.md`
  * §4.7, T11): for every model, each address folds to the canonical address the core itself reads,
  * and every mirror the bank space reports for a site reads the same byte. A fold made without the
  * model would put a 1K program's label on a 64K machine's unrelated byte; this is what proves the

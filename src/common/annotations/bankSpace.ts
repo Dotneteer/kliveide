@@ -25,7 +25,7 @@ import {
  * bytes whichever slot their bank happens to sit in. What differs between machines is the arithmetic
  * between that site and a Z80 address, and it used to be written out four times, every time as the
  * ZX Spectrum Next's 8K-page arithmetic. On a 128K that arithmetic is not wrong loudly — a bank
- * breakpoint simply never fires (T1 of `.docs/annotations.md`).
+ * breakpoint simply never fires (T1 of `dev/patterns/annotations.md`).
  *
  * So every conversion goes through one object per machine, and `bankSpaceFor` is the only place a
  * machine id is looked at.

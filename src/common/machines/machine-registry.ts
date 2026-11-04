@@ -242,7 +242,7 @@ const Z88_MODELS: MachineModel[] = [
 /**
  * The 48K BASIC ROM's report codes (`RST $08`) and calculator literals (`RST $28`), decoded only in
  * a ROM page that is a 48K BASIC ROM — which is what lets the 128K, +3 and Scorpion have it, their
- * other ROM pages being different programs (`.docs/annotations.md`, "The Live Disassembly View").
+ * other ROM pages being different programs (`dev/patterns/annotations.md`, "The Live Disassembly View").
  */
 const spectrum48CustomDisassembler: CustomDisassemblerFactory = (context) =>
   gateOnRom(new ZxSpectrum48CustomDisassembler(), context, 0x4000);

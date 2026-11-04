@@ -115,7 +115,7 @@ const specialDocumentDefinitions: Record<SpecialDocumentId, SpecialDocumentDefin
     iconName: "gauge",
     workspaceRestorable: true
   }, { name: "panels.document.profiler" }),
-  // --- The graphics finder over the paused machine (`.docs/reverse-engineering-tools.md`, "Graphics finder")
+  // --- The graphics finder over the paused machine (`dev/patterns/reverse-engineering-tools.md`, "Graphics finder")
   [GRAPHICS_PANEL_ID]: withTexts({
     id: GRAPHICS_PANEL_ID,
     type: GRAPHICS_EDITOR,

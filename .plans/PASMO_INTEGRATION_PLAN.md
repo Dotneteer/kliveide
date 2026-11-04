@@ -150,7 +150,7 @@ are not documented. Phase 0 settles them by running the real executable.
 - Dialog (D4): `PASMO_INTEGRATION_DIALOG = 10` in `dialog-ids.ts`, a registry entry,
   `DialogCommands.ts` `pasmoIntegration`, `ui-action-ids.ts` `"dialog:pasmo"`, a `ui-actions.ts`
   case, and a `settings-pages.ts` "Assemblers" row "PASMO". Follow `.ai/ui-mvc-guide.md` and
-  `.docs/dialog-mvc-pattern.md`.
+  `dev/patterns/dialog-mvc-pattern.md`.
 - `commands/PasmoCommands.ts`: `pasmo-reset [path] [-p]`, registered in `IdeCommands.ts`.
 
 ### Phase 3 — Command line and templates

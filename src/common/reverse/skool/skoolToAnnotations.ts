@@ -11,7 +11,7 @@ import { applyProposals, proposeForBank, type BankProposal, type ProposalMode } 
 import type { SkoolBlockType, SkoolDocument, SkoolEntry, SkoolInstruction } from "./skoolTypes";
 
 /*
- * A SkoolKit skool or control file as Klive annotations (`.docs/reverse-engineering-tools.md`
+ * A SkoolKit skool or control file as Klive annotations (`dev/patterns/reverse-engineering-tools.md`
  * §6.3, phase S2). Written from SkoolKit's documented formats only (R7).
  *
  * - **Bytes come from Klive (R9, S-T2).** The importer never builds memory from instruction text.

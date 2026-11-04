@@ -12,7 +12,7 @@ import {
 } from "./skoolTypes";
 
 /*
- * A skool file reader (`.docs/reverse-engineering-tools.md`, "SkoolKit import and export").
+ * A skool file reader (`dev/patterns/reverse-engineering-tools.md`, "SkoolKit import and export").
  *
  * Written from SkoolKit's documented skool format only (R7). The rules it follows, in Klive's words:
  *

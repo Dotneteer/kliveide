@@ -1,7 +1,7 @@
 # Klive BASIC: lowering the typed tree to MIR
 
 How Klive BASIC's lowering (`src/main/kbasic/ir/lower.ts`) turns each BASIC construct into the shared
-back end's MIR (`.docs/z80-backend-mir.md`). It was §8 of the MIR note, which became the back end's
+back end's MIR (`dev/patterns/z80-backend-mir.md`). It was §8 of the MIR note, which became the back end's
 when the back end was shared (`.plans/SHARED_Z80_BACKEND_PLAN.md`); the section numbers below keep
 their original numbering. GOSUB lowers to `localcall`, ON ... GOSUB to a calling `switch`, END and
 ERROR to `exit`, and every operation states BASIC's meaning (`src/main/kbasic/ir/types.ts`): integer

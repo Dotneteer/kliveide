@@ -33,7 +33,7 @@ import type { GraphicCandidate } from "@common/reverse/graphicsCandidates";
 import styles from "./GraphicsView.module.scss";
 
 /*
- * Memory as bitmaps: the graphics finder's view (`.docs/reverse-engineering-tools.md`, "Graphics finder", R5).
+ * Memory as bitmaps: the graphics finder's view (`dev/patterns/reverse-engineering-tools.md`, "Graphics finder", R5).
  *
  * One component, used by the static memory dump's `graphics` view mode and by the live *Graphics*
  * document. It is handed the bytes and a look; it owns only what is about this view instant —

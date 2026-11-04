@@ -11,7 +11,7 @@ best place to start reading.
 
 1. Read the source and its options (its own syntax: header comments, directives, settings).
 2. Parse and check it; report its own diagnostics, in its own codes and words.
-3. **Lower it to MIR** (`.docs/z80-backend-mir.md`), with `mir/builder.ts`.
+3. **Lower it to MIR** (`dev/patterns/z80-backend-mir.md`), with `mir/builder.ts`.
 4. Call `compileModule(mir, backendOptions, frontEndInfo)` (`link/compile-module.ts`).
 5. Turn the back end's problems into its diagnostics (or use `problemMessage`), and hand the result to
    the IDE through the compiler shell (`compiler-shell/Z80LanguageCompiler.ts`).
@@ -45,7 +45,7 @@ otherwise):
   below IX, `prologue.end` after the prologue, an epilogue block starting with `epilogue.begin`, `ret`),
   `fragment`s (code called without a frame).
 - **State every meaning that differs between languages** (`rounding`, `overflow`, `toInt`, `shift`,
-  `truth`; `.docs/z80-backend-mir.md`, as-built note). The verifier rejects a missing one, and one
+  `truth`; `dev/patterns/z80-backend-mir.md`, as-built note). The verifier rejects a missing one, and one
   the back end does not implement yet rather than using another. To add one: selector support, the
   folder, a MIR-level test (`test/z80-backend/mir/semantics.test.ts`), then list it in `opt/verify.ts`.
 - **Runtime calls** are `rtcall core.X` with arguments in source order; the register contract comes
@@ -73,7 +73,7 @@ README there). A language adds its own package — a folder of `*.kz80.asm` modu
 ## 6. Debug information
 
 The back end builds the classic and source-level tables. The front end supplies, in the debugger's
-vocabulary (`.docs/source-debugging-model.md`):
+vocabulary (`dev/patterns/source-debugging-model.md`):
 
 - `MModule.globals` and each routine's `vars`: variable descriptors — name as written, value
   representation (`i16`, `float40`, `str.heap`, …), the type's name in the language (`typeLabel`), and

@@ -2,7 +2,7 @@ import type { GraphicsLook } from "@common/reverse/graphicsDecode";
 
 /*
  * `gfx <address> ...` asks the Graphics document to show an address with a look
- * (`.docs/reverse-engineering-tools.md`, "Graphics finder"). The document may not be mounted yet when the
+ * (`dev/patterns/reverse-engineering-tools.md`, "Graphics finder"). The document may not be mounted yet when the
  * command runs, so the request is held until a listener takes it — the pending-reveal pattern of
  * `spriteReveal.ts`.
  */

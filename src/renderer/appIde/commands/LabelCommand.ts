@@ -39,7 +39,7 @@ export type LabelCommandArgs = {
  * Closes the reverse-engineering loop: the moment you work out what a routine *is*, you are paused
  * in the debugger, and the name goes in from there; the live disassembly uses it at once.
  *
- * Works on every machine with a bank space (`.docs/annotations.md`, "Commands"):
+ * Works on every machine with a bank space (`dev/patterns/annotations.md`, "Commands"):
  *
  * - an address in RAM is named as a **local** label of the bank paged there, in the active set —
  *   the same routine is at a different Z80 address the next time its bank is paged elsewhere;

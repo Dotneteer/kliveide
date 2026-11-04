@@ -66,7 +66,7 @@ export function regionActionsFor(space: BankSpace | undefined): { id: NexAnnotat
 
 /**
  * Editing annotations from the live Disassembly view
- * (`.docs/annotations.md`, "The Live Disassembly View"): the row menu's annotation entries, their
+ * (`dev/patterns/annotations.md`, "The Live Disassembly View"): the row menu's annotation entries, their
  * shortcuts, and running one through the bank document's controller.
  */
 export function useLiveAnnotationEditing(args: {

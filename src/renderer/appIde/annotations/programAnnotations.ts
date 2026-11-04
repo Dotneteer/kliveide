@@ -17,7 +17,7 @@ export const NEXT_ANNOTATION_SCHEMA_VERSION = 2;
  *
  * **3** added `machine`. A Next sidecar never carries it and stays at 2, byte for byte, so a build
  * that reads only `[1, 2]` keeps opening every NEX sidecar — and refuses a 48K one instead of
- * reading its banks as Next banks. See `.docs/annotations.md`.
+ * reading its banks as Next banks. See `dev/patterns/annotations.md`.
  */
 export const MACHINE_ANNOTATION_SCHEMA_VERSION = 3;
 
@@ -99,7 +99,7 @@ export type AnnotationRegionType =
  * bit 7 set on its last character, listed as `.defc` rows (the Spectrum ROMs' keyword and message
  * tables); `fill` is runs of one repeated byte, listed as `.fillb count,value` rows (padding and
  * unused space); `graphic` is bytes laid out by the bank's matching `graphics` entry
- * (`.docs/annotations.md`, "The Reverse-Engineering Tools' Keys").
+ * (`dev/patterns/annotations.md`, "The Reverse-Engineering Tools' Keys").
  */
 export type DecodedRegionType = Extract<AnnotationRegionType, "copper" | "dma" | "text" | "defc" | "fill" | "graphic">;
 

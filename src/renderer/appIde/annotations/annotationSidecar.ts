@@ -106,7 +106,7 @@ function toSidecarAnnotations(annotations: ProgramAnnotations): Record<string, u
  * - **annotations** (`source`, `globalLabels`, `banks`) are written by the annotation session.
  * - **`debug`** (the bank breakpoints) is written by the breakpoint path.
  *
- * Both write the moment their half changes — the contract `.docs/annotations.md` describes.
+ * Both write the moment their half changes — the contract `dev/patterns/annotations.md` describes.
  * Sharing a policy is not the same as sharing a writer: writing the whole in-memory model from
  * either side would still revert whatever the other had written since it loaded, and the two run
  * independently and concurrently. So each reads the file, replaces only its own keys, and writes

@@ -18,7 +18,7 @@ import {
 } from "@common/reverse/sourceExportUi";
 
 /*
- * The reverse-engineering tools a listing offers (`.docs/reverse-engineering-tools.md`, "Code/data detection",
+ * The reverse-engineering tools a listing offers (`dev/patterns/reverse-engineering-tools.md`, "Code/data detection",
  * §6.4, §7.5): detection, source export, SkoolKit import and export. Each item is the panel-dialog
  * → command pattern of §2.4: a file dialog here, then a command with the path, so every action is
  * also scriptable.

@@ -440,7 +440,7 @@ class MainApiImpl {
   /**
    * The absolute path of a file in the Klive home folder (`<home>/Klive`, or the portable data
    * folder's `Klive`): where a user's annotations of a shipped ROM are kept
-   * (`.docs/annotations.md`, "ROM Annotations").
+   * (`dev/patterns/annotations.md`, "ROM Annotations").
    * @param _relative The path inside the Klive home folder
    */
   async resolveKliveHomePath(_relative: string): Promise<string> {
@@ -476,7 +476,7 @@ class MainApiImpl {
 
   /**
    * Assembles Klive Z80 source held in memory and returns its segments and errors, with no file
-   * I/O: how source export (`.docs/reverse-engineering-tools.md`, "Export as source", R10) proves its output
+   * I/O: how source export (`dev/patterns/reverse-engineering-tools.md`, "Export as source", R10) proves its output
    * reassembles to the bytes it came from.
    * @param _source The source text (it names its own `.model`)
    */
@@ -487,7 +487,7 @@ class MainApiImpl {
   /**
    * Assembles instructions one by one, each at its own address, and returns each one's bytes or
    * why it does not assemble: the byte check of a SkoolKit import
-   * (`.docs/reverse-engineering-tools.md`, S-T2). The assembler lives in the main process.
+   * (`dev/patterns/reverse-engineering-tools.md`, S-T2). The assembler lives in the main process.
    */
   async assembleLines(
     _lines: { text: string; address: number }[],

@@ -52,7 +52,7 @@ export class SelectOutputPaneCommand extends IdeCommandBase<SelectOutputArgs> {
 /**
  * `show-memory [<address>]`: displays the machine memory panel and, with an address, reveals it there
  * (in the 64K view) — the sibling of `show-disass <address>` the graphics finder's *Show in memory*
- * runs (`.docs/reverse-engineering-tools.md`, "Graphics finder").
+ * runs (`dev/patterns/reverse-engineering-tools.md`, "Graphics finder").
  */
 export class ShowMemoryCommand extends IdeCommandBase<{ address?: number }> {
   readonly id = "show-memory";

@@ -8,7 +8,7 @@
  * to a language (type names, how a local subroutine is labelled, the error reports) arrives as data
  * from the producer, or from the debugger's language plugin. Producers: Klive BASIC (the shared Z80
  * back end), Boriel BASIC (`boriel-integration/dbg-adapter.ts`), z88dk C
- * (`z88dk-integration/z88dk-debug-adapter.ts`). `.docs/source-debugging-model.md` describes it.
+ * (`z88dk-integration/z88dk-debug-adapter.ts`). `dev/patterns/source-debugging-model.md` describes it.
  *
  * Everything is JSON-serialisable: it crosses IPC and the worker boundary, and is kept in the NEX
  * debug sidecar (`source-debug-sidecar.ts`), whose readers upgrade version 1 (`source-debug-upgrade.ts`).

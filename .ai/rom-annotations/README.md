@@ -3,7 +3,7 @@
 Read this before adding or changing any `.rom.dis` under `src/public/roms/` (the Next's are in
 `src/public/roms/zxnext/<setId>/`). The shipped
 sidecars' `authoring` key points here. How ROM
-sidecars are stored, found and bound is `.docs/annotations.md` ("ROM Annotations"); the provenance rule and the session log are
+sidecars are stored, found and bound is `dev/patterns/annotations.md` ("ROM Annotations"); the provenance rule and the session log are
 `PROVENANCE.md` beside this file.
 
 ## The rule (decision D4) — read it twice

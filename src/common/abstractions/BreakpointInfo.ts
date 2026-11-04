@@ -25,7 +25,7 @@ export type BreakpointOwner =
   | {
       /**
        * The owner's name before the sidecars were for every machine
-       * (`.docs/annotations.md`, "Commands"). Read as `sidecar`: every reader goes
+       * (`dev/patterns/annotations.md`, "Commands"). Read as `sidecar`: every reader goes
        * through `sidecarOfOwner`, and the emulator stores it as `sidecar`.
        */
       kind: "nex";

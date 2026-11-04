@@ -11,7 +11,7 @@ import {
 } from "./skoolTypes";
 
 /*
- * A SkoolKit control file reader (`.docs/reverse-engineering-tools.md`, "SkoolKit import and export").
+ * A SkoolKit control file reader (`dev/patterns/reverse-engineering-tools.md`, "SkoolKit import and export").
  *
  * Written from SkoolKit's documented control-file format only (R7). It gives the same
  * `SkoolDocument` a skool file does, with no instruction text — a control file describes structure

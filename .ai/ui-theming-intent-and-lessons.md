@@ -525,7 +525,7 @@ colouring one never touches the others or the still-neutral panels. Full role ta
 
 ## The Graphics Finder: Hardware Pixels Under Token Chrome
 
-The graphics finder (`features/graphics/`, `.docs/reverse-engineering-tools.md`, "Graphics finder") draws
+The graphics finder (`features/graphics/`, `dev/patterns/reverse-engineering-tools.md`, "Graphics finder") draws
 memory as ZX bitmaps. The pixels are the machine's: ink and paper are `SPECTRUM_48_COLORS` entries
 the user picks (default `INK 0: PAPER 7`), never tokens. Everything drawn *over* them is chrome, on
 one overlay canvas, from `--color-graphics-*` aliases read off the element: the selection takes the
@@ -2981,7 +2981,7 @@ behaviour as the default and make the clever one an option.
 **A dialog earns MVC by having async orchestration, not by being big.** The joystick bindings
 dialog has two columns and twenty-four capture rows, which looks like the largest dialog in the app
 and is still a plain one: it reads a setting, captures keystrokes and writes once on Save, with no
-service calls to interleave or fail. `.docs/dialog-mvc-pattern.md` says the Intent/Event split is
+service calls to interleave or fail. `dev/patterns/dialog-mvc-pattern.md` says the Intent/Event split is
 "pure ceremony" for such a dialog, and it is right. What *did* deserve isolating was the rules —
 which pin loses a key to which, what a binding costs the emulated keyboard, how far a reset reaches
 — and those are pure functions in `common/settings/`, tested in the fast `node` project. That gets

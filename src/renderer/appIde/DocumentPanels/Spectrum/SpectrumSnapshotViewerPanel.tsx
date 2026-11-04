@@ -506,7 +506,7 @@ const BanksSection = ({ ctx, info, fullPath }: SectionProps & { fullPath: string
   const documentHubService = useDocumentHubService();
   const { navigationHistoryService, projectService } = useAppServices();
   /*
-   * The snapshot's annotations (`<snapshot>.dis`, `.docs/annotations.md`
+   * The snapshot's annotations (`<snapshot>.dis`, `dev/patterns/annotations.md`
    * §4.6): a popped-out bank is annotated when the file exists, and the banner creates it, as the
    * NEX viewer's does. Loading the snapshot into the machine (`zx-snapshot`) makes the same file the
    * active annotation set.
