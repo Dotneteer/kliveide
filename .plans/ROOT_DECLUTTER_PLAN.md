@@ -160,9 +160,13 @@ goes while the recipe is fresh and before the big comment-only rewrites.
   contributors, release scripts). No moves yet; this is the landing point the later steps fill.
 - **Add `"!dev"` to `package.json` `build.files` in this step, before anything moves in.** That list
   is `**/*` minus exclusions, so a folder it does not name is packaged: without the entry, step 7 would
-  ship 4671 research files and step 11 the scripts inside the app. (Today `.ai/`, `.docs/`, `.plans/` and `.changes/` are not
-  excluded either; check a packaged build and record whether electron-builder's own dot-file
-  defaults kept them out.)
+  ship 4671 research files and step 11 the scripts inside the app. *Done (step 2).* **Found while checking (step 3):** they were not kept out. The app
+  archive of the 2026-10-23 macOS build, and a fresh `--dir` build, carry `.ai/`, `.changes/`,
+  `.claude/`, `.docs/`, `.plans/`, `_experiments/`, `scripts/`, `AGENTS.md`, `tsconfig.json` and,
+  on a developer machine, the ignored scratch folders (`.visual-tests/`, `i18n-work/`, ...). `"!dev"`
+  drops most of them as the moves land; what it leaves (`.claude/`, `AGENTS.md`, `tsconfig.json`,
+  local scratch) is a follow-up of its own: turn `build.files` into an allowlist (`out/**`,
+  `package.json`, what the app reads at run time) instead of `**/*` minus exclusions.
 - Update the "Project Context" section of `AGENTS.md` to describe `dev/` with the paths it will hold,
   marking the not-yet-moved ones.
 
@@ -178,7 +182,9 @@ goes while the recipe is fresh and before the big comment-only rewrites.
 - Checks: `npx electron-builder --dir` on one platform builds and the app bundle carries the icon.
 - Side finding to fix here: `build/electron-builder.json5` is stale (`.ai/boriel/integration.md` says
   so; its `buildResources` points at a missing `src/electron/resources`). Delete it, and update the
-  comment in `src/main/recording/ffmpegAvailable.ts` that names it.
+  comment in `src/main/recording/ffmpegAvailable.ts` that names it. *Done:* that comment credited the file with unpacking
+  `@ffmpeg-installer`; it never took part in a build, and electron-builder unpacks the package on its
+  own (present in `app.asar.unpacked` in both the 2026-10-23 build and the step 3 build).
 
 ### Step 4. `_experiments/` -> `dev/experiments/`
 

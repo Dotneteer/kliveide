@@ -223,7 +223,7 @@
     },
     "mac": {
       "target": "pkg",
-      "icon": "public/images/klive-logo.icns"
+      "icon": "build/icons/klive-logo.icns"
     },
     "win": {
       "target": [
@@ -242,7 +242,7 @@
       ],
       "artifactName": "KliveIde-Portable-${version}-${arch}.${ext}",
       "asar": false,
-      "icon": "public/images/512x512.png"
+      "icon": "build/icons/512x512.png"
     },
     "nsis": {
       "artifactName": "KliveIdeSetup-${version}-${arch}.${ext}",
@@ -250,7 +250,7 @@
     },
     "linux": {
       "target": "AppImage",
-      "icon": "public/images/512x512.png"
+      "icon": "build/icons/512x512.png"
     },
     "dmg": {
       "backgroundColor": "#00b4cc",
@@ -267,7 +267,6 @@
       "!vendor",
       "!CHANGELOG.md",
       "!pages",
-      "!public",
       "!release",
       "!src",
       "!test",
