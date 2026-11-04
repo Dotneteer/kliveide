@@ -1,0 +1,1 @@
+{ "description": "The Get Started bouncing ball: a DO ... LOOP whose block statement starts at its first inner statement's address (dbg-observed.md 16), at optimisation level 1", "args": ["--arch", "zx48k", "-O", "1", "-S", "32768"] }

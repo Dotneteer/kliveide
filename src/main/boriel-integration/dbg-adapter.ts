@@ -170,11 +170,35 @@ export function adaptBorielDebugInfo(input: DbgAdapterInput): DbgAdapterOutput {
     .sort((a, b) => a.start - b.start);
 
   // --- Statements: sorted by address, re-indexed densely, ends clamped, columns corrected
-  const raw: any[] = (sld.statements ?? []).slice().sort(
+  const sorted: any[] = (sld.statements ?? []).slice().sort(
     (a: any, b: any) => a.startAddress - b.startAddress || (a.partition ?? -1) - (b.partition ?? -1)
   );
+  // --- A block statement (`DO` … `LOOP`, a multi-line `IF`, ...) that starts at the address of the
+  // --- first statement inside it holds that statement's bytes, while the inner one is recorded
+  // --- empty (`dbg-observed.md` 16): the bytes are the inner statement's, so the block's entry is
+  // --- dropped and anything naming it (a call site) names the inner statement instead
+  const enclosedBy = new Map<any, any>();
+  for (const s of sorted) {
+    const inner = sorted.find(
+      (o) =>
+        o !== s &&
+        o.startAddress === s.startAddress &&
+        (o.partition ?? undefined) === (s.partition ?? undefined) &&
+        o.fileIndex === s.fileIndex &&
+        s.startLine <= o.startLine &&
+        s.endLine >= o.endLine &&
+        s.endLine - s.startLine > o.endLine - o.startLine
+    );
+    if (inner) enclosedBy.set(s, inner);
+  }
+  const raw = sorted.filter((s) => !enclosedBy.has(s));
   const indexOf = new Map<number, number>();
   raw.forEach((s, i) => indexOf.set(s.index, i));
+  for (const [block, inner] of enclosedBy) {
+    let target = inner;
+    while (enclosedBy.has(target)) target = enclosedBy.get(target);
+    indexOf.set(block.index, indexOf.get(target.index)!);
+  }
   // --- A modular build (`USE`) records every statement as the main program's: the routine whose
   // --- frame holds the statement's address, in the same bank, is its owner (`dbg-observed.md` 15)
   const mainRaw = entrypointIndex(rawCallables);

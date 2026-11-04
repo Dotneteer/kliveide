@@ -998,7 +998,7 @@ Carried over from the handoff note written at the end of B6 (removed 2026-11-04,
 4. **Small leftovers:** debugging a `.nex` built outside Klive from zxbc's raw `.dbg` (§6.4). The
    128K tape loader crash is fixed (§7); whether a banked Boriel export should go back to Klive's
    loader (so `-as`, `-n`, `-b`, `-scr` work again) instead of zxbc's tape is still to decide.
-5. **The debug-info check warns on the Get Started program** (`scripts/doc-shots/fixtures/get-started/bouncing-ball`):
+5. ~~**The debug-info check warns on the Get Started program**~~ **Fixed 2026-11-04** (`dbg-observed.md` 16: a block statement swallowed its first inner statement's bytes; the adapter drops the block's entry; fixture `do-loop`). (`scripts/doc-shots/fixtures/get-started/bouncing-ball`):
    `ZXBC-D`, "statements 2 and 3 overlap" (its first `DIM ... = value` lines). Seen 2026-11-04, when
    Boriel BASIC became the only compiler (`.plans/KLIVE_BASIC_SWITCH_OFF_PLAN.md`); the program builds,
    runs and debugs. Every reader of Get Started sees the warning, so it is the first beta issue to fix.

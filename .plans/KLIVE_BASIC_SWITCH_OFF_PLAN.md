@@ -1,6 +1,6 @@
 # Switching Klive BASIC off in favour of Boriel BASIC (beta)
 
-Status: **implemented** (2026-11-04). Decided by the project author. The debug-info check still warns on the Get Started program ("statements 2 and 3 overlap", a `ZXBC-D` warning): a beta issue for `BORIEL_BASIC_INTEGRATION_PLAN.md` §13.
+Status: **implemented** (2026-11-04). Decided by the project author.
 
 ## 0. Goal and decisions
 

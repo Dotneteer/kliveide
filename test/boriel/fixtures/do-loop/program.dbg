@@ -1,0 +1,395 @@
+{
+  "format": "zx-source-debug",
+  "version": 1,
+  "architecture": "zx48k",
+  "binaryLength": 6449,
+  "binaryChecksum": 3227663698,
+  "sourceLevelDebug": {
+    "language": "basic",
+    "files": [
+      {
+        "index": 0,
+        "filename": "program.bas"
+      }
+    ],
+    "statements": [
+      {
+        "index": 2,
+        "fileIndex": 0,
+        "startLine": 12,
+        "startColumn": 0,
+        "endLine": 12,
+        "endColumn": 3,
+        "startAddress": 37566,
+        "endAddress": 37569,
+        "kind": "normal",
+        "callableIndex": 1,
+        "callTargets": []
+      },
+      {
+        "index": 4,
+        "fileIndex": 0,
+        "startLine": 13,
+        "startColumn": 0,
+        "endLine": 13,
+        "endColumn": 13,
+        "startAddress": 37569,
+        "endAddress": 37588,
+        "kind": "normal",
+        "callableIndex": 1,
+        "callTargets": []
+      },
+      {
+        "index": 5,
+        "fileIndex": 0,
+        "startLine": 15,
+        "startColumn": 0,
+        "endLine": 15,
+        "endColumn": 20,
+        "startAddress": 37588,
+        "endAddress": 37588,
+        "kind": "normal",
+        "callableIndex": 1,
+        "callTargets": []
+      },
+      {
+        "index": 14,
+        "fileIndex": 0,
+        "startLine": 14,
+        "startColumn": 0,
+        "endLine": 24,
+        "endColumn": 4,
+        "startAddress": 37588,
+        "endAddress": 37602,
+        "kind": "normal",
+        "callableIndex": 1,
+        "callTargets": []
+      },
+      {
+        "index": 6,
+        "fileIndex": 0,
+        "startLine": 16,
+        "startColumn": 0,
+        "endLine": 16,
+        "endColumn": 14,
+        "startAddress": 37602,
+        "endAddress": 37613,
+        "kind": "normal",
+        "callableIndex": 1,
+        "callTargets": []
+      },
+      {
+        "index": 11,
+        "fileIndex": 0,
+        "startLine": 17,
+        "startColumn": 4,
+        "endLine": 21,
+        "endColumn": 10,
+        "startAddress": 37613,
+        "endAddress": 37637,
+        "kind": "normal",
+        "callableIndex": 1,
+        "callTargets": []
+      },
+      {
+        "index": 7,
+        "fileIndex": 0,
+        "startLine": 18,
+        "startColumn": 0,
+        "endLine": 18,
+        "endColumn": 16,
+        "startAddress": 37637,
+        "endAddress": 37646,
+        "kind": "normal",
+        "callableIndex": 1,
+        "callTargets": []
+      },
+      {
+        "index": 8,
+        "fileIndex": 0,
+        "startLine": 19,
+        "startColumn": 0,
+        "endLine": 19,
+        "endColumn": 29,
+        "startAddress": 37646,
+        "endAddress": 37653,
+        "kind": "normal",
+        "callableIndex": 1,
+        "callTargets": []
+      },
+      {
+        "index": 10,
+        "fileIndex": 0,
+        "startLine": 20,
+        "startColumn": 8,
+        "endLine": 20,
+        "endColumn": 21,
+        "startAddress": 37653,
+        "endAddress": 37672,
+        "kind": "normal",
+        "callableIndex": 1,
+        "callTargets": []
+      },
+      {
+        "index": 12,
+        "fileIndex": 0,
+        "startLine": 22,
+        "startColumn": 0,
+        "endLine": 22,
+        "endColumn": 20,
+        "startAddress": 37672,
+        "endAddress": 37686,
+        "kind": "normal",
+        "callableIndex": 1,
+        "callTargets": []
+      },
+      {
+        "index": 13,
+        "fileIndex": 0,
+        "startLine": 23,
+        "startColumn": 4,
+        "endLine": 23,
+        "endColumn": 11,
+        "startAddress": 37686,
+        "endAddress": 37695,
+        "kind": "normal",
+        "callableIndex": 1,
+        "callTargets": []
+      },
+      {
+        "index": 15,
+        "fileIndex": 0,
+        "startLine": 14,
+        "startColumn": 0,
+        "endLine": 25,
+        "endColumn": 0,
+        "startAddress": 37695,
+        "endAddress": 37700,
+        "kind": "normal",
+        "callableIndex": 1,
+        "callTargets": []
+      },
+      {
+        "index": 1,
+        "fileIndex": 0,
+        "startLine": 9,
+        "startColumn": 4,
+        "endLine": 9,
+        "endColumn": 23,
+        "startAddress": 37722,
+        "endAddress": 37751,
+        "kind": "normal",
+        "callableIndex": 0,
+        "callTargets": []
+      }
+    ],
+    "callables": [
+      {
+        "index": 0,
+        "name": "DrawBall",
+        "kind": "subroutine",
+        "fileIndex": 0,
+        "line": 8,
+        "entryAddress": 37714,
+        "exitAddresses": [
+          37764
+        ]
+      },
+      {
+        "index": 1,
+        "name": "main",
+        "kind": "entrypoint",
+        "fileIndex": 0,
+        "line": 1,
+        "entryAddress": 32768,
+        "exitAddresses": [
+          37700
+        ]
+      }
+    ],
+    "addressToStatement": [
+      [
+        37566,
+        2
+      ],
+      [
+        37569,
+        4
+      ],
+      [
+        37588,
+        5
+      ],
+      [
+        37588,
+        14
+      ],
+      [
+        37602,
+        6
+      ],
+      [
+        37613,
+        11
+      ],
+      [
+        37637,
+        7
+      ],
+      [
+        37646,
+        8
+      ],
+      [
+        37653,
+        10
+      ],
+      [
+        37672,
+        12
+      ],
+      [
+        37686,
+        13
+      ],
+      [
+        37695,
+        15
+      ],
+      [
+        37722,
+        1
+      ]
+    ],
+    "usesBanking": false,
+    "partitionedAddressMap": [],
+    "extensions": {
+      "frames": [
+        {
+          "callableIndex": 0,
+          "convention": "frame",
+          "returnSlotOffset": 2,
+          "argBytes": 4,
+          "startAddress": 37714,
+          "bodyStart": 37722,
+          "epilogueStart": 37751,
+          "endAddress": 37774
+        },
+        {
+          "callableIndex": 1,
+          "convention": "entrypoint",
+          "returnSlotOffset": 0,
+          "argBytes": 0,
+          "startAddress": 32768,
+          "bodyStart": 37566,
+          "epilogueStart": 37700
+        }
+      ],
+      "mainBaselineSymbol": 32790,
+      "callSites": [
+        {
+          "returnAddress": 37602,
+          "statementIndex": 5,
+          "calleeIndex": 0,
+          "kind": "sub",
+          "order": 0,
+          "moreCallsFollow": false
+        },
+        {
+          "returnAddress": 37686,
+          "statementIndex": 12,
+          "calleeIndex": 0,
+          "kind": "sub",
+          "order": 0,
+          "moreCallsFollow": false
+        }
+      ],
+      "variables": [
+        {
+          "name": "x",
+          "displayName": "x",
+          "type": "integer",
+          "kind": "global",
+          "location": {
+            "at": "absolute",
+            "address": 37560
+          },
+          "byRef": false,
+          "scope": "global",
+          "declaredAt": {
+            "fileIndex": 0,
+            "line": 4
+          }
+        },
+        {
+          "name": "dx",
+          "displayName": "dx",
+          "type": "integer",
+          "kind": "global",
+          "location": {
+            "at": "absolute",
+            "address": 37562
+          },
+          "byRef": false,
+          "scope": "global",
+          "declaredAt": {
+            "fileIndex": 0,
+            "line": 5
+          }
+        },
+        {
+          "name": "bounces",
+          "displayName": "bounces",
+          "type": "uinteger",
+          "kind": "global",
+          "location": {
+            "at": "absolute",
+            "address": 37564
+          },
+          "byRef": false,
+          "scope": "global",
+          "declaredAt": {
+            "fileIndex": 0,
+            "line": 6
+          }
+        },
+        {
+          "name": "column",
+          "displayName": "column",
+          "type": "integer",
+          "kind": "parameter",
+          "location": {
+            "at": "frame",
+            "ixOffset": 4
+          },
+          "byRef": false,
+          "scope": {
+            "callableIndex": 0
+          },
+          "declaredAt": {
+            "fileIndex": 0,
+            "line": 8
+          }
+        },
+        {
+          "name": "ball",
+          "displayName": "ball",
+          "type": "string",
+          "kind": "parameter",
+          "location": {
+            "at": "frame",
+            "ixOffset": 6
+          },
+          "byRef": false,
+          "scope": {
+            "callableIndex": 0
+          },
+          "declaredAt": {
+            "fileIndex": 0,
+            "line": 8
+          }
+        }
+      ]
+    }
+  }
+}

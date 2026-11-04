@@ -44,9 +44,23 @@ const statementAt = (sld: SourceLevelDebugInfo, address: number) => {
 
 describe("the .dbg adapter", () => {
   it("passes its own checks on every fixture", () => {
-    for (const [name, arch] of [["calls", "zx48k"], ["calls-next", "zxnext"], ["arrays", "zx48k"], ["runtime-error", "zx48k"]]) {
+    for (const [name, arch] of [["calls", "zx48k"], ["calls-next", "zxnext"], ["arrays", "zx48k"], ["runtime-error", "zx48k"], ["do-loop", "zx48k"]]) {
       expect(adapt(name, arch).problems, name).toEqual([]);
     }
+  });
+
+  it("gives a DO block's first inner statement its bytes, not the block (dbg-observed.md 16)", () => {
+    const { sourceLevelDebug: sld, problems } = adapt("do-loop");
+    expect(problems).toEqual([]);
+    // --- DrawBall(x, " ") (line 15) is the first statement inside DO (line 14): zxbc recorded it
+    // --- empty and gave its bytes to a DO statement over lines 14-24
+    const first = statementOn(sld, 15);
+    const next = statementOn(sld, 16);
+    expect(first.endAddress).toBe(next.startAddress);
+    expect(statementAt(sld, first.startAddress)).toBe(first.index);
+    expect(sld.statements.some((s) => s.startLine === 14 && s.endLine === 24)).toBe(false);
+    // --- The LOOP's jump back keeps its own statement
+    expect(sld.statements.some((s) => s.startLine === 14 && s.endLine === 25)).toBe(true);
   });
 
   it("re-indexes statements densely in address order (zxbc's have gaps: removed statements)", () => {
