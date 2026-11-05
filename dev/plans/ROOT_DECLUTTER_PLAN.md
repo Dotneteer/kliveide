@@ -117,9 +117,10 @@ Git moves only tracked files. After pulling:
   ZX Spectrum Next ran. On the final tree, a later instrumented launch would not answer on its
   debugging ports after an earlier forced kill of a test run (the main thread was idle in its event
   loop, so the app itself ran); a by-hand launch is the remaining GUI check.
-- Not run: the jsdom test tier (171 files) cannot start on the closing machine's Node 22.14
-  (jsdom's bundled undici needs 22.19 or later). Run `npm test` on a newer Node; until then
-  `release:prepare` will warn that the slow tier has not passed on these sources.
+- The jsdom test tier (171 files) could not start on the closing machine's Node 22.14: jsdom 30
+  needs Node `^22.22.2 || ^24.15.0 || >=26` (its bundled undici, 22.19 or later), which
+  `package.json`'s `engines` now states. On Node 22.23.4 (2026-11-05) `npm test` passed: 1475 files,
+  the jsdom tier included.
 
 ## 8. Further options, not taken
 
