@@ -18,7 +18,7 @@ const resolveRuntimeModules = (labels: string[], modules?: string[]) => library.
 const allModules = library.packages.flatMap((p) => p.modules);
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const indexer = require("../../../scripts/runtime-index.cjs");
+const indexer = require("../../../dev/scripts/runtime-index.cjs");
 
 function options(defines: string[] = []): AssemblerOptions {
   const o = new AssemblerOptions();

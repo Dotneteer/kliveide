@@ -1,7 +1,7 @@
 @use "@styles/core.scss" as *;
 
 /*
- * The Select Machine dialog (`.plans/MACHINE_SELECT_DIALOG_PLAN.md` §4): an accordion of machine
+ * The Select Machine dialog (`dev/plans/MACHINE_SELECT_DIALOG_PLAN.md` §4): an accordion of machine
  * types and models on the left, the selected model's hardware sheet on the right.
  *
  * The body is a fixed-height two-pane frame so the dialog does not jump as sections open and as

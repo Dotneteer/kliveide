@@ -1,7 +1,7 @@
 /*
  * The types of the emulator's debug recording calls (`EmuApi.saveDebugRecording`,
  * `EmuApi.loadDebugRecording`), shared by the IDE, the main process and the emulator
- * (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` §4.4).
+ * (`dev/plans/DEBUG_SESSION_RECORDING_PLAN.md` §4.4).
  */
 
 import type { RecordingSources } from "./debugRecordingFile";

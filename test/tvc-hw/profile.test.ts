@@ -8,7 +8,7 @@ import { createTvcSession, type TvcTestSession } from "../harness/tvc";
 import { bareMachine } from "./bare";
 
 /*
- * The TVC's access profile, history partitions and IDE partitions (`.ai/videoton-tvc.md`, "Memory
+ * The TVC's access profile, history partitions and IDE partitions (`dev/ai/videoton-tvc.md`, "Memory
  * partitions, history and profile"): a byte's profile offset is its offset in the core's physical
  * memory, so a byte reached through a page lands in the bank the mapper showed, and the layout
  * names it back as that partition.

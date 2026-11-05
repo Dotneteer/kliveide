@@ -7,7 +7,7 @@ import { sanitize } from "@main/unit-tests/unitTestProjectSettings";
 import { usageError } from "./exit-codes";
 
 /*
- * `klive.project` read without Electron (`.plans/UNIT_TESTS_CLI_PLAN.md` D2, D6, D13): the build
+ * `klive.project` read without Electron (`dev/plans/UNIT_TESTS_CLI_PLAN.md` D2, D6, D13): the build
  * root, the machine, the project's settings (compiler settings live there) and the `unitTests`
  * section. The IDE's loader (`src/main/projects.ts`) applies a project to the store; this one only
  * reads the fields a headless build and test run need.

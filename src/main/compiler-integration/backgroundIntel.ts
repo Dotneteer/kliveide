@@ -11,7 +11,7 @@ export function hasErrorSeverity(errors: readonly AssemblerErrorInfo[] | undefin
 
 /**
  * The language-intelligence actions a background check's result leads to
- * (`.plans/BASIC_EDITOR_INTELLIGENCE_PLAN.md` E3, E4):
+ * (`dev/plans/BASIC_EDITOR_INTELLIGENCE_PLAN.md` E3, E4):
  *
  * - The assembler's intel is published when the result has no error; warnings never block it.
  *   Otherwise the last good snapshot stays, so intel survives a half-typed line.

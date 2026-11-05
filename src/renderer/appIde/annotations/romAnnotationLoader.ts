@@ -21,8 +21,8 @@ import type { RomLayer } from "./romLayer";
 import { inheritsOf, type InheritedSidecarSource } from "./romInheritance";
 
 /*
- * Finding a ROM page's sidecar (`.plans/ROM_ANNOTATION_EDITING_PLAN.md` §4.2, which amends §5.2-§5.3
- * of `.docs/annotations.md`).
+ * Finding a ROM page's sidecar (`dev/plans/ROM_ANNOTATION_EDITING_PLAN.md` §4.2, which amends §5.2-§5.3
+ * of `dev/patterns/annotations.md`).
  *
  * **One sidecar is in effect for a page**, chosen in this order:
  *

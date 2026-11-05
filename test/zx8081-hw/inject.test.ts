@@ -6,7 +6,7 @@ import { playInjectionFlow } from "@common/headless/frameRunner";
 import { createZx81Session, Zx81TestSession } from "../harness/zx81";
 
 /**
- * Running built code on the ZX81 and ZX80 (`.ai/zx8081.md`, "Machine code decisions", D4): the machine's
+ * Running built code on the ZX81 and ZX80 (`dev/ai/zx8081.md`, "Machine code decisions", D4): the machine's
  * own injection flow, played as the IDE plays it - boot to the editor's key wait, write the
  * `1 REM`/`2 RAND USR` program, type RUN - on the real cores.
  *

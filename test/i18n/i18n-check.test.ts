@@ -2,10 +2,10 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { checkI18n, renderKeysFile } from "../../scripts/i18n-check.cjs";
-import { buildTodo } from "../../scripts/i18n-todo.cjs";
-import { renderSourceFile, renderTranslationsFile } from "../../scripts/i18n-lib.cjs";
-import { extractJsonObject, mergeTranslations } from "../../scripts/i18n-merge.cjs";
+import { checkI18n, renderKeysFile } from "../../dev/scripts/i18n-check.cjs";
+import { buildTodo } from "../../dev/scripts/i18n-todo.cjs";
+import { renderSourceFile, renderTranslationsFile } from "../../dev/scripts/i18n-lib.cjs";
+import { extractJsonObject, mergeTranslations } from "../../dev/scripts/i18n-merge.cjs";
 
 let root: string;
 

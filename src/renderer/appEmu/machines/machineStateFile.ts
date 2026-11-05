@@ -1,6 +1,6 @@
 /*
  * Saves and loads Klive state files (`.kls`) for every WASM machine: the orchestration of
- * `.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.8.
+ * `dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.8.
  *
  * Save:
  *  1. A machine with no state (stopped, never started) cannot be saved.
@@ -156,7 +156,7 @@ export async function saveMachineStateFile(
 
 /**
  * The state file of the machine as it stands now - no pause, no resume: the caller holds the machine
- * still (a state save, or a debug recording's present, `.plans/DEBUG_SESSION_RECORDING_PLAN.md` D16)
+ * still (a state save, or a debug recording's present, `dev/plans/DEBUG_SESSION_RECORDING_PLAN.md` D16)
  */
 export function captureKliveStateFile(
   ports: MachineStatePorts,

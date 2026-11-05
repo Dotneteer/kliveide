@@ -11,7 +11,7 @@ import { tvcExportFile } from "@renderer/appIde/utils/tvc-code";
 import { createTvcSession, type TvcTestSession } from "../harness/tvc";
 
 /**
- * The TVC project template (`.ai/videoton-tvc.md`, "Run, Debug and export") assembles without
+ * The TVC project template (`dev/ai/videoton-tvc.md`, "Run, Debug and export") assembles without
  * errors and does what its comments say, run as the IDE runs it and loaded from its export. The
  * pictures were checked by eye (`TVC_TEMPLATE_PNG=<dir>` writes them); the test finds the
  * template's two lines of text as the rows of ink it has more than a program that prints nothing.

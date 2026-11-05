@@ -7,7 +7,7 @@ import { useSelector } from "@renderer/core/RendererProvider";
 import styles from "./HistoryBanner.module.scss";
 
 /*
- * The "present" band (`.plans/LITE_STEP_BACK_PLAN.md` D6): its own module, with nothing but the
+ * The "present" band (`dev/plans/LITE_STEP_BACK_PLAN.md` D6): its own module, with nothing but the
  * store behind it, so every memory-reading panel can show it without pulling in the IDE services.
  */
 

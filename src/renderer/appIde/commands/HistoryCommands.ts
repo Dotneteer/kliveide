@@ -63,7 +63,7 @@ import {
 } from "@renderer/appIde/services/ide-commands";
 
 /*
- * The execution history's commands (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.5). They gate on
+ * The execution history's commands (`dev/plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.5). They gate on
  * the `MF_EXEC_HISTORY` capability, not on a machine id, so G4.2 lights them up without changes,
  * and on the advanced-debugging switch (`@common/features/advancedDebugging`).
  */
@@ -216,7 +216,7 @@ export class HistoryCommand extends IdeCommandBase<{ count?: number }> {
 }
 
 // =================================================================================================
-// Trace export (`.plans/TRACE_EXPORT_PLAN.md` §4.2, G4.5)
+// Trace export (`dev/plans/TRACE_EXPORT_PLAN.md` §4.2, G4.5)
 
 /** Records one read fetches (the document's `BULK_READ`, D11) */
 const EXPORT_PAGE = 8192;
@@ -299,7 +299,7 @@ export function resolveExportRange(
 
 /**
  * `history-export <file>`: writes a range of the execution history to a text or CSV trace, so two
- * runs can be compared with any diff tool (`.plans/TRACE_EXPORT_PLAN.md`)
+ * runs can be compared with any diff tool (`dev/plans/TRACE_EXPORT_PLAN.md`)
  */
 export class HistoryExportCommand extends IdeCommandBase<HistoryExportArgs> {
   readonly id = "history-export";
@@ -506,7 +506,7 @@ function messageOf(err: unknown): string {
 }
 
 // =================================================================================================
-// Lite step back (`.plans/LITE_STEP_BACK_PLAN.md` §4.5, G4.3): the history cursor. Navigation is
+// Lite step back (`dev/plans/LITE_STEP_BACK_PLAN.md` §4.5, G4.3): the history cursor. Navigation is
 // not a machine command (D4); it moves what the IDE shows, never the machine.
 
 /** Moves the history cursor and reports where it went, or why it did not */
@@ -654,11 +654,11 @@ export class HistoryPresentCommand extends IdeCommandBase {
 
 /**
  * `history-take-over`: the point the machine stands at in the past becomes the present
- * (`.plans/REVERSE_DEBUGGING_PLAN.md` D12): the recorded future goes, and live input resumes
+ * (`dev/plans/REVERSE_DEBUGGING_PLAN.md` D12): the recorded future goes, and live input resumes
  */
 export class HistoryTakeOverCommand extends IdeCommandBase<{ "-y"?: boolean }> {
   readonly id = "history-take-over";
-  // --- Asks for a confirmation: never through automation (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` T5)
+  // --- Asks for a confirmation: never through automation (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` T5)
   readonly automation = "deny" as const;
   get description() {
     return t("commands.history.takeOver.description");

@@ -1,6 +1,6 @@
 /*
  * The Klive state file (`.kls`): a machine's complete state, for any WASM machine
- * (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.7, D8). Pure: no Node, no DOM.
+ * (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.7, D8). Pure: no Node, no DOM.
  *
  *   "KLIVESTA" · u16 container version (1) · u16 flags (0)
  *   u32 header length · header JSON (UTF-8)

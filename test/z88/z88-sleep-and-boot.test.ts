@@ -11,7 +11,7 @@ import { createZ88Session, Z88_LCD } from "../harness/z88";
  * The boot tests are the smoke test of the whole machine: every model's ROM runs, draws its Index
  * screen and waits for a key.
  *
- * Step 0.3 of `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`.
+ * Step 0.3 of `dev/plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`.
  */
 describe("Z88 sleep mode", () => {
   async function haltWithI(i: number) {

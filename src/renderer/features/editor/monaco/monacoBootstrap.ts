@@ -72,7 +72,7 @@ export async function initializeMonaco(): Promise<void> {
     navigateMonacoToFile
   );
 
-  // --- Klive BASIC (`.zxbas`): `.plans/BASIC_EDITOR_INTELLIGENCE_PLAN.md`
+  // --- Klive BASIC (`.zxbas`): `dev/plans/BASIC_EDITOR_INTELLIGENCE_PLAN.md`
   registerBasicProviders(monaco, {
     getService: () => basicIntelSingleton,
     getProjectFolder: getMonacoProjectFolder,
@@ -81,7 +81,7 @@ export async function initializeMonaco(): Promise<void> {
     applyExternalEdits: applyMonacoExternalEdits
   });
 
-  // --- The profiler's hints at each routine's first line (`.plans/PROFILER_PLAN.md` D15)
+  // --- The profiler's hints at each routine's first line (`dev/plans/PROFILER_PLAN.md` D15)
   for (const language of PROFILER_INLAY_LANGUAGES) registerProfilerInlayProvider(monaco, language);
 
   monacoEditor.editor.registerEditorOpener({

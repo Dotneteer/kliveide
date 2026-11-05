@@ -16,10 +16,10 @@ import { junitOfLastRun } from "@renderer/appIde/unit-tests/unitTestJUnit";
 import { compileProject } from "../../src/cli/compile";
 import { createCliMachine } from "../../src/cli/headless";
 import { loadProject } from "../../src/cli/project";
-import { buildSp48Wasm } from "../../scripts/build-sp48-wasm.cjs";
+import { buildSp48Wasm } from "../../dev/scripts/build-sp48-wasm.cjs";
 
 /*
- * `klive test` and `klive build` end to end (`.plans/UNIT_TESTS_CLI_PLAN.md` Phase 1, §6): the real
+ * `klive test` and `klive build` end to end (`dev/plans/UNIT_TESTS_CLI_PLAN.md` Phase 1, §6): the real
  * command line, in this process, on the fixture projects under `test/cli/fixtures/` - compiled by the
  * Klive assembler and run on the real 48K core with its ROM. It checks D3's exit codes 0-4, the JUnit
  * file (D7) and its byte identity between runs (D10), LCOV (D8) and TAP (D4).

@@ -13,7 +13,7 @@ import { MessengerBase } from "@messaging/MessengerBase";
 import { DebugSupport } from "@emu/machines/DebugSupport";
 import { AUDIO_SAMPLE_RATE, FILE_PROVIDER } from "@emu/machines/machine-props";
 import { Z88WasmV2Machine } from "@emu/machines/z88/Z88WasmV2Machine";
-import { buildZ88Wasm, productionOutput, waitForZ88WasmBuildLock } from "../../../../scripts/build-z88-wasm.cjs";
+import { buildZ88Wasm, productionOutput, waitForZ88WasmBuildLock } from "../../../../dev/scripts/build-z88-wasm.cjs";
 
 /**
  * The Z88 machine the harness drives: only the machine API (`IZ88Machine`) and the IDE surface
@@ -139,9 +139,9 @@ let wasmArtifactChecked = false;
 
 /** What the artifact is built from: the Z88 core, the shared Z80 core it includes, the build script */
 const WASM_INPUTS = ["src/emu/machines/z88/wasm/z88", "src/emu/z80/wasm"];
-const WASM_BUILD_SCRIPT = "scripts/build-z88-wasm.cjs";
+const WASM_BUILD_SCRIPT = "dev/scripts/build-z88-wasm.cjs";
 /** The layout stamp's writer: a change to what it stamps (the code hash) needs a rebuild too */
-const WASM_LAYOUT_SCRIPT = "scripts/wasm-layout.cjs";
+const WASM_LAYOUT_SCRIPT = "dev/scripts/wasm-layout.cjs";
 
 /** The inputs newer than the production artifact (all of them when there is none) */
 function staleZ88WasmInputs(): string[] {

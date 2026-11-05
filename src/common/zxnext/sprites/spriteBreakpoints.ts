@@ -1,6 +1,6 @@
 /*
  * Sprite-attribute breakpoints (`sp:`), the pure parts: the attribute-byte filter's text form and the
- * stop message (`.plans/SPRITE_ATTRIBUTE_BREAKPOINTS_PLAN.md`).
+ * stop message (`dev/plans/SPRITE_ATTRIBUTE_BREAKPOINTS_PLAN.md`).
  *
  * Pure: no React, no Node. The command line, the breakpoint dialog, the Breakpoints panel and the
  * machine controller share it.

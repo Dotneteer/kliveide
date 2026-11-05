@@ -11,7 +11,7 @@ import {
 } from "@emu/machines/enterprise/EpTapeFile";
 
 /*
- * The Enterprise's cassette (`.plans/ENTERPRISE_PLAN.md` §9.3, `ep-tape.c`, `EpTapeFile.ts`) on the real
+ * The Enterprise's cassette (`dev/plans/ENTERPRISE_PLAN.md` §9.3, `ep-tape.c`, `EpTapeFile.ts`) on the real
  * EXOS 2.1 and IS-BASIC: a SAVE recorded from the left D/A and published as an ep128emu `.tap`, LOADed
  * back in a fresh machine at fast and at real speed, a data file of several chunks written and read
  * back through an EPTE tape Klive's writer built, the motor stopping between chunks, a CRC error, the

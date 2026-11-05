@@ -32,7 +32,7 @@ export function clearDetectedTextFiles(): void {
 
 // --- What files hold when their extension cannot tell (a tokenised HT-1080Z `.bas`), by full path:
 // --- filled from the tree the main process sniffs, read by `getFileTypeEntry`
-// --- (`.plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D2)
+// --- (`dev/plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D2)
 const fileContentKinds = new Map<string, FileContentKind>();
 // --- The files a tree has listed, so a kind that changes can be told from one seen the first time
 const listedFilePaths = new Set<string>();

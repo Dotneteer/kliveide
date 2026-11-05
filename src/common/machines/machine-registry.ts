@@ -88,7 +88,7 @@ import { M6510Disassembler } from "@renderer/appIde/disassemblers/6510-disassemb
 /**
  * The Cambridge Z88 models. Their ids never change (saved projects refer to them) and they select no
  * backend: they follow `DEFAULT_Z88_IMPLEMENTATION`, WASM since Step 14 of
- * `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md` ("Machine menu during the comparison period").
+ * `dev/plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md` ("Machine menu during the comparison period").
  */
 const Z88_MODELS: MachineModel[] = [
   {
@@ -242,7 +242,7 @@ const Z88_MODELS: MachineModel[] = [
 /**
  * The 48K BASIC ROM's report codes (`RST $08`) and calculator literals (`RST $28`), decoded only in
  * a ROM page that is a 48K BASIC ROM — which is what lets the 128K, +3 and Scorpion have it, their
- * other ROM pages being different programs (`.docs/annotations.md`, "The Live Disassembly View").
+ * other ROM pages being different programs (`dev/patterns/annotations.md`, "The Live Disassembly View").
  */
 const spectrum48CustomDisassembler: CustomDisassemblerFactory = (context) =>
   gateOnRom(new ZxSpectrum48CustomDisassembler(), context, 0x4000);
@@ -334,7 +334,7 @@ export const machineRegistry: MachineInfo[] = [
       [MF_EXEC_HISTORY]: true,
       // --- Passes the journal-replay determinism test (REVERSE_DEBUGGING_PLAN D19)
       [MF_REVERSE_DEBUG]: true,
-      // --- Code coverage and the heat map (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D15)
+      // --- Code coverage and the heat map (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D15)
       [MF_PROFILE]: true
     },
     models: [
@@ -389,7 +389,7 @@ export const machineRegistry: MachineInfo[] = [
       [MF_EXEC_HISTORY]: true,
       // --- Passes the journal-replay determinism test (REVERSE_DEBUGGING_PLAN D19)
       [MF_REVERSE_DEBUG]: true,
-      // --- Code coverage and the heat map (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D15)
+      // --- Code coverage and the heat map (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D15)
       [MF_PROFILE]: true
     },
     // --- The disks are the Pentagon's Beta 128 (the model's `MC_DISK_SUPPORT`; the 128K has none)
@@ -423,7 +423,7 @@ export const machineRegistry: MachineInfo[] = [
       [MF_EXEC_HISTORY]: true,
       // --- Passes the journal-replay determinism test (REVERSE_DEBUGGING_PLAN D19)
       [MF_REVERSE_DEBUG]: true,
-      // --- Code coverage and the heat map (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D15)
+      // --- Code coverage and the heat map (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D15)
       [MF_PROFILE]: true
     },
     mediaIds: [MEDIA_TAPE, MEDIA_DISK_A, MEDIA_DISK_B],
@@ -463,10 +463,10 @@ export const machineRegistry: MachineInfo[] = [
       [MF_EXEC_HISTORY]: true,
       // --- Passes the journal-replay determinism test (REVERSE_DEBUGGING_PLAN D19)
       [MF_REVERSE_DEBUG]: true,
-      // --- Code coverage and the heat map (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D15)
+      // --- Code coverage and the heat map (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D15)
       [MF_PROFILE]: true
     },
-    // --- One model per Next profile: a board and a core version (`.ai/zxnext-models.md` D1)
+    // --- One model per Next profile: a board and a core version (`dev/ai/zxnext-models.md` D1)
     models: NEXT_PROFILE_IDS.map((modelId) => ({ modelId, displayName: nextModelDisplayName(modelId), config: {} })),
     mediaIds: [MEDIA_TAPE],
     toolInfo: {
@@ -480,7 +480,7 @@ export const machineRegistry: MachineInfo[] = [
     }
   },
   {
-    // --- The Timex core (`.plans/TIMEX_SCORPION_PLAN.md`): the TC2048 (G9.4a), a 48K with Timex's
+    // --- The Timex core (`dev/plans/TIMEX_SCORPION_PLAN.md`): the TC2048 (G9.4a), a 48K with Timex's
     // --- SCLD - the extra screen modes, port $FF, a Kempston port; the TC2068/TS2068 (G9.4b) add the
     // --- 8K chunk map (HOME/DOCK/EXROM partitions H0-H7, D0-D7, X0-X7), the AY and the cartridge.
     machineId: MI_TIMEX,
@@ -499,7 +499,7 @@ export const machineRegistry: MachineInfo[] = [
       [MF_EXEC_HISTORY]: true,
       // --- Passes the journal-replay determinism test (REVERSE_DEBUGGING_PLAN D19)
       [MF_REVERSE_DEBUG]: true,
-      // --- Code coverage and the heat map (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D15)
+      // --- Code coverage and the heat map (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D15)
       [MF_PROFILE]: true
     },
     models: TIMEX_MODELS,
@@ -516,7 +516,7 @@ export const machineRegistry: MachineInfo[] = [
     }
   },
   {
-    // --- The Scorpion ZS-256 (`.plans/TIMEX_SCORPION_PLAN.md` G9.4c): its own machine on the 128K
+    // --- The Scorpion ZS-256 (`dev/plans/TIMEX_SCORPION_PLAN.md` G9.4c): its own machine on the 128K
     // --- core - 256K in sixteen banks, $1FFD, four ROMs (R0-R3), the Beta 128 built in (P3)
     machineId: MI_SCORPION,
     displayName: "Scorpion ZS-256",
@@ -533,7 +533,7 @@ export const machineRegistry: MachineInfo[] = [
       [MF_EXEC_HISTORY]: true,
       // --- Passes the journal-replay determinism test (REVERSE_DEBUGGING_PLAN D19)
       [MF_REVERSE_DEBUG]: true,
-      // --- Code coverage and the heat map (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D15)
+      // --- Code coverage and the heat map (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D15)
       [MF_PROFILE]: true
     },
     mediaIds: [MEDIA_TAPE, MEDIA_DISK_A, MEDIA_DISK_B],
@@ -564,7 +564,7 @@ export const machineRegistry: MachineInfo[] = [
       [MF_EXEC_HISTORY]: true,
       // --- Passes the journal-replay determinism test (REVERSE_DEBUGGING_PLAN D19)
       [MF_REVERSE_DEBUG]: true,
-      // --- Code coverage and the heat map (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D15)
+      // --- Code coverage and the heat map (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D15)
       [MF_PROFILE]: true
     },
     models: [...Z88_MODELS],
@@ -591,14 +591,14 @@ export const machineRegistry: MachineInfo[] = [
     features: {
       [MF_Z80]: true,
       [MF_TAPE_SUPPORT]: true,
-      // --- Built code goes in as a 1 REM program and RUN (`.ai/zx8081.md`, "Machine code decisions", D4)
+      // --- Built code goes in as a 1 REM program and RUN (`dev/ai/zx8081.md`, "Machine code decisions", D4)
       [MF_INJECT_SUPPORT]: true,
       [MF_ALLOW_SCAN_LINES]: false,
       // --- The shared execution-history recorder (EXECUTION_HISTORY_ALL_CORES_PLAN)
       [MF_EXEC_HISTORY]: true,
       // --- Passes the journal-replay determinism test (REVERSE_DEBUGGING_PLAN D19)
       [MF_REVERSE_DEBUG]: true,
-      // --- Code coverage and the heat map (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D15)
+      // --- Code coverage and the heat map (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D15)
       [MF_PROFILE]: true
     },
     models: [...ZX81_MODELS],
@@ -624,14 +624,14 @@ export const machineRegistry: MachineInfo[] = [
     features: {
       [MF_Z80]: true,
       [MF_TAPE_SUPPORT]: true,
-      // --- As the ZX81's (`.ai/zx8081.md`, "Machine code decisions", D4)
+      // --- As the ZX81's (`dev/ai/zx8081.md`, "Machine code decisions", D4)
       [MF_INJECT_SUPPORT]: true,
       [MF_ALLOW_SCAN_LINES]: false,
       // --- The shared execution-history recorder (EXECUTION_HISTORY_ALL_CORES_PLAN)
       [MF_EXEC_HISTORY]: true,
       // --- Passes the journal-replay determinism test (REVERSE_DEBUGGING_PLAN D19)
       [MF_REVERSE_DEBUG]: true,
-      // --- Code coverage and the heat map (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D15)
+      // --- Code coverage and the heat map (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D15)
       [MF_PROFILE]: true
     },
     models: [...ZX80_MODELS],
@@ -651,7 +651,7 @@ export const machineRegistry: MachineInfo[] = [
     }
   },
   {
-    // --- `.plans/HT1080Z_PLAN.md`: Series I, Series II and the /64 (D1), Series I/II also with 48K.
+    // --- `dev/plans/HT1080Z_PLAN.md`: Series I, Series II and the /64 (D1), Series I/II also with 48K.
     machineId: MI_HT1080Z,
     displayName: "HT-1080Z",
     charSet: Ht1080zChars,
@@ -661,14 +661,14 @@ export const machineRegistry: MachineInfo[] = [
       [MF_PSG]: true,
       // --- .cas/.cmd/.bas tapes, real time or fast load (§9)
       [MF_TAPE_SUPPORT]: true,
-      // --- Built code goes into RAM and starts, as SYSTEM would (`.plans/HT1080Z_CODE_INJECTION_PLAN.md`)
+      // --- Built code goes into RAM and starts, as SYSTEM would (`dev/plans/HT1080Z_CODE_INJECTION_PLAN.md`)
       [MF_INJECT_SUPPORT]: true,
       [MF_ALLOW_SCAN_LINES]: false,
       // --- The shared execution-history recorder (EXECUTION_HISTORY_ALL_CORES_PLAN)
       [MF_EXEC_HISTORY]: true,
       // --- Passes the journal-replay determinism test (REVERSE_DEBUGGING_PLAN D19)
       [MF_REVERSE_DEBUG]: true,
-      // --- Code coverage and the heat map (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D15)
+      // --- Code coverage and the heat map (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D15)
       [MF_PROFILE]: true
     },
     // --- Each model shows its own character ROM's glyphs in the memory panel and the BASIC listing
@@ -693,7 +693,7 @@ export const machineRegistry: MachineInfo[] = [
     }
   },
   {
-    // --- `.ai/videoton-tvc.md`, "Decisions": the 64K and the 64K+ (D2)
+    // --- `dev/ai/videoton-tvc.md`, "Decisions": the 64K and the 64K+ (D2)
     machineId: MI_TVC,
     displayName: "Videoton TVC",
     charSet: TvcChars,
@@ -729,7 +729,7 @@ export const machineRegistry: MachineInfo[] = [
     }
   },
   {
-    // --- `.plans/ENTERPRISE_PLAN.md`: the 128 and the 64 as models (D2). The IDE's
+    // --- `dev/plans/ENTERPRISE_PLAN.md`: the 128 and the 64 as models (D2). The IDE's
     // --- surfaces arrive phase by phase: the picture (3), sound (4), keyboard and FILE: (5), the
     // --- debugger's partitions, history and profile (7), Run and tapes (8), EXDOS and disks (9).
     machineId: MI_ENTERPRISE,
@@ -842,15 +842,15 @@ export function getMachineName(machineId: string, modelId?: string): string {
  * session can still name one; `resolveModelId` maps it before the registry is searched.
  *
  * The Cambridge Z88's "WASM preview" twins (`<id>-wasm`, Steps 9-13 of
- * `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`) became the originals when WASM became the default,
+ * `dev/plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`) became the originals when WASM became the default,
  * and its "TypeScript" twins (`<id>-ts`) went with the TypeScript emulation
- * (`.plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`). A leftover `z88Implementation` key in a saved
+ * (`dev/plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`). A leftover `z88Implementation` key in a saved
  * configuration is ignored.
  *
  * The ZX Spectrum Next's "compatibility" model selected the TypeScript emulator, which was removed
- * once the WASM core reached parity (`.plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`, D4), and
+ * once the WASM core reached parity (`dev/plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`, D4), and
  * "standard" was its one model before each Next model became a profile (a board and a core version,
- * `.ai/zxnext-models.md` D1). Both open on the model they were made with, KS2 with
+ * `dev/ai/zxnext-models.md` D1). Both open on the model they were made with, KS2 with
  * core 3.02.01.
  */
 export const modelIdAliases: Readonly<Record<string, Readonly<Record<string, string>>>> = {
@@ -866,7 +866,7 @@ export const modelIdAliases: Readonly<Record<string, Readonly<Record<string, str
 /**
  * The model a reference *without* a model id means, for machines that gained models after projects,
  * favourites and state files had already saved them without one. The ZX Spectrum 128K had no models
- * until the Pentagon 128 became its second one (`.plans/PENTAGON_128_PLAN.md`, P1).
+ * until the Pentagon 128 became its second one (`dev/plans/PENTAGON_128_PLAN.md`, P1).
  */
 export const implicitModelIds: Readonly<Record<string, string>> = {
   [MI_SPECTRUM_128]: "sp128",
@@ -881,7 +881,7 @@ export const implicitModelIds: Readonly<Record<string, string>> = {
 /**
  * The model a new project starts on when nothing else picks one (no running model of the type, no
  * favourite), for machines whose newest model is not their first. The Next's first model is the one
- * old projects mean; new work starts on the newest core (`.ai/zxnext-models.md` D7).
+ * old projects mean; new work starts on the newest core (`dev/ai/zxnext-models.md` D7).
  */
 export const newProjectModelIds: Readonly<Record<string, string>> = {
   [MI_ZXNEXT]: NEW_PROJECT_NEXT_PROFILE_ID

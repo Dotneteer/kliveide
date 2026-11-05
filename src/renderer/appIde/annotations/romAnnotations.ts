@@ -5,7 +5,7 @@ import type { RomPartitionInfo } from "./romAnnotationLoader";
 
 /*
  * The ROM layers of the machine running now, by ROM partition
- * (`.docs/annotations.md`, "ROM Annotations").
+ * (`dev/patterns/annotations.md`, "ROM Annotations").
  *
  * Filled by the ROM annotation loader whenever the machine's ROM sources change (a machine start,
  * a ROM property change) or a layer is edited; read by the shared resolver. A module singleton, like

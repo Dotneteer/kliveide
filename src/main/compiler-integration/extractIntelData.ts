@@ -36,7 +36,7 @@ export function extractLanguageIntelData(output: KliveCompilerOutput): LanguageI
     visitModule(output as any, "", symbolDefinitions, outline);
   }
 
-  // --- `.proc`/`.endp` blocks (`.plans/PROFILER_PLAN.md` D7): an outline entry spanning the block
+  // --- `.proc`/`.endp` blocks (`dev/plans/PROFILER_PLAN.md` D7): an outline entry spanning the block
   const procedures: ProcedureInfo[] =
     "procedures" in output && Array.isArray((output as any).procedures) ? (output as any).procedures : [];
   for (const proc of procedures) {

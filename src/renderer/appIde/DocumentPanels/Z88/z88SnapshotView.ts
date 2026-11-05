@@ -1,5 +1,5 @@
 /*
- * What the `.z88` viewer shows, computed without React (`.plans/Z88_SNAPSHOT_PLAN.md` §4.8): the
+ * What the `.z88` viewer shows, computed without React (`dev/plans/Z88_SNAPSHOT_PLAN.md` §4.8): the
  * Blink registers' bit names, which bank each address range holds, each slot's banks, and the RTC
  * as a duration. The panel only lays these out.
  */

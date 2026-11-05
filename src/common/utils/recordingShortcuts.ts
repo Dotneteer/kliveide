@@ -8,7 +8,7 @@ import { createSettingsReader } from "./SettingsReader";
  * user setting, like the stepping and navigation shortcuts. The default is free in the menus, the
  * machine menus and Monaco's re-bound keys (which cover F7 with one modifier, not two).
  *
- * See `.plans/IDE_EMU_RECORDING_PLAN.md` §5.3.
+ * See `dev/plans/IDE_EMU_RECORDING_PLAN.md` §5.3.
  */
 
 export const SHORTCUT_RECORD_IDE_EMU = "shortcuts.recordIdeEmu";

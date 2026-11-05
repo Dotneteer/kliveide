@@ -9,7 +9,7 @@ import { DiskImageError } from "@emu/machines/disk/DiskImageError";
 import { DSK_CORPUS, corpusDisk, pattern } from "./dskCorpus";
 
 /*
- * The DSK reader and writer (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, A0/A1): real images round
+ * The DSK reader and writer (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, A0/A1): real images round
  * trip byte for byte, the generated corpus round trips through the model, and broken images are
  * refused with a reason.
  */

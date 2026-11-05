@@ -11,7 +11,7 @@ import { describeZx8081Context } from "@common/history/contexts/zx8081Context";
 import { describeSp48Context } from "@common/history/contexts/sp48Context";
 
 /*
- * The pure parts of execution history on every core (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`):
+ * The pure parts of execution history on every core (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`):
  * the context decoders against hand-built bytes, and the interrupt service spans the viewer folds
  * (D10). The decoders are checked against the live machines' `getPartition` in `test/wasm/history/`.
  */

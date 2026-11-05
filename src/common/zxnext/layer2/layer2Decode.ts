@@ -1,5 +1,5 @@
 /*
- * The ZX Spectrum Next's Layer 2, decoded (`.plans/LAYER2_INSPECTOR_PLAN.md` §4.1, D3). Pure: a pixel
+ * The ZX Spectrum Next's Layer 2, decoded (`dev/plans/LAYER2_INSPECTOR_PLAN.md` §4.1, D3). Pure: a pixel
  * is a function of one byte and three registers, so the inspector decodes it here rather than asking
  * the core. Every rule copies the Layer 2 passes and `zxnextUlaReadLayer2Pixel` in `zxnext-ula.c`
  * and `zxnextMemoryResolveLayer2Offset` in `zxnext-memory.c`, which follow `layer2.vhd` and

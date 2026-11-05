@@ -11,7 +11,7 @@ import { createHarnessZ88Machine } from "../harness/z88";
  * The Cambridge Z88 has no route for code built in the IDE: OZ owns the memory and its paging, so
  * "inject", "run" and "debug" have nothing to write the code into or start it from. The machine
  * used to answer with a stub - no code written, entry point 0 - so "run" rebooted OZ. Follow-up F4 of
- * `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`: the machine declares no inject support, the IDE
+ * `dev/plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`: the machine declares no inject support, the IDE
  * refuses all three before compiling, and the machine refuses too if anything reaches it.
  */
 

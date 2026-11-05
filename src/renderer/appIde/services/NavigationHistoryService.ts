@@ -33,7 +33,7 @@ const TAB_SWITCH_REASONS: ReadonlySet<NavigationReason> = new Set(["tabSwitch", 
  * the entries in a `NavigationHistory`, restores entries through their adapters, and publishes what
  * the UI needs into `ideView.navHistory`.
  *
- * See `.plans/NAVIGATION_HISTORY_PLAN.md` §3.4.
+ * See `dev/plans/NAVIGATION_HISTORY_PLAN.md` §3.4.
  */
 export class NavigationHistoryService implements INavigationHistoryService {
   private readonly _history: NavigationHistory;

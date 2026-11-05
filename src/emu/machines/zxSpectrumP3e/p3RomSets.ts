@@ -2,7 +2,7 @@ import type { MachineConfigSet, MachineModel } from "@common/machines/info-types
 import { MC_DISK_SUPPORT, MC_SP3_ROM_SET } from "@common/machines/constants";
 
 /*
- * The ROM sets the `spp3e` core boots (`.plans/PLUS3_AMSTRAD_ROMS_PLAN.md`, P2-P4). The core is the
+ * The ROM sets the `spp3e` core boots (`dev/plans/PLUS3_AMSTRAD_ROMS_PLAN.md`, P2-P4). The core is the
  * Amstrad +2A/+3 gate array whichever set is loaded; what differs between the sets is the ROM
  * images and the few ROM addresses the IDE's flows wait for. This table owns those addresses: no
  * flow writes one as a literal.

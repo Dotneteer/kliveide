@@ -2,7 +2,7 @@ import { tokenizeBasicProgram } from "@common/basic/spectrumBasicTokenizer";
 import type { DiskFileKind, DiskFsKind, NewDiskFile } from "./types";
 
 /*
- * Host files as disk files (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, B4): what a file dropped on
+ * Host files as disk files (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, B4): what a file dropped on
  * or added to the Disk Explorer becomes.
  *
  * - `.tap`: every file on the tape, with its header's kind, name and parameters; a headerless block

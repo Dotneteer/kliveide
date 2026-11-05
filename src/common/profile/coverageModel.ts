@@ -6,7 +6,7 @@ import { resolvedPartitionFor } from "@common/utils/source-breakpoint-partition"
 import type { LcovFile } from "@common/profile/coverageExport";
 
 /*
- * Code coverage of a compilation's source lines (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D11,
+ * Code coverage of a compilation's source lines (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D11,
  * D12, T8). Pure: the compilation gives every line's instruction starts, each with the partition its
  * code lives in; the core's flags at those starts (`getProfileSample`) say which ran.
  *

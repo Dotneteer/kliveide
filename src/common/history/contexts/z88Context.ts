@@ -1,6 +1,6 @@
 /*
  * The Cambridge Z88's 16-byte history context (`z88HistoryContext` at the end of `z88.c`,
- * `.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` §3):
+ * `dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` §3):
  *   0-3  SR0-SR3, the segment registers
  *   4-11 the bank behind each 8K page, which covers the split segment 0
  *   12   COM.RAMS (bit 2): bank $20 rather than $00 at $0000-$1FFF

@@ -1,5 +1,5 @@
 /*
- * The HT-1080Z memory map (HARDWARE.md §3; `.plans/HT1080Z_PLAN.md` §3):
+ * The HT-1080Z memory map (HARDWARE.md §3; `dev/plans/HT1080Z_PLAN.md` §3):
  *
  *   0000-2FFF  Level II BASIC ROM (12K)
  *   3000-37FF  the extension EPROM (2K window)

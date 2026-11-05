@@ -12,12 +12,12 @@ import {
 
 /*
  * Reads the access profile of any WASM core (`src/emu/z80/wasm/z80-profile.c`,
- * `.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §4.2): the same exports on every core, and a header that
+ * `dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §4.2): the same exports on every core, and a header that
  * says where the flags, the page map and the counter pool are. The reader views them in place, as the
  * history reader views its ring.
  */
 
-/** The exports every profiling core has (`scripts/z80-profile-exports.cjs`) */
+/** The exports every profiling core has (`dev/scripts/z80-profile-exports.cjs`) */
 export const Z80_PROFILE_CORE_EXPORTS = [
   "z80ProfileGetHeaderOffset",
   "z80ProfileGetFlagsOffset",
@@ -86,7 +86,7 @@ const H_FLAGS_OFFSET = 100;
 const H_PAGE_MAP_OFFSET = 104;
 const H_POOL_OFFSET = 108;
 const H_PAGE_MAP_ENTRIES = 112;
-// --- The call tracker (version 2, `.plans/PROFILER_PLAN.md` §4.2)
+// --- The call tracker (version 2, `dev/plans/PROFILER_PLAN.md` §4.2)
 const H_CALLS_ON = 11;
 const H_STACK_RESYNCS = 116;
 const H_DEPTH_OVERFLOWS = 120;

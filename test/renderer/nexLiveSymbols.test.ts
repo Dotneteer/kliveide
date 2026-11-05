@@ -13,7 +13,7 @@ import {
  * The popped-out bank's listing already names things — it knows which bank it is showing. The live
  * view knows only Z80 addresses and its banks move underneath it, so the same routine reads
  * `call DrawSprite` in the pop-out and `call $C100` while the program runs, which is the moment the
- * name is worth most. See `.ai/nex-debugging.md`.
+ * name is worth most. See `dev/ai/nex-debugging.md`.
  */
 
 /** Eight 8K slots. Bank 5 is pages 10/11, bank 6 is 12/13. */

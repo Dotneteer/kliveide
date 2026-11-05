@@ -1,13 +1,13 @@
 # Enterprise 64/128 WASM Core
 
-One C core runs both Enterprise models (`.plans/ENTERPRISE_PLAN.md`, decision D2): `epConfigure` picks
+One C core runs both Enterprise models (`dev/plans/ENTERPRISE_PLAN.md`, decision D2): `epConfigure` picks
 128K or 64K of RAM and the ROMs present, and the host uploads the model's ROMs. It builds to
 `dist/ep.wasm` (`npm run build:ep-wasm`) and is loaded by `EpWasmV2Loader.ts`. The TypeScript side is
 `../EpWasmHost.ts` (plumbing) and `../EpWasmV2Machine.ts` (the adapter). There is no TypeScript
 Enterprise machine and no second CPU: the core includes the shared Z80 (`src/emu/z80/wasm/z80.c`)
 through its `Z80_*` hooks. It needed no new hook.
 
-The hardware facts come from the research pack `_input/enterprise128/` (`NICK_VIDEO.md`,
+The hardware facts come from the research pack `dev/research/enterprise128/` (`NICK_VIDEO.md`,
 `NICK_VIDEO_BACKGROUND.md`, `DAVE_MEMORY_IO.md`, `DAVE_AUDIO_BACKGROUND.md`). The code is Klive's own;
 no emulator's code was ported (plan D1).
 

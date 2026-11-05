@@ -1,5 +1,5 @@
 /*
- * The React-free part of the ZX Spectrum snapshot viewer (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md`
+ * The React-free part of the ZX Spectrum snapshot viewer (`dev/plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md`
  * §4.8): paging decoded, the 64K as the snapshot pages it, the bank list, and the AY registers in
  * words. The panel only lays these out.
  */

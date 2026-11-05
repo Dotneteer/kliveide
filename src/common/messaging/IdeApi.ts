@@ -108,7 +108,7 @@ abstract class IdeApiImpl {
 
   /**
    * Executes a command into a fresh output buffer, mirrored to the Build pane, and returns its
-   * output as plain text lines with the result (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D9).
+   * output as plain text lines with the result (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` D9).
    * With `automation`, a command marked `automation: "deny"` is refused instead of run (T5).
    * @param _commandText The command text to execute.
    * @param _options Options of the run.
@@ -137,7 +137,7 @@ abstract class IdeApiImpl {
   }
 
   /**
-   * The machine wrote to a disk image file (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, D4): a Disk
+   * The machine wrote to a disk image file (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, D4): a Disk
    * Explorer showing it reloads
    * @param _filePath The image's absolute path
    */

@@ -22,7 +22,7 @@ import type { DefinitionLabel } from "./goToDefinition";
 
 /*
  * Editing annotations from the live Disassembly view (§4.5 of
- * `.docs/annotations.md`).
+ * `dev/patterns/annotations.md`).
  *
  * The controller is the bank document's, **reused unchanged**: for one action it is given the bank
  * the row is in (`liveRowTarget`), the rows of that piece, and the intent; it opens the same dialog

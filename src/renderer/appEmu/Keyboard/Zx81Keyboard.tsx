@@ -6,7 +6,7 @@ import { KeyboardApi } from "./KeyboardPanel";
 import { useKeyboard } from "./useKeyboard";
 
 /*
- * The ZX81 virtual keyboard (`.ai/zx8081.md`, "The virtual keyboard"), built to the approved design: geometry measured from the reference photo, legends from
+ * The ZX81 virtual keyboard (`dev/ai/zx8081.md`, "The virtual keyboard"), built to the approved design: geometry measured from the reference photo, legends from
  * the ROM's key tables (K-UNSHIFT $007E, K-SHIFT $00A5, K-FUNCT $00CC, K-GRAPH $00F3).
  */
 

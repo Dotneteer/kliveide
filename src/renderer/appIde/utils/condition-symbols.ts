@@ -5,7 +5,7 @@ import type { ProgramAnnotations } from "@renderer/appIde/annotations/programAnn
 import { bankLocalSymbolKey, romSymbolKey } from "@common/utils/breakpoint-condition/condition-types";
 
 /*
- * The symbol table breakpoint conditions bind their labels to (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md`
+ * The symbol table breakpoint conditions bind their labels to (`dev/plans/CONDITIONAL_BREAKPOINTS_PLAN.md`
  * §3.6): the integer symbols of the last successful build, joined by the labels of every loaded
  * `.nex.dis` sidecar (F3). The emulator gets the whole table in one call whenever either changes.
  *
@@ -58,7 +58,7 @@ export function setSidecarConditionSymbols(
 
 /**
  * Record the ROM's labels, as `rom:<name>` keys with their ROM address: what `ROM:<name>` reads in
- * a condition (`.docs/annotations.md`, "ROM Annotations"). Replaces the previous ROM's.
+ * a condition (`dev/patterns/annotations.md`, "ROM Annotations"). Replaces the previous ROM's.
  */
 export function setRomConditionSymbols(labels: readonly { name: string; address: number }[]): void {
   romSymbols = {};

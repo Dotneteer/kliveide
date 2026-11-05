@@ -15,7 +15,7 @@ import * as clearHistoryCommand from "@renderer/appIde/commands/ClearHistoryComm
 import * as clearScreenCommand from "@renderer/appIde/commands/ClearScreenCommand";
 
 /*
- * The debugging commands in the pseudo-locale (`.ai/localization.md`): every
+ * The debugging commands in the pseudo-locale (`dev/ai/localization.md`): every
  * command description, the history reasons and the fork confirmation are pseudo text, so none of
  * them is still a hard-coded English string.
  */

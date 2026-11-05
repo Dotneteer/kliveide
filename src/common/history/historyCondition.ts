@@ -2,7 +2,7 @@ import type { CompiledCondition, CondNode, ConditionRegister } from "@common/uti
 import type { HistoryRegisters } from "./historyRecord";
 
 /*
- * Breakpoint conditions evaluated against a history record (`.plans/LITE_STEP_BACK_PLAN.md` D11,
+ * Breakpoint conditions evaluated against a history record (`dev/plans/LITE_STEP_BACK_PLAN.md` D11,
  * T5). The one evaluator of the language is C (`src/emu/z80/wasm/z80-condition.c`), and it reads the
  * live CPU and memory. Reverse Continue needs the *recorded* registers, and a record holds nothing
  * else - so this evaluates only conditions built from registers, flags, constants, labels and the

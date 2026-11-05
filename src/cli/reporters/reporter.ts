@@ -3,7 +3,7 @@ import type { JUnitResult } from "@common/unit-tests/junit";
 import type { UnitTestSummary } from "@common/unit-tests/unitTestTypes";
 
 /*
- * What `klive test` streams to the console (`.plans/UNIT_TESTS_CLI_PLAN.md` D4): one reporter at a
+ * What `klive test` streams to the console (`dev/plans/UNIT_TESTS_CLI_PLAN.md` D4): one reporter at a
  * time, chosen by `--reporter` or by whether stdout is a terminal (T6). JUnit and LCOV are files,
  * written after the run.
  */

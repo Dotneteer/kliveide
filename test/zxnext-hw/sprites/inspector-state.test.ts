@@ -8,7 +8,7 @@ import { hex8, parkedSession, writePalette } from "../ula/_ula-helpers";
 import { qualifySprites, rng, type SpriteAttrs } from "./_sprite-model";
 
 /*
- * What the Sprite Inspector reads (`.plans/SPRITE_INSPECTOR_PLAN.md` Phase 2): the snapshot must be
+ * What the Sprite Inspector reads (`dev/plans/SPRITE_INSPECTOR_PLAN.md` Phase 2): the snapshot must be
  * what a program uploaded, the core's resolve must be what the engine draws, and reading must never
  * change the machine.
  */

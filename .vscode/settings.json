@@ -2,6 +2,7 @@
   "editor.defaultFormatter": "rvest.vs-code-prettier-eslint",
   "editor.formatOnPaste": false,
   "editor.formatOnType": false,
+  "eslint.options": { "overrideConfigFile": "build/eslint.config.cjs" },
 
   "[typescript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"

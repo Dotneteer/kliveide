@@ -5,7 +5,7 @@ import type { AssemblerErrorInfo } from "@abstractions/CompilerInfo";
 
 
 /*
- * zcc's diagnostics as Klive's (`.plans/Z88DK_INTEGRATION_PLAN.md` §5.1). Observed forms (v2.4):
+ * zcc's diagnostics as Klive's (`dev/plans/Z88DK_INTEGRATION_PLAN.md` §5.1). Observed forms (v2.4):
  *
  *   main.c:3:13: error: Invalid expression              compiler (sccz80), with a column
  *   main.c:5:33: fatal error: Unknown symbol: x         compiler, fatal

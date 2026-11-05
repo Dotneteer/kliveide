@@ -1,11 +1,11 @@
 /**
- * The supported display languages (`.ai/localization.md`, D12): one row per language. The Language
+ * The supported display languages (`dev/ai/localization.md`, D12): one row per language. The Language
  * settings page, the `system` resolution, the tooling and the contributor guide all read this
  * table, so adding a language is "add a row + a folder".
  *
  * A row with `enabled: false` is not offered to users yet (too incomplete); dev builds still list
  * it once it has a catalog. The five translated languages are enabled since the first translation
- * round (`.ai/localization.md`). `qps` is the generated pseudo-locale, not offered in the Language dropdown (tests and dev builds set it directly).
+ * round (`dev/ai/localization.md`). `qps` is the generated pseudo-locale, not offered in the Language dropdown (tests and dev builds set it directly).
  */
 import { PSEUDO_LANGUAGE, SOURCE_LANGUAGE } from "./catalogs-core";
 import { TRANSLATED_CATALOGS } from "./translations.generated";

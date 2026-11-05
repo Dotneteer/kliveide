@@ -8,7 +8,7 @@ import { LayerDebugOverlay } from "@renderer/features/emulator/LayerDebugOverlay
 import { ProbeTooltip } from "@renderer/features/emulator/NextLayersScreenOverlay";
 
 /*
- * The emulator window's layer views (`.plans/LAYER_COMPOSITION_PLAN.md` D3, D7): the pill that
+ * The emulator window's layer views (`dev/plans/LAYER_COMPOSITION_PLAN.md` D3, D7): the pill that
  * announces a hidden layer, and the probe's explanation of a pixel.
  */
 

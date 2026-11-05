@@ -4,11 +4,11 @@
  * One pure module (no React, no Node), a sibling of `copperDecoder.ts`. It reads the byte stream a
  * program uploads to port `$6B` and splits it into register writes the way the DMA does: the
  * follow-byte bits of each base byte - not the assembler's conventions - decide how many bytes a
- * write takes. See `.plans/NEX_DMA_COPPER_REGIONS_PLAN.md` §4 (decisions D1, D2, D9).
+ * write takes. See `dev/plans/NEX_DMA_COPPER_REGIONS_PLAN.md` §4 (decisions D1, D2, D9).
  *
  * The sequencing is that of `zxnextDmaWriteBase` / `zxnextDmaWritePort` in
  * `src/emu/machines/zxNext/wasm/zxnext/zxnext-dma.c`, whose reference is
- * `vendor/next-fpga/3.02.01/src/device/dma.vhd`. In short, for a base byte `d`:
+ * `dev/vendor/next-fpga/3.02.01/src/device/dma.vhd`. In short, for a base byte `d`:
  *
  *   D7=0, D1D0≠00       WR0  D3/D4 port A low/high, D5/D6 block length low/high follow
  *   D7=0, D2D1D0=100    WR1  D6: a timing byte follows; its D5: one more byte (swallowed)

@@ -170,7 +170,7 @@ export interface IAnyMachine extends IAnyCpu, IMachineEventHandler {
   getBufferStartOffset(): number;
 
   /**
-   * Where the raster is now, for the beam position overlay (`.plans/BEAM_POSITION_OVERLAY_PLAN.md`
+   * Where the raster is now, for the beam position overlay (`dev/plans/BEAM_POSITION_OVERLAY_PLAN.md`
    * D4): the beam's line, tact and pixel in the displayed buffer, the machine's raster timing, and
    * how much of the picture is this frame's (T1). A machine without one shows no overlay. Reading it
    * never changes the machine.
@@ -307,7 +307,7 @@ export interface IAnyMachine extends IAnyCpu, IMachineEventHandler {
    * spells out beside it ("Alt ROM 0" for `X0`). Never parsed, never put in a key.
    *
    * May be empty, or may cover only some partitions: a machine that supplies none simply shows
-   * labels everywhere. See `.plans/PARTITION_NAMING_UNIFICATION_PLAN.md` §3.
+   * labels everywhere. See `dev/plans/PARTITION_NAMING_UNIFICATION_PLAN.md` §3.
    */
   getPartitionDescriptions(): Record<number, string>;
 

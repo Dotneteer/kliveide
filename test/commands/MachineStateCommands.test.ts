@@ -11,7 +11,7 @@ import { writeKliveStateFile } from "@common/machineState/kliveStateFile";
 import { ValidationMessageType } from "@renderer/abstractions/ValidationMessageType";
 
 /*
- * The `state-save` and `state-load` IDE commands (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md`
+ * The `state-save` and `state-load` IDE commands (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md`
  * §4.8, Phase 8). The emulator is mocked; `test/wasm/state/machine-state-flow.test.ts` covers it.
  */
 

@@ -1,6 +1,6 @@
 ' Klive BASIC standard library - print64.bas: print64 and printat64.
-' Klive's own code, written from the documented API (.ai/kbasic/stdlib-api.json), with Klive's own
-' 3 x 7 font (scripts/kbasic-font64.cjs generates the table below).
+' Klive's own code, written from the documented API (dev/ai/kbasic/stdlib-api.json), with Klive's own
+' 3 x 7 font (dev/scripts/kbasic-font64.cjs generates the table below).
 #pragma once
 #include <__kbase.bas>
 #pragma push(case_insensitive)

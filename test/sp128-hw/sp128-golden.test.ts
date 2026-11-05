@@ -7,7 +7,7 @@ import { recordTimingExercise } from "./timing-exercise";
 
 /*
  * The ZX Spectrum 128K's behaviour, recorded before the core learned the Pentagon timing
- * (`.plans/PENTAGON_128_PLAN.md` P7) and kept as a regression: the 128K must stay exactly as it was.
+ * (`dev/plans/PENTAGON_128_PLAN.md` P7) and kept as a regression: the 128K must stay exactly as it was.
  *
  * A program exercises everything the timing touches - interrupts, border stripes, writes to the
  * contended screen, the floating bus, paging (contended and uncontended banks, the shadow screen),
@@ -15,7 +15,7 @@ import { recordTimingExercise } from "./timing-exercise";
  * contention counters and the CPU, and at the end every RAM bank.
  *
  * `SP128_GOLDEN_WRITE=1` records `sp128-golden.json` (only ever from a core known to be right).
- * Re-recorded by `.plans/SPECTRUM_ULA_ACCURACY_PLAN.md`, whose fixes changed the 128K on purpose (the
+ * Re-recorded by `dev/plans/SPECTRUM_ULA_ACCURACY_PLAN.md`, whose fixes changed the 128K on purpose (the
  * contention table, the 35 T-state interrupt, prefixed instructions' timing, writes and the border
  * against the ULA's reads), from a core that passes ZX Spectrum Timing Tests 128K.
  */

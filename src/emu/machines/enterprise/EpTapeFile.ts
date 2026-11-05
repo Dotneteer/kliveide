@@ -1,6 +1,6 @@
 /*
- * Enterprise 64/128 tape files (`.plans/ENTERPRISE_PLAN.md` §9.3; the formats are
- * `_input/enterprise128/STORAGE_FIRMWARE_SOFTWARE.md` §4.2 and `DAVE_MEMORY_IO.md` §7.4-§7.5).
+ * Enterprise 64/128 tape files (`dev/plans/ENTERPRISE_PLAN.md` §9.3; the formats are
+ * `dev/research/enterprise128/STORAGE_FIRMWARE_SOFTWARE.md` §4.2 and `DAVE_MEMORY_IO.md` §7.4-§7.5).
  *
  * EXOS writes a file as chunks, the motor stopped between them. A chunk is a leader (424 us cycles at
  * the fast speed), one sync cycle (696 us), a dummy byte (00h), 6Ah, the chunk's data and a few leader

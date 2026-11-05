@@ -19,7 +19,7 @@ import { CimHandler } from "./fat32/CimHandlers";
 import { CimFileManager } from "./fat32/CimFileManager";
 
 /*
- * Hard-disk images in the main process (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, C1/C2): a raw
+ * Hard-disk images in the main process (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, C1/C2): a raw
  * `.img`, a RAMsoft `.hdf` or Klive's `.cim`, opened as a block device and read sector by sector -
  * an SD card image of gigabytes never travels to the renderer whole. The Disk Explorer and the
  * `disk` command ask through MainApi for what they show and send their edits here.

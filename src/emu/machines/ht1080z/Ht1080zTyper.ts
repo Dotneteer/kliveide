@@ -1,7 +1,7 @@
 import type { Ht1080zRomSetId } from "./Ht1080zRoms";
 
 /**
- * Text as HT-1080Z keystrokes (`.plans/HT1080Z_PLAN.md` §7, Phase 4). Every value here was observed
+ * Text as HT-1080Z keystrokes (`dev/plans/HT1080Z_PLAN.md` §7, Phase 4). Every value here was observed
  * on the core running the real ROMs (`test/ht1080z-hw/keyboard.test.ts`).
  *
  * - Letters are unshifted for capitals and shifted for lowercase. The bare Level II BASIC shows both

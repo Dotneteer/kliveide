@@ -11,7 +11,7 @@ import { SCORPION_MODELS } from "./sp128Timings";
 export const SCORPION_ROM_SIZE = 0x10000;
 
 /*
- * The Scorpion's partitions (`.plans/TIMEX_SCORPION_PLAN.md` G9.4c): ROMs R0 (the 128K editor) -1,
+ * The Scorpion's partitions (`dev/plans/TIMEX_SCORPION_PLAN.md` G9.4c): ROMs R0 (the 128K editor) -1,
  * R1 (48K BASIC) -2, R2 (the service monitor) -3, R3 (TR-DOS) -4; RAM banks B0-B15 0-15
  */
 const ROM_LABELS: Record<number, string> = { [-1]: "R0", [-2]: "R1", [-3]: "R2", [-4]: "R3" };
@@ -23,7 +23,7 @@ const ROM_DESCRIPTIONS: Record<number, string> = {
 };
 
 /**
- * The Scorpion ZS-256 (`.plans/TIMEX_SCORPION_PLAN.md` G9.4c): its own machine on the 128K core,
+ * The Scorpion ZS-256 (`dev/plans/TIMEX_SCORPION_PLAN.md` G9.4c): its own machine on the 128K core,
  * which the Scorpion's timing profile switches to the Scorpion: 256K of RAM in sixteen banks, the
  * second paging port $1FFD (RAM bank 0 or the service ROM at $0000, bank bit 3), the 48K's raster
  * without contention, and the Beta 128 built in.

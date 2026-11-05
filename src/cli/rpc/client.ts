@@ -19,7 +19,7 @@ import {
 import { resolveSettingsFilePath } from "@main/settings-path";
 
 /*
- * The client side of the automation protocol (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` §4.1, D12):
+ * The client side of the automation protocol (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` §4.1, D12):
  * find the connection file, connect, say hello, send requests, receive notifications. Node only;
  * no Electron. The `klive ide` verbs and the live tests use it.
  */

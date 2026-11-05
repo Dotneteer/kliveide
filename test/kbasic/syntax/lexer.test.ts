@@ -6,7 +6,7 @@ import { lex } from "@main/kbasic/syntax/lexer";
 import { SourceSet } from "@main/kbasic/syntax/source";
 import type { Token } from "@main/kbasic/syntax/tokens";
 
-import spec from "../../../.ai/zxbasic-syntax/zxbasic-syntax.json";
+import spec from "../../../dev/ai/zxbasic-syntax/zxbasic-syntax.json";
 
 function tokens(text: string) {
   const sources = new SourceSet();

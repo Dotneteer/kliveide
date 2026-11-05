@@ -604,9 +604,9 @@ static uint32_t zxnextUlaSignExtendScale9(uint32_t value8, uint32_t scale) {
  * The render resolves into its own cache, `zxnextUlaResolvedSprites`, up to the last visible sprite.
  * The IDE's Sprite Inspector resolves all 128 into a separate, volatile buffer
  * (`zxnextResolveSpritesForIde`), so reading the sprite table never writes machine state
- * (`.plans/SPRITE_INSPECTOR_PLAN.md` trap T3).
+ * (`dev/plans/SPRITE_INSPECTOR_PLAN.md` trap T3).
  *
- * Follows `vendor/next-fpga/3.02.01/src/video/sprites.vhd` ("sort out relative sprite characteristics" and
+ * Follows `dev/vendor/next-fpga/3.02.01/src/video/sprites.vhd` ("sort out relative sprite characteristics" and
  * the anchor latch in `S_QUALIFY`):
  *
  * - A sprite is **relative** when it has five attribute bytes and attr4 bits 7:6 are `01`. Every
@@ -1114,7 +1114,7 @@ static inline void zxnextMixParamsUnpack(uint32_t v, ZxnextMixParams* p) {
 }
 
 /*
- * Why a pixel shows what it shows (`.plans/LAYER_COMPOSITION_PLAN.md` D7, T5). Computed by
+ * Why a pixel shows what it shows (`dev/plans/LAYER_COMPOSITION_PLAN.md` D7, T5). Computed by
  * zxnextComposePixel itself, so the explanation can never drift from the mixer (D10). Mirrored by
  * `src/common/zxnext/layers/layerMix.ts`.
  */
@@ -1275,7 +1275,7 @@ static inline __attribute__((always_inline)) uint32_t zxnextComposePixel(const Z
 }
 
 // ---------------------------------------------------------------------------
-// Layer debugging (`.plans/LAYER_COMPOSITION_PLAN.md`)
+// Layer debugging (`dev/plans/LAYER_COMPOSITION_PLAN.md`)
 //
 // The IDE can hide layers, show one alone (solo) and mark the pixels no layer covers. This is applied
 // only here, in the mixer (D1): the renderers still run, so sprite collision and "too many sprites"
@@ -1688,7 +1688,7 @@ static uint32_t zxnextRasterWriteTact(void) {
 }
 
 /*
- * Layer capture (`.plans/LAYER_COMPOSITION_PLAN.md` §4.3, D6, T3, T6, T7).
+ * Layer capture (`dev/plans/LAYER_COMPOSITION_PLAN.md` §4.3, D6, T3, T6, T7).
  *
  * The per-layer buffers hold, per row, the render of that row's *last* span, and the mixer's inputs
  * ($15, $4A, $68, the enables) are read from the current state, so recomposing a paused picture from
@@ -2058,7 +2058,7 @@ static void zxnextRasterReset(void) {
 }
 
 /*
- * Beam position overlay (`.plans/BEAM_POSITION_OVERLAY_PLAN.md` §4.2, D3, T2).
+ * Beam position overlay (`dev/plans/BEAM_POSITION_OVERLAY_PLAN.md` §4.2, D3, T2).
  *
  * A paused picture is this frame up to the last catch-up and last frame's pixels after it (T1). The
  * IDE shows the picture "rendered to the beam": [zxnextRasterPixel, beam) drawn from the current

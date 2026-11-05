@@ -1,5 +1,5 @@
 /*
- * Block devices (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, C1): what a hard-disk file system
+ * Block devices (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, C1): what a hard-disk file system
  * reads and writes, 512-byte sectors by LBA, whatever the image's container - a raw `.img`, a
  * RAMsoft `.hdf`, Klive's own `.cim`, or bytes in memory. A partition is a device too, a window onto
  * its disk.

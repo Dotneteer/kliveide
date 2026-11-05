@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   validateWasmCpuContract,
   wasmCpuContract
-} from "../../scripts/check-wasm-cpu-contract.cjs";
+} from "../../dev/scripts/check-wasm-cpu-contract.cjs";
 
 describe("WASM machines: shared Z80/Z80N CPU contract", () => {
   it("requires every WASM machine artifact to be built around the shared CPU source", () => {
@@ -67,7 +67,7 @@ describe("WASM machines: shared Z80/Z80N CPU contract", () => {
     expect(zx8081?.forbiddenIncludeFragments).toEqual(["zxSpectrum/wasm/common/"]);
     expect(zx8081?.allowedIncludeFragments).toEqual(["zxSpectrum/wasm/common/zx-spectrum-keyboard.c"]);
     expect(zx8081?.ok).toBe(true);
-    // --- The HT-1080Z may share the Spectrum's AY (`.plans/HT1080Z_PLAN.md` §5), nothing else
+    // --- The HT-1080Z may share the Spectrum's AY (`dev/plans/HT1080Z_PLAN.md` §5), nothing else
     const ht1080z = report.models.find(model => model.id === "ht1080z");
     expect(ht1080z?.forbiddenIncludeFragments).toEqual(["zxSpectrum/wasm/common/"]);
     expect(ht1080z?.allowedIncludeFragments).toEqual(["zxSpectrum/wasm/common/zx-spectrum-psg.c"]);

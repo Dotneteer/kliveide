@@ -16,7 +16,7 @@ import {
 import type { Routine, RoutineMap, RoutineSource } from "./routineMap";
 
 /*
- * The profiler's views of a profile (`.plans/PROFILER_PLAN.md` D3-D5, D11, §4.1): the flat
+ * The profiler's views of a profile (`dev/plans/PROFILER_PLAN.md` D3-D5, D11, §4.1): the flat
  * "top routines" table, the per-address table and the call graph. Pure: the IDE's document, the
  * `profile top` command, the exporters, KSX and the CLI (G5.6) all start here.
  */

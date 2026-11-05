@@ -7,7 +7,7 @@ import type { EpHostFileStore } from "./EpHostFs";
 export const EP_FILEIO_HOME_FOLDER = "FILEIO";
 
 /**
- * FILE:'s files in a host folder, through the main process (`.plans/ENTERPRISE_PLAN.md` §9.2): the
+ * FILE:'s files in a host folder, through the main process (`dev/plans/ENTERPRISE_PLAN.md` §9.2): the
  * folder the machine names (`EP_FILEIO_FOLDER`), or `FILEIO` in the Klive home folder. A name matches
  * as given, then in lower and in upper case (EXOS passes names as they were typed, and a host file
  * system may tell case apart).

@@ -1,5 +1,5 @@
 /*
- * Loads a `.z88` snapshot into the emulator: the orchestration of `.plans/Z88_SNAPSHOT_PLAN.md` §4.5.
+ * Loads a `.z88` snapshot into the emulator: the orchestration of `dev/plans/Z88_SNAPSHOT_PLAN.md` §4.5.
  *
  *  1. Parse and map the file. Anything Klive cannot load stops here, before the machine is touched.
  *  2. Make the machine fit: a Z88 with the snapshot's internal RAM and LCD size. A machine that does

@@ -10,7 +10,7 @@ import { createSp48Session } from "../harness/sp48";
 
 /*
  * DeZog `ASSERTION` and `WPMEM` comments on the real 48K core
- * (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` Phase 4): a Klive assembler program is checked
+ * (`dev/plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` Phase 4): a Klive assembler program is checked
  * and installed the way the IDE does after a build, then run. An assertion stops when its
  * expression is false, with the values it read; a WPMEM watchpoint catches a write inside its range
  * and not one past it; LOGPOINT, ASSERTION and WPMEM breakpoints live in the one annotation set.

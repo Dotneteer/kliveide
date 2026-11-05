@@ -8,7 +8,7 @@ import { sp128Driver } from "./drivers";
 import { trdosRomFromEnvironment } from "../../harness/sp128";
 
 /*
- * The 128K core's execution history (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` Phase 2): the ZX
+ * The 128K core's execution history (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` Phase 2): the ZX
  * Spectrum 128K, the Pentagon 128 and the Scorpion ZS-256, which share one context (D5).
  */
 

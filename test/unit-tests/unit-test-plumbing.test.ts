@@ -32,7 +32,7 @@ import { findTest } from "@renderer/appIde/commands/UnitTestCommands";
 import { assembleWithInclude } from "./unitTestSupport";
 
 /*
- * The plumbing around the runner (`.plans/Z80_UNIT_TESTS_PLAN.md` Phase 2): the store slice, the
+ * The plumbing around the runner (`dev/plans/Z80_UNIT_TESTS_PLAN.md` Phase 2): the store slice, the
  * compilation the worker gets, Add unit-test support, the project settings, the core lookup, the
  * panel's rows and the commands' test lookup.
  */

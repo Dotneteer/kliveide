@@ -1,6 +1,6 @@
 /*
  * Static hardware facts of every registered machine model, for the Select Machine dialog's hardware
- * sheet (`.plans/MACHINE_SELECT_DIALOG_PLAN.md` §4.2, §5.1b).
+ * sheet (`dev/plans/MACHINE_SELECT_DIALOG_PLAN.md` §4.2, §5.1b).
  *
  * Why a table: most of these numbers live inside the machine hosts or the WASM C cores, and the
  * dialog must not instantiate a machine to read them. Three rules keep the table honest:
@@ -14,7 +14,7 @@
  *    A fact no source pins down (ZX81 lines per frame, the ZX80's line length) is left out and the
  *    sheet shows "—"; nothing here is written from memory.
  *
- * Texts (`.ai/localization.md`, D7): a plain string is a technical value shown as it is (chip,
+ * Texts (`dev/ai/localization.md`, D7): a plain string is a technical value shown as it is (chip,
  * CPU and product names, `4 MB`, `KERNAL`); a sentence or plain word is a `tx(key)` message, which
  * `getHardwareSpec` translates when the dialog reads the spec.
  *
@@ -352,13 +352,13 @@ export const HARDWARE_SPECS: Readonly<Record<string, MachineSpecs>> = {
           perFrame: 71_680,
           note: tx("hardware.timing.pentagon")
         },
-        // --- The Beta 128 (`.plans/BETA128_TRDOS_PLAN.md`): it boots the user's own TR-DOS ROM
+        // --- The Beta 128 (`dev/plans/BETA128_TRDOS_PLAN.md`): it boots the user's own TR-DOS ROM
         media: [SPECTRUM_TAPE, { text: tx("hardware.media.pentagonBeta"), chip: BETA128_CHIP }]
       }
     }
   },
   [MI_TIMEX]: {
-    // --- timexModels.ts, timex.c, zx-spectrum-scld.c (`.plans/TIMEX_SCORPION_PLAN.md` §8)
+    // --- timexModels.ts, timex.c, zx-spectrum-scld.c (`dev/plans/TIMEX_SCORPION_PLAN.md` §8)
     base: {
       cpu: "Zilog Z80",
       clockHz: TIMEX_MODELS_INFO.tc2048.clockHz,
@@ -504,7 +504,7 @@ export const HARDWARE_SPECS: Readonly<Record<string, MachineSpecs>> = {
     models: { "zx81-16k-us": ZX8081_NTSC, "zx81-1k-us": ZX8081_NTSC }
   },
   [MI_HT1080Z]: {
-    // --- ht1080zMachineInfo.ts, Ht1080zRoms.ts, wasm/ht1080z/ht1080z.c (`.plans/HT1080Z_PLAN.md`).
+    // --- ht1080zMachineInfo.ts, Ht1080zRoms.ts, wasm/ht1080z/ht1080z.c (`dev/plans/HT1080Z_PLAN.md`).
     // --- Series II is the base; the other models override what differs (§4.3).
     base: {
       cpu: "Zilog Z80",
@@ -540,7 +540,7 @@ export const HARDWARE_SPECS: Readonly<Record<string, MachineSpecs>> = {
     }
   },
   [MI_TVC]: {
-    // --- tvcMachineInfo.ts, TvcRoms.ts, wasm/tvc/tvc.c (`.ai/videoton-tvc.md`)
+    // --- tvcMachineInfo.ts, TvcRoms.ts, wasm/tvc/tvc.c (`dev/ai/videoton-tvc.md`)
     base: {
       cpu: "Zilog Z80",
       clockHz: TVC_CLOCK,
@@ -571,7 +571,7 @@ export const HARDWARE_SPECS: Readonly<Record<string, MachineSpecs>> = {
     models: { tvc64p: { rom: tvcRoms("22") } }
   },
   [MI_ENTERPRISE]: {
-    // --- epMachineInfo.ts, EpRoms.ts, wasm/ep/ep.c (`.plans/ENTERPRISE_PLAN.md`)
+    // --- epMachineInfo.ts, EpRoms.ts, wasm/ep/ep.c (`dev/plans/ENTERPRISE_PLAN.md`)
     base: {
       cpu: "Zilog Z80A",
       clockHz: EP_CLOCK,

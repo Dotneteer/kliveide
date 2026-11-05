@@ -8,7 +8,7 @@
 // The diagrams, the spread of the channels and the level budget are drawn from the rules. Then:
 //   node docs/authoring/next-audio/turbosound-figures.cjs
 //
-// Sized for print (.ai/hardware-articles-guide.md, Figures): the drawings use the whole 700-unit width, and
+// Sized for print (dev/ai/hardware-articles-guide.md, Figures): the drawings use the whole 700-unit width, and
 // no text is smaller than 13.5 units, about 10 pt when the figure spans a 16 cm text column.
 "use strict";
 

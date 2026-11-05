@@ -6,7 +6,7 @@ import { basicListingText, decodeBasicProgram } from "@renderer/appIde/DocumentP
 import { PRINT_42 } from "../diskfs/fixtures";
 
 /*
- * Spectrum BASIC text to tokens (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, B4), checked against
+ * Spectrum BASIC text to tokens (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, B4), checked against
  * hand-encoded bytes and against the listing decoder it is the inverse of.
  */
 

@@ -2,7 +2,7 @@
 
 /*
  * The SD card on the SPI bus, shared by the Next and the classic cores' DivMMC
- * (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, C3); moved here from the Next's zxnext-sd.c unchanged.
+ * (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, C3); moved here from the Next's zxnext-sd.c unchanged.
  * The card answers the SPI-mode commands from the SD Physical Layer specification; the sectors are the
  * host's: a read or a write sets the host command (zxSdGetHostCommand), the frame loop stops, and the
  * host answers with zxSdSetReadResponse / zxSdSetWriteResponse.

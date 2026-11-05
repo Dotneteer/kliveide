@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { revertSdWrites, SdUndoLog } from "@emu/machines/reverse/SdUndoLog";
 
 /*
- * The SD undo log (`.plans/REVERSE_DEBUGGING_PLAN.md` D14): writes keyed by the journal index their
+ * The SD undo log (`dev/plans/REVERSE_DEBUGGING_PLAN.md` D14): writes keyed by the journal index their
  * acknowledgement was journaled at, taken back newest first from a fork's journal end.
  */
 describe("SdUndoLog", () => {

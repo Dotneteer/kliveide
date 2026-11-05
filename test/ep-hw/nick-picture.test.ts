@@ -4,7 +4,7 @@ import { createEpSession, type EpTestSession } from "../harness/enterprise";
 import { bareMachine, pictureHash, standardLpt, stepUntil, writeShotIfAsked, type Lpb } from "./bare";
 
 /*
- * NICK's picture (`.plans/ENTERPRISE_PLAN.md` Phase 3, §7): the modes and colour modes on a worked
+ * NICK's picture (`dev/plans/ENTERPRISE_PLAN.md` Phase 3, §7): the modes and colour modes on a worked
  * byte, the ALT options, the palette and FIXBIAS, the one-slot pipeline, blanking, mid-line writes,
  * the TV window, and EXOS's own screen.
  *

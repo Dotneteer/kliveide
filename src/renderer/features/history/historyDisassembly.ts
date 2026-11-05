@@ -5,7 +5,7 @@ import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler
 
 /*
  * Disassembles history records one instruction at a time, from the bytes the record captured - not
- * from today's memory, so self-modifying code reads as it ran (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md`
+ * from today's memory, so self-modifying code reads as it ran (`dev/plans/EXECUTION_HISTORY_VIEWER_PLAN.md`
  * D5, T12). The disassembler sees the record's four bytes at offset 0 and prints them at the record's
  * PC (`setAddressOffset`). Results are cached by (PC, bytes): a loop's instructions repeat across
  * thousands of rows, so the cache turns a full-ring filter into a few hundred disassemblies.

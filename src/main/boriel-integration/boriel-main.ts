@@ -29,7 +29,7 @@ import { resolveBorielExecutable } from "./boriel-resolver";
 
 /*
  * The Electron side of the Boriel BASIC setup: builds the service's dependencies from the running
- * app and writes what an installation decided into the settings (`.ai/boriel/integration.md`
+ * app and writes what an installation decided into the settings (`dev/ai/boriel/integration.md`
  * "The installation offer" and "The installer"). Everything with logic in it lives in `boriel-install-service.ts`, which the tests drive.
  */
 

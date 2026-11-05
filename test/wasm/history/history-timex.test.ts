@@ -7,7 +7,7 @@ import { describeHistoryCore, history, loadRecording } from "./historyCoreSuite"
 import { timexDriver } from "./drivers";
 
 /*
- * The Timex machines' execution history (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` Phase 1): the
+ * The Timex machines' execution history (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` Phase 1): the
  * 48K core built with the SCLD. The TS2068's 8K chunk map is the paging the partition check steps
  * through: chunks 0, 1, 6 and 7 move between HOME and the external bank, which port $FF picks.
  */

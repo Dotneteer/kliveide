@@ -9,7 +9,7 @@ import { t } from "@common/i18n/i18n";
  * project save and must not pull in renderer code.
  *
  * Every persister goes through these helpers, so "which fields are stored" has one answer. See
- * `.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.1 and §4.7.
+ * `dev/plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.1 and §4.7.
  */
 
 /** Every hit-count rule, in the order the UI lists them. */
@@ -27,7 +27,7 @@ export const MAX_BREAKPOINT_HIT_COUNT = 65535;
 
 /**
  * The persisted filter fields of a breakpoint - and its action: a logpoint's template
- * (`.plans/LOGPOINTS_PLAN.md` §4.1) travels with the condition and the hit rule, because every
+ * (`dev/plans/LOGPOINTS_PLAN.md` §4.1) travels with the condition and the hit rule, because every
  * persister that must keep one must keep the other, and none of them is part of the identity.
  */
 export type BreakpointFilters = Pick<

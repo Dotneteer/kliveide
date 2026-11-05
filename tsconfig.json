@@ -7,7 +7,7 @@
   // input files and exited 0. `npm run build:check` was that bare `tsc`, and the type checker went
   // quiet for long enough that the codebase reached TypeScript 6 with ~160 unreported errors.
   //
-  // The gate is now `scripts/check-types.cjs`, which runs each referenced project explicitly.
+  // The gate is now `dev/scripts/check-types.cjs`, which runs each referenced project explicitly.
   // Leave `files` empty: anything listed here is checked WITHOUT the projects' own compiler
   // options, which is how the confusion started.
   "files": [],

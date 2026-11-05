@@ -26,9 +26,9 @@ import {
 /*
  * The condition language's **front end** - lexer, parser, checker, label binding - which needs no
  * evaluator: the §3.7 errors with their ranges, warnings, tokens, the emitted tree and the bound
- * labels (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §3). What expressions *evaluate to* is tested
+ * labels (`dev/plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §3). What expressions *evaluate to* is tested
  * against the C evaluator in `test/wasm/condition/condition-evaluation.test.ts`
- * (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`).
+ * (`dev/plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`).
  */
 
 const EXEC: ConditionEnvironment = { accessKind: "exec" };
@@ -289,7 +289,7 @@ describe("syntax errors (§3.7 rule 1)", () => {
     ["A == == 1", "Unexpected '=='", 5, 7],
     ["A 1", "Unexpected '1'", 2, 3],
     ["A = 1", "Unexpected character '='", 2, 3],
-    // --- `*` and `/` are operators since `.plans/LOGPOINTS_PLAN.md` Q4; `%` still starts a binary literal
+    // --- `*` and `/` are operators since `dev/plans/LOGPOINTS_PLAN.md` Q4; `%` still starts a binary literal
     ["A ? 2", "Unexpected character '?'", 2, 3],
     ["page(1", "Missing ')'", 6, 6],
     ["A == #1", "Unexpected character '#'", 5, 6]
@@ -306,7 +306,7 @@ describe("profile (C18)", () => {
   });
 });
 
-describe("no constant folding (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md` E4)", () => {
+describe("no constant folding (`dev/plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md` E4)", () => {
   it("leaves constant sub-trees to the C evaluator", () => {
     expect(compile("A == 1 + 2").tree).toEqual({
       k: "bin",
@@ -356,7 +356,7 @@ describe("the plan's §3.1 examples", () => {
   });
 });
 
-describe("the bytecode (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md` §4.1)", () => {
+describe("the bytecode (`dev/plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md` §4.1)", () => {
   const code = (text: string, env: ConditionEnvironment = EXEC) => Array.from(emitCondition(compile(text, env)));
 
   it("starts with the format word and ends with END", () => {

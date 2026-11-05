@@ -4,7 +4,7 @@ import { electronAPI } from "@electron-toolkit/preload";
 // --- Custom APIs for renderer
 const api = {
   // --- A dropped `File`'s path on disk: the renderer cannot read `File.path` with context isolation
-  // --- (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.10)
+  // --- (`dev/plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.10)
   getPathForFile: (file: File): string => webUtils.getPathForFile(file)
 };
 

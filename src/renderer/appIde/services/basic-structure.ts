@@ -3,7 +3,7 @@
  * and `#if` regions, read from the editor's lines without the compiler.
  *
  * Folding, the matching-block-keyword highlight and the language configuration's indentation use
- * this (`.plans/BASIC_EDITOR_INTELLIGENCE_PLAN.md` E7): they must work while the file does not parse
+ * this (`dev/plans/BASIC_EDITOR_INTELLIGENCE_PLAN.md` E7): they must work while the file does not parse
  * and before the first background check finishes. Everything here is pure and Monaco-free.
  *
  * Lines are 1-based and columns 1-based (Monaco's), end columns exclusive.

@@ -17,7 +17,7 @@ import {
 import styles from "./Layer2Inspector.module.scss";
 
 /*
- * The inspector (`.plans/LAYER2_INSPECTOR_PLAN.md` §4.5): for a pixel, its coordinates, the stored
+ * The inspector (`dev/plans/LAYER2_INSPECTOR_PLAN.md` §4.5): for a pixel, its coordinates, the stored
  * byte or nibble, the palette index after the offset (T7), the colour with its priority bit, whether it
  * is transparent and why (T6), and its four addresses (D6); for a bank, its role, its physical range
  * and a thumbnail.

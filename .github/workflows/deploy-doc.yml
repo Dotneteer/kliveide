@@ -1,12 +1,12 @@
 # Builds the Nextra documentation site and publishes it to GitHub Pages.
 #
 # The docs site is an isolated npm package under docs/ with its own lockfile, so it
-# needs a second install step. See .plans/NEXTRA_4_NEXT_16_DOCS_MIGRATION_PLAN.md.
+# needs a second install step. See dev/plans/NEXTRA_4_NEXT_16_DOCS_MIGRATION_PLAN.md.
 
 name: GitHub Pages deploy
 
 # release.yml also calls it (workflow_call) once a release is published, so the landing page picks up
-# the new version and download links at once (.ai/release-guide.md). Its dry run
+# the new version and download links at once (dev/ai/release-guide.md). Its dry run
 # passes deploy: false and the would-be tag, and nothing is deployed.
 
 on:

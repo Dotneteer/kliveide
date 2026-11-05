@@ -52,7 +52,7 @@ import styles from "./CopperListPanel.module.scss";
 import { useT } from "@common/i18n/useT";
 
 /**
- * The Copper List document (`$copper`, `.plans/COPPER_DEBUGGING_PLAN.md` §4.5, G3.1): all 1024
+ * The Copper List document (`$copper`, `dev/plans/COPPER_DEBUGGING_PLAN.md` §4.5, G3.1): all 1024
  * slots decoded, with the raster ruler beside them. The gutter toggles `cu:` breakpoints; the row
  * menu runs to an instruction or goes to its `.copper` source (D11). The Copper's PC and the last
  * hit are two separate markers (trap T1).

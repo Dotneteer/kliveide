@@ -1,6 +1,6 @@
 /*
  * The 16-byte history context of the +2A/+3/+2E/+3E core (`spp3eHistoryContext` at the end of
- * `spp3e.c`, `.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` §3):
+ * `spp3e.c`, `dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` §3):
  *   0    port $7FFD   1 port $1FFD
  *   2-5  the partition of each 16K slot, a signed byte (the core's own partition table, which is
  *        what the live machine's `getPartition` returns, special paging included - D4)

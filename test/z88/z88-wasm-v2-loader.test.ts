@@ -16,7 +16,7 @@ import { z88WasmArtifactBytes } from "../harness/z88";
 
 /*
  * The Cambridge Z88 WASM loader and the core's Step 1 surface: buffers, reset, LCD shape, timing
- * constants and the CPU register getters (`.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`).
+ * constants and the CPU register getters (`dev/plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`).
  */
 
 async function loadBuilt(artifactName = "test-z88.wasm") {

@@ -6,7 +6,7 @@ import { useEmuStateListener } from "@renderer/appIde/useStateRefresh";
 import { nextPaletteDevice, type NextPaletteDeviceId } from "./nextPaletteDevices";
 
 /*
- * The live palette of one Next device (`.plans/TILEMAP_INSPECTOR_PLAN.md` §4.6, D6): the bank the
+ * The live palette of one Next device (`dev/plans/TILEMAP_INSPECTOR_PLAN.md` §4.6, D6): the bank the
  * device draws with, or a pinned one, read at the state panels' cadence. `useSpritePalette` is this
  * hook for the sprites plus the sprite editor's visible fallback; the Tilemap Inspector uses it for
  * the tilemap.

@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { DSK_WHOLE_IMAGE_KEY, dskSectorKey } from "@emu/machines/disk/disk-changes";
 
-import { buildSpP3eWasm, productionOutput } from "../../scripts/build-spp3e-wasm.cjs";
+import { buildSpP3eWasm, productionOutput } from "../../dev/scripts/build-spp3e-wasm.cjs";
 import type { TapeDataBlock } from "@common/structs/TapeDataBlock";
 
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";

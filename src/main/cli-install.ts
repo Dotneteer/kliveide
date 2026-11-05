@@ -5,7 +5,7 @@ import { app, dialog, type BrowserWindow } from "electron";
 import { t } from "@common/i18n/i18n";
 
 /*
- * Klive › Install Command Line Tool… (`.plans/UNIT_TESTS_CLI_PLAN.md` D12, macOS): a symlink from
+ * Klive › Install Command Line Tool… (`dev/plans/UNIT_TESTS_CLI_PLAN.md` D12, macOS): a symlink from
  * `/usr/local/bin/klive` to the launcher in the app's `Resources/cli`, made with the system's own
  * administrator prompt - as VS Code's "Install 'code' command in PATH" does. The launcher follows
  * the link back to the app, so moving Klive only needs the command run again.

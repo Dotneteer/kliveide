@@ -1,5 +1,5 @@
 /*
- * Writes an RZX input recording (`.plans/RZX_PLAN.md` §4.1, D15). Pure: no Node, no DOM.
+ * Writes an RZX input recording (`dev/plans/RZX_PLAN.md` §4.1, D15). Pure: no Node, no DOM.
  *
  * Written from the RZX v0.13 description (https://worldofspectrum.net/RZXformat.html):
  *  - the header says version 0.13, unsigned;

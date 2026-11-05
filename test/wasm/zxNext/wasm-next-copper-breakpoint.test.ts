@@ -14,7 +14,7 @@ import { createTestZxNextWasmMachine } from "./wasm-next-test-helpers";
 /**
  * Copper breakpoints (`cu:`), end to end: `DebugSupport` authoring the 1024-bit watch, the core
  * latching the first completed instruction, and the debug loop turning a hit into a stop
- * (`.plans/COPPER_DEBUGGING_PLAN.md` Phase 8). `test/zxnext-hw/copper/copper-debug.test.ts` covers
+ * (`dev/plans/COPPER_DEBUGGING_PLAN.md` Phase 8). `test/zxnext-hw/copper/copper-debug.test.ts` covers
  * the core's half on its own.
  *
  * The program uploads the C03 list through NEXTREG and starts it in mode 11, then spins.

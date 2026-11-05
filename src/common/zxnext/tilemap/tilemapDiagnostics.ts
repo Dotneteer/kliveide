@@ -1,5 +1,5 @@
 /*
- * Tilemap diagnostics (`.plans/TILEMAP_INSPECTOR_PLAN.md` D10, T1, T7). Pure.
+ * Tilemap diagnostics (`dev/plans/TILEMAP_INSPECTOR_PLAN.md` D10, T1, T7). Pure.
  *
  * Overlap is the commonest tilemap bug and invisible until the program writes, so the map, the
  * definitions of the tiles the map uses, the ULA bitmap and the ULA attributes are checked against

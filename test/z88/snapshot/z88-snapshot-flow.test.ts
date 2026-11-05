@@ -34,7 +34,7 @@ import type { Z88WasmV2Machine } from "@emu/machines/z88/Z88WasmV2Machine";
 import { createHarnessZ88Machine, ResolvingMessenger, z88Model } from "../../harness/z88";
 
 /*
- * The emulator-side snapshot load (`.plans/Z88_SNAPSHOT_PLAN.md` §4.5, Phase 3): fitting the machine
+ * The emulator-side snapshot load (`dev/plans/Z88_SNAPSHOT_PLAN.md` §4.5, Phase 3): fitting the machine
  * to the snapshot, restoring the state Paused, and the run / debug modes - on a real
  * `MachineController` driving the real Z88 core.
  */

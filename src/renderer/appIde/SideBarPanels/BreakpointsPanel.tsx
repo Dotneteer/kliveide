@@ -88,7 +88,7 @@ import {
   decodeCopperWord,
   formatCopperInstruction
 } from "@common/zxnext/copper/copperDecoder";
-// --- Register names: the union of every core's set (`.ai/zxnext-models.md` D5)
+// --- Register names: the union of every core's set (`dev/ai/zxnext-models.md` D5)
 import { nextRegUnion } from "@emu/machines/zxNext/nextRegSets";
 import { formatHitSpec } from "@common/utils/breakpoint-filters";
 import { logGroupOf } from "@common/utils/breakpoint-condition/logpoint-template";
@@ -532,7 +532,7 @@ export const BreakpointsPanel = () => {
   };
 
   /**
-   * Switch one log group (`.plans/LOGPOINTS_PLAN.md` §4.5): the DeZog model keeps a list of the
+   * Switch one log group (`dev/plans/LOGPOINTS_PLAN.md` §4.5): the DeZog model keeps a list of the
    * groups that log, so switching one off lists the rest, and switching the last one on drops the
    * list again. Persisted with the project; the emulator reads it from the shared store.
    */

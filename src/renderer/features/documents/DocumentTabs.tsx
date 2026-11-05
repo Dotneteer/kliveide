@@ -271,7 +271,7 @@ function hasDocumentTabDragData(
  *
  * The previous rule was "show `document.path` when the name is ambiguous", and path is absolute.
  * That produced tabs labelled
- * `/Users/dotneteer/source/kliveide/_experiments/testprojects/next/klive.project`, which then hit
+ * `/Users/dotneteer/source/kliveide/dev/experiments/testprojects/next/klive.project`, which then hit
  * `max-width: 360px` and `direction: rtl` on `.titleText` and rendered as
  * `…iments/testprojects/next/klive.project` — the middle of a path, with the one segment that
  * actually disambiguated it (`screen-tests/`, or its absence) clipped off the front. Every tab was

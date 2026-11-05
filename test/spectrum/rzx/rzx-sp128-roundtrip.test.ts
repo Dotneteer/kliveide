@@ -8,7 +8,7 @@ import { rzxSegments } from "@common/spectrum/rzx/rzxSegments";
 import { createSp128Session, type Sp128SessionModel, type Sp128TestSession } from "../../harness/sp128";
 
 /*
- * The RZX round trip on the 128K and the +2E/+3E (`.plans/RZX_PLAN.md` Phase 4): a program of our
+ * The RZX round trip on the 128K and the +2E/+3E (`dev/plans/RZX_PLAN.md` Phase 4): a program of our
  * own that pages banks through $7FFD, writes and reads back AY registers through IN, polls the
  * keyboard and, with a drive, the FDC's main status register. Recorded on the real core, it plays
  * back to identical RAM (every bank), registers, paging and AY state.

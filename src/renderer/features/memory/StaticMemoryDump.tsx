@@ -155,7 +155,7 @@ type MemoryDumpViewState = {
   topAddress?: number;
   /**
    * The annotation sidecar and the bank in it this document lists
-   * (`.docs/annotations.md`, "Commands"): a NEX's, a snapshot's, a paused
+   * (`dev/patterns/annotations.md`, "Commands"): a NEX's, a snapshot's, a paused
    * machine's.
    */
   annotationPath?: string;
@@ -215,7 +215,7 @@ type MemoryDumpViewState = {
    */
   romPageKind?: RomPageKind;
   /**
-   * How the Graphics view reads the bytes (`.docs/reverse-engineering-tools.md`, "Graphics finder"). View
+   * How the Graphics view reads the bytes (`dev/patterns/reverse-engineering-tools.md`, "Graphics finder"). View
    * state, never the sidecar: sweeping the width is how graphics are *found*, and a write per step
    * would turn browsing into editing. A graphic that has been found is named, which is a write.
    */
@@ -225,7 +225,7 @@ type MemoryDumpViewState = {
 };
 
 /**
- * `"z88"`: Cambridge Z88 code, from a `.z88` snapshot (`.plans/Z88_SLOT_BROWSER_PLAN.md` §4.5) - OZ
+ * `"z88"`: Cambridge Z88 code, from a `.z88` snapshot (`dev/plans/Z88_SLOT_BROWSER_PLAN.md` §4.5) - OZ
  * calls decoded after `RST 20h`, no ZX Next opcodes, and no system-variable names.
  *
  * Never inferred from the current machine: the bytes came from a file and stay Z88 code whichever
@@ -335,7 +335,7 @@ const StaticMemoryDump = ({
    * Only the default: a remembered choice in the annotation sidecar still wins (it is applied to the
    * view state further down), so a bank the user last read as hex opens as hex.
    *
-   * See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.16.
+   * See `dev/plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.16.
    */
   // --- The annotated bank, under its current names or the ones a saved layout may still carry
   const viewAnnotationPath = currentViewState.annotationPath ?? currentViewState.nexAnnotationPath;
@@ -358,7 +358,7 @@ const StaticMemoryDump = ({
    *
    * `lastView` accepts only memory and disassembly — a shipped build treats anything else as an error
    * and refuses the whole file — so while Sprites is showing, the editor is told the view it came
-   * from, which compares equal and writes nothing. See `.plans/NEX_BANK_SPRITES_VIEW_PLAN.md` §3.
+   * from, which compares equal and writes nothing. See `dev/plans/NEX_BANK_SPRITES_VIEW_PLAN.md` §3.
    */
   const lastListingView = useRef<"memory" | "disassembly">(
     viewMode === "sprites" || viewMode === "graphics" ? "disassembly" : viewMode
@@ -423,7 +423,7 @@ const StaticMemoryDump = ({
    *
    * Refs updated synchronously — by a jump when it asks for an address, and by a list when its
    * scrolling settles — because the history asks just before and just after a jump, before any state
-   * set by it has rendered. See `.plans/NAVIGATION_HISTORY_PLAN.md` §4.3.
+   * set by it has rendered. See `dev/plans/NAVIGATION_HISTORY_PLAN.md` §4.3.
    */
   const navMemoryTop = useRef<number>(viewState?.topAddress ?? viewState?.disassOffset ?? 0);
   const navDisassemblyTop = useRef<number>(viewState?.topAddress ?? viewState?.disassOffset ?? 0);
@@ -570,7 +570,7 @@ const StaticMemoryDump = ({
    * is paged in as one contiguous 16K block at exactly the offset the listing is numbered by, which
    * is what the debugger's own reveal always opens it at.
    *
-   * See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.19.
+   * See `dev/plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.19.
    */
   const branchGutterApplies =
     isNexBankDocument &&
@@ -604,7 +604,7 @@ const StaticMemoryDump = ({
    * here is the *document*: its view state, its scrolling, and generating the listing (which has a
    * path the editor knows nothing about — a dump with no sidecar still disassembles).
    *
-   * See `.ai/nex-debugging.md` and `.ai/ui-mvc-guide.md`.
+   * See `dev/ai/nex-debugging.md` and `dev/ai/ui-mvc-guide.md`.
    */
   /*
    * Mark the tab unsaved only when the sidecar could not be written.
@@ -1048,7 +1048,7 @@ const StaticMemoryDump = ({
     [navigationHistoryService]
   );
 
-  // ─── Graphics view (`.docs/reverse-engineering-tools.md`, "Graphics finder") ──────────
+  // ─── Graphics view (`dev/patterns/reverse-engineering-tools.md`, "Graphics finder") ──────────
 
   const graphicsLook = useMemo<GraphicsLook>(
     () => ({ ...DEFAULT_GRAPHICS_LOOK, ...currentViewState.graphicsLook }),
@@ -1948,7 +1948,7 @@ const StaticMemoryDump = ({
                      *
                      * This is also how a bank **watchpoint** gets made: the gutter click can only
                      * create an execution breakpoint, and the dialog's type selector is what turns
-                     * it into a memory read or write. See `.ai/nex-debugging.md`.
+                     * it into a memory read or write. See `dev/ai/nex-debugging.md`.
                      */
                     onEditBreakpoint={editBreakpoint}
                     partitionLabels={{}}

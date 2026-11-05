@@ -17,8 +17,8 @@ import { EpMemoryFileStore } from "@emu/machines/enterprise/EpHostFs";
 import { getSp128Model } from "@emu/machines/zxSpectrum128/sp128Timings";
 
 /*
- * The machines that run without the emulator window (`.plans/Z80_UNIT_TESTS_PLAN.md` D6, D18;
- * `.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D15, D16): the production `*WasmV2Machine` classes,
+ * The machines that run without the emulator window (`dev/plans/Z80_UNIT_TESTS_PLAN.md` D6, D18;
+ * `dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` D15, D16): the production `*WasmV2Machine` classes,
  * created the way the test harnesses create them - the WASM core's bytes come from the caller
  * (`readArtifact`) and the ROMs from a file provider - so the unit-test runner works in a
  * `worker_threads` worker and in a vitest test, and `klive test`/`klive run` work from the command

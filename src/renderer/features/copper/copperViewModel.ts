@@ -1,7 +1,7 @@
 /*
  * The Copper views' model: everything the Copper side-bar panel and the Copper List document show,
  * computed from one `CopperState` snapshot, with no React and no I/O
- * (`.plans/COPPER_DEBUGGING_PLAN.md` §4.4, §4.5).
+ * (`dev/plans/COPPER_DEBUGGING_PLAN.md` §4.4, §4.5).
  */
 import type { CopperHitEvent, CopperState } from "@common/messaging/EmuApi";
 import {

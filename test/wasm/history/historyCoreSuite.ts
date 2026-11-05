@@ -11,7 +11,7 @@ import { Z80Assembler } from "@main/z80-compiler/z80-assembler";
 import { historyFromOf, historyInfoOf, historyOf } from "../../harness/historySupport";
 
 /*
- * The execution-history checks every Z80 core runs (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` §6),
+ * The execution-history checks every Z80 core runs (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` §6),
  * written once and instantiated per core with its harness. The recorder is a debugger facility, not
  * hardware: the expectations come from the plan's decisions (a record is the state *before* its
  * instruction) and from what the CPU observably did - registers read by single-stepping, bytes

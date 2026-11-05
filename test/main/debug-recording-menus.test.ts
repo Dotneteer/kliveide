@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-/* `.plans/DEBUG_SESSION_RECORDING_PLAN.md` §4.5: the menus' dialogs and the D16 fallback question */
+/* `dev/plans/DEBUG_SESSION_RECORDING_PLAN.md` §4.5: the menus' dialogs and the D16 fallback question */
 
 const env = vi.hoisted(() => ({
   showSaveDialog: vi.fn(),

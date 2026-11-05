@@ -13,7 +13,7 @@ import { zxnextProfileLayout } from "@common/profile/layouts/zxnext";
 import { createSession, type NextTestSession } from "../../harness/zxnext";
 
 /*
- * The access profile on the ZX Spectrum Next (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` Phase 1):
+ * The access profile on the ZX Spectrum Next (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` Phase 1):
  * a known program gives exactly the expected flags and counts (D3, D9); reads and writes map apart,
  * through the MMU, the DivMMC and the Layer 2 write window, onto the bytes the layout names (T2); the
  * DMA's bus hold lands in `timeDma`, never in an instruction's time (T5); and every 28 MHz tick is

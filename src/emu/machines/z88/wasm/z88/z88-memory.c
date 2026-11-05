@@ -2,7 +2,7 @@
  * Cambridge Z88 - the memory map: the 4 MB physical memory, the cards in slots 0-3 and the internal
  * RAM, and the Blink's paging of the 64K logical space.
  *
- * A port of `Z88BankedMemory.ts` (Step 4 of `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`): eight 8K
+ * A port of `Z88BankedMemory.ts` (Step 4 of `dev/plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`): eight 8K
  * logical pages, each mapped to a physical offset and the card behind it. Page 0 is bank $00 (the
  * slot-0 card) or, with COM.RAMS, bank $20 (internal RAM); page 1 is the upper or lower half of
  * SR0's bank; pages 2-7 are SR1-SR3's 16K banks. A card smaller than its slot is mirrored through

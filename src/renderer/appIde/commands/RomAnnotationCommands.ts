@@ -46,7 +46,7 @@ import { romExportVerdictText, runRomSourceExport } from "@renderer/appIde/annot
 import { t } from "@common/i18n/i18n";
 
 /*
- * The `rom-ann-*` commands (`.plans/ROM_ANNOTATION_EDITING_PLAN.md` R7, R8).
+ * The `rom-ann-*` commands (`dev/plans/ROM_ANNOTATION_EDITING_PLAN.md` R7, R8).
  *
  * A ROM is named as Klive ships it, by its path under `src/public/roms` (`sp48.rom`, `sp128-1.rom`,
  * `zxnext/nextzxos-2.08/enNextZX.rom`), or by the path of a ROM file (absolute, or relative to the

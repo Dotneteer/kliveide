@@ -2,7 +2,7 @@
 #
 # Run by hand (workflow_dispatch), it is the author's PRIVATE build: the kits stay workflow
 # artifacts, named after package.json's version, and are never tagged, released or deployed (D14 and
-# D16 in .ai/release-guide.md). Keep it that way: all publishing lives in release.yml,
+# D16 in dev/ai/release-guide.md). Keep it that way: all publishing lives in release.yml,
 # which reuses these jobs through workflow_call and publishes their artifacts itself.
 
 name: Build artifacts
@@ -79,13 +79,13 @@ jobs:
           echo "::error::Packaging failed after 4 attempts"
           exit 1
 
-      # --- The packaged `klive` command line on the fixture project (.plans/UNIT_TESTS_CLI_PLAN.md §6)
+      # --- The packaged `klive` command line on the fixture project (dev/plans/UNIT_TESTS_CLI_PLAN.md §6)
       - name: Smoke-test the klive command line
         shell: cmd
         run: |
           call artifacts\win-unpacked\resources\cli\klive.cmd --version || exit /b 1
           call artifacts\win-unpacked\resources\cli\klive.cmd test test\cli\fixtures\sp48 --junit results.xml --coverage coverage.lcov || exit /b 1
-          rem --- klive run (.plans/COMMAND_LINE_AUTOMATION_PLAN.md Phase 2): the picture must match the golden
+          rem --- klive run (dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md Phase 2): the picture must match the golden
           call artifacts\win-unpacked\resources\cli\klive.cmd run test\cli\fixtures\run48 --frames 10 --screenshot shot.png || exit /b 1
           fc /b shot.png test\cli\fixtures\run48\expected-frame10.png > nul || exit /b 1
 
@@ -167,7 +167,7 @@ jobs:
           exit 1
 
       # --- The packaged `klive` command line on the fixture project, the way the docs' GitHub Actions
-      # --- example runs it (.plans/UNIT_TESTS_CLI_PLAN.md §6, D12)
+      # --- example runs it (dev/plans/UNIT_TESTS_CLI_PLAN.md §6, D12)
       - name: Smoke-test the klive command line
         shell: bash
         run: |
@@ -176,7 +176,7 @@ jobs:
           ./*x86_64.AppImage --appimage-extract > /dev/null
           ./squashfs-root/resources/cli/klive --version
           ./squashfs-root/resources/cli/klive test ../test/cli/fixtures/sp48 --junit results.xml --coverage coverage.lcov
-          # --- klive run (.plans/COMMAND_LINE_AUTOMATION_PLAN.md Phase 2): the picture must match the golden
+          # --- klive run (dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md Phase 2): the picture must match the golden
           ./squashfs-root/resources/cli/klive run ../test/cli/fixtures/run48 --frames 10 --screenshot shot.png
           cmp shot.png ../test/cli/fixtures/run48/expected-frame10.png
           rm -rf squashfs-root
@@ -526,13 +526,13 @@ jobs:
           echo "::error::Packaging failed after 4 attempts"
           exit 1
 
-      # --- The packaged `klive` command line on the fixture project (.plans/UNIT_TESTS_CLI_PLAN.md §6)
+      # --- The packaged `klive` command line on the fixture project (dev/plans/UNIT_TESTS_CLI_PLAN.md §6)
       - name: Smoke-test the klive command line
         shell: bash
         run: |
           "artifacts/mac-arm64/Klive IDE.app/Contents/Resources/cli/klive" --version
           "artifacts/mac-arm64/Klive IDE.app/Contents/Resources/cli/klive" test test/cli/fixtures/sp48 --junit results.xml --coverage coverage.lcov
-          # --- klive run (.plans/COMMAND_LINE_AUTOMATION_PLAN.md Phase 2): the picture must match the golden
+          # --- klive run (dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md Phase 2): the picture must match the golden
           "artifacts/mac-arm64/Klive IDE.app/Contents/Resources/cli/klive" run test/cli/fixtures/run48 --frames 10 --screenshot shot.png
           cmp shot.png test/cli/fixtures/run48/expected-frame10.png
 

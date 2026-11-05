@@ -6,7 +6,7 @@ import { DiskFsError, type DiskFileAttributes, type DiskFileSystem, type NewDisk
 
 /*
  * The edits the Disk Explorer, the `disk` IDE command and `klive disk` make
- * (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, B4/B6), as pure functions of an image's bytes.
+ * (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, B4/B6), as pure functions of an image's bytes.
  */
 
 /** An edit to a disk image */

@@ -1,5 +1,5 @@
 /*
- * Who uses which pattern (`.plans/SPRITE_INSPECTOR_PLAN.md` §4.5.2). Pure.
+ * Who uses which pattern (`dev/plans/SPRITE_INSPECTOR_PLAN.md` §4.5.2). Pure.
  *
  * Pattern RAM is 64 slots of 256 bytes. An 8-bit sprite reads a whole slot; a 4-bit sprite reads one
  * 128-byte half of it (`pattern7 & 1` picks the high half). The Patterns view draws each slot the way

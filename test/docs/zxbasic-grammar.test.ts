@@ -13,7 +13,7 @@ const REPO = join(__dirname, "..", "..");
 
 describe("the docs' ZX BASIC grammar", () => {
   it("is current with the IDE's word lists", () => {
-    const { render } = require("../../scripts/build-doc-zxbasic-grammar.cjs");
+    const { render } = require("../../dev/scripts/build-doc-zxbasic-grammar.cjs");
     const committed = readFileSync(join(REPO, "docs", "zxbasic.tmLanguage.json"), "utf8");
     expect(committed, "run `npm run doc:grammar`").toBe(render());
   });

@@ -1,6 +1,6 @@
 /*
  * Writes `.szx` (zx-state 1.4) snapshots, the inverse of `szxFile.ts`
- * (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.2, D2, D17). The block layouts follow
+ * (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.2, D2, D17). The block layouts follow
  * Spectaculator's zx-state specification (https://www.spectaculator.com/docs/zx-state/intro.html).
  *
  * The file is "ZXST", major 1, minor 4, the machine id and flags, then these blocks:

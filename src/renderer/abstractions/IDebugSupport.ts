@@ -62,7 +62,7 @@ export interface IDebugSupport {
 
   /**
    * The execution addresses whose conditions an in-core debug loop may decide itself, with their program
-   * slots (`DebugSupport.coreConditionPlan`, `.ai/wasm-core-debug.md`)
+   * slots (`DebugSupport.coreConditionPlan`, `dev/ai/wasm-core-debug.md`)
    */
   coreConditionPlan?(): { address: number; slots: number[] }[];
 
@@ -171,7 +171,7 @@ export interface IDebugSupport {
   statementTracker?: {
     observe(pc: number, getPartition?: (address: number) => number | undefined): void;
     current: number;
-    /** The addresses `observe` acts at; a debug loop in the core stops there for it (`.ai/wasm-core-debug.md` D13) */
+    /** The addresses `observe` acts at; a debug loop in the core stops there for it (`dev/ai/wasm-core-debug.md` D13) */
     stopAddresses?(): readonly number[];
   };
 
@@ -243,7 +243,7 @@ export interface IDebugSupport {
    *
    * Set for the window in which an injection flow's keystrokes are still in flight: a user
    * breakpoint pausing the machine there would expire every keystroke that has not landed yet and
-   * leave the OS command line half-typed. See `.ai/nex-debugging.md`.
+   * leave the OS command line half-typed. See `dev/ai/nex-debugging.md`.
    */
   suppressUserBreakpoints: boolean;
 
@@ -277,7 +277,7 @@ export interface IDebugSupport {
 
   /**
    * The machine's condition evaluator: its core's program store
-   * (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`). Set once per machine.
+   * (`dev/plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`). Set once per machine.
    */
   conditionStoreProvider?: () => ConditionStore | undefined;
 
@@ -300,7 +300,7 @@ export interface IDebugSupport {
   listBreakpointsWithState(): BreakpointInfo[];
 
   /**
-   * Reverse Continue (`.plans/LITE_STEP_BACK_PLAN.md` D11): the enabled execution breakpoints at an
+   * Reverse Continue (`dev/plans/LITE_STEP_BACK_PLAN.md` D11): the enabled execution breakpoints at an
    * address in a partition, with their compiled conditions. Optional: test doubles may omit it.
    */
   historicalExecBreakpoints?(
@@ -308,7 +308,7 @@ export interface IDebugSupport {
     partition: number | undefined
   ): { bp: BreakpointInfo; compiled?: CompiledCondition; error?: string }[];
 
-  // --- Logpoints (`.plans/LOGPOINTS_PLAN.md` §4.2)
+  // --- Logpoints (`dev/plans/LOGPOINTS_PLAN.md` §4.2)
 
   /** The clock, frame counter and slot map logpoints and conditions read. */
   machineInfo?: ConditionMachineInfo;

@@ -2,7 +2,7 @@ import { profileLocationOf, type ProfileLayout } from "./layouts/profileLayout";
 import { PF_SELF_MODIFIED, type ProfileTouchedByte } from "./profileTypes";
 
 /*
- * The self-modifying-code report (`coverage smc`, `.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D9):
+ * The self-modifying-code report (`coverage smc`, `dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D9):
  * runs of self-modified bytes, each with its partition, the nearest label at or before it, and -
  * where counters were kept - how often it was written and executed.
  */

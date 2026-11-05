@@ -10,7 +10,7 @@ import { extractGlobalOptions } from "../../src/cli/verbs/ide";
 import { createFakeHost, makeTempHome, startFakeServer, type FakeHost } from "../automation/fake-host";
 
 /*
- * `klive ide …` (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D12) in-process: the real verbs and the
+ * `klive ide …` (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` D12) in-process: the real verbs and the
  * real client against the real server on a fake Klive. Exit codes, the human output and `--json`.
  */
 

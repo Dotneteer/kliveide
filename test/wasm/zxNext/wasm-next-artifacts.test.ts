@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import { NEXT_PROFILE_IDS, NEXT_PROFILES, nextProfileOf } from "@emu/machines/zxNext/nextProfiles";
 import { MachineStateMismatchError } from "@emu/machines/state/wasmStateImage";
-import { ZXNEXT_ARTIFACTS } from "../../../scripts/zxnext-artifacts.cjs";
+import { ZXNEXT_ARTIFACTS } from "../../../dev/scripts/zxnext-artifacts.cjs";
 import { createSession } from "../../harness/zxnext";
 
 /*
- * One WASM artifact per Next model's hardware (`.ai/zxnext-models.md` D3): the
+ * One WASM artifact per Next model's hardware (`dev/ai/zxnext-models.md` D3): the
  * build's artifact list follows the profiles, each artifact loads with its own identity, and a state
  * saved on one model is refused by another with a message that names both models.
  */

@@ -143,7 +143,7 @@ describe("EmuStatusBar — performance info", () => {
 
 /*
  * A state change shows the machine's PC at once, with no frame in between: a pause, and a `.z88`
- * snapshot restored paused (`.plans/Z88_SNAPSHOT_PLAN.md` Phase 7), which runs no frame at all.
+ * snapshot restored paused (`dev/plans/Z88_SNAPSHOT_PLAN.md` Phase 7), which runs no frame at all.
  */
 describe("EmuStatusBar — PC after a state change", () => {
   it("shows the new PC when the machine pauses, without a frame", async () => {

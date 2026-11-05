@@ -1,5 +1,5 @@
 ' Klive BASIC standard library - fmath.bas: fSin, fCos and fTan.
-' Klive's own code, written from the documented API (.ai/kbasic/stdlib-api.json) and zxbc's observed
+' Klive's own code, written from the documented API (dev/ai/kbasic/stdlib-api.json) and zxbc's observed
 ' results (compatibility plan C6): angles in degrees, Fixed results about 0.25% accurate.
 #pragma once
 #pragma push(case_insensitive)

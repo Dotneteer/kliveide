@@ -9,7 +9,7 @@ import { arrayLayout, elementAddress, frameIx, variableAddress } from "./variabl
 import type { WatchExpr, WatchValue } from "./watch-ast";
 
 /**
- * Watch expressions (plan §10.8, `.plans/SHARED_Z80_BACKEND_PLAN.md` §12.3): a watch is parsed by
+ * Watch expressions (plan §10.8, `dev/plans/SHARED_Z80_BACKEND_PLAN.md` §12.3): a watch is parsed by
  * the language's plugin into the neutral watch AST (`watch-ast.ts`) and evaluated here, for every
  * language, over a snapshot of the machine's memory — nothing runs in the machine. Numbers evaluate
  * as JavaScript numbers; every meaning that differs between languages (division, remainders,

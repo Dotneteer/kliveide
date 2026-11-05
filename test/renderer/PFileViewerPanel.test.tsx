@@ -11,7 +11,7 @@ import { zx80VarsFile } from "./pfile/zx80VarsFile";
  * `test/renderer/pfile/pFileView.test.ts`.
  */
 
-const TAPES = join(__dirname, "../../_input/zx81-tapes");
+const TAPES = join(__dirname, "../../dev/research/zx81-tapes");
 const CHARACTERS = new Uint8Array(readFileSync(join(TAPES, "basic/Characters.P")));
 const BYTE_FOREVER = new Uint8Array(readFileSync(join(TAPES, "1k/byteForever.p")));
 const DEC_TO_FP = new Uint8Array(readFileSync(join(TAPES, "basic/DEC-TO-FP-2.p")));

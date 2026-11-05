@@ -8,7 +8,7 @@ import { sp48TapeLoadFlow } from "@emu/machines/tapeLoadFlows";
 import { createSp48Session } from "../harness/sp48";
 
 /*
- * "Load and run" on a 48K (`.plans/TAPE_VIEWER_PLAN.md` §4.6), on the real machine: the keystrokes
+ * "Load and run" on a 48K (`dev/plans/TAPE_VIEWER_PLAN.md` §4.6), on the real machine: the keystrokes
  * `sp48TapeLoadFlow` queues, typed into the real ROM's editor, load a real tape. The command and
  * the IDE side are covered by `test/commands/TapeLoadCommand.test.ts`.
  */

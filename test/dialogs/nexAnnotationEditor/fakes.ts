@@ -10,7 +10,7 @@ import { anAnnotationModel } from "./fixtures";
 
 /*
  * Fakes for every port the annotation editor touches, so its whole behaviour runs headless — no
- * React, no DOM, and no `vi.mock` below the container, per `.ai/ui-mvc-guide.md`.
+ * React, no DOM, and no `vi.mock` below the container, per `dev/ai/ui-mvc-guide.md`.
  */
 
 /**

@@ -14,7 +14,7 @@ import { MemoryMap, MemorySection } from "@renderer/appIde/disassemblers/common-
 import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z80-disassembler";
 
 /*
- * The Enterprise's ROMs as the ROM annotation tools read them (`.ai/rom-annotations/ep-authoring-guide.md`):
+ * The Enterprise's ROMs as the ROM annotation tools read them (`dev/ai/rom-annotations/ep-authoring-guide.md`):
  * every 16K page known by its bytes and decoded at $C000, where EXOS runs it, with the function code after
  * `RST 30h` as data; and the bank space telling its ROM segments (positive partitions) from its RAM.
  */

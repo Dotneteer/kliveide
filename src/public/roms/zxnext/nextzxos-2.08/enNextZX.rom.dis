@@ -2,7 +2,7 @@
   "schemaVersion": 3,
   "machine": "rom",
   "source": {"fileName":"enNextZX.rom"},
-  "authoring": ".ai/rom-annotations/README.md",
+  "authoring": "dev/ai/rom-annotations/README.md",
   "level": 2,
   "pages": {
     "0": {"crc32":"95ba84d4","name":"ZX Spectrum Next NextZXOS ROM 0"},

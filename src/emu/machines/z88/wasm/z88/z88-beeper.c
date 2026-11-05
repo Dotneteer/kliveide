@@ -2,7 +2,7 @@
  * Cambridge Z88 - the beeper: the speaker level, sampled at the audio rate and DC-filtered.
  *
  * A port of `Z88BeeperDevice` on `AudioDeviceBase` (Step 9 of
- * `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`). With COM.SRUN set the speaker plays the Blink's
+ * `dev/plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`). With COM.SRUN set the speaker plays the Blink's
  * 3200 Hz oscillator (silenced by COM.SBIT); with SRUN clear, the ear bit (COM.SBIT) drives it.
  *
  * The arithmetic is the TypeScript device's, in doubles, so the samples are the same numbers: one

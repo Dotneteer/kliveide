@@ -21,7 +21,7 @@ export type CompilerWorkerData = {
   state: AppState;
   /**
    * The open `.zxbas` file: when the build root does not include it, the worker checks it as a root
-   * of its own for language intelligence (`.plans/BASIC_EDITOR_INTELLIGENCE_PLAN.md` E14).
+   * of its own for language intelligence (`dev/plans/BASIC_EDITOR_INTELLIGENCE_PLAN.md` E14).
    */
   basicActiveFile?: string;
 };

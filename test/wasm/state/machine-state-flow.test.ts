@@ -1,6 +1,6 @@
 /*
  * Saving and loading Klive state files through a real MachineController and the real cores
- * (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` Phase 7). The machine service's part is played
+ * (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` Phase 7). The machine service's part is played
  * by a small fake that rebuilds machines the way MachineService does.
  */
 import { afterEach, describe, expect, it } from "vitest";
@@ -259,7 +259,7 @@ describe("loading a state", () => {
   });
 });
 
-describe("state files of the +2A/+3 models (.plans/PLUS3_AMSTRAD_ROMS_PLAN.md Phase 3)", () => {
+describe("state files of the +2A/+3 models (dev/plans/PLUS3_AMSTRAD_ROMS_PLAN.md Phase 3)", () => {
   /** An emulator on a +2A/+3/+2E/+3E model, paused at $8100 of a loaded +3 program */
   async function p3PausedAtLoop(modelId: string, config: MachineConfigSet = {}): Promise<FakeEmulator> {
     const emu = await emulator(MI_SPECTRUM_3E, modelId, config);

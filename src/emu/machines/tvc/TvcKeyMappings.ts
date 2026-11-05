@@ -1,7 +1,7 @@
 import type { KeyMapping } from "@abstractions/KeyMapping";
 
 /**
- * The host keyboard on the TVC matrix (`.ai/videoton-tvc.md`, "Keyboard and typing"), by key
+ * The host keyboard on the TVC matrix (`dev/ai/videoton-tvc.md`, "Keyboard and typing"), by key
  * position. Letters and digits are on their own keys, as a non-Hungarian host labels them. The
  * punctuation keys sit on the host keys with the same symbol where there is one. The Hungarian
  * accented letters, which a non-Hungarian host has no keys for, are on F1-F9 (í ö ü ó ő ú é á ű);

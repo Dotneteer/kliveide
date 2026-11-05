@@ -4,7 +4,7 @@
  * The ~200 `--bgcolor-*` / `--color-*` names the app has always used, repointed from literal colours
  * onto the L2 semantic layer.
  *
- * This is the migration trick described in `.ai/ui-design-system.md`, "The token architecture". Every one of the
+ * This is the migration trick described in `dev/ai/ui-design-system.md`, "The token architecture". Every one of the
  * 110 stylesheets keeps asking for exactly the token it always asked for, so nothing has to change
  * for the new palette to take effect everywhere at once — and later phases can retire an alias by
  * pointing its component at the L2 name directly, one panel at a time, without a flag day.
@@ -483,7 +483,7 @@ export const componentAliases: Record<string, string> = {
    */
   "--color-breakpoint-type": "var(--accent-secondary-text)",
   /*
-   * A logpoint's group (`.plans/LOGPOINTS_PLAN.md` §4.3, §4.5): the `[GROUP]` of each Log pane line
+   * A logpoint's group (`dev/plans/LOGPOINTS_PLAN.md` §4.3, §4.5): the `[GROUP]` of each Log pane line
    * is painted with the output pane's `bright-magenta`, and the Breakpoints panel's group switch rows
    * take the same ink through this alias, so a group reads as one thing in both places.
    */
@@ -526,7 +526,7 @@ export const componentAliases: Record<string, string> = {
   "--border-memory-highlight": "var(--accent-secondary-border)",
 
   /*
-   * The memory view's heat map (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D14): a fixed,
+   * The memory view's heat map (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D14): a fixed,
    * accent-independent ramp per kind of access, so it never reads as the changed-byte mark or the
    * hover (both the secondary accent). A heat cell *fills* - unlike the changed-byte mark, which
    * must not - because the fill is the information: the whole point of the view is the pattern a
@@ -550,7 +550,7 @@ export const componentAliases: Record<string, string> = {
   "--bgcolor-coverage-line": "var(--status-success-subtle)",
 
   /*
-   * The Profiler document (`.plans/PROFILER_PLAN.md` D3, D4, D10, D14). The share bar behind a
+   * The Profiler document (`dev/plans/PROFILER_PLAN.md` D3, D4, D10, D14). The share bar behind a
    * row's self % is the primary accent's subtle wash - a quantity, drawn like a selection would be
    * too strong; the pseudo-rows (HALT, acknowledges, DMA, snooze) are time that is no routine's, so
    * they recede in the secondary data ink, in italics; the call tracker's "approximate" counters
@@ -644,7 +644,7 @@ export const componentAliases: Record<string, string> = {
    */
   "--color-annotation-rail": "var(--syntax-label)",
   /*
-   * A ROM label in the live Disassembly view (`.docs/annotations.md`
+   * A ROM label in the live Disassembly view (`dev/patterns/annotations.md`
    * §5.5): the label hue, because it is a name like any other, distinguished by weight and slant in
    * the stylesheet rather than by a hue of its own — a fourth hue in the row would read as another
    * data column.
@@ -696,7 +696,7 @@ export const componentAliases: Record<string, string> = {
    */
   "--color-state-value-alt": "var(--accent-secondary-text)",
 
-  // --- Copper views (`.plans/COPPER_DEBUGGING_PLAN.md` §4.4, §4.5) -----------------------------
+  // --- Copper views (`dev/plans/COPPER_DEBUGGING_PLAN.md` §4.4, §4.5) -----------------------------
   /*
    * The raster ruler's three zones, in `cvc` order. The paper takes the accent's subtle fill
    * because it is where the list's effects are seen; the borders are neutral surfaces, the lower
@@ -715,7 +715,7 @@ export const componentAliases: Record<string, string> = {
   "--bgcolor-copper-pc": "var(--accent-subtle)",
   "--bgcolor-copper-hit": "var(--status-warning-subtle)",
 
-  // --- Execution History (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.6) -----------------------
+  // --- Execution History (`dev/plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.6) -----------------------
   /*
    * Event rows (INT, NMI, DMA hold) are separators, not instructions: a subtle neutral band with
    * secondary text, so a run of instructions reads unbroken and an interrupt still stands out. The
@@ -728,7 +728,7 @@ export const componentAliases: Record<string, string> = {
   "--color-history-frame-line": "var(--border-strong)",
   "--color-history-recording": "var(--status-error)",
 
-  // --- NEX bank browser content mix (`.plans/NEX_DMA_COPPER_REGIONS_PLAN.md` Phase 4) -----------
+  // --- NEX bank browser content mix (`dev/plans/NEX_DMA_COPPER_REGIONS_PLAN.md` Phase 4) -----------
   /*
    * The two hardware-program kinds take fixed hues, not accent shades: the accent already owns
    * Code (primary) and Words (secondary), and Bytes takes the warning hue, so the two new segments
@@ -747,7 +747,7 @@ export const componentAliases: Record<string, string> = {
   "--color-nex-mix-text": "var(--syntax-string)",
   "--color-nex-mix-graphic": "var(--syntax-number)",
 
-  // --- Changed since the previous stop (`.plans/SPRITE_INSPECTOR_PLAN.md` D16) -------------------
+  // --- Changed since the previous stop (`dev/plans/SPRITE_INSPECTOR_PLAN.md` D16) -------------------
   /*
    * One treatment for "these bytes moved since the machine last stopped", defined once so any state
    * panel can adopt it: a dot in `--color-state-changed` beside the row's index. It is the data
@@ -757,7 +757,7 @@ export const componentAliases: Record<string, string> = {
    */
   "--color-state-changed": "var(--data-changed)",
 
-  // --- Sprite Inspector (`.plans/SPRITE_INSPECTOR_PLAN.md` §4.5) -------------------------------
+  // --- Sprite Inspector (`dev/plans/SPRITE_INSPECTOR_PLAN.md` §4.5) -------------------------------
   /* Effective visibility: drawn, or its own bit set but hidden by its anchor (trap T5). */
   "--color-sprite-visible": "var(--status-success)",
   "--color-sprite-hidden-by-anchor": "var(--status-warning)",
@@ -775,7 +775,7 @@ export const componentAliases: Record<string, string> = {
   "--color-sprite-map-outline": "var(--color-state-value)",
   "--bgcolor-sprite-map-selected": "var(--accent-solid)",
 
-  // --- Graphics finder (`.docs/reverse-engineering-tools.md`, "Graphics finder", G-T3) ----------------------
+  // --- Graphics finder (`dev/patterns/reverse-engineering-tools.md`, "Graphics finder", G-T3) ----------------------
   /*
    * The machine's pixels are hardware colours (ink and paper from the ZX palette); everything drawn
    * over them is chrome, and takes these. The selection is the primary accent, as on every other
@@ -798,7 +798,7 @@ export const componentAliases: Record<string, string> = {
    */
   "--color-annotation-auto": "var(--text-tertiary)",
 
-  // --- Tilemap Inspector (`.plans/TILEMAP_INSPECTOR_PLAN.md` §4.5) ------------------------------
+  // --- Tilemap Inspector (`dev/plans/TILEMAP_INSPECTOR_PLAN.md` §4.5) ------------------------------
   /*
    * The overlays drawn on the map and the tile sheet. The clip window takes the warning hue, as on
    * the sprite-space map (it is what cuts pixels off); the visible window, a different thing on the
@@ -812,7 +812,7 @@ export const componentAliases: Record<string, string> = {
   "--color-tilemap-index": "var(--text-primary)",
   "--bgcolor-tilemap-index": "var(--surface-canvas)",
 
-  // --- Layer 2 Inspector (`.plans/LAYER2_INSPECTOR_PLAN.md` §4.5) --------------------------------
+  // --- Layer 2 Inspector (`dev/plans/LAYER2_INSPECTOR_PLAN.md` §4.5) --------------------------------
   /*
    * The overlays on the Layer 2 image follow the Tilemap Inspector's: the clip window in the warning
    * hue, the visible window in the secondary accent, the selection in the primary accent. New here:
@@ -832,7 +832,7 @@ export const componentAliases: Record<string, string> = {
   "--color-layer2-role-displayed": "var(--accent-text)",
   "--color-layer2-role-shadow": "var(--accent-secondary-text)",
 
-  // --- Next layer composition (`.plans/LAYER_COMPOSITION_PLAN.md` §4.5) ----------------------------
+  // --- Next layer composition (`dev/plans/LAYER_COMPOSITION_PLAN.md` §4.5) ----------------------------
   /*
    * Four layers, four identities: the strip's chips, the clip-window outlines on the screen and the
    * Layers document's thumbnail frames all colour a layer the same way. The four status hues are the
@@ -847,7 +847,7 @@ export const componentAliases: Record<string, string> = {
   "--color-layers-pill": "var(--status-warning)",
   "--color-layers-chip-off": "var(--text-disabled)",
 
-  // --- Beam position overlay (`.plans/BEAM_POSITION_OVERLAY_PLAN.md` D9) ----------------------------
+  // --- Beam position overlay (`dev/plans/BEAM_POSITION_OVERLAY_PLAN.md` D9) ----------------------------
   /*
    * Chrome over the paused emulator screen. The beam is the primary accent and the Copper's hit the
    * secondary (D7): two pointers into one raster get two markers in two hues. The part of the picture
@@ -899,7 +899,7 @@ export const componentAliases: Record<string, string> = {
   "--bgcolor-debug-macro-bp": "var(--status-success-subtle)",
   "--color-debug-unreachable-bp": "var(--status-warning)",
   /*
-   * The history cursor (`.plans/LITE_STEP_BACK_PLAN.md` D7, Q1): "you are looking at the past".
+   * The history cursor (`dev/plans/LITE_STEP_BACK_PLAN.md` D7, Q1): "you are looking at the past".
    * The secondary accent, because the present's execution point is the primary one and both can be
    * talked about in one view (the editor, the status bar) - two pointers into one timeline. An
    * outline and a band, never a tint over a whole panel: a tinted panel reads as disabled.
@@ -939,7 +939,7 @@ export const componentAliases: Record<string, string> = {
 
   // --- Tape viewer timeline strip ----------------------------------------------------------------
   /*
-   * One segment per block, coloured by what the block is (`.plans/TAPE_VIEWER_PLAN.md` §4.4.1).
+   * One segment per block, coloured by what the block is (`dev/plans/TAPE_VIEWER_PLAN.md` §4.4.1).
    * Neutral by default, ordered by how much the block matters to a reader: data and code stand out
    * of the track more than headers, tones and pauses do. Only two hues: BASIC takes the accent (it
    * is the one block the viewer decodes), and a block Klive does not play takes the error colour -
@@ -957,7 +957,7 @@ export const componentAliases: Record<string, string> = {
   "--color-tape-segment-unplayable": "var(--status-error)",
   "--color-tape-segment-selected": "var(--text-primary)",
 
-  // --- Byte anatomy and the HT-1080Z tape viewer (`.plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D5) ------
+  // --- Byte anatomy and the HT-1080Z tape viewer (`dev/plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D5) ------
   /*
    * In a listing a BASIC keyword is coloured as the editor colours a keyword (`--syntax-keyword`) and
    * a string as the editor's strings: a listing and the source it came from name the same thing with
@@ -986,7 +986,7 @@ export const componentAliases: Record<string, string> = {
   "--color-memory-map-basic": "var(--color-tape-segment-basic)",
   "--color-memory-map-selected": "var(--color-tape-segment-selected)",
 
-  // --- Unit Tests panel (`.plans/Z80_UNIT_TESTS_PLAN.md` D13) ------------------------------------
+  // --- Unit Tests panel (`dev/plans/Z80_UNIT_TESTS_PLAN.md` D13) ------------------------------------
   /*
    * Status is the only colour in the panel: a passed test's glyph takes success, a failed one error,
    * one that ended in an error (stack, timeout, HALT) the warning hue, and the message line under a

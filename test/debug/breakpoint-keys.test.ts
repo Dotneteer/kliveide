@@ -13,7 +13,7 @@ import {
  * index so it cannot move when a machine's labels do; the display key names it by label because
  * that is what a user types.
  *
- * See `.plans/PARTITION_NAMING_UNIFICATION_PLAN.md` §8, decision 4.
+ * See `dev/plans/PARTITION_NAMING_UNIFICATION_PLAN.md` §8, decision 4.
  */
 
 /** A 128K-shaped label map: ROMs indexed negatively, banks from zero. */
@@ -124,7 +124,7 @@ describe("breakpoint keys - NextReg write breakpoints", () => {
    * partition, so the two key forms coincide and the label map is never consulted — which is what
    * every case below asserts by checking both forms against one string.
    *
-   * See `.plans/NEXTREG_WRITE_BREAKPOINTS_PLAN.md` §4.3.
+   * See `dev/plans/NEXTREG_WRITE_BREAKPOINTS_PLAN.md` §4.3.
    */
   const bothForms = (bp: BreakpointInfo): string => {
     const storage = getBreakpointStorageKey(bp);

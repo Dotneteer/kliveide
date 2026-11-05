@@ -4,7 +4,7 @@ import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 
 /*
- * Running a machine without the emulator window (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D16): whole
+ * Running a machine without the emulator window (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` D16): whole
  * frames, to an address, and the IDE's code-injection flows. The unit-test runner and `klive run` use
  * it, so both boot a machine exactly the same way. Emulated time only: a flow's waits, which the IDE's
  * controller spends on the host's clock, become the frames they stand for (20 ms each), so a run

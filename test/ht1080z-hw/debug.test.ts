@@ -5,7 +5,7 @@ import { HT_VIDEO_PAGE } from "@emu/machines/machine-props";
 import { createHtSession, type Ht1080zTestSession } from "../harness/ht1080z";
 
 /**
- * The debugger and state files on the HT-1080Z (`.plans/HT1080Z_PLAN.md` Phase 8), driven as the IDE
+ * The debugger and state files on the HT-1080Z (`dev/plans/HT1080Z_PLAN.md` Phase 8), driven as the IDE
  * drives them: breakpoints in the ROM and in RAM, step into/over/out, and a state saved to a `.kls`
  * file and restored into another machine of the same model.
  */

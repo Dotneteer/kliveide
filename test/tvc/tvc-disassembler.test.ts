@@ -5,7 +5,7 @@ import { TvcCustomDisassembler } from "@renderer/appIde/disassemblers/z80-disass
 import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z80-disassembler";
 
 /*
- * The TVC's custom disassembly (`.ai/videoton-tvc.md`, "IDE integration"): the byte after `RST 30h`
+ * The TVC's custom disassembly (`dev/ai/videoton-tvc.md`, "IDE integration"): the byte after `RST 30h`
  * is the system call's function code, anywhere in memory.
  */
 

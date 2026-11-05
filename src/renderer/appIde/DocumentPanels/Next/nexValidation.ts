@@ -18,7 +18,7 @@ import {
  * ROM never reaches its own code; one that needs a newer core may fail in ways that look like
  * emulator bugs. All of it is decidable from the 512-byte header the viewer has already parsed.
  *
- * Pure, and table-driven in its tests, per `.ai/nex-debugging.md`. The machine's side of
+ * Pure, and table-driven in its tests, per `dev/ai/nex-debugging.md`. The machine's side of
  * each comparison arrives in `NexValidationContext` rather than being read here, so nothing in this
  * module knows about the emulator.
  */

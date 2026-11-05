@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { instructionStarts, z80InstructionLength } from "@common/profile/z80InstructionLength";
 
-/* Instruction lengths for coverage's partial lines (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` T8) */
+/* Instruction lengths for coverage's partial lines (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` T8) */
 
 describe("z80InstructionLength", () => {
   const cases: [string, number[], number, boolean?][] = [

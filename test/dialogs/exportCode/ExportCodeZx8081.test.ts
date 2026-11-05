@@ -12,7 +12,7 @@ import { selectViewModel } from "@renderer/appIde/dialogs/exportCode/ExportCodeV
 import { aState, anEnv } from "./fakes";
 
 /**
- * The Export dialog on a ZX81 or ZX80 (`.ai/zx8081.md`, "Machine code decisions", D8): the machine's own
+ * The Export dialog on a ZX81 or ZX80 (`dev/ai/zx8081.md`, "Machine code decisions", D8): the machine's own
  * program file, none of the Spectrum's loader options, and auto-run on a `.p`.
  */
 const zx81 = (settings: Record<string, unknown> = {}) =>
@@ -24,7 +24,7 @@ describe("Export dialog on the ZX80/ZX81", () => {
   it("offers formats by machine", () => {
     expect(formatOptionsFor("zx81").map((o) => o.value)).toEqual(["p", "hex"]);
     expect(formatOptionsFor("zx80").map((o) => o.value)).toEqual(["o", "p", "hex"]);
-    // --- The 48K adds a Microdrive cartridge (`.plans/MICRODRIVE_PLAN.md` Q7)
+    // --- The 48K adds a Microdrive cartridge (`dev/plans/MICRODRIVE_PLAN.md` Q7)
     expect(formatOptionsFor("sp48").map((o) => o.value)).toEqual([...FORMAT_OPTIONS.map((o) => o.value), "mdr"]);
   });
 

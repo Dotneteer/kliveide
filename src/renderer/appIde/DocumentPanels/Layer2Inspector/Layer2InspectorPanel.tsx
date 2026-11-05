@@ -53,7 +53,7 @@ import { Layer2InspectorPane } from "./Layer2InspectorPane";
 import styles from "./Layer2Inspector.module.scss";
 
 /**
- * The Layer 2 Inspector (`$layer2`, `.plans/LAYER2_INSPECTOR_PLAN.md`, G3.5): the live Layer 2 image
+ * The Layer 2 Inspector (`$layer2`, `dev/plans/LAYER2_INSPECTOR_PLAN.md`, G3.5): the live Layer 2 image
  * from one of three sources - the displayed banks (`$12`), the shadow banks (`$13`) or the set the
  * `$123B` window maps (D4) - whole or as displayed (D5), with a Banks strip and an inspector that
  * resolves every pixel to its addresses (D6).

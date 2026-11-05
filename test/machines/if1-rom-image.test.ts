@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { checkInterface1Rom, IF1_ROM_RESOURCE } from "@emu/machines/zxSpectrum/if1/if1Rom";
 
 /*
- * The shipped ZX Interface 1 ROM (`.plans/MICRODRIVE_PLAN.md` Phase 0, Q1). A replaced or corrupted
+ * The shipped ZX Interface 1 ROM (`dev/plans/MICRODRIVE_PLAN.md` Phase 0, Q1). A replaced or corrupted
  * image fails here instead of crashing the first RST 8. The CRC32 is MAME's v2 BIOS, recorded in
  * `src/public/roms/if1-roms-readme.txt`. The paging checks pin the facts the device relies on (§3 M2):
  * the IF1 ROM and the 48K ROM hold the same instruction at the page-in addresses, so paging before or

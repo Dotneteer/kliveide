@@ -2,7 +2,7 @@
  * Cambridge Z88 - the programmable cards: UV EPROMs, Intel 28F00xS5 and AMD 29F0x0B flash chips.
  *
  * A port of `Z88UvEpromMemoryCard`, `Z88IntelFlashMemoryCard` and `Z88AmdFlashMemoryCard` (Step 10 of
- * `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`), themselves based on OZvm's EpromBank, IntelFlashBank
+ * `dev/plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`), themselves based on OZvm's EpromBank, IntelFlashBank
  * and AmdFlashBank. Each slot holds one card, so the chip state is per slot (index 0-3).
  *
  * The fast path stays in z88-memory.c: a read goes straight to physical memory unless the slot's chip

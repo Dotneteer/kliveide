@@ -1,7 +1,7 @@
 import { t } from "@common/i18n/i18n";
 
 /*
- * Where injected or exported Videoton TVC code may go (`.ai/videoton-tvc.md`, "Run, Debug and
+ * Where injected or exported Videoton TVC code may go (`dev/ai/videoton-tvc.md`, "Run, Debug and
  * export"). One set of rules for Run, Inject and Export, so what Run executes is what Export
  * writes. The layout is the one TVC machine-code programs are distributed in (rtvc's
  * `BASIC_START`): a one-line BASIC program at 19EFh that calls the code with `USR`, and the code

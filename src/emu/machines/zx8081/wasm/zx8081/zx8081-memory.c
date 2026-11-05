@@ -39,7 +39,7 @@ static void zx8081BeforeM1(void) { zx8081M1Fetch = 1u; }
  * Out of line: `zx8081CpuReadMemory` is inlined at every memory access of every opcode. While this
  * body was inlined too, the compiler could drop it after an instruction's first read only as long as
  * nothing opaque ran between the reads; the access profile's hook calls (`z80-profile.h`) are opaque,
- * and inlined it grew the core from 192 KB to 281 KB (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` T10).
+ * and inlined it grew the core from 192 KB to 281 KB (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` T10).
  */
 static uint8_t ZX8081_NOINLINE zx8081CpuReadOpcode(uint16_t address) {
   uint8_t value = zx8081PeekMemory(address);

@@ -39,7 +39,7 @@ import {
   parseNumericInput,
   validateBreakpointForm
 } from "@renderer/appIde/utils/breakpoint-form";
-// --- Register names: the union of every core's set (`.ai/zxnext-models.md` D5)
+// --- Register names: the union of every core's set (`dev/ai/zxnext-models.md` D5)
 import { nextRegUnion } from "@emu/machines/zxNext/nextRegSets";
 import { SPRITE_ATTRIBUTE_LABELS } from "@common/zxnext/sprites/spriteBreakpoints";
 import styles from "./BreakpointDialog.module.scss";
@@ -54,7 +54,7 @@ import { withLabels } from "@common/i18n/labels";
  * Source-code breakpoints are *placed* by the editor's glyph margin, which tracks them as lines
  * move; opened on one, the dialog is in **source mode** - the location is shown, and only the
  * condition, the hit rule and the enabled state are editable
- * (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.4.2).
+ * (`dev/plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.4.2).
  *
  * Every rule lives in `breakpoint-form.ts`, which has no React in it and is tested without mounting
  * anything. This component decides only what to *show*.
@@ -95,7 +95,7 @@ const describeCopperIndex = (text: string, ram: Uint8Array | undefined): string 
   return `${hex} — ${formatCopperInstruction(instr)} · ${describeCopperInstruction(instr)}`;
 };
 
-/** What the breakpoint does when its filters pass (`.plans/LOGPOINTS_PLAN.md` §4.5). */
+/** What the breakpoint does when its filters pass (`dev/plans/LOGPOINTS_PLAN.md` §4.5). */
 const ACTION_OPTIONS: RadioGroupOption[] = withLabels([
   { value: "stop", labelKey: "dialog.breakpoint.action.stop" },
   { value: "log", labelKey: "dialog.breakpoint.action.log" }

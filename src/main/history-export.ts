@@ -1,5 +1,5 @@
 /*
- * Debug › Export Execution History… (`.plans/TRACE_EXPORT_PLAN.md` §4.3, D13): a save dialog in
+ * Debug › Export Execution History… (`dev/plans/TRACE_EXPORT_PLAN.md` §4.3, D13): a save dialog in
  * main, then the IDE's `history-export` command - the state menus' pattern.
  */
 import path from "path";

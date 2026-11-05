@@ -1,5 +1,5 @@
 /*
- * The ZX Spectrum Next tilemap, decoded (`.plans/TILEMAP_INSPECTOR_PLAN.md` §4.1, D3). Pure: a cell
+ * The ZX Spectrum Next tilemap, decoded (`dev/plans/TILEMAP_INSPECTOR_PLAN.md` §4.1, D3). Pure: a cell
  * is a function of its one or two map bytes and six registers, so the inspector decodes it here
  * rather than asking the core. Every rule copies `zxnextUlaRenderTilemapScreen` and
  * `zxnextUlaReadTilemapVram` in `zxnext-ula.c`, which follow `tilemap.vhd`; a harness test

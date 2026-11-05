@@ -23,7 +23,7 @@ export type DocumentApi = {
    * it does nothing. The NEX debugger needs exactly that: as the program counter moves within a bank
    * whose document is already showing, each pause has to scroll the listing to the new address.
    *
-   * See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.18.
+   * See `dev/plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.18.
    */
   revealAddress?: (address: number) => void;
 
@@ -32,7 +32,7 @@ export type DocumentApi = {
    * been disposed, for example); the document type's navigation adapter then captures the location
    * from the document state instead.
    *
-   * See `.plans/NAVIGATION_HISTORY_PLAN.md` §3.2.
+   * See `dev/plans/NAVIGATION_HISTORY_PLAN.md` §3.2.
    */
   getNavigationLocator?: () => NavigationLocator | undefined;
 

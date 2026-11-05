@@ -44,10 +44,10 @@ import { Z88SlotBrowser } from "./Z88SlotBrowser";
 import { z88BankDumpId, z88BankDumpTitle } from "./z88BankDocument";
 
 /*
- * The `.z88` (OZvm snapshot) viewer (`.plans/Z88_SNAPSHOT_PLAN.md` §4.8): what the file holds and
+ * The `.z88` (OZvm snapshot) viewer (`dev/plans/Z88_SNAPSHOT_PLAN.md` §4.8): what the file holds and
  * whether Klive can load it, the Z80 and Blink state, the 64K as the snapshot pages it (with a
  * memory dump and disassembly at PC), and every card bank by bank in the Slots browser
- * (`.plans/Z88_SLOT_BROWSER_PLAN.md`), which pops a bank out as its own document.
+ * (`dev/plans/Z88_SLOT_BROWSER_PLAN.md`), which pops a bank out as its own document.
  *
  * Built only from the shared viewer primitives - no stylesheet of its own, no colour.
  */

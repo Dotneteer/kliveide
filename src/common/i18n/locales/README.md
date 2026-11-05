@@ -45,16 +45,16 @@ translation round keeps it.
 2. **Add a glossary column.** In `glossary.json`, add your language's id to every term in `terms`
    and a `style` entry: how to address the user, how menu commands are phrased, capitalization.
    Ask an AI to draft it from the other columns, then correct it yourself.
-3. **Get the work list.** `npm run i18n:todo -- <lang>` writes `i18n-work/<lang>.todo.json`: every
+3. **Get the work list.** `npm run i18n:todo -- <lang>` writes `.local/i18n-work/<lang>.todo.json`: every
    entry still to translate, with its context. For smaller batches add `--ns menu` (one area) or
    `--limit 200`.
 4. **Translate.**
    - *With an AI model:* give it `TRANSLATING.md`, `glossary.json` and the todo file, and ask:
      "Translate this file into <language> (<lang>), following TRANSLATING.md." For Portuguese, name
      the variant (`pt-BR` or `pt-PT`) and translate each variant in its own request, from English.
-     Save the answer to a file, e.g. `i18n-work/<lang>.answer.json`.
+     Save the answer to a file, e.g. `.local/i18n-work/<lang>.answer.json`.
    - *By hand:* write a JSON object `{ "<key>": "<translation>" }` with the entries you translated.
-5. **Merge it.** `npm run i18n:merge -- <lang> i18n-work/<lang>.answer.json`. Entries with broken
+5. **Merge it.** `npm run i18n:merge -- <lang> .local/i18n-work/<lang>.answer.json`. Entries with broken
    placeholders or ICU syntax are rejected and listed; they stay in the next `i18n:todo`. The merge
    creates the language's files and wires them into the app — no code to edit.
 6. **Check it.** `npm run i18n:check` must report `0 error(s)`. Look at its warnings for your
@@ -64,7 +64,7 @@ translation round keeps it.
 8. **Enable it** when it is ready (roughly 60 % or more): set `enabled: true` in `languages.ts`.
 9. Open a pull request with the language folder (including `.source.json`), the glossary column,
    the `languages.ts` row, and `src/common/i18n/translations.generated.ts` — the merge regenerated
-   it, and `npm run i18n:check` (CI) fails when it is out of date. Don't commit `i18n-work/`.
+   it, and `npm run i18n:check` (CI) fails when it is out of date. Don't commit `.local/i18n-work/`.
 
 ## 4. Update after the English changed
 

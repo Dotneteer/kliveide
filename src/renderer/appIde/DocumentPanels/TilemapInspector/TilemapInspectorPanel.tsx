@@ -56,7 +56,7 @@ import { TilemapInspectorPane } from "./TilemapInspectorPane";
 import styles from "./TilemapInspector.module.scss";
 
 /**
- * The Tilemap Inspector (`$tilemap`, `.plans/TILEMAP_INSPECTOR_PLAN.md`, G3.4): the live tilemap and
+ * The Tilemap Inspector (`$tilemap`, `dev/plans/TILEMAP_INSPECTOR_PLAN.md`, G3.4): the live tilemap and
  * its tile definitions in one document, with an inspector for the selection. The views are linked:
  * selecting a cell highlights its tile, selecting a tile outlines the cells that use it.
  *

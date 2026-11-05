@@ -1,5 +1,5 @@
 /**
- * The website's colours are the app's (decision D8 of .ai/docs-site.md):
+ * The website's colours are the app's (decision D8 of dev/ai/docs-site.md):
  * docs/app/tokens.css must hold the same values as the app's L1 palette, in both tones, so a
  * palette change in the app cannot leave the site behind unnoticed.
  */

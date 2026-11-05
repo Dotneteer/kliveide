@@ -14,7 +14,7 @@ import {
 import { ulaRasterPosition } from "@renderer/appEmu/MainToEmuProcessor";
 
 /*
- * The beam overlay's geometry (`.plans/BEAM_POSITION_OVERLAY_PLAN.md` §4.1, Phase 3): the linear
+ * The beam overlay's geometry (`dev/plans/BEAM_POSITION_OVERLAY_PLAN.md` §4.1, Phase 3): the linear
  * raster each machine reports, per timing. The cores themselves are checked against it in
  * test/zxnext-hw/video/beam-position.test.ts and test/spectrum-hw/beam-position.test.ts.
  */

@@ -8,7 +8,7 @@ import { Ht1080zCustomDisassembler } from "@renderer/appIde/disassemblers/z80-di
 import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z80-disassembler";
 
 /*
- * The HT-1080Z's custom disassembly (`.plans/HT1080Z_PLAN.md` §11): the byte after `RST 08h` and the
+ * The HT-1080Z's custom disassembly (`dev/plans/HT1080Z_PLAN.md` §11): the byte after `RST 08h` and the
  * BASIC ROM's tables, checked against the real ROMs of all three models.
  */
 const romOf = (set: string) => new Uint8Array(readFileSync(join(__dirname, `../../src/public/roms/ht1080z-${set}.rom`)));

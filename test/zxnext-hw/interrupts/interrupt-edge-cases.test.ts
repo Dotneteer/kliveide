@@ -5,7 +5,7 @@ import { createSession } from "../../harness/zxnext";
 /*
  * Maskable-interrupt edge cases found while writing the interrupts chapter (catalogue INT-028, INT-029).
  *
- * Hardware (`vendor/next-fpga/3.02.01/src`):
+ * Hardware (`dev/vendor/next-fpga/3.02.01/src`):
  * - zxnext.vhd ~5272-5275: a NextReg $22 write stores only bit 1 (line interrupt enable) and bit 0 (line
  *   bit 8); bit 2 goes to the ULA disable (~3617). Bit 7 reads the pulse /INT (~5938) and is read-only:
  *   writing it raises no interrupt.

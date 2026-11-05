@@ -1,5 +1,5 @@
 ' Klive BASIC standard library - csrlin.bas: CSRLIN.
-' Klive's own code, written from the documented API (.ai/kbasic/stdlib-api.json).
+' Klive's own code, written from the documented API (dev/ai/kbasic/stdlib-api.json).
 #pragma once
 #pragma push(case_insensitive)
 #pragma case_insensitive = true

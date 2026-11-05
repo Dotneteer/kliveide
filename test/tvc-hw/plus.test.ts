@@ -5,7 +5,7 @@ import { TVC_PHYS_VID0, TVC_BANK_SIZE, TVC_PHYS_U0 } from "@emu/machines/tvc/tvc
 import { bareMachine, PAL, PAPER_LEFT, PAPER_TOP, pictureHash, pixel, RGB, writeShotIfAsked } from "./bare";
 
 /*
- * The TVC 64K+ (`.ai/videoton-tvc.md`, "Decisions", D2): BASIC 2.2, four 16K video banks, and a
+ * The TVC 64K+ (`dev/ai/videoton-tvc.md`, "Decisions", D2): BASIC 2.2, four 16K video banks, and a
  * video paging register (port 0Ch, mirrored at 0Dh-0Fh) whose bits 1-0 choose page 1's bank (with
  * port 02h bit 2), bits 3-2 page 2's, and bits 5-4 the bank the video circuit shows (HW pp.94-95).
  */

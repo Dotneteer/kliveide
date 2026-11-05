@@ -1,5 +1,5 @@
 /*
- * The z88dk settings (`.plans/Z88DK_INTEGRATION_PLAN.md` §4.2, decision C6). The install is set up
+ * The z88dk settings (`dev/plans/Z88DK_INTEGRATION_PLAN.md` §4.2, decision C6). The install is set up
  * through the Z88DK integration dialog; the build options live in `klive.project` and are read by
  * `Z88dkCompiler` through the settings reader (project settings win over user settings).
  */
@@ -32,7 +32,7 @@ export const Z88DK_PRAGMAS = "z88dk.pragmas";
 /** Run `zcc -c` on the edited file for the editor's background diagnostics (off by default). */
 export const Z88DK_BACKGROUND_CHECK = "z88dk.backgroundCheck";
 
-/** The oldest z88dk build Klive supports (v2.4, decision C3; `.ai/z88dk/README.md`). */
+/** The oldest z88dk build Klive supports (v2.4, decision C3; `dev/ai/z88dk/README.md`). */
 export const Z88DK_MIN_SUPPORTED_BUILD = 23854;
 /** The release tag of that build: the dialog marks this and newer releases as supported. */
 export const Z88DK_MIN_SUPPORTED_TAG = "v2.4";

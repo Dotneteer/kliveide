@@ -12,7 +12,7 @@ import { buildProfilerModel, readProfileSnapshot, type ProfilerModel } from "./p
 import { t } from "@common/i18n/i18n";
 
 /*
- * The profiler's editor hints (`.plans/PROFILER_PLAN.md` D15): with a profile present and the
+ * The profiler's editor hints (`dev/plans/PROFILER_PLAN.md` D15): with a profile present and the
  * setting on (it is off by default), a Monaco inlay at the end of each routine's first line -
  * "9.4% · 1,204 calls". Nothing else in the editor changes.
  *

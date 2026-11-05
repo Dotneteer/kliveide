@@ -25,7 +25,7 @@ import { bankAtLine, codebankDebugInfo, planBanks, type BankPlan } from "./banki
 import { MODEL_NAMES, nexHeader, START_LABEL } from "./nex";
 
 /**
- * The shared Z80 back end's driver (`.plans/SHARED_Z80_BACKEND_PLAN.md` §3.1, §4.3): a verified MIR
+ * The shared Z80 back end's driver (`dev/plans/SHARED_Z80_BACKEND_PLAN.md` §3.1, §4.3): a verified MIR
  * module becomes an assembled program and its debug tables — the MIR passes, instruction selection,
  * the LIR rules, emission, runtime linking, assembly, branch shaping, bank placement and the debug
  * builders. A front end lowers its language to MIR and calls this; nothing here knows which language
@@ -76,7 +76,7 @@ export async function compileModule(mir: MModule, options: BackendOptions, front
   // --- Every build: each operation states a meaning the back end implements (S3)
   const unsupported = moduleSemanticProblems(mir);
   if (unsupported.length) return fail({ kind: "invalid-mir", problems: unsupported });
-  // --- The MIR verifier (.docs/z80-backend-optimiser.md §3): an optimised build checks its input first
+  // --- The MIR verifier (dev/patterns/z80-backend-optimiser.md §3): an optimised build checks its input first
   if (level >= 1) {
     const problems = verifyModule(mir, level);
     if (problems.length) return fail({ kind: "invalid-mir", problems });
@@ -166,7 +166,7 @@ export async function compileModule(mir: MModule, options: BackendOptions, front
     return fail(...problems);
   }
 
-  // --- Branch shaping (.docs/z80-backend-optimiser.md §4.4): jp -> jr where the first assembly shows
+  // --- Branch shaping (dev/patterns/z80-backend-optimiser.md §4.4): jp -> jr where the first assembly shows
   // --- the target in reach, then assemble again (every change shortens the code, so the reach holds)
   if (level >= 1) {
     const asmStatements = new Set(mir.statements.filter((st) => st.asmLines?.length).map((st) => st.sid));

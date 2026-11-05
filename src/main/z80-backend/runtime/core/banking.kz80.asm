@@ -3,7 +3,7 @@
 ; @exports  FarCall, FarReturn, FarInit, FarMap, FarBank, FarSP, FarAccess, FarRelease
 ; @init     FarInit
 ;
-; Klive's own implementation of the contract in .ai/kbasic/codebank-contract.md §4. A banked
+; Klive's own implementation of the contract in dev/ai/kbasic/codebank-contract.md §4. A banked
 ; routine's resident trampoline is `call FarCall` followed by the logical bank (a byte) and the
 ; body's address (a word). The compiler defines FarReg (the NextReg of the window's first MMU slot),
 ; FarSlots (1 for an 8K window, 2 for 16K), FarDepth, the page table FarPages (a row per logical

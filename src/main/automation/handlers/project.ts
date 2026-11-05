@@ -11,7 +11,7 @@ import {
 import { commandRunResult, diagnosticsOf, quoteCommandArg, runIdeCommand } from "./commands";
 
 /*
- * `project.*` (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` §4.2, D10). The IDE renderer orchestrates
+ * `project.*` (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` §4.2, D10). The IDE renderer orchestrates
  * compilation, so building, running and exporting go through the same commands the Machine menu
  * and the toolbar use (`compile`, `run`, `debug`, `inject`, `expc`), and their structured results
  * come from each command's `value` rather than from its text. A failed build is a result with

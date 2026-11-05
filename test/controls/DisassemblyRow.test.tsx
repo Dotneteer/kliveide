@@ -1003,7 +1003,7 @@ describe("deriveDisassemblyRowViewModel: bank-relative breakpoints", () => {
      * empty gutter *creates*. Falling back to the row's address armed a plain address breakpoint at
      * wherever the bank was paged: it appeared in the Breakpoints panel and was invisible on the row
      * that made it, because a bank gutter looks up by offset.
-     * See .plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md §15.20.
+     * See dev/plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md §15.20.
      */
     const vm = viewModelWithBankScope({ bank: 2, bankOffset: 0x2624 });
     expect(vm.breakpointAddress).toBe("02:+$2624");
@@ -1093,7 +1093,7 @@ describe("deriveDisassemblyRowViewModel: bank-relative breakpoints", () => {
  * `bp-del $8000` for a breakpoint whose key is `$8000 R`, which matches nothing and leaves a dot
  * that cannot be clicked away. Watchpoints on a NEX bank made that reachable.
  *
- * See `.ai/nex-debugging.md`.
+ * See `dev/ai/nex-debugging.md`.
  */
 describe("DisassemblyRow: the breakpoint kind reaches the indicator", () => {
   function renderWithBreakpoint(breakpoint: any, over: any = {}) {

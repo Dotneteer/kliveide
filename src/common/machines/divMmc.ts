@@ -3,7 +3,7 @@ import type { MachineConfigSet } from "./info-types";
 import { getModelConfig } from "./machine-registry";
 
 /*
- * Which machines can have a DivMMC (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, C5): the 16K/48K, the
+ * Which machines can have a DivMMC (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, C5): the 16K/48K, the
  * 128K with its own timing - not the Pentagon or the Scorpion, which have the Beta 128 - and the
  * +2A/+3/+2E/+3E. Whether one is connected is the machine config's `MC_DIVMMC`.
  */

@@ -23,7 +23,7 @@ import {
 
 /*
  * **Load and run** / **Insert** / **Load and debug** for a `.tap` or `.tzx` file: the Explorer's
- * context menu entries and the buttons in the tape viewer's tab bar (`.plans/TAPE_VIEWER_PLAN.md`
+ * context menu entries and the buttons in the tape viewer's tab bar (`dev/plans/TAPE_VIEWER_PLAN.md`
  * §4.6). All of them run the `tape-load` command, as the `.nex` entries run `nex-run`, so the
  * Explorer, the viewer and a script do the same thing.
  *
@@ -57,7 +57,7 @@ export function getTapeLaunchContextMenuInfo(services: AppServices): ContextMenu
 
 /**
  * The Explorer's entries for a ZX80/ZX81 program file (`.p`, `.81`, `.o`, `.80`): the same `tape-load`
- * command, enabled on a ZX80 or ZX81 (`.ai/zx8081.md`, "Files, tape and the IDE").
+ * command, enabled on a ZX80 or ZX81 (`dev/ai/zx8081.md`, "Files, tape and the IDE").
  * @param services The app services
  */
 export function getProgramLaunchContextMenuInfo(services: AppServices): ContextMenuInfo[] {
@@ -66,7 +66,7 @@ export function getProgramLaunchContextMenuInfo(services: AppServices): ContextM
 
 /**
  * The Explorer's entries for an HT-1080Z tape (`.cas`, `.cmd`): the same `tape-load` command,
- * enabled on the HT-1080Z (`.plans/HT1080Z_PLAN.md` §9, §11).
+ * enabled on the HT-1080Z (`dev/plans/HT1080Z_PLAN.md` §9, §11).
  * @param services The app services
  */
 export function getHtTapeLaunchContextMenuInfo(services: AppServices): ContextMenuInfo[] {

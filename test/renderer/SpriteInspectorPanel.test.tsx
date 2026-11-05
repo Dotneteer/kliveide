@@ -6,7 +6,7 @@ import { MachineControllerState } from "@abstractions/MachineControllerState";
 import type { NextSpriteState } from "@common/messaging/EmuApi";
 
 /*
- * The Sprite Inspector document shell (`.plans/SPRITE_INSPECTOR_PLAN.md` Phase 4-5): the empty
+ * The Sprite Inspector document shell (`dev/plans/SPRITE_INSPECTOR_PLAN.md` Phase 4-5): the empty
  * state, the globals strip and the Sprites table, rendered against a canned snapshot.
  */
 

@@ -5,7 +5,7 @@ import { createSp128Session, type Sp128TestSession } from "../harness/sp128";
 import { startAtFrameTact } from "../harness/spectrumBeam";
 
 /*
- * The ULA's timing against the CPU on the 48K and the 128K (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md`
+ * The ULA's timing against the CPU on the 48K and the 128K (`dev/plans/SPECTRUM_ULA_ACCURACY_PLAN.md`
  * Phases 1-5), each check at single T-state resolution. Every expectation comes from a hardware
  * source, never from Klive's own output:
  *

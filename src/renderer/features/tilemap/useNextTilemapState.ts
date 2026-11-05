@@ -8,7 +8,7 @@ import { useEmuStateListener } from "@renderer/appIde/useStateRefresh";
 import { tilemapStateHash } from "./tilemapViewModel";
 
 /*
- * The Tilemap Inspector's read path (`.plans/TILEMAP_INSPECTOR_PLAN.md` §4.3, D9, T9).
+ * The Tilemap Inspector's read path (`dev/plans/TILEMAP_INSPECTOR_PLAN.md` §4.3, D9, T9).
  *
  * - One `getNextTilemapState()` call per refresh, at the state panels' cadence.
  * - Nothing is read while disabled. The document area mounts only the active document, so a hidden

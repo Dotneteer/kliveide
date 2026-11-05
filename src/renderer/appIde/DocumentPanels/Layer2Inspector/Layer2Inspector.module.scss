@@ -1,7 +1,7 @@
 @use "@styles/core.scss" as *;
 
 /*
- * The Layer 2 Inspector (`.plans/LAYER2_INSPECTOR_PLAN.md` §4.4-§4.5). It shares the Tilemap
+ * The Layer 2 Inspector (`dev/plans/LAYER2_INSPECTOR_PLAN.md` §4.4-§4.5). It shares the Tilemap
  * Inspector's frame: a one-line toolbar, a one-line globals strip (flags first, "+n more"), then the
  * Banks strip, and the inspector a band under the image or a rail beside it (`data-layout`). Values
  * take the state panels' `--color-state-value`; overlays on the image are painted from the

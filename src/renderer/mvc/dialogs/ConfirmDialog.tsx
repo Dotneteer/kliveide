@@ -7,7 +7,7 @@ export type ConfirmDialogProps = DialogComponentProps<boolean> & ConfirmRequest;
 
 /**
  * The body a `ConfirmPort` opens. It is a managed dialog body in the sense of
- * `.docs/dialog-pattern.md`: the provider owns the modal frame, this component
+ * `dev/patterns/dialog-pattern.md`: the provider owns the modal frame, this component
  * only settles through `controls`.
  */
 export const ConfirmDialog = ({

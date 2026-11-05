@@ -21,7 +21,7 @@ import {
 
 /*
  * The `.z88` viewer's slots: every bank of every card in one list, grouped by card, with the selected
- * bank's details beside it (`.plans/Z88_SLOT_BROWSER_PLAN.md` §4.3). The list, keyboard and pop-out
+ * bank's details beside it (`dev/plans/Z88_SLOT_BROWSER_PLAN.md` §4.3). The list, keyboard and pop-out
  * are the shared `BankBrowser` shell; this adds what a snapshot knows about a bank - where it is paged
  * in, its mirrors, PC and SP, and OZvm's breakpoints. No annotations and no Sprites view.
  *

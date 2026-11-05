@@ -1,6 +1,6 @@
 /*
  * Writes `.z80` snapshots, always version 3 (https://worldofspectrum.org/faq/reference/z80format.htm),
- * the inverse of `z80File.ts` (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.2, D2).
+ * the inverse of `z80File.ts` (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.2, D2).
  *
  * The 30-byte header has PC = 0, which marks version 2 or later; the 54-byte extra header (55 with
  * the +3's $1FFD) holds PC, the hardware mode, $7FFD, the AY and the frame position. Each 16K page
@@ -33,7 +33,7 @@ function hardwareMode(
   machine: SnapshotMachineKind,
   losses: string[]
 ): { mode: number; modified: boolean } {
-  // --- Modes 1 (48K) and 5 (128K) add the Interface 1 (`.plans/MICRODRIVE_PLAN.md` Phase 5)
+  // --- Modes 1 (48K) and 5 (128K) add the Interface 1 (`dev/plans/MICRODRIVE_PLAN.md` Phase 5)
   const if1 = !!s.peripherals.interface1;
   switch (machine) {
     case "16k":

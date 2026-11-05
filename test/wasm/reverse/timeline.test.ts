@@ -1,5 +1,5 @@
 /*
- * The reverse-debugging timeline (`.plans/REVERSE_DEBUGGING_PLAN.md` Phase 2, `reverse/Timeline.ts`)
+ * The reverse-debugging timeline (`dev/plans/REVERSE_DEBUGGING_PLAN.md` Phase 2, `reverse/Timeline.ts`)
  * on the real 48K and Next cores:
  *
  * - stepping back to past positions puts the whole machine where it was (every panel would show it);

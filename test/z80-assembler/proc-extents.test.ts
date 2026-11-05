@@ -4,7 +4,7 @@ import { extractLanguageIntelData } from "@main/compiler-integration/extractInte
 import type { KliveCompilerOutput } from "@abstractions/CompilerInfo";
 
 /*
- * The assembler's `.proc`/`.endp` extents (`.plans/PROFILER_PLAN.md` D7): the profiler's routine
+ * The assembler's `.proc`/`.endp` extents (`dev/plans/PROFILER_PLAN.md` D7): the profiler's routine
  * source after Klive BASIC callables (D6), and the editor outline's "proc" entries.
  */
 

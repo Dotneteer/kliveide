@@ -1,5 +1,5 @@
 /*
- * The model of an RZX input recording (`.plans/RZX_PLAN.md` §4.1). Pure: no Node, no DOM.
+ * The model of an RZX input recording (`dev/plans/RZX_PLAN.md` §4.1). Pure: no Node, no DOM.
  *
  * The format (RZX v0.13, https://worldofspectrum.net/RZXformat.html), in brief: a 10-byte header
  * ("RZX!", major, minor, a DWORD of flags), then blocks of an ID byte, a DWORD length that counts the

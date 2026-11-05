@@ -22,7 +22,7 @@ import { ZX80_CHARSET, ZX81_CHARSET } from "@common/zx8081/charset";
 import { parseZxProgramFile, type ZxProgramFile } from "@emu/machines/zx8081/ZxPFile";
 
 import { buildCoreOnce } from "../coreBuild";
-import { buildZx8081Wasm, productionOutput } from "../../../scripts/build-zx8081-wasm.cjs";
+import { buildZx8081Wasm, productionOutput } from "../../../dev/scripts/build-zx8081-wasm.cjs";
 
 export const REPO_ROOT = join(__dirname, "../../..");
 const ROMS = join(REPO_ROOT, "src/public/roms");
@@ -228,9 +228,9 @@ export class Zx81TestSession {
     return this;
   }
 
-  /** Reads a program file from `_input/zx81-tapes/` (or a path) */
+  /** Reads a program file from `dev/research/zx81-tapes/` (or a path) */
   static readProgram(path: string): ZxProgramFile {
-    const full = path.startsWith("/") ? path : join(REPO_ROOT, "_input/zx81-tapes", path);
+    const full = path.startsWith("/") ? path : join(REPO_ROOT, "dev/research/zx81-tapes", path);
     const file = parseZxProgramFile(new Uint8Array(readFileSync(full)), full);
     if (!file) throw new Error(`Not a ZX80/ZX81 program: ${path}`);
     return file;
@@ -327,7 +327,7 @@ export class Zx81TestSession {
   }
 
   // ==========================================================================================
-  // Execution history (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`): the core's recorder, as the
+  // Execution history (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`): the core's recorder, as the
   // IDE reads it through `IExecutionHistorySource`
 
   /** Turns the execution-history recorder on or off, as a debug session does */

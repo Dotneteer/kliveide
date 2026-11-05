@@ -13,11 +13,11 @@ import {
 import { ConditionStore, type ConditionCoreExports } from "@emu/machines/conditionStore";
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const { buildConditionWasm } = require("../../../scripts/build-condition-wasm.cjs");
+const { buildConditionWasm } = require("../../../dev/scripts/build-condition-wasm.cjs");
 
 /*
  * The breakpoint condition evaluator - the C code every Z80 core includes - run standalone for tests
- * (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md` §6).
+ * (`dev/plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md` §6).
  *
  * Its machine facts are WebAssembly imports bound to whatever `ConditionContext` the test supplies,
  * so a test describes registers, memory and paging exactly as it did when the evaluator was

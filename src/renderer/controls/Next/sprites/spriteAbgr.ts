@@ -2,7 +2,7 @@ import { getAbrgForPaletteCode } from "@emu/machines/zxNext/palette";
 
 /*
  * Palette codes to the canvas's pixel format, for the sprite pattern sheets (the NEX bank Sprites
- * view and the Sprite Inspector, `.plans/SPRITE_INSPECTOR_PLAN.md` §4.6).
+ * view and the Sprite Inspector, `dev/plans/SPRITE_INSPECTOR_PLAN.md` §4.6).
  */
 
 /** 256 palette codes (register layout) as ABGR words for `ImageData`. */

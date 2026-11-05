@@ -11,7 +11,7 @@ import { SETTING_EMU_REVERSE_DEBUGGING } from "@common/settings/setting-const";
 import { createCore } from "../harness/zxnext";
 
 /*
- * The controller's half of the reverse-debugging timeline (`.plans/REVERSE_DEBUGGING_PLAN.md` D2, D5,
+ * The controller's half of the reverse-debugging timeline (`dev/plans/REVERSE_DEBUGGING_PLAN.md` D2, D5,
  * Phase 2), on the real ZX Spectrum Next core: a timeline in every debug session, none in a plain Run
  * or with the setting off; the run loop takes keyframes; a stop ends it.
  */

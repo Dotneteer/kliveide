@@ -108,7 +108,7 @@ export class ZxSpectrumP3eWasmV2Machine
   implements IExecutionHistorySource, IAccessProfileSource, IRzxMachine
 {
   // ==============================================================================================
-  // Execution history (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`): the shared recorder in the
+  // Execution history (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`): the shared recorder in the
   // core, read through the shared reader; the machine id names the context decoder
 
   get historyMachineId(): string {
@@ -141,7 +141,7 @@ export class ZxSpectrumP3eWasmV2Machine
   }
 
   // ==============================================================================================
-  // The access profile (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`): the shared module in the core,
+  // The access profile (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`): the shared module in the core,
   // read through the shared reader; the machine id names the layout
 
   get profileMachineId(): string {
@@ -196,12 +196,12 @@ export class ZxSpectrumP3eWasmV2Machine
   public readonly implementation = "wasm" as const;
   public wasmV2Runtime?: SpP3eWasmV2Runtime;
 
-  /** The DivMMC (`.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md` C4): with `MC_DIVMMC`, connected at setup */
+  /** The DivMMC (`dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md` C4): with `MC_DIVMMC`, connected at setup */
   readonly divMmc = new DivMmcSupport("spp3e", {
     getDivMmcRuntime: () => this.wasmV2Runtime,
     loadDivMmcRom: (path) => this.loadRomFromResource(path)
   });
-  /** The RZX session playing or recording on this machine (`.plans/RZX_PLAN.md` §4.3) */
+  /** The RZX session playing or recording on this machine (`dev/plans/RZX_PLAN.md` §4.3) */
   public rzxSession?: IRzxSession;
   private rzxCoreBridge?: RzxCoreBridge;
   private readonly wasmV2AudioSamples: AudioSample[] = [];
@@ -808,7 +808,7 @@ export class ZxSpectrumP3eWasmV2Machine
     return this.requireWasmV2Runtime().exports.spp3eGetPixelBufferStartOffset();
   }
 
-  /** The beam position overlay (`.plans/BEAM_POSITION_OVERLAY_PLAN.md` §4.3, D4) */
+  /** The beam position overlay (`dev/plans/BEAM_POSITION_OVERLAY_PLAN.md` §4.3, D4) */
   getBeamPosition(): BeamPosition {
     const ex = this.requireWasmV2Runtime().exports;
     return spectrumWasmBeamPosition(
@@ -1095,7 +1095,7 @@ export class ZxSpectrumP3eWasmV2Machine
   }
 
   /*
-   * The disks in the core (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, A3). A disk is uploaded as
+   * The disks in the core (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, A3). A disk is uploaded as
    * its sector table: every track the file formats, every sector with its own ID, status bytes,
    * copies and stored length, the data back to back in file order. The write-back reads the core's
    * tables, never a geometry of its own: a written sector comes back keyed by its physical
@@ -1353,7 +1353,7 @@ export class ZxSpectrumP3eWasmV2Machine
 
   /**
    * The core's breakpoint condition evaluator: its program store. The shared C evaluator reads the
-   * registers and memory inside the core (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`).
+   * registers and memory inside the core (`dev/plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`).
    */
   getConditionStore(): ConditionStore | undefined {
     return this.wasmV2Runtime ? conditionStoreOf(this.wasmV2Runtime) : undefined;
@@ -1611,7 +1611,7 @@ export class ZxSpectrumP3eWasmV2Machine
 
 
   /**
-   * Replaces the machine's state with a snapshot's (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.4).
+   * Replaces the machine's state with a snapshot's (`dev/plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.4).
    * Call it through `IMachineController.restoreState`, which leaves the machine Paused. The disks
    * stay as inserted: the floppy controller is reset, not restored (trap 7).
    * @returns The frame tact the machine stands at
@@ -1631,7 +1631,7 @@ export class ZxSpectrumP3eWasmV2Machine
 
   /**
    * Reads the machine's state as a snapshot model, without changing it
-   * (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.1). The machine must be paused.
+   * (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.1). The machine must be paused.
    * @param media The tape and disk files the media store holds
    * @throws When the CPU stands inside a prefixed instruction
    */
@@ -1645,7 +1645,7 @@ export class ZxSpectrumP3eWasmV2Machine
 
   /**
    * Captures the machine's whole state: the core's memory image plus this wrapper's own fields
-   * (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.5). The machine must be paused.
+   * (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.5). The machine must be paused.
    */
   saveMachineState(): MachineStateParts {
     const runtime = this.requireWasmV2Runtime();
@@ -1656,7 +1656,7 @@ export class ZxSpectrumP3eWasmV2Machine
   }
 
   // ------------------------------------------------------------------------------------------------
-  // Reverse debugging (`.plans/REVERSE_DEBUGGING_PLAN.md` §4.2, `reverse/Timeline.ts`)
+  // Reverse debugging (`dev/plans/REVERSE_DEBUGGING_PLAN.md` §4.2, `reverse/Timeline.ts`)
 
   /** The core, as the export contract names it */
   get reverseCoreId(): string {

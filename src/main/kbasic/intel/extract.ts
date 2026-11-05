@@ -22,7 +22,7 @@ import { isLibraryPath } from "../stdlib";
 
 /**
  * Builds the editor's BASIC intelligence snapshot from a front-end run
- * (`.plans/BASIC_EDITOR_INTELLIGENCE_PLAN.md` §3, §4.1). Pure: it reads the result and nothing else.
+ * (`dev/plans/BASIC_EDITOR_INTELLIGENCE_PLAN.md` §3, §4.1). Pure: it reads the result and nothing else.
  *
  * Undefined when the program was not bound (it has lexer, preprocessor or parser errors).
  */

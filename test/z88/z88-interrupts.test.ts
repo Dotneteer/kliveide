@@ -11,7 +11,7 @@ import { createZ88Session, type Z88TestSession } from "../harness/z88";
  * periods and every odd TIM0 is a TICK (10 ms). Opening the flap raises STA.FLAP and STA.FLAPOPEN
  * (with INT.FLAP), and no RTC interrupt comes out while the flap is open.
  *
- * Step 0.3 of `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`.
+ * Step 0.3 of `dev/plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`.
  */
 
 const INT_GINT = 0x01;

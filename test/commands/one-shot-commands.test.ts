@@ -21,7 +21,7 @@ vi.mock("@common/messaging/EmuApi", () => ({
 }));
 
 /*
- * `bp-set -once` and `-len` (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §4.2, §4.6).
+ * `bp-set -once` and `-len` (`dev/plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §4.2, §4.6).
  */
 
 type Ctx = IdeCommandContext & { emuApi: any; output: any; service: any; store: any };

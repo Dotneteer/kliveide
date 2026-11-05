@@ -11,7 +11,7 @@ import {
 import { integerSymbolsOf } from "@common/utils/breakpoint-condition/integer-symbols";
 
 /*
- * sjasmplus SLD data for logpoints (`.plans/LOGPOINTS_PLAN.md` §4.7, Phase 4): `K` lines become
+ * sjasmplus SLD data for logpoints (`dev/plans/LOGPOINTS_PLAN.md` §4.7, Phase 4): `K` lines become
  * `LOGPOINT` annotations, `L` lines become the build's symbols (Q7), a comment holding `|` survives,
  * and a source with LOGPOINT comments but no `K` lines gets the `SLDOPT` warning (Q6). The fixture
  * follows the format of sjasmplus's documentation (SLD version 1).

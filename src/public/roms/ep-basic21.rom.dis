@@ -2,7 +2,7 @@
   "schemaVersion": 3,
   "machine": "rom",
   "source": {"fileName":"ep-basic21.rom"},
-  "authoring": ".ai/rom-annotations/README.md",
+  "authoring": "dev/ai/rom-annotations/README.md",
   "level": 2,
   "pages": {
     "0": {"crc32":"55f96251","name":"IS-BASIC 2.1 (cartridge, segment 04h)"}

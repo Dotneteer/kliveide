@@ -11,7 +11,7 @@ import { createTestZxNextWasmMachine } from "./wasm-next-test-helpers";
  * frame ran, so the copper was inert in the emulator while looking healthy in tests. Every
  * assertion here therefore drives a real frame rather than calling the tick directly.
  *
- * See .plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md §15.5c / §15.10.
+ * See dev/plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md §15.5c / §15.10.
  */
 
 /** MOVE: bit 15 = 0, bits 14:8 = register, bits 7:0 = value. */

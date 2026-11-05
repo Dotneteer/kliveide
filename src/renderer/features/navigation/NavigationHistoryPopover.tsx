@@ -50,7 +50,7 @@ type Props = {
  *
  * Keyboard: the current row takes focus on open; arrows move, Enter chooses, Escape closes.
  *
- * See `.plans/NAVIGATION_HISTORY_PLAN.md` §6.
+ * See `dev/plans/NAVIGATION_HISTORY_PLAN.md` §6.
  */
 export const NavigationHistoryPopover = ({ anchor, shortcuts, onClose }: Props) => {
   const t = useT();

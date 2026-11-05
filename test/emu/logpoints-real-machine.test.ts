@@ -11,7 +11,7 @@ import { createSp48Session } from "../harness/sp48";
 import { createSession } from "../harness/zxnext";
 
 /*
- * Logpoints on the real machines (the WASM cores), Phase 3 of `.plans/LOGPOINTS_PLAN.md`: templates
+ * Logpoints on the real machines (the WASM cores), Phase 3 of `dev/plans/LOGPOINTS_PLAN.md`: templates
  * read the core's registers and memory at the hit, hit rules count real passes, a logpoint never
  * stops, and the per-frame cap holds in a hot loop. Every program ends in a plain breakpoint.
  */

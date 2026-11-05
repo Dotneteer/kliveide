@@ -24,7 +24,7 @@ import { openTapeBlockView } from "./TapeBlockViewerPanel";
 import styles from "./TapeViewerPanel.module.scss";
 
 /*
- * The `.tap`/`.tzx` viewer (`.plans/TAPE_VIEWER_PLAN.md`): a summary strip, then every block in the
+ * The `.tap`/`.tzx` viewer (`dev/plans/TAPE_VIEWER_PLAN.md`): a summary strip, then every block in the
  * shared bank browser - grouped by file, with the timeline strip above it - and each block poppable
  * as memory, disassembly, a BASIC listing or a screen.
  *

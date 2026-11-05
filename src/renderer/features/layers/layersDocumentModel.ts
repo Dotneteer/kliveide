@@ -18,7 +18,7 @@ import {
 } from "@common/zxnext/video/clipWindows";
 
 /*
- * The Layers document's model (`.plans/LAYER_COMPOSITION_PLAN.md` D9): the priority stack for the
+ * The Layers document's model (`dev/plans/LAYER_COMPOSITION_PLAN.md` D9): the priority stack for the
  * current `$15` and blend mode, and one card per layer with the reasons it might not be on the
  * screen. Pure: tested without the emulator. The mixer itself is never re-implemented here (D10);
  * this only names what the registers select. Its text is translated

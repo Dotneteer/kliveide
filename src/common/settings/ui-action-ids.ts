@@ -1,6 +1,6 @@
 /*
  * The actions a renderer can ask the main process to run (`MainApi.runUiAction`): the Settings
- * dialog's buttons and app-state values, and the in-window controls (`.plans/MENU_REDESIGN_PLAN.md`
+ * dialog's buttons and app-state values, and the in-window controls (`dev/plans/MENU_REDESIGN_PLAN.md`
  * §4–§5). `src/main/ui-actions.ts` implements them.
  */
 export type UiActionId =
@@ -48,5 +48,5 @@ export type UiActionId =
   | "dialog:boriel"
   | "dialog:z88dk"
   | "dialog:excluded-items"
-  /** Opens the translators' guide in the browser (`.ai/localization.md`, D8) */
+  /** Opens the translators' guide in the browser (`dev/ai/localization.md`, D8) */
   | "open:translation-guide";

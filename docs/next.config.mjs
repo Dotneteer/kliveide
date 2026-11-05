@@ -5,7 +5,7 @@ import { DEFAULT_LOCALE, LOCALES } from "./i18n/locales.mjs";
 import remarkReleaseVersion from "./remark-release-version.mjs";
 
 // ZX BASIC (```zxbasic), generated from the IDE's own word lists by
-// scripts/build-doc-zxbasic-grammar.cjs; test/docs/zxbasic-grammar.test.ts keeps it current.
+// dev/scripts/build-doc-zxbasic-grammar.cjs; test/docs/zxbasic-grammar.test.ts keeps it current.
 const zxbasicLanguage = JSON.parse(readFileSync(new URL("./zxbasic.tmLanguage.json", import.meta.url), "utf8"));
 
 // Z80 assembly language grammar embedded directly to avoid file system operations
@@ -378,7 +378,7 @@ const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 const withNextra = nextra({
   // Static export has no middleware, so Nextra writes the locale into every page-map link
-  // itself. See D1 in .ai/docs-site.md.
+  // itself. See D1 in dev/ai/docs-site.md.
   unstable_shouldAddLocaleToLinks: true,
   // Every code block gets Nextra's copy button (shown when the block is hovered or focused)
   defaultShowCopyCode: true,

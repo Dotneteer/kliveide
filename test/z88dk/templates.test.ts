@@ -10,7 +10,7 @@ import { parseZ88dkMap, projectFileTest, z88dkLineRecords } from "@main/z88dk-in
 import { z88dkTargetFor } from "@main/z88dk-integration/z88dk-targets";
 
 /*
- * The shipped z88dk project templates of the ZX Spectrum family (`.plans/ZX_SPECTRUM_C_TEMPLATES_PLAN.md`,
+ * The shipped z88dk project templates of the ZX Spectrum family (`dev/plans/ZX_SPECTRUM_C_TEMPLATES_PLAN.md`,
  * T1). The `tpl-*` fixtures are the templates' own `main.c` compiled by zcc with the arguments Klive's
  * debug build uses (`npm run z88dk:fixtures`); these tests keep the three in step:
  * - every Spectrum family machine and model z88dk builds for has a template and a fixture of it;

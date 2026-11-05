@@ -15,7 +15,7 @@ import {
 import { createAnnotatedDisassemblyItems } from "@renderer/appIde/annotations/annotatedDisassembly";
 
 /*
- * The model additions of `.docs/annotations.md`, "The Reverse-Engineering Tools' Keys" (M0): `text`/`graphic`
+ * The model additions of `dev/patterns/annotations.md`, "The Reverse-Engineering Tools' Keys" (M0): `text`/`graphic`
  * decoded regions, `origin`, `graphics`, `endComment` and `interop` — all keys a shipped build
  * ignores (R2).
  */

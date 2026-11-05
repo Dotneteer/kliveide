@@ -109,7 +109,7 @@ export function shouldStopAtDebugPoint(input: DebugStopDecisionInput): boolean {
   debugSupport.statementTracker?.observe(pc, getPartition);
 
   /*
-   * Logpoints log once per arrival (`.plans/LOGPOINTS_PLAN.md` L5). The decision is asked again, at
+   * Logpoints log once per arrival (`dev/plans/LOGPOINTS_PLAN.md` L5). The decision is asked again, at
    * the same PC, on the instruction a run or step resumes from - after a pause, a step, or simply a
    * frame boundary - and a logpoint there has already logged. Any executed instruction is an
    * arrival; so is the first decision after a machine start, which clears `lastDecisionPc`.
@@ -126,7 +126,7 @@ export function shouldStopAtDebugPoint(input: DebugStopDecisionInput): boolean {
    * **The guard is tested first, and the decision is not even asked on the resumed-from
    * instruction.** That ordering did not matter while `shouldStopAt` was a pure question; with hit
    * counts it has a side effect, and asking it here would count the instruction a run resumes from
-   * a second time (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.6) - the same reasoning as consuming
+   * a second time (`dev/plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.6) - the same reasoning as consuming
    * one-shots only inside the guard, below.
    *
    * **Nor is it asked again where the last decision was made and nothing ran since** - the same
@@ -148,7 +148,7 @@ export function shouldStopAtDebugPoint(input: DebugStopDecisionInput): boolean {
      * A one-shot exists to stop the machine once — a run-to target, the NEX entry-point stop, a
      * user's "stop here once" — so it is spent here rather than left for the user to clear by hand.
      * Only the one-shots whose own filters passed for this stop are spent
-     * (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` O3).
+     * (`dev/plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` O3).
      *
      * Inside the guard, not above it: the `lastBreakpoint` test rejects the re-trigger at the
      * address the machine is *resuming from*, and that is not a hit. Consuming there would delete a

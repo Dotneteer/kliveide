@@ -9,7 +9,7 @@ import { createSession, type NextTestSession, readNextRom } from "../../harness/
  * mfNmiByIoTrap"); the rest of those files is covered by `nmi.test.ts`, `multiface/*.test.ts` and
  * `reset/reset-register.test.ts`.
  *
- * Hardware (`vendor/next-fpga/3.02.01/src/zxnext.vhd`):
+ * Hardware (`dev/vendor/next-fpga/3.02.01/src/zxnext.vhd`):
  * - ~2045-2047: a $02 write with bits 3 and 2 asserts both causes in the same clock (`nmi_gen_nr_mf`,
  *   `nmi_gen_nr_divmmc`, ~3812-3814), each gated by its $06 enable.
  * - ~2051-2071: while no NMI is active the arbiter latches *one* source, the Multiface first

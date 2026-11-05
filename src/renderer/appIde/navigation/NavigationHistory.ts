@@ -16,7 +16,7 @@ import type { NavigationEntry } from "@renderer/abstractions/NavigationLocation"
  *   jump (a debugger pause, for example), or a document type that does not take part — Back first
  *   returns to the current entry itself.
  *
- * See `.plans/NAVIGATION_HISTORY_PLAN.md` §3.3.
+ * See `dev/plans/NAVIGATION_HISTORY_PLAN.md` §3.3.
  */
 
 /** Decides whether two entries are the same place. Only called for entries of the same document. */

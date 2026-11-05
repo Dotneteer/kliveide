@@ -1,7 +1,7 @@
 import { MonacoAwareCustomLanguageInfo } from "../../abstractions/CustomLanguageInfo";
 
 /**
- * C source (`.c`, `.h`), built by z88dk (`.plans/Z88DK_INTEGRATION_PLAN.md` §6). Monaco ships a C
+ * C source (`.c`, `.h`), built by z88dk (`dev/plans/Z88DK_INTEGRATION_PLAN.md` §6). Monaco ships a C
  * tokenizer, which stays: when its `c` language is registered, `ensureLanguage` leaves it alone and
  * this provider only adds what Klive needs - breakpoints in the glyph margin, the compiler's name and
  * the generated theme. The grammar below is a fallback for a Monaco build without its C language.

@@ -7,7 +7,7 @@ import {
 import { createSp48Session, type Sp48TestSession } from "../../harness/sp48";
 
 /*
- * The call tracker on the ZX Spectrum 48K (`.plans/PROFILER_PLAN.md` Phase 2, D9-D12, traps T1-T5):
+ * The call tracker on the ZX Spectrum 48K (`dev/plans/PROFILER_PLAN.md` Phase 2, D9-D12, traps T1-T5):
  * known programs give exact inclusive and exclusive times per edge. $8000 and up is uncontended, so
  * every instruction's time is its documented T-state count.
  *

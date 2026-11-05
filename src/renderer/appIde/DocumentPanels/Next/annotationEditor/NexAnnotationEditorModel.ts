@@ -48,7 +48,7 @@ export type NexAnnotationEditorEnvironment = {
   machineRunning: boolean;
   /**
    * The annotations are shown but never written: a shipped ROM sidecar, which is edited only through
-   * a working copy (`.plans/ROM_ANNOTATION_EDITING_PLAN.md`). Every editing action is unavailable;
+   * a working copy (`dev/plans/ROM_ANNOTATION_EDITING_PLAN.md`). Every editing action is unavailable;
    * Go to Definition, which only reads, still works.
    */
   readOnly?: boolean;
@@ -119,7 +119,7 @@ export const reduce: UiReducer<NexAnnotationEditorState, NexAnnotationEditorEven
   switch (event.type) {
     case "envReplaced": {
       // --- An unrelated view-state write reaches the container as a fresh object; ignoring an
-      // --- equal one here is what stops a re-render loop (trap 4 in `.ai/ui-mvc-guide.md`).
+      // --- equal one here is what stops a re-render loop (trap 4 in `dev/ai/ui-mvc-guide.md`).
       if (sameEnvironment(state.env, event.env)) return state;
       // --- Moving to a different bank or sidecar invalidates the selection: the row indices meant
       // --- positions in the *old* listing.

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /*
- * F1 of .plans/ZX_NEXT_FIDELITY_PROOF_PLAN.md: the T80N single-instruction differential.
+ * F1 of dev/plans/ZX_NEXT_FIDELITY_PROOF_PLAN.md: the T80N single-instruction differential.
  *
  * Writes the case file both sides run: the T80N simulated from the FPGA's VHDL (cpu_tb.vhd) and
  * Klive's ZX Spectrum Next core (f1-klive.f1.ts). The set is fixed by the seed, so the count is

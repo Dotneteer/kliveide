@@ -8,8 +8,8 @@ import { asCliError, runTestVerb } from "./verbs/test";
 import { runDiskVerb } from "./verbs/disk";
 
 /*
- * The `klive` command line (`.plans/UNIT_TESTS_CLI_PLAN.md` D1–D3,
- * `.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D1): one executable, two families of verbs. `klive ide …`
+ * The `klive` command line (`dev/plans/UNIT_TESTS_CLI_PLAN.md` D1–D3,
+ * `dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` D1): one executable, two families of verbs. `klive ide …`
  * drives a running Klive; the headless verbs (`test`, `build`, `run`) work on a machine of their own
  * in this process.
  */

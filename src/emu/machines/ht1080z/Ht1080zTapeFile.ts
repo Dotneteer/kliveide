@@ -1,5 +1,5 @@
 /*
- * HT-1080Z tape files (`.plans/HT1080Z_PLAN.md` §9; `_input/ht1080z/STORAGE_FIRMWARE_SOFTWARE.md` §3):
+ * HT-1080Z tape files (`dev/plans/HT1080Z_PLAN.md` §9; `dev/research/ht1080z/STORAGE_FIRMWARE_SOFTWARE.md` §3):
  * `.cas`, `.cmd` and `.bas`, each turned into the `.cas` bit stream the core plays and reads.
  *
  * The `.cas` header detection - 00 bytes then the A5h sync, at any bit offset, and the 1500-baud
@@ -87,7 +87,7 @@ export function ht1080zTapeErrorKey(err: unknown): MessageKey {
 
 /**
  * Whether a file goes in the HT-1080Z's deck: a `.cas` or `.cmd` always; a `.bas` when its content is a
- * tokenised HT program (`.plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D1, D6), or - its content unknown or text
+ * tokenised HT program (`dev/plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D1, D6), or - its content unknown or text
  * - while the HT runs, where reading it says why a text `.bas` is not a tape. Elsewhere a text `.bas`
  * is BASIC source (Klive BASIC, Boriel BASIC).
  * @param bytes The file's bytes (or its first ones), when known

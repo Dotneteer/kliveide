@@ -2,7 +2,7 @@ import type { FileManagerIntent } from "./FileManagerController";
 import type { PaneSide } from "./FileManagerModel";
 
 /*
- * The File Manager's keys (`.ai/file-manager.md`, D8): a key press to an intent, pure, so the
+ * The File Manager's keys (`dev/ai/file-manager.md`, D8): a key press to an intent, pure, so the
  * keyboard is tested without a DOM.
  */
 

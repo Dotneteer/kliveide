@@ -14,7 +14,7 @@ import { REGION_BLOCK } from "./skoolToAnnotations";
 import type { SkoolBlockType } from "./skoolTypes";
 
 /*
- * Klive annotations as a SkoolKit skool or control file (`.docs/reverse-engineering-tools.md`
+ * Klive annotations as a SkoolKit skool or control file (`dev/patterns/reverse-engineering-tools.md`
  * §6.3, §6.5, §6.6, phase S3). Written from SkoolKit's documented formats only (R7).
  *
  * It walks the same annotated listing source export walks (§7.2), with the names taken out of the

@@ -2,7 +2,7 @@ import type { DiskPartition } from "./blockDevice";
 import type { FatRegions } from "./fat";
 import type { DiskFileEntry, DiskFsInfo } from "./types";
 
-/* What the Disk Explorer shows of a hard-disk image (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, C2) */
+/* What the Disk Explorer shows of a hard-disk image (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, C2) */
 
 export type HardDiskKind = "img" | "hdf" | "cim";
 

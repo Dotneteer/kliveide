@@ -1,5 +1,5 @@
 /*
- * The snapshot writers (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` Phase 1): every format
+ * The snapshot writers (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` Phase 1): every format
  * round-trips through Klive's parsers to the same model, minus the losses the writer declares, and
  * the `.sna` output equals the spec-written test builders byte for byte (D14).
  */

@@ -1,5 +1,5 @@
 /*
- * The ZX Spectrum Next layer mixer as the IDE describes it (`.plans/LAYER_COMPOSITION_PLAN.md`).
+ * The ZX Spectrum Next layer mixer as the IDE describes it (`dev/plans/LAYER_COMPOSITION_PLAN.md`).
  *
  * Pure: names, orders and decoders only. The mixer itself is never re-implemented here (D10) - the
  * core's `zxnextComposePixel` (`zxnext-ula.c`) composes the picture and computes the "why" of every

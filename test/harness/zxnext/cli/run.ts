@@ -31,7 +31,7 @@ Options:
                         NextZXOS boots from a clone of ~/Klive/ks2.cim and .nexload's the program
   --headed              browser tier: show the Chrome window
   --long                Also capture each case's longCapture frames
-  --out <dir>           Run folder (default .visual-tests/<timestamp>)
+  --out <dir>           Run folder (default .local/visual-tests/<timestamp>)
   --list                List cases and exit
   --verbose             Also print known failures (XFAIL) with their reasons
   --approve             Approve reviewed cases from a run into golden.json (no emulation;
@@ -66,7 +66,7 @@ function parseArgs(args: string[]): Options {
   return o;
 }
 
-const LATEST = join(REPO_ROOT, ".visual-tests", "LATEST");
+const LATEST = join(REPO_ROOT, ".local", "visual-tests", "LATEST");
 
 const mark: Record<string, string> = { pass: "✓", fail: "✗", xfail: "~", xpass: "!" };
 
@@ -95,9 +95,9 @@ export async function runVisualTestsCli(args: string[], vite: ViteDevServer): Pr
 
   assertWasmArtifactFresh();
   const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-  const outRoot = resolve(o.out ?? join(REPO_ROOT, ".visual-tests", stamp));
+  const outRoot = resolve(o.out ?? join(REPO_ROOT, ".local", "visual-tests", stamp));
   mkdirSync(outRoot, { recursive: true });
-  mkdirSync(join(REPO_ROOT, ".visual-tests"), { recursive: true });
+  mkdirSync(join(REPO_ROOT, ".local", "visual-tests"), { recursive: true });
   writeFileSync(LATEST, outRoot + "\n");
   console.log(`Tier: ${o.tier}`);
 

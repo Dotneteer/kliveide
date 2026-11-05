@@ -5,7 +5,7 @@ import { MI_ENTERPRISE } from "@common/machines/constants";
 import { EpWasmV2Machine } from "./EpWasmV2Machine";
 
 /**
- * Creates an Enterprise 64/128: one WASM core for both models (`.plans/ENTERPRISE_PLAN.md`, D2).
+ * Creates an Enterprise 64/128: one WASM core for both models (`dev/plans/ENTERPRISE_PLAN.md`, D2).
  * @param model The machine model
  * @param config The machine configuration; it overrides the model's configuration
  * @param messenger The messenger to the main process

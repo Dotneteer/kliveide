@@ -1,6 +1,6 @@
 /*
  * The Klive state items of the File menu
- * (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.9, D19): save and load a state file, and the
+ * (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.9, D19): save and load a state file, and the
  * in-memory quick save/restore slot.
  */
 import path from "path";

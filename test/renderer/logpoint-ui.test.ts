@@ -17,7 +17,7 @@ import {
 } from "@renderer/appIde/utils/breakpoint-form";
 
 /*
- * The logpoint UI's decisions without React (`.plans/LOGPOINTS_PLAN.md` §4.5, Phase 6): which glyph
+ * The logpoint UI's decisions without React (`dev/plans/LOGPOINTS_PLAN.md` §4.5, Phase 6): which glyph
  * a breakpoint draws, the Breakpoints panel's logpoint sections, and the dialog form's Action row
  * and template validation.
  */

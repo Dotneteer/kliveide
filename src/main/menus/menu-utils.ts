@@ -1,5 +1,5 @@
 /*
- * Helpers shared by the menu builders (`.plans/MENU_REDESIGN_PLAN.md` §7 Phase 1).
+ * Helpers shared by the menu builders (`dev/plans/MENU_REDESIGN_PLAN.md` §7 Phase 1).
  */
 import type { MenuItem, MenuItemConstructorOptions } from "electron";
 import type { MachineMenuItem } from "@common/machines/info-types";
@@ -61,7 +61,7 @@ export function hasVisibleItems(items: AnyItem[] | MachineMenuItem[]): boolean {
 /**
  * A checkbox bound to a boolean setting. A setting bound to one window (`boundTo`) shows only while
  * that window has the focus. The label is the caller's translated text: a setting's own title is
- * English and belongs to the Settings dialog (`.ai/localization.md`).
+ * English and belongs to the Settings dialog (`dev/ai/localization.md`).
  */
 export function createBooleanSettingsMenu(
   settingsId: string,

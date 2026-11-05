@@ -134,7 +134,7 @@ class EmuApiImpl {
   }
 
   /**
-   * Inserts a `.dck` cartridge into a Timex 2068's DOCK (`.plans/TIMEX_SCORPION_PLAN.md` G9.4b); a
+   * Inserts a `.dck` cartridge into a Timex 2068's DOCK (`dev/plans/TIMEX_SCORPION_PLAN.md` G9.4b); a
    * running machine restarts, since the ROM looks for a cartridge when it starts
    * @param _file The cartridge file
    * @param _contents Its bytes
@@ -151,7 +151,7 @@ class EmuApiImpl {
 
   /**
    * Loads a `.z88` (OZvm) snapshot into the emulator, rebuilding the machine as a Z88 that fits it
-   * when needed (`.plans/Z88_SNAPSHOT_PLAN.md` §4.5).
+   * when needed (`dev/plans/Z88_SNAPSHOT_PLAN.md` §4.5).
    * @param _contents The `.z88` file
    * @param _mode "run": start; "debug": start debugging, stopping at the snapshot's PC before that
    * instruction runs
@@ -166,7 +166,7 @@ class EmuApiImpl {
 
   /**
    * Loads a ZX Spectrum `.sna` / `.z80` / `.szx` snapshot into the emulator, switching to the
-   * machine it needs (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.5).
+   * machine it needs (`dev/plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.5).
    * @param _fileName The snapshot's file name (its extension picks the format)
    * @param _contents The snapshot file
    * @param _mode "run": start; "debug": start debugging, stopping at the snapshot's PC before that
@@ -187,7 +187,7 @@ class EmuApiImpl {
   }
 
   /**
-   * Plays an RZX input recording, switching to the machine it needs (`.plans/RZX_PLAN.md` §4.5)
+   * Plays an RZX input recording, switching to the machine it needs (`dev/plans/RZX_PLAN.md` §4.5)
    * @param _fileName The file's name, for messages
    * @param _contents The `.rzx` file
    * @param _mode "run", or "debug" (stop at the snapshot's PC before that instruction runs)
@@ -203,7 +203,7 @@ class EmuApiImpl {
   }
 
   /**
-   * Renders an RZX recording to video with the screen recorder (`.plans/RZX_PLAN.md` §4.7). Returns
+   * Renders an RZX recording to video with the screen recorder (`dev/plans/RZX_PLAN.md` §4.7). Returns
    * once rendering has started; the video stops by itself at the recording's end or a desync.
    */
   async renderRzxToVideo(
@@ -247,7 +247,7 @@ class EmuApiImpl {
 
   /**
    * Saves the running ZX Spectrum 48K, 128K or +2E/+3E as a `.sna`, `.z80` or `.szx` snapshot
-   * (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.3). A running machine is paused for the
+   * (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.3). A running machine is paused for the
    * capture and runs on afterwards; a paused one stays paused.
    * @param _format The file format
    * @param _creator The program a `.szx` file names as its creator
@@ -263,7 +263,7 @@ class EmuApiImpl {
 
   /**
    * Saves the machine's complete state as a Klive state file (`.kls`;
-   * `.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.8). A running machine runs on afterwards.
+   * `dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.8). A running machine runs on afterwards.
    * @param _options The Klive version for the header; the Next SD card's fingerprint
    * @returns The file; rejects when the machine has no state or cannot save one
    */
@@ -292,7 +292,7 @@ class EmuApiImpl {
 
   /**
    * Saves the reverse-debugging timeline as a debug recording (`.klr`;
-   * `.plans/DEBUG_SESSION_RECORDING_PLAN.md` §4.4). A running machine runs on afterwards.
+   * `dev/plans/DEBUG_SESSION_RECORDING_PLAN.md` §4.4). A running machine runs on afterwards.
    * @param _options What to save, and the IDE's part of it (version, watches, sources, SD card)
    * @returns The file; rejects when the machine keeps no timeline
    */
@@ -302,7 +302,7 @@ class EmuApiImpl {
 
   /**
    * Opens a debug recording: the machine it was made on, its timeline, paused where it was saved
-   * (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` §4.4, D10)
+   * (`dev/plans/DEBUG_SESSION_RECORDING_PLAN.md` §4.4, D10)
    * @param _fileName The file's name, for messages
    * @param _contents The file
    * @param _kliveVersion This Klive's version (the same-build message, D3)
@@ -318,7 +318,7 @@ class EmuApiImpl {
   }
 
   /**
-   * Whether this build can replay a debug recording (the viewer, `.plans/DEBUG_SESSION_RECORDING_PLAN.md`
+   * Whether this build can replay a debug recording (the viewer, `dev/plans/DEBUG_SESSION_RECORDING_PLAN.md`
    * D19): known when the running machine has the recording's core
    * @param _header The recording's identity
    * @param _kliveVersion This Klive's version, for the message
@@ -332,7 +332,7 @@ class EmuApiImpl {
 
   /**
    * Saves the machine's state into its in-memory quick slot (D19 of
-   * `.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md`); a running machine runs on.
+   * `dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md`); a running machine runs on.
    */
   async quickSaveMachineState(): Promise<{ machineName: string; pc: number }> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
@@ -374,7 +374,7 @@ class EmuApiImpl {
 
   /**
    * Puts a sample source on a ZX Spectrum Next's Raspberry Pi I2S input in place of the Pi, or takes it
-   * off (`.plans/PI_I2S_AUDIO_PLAN.md` §4). The stream starts at once.
+   * off (`dev/plans/PI_I2S_AUDIO_PLAN.md` §4). The stream starts at once.
    * @param _spec The source: off, a tone, or a WAV file's bytes
    * @returns The stream's state afterwards
    * @throws when the machine is not a Next, or the WAV file cannot be decoded (the message names why)
@@ -390,7 +390,7 @@ class EmuApiImpl {
 
   /**
    * Puts a cartridge (an `.mdr`'s bytes) into Microdrive 1 (0) or 2 (1), or ejects it (no contents)
-   * (`.plans/MICRODRIVE_PLAN.md`)
+   * (`dev/plans/MICRODRIVE_PLAN.md`)
    */
   async setMicrodriveFile(_drive: number, _file?: string, _contents?: Uint8Array): Promise<void> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
@@ -416,7 +416,7 @@ class EmuApiImpl {
 
   /**
    * Gets the current CPU state. While the history cursor is in the past it is the state at the
-   * cursor (`.plans/LITE_STEP_BACK_PLAN.md` D2), with `history` set; `present` asks for the live one.
+   * cursor (`dev/plans/LITE_STEP_BACK_PLAN.md` D2), with `history` set; `present` asks for the live one.
    */
   async getCpuState(_options?: { present?: boolean }): Promise<CpuState> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
@@ -551,7 +551,7 @@ class EmuApiImpl {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 
-  /** Resets the machine and boots the cartridge in Microdrive 1 (`.plans/MICRODRIVE_PLAN.md` 4.3) */
+  /** Resets the machine and boots the cartridge in Microdrive 1 (`dev/plans/MICRODRIVE_PLAN.md` 4.3) */
   async startMicrodriveBoot(_debug: boolean): Promise<void> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
@@ -563,7 +563,7 @@ class EmuApiImpl {
   /**
    * Puts a card application into the Z88's application slot and starts it: the machine soft-resets,
    * then □ + the application's key is pressed once OZ is ready (`z88AppFlow.ts`; a z88dk C program,
-   * `.plans/Z88DK_INTEGRATION_PLAN.md` §7).
+   * `dev/plans/Z88DK_INTEGRATION_PLAN.md` §7).
    * @param _file The card image (`.epr`)
    * @param _sizeKb Its size in KB (32, 128 or 256)
    * @param _appKey The application's key, a letter
@@ -684,7 +684,7 @@ class EmuApiImpl {
   }
 
   /**
-   * What the execution-history ring holds (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.4), or
+   * What the execution-history ring holds (`dev/plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.4), or
    * undefined when the machine does not record history.
    */
   async getHistoryInfo(): Promise<ExecutionHistoryInfo | undefined> {
@@ -701,7 +701,7 @@ class EmuApiImpl {
 
   /**
    * The outermost interrupt service spans of the held history records, for the viewer to fold
-   * (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` D10), or undefined when the machine does not
+   * (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` D10), or undefined when the machine does not
    * record history.
    */
   async getHistoryServiceSpans(): Promise<HistoryServiceSpan[] | undefined> {
@@ -715,7 +715,7 @@ class EmuApiImpl {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 
-  // --- The access profile: code coverage and the heat map (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`
+  // --- The access profile: code coverage and the heat map (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`
   // --- §4.2). Undefined on a machine whose core does not profile, or with advanced debugging off.
 
   /** What the profile holds (`coverage status`) */
@@ -769,7 +769,7 @@ class EmuApiImpl {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 
-  // --- The profiler (`.plans/PROFILER_PLAN.md` D1, D2, D9-D12)
+  // --- The profiler (`dev/plans/PROFILER_PLAN.md` D1, D2, D9-D12)
 
   /**
    * Starts a profiling window: resets the profile, turns it on with counters and, with `calls`, the
@@ -798,7 +798,7 @@ class EmuApiImpl {
   }
 
   /**
-   * Moves the history cursor (`.plans/LITE_STEP_BACK_PLAN.md` D4): Step Back, Step Forward, Reverse
+   * Moves the history cursor (`dev/plans/LITE_STEP_BACK_PLAN.md` D4): Step Back, Step Forward, Reverse
    * Step Over/Out, Reverse Continue, Return to Present, or to a record. Never changes the machine.
    */
   async navigateHistory(
@@ -809,7 +809,7 @@ class EmuApiImpl {
   }
 
   /**
-   * Take over here (`.plans/REVERSE_DEBUGGING_PLAN.md` D12): the point in the past the machine
+   * Take over here (`dev/plans/REVERSE_DEBUGGING_PLAN.md` D12): the point in the past the machine
    * stands at becomes the present. False when the machine is not in the past.
    */
   async takeOverHere(): Promise<boolean> {
@@ -817,7 +817,7 @@ class EmuApiImpl {
   }
 
   /**
-   * What Take over here would leave behind (`.plans/REVERSE_DEBUGGING_PLAN.md` T4): SD card sector
+   * What Take over here would leave behind (`dev/plans/REVERSE_DEBUGGING_PLAN.md` T4): SD card sector
    * writes it reverts, files saved to tape that stay. Undefined without a timeline.
    */
   async getForkPreview(): Promise<{ sdWrites: number; hostFiles: string[] } | undefined> {
@@ -872,7 +872,7 @@ class EmuApiImpl {
 
   /**
    * Gets the ZX Spectrum Next layer state the Layers document shows
-   * (`.plans/LAYER_COMPOSITION_PLAN.md` D9): the mixer registers, the clip windows, the debug view
+   * (`dev/plans/LAYER_COMPOSITION_PLAN.md` D9): the mixer registers, the clip windows, the debug view
    * and, with `thumbnails`, one picture per layer from the capture, in the screen's shape. Reading it never
    * changes the machine.
    */
@@ -930,7 +930,7 @@ class EmuApiImpl {
   /**
    * Where each ROM partition came from and what it is, keyed by partition (`-1`, `-2`, ...): its
    * CRC-32 and size, and the file and 16K page holding those bytes
-   * (`.docs/annotations.md`, "ROM Annotations"). A machine without partitions reports
+   * (`dev/patterns/annotations.md`, "ROM Annotations"). A machine without partitions reports
    * its one ROM as `-1`. Empty for a machine whose ROMs carry no annotations.
    */
   async getRomSources(_withBytes?: boolean): Promise<Record<number, RomSource>> {
@@ -1034,7 +1034,7 @@ class EmuApiImpl {
   /**
    * Writes bytes to memory: from `_address` in the CPU's current view, or from offset `_address`
    * of a partition (a ROM page or RAM bank) whatever is paged in
-   * (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` T8).
+   * (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` T8).
    * @param _address The address, or the offset within the partition.
    * @param _bytes The bytes to write.
    * @param _partition The partition, or undefined for the CPU's view.
@@ -1188,7 +1188,7 @@ export type Z80CpuState = {
    */
   lastSpriteWrite?: SpriteWriteEvent;
   /**
-   * Set while the history cursor is in the past (`.plans/LITE_STEP_BACK_PLAN.md` D2, T9): the
+   * Set while the history cursor is in the past (`dev/plans/LITE_STEP_BACK_PLAN.md` D2, T9): the
    * registers, flags, interrupt state and PC partition are the record's; `tacts`, the last memory
    * and I/O accesses and `opStartAddress` are not in a record and must be shown as unknown.
    */
@@ -1220,7 +1220,7 @@ export type CopperHitEvent = {
 
 /**
  * The ZX Spectrum Next sprites, as the Sprite Inspector reads them in one call
- * (`.plans/SPRITE_INSPECTOR_PLAN.md` §4.3, D2). Not `SpriteInfo`: that name is the C64 VIC type.
+ * (`dev/plans/SPRITE_INSPECTOR_PLAN.md` §4.3, D2). Not `SpriteInfo`: that name is the C64 VIC type.
  */
 export type NextSpriteState = {
   /** 128 slots x 5 attribute bytes, a copy */
@@ -1260,7 +1260,7 @@ export type NextSpriteState = {
 
 /**
  * The ZX Spectrum Next tilemap, as the Tilemap Inspector reads it in one call
- * (`.plans/TILEMAP_INSPECTOR_PLAN.md` §4.3, D2).
+ * (`dev/plans/TILEMAP_INSPECTOR_PLAN.md` §4.3, D2).
  */
 export type NextTilemapState = {
   regs: TilemapRegs;
@@ -1279,11 +1279,11 @@ export type NextTilemapState = {
 
 /**
  * The ZX Spectrum Next's Layer 2, as the Layer 2 Inspector reads it in one call
- * (`.plans/LAYER2_INSPECTOR_PLAN.md` §4.3, D2).
+ * (`dev/plans/LAYER2_INSPECTOR_PLAN.md` §4.3, D2).
  */
 /**
  * The ZX Spectrum Next's layer mixer as the Layers document and strip read it
- * (`.plans/LAYER_COMPOSITION_PLAN.md` §4.4, D9).
+ * (`dev/plans/LAYER_COMPOSITION_PLAN.md` §4.4, D9).
  */
 export type NextLayerState = {
   regs: NextLayerRegs;
@@ -1395,7 +1395,7 @@ export type SpriteWriteOrigin = "port" | "dma" | "nextreg" | "copper";
 
 /**
  * A sprite attribute write a breakpoint stopped on; see `Z80CpuState.lastSpriteWrite`
- * (`.plans/SPRITE_ATTRIBUTE_BREAKPOINTS_PLAN.md`). The machine stops at the end of the instruction
+ * (`dev/plans/SPRITE_ATTRIBUTE_BREAKPOINTS_PLAN.md`). The machine stops at the end of the instruction
  * during which the write happened, so the event carries the byte it replaced as well.
  */
 export type SpriteWriteEvent = {
@@ -1521,7 +1521,7 @@ export type UlaState = {
   ramB: number;
 };
 
-/** The Videoton TVC's video circuit, for the TVC Video panel (`.ai/videoton-tvc.md`, "IDE
+/** The Videoton TVC's video circuit, for the TVC Video panel (`dev/ai/videoton-tvc.md`, "IDE
  * integration") */
 export type TvcVideoState = {
   /** The 6845's R0-R17 and its address register */
@@ -1662,7 +1662,7 @@ export type MemoryInfo = {
   osInitialized: boolean;
   memBreakpoints: BreakpointInfo[];
   /**
-   * Set while the history cursor is in the past (`.plans/LITE_STEP_BACK_PLAN.md` T2): the
+   * Set while the history cursor is in the past (`dev/plans/LITE_STEP_BACK_PLAN.md` T2): the
    * registers above are the present's, these are the cursor's, and `bytes` are the bytes the CPU
    * decoded at `pc` then - the disassembly marks the row when memory there has changed since.
    */

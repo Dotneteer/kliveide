@@ -25,7 +25,7 @@ import { drawZx81Screen, zx81FontFromRom } from "@renderer/appIde/DocumentPanels
  * `test/zx8081-hw/p-file-viewer.test.ts`.
  */
 
-const TAPES = join(__dirname, "../../../_input/zx81-tapes");
+const TAPES = join(__dirname, "../../../dev/research/zx81-tapes");
 const read = (path: string) => new Uint8Array(readFileSync(join(TAPES, path)));
 const ROM = new Uint8Array(readFileSync(join(__dirname, "../../../src/public/roms/zx81.rom")));
 

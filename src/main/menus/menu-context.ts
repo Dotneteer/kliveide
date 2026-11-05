@@ -1,5 +1,5 @@
 /*
- * What every menu builder reads (`.plans/MENU_REDESIGN_PLAN.md` §7 Phase 1). `setupMenu` creates
+ * What every menu builder reads (`dev/plans/MENU_REDESIGN_PLAN.md` §7 Phase 1). `setupMenu` creates
  * one per rebuild; the builders read nothing else from the environment, which is what lets the tests
  * build each menu from a hand-made context.
  */

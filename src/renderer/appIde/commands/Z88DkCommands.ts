@@ -40,7 +40,7 @@ export class ResetZ88DkCommand extends IdeCommandBase<ResetZ88DkCommandArgs> {
   }
 }
 
-/** Opens the z88dk integration dialog (`.plans/Z88DK_INTEGRATION_PLAN.md` §4.2). */
+/** Opens the z88dk integration dialog (`dev/plans/Z88DK_INTEGRATION_PLAN.md` §4.2). */
 export class SetupZ88DkCommand extends IdeCommandBase {
   readonly id = "z88dk-setup";
   // --- Opens a modal dialog: never through automation

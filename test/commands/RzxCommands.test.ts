@@ -22,7 +22,7 @@ import { ValidationMessageType } from "@renderer/abstractions/ValidationMessageT
 import { buildSzx, state48 } from "../spectrum/snapshot/builders";
 
 /*
- * The RZX IDE commands (`.plans/RZX_PLAN.md` §1.6, Phases 5-7). The emulator side is mocked here;
+ * The RZX IDE commands (`dev/plans/RZX_PLAN.md` §1.6, Phases 5-7). The emulator side is mocked here;
  * `test/spectrum/rzx/rzx-sp-flow.test.ts` covers it on a real controller and core.
  */
 

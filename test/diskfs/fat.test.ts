@@ -4,7 +4,7 @@ import { MemoryBlockDevice, PartitionDevice, readPartitions, readHdfHeader, crea
 import { FatFileSystem, createFatImage, formatFat } from "@common/diskfs/fat";
 
 /*
- * FAT16/FAT32 (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, C1) on images formatted in memory:
+ * FAT16/FAT32 (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, C1) on images formatted in memory:
  * the layout, files and folders, long names, deletes, renames and attributes, and partitions.
  */
 

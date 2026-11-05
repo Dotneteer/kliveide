@@ -2,7 +2,7 @@ import type { UnitTestCase } from "./discovery";
 import type { UnitTestErrorKind, UnitTestResult } from "./unitTestTypes";
 
 /*
- * JUnit XML of a unit-test run (`.plans/UNIT_TESTS_CLI_PLAN.md` D7, T2, D10, D14). Shared by the
+ * JUnit XML of a unit-test run (`dev/plans/UNIT_TESTS_CLI_PLAN.md` D7, T2, D10, D14). Shared by the
  * `klive test --junit` command line and the Test panel's "Export results as JUnit…", so a file made
  * in the IDE matches the one CI makes.
  *

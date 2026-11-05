@@ -3,7 +3,7 @@ import { droppedFileAction } from "@common/utils/dropped-file-action";
 import { handleEmuFileDrop } from "@renderer/appEmu/useEmuFileDrop";
 
 /*
- * Dropping files onto the emulator window (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.10, Phase 8).
+ * Dropping files onto the emulator window (`dev/plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.10, Phase 8).
  */
 
 describe("droppedFileAction", () => {

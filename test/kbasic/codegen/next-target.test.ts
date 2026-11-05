@@ -94,7 +94,7 @@ describe("source stepping on the Next (§10.2)", () => {
 
 describe("the ZX Spectrum Next project template of Klive BASIC", () => {
   // --- The template while Klive BASIC built BASIC programs; the shipped one is Boriel BASIC's now
-  // --- (`.ai/klive-basic-switch.md`), so its CODEBANK version is kept here as a fixture
+  // --- (`dev/ai/klive-basic-switch.md`), so its CODEBANK version is kept here as a fixture
   it("runs, calling its CODEBANK routine", async () => {
     const source = readFileSync(join(__dirname, "fixtures", "next-codebank-template.zxbas"), "utf8");
     const r = await runBasicNext(source);

@@ -2,7 +2,7 @@
   "schemaVersion": 3,
   "machine": "rom",
   "source": {"fileName":"enNextZX.rom"},
-  "authoring": ".ai/rom-annotations/README.md",
+  "authoring": "dev/ai/rom-annotations/README.md",
   "level": 2,
   "pages": {
     "0": {"crc32":"2f430534","name":"ZX Spectrum Next NextZXOS ROM 0"},
@@ -43221,5 +43221,5 @@
     "3:16368:line": "derived",
     "3:16376:line": "derived"
   },
-  "carriedFrom": {"sidecar":"zxnext/nextzxos-2.08/enNextZX.rom.dis","method":"byte signature (scripts/rom-annotations-carry.cjs)"}
+  "carriedFrom": {"sidecar":"zxnext/nextzxos-2.08/enNextZX.rom.dis","method":"byte signature (dev/scripts/rom-annotations-carry.cjs)"}
 }

@@ -8,7 +8,7 @@
 // The diagrams, the timing, the word and the level budget are drawn from the rules. Then:
 //   node docs/authoring/next-audio/pi-audio-figures.cjs
 //
-// Sized for print (.ai/hardware-articles-guide.md, Figures): the drawings use the whole 700-unit width, and
+// Sized for print (dev/ai/hardware-articles-guide.md, Figures): the drawings use the whole 700-unit width, and
 // no text is smaller than 13.5 units.
 "use strict";
 

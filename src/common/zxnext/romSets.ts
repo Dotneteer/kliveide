@@ -1,11 +1,11 @@
 import * as manifestModule from "./nextRomSets.json";
 
 // --- Vite and vitest give a JSON module a default export; the plain CommonJS transpile some scripts
-// --- load TypeScript through (`scripts/benchmark-zxnext-wasm.cjs`) gives the object itself
+// --- load TypeScript through (`dev/scripts/benchmark-zxnext-wasm.cjs`) gives the object itself
 const manifest: typeof manifestModule = (manifestModule as any).default ?? manifestModule;
 
 /*
- * The ZX Spectrum Next's ROM sets (`.ai/zxnext-models.md` D9).
+ * The ZX Spectrum Next's ROM sets (`dev/ai/zxnext-models.md` D9).
  *
  * A ROM set is one NextZXOS release from the official distribution: its ROM files, the SD card base
  * image built from the same release, and the ROM facts Klive's code depends on (D6). The files are
@@ -45,7 +45,7 @@ export type NextRomFacts = {
 export type NextFpgaRomInfo = {
   /** The core version it comes from (`3.02.01`) */
   core: string;
-  /** Its VHDL file, relative to `vendor/next-fpga/<core>/` */
+  /** Its VHDL file, relative to `dev/vendor/next-fpga/<core>/` */
   source: string;
   size: number;
   sha256: string;
@@ -61,7 +61,7 @@ export type NextRomSet = {
   files: Readonly<Record<string, NextRomFileInfo>>;
   /**
    * ROM images that live inside the FPGA core rather than in the distribution (the anti-brick core's
-   * boot ROM), extracted from the core version's VHDL (`vendor/next-fpga/<core>/<source>`); shipped
+   * boot ROM), extracted from the core version's VHDL (`dev/vendor/next-fpga/<core>/<source>`); shipped
    * beside the set's files so they can be annotated
    */
   fpgaRoms: Readonly<Record<string, NextFpgaRomInfo>>;

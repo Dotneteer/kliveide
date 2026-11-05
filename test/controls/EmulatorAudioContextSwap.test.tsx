@@ -4,7 +4,7 @@ import { act, renderHook } from "@testing-library/react";
 /*
  * The audio context is replaced when the machine is: `initAudio` closes the old one and builds the
  * next, asynchronously. A machine started inside that window - a `.z88` snapshot runs straight after
- * the machine it needed is rebuilt (`.plans/Z88_SNAPSHOT_PLAN.md` Phase 7) - used to call `play()` on
+ * the machine it needed is rebuilt (`dev/plans/Z88_SNAPSHOT_PLAN.md` Phase 7) - used to call `play()` on
  * the old renderer and raise "Cannot resume a closed AudioContext".
  */
 

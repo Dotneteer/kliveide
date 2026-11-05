@@ -3,7 +3,7 @@ import { SpectrumKeyCode } from "@emu/machines/zxSpectrum/SpectrumKeyCode";
 import { SP128_MAIN_WAITING_LOOP, SP128_RETURN_TO_EDITOR, SP48_MAIN_ENTRY, SP_KEY_WAIT } from "../../ZxSpectrumBase";
 
 /*
- * The Microdrive Loader (`.plans/MICRODRIVE_PLAN.md` Phase 4.3): after a reset, `RUN` with no
+ * The Microdrive Loader (`dev/plans/MICRODRIVE_PLAN.md` Phase 4.3): after a reset, `RUN` with no
  * program, which makes the Interface 1 load the program "run" from Microdrive 1 and run it (its first
  * entry after NEW sees RUN in the edit line: `interface1-rom-behaviour.md` §1). The 128K types it in
  * 128 BASIC, where the same report reaches the Interface 1 (`if1-128k.test.ts`, T9).

@@ -5,7 +5,7 @@ import { writeDebugRecording, type DebugRecording } from "@common/debugRecording
 import type { DebugRecordingCompatibility } from "@common/debugRecording/debugRecordingTypes";
 
 /*
- * The debug recording viewer (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` D19, Phase 3): the header,
+ * The debug recording viewer (`dev/plans/DEBUG_SESSION_RECORDING_PLAN.md` D19, Phase 3): the header,
  * the length, the note, breakpoints, media and sources - and whether this build opens it, which the
  * emulator answers when it runs the recording's core.
  */

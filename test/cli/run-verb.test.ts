@@ -10,7 +10,7 @@ import { artifactNameOf, headlessUnsupportedMessage, HEADLESS_MACHINES } from "@
 import { unsupportedMachineMessage } from "@main/unit-tests/unitTestMachines";
 
 /*
- * `klive run`'s parsing and reporting, without a machine (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md`
+ * `klive run`'s parsing and reporting, without a machine (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md`
  * §6 "Node unit"): the `--bp` subset of `bp-set`, `--keys`, `--dump-mem`, the input kinds, the
  * machines that run headless, and the usage errors that come before anything is built. The runs
  * themselves are in `klive-run-e2e.test.ts` (e2e tier).

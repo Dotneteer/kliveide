@@ -92,7 +92,7 @@ export function ownerForScope(
 
 /**
  * The sidecar that owns a breakpoint, or `undefined` when no sidecar does. Reads the former `nex`
- * owner as the `sidecar` one (`.docs/annotations.md`, "Commands").
+ * owner as the `sidecar` one (`dev/patterns/annotations.md`, "Commands").
  */
 export function sidecarOfOwner(owner: BreakpointOwner | undefined): string | undefined {
   return owner?.kind === "sidecar" || owner?.kind === "nex" ? owner.sidecar : undefined;
@@ -107,7 +107,7 @@ export function normalizeBreakpointOwner(
 
 /**
  * Is this a logpoint read from a `LOGPOINT` source comment - owned by the build, read-only to the
- * user (`.plans/LOGPOINTS_PLAN.md` L10)?
+ * user (`dev/plans/LOGPOINTS_PLAN.md` L10)?
  */
 export function isAnnotationBreakpoint(bp: BreakpointInfo): boolean {
   return bp?.owner?.kind === "annotation";

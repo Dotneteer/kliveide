@@ -1,5 +1,5 @@
 /*
- * Mapping live Copper RAM back to `.copper` source (`.plans/COPPER_DEBUGGING_PLAN.md` D8, D11, T10).
+ * Mapping live Copper RAM back to `.copper` source (`dev/plans/COPPER_DEBUGGING_PLAN.md` D8, D11, T10).
  *
  * The assembler records every maximal run of `.copper` emissions as a `CopperBlock`. The program
  * uploads such a block into the Copper's RAM at some list offset - often 0, not always - and may

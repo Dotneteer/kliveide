@@ -5,24 +5,24 @@ import { createSp48Session, type Sp48TestSession } from "../harness/sp48";
 import { createSp128Session, type Sp128TestSession } from "../harness/sp128";
 
 /*
- * The ZX Spectrum timing test kit (`vendor/spectrum-tests/`, `.plans/SPECTRUM_ULA_ACCURACY_PLAN.md`
+ * The ZX Spectrum timing test kit (`dev/vendor/spectrum-tests/`, `dev/plans/SPECTRUM_ULA_ACCURACY_PLAN.md`
  * Phase 0): runs the community's test programs on Klive's cores. Each program has a test file of its
  * own here, in the slow tier (`npm run test:slow`).
  *
  * A program that reports its own result (PASS/FAIL, a table checked against its author's real
- * machines) is asserted. A program that only draws gets its picture written to `.spectrum-kit/`
+ * machines) is asserted. A program that only draws gets its picture written to `.local/spectrum-kit/`
  * (git-ignored) for a by-eye comparison with the real-machine photos and videos on its ZXE wiki page:
  * never a golden recorded from Klive's own output (the plan's ground rules).
  *
  * Some runs' pictures are published on the documentation site and checked against it on every run
- * (`PublishedPictures` in `pictures.ts`, `.plans/SPECTRUM_ACCURACY_DOCS_PLAN.md`).
+ * (`PublishedPictures` in `pictures.ts`, `dev/plans/SPECTRUM_ACCURACY_DOCS_PLAN.md`).
  */
 
 /** The kit's folder */
-export const KIT = join(__dirname, "../../vendor/spectrum-tests");
+export const KIT = join(__dirname, "../../dev/vendor/spectrum-tests");
 
 /** Where the runs' pictures go */
-export const OUT = join(__dirname, "../../.spectrum-kit");
+export const OUT = join(__dirname, "../../.local/spectrum-kit");
 
 export type KitSession = Sp48TestSession | Sp128TestSession;
 
@@ -68,7 +68,7 @@ export function press(s: KitSession, ...keys: string[]): void {
   s.typeKeys([keys], { hold: 5, gap: 10 });
 }
 
-/** Writes the picture (and its text) to `.spectrum-kit/<name>.png` / `.txt` for a by-eye check */
+/** Writes the picture (and its text) to `.local/spectrum-kit/<name>.png` / `.txt` for a by-eye check */
 export function savePicture(s: KitSession, name: string): void {
   mkdirSync(OUT, { recursive: true });
   writeFileSync(join(OUT, `${name}.png`), s.screenPng());

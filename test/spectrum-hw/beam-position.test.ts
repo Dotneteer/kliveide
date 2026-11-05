@@ -8,7 +8,7 @@ import { processMainToEmuMessages } from "@renderer/appEmu/MainToEmuProcessor";
 
 /*
  * The beam position overlay on the cores built on `zx-spectrum-ula.c`
- * (`.plans/BEAM_POSITION_OVERLAY_PLAN.md` Phase 2): the 48K, the 128K and the Pentagon (sp128), the
+ * (`dev/plans/BEAM_POSITION_OVERLAY_PLAN.md` Phase 2): the 48K, the 128K and the Pentagon (sp128), the
  * +2A and +3E (spp3e) and the Timex (the 48K core with the SCLD, two buffer pixels per Spectrum pixel).
  *
  * - The overlay's linear raster agrees with the core's own tact -> pixel table for every tact the

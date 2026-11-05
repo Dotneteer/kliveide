@@ -5,7 +5,7 @@ import { BasicProgramBuffer } from "./BasicLine";
 import type { BasicListing } from "./basicListing";
 
 /*
- * The Enterprise's IS-BASIC listing (`.plans/ENTERPRISE_PLAN.md` §11.4): the current program, through
+ * The Enterprise's IS-BASIC listing (`dev/plans/ENTERPRISE_PLAN.md` §11.4): the current program, through
  * IS-BASIC's own pointers (021Ah, 0236h in segment F8h at page 0), detokenised as LIST prints it
  * (`common/enterprise/basicTokens.ts`, observed on the running ROM). Each character goes through
  * EXOS's font (`EpChars`), so 23h shows as the machine shows it, £; a code with no glyph is a `$NN`

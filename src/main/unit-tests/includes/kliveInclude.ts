@@ -1,5 +1,5 @@
 /*
- * Klive's unit-test include for its own assembler (`.plans/Z80_UNIT_TESTS_PLAN.md` D4).
+ * Klive's unit-test include for its own assembler (`dev/plans/Z80_UNIT_TESTS_PLAN.md` D4).
  *
  * Written from scratch for Klive from the documented meaning of DeZog's conventions: the same
  * label names and macro names, in Klive syntax. No DeZog code is copied. **Testing → Add unit-test

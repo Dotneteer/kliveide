@@ -23,7 +23,7 @@ export function parseBeamSwitch(arg: string | undefined): boolean | undefined {
 
 /**
  * `beam [on|off]`: shows or hides the beam position overlay on the paused emulator screen
- * (`.plans/BEAM_POSITION_OVERLAY_PLAN.md` D8) - the same setting as the View menu item and the
+ * (`dev/plans/BEAM_POSITION_OVERLAY_PLAN.md` D8) - the same setting as the View menu item and the
  * emulator toolbar button. Without an argument, says whether it is on.
  */
 export class BeamCommand extends IdeCommandBase<{ state?: string }> {

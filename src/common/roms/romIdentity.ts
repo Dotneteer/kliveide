@@ -10,7 +10,7 @@ import {
 import { NEXT_ROM_SETS, nextRomAnnotationFile } from "@common/zxnext/romSets";
 
 /*
- * Which ROM a ROM page is (`.docs/annotations.md`, "ROM Annotations").
+ * Which ROM a ROM page is (`dev/patterns/annotations.md`, "ROM Annotations").
  *
  * A partition label names a *slot*, not the ROM in it: the 128K's `R1`, a +3's `R3` and a custom 48K
  * ROM all look alike from the label (T6). What identifies a page is its bytes, and the CRC-32 of
@@ -100,7 +100,7 @@ const NEXT_PAGE_KINDS: Readonly<Record<string, readonly (RomPageKind | undefined
 };
 
 /**
- * The Next's pages, generated from the ROM set manifest (`.ai/zxnext-models.md` D9.3):
+ * The Next's pages, generated from the ROM set manifest (`dev/ai/zxnext-models.md` D9.3):
  * every page of every set, named by its path (`zxnext/<setId>/enNextZX.rom`). A page whose CRC is
  * already listed (the same bytes in another file or set) keeps its first entry.
  */

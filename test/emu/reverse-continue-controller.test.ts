@@ -10,7 +10,7 @@ import { comparePositions } from "@emu/machines/reverse/timelinePosition";
 import { createSp48Session } from "../harness/sp48";
 
 /*
- * Reverse Continue and reverse watchpoints (`.plans/REVERSE_DEBUGGING_PLAN.md` D15, Phase 5), on the
+ * Reverse Continue and reverse watchpoints (`dev/plans/REVERSE_DEBUGGING_PLAN.md` D15, Phase 5), on the
  * real 48K through the machine controller: a memory-write watchpoint finds the last write to an
  * address several keyframe intervals back - checked on the real past machine, interval by interval -
  * and the machine lands on it.

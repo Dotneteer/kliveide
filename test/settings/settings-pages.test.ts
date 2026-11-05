@@ -21,7 +21,7 @@ import {
 } from "@common/settings/setting-const";
 
 /*
- * The Settings dialog's content (`.plans/MENU_REDESIGN_PLAN.md` §4): what each row reads, where it
+ * The Settings dialog's content (`dev/plans/MENU_REDESIGN_PLAN.md` §4): what each row reads, where it
  * applies, and what the search finds.
  */
 
@@ -184,8 +184,8 @@ describe("settingsRowMatches", () => {
   });
 });
 
-describe("the BASIC compiler rows (`.ai/boriel/integration.md`, 'Editor, settings and status bar')", () => {
-  // --- KLIVE-BASIC-OFF: the compiler row is commented out (`.ai/klive-basic-switch.md`)
+describe("the BASIC compiler rows (`dev/ai/boriel/integration.md`, 'Editor, settings and status bar')", () => {
+  // --- KLIVE-BASIC-OFF: the compiler row is commented out (`dev/ai/klive-basic-switch.md`)
   it.skip("show the compiler that builds now: the project's choice wins over the user's", () => {
     expect(readSettingsRowValue(row("basicCompiler"), stateOf({}))).toBe("klive");
     expect(readSettingsRowValue(row("basicCompiler"), stateOf({ userSettings: { zxbasic: { compiler: "boriel" } } }))).toBe("boriel");
@@ -210,7 +210,7 @@ describe("the BASIC compiler rows (`.ai/boriel/integration.md`, 'Editor, setting
     expect(readSettingsRowValue(boriel, explicit)).toBe("C:\\tools\\zxb");
   });
 
-  // --- KLIVE-BASIC-OFF: the compiler row is commented out (`.ai/klive-basic-switch.md`)
+  // --- KLIVE-BASIC-OFF: the compiler row is commented out (`dev/ai/klive-basic-switch.md`)
   it.skip("are found by the words a user would search for", () => {
     expect(settingsRowMatches(row("basicCompiler"), "compiler")).toBe(true);
     expect(settingsRowMatches(row("basicCompiler"), "basic")).toBe(true);
@@ -218,7 +218,7 @@ describe("the BASIC compiler rows (`.ai/boriel/integration.md`, 'Editor, setting
   });
 });
 
-describe("the automation rows (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D4, D7)", () => {
+describe("the automation rows (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` D4, D7)", () => {
   it("read the user settings set -u writes, never a project's", () => {
     const on = stateOf({ userSettings: { automation: { enabled: "1", level: "full" } } });
     expect(readSettingsRowValue(row("automationEnabled"), on)).toBe(true);
@@ -235,7 +235,7 @@ describe("the automation rows (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D4, D7)"
   });
 });
 
-describe("the ZX Spectrum Next's real-time clock rows (`.ai/zxnext-rtc.md`)", () => {
+describe("the ZX Spectrum Next's real-time clock rows (`dev/ai/zxnext-rtc.md`)", () => {
   const RTC_ROWS = ["nextRtcClock", "nextRtcKeep", "nextRtcKept"];
 
   it("show on the Machine page for the Next only, in one group after Sound", () => {

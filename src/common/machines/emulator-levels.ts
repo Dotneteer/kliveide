@@ -1,7 +1,7 @@
 /*
  * The clock multipliers and sound levels the emulator offers. Machine › Speed and Machine › Sound,
  * the status bar's speed popup and the toolbar's sound dropdown all read these, so they cannot drift
- * apart (`.plans/MENU_REDESIGN_PLAN.md` §5).
+ * apart (`dev/plans/MENU_REDESIGN_PLAN.md` §5).
  */
 import { t } from "@common/i18n/i18n";
 import { withLabels } from "@common/i18n/labels";

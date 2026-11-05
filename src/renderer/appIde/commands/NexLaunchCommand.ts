@@ -47,7 +47,7 @@ export type LaunchNexCommandArgs = {
  * The command needs no project, which is the point: the Explorer menu and the NEX viewer both reach
  * it, and so does a script.
  *
- * See `.ai/nex-debugging.md`.
+ * See `dev/ai/nex-debugging.md`.
  */
 export class LaunchNexCommand extends IdeCommandBase<LaunchNexCommandArgs> {
   readonly id = "nex-run";

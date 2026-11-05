@@ -104,7 +104,7 @@ export class ZxSpectrum48WasmV2Machine
   implements IExecutionHistorySource, IAccessProfileSource, IRzxMachine
 {
   // ==============================================================================================
-  // Execution history (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`): the shared recorder in the
+  // Execution history (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`): the shared recorder in the
   // core, read through the shared reader; the machine id names the context decoder
 
   get historyMachineId(): string {
@@ -137,7 +137,7 @@ export class ZxSpectrum48WasmV2Machine
   }
 
   // ==============================================================================================
-  // The access profile (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`): the shared module in the core,
+  // The access profile (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`): the shared module in the core,
   // read through the shared reader; the machine id names the layout (the Timex has its own)
 
   get profileMachineId(): string {
@@ -193,7 +193,7 @@ export class ZxSpectrum48WasmV2Machine
   public wasmV2Runtime?: Sp48WasmV2Runtime;
 
   /**
-   * The DivMMC (`.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md` C4): with `MC_DIVMMC`, connected at setup.
+   * The DivMMC (`dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md` C4): with `MC_DIVMMC`, connected at setup.
    * The Timex build of this core has none (`divMmc.available` is false there).
    */
   readonly divMmc = new DivMmcSupport("sp48", {
@@ -201,7 +201,7 @@ export class ZxSpectrum48WasmV2Machine
     loadDivMmcRom: (path) => this.loadRomFromResource(path)
   });
   /**
-   * The ZX Interface 1 and its Microdrives (`.plans/MICRODRIVE_PLAN.md`): with `MC_INTERFACE1`,
+   * The ZX Interface 1 and its Microdrives (`dev/plans/MICRODRIVE_PLAN.md`): with `MC_INTERFACE1`,
    * connected at setup. The Timex build of this core has none (`if1.available` is false there).
    */
   readonly if1 = new Interface1MachineSupport("sp48", {
@@ -210,7 +210,7 @@ export class ZxSpectrum48WasmV2Machine
     setMachinePropertyRaw: (key, value) => this.setPropertyRaw(key, value),
     loadRom: (path) => this.loadRomFromResource(path)
   });
-  /** The RZX session playing or recording on this machine (`.plans/RZX_PLAN.md` §4.3) */
+  /** The RZX session playing or recording on this machine (`dev/plans/RZX_PLAN.md` §4.3) */
   public rzxSession?: IRzxSession;
   private rzxCoreBridge?: RzxCoreBridge;
   private readonly wasmV2AudioSamples: AudioSample[] = [];
@@ -770,7 +770,7 @@ export class ZxSpectrum48WasmV2Machine
     return this.requireWasmV2Runtime().exports.sp48GetPixelBufferStartOffset();
   }
 
-  /** The beam position overlay (`.plans/BEAM_POSITION_OVERLAY_PLAN.md` §4.3, D4) */
+  /** The beam position overlay (`dev/plans/BEAM_POSITION_OVERLAY_PLAN.md` §4.3, D4) */
   getBeamPosition(): BeamPosition {
     const ex = this.requireWasmV2Runtime().exports;
     return spectrumWasmBeamPosition(
@@ -896,7 +896,7 @@ export class ZxSpectrum48WasmV2Machine
         runtime.exports.sp48TapeSetFastLoad(value ? 1 : 0);
         break;
 
-      // --- The ULA's late timing and snow (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phases 4, 5)
+      // --- The ULA's late timing and snow (`dev/plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phases 4, 5)
       case ULA_LATE_TIMING:
         runtime.exports.sp48SetLateTiming(value ? 1 : 0);
         break;
@@ -1248,10 +1248,10 @@ export class ZxSpectrum48WasmV2Machine
 
   /**
    * The core's breakpoint condition evaluator: its program store. The shared C evaluator reads the
-   * registers and memory inside the core (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`).
+   * registers and memory inside the core (`dev/plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`).
    */
   /**
-   * Replaces the machine's state with a snapshot's (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.4).
+   * Replaces the machine's state with a snapshot's (`dev/plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.4).
    * Call it through `IMachineController.restoreState`, which leaves the machine Paused.
    * @returns The frame tact the machine stands at
    * @throws When the snapshot needs another machine
@@ -1271,7 +1271,7 @@ export class ZxSpectrum48WasmV2Machine
 
   /**
    * Reads the machine's state as a snapshot model, without changing it
-   * (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.1). The machine must be paused.
+   * (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.1). The machine must be paused.
    * @param media The tape and disk files the media store holds
    * @throws When the CPU stands inside a prefixed instruction
    */
@@ -1295,7 +1295,7 @@ export class ZxSpectrum48WasmV2Machine
 
   /**
    * Captures the machine's whole state: the core's memory image plus this wrapper's own fields
-   * (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.5). The machine must be paused.
+   * (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.5). The machine must be paused.
    */
   saveMachineState(): MachineStateParts {
     const runtime = this.requireWasmV2Runtime();
@@ -1306,7 +1306,7 @@ export class ZxSpectrum48WasmV2Machine
   }
 
   // ------------------------------------------------------------------------------------------------
-  // Reverse debugging (`.plans/REVERSE_DEBUGGING_PLAN.md` §4.2, `reverse/Timeline.ts`)
+  // Reverse debugging (`dev/plans/REVERSE_DEBUGGING_PLAN.md` §4.2, `reverse/Timeline.ts`)
 
   /** The core, as the export contract names it */
   get reverseCoreId(): string {

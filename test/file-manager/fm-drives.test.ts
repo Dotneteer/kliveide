@@ -22,7 +22,7 @@ import {
 } from "@main/file-manager/fmDrives";
 
 /*
- * The File Manager's drive layer (`.ai/file-manager.md`): host volumes, host folders,
+ * The File Manager's drive layer (`dev/ai/file-manager.md`): host volumes, host folders,
  * the project with its exclusions, floppy images and hard-disk partitions, listed and read.
  */
 

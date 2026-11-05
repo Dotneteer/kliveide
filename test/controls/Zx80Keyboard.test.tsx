@@ -1,5 +1,5 @@
 /**
- * The ZX80 virtual keyboard (`.ai/zx8081.md`, "The virtual keyboard"): all 40 keys render, a click holds
+ * The ZX80 virtual keyboard (`dev/ai/zx8081.md`, "The virtual keyboard"): all 40 keys render, a click holds
  * the key (SHIFT too for an amber legend or the right button), and the legend table agrees with the
  * 4K ROM itself - its key tables, its keyword table and the graphics in its character set.
  */

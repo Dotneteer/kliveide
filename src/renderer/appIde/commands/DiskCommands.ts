@@ -21,7 +21,7 @@ import { addHostFiles, deleteFiles, failureOf, renameFile, runDiskEdit, type Dis
 
 /*
  * `disk`: the Disk Explorer's operations from the command prompt, for recipes, scripts and the
- * automation API (`klive ide cmd "disk ls game.dsk"`) - .plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md,
+ * automation API (`klive ide cmd "disk ls game.dsk"`) - dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md,
  * B6. Every edit goes through the same main-process begin/commit pair as the explorer's (D4), so a
  * disk in the running machine's drive is paused, written and inserted again. Paths are the
  * project's, or absolute.

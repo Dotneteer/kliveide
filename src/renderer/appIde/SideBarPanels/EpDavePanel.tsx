@@ -48,7 +48,7 @@ const formatNumber = (value: number, digits = 1) => {
 const portName = (port: number) => `${toHexa2(port)}h`;
 
 /**
- * The Enterprise 64/128's DAVE (`.plans/ENTERPRISE_PLAN.md` §11): the page registers with their
+ * The Enterprise 64/128's DAVE (`dev/plans/ENTERPRISE_PLAN.md` §11): the page registers with their
  * segments, the interrupt sources (B4h), BFh decoded, the three tone channels and the noise channel
  * decoded, the D/A bits and the sound registers as written.
  */

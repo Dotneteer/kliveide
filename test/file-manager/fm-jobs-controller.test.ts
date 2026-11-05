@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { GAME_DSK, PROJECT, HOME, fakePlan, openFileManager } from "./fakes";
 
 /*
- * The File Manager's commands (`.ai/file-manager.md`) through its controller: copy
+ * The File Manager's commands (`dev/ai/file-manager.md`) through its controller: copy
  * and move with their dialog, conflicts, progress and the notice; delete, new folder, rename.
  */
 

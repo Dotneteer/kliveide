@@ -1,6 +1,6 @@
 /*
  * Writes `.sna` snapshots (https://worldofspectrum.org/faq/reference/formats.htm), the inverse of
- * `snaFile.ts` (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.2).
+ * `snaFile.ts` (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.2).
  *
  * A 48K file has no PC field: PC is pushed onto the stack, as if an NMI had happened, and a loader
  * pops it with a RETN. The push goes into a copy of the snapshot's RAM, never into the model (D5).

@@ -11,7 +11,7 @@ import type { AddressSymbols, AnnotatedSite, SymbolHit } from "./symbolResolver"
 
 /*
  * The live Disassembly view as an annotated listing
- * (`.docs/annotations.md`, "The Live Disassembly View").
+ * (`dev/patterns/annotations.md`, "The Live Disassembly View").
  *
  * The view disassembles a Z80 address range, but annotations live in banks and ROM pages, and one
  * visible 64K window can cross four slots each holding a different bank, and possibly a ROM (T8).

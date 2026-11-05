@@ -12,7 +12,7 @@ import {
 
 /*
  * The identity of a `.z88` bank's pop-out document, and reading its bytes back from the file
- * (`.plans/Z88_SLOT_BROWSER_PLAN.md` §4.4).
+ * (`dev/plans/Z88_SLOT_BROWSER_PLAN.md` §4.4).
  */
 
 const SAMPLE_PATH = join(__dirname, "fixtures", "mm+jsw-oz5.z88");

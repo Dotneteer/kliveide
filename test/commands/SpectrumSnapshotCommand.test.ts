@@ -14,7 +14,7 @@ import { ValidationMessageType } from "@renderer/abstractions/ValidationMessageT
 import { buildSna48, buildSzx, state128, state48, szxBlock, szxDskBlock } from "../spectrum/snapshot/builders";
 
 /*
- * The `zx-snapshot` IDE command (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.6, Phase 5). The emulator
+ * The `zx-snapshot` IDE command (`dev/plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.6, Phase 5). The emulator
  * side is mocked here; `test/spectrum/snapshot/spectrum-snapshot-flow.test.ts` covers it on the
  * real machines.
  */

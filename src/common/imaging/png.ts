@@ -1,7 +1,7 @@
 import { deflateSync } from "node:zlib";
 
 /*
- * A minimal PNG encoder for emulated pictures (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D16). The
+ * A minimal PNG encoder for emulated pictures (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` D16). The
  * pixel buffers every machine renders are 32-bit words whose bytes read R, G, B, A in memory order
  * (0xAABBGGRR on a little-endian host), which is exactly PNG's 8-bit RGBA, so the rows are copied
  * as they are. Node only (zlib); the main process, the CLI and the tests use it.

@@ -105,18 +105,18 @@ export class AssemblerOutput<
   readonly traceOutput: string[];
 
   /**
-   * DeZog-style source annotations (`LOGPOINT` comments), `.plans/LOGPOINTS_PLAN.md` §4.7
+   * DeZog-style source annotations (`LOGPOINT` comments), `dev/plans/LOGPOINTS_PLAN.md` §4.7
    */
   readonly debugAnnotations: SourceAnnotation[] = [];
 
   /**
    * The `.copper` blocks: maximal runs of consecutive `.copper` emissions, with each word's final
-   * value (after fixups) and source line (`.plans/COPPER_DEBUGGING_PLAN.md` D8)
+   * value (after fixups) and source line (`dev/plans/COPPER_DEBUGGING_PLAN.md` D8)
    */
   readonly copperBlocks: CopperBlock[] = [];
 
   /**
-   * The `.proc`/`.endp` blocks' extents (`.plans/PROFILER_PLAN.md` D7): the profiler rolls time up
+   * The `.proc`/`.endp` blocks' extents (`dev/plans/PROFILER_PLAN.md` D7): the profiler rolls time up
    * per procedure, and the editor outline shows them
    */
   readonly procedures: ProcedureInfo[] = [];

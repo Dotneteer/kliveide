@@ -14,7 +14,7 @@ import { createSession, MATRIX_KEYS, type MatrixKey, type NextTestSession } from
  * because the API itself is what is under test. What the machine then does with the keys is observed the
  * hardware way: a Z80 program polls the keyboard rows through port $FE and logs every change.
  *
- * .plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md §15.12: keys queued faster than the machine advances used
+ * dev/plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md §15.12: keys queued faster than the machine advances used
  * to share one time window, and the playback dropped the expired ones unpressed.
  *
  * Rows (zxnext.vhd ~3440-3456, membrane.vhd): A11 = $F7FE keys 1 2 3 4 5 (bits 0-4), A12 = $EFFE keys

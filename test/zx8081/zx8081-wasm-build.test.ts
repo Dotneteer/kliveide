@@ -15,8 +15,8 @@ import {
   source,
   wasmDistDirectoryRelative,
   ZX8081_WASM_MEMORY_BYTES
-} from "../../scripts/build-zx8081-wasm.cjs";
-import { checkZx8081WasmSize, DEFAULT_MAX_BYTES, parseMaxBytes } from "../../scripts/check-zx8081-wasm-size.cjs";
+} from "../../dev/scripts/build-zx8081-wasm.cjs";
+import { checkZx8081WasmSize, DEFAULT_MAX_BYTES, parseMaxBytes } from "../../dev/scripts/check-zx8081-wasm-size.cjs";
 import { zx8081WasmV2RequiredExports } from "@emu/machines/zx8081/wasm/Zx8081WasmV2Loader";
 import { sharedZ80Functions } from "../wasmSharedExports";
 
@@ -53,7 +53,7 @@ describe("ZX80/ZX81 WASM build", () => {
     // --- ... and the shared execution-history recorder, and exports it
     const recorder = readFileSync(join(folder, "../../../../z80/wasm/z80-history.c"), "utf8");
     const historyFunctions = [...recorder.matchAll(/^(?:uint32_t|void) (z80History[A-Za-z0-9]+)\([^)]*\)\s*\{/gm)].map((m) => m[1]);
-    // --- ... and the shared access profile (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §4.1)
+    // --- ... and the shared access profile (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §4.1)
     const profile = readFileSync(join(folder, "../../../../z80/wasm/z80-profile.c"), "utf8");
     const profileFunctions = [...profile.matchAll(/^(?:uint32_t|void) (z80Profile[A-Za-z0-9]+)\([^)]*\)\s*\{/gm)].map((m) => m[1]);
     const own = [
@@ -91,8 +91,8 @@ describe("ZX80/ZX81 WASM build", () => {
       ])
     );
     expect(packageJson.scripts["build:all-wasm"]).toContain("npm run build:zx8081-wasm");
-    expect(packageJson.scripts["build:zx8081-wasm"]).toBe("node scripts/build-zx8081-wasm.cjs");
-    expect(packageJson.scripts["check:zx8081-wasm-size"]).toBe("node scripts/check-zx8081-wasm-size.cjs");
+    expect(packageJson.scripts["build:zx8081-wasm"]).toBe("node dev/scripts/build-zx8081-wasm.cjs");
+    expect(packageJson.scripts["check:zx8081-wasm-size"]).toBe("node dev/scripts/check-zx8081-wasm-size.cjs");
   });
 
   it("releases the build lock and instantiates the artifact", async () => {

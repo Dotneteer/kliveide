@@ -8,7 +8,7 @@ import { nextProfileOf } from "@emu/machines/zxNext/nextProfiles";
  * returns generics (`g_machine_id`, `g_version`, `g_sub_version`, `g_board_issue`; zxnext.vhd ~5830-5860)
  * and no write branch assigns them.
  *
- * - `$00`: `vendor/next-fpga/3.02.01/nextreg.txt` lists `0000 1000 = EMULATORS` ($08); the FPGA reports `$0A`.
+ * - `$00`: `dev/vendor/next-fpga/3.02.01/nextreg.txt` lists `0000 1000 = EMULATORS` ($08); the FPGA reports `$0A`.
  * - `$01`: bits 7-4 major, 3-0 minor; `$0E`: sub-minor. The value is the core version the emulator
  *   claims to implement: the profile's `coreVersion` (`nextProfiles.ts`), which the core's reset sets.
  * - `$0F`: bits 7-4 "Reserved, 0", bits 3-0 board ID.

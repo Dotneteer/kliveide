@@ -1,5 +1,5 @@
 /*
- * The debugger's in-core loop, shared by every core that has one (`.plans/WASM_CORE_LEAN_AND_DEBUG_PLAN.md`
+ * The debugger's in-core loop, shared by every core that has one (`dev/plans/WASM_CORE_LEAN_AND_DEBUG_PLAN.md`
  * Phase 2, D7; Phase 4a brings it to every core and widens what it decides, D13).
  *
  * A core defines `Z80_DEBUG_LOOP_PREFIX` (its export prefix) and includes this file after its

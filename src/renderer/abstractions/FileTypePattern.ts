@@ -16,7 +16,7 @@ export type FileTypePattern = {
   ignoreCase?: boolean;
   /**
    * The entry matches only a file of this content kind, which the main process sniffed when it listed
-   * the folder (a tokenised HT-1080Z `.bas`; `.plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D2). An entry
+   * the folder (a tokenised HT-1080Z `.bas`; `dev/plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D2). An entry
    * without one matches whatever the content.
    */
   contentKind?: FileContentKind;
@@ -31,7 +31,7 @@ export type FileTypeEditor = FileTypePattern & {
   isBinary?: boolean;
   /**
    * The document opens without reading the file: its panel reads what it shows through the main
-   * process (a hard-disk image of gigabytes; `.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md` C2)
+   * process (a hard-disk image of gigabytes; `dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md` C2)
    */
   noContent?: boolean;
   openPermanent?: boolean;

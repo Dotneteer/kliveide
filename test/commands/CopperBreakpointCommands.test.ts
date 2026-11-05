@@ -14,7 +14,7 @@ type MockIdeCommandContext = IdeCommandContext & {
 
 /*
  * The `cu:<index>` address spec: a ZX Spectrum Next Copper-instruction breakpoint
- * (`.plans/COPPER_DEBUGGING_PLAN.md` §4.8). It goes through the shared
+ * (`dev/plans/COPPER_DEBUGGING_PLAN.md` §4.8). It goes through the shared
  * `BreakpointWithAddressCommand.validateCommandArgs`, so `bp-set`, `bp-del` and `bp-en` all take it.
  */
 describe("Copper breakpoints - the `cu:` address spec", () => {

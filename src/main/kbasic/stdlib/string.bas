@@ -1,5 +1,5 @@
 ' Klive BASIC standard library - string.bas: left, mid and right.
-' Klive's own code, written from the documented API (.ai/kbasic/stdlib-api.json). mid's start counts
+' Klive's own code, written from the documented API (dev/ai/kbasic/stdlib-api.json). mid's start counts
 ' from 0 whatever the program's string base, as zxbc's (annex string-library-base).
 #pragma once
 #include <__kbase.bas>

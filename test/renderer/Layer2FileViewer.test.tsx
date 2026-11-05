@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import React from "react";
 
 /*
- * The `.sl2` / `.nxi` viewer (`.plans/LAYER2_INSPECTOR_PLAN.md` Phase 7): a 48K file is 256×192, an
+ * The `.sl2` / `.nxi` viewer (`dev/plans/LAYER2_INSPECTOR_PLAN.md` Phase 7): a 48K file is 256×192, an
  * 80K one offers 320×256 and 640×256, the palette's source is labelled, and a wrong size is an error.
  */
 

@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 
-import { buildSp48Wasm, productionOutput } from "../../scripts/build-sp48-wasm.cjs";
+import { buildSp48Wasm, productionOutput } from "../../dev/scripts/build-sp48-wasm.cjs";
 import {
   loadSp48WasmV2,
   resetSp48WasmV2ModuleCache,

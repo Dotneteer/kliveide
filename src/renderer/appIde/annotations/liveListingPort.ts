@@ -6,13 +6,13 @@ import type { RomPartitionInfo } from "./romAnnotationLoader";
 
 /*
  * The live Disassembly view's rows, in the terms the annotation editor works in
- * (`.docs/annotations.md`, "The Live Disassembly View").
+ * (`dev/patterns/annotations.md`, "The Live Disassembly View").
  *
  * The editor's controller edits one bank of one sidecar, with rows numbered by bank offset. A live
  * row is a Z80 address under the current paging. This turns one into the other:
  *
  * - a row in a RAM bank goes to the **active annotation set**, at that bank and offset;
- * - a row in a ROM page goes to the page's **working copy** (`.plans/ROM_ANNOTATION_EDITING_PLAN.md`)
+ * - a row in a ROM page goes to the page's **working copy** (`dev/plans/ROM_ANNOTATION_EDITING_PLAN.md`)
  *   — and only when one exists: a ROM page without one is shown from its shipped sidecar, read-only;
  * - a row nowhere annotatable (a Timex DOCK chunk, a machine without a bank space) or with no set
  *   active gets a reason instead, which the menu shows on its disabled entries.

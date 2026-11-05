@@ -2,7 +2,7 @@ import { processIo } from "./io";
 import { runCli } from "./run-cli";
 
 /*
- * The CLI's entry point (`.plans/UNIT_TESTS_CLI_PLAN.md` D1): Klive's own Electron binary in Node
+ * The CLI's entry point (`dev/plans/UNIT_TESTS_CLI_PLAN.md` D1): Klive's own Electron binary in Node
  * mode (`ELECTRON_RUN_AS_NODE=1`) runs this bundle - no window, no GPU, no display, and never
  * `main/index.ts` with its single-instance lock. It also runs under plain Node.
  *

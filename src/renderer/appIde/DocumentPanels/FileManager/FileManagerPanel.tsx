@@ -27,7 +27,7 @@ import type { PaneLocation } from "./FileManagerModel";
 import { FileManagerView } from "./FileManagerView";
 
 /*
- * The File Manager document (`.ai/file-manager.md`, D1): wiring only. The controller gets
+ * The File Manager document (`dev/ai/file-manager.md`, D1): wiring only. The controller gets
  * MainApi's `fm*` calls, the file picker and the document's view state as its ports.
  */
 

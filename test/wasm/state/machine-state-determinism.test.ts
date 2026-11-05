@@ -1,5 +1,5 @@
 /*
- * The determinism proof of Klive state files (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md`
+ * The determinism proof of Klive state files (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md`
  * Phase 6), on every WASM core:
  *
  *   1. machine A runs a busy workload and stops at an odd point inside a frame;
@@ -55,7 +55,7 @@ function fingerprint(m: StateMachine) {
 
 /**
  * Steps 1-5 above. A records execution history and B does not
- * (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` T10): the recorder writes only volatile memory, so
+ * (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` T10): the recorder writes only volatile memory, so
  * the images are still equal.
  */
 function proveDeterminism(a: Driver, b: Driver, frames: number): void {
@@ -196,7 +196,7 @@ describe("machine state: save, load into another machine, run = keep running", (
   });
 
   it("Videoton TVC with the HBF card, reading its disk", async () => {
-    const disk = new Uint8Array(readFileSync(join(__dirname, "../../../_input/videoton-tvc/rtvc/progs/VTDOS-SYSTEM.DSK")));
+    const disk = new Uint8Array(readFileSync(join(__dirname, "../../../dev/research/videoton-tvc/rtvc/progs/VTDOS-SYSTEM.DSK")));
     const a = await createTvcSession({ hbf: true });
     const b = await createTvcSession({ hbf: true });
     a.insertDisk(0, disk);
@@ -243,7 +243,7 @@ loop:
   });
 
   /*
-   * The layer debug view is debugging state (`.plans/LAYER_COMPOSITION_PLAN.md` D2, T8): A hides the
+   * The layer debug view is debugging state (`dev/plans/LAYER_COMPOSITION_PLAN.md` D2, T8): A hides the
    * ULA, captures, recomposes and probes; B does none of it. Everything but the picture - which the
    * mask is meant to change - must still be equal, and neither machine takes the other's view.
    */

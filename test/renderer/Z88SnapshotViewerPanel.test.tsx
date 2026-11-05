@@ -6,9 +6,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { unzipSync, zipSync } from "fflate";
 
 /*
- * The `.z88` viewer panel (`.plans/Z88_SNAPSHOT_PLAN.md` §4.8, Phase 5): its sections, the
+ * The `.z88` viewer panel (`dev/plans/Z88_SNAPSHOT_PLAN.md` §4.8, Phase 5): its sections, the
  * loadability report, the "at PC" dumps, and the Slots browser with its bank pop-outs
- * (`.plans/Z88_SLOT_BROWSER_PLAN.md`). The values it computes are tested without a DOM in
+ * (`dev/plans/Z88_SLOT_BROWSER_PLAN.md`). The values it computes are tested without a DOM in
  * `test/z88/snapshot/z88-snapshot-view.test.ts`.
  */
 

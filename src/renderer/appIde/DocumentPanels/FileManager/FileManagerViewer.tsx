@@ -13,7 +13,7 @@ import type { ViewerVm } from "./FileManagerViewModel";
 import styles from "./FileManagerPanel.module.scss";
 
 /*
- * F3's viewer over a pane (`.ai/file-manager.md`): a BASIC program's listing, a
+ * F3's viewer over a pane (`dev/ai/file-manager.md`): a BASIC program's listing, a
  * SCREEN$ as its picture, text as text, anything else as bytes - the Disk Explorer's own previews.
  */
 

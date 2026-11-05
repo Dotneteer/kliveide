@@ -3,12 +3,12 @@ import { intToX2, intToX4 } from "../utils";
 import { CUSTOM_Z80_DISASSEMBLY_TOOL, ICustomDisassembler, IDisassemblyApi } from "./custom-disassembly";
 
 /*
- * The Enterprise 64/128's custom disassembler (`.plans/ENTERPRISE_PLAN.md` §11). `RST 30h` is the
+ * The Enterprise 64/128's custom disassembler (`dev/plans/ENTERPRISE_PLAN.md` §11). `RST 30h` is the
  * EXOS call: the byte after it is the function code, and execution goes on after that byte (the
  * machine's `getCallInstructionLength` gives 2 for it, so Step Over agrees). Every program calls EXOS
  * this way, not only the ROM, so the decoding is not gated on an address.
  *
- * The function codes are the EXOS 2.1 kernel specification's list (`_input/enterprise128/docs/Exos.htm`,
+ * The function codes are the EXOS 2.1 kernel specification's list (`dev/research/enterprise128/docs/Exos.htm`,
  * part II, §2 "EXOS function codes"); the names are Klive's own words for them. Codes 12-15 and
  * anything above 34 are not functions: EXOS answers them with the .IFUNC error.
  */
@@ -98,7 +98,7 @@ export class EpCustomDisassembler implements ICustomDisassembler {
  * $C000 + 2n of segment 1, which carries much of IS-BASIC 2.1), a byte below $80 entry n of the BASIC ROM's own
  * table ($C0E8 + 2n of its segment), and $00 (that table's entry 0) leaves the list. A routine may take inline
  * operands, reading them through the gate's pointer: $92 a byte, $93 and $96 a word (EXOS 2.1's segment 1,
- * read from their code and observed in the running gate; `.ai/rom-annotations/ep-authoring-guide.md`).
+ * read from their code and observed in the running gate; `dev/ai/rom-annotations/ep-authoring-guide.md`).
  * The restart means this only in IS-BASIC's own code, so the decoding is gated on the ROM pages that hold it
  * (kinds "ep-exos-basic", EXOS 2.1's segment 01h, and "ep-basic", the IS-BASIC 2.1 cartridge, whose routines take
  * no inline operands).

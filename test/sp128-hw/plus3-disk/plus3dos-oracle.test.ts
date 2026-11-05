@@ -8,7 +8,7 @@ import { PRINT_42 } from "../../diskfs/fixtures";
 import { command, memory, plus3WithDisks, programLine } from "./plus3Disk";
 
 /*
- * +3DOS judged by the +3 (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, D9, B1/B2): what Klive
+ * +3DOS judged by the +3 (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, D9, B1/B2): what Klive
  * writes, the +3 lists and loads; what the +3 writes, Klive lists and reads.
  */
 

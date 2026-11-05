@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { profileLayoutOf } from "@common/profile/layouts";
 import { isProfileRom, profileLocationOf, profileOffsetOf } from "@common/profile/layouts/profileLayout";
 
-/* The per-core profile layouts (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §2.2, D11) */
+/* The per-core profile layouts (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §2.2, D11) */
 
 describe("the profile layouts", () => {
   it("cover every profiling machine id", () => {

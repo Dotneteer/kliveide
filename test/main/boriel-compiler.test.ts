@@ -56,7 +56,7 @@ describe("Boriel BASIC options", () => {
     expect(args.join(" ")).toContain("--opt-strategy size");
     for (const flag of ["--explicit", "--strict", "--debug-memory", "--debug-array", "--enable-break"]) expect(args).toContain(flag);
     expect(args.join(" ")).toContain("-D A -D B=2");
-    // --- One include list: a repeated -I keeps only the last folder (`.ai/boriel/options.md`)
+    // --- One include list: a repeated -I keeps only the last folder (`dev/ai/boriel/options.md`)
     expect(args.join(" ")).toContain("-I /x:/y");
     expect(args.join(" ")).toContain("-W 150 +W 170");
     expect(args.join(" ")).toContain("--set:nex:sp 65520");
@@ -302,7 +302,7 @@ describe("BorielCompiler", () => {
 
   it("builds the .nex with --debug, which changes zxbc's code, so it holds the debugged program", async () => {
     // --- zxbc 2.0.0-beta25 generates other code without --debug: the Next ran that while the
-    // --- debugger read the .bin's addresses, so no breakpoint ever fired (`.ai/boriel/integration.md`, "The compiler")
+    // --- debugger read the .bin's addresses, so no breakpoint ever fired (`dev/ai/boriel/integration.md`, "The compiler")
     const { compiler, calls } = compilerWith({ image: [1, 2, 3, 4], imageWithoutDebug: [1, 2, 9, 9, 4] }, "zxnext");
     const output: any = await compiler.compileFile(source);
     expect(calls[1].args.some((a) => a.startsWith("--debug="))).toBe(true);
@@ -445,7 +445,7 @@ describe("BorielCompiler with the real zxbc", () => {
     const project = path.join(home, "bouncing-ball");
     fs.mkdirSync(path.join(project, "code"), { recursive: true });
     const source = path.join(project, "code", "program.zxbas");
-    fs.copyFileSync(path.resolve(__dirname, "../../scripts/doc-shots/fixtures/get-started/bouncing-ball/code/program.zxbas"), source);
+    fs.copyFileSync(path.resolve(__dirname, "../../dev/scripts/doc-shots/fixtures/get-started/bouncing-ball/code/program.zxbas"), source);
     const compiler = new BorielCompiler();
     compiler.setAppState({
       userSettings: { zxbasic: { executablePath: zxbcPath } },

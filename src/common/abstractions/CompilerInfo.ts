@@ -614,7 +614,7 @@ export type ListFileItem = {
   isMacroInvocation?: boolean;
   /**
    * The partition the line's code lives in, when the compiler knows it directly (sjasmplus's SLD
-   * page on a banked device, `.plans/PROFILER_PLAN.md` D8b); the Klive assembler's comes from the
+   * page on a banked device, `dev/plans/PROFILER_PLAN.md` D8b); the Klive assembler's comes from the
    * segment's bank instead
    */
   partition?: number;
@@ -827,7 +827,7 @@ export type SimpleAssemblerOutput = {
   errors?: AssemblerErrorInfo[];
   debugMessages?: string[];
   traceOutput?: string[];
-  /** A Klive BASIC background check's language intelligence (`.plans/BASIC_EDITOR_INTELLIGENCE_PLAN.md` §4.2). */
+  /** A Klive BASIC background check's language intelligence (`dev/plans/BASIC_EDITOR_INTELLIGENCE_PLAN.md` §4.2). */
   basicIntel?: BasicIntelData[];
   /** The compiler's product name ("Klive BASIC", "z88dk"): the profiler's routine table names it. */
   compilerName?: string;
@@ -869,24 +869,24 @@ export type DebuggableOutput = InjectableOutput & {
 
   /**
    * Annotations read from source comments: DeZog's `LOGPOINT` today, `ASSERTION` and `WPMEM` with
-   * G1.5 (`.plans/LOGPOINTS_PLAN.md` §4.7). Kind-tagged so a new kind adds nothing else.
+   * G1.5 (`dev/plans/LOGPOINTS_PLAN.md` §4.7). Kind-tagged so a new kind adds nothing else.
    */
   readonly debugAnnotations?: SourceAnnotation[];
 
   /**
-   * The Klive assembler's `.copper` blocks (`.plans/COPPER_DEBUGGING_PLAN.md` D8): maximal runs of
+   * The Klive assembler's `.copper` blocks (`dev/plans/COPPER_DEBUGGING_PLAN.md` D8): maximal runs of
    * consecutive `.copper` emissions, matched against the live Copper RAM by instruction shape.
    */
   readonly copperBlocks?: CopperBlock[];
 
   /**
-   * The Klive assembler's `.proc`/`.endp` extents (`.plans/PROFILER_PLAN.md` D7): the profiler's
+   * The Klive assembler's `.proc`/`.endp` extents (`dev/plans/PROFILER_PLAN.md` D7): the profiler's
    * second-best routine source after Klive BASIC callables (D6).
    */
   readonly procedures?: ProcedureInfo[];
 };
 
-/** One `.proc`/`.endp` block's extent (`.plans/PROFILER_PLAN.md` D7) */
+/** One `.proc`/`.endp` block's extent (`dev/plans/PROFILER_PLAN.md` D7) */
 export type ProcedureInfo = {
   /** The label on the `.proc` line, or the enclosing one; dotted with its module and outer procs */
   readonly name: string;
@@ -906,9 +906,9 @@ export type ProcedureInfo = {
   readonly endLine: number;
 };
 
-/** A source-comment annotation the build found (`.plans/LOGPOINTS_PLAN.md` §4.7). */
+/** A source-comment annotation the build found (`dev/plans/LOGPOINTS_PLAN.md` §4.7). */
 export type SourceAnnotation = {
-  /** The DeZog keyword (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §4.3 adds the last two). */
+  /** The DeZog keyword (`dev/plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §4.3 adds the last two). */
   kind: "LOGPOINT" | "ASSERTION" | "WPMEM";
   /** Index into `sourceFileList`. */
   fileIndex: number;
@@ -930,7 +930,7 @@ export type SourceAnnotation = {
   text: string;
   /**
    * For a comment inside a macro body: the line that invoked the macro - the outermost invocation,
-   * the one the user wrote (`.plans/Z80_UNIT_TESTS_PLAN.md` T2). `fileIndex`/`line` stay the macro
+   * the one the user wrote (`dev/plans/Z80_UNIT_TESTS_PLAN.md` T2). `fileIndex`/`line` stay the macro
    * body's, where the comment is; a failure report names this line instead.
    */
   invokedAt?: { fileIndex: number; line: number };

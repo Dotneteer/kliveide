@@ -3,7 +3,7 @@ import { SpectrumKeyCode } from "@emu/machines/zxSpectrum/SpectrumKeyCode";
 import { SP128_MAIN_WAITING_LOOP, SP48_MAIN_ENTRY, SP_KEY_WAIT } from "../ZxSpectrumBase";
 
 /*
- * The Pentagon's Disk Loader (`.plans/BETA128_TRDOS_PLAN.md` Phase 4, Q5): after a reset, the 128K
+ * The Pentagon's Disk Loader (`dev/plans/BETA128_TRDOS_PLAN.md` Phase 4, Q5): after a reset, the 128K
  * menu's 48 BASIC, `RANDOMIZE USR 15616` to enter TR-DOS, then `RUN`, which boots the disk's BASIC
  * file `boot` (the Beta 128 user manual: "If you enter either LOAD or RUN without the filename,
  * TRDOS will load or run the BASIC program 'boot'").

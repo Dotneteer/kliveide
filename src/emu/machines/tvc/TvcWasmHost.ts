@@ -40,7 +40,7 @@ const RETURN_SETTLE_FRAMES = 12;
 /**
  * The host side of a Videoton TVC whose hardware is emulated in the WASM core: the clock and frame
  * units, the keyboard mapping and the emulated keystroke queue. It follows the HT-1080Z host
- * (`Ht1080zWasmHost.ts`), the template for a non-Spectrum machine (`.ai/videoton-tvc.md`). The
+ * (`Ht1080zWasmHost.ts`), the template for a non-Spectrum machine (`dev/ai/videoton-tvc.md`). The
  * emulating subclass supplies memory, ports, keys, the picture and the frame loop.
  *
  * Run and Debug boot BASIC, put the code in RAM and have BASIC call it (`common/tvc/codePlacement.ts`).
@@ -73,7 +73,7 @@ export abstract class TvcWasmHost extends Z80MachineBase {
   /**
    * The reset button, and the end of every power-on (`hardReset` resets too). The frame length is set
    * here: `Z80Cpu.hardReset` leaves it at 1,000,000 tacts, and the controller paces the UI by it
-   * (`.ai/wasm-migration-intent-and-lessons.md`, the ZX80/81 section).
+   * (`dev/ai/wasm-migration-intent-and-lessons.md`, the ZX80/81 section).
    */
   reset(): void {
     super.reset();
@@ -202,7 +202,7 @@ export abstract class TvcWasmHost extends Z80MachineBase {
   }
 
   // ==========================================================================================
-  // Code injection (`.ai/videoton-tvc.md`, "Run, Debug and export", `common/tvc/codePlacement.ts`)
+  // Code injection (`dev/ai/videoton-tvc.md`, "Run, Debug and export", `common/tvc/codePlacement.ts`)
 
   /** The loop BASIC waits for a key in at its prompt */
   get keyWaitLoop(): number {

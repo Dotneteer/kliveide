@@ -211,7 +211,7 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
     args: ExportCommandArgs
   ): Promise<IdeCommandResult> {
     // --- A C build (z88dk) exports the native file appmake wrote instead of rebuilding it
-    // --- (`.plans/Z88DK_INTEGRATION_PLAN.md` §7); `.nex` takes the NEX path below, which uses it too
+    // --- (`dev/plans/Z88DK_INTEGRATION_PLAN.md` §7); `.nex` takes the NEX path below, which uses it too
     const z88dkExport = await exportZ88dkArtefact(context, output, args);
     if (z88dkExport) return z88dkExport;
 
@@ -277,7 +277,7 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
       }
     }
 
-    // --- A ZX80/ZX81 program exports as the machine's own program file (`.ai/zx8081.md`, "Machine code decisions", D8)
+    // --- A ZX80/ZX81 program exports as the machine's own program file (`dev/ai/zx8081.md`, "Machine code decisions", D8)
     const zxFormat = zx8081ExportFormatOf(
       (output as CompilerOutput).modelType,
       emulatorState?.machineId,
@@ -337,7 +337,7 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
       }
     }
 
-    // --- A bootable disk (`.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md` B6): the code files and a
+    // --- A bootable disk (`dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md` B6): the code files and a
     // --- BASIC loader the machine's own boot runs - `DISK` on a +3, `boot` under TR-DOS, `run` on a
     // --- Microdrive cartridge (MICRODRIVE_PLAN 4.4)
     if (args["-f"] === "dsk" || args["-f"] === "trd" || args["-f"] === "mdr") {
@@ -902,7 +902,7 @@ export async function injectCode(
   let additionalInfo: any = null;
   const isZxNext = compiledOutput.modelType === SpectrumModelType.Next;
 
-  // --- Debug one unit test (`.plans/Z80_UNIT_TESTS_PLAN.md` D12): the test and its labels
+  // --- Debug one unit test (`dev/plans/Z80_UNIT_TESTS_PLAN.md` D12): the test and its labels
   let unitTest: UnitTestDebugInfo | undefined;
   if (unitTestOf) {
     const resolved = unitTestOf(result);
@@ -947,7 +947,7 @@ export async function injectCode(
     );
   }
 
-  // --- A C build for the ZX80/ZX81 (z88dk, `.plans/Z88DK_INTEGRATION_PLAN.md` §5.2) brings its own
+  // --- A C build for the ZX80/ZX81 (z88dk, `dev/plans/Z88DK_INTEGRATION_PLAN.md` §5.2) brings its own
   // --- program file: Run and Debug load it as `tape-load -r`/`-d` does, Inject has nothing to place
   const programFile = (result as { programFile?: string }).programFile;
   if (programFile) {
@@ -996,7 +996,7 @@ export async function injectCode(
   );
   if (zx8081Problem) return commandError(zx8081Problem);
 
-  // --- The HT-1080Z takes code in RAM it can protect from BASIC (`.plans/HT1080Z_CODE_INJECTION_PLAN.md` D2)
+  // --- The HT-1080Z takes code in RAM it can protect from BASIC (`dev/plans/HT1080Z_CODE_INJECTION_PLAN.md` D2)
   const isHt1080z = emulatorState?.machineId === MI_HT1080Z;
   // --- Another machine's code (a Spectrum build from sjasmplus or Klive BASIC) gets the machine's
   // --- model-mismatch refusal instead

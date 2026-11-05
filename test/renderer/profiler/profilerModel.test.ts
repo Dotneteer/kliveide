@@ -25,7 +25,7 @@ import {
 import { routineInlays } from "@renderer/features/profiler/profilerInlays";
 
 /*
- * The Profiler document's model (`.plans/PROFILER_PLAN.md` D5, D10, D14, Phase 4): the snapshot
+ * The Profiler document's model (`dev/plans/PROFILER_PLAN.md` D5, D10, D14, Phase 4): the snapshot
  * read, offsets through the current paging, the header's facts, the empty states and the Call tree's
  * visible rows.
  */

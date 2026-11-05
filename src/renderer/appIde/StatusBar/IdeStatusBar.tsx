@@ -20,9 +20,9 @@ type IdeStatusBarProps = {
 export const IdeStatusBar = ({ show }: IdeStatusBarProps) => {
   const t = useT();
   const { projectService, ideCommandsService } = useAppServices();
-  // --- The history cursor (`.plans/LITE_STEP_BACK_PLAN.md` D7): "you are in the past", one click back
+  // --- The history cursor (`dev/plans/LITE_STEP_BACK_PLAN.md` D7): "you are in the past", one click back
   const historyPosition = useSelector((s) => s.emulatorState?.historyPosition);
-  // --- Full reverse debugging (`.plans/REVERSE_DEBUGGING_PLAN.md` §4.4): in the past, replaying, searching
+  // --- Full reverse debugging (`dev/plans/REVERSE_DEBUGGING_PLAN.md` §4.4): in the past, replaying, searching
   const reverseDebug = useSelector((s) => s.emulatorState?.reverseDebug);
   const execState = useSelector((s) => s.emulatorState?.machineState);
   const statusMessage = useSelector((s) => s.ideView?.statusMessage);
@@ -33,7 +33,7 @@ export const IdeStatusBar = ({ show }: IdeStatusBarProps) => {
   const cursorColumn = useSelector((s) => s.ideView?.cursorColumn);
   const automation = useSelector((s) => s.automation);
   // --- The compiler BASIC files build with (a project's choice wins over the user's), so the switch
-  // --- between Klive BASIC and Boriel BASIC is never invisible (`.ai/boriel/integration.md`, "Editor, settings and status bar")
+  // --- between Klive BASIC and Boriel BASIC is never invisible (`dev/ai/boriel/integration.md`, "Editor, settings and status bar")
   const basicCompiler = useSelector((s) => selectedZxBasicCompiler(s));
   const mainApi = useMainApi();
   useSelector((s) => s.ideView?.documentHubState);
@@ -171,7 +171,7 @@ type ReverseDebugSectionProps = {
 };
 
 /**
- * The reverse-debugging states (`.plans/REVERSE_DEBUGGING_PLAN.md` §4.4): "⟲ −1.24 s · step −3,412"
+ * The reverse-debugging states (`dev/plans/REVERSE_DEBUGGING_PLAN.md` §4.4): "⟲ −1.24 s · step −3,412"
  * in the past, with Take over here beside it; "▶ Replaying · 800 ms to present"; a search's progress,
  * which a click cancels; and an error chip when the timeline stopped. The reverse range is in the
  * tooltip. The past keeps G4.3's chip colours (the secondary accent).
@@ -210,7 +210,7 @@ type AutomationItemProps = {
 };
 
 /**
- * The automation server's item (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D4): automation is
+ * The automation server's item (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` D4): automation is
  * listening, and how many clients are connected. A click opens the Automation output pane (D13).
  */
 const AutomationItem = ({ clients, level, open }: AutomationItemProps) => {

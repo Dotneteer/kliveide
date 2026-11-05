@@ -1,5 +1,5 @@
 /*
- * Where ZX Spectrum Next sprites land, in sprite space (`.plans/SPRITE_INSPECTOR_PLAN.md` §4.1, T8,
+ * Where ZX Spectrum Next sprites land, in sprite space (`dev/plans/SPRITE_INSPECTOR_PLAN.md` §4.1, T8,
  * T10). Pure; every rule here copies `zxnextUlaProcessSprites` in `zxnext-ula.c`.
  *
  * Sprite space is 320 x 256. The paper's top left is (32, 32), so the paper is (32,32)-(287,223).

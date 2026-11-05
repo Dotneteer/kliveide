@@ -1,5 +1,5 @@
 /*
- * Records an RZX file in the emulator (`.plans/RZX_PLAN.md` §4.5, D3, D16).
+ * Records an RZX file in the emulator (`dev/plans/RZX_PLAN.md` §4.5, D3, D16).
  *
  * Record:
  *  1. pause (a paused machine stays paused, D16: "record from here");

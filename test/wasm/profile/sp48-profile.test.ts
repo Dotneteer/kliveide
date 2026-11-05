@@ -10,7 +10,7 @@ import {
 import { createSp48Session, type Sp48TestSession } from "../../harness/sp48";
 
 /*
- * The access profile on the ZX Spectrum 48K (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` Phases 0-1):
+ * The access profile on the ZX Spectrum 48K (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` Phases 0-1):
  * a known program gives exactly the expected E/C/R/W/S bytes (D3, D9), counts equal a hand count,
  * time per address sums to the total less the buckets (D7), and the debugger's own reads never
  * count (trap T1).

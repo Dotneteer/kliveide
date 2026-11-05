@@ -29,7 +29,7 @@ import { NEXT_PROFILE_IDS, nextProfileOf, romSetOf } from "@emu/machines/zxNext/
 export const SD_CARD_FILE_FOLDER = "sdCardFileFolder";
 
 /**
- * The active Next model's default SD card (`.ai/zxnext-models.md` D7): each model has
+ * The active Next model's default SD card (`dev/ai/zxnext-models.md` D7): each model has
  * its own working copy in the Klive home folder (`ks2.cim` for KS2 with core 3.02.01, the file every
  * earlier Klive wrote) and its ROM set's base image, so switching models never boots NextZXOS from a
  * card of another release. A user-selected card (`MEDIA_SD_CARD`) still overrides it.
@@ -387,7 +387,7 @@ export type SdCardDevice = {
 let rawSdCard: { file: string; device: BlockDevice & { close(): void } } | undefined;
 
 /**
- * The machine's SD card as sectors (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md C5): a `.cim` through
+ * The machine's SD card as sectors (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md C5): a `.cim` through
  * its handler (the Next's card, and the default one), a raw `.img` or an `.hdf` (the DivMMC's cards are
  * often those) as a block device over the file
  */
@@ -480,10 +480,10 @@ function isMachineStopped(): boolean {
 }
 
 /**
- * View › Machine Views on the Next: the Copper List document (`.plans/COPPER_DEBUGGING_PLAN.md`
- * §4.5), the Sprite Inspector (`.plans/SPRITE_INSPECTOR_PLAN.md` §4.4), the Tilemap Inspector
- * (`.plans/TILEMAP_INSPECTOR_PLAN.md` §4.4), the Layer 2 Inspector (`.plans/LAYER2_INSPECTOR_PLAN.md`
- * §4.4) and the Layers document (`.plans/LAYER_COMPOSITION_PLAN.md`). All go through the IDE's
+ * View › Machine Views on the Next: the Copper List document (`dev/plans/COPPER_DEBUGGING_PLAN.md`
+ * §4.5), the Sprite Inspector (`dev/plans/SPRITE_INSPECTOR_PLAN.md` §4.4), the Tilemap Inspector
+ * (`dev/plans/TILEMAP_INSPECTOR_PLAN.md` §4.4), the Layer 2 Inspector (`dev/plans/LAYER2_INSPECTOR_PLAN.md`
+ * §4.4) and the Layers document (`dev/plans/LAYER_COMPOSITION_PLAN.md`). All go through the IDE's
  * commands, so the menu, the command line and the panels share one implementation. The layer
  * toggles themselves live on the Layers strip under the screen, which has every one of them.
  */

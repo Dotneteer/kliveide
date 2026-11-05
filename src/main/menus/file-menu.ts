@@ -1,5 +1,5 @@
 /*
- * The File menu (`.plans/MENU_REDESIGN_PLAN.md` §3): projects, then one Open File… for every file
+ * The File menu (`dev/plans/MENU_REDESIGN_PLAN.md` §3): projects, then one Open File… for every file
  * the emulator understands, the saves, the quick state slot, and (off macOS) Settings… and Quit.
  */
 import type { MenuItemConstructorOptions } from "electron";
@@ -48,7 +48,7 @@ export function settingsMenuItem(context: MenuContext): MenuItemConstructorOptio
 
 /**
  * Klive › Automation (File › Automation elsewhere): shown while the automation server listens
- * (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D13), so the user can see and stop what scripts do.
+ * (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` D13), so the user can see and stop what scripts do.
  */
 export function automationMenuItems(context: MenuContext): MenuItemConstructorOptions[] {
   const automation = context.appState?.automation;
@@ -135,7 +135,7 @@ export function createFileMenu(context: MenuContext): MenuItemConstructorOptions
       click: async () => await pickAndOpenEmulatorFile(context.focusedWindow())
     },
     {
-      // --- The two-pane File Manager (`.ai/file-manager.md`, D1); opens in the IDE window
+      // --- The two-pane File Manager (`dev/ai/file-manager.md`, D1); opens in the IDE window
       id: "show_file_manager",
       label: t("menu.file.fileManager"),
       click: async () => {
@@ -151,7 +151,7 @@ export function createFileMenu(context: MenuContext): MenuItemConstructorOptions
       click: async () => await saveSpectrumSnapshotAs(context.focusedWindow())
     },
     {
-      // --- Any machine with a state (.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md §4.9)
+      // --- Any machine with a state (dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md §4.9)
       id: "save_machine_state",
       label: t("menu.file.saveMachineState"),
       enabled: canSaveMachineState(appState),

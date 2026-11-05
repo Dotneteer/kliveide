@@ -16,7 +16,7 @@ import {
 /*
  * The host half of Copper breakpoints (`cu:`): the key, the predicates, the definition `DebugSupport`
  * stores, and the 1024-bit watch it hands the ZX Spectrum Next core. See
- * `.plans/COPPER_DEBUGGING_PLAN.md` §4.7.
+ * `dev/plans/COPPER_DEBUGGING_PLAN.md` §4.7.
  */
 
 const support = (...bps: BreakpointInfo[]): DebugSupport => new DebugSupport(undefined, bps);

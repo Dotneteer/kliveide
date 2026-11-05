@@ -27,7 +27,7 @@ import { adaptBorielDebugInfo, type DbgAdapterOutput } from "./dbg-adapter";
 import { lineCanHaveBreakpoint } from "@main/kbasic/breakpoints";
 
 /*
- * Boriel BASIC 2.x as Klive's `zxbas` compiler (`.ai/boriel/integration.md`, "The compiler"). It runs
+ * Boriel BASIC 2.x as Klive's `zxbas` compiler (`dev/ai/boriel/integration.md`, "The compiler"). It runs
  * the external `zxbc` and turns its outputs into Klive's: the code image as one segment, its
  * diagnostics, the model to inject into, and for the Next the `.nex` zxbc wrote. The source-level
  * debug information (`.dbg`) is written and checked here; turning it into Klive's model is Phase B3.
@@ -60,7 +60,7 @@ export const runZxbc: ZxbcRunner = async (executable, args, { cwd, timeoutMs }) 
 export const BUILD_TIMEOUT_MS = 120_000;
 export const CHECK_TIMEOUT_MS = 30_000;
 
-/** The highest optimisation level a debug build uses unless the header sets one (D11; `.ai/boriel/integration.md`, "The compiler"). */
+/** The highest optimisation level a debug build uses unless the header sets one (D11; `dev/ai/boriel/integration.md`, "The compiler"). */
 export const DEBUG_PROFILE_LEVEL = 1;
 
 /** The Klive machines Boriel BASIC builds for, as Klive targets and inject models. */
@@ -164,12 +164,12 @@ export class BorielCompiler implements IKliveCompiler {
     for (const ext of ["bin", "dbg", "map", "err", "nex", "z80", "tap", SECOND_DBG]) fs.rmSync(out(ext), { force: true });
     const { args, arch } = zxbcArgumentsFor(options, header, undefined, path.dirname(filename));
     const common = [...args, ...(projectIni ? ["-F", projectIni] : [])];
-    // --- `--debug` changes the code zxbc generates (`.ai/boriel/dbg-observed.md`): every other
+    // --- `--debug` changes the code zxbc generates (`dev/ai/boriel/dbg-observed.md`): every other
     // --- output of this build passes it too, or it holds other code than the one debugged
     const sameCode = [...common, `--debug=${out(SECOND_DBG)}`];
 
     // --- The code image, its debug file and map: what Klive injects and debugs. zxbc refuses `bin`
-    // --- for a banked build (`.ai/boriel/integration.md`, "Banked programs"): the program then comes out of a 128K snapshot or the .nex
+    // --- for a banked build (`dev/ai/boriel/integration.md`, "Banked programs"): the program then comes out of a 128K snapshot or the .nex
     const banked = args.includes("--split-modules");
     const format = !banked ? "bin" : arch === "zxnext" ? "nex" : "z80";
     const run = await this.invoke(
@@ -199,7 +199,7 @@ export class BorielCompiler implements IKliveCompiler {
 
     const debugFile = readDebugFile(out("dbg"));
     if (typeof debugFile === "string") return { errors: [...diagnostics, buildError(filename, "ZXBC-D", debugFile)], traceOutput: trace };
-    // --- A stale or foreign .dbg must never drive the debugger (`.ai/boriel/integration.md`, "The compiler")
+    // --- A stale or foreign .dbg must never drive the debugger (`dev/ai/boriel/integration.md`, "The compiler")
     const program = programOf(fs.readFileSync(out(format)), format, options.origin, debugFile, arch);
     if (typeof program === "string") {
       return { errors: [...diagnostics, buildError(filename, "ZXBC-D", `The debug file does not belong to the compiled program: ${program}.`)], traceOutput: trace };
@@ -208,7 +208,7 @@ export class BorielCompiler implements IKliveCompiler {
     const entryAddress =
       debugFile.sourceLevelDebug?.callables?.find((c: any) => c.kind === "entrypoint")?.entryAddress ?? options.origin;
 
-    // --- The .dbg in Klive's model (`.ai/boriel/integration.md`, "The `.dbg` adapter"); a build whose debug data cannot be read still runs
+    // --- The .dbg in Klive's model (`dev/ai/boriel/integration.md`, "The `.dbg` adapter"); a build whose debug data cannot be read still runs
     let debug: DbgAdapterOutput | undefined;
     try {
       debug = adaptBorielDebugInfo({
@@ -236,7 +236,7 @@ export class BorielCompiler implements IKliveCompiler {
           (debug.dropped.length ? ` (${debug.dropped.length} records left out)` : "")
       );
       for (const problem of debug.problems) trace.push(`Boriel BASIC: debug information check: ${problem}`);
-      // --- Boriel promises none of Klive BASIC's stepping guarantees (`.ai/boriel/limitations.md`, item 3): say when the data breaks one
+      // --- Boriel promises none of Klive BASIC's stepping guarantees (`dev/ai/boriel/limitations.md`, item 3): say when the data breaks one
       if (debug.problems.length) {
         diagnostics.push({
           ...buildError(
@@ -454,7 +454,7 @@ export function programOf(
 
 /**
  * An error at the build root's first CODEBANK block (or `#pragma codebank`), outside ASM blocks:
- * that is Klive BASIC syntax (`.ai/boriel/limitations.md`, item 4), which zxbc
+ * that is Klive BASIC syntax (`dev/ai/boriel/limitations.md`, item 4), which zxbc
  * reports only as an undeclared function. Undefined when the file has none.
  */
 export function codebankHint(filename: string): AssemblerErrorInfo | undefined {

@@ -25,7 +25,7 @@ import { BreakpointWithAddressCommand, type BreakpointWithAddressArgs } from "./
  * makes this work on a ZX Spectrum Next bank that is not paged in yet. That is the case worth having
  * it for: running to an offset inside a NEX's bank, wherever NextZXOS ends up paging that bank.
  *
- * See `.ai/nex-debugging.md`.
+ * See `dev/ai/nex-debugging.md`.
  */
 export class RunToCursorCommand extends BreakpointWithAddressCommand {
   readonly id = "run-to";
@@ -64,7 +64,7 @@ export class RunToCursorCommand extends BreakpointWithAddressCommand {
     }
 
     // --- `run-to cu:<index>`: run until the Copper completes that list instruction (the Copper
-    // --- List's "Run to here", `.plans/COPPER_DEBUGGING_PLAN.md` D6)
+    // --- List's "Run to here", `dev/plans/COPPER_DEBUGGING_PLAN.md` D6)
     // --- `run-to sp:<sprite>`: run until an attribute byte of that sprite is written (the Sprite
     // --- Inspector's "Run until attribute write")
     const target: BreakpointInfo =

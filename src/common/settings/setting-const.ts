@@ -5,7 +5,7 @@ export const SETTING_EMU_SHOW_KEYBOARD = "emuViewOptions.showKeyboard";
 export const SETTING_EMU_SHOW_INSTANT_SCREEN = "emuViewOptions.showInstantScreen";
 export const SETTING_EMU_SHOW_MEDIA_INFO = "emuViewOptions.showMediaInfo";
 export const SETTING_EMU_SHOW_NEXT_LAYERS = "emuViewOptions.showNextLayers";
-/** The beam position overlay on the paused screen (`.plans/BEAM_POSITION_OVERLAY_PLAN.md` D8) */
+/** The beam position overlay on the paused screen (`dev/plans/BEAM_POSITION_OVERLAY_PLAN.md` D8) */
 export const SETTING_EMU_SHOW_BEAM_POSITION = "emuViewOptions.showBeamPosition";
 export const SETTING_EMU_SCANLINE_EFFECT = "emuOptions.scanlineEffect";
 /**
@@ -20,11 +20,11 @@ export const SETTING_EMU_MOUSE_SENSITIVITY = "emuOptions.mouseSensitivity";
 export const SETTING_EMU_JOYSTICK_BINDINGS = "emuOptions.joystickBindings";
 export const SETTING_EMU_MACHINE_FAVORITES = "emuOptions.machineFavorites";
 export const SETTING_EMU_FAST_LOAD = "emuOptions.fastLoad";
-/** The HT-1080Z's VIDEO CUT switch, which blanks the picture (`.plans/HT1080Z_PLAN.md` §6): off */
+/** The HT-1080Z's VIDEO CUT switch, which blanks the picture (`dev/plans/HT1080Z_PLAN.md` §6): off */
 export const SETTING_EMU_HT_VIDEO_CUT = "emuOptions.ht1080zVideoCut";
 /** The HT-1080Z's dash: a CPU access to video RAM blanks cells at the beam (D7): on */
 export const SETTING_EMU_HT_CPU_DASH = "emuOptions.ht1080zCpuDash";
-/** ZX Spectrum 16K/48K/128K: late ("alternate") ULA timing, one T-state later (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phase 4): off */
+/** ZX Spectrum 16K/48K/128K: late ("alternate") ULA timing, one T-state later (`dev/plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phase 4): off */
 export const SETTING_EMU_ULA_LATE_TIMING = "emuOptions.ulaLateTiming";
 /** ZX Spectrum 16K/48K/128K: the snow effect (Phase 5): on */
 export const SETTING_EMU_ULA_SNOW = "emuOptions.ulaSnow";
@@ -33,12 +33,12 @@ export const SETTING_EMU_NEXT_AUDIO_OUTPUT = "emuOptions.nextAudioOutput";
 // --- The ZX Spectrum Next's real-time clock: what it follows, and keeping it between sessions
 export const SETTING_EMU_NEXT_RTC_CLOCK = "emuOptions.nextRtcClock";
 export const SETTING_EMU_NEXT_RTC_KEEP = "emuOptions.nextRtcKeep";
-/** Reverse debugging in debug sessions (`.plans/REVERSE_DEBUGGING_PLAN.md` D2): on by default */
+/** Reverse debugging in debug sessions (`dev/plans/REVERSE_DEBUGGING_PLAN.md` D2): on by default */
 export const SETTING_EMU_REVERSE_DEBUGGING = "emuOptions.reverseDebugging";
 /** The reverse-debugging keyframe budget in MB (D6); 0: the smaller of 512 MB and 1/16 of memory */
 export const SETTING_EMU_REVERSE_DEBUG_MEMORY_MB = "emuOptions.reverseDebugMemoryMb";
 /*
- * Code coverage and the heat map (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D6, T11, §4.3)
+ * Code coverage and the heat map (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D6, T11, §4.3)
  */
 /** Clear the profile when a machine starts from Stopped (as DeZog does): on by default */
 export const SETTING_EMU_PROFILE_RESET_ON_START = "emuOptions.profileResetOnStart";
@@ -48,25 +48,25 @@ export const SETTING_EMU_PROFILE_RESET_AFTER_INJECTION = "emuOptions.profileRese
 export const SETTING_EMU_PROFILE_COUNTERS = "emuOptions.profileCounters";
 /** Tint covered source lines' background as well as marking the strip (D12): off */
 export const SETTING_IDE_COVERAGE_LINE_TINT = "ideViewOptions.coverageLineTint";
-/** The profiler's hints at each routine's first line (`.plans/PROFILER_PLAN.md` D15): off */
+/** The profiler's hints at each routine's first line (`dev/plans/PROFILER_PLAN.md` D15): off */
 export const SETTING_IDE_PROFILER_INLAYS = "ideViewOptions.profilerInlays";
-/** The TR-DOS ROM file the Pentagon's Beta 128 boots (`.plans/BETA128_TRDOS_PLAN.md` Q1): Klive cannot ship it */
+/** The TR-DOS ROM file the Pentagon's Beta 128 boots (`dev/plans/BETA128_TRDOS_PLAN.md` Q1): Klive cannot ship it */
 export const SETTING_EMU_TRDOS_ROM = "emuOptions.trdosRomFile";
-/** The 8K esxDOS ROM the DivMMC boots (`.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md` C5): Klive cannot ship it */
+/** The 8K esxDOS ROM the DivMMC boots (`dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md` C5): Klive cannot ship it */
 export const SETTING_EMU_ESXDOS_ROM = "emuOptions.esxDosRomFile";
 /**
- * An Interface 1 ROM file that replaces the shipped v2 ROM (`.plans/MICRODRIVE_PLAN.md` Q1): empty means
+ * An Interface 1 ROM file that replaces the shipped v2 ROM (`dev/plans/MICRODRIVE_PLAN.md` Q1): empty means
  * the shipped `if1-2.rom`
  */
 export const SETTING_EMU_IF1_ROM = "emuOptions.interface1RomFile";
-/** Run unthrottled while a Microdrive's motor runs (`.plans/MICRODRIVE_PLAN.md` §3 M6, Q6): off */
+/** Run unthrottled while a Microdrive's motor runs (`dev/plans/MICRODRIVE_PLAN.md` §3 M6, Q6): off */
 export const SETTING_EMU_FAST_MICRODRIVE = "emuOptions.fastMicrodrive";
-/** The TC2048 ROM file the Timex boots (`.plans/TIMEX_SCORPION_PLAN.md` P5): Klive cannot ship it */
+/** The TC2048 ROM file the Timex boots (`dev/plans/TIMEX_SCORPION_PLAN.md` P5): Klive cannot ship it */
 export const SETTING_EMU_TC2048_ROM = "emuOptions.tc2048RomFile";
 /** The TC2068's and TS2068's 24K ROM files (the HOME ROM, then the EXROM); Klive cannot ship them */
 export const SETTING_EMU_TC2068_ROM = "emuOptions.tc2068RomFile";
 export const SETTING_EMU_TS2068_ROM = "emuOptions.ts2068RomFile";
-/** The Scorpion ZS-256's 64K ROM file (`.plans/TIMEX_SCORPION_PLAN.md` G9.4c); Klive cannot ship it */
+/** The Scorpion ZS-256's 64K ROM file (`dev/plans/TIMEX_SCORPION_PLAN.md` G9.4c); Klive cannot ship it */
 export const SETTING_EMU_SCORPION_ROM = "emuOptions.scorpionRomFile";
 export const SETTING_EMU_STAY_ON_TOP = "emuOptions.stayOnTop";
 export const SETTING_EMU_STEP_IN_INTERRUPTS = "emuOptions.sourceStepStopsInInterrupts";
@@ -76,7 +76,7 @@ export const SETTING_EMU_KEYBOARD_LAYOUT = "emuOptions.keyboardLayout";
 export const SETTING_EMU_KEYBOARD_HEIGHT = "emuOptions.keyboardPanelHeight";
 export const SETTING_EMU_KEYBOARD_HEIGHTS = "emuOptions.keyboardPanelHeights";
 export const SETTING_IDE_SHOW_TOOLBAR = "ideViewOptions.showToolbar";
-// --- The File Manager (`.ai/file-manager.md`, D7)
+// --- The File Manager (`dev/ai/file-manager.md`, D7)
 export const SETTING_FM_SHOW_HIDDEN = "ideViewOptions.fileManagerShowHidden";
 export const SETTING_FM_DELETE_PERMANENTLY = "ideViewOptions.fileManagerDeletePermanently";
 export const SETTING_IDE_SHOW_STATUS_BAR = "ideViewOptions.showStatusBar";
@@ -94,9 +94,9 @@ export const SETTING_IDE_ACTIVE_OUTPUT_PANE = "ideViewOptions.activeOutputPane";
 export const SETTING_IDE_OPEN_LAST_PROJECT = "ideBehavior.openLastProject";
 export const SETTING_IDE_CLOSE_EMU = "ideBehavior.closeEmuWithIde";
 export const SETTING_IDE_NAV_RECORD_TAB_SWITCH = "ideBehavior.navRecordTabSwitches";
-// --- The display language (`.ai/localization.md`, D8): "system" or a `languages.ts` id
+// --- The display language (`dev/ai/localization.md`, D8): "system" or a `languages.ts` id
 export const SETTING_IDE_LANGUAGE = "ideViewOptions.language";
-// --- Every text shows its translation key (`.ai/localization.md`, "The tooling")
+// --- Every text shows its translation key (`dev/ai/localization.md`, "The tooling")
 export const SETTING_IDE_I18N_SHOW_KEYS = "ideViewOptions.i18nShowKeys";
 export const SETTING_PANEL_FONT_FAMILY = "panelOptions.fontFamily";
 export const SETTING_PANEL_FONT_SIZE = "panelOptions.fontSize";

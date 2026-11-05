@@ -17,7 +17,7 @@ export const NEXT_ANNOTATION_SCHEMA_VERSION = 2;
  *
  * **3** added `machine`. A Next sidecar never carries it and stays at 2, byte for byte, so a build
  * that reads only `[1, 2]` keeps opening every NEX sidecar — and refuses a 48K one instead of
- * reading its banks as Next banks. See `.docs/annotations.md`.
+ * reading its banks as Next banks. See `dev/patterns/annotations.md`.
  */
 export const MACHINE_ANNOTATION_SCHEMA_VERSION = 3;
 
@@ -78,7 +78,7 @@ export type AnnotationOffsetIndex = 0 | 1 | 2 | 3;
 /**
  * What a region of a bank is. `copper` and `dma` exist only in memory: on disk they are `bytes`
  * regions with a `decode` key, which shipped builds ignore — see `toSidecarRegion` and
- * `.plans/NEX_DMA_COPPER_REGIONS_PLAN.md` D3.
+ * `dev/plans/NEX_DMA_COPPER_REGIONS_PLAN.md` D3.
  */
 export type AnnotationRegionType =
   | "disassemble"
@@ -99,7 +99,7 @@ export type AnnotationRegionType =
  * bit 7 set on its last character, listed as `.defc` rows (the Spectrum ROMs' keyword and message
  * tables); `fill` is runs of one repeated byte, listed as `.fillb count,value` rows (padding and
  * unused space); `graphic` is bytes laid out by the bank's matching `graphics` entry
- * (`.docs/annotations.md`, "The Reverse-Engineering Tools' Keys").
+ * (`dev/patterns/annotations.md`, "The Reverse-Engineering Tools' Keys").
  */
 export type DecodedRegionType = Extract<AnnotationRegionType, "copper" | "dma" | "text" | "defc" | "fill" | "graphic">;
 
@@ -394,7 +394,7 @@ export type BankAnnotation = {
    *
    * LF line breaks, trailing whitespace trimmed, and never empty — an emptied comment is removed
    * rather than stored as `""`. Additive within the bank, not a schema bump; see
-   * `.plans/NEX_BANK_COMMENTS_PLAN.md` §3 for what that costs a previously shipped build.
+   * `dev/plans/NEX_BANK_COMMENTS_PLAN.md` §3 for what that costs a previously shipped build.
    */
   comment?: string;
   /** How the Sprites view reads this bank. See `BankSprites`. */
@@ -418,13 +418,13 @@ export type SidecarBreakpoint = SidecarBreakpointFilters & {
 /**
  * A breakpoint's condition and hit-count rule, stored under the names `BreakpointInfo` uses. Shared
  * by both stored shapes; absent fields mean "always stop". Additive fields, like
- * `labelBreakpoints` — not a schema bump. See `.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.7.
+ * `labelBreakpoints` — not a schema bump. See `dev/plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.7.
  */
 export type SidecarBreakpointFilters = {
   condition?: string;
   hitMode?: BreakpointHitMode;
   hitCount?: number;
-  /** A logpoint's template (`.plans/LOGPOINTS_PLAN.md` §4.6). */
+  /** A logpoint's template (`dev/plans/LOGPOINTS_PLAN.md` §4.6). */
   logMessage?: string;
   /** Absent means the Klive dialect. */
   logDialect?: LogDialect;
@@ -438,7 +438,7 @@ export type SidecarBreakpointFilters = {
  * would make it a bank breakpoint that happened to be named, and it would stop meaning the same
  * thing the moment the code moved.
  *
- * `bank` absent means a **global** label. See `.ai/nex-debugging.md`.
+ * `bank` absent means a **global** label. See `dev/ai/nex-debugging.md`.
  */
 export type SidecarLabelBreakpoint = SidecarBreakpointFilters & {
   label: string;
@@ -453,7 +453,7 @@ export type SidecarLabelBreakpoint = SidecarBreakpointFilters & {
  * Saved **independently of the annotations beside it**, and on a different policy: annotation edits
  * are written when the user asks, while a breakpoint is written the moment it is set — a breakpoint
  * lost because nobody pressed Save is a bug, not a policy. Both writers read-merge-write over
- * disjoint keys, so neither can clobber the other. See `.ai/nex-debugging.md`.
+ * disjoint keys, so neither can clobber the other. See `dev/ai/nex-debugging.md`.
  */
 export type AnnotationDebugState = {
   breakpoints?: SidecarBreakpoint[];

@@ -6,7 +6,7 @@ import { encodePng } from "@common/imaging/png";
 
 /*
  * The pictures the documentation site publishes from the kit's runs
- * (`.plans/SPECTRUM_ACCURACY_DOCS_PLAN.md` §4.3), and the check that keeps them true.
+ * (`dev/plans/SPECTRUM_ACCURACY_DOCS_PLAN.md` §4.3), and the check that keeps them true.
  *
  * A test takes its pictures while it runs and settles them only after its assertions have passed, so
  * nothing is published from a run that fails. Settling either writes them (`KIT_PUBLISH=1`) to

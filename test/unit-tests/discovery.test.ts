@@ -11,7 +11,7 @@ import { Z80Assembler } from "@main/z80-compiler/z80-assembler";
 import { assembleWithInclude } from "./unitTestSupport";
 
 /*
- * Unit-test discovery (`.plans/Z80_UNIT_TESTS_PLAN.md` §4.1, D1, T3, T4): DeZog's label conventions on
+ * Unit-test discovery (`dev/plans/Z80_UNIT_TESTS_PLAN.md` §4.1, D1, T3, T4): DeZog's label conventions on
  * Klive assembler output (modules, case-insensitive builds) and on sjasmplus SLD data.
  */
 

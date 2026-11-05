@@ -23,7 +23,7 @@ export class CompileCommand extends IdeCommandBase {
 
   async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
     const compileResult = await compileCode(context);
-    // --- The diagnostics as the result value (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D10)
+    // --- The diagnostics as the result value (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` D10)
     const value = buildDiagnosticsValue(compileResult.result);
     return compileResult.message
       ? commandError(compileResult.message, value)

@@ -5,7 +5,7 @@ import type { Ht1080zRomSetId } from "./Ht1080zRoms";
 
 /**
  * The HT-1080Z: its models and the facts the host, the core and the renderer share
- * (`.plans/HT1080Z_PLAN.md` §3, §4.3 and §17; decisions D1 and D5).
+ * (`dev/plans/HT1080Z_PLAN.md` §3, §4.3 and §17; decisions D1 and D5).
  */
 
 /** Series I and II: 10.644 MHz / 6 (the Genie manual) */

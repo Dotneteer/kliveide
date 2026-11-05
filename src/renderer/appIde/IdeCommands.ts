@@ -229,25 +229,25 @@ export function registerIdeCommands(cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new ClearExecutionHistoryCommand());
   cmdSrv.registerCommand(new HistoryCommand());
   cmdSrv.registerCommand(new HistoryExportCommand());
-  // --- Code coverage and the heat map (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D15)
+  // --- Code coverage and the heat map (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D15)
   cmdSrv.registerCommand(new CoverageCommand());
   cmdSrv.registerCommand(new CoverageResetCommand());
-  // --- Unit tests (`.plans/Z80_UNIT_TESTS_PLAN.md` D16)
+  // --- Unit tests (`dev/plans/Z80_UNIT_TESTS_PLAN.md` D16)
   cmdSrv.registerCommand(new TestListCommand());
   cmdSrv.registerCommand(new TestRunCommand());
   cmdSrv.registerCommand(new TestDebugCommand());
   cmdSrv.registerCommand(new TestInitCommand());
   cmdSrv.registerCommand(new TestJUnitCommand());
-  // --- The profiler (`.plans/PROFILER_PLAN.md` D16)
+  // --- The profiler (`dev/plans/PROFILER_PLAN.md` D16)
   cmdSrv.registerCommand(new ProfileCommand());
   cmdSrv.registerCommand(new ProfileStartCommand());
   cmdSrv.registerCommand(new ProfileStopCommand());
   cmdSrv.registerCommand(new ShowProfilerCommand());
   cmdSrv.registerCommand(new HideProfilerCommand());
-  // --- The two-pane File Manager (`.ai/file-manager.md`, D1)
+  // --- The two-pane File Manager (`dev/ai/file-manager.md`, D1)
   cmdSrv.registerCommand(new ShowFileManagerCommand());
   cmdSrv.registerCommand(new MemoryHeatCommand());
-  // --- Lite step back (`.plans/LITE_STEP_BACK_PLAN.md` §4.5)
+  // --- Lite step back (`dev/plans/LITE_STEP_BACK_PLAN.md` §4.5)
   cmdSrv.registerCommand(new StepBackCommand());
   cmdSrv.registerCommand(new StepForwardCommand());
   cmdSrv.registerCommand(new StepBackOverCommand());

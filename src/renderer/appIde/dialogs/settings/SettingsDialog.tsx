@@ -18,7 +18,7 @@ type Props = {
 };
 
 /**
- * Klive › Settings… / File › Settings… (`.plans/MENU_REDESIGN_PLAN.md` §4).
+ * Klive › Settings… / File › Settings… (`dev/plans/MENU_REDESIGN_PLAN.md` §4).
  *
  * Wiring only: the rules live in `SettingsModel` / `SettingsViewModel` / `SettingsController`.
  * Opens in whichever window has the focus, so both dialog registries render it.

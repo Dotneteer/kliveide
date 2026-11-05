@@ -6,7 +6,7 @@ import { DCK_BANK_DOCK } from "@common/timex/dckFile";
 import { createTimexSession, type TimexTestSession } from "../harness/timex";
 
 /*
- * 2068 snapshots (`.plans/TIMEX_SCORPION_PLAN.md` G9.4b Phase 5): `.szx` machines 9 (TC2068) and 12
+ * 2068 snapshots (`dev/plans/TIMEX_SCORPION_PLAN.md` G9.4b Phase 5): `.szx` machines 9 (TC2068) and 12
  * (TS2068) with the SCLD block, the AY block and a DOCK block per cartridge page; `.z80` hardware
  * modes 15 and 128 with $F4/$FF in bytes 35/36 and the AY in the header (no cartridge); `.sna` as a
  * 48K, with the losses named.

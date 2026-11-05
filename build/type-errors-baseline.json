@@ -1,5 +1,5 @@
 {
-  "$comment": "Known type errors, keyed by file and TypeScript diagnostic code. The build fails on anything NOT listed here. Regenerate with `npm run build:check -- --update` — but only ever to LOWER a count. See scripts/check-types.cjs.",
+  "$comment": "Known type errors, keyed by file and TypeScript diagnostic code. The build fails on anything NOT listed here. Regenerate with `npm run build:check -- --update` — but only ever to LOWER a count. See dev/scripts/check-types.cjs.",
   "updated": "2026-10-31",
   "total": 110,
   "entries": {

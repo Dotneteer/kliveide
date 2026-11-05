@@ -10,7 +10,7 @@ import {
 
 /*
  * The Beta 128's two drives, between the media store and the `sp128` core
- * (`.plans/BETA128_TRDOS_PLAN.md` B3, B4, Q4).
+ * (`dev/plans/BETA128_TRDOS_PLAN.md` B3, B4, Q4).
  *
  * A disk arrives as the bytes of its file (the `MEDIA_DISK_A/B` machine properties, as on the +3),
  * a `.trd` or an `.scl` told apart by content. It is converted to the core's canonical layout and

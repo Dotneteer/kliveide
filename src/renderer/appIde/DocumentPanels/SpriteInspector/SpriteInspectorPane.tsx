@@ -34,7 +34,7 @@ import type { NexSpriteFormat } from "@common/zxnext/sprites/spritePatterns";
 import styles from "./SpriteInspector.module.scss";
 
 /*
- * The inspector (`.plans/SPRITE_INSPECTOR_PLAN.md` §4.5.3): the selection's details and where it is
+ * The inspector (`dev/plans/SPRITE_INSPECTOR_PLAN.md` §4.5.3): the selection's details and where it is
  * in sprite space. One component with two homes, chosen by the document's width:
  *
  * - `band`: a strip under the list in a narrow document, split into the details (previews beside the

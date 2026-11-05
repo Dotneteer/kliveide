@@ -1,5 +1,5 @@
 /*
- * The ZX Interface 1's ROM (`.plans/MICRODRIVE_PLAN.md` Q1): Klive ships the second edition as
+ * The ZX Interface 1's ROM (`dev/plans/MICRODRIVE_PLAN.md` Q1): Klive ships the second edition as
  * `roms/if1-2.rom`; the `SETTING_EMU_IF1_ROM` setting can name another 8K file. A user file is
  * identified by its CRC32 (MAME's hashes, `src/public/roms/if1-roms-readme.txt`), so the UI can say
  * which edition is running.

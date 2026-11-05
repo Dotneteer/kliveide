@@ -5,7 +5,7 @@
  * outside `tokens/` should import from here: components read the L2 semantic names produced by
  * `semantic.ts`, which is what makes the accent and tone axes swappable.
  *
- * See `.ai/ui-design-system.md`, "The token architecture" and "Accents".
+ * See `dev/ai/ui-design-system.md`, "The token architecture" and "Accents".
  */
 
 import { ACCENT_IDS, DEFAULT_ACCENT, isAccentId, type AccentId } from "@common/theming/accents";
@@ -245,7 +245,7 @@ export const FAVORITE: Record<Tone, string> = {
 };
 
 /**
- * The memory heat map's three hues (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D14, T9): executed,
+ * The memory heat map's three hues (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D14, T9): executed,
  * read, written. Fixed across accents, like the status hues: a ramp built from the accent would run
  * into the changed-byte mark (the secondary accent) and the selection, which share the same rows.
  * `semantic.ts` derives the five ramp steps from each by mixing it into the panel surface, so both
@@ -295,7 +295,7 @@ export const DEVICE = {
   legendBelow: "#d02000",
   /*
    * The Sinclair ZX81's keyboard: a pure black body and light-grey keys with black legends, red
-   * shifted legends and white keyword/function print (`.ai/zx8081.md`, "The virtual keyboard", the approved
+   * shifted legends and white keyword/function print (`dev/ai/zx8081.md`, "The virtual keyboard", the approved
    * design). A light key face is new among Klive's device
    * keyboards; its highlight comes from the accent's dark end (`--accent-on-device-light`).
    */
@@ -307,7 +307,7 @@ export const DEVICE = {
   /*
    * The Sinclair ZX80's keyboard: blue keys on the same black case, white main legends and keyword
    * print, amber shifted legends and graphics, and BREAK in a dark blue that barely shows (sampled from
-   * a photo of an original machine and lifted for its underexposure; `.ai/zx8081.md`,
+   * a photo of an original machine and lifted for its underexposure; `dev/ai/zx8081.md`,
    * "The virtual keyboard"). The key face is dark, so its highlight is the accent's light end.
    */
   keyZx80: "#1c45b0",
@@ -317,7 +317,7 @@ export const DEVICE = {
    * The HT-1080Z's keyboard: cream keys with near-black legends in a dark charcoal recess, set in an
    * off-white case; PAGE and F1 are small light-grey keys (sampled from a photo of a Series I/II
    * machine, https://frescho.hu/ht-1080z-adatlap/; the approved mockup
-   * `.plans/ht1080z/ht1080z-keyboard-mockup.html`). The Hungarian hint legends are Klive's, not
+   * `dev/plans/ht1080z/ht1080z-keyboard-mockup.html`). The Hungarian hint legends are Klive's, not
    * printed on the machine, in a burnt orange that stays readable on cream.
    */
   keyHt1080z: "#e6dfcb",

@@ -7,7 +7,7 @@ import type { MemoryInfo } from "@common/messaging/EmuApi";
 import { runDetection, type DetectionContext, type DetectionPorts } from "@renderer/appIde/reverse/detection";
 
 /*
- * Code/data detection on the real ZX Spectrum Next core (`.docs/reverse-engineering-tools.md`
+ * Code/data detection on the real ZX Spectrum Next core (`dev/patterns/reverse-engineering-tools.md`
  * §8, G7.3): a program with a known layout — code, a table it reads, a message it reads one byte
  * of, a routine it never calls — run with coverage on, then classified bank by bank. The 16K bank
  * is read through its two 8K pages (D-T7).

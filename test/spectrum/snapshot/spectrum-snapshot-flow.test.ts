@@ -1,5 +1,5 @@
 /*
- * The emulator-side snapshot load (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.5, Phase 4): fitting the
+ * The emulator-side snapshot load (`dev/plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.5, Phase 4): fitting the
  * machine to the snapshot, media first, restoring the state Paused, and the run / debug modes - on a
  * real `MachineController` driving the real Spectrum cores. Runs in the e2e-cores tier.
  */
@@ -197,7 +197,7 @@ describe("fitting the machine", () => {
   });
 });
 
-describe("fitting the machine: the Amstrad +2A/+3 models (.plans/PLUS3_AMSTRAD_ROMS_PLAN.md Phase 3)", () => {
+describe("fitting the machine: the Amstrad +2A/+3 models (dev/plans/PLUS3_AMSTRAD_ROMS_PLAN.md Phase 3)", () => {
   const map = (bytes: Uint8Array, name: string) => {
     const s = parseSpectrumSnapshot(name, bytes);
     return { s, m: mapSpectrumSnapshotToKlive(s) };
@@ -404,7 +404,7 @@ describe("loading through the controller", () => {
   });
 });
 
-describe("saving through the controller (.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md Phase 3)", () => {
+describe("saving through the controller (dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md Phase 3)", () => {
   function savePorts(emu: FakeEmulator, media = {}): SpectrumSnapshotSavePorts {
     return {
       getMachineController: () => emu.controller,

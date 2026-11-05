@@ -9,7 +9,7 @@ import { createSettingsReader } from "./SettingsReader";
  * Accelerators use Electron's syntax ("Ctrl+-", "Alt+Left") and can be overridden with the
  * `shortcuts.navigateBack` / `shortcuts.navigateForward` user settings, like the stepping shortcuts.
  *
- * See `.plans/NAVIGATION_HISTORY_PLAN.md` §5.
+ * See `dev/plans/NAVIGATION_HISTORY_PLAN.md` §5.
  */
 
 export const SHORTCUT_NAVIGATE_BACK = "shortcuts.navigateBack";

@@ -1,6 +1,6 @@
 /*
  * Saving snapshots from the real 48K, 128K and +2E/+3E WASM cores
- * (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` Phase 2). Runs in the e2e-cores tier.
+ * (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` Phase 2). Runs in the e2e-cores tier.
  *
  * The central check is "save, load into a fresh machine, run" equals "keep running": a program is
  * run to an odd point in a frame, saved, loaded into a second machine, and both then run the same

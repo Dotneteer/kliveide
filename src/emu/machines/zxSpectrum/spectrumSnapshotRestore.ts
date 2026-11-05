@@ -1,5 +1,5 @@
 /*
- * Puts a parsed ZX Spectrum snapshot into a WASM core (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.4).
+ * Puts a parsed ZX Spectrum snapshot into a WASM core (`dev/plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.4).
  * The 48K, 128K and +2E/+3E machines share this sequence; their export names differ only in their
  * prefix (`sp48`, `sp128`, `spp3e`), so the core is addressed through it.
  *
@@ -8,7 +8,7 @@
  *     which re-syncs the tape, audio and disk state the core reset clears). The reset keeps RAM, but
  *     unlocks paging, silences the AY and rebuilds the 128K cores' flat 64K view from the banks.
  *     A `.szx` file then sets the ULA's late ("alternate") timing on the cores that have it
- *     (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phase 4); `.sna` and `.z80` cannot say, so the machine
+ *     (`dev/plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phase 4); `.sna` and `.z80` cannot say, so the machine
  *     keeps its own.
  *  2. Paging: $1FFD first (+3), then $7FFD, whose bit 5 locks every later $7FFD write (trap 5).
  *  3. The AY registers, then the selected one (writing R13 restarts the envelope; trap 14).
@@ -147,7 +147,7 @@ export function restoreSpectrumSnapshot(core: SpectrumSnapshotCore, snapshot: Sp
   }
 
   // --- 7b. The Interface 1's paging (`.z80` byte 36, `.szx` IF1). The reset paged it out; the
-  // --- cartridges arrive through the media store, as the disks do (`.plans/MICRODRIVE_PLAN.md` Phase 5)
+  // --- cartridges arrive through the media store, as the disks do (`dev/plans/MICRODRIVE_PLAN.md` Phase 5)
   const if1 = snapshot.peripherals.if1;
   if (if1 && typeof all[core.prefix + "If1GetPresent"] === "function" && call("If1GetPresent") !== 0) {
     call("If1SetPaged", if1.paged ? 1 : 0);

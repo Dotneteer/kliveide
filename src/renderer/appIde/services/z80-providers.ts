@@ -20,7 +20,7 @@ import {
 } from "./z80-completion-data";
 import { lookupTstates } from "./z80-tstates-data";
 import type { DocumentOutlineEntry, SymbolDefinitionInfo } from "@abstractions/CompilerInfo";
-// --- Register names: the union of every core's set (`.ai/zxnext-models.md` D5)
+// --- Register names: the union of every core's set (`dev/ai/zxnext-models.md` D5)
 import { nextRegUnion } from "@emu/machines/zxNext/nextRegSets";
 import {
   decodeCopperWord,
@@ -476,7 +476,7 @@ export function getDmaCompletionItems(ctx: DmaCompletionContext): CompletionResu
 }
 
 // ---------------------------------------------------------------------------
-// Copper context-aware completion helpers (`.plans/COPPER_DEBUGGING_PLAN.md` §4.9)
+// Copper context-aware completion helpers (`dev/plans/COPPER_DEBUGGING_PLAN.md` §4.9)
 // ---------------------------------------------------------------------------
 
 /** Where the cursor is within a `.copper` pragma line. */

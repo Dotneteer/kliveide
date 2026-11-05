@@ -15,7 +15,7 @@ import { CliError, EXIT_INTERNAL, usageError } from "./exit-codes";
 import { buildRootPath, languageOf, type CliProject } from "./project";
 
 /*
- * The compile step without the renderer (`.plans/UNIT_TESTS_CLI_PLAN.md` D5, D6, T4): the IDE's own
+ * The compile step without the renderer (`dev/plans/UNIT_TESTS_CLI_PLAN.md` D5, D6, T4): the IDE's own
  * compiler registry, given a minimal `AppState` built from the project file and the command line.
  * The Klive assembler needs nothing from it; sjasmplus needs the project folder and its executable.
  */

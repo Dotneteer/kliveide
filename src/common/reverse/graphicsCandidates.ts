@@ -4,7 +4,7 @@ import { t, type MessageArgs } from "@common/i18n/i18n";
 import type { MessageKey } from "@common/i18n/keys.generated";
 
 /*
- * Where graphics probably are (`.docs/reverse-engineering-tools.md`, "Graphics finder"). Heuristics,
+ * Where graphics probably are (`dev/patterns/reverse-engineering-tools.md`, "Graphics finder"). Heuristics,
  * labelled as such in the UI — a list to start browsing from, not a classification.
  *
  * - **Fonts**: 96 characters of 8 bytes whose first is all zero (the space) and most of the rest are

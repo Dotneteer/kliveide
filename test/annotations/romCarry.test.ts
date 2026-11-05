@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 /*
- * The re-anchoring core (`src/common/roms/romCarry.ts`, used by `scripts/rom-annotations-carry.cjs`) (`.ai/zxnext-models.md`
+ * The re-anchoring core (`src/common/roms/romCarry.ts`, used by `dev/scripts/rom-annotations-carry.cjs`) (`dev/ai/zxnext-models.md`
  * D8): annotated offsets of one ROM page placed in a newer page by byte signature.
  */
 

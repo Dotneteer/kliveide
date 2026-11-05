@@ -8,7 +8,7 @@
  * of row R7. The cursor output is high on the character whose MA is R14-R15, on rasters R10-R11,
  * only while DE is high.
  *
- * The variant (D6, `.ai/videoton-tvc.md`): Hitachi/UMC "type 0" by default, as the manual describes
+ * The variant (D6, `dev/ai/videoton-tvc.md`): Hitachi/UMC "type 0" by default, as the manual describes
  * it - R3's high nibble sets the VS width in lines (0 is 16) and R12-R13 read back.
  * `tvcCrtcSetMotorola` switches to the Motorola MC6845: VS is always 16 lines and only R14-R17 read
  * back. Write-only registers read 00h (an assumption: the manual says nothing).

@@ -75,7 +75,7 @@ export class TestUpd765Machine extends ZxSpectrumBase {
   // `ZxSpectrumBase.onTactIncremented` drives `CommonScreenDevice.renderTact` for real, which
   // reads screen memory. It used to throw here and never be called, because the base class left
   // `lastRenderedFrameTact` undefined and `undefined < currentFrameTact` silently skipped every
-  // render (see `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.11). The floppy tests care
+  // render (see `dev/plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.11). The floppy tests care
   // about the controller, not the picture, so any stable value will do.
   readScreenMemory(_offset: number): number {
     return 0;

@@ -4,7 +4,7 @@ import type { SideBarPanelBadgeProps } from "@renderer/abstractions/SideBarPanel
 import { useT } from "@common/i18n/useT";
 
 /**
- * The failure count on the Unit Tests panel's header (`.plans/Z80_UNIT_TESTS_PLAN.md` D13): tests
+ * The failure count on the Unit Tests panel's header (`dev/plans/Z80_UNIT_TESTS_PLAN.md` D13): tests
  * that failed or ended in an error in their last run. The count is selected, not the results, so the
  * badge re-renders only when the number changes.
  */

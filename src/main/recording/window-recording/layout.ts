@@ -3,7 +3,7 @@
  *
  * The two windows are composed side by side in the chosen arrangement, whatever their real positions
  * on the screen. The video is the bounding rectangle of that arrangement; the shorter (or narrower)
- * window is centred along the shared side. See `.plans/IDE_EMU_RECORDING_PLAN.md` §4.3.
+ * window is centred along the shared side. See `dev/plans/IDE_EMU_RECORDING_PLAN.md` §4.3.
  */
 
 import type { RecordingIdePosition } from "@common/state/AppState";

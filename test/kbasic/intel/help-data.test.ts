@@ -7,7 +7,7 @@ import { HELP_ATTRIBUTION, KEYWORD_HELP, keywordHelp, libraryRoutineHelp, monarc
 import { zxBasLanguageProvider } from "@renderer/appIde/project/zxBasLanguageProvider";
 
 const require = createRequire(import.meta.url);
-const generator = require(path.resolve("scripts/kbasic-help-data.cjs")) as {
+const generator = require(path.resolve("dev/scripts/kbasic-help-data.cjs")) as {
   generate(): { text: string; problems: string[] };
   displayOf(ebnf: string, keyword?: string): string | undefined;
   OUT: string;

@@ -4,7 +4,7 @@ import { PcmPiI2sSource, SilencePiI2sSource, TonePiI2sSource } from "@emu/machin
 import { decodeWav, WavDecodeError } from "@emu/machines/zxNext/piI2s/wavDecoder";
 
 /*
- * The Pi I2S sample sources and the WAV decoder (`.plans/PI_I2S_AUDIO_PLAN.md` §3). The machine side is
+ * The Pi I2S sample sources and the WAV decoder (`dev/plans/PI_I2S_AUDIO_PLAN.md` §3). The machine side is
  * `test/zxnext-hw/audio/pi-i2s.test.ts`.
  */
 

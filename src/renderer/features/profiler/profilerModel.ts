@@ -23,7 +23,7 @@ import { buildRoutineMap, routineSourceLabel, type RoutineMap } from "@common/pr
 import { t } from "@common/i18n/i18n";
 
 /*
- * The Profiler document's and the `profile` commands' model (`.plans/PROFILER_PLAN.md` D3-D5,
+ * The Profiler document's and the `profile` commands' model (`dev/plans/PROFILER_PLAN.md` D3-D5,
  * D10, D14): one read of the profile through the Emu API, rolled up by the pure functions in
  * `src/common/profile/`. No React, so it is tested without rendering.
  */

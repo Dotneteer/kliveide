@@ -5,7 +5,7 @@ import { requireSingleLine } from "../method-types";
 import { runIdeCommandOrFail } from "./commands";
 
 /*
- * `breakpoints.*` (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` §4.2). `set` and `remove` take the
+ * `breakpoints.*` (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` §4.2). `set` and `remove` take the
  * `bp-set` / `bp-del` text, so conditions, hit counts, logpoints and partitions work exactly as they
  * do in the command prompt; `list` writes each breakpoint back as that text (`spec`).
  */

@@ -1,5 +1,5 @@
 /*
- * The access profile's hooks (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §4.1, D1-D10): code
+ * The access profile's hooks (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §4.1, D1-D10): code
  * coverage (G5.1), the memory heat map (G5.2) and the flat profiler's per-instruction time (G5.3).
  *
  * A core that profiles includes this file BEFORE `z80.c`, and `z80-profile.c` after everything its
@@ -20,7 +20,7 @@
 /*
  * The 192-byte header the reader (`WasmProfileReader.ts`) parses. Little-endian, natural alignment:
  * every field sits at the offset in the comment, so the struct is the wire format. Version 2 added
- * the call tracker's fields (`.plans/PROFILER_PLAN.md` §4.2) from offset 116 on.
+ * the call tracker's fields (`dev/plans/PROFILER_PLAN.md` §4.2) from offset 116 on.
  */
 typedef struct Z80ProfileHeader {
   uint32_t magic; /* 0: "KPRF" */
@@ -68,7 +68,7 @@ typedef struct Z80ProfileHeader {
 } Z80ProfileHeader;
 
 /*
- * The call tracker's pending event (`.plans/PROFILER_PLAN.md` D9): CALL, RST, RET and interrupt
+ * The call tracker's pending event (`dev/plans/PROFILER_PLAN.md` D9): CALL, RST, RET and interrupt
  * pushes only note it; the instruction's end (or the acknowledge's) settles it once the stack pointer
  * and the program counter are final and the instruction's time is in the clock.
  */

@@ -4,7 +4,7 @@ import { NEXT_PROFILES, type NextProfileId } from "@emu/machines/zxNext/nextProf
 import { createSession, forEachProfile, type NextTestSession } from "../../harness/zxnext";
 
 /*
- * The MD pad reset: A + B + C + START (core 3.02.02, `.ai/zxnext-cores/30201-to-30204.md` 1.8), on
+ * The MD pad reset: A + B + C + START (core 3.02.02, `dev/ai/zxnext-cores/30201-to-30204.md` 1.8), on
  * both profiles.
  *
  * Hardware:

@@ -1,7 +1,7 @@
 import type { KeyMapping } from "@abstractions/KeyMapping";
 
 /**
- * The host keyboard on the HT-1080Z matrix, by key position (`.plans/HT1080Z_PLAN.md` §7): letters
+ * The host keyboard on the HT-1080Z matrix, by key position (`dev/plans/HT1080Z_PLAN.md` §7): letters
  * and digits on their keys, Enter is NEW LINE, Escape BREAK, Home CLEAR, the arrows the four arrow
  * keys, Backspace the left arrow (which deletes the last character), both shifts SHIFT.
  *

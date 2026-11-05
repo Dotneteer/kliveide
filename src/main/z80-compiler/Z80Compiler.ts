@@ -51,7 +51,7 @@ export class Z80Compiler implements IKliveCompiler {
 
   /**
    * The options of a build that names none (the IDE's): a source with no `.model` is assembled for
-   * the running machine (`.ai/zx8081.md`, "Machine code decisions", Q1)
+   * the running machine (`dev/ai/zx8081.md`, "Machine code decisions", Q1)
    */
   private defaultOptions(): AssemblerOptions {
     const options = new AssemblerOptions();

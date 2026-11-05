@@ -15,7 +15,7 @@ import { menuTapeLoadFlow, sp48TapeLoadFlow } from "@emu/machines/tapeLoadFlows"
 import { SpectrumKeyCode } from "@emu/machines/zxSpectrum/SpectrumKeyCode";
 
 /*
- * "Load and run" a tape (`.plans/TAPE_VIEWER_PLAN.md` §4.6): `MachineController.runTapeLoad` runs a
+ * "Load and run" a tape (`dev/plans/TAPE_VIEWER_PLAN.md` §4.6): `MachineController.runTapeLoad` runs a
  * machine's tape-load flow - reset, reach the editor or the menu, type - and injects nothing. The
  * 48K flow's keys load a real tape on the real ROM in `test/tape/tape-load-flow.test.ts`.
  */

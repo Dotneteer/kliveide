@@ -2,7 +2,7 @@
   "schemaVersion": 3,
   "machine": "rom",
   "source": {"fileName":"ep-exos21.rom"},
-  "authoring": ".ai/rom-annotations/README.md",
+  "authoring": "dev/ai/rom-annotations/README.md",
   "level": 2,
   "pages": {
     "0": {"crc32":"2169c49c","name":"EXOS 2.1, segment 00h"},

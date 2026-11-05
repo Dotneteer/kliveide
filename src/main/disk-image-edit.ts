@@ -8,7 +8,7 @@ import { getIdeApi } from "@messaging/MainToIdeMessenger";
 import { mainStore } from "./main-store";
 
 /*
- * Editing a disk image file from the IDE (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, D4/D5).
+ * Editing a disk image file from the IDE (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, D4/D5).
  *
  * An edit is two calls around the renderer's own change of the bytes:
  *
@@ -42,7 +42,7 @@ export function mountedDrive (filePath: string): number | undefined {
   return driveHolding(filePath, [MEDIA_DISK_A, MEDIA_DISK_B]);
 }
 
-/** The Microdrive holding the cartridge, if it is in one (`.plans/MICRODRIVE_PLAN.md`) */
+/** The Microdrive holding the cartridge, if it is in one (`dev/plans/MICRODRIVE_PLAN.md`) */
 export function mountedMicrodrive (filePath: string): number | undefined {
   return driveHolding(filePath, MEDIA_MICRODRIVES);
 }

@@ -200,7 +200,7 @@ describe("Z88dkCompiler (fixtures)", () => {
     expect(out.errors[0].message).toMatch(/does not say where the program loads/);
   });
 
-  // --- z88dk v2.4's classic Next startup runs into printf's format table (`.ai/z88dk/targets.md`)
+  // --- z88dk v2.4's classic Next startup runs into printf's format table (`dev/ai/z88dk/targets.md`)
   it("warns when printf's format table is linked into the startup code (a Next program using printf)", async () => {
     const compiler = new Z88dkCompiler(replay("zxn-printf"));
     const { state, main } = project("zxn-printf", "zxnext");

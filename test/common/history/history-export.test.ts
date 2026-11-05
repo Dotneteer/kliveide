@@ -21,7 +21,7 @@ import { csvCell, csvRow } from "@common/history/csv";
 import { historyContextDecoder } from "@common/history/contexts";
 import type { HistoryServiceSpan } from "@common/history/serviceSpans";
 
-/* `.plans/TRACE_EXPORT_PLAN.md` §6: the pure exporter against hand-built records */
+/* `dev/plans/TRACE_EXPORT_PLAN.md` §6: the pure exporter against hand-built records */
 
 type RecordInit = Partial<Omit<HistoryRecord, "regs">> & { regs?: Partial<HistoryRecord["regs"]> };
 

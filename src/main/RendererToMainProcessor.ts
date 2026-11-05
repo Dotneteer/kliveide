@@ -1156,14 +1156,14 @@ class MainMessageProcessor {
 
     compiler?.setAppState(mainStore.getState());
     const output = (await compiler.compileFile(filename, options, params?.profile)) as KliveCompilerOutput;
-    // --- `LOGPOINT` comments that cannot be used become build warnings (`.plans/LOGPOINTS_PLAN.md` L13)
+    // --- `LOGPOINT` comments that cannot be used become build warnings (`dev/plans/LOGPOINTS_PLAN.md` L13)
     const checked = checkSourceAnnotations(output);
-    // --- The unit-test runner takes the last build (`.plans/Z80_UNIT_TESTS_PLAN.md` D15)
+    // --- The unit-test runner takes the last build (`dev/plans/Z80_UNIT_TESTS_PLAN.md` D15)
     rememberCompilation(filename, language, checked);
     return checked;
   }
 
-  /** Runs the last build's unit tests in a worker (`.plans/Z80_UNIT_TESTS_PLAN.md` D6) */
+  /** Runs the last build's unit tests in a worker (`dev/plans/Z80_UNIT_TESTS_PLAN.md` D6) */
   async runUnitTests(request: UnitTestRunRequest): Promise<UnitTestRunResponse> {
     return runUnitTestsInWorker(request, (action) => this.dispatch(action));
   }
@@ -1488,7 +1488,7 @@ class MainMessageProcessor {
   }
 
   /**
-   * Inserts a tape file, as the "Select Tape File..." menu does (`.plans/TAPE_VIEWER_PLAN.md` D6).
+   * Inserts a tape file, as the "Select Tape File..." menu does (`dev/plans/TAPE_VIEWER_PLAN.md` D6).
    * @returns The failure's message, or undefined when the tape was inserted
    */
   async setTapeFile(filename: string): Promise<string | undefined> {
@@ -1499,7 +1499,7 @@ class MainMessageProcessor {
   }
 
   /**
-   * Opens a file dropped onto the emulator window (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.10).
+   * Opens a file dropped onto the emulator window (`dev/plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.10).
    * @param filename The dropped file's full path
    */
   async openDroppedFile(filename: string): Promise<string | undefined> {
@@ -1830,7 +1830,7 @@ function saveDiskChanges(diskIndex: number, changes: SectorChanges): ResponseMes
   }
 
   // --- TR-DOS disks (the Pentagon's Beta 128): a `.trd` takes each change at its file sector; an
-  // --- `.scl` is a container, never written back (`.plans/BETA128_TRDOS_PLAN.md` Q4)
+  // --- `.scl` is a container, never written back (`dev/plans/BETA128_TRDOS_PLAN.md` Q4)
   const extension = path.extname(diskFile).toLowerCase();
   if (extension === ".scl") {
     return defaultResponse();

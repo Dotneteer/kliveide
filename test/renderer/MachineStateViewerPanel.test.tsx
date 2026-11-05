@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { writeKliveStateFile, type KliveStateFile } from "@common/machineState/kliveStateFile";
 
 /*
- * The Klive state viewer (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.9, Phase 8): the
+ * The Klive state viewer (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.9, Phase 8): the
  * header, the thumbnail, the media and the portable part, from a file read without its image.
  */
 

@@ -4,7 +4,7 @@ import { annotationStateKey, commentKindOf } from "@common/utils/source-annotati
 
 /*
  * The disabled state of the breakpoints `LOGPOINT`, `ASSERTION` and `WPMEM` comments create
- * (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` S3, §4.4): held by the IDE for the session, keyed
+ * (`dev/plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` S3, §4.4): held by the IDE for the session, keyed
  * `resource:line:kind`, and re-applied at every install - so it survives rebuilds while the comment
  * stays on its line. Never written to disk: a restart of Klive enables them all again (Q2).
  */

@@ -4,8 +4,8 @@ import { createFormattedMdr, readMdrCatalog, readMdrFile } from "@emu/machines/m
 import { runBasic, screenLines, sp48WithInterface1 } from "./if1TestSupport";
 
 /*
- * Files on a cartridge with the shipped v2 ROM (`.plans/MICRODRIVE_PLAN.md` Phase 4.1; the scripts
- * are `_input/microdrive/test-material.md` T3-T8). Each test starts from a tool-formatted cartridge
+ * Files on a cartridge with the shipped v2 ROM (`dev/plans/MICRODRIVE_PLAN.md` Phase 4.1; the scripts
+ * are `dev/research/microdrive/test-material.md` T3-T8). Each test starts from a tool-formatted cartridge
  * (`createFormattedMdr`), which the ROM uses as it would one it formatted itself, and reads the
  * result both on the screen and in the image.
  */

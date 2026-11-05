@@ -1,5 +1,5 @@
 /*
- * What a unit-test run reports (`.plans/Z80_UNIT_TESTS_PLAN.md` D8, §4.2): shared by the runner, the
+ * What a unit-test run reports (`dev/plans/Z80_UNIT_TESTS_PLAN.md` D8, §4.2): shared by the runner, the
  * worker, the main process and the IDE. Plain data, so it crosses threads and IPC unchanged.
  */
 
@@ -50,7 +50,7 @@ export type UnitTestSummary = {
   cancelled?: boolean;
   /**
    * The machine's clock in Hz (base clock times multiplier): emulated seconds are T-states divided
-   * by it, the JUnit `time` of `.plans/UNIT_TESTS_CLI_PLAN.md` D7/T2
+   * by it, the JUnit `time` of `dev/plans/UNIT_TESTS_CLI_PLAN.md` D7/T2
    */
   clockHz?: number;
 };

@@ -3,7 +3,7 @@ import path from "path";
 
 /*
  * Where the main process finds a machine core's WASM file for the unit-test worker
- * (`.plans/Z80_UNIT_TESTS_PLAN.md` D6). The renderer loads a core through Vite's asset URL; the
+ * (`dev/plans/Z80_UNIT_TESTS_PLAN.md` D6). The renderer loads a core through Vite's asset URL; the
  * worker cannot, so the main process reads the bytes itself:
  *
  * - a development build runs from the repository: the core's `wasm/dist` folder is current;
@@ -32,7 +32,7 @@ const CORE_FOLDERS: Record<string, string> = {
  * `extraResources`) sit outside the asar; tried first
  */
 export function findWasmArtifact(artifactName: string, baseDir: string, resourcesDir?: string): string | undefined {
-  // --- A packaged app's plain copy, outside the asar (`.plans/UNIT_TESTS_CLI_PLAN.md` T3)
+  // --- A packaged app's plain copy, outside the asar (`dev/plans/UNIT_TESTS_CLI_PLAN.md` T3)
   const folder = CORE_FOLDERS[artifactName];
   if (folder && resourcesDir) {
     const candidate = path.join(resourcesDir, "wasm", folder, artifactName);

@@ -38,7 +38,7 @@ export function useConfirmPort(): ConfirmPort {
   return useMemo<ConfirmPort>(
     () => ({
       confirm: async (request: ConfirmRequest) => {
-        // --- Still opened through DialogProvider, per .docs/dialog-pattern.md.
+        // --- Still opened through DialogProvider, per dev/patterns/dialog-pattern.md.
         // --- The port only hides *which* service answers the question.
         const result = await dialogs.open<boolean, ConfirmRequest>(ConfirmDialog, request, {
           title: request.title,

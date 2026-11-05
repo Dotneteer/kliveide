@@ -1,7 +1,7 @@
 import type { Ht1080zSegment } from "./codePlacement";
 
 /*
- * An HT-1080Z (TRS-80 Model I) `/CMD` load module (`.plans/HT1080Z_CODE_INJECTION_PLAN.md` D6):
+ * An HT-1080Z (TRS-80 Model I) `/CMD` load module (`dev/plans/HT1080Z_CODE_INJECTION_PLAN.md` D6):
  *
  *   05 len name           the module header: the program's name
  *   01 len lo hi data...  a load block; `len` counts the address and the data, so a block of n data

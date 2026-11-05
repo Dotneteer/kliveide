@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-/* `.plans/TRACE_EXPORT_PLAN.md` §4.3: the save dialog that remembers its folder, and the menu's export */
+/* `dev/plans/TRACE_EXPORT_PLAN.md` §4.3: the save dialog that remembers its folder, and the menu's export */
 
 const env = vi.hoisted(() => ({
   showSaveDialog: vi.fn(),

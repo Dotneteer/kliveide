@@ -14,7 +14,7 @@ import { createTestZxNextWasmMachine } from "./wasm-next-test-helpers";
 /**
  * Sprite-attribute breakpoints (`sp:`), end to end: `DebugSupport` authoring the per-sprite
  * attribute mask, the core latching the first watched write, and the debug loop turning it into a
- * stop (`.plans/SPRITE_ATTRIBUTE_BREAKPOINTS_PLAN.md`). `test/zxnext-hw/sprites/attribute-watch.test.ts`
+ * stop (`dev/plans/SPRITE_ATTRIBUTE_BREAKPOINTS_PLAN.md`). `test/zxnext-hw/sprites/attribute-watch.test.ts`
  * covers the core's half on its own, the DMA and Copper writers included.
  *
  * The program selects sprite 12 through $303B, writes its five attributes through port $57, writes

@@ -20,10 +20,10 @@ import type { StatementAddresses } from "./builder";
 import type { SourceFiles } from "./sources";
 
 /**
- * The source-level tables (`.docs/z80-backend-debug-builder.md` §4): `SourceLevelDebugInfo` and its
+ * The source-level tables (`dev/patterns/z80-backend-debug-builder.md` §4): `SourceLevelDebugInfo` and its
  * extensions (plan §8.4), which source stepping, the call stack and the Variables panel read. It
  * reads the MIR, the emitted program, the assembler's listing and the front end's descriptors only:
- * no language's symbols or types (`.plans/SHARED_Z80_BACKEND_PLAN.md` §3.3).
+ * no language's symbols or types (`dev/plans/SHARED_Z80_BACKEND_PLAN.md` §3.3).
  *
  * The user's statements and the language library's are statements here; a fragment's code (Klive
  * BASIC's DATA items, which READ calls) counts as runtime. Library files come after the user's and

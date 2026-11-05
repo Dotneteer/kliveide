@@ -26,7 +26,7 @@ const SPECTRUM_MACHINES = [MI_SPECTRUM_48, MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_T
 
 /**
  * Saves the running ZX Spectrum 48K, 128K or +2E/+3E as a `.szx`, `.z80` or `.sna` snapshot
- * (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.3).
+ * (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.3).
  *
  * The file's extension picks the format; `.szx` keeps everything. What a format cannot hold is
  * listed as warnings (D3), and a state it would load back differently is refused. An existing file

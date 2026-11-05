@@ -30,13 +30,13 @@ export type RuntimeLayout = {
   codebank?: { slot: number; slots: number; depth: number; pages: number[] };
 };
 
-/** The back end's own packages (`.plans/SHARED_Z80_BACKEND_PLAN.md` §3.2): every program may link them. */
+/** The back end's own packages (`dev/plans/SHARED_Z80_BACKEND_PLAN.md` §3.2): every program may link them. */
 export const BACKEND_PACKAGES: readonly RuntimePackage[] = [corePackage, zxPackage];
 
 /**
  * The runtime a program links from: the back end's packages and its language's. Every module
  * links into the one assembler module `core` (labels `core.<label>`), so names and labels are
- * unique across all of them (`scripts/runtime-index.cjs` checks it).
+ * unique across all of them (`dev/scripts/runtime-index.cjs` checks it).
  */
 export class RuntimeLibrary {
   private readonly modulesByName = new Map<string, RuntimeModule>();

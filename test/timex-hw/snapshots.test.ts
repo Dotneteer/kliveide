@@ -7,7 +7,7 @@ import { createTimexSession, type TimexTestSession } from "../harness/timex";
 import { displayFileAddress, ink, paper } from "./_timex-helpers";
 
 /*
- * TC2048 snapshots and state files (`.plans/TIMEX_SCORPION_PLAN.md` G9.4a Phase 4): `.szx` machine 8
+ * TC2048 snapshots and state files (`dev/plans/TIMEX_SCORPION_PLAN.md` G9.4a Phase 4): `.szx` machine 8
  * with its SCLD block, `.z80` hardware mode 14 with port $FF in byte 36, `.sna` as a 48K with the
  * loss named, and the Klive state file (the core's memory image, port $FF included).
  */

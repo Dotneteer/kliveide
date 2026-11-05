@@ -1,5 +1,5 @@
 /*
- * A core's profile layout (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §2.2, D11): how its linear
+ * A core's profile layout (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §2.2, D11): how its linear
  * profile offsets lie over its partitions. The core's `Z80_PROFILE_PHYS_READ`/`_WRITE` macros produce
  * offsets; a layout names them in the IDE's own terms - the partition numbers `getPartitionLabels`
  * labels - so a banked source line is checked against its own bank's byte, not whatever was mapped at

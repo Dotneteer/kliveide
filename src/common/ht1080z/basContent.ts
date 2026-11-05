@@ -1,5 +1,5 @@
 /*
- * What makes a `.bas` an HT-1080Z program (`.plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D1, D-A): a tokenised
+ * What makes a `.bas` an HT-1080Z program (`dev/plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D1, D-A): a tokenised
  * Level II program and BASIC source text share the extension but never the content, so the file
  * decides, wherever it is and whatever machine runs.
  *

@@ -117,7 +117,7 @@ class MachineService implements IMachineService {
         // --- torn down (a run-to-cursor target, a NEX entry-point stop) and mean nothing on the
         // --- next one. Annotation-owned logpoints (DeZog `LOGPOINT` comments) go too: they belong
         // --- to a build for the machine being torn down, and the next build installs its own
-        // --- (`.plans/LOGPOINTS_PLAN.md` L10).
+        // --- (`dev/plans/LOGPOINTS_PLAN.md` L10).
         oldBps = this._controller.debugSupport.breakpoints.filter(
           (bp) => bp.owner?.kind !== "session" && bp.owner?.kind !== "annotation"
         );
@@ -144,7 +144,7 @@ class MachineService implements IMachineService {
       oldBps,
       bankSpaceFor(machineId, { ...modelInfo?.config, ...config })
     );
-    // --- Conditional breakpoints (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.6): what a condition
+    // --- Conditional breakpoints (`dev/plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.6): what a condition
     // --- reads, and the machine facts it compiles against - built with the same helper the IDE
     // --- validates with, so both sides agree on what a condition means.
     connectConditionSupport(newController.debugSupport, machine);

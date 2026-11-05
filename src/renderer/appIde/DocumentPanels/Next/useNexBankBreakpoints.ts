@@ -115,7 +115,7 @@ export function useNexBankBreakpointCounts(): Map<number, BankBreakpointSummary>
  * Keeping a sidecar's breakpoints and the emulator's in step.
  *
  * The emulator is the runtime authority; the sidecar is the only place these breakpoints are stored
- * (`.ai/nex-debugging.md`, which is also why the project file excludes them). So the
+ * (`dev/ai/nex-debugging.md`, which is also why the project file excludes them). So the
  * sidecar is read once per file and installed, and every later change is written back.
  */
 

@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { writeCodeSegments } from "@emu/machines/writeCodeSegments";
 
 /*
- * Banked segments go into their bank whatever is paged in (`.plans/Z80_UNIT_TESTS_PLAN.md` T5): a
+ * Banked segments go into their bank whatever is paged in (`dev/plans/Z80_UNIT_TESTS_PLAN.md` T5): a
  * 16K partition on the 128K family, two 8K pages on the Next.
  */
 

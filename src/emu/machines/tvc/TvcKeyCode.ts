@@ -3,7 +3,7 @@ import type { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
 /**
  * The keys of the TVC's 11 x 8 matrix (rtvc/info/tvc.md "Keyboard"; HW p.97), numbered
  * `row * 8 + column` as the core's `tvcSetKeyStatus` takes them. Port 03h bits 3-0 select a row and
- * port 58h reads its columns, active low. Rows 9 and 10 are open (`.ai/videoton-tvc.md`, "Open
+ * port 58h reads its columns, active low. Rows 9 and 10 are open (`dev/ai/videoton-tvc.md`, "Open
  * hardware questions", Q6).
  *
  * Row 8 holds INS, and the cursor keys and Tab, which BASIC's joystick 1 also reads (Tab is its

@@ -9,7 +9,7 @@ import type { Z88TestSession } from "../../harness/z88";
 
 /*
  * Fixed expectations for the Cambridge Z88 suites that once compared the WASM core with the
- * TypeScript machine in lockstep (`.plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`, Step 1).
+ * TypeScript machine in lockstep (`dev/plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`, Step 1).
  *
  * The TypeScript machine recorded every value in `goldens/*.json` before it was deleted (the last
  * commit that has it is tagged `z88-typescript-last`), and the WASM core matched every one. A suite

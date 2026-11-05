@@ -4,7 +4,7 @@ import { NEXT_PROFILES, type NextProfileId } from "@emu/machines/zxNext/nextProf
 import { createSession, forEachProfile, type NextTestSession } from "../../harness/zxnext";
 
 /*
- * NextReg $81 bit 3 and the +3 disk motor latch (core 3.02.03, `.ai/zxnext-cores/30201-to-30204.md`
+ * NextReg $81 bit 3 and the +3 disk motor latch (core 3.02.03, `dev/ai/zxnext-cores/30201-to-30204.md`
  * 1.6), seen through the Multiface +3 readback of $1FFD, on both profiles.
  *
  * Hardware:

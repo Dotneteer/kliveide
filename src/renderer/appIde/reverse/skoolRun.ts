@@ -17,7 +17,7 @@ import { loadAnnotationSidecar } from "@renderer/appIde/annotations/annotationSi
 import { readBankBytes } from "./detection";
 
 /*
- * `skool-import` against the running machine (`.docs/reverse-engineering-tools.md`, "SkoolKit import and export"):
+ * `skool-import` against the running machine (`dev/patterns/reverse-engineering-tools.md`, "SkoolKit import and export"):
  * the file's addresses resolved through the bank space (S-T1), its instructions checked against the
  * machine's bytes (S-T2), and the result offered as the Detect dialog's proposal table.
  */

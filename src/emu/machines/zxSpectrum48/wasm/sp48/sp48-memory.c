@@ -17,7 +17,7 @@ static inline uint8_t readScreenMemoryOffset(uint32_t offset) {
 
 #ifdef SP48_SCLD
 // ----------------------------------------------------------------------------
-// The Timex 2068 memory map (`.plans/TIMEX_SCORPION_PLAN.md` G9.4b; TS2068 Technical Manual
+// The Timex 2068 memory map (`dev/plans/TIMEX_SCORPION_PLAN.md` G9.4b; TS2068 Technical Manual
 // 2.1.8.1, 2.1.13.5). `sp48Memory` is the HOME bank: the 16K HOME ROM, then 48K of RAM, which the
 // SCLD's display reads whatever the CPU sees. Each 8K chunk the CPU addresses comes from HOME, or -
 // when its bit in port $F4 is set - from the DOCK (port $FF bit 7 clear) or the EXROM bank (set).

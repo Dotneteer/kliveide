@@ -240,7 +240,7 @@ export const activityRegistry: Activity[] = [
   withTexts({
     id: ACTIVITY_TEST_ID,
     iconName: "flask-conical",
-    // --- Testing → Add unit-test support, and the runs (`.plans/Z80_UNIT_TESTS_PLAN.md` D4, D16)
+    // --- Testing → Add unit-test support, and the runs (`dev/plans/Z80_UNIT_TESTS_PLAN.md` D4, D16)
     commands: TestingCommands
   }, { title: "panels.activity.testing" })
 ];
@@ -300,7 +300,7 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     restrictTo: [MI_ZXNEXT]
   }, { title: "panels.sideBar.nextRegisters" }),
   {
-    // --- Beside the Next Registers (`.plans/COPPER_DEBUGGING_PLAN.md` D16)
+    // --- Beside the Next Registers (`dev/plans/COPPER_DEBUGGING_PLAN.md` D16)
     id: "nextCopperPanel",
     title: "Copper",
     hostActivity: ACTIVITY_DEBUG_ID,
@@ -316,7 +316,7 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     requireFeature: [MF_ULA]
   },
   withTexts({
-    // --- The Videoton TVC's CRTC, palette, border and video banks (`.ai/videoton-tvc.md`, "IDE
+    // --- The Videoton TVC's CRTC, palette, border and video banks (`dev/ai/videoton-tvc.md`, "IDE
     // --- integration")
     id: "tvcVideoPanel",
     hostActivity: ACTIVITY_DEBUG_ID,
@@ -325,7 +325,7 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     restrictTo: [MI_TVC]
   }, { title: "panels.sideBar.tvcVideo" }),
   withTexts({
-    // --- The Enterprise's NICK: ports, counters, the current LPB and the LPT (`.plans/ENTERPRISE_PLAN.md` §11)
+    // --- The Enterprise's NICK: ports, counters, the current LPB and the LPT (`dev/plans/ENTERPRISE_PLAN.md` §11)
     id: "epNickPanel",
     hostActivity: ACTIVITY_DEBUG_ID,
     renderer: EpNickPanel,
@@ -333,7 +333,7 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     restrictTo: [MI_ENTERPRISE]
   }, { title: "panels.side.epNick.title" }),
   withTexts({
-    // --- The Enterprise's DAVE: paging, interrupts, BFh and sound (`.plans/ENTERPRISE_PLAN.md` §11)
+    // --- The Enterprise's DAVE: paging, interrupts, BFh and sound (`dev/plans/ENTERPRISE_PLAN.md` §11)
     id: "epDavePanel",
     hostActivity: ACTIVITY_DEBUG_ID,
     renderer: EpDavePanel,
@@ -409,7 +409,7 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     restrictTo: [MI_ZXNEXT]
   }, { title: "panels.sideBar.nextPalettes" }),
   withTexts({
-    // --- The Testing activity's first panel (`.plans/Z80_UNIT_TESTS_PLAN.md` D13)
+    // --- The Testing activity's first panel (`dev/plans/Z80_UNIT_TESTS_PLAN.md` D13)
     id: "unitTestsPanel",
     hostActivity: ACTIVITY_TEST_ID,
     renderer: UnitTestsPanel,
@@ -455,16 +455,16 @@ export const outputPaneRegistry: OutputPaneInfo[] = [
     id: PANE_ID_SCRIPTIMG,
   }, { displayName: "panels.outputPane.scriptOutput" }),
   withTexts({
-    // --- Logpoint output (`.plans/LOGPOINTS_PLAN.md` §4.3): its own pane, so a busy logpoint can
+    // --- Logpoint output (`dev/plans/LOGPOINTS_PLAN.md` §4.3): its own pane, so a busy logpoint can
     // --- be cleared without losing build or machine messages
     id: PANE_ID_LOG,
   }, { displayName: "panels.outputPane.log" }),
   withTexts({
-    // --- Unit-test results (`.plans/Z80_UNIT_TESTS_PLAN.md` D16)
+    // --- Unit-test results (`dev/plans/Z80_UNIT_TESTS_PLAN.md` D16)
     id: PANE_ID_TESTS,
   }, { displayName: "panels.outputPane.tests" }),
   withTexts({
-    // --- What scripts did through the automation server (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D13)
+    // --- What scripts did through the automation server (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` D13)
     id: PANE_ID_AUTOMATION,
   }, { displayName: "panels.outputPane.automation" })
 ];
@@ -519,7 +519,7 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     icon: "gauge"
   },
   {
-    // --- The two-pane File Manager (`.ai/file-manager.md`, D1)
+    // --- The two-pane File Manager (`dev/ai/file-manager.md`, D1)
     id: FILE_MANAGER_EDITOR,
     renderer: createFileManagerPanel,
     icon: "columns-2"
@@ -584,11 +584,11 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     renderer: createTapeViewerPanel,
     icon: "@file-tap-tzx",
     // --- Its blocks pop out into documents, and Go Back must return here
-    // --- (`.plans/TAPE_VIEWER_PLAN.md` §4.5)
+    // --- (`dev/plans/TAPE_VIEWER_PLAN.md` §4.5)
     navigation: fileDocumentNavigationAdapter
   },
   {
-    // --- An HT-1080Z .cas, .cmd or tokenised .bas (`.plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D5)
+    // --- An HT-1080Z .cas, .cmd or tokenised .bas (`dev/plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D5)
     id: HT1080Z_TAPE_VIEWER,
     renderer: createHt1080zTapeViewerPanel,
     icon: "@file-tap-tzx",
@@ -635,7 +635,7 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     navigation: fileDocumentNavigationAdapter
   },
   {
-    // --- `.sna`, `.z80` and `.szx` (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.8)
+    // --- `.sna`, `.z80` and `.szx` (`dev/plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.8)
     id: SPECTRUM_SNAPSHOT_VIEWER,
     renderer: createSpectrumSnapshotViewerPanel,
     icon: "chip",
@@ -643,7 +643,7 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     navigation: fileDocumentNavigationAdapter
   },
   {
-    // --- RZX input recordings (`.plans/RZX_PLAN.md` §4.6)
+    // --- RZX input recordings (`dev/plans/RZX_PLAN.md` §4.6)
     id: RZX_VIEWER,
     renderer: createRzxViewerPanel,
     icon: "chip",
@@ -651,13 +651,13 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     navigation: fileDocumentNavigationAdapter
   },
   {
-    // --- Klive state files (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.9)
+    // --- Klive state files (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.9)
     id: MACHINE_STATE_VIEWER,
     renderer: createMachineStateViewerPanel,
     icon: "chip"
   },
   {
-    // --- Debug recordings (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` D19)
+    // --- Debug recordings (`dev/plans/DEBUG_SESSION_RECORDING_PLAN.md` D19)
     id: DEBUG_RECORDING_VIEWER,
     renderer: createDebugRecordingViewerPanel,
     icon: "history"
@@ -667,7 +667,7 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     renderer: createZ88SnapshotViewerPanel,
     icon: "chip",
     // --- Its banks pop out into documents, and Go Back must return here
-    // --- (`.plans/Z88_SLOT_BROWSER_PLAN.md` §4.4)
+    // --- (`dev/plans/Z88_SLOT_BROWSER_PLAN.md` §4.4)
     navigation: fileDocumentNavigationAdapter
   },
   {
@@ -824,7 +824,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "ends",
     pattern: ".bas",
-    // --- A tokenised HT-1080Z program, by its content (`.plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D1-D3);
+    // --- A tokenised HT-1080Z program, by its content (`dev/plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D1-D3);
     // --- any other .bas is BASIC source, the entry below
     contentKind: "ht1080zBasic",
     ignoreCase: true,
@@ -901,8 +901,8 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "ends",
     pattern: ".cas",
-    // --- An HT-1080Z tape (`.plans/HT1080Z_PLAN.md` §9) or a Videoton TVC one
-    // --- (`.ai/videoton-tvc.md`, "Tape, disks and files"): the viewer reads which from the bytes
+    // --- An HT-1080Z tape (`dev/plans/HT1080Z_PLAN.md` §9) or a Videoton TVC one
+    // --- (`dev/ai/videoton-tvc.md`, "Tape, disks and files"): the viewer reads which from the bytes
     // --- (`detectCasFormat`) and shows either, and Run/Insert/Debug are enabled on that machine only
     ignoreCase: true,
     editor: HT1080Z_TAPE_VIEWER,
@@ -916,8 +916,8 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "ends",
     pattern: ".cmd",
-    // --- An HT-1080Z tape (`.plans/HT1080Z_PLAN.md` §9): its parts in the HT tape viewer
-    // --- (`.plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D5), Run/Insert/Debug
+    // --- An HT-1080Z tape (`dev/plans/HT1080Z_PLAN.md` §9): its parts in the HT tape viewer
+    // --- (`dev/plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D5), Run/Insert/Debug
     ignoreCase: true,
     editor: HT1080Z_TAPE_VIEWER,
     icon: "@file-tap-tzx",
@@ -930,7 +930,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "ends",
     pattern: ".p",
-    // --- A ZX80/ZX81 program file, which the machine's tape plays (`.ai/zx8081.md`, "Files, tape and the IDE")
+    // --- A ZX80/ZX81 program file, which the machine's tape plays (`dev/ai/zx8081.md`, "Files, tape and the IDE")
     ignoreCase: true,
     editor: P_FILE_VIEWER,
     icon: "@file-tap-tzx",
@@ -943,7 +943,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "ends",
     pattern: ".81",
-    // --- A ZX80/ZX81 program file, which the machine's tape plays (`.ai/zx8081.md`, "Files, tape and the IDE")
+    // --- A ZX80/ZX81 program file, which the machine's tape plays (`dev/ai/zx8081.md`, "Files, tape and the IDE")
     ignoreCase: true,
     editor: P_FILE_VIEWER,
     icon: "@file-tap-tzx",
@@ -956,7 +956,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "ends",
     pattern: ".o",
-    // --- A ZX80/ZX81 program file, which the machine's tape plays (`.ai/zx8081.md`, "Files, tape and the IDE")
+    // --- A ZX80/ZX81 program file, which the machine's tape plays (`dev/ai/zx8081.md`, "Files, tape and the IDE")
     ignoreCase: true,
     editor: P_FILE_VIEWER,
     icon: "@file-tap-tzx",
@@ -969,7 +969,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "ends",
     pattern: ".80",
-    // --- A ZX80/ZX81 program file, which the machine's tape plays (`.ai/zx8081.md`, "Files, tape and the IDE")
+    // --- A ZX80/ZX81 program file, which the machine's tape plays (`dev/ai/zx8081.md`, "Files, tape and the IDE")
     ignoreCase: true,
     editor: P_FILE_VIEWER,
     icon: "@file-tap-tzx",
@@ -979,7 +979,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     documentTabRenderer: programLaunchCommandBarRenderer,
     contextMenuInfo: getProgramLaunchContextMenuInfo
   },
-  // --- Disk images in the Disk Explorer (`.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md` B4): the
+  // --- Disk images in the Disk Explorer (`dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md` B4): the
   // --- explorer edits the file through the main process, so the document itself stays read-only
   ...[".dsk", ".trd", ".scl"].map((pattern) => ({
     matchType: "ends" as const,
@@ -991,7 +991,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     isReadOnly: true,
     openPermanent: true
   })),
-  // --- Microdrive cartridges (`.plans/MICRODRIVE_PLAN.md` Phase 3): the same explorer, one row of sectors
+  // --- Microdrive cartridges (`dev/plans/MICRODRIVE_PLAN.md` Phase 3): the same explorer, one row of sectors
   {
     matchType: "ends" as const,
     pattern: ".mdr",
@@ -1016,7 +1016,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     openPermanent: true
   })),
   /*
-   * SkoolKit files (`.docs/reverse-engineering-tools.md`, "SkoolKit import and export"): plain text in the editor;
+   * SkoolKit files (`dev/patterns/reverse-engineering-tools.md`, "SkoolKit import and export"): plain text in the editor;
    * `skool-import` reads them. `.ctl` is registered only as text, because the extension is generic.
    * Monaco colouring for skool files is a later follow-up.
    */
@@ -1035,7 +1035,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   /*
    * A ROM's annotations (`sp48.rom.dis`): opened in the ROM annotation editor, which edits a working
    * copy or a custom ROM's sidecar and shows a shipped one read-only. Before `.dis`, which it would
-   * otherwise match. `.plans/ROM_ANNOTATION_EDITING_PLAN.md` R4.
+   * otherwise match. `dev/plans/ROM_ANNOTATION_EDITING_PLAN.md` R4.
    */
   {
     matchType: "ends",
@@ -1055,7 +1055,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     isReadOnly: true
   },
   /*
-   * Annotation sidecars of every kind (`.docs/annotations.md`, "Commands"):
+   * Annotation sidecars of every kind (`dev/patterns/annotations.md`, "Commands"):
    * `game.nex.dis`, `game.z80.dis`, a project's `annotations.dis`, a ROM's `sp48.rom.dis`. Read-only
    * JSON: they are edited through the annotation dialogs, which keep the file valid.
    */
@@ -1105,7 +1105,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     contextMenuInfo: getSpectrumSnapshotContextMenuInfo
   },
   {
-    // --- An OZvm Cambridge Z88 snapshot (`.plans/Z88_SNAPSHOT_PLAN.md` §4.8)
+    // --- An OZvm Cambridge Z88 snapshot (`dev/plans/Z88_SNAPSHOT_PLAN.md` §4.8)
     matchType: "ends",
     pattern: ".z88",
     editor: Z88_SNAPSHOT_VIEWER,
@@ -1117,7 +1117,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     contextMenuInfo: getZ88SnapshotContextMenuInfo
   },
   {
-    // --- ZX Spectrum snapshots (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.8-4.9)
+    // --- ZX Spectrum snapshots (`dev/plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.8-4.9)
     matchType: "ends",
     pattern: ".sna",
     editor: SPECTRUM_SNAPSHOT_VIEWER,
@@ -1142,7 +1142,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     contextMenuInfo: getSpectrumSnapshotContextMenuInfo
   },
   {
-    // --- RZX input recordings (`.plans/RZX_PLAN.md` §4.6)
+    // --- RZX input recordings (`dev/plans/RZX_PLAN.md` §4.6)
     matchType: "ends",
     pattern: ".rzx",
     editor: RZX_VIEWER,
@@ -1155,7 +1155,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     contextMenuInfo: getRzxContextMenuInfo
   },
   {
-    // --- Klive state files (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.9)
+    // --- Klive state files (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.9)
     matchType: "ends",
     pattern: ".kls",
     editor: MACHINE_STATE_VIEWER,
@@ -1168,7 +1168,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     contextMenuInfo: getMachineStateContextMenuInfo
   },
   {
-    // --- Debug recordings (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` D19)
+    // --- Debug recordings (`dev/plans/DEBUG_SESSION_RECORDING_PLAN.md` D19)
     matchType: "ends",
     pattern: ".klr",
     editor: DEBUG_RECORDING_VIEWER,

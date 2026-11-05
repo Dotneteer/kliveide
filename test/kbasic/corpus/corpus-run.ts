@@ -23,7 +23,7 @@ import { isNextOnly, oracleDifferences, programs, readExpectations, reportChar, 
  * | `'@expect keys <key> ...` | hold these keys (`SpectrumKeyCode` names) from the start |
  * | `'@expect oracle-differs <entry>` | the upstream oracle's result differs on purpose: the semantics annex entry that decides it (one line per entry; a mark on a program upstream agrees with fails) |
  *
- * When `test/kbasic/oracle/<area>/<name>.json` exists (written by `scripts/kbasic-oracle.cjs` from a
+ * When `test/kbasic/oracle/<area>/<name>.json` exists (written by `dev/scripts/kbasic-oracle.cjs` from a
  * locally installed `zxbc`, plan D12), the screen rows, error report and peeks the program expects
  * must be what upstream showed too, unless the program names the annex entry that differs.
  *
@@ -32,9 +32,9 @@ import { isNextOnly, oracleDifferences, programs, readExpectations, reportChar, 
 const ROOT = __dirname;
 const ORACLE = join(__dirname, "..", "oracle");
 
-/** The semantics annex entries (`.ai/zxbasic-syntax`), which `oracle-differs` must name. */
+/** The semantics annex entries (`dev/ai/zxbasic-syntax`), which `oracle-differs` must name. */
 const ANNEX = new Set<string>(
-  JSON.parse(readFileSync(join(__dirname, "../../../.ai/zxbasic-syntax/zxbasic-syntax.json"), "utf8")).semantics.entries.map((e: { name: string }) => e.name)
+  JSON.parse(readFileSync(join(__dirname, "../../../dev/ai/zxbasic-syntax/zxbasic-syntax.json"), "utf8")).semantics.entries.map((e: { name: string }) => e.name)
 );
 
 function heapUsed(r: Run): number {
@@ -45,7 +45,7 @@ function heapUsed(r: Run): number {
 }
 
 /**
- * G4 (`.docs/z80-backend-debug-builder.md` §7), checked on the run: inside a routine SP is IX minus the
+ * G4 (`dev/patterns/z80-backend-debug-builder.md` §7), checked on the run: inside a routine SP is IX minus the
  * frame at every statement entry; in the main program it is the first statement's SP minus two bytes
  * per GOSUB that has not returned yet. DATA items, which READ calls, are left out. A GOSUB or ON (which may or may not call) allows one level
  * more at the next main entry, a RETURN one level less; a SUB or FUNCTION call leaves it.

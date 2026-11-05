@@ -9,7 +9,7 @@ import { ht1080zExportFile } from "@renderer/appIde/utils/ht1080z-code";
 import { createHtSession, Ht1080zTestSession } from "../harness/ht1080z";
 
 /**
- * The HT-1080Z project template (`.plans/HT1080Z_CODE_INJECTION_PLAN.md` D8) assembles without
+ * The HT-1080Z project template (`dev/plans/HT1080Z_CODE_INJECTION_PLAN.md` D8) assembles without
  * errors and does what its comments say, run as the IDE runs it and loaded from its export.
  */
 const SOURCE = readFileSync(

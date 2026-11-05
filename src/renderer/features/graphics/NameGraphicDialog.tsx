@@ -24,7 +24,7 @@ import { MASK_LABELS } from "./GraphicsToolbar";
 import styles from "./NameGraphicDialog.module.scss";
 
 /*
- * *Name graphic…* (`.docs/reverse-engineering-tools.md`, "Graphics finder"): a name and the layout the
+ * *Name graphic…* (`dev/patterns/reverse-engineering-tools.md`, "Graphics finder"): a name and the layout the
  * graphic is read with, pre-filled from the finder's look. The caller publishes the result as one
  * session update (`withNamedGraphic`).
  */

@@ -83,7 +83,7 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
       state === MachineControllerState.Pausing ||
       state === MachineControllerState.Paused);
   const canStep = !isCompiling && state === MachineControllerState.Paused;
-  // --- Lite step back (`.plans/LITE_STEP_BACK_PLAN.md` §4.4): on every machine that records history
+  // --- Lite step back (`dev/plans/LITE_STEP_BACK_PLAN.md` §4.4): on every machine that records history
   const machineId = useSelector((s) => s.emulatorState?.machineId);
   const historyPosition = useSelector((s) => s.emulatorState?.historyPosition);
   // --- Off with the advanced-debugging switch (`@common/features/advancedDebugging`)

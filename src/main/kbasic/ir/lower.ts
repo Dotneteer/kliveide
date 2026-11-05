@@ -33,7 +33,7 @@ import {
 } from "../../z80-backend/mir/mir";
 
 /**
- * Lowers the typed program to MIR (`.docs/kbasic-lowering.md`). Variables are read and written through
+ * Lowers the typed program to MIR (`dev/patterns/kbasic-lowering.md`). Variables are read and written through
  * slots; temporaries are virtual registers that never leave their statement. Every statement (and
  * every separately executing part of a block statement) gets a statement id with its span.
  *
@@ -972,7 +972,7 @@ class Lowering {
   }
 
   // ----------------------------------------------------------------------------------------------
-  // Control flow (.docs/kbasic-lowering.md §8.3-§8.7)
+  // Control flow (dev/patterns/kbasic-lowering.md §8.3-§8.7)
 
   private ifStatement(s: Extract<BoundStatement, { kind: "if" }>): void {
     const after = this.newLabel();
@@ -1121,7 +1121,7 @@ class Lowering {
   }
 
   // ===============================================================================================
-  // Routines (.docs/kbasic-lowering.md §8.8, .docs/z80-backend-lir-regalloc.md §6)
+  // Routines (dev/patterns/kbasic-lowering.md §8.8, dev/patterns/z80-backend-lir-regalloc.md §6)
 
   private allocateLocal(type: MType): Slot {
     return this.allocateBytes(mtypeSize(type));
@@ -1614,7 +1614,7 @@ class Lowering {
   }
 
   /**
-   * A SUB or FUNCTION call. Arguments are evaluated last first (.docs/z80-backend-mir.md Q1), so the
+   * A SUB or FUNCTION call. Arguments are evaluated last first (dev/patterns/z80-backend-mir.md Q1), so the
    * stack machine leaves them where STDCALL wants them; each is a vreg, so each is pushed in turn.
    */
   private call(routine: RoutineSymbol, args: BoundArgument[], resultType: MType | undefined): Value | undefined {
@@ -1810,7 +1810,7 @@ class Lowering {
   }
 
   // ----------------------------------------------------------------------------------------------
-  // Strings (.docs/kbasic-string-ownership.md)
+  // Strings (dev/patterns/kbasic-string-ownership.md)
 
   /** 1 when the value is owned (a runtime routine should free it after use), else 0. */
   private consumeFlag(v: Value): number {

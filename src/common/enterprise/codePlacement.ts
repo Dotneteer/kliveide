@@ -1,7 +1,7 @@
 import { t } from "@common/i18n/i18n";
 
 /*
- * Where injected or exported Enterprise code may go (`.plans/ENTERPRISE_PLAN.md` §12). One set of rules
+ * Where injected or exported Enterprise code may go (`dev/plans/ENTERPRISE_PLAN.md` §12). One set of rules
  * for Run and Export, so what Run executes is what Export writes.
  *
  * The program is an EXOS `$$APP` (module type 5, STORAGE_FIRMWARE_SOFTWARE §3.7): a 16-byte header

@@ -4,7 +4,7 @@ import { C_LANGUAGE } from "./c";
 
 /**
  * The source-level debugger's language plugins, by `SourceLevelDebugInfo.language`
- * (`.plans/SHARED_Z80_BACKEND_PLAN.md` §12.4). The only file that imports a plugin: the debugger's
+ * (`dev/plans/SHARED_Z80_BACKEND_PLAN.md` §12.4). The only file that imports a plugin: the debugger's
  * core asks here, and a language without a plugin gets the neutral one.
  */
 const PLUGINS: Record<string, DebugLanguageSupport> = {

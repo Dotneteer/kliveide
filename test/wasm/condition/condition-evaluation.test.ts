@@ -18,7 +18,7 @@ import {
  * What breakpoint conditions evaluate to - every operator and precedence level, the literal forms,
  * registers, flags, accesses, partitions, banks, strings and labels - checked against the C
  * evaluator every Z80 core includes (`src/emu/z80/wasm/z80-condition.c`), run standalone through
- * `condition-host.ts` (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`). The expectations are the ones
+ * `condition-host.ts` (`dev/plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`). The expectations are the ones
  * the TypeScript evaluator met before it was retired.
  */
 
@@ -478,7 +478,7 @@ describe("labels (§3.6)", () => {
 
 });
 
-describe("the C evaluator's own guarantees (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`)", () => {
+describe("the C evaluator's own guarantees (`dev/plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`)", () => {
   const F = CONDITION_FORMAT;
   const ctx = context();
 

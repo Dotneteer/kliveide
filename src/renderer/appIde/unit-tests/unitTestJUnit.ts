@@ -4,7 +4,7 @@ import { toJUnitXml } from "@common/unit-tests/junit";
 import { t } from "@common/i18n/i18n";
 
 /**
- * The last run's results as JUnit (`.plans/UNIT_TESTS_CLI_PLAN.md` D14): the command line's writer
+ * The last run's results as JUnit (`dev/plans/UNIT_TESTS_CLI_PLAN.md` D14): the command line's writer
  * on the Test panel's results, so a file exported here matches the one `klive test --junit` writes
  * @returns The document, or why there is none
  */

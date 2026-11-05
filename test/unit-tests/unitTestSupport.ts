@@ -13,13 +13,13 @@ import { runUnitTests } from "@main/unit-tests/UnitTestRunner";
 import { KLIVE_UNIT_TEST_INCLUDE } from "@main/unit-tests/includes/kliveInclude";
 import { MI_HT1080Z, MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48, MI_TVC, MI_ZXNEXT, MI_ENTERPRISE } from "@common/machines/constants";
 
-import { buildSp48Wasm, productionOutput as sp48Output } from "../../scripts/build-sp48-wasm.cjs";
-import { buildSp128Wasm, productionOutput as sp128Output } from "../../scripts/build-sp128-wasm.cjs";
-import { buildSpP3eWasm, productionOutput as spp3eOutput } from "../../scripts/build-spp3e-wasm.cjs";
-import { productionOutput as zxnextOutput } from "../../scripts/build-zxnext-wasm.cjs";
-import { buildHt1080zWasm, productionOutput as ht1080zOutput } from "../../scripts/build-ht1080z-wasm.cjs";
-import { buildTvcWasm, productionOutput as tvcOutput } from "../../scripts/build-tvc-wasm.cjs";
-import { buildEpWasm, productionOutput as epOutput } from "../../scripts/build-ep-wasm.cjs";
+import { buildSp48Wasm, productionOutput as sp48Output } from "../../dev/scripts/build-sp48-wasm.cjs";
+import { buildSp128Wasm, productionOutput as sp128Output } from "../../dev/scripts/build-sp128-wasm.cjs";
+import { buildSpP3eWasm, productionOutput as spp3eOutput } from "../../dev/scripts/build-spp3e-wasm.cjs";
+import { productionOutput as zxnextOutput } from "../../dev/scripts/build-zxnext-wasm.cjs";
+import { buildHt1080zWasm, productionOutput as ht1080zOutput } from "../../dev/scripts/build-ht1080z-wasm.cjs";
+import { buildTvcWasm, productionOutput as tvcOutput } from "../../dev/scripts/build-tvc-wasm.cjs";
+import { buildEpWasm, productionOutput as epOutput } from "../../dev/scripts/build-ep-wasm.cjs";
 
 /*
  * Shared by the unit-test runner's tests: the production cores and ROMs, read from the repo the way

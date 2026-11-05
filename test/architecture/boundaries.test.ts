@@ -4,7 +4,7 @@ import { dirname, join, relative, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 /**
- * The architectural boundaries of `.plans/SHARED_Z80_BACKEND_PLAN.md`:
+ * The architectural boundaries of `dev/plans/SHARED_Z80_BACKEND_PLAN.md`:
  *
  * - **Part A (§1.2, §4.4):** the shared back end imports nothing from a language, and a language
  *   imports only the back-end files of §4.4 and does no Z80 code generation of its own.

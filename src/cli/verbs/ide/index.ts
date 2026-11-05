@@ -27,7 +27,7 @@ import { bpVerb, memVerb, pokeVerb, regsVerb, screenshotVerb } from "./state";
 import { cmdVerb, eventsVerb, rpcVerb } from "./raw";
 
 /*
- * `klive ide <verb>` (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D1, D12): the verbs that drive a
+ * `klive ide <verb>` (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` D1, D12): the verbs that drive a
  * running Klive through its automation server. With no verb it prints the connection status.
  */
 

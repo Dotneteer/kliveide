@@ -7,7 +7,7 @@ import { loadProject } from "../project";
 import { parseMachineOption } from "./test";
 
 /*
- * `klive build` (`.plans/UNIT_TESTS_CLI_PLAN.md` D2, Q3): compile the build root, for CI jobs that
+ * `klive build` (`dev/plans/UNIT_TESTS_CLI_PLAN.md` D2, Q3): compile the build root, for CI jobs that
  * only assemble. Errors go to stderr in the gcc format; `--out` writes the code.
  */
 

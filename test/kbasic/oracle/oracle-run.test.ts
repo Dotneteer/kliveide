@@ -7,7 +7,7 @@ import { runBinary, runBinaryThroughBasic } from "../codegen/run-kit";
 import { readExpectations, type OracleResult } from "../corpus/expectations";
 
 /**
- * The behavioural oracle's runner (plan D12, R9). `scripts/kbasic-oracle.cjs` compiles corpus
+ * The behavioural oracle's runner (plan D12, R9). `dev/scripts/kbasic-oracle.cjs` compiles corpus
  * programs with a locally installed `zxbc` into a temporary folder and starts this file with
  * `KBASIC_ORACLE_MANIFEST` naming them; without it (in CI, in a normal test run) there is nothing to
  * do. Each binary runs on the 48K harness as a corpus program does, and only what was observed is

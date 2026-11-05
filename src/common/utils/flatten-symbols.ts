@@ -1,5 +1,5 @@
 /*
- * A compilation's symbols with its modules' symbols included (`.plans/Z80_UNIT_TESTS_PLAN.md` T4).
+ * A compilation's symbols with its modules' symbols included (`dev/plans/Z80_UNIT_TESTS_PLAN.md` T4).
  *
  * The Klive assembler keeps a module's symbols in that module (`nestedModules`), so a reader of the
  * root `symbols` alone never saw `Module1.UT_test2`. This walk adds them under their dotted name, the

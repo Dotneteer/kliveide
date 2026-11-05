@@ -16,7 +16,7 @@ import { VIEW_NAMES } from "@renderer/appIde/DocumentPanels/Next/NexBankBrowser"
 import { aListing, anAnnotationModel, aState } from "../dialogs/nexAnnotationEditor/fixtures";
 
 /*
- * The NEX panels' text in the pseudo-locale (`.ai/localization.md`): the pure
+ * The NEX panels' text in the pseudo-locale (`dev/ai/localization.md`): the pure
  * formatters behind the bank browser, the pop-out header and the annotation editor produce pseudo
  * text, and the annotation menu, built before a language switch, follows the switch when it is read.
  */

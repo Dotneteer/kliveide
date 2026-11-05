@@ -466,7 +466,7 @@ export abstract class ZxSpectrumBase extends Z80MachineBase implements IZxSpectr
     // --- `await delay(...)` between keys) cannot outrun a machine that is not advancing at real
     // --- time. Anchored to `this.tacts`, such keys shared one window and `emulateKeystroke()`
     // --- discarded the ones whose window had passed without ever pressing them. See
-    // --- `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.12.
+    // --- `dev/plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.12.
     const tactsPerFrame = this.tactsInFrame * this.clockMultiplier;
     const queue = this.emulatedKeyStrokes;
     const lastEndTact = queue.length > 0 ? queue[queue.length - 1].endTact : this.tacts;
@@ -506,7 +506,7 @@ export abstract class ZxSpectrumBase extends Z80MachineBase implements IZxSpectr
     // --- Straight to memory (`doWriteMemory`), as the Next's injection does: injecting is not
     // --- something the emulated CPU does, so it takes no contention and no machine time. The
     // --- contended `writeMemory` added T-states to the TypeScript side's counter that the core never
-    // --- ran, so `tacts` went backwards at the next sync (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` §10).
+    // --- ran, so `tacts` went backwards at the next sync (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` §10).
     // --- Clear the screen unless otherwise requested
     if (!codeToInject.options.noCls) {
       for (let addr = 0x4000; addr < 0x5800; addr++) {

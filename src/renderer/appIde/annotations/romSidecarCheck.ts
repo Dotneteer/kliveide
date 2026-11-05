@@ -13,7 +13,7 @@ import { romDecoderFor } from "./romDecoder";
 import { inheritsOf, withInheritedEntries, type InheritedSidecarSource } from "./romInheritance";
 
 /*
- * Is a working copy ready to be copied into `src/public/roms/`? (`.plans/ROM_ANNOTATION_EDITING_PLAN.md`
+ * Is a working copy ready to be copied into `src/public/roms/`? (`dev/plans/ROM_ANNOTATION_EDITING_PLAN.md`
  * R7.)
  *
  * The same assertions `test/annotations/shippedRomSidecars.test.ts` makes about every shipped

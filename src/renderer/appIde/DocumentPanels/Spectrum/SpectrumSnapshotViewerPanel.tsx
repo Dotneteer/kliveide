@@ -58,7 +58,7 @@ import {
 
 /*
  * The ZX Spectrum snapshot viewer for `.sna`, `.z80` and `.szx` files
- * (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.8, decision D6): what the file holds and whether (and as
+ * (`dev/plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.8, decision D6): what the file holds and whether (and as
  * what) Klive can load it, the screen, the Z80, ULA, paging and AY state, the 64K at PC as a memory
  * dump or disassembly, every RAM bank in a bank browser, and the format's own header fields.
  *
@@ -506,7 +506,7 @@ const BanksSection = ({ ctx, info, fullPath }: SectionProps & { fullPath: string
   const documentHubService = useDocumentHubService();
   const { navigationHistoryService, projectService } = useAppServices();
   /*
-   * The snapshot's annotations (`<snapshot>.dis`, `.docs/annotations.md`
+   * The snapshot's annotations (`<snapshot>.dis`, `dev/patterns/annotations.md`
    * §4.6): a popped-out bank is annotated when the file exists, and the banner creates it, as the
    * NEX viewer's does. Loading the snapshot into the machine (`zx-snapshot`) makes the same file the
    * active annotation set.

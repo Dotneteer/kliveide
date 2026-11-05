@@ -5,7 +5,7 @@ import { historyReasonText, historyStepText } from "@common/history/historyNavig
 import { parseHistoryTarget } from "@renderer/appIde/commands/HistoryCommands";
 
 /*
- * The small pure pieces of lite step back (`.plans/LITE_STEP_BACK_PLAN.md` §4.5, Q3, T7): the
+ * The small pure pieces of lite step back (`dev/plans/LITE_STEP_BACK_PLAN.md` §4.5, Q3, T7): the
  * `history-goto` target, the status texts, and the reverse keys.
  */
 

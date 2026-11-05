@@ -27,7 +27,7 @@ import { findWasmArtifact } from "./wasmArtifacts";
 import { UNIT_TEST_LANGUAGES } from "./addUnitTestSupport";
 
 /*
- * The main process's side of a unit-test run (`.plans/Z80_UNIT_TESTS_PLAN.md` D6, D14, D15, D19):
+ * The main process's side of a unit-test run (`dev/plans/Z80_UNIT_TESTS_PLAN.md` D6, D14, D15, D19):
  * it keeps the last build, resolves the machine, the project settings, the core and the ROM folder
  * (T11), starts the worker and turns its events into store actions every window sees.
  */

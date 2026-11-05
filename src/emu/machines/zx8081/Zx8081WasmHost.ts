@@ -244,7 +244,7 @@ export abstract class Zx8081WasmHost extends Z80MachineBase {
   }
 
   // ==========================================================================================
-  // Code injection (`.ai/zx8081.md`, "Machine code decisions", D4) and tape loading
+  // Code injection (`dev/ai/zx8081.md`, "Machine code decisions", D4) and tape loading
 
   /**
    * The code model this machine runs: the ROM decides, so a ZX80 with the 8K ROM runs ZX81 code

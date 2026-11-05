@@ -36,7 +36,7 @@ export type TapeLoadCommandArgs = {
   "-e"?: boolean;
 };
 
-/** The machines a tape loads into from the IDE (`.plans/TAPE_VIEWER_PLAN.md` D4) */
+/** The machines a tape loads into from the IDE (`dev/plans/TAPE_VIEWER_PLAN.md` D4) */
 export const TAPE_LOAD_MACHINES: readonly string[] = [
   MI_SPECTRUM_48,
   MI_SPECTRUM_128,
@@ -47,7 +47,7 @@ export const TAPE_LOAD_MACHINES: readonly string[] = [
 
 /**
  * Why an HT-1080Z tape (`.cas`, `.cmd`) cannot be loaded into the current machine, or undefined when
- * it can (`.plans/HT1080Z_PLAN.md` §9).
+ * it can (`dev/plans/HT1080Z_PLAN.md` §9).
  * @param state The IDE's state (the part read here)
  */
 export function htTapeLoadGuard(state: { emulatorState?: { machineId?: string } }): string | undefined {
@@ -121,7 +121,7 @@ export function resolveTapePath(file: string, projectFolder?: string | null): st
 /**
  * Why a tape cannot be loaded into the current machine, or undefined when it can. Shared by the
  * command, the tape viewer's buttons and the Explorer's entries, so all three refuse the same way
- * (`.plans/TAPE_VIEWER_PLAN.md` §4.6).
+ * (`dev/plans/TAPE_VIEWER_PLAN.md` §4.6).
  *
  * An allow-list, not the machine's tape-support flag: the ZX Spectrum Next supports tapes too, but
  * through NextZXOS and its own menu, which is not what these actions drive.
@@ -148,7 +148,7 @@ async function readCasFormat(context: IdeCommandContext, file: string | undefine
 }
 
 /**
- * Loads a `.tap` or `.tzx` file into the ZX Spectrum's tape deck (`.plans/TAPE_VIEWER_PLAN.md`
+ * Loads a `.tap` or `.tzx` file into the ZX Spectrum's tape deck (`dev/plans/TAPE_VIEWER_PLAN.md`
  * §4.6).
  *
  * With no option it only inserts the tape - as the emulator's "Select Tape File..." menu does, and
@@ -233,7 +233,7 @@ export class TapeLoadCommand extends IdeCommandBase<TapeLoadCommandArgs> {
     if (args["-e"] && args.file?.trim() && !isHtTape) {
       messages.push(validationError(t("commands.tapeLoad.entryHtOnly")));
     }
-    // --- An HT-1080Z tape loads into the HT only (`.plans/HT1080Z_PLAN.md` §9)
+    // --- An HT-1080Z tape loads into the HT only (`dev/plans/HT1080Z_PLAN.md` §9)
     if (isHtTape) {
       if (currentMachine !== MI_HT1080Z) {
         const name = machineRegistry.find((m) => m.machineId === currentMachine)?.displayName ?? currentMachine;

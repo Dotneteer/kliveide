@@ -11,7 +11,7 @@ import { DebugSupport, NEXTREG_WATCH_CPU, NEXTREG_WATCH_COPPER } from "@emu/mach
  * table is allowed to be too generous and `hasNextRegWrite` is not. Every case below is really
  * asking "is the approximation still a superset of the exact answer?".
  *
- * See `.plans/NEXTREG_WRITE_BREAKPOINTS_PLAN.md` §4.4.
+ * See `dev/plans/NEXTREG_WRITE_BREAKPOINTS_PLAN.md` §4.4.
  */
 
 const FLAGS = 0x000;

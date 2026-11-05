@@ -7,7 +7,7 @@ import { PF_CODE, PF_EXECUTED } from "@common/profile/profileTypes";
 import { buildCoverageModel, coverageTotals, lineCoverage } from "@common/profile/coverageModel";
 
 /*
- * The coverage model (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D11, D12, T8, Phase 4): asm lines,
+ * The coverage model (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D11, D12, T8, Phase 4): asm lines,
  * a macro invocation whose expansion ran only in part, banked segments checked against their own
  * bank, and a Klive BASIC statement's instruction starts decoded from its code.
  */

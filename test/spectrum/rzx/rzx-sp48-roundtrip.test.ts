@@ -13,7 +13,7 @@ import { HistoryKind } from "@common/history/historyRecord";
 import { createSp48Session, type Sp48TestSession } from "../../harness/sp48";
 
 /*
- * The RZX determinism proof on the 48K (`.plans/RZX_PLAN.md` Phase 3, §1.3): a session recorded on
+ * The RZX determinism proof on the 48K (`dev/plans/RZX_PLAN.md` Phase 3, §1.3): a session recorded on
  * the real core plays back to the identical machine state - RAM and registers at every 50th frame
  * and at the end - whatever keys are held during playback. Then the desync checks.
  *
@@ -240,7 +240,7 @@ describe("RZX round trip on the 48K (the determinism proof)", () => {
   }, 120_000);
 
   /*
-   * Playback records execution history (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` D8, T9): a desync
+   * Playback records execution history (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` D8, T9): a desync
    * stop is where "how did I get here?" matters. The recorder only reads the CPU, so it cannot disturb
    * the replaced IN values or the fetch count that places the interrupts.
    */

@@ -7,15 +7,15 @@ export const MI_ZXNEXT = "zxnext";
 export const MI_C64 = "c64";
 export const MI_ZX80 = "zx80";
 export const MI_ZX81 = "zx81";
-/** The Timex Computer 2048 (`.plans/TIMEX_SCORPION_PLAN.md`; the TC2068/TS2068 join as models) */
+/** The Timex Computer 2048 (`dev/plans/TIMEX_SCORPION_PLAN.md`; the TC2068/TS2068 join as models) */
 export const MI_TIMEX = "timex";
-/** The Scorpion ZS-256 (`.plans/TIMEX_SCORPION_PLAN.md` G9.4c), on the 128K's core */
+/** The Scorpion ZS-256 (`dev/plans/TIMEX_SCORPION_PLAN.md` G9.4c), on the 128K's core */
 export const MI_SCORPION = "scorpion";
-/** The HT-1080Z (`.plans/HT1080Z_PLAN.md`): Series I, Series II and the /64 as models */
+/** The HT-1080Z (`dev/plans/HT1080Z_PLAN.md`): Series I, Series II and the /64 as models */
 export const MI_HT1080Z = "ht1080z";
-/** The Videoton TV Computer (`.ai/videoton-tvc.md`): the 64K and the 64K+ as models */
+/** The Videoton TV Computer (`dev/ai/videoton-tvc.md`): the 64K and the 64K+ as models */
 export const MI_TVC = "tvc";
-/** The Enterprise 64/128 (`.plans/ENTERPRISE_PLAN.md`): the 128 and the 64 as models */
+/** The Enterprise 64/128 (`dev/plans/ENTERPRISE_PLAN.md`): the 128 and the 64 as models */
 export const MI_ENTERPRISE = "ep";
 
 /**
@@ -34,7 +34,7 @@ export const MEDIA_INFO_MACHINE_IDS: string[] = [
 
 /**
  * The machines with a raster beam the emulator can show on its paused screen
- * (`.plans/BEAM_POSITION_OVERLAY_PLAN.md`): the ZX Spectrum family, the Next, the HT-1080Z, the TVC and the
+ * (`dev/plans/BEAM_POSITION_OVERLAY_PLAN.md`): the ZX Spectrum family, the Next, the HT-1080Z, the TVC and the
  * Enterprise. Not
  * the Z88 (an LCD, no beam), the ZX80/81 (a CPU-generated display) or the C64. The toolbar button and the View menu
  * item appear only for these.
@@ -60,7 +60,7 @@ export const TV_NOISE_MACHINE_IDS: string[] = [MI_ZX80, MI_ZX81];
 
 /**
  * The machines with a Sinclair ULA whose late timing and snow Klive emulates (the 16K, the 48K and the
- * 128K; `.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phases 4, 5). The Pentagon among the 128K's models
+ * 128K; `dev/plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phases 4, 5). The Pentagon among the 128K's models
  * ignores both.
  */
 export const ULA_TIMING_MACHINE_IDS: string[] = [MI_SPECTRUM_48, MI_SPECTRUM_128];
@@ -115,13 +115,13 @@ export const MC_EP_HOSTFS = "epHostFs";
 export const MC_EP_EXDOS = "epExdos";
 /**
  * The 48K, the 128K (its own timing, not the Pentagon's or the Scorpion's) and the +2A/+3/+2E/+3E: a
- * DivMMC is connected (`.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md` C5). It boots the esxDOS ROM the
+ * DivMMC is connected (`dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md` C5). It boots the esxDOS ROM the
  * user names (`SETTING_EMU_ESXDOS_ROM`) from the SD card the SD card menu names.
  */
 export const MC_DIVMMC = "divMmc";
 /**
  * The 48K and the 128K (its own timing): a ZX Interface 1 is connected, with its Microdrives
- * (`.plans/MICRODRIVE_PLAN.md`). Never together with the DivMMC: both decode port $E7 (Q4).
+ * (`dev/plans/MICRODRIVE_PLAN.md`). Never together with the DivMMC: both decode port $E7 (Q4).
  */
 export const MC_INTERFACE1 = "interface1";
 
@@ -156,7 +156,7 @@ export const MF_ALLOW_SCAN_LINES = "allowScanLines";
 export const MF_INJECT_SUPPORT = "injectSupport";
 /**
  * Whether the machine records execution history in debug sessions
- * (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` D12): the Execution History document, its commands and
+ * (`dev/plans/EXECUTION_HISTORY_VIEWER_PLAN.md` D12): the Execution History document, its commands and
  * its menu item gate on this, not on a list of machine ids, so a core that starts recording lights
  * them up by setting it here.
  */
@@ -164,14 +164,14 @@ export const MF_EXEC_HISTORY = "execHistory";
 
 /**
  * Whether the machine keeps a reverse-debugging timeline in debug sessions
- * (`.plans/REVERSE_DEBUGGING_PLAN.md` D19): set per core once it passes the journal-replay
+ * (`dev/plans/REVERSE_DEBUGGING_PLAN.md` D19): set per core once it passes the journal-replay
  * determinism test (`test/wasm/reverse/journal-replay-determinism.test.ts`).
  */
 export const MF_REVERSE_DEBUG = "reverseDebug";
 
 /**
  * Whether the machine's core keeps an access profile: code coverage, the memory heat map and the
- * profiler's time (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D15). Debug -> Code Coverage, the
+ * profiler's time (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D15). Debug -> Code Coverage, the
  * `coverage` commands, the editor strip, the disassembly cell and the memory view's Heat selector
  * gate on this; set per core once its mapping test passes (Phase 2).
  */

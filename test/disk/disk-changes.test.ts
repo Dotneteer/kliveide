@@ -14,7 +14,7 @@ import { createBlankTrd, TRD_SECTOR_SIZE } from "@emu/machines/disk/trd/trdImage
 import { corpusDisk, pattern } from "./dskCorpus";
 
 /*
- * Disk write-back by physical sector position (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, A2):
+ * Disk write-back by physical sector position (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, A2):
  * the cases where the old `track * 100 + R` key wrote to the wrong place.
  */
 

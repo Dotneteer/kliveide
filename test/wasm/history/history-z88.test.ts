@@ -7,7 +7,7 @@ import { describeHistoryCore, history, historyInfo, loadRecording } from "./hist
 import { z88Driver } from "./drivers";
 
 /*
- * The Cambridge Z88's execution history (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` Phase 4). Its
+ * The Cambridge Z88's execution history (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` Phase 4). Its
  * debugger runs instructions in C (`z88ExecuteUntilStop`), which records too (D9). A snoozed CPU and a
  * CPU in coma run no cycle, so they leave a gap the frame numbers show (T8).
  */

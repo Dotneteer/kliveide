@@ -43,7 +43,7 @@ import {
 import { t, uiLocale } from "@common/i18n/i18n";
 
 /*
- * The profiler's commands (`.plans/PROFILER_PLAN.md` D16): `profile start|stop|reset|status|top|
+ * The profiler's commands (`dev/plans/PROFILER_PLAN.md` D16): `profile start|stop|reset|status|top|
  * export`, the `profile-start`/`profile-stop` shortcuts (`pst`, `psp`) and `show-profiler`. They gate
  * on the `MF_PROFILE` capability (D17) and on the advanced-debugging switch, as `coverage` does.
  */

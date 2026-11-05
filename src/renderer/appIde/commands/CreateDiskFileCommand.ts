@@ -13,7 +13,7 @@ import { CARTRIDGE_FOLDER, DISK_FOLDER } from "@common/structs/project-const";
 import { isMdrCartridgeType } from "@emu/machines/microdrive/mdrImage";
 import { t } from "@common/i18n/i18n";
 
-// --- CPC DSK disks for the +3, blank TR-DOS disks for the Pentagon (`.plans/BETA128_TRDOS_PLAN.md`)
+// --- CPC DSK disks for the +3, blank TR-DOS disks for the Pentagon (`dev/plans/BETA128_TRDOS_PLAN.md`)
 const availableDiskTypes = ["ss", "ds", "sse", "dse", "dse80", "trd80ds", "trd40ds", "trd80ss", "trd40ss", "mdr", "mdrblank"];
 
 type CreateDiskFileCommandArgs = {

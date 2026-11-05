@@ -4,7 +4,7 @@ import { createEpSession, type EpTestSession } from "../harness/enterprise";
 import { bareMachine, timeCode } from "./bare";
 
 /*
- * The CPU's bus timing (`.plans/ENTERPRISE_PLAN.md` Phase 2, §3.3, §6): DAVE's wait states by BFh, and
+ * The CPU's bus timing (`dev/plans/ENTERPRISE_PLAN.md` Phase 2, §3.3, §6): DAVE's wait states by BFh, and
  * NICK's clock stretch on video RAM and on its ports, in half-T steps against a slot grid that is not
  * the CPU's (4.4952 T a slot).
  *

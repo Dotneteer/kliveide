@@ -213,7 +213,7 @@ class IdeMessageProcessor {
 
   /**
    * Executes a command into a fresh buffer, mirrored to the Build pane, and returns its output as
-   * plain text lines (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D9). With `automation`, a command
+   * plain text lines (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` D9). With `automation`, a command
    * marked `automation: "deny"` is refused instead of run (T5).
    * @param commandText The command text to execute.
    * @param options Options of the run.
@@ -385,7 +385,7 @@ export async function saveAllBeforeQuit(
 
 /**
  * The id of the command a text would run, when that command is marked `automation: "deny"`
- * (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` T5); undefined when it may run.
+ * (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` T5); undefined when it may run.
  */
 export function automationDeniedCommand(
   commands: Pick<IIdeCommandService, "getCommandByIdOrAlias">,

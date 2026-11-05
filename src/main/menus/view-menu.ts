@@ -1,5 +1,5 @@
 /*
- * The View menu (`.plans/MENU_REDESIGN_PLAN.md` §3): the machine views, the parts of the focused
+ * The View menu (`dev/plans/MENU_REDESIGN_PLAN.md` §3): the machine views, the parts of the focused
  * window, navigation, zoom and full screen, and one light/dark switch. Fonts, the accent, the editor
  * options and the layout preferences are in Settings.
  */
@@ -109,7 +109,7 @@ export function createViewMenu(context: MenuContext): MenuItemConstructorOptions
      * Go Back / Go Forward, in both windows. While the IDE window has focus its renderer handles the
      * shortcuts itself, before Monaco can, and marks the key handled — which keeps the accelerator
      * here from firing a second time. The accelerator is what makes the shortcut work from the
-     * emulator window. See `.plans/NAVIGATION_HISTORY_PLAN.md` §5.
+     * emulator window. See `dev/plans/NAVIGATION_HISTORY_PLAN.md` §5.
      */
     {
       id: "ide_go_back",
@@ -136,7 +136,7 @@ export function createViewMenu(context: MenuContext): MenuItemConstructorOptions
       // --- The window's own zoom (the emulator screen fits its panel by itself)
       id: "zoom",
       label: t("menu.view.zoom"),
-      // --- Explicit labels, or the OS labels these in its own language (`.ai/localization.md`)
+      // --- Explicit labels, or the OS labels these in its own language (`dev/ai/localization.md`)
       submenu: [
         { role: "resetZoom", label: t("menu.view.actualSize") },
         { role: "zoomIn", label: t("menu.view.zoomIn") },

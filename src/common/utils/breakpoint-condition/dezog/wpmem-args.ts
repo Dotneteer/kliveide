@@ -5,7 +5,7 @@ import { parseDezogExpression } from "./dezog-parser";
 import { t } from "@common/i18n/i18n";
 
 /*
- * The arguments of a DeZog `WPMEM` comment (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §2.2,
+ * The arguments of a DeZog `WPMEM` comment (`dev/plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §2.2,
  * §4.3), recorded from DeZog's documentation in Klive's words:
  *
  *   WPMEM [addr [, length [, access]]]

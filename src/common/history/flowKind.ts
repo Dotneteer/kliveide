@@ -2,7 +2,7 @@ import { HistoryKind, type HistoryRecord } from "./historyRecord";
 
 /*
  * Classifies a history record by what it did to the flow of control
- * (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.4): the viewer's row icons, and G4.3's reverse
+ * (`dev/plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.4): the viewer's row icons, and G4.3's reverse
  * step-over and step-out. Conditional instructions are "taken" or not by the PC of the record that
  * follows (an INT record's PC is the interrupted address, so it works there too).
  */

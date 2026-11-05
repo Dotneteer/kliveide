@@ -9,7 +9,7 @@ import { parseCommand } from "@renderer/appIde/services/command-parser";
 import type { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
 import { createMockContext } from "./test-helpers/mock-context";
 
-/* `.plans/TRACE_EXPORT_PLAN.md` Phase 2: `history-export` against a faked Emu API */
+/* `dev/plans/TRACE_EXPORT_PLAN.md` Phase 2: `history-export` against a faked Emu API */
 
 function record(sequence: number, init: Partial<Omit<HistoryRecord, "regs">> & { regs?: Partial<HistoryRecord["regs"]> } = {}): HistoryRecord {
   const { regs, ...rest } = init;

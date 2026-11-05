@@ -46,7 +46,7 @@ export type DisassemblyRowViewModel = {
   breakpointAddress: number | string;
   breakpointPartition?: string;
   execPoint: boolean;
-  /** The exec point is the history cursor's, not the machine's (`.plans/LITE_STEP_BACK_PLAN.md` D7) */
+  /** The exec point is the history cursor's, not the machine's (`dev/plans/LITE_STEP_BACK_PLAN.md` D7) */
   historical: boolean;
   /** The bytes at the historical PC differ from the ones the CPU decoded then (T2) */
   codeChanged: boolean;
@@ -73,7 +73,7 @@ export type DisassemblyRowViewModelParams = {
    * up by offset: the breakpoint exists, shows in the sidebar, and is invisible on the row that made
    * it.
    *
-   * See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.20.
+   * See `dev/plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.20.
    */
   bankScope?: { bank: number; bankOffset: number };
   breakpoint?: BreakpointInfo;
@@ -87,7 +87,7 @@ export type DisassemblyRowViewModelParams = {
   showBanks: boolean;
   /**
    * While the history cursor is in the past: the bytes the CPU decoded at `pausedPc` then
-   * (`.plans/LITE_STEP_BACK_PLAN.md` T2). Undefined at the present.
+   * (`dev/plans/LITE_STEP_BACK_PLAN.md` T2). Undefined at the present.
    */
   historyBytes?: number[];
 };
@@ -416,13 +416,13 @@ type DisassemblyRowProps = DisassemblyRowViewModelParams & {
    */
   verdict?: BranchVerdict;
   /**
-   * Reserve code coverage's cell (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D13): a property of
+   * Reserve code coverage's cell (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D13): a property of
    * the listing, like `showBranchGutter`
    */
   showCoverage?: boolean;
   /** This row's coverage: undefined no data, 0 never started, -1 started (no count), n started n times */
   coverage?: number;
-  /** The profiled time's share of this row's instruction, in percent (`.plans/PROFILER_PLAN.md` D15) */
+  /** The profiled time's share of this row's instruction, in percent (`dev/plans/PROFILER_PLAN.md` D15) */
   timeShare?: number;
   selected?: boolean;
   selectedRange?: boolean;

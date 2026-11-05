@@ -1,7 +1,7 @@
 import type { KeyMapping } from "@abstractions/KeyMapping";
 
 /**
- * The host keyboard on the Enterprise matrix (`.plans/ENTERPRISE_PLAN.md` §9.1), by key position on a
+ * The host keyboard on the Enterprise matrix (`dev/plans/ENTERPRISE_PLAN.md` §9.1), by key position on a
  * UK layout. Letters, digits and punctuation are on their own keys; the Enterprise's own keys go
  * where the editor's use of them suggests: Enter is ENTER, Backspace ERASE, Delete DEL, Insert INS,
  * Escape ESC, Caps Lock LOCK, Tab TAB, End STOP, Pause and Home HOLD, F1-F8 the function keys, Alt

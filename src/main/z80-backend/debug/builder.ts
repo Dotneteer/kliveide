@@ -4,7 +4,7 @@ import type { LineInfo } from "../emit/emit";
 import type { SourceFiles } from "./sources";
 
 /**
- * The debug-info builder (`.docs/z80-backend-debug-builder.md`): joins the generated program's line
+ * The debug-info builder (`dev/patterns/z80-backend-debug-builder.md`): joins the generated program's line
  * table with the assembler's list items and turns statement ids into the classic tables the IDE's
  * breakpoint and execution-point code reads (§5), plus each statement's address range.
  */

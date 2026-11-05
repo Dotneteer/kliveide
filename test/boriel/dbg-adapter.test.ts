@@ -11,7 +11,7 @@ import { loadNexFileContents } from "@renderer/appIde/DocumentPanels/Next/nexFil
 
 /*
  * The .dbg adapter on zxbc's real output (`test/boriel/fixtures/`, README there). Each expectation
- * names the Phase B0 correction it checks (`.ai/boriel/dbg-observed.md`).
+ * names the Phase B0 correction it checks (`dev/ai/boriel/dbg-observed.md`).
  */
 
 const FIXTURES = path.join(__dirname, "fixtures");

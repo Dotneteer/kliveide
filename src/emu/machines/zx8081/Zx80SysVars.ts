@@ -2,7 +2,7 @@ import { SysVar, SysVarType } from "@abstractions/SysVar";
 
 /*
  * The ZX80's system variables (the 4K ROM's), for the System Variables panel and for naming the
- * operands that read them — `.docs/annotations.md`, "The ZX80 and ZX81"
+ * operands that read them — `dev/patterns/annotations.md`, "The ZX80 and ZX81"
  *
  * Recorded from the ZX80 operating manual's list of system variables: the addresses, names and sizes
  * are interface facts of the machine, and the descriptions are Klive's own words. A ZX80 fitted with

@@ -1,5 +1,5 @@
 /*
- * Debug › Save Debug Recording… and Debug › Open Debug Recording… (`.plans/DEBUG_SESSION_RECORDING_PLAN.md`
+ * Debug › Save Debug Recording… and Debug › Open Debug Recording… (`dev/plans/DEBUG_SESSION_RECORDING_PLAN.md`
  * §4.5, D2): dialogs in main, then the IDE's `debug-recording-save` / `debug-recording-load` commands -
  * the state menus' pattern. File › Open File… and a dropped `.klr` come here too.
  */
@@ -20,7 +20,7 @@ import { t } from "@common/i18n/i18n";
 /** The settings key of the folder the last recording was saved to or opened from */
 export const DEBUG_RECORDING_FOLDER = "debugRecordingFolder";
 
-/** A function, so the filter name is in the current language (`.ai/localization.md`, D7) */
+/** A function, so the filter name is in the current language (`dev/ai/localization.md`, D7) */
 const filters = () => [{ name: t("common.filter.debugRecordings"), extensions: ["klr"] }];
 
 /** Whether the machine keeps a reverse-debugging timeline now: Save Debug Recording… needs one (D17) */

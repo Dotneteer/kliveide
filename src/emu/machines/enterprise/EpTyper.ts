@@ -1,5 +1,5 @@
 /*
- * Text as Enterprise keystrokes, for the IDE's typing and the tests (`.plans/ENTERPRISE_PLAN.md` §9.1).
+ * Text as Enterprise keystrokes, for the IDE's typing and the tests (`dev/plans/ENTERPRISE_PLAN.md` §9.1).
  * Every character here was typed on the running machine (EXOS 2.1 with IS-BASIC 2.1, each key and
  * SHIFT with each key) and read back from its screen (`test/ep-hw/keyboard.test.ts`): plain keys give
  * lower case and the key's symbol, SHIFT upper case and its second symbol.

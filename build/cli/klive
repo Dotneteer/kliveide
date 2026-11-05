@@ -1,5 +1,5 @@
 #!/bin/sh
-# The `klive` command line (.plans/UNIT_TESTS_CLI_PLAN.md D1, D11): Klive's own binary in Node mode
+# The `klive` command line (dev/plans/UNIT_TESTS_CLI_PLAN.md D1, D11): Klive's own binary in Node mode
 # runs the CLI bundle - no window, no GPU, no display. This launcher sits in the app's
 # resources/cli folder and finds the app relative to itself, wherever it was installed, also when it
 # is reached through a symlink (/usr/local/bin/klive, /usr/bin/klive).

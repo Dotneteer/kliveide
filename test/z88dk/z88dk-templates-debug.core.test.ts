@@ -11,7 +11,7 @@ import { buildTemplate, codeToInjectOf, FIXTURES } from "./zccReplay";
 import { debugWalkthrough, expectWalkthrough, withTemp, type DebugSession } from "./templateRun";
 
 /*
- * Debug on the real cores, one per route (`.plans/ZX_SPECTRUM_C_TEMPLATES_PLAN.md` T4): each template's
+ * Debug on the real cores, one per route (`dev/plans/ZX_SPECTRUM_C_TEMPLATES_PLAN.md` T4): each template's
  * debug build (zcc replayed) is delivered as Debug delivers it, then walked through the debugger as a
  * user does - a breakpoint in `square`, Step Over, Step Out, Continue - with the Call Stack and the
  * Variables panel built by the IDE's models at every stop (`templateRun.ts`, `debugWalkthrough`).

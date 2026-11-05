@@ -22,7 +22,7 @@ const DEFAULT_TONE_LEVEL = 50;
 
 /**
  * Puts a sample source on the ZX Spectrum Next's Raspberry Pi I2S input, in place of the Pi
- * (`.plans/PI_I2S_AUDIO_PLAN.md` §4): a WAV file, a sine tone, or nothing. With no argument it shows
+ * (`dev/plans/PI_I2S_AUDIO_PLAN.md` §4): a WAV file, a sine tone, or nothing. With no argument it shows
  * the stream's state. The stream starts at once and runs with the machine; what the Next makes of it
  * (the mix, NextRegs $2C-$2E, the EAR bit) is up to NextReg $A2, as on the hardware.
  */

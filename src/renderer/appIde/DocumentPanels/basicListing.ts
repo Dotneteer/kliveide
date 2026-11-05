@@ -8,7 +8,7 @@ import { t } from "@common/i18n/i18n";
  *
  * It used to live inside `BasicPanel`, reading the live machine's memory through refs, so nothing
  * else could list a program. The tape viewer lists one from a tape block, with no machine at all
- * (`.plans/TAPE_VIEWER_PLAN.md` §4.3), so the loop moved here as a pure function. Both views call
+ * (`dev/plans/TAPE_VIEWER_PLAN.md` §4.3), so the loop moved here as a pure function. Both views call
  * it, so a program reads the same in either.
  *
  * This is the ROM's own token format, decoded with the machine's character table

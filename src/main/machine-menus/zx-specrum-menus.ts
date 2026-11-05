@@ -92,7 +92,7 @@ export const tapeMenuRenderer: MachineMenuRenderer = (windowInfo, machine) => {
 };
 
 /**
- * The Sinclair ULA's variants (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phases 4, 5): the snow effect
+ * The Sinclair ULA's variants (`dev/plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phases 4, 5): the snow effect
  * and late timing, on the 16K/48K and the 128K. The Pentagon among the 128K's models ignores them.
  */
 export const ulaHardwareRenderer: MachineMenuRenderer = () => [
@@ -207,7 +207,7 @@ export const diskMenuRenderer: MachineMenuRenderer = (windowInfo, _, model) => {
 };
 
 /**
- * The TR-DOS ROM of the Pentagon's Beta 128 (`.plans/BETA128_TRDOS_PLAN.md` Q1): Klive cannot ship
+ * The TR-DOS ROM of the Pentagon's Beta 128 (`dev/plans/BETA128_TRDOS_PLAN.md` Q1): Klive cannot ship
  * it, so the user names their own copy in Settings › Machine; the machine restarts with it.
  */
 export async function forgetTrdosRom(): Promise<void> {
@@ -389,7 +389,7 @@ async function setTapeFile(browserWindow: BrowserWindow, state: AppState): Promi
     title: t("messages.tape.select"),
     defaultPath,
     filters: [
-      // --- The media strip's Insert button asks here on the HT-1080Z too (`.plans/HT1080Z_PLAN.md` §9)
+      // --- The media strip's Insert button asks here on the HT-1080Z too (`dev/plans/HT1080Z_PLAN.md` §9)
       state.emulatorState?.machineId === MI_HT1080Z
         ? { name: t("common.filter.ht1080zTapes"), extensions: ["cas", "cmd", "bas"] }
         : state.emulatorState?.machineId === MI_TVC
@@ -621,7 +621,7 @@ const SPECTRUM_SNAPSHOT_FOLDER = "spectrumSnapshotFolder";
 
 /**
  * Can the emulator's machine be saved as a ZX Spectrum snapshot now? It must be a 48K, 128K,
- * +2E/+3E or TC2048 with a state: running or paused (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` D4).
+ * +2E/+3E or TC2048 with a state: running or paused (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` D4).
  */
 export function canSaveSpectrumSnapshot(state: AppState = mainStore.getState()): boolean {
   const machineId = state?.emulatorState?.machineId;
@@ -648,7 +648,7 @@ export function defaultSnapshotFileName(state: AppState, now = new Date()): stri
 
 /**
  * Asks for a file and saves the machine into it through the IDE's `zx-snapshot-save` command
- * (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.4). The extension picks the format, `.szx`
+ * (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.4). The extension picks the format, `.szx`
  * first. What the chosen format could not hold is shown afterwards, unless the user turned that
  * notice off for the format. The machine menus and File -> Save ZX Spectrum Snapshot... share it.
  * @param browserWindow The window that owns the dialogs

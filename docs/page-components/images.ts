@@ -1,6 +1,6 @@
 /**
  * Localized screenshots: `public/images/<lang>/<src>`, falling back to English (R4 of
- * .ai/docs-site.md). Build-time only - it reads the image folder.
+ * dev/ai/docs-site.md). Build-time only - it reads the image folder.
  */
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";

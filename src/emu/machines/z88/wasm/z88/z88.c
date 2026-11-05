@@ -4,7 +4,7 @@
  * One translation unit: the machine state below, the Z88 parts it includes, and the shared Z80 core
  * (`src/emu/z80/wasm/z80.c`) wired to them through the `Z80_*` hook macros. No heap; every buffer
  * is a static array exposed through a pointer export. See
- * `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md` for the architecture and the step this file is at.
+ * `dev/plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md` for the architecture and the step this file is at.
  *
  * Status (Step 10, 2026-09-19): the memory map and the RAM/ROM cards (Step 4), the CPU and the frame
  * loop (Step 5), the Blink - ports, RTC, interrupts, flap, battery (Step 6) - the keyboard and sleep
@@ -132,10 +132,10 @@ static inline void z88BusNewInstruction(void);
 #define Z80_FETCH_CODE_BYTE(address) z88FetchCodeByte((uint16_t)(address))
 #define Z80_TACT_PLUS_N(value) z88CpuTactPlusN((uint32_t)(value))
 /* The execution-history recorder's hooks; the recorder and this machine's macros for it are at the
-   end of this file (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` Phase 4) */
+   end of this file (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` Phase 4) */
 #include "../../../../z80/wasm/z80-history.h"
 /* The access profile's hooks; the module and this machine's mapping for it are at the end of this
-   file (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D1, D4) */
+   file (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D1, D4) */
 #include "../../../../z80/wasm/z80-profile.h"
 #include "../../../../z80/wasm/z80.c"
 /* The CPU's registers and debugger state, exported as `z88GetCpuAf` ... (WASM_CORE_LEAN_AND_DEBUG_PLAN D8) */
@@ -390,7 +390,7 @@ void z88SetCpuSnoozed(uint32_t v) {
 uint32_t z88GetCpuSigInt(void) { return z80GetSigInt(); }
 
 // -----------------------------------------------------------------------------
-// Breakpoint conditions (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`): the shared evaluator, with
+// Breakpoint conditions (`dev/plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`): the shared evaluator, with
 // this machine's side-effect-free reads. `z88MemoryPeek` reads through the paging with no timing, no
 // bus event, no flash command abort and no empty-slot generator step. A partition is a 16K bank as `getMemoryPartition` in `Z88WasmV2Machine.ts` reads it
 // (`z88BankStorageOffset`: a small card is mirrored across its slot). `page()` stays "no value", as
@@ -410,7 +410,7 @@ static uint32_t condZ88PeekPartition(int32_t partition, uint32_t address) {
 #include "../../../../z80/wasm/z80-condition.c"
 
 // -----------------------------------------------------------------------------
-// Execution history (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` §3, Phase 4): the shared recorder,
+// Execution history (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` §3, Phase 4): the shared recorder,
 // with this machine's side-effect-free peek (`z88MemoryPeek`), its frame position in T-states and
 // its context. `z88ExecuteUntilStop` loops the CPU in C, so the debugger's fast path records too
 // (D9). A snoozed CPU runs `z80SnoozeCycle`, not a CPU cycle, and a CPU in coma runs nothing: both
@@ -442,7 +442,7 @@ static inline void z88HistoryContext(uint32_t kind, uint8_t *out) {
 #include "../../../../z80/wasm/z80-history.c"
 
 // -----------------------------------------------------------------------------
-// The access profile (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §2.2, D4): the shared module, with
+// The access profile (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §2.2, D4): the shared module, with
 // this machine's physical layout. Time is in CPU T-states (D8); the snooze goes to its own bucket
 // (`z88ExecuteInstruction`, D7), and a CPU in coma is HALTed, so its time is the HALT's.
 //

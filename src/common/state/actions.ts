@@ -29,7 +29,7 @@ export const ideLoadedAction: ActionCreator = () => ({
   type: "IDE_LOADED"
 });
 
-/** The automation server's status (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D4) */
+/** The automation server's status (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` D4) */
 export const setAutomationStatusAction: ActionCreator = (status: AutomationStatusState) => ({
   type: "SET_AUTOMATION_STATUS",
   payload: { value: status }
@@ -45,7 +45,7 @@ export const isWindowsAction: ActionCreator = (flag: boolean) => ({
   payload: { flag }
 });
 
-/** The resolved display language (`.ai/localization.md`, "The runtime"), published by main */
+/** The resolved display language (`dev/ai/localization.md`, "The runtime"), published by main */
 export const setUiLanguageAction: ActionCreator = (
   value: import("@common/i18n/languages").UiLanguageState
 ) => ({
@@ -148,7 +148,7 @@ export const setClockMultiplierAction: ActionCreator = (numValue: number) => ({
   payload: { numValue }
 });
 
-/** The Interface 1's running Microdrive motors, bit n drive n + 1 (`.plans/MICRODRIVE_PLAN.md`) */
+/** The Interface 1's running Microdrive motors, bit n drive n + 1 (`dev/plans/MICRODRIVE_PLAN.md`) */
 export const setMicrodriveMotorsAction: ActionCreator = (numValue: number) => ({
   type: "SET_MICRODRIVE_MOTORS",
   payload: { numValue }
@@ -174,7 +174,7 @@ export const setMouseCapturedAction: ActionCreator = (captured: boolean) => ({
 });
 
 /**
- * The ZX Spectrum Next layer debug view (`.plans/LAYER_COMPOSITION_PLAN.md` D2, D4): the strip, the
+ * The ZX Spectrum Next layer debug view (`dev/plans/LAYER_COMPOSITION_PLAN.md` D2, D4): the strip, the
  * menu and the `layers` command all set it; the emulator window applies it to the machine.
  */
 export const setNextLayersAction: ActionCreator = (
@@ -185,7 +185,7 @@ export const setNextLayersAction: ActionCreator = (
 });
 
 /**
- * The history cursor moved (`.plans/LITE_STEP_BACK_PLAN.md` D3): steps back from the present (0 at
+ * The history cursor moved (`dev/plans/LITE_STEP_BACK_PLAN.md` D3): steps back from the present (0 at
  * the present) and the record it is on
  */
 export const setHistoryPositionAction: ActionCreator = (
@@ -197,19 +197,19 @@ export const setHistoryPositionAction: ActionCreator = (
   payload: { value: { position, sequence, memoryIsHistorical } }
 });
 
-/** The emulator holds a quick-saved machine state (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` D19) */
+/** The emulator holds a quick-saved machine state (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` D19) */
 export const setQuickStateAvailableAction: ActionCreator = (available: boolean) => ({
   type: "SET_QUICK_STATE_AVAILABLE",
   payload: { flag: available }
 });
 
-/** The reverse-debugging timeline's state (`.plans/REVERSE_DEBUGGING_PLAN.md` §4.4); undefined clears it */
+/** The reverse-debugging timeline's state (`dev/plans/REVERSE_DEBUGGING_PLAN.md` §4.4); undefined clears it */
 export const setReverseDebugStateAction: ActionCreator = (reverseDebug?: import("./AppState").ReverseDebugState) => ({
   type: "SET_REVERSE_DEBUG_STATE",
   payload: { value: reverseDebug }
 });
 
-/** The RZX session's state (`.plans/RZX_PLAN.md` §4.6); undefined clears it */
+/** The RZX session's state (`dev/plans/RZX_PLAN.md` §4.6); undefined clears it */
 export const setRzxStateAction: ActionCreator = (rzx?: import("./AppState").RzxState) => ({
   type: "SET_RZX_STATE",
   payload: { value: rzx }
@@ -290,7 +290,7 @@ export const setSourceFrameAction: ActionCreator = (frame: number) => ({
   payload: { index: frame }
 });
 
-/** The memory view's heat map mode (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D14) */
+/** The memory view's heat map mode (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D14) */
 export const setMemoryHeatModeAction: ActionCreator = (mode: string) => ({
   type: "SET_MEMORY_HEAT_MODE",
   payload: { text: mode }
@@ -311,9 +311,9 @@ export const incBreakpointHitsVersionAction: ActionCreator = () => ({
 });
 
 /**
- * The access profile's switch (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D6): Debug -> Code
+ * The access profile's switch (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D6): Debug -> Code
  * Coverage and `coverage on|off`. One switch per session, not a setting. `calls` is the profiler's
- * call tracker (`.plans/PROFILER_PLAN.md` D1).
+ * call tracker (`dev/plans/PROFILER_PLAN.md` D1).
  */
 export const setProfilingAction: ActionCreator = (enabled: boolean, counters: boolean, calls?: boolean) => ({
   type: "SET_PROFILING",
@@ -390,7 +390,7 @@ export const endCompileAction: ActionCreator = (
   payload: { compileResult, failed, endedAt }
 });
 
-// --- Unit tests (`.plans/Z80_UNIT_TESTS_PLAN.md` §4.3)
+// --- Unit tests (`dev/plans/Z80_UNIT_TESTS_PLAN.md` §4.3)
 
 /** A run starts: the tests it runs lose their old results */
 export const unitTestsRunStartedAction: ActionCreator = (ids: string[], startedAt: number) => ({
@@ -522,7 +522,7 @@ export const setExportDialogInfoAction: ActionCreator = (value: ExportDialogSett
 
 /**
  * The project's annotation sidecar, relative to its folder (`.kliveproject`'s `annotations`). Absent
- * means the default, `annotations.dis` (`.docs/annotations.md`).
+ * means the default, `annotations.dis` (`dev/patterns/annotations.md`).
  */
 export const setProjectAnnotationsAction: ActionCreator = (value: string | undefined) => ({
   type: "SET_PROJECT_ANNOTATIONS",
@@ -608,12 +608,12 @@ export const setSourceWatchesAction: ActionCreator = (watches: string[]) => ({
 });
 
 /**
- * Which logpoint groups log (`.plans/LOGPOINTS_PLAN.md` §4.2): all, none, or only the listed ones.
+ * Which logpoint groups log (`dev/plans/LOGPOINTS_PLAN.md` §4.2): all, none, or only the listed ones.
  * An absent value means everything on, which is what a project without the setting restores.
  */
 /**
  * Which DeZog comment kinds a build turns into breakpoints
- * (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` S6). Absent means both on.
+ * (`dev/plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` S6). Absent means both on.
  */
 export const setSourceCommentsAction: ActionCreator = (switches?: {
   assertion?: boolean;

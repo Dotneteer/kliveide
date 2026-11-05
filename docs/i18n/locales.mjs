@@ -1,6 +1,6 @@
 /**
- * The site's languages (R1 of .ai/docs-site.md): the enabled UI languages
- * of the app, exported to languages.json by `node scripts/docs-i18n.cjs languages` (and checked
+ * The site's languages (R1 of dev/ai/docs-site.md): the enabled UI languages
+ * of the app, exported to languages.json by `node dev/scripts/docs-i18n.cjs languages` (and checked
  * by `doc:i18n:check`). A language is *published* once it has a content/<id>/ folder - that is,
  * once its first translation is merged - so an enabled language without translations yet does
  * not produce empty pages.
@@ -26,6 +26,6 @@ export const LOCALE_NAMES = Object.fromEntries(languages.map((l) => [l.id, l.nat
 
 /**
  * The documentation areas translated into every non-English locale. Links into any other area
- * go to the English pages (§4.2 of the plan). Keep in step with scripts/docs-i18n.cjs.
+ * go to the English pages (§4.2 of the plan). Keep in step with dev/scripts/docs-i18n.cjs.
  */
 export const TRANSLATED_AREAS = ["get-started"];

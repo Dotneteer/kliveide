@@ -7,7 +7,7 @@ import { checkRomSidecar } from "@renderer/appIde/annotations/romSidecarCheck";
 import { formatRomSidecar, missingProvenance, strayProvenance } from "@common/roms/romAnnotationTools";
 
 /*
- * A working copy is written so it can be shipped as it is (`.plans/ROM_ANNOTATION_EDITING_PLAN.md`
+ * A working copy is written so it can be shipped as it is (`dev/plans/ROM_ANNOTATION_EDITING_PLAN.md`
  * R5, T2, T3): banks from the model, everything else from the file, provenance moved with the
  * entries, the CLI's own format.
  */

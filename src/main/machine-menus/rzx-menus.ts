@@ -1,5 +1,5 @@
 /*
- * The RZX items of the ZX Spectrum machine menu and of the File menu (`.plans/RZX_PLAN.md` §1.6):
+ * The RZX items of the ZX Spectrum machine menu and of the File menu (`dev/plans/RZX_PLAN.md` §1.6):
  * Machine -> RZX (Play Recording..., Record, Stop and Save..., Insert Rollback Point, Roll Back,
  * Render Recording to Video...) and File -> Play RZX Recording... Every item runs the IDE's `zx-rzx*`
  * command, so the menus, the viewer, the Explorer and a script do the same thing.
@@ -51,7 +51,7 @@ export function isRzxRecordingActive(state: AppState = mainStore.getState()): bo
   return rzx?.mode === "recording" && !rzx.unsaved;
 }
 
-/** The RZX items of Machine › Record (`.plans/RZX_PLAN.md`); playing a recording is File › Open File… */
+/** The RZX items of Machine › Record (`dev/plans/RZX_PLAN.md`); playing a recording is File › Open File… */
 export const rzxMenuRenderer: MachineMenuRenderer = (windowInfo) => {
   const emuWindow = windowInfo.emuWindow;
   const state = mainStore.getState();

@@ -174,7 +174,7 @@ type ZxNextWasmV2Checkpoint = {
   /**
    * The core's linear memory, minus every volatile range of its `klive.layout` stamp: the frame
    * trace, the execution-history ring, the layer captures and the other debugging buffers
-   * (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` trap T7). They hold nothing a restored machine needs,
+   * (`dev/plans/EXECUTION_HISTORY_VIEWER_PLAN.md` trap T7). They hold nothing a restored machine needs,
    * so leaving them out keeps the checkpoint small, and a restore leaves them as they are - the
    * history ring is the controller's to clear (D9), and a trace recorded across a restore stays
    * consistent with its own header. One entry per kept span, in address order.
@@ -219,12 +219,12 @@ export class ZxNextWasmV2Machine
   private wasmV2AudioSampleRate = -1;
   private readonly wasmV2AudioSamples: AudioSample[] = [];
   private wasmV2Checkpoint?: ZxNextWasmV2Checkpoint;
-  /** What stands in for the Raspberry Pi on the I2S link (`.plans/PI_I2S_AUDIO_PLAN.md`) */
+  /** What stands in for the Raspberry Pi on the I2S link (`dev/plans/PI_I2S_AUDIO_PLAN.md`) */
   private piI2sSource?: PiI2sSource;
   private piI2sScratch = new Int16Array(0);
   /** The core's since-pause contention count when the IDE last restarted it (see resetContentionDelaySincePause). */
   private wasmV2ContentionPauseBase = 0;
-  /** The DS1307's host side: which clock it follows, and keeping it (`.ai/zxnext-rtc.md`) */
+  /** The DS1307's host side: which clock it follows, and keeping it (`dev/ai/zxnext-rtc.md`) */
   readonly rtcHost = new NextRtcHost(
     () => this.wasmV2Runtime?.exports as unknown as NextRtcExports | undefined,
     () => this.profile.id,
@@ -691,7 +691,7 @@ export class ZxNextWasmV2Machine
 
   /**
    * Captures the machine's whole state: the core's memory image plus this wrapper's own fields
-   * (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.5). The machine must be paused. The SD
+   * (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.5). The machine must be paused. The SD
    * card image is a host file and not part of it (D12).
    */
   saveMachineState(): MachineStateParts {
@@ -703,7 +703,7 @@ export class ZxNextWasmV2Machine
   }
 
   // ------------------------------------------------------------------------------------------------
-  // Reverse debugging (`.plans/REVERSE_DEBUGGING_PLAN.md` §4.2, `reverse/Timeline.ts`)
+  // Reverse debugging (`dev/plans/REVERSE_DEBUGGING_PLAN.md` §4.2, `reverse/Timeline.ts`)
 
   /** Per model, as the state files' (`stateCoreIdOf`): a recording made on one Next model never replays on another */
   get reverseCoreId(): string {
@@ -768,7 +768,7 @@ export class ZxNextWasmV2Machine
    */
   loadMachineState(parts: MachineStateParts): void {
     const runtime = this.requireWasmV2Runtime();
-    // --- Another Next model's state: say which model saved it (`.ai/zxnext-models.md`, "As-built details worth knowing")
+    // --- Another Next model's state: say which model saved it (`dev/ai/zxnext-models.md`, "As-built details worth knowing")
     const coreId = stateCoreIdOf(this.profile);
     const savedOn = profileOfStateCoreId(parts.coreId);
     if (savedOn && parts.coreId !== coreId) {
@@ -885,7 +885,7 @@ export class ZxNextWasmV2Machine
   private wasmV2CheckpointSpans?: { runtime: ZxNextWasmV2Runtime; spans: [number, number][] };
 
   // ==============================================================================================
-  // Execution history (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.4): the shared recorder in the
+  // Execution history (`dev/plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.4): the shared recorder in the
   // core, read through the shared reader
 
   readonly historyMachineId = "zxnext";
@@ -916,7 +916,7 @@ export class ZxNextWasmV2Machine
   }
 
   // ==============================================================================================
-  // The access profile (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`): the shared module in the core,
+  // The access profile (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`): the shared module in the core,
   // read through the shared reader. Time is in 28 MHz ticks (D8), so it stays comparable across CPU
   // speed changes; the DMA's bus holds are a header bucket (T5).
 
@@ -1157,7 +1157,7 @@ export class ZxNextWasmV2Machine
         this.lastNextRegWrite = undefined;
 
         /*
-         * The Copper watch (`.plans/COPPER_DEBUGGING_PLAN.md` §4.6): pushed whole on entry like the
+         * The Copper watch (`dev/plans/COPPER_DEBUGGING_PLAN.md` §4.6): pushed whole on entry like the
          * NextReg table, and disarmed when nothing watches, so the Copper's hot path stays free (T3).
          * A pending Copper step arms "any index" as a one-shot.
          */
@@ -1571,7 +1571,7 @@ export class ZxNextWasmV2Machine
    */
   override async executeCustomCommand(command: string): Promise<any> {
     const runtime = this.wasmV2Runtime;
-    // --- The Settings dialog's Kept clock buttons (`.ai/zxnext-rtc.md` D8)
+    // --- The Settings dialog's Kept clock buttons (`dev/ai/zxnext-rtc.md` D8)
     if (runtime != null && command === "rtcSetToHost") {
       this.rtcHost.setToHost();
       return;
@@ -2004,7 +2004,7 @@ export class ZxNextWasmV2Machine
   }
 
   /**
-   * The Sprite Inspector's snapshot (`.plans/SPRITE_INSPECTOR_PLAN.md` §4.3). Every value comes from
+   * The Sprite Inspector's snapshot (`dev/plans/SPRITE_INSPECTOR_PLAN.md` §4.3). Every value comes from
    * a side-effect-free getter: the status is peeked, not read through `$303B` (T1), and the resolve
    * goes into the core's IDE buffer, never the render cache (T3).
    */
@@ -2046,7 +2046,7 @@ export class ZxNextWasmV2Machine
   }
 
   /**
-   * The Tilemap Inspector's snapshot (`.plans/TILEMAP_INSPECTOR_PLAN.md` §4.3). Side-effect free
+   * The Tilemap Inspector's snapshot (`dev/plans/TILEMAP_INSPECTOR_PLAN.md` §4.3). Side-effect free
    * (D8): the registers come from getters and direct NextReg reads, the banks are two copies of
    * physical memory, one call for the whole 32K rather than a read per byte.
    */
@@ -2079,7 +2079,7 @@ export class ZxNextWasmV2Machine
   }
 
   /**
-   * The Layer 2 Inspector's snapshot (`.plans/LAYER2_INSPECTOR_PLAN.md` §4.3). Side-effect free (D8):
+   * The Layer 2 Inspector's snapshot (`dev/plans/LAYER2_INSPECTOR_PLAN.md` §4.3). Side-effect free (D8):
    * the registers come from getters (the `$123B` value from the module, not a port read), the banks
    * are copies of physical memory, 128K per set in one call (the 80K of the widest layer and the three
    * banks a scroll can reach past it, T4). The shadow set is copied only when asked
@@ -2123,7 +2123,7 @@ export class ZxNextWasmV2Machine
     };
   }
 
-  // ─── Layer debugging (`.plans/LAYER_COMPOSITION_PLAN.md`) ────────────────────────────────
+  // ─── Layer debugging (`dev/plans/LAYER_COMPOSITION_PLAN.md`) ────────────────────────────────
 
   /** The debug view the host last set; re-pushed after anything that rewrites the core's memory */
   private layerDebug: NextLayerDebug = { ...NO_LAYER_DEBUG };
@@ -2175,7 +2175,7 @@ export class ZxNextWasmV2Machine
     this.beamPreviewShown = false;
   }
 
-  // ─── The beam position overlay (`.plans/BEAM_POSITION_OVERLAY_PLAN.md` §4.2) ─────────────────
+  // ─── The beam position overlay (`dev/plans/BEAM_POSITION_OVERLAY_PLAN.md` §4.2) ─────────────────
 
   /** The preview shows the picture rendered up to the beam (D3) until the machine runs again */
   private beamPreviewShown = false;
@@ -2381,7 +2381,7 @@ export class ZxNextWasmV2Machine
   }
 
   /**
-   * The profile's ROM set (`.ai/zxnext-models.md` D9), each file checked against the
+   * The profile's ROM set (`dev/ai/zxnext-models.md` D9), each file checked against the
    * manifest's page CRCs (D9.3): a hand-replaced ROM is reported, not booted
    */
   private async loadWasmV2RomImages(): Promise<ZxNextWasmV2RomImages> {
@@ -2413,7 +2413,7 @@ export class ZxNextWasmV2Machine
     writeCoreBytes(runtime, runtime.memory, roms.divMmcRom, OFFS_DIVMMC_ROM);
     writeCoreBytes(runtime, runtime.memory, roms.multifaceRom, OFFS_MULTIFACE_MEM);
     writeCoreBytes(runtime, runtime.memory, roms.altRom, OFFS_ALT_ROM_0);
-    // --- The ROM set's facts the core depends on (`.ai/zxnext-models.md` D6)
+    // --- The ROM set's facts the core depends on (`dev/ai/zxnext-models.md` D6)
     const tape = NEXT_ROM_SETS[this.profile.romSet].facts.ldBytes;
     runtime.exports.zxnextTapeSetRomRoutines(tape.loadBytes, tape.loadBytesInvalidHeader, tape.loadBytesResume, tape.saveBytes);
   }
@@ -2664,7 +2664,7 @@ export class ZxNextWasmV2Machine
 
   /**
    * The core's breakpoint condition evaluator: its program store. The shared C evaluator reads the
-   * registers and memory inside the core (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`).
+   * registers and memory inside the core (`dev/plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`).
    */
   getConditionStore(): ConditionStore | undefined {
     return this.wasmV2Runtime ? conditionStoreOf(this.wasmV2Runtime) : undefined;

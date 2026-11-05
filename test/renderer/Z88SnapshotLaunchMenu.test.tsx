@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MI_SPECTRUM_48, MI_Z88 } from "@common/machines/constants";
 
 /*
- * The `.z88` launch entries (`.plans/Z88_SNAPSHOT_PLAN.md` §4.9, Phase 6): the Explorer's context menu
+ * The `.z88` launch entries (`dev/plans/Z88_SNAPSHOT_PLAN.md` §4.9, Phase 6): the Explorer's context menu
  * and the viewer's tab-bar buttons. Both only run the `z88-snapshot` command, which
  * `test/commands/Z88SnapshotCommand.test.ts` covers.
  */

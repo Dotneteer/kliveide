@@ -12,7 +12,7 @@
  *  3. Blanking clears the video register (Part 8): a 14.4 us monostable from HS rising (22.5
  *     characters, 180 dots at 12.5 MHz), and a latch set by the VS monostable and cleared while MA9
  *     is 1.
- *  4. The TV (Part 9, D4 in `.ai/videoton-tvc.md`): the line sync starts on HS falling, the frame
+ *  4. The TV (Part 9, D4 in `dev/ai/videoton-tvc.md`): the line sync starts on HS falling, the frame
  *     sync on VS rising. The picture is 70 characters by 288 lines, placed as a television would
  *     with the ROM's values: 21 characters after the line sync and 26 line syncs after the frame
  *     sync, which centres the 512 x 240 paper with 24 dots and 24 lines of border around it. The

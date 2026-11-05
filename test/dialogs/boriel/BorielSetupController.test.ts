@@ -205,7 +205,7 @@ describe("closing", () => {
 });
 
 describe("choosing the compiler", () => {
-  // --- KLIVE-BASIC-OFF: the checkbox is hidden (`.ai/klive-basic-switch.md`); restore with it
+  // --- KLIVE-BASIC-OFF: the checkbox is hidden (`dev/ai/klive-basic-switch.md`); restore with it
   it.skip("offers the switch only once Boriel BASIC works", async () => {
     const none = await openDialog();
     expect(none.vm.useBoriel.visible).toBe(false);

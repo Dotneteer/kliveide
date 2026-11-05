@@ -10,7 +10,7 @@ implementations. The ZX Spectrum Next's TurboSound is emulated in C, a port of `
 (2026-09-18, bug B73), tested at the hardware boundary by `test/zxnext-hw/audio/ay-psg.test.ts`.
 The MAME-shaped TypeScript `PsgChip` (and its unit tests) was retired once nothing used it, and the
 TypeScript Next audio devices went with the TypeScript Next backend
-(`.plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`).
+(`dev/plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`).
 
 ## Test Gaps
 

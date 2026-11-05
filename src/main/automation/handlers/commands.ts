@@ -4,7 +4,7 @@ import { automationError } from "../errors";
 import type { MethodContext } from "../method-types";
 
 /*
- * Running IDE commands for the methods built on them (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md`
+ * Running IDE commands for the methods built on them (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md`
  * D9, D10): the command runs into a fresh buffer that is mirrored to the Build pane, so the user
  * still sees what a script did, and its output comes back as plain text lines.
  */

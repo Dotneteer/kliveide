@@ -1,5 +1,5 @@
 /**
- * The Videoton TVC virtual keyboard (`.ai/videoton-tvc.md`, "Keyboard and typing"), drawn from a
+ * The Videoton TVC virtual keyboard (`dev/ai/videoton-tvc.md`, "Keyboard and typing"), drawn from a
  * photo of a TVC 64K: every matrix key is on it once (SHIFT twice), the legends are the machine's,
  * and each zone sends what it shows - the face holds the key (SHIFT too on the right button), the
  * printed shifted legend holds SHIFT with it, the joystick's directions and knob are the row-8

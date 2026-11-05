@@ -4,7 +4,7 @@ import { t } from "@common/i18n/i18n";
 import type { MessageKey } from "@common/i18n/keys.generated";
 
 /*
- * The history cursor as it crosses the Emu API (`.plans/LITE_STEP_BACK_PLAN.md` §4.3). Navigation
+ * The history cursor as it crosses the Emu API (`dev/plans/LITE_STEP_BACK_PLAN.md` §4.3). Navigation
  * is its own call, not a `MachineCommand` (D4): it never changes the machine.
  */
 

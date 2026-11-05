@@ -14,7 +14,7 @@ import { spectrumSnapshotProjectGuard } from "@renderer/appIde/commands/Spectrum
 /*
  * **Run** / **Debug** for a ZX Spectrum snapshot (`.sna`, `.z80`, `.szx`): the Explorer's context
  * menu entries and the buttons in the snapshot viewer's tab bar
- * (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.9), copied from `Z88SnapshotLaunchMenu.tsx`. All of
+ * (`dev/plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.9), copied from `Z88SnapshotLaunchMenu.tsx`. All of
  * them run the `zx-snapshot` command, so the Explorer, the viewer, the menus and a script do the
  * same thing.
  *

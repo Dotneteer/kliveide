@@ -5,7 +5,7 @@ import { intToX2, intToX4 } from "../utils";
 import { CUSTOM_Z80_DISASSEMBLY_TOOL, ICustomDisassembler, IDisassemblyApi } from "./custom-disassembly";
 
 /*
- * The HT-1080Z's custom disassembler (`.plans/HT1080Z_PLAN.md` §11). Level II BASIC's `RST 08h` is
+ * The HT-1080Z's custom disassembler (`dev/plans/HT1080Z_PLAN.md` §11). Level II BASIC's `RST 08h` is
  * its syntax check: the byte after it is the character (or token) the text must hold next. The ROM's
  * tables between 1608h and 18F6h are data, listed as such. Every model's BASIC ROM has them at the
  * same addresses (`test/ht1080z/disassembler.test.ts` checks the three ROMs).

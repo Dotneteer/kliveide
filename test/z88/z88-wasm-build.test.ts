@@ -17,14 +17,14 @@ import {
   source,
   wasmDistDirectoryRelative,
   Z88_WASM_MEMORY_BYTES
-} from "../../scripts/build-z88-wasm.cjs";
-import { checkZ88WasmSize, DEFAULT_MAX_BYTES, parseMaxBytes } from "../../scripts/check-z88-wasm-size.cjs";
+} from "../../dev/scripts/build-z88-wasm.cjs";
+import { checkZ88WasmSize, DEFAULT_MAX_BYTES, parseMaxBytes } from "../../dev/scripts/check-z88-wasm-size.cjs";
 import { z88WasmV2RequiredExports } from "@emu/machines/z88/wasm/Z88WasmV2Loader";
 import { z88WasmArtifactBytes } from "../harness/z88";
 import { sharedZ80Functions } from "../wasmSharedExports";
 
 /*
- * The Cambridge Z88 WASM build (Step 1 of `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`).
+ * The Cambridge Z88 WASM build (Step 1 of `dev/plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`).
  */
 
 type Call = { compiler: string; args: string[] };
@@ -163,8 +163,8 @@ describe("Cambridge Z88 WASM build", () => {
 
   it("is part of the platform builds", () => {
     expect(packageJson.scripts["build:all-wasm"]).toContain("npm run build:z88-wasm");
-    expect(packageJson.scripts["build:z88-wasm"]).toBe("node scripts/build-z88-wasm.cjs");
-    expect(packageJson.scripts["check:z88-wasm-size"]).toBe("node scripts/check-z88-wasm-size.cjs");
+    expect(packageJson.scripts["build:z88-wasm"]).toBe("node dev/scripts/build-z88-wasm.cjs");
+    expect(packageJson.scripts["check:z88-wasm-size"]).toBe("node dev/scripts/check-z88-wasm-size.cjs");
   });
 
   it("releases the build lock after a real build", () => {

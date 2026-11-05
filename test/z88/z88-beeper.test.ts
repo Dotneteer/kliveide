@@ -11,7 +11,7 @@ import { createZ88Session, type Z88Sample } from "../harness/z88";
  * The machine's samples go through a DC high-pass filter, so a level change shows as a jump of
  * about 1.0 between consecutive samples; a steady level decays towards 0. The tests count jumps.
  *
- * Step 0.3 of `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`.
+ * Step 0.3 of `dev/plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`.
  */
 
 const COM_RAMS = 0x04;

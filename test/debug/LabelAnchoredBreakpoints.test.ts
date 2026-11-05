@@ -20,7 +20,7 @@ import {
  * and a bank-relative one names an offset in a bank; both stop meaning what the user meant as soon
  * as a rebuild shifts the routine. "Break at `DrawSprite`" keeps meaning it.
  *
- * See `.ai/nex-debugging.md`.
+ * See `dev/ai/nex-debugging.md`.
  */
 
 const SIDECAR = "Game.nex.dis";

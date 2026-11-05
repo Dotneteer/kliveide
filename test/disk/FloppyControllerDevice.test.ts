@@ -245,7 +245,7 @@ describe("FloppyControllerDevice", () => {
     // while `Z80MachineBase.reset()` left `frameCompleted` false: the frame runner then skipped
     // frame initialization for the first frame, so the per-frame device tick that lives in
     // `onInitNewFrame` fired only 10 times for 11 frames. See
-    // `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.11.
+    // `dev/plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.11.
     expect(fdt.currentDrive.motorOn).toBe(true);
     expect(fdt.currentDrive.motorSpeed).toBe(22);
     expect(fdt.currentDrive.motorAccelerating).toBe(true);

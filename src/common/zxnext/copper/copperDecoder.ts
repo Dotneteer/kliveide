@@ -3,9 +3,9 @@
  *
  * One pure module (no React, no Node) shared by everything that shows a Copper word: the Copper
  * side-bar panel, the Copper List document, the debugger's stop message, the Breakpoints panel and
- * the assembler's `.copper` hover. See `.plans/COPPER_DEBUGGING_PLAN.md` §4.1.
+ * the assembler's `.copper` hover. See `dev/plans/COPPER_DEBUGGING_PLAN.md` §4.1.
  *
- * Encoding (`vendor/next-fpga/3.02.01/src/video/copper.vhd`; the C core mirrors it in `zxnext-copper.c`):
+ * Encoding (`dev/vendor/next-fpga/3.02.01/src/video/copper.vhd`; the C core mirrors it in `zxnext-copper.c`):
  *
  *   WAIT  1HHHHHHL LLLLLLLL   line L (9 bits, compared with `cvc`), horizontal position H (6 bits)
  *   MOVE  0RRRRRRR VVVVVVVV   NextReg R ($00-$7F) <- V; R = 0 is a NOP (no write pulse)

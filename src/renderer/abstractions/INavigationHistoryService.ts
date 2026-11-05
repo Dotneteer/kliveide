@@ -4,7 +4,7 @@ import type { NavigationEntry, NavigationReason } from "./NavigationLocation";
  * The IDE-wide Go Back / Go Forward history.
  *
  * One history for the whole IDE (not per document area); it lives in memory and is cleared when the
- * project closes. See `.plans/NAVIGATION_HISTORY_PLAN.md` §3.4.
+ * project closes. See `dev/plans/NAVIGATION_HISTORY_PLAN.md` §3.4.
  */
 export interface INavigationHistoryService {
   /**

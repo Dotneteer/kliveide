@@ -7,14 +7,14 @@ import { startBasic } from "../codegen/run-kit";
 import { isNextOnly, programs, readExpectations } from "../corpus/expectations";
 
 /**
- * What the optimiser gains (`.docs/z80-backend-optimiser.md` §7): every 48K corpus program is built at
+ * What the optimiser gains (`dev/patterns/z80-backend-optimiser.md` §7): every 48K corpus program is built at
  * each level and run to its end; its code size (the program's own code, runtime and data excluded)
  * and the T-states it took are compared with `opt-baseline.json`. A level may never get worse than
  * its recorded figures (a ratchet): code size exactly, T-states with one frame of slack, because a
  * program that waits (PAUSE, BEEP) can shift by a frame when its code changes. The emulator is
  * deterministic, so there is no other noise.
  *
- * `KBASIC_OPT_UPDATE=1` rewrites the baseline (`node scripts/kbasic-opt-report.cjs` does, and prints
+ * `KBASIC_OPT_UPDATE=1` rewrites the baseline (`node dev/scripts/kbasic-opt-report.cjs` does, and prints
  * the totals); lowering a figure is the normal way a baseline changes, raising one needs a reason.
  */
 const LEVELS = [0, 1, 2, 3];

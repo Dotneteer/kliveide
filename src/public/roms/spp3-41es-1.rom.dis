@@ -2,7 +2,7 @@
   "schemaVersion": 3,
   "machine": "rom",
   "source": {"fileName":"spp3-41es-1.rom"},
-  "authoring": ".ai/rom-annotations/README.md",
+  "authoring": "dev/ai/rom-annotations/README.md",
   "level": 2,
   "pages": {
     "0": {"crc32":"a8ac4966","name":"ZX Spectrum +2A/+3 v4.1 Spanish ROM 1 (syntax)"}

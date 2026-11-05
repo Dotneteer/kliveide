@@ -5,7 +5,7 @@ import type { SourceSet } from "../syntax/source";
 import { debugTypeOf } from "./types";
 
 /**
- * Klive BASIC's variables as the shared back end's debug descriptors (`.plans/SHARED_Z80_BACKEND_PLAN.md`
+ * Klive BASIC's variables as the shared back end's debug descriptors (`dev/plans/SHARED_Z80_BACKEND_PLAN.md`
  * §3.3): names as the source writes them, BASIC's type names, and where each lives — a label the
  * assembler resolves, a fixed address, a frame offset or a constant's value. The back end turns them
  * into the debugger's variable table after assembly.

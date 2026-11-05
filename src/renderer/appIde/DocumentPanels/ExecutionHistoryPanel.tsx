@@ -88,7 +88,7 @@ import styles from "./ExecutionHistoryPanel.module.scss";
 import { useT } from "@common/i18n/useT";
 
 /**
- * The Execution History document (`$history`, `.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.6, G4.1):
+ * The Execution History document (`$history`, `dev/plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.6, G4.1):
  * the last instructions the CPU ran in this debug session, newest at the bottom, with the registers
  * each one changed and the source line it came from. Read-only: it reads the core's ring when the
  * machine stops, by sequence number, a page at a time (§4.6.3).
@@ -136,7 +136,7 @@ const ExecutionHistoryPanel = (_props: DocumentProps) => {
   const machineId = useSelector((s) => s.emulatorState?.machineId);
   const machineState = useSelector((s) => s.emulatorState?.machineState);
   const isDebugging = useSelector((s) => s.emulatorState?.isDebugging);
-  // --- The history cursor (`.plans/LITE_STEP_BACK_PLAN.md` D13): its row is selected and in view
+  // --- The history cursor (`dev/plans/LITE_STEP_BACK_PLAN.md` D13): its row is selected and in view
   const historySequence = useSelector((s) => s.emulatorState?.historySequence);
   const compilation = useSelector((s) => s.compilation?.result) as KliveCompilerOutput | undefined;
 
@@ -464,7 +464,7 @@ const ExecutionHistoryPanel = (_props: DocumentProps) => {
     await copyText(text.replace(/\n$/, ""));
   };
 
-  // --- Export a trace (`.plans/TRACE_EXPORT_PLAN.md` §4.3): the command, with the document's filter
+  // --- Export a trace (`dev/plans/TRACE_EXPORT_PLAN.md` §4.3): the command, with the document's filter
   // --- and fold state, so the file holds what the user sees. A filter shows folded rows anyway.
   const [exporting, setExporting] = useState(false);
   const exportRows = async (fromSequence?: number) => {
@@ -523,7 +523,7 @@ const ExecutionHistoryPanel = (_props: DocumentProps) => {
     }
   };
 
-  // --- The reverse-debugging timeline's reach (`.plans/REVERSE_DEBUGGING_PLAN.md` §4.4)
+  // --- The reverse-debugging timeline's reach (`dev/plans/REVERSE_DEBUGGING_PLAN.md` §4.4)
   const reverseRange = useSelector((s) =>
     s.emulatorState?.reverseDebug?.active ? s.emulatorState.reverseDebug.rangeSeconds : undefined
   );

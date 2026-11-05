@@ -19,7 +19,7 @@ import {
 import { t } from "@common/i18n/i18n";
 
 /*
- * The Sprite Inspector's commands (`.plans/SPRITE_INSPECTOR_PLAN.md` D11): two commands, one
+ * The Sprite Inspector's commands (`dev/plans/SPRITE_INSPECTOR_PLAN.md` D11): two commands, one
  * document. Both open `$sprites`, each focused on its own view.
  */
 
@@ -78,7 +78,7 @@ export class ShowPatternsCommand extends IdeCommandBase<{ index?: number }> {
 /**
  * The 16K pattern RAM as a `.spr` file: 64 8-bit patterns of 256 bytes. The bytes are the same
  * whatever format the Patterns view shows; a 4-bit pattern is half of one of these
- * (`.plans/SPRITE_INSPECTOR_PLAN.md` D15).
+ * (`dev/plans/SPRITE_INSPECTOR_PLAN.md` D15).
  */
 export function patternRamAsSpr(patterns: Uint8Array): Uint8Array {
   return serializeSprFile(

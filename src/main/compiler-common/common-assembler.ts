@@ -1110,7 +1110,7 @@ export abstract class CommonAssembler<
   /**
    * On the HT-1080Z, code below $3C00 is in the ROM or the keyboard area and cannot be loaded, and code
    * in $3C00-$42E8 is overwritten by BASIC's screen and the ROM's work area
-   * (`.plans/HT1080Z_CODE_INJECTION_PLAN.md` D2). Warned once per segment and area: injection and
+   * (`dev/plans/HT1080Z_CODE_INJECTION_PLAN.md` D2). Warned once per segment and area: injection and
    * export refuse the first, and the second can be deliberate (a picture in video RAM).
    */
   protected checkHt1080zCodeRange(): void {
@@ -1396,7 +1396,7 @@ export abstract class CommonAssembler<
 
   /**
    * Where code with no `.org` goes: $8000, except on the ZX80/ZX81, where nothing executes there and
-   * code lives in the `1 REM` line (`.ai/zx8081.md`, "Machine code decisions", D3)
+   * code lives in the `1 REM` line (`dev/ai/zx8081.md`, "Machine code decisions", D3)
    */
   private modelDefaultStartAddress(): number {
     switch (this._output.modelType ?? this._options?.currentModel) {
@@ -1404,7 +1404,7 @@ export abstract class CommonAssembler<
         return ZX81_REM_BODY;
       case SpectrumModelType.ZX80:
         return ZX80_REM_BODY;
-      // --- Free RAM on every HT-1080Z model, above BASIC (`.plans/HT1080Z_CODE_INJECTION_PLAN.md` D8)
+      // --- Free RAM on every HT-1080Z model, above BASIC (`dev/plans/HT1080Z_CODE_INJECTION_PLAN.md` D8)
       case SpectrumModelType.HT1080Z:
         return 0x7000;
       // --- After the BASIC launcher line, where TVC machine code is loaded (`common/tvc/codePlacement.ts`)
@@ -1474,8 +1474,8 @@ export abstract class CommonAssembler<
     fromMacroEmit: boolean = false
   ): Promise<void> {
     /*
-     * A DeZog `LOGPOINT`, `ASSERTION` or `WPMEM` comment (`.plans/LOGPOINTS_PLAN.md` §4.7,
-     * `.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §4.3) on any line that is assembled -
+     * A DeZog `LOGPOINT`, `ASSERTION` or `WPMEM` comment (`dev/plans/LOGPOINTS_PLAN.md` §4.7,
+     * `dev/plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §4.3) on any line that is assembled -
      * comment-only and label-only lines included; lines of a false IF branch never get here. It
      * fires at the line's own address when the line emits code, and otherwise at the location
      * counter after it: the next instruction emitted in the same segment. Each macro expansion
@@ -1497,7 +1497,7 @@ export abstract class CommonAssembler<
     // --- instruction's line is checked before that instruction runs; on its own line, before the
     // --- next one. A WPMEM without an address watches the line's own address.
     // --- In a macro body, the outermost invocation is the line the user wrote: a failure names it
-    // --- (`.plans/Z80_UNIT_TESTS_PLAN.md` T2)
+    // --- (`dev/plans/Z80_UNIT_TESTS_PLAN.md` T2)
     const invocation = this._macroInvocations[0] as unknown as AssemblyLine<TInstruction> | undefined;
     const invokedAt =
       invocation && (invocation.fileIndex !== asmLine.fileIndex || invocation.line !== asmLine.line)
@@ -2702,7 +2702,7 @@ export abstract class CommonAssembler<
 
   /**
    * Processes the .defzx pragma: text in the ZX80's or ZX81's character set, a lower-case letter
-   * giving the inverse-video capital (`.ai/zx8081.md`, "Machine code decisions", D2)
+   * giving the inverse-video capital (`dev/ai/zx8081.md`, "Machine code decisions", D2)
    * @param pragma Pragma to process
    * @param emitAction Action to emit a code byte
    */
@@ -3739,7 +3739,7 @@ export abstract class CommonAssembler<
 
 
   // ---------------------------------------------------------------------------
-  // Copper pragma emission helpers (`.plans/COPPER_DEBUGGING_PLAN.md` §4.9)
+  // Copper pragma emission helpers (`dev/plans/COPPER_DEBUGGING_PLAN.md` §4.9)
   //
   // Copper words are big-endian (high byte first), as the Copper reads them:
   //   WAIT  1HHHHHHL LLLLLLLL   line 0..511, horizontal position 0..63
@@ -5506,7 +5506,7 @@ export abstract class CommonAssembler<
     // --- End found
     const lastLine = currentLineIndex.index;
 
-    // --- The procedure's extent (`.plans/PROFILER_PLAN.md` D7): its name is the label on the
+    // --- The procedure's extent (`dev/plans/PROFILER_PLAN.md` D7): its name is the label on the
     // --- `.proc` line, or the enclosing one - the open proc's, else the last global label
     const procStart = this.getCurrentAssemblyAddress();
     const procSegment = this._output.segments.length - 1;
@@ -5638,7 +5638,7 @@ export abstract class CommonAssembler<
 
     // --- Create a new nested module
     const newModule = new AssemblyModule(this._currentModule, this.isCaseSensitive);
-    // --- The name as written: unit-test suites are named after it (`.plans/Z80_UNIT_TESTS_PLAN.md` T3)
+    // --- The name as written: unit-test suites are named after it (`dev/plans/Z80_UNIT_TESTS_PLAN.md` T3)
     newModule.writtenName = moduleName;
     this._currentModule.addNestedModule(moduleName, newModule);
     this._currentModule = newModule;

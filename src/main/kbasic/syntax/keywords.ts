@@ -1,5 +1,5 @@
 /**
- * The reserved words of ZX BASIC (`.ai/zxbasic-syntax/zxbasic-syntax.json` `keywords`, which a test
+ * The reserved words of ZX BASIC (`dev/ai/zxbasic-syntax/zxbasic-syntax.json` `keywords`, which a test
  * keeps this table equal to) plus the CODEBANK extension's CODEBANK and FARPTR (plan D6).
  */
 export type KeywordKind = "statement" | "function" | "operator" | "modifier" | "type" | "declaration" | "misc";

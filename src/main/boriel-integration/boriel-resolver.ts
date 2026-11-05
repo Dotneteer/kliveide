@@ -9,7 +9,7 @@ import { BORIEL_INSTALL_FOLDER, BORIEL_MIN_MAJOR_VERSION } from "./boriel-config
 import { parseBorielVersion, versionFromOutput } from "./boriel-version";
 
 /*
- * Finding and checking the Boriel BASIC compiler (`.ai/boriel/integration.md`, "Resolver and version probe").
+ * Finding and checking the Boriel BASIC compiler (`dev/ai/boriel/integration.md`, "Resolver and version probe").
  * Resolution: an explicit `zxbasic.executablePath`, else `zxbasic.root` + `zxbc[.exe]`.
  */
 
@@ -41,7 +41,7 @@ export type VersionRunner = (executablePath: string, timeoutMs: number) => Promi
 /**
  * Runs `zxbc --version` in an empty temporary folder (zxbc reads `./project.ini` from its working
  * folder), with stdin closed and a timeout that kills it: a quarantined first launch on macOS
- * blocks forever (`.ai/boriel/kit.md`).
+ * blocks forever (`dev/ai/boriel/kit.md`).
  */
 export const runZxbcVersion: VersionRunner = async (executablePath, timeoutMs) => {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "klive-zxbc-"));

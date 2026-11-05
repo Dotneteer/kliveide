@@ -13,9 +13,9 @@ module. Read this before adding a hook, a debugger feature or a core.
 | `z80-cpu-exports.c` | Register, step-out, interrupt-depth, access-log and last-port exports | `Z80_EXPORT_PREFIX`, after `z80.c` |
 | `z80-debug-loop.c` | The debugger's in-core loop | `Z80_DEBUG_LOOP_PREFIX`, after `<prefix>ExecuteInstruction` |
 
-The plans behind them: `.plans/EXECUTION_HISTORY_VIEWER_PLAN.md`, `.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`,
-`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md` and, for the cost of debugging and the in-core loop's decisions, traps and
-budgets, `.ai/wasm-core-debug.md`. `scripts/check-wasm-cpu-contract.cjs` checks the includes.
+The plans behind them: `dev/plans/EXECUTION_HISTORY_VIEWER_PLAN.md`, `dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`,
+`dev/plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md` and, for the cost of debugging and the in-core loop's decisions, traps and
+budgets, `dev/ai/wasm-core-debug.md`. `dev/scripts/check-wasm-cpu-contract.cjs` checks the includes.
 
 ## Contention hooks
 
@@ -24,13 +24,13 @@ A core with memory contention defines `Z80_DELAY_MEMORY_READ`/`_WRITE` (a memory
 with an address on the bus, the timing tables' `ir:1`, `hl:1`, `pc+1:1` entries). The second T-state
 of an M1's refresh, with IR on the bus, goes through `Z80_DELAY_REFRESH_BUS_ACCESS`, which defaults to
 the address-bus hook; the 48K and 128K define it as nothing, because the ULA halts the CPU only on an
-M-cycle's first T-state (IR Contention's real-machine pictures, `.plans/SPECTRUM_ACCURACY_DOCS_PLAN.md`).
+M-cycle's first T-state (IR Contention's real-machine pictures, `dev/plans/SPECTRUM_ACCURACY_DOCS_PLAN.md`).
 The +2A/+3's gate array contends memory cycles only, so its address-bus and port hooks add no delay.
 
 An opcode fetch normally goes through `Z80_DELAY_MEMORY_READ` like any read. A core that must time
 M1 cycles on their own defines `Z80_DELAY_OPCODE_FETCH(address)`. The Videoton TVC needs it: its
 clock stretch differs for an M1, and its WAIT circuit adds a wait state to every M1
-(`.ai/videoton-tvc.md`, "The shared Z80 hook H1").
+(`dev/ai/videoton-tvc.md`, "The shared Z80 hook H1").
 - It then replaces the memory-read delay of every M1: the unprefixed opcode, the byte after a
   `CB`/`ED`/`DD`/`FD` prefix, a repeated `DD`/`FD`, and each halted cycle. It adds the fetch's three
   tacts itself; the refresh tact follows as usual.
@@ -42,7 +42,7 @@ clock stretch differs for an M1, and its WAIT circuit adds a wait state to every
 ## The Next's CPU is a T80N, not a Zilog Z80
 
 `Z80_T80N`, defined only by the Next (`zxnext-cpu.c`), switches `z80.c` to the FPGA's T80N
-(`vendor/next-fpga/3.02.01/src/cpu/`) where the two differ:
+(`dev/vendor/next-fpga/3.02.01/src/cpu/`) where the two differ:
 - *Flags:* `BIT` takes flag bits 3/5 from the operand, or 0 for `(HL)`/`(IX+d)`, never from MEMPTR.
   `IN r,(C)`, `LD A,I` and `LD A,R` keep flag bits 3/5, and `IN r,(C)` sets parity. `CPI` and friends
   take flag bits 3/5 from the byte. Block I/O keeps the flags of `SUB B,1`. The Z80N block copies
@@ -122,7 +122,7 @@ Copper and sprite watches (`canRunInCore`), and anything a test forces with
 ### Adding a core
 
 Include `z80-cpu-exports.c` and `z80-debug-loop.c`, export `cpuExports(...)` and `debugLoopExports(...)`
-(`scripts/z80-cpu-exports.cjs`) and list `debugLoopVolatileSymbols(...)` as volatile, give the loader the
+(`dev/scripts/z80-cpu-exports.cjs`) and list `debugLoopVolatileSymbols(...)` as volatile, give the loader the
 `breakpointFlags` and `condPlan` views, and give the host's `WasmDebugLoopHost` its `executeUntilStop`,
 `lastOpStart`, `pushBreakpointFlags` and `conditionPlan` hooks. If the core's bus record is not the shared
 Z80's, define `Z80_DEBUG_LOOP_ACCESS_HIT` (the Z88 and the Next do).

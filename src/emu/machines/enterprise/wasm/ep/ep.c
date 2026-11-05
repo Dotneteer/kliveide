@@ -3,8 +3,8 @@
  *
  * One translation unit: the machine state below, the Enterprise parts it includes, and the shared Z80
  * core (`src/emu/z80/wasm/z80.c`) wired to them through the `Z80_*` hook macros. No heap; every buffer
- * is a static array exposed through a pointer export. The plan is `.plans/ENTERPRISE_PLAN.md`; the
- * hardware facts come from the research pack `_input/enterprise128/`. The code is Klive's own.
+ * is a static array exposed through a pointer export. The plan is `dev/plans/ENTERPRISE_PLAN.md`; the
+ * hardware facts come from the research pack `dev/research/enterprise128/`. The code is Klive's own.
  *
  * One artifact runs both models (plan §4.3, D2): `epConfigure` picks the RAM size, and the host
  * uploads the model's ROMs.
@@ -419,7 +419,7 @@ uint32_t epGetOpStartAddress(void) { return epOpStartAddress; }
 #include "../../../../z80/wasm/z80-condition.c"
 
 // -----------------------------------------------------------------------------
-// Execution history (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` §3): the shared recorder. The
+// Execution history (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` §3): the shared recorder. The
 // context:
 //   0-3  the page registers B0h-B3h (the segment each 16K page shows)
 //   4    bit 0 the Enterprise 128
@@ -442,7 +442,7 @@ static inline void epHistoryContext(uint32_t kind, uint8_t *out) {
 #include "../../../../z80/wasm/z80-history.c"
 
 // -----------------------------------------------------------------------------
-// The access profile (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §2.2): a byte's profile offset is
+// The access profile (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §2.2): a byte's profile offset is
 // its physical address in `epMemory`. ROM and unmapped segments take no writes.
 // -----------------------------------------------------------------------------
 

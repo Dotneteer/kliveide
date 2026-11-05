@@ -1,5 +1,5 @@
 /*
- * The journal-replay determinism test (`.plans/REVERSE_DEBUGGING_PLAN.md` T12, Phase 0 (d)), on the
+ * The journal-replay determinism test (`dev/plans/REVERSE_DEBUGGING_PLAN.md` T12, Phase 0 (d)), on the
  * 48K and the Next. It is the gate a core passes before it gets reverse debugging (D19).
  *
  *   1. Machine A runs a scripted workload with randomly timed inputs - keys and, through the
@@ -454,7 +454,7 @@ function zx8081Machine(machineId: string): MachineFactory {
 }
 
 /**
- * The HT-1080Z at the `>` prompt (`.plans/HT1080Z_PLAN.md` §11): no interrupts, the video drawn
+ * The HT-1080Z at the `>` prompt (`dev/plans/HT1080Z_PLAN.md` §11): no interrupts, the video drawn
  * against the CPU clock, the AY beside the beeper. Inputs besides keys: memory edits, the clock
  * multiplier, AY register writes through ports 1Fh/1Eh, and the RESET key's NMI.
  */
@@ -492,7 +492,7 @@ async function ht1080zMachine(): Promise<Driver> {
 }
 
 /**
- * The Videoton TVC 64K+ at BASIC 2.2's prompt (`.ai/videoton-tvc.md`, "Memory partitions, history and
+ * The Videoton TVC 64K+ at BASIC 2.2's prompt (`dev/ai/videoton-tvc.md`, "Memory partitions, history and
  * profile"): the cursor and
  * sound interrupts, the clock stretch on video RAM. Inputs besides keys: memory edits, the border
  * and palette ports, the paging ports 02h/0Ch and the sound divider and its restart.
@@ -536,7 +536,7 @@ async function tvcMachine(): Promise<Driver> {
 }
 
 /**
- * The Enterprise 128 at IS-BASIC's prompt (`.plans/ENTERPRISE_PLAN.md` §11): the video and 1 Hz
+ * The Enterprise 128 at IS-BASIC's prompt (`dev/plans/ENTERPRISE_PLAN.md` §11): the video and 1 Hz
  * interrupts, DAVE's waits and NICK's stretch. Inputs besides keys: memory edits, NICK's border and
  * FIXBIAS ports, DAVE's sound registers and the keyboard row select.
  */
@@ -629,7 +629,7 @@ const cores: [SpikeCoreId, MachineFactory, string[], string?][] = [
   ["zxnext", () => nextMachine(), NEXT_KEYS],
   ["zxnext", () => nextMachine(true), NEXT_KEYS, "zxnext (Pi I2S)"],
   ["zxnext", () => nextMachine(false, true), NEXT_KEYS, "zxnext (tape)"],
-  // --- One representative case per further Next artifact (`.ai/zxnext-models.md`, "Rules")
+  // --- One representative case per further Next artifact (`dev/ai/zxnext-models.md`, "Rules")
   ["zxnext", () => nextMachine(false, false, "ks2-30204"), NEXT_KEYS, "zxnext (ks2-30204)"],
   ["sp128", sp128FamilyMachine("sp128", "sp128"), SP128_KEYS],
   ["sp128", sp128FamilyMachine("pentagon", "sp128"), SP128_KEYS, "pentagon"],
@@ -650,7 +650,7 @@ const cores: [SpikeCoreId, MachineFactory, string[], string?][] = [
 const SCRATCH_CORES: SpikeCoreId[] = ["sp48", "zxnext"];
 
 /*
- * T5's proof (`.plans/REVERSE_DEBUGGING_PLAN.md` Phase 3): a lean keyframe - one that leaves the
+ * T5's proof (`dev/plans/REVERSE_DEBUGGING_PLAN.md` Phase 3): a lean keyframe - one that leaves the
  * frame-boundary scratch the layout stamp names out - restored with that scratch full of garbage
  * replays every interval into the next keyframe exactly. Garbage that reached anything the keyframe
  * keeps would show as a differing page.

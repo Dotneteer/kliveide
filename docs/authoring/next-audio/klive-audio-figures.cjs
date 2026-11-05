@@ -9,7 +9,7 @@
 // its constants copied below) on a timeline; the diagrams are drawn from Klive's code. Then:
 //   node docs/authoring/next-audio/klive-audio-figures.cjs
 //
-// Sized for print (.ai/hardware-articles-guide.md, Figures): the drawings use the whole 700-unit width, and
+// Sized for print (dev/ai/hardware-articles-guide.md, Figures): the drawings use the whole 700-unit width, and
 // no text is smaller than 13.5 units.
 "use strict";
 

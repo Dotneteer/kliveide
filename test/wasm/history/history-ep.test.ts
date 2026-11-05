@@ -6,7 +6,7 @@ import { describeHistoryCore, history } from "./historyCoreSuite";
 import { epDriver } from "./drivers";
 
 /*
- * The Enterprise's execution history (`.plans/ENTERPRISE_PLAN.md` §11): the shared suite on both
+ * The Enterprise's execution history (`dev/plans/ENTERPRISE_PLAN.md` §11): the shared suite on both
  * models, and the machine's own context - the page registers B0h-B3h, the model and BFh.
  */
 

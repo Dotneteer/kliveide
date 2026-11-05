@@ -3,13 +3,13 @@ import type { ScreenConfiguration } from "@emu/abstractions/ScreenConfiguration"
 import { MC_DISK_SUPPORT, MC_SCORPION, MC_SP128_TIMING } from "@common/machines/constants";
 
 /*
- * The two timings the `sp128` core runs (`.plans/PENTAGON_128_PLAN.md`, P2-P3): the ZX Spectrum 128K
+ * The two timings the `sp128` core runs (`dev/plans/PENTAGON_128_PLAN.md`, P2-P3): the ZX Spectrum 128K
  * and the Pentagon 128. To software the two are the same machine - `$7FFD` paging, the 128K ROMs, the
  * AY - and differ only in timing. This table is the TypeScript side of the core's
  * `sp128ApplyTiming` (sp128.c); `test/machines/sp128-timings.test.ts` keeps the two equal.
  *
  * The Pentagon numbers come from the ZX Spectrum Next's own Pentagon mode in the FPGA sources
- * (`vendor/next-fpga/3.02.01/src/video/zxula_timing.vhd`, `zxnext.vhd`), the reference the Next core already
+ * (`dev/vendor/next-fpga/3.02.01/src/video/zxula_timing.vhd`, `zxnext.vhd`), the reference the Next core already
  * follows; sp128.c's comments carry the derivation.
  */
 
@@ -113,7 +113,7 @@ export const SP128_TIMINGS: Record<Sp128TimingId, Sp128Timing> = {
     },
     snapshotKind: "pentagon"
   },
-  // --- The Scorpion ZS-256 (`.plans/TIMEX_SCORPION_PLAN.md` G9.4c, §8): the 48K's raster at
+  // --- The Scorpion ZS-256 (`dev/plans/TIMEX_SCORPION_PLAN.md` G9.4c, §8): the 48K's raster at
   // --- 3.5 MHz, no contention, the floating bus kept; its own machine (`scorpion`) on this core
   scorpion: {
     id: "scorpion",
@@ -164,7 +164,7 @@ export function getSp128Timing(config: MachineConfigSet | undefined): Sp128Timin
  */
 export const SP128_MODELS: MachineModel[] = [
   { modelId: "sp128", displayName: "ZX Spectrum 128K", config: { [MC_SP128_TIMING]: "sp128" } },
-  // --- The Pentagon's Beta 128 disk interface has two drives (`.plans/BETA128_TRDOS_PLAN.md` B1, Q3)
+  // --- The Pentagon's Beta 128 disk interface has two drives (`dev/plans/BETA128_TRDOS_PLAN.md` B1, Q3)
   {
     modelId: "pentagon",
     displayName: "Pentagon 128",

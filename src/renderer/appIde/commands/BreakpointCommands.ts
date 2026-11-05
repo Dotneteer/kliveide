@@ -200,7 +200,7 @@ export type BreakpointWithAddressArgs = {
   "-hit"?: string;
   /** The condition: the raw rest of the line after `-if`. */
   "-if"?: string;
-  /** A logpoint's message template (`.plans/LOGPOINTS_PLAN.md` §4.4), quotes removed. */
+  /** A logpoint's message template (`dev/plans/LOGPOINTS_PLAN.md` §4.4), quotes removed. */
   "-log"?: string;
   /** A one-shot: removed the first time it stops the machine (G1.6, O1). `bp-set` only. */
   "-once"?: boolean;
@@ -211,7 +211,7 @@ export type BreakpointWithAddressArgs = {
   /**
    * The annotation label a `<bank>:<label>` spec anchors the breakpoint to, and the sidecar whose
    * label table it is looked up in: the active annotation set's
-   * (`.docs/annotations.md`, "Commands").
+   * (`dev/patterns/annotations.md`, "Commands").
    */
   label?: string;
   labelFile?: string;
@@ -409,7 +409,7 @@ export abstract class BreakpointWithAddressCommand extends IdeCommandBase<Breakp
 
               /*
                * `ROM:<name>` and `<bank>:<label>` - a breakpoint named by an annotation label
-               * (`.docs/annotations.md`, "Commands", "ROM Annotations"). Told apart from
+               * (`dev/patterns/annotations.md`, "Commands", "ROM Annotations"). Told apart from
                * `<partition>:<address>` by the second part being an identifier: an address literal
                * starts with `$`, `%` or a digit.
                */
@@ -444,7 +444,7 @@ export abstract class BreakpointWithAddressCommand extends IdeCommandBase<Breakp
                * none of those - `n` and `r` are not hex digits.
                */
               /*
-               * `cu:<index>` - a Copper-instruction breakpoint (`.plans/COPPER_DEBUGGING_PLAN.md`
+               * `cu:<index>` - a Copper-instruction breakpoint (`dev/plans/COPPER_DEBUGGING_PLAN.md`
                * §4.8). Before the partition gate for the same reason as `nr:`; `cu` cannot shadow a
                * partition label either (`u` is not a hex digit).
                */
@@ -470,7 +470,7 @@ export abstract class BreakpointWithAddressCommand extends IdeCommandBase<Breakp
 
               /*
                * `sp:<sprite>` - a sprite-attribute breakpoint
-               * (`.plans/SPRITE_ATTRIBUTE_BREAKPOINTS_PLAN.md`). Before the partition gate for the
+               * (`dev/plans/SPRITE_ATTRIBUTE_BREAKPOINTS_PLAN.md`). Before the partition gate for the
                * same reason as `nr:`; `sp` cannot shadow a partition label (`s`, `p` are not hex).
                */
               if (segments[0] === "sp") {
@@ -581,7 +581,7 @@ export abstract class BreakpointWithAddressCommand extends IdeCommandBase<Breakp
 
                 // --- The bank is a 16K bank number in plain hex, *not* a partition label: on the
                 // --- Next the label map describes 8K pages, and routing a bank through it is how
-                // --- the two index spaces got confused. See `.ai/nex-debugging.md`.
+                // --- the two index spaces got confused. See `dev/ai/nex-debugging.md`.
                 const bank = parseInt(segments[0], 16);
                 if (!Number.isInteger(bank) || bank < 0 || bank > bankSpace.maxBank) {
                   messages = [
@@ -783,7 +783,7 @@ export class SetBreakpointCommand extends BreakpointWithAddressCommand {
   get description() {
     return t("commands.bp.set.description");
   }
-  // --- The first line is syntax (English); the explanations are translated (`.ai/localization.md`)
+  // --- The first line is syntax (English); the explanations are translated (`dev/ai/localization.md`)
   get usage(): string[] {
     return [
       "bp-set <address-spec> [-r] [-w] [-i] [-o] [-c] [-m <mask>] [-v <value>] [-len <bytes>] [-attr <bytes>] [-once] [-log \"<template>\"] [-hit <spec>] [-if <condition>]",
@@ -1002,7 +1002,7 @@ export function unescapeLogOption(value: string): string {
 }
 
 // ================================================================================================
-// Logpoint groups (`.plans/LOGPOINTS_PLAN.md` §4.4)
+// Logpoint groups (`dev/plans/LOGPOINTS_PLAN.md` §4.4)
 
 /** Every group the current logpoints name, with how many each holds. */
 function knownLogGroups(bps: BreakpointInfo[]): Map<string, number> {

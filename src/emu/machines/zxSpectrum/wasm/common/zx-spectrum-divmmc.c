@@ -1,7 +1,7 @@
 #include "zx-spectrum-divmmc.h"
 
 /*
- * The DivMMC, shared by the Next and the classic cores (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, C3).
+ * The DivMMC, shared by the Next and the classic cores (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, C3).
  * Written from the Next FPGA's divmmc.vhd and zxnext.vhd (the core's reference); moved here from the
  * Next's zxnext-divmmc.c unchanged, the machine-specific parts left to the including core:
  *

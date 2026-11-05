@@ -5,7 +5,7 @@ import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
 
 /*
  * A compiler that writes its own tape (a banked Boriel BASIC 128K program,
- * `.ai/boriel/integration.md`, "Banked programs") hands it over as `prebuiltTape`: the TAP/TZX export
+ * `dev/ai/boriel/integration.md`, "Banked programs") hands it over as `prebuiltTape`: the TAP/TZX export
  * saves those blocks, because zxbc's loader pages the banks the way its runtime expects and Klive's
  * 128K loader does not (the program crashed after loading).
  */

@@ -2,7 +2,7 @@
  * The parser of OZvm `.z88` snapshot files.
  *
  * Normative format: https://gitlab.com/b4works/ozvm/-/wikis/Z88-Snapshot-Format. The design is in
- * `.plans/Z88_SNAPSHOT_PLAN.md` §4.1.
+ * `dev/plans/Z88_SNAPSHOT_PLAN.md` §4.1.
  *
  * This module only reads the file. Whether Klive can load what it read (the card types and sizes it
  * emulates, hybrid cards) is decided by `z88SnapshotMapping.ts`. That way the `.z88` viewer can show

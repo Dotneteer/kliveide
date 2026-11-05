@@ -23,12 +23,12 @@
 
 /*
  * Z80_T80N: the ZX Spectrum Next's CPU is the T80N of the FPGA core
- * (vendor/next-fpga/3.02.01/src/cpu/t80n*.vhd, core 3.02.01), not a Zilog die, and some of its flags and one
+ * (dev/vendor/next-fpga/3.02.01/src/cpu/t80n*.vhd, core 3.02.01), not a Zilog die, and some of its flags and one
  * instruction differ from a Zilog Z80. The Next core defines Z80_T80N before including this file
  * (src/emu/machines/zxNext/wasm/zxnext/zxnext-cpu.c); every other
  * core builds this file without it and keeps the Zilog behaviour (ZEXALL, the Spectrum suites).
  * Each difference (D1-D8) is pinned by the T80N differential, test/vhdl/f1/
- * (.plans/ZX_NEXT_FIDELITY_PROOF_PLAN.md, section 8, F1).
+ * (dev/plans/ZX_NEXT_FIDELITY_PROOF_PLAN.md, section 8, F1).
  */
 
 #ifndef Z80_CAPTURE_BUS_EVENTS
@@ -36,8 +36,8 @@
 #endif
 
 /*
- * Benchmark-only switches (`.plans/WASM_CORE_LEAN_AND_DEBUG_PLAN.md` Phase 0). No production build
- * defines them; `scripts/benchmark-debug-overhead.cjs` passes them with `-D` to measure what the
+ * Benchmark-only switches (`dev/plans/WASM_CORE_LEAN_AND_DEBUG_PLAN.md` Phase 0). No production build
+ * defines them; `dev/scripts/benchmark-debug-overhead.cjs` passes them with `-D` to measure what the
  * debugging support costs a fast frame. Builds with them emulate identically but cannot debug:
  * - `Z80_BENCH_STRIP_STEP_OUT`: no shadow step-out stack (D5's measurement);
  * - `Z80_BENCH_STRIP_DEBUG`: no debug work at all - the stack, the history and profile hooks, bus
@@ -66,7 +66,7 @@
  * the Z80 only on an M-cycle's first T-state (Sinclair Wiki, "ZX Spectrum ULA"), and the documented
  * instruction timings give an opcode fetch as `pc:4` with no IR entry. Real 48K and 128K machines
  * draw IR Contention's (Mark Woodmass) lower border bars where they are only without this delay
- * (`.plans/SPECTRUM_ACCURACY_DOCS_PLAN.md`). By default it is an address-bus access, as before.
+ * (`dev/plans/SPECTRUM_ACCURACY_DOCS_PLAN.md`). By default it is an address-bus access, as before.
  */
 #ifndef Z80_DELAY_REFRESH_BUS_ACCESS
 #define Z80_DELAY_REFRESH_BUS_ACCESS(address) Z80_DELAY_ADDRESS_BUS_ACCESS(address)
@@ -124,7 +124,7 @@
 #endif
 
 /*
- * The execution-history recorder (`z80-history.c`, `.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.1).
+ * The execution-history recorder (`z80-history.c`, `dev/plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.1).
  * A core that records history includes `z80-history.h` before this file, which defines all three;
  * every other core keeps these no-ops and pays nothing.
  *
@@ -153,7 +153,7 @@
 #endif
 
 /*
- * The access profile (`z80-profile.c`, `.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §4.1). A core that
+ * The access profile (`z80-profile.c`, `dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §4.1). A core that
  * profiles includes `z80-profile.h` before this file, which defines all seven; every other core keeps
  * these no-ops and pays nothing.
  *
@@ -188,7 +188,7 @@
 #define Z80_PROFILE_HALT_END() ((void)0)
 #endif
 /*
- * The call tracker (`.plans/PROFILER_PLAN.md` D9), at the same four shadow-stack choke points as
+ * The call tracker (`dev/plans/PROFILER_PLAN.md` D9), at the same four shadow-stack choke points as
  * step-out: `Z80_PROFILE_CALL(rst)` in `callCore`/`rstCore`, `Z80_PROFILE_RET()` in `retCore` and
  * `Z80_PROFILE_INT(nmi)` after an interrupt's push. Each only notes the event; the instruction's end
  * settles it.
@@ -535,7 +535,7 @@ Z80_ALWAYS_INLINE uint8_t readCodeMemory(uint16_t address) {
 /*
  * An M1 opcode fetch, for a machine that times it differently from a data read (the Videoton TVC's
  * clock stretch holds the clock in T2 of an M1 but in T3 of a read, and its WAIT circuit adds a wait
- * state to every M1; `.ai/videoton-tvc.md`, "The shared Z80 hook H1"). The hook replaces the
+ * state to every M1; `dev/ai/videoton-tvc.md`, "The shared Z80 hook H1"). The hook replaces the
  * fetch's memory-read delay: it must add the fetch's first three tacts itself, as
  * `Z80_DELAY_MEMORY_READ` does; the refresh tact follows as usual. Only a core that defines it
  * compiles this path.
@@ -3568,7 +3568,7 @@ void z80ExecuteCpuCycle(void) {
     /*
      * A halted CPU fetches the byte after the HALT and ignores it (PC stays on the HALT here, so
      * that is PC + 1): a HALT at $7FFF on the 48K is contended once, its halted cycles are not.
-     * HALT2INT's real-machine results show it (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phase 4).
+     * HALT2INT's real-machine results show it (`dev/plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phase 4).
      */
 #ifdef Z80_DELAY_OPCODE_FETCH
     /* A halted cycle is an M1 too (/M1 is low), so a machine timing M1s on its own sees it */
@@ -3617,7 +3617,7 @@ void z80ExecuteCpuCycle(void) {
      * M1. It used to be added after the operation, which kept every instruction's length but put
      * each operand and data access of a prefixed instruction one T-state early, so the ZX Spectrum
      * contended them at the wrong T-state (ZX Spectrum Timing Tests 48K failed all its contended
-     * tests; `.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phase 0), and a DD/FD repeated as a prefix
+     * tests; `dev/plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phase 0), and a DD/FD repeated as a prefix
      * took 3 T-states instead of 4.
      */
     Z80_REFRESH(IR);

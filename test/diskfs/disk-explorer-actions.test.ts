@@ -15,7 +15,7 @@ import {
 import { analyzeDiskImage } from "@renderer/appIde/DocumentPanels/DiskExplorer/diskExplorerModel";
 
 /*
- * The Disk Explorer's flows (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, B4) through fake ports: a
+ * The Disk Explorer's flows (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, B4) through fake ports: a
  * disk "file" in memory, a machine that may be paused, and the user's answers.
  */
 

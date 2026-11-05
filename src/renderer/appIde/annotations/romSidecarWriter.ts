@@ -8,7 +8,7 @@ import {
 } from "@common/roms/romAnnotationTools";
 
 /*
- * Writing a ROM sidecar's working copy so it stays shippable (`.plans/ROM_ANNOTATION_EDITING_PLAN.md`
+ * Writing a ROM sidecar's working copy so it stays shippable (`dev/plans/ROM_ANNOTATION_EDITING_PLAN.md`
  * R5, §4.5).
  *
  * A working copy is copied into `src/public/roms/` unchanged once its author is happy with it, and

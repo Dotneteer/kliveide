@@ -12,7 +12,7 @@ import { findSmcRuns } from "@common/profile/smcReport";
 import { profileLayoutOf } from "@common/profile/layouts";
 import { PF_CODE, PF_EXECUTED, PF_SELF_MODIFIED, PF_WRITTEN } from "@common/profile/profileTypes";
 
-/* The coverage exports and the SMC report (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D9, D16, Phase 6) */
+/* The coverage exports and the SMC report (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D9, D16, Phase 6) */
 
 const sp48 = profileLayoutOf("sp48")!;
 const sp128 = profileLayoutOf("sp128")!;

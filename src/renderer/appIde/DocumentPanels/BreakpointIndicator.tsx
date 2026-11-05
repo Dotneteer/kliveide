@@ -76,7 +76,7 @@ type Props = {
   onEdit?: () => void;
   /**
    * The breakpoint has a condition or a hit-count rule: the dot carries an "=" mark
-   * (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.4.2).
+   * (`dev/plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.4.2).
    */
   conditional?: boolean;
   /**
@@ -210,7 +210,7 @@ export const BreakpointIndicator = ({
     // --- The gesture is only discoverable from here, which is why it is listed rather than left to
     // --- be found. See `runToHere`.
     (canRunTo ? `\n${t("panels.doc.breakpoint.hint.runHere", { modifier: runToModifierLabel })}` : "") +
-    // --- One-shots (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` O1)
+    // --- One-shots (`dev/plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` O1)
     (readOnly || isLogpointGlyph(glyph)
       ? ""
       : oneShot
@@ -299,7 +299,7 @@ export const BreakpointIndicator = ({
    * A modifier-click rather than a menu item because the indicator is where the other
    * address-specific gestures already live, and one handler here gives the gesture to both the live
    * disassembly view and every NEX bank dump. A proper row context menu is the better home
-   * eventually; see `.ai/nex-debugging.md`.
+   * eventually; see `dev/ai/nex-debugging.md`.
    */
   const runToHere = async () => {
     if (!canRunTo) return;

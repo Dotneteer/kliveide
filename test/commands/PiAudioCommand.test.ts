@@ -6,7 +6,7 @@ import { PiAudioCommand } from "@renderer/appIde/commands/PiAudioCommand";
 import { ValidationMessageType } from "@renderer/abstractions/ValidationMessageType";
 
 /*
- * The `pi-audio` IDE command (`.plans/PI_I2S_AUDIO_PLAN.md` §4). The emulator is mocked here; the
+ * The `pi-audio` IDE command (`dev/plans/PI_I2S_AUDIO_PLAN.md` §4). The emulator is mocked here; the
  * machine side runs on the real core in `test/zxnext-hw/audio/pi-i2s.test.ts`.
  */
 

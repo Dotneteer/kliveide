@@ -23,7 +23,7 @@ import {
 } from "@renderer/appIde/DocumentPanels/Z88/z88SnapshotView";
 
 /*
- * What the `.z88` viewer shows (`.plans/Z88_SNAPSHOT_PLAN.md` §4.8, Phase 5), without React. The
+ * What the `.z88` viewer shows (`dev/plans/Z88_SNAPSHOT_PLAN.md` §4.8, Phase 5), without React. The
  * sample's values come from its `snapshot.settings`.
  */
 
@@ -184,7 +184,7 @@ describe("Z88 snapshot viewer - cards", () => {
 });
 
 /*
- * The Slots browser's rows (`.plans/Z88_SLOT_BROWSER_PLAN.md` §4.2). The sample pages: COM.RAMS (bank
+ * The Slots browser's rows (`dev/plans/Z88_SLOT_BROWSER_PLAN.md` §4.2). The sample pages: COM.RAMS (bank
  * $20 at $0000), SR0 = $21 (the upper 8K of $20), SR1 = $22, SR2 = $BE and SR3 = $BF (the 32K EPROM
  * of slot 2 through its mirrors: $80 and $81). PC = $F523.
  */

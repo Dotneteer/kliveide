@@ -45,9 +45,10 @@ export function getFFmpegPath(): string {
  * In a packaged app `@ffmpeg-installer/ffmpeg` computes its binary's path from its own location,
  * which is inside `app.asar`. Electron's `fs` answers for that path, so the binary looked present, but
  * `spawn` cannot execute a file inside an archive. Every recording in a packaged build therefore
- * created its folder and nothing else (issue #1374). `electron-builder.json5` unpacks the package to
- * `app.asar.unpacked`, as the package's own README asks. In a development run there is no archive
- * and the path is returned unchanged.
+ * created its folder and nothing else (issue #1374). The packaged build carries the package in
+ * `app.asar.unpacked` (electron-builder unpacks it without an `asarUnpack` entry: checked in the
+ * 2026-10-23 macOS build), as the package's own README asks. In a development run there is no
+ * archive and the path is returned unchanged.
  */
 export function toUnpackedAsarPath(filePath: string): string {
   return filePath.replace(/([\\/])app\.asar([\\/])/, "$1app.asar.unpacked$2");

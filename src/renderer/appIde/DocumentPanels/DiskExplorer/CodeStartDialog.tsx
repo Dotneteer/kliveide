@@ -7,7 +7,7 @@ import type { DialogComponentProps } from "@renderer/controls/overlay/DialogProv
 import { useT } from "@common/i18n/useT";
 
 /*
- * Where a headerless binary added to a disk loads (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md,
+ * Where a headerless binary added to a disk loads (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md,
  * B4): a decimal or $-hex address, 32768 suggested.
  */
 

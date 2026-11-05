@@ -19,7 +19,7 @@ import { ValidationMessageType } from "@renderer/abstractions/ValidationMessageT
  * does not get written to a project or a sidecar (session-owned), because both failures are silent:
  * the user would find breakpoints they never set, at addresses they only wanted to reach once.
  *
- * See `.ai/nex-debugging.md`.
+ * See `dev/ai/nex-debugging.md`.
  */
 function contextFor(
   machineState: MachineControllerState | undefined,

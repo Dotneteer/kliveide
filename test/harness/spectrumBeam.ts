@@ -1,6 +1,6 @@
 /*
  * Starting code at an exact T-state of the ZX Spectrum's frame, for the ULA timing tests
- * (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md`): the floating bus, a write racing the beam, a border change,
+ * (`dev/plans/SPECTRUM_ULA_ACCURACY_PLAN.md`): the floating bus, a write racing the beam, a border change,
  * snow. Shared by the 48K and the 128K harnesses (`./sp48`, `./sp128`).
  *
  * The code runs from uncontended RAM ($8000 by default) with interrupts off, after a filler of NOPs

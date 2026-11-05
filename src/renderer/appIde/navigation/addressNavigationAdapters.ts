@@ -36,7 +36,7 @@ import type { PFileRegionKind } from "../DocumentPanels/PFile/pFileView";
  * (`DocumentApi.getNavigationLocator`) and falls back to the document's saved view state; restore
  * activates (or reopens) the document and asks its view to `revealLocator`.
  *
- * See `.plans/NAVIGATION_HISTORY_PLAN.md` §3.2 and §4.2-4.3.
+ * See `dev/plans/NAVIGATION_HISTORY_PLAN.md` §3.2 and §4.2-4.3.
  */
 
 /** Within a screenful of rows: one entry, not two. */
@@ -294,7 +294,7 @@ export function createStaticDumpNavigationAdapter(
         return true;
       }
 
-      // --- A ZX Spectrum snapshot's RAM bank (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §9)
+      // --- A ZX Spectrum snapshot's RAM bank (`dev/plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §9)
       const spectrumBank = parseSpectrumBankDocumentId(entry.documentId);
       if (spectrumBank) {
         if (!deps.readSpectrumBankBytes) return false;

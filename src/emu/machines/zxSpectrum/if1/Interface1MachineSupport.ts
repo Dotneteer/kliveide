@@ -6,7 +6,7 @@ import { IF1_SLOT_SIZE, Interface1Support, type Interface1CorePrefix } from "./i
 import { checkInterface1Rom, IF1_ROM_RESOURCE, type Interface1RomEdition } from "./if1Rom";
 
 /*
- * The Interface 1 on a machine class (`.plans/MICRODRIVE_PLAN.md` Phase 3): what the 48K and the
+ * The Interface 1 on a machine class (`dev/plans/MICRODRIVE_PLAN.md` Phase 3): what the 48K and the
  * 128K share. It connects the interface with its ROM, puts the media store's cartridges into the
  * drives, and hands the slots the guest writes back to the controller, as `Beta128Disks` does for
  * the Pentagon's disks.

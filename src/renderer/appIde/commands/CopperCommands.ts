@@ -16,7 +16,7 @@ import {
 import { t } from "@common/i18n/i18n";
 
 /*
- * The ZX Spectrum Next Copper's commands (`.plans/COPPER_DEBUGGING_PLAN.md` §4.5, §4.6). The
+ * The ZX Spectrum Next Copper's commands (`dev/plans/COPPER_DEBUGGING_PLAN.md` §4.5, §4.6). The
  * breakpoint form, `cu:<index>`, lives with the other address specs in `BreakpointCommands.ts`.
  */
 

@@ -9,7 +9,7 @@ import { t } from "@common/i18n/i18n";
 import type { DefinitionLabel } from "@renderer/appIde/annotations/goToDefinition";
 
 /*
- * The live disassembly view's row menu (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §4.2): the
+ * The live disassembly view's row menu (`dev/plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §4.2): the
  * gutter's gestures, named and discoverable. Each item is an IDE command, so the menu adds no
  * second path to the breakpoint set. No React, so the items are tested without a view.
  */
@@ -27,7 +27,7 @@ export type RowMenuTarget = {
 };
 
 /**
- * The annotation entries of a live row (`.docs/annotations.md`, "The Live Disassembly View"): the
+ * The annotation entries of a live row (`dev/patterns/annotations.md`, "The Live Disassembly View"): the
  * bank document's own, with the same shortcuts, acting on the bank or ROM page the row is in.
  */
 export type AnnotationRowMenuItem = {
@@ -173,7 +173,7 @@ export function disassemblyRowMenuItems(
     command: `run-to $${toHexa4(target.address)}`
   });
   items.push({ id: "edit", text: t("panels.doc.rowMenu.editBreakpoint"), hint: "Double-Click", disabled: !bp });
-  // --- The graphics finder at the row (`.docs/reverse-engineering-tools.md`, "Graphics finder")
+  // --- The graphics finder at the row (`dev/patterns/reverse-engineering-tools.md`, "Graphics finder")
   items.push({
     id: "showGraphics",
     text: t("panels.doc.rowMenu.showAsGraphics"),

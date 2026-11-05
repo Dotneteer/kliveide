@@ -4,7 +4,7 @@
  * The Z88's slot strip, under the emulator screen.
  *
  * This is a **device surface**, so `--bgcolor-display` / `--color-display` are correct and stay:
- * per the settled rule in `.ai/ui-theming-intent-and-lessons.md`, what belongs to the machine does
+ * per the settled rule in `dev/ai/ui-theming-intent-and-lessons.md`, what belongs to the machine does
  * not follow the app's tone. Only the app-owned parts — the type scale, the radius and the spacing
  * — were out of step, which is why this was the last emulator-shell surface left unconverted.
  */

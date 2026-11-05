@@ -8,7 +8,7 @@ import { SP48_MAIN_ENTRY } from "@emu/machines/ZxSpectrumBase";
 import { createTimexSession, hasTc2048Rom, type TimexTestSession } from "../harness/timex";
 
 /*
- * The IDE's flows on the TC2048 (`.plans/TIMEX_SCORPION_PLAN.md` G9.4a, P6). Without a TC2048 ROM the
+ * The IDE's flows on the TC2048 (`dev/plans/TIMEX_SCORPION_PLAN.md` G9.4a, P6). Without a TC2048 ROM the
  * machine boots the Sinclair 48K ROM, so every flow runs in CI; the ROM-gated cases repeat them on
  * the TC2048 ROM named in `KLIVE_TC2048_ROM`. The flows wait at the 48K ROM's addresses, which the
  * TC2048 ROM keeps: it differs from the 48K ROM only in the CALL at $1299 that prints the copyright

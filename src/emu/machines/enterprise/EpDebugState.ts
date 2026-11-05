@@ -1,9 +1,9 @@
 /*
- * NICK's and DAVE's state as the debugger shows it (`.plans/ENTERPRISE_PLAN.md` §11, the NICK and
+ * NICK's and DAVE's state as the debugger shows it (`dev/plans/ENTERPRISE_PLAN.md` §11, the NICK and
  * DAVE panels), read from the WASM core and decoded. The test harness (`test/harness/enterprise/`)
  * reads NICK and DAVE through the same functions.
  *
- * Facts: `_input/enterprise128/NICK_VIDEO.md` (§3, the LPB), `DAVE_MEMORY_IO.md` (§4 interrupts, §5
+ * Facts: `dev/research/enterprise128/NICK_VIDEO.md` (§3, the LPB), `DAVE_MEMORY_IO.md` (§4 interrupts, §5
  * sound, §8 BFh). This module imports no core code: the renderer imports its types.
  */
 

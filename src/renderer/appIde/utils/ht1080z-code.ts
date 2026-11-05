@@ -11,7 +11,7 @@ import { cmdToSystemTape } from "@emu/machines/ht1080z/Ht1080zTapeFile";
 import { resolveHt1080zHardware } from "@emu/machines/ht1080z/ht1080zMachineInfo";
 
 /*
- * Exporting HT-1080Z code (`.plans/HT1080Z_CODE_INJECTION_PLAN.md` D6, D-Q4): a `.cmd` load module or
+ * Exporting HT-1080Z code (`dev/plans/HT1080Z_CODE_INJECTION_PLAN.md` D6, D-Q4): a `.cmd` load module or
  * a `.cas` SYSTEM tape, from the same placement rules Run uses.
  */
 

@@ -3,8 +3,8 @@
  * the LCD registers and the I/O port decoding.
  *
  * A port of `Z88BlinkDevice.ts` and of `Z88Machine.doReadPort` / `doWritePort` (Step 6 of
- * `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`), brought to OZvm's behaviour by
- * `.plans/Z88_OZVM_PARITY_PLAN.md`:
+ * `dev/plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`), brought to OZvm's behaviour by
+ * `dev/plans/Z88_OZVM_PARITY_PLAN.md`:
  *
  * - Only power-on resets the Blink (`z88BlinkPowerOn`). The reset button resets the CPU alone, as
  *   OZvm's `pressResetButton` does: COM, SR0-SR3, the interrupt registers, the clock and the LCD
@@ -422,7 +422,7 @@ void z88ResetBlink(void) { z88BlinkPowerOn(); }
 uint32_t z88GetEarBit(void) { return z88EarBit; }
 
 /*
- * Restoring a saved state (`.z88` snapshots, `.plans/Z88_SNAPSHOT_PLAN.md` §4.4). These set the
+ * Restoring a saved state (`.z88` snapshots, `dev/plans/Z88_SNAPSHOT_PLAN.md` §4.4). These set the
  * registers as they were saved: no RTC event, no interrupt re-evaluation (TSTA is a latch; STA and
  * INT, which drive the interrupt line, are restored through their own setters), and the LCD
  * pointers without the port's B-register split. The screen derives its font and map addresses from

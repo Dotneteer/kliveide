@@ -53,7 +53,7 @@ describe("NewProjectModel — machine types and models", () => {
 
   it("offers a one-model type its single model", () => {
     expect(modelOptionsOf(aState({ machineId: "scorpion" })).length).toBe(1);
-    // --- The Next has a model per board and core version (`.ai/zxnext-models.md` D1)
+    // --- The Next has a model per board and core version (`dev/ai/zxnext-models.md` D1)
     expect(modelOptionsOf(aState({ machineId: "zxnext" })).length).toBe(2);
   });
 

@@ -7,7 +7,7 @@ import { createSp48Session } from "../harness/sp48";
 import { copyHostFolderToHardDisk, createHardDiskImage, openHardDiskImage } from "@main/hard-disk-images";
 
 /*
- * esxDOS on the 48K's DivMMC, end to end (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, C6): a FAT16
+ * esxDOS on the 48K's DivMMC, end to end (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, C6): a FAT16
  * card Klive makes and fills with esxDOS's own folders, the real esxDOS ROM, the real 48K ROM. Klive
  * cannot ship esxDOS, so this runs only where KLIVE_ESXDOS_DIR names an esxDOS distribution - its
  * 8K ROM (ESXMMC.BIN, or any 8192-byte .bin/.rom in the folder) and its BIN, SYS and TMP folders:

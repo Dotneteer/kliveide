@@ -8,7 +8,7 @@ import { parseTvcCasFile } from "@emu/machines/tvc/TvcCasFile";
 import { aState, anEnv } from "./fakes";
 
 /**
- * The Export dialog and the `.cas` on the Videoton TVC (`.ai/videoton-tvc.md`, "Run, Debug and
+ * The Export dialog and the `.cas` on the Videoton TVC (`dev/ai/videoton-tvc.md`, "Run, Debug and
  * export"): `.cas` first, then HEX, and none of the Spectrum's loader options; the file is a
  * program LOAD runs.
  */

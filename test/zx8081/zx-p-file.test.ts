@@ -7,7 +7,7 @@ import { zx8081KeysForText } from "@emu/machines/zx8081/Zx8081Typer";
 import { Zx8081KeyCode } from "@emu/machines/zx8081/Zx8081KeyCode";
 import { resolveZx8081Hardware, zx8081ModelForProgram } from "@emu/machines/zx8081/zx8081MachineInfo";
 
-const TAPES = join(__dirname, "../../_input/zx81-tapes");
+const TAPES = join(__dirname, "../../dev/research/zx81-tapes");
 const read = (path: string) => new Uint8Array(readFileSync(join(TAPES, path)));
 
 describe("ZX81 .P files", () => {

@@ -4,7 +4,7 @@ import type { MessengerBase } from "@common/messaging/MessengerBase";
 import { Zx8081WasmV2Machine } from "./Zx8081WasmV2Machine";
 
 /**
- * Creates a Sinclair ZX80 or ZX81: one WASM core for both (`.ai/zx8081.md`, "Core decisions", D2/D6).
+ * Creates a Sinclair ZX80 or ZX81: one WASM core for both (`dev/ai/zx8081.md`, "Core decisions", D2/D6).
  * @param machineId `zx80` or `zx81`
  * @param model The machine model
  * @param config The machine configuration; it overrides the model's configuration

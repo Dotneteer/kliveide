@@ -45,7 +45,7 @@ import { isCommentDisabled } from "@renderer/appIde/utils/annotation-state";
  * The label map is therefore a required parameter of the display form: forgetting it is now a
  * compile error rather than a silent fall back to the other notation.
  *
- * See `.plans/PARTITION_NAMING_UNIFICATION_PLAN.md` §8, decision 4.
+ * See `dev/plans/PARTITION_NAMING_UNIFICATION_PLAN.md` §8, decision 4.
  */
 
 /**
@@ -96,7 +96,7 @@ function buildBreakpointKey(
   partitionText: (partition: number) => string
 ): string {
   /*
-   * A run-to target (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` O4) lives in its own key
+   * A run-to target (`dev/plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` O4) lives in its own key
    * namespace. Under the plain key, `run-to $8000` replaced the user's breakpoint at `$8000` with a
    * session one-shot that was then consumed - the user's breakpoint was silently lost (B2).
    */
@@ -125,7 +125,7 @@ function buildBreakpointKey(
    * **global** one, whose value is a 16-bit address.
    */
   /*
-   * A logpoint read from a `LOGPOINT` source comment (`.plans/LOGPOINTS_PLAN.md` §4.1): its
+   * A logpoint read from a `LOGPOINT` source comment (`dev/plans/LOGPOINTS_PLAN.md` §4.1): its
    * resource and line for display and click-to-source, and its address because one comment inside a
    * macro yields one logpoint per expansion. The `LP:` prefix keeps it clear of a user breakpoint on
    * the same line, so the user can still stop where a comment logs.
@@ -184,7 +184,7 @@ function buildBreakpointKey(
   }
 
   /*
-   * A Copper breakpoint is named by its list index (`.plans/COPPER_DEBUGGING_PLAN.md` D3): `CU:$00B`.
+   * A Copper breakpoint is named by its list index (`dev/plans/COPPER_DEBUGGING_PLAN.md` D3): `CU:$00B`.
    * Like `NR:`, it has no kind suffix and no partition, and cannot collide with a partition label
    * (`parseNextPartitionLabel` takes `R0`-`R3`, `X0`/`X1`, `DM`, `M0`-`MF`, `UN` and hex digits;
    * `CU` is none of them).
@@ -331,7 +331,7 @@ export async function refreshSourceCodeBreakpoints(
   // --- Warnings are listed with the errors but do not fail the compilation
   if (compilation.result && !compilation.failed && !compilation.result.errors?.some((e) => !e.isWarning)) {
     // --- Breakpoint conditions bind to the last *successful* build's integer symbols
-    // --- (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §3.6). This runs after every build path, so it
+    // --- (`dev/plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §3.6). This runs after every build path, so it
     // --- is the one place that keeps the emulator's table current.
     setBuildConditionSymbols(
       integerSymbolsOfOutput(compilation.result)
@@ -339,8 +339,8 @@ export async function refreshSourceCodeBreakpoints(
     await pushConditionSymbols(emuApi);
 
     // --- The build's `LOGPOINT`, `ASSERTION` and `WPMEM` comments replace the previous build's
-    // --- (`.plans/LOGPOINTS_PLAN.md` L10) in **one** install - two would each delete the other's
-    // --- (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §4.4). A build without any clears them; a
+    // --- (`dev/plans/LOGPOINTS_PLAN.md` L10) in **one** install - two would each delete the other's
+    // --- (`dev/plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §4.4). A build without any clears them; a
     // --- failed build never gets here, so it keeps them.
     await emuApi.resetBreakpointsTo(
       buildLogpoints(compilation.result, store.getState().project?.folderPath, machineId, {
@@ -356,11 +356,11 @@ export async function refreshSourceCodeBreakpoints(
 
     // --- There can be source code breakpoints. Only the project's own: this call replaces the
     // --- project scope, so a sidecar's breakpoints or the build's `LOGPOINT` logpoints handed in
-    // --- here would be restamped as project-owned (`.plans/LOGPOINTS_PLAN.md` L10).
+    // --- here would be restamped as project-owned (`dev/plans/LOGPOINTS_PLAN.md` L10).
     const all = await getBreakpoints(messenger);
     const bps = all.filter((bp) => breakpointMatchesScope(bp.owner, { kind: "project" }));
     // --- Session-owned source breakpoints (a user's one-shot, a run-to target) are resolved too,
-    // --- but never reinstalled under the project scope (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` O2)
+    // --- but never reinstalled under the project scope (`dev/plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` O2)
     const toResolve = [
       ...bps,
       ...all.filter((bp) => bp.owner?.kind === "session" && bp.resource && bp.exec)

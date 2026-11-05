@@ -7,7 +7,7 @@ import {
   zx8081InjectionProblem
 } from "@renderer/appIde/utils/zx8081-code";
 
-/** The IDE's check before it sends built code to a ZX80/ZX81 (`.ai/zx8081.md`, "Machine code decisions", D4) */
+/** The IDE's check before it sends built code to a ZX80/ZX81 (`dev/ai/zx8081.md`, "Machine code decisions", D4) */
 const seg = (startAddress: number, length = 1) => ({ startAddress, emittedCode: new Array(length).fill(0xc9) });
 
 describe("zx8081InjectionProblem", () => {

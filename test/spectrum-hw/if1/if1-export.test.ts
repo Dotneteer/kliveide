@@ -7,7 +7,7 @@ import { createSp128Session } from "../../harness/sp128";
 import { sp48WithInterface1 } from "./if1TestSupport";
 
 /*
- * `expc -f mdr` (`.plans/MICRODRIVE_PLAN.md` Phase 4.4): a compiled program as a bootable cartridge -
+ * `expc -f mdr` (`dev/plans/MICRODRIVE_PLAN.md` Phase 4.4): a compiled program as a bootable cartridge -
  * its code files and a loader named "run" - booted by the Microdrive Loader on both machines.
  */
 

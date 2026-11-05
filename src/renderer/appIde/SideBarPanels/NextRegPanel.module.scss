@@ -136,7 +136,7 @@ span.nextRegHeaderLabel {
  *
  * **No background fill.** The obvious choice, `--surface-raised`, means *lighter* — which reads as
  * lifted in dark but is pure white in light, so a band filled with it would invert between the two
- * tones (see the trap recorded in `.ai/ui-theming-intent-and-lessons.md`). A rule plus an indent
+ * tones (see the trap recorded in `dev/ai/ui-theming-intent-and-lessons.md`). A rule plus an indent
  * says "this belongs to the row above" in both tones without taking a position on depth.
  *
  * The rule is `--color-panel-separator`, not `--border-subtle`: on `--surface-panel` the subtle

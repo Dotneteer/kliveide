@@ -6,7 +6,7 @@ import { delay } from "../_timing-helpers";
 /*
  * Video timing (catalogue VT-001 - VT-009, VT-011).
  *
- * Hardware (`vendor/next-fpga/3.02.01/src/video/zxula_timing.vhd` ~146-310, `zxnext.vhd`):
+ * Hardware (`dev/vendor/next-fpga/3.02.01/src/video/zxula_timing.vhd` ~146-310, `zxnext.vhd`):
  * - Per timing: line length c_max_hc + 1 (7 MHz clocks, 2 per 3.5 MHz tact), frame c_max_vc + 1
  *   lines, display origin c_min_vactive, interrupt at (c_int_v, c_int_h):
  *     48K       448 x 312 (60 Hz: 264), vactive 64 (40), int (0, 116)
@@ -177,7 +177,7 @@ Stop:   jr Stop
 
     // --- VT-007: $22 bit 7 is the pulse; it lasts pulseCycles CPU cycles. A pulse that falls on an odd
     // --- HC starts mid-cycle and still ends on the last count's CPU edge, half a T-state short (63 HC
-    // --- for 32 cycles, measured on the simulated FPGA core: .plans/ZX_NEXT_FIDELITY_PROOF_PLAN.md,
+    // --- for 32 cycles, measured on the simulated FPGA core: dev/plans/ZX_NEXT_FIDELITY_PROOF_PLAN.md,
     // --- F3-2), which whole-T sampling sees as one T less. Only Pentagon's falls on an even HC.
     it(`VT-007: ${t.name} INT pulse lasts ${t.pulseCycles} tacts`, async () => {
       const s = await createSession();

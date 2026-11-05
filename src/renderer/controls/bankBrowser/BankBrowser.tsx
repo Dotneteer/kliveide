@@ -27,7 +27,7 @@ import styles from "./BankBrowser.module.scss";
  * poppable into its own document.
  *
  * Extracted from the NEX viewer's bank browser so the `.z88` viewer's slots can use the same shape
- * (`.plans/Z88_SLOT_BROWSER_PLAN.md`). The shell owns what both share - the heading and filters, the
+ * (`dev/plans/Z88_SLOT_BROWSER_PLAN.md`). The shell owns what both share - the heading and filters, the
  * list and its keyboard, the details frame with its split pop-out button, the row menu - and knows
  * nothing about NEX annotations or Z88 cards: the caller hands it items and renders their content.
  *

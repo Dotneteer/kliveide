@@ -2,7 +2,7 @@ import { resolve } from "path";
 import { defineConfig } from "vitest/config";
 
 /*
- * The Klive sides of F1 and F3 (.plans/ZX_NEXT_FIDELITY_PROOF_PLAN.md §8): run only by
+ * The Klive sides of F1 and F3 (dev/plans/ZX_NEXT_FIDELITY_PROOF_PLAN.md §8): run only by
  * `node test/vhdl/f1/run-f1.cjs` and `node test/vhdl/f3/run-f3.cjs`, never by `npm test`. Their
  * files end in `.f1.ts` / `.f3.ts`, which no other vitest config includes.
  */

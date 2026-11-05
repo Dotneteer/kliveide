@@ -22,7 +22,7 @@ export type MonacoSelectionOrPosition =
  * The 1-based line and column an editor opener should land on.
  *
  * The column used to be dropped, so every Go to Definition landed on column 1 of the right line.
- * Navigation history (`.plans/NAVIGATION_HISTORY_PLAN.md` §4.1) records where a jump arrives, and an
+ * Navigation history (`dev/plans/NAVIGATION_HISTORY_PLAN.md` §4.1) records where a jump arrives, and an
  * entry that points at the start of the line instead of the symbol is a worse place to come back to.
  * `column` is `undefined` when Monaco supplied none, so callers can tell "column 1" from "unknown".
  */

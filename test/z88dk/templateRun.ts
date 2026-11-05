@@ -13,7 +13,7 @@ import { buildVariableSections } from "@renderer/appIde/debugger/source/variable
 import { buildTemplate, codeToInjectOf, type TemplateBuild } from "./zccReplay";
 
 /*
- * Runs the shipped z88dk templates (`.plans/ZX_SPECTRUM_C_TEMPLATES_PLAN.md`, T3) on the real cores the
+ * Runs the shipped z88dk templates (`dev/plans/ZX_SPECTRUM_C_TEMPLATES_PLAN.md`, T3) on the real cores the
  * way Run delivers them: the template fixture is built by `Z88dkCompiler` (zcc replayed), Run's
  * `CodeToInject` is made from its output as `injectCode` makes it, and the machine's own injection
  * flow plays it. The template prints "n squared is n*n" for `counter` = 1..5, so the loop leaves
@@ -99,7 +99,7 @@ export async function runSpectrumTemplate(
   });
 }
 
-// ─── Debug (`.plans/ZX_SPECTRUM_C_TEMPLATES_PLAN.md` T4) ──────────────────────────────────────────
+// ─── Debug (`dev/plans/ZX_SPECTRUM_C_TEMPLATES_PLAN.md` T4) ──────────────────────────────────────────
 
 /** What the debug walkthrough needs of a harness session, beyond running it. */
 export type DebugSession = TemplateSession & {

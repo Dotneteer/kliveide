@@ -154,7 +154,7 @@ class MainApiImpl {
   }
 
   /**
-   * Starts an edit of a disk image file (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, D4): a machine
+   * Starts an edit of a disk image file (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, D4): a machine
    * running with the image in a drive is paused, and the file's current bytes come back.
    * @param _filePath The image's full path
    */
@@ -187,7 +187,7 @@ class MainApiImpl {
 
   /**
    * What a hard-disk image (`.img`, `.hdf`, `.cim`) holds: its partitions, its FAT file system and a
-   * folder's files (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, C2). Read sector by sector in the
+   * folder's files (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, C2). Read sector by sector in the
    * main process: the image is never sent whole.
    */
   async queryHardDisk(
@@ -217,7 +217,7 @@ class MainApiImpl {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 
-  /** The File Manager's drives: this computer's volumes and folders, and the open project (`.ai/file-manager.md`) */
+  /** The File Manager's drives: this computer's volumes and folders, and the open project (`dev/ai/file-manager.md`) */
   async fmListDrives(): Promise<FmDriveRef[]> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
@@ -440,7 +440,7 @@ class MainApiImpl {
   /**
    * The absolute path of a file in the Klive home folder (`<home>/Klive`, or the portable data
    * folder's `Klive`): where a user's annotations of a shipped ROM are kept
-   * (`.docs/annotations.md`, "ROM Annotations").
+   * (`dev/patterns/annotations.md`, "ROM Annotations").
    * @param _relative The path inside the Klive home folder
    */
   async resolveKliveHomePath(_relative: string): Promise<string> {
@@ -476,7 +476,7 @@ class MainApiImpl {
 
   /**
    * Assembles Klive Z80 source held in memory and returns its segments and errors, with no file
-   * I/O: how source export (`.docs/reverse-engineering-tools.md`, "Export as source", R10) proves its output
+   * I/O: how source export (`dev/patterns/reverse-engineering-tools.md`, "Export as source", R10) proves its output
    * reassembles to the bytes it came from.
    * @param _source The source text (it names its own `.model`)
    */
@@ -487,7 +487,7 @@ class MainApiImpl {
   /**
    * Assembles instructions one by one, each at its own address, and returns each one's bytes or
    * why it does not assemble: the byte check of a SkoolKit import
-   * (`.docs/reverse-engineering-tools.md`, S-T2). The assembler lives in the main process.
+   * (`dev/patterns/reverse-engineering-tools.md`, S-T2). The assembler lives in the main process.
    */
   async assembleLines(
     _lines: { text: string; address: number }[],
@@ -508,7 +508,7 @@ class MainApiImpl {
 
   /**
    * The SD card image the ZX Spectrum Next uses now, with a fingerprint of its content
-   * (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` D12); undefined when there is no image file.
+   * (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` D12); undefined when there is no image file.
    */
   async getSdCardFingerprint(): Promise<SdCardFingerprint | undefined> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
@@ -779,7 +779,7 @@ class MainApiImpl {
   }
 
   /**
-   * Runs the unit tests of the last build in a worker (`.plans/Z80_UNIT_TESTS_PLAN.md` D6, D15): the
+   * Runs the unit tests of the last build in a worker (`dev/plans/Z80_UNIT_TESTS_PLAN.md` D6, D15): the
    * caller builds first. Results stream into the store; the whole run comes back when it ends.
    * @param _request Which tests, and how
    */
@@ -862,7 +862,7 @@ class MainApiImpl {
   }
 
   /**
-   * Writes the slots the guest changed into Microdrive `drive`'s `.mdr` file (`.plans/MICRODRIVE_PLAN.md`)
+   * Writes the slots the guest changed into Microdrive `drive`'s `.mdr` file (`dev/plans/MICRODRIVE_PLAN.md`)
    * @param _drive Microdrive 1 (0) or 2 (1)
    * @param _changes The changed slots, keyed by slot, 543 bytes each
    */
@@ -1064,7 +1064,7 @@ class MainApiImpl {
 
   /**
    * Opens one of the IDE's ZX Spectrum Next inspectors from the emulator window: the pixel probe's
-   * "open the owning inspector" (`.plans/LAYER_COMPOSITION_PLAN.md` D7). Only these four, never an
+   * "open the owning inspector" (`dev/plans/LAYER_COMPOSITION_PLAN.md` D7). Only these four, never an
    * arbitrary command.
    * @param _inspector Which inspector
    */
@@ -1075,7 +1075,7 @@ class MainApiImpl {
   /**
    * Runs one of the main process's UI actions (`src/main/ui-actions.ts`): the Settings dialog's
    * buttons and app-state values, and the toolbar and status-bar controls
-   * (`.plans/MENU_REDESIGN_PLAN.md` §4–§5). Each runs the code its old menu item ran.
+   * (`dev/plans/MENU_REDESIGN_PLAN.md` §4–§5). Each runs the code its old menu item ran.
    * @param _actionId The action
    * @param _value Its argument, if it takes one
    * @returns An error message for an unknown action or value, undefined when done
@@ -1183,7 +1183,7 @@ const UNBOUNDED_MAIN_METHODS = [
   "ejectMediaFile",
   // --- File pickers, confirmations and dialogs of their own
   "runUiAction",
-  // --- A File Manager copy runs as long as its files take (`.ai/file-manager.md`)
+  // --- A File Manager copy runs as long as its files take (`dev/ai/file-manager.md`)
   "fmRunTransfer",
   // --- The app is terminating; a response may legitimately never arrive
   "exitApp",

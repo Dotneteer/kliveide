@@ -1,5 +1,5 @@
 /*
- * What a ZX Spectrum machine and an RZX session say to each other (`.plans/RZX_PLAN.md` §4.3).
+ * What a ZX Spectrum machine and an RZX session say to each other (`dev/plans/RZX_PLAN.md` §4.3).
  *
  * A session - `RzxPlayer` or `RzxRecorder` - is attached to the machine (`IRzxMachine.rzxSession`).
  * The machine's two execution paths call it:

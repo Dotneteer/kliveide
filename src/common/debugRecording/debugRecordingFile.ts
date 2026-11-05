@@ -1,6 +1,6 @@
 /*
  * The debug recording (`.klr`): a reverse-debugging timeline written to a file
- * (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` §4.1, D1, D3-D6). Pure: no Node, no DOM.
+ * (`dev/plans/DEBUG_SESSION_RECORDING_PLAN.md` §4.1, D1, D3-D6). Pure: no Node, no DOM.
  *
  *   "KLIVEREC" container (`chunkedContainer.ts`) · header JSON
  *   THMB  u16 width · u16 height · RGBA: the screen at the saved present

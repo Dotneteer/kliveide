@@ -8,7 +8,7 @@ import { describeHistoryCore, history, loadRecording } from "./historyCoreSuite"
 import { zx8081Driver } from "./drivers";
 
 /*
- * The ZX80/ZX81's execution history (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` Phase 5). The CPU
+ * The ZX80/ZX81's execution history (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` Phase 5). The CPU
  * executes the display file: each M1 above 32K of a byte with bit 6 clear reads a NOP the ULA forced
  * onto the bus. Those merge into one forced-NOP record per display line (D6, T2); the SLOW mode's NMIs
  * and the ZX80's per-line INTs are genuine and recorded (T3).

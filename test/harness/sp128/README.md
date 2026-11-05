@@ -4,7 +4,7 @@ Scripts one real ZX Spectrum 128K or +2A/+3/+2E/+3E — the WASM core the app ru
 ROMs (`src/public/roms/sp128-*.rom`; for the `spp3e` models the model's ROM set from
 `p3RomSets.ts`: `spp3e-*.rom`, or Amstrad's `spp3-40-*`, `spp3-41-*`, `spp3-41es-*`) — from a
 vitest test. Built for the snapshot loader
-(`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` Phase 3), which needs paging, the AY and the frame position
+(`dev/plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` Phase 3), which needs paging, the AY and the frame position
 of these machines. Its 48K sibling is `../sp48/`; the conventions are the same.
 
 ```ts
@@ -28,7 +28,7 @@ it("pages bank 3 in from a snapshot", async () => {
 | | `captureSnapshot()` | Reads the machine's state as a snapshot model with `captureSnapshotState`, without changing it. |
 | | `saveSnapshot(format)` | Captures and writes a `.sna`/`.z80`/`.szx` file, as the emulator saves one; returns `{ bytes, losses }` and throws when the format refuses the state. |
 | RZX | `startRzxRecording(options?)` → `RzxRecorder`, `stopRzxRecording()` → `Uint8Array` | Records an RZX file from the current state as the emulator does (a `.szx` snapshot, then every IN and every frame's fetch count); stopping returns the finalised file. |
-| | `playRzx(bytes, options?)` → `RzxPlayer`, `runRzx({ onFrame, maxFrames })` → `RzxStop`, `rzxStatus` | Loads a recording's snapshot and plays it on the machine's own frame loop until it ends or desyncs (`.plans/RZX_PLAN.md`). Shared with `../sp128/` through `../spectrumRzx.ts`; `runFrames` throws when a session stops under it. |
+| | `playRzx(bytes, options?)` → `RzxPlayer`, `runRzx({ onFrame, maxFrames })` → `RzxStop`, `rzxStatus` | Loads a recording's snapshot and plays it on the machine's own frame loop until it ends or desyncs (`dev/plans/RZX_PLAN.md`). Shared with `../sp128/` through `../spectrumRzx.ts`; `runFrames` throws when a session stops under it. |
 | Run | `runFrames(n)`, `step(n)` | Whole frames; single instructions. |
 | | `finishFrame()` | Runs the rest of the current frame instruction by instruction. Use it after stepping to a frame tact and changing memory or a port: `runFrames` from the middle of a frame re-draws that frame from its first tact. |
 | Code | `loadCode(source)`, `poke(address, bytes)` | Assembles Klive Z80 source (`.model Spectrum128`) into the memory the CPU sees, returning `{ entry, symbol(name) }`; writes bytes. Neither changes PC or SP. |
@@ -45,7 +45,7 @@ it("pages bank 3 in from a snapshot", async () => {
 | AY | `psgRegister(n)`, `psgSelected()` | A register's value (the selection is restored after reading); the selected register. |
 | ULA | `frameTact()`, `border()` | T-states since the frame started; the border colour. |
 | CPU | `cpu()` | Every register read from the core, with IFF1/IFF2, IM, HALT and the EI backlog. |
-| History | `recordHistory(on)`, `clearHistory()`, `historyInfo()`, `history(count?)`, `historyFrom(sequence, count)` | The execution-history recorder (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`) through the machine's `IExecutionHistorySource`, shared with every harness (`../historySupport.ts`): on/off, clear, the ring's header, the newest records decoded oldest first (each the state *before* its instruction or event), a read by sequence with its "gone" flag. |
+| History | `recordHistory(on)`, `clearHistory()`, `historyInfo()`, `history(count?)`, `historyFrom(sequence, count)` | The execution-history recorder (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`) through the machine's `IExecutionHistorySource`, shared with every harness (`../historySupport.ts`): on/off, clear, the ring's header, the newest records decoded oldest first (each the state *before* its instruction or event), a read by sequence with its "gone" flag. |
 
 ## Notes
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /*
- * F3 triage, second round (.plans/ZX_NEXT_FIDELITY_PROOF_PLAN.md §8, "F3 triage"): probes for the
+ * F3 triage, second round (dev/plans/ZX_NEXT_FIDELITY_PROOF_PLAN.md §8, "F3 triage"): probes for the
  * open timing candidates. Each program starts at the aligned first fetch, does one precise operation
  * and writes the ready marker at once, so the F3 stop time (frame, line, HC) *is* the measurement;
  * a sweep of one parameter separates a fixed offset from a per-cycle one. The CTC probe instead

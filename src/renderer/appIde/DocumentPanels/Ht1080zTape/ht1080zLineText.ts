@@ -5,7 +5,7 @@ import { HT64_BACKTICK_PAIRS } from "../ht1080zBasicListing";
 import type { Ht1080zBasicLine } from "./ht1080zTapeView";
 
 /*
- * A program line as the tape viewer shows it (`.plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D5): the text LIST
+ * A program line as the tape viewer shows it (`dev/plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D5): the text LIST
  * would print, cut into runs a listing colours - keywords, strings and the rest. It follows the same
  * rules as the BASIC Listing view's detokenizer (`ht1080zBasicListing.ts`): `:ELSE` and `:REM'` print
  * without their colon, codes below 20h print nothing, and on the /64 a backtick pair is one character.

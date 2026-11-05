@@ -1,6 +1,6 @@
 /*
  * `show-sprites <n>` and `show-patterns <n>` ask the Sprite Inspector to show a view and select a
- * sprite or a pattern (`.plans/SPRITE_INSPECTOR_PLAN.md` D11). The document may not be mounted yet
+ * sprite or a pattern (`dev/plans/SPRITE_INSPECTOR_PLAN.md` D11). The document may not be mounted yet
  * when the command runs, so the request is held until a listener takes it.
  */
 

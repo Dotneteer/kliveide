@@ -21,7 +21,7 @@ import {
 import { historyContextDecoder } from "@common/history/contexts";
 import { WasmHistoryReader, HISTORY_MAGIC } from "@emu/machines/history/WasmHistoryReader";
 
-/* `.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §6.2: the pure modules against hand-built bytes */
+/* `dev/plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §6.2: the pure modules against hand-built bytes */
 
 function record(overrides: Partial<HistoryRecord> & { regs?: Partial<HistoryRecord["regs"]> } = {}): HistoryRecord {
   const { regs, ...rest } = overrides;

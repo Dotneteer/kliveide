@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { chooseSocketPath, fitsSocketPath, socketPathLimit } from "@main/automation/socket-path";
 
 /*
- * Where the server listens (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D6, T3).
+ * Where the server listens (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` D6, T3).
  */
 
 const LONG_HOME = "/Users/" + "x".repeat(150);

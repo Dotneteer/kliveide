@@ -59,7 +59,7 @@ const SwatchRow = ({
 const flagLetters = (b: EpLpb) => `${b.vres ? "V" : "-"}${b.vint ? "I" : "-"}${b.reload ? "R" : "-"}`;
 
 /**
- * The Enterprise 64/128's NICK (`.plans/ENTERPRISE_PLAN.md` §11): the ports as written, the LPT
+ * The Enterprise 64/128's NICK (`dev/plans/ENTERPRISE_PLAN.md` §11): the ports as written, the LPT
  * pointer and the beam, the live line data pointers, FIXBIAS and the border, the current Line
  * Parameter Block decoded, and the LPT from its base to the RELOAD block.
  */

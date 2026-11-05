@@ -16,7 +16,7 @@ import { useT } from "@common/i18n/useT";
 
 /**
  * Back, the history list, and Forward — the start of the IDE toolbar (Option A of
- * `.plans/NAVIGATION_HISTORY_PLAN.md` §6).
+ * `dev/plans/NAVIGATION_HISTORY_PLAN.md` §6).
  *
  * Enabled state and tooltips are computed from the service on every render, not taken from the
  * published `ideView.navHistory` flags: whether Back has somewhere to go depends on the active

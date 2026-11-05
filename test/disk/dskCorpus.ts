@@ -2,7 +2,7 @@ import { buildDisk, sectorRun, type SectorSpec } from "@emu/machines/disk/disk-b
 import type { DiskInformation } from "@emu/machines/disk/DiskInformation";
 
 /*
- * The DSK test corpus (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, A0 and D9): awkward disks made
+ * The DSK test corpus (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, A0 and D9): awkward disks made
  * in code, so no third-party image is needed. Every sector's bytes say where they belong
  * (`pattern`), so a sector read, written or uploaded to the wrong place shows up as wrong bytes.
  */

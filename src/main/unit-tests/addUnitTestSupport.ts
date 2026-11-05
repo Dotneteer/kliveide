@@ -6,7 +6,7 @@ import { KLIVE_INCLUDE_FILE, KLIVE_UNIT_TEST_INCLUDE } from "./includes/kliveInc
 import { SJASMPLUS_INCLUDE_FILE, SJASMPLUS_UNIT_TEST_INCLUDE } from "./includes/sjasmplusInclude";
 
 /*
- * Testing → Add unit-test support / `test-init` (`.plans/Z80_UNIT_TESTS_PLAN.md` D4, D5): writes
+ * Testing → Add unit-test support / `test-init` (`dev/plans/Z80_UNIT_TESTS_PLAN.md` D4, D5): writes
  * Klive's include next to the build root - never over an existing file, so a DeZog project keeps
  * its own `unit_tests.inc` - and adds the include line to the build root when it has none. For
  * sjasmplus, the `SLDOPT` line that exports the assertion comments comes too.

@@ -2,7 +2,7 @@ import { historyContextDecoder } from "./contexts";
 import { HistoryKind, type HistoryRecord } from "./historyRecord";
 
 /*
- * One history row as text (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.6.1): the document's cells,
+ * One history row as text (`dev/plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.6.1): the document's cells,
  * and, through `historyExport.ts` (G4.5), the `history` command's lines, "Copy rows as text" and the
  * exported traces all come from here. Pure - the disassembly and the source location are resolved by
  * the caller (the renderer owns both).
@@ -32,7 +32,7 @@ export type HistoryRowInput = {
 };
 
 /**
- * How an event row writes its repeat count (`.plans/TRACE_EXPORT_PLAN.md` D6, T2): "show" is the
+ * How an event row writes its repeat count (`dev/plans/TRACE_EXPORT_PLAN.md` D6, T2): "show" is the
  * viewer's `HALT ×1,203`; "mask" writes `HALT ×*`, because the count depends on timing, not on the
  * program path; "omit" leaves it out (CSV writes it in a column of its own). A DMA hold's held
  * T-states go with the count.

@@ -14,7 +14,7 @@ vi.mock("@controls/Icon", () => ({
 import { BreakpointIndicator } from "@renderer/appIde/DocumentPanels/BreakpointIndicator";
 
 /*
- * The conditional and inactive glyph variants (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.4.2):
+ * The conditional and inactive glyph variants (`dev/plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.4.2):
  * the shape changes, the colour stays the breakpoint's.
  */
 afterEach(cleanup);

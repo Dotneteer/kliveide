@@ -1,5 +1,5 @@
 /**
- * What crosses IPC for the Boriel BASIC setup (`.ai/boriel/integration.md`). All
+ * What crosses IPC for the Boriel BASIC setup (`dev/ai/boriel/integration.md`). All
  * plain data; the discriminated unions use string tags (`kind`), which this project's
  * `strictNullChecks: false` build can narrow.
  */

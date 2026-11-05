@@ -1,8 +1,8 @@
 /**
- * Contract test for `.ai/zxbasic-syntax/`.
+ * Contract test for `dev/ai/zxbasic-syntax/`.
  *
  * `zxbasic-syntax.json` is Klive's own description of the Boriel ZX BASIC language, the only
- * language reference the Klive-native compiler work may use (see `.ai/zxbasic-syntax/README.md`).
+ * language reference the Klive-native compiler work may use (see `dev/ai/zxbasic-syntax/README.md`).
  * `upstream-fingerprint.json` pins the upstream release it describes. These checks keep the two
  * files consistent with each other and with the shape the README promises, so that a refresh
  * session cannot leave the reference half-updated:
@@ -15,14 +15,14 @@
  * - every docs page referenced from the spec is one the fingerprint watches, so a page rename
  *   upstream is noticed;
  * - the `changes` log is newest-first and its newest entry is the fingerprinted release;
- * - every `semantics` (R8, `.ai/kbasic/compiler.md`) entry that is decided or provisional names its decision and a test
+ * - every `semantics` (R8, `dev/ai/kbasic/compiler.md`) entry that is decided or provisional names its decision and a test
  *   file that exists, and every open one names the phase that must settle it.
  */
 import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
-const folder = path.join(__dirname, "..", "..", ".ai", "zxbasic-syntax");
+const folder = path.join(__dirname, "..", "..", "dev", "ai", "zxbasic-syntax");
 const spec = JSON.parse(fs.readFileSync(path.join(folder, "zxbasic-syntax.json"), "utf8"));
 const fingerprint = JSON.parse(fs.readFileSync(path.join(folder, "upstream-fingerprint.json"), "utf8"));
 

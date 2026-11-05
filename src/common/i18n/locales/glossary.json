@@ -1,5 +1,5 @@
 {
-  "_about": "Klive's translation glossary (`.ai/localization.md`, D11). Seeded by AI from the English catalogs; each language column still needs review by a native speaker. Translators and the AI follow it; extend it in the same change that adds or fixes a language. See README.md. The translation rounds (`.ai/localization.md`, and its rerun after steps 11–13) added the terms their translators had to settle on themselves.",
+  "_about": "Klive's translation glossary (`dev/ai/localization.md`, D11). Seeded by AI from the English catalogs; each language column still needs review by a native speaker. Translators and the AI follow it; extend it in the same change that adds or fixes a language. See README.md. The translation rounds (`dev/ai/localization.md`, and its rerun after steps 11–13) added the terms their translators had to settle on themselves.",
   "reviewed": {
     "es": false,
     "pt-BR": false,

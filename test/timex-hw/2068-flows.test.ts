@@ -8,7 +8,7 @@ import { DCK_BANK_DOCK, parseDckFile, writeDckFile } from "@common/timex/dckFile
 import { createTimexSession, hasTimexRom } from "../harness/timex";
 
 /*
- * The IDE's flows on the 2068s (`.plans/TIMEX_SCORPION_PLAN.md` G9.4b, P6). Without a 2068 ROM the
+ * The IDE's flows on the 2068s (`dev/plans/TIMEX_SCORPION_PLAN.md` G9.4b, P6). Without a 2068 ROM the
  * machines boot the Sinclair 48K ROM, so the flows wait at the 48K's addresses; with the TS2068 ROM
  * (`KLIVE_TS2068_ROM`, CRC-32 48004230) they wait at its own: the main loop at $0E32 in the HOME
  * ROM, and the tape routines - the 48K's, moved - in the EXROM, which the ROM pages into chunk 0

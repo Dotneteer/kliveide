@@ -44,7 +44,7 @@ import { t } from "@common/i18n/i18n";
 
 /*
  * The `ann-*` commands: which `.dis` file is the active annotation set
- * (`.docs/annotations.md`, "The Active Annotation Set").
+ * (`dev/patterns/annotations.md`, "The Active Annotation Set").
  *
  * `nex-run`, `zx-snapshot`, a ZX80/ZX81 `tape-load` and opening a project each make a set active on
  * their own. These are for everything else: a tape-loaded Spectrum game, a program built outside a

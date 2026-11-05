@@ -2,7 +2,7 @@ import type { AutomationErrorKind, JsonRpcError } from "@common/automation/proto
 import { JSONRPC_INVALID_PARAMS, JSONRPC_METHOD_NOT_FOUND } from "@common/automation/protocol";
 
 /*
- * The CLI's exit codes (`.plans/UNIT_TESTS_CLI_PLAN.md` D3, `.plans/COMMAND_LINE_AUTOMATION_PLAN.md`
+ * The CLI's exit codes (`dev/plans/UNIT_TESTS_CLI_PLAN.md` D3, `dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md`
  * D12, D15).
  */
 export const EXIT_OK = 0;

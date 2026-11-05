@@ -322,7 +322,7 @@ describe("BreakpointsPanel - source-code breakpoints", () => {
 
   it("offers Edit, which opens the dialog in source mode", async () => {
     // --- The editor's glyph margin still *places* these; the dialog edits only their condition and
-    // --- hit rule (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.4.2), so the old disabled "Edit
+    // --- hit rule (`dev/plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.4.2), so the old disabled "Edit
     // --- from the editor's left margin" hint is gone.
     await renderPanel([SOURCE_BP]);
 
@@ -560,7 +560,7 @@ describe("BreakpointsPanel - grouping", () => {
 
 
 /*
- * Conditions and hit counts in the panel (Phase 6 of `.plans/CONDITIONAL_BREAKPOINTS_PLAN.md`,
+ * Conditions and hit counts in the panel (Phase 6 of `dev/plans/CONDITIONAL_BREAKPOINTS_PLAN.md`,
  * §4.9): the row shows the condition, the rule and the live count, and offers to reset counts.
  */
 describe("BreakpointsPanel - conditions and hit counts", () => {

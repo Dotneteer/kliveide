@@ -8,7 +8,7 @@ import { convertAsciiStringToNextKeyCodes } from "@emu/machines/zxNext/nextKeyCo
  * produce a capital at all but the symbol printed on the key — SYMBOL SHIFT + N is `,`. Injecting
  * `.nexload ScrollNutter.nex` therefore typed a comma where the `N` belonged.
  *
- * See .plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md §15.13.
+ * See dev/plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md §15.13.
  */
 
 describe("ASCII to ZX Next key codes", () => {

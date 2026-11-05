@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // The Timex SCLD: screen modes, port $FF, and the TC2048's Kempston port
 //
-// `.plans/TIMEX_SCORPION_PLAN.md` G9.4a. Included by `zx-spectrum-ula.c` in place of its own
+// `dev/plans/TIMEX_SCORPION_PLAN.md` G9.4a. Included by `zx-spectrum-ula.c` in place of its own
 // renderers when the core defines `SP48_SCLD` (the Timex core, `timex.c`). The state lives in the
 // core's statics: `sp48ScldPortFf` (the control register), `sp48ScldHiresBright` (a per-model fact)
 // and `sp48KempstonState`.

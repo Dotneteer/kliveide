@@ -3,7 +3,7 @@ import { ROOT_SUITE_NAME, junitErrorType, type JUnitResult } from "@common/unit-
 import { locationText, totalsText, type ConsoleReporter, type RunTotals } from "./reporter";
 
 /*
- * The `pretty` and `plain` reporters (`.plans/UNIT_TESTS_CLI_PLAN.md` D4, T6): suites, one line per
+ * The `pretty` and `plain` reporters (`dev/plans/UNIT_TESTS_CLI_PLAN.md` D4, T6): suites, one line per
  * test with its T-states, and the failure's message under it with `file:line`. `pretty` adds colour
  * and ✔/✘; `plain` is the same text in ASCII without escape codes, for CI logs.
  */

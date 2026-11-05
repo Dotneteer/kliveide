@@ -49,7 +49,7 @@ import { z88dkTargetFor, type Z88dkTarget } from "./z88dk-targets";
 import { adaptZ88dkDebugInfo } from "./z88dk-debug-adapter";
 
 /*
- * z88dk as Klive's compiler for C (`.plans/Z88DK_INTEGRATION_PLAN.md` §5, decision C1). It runs `zcc`
+ * z88dk as Klive's compiler for C (`dev/plans/Z88DK_INTEGRATION_PLAN.md` §5, decision C1). It runs `zcc`
  * for the machine's target (C5) with the project's options (C6), and turns its outputs into Klive's:
  * diagnostics, the image as segments, the line tables from the map (C8), and the native file
  * `-create-app` wrote (a `.nex` the Next runs, a `.P`/`.O` the ZX81/ZX80 load, what Export copies).
@@ -265,7 +265,7 @@ export class Z88dkCompiler implements IKliveCompiler {
     const image = fs.readFileSync(imageFile);
     const mapText = fs.existsSync(`${output}.map`) ? fs.readFileSync(`${output}.map`, "utf8") : "";
     const symbols = parseZ88dkMap(mapText);
-    // --- z88dk v2.4's classic Next startup runs into printf's format table (`.ai/z88dk/targets.md`)
+    // --- z88dk v2.4's classic Next startup runs into printf's format table (`dev/ai/z88dk/targets.md`)
     if (printfTableInStartupCode(symbols)) {
       diagnostics.push({ ...z88dkBuildError(filename, t("compiler.z88dk.printfTableInStartup"), "ZCC-PRINTF"), isWarning: true });
     }
@@ -447,7 +447,7 @@ export class Z88dkCompiler implements IKliveCompiler {
     if (run.error) return { errors: [z88dkBuildError(filename, `zcc could not be started: ${run.error}`)] };
     const output = `${run.stderr}\n${run.stdout}`;
     const diagnostics = parseZccDiagnostics(output, cwd, filename);
-    // --- A Z88 application without its DOR fails to link on `applname` (`.ai/z88dk/targets.md`)
+    // --- A Z88 application without its DOR fails to link on `applname` (`dev/ai/z88dk/targets.md`)
     if (/undefined symbol: applname/.test(output)) {
       diagnostics.push({
         ...z88dkBuildError(

@@ -8,7 +8,7 @@
 // Then run this script, which rewrites the SVG between the page's {/* fig:<name> */} markers:
 //   node docs/authoring/next-audio/overview-figures.cjs
 //
-// Sized for print (.ai/hardware-articles-guide.md, Figures): the drawings use the whole 700-unit width, and
+// Sized for print (dev/ai/hardware-articles-guide.md, Figures): the drawings use the whole 700-unit width, and
 // no text is smaller than 13.5 units, about 10 pt when the figure spans a 16 cm text column.
 "use strict";
 

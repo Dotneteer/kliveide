@@ -12,7 +12,7 @@ import { parseZ88dkMap, projectFileTest, z88dkLineDebug, z88dkLineRecords } from
 import { compileBasic } from "../kbasic/codegen/run-kit";
 
 /**
- * The source-level debug information every producer writes (`.plans/SHARED_Z80_BACKEND_PLAN.md`
+ * The source-level debug information every producer writes (`dev/plans/SHARED_Z80_BACKEND_PLAN.md`
  * Part B, B0), kept in full so a change to the model shows as a readable diff: Klive BASIC (a few
  * corpus programs covering routines, GOSUB, ON ... GOSUB and CODEBANK), Boriel BASIC (the zxbc
  * fixtures) and z88dk C (the zx-hello fixture). `DEBUG_GOLDENS_UPDATE=1` re-records them.

@@ -10,7 +10,7 @@ import { comparePositions } from "@emu/machines/reverse/timelinePosition";
 import { createSession } from "../harness/zxnext";
 
 /*
- * Reverse Continue with the Next's own breakpoint kinds (`.plans/REVERSE_DEBUGGING_PLAN.md` D15,
+ * Reverse Continue with the Next's own breakpoint kinds (`dev/plans/REVERSE_DEBUGGING_PLAN.md` D15,
  * Phase 7), on the real Next through the controller. They go through the same debug loop as every
  * other kind, checked on the real past machine:
  *

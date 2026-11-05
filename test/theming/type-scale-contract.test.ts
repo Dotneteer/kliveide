@@ -18,7 +18,7 @@ import { join, relative, sep } from "node:path";
  * ## Why a baseline rather than zero
  *
  * Failing on all 57 would fail the build before a single panel could be converted, so this follows
- * `scripts/check-types.cjs`: the known offenders live in `build/style-mandate-baseline.json` and the
+ * `dev/scripts/check-types.cjs`: the known offenders live in `build/style-mandate-baseline.json` and the
  * suite fails on anything *new*. Unlike that script, a count that has *dropped* also fails — with a
  * message saying exactly what to run. That is deliberate. This file exists to be a ratchet, and a
  * ratchet that lets the baseline drift above reality lets a fix be silently undone later.
@@ -48,7 +48,7 @@ import { join, relative, sep } from "node:path";
  * through a named constant (`LAB_WIDTH`, `REG_LABEL_WIDTH`, `ADDRESS_WIDTH`), and whether those are
  * `ch` or px depends on the constant's *type* — `"7ch"` is a string and fine, `7` is a number and
  * becomes px. A text scan cannot see that. **The type system can**, and that is the real fix:
- * Phase 15 of `.plans/UI_MODERNIZATION_BATCH_2_PLAN.md` removes the number half of the `width` prop
+ * Phase 15 of `dev/plans/UI_MODERNIZATION_BATCH_2_PLAN.md` removes the number half of the `width` prop
  * so the unit is compiler-enforced. When it lands, `M2` here becomes redundant and should be
  * deleted rather than kept as decoration.
  */

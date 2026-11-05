@@ -3,7 +3,7 @@ import { describe } from "vitest";
 import { NEXT_PROFILE_IDS, type NextProfileId } from "@emu/machines/zxNext/nextProfiles";
 
 /**
- * The profiles a version-sensitive test runs on (`.ai/zxnext-models.md`, "Rules"): one
+ * The profiles a version-sensitive test runs on (`dev/ai/zxnext-models.md`, "Rules"): one
  * `describe` per profile, so a test states which models it covers. A version-sensitive test that
  * runs only one profile is a review smell.
  *

@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { DebugSupport } from "@emu/machines/DebugSupport";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
-import { productionOutput } from "../../../scripts/build-zxnext-wasm.cjs";
+import { productionOutput } from "../../../dev/scripts/build-zxnext-wasm.cjs";
 
 import { createTestZxNextWasmMachine } from "./wasm-next-test-helpers";
 

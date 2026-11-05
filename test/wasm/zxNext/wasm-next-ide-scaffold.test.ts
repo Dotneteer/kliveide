@@ -13,7 +13,7 @@ import {
 import {
   productionOutput,
   waitForZxNextWasmBuildLock
-} from "../../../scripts/build-zxnext-wasm.cjs";
+} from "../../../dev/scripts/build-zxnext-wasm.cjs";
 import { buildZxNextWasmArtifact } from "./wasm-next-test-helpers";
 import { FileProvider } from "./FileProvider";
 import { describe, expect, it } from "vitest";

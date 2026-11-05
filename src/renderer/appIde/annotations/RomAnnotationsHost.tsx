@@ -15,7 +15,7 @@ import { pushConditionSymbols, setRomConditionSymbols } from "@renderer/appIde/u
 
 /**
  * Keeps the ROM annotations of the machine running now loaded
- * (`.docs/annotations.md`, "ROM Annotations"): read again when the machine, its model or
+ * (`dev/patterns/annotations.md`, "ROM Annotations"): read again when the machine, its model or
  * configuration changes (a ROM property) or the machine starts, whenever a working copy is edited
  * (working copies are sessions like any annotation file, so an edit reaches the listing the way a
  * program edit does — and so does a change another program makes to the file, which the session

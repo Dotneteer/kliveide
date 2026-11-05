@@ -21,7 +21,7 @@ const toHexa4 = (value: number) => (value & 0xffff).toString(16).toUpperCase().p
 
 /*
  * The code-injection flow waits in NextZXOS's key-wait loop in ROM 0. Its addresses are facts about
- * the ROM set (`nextRomSets.json`, `.ai/zxnext-models.md` D6); in NextZXOS 2.08:
+ * the ROM set (`nextRomSets.json`, `dev/ai/zxnext-models.md` D6); in NextZXOS 2.08:
  *
  *   $1202: HALT
  *   $1203: LD HL,$5C3B      ; FLAGS
@@ -33,7 +33,7 @@ const toHexa4 = (value: number) => (value & 0xffff).toString(16).toUpperCase().p
  * OS parks here whenever it wants a key - during boot, at the boot menu, at the BASIC prompt, inside
  * the Calculator. That is precisely why reaching the HALT once proves nothing about *which* program
  * is waiting, and why the flow below waits for the machine to settle in this range instead.
- * See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.14.
+ * See `dev/plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.14.
  */
 const SP_KEY_WAIT = 250;
 const SP_KEY_WAIT_SHORT = 50;
@@ -338,7 +338,7 @@ export function buildNextCodeInjectionFlow(
     // `QueueKey` only *queues*; `emulateKeystroke()` plays the key back over the following frames.
     // Without this the `ReachExecPoint` below ran while the machine was still sitting in the boot
     // menu's waiting loop — which is the very address it waits for — so it matched instantly and
-    // typing started anyway. See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.13.
+    // typing started anyway. See `dev/plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.13.
     {
       type: "WaitKeyQueue"
     },

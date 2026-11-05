@@ -4,7 +4,7 @@ import { DCK_BANK_DOCK } from "@common/timex/dckFile";
 import { createTimexSession } from "../harness/timex";
 
 /*
- * The 2068s' 8K partitions in the debugger (`.plans/TIMEX_SCORPION_PLAN.md` Q5): HOME H0-H7, DOCK
+ * The 2068s' 8K partitions in the debugger (`dev/plans/TIMEX_SCORPION_PLAN.md` Q5): HOME H0-H7, DOCK
  * D0-D7, EXROM X0-X7; ROMs numbered from -1 down, RAM from 0 up.
  */
 describe("2068 partitions", () => {

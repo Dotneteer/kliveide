@@ -3,7 +3,7 @@ import type { UnitTestsState } from "./AppState";
 import type { UnitTestEvent } from "@common/unit-tests/unitTestTypes";
 
 /**
- * The unit-test results (`.plans/Z80_UNIT_TESTS_PLAN.md` §4.3): the main process dispatches a run's
+ * The unit-test results (`dev/plans/Z80_UNIT_TESTS_PLAN.md` §4.3): the main process dispatches a run's
  * events, every window sees them. A run clears the results of the tests it runs only, so a filtered
  * run keeps the others' last results.
  */

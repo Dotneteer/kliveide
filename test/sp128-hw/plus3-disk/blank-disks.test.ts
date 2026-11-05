@@ -5,7 +5,7 @@ import { readDiskData } from "@emu/machines/disk/disk-readers";
 import { command, plus3WithDisks, programLine } from "./plus3Disk";
 
 /*
- * The blank disks Create Disk writes (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, A2), judged by
+ * The blank disks Create Disk writes (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, A2), judged by
  * +3DOS itself: the +3 must log each one in from its disk specification, report the free space
  * its geometry gives, and save and load a file on it.
  *

@@ -44,7 +44,7 @@ import { onGraphicsReveal } from "./graphicsReveal";
 import { encodePng, graphicsRgba } from "./graphicsPng";
 
 /*
- * The live *Graphics* document (`$graphics`, `.docs/reverse-engineering-tools.md`, "Graphics finder"): the
+ * The live *Graphics* document (`$graphics`, `dev/patterns/reverse-engineering-tools.md`, "Graphics finder"): the
  * graphics finder over the paused machine. It reads the 64K view or one bank or ROM page through
  * `getMemoryContents`, refreshing on pause like the Memory panel — and not while the user drags a
  * selection (G-T2). With coverage, the bytes the CPU never read can be dimmed (§5.4).

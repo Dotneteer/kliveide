@@ -11,7 +11,7 @@ import { readTrdCatalog, readTrdDiskInfo } from "@emu/machines/disk/trd/trdImage
 
 /*
  * The Create Disk dialog's TR-DOS types make blank, formatted `.trd` files for the Pentagon's Beta 128
- * (`.plans/BETA128_TRDOS_PLAN.md` Phase 3); the CPC types still make `.dsk` files.
+ * (`dev/plans/BETA128_TRDOS_PLAN.md` Phase 3); the CPC types still make `.dsk` files.
  */
 
 let folder: string | undefined;

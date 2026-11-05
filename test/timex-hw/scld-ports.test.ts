@@ -6,7 +6,7 @@ import { TIMEX_MODELS_INFO } from "@emu/machines/timex/timexModels";
 import { displayFileAddress } from "./_timex-helpers";
 
 /*
- * The SCLD's ports, its interrupt and its timing on the TC2048 (`.plans/TIMEX_SCORPION_PLAN.md` §8).
+ * The SCLD's ports, its interrupt and its timing on the TC2048 (`dev/plans/TIMEX_SCORPION_PLAN.md` §8).
  * Timing is checked the way G9.1 checked the Pentagon: against a machine with known results (the 48K
  * core), since the TC2048 keeps the 48K's raster.
  */

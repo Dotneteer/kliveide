@@ -1,7 +1,7 @@
 import type { PaletteDeviceInfo } from "@common/messaging/EmuApi";
 
 /*
- * The Next's palette-owning devices (`.plans/TILEMAP_INSPECTOR_PLAN.md` §4.6): shared by the Next
+ * The Next's palette-owning devices (`dev/plans/TILEMAP_INSPECTOR_PLAN.md` §4.6): shared by the Next
  * Palettes panel and `useNextDevicePalette`, so a device's live bank and transparency are decided in
  * one place.
  */

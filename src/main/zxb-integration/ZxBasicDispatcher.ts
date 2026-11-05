@@ -7,7 +7,7 @@ import { selectedZxBasicCompiler } from "./zxb-config";
 
 /**
  * Registered for `zxbas`: hands each request to Klive BASIC or to Boriel BASIC 2.x, as the
- * `zxbasic.compiler` setting says (`.ai/boriel/integration.md`, "Decisions", B1).
+ * `zxbasic.compiler` setting says (`dev/ai/boriel/integration.md`, "Decisions", B1).
  */
 export class ZxBasicDispatcher implements IKliveCompiler {
   private state: AppState | undefined;

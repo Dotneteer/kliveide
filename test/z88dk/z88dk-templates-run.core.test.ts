@@ -8,7 +8,7 @@ import { buildTemplate } from "./zccReplay";
 import { globalAddress, runSpectrumTemplate, runUntilCounterDone, topRowsHaveInk, withTemp, type TemplateSession } from "./templateRun";
 
 /*
- * Run on the real cores, one representative per route (`.plans/ZX_SPECTRUM_C_TEMPLATES_PLAN.md` T3,
+ * Run on the real cores, one representative per route (`dev/plans/ZX_SPECTRUM_C_TEMPLATES_PLAN.md` T3,
  * fast tier): the 48K's own injection, the 128K and +3 family's 48 BASIC injection, the TC2048 (+zx on
  * the Timex core), and the Next's .nex. Every other model is in `z88dk-templates-run-models.core.test.ts`
  * (slow tier).
@@ -49,7 +49,7 @@ describe("z88dk templates run (one per route)", () => {
       await s.loadProgramFile(nexFile);
       runUntilCounterDone(s as unknown as TemplateSession, out);
       expect(topRowsHaveInk(s as unknown as TemplateSession), "the template's text in the top rows").toBe(true);
-      // --- `.nexload` leaves no return address (`_input/nexload.asm`: SP from the header, `rst $20`
+      // --- `.nexload` leaves no return address (`dev/research/nexload.asm`: SP from the header, `rst $20`
       // --- to PC), so the template must not return from main: it stays in its own code. A `return`
       // --- there went to a garbage address and reset the machine.
       const { startAddress, emittedCode } = out.segments[0];

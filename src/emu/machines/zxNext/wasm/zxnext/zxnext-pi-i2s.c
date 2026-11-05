@@ -1,7 +1,7 @@
 #include "zxnext-pi-i2s.h"
 
 /*
- * The Next's side of the Raspberry Pi I2S link (.plans/PI_I2S_AUDIO_PLAN.md).
+ * The Next's side of the Raspberry Pi I2S link (dev/plans/PI_I2S_AUDIO_PLAN.md).
  *
  * zxnext.vhd ~2239-2330 and ~6410 wire the `i2s` entity (audio/i2s.vhd, i2s/i2s_slave.vhd,
  * i2s/i2s_receive.vhd). The Pi is always the clock master (the FPGA's master mode and NR $A3 are

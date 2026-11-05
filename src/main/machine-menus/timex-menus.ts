@@ -41,7 +41,7 @@ const ROM_SETTING: Record<TimexModelId, string> = {
 const DOCK_FILE_FOLDER = "dockFileFolder";
 
 /**
- * The model's ROM (`.plans/TIMEX_SCORPION_PLAN.md` P5): Klive cannot ship Timex's ROMs, so the user
+ * The model's ROM (`dev/plans/TIMEX_SCORPION_PLAN.md` P5): Klive cannot ship Timex's ROMs, so the user
  * names their own copy in Settings › Machine; without one the machine boots the Sinclair 48K ROM.
  * Choosing or forgetting it restarts the machine. Both act on the running Timex model.
  */

@@ -19,7 +19,7 @@ import { MAX_PROGRAM_WORDS, MAX_STACK_DEPTH, emitCondition, stackDepthOf } from 
  * specials or label slots; strings fold into the number their access would read (C9) - byte
  * packing, not evaluation; and the static checks of §3.7 run, the first error stopping compilation.
  * Nothing here evaluates: constants are emitted as bytecode and the C evaluator computes them
- * (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md` E4). Warnings (unknown
+ * (`dev/plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md` E4). Warnings (unknown
  * labels, reserved names shadowing a symbol) are collected and do not reject the condition.
  */
 
@@ -61,7 +61,7 @@ export function compileCondition(text: string, env: ConditionEnvironment): Compi
 
 /**
  * Check and compile an expression with the given parser. The DeZog dialect of a logpoint template
- * (`.plans/LOGPOINTS_PLAN.md` §3.4) is a second *front end* over this one checker: its parser
+ * (`dev/plans/LOGPOINTS_PLAN.md` §3.4) is a second *front end* over this one checker: its parser
  * builds the same syntax tree, and from there the expression is checked, emitted and evaluated as
  * any condition is.
  */
@@ -435,7 +435,7 @@ function formatRange(min: number, max: number): string {
  * The value of a **literal** operand - a number, a character, a partition or a folded string, or one
  * of those negated - or `undefined` for anything computed.
  *
- * The front end does not evaluate (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md` E4): computed
+ * The front end does not evaluate (`dev/plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md` E4): computed
  * constants like `255 + 1` are left to the C evaluator, so only literals are range-checked.
  * Negation is a sign, not evaluation.
  */

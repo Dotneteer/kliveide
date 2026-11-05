@@ -1,7 +1,7 @@
 /*
- * The TypeScript side of the cores' Interface 1 (`zx-spectrum-if1.c`, `.plans/MICRODRIVE_PLAN.md`).
+ * The TypeScript side of the cores' Interface 1 (`zx-spectrum-if1.c`, `dev/plans/MICRODRIVE_PLAN.md`).
  * The 48K and 128K cores export the same functions under their own prefix (`sp48If1SetPresent`, ...),
- * as the DivMMC's do; `scripts/if1-exports.cjs` keeps the build side of the list.
+ * as the DivMMC's do; `dev/scripts/if1-exports.cjs` keeps the build side of the list.
  *
  * A cartridge lives in the core as an .mdr holds it: up to 254 slots of 543 bytes (the 15-byte
  * header, then the 528-byte record). Every write into that image goes through `writeCoreBytes`, so
@@ -12,7 +12,7 @@ import { writeCoreBytes } from "@emu/machines/reverse/coreMemoryWrites";
 
 export type Interface1CorePrefix = "sp48" | "sp128";
 
-/** The export names without the core's prefix (`scripts/if1-exports.cjs` keeps the build side) */
+/** The export names without the core's prefix (`dev/scripts/if1-exports.cjs` keeps the build side) */
 export const IF1_EXPORT_SUFFIXES = [
   "If1SetPresent",
   "If1GetPresent",

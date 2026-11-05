@@ -852,7 +852,7 @@ export class NexAnnotationEditorController extends UiController<
     super.activate();
     // --- `activate` is the other half of `dispose`: React tears an effect down and re-runs it,
     // --- always under StrictMode. Without re-subscribing here the editor would come back alive but
-    // --- deaf to the session. See trap 1 in `.ai/ui-mvc-guide.md`.
+    // --- deaf to the session. See trap 1 in `dev/ai/ui-mvc-guide.md`.
     this.watchSession();
   }
 

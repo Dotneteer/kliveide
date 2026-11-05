@@ -4,7 +4,7 @@ import { SP48_MAIN_ENTRY, SP_KEY_WAIT } from "./ZxSpectrumBase";
 
 /*
  * The keystrokes that start a tape loading after a reset - what "Load and run" on a tape does
- * (`.plans/TAPE_VIEWER_PLAN.md` §4.6). They run through `MachineController`'s code-injection flow
+ * (`dev/plans/TAPE_VIEWER_PLAN.md` §4.6). They run through `MachineController`'s code-injection flow
  * but inject nothing: the tape is already in the deck, and the machine's own ROM loads it, so
  * whatever loader the tape carries runs exactly as it would on the real machine.
  *

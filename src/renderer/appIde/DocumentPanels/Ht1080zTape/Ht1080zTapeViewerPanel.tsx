@@ -44,7 +44,7 @@ import { TvcCasView, type TvcCasViewState } from "../TvcTape/TvcCasView";
 import styles from "./Ht1080zTapeViewer.module.scss";
 
 /*
- * The HT-1080Z tape file viewer (`.plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D5): a `.cas`, a `.cmd` or a
+ * The HT-1080Z tape file viewer (`dev/plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D5): a `.cas`, a `.cmd` or a
  * tokenised `.bas`, shown the way the TAP/TZX viewer shows a Spectrum tape - a summary strip, a graphic
  * of the whole file, the parts in the shared bank browser and the selected part's facts and bytes.
  *

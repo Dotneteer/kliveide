@@ -4,7 +4,7 @@ import type { ProfileLayout, ProfileRegion } from "./profileLayout";
  * The Timex machines (`sp48.c`'s profile macros, built with `SP48_SCLD`): HOME at $00000-$0FFFF,
  * EXROM at $10000-$11FFF, DOCK at $12000-$21FFF.
  *
- * The partitions are `TimexWasmV2Machine`'s 8K chunks (`.plans/TIMEX_SCORPION_PLAN.md` Q5): HOME
+ * The partitions are `TimexWasmV2Machine`'s 8K chunks (`dev/plans/TIMEX_SCORPION_PLAN.md` Q5): HOME
  * H0 -1, H1 -2, H2-H7 2-7; DOCK D0-D7 8-15; EXROM X0-X7 -3 to -10. The 8K EXROM answers in every
  * chunk of its bank, so its eight partitions share one region (X0 names it).
  */

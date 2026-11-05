@@ -24,7 +24,7 @@ import { withLabelChange } from "@renderer/appIde/annotations/annotationEdits";
  * precisely what a local label expresses and a global one does not.
  *
  * Pure: the promotion is a function of the annotations, a bank site and a name, so what it does is
- * decided and tested without a machine or a file. See `.ai/nex-debugging.md`.
+ * decided and tested without a machine or a file. See `dev/ai/nex-debugging.md`.
  */
 
 /** Where the label goes: an offset inside one of the NEX's 16K banks. */

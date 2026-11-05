@@ -13,7 +13,7 @@ import {
 } from "@common/debugRecording/debugRecordingFile";
 import { concatBytes, encodeSection } from "@common/machineState/chunkedContainer";
 
-/* `.plans/DEBUG_SESSION_RECORDING_PLAN.md` Phase 1: the `.klr` format, without a machine */
+/* `dev/plans/DEBUG_SESSION_RECORDING_PLAN.md` Phase 1: the `.klr` format, without a machine */
 
 const PAGE = 4096;
 const MEMORY = 5 * PAGE + 100;

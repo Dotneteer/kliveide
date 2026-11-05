@@ -24,7 +24,7 @@ type Diff = { klive: string; zxbc: string };
 type Baseline = Record<string, Record<string, Diff>>;
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const compat = require("../../../scripts/kbasic-compat.cjs") as {
+const compat = require("../../../dev/scripts/kbasic-compat.cjs") as {
   buildProgram(items: Item[]): string;
   chunk(items: Item[], size: number): Item[][];
   itemResult(item: Item, row: number, line: (row: number) => string, peek?: (address: number) => number): string;
@@ -36,7 +36,7 @@ const UPDATE = process.env.KBASIC_COMPAT_UPDATE === "1";
 const baseline: Baseline = existsSync(BASELINE_FILE) ? JSON.parse(readFileSync(BASELINE_FILE, "utf8")) : {};
 const faults: Record<string, Record<string, Diff & { fault: string }>> = JSON.parse(readFileSync(join(DIR, "faults.json"), "utf8"));
 const ANNEX = new Set<string>(
-  (JSON.parse(readFileSync(join(DIR, "..", "..", "..", ".ai", "zxbasic-syntax", "zxbasic-syntax.json"), "utf8")).semantics.entries as { name: string }[]).map((e) => e.name)
+  (JSON.parse(readFileSync(join(DIR, "..", "..", "..", "dev", "ai", "zxbasic-syntax", "zxbasic-syntax.json"), "utf8")).semantics.entries as { name: string }[]).map((e) => e.name)
 );
 const next: Baseline = {};
 

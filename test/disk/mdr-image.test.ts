@@ -20,8 +20,8 @@ import {
 } from "@emu/machines/microdrive/mdrImage";
 
 /*
- * The .mdr image (`.plans/MICRODRIVE_PLAN.md` Phase 3.1). The worked example is
- * `_input/microdrive/mdr-and-file-formats.md` §8.
+ * The .mdr image (`dev/plans/MICRODRIVE_PLAN.md` Phase 3.1). The worked example is
+ * `dev/research/microdrive/mdr-and-file-formats.md` §8.
  */
 
 const bytesOf = (text: string) => [...text].map((c) => c.charCodeAt(0));

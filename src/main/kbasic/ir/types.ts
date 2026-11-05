@@ -5,7 +5,7 @@ import type { Instr, MType } from "../../z80-backend/mir/mir";
 import type { KType } from "../semantics/types";
 
 /**
- * Klive BASIC's types and operations in the shared back end's terms (`.plans/SHARED_Z80_BACKEND_PLAN.md`
+ * Klive BASIC's types and operations in the shared back end's terms (`dev/plans/SHARED_Z80_BACKEND_PLAN.md`
  * §3.4): which MIR representation each BASIC type is, and what BASIC means by the operations whose
  * meaning differs between languages.
  */

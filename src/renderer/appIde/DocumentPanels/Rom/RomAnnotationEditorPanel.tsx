@@ -49,7 +49,7 @@ import { RomLevelCard } from "./RomLevelCard";
 import styles from "./RomAnnotationEditorPanel.module.scss";
 
 /*
- * The ROM annotation editor (`.plans/ROM_ANNOTATION_EDITING_PLAN.md` R4, §4.1).
+ * The ROM annotation editor (`dev/plans/ROM_ANNOTATION_EDITING_PLAN.md` R4, §4.1).
  *
  * Opened by selecting a ROM sidecar: a working copy in `<Klive home>/RomAnnotations/`, a custom ROM's
  * `<path>.dis`, or a shipped one. It matches the file's pages to ROM bytes by CRC and lists them; a

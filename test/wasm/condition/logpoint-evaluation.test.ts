@@ -16,7 +16,7 @@ import type {
 import { RESULT, runProgram, setConditionEnv } from "./condition-host";
 
 /*
- * Logpoint expressions on the C evaluator (`.plans/LOGPOINTS_PLAN.md` §3.4-§3.5, Phase 2): the
+ * Logpoint expressions on the C evaluator (`dev/plans/LOGPOINTS_PLAN.md` §3.4-§3.5, Phase 2): the
  * multiplicative operators, division by zero, the machine specials, the DeZog dialect's precedence,
  * and whole templates rendered from values the evaluator computed.
  */

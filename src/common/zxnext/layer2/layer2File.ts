@@ -1,5 +1,5 @@
 /*
- * `.sl2` and `.nxi` files: a Layer 2 picture as raw bytes (`.plans/LAYER2_INSPECTOR_PLAN.md`
+ * `.sl2` and `.nxi` files: a Layer 2 picture as raw bytes (`dev/plans/LAYER2_INSPECTOR_PLAN.md`
  * Phase 7, Q4). Pure.
  *
  * The bytes are the layer as it sits in its banks, in the order `layer2Decode.ts` reads them. The size

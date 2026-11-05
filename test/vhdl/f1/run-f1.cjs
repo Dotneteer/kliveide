@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /*
- * F1 of .plans/ZX_NEXT_FIDELITY_PROOF_PLAN.md (§8, "F1 run specification"): runs the T80N
+ * F1 of dev/plans/ZX_NEXT_FIDELITY_PROOF_PLAN.md (§8, "F1 run specification"): runs the T80N
  * single-instruction differential end to end and writes the evidence.
  *
  *   node test/vhdl/f1/run-f1.cjs --sample            the 1,775-case bring-up sample
@@ -21,8 +21,8 @@ const crypto = require("crypto");
 const { spawn, execFileSync } = require("child_process");
 
 const ROOT = path.resolve(__dirname, "../../..");
-// --- The 3.02.01 reference, fetched (`npm run next-fpga:fetch`, `.ai/zxnext-models.md` D4)
-const CPU = path.dirname(require(path.join(ROOT, "scripts/next-fpga-path.cjs")).nextFpgaPath("3.02.01", "src/cpu/t80n.vhd"));
+// --- The 3.02.01 reference, fetched (`npm run next-fpga:fetch`, `dev/ai/zxnext-models.md` D4)
+const CPU = path.dirname(require(path.join(ROOT, "dev/scripts/next-fpga-path.cjs")).nextFpgaPath("3.02.01", "src/cpu/t80n.vhd"));
 const CPU_FILES = ["t80n_pack.vhd", "t80n_alu.vhd", "t80n_mcode.vhd", "t80n.vhd", "t80na.vhd"].map((f) => path.join(CPU, f));
 const TB = path.join(__dirname, "cpu_tb.vhd");
 const GEN = path.join(__dirname, "generate-cases.cjs");
@@ -271,7 +271,7 @@ async function main() {
 
 Run ${new Date(start).toISOString()} · verdict **${summaryJson.verdict}**
 
-Specification: \`.plans/ZX_NEXT_FIDELITY_PROOF_PLAN.md\` §8, "F1 run specification".
+Specification: \`dev/plans/ZX_NEXT_FIDELITY_PROOF_PLAN.md\` §8, "F1 run specification".
 
 ## Result
 

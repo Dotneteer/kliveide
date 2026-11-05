@@ -11,7 +11,7 @@ import { createZ88Session, z88Model, type Z88TestSession } from "../../harness/z
 import { fitMachineConfig } from "@renderer/appEmu/machines/z88SnapshotLoad";
 
 /*
- * Loading a `.z88` snapshot into the real Z88 core (`.plans/Z88_SNAPSHOT_PLAN.md` Phase 2). The
+ * Loading a `.z88` snapshot into the real Z88 core (`dev/plans/Z88_SNAPSHOT_PLAN.md` Phase 2). The
  * expected values come from the file itself: its `snapshot.settings` and its bank images.
  */
 

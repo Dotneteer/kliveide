@@ -10,7 +10,7 @@ import { createSession } from "../harness/zxnext";
 
 /*
  * Boriel BASIC programs on the real ZX Spectrum Next core, started from the `.nex` zxbc wrote, as the
- * IDE starts them (`.ai/boriel/integration.md`, "The debugger"): a program that runs to the end
+ * IDE starts them (`dev/ai/boriel/integration.md`, "The debugger"): a program that runs to the end
  * with the right output (zxbc's Next code, Z80N instructions included, works), source breakpoints, the call
  * stack, and the runtime-error stop, which on the Next must come before zxbc's panic screen.
  */
@@ -36,7 +36,7 @@ async function startNex(name: string) {
   await session.prepareBasic();
   await session.loadProgramFile(path.join(FIXTURES, name, "program.nex"));
   // --- The .nex must load the code the .dbg describes. zxbc's code differs without --debug, and a
-  // --- .nex built so ran other code than the one debugged: no IDE breakpoint ever fired (`.ai/boriel/integration.md`, "The compiler")
+  // --- .nex built so ran other code than the one debugged: no IDE breakpoint ever fired (`dev/ai/boriel/integration.md`, "The compiler")
   const image = fs.readFileSync(path.join(FIXTURES, name, "program.bin"));
   expect(Buffer.from(session.peekBytes(0x8000, image.length))).toEqual(image);
   return session;

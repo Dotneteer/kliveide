@@ -52,7 +52,7 @@ export class SelectOutputPaneCommand extends IdeCommandBase<SelectOutputArgs> {
 /**
  * `show-memory [<address>]`: displays the machine memory panel and, with an address, reveals it there
  * (in the 64K view) — the sibling of `show-disass <address>` the graphics finder's *Show in memory*
- * runs (`.docs/reverse-engineering-tools.md`, "Graphics finder").
+ * runs (`dev/patterns/reverse-engineering-tools.md`, "Graphics finder").
  */
 export class ShowMemoryCommand extends IdeCommandBase<{ address?: number }> {
   readonly id = "show-memory";
@@ -105,7 +105,7 @@ export class HideMemoryCommand extends IdeCommandBase {
 /**
  * `show-disass [<address>]`: displays the live disassembly panel and, with an address, reveals it
  * there (in the 64K view). The reusable "Show in Disassembly" entry point: any view that knows an
- * address runs this command (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §4.8).
+ * address runs this command (`dev/plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §4.8).
  */
 export class ShowDisassemblyCommand extends IdeCommandBase<{ address?: number }> {
   readonly id = "show-disass";

@@ -5,7 +5,7 @@ import { expectSameBytes } from "../expectBytes";
 import { createHtSession, type Ht1080zTestSession } from "../harness/ht1080z";
 
 /*
- * The beam position overlay on the HT-1080Z (`.plans/BEAM_POSITION_OVERLAY_PLAN.md`; `ht1080z-video.c`):
+ * The beam position overlay on the HT-1080Z (`dev/plans/BEAM_POSITION_OVERLAY_PLAN.md`; `ht1080z-video.c`):
  * one T-state per 6-dot character slot, slot s of a line showing the byte read at s - 2, the picture
  * 72 dots and 48 lines into the 528 x 288 buffer.
  */

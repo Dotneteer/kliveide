@@ -4,7 +4,7 @@ import type { HistoryServiceSpan } from "./serviceSpans";
 
 /*
  * Walking backwards (and forwards) through the execution history: the pure half of G4.3's lite step
- * back (`.plans/LITE_STEP_BACK_PLAN.md` §4.2). Everything here reads records by sequence number
+ * back (`dev/plans/LITE_STEP_BACK_PLAN.md` §4.2). Everything here reads records by sequence number
  * through `HistoryWalkSource`, so the tests feed arrays and the emulator feeds the ring.
  *
  * **Where the cursor stands.** A cursor at sequence *s* shows the state *before* record *s* ran (a

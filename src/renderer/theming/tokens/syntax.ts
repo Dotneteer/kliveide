@@ -231,7 +231,7 @@ export function editorBackground(tone: Tone): string {
  * **Hue carries class.** The scheme this replaces derived every colour from the accent, so nine of
  * eleven classes were lightness steps of a single blue and comments were neutral grey. Hue is by far
  * the strongest channel for telling token classes apart at a glance; lightness alone is the weakest.
- * See `.plans/SYNTAX_PALETTE_REVISION_PLAN.md`, which supersedes §8.1 of the modernization plan.
+ * See `dev/plans/SYNTAX_PALETTE_REVISION_PLAN.md`, which supersedes §8.1 of the modernization plan.
  *
  * `keyword` and `error` are deliberately absent:
  *

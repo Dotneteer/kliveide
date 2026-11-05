@@ -3,7 +3,7 @@ import type { ReturnRegisters, SourceValueType } from "@abstractions/SourceDebug
 import type { MType } from "./mir";
 
 /**
- * The value representations of the shared Z80 back end (`.plans/SHARED_Z80_BACKEND_PLAN.md` §3.4):
+ * The value representations of the shared Z80 back end (`dev/plans/SHARED_Z80_BACKEND_PLAN.md` §3.4):
  * what the back end needs to move, store, pass and return a value — its size, its register class,
  * the registers a routine returns it in — and how the debugger decodes it. What a language *means*
  * by an operation on it is stated on the MIR operation, never here.

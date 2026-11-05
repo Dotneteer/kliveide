@@ -9,7 +9,7 @@ import { p3ModelRomSet, type P3ModelId } from "@emu/machines/zxSpectrumP3e/p3Rom
 import { createSp128Session, type Sp128TestSession } from "../harness/sp128";
 
 /*
- * The +2A/+3 with the Amstrad ROMs (`.plans/PLUS3_AMSTRAD_ROMS_PLAN.md` Phase 2), on the real core
+ * The +2A/+3 with the Amstrad ROMs (`dev/plans/PLUS3_AMSTRAD_ROMS_PLAN.md` Phase 2), on the real core
  * and the real ROMs: every ROM set's row of `p3RomSets.ts` is checked by running the IDE's own
  * flows. The flows are played without the ROM check, as the IDE plays them (the core stops on the
  * PC alone), and the ROM is asserted afterwards: an address that a boot passed first in another ROM

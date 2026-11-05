@@ -22,7 +22,7 @@ import { bankRelativePartition } from "@common/utils/breakpoint-scope";
  * failure is silent in both directions — a breakpoint that stops when it should not, or stops
  * mattering for good.
  *
- * See `.ai/nex-debugging.md`.
+ * See `dev/ai/nex-debugging.md`.
  */
 
 /** Bank 5 offset $0100 arms $0100, $2100, ... $E100; its partition is bank 5's low 8K page. */
@@ -242,7 +242,7 @@ describe("the stored definition must be complete", () => {
   });
 
   /*
-   * Conditional breakpoints, Phase 1 (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.1): the condition
+   * Conditional breakpoints, Phase 1 (`dev/plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.1): the condition
    * and the hit rule are stored on every binding shape, and the runtime-only fields never are.
    */
   const FILTERS = { condition: "A == $FF && !ZF", hitMode: "every" as const, hitCount: 4 };

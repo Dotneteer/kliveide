@@ -22,7 +22,7 @@ import type {
 import { COMPARISONS } from "./mir";
 
 /**
- * Builds MIR (`.plans/SHARED_Z80_BACKEND_PLAN.md` §4.4): what a front end, or a test of the back end,
+ * Builds MIR (`dev/plans/SHARED_Z80_BACKEND_PLAN.md` §4.4): what a front end, or a test of the back end,
  * uses instead of writing the MIR's objects by hand. It keeps the invariants the verifier checks —
  * every instruction has a statement id, every vreg is defined once — and leaves every decision about
  * meaning to the caller: an operation whose meaning differs between languages gets exactly the

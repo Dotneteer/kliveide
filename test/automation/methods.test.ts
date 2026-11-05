@@ -11,7 +11,7 @@ import {
 import { AUTOMATION_METHOD_TABLE } from "@main/automation/methods";
 
 /*
- * The method table (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D7, D8): every method is listed, and
+ * The method table (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` D7, D8): every method is listed, and
  * every listed method declares a level.
  */
 

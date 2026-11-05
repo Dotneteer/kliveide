@@ -6,7 +6,7 @@ import { describeMachineState, gccDiagnostic, hexDump } from "../../src/cli/form
 import { launchCommand } from "../../src/cli/rpc/launch";
 
 /*
- * The CLI's pure parts (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` §6): argument parsing, exit-code
+ * The CLI's pure parts (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` §6): argument parsing, exit-code
  * mapping and formatting.
  */
 

@@ -11,7 +11,7 @@ import {
 } from "@main/hard-disk-images";
 
 /*
- * Hard-disk images in the main process (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, C1/C2): each
+ * Hard-disk images in the main process (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, C1/C2): each
  * container made, formatted, edited and read back through its block device.
  */
 

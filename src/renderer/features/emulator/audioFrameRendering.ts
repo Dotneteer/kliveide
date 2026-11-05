@@ -19,7 +19,7 @@ export async function renderMachineAudioFrame(
   recordingManager?: AudioFrameRecorder,
   /**
    * The live output is muted, but the recorder still gets the sound: an RZX recording rendered to
-   * video runs faster than real time (`.plans/RZX_PLAN.md` D18)
+   * video runs faster than real time (`dev/plans/RZX_PLAN.md` D18)
    */
   liveMuted = false
 ): Promise<AudioSample[]> {

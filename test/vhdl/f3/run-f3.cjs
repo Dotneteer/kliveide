@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /*
- * F3 of .plans/ZX_NEXT_FIDELITY_PROOF_PLAN.md (§8): every program the Next hardware tests load,
- * replayed on Klive's Next core and on the whole FPGA core simulated from vendor/next-fpga/3.02.01/src (nvc),
+ * F3 of dev/plans/ZX_NEXT_FIDELITY_PROOF_PLAN.md (§8): every program the Next hardware tests load,
+ * replayed on Klive's Next core and on the whole FPGA core simulated from dev/vendor/next-fpga/3.02.01/src (nvc),
  * compared right after the instruction that writes the ready marker ($A5 to NextReg $7F).
  *
  *   node test/vhdl/f3/run-f3.cjs [--sample N] [--jobs N] [--klive N] [--out DIR] [--programs FILE]
@@ -19,8 +19,8 @@ const crypto = require("crypto");
 const { spawn, execFileSync, spawnSync } = require("child_process");
 
 const ROOT = path.resolve(__dirname, "../../..");
-// --- The 3.02.01 reference, fetched (`npm run next-fpga:fetch`, `.ai/zxnext-models.md` D4)
-const SRC = path.dirname(require(path.join(ROOT, "scripts/next-fpga-path.cjs")).nextFpgaPath("3.02.01", "src/zxnext.vhd"));
+// --- The 3.02.01 reference, fetched (`npm run next-fpga:fetch`, `dev/ai/zxnext-models.md` D4)
+const SRC = path.dirname(require(path.join(ROOT, "dev/scripts/next-fpga-path.cjs")).nextFpgaPath("3.02.01", "src/zxnext.vhd"));
 const F3 = __dirname;
 const args = process.argv.slice(2);
 const opt = (n, d) => (args.includes(n) ? args[args.indexOf(n) + 1] : d);
@@ -104,7 +104,7 @@ function build() {
   const patched = path.join(out, "patched");
   fs.mkdirSync(patched, { recursive: true });
   // fifop.vhd's to_unsigned(-1, n) (ISE accepts it, nvc does not): an all-ones aggregate instead,
-  // written to the run folder; _input/ is never changed
+  // written to the run folder; dev/research/ is never changed
   const fifop = fs.readFileSync(path.join(SRC, "serial/fifop.vhd"), "utf8")
     .replace("std_logic_vector(to_unsigned(-1,stored'length-1))", "(stored'length-2 downto 0 => '1')");
   fs.writeFileSync(path.join(patched, "fifop.vhd"), fifop);
@@ -361,7 +361,7 @@ Times: phase 3 (Klive) ${summary.seconds.phase3.toFixed(0)} s, phase 4 (simulato
 | Input | SHA-256 |
 |---|---|
 ${inputs}
-| vendor/next-fpga/3.02.01/src/zxnext.vhd | \`${sha(path.join(SRC, "zxnext.vhd"))}\` |
+| dev/vendor/next-fpga/3.02.01/src/zxnext.vhd | \`${sha(path.join(SRC, "zxnext.vhd"))}\` |
 | src/emu/machines/zxNext/wasm/dist/zx-spectrum-next.wasm | \`${sha(path.join(ROOT, "src/emu/machines/zxNext/wasm/dist/zx-spectrum-next.wasm"))}\` |
 `;
   fs.writeFileSync(path.join(out, "report.md"), report);

@@ -27,7 +27,7 @@ import { withHardDisk } from "../hard-disk-images";
 import type { FmHardDiskAccess } from "./fmDrives";
 
 /*
- * The File Manager's jobs (`.ai/file-manager.md`): copy and move planned first,
+ * The File Manager's jobs (`dev/ai/file-manager.md`): copy and move planned first,
  * then run with progress and cancel; delete, new folder and rename. Every write to an image goes
  * through the paths that already keep a mounted disk and the machine's SD card safe:
  *

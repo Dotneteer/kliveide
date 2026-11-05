@@ -123,7 +123,7 @@ span.watchValueError {
 }
 
 /*
- * The watchpoint mark (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` W4): the breakpoint panel's
+ * The watchpoint mark (`dev/plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` W4): the breakpoint panel's
  * memory read/write glyph, in the binary-breakpoint colour, when an enabled memory breakpoint
  * covers any of the watch's bytes. Always reserved, so the symbol column does not shift as marks
  * come and go; clicking it reveals the watchpoint in the Breakpoints panel.

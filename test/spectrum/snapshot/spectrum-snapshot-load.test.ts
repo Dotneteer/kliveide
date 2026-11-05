@@ -1,6 +1,6 @@
 /*
  * Loading snapshots into the real 48K, 128K and +2E/+3E WASM cores
- * (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` Phase 3). Runs in the e2e-cores tier.
+ * (`dev/plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` Phase 3). Runs in the e2e-cores tier.
  */
 import { describe, expect, it } from "vitest";
 import { createSp48Session } from "../../harness/sp48";

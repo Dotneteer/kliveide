@@ -1,6 +1,6 @@
 /*
- * Carrying a ROM sidecar's annotations to another version of the ROM (`.ai/zxnext-models.md`
- * D8): the core of `scripts/rom-annotations-carry.cjs` (`npm run rom:annotations:carry`), which keeps its
+ * Carrying a ROM sidecar's annotations to another version of the ROM (`dev/ai/zxnext-models.md`
+ * D8): the core of `dev/scripts/rom-annotations-carry.cjs` (`npm run rom:annotations:carry`), which keeps its
  * command line on top of it.
  *
  * Every annotated offset is re-anchored on its own by a byte signature: a window of the old page's bytes

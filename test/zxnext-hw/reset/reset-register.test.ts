@@ -5,7 +5,7 @@ import { createSession, type NextTestSession, readNextRom } from "../../harness/
 /*
  * NextReg $02 - resets, reset type, software NMIs, I/O trap flag (catalogue RST-001 - RST-006).
  *
- * Hardware (`vendor/next-fpga/3.02.01/src/zxnext.vhd`, `vendor/next-fpga/3.02.01/nextreg.txt` "0x02"):
+ * Hardware (`dev/vendor/next-fpga/3.02.01/src/zxnext.vhd`, `dev/vendor/next-fpga/3.02.01/nextreg.txt` "0x02"):
  * - ~6316-6317: a $02 write with bit 0 is a soft reset, with bit 1 a hard reset ("hard reset has
  *   precedence"). The soft reset asserts `reset`: PC restarts at 0, RAM is untouched.
  * - ~1691: every soft reset shifts `nr_02_reset_type` to '0' & rt(2) & (rt(1) or rt(0)); the read

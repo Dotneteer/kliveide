@@ -14,7 +14,7 @@ export const SELECT_MACHINE_ITEM_ID = "machine_select_dialog";
 export const SELECT_MACHINE_ACCELERATOR = "CmdOrCtrl+Shift+M";
 
 /**
- * Builds the items of the Machine › Machine type submenu (plan: `.plans/MACHINE_SELECT_DIALOG_PLAN.md`
+ * Builds the items of the Machine › Machine type submenu (plan: `dev/plans/MACHINE_SELECT_DIALOG_PLAN.md`
  * §3):
  * - the favourites, in their order, with a separator after each entry that asks for one (never
  *   after the last favourite);

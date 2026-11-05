@@ -4,7 +4,7 @@
  *
  * Shared by the machine (`Z88WasmHost`) and the renderer's card dialogs, so it imports neither the
  * machine nor the renderer. It began as the neutral half of the TypeScript card classes, removed with
- * the TypeScript Z88 (`.plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`).
+ * the TypeScript Z88 (`dev/plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`).
  */
 
 import { CardIds } from "./CardIds";

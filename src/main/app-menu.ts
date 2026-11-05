@@ -1,5 +1,5 @@
 /*
- * The application menu (`.plans/MENU_REDESIGN_PLAN.md`). Each top-level menu has its own builder in
+ * The application menu (`dev/plans/MENU_REDESIGN_PLAN.md`). Each top-level menu has its own builder in
  * `./menus/`; this module creates the context they read, puts them in order, and installs the result
  * — only when it differs from the menu already installed.
  */
@@ -60,7 +60,7 @@ export function createMenuContext(emuWindow: BrowserWindow, ideWindow: BrowserWi
       stepOut:
         settingsReader.readSetting("shortcuts.stepOut") ?? (__DARWIN__ ? "Shift+F12" : "Shift+F11"),
       stepOverLine: settingsReader.readSetting("shortcuts.stepOverLine") ?? "Shift+F10",
-      // --- Reverse stepping (`.plans/LITE_STEP_BACK_PLAN.md` Q3)
+      // --- Reverse stepping (`dev/plans/LITE_STEP_BACK_PLAN.md` Q3)
       ...readReverseShortcuts(
         (key) => settingsReader.readSetting(key),
         __DARWIN__ ? "darwin" : __LINUX__ ? "linux" : "win32"
@@ -129,7 +129,7 @@ export function createMenuTemplate(context: MenuContext): MenuItemConstructorOpt
       id: EDIT_MENU_ID,
       label: t("menu.edit.title"),
       // --- Explicit labels: a role item without one is labelled by Electron/the OS in the *OS*
-      // --- language, which would mix languages in one menu (`.ai/localization.md`)
+      // --- language, which would mix languages in one menu (`dev/ai/localization.md`)
       submenu: [
         { role: "undo", label: t("menu.edit.undo") },
         { role: "redo", label: t("menu.edit.redo") },

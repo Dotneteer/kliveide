@@ -5,7 +5,7 @@ import type { Z80CpuState } from "@common/messaging/EmuApi";
 import { createZx81Session, type Zx81TestSession } from "../harness/zx81";
 
 /**
- * The debugger on the ZX81 (`.ai/zx8081.md`, "The core as built"), driven as the IDE drives it:
+ * The debugger on the ZX81 (`dev/ai/zx8081.md`, "The core as built"), driven as the IDE drives it:
  * breakpoints in the ROM and in RAM, step into/over/out, memory and I/O breakpoints, and stepping
  * through the display file, where the ULA turns the bytes the CPU fetches into NOPs.
  */

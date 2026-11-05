@@ -11,7 +11,7 @@ import { SPECTRUM_SNAPSHOT_VIEWER } from "@state/common-ids";
  * away its own error message, a palette whose byte order was documented backwards for years, and a
  * viewer that spent six months unreachable.
  *
- * See `.plans/UI_MODERNIZATION_BATCH_2_PLAN.md` Phases 30, 33 and 37.
+ * See `dev/plans/UI_MODERNIZATION_BATCH_2_PLAN.md` Phases 30, 33 and 37.
  */
 
 describe("readTapeFile", () => {
@@ -89,7 +89,7 @@ describe("the .z80 file type route", () => {
    * six months. Nothing detected that, because both halves type-check on their own.
    */
   it.each([".z80", ".sna", ".szx"])("routes %s files to the ZX Spectrum snapshot viewer", (pattern) => {
-    // --- One viewer serves all three formats since `.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` (D6)
+    // --- One viewer serves all three formats since `dev/plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` (D6)
     const entry = fileTypeRegistry.find(
       (item) => item.matchType === "ends" && item.pattern === pattern
     );

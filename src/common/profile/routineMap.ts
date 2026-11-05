@@ -4,7 +4,7 @@ import { profileLocationOf, type ProfileLayout } from "./layouts/profileLayout";
 import { isProfileRootKey, PROFILE_KEY_UNMAPPED, type ProfileEdge } from "./profileTypes";
 
 /*
- * The profiler's routines (`.plans/PROFILER_PLAN.md` D6, §4.1): what a profile offset's time rolls
+ * The profiler's routines (`dev/plans/PROFILER_PLAN.md` D6, §4.1): what a profile offset's time rolls
  * up into. Pure, so the IDE, the CLI (G5.6) and KSX share it.
  *
  * A routine comes from the best debug info available, in this order: source-level callables (any compiler with source-level debug info), the
@@ -85,7 +85,7 @@ export type RoutineMapInput = {
   partitionLabel?: (partition: number) => string;
   /**
    * The labels of the active annotation set and the ROM's annotations (D6 (3b),
-   * `.docs/annotations.md`, "The Shared Resolver"): routines between the compilation's
+   * `dev/patterns/annotations.md`, "The Shared Resolver"): routines between the compilation's
    * labels and the call targets, each up to the next one in its partition or the end of its 16K slot.
    */
   annotationLabels?: readonly RoutineLabel[];

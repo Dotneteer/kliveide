@@ -4,7 +4,7 @@
  * and the disassembly sections.
  *
  * Shared by the machine (`Z88WasmHost`, `Z88WasmV2Machine`) and the renderer, so it must not import
- * the machine nor the renderer's command services (see `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`,
+ * the machine nor the renderer's command services (see `dev/plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`,
  * "Target Architecture").
  */
 import { IMemorySection, MemorySectionType } from "@abstractions/MemorySection";
@@ -92,7 +92,7 @@ export function z88PartitionLabels(): Record<number, string> {
 
 /**
  * The Z88 has no ROM partitions: its ROM is a card in slot 0 rather than a fixed page, so the bank
- * map is complete rather than missing entries (`.plans/PARTITION_NAMING_UNIFICATION_PLAN.md` §8,
+ * map is complete rather than missing entries (`dev/plans/PARTITION_NAMING_UNIFICATION_PLAN.md` §8,
  * decision 2). All partitions are banks, so the chooser needs one caption beside the grid.
  */
 export function z88PartitionGroups(): Record<number, string> {
@@ -124,7 +124,7 @@ export function z88RomFlags(): boolean[] {
  * screen range in it as on the ZX Spectrum, which is why the disassembly view hides its "RAM" and
  * "Screen" options for the Z88 (`CT_DISASSEMBLER_VIEW` in `machine-registry.ts`). The Spectrum ranges
  * this used to return left `$4000-$5AFF` (the Spectrum's screen) out of every Z88 disassembly -
- * follow-up F3 of `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`.
+ * follow-up F3 of `dev/plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`.
  * @param _options The view's `ram` and `screen` options, which do not apply to the Z88
  */
 export function z88DisassemblySections(_options: Record<string, any>): IMemorySection[] {

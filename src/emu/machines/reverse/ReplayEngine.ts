@@ -1,5 +1,5 @@
 /*
- * Replay to a position (`.plans/REVERSE_DEBUGGING_PLAN.md` §4.2, D4, D9).
+ * Replay to a position (`dev/plans/REVERSE_DEBUGGING_PLAN.md` §4.2, D4, D9).
  *
  * To reach position *s*: restore the newest keyframe at or before *s*, put the recorder at its
  * position (rewinding the ring when it still holds it), then run the core's own fast frame loop with

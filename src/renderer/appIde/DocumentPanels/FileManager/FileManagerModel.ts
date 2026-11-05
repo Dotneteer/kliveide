@@ -3,7 +3,7 @@ import type { FmDeleteResult, FmJobResult } from "@common/fileManager/fmJobTypes
 import { DEFAULT_TRANSFER_OPTIONS, type FmTransferOptions } from "@common/fileManager/fmTransfer";
 
 /*
- * The File Manager's model (`.ai/file-manager.md`): two panes, each on a drive and a
+ * The File Manager's model (`dev/ai/file-manager.md`): two panes, each on a drive and a
  * folder of it, with a cursor, marked files and a sort order; the drive menu; the drives known.
  * Pure: no React, no MainApi, no texts.
  */

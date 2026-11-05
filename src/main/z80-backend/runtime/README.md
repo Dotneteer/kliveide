@@ -1,9 +1,9 @@
 # The runtime of the shared Z80 back end
 
 The runtime every compiled program links: Klive-written Z80 in Klive's assembler dialect, one file
-per module, in **packages** (`.plans/SHARED_Z80_BACKEND_PLAN.md` §3.2). It was written for Klive
-BASIC (`.ai/kbasic/compiler.md`, "Runtime and ROM policy") and is **written from scratch** — no upstream runtime
-file is opened, copied or converted (`.ai/kbasic/compiler.md`, "Provenance (hard rule)"); interfaces come from `.ai/kbasic/runtime-abi.md`,
+per module, in **packages** (`dev/plans/SHARED_Z80_BACKEND_PLAN.md` §3.2). It was written for Klive
+BASIC (`dev/ai/kbasic/compiler.md`, "Runtime and ROM policy") and is **written from scratch** — no upstream runtime
+file is opened, copied or converted (`dev/ai/kbasic/compiler.md`, "Provenance (hard rule)"); interfaces come from `dev/ai/kbasic/runtime-abi.md`,
 behaviour from the spec and the ROM documentation.
 
 | Package | Folder | What it holds | May require |
@@ -22,7 +22,7 @@ behaviour from the spec and the ROM documentation.
   `.proc`), and the program calls `core.<label>`.
 - The linker also defines, in `core`: `HeapStart` and `HeapSize` (the heap area).
 - Units are parsed once and cached (`RuntimeUnitCache`), keyed by module, target model and defines.
-- `scripts/runtime-index.cjs` embeds every module's text and header in its package's generated file
+- `dev/scripts/runtime-index.cjs` embeds every module's text and header in its package's generated file
   (`generated/core-package.ts`, `generated/zx-package.ts`, and the language's own). **Run
   `npm run runtime:bundle` after changing a module**; `npm run build:check` fails while a generated
   file is stale.

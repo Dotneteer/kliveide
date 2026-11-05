@@ -64,7 +64,7 @@ const ACCESS_TYPES: Record<string, Omit<AccessType, "name">> = {
 };
 
 const FUNCTIONS = new Set<string>(["page", "nr", "s8", "s16", "s32"]);
-/** The zero-argument machine specials (`.plans/LOGPOINTS_PLAN.md` §3.5). */
+/** The zero-argument machine specials (`dev/plans/LOGPOINTS_PLAN.md` §3.5). */
 export const MACHINE_FUNCTIONS = new Set<string>(["tstates", "cpufreq", "frame", "slots"]);
 const RELATIONAL = new Set(["==", "!=", "<", "<=", ">", ">="]);
 
@@ -194,7 +194,7 @@ class Parser {
     return this.leftAssoc(() => this.multiplicative(), ["+", "-"]);
   }
 
-  /** `*` and `/` (`.plans/LOGPOINTS_PLAN.md` Q4); `/` is integer division. No `%`: it is binary. */
+  /** `*` and `/` (`dev/plans/LOGPOINTS_PLAN.md` Q4); `/` is integer division. No `%`: it is binary. */
   private multiplicative(): SyntaxNode {
     return this.leftAssoc(() => this.unary(), ["*", "/"]);
   }

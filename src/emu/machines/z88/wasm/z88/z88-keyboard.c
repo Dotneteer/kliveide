@@ -3,7 +3,7 @@
  * sleep detection the machine reports.
  *
  * A port of `Z88KeyboardDevice.setKeyStatus` and of the sleep check in `Z88Machine.onInitNewFrame`
- * (Step 7 of `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`). The matrix itself (`z88KeyboardLines`,
+ * (Step 7 of `dev/plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`). The matrix itself (`z88KeyboardLines`,
  * one byte per address line A8-A15) and the KBD port read are in z88.c and z88-blink.c.
  *
  * Kept for parity: the keyboard reset clears the matrix but not the "a key is pressed" and shift

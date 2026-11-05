@@ -1,7 +1,7 @@
 import type { PiI2sSource } from "@emu/machines/zxNext/piI2s/PiI2sSource";
 
 /*
- * The Raspberry Pi's end of the Next's I2S link, for the session (`.plans/PI_I2S_AUDIO_PLAN.md`): a
+ * The Raspberry Pi's end of the Next's I2S link, for the session (`dev/plans/PI_I2S_AUDIO_PLAN.md`): a
  * sample source the machine feeds into the core frame by frame, exactly as the IDE does.
  */
 

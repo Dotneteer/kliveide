@@ -1,5 +1,5 @@
 ' Klive BASIC standard library - asc.bas: asc.
-' Klive's own code, written from the documented API (.ai/kbasic/stdlib-api.json).
+' Klive's own code, written from the documented API (dev/ai/kbasic/stdlib-api.json).
 #pragma once
 #include <__kbase.bas>
 #pragma push(case_insensitive)

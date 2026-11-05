@@ -42,27 +42,27 @@ export const SpectrumModelTypes: Record<number, string> = {
 
 /**
  * Whether a model type is one of the Sinclair ZX80/ZX81 models
- * (`.ai/zx8081.md`, "Machine code decisions", D1)
+ * (`dev/ai/zx8081.md`, "Machine code decisions", D1)
  */
 export function isZx8081ModelType(modelType: number | undefined): boolean {
   return modelType === SpectrumModelType.ZX80 || modelType === SpectrumModelType.ZX81;
 }
 
 /**
- * Whether a model type is the HT-1080Z's, every model of it (`.plans/HT1080Z_CODE_INJECTION_PLAN.md`
+ * Whether a model type is the HT-1080Z's, every model of it (`dev/plans/HT1080Z_CODE_INJECTION_PLAN.md`
  * D1, D-Q1)
  */
 export function isHt1080zModelType(modelType: number | undefined): boolean {
   return modelType === SpectrumModelType.HT1080Z;
 }
 
-/** Whether a model type is the Videoton TVC's, both models (`.ai/videoton-tvc.md`, "Run, Debug and
+/** Whether a model type is the Videoton TVC's, both models (`dev/ai/videoton-tvc.md`, "Run, Debug and
  * export") */
 export function isTvcModelType(modelType: number | undefined): boolean {
   return modelType === SpectrumModelType.TVC;
 }
 
-/** Whether a model type is the Enterprise 64/128's, both models (`.plans/ENTERPRISE_PLAN.md` §12) */
+/** Whether a model type is the Enterprise 64/128's, both models (`dev/plans/ENTERPRISE_PLAN.md` §12) */
 export function isEnterpriseModelType(modelType: number | undefined): boolean {
   return modelType === SpectrumModelType.Enterprise;
 }
@@ -78,7 +78,7 @@ export function findModelTypeByName(name: string): number | undefined {
 } 
 /**
  * The model a source with no `.model` pragma is assembled for: the running machine's
- * (`.ai/zx8081.md`, "Machine code decisions", Q1). A ZX80 with the 8K ROM runs ZX81 code. Machines
+ * (`dev/ai/zx8081.md`, "Machine code decisions", Q1). A ZX80 with the 8K ROM runs ZX81 code. Machines
  * with no model of their own (the Timex, the Scorpion, the Z88) keep the 48K default.
  * @param machineId The running machine
  * @param config The running machine's configuration

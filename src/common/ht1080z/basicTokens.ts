@@ -1,5 +1,5 @@
 /**
- * The HT-1080Z's Level II BASIC keywords by token (`.plans/HT1080Z_PLAN.md` §11): the ROM's
+ * The HT-1080Z's Level II BASIC keywords by token (`dev/plans/HT1080Z_PLAN.md` §11): the ROM's
  * reserved-word table at 1650h lists them for tokens 80h-FBh in order, each keyword with bit 7 set on
  * its first character. `test/ht1080z/basic-tokens.test.ts` decodes the table from every model's ROM
  * and compares it with this list. D1h is the power operator, shown as `↑` on the HT's screen.

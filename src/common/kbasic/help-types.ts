@@ -1,7 +1,7 @@
 /**
  * The shape of Klive BASIC's static help data (`help-data.generated.ts`, written by
  * `npm run kbasic:help` from the language spec and the documented library API;
- * `.plans/BASIC_EDITOR_INTELLIGENCE_PLAN.md` §4.4). Hover, completion and signature help read it.
+ * `dev/plans/BASIC_EDITOR_INTELLIGENCE_PLAN.md` §4.4). Hover, completion and signature help read it.
  */
 
 export type BasicHelpKind =

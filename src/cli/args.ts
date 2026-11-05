@@ -1,7 +1,7 @@
 import { usageError } from "./exit-codes";
 
 /*
- * A small argument parser (`.plans/UNIT_TESTS_CLI_PLAN.md` D13: no new dependency).
+ * A small argument parser (`dev/plans/UNIT_TESTS_CLI_PLAN.md` D13: no new dependency).
  *
  * Long options only (`--json`, `--timeout 30`, `--timeout=30`). Single-dash words are positional:
  * they belong to the IDE command syntax that `klive ide cmd` and `klive ide bp set` pass through
@@ -98,7 +98,7 @@ export function parseNumberIn(text: string, what: string, min: number, max: numb
 
 /**
  * A memory location: `$5C00` (the CPU's view) or `B5:$0100` (a partition and an offset, as the
- * memory panel writes it; `.plans/COMMAND_LINE_AUTOMATION_PLAN.md` T8).
+ * memory panel writes it; `dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` T8).
  */
 export function parseLocation(text: string): { address: number } | { partition: string; offset: number } {
   const colon = text.indexOf(":");

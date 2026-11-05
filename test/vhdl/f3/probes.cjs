@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /*
- * F3 triage probes (.plans/ZX_NEXT_FIDELITY_PROOF_PLAN.md §8): programs that wait an exact number of
+ * F3 triage probes (dev/plans/ZX_NEXT_FIDELITY_PROOF_PLAN.md §8): programs that wait an exact number of
  * T-states from the program's first fetch (which both machines start at the same raster position),
  * then read one value with a single IN and store it. A sweep of the wait, one T-state at a time,
  * finds the T-state at which the value changes on each machine; run-f3.cjs replays the sweep on Klive

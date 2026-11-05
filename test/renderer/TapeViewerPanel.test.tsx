@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /*
- * The `.tap`/`.tzx` viewer (`.plans/TAPE_VIEWER_PLAN.md` §4.4-4.5): the summary, the block browser
+ * The `.tap`/`.tzx` viewer (`dev/plans/TAPE_VIEWER_PLAN.md` §4.4-4.5): the summary, the block browser
  * with its timeline, the BASIC preview, and the pop-outs. The model is tested without a DOM in
  * `test/renderer/tape/tapeView.test.ts`.
  */

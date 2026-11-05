@@ -17,7 +17,7 @@ import { t } from "@common/i18n/i18n";
 const TAPE_FILE_FOLDER = "tapeFileFolder";
 
 /**
- * The ZX80 and ZX81 tape commands (`.ai/zx8081.md`, "Files, tape and the IDE"). A program file (`.p`/`.81`
+ * The ZX80 and ZX81 tape commands (`dev/ai/zx8081.md`, "Files, tape and the IDE"). A program file (`.p`/`.81`
  * for the ZX81, `.o`/`.80` for the ZX80) is the tape: "Load and Run" resets the machine, types the
  * load command and, once the ROM has loaded the program, RUN. Fast load reads the bytes straight
  * into the ROM's LOAD routine; without it they play in real time.

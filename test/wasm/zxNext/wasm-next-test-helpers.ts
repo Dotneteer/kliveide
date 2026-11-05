@@ -8,7 +8,7 @@ import {
   buildAllZxNextWasm,
   ZXNEXT_ARTIFACTS,
   waitForZxNextWasmBuildLock
-} from "../../../scripts/build-zxnext-wasm.cjs";
+} from "../../../dev/scripts/build-zxnext-wasm.cjs";
 import { NEXT_PROFILES, IMPLICIT_NEXT_PROFILE_ID, nextModelDisplayName, type NextProfileId } from "@emu/machines/zxNext/nextProfiles";
 import { FileProvider } from "./FileProvider";
 
@@ -25,7 +25,7 @@ export async function buildZxNextWasmArtifact(force = false): Promise<void> {
   zxNextWasmBuilt = true;
 }
 
-/** A profile's artifact on disk (`scripts/zxnext-artifacts.cjs`) */
+/** A profile's artifact on disk (`dev/scripts/zxnext-artifacts.cjs`) */
 export function zxNextArtifactPath(profile: NextProfileId = IMPLICIT_NEXT_PROFILE_ID): string {
   const entry = ZXNEXT_ARTIFACTS.find((a: { artifact: string }) => a.artifact === NEXT_PROFILES[profile].wasmArtifact);
   if (!entry) throw new Error(`No artifact for ${profile}.`);

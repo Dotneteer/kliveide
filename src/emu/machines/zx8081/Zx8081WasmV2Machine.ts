@@ -66,7 +66,7 @@ function isProgramFile(value: unknown): value is ZxProgramFile {
  */
 export class Zx8081WasmV2Machine extends Zx8081WasmHost implements IExecutionHistorySource, IAccessProfileSource {
   // ==============================================================================================
-  // Execution history (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`): the shared recorder in the
+  // Execution history (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`): the shared recorder in the
   // core, read through the shared reader; the machine id names the context decoder
 
   get historyMachineId(): string {
@@ -99,7 +99,7 @@ export class Zx8081WasmV2Machine extends Zx8081WasmHost implements IExecutionHis
   }
 
   // ==============================================================================================
-  // The access profile (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`): the shared module in the core,
+  // The access profile (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`): the shared module in the core,
   // read through the shared reader; the ZX80 and the ZX81 share one layout (`layouts/zx8081.ts`)
 
   get profileMachineId(): string {
@@ -744,7 +744,7 @@ export class Zx8081WasmV2Machine extends Zx8081WasmHost implements IExecutionHis
 
   /**
    * Captures the machine's whole state: the core's memory image plus this wrapper's own fields
-   * (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.5). The machine must be paused.
+   * (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.5). The machine must be paused.
    */
   saveMachineState(): MachineStateParts {
     const runtime = this.requireWasmV2Runtime();
@@ -755,7 +755,7 @@ export class Zx8081WasmV2Machine extends Zx8081WasmHost implements IExecutionHis
   }
 
   // ------------------------------------------------------------------------------------------------
-  // Reverse debugging (`.plans/REVERSE_DEBUGGING_PLAN.md` §4.2, `reverse/Timeline.ts`)
+  // Reverse debugging (`dev/plans/REVERSE_DEBUGGING_PLAN.md` §4.2, `reverse/Timeline.ts`)
 
   /** The core, as the export contract names it */
   get reverseCoreId(): string {

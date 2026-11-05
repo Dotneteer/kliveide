@@ -33,7 +33,7 @@ export function isZ88SnapshotPath(path: string | undefined): boolean {
 }
 
 /**
- * Loads a `.z88` (OZvm) snapshot into the Cambridge Z88 (`.plans/Z88_SNAPSHOT_PLAN.md` §4.6).
+ * Loads a `.z88` (OZvm) snapshot into the Cambridge Z88 (`dev/plans/Z88_SNAPSHOT_PLAN.md` §4.6).
  *
  * With no option (or `-d`) it debugs the snapshot, stopping at its PC before that instruction runs.
  * `-r` runs it. `-a` does what the file's `Autorun` flag says, as OZvm does: run when it is set,

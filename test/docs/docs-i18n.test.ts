@@ -1,5 +1,5 @@
 /**
- * The website translation tool's page check (scripts/docs-i18n.cjs): a translated Get Started
+ * The website translation tool's page check (dev/scripts/docs-i18n.cjs): a translated Get Started
  * page must keep its English original's structure - the code, the screenshots, the headings,
  * the links - and merge rewrites links into translated areas only.
  */
@@ -7,7 +7,7 @@ import { createRequire } from "node:module";
 import { describe, expect, it } from "vitest";
 
 const require = createRequire(import.meta.url);
-const { pageProblems, localizeLinks } = require("../../scripts/docs-i18n.cjs");
+const { pageProblems, localizeLinks } = require("../../dev/scripts/docs-i18n.cjs");
 
 const EN = `---
 description: "Start the machine."

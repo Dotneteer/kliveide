@@ -6,7 +6,7 @@ import { createSp128Session, type Sp128TestSession } from "../../harness/sp128";
 import { checkCallEdge, checkMapping, checkTimeSums, jump, out, profiled } from "./pagedSpectrumProfile";
 
 /*
- * The access profile on the +2A/+3/+2E/+3E core (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` Phase 2):
+ * The access profile on the +2A/+3/+2E/+3E core (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` Phase 2):
  * physical offsets over RAM banks 0-7 and ROMs 0-3, mapped through the slot map - the special
  * (all-RAM) paging modes included - never the flat `spp3eMemory` copy (traps T2, T3).
  */

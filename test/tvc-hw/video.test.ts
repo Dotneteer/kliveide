@@ -5,7 +5,7 @@ import { bareMachine, beam, PAL, PAPER_LEFT, PAPER_TOP, paperDots, pixel, pokePa
 
 /*
  * The TVC video path (`src/emu/machines/tvc/wasm/README.md`, "Video"; every fact from
- * `_input/videoton-tvc/TVC_VIDEO_GENERATION.md`, the part named in each test).
+ * `dev/research/videoton-tvc/TVC_VIDEO_GENERATION.md`, the part named in each test).
  */
 
 describe("TVC video: from byte to pixels (Part 6)", () => {

@@ -41,7 +41,7 @@ describe("MF_INJECT_SUPPORT", () => {
     ["ZX Spectrum 128K", MI_SPECTRUM_128],
     ["ZX Spectrum +3E", MI_SPECTRUM_3E],
     ["Commodore 64", MI_C64],
-    // --- A 1 REM program and RUN (`.ai/zx8081.md`, "Machine code decisions", D4)
+    // --- A 1 REM program and RUN (`dev/ai/zx8081.md`, "Machine code decisions", D4)
     ["Sinclair ZX81", MI_ZX81],
     ["Sinclair ZX80", MI_ZX80],
     // --- BASIC calls the code with USR, above LOMEM (`common/tvc/codePlacement.ts`)

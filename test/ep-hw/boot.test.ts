@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { createEpSession } from "../harness/enterprise";
 
 /*
- * Booting EXOS 2.1 and IS-BASIC 2.1 on the Enterprise 128 (`.plans/ENTERPRISE_PLAN.md` Phase 1): the
+ * Booting EXOS 2.1 and IS-BASIC 2.1 on the Enterprise 128 (`dev/plans/ENTERPRISE_PLAN.md` Phase 1): the
  * RAM test, the ROM scan, the ENTERPRISE banner that waits for a key, and IS-BASIC's prompt. Phase 1
  * draws no pixels, so the screen is read the way NICK reads it: the LPT and the character codes its
  * character-mode blocks point at.

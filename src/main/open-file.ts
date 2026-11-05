@@ -1,5 +1,5 @@
 /*
- * File › Open File… and files dropped onto the emulator window (`.plans/MENU_REDESIGN_PLAN.md` §3):
+ * File › Open File… and files dropped onto the emulator window (`dev/plans/MENU_REDESIGN_PLAN.md` §3):
  * one way to open every file the emulator understands. `droppedFileAction` decides what a file is;
  * this module carries the decision out with the same code the old per-type menu items used.
  */
@@ -127,8 +127,8 @@ export async function openEmulatorFile(
 }
 
 /**
- * Puts an HT-1080Z tape into the HT-1080Z's deck (`.plans/HT1080Z_PLAN.md` §9), or a `.cas` into the
- * Videoton TVC's (`.ai/videoton-tvc.md`, "Tape, disks and files"): refused on any other machine,
+ * Puts an HT-1080Z tape into the HT-1080Z's deck (`dev/plans/HT1080Z_PLAN.md` §9), or a `.cas` into the
+ * Videoton TVC's (`dev/ai/videoton-tvc.md`, "Tape, disks and files"): refused on any other machine,
  * with the reason
  * @returns An error message, or undefined when the tape went in
  */

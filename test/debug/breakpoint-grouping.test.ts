@@ -14,7 +14,7 @@ import {
  * is the ordering rule - a mounted virtualized list would tell us almost nothing about it and cost
  * a great deal to ask.
  *
- * See `.plans/NEXTREG_WRITE_BREAKPOINTS_PLAN.md` §4.9a.
+ * See `dev/plans/NEXTREG_WRITE_BREAKPOINTS_PLAN.md` §4.9a.
  */
 
 const LABELS: Record<number, string> = { [-1]: "R0", 0: "B0", 1: "B1" };

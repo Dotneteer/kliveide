@@ -10,7 +10,7 @@ import { selectViewModel, type DetectViewModel } from "./DetectViewModel";
 
 /**
  * Orchestrates the Detect dialog: it reads the profile, classifies several banks and publishes —
- * the async work that makes this an MVC dialog (`.ai/ui-mvc-guide.md`).
+ * the async work that makes this an MVC dialog (`dev/ai/ui-mvc-guide.md`).
  */
 export class DetectController extends UiController<DetectState, DetectIntent, DetectEvent, DetectViewModel> {
   private readonly detectRun = new LatestRun();

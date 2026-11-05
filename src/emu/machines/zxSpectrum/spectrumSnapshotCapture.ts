@@ -1,6 +1,6 @@
 /*
  * Reads a WASM ZX Spectrum core's state into the snapshot model, the mirror image of
- * `spectrumSnapshotRestore.ts` (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.1, D4).
+ * `spectrumSnapshotRestore.ts` (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.1, D4).
  *
  * It reads only through the cores' getters, so capturing never changes the machine. The caller
  * makes sure the machine is paused at an instruction boundary; the capture itself refuses a CPU that
@@ -157,7 +157,7 @@ export function captureSpectrumSnapshot(
     lastFe: call("GetPortFeValue") & 0xff,
     frameTact: call("GetCurrentFrameTact")
   };
-  // --- Late ("alternate") ULA timing, on the cores that have it (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phase 4)
+  // --- Late ("alternate") ULA timing, on the cores that have it (`dev/plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phase 4)
   if (typeof all[core.prefix + "GetLateTiming"] === "function" && call("GetLateTiming") !== 0) {
     ula.alternateTimings = true;
   }

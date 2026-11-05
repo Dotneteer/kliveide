@@ -123,7 +123,7 @@ export class WasmSpectrumPsgDevice implements ISpectrumPsgDevice {
 }
 
 /**
- * The beam of a core built on `zx-spectrum-ula.c` (`.plans/BEAM_POSITION_OVERLAY_PLAN.md` §4.3), from
+ * The beam of a core built on `zx-spectrum-ula.c` (`dev/plans/BEAM_POSITION_OVERLAY_PLAN.md` §4.3), from
  * its `GetBeamInfo(field)` export (fields in `ulaBeamInfo`), the displayed buffer's size and start
  * offset, and the buffer pixels per Spectrum pixel (2 on the Timex).
  *

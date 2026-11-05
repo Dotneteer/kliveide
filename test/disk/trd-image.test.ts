@@ -21,7 +21,7 @@ import {
 } from "@emu/machines/disk/trd/trdImage";
 
 /*
- * TR-DOS images (`.plans/BETA128_TRDOS_PLAN.md` Phase 3). The layout facts, with sources, are in §9
+ * TR-DOS images (`dev/plans/BETA128_TRDOS_PLAN.md` Phase 3). The layout facts, with sources, are in §9
  * of the plan: Kaitai Struct's `tr_dos_image.ksy` (CC0) and the Sinclair Wiki.
  */
 

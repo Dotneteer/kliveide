@@ -7,7 +7,7 @@ import { startBasic } from "./run-kit";
 
 /**
  * Source steps decided from the core's stops equal source steps decided after every instruction
- * (`.ai/wasm-core-debug.md` T6).
+ * (`dev/ai/wasm-core-debug.md` T6).
  *
  * The core stops a source step only at statement entries and call-site return addresses
  * (`SourceDebugIndex.trackedAddresses`), where `shouldStopAtSourceStep` decides; elsewhere that function

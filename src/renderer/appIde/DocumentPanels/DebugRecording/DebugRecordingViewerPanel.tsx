@@ -22,7 +22,7 @@ import { formatReverseSeconds } from "@common/history/reverseDebugText";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_SD_CARD, MEDIA_TAPE } from "@common/structs/project-const";
 
 /*
- * The debug recording (`.klr`) viewer (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` D19): the screen at
+ * The debug recording (`.klr`) viewer (`dev/plans/DEBUG_SESSION_RECORDING_PLAN.md` D19): the screen at
  * the saved moment, the machine, the Klive build, how long and how much it recorded, its breakpoints,
  * media and sources, the note - and whether this build can replay it, which the emulator can tell
  * when it runs the recording's core (D3). It reads the file without inflating the timeline and runs

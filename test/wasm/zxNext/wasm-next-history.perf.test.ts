@@ -6,12 +6,12 @@ import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { createSession } from "../../harness/zxnext";
 
 /*
- * The execution-history recorder's cost (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` trap T14, Phase 8).
+ * The execution-history recorder's cost (`dev/plans/EXECUTION_HISTORY_VIEWER_PLAN.md` trap T14, Phase 8).
  * `npm run test:perf`; not part of the regular tiers, because a timing ratio on a shared CI runner
  * is noise.
  *
  * - On, in the debug loop (Start with Debugging), it costs at most 25%: the D14 budget of
- *   `.ai/wasm-core-debug.md`. The loop runs in C since the in-core debug loop and costs
+ *   `dev/ai/wasm-core-debug.md`. The loop runs in C since the in-core debug loop and costs
  *   about a plain Run, so the recorder's unchanged cost is a larger fraction of it than the 8% it was
  *   of the old loop, which paid a TypeScript round trip per instruction; it measures about 10%.
  * - Off, the hook is one predictable branch per cycle. A plain Run never records (D8); the second

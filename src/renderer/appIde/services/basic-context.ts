@@ -1,7 +1,7 @@
 import { scanBasicLines } from "./basic-structure";
 
 /**
- * What is being typed where in a `.zxbas` file (`.plans/BASIC_EDITOR_INTELLIGENCE_PLAN.md` §4.7):
+ * What is being typed where in a `.zxbas` file (`dev/plans/BASIC_EDITOR_INTELLIGENCE_PLAN.md` §4.7):
  * read from the text alone, so completion knows its context while the file does not parse.
  * Pure and table-driven; lines are 1-based, columns 1-based (Monaco's).
  */

@@ -25,7 +25,7 @@ import { DSK_WHOLE_IMAGE_KEY } from "@emu/machines/disk/disk-changes";
 import type { EpTapeFile } from "@emu/machines/enterprise/EpTapeFile";
 
 import { buildCoreOnce } from "../coreBuild";
-import { buildEpWasm, productionOutput } from "../../../scripts/build-ep-wasm.cjs";
+import { buildEpWasm, productionOutput } from "../../../dev/scripts/build-ep-wasm.cjs";
 
 export const REPO_ROOT = join(__dirname, "../../..");
 const ROMS = join(REPO_ROOT, "src/public/roms");

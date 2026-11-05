@@ -1,11 +1,11 @@
 /*
- * The reverse-debugging spike's measurements (`.plans/REVERSE_DEBUGGING_PLAN.md` Phase 0 (a)-(c)):
+ * The reverse-debugging spike's measurements (`dev/plans/REVERSE_DEBUGGING_PLAN.md` Phase 0 (a)-(c)):
  * page-shared keyframe cost, T5's render-buffer classification and replay time, on three workloads
  * per machine. Behind a dev flag - it runs only with `KLIVE_REVERSE_SPIKE=1`:
  *
  *   KLIVE_REVERSE_SPIKE=1 npm test -- test/reverse/reverse-spike-measure.test.ts
  *
- * The debug recording's Phase 0 (`.plans/DEBUG_SESSION_RECORDING_PLAN.md`) runs with
+ * The debug recording's Phase 0 (`dev/plans/DEBUG_SESSION_RECORDING_PLAN.md`) runs with
  * `KLIVE_RECORDING_MEASURE=1` (`KLIVE_RECORDING_OUT=<file.json>` writes its results).
  *
  * Optional: `KLIVE_WASM_MAP_DIR=<folder>` (set it for the core builds as well) attributes changed
@@ -85,7 +85,7 @@ function loadSymbols(prefixes: string[], check: { symbol: string; address: numbe
   const dir = process.env.KLIVE_WASM_MAP_DIR;
   if (!dir || !existsSync(dir)) return undefined;
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { parseLinkerMap } = require(join(ROOT, "scripts/wasm-layout.cjs"));
+  const { parseLinkerMap } = require(join(ROOT, "dev/scripts/wasm-layout.cjs"));
   for (const prefix of prefixes) {
     for (const file of readdirSync(dir).filter((f) => f.startsWith(prefix))) {
       const symbols = (parseLinkerMap(readFileSync(join(dir, file), "utf8")).symbols as Sym[]).filter((s) => !s.symbol.startsWith("."));
@@ -319,7 +319,7 @@ function tapBlocks(path: string) {
   return reader.dataBlocks;
 }
 
-const YANKEE = join(ROOT, "_input/A Yankee in Iraq v1.3.3.tap");
+const YANKEE = join(ROOT, "dev/research/A Yankee in Iraq v1.3.3.tap");
 const GAME_KEYS_48 = ["Q", "A", "O", "P", "Space", "M", "N1", "Enter"];
 
 /** A player: a key goes down or up every few frames */
@@ -660,7 +660,7 @@ describe.skipIf(!SESSION_ENABLED)("reverse debugging: a 10-minute session (Phase
 });
 
 // ------------------------------------------------------------------------------------------------
-// Debug recordings, Phase 0 (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` §5): what a recording of each
+// Debug recordings, Phase 0 (`dev/plans/DEBUG_SESSION_RECORDING_PLAN.md` §5): what a recording of each
 // workload costs on disk and to save and open, full and sparse, at deflate levels 1, 6 and 9.
 // KLIVE_RECORDING_MEASURE=1; KLIVE_RECORDING_FRAMES sets the session length (60 s by default).
 

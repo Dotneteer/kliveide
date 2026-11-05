@@ -9,17 +9,17 @@ import { createZ88Session } from "../../harness/z88";
 import { createZx81Session } from "../../harness/zx81";
 
 /*
- * The execution-history recorder's cost on every core (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`
+ * The execution-history recorder's cost on every core (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`
  * trap T5). `npm run test:perf`; not part of the regular tiers, because a timing ratio on a shared CI
  * runner is noise.
  *
- * - Every core's debug loop runs in C (`…ExecuteUntilStop`, `.ai/wasm-core-debug.md`
+ * - Every core's debug loop runs in C (`…ExecuteUntilStop`, `dev/ai/wasm-core-debug.md`
  *   Phase 4a): a debug session costs about what a plain Run does, so the recorder's fixed cost per
  *   instruction is a visible fraction of it. The bound is that plan's D14 budget for a debug session with
  *   history recording, 25%. (Before Phase 4a the Spectrums' loop paid a TypeScript round trip per
  *   instruction and recording cost at most 8% of it; the recorder did not change, the loop got faster.)
  * - The ZX81's loop (the ULA works every instruction) measures 16-18% here and 1.3x a plain Run in the
- *   host benchmark, missing D14 (`.ai/wasm-core-debug.md`, "What the measurements showed"): its bound, 35%, is a guard
+ *   host benchmark, missing D14 (`dev/ai/wasm-core-debug.md`, "What the measurements showed"): its bound, 35%, is a guard
  *   against regressions. The Z88's loop is the fastest of all - about 22 ns an instruction - so the
  *   recorder's fixed cost, mostly storing one 64-byte record into a 4 MB ring, is about a third of it:
  *   about 8 ns an instruction, with the debug run still well over 100 times real time. Its bound is

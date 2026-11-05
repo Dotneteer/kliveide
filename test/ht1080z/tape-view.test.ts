@@ -17,12 +17,12 @@ import {
 import { ht1080zPartAnatomy } from "@renderer/appIde/DocumentPanels/Ht1080zTape/ht1080zTapeFields";
 
 /*
- * The HT-1080Z tape viewer's model (`.plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D4) on real files: the demo
+ * The HT-1080Z tape viewer's model (`dev/plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D4) on real files: the demo
  * program the Series II saved, the `default` template assembled into a `.cmd`, and the tapes Klive
  * makes of them.
  */
 const REPO = join(__dirname, "../..");
-const DEMO = new Uint8Array(readFileSync(join(REPO, "scripts/doc-shots/recipes/ht1080z-demo.bas")));
+const DEMO = new Uint8Array(readFileSync(join(REPO, "dev/scripts/doc-shots/recipes/ht1080z-demo.bas")));
 const S2 = ht1080zCharsFor("s2");
 
 async function templateCmd(): Promise<{ cmd: Uint8Array; code: number[] }> {

@@ -212,7 +212,7 @@ describe(".z80", () => {
     expect(s.peripherals.issue2).toBe(true);
     const w = mapSpectrumSnapshotToKlive(s).warnings.join("\n");
     expect(w).toMatch(/AY chip on a 48K/);
-    // --- Klive's 48K has the Interface 1 (`.plans/MICRODRIVE_PLAN.md` Phase 5): no warning
+    // --- Klive's 48K has the Interface 1 (`dev/plans/MICRODRIVE_PLAN.md` Phase 5): no warning
     expect(w).not.toMatch(/Interface 1/);
     expect(w).toMatch(/Issue 2/);
   });
@@ -450,7 +450,7 @@ describe("mapping", () => {
     expect(map("pentagon").kliveName).toBe("Pentagon 128");
   });
 
-  it("lists the +E models first, then the Amstrad ones (.plans/PLUS3_AMSTRAD_ROMS_PLAN.md P6)", () => {
+  it("lists the +E models first, then the Amstrad ones (dev/plans/PLUS3_AMSTRAD_ROMS_PLAN.md P6)", () => {
     expect(map("plus2a").modelIds).toEqual(["nofdd", "fdd1", "fdd2", "plus2a", "plus2a-es"]);
     expect(map("plus3").modelIds).toEqual([
       "fdd1",

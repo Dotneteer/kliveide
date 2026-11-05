@@ -1,5 +1,5 @@
 /**
- * The latest release, as scripts/build-doc-site-info.cjs found it (docs/generated/site-info.json).
+ * The latest release, as dev/scripts/build-doc-site-info.cjs found it (docs/generated/site-info.json).
  * A build that skipped that step (`next build` run directly) still works: it shows no version
  * and links to the releases page.
  */

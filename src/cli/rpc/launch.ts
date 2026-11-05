@@ -7,7 +7,7 @@ import { lookUpConnection } from "@main/automation/connection-file";
 import { CliError, EXIT_INTERNAL, EXIT_USAGE } from "../exit-codes";
 
 /*
- * `--launch` (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D12, T1, T2): start Klive with
+ * `--launch` (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` D12, T1, T2): start Klive with
  * `--automation --noide` when no live server answers, then wait for its connection file. The
  * launched instance stays open.
  *

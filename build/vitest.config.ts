@@ -49,7 +49,7 @@ export default defineConfig({
       /**
        * The end-to-end tiers: tests that run the real WASM machine cores (see `build/e2e-tests.ts`).
        * `npm test` runs each fast one only when its inputs changed since it last passed
-       * (`scripts/run-tests.cjs`); `npm run test:e2e` / `npm run test:fast` run them regardless.
+       * (`dev/scripts/run-tests.cjs`); `npm run test:e2e` / `npm run test:fast` run them regardless.
        * `e2e-slow` runs only on request: `npm run test:slow` / `npm run test:all`.
        */
       {

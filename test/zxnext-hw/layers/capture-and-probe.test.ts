@@ -8,7 +8,7 @@ import { apply, configs, describeConfig, hex9, makeScene, pixelInputs, sceneSess
 
 /*
  * The layer capture, the exact paused recompose and the pixel probe
- * (`.plans/LAYER_COMPOSITION_PLAN.md` Phases 4 and 5).
+ * (`dev/plans/LAYER_COMPOSITION_PLAN.md` Phases 4 and 5).
  *
  * - A Copper program changes `$15`, `$4A` and the Layer 2 palette offset mid-frame (T3). Stopped
  *   mid-frame, a recompose from the capture with no layer hidden equals the machine's own picture

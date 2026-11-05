@@ -88,7 +88,7 @@ describe("Boriel BASIC setup", () => {
   beforeEach(() => {
     root = fs.mkdtempSync(path.join(os.tmpdir(), "klive-boriel-"));
     home = path.join(root, "home");
-    vendor = path.join(root, "app", "vendor", "boriel-basic");
+    vendor = path.join(root, "app", "dev", "vendor", "boriel-basic");
     fs.mkdirSync(home, { recursive: true });
     writeKit(makeKitArchive());
     settings = {};
@@ -246,7 +246,7 @@ describe("Boriel BASIC setup with the real kit", () => {
       settings: { readSetting: () => undefined },
       setupRecord: undefined
     });
-    // --- The pinned version, as vendor/boriel-basic/kit.json names it
+    // --- The pinned version, as dev/vendor/boriel-basic/kit.json names it
     expect(result).toMatchObject({ kind: "installed", version: available ? bundled.version : "" });
   }, 60_000);
 });
@@ -254,7 +254,7 @@ describe("Boriel BASIC setup with the real kit", () => {
 // --- Why the installer may leave out the Windows kits' .pdb files: no executable names one (no
 // --- CodeView "RSDS" record) or loads a library at run time, which is how a program could find one
 describe("Boriel BASIC Windows kits", () => {
-  const vendor = path.resolve(__dirname, "../../vendor/boriel-basic");
+  const vendor = path.resolve(__dirname, "../../dev/vendor/boriel-basic");
   const manifest = JSON.parse(fs.readFileSync(path.join(vendor, "kit.json"), "utf8"));
   for (const key of ["win32-x64", "win32-arm64"]) {
     const archive = path.join(vendor, "kits", manifest.kits[key].file);

@@ -38,7 +38,7 @@ const lightTheme = tokensFor("light");
  * declaration, so a missing token looks like a design decision rather than a bug.
  *
  * This test closes that gap. It was written before the token layer landed (the UI
- * modernization's first step, `.ai/ui-design-system.md`) so that its initial failures documented the existing breakage,
+ * modernization's first step, `dev/ai/ui-design-system.md`) so that its initial failures documented the existing breakage,
  * and now guards the layer that replaced it.
  */
 

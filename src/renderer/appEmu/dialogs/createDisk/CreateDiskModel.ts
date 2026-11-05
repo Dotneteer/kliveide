@@ -20,7 +20,7 @@ export const DISK_TYPES: DiskTypeOption[] = withLabels([
 
 export const DEFAULT_DISK_TYPE = "ss";
 
-// --- TR-DOS disks for the Pentagon's Beta 128 (`.plans/BETA128_TRDOS_PLAN.md` Phase 3): blank,
+// --- TR-DOS disks for the Pentagon's Beta 128 (`dev/plans/BETA128_TRDOS_PLAN.md` Phase 3): blank,
 // --- TR-DOS-formatted `.trd` images (`createBlankTrd`)
 export const TRD_DISK_TYPES: DiskTypeOption[] = withLabels([
   { labelKey: "dialog.createDisk.diskType.trd80ds", value: "trd80ds" },

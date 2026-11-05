@@ -2,8 +2,8 @@
 
 The Cambridge Z88 WASM implementation is the full-machine C core under this folder. It builds to
 `dist/cambridge-z88.wasm` and is loaded by `Z88WasmV2Loader.ts`, and it is the only Z88 emulation.
-The migration was `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`; the TypeScript machine it replaced
-was removed by `.plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md` (the last commit that has it is
+The migration was `dev/plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`; the TypeScript machine it replaced
+was removed by `dev/plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md` (the last commit that has it is
 tagged `z88-typescript-last`).
 
 **Status.** The whole machine is emulated: the memory map and every card type - RAM, ROM, UV EPROM,
@@ -39,7 +39,7 @@ Z80 core and the absence of the Spectrum devices.
 `npm run build:z88-wasm` (compiler: `clang`, or `Z88_WASM_CC`; profile: `Z88_WASM_OPTIMIZATION`
 = `speed` (default), `size` or `lto`). `npm run check:z88-wasm-size` checks the size ceiling. The
 build uses the portable `wasm32` target and `wasm-ld`, not Emscripten. Builds of the production
-artifact are serialized with a lock file (`scripts/wasm-build-lock.cjs`), because test workers build
+artifact are serialized with a lock file (`dev/scripts/wasm-build-lock.cjs`), because test workers build
 it in parallel.
 
 ## The CPU's bus record
@@ -120,7 +120,7 @@ as the low byte they push, so the CPU panel showed a 16-bit "last write value" a
 
 ## Brought to OZvm's behaviour (2026-10-04)
 
-`.plans/Z88_OZVM_PARITY_PLAN.md` compared the core with OZvm (https://gitlab.com/b4works/ozvm, read
+`dev/plans/Z88_OZVM_PARITY_PLAN.md` compared the core with OZvm (https://gitlab.com/b4works/ozvm, read
 for behaviour only) after users reported "noise" on the larger LCDs under OZ 5. The goldens were
 re-recorded for it, the second settled change to them, after every changed entry had been traced to
 one of these:
@@ -187,7 +187,7 @@ cannot time out with:
 
 The Z88 goldens were re-recorded for this, the one settled change to them. The ROM traces, the
 Developers' Notes passages and the review of the diff are in
-`.plans/CAMBRIDGE_Z88_ISSUE_1374_PLAN.md` (Step 4), and `test/z88/z88-timeout-coma.test.ts` holds
+`dev/plans/CAMBRIDGE_Z88_ISSUE_1374_PLAN.md` (Step 4), and `test/z88/z88-timeout-coma.test.ts` holds
 the behaviour.
 
 **The Z80 is a CMOS part** (`#define Z80_CMOS 1` before `z80.c` is included). The shared core
@@ -207,7 +207,7 @@ from 0. Any other code that compares absolute tacts has the same trap.
 **The tact hook is `noinline`** (`Z88_CPU_NOINLINE`), as `sp48CpuTactPlusN` is: it runs the sampler,
 and inlined into every opcode it would more than triple the code (710 KB against 198 KB).
 
-**R counts both M1 cycles of a prefixed instruction** (2026-10-03, `.ai/zx8081.md`, "Core decisions", C4,
+**R counts both M1 cycles of a prefixed instruction** (2026-10-03, `dev/ai/zx8081.md`, "Core decisions", C4,
 the shared core's fix for the Sinclair ZX81). The IDE goldens' `ir` values and the typing sessions'
 memory digests were re-recorded for it: OZ stores R-derived bytes (its interrupt-state save reads
 `LD A,R`). Before re-recording, the typing sessions were recorded with every R-free field - PC, tacts,

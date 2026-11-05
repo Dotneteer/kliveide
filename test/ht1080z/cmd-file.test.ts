@@ -7,7 +7,7 @@ import { cmdToSystemTape } from "@emu/machines/ht1080z/Ht1080zTapeFile";
 import { ht1080zExportFile, ht1080zExportFormatOf, ht1080zFormatProblem } from "@renderer/appIde/utils/ht1080z-code";
 
 /*
- * The HT-1080Z's export files (`.plans/HT1080Z_CODE_INJECTION_PLAN.md` D6): the `.cmd` load module's
+ * The HT-1080Z's export files (`dev/plans/HT1080Z_CODE_INJECTION_PLAN.md` D6): the `.cmd` load module's
  * records, blocks split at 256 bytes, and the `.cas` made from it.
  */
 describe("HT-1080Z .cmd and .cas export", () => {

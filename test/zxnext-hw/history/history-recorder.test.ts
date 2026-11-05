@@ -7,7 +7,7 @@ import { createSession, type NextTestSession } from "../../harness/zxnext";
 
 /*
  * The execution-history recorder on the ZX Spectrum Next (`src/emu/z80/wasm/z80-history.c`,
- * `.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §6.1). The recorder is a debugger facility, not hardware:
+ * `dev/plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §6.1). The recorder is a debugger facility, not hardware:
  * its expectations come from the plan's decisions (D3: a record is the state *before* the event) and
  * from what the CPU observably did - registers read by single-stepping, bytes poked into memory.
  */

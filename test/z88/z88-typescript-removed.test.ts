@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { REPO_ROOT } from "../harness/z88/core/machines";
 
 /*
- * The TypeScript Cambridge Z88 emulation is gone (`.plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`,
+ * The TypeScript Cambridge Z88 emulation is gone (`dev/plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`,
  * Step 3; the last commit that has it is tagged `z88-typescript-last`). The WASM core
  * (`src/emu/machines/z88/wasm/`, adapter `Z88WasmV2Machine`) is the only Z88, and these checks keep
  * the deleted modules from coming back or being imported again - a type-only import included, which
@@ -69,7 +69,7 @@ describe("Cambridge Z88: the TypeScript emulation is removed", () => {
     const importRe = /(?:import|export)\s+(?:type\s+)?(?:[^"';]*?\s+from\s+)?["']([^"']+)["']|require\(\s*["']([^"']+)["']\s*\)/g;
     const deleted = new Set(DELETED.map((m) => `${Z88}/${m}`));
     const leaks: string[] = [];
-    for (const file of ["src", "test", "scripts"].flatMap((d) => sources(d))) {
+    for (const file of ["src", "test", "dev/scripts"].flatMap((d) => sources(d))) {
       for (const match of readFileSync(join(REPO_ROOT, file), "utf8").matchAll(importRe)) {
         const spec = (match[1] ?? match[2]).replace(/\.(ts|tsx|js)$/, "");
         const target = spec.startsWith("@emu/")

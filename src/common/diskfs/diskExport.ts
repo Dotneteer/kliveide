@@ -9,7 +9,7 @@ import { DiskFsError, type DiskFileSystem } from "./types";
 import { diskFileName } from "./importFiles";
 
 /*
- * A compiled program as a bootable disk (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, B6): Klive's
+ * A compiled program as a bootable disk (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, B6): Klive's
  * own `expc -f dsk` / `-f trd`, so an assembly or Klive BASIC build needs no other tool for a disk.
  *
  * The disk holds each code segment as a CODE file at its address, an optional loading screen, and a
@@ -19,7 +19,7 @@ import { diskFileName } from "./importFiles";
  * - TR-DOS: `boot`, which TR-DOS runs from a boot - each load a TR-DOS command line of its own,
  *   `RANDOMIZE USR 15619: REM : LOAD "name"CODE` (the Beta 128 manual's BASIC entry), since the
  *   command takes the rest of its line.
- * - A Microdrive cartridge (`.plans/MICRODRIVE_PLAN.md` 4.4): `run`, which RUN with no program loads
+ * - A Microdrive cartridge (`dev/plans/MICRODRIVE_PLAN.md` 4.4): `run`, which RUN with no program loads
  *   from Microdrive 1 (the Microdrive Loader) - `10 [CLEAR n:] [BORDER b:] LOAD *"m";1;"name"CODE: ...
  *   RANDOMIZE USR entry`.
  *

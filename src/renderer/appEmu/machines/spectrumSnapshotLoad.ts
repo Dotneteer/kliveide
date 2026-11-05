@@ -1,6 +1,6 @@
 /*
  * Loads a ZX Spectrum snapshot (`.sna`, `.z80`, `.szx`) into the emulator: the orchestration of
- * `.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.5, modelled on `z88SnapshotLoad.ts`.
+ * `dev/plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.5, modelled on `z88SnapshotLoad.ts`.
  *
  *  1. Parse and map the file. Anything Klive cannot load stops here, before the machine is touched.
  *  2. Make the machine fit: the snapshot picks the machine type (D2). A machine of another type, or
@@ -194,7 +194,7 @@ export async function loadSpectrumSnapshot(
 
 /**
  * The mapping's warnings that hold for the model the snapshot opens on: the "+E ROMs instead of the
- * Amstrad ones" warning goes when it stays on an Amstrad model (`.plans/PLUS3_AMSTRAD_ROMS_PLAN.md`
+ * Amstrad ones" warning goes when it stays on an Amstrad model (`dev/plans/PLUS3_AMSTRAD_ROMS_PLAN.md`
  * Phase 3).
  */
 function mappingWarnings(
@@ -267,7 +267,7 @@ type SpectrumMachineFit = {
 };
 
 /**
- * A snapshot taken with an Interface 1 connects it (`.plans/MICRODRIVE_PLAN.md` Phase 5), on a
+ * A snapshot taken with an Interface 1 connects it (`dev/plans/MICRODRIVE_PLAN.md` Phase 5), on a
  * machine that can have one, and so disconnects the DivMMC (Q4). One without it leaves the
  * interface as it is: its ROM is paged out, and the machine runs as without it.
  */

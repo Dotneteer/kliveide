@@ -34,7 +34,7 @@ import {
 } from "@common/unit-tests/unitTestGuards";
 
 /*
- * The unit-test runner (`.plans/Z80_UNIT_TESTS_PLAN.md` D3, D6-D11, D20, §4.2).
+ * The unit-test runner (`dev/plans/Z80_UNIT_TESTS_PLAN.md` D3, D6-D11, D20, §4.2).
  *
  * Pure TypeScript, no Electron: it gets a machine that is set up (`HeadlessMachineFactory`), a
  * compilation and its discovered tests, and streams `UnitTestEvent`s. It builds the base state once
@@ -106,7 +106,7 @@ export type UnitTestRunInput = {
  *   `HT1080Z` 7, `TVC` 8, `Enterprise` 9)
  */
 export function bootModelFor(machineId: string, modelType: number | undefined): string {
-  // --- The ZX80/ZX81 flow checks the code's model against the ROM (`.ai/zx8081.md`, "Machine code decisions", D4)
+  // --- The ZX80/ZX81 flow checks the code's model against the ROM (`dev/ai/zx8081.md`, "Machine code decisions", D4)
   if (modelType === 5) return "zx80";
   if (modelType === 6) return "zx81";
   // --- The HT-1080Z boots through its own flow on every model (`HT1080Z_CODE_INJECTION_PLAN.md` D9)

@@ -7,7 +7,7 @@ import { PublishedPictures } from "./pictures";
  * ZX Spectrum Timing Tests - 128K v1.0 (Richard and Tim Butler, 2015), a `.szx` snapshot: the 48K
  * suite's 35 tests (and two I/O tests) on the 128K in 48K mode, each compared by the program with the
  * results of its authors' real 128K - a machine with late timing: Klive passes them with late timing
- * on and fails five contended tests with early timing (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` §1.4).
+ * on and fails five contended tests with early timing (`dev/plans/SPECTRUM_ULA_ACCURACY_PLAN.md` §1.4).
  *
  * Test 15 uncontended (IM 0/1/2, LD A,I, ...) counts loops until an interrupt lands while IM 2 is
  * set; one landing in IM 0 or IM 1 runs the ROM's interrupt routine and the loop goes on. How long

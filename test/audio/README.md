@@ -20,7 +20,7 @@ hardware boundary, not through device objects:
   `wasm-next-psg-audio.test.ts`, `wasm-next-debug-audio.test.ts`
 
 The TypeScript Next audio devices and their 23 test files were removed with the TypeScript Next
-backend (`.plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`). Classic Spectrum 128K/+3E PSG
+backend (`dev/plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`). Classic Spectrum 128K/+3E PSG
 behaviour is covered by the WASM Spectrum tests.
 
 ## Sample Rate Math

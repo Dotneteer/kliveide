@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { blankMdr, Interface1Support, type Interface1CorePrefix } from "@emu/machines/zxSpectrum/if1/if1CoreBridge";
 
 /*
- * The Interface 1 for the 48K and 128K harnesses (`.plans/MICRODRIVE_PLAN.md` Phase 2): the same
+ * The Interface 1 for the 48K and 128K harnesses (`dev/plans/MICRODRIVE_PLAN.md` Phase 2): the same
  * bridge the IDE uses, over the session's machine.
  */
 

@@ -4,7 +4,7 @@ import type { EmuApi } from "@common/messaging/EmuApi";
 import type { ProjectStructure } from "@main/ksx-runner/ProjectStructure";
 
 /*
- * What the automation server needs of Klive (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` §4.1): the
+ * What the automation server needs of Klive (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` §4.1): the
  * shared store, the emulator and IDE APIs it is a thin layer over, and opening a folder. The real
  * host (`automation-controller.ts`) wires these to `mainStore`, `getEmuApi()` and `getIdeApi()`; the
  * protocol tests pass fakes, so the whole protocol runs in-process without Electron.

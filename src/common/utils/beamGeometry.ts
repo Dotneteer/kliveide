@@ -1,5 +1,5 @@
 /*
- * The beam position overlay's contract and geometry (`.plans/BEAM_POSITION_OVERLAY_PLAN.md` §4.1).
+ * The beam position overlay's contract and geometry (`dev/plans/BEAM_POSITION_OVERLAY_PLAN.md` §4.1).
  *
  * A machine reports where its raster is as a `BeamPosition` (D4); everything the overlay draws or says
  * is a pure function of it, so the overlay never computes timing itself and never mixes units (T3).

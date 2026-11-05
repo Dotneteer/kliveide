@@ -18,7 +18,7 @@ import type { NavigationEntry, NavigationLocator } from "@renderer/abstractions/
  * this session. When a model is disposed, the tracked positions are written back into the entries
  * first; a file never opened keeps the line it was recorded at.
  *
- * See `.plans/NAVIGATION_HISTORY_PLAN.md` §7 ("Line drift").
+ * See `dev/plans/NAVIGATION_HISTORY_PLAN.md` §7 ("Line drift").
  */
 
 /** Lines within this distance of each other are the same place, as in VS Code. */

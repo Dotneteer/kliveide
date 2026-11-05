@@ -6,7 +6,7 @@ import type { UnitTestEvent, UnitTestSummary } from "@common/unit-tests/unitTest
 import type { UnitTestWorkerData } from "./unitTestWorkerTypes";
 
 /*
- * Starts the unit-test worker and streams its events (`.plans/Z80_UNIT_TESTS_PLAN.md` D6): the
+ * Starts the unit-test worker and streams its events (`dev/plans/Z80_UNIT_TESTS_PLAN.md` D6): the
  * `compiler-integration/runWorker.ts` pattern. One run at a time; `cancel` terminates the worker,
  * which is safe because the worker owns nothing but its machine.
  */

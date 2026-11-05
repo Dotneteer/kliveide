@@ -4,7 +4,7 @@ import { NEXT_PROFILES, type NextProfileId } from "@emu/machines/zxNext/nextProf
 import { createSession, forEachProfile, type PiI2sSamples } from "../../harness/zxnext";
 
 /*
- * The Pi I2S EAR bit on port $FE bit 6 (core 3.02.02, `.ai/zxnext-cores/30201-to-30204.md` 1.4), on
+ * The Pi I2S EAR bit on port $FE bit 6 (core 3.02.02, `dev/ai/zxnext-cores/30201-to-30204.md` 1.4), on
  * both profiles.
  *
  * Hardware:

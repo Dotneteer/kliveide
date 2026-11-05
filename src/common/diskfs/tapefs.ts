@@ -12,7 +12,7 @@ import {
 } from "./types";
 
 /*
- * A tape as a file system (`.ai/file-manager.md`): its header and data block
+ * A tape as a file system (`dev/ai/file-manager.md`): its header and data block
  * pairs are the files, in tape order. A `.tap` is read and written: a new file is appended as a
  * header and a data block, deleting removes both, renaming rewrites the header. A `.tzx` is read
  * only, from its standard-speed blocks (ID $10); its other blocks are not files.

@@ -48,7 +48,7 @@ export function annotationsMenuTitle(): string {
  *
  * A string discriminant, not a boolean: this project compiles with `strictNullChecks: false`, under
  * which TypeScript does not narrow a union on a boolean-literal discriminant (trap 2 in
- * `.ai/ui-mvc-guide.md`).
+ * `dev/ai/ui-mvc-guide.md`).
  */
 export type NexAnnotationWarningViewModel =
   | { kind: "none" }
@@ -101,7 +101,7 @@ export type NexAnnotationMenuAction =
   | "mark-fill"
   | "mark-skip"
   | "clear"
-  // --- The live Disassembly view's ROM rows only (`.plans/ROM_ANNOTATION_EDITING_PLAN.md` §4.1):
+  // --- The live Disassembly view's ROM rows only (`dev/plans/ROM_ANNOTATION_EDITING_PLAN.md` §4.1):
   // --- open the page's working copy in the ROM annotation editor, or make one first
   | "open-rom-annotations"
   | "start-rom-annotations";

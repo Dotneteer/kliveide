@@ -32,9 +32,9 @@ import { summaryText } from "@renderer/appIde/unit-tests/unitTestTree";
 import { t } from "@common/i18n/i18n";
 
 /*
- * The unit-test commands (`.plans/Z80_UNIT_TESTS_PLAN.md` D16): `test-list`, `test-run [<pattern>]
+ * The unit-test commands (`dev/plans/Z80_UNIT_TESTS_PLAN.md` D16): `test-list`, `test-run [<pattern>]
  * [-failed] [-coverage]`, `test-debug <test>`, `test-init` and `test-junit <file>`
- * (`.plans/UNIT_TESTS_CLI_PLAN.md` D14). Patterns match `Suite.UT_name` with `*`. KSX scripts reach
+ * (`dev/plans/UNIT_TESTS_CLI_PLAN.md` D14). Patterns match `Suite.UT_name` with `*`. KSX scripts reach
  * them through `executeCommand`.
  */
 

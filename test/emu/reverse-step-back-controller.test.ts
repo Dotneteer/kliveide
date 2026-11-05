@@ -12,7 +12,7 @@ import type { TimelinePosition } from "@emu/machines/reverse/timelinePosition";
 import { createSp48Session } from "../harness/sp48";
 
 /*
- * Full reverse debugging through the machine controller (`.plans/REVERSE_DEBUGGING_PLAN.md` Phase 4),
+ * Full reverse debugging through the machine controller (`dev/plans/REVERSE_DEBUGGING_PLAN.md` Phase 4),
  * on the real 48K core:
  *
  * - G4.3's Step Back now puts the machine itself in the past (D10): 1,000 steps back, and at every one

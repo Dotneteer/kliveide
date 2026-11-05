@@ -9,8 +9,8 @@ import { PublishedPictures } from "./pictures";
 /*
  * The kit's programs that only draw their result and have no real-machine picture checked yet (the
  * ULA and IR Contention programs are checked in `ula-pictures.test.ts`). Each runs on the machine it
- * is for, and its picture is written to `.spectrum-kit/` for a by-eye comparison with the real-machine
- * photos and videos on its ZXE wiki page (`vendor/spectrum-tests/kit.json` links them); none of them
+ * is for, and its picture is written to `.local/spectrum-kit/` for a by-eye comparison with the real-machine
+ * photos and videos on its ZXE wiki page (`dev/vendor/spectrum-tests/kit.json` links them); none of them
  * is a golden.
  *
  * The snow programs run twice, with the snow effect on and off. Those that show snow on a real

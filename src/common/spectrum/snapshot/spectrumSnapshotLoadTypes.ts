@@ -1,6 +1,6 @@
 /*
  * The types of the emulator's `loadSpectrumSnapshot` call (`EmuApi`), shared by the IDE, the main
- * process and the emulator. See `.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.5.
+ * process and the emulator. See `dev/plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.5.
  */
 
 /**

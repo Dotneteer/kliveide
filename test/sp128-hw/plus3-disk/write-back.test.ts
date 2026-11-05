@@ -9,7 +9,7 @@ import type { Sp128TestSession } from "../../harness/sp128";
 import { command, plus3WithDisks, programLine } from "./plus3Disk";
 
 /*
- * Disk write-back end to end (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, A2/A3): what +3DOS
+ * Disk write-back end to end (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, A2/A3): what +3DOS
  * writes comes out of the machine as changes, the changes patch the image as the IDE patches the
  * file, and a second +3 finds the files on the patched image.
  */

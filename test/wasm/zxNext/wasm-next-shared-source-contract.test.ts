@@ -7,7 +7,7 @@ import {
   buildZxNextWasm,
   optimizationProfiles,
   productionOutput as zxnextProductionOutput
-} from "../../../scripts/build-zxnext-wasm.cjs";
+} from "../../../dev/scripts/build-zxnext-wasm.cjs";
 
 const ROOT = resolve(__dirname, "../../..");
 

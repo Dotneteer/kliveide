@@ -104,7 +104,7 @@ interface WaitStep extends CodeInjectionStepBase {
  * This step is paced by the machine: it polls `getKeyQueueLength()` until the queue drains, so the
  * keystroke has demonstrably been delivered before the flow moves on.
  *
- * See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.13.
+ * See `dev/plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.13.
  */
 interface WaitKeyQueueStep extends CodeInjectionStepBase {
   type: "WaitKeyQueue";
@@ -135,7 +135,7 @@ interface WaitKeyQueueStep extends CodeInjectionStepBase {
  * inside the loop on `samples` consecutive polls. While the OS is loading something it is doing real
  * work and cannot satisfy that; once it is genuinely sitting at a prompt it satisfies it at once.
  *
- * See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.14.
+ * See `dev/plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.14.
  */
 interface WaitIdleStep extends CodeInjectionStepBase {
   type: "WaitIdle";

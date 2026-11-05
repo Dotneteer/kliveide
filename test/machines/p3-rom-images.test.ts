@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 /*
- * The Amstrad +2A/+3 ROM images (`.plans/PLUS3_AMSTRAD_ROMS_PLAN.md` §4, Phase 0). A wrong or
+ * The Amstrad +2A/+3 ROM images (`dev/plans/PLUS3_AMSTRAD_ROMS_PLAN.md` §4, Phase 0). A wrong or
  * corrupted image would boot to a garbled menu; here it fails instead. The CRC32s were taken from
  * the files when they were added (source: `src/public/roms/spp3-roms-readme.txt`).
  */

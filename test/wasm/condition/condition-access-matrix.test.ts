@@ -10,7 +10,7 @@ import {
 
 /*
  * Every memory access form of the breakpoint condition language, systematically
- * (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §3.4): each of the 14 access prefixes, against every
+ * (`dev/plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §3.4): each of the 14 access prefixes, against every
  * addressing mode - the CPU's view, a partition, a ZX Spectrum Next 16K bank, a bank-local label -
  * at an ordinary address and across each wrap boundary; string comparison for every unsigned width
  * and byte order; and the out-of-range check at each type's exact boundaries.

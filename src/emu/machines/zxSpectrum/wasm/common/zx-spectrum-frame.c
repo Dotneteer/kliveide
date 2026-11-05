@@ -1,5 +1,5 @@
 /*
- * The ZX Spectrum cores' frame loop and RZX playback steps (`.plans/WASM_CORE_LEAN_AND_DEBUG_PLAN.md`
+ * The ZX Spectrum cores' frame loop and RZX playback steps (`dev/plans/WASM_CORE_LEAN_AND_DEBUG_PLAN.md`
  * Phase 2, D8). The 48K (with the Timex), the 128K and the +2E/+3E had the same code under their own
  * names; each now includes this file once, after `zx-spectrum-rzx.c` and its own ULA and frame
  * functions, and before `<prefix>ExecuteInstruction` (which calls the playback step).
@@ -43,7 +43,7 @@ uint32_t ZXS(ExecuteInstruction)(void);
 /*
  * A playback frame longer than an EI/retrigger frame ended: the picture is complete, and the next
  * frame starts at this tact, so the interrupt falls on frame tact 0 where the ULA expects it
- * (`.plans/RZX_PLAN.md` trap 5). Frames of 4 fetches or fewer complete no picture (D19).
+ * (`dev/plans/RZX_PLAN.md` trap 5). Frames of 4 fetches or fewer complete no picture (D19).
  */
 static void ZXS(CompletePlayPicture)(void) {
   ZXS(FrameCompleted) = 1u;
@@ -59,7 +59,7 @@ static void ZXS(CompletePlayPicture)(void) {
 }
 
 /*
- * One playback step (`.plans/RZX_PLAN.md` §4.2): the interrupt comes from the recording, never
+ * One playback step (`dev/plans/RZX_PLAN.md` §4.2): the interrupt comes from the recording, never
  * from the ULA, and a step that reaches the frame's fetch count runs nothing - it ends the frame.
  */
 static uint32_t ZXS(ExecutePlayInstruction)(void) {
@@ -134,7 +134,7 @@ uint32_t ZXS(ExecuteFrame)(void) {
 
 /*
  * RZX: puts the machine at `tact` of its frame, from an input block's T-state field
- * (`.plans/RZX_PLAN.md` trap 11). Values past the frame's end are ignored.
+ * (`dev/plans/RZX_PLAN.md` trap 11). Values past the frame's end are ignored.
  */
 void ZXS(RzxSetFrameTact)(uint32_t tact) {
   if (tact >= ZXS(TactsInFrame)) return;

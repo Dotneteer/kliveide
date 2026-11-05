@@ -18,7 +18,7 @@ import { ValidationMessageType } from "@renderer/abstractions/ValidationMessageT
  * The `+` is what separates it from the absolute `<partition>:<address>` form. It is safe because no
  * address literal can begin with one, so no existing spelling changes meaning — which matters,
  * because `bp-set`'s grammar is public API that appears in the docs and in users' scripts
- * (`.plans/PARTITION_NAMING_UNIFICATION_PLAN.md` §2).
+ * (`dev/plans/PARTITION_NAMING_UNIFICATION_PLAN.md` §2).
  */
 function contextFor(machineId: string): any {
   return {
@@ -94,7 +94,7 @@ describe("bp-set bank-relative grammar", () => {
 
   it("does not route the bank through the partition label map", async () => {
     // --- A bank is 16K; a partition index is an 8K page. Routing one through the other's names is
-    // --- how the two index spaces got confused. See `.ai/nex-debugging.md`.
+    // --- how the two index spaces got confused. See `dev/ai/nex-debugging.md`.
     await validate("05:+$0100");
     expect(parsePartitionLabel).not.toHaveBeenCalled();
   });

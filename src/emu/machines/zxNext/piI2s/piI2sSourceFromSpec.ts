@@ -3,7 +3,7 @@ import { PcmPiI2sSource, TonePiI2sSource, type PiI2sSource } from "./PiI2sSource
 import { decodeWav } from "./wavDecoder";
 
 /**
- * The source an IDE request describes (`.plans/PI_I2S_AUDIO_PLAN.md` §4); undefined for "off"
+ * The source an IDE request describes (`dev/plans/PI_I2S_AUDIO_PLAN.md` §4); undefined for "off"
  * @throws WavDecodeError for a WAV file that cannot be decoded
  */
 export function piI2sSourceFromSpec(spec: PiI2sSourceSpec): PiI2sSource | undefined {

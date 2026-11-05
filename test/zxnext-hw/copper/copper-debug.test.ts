@@ -4,7 +4,7 @@ import type { NextTestSession } from "../../harness/zxnext";
 import { parkedSession } from "../ula/_ula-helpers";
 
 /*
- * The IDE's view of the Copper and the Copper-instruction watch (`.plans/COPPER_DEBUGGING_PLAN.md`
+ * The IDE's view of the Copper and the Copper-instruction watch (`dev/plans/COPPER_DEBUGGING_PLAN.md`
  * Phases 4 and 7).
  *
  * - `copperState()` reads what the Copper side-bar panel and the Copper List document show: the list

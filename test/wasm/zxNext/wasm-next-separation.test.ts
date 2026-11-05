@@ -11,7 +11,7 @@ import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
  * `ZxNextWasmV2Machine` used to extend the TypeScript `ZxNextMachine`, so every WASM machine built -
  * and reset - all ~25 TypeScript devices, and several paths quietly ran TypeScript emulation (the
  * keyboard, code injection, frame pacing). Separating them (Step 5 of
- * `.plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`) was what made removing the TypeScript
+ * `dev/plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`) was what made removing the TypeScript
  * machine possible at all.
  *
  * The TypeScript files are deleted now (Step 13), so these tests read as an architecture guard: the

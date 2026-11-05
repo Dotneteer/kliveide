@@ -1,6 +1,6 @@
 /*
  * The advanced-debugging feature switch: one user setting that turns the whole G4 and G5 feature
- * group of `.plans/CLOSING_THE_GAPS_PLAN.md` on or off.
+ * group of `dev/plans/CLOSING_THE_GAPS_PLAN.md` on or off.
  *
  * - G4: the execution history (viewer, lite step back, trace export), full reverse debugging (the
  *   timeline, Reverse Step/Continue, Take over here) and debug session recordings (`.klr`).

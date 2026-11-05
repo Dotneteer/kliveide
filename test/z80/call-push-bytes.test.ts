@@ -6,7 +6,7 @@ import { RunMode, Z80TestMachine } from "./test-z80";
  * is 8 bits wide, so the low byte's write cycle carries `PC & $FF` - never the whole 16-bit PC.
  *
  * Found by the Cambridge Z88 WASM migration's IDE parity test (Step 11 of
- * `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`): `callCore` and `rstCore` passed the whole PC, so the
+ * `dev/plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`): `callCore` and `rstCore` passed the whole PC, so the
  * CPU panel's "last memory write value" showed a 16-bit number after a CALL, and a memory handler that
  * looks at the value (a Z88 flash card) saw one. The memory array itself stored the right byte.
  */

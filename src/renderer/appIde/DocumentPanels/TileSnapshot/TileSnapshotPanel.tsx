@@ -25,7 +25,7 @@ import styles from "./TileSnapshotPanel.module.scss";
 /*
  * A tilemap tile popped out of the Tilemap Inspector (`tileSnapshot.ts`): an 8 x 8 pixel grid with
  * rulers, the frozen tilemap palette and a preview, laid out like the sprite editor and read-only in
- * the same way (`.ai/ui-theming-intent-and-lessons.md`, "A Read-Only View Of An Editor"). Nothing is
+ * the same way (`dev/ai/ui-theming-intent-and-lessons.md`, "A Read-Only View Of An Editor"). Nothing is
  * saved; the tab is not restored with the workspace.
  */
 

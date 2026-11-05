@@ -2,7 +2,7 @@
  * The ZX80/ZX81 ULA: the line timer, HSYNC and VSYNC, the ZX81's NMI generator and WAIT, the INT on
  * A6 during refresh, the character fetch at refresh, and the ports. Ported from CLK
  * `Machines/Sinclair/ZX8081/ZX8081.cpp` (MIT; Copyright (c) 2015 Thomas Harte - the full notice is in zx8081.c and THIRD_PARTY_NOTICES.md), rewritten to
- * the shared Z80 core's hooks (`.plans/ZX8081_WASM_PLAN.md` §3, §6).
+ * the shared Z80 core's hooks (`dev/plans/ZX8081_WASM_PLAN.md` §3, §6).
  */
 
 /* The line timer, in T-states. The ZX81 wraps it every 207 T; the ZX80's runs on until an INT ack. */

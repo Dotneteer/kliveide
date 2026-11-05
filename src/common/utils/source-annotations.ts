@@ -15,7 +15,7 @@ import { parseWpmemArgs } from "./breakpoint-condition/dezog/wpmem-args";
 import { t } from "@common/i18n/i18n";
 
 /*
- * DeZog-style source annotations (`.plans/LOGPOINTS_PLAN.md` §4.7): the `LOGPOINT` comments a build
+ * DeZog-style source annotations (`dev/plans/LOGPOINTS_PLAN.md` §4.7): the `LOGPOINT` comments a build
  * finds, checked into build warnings, and turned into the logpoints the build owns.
  *
  * Kind-tagged throughout, so G1.5 (`ASSERTION`, `WPMEM`) adds its kinds here and nothing else.
@@ -168,7 +168,7 @@ export function checkSourceAnnotations<T extends KliveCompilerOutput>(output: T)
 /**
  * Which DeZog comment made a build-owned breakpoint: its `annotationKind`, or `LOGPOINT` for an
  * annotation logpoint (which carries none); `undefined` for any other breakpoint. All three kinds'
- * marks behave alike in the IDE (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` Q6).
+ * marks behave alike in the IDE (`dev/plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` Q6).
  */
 export function commentKindOf(bp: BreakpointInfo | undefined): AnnotationKeyword | undefined {
   if (bp?.owner?.kind !== "annotation") return undefined;
@@ -223,7 +223,7 @@ export function annotationBreakpoints(
     const resource = resourceOf(filename);
     const partition = annotation.partition ?? partitionOf?.(annotation);
     const disabled = !!options.isDisabled?.(annotationStateKey(resource, annotation.line, annotation.kind));
-    // --- A comment in a macro body reports the invocation's line (`.plans/Z80_UNIT_TESTS_PLAN.md` T2)
+    // --- A comment in a macro body reports the invocation's line (`dev/plans/Z80_UNIT_TESTS_PLAN.md` T2)
     const invokedFile = annotation.invokedAt
       ? debuggable.sourceFileList?.[annotation.invokedAt.fileIndex]?.filename
       : undefined;

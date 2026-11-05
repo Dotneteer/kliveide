@@ -6,7 +6,7 @@ import { PANE_ID_TESTS } from "@common/integration/constants";
 import { useT } from "@common/i18n/useT";
 
 /**
- * The Testing activity's "..." menu (`.plans/Z80_UNIT_TESTS_PLAN.md` D4, D16): Add unit-test support,
+ * The Testing activity's "..." menu (`dev/plans/Z80_UNIT_TESTS_PLAN.md` D4, D16): Add unit-test support,
  * and the runs the panel's toolbar offers, by name. Each item runs the matching `test-*` command into
  * the Tests pane.
  */

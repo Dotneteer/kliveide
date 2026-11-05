@@ -5,7 +5,7 @@ import { commentKindOf } from "@common/utils/source-annotations";
 import { t } from "@common/i18n/i18n";
 
 /*
- * The editor's breakpoint-margin context menu (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.4.2):
+ * The editor's breakpoint-margin context menu (`dev/plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.4.2):
  * which items a right-click offers, and what each does. No React and no Monaco, so the decisions -
  * and the one flow with a second step, "Add Conditional Breakpoint... -> Cancel removes it" - are
  * tested without mounting an editor. `MonacoEditor` supplies the target and the ports.
@@ -36,12 +36,12 @@ export type MarginActionId =
   | "remove"
   | "add"
   | "addConditional"
-  // --- Logpoints (`.plans/LOGPOINTS_PLAN.md` §4.5)
+  // --- Logpoints (`dev/plans/LOGPOINTS_PLAN.md` §4.5)
   | "addLogpoint"
   | "toLogpoint"
   | "editLogMessage"
   | "toBreakpoint"
-  // --- One-shots (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §4.2)
+  // --- One-shots (`dev/plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §4.2)
   | "addOnce"
   | "makeOnce"
   | "keepAfterStop"

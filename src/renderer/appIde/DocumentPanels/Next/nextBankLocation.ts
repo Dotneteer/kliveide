@@ -10,7 +10,7 @@ import { nextBankSpace } from "@common/annotations/bankSpace";
  * A popped-out NEX bank shows a 16K bank's bytes, and until this existed nothing on screen said
  * whether that bank was paged in at all, let alone where — so a breakpoint set in it appeared to do
  * nothing whenever the bank was not currently visible. That is the paging subtlety behind bank-
- * relative breakpoints (`.ai/nex-debugging.md`), and §11.2 is about making it visible
+ * relative breakpoints (`dev/ai/nex-debugging.md`), and §11.2 is about making it visible
  * instead of surprising.
  *
  * The Next's MMU is eight independent 8K slots, so a 16K bank is **two** 8K pages and the hardware
@@ -82,7 +82,7 @@ export function locateBank16k(
  * `undefined` outside the bank, which a correctly numbered listing never produces but a mismatched
  * `listingOffset` can.
  *
- * See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.20.
+ * See `dev/plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.20.
  */
 export function listedBankOffset(
   address: number,
@@ -105,7 +105,7 @@ export function listedBankOffset(
  * Requires the ordinary contiguous, aligned placement: a bank split across non-adjacent slots has no
  * single base for a listing to agree with.
  *
- * See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.19.
+ * See `dev/plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.19.
  */
 export function isListedWhereItIsPaged(
   placements: BankPlacement[] | undefined,

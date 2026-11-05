@@ -9,7 +9,7 @@ import { AutomationClient, RpcError } from "../../src/cli/rpc/client";
 import { createFakeHost, startFakeServer, type FakeHost } from "./fake-host";
 
 /*
- * The automation server end to end, in-process (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` §6, Phase
+ * The automation server end to end, in-process (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` §6, Phase
  * 3 and 4): the real server and the real client over a real socket, against a fake Klive.
  */
 

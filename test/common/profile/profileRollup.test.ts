@@ -23,7 +23,7 @@ import {
 } from "@common/profile/profileExport";
 
 /*
- * The flat rollup, the call graph and the exports (`.plans/PROFILER_PLAN.md` D3-D5, D11-D13,
+ * The flat rollup, the call graph and the exports (`dev/plans/PROFILER_PLAN.md` D3-D5, D11-D13,
  * Phases 1 and 5) on a synthetic profile whose numbers add up: every time a routine's inclusive
  * time claims is its own exclusive time plus its calls'.
  */

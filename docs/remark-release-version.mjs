@@ -1,11 +1,11 @@
 // Replaces @KLIVE_RELEASE@ in the docs with the latest release's version (0.64.0), so no page has
-// to hard-code a release (D8 in .ai/release-guide.md). The version comes from
-// docs/generated/site-info.json, which scripts/build-doc-site-info.cjs writes from the newest v*
+// to hard-code a release (D8 in dev/ai/release-guide.md). The version comes from
+// docs/generated/site-info.json, which dev/scripts/build-doc-site-info.cjs writes from the newest v*
 // tag before every docs build; a release redeploys the site, so the pages follow by themselves.
 //
 // It works in code fences, inline code, prose and link targets - the places a download URL or a
 // version can appear. The page's raw source (Nextra's "Copy page") is not in the tree; the page
-// route replaces the token there with replaceReleaseToken(). scripts/check-docs-release-links.cjs fails the build on a hard-coded release
+// route replaces the token there with replaceReleaseToken(). dev/scripts/check-docs-release-links.cjs fails the build on a hard-coded release
 // URL in content/ and on a token that survived into the built pages.
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";

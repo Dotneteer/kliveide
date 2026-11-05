@@ -17,7 +17,7 @@ import { createZ88Session, z88Model, Z88_LCD, type Z88TestSession } from "../har
  * a null cell that takes no space.
  *
  * Colours, the flash timings and the unpainted right edge are the TypeScript oracle's, pinned so the
- * WASM core reproduces them. Step 0.3 of `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`.
+ * WASM core reproduces them. Step 0.3 of `dev/plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`.
  */
 
 // --- Where the test puts things (the session's flat RAM: banks $20-$23 at $0000-$FFFF)

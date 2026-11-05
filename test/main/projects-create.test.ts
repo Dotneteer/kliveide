@@ -162,7 +162,7 @@ describe("createKliveProject", () => {
     expect(projectContents.settings.languages.sjasmp).toBe(".asm|.sjasm");
   });
 
-  // --- The C templates of the Spectrum family (`.plans/ZX_SPECTRUM_C_TEMPLATES_PLAN.md`; their builds
+  // --- The C templates of the Spectrum family (`dev/plans/ZX_SPECTRUM_C_TEMPLATES_PLAN.md`; their builds
   // --- are checked against zcc output in `test/z88dk/templates.test.ts`)
   it.each(["sp48", "sp128", "spp3e", "timex", "scorpion", "zxnext"])(
     "creates a %s project from the z88-dk template",

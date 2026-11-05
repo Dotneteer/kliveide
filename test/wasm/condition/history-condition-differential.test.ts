@@ -8,7 +8,7 @@ import { RESULT, runProgram } from "./condition-host";
 import { emitCondition } from "@common/utils/breakpoint-condition/condition-bytecode";
 
 /*
- * The history evaluator against the C evaluator (`.plans/LITE_STEP_BACK_PLAN.md` T5): random
+ * The history evaluator against the C evaluator (`dev/plans/LITE_STEP_BACK_PLAN.md` T5): random
  * register-only conditions, the same registers, the same answers. Reverse Continue must decide a
  * register condition exactly as the live machine would have at that instruction.
  */

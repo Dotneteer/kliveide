@@ -52,7 +52,7 @@ describe("shouldStopAtDebugPoint — real breakpoints", () => {
   });
 
   it("does not even ask about the breakpoint a run resumes from", () => {
-    // --- `shouldStopAt` counts hits now (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.6), so asking
+    // --- `shouldStopAt` counts hits now (`dev/plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.6), so asking
     // --- it here would count the resumed-from instruction twice. The guard comes first.
     const shouldStopAt = vi.fn(() => true);
     const debugSupport = support([], { lastBreakpoint: 0x8000, shouldStopAt });

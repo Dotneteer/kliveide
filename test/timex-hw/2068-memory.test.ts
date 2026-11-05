@@ -5,7 +5,7 @@ import { createTimexSession, type TimexTestSession } from "../harness/timex";
 import { displayFileAddress } from "./_timex-helpers";
 
 /*
- * The 2068s' memory (`.plans/TIMEX_SCORPION_PLAN.md` G9.4b, §8): eight 8K chunks, each HOME unless
+ * The 2068s' memory (`dev/plans/TIMEX_SCORPION_PLAN.md` G9.4b, §8): eight 8K chunks, each HOME unless
  * its bit in port $F4 is set, then the DOCK ($FF bit 7 clear) or the EXROM bank (set) - TS2068
  * Technical Manual 2.1.8.1, 2.1.13.5. The display always comes from HOME (5.1.1), and the SCLD
  * contends only the display RAM. These run on the 48K ROM, which the machines boot without their

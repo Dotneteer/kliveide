@@ -6,7 +6,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 
 /**
  * The shared Z80 core's M1 timing hook, H1 `Z80_DELAY_OPCODE_FETCH(address)`
- * (`.ai/videoton-tvc.md`, "The shared Z80 hook H1"). When a core defines it, it replaces the
+ * (`dev/ai/videoton-tvc.md`, "The shared Z80 hook H1"). When a core defines it, it replaces the
  * memory-read delay of every M1 cycle:
  *
  * - the unprefixed opcode fetch;

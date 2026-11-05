@@ -16,7 +16,7 @@ import {
   packagedArtifactRelative,
   packagedResourceDirectory,
   wasmDistDirectoryRelative
-} from "../../../scripts/build-zxnext-wasm.cjs";
+} from "../../../dev/scripts/build-zxnext-wasm.cjs";
 
 describe("ZX Spectrum Next WASM rollout", () => {
   it("creates the WASM machine whatever the configuration says", () => {
@@ -44,7 +44,7 @@ describe("ZX Spectrum Next WASM rollout", () => {
     expect(models[0].displayName).toBe("ZX Spectrum Next (KS2, core 3.02.01)");
     // --- D4: a project or a last session saved with the TypeScript model opens on the WASM one
     // --- instead of naming a machine the registry cannot find; `standard` was the one model before
-    // --- profiles (`.ai/zxnext-models.md` D1)
+    // --- profiles (`dev/ai/zxnext-models.md` D1)
     expect(resolveModelId(MI_ZXNEXT, "compatibility")).toBe("ks2-30201");
     expect(resolveModelId(MI_ZXNEXT, "standard")).toBe("ks2-30201");
     for (const model of models) {
@@ -82,7 +82,7 @@ describe("ZX Spectrum Next WASM rollout", () => {
 
 describe("ZX Spectrum Next: the retired \"compatibility\" model id", () => {
   /*
-   * D4 of `.plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`: the model that selected the
+   * D4 of `dev/plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`: the model that selected the
    * TypeScript emulator is gone, but settings files and `klive.project` files on disk still name
    * it. Opening one must land on the remaining Next model, never throw at startup.
    */

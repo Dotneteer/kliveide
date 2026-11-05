@@ -14,7 +14,7 @@ import type { BankSpace } from "@common/annotations/bankSpace";
  * through the compiler's list file.
  *
  * Pure: the resolution is a function of a breakpoint and a sidecar's annotations, so it is decided
- * here and tested without a machine, a document or a file. See `.ai/nex-debugging.md`.
+ * here and tested without a machine, a document or a file. See `dev/ai/nex-debugging.md`.
  */
 
 /** Where a label-anchored breakpoint turned out to be. */
@@ -88,7 +88,7 @@ export function patchForResolution(
 
 /**
  * A bank resolution on a machine without banks (the ZX80/ZX81, §4.7 of
- * `.docs/annotations.md`): the label's canonical address, and the
+ * `dev/patterns/annotations.md`): the label's canonical address, and the
  * breakpoint stays partitionless. Elsewhere the resolution is kept as it is.
  */
 export function withoutBanks(

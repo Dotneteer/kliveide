@@ -10,8 +10,8 @@ import { createSp128Session } from "../../harness/sp128";
 import { installProgram, sp48WithInterface1 } from "./if1TestSupport";
 
 /*
- * The Interface 1 on the 128K, and RUN's auto-load of "run" (`.plans/MICRODRIVE_PLAN.md` Phase 4.2,
- * 4.3; `_input/microdrive/model-compatibility.md` §2, `test-material.md` T9, T10).
+ * The Interface 1 on the 128K, and RUN's auto-load of "run" (`dev/plans/MICRODRIVE_PLAN.md` Phase 4.2,
+ * 4.3; `dev/research/microdrive/model-compatibility.md` §2, `test-material.md` T9, T10).
  */
 
 const EMPTY = (model: "sp48" | "sp128"): CodeToInject => ({

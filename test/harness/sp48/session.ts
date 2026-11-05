@@ -36,7 +36,7 @@ import type { Interface1DriveState, Interface1State, Interface1Support } from "@
 import { connectInterface1, insertCartridge, interface1Of, type HarnessCartridge } from "../interface1Support";
 
 import { buildCoreOnce } from "../coreBuild";
-import { buildSp48Wasm, productionOutput } from "../../../scripts/build-sp48-wasm.cjs";
+import { buildSp48Wasm, productionOutput } from "../../../dev/scripts/build-sp48-wasm.cjs";
 
 /** The real 48K BASIC ROM the app ships (`src/public/roms/sp48.rom`). */
 const ROM_PATH = join(__dirname, "../../../src/public/roms/sp48.rom");
@@ -491,7 +491,7 @@ export class Sp48TestSession {
   }
 
   // ==========================================================================================
-  // RZX (`.plans/RZX_PLAN.md`)
+  // RZX (`dev/plans/RZX_PLAN.md`)
 
   /**
    * Starts recording an RZX file at the machine's current state, as the emulator does: a `.szx`
@@ -597,7 +597,7 @@ export class Sp48TestSession {
   }
 
   // ==========================================================================================
-  // The DivMMC (`.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md` C4/C6)
+  // The DivMMC (`dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md` C4/C6)
 
   private sdCard?: HarnessSdCard;
   private if1?: Interface1Support;
@@ -701,7 +701,7 @@ export class Sp48TestSession {
   }
 
   // ==========================================================================================
-  // Execution history (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`): the core's recorder, as the
+  // Execution history (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`): the core's recorder, as the
   // IDE reads it through `IExecutionHistorySource`
 
   /** Turns the execution-history recorder on or off, as a debug session does */

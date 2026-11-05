@@ -5,7 +5,7 @@ import { Ht1080zKeyCode as K } from "@emu/machines/ht1080z/Ht1080zKeyCode";
 import { HT1080Z_CLOCK_64, HT1080Z_CLOCK_S12 } from "@emu/machines/ht1080z/ht1080zMachineInfo";
 
 /*
- * The Phase 2 hardware-rule probes (`.plans/HT1080Z_PLAN.md` §12.1, §13): small machine-code programs
+ * The Phase 2 hardware-rule probes (`dev/plans/HT1080Z_PLAN.md` §12.1, §13): small machine-code programs
  * run on the real core after the real ROM has booted, pinning the memory map, unmapped reads, the
  * keyboard's OR-read, the ports without tape, NMI and the absence of INT. Each program ends in
  * `JR $` and leaves its results in RAM at RESULTS.

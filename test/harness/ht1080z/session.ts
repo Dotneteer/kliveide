@@ -15,7 +15,7 @@ import { MEDIA_TAPE } from "@common/structs/project-const";
 import { HT1080Z_MODELS, HT1080Z_VIDEO_RAM_START } from "@emu/machines/ht1080z/ht1080zMachineInfo";
 
 import { buildCoreOnce } from "../coreBuild";
-import { buildHt1080zWasm, productionOutput } from "../../../scripts/build-ht1080z-wasm.cjs";
+import { buildHt1080zWasm, productionOutput } from "../../../dev/scripts/build-ht1080z-wasm.cjs";
 
 export const REPO_ROOT = join(__dirname, "../../..");
 const ROMS = join(REPO_ROOT, "src/public/roms");
@@ -302,7 +302,7 @@ export class Ht1080zTestSession {
    *
    * On Series I/II codes 00h-1Fh read as 40h-5Fh: the BASIC's display driver (0471h) stores every
    * letter there - 40h-7Fh folded to 00h-1Fh - and the /64's BASIC removes that fold
-   * (`.plans/HT1080Z_PLAN.md` §17, "Phase 2" - an open question against D10).
+   * (`dev/plans/HT1080Z_PLAN.md` §17, "Phase 2" - an open question against D10).
    */
   screenText(): string[] {
     const foldsLetters = this.machine.hardware.romSet !== "s64";

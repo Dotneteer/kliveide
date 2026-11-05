@@ -13,8 +13,8 @@ import {
 } from "@common/machines/constants";
 
 /*
- * Which machines run headless and which core each loads (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md`
- * D15, D16; `.plans/Z80_UNIT_TESTS_PLAN.md` D18). Kept apart from `HeadlessMachineFactory`, which
+ * Which machines run headless and which core each loads (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md`
+ * D15, D16; `dev/plans/Z80_UNIT_TESTS_PLAN.md` D18). Kept apart from `HeadlessMachineFactory`, which
  * imports the machine classes: the main process needs only these facts, and only a worker or the
  * command line loads the cores.
  */
@@ -68,7 +68,7 @@ export function artifactNameOf(machineId: string, modelId?: string): string {
     case MI_SPECTRUM_3E:
       return SPP3E_WASM_V2_ARTIFACT_NAME;
     case MI_ZXNEXT:
-      // --- One artifact per Next model's hardware (`.ai/zxnext-models.md` D3)
+      // --- One artifact per Next model's hardware (`dev/ai/zxnext-models.md` D3)
       return nextProfileOf(modelId).wasmArtifact;
     case MI_ZX80:
     case MI_ZX81:

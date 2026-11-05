@@ -16,7 +16,7 @@ import {
 import { t } from "@common/i18n/i18n";
 
 /*
- * The Layer 2 Inspector's command (`.plans/LAYER2_INSPECTOR_PLAN.md` §4.4): opens `$layer2`,
+ * The Layer 2 Inspector's command (`dev/plans/LAYER2_INSPECTOR_PLAN.md` §4.4): opens `$layer2`,
  * optionally on a source.
  */
 

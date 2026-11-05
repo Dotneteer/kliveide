@@ -1,5 +1,5 @@
 /*
- * The HT-1080Z I/O ports (HARDWARE.md §4; `.plans/HT1080Z_PLAN.md` §8). Only A0-A7 are decoded.
+ * The HT-1080Z I/O ports (HARDWARE.md §4; `dev/plans/HT1080Z_PLAN.md` §8). Only A0-A7 are decoded.
  *
  *   FF write  bits 0-1 cassette out (three levels), bit 2 the relay/motor; clears the cassette-in latch
  *   FF read   bit 7 the cassette-in latch; the other bits read 1 (undocumented)

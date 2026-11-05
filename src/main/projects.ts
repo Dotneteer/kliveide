@@ -212,7 +212,7 @@ export async function openFolderByPath(projectFolder: string): Promise<string | 
       disp(setWatchesAction(projectStruct.debugger?.watchExpressions ?? []));
       // --- `basicWatches`: the name project files written before the debugger became language-neutral use
       disp(setSourceWatchesAction(projectStruct.debugger?.sourceWatches ?? projectStruct.debugger?.basicWatches ?? []));
-      // --- The logpoint group switch (`.plans/LOGPOINTS_PLAN.md` §4.6). Absent means everything
+      // --- The logpoint group switch (`dev/plans/LOGPOINTS_PLAN.md` §4.6). Absent means everything
       // --- on, so a project without it resets what the previous project switched off. The
       // --- emulator reads it from the shared store.
       disp(setLogpointGroupsAction(readLogpointGroups(projectStruct.debugger?.logpointGroups)));
@@ -256,7 +256,7 @@ export async function openFolderByPath(projectFolder: string): Promise<string | 
         // --- breakpoints belonging to anything else — a `.nex` sidecar, or a live debug session.
         await getEmuApi().restoreBreakpoints(restoredBreakpoints, { kind: "project" });
         // --- The previous project's `LOGPOINT` comments belong to its build, not to this project;
-        // --- they come back with this project's first build (`.plans/LOGPOINTS_PLAN.md` L10)
+        // --- they come back with this project's first build (`dev/plans/LOGPOINTS_PLAN.md` L10)
         await getEmuApi().restoreBreakpoints([], { kind: "annotation" });
       } else {
         console.warn(
@@ -483,11 +483,11 @@ function getKliveProjectStructureFromState(breakpoints: BreakpointInfo[]): Klive
       watchExpressions: state.watchExpressions ?? [],
       sourceWatches: state.sourceWatches ?? [],
       // --- Absent when everything logs, so a project that never touched the switch stays
-      // --- byte-identical (`.plans/LOGPOINTS_PLAN.md` §4.6)
+      // --- byte-identical (`dev/plans/LOGPOINTS_PLAN.md` §4.6)
       ...(isDefaultLogpointGroups(state.logpointGroups)
         ? {}
         : { logpointGroups: state.logpointGroups }),
-      // --- Absent when both are on (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §4.8)
+      // --- Absent when both are on (`dev/plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §4.8)
       ...(isDefaultSourceComments(state.sourceComments)
         ? {}
         : { sourceComments: state.sourceComments })
@@ -500,7 +500,7 @@ function getKliveProjectStructureFromState(breakpoints: BreakpointInfo[]): Klive
     // --- Only when the project names its own sidecar; the default is written as no key at all
     ...(state.project?.annotations ? { annotations: state.project.annotations } : {}),
     workspaceSettings: state.workspaceSettings,
-    // --- Written by hand, never by the IDE (`.plans/Z80_UNIT_TESTS_PLAN.md` D19): carried over as is
+    // --- Written by hand, never by the IDE (`dev/plans/Z80_UNIT_TESTS_PLAN.md` D19): carried over as is
     ...(unitTests !== undefined ? { unitTests } : {}),
   };
 }
@@ -640,7 +640,7 @@ type DebuggerState = {
    *
    * It exists so the **next** such change is migratable, and so a project written by a newer Klive
    * announces itself instead of loading breakpoints that quietly mean something else. See
-   * `.ai/nex-debugging.md`, item 0.
+   * `dev/ai/nex-debugging.md`, item 0.
    */
   schemaVersion?: number;
   breakpoints: BreakpointInfo[];
@@ -654,12 +654,12 @@ type DebuggerState = {
   /** The same list as project files written by older builds name it; read, never written. */
   basicWatches?: string[];
   /**
-   * Which logpoint groups log (`.plans/LOGPOINTS_PLAN.md` §4.6). Absent when everything does - an
+   * Which logpoint groups log (`dev/plans/LOGPOINTS_PLAN.md` §4.6). Absent when everything does - an
    * additive field, so no schema bump.
    */
   logpointGroups?: LogpointGroupState;
   /**
-   * The ASSERTION / WPMEM comment switches (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` S6).
+   * The ASSERTION / WPMEM comment switches (`dev/plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` S6).
    * Absent when both are on - an additive field, so no schema bump.
    */
   sourceComments?: SourceCommentSwitches;

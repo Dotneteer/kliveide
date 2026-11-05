@@ -1,5 +1,5 @@
 /**
- * The ZX81 virtual keyboard (`.ai/zx8081.md`, "The virtual keyboard"): every key of the approved
+ * The ZX81 virtual keyboard (`dev/ai/zx8081.md`, "The virtual keyboard"): every key of the approved
  * design is rendered, and each zone sends what the design says - the key face holds the key (SHIFT too on the right
  * button), the red legend holds SHIFT with the key, the function and the graphic queue keystrokes
  * with gaps the ROM's debounce accepts.

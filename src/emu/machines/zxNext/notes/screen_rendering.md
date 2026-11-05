@@ -806,7 +806,7 @@ The bank calculation adds 1 to the upper nibble to account for ZX Spectrum RAM s
 
 > Removed 2026-09-20. This was a phase-by-phase plan for building Layer 2 in the TypeScript
 > `NextComposedScreenDevice` (`UlaMatrix.ts`, `Layer2Matrix.ts`), all of it completed and then
-> deleted with that backend (`.plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`, D7). The
+> deleted with that backend (`dev/plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`, D7). The
 > hardware facts it rested on are in the sections above and below; the emulator is
 > `wasm/zxnext/zxnext-ula.c`.
 
@@ -1732,7 +1732,7 @@ This allows seamless switching between resolution modes without bitmap reallocat
 > per-(VC, HC) bit-flag matrix described here - `UlaMatrix.ts`, `Layer2Matrix.ts`,
 > `RenderingCell.ts`, `generateULAStandardCell`, `renderULAStandardPixel` - was the TypeScript
 > renderer's architecture. That renderer is gone
-> (`.plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`); the emulator is `wasm/zxnext/zxnext-ula.c`,
+> (`dev/plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`); the emulator is `wasm/zxnext/zxnext-ula.c`,
 > which races the beam instead, catching the raster up to the current tact before any write that
 > could change what is drawn. What stays true is *what happens at each counter position* - the
 > region boundaries, the HC subcycle schedule, the fetch and shift-register timing, the bandwidth -

@@ -3,8 +3,8 @@
  *
  * One translation unit: the machine state below, the TVC parts it includes, and the shared Z80 core
  * (`src/emu/z80/wasm/z80.c`) wired to them through the `Z80_*` hook macros. No heap; every buffer is
- * a static array exposed through a pointer export. The decisions are in `.ai/videoton-tvc.md`; the
- * hardware facts come from `_input/videoton-tvc/` (TVC_HARDWARE_OVERVIEW.md, TVC_VIDEO_GENERATION.md,
+ * a static array exposed through a pointer export. The decisions are in `dev/ai/videoton-tvc.md`; the
+ * hardware facts come from `dev/research/videoton-tvc/` (TVC_HARDWARE_OVERVIEW.md, TVC_VIDEO_GENERATION.md,
  * TVC_CLOCK_STRETCH_FIGURES.md). The code is Klive's own.
  *
  * One artifact runs both models (D2): `tvcConfigure` picks the 64K or the 64K+ at run
@@ -378,7 +378,7 @@ uint32_t tvcGetItPending(void) { return tvcItPending; }
 #include "../../../../z80/wasm/z80-condition.c"
 
 // -----------------------------------------------------------------------------
-// Execution history (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` §3): the shared recorder. The
+// Execution history (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` §3): the shared recorder. The
 // context:
 //   0    bit 0 the 64K+; bit 1 the video bank shown on the 64K+ is not 0
 //   1    port 02h (the main paging register)
@@ -405,7 +405,7 @@ static inline void tvcHistoryContext(uint32_t kind, uint8_t *out) {
 #include "../../../../z80/wasm/z80-history.c"
 
 // -----------------------------------------------------------------------------
-// The access profile (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §2.2): a byte's profile offset is
+// The access profile (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §2.2): a byte's profile offset is
 // its physical address in `tvcMemory`. ROM and an empty card window take no writes.
 // -----------------------------------------------------------------------------
 

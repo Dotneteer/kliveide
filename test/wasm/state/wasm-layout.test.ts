@@ -1,5 +1,5 @@
 /*
- * The memory-layout fingerprint (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` Phase 4).
+ * The memory-layout fingerprint (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` Phase 4).
  *
  * A small C program is linked the way the cores are, then changed: an added static or a renumbered
  * function table must change the fingerprint; an edit inside a function body must not. Then every
@@ -13,7 +13,7 @@ import { join } from "node:path";
 import { readWasmLayout } from "@emu/machines/state/wasmLayout";
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const layoutTools = require("../../../scripts/wasm-layout.cjs");
+const layoutTools = require("../../../dev/scripts/wasm-layout.cjs");
 
 const dir = mkdtempSync(join(tmpdir(), "klive-layout-"));
 
@@ -117,13 +117,13 @@ describe("layout fingerprint", () => {
 
 describe("the cores carry a layout", () => {
   const cores: [string, string][] = [
-    ["sp48", "../../../scripts/build-sp48-wasm.cjs"],
-    ["timex", "../../../scripts/build-timex-wasm.cjs"],
-    ["sp128", "../../../scripts/build-sp128-wasm.cjs"],
-    ["spp3e", "../../../scripts/build-spp3e-wasm.cjs"],
-    ["z88", "../../../scripts/build-z88-wasm.cjs"],
-    ["zx8081", "../../../scripts/build-zx8081-wasm.cjs"],
-    ["zxnext", "../../../scripts/build-zxnext-wasm.cjs"]
+    ["sp48", "../../../dev/scripts/build-sp48-wasm.cjs"],
+    ["timex", "../../../dev/scripts/build-timex-wasm.cjs"],
+    ["sp128", "../../../dev/scripts/build-sp128-wasm.cjs"],
+    ["spp3e", "../../../dev/scripts/build-spp3e-wasm.cjs"],
+    ["z88", "../../../dev/scripts/build-z88-wasm.cjs"],
+    ["zx8081", "../../../dev/scripts/build-zx8081-wasm.cjs"],
+    ["zxnext", "../../../dev/scripts/build-zxnext-wasm.cjs"]
   ];
 
   it.each(cores)("%s: two builds agree, and the stamp matches the memory size", (core, script) => {

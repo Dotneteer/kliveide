@@ -1,5 +1,5 @@
 /*
- * The Timex core (`.plans/TIMEX_SCORPION_PLAN.md`): the Timex Computer 2048 (G9.4a), the Timex
+ * The Timex core (`dev/plans/TIMEX_SCORPION_PLAN.md`): the Timex Computer 2048 (G9.4a), the Timex
  * Computer 2068 and the Timex Sinclair 2068 (G9.4b).
  *
  * The TC2048 is a 48K Spectrum whose ULA is Timex's SCLD, so this core is the 48K machine

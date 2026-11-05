@@ -13,7 +13,7 @@ import { zx8081ProfileLayout } from "@common/profile/layouts/zx8081";
 import { createZx81Session, type Zx81TestSession } from "../../harness/zx81";
 
 /*
- * The access profile on the ZX80/ZX81 (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §2.2): a known
+ * The access profile on the ZX80/ZX81 (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §2.2): a known
  * program gives exactly the expected E/C/R/W/S bytes (D3, D9); the profile offset is a byte's canonical
  * address whatever mirror reached it (`zx8081.c`'s macros, `layouts/zx8081.ts`), a write to the ROM
  * reaches nothing, the 64K model's opcode fetches above 32K land where they read; and every T-state of

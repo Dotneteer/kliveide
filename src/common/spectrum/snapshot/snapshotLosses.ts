@@ -1,6 +1,6 @@
 /*
  * What `.sna` and `.z80` cannot hold, whatever the machine
- * (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` D3, traps 8 and 9). `.szx` holds all of it.
+ * (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` D3, traps 8 and 9). `.szx` holds all of it.
  *
  * HALT is not a loss: Klive keeps PC on the HALT opcode, so a loader that knows nothing about HALT
  * runs the HALT again, which is the same state.
@@ -38,7 +38,7 @@ export function commonLosses(s: SpectrumSnapshot, format: "sna" | "z80"): string
         : t("media.snapshot.loss.z80Beta128")
     );
   }
-  // --- The Interface 1 (`.plans/MICRODRIVE_PLAN.md` Phase 5): a .z80 names it and its paging, a .sna
+  // --- The Interface 1 (`dev/plans/MICRODRIVE_PLAN.md` Phase 5): a .z80 names it and its paging, a .sna
   // --- nothing; neither holds the cartridges or a ROM other than the standard one
   const if1 = s.peripherals.if1;
   if (format === "sna" && (s.peripherals.interface1 || if1)) {

@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { INCLUDE_LINES, runProgram } from "./unitTestSupport";
 
 /*
- * The unit-test runner on the real 48K core (`.plans/Z80_UNIT_TESTS_PLAN.md` Phase 1): the outcome
+ * The unit-test runner on the real 48K core (`dev/plans/Z80_UNIT_TESTS_PLAN.md` Phase 1): the outcome
  * matrix of D8 with Klive's own include, deterministic T-states (D20), and LOGPOINT capture (D11).
  */
 

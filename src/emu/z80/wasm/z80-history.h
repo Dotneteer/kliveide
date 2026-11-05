@@ -1,5 +1,5 @@
 /*
- * The execution-history recorder's hooks (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.1-§4.2).
+ * The execution-history recorder's hooks (`dev/plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.1-§4.2).
  *
  * A core that records history includes this file BEFORE `z80.c`, and `z80-history.c` after
  * everything its `Z80_HISTORY_*` machine macros use (see the top of `z80-history.c`). This file
@@ -28,7 +28,7 @@ typedef struct Z80HistoryHeader {
   uint32_t newestSequenceHi; /* 28 */
   uint32_t generation; /* 32: bumped by every clear, so a reader drops its caches */
   uint32_t ringOffset; /* 36: where the records start in linear memory */
-  /* The stop target of a replay (`.plans/REVERSE_DEBUGGING_PLAN.md` D3, D4): a position is the
+  /* The stop target of a replay (`dev/plans/REVERSE_DEBUGGING_PLAN.md` D3, D4): a position is the
      newest record's sequence and the units it holds (its repeat count), `z80HistorySetTarget` */
   uint32_t targetSequenceLo; /* 40 */
   uint32_t targetSequenceHi; /* 44 */

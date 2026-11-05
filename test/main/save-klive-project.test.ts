@@ -185,7 +185,7 @@ describe("saveKliveProject", () => {
   });
 
   it("saves a breakpoint's condition and hit rule, but not its runtime state", async () => {
-    // --- `.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.1: the live counter restarts with the machine,
+    // --- `dev/plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.1: the live counter restarts with the machine,
     // --- and storing it would also make every save after a run rewrite the file for nothing.
     listBreakpoints.mockResolvedValue({
       breakpoints: [
@@ -240,7 +240,7 @@ describe("saveKliveProject", () => {
      * A forward-looking marker. The one semantic change so far — a positive ZX Next partition being
      * an 8K page — is not migratable, so this exists for the *next* one, and so a project written by
      * a newer Klive announces itself instead of loading breakpoints that quietly mean something
-     * else. See `.ai/nex-debugging.md`, item 0.
+     * else. See `dev/ai/nex-debugging.md`, item 0.
      */
     const { saveKliveProject } = await import("@main/projects");
 
@@ -277,7 +277,7 @@ describe("saveKliveProject", () => {
     expect(projectFileVersionDispatches()).toBe(1);
   });
 
-  // --- `.plans/LOGPOINTS_PLAN.md` Phase 1 (§4.6)
+  // --- `dev/plans/LOGPOINTS_PLAN.md` Phase 1 (§4.6)
   it("saves a logpoint's template and dialect, but neither its error nor the build's LOGPOINT comments", async () => {
     listBreakpoints.mockResolvedValue({
       breakpoints: [

@@ -18,7 +18,7 @@ import { OverlayCanvas } from "./OverlayCanvas";
 import styles from "./TilemapInspector.module.scss";
 
 /*
- * The Tiles view (`.plans/TILEMAP_INSPECTOR_PLAN.md` §4.5.2): the definitions as one sheet of 8 x 8
+ * The Tiles view (`dev/plans/TILEMAP_INSPECTOR_PLAN.md` §4.5.2): the definitions as one sheet of 8 x 8
  * tiles (T9), 256 or 512 (T3), 4-bit or text mode (T4); unreferenced tiles dimmed, usage counts from
  * zoom 3, the selection outlined.
  */

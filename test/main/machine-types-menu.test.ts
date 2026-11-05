@@ -10,7 +10,7 @@ import { createMachineTypesMenu, SELECT_MACHINE_ITEM_ID } from "@main/machine-ty
 
 /*
  * The Machine › Machine type submenu: the favourites in order, separators where asked, the running
- * model when it is not a favourite, then "Select machine…" (.plans/MACHINE_SELECT_DIALOG_PLAN.md §3).
+ * model when it is not a favourite, then "Select machine…" (dev/plans/MACHINE_SELECT_DIALOG_PLAN.md §3).
  */
 
 const registry: MachineInfo[] = [

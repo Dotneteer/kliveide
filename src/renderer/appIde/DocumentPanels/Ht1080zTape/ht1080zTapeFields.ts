@@ -5,7 +5,7 @@ import type { Ht1080zBasicLine, Ht1080zPart } from "./ht1080zTapeView";
 
 /*
  * A part's bytes, field by field - the model behind the viewer's byte anatomy
- * (`.plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D4, D5), as `tapeHeaderFields.ts` is for a Spectrum header.
+ * (`dev/plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D4, D5), as `tapeHeaderFields.ts` is for a Spectrum header.
  * The bytes are cut into groups (a marker, a length, an address, the data...), and each field names a
  * group and says what it holds. Worded in the current language, so call it at display time.
  */

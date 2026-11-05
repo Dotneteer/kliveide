@@ -32,7 +32,7 @@ export class AssemblyModule<TInstruction extends TypedObject, TToken extends Com
 
   /**
    * The module's name as the source wrote it (its key in the parent may be lower-case): unit-test
-   * suites are named after it (`.plans/Z80_UNIT_TESTS_PLAN.md` T3)
+   * suites are named after it (`dev/plans/Z80_UNIT_TESTS_PLAN.md` T3)
    */
   writtenName?: string;
 

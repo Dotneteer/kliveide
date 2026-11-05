@@ -12,7 +12,7 @@ import { modelTypeToMachineType } from "@renderer/appIde/utils/compile-code";
 import { getSjasmModelType } from "@main/sjasmp-integration/SjasmPCompiler";
 
 /**
- * The HT-1080Z model of the Klive assembler (`.plans/HT1080Z_CODE_INJECTION_PLAN.md` D1, D2): the
+ * The HT-1080Z model of the Klive assembler (`dev/plans/HT1080Z_CODE_INJECTION_PLAN.md` D1, D2): the
  * `.model` name, `#ifmod`, no banks, the default address, and the warnings for code the machine cannot
  * load or BASIC overwrites.
  */

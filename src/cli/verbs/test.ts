@@ -21,7 +21,7 @@ import { createTapReporter } from "../reporters/tap";
 import { createTextReporter } from "../reporters/text";
 
 /*
- * `klive test` (`.plans/UNIT_TESTS_CLI_PLAN.md` D2-D10, §4): load the project, compile the build
+ * `klive test` (`dev/plans/UNIT_TESTS_CLI_PLAN.md` D2-D10, §4): load the project, compile the build
  * root, discover the tests, run them in this process on one machine (D10), stream them to the
  * console and write JUnit and coverage files. The exit code is D3's.
  */

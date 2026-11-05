@@ -10,7 +10,7 @@ import styles from "./Data.module.scss";
 /**
  * `controls/data` — the shared primitives for Klive's data-dense panels.
  *
- * the UI modernization (`.ai/ui-design-system.md`, "The shared data primitives"). Before this, `SideBarPanels/` and `DocumentPanels/`
+ * the UI modernization (`dev/ai/ui-design-system.md`, "The shared data primitives"). Before this, `SideBarPanels/` and `DocumentPanels/`
  * each hand-rolled the same handful of shapes: 7 of 12 sidebar stylesheets carried a byte-identical
  * root block, six carried a byte-identical empty state, and 16 files across the two folders defined
  * their own "data row".

@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { compareAssets, downloadsFrom, expectedAssets } from "../../scripts/release-assets.cjs";
+import { compareAssets, downloadsFrom, expectedAssets } from "../../dev/scripts/release-assets.cjs";
 
 describe("release assets", () => {
   it("names the six kits of a version", () => {

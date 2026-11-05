@@ -1,5 +1,5 @@
 /**
- * Language intelligence for ZX BASIC (`.zxbas`) in Monaco (`.plans/BASIC_EDITOR_INTELLIGENCE_PLAN.md`
+ * Language intelligence for ZX BASIC (`.zxbas`) in Monaco (`dev/plans/BASIC_EDITOR_INTELLIGENCE_PLAN.md`
  * §4.6): hover, definition, references, highlights, completion, signature help, rename, outline,
  * folding and `#include` links.
  *

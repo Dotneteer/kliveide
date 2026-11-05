@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { createHtSession, Ht1080zTestSession } from "../harness/ht1080z";
 
 /*
- * The Phase 6 tape tests (`.plans/HT1080Z_PLAN.md` §8-9, §13): real-time and fast loads of the same
+ * The Phase 6 tape tests (`dev/plans/HT1080Z_PLAN.md` §8-9, §13): real-time and fast loads of the same
  * tape end in the same RAM, SAVE round-trips through a `.cas`, `.cmd` and `.bas` files load and run,
  * and the tape moves only with the motor. Every program here is written for these tests (§12.3).
  */

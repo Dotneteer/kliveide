@@ -608,13 +608,13 @@ function buildZx8081Chars(isZx81: boolean): Record<number, CharDescriptor> {
 }
 
 /**
- * The HT-1080Z character set for the memory panel (`.plans/HT1080Z_PLAN.md` §11): ASCII at
+ * The HT-1080Z character set for the memory panel (`dev/plans/HT1080Z_PLAN.md` §11): ASCII at
  * $20-$7F, control codes below, and the 2 x 3 semigraphics blocks at $80-$FF (bit 6 is ignored
  * there). The per-model glyphs - the Series II accents, the /64's Hungarian set at $00-$1F - and the
  * BASIC tokens come with Phase 8.
  */
 /*
- * The HT-1080Z's character sets (`.plans/HT1080Z_PLAN.md` §11, §15 D10), one per character ROM, the
+ * The HT-1080Z's character sets (`dev/plans/HT1080Z_PLAN.md` §11, §15 D10), one per character ROM, the
  * glyphs read off each model's ROM:
  *
  * - Series I: ASCII, `[ \ ] ^ _` and lowercase as on a TRS-80; 7Fh is a checkerboard.
@@ -658,7 +658,7 @@ export function ht1080zCharsFor(set: Ht1080zCharSetId): Record<number, CharDescr
 export const Ht1080zChars: Record<number, CharDescriptor> = ht1080zCharsFor("s2");
 
 /*
- * The Videoton TVC's character set for the memory panel (`.ai/videoton-tvc.md`, "Keyboard and
+ * The Videoton TVC's character set for the memory panel (`dev/ai/videoton-tvc.md`, "Keyboard and
  * typing"): ASCII at 20h-7Eh, and the Hungarian accented letters where both BASIC ROMs store them -
  * Á É Í Ó Ö Ő Ú Ü Ű at 00h-08h and the lowercase ones at 10h-18h (typed into a BASIC string and
  * read back from the program, `test/tvc-hw/charset.test.ts`). Other codes have no glyph here.
@@ -678,7 +678,7 @@ function buildTvcChars(): Record<number, CharDescriptor> {
 export const TvcChars: Record<number, CharDescriptor> = buildTvcChars();
 
 /*
- * The Enterprise 64/128's character set for the memory panel (`.plans/ENTERPRISE_PLAN.md` §11), read
+ * The Enterprise 64/128's character set for the memory panel (`dev/plans/ENTERPRISE_PLAN.md` §11), read
  * from EXOS 2.1's own font as it lies in video RAM after boot (128 glyphs; `test/ep-hw/charset.test.ts`
  * pins some of them). ASCII at 20h-7Eh but for 23h, which is £ (the UK machine's # is 01h); below 20h
  * EXOS keeps accented letters, arrows and a few symbols. Codes whose glyph is not a clear character

@@ -1,5 +1,5 @@
 /**
- * The history cursor's UI (`.plans/LITE_STEP_BACK_PLAN.md` §6.3): the CPU panel in the past (its
+ * The history cursor's UI (`dev/plans/LITE_STEP_BACK_PLAN.md` §6.3): the CPU panel in the past (its
  * band, what the record cannot tell, what the previous step changed), the status-bar chip and the
  * toolbar's reverse controls.
  */

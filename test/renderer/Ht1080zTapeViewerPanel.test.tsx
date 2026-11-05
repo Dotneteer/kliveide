@@ -8,12 +8,12 @@ import { basToBasicTape } from "@emu/machines/ht1080z/Ht1080zTapeFile";
 import { buildTvcCasFile } from "@emu/machines/tvc/TvcCasFile";
 
 /*
- * The HT-1080Z tape file viewer (`.plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D5): a `.cas`, a `.cmd` and a
+ * The HT-1080Z tape file viewer (`dev/plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D5): a `.cas`, a `.cmd` and a
  * tokenised `.bas` in the panel - the summary, the graphics, the parts, the details and the pop-outs.
  * The model is tested without a DOM in `test/ht1080z/tape-view.test.ts`.
  */
 
-const DEMO = new Uint8Array(readFileSync(join(__dirname, "../../scripts/doc-shots/recipes/ht1080z-demo.bas")));
+const DEMO = new Uint8Array(readFileSync(join(__dirname, "../../dev/scripts/doc-shots/recipes/ht1080z-demo.bas")));
 const DEMO_CAS = basToBasicTape(DEMO, "D");
 const CODE = [0x21, 0x00, 0x3c, 0x36, 0x48, 0xc9];
 const HELLO_CMD = buildHt1080zCmd([{ startAddress: 0x7000, emittedCode: CODE }], 0x7000, "HELLO");

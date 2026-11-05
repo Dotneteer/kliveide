@@ -2,7 +2,7 @@
  * Cambridge Z88 - the LCD: the Blink renders the Screen Base File (SBF) through the font tables
  * PB0-PB3.
  *
- * A port of `Z88ScreenDevice.renderScreen` (Step 8 of `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`),
+ * A port of `Z88ScreenDevice.renderScreen` (Step 8 of `dev/plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`),
  * run at the start of every frame; the picture is drawn every 8th frame (40 ms). Rows of 256 bytes of
  * (char, attribute) cells: LORES cells are 6 pixels wide (9-bit code; $1C0+ are user graphics from
  * LORES0), HIRES cells 8 pixels (10-bit code; $300+ come from HIRES1), the cursor is a LORES cell
@@ -285,7 +285,7 @@ static void z88RenderScreen(void) {
  * Draws the LCD now, from the current Blink state and memory. A restored `.z88` snapshot is looked at
  * before its first frame - a debug session stops on its PC before any instruction runs - and the
  * frame-start work above would leave the reset's blank picture until the 8th frame
- * (`.plans/Z88_SNAPSHOT_PLAN.md` Phase 7).
+ * (`dev/plans/Z88_SNAPSHOT_PLAN.md` Phase 7).
  */
 void z88DrawLcd(void) {
   z88FlashFlag = z88Tim[0] <= 120u ? 1u : 0u;

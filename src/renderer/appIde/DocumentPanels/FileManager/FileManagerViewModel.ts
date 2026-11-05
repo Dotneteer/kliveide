@@ -5,7 +5,7 @@ import type { FmBecomes } from "@common/fileManager/fmTransfer";
 import { isBlocked, paneRows, type FmNotice, type FmState, type PaneSide, type PaneState, type SortKey } from "./FileManagerModel";
 
 /*
- * What the File Manager shows (`.ai/file-manager.md`): every text and number formatted
+ * What the File Manager shows (`dev/ai/file-manager.md`): every text and number formatted
  * here, so the view only lays it out.
  */
 

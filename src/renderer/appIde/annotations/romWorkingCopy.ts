@@ -9,7 +9,7 @@ import { SHIPPED_ROM_FOLDER, legacyOverlayRelativePath, type RomPartitionInfo } 
 import type { AnnotationRegion } from "./programAnnotations";
 
 /*
- * Making a ROM page's working copy (`.plans/ROM_ANNOTATION_EDITING_PLAN.md` R8, T5, §4.2).
+ * Making a ROM page's working copy (`dev/plans/ROM_ANNOTATION_EDITING_PLAN.md` R8, T5, §4.2).
  *
  * A working copy is the file that is later copied into `src/public/roms/` unchanged, so it starts as
  * exactly the shipped sidecar — the same bytes a hand copy would give — or, for a ROM Klive ships no
@@ -63,7 +63,7 @@ export function freshRomSidecar(target: WorkingCopyTarget): string {
     schemaVersion: 3,
     machine: "rom",
     source: { fileName: target.romName },
-    authoring: ".ai/rom-annotations/README.md",
+    authoring: "dev/ai/rom-annotations/README.md",
     level: 0,
     pages: { [page]: { crc32: target.crc32, name: target.romName } },
     banks: {

@@ -16,7 +16,7 @@ import { AssemblerOptions } from "@main/compiler-common/assembler-in-out";
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
 
 /*
- * The profiler's routine maps (`.plans/PROFILER_PLAN.md` D6, Phase 1): from Klive BASIC callables,
+ * The profiler's routine maps (`dev/plans/PROFILER_PLAN.md` D6, Phase 1): from Klive BASIC callables,
  * the Klive assembler's `.proc` extents and labels (modules included), sjasmplus SLD labels with
  * pages, call targets and bare blocks.
  */

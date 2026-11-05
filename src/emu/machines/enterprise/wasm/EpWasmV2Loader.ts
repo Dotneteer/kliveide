@@ -1,8 +1,8 @@
 /*
- * Loads the Enterprise 64/128 WASM core (`dist/ep.wasm`, built by `scripts/build-ep-wasm.cjs`):
+ * Loads the Enterprise 64/128 WASM core (`dist/ep.wasm`, built by `dev/scripts/build-ep-wasm.cjs`):
  * compiles it once per artifact name, instantiates it without imports, checks every export the machine
  * needs, and creates the typed views over the core's buffers. The shape follows `TvcWasmV2Loader.ts`.
- * See `.plans/ENTERPRISE_PLAN.md`.
+ * See `dev/plans/ENTERPRISE_PLAN.md`.
  */
 
 import { WASM_CORE_CONDITION_PLAN_WORDS } from "@emu/machines/wasmDebugLoopLayout";

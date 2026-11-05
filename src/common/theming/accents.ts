@@ -7,7 +7,7 @@
  * since the main process has no use for them.
  *
  * The accent is a user setting orthogonal to the light/dark tone: any accent pairs with either
- * theme. See `.ai/ui-design-system.md`, "Accents".
+ * theme. See `dev/ai/ui-design-system.md`, "Accents".
  */
 import { withLabels } from "@common/i18n/labels";
 import type { MessageKey } from "@common/i18n/keys.generated";

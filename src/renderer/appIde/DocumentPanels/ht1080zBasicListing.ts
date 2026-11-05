@@ -6,7 +6,7 @@ import { BasicProgramBuffer, getMemoryWord } from "./BasicLine";
 import type { BasicListing } from "./basicListing";
 
 /*
- * The HT-1080Z's BASIC detokenizer (`.plans/HT1080Z_PLAN.md` §11): a Level II program's bytes into
+ * The HT-1080Z's BASIC detokenizer (`dev/plans/HT1080Z_PLAN.md` §11): a Level II program's bytes into
  * the lines the BASIC Listing view shows, the way the ROM's LIST prints them. Observed on the core
  * (`test/ht1080z-hw/basic-listing.test.ts` lists programs both ways and compares):
  *

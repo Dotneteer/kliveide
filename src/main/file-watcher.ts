@@ -26,7 +26,7 @@ class FileChangeWatcher {
       },
       (event, filename) => {
         // --- A .bas rewritten in place may have changed between source text and a tokenised HT-1080Z
-        // --- program: the refreshed tree sniffs it again (`.plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D2)
+        // --- program: the refreshed tree sniffs it again (`dev/plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D2)
         if (event === "rename" || (event === "change" && /\.bas$/i.test(String(filename ?? "")))) {
           this.store.dispatch(incExploreViewVersionAction(), "main");
         }

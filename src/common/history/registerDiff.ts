@@ -2,7 +2,7 @@ import type { HistoryRegisters } from "./historyRecord";
 
 /*
  * What an instruction changed: the registers that differ between the state before it and the state
- * before the next record (or the live state, for the newest) - `.plans/EXECUTION_HISTORY_VIEWER_PLAN.md`
+ * before the next record (or the live state, for the newest) - `dev/plans/EXECUTION_HISTORY_VIEWER_PLAN.md`
  * §4.4. R changes on every M1 and WZ on most instructions, so both are left out of the row summary by
  * default; the detail pane shows every register anyway.
  */

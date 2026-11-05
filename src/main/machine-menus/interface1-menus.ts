@@ -21,7 +21,7 @@ import { t } from "@common/i18n/i18n";
 import { divMmcMenuRenderer } from "./divmmc-menus";
 
 /*
- * The ZX Interface 1 and its Microdrives on the 48K and the 128K (`.plans/MICRODRIVE_PLAN.md`
+ * The ZX Interface 1 and its Microdrives on the 48K and the 128K (`dev/plans/MICRODRIVE_PLAN.md`
  * Phase 3): Machine › Interfaces connects the interface (the machine config's `MC_INTERFACE1`, which
  * restarts the machine; it disconnects the DivMMC, which answers port $E7 too), runs a fast
  * Microdrive, and puts `.mdr` cartridges into drives 1 and 2. The ROM is Settings › Machine's, as the

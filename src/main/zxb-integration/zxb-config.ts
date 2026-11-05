@@ -17,7 +17,7 @@ export const ZXBC_EXPLICIT_VARIABLES = "zxbasic.explicitVariables";
 export const ZXBC_STRICT_MODE = "zxbasic.strictMode";
 /**
  * Which compiler builds `.zxbas`/`.bas` files: "klive" (Klive BASIC, the default) or "boriel" (the
- * external Boriel BASIC 2.x, `.ai/boriel/integration.md`, "Decisions", B1). A user or project setting.
+ * external Boriel BASIC 2.x, `dev/ai/boriel/integration.md`, "Decisions", B1). A user or project setting.
  */
 export const ZXBC_COMPILER = "zxbasic.compiler";
 
@@ -35,7 +35,7 @@ export function selectedZxBasicCompiler(state: AppState | undefined): ZxBasicCom
 /**
  * The compiler a `zxbasic.compiler` value selects.
  *
- * KLIVE-BASIC-OFF: Klive BASIC is switched off (`.ai/klive-basic-switch.md`): every
+ * KLIVE-BASIC-OFF: Klive BASIC is switched off (`dev/ai/klive-basic-switch.md`): every
  * value selects Boriel BASIC. Restore the commented lines to bring the switch back.
  */
 export function compilerChoiceOf(_value: unknown): ZxBasicCompilerChoice {

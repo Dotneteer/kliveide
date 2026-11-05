@@ -101,7 +101,7 @@ import {
  * developers and are not shown anywhere: the Settings dialog shows its rows' own translated texts
  * (`settings-pages.ts`, `en/settings.json`), and a menu checkbox passes its own label
  * (`createBooleanSettingsMenu`). So they are deliberately not translation keys
- * (`.ai/localization.md`).
+ * (`dev/ai/localization.md`).
  */
 const settingDefinitions: Setting[] = [
   {
@@ -195,7 +195,7 @@ const settingDefinitions: Setting[] = [
     saveWithIde: true,
     boundTo: "emu"
   },
-  // --- The ZX Spectrum ULA's timing variants (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phases 4, 5)
+  // --- The ZX Spectrum ULA's timing variants (`dev/plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phases 4, 5)
   {
     id: SETTING_EMU_ULA_LATE_TIMING,
     title: "Late ULA Timing",
@@ -433,7 +433,7 @@ const settingDefinitions: Setting[] = [
     saveWithIde: true,
     boundTo: "emu"
   },
-  // --- The HT-1080Z's video switches (`.plans/HT1080Z_PLAN.md` §6, D7)
+  // --- The HT-1080Z's video switches (`dev/plans/HT1080Z_PLAN.md` §6, D7)
   {
     id: SETTING_EMU_HT_VIDEO_CUT,
     title: "HT-1080Z VIDEO CUT",
@@ -453,7 +453,7 @@ const settingDefinitions: Setting[] = [
     saveWithIde: true,
     boundTo: "emu"
   },
-  // --- Reverse debugging (`.plans/REVERSE_DEBUGGING_PLAN.md` D2, D6)
+  // --- Reverse debugging (`dev/plans/REVERSE_DEBUGGING_PLAN.md` D2, D6)
   {
     id: SETTING_EMU_REVERSE_DEBUGGING,
     title: "Reverse Debugging",
@@ -476,7 +476,7 @@ const settingDefinitions: Setting[] = [
     saveWithIde: true,
     boundTo: "emu"
   },
-  // --- Code coverage and the heat map (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D6, T11)
+  // --- Code coverage and the heat map (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D6, T11)
   {
     id: SETTING_EMU_PROFILE_RESET_ON_START,
     title: "Clear Coverage When the Machine Starts",

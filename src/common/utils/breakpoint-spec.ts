@@ -8,7 +8,7 @@ import { formatSpriteAttrList, SPRITE_ATTR_ALL } from "@common/zxnext/sprites/sp
 
 /*
  * A breakpoint written back as `bp-set` text. Shared by `bp-list`, the disassembly's menus and the
- * automation server's `breakpoints.list` (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` §4.2), so every
+ * automation server's `breakpoints.list` (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` §4.2), so every
  * listing pastes back into `bp-set` the same way. No renderer imports.
  */
 
@@ -68,7 +68,7 @@ export function quoteLogTemplate(template: string): string {
 
 /**
  * What kind of access a breakpoint stops on, as the automation protocol names it
- * (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` §4.2).
+ * (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` §4.2).
  */
 export function breakpointKind(bp: BreakpointInfo): string {
   if (bp.memoryRead && bp.memoryWrite) return "readwrite";

@@ -64,7 +64,7 @@ export const ViewControls = ({ recordingManagerRef }: Props) => {
 
   const soundLevel = useSelector((s) => s.emulatorState?.soundLevel);
   const windowRecording = useSelector((s) => s.emulatorState?.windowRecordingState === "recording");
-  // --- The sound level and the recordings, next to their buttons (`.plans/MENU_REDESIGN_PLAN.md` §5)
+  // --- The sound level and the recordings, next to their buttons (`dev/plans/MENU_REDESIGN_PLAN.md` §5)
   const [soundMenu, soundMenuApi] = useContextMenuState();
   const [recordMenu, recordMenuApi] = useContextMenuState();
 

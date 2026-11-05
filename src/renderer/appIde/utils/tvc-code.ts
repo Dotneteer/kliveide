@@ -10,7 +10,7 @@ import {
 import { buildTvcCasFile } from "@emu/machines/tvc/TvcCasFile";
 
 /*
- * Exporting Videoton TVC code (`.ai/videoton-tvc.md`, "Run, Debug and export"): a `.cas` program
+ * Exporting Videoton TVC code (`dev/ai/videoton-tvc.md`, "Run, Debug and export"): a `.cas` program
  * file, the way TVC machine code is distributed - the one-line BASIC launcher at 19EFh and the code
  * where it was assembled (`common/tvc/codePlacement.ts`), with the autostart flag, so `LOAD` runs
  * it.

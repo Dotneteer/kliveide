@@ -1,5 +1,5 @@
 /*
- * Page-shared keyframes (`.plans/REVERSE_DEBUGGING_PLAN.md` D5, D6, T5).
+ * Page-shared keyframes (`dev/plans/REVERSE_DEBUGGING_PLAN.md` D5, D6, T5).
  *
  * A keyframe is a full page table over a pool of immutable, reference-counted 4 KiB pages. A page
  * equal to the same page of the previous keyframe is shared, so a keyframe costs only the pages that
@@ -385,7 +385,7 @@ export class KeyframeStore {
 
   /**
    * The pool pages a set of keyframes refers to, each once, and their page tables renumbered into
-   * that list (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` §4.2, D6). Pages are immutable once pooled,
+   * that list (`dev/plans/DEBUG_SESSION_RECORDING_PLAN.md` §4.2, D6). Pages are immutable once pooled,
    * so the arrays are shared, not copied: a save can write them after the machine runs on (T10).
    */
   exportKeyframes(keyframes: readonly Keyframe[]): { pages: Uint8Array[]; tables: Int32Array[] } {

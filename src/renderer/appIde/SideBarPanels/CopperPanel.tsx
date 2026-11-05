@@ -34,7 +34,7 @@ import styles from "./CopperPanel.module.scss";
 import { useT } from "@common/i18n/useT";
 
 /**
- * The Copper side-bar panel (`.plans/COPPER_DEBUGGING_PLAN.md` §4.4, G3.1): the Copper's live
+ * The Copper side-bar panel (`dev/plans/COPPER_DEBUGGING_PLAN.md` §4.4, G3.1): the Copper's live
  * state and a seven-row window of decoded instructions around its PC. A converted state panel:
  * values take `--color-state-value`, the hit and "now" markers are separate (trap T1).
  */

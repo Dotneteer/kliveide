@@ -6,7 +6,7 @@ import type { Sp128TestSession } from "../../harness/sp128";
 
 /*
  * A 16K stand-in for the TR-DOS ROM, written for these tests: Klive cannot ship TR-DOS
- * (`.plans/BETA128_TRDOS_PLAN.md` Q1). It holds FDC routines at $3D00, so a test enters them the way
+ * (`dev/plans/BETA128_TRDOS_PLAN.md` Q1). It holds FDC routines at $3D00, so a test enters them the way
  * TR-DOS is entered - by fetching an instruction from $3D00-$3DFF with the 48K BASIC ROM selected -
  * and they leave by returning to RAM, which pages the ROM out. They drive the WD1793 through the
  * interface's ports with real CPU timing, so DRQ, Lost Data and INTRQ are what a program sees.

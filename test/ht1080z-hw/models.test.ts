@@ -6,7 +6,7 @@ import { pictureHash } from "./goldens";
 import goldens from "./goldens.json";
 
 /*
- * The Phase 7 model tests (`.plans/HT1080Z_PLAN.md` §4.3, §13): every registered model boots on its
+ * The Phase 7 model tests (`dev/plans/HT1080Z_PLAN.md` §4.3, §13): every registered model boots on its
  * own ROMs, clock and RAM; the 48K Series I/II show their 16K originals' screen; the accented
  * characters print through BASIC on Series II and the /64. The per-model screen goldens are
  * `screen.test.ts`'s.

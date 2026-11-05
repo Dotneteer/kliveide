@@ -8,7 +8,7 @@ import { compileBasic } from "../../kbasic/codegen/run-kit";
 import { programs } from "../../kbasic/corpus/expectations";
 
 /**
- * The shared back end's output snapshot (`.plans/SHARED_Z80_BACKEND_PLAN.md` §5, Phase 0): every
+ * The shared back end's output snapshot (`dev/plans/SHARED_Z80_BACKEND_PLAN.md` §5, Phase 0): every
  * Klive BASIC corpus program compiled at optimisation levels 0-3, with a hash of each artefact the
  * refactoring must keep identical - the generated program text, the assembled bytes of every
  * segment, the source-level debug tables, the classic debug tables and the diagnostics. It only

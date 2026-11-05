@@ -1,5 +1,5 @@
 /*
- * The HT-1080Z's sound (`.plans/HT1080Z_PLAN.md` §10; `_input/ht1080z/SOUND_AY.md`): one speaker
+ * The HT-1080Z's sound (`dev/plans/HT1080Z_PLAN.md` §10; `dev/research/ht1080z/SOUND_AY.md`): one speaker
  * fed by the port-FF beeper and the AY-3-8910, sampled at the host's audio rate.
  *
  * - The beeper: port FF bits 0-1 drive the three-level cassette output, which also drives the

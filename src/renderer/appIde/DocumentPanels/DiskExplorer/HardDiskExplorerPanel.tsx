@@ -29,7 +29,7 @@ import styles from "./DiskExplorerPanel.module.scss";
 
 /*
  * The Disk Explorer for hard-disk images - `.img`, `.hdf`, `.cim` SD cards
- * (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, C2). The image can be gigabytes, so nothing of it is
+ * (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, C2). The image can be gigabytes, so nothing of it is
  * loaded here: the main process reads the folder shown, the file previewed and the volume's map, and
  * makes the edits (on the machine's own SD card, under its lock).
  */

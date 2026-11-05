@@ -25,7 +25,7 @@ import {
  * bytes whichever slot their bank happens to sit in. What differs between machines is the arithmetic
  * between that site and a Z80 address, and it used to be written out four times, every time as the
  * ZX Spectrum Next's 8K-page arithmetic. On a 128K that arithmetic is not wrong loudly — a bank
- * breakpoint simply never fires (T1 of `.docs/annotations.md`).
+ * breakpoint simply never fires (T1 of `dev/patterns/annotations.md`).
  *
  * So every conversion goes through one object per machine, and `bankSpaceFor` is the only place a
  * machine id is looked at.
@@ -43,12 +43,12 @@ import {
  * - `ht1080z`: no partitions, no mirrors. Two ROM pages at fixed addresses, the BASIC (`-1`,
  *   $0000-$2FFF) and the extension (`-2`, $3000-$37FF), each counted from its own start; RAM from
  *   $4000 as 16K blocks 1-3. The keyboard and the video RAM ($3800-$3FFF) cannot be annotated.
- * - `tvc`: the Videoton TVC's 16K partitions, as the 128K's (`.ai/videoton-tvc.md`, "Memory
+ * - `tvc`: the Videoton TVC's 16K partitions, as the 128K's (`dev/ai/videoton-tvc.md`, "Memory
  *   partitions, history and profile"): U0-U3 are banks 0-3, the video banks 4 (and 5-7 on the
  *   64K+). The ROM is named by chip, each its own file and so its own sidecar (`TVC_ROM_PAGES`):
  *   SYS's low half (-1) and high half (-9), and EXTH (-3, the high half of EXT; the card window
  *   below it is no ROM page). CART (-2) and the HBF card's pages stay the machine's partitions.
- * - `ep`: the Enterprise 64/128's 256 segments, numbered as DAVE numbers them (`.plans/ENTERPRISE_PLAN.md`
+ * - `ep`: the Enterprise 64/128's 256 segments, numbered as DAVE numbers them (`dev/plans/ENTERPRISE_PLAN.md`
  *   §11): any 16K page can show any segment, so every segment is a bank, its number the partition. The
  *   ROM segments (EXOS 00h-01h, the cartridge 04h, the FILE: ROM 10h, EXDOS 20h-21h) are ROM pages under
  *   their own segment numbers; the 64's missing F8h-FBh are not RAM.

@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { formattedMdr, installProgram, runBasic, screenLines, sp48WithInterface1 } from "./if1TestSupport";
 
 /*
- * The Interface 1 across the core's own bookkeeping (`.plans/MICRODRIVE_PLAN.md` Phase 2.7-2.8):
+ * The Interface 1 across the core's own bookkeeping (`dev/plans/MICRODRIVE_PLAN.md` Phase 2.7-2.8):
  * the stubbed RS232, the tact counter's rebase with a drive running (every absolute tact the device
  * keeps moves with it), and a Klive state taken mid-transfer.
  */
@@ -52,7 +52,7 @@ describe("Interface 1 and the machine's state", () => {
   }, 120_000);
 });
 
-describe("Interface 1 in snapshots (`.plans/MICRODRIVE_PLAN.md` Phase 5)", () => {
+describe("Interface 1 in snapshots (`dev/plans/MICRODRIVE_PLAN.md` Phase 5)", () => {
   it.each(["szx", "z80"] as const)("a .%s taken with the ROM paged in comes back paged in", async (format) => {
     const s = (await sp48WithInterface1()).insertCartridge(0, formattedMdr());
     runBasic(s, `10 CAT 1`, 40);
@@ -80,7 +80,7 @@ describe("Interface 1 in snapshots (`.plans/MICRODRIVE_PLAN.md` Phase 5)", () =>
   }, 60_000);
 });
 
-describe("Interface 1 in RZX recordings (`.plans/MICRODRIVE_PLAN.md` Phase 5)", () => {
+describe("Interface 1 in RZX recordings (`dev/plans/MICRODRIVE_PLAN.md` Phase 5)", () => {
   it("a CAT recorded with a cartridge plays back to the same screen without one", async () => {
     const s = (await sp48WithInterface1()).insertCartridge(0, formattedMdr());
     // --- The program goes into memory before the recording, which sees only what the CPU does

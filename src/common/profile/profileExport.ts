@@ -4,7 +4,7 @@ import { PF_EXECUTED, type ProfileTouchedByte } from "./profileTypes";
 import type { AddressRow, CallGraph, CallNode, FlatProfile } from "./profileRollup";
 
 /*
- * The profiler's exports (`.plans/PROFILER_PLAN.md` D13): Fuse's profile, CSV of the tables,
+ * The profiler's exports (`dev/plans/PROFILER_PLAN.md` D13): Fuse's profile, CSV of the tables,
  * callgrind for KCachegrind/QCachegrind and speedscope JSON for flame graphs. Pure; the format
  * follows the file's extension unless `-format` names one.
  */

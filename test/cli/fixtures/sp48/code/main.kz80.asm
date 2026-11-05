@@ -1,4 +1,4 @@
-; The command line's fixture project (.plans/UNIT_TESTS_CLI_PLAN.md §6): every test passes.
+; The command line's fixture project (dev/plans/UNIT_TESTS_CLI_PLAN.md §6): every test passes.
 ; The repository's CI runs 'klive test' on it, as the docs' GitHub Actions example does.
 #include "unit_tests.kz80.asm"
 

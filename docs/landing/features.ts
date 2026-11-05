@@ -5,7 +5,7 @@
  * whose `since` is at most the latest release tag, so it never claims something a visitor cannot
  * download yet (R6). When a release ships a feature, it appears on the next docs build by itself.
  * The status per feature was checked against CHANGELOG.md on 2026-10-18; see the release-status
- * note in .plans/LANDING_PAGE_COMPETITIVE_ANALYSIS.md §4.
+ * note in dev/plans/LANDING_PAGE_COMPETITIVE_ANALYSIS.md §4.
  *
  * `image` is either localized (`{ localized: "get-started/x.webp" }`, from the Get Started
  * screenshots) or a plain path under public/images.
@@ -38,7 +38,7 @@ export const FEATURES: Feature[] = [
     more: { area: "guides", rest: "debugging/reverse-debugging/" }
   },
   {
-    // --- `.plans/SPECTRUM_ACCURACY_DOCS_PLAN.md` Phase 3. The ULA accuracy work ships in the release
+    // --- `dev/plans/SPECTRUM_ACCURACY_DOCS_PLAN.md` Phase 3. The ULA accuracy work ships in the release
     // after 0.64.0; confirm this version when that release is prepared, so it never shows earlier (R6).
     id: "accuracy",
     since: "0.65.0",
@@ -75,11 +75,11 @@ export const SHOWN_FEATURES = 5;
 
 /**
  * The hero carousel's pictures, in order. Localized ones come from the Get Started screenshots;
- * the others from `scripts/doc-shots/recipes/landing.cjs` (ScrollNutter.nex on the Next). `caption`
+ * the others from `dev/scripts/doc-shots/recipes/landing.cjs` (ScrollNutter.nex on the Next). `caption`
  * is a key of docs/i18n/landing/<lang>.json.
  *
  * A slide with a `video` (a path under public/images) plays it, with `image` as its poster: the
- * reverse-debugging loop comes from `scripts/doc-shots/recipes/landing-reverse.cjs`, recorded with
+ * reverse-debugging loop comes from `dev/scripts/doc-shots/recipes/landing-reverse.cjs`, recorded with
  * Klive's own IDE + Emulator recording. It is the first slide, the page's signature.
  */
 export type HeroSlide = { image: Feature["image"]; video?: string; caption: string; width: number; height: number };

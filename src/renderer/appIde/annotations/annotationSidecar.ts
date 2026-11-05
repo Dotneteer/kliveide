@@ -106,13 +106,13 @@ function toSidecarAnnotations(annotations: ProgramAnnotations): Record<string, u
  * - **annotations** (`source`, `globalLabels`, `banks`) are written by the annotation session.
  * - **`debug`** (the bank breakpoints) is written by the breakpoint path.
  *
- * Both write the moment their half changes — the contract `.docs/annotations.md` describes.
+ * Both write the moment their half changes — the contract `dev/patterns/annotations.md` describes.
  * Sharing a policy is not the same as sharing a writer: writing the whole in-memory model from
  * either side would still revert whatever the other had written since it loaded, and the two run
  * independently and concurrently. So each reads the file, replaces only its own keys, and writes
  * back — which also means a key this build does not know about survives a round trip.
  *
- * See `.ai/nex-debugging.md`.
+ * See `dev/ai/nex-debugging.md`.
  */
 
 const ANNOTATION_KEYS = ["schemaVersion", "machine", "source", "globalLabels", "banks"] as const;

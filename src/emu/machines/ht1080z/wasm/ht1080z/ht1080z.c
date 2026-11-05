@@ -3,8 +3,8 @@
  *
  * One translation unit: the machine state below, the HT parts it includes, and the shared Z80 core
  * (`src/emu/z80/wasm/z80.c`) wired to them through the `Z80_*` hook macros. No heap; every buffer is
- * a static array exposed through a pointer export. The plan is `.plans/HT1080Z_PLAN.md`; the
- * hardware facts come from `_input/ht1080z/` (HARDWARE.md, VIDEO_TIMING.md), with the values the
+ * a static array exposed through a pointer export. The plan is `dev/plans/HT1080Z_PLAN.md`; the
+ * hardware facts come from `dev/research/ht1080z/` (HARDWARE.md, VIDEO_TIMING.md), with the values the
  * plan's §17 records.
  *
  * One artifact runs every model (decision D1): `ht1080zConfigure` picks the clock and the RAM size at
@@ -88,7 +88,7 @@ static uint16_t htOpStartAddress;
 
 /*
  * Whether an instruction records its bus activity for the IDE, as on the ZX80/81 core
- * (`zx8081.c`, `.plans/WASM_CORE_LEAN_AND_DEBUG_PLAN.md` Phase 1): always in the debugger's paths, and
+ * (`zx8081.c`, `dev/plans/WASM_CORE_LEAN_AND_DEBUG_PLAN.md` Phase 1): always in the debugger's paths, and
  * for the last `HT_CAPTURE_WINDOW` T-states of a fast frame - a window that depends only on the
  * position in the frame, so a replay records what the straight run did.
  */
@@ -328,7 +328,7 @@ uint32_t ht1080zGetOpStartAddress(void) { return htOpStartAddress; }
 #include "../../../../z80/wasm/z80-condition.c"
 
 // -----------------------------------------------------------------------------
-// Execution history (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` §3): the shared recorder, with this
+// Execution history (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` §3): the shared recorder, with this
 // machine's side-effect-free peek, its frame position in T-states and its context. There is no
 // banking. The context:
 //   0    bits 0-1 the model (0 Series I, 1 Series II, 2 the /64), bit 4 48K of RAM (else 16K)
@@ -348,7 +348,7 @@ static inline void htHistoryContext(uint32_t kind, uint8_t *out) {
 #include "../../../../z80/wasm/z80-history.c"
 
 // -----------------------------------------------------------------------------
-// The access profile (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §2.2): a byte's profile offset is
+// The access profile (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §2.2): a byte's profile offset is
 // its address. The ROMs (0000-37FF) and the video RAM and RAM (3C00 up to the model's RAM end) are
 // backed; the keyboard (3800-3BFF) and the empty space above a 16K machine's RAM are not, and a
 // write to ROM reaches nothing.

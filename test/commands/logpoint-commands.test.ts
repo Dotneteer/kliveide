@@ -29,7 +29,7 @@ vi.mock("@common/messaging/EmuApi", () => ({
 vi.mock("@renderer/appIde/utils/save-project", () => ({ saveProject: vi.fn() }));
 
 /*
- * Logpoints from the command line (`.plans/LOGPOINTS_PLAN.md` §4.4, Phase 5): `-log` on `bp-set`,
+ * Logpoints from the command line (`dev/plans/LOGPOINTS_PLAN.md` §4.4, Phase 5): `-log` on `bp-set`,
  * accepted and ignored by `bp-del`/`bp-en`, `bp-list` lines that paste back, the annotation
  * section, and `lp-en` / `lp-groups`.
  */

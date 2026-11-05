@@ -5,7 +5,7 @@ import type { EpRomSetId } from "./EpRoms";
 
 /**
  * The Enterprise 64/128: its models and the facts the host, the core and the renderer share
- * (`.plans/ENTERPRISE_PLAN.md` §4.3, D2).
+ * (`dev/plans/ENTERPRISE_PLAN.md` §4.3, D2).
  */
 
 /** The CPU clock: the 8 MHz crystal divided by 2 */

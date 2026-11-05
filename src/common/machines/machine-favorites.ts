@@ -4,7 +4,7 @@ import { MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48, MI_Z88, MI_ZX81, MI_ZX
 
 /**
  * One entry of the Machine › Machine type menu. The order of the stored array is the menu order.
- * See `.plans/MACHINE_SELECT_DIALOG_PLAN.md` §3 and §5.1.
+ * See `dev/plans/MACHINE_SELECT_DIALOG_PLAN.md` §3 and §5.1.
  */
 export type MachineFavorite = {
   machineId: string;

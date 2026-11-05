@@ -488,7 +488,7 @@ describe("applyKindChange", () => {
  *
  * `05:+$0100` is spelled into the address field rather than given controls of its own, because that
  * is what `bp-set` accepts — one syntax, one parser — and because the Type selector above it is then
- * all a bank *watchpoint* needs. See `.ai/nex-debugging.md`.
+ * all a bank *watchpoint* needs. See `dev/ai/nex-debugging.md`.
  */
 
 const nextEnv = (over: Partial<BreakpointEnvironment> = {}): BreakpointEnvironment =>
@@ -735,7 +735,7 @@ describe("the dialog and bp-set agree on a bank-relative address", () => {
  * `formToBreakpointInfo` both branch out of the address rules entirely instead of suppressing them
  * one at a time.
  *
- * See `.plans/NEXTREG_WRITE_BREAKPOINTS_PLAN.md` §4.8.
+ * See `dev/plans/NEXTREG_WRITE_BREAKPOINTS_PLAN.md` §4.8.
  */
 
 const nextRegEnv = (over: Partial<BreakpointEnvironment> = {}): BreakpointEnvironment =>
@@ -980,7 +980,7 @@ describe("NextReg breakpoints - switching type", () => {
 });
 
 /*
- * Conditions and hit counts in the form (Phase 5 of `.plans/CONDITIONAL_BREAKPOINTS_PLAN.md`,
+ * Conditions and hit counts in the form (Phase 5 of `dev/plans/CONDITIONAL_BREAKPOINTS_PLAN.md`,
  * §4.4): validated by the same checker the emulator arms with, against the machine and symbols in
  * the environment; and the source mode that edits only those on a source breakpoint.
  */
@@ -1185,7 +1185,7 @@ describe("one-shots and memory ranges (G1.6, S10)", () => {
 });
 
 /*
- * Copper breakpoints: the seventh kind, bound to a Copper list index (`.plans/COPPER_DEBUGGING_PLAN.md`
+ * Copper breakpoints: the seventh kind, bound to a Copper list index (`dev/plans/COPPER_DEBUGGING_PLAN.md`
  * §4.8). Like the NextReg kind it shares no field with the place kinds.
  */
 describe("Copper breakpoints - the form", () => {
@@ -1246,7 +1246,7 @@ describe("Copper breakpoints - the form", () => {
 
 /*
  * Sprite-attribute breakpoints: the eighth kind, bound to a sprite and a set of attribute bytes
- * (`.plans/SPRITE_ATTRIBUTE_BREAKPOINTS_PLAN.md`). Like the Copper kind it shares no field with the
+ * (`dev/plans/SPRITE_ATTRIBUTE_BREAKPOINTS_PLAN.md`). Like the Copper kind it shares no field with the
  * place kinds.
  */
 describe("Sprite breakpoints - the form", () => {

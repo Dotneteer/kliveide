@@ -1,6 +1,6 @@
 /**
- * The HT-1080Z virtual keyboard (`.plans/HT1080Z_PLAN.md` §7, the approved mockup
- * `.plans/ht1080z/ht1080z-keyboard-mockup.html`): every key of the drawing is rendered, and each zone
+ * The HT-1080Z virtual keyboard (`dev/plans/HT1080Z_PLAN.md` §7, the approved mockup
+ * `dev/plans/ht1080z/ht1080z-keyboard-mockup.html`): every key of the drawing is rendered, and each zone
  * sends what the mockup says - the face holds the key (SHIFT too on the right button), the printed
  * shifted legend holds SHIFT with it, a Hungarian hint types its character through the machine's
  * typer, PAGE and F1 latch.

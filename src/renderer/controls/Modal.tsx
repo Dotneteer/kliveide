@@ -108,7 +108,7 @@ export const Modal = ({
   onSecondaryClicked,
   onCancelClicked
 }: ModalProps) => {
-  // --- The default button texts are the current language's (`.ai/localization.md`)
+  // --- The default button texts are the current language's (`dev/ai/localization.md`)
   const t = useT();
   primaryLabel ??= t("common.button.ok");
   cancelLabel ??= t("common.button.cancel");

@@ -8,7 +8,7 @@ import { stdlibBundle } from "@main/kbasic/stdlib/generated/stdlib-bundle";
 import { runBasicNext } from "./next-kit";
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const packers = require("../../../scripts/kbasic-packers.cjs") as {
+const packers = require("../../../dev/scripts/kbasic-packers.cjs") as {
   zx0Pack(data: number[], o?: { backwards?: boolean }): number[];
   rcsAddress(i: number): number;
 };
@@ -311,7 +311,7 @@ describe("standard library", () => {
 
     it("print64 prints Klive's 4-pixel font at its own cursor", async () => {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const font64 = require("../../../scripts/kbasic-font64.cjs");
+      const font64 = require("../../../dev/scripts/kbasic-font64.cjs");
       const bytes: number[] = font64.pack();
       const glyph = (code: number, line: number) => {
         const b = bytes[((code - 32) >> 1) * 8 + line];
@@ -326,9 +326,9 @@ describe("standard library", () => {
       expect(r.screen(1)[0]).toBe("ok");
     });
 
-    it("the 64-column font table is the one scripts/kbasic-font64.cjs designs", () => {
+    it("the 64-column font table is the one dev/scripts/kbasic-font64.cjs designs", () => {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const font64 = require("../../../scripts/kbasic-font64.cjs");
+      const font64 = require("../../../dev/scripts/kbasic-font64.cjs");
       const text = stdlibBundle.stdlib.find((f) => f.name === "print64.bas")!.text;
       expect(text).toContain(font64.table(font64.pack()));
     });

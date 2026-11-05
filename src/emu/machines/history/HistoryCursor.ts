@@ -23,7 +23,7 @@ import {
 } from "@common/history/reverseStep";
 
 /*
- * The history cursor (`.plans/LITE_STEP_BACK_PLAN.md` D1, §4.1): where in the recorded past the
+ * The history cursor (`dev/plans/LITE_STEP_BACK_PLAN.md` D1, §4.1): where in the recorded past the
  * paused machine is being looked at. It never changes the machine; it changes what
  * `getCpuState()` answers (D2). It holds a sequence number, not a position, and checks it against
  * the ring on every read (T6): a cursor whose record was overwritten or whose ring was cleared is
@@ -51,7 +51,7 @@ export type HistoricalState = {
 };
 
 /**
- * Full reverse debugging behind the cursor (`.plans/REVERSE_DEBUGGING_PLAN.md` D10): moving the
+ * Full reverse debugging behind the cursor (`dev/plans/REVERSE_DEBUGGING_PLAN.md` D10): moving the
  * cursor puts the machine itself at that point by replay, so memory and devices show it too
  */
 export interface HistoryReplayHook {

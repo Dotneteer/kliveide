@@ -1,19 +1,19 @@
 /*
  * What opening a file in the emulator does: dropping it onto the emulator window
- * (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.10, decision D10) and File › Open File…
- * (`.plans/MENU_REDESIGN_PLAN.md` §3) both route here. The routing is by extension and is written to
+ * (`dev/plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.10, decision D10) and File › Open File…
+ * (`dev/plans/MENU_REDESIGN_PLAN.md` §3) both route here. The routing is by extension and is written to
  * take more media types later:
  *  - `.sna`, `.z80`, `.szx`: run the snapshot (`zx-snapshot -r`);
  *  - `.z88`: open the Z88 snapshot (`z88-snapshot -a`, following Autorun);
  *  - `.tap`, `.tzx`: insert the tape, as Machine › Tape › Insert Tape... does;
- *  - `.cas`, `.cmd`: insert the HT-1080Z tape, on the HT-1080Z only (`.plans/HT1080Z_PLAN.md` §9);
- *  - `.bas`: by its content, which the main process reads (`.plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D6):
+ *  - `.cas`, `.cmd`: insert the HT-1080Z tape, on the HT-1080Z only (`dev/plans/HT1080Z_PLAN.md` §9);
+ *  - `.bas`: by its content, which the main process reads (`dev/plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D6):
  *    a tokenised HT-1080Z program goes in as an HT tape, BASIC source text opens in the IDE;
  *  - `.kls`: load the Klive state and debug it, stopping at its PC (`state-load -d`, asking before a
  *    load that needs `-y`);
- *  - `.rzx`: play the RZX recording (`zx-rzx`, `.plans/RZX_PLAN.md`);
+ *  - `.rzx`: play the RZX recording (`zx-rzx`, `dev/plans/RZX_PLAN.md`);
  *  - `.klr`: open the debug recording (`debug-recording-load`, asking before opening only its end
- *    state, `.plans/DEBUG_SESSION_RECORDING_PLAN.md`);
+ *    state, `dev/plans/DEBUG_SESSION_RECORDING_PLAN.md`);
  *  - anything else: refused with a message.
  */
 

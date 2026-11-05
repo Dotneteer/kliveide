@@ -167,7 +167,7 @@ export type NexAnnotationEditorPorts = {
    * Two questions still use it — discarding unsaved annotations on close, and rewriting a whole 16K
    * bank — and both are asserted with their exact wording by the existing DOM suite. Routing them
    * through the app's `ConfirmPort` instead would be a *behaviour* change, which a refactor must not
-   * smuggle in. Worth doing as its own change: `.docs/dialog-pattern.md` says the app's dialog is the
+   * smuggle in. Worth doing as its own change: `dev/patterns/dialog-pattern.md` says the app's dialog is the
    * one to use, and the label-delete flow beside them already does.
    */
   nativeConfirm: (message: string) => boolean;

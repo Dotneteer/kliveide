@@ -21,7 +21,7 @@ export function diskImageKind (fileName: string, bytes?: Uint8Array): DiskImageK
 
 /** Opens the file system of a disk image: +3DOS on a `.dsk`, TR-DOS on a `.trd` or `.scl`, a Microdrive cartridge on an `.mdr`, a tape on a `.tap` or `.tzx` */
 export function openDiskFileSystem (bytes: Uint8Array, fileName: string): DiskFileSystem {
-  // --- Tapes are files of the File Manager only (`.ai/file-manager.md`); the Disk
+  // --- Tapes are files of the File Manager only (`dev/ai/file-manager.md`); the Disk
   // --- Explorer and `disk` never see them, so `diskImageKind` does not name them
   if (/\.tap$/i.test(fileName)) return new TapeFileSystem(bytes, "tap");
   if (/\.tzx$/i.test(fileName)) return new TapeFileSystem(bytes, "tzx");

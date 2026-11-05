@@ -7,17 +7,17 @@ import type { CliIo } from "../../src/cli/io";
 import { runCli } from "../../src/cli/run-cli";
 import { ZX81_CHARSET } from "@common/zx8081/charset";
 import { compileNexFile } from "../harness/zxnext/core/compile-nex";
-import { buildSp48Wasm } from "../../scripts/build-sp48-wasm.cjs";
-import { buildSp128Wasm } from "../../scripts/build-sp128-wasm.cjs";
-import { buildZx8081Wasm } from "../../scripts/build-zx8081-wasm.cjs";
-import { buildHt1080zWasm } from "../../scripts/build-ht1080z-wasm.cjs";
-import { buildTvcWasm } from "../../scripts/build-tvc-wasm.cjs";
-import { buildEpWasm } from "../../scripts/build-ep-wasm.cjs";
+import { buildSp48Wasm } from "../../dev/scripts/build-sp48-wasm.cjs";
+import { buildSp128Wasm } from "../../dev/scripts/build-sp128-wasm.cjs";
+import { buildZx8081Wasm } from "../../dev/scripts/build-zx8081-wasm.cjs";
+import { buildHt1080zWasm } from "../../dev/scripts/build-ht1080z-wasm.cjs";
+import { buildTvcWasm } from "../../dev/scripts/build-tvc-wasm.cjs";
+import { buildEpWasm } from "../../dev/scripts/build-ep-wasm.cjs";
 import { tvcExportFile } from "@renderer/appIde/utils/tvc-code";
 import { buildZxNextWasmArtifact } from "../wasm/zxNext/wasm-next-test-helpers";
 
 /*
- * `klive run` end to end (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` Phase 1, §6, D15, T10): the real
+ * `klive run` end to end (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` Phase 1, §6, D15, T10): the real
  * command line, in this process, on the real cores - a 48K, a 128K, a ZX81 and a Next - with every
  * stop condition, --keys, every output, the inputs (a project, a tape, a snapshot, a Klive state, a
  * NEX file, a ZX81 program), the exit codes 0/2/3/4/5 and two runs compared byte for byte.
@@ -130,7 +130,7 @@ describe("klive run: stop conditions on the 48K", () => {
   }, 60_000);
 
   it("builds a ZX81 project into a 1 REM program and runs it through RUN", async () => {
-    // --- `.ai/zx8081.md`, "Machine code decisions", D4: the machine's own flow types RUN, RAND USR calls the code
+    // --- `dev/ai/zx8081.md`, "Machine code decisions", D4: the machine's own flow types RUN, RAND USR calls the code
     const run = await kliveJson(["run", "runzx81", "--until-pc", "Done", "--dump-mem", `Counter:1=${file("zx81.bin")}`]);
     expect(run.code).toBe(0);
     expect(run.result.stop).toBe("pc");
@@ -256,7 +256,7 @@ describe("klive run: inputs", () => {
   }, 120_000);
 
   it("loads a ZX81 program file and lets it RUN", async () => {
-    const program = path.join(REPO, "_input/zx81-tapes/basic/Characters.P");
+    const program = path.join(REPO, "dev/research/zx81-tapes/basic/Characters.P");
     const run = await klive(["run", program, "--frames", "300", "--dump-mem", `$4000:$4000=${file("zx81.bin")}`]);
     expect(run.code).toBe(0);
     expect(run.out[0]).toMatch(/^Characters\.P \(ZX81 program\): stopped/);
@@ -265,7 +265,7 @@ describe("klive run: inputs", () => {
   }, 120_000);
 
   it("builds an HT-1080Z project and starts it after the power-on question", async () => {
-    // --- `.plans/HT1080Z_CODE_INJECTION_PLAN.md` D4, D9: BASIC keeps below the code, PC starts at it
+    // --- `dev/plans/HT1080Z_CODE_INJECTION_PLAN.md` D4, D9: BASIC keeps below the code, PC starts at it
     const run = await kliveJson(["run", "runht1080z", "--until-pc", "Done", "--dump-mem", `Counter:1=${file("ht.bin")}`]);
     expect(run.code).toBe(0);
     expect(run.result.stop).toBe("pc");

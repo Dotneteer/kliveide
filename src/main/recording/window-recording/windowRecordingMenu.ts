@@ -10,7 +10,7 @@ import {
 import { t } from "@common/i18n/i18n";
 
 /**
- * The IDE + Emulator recording item of Machine › Record (`.plans/IDE_EMU_RECORDING_PLAN.md` §5.2).
+ * The IDE + Emulator recording item of Machine › Record (`dev/plans/IDE_EMU_RECORDING_PLAN.md` §5.2).
  *
  * Built from the state alone, so the enablement rules can be tested without the whole app menu.
  */
@@ -32,7 +32,7 @@ export const IDE_POSITION_ITEMS: [RecordingIdePosition, string][] = [
 /**
  * The IDE + Emulator recording item of Machine › Record: start or stop. Its preferences (the IDE's
  * position, the pointer, the clicks, HiDPI) are in Settings › Recording
- * (`.plans/MENU_REDESIGN_PLAN.md` §4.1), which writes them with `windowRecordingPreferenceAction`.
+ * (`dev/plans/MENU_REDESIGN_PLAN.md` §4.1), which writes them with `windowRecordingPreferenceAction`.
  */
 export function createWindowRecordingMenuItems(
   context: WindowRecordingMenuContext

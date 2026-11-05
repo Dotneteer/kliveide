@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const packers = require("../../../scripts/kbasic-packers.cjs") as {
+const packers = require("../../../dev/scripts/kbasic-packers.cjs") as {
   zx0Pack(data: number[], o?: { classic?: boolean; backwards?: boolean }): number[];
   megaLzPack(data: number[]): number[];
   rcsEncode(screen: number[]): number[];

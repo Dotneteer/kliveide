@@ -7,7 +7,7 @@ import { zxSpectrum48SysVars } from "@emu/machines/zxSpectrum48/ZxSpectrum48SysV
 import { zxSpectrum128SysVars } from "@emu/machines/zxSpectrum128/ZxSpectrum128SysVars";
 
 /*
- * Which system variables a ROM page document names (`.plans/ROM_ANNOTATION_EDITING_PLAN.md` §10):
+ * Which system variables a ROM page document names (`dev/plans/ROM_ANNOTATION_EDITING_PLAN.md` §10):
  * the table the ROM's own machine reports through `getSysVars`.
  */
 

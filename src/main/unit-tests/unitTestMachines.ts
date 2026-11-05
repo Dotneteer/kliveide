@@ -2,12 +2,12 @@ import { MI_C64, MI_ENTERPRISE, MI_HT1080Z, MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_
 import { HEADLESS_MACHINE_NAMES } from "@common/headless/headlessMachines";
 
 /*
- * Which machines the unit-test runner drives (`.plans/Z80_UNIT_TESTS_PLAN.md` D18). The cores and
+ * Which machines the unit-test runner drives (`dev/plans/Z80_UNIT_TESTS_PLAN.md` D18). The cores and
  * their artifact names are the headless machines' (`@common/headless/headlessMachines`); the runner
  * needs a machine whose code can be injected, which the ZX80/ZX81 do not have yet. The HT-1080Z joined
- * with its code injection (`.plans/HT1080Z_CODE_INJECTION_PLAN.md` D9, D-Q6), and the Videoton TVC with
- * its (`.ai/videoton-tvc.md`, "Run, Debug and export"): the runner stops its flow at BASIC's
- * prompt. So does the Enterprise's (`.plans/ENTERPRISE_PLAN.md` Phase 8), at IS-BASIC's.
+ * with its code injection (`dev/plans/HT1080Z_CODE_INJECTION_PLAN.md` D9, D-Q6), and the Videoton TVC with
+ * its (`dev/ai/videoton-tvc.md`, "Run, Debug and export"): the runner stops its flow at BASIC's
+ * prompt. So does the Enterprise's (`dev/plans/ENTERPRISE_PLAN.md` Phase 8), at IS-BASIC's.
  */
 
 /** The machines with a runner (D18); the others get `unsupportedMachineMessage` */

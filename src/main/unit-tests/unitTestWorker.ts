@@ -10,7 +10,7 @@ import { createHeadlessMachine } from "@common/headless/HeadlessMachineFactory";
 import { bootModelFor, runUnitTests } from "./UnitTestRunner";
 
 /*
- * The unit-test worker (`.plans/Z80_UNIT_TESTS_PLAN.md` D6): one machine, the tests run in sequence
+ * The unit-test worker (`dev/plans/Z80_UNIT_TESTS_PLAN.md` D6): one machine, the tests run in sequence
  * (T10), every event posted to the main process as it happens. Cancelling terminates the worker.
  */
 

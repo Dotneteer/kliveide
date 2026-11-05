@@ -8,7 +8,7 @@ import type { ScreenLabel, ScreenShape } from "./EmulatorScreenOverlay";
 import { t } from "@common/i18n/i18n";
 
 /*
- * What the beam position overlay draws (`.plans/BEAM_POSITION_OVERLAY_PLAN.md` §4.4): a pure function
+ * What the beam position overlay draws (`dev/plans/BEAM_POSITION_OVERLAY_PLAN.md` §4.4): a pure function
  * of the machine's `BeamPosition`, so it is tested without a machine or a canvas. Shapes are in
  * displayed buffer pixels; their `className` is a role the component maps to its stylesheet.
  */
@@ -40,7 +40,7 @@ export const BEAM_HATCH_ID = "klive-beam-hatch";
 const TICK = 6;
 
 /**
- * The frame tact of a Copper beam position (`cvc`, `hc_ula`; `.plans/COPPER_DEBUGGING_PLAN.md`) on
+ * The frame tact of a Copper beam position (`cvc`, `hc_ula`; `dev/plans/COPPER_DEBUGGING_PLAN.md`) on
  * the Next. `cvc` is loaded with the `$64` offset at the first paper line, and `hc_ula` 0 is twelve
  * pixels before paper x 0, so seen from the buffer the paper corner is (cvc = offset, hc_ula = 12).
  */

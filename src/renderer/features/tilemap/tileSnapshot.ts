@@ -16,7 +16,7 @@ import { tileAddress, transformText, type TilemapModel } from "./tilemapViewMode
  * A tilemap tile popped out of the Tilemap Inspector into a read-only tile viewer: the tile's
  * definition bytes, frozen when taken, with what is needed to draw it as the hardware does - the
  * format, the palette offset, the transparency rule and, when it was taken from a cell, that cell's
- * rotate and mirrors (`.plans/TILEMAP_INSPECTOR_PLAN.md`, after §9).
+ * rotate and mirrors (`dev/plans/TILEMAP_INSPECTOR_PLAN.md`, after §9).
  *
  * The document holds the 32 (or, in text mode, 8) definition bytes as its contents and the rest in
  * its view state. The tilemap palette is frozen with it (the bank the tilemap drew with, or the pinned

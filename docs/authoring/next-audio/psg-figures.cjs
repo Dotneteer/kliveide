@@ -8,7 +8,7 @@
 // The diagrams, the tone counter's timeline and the volume tables are drawn from the chip's rules. Then:
 //   node docs/authoring/next-audio/psg-figures.cjs
 //
-// Sized for print (.ai/hardware-articles-guide.md, Figures): the drawings use the whole 700-unit width, and
+// Sized for print (dev/ai/hardware-articles-guide.md, Figures): the drawings use the whole 700-unit width, and
 // no text is smaller than 13.5 units, about 10 pt when the figure spans a 16 cm text column.
 "use strict";
 

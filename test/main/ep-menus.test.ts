@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { MachineMenuItem } from "@common/machines/info-types";
 
 /*
- * The Enterprise's Machine menu (`.plans/ENTERPRISE_PLAN.md` §11): the hardware switches (cartridge,
+ * The Enterprise's Machine menu (`dev/plans/ENTERPRISE_PLAN.md` §11): the hardware switches (cartridge,
  * FILE: device and its folder, palette), the tape's items, and the EXDOS card's switch with its two
  * drives when the card is fitted.
  */

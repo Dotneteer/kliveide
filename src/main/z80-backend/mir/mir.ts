@@ -4,12 +4,12 @@ import type { VariableDebugInfo } from "@abstractions/SourceDebugInfo";
 import { representationOf, type RegClass } from "./representations";
 
 /**
- * The MIR (`.docs/z80-backend-mir.md`): the shared Z80 back end's input. Per function, a control-flow
+ * The MIR (`dev/patterns/z80-backend-mir.md`): the shared Z80 back end's input. Per function, a control-flow
  * graph of blocks whose instructions compute into single-assignment virtual registers and read and
  * write variables through slots. Every instruction and terminator carries the statement id (sid) it
  * belongs to.
  *
- * It is language-neutral (`.plans/SHARED_Z80_BACKEND_PLAN.md` §3.4, §4.1): its types are value
+ * It is language-neutral (`dev/plans/SHARED_Z80_BACKEND_PLAN.md` §3.4, §4.1): its types are value
  * *representations* (`representations.ts`), and every operation whose meaning differs between
  * languages states the meaning it wants (`rounding`, `overflow`, `toInt`, `shift`, `truth`). A front
  * end lowers its language to it; nothing here knows which language that was.
@@ -113,7 +113,7 @@ export type CallSite = {
 };
 
 export type Instr = { sid: number } & (
-  /** The entry of statement `sid` (a zero-size marker, `.docs/z80-backend-mir.md` §6). */
+  /** The entry of statement `sid` (a zero-size marker, `dev/patterns/z80-backend-mir.md` §6). */
   | { op: "stmt" }
   | { op: "prologue.end" }
   | { op: "epilogue.begin" }
@@ -170,7 +170,7 @@ export type Block = { label: string; instrs: Instr[]; term?: Terminator };
 export type FrameSlot = { name: string; type: MType; offset: number };
 
 /**
- * A variable as the debugger shows it (`.plans/SHARED_Z80_BACKEND_PLAN.md` §3.3), in the debugger's
+ * A variable as the debugger shows it (`dev/plans/SHARED_Z80_BACKEND_PLAN.md` §3.3), in the debugger's
  * vocabulary. The front end describes it; the back end turns `storage` into a location after
  * assembly.
  */

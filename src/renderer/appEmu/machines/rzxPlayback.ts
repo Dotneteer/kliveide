@@ -1,5 +1,5 @@
 /*
- * Plays an RZX recording in the emulator, and renders one to video (`.plans/RZX_PLAN.md` §4.5, §4.7).
+ * Plays an RZX recording in the emulator, and renders one to video (`dev/plans/RZX_PLAN.md` §4.5, §4.7).
  *
  * Play:
  *  1. parse the file;

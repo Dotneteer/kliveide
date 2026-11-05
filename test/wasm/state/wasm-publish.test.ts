@@ -6,7 +6,7 @@ import {
   discardWasmOutput,
   publishWasmOutput,
   stagingWasmOutput
-} from "../../../scripts/wasm-layout.cjs";
+} from "../../../dev/scripts/wasm-layout.cjs";
 
 /*
  * A core build compiles and stamps a staging file, then renames it over the artifact, so a test

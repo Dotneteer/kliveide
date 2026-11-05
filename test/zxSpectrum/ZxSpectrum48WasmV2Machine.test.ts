@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 
 import { TapeDataBlock } from "@common/structs/TapeDataBlock";
-import { buildSp48Wasm, productionOutput } from "../../scripts/build-sp48-wasm.cjs";
+import { buildSp48Wasm, productionOutput } from "../../dev/scripts/build-sp48-wasm.cjs";
 import { MEDIA_TAPE } from "@common/structs/project-const";
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";

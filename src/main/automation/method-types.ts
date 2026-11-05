@@ -8,7 +8,7 @@ import type { AutomationHost } from "./host";
 import { invalidParams } from "./errors";
 
 /*
- * The shapes the method table and its handlers share (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D7,
+ * The shapes the method table and its handlers share (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` D7,
  * D8, D14).
  */
 

@@ -4,7 +4,7 @@ import { createEpSession, type EpTestSession } from "../harness/enterprise";
 import { bareMachine, standardLpt, stepUntil } from "./bare";
 
 /*
- * DAVE's interrupts and timers (`.plans/ENTERPRISE_PLAN.md` §8.1; DAVE_MEMORY_IO.md §4): the latches,
+ * DAVE's interrupts and timers (`dev/plans/ENTERPRISE_PLAN.md` §8.1; DAVE_MEMORY_IO.md §4): the latches,
  * B4h's semantics, the 1 kHz / 50 Hz / 1 Hz chain, tone-generator interrupts, BFh bit 1's slower
  * clock, and NICK's VINT on INT1. The CPU sits in `DI; HALT`, so nothing but the test touches DAVE.
  */
