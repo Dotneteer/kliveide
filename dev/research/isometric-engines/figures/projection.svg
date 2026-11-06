@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 362" width="760" height="362" font-family="Helvetica, Arial, sans-serif" font-size="14" fill="#1f2933">
+<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="context-stroke"/></marker></defs>
+<rect width="760" height="362" fill="#ffffff"/>
+<text x="190" y="28" font-size="17" text-anchor="middle" fill="#1f2933" font-weight="bold">Knight Lore</text>
+<text x="570" y="28" font-size="17" text-anchor="middle" fill="#1f2933" font-weight="bold">Head over Heels</text>
+<line x1="190" y1="185" x2="290" y2="235" stroke="#2f6fb7" stroke-width="2" marker-end="url(#arr)"/>
+<text x="296" y="243" font-size="15" text-anchor="start" fill="#2f6fb7" font-weight="bold">+X</text>
+<line x1="190" y1="185" x2="290" y2="135" stroke="#14857a" stroke-width="2" marker-end="url(#arr)"/>
+<text x="296" y="133" font-size="15" text-anchor="start" fill="#14857a" font-weight="bold">+Y</text>
+<line x1="190" y1="185" x2="190" y2="95" stroke="#c77700" stroke-width="2" marker-end="url(#arr)"/>
+<text x="198" y="99" font-size="15" text-anchor="start" fill="#c77700" font-weight="bold">+Z (up)</text>
+<circle cx="190" cy="185" r="4" fill="#1f2933"/>
+<text x="190" y="270" font-size="14" text-anchor="middle" fill="#1f2933" font-weight="normal">pixel x = X + Y - 128</text>
+<text x="190" y="292" font-size="14" text-anchor="middle" fill="#1f2933" font-weight="normal">pixel y = (Y - X + 128) / 2 + Z - 104  (counted up)</text>
+<text x="190" y="320" font-size="14" text-anchor="middle" fill="#5f6c7b" font-weight="normal">Invisible step: (+1, -1, +1) points at the viewer.</text>
+<text x="190" y="342" font-size="14" text-anchor="middle" fill="#5f6c7b" font-weight="normal">Further back = smaller X, larger Y, lower Z.</text>
+<line x1="570" y1="130" x2="670" y2="80" stroke="#2f6fb7" stroke-width="2" marker-end="url(#arr)"/>
+<text x="676" y="78" font-size="15" text-anchor="start" fill="#2f6fb7" font-weight="bold">+U</text>
+<line x1="570" y1="130" x2="470" y2="80" stroke="#14857a" stroke-width="2" marker-end="url(#arr)"/>
+<text x="438" y="78" font-size="15" text-anchor="start" fill="#14857a" font-weight="bold">+V</text>
+<line x1="570" y1="130" x2="570" y2="220" stroke="#c77700" stroke-width="2" marker-end="url(#arr)"/>
+<text x="578" y="214" font-size="15" text-anchor="start" fill="#c77700" font-weight="bold">+Z (down)</text>
+<circle cx="570" cy="130" r="4" fill="#1f2933"/>
+<text x="570" y="270" font-size="14" text-anchor="middle" fill="#1f2933" font-weight="normal">X = U - V + 128  (1 unit = 2 pixels)</text>
+<text x="570" y="292" font-size="14" text-anchor="middle" fill="#1f2933" font-weight="normal">Y = 2Z - U - V + 127  (pixels, counted down)</text>
+<text x="570" y="320" font-size="14" text-anchor="middle" fill="#5f6c7b" font-weight="normal">Invisible step: (+1, +1, +1) points away from the viewer.</text>
+<text x="570" y="342" font-size="14" text-anchor="middle" fill="#5f6c7b" font-weight="normal">Further back = larger U, larger V, larger Z.</text>
+<line x1="380" y1="20" x2="380" y2="350" stroke="#e4e7eb" stroke-width="2"/>
+</svg>

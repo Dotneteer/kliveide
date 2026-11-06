@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 450" width="700" height="450" font-family="Helvetica, Arial, sans-serif" font-size="14" fill="#1f2933">
+<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="context-stroke"/></marker></defs>
+<rect width="700" height="450" fill="#ffffff"/>
+<text x="174" y="28" font-size="16" text-anchor="middle" fill="#1f2933" font-weight="bold">Knight Lore: one batch a frame</text>
+<rect x="24" y="44" width="300" height="62" rx="6" fill="#d6e6f7" stroke="#2f6fb7" stroke-width="1"/>
+<text x="38" y="69" font-size="14" text-anchor="start" fill="#1f2933" font-weight="bold">Run every object handler</text>
+<text x="38" y="91" font-size="12.5" text-anchor="start" fill="#5f6c7b" font-weight="normal">Save the old picture box, then move and clip</text>
+<line x1="174" y1="106" x2="174" y2="124" stroke="#2f6fb7" stroke-width="2" marker-end="url(#arr)"/>
+<rect x="24" y="124" width="300" height="62" rx="6" fill="#d6e6f7" stroke="#2f6fb7" stroke-width="1"/>
+<text x="38" y="149" font-size="14" text-anchor="start" fill="#1f2933" font-weight="bold">Flag what changed</text>
+<text x="38" y="171" font-size="12.5" text-anchor="start" fill="#5f6c7b" font-weight="normal">Wipe + draw, and draw for every overlapper</text>
+<line x1="174" y1="186" x2="174" y2="204" stroke="#2f6fb7" stroke-width="2" marker-end="url(#arr)"/>
+<rect x="24" y="204" width="300" height="62" rx="6" fill="#d6e6f7" stroke="#2f6fb7" stroke-width="1"/>
+<text x="38" y="229" font-size="14" text-anchor="start" fill="#1f2933" font-weight="bold">Wipe the rectangles</text>
+<text x="38" y="251" font-size="12.5" text-anchor="start" fill="#5f6c7b" font-weight="normal">In the retained buffer; push each rectangle</text>
+<line x1="174" y1="266" x2="174" y2="284" stroke="#2f6fb7" stroke-width="2" marker-end="url(#arr)"/>
+<rect x="24" y="284" width="300" height="62" rx="6" fill="#d6e6f7" stroke="#2f6fb7" stroke-width="1"/>
+<text x="38" y="309" font-size="14" text-anchor="start" fill="#1f2933" font-weight="bold">Draw flagged objects whole</text>
+<text x="38" y="331" font-size="12.5" text-anchor="start" fill="#5f6c7b" font-weight="normal">Pick order by box search; masked sprites</text>
+<line x1="174" y1="346" x2="174" y2="364" stroke="#2f6fb7" stroke-width="2" marker-end="url(#arr)"/>
+<rect x="24" y="364" width="300" height="62" rx="6" fill="#d6e6f7" stroke="#2f6fb7" stroke-width="1"/>
+<text x="38" y="389" font-size="14" text-anchor="start" fill="#1f2933" font-weight="bold">Copy rectangles to the display</text>
+<text x="38" y="411" font-size="12.5" text-anchor="start" fill="#5f6c7b" font-weight="normal">Only those; pace by amount of work</text>
+<text x="526" y="28" font-size="16" text-anchor="middle" fill="#1f2933" font-weight="bold">Head over Heels: one redraw a change</text>
+<rect x="376" y="44" width="300" height="62" rx="6" fill="#cfeee9" stroke="#14857a" stroke-width="1"/>
+<text x="390" y="69" font-size="14" text-anchor="start" fill="#1f2933" font-weight="bold">Run the object's function</text>
+<text x="390" y="91" font-size="12.5" text-anchor="start" fill="#5f6c7b" font-weight="normal">Store old extents when a change is flagged</text>
+<line x1="526" y1="106" x2="526" y2="124" stroke="#14857a" stroke-width="2" marker-end="url(#arr)"/>
+<rect x="376" y="124" width="300" height="62" rx="6" fill="#cfeee9" stroke="#14857a" stroke-width="1"/>
+<text x="390" y="149" font-size="14" text-anchor="start" fill="#1f2933" font-weight="bold">Relink in the sorted list</text>
+<text x="390" y="171" font-size="12.5" text-anchor="start" fill="#5f6c7b" font-weight="normal">Unlink, then insert with DepthCmp</text>
+<line x1="526" y1="186" x2="526" y2="204" stroke="#14857a" stroke-width="2" marker-end="url(#arr)"/>
+<rect x="376" y="204" width="300" height="62" rx="6" fill="#cfeee9" stroke="#14857a" stroke-width="1"/>
+<text x="390" y="229" font-size="14" text-anchor="start" fill="#1f2933" font-weight="bold">Union of old and new extents</text>
+<text x="390" y="251" font-size="12.5" text-anchor="start" fill="#5f6c7b" font-weight="normal">Round X to bytes; becomes the view window</text>
+<line x1="526" y1="266" x2="526" y2="284" stroke="#14857a" stroke-width="2" marker-end="url(#arr)"/>
+<rect x="376" y="284" width="300" height="62" rx="6" fill="#cfeee9" stroke="#14857a" stroke-width="1"/>
+<text x="390" y="309" font-size="14" text-anchor="start" fill="#1f2933" font-weight="bold">Rebuild the window from nothing</text>
+<text x="390" y="331" font-size="12.5" text-anchor="start" fill="#5f6c7b" font-weight="normal">Background columns, then the object lists</text>
+<line x1="526" y1="346" x2="526" y2="364" stroke="#14857a" stroke-width="2" marker-end="url(#arr)"/>
+<rect x="376" y="364" width="300" height="62" rx="6" fill="#cfeee9" stroke="#14857a" stroke-width="1"/>
+<text x="390" y="389" font-size="14" text-anchor="start" fill="#1f2933" font-weight="bold">Blit the window to the display</text>
+<text x="390" y="411" font-size="12.5" text-anchor="start" fill="#5f6c7b" font-weight="normal">Repeats for the next object that changed</text>
+</svg>

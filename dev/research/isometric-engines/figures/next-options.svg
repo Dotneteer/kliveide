@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 340" width="720" height="340" font-family="Helvetica, Arial, sans-serif" font-size="14" fill="#1f2933">
+<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="context-stroke"/></marker></defs>
+<rect width="720" height="340" fill="#ffffff"/>
+<text x="125" y="28" font-size="15" text-anchor="middle" fill="#1f2933" font-weight="bold">A: Software</text>
+<text x="125" y="48" font-size="12.5" text-anchor="middle" fill="#5f6c7b" font-weight="normal">every object blitted to Layer 2</text>
+<rect x="20" y="66" width="210" height="52" rx="5" fill="#e4e7eb" stroke="#9aa5b1" stroke-width="1"/>
+<text x="125" y="88" font-size="13" text-anchor="middle" fill="#1f2933" font-weight="bold">Sprites</text>
+<text x="125" y="106" font-size="12" text-anchor="middle" fill="#5f6c7b" font-weight="normal">unused, or the HUD</text>
+<rect x="20" y="126" width="210" height="52" rx="5" fill="#d6e6f7" stroke="#2f6fb7" stroke-width="1"/>
+<text x="125" y="148" font-size="13" text-anchor="middle" fill="#1f2933" font-weight="bold">Layer 2</text>
+<text x="125" y="166" font-size="12" text-anchor="middle" fill="#5f6c7b" font-weight="normal">room + all objects</text>
+<rect x="20" y="186" width="210" height="52" rx="5" fill="#e4e7eb" stroke="#9aa5b1" stroke-width="1"/>
+<text x="125" y="208" font-size="13" text-anchor="middle" fill="#1f2933" font-weight="bold">ULA / tilemap</text>
+<text x="125" y="226" font-size="12" text-anchor="middle" fill="#5f6c7b" font-weight="normal">hidden, or the HUD</text>
+<text x="22" y="266" font-size="12.5" text-anchor="start" fill="#1f2933" font-weight="normal">+ Any overlap is correct</text>
+<text x="22" y="286" font-size="12.5" text-anchor="start" fill="#1f2933" font-weight="normal">+ Pictures of any size</text>
+<text x="22" y="306" font-size="12.5" text-anchor="start" fill="#1f2933" font-weight="normal">- Slowest; needs dirty rectangles</text>
+<text x="22" y="326" font-size="12.5" text-anchor="start" fill="#1f2933" font-weight="normal">- Off-screen buffer or page flip</text>
+<text x="360" y="28" font-size="15" text-anchor="middle" fill="#1f2933" font-weight="bold">B: Sprites over a backdrop</text>
+<text x="360" y="48" font-size="12.5" text-anchor="middle" fill="#5f6c7b" font-weight="normal">SLU, plus cover sprites</text>
+<rect x="255" y="66" width="210" height="52" rx="5" fill="#cfeee9" stroke="#14857a" stroke-width="1"/>
+<text x="360" y="88" font-size="13" text-anchor="middle" fill="#1f2933" font-weight="bold">Sprites</text>
+<text x="360" y="106" font-size="12" text-anchor="middle" fill="#5f6c7b" font-weight="normal">objects + cover pieces, in depth order</text>
+<rect x="255" y="126" width="210" height="52" rx="5" fill="#d6e6f7" stroke="#2f6fb7" stroke-width="1"/>
+<text x="360" y="148" font-size="13" text-anchor="middle" fill="#1f2933" font-weight="bold">Layer 2</text>
+<text x="360" y="166" font-size="12" text-anchor="middle" fill="#5f6c7b" font-weight="normal">static room</text>
+<rect x="255" y="186" width="210" height="52" rx="5" fill="#e4e7eb" stroke="#9aa5b1" stroke-width="1"/>
+<text x="360" y="208" font-size="13" text-anchor="middle" fill="#1f2933" font-weight="bold">ULA / tilemap</text>
+<text x="360" y="226" font-size="12" text-anchor="middle" fill="#5f6c7b" font-weight="normal">HUD</text>
+<text x="257" y="266" font-size="12.5" text-anchor="start" fill="#1f2933" font-weight="normal">+ Moving costs no pixel copying</text>
+<text x="257" y="286" font-size="12.5" text-anchor="start" fill="#1f2933" font-weight="normal">+ Sort result = sprite slot order</text>
+<text x="257" y="306" font-size="12.5" text-anchor="start" fill="#1f2933" font-weight="normal">- 16K of patterns is the limit</text>
+<text x="257" y="326" font-size="12.5" text-anchor="start" fill="#1f2933" font-weight="normal">- Occluders must become sprites</text>
+<text x="595" y="28" font-size="15" text-anchor="middle" fill="#1f2933" font-weight="bold">C: Scenery above sprites</text>
+<text x="595" y="48" font-size="12.5" text-anchor="middle" fill="#5f6c7b" font-weight="normal">LSU, Layer 2 holds occluders</text>
+<rect x="490" y="66" width="210" height="52" rx="5" fill="#d6e6f7" stroke="#2f6fb7" stroke-width="1"/>
+<text x="595" y="88" font-size="13" text-anchor="middle" fill="#1f2933" font-weight="bold">Layer 2</text>
+<text x="595" y="106" font-size="12" text-anchor="middle" fill="#5f6c7b" font-weight="normal">pieces that can hide objects</text>
+<rect x="490" y="126" width="210" height="52" rx="5" fill="#cfeee9" stroke="#14857a" stroke-width="1"/>
+<text x="595" y="148" font-size="13" text-anchor="middle" fill="#1f2933" font-weight="bold">Sprites</text>
+<text x="595" y="166" font-size="12" text-anchor="middle" fill="#5f6c7b" font-weight="normal">objects</text>
+<rect x="490" y="186" width="210" height="52" rx="5" fill="#fbe7c6" stroke="#c77700" stroke-width="1"/>
+<text x="595" y="208" font-size="13" text-anchor="middle" fill="#1f2933" font-weight="bold">Tilemap / ULA</text>
+<text x="595" y="226" font-size="12" text-anchor="middle" fill="#5f6c7b" font-weight="normal">floor and back walls</text>
+<text x="492" y="266" font-size="12.5" text-anchor="start" fill="#1f2933" font-weight="normal">+ Few sprites needed</text>
+<text x="492" y="286" font-size="12.5" text-anchor="start" fill="#1f2933" font-weight="normal">- Layer 2 must change as objects</text>
+<text x="492" y="306" font-size="12.5" text-anchor="start" fill="#1f2933" font-weight="normal">  move around the scenery</text>
+<text x="492" y="326" font-size="12.5" text-anchor="start" fill="#1f2933" font-weight="normal">- Backdrop limited to tiles</text>
+</svg>

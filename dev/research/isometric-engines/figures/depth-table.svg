@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 272" width="880" height="272" font-family="Helvetica, Arial, sans-serif" font-size="14" fill="#1f2933">
+<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="context-stroke"/></marker></defs>
+<rect width="880" height="272" fill="#ffffff"/>
+<text x="226.0" y="28" font-size="14" text-anchor="middle" fill="#1f2933" font-weight="bold">Z: candidate wholly above (+0)</text>
+<text x="154.0" y="54" font-size="10.5" text-anchor="middle" fill="#5f6c7b" font-weight="normal">other further</text>
+<text x="226.0" y="54" font-size="10.5" text-anchor="middle" fill="#5f6c7b" font-weight="normal">overlap</text>
+<text x="298.0" y="54" font-size="10.5" text-anchor="middle" fill="#5f6c7b" font-weight="normal">cand. further</text>
+<text x="110" y="84" font-size="11" text-anchor="end" fill="#5f6c7b" font-weight="normal">cand. further</text>
+<text x="110" y="99" font-size="11" text-anchor="end" fill="#5f6c7b" font-weight="normal">Y code 0</text>
+<rect x="118" y="66" width="72" height="44" rx="2" fill="#e4e7eb" stroke="#ffffff" stroke-width="2"/>
+<text x="154.0" y="94" font-size="15" text-anchor="middle" fill="#1f2933" font-weight="bold">0</text>
+<rect x="190" y="66" width="72" height="44" rx="2" fill="#e4e7eb" stroke="#ffffff" stroke-width="2"/>
+<text x="226.0" y="94" font-size="15" text-anchor="middle" fill="#1f2933" font-weight="bold">9</text>
+<rect x="262" y="66" width="72" height="44" rx="2" fill="#e4e7eb" stroke="#ffffff" stroke-width="2"/>
+<text x="298.0" y="94" font-size="15" text-anchor="middle" fill="#1f2933" font-weight="bold">18</text>
+<text x="110" y="128" font-size="11" text-anchor="end" fill="#5f6c7b" font-weight="normal">overlap</text>
+<text x="110" y="143" font-size="11" text-anchor="end" fill="#5f6c7b" font-weight="normal">Y code 3</text>
+<rect x="118" y="110" width="72" height="44" rx="2" fill="#d6e6f7" stroke="#ffffff" stroke-width="2"/>
+<text x="154.0" y="138" font-size="15" text-anchor="middle" fill="#1f2933" font-weight="bold">3</text>
+<rect x="190" y="110" width="72" height="44" rx="2" fill="#d6e6f7" stroke="#ffffff" stroke-width="2"/>
+<text x="226.0" y="138" font-size="15" text-anchor="middle" fill="#1f2933" font-weight="bold">12</text>
+<rect x="262" y="110" width="72" height="44" rx="2" fill="#e4e7eb" stroke="#ffffff" stroke-width="2"/>
+<text x="298.0" y="138" font-size="15" text-anchor="middle" fill="#1f2933" font-weight="bold">21</text>
+<text x="110" y="172" font-size="11" text-anchor="end" fill="#5f6c7b" font-weight="normal">other further</text>
+<text x="110" y="187" font-size="11" text-anchor="end" fill="#5f6c7b" font-weight="normal">Y code 6</text>
+<rect x="118" y="154" width="72" height="44" rx="2" fill="#d6e6f7" stroke="#ffffff" stroke-width="2"/>
+<text x="154.0" y="182" font-size="15" text-anchor="middle" fill="#1f2933" font-weight="bold">6</text>
+<rect x="190" y="154" width="72" height="44" rx="2" fill="#d6e6f7" stroke="#ffffff" stroke-width="2"/>
+<text x="226.0" y="182" font-size="15" text-anchor="middle" fill="#1f2933" font-weight="bold">15</text>
+<rect x="262" y="154" width="72" height="44" rx="2" fill="#e4e7eb" stroke="#ffffff" stroke-width="2"/>
+<text x="298.0" y="182" font-size="15" text-anchor="middle" fill="#1f2933" font-weight="bold">24</text>
+<text x="478.0" y="28" font-size="14" text-anchor="middle" fill="#1f2933" font-weight="bold">Z: overlap (+1)</text>
+<text x="406.0" y="54" font-size="10.5" text-anchor="middle" fill="#5f6c7b" font-weight="normal">other further</text>
+<text x="478.0" y="54" font-size="10.5" text-anchor="middle" fill="#5f6c7b" font-weight="normal">overlap</text>
+<text x="550.0" y="54" font-size="10.5" text-anchor="middle" fill="#5f6c7b" font-weight="normal">cand. further</text>
+<rect x="370" y="66" width="72" height="44" rx="2" fill="#e4e7eb" stroke="#ffffff" stroke-width="2"/>
+<text x="406.0" y="94" font-size="15" text-anchor="middle" fill="#1f2933" font-weight="bold">1</text>
+<rect x="442" y="66" width="72" height="44" rx="2" fill="#cfeee9" stroke="#ffffff" stroke-width="2"/>
+<text x="478.0" y="94" font-size="15" text-anchor="middle" fill="#1f2933" font-weight="bold">10</text>
+<rect x="514" y="66" width="72" height="44" rx="2" fill="#cfeee9" stroke="#ffffff" stroke-width="2"/>
+<text x="550.0" y="94" font-size="15" text-anchor="middle" fill="#1f2933" font-weight="bold">19</text>
+<rect x="370" y="110" width="72" height="44" rx="2" fill="#d6e6f7" stroke="#ffffff" stroke-width="2"/>
+<text x="406.0" y="138" font-size="15" text-anchor="middle" fill="#1f2933" font-weight="bold">4</text>
+<rect x="442" y="110" width="72" height="44" rx="2" fill="#f8d7d7" stroke="#ffffff" stroke-width="2"/>
+<text x="478.0" y="138" font-size="15" text-anchor="middle" fill="#1f2933" font-weight="bold">13</text>
+<rect x="514" y="110" width="72" height="44" rx="2" fill="#cfeee9" stroke="#ffffff" stroke-width="2"/>
+<text x="550.0" y="138" font-size="15" text-anchor="middle" fill="#1f2933" font-weight="bold">22</text>
+<rect x="370" y="154" width="72" height="44" rx="2" fill="#d6e6f7" stroke="#ffffff" stroke-width="2"/>
+<text x="406.0" y="182" font-size="15" text-anchor="middle" fill="#1f2933" font-weight="bold">7</text>
+<rect x="442" y="154" width="72" height="44" rx="2" fill="#d6e6f7" stroke="#ffffff" stroke-width="2"/>
+<text x="478.0" y="182" font-size="15" text-anchor="middle" fill="#1f2933" font-weight="bold">16</text>
+<rect x="514" y="154" width="72" height="44" rx="2" fill="#e4e7eb" stroke="#ffffff" stroke-width="2"/>
+<text x="550.0" y="182" font-size="15" text-anchor="middle" fill="#1f2933" font-weight="bold">25</text>
+<text x="730.0" y="28" font-size="14" text-anchor="middle" fill="#1f2933" font-weight="bold">Z: other wholly above (+2)</text>
+<text x="658.0" y="54" font-size="10.5" text-anchor="middle" fill="#5f6c7b" font-weight="normal">other further</text>
+<text x="730.0" y="54" font-size="10.5" text-anchor="middle" fill="#5f6c7b" font-weight="normal">overlap</text>
+<text x="802.0" y="54" font-size="10.5" text-anchor="middle" fill="#5f6c7b" font-weight="normal">cand. further</text>
+<rect x="622" y="66" width="72" height="44" rx="2" fill="#e4e7eb" stroke="#ffffff" stroke-width="2"/>
+<text x="658.0" y="94" font-size="15" text-anchor="middle" fill="#1f2933" font-weight="bold">2</text>
+<rect x="694" y="66" width="72" height="44" rx="2" fill="#cfeee9" stroke="#ffffff" stroke-width="2"/>
+<text x="730.0" y="94" font-size="15" text-anchor="middle" fill="#1f2933" font-weight="bold">11</text>
+<rect x="766" y="66" width="72" height="44" rx="2" fill="#cfeee9" stroke="#ffffff" stroke-width="2"/>
+<text x="802.0" y="94" font-size="15" text-anchor="middle" fill="#1f2933" font-weight="bold">20</text>
+<rect x="622" y="110" width="72" height="44" rx="2" fill="#e4e7eb" stroke="#ffffff" stroke-width="2"/>
+<text x="658.0" y="138" font-size="15" text-anchor="middle" fill="#1f2933" font-weight="bold">5</text>
+<rect x="694" y="110" width="72" height="44" rx="2" fill="#cfeee9" stroke="#ffffff" stroke-width="2"/>
+<text x="730.0" y="138" font-size="15" text-anchor="middle" fill="#1f2933" font-weight="bold">14</text>
+<rect x="766" y="110" width="72" height="44" rx="2" fill="#cfeee9" stroke="#ffffff" stroke-width="2"/>
+<text x="802.0" y="138" font-size="15" text-anchor="middle" fill="#1f2933" font-weight="bold">23</text>
+<rect x="622" y="154" width="72" height="44" rx="2" fill="#e4e7eb" stroke="#ffffff" stroke-width="2"/>
+<text x="658.0" y="182" font-size="15" text-anchor="middle" fill="#1f2933" font-weight="bold">8</text>
+<rect x="694" y="154" width="72" height="44" rx="2" fill="#e4e7eb" stroke="#ffffff" stroke-width="2"/>
+<text x="730.0" y="182" font-size="15" text-anchor="middle" fill="#1f2933" font-weight="bold">17</text>
+<rect x="766" y="154" width="72" height="44" rx="2" fill="#e4e7eb" stroke="#ffffff" stroke-width="2"/>
+<text x="802.0" y="182" font-size="15" text-anchor="middle" fill="#1f2933" font-weight="bold">26</text>
+<rect x="118" y="216" width="18" height="18" rx="2" fill="#d6e6f7" stroke="#9aa5b1" stroke-width="1"/>
+<text x="142" y="230" font-size="13" text-anchor="start" fill="#1f2933" font-weight="normal">other first (7)</text>
+<rect x="308" y="216" width="18" height="18" rx="2" fill="#cfeee9" stroke="#9aa5b1" stroke-width="1"/>
+<text x="332" y="230" font-size="13" text-anchor="start" fill="#1f2933" font-weight="normal">candidate first (7)</text>
+<rect x="498" y="216" width="18" height="18" rx="2" fill="#e4e7eb" stroke="#9aa5b1" stroke-width="1"/>
+<text x="522" y="230" font-size="13" text-anchor="start" fill="#1f2933" font-weight="normal">no order (12)</text>
+<rect x="688" y="216" width="18" height="18" rx="2" fill="#f8d7d7" stroke="#9aa5b1" stroke-width="1"/>
+<text x="712" y="230" font-size="13" text-anchor="start" fill="#1f2933" font-weight="normal">boxes intersect (1)</text>
+<text x="118" y="258" font-size="12.5" text-anchor="start" fill="#5f6c7b" font-weight="normal">Index = Z code + Y code + X code (X codes: 0 other further, 9 overlap, 18 candidate further).</text>
+</svg>

@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 296" width="700" height="296" font-family="Helvetica, Arial, sans-serif" font-size="14" fill="#1f2933">
+<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="context-stroke"/></marker></defs>
+<rect width="700" height="296" fill="#ffffff"/>
+<text x="170" y="26" font-size="15" text-anchor="middle" fill="#1f2933" font-weight="bold">No correct order exists</text>
+<text x="530" y="26" font-size="15" text-anchor="middle" fill="#1f2933" font-weight="bold">Fix: split one box</text>
+<polygon points="90,50 60,65 170,240 200,225" fill="#fbe7c6" stroke="#c77700" stroke-width="2" />
+<polygon points="250,50 280,50 170,240 140,225" fill="#cfeee9" stroke="#14857a" stroke-width="2" />
+<polygon points="60,70 280,70 280,100 60,100" fill="#d6e6f7" stroke="#2f6fb7" stroke-width="2" />
+<clipPath id="cl0"><rect x="40" y="60" width="120" height="50"/></clipPath>
+<polygon points="90,50 60,65 170,240 200,225" fill="#fbe7c6" stroke="#c77700" stroke-width="2" clip-path="url(#cl0)"/>
+<text x="166" y="92" font-size="15" text-anchor="middle" fill="#1f2933" font-weight="bold">A</text>
+<text x="198" y="165" font-size="15" text-anchor="middle" fill="#1f2933" font-weight="bold">B</text>
+<text x="140" y="165" font-size="15" text-anchor="middle" fill="#1f2933" font-weight="bold">C</text>
+<text x="170" y="282" font-size="13" text-anchor="middle" fill="#5f6c7b" font-weight="normal">A covers B, B covers C, C covers A</text>
+<polygon points="450,50 420,65 530,240 560,225" fill="#fbe7c6" stroke="#c77700" stroke-width="2" />
+<polygon points="610,50 640,50 530,240 500,225" fill="#cfeee9" stroke="#14857a" stroke-width="2" />
+<polygon points="420,70 640,70 640,100 420,100" fill="#d6e6f7" stroke="#2f6fb7" stroke-width="2" />
+<clipPath id="cl360"><rect x="400" y="60" width="120" height="50"/></clipPath>
+<polygon points="450,50 420,65 530,240 560,225" fill="#fbe7c6" stroke="#c77700" stroke-width="2" clip-path="url(#cl360)"/>
+<text x="526" y="92" font-size="15" text-anchor="middle" fill="#1f2933" font-weight="bold">A</text>
+<text x="558" y="165" font-size="15" text-anchor="middle" fill="#1f2933" font-weight="bold">B</text>
+<text x="500" y="165" font-size="15" text-anchor="middle" fill="#1f2933" font-weight="bold">C</text>
+<line x1="452" y1="124" x2="502" y2="124" stroke="#c43d3d" stroke-width="2.5" stroke-dasharray="6 4"/>
+<text x="446" y="129" font-size="13" text-anchor="end" fill="#c43d3d" font-weight="normal">cut C here</text>
+<text x="530" y="282" font-size="13" text-anchor="middle" fill="#5f6c7b" font-weight="normal">Draw lower C, B, A, then upper C</text>
+</svg>
