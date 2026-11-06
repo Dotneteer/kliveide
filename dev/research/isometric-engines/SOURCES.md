@@ -11,8 +11,8 @@ day was `f4f318f9dea624b1760064a1da76b20b125a519d`). The folders match its `src/
 [04_HEAD_OVER_HEELS_ENGINE.md](04_HEAD_OVER_HEELS_ENGINE.md) apply. It is a subset, so the files do not assemble on their own. The repository
 states no licence, and the code is a disassembly of a copyrighted game.
 
-[binaries/](binaries/) holds game images for reverse engineering, downloaded on 2026-11-06. **Its own `.gitignore` keeps them out of git**, so they
-exist only on this machine and can be downloaded again from these links. Nothing was run or disassembled. The tape block checksums were verified.
+[binaries/](binaries/) holds game images for reverse engineering, downloaded on 2026-11-06 from these links. Nothing was run or disassembled. The tape
+block checksums were verified.
 
 | File | Game | From | SHA-256 |
 |---|---|---|---|
