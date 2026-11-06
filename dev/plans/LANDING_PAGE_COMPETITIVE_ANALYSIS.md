@@ -1,6 +1,6 @@
 # Klive vs. ZX Spectrum Development Environments: Competitive Analysis
 
-Status: **current as of 2026-11-04** (compacted; the original 2026-10-02 analysis and its
+Status: **current as of 2026-11-06** (compacted; the original 2026-10-02 analysis and its
 landing-page drafts are in git history). The field (§1) and the competitor columns of §2 are from
 web research of 2026-10-02 (official docs, READMEs, release notes, forums); facts that could not be
 checked against a page are marked **(unverified)** and must be checked before a public page says
@@ -8,7 +8,7 @@ them. The Klive column is kept current under `AGENTS.md`'s standing rule: when a
 `dev/plans/CLOSING_THE_GAPS_PLAN.md` is implemented, update §2 (the Klive column) and §4 (the gaps) in
 the same change.
 
-Klive features are released unless marked **(after v0.66.0)**, meaning they wait in `dev/changes/` for
+Klive features are released unless marked **(after v0.67.0)**, meaning they wait in `dev/changes/` for
 the next release.
 
 ---
@@ -45,13 +45,13 @@ developers use it.
 | All-in-one app | ✅ | ✗ (3-4 tools) | ✗ | ✗ | ✗ | ◐ (VS Code + CSpect) |
 | Win / Mac / Linux | ✅ | ✅ | ◐ (Mono) | ✅ | ✅ | ✅ |
 | 48K / 128K / +2A / +3 / +2E / +3E | ✅ incl. the Amstrad +2A/+3 ROMs; ULA timing checked against the real-machine timing suites (snow, late timing), results published beside real-machine photos | ✅ | ✗ | ✅ (reference) | ◐ (48/128) | ◐ |
-| ZX Spectrum Next | ✅ C/WASM core citing the FPGA VHDL, a hardware test suite of about 30 areas; two models by core version **(after v0.66.0)** | ✅ | ✅ (reference dev kit) | ✗ | ✗ | via CSpect / MAME |
-| Other machines | Z88, Pentagon 128 with Beta 128/TR-DOS, Timex TC2048/TC2068/TS2068, Scorpion ZS-256, ZX80/ZX81 (with machine code run and debugged as a `1 REM` program), HT-1080Z, Videoton TVC 64K/64K+, Enterprise 64/128 **(after v0.66.0)**, C64 (experimental) | Very wide | ✗ | Many clones | CPC, C64 | ✗ |
+| ZX Spectrum Next | ✅ C/WASM core citing the FPGA VHDL, a hardware test suite of about 30 areas; two models by core version | ✅ | ✅ (reference dev kit) | ✗ | ✗ | via CSpect / MAME |
+| Other machines | Z88, Pentagon 128 with Beta 128/TR-DOS, Timex TC2048/TC2068/TS2068, Scorpion ZS-256, ZX80/ZX81 (with machine code run and debugged as a `1 REM` program), HT-1080Z, Videoton TVC 64K/64K+, Enterprise 64/128, C64 (experimental) | Very wide | ✗ | Many clones | CPC, C64 | ✗ |
 | Editor with language intelligence | ✅ asm: compiler-driven completion, hover (macro expansion), rename, references, inlay hints, colour pickers. ◐ BASIC: keyword help, completion, signature help and folding while Boriel builds BASIC | ✅ (VS Code extensions) | ✗ | ✗ | ✗ | ◐ |
 | Built-in assembler | ✅ Klive Z80/Z80N: macros, structs, modules, `.savenex`, `.dma` and `.copper` DSLs | ✗ | ✗ | ✗ | ✗ | ✗ |
 | External toolchains | ✅ sjasmplus (SLD), Boriel BASIC 2.x (bundled, installed on first run), z88dk C (line-level debugging), PASTA/80; SkoolKit import/export | ✅ sjasmplus, z80asm, z88dk | map files | ✗ | SkoolKit | Boriel |
-| BASIC compiler | ◐ Boriel BASIC 2.x (beta, bundled), the only BASIC compiler **(after v0.66.0)**; Klive BASIC switched off; banked modules on the 128K and Next | ✗ | ✗ | ✗ | ✗ | Boriel (external) |
-| **BASIC source-level debugging** | ✅ breakpoints, statement stepping, call stack (FASTCALL and far calls), variables, Just My Code, error stops; 48K, 128K, Next; a `.nex` built outside Klive from zxbc's `.dbg` **(after v0.66.0)** | ◐ (viewers only) | ✗ | ✗ | ✗ | ◐ (ZXBS, reported buggy) |
+| BASIC compiler | ◐ Boriel BASIC 2.x (beta, bundled), the only BASIC compiler; Klive BASIC switched off; banked modules on the 128K and Next | ✗ | ✗ | ✗ | ✗ | Boriel (external) |
+| **BASIC source-level debugging** | ✅ breakpoints, statement stepping, call stack (FASTCALL and far calls), variables, Just My Code, error stops; 48K, 128K, Next; a `.nex` built outside Klive from zxbc's `.dbg` | ◐ (viewers only) | ✗ | ✗ | ✗ | ◐ (ZXBS, reported buggy) |
 | Asm source-level debugging | ✅ Klive asm; sjasmplus with bank-aware SLD on the 128K, +3 and Next (not yet checked in the IDE, G10.3) | ✅ | labels only | ✗ | ✗ | ✗ |
 | **C source-level debugging** | ✅ z88dk (sccz80): C-line breakpoints, stepping, call stack, typed parameters, locals and globals | ◐ (line level) | ✗ | ✗ | ✗ | ✗ |
 | Exec / memory / I/O breakpoints | ✅ bank-relative and partition-scoped; every data access of an instruction watched | ✅ | ◐ | ✅ | ✅ | via CSpect |
@@ -61,15 +61,15 @@ developers use it.
 | **Unit tests / coverage / profiler** | ✅ per-bank coverage and heat map, SMC detection, LCOV; flat and call-graph profiler with interrupts as roots, speedscope/callgrind exports; DeZog-compatible unit tests with both assemblers, deterministic, T-states per test; `klive test` in CI (JUnit, LCOV) | ✅ (DeZog; VS Code only, no CI) | ✗ | profiler | memory diff | ✗ |
 | Call stack, watches | ✅ (+ BASIC and C call stacks) | ✅ | ? | ✗ | ✅ | ◐ |
 | Disassembly insight | ✅ branch verdicts with T-state cost, system-variable operands, T-state measuring | ✅ | ◐ | ◐ | ✅ | ✗ |
-| NEX reverse engineering | ✅ debug any `.nex` with no project, bank breakpoints and watchpoints, entry stop, live bank vs. file diff, `.nex.dis` annotations with Copper/DMA regions **(after v0.66.0)** | ◐ (DeZog Analyze) | ✗ | ✗ | ✗ (no Next) | ✗ |
-| General reverse engineering | ✅ annotations on every machine; every shipped ROM annotated to level 2 (48K, 128K, +2A/+3/+3E, ZX80/ZX81, every Next ROM set, HT-1080Z, TVC, and the Enterprise's **(after v0.66.0)**); code/data detection from coverage, graphics finder, SkoolKit, source export verified by reassembly | ◐ | ✗ | ✗ | ✅ | ✗ |
+| NEX reverse engineering | ✅ debug any `.nex` with no project, bank breakpoints and watchpoints, entry stop, live bank vs. file diff, `.nex.dis` annotations with Copper/DMA regions | ◐ (DeZog Analyze) | ✗ | ✗ | ✗ (no Next) | ✗ |
+| General reverse engineering | ✅ annotations on every machine; every shipped ROM annotated to level 2 (48K, 128K, +2A/+3/+3E, ZX80/ZX81, every Next ROM set, HT-1080Z, TVC, and the Enterprise's except IS-BASIC 2.0); code/data detection from coverage, graphics finder, SkoolKit, source export verified by reassembly | ◐ | ✗ | ✗ | ✅ | ✗ |
 | **Live Next inspectors** | ✅ Copper (with a raster ruler and list checks), Sprite, Tilemap and Layer 2 Inspectors, layer composition with a pixel probe naming the mixer rule (apparently unique) | ✅ (ZEsarUX) | ? | — | — | ✗ |
 | Beam position on the paused screen | ✅ on the Next and every Spectrum model, the picture drawn up to the beam | ✅ (ZEsarUX) | ? | ? | ? | ✗ |
 | Next asset editors | ✅ sprites, palettes, Layer 2 pictures, images | ✗ | ✗ | — | — | ✗ |
 | NextZXOS boot, SD image | ✅ cached boot, a FAT32 driver; tapes on the Next | ✅ | ✅ | — | — | via CSpect |
 | Snapshots and machine state | ✅ `.sna`/`.z80`/`.szx` load, run and save; `.kls` state files with a quick slot on every machine | ✅ | ✗ | ✅ | ✅ | — |
 | RZX recording / playback | ✅ including under the debugger; render to video | ? | ✗ | ✅ | ✅ | ✗ |
-| Tape / disk / storage | ✅ TAP/TZX/`.cas`; DSK and TR-DOS byte-exact with a Disk Explorer; DivMMC/esxDOS with FAT hard-disk images; Interface 1 and Microdrives; a two-pane File Manager across host, images, tapes and machine storage **(after v0.66.0)** | ✅ | — | ✅ | ◐ | — |
+| Tape / disk / storage | ✅ TAP/TZX/`.cas`; DSK and TR-DOS byte-exact with a Disk Explorer; DivMMC/esxDOS with FAT hard-disk images; Interface 1 and Microdrives; a two-pane File Manager across host, images, tapes and machine storage | ✅ | — | ✅ | ◐ | — |
 | Export | ✅ TAP/TZX/HEX with loaders, NEX, DSK/TRD/MDR, `.p`/`.o`, `.com`; annotated source; SkoolKit | ◐ | — | — | ✅ SkoolKit | NEX |
 | Scripting / automation | ✅ Klive Script; a token-authenticated JSON-RPC API and `klive ide`; headless `klive test`/`build`/`run` | ✅ ZRCP | ✅ C# plugins | ✗ | ✅ Lua | ✗ |
 | Debug on real Next hardware | ✗ (G6.4, deferred) | ✅ (DeZog serial) | ✗ | — | — | ✗ |
@@ -105,7 +105,7 @@ profiler (G5), W4 live Next inspectors (G3), W5 snapshots, state files and RZX (
 engineering depth (G7), W9 machine breadth (G9). Their detail is in §2.
 
 **Release status note** (update it to each release; the release PR's checklist asks for it):
-everything above shipped by **v0.66.0** except what §2 marks **(after v0.66.0)**. The landing page
+everything above shipped by **v0.67.0** except what §2 marks **(after v0.67.0)**. The landing page
 gates each feature and machine on the latest release tag (`docs/landing/features.ts` `since`), so it
 never claims ahead of a release.
 

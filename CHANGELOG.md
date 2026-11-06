@@ -1,5 +1,228 @@
 # Klive IDE Changelog
 
+## 0.67.0 (2026-11-06)
+
+### Highlights
+
+- **The Enterprise 64 and 128**, the British home computer, with EXOS, IS-BASIC, EXDOS floppy disks
+  and the full debugger.
+- **The File Manager:** two panes in the style of Total Commander, copying files between your disks,
+  the project, disk and SD card images, tapes and the machine's own storage.
+- **ZX Spectrum Next models:** KS2 with core 3.02.01 (NextZXOS 2.08) or core 3.02.04 (NextZXOS
+  2.10), each with its own emulated hardware, ROMs and SD card.
+- **Boriel BASIC (beta) now builds every BASIC program.** Klive BASIC is switched off, so read the
+  breaking change below if your programs use `CODEBANK`.
+
+### Breaking changes
+
+- **BASIC programs build with Boriel BASIC (beta).** Klive BASIC is switched off: every `.zxbas` and
+  `.bas` program now builds with Boriel BASIC 2, which comes with Klive and installs from the
+  first-start offer or **Settings › Integrations**. The choice between the two compilers is gone.
+  Programs that use Klive BASIC's `CODEBANK` or its own header options (`asm-dialect`, `codebank-*`)
+  no longer build as before: move banked code into modules with `'@split-modules`. The editor no
+  longer knows a BASIC program's own names (hover, go to definition, rename). The ZX Spectrum Next
+  BASIC template is a plain program now; it, and the ZX Spectrum 128K and Scorpion templates, end in
+  an endless loop so their output stays on the screen (a `.nex` program cannot return to NextZXOS,
+  and 128 BASIC's editor would redraw over it), and the documentation describes Boriel BASIC only.
+
+### Features
+
+- **BBC BASIC (Z80) Reference Guide in the Library:** the Cambridge Z88's BBC BASIC manual is now on
+  the documentation site, next to the User Guide and the Developers' Notes. Every keyword has a page
+  of its own, alongside the chapters on the in-line assembler, the screen driver, the operating
+  system
+  interface, printing and files, and the annexes. The Z88 machine guide links to it.
+- **The Enterprise 64 and 128:** Klive emulates the British home computer as the Enterprise 128
+  (EXOS
+  2.1, IS-BASIC 2.1) and the Enterprise 64 (EXOS 2.0, IS-BASIC 2.0), with the NICK video chip
+  drawing
+  its picture slot by slot from the line parameter table, the clock stretch on video memory, DAVE's
+  stereo sound, interrupts and memory paging, and the keyboard and joysticks. The on-screen keyboard
+  is drawn from the machine, with the word processor's label strip and the built-in joystick.
+  Klive's
+  `FILE:` device lets BASIC `LOAD` and `SAVE` files in a folder on your computer (Machine › Open
+  FILE:
+  Folder). Programs load from `.tap` and `.wav` tapes, fast or in real time, and `SAVE` writes
+  `.tap`
+  files; the EXDOS floppy interface (Machine › EXDOS Floppy Interface) reads and writes `.img`
+  disks.
+  The assembler takes `.model ENTERPRISE`: Run and Debug load the program at `$0100` through EXOS's
+  own loader, Export writes a `.com` file, and a new project template prints a welcome. Debugging
+  (with EXOS's `RST 30h` calls named and stepped over), the NICK and DAVE panels, the EXOS
+  variables,
+  the IS-BASIC listing, the memory panel's 256 segments, execution history, reverse debugging, code
+  coverage, state files, the Z80 unit-test runner and `klive run` work as on the other machines.
+- **Choose the machine and start it from the command line:** start Klive with
+  `--machine <id>[:<model>]` (for example `--machine zxnext` or `--machine sp48:ntsc`) to open it on
+  that machine instead of the last one used, and with `--start` to start the machine as soon as the
+  emulator has loaded. With either switch, Klive leaves the last project closed, because opening it
+  would switch to the project's own machine.
+- **Show IDE toggle:** View › Show IDE is now a checkbox that stays in the menu. It is checked while
+  the IDE window is shown, and clicking it hides or shows the IDE window.
+- **Machine settings at hand and a toolbar that fits:** Machine › Configure *machine*... (the menu's
+  first item) and a new emulator toolbar button open Settings on the Machine page, which now holds
+  every option that applies to the running machine only: its ROMs, the ZX80/ZX81 TV noise, the
+  Spectrum's snow effect and late ULA timing, and the ZX Spectrum Next's sound output (they used to
+  be
+  on the Emulator page). When the emulator window is too narrow for every toolbar button, the
+  stay-on-top, instant screen, beam position and keyboard buttons fold into one View options button,
+  and if that is not enough, whole groups move into a More menu at the right end; widening the
+  window
+  brings them back. In these menus each command shows its toolbar icon, and a switch that is on
+  shows
+  the toolbar's blue frame.
+- **ZX Spectrum Next models:** the Next comes as two models, KS2 with core 3.02.01 and KS2 with core
+  3.02.04, each with its own emulated hardware, NextZXOS release (2.08 and 2.10), ROMs, default SD
+  card
+  and Next Registers descriptions. Pick one in Select Machine or New Project; new projects start on
+  core 3.02.04, and projects saved earlier open on core 3.02.01. A state file or debug recording
+  saved
+  on one model is refused by the other, with a message that names both. Debug › ROM Annotations
+  has NextZXOS 2.10's ROMs at level 2 (every call and jump target labelled, every label described),
+  like
+  2.08's.
+- **The File Manager:** a two-pane file manager (File › File Manager... or `fm`), in the style of
+  Total Commander. Each pane shows a drive: a disk of this computer, the open project, a disk image
+  (`.dsk`, `.trd`, `.scl`, `.mdr`, and the MGT +D/DISCiPLE's `.mgt`), an SD card or hard disk image
+  (`.img`, `.hdf`, `.cim`, each FAT partition and each +3e IDEDOS +3DOS partition a drive of its
+  own), a tape (`.tap`, `.tzx`), or, while the machine is stopped, its own SD card, disks,
+  Microdrives and tape. Copy and move files between any two (F5, F6, or drag and drop), converting
+  each to what the other side keeps: a `.tap` splits into its programs and code on a disk, a `.bas`
+  is tokenised, a program comes back as a one-file `.tap`. Rename, delete, make folders, view a file
+  as a BASIC listing, a screen or bytes (F3), mark files by mask, and reorder a tape. A disk image
+  is written once at the end of a copy, so a cancelled copy leaves it unchanged.
+- **Enterprise 128 ROM annotations:** Klive now ships the first part of EXOS 2.1 annotated, its
+  segment 00h, with a label on every call and jump target, a synopsis for each of its 1,132 labels,
+  and its data regions: the start-up (ROM checksum, RAM test, ROM scan), the EXOS calls and their
+  dispatch, channels and memory allocation, module loading, and the built-in VIDEO, SOUND, KEYBOARD
+  and EDITOR devices with their control codes, escape sequences, tables and character set. The
+  segment reads by name in the Disassembly view whenever EXOS pages it in, and in the ROM annotation
+  editor. Every Enterprise ROM (EXOS 2.0 and 2.1, IS-BASIC, EXDOS) is now listed under Debug › ROM
+  Annotations, where the others can be annotated too.
+- **Enterprise 128 ROM annotations, EXOS 2.1 segment 01h:** the second half of EXOS 2.1 is annotated
+  too, with a label on every call and jump target and a synopsis for each of its 923 labels:
+  IS-BASIC 2.1's added functions and statements (maths, strings, SET, LIST, RENUMBER, AUTO, PRINT
+  USING, the packed error messages), the clock, the PRINTER, TAPE, SERIAL and NET devices, and the
+  Enterprise Word Processor. The Disassembly view now lists IS-BASIC's call lists (the routine bytes
+  after RST 10h) as data on that segment, each byte named, instead of reading them as instructions.
+- **Enterprise 64 ROM annotations, EXOS 2.0:** both segments of the Enterprise 64's EXOS 2.0 are
+  annotated, with a label on every call and jump target and a synopsis for each of their 2,041
+  labels: the kernel, VIDEO, SOUND, KEYBOARD, EDITOR and PRINTER in segment 00h, and IS-BASIC 2.0's
+  routines, the clock, TAPE, SERIAL, NET and the word processor in segment 01h. They were carried
+  over from EXOS 2.1's annotations where the code is the same and written for 2.0 where it differs.
+  On the 64, the IS-BASIC call lists in segment 01h are listed as data too.
+- **Enterprise IS-BASIC 2.1 ROM annotations:** the IS-BASIC 2.1 cartridge is annotated too, with a
+  label on every call and jump target and a synopsis for each of its 1,021 labels: the start-up and
+  the gate that lets IS-BASIC call EXOS segment 1, the tokeniser and the lister, the statements and
+  their keyword table, the expression evaluator, the decimal arithmetic, arrays, user-defined
+  functions, the error handling and the graphics and sound statements. Its call lists after RST 10h
+  are listed as data, each routine byte named.
+- **Enterprise EXDOS 1.3 ROM annotations:** the EXDOS disk ROM (segments 20h and 21h) is annotated,
+  with a label on every call and jump target and a synopsis for each of its 1,055 labels: the
+  extension's start-up and actions, the 31 EXDOS functions and the DISK and drive-letter devices,
+  the FAT12 file system and its sector buffers, the floppy controller and RAM disk drivers, the
+  format code, the Abort/Retry/Ignore prompt and the EXDOS commands and their interpreter. Segment
+  21h's English and German message tables are listed as text, and the byte that follows each call to
+  segment 20h's workspace-word helper as data.
+- **ZX Spectrum Next real-time clock options:** the Next's clock now follows the host's clock, so it
+  shows the real time even after the debugger paused the machine, and it keeps a time set with
+  `.time`
+  or `.date`, and the clock's 56 bytes of RAM, from one session to the next, as the battery on a
+  real
+  board does. Each Next model keeps its own clock. **Settings › Machine** has a **Real-time clock**
+  group: choose emulated time instead, switch keeping off, and set the clock to the host's time or
+  forget a kept one.
+- **Annotations for the ZX Spectrum Next's anti-brick boot ROM:** Debug › ROM Annotations lists the
+  boot ROM of the anti-brick core under both NextZXOS releases (core 3.02.01's under 2.08, core
+  3.02.04's under 2.10), annotated to level 2: every call and jump target labelled and every routine
+  described, from its SD card and FAT driver to the text screen and the steps that restart the core
+  or
+  load the update module. A `bootrom_ab.bin.dis` file opens in the ROM annotation editor from the
+  Explorer, like a `.rom.dis` file.
+- **Source-level debugging for a `.nex` built outside Klive:** `nex-run -d` now reads the
+  `<name>.dbg` that Boriel BASIC's `zxbc` wrote beside the `.nex` (build with `--debug=<name>.dbg`,
+  and `-M <name>.map` for symbols), checks that it belongs to that exact build, and stops at your
+  source breakpoints. The Windows install of Boriel BASIC is also about 34 MB smaller, because the
+  installer no longer unpacks debug-symbol files that nothing loads.
+
+### Fixes
+
+- Reverse debugging: the emulator window kept showing the present while the machine was in the past.
+  After Step Back, Reverse Continue or a selected history row, its screen, its pause label and its
+  status bar's PC stayed as they were at the present; they now show the moment the machine is at,
+  and the present again on Return to Present.
+- Cambridge Z88: the Help menu's User Guide, Developers' Notes and BBC BASIC Reference links opened
+  the original Confluence wiki and Google Doc. They now open the same manuals in the Library on
+  kliveide.net.
+- Tapes: a `.cas` file was always read as an HT-1080Z tape. Opening a Videoton TVC tape in the IDE
+  showed "No HT-1080Z file follows the sync byte", and a TVC tape restored at startup was refused
+  with
+  a message box even when the TVC was the current machine. The tape viewer now reads which machine's
+  tape a `.cas` is from its contents and shows TVC tapes with their headers, BASIC listing and code;
+  Run, Insert and Debug are enabled on that machine only; and a tape set before its machine is ready
+  goes into the deck when the machine starts. TVC tapes whose header record counts are wrong now
+  load
+  too.
+- New Project: creating a project while another one was open could open the previous project's
+  files.
+  A new Videoton TVC project showed the open ZX Spectrum 48K project's `code/code.kz80.asm` until
+  the
+  project was reopened or Klive restarted. The New Project dialog and `newp -o` now wait for the new
+  project to load before opening its build root.
+- Tapes: when the last session ended with a Videoton TVC or HT-1080Z `.cas` tape in the deck while
+  another machine was running, Klive showed "... is a Videoton TVC tape" in a message box at every
+  start. The restored tape now waits for its own machine without a message.
+- Menus: pressing the button that opened a dropdown menu (sound level, recordings, the MHz chip, the
+  open documents list and others) closed the menu and opened it again at once; it now closes it. A
+  menu opened with the mouse no longer shows a keyboard focus ring on its first item.
+- Settings: in a narrow window, where the pages show as a row of tabs, the selected page was marked
+  by
+  a bar on its left edge; the bar is now under the tab.
+- ZX Spectrum Next: NextReg `$0E` read sub-version `.00`, so the machine claimed core 3.02.00 while
+  it
+  emulates 3.02.01, and the NEX viewer called a file that asks for core 3.02.01 unsupported.
+- ZX Spectrum Next: switching memory contention off or on with NextReg `$08` bit 6 took effect at
+  once.
+  The Next takes the bit over only from dot 256 of the current line, and reading NextReg `$08` back
+  returns the old bit until then; Klive now does the same.
+- ZX Spectrum Next: the DivMMC's "ROM 3 only" entry points, the 48K ROM's tape traps among them,
+  mapped
+  only when the slot held exactly `$FF` and the +3's ROM 3 was paged in. They now follow the Next's
+  rule: the current machine type's 48K BASIC (ROM 1 on a 128K type, the only ROM on a 48K type), any
+  page from `$E0` up, never in config mode, and the 48K alternate ROM when the alternate ROM is on.
+- ZX Spectrum Next: four interrupt behaviours differed from the hardware. Writing NextReg `$22` with
+  bit 7
+  set held the maskable interrupt line low, although that bit is read-only; a `RETI` released the
+  hardware IM2 daisy chain even when the CPU was not in IM 2; after a stackless NMI, a `RETI`
+  returned
+  through NextRegs `$C2`/`$C3`, which only `RETN` uses; and the DRIVE key raised a DivMMC NMI while
+  the
+  DivMMC port was switched off. All four now behave as on the Next.
+- ZX Spectrum Next: three port decodes differed from the hardware. A write to an address such as
+  `$FFE9`, with address bit 2 clear, reached the AY chips, which answer only with bit 2 set; with
+  the
+  `$1FFD` port switched off (NextReg `$82` bit 3), a `$1FFD` write did not page memory as `$7FFD` in
+  48K
+  and 128K timing; and with the +3 disk I/O trap on, a `$3FFD` write raised the trap but did not
+  page
+  memory as `$7FFD` in 48K and 128K timing. All three now behave as on the Next.
+- ROM annotations: a ROM page opened read-only from Klive's own annotations (with no working copy)
+  had
+  no context menu in its disassembly, so Go to Definition and Go to References (and their Ctrl+F12
+  and
+  Shift+F12 keys) could not be used. They now work there; the editing entries stay disabled until a
+  working copy is made.
+- A banked ZX Spectrum 128 program exported as a tape with an auto-start loader (`expc -as`) but
+  without `-c` reset the machine into 48 BASIC: the loader left the stack in the $C000 window it
+  pages the banks into. The loader now always moves the stack below the program's code.
+- A Boriel BASIC program with a `DO` … `LOOP` (or another block statement) warned that its debug
+  information failed a check ("statements overlap"), and source stepping could stop on the block's
+  line instead of its first statement: zxbc records the block over the first inner statement's code.
+  Klive now gives that code to the inner statement.
+- The packaged app carried about 10,800 files it never used inside its archive: the repository's AI
+  notes, implementation plans and build scripts, and, when built on a developer machine, local
+  scratch folders. It now ships only the built app, its dependencies and the licence files.
+
 ## 0.66.0 (2026-10-30)
 
 ### Highlights

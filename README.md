@@ -29,8 +29,8 @@ BASIC, press one button, and watch your code run — or step through it — insi
   Pentagon, Scorpion ZS-256, Cambridge Z88, Sinclair ZX80/ZX81, HT-1080Z, Videoton TVC 64K/64K+, and
   Enterprise 64/128.
   [All machines and models →](https://kliveide.net/en/reference/machine-types/)
-- **Languages** — the built-in Klive Z80 Assembler and Klive BASIC, plus Boriel BASIC, SJASMPLUS,
-  z88dk, and PASTA/80. [Languages →](https://kliveide.net/en/guides/languages/klive-z80-assembler/)
+- **Languages** — the built-in Klive Z80 Assembler, plus Boriel BASIC (beta), SJASMPLUS, z88dk, and
+  PASTA/80. [Languages →](https://kliveide.net/en/guides/languages/klive-z80-assembler/)
 - **One-click workflow** — compile, inject, run, or debug your program in the emulator from the editor.
 - **Debugger** — breakpoints with conditions, watches, memory and disassembly views, call stack,
   execution history, and reverse debugging. [Debugging →](https://kliveide.net/en/guides/debugging/run-debug/)
