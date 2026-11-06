@@ -37,7 +37,7 @@ There are no pre-releases; `release:verify` rejects anything but `x.y.z`.
 | `release:prepare` preflight | dirty tree, not on master, behind origin, invalid changeset, tag exists | fix and re-run; nothing was written |
 | a `release:prepare` gate | the release changes are on `release/v…`, uncommitted | fix on master in a normal PR; `git switch master && git branch -D release/v… && git checkout -- .`, re-run |
 | workflow **verify** | the merged commit is not releasable (message lists why) | fix on master; re-run with *Run workflow* on master, *dry_run* off |
-| workflow **build** | a kit failed to build; nothing is tagged or published | fix on master, then *Run workflow* on master, *dry_run* off |
+| workflow **build** | a kit failed to build; nothing is tagged or published | fix on master, then *Run workflow* on master, *dry_run* off. The fix carries **no changeset** (use the `no-changeset` label): verify rejects a pending one |
 | workflow **publish** | a draft may exist | re-run the job: an existing draft is reused, a published release ends green |
 | workflow **docs** / **smoke** | the release is out; the site is stale or a link is broken | re-run the failed jobs; a master push also redeploys the site |
 
