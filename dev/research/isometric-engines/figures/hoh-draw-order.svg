@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 426" width="680" height="426" font-family="Helvetica, Arial, sans-serif" font-size="14" fill="#1f2933">
+<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="context-stroke"/></marker></defs>
+<rect width="680" height="426" fill="#ffffff"/>
+<rect x="30" y="16" width="620" height="44" rx="5" fill="#e4e7eb" stroke="#9aa5b1" stroke-width="1"/>
+<text x="46" y="43" font-size="14" text-anchor="start" fill="#1f2933" font-weight="bold">DrawBkgnd</text>
+<text x="240" y="43" font-size="13" text-anchor="start" fill="#1f2933" font-weight="normal">Walls and floor, column by column, into ViewBuff</text>
+<line x1="340" y1="60" x2="340" y2="74" stroke="#1f2933" stroke-width="1.5" marker-end="url(#arr)"/>
+<rect x="30" y="74" width="620" height="44" rx="5" fill="#e6dcf5" stroke="#7a4fb5" stroke-width="1"/>
+<text x="46" y="101" font-size="14" text-anchor="start" fill="#1f2933" font-weight="bold">List 1: next room in V</text>
+<text x="240" y="101" font-size="13" text-anchor="start" fill="#1f2933" font-weight="normal">Only if the wall is open and the window reaches it</text>
+<line x1="340" y1="118" x2="340" y2="132" stroke="#1f2933" stroke-width="1.5" marker-end="url(#arr)"/>
+<rect x="30" y="132" width="620" height="44" rx="5" fill="#e6dcf5" stroke="#7a4fb5" stroke-width="1"/>
+<text x="46" y="159" font-size="14" text-anchor="start" fill="#1f2933" font-weight="bold">List 2: next room in U</text>
+<text x="240" y="159" font-size="13" text-anchor="start" fill="#1f2933" font-weight="normal">Same test on the other side</text>
+<line x1="340" y1="176" x2="340" y2="190" stroke="#1f2933" stroke-width="1.5" marker-end="url(#arr)"/>
+<rect x="30" y="190" width="620" height="44" rx="5" fill="#d6e6f7" stroke="#2f6fb7" stroke-width="1"/>
+<text x="46" y="217" font-size="14" text-anchor="start" fill="#1f2933" font-weight="bold">List 3: far</text>
+<text x="240" y="217" font-size="13" text-anchor="start" fill="#1f2933" font-weight="normal">Objects beyond the room's high U or V limit</text>
+<line x1="340" y1="234" x2="340" y2="248" stroke="#1f2933" stroke-width="1.5" marker-end="url(#arr)"/>
+<rect x="30" y="248" width="620" height="44" rx="5" fill="#cfeee9" stroke="#14857a" stroke-width="1"/>
+<text x="46" y="275" font-size="14" text-anchor="start" fill="#1f2933" font-weight="bold">List 0: main</text>
+<text x="240" y="275" font-size="13" text-anchor="start" fill="#1f2933" font-weight="normal">The room's ordinary objects, sorted far to near</text>
+<line x1="340" y1="292" x2="340" y2="306" stroke="#1f2933" stroke-width="1.5" marker-end="url(#arr)"/>
+<rect x="30" y="306" width="620" height="44" rx="5" fill="#fbe7c6" stroke="#c77700" stroke-width="1"/>
+<text x="46" y="333" font-size="14" text-anchor="start" fill="#1f2933" font-weight="bold">List 4: near</text>
+<text x="240" y="333" font-size="13" text-anchor="start" fill="#1f2933" font-weight="normal">Objects beyond the room's low U or V limit</text>
+<line x1="340" y1="350" x2="340" y2="364" stroke="#1f2933" stroke-width="1.5" marker-end="url(#arr)"/>
+<rect x="30" y="364" width="620" height="44" rx="5" fill="#e4e7eb" stroke="#9aa5b1" stroke-width="1"/>
+<text x="46" y="391" font-size="14" text-anchor="start" fill="#1f2933" font-weight="bold">BlitScreen</text>
+<text x="240" y="391" font-size="13" text-anchor="start" fill="#1f2933" font-weight="normal">Copy the window to the display</text>
+</svg>
