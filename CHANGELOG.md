@@ -4,8 +4,14 @@
 
 ### Highlights
 
-- **The Enterprise 64 and 128**, the British home computer, with EXOS and IS-BASIC.
-- ZX Spectrum Next models: KS2 with core 3.02.01 or 3.02.04
+- **The Enterprise 64 and 128**, the British home computer, with EXOS, IS-BASIC, EXDOS floppy disks
+  and the full debugger.
+- **The File Manager:** two panes in the style of Total Commander, copying files between your disks,
+  the project, disk and SD card images, tapes and the machine's own storage.
+- **ZX Spectrum Next models:** KS2 with core 3.02.01 (NextZXOS 2.08) or core 3.02.04 (NextZXOS
+  2.10), each with its own emulated hardware, ROMs and SD card.
+- **Boriel BASIC (beta) now builds every BASIC program.** Klive BASIC is switched off, so read the
+  breaking change below if your programs use `CODEBANK`.
 
 ### Breaking changes
 
