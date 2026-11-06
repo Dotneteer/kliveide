@@ -12,8 +12,8 @@ work, and the design questions a Next engine has to answer.
 - Results from the small simulation described in [02_DEPTH_SORTING.md](02_DEPTH_SORTING.md) are marked
   *simulation*. They use synthetic scenes, not the games' rooms, and nothing here was run on a Next.
 - Algorithms are described in this pack's own words. The notes copy no game code, graphics or long
-  extracts. The one copy of third-party code is the [head-over-heels-asm/](head-over-heels-asm/) folder.
-  See "Using this material" below.
+  extracts. The third-party copies are the [head-over-heels-asm/](head-over-heels-asm/) and
+  [binaries/](binaries/) folders. See "Using this material" below.
 
 ## Read in this order
 
@@ -27,7 +27,7 @@ work, and the design questions a Next engine has to answer.
 | [06_KNIGHT_LORE_REFERENCE.md](06_KNIGHT_LORE_REFERENCE.md) | Knight Lore at code level: routines by subsystem with links, data tables, sprite drawer details and game systems |
 | [SOURCES.md](SOURCES.md) | All sources, with status and reliability |
 | [head-over-heels-asm/](head-over-heels-asm/) | Unmodified copies of the 19 Frankau `.asm` files downloaded for this research, in their `src/` layout |
-| `binaries/` | Game images to reverse engineer, git-ignored and local only; listed in [SOURCES.md](SOURCES.md#local-copies) |
+| [binaries/](binaries/) | Game images to reverse engineer; listed in [SOURCES.md](SOURCES.md#local-copies) |
 
 ## The short version
 
