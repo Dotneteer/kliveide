@@ -1,0 +1,598 @@
+---
+description: "How Wi-Fi works on the ZX Spectrum Next: the ESP8266 module as a second computer, the wires between it and the FPGA, boot pins and reset, the AT command language, joining a network, a TCP conversation, the +IPD framing, where TCP's guarantee ends, and how fast the link can go."
+---
+
+import { Callout } from 'nextra/components'
+
+# Wi-Fi: A Telegraph Clerk on a Serial Line
+
+WPA2 encryption, radio packets, TCP with its timers and retransmissions, DNS lookups: a modern network
+connection is a lot of software, and a Z80 running at 3.5 MHz has 64K to put it in. So how does a Next
+fetch a web page? The answer made me smile the first time I understood it: the Next doesn't. It hires
+somebody else to do it, and talks to him in plain text.
+
+Knowing how that arrangement works decides whether your network code is pleasant or haunted. Anything on
+the Next that touches the Internet, from a chat client to a file sync tool, goes through the one narrow
+door this chapter describes. The door has rules, it has a speed limit, and it has one nasty surprise about
+what "reliable" means.
+
+The previous chapter, [UARTs: Two Serial Ports Behind One
+Door](/en/under-the-hood/emulator-internals/next-uart/), explains the serial port itself: ports, baud rate,
+buffers and status bits. I lean on it throughout and will not repeat it.
+
+## The road ahead
+
+We begin with the Wi-Fi module, which turns out to be a whole computer, and with the handful of wires that
+tie it to the Next. Then we see how the module starts and how a program can reset it. After that comes the
+language the two sides speak: first the commands, then joining a network, then a real conversation with a
+server. Telling a server's data from the module's own chatter takes a small parser, which we write in Z80.
+The idea I most want you to take away is in the section on the promise that stops at the module, so read
+that one even if you skim the rest. We finish with how fast the link can go and with the differences
+between firmware versions.
+
+<Callout type="info">
+The Next's side is described for **core 3.02.01**, with a master clock of **28 MHz** and the serial line at
+**115,200 baud, 8 data bits, no parity, one stop bit**. The module is not part of the Next's own design: what
+it answers depends on the firmware loaded into it, and the exchanges shown here are those of Espressif's
+standard AT firmware.
+</Callout>
+
+## A computer for a peripheral
+
+The Wi-Fi hardware is an **ESP-01**, a small board that pushes onto a header behind the VGA port, with no
+soldering. On it are two things that matter: an **ESP8266** chip from Espressif and a flash memory holding
+its firmware. The chip contains the radio, for 802.11 b/g/n on the 2.4 GHz band, with WPA and WPA2.
+
+It also contains a processor, and here the story turns funny. The ESP8266's core is a 32-bit RISC running
+at 80 MHz, with 160 KB of RAM on the chip. Set that beside the 8-bit CPU it serves. I find it delightful
+that the humblest peripheral in the machine, the one you can buy for the price of a sandwich, has more raw
+processing power than the computer it is plugged into.
+
+I think of the module as **the telegraph clerk**. You walk up to his counter with a message written on a
+slip, he does whatever mysterious things are needed to send it across the world, and when an answer arrives
+he passes it through the hatch. You never touch the wires yourself, and you don't care how they work.
+
+That is the whole design. The Next contains no network logic at all: no MAC, no packet buffers, no checksum
+engine. All of it runs as firmware inside the clerk. The FPGA provides a serial port and a couple of control
+lines, and I admire how little that costs.
+
+## Five wires and a socket
+
+Here is everything that connects the Next to its clerk:
+
+<figure>
+{/* fig:wires */}
+<svg viewBox="-2 -2 704 308" role="img" aria-label="On the left the Next's FPGA, with five rows: the UART 0 transmitter, the UART 0 receiver, NextRegs $A8 and $A9 bit 0 for GPIO0, NextReg $A9 bit 2 for GPIO2, and NextReg $02 bit 7 for the reset line. In the middle wires run to the ESP-01 module's pins: transmitter to RX, TX back to the receiver, GPIO0 both ways, GPIO2 from the module only, and reset to RST, a line shared with the expansion bus. A dashed row shows the two flow control lines, present on issue 4 boards and later. On the right the module talks by radio to the Wi-Fi router." style={{ width: "100%", height: "auto" }}>
+  <defs>
+    <marker id="wf-w-0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
+    </marker>
+    <marker id="wf-w-1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#30a46c" />
+    </marker>
+    <marker id="wf-w-2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#e8912d" />
+    </marker>
+    <marker id="wf-w-3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#e5484d" />
+    </marker>
+    <marker id="wf-w-4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#a855f7" />
+    </marker>
+  </defs>
+  <rect x="0" y="8" width="250" height="296" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="125" y="161.3" textAnchor="middle" fill="currentColor" fontSize="15"></text>
+  <text x="125" y="28" textAnchor="middle" fill="currentColor" fontSize="15" fontWeight="bold">the Next's FPGA</text>
+  <rect x="410" y="8" width="120" height="296" rx="6" fill="#a855f7" fillOpacity="0.08" stroke="#a855f7" strokeWidth="2" />
+  <text x="470" y="161.3" textAnchor="middle" fill="#a855f7" fontSize="15"></text>
+  <text x="470" y="28" textAnchor="middle" fill="#a855f7" fontSize="15" fontWeight="bold">ESP-01</text>
+  <rect x="14" y="38" width="222" height="36" rx="4" fill="none" stroke="#30a46c" strokeWidth="1.6" />
+  <text x="125" y="61" textAnchor="middle" fill="#30a46c" fontSize="14">UART 0 transmitter</text>
+  <text x="470" y="61" textAnchor="middle" fill="#a855f7" fontSize="15" fontWeight="bold">RX</text>
+  <text x="330" y="51" textAnchor="middle" fill="#30a46c" fontSize="13.5">bytes out</text>
+  <line x1="236" y1="62" x2="408" y2="62" stroke="#30a46c" strokeWidth="1.8" markerEnd="url(#wf-w-1)" />
+  <rect x="14" y="84" width="222" height="36" rx="4" fill="none" stroke="#30a46c" strokeWidth="1.6" />
+  <text x="125" y="107" textAnchor="middle" fill="#30a46c" fontSize="14">UART 0 receiver</text>
+  <text x="470" y="107" textAnchor="middle" fill="#a855f7" fontSize="15" fontWeight="bold">TX</text>
+  <text x="330" y="97" textAnchor="middle" fill="#30a46c" fontSize="13.5">bytes in</text>
+  <line x1="410" y1="108" x2="238" y2="108" stroke="#30a46c" strokeWidth="1.8" markerEnd="url(#wf-w-1)" />
+  <rect x="14" y="130" width="222" height="36" rx="4" fill="none" stroke="#e8912d" strokeWidth="1.6" />
+  <text x="125" y="153" textAnchor="middle" fill="#e8912d" fontSize="14">$A8, $A9 bit 0</text>
+  <text x="470" y="153" textAnchor="middle" fill="#a855f7" fontSize="15" fontWeight="bold">GPIO0</text>
+  <text x="330" y="143" textAnchor="middle" fill="#e8912d" fontSize="13.5">boot choice</text>
+  <line x1="236" y1="154" x2="408" y2="154" stroke="#e8912d" strokeWidth="1.8" markerEnd="url(#wf-w-2)" />
+  <line x1="398" y1="154" x2="238" y2="154" stroke="#e8912d" strokeWidth="1.8" markerEnd="url(#wf-w-2)" />
+  <rect x="14" y="176" width="222" height="36" rx="4" fill="none" stroke="#e8912d" strokeWidth="1.6" />
+  <text x="125" y="199" textAnchor="middle" fill="#e8912d" fontSize="14">$A9 bit 2</text>
+  <text x="470" y="199" textAnchor="middle" fill="#a855f7" fontSize="15" fontWeight="bold">GPIO2</text>
+  <text x="330" y="189" textAnchor="middle" fill="#e8912d" fontSize="13.5">read only</text>
+  <line x1="410" y1="200" x2="238" y2="200" stroke="#e8912d" strokeWidth="1.8" markerEnd="url(#wf-w-2)" />
+  <rect x="14" y="222" width="222" height="36" rx="4" fill="none" stroke="#e5484d" strokeWidth="1.6" />
+  <text x="125" y="245" textAnchor="middle" fill="#e5484d" fontSize="14">$02 bit 7</text>
+  <text x="470" y="245" textAnchor="middle" fill="#a855f7" fontSize="15" fontWeight="bold">RST</text>
+  <text x="330" y="235" textAnchor="middle" fill="#e5484d" fontSize="13.5">reset</text>
+  <line x1="236" y1="246" x2="408" y2="246" stroke="#e5484d" strokeWidth="1.8" markerEnd="url(#wf-w-3)" />
+  <rect x="14" y="268" width="222" height="30" rx="4" fill="none" stroke="#30a46c" strokeWidth="1.4" strokeDasharray="5 4" />
+  <text x="125" y="288" textAnchor="middle" fill="#30a46c" fontSize="14">UART 0 flow control</text>
+  <text x="330" y="280" textAnchor="middle" fill="#30a46c" fontSize="13.5">issue 4 and later</text>
+  <line x1="236" y1="290" x2="410" y2="290" stroke="#30a46c" strokeWidth="1.8" strokeDasharray="5 4" />
+  <rect x="606" y="96" width="94" height="88" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="653" y="127.9" textAnchor="middle" fill="currentColor" fontSize="14">router</text>
+  <text x="653" y="144.9" textAnchor="middle" fill="currentColor" fontSize="14">and the</text>
+  <text x="653" y="161.9" textAnchor="middle" fill="currentColor" fontSize="14">Internet</text>
+  <text x="568" y="130" textAnchor="middle" fill="#a855f7" fontSize="13.5" fontWeight="bold">Wi-Fi</text>
+  <line x1="530" y1="140" x2="604" y2="140" stroke="#a855f7" strokeWidth="1.8" markerEnd="url(#wf-w-4)" />
+  <line x1="592" y1="140" x2="532" y2="140" stroke="#a855f7" strokeWidth="1.8" markerEnd="url(#wf-w-4)" />
+</svg>
+{/* /fig:wires */}
+<figcaption>All the wires between the FPGA and the module. Only two carry data; the others choose how the module boots and reset it. The flow control lines exist on issue 4 boards and later.</figcaption>
+</figure>
+
+- **The serial pair.** The transmitter of **UART 0** drives the module's RX pin, and the module's TX pin
+  drives the receiver of UART 0. Every byte of the conversation goes over these two wires.
+- **GPIO0.** A pin the module looks at when it starts, and the one wire the Next can both drive and read.
+  The **ESP Wifi GPIO Output Enable register, NextReg `$A8`**, bit 0 lets the Next drive it, and the **ESP
+  Wifi GPIO register, NextReg `$A9`**, bit 0 is the level to drive. Reading `$A9` gives the pin's real level.
+- **GPIO2.** Another start-up pin, which the Next only reads, in bit 2 of NextReg `$A9`. The FPGA never drives
+  it, and bit 2 of NextReg `$A8` is fixed at 0.
+- **Reset.** Bit 7 of the **Reset register, NextReg `$02`** holds the module in reset for as long as it is set.
+
+A soft reset releases GPIO0 by clearing NextReg `$A8` and sets the level in `$A9` back to 1. The FPGA also
+holds weak pull-ups on both GPIO pins and on the receive line, so anything left undriven sits high, which is
+the level the module wants to see for a normal start.
+
+Two details are worth remembering. **The reset line is shared with the expansion bus**, so bit 7 of NextReg
+`$02` also resets whatever is plugged in there; I would not touch it in a program that might run with a
+peripheral attached. And if the **Joystick I/O Mode register, NextReg `$0B`**, moves UART 0 to a joystick port (the [UART
+chapter](/en/under-the-hood/emulator-internals/next-uart/#the-joystick-port) has the details), the clerk's
+receive pin rests high and he hears nothing more until UART 0 comes back.
+
+The dashed row in the figure is hardware flow control, the two signals that let a receiver say "wait". On
+issue 2 boards those lines do not exist at all: the Next's transmitter always believes it may send, and its
+request to pause goes nowhere. On issue 4 boards and later the FPGA has both lines for the module, but the
+eight pins of a standard ESP-01 include neither of them. My advice is to write your code as if nothing
+will ever pause the clerk, and we will soon see why that matters.
+
+## Waking the clerk
+
+When the ESP8266 comes out of reset, its boot ROM looks at three pins to decide what to do. Two are the ones
+the Next can see, and the third is held low on the module:
+
+- **GPIO0 high and GPIO2 high**: start the firmware in flash. This is the normal case, and the pull-ups make
+  it the default.
+- **GPIO0 low and GPIO2 high**: wait for a new firmware on the serial line. This is **download mode**, and it
+  is how a firmware update tool running on the Next rewrites the clerk's flash without taking him out of the
+  machine.
+
+Here is the whole recipe for putting the module into download mode, using the Z80N's `nextreg` instruction:
+
+```z80klive
+        nextreg $a9,%00000000  ; GPIO0 will be low
+        nextreg $a8,%00000001  ; the Next drives it
+        nextreg $02,%10000000  ; hold the module in reset
+        ; ...wait a moment...
+        nextreg $02,%00000000  ; release: GPIO0 is sampled now
+        ; ...talk to the boot ROM over UART 0...
+        nextreg $a8,%00000000  ; let GPIO0 float high again
+```
+
+For an ordinary restart, leave the first two lines out. Write exactly `$80` and then `$00` to NextReg `$02`:
+bits 0 and 1 of that register cause a soft and a hard reset of the Next itself, and you do not want one of
+those by accident. Bit 7 alone only reaches the module and the expansion bus.
+
+A hard reset of the Next restarts the module too. A soft reset does so only when the expansion bus is enabled;
+otherwise the clerk stays at his desk, with his network connection intact, while the Next reboots around him.
+A program can therefore find him in the middle of a conversation that some earlier program started, and I
+recommend assuming exactly that when you begin.
+
+Now a small trap. In its first moments the boot ROM prints a diagnostic message on the serial line, and on the
+usual module it does so at **74,880 baud**, a rate that falls out of its 26 MHz crystal. The Next is listening
+at 115,200, so what lands in the receive buffer is a burst of nonsense. Some of those frames fail their stop bit
+and are thrown away; the rest arrive as random bytes. After any module reset, wait, then clear UART 0 with the
+`$98`, `$18` pair on the frame register, and only then start talking.
+
+## Talking in AT
+
+The clerk's language is older than the Spectrum. In 1981 Hayes sold a modem you controlled by sending it text
+commands beginning with the letters **AT**, for "attention", and the format stuck for decades. Espressif's AT
+firmware offers the same bargain: lines of text in, lines of text out.
+
+A command is ASCII text ending in carriage return and line feed, written to UART 0 with a loop like the `Send`
+routine in the UART chapter. The simplest possible exchange checks that anybody is home:
+
+```text
+AT
+OK
+```
+
+If you see `OK`, the clerk is awake and both ends agree on the baud rate. If you see garbage or nothing, they
+probably don't. The Next powers up at 115,200, which is the speed most modules use, but some leave the factory at
+57,600 or 19,200. The Next's `.UART` terminal has a `-f` option that hunts for the right rate. Once found, the
+command `AT+UART_DEF=115200,8,1,0,0` (plain `AT+UART=` on older firmware) stores the speed in the module's
+flash, so you only do this once.
+
+By default the module also **echoes** everything you send, which a human at a terminal likes and a program does
+not. `ATE0` switches echo off, and it is the first command I would send.
+
+## Joining a network
+
+Getting on to Wi-Fi takes three commands, and you normally type them only once:
+
+```text
+AT+CWMODE=1
+OK
+AT+CWJAP="MyNetwork","MyPassword"
+WIFI CONNECTED
+WIFI GOT IP
+
+OK
+AT+CIFSR
++CIFSR:STAIP,"192.168.1.42"
++CIFSR:STAMAC,"5c:cf:7f:12:34:56"
+
+OK
+```
+
+`AT+CWMODE=1` makes the module a **station**, a client of an access point, rather than an access point of its
+own. `AT+CWJAP` joins the network and is slow, because this is where the radio, the password handshake and the
+address request all happen. `AT+CIFSR` shows the address the router gave it.
+
+What I like best is that the clerk **remembers**. The network name and password stay in his flash, and when he
+restarts he rejoins without being asked, telling you `WIFI CONNECTED` and `WIFI GOT IP` as he does. So the
+Next's `WIFI.BAS` set-up program needs to run once, and every later program simply finds the network already
+there. The same fact has a darker side: your Wi-Fi password lives on that little board, so wipe it with
+`AT+CWQAP` before you sell the module on.
+
+## A conversation with a server
+
+Let's fetch a page from a small web server on the local network, at address 192.168.1.20 and port 8080. It is the
+kind of thing every network program on the Next does, and three parties take part:
+
+<figure>
+{/* fig:conversation */}
+<svg viewBox="-2 -2 704 434" role="img" aria-label="A sequence chart with three vertical lines: your program on the Z80, the Wi-Fi module, and the server. Your program asks the module to open a connection, and the module opens it and answers CONNECT and OK. Your program sends AT+CIPSEND=38, gets the prompt, and sends the 38 bytes, which the module sends to the server in a TCP packet and answers SEND OK. The server's reply arrives in a TCP packet and the module passes it on as +IPD,31: followed by the 31 bytes. The server closes the connection and the module reports CLOSED." style={{ width: "100%", height: "auto" }}>
+  <defs>
+    <marker id="wf-s-0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#30a46c" />
+    </marker>
+    <marker id="wf-s-1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#a855f7" />
+    </marker>
+  </defs>
+  <text x="80" y="18" textAnchor="middle" fill="currentColor" fontSize="15" fontWeight="bold">your program</text>
+  <line x1="80" y1="30" x2="80" y2="428" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.55" />
+  <text x="350" y="18" textAnchor="middle" fill="#a855f7" fontSize="15" fontWeight="bold">the module</text>
+  <line x1="350" y1="30" x2="350" y2="428" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.55" />
+  <text x="620" y="18" textAnchor="middle" fill="currentColor" fontSize="15" fontWeight="bold">the server</text>
+  <line x1="620" y1="30" x2="620" y2="428" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.55" />
+  <line x1="82" y1="62" x2="348" y2="62" stroke="#30a46c" strokeWidth="1.8" markerEnd="url(#wf-s-0)" />
+  <text x="215" y="55" textAnchor="middle" fill="#30a46c" fontSize="13.5">AT+CIPSTART=&quot;TCP&quot;,...</text>
+  <line x1="352" y1="94" x2="618" y2="94" stroke="#a855f7" strokeWidth="1.8" markerEnd="url(#wf-s-1)" />
+  <text x="485" y="87" textAnchor="middle" fill="#a855f7" fontSize="13.5">opens a TCP connection</text>
+  <line x1="348" y1="126" x2="82" y2="126" stroke="#30a46c" strokeWidth="1.8" markerEnd="url(#wf-s-0)" />
+  <text x="215" y="119" textAnchor="middle" fill="#30a46c" fontSize="13.5">CONNECT, OK</text>
+  <line x1="82" y1="158" x2="348" y2="158" stroke="#30a46c" strokeWidth="1.8" markerEnd="url(#wf-s-0)" />
+  <text x="215" y="151" textAnchor="middle" fill="#30a46c" fontSize="13.5">AT+CIPSEND=38</text>
+  <line x1="348" y1="190" x2="82" y2="190" stroke="#30a46c" strokeWidth="1.8" markerEnd="url(#wf-s-0)" />
+  <text x="215" y="183" textAnchor="middle" fill="#30a46c" fontSize="13.5">OK, then the &gt; prompt</text>
+  <line x1="82" y1="222" x2="348" y2="222" stroke="#30a46c" strokeWidth="1.8" markerEnd="url(#wf-s-0)" />
+  <text x="215" y="215" textAnchor="middle" fill="#30a46c" fontSize="13.5">the 38 bytes of the request</text>
+  <line x1="352" y1="254" x2="618" y2="254" stroke="#a855f7" strokeWidth="1.8" markerEnd="url(#wf-s-1)" />
+  <text x="485" y="247" textAnchor="middle" fill="#a855f7" fontSize="13.5">the request, in a TCP packet</text>
+  <line x1="348" y1="286" x2="82" y2="286" stroke="#30a46c" strokeWidth="1.8" markerEnd="url(#wf-s-0)" />
+  <text x="215" y="279" textAnchor="middle" fill="#30a46c" fontSize="13.5">SEND OK</text>
+  <line x1="618" y1="318" x2="352" y2="318" stroke="#a855f7" strokeWidth="1.8" markerEnd="url(#wf-s-1)" />
+  <text x="485" y="311" textAnchor="middle" fill="#a855f7" fontSize="13.5">the reply, in a TCP packet</text>
+  <line x1="348" y1="350" x2="82" y2="350" stroke="#30a46c" strokeWidth="1.8" markerEnd="url(#wf-s-0)" />
+  <text x="215" y="343" textAnchor="middle" fill="#30a46c" fontSize="13.5">+IPD,31: and the 31 bytes</text>
+  <line x1="618" y1="382" x2="352" y2="382" stroke="#a855f7" strokeWidth="1.8" markerEnd="url(#wf-s-1)" />
+  <text x="485" y="375" textAnchor="middle" fill="#a855f7" fontSize="13.5">closes the connection</text>
+  <line x1="348" y1="414" x2="82" y2="414" stroke="#30a46c" strokeWidth="1.8" markerEnd="url(#wf-s-0)" />
+  <text x="215" y="407" textAnchor="middle" fill="#30a46c" fontSize="13.5">CLOSED</text>
+</svg>
+{/* /fig:conversation */}
+<figcaption>Fetching a page. Green is text on the serial line between your program and the module; purple is what the module does on your behalf over the network. Your program never sees a TCP packet.</figcaption>
+</figure>
+
+Here is the serial traffic of that picture, in order. Lines beginning with `>>` are what your program sends and
+the others are the module's answers:
+
+```text
+>> AT+CIPSTART="TCP","192.168.1.20",8080
+CONNECT
+
+OK
+>> AT+CIPSEND=38
+OK
+>
+>> GET / HTTP/1.0<CR><LF>Host: 192.168.1.20<CR><LF><CR><LF>
+SEND OK
+
++IPD,31:HTTP/1.0 200 OK<CR><LF><CR><LF>Hello, Next!
+CLOSED
+```
+
+Walk through it with me:
+
+1. `AT+CIPSTART` asks the clerk to open a connection, and he handles the whole TCP handshake himself. `TCP` could
+   have been `UDP` or `SSL`, and a host name works as well as an address, because the module does the DNS lookup too.
+2. `AT+CIPSEND=38` announces exactly how many bytes are coming. The module answers `OK` and then a `>` prompt.
+   Wait for the prompt: bytes sent before it are not part of the message.
+3. Now the 38 bytes go out, with no line ending added; the count is the only thing that says where the message
+   stops. Send too many and the module answers `busy` to the excess; send too few and it keeps waiting, taking
+   your next command as part of the data.
+4. `SEND OK` says the bytes have left the module. It does not say the server has read them.
+5. The reply arrives unasked. It starts with `+IPD,31:`, the module's way of saying "here come 31 bytes from
+   the network".
+6. When the server closes the connection, the module reports `CLOSED`, right after the last byte of data.
+
+Notice the shape of this. The line runs both ways at once, so replies and network data can arrive at any moment,
+including while you are in the middle of sending something else. One `AT+CIPSEND` carries at most 2,048
+bytes, so longer messages go out in several rounds.
+
+## Telling data from chatter
+
+The module uses one serial line for two kinds of thing: its own remarks, such as `OK` or `CLOSED`, and raw data
+from the network, which can contain absolutely anything. It keeps them apart with a tiny piece of framing:
+
+<figure>
+{/* fig:stream */}
+<svg viewBox="-2 -2 704 122" role="img" aria-label="A row of eighteen cells, one per byte, as they arrive on the serial line: O, K, CR, LF are the module's chatter; +, I, P, D and the comma are the tag; 5 is the length in decimal; a colon ends it; H, e, l, l, o are five bytes of data, which are counted, not searched; CR and LF that follow are chatter again." style={{ width: "100%", height: "auto" }}>
+  <rect x="0" y="8" width="38.9" height="44" fill="none" stroke="currentColor" strokeWidth="1.4" />
+  <text x="19.4" y="37" textAnchor="middle" fill="currentColor" fontSize="15" fontWeight="bold">O</text>
+  <rect x="38.9" y="8" width="38.9" height="44" fill="none" stroke="currentColor" strokeWidth="1.4" />
+  <text x="58.3" y="37" textAnchor="middle" fill="currentColor" fontSize="15" fontWeight="bold">K</text>
+  <rect x="77.8" y="8" width="38.9" height="44" fill="none" stroke="currentColor" strokeWidth="1.4" />
+  <text x="97.2" y="37" textAnchor="middle" fill="currentColor" fontSize="13.5" fontWeight="bold">CR</text>
+  <rect x="116.7" y="8" width="38.9" height="44" fill="none" stroke="currentColor" strokeWidth="1.4" />
+  <text x="136.1" y="37" textAnchor="middle" fill="currentColor" fontSize="13.5" fontWeight="bold">LF</text>
+  <rect x="155.6" y="8" width="38.9" height="44" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="175" y="37" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">+</text>
+  <rect x="194.4" y="8" width="38.9" height="44" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="213.9" y="37" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">I</text>
+  <rect x="233.3" y="8" width="38.9" height="44" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="252.8" y="37" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">P</text>
+  <rect x="272.2" y="8" width="38.9" height="44" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="291.7" y="37" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">D</text>
+  <rect x="311.1" y="8" width="38.9" height="44" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="330.6" y="37" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">,</text>
+  <rect x="350" y="8" width="38.9" height="44" fill="#3b82f6" fillOpacity="0.14" stroke="#3b82f6" strokeWidth="1.4" />
+  <text x="369.4" y="37" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">5</text>
+  <rect x="388.9" y="8" width="38.9" height="44" fill="#3b82f6" fillOpacity="0.14" stroke="#3b82f6" strokeWidth="1.4" />
+  <text x="408.3" y="37" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">:</text>
+  <rect x="427.8" y="8" width="38.9" height="44" fill="#30a46c" fillOpacity="0.14" stroke="#30a46c" strokeWidth="1.4" />
+  <text x="447.2" y="37" textAnchor="middle" fill="#30a46c" fontSize="15" fontWeight="bold">H</text>
+  <rect x="466.7" y="8" width="38.9" height="44" fill="#30a46c" fillOpacity="0.14" stroke="#30a46c" strokeWidth="1.4" />
+  <text x="486.1" y="37" textAnchor="middle" fill="#30a46c" fontSize="15" fontWeight="bold">e</text>
+  <rect x="505.6" y="8" width="38.9" height="44" fill="#30a46c" fillOpacity="0.14" stroke="#30a46c" strokeWidth="1.4" />
+  <text x="525" y="37" textAnchor="middle" fill="#30a46c" fontSize="15" fontWeight="bold">l</text>
+  <rect x="544.4" y="8" width="38.9" height="44" fill="#30a46c" fillOpacity="0.14" stroke="#30a46c" strokeWidth="1.4" />
+  <text x="563.9" y="37" textAnchor="middle" fill="#30a46c" fontSize="15" fontWeight="bold">l</text>
+  <rect x="583.3" y="8" width="38.9" height="44" fill="#30a46c" fillOpacity="0.14" stroke="#30a46c" strokeWidth="1.4" />
+  <text x="602.8" y="37" textAnchor="middle" fill="#30a46c" fontSize="15" fontWeight="bold">o</text>
+  <rect x="622.2" y="8" width="38.9" height="44" fill="none" stroke="currentColor" strokeWidth="1.4" />
+  <text x="641.7" y="37" textAnchor="middle" fill="currentColor" fontSize="13.5" fontWeight="bold">CR</text>
+  <rect x="661.1" y="8" width="38.9" height="44" fill="none" stroke="currentColor" strokeWidth="1.4" />
+  <text x="680.6" y="37" textAnchor="middle" fill="currentColor" fontSize="13.5" fontWeight="bold">LF</text>
+  <path d="M3,58 L3,66 L152.55555555555554,66 L152.55555555555554,58" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+  <text x="77.8" y="84" textAnchor="middle" fill="currentColor" fontSize="13.5">chatter</text>
+  <path d="M158.55555555555554,58 L158.55555555555554,66 L347,66 L347,58" fill="none" stroke="#e8912d" strokeWidth="1.6" strokeLinejoin="round" />
+  <text x="252.8" y="84" textAnchor="middle" fill="#e8912d" fontSize="13.5">the tag</text>
+  <path d="M353,58 L353,66 L424.7777777777777,66 L424.7777777777777,58" fill="none" stroke="#3b82f6" strokeWidth="1.6" strokeLinejoin="round" />
+  <text x="388.9" y="84" textAnchor="middle" fill="#3b82f6" fontSize="13.5">length</text>
+  <text x="388.9" y="101" textAnchor="middle" fill="#3b82f6" fontSize="13.5">and colon</text>
+  <path d="M430.7777777777777,58 L430.7777777777777,66 L619.2222222222222,66 L619.2222222222222,58" fill="none" stroke="#30a46c" strokeWidth="1.6" strokeLinejoin="round" />
+  <text x="525" y="84" textAnchor="middle" fill="#30a46c" fontSize="13.5">data: counted,</text>
+  <text x="525" y="101" textAnchor="middle" fill="#30a46c" fontSize="13.5">never searched</text>
+  <path d="M625.2222222222222,58 L625.2222222222222,66 L697,66 L697,58" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+  <text x="661.1" y="84" textAnchor="middle" fill="currentColor" fontSize="13.5">chatter</text>
+</svg>
+{/* /fig:stream */}
+<figcaption>What arrives on the serial line, one cell per byte. A reader searches for the tag, reads the length in decimal up to the colon, and then counts that many bytes without looking at what they are.</figcaption>
+</figure>
+
+The rule that makes it work is that **the data is counted, never searched**. A web page that happens to contain
+the text `+IPD,` or `CLOSED` is fine, because once the length is known, the next that many bytes are data regardless
+of what they say.
+
+So a reader needs just three steps: look for the tag, read a number, copy that many bytes. Here it is in Z80N:
+
+```z80klive
+; read one +IPD packet from UART 0 to (DE); HL = its length
+GetPacket:
+        ld hl,Tag
+Match:  call GetByte
+        cp (hl)
+        jr z,Hit
+        ld hl,Tag              ; no: start over, but this byte
+        cp (hl)                ; may be a new "+"
+        jr nz,Match
+Hit:    inc hl
+        ld a,(hl)
+        or a
+        jr nz,Match            ; more of the tag to find
+        ld hl,0                ; now the length, in decimal
+Digit:  call GetByte
+        cp ':'
+        jr z,Body
+        sub '0'
+        add hl,hl              ; HL * 2
+        ld b,h
+        ld c,l
+        add hl,hl              ; * 4
+        add hl,hl              ; * 8
+        add hl,bc              ; * 10
+        add hl,a               ; Z80N: plus the digit
+        jr Digit
+Body:   push hl                ; keep the length
+Copy:   ld a,h
+        or l
+        jr z,Done
+        call GetByte
+        ld (de),a
+        inc de
+        dec hl
+        jr Copy
+Done:   pop hl
+        ret
+
+GetByte:
+        ld bc,$133b
+Wait:   in a,(c)               ; status
+        rra
+        jr nc,Wait             ; nothing yet
+        inc b                  ; $143B: RX
+        in a,(c)               ; the oldest byte
+        ret
+
+Tag:    .defb "+IPD,",0
+```
+
+How it works:
+
+- **`GetByte`** waits for status bit 0, then reads the receive port. It moves `B` from `$13` to `$14` rather than
+  loading a whole new port number.
+- **The matching loop** walks `HL` along the tag. On a mismatch it goes back to the start of the tag, but it first
+  checks whether the byte that failed is itself a `+`. Without that check, the text `++IPD,5:` would slip past.
+- **The digits** build the length with the usual multiply-by-ten, in which `A` survives because `add hl` leaves it
+  alone. `add hl,a` is a Z80N instruction; on a plain Z80 you would load `BC` and add that.
+- **The copy** counts `HL` down, with no interest at all in what the bytes are.
+
+This is the honest minimum, and I would not ship it as it stands: `GetByte` waits forever, so a connection that dies
+in mid-packet hangs the program. A real reader counts down a timeout in `Wait` and gives up.
+
+## The promise that stops at the module
+
+Here is the part I promised. TCP is the reliable protocol: every byte is numbered and acknowledged, and a lost
+packet is sent again. It is natural to assume that if your connection is TCP, your program receives every byte.
+
+It doesn't, and the reason is where TCP ends:
+
+<figure>
+{/* fig:guarantee */}
+<svg viewBox="-2 -2 704 182" role="img" aria-label="Left to right: the server, an arrow labelled Wi-Fi and TCP, a lost packet is sent again, the module, an arrow labelled serial line, a lost byte is gone, and the Next's 512-byte receive buffer. A red dashed line below the module marks where TCP's guarantee ends. Below, a green bar under the left half reads TCP checks and resends, and a red bar under the right half reads nothing checks." style={{ width: "100%", height: "auto" }}>
+  <defs>
+    <marker id="wf-g-0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#a855f7" />
+    </marker>
+    <marker id="wf-g-1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#e5484d" />
+    </marker>
+  </defs>
+  <rect x="0" y="22" width="110" height="74" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="55" y="55.4" textAnchor="middle" fill="currentColor" fontSize="14">the</text>
+  <text x="55" y="72.4" textAnchor="middle" fill="currentColor" fontSize="14">server</text>
+  <rect x="295" y="22" width="110" height="74" rx="6" fill="#a855f7" fillOpacity="0.12" stroke="#a855f7" strokeWidth="2" />
+  <text x="350" y="55.4" textAnchor="middle" fill="#a855f7" fontSize="14">the</text>
+  <text x="350" y="72.4" textAnchor="middle" fill="#a855f7" fontSize="14">module</text>
+  <rect x="590" y="22" width="110" height="74" rx="6" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="2" />
+  <text x="645" y="55.4" textAnchor="middle" fill="#30a46c" fontSize="14">receive</text>
+  <text x="645" y="72.4" textAnchor="middle" fill="#30a46c" fontSize="14">buffer, 512</text>
+  <line x1="110" y1="59" x2="293" y2="59" stroke="#a855f7" strokeWidth="2" markerEnd="url(#wf-g-0)" />
+  <line x1="405" y1="59" x2="588" y2="59" stroke="#e5484d" strokeWidth="2" markerEnd="url(#wf-g-1)" />
+  <text x="202" y="49" textAnchor="middle" fill="#a855f7" fontSize="13.5" fontWeight="bold">Wi-Fi and TCP</text>
+  <text x="202" y="80" textAnchor="middle" fill="#a855f7" fontSize="13.5">a lost packet is sent again</text>
+  <text x="497" y="49" textAnchor="middle" fill="#e5484d" fontSize="13.5" fontWeight="bold">the serial line</text>
+  <text x="497" y="80" textAnchor="middle" fill="#e5484d" fontSize="13.5">a lost byte is gone</text>
+  <line x1="350" y1="96" x2="350" y2="178" stroke="#e5484d" strokeWidth="2" strokeDasharray="6 4" />
+  <rect x="0" y="122" width="340" height="34" rx="4" fill="#a855f7" fillOpacity="0.12" stroke="#a855f7" strokeWidth="1.5" />
+  <text x="170" y="144" textAnchor="middle" fill="#a855f7" fontSize="14">TCP checks and resends</text>
+  <rect x="360" y="122" width="340" height="34" rx="4" fill="#e5484d" fillOpacity="0.1" stroke="#e5484d" strokeWidth="1.5" />
+  <text x="530" y="144" textAnchor="middle" fill="#e5484d" fontSize="14">nothing checks</text>
+</svg>
+{/* /fig:guarantee */}
+<figcaption>TCP's promise covers the journey from the server to the module. The last stretch, from the module to the Next's receive buffer, is a plain serial line, and nothing there notices a lost byte.</figcaption>
+</figure>
+
+The clerk acknowledges a packet to the server the moment **he** has it. From the server's point of view the data
+has been delivered, and it will never be sent again. Then the clerk pushes those bytes down the serial line at full
+speed, and in the usual arrangement he neither knows nor cares whether anybody is reading.
+
+Now do the arithmetic. A TCP packet carries up to 1,460 bytes, which takes 127 ms to cross at 115,200 baud, and the
+Next's receive buffer holds 512, filled in 44 ms. If your program goes away for longer than that while a packet is
+arriving, perhaps to write a sector to the SD card, the buffer overflows and bytes are lost. TCP will not save you,
+because as far as TCP is concerned, everything went perfectly.
+
+Which leaves you three defences, and I would use them in this order:
+
+- **Never stop reading during a packet.** Read into memory, and do the slow work between packets. Status bit 2, the
+  overflow flag, tells you it went wrong, which at least lets you say so.
+- **Add your own check.** If the data matters, put a checksum or CRC in the protocol above TCP and ask again when it
+  fails. That sounds redundant until you remember where TCP stops. NextSync, the popular file transfer tool for the
+  Next, puts checksums on every packet for exactly this reason.
+- **Ask for the data yourself.** Newer firmware has a **passive receive mode**, `AT+CIPRECVMODE=1`. In this mode the
+  module holds what arrives, tells you how much is waiting, and hands over a portion only when you request it with
+  `AT+CIPRECVDATA`. This turns the clerk from someone who shoves papers through the hatch into someone who waits
+  to be asked, and as his own buffer fills, TCP's flow control quietly slows the server down. It is the only true
+  end-to-end flow control available here, and I wish every module had it. Check with `AT+GMR` what yours can do.
+
+## How fast it can go
+
+At 115,200 baud a byte takes 86.8 µs and the line carries 11,520 bytes a second, which the framing barely dents: on
+a full packet the `+IPD,1460:` header is under one per cent. That means about a tenth of a megabyte in ten seconds,
+so a 200K file takes about 18 seconds at best.
+
+You can go faster, in three moves that must happen in this order:
+
+1. Tell the module the new speed with `AT+UART_CUR=921600,8,1,0,0`. `CUR` means it lasts until the next restart, and
+   I much prefer it to `AT+UART_DEF` for this, because a machine stuck at an unusual saved speed is a pain to recover.
+2. Wait for his `OK`, which still comes at the old speed.
+3. Program the Next's prescaler for the new rate, here 30, which gives 933,333 baud (see the UART chapter's section on
+   the baud rate). Do this promptly, or you'll miss the start of whatever he sends next.
+
+The next limit is your code. Add up the instructions in the reader above and each data byte costs 122 T-states
+when the buffer is not empty, before counting any wait states the machine inserts. So the reader manages about 28,700
+bytes a second at 3.5 MHz, and 229,500 at 28 MHz. Compare that with what the line delivers:
+
+- At **115,200 baud**, 11,523 bytes a second: comfortable at any CPU speed.
+- At **921,600 baud** (really 933,333), 93,333 bytes a second, one every 10.7 µs: the reader needs a 14 MHz CPU.
+- At **2,000,000 baud**, 200,000 bytes a second, one every 5 µs: it needs 28 MHz and nothing else happening, and the
+  receive buffer fills in just 2.6 ms.
+
+In practice the radio, the module and the protocol all take their cut. NextSync reports a best of about 48 KB/s for a
+single large file, more than four times what 115,200 baud could carry, and that is a fair picture of what this link
+can do when everything goes well. I think that is rather good for a machine whose ancestors loaded from cassette at
+under 200 bytes a second.
+
+## Firmware is the fine print
+
+Everything above the serial line belongs to the firmware, and not all modules run the same one. AT firmware versions
+0.30, 1.3, 1.5.4, 2.2.1 and 3.0.3 have all been found on modules; in a sample of about fifty bought from ordinary
+shops, 1.x was the commonest. Espressif's documents for those versions differ in the details:
+
+- Older firmware answers `AT+CIPSTART` with `OK` and `Linked` rather than `CONNECT` and `OK`.
+- Sending a command while the module is busy can bring back `busy`, and the wording differs between versions.
+- Passive receive does not exist in the older versions, and the speed command has changed its name over time:
+  `AT+UART` on some firmware, `AT+UART_CUR` and `AT+UART_DEF` on others.
+- `AT+CIPMUX=1` allows several connections at once, and it changes the tag to `+IPD,<id>,<length>:`.
+
+My rule of thumb: match on the shortest thing that is stable, such as `OK`, `ERROR` and `+IPD,`, and treat every other
+line as decoration. `AT+GMR` tells you what you are talking to.
+
+When a clerk misbehaves, he also tells you why. After an unexpected restart the module prints `rst cause:` and a number:
+0 for a normal power-on, 1 for the hardware watchdog after the firmware has hung, 2 for an uncaught exception, 3 for
+the software watchdog, 4 for a software restart and 5 for waking from deep sleep. If you see this repeatedly, the module
+is crashing, and the fault is rarely in your Z80 code.
+
+The Next's distribution ships several layers built on all this, so you often need not write any of it. `UART.DRV` is
+an interrupt-driven driver with a 16K buffer, which solves the overflow problem for programs that use it. The ESPAT
+driver serves BASIC programs, and the `.http` dot command fetches a file. `.UART` and `TERMINAL.BAS`
+are for typing AT commands by hand, which remains the best way I know to learn how your own module behaves.
+
+## What to take home
+
+The Next has no network hardware of its own. A small ESP-01 board behind the VGA port, with an ESP8266 chip inside, runs
+the radio, WPA2, TCP and DNS in its own firmware, on a 32-bit processor faster than the machine it serves. The FPGA gives
+it UART 0 and a few control lines: GPIO0 through NextRegs `$A8` and `$A9`, GPIO2 for reading, and reset through bit 7
+of NextReg `$02`, which it shares with the expansion bus. GPIO0 low at reset selects download mode; the pull-ups give the
+normal start, and the boot ROM's message at 74,880 baud leaves junk in the buffer to clear away.
+
+Your program talks to the clerk in AT commands, lines of text ending in CR LF. `AT+CWJAP` joins a network once and for
+all. `AT+CIPSTART` opens a connection, `AT+CIPSEND=n` sends exactly n bytes after the `>` prompt, and data comes back
+as `+IPD,n:` followed by n bytes that are counted and never searched.
+
+The lesson I would keep is that TCP's promise ends at the module. A 1,460-byte packet fills the 512-byte buffer in 44 ms
+at 115,200 baud whether or not you are reading, and a byte lost there is lost for good, so keep reading during a packet,
+add a checksum if the data matters, or use passive receive if your firmware has it. With `AT+UART_CUR` and a new
+prescaler the link can go far faster than its default of 11,520 bytes a second, as long as your reader keeps up. Treat the
+clerk politely, count what you hand him, and he will bring you the whole world through a two-wire hatch.

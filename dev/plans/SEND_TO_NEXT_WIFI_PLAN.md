@@ -27,8 +27,9 @@ Not in scope:
 - Debugging, breakpoints, reading memory or registers from the real machine (G6.4).
 - Serial or USB transports.
 - Syncing whole folders (NextSync already does that, §2.3), or reading files back from the Next.
-- Emulating the ESP inside Klive's own Next emulator for users ("Wi-Fi in the emulator"). The fake ESP
-  this plan builds for its tests (§6) is a natural start for that, but it is a separate follow-up.
+- Emulating the ESP inside Klive's own Next emulator for users ("Wi-Fi in the emulator"). That is
+  [NEXT_WIFI_EMULATION_PLAN.md](NEXT_WIFI_EMULATION_PLAN.md), whose `EspAtModule` replaces the fake ESP
+  this plan builds for its tests (§6): whichever plan starts first builds it, once.
 - Internet access, a cloud relay, or connecting to a Next that is on a different network.
 
 ---
