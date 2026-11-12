@@ -1,6 +1,6 @@
 import packageJson from "../../../package.json";
 
-import { NEXT_PROFILE_IDS } from "@emu/machines/zxNext/nextProfiles";
+import { NEXT_PROFILE_IDS, profileOfStateCoreId } from "@emu/machines/zxNext/nextProfiles";
 import { describe, expect, it } from "vitest";
 
 import { MI_ZXNEXT } from "@common/machines/constants";
@@ -123,6 +123,16 @@ describe("ZX Spectrum Next: the retired \"compatibility\" model id", () => {
       entry.factory = originalFactory;
     }
     expect(created[0]).toEqual(["ks2-30201", saved]);
+  });
+});
+
+describe("ZX Spectrum Next: the 3.03 models' first ids", () => {
+  it("a project saved with ks2-30300 or ks3-30300 opens on the 3.03.03 model, and so does its state", () => {
+    // --- The models were on master as 3.03.00 for an hour before the core was found to be 3.03.03
+    expect(resolveModelId(MI_ZXNEXT, "ks2-30300")).toBe("ks2-30303");
+    expect(resolveModelId(MI_ZXNEXT, "ks3-30300")).toBe("ks3-30303");
+    expect(profileOfStateCoreId("zxnext/ks3-30300")?.id).toBe("ks3-30303");
+    expect(profileOfStateCoreId("zxnext/ks2-30300")?.id).toBe("ks2-30303");
   });
 });
 

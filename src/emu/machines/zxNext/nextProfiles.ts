@@ -103,11 +103,15 @@ export const NEW_PROJECT_NEXT_PROFILE_ID: NextProfileId = "ks2-30204";
 
 /**
  * Model ids that are gone, and the profile each now means (D1): `standard` was the one Next model
- * before models were profiles, `compatibility` the TypeScript emulator's.
+ * before models were profiles, `compatibility` the TypeScript emulator's; `ks2-30300` and `ks3-30300`
+ * were the core 3.03.03 models' first ids, on master for an hour before the core was found to be
+ * 3.03.03, not 3.03.00 (`dev/plans/ZXNEXT_3_03_PLAN.md`), and projects saved meanwhile name them.
  */
 export const NEXT_PROFILE_ALIASES: Readonly<Record<string, NextProfileId>> = {
   standard: "ks2-30201",
-  compatibility: "ks2-30201"
+  compatibility: "ks2-30201",
+  "ks2-30300": "ks2-30303",
+  "ks3-30300": "ks3-30303"
 };
 
 /** Whether a model id names a profile (aliases resolved) */
@@ -168,5 +172,8 @@ export function stateCoreIdOf(profile: NextProfile): string {
 export function profileOfStateCoreId(coreId: string): NextProfile | undefined {
   if (coreId === "zxnext") return NEXT_PROFILES[IMPLICIT_NEXT_PROFILE_ID];
   const match = /^zxnext\/(.+)$/.exec(coreId);
-  return match ? NEXT_PROFILES[match[1] as NextProfileId] : undefined;
+  if (!match) return undefined;
+  // --- A state saved under a renamed model's old id belongs to the model it now means
+  const id = NEXT_PROFILE_ALIASES[match[1]] ?? match[1];
+  return NEXT_PROFILES[id as NextProfileId];
 }
