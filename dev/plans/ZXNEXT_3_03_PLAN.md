@@ -1,6 +1,6 @@
-# ZX Spectrum Next core 3.03.00 models (KS2 and KS3)
+# ZX Spectrum Next core 3.03 models (KS2 and KS3)
 
-Status: **open** (started 2026-11-12). Phases 1-6 are done (2026-11-12, `npm run test:slow` passed); phase 7 waits for the 3.03.00 VHDL. Read `dev/ai/zxnext-models.md` first: this plan follows its
+Status: **open** (started 2026-11-12). Phases 1-6 are done (2026-11-12, `npm run test:slow` passed); phase 7 waits for the core 3.03 VHDL. Read `dev/ai/zxnext-models.md` first: this plan follows its
 "Adding a model" steps and its decisions D1-D9, and says where it has to depart from them.
 
 ## Goal
@@ -11,8 +11,8 @@ zxnDDMA", TBBLUE.FW 1.46, NextZXOS 2.10):
 
 | Model id | Board | `g_board_issue` | Core | Artifact |
 |---|---|---|---|---|
-| `ks2-30300` | KS2 (Issue 4 PCB) | 2 | 3.03.00 | `zx-spectrum-next-ks2-30300.wasm` |
-| `ks3-30300` | KS3 (Issue 5 PCB) | 3 | 3.03.00 | `zx-spectrum-next-ks3-30300.wasm` |
+| `ks2-30303` | KS2 (Issue 4 PCB) | 2 | 3.03.03 | `zx-spectrum-next-ks2-30303.wasm` |
+| `ks3-30303` | KS3 (Issue 5 PCB) | 3 | 3.03.03 | `zx-spectrum-next-ks3-30303.wasm` |
 
 ## What is known, and from where
 
@@ -34,7 +34,15 @@ zxnDDMA", TBBLUE.FW 1.46, NextZXOS 2.10):
 - **The zxnDDMA is documented by the distribution**: `docs/zxnDDMA/zxnddma.gde` (7990 lines, core
   3.03.00, issues 2, 4, 5; many facts marked as checked on real boards in October 2026) and its
   example listings. It names `cores/zxnext/src/device/new_dma.vhd`, which is not published.
-- **"28MHz 0 WS"** is one line in the distribution's `CHANGELOG`. Nothing says which wait states went.
+- **The release is core 3.03.03, not 3.03.00.** The CHANGELOG's headline says 3.03.00, but the pinned
+  commit is the System/Next 26.11a release: two commits before it, `cb4c0bd` "Core 3.03.03 - Fixes
+  audio glitches on some HDMI monitors" updated `TBBLUE.TBU`, and its README lists 3.03.03 for issues
+  2, 4 and 5. The release page (specnext.com/latestdistro, read 2026-11-12) says "Core version:
+  3.03.03 (Issues 2,4,5) featuring Zero Wait State 28MHz and zxnDimensionalDMA". The models were first
+  added as 3.03.00 (`ks2-30300`, `ks3-30300`) and renamed before they shipped.
+- **"28MHz 0 WS"** is on every board (the release page). Which reads lost their wait is not stated;
+  "zero wait state" is read as all of them (`sram_wait_n`, zxnext.vhd@3.02.04 ~3466-3475, which also
+  holds the DMA through `z80_wait_n`, ~2131).
 - **The ROMs are new bytes.** All five NextZXOS ROMs differ from the committed `nextzxos-2.10` set
   (which came from the `KS3` branch at `b7cc7d34`), though both call themselves NextZXOS 2.10.
 - **The FPGA boot ROM** (`bootrom_ab.bin`) is built from `src/rom/bootrom_ab.vhd`, which is not
@@ -44,7 +52,7 @@ zxnDDMA", TBBLUE.FW 1.46, NextZXOS 2.10):
 
 - **D-A - Build the 3.03 delta from the distribution's documents, marked as such.** Every behaviour
   that exists only in 3.03 is guarded by `#if ZXNEXT_CORE_VERSION >= 30300` and cites the guide
-  (`zxnddma.gde@26.11 §2.5`), not VHDL. Each such guard carries `VHDL-PENDING(3.03.00)`, so the
+  (`zxnddma.gde@26.11 §2.5`), not VHDL. Each such guard carries `VHDL-PENDING(3.03.03)`, so the
   whole set can be found and checked once the VHDL is published (phase 7). The guide is read for
   interface facts and written in Klive's own words; its listings are not copied into the repository.
 - **D-B - Board facts come from VHDL 3.02.04.** The KS3 behaviour (phase 3) is guarded by
@@ -56,8 +64,11 @@ zxnDDMA", TBBLUE.FW 1.46, NextZXOS 2.10):
 - **D-D - Boot ROM.** The new set has no `fpgaRoms`: 3.03's `bootrom_ab.vhd` is not published, and
   the boot ROM is only shipped for annotation (the cores do not load it). A copy of 3.02.04's would be
   the same bytes, which the ROM identity table already names by the 2.10 set (first entry wins).
-- **D-E - 28 MHz zero wait states is not modelled** until the VHDL (or a measurement on a real 3.03
-  board) says which waits went. At 28 MHz the new models time like 3.02.04. Recorded under "Open".
+- **D-E - 28 MHz zero wait states on every board** (revised 2026-11-12; first decided as "not
+  modelled"). From `ZXNEXT_CORE_VERSION >= 30300` a CPU read and a DMA read at 28 MHz take no wait
+  clock, on KS2 and KS3 alike (the release page; the CHANGELOG puts it in 3.03.00).
+  VHDL-PENDING(3.03.03): which reads lost the wait is inferred from the name.
+  `test/zxnext-hw/memory/wait-states.test.ts` and `DMA-28M` run every profile.
 - **D-F - The new-project default stays `ks2-30204`** (D7) while the 3.03 models rest on unverified
   documents. Revisit in phase 7.
 - **D-G - Memory size is a board fact.** The KS3 artifact's memory array is 4 MB plus the error page,
@@ -74,9 +85,9 @@ zxnDDMA", TBBLUE.FW 1.46, NextZXOS 2.10):
    `npm run rom:annotations:carry` (D8), review lists in `dev/ai/rom-annotations/carry-review/`,
    `PROVENANCE.md` appended.
 2. **Profiles.** `NextProfileId` and `NEXT_PROFILES` (both models), the two artifacts in
-   `dev/scripts/zxnext-artifacts.cjs`, NextReg set `30300` (the 30204 set plus any documented change;
+   `dev/scripts/zxnext-artifacts.cjs`, NextReg set `30303` (the 30204 set plus any documented change;
    `$0F`'s description names issue 5), the registry (models list), the SD working copies
-   `ks2-30300.cim` / `ks3-30300.cim`, the NEX minimum-core check. Each model boots its card into
+   `ks2-30303.cim` / `ks3-30303.cim`, the NEX minimum-core check. Each model boots its card into
    NextZXOS's waiting loop (`nextzxos-boot.test.ts`).
 3. **KS3 board** (`ZXNEXT_BOARD_ISSUE >= 3`, VHDL 3.02.04): the memory size (D-G), `$0F` = 3,
    NextReg `$04` with 8 bits in config mode, the FDC expansion-bus signals as far as Klive models the
@@ -105,9 +116,10 @@ zxnDDMA", TBBLUE.FW 1.46, NextZXOS 2.10):
    competitive-analysis tables if a gap closes, a `feature` changeset for the whole plan.
 6. **Checks.** Focused tests, `npm run build:check`, `npm run lint:renderer`, the Vite build,
    `npm run test:slow` before closing.
-7. **When the 3.03.00 VHDL is published.** Pin it in `sources.json`, fetch, carry the comments,
-   classify the delta (`dev/ai/zxnext-cores/30204-to-30300.md`), check every `VHDL-PENDING(3.03.00)`
-   guard against it, set `vhdlRef` to `3.03.00`, model "28MHz 0 WS" (D-E), reconsider D-F.
+7. **When the core 3.03 VHDL is published.** Pin it in `sources.json`, fetch, carry the comments,
+   classify the delta (`dev/ai/zxnext-cores/30204-to-30303.md`), check every `VHDL-PENDING(3.03.03)`
+   guard against it, set `vhdlRef` to the pinned version, check which reads lost the wait (D-E),
+   reconsider D-F.
 
 ## As built (2026-11-12)
 
@@ -125,7 +137,7 @@ zxnDDMA", TBBLUE.FW 1.46, NextZXOS 2.10):
 
 ## Open
 
-- 28 MHz zero wait states (D-E).
+- Which 28 MHz reads lost their wait (D-E), until the VHDL.
 - zxnDDMA timing beyond what the guide measured.
 - The 3.03 boot ROM (D-D).
 - Any NextReg added or changed in 3.03 that the guide does not mention.

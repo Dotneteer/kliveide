@@ -5,7 +5,7 @@ import { createSession, type NextTestSession } from "../../harness/zxnext";
 import { forEachProfile } from "../../harness/zxnext/script/profiles";
 
 /*
- * The zxnDDMA of core 3.03.00 (`dev/plans/ZXNEXT_3_03_PLAN.md`, phase 4): the DMA's extra commands on
+ * The zxnDDMA, new in core 3.03.00 (the models run 3.03.03; `dev/plans/ZXNEXT_3_03_PLAN.md`, phase 4): the DMA's extra commands on
  * port $6B. Its VHDL (new_dma.vhd) is not published; the reference is the distribution's guide,
  * docs/zxnDDMA/zxnddma.gde@26.11 (gitlab.com/thesmog358/tbblue at 3a892b03), cited by section:
  *
@@ -173,6 +173,48 @@ describe("zxnDDMA", () => {
       // --- X = 300 (X_hi bit 0 set), Y = 5; two bytes: the second is one line down (the next byte)
       write(s, transfer({ a: 0x0000, b: 0, len: 2, noB: true, ddma: [0xd7, 0x09], afterWr4: [0xdf, PHYSICAL | XY, 300 & 0xff, 1, 5] })).runFrames(1);
       expect(s.sramBytes(0x40000 + bank * 0x4000 + 300 * 256 + 5, 2)).toEqual([0xcd, 0xce]);
+    });
+  });
+
+  // --- 28 MHz: a DMA read from SRAM waits one clock before 3.03, none from 3.03 on ("Zero Wait State
+  // --- 28MHz", specnext.com/latestdistro, core 3.03.03; zxnext.vhd@3.02.04 ~2131: the DMA waits on
+  // --- z80_wait_n, which carries sram_wait_n). VHDL-PENDING(3.03.03).
+  forEachProfile(NEXT_PROFILE_IDS, (profile) => {
+    const wait = hasDdma(profile) ? 0 : 1;
+    it(`DMA-28M: at 28 MHz an SRAM-to-SRAM byte takes ${6 + wait} CPU clocks`, async () => {
+      /** CPU T-states from the enabling OUT to the instruction after the transfer, for `len` bytes */
+      const time = async (len: number) => {
+        const s = await createSession({ profile });
+        const setup = [0x83, ...transfer({ a: 0xc000, b: 0xe000, len }).slice(1, -1)];
+        await s.loadCode(
+          [
+            "        .org $8000",
+            "Start:  di",
+            "        nextreg $07,3",
+            "        nextreg $56,40",
+            "        nextreg $57,41",
+            "        ld hl,Setup",
+            "        ld b,SetupEnd-Setup",
+            "        ld c,$6b",
+            "        otir",
+            "        ld a,$87",
+            "        ld bc,$006b",
+            "Enable: out (c),a",
+            // --- the enable's BUSRQ comes too late for the OUT: the first NOP runs, then the transfer
+            "        nop",
+            "        nop",
+            "Done:   jr $",
+            `Setup:  .defb ${setup.map((b) => "$" + b.toString(16)).join(",")}`,
+            "SetupEnd:"
+          ].join("\n"),
+          { entry: "Start" }
+        );
+        s.runTo("Enable");
+        const t0 = s.tacts;
+        s.runTo("Done");
+        return s.tacts - t0;
+      };
+      expect((await time(101)) - (await time(1))).toBe(100 * (6 + wait));
     });
   });
 

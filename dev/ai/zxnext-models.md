@@ -18,11 +18,11 @@ Shipped profiles:
 |---|---|---|---|---|---|
 | `ks2-30201` | KS2 (board issue 2 = Issue 4 PCB) | 3.02.01 | `zx-spectrum-next.wasm` | `nextzxos-2.08` | `~/Klive/ks2.cim` |
 | `ks2-30204` | KS2 | 3.02.04 | `zx-spectrum-next-ks2-30204.wasm` | `nextzxos-2.10` | `~/Klive/ks2-30204.cim` |
-| `ks2-30300` | KS2 | 3.03.00 | `zx-spectrum-next-ks2-30300.wasm` | `nextzxos-26.11` (2.10a) | `~/Klive/ks2-30300.cim` |
-| `ks3-30300` | KS3 (board issue 3 = Issue 5 PCB) | 3.03.00 | `zx-spectrum-next-ks3-30300.wasm` | `nextzxos-26.11` (2.10a) | `~/Klive/ks3-30300.cim` |
+| `ks2-30303` | KS2 | 3.03.03 | `zx-spectrum-next-ks2-30303.wasm` | `nextzxos-26.11` (2.10a) | `~/Klive/ks2-30303.cim` |
+| `ks3-30303` | KS3 (board issue 3 = Issue 5 PCB) | 3.03.03 | `zx-spectrum-next-ks3-30303.wasm` | `nextzxos-26.11` (2.10a) | `~/Klive/ks3-30303.cim` |
 
-The 3.03.00 models depart from D4: core 3.03.00's VHDL is not published, so its delta (the zxnDDMA)
-is built from the distribution's guide and every such guard is marked `VHDL-PENDING(3.03.00)`; their
+The 3.03.03 models depart from D4: core 3.03's VHDL is not published, so its delta (the zxnDDMA and
+zero wait states at 28 MHz) is built from the distribution's guide and its release page and every such guard is marked `VHDL-PENDING(3.03.03)`; their
 `vhdlRef` is 3.02.04, whose VHDL has the issue 5 board. `dev/plans/ZXNEXT_3_03_PLAN.md` holds the
 decisions (D-A to D-G) and what to do once the VHDL appears.
 
@@ -215,8 +215,8 @@ KS3 fits the same steps: the board is a profile field and a compile-time define,
 - **ULA I/O contention** (delta item 3) is modelled in neither version; a separate fidelity item.
 - **EAR polarity** on 3.02.04 (delta item 4) is unconfirmed on hardware.
 - Upstream is at 3.02.05 (branch `30205`); adding it is one manifest entry plus the steps above.
-- **Core 3.03.00's VHDL** is not published; `dev/plans/ZXNEXT_3_03_PLAN.md` phase 7 lists what to do
-  when it is (pin, classify, check every `VHDL-PENDING(3.03.00)`, model "28MHz 0 WS").
+- **Core 3.03's VHDL** is not published; `dev/plans/ZXNEXT_3_03_PLAN.md` phase 7 lists what to do
+  when it is (pin, classify, check every `VHDL-PENDING(3.03.03)`, which reads lost the 28 MHz wait).
 - **The IDE does not show the KS3's upper 2 MB** (memory panels, bank pickers, profiler): it is
   reached only through config mode and the DMA.
 - Offering a second NextZXOS for the same core is possible by the data model (D9.1) but has no UI.

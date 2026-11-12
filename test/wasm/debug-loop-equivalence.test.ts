@@ -98,12 +98,12 @@ const MACHINES: Record<string, () => Promise<Setup>> = {
     const s = await createNextSession({ profile: "ks2-30204" });
     return { machine: s.machine as unknown as Machine, prefix: "zxnext", base: 0x8000, counter: 0x9000, di: true, port: 0x7ffe };
   },
-  "zxnext (ks2-30300)": async () => {
-    const s = await createNextSession({ profile: "ks2-30300" });
+  "zxnext (ks2-30303)": async () => {
+    const s = await createNextSession({ profile: "ks2-30303" });
     return { machine: s.machine as unknown as Machine, prefix: "zxnext", base: 0x8000, counter: 0x9000, di: true, port: 0x7ffe };
   },
-  "zxnext (ks3-30300)": async () => {
-    const s = await createNextSession({ profile: "ks3-30300" });
+  "zxnext (ks3-30303)": async () => {
+    const s = await createNextSession({ profile: "ks3-30303" });
     return { machine: s.machine as unknown as Machine, prefix: "zxnext", base: 0x8000, counter: 0x9000, di: true, port: 0x7ffe };
   },
   "zxnext (Pi I2S)": async () => {

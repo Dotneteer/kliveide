@@ -318,11 +318,17 @@ static inline void zxnextCpuDelayContendedMemory(uint32_t address, uint32_t memo
 static inline void zxnextCpuDelayMemoryRead(uint32_t address) {
   zxnextCpuDelayContendedMemory(address, 1u);
   zxnextCpuTactPlusN(3u);
+#if ZXNEXT_CORE_VERSION < 30300
+  /* sram_wait_n: a read at 28 MHz waits one clock (zxnext.vhd@3.02.04 ~3466-3475). Core 3.03 has
+     "Zero Wait State 28MHz" on every board (specnext.com/latestdistro, System/Next 26.11a, core
+     3.03.03 for issues 2, 4 and 5; the distribution's CHANGELOG puts it in 3.03.00). Which reads it
+     covers is inferred from the name: all of them. VHDL-PENDING(3.03.03). */
   if (cpuEffectiveSpeed == 3u && !zxnextCpuReadsBank7(address)) {
     zxnextCpuTactPlusN(1u);
     totalContentionDelaySinceStart++;
     contentionDelaySincePause++;
   }
+#endif
 }
 
 static inline void zxnextCpuDelayMemoryWrite(uint32_t address) {

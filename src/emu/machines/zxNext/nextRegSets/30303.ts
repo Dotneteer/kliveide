@@ -3,10 +3,10 @@ import { NEXT_REG_DELTA_30204 } from "./30204";
 import type { NextRegSetDelta } from "./index";
 
 /*
- * Core 3.03.00's NextReg set (`dev/plans/ZXNEXT_3_03_PLAN.md`, D5): the 3.02.04 delta, plus the two
+ * Core 3.03.03's NextReg set (`dev/plans/ZXNEXT_3_03_PLAN.md`, D5): the 3.02.04 delta, plus the two
  * registers whose description names the issue 5 board, which the 3.03 models are the first to emulate
- * (`nextreg.txt@3.02.04`: $0F's board ID 0011, $04's bit 7). The 3.03.00 nextreg.txt is not published:
- * the zxnDDMA's guide (`zxnddma.gde@26.11`) adds no register. VHDL-PENDING(3.03.00).
+ * (`nextreg.txt@3.02.04`: $0F's board ID 0011, $04's bit 7). The 3.03 nextreg.txt is not published:
+ * the zxnDDMA's guide (`zxnddma.gde@26.11`) adds no register. VHDL-PENDING(3.03.03).
  */
 
 const base = (id: number) => {
@@ -15,7 +15,7 @@ const base = (id: number) => {
   return descriptor;
 };
 
-export const NEXT_REG_DELTA_30300: NextRegSetDelta = {
+export const NEXT_REG_DELTA_30303: NextRegSetDelta = {
   upsert: [
     ...(NEXT_REG_DELTA_30204.upsert ?? []),
     {

@@ -454,7 +454,7 @@ Next, the **Priority Decode Chain** runs through each system in priority order (
 
 Finally, **Wait States and Timing** are applied because memory access isn't instant - different memory types have different speeds:
 
-- **At 28 MHz**: Always insert 1 wait state for SRAM **read** access (chips need time to respond)
+- **At 28 MHz**: Always insert 1 wait state for SRAM **read** access (chips need time to respond); core 3.03 removed it ("Zero Wait State 28MHz")
   - This adds 1 extra T-state to the normal 3 T-state memory read delay
   - **Write operations do NOT require this wait state** (writes use a different timing mechanism)
 - **At 14 MHz and below**: No wait states needed for SRAM (chips are fast enough)

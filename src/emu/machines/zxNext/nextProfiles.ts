@@ -11,7 +11,7 @@ import { NEXT_ROM_SETS, type NextRomSet, type NextRomSetId } from "@common/zxnex
  * menus) and the tests read it.
  */
 
-export type NextProfileId = "ks2-30201" | "ks2-30204" | "ks2-30300" | "ks3-30300";
+export type NextProfileId = "ks2-30201" | "ks2-30204" | "ks2-30303" | "ks3-30303";
 
 export type NextBoard = "ks1" | "ks2" | "ks3";
 
@@ -61,30 +61,30 @@ export const NEXT_PROFILES: Readonly<Record<NextProfileId, NextProfile>> = {
     nextRegSet: "30204",
     vhdlRef: "3.02.04"
   },
-  // --- Core 3.03.00 (`dev/plans/ZXNEXT_3_03_PLAN.md`): its VHDL is not published, so `vhdlRef` names the
+  // --- Core 3.03.03, the System/Next 26.11a release's (`dev/plans/ZXNEXT_3_03_PLAN.md`): its VHDL is not published, so `vhdlRef` names the
   // --- latest one that is, which has the issue 5 board (D-B); the 3.03 delta comes from the
   // --- distribution's documents (D-A)
-  "ks2-30300": {
-    id: "ks2-30300",
+  "ks2-30303": {
+    id: "ks2-30303",
     board: "ks2",
     boardIssue: 2,
-    coreVersion: [3, 3, 0],
-    wasmArtifact: "zx-spectrum-next-ks2-30300.wasm",
+    coreVersion: [3, 3, 3],
+    wasmArtifact: "zx-spectrum-next-ks2-30303.wasm",
     romSet: "nextzxos-26.11",
-    sdWorkingCopy: "ks2-30300.cim",
-    nextRegSet: "30300",
+    sdWorkingCopy: "ks2-30303.cim",
+    nextRegSet: "30303",
     vhdlRef: "3.02.04"
   },
-  "ks3-30300": {
-    id: "ks3-30300",
+  "ks3-30303": {
+    id: "ks3-30303",
     board: "ks3",
     // --- An Issue 5 PCB (`zxnext_top_issue5.vhd@3.02.04 ~39`)
     boardIssue: 3,
-    coreVersion: [3, 3, 0],
-    wasmArtifact: "zx-spectrum-next-ks3-30300.wasm",
+    coreVersion: [3, 3, 3],
+    wasmArtifact: "zx-spectrum-next-ks3-30303.wasm",
     romSet: "nextzxos-26.11",
-    sdWorkingCopy: "ks3-30300.cim",
-    nextRegSet: "30300",
+    sdWorkingCopy: "ks3-30303.cim",
+    nextRegSet: "30303",
     vhdlRef: "3.02.04"
   }
 };

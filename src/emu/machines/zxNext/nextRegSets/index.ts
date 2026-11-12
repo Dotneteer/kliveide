@@ -1,7 +1,7 @@
 import { NEXT_REG_DESCRIPTORS, type NextRegDescriptor } from "../nextRegDescriptors";
 import type { NextProfile } from "../nextProfiles";
 import { NEXT_REG_DELTA_30204 } from "./30204";
-import { NEXT_REG_DELTA_30300 } from "./30300";
+import { NEXT_REG_DELTA_30303 } from "./30303";
 
 /*
  * The NextReg description sets (`dev/ai/zxnext-models.md` D5): core 3.02.01's is the base
@@ -24,7 +24,7 @@ export type NextRegSetDelta = {
 const DELTAS: Readonly<Record<string, NextRegSetDelta>> = {
   "30201": {},
   "30204": NEXT_REG_DELTA_30204,
-  "30300": NEXT_REG_DELTA_30300
+  "30303": NEXT_REG_DELTA_30303
 };
 
 /* The base's order is kept; a new register goes before the first one with a higher id */

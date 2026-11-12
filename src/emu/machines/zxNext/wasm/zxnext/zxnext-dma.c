@@ -104,7 +104,7 @@ static uint8_t dmaRdSeq;
 /*
  * The zxnDDMA of core 3.03.00: the DMA's extra commands on port $6B (`dev/plans/ZXNEXT_3_03_PLAN.md`
  * D-A). Its VHDL (new_dma.vhd) is not published: everything here is from the distribution's guide,
- * docs/zxnDDMA/zxnddma.gde@26.11 (2.5-2.9), and is marked VHDL-PENDING(3.03.00). Where the guide is
+ * docs/zxnDDMA/zxnddma.gde@26.11 (2.5-2.9), and is marked VHDL-PENDING(3.03.03). Where the guide is
  * silent, the choice is written next to the code.
  */
 #define DDMA_PHYSICAL 0x01u
@@ -313,7 +313,7 @@ static uint8_t zxnextDmaDdmaFollowBytes(uint8_t cmd) {
  * $DF with bit 4: the Port B start address worked out from the Layer 2 screen (2.5, "Layer 2 X,Y"):
  * the bank from NextReg $12 ($13 with bit 5), the mode from NextReg $70 bits 5:4; it writes WR4's start
  * address and the $DB byte, and Port B's stride becomes 256. The bank is taken as 7 bits, as Layer 2's
- * own registers hold it (VHDL-PENDING(3.03.00)).
+ * own registers hold it (VHDL-PENDING(3.03.03)).
  */
 static void zxnextDmaLayer2XY(uint8_t xLo, uint8_t xHi, uint8_t y) {
   const uint32_t bank = zxnextNextRegs[(dmaFlags & DDMA_HIDDEN) ? 0x13u : 0x12u] & 0x7fu;
@@ -649,11 +649,8 @@ static uint32_t zxnextDmaTransferByte(void) {
     value = (uint8_t)(srcIo ? zxnextPortsRead(dmaSrc)
       : physical ? zxnextDmaReadPhysical(dmaSrcHi, dmaSrc) : zxnextMemoryReadMapped(dmaSrc));
     clocks = zxnextDmaCycleClocks(srcIsA ? dmaPortATiming : dmaPortBTiming);
-    if (srcIo) {
-      if ((dmaSrc & 0xffu) == DMA_SPI_DATA_PORT) clocks += DMA_SPI_WAIT_CLOCKS;
-    } else if (scale == 1u && (physical || zxnextMemoryGetPageBank8((dmaSrc >> 13) & 0x07u) != 0x0eu)) {
-      clocks += 1u; // sram_wait_n at 28 MHz (physical mode is always SRAM)
-    }
+    /* No sram_wait_n at 28 MHz: core 3.03 has zero wait states (zxnextCpuDelayMemoryRead) */
+    if (srcIo && (dmaSrc & 0xffu) == DMA_SPI_DATA_PORT) clocks += DMA_SPI_WAIT_CLOCKS;
   }
 
   // --- write cycle; a transparent byte is not written, its cycle is still taken (the guide is silent)
