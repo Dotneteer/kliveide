@@ -631,6 +631,8 @@ const cores: [SpikeCoreId, MachineFactory, string[], string?][] = [
   ["zxnext", () => nextMachine(false, true), NEXT_KEYS, "zxnext (tape)"],
   // --- One representative case per further Next artifact (`dev/ai/zxnext-models.md`, "Rules")
   ["zxnext", () => nextMachine(false, false, "ks2-30204"), NEXT_KEYS, "zxnext (ks2-30204)"],
+  ["zxnext", () => nextMachine(false, false, "ks2-30300"), NEXT_KEYS, "zxnext (ks2-30300)"],
+  ["zxnext", () => nextMachine(false, false, "ks3-30300"), NEXT_KEYS, "zxnext (ks3-30300)"],
   ["sp128", sp128FamilyMachine("sp128", "sp128"), SP128_KEYS],
   ["sp128", sp128FamilyMachine("pentagon", "sp128"), SP128_KEYS, "pentagon"],
   // --- Without its own ROM the Scorpion boots the 128K ROMs, on its own memory map and timing

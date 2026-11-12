@@ -95,7 +95,7 @@ describe("Select Machine dialog", () => {
     const h = open().do({ type: "filterChanged", text: "ntsc" });
     expect(h.vm.sections.some((s) => s.kind === "favorites")).toBe(false);
     const keys = h.vm.sections.flatMap((s) => (s.kind === "leaf" ? [s.row.key] : s.kind === "machine" ? s.rows.map((r) => r.key) : []));
-    expect(keys).toEqual(["sp48/ntsc", "zxnext/ks2-30201", "zxnext/ks2-30204", "timex/ts2068", "zx81/zx81-16k-us", "zx81/zx81-1k-us", "c64/ntsc"]);
+    expect(keys).toEqual(["sp48/ntsc", "zxnext/ks2-30201", "zxnext/ks2-30204", "zxnext/ks2-30300", "zxnext/ks3-30300", "timex/ts2068", "zx81/zx81-16k-us", "zx81/zx81-1k-us", "c64/ntsc"]);
     expect(h.vm.sections.every((s) => s.kind === "leaf" || s.open)).toBe(true);
 
     h.do({ type: "filterChanged", text: "z88 128k" });

@@ -131,10 +131,11 @@ static void zxnextMemorySetRamPageByMmu(uint32_t pageNo) {
   }
 
   uint32_t half = pageNo & 0x01u;
-  /* ~2994-3000: in config mode the ROM slots show the 16K SRAM bank of $04 (bits 6-0), writable, with
+  /* ~2994-3000: in config mode the ROM slots show the 16K SRAM bank of $04 (bits 6-0; 7-0 on a 4 MB
+     board, ~6218-6246, through zxnextSramOffset), writable, with
      no Alt ROM (sram_pre_override "110": DivMMC, Layer 2 and the Multiface still go above it) */
   if (pageNo <= 1u && zxnextConfigMode) {
-    uint32_t configOffset = (zxnextNextRegs[0x04u] & 0x7fu) * 0x4000u + half * 0x2000u;
+    uint32_t configOffset = zxnextSramOffset((zxnextNextRegs[0x04u] & ZXNEXT_NR_04_MASK) * 0x4000u) + half * 0x2000u;
     zxnextMemorySetPageInfo(pageNo, configOffset, configOffset, 0xffu, 0xffu);
     return;
   }
@@ -382,7 +383,8 @@ static void zxnextMemorySetNextRegister(uint32_t reg, uint32_t value) {
   if (normalizedReg >= 0x50 && normalizedReg <= 0x57) {
     zxnextMemoryUpdateMapping();
   } else if (normalizedReg == 0x04) {
-    zxnextNextRegs[0x04u] = (uint8_t)(byteValue & 0x7fu);
+    /* 7 bits, 8 on an issue 5 board (zxnext.vhd@3.02.04 ~6218-6246) */
+    zxnextNextRegs[0x04u] = (uint8_t)(byteValue & ZXNEXT_NR_04_MASK);
     if (zxnextConfigMode) zxnextMemoryUpdateMapping();
   } else if (normalizedReg == 0x8c) {
     zxnextMemoryUpdateMapping();

@@ -1,0 +1,82 @@
+Carried by dev/scripts/rom-annotations-carry.cjs (byte signature), for hand review.
+From: zxnext/nextzxos-2.10/enNextMf.rom.dis
+To:   zxnext/nextzxos-26.11/enNextMf.rom.dis  (level 2)
+
+== Page 0 (112dcf94 -> a82ed3f9)
+   labels 424/425, line annotations 2007/2010, data regions 34/34 carried
+
+-- Labels not carried (1)
+$1BAD  TXT_VERSION_ROM
+        missing
+
+-- Line annotations not carried (3)
+$12FF  $E210?
+        missing
+$18FC  $E210, the version expected?
+        missing
+$1BAD  "E210 enNextMf.rom", 17 characters, printed by LOAD_MF_SYS from $1315.
+        missing
+
+-- Carried comments to check: a ROM address they name moved or was not placed, or their data changed (30)
+$1B9C (was $1B9C)  Plain text printed by length from $1308: "Version mismatch:" (17), then from $1BAD (TXT_VE
+        the data under it changed: check its text
+$1B9C (was $1B9C)  Plain text printed by length from $1308: "Version mismatch:" (17), then from $1BAD (TXT_VE
+        $1BAD -> missing
+$1C07 (was $1C07)  Prompt for the snapshot's file name; texts from here end with bit 7 set, $C0-$DF excepted.
+        the data under it changed: check its text
+$1C19 (was $1C19)  Prompt for the bank dump's file name.
+        the data under it changed: check its text
+$1C2D (was $1C2D)  INVERSE 1, ">", INVERSE 0, printed at $142E.
+        the data under it changed: check its text
+$1C31 (was $1C31)  8 bytes ending with bit 7 set ($1E $05 $0E $1A $00 $16 $17 $00): no reader found.
+        the data under it changed: check its text
+$1C39 (was $1C39)  The memory view's help line and its menu (AT 22,0 first).
+        the data under it changed: check its text
+$1CC5 (was $1CC5)  "Bank" as a highlighted field.
+        the data under it changed: check its text
+$1CCC (was $1CCC)  "Offset" as a highlighted field.
+        the data under it changed: check its text
+$1CD6 (was $1CD6)  "Address" as a highlighted field.
+        the data under it changed: check its text
+$1CDF (was $1CDF)  A space.
+        the data under it changed: check its text
+$1CE0 (was $1CE0)  AT 0,32 and "Enter "; the prompts below follow it.
+        the data under it changed: check its text
+$1CE9 (was $1CE9)  "bank: ": the bank prompt, passed to $0B0F at $08B0.
+        the data under it changed: check its text
+$1CEF (was $1CEF)  "offset: ": the offset prompt, passed to $0B16 at $08C5.
+        the data under it changed: check its text
+$1CF7 (was $1CF7)  "address: ": the address prompt, passed to $0B16 at $08D3.
+        the data under it changed: check its text
+$1D00 (was $1D00)  "1st offset: ": the first prompt of a range by offset, passed to $0B49 from $09BE.
+        the data under it changed: check its text
+$1D0C (was $1D0C)  "1st address: ": the first prompt of a range by address, passed to $0B49 from $09C4.
+        the data under it changed: check its text
+$1D19 (was $1D19)  " last: ": the range's end prompt, passed to $0B4C at $09CB.
+        the data under it changed: check its text
+$1D20 (was $1D20)  " dest: ": the destination prompt, passed to $0B4C at $09D2.
+        the data under it changed: check its text
+$1D27 (was $1D27)  " Sure?": the confirmation, printed through $108A at $09D9.
+        the data under it changed: check its text
+$1D2D (was $1D2D)  AT 0,32 and "H/T? ".
+        the data under it changed: check its text
+$1D35 (was $1D35)  OVER 1, INVERSE 1 and a space, OVER 0, INVERSE 0, then cursor left: marks the edit positio
+        the data under it changed: check its text
+$1D3C (was $1D3C)  The register view's fixed text: register names placed with AT row,column (columns $42 and 
+        the data under it changed: check its text
+$1E02 (was $1E02)  The register view's help line and menu, then "OS 2.10" at AT 23,75 and "Core " at AT 22,73
+        the data under it changed: check its text
+$1E82 (was $1E82)  "-->".
+        the data under it changed: check its text
+$1E85 (was $1E85)  "1st bank: ": the bank dump's first-bank prompt, passed to $0B0F at $077A.
+        the data under it changed: check its text
+$1E8F (was $1E8F)  "last bank: ": the bank dump's last-bank prompt, passed to $0B0F at $0785.
+        the data under it changed: check its text
+$1E9A (was $1E9A)  The breakpoint view's help line and menu, ending with "Global" highlighted at AT 0,64.
+        the data under it changed: check its text
+$1F42 (was $1F42)  "c:/nextzxos/enMf0.sys": the file $12D0 loads; the digit at $5F10 (offset 16) is replaced 
+        the data under it changed: check its text
+$1F57 (was $1F57)  The message for a program that touched the +3 FDC ports (printed at $034C): FLASH 1 "ERROR
+        the data under it changed: check its text
+
+Page 0 measured: level 2, 0 unlabelled target(s), 0 label(s) without a synopsis, 0 misplaced

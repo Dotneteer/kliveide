@@ -41,7 +41,9 @@ describe("beam position overlay", () => {
     const label = screen.getByTestId("beam-stale-label");
     expect(label.textContent).toBe("previous frame");
     // --- under the first stale row
-    expect(label.style.top).toBe(`${(91 / 287) * 100}%`);
+    // --- the number, not the text: jsdom 31 rounds a percentage to 4 decimals, 30 did not
+    expect(label.style.top.endsWith("%")).toBe(true);
+    expect(parseFloat(label.style.top)).toBeCloseTo((91 / 287) * 100, 3);
     // --- without the hover readout the overlay lets the pointer through to the screen
     expect(screen.queryByTestId("beam-readout")).toBeNull();
   });

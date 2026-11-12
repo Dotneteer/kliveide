@@ -8,7 +8,11 @@ const ZXNEXT_ARTIFACTS = [
   // --- KS2, core 3.02.01: the original artifact name, which every earlier build packaged
   { artifact: "zx-spectrum-next.wasm", coreVersion: 30201, boardIssue: 2 },
   // --- KS2, core 3.02.04
-  { artifact: "zx-spectrum-next-ks2-30204.wasm", coreVersion: 30204, boardIssue: 2 }
+  { artifact: "zx-spectrum-next-ks2-30204.wasm", coreVersion: 30204, boardIssue: 2 },
+  // --- KS2 and KS3, core 3.03.00 (`dev/plans/ZXNEXT_3_03_PLAN.md`): the KS3 board is issue 5,
+  // --- g_board_issue 3 (`zxnext_top_issue5.vhd@3.02.04 ~39`)
+  { artifact: "zx-spectrum-next-ks2-30300.wasm", coreVersion: 30300, boardIssue: 2 },
+  { artifact: "zx-spectrum-next-ks3-30300.wasm", coreVersion: 30300, boardIssue: 3 }
 ];
 
 /** The compiler defines of an artifact */

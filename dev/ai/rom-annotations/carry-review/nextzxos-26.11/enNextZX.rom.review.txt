@@ -1,0 +1,320 @@
+Carried by dev/scripts/rom-annotations-carry.cjs (byte signature), for hand review.
+From: zxnext/nextzxos-2.10/enNextZX.rom.dis
+To:   zxnext/nextzxos-26.11/enNextZX.rom.dis  (level 0)
+
+== Page 0 (2f430534 -> fac011ab)
+   labels 1024/1026, line annotations 3851/3854, data regions 68/69 carried
+
+-- Labels not carried (2)
+$0000  START
+        missing
+$0004  ROM_ID_BYTES
+        missing
+
+-- Line annotations not carried (3)
+$0000  RST $00, reset: interrupts off, then the Next's register set-up (INIT_NEXTREGS).
+        missing
+$0001  On to the Next's register set-up
+        missing
+$0004  Four bytes no code in this page reads: "ED" ($45 $44), then the word $E210 at $0006 (the s
+        missing
+
+-- Data regions not carried (their bytes are code regions now) (1)
+$0004  bytes $0004-$0007
+        start missing
+
+-- Carried comments to check: a ROM address they name moved or was not placed, or their data changed (24)
+$0033 (was $0033)  A channel M's output, the word at +$05 of the channel M template in ROM 2 ($12A0 there): A
+        $12A0 -> ambiguous
+$003C (was $003C)  $80: the DivMMC's memory paged in at $0000
+        $0000 -> missing
+$0046 (was $0046)  Port $E3 (DivMMC control) = A: with $80 the DivMMC's memory replaces this ROM at $0000-$3F
+        $0000 -> missing
+$0274 (was $0274)  ROM 1's $1535
+        $1535 -> ambiguous
+$03E5 (was $03E5)  The I/O of the current channel for ROM 2's stream calls: its IDE_STREAM_OUT ($005F, throug
+        $155B -> ambiguous, $1565 -> ambiguous, $156A -> ambiguous
+$052C (was $052C)  A channel F's position operation (the third word of its template in ROM 2, $1265 there), b
+        $1265 -> ambiguous
+$0562 (was $0562)  Removes BC bytes at HL (a channel being closed) from CHANS, for ROM 2 (from its $1559, the
+        $1559 -> ambiguous
+$059A (was $059A)  Makes room for BC bytes at HL in CHANS (a channel being opened), for ROM 2 (from its $14B0
+        $14B0 -> ambiguous
+$0669 (was $0669)  Shows the current menu (title at $D742) and waits for a choice; the item selected at $F700
+        $1523 -> ambiguous
+$0904 (was $0904)  Two return addresses dropped, a frame waited for and the key flag cleared; then on the alt
+        $1533 -> ambiguous
+$0944 (was $0944)  A = 0 for ROM 1's $1535
+        $1535 -> ambiguous
+$0949 (was $0949)  Applies the column count at $D73D (32, 64 or 85): ROM 1's $1523 with A = 0 for 32, 9 other
+        $1523 -> ambiguous
+$0953 (was $0953)  ROM 1's $1523 with A
+        $1523 -> ambiguous
+$0999 (was $0999)  Swaps the display settings with the copies from $D5B9 on, after a frame: port $FF (Timex) 
+        $1523 -> ambiguous, $123B -> ambiguous
+$09AA (was $09AA)  Set through ROM 1's $1523
+        $1523 -> ambiguous
+$0C87 (was $0C87)  Only with the state byte ($D5B8) zero: the return address dropped and the alternate ROM's 
+        $13B8 -> ambiguous
+$0C8D (was $0C8D)  The alternate ROM's $13B8
+        $13B8 -> ambiguous
+$1925 (was $1925)  In ROM ($0000-$3FFF)?
+        $0000 -> missing
+$2668 (was $2668)  With page 11 and 16 in MMU 6-7 ($272C): the window records written again (WCH_SET_RECORDS)
+        $153B -> ambiguous
+$2965 (was $2965)  Key table of IDE_WINDOW_LINEIN, read by the table dispatcher at $1022: 17 entries of a key
+        $1429 -> ambiguous
+$2A94 (was $2A94)  Key $11: handled by the alternate ROM's $1429.
+        $1429 -> ambiguous
+$2C04 (was $2C04)  Runs the system's own Browser (from BROWSER_RESUME for a '<' type). 1. SP = $5BFF. 2. ROM 
+        $1533 -> ambiguous
+$31EB (was $31EB)  Puts things back when the Browser ends; keeps AF (carry set), DE and HL. 1. The sort memor
+        $1523 -> ambiguous
+$3230 (was $3230)  Saves what the Browser changes: $5B68-$5B89 (BRW_STATE_COPY), the mode ($5C7F to $D693), C
+        $1523 -> ambiguous
+
+== Page 1 (6162fd76 -> 20f98e41)
+   labels 979/980, line annotations 4309/4310, data regions 46/47 carried
+
+-- Labels not carried (1)
+$2AA4  COPYRIGHT_MSG
+        its data region (bytes/defc $2AA4-$2AE2) was not carried
+
+-- Line annotations not carried (1)
+$2AA4  The copyright lines, printed by REMOUNT's fresh start (at $2C2F, through PRINT_MSG): $7F (
+        its data region (bytes/defc $2AA4-$2AE2) was not carried
+
+-- Data regions not carried (their bytes are code regions now) (1)
+$2AA4  bytes/defc $2AA4-$2AE2
+        end $2AE2 missing
+
+-- Carried comments to check: a ROM address they name moved or was not placed, or their data changed (23)
+$01A9 (was $01A9)  Code run at $5BB8 (copied by A3_LOAD, $38 bytes): 1. ROM 3 selected, NextReg $82 = A, port
+        $25C6 -> ambiguous
+$01B7 (was $01B7)  Its word at $25C6 = $5BD3, the hook below
+        $25C6 -> ambiguous
+$01C4 (was $01C4)  Part of RAM_RESET_CODE, run at $5BD3 when the alternate ROM goes through its word at $25C6
+        $25C6 -> ambiguous, $243B -> ambiguous
+$01C9 (was $01C9)  The word at $25C6 back to $36A8
+        $25C6 -> ambiguous
+$07E9 (was $07E9)  Applies the operation to the variable and the operand, then assigns the result: 1. A '%' v
+        $24F1 -> ambiguous, $25CA -> ambiguous
+$0804 (was $0804)  The DivMMC memory's $24F1: DE = the operand
+        $24F1 -> ambiguous
+$080F (was $080F)  Another operation: the DivMMC memory's $25CA
+        $25CA -> ambiguous
+$09A8 (was $09A8)  Copies BC bytes from DE onto the machine stack (SP lowered by BC) and runs them there with
+        $250E -> ambiguous
+$0AB4 (was $0AB4)  Runs the line at DE as a direct command for ROM 2 (page 2 calls it at $0FAE through CALL $
+        $238A -> ambiguous, $238C -> ambiguous, $238B -> ambiguous
+$0C83 (was $0C83)  The three words RUN_LINE_SAVED pushed back: $238C, $238A (in RAM page $10) and $5B6A; this
+        $238C -> ambiguous, $238A -> ambiguous
+$12F7 (was $12F7)  Reads NextReg A through ports $243B and $253B. Exit: A = its value, BC = $253B.
+        $243B -> ambiguous, $253B -> ambiguous
+$12FC (was $12FC)  BC = $253B
+        $253B -> ambiguous
+$15C4 (was $15C4)  Sprites off (NextReg $15 bits 1-0 cleared), all 128 sprites hidden (attribute 3 = 0 throug
+        $24DF -> ambiguous
+$15D9 (was $15D9)  $24DF-$2CFF filled with 0
+        $24DF -> ambiguous
+$1905 (was $1905)  Takes the last calculator value as an integer (the DivMMC memory's $24F1; carry goes on to
+        $24F1 -> ambiguous
+$1906 (was $1906)  DE = the value ($24F1 in the DivMMC memory)
+        $24F1 -> ambiguous
+$1B7F (was $1B7F)  An integer variable: DEST - $3264 must be a slot below 26 (else ENDPROC_LET); the value is
+        $24F1 -> ambiguous
+$26F7 (was $26F7)  From ROM 2 (its word $26F7 at $2412): BC is kept at $5B54; port $E3 = the high byte of the
+        $2412 -> ambiguous
+$2D3C (was $2D3C)  The command of keyword $88 (a number, ',', then class $0E; its word at $03BD): r, v [, v .
+        $243B -> ambiguous, $253B -> ambiguous
+$3D58 (was $3D58)  An integer variable (%a, the letter's number 0-25 in A'): with '(' an array (VAR_STACK_INT
+        $24F1 -> ambiguous
+$3D7C (was $3D7C)  The DivMMC memory's $24F1
+        $24F1 -> ambiguous
+$3EB1 (was $3EB1)  The alternate ROM's $2514. Called from page 0 ($3A56, RST $18).
+        $2514 -> ambiguous
+$3FC3 (was $3FC3)  POINT as a statement (keyword $A9: class 8, TO, class 1, class $0C; its word at $03EB): x,
+        $22CB -> ambiguous
+
+== Page 2 (8263c4ba -> 00732096)
+   labels 785/785, line annotations 3404/3405, data regions 60/60 carried
+
+-- Line annotations not carried (1)
+$1EA0  Expected version $E210
+        missing
+
+-- Carried comments to check: a ROM address they name moved or was not placed, or their data changed (71)
+$0068 (was $0068)  Copies through the DivMMC memory's $04DD with selector 1: from ROM 0's COLSET_PUT ($0AAC t
+        $3760 -> ambiguous
+$006D (was $006D)  A = the byte at HL in the DivMMC memory through its $001D with selector 1 (ROM 1's SET_ATT
+        $3760 -> ambiguous
+$0072 (was $0072)  Writes A at HL in the DivMMC memory through its $02E0 with selector 1 (ROM 1's SET_ATTR_FI
+        $3760 -> ambiguous
+$0322 (was $0322)  DOS_OPEN (from $0106; also from IDE_SNAPLOAD at $0871 and others). 1. Bit 3 of C (the meta
+        $314A -> ambiguous
+$032C (was $032C)  Byte $314A of DivMMC bank 7
+        $314A -> ambiguous
+$03E6 (was $03E6)  An image file: 256 bytes of its name from BC to $3000 + 256 x the drive through the DivMMC
+        $3000 -> ambiguous
+$03EF (was $03EF)  E = 0: DE = $3000 + 256 x drive
+        $3000 -> ambiguous
+$0478 (was $0478)  IDE_DOS_MAPPING (from $00F7). 1. The drive letter (L AND $7F) made 0-15 (DRIVE_INDEX); $F7
+        $3000 -> ambiguous
+$04A5 (was $04A5)  HL = $3000 + 256 x the drive
+        $3000 -> ambiguous
+$05E0 (was $05E0)  DOS_GET_1346 (from $013C; also $1CDA): the DivMMC memory's $34B6 with selector $0D.
+        $34B6 -> ambiguous
+$05E5 (was $05E5)  DOS_SET_1346 (from $013F; also IDE_SNAPLOAD at $087B): the DivMMC memory's $34BC with sele
+        $34BC -> ambiguous
+$05EA (was $05EA)  The DivMMC memory's $344D with selector $0D (from $2460, A = a drive letter there).
+        $344D -> ambiguous
+$05EF (was $05EF)  The DivMMC memory's $34F4 with selector $0D (from $1CF2).
+        $34F4 -> ambiguous
+$05FB (was $05FB)  The DivMMC memory's $3432 with selector $0D. Nothing in pages 0-3 calls it.
+        $3432 -> ambiguous
+$0600 (was $0600)  The DivMMC memory's $3440 with selector $0D. Nothing in pages 0-3 calls it.
+        $3440 -> ambiguous
+$067A (was $067A)  By unit C: 5 and up go on at $17F7 with C = unit - 5 and IX = $3135; 4 (the RAMdisk in the
+        $3135 -> ambiguous, $353D -> ambiguous, $313B -> ambiguous
+$067E (was $067E)  IX = $3135
+        $3135 -> ambiguous
+$068B (was $068B)  DivMMC $353D, selector $0D
+        $353D -> ambiguous
+$0693 (was $0693)  IX = $313B
+        $313B -> ambiguous
+$0F82 (was $0F82)  Runs a BASIC line kept elsewhere: copies it from HL (to its CR) to E_LINE, adds the $80 en
+        $2C05 -> ambiguous, $2C15 -> ambiguous, $2C1B -> ambiguous
+$0FBF (was $0FBF)  IDE_INTEGER_VAR ($01C9): gets or sets a NextBASIC integer variable (the API document's cal
+        $3264 -> ambiguous, $3300 -> ambiguous, $3148 -> ambiguous, $314A -> ambiguous
+$0FCD (was $0FCD)  Arrays at $3300, 128 bytes each
+        $3300 -> ambiguous
+$0FE4 (was $0FE4)  B was 0 or 2: B = 0 is a plain variable (INTVAR_SIMPLE), B = 2 one of the two words at $31
+        $3148 -> ambiguous
+$0FED (was $0FED)  The two words at $3148
+        $3148 -> ambiguous
+$0FF2 (was $0FF2)  A plain variable: from $3264.
+        $3264 -> ambiguous
+$149A (was $149A)  The first 13 bytes of a channel W (a window): output and input $5B4D, the letter W, ROM 0'
+        $2BBE -> ambiguous
+$1A8E (was $1A8E)  IDE_MOUNT (jump table $01D2; the API document: unmount or remount the SD cards): 1. A = 1:
+        $318A -> ambiguous, $3167 -> ambiguous
+$1AEE (was $1AEE)  DivMMC memory's $318A
+        $318A -> ambiguous
+$1AF4 (was $1AF4)  DivMMC memory's $3167
+        $3167 -> ambiguous
+$1B04 (was $1B04)  Mounts the SD cards and maps the drives (IDE_MOUNT with A = 1; page 1's SD_REMOUNT calls i
+        $312C -> ambiguous, $37F0 -> ambiguous, $3FFC -> ambiguous
+$1B6A (was $1B6A)  DivMMC $04DB on $2300-$312C
+        $312C -> ambiguous
+$1B85 (was $1B85)  Bank $0D: $04DB on $37F0-$3FFC
+        $37F0 -> ambiguous, $3FFC -> ambiguous
+$1CD9 (was $1CD9)  Sets up the SD card units (called from IDE_MOUNT_SD with its entry A): 1. A is kept only w
+        $34F4 -> ambiguous
+$1CF2 (was $1CF2)  DivMMC bank $0D's $34F4
+        $34F4 -> ambiguous
+$1D0C (was $1D0C)  Loads the system files (IDE_MOUNT_SD with A = 0); a failure prints a message and stops (HA
+        $3140 -> ambiguous, $3180 -> ambiguous
+$1D43 (was $1D43)  To DivMMC bank 0's $3140
+        $3140 -> ambiguous
+$1D6B (was $1D6B)  To bank 1's $3180
+        $3180 -> ambiguous
+$1DA4 (was $1DA4)  To bank $0D's $2BF8
+        $2BF8 -> ambiguous
+$20F4 (was $20F4)  "Version mismatch:", ENTER, "e210 enNextZX.rom", ENTER, $FF (CHECK_VERSION).
+        the data under it changed: check its text
+$219B (was $219B)  Device 5 or more: 1. The drive's block and word found ($2145). 2. D bit 7 set: an image fi
+        $2E96 -> ambiguous, $2E98 -> ambiguous, $2EE3 -> ambiguous, $376E -> ambiguous
+$21F1 (was $21F1)  +$2A to +$2F: the words $2E96, $2E98, $2EE3
+        $2E96 -> ambiguous, $2E98 -> ambiguous, $2EE3 -> ambiguous
+$221D (was $221D)  DE = $376E + 19 x the drive
+        $376E -> ambiguous
+$2239 (was $2239)  The drive's word (HL) = its block (DE). Then the block's first 15 bytes go to $F72F, $F73E
+        $3870 -> ambiguous
+$225D (was $225D)  DE = $3870 + 22 x the drive
+        $3870 -> ambiguous
+$226E (was $226E)  Opens the file named at BC as an image of type A and reads its first 1K (from $16D9 with A
+        $344F -> ambiguous
+$22E2 (was $22E2)  The DivMMC memory's $344F
+        $344F -> ambiguous
+$245A (was $245A)  Unmaps drive A (probably IDE_DOS_UNMAP's work; nothing in the four pages refers to $245A):
+        $344D -> ambiguous
+$2460 (was $2460)  The DivMMC memory's $344D (bank $0D)
+        $344D -> ambiguous
+$24EB (was $24EB)  Sets the RAM disk up (from $1CEE): 1. RAMDISK_XDPB_END to $E843 (the parameter block at $E
+        $362D -> ambiguous
+$251D (was $251D)  One track set up.
+        $362D -> ambiguous
+$255E (was $255E)  21 bytes copied to $E843 by RAMDISK_SETUP, the RAM disk's parameter block from +$1B: $08, 
+        $2E96 -> ambiguous, $2E98 -> ambiguous, $2EE3 -> ambiguous
+$2585 (was $2585)  DOS_BOOT ($012A, as documented): starts the program in drive A's boot sector, the same job
+        $34A5 -> ambiguous
+$258D (was $258D)  The DivMMC memory's $34A5 (bank $0D)
+        $34A5 -> ambiguous
+$27D2 (was $27D2)  DD_READ_SECTOR ($0163, as documented): reads one sector: the READ DATA command block at $E
+        $30CC -> ambiguous
+$27DA (was $27DA)  The DivMMC memory's $30CC runs it (bank $0C)
+        $30CC -> ambiguous
+$27E7 (was $27E7)  DD_L_READ ($0190, as documented): the DivMMC memory's $30CC (bank $0C) with the caller's H
+        $30CC -> ambiguous
+$27F6 (was $27F6)  Keeps BASIC's state in a frame on the machine stack round a call that runs BASIC (from IDE
+        $3A62 -> ambiguous
+$2820 (was $2820)  Undoes RUN_FRAME_SET's frame: ROM 1's GOSUB_RESTORE ($3AEA) on its GO SUB entry, then $5B5
+        $3AEA -> ambiguous
+$285B (was $285B)  DOS_DELETE ($0124, as documented; page 0's ERASE_FILE calls it at its $3909): deletes the 
+        $3909 -> ambiguous
+$2870 (was $2870)  DOS_RENAME ($0127, as documented; page 0 calls it at its $3A46): renames the file at HL to
+        $3A46 -> ambiguous
+$292E (was $292E)  Tests bit 2 of the byte at $314A in DivMMC bank 7 (the byte whose bit 0 DOS_OPEN reads; pr
+        $314A -> ambiguous
+$292F (was $292F)  The byte at $314A
+        $314A -> ambiguous
+$297E (was $297E)  Toggles the Browser's settings: the view flags ($D5EA) XOR B, the sort flags ($D5EB) XOR C
+        $3969 -> ambiguous, $3985 -> ambiguous
+$298E (was $298E)  BRW_SAVE_PREFS with the filter at $D82B. From page 0's KEY_FILTER ($391E).
+        $391E -> ambiguous
+$2991 (was $2991)  Saves the Browser's settings to the DivMMC memory: the saved part and entry (BRW_POS_SAVE)
+        $3325 -> ambiguous, $333C -> ambiguous
+$29AD (was $29AD)  Copies the 19 bytes of the Browser's settings between $D82B and $3F00 in the DivMMC memory
+        $2D20 -> ambiguous, $3300 -> ambiguous
+$29DD (was $29DD)  IDE_PATH change into the directory named at $D82B, and the word $5245 ("ER") at $3F18 in t
+        $3050 -> ambiguous, $30E3 -> ambiguous
+$29F3 (was $29F3)  Takes the mark BRW_CD_MARK leaves: the word at $3F18 in the DivMMC memory, its low byte cl
+        $2C07 -> ambiguous
+$2A0A (was $2A0A)  Stores DE (the Browser's part and entry) at $3F14 in the DivMMC memory. From BRW_SAVE_PREF
+        $36E8 -> ambiguous
+$2A1B (was $2A1B)  Compares the path at $D930 with the one kept at $3E00 in the DivMMC memory and keeps the n
+        $32BB -> ambiguous
+$2A46 (was $2A46)  Sets the byte kept at $3F17 in the DivMMC memory (with its complement at $3F16) and return
+        $2BF8 -> ambiguous
+
+== Page 3 (9ced2dbc -> cb246c44)
+   labels 1149/1149, line annotations 5745/5746, data regions 80/80 carried
+
+-- Line annotations not carried (1)
+$03C1  The alternate ROM paged in: the tone goes on at $03C5 in its page 1
+        missing
+
+-- Carried comments to check: a ROM address they name moved or was not placed, or their data changed (9)
+$03B5 (was $03B5)  Makes a tone; BEEP ($0F44, $1091, $116F, $0469) and the editor's click (DE = PIP, HL = $00
+        $03C1 -> missing
+$0E0D (was $0E0D)  The row of a third's top line goes to the third above's bottom line ($F8E0 = -$0720).
+        $0720 -> missing
+$0E0E (was $0E0E)  Less $0720
+        $0720 -> missing
+$0E2B (was $0E2B)  HL + $0700: the next third's top line
+        $0700 -> missing
+$0E5E (was $0E5E)  HL + $0701: the next third
+        $0701 -> missing
+$3953 (was $3953)  Token $9A (BANK) in an expression (the scanner's character table, word at $0734): the bank
+        $0734 -> missing
+$397E (was $397E)  Token $9E (SPRITE) in an expression (the character table's word at $073C), by the token af
+        $073C -> missing
+$3A02 (was $3A02)  Token $87 (PEEK$) in an expression (the character table's word at $070E): PEEK_STR_BANK wi
+        $070E -> missing
+$3AB8 (was $3AB8)  '{' in an expression (the character table's word at $06F6): a string expression, then '}';
+        $06F6 -> missing
+
+Page 0 measured: level 2, 0 unlabelled target(s), 0 label(s) without a synopsis, 0 misplaced
+Page 1 measured: level 0, 3 unlabelled target(s), 0 label(s) without a synopsis, 0 misplaced
+Page 2 measured: level 2, 0 unlabelled target(s), 0 label(s) without a synopsis, 0 misplaced
+Page 3 measured: level 2, 0 unlabelled target(s), 0 label(s) without a synopsis, 0 misplaced

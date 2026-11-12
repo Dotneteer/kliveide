@@ -66,7 +66,11 @@ export type NextRomSet = {
    */
   fpgaRoms: Readonly<Record<string, NextFpgaRomInfo>>;
   /** The SD card image a new working copy is made from, relative to `src/public` */
-  sdBaseImage: { file: string; sha256: string };
+  /**
+   * `exclude`: distribution paths left off this set's card (`build-next-sd-image.cjs`), so the committed
+   * image stays under GitHub's 100 MB file limit
+   */
+  sdBaseImage: { file: string; sha256: string; exclude?: string[] };
   facts: NextRomFacts;
 };
 

@@ -55,7 +55,7 @@ describe("createRomAnnotationsMenu", () => {
     const menu = createRomAnnotationsMenu(machineRegistry, vi.fn());
     const nextReleases = submenu(submenu(menu).find((item) => item.label === "ZX Spectrum Next")!);
     // --- One submenu per NextZXOS release: the releases' files have the same names
-    expect(shape(nextReleases)).toEqual(["NextZXOS 2.08", "NextZXOS 2.10"]);
+    expect(shape(nextReleases)).toEqual(["NextZXOS 2.08", "NextZXOS 2.10", "NextZXOS 2.10a"]);
     const next = submenu(nextReleases[0]);
     expect(shape(next)).toEqual([
       "enNextZX.rom, page 0",

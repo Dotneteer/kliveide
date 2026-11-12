@@ -1,0 +1,350 @@
+Carried by dev/scripts/rom-annotations-carry.cjs (byte signature), for hand review.
+From: zxnext/nextzxos-2.10/enAltZX.rom.dis
+To:   zxnext/nextzxos-26.11/enAltZX.rom.dis  (level 0)
+
+== Page 0 (fa6cf261 -> 166f654a)
+   labels 658/660, line annotations 3269/3272, data regions 36/36 carried
+
+-- Labels not carried (2)
+$0000  RST_BANK7
+        missing
+$0003  ALT_VERSION
+        missing
+
+-- Line annotations not carried (3)
+$0000  RST $00: on at TO_SWAP_BANK7, which swaps SP with the pointer kept at $5B6A and pages RAM 
+        missing
+$0001  On at TO_SWAP_BANK7
+        missing
+$0003  Returns DE = $E210, the version of this ROM; NextZXOS ROM 2 calls it at $1D27 (through its
+        missing
+
+-- Carried comments to check: a ROM address they name moved or was not placed, or their data changed (34)
+$0046 (was $0046)  Port $E3 (DivMMC control) = $80: the DivMMC's memory replaces this ROM at $0000-$3FFF, so 
+        $0000 -> missing
+$007B (was $007B)  NextReg $8C = 0: the alternate ROM off, so the standard ROM appears at $0000; the RET goes
+        $0000 -> missing
+$0080 (was $0080)  RST $18's work: calls the routine at the word after the RST in ROM 1: BC = the word, the r
+        $3E8A -> ambiguous
+$008E (was $008E)  ROM 0's $3E8A selects ROM 1 and goes to BC
+        $3E8A -> ambiguous
+$0092 (was $0092)  Alternate ROM off; RET to $3E8A
+        $3E8A -> ambiguous
+$031E (was $031E)  Starts the editor in mode 2A (0 NextBASIC, 4 the Calculator, 8 a third mode): reached from
+        $2C3D -> ambiguous
+$1406 (was $1406)  With bank 0: NextZXOS ROM 1's $2AE3, which renumbers lines 1-9999 from 10 in steps of 10 (
+        $2AE3 -> ambiguous
+$1407 (was $1407)  ROM 1's $2AE3: lines 1-9999 renumbered from 10, step 10
+        $2AE3 -> ambiguous
+$1416 (was $1416)  The alternate stack ($5B6A) moved to UDG - 1; with bank 0, NextZXOS ROM 1's CLEAR_CHECK ($
+        $3498 -> ambiguous
+$1429 (was $1429)  Key $11 (EDIT_KEY_TABLE; NextZXOS ROM 0's LINEIN_KEY_11 at $2A94 too): FLAGS2 ($5C6A) bit 
+        $2A94 -> ambiguous
+$1565 (was $1565)  IDE_TOKENISER ($01D8, as documented), reached from NextZXOS ROM 2's IDE_TOKENISER ($10AC, 
+        $3E18 -> ambiguous, $0000 -> missing
+$18BA (was $18BA)  IDE_TOKENISER with B = 0: the work space cleared (ROM 3's CLEAR_WS), an ENTER put at E_LIN
+        $32FF -> ambiguous
+$18D3 (was $18D3)  The DivMMC byte $32FF = 0, B = it
+        $32FF -> ambiguous
+$191D (was $191D)  Swaps A with the DivMMC memory's byte at $32FF: DMMC_SWAP_CODE copied to $D7B4 and run the
+        $32FF -> ambiguous
+$1AAD (was $1AAD)  Prints program lines through RST $28, from the line at HL in bank ($5B65) on (NextZXOS ROM
+        $362A -> ambiguous, $2800 -> ambiguous
+$1ABF (was $1ABF)  A number from $2800 up?
+        $2800 -> ambiguous
+$1AE7 (was $1AE7)  Counts the characters the line at HL expands to (its number and text; LINE_START_NUM, then
+        $3FE3 -> ambiguous
+$1B02 (was $1B02)  Renumbers program lines: the lines numbered from BC to DE get the numbers HL, HL + IX, ...
+        $2AEF -> ambiguous
+$1B8E (was $1B8E)  Puts the program back in order: from PROG, each line whose number is not above the one bef
+        $3700 -> ambiguous
+$1BC2 (was $1BC2)  The line copied to $3700
+        $3700 -> ambiguous
+$1BE5 (was $1BE5)  Copied back from $3700
+        $3700 -> ambiguous
+$2060 (was $2060)  LINE MERGE m,n (token $CA's MERGE: NextZXOS ROM 1's syntax word at $04F7, class 8, two num
+        $3FE3 -> ambiguous
+$208E (was $208E)  HL = its listed length (LINE_TEXT_LEN, ROM 1's $3FE3)
+        $3FE3 -> ambiguous
+$216F (was $216F)  The menu items' functions, 'i' 0 to 12 (MENU_ACT_I): a word each, bit 7 set for an address
+        $2C04 -> ambiguous
+$21D5 (was $21D5)  'g': the guide's name copied to $DA35 with its end, then the command GUIDE_CMD_TEXT (layer
+        $30AD -> ambiguous
+$21EE (was $21EE)  Runs the command text at HL as BASIC: $D5B8 = 5 when it was 4; the text copied to the rows
+        $3127 -> ambiguous
+$2289 (was $2289)  READ_TO_C000 with BC = $700 (at most $6FF bytes). Called by NextZXOS ROM 0 ($2EC4, with DE
+        $2EC4 -> ambiguous
+$228C (was $228C)  READ_FILE into $C000. Called by NextZXOS ROM 0 ($30FE). Exit: as READ_FILE; BC and HL kept
+        $30FE -> ambiguous
+$2297 (was $2297)  Reads the file named at DE into HL, at most BC - 1 bytes: BC + 1 bytes from HL first fille
+        $3B2A -> ambiguous
+$26C8 (was $26C8)  A file name ended by $00: $7F, "browser.cfg" (the system folder, see SYS_FOLDER_TEXT). Pas
+        $3B27 -> ambiguous
+$26D5 (was $26D5)  A file name ended by $00: $7F, "enBrowsext.cfg". Passed to READ_TO_C000_7 by NextZXOS ROM 
+        $2EC1 -> ambiguous
+$26E5 (was $26E5)  "c:/docs/guides/browser.gde", ended by $FF: the Browser's own guide, which NextZXOS ROM 0 
+        $30A8 -> ambiguous
+$2700 (was $2700)  A command line: "CLS:LOAD"RUN.BAS"", $0D (NextZXOS ROM 0 at $30E7). RUN_GDE_TXT follows.
+        $30E7 -> ambiguous
+$2712 (was $2712)  "run", which runs on into GDE_EXT_TXT: "run.gde", ended by $FF (NextZXOS ROM 0 at $3053, f
+        $3053 -> ambiguous
+
+== Page 1 (c511d3a4 -> abb6edb1)
+   labels 790/806, line annotations 4194/4265, data regions 37/40 carried
+
+-- Labels not carried (16)
+$03C5  TONE_OUT_ALT
+        ambiguous ($01D6, $01D7, $01D8, $01D9, ...)
+$03E9  TONE_ALT_LOOP
+        missing
+$03F9  TONE_ALT_NOPS
+        missing
+$03FE  TONE_ALT_DELAY
+        missing
+$041A  TONE_ALT_HIGH
+        missing
+$041E  TONE_ALT_END
+        missing
+$178C  PLAY_SPEED_DONE
+        missing
+$186F  PLAY_RESTORE
+        missing
+$1877  PLAY_STEP
+        missing
+$1D77  PLAY_RPT_N
+        missing
+$1D7E  PLAY_RPT_L
+        missing
+$1D85  PLAY_RPT_K
+        missing
+$1D8C  PLAY_RPT_D
+        missing
+$1D93  PLAY_RPT_M
+        missing
+$1D9A  PLAY_RPT_O
+        missing
+$1ED5  PLAY_PERIODS
+        its data region (words $1ED5-$1FAC) was not carried
+
+-- Line annotations not carried (71)
+$03C5  The rest of ROM 3's TONE_OUT, which pages this ROM in (NextReg $8C = $80 at its $03C1) and
+        ambiguous ($01D6, $01D7, $01D8, $01D9, ...)
+$03C6  ROM 1 selected for the DivMMC call
+        missing
+$03CA  The DivMMC memory's $2993: E
+        missing
+$03CF  ROM 3 selected again
+        missing
+$03D3  A = NextReg 7, the CPU speed
+        missing
+$03DE  E bit 3: 3.5 MHz for the tone?
+        missing
+$03E2  The speed kept
+        missing
+$03E5  Yes: 3.5 MHz
+        missing
+$03E9  IX = the entry into TONE_ALT_NOPS; A = the border colour from BORDCR with bit 3 set.
+        missing
+$03EF  The border colour from BORDCR
+        missing
+$03F4  Down to bits 0-2
+        missing
+$03F7  Bit 3 set
+        missing
+$03F9  The entry JP (IX) uses: 0 to 3 NOPs, then the delay loop.
+        missing
+$03FC  B and C one more for the loops' first DEC
+        missing
+$03FE  The delay: C counts down, then B (from H) with C reloaded.
+        missing
+$0401  C = $3F for the outer rounds
+        missing
+$0407  The speaker bit flipped
+        missing
+$0409  The edge
+        missing
+$040B  B = H again
+        missing
+$040C  C = the byte sent
+        missing
+$040D  A rising edge?
+        missing
+$040F  Yes: the second half
+        missing
+$0411  Cycles left?
+        missing
+$0413  No: done
+        missing
+$0415  A back, C = L
+        missing
+$0417  One cycle less
+        missing
+$0418  The next half-cycle
+        missing
+$041A  After a rising edge: the second half-cycle, one inner count longer.
+        missing
+$041B  One count longer
+        missing
+$041E  DE ran out: interrupts on, the CPU speed back (NextReg 7), A = 0, out through ALT_ROM_OFF.
+        missing
+$041F  The speed back
+        missing
+$0423  A = 0; back into ROM 3
+        missing
+$1774  ROM 1's $0059: the DivMMC memory's $2993, E
+        missing
+$1777  BC kept
+        missing
+$1778  A = NextReg 7, the CPU speed
+        missing
+$1782  Kept at $5CA5
+        missing
+$1785  E bit 3: 3.5 MHz while playing?
+        missing
+$1787  No: on
+        missing
+$1789  Yes: NextReg 7 = 0, 3.5 MHz
+        missing
+$178C  The speed set: on with the strings' blocks.
+        missing
+$186A  No: on
+        missing
+$186C  Yes: the AY silenced
+        missing
+$186F  The CPU speed back from $5CA5 (NextReg 7), interrupts on, return. The end of PLAY_ALL_DONE
+        missing
+$1872  NextReg 7
+        missing
+$1875  Interrupts back on
+        missing
+$1877  The shortest length waited (PLAY_WAIT), the lengths moved on (PLAY_ADVANCE), the next shor
+        missing
+$1878  Waited
+        missing
+$187B  The lengths moved on, new notes read and started
+        missing
+$187E  The next shortest length
+        missing
+$1881  Again
+        missing
+$19C3  No: on
+        missing
+$19C5  Yes: the AY silenced
+        missing
+$19C8  Error code $14, report L
+        missing
+$19CA  Through PLAY_ERROR
+        missing
+$19E5  The next character
+        missing
+$1D73  A = the error code
+        missing
+$1D74  NextZXOS ROM 1's ERROR_128_A
+        missing
+$1D77  Error code $29, report n (out of range).
+        missing
+$1D7A  Error code $29, report n
+        missing
+$1D7E  Error code $27, report l (number too big).
+        missing
+$1D81  Error code $27, report l
+        missing
+$1D85  Error code $26, report k (invalid note name).
+        missing
+$1D88  Error code $26, report k
+        missing
+$1D8C  Error code $1F, report d (too many brackets).
+        missing
+$1D8F  Error code $1F, report d
+        missing
+$1D93  Error code $28, report m (note out of range).
+        missing
+$1D96  Error code $28, report m
+        missing
+$1D9A  Error code $2A, report o (too many tied notes).
+        missing
+$1D9D  Error code $2A, report o
+        missing
+$1ED5  The AY tone periods for notes 21 up, one word each: 108 of them (notes 21-128); note 21's 
+        its data region (words $1ED5-$1FAC) was not carried
+$2BA3  Yes: BC = 1
+        at the new offset: not on an instruction start in the new page
+
+-- Data regions not carried (their bytes are code regions now) (3)
+$0156  bytes/fill $0156-$03C4
+        end $03C4 ambiguous ($01D6, $01D7, $01D8, $01D9, ...)
+$0427  bytes/fill $0427-$056A
+        start ambiguous ($0156, $0157, $0158, $0159, ...)
+$1ED5  words $1ED5-$1FAC
+        odd length 241 for words
+
+-- Carried comments to check: a ROM address they name moved or was not placed, or their data changed (33)
+$00A7 (was $00A7)  RST $20's stub past its inline word: calls the ROM 3 routine at BC (from $1A0E, which sets
+        $1A0E -> $19F0
+$00D7 (was $00D7)  Calls the DivMMC memory's routine whose address is the word after the CALL: BC kept at $5B
+        $3EA0 -> ambiguous
+$00E1 (was $00E1)  The DivMMC routine, entered by ROM 1's $3EA0
+        $3EA0 -> ambiguous
+$011F (was $011F)  HL + 1, CH_ADD = HL, then SKIP_CHAR. The same bytes as ROM 1's SKIP_ONE ($3ECF).
+        $3ECF -> ambiguous
+$056B (was $056B)  SPRITE (token $9E): NextZXOS ROM 1's syntax entry for it ($038B) is class $0E with the wor
+        $038B -> ambiguous
+$0860 (was $0860)  SPRITE OVER (a,b [TO c] [,d [,e]]) for ROM 3's SPRITE_OVER_FN ($39AF), which calls here th
+        $1EF2 -> $1ED9
+$08C7 (was $08C7)  SPRITE AT (n,i) for ROM 3's SPRITE_CALL ($39A4, with L = AT), called through its $1EF2: a 
+        $1EF2 -> $1ED9
+$10F2 (was $10F2)  LAYER DIM a, b, c, d (from NextZXOS ROM 1's syntax entry for LAYER DIM, the word at its $0
+        $15A9 -> ambiguous
+$1758 (was $1758)  PLAY a$, b$, ... (from NextZXOS ROM 1's syntax entry for token $A4, the word at its $0392)
+        $0392 -> ambiguous
+$1C1A (was $1C38)  The routines of PLAY's commands, from the index PLAY_FIND_LETTER gives (0 for none): a not
+        the data under it changed: check its text
+$1FD4 (was $1FD4)  CAT [-] [#n] [name] [EXP] (from NextZXOS ROM 1's syntax entry for CAT, the word at its $03
+        $0371 -> ambiguous
+$2480 (was $2480)  COPY "name" TO "name" (the syntax table's word at $048E, NextZXOS ROM 1, after classes $0A
+        $048E -> ambiguous
+$248E (was $248E)  COPY "name" TO SCREEN$ or TO LPRINT (the syntax table's word at $0491): stream 3 when the 
+        $0491 -> ambiguous
+$249A (was $249A)  COPY "name" TO #n (the syntax table's word at $0495, after '#' and class 0): A = the strea
+        $0495 -> ambiguous
+$29C6 (was $29C6)  CD "path" (token $A0; the syntax table's word at $03B0, after classes $0A and $0C): the pa
+        $03B0 -> ambiguous, $1BF9 -> $1BDB
+$29D6 (was $29D6)  ROM 2's $1BF9: LOAD and SAVE drives = the default
+        $1BF9 -> $1BDB
+$29DC (was $29DC)  MKDIR "path" (token $A1; the syntax table's word at $03B4): IDE_PATH with A = 2 (rc_path_m
+        $03B4 -> ambiguous
+$29E9 (was $29E9)  RMDIR "path" (token $A2; the syntax table's word at $03B8): IDE_PATH with A = 3 (rc_path_d
+        $03B8 -> ambiguous
+$29F0 (was $29F0)  PWD (token $9F; the syntax table's word at $038F, class $0E): ROM 1's STREAM_OPT_2 (stream
+        $038F -> ambiguous
+$2CD7 (was $2CD7)  MOVE "a" TO "b" (the syntax table's word at $04E3, after classes $0A and $0C): the second 
+        $04E3 -> ambiguous
+$2D12 (was $2D12)  MOVE "d:" IN "partition" (the syntax table's word at $04DC): maps drive d to a partition, 
+        $04DC -> ambiguous
+$2D3A (was $2D3A)  MOVE "d:" OUT (the syntax table's word at $04DF): the drive letter (DRIVE_ARG) and ROM 2's
+        $04DF -> ambiguous
+$2DA8 (was $2DA8)  Takes a partition, device or image name from the calculator stack (ROM 1's STK_FETCH); a s
+        $3FA2 -> ambiguous
+$2E1B (was $2E1B)  FORMAT (the syntax table's word at $03A8, class $0E), A = the character after it: FORMAT L
+        $03A8 -> ambiguous
+$309D (was $309D)  SCREEN$: 6912 ($1B00) bytes from $4000, type 3. Not for MERGE.
+        $1B00 -> $1AE2
+$3472 (was $3472)  $5B65 = $FE, the screen: with bit 1 of $5C7F set, Layer 2's three banks (DATA_LAYER2); oth
+        $1800 -> $17E7
+$3478 (was $3478)  Bank 5's first $1800 bytes
+        $1800 -> $17E7
+$3643 (was $3643)  Layer 2: the 16K third holding row D is paged in at $0000-$3FFF for writing (port $123B, L
+        $123B -> ambiguous
+$3659 (was $3659)  Port $123B = A, the third (bits 7-6; third 3 becomes third 0) and the paging bits, kept at
+        $123B -> ambiguous
+$365F (was $365F)  Port $123B written; BC = $40FF.
+        $123B -> ambiguous
+$3662 (was $3662)  Port $123B, Layer 2 access
+        $123B -> ambiguous
+$36A6 (was $36A6)  Ends drawing (from $0F89 and $1174): LoRes (C = $7F) gives MMU slot 3 page $11 back (LORES
+        $123B -> ambiguous
+$36AE (was $36AE)  Port $123B: paging off
+        $123B -> ambiguous
+
+Page 0 measured: level 0, 1 unlabelled target(s), 0 label(s) without a synopsis, 0 misplaced
+Page 1 measured: level 0, 10 unlabelled target(s), 0 label(s) without a synopsis, 0 misplaced

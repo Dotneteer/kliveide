@@ -1,0 +1,34 @@
+Carried by dev/scripts/rom-annotations-carry.cjs (byte signature), for hand review.
+From: zxnext/nextzxos-2.10/enNxtmmc.rom.dis
+To:   zxnext/nextzxos-26.11/enNxtmmc.rom.dis  (level 2)
+
+== Page 0 (4084326b -> 3e9607ae)
+   labels 616/618, line annotations 2647/2650, data regions 11/12 carried
+
+-- Labels not carried (2)
+$0000  RESET_ENTRY
+        missing
+$0004  DV_MARK
+        missing
+
+-- Line annotations not carried (3)
+$0000  RST $00, reset: interrupts off, then RESET_GO, which pages the DivMMC memory out and goes 
+        missing
+$0001  On to the page-out
+        missing
+$0004  Four bytes nothing in this ROM runs or reads: 'D', 'V', $10, $E2 (the word $E210, as at $0
+        missing
+
+-- Data regions not carried (their bytes are code regions now) (1)
+$0004  bytes $0004-$0007
+        start missing
+
+-- Carried comments to check: a ROM address they name moved or was not placed, or their data changed (3)
+$006A (was $006A)  RST $00's way on: $0001 pushed, then DIVMMC_RELEASE ($1EA0) pages the DivMMC memory out an
+        $0001 -> missing
+$0F4F (was $0F4F)  Puts B characters of the name at DE as 16-bit units at HL (a long-name entry's part): the 
+        $0000 -> missing
+$0F58 (was $0F58)  $0000
+        $0000 -> missing
+
+Page 0 measured: level 2, 0 unlabelled target(s), 0 label(s) without a synopsis, 0 misplaced

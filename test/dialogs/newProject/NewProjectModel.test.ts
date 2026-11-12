@@ -22,6 +22,7 @@ import {
 
 import { t } from "@common/i18n/i18n";
 import { getAllMachineModels } from "@common/machines/machine-registry";
+import { NEXT_PROFILE_IDS } from "@emu/machines/zxNext/nextProfiles";
 
 import { aState, anEnv, rejectingValidation } from "./fakes";
 
@@ -54,7 +55,7 @@ describe("NewProjectModel — machine types and models", () => {
   it("offers a one-model type its single model", () => {
     expect(modelOptionsOf(aState({ machineId: "scorpion" })).length).toBe(1);
     // --- The Next has a model per board and core version (`dev/ai/zxnext-models.md` D1)
-    expect(modelOptionsOf(aState({ machineId: "zxnext" })).length).toBe(2);
+    expect(modelOptionsOf(aState({ machineId: "zxnext" })).length).toBe(NEXT_PROFILE_IDS.length);
   });
 
   it("offers only the types that have templates, once that is known", () => {
