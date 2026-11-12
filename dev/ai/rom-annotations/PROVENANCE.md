@@ -2526,3 +2526,28 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
 - **Level:** 2, measured and recorded (3,828 instructions, 365 labels). Reassembles byte for byte. The compile's
   remaining questions are register facts the tool cannot follow through `CALL $0033` (JP (IY)) and label names
   shared with other sidecars.
+
+### 2026-11-12 — ZX Spectrum Next: the `nextzxos-26.11` set (NextZXOS 2.10a) from the 2.10 sidecars, level 2
+
+- **What:** the five ROMs of the distribution's 26.11 release (`thesmog358/tbblue` at `3a892b03`), which
+  still call themselves 2.10 but differ from the `KS3` branch's: the version word `$E210` is `$A210`
+  (ROM 0 `$0006`, ROM 2's CHECK_VERSION, the DivMMC ROM's mark, the Multiface's checks, the alternate
+  ROM's ALT_VERSION) and the texts read "2.10a"; ROM 3's TONE_OUT is the 48K ROM's again (`LD IX,$03D1`
+  at `$03C1` instead of paging the alternate ROM in); the alternate ROM's page 1 lost TONE_OUT_ALT
+  (`$03C5-$0425` are zeros now) and PLAY's CPU-speed switch (PLAY_RUN no longer keeps NextReg 7 at
+  `$5CA5` or drops to 3.5 MHz, so its code moved up 25 bytes; the report entries each silence the AY,
+  enable interrupts and call ERROR_128_A themselves).
+- **How:** every change is in place (equal lengths, nothing shifted outside PLAY), so each page took the
+  2.10 sidecar's entries at the same offsets, marked `derived`; the alternate ROM's page 1 took
+  `rom:annotations:carry` for the moved PLAY code plus the 2.10 entries outside the changed blocks
+  (a first merge that restored same-offset entries inside the moved block put a comment on the wrong
+  instruction at `$185C`; redone with the changed blocks excluded). Then by hand, from the 26.11 bytes
+  (each edit asserts the bytes it describes): the version texts; TONE_OUT's synopsis and `$03C1`;
+  `$0156-$056A` one fill region; PLAY_RUN's steps 1 and 4, PLAY_ALL_DONE, PLAY_STEP (`$1858`),
+  PLAY_NEXT's BREAK path, PLAY_RPT_N to PLAY_RPT_O (`$1D52-$1D87`, which replace 2.10's PLAY_ERROR);
+  PLAY_PERIODS back as a words region at `$1EBC-$1F93` and the zeros after it to `$1FC1`. The RST
+  `$20` stub's synopsis at `$00A7` named its caller as `$1A0E`, wrong already in 2.10 (that is a CP);
+  it is PLAY_TEMPO's call at `$1AAB` (`$1AC9` in 2.10).
+- **Sources:** the ROM bytes only (`sp48-dis.cjs` listings of both sets, byte diffs). The review lists
+  are in `carry-review/nextzxos-26.11/`.
+- **Level:** 2 on every page, measured and recorded. No boot ROM: core 3.03.00's is not published.

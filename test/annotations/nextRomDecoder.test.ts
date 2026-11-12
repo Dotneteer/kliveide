@@ -142,8 +142,23 @@ describe("the decoding of every NextZXOS release Klive ships", () => {
 
   // --- Each set's own addresses, and the ones only the other set uses
   const MOVED: { file: string; page: number; kind: Parameters<typeof romDecoderFor>[0]; own: Record<string, number[]> }[] = [
-    { file: "enNextZX.rom", page: 1, kind: "next-os1", own: { "nextzxos-2.08": [0x08ef, 0x26cb, 0x26e5], "nextzxos-2.10": [0x08e2, 0x26c5, 0x26df] } },
-    { file: "enNextMf.rom", page: 0, kind: "next-multiface", own: { "nextzxos-2.08": [0x1569], "nextzxos-2.10": [0x1572] } }
+    {
+      file: "enNextZX.rom",
+      page: 1,
+      kind: "next-os1",
+      own: {
+        "nextzxos-2.08": [0x08ef, 0x26cb, 0x26e5],
+        "nextzxos-2.10": [0x08e2, 0x26c5, 0x26df],
+        // --- 2.10a changed bytes only in place: 2.10's addresses
+        "nextzxos-26.11": [0x08e2, 0x26c5, 0x26df]
+      }
+    },
+    {
+      file: "enNextMf.rom",
+      page: 0,
+      kind: "next-multiface",
+      own: { "nextzxos-2.08": [0x1569], "nextzxos-2.10": [0x1572], "nextzxos-26.11": [0x1572] }
+    }
   ];
 
   for (const { file, page, kind, own } of MOVED) {
@@ -153,7 +168,8 @@ describe("the decoding of every NextZXOS release Klive ships", () => {
         const sidecar = JSON.parse(readFileSync(join(__dirname, `../../src/public/roms/zxnext/${setId}/${file}.dis`), "utf8"));
         const others = Object.entries(own)
           .filter(([id]) => id !== setId)
-          .flatMap(([, addresses]) => addresses);
+          .flatMap(([, addresses]) => addresses)
+          .filter((address) => !own[setId].includes(address));
         const called = new Set<number>();
         for (const region of sidecar.banks[String(page)].regions.filter((r: { type: string }) => r.type === "disassemble")) {
           for (const instr of await romDecoderFor(kind)(bytes, region.start, Math.min(region.end, bytes.length - 1))) {

@@ -28,6 +28,20 @@
 #define ZXNEXT_BOARD_ISSUE 2
 #endif
 
+/*
+ * The board's SRAM and NextReg $04's width (`dev/plans/ZXNEXT_3_03_PLAN.md` D-G). Address bit 21 reaches
+ * the SRAM on an issue 5 board only (zxnext.vhd@3.02.04 ~1763-1777: `o_RAM_A_ADDR_21` is '0' on issues
+ * 2-4), so the KS3 has 4 MB; NextReg $04 keeps all 8 bits there and 7 bits on the others (~6218-6246).
+ * The MMU reaches 8K pages 0-223 on every board (~3258: `mmu_A21_A13` bit 8 set above $DF).
+ */
+#if ZXNEXT_BOARD_ISSUE >= 3
+#define ZXNEXT_SRAM_SIZE 0x400000u
+#define ZXNEXT_NR_04_MASK 0xffu
+#else
+#define ZXNEXT_SRAM_SIZE 0x200000u
+#define ZXNEXT_NR_04_MASK 0x7fu
+#endif
+
 /* NextReg $01 (major << 4 | minor) and $0E (sub-minor) */
 #define ZXNEXT_CORE_VERSION_MAJOR (ZXNEXT_CORE_VERSION / 10000)
 #define ZXNEXT_CORE_VERSION_MINOR ((ZXNEXT_CORE_VERSION / 100) % 100)

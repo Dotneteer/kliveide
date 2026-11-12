@@ -75,8 +75,9 @@ describe("ROM_ANNOTATION_CATALOG", () => {
 
   it("lists each Next ROM set's files by their paths, in the five groups of a set", () => {
     const next = ROM_ANNOTATION_CATALOG.find((machine) => machine.machineId === "zxnext")!;
-    const sets = Object.keys(NEXT_ROM_SETS);
-    expect(next.groups.length).toBe(5 * sets.length);
+    const sets = Object.values(NEXT_ROM_SETS);
+    // --- A set without an FPGA boot ROM (nextzxos-26.11: core 3.03's is not published) has four groups
+    expect(next.groups.length).toBe(sets.reduce((sum, set) => sum + (Object.keys(set.fpgaRoms).length ? 5 : 4), 0));
     expect(next.groups.slice(0, 5).map((group) => group.map((entry) => romCatalogFileName(entry)))).toEqual([
       ["enNextZX.rom", "enNextZX.rom", "enNextZX.rom", "enNextZX.rom"],
       ["enNextLG.rom", "enNextLG.rom", "enNextLG.rom", "enNextLG.rom"],

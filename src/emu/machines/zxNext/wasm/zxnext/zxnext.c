@@ -1,7 +1,20 @@
 #include <stdint.h>
 #include "zxnext-profile.h"
 
-#define ZXNEXT_MEMORY_SIZE (2048 * 1024 + 0x2000)
+/*
+ * The core's memory: SRAM $000000-$1FFFFF at its physical address, then the 8K error page nothing maps
+ * (reads $FF), then - on a 4 MB board - SRAM $200000-$3FFFFF at physical + $2000. Every offset below
+ * $202000 is the same on every board, so the IDE's layout (`nextMemoryLayout.ts`) holds for all;
+ * only config-mode NextReg $04 and the DMA's physical addresses reach the upper block
+ * (`zxnextSramOffset`).
+ */
+#define ZXNEXT_ERR_PAGE_OFFSET 0x200000u
+#define ZXNEXT_MEMORY_SIZE (ZXNEXT_SRAM_SIZE + 0x2000u)
+
+/* The memory offset of a physical SRAM address below ZXNEXT_SRAM_SIZE */
+static inline uint32_t zxnextSramOffset(uint32_t physical) {
+  return physical < ZXNEXT_ERR_PAGE_OFFSET ? physical : physical + 0x2000u;
+}
 #define ZXNEXT_FLAT_MEMORY_SIZE 0x10000
 #define ZXNEXT_SCREEN_WIDTH 720
 #define ZXNEXT_SCREEN_HEIGHT 288
@@ -1230,7 +1243,7 @@ static void zxnextHistoryDmaHold(uint32_t cpuTacts, uint16_t src, uint16_t dest,
 // so does anything at or above the error page (`OFFS_ERR_PAGE`), which no partition names.
 // -----------------------------------------------------------------------------
 
-#define ZXNEXT_PROFILE_ERR_PAGE (2048u * 1024u)
+#define ZXNEXT_PROFILE_ERR_PAGE ZXNEXT_ERR_PAGE_OFFSET
 
 /*
  * Both run at every CPU memory access while profiling is on (trap T10), so the common case - no
@@ -1273,8 +1286,9 @@ Z80_ALWAYS_INLINE int32_t zxnextProfilePhysWrite(uint32_t address) {
   return physical < ZXNEXT_PROFILE_ERR_PAGE ? (int32_t)physical : -1;
 }
 
-/* The whole of `zxnextMemory`, error page included, so an offset is the physical offset unchanged */
-#define Z80_PROFILE_FLAG_BYTES ZXNEXT_MEMORY_SIZE
+/* `zxnextMemory` up to the error page's end, so an offset is the physical offset unchanged; the same on
+   every board: a 4 MB board's upper block (config mode and the DMA only) is not profiled */
+#define Z80_PROFILE_FLAG_BYTES (ZXNEXT_ERR_PAGE_OFFSET + 0x2000u)
 /* 64 pages (12 MB): 512K of touched memory with counters; the flags cover all 2 MB regardless (D5, T6) */
 #define Z80_PROFILE_POOL_PAGES 64u
 #define Z80_PROFILE_PHYS_READ(address) zxnextProfilePhysRead((uint32_t)(address))

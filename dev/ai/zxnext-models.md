@@ -18,6 +18,13 @@ Shipped profiles:
 |---|---|---|---|---|---|
 | `ks2-30201` | KS2 (board issue 2 = Issue 4 PCB) | 3.02.01 | `zx-spectrum-next.wasm` | `nextzxos-2.08` | `~/Klive/ks2.cim` |
 | `ks2-30204` | KS2 | 3.02.04 | `zx-spectrum-next-ks2-30204.wasm` | `nextzxos-2.10` | `~/Klive/ks2-30204.cim` |
+| `ks2-30300` | KS2 | 3.03.00 | `zx-spectrum-next-ks2-30300.wasm` | `nextzxos-26.11` (2.10a) | `~/Klive/ks2-30300.cim` |
+| `ks3-30300` | KS3 (board issue 3 = Issue 5 PCB) | 3.03.00 | `zx-spectrum-next-ks3-30300.wasm` | `nextzxos-26.11` (2.10a) | `~/Klive/ks3-30300.cim` |
+
+The 3.03.00 models depart from D4: core 3.03.00's VHDL is not published, so its delta (the zxnDDMA)
+is built from the distribution's guide and every such guard is marked `VHDL-PENDING(3.03.00)`; their
+`vhdlRef` is 3.02.04, whose VHDL has the issue 5 board. `dev/plans/ZXNEXT_3_03_PLAN.md` holds the
+decisions (D-A to D-G) and what to do once the VHDL appears.
 
 ## Decisions
 
@@ -112,7 +119,7 @@ Shipped profiles:
 | VHDL scripts | `npm run next-fpga:{fetch,comments,diff}` (`dev/scripts/next-fpga-*.cjs`) |
 | ROM set manifest (provenance, hashes, page CRCs, facts, SD image) | `src/common/zxnext/nextRomSets.json`, typed by `src/common/zxnext/romSets.ts` (`nextRomPath`, `nextRomFolder`) |
 | ROMs and sidecars | `src/public/roms/zxnext/<setId>/` |
-| SD base images | `src/public/mmc/` (`ks2-base.cim` for 2.08, `nextzxos-2.10-base.cim`) |
+| SD base images | `src/public/mmc/` (`ks2-base.cim` for 2.08, `nextzxos-2.10-base.cim`, `nextzxos-26.11-base.cim`) |
 | SD card menus | `src/main/machine-menus/zx-next-menus.ts` |
 | ROM loading, CRC check, facts written to the core | `src/emu/machines/zxNext/ZxNextWasmV2Machine.ts` |
 | NEX minimum-core check | `NexFileViewerPanel.tsx`, against the active model |
@@ -155,6 +162,23 @@ Shipped profiles:
   is skipped: neither version models I/O contention. Item 4's EAR polarity follows the VHDL pin
   chain, not confirmed on hardware.
 - The ROM Annotations menu groups the Next's ROMs by NextZXOS release.
+- **A set is named after its NextZXOS release, or after the distribution release when NextZXOS kept
+  its number**: `nextzxos-26.11` is NextZXOS 2.10a (the 26.11 distribution), whose bytes differ from
+  the `KS3` branch's 2.10. Its changes are all in place (the version word $E210 -> $A210, ROM 3's
+  TONE_OUT back to the 48K ROM's, the alternate ROM's PLAY without the CPU-speed switch), so its
+  sidecars are 2.10's at the same offsets plus a carry for the moved PLAY code.
+- **A set has no `fpgaRoms` when its core's boot ROM is not published** (`nextzxos-26.11`); identical
+  boot ROM bytes are named by their first set anyway.
+- **An SD base image must stay under GitHub's 100 MB file limit**: a set's `sdBaseImage.exclude` leaves
+  distribution paths off its card (`nextzxos-26.11` leaves out `extras/nextest`, the 52 MB factory
+  board test). `next-roms:fetch -- --git` reads the files through Git when GitLab's raw URLs answer
+  HTTP 429.
+- **The KS3's memory (D-G of the 3.03 plan)**: 4 MB of SRAM, the upper 2 MB kept after the 8K error page
+  in the core's array (`zxnextSramOffset`), so every offset below $202000 is the same on every board
+  and the IDE's layout (`nextMemoryLayout.ts`) needs no board. The MMU reaches pages 0-223 on every
+  board (`zxnext.vhd@3.02.04 ~3258`); only config-mode NextReg `$04` (8 bits on issue 5, ~6218) and
+  the zxnDDMA's physical addresses reach the upper block. The loader accepts both memory sizes.
+  `session.sramBytes(physical)` reads SRAM by physical address in tests.
 
 ## Adding a model
 
@@ -191,4 +215,8 @@ KS3 fits the same steps: the board is a profile field and a compile-time define,
 - **ULA I/O contention** (delta item 3) is modelled in neither version; a separate fidelity item.
 - **EAR polarity** on 3.02.04 (delta item 4) is unconfirmed on hardware.
 - Upstream is at 3.02.05 (branch `30205`); adding it is one manifest entry plus the steps above.
+- **Core 3.03.00's VHDL** is not published; `dev/plans/ZXNEXT_3_03_PLAN.md` phase 7 lists what to do
+  when it is (pin, classify, check every `VHDL-PENDING(3.03.00)`, model "28MHz 0 WS").
+- **The IDE does not show the KS3's upper 2 MB** (memory panels, bank pickers, profiler): it is
+  reached only through config mode and the DMA.
 - Offering a second NextZXOS for the same core is possible by the data model (D9.1) but has no UI.

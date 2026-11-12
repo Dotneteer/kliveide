@@ -162,5 +162,80 @@
         "saveBytes": "0x04c2"
       }
     }
+  },
+  "nextzxos-26.11": {
+    "nextZxOs": "2.10a",
+    "source": {
+      "project": "thesmog358/tbblue",
+      "ref": "master",
+      "commit": "3a892b03738cfb27eee01f33d09186d3215a5a4a",
+      "dir": "machines/next"
+    },
+    "fetched": "2026-11-12",
+    "files": {
+      "enNextZX.rom": {
+        "size": 65536,
+        "sha256": "6f7fcd3579e84e390bcdf89907b78f90a01aa848b25fe7807f80c66b3aa69d5e",
+        "pages": [
+          "fac011ab",
+          "20f98e41",
+          "00732096",
+          "cb246c44"
+        ]
+      },
+      "enNxtmmc.rom": {
+        "size": 8192,
+        "sha256": "51854634758ddace36d5fc8b81f5e97a34c0538c511bc895bb9821c463235e84",
+        "pages": [
+          "3e9607ae"
+        ]
+      },
+      "enNextMf.rom": {
+        "size": 8192,
+        "sha256": "96b57f9b1ecba422c46ae567f5aaba7736d9a6efc66585cd33a83804ce6485c7",
+        "pages": [
+          "a82ed3f9"
+        ]
+      },
+      "enAltZX.rom": {
+        "size": 32768,
+        "sha256": "24d98dbb7032ae03d7b051928ffd4b8e7b8b1ce8c426378704c66cefe82aa7c8",
+        "pages": [
+          "166f654a",
+          "abb6edb1"
+        ]
+      },
+      "enNextLG.rom": {
+        "size": 65536,
+        "sha256": "39aa98e42abf176887fd03c6dd03e37df4f8d6dfd6477926b11f4d6bf7f8f090",
+        "pages": [
+          "fac011ab",
+          "20f98e41",
+          "7ebb22eb",
+          "cb246c44"
+        ]
+      }
+    },
+    "fpgaRoms": {},
+    "sdBaseImage": {
+      "file": "mmc/nextzxos-26.11-base.cim",
+      "sha256": "c9d23e9abcf490e14e30767a482c3c061d0bd3a934befc8c5b505cf9db7eef87",
+      "exclude": [
+        "extras/nextest"
+      ]
+    },
+    "facts": {
+      "keyWaitLoop": [
+        "0x0c98",
+        "0x0cbe"
+      ],
+      "mainWaitingLoop": "0x0cb5",
+      "ldBytes": {
+        "loadBytes": "0x056c",
+        "loadBytesInvalidHeader": "0x05b6",
+        "loadBytesResume": "0x05e2",
+        "saveBytes": "0x04c2"
+      }
+    }
   }
 }

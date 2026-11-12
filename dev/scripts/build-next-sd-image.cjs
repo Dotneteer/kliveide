@@ -223,12 +223,17 @@ function fetchDistribution(commit, into) {
   git(into, "checkout", "-q", "FETCH_HEAD");
 }
 
-/** The distribution's tracked files that go on the card, sorted. */
-function cardFiles(src) {
+/**
+ * The distribution's tracked files that go on the card, sorted. `setExclude` is the set's own
+ * `sdBaseImage.exclude`: folders (or files) left off that set's card only, because a committed image
+ * must stay under GitHub's 100 MB file limit.
+ */
+function cardFiles(src, setExclude = []) {
+  const inSetExclude = (path) => setExclude.some((prefix) => path === prefix || path.startsWith(`${prefix}/`));
   return git(src, "ls-files", "-z")
     .split("\0")
     .filter(Boolean)
-    .filter((path) => !EXCLUDED.has(path.split("/")[0]) && !EXCLUDED.has(path))
+    .filter((path) => !EXCLUDED.has(path.split("/")[0]) && !EXCLUDED.has(path) && !inSetExclude(path))
     .sort();
 }
 
@@ -306,7 +311,7 @@ async function main() {
 
   try {
     checkRoms(src, setId, set);
-    const files = cardFiles(src);
+    const files = cardFiles(src, set.sdBaseImage.exclude);
     const outPath = args.out ? resolve(args.out) : join(PUBLIC, set.sdBaseImage.file);
     const label = set.source.ref.toUpperCase().substring(0, 11);
     console.log(`Building ${outPath}: ${files.length} files, ${CARD_SIZE_MB} MB card, label "${label}" ...`);

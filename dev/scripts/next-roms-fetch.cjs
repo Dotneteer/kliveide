@@ -3,7 +3,9 @@
  * Fetches one ZX Spectrum Next ROM set from the official distribution and records it in the
  * manifest (`dev/ai/zxnext-models.md` D9.2).
  *
- *   npm run next-roms:fetch -- <setId> --ref <branch|commit> [--replace] [--files a.rom,b.rom]
+ *   npm run next-roms:fetch -- <setId> --ref <branch|commit> [--replace] [--git] [--files a.rom,b.rom]
+ *
+ * `--git` reads the files through Git rather than the raw URLs, for when GitLab answers HTTP 429.
  *
  * A development step, run once when a Next model is implemented: the files land in
  * `src/public/roms/zxnext/<setId>/` and are committed; the app and the tests never download them.
@@ -72,6 +74,27 @@ async function download(commit, file) {
   return new Uint8Array(await response.arrayBuffer());
 }
 
+/**
+ * The files at a commit, read through Git instead of the raw URLs (`--git`): GitLab's raw endpoint
+ * answers HTTP 429 to an IP it has rate-limited, while its Git endpoint keeps serving. A shallow,
+ * blob-less fetch of the one commit, then `git show` per file; Git checks every object by its id.
+ */
+function readWithGit(commit, files) {
+  const { mkdtempSync, rmSync } = require("node:fs");
+  const { tmpdir } = require("node:os");
+  const dir = mkdtempSync(join(tmpdir(), "klive-next-roms-"));
+  const git = (...args) => execFileSync("git", ["-C", dir, ...args], { maxBuffer: 64 * 1024 * 1024 });
+  try {
+    git("init", "-q");
+    git("fetch", "-q", "--depth", "1", "--filter=blob:none", `https://gitlab.com/${PROJECT}.git`, commit);
+    const result = {};
+    for (const file of files) result[file] = new Uint8Array(git("show", `${commit}:${DIR}/${file}`));
+    return result;
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
 function readManifest() {
   return existsSync(MANIFEST) ? JSON.parse(readFileSync(MANIFEST, "utf8")) : {};
 }
@@ -86,12 +109,13 @@ function parseArgs(argv) {
     const arg = argv[i];
     if (arg === "--ref") args.ref = argv[++i];
     else if (arg === "--replace") args.replace = true;
+    else if (arg === "--git") args.git = true;
     else if (arg === "--files") args.files = argv[++i].split(",").map((f) => f.trim()).filter(Boolean);
     else if (!arg.startsWith("--") && !args.setId) args.setId = arg;
     else throw new Error(`Unknown argument '${arg}'.`);
   }
   if (!args.setId || !args.ref) {
-    throw new Error("Usage: npm run next-roms:fetch -- <setId> --ref <branch|commit> [--replace] [--files a.rom,b.rom]");
+    throw new Error("Usage: npm run next-roms:fetch -- <setId> --ref <branch|commit> [--replace] [--git] [--files a.rom,b.rom]");
   }
   if (!/^[a-z0-9][a-z0-9.-]*$/.test(args.setId)) throw new Error(`'${args.setId}' is not a valid set id.`);
   return args;
@@ -108,8 +132,9 @@ async function main() {
   const folder = join(ROM_ROOT, args.setId);
   mkdirSync(folder, { recursive: true });
   const files = {};
+  const viaGit = args.git ? readWithGit(commit, args.files) : undefined;
   for (const file of args.files) {
-    const bytes = await download(commit, file);
+    const bytes = viaGit ? viaGit[file] : await download(commit, file);
     writeFileSync(join(folder, file), bytes);
     files[file] = describe(bytes);
     console.log(`  ${file}: ${bytes.length} bytes, pages ${files[file].pages.join(" ")}`);

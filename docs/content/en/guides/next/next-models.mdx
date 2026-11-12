@@ -19,6 +19,8 @@ and what differs between them.
 |---|---|---|---|---|
 | ZX Spectrum Next (KS2, core 3.02.01) | KS2 (issue 4) | 3.02.01 | 2.08 | `ks2.cim` |
 | ZX Spectrum Next (KS2, core 3.02.04) | KS2 (issue 4) | 3.02.04 | 2.10 | `ks2-30204.cim` |
+| ZX Spectrum Next (KS2, core 3.03.00) | KS2 (issue 4) | 3.03.00 | 2.10a | `ks2-30300.cim` |
+| ZX Spectrum Next (KS3, core 3.03.00) | KS3 (issue 5) | 3.03.00 | 2.10a | `ks3-30300.cim` |
 
 Each model has its own:
 
@@ -61,3 +63,26 @@ The KS2 / 3.02.04 model emulates these hardware changes; the 3.02.01 model keeps
 
 The [Next Registers panel](/en/guides/next/next-registers) shows each register as the model's core
 describes it.
+
+## What changed in core 3.03.00
+
+The two core 3.03.00 models boot the distribution's 26.11 release (NextZXOS 2.10a). Their hardware is
+core 3.02.04's plus the zxnDDMA, the DMA's new commands on port `$6B`:
+
+| Area | Core 3.03.00 |
+|---|---|
+| zxnDDMA | `$D7` and `$DB` set address bits 23-16 of each port; `$DF` turns on physical addresses (the flat SRAM, no MMU), rectangles (`$E3`, `$E7`, `$EB`, `$EF`), a transparent colour (`$F3`), fill (`$F7`) and Layer 2 X,Y positions. Port `$0B` ignores them, as earlier cores do. |
+
+Core 3.03.00's FPGA source is not published yet. These models follow the zxnDDMA guide that comes
+with the distribution (`docs/zxnDDMA/zxnddma.gde` on the SD card). Two of its changes are not emulated
+yet: the 28 MHz speed without wait states, and the DMA's exact timing beyond what the guide states. At
+28 MHz these models run as core 3.02.04 does.
+
+## The KS3 board
+
+The KS3 (issue 5) board has 4 MB of SRAM, twice the KS2's, and NextReg `$0F` reads 3. The MMU still
+reaches 8K pages 0-223 only, as on every board. A program reaches the upper 2 MB in two ways:
+
+- **The zxnDDMA's physical addresses**, `$200000-$3FFFFF`. On a KS2 these addresses wrap onto the
+  lower 2 MB, so check the board (NextReg `$0F`) before using them.
+- **NextReg `$04` in config mode**, whose bit 7 selects the upper 2 MB on the KS3 only.

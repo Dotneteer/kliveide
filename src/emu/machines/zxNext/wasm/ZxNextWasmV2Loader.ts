@@ -9,6 +9,13 @@ import { ZXNEXT_FRAME_TRACE_CAPACITY, ZXNEXT_FRAME_TRACE_HEADER_SIZE, ZXNEXT_FRA
 /** The implicit Next model's artifact, when the caller names none (`nextProfiles.ts`, D3) */
 const DEFAULT_ARTIFACT_NAME = nextProfileOf().wasmArtifact;
 export const ZXNEXT_WASM_V2_MEMORY_SIZE = OFFS_ERR_PAGE + 0x2000;
+
+/**
+ * The core memory sizes an artifact may have: 2 MB of SRAM and the error page, or on a KS3 (4 MB)
+ * another 2 MB after the error page (`zxnext.c`, `zxnextSramOffset`; `dev/plans/ZXNEXT_3_03_PLAN.md`
+ * D-G). The first `ZXNEXT_WASM_V2_MEMORY_SIZE` bytes are laid out alike on every board.
+ */
+export const ZXNEXT_WASM_V2_MEMORY_SIZES: readonly number[] = [ZXNEXT_WASM_V2_MEMORY_SIZE, ZXNEXT_WASM_V2_MEMORY_SIZE + 0x200000];
 export const ZXNEXT_WASM_V2_FLAT_MEMORY_SIZE = 0x10000;
 export const ZXNEXT_WASM_V2_KEYBOARD_LINE_COUNT = 8;
 export const ZXNEXT_WASM_V2_NEXT_REG_COUNT = 0x100;
@@ -980,7 +987,11 @@ export function createZxNextWasmV2Views(
   const pixelBytes = pixelWords * 4;
   const traceBytes = traceHeaderSize + traceCapacity * traceRecordSize;
 
-  assertExpectedSize(artifactName, "memory", memorySize, ZXNEXT_WASM_V2_MEMORY_SIZE);
+  if (!ZXNEXT_WASM_V2_MEMORY_SIZES.includes(memorySize)) {
+    throw new Error(
+      `ZX Spectrum Next WASM v2 artifact '${artifactName}' reports memory size ${memorySize}; expected one of ${ZXNEXT_WASM_V2_MEMORY_SIZES.join(", ")}.`
+    );
+  }
   assertExpectedSize(artifactName, "flatMemory", flatMemorySize, ZXNEXT_WASM_V2_FLAT_MEMORY_SIZE);
   assertExpectedSize(artifactName, "keyboardLines", keyboardLineCount, ZXNEXT_WASM_V2_KEYBOARD_LINE_COUNT);
   assertExpectedSize(artifactName, "nextRegs", nextRegCount, ZXNEXT_WASM_V2_NEXT_REG_COUNT);

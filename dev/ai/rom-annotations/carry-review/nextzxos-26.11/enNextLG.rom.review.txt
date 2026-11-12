@@ -1,0 +1,12 @@
+Carried by dev/scripts/rom-annotations-carry.cjs (byte signature), for hand review.
+From: zxnext/nextzxos-2.10/enNextLG.rom.dis
+To:   zxnext/nextzxos-26.11/enNextLG.rom.dis  (level 2)
+
+== Page 2 (fcabc6c7 -> 7ebb22eb)
+   labels 2/2, line annotations 2/2, data regions 24/24 carried
+
+-- Carried comments to check: a ROM address they name moved or was not placed, or their data changed (1)
+$20F4 (was $20F4)  "Version mismatch:", ENTER, "e210 enNextLG.rom", ENTER, $FF (CHECK_VERSION): enNextZX.rom'
+        the data under it changed: check its text
+
+Page 2 measured: level 2, 0 unlabelled target(s), 0 label(s) without a synopsis, 0 misplaced

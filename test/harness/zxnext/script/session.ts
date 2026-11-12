@@ -762,6 +762,22 @@ export class NextTestSession {
     return this.machine.wasmV2Runtime!.memory;
   }
 
+  /**
+   * `length` bytes of SRAM from a physical address (`$000000-$1FFFFF`, and on a KS3 up to `$3FFFFF`),
+   * as stored: banks 5 and 7 here are the block RAM the MMU and the ULA use. The core keeps a KS3's
+   * upper 2 MB after its 8K error page (`zxnext.c`, `zxnextSramOffset`); this reads it at its physical
+   * address. Read-only, like `physicalMemory`.
+   */
+  sramBytes(physical: number, length = 1): number[] {
+    const memory = this.machine.wasmV2Runtime!.memory;
+    return Array.from({ length }, (_, i) => {
+      const address = physical + i;
+      const offset = address < 0x200000 ? address : address + 0x2000;
+      if (offset >= memory.length) throw new Error(`sramBytes: $${address.toString(16)} is beyond this board's SRAM`);
+      return memory[offset];
+    });
+  }
+
   /** Writes a byte of an 8K RAM page whatever is mapped, through MMU slot 7 (restored afterwards). */
   pokePage(page: number, offset: number, value: number): this {
     const saved = readNextRegDirect(this.machine, 0x57);
