@@ -6,6 +6,7 @@ import { ZxSpectrumBase } from "@emu/machines/ZxSpectrumBase";
 import { Sp128EnterKeyTop } from "./Sp128EnterKeyTop";
 import { Sp128EnterKeyBottom } from "./Sp128EnterKeyBottom";
 import { KeyboardApi } from "./KeyboardPanel";
+import { NextExtraKeyCode } from "@emu/machines/zxNext/nextKeyCodes";
 import { useKeyboard } from "./useKeyboard";
 
 const DEFAULT_WIDTH = 14 * 75 + 20;
@@ -29,20 +30,18 @@ export const NextKeyboard = ({ width, height, apiLoaded }: Props) => {
         <Key
           zoom={zoom}
           extMode={true}
-          code={35}
-          secondaryCode={0}
+          code={NextExtraKeyCode.Break}
           keyAction={handleClick}
           center='BREAK'
-          pressed={isPressed(35, 0)}
+          pressed={isPressed(NextExtraKeyCode.Break)}
         />
         <Key
           zoom={zoom}
           extMode={true}
-          code={15}
-          secondaryCode={0}
+          code={NextExtraKeyCode.Edit}
           keyAction={handleClick}
           center='EDIT'
-          pressed={isPressed(15)}
+          pressed={isPressed(NextExtraKeyCode.Edit)}
         />
         <Key
           zoom={zoom}
@@ -164,11 +163,10 @@ export const NextKeyboard = ({ width, height, apiLoaded }: Props) => {
           zoom={zoom}
           extMode={true}
           xwidth={110}
-          code={20}
-          secondaryCode={0}
+          code={NextExtraKeyCode.Delete}
           keyAction={handleClick}
           center='DELETE'
-          pressed={isPressed(20, 0)}
+          pressed={isPressed(NextExtraKeyCode.Delete)}
         />
       </Row>
       <Row height='auto' style={keyboardRowStyle}>
@@ -176,25 +174,23 @@ export const NextKeyboard = ({ width, height, apiLoaded }: Props) => {
           zoom={zoom}
           extMode={true}
           xwidth={92}
-          code={17}
-          secondaryCode={0}
+          code={NextExtraKeyCode.TrueVideo}
           keyAction={handleClick}
           keyword='TRUE'
           symbolWord='VIDEO'
           cleanMode={true}
-          pressed={isPressed(17, 0)}
+          pressed={isPressed(NextExtraKeyCode.TrueVideo)}
         />
         <Key
           zoom={zoom}
           extMode={true}
           xwidth={92}
-          code={18}
-          secondaryCode={0}
+          code={NextExtraKeyCode.InvVideo}
           keyAction={handleClick}
           keyword='INV'
           symbolWord='VIDEO'
           cleanMode={true}
-          pressed={isPressed(18, 0)}
+          pressed={isPressed(NextExtraKeyCode.InvVideo)}
         />
         <Key
           zoom={zoom}
@@ -334,23 +330,21 @@ export const NextKeyboard = ({ width, height, apiLoaded }: Props) => {
           zoom={zoom}
           extMode={true}
           xwidth={110}
-          code={16}
-          secondaryCode={0}
+          code={NextExtraKeyCode.CapsLock}
           keyAction={handleClick}
           keyword='CAPS'
           symbolWord='LOCK'
           cleanMode={true}
-          pressed={isPressed(16, 0)}
+          pressed={isPressed(NextExtraKeyCode.CapsLock)}
         />
         <Key
           zoom={zoom}
           extMode={true}
           xwidth={95}
-          code={21}
-          secondaryCode={0}
+          code={NextExtraKeyCode.Graph}
           keyAction={handleClick}
           center='GRAPH'
-          pressed={isPressed(21,0)}
+          pressed={isPressed(NextExtraKeyCode.Graph)}
           />
         <Key
           zoom={zoom}
@@ -488,13 +482,12 @@ export const NextKeyboard = ({ width, height, apiLoaded }: Props) => {
           zoom={zoom}
           extMode={true}
           xwidth={91}
-          code={36}
-          secondaryCode={0}
+          code={NextExtraKeyCode.Extend}
           keyAction={handleClick}
           keyword='EXTEND'
           symbolWord='MODE'
           cleanMode={true}
-          pressed={isPressed(36, 0)}
+          pressed={isPressed(NextExtraKeyCode.Extend)}
           />
         <Key
           zoom={zoom}
@@ -574,12 +567,11 @@ export const NextKeyboard = ({ width, height, apiLoaded }: Props) => {
         <Key
           zoom={zoom}
           extMode={true}
-          code={23}
-          secondaryCode={0}
+          code={NextExtraKeyCode.Up}
           keyAction={handleClick}
           main={"\u25b2"}
           centerMode={true}
-          pressed={isPressed(23, 0)}
+          pressed={isPressed(NextExtraKeyCode.Up)}
           />
         <Key
           zoom={zoom}
@@ -605,42 +597,38 @@ export const NextKeyboard = ({ width, height, apiLoaded }: Props) => {
         <Key
           zoom={zoom}
           extMode={true}
-          code={26}
-          secondaryCode={36}
+          code={NextExtraKeyCode.Semicolon}
           keyAction={handleClick}
           main=';'
           centerMode={true}
-          pressed={isPressed(26, 36)}
+          pressed={isPressed(NextExtraKeyCode.Semicolon)}
           />
         <Key
           zoom={zoom}
           extMode={true}
-          code={25}
-          secondaryCode={36}
+          code={NextExtraKeyCode.DoubleQuote}
           keyAction={handleClick}
           main='"'
           centerMode={true}
-          pressed={isPressed(25, 36)}
+          pressed={isPressed(NextExtraKeyCode.DoubleQuote)}
           />
         <Key
           zoom={zoom}
           extMode={true}
-          code={38}
-          secondaryCode={36}
+          code={NextExtraKeyCode.Comma}
           keyAction={handleClick}
           main=','
           centerMode={true}
-          pressed={isPressed(38, 36)}
+          pressed={isPressed(NextExtraKeyCode.Comma)}
           />
         <Key
           zoom={zoom}
           extMode={true}
-          code={37}
-          secondaryCode={36}
+          code={NextExtraKeyCode.Period}
           keyAction={handleClick}
           main='.'
           centerMode={true}
-          pressed={isPressed(37, 36)}
+          pressed={isPressed(NextExtraKeyCode.Period)}
           />
         <Key
           zoom={zoom}
@@ -653,32 +641,29 @@ export const NextKeyboard = ({ width, height, apiLoaded }: Props) => {
         <Key
           zoom={zoom}
           extMode={true}
-          code={19}
-          secondaryCode={0}
+          code={NextExtraKeyCode.Left}
           keyAction={handleClick}
           main={"\u25c0"}
           centerMode={true}
-          pressed={isPressed(19, 0)}
+          pressed={isPressed(NextExtraKeyCode.Left)}
           />
         <Key
           zoom={zoom}
           extMode={true}
-          code={24}
-          secondaryCode={0}
+          code={NextExtraKeyCode.Down}
           keyAction={handleClick}
           main={"\u25bc"}
           centerMode={true}
-          pressed={isPressed(24,0)}
+          pressed={isPressed(NextExtraKeyCode.Down)}
           />
         <Key
           zoom={zoom}
           extMode={true}
-          code={22}
-          secondaryCode={0}
+          code={NextExtraKeyCode.Right}
           keyAction={handleClick}
           main={"\u25b6"}
           centerMode={true}
-          pressed={isPressed(22,0)}
+          pressed={isPressed(NextExtraKeyCode.Right)}
           />
         <Key
           zoom={zoom}

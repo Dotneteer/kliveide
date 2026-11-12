@@ -9,8 +9,7 @@ import type { MessengerBase } from "@common/messaging/MessengerBase";
 import { IMemorySection } from "@abstractions/MemorySection";
 import { createMainApi } from "@common/messaging/MainApi";
 import { EmulatedKeyStroke, laterTact, tactsPast, toTactCounter } from "@emu/structs/EmulatedKeyStroke";
-import { SpectrumKeyCode } from "@emu/machines/zxSpectrum/SpectrumKeyCode";
-import { spectrumKeyMappings } from "@emu/machines/zxSpectrum/SpectrumKeyMappings";
+import { NextKeyCodeSet, nextKeyMappings } from "./NextKeyMappings";
 import { Z80MachineBase } from "../Z80MachineBase";
 import {
   buildNextCodeInjectionFlow,
@@ -150,12 +149,13 @@ export abstract class ZxNextWasmHost extends Z80MachineBase {
   // ==========================================================================================
   // Keyboard
 
+  /** The 40 matrix keys and the 16 extra keys (codes 40-55), which press their own key in the core */
   getKeyCodeSet(): KeyCodeSet {
-    return SpectrumKeyCode;
+    return NextKeyCodeSet;
   }
 
   getDefaultKeyMapping(): KeyMapping {
-    return spectrumKeyMappings;
+    return nextKeyMappings;
   }
 
   getCursorMode(): number {

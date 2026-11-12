@@ -46,7 +46,8 @@ a stream of bits on another wire back into bytes. The Next has two of them, iden
 call them **the twins**:
 
 - **UART 0** is wired to the **Wi-Fi module**, an ESP chip on the board, which does the networking and
-  talks to the Next through text commands on this line.
+  talks to the Next through text commands on this line; the
+  [Wi-Fi chapter](/en/under-the-hood/emulator-internals/next-wifi/) tells its story.
 - **UART 1** is wired to the **Raspberry Pi's connector**, on GPIO 14 and 15, once bit 5 of the **PI
   Peripheral Enable register, NextReg `$A0`**, gives those pins to the UART.
 
