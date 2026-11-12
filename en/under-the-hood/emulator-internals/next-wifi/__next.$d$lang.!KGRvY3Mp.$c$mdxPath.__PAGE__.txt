@@ -1,0 +1,785 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:Ta5c5,---
+description: "How Wi-Fi works on the ZX Spectrum Next: the ESP8266 module as a second computer, the wires between it and the FPGA, boot pins and reset, the AT command language, joining a network, a TCP conversation, the +IPD framing, where TCP's guarantee ends, and how fast the link can go."
+---
+
+import { Callout } from 'nextra/components'
+
+# Wi-Fi: A Telegraph Clerk on a Serial Line
+
+WPA2 encryption, radio packets, TCP with its timers and retransmissions, DNS lookups: a modern network
+connection is a lot of software, and a Z80 running at 3.5 MHz has 64K to put it in. So how does a Next
+fetch a web page? The answer made me smile the first time I understood it: the Next doesn't. It hires
+somebody else to do it, and talks to him in plain text.
+
+Knowing how that arrangement works decides whether your network code is pleasant or haunted. Anything on
+the Next that touches the Internet, from a chat client to a file sync tool, goes through the one narrow
+door this chapter describes. The door has rules, it has a speed limit, and it has one nasty surprise about
+what "reliable" means.
+
+The previous chapter, [UARTs: Two Serial Ports Behind One
+Door](/en/under-the-hood/emulator-internals/next-uart/), explains the serial port itself: ports, baud rate,
+buffers and status bits. I lean on it throughout and will not repeat it.
+
+## The road ahead
+
+We begin with the Wi-Fi module, which turns out to be a whole computer, and with the handful of wires that
+tie it to the Next. Then we see how the module starts and how a program can reset it. After that comes the
+language the two sides speak: first the commands, then joining a network, then a real conversation with a
+server. Telling a server's data from the module's own chatter takes a small parser, which we write in Z80.
+The idea I most want you to take away is in the section on the promise that stops at the module, so read
+that one even if you skim the rest. We finish with how fast the link can go and with the differences
+between firmware versions.
+
+<Callout type="info">
+The Next's side is described for **core 3.02.01**, with a master clock of **28 MHz** and the serial line at
+**115,200 baud, 8 data bits, no parity, one stop bit**. The module is not part of the Next's own design: what
+it answers depends on the firmware loaded into it, and the exchanges shown here are those of Espressif's
+standard AT firmware.
+</Callout>
+
+## A computer for a peripheral
+
+The Wi-Fi hardware is an **ESP-01**, a small board that pushes onto a header behind the VGA port, with no
+soldering. On it are two things that matter: an **ESP8266** chip from Espressif and a flash memory holding
+its firmware. The chip contains the radio, for 802.11 b/g/n on the 2.4 GHz band, with WPA and WPA2.
+
+It also contains a processor, and here the story turns funny. The ESP8266's core is a 32-bit RISC running
+at 80 MHz, with 160 KB of RAM on the chip. Set that beside the 8-bit CPU it serves. I find it delightful
+that the humblest peripheral in the machine, the one you can buy for the price of a sandwich, has more raw
+processing power than the computer it is plugged into.
+
+I think of the module as **the telegraph clerk**. You walk up to his counter with a message written on a
+slip, he does whatever mysterious things are needed to send it across the world, and when an answer arrives
+he passes it through the hatch. You never touch the wires yourself, and you don't care how they work.
+
+That is the whole design. The Next contains no network logic at all: no MAC, no packet buffers, no checksum
+engine. All of it runs as firmware inside the clerk. The FPGA provides a serial port and a couple of control
+lines, and I admire how little that costs.
+
+## Five wires and a socket
+
+Here is everything that connects the Next to its clerk:
+
+<figure>
+{/* fig:wires */}
+<svg viewBox="-2 -2 704 308" role="img" aria-label="On the left the Next's FPGA, with five rows: the UART 0 transmitter, the UART 0 receiver, NextRegs $A8 and $A9 bit 0 for GPIO0, NextReg $A9 bit 2 for GPIO2, and NextReg $02 bit 7 for the reset line. In the middle wires run to the ESP-01 module's pins: transmitter to RX, TX back to the receiver, GPIO0 both ways, GPIO2 from the module only, and reset to RST, a line shared with the expansion bus. A dashed row shows the two flow control lines, present on issue 4 boards and later. On the right the module talks by radio to the Wi-Fi router." style={{ width: "100%", height: "auto" }}>
+  <defs>
+    <marker id="wf-w-0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
+    </marker>
+    <marker id="wf-w-1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#30a46c" />
+    </marker>
+    <marker id="wf-w-2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#e8912d" />
+    </marker>
+    <marker id="wf-w-3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#e5484d" />
+    </marker>
+    <marker id="wf-w-4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#a855f7" />
+    </marker>
+  </defs>
+  <rect x="0" y="8" width="250" height="296" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="125" y="161.3" textAnchor="middle" fill="currentColor" fontSize="15"></text>
+  <text x="125" y="28" textAnchor="middle" fill="currentColor" fontSize="15" fontWeight="bold">the Next's FPGA</text>
+  <rect x="410" y="8" width="120" height="296" rx="6" fill="#a855f7" fillOpacity="0.08" stroke="#a855f7" strokeWidth="2" />
+  <text x="470" y="161.3" textAnchor="middle" fill="#a855f7" fontSize="15"></text>
+  <text x="470" y="28" textAnchor="middle" fill="#a855f7" fontSize="15" fontWeight="bold">ESP-01</text>
+  <rect x="14" y="38" width="222" height="36" rx="4" fill="none" stroke="#30a46c" strokeWidth="1.6" />
+  <text x="125" y="61" textAnchor="middle" fill="#30a46c" fontSize="14">UART 0 transmitter</text>
+  <text x="470" y="61" textAnchor="middle" fill="#a855f7" fontSize="15" fontWeight="bold">RX</text>
+  <text x="330" y="51" textAnchor="middle" fill="#30a46c" fontSize="13.5">bytes out</text>
+  <line x1="236" y1="62" x2="408" y2="62" stroke="#30a46c" strokeWidth="1.8" markerEnd="url(#wf-w-1)" />
+  <rect x="14" y="84" width="222" height="36" rx="4" fill="none" stroke="#30a46c" strokeWidth="1.6" />
+  <text x="125" y="107" textAnchor="middle" fill="#30a46c" fontSize="14">UART 0 receiver</text>
+  <text x="470" y="107" textAnchor="middle" fill="#a855f7" fontSize="15" fontWeight="bold">TX</text>
+  <text x="330" y="97" textAnchor="middle" fill="#30a46c" fontSize="13.5">bytes in</text>
+  <line x1="410" y1="108" x2="238" y2="108" stroke="#30a46c" strokeWidth="1.8" markerEnd="url(#wf-w-1)" />
+  <rect x="14" y="130" width="222" height="36" rx="4" fill="none" stroke="#e8912d" strokeWidth="1.6" />
+  <text x="125" y="153" textAnchor="middle" fill="#e8912d" fontSize="14">$A8, $A9 bit 0</text>
+  <text x="470" y="153" textAnchor="middle" fill="#a855f7" fontSize="15" fontWeight="bold">GPIO0</text>
+  <text x="330" y="143" textAnchor="middle" fill="#e8912d" fontSize="13.5">boot choice</text>
+  <line x1="236" y1="154" x2="408" y2="154" stroke="#e8912d" strokeWidth="1.8" markerEnd="url(#wf-w-2)" />
+  <line x1="398" y1="154" x2="238" y2="154" stroke="#e8912d" strokeWidth="1.8" markerEnd="url(#wf-w-2)" />
+  <rect x="14" y="176" width="222" height="36" rx="4" fill="none" stroke="#e8912d" strokeWidth="1.6" />
+  <text x="125" y="199" textAnchor="middle" fill="#e8912d" fontSize="14">$A9 bit 2</text>
+  <text x="470" y="199" textAnchor="middle" fill="#a855f7" fontSize="15" fontWeight="bold">GPIO2</text>
+  <text x="330" y="189" textAnchor="middle" fill="#e8912d" fontSize="13.5">read only</text>
+  <line x1="410" y1="200" x2="238" y2="200" stroke="#e8912d" strokeWidth="1.8" markerEnd="url(#wf-w-2)" />
+  <rect x="14" y="222" width="222" height="36" rx="4" fill="none" stroke="#e5484d" strokeWidth="1.6" />
+  <text x="125" y="245" textAnchor="middle" fill="#e5484d" fontSize="14">$02 bit 7</text>
+  <text x="470" y="245" textAnchor="middle" fill="#a855f7" fontSize="15" fontWeight="bold">RST</text>
+  <text x="330" y="235" textAnchor="middle" fill="#e5484d" fontSize="13.5">reset</text>
+  <line x1="236" y1="246" x2="408" y2="246" stroke="#e5484d" strokeWidth="1.8" markerEnd="url(#wf-w-3)" />
+  <rect x="14" y="268" width="222" height="30" rx="4" fill="none" stroke="#30a46c" strokeWidth="1.4" strokeDasharray="5 4" />
+  <text x="125" y="288" textAnchor="middle" fill="#30a46c" fontSize="14">UART 0 flow control</text>
+  <text x="330" y="280" textAnchor="middle" fill="#30a46c" fontSize="13.5">issue 4 and later</text>
+  <line x1="236" y1="290" x2="410" y2="290" stroke="#30a46c" strokeWidth="1.8" strokeDasharray="5 4" />
+  <rect x="606" y="96" width="94" height="88" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="653" y="127.9" textAnchor="middle" fill="currentColor" fontSize="14">router</text>
+  <text x="653" y="144.9" textAnchor="middle" fill="currentColor" fontSize="14">and the</text>
+  <text x="653" y="161.9" textAnchor="middle" fill="currentColor" fontSize="14">Internet</text>
+  <text x="568" y="130" textAnchor="middle" fill="#a855f7" fontSize="13.5" fontWeight="bold">Wi-Fi</text>
+  <line x1="530" y1="140" x2="604" y2="140" stroke="#a855f7" strokeWidth="1.8" markerEnd="url(#wf-w-4)" />
+  <line x1="592" y1="140" x2="532" y2="140" stroke="#a855f7" strokeWidth="1.8" markerEnd="url(#wf-w-4)" />
+</svg>
+{/* /fig:wires */}
+<figcaption>All the wires between the FPGA and the module. Only two carry data; the others choose how the module boots and reset it. The flow control lines exist on issue 4 boards and later.</figcaption>
+</figure>
+
+- **The serial pair.** The transmitter of **UART 0** drives the module's RX pin, and the module's TX pin
+  drives the receiver of UART 0. Every byte of the conversation goes over these two wires.
+- **GPIO0.** A pin the module looks at when it starts, and the one wire the Next can both drive and read.
+  The **ESP Wifi GPIO Output Enable register, NextReg `$A8`**, bit 0 lets the Next drive it, and the **ESP
+  Wifi GPIO register, NextReg `$A9`**, bit 0 is the level to drive. Reading `$A9` gives the pin's real level.
+- **GPIO2.** Another start-up pin, which the Next only reads, in bit 2 of NextReg `$A9`. The FPGA never drives
+  it, and bit 2 of NextReg `$A8` is fixed at 0.
+- **Reset.** Bit 7 of the **Reset register, NextReg `$02`** holds the module in reset for as long as it is set.
+
+A soft reset releases GPIO0 by clearing NextReg `$A8` and sets the level in `$A9` back to 1. The FPGA also
+holds weak pull-ups on both GPIO pins and on the receive line, so anything left undriven sits high, which is
+the level the module wants to see for a normal start.
+
+Two details are worth remembering. **The reset line is shared with the expansion bus**, so bit 7 of NextReg
+`$02` also resets whatever is plugged in there; I would not touch it in a program that might run with a
+peripheral attached. And if the **Joystick I/O Mode register, NextReg `$0B`**, moves UART 0 to a joystick port (the [UART
+chapter](/en/under-the-hood/emulator-internals/next-uart/#the-joystick-port) has the details), the clerk's
+receive pin rests high and he hears nothing more until UART 0 comes back.
+
+The dashed row in the figure is hardware flow control, the two signals that let a receiver say "wait". On
+issue 2 boards those lines do not exist at all: the Next's transmitter always believes it may send, and its
+request to pause goes nowhere. On issue 4 boards and later the FPGA has both lines for the module, but the
+eight pins of a standard ESP-01 include neither of them. My advice is to write your code as if nothing
+will ever pause the clerk, and we will soon see why that matters.
+
+## Waking the clerk
+
+When the ESP8266 comes out of reset, its boot ROM looks at three pins to decide what to do. Two are the ones
+the Next can see, and the third is held low on the module:
+
+- **GPIO0 high and GPIO2 high**: start the firmware in flash. This is the normal case, and the pull-ups make
+  it the default.
+- **GPIO0 low and GPIO2 high**: wait for a new firmware on the serial line. This is **download mode**, and it
+  is how a firmware update tool running on the Next rewrites the clerk's flash without taking him out of the
+  machine.
+
+Here is the whole recipe for putting the module into download mode, using the Z80N's `nextreg` instruction:
+
+```z80klive
+        nextreg $a9,%00000000  ; GPIO0 will be low
+        nextreg $a8,%00000001  ; the Next drives it
+        nextreg $02,%10000000  ; hold the module in reset
+        ; ...wait a moment...
+        nextreg $02,%00000000  ; release: GPIO0 is sampled now
+        ; ...talk to the boot ROM over UART 0...
+        nextreg $a8,%00000000  ; let GPIO0 float high again
+```
+
+For an ordinary restart, leave the first two lines out. Write exactly `$80` and then `$00` to NextReg `$02`:
+bits 0 and 1 of that register cause a soft and a hard reset of the Next itself, and you do not want one of
+those by accident. Bit 7 alone only reaches the module and the expansion bus.
+
+A hard reset of the Next restarts the module too. A soft reset does so only when the expansion bus is enabled;
+otherwise the clerk stays at his desk, with his network connection intact, while the Next reboots around him.
+A program can therefore find him in the middle of a conversation that some earlier program started, and I
+recommend assuming exactly that when you begin.
+
+Now a small trap. In its first moments the boot ROM prints a diagnostic message on the serial line, and on the
+usual module it does so at **74,880 baud**, a rate that falls out of its 26 MHz crystal. The Next is listening
+at 115,200, so what lands in the receive buffer is a burst of nonsense. Some of those frames fail their stop bit
+and are thrown away; the rest arrive as random bytes. After any module reset, wait, then clear UART 0 with the
+`$98`, `$18` pair on the frame register, and only then start talking.
+
+## Talking in AT
+
+The clerk's language is older than the Spectrum. In 1981 Hayes sold a modem you controlled by sending it text
+commands beginning with the letters **AT**, for "attention", and the format stuck for decades. Espressif's AT
+firmware offers the same bargain: lines of text in, lines of text out.
+
+A command is ASCII text ending in carriage return and line feed, written to UART 0 with a loop like the `Send`
+routine in the UART chapter. The simplest possible exchange checks that anybody is home:
+
+```text
+AT
+OK
+```
+
+If you see `OK`, the clerk is awake and both ends agree on the baud rate. If you see garbage or nothing, they
+probably don't. The Next powers up at 115,200, which is the speed most modules use, but some leave the factory at
+57,600 or 19,200. The Next's `.UART` terminal has a `-f` option that hunts for the right rate. Once found, the
+command `AT+UART_DEF=115200,8,1,0,0` (plain `AT+UART=` on older firmware) stores the speed in the module's
+flash, so you only do this once.
+
+By default the module also **echoes** everything you send, which a human at a terminal likes and a program does
+not. `ATE0` switches echo off, and it is the first command I would send.
+
+## Joining a network
+
+Getting on to Wi-Fi takes three commands, and you normally type them only once:
+
+```text
+AT+CWMODE=1
+OK
+AT+CWJAP="MyNetwork","MyPassword"
+WIFI CONNECTED
+WIFI GOT IP
+
+OK
+AT+CIFSR
++CIFSR:STAIP,"192.168.1.42"
++CIFSR:STAMAC,"5c:cf:7f:12:34:56"
+
+OK
+```
+
+`AT+CWMODE=1` makes the module a **station**, a client of an access point, rather than an access point of its
+own. `AT+CWJAP` joins the network and is slow, because this is where the radio, the password handshake and the
+address request all happen. `AT+CIFSR` shows the address the router gave it.
+
+What I like best is that the clerk **remembers**. The network name and password stay in his flash, and when he
+restarts he rejoins without being asked, telling you `WIFI CONNECTED` and `WIFI GOT IP` as he does. So the
+Next's `WIFI.BAS` set-up program needs to run once, and every later program simply finds the network already
+there. The same fact has a darker side: your Wi-Fi password lives on that little board, so wipe it with
+`AT+CWQAP` before you sell the module on.
+
+## A conversation with a server
+
+Let's fetch a page from a small web server on the local network, at address 192.168.1.20 and port 8080. It is the
+kind of thing every network program on the Next does, and three parties take part:
+
+<figure>
+{/* fig:conversation */}
+<svg viewBox="-2 -2 704 434" role="img" aria-label="A sequence chart with three vertical lines: your program on the Z80, the Wi-Fi module, and the server. Your program asks the module to open a connection, and the module opens it and answers CONNECT and OK. Your program sends AT+CIPSEND=38, gets the prompt, and sends the 38 bytes, which the module sends to the server in a TCP packet and answers SEND OK. The server's reply arrives in a TCP packet and the module passes it on as +IPD,31: followed by the 31 bytes. The server closes the connection and the module reports CLOSED." style={{ width: "100%", height: "auto" }}>
+  <defs>
+    <marker id="wf-s-0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#30a46c" />
+    </marker>
+    <marker id="wf-s-1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#a855f7" />
+    </marker>
+  </defs>
+  <text x="80" y="18" textAnchor="middle" fill="currentColor" fontSize="15" fontWeight="bold">your program</text>
+  <line x1="80" y1="30" x2="80" y2="428" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.55" />
+  <text x="350" y="18" textAnchor="middle" fill="#a855f7" fontSize="15" fontWeight="bold">the module</text>
+  <line x1="350" y1="30" x2="350" y2="428" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.55" />
+  <text x="620" y="18" textAnchor="middle" fill="currentColor" fontSize="15" fontWeight="bold">the server</text>
+  <line x1="620" y1="30" x2="620" y2="428" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.55" />
+  <line x1="82" y1="62" x2="348" y2="62" stroke="#30a46c" strokeWidth="1.8" markerEnd="url(#wf-s-0)" />
+  <text x="215" y="55" textAnchor="middle" fill="#30a46c" fontSize="13.5">AT+CIPSTART=&quot;TCP&quot;,...</text>
+  <line x1="352" y1="94" x2="618" y2="94" stroke="#a855f7" strokeWidth="1.8" markerEnd="url(#wf-s-1)" />
+  <text x="485" y="87" textAnchor="middle" fill="#a855f7" fontSize="13.5">opens a TCP connection</text>
+  <line x1="348" y1="126" x2="82" y2="126" stroke="#30a46c" strokeWidth="1.8" markerEnd="url(#wf-s-0)" />
+  <text x="215" y="119" textAnchor="middle" fill="#30a46c" fontSize="13.5">CONNECT, OK</text>
+  <line x1="82" y1="158" x2="348" y2="158" stroke="#30a46c" strokeWidth="1.8" markerEnd="url(#wf-s-0)" />
+  <text x="215" y="151" textAnchor="middle" fill="#30a46c" fontSize="13.5">AT+CIPSEND=38</text>
+  <line x1="348" y1="190" x2="82" y2="190" stroke="#30a46c" strokeWidth="1.8" markerEnd="url(#wf-s-0)" />
+  <text x="215" y="183" textAnchor="middle" fill="#30a46c" fontSize="13.5">OK, then the &gt; prompt</text>
+  <line x1="82" y1="222" x2="348" y2="222" stroke="#30a46c" strokeWidth="1.8" markerEnd="url(#wf-s-0)" />
+  <text x="215" y="215" textAnchor="middle" fill="#30a46c" fontSize="13.5">the 38 bytes of the request</text>
+  <line x1="352" y1="254" x2="618" y2="254" stroke="#a855f7" strokeWidth="1.8" markerEnd="url(#wf-s-1)" />
+  <text x="485" y="247" textAnchor="middle" fill="#a855f7" fontSize="13.5">the request, in a TCP packet</text>
+  <line x1="348" y1="286" x2="82" y2="286" stroke="#30a46c" strokeWidth="1.8" markerEnd="url(#wf-s-0)" />
+  <text x="215" y="279" textAnchor="middle" fill="#30a46c" fontSize="13.5">SEND OK</text>
+  <line x1="618" y1="318" x2="352" y2="318" stroke="#a855f7" strokeWidth="1.8" markerEnd="url(#wf-s-1)" />
+  <text x="485" y="311" textAnchor="middle" fill="#a855f7" fontSize="13.5">the reply, in a TCP packet</text>
+  <line x1="348" y1="350" x2="82" y2="350" stroke="#30a46c" strokeWidth="1.8" markerEnd="url(#wf-s-0)" />
+  <text x="215" y="343" textAnchor="middle" fill="#30a46c" fontSize="13.5">+IPD,31: and the 31 bytes</text>
+  <line x1="618" y1="382" x2="352" y2="382" stroke="#a855f7" strokeWidth="1.8" markerEnd="url(#wf-s-1)" />
+  <text x="485" y="375" textAnchor="middle" fill="#a855f7" fontSize="13.5">closes the connection</text>
+  <line x1="348" y1="414" x2="82" y2="414" stroke="#30a46c" strokeWidth="1.8" markerEnd="url(#wf-s-0)" />
+  <text x="215" y="407" textAnchor="middle" fill="#30a46c" fontSize="13.5">CLOSED</text>
+</svg>
+{/* /fig:conversation */}
+<figcaption>Fetching a page. Green is text on the serial line between your program and the module; purple is what the module does on your behalf over the network. Your program never sees a TCP packet.</figcaption>
+</figure>
+
+Here is the serial traffic of that picture, in order. Lines beginning with `>>` are what your program sends and
+the others are the module's answers:
+
+```text
+>> AT+CIPSTART="TCP","192.168.1.20",8080
+CONNECT
+
+OK
+>> AT+CIPSEND=38
+OK
+>
+>> GET / HTTP/1.0<CR><LF>Host: 192.168.1.20<CR><LF><CR><LF>
+SEND OK
+
++IPD,31:HTTP/1.0 200 OK<CR><LF><CR><LF>Hello, Next!
+CLOSED
+```
+
+Walk through it with me:
+
+1. `AT+CIPSTART` asks the clerk to open a connection, and he handles the whole TCP handshake himself. `TCP` could
+   have been `UDP` or `SSL`, and a host name works as well as an address, because the module does the DNS lookup too.
+2. `AT+CIPSEND=38` announces exactly how many bytes are coming. The module answers `OK` and then a `>` prompt.
+   Wait for the prompt: bytes sent before it are not part of the message.
+3. Now the 38 bytes go out, with no line ending added; the count is the only thing that says where the message
+   stops. Send too many and the module answers `busy` to the excess; send too few and it keeps waiting, taking
+   your next command as part of the data.
+4. `SEND OK` says the bytes have left the module. It does not say the server has read them.
+5. The reply arrives unasked. It starts with `+IPD,31:`, the module's way of saying "here come 31 bytes from
+   the network".
+6. When the server closes the connection, the module reports `CLOSED`, right after the last byte of data.
+
+Notice the shape of this. The line runs both ways at once, so replies and network data can arrive at any moment,
+including while you are in the middle of sending something else. One `AT+CIPSEND` carries at most 2,048
+bytes, so longer messages go out in several rounds.
+
+## Telling data from chatter
+
+The module uses one serial line for two kinds of thing: its own remarks, such as `OK` or `CLOSED`, and raw data
+from the network, which can contain absolutely anything. It keeps them apart with a tiny piece of framing:
+
+<figure>
+{/* fig:stream */}
+<svg viewBox="-2 -2 704 122" role="img" aria-label="A row of eighteen cells, one per byte, as they arrive on the serial line: O, K, CR, LF are the module's chatter; +, I, P, D and the comma are the tag; 5 is the length in decimal; a colon ends it; H, e, l, l, o are five bytes of data, which are counted, not searched; CR and LF that follow are chatter again." style={{ width: "100%", height: "auto" }}>
+  <rect x="0" y="8" width="38.9" height="44" fill="none" stroke="currentColor" strokeWidth="1.4" />
+  <text x="19.4" y="37" textAnchor="middle" fill="currentColor" fontSize="15" fontWeight="bold">O</text>
+  <rect x="38.9" y="8" width="38.9" height="44" fill="none" stroke="currentColor" strokeWidth="1.4" />
+  <text x="58.3" y="37" textAnchor="middle" fill="currentColor" fontSize="15" fontWeight="bold">K</text>
+  <rect x="77.8" y="8" width="38.9" height="44" fill="none" stroke="currentColor" strokeWidth="1.4" />
+  <text x="97.2" y="37" textAnchor="middle" fill="currentColor" fontSize="13.5" fontWeight="bold">CR</text>
+  <rect x="116.7" y="8" width="38.9" height="44" fill="none" stroke="currentColor" strokeWidth="1.4" />
+  <text x="136.1" y="37" textAnchor="middle" fill="currentColor" fontSize="13.5" fontWeight="bold">LF</text>
+  <rect x="155.6" y="8" width="38.9" height="44" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="175" y="37" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">+</text>
+  <rect x="194.4" y="8" width="38.9" height="44" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="213.9" y="37" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">I</text>
+  <rect x="233.3" y="8" width="38.9" height="44" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="252.8" y="37" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">P</text>
+  <rect x="272.2" y="8" width="38.9" height="44" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="291.7" y="37" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">D</text>
+  <rect x="311.1" y="8" width="38.9" height="44" fill="#e8912d" fillOpacity="0.14" stroke="#e8912d" strokeWidth="1.4" />
+  <text x="330.6" y="37" textAnchor="middle" fill="#e8912d" fontSize="15" fontWeight="bold">,</text>
+  <rect x="350" y="8" width="38.9" height="44" fill="#3b82f6" fillOpacity="0.14" stroke="#3b82f6" strokeWidth="1.4" />
+  <text x="369.4" y="37" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">5</text>
+  <rect x="388.9" y="8" width="38.9" height="44" fill="#3b82f6" fillOpacity="0.14" stroke="#3b82f6" strokeWidth="1.4" />
+  <text x="408.3" y="37" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">:</text>
+  <rect x="427.8" y="8" width="38.9" height="44" fill="#30a46c" fillOpacity="0.14" stroke="#30a46c" strokeWidth="1.4" />
+  <text x="447.2" y="37" textAnchor="middle" fill="#30a46c" fontSize="15" fontWeight="bold">H</text>
+  <rect x="466.7" y="8" width="38.9" height="44" fill="#30a46c" fillOpacity="0.14" stroke="#30a46c" strokeWidth="1.4" />
+  <text x="486.1" y="37" textAnchor="middle" fill="#30a46c" fontSize="15" fontWeight="bold">e</text>
+  <rect x="505.6" y="8" width="38.9" height="44" fill="#30a46c" fillOpacity="0.14" stroke="#30a46c" strokeWidth="1.4" />
+  <text x="525" y="37" textAnchor="middle" fill="#30a46c" fontSize="15" fontWeight="bold">l</text>
+  <rect x="544.4" y="8" width="38.9" height="44" fill="#30a46c" fillOpacity="0.14" stroke="#30a46c" strokeWidth="1.4" />
+  <text x="563.9" y="37" textAnchor="middle" fill="#30a46c" fontSize="15" fontWeight="bold">l</text>
+  <rect x="583.3" y="8" width="38.9" height="44" fill="#30a46c" fillOpacity="0.14" stroke="#30a46c" strokeWidth="1.4" />
+  <text x="602.8" y="37" textAnchor="middle" fill="#30a46c" fontSize="15" fontWeight="bold">o</text>
+  <rect x="622.2" y="8" width="38.9" height="44" fill="none" stroke="currentColor" strokeWidth="1.4" />
+  <text x="641.7" y="37" textAnchor="middle" fill="currentColor" fontSize="13.5" fontWeight="bold">CR</text>
+  <rect x="661.1" y="8" width="38.9" height="44" fill="none" stroke="currentColor" strokeWidth="1.4" />
+  <text x="680.6" y="37" textAnchor="middle" fill="currentColor" fontSize="13.5" fontWeight="bold">LF</text>
+  <path d="M3,58 L3,66 L152.55555555555554,66 L152.55555555555554,58" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+  <text x="77.8" y="84" textAnchor="middle" fill="currentColor" fontSize="13.5">chatter</text>
+  <path d="M158.55555555555554,58 L158.55555555555554,66 L347,66 L347,58" fill="none" stroke="#e8912d" strokeWidth="1.6" strokeLinejoin="round" />
+  <text x="252.8" y="84" textAnchor="middle" fill="#e8912d" fontSize="13.5">the tag</text>
+  <path d="M353,58 L353,66 L424.7777777777777,66 L424.7777777777777,58" fill="none" stroke="#3b82f6" strokeWidth="1.6" strokeLinejoin="round" />
+  <text x="388.9" y="84" textAnchor="middle" fill="#3b82f6" fontSize="13.5">length</text>
+  <text x="388.9" y="101" textAnchor="middle" fill="#3b82f6" fontSize="13.5">and colon</text>
+  <path d="M430.7777777777777,58 L430.7777777777777,66 L619.2222222222222,66 L619.2222222222222,58" fill="none" stroke="#30a46c" strokeWidth="1.6" strokeLinejoin="round" />
+  <text x="525" y="84" textAnchor="middle" fill="#30a46c" fontSize="13.5">data: counted,</text>
+  <text x="525" y="101" textAnchor="middle" fill="#30a46c" fontSize="13.5">never searched</text>
+  <path d="M625.2222222222222,58 L625.2222222222222,66 L697,66 L697,58" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+  <text x="661.1" y="84" textAnchor="middle" fill="currentColor" fontSize="13.5">chatter</text>
+</svg>
+{/* /fig:stream */}
+<figcaption>What arrives on the serial line, one cell per byte. A reader searches for the tag, reads the length in decimal up to the colon, and then counts that many bytes without looking at what they are.</figcaption>
+</figure>
+
+The rule that makes it work is that **the data is counted, never searched**. A web page that happens to contain
+the text `+IPD,` or `CLOSED` is fine, because once the length is known, the next that many bytes are data regardless
+of what they say.
+
+So a reader needs just three steps: look for the tag, read a number, copy that many bytes. Here it is in Z80N:
+
+```z80klive
+; read one +IPD packet from UART 0 to (DE); HL = its length
+GetPacket:
+        ld hl,Tag
+Match:  call GetByte
+        cp (hl)
+        jr z,Hit
+        ld hl,Tag              ; no: start over, but this byte
+        cp (hl)                ; may be a new "+"
+        jr nz,Match
+Hit:    inc hl
+        ld a,(hl)
+        or a
+        jr nz,Match            ; more of the tag to find
+        ld hl,0                ; now the length, in decimal
+Digit:  call GetByte
+        cp ':'
+        jr z,Body
+        sub '0'
+        add hl,hl              ; HL * 2
+        ld b,h
+        ld c,l
+        add hl,hl              ; * 4
+        add hl,hl              ; * 8
+        add hl,bc              ; * 10
+        add hl,a               ; Z80N: plus the digit
+        jr Digit
+Body:   push hl                ; keep the length
+Copy:   ld a,h
+        or l
+        jr z,Done
+        call GetByte
+        ld (de),a
+        inc de
+        dec hl
+        jr Copy
+Done:   pop hl
+        ret
+
+GetByte:
+        ld bc,$133b
+Wait:   in a,(c)               ; status
+        rra
+        jr nc,Wait             ; nothing yet
+        inc b                  ; $143B: RX
+        in a,(c)               ; the oldest byte
+        ret
+
+Tag:    .defb "+IPD,",0
+```
+
+How it works:
+
+- **`GetByte`** waits for status bit 0, then reads the receive port. It moves `B` from `$13` to `$14` rather than
+  loading a whole new port number.
+- **The matching loop** walks `HL` along the tag. On a mismatch it goes back to the start of the tag, but it first
+  checks whether the byte that failed is itself a `+`. Without that check, the text `++IPD,5:` would slip past.
+- **The digits** build the length with the usual multiply-by-ten, in which `A` survives because `add hl` leaves it
+  alone. `add hl,a` is a Z80N instruction; on a plain Z80 you would load `BC` and add that.
+- **The copy** counts `HL` down, with no interest at all in what the bytes are.
+
+This is the honest minimum, and I would not ship it as it stands: `GetByte` waits forever, so a connection that dies
+in mid-packet hangs the program. A real reader counts down a timeout in `Wait` and gives up.
+
+## The promise that stops at the module
+
+Here is the part I promised. TCP is the reliable protocol: every byte is numbered and acknowledged, and a lost
+packet is sent again. It is natural to assume that if your connection is TCP, your program receives every byte.
+
+It doesn't, and the reason is where TCP ends:
+
+<figure>
+{/* fig:guarantee */}
+<svg viewBox="-2 -2 704 182" role="img" aria-label="Left to right: the server, an arrow labelled Wi-Fi and TCP, a lost packet is sent again, the module, an arrow labelled serial line, a lost byte is gone, and the Next's 512-byte receive buffer. A red dashed line below the module marks where TCP's guarantee ends. Below, a green bar under the left half reads TCP checks and resends, and a red bar under the right half reads nothing checks." style={{ width: "100%", height: "auto" }}>
+  <defs>
+    <marker id="wf-g-0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#a855f7" />
+    </marker>
+    <marker id="wf-g-1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#e5484d" />
+    </marker>
+  </defs>
+  <rect x="0" y="22" width="110" height="74" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="55" y="55.4" textAnchor="middle" fill="currentColor" fontSize="14">the</text>
+  <text x="55" y="72.4" textAnchor="middle" fill="currentColor" fontSize="14">server</text>
+  <rect x="295" y="22" width="110" height="74" rx="6" fill="#a855f7" fillOpacity="0.12" stroke="#a855f7" strokeWidth="2" />
+  <text x="350" y="55.4" textAnchor="middle" fill="#a855f7" fontSize="14">the</text>
+  <text x="350" y="72.4" textAnchor="middle" fill="#a855f7" fontSize="14">module</text>
+  <rect x="590" y="22" width="110" height="74" rx="6" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="2" />
+  <text x="645" y="55.4" textAnchor="middle" fill="#30a46c" fontSize="14">receive</text>
+  <text x="645" y="72.4" textAnchor="middle" fill="#30a46c" fontSize="14">buffer, 512</text>
+  <line x1="110" y1="59" x2="293" y2="59" stroke="#a855f7" strokeWidth="2" markerEnd="url(#wf-g-0)" />
+  <line x1="405" y1="59" x2="588" y2="59" stroke="#e5484d" strokeWidth="2" markerEnd="url(#wf-g-1)" />
+  <text x="202" y="49" textAnchor="middle" fill="#a855f7" fontSize="13.5" fontWeight="bold">Wi-Fi and TCP</text>
+  <text x="202" y="80" textAnchor="middle" fill="#a855f7" fontSize="13.5">a lost packet is sent again</text>
+  <text x="497" y="49" textAnchor="middle" fill="#e5484d" fontSize="13.5" fontWeight="bold">the serial line</text>
+  <text x="497" y="80" textAnchor="middle" fill="#e5484d" fontSize="13.5">a lost byte is gone</text>
+  <line x1="350" y1="96" x2="350" y2="178" stroke="#e5484d" strokeWidth="2" strokeDasharray="6 4" />
+  <rect x="0" y="122" width="340" height="34" rx="4" fill="#a855f7" fillOpacity="0.12" stroke="#a855f7" strokeWidth="1.5" />
+  <text x="170" y="144" textAnchor="middle" fill="#a855f7" fontSize="14">TCP checks and resends</text>
+  <rect x="360" y="122" width="340" height="34" rx="4" fill="#e5484d" fillOpacity="0.1" stroke="#e5484d" strokeWidth="1.5" />
+  <text x="530" y="144" textAnchor="middle" fill="#e5484d" fontSize="14">nothing checks</text>
+</svg>
+{/* /fig:guarantee */}
+<figcaption>TCP's promise covers the journey from the server to the module. The last stretch, from the module to the Next's receive buffer, is a plain serial line, and nothing there notices a lost byte.</figcaption>
+</figure>
+
+The clerk acknowledges a packet to the server the moment **he** has it. From the server's point of view the data
+has been delivered, and it will never be sent again. Then the clerk pushes those bytes down the serial line at full
+speed, and in the usual arrangement he neither knows nor cares whether anybody is reading.
+
+Now do the arithmetic. A TCP packet carries up to 1,460 bytes, which takes 127 ms to cross at 115,200 baud, and the
+Next's receive buffer holds 512, filled in 44 ms. If your program goes away for longer than that while a packet is
+arriving, perhaps to write a sector to the SD card, the buffer overflows and bytes are lost. TCP will not save you,
+because as far as TCP is concerned, everything went perfectly.
+
+Which leaves you three defences, and I would use them in this order:
+
+- **Never stop reading during a packet.** Read into memory, and do the slow work between packets. Status bit 2, the
+  overflow flag, tells you it went wrong, which at least lets you say so.
+- **Add your own check.** If the data matters, put a checksum or CRC in the protocol above TCP and ask again when it
+  fails. That sounds redundant until you remember where TCP stops. NextSync, the popular file transfer tool for the
+  Next, puts checksums on every packet for exactly this reason.
+- **Ask for the data yourself.** Newer firmware has a **passive receive mode**, `AT+CIPRECVMODE=1`. In this mode the
+  module holds what arrives, tells you how much is waiting, and hands over a portion only when you request it with
+  `AT+CIPRECVDATA`. This turns the clerk from someone who shoves papers through the hatch into someone who waits
+  to be asked, and as his own buffer fills, TCP's flow control quietly slows the server down. It is the only true
+  end-to-end flow control available here, and I wish every module had it. Check with `AT+GMR` what yours can do.
+
+## How fast it can go
+
+At 115,200 baud a byte takes 86.8 µs and the line carries 11,520 bytes a second, which the framing barely dents: on
+a full packet the `+IPD,1460:` header is under one per cent. That means about a tenth of a megabyte in ten seconds,
+so a 200K file takes about 18 seconds at best.
+
+You can go faster, in three moves that must happen in this order:
+
+1. Tell the module the new speed with `AT+UART_CUR=921600,8,1,0,0`. `CUR` means it lasts until the next restart, and
+   I much prefer it to `AT+UART_DEF` for this, because a machine stuck at an unusual saved speed is a pain to recover.
+2. Wait for his `OK`, which still comes at the old speed.
+3. Program the Next's prescaler for the new rate, here 30, which gives 933,333 baud (see the UART chapter's section on
+   the baud rate). Do this promptly, or you'll miss the start of whatever he sends next.
+
+The next limit is your code. Add up the instructions in the reader above and each data byte costs 122 T-states
+when the buffer is not empty, before counting any wait states the machine inserts. So the reader manages about 28,700
+bytes a second at 3.5 MHz, and 229,500 at 28 MHz. Compare that with what the line delivers:
+
+- At **115,200 baud**, 11,523 bytes a second: comfortable at any CPU speed.
+- At **921,600 baud** (really 933,333), 93,333 bytes a second, one every 10.7 µs: the reader needs a 14 MHz CPU.
+- At **2,000,000 baud**, 200,000 bytes a second, one every 5 µs: it needs 28 MHz and nothing else happening, and the
+  receive buffer fills in just 2.6 ms.
+
+In practice the radio, the module and the protocol all take their cut. NextSync reports a best of about 48 KB/s for a
+single large file, more than four times what 115,200 baud could carry, and that is a fair picture of what this link
+can do when everything goes well. I think that is rather good for a machine whose ancestors loaded from cassette at
+under 200 bytes a second.
+
+## Firmware is the fine print
+
+Everything above the serial line belongs to the firmware, and not all modules run the same one. AT firmware versions
+0.30, 1.3, 1.5.4, 2.2.1 and 3.0.3 have all been found on modules; in a sample of about fifty bought from ordinary
+shops, 1.x was the commonest. Espressif's documents for those versions differ in the details:
+
+- Older firmware answers `AT+CIPSTART` with `OK` and `Linked` rather than `CONNECT` and `OK`.
+- Sending a command while the module is busy can bring back `busy`, and the wording differs between versions.
+- Passive receive does not exist in the older versions, and the speed command has changed its name over time:
+  `AT+UART` on some firmware, `AT+UART_CUR` and `AT+UART_DEF` on others.
+- `AT+CIPMUX=1` allows several connections at once, and it changes the tag to `+IPD,<id>,<length>:`.
+
+My rule of thumb: match on the shortest thing that is stable, such as `OK`, `ERROR` and `+IPD,`, and treat every other
+line as decoration. `AT+GMR` tells you what you are talking to.
+
+When a clerk misbehaves, he also tells you why. After an unexpected restart the module prints `rst cause:` and a number:
+0 for a normal power-on, 1 for the hardware watchdog after the firmware has hung, 2 for an uncaught exception, 3 for
+the software watchdog, 4 for a software restart and 5 for waking from deep sleep. If you see this repeatedly, the module
+is crashing, and the fault is rarely in your Z80 code.
+
+The Next's distribution ships several layers built on all this, so you often need not write any of it. `UART.DRV` is
+an interrupt-driven driver with a 16K buffer, which solves the overflow problem for programs that use it. The ESPAT
+driver serves BASIC programs, and the `.http` dot command fetches a file. `.UART` and `TERMINAL.BAS`
+are for typing AT commands by hand, which remains the best way I know to learn how your own module behaves.
+
+## What to take home
+
+The Next has no network hardware of its own. A small ESP-01 board behind the VGA port, with an ESP8266 chip inside, runs
+the radio, WPA2, TCP and DNS in its own firmware, on a 32-bit processor faster than the machine it serves. The FPGA gives
+it UART 0 and a few control lines: GPIO0 through NextRegs `$A8` and `$A9`, GPIO2 for reading, and reset through bit 7
+of NextReg `$02`, which it shares with the expansion bus. GPIO0 low at reset selects download mode; the pull-ups give the
+normal start, and the boot ROM's message at 74,880 baud leaves junk in the buffer to clear away.
+
+Your program talks to the clerk in AT commands, lines of text ending in CR LF. `AT+CWJAP` joins a network once and for
+all. `AT+CIPSTART` opens a connection, `AT+CIPSEND=n` sends exactly n bytes after the `>` prompt, and data comes back
+as `+IPD,n:` followed by n bytes that are counted and never searched.
+
+The lesson I would keep is that TCP's promise ends at the module. A 1,460-byte packet fills the 512-byte buffer in 44 ms
+at 115,200 baud whether or not you are reading, and a byte lost there is lost for good, so keep reading during a packet,
+add a checksum if the data matters, or use passive receive if your firmware has it. With `AT+UART_CUR` and a new
+prescaler the link can go far faster than its default of 11,520 bytes a second, as long as your reader keeps up. Treat the
+clerk politely, count what you hand him, and he will bring you the whole world through a two-wire hatch.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"The road ahead","id":"the-road-ahead","depth":2},{"value":"A computer for a peripheral","id":"a-computer-for-a-peripheral","depth":2},{"value":"Five wires and a socket","id":"five-wires-and-a-socket","depth":2},{"value":"Waking the clerk","id":"waking-the-clerk","depth":2},{"value":"Talking in AT","id":"talking-in-at","depth":2},{"value":"Joining a network","id":"joining-a-network","depth":2},{"value":"A conversation with a server","id":"a-conversation-with-a-server","depth":2},{"value":"Telling data from chatter","id":"telling-data-from-chatter","depth":2},{"value":"The promise that stops at the module","id":"the-promise-that-stops-at-the-module","depth":2},{"value":"How fast it can go","id":"how-fast-it-can-go","depth":2},{"value":"Firmware is the fine print","id":"firmware-is-the-fine-print","depth":2},{"value":"What to take home","id":"what-to-take-home","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"How Wi-Fi works on the ZX Spectrum Next: the ESP8266 module as a second computer, the wires between it and the FPGA, boot pins and reset, the AT command language, joining a network, a TCP conversation, the +IPD framing, where TCP's guarantee ends, and how fast the link can go.","title":"Wi-Fi: A Telegraph Clerk on a Serial Line","filePath":"content/en/under-the-hood/emulator-internals/next-wifi.mdx","timestamp":1793815370000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"under-the-hood/emulator-internals/next-wifi","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Wi-Fi: A Telegraph Clerk on a Serial Line - Klive IDE"}],["$","meta","1",{"name":"description","content":"How Wi-Fi works on the ZX Spectrum Next: the ESP8266 module as a second computer, the wires between it and the FPGA, boot pins and reset, the AT command language, joining a network, a TCP conversation, the +IPD framing, where TCP's guarantee ends, and how fast the link can go."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/under-the-hood/emulator-internals/next-wifi/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"-JWhM02qBVd4ypLy3aqLg"}
+20:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+21:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+6c:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Wi-Fi: A Telegraph Clerk on a Serial Line","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"WPA2 encryption, radio packets, TCP with its timers and retransmissions, DNS lookups: a modern network\nconnection is a lot of software, and a Z80 running at 3.5 MHz has 64K to put it in. So how does a Next\nfetch a web page? The answer made me smile the first time I understood it: the Next doesn’t. It hires\nsomebody else to do it, and talks to him in plain text."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Knowing how that arrangement works decides whether your network code is pleasant or haunted. Anything on\nthe Next that touches the Internet, from a chat client to a file sync tool, goes through the one narrow\ndoor this chapter describes. The door has rules, it has a speed limit, and it has one nasty surprise about\nwhat “reliable” means."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The previous chapter, ",["$","$L20",null,{"href":"/en/under-the-hood/emulator-internals/next-uart/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"UARTs: Two Serial Ports Behind One\nDoor"}],", explains the serial port itself: ports, baud rate,\nbuffers and status bits. I lean on it throughout and will not repeat it."]}],"\n",["$","h2",null,{"id":"the-road-ahead","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The road ahead",["$","$L21",null,{"id":"the-road-ahead"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"We begin with the Wi-Fi module, which turns out to be a whole computer, and with the handful of wires that\ntie it to the Next. Then we see how the module starts and how a program can reset it. After that comes the\nlanguage the two sides speak: first the commands, then joining a network, then a real conversation with a\nserver. Telling a server’s data from the module’s own chatter takes a small parser, which we write in Z80.\nThe idea I most want you to take away is in the section on the promise that stops at the module, so read\nthat one even if you skim the rest. We finish with how fast the link can go and with the differences\nbetween firmware versions."}],"\n",["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"}]}]}],"$L22"]}],"\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49","\n","$L4a","\n","$L4b","\n","$L4c","\n","$L4d","\n","$L4e","\n","$L4f","\n","$L50","\n","$L51","\n","$L52","\n","$L53","\n","$L54","\n","$L55","\n","$L56","\n","$L57","\n","$L58","\n","$L59","\n","$L5a","\n","$L5b","\n","$L5c","\n","$L5d","\n","$L5e","\n","$L5f","\n","$L60","\n","$L61","\n","$L62","\n","$L63","\n","$L64","\n","$L65","\n","$L66","\n","$L67","\n","$L68","\n","$L69","\n","$L6a","\n","$L6b"]]}]
+15:["$","$L6c",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@6d"}]}]
+1f:true
+81:"ToggleWordWrapButton"
+82:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$81"]
+83:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+9:300
+22:["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The Next’s side is described for ",["$","strong",null,{"children":"core 3.02.01"}],", with a master clock of ",["$","strong",null,{"children":"28 MHz"}]," and the serial line at\n",["$","strong",null,{"children":"115,200 baud, 8 data bits, no parity, one stop bit"}],". The module is not part of the Next’s own design: what\nit answers depends on the firmware loaded into it, and the exchanges shown here are those of Espressif’s\nstandard AT firmware."]}]}]
+23:["$","h2",null,{"id":"a-computer-for-a-peripheral","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["A computer for a peripheral",["$","$L21",null,{"id":"a-computer-for-a-peripheral"}]]}]
+24:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The Wi-Fi hardware is an ",["$","strong",null,{"children":"ESP-01"}],", a small board that pushes onto a header behind the VGA port, with no\nsoldering. On it are two things that matter: an ",["$","strong",null,{"children":"ESP8266"}]," chip from Espressif and a flash memory holding\nits firmware. The chip contains the radio, for 802.11 b/g/n on the 2.4 GHz band, with WPA and WPA2."]}]
+25:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"It also contains a processor, and here the story turns funny. The ESP8266’s core is a 32-bit RISC running\nat 80 MHz, with 160 KB of RAM on the chip. Set that beside the 8-bit CPU it serves. I find it delightful\nthat the humblest peripheral in the machine, the one you can buy for the price of a sandwich, has more raw\nprocessing power than the computer it is plugged into."}]
+26:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["I think of the module as ",["$","strong",null,{"children":"the telegraph clerk"}],". You walk up to his counter with a message written on a\nslip, he does whatever mysterious things are needed to send it across the world, and when an answer arrives\nhe passes it through the hatch. You never touch the wires yourself, and you don’t care how they work."]}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"That is the whole design. The Next contains no network logic at all: no MAC, no packet buffers, no checksum\nengine. All of it runs as firmware inside the clerk. The FPGA provides a serial port and a couple of control\nlines, and I admire how little that costs."}]
+28:["$","h2",null,{"id":"five-wires-and-a-socket","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Five wires and a socket",["$","$L21",null,{"id":"five-wires-and-a-socket"}]]}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Here is everything that connects the Next to its clerk:"}]
+2a:["$","figure",null,{"children":[["$","svg",null,{"viewBox":"-2 -2 704 308","role":"img","aria-label":"On the left the Next's FPGA, with five rows: the UART 0 transmitter, the UART 0 receiver, NextRegs $A8 and $A9 bit 0 for GPIO0, NextReg $A9 bit 2 for GPIO2, and NextReg $02 bit 7 for the reset line. In the middle wires run to the ESP-01 module's pins: transmitter to RX, TX back to the receiver, GPIO0 both ways, GPIO2 from the module only, and reset to RST, a line shared with the expansion bus. A dashed row shows the two flow control lines, present on issue 4 boards and later. On the right the module talks by radio to the Wi-Fi router.","style":{"width":"100%","height":"auto"},"children":[["$","defs",null,{"children":[["$","marker",null,{"id":"wf-w-0","viewBox":"0 0 10 10","refX":"9","refY":"5","markerWidth":"7","markerHeight":"7","orient":"auto-start-reverse","children":["$","path",null,{"d":"M0,0 L10,5 L0,10 z","fill":"currentColor"}]}],["$","marker",null,{"id":"wf-w-1","viewBox":"0 0 10 10","refX":"9","refY":"5","markerWidth":"7","markerHeight":"7","orient":"auto-start-reverse","children":["$","path",null,{"d":"M0,0 L10,5 L0,10 z","fill":"#30a46c"}]}],["$","marker",null,{"id":"wf-w-2","viewBox":"0 0 10 10","refX":"9","refY":"5","markerWidth":"7","markerHeight":"7","orient":"auto-start-reverse","children":["$","path",null,{"d":"M0,0 L10,5 L0,10 z","fill":"#e8912d"}]}],["$","marker",null,{"id":"wf-w-3","viewBox":"0 0 10 10","refX":"9","refY":"5","markerWidth":"7","markerHeight":"7","orient":"auto-start-reverse","children":["$","path",null,{"d":"M0,0 L10,5 L0,10 z","fill":"#e5484d"}]}],["$","marker",null,{"id":"wf-w-4","viewBox":"0 0 10 10","refX":"9","refY":"5","markerWidth":"7","markerHeight":"7","orient":"auto-start-reverse","children":["$","path",null,{"d":"M0,0 L10,5 L0,10 z","fill":"#a855f7"}]}]]}],["$","rect",null,{"x":"0","y":"8","width":"250","height":"296","rx":"6","fill":"none","stroke":"currentColor","strokeWidth":"1.5"}],["$","text",null,{"x":"125","y":"161.3","textAnchor":"middle","fill":"currentColor","fontSize":"15"}],["$","text",null,{"x":"125","y":"28","textAnchor":"middle","fill":"currentColor","fontSize":"15","fontWeight":"bold","children":"the Next’s FPGA"}],["$","rect",null,{"x":"410","y":"8","width":"120","height":"296","rx":"6","fill":"#a855f7","fillOpacity":"0.08","stroke":"#a855f7","strokeWidth":"2"}],["$","text",null,{"x":"470","y":"161.3","textAnchor":"middle","fill":"#a855f7","fontSize":"15"}],["$","text",null,{"x":"470","y":"28","textAnchor":"middle","fill":"#a855f7","fontSize":"15","fontWeight":"bold","children":"ESP-01"}],["$","rect",null,{"x":"14","y":"38","width":"222","height":"36","rx":"4","fill":"none","stroke":"#30a46c","strokeWidth":"1.6"}],["$","text",null,{"x":"125","y":"61","textAnchor":"middle","fill":"#30a46c","fontSize":"14","children":"UART 0 transmitter"}],["$","text",null,{"x":"470","y":"61","textAnchor":"middle","fill":"#a855f7","fontSize":"15","fontWeight":"bold","children":"RX"}],["$","text",null,{"x":"330","y":"51","textAnchor":"middle","fill":"#30a46c","fontSize":"13.5","children":"bytes out"}],["$","line",null,{"x1":"236","y1":"62","x2":"408","y2":"62","stroke":"#30a46c","strokeWidth":"1.8","markerEnd":"url(#wf-w-1)"}],["$","rect",null,{"x":"14","y":"84","width":"222","height":"36","rx":"4","fill":"none","stroke":"#30a46c","strokeWidth":"1.6"}],["$","text",null,{"x":"125","y":"107","textAnchor":"middle","fill":"#30a46c","fontSize":"14","children":"UART 0 receiver"}],["$","text",null,{"x":"470","y":"107","textAnchor":"middle","fill":"#a855f7","fontSize":"15","fontWeight":"bold","children":"TX"}],["$","text",null,{"x":"330","y":"97","textAnchor":"middle","fill":"#30a46c","fontSize":"13.5","children":"bytes in"}],["$","line",null,{"x1":"410","y1":"108","x2":"238","y2":"108","stroke":"#30a46c","strokeWidth":"1.8","markerEnd":"url(#wf-w-1)"}],["$","rect",null,{"x":"14","y":"130","width":"222","height":"36","rx":"4","fill":"none","stroke":"#e8912d","strokeWidth":"1.6"}],["$","text",null,{"x":"125","y":"153","textAnchor":"middle","fill":"#e8912d","fontSize":"14","children":"$$A8, $A9 bit 0"}],["$","text",null,{"x":"470","y":"153","textAnchor":"middle","fill":"#a855f7","fontSize":"15","fontWeight":"bold","children":"GPIO0"}],["$","text",null,{"x":"330","y":"143","textAnchor":"middle","fill":"#e8912d","fontSize":"13.5","children":"boot choice"}],["$","line",null,{"x1":"236","y1":"154","x2":"408","y2":"154","stroke":"#e8912d","strokeWidth":"1.8","markerEnd":"url(#wf-w-2)"}],["$","line",null,{"x1":"398","y1":"154","x2":"238","y2":"154","stroke":"#e8912d","strokeWidth":"1.8","markerEnd":"url(#wf-w-2)"}],["$","rect",null,{"x":"14","y":"176","width":"222","height":"36","rx":"4","fill":"none","stroke":"#e8912d","strokeWidth":"1.6"}],["$","text",null,{"x":"125","y":"199","textAnchor":"middle","fill":"#e8912d","fontSize":"14","children":"$$A9 bit 2"}],["$","text",null,{"x":"470","y":"199","textAnchor":"middle","fill":"#a855f7","fontSize":"15","fontWeight":"bold","children":"GPIO2"}],"$L6e","$L6f","$L70","$L71","$L72","$L73","$L74","$L75","$L76","$L77","$L78","$L79","$L7a","$L7b","$L7c","$L7d","$L7e","$L7f"]}],"$L80"]}]
+2b:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"The serial pair."}]," The transmitter of ",["$","strong",null,{"children":"UART 0"}]," drives the module’s RX pin, and the module’s TX pin\ndrives the receiver of UART 0. Every byte of the conversation goes over these two wires."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"GPIO0."}]," A pin the module looks at when it starts, and the one wire the Next can both drive and read.\nThe ",["$","strong",null,{"children":["ESP Wifi GPIO Output Enable register, NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$A8"}]]}],", bit 0 lets the Next drive it, and the ",["$","strong",null,{"children":["ESP\nWifi GPIO register, NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$A9"}]]}],", bit 0 is the level to drive. Reading ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$A9"}]," gives the pin’s real level."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"GPIO2."}]," Another start-up pin, which the Next only reads, in bit 2 of NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$A9"}],". The FPGA never drives\nit, and bit 2 of NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$A8"}]," is fixed at 0."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Reset."}]," Bit 7 of the ",["$","strong",null,{"children":["Reset register, NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$02"}]]}]," holds the module in reset for as long as it is set."]}],"\n"]}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A soft reset releases GPIO0 by clearing NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$A8"}]," and sets the level in ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$A9"}]," back to 1. The FPGA also\nholds weak pull-ups on both GPIO pins and on the receive line, so anything left undriven sits high, which is\nthe level the module wants to see for a normal start."]}]
+2d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Two details are worth remembering. ",["$","strong",null,{"children":"The reset line is shared with the expansion bus"}],", so bit 7 of NextReg\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$02"}]," also resets whatever is plugged in there; I would not touch it in a program that might run with a\nperipheral attached. And if the ",["$","strong",null,{"children":["Joystick I/O Mode register, NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$0B"}]]}],", moves UART 0 to a joystick port (the ",["$","$L20",null,{"href":"/en/under-the-hood/emulator-internals/next-uart/#the-joystick-port","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"UART\nchapter"}]," has the details), the clerk’s\nreceive pin rests high and he hears nothing more until UART 0 comes back."]}]
+2e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The dashed row in the figure is hardware flow control, the two signals that let a receiver say “wait”. On\nissue 2 boards those lines do not exist at all: the Next’s transmitter always believes it may send, and its\nrequest to pause goes nowhere. On issue 4 boards and later the FPGA has both lines for the module, but the\neight pins of a standard ESP-01 include neither of them. My advice is to write your code as if nothing\nwill ever pause the clerk, and we will soon see why that matters."}]
+2f:["$","h2",null,{"id":"waking-the-clerk","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Waking the clerk",["$","$L21",null,{"id":"waking-the-clerk"}]]}]
+30:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When the ESP8266 comes out of reset, its boot ROM looks at three pins to decide what to do. Two are the ones\nthe Next can see, and the third is held low on the module:"}]
+31:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"GPIO0 high and GPIO2 high"}],": start the firmware in flash. This is the normal case, and the pull-ups make\nit the default."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"GPIO0 low and GPIO2 high"}],": wait for a new firmware on the serial line. This is ",["$","strong",null,{"children":"download mode"}],", and it\nis how a firmware update tool running on the Next rewrites the clerk’s flash without taking him out of the\nmachine."]}],"\n"]}]
+32:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Here is the whole recipe for putting the module into download mode, using the Z80N’s ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"nextreg"}]," instruction:"]}]
+33:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L82",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L83",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        nextreg"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" $a9"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"%00000000"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"  ; GPIO0 will be low"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        nextreg"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" $a8"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"%00000001"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"  ; the Next drives it"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        nextreg"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" $02"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"%10000000"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"  ; hold the module in reset"}]]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"        ; ...wait a moment..."}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        nextreg"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" $02"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"%00000000"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"  ; release: GPIO0 is sampled now"}]]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"        ; ...talk to the boot ROM over UART 0..."}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        nextreg"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" $a8"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"%00000000"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"  ; let GPIO0 float high again"}]]}]]}]]}]]}]
+34:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["For an ordinary restart, leave the first two lines out. Write exactly ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$80"}]," and then ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$00"}]," to NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$02"}],":\nbits 0 and 1 of that register cause a soft and a hard reset of the Next itself, and you do not want one of\nthose by accident. Bit 7 alone only reaches the module and the expansion bus."]}]
+35:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A hard reset of the Next restarts the module too. A soft reset does so only when the expansion bus is enabled;\notherwise the clerk stays at his desk, with his network connection intact, while the Next reboots around him.\nA program can therefore find him in the middle of a conversation that some earlier program started, and I\nrecommend assuming exactly that when you begin."}]
+36:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Now a small trap. In its first moments the boot ROM prints a diagnostic message on the serial line, and on the\nusual module it does so at ",["$","strong",null,{"children":"74,880 baud"}],", a rate that falls out of its 26 MHz crystal. The Next is listening\nat 115,200, so what lands in the receive buffer is a burst of nonsense. Some of those frames fail their stop bit\nand are thrown away; the rest arrive as random bytes. After any module reset, wait, then clear UART 0 with the\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$98"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$18"}]," pair on the frame register, and only then start talking."]}]
+37:["$","h2",null,{"id":"talking-in-at","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Talking in AT",["$","$L21",null,{"id":"talking-in-at"}]]}]
+38:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The clerk’s language is older than the Spectrum. In 1981 Hayes sold a modem you controlled by sending it text\ncommands beginning with the letters ",["$","strong",null,{"children":"AT"}],", for “attention”, and the format stuck for decades. Espressif’s AT\nfirmware offers the same bargain: lines of text in, lines of text out."]}]
+39:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A command is ASCII text ending in carriage return and line feed, written to UART 0 with a loop like the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Send"}],"\nroutine in the UART chapter. The simplest possible exchange checks that anybody is home:"]}]
+3a:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L82",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L83",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"AT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OK"}]}]]}]]}]]}]
+3b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["If you see ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"OK"}],", the clerk is awake and both ends agree on the baud rate. If you see garbage or nothing, they\nprobably don’t. The Next powers up at 115,200, which is the speed most modules use, but some leave the factory at\n57,600 or 19,200. The Next’s ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".UART"}]," terminal has a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"-f"}]," option that hunts for the right rate. Once found, the\ncommand ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"AT+UART_DEF=115200,8,1,0,0"}]," (plain ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"AT+UART="}]," on older firmware) stores the speed in the module’s\nflash, so you only do this once."]}]
+3c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["By default the module also ",["$","strong",null,{"children":"echoes"}]," everything you send, which a human at a terminal likes and a program does\nnot. ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ATE0"}]," switches echo off, and it is the first command I would send."]}]
+3d:["$","h2",null,{"id":"joining-a-network","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Joining a network",["$","$L21",null,{"id":"joining-a-network"}]]}]
+3e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Getting on to Wi-Fi takes three commands, and you normally type them only once:"}]
+3f:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L82",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L83",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"AT+CWMODE=1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OK"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"AT+CWJAP=\"MyNetwork\",\"MyPassword\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"WIFI CONNECTED"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"WIFI GOT IP"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OK"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"AT+CIFSR"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"+CIFSR:STAIP,\"192.168.1.42\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"+CIFSR:STAMAC,\"5c:cf:7f:12:34:56\""}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OK"}]}]]}]]}]]}]
+40:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"AT+CWMODE=1"}]," makes the module a ",["$","strong",null,{"children":"station"}],", a client of an access point, rather than an access point of its\nown. ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"AT+CWJAP"}]," joins the network and is slow, because this is where the radio, the password handshake and the\naddress request all happen. ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"AT+CIFSR"}]," shows the address the router gave it."]}]
+41:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["What I like best is that the clerk ",["$","strong",null,{"children":"remembers"}],". The network name and password stay in his flash, and when he\nrestarts he rejoins without being asked, telling you ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"WIFI CONNECTED"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"WIFI GOT IP"}]," as he does. So the\nNext’s ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"WIFI.BAS"}]," set-up program needs to run once, and every later program simply finds the network already\nthere. The same fact has a darker side: your Wi-Fi password lives on that little board, so wipe it with\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"AT+CWQAP"}]," before you sell the module on."]}]
+42:["$","h2",null,{"id":"a-conversation-with-a-server","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["A conversation with a server",["$","$L21",null,{"id":"a-conversation-with-a-server"}]]}]
+43:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Let’s fetch a page from a small web server on the local network, at address 192.168.1.20 and port 8080. It is the\nkind of thing every network program on the Next does, and three parties take part:"}]
+44:["$","figure",null,{"children":[["$","svg",null,{"viewBox":"-2 -2 704 434","role":"img","aria-label":"A sequence chart with three vertical lines: your program on the Z80, the Wi-Fi module, and the server. Your program asks the module to open a connection, and the module opens it and answers CONNECT and OK. Your program sends AT+CIPSEND=38, gets the prompt, and sends the 38 bytes, which the module sends to the server in a TCP packet and answers SEND OK. The server's reply arrives in a TCP packet and the module passes it on as +IPD,31: followed by the 31 bytes. The server closes the connection and the module reports CLOSED.","style":{"width":"100%","height":"auto"},"children":[["$","defs",null,{"children":[["$","marker",null,{"id":"wf-s-0","viewBox":"0 0 10 10","refX":"9","refY":"5","markerWidth":"7","markerHeight":"7","orient":"auto-start-reverse","children":["$","path",null,{"d":"M0,0 L10,5 L0,10 z","fill":"#30a46c"}]}],["$","marker",null,{"id":"wf-s-1","viewBox":"0 0 10 10","refX":"9","refY":"5","markerWidth":"7","markerHeight":"7","orient":"auto-start-reverse","children":["$","path",null,{"d":"M0,0 L10,5 L0,10 z","fill":"#a855f7"}]}]]}],["$","text",null,{"x":"80","y":"18","textAnchor":"middle","fill":"currentColor","fontSize":"15","fontWeight":"bold","children":"your program"}],["$","line",null,{"x1":"80","y1":"30","x2":"80","y2":"428","stroke":"currentColor","strokeWidth":"1.4","strokeOpacity":"0.55"}],["$","text",null,{"x":"350","y":"18","textAnchor":"middle","fill":"#a855f7","fontSize":"15","fontWeight":"bold","children":"the module"}],["$","line",null,{"x1":"350","y1":"30","x2":"350","y2":"428","stroke":"currentColor","strokeWidth":"1.4","strokeOpacity":"0.55"}],["$","text",null,{"x":"620","y":"18","textAnchor":"middle","fill":"currentColor","fontSize":"15","fontWeight":"bold","children":"the server"}],["$","line",null,{"x1":"620","y1":"30","x2":"620","y2":"428","stroke":"currentColor","strokeWidth":"1.4","strokeOpacity":"0.55"}],["$","line",null,{"x1":"82","y1":"62","x2":"348","y2":"62","stroke":"#30a46c","strokeWidth":"1.8","markerEnd":"url(#wf-s-0)"}],["$","text",null,{"x":"215","y":"55","textAnchor":"middle","fill":"#30a46c","fontSize":"13.5","children":"AT+CIPSTART=“TCP”,…"}],["$","line",null,{"x1":"352","y1":"94","x2":"618","y2":"94","stroke":"#a855f7","strokeWidth":"1.8","markerEnd":"url(#wf-s-1)"}],["$","text",null,{"x":"485","y":"87","textAnchor":"middle","fill":"#a855f7","fontSize":"13.5","children":"opens a TCP connection"}],["$","line",null,{"x1":"348","y1":"126","x2":"82","y2":"126","stroke":"#30a46c","strokeWidth":"1.8","markerEnd":"url(#wf-s-0)"}],["$","text",null,{"x":"215","y":"119","textAnchor":"middle","fill":"#30a46c","fontSize":"13.5","children":"CONNECT, OK"}],["$","line",null,{"x1":"82","y1":"158","x2":"348","y2":"158","stroke":"#30a46c","strokeWidth":"1.8","markerEnd":"url(#wf-s-0)"}],["$","text",null,{"x":"215","y":"151","textAnchor":"middle","fill":"#30a46c","fontSize":"13.5","children":"AT+CIPSEND=38"}],["$","line",null,{"x1":"348","y1":"190","x2":"82","y2":"190","stroke":"#30a46c","strokeWidth":"1.8","markerEnd":"url(#wf-s-0)"}],["$","text",null,{"x":"215","y":"183","textAnchor":"middle","fill":"#30a46c","fontSize":"13.5","children":"OK, then the > prompt"}],["$","line",null,{"x1":"82","y1":"222","x2":"348","y2":"222","stroke":"#30a46c","strokeWidth":"1.8","markerEnd":"url(#wf-s-0)"}],["$","text",null,{"x":"215","y":"215","textAnchor":"middle","fill":"#30a46c","fontSize":"13.5","children":"the 38 bytes of the request"}],["$","line",null,{"x1":"352","y1":"254","x2":"618","y2":"254","stroke":"#a855f7","strokeWidth":"1.8","markerEnd":"url(#wf-s-1)"}],["$","text",null,{"x":"485","y":"247","textAnchor":"middle","fill":"#a855f7","fontSize":"13.5","children":"the request, in a TCP packet"}],["$","line",null,{"x1":"348","y1":"286","x2":"82","y2":"286","stroke":"#30a46c","strokeWidth":"1.8","markerEnd":"url(#wf-s-0)"}],["$","text",null,{"x":"215","y":"279","textAnchor":"middle","fill":"#30a46c","fontSize":"13.5","children":"SEND OK"}],["$","line",null,{"x1":"618","y1":"318","x2":"352","y2":"318","stroke":"#a855f7","strokeWidth":"1.8","markerEnd":"url(#wf-s-1)"}],["$","text",null,{"x":"485","y":"311","textAnchor":"middle","fill":"#a855f7","fontSize":"13.5","children":"the reply, in a TCP packet"}],["$","line",null,{"x1":"348","y1":"350","x2":"82","y2":"350","stroke":"#30a46c","strokeWidth":"1.8","markerEnd":"url(#wf-s-0)"}],["$","text",null,{"x":"215","y":"343","textAnchor":"middle","fill":"#30a46c","fontSize":"13.5","children":"+IPD,31: and the 31 bytes"}],["$","line",null,{"x1":"618","y1":"382","x2":"352","y2":"382","stroke":"#a855f7","strokeWidth":"1.8","markerEnd":"url(#wf-s-1)"}],["$","text",null,{"x":"485","y":"375","textAnchor":"middle","fill":"#a855f7","fontSize":"13.5","children":"closes the connection"}],["$","line",null,{"x1":"348","y1":"414","x2":"82","y2":"414","stroke":"#30a46c","strokeWidth":"1.8","markerEnd":"url(#wf-s-0)"}],"$L84"]}],"$L85"]}]
+45:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Here is the serial traffic of that picture, in order. Lines beginning with ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":">>"}]," are what your program sends and\nthe others are the module’s answers:"]}]
+46:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L82",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L83",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":">> AT+CIPSTART=\"TCP\",\"192.168.1.20\",8080"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"CONNECT"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OK"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":">> AT+CIPSEND=38"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OK"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":">"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":">> GET / HTTP/1.0<CR><LF>Host: 192.168.1.20<CR><LF><CR><LF>"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"SEND OK"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"+IPD,31:HTTP/1.0 200 OK<CR><LF><CR><LF>Hello, Next!"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"CLOSED"}]}]]}]]}]]}]
+47:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Walk through it with me:"}]
+48:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"AT+CIPSTART"}]," asks the clerk to open a connection, and he handles the whole TCP handshake himself. ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"TCP"}]," could\nhave been ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"UDP"}]," or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"SSL"}],", and a host name works as well as an address, because the module does the DNS lookup too."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"AT+CIPSEND=38"}]," announces exactly how many bytes are coming. The module answers ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"OK"}]," and then a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":">"}]," prompt.\nWait for the prompt: bytes sent before it are not part of the message."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Now the 38 bytes go out, with no line ending added; the count is the only thing that says where the message\nstops. Send too many and the module answers ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"busy"}]," to the excess; send too few and it keeps waiting, taking\nyour next command as part of the data."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"SEND OK"}]," says the bytes have left the module. It does not say the server has read them."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["The reply arrives unasked. It starts with ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"+IPD,31:"}],", the module’s way of saying “here come 31 bytes from\nthe network”."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["When the server closes the connection, the module reports ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"CLOSED"}],", right after the last byte of data."]}],"\n"]}]
+49:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Notice the shape of this. The line runs both ways at once, so replies and network data can arrive at any moment,\nincluding while you are in the middle of sending something else. One ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"AT+CIPSEND"}]," carries at most 2,048\nbytes, so longer messages go out in several rounds."]}]
+4a:["$","h2",null,{"id":"telling-data-from-chatter","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Telling data from chatter",["$","$L21",null,{"id":"telling-data-from-chatter"}]]}]
+4b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The module uses one serial line for two kinds of thing: its own remarks, such as ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"OK"}]," or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"CLOSED"}],", and raw data\nfrom the network, which can contain absolutely anything. It keeps them apart with a tiny piece of framing:"]}]
+4c:["$","figure",null,{"children":[["$","svg",null,{"viewBox":"-2 -2 704 122","role":"img","aria-label":"A row of eighteen cells, one per byte, as they arrive on the serial line: O, K, CR, LF are the module's chatter; +, I, P, D and the comma are the tag; 5 is the length in decimal; a colon ends it; H, e, l, l, o are five bytes of data, which are counted, not searched; CR and LF that follow are chatter again.","style":{"width":"100%","height":"auto"},"children":[["$","rect",null,{"x":"0","y":"8","width":"38.9","height":"44","fill":"none","stroke":"currentColor","strokeWidth":"1.4"}],["$","text",null,{"x":"19.4","y":"37","textAnchor":"middle","fill":"currentColor","fontSize":"15","fontWeight":"bold","children":"O"}],["$","rect",null,{"x":"38.9","y":"8","width":"38.9","height":"44","fill":"none","stroke":"currentColor","strokeWidth":"1.4"}],["$","text",null,{"x":"58.3","y":"37","textAnchor":"middle","fill":"currentColor","fontSize":"15","fontWeight":"bold","children":"K"}],["$","rect",null,{"x":"77.8","y":"8","width":"38.9","height":"44","fill":"none","stroke":"currentColor","strokeWidth":"1.4"}],["$","text",null,{"x":"97.2","y":"37","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","fontWeight":"bold","children":"CR"}],["$","rect",null,{"x":"116.7","y":"8","width":"38.9","height":"44","fill":"none","stroke":"currentColor","strokeWidth":"1.4"}],["$","text",null,{"x":"136.1","y":"37","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","fontWeight":"bold","children":"LF"}],["$","rect",null,{"x":"155.6","y":"8","width":"38.9","height":"44","fill":"#e8912d","fillOpacity":"0.14","stroke":"#e8912d","strokeWidth":"1.4"}],["$","text",null,{"x":"175","y":"37","textAnchor":"middle","fill":"#e8912d","fontSize":"15","fontWeight":"bold","children":"+"}],["$","rect",null,{"x":"194.4","y":"8","width":"38.9","height":"44","fill":"#e8912d","fillOpacity":"0.14","stroke":"#e8912d","strokeWidth":"1.4"}],["$","text",null,{"x":"213.9","y":"37","textAnchor":"middle","fill":"#e8912d","fontSize":"15","fontWeight":"bold","children":"I"}],["$","rect",null,{"x":"233.3","y":"8","width":"38.9","height":"44","fill":"#e8912d","fillOpacity":"0.14","stroke":"#e8912d","strokeWidth":"1.4"}],["$","text",null,{"x":"252.8","y":"37","textAnchor":"middle","fill":"#e8912d","fontSize":"15","fontWeight":"bold","children":"P"}],["$","rect",null,{"x":"272.2","y":"8","width":"38.9","height":"44","fill":"#e8912d","fillOpacity":"0.14","stroke":"#e8912d","strokeWidth":"1.4"}],["$","text",null,{"x":"291.7","y":"37","textAnchor":"middle","fill":"#e8912d","fontSize":"15","fontWeight":"bold","children":"D"}],["$","rect",null,{"x":"311.1","y":"8","width":"38.9","height":"44","fill":"#e8912d","fillOpacity":"0.14","stroke":"#e8912d","strokeWidth":"1.4"}],["$","text",null,{"x":"330.6","y":"37","textAnchor":"middle","fill":"#e8912d","fontSize":"15","fontWeight":"bold","children":","}],["$","rect",null,{"x":"350","y":"8","width":"38.9","height":"44","fill":"#3b82f6","fillOpacity":"0.14","stroke":"#3b82f6","strokeWidth":"1.4"}],["$","text",null,{"x":"369.4","y":"37","textAnchor":"middle","fill":"#3b82f6","fontSize":"15","fontWeight":"bold","children":"5"}],["$","rect",null,{"x":"388.9","y":"8","width":"38.9","height":"44","fill":"#3b82f6","fillOpacity":"0.14","stroke":"#3b82f6","strokeWidth":"1.4"}],["$","text",null,{"x":"408.3","y":"37","textAnchor":"middle","fill":"#3b82f6","fontSize":"15","fontWeight":"bold","children":":"}],["$","rect",null,{"x":"427.8","y":"8","width":"38.9","height":"44","fill":"#30a46c","fillOpacity":"0.14","stroke":"#30a46c","strokeWidth":"1.4"}],["$","text",null,{"x":"447.2","y":"37","textAnchor":"middle","fill":"#30a46c","fontSize":"15","fontWeight":"bold","children":"H"}],["$","rect",null,{"x":"466.7","y":"8","width":"38.9","height":"44","fill":"#30a46c","fillOpacity":"0.14","stroke":"#30a46c","strokeWidth":"1.4"}],["$","text",null,{"x":"486.1","y":"37","textAnchor":"middle","fill":"#30a46c","fontSize":"15","fontWeight":"bold","children":"e"}],["$","rect",null,{"x":"505.6","y":"8","width":"38.9","height":"44","fill":"#30a46c","fillOpacity":"0.14","stroke":"#30a46c","strokeWidth":"1.4"}],["$","text",null,{"x":"525","y":"37","textAnchor":"middle","fill":"#30a46c","fontSize":"15","fontWeight":"bold","children":"l"}],["$","rect",null,{"x":"544.4","y":"8","width":"38.9","height":"44","fill":"#30a46c","fillOpacity":"0.14","stroke":"#30a46c","strokeWidth":"1.4"}],["$","text",null,{"x":"563.9","y":"37","textAnchor":"middle","fill":"#30a46c","fontSize":"15","fontWeight":"bold","children":"l"}],["$","rect",null,{"x":"583.3","y":"8","width":"38.9","height":"44","fill":"#30a46c","fillOpacity":"0.14","stroke":"#30a46c","strokeWidth":"1.4"}],["$","text",null,{"x":"602.8","y":"37","textAnchor":"middle","fill":"#30a46c","fontSize":"15","fontWeight":"bold","children":"o"}],["$","rect",null,{"x":"622.2","y":"8","width":"38.9","height":"44","fill":"none","stroke":"currentColor","strokeWidth":"1.4"}],["$","text",null,{"x":"641.7","y":"37","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","fontWeight":"bold","children":"CR"}],["$","rect",null,{"x":"661.1","y":"8","width":"38.9","height":"44","fill":"none","stroke":"currentColor","strokeWidth":"1.4"}],"$L86","$L87","$L88","$L89","$L8a","$L8b","$L8c","$L8d","$L8e","$L8f","$L90","$L91","$L92"]}],"$L93"]}]
+4d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The rule that makes it work is that ",["$","strong",null,{"children":"the data is counted, never searched"}],". A web page that happens to contain\nthe text ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"+IPD,"}]," or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"CLOSED"}]," is fine, because once the length is known, the next that many bytes are data regardless\nof what they say."]}]
+4e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"So a reader needs just three steps: look for the tag, read a number, copy that many bytes. Here it is in Z80N:"}]
+4f:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L82",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L83",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"; read one +IPD packet from UART 0 to (DE); HL = its length"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"GetPacket"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" hl"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#B5890F"},"children":"Tag"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"Match"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"  call"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" GetByte"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        cp"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"hl"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":")"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        jr"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" z"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#B5890F"},"children":"Hit"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" hl"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#B5890F"},"children":"Tag"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"              ; no: start over, but this byte"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        cp"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"hl"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":")                "}],["$","span",null,{"style":{"color":"#6A9955"},"children":"; may be a new \"+\""}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        jr"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" nz"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#B5890F"},"children":"Match"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"Hit"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    inc"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" hl"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":",("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"hl"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":")"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        or"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        jr"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" nz"}],"$L94","$L95","$L96"]}],"\n","$L97","\n","$L98","\n","$L99","\n","$L9a","\n","$L9b","\n","$L9c","\n","$L9d","\n","$L9e","\n","$L9f","\n","$La0","\n","$La1","\n","$La2","\n","$La3","\n","$La4","\n","$La5","\n","$La6","\n","$La7","\n","$La8","\n","$La9","\n","$Laa","\n","$Lab","\n","$Lac","\n","$Lad","\n","$Lae","\n","$Laf","\n","$Lb0","\n","$Lb1","\n","$Lb2","\n","$Lb3","\n","$Lb4","\n","$Lb5","\n","$Lb6","\n","$Lb7","\n","$Lb8","\n","$Lb9"]}]]}]]}]
+50:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"How it works:"}]
+51:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"GetByte"}]}]," waits for status bit 0, then reads the receive port. It moves ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"B"}]," from ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$13"}]," to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$14"}]," rather than\nloading a whole new port number."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"The matching loop"}]," walks ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"HL"}]," along the tag. On a mismatch it goes back to the start of the tag, but it first\nchecks whether the byte that failed is itself a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"+"}],". Without that check, the text ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"++IPD,5:"}]," would slip past."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"The digits"}]," build the length with the usual multiply-by-ten, in which ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"A"}]," survives because ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"add hl"}]," leaves it\nalone. ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"add hl,a"}]," is a Z80N instruction; on a plain Z80 you would load ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"BC"}]," and add that."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"The copy"}]," counts ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"HL"}]," down, with no interest at all in what the bytes are."]}],"\n"]}]
+52:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["This is the honest minimum, and I would not ship it as it stands: ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"GetByte"}]," waits forever, so a connection that dies\nin mid-packet hangs the program. A real reader counts down a timeout in ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Wait"}]," and gives up."]}]
+53:["$","h2",null,{"id":"the-promise-that-stops-at-the-module","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The promise that stops at the module",["$","$L21",null,{"id":"the-promise-that-stops-at-the-module"}]]}]
+54:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Here is the part I promised. TCP is the reliable protocol: every byte is numbered and acknowledged, and a lost\npacket is sent again. It is natural to assume that if your connection is TCP, your program receives every byte."}]
+55:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"It doesn’t, and the reason is where TCP ends:"}]
+56:["$","figure",null,{"children":[["$","svg",null,{"viewBox":"-2 -2 704 182","role":"img","aria-label":"Left to right: the server, an arrow labelled Wi-Fi and TCP, a lost packet is sent again, the module, an arrow labelled serial line, a lost byte is gone, and the Next's 512-byte receive buffer. A red dashed line below the module marks where TCP's guarantee ends. Below, a green bar under the left half reads TCP checks and resends, and a red bar under the right half reads nothing checks.","style":{"width":"100%","height":"auto"},"children":[["$","defs",null,{"children":[["$","marker",null,{"id":"wf-g-0","viewBox":"0 0 10 10","refX":"9","refY":"5","markerWidth":"7","markerHeight":"7","orient":"auto-start-reverse","children":["$","path",null,{"d":"M0,0 L10,5 L0,10 z","fill":"#a855f7"}]}],["$","marker",null,{"id":"wf-g-1","viewBox":"0 0 10 10","refX":"9","refY":"5","markerWidth":"7","markerHeight":"7","orient":"auto-start-reverse","children":["$","path",null,{"d":"M0,0 L10,5 L0,10 z","fill":"#e5484d"}]}]]}],["$","rect",null,{"x":"0","y":"22","width":"110","height":"74","rx":"6","fill":"none","stroke":"currentColor","strokeWidth":"1.5"}],["$","text",null,{"x":"55","y":"55.4","textAnchor":"middle","fill":"currentColor","fontSize":"14","children":"the"}],["$","text",null,{"x":"55","y":"72.4","textAnchor":"middle","fill":"currentColor","fontSize":"14","children":"server"}],["$","rect",null,{"x":"295","y":"22","width":"110","height":"74","rx":"6","fill":"#a855f7","fillOpacity":"0.12","stroke":"#a855f7","strokeWidth":"2"}],["$","text",null,{"x":"350","y":"55.4","textAnchor":"middle","fill":"#a855f7","fontSize":"14","children":"the"}],["$","text",null,{"x":"350","y":"72.4","textAnchor":"middle","fill":"#a855f7","fontSize":"14","children":"module"}],["$","rect",null,{"x":"590","y":"22","width":"110","height":"74","rx":"6","fill":"#30a46c","fillOpacity":"0.12","stroke":"#30a46c","strokeWidth":"2"}],["$","text",null,{"x":"645","y":"55.4","textAnchor":"middle","fill":"#30a46c","fontSize":"14","children":"receive"}],["$","text",null,{"x":"645","y":"72.4","textAnchor":"middle","fill":"#30a46c","fontSize":"14","children":"buffer, 512"}],["$","line",null,{"x1":"110","y1":"59","x2":"293","y2":"59","stroke":"#a855f7","strokeWidth":"2","markerEnd":"url(#wf-g-0)"}],["$","line",null,{"x1":"405","y1":"59","x2":"588","y2":"59","stroke":"#e5484d","strokeWidth":"2","markerEnd":"url(#wf-g-1)"}],["$","text",null,{"x":"202","y":"49","textAnchor":"middle","fill":"#a855f7","fontSize":"13.5","fontWeight":"bold","children":"Wi-Fi and TCP"}],["$","text",null,{"x":"202","y":"80","textAnchor":"middle","fill":"#a855f7","fontSize":"13.5","children":"a lost packet is sent again"}],["$","text",null,{"x":"497","y":"49","textAnchor":"middle","fill":"#e5484d","fontSize":"13.5","fontWeight":"bold","children":"the serial line"}],["$","text",null,{"x":"497","y":"80","textAnchor":"middle","fill":"#e5484d","fontSize":"13.5","children":"a lost byte is gone"}],["$","line",null,{"x1":"350","y1":"96","x2":"350","y2":"178","stroke":"#e5484d","strokeWidth":"2","strokeDasharray":"6 4"}],["$","rect",null,{"x":"0","y":"122","width":"340","height":"34","rx":"4","fill":"#a855f7","fillOpacity":"0.12","stroke":"#a855f7","strokeWidth":"1.5"}],["$","text",null,{"x":"170","y":"144","textAnchor":"middle","fill":"#a855f7","fontSize":"14","children":"TCP checks and resends"}],["$","rect",null,{"x":"360","y":"122","width":"340","height":"34","rx":"4","fill":"#e5484d","fillOpacity":"0.1","stroke":"#e5484d","strokeWidth":"1.5"}],["$","text",null,{"x":"530","y":"144","textAnchor":"middle","fill":"#e5484d","fontSize":"14","children":"nothing checks"}]]}],["$","figcaption",null,{"children":"TCP’s promise covers the journey from the server to the module. The last stretch, from the module to the Next’s receive buffer, is a plain serial line, and nothing there notices a lost byte."}]]}]
+57:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The clerk acknowledges a packet to the server the moment ",["$","strong",null,{"children":"he"}]," has it. From the server’s point of view the data\nhas been delivered, and it will never be sent again. Then the clerk pushes those bytes down the serial line at full\nspeed, and in the usual arrangement he neither knows nor cares whether anybody is reading."]}]
+58:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Now do the arithmetic. A TCP packet carries up to 1,460 bytes, which takes 127 ms to cross at 115,200 baud, and the\nNext’s receive buffer holds 512, filled in 44 ms. If your program goes away for longer than that while a packet is\narriving, perhaps to write a sector to the SD card, the buffer overflows and bytes are lost. TCP will not save you,\nbecause as far as TCP is concerned, everything went perfectly."}]
+59:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Which leaves you three defences, and I would use them in this order:"}]
+5a:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Never stop reading during a packet."}]," Read into memory, and do the slow work between packets. Status bit 2, the\noverflow flag, tells you it went wrong, which at least lets you say so."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Add your own check."}]," If the data matters, put a checksum or CRC in the protocol above TCP and ask again when it\nfails. That sounds redundant until you remember where TCP stops. NextSync, the popular file transfer tool for the\nNext, puts checksums on every packet for exactly this reason."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Ask for the data yourself."}]," Newer firmware has a ",["$","strong",null,{"children":"passive receive mode"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"AT+CIPRECVMODE=1"}],". In this mode the\nmodule holds what arrives, tells you how much is waiting, and hands over a portion only when you request it with\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"AT+CIPRECVDATA"}],". This turns the clerk from someone who shoves papers through the hatch into someone who waits\nto be asked, and as his own buffer fills, TCP’s flow control quietly slows the server down. It is the only true\nend-to-end flow control available here, and I wish every module had it. Check with ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"AT+GMR"}]," what yours can do."]}],"\n"]}]
+5b:["$","h2",null,{"id":"how-fast-it-can-go","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["How fast it can go",["$","$L21",null,{"id":"how-fast-it-can-go"}]]}]
+5c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["At 115,200 baud a byte takes 86.8 µs and the line carries 11,520 bytes a second, which the framing barely dents: on\na full packet the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"+IPD,1460:"}]," header is under one per cent. That means about a tenth of a megabyte in ten seconds,\nso a 200K file takes about 18 seconds at best."]}]
+5d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You can go faster, in three moves that must happen in this order:"}]
+5e:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["Tell the module the new speed with ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"AT+UART_CUR=921600,8,1,0,0"}],". ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"CUR"}]," means it lasts until the next restart, and\nI much prefer it to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"AT+UART_DEF"}]," for this, because a machine stuck at an unusual saved speed is a pain to recover."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Wait for his ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"OK"}],", which still comes at the old speed."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Program the Next’s prescaler for the new rate, here 30, which gives 933,333 baud (see the UART chapter’s section on\nthe baud rate). Do this promptly, or you’ll miss the start of whatever he sends next."}],"\n"]}]
+5f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The next limit is your code. Add up the instructions in the reader above and each data byte costs 122 T-states\nwhen the buffer is not empty, before counting any wait states the machine inserts. So the reader manages about 28,700\nbytes a second at 3.5 MHz, and 229,500 at 28 MHz. Compare that with what the line delivers:"}]
+60:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["At ",["$","strong",null,{"children":"115,200 baud"}],", 11,523 bytes a second: comfortable at any CPU speed."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["At ",["$","strong",null,{"children":"921,600 baud"}]," (really 933,333), 93,333 bytes a second, one every 10.7 µs: the reader needs a 14 MHz CPU."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["At ",["$","strong",null,{"children":"2,000,000 baud"}],", 200,000 bytes a second, one every 5 µs: it needs 28 MHz and nothing else happening, and the\nreceive buffer fills in just 2.6 ms."]}],"\n"]}]
+61:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"In practice the radio, the module and the protocol all take their cut. NextSync reports a best of about 48 KB/s for a\nsingle large file, more than four times what 115,200 baud could carry, and that is a fair picture of what this link\ncan do when everything goes well. I think that is rather good for a machine whose ancestors loaded from cassette at\nunder 200 bytes a second."}]
+62:["$","h2",null,{"id":"firmware-is-the-fine-print","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Firmware is the fine print",["$","$L21",null,{"id":"firmware-is-the-fine-print"}]]}]
+63:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Everything above the serial line belongs to the firmware, and not all modules run the same one. AT firmware versions\n0.30, 1.3, 1.5.4, 2.2.1 and 3.0.3 have all been found on modules; in a sample of about fifty bought from ordinary\nshops, 1.x was the commonest. Espressif’s documents for those versions differ in the details:"}]
+64:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["Older firmware answers ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"AT+CIPSTART"}]," with ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"OK"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Linked"}]," rather than ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"CONNECT"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"OK"}],"."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Sending a command while the module is busy can bring back ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"busy"}],", and the wording differs between versions."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Passive receive does not exist in the older versions, and the speed command has changed its name over time:\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"AT+UART"}]," on some firmware, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"AT+UART_CUR"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"AT+UART_DEF"}]," on others."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"AT+CIPMUX=1"}]," allows several connections at once, and it changes the tag to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"+IPD,<id>,<length>:"}],"."]}],"\n"]}]
+65:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["My rule of thumb: match on the shortest thing that is stable, such as ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"OK"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ERROR"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"+IPD,"}],", and treat every other\nline as decoration. ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"AT+GMR"}]," tells you what you are talking to."]}]
+66:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["When a clerk misbehaves, he also tells you why. After an unexpected restart the module prints ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"rst cause:"}]," and a number:\n0 for a normal power-on, 1 for the hardware watchdog after the firmware has hung, 2 for an uncaught exception, 3 for\nthe software watchdog, 4 for a software restart and 5 for waking from deep sleep. If you see this repeatedly, the module\nis crashing, and the fault is rarely in your Z80 code."]}]
+67:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The Next’s distribution ships several layers built on all this, so you often need not write any of it. ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"UART.DRV"}]," is\nan interrupt-driven driver with a 16K buffer, which solves the overflow problem for programs that use it. The ESPAT\ndriver serves BASIC programs, and the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".http"}]," dot command fetches a file. ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".UART"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"TERMINAL.BAS"}],"\nare for typing AT commands by hand, which remains the best way I know to learn how your own module behaves."]}]
+68:["$","h2",null,{"id":"what-to-take-home","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["What to take home",["$","$L21",null,{"id":"what-to-take-home"}]]}]
+69:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The Next has no network hardware of its own. A small ESP-01 board behind the VGA port, with an ESP8266 chip inside, runs\nthe radio, WPA2, TCP and DNS in its own firmware, on a 32-bit processor faster than the machine it serves. The FPGA gives\nit UART 0 and a few control lines: GPIO0 through NextRegs ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$A8"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$A9"}],", GPIO2 for reading, and reset through bit 7\nof NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$02"}],", which it shares with the expansion bus. GPIO0 low at reset selects download mode; the pull-ups give the\nnormal start, and the boot ROM’s message at 74,880 baud leaves junk in the buffer to clear away."]}]
+6a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Your program talks to the clerk in AT commands, lines of text ending in CR LF. ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"AT+CWJAP"}]," joins a network once and for\nall. ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"AT+CIPSTART"}]," opens a connection, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"AT+CIPSEND=n"}]," sends exactly n bytes after the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":">"}]," prompt, and data comes back\nas ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"+IPD,n:"}]," followed by n bytes that are counted and never searched."]}]
+6b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The lesson I would keep is that TCP’s promise ends at the module. A 1,460-byte packet fills the 512-byte buffer in 44 ms\nat 115,200 baud whether or not you are reading, and a byte lost there is lost for good, so keep reading during a packet,\nadd a checksum if the data matters, or use passive receive if your firmware has it. With ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"AT+UART_CUR"}]," and a new\nprescaler the link can go far faster than its default of 11,520 bytes a second, as long as your reader keeps up. Treat the\nclerk politely, count what you hand him, and he will bring you the whole world through a two-wire hatch."]}]
+6d:null
+9:C
+6e:["$","text",null,{"x":"330","y":"189","textAnchor":"middle","fill":"#e8912d","fontSize":"13.5","children":"read only"}]
+6f:["$","line",null,{"x1":"410","y1":"200","x2":"238","y2":"200","stroke":"#e8912d","strokeWidth":"1.8","markerEnd":"url(#wf-w-2)"}]
+70:["$","rect",null,{"x":"14","y":"222","width":"222","height":"36","rx":"4","fill":"none","stroke":"#e5484d","strokeWidth":"1.6"}]
+71:["$","text",null,{"x":"125","y":"245","textAnchor":"middle","fill":"#e5484d","fontSize":"14","children":"$$02 bit 7"}]
+72:["$","text",null,{"x":"470","y":"245","textAnchor":"middle","fill":"#a855f7","fontSize":"15","fontWeight":"bold","children":"RST"}]
+73:["$","text",null,{"x":"330","y":"235","textAnchor":"middle","fill":"#e5484d","fontSize":"13.5","children":"reset"}]
+74:["$","line",null,{"x1":"236","y1":"246","x2":"408","y2":"246","stroke":"#e5484d","strokeWidth":"1.8","markerEnd":"url(#wf-w-3)"}]
+75:["$","rect",null,{"x":"14","y":"268","width":"222","height":"30","rx":"4","fill":"none","stroke":"#30a46c","strokeWidth":"1.4","strokeDasharray":"5 4"}]
+76:["$","text",null,{"x":"125","y":"288","textAnchor":"middle","fill":"#30a46c","fontSize":"14","children":"UART 0 flow control"}]
+77:["$","text",null,{"x":"330","y":"280","textAnchor":"middle","fill":"#30a46c","fontSize":"13.5","children":"issue 4 and later"}]
+78:["$","line",null,{"x1":"236","y1":"290","x2":"410","y2":"290","stroke":"#30a46c","strokeWidth":"1.8","strokeDasharray":"5 4"}]
+79:["$","rect",null,{"x":"606","y":"96","width":"94","height":"88","rx":"6","fill":"none","stroke":"currentColor","strokeWidth":"1.5"}]
+7a:["$","text",null,{"x":"653","y":"127.9","textAnchor":"middle","fill":"currentColor","fontSize":"14","children":"router"}]
+7b:["$","text",null,{"x":"653","y":"144.9","textAnchor":"middle","fill":"currentColor","fontSize":"14","children":"and the"}]
+7c:["$","text",null,{"x":"653","y":"161.9","textAnchor":"middle","fill":"currentColor","fontSize":"14","children":"Internet"}]
+7d:["$","text",null,{"x":"568","y":"130","textAnchor":"middle","fill":"#a855f7","fontSize":"13.5","fontWeight":"bold","children":"Wi-Fi"}]
+7e:["$","line",null,{"x1":"530","y1":"140","x2":"604","y2":"140","stroke":"#a855f7","strokeWidth":"1.8","markerEnd":"url(#wf-w-4)"}]
+7f:["$","line",null,{"x1":"592","y1":"140","x2":"532","y2":"140","stroke":"#a855f7","strokeWidth":"1.8","markerEnd":"url(#wf-w-4)"}]
+80:["$","figcaption",null,{"children":"All the wires between the FPGA and the module. Only two carry data; the others choose how the module boots and reset it. The flow control lines exist on issue 4 boards and later."}]
+84:["$","text",null,{"x":"215","y":"407","textAnchor":"middle","fill":"#30a46c","fontSize":"13.5","children":"CLOSED"}]
+85:["$","figcaption",null,{"children":"Fetching a page. Green is text on the serial line between your program and the module; purple is what the module does on your behalf over the network. Your program never sees a TCP packet."}]
+86:["$","text",null,{"x":"680.6","y":"37","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","fontWeight":"bold","children":"LF"}]
+87:["$","path",null,{"d":"M3,58 L3,66 L152.55555555555554,66 L152.55555555555554,58","fill":"none","stroke":"currentColor","strokeWidth":"1.6","strokeLinejoin":"round"}]
+88:["$","text",null,{"x":"77.8","y":"84","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"chatter"}]
+89:["$","path",null,{"d":"M158.55555555555554,58 L158.55555555555554,66 L347,66 L347,58","fill":"none","stroke":"#e8912d","strokeWidth":"1.6","strokeLinejoin":"round"}]
+8a:["$","text",null,{"x":"252.8","y":"84","textAnchor":"middle","fill":"#e8912d","fontSize":"13.5","children":"the tag"}]
+8b:["$","path",null,{"d":"M353,58 L353,66 L424.7777777777777,66 L424.7777777777777,58","fill":"none","stroke":"#3b82f6","strokeWidth":"1.6","strokeLinejoin":"round"}]
+8c:["$","text",null,{"x":"388.9","y":"84","textAnchor":"middle","fill":"#3b82f6","fontSize":"13.5","children":"length"}]
+8d:["$","text",null,{"x":"388.9","y":"101","textAnchor":"middle","fill":"#3b82f6","fontSize":"13.5","children":"and colon"}]
+8e:["$","path",null,{"d":"M430.7777777777777,58 L430.7777777777777,66 L619.2222222222222,66 L619.2222222222222,58","fill":"none","stroke":"#30a46c","strokeWidth":"1.6","strokeLinejoin":"round"}]
+8f:["$","text",null,{"x":"525","y":"84","textAnchor":"middle","fill":"#30a46c","fontSize":"13.5","children":"data: counted,"}]
+90:["$","text",null,{"x":"525","y":"101","textAnchor":"middle","fill":"#30a46c","fontSize":"13.5","children":"never searched"}]
+91:["$","path",null,{"d":"M625.2222222222222,58 L625.2222222222222,66 L697,66 L697,58","fill":"none","stroke":"currentColor","strokeWidth":"1.6","strokeLinejoin":"round"}]
+92:["$","text",null,{"x":"661.1","y":"84","textAnchor":"middle","fill":"currentColor","fontSize":"13.5","children":"chatter"}]
+93:["$","figcaption",null,{"children":"What arrives on the serial line, one cell per byte. A reader searches for the tag, reads the length in decimal up to the colon, and then counts that many bytes without looking at what they are."}]
+94:["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}]
+95:["$","span",null,{"style":{"color":"#B5890F"},"children":"Match"}]
+96:["$","span",null,{"style":{"color":"#6A9955"},"children":"            ; more of the tag to find"}]
+97:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" hl"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"0"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"                ; now the length, in decimal"}]]}]
+98:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"Digit"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"  call"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" GetByte"}]]}]
+99:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        cp"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" ':'"}]]}]
+9a:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        jr"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" z"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#B5890F"},"children":"Body"}]]}]
+9b:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        sub"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" '0'"}]]}]
+9c:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        add"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" hl"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"hl"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"              ; HL * 2"}]]}]
+9d:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" b"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"h"}]]}]
+9e:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"l"}]]}]
+9f:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        add"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" hl"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"hl"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"              ; * 4"}]]}]
+a0:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        add"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" hl"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"hl"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"              ; * 8"}]]}]
+a1:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        add"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" hl"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"bc"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"              ; * 10"}]]}]
+a2:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        add"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" hl"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"               ; Z80N: plus the digit"}]]}]
+a3:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        jr"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" Digit"}]]}]
+a4:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"Body"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"   push"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" hl"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"                ; keep the length"}]]}]
+a5:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"Copy"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"   ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"h"}]]}]
+a6:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        or"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" l"}]]}]
+a7:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        jr"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" z"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#B5890F"},"children":"Done"}]]}]
+a8:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        call"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" GetByte"}]]}]
+a9:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"de"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}]]}]
+aa:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        inc"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" de"}]]}]
+ab:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        dec"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" hl"}]]}]
+ac:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        jr"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" Copy"}]]}]
+ad:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"Done"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"   pop"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" hl"}]]}]
+ae:["$","span",null,{"children":["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ret"}]}]
+af:["$","span",null,{"children":" "}]
+b0:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"GetByte"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}]]}]
+b1:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" bc"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$133b"}]]}]
+b2:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"Wait"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"   in"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":",("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":")               "}],["$","span",null,{"style":{"color":"#6A9955"},"children":"; status"}]]}]
+b3:["$","span",null,{"children":["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        rra"}]}]
+b4:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        jr"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" nc"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#B5890F"},"children":"Wait"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"             ; nothing yet"}]]}]
+b5:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        inc"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" b"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"                  ; $143B: RX"}]]}]
+b6:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        in"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":",("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":")               "}],["$","span",null,{"style":{"color":"#6A9955"},"children":"; the oldest byte"}]]}]
+b7:["$","span",null,{"children":["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        ret"}]}]
+b8:["$","span",null,{"children":" "}]
+b9:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"Tag"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}],["$","span",null,{"style":{"color":"#C586C0"},"children":"    .defb"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" \"+IPD,\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"0"}]]}]
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"
