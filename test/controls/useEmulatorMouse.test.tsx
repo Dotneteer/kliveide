@@ -6,6 +6,17 @@ import { useEmulatorMouse } from "@renderer/features/emulator/useEmulatorMouse";
 import { requestMouseCapture } from "@renderer/features/emulator/mouseCaptureBridge";
 import { flushPackets } from "@renderer/features/emulator/useEmulatorMouse";
 
+/**
+ * The indicator's translate3d x and y in px. Read as numbers, not as the CSS text: jsdom's serializer
+ * writes the z of `translate3d(x, y, 0)` as `0` up to version 30 and as `0px` from 31.
+ */
+function offsetOf(element: HTMLElement): [number, number] {
+  const match = /translate3d\((-?[\d.]+)px,\s*(-?[\d.]+)px/.exec(element.style.transform);
+  if (!match) throw new Error(`not a translate3d: '${element.style.transform}'`);
+  return [Number(match[1]), Number(match[2])];
+}
+
+
 /*
  * `useEmulatorMouse` - capture and release only (Milestone A, step 1).
  *
@@ -316,7 +327,7 @@ describe("useEmulatorMouse", () => {
       grantLock();
       flushFrame();
 
-      expect(indicator.style.transform).toBe("translate3d(160px, 120px, 0)");
+      expect(offsetOf(indicator)).toEqual([160, 120]);
     });
 
     it("follows the host movement", () => {
@@ -325,7 +336,7 @@ describe("useEmulatorMouse", () => {
       moveMouse(10, -20);
       flushFrame();
 
-      expect(indicator.style.transform).toBe("translate3d(170px, 100px, 0)");
+      expect(offsetOf(indicator)).toEqual([170, 100]);
     });
 
     it("coalesces a frame's worth of movement into one update", () => {
@@ -337,7 +348,7 @@ describe("useEmulatorMouse", () => {
       moveMouse(5, 0);
       flushFrame();
 
-      expect(indicator.style.transform).toBe("translate3d(172px, 120px, 0)");
+      expect(offsetOf(indicator)).toEqual([172, 120]);
     });
 
     it("clamps at the edges instead of leaving the screen", () => {
@@ -345,11 +356,11 @@ describe("useEmulatorMouse", () => {
       grantLock();
       moveMouse(10_000, 10_000);
       flushFrame();
-      expect(indicator.style.transform).toBe("translate3d(320px, 240px, 0)");
+      expect(offsetOf(indicator)).toEqual([320, 240]);
 
       moveMouse(-10_000, -10_000);
       flushFrame();
-      expect(indicator.style.transform).toBe("translate3d(0px, 0px, 0)");
+      expect(offsetOf(indicator)).toEqual([0, 0]);
     });
 
     it("comes back from an edge by the distance actually moved, not the distance pushed", () => {
@@ -362,7 +373,7 @@ describe("useEmulatorMouse", () => {
       moveMouse(-5, 0);
       flushFrame();
 
-      expect(indicator.style.transform).toBe("translate3d(315px, 120px, 0)");
+      expect(offsetOf(indicator)).toEqual([315, 120]);
     });
 
     it("shows which buttons are held", () => {
@@ -538,7 +549,7 @@ describe("useEmulatorMouse", () => {
       moveMouse(10, 0);
       flushFrame();
 
-      expect(indicator.style.transform).toBe("translate3d(180px, 120px, 0)");
+      expect(offsetOf(indicator)).toEqual([180, 120]);
     });
 
     it("still sends the machine the unscaled movement", () => {
@@ -559,7 +570,7 @@ describe("useEmulatorMouse", () => {
       moveMouse(10, 0);
       flushFrame();
 
-      expect(indicator.style.transform).toBe("translate3d(165px, 120px, 0)");
+      expect(offsetOf(indicator)).toEqual([165, 120]);
     });
   });
 
