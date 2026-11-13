@@ -39,8 +39,8 @@ make it the one called "Where the copy departs from the original". Last come the
 instructions, group by group, with their timings.
 
 <Callout type="info">
-The facts are for **core 3.02.01**. Timings are in CPU **T-states**, at **3.5 MHz** unless a section says
-otherwise, and without contention. Every fact about the Next was checked against its hardware design.
+The facts are for **core 3.02.01**, and the 28 MHz section also says what core 3.03 changed. Timings are in
+CPU **T-states**, at **3.5 MHz** unless a section says otherwise, and without contention. Every fact about the Next was checked against its hardware design.
 </Callout>
 
 ## A Z80 without a chip
@@ -340,7 +340,9 @@ wait state is the Next's own, and it deserves a section.
 At 3.5, 7 and 14 MHz, an instruction takes exactly the T-states of the Zilog tables; a T-state only gets
 shorter. At **28 MHz** a T-state lasts 36 nanoseconds, and the Next adds **one wait state to every memory
 read**: every opcode fetch, every operand byte and every byte of data read. Memory writes and I/O cycles get
-none.
+none, and neither do reads from the first half of bank 7, page `$0E`, which lives in the FPGA's own block RAM
+rather than in the static RAM chips. (Bank 5 lives there too, but the ULA shares it, so its reads wait like
+the rest.)
 
 The reason is the memory. The CPU and Layer 2 share the Next's static RAM chips, and the core runs one memory
 cycle on them per 28 MHz clock, the CPU first and Layer 2 in the cycles it leaves. So that the chips and the
@@ -469,6 +471,14 @@ bytes included. A few examples:
 The wait state is the price of giving the memory a whole clock to answer. I think it is a fair price:
 28 MHz is still roughly six to seven times as fast as 3.5 MHz, not eight. My advice is to count the T-states
 of a timed loop at the speed it will run at, and never to scale a 3.5 MHz count by eight.
+
+**Core 3.03 takes the wait state away.** From core 3.03 on, the Next runs at 28 MHz with **zero wait
+states**, on every board: the Issue 2, Issue 4 and Issue 5 cores all have it. Every instruction is back to its
+Zilog T-states at every speed, `NOP` takes 4 at 28 MHz, `LD A,(nn)` 13 and `POP BC` 10, and the DMA's reads
+lose their wait as well. So the same program runs a little faster on a 3.03 core than on a 3.02 one, and a
+delay loop counted for 3.02 at 28 MHz comes out short. If a loop's exact length matters to you, read the core
+version from NextReg `$01` and NextReg `$0E` and count for the core you are on; I would rather count than
+guess.
 
 ## Sharing the bus
 
@@ -745,7 +755,8 @@ The **interrupt mode**, set by `IM 0`, `IM 1` or `IM 2`, decides what happens ne
   ROM's, and the Next's hardware IM2 mode uses it to give every source a handler of its own.
 
 At 28 MHz the reads get their wait states and nothing else does: the acknowledge reads no memory and the
-pushes are writes, so IM 1 still takes 13 T-states and IM 2 takes 21.
+pushes are writes, so IM 1 still takes 13 T-states and IM 2 takes 21 (19 on core 3.03, which has no wait
+states).
 
 ### The NMI's response
 
@@ -1585,7 +1596,8 @@ says.
 
 The timing has one Next rule of its own: at 28 MHz every memory read gets one wait state, writes and I/O none,
 because a read gets a whole 28 MHz clock of the memory and its byte comes one clock late. Count one extra
-T-state per byte read, opcodes included. Contention exists only at 3.5 MHz. The DMA takes
+T-state per byte read, opcodes included, except from page `$0E`. Core 3.03 drops that wait on every board, so
+there the Zilog counts hold at all four speeds. Contention exists only at 3.5 MHz. The DMA takes
 the bus between M-cycles, `HALT` keeps fetching `NOP`s, and an interrupt costs 13 T-states in IM 1 and 19 in
 IM 2 once the running instruction ends.
 

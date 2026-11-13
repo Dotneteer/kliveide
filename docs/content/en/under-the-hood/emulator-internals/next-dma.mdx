@@ -1,5 +1,5 @@
 ---
-description: "How the ZX Spectrum Next's DMA works: a second bus master that borrows the CPU's bus, the zxnDMA and Z80 DMA ports and their byte counts, the base bytes and their followers, port A and port B, continuous and burst mode, the commands, six T-states a byte, the prescaler and its exact period, auto restart, the status byte and the read sequence, stepping aside for interrupts, wait states and resets."
+description: "How the ZX Spectrum Next's DMA works: a second bus master that borrows the CPU's bus, the zxnDMA and Z80 DMA ports and their byte counts, the base bytes and their followers, port A and port B, continuous and burst mode, the commands, six T-states a byte, the prescaler and its exact period, auto restart, the status byte and the read sequence, stepping aside for interrupts, wait states and resets, and core 3.03's zxnDDMA blitter."
 ---
 
 import { Callout } from 'nextra/components'
@@ -31,11 +31,13 @@ dialects, the byte count. Next is the way you talk to the DMA, a stream of base 
 the registers one by one: the two ports A and B, the operating mode, the flags and the commands. The heart of
 the chapter is the timing: six T-states a byte, the prescaler that spaces the bytes out, and burst mode, which
 gives the CPU its bus back between them; if you read only one part, read those three sections. After that we
-look at auto restart, reading the DMA back, interrupts, wait states and resets.
+look at auto restart, reading the DMA back, interrupts, wait states and resets. The last section is about
+core 3.03, which turns the DMA into a blitter: full 22-bit addresses, rectangles, a see-through colour, fill
+and Layer 2 screen positions.
 
 <Callout type="info">
-The facts are for **core 3.02.01**. Timings are in CPU T-states for a CPU at **3.5 MHz**, unless a section
-says otherwise. Every fact was checked against the Next's hardware design.
+The facts are for **core 3.02.01**, except in the last section, which is about core 3.03. Timings are in CPU
+T-states for a CPU at **3.5 MHz**, unless a section says otherwise. Every fact was checked against the Next's hardware design.
 </Callout>
 
 ## A second master on the bus
@@ -547,7 +549,8 @@ stretch a byte, all of them wait states the CPU would get too:
   the DMA's next access to it until the last byte has finished, 16 CPU clocks. So a DMA from `$EB` to memory
   reads a sector at the speed of the card's serial link, without a single byte lost.
 - **28 MHz memory.** At 28 MHz a read from the main memory gets a wait state, the DMA's as well as the
-  CPU's.
+  CPU's. Core 3.03 has no wait states at 28 MHz, so there a memory to memory byte takes its six clocks and
+  not one more.
 
 If you ask me, the two-clock cycle is the one to use for memory to memory copies, and the three-clock cycle
 for anything that talks to a device. I have no evidence that a device minds; I simply like the margin.
@@ -771,6 +774,114 @@ deaf. It does not clear the start addresses, the block length, the direction or 
 command is a smaller reset still: it also keeps the operating mode and the read mask. So the
 advice of the interrupts chapter goes for the courier too: write every register a transfer needs, every time.
 
+## The zxnDDMA: a blitter in core 3.03
+
+Core 3.03 teaches the courier new tricks. The new DMA is the **zxnDimensionalDMA**, **zxnDDMA** for short,
+and the Next's release notes simply call it the blitter. Everything in this chapter still holds on it: the
+same base bytes, the same timing, the same two ports. What it adds is a handful of new commands, all shaped
+like WR6 commands, and it takes them **on port `$6B` only**.
+
+Here they are, each with the bytes that follow it:
+
+- `$D7` and `$DB`, one byte each: **bits 23–16 of port A's and port B's address**, the extended byte.
+- `$DF`, one byte: **the mode flags**, below.
+- `$E3`, `$E7`, `$EB` and `$EF`, two bytes each, low byte first: the **row length**, the **number of rows**,
+  **port A's stride** and **port B's stride**.
+- `$F3`, one byte: the **transparent colour**. `$F7`, one byte: the **fill value**.
+
+`$DF` switches the new behaviour on, bit by bit: bit 0 **physical**, bit 1 **2D**, bit 2 **transparent**,
+bit 3 **fill**, bit 4 **Layer 2 X,Y** and bit 5 **hidden screen**; bits 7–6 stay 0. Notice that **each `$DF`
+sets every flag at once**, so it is not a bit you turn on but a whole set you send.
+
+**Physical addresses.** With bit 0 set, the DMA forgets the MMU. An address is 22 bits: bits 5–0 of the
+extended byte above the 16-bit address, and it names a byte of the static RAM directly, where the RAM's 16K
+bank *n* starts at `$40000` + *n* × `$4000` and its 8K page *n* at `$40000` + *n* × `$2000`. Bits 7–6 of the
+extended byte are dropped. Counting up carries from the 16-bit address into the extended byte at `$FFFF`, and
+counting down borrows at `$0000`, so one transfer can run across a 64K boundary. No more paging memory in and
+out between the pieces of a copy: if you ask me, that alone is worth the new core. Two things to keep in mind:
+
+- **The static RAM only.** Bank 5 and the first half of bank 7 are the FPGA's own block RAM when the MMU
+  maps them, and the ULA reads its screen from there. A physical write to their addresses, `$054000` and
+  `$05C000`, lands in the static RAM behind them, the memory chapter's twins, which the ULA never shows. Copy
+  to the ULA screen through the MMU, the old way.
+- **The board's size.** The Issue 5 board's 4 MB reach `$3FFFFF`. The Issue 4 board has 2 MB and drops address
+  bit 21, so `$200000` and up wrap onto the bottom of the memory, which on a Next holds the ROMs and the DivMMC's
+  memory. The Issue 2 board has 1 MB, or 2 MB with its expansion. Read the Board ID register, NextReg `$0F`,
+  before you touch anything above 2 MB. The MMU never reaches past 2 MB on any board, so on the Issue 5 board
+  physical mode is a program's way into its upper half; the memory chapter's
+  [From a CPU address to the SRAM](/en/under-the-hood/emulator-internals/next-memory-io/#from-a-cpu-address-to-the-sram)
+  has the details.
+
+**Rectangles.** With bit 1 set, the block length is not used. The DMA moves a rectangle instead, row length ×
+number of rows bytes. Inside a row each port steps as WR1 and WR2 say; when a row ends, each port starts its
+next row at its previous row's start plus its **stride**, the distance from the start of one row to the start
+of the next, not the gap after it. In physical mode a stride is added to the full 22-bit start, so rows can
+cross 64K too. A row length or a number of rows of 0 still moves one byte. A 32 × 32 picture out of a sheet
+256 bytes wide is row length 32, 32 rows and a source stride of 256.
+
+**Transparency and fill.** With bit 2 set, a source byte equal to the `$F3` colour is not written, but both
+addresses move on, so the background around a character stays as it was: the sprite engine's see-through
+colour, now for anything you copy. With bit 3 set, the DMA does no read at all, and every byte gets the `$F7`
+value; without its read cycle a byte takes half the time of a copy from a fixed address, which makes fill the
+quickest way to clear a screen.
+
+**Layer 2 positions.** With bit 4 set, and bit 0 with it, three more bytes follow the flags: X's low byte, X's
+high byte and Y. The DMA works out port B's start address and its extended byte from them, using the Layer 2
+bank in the Layer 2 Active RAM bank register, NextReg `$12`, or with bit 5 the shadow bank in NextReg `$13`,
+and the screen mode in NextReg `$70` bits 5–4:
+
+- **256 × 192**, stored row by row: the bank's start + Y × 256 + X. Only X's low byte counts.
+- **320 × 256** and **640 × 256**, stored column by column: the bank's start + X × 256 + Y, with a 9-bit X (in
+  the 640 mode, X is a byte column, 0–319).
+
+Port B's stride becomes 256 and stays so until `$EF` or `$C3`: one row down in the 256 × 192 mode, one column
+to the right in the column modes. Send this `$DF` after WR4, or use a WR4 without address bytes, `$A1` or
+`$C1`: a WR4 that carries an address overwrites the one the DMA worked out. Draw with bit 5 and you paint the
+screen that is not shown, then swap the two, and the player never sees a half-drawn picture.
+
+**Resets and lifetimes.** The new settings stay until `$C3`, which clears them all: the flags, both extended
+bytes, the rectangle, the strides and both colours. `$CF` copies the extended bytes into the working addresses
+along with the 16-bit ones. Physical mode stays on until the next `$DF` or `$C3`, so a later ordinary transfer
+must turn it off; my rule is to start every zxnDDMA setup with `$C3`, always.
+
+Let's copy 16 bytes from RAM page 40 to RAM page 41 without paging either of them in. Page 40 starts at
+`$40000` + 40 × `$2000` = `$090000`, page 41 at `$092000`:
+
+```z80klive
+        ld hl,Setup
+        ld b,Size
+        ld c,$6b             ; zxnDMA port
+        otir
+        ret
+Setup:  .defb $c3            ; reset: zxnDDMA settings off
+        .defb $d7,$09        ; port A bits 23-16
+        .defb $db,$09        ; port B bits 23-16
+        .defb $df,$01        ; flags: physical
+        .defb $7d,$00,$00    ; WR0: A to B, port A $0000
+        .defb $10,$00        ;   length 16
+        .defb $14,$10        ; WR1, WR2: memory, up
+        .defb $ad,$00,$20    ; WR4: continuous, B $2000
+        .defb $82,$cf,$87    ; stop at end, load, enable
+Size:   .equ $-Setup
+```
+
+How it works:
+
+1. `$C3` clears every zxnDDMA setting left by an earlier transfer.
+2. `$D7` and `$DB` give both ports the extended byte `$09`; with the 16-bit addresses `$0000` and `$2000`
+   below them, they make `$090000` and `$092000`.
+3. `$DF $01` turns physical mode on, so the MMU's slots play no part.
+4. The rest is an ordinary zxnDMA setup: WR0, WR1, WR2 and WR4, then `$82`, `$CF` to load and `$87` to start.
+
+Now the one trap, and I warn you about it because it bites quietly. On port `$0B`, and on every core before
+3.03, the DMA does not know the new commands: it drops the command byte and then reads the bytes after it as
+ordinary base bytes. In the listing above, an old core would take `$09` as a WR0 that announces port A's low
+byte, and the setup would go astray from there. So find out first whether the zxnDDMA is there. A safe test
+sends the zxnDDMA bytes straight after `$C3`, keeps every one of their data bytes below `$80`, follows them
+with eight `$83`s, which finish any register write an old DMA was left in the middle of, and then copies one
+byte whose two possible destinations, the 16-bit one an old DMA uses and the physical one, are both harmless.
+Whichever of them changed tells you which DMA you have.
+
 ## What to take home
 
 The DMA, the courier, borrows the CPU's bus with `/BUSRQ` and `/BUSAK`; while it holds the bus the CPU is
@@ -793,5 +904,11 @@ all its time. Auto restart loops a block, and in continuous mode it never lets g
 The status byte, `00E1101T`, and the read sequence of counter and addresses can be read only while the CPU has
 the bus. Interrupts enabled in NextRegs `$CC`–`$CE` make the DMA step aside in hardware IM2 mode, contention
 and the SD card's port slow it down like the CPU, and a reset sets it back to zxnDMA mode, continuous and
-three-clock cycles. Once you know who holds the bus and when, the courier is the fastest pair of hands in the
-machine.
+three-clock cycles.
+
+Core 3.03's zxnDDMA adds commands on port `$6B` only: `$D7` and `$DB` for the top bits of a 22-bit physical
+address that bypasses the MMU and reaches all 4 MB of the Issue 5 board, `$DF` for a whole set of flags,
+`$E3` to `$EF` for rectangles with a stride per port, `$F3` for a see-through colour, `$F7` for a fill without
+reads, and X,Y positions on the Layer 2 screen. On an older core those bytes turn into register writes, so
+check before you use them. Once you know who holds the bus and when, the courier is the fastest pair of hands
+in the machine.
