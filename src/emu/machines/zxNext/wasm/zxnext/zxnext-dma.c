@@ -141,13 +141,16 @@ static uint8_t dmaXCount;
 static uint8_t dmaXIndex;
 static uint8_t dmaXBytes[4]; /* $DF with X,Y: the flags, X_lo, X_hi, Y */
 /*
- * The SRAM behind banks 5 and 7. Those banks are block RAM inside the FPGA, which the MMU reaches; the
- * SRAM at their physical addresses is a separate store only physical mode reaches ("Banks 5 and 7 are
- * in block RAM, so a physical transfer to their SRAM addresses does not reach the ULA screen", 2.5).
+ * The SRAM behind bank 5 (pages $0A-$0B) and page $0E, the first half of bank 7. Those pages are block RAM
+ * inside the FPGA, which the MMU reaches (zxnext.vhd@3.02.04: mem_active_bank5, mem_active_bank7 = page
+ * $0E only); the SRAM at their physical addresses is a separate store, which physical mode reaches ("a
+ * physical transfer to their SRAM addresses does not reach the ULA screen", the guide's 2.5, which says
+ * "banks 5 and 7" loosely: page $0F is ordinary SRAM). Klive keeps one copy of those pages elsewhere (the
+ * core's README, "Banks 5 and 7 are one memory"), so this store is seen by physical mode only.
  */
 #define DDMA_BANK5_PHYS 0x054000u
-#define DDMA_BANK7_PHYS 0x05c000u
-static uint8_t dmaSramBank57[0x8000];
+#define DDMA_PAGE0E_PHYS 0x05c000u
+static uint8_t dmaSramBank57[0x6000];
 
 static void zxnextDmaDdmaClear(void) {
   dmaExtA = 0;
@@ -538,11 +541,12 @@ static inline uint32_t zxnextDmaPhysicalAddress(uint8_t hi, uint16_t lo) {
 }
 
 static inline uint32_t zxnextDmaInBank57(uint32_t physical) {
-  return (physical & ~0x3fffu) == DDMA_BANK5_PHYS || (physical & ~0x3fffu) == DDMA_BANK7_PHYS;
+  return (physical & ~0x3fffu) == DDMA_BANK5_PHYS || (physical & ~0x1fffu) == DDMA_PAGE0E_PHYS;
 }
 
 static inline uint32_t zxnextDmaBank57Index(uint32_t physical) {
-  return ((physical & ~0x3fffu) == DDMA_BANK7_PHYS ? 0x4000u : 0u) | (physical & 0x3fffu);
+  /* bank 5 at 0-$3FFF, page $0E at $4000-$5FFF */
+  return (physical & ~0x1fffu) == DDMA_PAGE0E_PHYS ? 0x4000u | (physical & 0x1fffu) : (physical & 0x3fffu);
 }
 
 /* Physical mode reads the SRAM only, never the block RAM (2.5) */

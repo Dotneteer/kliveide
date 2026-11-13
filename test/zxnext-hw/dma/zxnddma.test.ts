@@ -117,6 +117,18 @@ describe("zxnDDMA", () => {
       expect(Array.from(s.peekBytes(0xe000, 8))).toEqual(Array(8).fill(0xc3));
     });
 
+    it("DDMA-004b: only page $0E of bank 7 is block RAM: a physical fill of page $0F shows through the MMU", async () => {
+      // --- zxnext.vhd@3.02.04: mem_active_bank7 is page $0E only; page $0F ($05E000) is ordinary SRAM
+      const s = await parked(profile);
+      write(s, transfer({ a: 0x0000, b: 0xe000, len: 8, ddma: [0xdb, 0x05, 0xf7, 0x6e, 0xdf, PHYSICAL | FILL] })).runFrames(1);
+      s.setNextReg(0x57, 0x0f);
+      expect(Array.from(s.peekBytes(0xe000, 8)), "page $0F through slot 7").toEqual(Array(8).fill(0x6e));
+      // --- and page $0E's ($05C000) does not: block RAM
+      const page0e = (s.setNextReg(0x57, 0x0e), Array.from(s.peekBytes(0xe000, 8)));
+      write(s, transfer({ a: 0x0000, b: 0xc000, len: 8, ddma: [0xdb, 0x05, 0xf7, 0x6e, 0xdf, PHYSICAL | FILL] })).runFrames(1);
+      expect(Array.from(s.peekBytes(0xe000, 8)), "page $0E through slot 7").toEqual(page0e);
+    });
+
     // --- Rectangles, transparency and fill --------------------------------------------------------------
 
     it("DDMA-005: 2D copies row length x rows, each row at the row start plus the stride", async () => {

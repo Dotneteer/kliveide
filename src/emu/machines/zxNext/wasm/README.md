@@ -81,6 +81,9 @@ Memory and I/O (`docs/content/en/under-the-hood/emulator-internals/next-memory-i
   from the SRAM and the Layer 2 mapping writes the SRAM (zxnext.vhd ~2994, ~3016, ~3058; layer2.vhd
   ~172). Klive keeps one copy, so Layer 2 in bank 5 shows the CPU's writes and the mapping's writes show
   on the ULA. Bank 7 is also modelled as 16K of display memory where the hardware has 8K of block RAM.
+  Core 3.03's DMA in physical mode keeps a store of its own for the SRAM behind bank 5 and page `$0E`
+  (`zxnext-dma.c`, `dmaSramBank57`), so a physical write there does not reach the ULA, as on the hardware;
+  but Layer 2 still shows the one copy, not that store.
 - **I/O cycles are not contended.** `zxnextCpuDelayPortReadHead/Tail` are plain T-states; the hardware
   contends even ports, `$7FFD` (128K/+3 timing) and the ULA+ ports in 48K/128K timing (zxnext.vhd ~4476,
   zxula.vhd ~595).
