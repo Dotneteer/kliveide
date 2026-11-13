@@ -847,12 +847,17 @@ class MainMessageProcessor {
   }
 
   /**
-   * Copies the specified file to the SD card image.
+   * Copies the specified file to the SD card image the machine uses now: the project's or the user's
+   * chosen card when one is mounted, else the model's default working copy. The default alone would
+   * miss a mounted card, and NextZXOS would then `.nexload` a stale copy from the card it booted.
    * @param srcFile
    * @param destFile The destination file path on the SD card image.
    */
   async copyToSdCard(srcFile: string, destFile: string) {
-    const sdCardPath = getDefaultSdCardPath();
+    const sdCardPath = activeSdCardFile();
+    if (!sdCardPath.toLowerCase().endsWith(".cim")) {
+      throw new Error(`Klive can copy a file only onto a .cim SD card image, not onto ${sdCardPath}`);
+    }
     if (!fs.existsSync(sdCardPath)) {
       // --- The folder does not exist, we cannot proceed
       console.error("SD card path does not exist:", sdCardPath);
@@ -1579,8 +1584,8 @@ class MainMessageProcessor {
    * @returns True if the "autoexec.1st" file exists, false otherwise.
    */
   async hasNextAutoExec(): Promise<boolean> {
-    const sdCardPath = getDefaultSdCardPath();
-    if (!fs.existsSync(sdCardPath)) {
+    const sdCardPath = activeSdCardFile();
+    if (!sdCardPath.toLowerCase().endsWith(".cim") || !fs.existsSync(sdCardPath)) {
       return false;
     }
 
