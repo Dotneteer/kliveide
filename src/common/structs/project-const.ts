@@ -14,6 +14,11 @@ export const MEDIA_TAPE = "tape";
 export const MEDIA_DISK_A = "diskA";
 export const MEDIA_DISK_B = "diskB";
 export const MEDIA_SD_CARD = "sdCard";
+/**
+ * A ZX Spectrum Next's second SD card (card 1), on a model with two card readers (the KS3;
+ * `dev/plans/ZXNEXT_KS3_FOLLOWUP_PLAN.md` phase 2). No default image: unset is an empty slot.
+ */
+export const MEDIA_SD_CARD_2 = "sdCard2";
 /** The Timex 2068s' cartridge (`.dck`) in the DOCK */
 export const MEDIA_DOCK = "dock";
 /** The Interface 1's Microdrives 1 and 2 (`.mdr` cartridges; `dev/plans/MICRODRIVE_PLAN.md`) */

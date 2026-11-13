@@ -473,6 +473,10 @@
   "@messages.sdCard.select": {
     "context": "Title of an Open File dialog picking an SD card image for the ZX Spectrum Next."
   },
+  "messages.sdCard.select2": "Select the Image for SD Card 2",
+  "@messages.sdCard.select2": {
+    "context": "Title of an Open File dialog picking the image for the ZX Spectrum Next KS3's second SD card reader."
+  },
   "messages.divMmc.selectRom": "Select the esxDOS ROM (8K)",
   "@messages.divMmc.selectRom": {
     "context": "Title of the open-file dialog that picks the esxDOS ROM the DivMMC interface boots."

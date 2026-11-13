@@ -48,6 +48,20 @@ Reset the default image only when you mean to: it deletes everything programs or
 default card. Keep files you care about on your computer and copy them in with `ncp`.
 </Callout>
 
+## A second card on the KS3
+
+The KS3 board has two card readers, so the **ZX Spectrum Next (KS3, core 3.03.03)** model has a second card
+too. The card above is its first; the second reader is empty until you put an image in it. The menu has two
+more items on that model, also available while the machine is stopped:
+
+| Item | What it does |
+|---|---|
+| **Select Image for SD Card 2...** | Puts an image (`.cim`, `.img` or `.hdf`) into the second reader. Klive remembers the choice. |
+| **Eject SD Card 2** | Leaves the second reader empty. |
+
+The second reader is the Next's SD card 1, the one port `$E7` selects with `$FD`. `ncp` copies to and from
+the first card only.
+
 ## Copying files with `ncp`
 
 The `ncp` command (alias `next-copy`) copies one file between your computer and the card:

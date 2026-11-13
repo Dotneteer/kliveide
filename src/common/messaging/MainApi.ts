@@ -944,8 +944,9 @@ class MainApiImpl {
   /**
    * Reads a sector from the SD card and returns its data.
    * @param _sectorIndex The sector index to read.
+   * @param _card The card: 0, or 1 for a ZX Spectrum Next's second reader (`MEDIA_SD_CARD_2`).
    */
-  async readSdCardSector(_sectorIndex: number): Promise<Uint8Array> {
+  async readSdCardSector(_sectorIndex: number, _card?: number): Promise<Uint8Array> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 
@@ -953,16 +954,22 @@ class MainApiImpl {
    * Writes data to a sector on the SD card.
    * @param _sectorIndex The sector index to write.
    * @param _data The data to write to the sector.
+   * @param _card The card: 0, or 1 for a ZX Spectrum Next's second reader.
    * @returns Object with success status and persistence confirmation flag.
    */
-  async writeSdCardSector(_sectorIndex: number, _data: Uint8Array): Promise<{ success: boolean; persistenceConfirmed: boolean }> {
+  async writeSdCardSector(
+    _sectorIndex: number,
+    _data: Uint8Array,
+    _card?: number
+  ): Promise<{ success: boolean; persistenceConfirmed: boolean }> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 
   /**
-   * Returns the total number of 512-byte sectors on the mounted SD card image.
+   * Returns the total number of 512-byte sectors on the mounted SD card image; 0 for an empty slot.
+   * @param _card The card: 0, or 1 for a ZX Spectrum Next's second reader.
    */
-  async getSdCardInfo(): Promise<{ totalSectors: number }> {
+  async getSdCardInfo(_card?: number): Promise<{ totalSectors: number }> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 

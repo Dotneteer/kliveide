@@ -42,8 +42,16 @@ export class InMemorySdMessenger extends MessengerBase {
   /** Main-API calls made, by method. */
   readonly calls: Record<string, number> = {};
 
+  /** The second card (card 1, a KS3's second reader); undefined is an empty slot */
+  card2?: SdCardBacking;
+
   constructor(readonly card: SdCardBacking) {
     super();
+  }
+
+  /** The card a call names (its `card` argument, 0 when absent), or undefined for an empty slot 1 */
+  private cardOf(index: unknown): SdCardBacking | undefined {
+    return index === 1 ? this.card2 : this.card;
   }
 
   override async sendMessage(message: RequestMessage): Promise<any> {
@@ -54,13 +62,16 @@ export class InMemorySdMessenger extends MessengerBase {
     this.calls[method] = (this.calls[method] ?? 0) + 1;
     switch (method) {
       case "getSdCardInfo":
-        return { type: "ApiMethodResponse", result: { totalSectors: this.card.totalSectors } };
-      case "readSdCardSector":
-        return { type: "ApiMethodResponse", result: this.card.readSector(args[0] as number) };
+        return { type: "ApiMethodResponse", result: { totalSectors: this.cardOf(args[0])?.totalSectors ?? 0 } };
+      case "readSdCardSector": {
+        const card = this.cardOf(args[1]);
+        return { type: "ApiMethodResponse", result: card ? card.readSector(args[0] as number) : new Uint8Array(SD_SECTOR_BYTES) };
+      }
       case "writeSdCardSector": {
         const sector = args[0] as number;
-        if (sector >= this.card.totalSectors) return { type: "ApiMethodResponse", result: { success: false, persistenceConfirmed: false } };
-        this.card.writeSector(sector, args[1] as Uint8Array);
+        const card = this.cardOf(args[2]);
+        if (!card || sector >= card.totalSectors) return { type: "ApiMethodResponse", result: { success: false, persistenceConfirmed: false } };
+        card.writeSector(sector, args[1] as Uint8Array);
         return { type: "ApiMethodResponse", result: { success: true, persistenceConfirmed: true } };
       }
       default:

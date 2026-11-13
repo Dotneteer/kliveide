@@ -18,6 +18,7 @@ import {
   nextPartitionGroups,
   nextPartitionLabels,
   parseNextPartitionLabel,
+  type NextPartitionOptions,
   z80nCallInstructionLength
 } from "./nextMachineInfo";
 import { zxNextSysVars } from "./ZxNextSysVars";
@@ -106,20 +107,25 @@ export abstract class ZxNextWasmHost extends Z80MachineBase {
     return zxNextSysVars;
   }
 
+  /** The partitions this model has beyond the common ones: the KS3's upper 2 MB */
+  protected get partitionOptions(): NextPartitionOptions {
+    return { upperRam: this.profile.board === "ks3" };
+  }
+
   parsePartitionLabel(label: string): number | undefined {
-    return parseNextPartitionLabel(label);
+    return parseNextPartitionLabel(label, this.partitionOptions);
   }
 
   getPartitionLabels(): Record<number, string> {
-    return nextPartitionLabels();
+    return nextPartitionLabels(this.partitionOptions);
   }
 
   getPartitionDescriptions(): Record<number, string> {
-    return nextPartitionDescriptions();
+    return nextPartitionDescriptions(this.partitionOptions);
   }
 
   getPartitionGroups(): Record<number, string> {
-    return nextPartitionGroups();
+    return nextPartitionGroups(this.partitionOptions);
   }
 
   getDisassemblySections(options: Record<string, any>): IMemorySection[] {

@@ -86,3 +86,9 @@ reaches 8K pages 0-223 only, as on every board. A program reaches the upper 2 MB
 - **The zxnDDMA's physical addresses**, `$200000-$3FFFFF`. On a KS2 these addresses wrap onto the
   lower 2 MB, so check the board (NextReg `$0F`) before using them.
 - **NextReg `$04` in config mode**, whose bit 7 selects the upper 2 MB on the KS3 only.
+
+In the IDE, the memory view and the bank choosers list the upper 2 MB on the KS3 model as **Upper RAM**,
+pages `U00` to `UFF`, so you can watch and edit what a program keeps there.
+
+The KS3 also has a second SD card reader; [The Next's SD card](/en/guides/next/sd-card) shows how to put an
+image in it.

@@ -35,6 +35,23 @@ const toHexa4 = (value: number) => (value & 0xffff).toString(16).toUpperCase().p
  * is waiting, and why the flow below waits for the machine to settle in this range instead.
  * See `dev/plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.14.
  */
+/*
+ * The KS3's upper 2 MB (`dev/plans/ZXNEXT_KS3_FOLLOWUP_PLAN.md`, phase 3): physical $200000-$3FFFFF,
+ * 256 pages of 8K that no MMU page number reaches. They are partitions 256-511, named `U00`-`UFF`, so the
+ * RAM pages keep 0-223 and their two-digit names, and the history context's 224 stays "no partition".
+ * Only a board with 4 MB offers them (`upperRam`).
+ */
+export const NEXT_UPPER_PARTITION_BASE = 256;
+export const NEXT_UPPER_PAGE_COUNT = 256;
+/** The physical address of the upper 2 MB's first page */
+export const NEXT_UPPER_PHYSICAL = 0x200000;
+
+/** Which partitions a Next has beyond the common ones */
+export type NextPartitionOptions = {
+  /** The upper 2 MB of a 4 MB board (the KS3) */
+  upperRam?: boolean;
+};
+
 const SP_KEY_WAIT = 250;
 const SP_KEY_WAIT_SHORT = 50;
 
@@ -42,7 +59,7 @@ const SP_KEY_WAIT_SHORT = 50;
  * Parses a partition label to get the partition number
  * @param label Label to parse
  */
-export function parseNextPartitionLabel(label: string): number | undefined {
+export function parseNextPartitionLabel(label: string, options: NextPartitionOptions = {}): number | undefined {
   // --- Normalize once and use the normalized value throughout. The `default:` branch used to
   // --- test the *original* string (`label.startsWith("M")`) while the switch tested the
   // --- uppercased one, and `BreakpointCommands` lowercases an address spec before parsing it —
@@ -75,6 +92,11 @@ export function parseNextPartitionLabel(label: string): number | undefined {
       return -7;
   }
 
+  // --- The upper 2 MB's pages U00..UFF, on a board that has them
+  if (options.upperRam && /^U[0-9A-F]{1,2}$/.test(normalized)) {
+    return NEXT_UPPER_PARTITION_BASE + parseInt(normalized.substring(1), 16);
+  }
+
   // --- DivMMC RAM pages M0..MF occupy partitions -8..-23.
   if (normalized.startsWith("M")) {
     const page = normalized.substring(1);
@@ -95,7 +117,7 @@ export function parseNextPartitionLabel(label: string): number | undefined {
  * Gets the label of the specified partition
  * @param partition Partition index
  */
-export function nextPartitionLabels(): Record<number, string> {
+export function nextPartitionLabels(options: NextPartitionOptions = {}): Record<number, string> {
   const result: Record<number, string> = {
     [-1]: "R0",
     [-2]: "R1",
@@ -111,6 +133,9 @@ export function nextPartitionLabels(): Record<number, string> {
   for (let i = 0; i < 224; i++) {
     result[i] = toHexa2(i).toUpperCase();
   }
+  if (options.upperRam) {
+    for (let i = 0; i < NEXT_UPPER_PAGE_COUNT; i++) result[NEXT_UPPER_PARTITION_BASE + i] = `U${toHexa2(i)}`;
+  }
   return result;
 }
 
@@ -121,7 +146,7 @@ export function nextPartitionLabels(): Record<number, string> {
  * these partitions `NROM0`, `ALTR0` and `DivMR` — names nothing else in the system used and that
  * `parsePartitionLabel` rejected. They are descriptions now, and the label is what identifies.
  */
-export function nextPartitionDescriptions(): Record<number, string> {
+export function nextPartitionDescriptions(options: NextPartitionOptions = {}): Record<number, string> {
   const result: Record<number, string> = {
     [-1]: "Next ROM 0",
     [-2]: "Next ROM 1",
@@ -137,6 +162,12 @@ export function nextPartitionDescriptions(): Record<number, string> {
   for (let i = 0; i < 224; i++) {
     result[i] = `Bank $${toHexa2(i).toUpperCase()}`;
   }
+  if (options.upperRam) {
+    for (let i = 0; i < NEXT_UPPER_PAGE_COUNT; i++) {
+      const physical = (NEXT_UPPER_PHYSICAL + i * 0x2000).toString(16).toUpperCase();
+      result[NEXT_UPPER_PARTITION_BASE + i] = `Upper RAM page $${toHexa2(i)} (physical $${physical})`;
+    }
+  }
   return result;
 }
 
@@ -146,7 +177,7 @@ export function nextPartitionDescriptions(): Record<number, string> {
  * The caption carries the noun so the chip does not have to: `M0`..`MF` sit under one
  * "DivMMC RAM" heading rather than spelling it out sixteen times.
  */
-export function nextPartitionGroups(): Record<number, string> {
+export function nextPartitionGroups(options: NextPartitionOptions = {}): Record<number, string> {
   const result: Record<number, string> = {
     [-1]: "Next ROM",
     [-2]: "Next ROM",
@@ -163,6 +194,9 @@ export function nextPartitionGroups(): Record<number, string> {
   // --- height — which was the only reason to leave it unlabelled.
   for (let i = 0; i < 224; i++) {
     result[i] = "RAM Banks";
+  }
+  if (options.upperRam) {
+    for (let i = 0; i < NEXT_UPPER_PAGE_COUNT; i++) result[NEXT_UPPER_PARTITION_BASE + i] = "Upper RAM";
   }
   return result;
 }

@@ -693,6 +693,14 @@
   "@menu.next.resetDefaultImage": {
     "context": "Machine › SD Card: restores Klive's own SD card image to its original content (asks first). The trailing '...' means the item opens a dialog; keep it."
   },
+  "menu.next.selectImage2": "Select Image for SD Card 2...",
+  "@menu.next.selectImage2": {
+    "context": "Machine › SD Card (ZX Spectrum Next KS3, which has two card readers): picks the image for the second card reader. The trailing '...' means the item opens a dialog; keep it."
+  },
+  "menu.next.ejectImage2": "Eject SD Card 2",
+  "@menu.next.ejectImage2": {
+    "context": "Machine › SD Card (ZX Spectrum Next KS3): leaves the second card reader empty."
+  },
   "menu.next.hotkeys": "Hotkeys",
   "@menu.next.hotkeys": {
     "context": "Machine › ZX Spectrum Next: submenu of the real machine's function-key actions (F1-F10)."

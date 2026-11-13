@@ -564,7 +564,8 @@ the updater.
 - **The boot ROM** answers reads of `$0000–$3FFF`, until the first write to NextReg `$03` switches it off.
 - **The Config Mapping register, NextReg `$04`**, maps any 16K bank of the SRAM to `$0000–$3FFF`. The firmware
   uses it to write the ROM images into the banks where the machine will look for them: the Spectrum ROMs in
-  the first 64K, then the DivMMC's ROM, the Multiface's ROM and RAM, and the alternate ROMs, 128K in all.
+  the first 64K, then the DivMMC's ROM, the Multiface's ROM and RAM, and the alternate ROMs, 128K in all. On
+  the Issue 5 board it keeps all 8 bits, so it reaches the whole 4 MB; on the other boards bit 7 is ignored.
 - **The flash can be selected** on the SPI bus (`$7F` on port `$E7`), which the storage chapter's
   [The flash and the Pi](/en/under-the-hood/emulator-internals/next-storage/#the-flash-and-the-pi) describes.
   The firmware reads a core's header and writes a core this way.
@@ -670,6 +671,14 @@ slot 0, exactly as it will every day from now on. If you ask me, that is the hon
 A record can also name **slot 0**, to update the anti-brick core itself. The updater then shows a red warning
 that this can brick the machine, and goes ahead only if you hold **A and B** together. I have never needed it,
 and I hope you never do.
+
+The current system release, **26.11a**, puts **core 3.03.03** into slot 1 on all three boards and comes with
+**firmware 1.46**. One change matters for the update itself: from core 3.03.00 on, the Issue 2 board's core is
+split in two, one for HDMI and one for VGA. An Issue 2 machine must therefore update its core first and the
+rest of the system after it; done the other way round, the new firmware looks for a test card core that is
+not there yet, and the machine looks bricked although it is not. The Issue 5 board, which has two SD card
+readers, an internal one and an external one, updates both cards through a new updater program that the
+release installs first. My advice for any board: read the release's notes for your board before you press U.
 
 ## Repairing a broken slot 1
 

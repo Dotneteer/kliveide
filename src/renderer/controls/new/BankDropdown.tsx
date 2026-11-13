@@ -55,17 +55,20 @@ export default function BankDropdown({
 }: Props) {
   const rootElement = useOverlayRoot();
 
-  const { specialBlocks, bankOptions, bankRows, ordered } = useMemo(() => {
+  const { specialBlocks, bankBlocks, bankRows, ordered } = useMemo(() => {
     const special = options.filter((o) => o.group === "special");
     const banks = options.filter((o) => o.group === "bank");
+    // --- Banks can come in more than one captioned block too (the KS3's "Upper RAM" after the "RAM
+    // --- Banks"): each block starts its own grid rows, with its caption beside its first row.
+    const blocks = toCaptionedBlocks(banks);
     return {
       // --- One row per captioned block, so "DivMMC RAM" is printed once above `M0`..`MF` rather
       // --- than spelled out on each of the sixteen chips.
       specialBlocks: toCaptionedBlocks(special),
-      bankOptions: banks,
-      // --- The same banks chunked the way the grid wraps them, which is the model arrow keys move
-      // --- over. Layout and navigation have to agree on where the rows are.
-      bankRows: toRows(banks, BANKS_PER_ROW),
+      bankBlocks: blocks,
+      // --- The same banks chunked the way the grid wraps them, block by block, which is the model
+      // --- arrow keys move over. Layout and navigation have to agree on where the rows are.
+      bankRows: blocks.flatMap((block) => toRows(block.options, BANKS_PER_ROW)),
       ordered: [...special, ...banks]
     };
   }, [options]);
@@ -191,28 +194,31 @@ export default function BankDropdown({
                 {block.options.map((option) => renderCell(option))}
               </Fragment>
             ))}
-            {specialBlocks.length > 0 && bankOptions.length > 0 && (
+            {specialBlocks.length > 0 && bankBlocks.length > 0 && (
               <Select.Separator className={styles.SelectSeparator} />
             )}
-            {/*
-              * The bank grid's caption goes beside its first row rather than above it, so naming
-              * 224 banks costs no extra height. Rows below leave column 1 empty on their own,
-              * because each is placed into column 2 explicitly.
-              */}
-            {bankOptions[0]?.caption && (
-              <span className={styles.caption}>{bankOptions[0].caption}</span>
-            )}
-            {bankOptions.map((option, index) =>
-              /*
-               * Every row's first cell is placed into column 2, not just the first row's.
-               *
-               * The grid is 17 columns wide — caption plus sixteen cells — so auto-flow would put
-               * each row's seventeenth item back in the *caption* column, and every bank row after
-               * the first would slide one cell left. Placing each row's opener explicitly is what
-               * keeps `M3` above bank `03` all the way down.
-               */
-              renderCell(option, index % BANKS_PER_ROW === 0 ? styles.bankRowStart : undefined)
-            )}
+            {bankBlocks.map((block, blockIndex) => (
+              <Fragment key={`bank-${blockIndex}`}>
+                {/*
+                  * A bank block's caption goes beside its first row rather than above it, so
+                  * naming 224 banks costs no extra height. Rows below leave column 1 empty on
+                  * their own, because each is placed into column 2 explicitly.
+                  */}
+                {block.caption && <span className={styles.caption}>{block.caption}</span>}
+                {block.options.map((option, index) =>
+                  /*
+                   * Every row's first cell is placed into column 2, not just the first row's.
+                   *
+                   * The grid is 17 columns wide — caption plus sixteen cells — so auto-flow would
+                   * put each row's seventeenth item back in the *caption* column, and every bank
+                   * row after the first would slide one cell left. Placing each row's opener
+                   * explicitly is what keeps `M3` above bank `03` all the way down, and what
+                   * starts a new block on a fresh row.
+                   */
+                  renderCell(option, index % BANKS_PER_ROW === 0 ? styles.bankRowStart : undefined)
+                )}
+              </Fragment>
+            ))}
           </Select.Viewport>
         </Select.Content>
       </Select.Portal>

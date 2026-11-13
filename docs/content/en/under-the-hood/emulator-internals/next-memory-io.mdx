@@ -41,7 +41,7 @@ a map of all 256 numbers, and what a reset clears.
 
 <Callout type="info">
 The facts are for **core 3.02.01** on a Next with **2 MB** of RAM (a 1 MB machine has the same map with the
-top 1 MB missing). The machine is in **+3 timing** unless a section says otherwise, and contention is
+top 1 MB missing; the Issue 5 board's 4 MB are in "From a CPU address to the SRAM"). The machine is in **+3 timing** unless a section says otherwise, and contention is
 described at **3.5 MHz**, the only speed where it exists. Every fact was checked against the Next's hardware
 design.
 </Callout>
@@ -399,6 +399,23 @@ the SRAM's copy, which the CPU never wrote. Write through the Layer 2 mapping (c
 section), and the bytes land in the SRAM, where the ULA never looks. I think of them as **the twins**: two
 memories answering to one bank number, living in different houses, and never talking to each other. My
 advice is to keep Layer 2 out of banks 5 and 7, and let the twins live their separate lives.
+
+**The Issue 5 board**, the third Kickstarter's, has twice the SRAM: **4 MB**, with 22-bit addresses. The
+upper 2 MB, `$200000–$3FFFFF`, sits above everything shown so far, and I like to call it **the attic**:
+plenty of room, but no stairs from the rooms your program lives in. Your page numbers do not reach it. A page
+is 8 bits wide, every page from `$E0` up already falls off the end of the RAM, and that is so on the Issue 5
+board as on every other, so the MMU sees the same 2 MB everywhere. Two ways lead up there:
+
+- **The Config Mapping register, NextReg `$04`**, maps a 16K bank of the whole SRAM at `$0000–$3FFF`, counting
+  from the bottom of the basement. On the Issue 5 board it keeps all 8 bits, so its banks `$80–$FF` are the
+  attic; on the other boards bit 7 is ignored. It works only in config mode, which is the firmware's ground,
+  not a program's.
+- **The DMA's physical addresses**, from core 3.03 on, reach any byte of the 4 MB without the MMU, as the DMA
+  chapter's [The zxnDDMA: a blitter in core 3.03](/en/under-the-hood/emulator-internals/next-dma/#the-zxnddma-a-blitter-in-core-303)
+  explains.
+
+On an Issue 4 board the same physical addresses wrap round onto the basement, ROMs and all, so a program that
+wants the attic reads the Board ID register, NextReg `$0F`, first: 3 means the Issue 5 board.
 
 ## Who answers an address
 
@@ -1588,7 +1605,9 @@ Three doors, then, and I hope they feel less like magic now. **Memory** is eight
 page chosen by NextRegs `$50`–`$57`; a 16K bank *n* is pages 2*n* and 2*n* + 1, pages `$00`–`$DF` are RAM,
 and `$FF` in slot 0 or 1 means the ROM. A page plus `$20` is its place in the 2 MB SRAM, whose first 256K, the
 basement, hold the ROMs, the DivMMC, the Multiface and the alternate ROMs, out of the MMU's reach. Bank 5 and
-half of bank 7 live in block RAM inside the FPGA as well, and Layer 2 never sees that twin.
+half of bank 7 live in block RAM inside the FPGA as well, and Layer 2 never sees that twin. The Issue 5 board
+adds an attic, a second 2 MB that no page number reaches: only config-mode NextReg `$04` and, from core 3.03,
+the DMA's physical addresses go up there.
 
 The bottom 16K is crowded: the stagehand (the boot ROM), the fire brigade (the Multiface), the butler (the
 DivMMC) and the painter (the Layer 2 mapping) all win over the MMU, in that order, and the top 16K belongs to

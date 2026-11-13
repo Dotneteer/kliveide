@@ -6,7 +6,7 @@ import { MEDIA_SD_CARD } from "@common/structs/project-const";
 import type { DiskEdit } from "@common/diskfs/edit";
 import { mainStore } from "./main-store";
 import { withSdCardAccess } from "./sd-card-access";
-import { activeSdCardFile, invalidateSdCardHandler } from "./machine-menus/zx-next-menus";
+import { activeSdCard2File, activeSdCardFile, invalidateSdCardHandler } from "./machine-menus/zx-next-menus";
 import { copyHostFolderToHardDisk, editHardDisk } from "./hard-disk-images";
 
 /*
@@ -21,7 +21,9 @@ import { copyHostFolderToHardDisk, editHardDisk } from "./hard-disk-images";
 export function isActiveSdCard (filePath: string): boolean {
   const media = mainStore.getState().media ?? {};
   const card = media[MEDIA_SD_CARD] ? activeSdCardFile() : undefined;
-  return !!card && path.resolve(card) === path.resolve(filePath);
+  // --- A KS3's second card (`MEDIA_SD_CARD_2`) is the machine's too
+  const card2 = activeSdCard2File();
+  return [card, card2].some((file) => !!file && path.resolve(file) === path.resolve(filePath));
 }
 
 /** Runs `op` on an image, under the SD card's lock and with a running machine paused when it is the machine's card */

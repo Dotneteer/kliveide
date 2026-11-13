@@ -372,6 +372,18 @@ export class NextTestSession {
     return this;
   }
 
+  /**
+   * A second SD card (card 1) beside the one `attachSdCard` gave (which must come first), for a model
+   * with two readers (the KS3); then the machine's card sizes are loaded again, as the app does at
+   * setup, so card 1 is present before the guest looks at it. On a one-reader model card 1 stays empty.
+   */
+  async attachSdCard2(card: Uint8Array | SdCardBacking): Promise<this> {
+    if (!this.sd) throw new Error("Attach card 0 first (attachSdCard)");
+    this.sd.card2 = card instanceof Uint8Array ? new MemorySdCard(card) : card;
+    await this.machine.ensureSdCardInfo(this.sd, true);
+    return this;
+  }
+
   /** The attached flat image, with the machine's writes in it. */
   get sdImage(): Uint8Array {
     if (!(this.sd?.card instanceof MemorySdCard)) throw new Error("No flat SD image attached (attachSdCard with a Uint8Array)");
