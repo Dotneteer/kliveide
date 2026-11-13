@@ -217,6 +217,7 @@ KS3 fits the same steps: the board is a profile field and a compile-time define,
 - Upstream is at 3.02.05 (branch `30205`); adding it is one manifest entry plus the steps above.
 - **Core 3.03's VHDL** is not published; `dev/plans/ZXNEXT_3_03_PLAN.md` phase 7 lists what to do
   when it is (pin, classify, check every `VHDL-PENDING(3.03.03)`, which reads lost the 28 MHz wait).
-- **The IDE does not show the KS3's upper 2 MB** (memory panels, bank pickers, profiler): it is
-  reached only through config mode and the DMA.
+- **The profiler does not see the KS3's upper 2 MB** (by design: it is reached only through config mode and
+  the DMA). The memory view and the bank choosers show it as partitions `U00`-`UFF` (256-511), and the KS3
+  model has a second SD card (`sdReaders`, `MEDIA_SD_CARD_2`): `dev/plans/ZXNEXT_KS3_FOLLOWUP_PLAN.md`.
 - Offering a second NextZXOS for the same core is possible by the data model (D9.1) but has no UI.

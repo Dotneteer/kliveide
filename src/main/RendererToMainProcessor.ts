@@ -1407,12 +1407,13 @@ class MainMessageProcessor {
    * Reads a sector from the SD card and returns its data.
    * @param sectorIndex The sector index to read.
    */
-  async readSdCardSector(sectorIndex: number) {
+  async readSdCardSector(sectorIndex: number, card = 0) {
     if (!Number.isInteger(sectorIndex) || sectorIndex < 0) {
       throw new Error("Invalid sector index");
     }
+    if (card !== 0 && card !== 1) throw new Error("Invalid SD card");
     // --- Input validated
-    return withSdCardAccess(() => getSdCardDevice().readSector(sectorIndex));
+    return withSdCardAccess(() => getSdCardDevice(card).readSector(sectorIndex));
   }
 
   /**
@@ -1422,7 +1423,8 @@ class MainMessageProcessor {
    */
   async writeSdCardSector(
     sectorIndex: number,
-    data: Uint8Array
+    data: Uint8Array,
+    card = 0
   ): Promise<{ success: boolean; persistenceConfirmed: boolean }> {
     if (!Number.isInteger(sectorIndex) || sectorIndex < 0) {
       throw new Error("Invalid sector index");
@@ -1430,8 +1432,9 @@ class MainMessageProcessor {
     if (!(data instanceof Uint8Array)) {
       throw new Error("Data must be a Uint8Array");
     }
+    if (card !== 0 && card !== 1) throw new Error("Invalid SD card");
     // --- Input validated
-    await withSdCardAccess(() => getSdCardDevice().writeSector(sectorIndex, data));
+    await withSdCardAccess(() => getSdCardDevice(card).writeSector(sectorIndex, data));
 
     // --- FIX for ISSUE #8: Explicit persistence confirmation
     // --- Only return success after fsyncSync has completed
@@ -1445,8 +1448,9 @@ class MainMessageProcessor {
   /**
    * Returns the total number of 512-byte sectors on the mounted SD card image.
    */
-  async getSdCardInfo(): Promise<{ totalSectors: number }> {
-    return withSdCardAccess(() => ({ totalSectors: getSdCardDevice().totalSectors }));
+  async getSdCardInfo(card = 0): Promise<{ totalSectors: number }> {
+    if (card !== 0 && card !== 1) throw new Error("Invalid SD card");
+    return withSdCardAccess(() => ({ totalSectors: getSdCardDevice(card).totalSectors }));
   }
 
   /**

@@ -74,7 +74,12 @@ import {
   UNPAGED_PARTITION_LABEL
 } from "./nextMemoryLayout";
 import { ZxNextWasmHost } from "./ZxNextWasmHost";
-import { NEXT_ROM_FLAGS } from "./nextMachineInfo";
+import {
+  NEXT_ROM_FLAGS,
+  NEXT_UPPER_PAGE_COUNT,
+  NEXT_UPPER_PARTITION_BASE,
+  NEXT_UPPER_PHYSICAL
+} from "./nextMachineInfo";
 import { NEXT_ROM_FILES, NEXT_ROM_SETS, nextRomPageCrcs, nextRomPath } from "@common/zxnext/romSets";
 import { nextModelDisplayName, profileOfStateCoreId, stateCoreIdOf } from "./nextProfiles";
 import { NextRtcHost, type NextRtcClockMode, type NextRtcExports, type NextRtcStore } from "./nextRtcHost";
@@ -565,10 +570,15 @@ export class ZxNextWasmV2Machine
     this.syncAudioSampleRateToWasmV2(this.wasmV2Runtime);
     this.syncTapeStateToWasmV2(this.wasmV2Runtime);
     this.syncCpuFromWasmV2(this.wasmV2Runtime);
+    // --- The cards' sizes before the guest looks at a card: card 1 is an empty slot until it has one
+    if (this.messenger) await this.ensureSdCardInfo(this.messenger);
   }
 
   override hardReset(): void {
     super.hardReset();
+    // --- The cards may have changed while the machine was stopped (a new image, an ejected second
+    // --- card): their sizes are fetched again at the first SD access
+    this.wasmV2SdCardInfoLoaded = false;
     if (this.wasmV2Runtime != null) {
       this.hardResetWasmV2(this.wasmV2Runtime);
       this.syncAudioSampleRateToWasmV2(this.wasmV2Runtime);
@@ -1492,6 +1502,13 @@ export class ZxNextWasmV2Machine
       offset = OFFS_DIVMMC_RAM + 0x2000 * (-index - 8);
     } else if (index >= 0 && index < 224) {
       offset = OFFS_NEXT_RAM + 0x2000 * index;
+    } else if (
+      this.partitionOptions.upperRam &&
+      index >= NEXT_UPPER_PARTITION_BASE &&
+      index < NEXT_UPPER_PARTITION_BASE + NEXT_UPPER_PAGE_COUNT
+    ) {
+      // --- The KS3's upper 2 MB: the core keeps it after its 8K error page (`zxnextSramOffset`)
+      offset = NEXT_UPPER_PHYSICAL + 0x2000 + 0x2000 * (index - NEXT_UPPER_PARTITION_BASE);
     }
     return runtime.memory.subarray(offset, offset + length);
   }
@@ -1718,7 +1735,7 @@ export class ZxNextWasmV2Machine
     const frameCommand = this.getFrameCommand();
     if (frameCommand == null) return;
 
-    await this.ensureWasmV2SdCardInfo(messenger);
+    await this.ensureSdCardInfo(messenger);
 
     switch (frameCommand.command) {
       case "sd-read":
@@ -1741,7 +1758,7 @@ export class ZxNextWasmV2Machine
     const runtime = this.requireWasmV2Runtime();
     const card = frameCommand.command === "sd-read-card1" ? 1 : 0;
     try {
-      const sectorData = await createMainApi(messenger).readSdCardSector(frameCommand.sector);
+      const sectorData = await createMainApi(messenger).readSdCardSector(frameCommand.sector, card);
       const data = sectorData instanceof Uint8Array ? sectorData : new Uint8Array(sectorData);
       const ptr = runtime.exports.zxnextGetSdWriteBufferPtr();
       writeCoreBytes(runtime, new Uint8Array(runtime.memoryBuffer), data.slice(0, ZXNEXT_SD_BYTES_PER_SECTOR), ptr);
@@ -1774,14 +1791,14 @@ export class ZxNextWasmV2Machine
       if (this.sdUndoLog) {
         let before: Uint8Array | undefined;
         try {
-          const old = await api.readSdCardSector(frameCommand.sector);
+          const old = await api.readSdCardSector(frameCommand.sector, card);
           before = old instanceof Uint8Array ? old : new Uint8Array(old);
         } catch {
           before = undefined;
         }
         this.sdUndoLog.record(card, frameCommand.sector, before);
       }
-      const result = await api.writeSdCardSector(frameCommand.sector, frameCommand.data);
+      const result = await api.writeSdCardSector(frameCommand.sector, frameCommand.data, card);
       runtime.exports.zxnextSetSdWriteResponse(card, result?.persistenceConfirmed ? 1 : 0);
     } catch (err) {
       console.log(`${frameCommand.command === "sd-write-card1" ? "SD card 1" : "SD card"} sector write error`, err);
@@ -1807,15 +1824,27 @@ export class ZxNextWasmV2Machine
     this.invalidateCheckpoints();
     const api = createMainApi(messenger);
     return revertSdWrites(entries, {
-      writeSector: async (_card, sector, data) => !!(await api.writeSdCardSector(sector, data))?.success
+      writeSector: async (card, sector, data) => !!(await api.writeSdCardSector(sector, data, card))?.success
     });
   }
 
-  private async ensureWasmV2SdCardInfo(messenger: MessengerBase): Promise<void> {
-    if (this.wasmV2SdCardInfoLoaded) return;
+  /**
+   * Gives the core the cards' sizes from the main process, once per hard reset: card 0, and on a model
+   * with a second reader (the KS3) card 1, whose slot is empty until it has a size. Called at setup
+   * when the machine has a messenger, and before every SD frame command otherwise.
+   */
+  async ensureSdCardInfo(messenger: MessengerBase, reload = false): Promise<void> {
+    if (this.wasmV2SdCardInfoLoaded && !reload) return;
     try {
-      const info = await createMainApi(messenger).getSdCardInfo();
+      const api = createMainApi(messenger);
+      const info = await api.getSdCardInfo();
       this.requireWasmV2Runtime().exports.zxnextSetSdCardInfo(0, info.totalSectors);
+      // --- A second reader (the KS3): card 1's size, 0 for an empty slot. NextZXOS reads card 0 before
+      // --- it looks at card 1, and that first read is what brings us here, so the slot is set in time.
+      if (this.profile.sdReaders === 2) {
+        const info1 = await api.getSdCardInfo(1);
+        this.requireWasmV2Runtime().exports.zxnextSetSdCardInfo(1, info1.totalSectors);
+      }
       this.wasmV2SdCardInfoLoaded = true;
     } catch (err) {
       console.warn("SD card info fetch failed, using default CSD", err);

@@ -42,6 +42,27 @@ describe("nextMachineInfo", () => {
     for (const [partition, label] of Object.entries(nextPartitionLabels())) {
       expect(parseNextPartitionLabel(label), label).toBe(Number(partition));
     }
+    for (const [partition, label] of Object.entries(nextPartitionLabels({ upperRam: true }))) {
+      expect(parseNextPartitionLabel(label, { upperRam: true }), label).toBe(Number(partition));
+    }
+  });
+
+  it("the KS3 adds its upper 2 MB as partitions 256-511, U00-UFF; the other models do not", () => {
+    // --- `dev/plans/ZXNEXT_KS3_FOLLOWUP_PLAN.md` phase 3: physical $200000-$3FFFFF, no MMU page reaches it
+    const ks3 = new ZxNextWasmV2Machine({ modelId: "ks3-30303", displayName: "", config: {} } as any);
+    const ks2 = new ZxNextWasmV2Machine({ modelId: "ks2-30303", displayName: "", config: {} } as any);
+    const labels = ks3.getPartitionLabels();
+    expect(Object.keys(labels)).toHaveLength(4 + 2 + 1 + 16 + 224 + 256);
+    expect(Object.keys(ks3.getPartitionDescriptions()).sort()).toEqual(Object.keys(labels).sort());
+    expect(Object.keys(ks3.getPartitionGroups()).sort()).toEqual(Object.keys(labels).sort());
+    expect([labels[256], labels[511]]).toEqual(["U00", "UFF"]);
+    expect(ks3.getPartitionDescriptions()[257]).toBe("Upper RAM page $01 (physical $202000)");
+    expect(ks3.getPartitionGroups()[300]).toBe("Upper RAM");
+    expect(["U00", "uff", "U1", "U100"].map((l) => ks3.parsePartitionLabel(l))).toEqual([256, 511, 257, undefined]);
+    // --- 224 stays "no partition" (the history context), not an upper page
+    expect(labels[224]).toBeUndefined();
+    expect(Object.keys(ks2.getPartitionLabels())).toHaveLength(4 + 2 + 1 + 16 + 224);
+    expect(ks2.parsePartitionLabel("U00")).toBeUndefined();
   });
 
   it("offers a disassembly section for every combination of the RAM and screen options", () => {

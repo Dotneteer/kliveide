@@ -30,6 +30,11 @@ export type NextProfile = {
   romSet: NextRomSetId;
   /** The default SD card working copy in the Klive home folder (D7) */
   sdWorkingCopy: string;
+  /**
+   * The board's SD card readers: 1, or 2 on the KS3 (internal and external). A second reader is card 1
+   * (`MEDIA_SD_CARD_2`), an empty slot until an image is chosen (`dev/plans/ZXNEXT_KS3_FOLLOWUP_PLAN.md`)
+   */
+  sdReaders: 1 | 2;
   /** Which NextReg description set the IDE shows (D5) */
   nextRegSet: string;
   /** The version key of the VHDL reference in `dev/vendor/next-fpga/sources.json` (D4) */
@@ -46,6 +51,7 @@ export const NEXT_PROFILES: Readonly<Record<NextProfileId, NextProfile>> = {
     romSet: "nextzxos-2.08",
     // --- The working copy every Klive before Next models wrote: no rename (D7)
     sdWorkingCopy: "ks2.cim",
+    sdReaders: 1,
     nextRegSet: "30201",
     vhdlRef: "3.02.01"
   },
@@ -58,6 +64,7 @@ export const NEXT_PROFILES: Readonly<Record<NextProfileId, NextProfile>> = {
     // --- The distribution's `KS3` release, which ships core 3.02.04 for KS2 boards too (D9)
     romSet: "nextzxos-2.10",
     sdWorkingCopy: "ks2-30204.cim",
+    sdReaders: 1,
     nextRegSet: "30204",
     vhdlRef: "3.02.04"
   },
@@ -72,6 +79,7 @@ export const NEXT_PROFILES: Readonly<Record<NextProfileId, NextProfile>> = {
     wasmArtifact: "zx-spectrum-next-ks2-30303.wasm",
     romSet: "nextzxos-26.11",
     sdWorkingCopy: "ks2-30303.cim",
+    sdReaders: 1,
     nextRegSet: "30303",
     vhdlRef: "3.02.04"
   },
@@ -84,6 +92,7 @@ export const NEXT_PROFILES: Readonly<Record<NextProfileId, NextProfile>> = {
     wasmArtifact: "zx-spectrum-next-ks3-30303.wasm",
     romSet: "nextzxos-26.11",
     sdWorkingCopy: "ks3-30303.cim",
+    sdReaders: 2,
     nextRegSet: "30303",
     vhdlRef: "3.02.04"
   }

@@ -98,6 +98,12 @@ describe("zxnDDMA", () => {
       if (NEXT_PROFILES[profile].board === "ks3") {
         expect(Array.from(s.peekBytes(0xc000, 4)), "page 40 untouched").toEqual(Array(4).fill(0x11));
         expect(s.sramBytes(0x290000, 4), "the upper SRAM").toEqual(Array(4).fill(0x5a));
+        // --- The IDE sees it as partition U48 ($290000 = $200000 + $48 x 8K), and writes there too
+        const u48 = s.machine.parsePartitionLabel("U48")!;
+        expect(u48).toBe(256 + 0x48);
+        expect(Array.from(s.machine.getMemoryPartition(u48).subarray(0, 4)), "the IDE's view").toEqual(Array(4).fill(0x5a));
+        s.machine.writeMemoryPartition(u48, 4, 0x77);
+        expect(s.sramBytes(0x290004)[0], "an IDE write lands in the SRAM").toBe(0x77);
         // --- and back again: a physical copy from $290000 to page 41
         write(s, transfer({ a: 0x0000, b: 0x2000, len: 4, ddma: [0xd7, 0x29, 0xdb, 0x09, 0xdf, PHYSICAL] })).runFrames(1);
         expect(Array.from(s.peekBytes(0xe000, 4)), "copied back").toEqual(Array(4).fill(0x5a));

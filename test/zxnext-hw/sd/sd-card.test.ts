@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { createSession, MemorySdCard, type NextTestSession, type SdCardBacking } from "../../harness/zxnext";
+import { NEXT_PROFILE_IDS, NEXT_PROFILES, type NextProfileId } from "@emu/machines/zxNext/nextProfiles";
+import { createSession, forEachProfile, MemorySdCard, type NextTestSession, type SdCardBacking } from "../../harness/zxnext";
 import { expectConsole } from "../../expectedConsole";
 
 /*
@@ -100,11 +101,23 @@ const LOG = 0xa000;
 const logOf = (s: NextTestSession, n: number) => Array.from(s.peekBytes(LOG, n));
 
 /** Runs `body` (after selecting `select` on $E7) with the image attached; returns the session. */
-async function run(body: string, opts: { select?: number; img?: Uint8Array | SdCardBacking; data?: string; maxFrames?: number } = {}) {
-  const s = await createSession();
+async function run(
+  body: string,
+  opts: {
+    select?: number;
+    img?: Uint8Array | SdCardBacking;
+    data?: string;
+    maxFrames?: number;
+    profile?: NextProfileId;
+    /** A second card (card 1), for a model with two readers */
+    img2?: Uint8Array;
+  } = {}
+) {
+  const s = await createSession({ profile: opts.profile });
   await s.loadCode(" .org $8000\n di\nPark: jr Park");
   s.poke(LOG, new Array(0x1800).fill(0xee));
   s.attachSdCard(opts.img ?? image());
+  if (opts.img2) await s.attachSdCard2(opts.img2);
   await s.loadCode(
     `
         .org $8000
@@ -486,4 +499,47 @@ ${send("Cmd17")}
     s.setNextReg(0x0a, 0x30);
     expect(s.readNextReg(0x0a) & 0x20).toBe(0x00);
   });
+});
+
+/*
+ * SPI-013: the second SD card reader (`dev/plans/ZXNEXT_KS3_FOLLOWUP_PLAN.md` phase 2). The KS3 has two
+ * readers, so its card 1 ($E7 = $FD) is a card when an image is given; a one-reader model's slot 1 stays
+ * empty whatever the host has. A read from card 1 returns card 1's bytes, not card 0's.
+ */
+forEachProfile(NEXT_PROFILE_IDS, (profile) => {
+  const twoReaders = NEXT_PROFILES[profile].sdReaders === 2;
+  /** A second image, its sector 5 different from card 0's */
+  const image2 = () => {
+    const img = new Uint8Array(SECTORS * 512);
+    for (let i = 0; i < 512; i++) img[5 * 512 + i] = (i * 11 + 0x5a) & 0xff;
+    return img;
+  };
+
+  it(`SPI-013: with a second image, card 1 ${twoReaders ? "answers" : "stays an empty slot"}`, async () => {
+    const s = await run(send("Cmd0"), { profile, select: 0xfd, img2: image2(), data: INIT_DATA });
+    expect(logOf(s, 1)).toEqual([twoReaders ? 0x01 : 0xff]);
+  });
+
+  if (twoReaders) {
+    it("SPI-013: CMD17 on card 1 reads the second image's sector", async () => {
+      const img2 = image2();
+      const s = await run(
+        `${INIT}
+${send("Cmd17")}
+        call WaitTok
+        call Store
+        ld hl,Block
+        ld b,0
+        inir
+        inir`,
+        { profile, select: 0xfd, img2, data: `${INIT_DATA}\nTries: .defb 0\nCmd17: ${defb(cmd(17, 5))}\nBlock .equ $b000` }
+      );
+      expect(Array.from(s.peekBytes(0xb000, 512)), "card 1's sector 5").toEqual(sectorOf(img2, 5));
+    });
+
+    it("SPI-013: without a second image the KS3's card 1 is an empty slot", async () => {
+      const s = await run(send("Cmd0"), { profile, select: 0xfd, data: INIT_DATA });
+      expect(logOf(s, 1)).toEqual([0xff]);
+    });
+  }
 });

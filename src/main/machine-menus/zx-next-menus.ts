@@ -4,7 +4,7 @@ import fs from "fs";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { MachineMenuItem, MachineMenuRenderer } from "@common/machines/info-types";
 import { AppState } from "@common/state/AppState";
-import { MEDIA_SD_CARD } from "@common/structs/project-const";
+import { MEDIA_SD_CARD, MEDIA_SD_CARD_2 } from "@common/structs/project-const";
 import { mainStore } from "@main/main-store";
 import { saveKliveProject } from "@main/projects";
 import { app, BrowserWindow, dialog } from "electron";
@@ -113,8 +113,57 @@ export const sdCardMenuRenderer: MachineMenuRenderer = (windowInfo) => {
       }
     }
   });
+  // --- A board with a second card reader (the KS3): card 1, an empty slot until an image is chosen
+  if (nextProfileOf(appState.emulatorState?.modelId).sdReaders === 2) {
+    items.push({ type: "separator" });
+    items.push({
+      id: "select_sd_card_2",
+      label: t("menu.next.selectImage2"),
+      enabled: isMachineStopped(),
+      click: async () => {
+        await setSdCard2File(emuWindow);
+        await saveKliveProject();
+        saveAppSettings();
+      }
+    });
+    items.push({
+      id: "eject_sd_card_2",
+      label: t("menu.next.ejectImage2"),
+      enabled: isMachineStopped() && !!activeSdCard2File(),
+      click: async () => {
+        await withSdCardAccess(() => closeSdCard2());
+        mainStore.dispatch(setMediaAction(MEDIA_SD_CARD_2, undefined));
+        await logEmuEvent("ZX Spectrum Next SD card 2: empty");
+        await saveKliveProject();
+      }
+    });
+  }
   return items;
 };
+
+/** Machine › SD Card › Select Image for SD Card 2: the second reader's image (card 1) */
+async function setSdCard2File(browserWindow: BrowserWindow): Promise<void> {
+  const lastFile = activeSdCard2File();
+  const defaultPath =
+    appSettings?.folders?.[SD_CARD_FILE_FOLDER] || (lastFile ? path.dirname(lastFile) : app.getPath("home"));
+  const dialogResult = await dialog.showOpenDialog(browserWindow, {
+    title: t("messages.sdCard.select2"),
+    defaultPath,
+    filters: [
+      { name: t("common.filter.cimImages"), extensions: ["cim"] },
+      { name: t("common.filter.allFiles"), extensions: ["*"] }
+    ],
+    properties: ["openFile"]
+  });
+  if (dialogResult.canceled || dialogResult.filePaths.length < 1) return;
+  const filename = dialogResult.filePaths[0];
+  await withSdCardAccess(() => closeSdCard2());
+  mainStore.dispatch(setMediaAction(MEDIA_SD_CARD_2, filename));
+  await logEmuEvent(`ZX Spectrum Next SD card 2 image: ${filename}`);
+  appSettings.folders ??= {};
+  appSettings.folders[SD_CARD_FILE_FOLDER] = path.dirname(filename);
+  await ensureSdCardBackupIfEnabled(filename);
+}
 
 /**
  * Which of the Next's sound outputs Klive plays (`next-audio-output.ts`): the jack, the internal
@@ -339,6 +388,11 @@ export function activeSdCardFile(): string {
   return mainStore.getState().media?.[MEDIA_SD_CARD] ?? getDefaultSdCardFile();
 }
 
+/** The second SD card's image (card 1, a KS3's second reader), or undefined for an empty slot */
+export function activeSdCard2File(): string | undefined {
+  return mainStore.getState().media?.[MEDIA_SD_CARD_2] || undefined;
+}
+
 let cimHandler: CimHandler;
 let currentSdCardFile: string;
 
@@ -374,6 +428,7 @@ export function invalidateSdCardHandler(): void {
     rawSdCard.device.close();
     rawSdCard = undefined;
   }
+  closeSdCard2();
 }
 
 /** The SD card's sectors, whatever its container (`getSdCardDevice`) */
@@ -391,7 +446,8 @@ let rawSdCard: { file: string; device: BlockDevice & { close(): void } } | undef
  * its handler (the Next's card, and the default one), a raw `.img` or an `.hdf` (the DivMMC's cards are
  * often those) as a block device over the file
  */
-export function getSdCardDevice(): SdCardDevice {
+export function getSdCardDevice(card = 0): SdCardDevice {
+  if (card === 1) return getSdCard2Device();
   const sdCardFile = activeSdCardFile();
   if (sdCardFile.toLowerCase().endsWith(".cim")) {
     const handler = getSdCardHandler();
@@ -407,6 +463,57 @@ export function getSdCardDevice(): SdCardDevice {
   }
   if (!rawSdCard) rawSdCard = { file: sdCardFile, device: openHardDiskImage(sdCardFile) };
   const device = rawSdCard.device;
+  return {
+    totalSectors: device.sectorCount,
+    readSector: (sector) => (sector < device.sectorCount ? device.readSector(sector) : new Uint8Array(512)),
+    writeSector: (sector, data) => {
+      if (sector >= device.sectorCount) throw new Error(`Sector ${sector} is past the card's end`);
+      device.writeSector(sector, data);
+      (device as { flush?(): void }).flush?.();
+    }
+  };
+}
+
+/* The second card's open image: a `.cim` through its handler, anything else as a block device */
+let sdCard2:
+  | { file: string; cim?: CimHandler; raw?: BlockDevice & { close(): void } }
+  | undefined;
+
+function closeSdCard2(): void {
+  sdCard2?.cim?.close();
+  sdCard2?.raw?.close();
+  sdCard2 = undefined;
+}
+
+/**
+ * The second SD card (card 1) as sectors: the image in `MEDIA_SD_CARD_2`, or an empty slot of 0
+ * sectors, which the core treats as no card (`zx-spectrum-sd.c`, `zxSdCardPresent`).
+ */
+function getSdCard2Device(): SdCardDevice {
+  const file = activeSdCard2File();
+  if (!file) {
+    closeSdCard2();
+    return {
+      totalSectors: 0,
+      readSector: () => new Uint8Array(512),
+      writeSector: () => {
+        throw new Error("No card in the second SD card reader");
+      }
+    };
+  }
+  if (sdCard2 && sdCard2.file !== file) closeSdCard2();
+  if (!sdCard2) {
+    sdCard2 = file.toLowerCase().endsWith(".cim") ? { file, cim: new CimHandler(file) } : { file, raw: openHardDiskImage(file) };
+  }
+  const { cim, raw } = sdCard2;
+  if (cim) {
+    return {
+      totalSectors: (cim.cimInfo.maxSize * 2048) / cim.cimInfo.sectorSize,
+      readSector: (sector) => cim.readSector(sector),
+      writeSector: (sector, data) => cim.writeSector(sector, data)
+    };
+  }
+  const device = raw!;
   return {
     totalSectors: device.sectorCount,
     readSector: (sector) => (sector < device.sectorCount ? device.readSector(sector) : new Uint8Array(512)),

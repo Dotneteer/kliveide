@@ -96,6 +96,38 @@ describe("BankDropdown grid, through the picker", () => {
     expect(screen.getAllByText("00").length).toBeGreaterThan(0);
   });
 
+  it("draws each captioned bank block with its own caption, a block starting on a fresh row", async () => {
+    HTMLElement.prototype.hasPointerCapture ??= vi.fn(() => false);
+    HTMLElement.prototype.setPointerCapture ??= vi.fn();
+    HTMLElement.prototype.releasePointerCapture ??= vi.fn();
+    HTMLElement.prototype.scrollIntoView ??= vi.fn();
+    // --- The KS3's shape in small: 20 RAM banks (not a multiple of 16), then an "Upper RAM" block
+    const labels: Record<number, string> = {};
+    const groups: Record<number, string> = {};
+    for (let i = 0; i < 20; i++) [labels[i], groups[i]] = [i.toString(16).padStart(2, "0"), "RAM Banks"];
+    for (let i = 0; i < 4; i++) [labels[256 + i], groups[256 + i]] = [`U0${i}`, "Upper RAM"];
+    const user = (await import("@testing-library/user-event")).default.setup();
+
+    renderWithProviders(
+      <PartitionPicker
+        value={0}
+        onChange={vi.fn()}
+        displayBankMatrix={true}
+        segmentOptions={[]}
+        partitionOptions={derivePartitionOptions(labels, {}, groups)}
+      />
+    );
+    await user.click(screen.getByRole("combobox"));
+
+    expect(screen.getByText("RAM Banks")).toBeInTheDocument();
+    expect(screen.getByText("Upper RAM")).toBeInTheDocument();
+    // --- U00 opens a row of its own (column 2), though the RAM block's last row held only 4 banks
+    const u00 = screen.getByRole("option", { name: "U00" });
+    const b10 = screen.getByRole("option", { name: "10" });
+    expect(u00.className).toBe(b10.className);
+    expect(screen.getByRole("option", { name: "U01" }).className).not.toBe(u00.className);
+  });
+
   it("separates special pages from banks", () => {
     const options = derivePartitionOptions(LABELS, DESCRIPTIONS);
 
