@@ -42,7 +42,7 @@ describe("floating window message sources", () => {
   });
 
   it("rejects what is not a floating window's source", () => {
-    for (const source of ["ide", "emu", "main", "float0", "float9", "float", "float01", undefined]) {
+    for (const source of ["ide", "emu", "main", "float0", "float5", "float9", "float", "float01", undefined]) {
       expect(isFloatSource(source)).toBe(false);
       expect(floatSlotOf(source as any)).toBeUndefined();
     }
@@ -50,12 +50,12 @@ describe("floating window message sources", () => {
 
   it("gives every satellite its own range of document hub ids", () => {
     expect(floatHubIdBase(1)).toBe(1000);
-    expect(floatHubIdBase(8)).toBe(8000);
+    expect(floatHubIdBase(4)).toBe(4000);
   });
 });
 
 describe("store routing over many renderers", () => {
-  const ALL: MessageSource[] = ["emu", "ide", "float1", "float2", "float8"];
+  const ALL: MessageSource[] = ["emu", "ide", "float1", "float2", "float4"];
 
   function targets(ids: MessageSource[], failing?: MessageSource) {
     const received: MessageSource[] = [];
@@ -100,7 +100,7 @@ describe("store routing over many renderers", () => {
     await expect(deliverForwardedAction(action("main"), list)).rejects.toBeInstanceOf(
       TargetWindowUnavailableError
     );
-    expect(received.sort()).toEqual(["emu", "float1", "float8", "ide"]);
+    expect(received.sort()).toEqual(["emu", "float1", "float4", "ide"]);
   });
 
   it("gives every renderer its own copy of the message", async () => {
@@ -213,24 +213,24 @@ describe("floating document bookkeeping", () => {
   it("allocates the lowest free slot up to the limit", () => {
     expect(allocateFloatSlot([])).toBe(1);
     expect(allocateFloatSlot([1, 2, 4])).toBe(3);
-    expect(allocateFloatSlot([1, 2, 3, 4, 5, 6, 7, 8])).toBeUndefined();
+    expect(allocateFloatSlot([1, 2, 3, 4])).toBeUndefined();
   });
 
   it("finds the slot of a floating document", () => {
     const state = {
       floatingDocuments: {
         2: { slot: 2 as const, document: { id: "/p/a.asm", type: "CodeEditor" } },
-        5: { slot: 5 as const, document: { id: "/p/b.asm", type: "CodeEditor" } }
+        3: { slot: 3 as const, document: { id: "/p/b.asm", type: "CodeEditor" } }
       }
     };
-    expect(findFloatingSlot(state, "/p/b.asm")).toBe(5);
+    expect(findFloatingSlot(state, "/p/b.asm")).toBe(3);
     expect(findFloatingSlot(state, "/p/c.asm")).toBeUndefined();
     expect(canOpenFloatingWindow(state)).toBe(true);
   });
 
-  it("refuses a ninth window", () => {
+  it("refuses a window over the limit", () => {
     const floatingDocuments: Record<number, any> = {};
-    for (let slot = 1; slot <= 8; slot++) {
+    for (let slot = 1; slot <= MAX_FLOATING_WINDOWS; slot++) {
       floatingDocuments[slot] = { slot, document: { id: `/p/${slot}`, type: "CodeEditor" } };
     }
     expect(canOpenFloatingWindow({ floatingDocuments })).toBe(false);

@@ -23,14 +23,16 @@
 import { Action } from "@common/state/Action";
 
 /**
- * The most floating document windows that may be open at a time
+ * The most floating document windows that may be open at a time. Each is a renderer process with its
+ * own Monaco and services: about 310 MB of working set measured (FLOATING_DOCUMENT_WINDOWS_PLAN §7),
+ * so the project author lowered the plan's 8 to 4.
  */
-export const MAX_FLOATING_WINDOWS = 8;
+export const MAX_FLOATING_WINDOWS = 4;
 
 /**
  * The slot number of a floating document window (1..MAX_FLOATING_WINDOWS)
  */
-export type FloatSlot = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+export type FloatSlot = 1 | 2 | 3 | 4;
 
 /**
  * The message source of a floating document window

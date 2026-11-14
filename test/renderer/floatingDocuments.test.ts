@@ -21,6 +21,7 @@ import { processMainToIdeMessages } from "@renderer/appIde/MainToIdeProcessor";
 import { NavigateToDocumentCommand } from "@renderer/appIde/commands/DocumentCommands";
 import { createMockContext } from "../commands/test-helpers/mock-context";
 import { floatHubIdBase } from "@common/messaging/floating-documents";
+import { MAX_FLOATING_WINDOWS } from "@common/messaging/messages-core";
 
 const PROJECT = "/project";
 const FILE = `${PROJECT}/src/main.asm`;
@@ -94,9 +95,9 @@ describe("Pop Out to Window: which documents may float (plan Q5)", () => {
     expect(getPopOutBlocker({ id: MEMORY_PANEL_ID, type: MEMORY_EDITOR }, state())).toBeUndefined();
   });
 
-  it("disables it at 8 windows", () => {
-    expect(getPopOutBlocker({ id: FILE, type: CODE_EDITOR }, state(7))).toBeUndefined();
-    expect(getPopOutBlocker({ id: FILE, type: CODE_EDITOR }, state(8))).toBe("limit");
+  it("disables it at the limit", () => {
+    expect(getPopOutBlocker({ id: FILE, type: CODE_EDITOR }, state(MAX_FLOATING_WINDOWS - 1))).toBeUndefined();
+    expect(getPopOutBlocker({ id: FILE, type: CODE_EDITOR }, state(MAX_FLOATING_WINDOWS))).toBe("limit");
   });
 
   it("keeps out what the workspace cannot restore, and kinds marked not floatable", () => {

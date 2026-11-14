@@ -2,7 +2,7 @@
 // Floating document windows: the main process side (`dev/plans/FLOATING_DOCUMENT_WINDOWS_PLAN.md` §3.6).
 //
 // A floating window is an IDE renderer in "satellite" mode holding exactly one document. This module
-// owns the slots (1..8), creates and destroys the windows, keeps `floatingDocuments` in the shared
+// owns the slots (1..MAX_FLOATING_WINDOWS, 4), creates and destroys the windows, keeps `floatingDocuments` in the shared
 // store, and routes the operations the plan names: open (pop out), dock, close, focus, close all, and
 // the save flush before a quit or a project switch.
 //

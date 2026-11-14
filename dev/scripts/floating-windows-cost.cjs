@@ -1,7 +1,7 @@
 /*
  * Measures what floating document windows cost (`dev/plans/FLOATING_DOCUMENT_WINDOWS_PLAN.md`, Phase 4):
- * pops out 8 documents one after the other, records how long each window takes to show its document
- * and the memory of every renderer process, and checks that a ninth cannot pop out.
+ * pops out as many documents as the limit allows (4) one after the other, records how long each window takes to show its document
+ * and the memory of every renderer process, and checks that one more cannot pop out.
  *
  * Run after `npx electron-vite build --config build/electron.vite.config.ts`:
  *   node dev/scripts/floating-windows-cost.cjs
@@ -11,7 +11,8 @@ const os = require("os");
 const path = require("path");
 const { launchKlive } = require("./doc-shots/harness.cjs");
 
-const COUNT = 8;
+// --- The limit, MAX_FLOATING_WINDOWS
+const COUNT = 4;
 
 // --- Enough code that the language service has something to index
 const program = (n) =>
@@ -84,13 +85,13 @@ const program = (n) =>
     console.log(`after ${COUNT}: total ${after.totalMb} MB (+${after.totalMb - before.totalMb} MB), IDE renderer ${after.ideMb} MB`);
     console.log(`floating renderers: ${after.floatMb.join(", ")} MB (mean ${Math.round(after.floatMb.reduce((a, b) => a + b, 0) / Math.max(1, after.floatMb.length))} MB)`);
 
-    // --- A ninth cannot pop out: the item is disabled and says why
-    const ninth = `f${COUNT + 1}.kz80.asm`;
-    await cmd(`nav code/${ninth} 1`, 1500);
-    await ide.locator('[class*="_documentTab_"]', { hasText: ninth }).first().click({ button: "right" });
+    // --- One more cannot pop out: the item is disabled and says why
+    const extra = `f${COUNT + 1}.kz80.asm`;
+    await cmd(`nav code/${extra} 1`, 1500);
+    await ide.locator('[class*="_documentTab_"]', { hasText: extra }).first().click({ button: "right" });
     await sleep(300);
-    const limitShown = await ide.getByText("8 windows open").count();
-    console.log(`${limitShown > 0 ? "ok  " : "FAIL"} a ninth document cannot pop out ("8 windows open")`);
+    const limitShown = await ide.getByText(`${COUNT} windows open`).count();
+    console.log(`${limitShown > 0 ? "ok  " : "FAIL"} one more document cannot pop out ("${COUNT} windows open")`);
     if (!limitShown) failed = true;
     await ide.keyboard.press("Escape");
   } catch (err) {

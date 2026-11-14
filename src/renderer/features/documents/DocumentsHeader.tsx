@@ -24,6 +24,7 @@ import ScrollViewer, { ScrollViewerApi } from "@renderer/controls/ScrollViewer";
 import { SmallIconButton } from "@renderer/controls/IconButton";
 import { useMainApi } from "@renderer/core/MainApi";
 import { getPopOutBlocker, popOutDocument } from "./floatingDocumentTransfer";
+import { MAX_FLOATING_WINDOWS } from "@common/messaging/messages-core";
 import {
   ContextMenu,
   ContextMenuItem,
@@ -45,7 +46,7 @@ export const DocumentsHeader = () => {
   const { store, messageSource } = useRendererContext();
   const { projectService, navigationHistoryService } = useAppServices();
   const mainApi = useMainApi();
-  // --- The Pop Out item's state follows the number of floating windows (the limit of 8)
+  // --- The Pop Out item's state follows the number of floating windows (MAX_FLOATING_WINDOWS)
   useSelector((s) => Object.keys(s.floatingDocuments ?? {}).length);
   const documentHubService = useDocumentHubService();
   const documentAreaGridApi = useDocumentAreaGridApi();
@@ -320,7 +321,7 @@ export const DocumentsHeader = () => {
   const getPopOutBlockedReason = (document: ProjectDocumentState): string | undefined => {
     switch (getPopOutBlocker(document, store.getState())) {
       case "limit":
-        return t("documents.tab.popOutLimit");
+        return t("documents.tab.popOutLimit", { count: MAX_FLOATING_WINDOWS });
       case "notFloatable":
       case "noProject":
         return t("documents.tab.popOutNotFloatable");

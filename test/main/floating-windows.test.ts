@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import createAppStore from "@state/store";
 import { FloatingWindowManager, type FloatingWindowLike } from "@main/floating-windows";
-import type { FloatSlot } from "@messaging/messages-core";
+import { MAX_FLOATING_WINDOWS, type FloatSlot } from "@messaging/messages-core";
 
 type FakeWindow = FloatingWindowLike & {
   slot: FloatSlot;
@@ -90,14 +90,15 @@ describe("FloatingWindowManager", () => {
     });
   });
 
-  it("allows at most 8 windows, then reuses a freed slot", () => {
+  it("allows at most MAX_FLOATING_WINDOWS (4) windows, then reuses a freed slot", () => {
     const { manager } = setup();
-    for (let i = 1; i <= 8; i++) {
+    expect(MAX_FLOATING_WINDOWS).toBe(4);
+    for (let i = 1; i <= MAX_FLOATING_WINDOWS; i++) {
       expect(manager.open(doc(`/p/${i}.asm`))).toEqual({ slot: i });
     }
-    expect(manager.open(doc("/p/9.asm"))).toEqual({ error: "limit" });
-    manager.destroy(4);
-    expect(manager.open(doc("/p/9.asm"))).toEqual({ slot: 4 });
+    expect(manager.open(doc("/p/extra.asm"))).toEqual({ error: "limit" });
+    manager.destroy(2);
+    expect(manager.open(doc("/p/extra.asm"))).toEqual({ slot: 2 });
   });
 
   it("never floats one document twice: it focuses the window instead", () => {

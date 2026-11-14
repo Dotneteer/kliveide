@@ -1293,7 +1293,7 @@ reuses the document strip's chrome rather than inventing a title-bar look: `--st
 `--font-size-300` name, and the same marks in the same order (dirty dot, read-only shield, lock). The
 two actions are text buttons with an icon (**Dock**, **Close**), not bare icons: they are the window's
 only controls and must read without a tooltip. A menu item that cannot run says why in its
-`trailing` slot ("8 windows open"), because context menu rows have no tooltip.
+`trailing` slot ("4 windows open"), because context menu rows have no tooltip.
 
 ## An Action's Verdict Is Shown Where The Action Was Started
 

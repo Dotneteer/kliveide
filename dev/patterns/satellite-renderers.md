@@ -1,6 +1,6 @@
 # Satellite renderers: floating document windows and the messaging rules
 
-Klive has more than two renderers. Besides the emulator (`emu`) and the IDE (`ide`), up to eight
+Klive has more than two renderers. Besides the emulator (`emu`) and the IDE (`ide`), up to four
 floating document windows (`float1`..`float8`) run at a time, each an IDE renderer in **satellite
 mode** holding one document (`dev/plans/FLOATING_DOCUMENT_WINDOWS_PLAN.md`). Read this before adding
 an `IdeApi` method, a shared-state action, or anything that assumes "the IDE window".
@@ -61,6 +61,6 @@ an `IdeApi` method, a shared-state action, or anything that assumes "the IDE win
 - Transfer, routing, workspace version 3: `test/renderer/floatingDocuments.test.ts`.
 - The menu with a focused floating window: `test/main/app-menu-floating.test.ts`; the shared history:
   `test/navigation/floatingNavigationHistory.test.ts`.
-- Cost with 8 windows: `node dev/scripts/floating-windows-cost.cjs`.
+- Cost with the most windows (`MAX_FLOATING_WINDOWS`, 4): `node dev/scripts/floating-windows-cost.cjs`.
 - In the running app: `node dev/scripts/floating-windows-ide-check.cjs` (after an
   `electron-vite build`), every window is also a CDP target for `dev/scripts/cdp/drive.mjs float ...`.

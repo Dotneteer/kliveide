@@ -33,7 +33,7 @@ export type PopOutBlocker = "limit" | "notFloatable" | "noProject";
 /**
  * Tells whether a document may pop out into a floating window (plan Q5): a document the workspace
  * can restore (a file of the project, or a restorable special document) whose kind is not marked
- * `floatable: false`, while fewer than 8 windows float.
+ * `floatable: false`, while fewer than `MAX_FLOATING_WINDOWS` windows float.
  */
 export function getPopOutBlocker(
   document: Pick<ProjectDocumentState, "id" | "type" | "floatable"> | undefined,

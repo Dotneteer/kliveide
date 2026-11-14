@@ -193,6 +193,9 @@ All decided by the project author on 2026-11-14.
   that turns out not to work floating is marked `floatable: false` in the registry.
 - **Q6. Dragging a tab out to pop it out: not in this plan.** The context menu first; dragging is a
   follow-up.
+- **Q7. The limit is 4 floating windows, not 8** (decided 2026-11-14, after the measurement in §7: about
+  310 MB of working set per window). `MAX_FLOATING_WINDOWS` is the one place it lives; the 8 in §1-§6
+  is the original plan's number, superseded.
 
 ## 5. Phases
 
@@ -312,12 +315,12 @@ All decided by the project author on 2026-11-14.
 - **Cost.** `dev/scripts/floating-windows-cost.cjs`, measured 2026-11-14 on macOS: each window shows its
   document about 0.74 s after Pop Out, steady to the eighth; each floating renderer's working set is
   about 310 MB (the IDE renderer's is about 310-370 MB), 8 windows add about 2.5 GB of working set
-  (shared pages counted, so an upper bound). That is above this plan's 100-200 MB estimate.
+  (shared pages counted, so an upper bound). That is above this plan's 100-200 MB estimate, and the
+  limit was lowered to 4 (Q7); the cost script now opens as many windows as the limit allows.
 - **Quit.** A floating window destroyed during a quit while its save request was pending stalled the
   quit (the request has no timeout): its save now ends when the window is gone.
 - **Guides screenshot.** `dev/scripts/doc-shots/recipes/guides-floating.cjs`.
 
 ### Open
 
-- Whether 8 stays the limit, given about 310 MB per window (the author's decision, Q-level).
 - Dragging a tab out (Q6) is not part of this plan.

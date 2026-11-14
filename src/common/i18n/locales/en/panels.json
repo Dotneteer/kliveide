@@ -368,9 +368,12 @@
   "@documents.tab.popOut": {
     "context": "Context-menu item of a document tab (right-click): moves this document out of the IDE into a window of its own that the user can move and resize freely."
   },
-  "documents.tab.popOutLimit": "8 windows open",
+  "documents.tab.popOutLimit": "{count, plural, one {# window open} other {# windows open}}",
   "@documents.tab.popOutLimit": {
-    "context": "Short note shown beside the disabled 'Pop Out to Window' menu item: at most 8 document windows can be open at a time, and 8 already are. Keep it short, it sits at the right end of a menu row."
+    "context": "Short note shown beside the disabled 'Pop Out to Window' menu item: at most this many document windows can be open at a time, and that many already are. Keep it short, it sits at the right end of a menu row.",
+    "placeholders": {
+      "count": "The most document windows that can be open at a time (4)"
+    }
   },
   "documents.tab.popOutNotFloatable": "Not available",
   "@documents.tab.popOutNotFloatable": {
