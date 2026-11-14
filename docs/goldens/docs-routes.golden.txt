@@ -196,6 +196,7 @@
 /en/guides/next/sd-card/index.html
 /en/guides/next/sprite-inspector/index.html
 /en/guides/next/sprite-palette-editors/index.html
+/en/guides/next/tbu-files/index.html
 /en/guides/next/tilemap-inspector/index.html
 /en/guides/projects/background-compilation/index.html
 /en/guides/projects/build-system/index.html

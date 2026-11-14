@@ -6,6 +6,9 @@
  *   Registers and Next Memory Mapping side-bar panels;
  * - `nex-files/nex-viewer.webp` — a `.nex` file in the NEX viewer, its banks listed;
  * - `next-models/rtc-settings.webp` — Settings › Machine with the real-time clock's group.
+ * - `tbu-files/tbu-viewer.webp` — a TBBLUE.TBU core update file in the TBU viewer. The file is not
+ *   in the repository (megabytes of FPGA bitstreams): `DOC_SHOTS_TBU` names a real one, from the
+ *   system distribution (`gitlab.com/thesmog358/tbblue`); without it the step is skipped.
  *
  * Like the layer recipes it pokes a program into a paused Next (no NextZXOS needed): the program
  * is `layers-demo.kz80.asm`'s, whose bytes are read from `layers.cjs` so the two cannot drift; it
@@ -55,6 +58,12 @@ module.exports = {
     try {
       await klive.cmd(`newp zxnext ${fixture.name} -p "${fixture.parent}" -o`, 12000);
       fs.copyFileSync(NEX, path.join(fixture.project, "banked.nex"));
+      const tbu = process.env.DOC_SHOTS_TBU;
+      if (tbu) {
+        // --- In a folder of its own: only the exact name TBBLUE.TBU opens the viewer
+        fs.mkdirSync(path.join(fixture.project, "sdcard"), { recursive: true });
+        fs.copyFileSync(tbu, path.join(fixture.project, "sdcard", "TBBLUE.TBU"));
+      }
       await klive.cmd("em-debug", 4000);
       await klive.cmd("em-pause", 1000);
       for (let i = 0; i < PROGRAM.length; i += 4) {
@@ -126,6 +135,20 @@ module.exports = {
         await h.park(ide);
         await klive.shot(DOCS, "en/guides/next/nex-files/nex-viewer.webp", { displayWidth: 760 });
       });
+      if (process.env.DOC_SHOTS_TBU) {
+        await step(klive, "tbu", async () => {
+          await klive.cmd(`nav "${path.join(fixture.project, "sdcard", "TBBLUE.TBU")}"`, 3000);
+          await ide.locator('[data-testid="tbu-viewer"]').last().waitFor({ timeout: 10000 });
+          // --- The Issue 4 core: a 7-series bitstream, the board most readers have
+          await ide.locator('[data-testid="tbu-viewer"]').last().getByText("Issue 4 (KS2)", { exact: true }).first().click();
+          await klive.sleep(1000);
+          await klive.cmd("cls", 400);
+          await h.park(ide);
+          await klive.shot(DOCS, "en/guides/next/tbu-files/tbu-viewer.webp", { displayWidth: 760 });
+        });
+      } else {
+        console.log("  - tbu: skipped, DOC_SHOTS_TBU names no TBBLUE.TBU");
+      }
       reportFailures();
     } finally {
       fixture.cleanup();

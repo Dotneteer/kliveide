@@ -148,6 +148,7 @@
 /images/en/guides/next/next-models/rtc-settings.webp
 /images/en/guides/next/next-registers/memory-mapping.webp
 /images/en/guides/next/next-registers/nextreg-panel.webp
+/images/en/guides/next/tbu-files/tbu-viewer.webp
 /images/en/guides/projects/creating-projects/build-bar.webp
 /images/en/guides/projects/creating-projects/build-bar.webp.json
 /images/en/guides/projects/creating-projects/explorer-build-root.webp

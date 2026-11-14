@@ -1,5 +1,8 @@
 # TBBLUE.TBU Viewer Plan
 
+**Status: done (2026-11-14).** Phases 0, 1, 2a, 2b and 4 are complete; Phase 3 was skipped by the
+project author's decision and is kept as an open idea. Each phase has an "As built" note below.
+
 A read-only document viewer for the ZX Spectrum Next core update file, `TBBLUE.TBU`, so its contents can be
 examined in the IDE: which cores it carries, for which boards and slots, where each image sits, and whether
 each image is intact. It opens **only** a file named `TBBLUE.TBU`, not every `.tbu` file.
@@ -324,6 +327,13 @@ author from the mockup).
   through the existing save-file dialog, after re-checking the checksum.
 - Ask before starting it: it is the one write the viewer would make.
 
+**Skipped (2026-11-14), decided by the project author; kept as an open idea.** Klive has no use for an
+extracted image (its Next is an emulator, it never runs a bitstream), flashing from outside uses the
+distribution's own files, and rebuilding a TBU from pulled images risks a bricked slot 1. The image's
+bytes are already one click away as a memory dump. Pick it up if a concrete need appears, such as
+diffing the three Issue 2 variants (`$00`/`$10`/`$20`) to learn which is HDMI and which VGA; a script
+answers that once without the viewer writing files.
+
 ### Phase 4 — Docs and bookkeeping
 
 - Correct the article's `fig:tbu` (`ZXNFILE` → `TBUFILE`, the formats told apart by the machine string),
@@ -333,6 +343,22 @@ author from the mockup).
   guides page that lists Next file viewers, if there is one; `npm run doc:build && npm run doc:check`.
 - One `feature` changeset with the commit that finishes Phase 2 (or Phase 3 if it is done); none for the
   intermediate commits.
+
+**As built (2026-11-14), done.**
+
+- Article: `fig:tbu` corrected in its generator (`0–7: TBUFILE`, record byte 1 is the **type**) and
+  regenerated; only that figure changed. The caption and the paragraph after it now say both formats
+  start with `TBUFILE` and the older one has no `ZX SPECTRUM NEXT`; a new paragraph links the viewer.
+  The figure was checked as a picture in both themes from the built page. **`zx-next-book` was not
+  touched** (another repository): its copy of the figure still says `ZXNFILE` and needs the same fix.
+- Guide: `docs/content/en/guides/next/tbu-files.mdx`, "Core update files (TBBLUE.TBU)", after The SD
+  card, plus a row in the guides' task index. Its screenshot comes from a new `tbu` step in
+  `dev/scripts/doc-shots/recipes/guides-next.cjs`, which needs `DOC_SHOTS_TBU` (a real TBBLUE.TBU; the
+  repository carries none) and is skipped without it. The published image was taken from the 3.02.03
+  maker file with the Issue 4 core selected; only that image was published.
+- Goldens: the route and the image added. `npm run doc:build && npm run doc:check` pass (prose: 0
+  findings).
+- Changeset: `dev/changes/tbblue-tbu-viewer-c0f6.md` (feature).
 
 ## 5. Risks and open questions
 
