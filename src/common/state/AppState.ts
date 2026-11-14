@@ -37,6 +37,11 @@ export type AppState = {
   isWindows?: boolean;
   emuFocused?: boolean;
   ideFocused?: boolean;
+  /**
+   * The floating document windows, by slot (`dev/plans/FLOATING_DOCUMENT_WINDOWS_PLAN.md` §3.4): every
+   * renderer reads it to route an "open this document" to the window that holds it
+   */
+  floatingDocuments?: Record<number, import("@common/messaging/floating-documents").FloatingDocumentEntry>;
   dimMenu?: boolean;
   /**
    * The emulator window is in its full screen mode: only the picture and the virtual keyboard, the
@@ -398,6 +403,7 @@ export const initialAppState: AppState = {
   accent: "sinclairBlue",
   emuFocused: false,
   ideFocused: false,
+  floatingDocuments: {},
   menuVersion: 0,
   globalSettings: {},
   ideView: {

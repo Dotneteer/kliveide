@@ -1,0 +1,80 @@
+@use "@styles/core.scss" as *;
+
+/*
+ * The header of a floating document window (`dev/plans/FLOATING_DOCUMENT_WINDOWS_PLAN.md` §2.2).
+ *
+ * The window is frameless, so this strip is its title bar: it is the drag region, and only the
+ * buttons opt out of it. It has the document strip's height and chrome, so a popped-out document
+ * looks like its tab grew a window around it.
+ */
+.floatHeader {
+  @include fix-height-panel(var(--strip-tabbar));
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-2) 0 var(--space-3);
+  background:
+    linear-gradient(var(--color-doc-seam), var(--color-doc-seam)) left bottom / 100% 1px no-repeat,
+    var(--bgcolor-docsheader);
+  -webkit-app-region: drag;
+  user-select: none;
+}
+
+.glyph {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-doc-activeText);
+  font-size: var(--font-size-300);
+}
+
+.marks {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-shrink: 0;
+}
+
+.dirty {
+  color: var(--color-doc-activeText);
+  font-size: var(--font-size-300);
+}
+
+.buttons {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-shrink: 0;
+  -webkit-app-region: no-drag;
+}
+
+.button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: calc(var(--strip-tabbar) - var(--space-3));
+  padding: 0 var(--space-2);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-doc-activeText);
+  font-size: var(--font-size-300);
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+
+  &:hover {
+    background: var(--surface-hover);
+  }
+
+  &:focus-visible {
+    outline: 1px solid var(--color-doc-activeText);
+  }
+}

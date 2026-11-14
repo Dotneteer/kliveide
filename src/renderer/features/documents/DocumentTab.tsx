@@ -67,6 +67,10 @@ type Props = {
   tabMoveRight?: () => void;
   tabMoveToNextArea?: () => void;
   tabMoveToPreviousArea?: () => void;
+  /** Pops the document out into a floating window; disabled when undefined */
+  tabPopOut?: () => void;
+  /** Why the document cannot pop out (shown beside the disabled item) */
+  popOutBlockedReason?: string;
   tabSplitRight?: () => void;
   tabSplitDown?: () => void;
   tabDragEnd?: () => void;
@@ -106,6 +110,8 @@ export const DocumentTab = ({
   tabMoveRight,
   tabMoveToNextArea,
   tabMoveToPreviousArea,
+  tabPopOut,
+  popOutBlockedReason,
   tabSplitRight,
   tabSplitDown,
   tabDragEnd,
@@ -156,6 +162,8 @@ export const DocumentTab = ({
     tabMoveRight,
     tabMoveToNextArea,
     tabMoveToPreviousArea,
+    tabPopOut,
+    popOutBlockedReason,
     tabSplitRight,
     tabSplitDown,
     tabsCount
@@ -247,6 +255,8 @@ function renderDocumentTabContextMenu({
   tabMoveRight,
   tabMoveToNextArea,
   tabMoveToPreviousArea,
+  tabPopOut,
+  popOutBlockedReason,
   tabSplitRight,
   tabSplitDown,
   tabsCount
@@ -265,6 +275,8 @@ function renderDocumentTabContextMenu({
   tabMoveRight?: () => void;
   tabMoveToNextArea?: () => void;
   tabMoveToPreviousArea?: () => void;
+  tabPopOut?: () => void;
+  popOutBlockedReason?: string;
   tabSplitRight?: () => void;
   tabSplitDown?: () => void;
   tabsCount?: number;
@@ -325,6 +337,15 @@ function renderDocumentTabContextMenu({
         clicked={() => {
           contextMenuApi.conceal();
           tabMoveToNextArea?.();
+        }}
+      />
+      <ContextMenuItem
+        text={t("documents.tab.popOut")}
+        disabled={!tabPopOut}
+        trailing={!tabPopOut ? popOutBlockedReason : undefined}
+        clicked={() => {
+          contextMenuApi.conceal();
+          tabPopOut?.();
         }}
       />
       <ContextMenuSeparator />

@@ -17,6 +17,13 @@ import { buildMessagingProxy } from "./MessageProxy";
 import type { UnitTestRunRequest, UnitTestRunResponse } from "@common/unit-tests/unitTestTypes";
 import type { AddUnitTestSupportResult } from "@main/unit-tests/addUnitTestSupport";
 import { MessengerBase } from "./MessengerBase";
+import type { AppState } from "@common/state/AppState";
+import type {
+  FloatingDocumentRequest,
+  FloatingDocumentResult,
+  FloatingDocumentReveal,
+  FloatingSavedDocument
+} from "./floating-documents";
 import { CompilerOptions, KliveCompilerOutput } from "@abstractions/CompilerInfo";
 import { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
 import { ScriptStartInfo } from "@abstractions/ScriptStartInfo";
@@ -1060,6 +1067,80 @@ class MainApiImpl {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 
+  // --- Floating document windows (`dev/plans/FLOATING_DOCUMENT_WINDOWS_PLAN.md` §3.4)
+
+  /**
+   * Opens a document in a new floating window (Pop Out to Window). The caller closes its own tab
+   * only when this answers with a slot.
+   * @param _request The document as the workspace saves it, and the area it comes from
+   */
+  async openFloatingDocument(_request: FloatingDocumentRequest): Promise<FloatingDocumentResult> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Docks the document of a floating window back into the IDE, then destroys the window.
+   * @param _slot The window's slot
+   * @param _document The document with its current position and view state
+   */
+  async dockFloatingDocument(_slot: number, _document: FloatingSavedDocument): Promise<boolean> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Destroys a floating window once its renderer ran the close path (Close)
+   * @param _slot The window's slot
+   */
+  async closeFloatingDocument(_slot: number): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Focuses the window that holds a document and moves its view; false when it does not float.
+   * @param _reveal The document and the position
+   */
+  async focusFloatingDocument(_reveal: FloatingDocumentReveal): Promise<boolean> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Records the current position and view state of a floating window's document (the workspace
+   * saves it, plan Q3).
+   * @param _slot The window's slot
+   * @param _document The document
+   */
+  async updateFloatingDocument(_slot: number, _document: FloatingSavedDocument): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * The file of a document was renamed: its floating window, if any, follows.
+   * @param _oldId The old path
+   * @param _newId The new path
+   */
+  async renameFloatingDocument(_oldId: string, _newId: string): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * The main process's whole current state. A floating window opens long after the broadcasts
+   * the other windows received at startup, so it starts from this (plan §3.2).
+   */
+  async getFullState(): Promise<AppState> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Opens a document in the IDE window (or the floating window that holds it) and brings that
+   * window forward: what a floating document does when it navigates to another document.
+   * @param _filename The document's path
+   * @param _line The line to go to
+   * @param _column The column to go to
+   */
+  async navigateInIde(_filename: string, _line?: number, _column?: number): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
   /**
    * Inserts a tape or disk through the open-file dialog: the same path as the Machine menu's
    * "Select Tape File..." / "Insert Disk into Drive X..." items, so the media state, the menus and
@@ -1199,6 +1280,10 @@ const UNBOUNDED_MAIN_METHODS = [
   "ejectMediaFile",
   // --- File pickers, confirmations and dialogs of their own
   "runUiAction",
+  // --- Runs an IDE command, which may itself wait on the user
+  "navigateInIde",
+  // --- The IDE may ask about unsaved documents while it opens the docked one
+  "dockFloatingDocument",
   // --- A File Manager copy runs as long as its files take (`dev/ai/file-manager.md`)
   "fmRunTransfer",
   // --- The app is terminating; a response may legitimately never arrive

@@ -1,4 +1,5 @@
 import path from "path";
+import { ideApiForDocument } from "@main/floating-windows-host";
 import fs from "fs";
 
 import type { MachineMenuRenderer, MachineMenuItem } from "@common/machines/info-types";
@@ -279,7 +280,7 @@ export const spectrumIdeRenderer: MachineMenuRenderer = () => {
       type: "checkbox",
       checked: volatileDocs[BASIC_PANEL_ID],
       click: async () => {
-        await getIdeApi().showBasic(!volatileDocs[BASIC_PANEL_ID]);
+        await ideApiForDocument(BASIC_PANEL_ID).showBasic(!volatileDocs[BASIC_PANEL_ID]);
         mainStore.dispatch(
           setVolatileDocStateAction(BASIC_PANEL_ID, !volatileDocs[BASIC_PANEL_ID])
         );

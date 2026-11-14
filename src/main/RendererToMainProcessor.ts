@@ -101,7 +101,21 @@ import {
   invalidateSdCardHandler
 } from "./machine-menus/zx-next-menus";
 import { withSdCardAccess } from "./sd-card-access";
-import { focusEmuWindow as bringEmuWindowToFront } from ".";
+import { focusEmuWindow as bringEmuWindowToFront, getAppWindows, showIdeWindow } from ".";
+import {
+  broadcastToIdeRenderers,
+  getFloatingWindows,
+  notifyFileContentChanged
+} from "./floating-windows-host";
+import type { MessageSource } from "@messaging/messages-core";
+import { isFloatSlot } from "@messaging/messages-core";
+import type {
+  FloatingDocumentRequest,
+  FloatingDocumentResult,
+  FloatingDocumentReveal,
+  FloatingSavedDocument
+} from "@messaging/floating-documents";
+import type { AppState } from "@common/state/AppState";
 import {
   ejectMediaFile as ejectMachineMedia,
   selectMediaFile as selectMachineMedia,
@@ -184,7 +198,7 @@ let _recordingBackend: IRecordingBackend | null = null;
 // --- One watcher for the app: the IDE follows the sidecars its annotation sessions hold open
 const annotationFileWatcher = new AnnotationFileWatcher((filePath) => {
   void Promise.resolve()
-    .then(() => getIdeApi().annotationFileChanged(filePath))
+    .then(() => broadcastToIdeRenderers((api) => api.annotationFileChanged(filePath)))
     .catch(() => {
       // --- No IDE window to tell: it reads the file afresh when it opens it
     });
@@ -198,7 +212,8 @@ class MainMessageProcessor {
    */
   constructor(
     private readonly window: BrowserWindow,
-    private readonly dispatch: Dispatch<Action>
+    private readonly dispatch: Dispatch<Action>,
+    private readonly sourceId?: MessageSource
   ) {}
 
   /**
@@ -828,6 +843,7 @@ class MainMessageProcessor {
       fs.mkdirSync(dir, { recursive: true });
     }
     fs.writeFileSync(filePath, data, { flag: "w" });
+    notifyFileContentChanged(filePath, this.sourceId);
     return filePath;
   }
 
@@ -851,6 +867,7 @@ class MainMessageProcessor {
       fs.mkdirSync(dir, { recursive: true });
     }
     fs.writeFileSync(filePath, data, { flag: "w" });
+    notifyFileContentChanged(filePath, this.sourceId);
     return filePath;
   }
 
@@ -1313,7 +1330,7 @@ class MainMessageProcessor {
   async saveMicrodriveChanges(drive: number, changes: SectorChanges) {
     const response = saveMicrodriveChanges(drive, changes);
     const file = mainStore.getState().media?.[MEDIA_MICRODRIVES[drive]]?.diskFile;
-    if (typeof file === "string") void getIdeApi().diskImageChanged(file).catch(() => {});
+    if (typeof file === "string") void broadcastToIdeRenderers((api) => api.diskImageChanged(file));
     return response;
   }
 
@@ -1321,7 +1338,7 @@ class MainMessageProcessor {
     const response = saveDiskChanges(diskIndex, changes);
     // --- An open Disk Explorer shows the disk as the machine left it
     const diskFile = mainStore.getState().media?.[diskIndex ? MEDIA_DISK_B : MEDIA_DISK_A]?.diskFile;
-    if (typeof diskFile === "string") void getIdeApi().diskImageChanged(diskFile).catch(() => {});
+    if (typeof diskFile === "string") void broadcastToIdeRenderers((api) => api.diskImageChanged(diskFile));
     return response;
   }
 
@@ -1537,6 +1554,61 @@ class MainMessageProcessor {
     bringEmuWindowToFront();
   }
 
+  // --- Floating document windows (`dev/plans/FLOATING_DOCUMENT_WINDOWS_PLAN.md` §3.4)
+
+  async openFloatingDocument(request: FloatingDocumentRequest): Promise<FloatingDocumentResult> {
+    if (!request || typeof request !== "object" || typeof request.document?.id !== "string") {
+      return { error: "failed", message: "Invalid floating document request." };
+    }
+    const manager = getFloatingWindows();
+    if (!manager) return { error: "failed", message: "Floating windows are not available yet." };
+    return manager.open(request);
+  }
+
+  async dockFloatingDocument(slot: number, document: FloatingSavedDocument): Promise<boolean> {
+    if (!isFloatSlot(slot)) return false;
+    return (await getFloatingWindows()?.dock(slot, document)) ?? false;
+  }
+
+  async closeFloatingDocument(slot: number): Promise<void> {
+    if (!isFloatSlot(slot)) return;
+    getFloatingWindows()?.destroy(slot);
+  }
+
+  async focusFloatingDocument(reveal: FloatingDocumentReveal): Promise<boolean> {
+    if (!reveal || typeof reveal.documentId !== "string") return false;
+    return (await getFloatingWindows()?.focusDocument(reveal)) ?? false;
+  }
+
+  async updateFloatingDocument(slot: number, document: FloatingSavedDocument): Promise<void> {
+    if (!isFloatSlot(slot) || typeof document?.id !== "string") return;
+    getFloatingWindows()?.updateDocument(slot, document);
+  }
+
+  async renameFloatingDocument(oldId: string, newId: string): Promise<void> {
+    if (typeof oldId !== "string" || typeof newId !== "string") return;
+    await getFloatingWindows()?.renameDocument(oldId, newId);
+  }
+
+  async getFullState(): Promise<AppState> {
+    return mainStore.getState();
+  }
+
+  async navigateInIde(filename: string, line?: number, column?: number): Promise<void> {
+    if (typeof filename !== "string" || !filename) return;
+    // --- A floating document is focused where it is (plan §2.3)
+    if (await getFloatingWindows()?.focusDocument({ documentId: filename, line, column })) return;
+    showIdeWindow();
+    const { ideWindow } = getAppWindows();
+    if (ideWindow && !ideWindow.isDestroyed()) {
+      if (ideWindow.isMinimized()) ideWindow.restore();
+      ideWindow.focus();
+    }
+    const position =
+      line !== undefined ? ` ${Math.trunc(line)}${column !== undefined ? ` ${Math.trunc(column)}` : ""}` : "";
+    await getIdeApi().executeCommand(`nav "${filename.replace(/"/g, '\\"')}"${position} -r definition`);
+  }
+
   /**
    * Inserts a tape or disk through the open-file dialog, as the Machine menu does.
    * @param mediaId MEDIA_TAPE, MEDIA_DISK_A or MEDIA_DISK_B
@@ -1688,7 +1760,7 @@ export async function processRendererToMainMessages(
   window: BrowserWindow
 ): Promise<any> {
   const dispatch = mainStore.dispatch;
-  const mainMessageProcessor = new MainMessageProcessor(window, dispatch);
+  const mainMessageProcessor = new MainMessageProcessor(window, dispatch, message.sourceId);
 
   if (message.targetId === "emu") {
     return await sendFromMainToEmu(relayedRequest(message));

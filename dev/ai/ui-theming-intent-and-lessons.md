@@ -1283,6 +1283,18 @@ A choice that only applies to one option of another choice (a bytes region's **F
 dialog) appears only while that option is selected, as its own `RadioGroup` row directly below, rather
 than being shown disabled for every other type.
 
+## A Frameless Window's Header Is The Tab It Came From, Grown
+
+A floating document window (`src/renderer/appFloat/FloatHeader`) has no OS frame, so its header is
+its title bar: the whole strip is `-webkit-app-region: drag` and only the buttons opt out
+(`no-drag`, on the button group *and* each button, or a click on a button drags the window). The strip
+reuses the document strip's chrome rather than inventing a title-bar look: `--strip-tabbar` height,
+`--bgcolor-docsheader` with the `--color-doc-seam` rule as a background layer, the tab's 16px glyph and
+`--font-size-300` name, and the same marks in the same order (dirty dot, read-only shield, lock). The
+two actions are text buttons with an icon (**Dock**, **Close**), not bare icons: they are the window's
+only controls and must read without a tooltip. A menu item that cannot run says why in its
+`trailing` slot ("8 windows open"), because context menu rows have no tooltip.
+
 ## An Action's Verdict Is Shown Where The Action Was Started
 
 A command run from a button or a menu writes to the Commands pane, which is usually hidden, so a

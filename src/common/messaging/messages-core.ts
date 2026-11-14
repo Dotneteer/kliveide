@@ -14,14 +14,64 @@
 // | |--------------------|       |--------------------| |
 // |                     MAIN process                    |
 // |-----------------------------------------------------|
+//
+// Floating document windows (`dev/plans/FLOATING_DOCUMENT_WINDOWS_PLAN.md`) are IDE renderers in
+// "satellite" mode: each is a further renderer with its own source (`float1`..`float8`) and its own
+// `FloatToMainMessenger` / `MainToFloatMessenger` pair.
 // ====================================================================================================================
 
 import { Action } from "@common/state/Action";
 
 /**
+ * The most floating document windows that may be open at a time
+ */
+export const MAX_FLOATING_WINDOWS = 8;
+
+/**
+ * The slot number of a floating document window (1..MAX_FLOATING_WINDOWS)
+ */
+export type FloatSlot = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+
+/**
+ * The message source of a floating document window
+ */
+export type FloatSource = `float${FloatSlot}`;
+
+/**
  * Potential message sources
  */
-export type MessageSource = "emu" | "ide" | "main";
+export type MessageSource = "emu" | "ide" | "main" | FloatSource;
+
+/**
+ * Tests whether the specified message source is a floating document window
+ */
+export function isFloatSource(source: unknown): source is FloatSource {
+  return typeof source === "string" && floatSlotOf(source) !== undefined;
+}
+
+/**
+ * Gets the slot of a floating window source; undefined when the source is not a floating window's
+ */
+export function floatSlotOf(source: string | undefined): FloatSlot | undefined {
+  const match = /^float([1-9]\d*)$/.exec(source ?? "");
+  if (!match) return undefined;
+  const slot = Number(match[1]);
+  return isFloatSlot(slot) ? slot : undefined;
+}
+
+/**
+ * Tests whether a number is a valid floating window slot
+ */
+export function isFloatSlot(slot: unknown): slot is FloatSlot {
+  return Number.isInteger(slot) && (slot as number) >= 1 && (slot as number) <= MAX_FLOATING_WINDOWS;
+}
+
+/**
+ * The message source of the floating window in the specified slot
+ */
+export function floatSourceOf(slot: FloatSlot): FloatSource {
+  return `float${slot}` as FloatSource;
+}
 
 /**
  * Available message channels
@@ -34,7 +84,11 @@ export type Channel =
   | "MainToIde"
   | "MainToIdeResponse"
   | "IdeToMain"
-  | "IdeToMainResponse";
+  | "IdeToMainResponse"
+  | "MainToFloat"
+  | "MainToFloatResponse"
+  | "FloatToMain"
+  | "FloatToMainResponse";
 
 /**
  * The common base for all message types

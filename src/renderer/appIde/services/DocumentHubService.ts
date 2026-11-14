@@ -625,6 +625,8 @@ class DocumentHubService implements IDocumentHubService {
     if (!docRenderer) return;
     document.iconName ||= docRenderer.icon;
     document.iconFill ||= docRenderer.iconFill;
+    // --- Pop Out to Window reads it (FLOATING_DOCUMENT_WINDOWS_PLAN Q5)
+    if (docRenderer.floatable === false) document.floatable = false;
   }
 
   private requestHubClosureIfEmpty(): void {

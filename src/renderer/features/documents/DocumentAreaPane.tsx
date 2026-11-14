@@ -15,13 +15,15 @@ import { IDocumentHubService } from "@renderer/abstractions/IDocumentHubService"
 type DocumentAreaPaneProps = {
   hub: IDocumentHubService;
   onActivated?: () => void;
+  /** Show the tab strip (a floating document window has its own header instead) */
+  showHeader?: boolean;
 };
 
 /**
  * Hosts one document hub, derives its active document snapshot, and mounts the
  * renderer for that document under the hub provider.
  */
-export const DocumentAreaPane = ({ hub, onActivated }: DocumentAreaPaneProps) => {
+export const DocumentAreaPane = ({ hub, onActivated, showHeader = true }: DocumentAreaPaneProps) => {
   const { projectService } = useAppServices();
   const hubVersion = useDocumentHubServiceVersion(hub);
   const projectViewStateVersion = useSelector((s) => s.project?.projectViewStateVersion);
@@ -88,7 +90,7 @@ export const DocumentAreaPane = ({ hub, onActivated }: DocumentAreaPaneProps) =>
         onFocusCapture={activateHub}
         onPointerDownCapture={activateHub}
       >
-        <DocumentsHeader />
+        {showHeader && <DocumentsHeader />}
         {activeDoc && (
           <DocumentsContainer
             key={activeDoc.id}

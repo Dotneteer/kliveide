@@ -19,6 +19,7 @@ import {
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { initializeMonaco } from "@renderer/features/editor/monaco/MonacoEditor";
 import { registerIdeCommands } from "./IdeCommands";
+import type { AppServicesRole } from "./services/AppServicesProvider";
 
 type IdeStartupArgs = {
   appPath: string;
@@ -28,6 +29,12 @@ type IdeStartupArgs = {
   isWindows: boolean;
   messenger: MessengerBase;
   store: Store<AppState>;
+  /**
+   * A floating document window runs as a "satellite" (`dev/plans/FLOATING_DOCUMENT_WINDOWS_PLAN.md`
+   * §3.1): it initializes Monaco and the commands like the IDE, but none of the work that must run
+   * once: signing the IDE loaded, the activity bar and tool panels, reopening the last project.
+   */
+  role?: AppServicesRole;
 };
 
 export function useEnsureIdeDocumentHub(appServices: AppServices): void {
@@ -43,7 +50,8 @@ export function useIdeStartup({
   ideLoaded,
   isWindows,
   messenger,
-  store
+  store,
+  role = "ide"
 }: IdeStartupArgs): void {
   const mounted = useRef(false);
 
@@ -62,6 +70,11 @@ export function useIdeStartup({
 
     mounted.current = true;
     registerIdeCommands(appServices.ideCommandsService);
+
+    if (role === "satellite") {
+      window.postMessage({ payload: "removeLoading" }, "*");
+      return;
+    }
 
     const audioCtx = new AudioContext();
     try {
@@ -82,14 +95,14 @@ export function useIdeStartup({
     dispatch(ideLoadedAction());
 
     window.postMessage({ payload: "removeLoading" }, "*");
-  }, [appPath, appServices, dispatch, messenger, store]);
+  }, [appPath, appServices, dispatch, messenger, role, store]);
 
   useEffect(() => {
     setIsWindows(isWindows);
   }, [isWindows]);
 
   useEffect(() => {
-    if (!ideLoaded) return;
+    if (!ideLoaded || role === "satellite") return;
 
     let cancelled = false;
     (async () => {
@@ -126,5 +139,5 @@ export function useIdeStartup({
     return () => {
       cancelled = true;
     };
-  }, [ideLoaded, messenger]);
+  }, [ideLoaded, messenger, role]);
 }

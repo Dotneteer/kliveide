@@ -1,3 +1,4 @@
+import { getFloatingDocuments } from "@common/messaging/floating-documents";
 import {
   useCallback,
   useEffect,
@@ -42,6 +43,12 @@ import { getLegacySpecialDocumentWorkspaceSettingIds } from "./specialDocuments"
 export const DEFAULT_DOCUMENT_AREA_ID = "document-area-1";
 
 export type DocumentAreaGridApi = {
+  /** The hub of an area; undefined when the area no longer exists */
+  getHubForArea?(areaId: DocumentAreaId): IDocumentHubService | undefined;
+  /** The ID of the area a hub shows */
+  getAreaIdOfHub?(hub: IDocumentHubService): DocumentAreaId | undefined;
+  /** Makes an area the active one */
+  activateArea?(areaId: DocumentAreaId): void;
   closeActiveArea(): Promise<void>;
   closeOtherAreas(): Promise<void>;
   getActiveAreaState(): DocumentAreaState;
@@ -83,6 +90,8 @@ export const DocumentAreaGrid = ({
   const { store } = useRendererContext();
   const documentHubState = useSelector((s) => s.ideView?.documentHubState);
   const workspaceLoaded = useSelector((s) => s.project?.workspaceLoaded ?? false);
+  // --- The workspace saves the floating documents with the tabs (FLOATING_DOCUMENT_WINDOWS_PLAN Q3)
+  const floatingDocuments = useSelector((s) => s.floatingDocuments);
   const nextAreaId = useRef(1);
   const workspaceRestored = useRef(false);
   const skipNextWorkspaceSave = useRef(false);
@@ -287,6 +296,15 @@ export const DocumentAreaGrid = ({
 
   const api = useMemo<DocumentAreaGridApi>(
     () => ({
+      getHubForArea: (areaId) => hubsByAreaId.get(areaId),
+      getAreaIdOfHub: (hub) =>
+        [...hubsByAreaId.entries()].find(([, areaHub]) => areaHub === hub)?.[0],
+      activateArea: (areaId) => {
+        const hub = hubsByAreaId.get(areaId);
+        if (!hub) return;
+        setActiveAreaId(areaId);
+        projectService.setActiveDocumentHubService(hub);
+      },
       closeActiveArea,
       closeOtherAreas,
       getActiveAreaState: () => {
@@ -313,6 +331,7 @@ export const DocumentAreaGrid = ({
       layout,
       moveDocumentToArea,
       moveDocumentToSiblingArea,
+      projectService,
       splitActiveArea
     ]
   );
@@ -337,7 +356,8 @@ export const DocumentAreaGrid = ({
       layout,
       hubsByAreaId,
       activeAreaId,
-      folderPath
+      folderPath,
+      getFloatingDocuments(store.getState())
     );
     let workspaceChanged = false;
     for (const settingId of getLegacySpecialDocumentWorkspaceSettingIds()) {
@@ -372,6 +392,7 @@ export const DocumentAreaGrid = ({
   }, [
     activeAreaId,
     documentHubState,
+    floatingDocuments,
     hubsByAreaId,
     layout,
     mainApi,

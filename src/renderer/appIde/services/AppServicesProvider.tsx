@@ -29,10 +29,20 @@ export function useAppServices (): AppServices {
   return services;
 }
 
+/**
+ * Which IDE renderer the services run in: the IDE window, or a floating document window in
+ * "satellite" mode (`dev/plans/FLOATING_DOCUMENT_WINDOWS_PLAN.md` §3.1). A satellite runs the same
+ * services, so every document panel works unchanged; its document hubs take IDs from their own range.
+ */
+export type AppServicesRole = "ide" | "satellite";
+
 type Props = {
+  role?: AppServicesRole;
+  /** The first document hub ID of a satellite is one above this */
+  hubIdBase?: number;
   children?: React.ReactNode;
 };
-export function AppServicesProvider ({ children }: Props) {
+export function AppServicesProvider ({ role = "ide", hubIdBase, children }: Props) {
   const { store, messenger, messageSource } = useRendererContext();
 
   const servicesRef = useRef<AppServices | undefined>(undefined);
@@ -42,7 +52,9 @@ export function AppServicesProvider ({ children }: Props) {
       messenger,
       messageSource
     );
-    const projectService = createProjectService(store, messenger);
+    const projectService = createProjectService(store, messenger, {
+      hubIdBase: role === "satellite" ? hubIdBase : undefined
+    });
     const navigationHistoryService = createNavigationHistoryService(store, projectService, messenger);
     servicesRef.current = {
       uiService: createUiService(),

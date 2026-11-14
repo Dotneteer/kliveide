@@ -57,6 +57,12 @@ export type ProjectDocumentState = {
   iconFill?: string;
 
   /**
+   * `false` when the document's kind cannot pop out into a floating window (copied from its
+   * renderer's registry entry, `dev/plans/FLOATING_DOCUMENT_WINDOWS_PLAN.md` Q5)
+   */
+  floatable?: boolean;
+
+  /**
    * The optional tree node in the explorer
    */
   node?: ProjectNode;

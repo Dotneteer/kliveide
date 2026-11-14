@@ -58,7 +58,7 @@ class ProjectService implements IProjectService {
   private _probedFilePaths = new Set<string>();
 
   // --- Document hub related fields
-  private _docHubIdSlots: boolean[] = [];
+  private _docHubIdsInUse = new Set<number>();
   private _docHubServices: IDocumentHubService[] = [];
   private _docHubActivations: IDocumentHubService[] = [];
   private _activeDocHub: IDocumentHubService | undefined;
@@ -67,7 +67,8 @@ class ProjectService implements IProjectService {
 
   constructor(
     private readonly store: Store<AppState>,
-    private readonly messenger: MessengerBase
+    private readonly messenger: MessengerBase,
+    private readonly options: ProjectServiceOptions = {}
   ) {
     store.subscribe(() => {
       const newState = store.getState();
@@ -307,7 +308,7 @@ class ProjectService implements IProjectService {
     if (this._docHubServices.length <= 1) return;
 
     // --- Remove the document hub service gracefully
-    delete this._docHubIdSlots[instance.hubId];
+    this._docHubIdsInUse.delete(instance.hubId);
     instance.dispose();
     this._docHubServices = this._docHubServices.filter((d) => d !== instance);
     this._docHubActivations = this._docHubActivations.filter((d) => d !== instance);
@@ -613,14 +614,15 @@ class ProjectService implements IProjectService {
   // --- Helper methods
 
   /**
-   * Gets the next available document hub ID
+   * Gets the lowest document hub ID not in use. Hub IDs key `ideView.documentHubState` in the shared
+   * store, so a floating window's start at its own base (FLOATING_DOCUMENT_WINDOWS_PLAN §3.1).
    */
   private getNextDocumentHubId(): number {
-    let nextId = 1;
-    while (nextId < this._docHubIdSlots.length && !this._docHubIdSlots[nextId]) {
+    let nextId = (this.options.hubIdBase ?? 0) + 1;
+    while (this._docHubIdsInUse.has(nextId)) {
       nextId++;
     }
-    this._docHubIdSlots[nextId] = true;
+    this._docHubIdsInUse.add(nextId);
     return nextId;
   }
 
@@ -670,5 +672,16 @@ class ProjectService implements IProjectService {
   }
 }
 
-export const createProjectService = (store: Store<AppState>, messenger: MessengerBase) =>
-  new ProjectService(store, messenger);
+/**
+ * Options of a project service
+ */
+export type ProjectServiceOptions = {
+  /** The first document hub ID is one above this (a floating window's `floatHubIdBase`) */
+  hubIdBase?: number;
+};
+
+export const createProjectService = (
+  store: Store<AppState>,
+  messenger: MessengerBase,
+  options?: ProjectServiceOptions
+) => new ProjectService(store, messenger, options);

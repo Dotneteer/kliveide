@@ -1,7 +1,8 @@
 # Floating Document Windows Plan
 
-**Status: approved (2026-11-14).** Nothing is implemented yet. The decisions are in §4 (Q1-Q6, all
-settled by the project author).
+**Status: implemented (2026-11-14), branch `feature/floating-document-windows`.** The decisions are in
+§4 (Q1-Q6, all settled by the project author); what was built, and what is still open, is in §7. The
+durable rules for later features are `dev/patterns/satellite-renderers.md`.
 
 A document tab in the IDE can pop out into its own window: a real Electron `BrowserWindow`, moved and
 resized like the IDE and emulator windows. The window shows the one document and a header with two
@@ -252,3 +253,49 @@ All decided by the project author on 2026-11-14.
   satellites.
 - **Memory**: each window is a renderer process with its own Monaco and services (~100-200 MB each); 8 is
   the cap for that reason. Measured in Phase 4.
+
+## 7. As built (2026-11-14)
+
+- **Phase 0.** `messages-core.ts` has `FloatSource`/`floatSlotOf`/`MAX_FLOATING_WINDOWS` and the
+  `FloatToMain*`/`MainToFloat*` channels. The three request channels share
+  `src/main/renderer-request-handler.ts`, which answers `event.sender`. The main store delivers every
+  action to every live renderer except its source (`src/main/renderer-routing.ts`); each renderer gets
+  its own copy of the message (the old code handed one object to both messengers, which shared a
+  correlation ID). `ide-api-routing.ts` classifies every `IdeApi` method, with a fifth class, `float`,
+  for the calls only a floating window answers (`revealFloatingDocument`, `floatingDocumentRenamed`,
+  `requestFloatingClose`). The main call sites were reviewed by method: output, dialogs, commands and
+  the project structure stay IDE-only; `annotationFileChanged`/`diskImageChanged` broadcast;
+  `showMemory`/`showDisassembly`/`showBasic` go to the window holding the document;
+  `saveAllBeforeQuit` fans out (`saveAllIdeRenderersBeforeQuit`, also on a project switch).
+- **Phase 1-2.** `src/main/floating-windows.ts` (`FloatingWindowManager`, rules tested with fake
+  windows) and `floating-windows-host.ts` (the app's instance). No temporary developer command was
+  needed: Pop Out landed in the same change. The satellite bootstrap is `?float=<slot>` in
+  `main.tsx`, which reads `MainApi.getFullState()` before rendering. In a satellite, `dispatch(..., "ide")`
+  is forwarded under the window's source and actions from main are replayed as `"main"`, so nothing
+  echoes. Pop Out and Dock save the document first: the delayed saves **and** the view's
+  `beforeDocumentDisposal` (found in the running app: an unsaved edit was lost on Dock without it).
+  Dock also drops the IDE's kept Monaco model for the path (`editorModelCache.ts`): the editor keeps
+  one model per path (`keepCurrentModel`), which otherwise showed the text from before the pop-out.
+  The quit's `saveOnClose` is now one shared promise: the IDE and emulator windows both start it, and a
+  second `saveAllBeforeQuit` sent to a closing IDE window was never answered (the quit stalled).
+- **Phase 3.** A focused floating window counts as the IDE (`ideFocused`, `isIdeWindowFocused`).
+  Monaco's own keys work in the window; `nav` from a floating document to another one opens it in the
+  IDE (`MainApi.navigateInIde`), and `nav`/the Explorer to a floating document focus its window and move
+  its view. Satellite-local dialogs open in the satellite (`IdeDialogBridge`). Workspace version 3 saves
+  `floating` (document, source area, bounds); version 2 reads as having none. The running-app check is
+  `dev/scripts/floating-windows-ide-check.cjs`.
+- **Phase 4 (partly).** Memory, Disassembly and BASIC can float (they are restorable special
+  documents); the View menu's toggles go to the window that holds them. No kind has been marked
+  `floatable: false` yet (the flag exists on `DocumentRendererInfo` and reaches the tab menu).
+- **Phase 5.** Guide section "A document in its own window" in `guides/editing/editor.mdx`; the
+  header's style rules in `dev/ai/ui-theming-intent-and-lessons.md`.
+
+### Open
+
+- The menus' accelerators that run an IDE command (`getIdeApi().executeCommand`) still act in the IDE
+  window when a floating window has the focus; Monaco's keys (save, find, go to line) work in the
+  window itself.
+- Navigation history: Go Back from a floating document is the satellite's own history, not the IDE's.
+- Language intel and memory cost with 8 windows open are not measured; no guides screenshot recipe.
+- A machine change does not close floating documents the new machine cannot show.
+- Dragging a tab out (Q6) is not part of this plan.

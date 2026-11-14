@@ -12,6 +12,10 @@ import {
   type DocumentAreaLayout
 } from "./documentAreaLayout";
 import { isWorkspaceRestorableSpecialDocument } from "./specialDocuments";
+import type {
+  FloatingDocumentEntry,
+  FloatingWindowBounds
+} from "@common/messaging/floating-documents";
 
 export const DOCS_WORKSPACE = "docsWorkspace";
 
@@ -36,11 +40,26 @@ export type SavedDocumentAreaInfo = {
   activeDocumentId?: string;
 };
 
+/**
+ * A document that was floating in its own window when the workspace was saved
+ * (`dev/plans/FLOATING_DOCUMENT_WINDOWS_PLAN.md` Q3): reopening the project reopens it floating
+ */
+export type SavedFloatingDocumentInfo = {
+  document: SavedDocumentInfo;
+  sourceAreaId?: DocumentAreaId;
+  bounds?: FloatingWindowBounds;
+};
+
+/**
+ * Version 2: the document areas. Version 3 adds the floating documents; a version 2 workspace reads
+ * as one without any.
+ */
 export type MultiAreaDocumentWorkspace = {
-  version: 2;
+  version: 2 | 3;
   layout: DocumentAreaLayout;
   areas: SavedDocumentAreaInfo[];
   activeAreaId?: DocumentAreaId;
+  floating?: SavedFloatingDocumentInfo[];
 };
 
 export type DocumentWorkspace = LegacyDocumentWorkspace | MultiAreaDocumentWorkspace;
@@ -112,13 +131,16 @@ export function createDocumentAreaWorkspace(
   layout: DocumentAreaLayout,
   hubsByAreaId: Map<DocumentAreaId, IDocumentHubService>,
   activeAreaId: DocumentAreaId,
-  folderPath: string
+  folderPath: string,
+  floatingDocuments: FloatingDocumentEntry[] = []
 ): MultiAreaDocumentWorkspace {
   const areaIds = findAreaIds(layout);
+  const floating = createSavedFloatingDocuments(floatingDocuments, folderPath);
   return {
-    version: 2,
+    version: floating.length > 0 ? 3 : 2,
     layout,
     activeAreaId,
+    ...(floating.length > 0 ? { floating } : {}),
     areas: areaIds.map((areaId) => {
       const hub = hubsByAreaId.get(areaId);
       const documents = (hub?.getOpenDocuments() ?? [])
@@ -179,5 +201,44 @@ export function getMultiAreaDocumentWorkspace(
 function isMultiAreaDocumentWorkspace(
   workspace: DocumentWorkspace
 ): workspace is MultiAreaDocumentWorkspace {
-  return "version" in workspace && workspace.version === 2;
+  return "version" in workspace && (workspace.version === 2 || workspace.version === 3);
+}
+
+/**
+ * The floating documents as the workspace saves them: only project-scoped ones, like the tabs
+ */
+export function createSavedFloatingDocuments(
+  entries: FloatingDocumentEntry[],
+  folderPath: string
+): SavedFloatingDocumentInfo[] {
+  return entries
+    .filter(
+      (entry) =>
+        !!entry?.document?.id &&
+        (entry.document.id.startsWith(folderPath) ||
+          isWorkspaceRestorableSpecialDocument(entry.document as ProjectDocumentState))
+    )
+    .map((entry) => ({
+      document: {
+        type: entry.document.type,
+        id: entry.document.id,
+        position: {
+          line: entry.document.position?.line ?? 0,
+          column: entry.document.position?.column ?? 0
+        },
+        ...(entry.document.viewState !== undefined ? { viewState: entry.document.viewState } : {})
+      },
+      ...(entry.sourceAreaId ? { sourceAreaId: entry.sourceAreaId } : {}),
+      ...(entry.bounds ? { bounds: { ...entry.bounds } } : {})
+    }));
+}
+
+/**
+ * The floating documents of a saved workspace (none before version 3)
+ */
+export function getSavedFloatingDocuments(
+  workspace: DocumentWorkspace | undefined
+): SavedFloatingDocumentInfo[] {
+  if (!workspace || !isMultiAreaDocumentWorkspace(workspace)) return [];
+  return Array.isArray(workspace.floating) ? workspace.floating.filter((f) => !!f?.document?.id) : [];
 }

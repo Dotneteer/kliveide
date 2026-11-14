@@ -1,3 +1,4 @@
+import { saveAllIdeRenderersBeforeQuit } from "./floating-windows-host";
 import path from "path";
 import fs from "fs";
 
@@ -45,7 +46,6 @@ import {
 } from "@common/structs/project-const";
 import { getEmuApi } from "@messaging/MainToEmuMessenger";
 import { setMachineType } from "./registeredMachines";
-import { getIdeApi } from "@messaging/MainToIdeMessenger";
 import { getModelConfig, newProjectModelIds } from "@common/machines/machine-registry";
 import { fileChangeWatcher } from "./file-watcher";
 import { processBuildFile } from "./build";
@@ -168,7 +168,8 @@ export async function openFolderByPath(projectFolder: string): Promise<string | 
   if (!fs.existsSync(projectFolder)) {
     return `Folder ${projectFolder} does not exists.`;
   }
-  const canClose = await getIdeApi().saveAllBeforeQuit();
+  // --- Every IDE renderer: the floating windows, then the IDE (FLOATING_DOCUMENT_WINDOWS_PLAN §3.3)
+  const canClose = await saveAllIdeRenderersBeforeQuit();
   if (!canClose) {
     return "Folder switch cancelled.";
   }

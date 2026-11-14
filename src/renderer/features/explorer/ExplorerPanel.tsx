@@ -1,3 +1,4 @@
+import { findFloatingSlot } from "@common/messaging/floating-documents";
 import styles from "./ExplorerPanel.module.scss";
 import { useDispatch, useRendererContext, useSelector } from "@renderer/core/RendererProvider";
 import { type ComponentProps, type KeyboardEvent, type MouseEvent, useCallback, useEffect, useRef, useState } from "react";
@@ -232,6 +233,13 @@ export const ExplorerPanel = () => {
 
     // --- Decided before the first await, so the next click of a double-click sees this open
     const path = node.data.fullPath;
+    // --- A floating document is focused in its window instead of opening a second copy
+    // --- (`dev/plans/FLOATING_DOCUMENT_WINDOWS_PLAN.md` §2.3). Checked without awaiting: the
+    // --- double-click guard below must still be decided before the first await.
+    if (findFloatingSlot(store.getState(), path)) {
+      await mainApi.focusFloatingDocument({ documentId: path });
+      return;
+    }
     const pending = pendingOpens.current.get(path);
     if (pending) {
       await openSettled(path);

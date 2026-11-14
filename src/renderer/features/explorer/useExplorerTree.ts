@@ -6,6 +6,7 @@ import { ITreeNode, ITreeView } from "@abstractions/ITreeNode";
 import { ProjectNode } from "@abstractions/ProjectNode";
 import { IProjectService } from "@renderer/abstractions/IProjectService";
 import { buildProjectTree, takeChangedContentKinds } from "@renderer/appIde/project/project-node";
+import { findFloatingSlot } from "@common/messaging/floating-documents";
 
 const folderCache = new Map<string, ITreeView<ProjectNode>>();
 let lastExplorerPath = "";
@@ -98,10 +99,17 @@ export function useExplorerTree({
       if (deletedDoc?.usedIn) {
         deletedDoc.usedIn.forEach((docHub) => docHub.closeDocument(docId));
       }
+      // --- A floating document's window closes, like its tab would
+      // --- (`dev/plans/FLOATING_DOCUMENT_WINDOWS_PLAN.md` §2.3)
+      const floatingSlot = findFloatingSlot(store.getState(), docId);
+      if (floatingSlot) void mainApi.closeFloatingDocument(floatingSlot);
     };
 
     const itemRenamed = (info: { oldName: string; node: ITreeNode<ProjectNode> }) => {
       const docId = info.node.data.fullPath;
+      if (findFloatingSlot(store.getState(), info.oldName)) {
+        void mainApi.renameFloatingDocument(info.oldName, docId);
+      }
       const renamedDoc = projectService.getDocumentById(docId);
       if (renamedDoc?.usedIn) {
         renamedDoc.usedIn.forEach((docHub) => {
@@ -118,7 +126,7 @@ export function useExplorerTree({
       projectService.itemDeleted.off(itemDeleted);
       projectService.itemRenamed.off(itemRenamed);
     };
-  }, [projectService]);
+  }, [mainApi, projectService, store]);
 
   useEffect(() => {
     if (lastExplorerPath) folderCache.delete(lastExplorerPath);
