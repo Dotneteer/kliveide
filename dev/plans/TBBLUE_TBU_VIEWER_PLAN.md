@@ -38,14 +38,14 @@ Index record (15 bytes, little-endian):
 |---|---|---|---|
 | 0 | 1 | length | 15 (the walk advances by this, not by a constant); `$FF` = end of list |
 | 1 | 1 | type | 1 = ZX Spectrum Next core (slot 1); 0 = anti-brick core (slot 0) |
-| 2 | 1 | board ID | NextReg `$0F` value: board issue − 2 (0 = Issue 2, 1 = Issue 3, 2 = Issue 4, 3 = Issue 5) |
+| 2 | 1 | board ID | NextReg `$0F` value: board issue − 2 (0 = Issue 2, 1 = Issue 3, 2 = Issue 4, 3 = Issue 5). **Newer files use more values** (`$10`, `$20`, `$40`, `$41` in 26.11a; see §1a) |
 | 3 | 1 | core major | NextReg `$01`: major in the high nibble, minor in the low (`$32` = 3.02) |
 | 4 | 1 | core sub-minor | NextReg `$0E` (`$03` → 3.02.03) |
 | 5 | 4 | sector offset | Image start in sectors **after the header**: file offset = (offset + 1) × 512 |
 | 9 | 4 | sector length | Image length in sectors |
 | 13 | 2 | checksum | Fletcher-16 over every sector of the image (sum1 low byte, sum2 high byte, both mod 255, seeded 0) |
 
-Image layout [src][bin]: the bitstream, padded with `$FF` to a fixed number of sectors (959 for boards 0-1,
+Image layout [src][bin] (as `maketbu.c` writes it; other sizes exist, §1a): the bitstream, padded with `$FF` to a fixed number of sectors (959 for boards 0-1,
 4,287 for boards 2-3), then **one trailer sector**: `ZX SPECTRUM NEXT\0`, `ZXN ISSUE <n> <ANTI-BRICK|ZX
 SPECTRUM NEXT>\0`, then a 7-byte flash record (length 7, type, board ID, core major, core sub-minor, a 16-bit
 screen offset left at `$FFFF`), the rest `$FF`. So an image is 960 or 4,288 sectors (480K / 2,144K), which
@@ -56,7 +56,7 @@ What the real files show [bin]:
 - 3.02.03: three records, Issue 2 / 4 / 5, all type 1; offsets and lengths add up exactly to the file size.
   The Issue 2 bitstream has the Xilinx sync word `AA 99 55 66` at byte 16 of its image (Spartan-6, 16-bit
   packets); Issue 4/5 at byte 304, with the IDCODE written at byte 400: `$0362E093` (Issue 4) and
-  `$0362D093` (Issue 5) — Artix-7 device IDs, to be mapped to part names in Phase 0.
+  `$0362D093` (Issue 5) — Artix-7 device IDs, mapped to part names in §1a.
 - 3.01.10 (KS2 image): two records, Issue 2 and Issue 4.
 - Images end in `$FF` padding; the meaningful bitstream ends well before it (Issue 2: 465,028 of 491,520 bytes).
 
@@ -77,6 +77,51 @@ Also starts with `TBUFILE`, but has no machine string at byte 8:
 The image follows at 512 and must be exactly the stated size. The two formats are told apart by bytes 8-24:
 `ZX SPECTRUM NEXT\0` means multi-core (byte 7 alone is not enough: in the 2019 file it is `$00` too).
 
+### 1a. Phase 0 results (2026-11-14)
+
+**What the file-type matcher receives.** `getFileTypeEntry` (`src/renderer/appIde/project/project-node.ts`)
+is called with a full path almost everywhere (the Explorer, the document hub, `ProjectService`), and with a
+bare name in a few places (`annotationSidecarDocument.ts`, `explorerFileOperations.ts`'s rename). So
+`matchType: "full"` cannot match a file name, and `ends` + `"TBBLUE.TBU"` would also match
+`MYTBBLUE.TBU`. **Decision:** add `matchType: "name"`, true when the text after the last `/` or `\` equals
+the pattern (with `ignoreCase`), with a unit test for both separators and for a bare name.
+
+**Which FPGA each image is for.** The bitstream writes the device's IDCODE into its IDCODE register:
+
+| Board | Bitstream | IDCODE write found at | IDCODE | Part |
+|---|---|---|---|---|
+| Issue 2 | Spartan-6, 16-bit packets; sync `AA 99 55 66` at image byte 16 | byte 36, type-1 write header `$31C2` (register `$0E`, 2 words) | `$04002093` | XC6SLX16 |
+| Issue 4 | 7-series, 32-bit packets; sync at byte 304 | byte 400, header `$30018001` (register `$0C`, 1 word) | `$0362E093` | XC7A15T |
+| Issue 5 | as Issue 4 | byte 400 | `$0362D093` | XC7A35T |
+
+Both agree with the article ("What the blank chip is made of") and `dev/research/zxnext-ks2-vs-ks3.md`.
+Sources: Xilinx UG380 and UG470 for the packet formats; the urjtag `PARTS` table (XC6SLX16 `0x4002`,
+XC7A35T `0x362D`); for the XC7A15T, its BSDL value `x362E093` as read by Vivado. UG470 v1.10 lists
+`X362D093` for both the 7A15T and the 7A35T, which is a known error in that revision; Klive's table says
+so in a comment. The viewer compares the IDCODE ignoring its top nibble (the silicon revision) and also
+checks that the part belongs to the record's board (a mismatch is a problem: an Issue 4 core in an Issue 5
+record would not configure the FPGA).
+
+**The 26.11a file** (System/Next 26.11a, `gitlab.com/thesmog358/tbblue` `master` `3a892b0`), from the
+catalogue already recorded in `dev/research/zxnext-ks2-vs-ks3.md` §2 (no new download):
+
+- The magic is `TBUFILE\0`, as in the older files, so the article's `ZXNFILE` is wrong (see below).
+- The board byte holds more than the `$0F` value: `$02` and `$03` (Issue 4, 5), `$00`, `$10`, `$20` (three
+  Issue 2 builds, `$00` and `$20` sharing one image), and `$40`, `$41` (core 3.02.04, `$38D` sectors, one
+  shared image, purpose unconfirmed, possibly the TestCard core). The local `maketbu.c` predates this and
+  only writes 0-3. **So the board byte must be read as a low nibble (board) and a high nibble (variant), and
+  the viewer must show unknown variants and types as raw values, not as problems.** What the variants mean,
+  and what the type byte holds in the `$40`/`$41` records, is not known; the research note did not record
+  the type bytes. Sizes other than 960 / 4,288 sectors (`$38D` = 909) must be accepted too: the fixed padding
+  is the maker's choice, not the format's.
+- `TBBLUE.HDMI.TBU` is not in the distribution; the HDMI and VGA builds for Issue 2 are records in the one
+  `TBBLUE.TBU`. **So D1 stays: `TBBLUE.TBU` only.**
+
+**Still open from Phase 0:** the full 26.11a header (512 bytes: the type bytes and the `$10`/`$20`/`$40`/
+`$41` records), to pin the variant reading with a real example. It needs reading the first 512 bytes of
+the distribution's `TBBLUE.TBU` (or the user's own copy of it); asked of the project author before
+downloading anything.
+
 ### A finding about the article
 
 The article's figure (`fig:tbu`, line 608-611) gives the multi-core magic as **`ZXNFILE`** and says older
@@ -90,8 +135,7 @@ after it need correcting (Phase 4, with `boot-figures.cjs`, which generates the 
 - **D1. Match by file name only.** The entry matches a file whose base name is `TBBLUE.TBU`, ignoring case
   (`tbblue.tbu` on a FAT card). `GAME.TBU` and `TBBLUE.HDMI.TBU` keep opening as they do today. The matcher
   receives full paths (see the `bootrom_ab.bin.dis` entry), so `ends` + `"TBBLUE.TBU"` would also catch
-  `MYTBBLUE.TBU`; Phase 0 decides between `ends` with a leading separator and a new `matchType: "name"`
-  (base-name equality, both separators). The new match type is preferred if it is a few lines.
+  `MYTBBLUE.TBU`. Phase 0 chose a new `matchType: "name"`: base-name equality, both separators (§1a).
 - **D2. A pure parser in `src/common/zxnext/tbuFile.ts`**, no React and no I/O: bytes in, a model out
   (format, header fields, records, per-record verdicts, problems). Everything the viewer shows comes from it,
   so it is fully unit-testable.
@@ -129,7 +173,7 @@ after it need correcting (Phase 4, with `boot-figures.cjs`, which generates the 
 
 ## 4. Phases
 
-### Phase 0 — Spike (no product code)
+### Phase 0 — Spike (no product code) — done except the 26.11a header; results in §1a
 
 - Confirm what string reaches `getNodeFileType` (full path or name) from the Explorer and the document
   hub, and choose D1's mechanism.
@@ -185,5 +229,7 @@ after it need correcting (Phase 4, with `boot-figures.cjs`, which generates the 
   Phase 0 check settles it before any doc edit.
 - **Issue 2 HDMI/VGA.** Since 3.03.00 Issue 2 has two cores, but the index record cannot tell them apart;
   the viewer can only say which by comparing with a known image, so it will not try.
-- **Open:** should `TBBLUE.HDMI.TBU` also open (D1)? Should the File Manager's F3 viewer and the SD-card
-  Disk Explorer offer the same view for a `TBBLUE.TBU` inside an image (a later step reusing the parser)?
+- **Board variants.** The meaning of the board byte's high nibble (`$10`, `$20`, `$40`) is not known
+  (§1a). The viewer shows it raw with "variant n"; a name is added only when a source states it.
+- **Open:** should the File Manager's F3 viewer and the SD-card Disk Explorer offer the same view for a
+  `TBBLUE.TBU` inside an image (a later step reusing the parser)? (`TBBLUE.HDMI.TBU` is settled: §1a.)
