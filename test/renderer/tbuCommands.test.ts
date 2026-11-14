@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { TBU_VIEWER } from "@common/state/common-ids";
+import { FW_VIEWER, TBU_VIEWER } from "@common/state/common-ids";
 import { ShowTbuCommand } from "@renderer/appIde/commands/TbuCommands";
+import { ShowFwCommand } from "@renderer/appIde/commands/FwCommands";
 
 /*
  * `show-tbu` (`dev/plans/TBBLUE_TBU_VIEWER_PLAN.md`, Phase 5): the current card's TBBLUE.TBU in the TBU
@@ -66,5 +67,29 @@ describe("show-tbu", () => {
     const outcome = await run(context);
     expect(outcome).toMatchObject({ success: false, finalMessage: message });
     expect(hub.openDocument).not.toHaveBeenCalled();
+  });
+});
+
+describe("show-fw", () => {
+  it("opens the card's TBBLUE.FW in the FW viewer, named after the card", async () => {
+    const contents = new Uint8Array([1, 2, 3]);
+    const { context, hub, readNextSdCardFile } = contextOf({ result: { card: CARD, contents } });
+    expect((await new ShowFwCommand().execute(context)).success).toBe(true);
+    expect(readNextSdCardFile).toHaveBeenCalledWith("TBBLUE.FW");
+    expect(hub.openDocument).toHaveBeenCalledWith(
+      { id: `fwCard:${CARD}`, name: "TBBLUE.FW · ks2-30303.cim", type: FW_VIEWER, iconName: "cpu", contents, isReadOnly: true },
+      undefined,
+      false
+    );
+  });
+
+  it("words its own errors", async () => {
+    const { context } = contextOf({ result: { card: CARD, error: "notFound" } });
+    expect(await new ShowFwCommand().execute(context)).toMatchObject({
+      success: false,
+      finalMessage: "The SD card ks2-30303.cim has no TBBLUE.FW in its root folder."
+    });
+    const other = contextOf({ machineId: "sp48" });
+    expect((await new ShowFwCommand().execute(other.context)).finalMessage).toMatch(/TBBLUE.FW is on the ZX Spectrum Next's SD card/);
   });
 });

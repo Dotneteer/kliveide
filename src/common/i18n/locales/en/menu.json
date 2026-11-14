@@ -997,5 +997,13 @@
   "menu.next.showTbuFailed": "Cannot Show TBBLUE.TBU",
   "@menu.next.showTbuFailed": {
     "context": "Title of the message box when Machine › SD Card › Show TBBLUE.TBU fails (no card, no such file on the card). TBBLUE.TBU is a file name."
+  },
+  "menu.next.showFw": "Show TBBLUE.FW",
+  "@menu.next.showFw": {
+    "context": "Machine › SD Card menu item (ZX Spectrum Next): opens the firmware file TBBLUE.FW from the current SD card in the FW viewer. TBBLUE.FW is a file name: keep it as is."
+  },
+  "menu.next.showFwFailed": "Cannot Show TBBLUE.FW",
+  "@menu.next.showFwFailed": {
+    "context": "Title of the message box when Machine › SD Card › Show TBBLUE.FW fails (no card, no such file on the card). TBBLUE.FW is a file name."
   }
 }

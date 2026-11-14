@@ -215,10 +215,23 @@ for Phase 2:
   listing): no console errors. It showed one fault the tests could not: "3,072 B" (module 13) touched
   the Note column in a `7ch` Size column, now `9ch`.
 
-### Phase 3 — Machine › SD Card › Show TBBLUE.FW
+### Phase 3 — Machine › SD Card › Show TBBLUE.FW — done
 
 - The menu item and `show-fw` on the TBU viewer's pattern (document `fwCard:<card>`, fresh read each
   time, failures in a message box); tests as for `show-tbu`.
+
+**As built (2026-11-14), done.**
+
+- `show-fw` (`FwCommands.ts`) and `show-tbu` now share `nextSdCardFileDocument.ts` (`openNextSdCardFile`):
+  the Next check, the card read through `readNextSdCardFile`, each command's own error texts, and the
+  fresh-read document (`fwCard:<card>`, named `TBBLUE.FW · <card file>`).
+- Menu: `show_fw` right after `show_tbu` in Machine › SD Card, on every model; the TBU item's click
+  handler became `showNextSdCardFile(window, command, failedTitle)` for both.
+- Texts: `menu.next.showFw`, `menu.next.showFwFailed`, `commands.fw.*` (5).
+- Tests: the TBU menu test now covers both items (6), the command test both commands (9), and the card
+  reader reads TBBLUE.FW from the 26.11 card (version 1.46).
+- Checked in the running IDE through the real menu item on a fresh project (default model ks2-30204,
+  the 2.10 card): firmware 1.45 opens, a second click replaces the tab, no console errors.
 
 ### Phase 4 — Docs and bookkeeping
 

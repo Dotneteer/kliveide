@@ -36,7 +36,7 @@ const menuOf = (modelId: string, machineState = MachineControllerState.Running) 
   return sdCardMenuRenderer({ emuWindow: {}, ideWindow: {} } as any, undefined as any, undefined as any);
 };
 
-describe("Machine › SD Card › Show TBBLUE.TBU", () => {
+describe("Machine › SD Card › Show TBBLUE.TBU and Show TBBLUE.FW", () => {
   beforeEach(() => {
     executeCommand.mockReset();
     showMessageBox.mockClear();
@@ -50,6 +50,26 @@ describe("Machine › SD Card › Show TBBLUE.TBU", () => {
       expect(item!.label).toBe("Show TBBLUE.TBU");
       expect(item!.enabled).not.toBe(false);
     }
+  });
+
+  it("offers Show TBBLUE.FW right after it, on every model", () => {
+    for (const model of ["ks2-30201", "ks2-30303", "ks3-30303"]) {
+      const items = menuOf(model);
+      const ids = items.map((i) => i.id);
+      expect(ids.indexOf("show_fw"), model).toBe(ids.indexOf("show_tbu") + 1);
+      expect(items.find((i) => i.id === "show_fw")!.label).toBe("Show TBBLUE.FW");
+    }
+  });
+
+  it("Show TBBLUE.FW runs show-fw and says a failure in its own message box", async () => {
+    executeCommand.mockResolvedValue({ success: false, finalMessage: "The SD card ks2.cim has no TBBLUE.FW in its root folder." });
+    await menuOf("ks2-30303").find((i) => i.id === "show_fw")!.click!();
+    expect(showIdeWindow).toHaveBeenCalled();
+    expect(executeCommand).toHaveBeenCalledWith("show-fw");
+    expect(showMessageBox).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ title: "Cannot Show TBBLUE.FW", message: "The SD card ks2.cim has no TBBLUE.FW in its root folder." })
+    );
   });
 
   it("comes before a KS3's second-card items, which are about another card", () => {

@@ -1835,5 +1835,35 @@
       "card": "The card image's file name",
       "reason": "The disk code's own message (English)"
     }
+  },
+  "commands.fw.showDescription": "Opens TBBLUE.FW, the firmware file on the ZX Spectrum Next's current SD card, in the FW viewer",
+  "@commands.fw.showDescription": {
+    "context": "Description of the show-fw command in the command prompt's help. TBBLUE.FW is a file name."
+  },
+  "commands.fw.nextOnly": "TBBLUE.FW is on the ZX Spectrum Next's SD card: switch to the ZX Spectrum Next first.",
+  "@commands.fw.nextOnly": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts), and the message of the box Machine › SD Card › Show TBBLUE.FW shows when it fails. TBBLUE.FW is a file name: keep it as is."
+  },
+  "commands.fw.noCard": "The SD card image {card} does not exist.",
+  "@commands.fw.noCard": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts), and the message of the box Machine › SD Card › Show TBBLUE.FW shows when it fails. TBBLUE.FW is a file name: keep it as is.",
+    "placeholders": {
+      "card": "The card image's full path"
+    }
+  },
+  "commands.fw.notFound": "The SD card {card} has no TBBLUE.FW in its root folder.",
+  "@commands.fw.notFound": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts), and the message of the box Machine › SD Card › Show TBBLUE.FW shows when it fails. TBBLUE.FW is a file name: keep it as is.",
+    "placeholders": {
+      "card": "The card image's file name, e.g. ks2.cim"
+    }
+  },
+  "commands.fw.unreadable": "TBBLUE.FW cannot be read from the SD card {card}: {reason}",
+  "@commands.fw.unreadable": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts), and the message of the box Machine › SD Card › Show TBBLUE.FW shows when it fails. TBBLUE.FW is a file name: keep it as is.",
+    "placeholders": {
+      "card": "The card image's file name",
+      "reason": "The disk code's own message (English)"
+    }
   }
 }
