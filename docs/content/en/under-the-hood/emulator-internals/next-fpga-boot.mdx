@@ -605,10 +605,10 @@ The header has a fixed layout:
 
 <figure>
 {/* fig:tbu */}
-<svg viewBox="-2 -2 704 334" role="img" aria-label="Three rows. First, the 512-byte header of a TBBLUE.TBU file: bytes 0 to 6 the magic word ZXNFILE, bytes 8 to 23 the text ZX SPECTRUM NEXT, then from byte 25 one record per core, and a byte $FF that ends the list. Second, one record of 15 bytes: byte 0 its length, 1 the slot, 2 the board ID, 3 the version, major and minor, 4 the sub-version, 5 to 8 the image's start and 9 to 12 its size, both in 512-byte sectors counted after the header, and 13 to 14 the checksum. Third, the file: the header followed by the images." style={{ width: "100%", height: "auto" }}>
+<svg viewBox="-2 -2 704 334" role="img" aria-label="Three rows. First, the 512-byte header of a TBBLUE.TBU file: bytes 0 to 7 the magic word TBUFILE and a zero byte, bytes 8 to 23 the text ZX SPECTRUM NEXT, then from byte 25 one record per core, and a byte $FF that ends the list. Second, one record of 15 bytes: byte 0 its length, 1 its type (1 for the Next core in slot 1, 0 for the anti-brick core in slot 0), 2 the board ID, 3 the version, major and minor, 4 the sub-version, 5 to 8 the image's start and 9 to 12 its size, both in 512-byte sectors counted after the header, and 13 to 14 the checksum. Third, the file: the header followed by the images." style={{ width: "100%", height: "auto" }}>
   <text x="0" y="18" fill="currentColor" fontSize="15" fontWeight="bold">the header, 512 bytes</text>
   <rect x="0" y="28" width="150" height="42" rx="6" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="2" />
-  <text x="75" y="53.7" textAnchor="middle" fill="#30a46c" fontSize="13.5">0–6: ZXNFILE</text>
+  <text x="75" y="53.7" textAnchor="middle" fill="#30a46c" fontSize="13.5">0–7: TBUFILE</text>
   <rect x="154" y="28" width="220" height="42" rx="6" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="2" />
   <text x="264" y="53.7" textAnchor="middle" fill="#30a46c" fontSize="13.5">8–23: ZX SPECTRUM NEXT</text>
   <rect x="378" y="28" width="250" height="42" rx="6" fill="#a855f7" fillOpacity="0.16" stroke="#a855f7" strokeWidth="2" />
@@ -620,7 +620,7 @@ The header has a fixed layout:
   <text x="23.3" y="145.7" textAnchor="middle" fill="#a855f7" fontSize="13.5">len</text>
   <text x="3" y="180" fill="currentColor" fontSize="13.5">0</text>
   <rect x="47.7" y="120" width="44.7" height="42" rx="6" fill="#a855f7" fillOpacity="0.12" stroke="#a855f7" strokeWidth="2" />
-  <text x="70" y="145.7" textAnchor="middle" fill="#a855f7" fontSize="13.5">slot</text>
+  <text x="70" y="145.7" textAnchor="middle" fill="#a855f7" fontSize="13.5">type</text>
   <text x="49.7" y="180" fill="currentColor" fontSize="13.5">1</text>
   <rect x="94.3" y="120" width="44.7" height="42" rx="6" fill="#a855f7" fillOpacity="0.12" stroke="#a855f7" strokeWidth="2" />
   <text x="116.7" y="145.7" textAnchor="middle" fill="#a855f7" fontSize="13.5">board</text>
@@ -652,11 +652,16 @@ The header has a fixed layout:
   <text x="0" y="312" fill="currentColor" fontSize="13.5">version byte: major in bits 7–4, minor in bits 3–0; start and size are little-endian</text>
 </svg>
 {/* /fig:tbu */}
-<figcaption>The header of a TBBLUE.TBU file with several cores: a magic word, the product name, then one record per core with its slot, board, version, the image's position and size in 512-byte sectors after the header, and its checksum. A record of $FF ends the list; the images follow the header.</figcaption>
+<figcaption>The header of a TBBLUE.TBU file with several cores: a magic word, the product name, then one record per core with its type (which slot it goes to), board, version, the image's position and size in 512-byte sectors after the header, and its checksum. A record of $FF ends the list; the images follow the header.</figcaption>
 </figure>
 
-Older files, with the magic word `TBUFILE`, carry one core with a simpler checksum, and the updater checks
-their machine ID and their exact size instead. Both kinds end the same way: in slot 1.
+Older files start with the same magic word, `TBUFILE`, but have no `ZX SPECTRUM NEXT` after it: they
+carry one core with a simpler checksum, and the updater checks their machine ID and their exact size
+instead. Both kinds end the same way: in slot 1.
+
+You can see all of this for yourself. Open a `TBBLUE.TBU` in Klive and the
+[TBU viewer](/en/guides/next/tbu-files/) lists its records, checks every image's checksum the way the
+updater does, and lists the configuration packets of each core's bitstream.
 
 Let me warn you about the one moment that matters. Between the erase and the end of the writing, slot 1 holds
 half a core. Switch off then, and the Next core is gone. That is not the end of the machine, because of the

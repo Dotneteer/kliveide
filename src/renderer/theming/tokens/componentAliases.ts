@@ -998,5 +998,19 @@ export const componentAliases: Record<string, string> = {
   "--color-unit-test-error": "var(--status-warning)",
   "--color-unit-test-running": "var(--accent-solid)",
   "--color-unit-test-idle": "var(--text-tertiary)",
-  "--bgcolor-unit-test-selected": "var(--accent-subtle)"
+  "--bgcolor-unit-test-selected": "var(--accent-subtle)",
+
+  // --- TBBLUE.TBU viewer (`dev/plans/TBBLUE_TBU_VIEWER_PLAN.md` D7, D8) ------------------------------
+  /*
+   * A verdict list's colours (a checksum, a trailer, the slot fit): success, error, and the warning hue
+   * for a record that is not the Next core itself (slot 0 or an unknown type). The selected core is
+   * marked the way list selections are, with the accent's tint. In the packet listing a frame-data
+   * block - the 99.9% of the image no packet explains - takes the secondary accent, so the one row
+   * that is not a register write stands apart from the disassembly colours of the rest.
+   */
+  "--color-tbu-ok": "var(--status-success)",
+  "--color-tbu-warning": "var(--status-warning)",
+  "--color-tbu-error": "var(--status-error)",
+  "--bgcolor-tbu-selected": "var(--accent-subtle)",
+  "--color-tbu-block": "var(--accent-secondary-text)"
 };

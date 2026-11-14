@@ -107,15 +107,15 @@ const figures = {};
 // ---------------------------------------------------------------------------------------------
 // Figure: the TBBLUE.TBU header
 {
-  const out = [svgOpen(700, 330, "Three rows. First, the 512-byte header of a TBBLUE.TBU file: bytes 0 to 6 the magic word ZXNFILE, bytes 8 to 23 the text ZX SPECTRUM NEXT, then from byte 25 one record per core, and a byte $FF that ends the list. Second, one record of 15 bytes: byte 0 its length, 1 the slot, 2 the board ID, 3 the version, major and minor, 4 the sub-version, 5 to 8 the image's start and 9 to 12 its size, both in 512-byte sectors counted after the header, and 13 to 14 the checksum. Third, the file: the header followed by the images.")];
+  const out = [svgOpen(700, 330, "Three rows. First, the 512-byte header of a TBBLUE.TBU file: bytes 0 to 7 the magic word TBUFILE and a zero byte, bytes 8 to 23 the text ZX SPECTRUM NEXT, then from byte 25 one record per core, and a byte $FF that ends the list. Second, one record of 15 bytes: byte 0 its length, 1 its type (1 for the Next core in slot 1, 0 for the anti-brick core in slot 0), 2 the board ID, 3 the version, major and minor, 4 the sub-version, 5 to 8 the image's start and 9 to 12 its size, both in 512-byte sectors counted after the header, and 13 to 14 the checksum. Third, the file: the header followed by the images.")];
   out.push(text(0, 18, "the header, 512 bytes", { size: FT, bold: true }));
-  blk(out, 0, 28, 150, 42, ["0–6: ZXNFILE"], { c: FW, fill: true, size: FS });
+  blk(out, 0, 28, 150, 42, ["0–7: TBUFILE"], { c: FW, fill: true, size: FS });
   blk(out, 154, 28, 220, 42, ["8–23: ZX SPECTRUM NEXT"], { c: FW, fill: true, size: FS });
   blk(out, 378, 28, 250, 42, ["from 25: records"], { c: UPD, fill: true, op: 0.16, size: FS, bold: true });
   blk(out, 632, 28, 68, 42, ["$FF"], { size: FS });
   out.push(text(0, 110, "one record, 15 bytes", { size: FT, bold: true }));
   const w = 700 / 15;
-  const fields = [[0, 0, "len"], [1, 1, "slot"], [2, 2, "board"], [3, 3, "ver."], [4, 4, "sub"], [5, 8, "start (sectors)"], [9, 12, "size (sectors)"], [13, 14, "checksum"]];
+  const fields = [[0, 0, "len"], [1, 1, "type"], [2, 2, "board"], [3, 3, "ver."], [4, 4, "sub"], [5, 8, "start (sectors)"], [9, 12, "size (sectors)"], [13, 14, "checksum"]];
   for (const [a, b, l] of fields) {
     blk(out, a * w + 1, 120, (b - a + 1) * w - 2, 42, [l], { c: UPD, fill: true, op: 0.12, size: FS });
     out.push(text(a * w + 3, 180, b > a ? `${a}–${b}` : String(a), { size: FS }));

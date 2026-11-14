@@ -1805,5 +1805,35 @@
   "commands.fileManager.showDescription": "Opens the File Manager",
   "@commands.fileManager.showDescription": {
     "context": "Description of the show-file-manager IDE command, shown in the command help."
+  },
+  "commands.tbu.showDescription": "Opens TBBLUE.TBU, the core update file on the ZX Spectrum Next's current SD card, in the TBU viewer",
+  "@commands.tbu.showDescription": {
+    "context": "Description of the show-tbu command in the command prompt's help. TBBLUE.TBU is a file name."
+  },
+  "commands.tbu.nextOnly": "TBBLUE.TBU is on the ZX Spectrum Next's SD card: switch to the ZX Spectrum Next first.",
+  "@commands.tbu.nextOnly": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts), and the message of the box Machine › SD Card › Show TBBLUE.TBU shows when it fails. TBBLUE.TBU is a file name: keep it as is."
+  },
+  "commands.tbu.noCard": "The SD card image {card} does not exist.",
+  "@commands.tbu.noCard": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts), and the message of the box Machine › SD Card › Show TBBLUE.TBU shows when it fails. TBBLUE.TBU is a file name: keep it as is.",
+    "placeholders": {
+      "card": "The card image's full path"
+    }
+  },
+  "commands.tbu.notFound": "The SD card {card} has no TBBLUE.TBU in its root folder.",
+  "@commands.tbu.notFound": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts), and the message of the box Machine › SD Card › Show TBBLUE.TBU shows when it fails. TBBLUE.TBU is a file name: keep it as is.",
+    "placeholders": {
+      "card": "The card image's file name, e.g. ks2.cim"
+    }
+  },
+  "commands.tbu.unreadable": "TBBLUE.TBU cannot be read from the SD card {card}: {reason}",
+  "@commands.tbu.unreadable": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts), and the message of the box Machine › SD Card › Show TBBLUE.TBU shows when it fails. TBBLUE.TBU is a file name: keep it as is.",
+    "placeholders": {
+      "card": "The card image's file name",
+      "reason": "The disk code's own message (English)"
+    }
   }
 }

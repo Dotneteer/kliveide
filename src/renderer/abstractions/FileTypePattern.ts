@@ -3,7 +3,12 @@ import type { ContextMenuInfo } from "./ContextMenuIfo";
 import type { PanelRenderer } from "./PanelRenderer";
 import type { FileContentKind } from "@common/ht1080z/basContent";
 
-export type PatternMatchType = "starts" | "contains" | "ends" | "full";
+/**
+ * How an entry's pattern is matched. The matcher is mostly given a full path, so `"full"` matches only
+ * where a bare name is passed; `"name"` compares the file's own name (the text after the last `/` or
+ * `\`), for a format known by its exact name, such as `TBBLUE.TBU`.
+ */
+export type PatternMatchType = "starts" | "contains" | "ends" | "full" | "name";
 
 export type FileTypePattern = {
   matchType?: PatternMatchType;

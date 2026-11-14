@@ -1,3 +1,4 @@
+import type { NextSdCardFileResult } from "@common/zxnext/nextSdCardFile";
 import { ProjectNodeWithChildren } from "@abstractions/ProjectNode";
 import type { HardDiskView } from "@common/diskfs/hardDisk";
 import type { DiskEdit } from "@common/diskfs/edit";
@@ -199,6 +200,14 @@ class MainApiImpl {
 
   /** A file's contents on a hard-disk image */
   async readHardDiskFile(_filePath: string, _name: string, _partition?: number): Promise<Uint8Array> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * A file on the ZX Spectrum Next's current SD card (the selected card, or the model's own), read
+   * under the SD card lock (`dev/plans/TBBLUE_TBU_VIEWER_PLAN.md`, Phase 5)
+   */
+  async readNextSdCardFile(_name: string): Promise<NextSdCardFileResult> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 

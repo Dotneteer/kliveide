@@ -1,0 +1,116 @@
+/*
+ * The TBBLUE.TBU viewer (`dev/plans/TBBLUE_TBU_VIEWER_PLAN.md`). Colours are L4 aliases
+ * (`--color-tbu-*`, `--bgcolor-tbu-selected` in `componentAliases.ts`); the file map is the tape
+ * viewer's `TimelineStrip`, and the packet listing takes the disassembly colour set.
+ */
+
+.view {
+  display: flex;
+  flex-direction: column;
+}
+
+.ok.ok {
+  color: var(--color-tbu-ok);
+}
+
+.warning.warning {
+  color: var(--color-tbu-warning);
+}
+
+.error.error {
+  color: var(--color-tbu-error);
+}
+
+/* --- The file map: the strip draws its selection ring outside the bar, so it needs room around it */
+.map {
+  padding: var(--space-1) var(--space-2);
+}
+
+/* --- The cores table: a fixed `ch` track per column, the note column takes the rest (M2) */
+.table {
+  min-width: 104ch;
+}
+
+.head {
+  border-bottom: 1px solid var(--border-default);
+}
+
+.row.selected {
+  background: var(--bgcolor-tbu-selected);
+}
+
+.cNum {
+  width: 4ch;
+}
+
+.cSlot {
+  width: 16ch;
+}
+
+/* --- A data row is one line: a cell that does not fit is cut with an ellipsis, never wrapped */
+.table .row > *,
+.table .head > *,
+.listingRow > * {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cBoard {
+  /* --- "Issue 2, variant 2" and a gap before the Core column */
+  width: 22ch;
+}
+
+.cCore {
+  width: 9ch;
+}
+
+.cOffset {
+  width: 9ch;
+}
+
+.cSize {
+  width: 8ch;
+}
+
+.cCheck {
+  width: 9ch;
+}
+
+.cFpga {
+  width: 10ch;
+}
+
+.cNote {
+  flex: 1 1 auto;
+  min-width: 14ch;
+}
+
+/* --- The packet listing: offset, operation, register, value, comment */
+.listing {
+  min-width: 70ch;
+}
+
+.lOffset {
+  width: 9ch;
+}
+
+.lOp {
+  width: 7ch;
+}
+
+.lReg {
+  width: 12ch;
+}
+
+.lValue {
+  width: 10ch;
+}
+
+.lComment {
+  flex: 1 1 auto;
+}
+
+.block.block {
+  color: var(--color-tbu-block);
+}

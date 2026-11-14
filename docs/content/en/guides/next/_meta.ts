@@ -11,5 +11,6 @@ export default {
   "picture-troubleshooting": "Why does my picture look wrong?",
   "sprite-palette-editors": "Sprite and palette editors",
   "sd-card": "The SD card",
+  "tbu-files": "Core update files (TBBLUE.TBU)",
   "real-time-clock": "The real-time clock"
 };
