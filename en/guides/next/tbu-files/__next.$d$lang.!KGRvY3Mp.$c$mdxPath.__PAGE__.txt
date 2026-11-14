@@ -1,0 +1,162 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T1851,---
+description: "Open a TBBLUE.TBU core update file to see which cores it carries, check each image's checksum before you update, and read each bitstream's configuration packets."
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# Examining Core Update Files (TBBLUE.TBU)
+
+`TBBLUE.TBU` is the file the ZX Spectrum Next's updater writes into the FPGA's flash: one or more
+cores, each for one board. Klive opens it in a viewer that shows which cores the file carries,
+checks every image the way the updater does before it erases anything, and lists what each
+bitstream tells the FPGA. Use it to check a file before you press U, or to see what a system
+release contains.
+
+*Applies to: ZX Spectrum Next core update files. The viewer only reads the file; it never changes it.*
+
+## Opening the file on your SD card
+
+With the ZX Spectrum Next selected, choose **Machine › SD Card › Show TBBLUE.TBU**, or type
+`show-tbu` at the command prompt. Klive reads `TBBLUE.TBU` from the root folder of the card the
+machine uses: the model's own card, or the image you chose with **Select Image...**. It works while
+the machine runs, and each time you choose it, it reads the card again. The tab is named after the
+card, for example **TBBLUE.TBU · ks2-30303.cim**.
+
+The update file on the card is the one the updater would write when you press U, so this is the
+quickest way to see which core an update would put on your board.
+
+## Opening a file from elsewhere
+
+<Steps>
+
+### Put the file in your project
+
+Copy `TBBLUE.TBU` into your project folder, for example from a system release of the Next's
+distribution or from a real card.
+
+### Open it
+
+Click the file in the Explorer, or type `nav TBBLUE.TBU` at the command prompt.
+
+</Steps>
+
+<Callout type="info">
+The viewer opens only a file named exactly `TBBLUE.TBU` (in any letter case). Other `.tbu` files are
+not this format. To keep several releases, give each its own folder rather than renaming the file.
+</Callout>
+
+## What the viewer shows
+
+<Shot src="guides/next/tbu-files/tbu-viewer.webp" alt="A TBBLUE.TBU file in the TBU viewer: the file's facts, a strip and a table of its three cores with Issue 4 selected, the selected core's details, and the start of its bitstream's packet listing" caption="The TBU viewer with the Issue 4 core selected: the file, its cores, the core's details and its bitstream." width={760} />
+
+The viewer has four sections, each of which you can fold away:
+
+| Section | What it shows |
+|---|---|
+| **File** | The format, the file size, how many of the 32 index records are used, and a verdict: **No problems**, or the number of errors and warnings, each described in a sentence. The button beside the heading opens the 512-byte header as a memory dump. |
+| **Cores** | A strip of the file to scale (the header, then each image) and a table with one row per core: its flash slot, board, core version, where its image is, its size, its checksum and the FPGA it is for. Click a row, or an image in the strip, to select that core. |
+| **Core** | The selected core in detail: the board byte, the image's range in sectors, the checksum the updater will compute, the FPGA part and its ID, how much of the image is bitstream and how much padding, whether it fits the board's flash slot, and the identification text in its last sector. The button beside the heading opens the image as a memory dump. |
+| **Bitstream** | The selected core's configuration packets, as a listing. |
+
+## Checking a file before an update
+
+The updater reads the whole image for your board and checks its checksum before it erases slot 1.
+The viewer does the same for every core in the file, so you can check a copy before you put it on a
+card:
+
+- **The checksum** of every core shows a tick when it matches. A damaged image shows a cross, and the
+  File section says which core it is. The updater would stop with **FAIL** on it.
+- **Your board** must have a row. The Issue 2 board reads its board ID as `$00`, the Issue 4 (KS2)
+  as `$02` and the Issue 5 (KS3) as `$03`; a file with no row for your board updates nothing.
+- **Slot fit** says whether the image fits the board's flash slot (512K on Issue 2 and 3, 2,176K on
+  Issue 4 and 5).
+- **The FPGA** column names the part each bitstream is built for (XC6SLX16, XC7A15T, XC7A35T). A
+  bitstream for another board's FPGA is reported as an error.
+
+A file can hold several records that use the very same image: newer releases carry three Issue 2
+records, two of them sharing one image. The table notes it ("Same image as 5"), and the strip draws
+the image once.
+
+The board byte's high four bits hold a variant number in newer files (`$10`, `$20`, ...), and some
+records carry a type other than the slot 1 core. Their meaning is not documented, so the viewer shows
+them as numbers, for example **Issue 2, variant 2** or **Type 3**.
+
+## Reading the bitstream
+
+An FPGA bitstream is a short program of register writes around one large block of configuration
+data. The **Bitstream** section lists that program, one packet per line: its offset in the image,
+the operation, the configuration register, the value written, and a comment that names a command
+(`RCRC`, `START`, `DESYNC`) or the FPGA an `IDCODE` write checks for. A run of NOPs is one line with
+a count. The frame data, nearly all of the image, is one line with its size: it is the FPGA's
+configuration itself and is not decoded.
+
+The Issue 2 and 3 boards use a Spartan-6 FPGA, whose bitstream is made of 16-bit packets; the Issue 4
+and 5 boards use Artix-7 parts, whose packets are 32-bit. The register names are Xilinx's.
+
+## Older update files
+
+Update files from 2019 and earlier hold a single core and a simpler header. The viewer shows them as
+**Legacy single-core**: the hardware ID, the core version, the image size against the file and the
+XOR checksum those files use, and the bitstream's packets.
+
+## Related
+
+- [The FPGA and its cores](/en/under-the-hood/emulator-internals/next-fpga-boot/): how the updater
+  writes a core, the flash slots and the anti-brick core
+- [The SD card](/en/guides/next/sd-card/): copying files to and from the emulated card
+- [ZX Spectrum Next models](/en/guides/next/next-models/)
+- [The Memory view](/en/guides/debugging/memory/)a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Opening the file on your SD card","id":"opening-the-file-on-your-sd-card","depth":2},{"value":"Opening a file from elsewhere","id":"opening-a-file-from-elsewhere","depth":2},{"value":"Put the file in your project","id":"put-the-file-in-your-project","depth":3},{"value":"Open it","id":"open-it","depth":3},{"value":"What the viewer shows","id":"what-the-viewer-shows","depth":2},{"value":"Checking a file before an update","id":"checking-a-file-before-an-update","depth":2},{"value":"Reading the bitstream","id":"reading-the-bitstream","depth":2},{"value":"Older update files","id":"older-update-files","depth":2},{"value":"Related","id":"related","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"Open a TBBLUE.TBU core update file to see which cores it carries, check each image's checksum before you update, and read each bitstream's configuration packets.","title":"Examining Core Update Files (TBBLUE.TBU)","filePath":"content/en/guides/next/tbu-files.mdx","timestamp":1793815370000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"guides/next/tbu-files","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Examining Core Update Files (TBBLUE.TBU) - Klive IDE"}],["$","meta","1",{"name":"description","content":"Open a TBBLUE.TBU core update file to see which cores it carries, check each image's checksum before you update, and read each bitstream's configuration packets."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/guides/next/tbu-files/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"BscFPe4q6MaKpjgMIRwlW"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+32:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Examining Core Update Files (TBBLUE.TBU)","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"TBBLUE.TBU"}]," is the file the ZX Spectrum Next’s updater writes into the FPGA’s flash: one or more\ncores, each for one board. Klive opens it in a viewer that shows which cores the file carries,\nchecks every image the way the updater does before it erases anything, and lists what each\nbitstream tells the FPGA. Use it to check a file before you press U, or to see what a system\nrelease contains."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","em",null,{"children":"Applies to: ZX Spectrum Next core update files. The viewer only reads the file; it never changes it."}]}],"\n",["$","h2",null,{"id":"opening-the-file-on-your-sd-card","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Opening the file on your SD card",["$","$L20",null,{"id":"opening-the-file-on-your-sd-card"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["With the ZX Spectrum Next selected, choose ",["$","strong",null,{"children":"Machine › SD Card › Show TBBLUE.TBU"}],", or type\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"show-tbu"}]," at the command prompt. Klive reads ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"TBBLUE.TBU"}]," from the root folder of the card the\nmachine uses: the model’s own card, or the image you chose with ",["$","strong",null,{"children":"Select Image…"}],". It works while\nthe machine runs, and each time you choose it, it reads the card again. The tab is named after the\ncard, for example ",["$","strong",null,{"children":"TBBLUE.TBU · ks2-30303.cim"}],"."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The update file on the card is the one the updater would write when you press U, so this is the\nquickest way to see which core an update would put on your board."}],"\n",["$","h2",null,{"id":"opening-a-file-from-elsewhere","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Opening a file from elsewhere",["$","$L20",null,{"id":"opening-a-file-from-elsewhere"}]]}],"\n",["$","div",null,{"className":"nextra-steps x:ms-4 x:mb-12 x:border-s x:border-gray-200 x:ps-6 x:dark:border-neutral-800","style":{"--counter-id":"_S_1_"},"children":[["$","h3",null,{"id":"put-the-file-in-your-project","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Put the file in your project",["$","$L20",null,{"id":"put-the-file-in-your-project"}]]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Copy ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"TBBLUE.TBU"}]," into your project folder, for example from a system release of the Next’s\ndistribution or from a real card."]}],["$","h3",null,{"id":"open-it","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Open it",["$","$L20",null,{"id":"open-it"}]]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Click the file in the Explorer, or type ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"nav TBBLUE.TBU"}]," at the command prompt."]}]]}],"\n","$L21","\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31"]]}]
+15:["$","$L32",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@33"}]}]
+1f:true
+34:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+9:300
+21:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The viewer opens only a file named exactly ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"TBBLUE.TBU"}]," (in any letter case). Other ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".tbu"}]," files are\nnot this format. To keep several releases, give each its own folder rather than renaming the file."]}]}]]}]
+22:["$","h2",null,{"id":"what-the-viewer-shows","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["What the viewer shows",["$","$L20",null,{"id":"what-the-viewer-shows"}]]}]
+23:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"760px"},"children":[["$","figcaption",null,{"className":"Shot_label__LxtzD","children":["$undefined",["$","span",null,{"children":"The TBU viewer with the Issue 4 core selected: the file, its cores, the core's details and its bitstream."}]]}],["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/guides/next/tbu-files/tbu-viewer.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/guides/next/tbu-files/tbu-viewer.webp","alt":"A TBBLUE.TBU file in the TBU viewer: the file's facts, a strip and a table of its three cores with Issue 4 selected, the selected core's details, and the start of its bitstream's packet listing","loading":"lazy","decoding":"async"}],[]]}]]}]
+24:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The viewer has four sections, each of which you can fold away:"}]
+25:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Section","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"What it shows","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"File"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["The format, the file size, how many of the 32 index records are used, and a verdict: ",["$","strong",null,{"children":"No problems"}],", or the number of errors and warnings, each described in a sentence. The button beside the heading opens the 512-byte header as a memory dump."],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"Cores"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"A strip of the file to scale (the header, then each image) and a table with one row per core: its flash slot, board, core version, where its image is, its size, its checksum and the FPGA it is for. Click a row, or an image in the strip, to select that core.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"Core"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The selected core in detail: the board byte, the image’s range in sectors, the checksum the updater will compute, the FPGA part and its ID, how much of the image is bitstream and how much padding, whether it fits the board’s flash slot, and the identification text in its last sector. The button beside the heading opens the image as a memory dump.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"Bitstream"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The selected core’s configuration packets, as a listing.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}]
+26:["$","h2",null,{"id":"checking-a-file-before-an-update","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Checking a file before an update",["$","$L20",null,{"id":"checking-a-file-before-an-update"}]]}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The updater reads the whole image for your board and checks its checksum before it erases slot 1.\nThe viewer does the same for every core in the file, so you can check a copy before you put it on a\ncard:"}]
+28:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"The checksum"}]," of every core shows a tick when it matches. A damaged image shows a cross, and the\nFile section says which core it is. The updater would stop with ",["$","strong",null,{"children":"FAIL"}]," on it."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Your board"}]," must have a row. The Issue 2 board reads its board ID as ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$00"}],", the Issue 4 (KS2)\nas ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$02"}]," and the Issue 5 (KS3) as ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$03"}],"; a file with no row for your board updates nothing."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Slot fit"}]," says whether the image fits the board’s flash slot (512K on Issue 2 and 3, 2,176K on\nIssue 4 and 5)."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"The FPGA"}]," column names the part each bitstream is built for (XC6SLX16, XC7A15T, XC7A35T). A\nbitstream for another board’s FPGA is reported as an error."]}],"\n"]}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A file can hold several records that use the very same image: newer releases carry three Issue 2\nrecords, two of them sharing one image. The table notes it (“Same image as 5”), and the strip draws\nthe image once."}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The board byte’s high four bits hold a variant number in newer files (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$10"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$20"}],", …), and some\nrecords carry a type other than the slot 1 core. Their meaning is not documented, so the viewer shows\nthem as numbers, for example ",["$","strong",null,{"children":"Issue 2, variant 2"}]," or ",["$","strong",null,{"children":"Type 3"}],"."]}]
+2b:["$","h2",null,{"id":"reading-the-bitstream","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Reading the bitstream",["$","$L20",null,{"id":"reading-the-bitstream"}]]}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["An FPGA bitstream is a short program of register writes around one large block of configuration\ndata. The ",["$","strong",null,{"children":"Bitstream"}]," section lists that program, one packet per line: its offset in the image,\nthe operation, the configuration register, the value written, and a comment that names a command\n(",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RCRC"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"START"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"DESYNC"}],") or the FPGA an ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"IDCODE"}]," write checks for. A run of NOPs is one line with\na count. The frame data, nearly all of the image, is one line with its size: it is the FPGA’s\nconfiguration itself and is not decoded."]}]
+2d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The Issue 2 and 3 boards use a Spartan-6 FPGA, whose bitstream is made of 16-bit packets; the Issue 4\nand 5 boards use Artix-7 parts, whose packets are 32-bit. The register names are Xilinx’s."}]
+2e:["$","h2",null,{"id":"older-update-files","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Older update files",["$","$L20",null,{"id":"older-update-files"}]]}]
+2f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Update files from 2019 and earlier hold a single core and a simpler header. The viewer shows them as\n",["$","strong",null,{"children":"Legacy single-core"}],": the hardware ID, the core version, the image size against the file and the\nXOR checksum those files use, and the bitstream’s packets."]}]
+30:["$","h2",null,{"id":"related","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Related",["$","$L20",null,{"id":"related"}]]}]
+31:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","$L34",null,{"href":"/en/under-the-hood/emulator-internals/next-fpga-boot/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"The FPGA and its cores"}],": how the updater\nwrites a core, the flash slots and the anti-brick core"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","$L34",null,{"href":"/en/guides/next/sd-card/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"The SD card"}],": copying files to and from the emulated card"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L34",null,{"href":"/en/guides/next/next-models/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"ZX Spectrum Next models"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L34",null,{"href":"/en/guides/debugging/memory/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"The Memory view"}]}],"\n"]}]
+33:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"
