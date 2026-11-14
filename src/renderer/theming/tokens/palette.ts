@@ -254,6 +254,18 @@ export const FAVORITE: Record<Tone, string> = {
  * Kept clear of the status hues (`warning` is hue ~20; execute sits at ~32, between it and the
  * favourite's gold) and of each other: warm, green-teal and violet.
  */
+/**
+ * The audio mixer's source-group hues (`dev/plans/AUDIO_MIXER_PLAN.md` §3.4): each group of a
+ * machine's sound sources (the beeper, each AY chip, the DACs, ...) draws its meters and spectra in
+ * one, so nine TurboSound channels read as three families of three. Taken in the group's order, so
+ * they are categories, not meanings: fixed across accents, like the heat map's hues, and kept apart
+ * from each other in hue (amber, blue, teal, violet, green, pink).
+ */
+export const AUDIO_GROUP: Record<Tone, readonly string[]> = {
+  dark: ["#F2B84B", "#5AA2FF", "#3CC9B4", "#B48CFF", "#7BD36B", "#FF7FB0"],
+  light: ["#9A6A00", "#1F63C8", "#007F70", "#6A3FD0", "#2F7D1E", "#C2306E"]
+};
+
 export const HEAT: Record<Tone, Record<"exec" | "read" | "write", string>> = {
   dark: {
     exec: "#F0902E",

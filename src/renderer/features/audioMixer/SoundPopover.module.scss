@@ -1,0 +1,175 @@
+@use "@styles/core.scss" as *;
+
+/*
+ * The emulator's sound popover (`dev/plans/AUDIO_MIXER_PLAN.md` §3.4, option C). "A Menu-Like List
+ * With A Header": the frame in the dropdown-menu aliases, the header and footer flat
+ * `--surface-chrome` bands with `--border-default` seams and an uppercase title; the accent once, on
+ * the chosen sound level. The rows are the panel-list size; each meter in its group's hue.
+ */
+.popover {
+  position: fixed;
+  z-index: var(--z-menu);
+  display: flex;
+  flex-direction: column;
+  width: 50ch;
+  max-width: calc(100vw - var(--space-4));
+  max-height: 70vh;
+  overflow: hidden;
+  background: var(--bg-color-dropdown-menu);
+  color: var(--color-dropdown-menu);
+  border: 1px solid var(--border-color-dropdown-menu);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-context-menu);
+  font-size: var(--font-size-100);
+
+  &:focus {
+    outline: none;
+  }
+}
+
+.header,
+.footer {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--strip-panelHeader);
+  padding: 0 var(--space-3);
+  background: var(--surface-chrome);
+}
+
+.header {
+  border-bottom: 1px solid var(--border-default);
+}
+
+.footer {
+  border-top: 1px solid var(--border-default);
+}
+
+.title {
+  color: var(--text-secondary);
+  font-weight: 600;
+  letter-spacing: 0.06ch;
+  text-transform: uppercase;
+}
+
+.levels {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--border-default);
+}
+
+.levelsLabel {
+  color: var(--data-label);
+  margin-right: var(--space-1);
+}
+
+.level {
+  all: unset;
+  cursor: pointer;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+
+  &:hover {
+    color: var(--text-primary);
+    border-color: var(--border-strong);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--focus-ring);
+  }
+}
+
+.levelOn {
+  background: var(--accent-solid);
+  border-color: var(--accent-solid);
+  color: var(--text-on-accent);
+
+  &:hover {
+    color: var(--text-on-accent);
+  }
+}
+
+.body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: var(--space-1) 0;
+}
+
+.group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3) 0;
+  font-size: var(--font-size-50);
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.chip {
+  width: 1ch;
+  height: 1ch;
+  border-radius: var(--radius-xs);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 5ch 10ch minmax(0, 1fr) 7ch;
+  align-items: center;
+  gap: var(--space-2);
+  height: var(--row-size-list);
+  padding: 0 var(--space-3);
+
+  &:hover {
+    background: var(--bg-color-dropdown-menu-pointed);
+  }
+}
+
+.name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--data-label);
+}
+
+.dim {
+  opacity: 0.45;
+}
+
+.meter {
+  width: 100%;
+  height: calc(var(--font-size-100) * 0.5);
+  border-radius: var(--radius-xs);
+}
+
+.db {
+  text-align: right;
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-50);
+  color: var(--color-state-value);
+  white-space: nowrap;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.link {
+  all: unset;
+  cursor: pointer;
+  color: var(--accent-text);
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--focus-ring);
+  }
+}

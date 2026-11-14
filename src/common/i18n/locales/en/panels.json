@@ -883,5 +883,199 @@
   "panels.document.fileManager": "File Manager",
   "@panels.document.fileManager": {
     "context": "Name of the File Manager document's tab: a two-pane file manager for this computer, the project and disk images."
+  },
+  "panels.document.audioMixer": "Audio Mixer",
+  "@panels.document.audioMixer": {
+    "context": "Document tab title of a built-in view: the audio mixer, which shows each sound source of the emulated machine and lets the user mute, solo or change its level. Also shown in the Open Editors list.",
+    "maxChars": 14
+  },
+  "panels.audioMixer.noMachine": "No machine is running",
+  "@panels.audioMixer.noMachine": {
+    "context": "Audio Mixer document (an IDE tab with one strip per sound source of the emulated machine - level meter, fader, mute and solo buttons, a small spectrum - and an analyser for the selected source): shown instead of the strips when the emulator has no machine."
+  },
+  "panels.audioMixer.noSound": "This machine has no sound output, so there is nothing to mix.",
+  "@panels.audioMixer.noSound": {
+    "context": "Audio Mixer document (an IDE tab with one strip per sound source of the emulated machine - level meter, fader, mute and solo buttons, a small spectrum - and an analyser for the selected source): shown instead of the strips for a machine without sound (ZX80, ZX81)."
+  },
+  "panels.audioMixer.waiting": "Waiting for the emulator…",
+  "@panels.audioMixer.waiting": {
+    "context": "Audio Mixer document (an IDE tab with one strip per sound source of the emulated machine - level meter, fader, mute and solo buttons, a small spectrum - and an analyser for the selected source): shown until the emulator sends its first measures."
+  },
+  "panels.audioMixer.unmuteAll": "Unmute all",
+  "@panels.audioMixer.unmuteAll": {
+    "context": "Audio Mixer document (an IDE tab with one strip per sound source of the emulated machine - level meter, fader, mute and solo buttons, a small spectrum - and an analyser for the selected source): a toolbar link that clears every mute and every solo (the faders stay).",
+    "maxChars": 14
+  },
+  "panels.audioMixer.reset": "Reset",
+  "@panels.audioMixer.reset": {
+    "context": "Audio Mixer document (an IDE tab with one strip per sound source of the emulated machine - level meter, fader, mute and solo buttons, a small spectrum - and an analyser for the selected source): a toolbar link that puts every source back to unity: no mute, no solo, every fader at 0 dB.",
+    "maxChars": 10
+  },
+  "panels.audioMixer.resetTitle": "Every source back to unity: no mute, no solo, every fader at 0 dB",
+  "@panels.audioMixer.resetTitle": {
+    "context": "Audio Mixer document (an IDE tab with one strip per sound source of the emulated machine - level meter, fader, mute and solo buttons, a small spectrum - and an analyser for the selected source): tooltip of the Reset link."
+  },
+  "panels.audioMixer.mute": "M",
+  "@panels.audioMixer.mute": {
+    "context": "Audio Mixer document (an IDE tab with one strip per sound source of the emulated machine - level meter, fader, mute and solo buttons, a small spectrum - and an analyser for the selected source): the label of a source's mute button: one letter (M for Mute) on a tiny button.",
+    "maxChars": 1
+  },
+  "panels.audioMixer.muteTitle": "Mute {channel}",
+  "@panels.audioMixer.muteTitle": {
+    "context": "Audio Mixer document (an IDE tab with one strip per sound source of the emulated machine - level meter, fader, mute and solo buttons, a small spectrum - and an analyser for the selected source): tooltip of a source's mute button.",
+    "placeholders": {
+      "channel": {
+        "description": "The source's name, e.g. Beeper or TurboSound AY1 A"
+      }
+    }
+  },
+  "panels.audioMixer.solo": "S",
+  "@panels.audioMixer.solo": {
+    "context": "Audio Mixer document (an IDE tab with one strip per sound source of the emulated machine - level meter, fader, mute and solo buttons, a small spectrum - and an analyser for the selected source): the label of a source's solo button: one letter (S for Solo) on a tiny button.",
+    "maxChars": 1
+  },
+  "panels.audioMixer.soloTitle": "Solo {channel}: while any source is soloed, only the soloed ones play",
+  "@panels.audioMixer.soloTitle": {
+    "context": "Audio Mixer document (an IDE tab with one strip per sound source of the emulated machine - level meter, fader, mute and solo buttons, a small spectrum - and an analyser for the selected source): tooltip of a source's solo button. Solo is the mixing-desk term.",
+    "placeholders": {
+      "channel": {
+        "description": "The source's name"
+      }
+    }
+  },
+  "panels.audioMixer.faderTitle": "{channel} level",
+  "@panels.audioMixer.faderTitle": {
+    "context": "Audio Mixer document (an IDE tab with one strip per sound source of the emulated machine - level meter, fader, mute and solo buttons, a small spectrum - and an analyser for the selected source): tooltip and accessible name of a source's level fader (a vertical slider).",
+    "placeholders": {
+      "channel": {
+        "description": "The source's name"
+      }
+    }
+  },
+  "panels.audioMixer.output": "Output",
+  "@panels.audioMixer.output": {
+    "context": "Audio Mixer document (an IDE tab with one strip per sound source of the emulated machine - level meter, fader, mute and solo buttons, a small spectrum - and an analyser for the selected source): the label of the last strip, which shows what is heard: every source after its gain.",
+    "maxChars": 10
+  },
+  "panels.audioMixer.outputTitle": "What you hear: every source after its gain",
+  "@panels.audioMixer.outputTitle": {
+    "context": "Audio Mixer document (an IDE tab with one strip per sound source of the emulated machine - level meter, fader, mute and solo buttons, a small spectrum - and an analyser for the selected source): tooltip of the Output strip."
+  },
+  "panels.audioMixer.channelName": "{group} {channel}",
+  "@panels.audioMixer.channelName": {
+    "context": "Audio Mixer document (an IDE tab with one strip per sound source of the emulated machine - level meter, fader, mute and solo buttons, a small spectrum - and an analyser for the selected source): a source's full name, its group then its own name, e.g. 'TurboSound AY1 A' or 'DAVE Tone 0'.",
+    "placeholders": {
+      "group": {
+        "description": "The source group, e.g. TurboSound AY1"
+      },
+      "channel": {
+        "description": "The source, e.g. A"
+      }
+    }
+  },
+  "panels.audioMixer.mode.spectrum": "Spectrum",
+  "@panels.audioMixer.mode.spectrum": {
+    "context": "Audio Mixer document (an IDE tab with one strip per sound source of the emulated machine - level meter, fader, mute and solo buttons, a small spectrum - and an analyser for the selected source): a view mode button of the analyser: the bar spectrum of the selected source.",
+    "maxChars": 12
+  },
+  "panels.audioMixer.mode.scope": "Scope",
+  "@panels.audioMixer.mode.scope": {
+    "context": "Audio Mixer document (an IDE tab with one strip per sound source of the emulated machine - level meter, fader, mute and solo buttons, a small spectrum - and an analyser for the selected source): a view mode button of the analyser: the waveform (oscilloscope) of the selected source.",
+    "maxChars": 12
+  },
+  "panels.audioMixer.mode.spectrogram": "Spectrogram",
+  "@panels.audioMixer.mode.spectrogram": {
+    "context": "Audio Mixer document (an IDE tab with one strip per sound source of the emulated machine - level meter, fader, mute and solo buttons, a small spectrum - and an analyser for the selected source): a view mode button of the analyser: the spectrum over time (a scrolling picture) of the selected source.",
+    "maxChars": 12
+  },
+  "panels.audioMixer.info.channel": "Source",
+  "@panels.audioMixer.info.channel": {
+    "context": "Audio Mixer document (an IDE tab with one strip per sound source of the emulated machine - level meter, fader, mute and solo buttons, a small spectrum - and an analyser for the selected source): a row label in the analyser's facts: the selected source's name.",
+    "maxChars": 12
+  },
+  "panels.audioMixer.info.state": "State",
+  "@panels.audioMixer.info.state": {
+    "context": "Audio Mixer document (an IDE tab with one strip per sound source of the emulated machine - level meter, fader, mute and solo buttons, a small spectrum - and an analyser for the selected source): a row label in the analyser's facts: whether the source plays, is muted, soloed, or silenced by another solo.",
+    "maxChars": 12
+  },
+  "panels.audioMixer.info.peak": "Peak",
+  "@panels.audioMixer.info.peak": {
+    "context": "Audio Mixer document (an IDE tab with one strip per sound source of the emulated machine - level meter, fader, mute and solo buttons, a small spectrum - and an analyser for the selected source): a row label in the analyser's facts: the source's peak level in dB.",
+    "maxChars": 12
+  },
+  "panels.audioMixer.info.rms": "RMS",
+  "@panels.audioMixer.info.rms": {
+    "context": "Audio Mixer document (an IDE tab with one strip per sound source of the emulated machine - level meter, fader, mute and solo buttons, a small spectrum - and an analyser for the selected source): a row label in the analyser's facts: the source's root-mean-square level in dB. RMS is a technical abbreviation: keep it.",
+    "maxChars": 12
+  },
+  "panels.audioMixer.info.strongest": "Strongest",
+  "@panels.audioMixer.info.strongest": {
+    "context": "Audio Mixer document (an IDE tab with one strip per sound source of the emulated machine - level meter, fader, mute and solo buttons, a small spectrum - and an analyser for the selected source): a row label in the analyser's facts: the frequency band where the source is loudest.",
+    "maxChars": 12
+  },
+  "panels.audioMixer.info.gain": "Gain",
+  "@panels.audioMixer.info.gain": {
+    "context": "Audio Mixer document (an IDE tab with one strip per sound source of the emulated machine - level meter, fader, mute and solo buttons, a small spectrum - and an analyser for the selected source): a row label in the analyser's facts: the gain the machine applies to the source now, in percent.",
+    "maxChars": 12
+  },
+  "panels.audioMixer.state.playing": "Playing",
+  "@panels.audioMixer.state.playing": {
+    "context": "Audio Mixer document (an IDE tab with one strip per sound source of the emulated machine - level meter, fader, mute and solo buttons, a small spectrum - and an analyser for the selected source): the State of a source that is heard.",
+    "maxChars": 30
+  },
+  "panels.audioMixer.state.muted": "Muted",
+  "@panels.audioMixer.state.muted": {
+    "context": "Audio Mixer document (an IDE tab with one strip per sound source of the emulated machine - level meter, fader, mute and solo buttons, a small spectrum - and an analyser for the selected source): the State of a muted source.",
+    "maxChars": 30
+  },
+  "panels.audioMixer.state.soloed": "Soloed",
+  "@panels.audioMixer.state.soloed": {
+    "context": "Audio Mixer document (an IDE tab with one strip per sound source of the emulated machine - level meter, fader, mute and solo buttons, a small spectrum - and an analyser for the selected source): the State of a soloed source.",
+    "maxChars": 30
+  },
+  "panels.audioMixer.state.soloedOut": "Silent: another is soloed",
+  "@panels.audioMixer.state.soloedOut": {
+    "context": "Audio Mixer document (an IDE tab with one strip per sound source of the emulated machine - level meter, fader, mute and solo buttons, a small spectrum - and an analyser for the selected source): the State of a source that is silent because another source is soloed.",
+    "maxChars": 30
+  },
+  "panels.audioMixer.db": "{value} dB",
+  "@panels.audioMixer.db": {
+    "context": "Audio Mixer document (an IDE tab with one strip per sound source of the emulated machine - level meter, fader, mute and solo buttons, a small spectrum - and an analyser for the selected source): a level in decibels relative to full scale, e.g. '-12.5 dB'.",
+    "maxChars": 10,
+    "placeholders": {
+      "value": {
+        "description": "The level, a negative number with one decimal"
+      }
+    }
+  },
+  "panels.audioMixer.dbSilent": "−∞ dB",
+  "@panels.audioMixer.dbSilent": {
+    "context": "Audio Mixer document (an IDE tab with one strip per sound source of the emulated machine - level meter, fader, mute and solo buttons, a small spectrum - and an analyser for the selected source): the level of a silent source: minus infinity decibels.",
+    "maxChars": 10
+  },
+  "panels.audioMixer.hz": "{value} Hz",
+  "@panels.audioMixer.hz": {
+    "context": "Audio Mixer document (an IDE tab with one strip per sound source of the emulated machine - level meter, fader, mute and solo buttons, a small spectrum - and an analyser for the selected source): a frequency, e.g. '440 Hz'.",
+    "maxChars": 10,
+    "placeholders": {
+      "value": {
+        "description": "The frequency in hertz"
+      }
+    }
+  },
+  "panels.audioMixer.percent": "{value}%",
+  "@panels.audioMixer.percent": {
+    "context": "Audio Mixer document (an IDE tab with one strip per sound source of the emulated machine - level meter, fader, mute and solo buttons, a small spectrum - and an analyser for the selected source): a gain in percent, e.g. '100%' (unity) or '0%' (muted).",
+    "maxChars": 6,
+    "placeholders": {
+      "value": {
+        "description": "The gain in percent"
+      }
+    }
+  },
+  "panels.audioMixer.none": "–",
+  "@panels.audioMixer.none": {
+    "context": "Audio Mixer document (an IDE tab with one strip per sound source of the emulated machine - level meter, fader, mute and solo buttons, a small spectrum - and an analyser for the selected source): shown for a fact that has no value (a silent source has no strongest frequency).",
+    "maxChars": 2
   }
 }

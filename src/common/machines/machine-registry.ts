@@ -8,6 +8,7 @@ import {
   MF_MOUSE_SUPPORT,
   MF_JOYSTICK_SUPPORT,
   MF_INJECT_SUPPORT,
+  MF_AUDIO_MIXER,
   MF_EXEC_HISTORY,
   MF_REVERSE_DEBUG,
   MF_PROFILE,
@@ -332,6 +333,7 @@ export const machineRegistry: MachineInfo[] = [
       [MF_ULA]: true,
       // --- The shared execution-history recorder (EXECUTION_HISTORY_ALL_CORES_PLAN)
       [MF_EXEC_HISTORY]: true,
+      [MF_AUDIO_MIXER]: true,
       // --- Passes the journal-replay determinism test (REVERSE_DEBUGGING_PLAN D19)
       [MF_REVERSE_DEBUG]: true,
       // --- Code coverage and the heat map (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D15)
@@ -387,6 +389,7 @@ export const machineRegistry: MachineInfo[] = [
       [MF_BANK]: 8,
       // --- The shared execution-history recorder (EXECUTION_HISTORY_ALL_CORES_PLAN)
       [MF_EXEC_HISTORY]: true,
+      [MF_AUDIO_MIXER]: true,
       // --- Passes the journal-replay determinism test (REVERSE_DEBUGGING_PLAN D19)
       [MF_REVERSE_DEBUG]: true,
       // --- Code coverage and the heat map (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D15)
@@ -421,6 +424,7 @@ export const machineRegistry: MachineInfo[] = [
       [MF_BANK]: 8,
       // --- The shared execution-history recorder (EXECUTION_HISTORY_ALL_CORES_PLAN)
       [MF_EXEC_HISTORY]: true,
+      [MF_AUDIO_MIXER]: true,
       // --- Passes the journal-replay determinism test (REVERSE_DEBUGGING_PLAN D19)
       [MF_REVERSE_DEBUG]: true,
       // --- Code coverage and the heat map (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D15)
@@ -461,6 +465,7 @@ export const machineRegistry: MachineInfo[] = [
       [MF_ALLOW_SCAN_LINES]: false,
       // --- The shared execution-history recorder (EXECUTION_HISTORY_VIEWER_PLAN)
       [MF_EXEC_HISTORY]: true,
+      [MF_AUDIO_MIXER]: true,
       // --- Passes the journal-replay determinism test (REVERSE_DEBUGGING_PLAN D19)
       [MF_REVERSE_DEBUG]: true,
       // --- Code coverage and the heat map (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D15)
@@ -497,6 +502,7 @@ export const machineRegistry: MachineInfo[] = [
       [MF_BANK]: 8,
       // --- The shared execution-history recorder (EXECUTION_HISTORY_ALL_CORES_PLAN)
       [MF_EXEC_HISTORY]: true,
+      [MF_AUDIO_MIXER]: true,
       // --- Passes the journal-replay determinism test (REVERSE_DEBUGGING_PLAN D19)
       [MF_REVERSE_DEBUG]: true,
       // --- Code coverage and the heat map (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D15)
@@ -531,6 +537,7 @@ export const machineRegistry: MachineInfo[] = [
       [MF_BANK]: 16,
       // --- The shared execution-history recorder (EXECUTION_HISTORY_ALL_CORES_PLAN)
       [MF_EXEC_HISTORY]: true,
+      [MF_AUDIO_MIXER]: true,
       // --- Passes the journal-replay determinism test (REVERSE_DEBUGGING_PLAN D19)
       [MF_REVERSE_DEBUG]: true,
       // --- Code coverage and the heat map (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D15)
@@ -562,6 +569,7 @@ export const machineRegistry: MachineInfo[] = [
       [MF_ALLOW_SCAN_LINES]: false,
       // --- The shared execution-history recorder (EXECUTION_HISTORY_ALL_CORES_PLAN)
       [MF_EXEC_HISTORY]: true,
+      [MF_AUDIO_MIXER]: true,
       // --- Passes the journal-replay determinism test (REVERSE_DEBUGGING_PLAN D19)
       [MF_REVERSE_DEBUG]: true,
       // --- Code coverage and the heat map (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D15)
@@ -666,6 +674,7 @@ export const machineRegistry: MachineInfo[] = [
       [MF_ALLOW_SCAN_LINES]: false,
       // --- The shared execution-history recorder (EXECUTION_HISTORY_ALL_CORES_PLAN)
       [MF_EXEC_HISTORY]: true,
+      [MF_AUDIO_MIXER]: true,
       // --- Passes the journal-replay determinism test (REVERSE_DEBUGGING_PLAN D19)
       [MF_REVERSE_DEBUG]: true,
       // --- Code coverage and the heat map (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D15)
@@ -706,6 +715,7 @@ export const machineRegistry: MachineInfo[] = [
       [MF_ALLOW_SCAN_LINES]: false,
       // --- The shared execution-history recorder and the access profile
       [MF_EXEC_HISTORY]: true,
+      [MF_AUDIO_MIXER]: true,
       [MF_PROFILE]: true,
       // --- Passes the journal-replay determinism test (REVERSE_DEBUGGING_PLAN D19)
       [MF_REVERSE_DEBUG]: true
@@ -748,6 +758,7 @@ export const machineRegistry: MachineInfo[] = [
       [MF_BANK]: 256,
       // --- The shared execution-history recorder and the access profile
       [MF_EXEC_HISTORY]: true,
+      [MF_AUDIO_MIXER]: true,
       [MF_PROFILE]: true,
       // --- Passes the journal-replay determinism test (REVERSE_DEBUGGING_PLAN D19)
       [MF_REVERSE_DEBUG]: true

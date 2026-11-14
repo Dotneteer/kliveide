@@ -75,6 +75,8 @@ export const SETTING_EMU_JUST_MY_CODE = "emuOptions.justMyCode";
 export const SETTING_EMU_KEYBOARD_LAYOUT = "emuOptions.keyboardLayout";
 export const SETTING_EMU_KEYBOARD_HEIGHT = "emuOptions.keyboardPanelHeight";
 export const SETTING_EMU_KEYBOARD_HEIGHTS = "emuOptions.keyboardPanelHeights";
+/** The audio mixer's mute, solo and fader per channel, keyed by machine ID (`AudioMixerSettingsByMachine`) */
+export const SETTING_EMU_AUDIO_MIXER = "emuOptions.audioMixer";
 export const SETTING_IDE_SHOW_TOOLBAR = "ideViewOptions.showToolbar";
 // --- The File Manager (`dev/ai/file-manager.md`, D7)
 export const SETTING_FM_SHOW_HIDDEN = "ideViewOptions.fileManagerShowHidden";

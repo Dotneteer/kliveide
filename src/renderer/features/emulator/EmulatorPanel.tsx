@@ -28,6 +28,7 @@ import {
   SETTING_EMU_HT_VIDEO_CUT,
   SETTING_EMU_ULA_LATE_TIMING,
   SETTING_EMU_ULA_SNOW,
+  SETTING_EMU_AUDIO_MIXER,
   SETTING_EMU_NEXT_AUDIO_OUTPUT,
   SETTING_EMU_NEXT_RTC_CLOCK,
   SETTING_EMU_NEXT_RTC_KEEP,
@@ -57,6 +58,7 @@ import { mediaStore } from "@emu/machines/media/media-info";
 import { useT } from "@common/i18n/useT";
 import type { MessageKey } from "@common/i18n/keys.generated";
 import type { MessageArgs } from "@common/i18n/i18n";
+import { audioMixerMonitor } from "./audioMixerMonitor";
 
 type Props = {
   keyStatusSet?: (code: number, down: boolean) => void;
@@ -120,6 +122,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   const ulaLateTiming = useGlobalSetting(SETTING_EMU_ULA_LATE_TIMING);
   const ulaSnow = useGlobalSetting(SETTING_EMU_ULA_SNOW);
   const nextAudioOutput = useGlobalSetting(SETTING_EMU_NEXT_AUDIO_OUTPUT);
+  const audioMixerSettings = useGlobalSetting(SETTING_EMU_AUDIO_MIXER);
   const nextRtcClock = useGlobalSetting(SETTING_EMU_NEXT_RTC_CLOCK);
   const nextRtcKeep = useGlobalSetting(SETTING_EMU_NEXT_RTC_KEEP);
   const showInstantScreen = useGlobalSetting(SETTING_EMU_SHOW_INSTANT_SCREEN);
@@ -385,13 +388,15 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     if (args.fullFrame) {
       const soundLevel = store.getState()?.emulatorState?.soundLevel ?? 0.0;
       const rendering = store.getState()?.emulatorState?.rzx?.mode === "rendering";
-      await renderMachineAudioFrame(
+      const heard = await renderMachineAudioFrame(
         currentController.machine,
         beeperRenderer.current,
         soundLevel,
         recordingManagerRef?.current,
         rendering
       );
+      // --- The audio mixer: the machine's gains, and while a view watches, the frame's measures
+      audioMixerMonitor.onFrame(heard, store.getState()?.emulatorState?.audioSampleRate ?? 0);
     }
 
     if (args.savedFileInfo) {
@@ -435,6 +440,14 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     machineStateChanged,
     machineFrameCompleted
   );
+
+  // --- The audio mixer (`dev/plans/AUDIO_MIXER_PLAN.md`): the machine it watches, and its settings
+  useEffect(() => {
+    audioMixerMonitor.attach(controller?.machine);
+  }, [controller]);
+  useEffect(() => {
+    audioMixerMonitor.setSettings(audioMixerSettings);
+  }, [audioMixerSettings]);
 
   // --- The ZX Spectrum Next layer debug view (`dev/plans/LAYER_COMPOSITION_PLAN.md`): mask, capture, pill
   const layerView = useNextLayerView(controller, displayScreenData);

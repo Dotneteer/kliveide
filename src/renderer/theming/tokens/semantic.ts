@@ -1,4 +1,4 @@
-import { ACCENTS, ANSI, DEVICE, FAVORITE, HEAT, NEUTRAL, STATUS, type AccentId, type Tone, DEVICE_INK } from "./palette";
+import { ACCENTS, ANSI, AUDIO_GROUP, DEVICE, FAVORITE, HEAT, NEUTRAL, STATUS, type AccentId, type Tone, DEVICE_INK } from "./palette";
 
 /**
  * The heat ramp's five steps: how much of the hue each mixes into the panel surface. Step 5 stops at
@@ -187,6 +187,9 @@ export function semanticTokens(tone: Tone, accentId: AccentId): Record<string, s
         HEAT_RAMP_PCT.map((pct, i) => [`--heat-${kind}-${i + 1}`, mix(HEAT[tone][kind], n.panel, pct)])
       )
     ),
+
+    // --- The audio mixer's source groups (`--audio-group-1` ... `-6`, in the group's order) --------
+    ...Object.fromEntries(AUDIO_GROUP[tone].map((hue, i) => [`--audio-group-${i + 1}`, hue])),
 
     // --- Marks ---------------------------------------------------------------------------------
     /** Something the user starred (favourite machines). Fixed across accents, like the status hues. */

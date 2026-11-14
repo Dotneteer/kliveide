@@ -1872,5 +1872,13 @@
       "card": "The card image's file name",
       "reason": "The disk code's own message (English)"
     }
+  },
+  "commands.audioMixer.showDescription": "Displays the Audio Mixer: each sound source of the emulated machine with its level and spectrum, to mute, solo or change its level",
+  "@commands.audioMixer.showDescription": {
+    "context": "Description of the show-audio-mixer IDE command (shown in the command help)."
+  },
+  "commands.audioMixer.noSound": "The current machine has no sound output",
+  "@commands.audioMixer.noSound": {
+    "context": "Error of the show-audio-mixer IDE command on a machine without sound (ZX80, ZX81)."
   }
 }

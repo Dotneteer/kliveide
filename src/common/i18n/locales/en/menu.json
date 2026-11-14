@@ -997,5 +997,10 @@
   "menu.next.showFwFailed": "Cannot Show TBBLUE.FW",
   "@menu.next.showFwFailed": {
     "context": "Title of the message box when Machine › SD Card › Show TBBLUE.FW fails (no card, no such file on the card). TBBLUE.FW is a file name."
+  },
+  "menu.view.audioMixer": "Audio Mixer",
+  "@menu.view.audioMixer": {
+    "context": "Menu item in View > Machine Views: opens the Audio Mixer document, which shows each sound source of the emulated machine and lets the user mute, solo or change its level. Shown only for machines with sound.",
+    "maxChars": 24
   }
 }

@@ -1316,5 +1316,25 @@
   "@emu.audioMixer.group.ay8910": {
     "context": "Audio mixer (a list of the emulated machine's sound sources, each with a level meter, a spectrum, mute and solo buttons and a level fader): the heading of the group of the HT-1080Z's AY sound chip's three channels. AY-3-8910 is the chip's part number: keep it.",
     "maxChars": 24
+  },
+  "emu.soundPopover.title": "Sound",
+  "@emu.soundPopover.title": {
+    "context": "Emulator window, the sound popover (opened from the chevron of the toolbar's sound button: the volume, then each sound source of the machine with mute and solo buttons and a level meter): the popover's heading.",
+    "maxChars": 12
+  },
+  "emu.soundPopover.volume": "Volume",
+  "@emu.soundPopover.volume": {
+    "context": "Emulator window, the sound popover (opened from the chevron of the toolbar's sound button: the volume, then each sound source of the machine with mute and solo buttons and a level meter): the label of the volume slider (the emulator's overall sound level).",
+    "maxChars": 10
+  },
+  "emu.soundPopover.openMixer": "Open Audio Mixer…",
+  "@emu.soundPopover.openMixer": {
+    "context": "Emulator window, the sound popover (opened from the chevron of the toolbar's sound button: the volume, then each sound source of the machine with mute and solo buttons and a level meter): a link that opens the Audio Mixer document in the IDE window, with each source's spectrum.",
+    "maxChars": 24
+  },
+  "emu.soundPopover.unmuteAll": "Unmute all",
+  "@emu.soundPopover.unmuteAll": {
+    "context": "Emulator window, the sound popover (opened from the chevron of the toolbar's sound button: the volume, then each sound source of the machine with mute and solo buttons and a level meter): a link that clears every source's mute and solo.",
+    "maxChars": 14
   }
 }

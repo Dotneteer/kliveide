@@ -236,6 +236,14 @@ export async function runUiAction(actionId: UiActionId, value?: unknown): Promis
     case "open-settings":
       await openSettingsDialog(value as SettingsPageId | undefined);
       return undefined;
+    case "open:audio-mixer": {
+      // --- The emulator's sound popover opens the IDE's Audio Mixer document (AUDIO_MIXER_PLAN §3.4)
+      showIdeWindow();
+      const { ideWindow } = getAppWindows();
+      if (ideWindow && !ideWindow.isDestroyed()) ideWindow.focus();
+      await getIdeApi().executeCommand("show-audio-mixer");
+      return undefined;
+    }
     case "settings:page-shown":
       return rememberSettingsPage(value) ? undefined : `Unknown Settings page: ${value}`;
     case "toggle-ide-emu-recording": {

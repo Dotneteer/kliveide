@@ -3101,6 +3101,29 @@ padding or rounding at the joint, via `+` and `:has(+ …)`), which is only safe
 severity side by side would fuse into one pill with no separator. Any inline decoration that styles
 its text as a shape has the same problem.
 
+## Categories That Are Not Meanings Take A Fixed Hue Set, In Their Order
+
+The audio mixer (`dev/plans/AUDIO_MIXER_PLAN.md`) colours each group of a machine's sound sources (the
+ULA, each AY chip, the DACs, ...) so nine TurboSound channels read as three families of three. Those
+hues are **categories, not meanings**: they come from a fixed L1 set (`AUDIO_GROUP` in `palette.ts`,
+`--audio-group-1` ... `-6`), taken in the order the machine lists its groups, fixed across accents like
+the heat map's hues. Never borrow the status hues or the accent for a category: a third group in the
+warning hue would read as a warning.
+
+- **The accent lands once per view**: the selected strip's ring, the chosen analyser mode, the chosen
+  sound level. The Output strip, which is not a source, uses the accent rather than a group hue.
+- **Mute and solo on are the status hues** (`--status-error`, `--status-warning`): a mixing desk's
+  red and yellow, read the same with every accent. A soloed-out or muted source keeps its hue at low
+  opacity (its meter still moves: the meters are pre-fader).
+- **A canvas reads its colours from tokens at draw time** (`getComputedStyle(canvas)`), never a
+  literal, so a theme or accent change applies at the next frame.
+- **A scrolling canvas (the spectrogram) moves its pixels with `getImageData`/`putImageData`, not
+  `drawImage(canvas, ...)` onto itself**: drawing a canvas with semi-transparent pixels over itself
+  composites old and new each frame and the picture smears into blocks and colour fringes. Map a
+  0..1 value to opacity through a power above 1, so a leakage floor of a few tenths recedes.
+- **A popover that holds controls takes the focus itself** (`tabIndex={-1}`, no outline), not its
+  first button: a focus ring on the first of a row of choices reads as the chosen one.
+
 ## Recommended First Reading For UI Work
 
 1. `../../AGENTS.md`

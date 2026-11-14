@@ -177,6 +177,13 @@ export const MF_REVERSE_DEBUG = "reverseDebug";
  */
 export const MF_PROFILE = "profile";
 
+/**
+ * Whether the machine has sound and its core reports its sources one by one for the audio mixer
+ * (`dev/plans/AUDIO_MIXER_PLAN.md`): View > Machine Views > Audio Mixer, the `show-audio-mixer` command
+ * and the emulator's sound popover gate on this. The ZX80, the ZX81 and the C64 have no sound.
+ */
+export const MF_AUDIO_MIXER = "audioMixer";
+
 // Available custom tool keys
 export const CT_DISASSEMBLER = "disassembler";
 export const CT_CUSTOM_DISASSEMBLER = "customDisassembler";

@@ -1,0 +1,245 @@
+@use "@styles/core.scss" as *;
+
+/*
+ * The Audio Mixer document (`dev/plans/AUDIO_MIXER_PLAN.md` §3.4, option B). A mixing console in the
+ * panel's vocabulary: strips on raised surfaces, grouped by chip with the group's hue
+ * (`--audio-group-n`) as a bar beside its label and in its meters and spectra; numbers in
+ * `--color-state-value`; the selected strip ringed in the accent. The strips scroll sideways when the
+ * document is narrow (the Next has twenty); the analyser takes the rest of the height.
+ */
+.document {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  font-size: var(--font-size-100);
+  color: var(--text-primary);
+  background: var(--surface-panel);
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-1) var(--space-3);
+  border-bottom: 1px solid var(--border-default);
+  background: var(--surface-chrome);
+}
+
+.spacer {
+  flex: 1;
+}
+
+.link {
+  all: unset;
+  cursor: pointer;
+  color: var(--accent-text);
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--focus-ring);
+  }
+}
+
+.strips {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  overflow-x: auto;
+  flex: none;
+  border-bottom: 1px solid var(--border-default);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.groupLabel {
+  font-size: var(--font-size-50);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05ch;
+  color: var(--text-secondary);
+  border-left: 2px solid;
+  padding-left: var(--space-1);
+  white-space: nowrap;
+}
+
+.groupStrips {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.strip {
+  width: 8ch;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--border-strong);
+  }
+}
+
+.selected {
+  outline: 2px solid var(--accent-solid);
+  outline-offset: -1px;
+}
+
+.output {
+  cursor: default;
+  background: var(--surface-active);
+}
+
+.stripName {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  color: var(--data-label);
+}
+
+.dim {
+  opacity: 0.45;
+}
+
+.miniSpectrum {
+  width: 100%;
+  height: calc(var(--font-size-100) * 2);
+  background: var(--surface-canvas);
+  border-radius: var(--radius-xs);
+}
+
+.meterRow {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-1);
+  height: calc(var(--font-size-100) * 9);
+}
+
+.meter {
+  width: 1ch;
+  height: 100%;
+  border-radius: var(--radius-xs);
+}
+
+.fader {
+  writing-mode: vertical-lr;
+  direction: rtl;
+  width: 1.6ch;
+  height: 100%;
+  margin: 0;
+  accent-color: var(--accent-solid);
+}
+
+.db {
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-50);
+  color: var(--color-state-value);
+  white-space: nowrap;
+}
+
+.analyser {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 28ch;
+}
+
+.analyserMain {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  min-height: 0;
+}
+
+.analyserHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.analyserTitle {
+  font-weight: 600;
+}
+
+.modes {
+  display: inline-flex;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.mode {
+  all: unset;
+  cursor: pointer;
+  padding: 0 var(--space-2);
+  color: var(--text-secondary);
+
+  &:hover {
+    color: var(--text-primary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: -2px;
+  }
+}
+
+.modeOn {
+  background: var(--accent-solid);
+  color: var(--text-on-accent);
+
+  &:hover {
+    color: var(--text-on-accent);
+  }
+}
+
+.analyserCanvas {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  background: var(--surface-canvas);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+}
+
+.facts {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-left: 1px solid var(--border-default);
+  background: var(--surface-raised);
+  display: grid;
+  grid-template-columns: 11ch minmax(0, 1fr);
+  row-gap: var(--space-1);
+  align-content: start;
+
+  dt {
+    color: var(--data-label);
+  }
+
+  dd {
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.value {
+  font-family: var(--monospace-font);
+  color: var(--color-state-value);
+}
