@@ -174,6 +174,20 @@ after it need correcting (Phase 4, with `boot-figures.cjs`, which generates the 
   is in Phase 3, not the first version.
 - **D6. Board and version text from Klive's own vocabulary**: board names as in `nextProfiles.ts`
   (Issue 2, Issue 4 KS2, Issue 5 KS3) where a profile matches, otherwise "Issue n"; versions as `3.02.03`.
+- **D7. Layout A + C** (chosen by the project author from the mockups, 2026-11-14): the summary, a
+  to-scale **file map** (header, then each distinct image, hatched where it is `$FF` padding; a block
+  selects its records), the **cores table** (a row selects its image; records sharing it are
+  highlighted), then the selected core's details. The mockup is `.local/tbu-mockup/index.html` (not
+  committed).
+- **D8. The bitstream's configuration packets are shown; its frame data is not** (decided 2026-11-14). A
+  bitstream is a short program of register writes around one large frame-data block (Issue 4 3.02.03:
+  about 30 packets, 2,189,680 of its 2,192,012 bytes in one FDRI write). The details get a collapsible
+  **Bitstream** section listing every packet: offset, type, operation, register, word count, value, with
+  command names (`CMD`) and the IDCODE's part decoded. A frame-data block is one row with its size. The
+  frame data itself means nothing without a per-device database, so it is not decoded. The decoder is
+  Klive's own code, `src/common/zxnext/xilinxBitstream.ts`, written from Xilinx UG380 (Spartan-6, 16-bit
+  packets) and UG470 (7-series, 32-bit packets). Checking the bitstream's own CRC is left for later; the
+  Fletcher-16 check covers the file.
 
 ## 3. What the viewer shows
 
@@ -239,8 +253,35 @@ tests, unit tier, plus the opt-in real-file check). Notes for Phase 2:
   no problems, every checksum matching, every part identified (XC6SLX16, XC7A15T, XC7A35T) and every
   trailer matching its record.
 
-### Phase 2 — Viewer and registration
+### Phase 2a — Bitstream packet decoder (D8)
 
+- `src/common/zxnext/xilinxBitstream.ts`: `decodeBitstreamPackets(bytes, start, end, family)` returns the
+  packet list (offset, type, op, register number and name, word count, the first value, command name);
+  stops at the end, at a word it cannot read (reported, not thrown) or at a limit of packets.
+- Register and command tables from UG380 and UG470, cited in the file; unknown registers shown by number.
+- Tests on bitstreams built in the test, both families, plus the opt-in real-file check.
+
+**As built (2026-11-14), done.** `src/common/zxnext/xilinxBitstream.ts` and
+`test/zxnext/xilinxBitstream.test.ts` (11 tests; with `TBU_REAL_FILES` every image of the four real files
+decodes to its last data byte and ends with a DESYNC). What the real bitstreams taught:
+
+- **A Spartan-6 Type 2 header names its own register** ([10:5], UG380 Table 5-26), unlike 7-series,
+  where it writes the previous Type 1 packet's register. The Issue 2 bitstream's frame data follows a CMD
+  write, so taking the previous register calls it CMD.
+- **Spartan-6 frame data is followed by a 32-bit AUTO CRC word** (UG380 Table 5-50); it is kept on the
+  FDRI packet (`autoCrc`) and counted in its bytes.
+- The Issue 4/5 bitstreams write commands `$12` and `$13`, absent from UG470 v1.10; they are named
+  BSPI_READ and FALL_EDGE as UG570 names the same codes. Register `$13` is undocumented (Project X-Ray
+  says so too) and is shown by number.
+- A NOP's address field is 0; it is shown with no register, not as CRC. Runs of NOPs are one packet
+  with a `repeat` count (Issue 4 has a run of 100 and one of 329).
+- The 2019 legacy image is padded with `$00` after its DESYNC; `$00` and `$FF` runs both end the list as
+  `padding`.
+- Packet counts: Issue 2 (3.02.03) 46, Issues 4/5 42; frame data is 99.9% of each image.
+
+### Phase 2b — Viewer and registration
+
+- A mockup of the details with the Bitstream section, for review, before the panel is built.
 - `src/renderer/appIde/DocumentPanels/Next/TbuFileViewerPanel.tsx` on `GenericFilePanel` and the
   `@renderer/controls/data` primitives (`DataPanel`, `DataRow`, `PanelHeader`, `HexValue`,
   `EmptyState`); `ch` widths and row-size tokens (M1-M3); no colour literals.
