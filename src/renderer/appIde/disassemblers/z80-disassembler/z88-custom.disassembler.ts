@@ -1,5 +1,5 @@
 import { MemorySection, DisassemblyItem, FetchResult } from "../common-types";
-import { intToX2 } from "../utils";
+import { intToX2, intToX4 } from "../utils";
 import {
   CUSTOM_Z80_DISASSEMBLY_TOOL,
   ICustomDisassembler,
@@ -83,7 +83,8 @@ export class Z88CustomDisassembler implements ICustomDisassembler {
         do {
           ch = this._api.fetch().opcode;
           stringBytes.push(ch);
-          if (ch >= 32 && ch <= 127) {
+          // --- A quote or a backslash inside the string would end or escape it: written as a byte
+          if (ch >= 32 && ch < 127 && ch !== 0x22 && ch !== 0x5c) {
             if (usedString) {
               str += String.fromCharCode(ch);
             } else {
@@ -115,21 +116,21 @@ export class Z88CustomDisassembler implements ICustomDisassembler {
 
       return true;
     } else if (peekResult.opcode === 0xef) {
-      // --- Handle RST 28H
-      // --- Consume th operation code
+      // --- Handle RST 28H: EXTCALL (OZ 4.5+), a 32-bit argument after it: the address (low byte
+      // --- first), the bank, and a fourth byte OZ skips (`ExtCall` in OZ's `os/lowram/memfunc.asm`
+      // --- returns past all four). Written as mpm's `extcall <address>,<bank>` macro is
       this._api.fetch();
-
-      // --- Get the 24-bit LSB address
-      const byte1 = this._api.fetch().opcode;
-      const byte2 = this._api.fetch().opcode;
-      const byte3 = this._api.fetch().opcode;
-      const addr = (byte3 << 16) | (byte2 << 8) | byte1;
+      const low = this._api.fetch().opcode;
+      const high = this._api.fetch().opcode;
+      const bank = this._api.fetch().opcode;
+      const spare = this._api.fetch().opcode;
+      const address = (high << 8) | low;
 
       // --- Create the item
       const newItem: DisassemblyItem = {
         address: peekResult.offset,
-        opCodes: [peekResult.opcode, byte1, byte2, byte3],
-        instruction: `extcall $${addr.toString(16).padStart(6, "").toLowerCase()}`,
+        opCodes: [peekResult.opcode, low, high, bank, spare],
+        instruction: `extcall $${intToX4(address)},$${intToX2(bank)}`,
         notAssemblable: true
       };
       this._api.addDisassemblyItem(newItem);

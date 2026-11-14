@@ -2,8 +2,8 @@
 
 **Status:** In progress (2026-11-14). Phase 0 done (the build identified; no rebuild, D-OZ5). Phase 1
 done (Z88 bank space, ROM pages, `z88-oz` decoding, `source` provenance; checked in the running IDE).
-Phase 2 under way: the aligner works, and its pilot (the FPP, bank $0D) imports to level 1 and
-reassembles. Next: the OZ call forms and multi-module projects.
+Phase 2 under way: every code component except PipeDream imports (banks 0, 1, 3, 4, 7, $0A-$0D), and
+they reassemble byte for byte. **To continue, read "Handoff" at the end of Phase 2.**
 **Goal:** a shipped sidecar `src/public/roms/z88v47.rom.dis` that annotates all 32 16K banks of the
 OZ 4.7 ROM to level 2. It is built mostly from the OZ project's own assembler source,
 <https://bitbucket.org/cambridge/oz/src/V4.7/>, which the owner has given permission to use.
@@ -231,16 +231,82 @@ assembler.
   running Z88 they are. The page view should list a bank's runs at their `segments`' addresses: a
   follow-up for Phase 3.
 
-*What the rest of Phase 2 needs* (a census of `os/`, `gn/`, `dc/`, `mth/` and `apps/`: 176 modules,
-about 122K lines, 18 projects):
-1. The OZ call forms: `oz`, `call_oz(...)` (about 2,100 uses), `fpp` and `extcall`, compared by call
-   name with Klive's `oz GN_Sop`-style rows.
-2. Multi-module projects: the modules of a `.prj` linked one after another from the first `org`, with
-   `xdef`/`xref` symbols shared.
-3. Real macro expansion for the MTH bank's data macros (`mthcmd`, `mthtpc`, `dorappl`, ...), and
-   `binary` includes (fonts, keymaps) by their file's size.
-4. Bank $09, BBC BASIC, is `apps/bbcbasic/basic.dat`, a binary with no source in the repository
-   (R.T. Russell's). It cannot be imported and stays under D4: from scratch, or left for later.
+*Every code component (2026-11-14).* The aligner now reads, besides the pilot's syntax:
+- the OZ call forms `oz`, `call_oz(...)`, `fpp`, `extcall` and `call_pkg`, placed by their bytes;
+- multi-module projects in link order (`.prj` lines like `osfep/fepcrddata.asm:` or a bare `ostables`);
+- mpm macros (parameters with defaults, `\%`, `\$?[n]`, `IF`s, `exitmacro`, `error`, the macro's own
+  `.\label`s, and `"\param"` with a string argument);
+- `defgroup`, and mpm's relocatable arithmetic: an expression that moves with the segment's base is an
+  address, one that does not is an offset (`evaluateRelocatable`);
+- mpm's tolerated spellings: `sub a,c`, `or N,a`, `sbc c`, `ixl`, `djnz,label`, `pop af : comment`,
+  `scf return error`, `\\` in strings, `defs 32 ($3f)`.
+
+`node dev/scripts/import-oz-source.cjs --all` imports the 15 components of
+`dev/ai/rom-annotations/z88-oz47-components.json` in about 4 seconds. Each walks to its end, with no
+target mismatch. The nine banks (0, 1, 3, 4, 7, $0A, $0B, $0C, $0D) hold 7,394 labels, pass the
+readiness check and **reassemble byte for byte**. Seven are at level 1. Banks 0 and 7 are level 0 only
+because of 11 `jr $` hang loops (`jr c,$` after an `OS_Mfr` call), which have no source label: those
+get `observed` labels in Phase 3.
+
+Labels Klive cannot take as they are (519: over 16 characters, or a name two modules of a bank share)
+are in `dev/ai/rom-annotations/z88-label-renames.json`. `shortLabelName` proposed them, by abbreviations
+and dropping inner vowels, never blind truncation, and `--all --write-renames` recorded them. **They
+are machine proposals, not reviewed yet:** reviewing them, or the ones that matter, is Phase 3 work.
+A hand-edited entry wins on every later import.
+
+The Z88 decoder was fixed along the way. OZ 4.5+'s `EXTCALL` is `RST 28h` plus **4** bytes (address,
+bank and a byte OZ skips; `ExtCall` in `os/lowram/memfunc.asm`), not 3. An `OS_Pout` string with `"` or
+`\` in it is written as hex bytes, so the export reassembles.
+
+### Handoff (2026-11-14): where Phase 2 stands, and how to continue
+
+**Committed** on branch `dotneteer/z88-disann`: Phases 0-1, the pilot and the ROM Annotations menu
+change. **Not committed** at the time of writing: everything in the "Every code component" paragraph
+above (aligner, import script, component manifest, rename table, decoder fixes, tests). Commit it before
+anything else. It completes only part of the plan, so it gets no changeset.
+
+To pick up in a new session:
+1. Read this plan, `dev/ai/rom-annotations/z88-authoring-guide.md` and `README.md` beside it.
+2. The OZ source must be at `.local/oz47/oz` (git-ignored). If it is missing, run
+   `git clone https://bitbucket.org/cambridge/oz.git .local/oz47/oz` and then
+   `git -C .local/oz47/oz checkout V4.7` (commit `603c979a`).
+3. `node dev/scripts/import-oz-source.cjs --all` must print "All 15 components imported."; the result
+   is `.local/oz-import/z88v47.rom.dis`, with a `<bank>.report.txt` per bank. A report is overwritten
+   by the next component of the same bank; run one component alone with `--out <scratch>.dis` to see
+   its own.
+4. Check it: `node dev/ai/rom-annotations/tools/check-annotations.cjs .local/oz-import/z88v47.rom.dis`
+   (`"problems": []`), and per bank the reassembly template
+   (`dev/ai/rom-annotations/tools/reassemble-test.ts.txt`: copy it to `test/reverse-eng/`, run it with
+   `PAGE=<bank> SIDECAR=<sidecar> ROM=z88v47.rom`, delete it).
+5. Tests: `test/annotations/ozSourceAligner.test.ts` (19), `test/annotations/z88RomPages.test.ts`,
+   `test/z88/z88-rom-sources.test.ts`.
+
+**What is left of Phase 2**, in a sensible order:
+1. **PipeDream** (`apps/pipedream/pipedream.prj`, banks 5 and 6): one 32K program built with
+   `mpm -bc ... -cz80` and split into `pipedream.bn0` (bank 5, at $8000) and `.bn1` (bank 6, run at
+   $C000). The import script works on one bank; it needs a walk that continues from bank 5's end into
+   bank 6 at offset 0, with segment 2 for bank 5 and segment 3 for bank 6 (check `rom.ldm` and the
+   bytes).
+2. **Bank 2**: data. Keymaps (`mth/keymaps.asm`, offset 0), the HIRES1 and LORES1 fonts
+   (`mth/hires1.asm` at $0C00, `lores1.asm` at $1000), the LOWRAM image (`os/lowram/lowram.prj`, stored
+   at $C800, offset $0800, but **run in RAM**: its segment is the RAM address it is copied to, so check
+   `reset.asm` for that), and the date filter (`mth/datefilter.asm` at $7300, offset $3300). Each is a
+   separate `mpm -bg` build; the manifest takes them with `--merge`. Expect `binary` includes, which the
+   aligner does not read yet ("a binary include (not read yet)"): give it the file's size from the
+   reader.
+3. **Bank 8, MTH** (`mth/mth.prj`): the DOR and MTH data macros (`dorappl`, `mthcmd`, `mthtpc`,
+   `dt_*`), which the macro expander should already handle. Watch for macros calling macros, and for
+   `\$$`.
+4. **Bank $1F**, the ROM header (`mth/romhdr.prj`, `romhdr.bin` at $3FC0), and **bank $10**, the
+   FlashStore file area (`welcome.pdd`, data only: a `bytes` region by hand is enough).
+5. **Bank 9, BBC BASIC**: `apps/bbcbasic/basic.dat`, R.T. Russell's binary, with no source in the
+   repository. It cannot be imported and stays under D4: annotate it from scratch, or leave it out. Ask
+   the developer.
+
+Then Phase 3 (below): the 11 hang-loop labels; reviewing the rename proposals; the synopses (most labels
+have none: the source has few routine headers); the IDE listing a Z88 bank's runs at their `segments`'
+addresses (the pilot's finding); and copying the result into `src/public/roms/z88v47.rom.dis` with
+`level` recorded. Q1, the wording of the owner's permission, must be settled before shipping (D-OZ2).
 
 ### Phase 3 — Import, review, reach level 2
 

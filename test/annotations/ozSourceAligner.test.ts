@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest";
 import {
   alignOzModule,
   evaluateOzExpression,
+  evaluateRelocatable,
   instructionShape,
+  shortLabelName,
   splitArguments,
   splitComment,
   type OzDecodedInstruction
@@ -180,5 +182,111 @@ describe("aligning a module", () => {
     expect(result.org).toBe(0xc000);
     expect(result.end).toBe(2);
     expect(result.problems).toEqual([]);
+  });
+});
+
+describe("mpm's spellings", () => {
+  it("accepts the accumulator spelled out or left out, and the index halves either way", () => {
+    expect(instructionShape("sub", "a, c")).toBe(instructionShape("sub", "c"));
+    expect(instructionShape("or", "MAT_ALLOCFIXED, a")).toBe("or N");
+    expect(instructionShape("sbc", "c")).toBe(instructionShape("sbc", "a,c"));
+    expect(instructionShape("ld", "a, ixl")).toBe(instructionShape("ld", "a,xl"));
+  });
+
+  it("reads a comma or a colon typed for a space or a semicolon, and words after scf", () => {
+    const text = ["        org $C000", "        djnz,Loop", ".Loop   pop af   : discard AF", "        scf return error"].join("\n");
+    const rom = bank([0x10, 0x00, 0xf1, 0x37], {
+      0: { length: 2, text: "djnz LC002", target: 2 },
+      2: { length: 1, text: "pop af" },
+      3: { length: 1, text: "scf" }
+    });
+    const result = alignOzModule({ path: "m.asm", text, bytes: rom.bytes, defines: [], reader: noIncludes, decodeAt: rom.decodeAt });
+    expect(result.stop).toBeUndefined();
+    expect(result.lines.map((l) => l.comment)).toEqual([undefined, "discard AF", "return error"]);
+  });
+});
+
+describe("relocatable values", () => {
+  const symbols = new Map<string, string | number | { offset: number }>([["Label", { offset: 0x10 }], ["End", { offset: 0x18 }]]);
+
+  it("gives an address the segment's base, a difference or an offset none", () => {
+    expect(evaluateRelocatable("Label", symbols, 0, 0xc000)).toBe(0xc010);
+    expect(evaluateRelocatable("Label+3", symbols, 0, 0xc000)).toBe(0xc013);
+    expect(evaluateRelocatable("End - $ - 1", symbols, 0x10, 0xc000)).toBe(7);
+    expect(evaluateRelocatable("$0021-$PC", symbols, 0x14, 0xc000)).toBe(0x0d);
+  });
+});
+
+describe("the OZ call forms and macros", () => {
+  const macros = [
+    "macro dt_nam (string)",
+    "  if !\\%",
+    '    error "DT_NAM: Name not specified"',
+    "    exitmacro",
+    "  endif",
+    ".\\record",
+    "        defb    $10",
+    "        defb    \\record_end - $-1",
+    '        defm    "\\string",0',
+    ".\\record_end",
+    "endmacro"
+  ].join("\n");
+  const reader = { include: (_from: string, name: string) => (name === "macros.def" ? { path: "macros.def", text: macros } : undefined) };
+
+  it("places oz, call_oz(...) and fpp by their bytes, the call checked where its code is known", () => {
+    const text = ["        org $C000", "defc GN_Sop = $3A09", "        oz      GN_Sop", "        call_oz(GN_Sop)", "        fpp     $45"].join("\n");
+    const rom = bank([0xe7, 0x09, 0x3a, 0xe7, 0x09, 0x3a, 0xdf, 0x45], {});
+    const result = alignOzModule({ path: "m.asm", text, bytes: rom.bytes, defines: [], reader: noIncludes, decodeAt: rom.decodeAt });
+    expect(result.stop).toBeUndefined();
+    expect(result.lines.map((l) => [l.offset, l.length])).toEqual([[0, 3], [3, 3], [6, 2]]);
+    const wrong = alignOzModule({ path: "m.asm", text: text.replace("$3A09", "$3A0A"), bytes: rom.bytes, defines: [], reader: noIncludes, decodeAt: rom.decodeAt });
+    expect(wrong.stop?.reason).toMatch(/byte 1/);
+  });
+
+  it("expands a macro: arguments, its own labels, a string argument inside quotes", () => {
+    const text = ['        include "macros.def"', "        org $C000", '        dt_nam  "AB"'].join("\n");
+    // --- $10, the length to the end (4: "AB", 0 and itself), "AB", 0
+    const rom = bank([0x10, 0x04, 0x41, 0x42, 0x00], {});
+    const result = alignOzModule({ path: "m.asm", text, bytes: rom.bytes, defines: [], reader, decodeAt: rom.decodeAt });
+    expect(result.stop).toBeUndefined();
+    expect(result.end).toBe(5);
+    expect(result.labels.every((l) => l.internal)).toBe(true);
+  });
+
+  it("stops at a macro's error", () => {
+    const text = ['        include "macros.def"', "        org $C000", "        dt_nam"].join("\n");
+    const rom = bank([], {});
+    const result = alignOzModule({ path: "m.asm", text, bytes: rom.bytes, defines: [], reader, decodeAt: rom.decodeAt });
+    expect(result.stop?.reason).toMatch(/dt_nam macro's error/);
+  });
+
+  it("reads defgroup's consecutive values", () => {
+    const text = ["defgroup", "    a_zero, a_one", "    b_ten = 10, b_eleven", "enddef", "        org $C000", "        defb b_eleven"].join("\n");
+    const rom = bank([11], {});
+    const result = alignOzModule({ path: "m.asm", text, bytes: rom.bytes, defines: [], reader: noIncludes, decodeAt: rom.decodeAt });
+    expect(result.stop).toBeUndefined();
+    expect(result.end).toBe(1);
+  });
+});
+
+describe("shortLabelName", () => {
+  it("keeps a name that fits, and shortens one that does not to 16 characters", () => {
+    expect(shortLabelName("FPAdd")).toBe("FPAdd");
+    for (const name of ["could_not_open_file_quit_to_main", "GetDefaultListingFilename", "ValidateNewCursorOffset"]) {
+      const short = shortLabelName(name);
+      expect(short.length, name).toBeLessThanOrEqual(16);
+      expect(short, name).toMatch(/^[A-Za-z_][A-Za-z0-9_]*$/);
+    }
+  });
+
+  it("abbreviates common words first, keeping their case", () => {
+    expect(shortLabelName("DisplayEazyLinkVersion")).toMatch(/^DispEazyLink/);
+    expect(shortLabelName("TransferFileBlock")).toBe("XferFileBlk");
+  });
+
+  it("is deterministic and gives a taken name a number", () => {
+    expect(shortLabelName("ozFileEprTotalSpace")).toBe(shortLabelName("ozFileEprTotalSpace"));
+    const first = shortLabelName("ozFileEprTotalSpace");
+    expect(shortLabelName("ozFileEprTotalSpace", new Set([first]))).not.toBe(first);
   });
 });
