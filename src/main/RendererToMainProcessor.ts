@@ -116,6 +116,8 @@ import type {
   FloatingSavedDocument
 } from "@messaging/floating-documents";
 import type { AppState } from "@common/state/AppState";
+import type { NavigationEntry } from "@renderer/abstractions/NavigationLocation";
+
 import {
   ejectMediaFile as ejectMachineMedia,
   selectMediaFile as selectMachineMedia,
@@ -203,6 +205,16 @@ const annotationFileWatcher = new AnnotationFileWatcher((filePath) => {
       // --- No IDE window to tell: it reads the file afresh when it opens it
     });
 });
+
+/** Shows the IDE window and gives it the focus */
+function bringIdeWindowForward(): void {
+  showIdeWindow();
+  const { ideWindow } = getAppWindows();
+  if (ideWindow && !ideWindow.isDestroyed()) {
+    if (ideWindow.isMinimized()) ideWindow.restore();
+    ideWindow.focus();
+  }
+}
 
 class MainMessageProcessor {
   /**
@@ -1594,19 +1606,44 @@ class MainMessageProcessor {
     return mainStore.getState();
   }
 
-  async navigateInIde(filename: string, line?: number, column?: number): Promise<void> {
+  async navigateInIde(
+    filename: string,
+    line?: number,
+    column?: number,
+    origin?: NavigationEntry
+  ): Promise<void> {
     if (typeof filename !== "string" || !filename) return;
     // --- A floating document is focused where it is (plan §2.3)
     if (await getFloatingWindows()?.focusDocument({ documentId: filename, line, column })) return;
-    showIdeWindow();
-    const { ideWindow } = getAppWindows();
-    if (ideWindow && !ideWindow.isDestroyed()) {
-      if (ideWindow.isMinimized()) ideWindow.restore();
-      ideWindow.focus();
+    bringIdeWindowForward();
+    // --- The jump starts in the floating window: the IDE's history records it from there
+    if (origin && typeof origin === "object") {
+      await getIdeApi().setNavigationOrigin(origin);
     }
     const position =
       line !== undefined ? ` ${Math.trunc(line)}${column !== undefined ? ` ${Math.trunc(column)}` : ""}` : "";
     await getIdeApi().executeCommand(`nav "${filename.replace(/"/g, '\\"')}"${position} -r definition`);
+  }
+
+  async recordNavigation(from?: NavigationEntry, to?: NavigationEntry): Promise<void> {
+    if (!from && !to) return;
+    await getIdeApi().recordNavigation(from, to);
+  }
+
+  async stepNavigation(direction: -1 | 1, current?: NavigationEntry): Promise<boolean> {
+    if (direction !== -1 && direction !== 1) return false;
+    const result = await getIdeApi().stepNavigation(direction, current);
+    // --- The IDE window comes forward when the location is there; a floating document's window
+    // --- was already brought forward when its entry was restored
+    if (result?.moved && result.documentId && !getFloatingWindows()?.findSlotOf(result.documentId)) {
+      bringIdeWindowForward();
+    }
+    return !!result?.moved;
+  }
+
+  async restoreFloatingNavigation(entry: NavigationEntry): Promise<boolean> {
+    if (!entry || typeof entry.documentId !== "string") return false;
+    return (await getFloatingWindows()?.restoreNavigation(entry)) ?? false;
   }
 
   /**

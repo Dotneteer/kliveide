@@ -21,6 +21,7 @@ import { getDocumentAreaCommandTarget } from "@renderer/features/documents/docum
 import { type DocumentAreaGridApi } from "@renderer/features/documents/DocumentAreaGrid";
 import { t } from "@common/i18n/i18n";
 import { isFloatSource } from "@common/messaging/messages-core";
+import { getFloatingDocuments } from "@common/messaging/floating-documents";
 import { routeToFloatingDocument } from "@renderer/features/documents/floatingDocumentTransfer";
 
 type NavigateToDocumentCommandArgs = {
@@ -166,16 +167,39 @@ export class NavigateToDocumentCommand extends IdeCommandBase<NavigateToDocument
     if (isSatellite) {
       const ownHub = context.service.projectService.getActiveDocumentHubService();
       if (ownHub?.isOpen(documentId)) return false;
-      await context.mainApi.navigateInIde(documentId, args.lineNo, args.columnNo);
+      // --- The jump starts here: the IDE's history records it from this window's location
+      const origin = context.service.navigationHistoryService?.captureCurrent?.(
+        (args["-r"] as NavigationReason | undefined) ?? "definition"
+      );
+      await context.mainApi.navigateInIde(documentId, args.lineNo, args.columnNo, origin);
       return true;
     }
-    return await routeToFloatingDocument(
+    const floatingType = getFloatingDocuments(context.store.getState()).find(
+      (entry) => entry.document?.id === documentId
+    )?.document.type;
+    if (!floatingType) return false;
+    const reason = args["-r"] as NavigationReason | undefined;
+    const from = reason ? context.service.navigationHistoryService?.captureCurrent?.(reason) : undefined;
+    const routed = await routeToFloatingDocument(
       context.store,
       context.mainApi,
       documentId,
       args.lineNo,
       args.columnNo
     );
+    // --- A recorded jump into a floating document: the IDE's history keeps it, its destination is
+    // --- the position asked for (the window shows it; this one cannot capture it)
+    if (routed && reason && args.lineNo !== undefined) {
+      context.service.navigationHistoryService?.recordExternal?.(from, {
+        documentId,
+        documentType: floatingType,
+        title: documentId.split("/").pop() ?? documentId,
+        locator: { kind: "text", line: args.lineNo, column: Math.max(args.columnNo ?? 1, 1) },
+        reason,
+        time: Date.now()
+      });
+    }
+    return routed;
   }
 
   /**

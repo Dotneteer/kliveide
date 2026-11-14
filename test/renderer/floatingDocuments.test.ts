@@ -257,6 +257,29 @@ describe("opening a floating document elsewhere (plan §2.3)", () => {
     expect(docService.openDocument).not.toHaveBeenCalled();
   });
 
+  it("a recorded nav into a floating document lands in the IDE's history", async () => {
+    const context: any = createMockContext();
+    context.messageSource = "ide";
+    context.store.getState.mockReturnValue(floatingState);
+    context.service.projectService.getNodeForFile.mockReturnValue({ data: { fullPath: FILE } });
+    context.mainApi.focusFloatingDocument = vi.fn(async () => true);
+    const history = context.service.navigationHistoryService;
+    history.captureCurrent = vi.fn(() => ({ documentId: "/project/a.asm" }));
+    history.recordExternal = vi.fn();
+
+    await new NavigateToDocumentCommand().execute(context, { filename: FILE, lineNo: 9, "-r": "breakpoint" } as any);
+
+    expect(history.recordExternal).toHaveBeenCalledWith(
+      { documentId: "/project/a.asm" },
+      expect.objectContaining({
+        documentId: FILE,
+        documentType: CODE_EDITOR,
+        locator: { kind: "text", line: 9, column: 1 },
+        reason: "breakpoint"
+      })
+    );
+  });
+
   it("nav in a floating window opens another document in the IDE", async () => {
     const context: any = createMockContext();
     context.messageSource = "float2";
@@ -269,7 +292,7 @@ describe("opening a floating document elsewhere (plan §2.3)", () => {
 
     await new NavigateToDocumentCommand().execute(context, { filename: other, lineNo: 4, columnNo: 2 });
 
-    expect(context.mainApi.navigateInIde).toHaveBeenCalledWith(other, 4, 2);
+    expect(context.mainApi.navigateInIde).toHaveBeenCalledWith(other, 4, 2, undefined);
     expect(docService.openDocument).not.toHaveBeenCalled();
   });
 });

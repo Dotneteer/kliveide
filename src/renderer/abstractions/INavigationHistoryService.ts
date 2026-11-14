@@ -22,6 +22,17 @@ export interface INavigationHistoryService {
   /** Goes back one location. Resolves false when there was nowhere to go. */
   goBack(): Promise<boolean>;
 
+  /**
+   * Floating document windows share the IDE's history (`dev/plans/FLOATING_DOCUMENT_WINDOWS_PLAN.md`
+   * §3.5). The IDE records a floating window's jumps (`recordExternal`), steps from its location
+   * (`stepFrom`), and takes a jump's origin from it (`setNextJumpOrigin`); a floating window restores
+   * the locations of its own document (`restoreExternal`).
+   */
+  recordExternal?(from: NavigationEntry | undefined, to: NavigationEntry | undefined): void;
+  stepFrom?(direction: -1 | 1, current: NavigationEntry | undefined): Promise<boolean>;
+  setNextJumpOrigin?(origin: NavigationEntry | undefined): void;
+  restoreExternal?(entry: NavigationEntry): Promise<boolean>;
+
   /** Goes forward one location. Resolves false when there was nowhere to go. */
   goForward(): Promise<boolean>;
 

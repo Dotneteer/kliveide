@@ -206,3 +206,15 @@ describe("FloatingWindowManager", () => {
     expect(manager.hasFocus()).toBe(true);
   });
 });
+
+describe("FloatingWindowManager during a quit", () => {
+  it("does not wait for a window that is destroyed before it answers", async () => {
+    const { windows, floatApis, manager } = setup();
+    manager.open(doc("/p/a.asm"));
+    floatApis.get(1).saveAllBeforeQuit.mockReturnValue(new Promise(() => {}));
+    const saving = manager.saveAllBeforeQuit();
+    manager.setQuitting(true);
+    windows[0].destroy();
+    await expect(saving).resolves.toBe(true);
+  });
+});

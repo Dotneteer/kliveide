@@ -12,6 +12,7 @@ import { useMainApi } from "@renderer/core/MainApi";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { useDocumentHubServiceVersion } from "@renderer/appIde/services/DocumentServiceProvider";
 import { useIdeStartup } from "@renderer/appIde/useIdeStartup";
+import { useNavigationShortcuts } from "@renderer/features/navigation/useNavigationShortcuts";
 import { IdeDialogBridge } from "@renderer/appIde/IdeDialogBridge";
 import { buildProjectTree } from "@renderer/appIde/project/project-node";
 import { restoreDocument } from "@renderer/appIde/restoreLastOpenDocuments";
@@ -73,6 +74,9 @@ const FloatApp = ({ slot }: Props) => {
   const [busy, setBusy] = useState(false);
   const openedRef = useRef(false);
   const leavingRef = useRef(false);
+
+  // --- Go Back / Go Forward from the keyboard and the mouse's side buttons, through the IDE's history
+  useNavigationShortcuts();
 
   useIdeStartup({
     appPath: "",

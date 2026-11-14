@@ -80,6 +80,13 @@ Right-click a document's tab and choose **Pop Out to Window** to move the docume
 into a window of its own. Move and resize it like any other window, for example onto a second
 screen next to the emulator. The document leaves its tab strip: it is open in one place at a time.
 
+<Shot
+  src="guides/editing/editor/floating-window.webp"
+  alt="A source file in a window of its own: a title bar with the file name, Dock and Close, and the editor below it"
+  caption="A document popped out of the IDE"
+  width={640}
+/>
+
 The window's title bar shows the document's name and two buttons:
 
 - **Dock** puts the document back into the IDE, in the editor area it came from (or the active one
@@ -88,9 +95,10 @@ The window's title bar shows the document's name and two buttons:
   window from the operating system (<kbd>Cmd</kbd>+<kbd>W</kbd>, <kbd>Alt</kbd>+<kbd>F4</kbd>) does
   the same.
 
-A floating document works as it does in the IDE: breakpoints, the execution point, the editor's keys
-and Go to Definition. Opening it again from the Explorer, the error list or a breakpoint brings its
-window to the front. Up to 8 documents can float at a time. The project remembers them: reopening it
+A floating document works as it does in the IDE: breakpoints, the execution point, the editor's keys,
+the menu's shortcuts and Go to Definition. Opening it again from the Explorer, the error list or a
+breakpoint brings its window to the front. Go Back and Go Forward move through one history shared
+with the IDE, so they return to a floating document's window as they do to a tab. Up to 8 documents can float at a time. The project remembers them: reopening it
 reopens them in their windows, where you left them.
 
 Closing the project closes the floating windows; their changes are saved first.

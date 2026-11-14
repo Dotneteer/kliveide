@@ -4,6 +4,7 @@ import { MessengerBase } from "./MessengerBase";
 import { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
 import { ProjectStructure } from "@main/ksx-runner/ProjectStructure";
 import type { MessageSource } from "./messages-core";
+import type { NavigationEntry } from "@renderer/abstractions/NavigationLocation";
 import type {
   DockedDocumentRequest,
   FloatingDocumentReveal
@@ -199,7 +200,54 @@ abstract class IdeApiImpl {
   async requestFloatingClose(): Promise<boolean> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
+
+  /**
+   * Records a jump a floating window made in the IDE's navigation history (one history, owned by the
+   * IDE: FLOATING_DOCUMENT_WINDOWS_PLAN §3.5).
+   * @param _from Where the jump started
+   * @param _to Where it ended
+   */
+  async recordNavigation(_from?: NavigationEntry, _to?: NavigationEntry): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Steps the IDE's navigation history from a floating window's current location.
+   * @param _direction -1: Go Back, 1: Go Forward
+   * @param _current Where the floating window is now
+   */
+  async stepNavigation(
+    _direction: -1 | 1,
+    _current?: NavigationEntry
+  ): Promise<NavigationStepResult> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * The next jump the IDE records starts at this location in a floating window (a `nav` from there to
+   * another document runs in the IDE).
+   * @param _origin The floating window's location
+   */
+  async setNavigationOrigin(_origin?: NavigationEntry): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * A floating window: restores a location of its own document that the IDE's history steps to.
+   * @param _entry The location
+   */
+  async restoreNavigation(_entry: NavigationEntry): Promise<boolean> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
 }
+
+/** What a step of the navigation history did */
+export type NavigationStepResult = {
+  /** The history moved */
+  moved: boolean;
+  /** The document now current in the IDE (main brings the IDE forward unless it floats) */
+  documentId?: string;
+};
 
 /** A command's result with its output (`executeCommandCaptured`) */
 export type CapturedCommandResult = IdeCommandResult & {

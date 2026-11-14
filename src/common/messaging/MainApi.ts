@@ -18,6 +18,7 @@ import type { UnitTestRunRequest, UnitTestRunResponse } from "@common/unit-tests
 import type { AddUnitTestSupportResult } from "@main/unit-tests/addUnitTestSupport";
 import { MessengerBase } from "./MessengerBase";
 import type { AppState } from "@common/state/AppState";
+import type { NavigationEntry } from "@renderer/abstractions/NavigationLocation";
 import type {
   FloatingDocumentRequest,
   FloatingDocumentResult,
@@ -1137,7 +1138,39 @@ class MainApiImpl {
    * @param _line The line to go to
    * @param _column The column to go to
    */
-  async navigateInIde(_filename: string, _line?: number, _column?: number): Promise<void> {
+  async navigateInIde(
+    _filename: string,
+    _line?: number,
+    _column?: number,
+    _origin?: NavigationEntry
+  ): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * A floating window records a jump in the IDE's navigation history.
+   * @param _from Where the jump started
+   * @param _to Where it ended
+   */
+  async recordNavigation(_from?: NavigationEntry, _to?: NavigationEntry): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * A floating window steps the IDE's navigation history (Go Back / Go Forward); the window that
+   * shows the location it reaches comes forward.
+   * @param _direction -1: back, 1: forward
+   * @param _current Where the floating window is now
+   */
+  async stepNavigation(_direction: -1 | 1, _current?: NavigationEntry): Promise<boolean> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * The IDE's history reached a location of a floating document: its window comes forward and shows it.
+   * @param _entry The location
+   */
+  async restoreFloatingNavigation(_entry: NavigationEntry): Promise<boolean> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 
@@ -1282,6 +1315,9 @@ const UNBOUNDED_MAIN_METHODS = [
   "runUiAction",
   // --- Runs an IDE command, which may itself wait on the user
   "navigateInIde",
+  // --- Restoring a location may open a document, which may ask the user
+  "stepNavigation",
+  "restoreFloatingNavigation",
   // --- The IDE may ask about unsaved documents while it opens the docked one
   "dockFloatingDocument",
   // --- A File Manager copy runs as long as its files take (`dev/ai/file-manager.md`)

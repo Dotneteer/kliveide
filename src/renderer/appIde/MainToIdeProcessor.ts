@@ -35,6 +35,8 @@ import type {
   FloatingDocumentReveal
 } from "@common/messaging/floating-documents";
 import { getSatelliteController } from "@renderer/appFloat/satelliteController";
+import type { NavigationEntry } from "@renderer/abstractions/NavigationLocation";
+import type { INavigationHistoryService } from "@renderer/abstractions/INavigationHistoryService";
 import { openDockedDocument } from "@renderer/features/documents/floatingDocumentTransfer";
 
 /**
@@ -59,7 +61,8 @@ class IdeMessageProcessor {
     private readonly outputPaneService: IOutputPaneService,
     private readonly ideCommandsService: IIdeCommandService,
     private readonly projectService: IProjectService,
-    private readonly scriptService: IScriptService
+    private readonly scriptService: IScriptService,
+    private readonly navigationHistoryService?: INavigationHistoryService
   ) {}
 
   /**
@@ -357,6 +360,53 @@ class IdeMessageProcessor {
   async requestFloatingClose() {
     return await requireSatellite().requestClose();
   }
+
+  /**
+   * Records a jump a floating window made (FLOATING_DOCUMENT_WINDOWS_PLAN §3.5)
+   */
+  recordNavigation(from?: NavigationEntry, to?: NavigationEntry) {
+    if ((from && !isEntry(from)) || (to && !isEntry(to))) return;
+    this.navigationHistoryService?.recordExternal?.(from, to);
+  }
+
+  /**
+   * Steps the history from a floating window's location
+   */
+  async stepNavigation(direction: -1 | 1, current?: NavigationEntry) {
+    if (direction !== -1 && direction !== 1) return { moved: false };
+    if (current && !isEntry(current)) return { moved: false };
+    const moved = (await this.navigationHistoryService?.stepFrom?.(direction, current)) ?? false;
+    const documentId = this.projectService.getActiveDocumentHubService()?.getActiveDocument()?.id;
+    return { moved, documentId };
+  }
+
+  /**
+   * The next recorded jump starts at a floating window's location
+   */
+  setNavigationOrigin(origin?: NavigationEntry) {
+    if (origin && !isEntry(origin)) return;
+    this.navigationHistoryService?.setNextJumpOrigin?.(origin);
+  }
+
+  /**
+   * Floating windows only: restores a location of the window's document
+   */
+  async restoreNavigation(entry: NavigationEntry) {
+    if (!isEntry(entry)) return false;
+    requireSatellite();
+    return (await this.navigationHistoryService?.restoreExternal?.(entry)) ?? false;
+  }
+}
+
+function isEntry(value: unknown): value is NavigationEntry {
+  const entry = value as NavigationEntry;
+  return (
+    !!entry &&
+    typeof entry === "object" &&
+    typeof entry.documentId === "string" &&
+    typeof entry.documentType === "string" &&
+    !!entry.locator
+  );
 }
 
 function requireSatellite() {
@@ -388,13 +438,20 @@ export async function processMainToIdeMessages(
       break;
 
     case "ApiMethodRequest":
-      const { outputPaneService, ideCommandsService, projectService, scriptService } = appServices;
+      const {
+        outputPaneService,
+        ideCommandsService,
+        projectService,
+        scriptService,
+        navigationHistoryService
+      } = appServices;
       const ideMessageProcessor = new IdeMessageProcessor(
         store,
         outputPaneService,
         ideCommandsService,
         projectService,
-        scriptService
+        scriptService,
+        navigationHistoryService
       );
 
       // --- We accept only methods defined in the MainMessageProcessor

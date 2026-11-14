@@ -45,7 +45,11 @@ export const IDE_API_ROUTING: Record<IdeApiMethodName, IdeApiRouting> = {
   openDockedDocument: "ide",
   revealFloatingDocument: "float",
   floatingDocumentRenamed: "float",
-  requestFloatingClose: "float"
+  requestFloatingClose: "float",
+  recordNavigation: "ide",
+  stepNavigation: "ide",
+  setNavigationOrigin: "ide",
+  restoreNavigation: "float"
 };
 
 /**

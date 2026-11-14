@@ -10,6 +10,7 @@ import { readReverseShortcuts } from "@common/settings/reverse-shortcuts";
 import { mainStore } from "./main-store";
 import { t } from "@common/i18n/i18n";
 import { dimMenuAction } from "@state/actions";
+import { getFloatingWindows } from "./floating-windows-host";
 import { getIdeApi } from "@messaging/MainToIdeMessenger";
 import { readNavigationShortcuts } from "@common/utils/navigationShortcuts";
 import { readRecordIdeEmuShortcut } from "@common/utils/recordingShortcuts";
@@ -173,7 +174,10 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
   // --- pointer rests at the top of the screen. So only touch the native menu when the rendered
   // --- menu really differs from the one already installed.
   if (__DARWIN__) {
-    const windowFocused = isEmuWindowFocused() ? emuWindow : ideWindow;
+    // --- A focused floating document window gets the IDE's menu, with its accelerators
+    // --- (FLOATING_DOCUMENT_WINDOWS_PLAN §3.6): without it the menu bar was empty while one had focus
+    const focusedFloat = getFloatingWindows()?.getFocusedWindow() as BrowserWindow | undefined;
+    const windowFocused = isEmuWindowFocused() ? emuWindow : (focusedFloat ?? ideWindow);
     if (!windowFocused.isDestroyed()) {
       template.forEach(templateTransform(windowFocused));
       if (menuChanged("app", template)) {
@@ -191,6 +195,15 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       template.forEach(templateTransform(ideWindow));
       if (menuChanged("ide", template)) {
         ideWindow.setMenu(Menu.buildFromTemplate(template));
+      }
+    }
+    // --- Floating document windows: the menu bar is not shown (they are frameless), but the menu's
+    // --- accelerators work there as in the IDE window (FLOATING_DOCUMENT_WINDOWS_PLAN §3.6)
+    for (const { slot, window } of getFloatingWindows()?.windows ?? []) {
+      const floatWindow = window as BrowserWindow;
+      template.forEach(templateTransform(floatWindow));
+      if (menuChanged(`float${slot}`, template)) {
+        floatWindow.setMenu(Menu.buildFromTemplate(template));
       }
     }
   }

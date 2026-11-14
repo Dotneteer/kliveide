@@ -13,6 +13,7 @@ const os = require("os");
 const path = require("path");
 const { launchKlive } = require("./doc-shots/harness.cjs");
 
+const MEMORY_TAB = "Machine Memory";
 const PROGRAM = ["Start:", "    ld a,1", "    ld b,2", "    ret", ""].join("\n");
 
 (async () => {
@@ -24,7 +25,13 @@ const PROGRAM = ["Start:", "    ld a,1", "    ld b,2", "    ret", ""].join("\n")
     if (!ok) failures.push(what);
   };
 
-  const klive = await launchKlive({ home: path.join(work, "home"), height: 820, userHome: path.join(work, "user") });
+  const klive = await launchKlive({
+    home: path.join(work, "home"),
+    height: 820,
+    userHome: path.join(work, "user"),
+    // --- The Machine type menu lists only favourites
+    globalSettings: { emuOptions: { machineFavorites: [{ machineId: "sp128", modelId: "sp128" }] } }
+  });
   const { app, ide, cmd, sleep } = klive;
   const floatWindow = () => app.windows().find((w) => w.url().includes("?float="));
   const waitFor = async (predicate, timeout = 15000) => {
@@ -49,8 +56,6 @@ const PROGRAM = ["Start:", "    ld a,1", "    ld b,2", "    ret", ""].join("\n")
     await sleep(400);
     await ide.getByText("Pop Out to Window", { exact: true }).click();
   };
-  const focusedWindowUrl = () =>
-    app.evaluate(({ BrowserWindow }) => BrowserWindow.getFocusedWindow()?.webContents.getURL() ?? "");
 
   try {
     const projects = path.join(work, "projects");
@@ -58,6 +63,7 @@ const PROGRAM = ["Start:", "    ld a,1", "    ld b,2", "    ret", ""].join("\n")
     await cmd(`newp sp48 floatcheck -p "${projects}"`, 5000);
     const folder = path.join(projects, "floatcheck");
     fs.writeFileSync(path.join(folder, "code", "code.kz80.asm"), PROGRAM);
+    fs.writeFileSync(path.join(folder, "code", "other.kz80.asm"), PROGRAM);
     await cmd(`open "${folder}"`, 8000);
     await cmd("nav code/code.kz80.asm 3", 3000);
     check((await tabNames()).includes("code.kz80.asm"), "the document is open in the IDE");
@@ -89,11 +95,43 @@ const PROGRAM = ["Start:", "    ld a,1", "    ld b,2", "    ret", ""].join("\n")
     await float.keyboard.type("; floated");
     await sleep(300);
 
-    // --- Opening it from the IDE focuses its window
-    await cmd("nav code/code.kz80.asm 4", 2500);
-    const focused = await waitFor(async () => (await focusedWindowUrl()).includes("?float="), 5000);
-    check(!!focused, "nav to a floating document focuses its window");
+    // --- Opening it from the IDE focuses its window; the jump goes into the one shared history.
+    // --- OS focus is unreliable under automation, so the check counts main's focus requests on the
+    // --- floating window instead.
+    await app.evaluate(({ BrowserWindow }) => {
+      const w = BrowserWindow.getAllWindows().find((b) => b.webContents.getURL().includes("?float="));
+      const focus = w.focus.bind(w);
+      globalThis.__floatFocusCount = 0;
+      w.focus = () => {
+        globalThis.__floatFocusCount++;
+        focus();
+      };
+    });
+    const floatFocusCount = () => app.evaluate(() => globalThis.__floatFocusCount ?? 0);
+    const activeIdeTab = () =>
+      ide.evaluate(
+        () =>
+          document
+            .querySelector('[class*="_documentTab_"][class*="_active_"] [class*="_titleText_"]')
+            ?.textContent.trim() ?? ""
+      );
+    await cmd("nav code/other.kz80.asm 1", 2000);
+    await cmd("nav code/code.kz80.asm 4 -r definition", 2500);
+    check((await floatFocusCount()) === 1, "nav to a floating document focuses its window");
     check(!(await tabNames()).includes("code.kz80.asm"), "no second copy opened in the IDE");
+
+    // --- Go Back returns to the IDE's document; Go Forward to the floating window
+    // --- Pressed in the floating window: the shortcut goes through the IDE's history from there
+    await float.click(".monaco-editor .view-lines");
+    await float.keyboard.press(process.platform === "darwin" ? "Control+Minus" : "Alt+ArrowLeft");
+    await sleep(2000);
+    check(
+      (await floatFocusCount()) === 1 && (await activeIdeTab()) === "other.kz80.asm",
+      "Go Back from the floating document returns to the IDE"
+    );
+    await cmd("nav-forward", 2000);
+    check((await floatFocusCount()) === 2, "Go Forward brings the floating window back");
+    check(!(await tabNames()).includes("code.kz80.asm"), "Go Forward does not open a second copy in the IDE");
 
     // --- Dock
     await float.click('[data-testid="float-dock"]');
@@ -120,6 +158,54 @@ const PROGRAM = ["Start:", "    ld a,1", "    ld b,2", "    ret", ""].join("\n")
       check(!!closed, "Close destroys the floating window");
       await sleep(500);
       check(!(await tabNames()).includes("code.kz80.asm"), "Close does not put the document back");
+    }
+
+    // --- A machine document floats too, and keeps working across a machine change (plan §2.3):
+    // --- Klive has no rule closing documents on a machine change; each panel follows the machine
+    await cmd("show-memory", 2500);
+    await popOut(MEMORY_TAB);
+    const memory = await waitFor(() => floatWindow());
+    check(!!memory, "the Memory view pops out");
+    if (memory) {
+      await waitFor(() => memory.evaluate(() => document.querySelector('[data-app-ready="true"]') !== null));
+      // --- The menu (and its accelerators) is complete while a floating window has the focus
+      // --- The menu exists only for a focused window, and the app launched here never becomes the
+      // --- frontmost one: main is told the floating window has the focus, then a state change
+      // --- rebuilds the menu through the same path a real focus takes
+      await app.evaluate(({ BrowserWindow }) => {
+        const w = BrowserWindow.getAllWindows().find((b) => b.webContents.getURL().includes("?float="));
+        if (w) w.isFocused = () => true;
+        BrowserWindow.getFocusedWindow = () => w ?? null;
+      });
+      await cmd("nav code/other.kz80.asm 2", 1500);
+      const menuReady = await waitFor(() =>
+        app.evaluate(({ Menu, BrowserWindow }) => {
+          const focused = BrowserWindow.getFocusedWindow();
+          const menu = process.platform === "darwin" ? Menu.getApplicationMenu() : focused?.getMenu?.();
+          return !!focused?.webContents.getURL().includes("?float=") && !!menu?.getMenuItemById("machine_types");
+        }),
+        8000
+      );
+      check(!!menuReady, "the menu is complete while a floating window has the focus");
+      const switched = await waitFor(() =>
+        app.evaluate(({ Menu }) => {
+          const item = Menu.getApplicationMenu()?.getMenuItemById("machine_sp128_sp128");
+          if (!item?.enabled) return false;
+          item.click();
+          return true;
+        })
+      );
+      check(switched, "the machine switches to the ZX Spectrum 128");
+      await sleep(6000);
+      const stillThere = !!floatWindow();
+      const text = stillThere ? await memory.evaluate(() => document.body.innerText) : "";
+      check(
+        stillThere && /[0-9A-F]{4}/.test(text) && !/cannot be opened/i.test(text),
+        "the floating Memory view keeps showing memory after the machine change"
+      );
+      check(!(await tabNames()).includes(MEMORY_TAB), "the Memory view stays out of the IDE");
+      await memory.click('[data-testid="float-close"]');
+      check(!!(await waitFor(async () => !floatWindow())), "the Memory view's window closes");
     }
   } catch (err) {
     failures.push(String(err));

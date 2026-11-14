@@ -29,6 +29,7 @@ import {
   type FloatingWindowBounds
 } from "@messaging/floating-documents";
 import { combineFanoutResults } from "@messaging/ide-api-routing";
+import type { NavigationEntry } from "@renderer/abstractions/NavigationLocation";
 
 /**
  * The default size of a new floating window
@@ -89,6 +90,9 @@ type OpenWindow = {
   boundsTimer?: ReturnType<typeof setTimeout>;
   /** The window is being destroyed by the manager: its close event must not ask the renderer */
   closing?: boolean;
+  /** Settles when the window is gone: a request to it still pending then has nothing to wait for */
+  gone: Promise<void>;
+  markGone: () => void;
 };
 
 /**
@@ -119,6 +123,22 @@ export class FloatingWindowManager {
    */
   setQuitting(quitting: boolean): void {
     this._quitting = quitting;
+  }
+
+  /**
+   * The open windows, by slot
+   */
+  get windows(): { slot: FloatSlot; window: FloatingWindowLike }[] {
+    return this.openSlots
+      .map((slot) => ({ slot, window: this._windows.get(slot)!.window }))
+      .filter(({ window }) => !window.isDestroyed());
+  }
+
+  /**
+   * The floating window that has the focus, if any
+   */
+  getFocusedWindow(): FloatingWindowLike | undefined {
+    return this.windows.find(({ window }) => window.isFocused())?.window;
   }
 
   /**
@@ -173,7 +193,9 @@ export class FloatingWindowManager {
       this.deps.dispatch(setFloatingDocumentAction(slot, undefined));
       return { error: "failed", message: String(err) };
     }
-    const openWindow: OpenWindow = { slot, window };
+    let markGone: () => void = () => {};
+    const gone = new Promise<void>((resolve) => (markGone = resolve));
+    const openWindow: OpenWindow = { slot, window, gone, markGone };
     this._windows.set(slot, openWindow);
     this.deps.registerMessenger(slot, window);
     this.attachWindowEvents(openWindow);
@@ -209,6 +231,7 @@ export class FloatingWindowManager {
     this._windows.delete(slot);
     if (openWindow) {
       openWindow.closing = true;
+      openWindow.markGone();
       if (openWindow.boundsTimer) clearTimeout(openWindow.boundsTimer);
       this.deps.unregisterMessenger(slot);
       if (!openWindow.window.isDestroyed()) {
@@ -242,10 +265,15 @@ export class FloatingWindowManager {
    * refused (the user cancelled an unsaved-document prompt).
    */
   async saveAllBeforeQuit(): Promise<boolean> {
+    // --- A window destroyed while its answer is pending (the app closes its windows during a quit)
+    // --- never answers, and the request has no timeout: its save is over when the window is gone
     const results = await Promise.allSettled(
       this.openSlots.map(async (slot) => {
         const api = this.deps.getFloatApi(slot);
-        return api ? await api.saveAllBeforeQuit() : true;
+        const gone = this._windows.get(slot)?.gone;
+        if (!api) return true;
+        const saved = api.saveAllBeforeQuit();
+        return gone ? await Promise.race([saved, gone.then(() => true)]) : await saved;
       })
     );
     return combineFanoutResults(results);
@@ -267,6 +295,21 @@ export class FloatingWindowManager {
       }
     }
     return true;
+  }
+
+  /**
+   * The IDE's navigation history reached a location of a floating document: its window comes forward
+   * and shows it (plan §3.5); false when the document does not float
+   */
+  async restoreNavigation(entry: NavigationEntry): Promise<boolean> {
+    const slot = this.findSlotOf(entry?.documentId);
+    if (!slot) return false;
+    this.focusSlot(slot);
+    try {
+      return (await this.deps.getFloatApi(slot)?.restoreNavigation(entry)) ?? false;
+    } catch {
+      return false;
+    }
   }
 
   /**

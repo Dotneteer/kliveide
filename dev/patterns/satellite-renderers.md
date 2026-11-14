@@ -44,6 +44,13 @@ an `IdeApi` method, a shared-state action, or anything that assumes "the IDE win
   `beforeDocumentDisposal`), then transfers the workspace's saved-document shape
   (`captureSavedDocument` → `restoreDocument`). The receiving window opens it before the giving one
   lets go.
+- **The menu belongs to the focused window, floating ones included** (`setupMenu`): a new
+  window-dependent menu rule must handle a focused floating window, or its accelerators go dead.
+- **One navigation history, the IDE's.** A satellite's `NavigationHistoryService` is remote
+  (`setRemote`); the IDE restores a floating document's entries in its window (`setFloatingRestorer`).
+  A new kind of jump recorded outside `recordJump` must go through `recordExternal` in the IDE.
+- **A request to a floating window that may be destroyed meanwhile ends with the window** (the
+  manager's `gone` promise), when it has no timeout of its own.
 - **A late window starts from main's full state** (`MainApi.getFullState`) before rendering; its IPC
   listener is registered at module load like the IDE's.
 
@@ -52,5 +59,8 @@ an `IdeApi` method, a shared-state action, or anything that assumes "the IDE win
 - Messaging and routing: `test/messaging/floating-messaging.test.ts`.
 - The window manager with fake windows: `test/main/floating-windows.test.ts`.
 - Transfer, routing, workspace version 3: `test/renderer/floatingDocuments.test.ts`.
+- The menu with a focused floating window: `test/main/app-menu-floating.test.ts`; the shared history:
+  `test/navigation/floatingNavigationHistory.test.ts`.
+- Cost with 8 windows: `node dev/scripts/floating-windows-cost.cjs`.
 - In the running app: `node dev/scripts/floating-windows-ide-check.cjs` (after an
   `electron-vite build`), every window is also a CDP target for `dev/scripts/cdp/drive.mjs float ...`.

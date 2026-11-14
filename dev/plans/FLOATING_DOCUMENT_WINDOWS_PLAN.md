@@ -290,12 +290,34 @@ All decided by the project author on 2026-11-14.
 - **Phase 5.** Guide section "A document in its own window" in `guides/editing/editor.mdx`; the
   header's style rules in `dev/ai/ui-theming-intent-and-lessons.md`.
 
+### Finished after the first commit (2026-11-14)
+
+- **Menu and shortcuts.** The menu commands main runs in the IDE (`getIdeApi().executeCommand`) act on
+  the machine or the project (run, coverage, profiler, state files, history export), so they rightly
+  stay with the IDE. The real gap was the menu itself: on macOS `setupMenu` filled the submenus only
+  for the focused emulator or IDE window, so a focused floating window left the menu bar empty and its
+  accelerators dead; elsewhere floating windows had no menu. A focused floating window now gets the
+  IDE's menu (macOS), and every floating window gets one elsewhere (`test/main/app-menu-floating.test.ts`).
+  `useNavigationShortcuts` is mounted in the floating window too.
+- **One navigation history.** The IDE's `NavigationHistoryService` is the only history. A floating
+  window's service is `setRemote`: it records its jumps in the IDE (`MainApi.recordNavigation`) and
+  steps from its own location (`stepNavigation`). The IDE restores a floating document's entries in its
+  window (`setFloatingRestorer` → `restoreFloatingNavigation` → `IdeApi.restoreNavigation`), never as a
+  second copy. A `nav` from a floating window to another document passes its origin, and a recorded
+  `nav` from the IDE into a floating document records its destination
+  (`test/navigation/floatingNavigationHistory.test.ts`).
+- **Machine change.** Klive has no rule that closes documents on a machine change (only a few commands
+  close their own documents); each panel follows the machine. The IDE check pops out the Memory view
+  and switches the machine: the window keeps showing memory. No kind needed `floatable: false`.
+- **Cost.** `dev/scripts/floating-windows-cost.cjs`, measured 2026-11-14 on macOS: each window shows its
+  document about 0.74 s after Pop Out, steady to the eighth; each floating renderer's working set is
+  about 310 MB (the IDE renderer's is about 310-370 MB), 8 windows add about 2.5 GB of working set
+  (shared pages counted, so an upper bound). That is above this plan's 100-200 MB estimate.
+- **Quit.** A floating window destroyed during a quit while its save request was pending stalled the
+  quit (the request has no timeout): its save now ends when the window is gone.
+- **Guides screenshot.** `dev/scripts/doc-shots/recipes/guides-floating.cjs`.
+
 ### Open
 
-- The menus' accelerators that run an IDE command (`getIdeApi().executeCommand`) still act in the IDE
-  window when a floating window has the focus; Monaco's keys (save, find, go to line) work in the
-  window itself.
-- Navigation history: Go Back from a floating document is the satellite's own history, not the IDE's.
-- Language intel and memory cost with 8 windows open are not measured; no guides screenshot recipe.
-- A machine change does not close floating documents the new machine cannot show.
+- Whether 8 stays the limit, given about 310 MB per window (the author's decision, Q-level).
 - Dragging a tab out (Q6) is not part of this plan.

@@ -9,6 +9,8 @@ import { createOutputPaneService } from "./OuputPaneService";
 import { createProjectService } from "./ProjectService";
 import { createScriptService } from "./ScriptService";
 import { createNavigationHistoryService } from "./navigationHistoryServiceFactory";
+import { createMainApi } from "@common/messaging/MainApi";
+import { findFloatingSlot } from "@common/messaging/floating-documents";
 
 // =====================================================================================================================
 /**
@@ -68,6 +70,23 @@ export function AppServicesProvider ({ role = "ide", hubIdBase, children }: Prop
     };
     ideCommandsService.setAppServices(servicesRef.current);
     navigationHistoryService.setAppServices(servicesRef.current);
+
+    // --- One navigation history, owned by the IDE (FLOATING_DOCUMENT_WINDOWS_PLAN §3.5): a floating
+    // --- window records and steps through it; the IDE restores a floating document's locations in
+    // --- its window
+    const mainApi = createMainApi(messenger);
+    if (role === "satellite") {
+      navigationHistoryService.setRemote?.({
+        record: (from, to) => mainApi.recordNavigation(from, to),
+        step: (direction, current) => mainApi.stepNavigation(direction, current)
+      });
+    } else {
+      navigationHistoryService.setFloatingRestorer?.((entry) =>
+        findFloatingSlot(store.getState(), entry.documentId)
+          ? mainApi.restoreFloatingNavigation(entry)
+          : undefined
+      );
+    }
   }
 
   return (

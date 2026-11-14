@@ -866,6 +866,10 @@ function createFloatingWindow(slot: FloatSlot, bounds: FloatingWindowBounds | un
     show: true
   });
 
+  // --- The window takes the IDE's menu (its accelerators) at the next menu update; a reused slot must
+  // --- not keep the previous window's menu signature
+  invalidateMenuCache();
+
   const floatQuery = `?float=${slot}`;
   const devUrl = process.env["ELECTRON_RENDERER_URL"];
   if (is.dev && devUrl) {
