@@ -1,0 +1,58 @@
+/*
+ * The toolbar and the status bar in the emulator's full screen mode
+ * (`dev/plans/EMU_FULL_SCREEN_MODE_PLAN.md` §2.2-2.3).
+ *
+ * They lie *over* the picture, never in the layout: a bar that pushed the picture would rescale the
+ * emulated screen every time the pointer touched an edge. Hidden, a bar is moved off its edge, not
+ * removed, so it slides; `visibility` waits for the slide to end before it hides the bar from the
+ * pointer and the keyboard.
+ */
+
+/* --- The mode is off: no box of its own, the bar sits in the window's column as before */
+.inLayout {
+    display: contents;
+}
+
+.edgeBar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    z-index: var(--z-overlay);
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-2);
+    visibility: hidden;
+    transition:
+        transform var(--duration-base) var(--ease-out),
+        visibility 0s linear var(--duration-base);
+}
+
+/*
+ * `--emu-full-screen-inset` keeps a bar off its edge: on macOS the menu bar slides down at the top edge too, so
+ * the toolbar is revealed under it. Hidden, the bar travels its own height *and* the inset, or its
+ * last rows would show below the menu bar.
+ */
+.top {
+    top: var(--emu-full-screen-inset, 0px);
+    transform: translateY(calc(-100% - var(--emu-full-screen-inset, 0px)));
+}
+
+.bottom {
+    bottom: var(--emu-full-screen-inset, 0px);
+    transform: translateY(calc(100% + var(--emu-full-screen-inset, 0px)));
+}
+
+.shown {
+    visibility: visible;
+    transform: translateY(0);
+    transition:
+        transform var(--duration-base) var(--ease-out),
+        visibility 0s linear 0s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .edgeBar,
+    .shown {
+        transition: none;
+    }
+}

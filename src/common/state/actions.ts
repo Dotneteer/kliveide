@@ -40,6 +40,17 @@ export const dimMenuAction: ActionCreator = (flag: boolean) => ({
   payload: { flag }
 });
 
+/**
+ * The emulator window's full screen mode (`dev/plans/EMU_FULL_SCREEN_MODE_PLAN.md`): only the
+ * picture and the virtual keyboard, with the toolbar and status bar sliding in at the edges. Main
+ * owns it; the emulator renderer reads it. `topInset` is the macOS menu bar's height in points: the
+ * menu bar slides down over the top edge, so the revealed toolbar sits below it.
+ */
+export const setEmuFullScreenModeAction: ActionCreator = (flag: boolean, topInset?: number) => ({
+  type: "SET_EMU_FULL_SCREEN_MODE",
+  payload: { flag, topInset }
+});
+
 export const isWindowsAction: ActionCreator = (flag: boolean) => ({
   type: "IS_WINDOWS",
   payload: { flag }

@@ -115,11 +115,35 @@ While the emulator window has the focus, the **View** menu has these items for i
 - **Fit Window to Screen** shrinks the window around the machine's picture at the zoom step it shows
   now; **Fit Window to Screen at 1x** makes it as small as the machine allows.
 - **Zoom** (**Actual Size**, **Zoom In**, **Zoom Out**) zooms the window's contents, and
-  **Toggle Full Screen** (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>F9</kbd>) fills the screen.
+  **Toggle Full Screen** (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>F9</kbd>) turns the
+  [full screen mode](#full-screen-mode) on and off.
 - **Show IDE** appears while the IDE window is hidden.
 
 The screen always fits its window. **Settings › Emulator › Zoom steps** chooses whether it snaps to
 whole steps (1x, 2x, 3x), half steps or quarter steps. The same page has the **Scanline effect**.
+
+## Full screen mode
+
+**View › Toggle Full Screen** (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>F9</kbd>) fills the screen with
+the machine: its picture and, when it is shown, the virtual keyboard. The toolbar, the status bar and
+the media strip below the picture are gone. The same shortcut brings the window back as it was.
+
+The toolbar and the status bar are still there when you need them:
+
+- Move the mouse to the top edge of the screen and the toolbar slides in over the picture. On macOS
+  the menu bar comes down at the top edge too, and the toolbar slides in just below it.
+- Move it to the bottom edge and the status bar slides in.
+- A bar stays while the mouse is over it, or while one of its menus or a dialog it opened is open,
+  and slides away shortly after the mouse leaves it.
+
+This works whether **View › Toolbar** and **View › Status Bar** are on or off; leaving the mode shows
+them as those settings say. The bars cover the picture without resizing it, and they do not appear
+while the machine has captured the mouse. <kbd>Esc</kbd> does not leave the mode: it is a key of the
+machine.
+
+Leaving full screen another way (on macOS, the window's green button or
+<kbd>Control</kbd>+<kbd>Cmd</kbd>+<kbd>F</kbd>) also ends the mode. In the IDE window
+**Toggle Full Screen** only fills the screen.
 
 ## Keeping the emulator on top
 

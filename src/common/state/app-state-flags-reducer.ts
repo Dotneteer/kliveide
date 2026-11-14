@@ -43,6 +43,13 @@ export function appStateFlagsReducer (
     case "DIM_MENU":
       return { ...state, dimMenu: payload?.flag };
 
+    case "SET_EMU_FULL_SCREEN_MODE":
+      return {
+        ...state,
+        emuFullScreenMode: !!payload?.flag,
+        emuFullScreenTopInset: payload?.flag ? payload?.topInset || 0 : 0
+      };
+
     case "SET_AUTOMATION_STATUS":
       return { ...state, automation: payload?.value?.listening ? payload.value : undefined };
 

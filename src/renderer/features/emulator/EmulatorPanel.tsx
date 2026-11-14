@@ -152,7 +152,11 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   // --- The setting that switches the strip on and off; none means always shown (the Z88 slots)
   const [machineToolsSetting, setMachineToolsSetting] = useState<string | undefined>();
   const machineToolsSettingValue = useGlobalSetting(machineToolsSetting ?? "");
-  const showMachineTools = !!machineTools && (!machineToolsSetting || !!machineToolsSettingValue);
+  // --- The full screen mode shows the picture only: no strip, whatever its setting
+  // --- (`dev/plans/EMU_FULL_SCREEN_MODE_PLAN.md` D3)
+  const fullScreenMode = useSelector((s) => s.emuFullScreenMode ?? false);
+  const showMachineTools =
+    !!machineTools && !fullScreenMode && (!machineToolsSetting || !!machineToolsSettingValue);
   const recordingManagerRef = useRecordingManager();
 
   // --- The window's minimum size, Fit Window to Screen and per-machine sizes (issue #1377)

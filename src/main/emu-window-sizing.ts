@@ -84,7 +84,7 @@ export function applyEmuContentSizeHints(
 
   const minimum = outerSizeFor(window, hints.minimum);
   window.setMinimumSize(minimum.width, minimum.height);
-  if (window.isMaximized() || window.isFullScreen()) return;
+  if (window.isMaximized() || window.isFullScreen() || window.isSimpleFullScreen?.()) return;
 
   const [width, height] = window.getSize();
   let target: Size = { width, height };
@@ -101,7 +101,9 @@ export function applyEmuContentSizeHints(
 
 /** Whether View | Fit Window to Screen can act on the window */
 export function canFitEmuWindowToScreen(window: BrowserWindow | null | undefined): boolean {
-  if (!window || window.isDestroyed() || window.isFullScreen()) return false;
+  if (!window || window.isDestroyed() || window.isFullScreen() || window.isSimpleFullScreen?.()) {
+    return false;
+  }
   return !!states.get(window)?.hints;
 }
 

@@ -76,9 +76,15 @@ export function createWindowStateManager(
     resetStateToDefault
   };
 
-  // --- Tests if the window is in normal state
+  // --- Tests if the window is in normal state. macOS simple full screen (the emulator's full screen
+  // --- mode) is not reported by `isFullScreen()`, and its bounds are the screen's, not the window's.
   function isNormal(win: BrowserWindow) {
-    return !win.isMaximized() && !win.isMinimized() && !win.isFullScreen();
+    return (
+      !win.isMaximized() &&
+      !win.isMinimized() &&
+      !win.isFullScreen() &&
+      !win.isSimpleFullScreen?.()
+    );
   }
 
   // --- Tests if the current state has bounds

@@ -11,6 +11,7 @@ import { DISASSEMBLY_PANEL_ID, MEMORY_PANEL_ID } from "@state/common-ids";
 import { mainStore } from "@main/main-store";
 import { saveKliveProject } from "@main/projects";
 import { fitEmuWindowToScreen } from "@main/emu-window-sizing";
+import { isAnyFullScreen, toggleEmuFullScreenMode } from "@main/emu-full-screen-mode";
 import {
   SETTING_EMU_SHOW_KEYBOARD,
   SETTING_EMU_SHOW_STATUS_BAR,
@@ -62,7 +63,7 @@ export function createMachineViewsMenu(context: MenuContext): MenuItemConstructo
 export function createViewMenu(context: MenuContext): MenuItemConstructorOptions {
   const { appState, emuWindow, ideWindow } = context;
   const navHistory = appState?.ideView?.navHistory;
-  const emuResizable = !emuWindow?.isDestroyed() && !emuWindow?.isFullScreen();
+  const emuResizable = !emuWindow?.isDestroyed() && !isAnyFullScreen(emuWindow);
   const dark = appState?.theme !== "light";
 
   const items: MenuItemConstructorOptions[] = [
@@ -144,6 +145,9 @@ export function createViewMenu(context: MenuContext): MenuItemConstructorOptions
       ]
     },
     {
+      // --- On the emulator window this is its full screen mode: only the picture and the keyboard,
+      // --- the toolbar and status bar revealed at the edges (`dev/plans/EMU_FULL_SCREEN_MODE_PLAN.md`
+      // --- D1). On the IDE window it stays plain OS full screen.
       id: "toggle_full_screen",
       label: t("menu.view.toggleFullScreen"),
       accelerator: context.shortcuts.fullScreen,
@@ -151,7 +155,11 @@ export function createViewMenu(context: MenuContext): MenuItemConstructorOptions
         if (context.ideFocus) {
           ideWindow.setFullScreen(!ideWindow.isFullScreen());
         } else {
-          emuWindow.setFullScreen(!emuWindow.isFullScreen());
+          toggleEmuFullScreenMode(
+            emuWindow,
+            (action) => mainStore.dispatch(action, "main"),
+            context.isMac
+          );
         }
       }
     },

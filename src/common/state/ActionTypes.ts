@@ -12,6 +12,7 @@ export interface ActionTypes {
   IDE_FOCUSED: null,
   EMU_FOCUSED: null,
   DIM_MENU: null,
+  SET_EMU_FULL_SCREEN_MODE: null,
   INC_MENU_VERSION: null;
 
   EMU_SET_KEYBOARD_LAYOUT: null;

@@ -488,3 +488,49 @@ describe("the menu in the pseudo-locale", () => {
     expect(roles.filter(({ item }) => !item.label).map(({ path }) => path)).toEqual([]);
   });
 });
+
+describe("View › Toggle Full Screen (`dev/plans/EMU_FULL_SCREEN_MODE_PLAN.md` D1)", () => {
+  function fakeWin() {
+    return {
+      isDestroyed: () => false,
+      isFocused: () => true,
+      isFullScreen: vi.fn(() => false),
+      setFullScreen: vi.fn(),
+      isSimpleFullScreen: vi.fn(() => false),
+      setSimpleFullScreen: vi.fn()
+    };
+  }
+
+  async function clickToggle(focus: "emu" | "ide") {
+    const { mainStore } = await import("@main/main-store");
+    const { resetEmuFullScreenMode } = await import("@main/emu-full-screen-mode");
+    resetEmuFullScreenMode();
+    vi.mocked(mainStore.dispatch).mockClear();
+    buildMenu("sp48", undefined, focus);
+    const emu = fakeWin();
+    const ide = fakeWin();
+    const template = createMenuTemplate(createMenuContext(emu as any, ide as any));
+    const item = menu(template, "View").find((i) => i.id === "toggle_full_screen")!;
+    (item.click as any)();
+    return { emu, ide, dispatch: vi.mocked(mainStore.dispatch) };
+  }
+
+  it("puts the emulator window into its full screen mode (simple full screen on macOS)", async () => {
+    const { emu, ide, dispatch } = await clickToggle("emu");
+    expect(emu.setSimpleFullScreen).toHaveBeenCalledWith(true);
+    expect(emu.setFullScreen).not.toHaveBeenCalled();
+    expect(ide.setFullScreen).not.toHaveBeenCalled();
+    // --- The mocked `electron` has no `screen`: the menu bar's height falls back to a plain one
+    expect(dispatch.mock.calls[0][0]).toEqual({
+      type: "SET_EMU_FULL_SCREEN_MODE",
+      payload: { flag: true, topInset: 24 }
+    });
+  });
+
+  it("keeps plain OS full screen for the IDE window", async () => {
+    const { emu, ide, dispatch } = await clickToggle("ide");
+    expect(ide.setFullScreen).toHaveBeenCalledWith(true);
+    expect(emu.setSimpleFullScreen).not.toHaveBeenCalled();
+    expect(dispatch).not.toHaveBeenCalled();
+  });
+});

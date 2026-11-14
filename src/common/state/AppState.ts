@@ -38,6 +38,17 @@ export type AppState = {
   emuFocused?: boolean;
   ideFocused?: boolean;
   dimMenu?: boolean;
+  /**
+   * The emulator window is in its full screen mode: only the picture and the virtual keyboard, the
+   * toolbar and status bar revealed at the screen edges (`dev/plans/EMU_FULL_SCREEN_MODE_PLAN.md`).
+   * A session state, never saved (D4).
+   */
+  emuFullScreenMode?: boolean;
+  /**
+   * How far below the top edge the full screen mode's toolbar slides in, in points: the macOS menu
+   * bar's height (it slides down at the top edge too), 0 elsewhere.
+   */
+  emuFullScreenTopInset?: number;
   theme?: string;
 
   /** Selected accent id (see theming/tokens/palette.ts). */

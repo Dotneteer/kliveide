@@ -26,6 +26,8 @@ export type Action = {
  */
 export type Payload = {
   flag: boolean;
+  /** The full screen mode's toolbar offset (the macOS menu bar), in points */
+  topInset: number;
   id: string;
   size: number;
   nextId: string;
