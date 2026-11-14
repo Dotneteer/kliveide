@@ -12,5 +12,6 @@ export default {
   "sprite-palette-editors": "Sprite and palette editors",
   "sd-card": "The SD card",
   "tbu-files": "Core update files (TBBLUE.TBU)",
+  "fw-files": "The firmware file (TBBLUE.FW)",
   "real-time-clock": "The real-time clock"
 };

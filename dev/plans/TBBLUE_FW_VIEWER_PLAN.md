@@ -1,5 +1,7 @@
 # TBBLUE.FW Viewer Plan
 
+**Status: done (2026-11-14).** Phases 0-4 are complete; each has an "As built" note below.
+
 A read-only viewer for the ZX Spectrum Next's firmware file, `TBBLUE.FW`, built on the principles of the
 TBBLUE.TBU viewer (`dev/plans/TBBLUE_TBU_VIEWER_PLAN.md`): a pure reader that never throws, problems as
 codes, a viewer chosen from mockups, opened by the exact file name and from Machine › SD Card. It shows
@@ -233,7 +235,7 @@ for Phase 2:
 - Checked in the running IDE through the real menu item on a fresh project (default model ks2-30204,
   the 2.10 card): firmware 1.45 opens, a second click replaces the tab, no console errors.
 
-### Phase 4 — Docs and bookkeeping
+### Phase 4 — Docs and bookkeeping — done
 
 - A guide page next to "Core update files (TBBLUE.TBU)", its screenshot from `guides-next.cjs` (the
   committed cards hold real firmware, so no `DOC_SHOTS_*` file is needed); `show-fw` in the command
@@ -241,6 +243,21 @@ for Phase 2:
   wrong (it lists seven modules; 1.46 has more entries).
 - One `feature` changeset with the commit that finishes the plan; `npm run doc:build && doc:check`,
   `npm test`, and `npm run test:slow` before it completes.
+
+**As built (2026-11-14), done.**
+
+- Guide: `docs/content/en/guides/next/fw-files.mdx`, "The firmware file (TBBLUE.FW)", after the TBU page,
+  with a row in the task index and links from the SD card and TBU pages. Its two images come from a new
+  `fw` step in `dev/scripts/doc-shots/recipes/guides-next.cjs`, which opens the model's own firmware
+  through Machine › SD Card › Show TBBLUE.FW (the committed card is the source; no outside file): the
+  viewer with the editor selected, and the test card. Only those two images were published.
+- `show-fw` in the command reference, after `show-tbu`.
+- Article: "The firmware file" no longer calls the screens block a module of start-up screens (it is
+  data: the test card picture and the start-up text), says every module runs at `$6000`, explains the
+  two alias entries, notes 1.46's seventeen entries, and links the viewer.
+- Goldens: the route and the two images. `npm run doc:build && npm run doc:check` pass (prose: 0
+  findings).
+- Changeset: `dev/changes/tbblue-fw-viewer-e17d.md` (feature).
 
 ## 4. Risks and open questions
 

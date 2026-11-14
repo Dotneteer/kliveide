@@ -1,0 +1,85 @@
+---
+description: "Open the ZX Spectrum Next's firmware file, TBBLUE.FW, to see its modules, the keys that start each one, its version, each module's code as a disassembly, and the video test card picture."
+---
+
+import { Callout } from 'nextra/components'
+
+# Examining the Firmware File (TBBLUE.FW)
+
+`TBBLUE.FW` holds the ZX Spectrum Next's firmware: the small programs that run before the machine
+starts, such as the start-up screen, the settings menu and the updater. Klive opens it in a viewer that
+shows which modules the file holds, which key starts each one, which firmware version it is, and each
+module's code as a Z80 disassembly. Use it to see what a firmware release contains, or to compare two.
+
+*Applies to: ZX Spectrum Next firmware files. The viewer only reads the file; it never changes it.*
+
+## Opening the firmware on your SD card
+
+With the ZX Spectrum Next selected, choose **Machine › SD Card › Show TBBLUE.FW**, or type `show-fw`
+at the command prompt. Klive reads `TBBLUE.FW` from the root folder of the card the machine uses: the
+model's own card, or the image you chose with **Select Image...**. It works while the machine runs, and
+it reads the card again each time you choose it. The tab is named after the card, for example
+**TBBLUE.FW · ks2-30303.cim**.
+
+To open a firmware file from elsewhere, for example from a system release, copy it into your project
+folder and click it in the Explorer, or type `nav TBBLUE.FW`.
+
+<Callout type="info">
+The viewer opens only a file named exactly `TBBLUE.FW` (in any letter case). To keep several releases,
+give each its own folder rather than renaming the file.
+</Callout>
+
+## What the viewer shows
+
+<Shot src="guides/next/fw-files/fw-viewer.webp" alt="The TBBLUE.FW viewer: the firmware version and size, the module map as a strip and a table with the keys that start each module, and the details of the selected editor module" caption="The firmware viewer with the editor module selected: Space starts it from the start-up screen." width={760} />
+
+| Section | What it shows |
+|---|---|
+| **File** | The firmware version (the text the start-up screen prints after "Firmware v"), the file size, how many of the map's 128 entries are used, the layout, and a verdict with any problems. The button beside the heading opens the 512-byte module map as a memory dump. |
+| **Modules** | A strip of the file to scale and a table: each module's name, the keys that start it, its blocks, where it is in the file and its size. Click a row, or a module in the strip, to select it. |
+| **Module** | The selected module: what it does, the keys that start it, its blocks and file range, whether it is code (run at `$6000`) or data, the `$00` padding at its end, and the texts it contains. The buttons beside the heading open the module as a memory dump and as a full disassembly. |
+| **Disassembly** | The first 256 instructions of a code module, at the address it runs at. |
+| **Test card** | For the screens block: the video test card picture it holds. |
+
+## The modules
+
+The firmware's map lists its modules by position. The published source of the firmware names the first
+nine, and the viewer uses those names:
+
+| # | Module | Started by |
+|---|---|---|
+| 0 | Boot: the start-up screen, then the machine | no key |
+| 1 | Old editor | the same blocks as Boot |
+| 2 | Updater | U; DRIVE + M1 held at power-on |
+| 3 | Old cores | the same blocks as Boot |
+| 4 | Editor: the settings menu | Space |
+| 5 | Cores: the extra cores menu | C |
+| 6 | Test card | A, D, V or R on the start-up screen |
+| 7 | Reset: `config.ini` back to its defaults | N and X together |
+| 8 | Screens: the test card picture and the start-up text | data |
+
+Entries 1 and 3 point at the boot module on purpose: they are where the editor and the extra cores
+module used to be, and older loaders that still start them get the boot module. The table dims them and
+says which module they repeat. In firmware files from 2019 and earlier they are still the editor and the
+extra cores module themselves, and the viewer names them **Editor (old place)** and **Cores (old
+place)**.
+
+Firmware 1.46 (System/Next 26.11a) has eight more entries, 9 to 16, that no published source names. The
+viewer numbers them, says whether each is code or data, and lists the texts inside, which show what they
+are for: flashing and erasing cores, core settings, and the credits.
+
+## The test card
+
+<Shot src="guides/next/fw-files/test-card.webp" alt="The ZXN video test card: colour bars, a grey scale, a circle with coloured blocks, resolution patterns and a rainbow strip along the bottom" caption="The video test card from the screens block, drawn with its own palette." width={512} />
+
+The screens block starts with this 256×192 Layer 2 picture and its palette. It is what the test card
+module shows when you press A, D, V or R on the start-up screen to find a video mode your monitor can
+show.
+
+## Related
+
+- [The FPGA and its cores](/en/under-the-hood/emulator-internals/next-fpga-boot/): the boot sequence,
+  the firmware file and the keys that choose a module
+- [Core update files (TBBLUE.TBU)](/en/guides/next/tbu-files/)
+- [The SD card](/en/guides/next/sd-card/)
+- [The Memory view](/en/guides/debugging/memory/)

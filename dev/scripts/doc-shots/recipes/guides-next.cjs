@@ -9,6 +9,9 @@
  * - `tbu-files/tbu-viewer.webp` — a TBBLUE.TBU core update file in the TBU viewer. The file is not
  *   in the repository (megabytes of FPGA bitstreams): `DOC_SHOTS_TBU` names a real one, from the
  *   system distribution (`gitlab.com/thesmog358/tbblue`); without it the step is skipped.
+ * - `fw-files/fw-viewer.webp` and `fw-files/test-card.webp` — the model's own TBBLUE.FW in the FW
+ *   viewer, opened through Machine › SD Card › Show TBBLUE.FW (the committed card holds real firmware,
+ *   so no outside file is needed), and the test card picture from its screens block.
  *
  * Like the layer recipes it pokes a program into a paused Next (no NextZXOS needed): the program
  * is `layers-demo.kz80.asm`'s, whose bytes are read from `layers.cjs` so the two cannot drift; it
@@ -149,6 +152,22 @@ module.exports = {
       } else {
         console.log("  - tbu: skipped, DOC_SHOTS_TBU names no TBBLUE.TBU");
       }
+      await step(klive, "fw", async () => {
+        await h.menu(klive, "show_fw", { wait: 2500 });
+        const viewer = ide.locator('[data-testid="fw-viewer"]').last();
+        await viewer.waitFor({ timeout: 10000 });
+        // --- The editor: a module with its key cap, its texts and its listing
+        await viewer.locator('[class*="_row_"]').getByText("Editor", { exact: true }).first().click();
+        await klive.sleep(1500);
+        await klive.cmd("cls", 400);
+        await h.park(ide);
+        await klive.shot(DOCS, "en/guides/next/fw-files/fw-viewer.webp", { displayWidth: 760 });
+        await viewer.locator('[class*="_row_"]').getByText("Screens", { exact: true }).first().click();
+        await klive.sleep(1200);
+        await viewer.locator('[data-testid="fw-picture"]').scrollIntoViewIfNeeded();
+        await klive.sleep(600);
+        await klive.shot('[data-testid="fw-picture"]', "en/guides/next/fw-files/test-card.webp", { displayWidth: 512 });
+      });
       reportFailures();
     } finally {
       fixture.cleanup();

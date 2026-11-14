@@ -185,6 +185,7 @@
 /en/guides/media/trdos-disks/index.html
 /en/guides/media/z88-snapshots/index.html
 /en/guides/next/copper/index.html
+/en/guides/next/fw-files/index.html
 /en/guides/next/layer2-inspector/index.html
 /en/guides/next/layers/index.html
 /en/guides/next/nex-files/index.html
