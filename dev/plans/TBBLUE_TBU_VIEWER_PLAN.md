@@ -219,6 +219,26 @@ after it need correcting (Phase 4, with `boot-figures.cjs`, which generates the 
   format, a truncated header, and a known Fletcher-16 vector. No 4.8 MB fixture is committed.
 - An optional check against the real files when a path is given in an environment variable, never in CI.
 
+**As built (2026-11-14), done.** `src/common/zxnext/tbuFile.ts` and `test/zxnext/tbuFile.test.ts` (29
+tests, unit tier, plus the opt-in real-file check). Notes for Phase 2:
+
+- `isTbuFileName(path)` is the base-name test for D1; the registry's new `matchType: "name"` should use
+  the same rule.
+- Problems are `{ code, severity, record?, otherRecord? }`; severities are `error`, `warning` and `info`
+  (`trailingData`). `partMismatch` and `tooBigForSlot` are errors; `recordLength`, `duplicateRecord`,
+  `notSectorAligned`, `trailerMismatch` and `legacyNotNext` are warnings.
+- **A shared image has one trailer**, and it can repeat only one of the records that use it (26.11a's
+  `$00`/`$20`). `matchesRecord` is per record; `trailerMismatch` is reported only when the trailer
+  repeats none of the group.
+- A record with zero sectors counts as `imageOutOfRange`. A record length under 15 stops the index walk
+  (`recordLength` + `indexNotTerminated`); a longer one is walked by its length.
+- Fletcher-16 sums 359 bytes before each modulo; one pass over the 4.8 MB file is fast enough to run when
+  the file opens (D4). An image shared by several records is summed once.
+- `TBU_REAL_FILES=<path>:<path> npm test -- test/zxnext/tbuFile.test.ts` checks real files. The
+  3.02.03 and 3.02.03 HDMI maker files, the KS2 image's 3.01.10 file and the 2019 legacy file all read with
+  no problems, every checksum matching, every part identified (XC6SLX16, XC7A15T, XC7A35T) and every
+  trailer matching its record.
+
 ### Phase 2 — Viewer and registration
 
 - `src/renderer/appIde/DocumentPanels/Next/TbuFileViewerPanel.tsx` on `GenericFilePanel` and the
