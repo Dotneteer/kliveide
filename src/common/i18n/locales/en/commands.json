@@ -1609,17 +1609,24 @@
       "count": "Number of problems"
     }
   },
-  "commands.romAnn.provenanceDescription": "Sets the provenance (observed or manual) of a label, line comment or region in a ROM's working copy",
+  "commands.romAnn.provenanceDescription": "Sets the provenance (observed, manual or source) of a label, line comment or region in a ROM's working copy",
   "@commands.romAnn.provenanceDescription": {
-    "context": "Description of the 'rom-ann-provenance' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated. 'observed' and 'manual' are the command's literal arguments: keep them. A 'sidecar' is the .dis annotation file that sits beside a ROM; a 'working copy' is the user's editable copy of it; 'shipped' ones come with Klive. Command names (rom-ann-new, rom-ann-open) are never translated."
+    "context": "Description of the 'rom-ann-provenance' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated. 'observed', 'manual' and 'source' are the command's literal arguments: keep them. A 'sidecar' is the .dis annotation file that sits beside a ROM; a 'working copy' is the user's editable copy of it; 'shipped' ones come with Klive. Command names (rom-ann-new, rom-ann-open) are never translated."
   },
   "commands.romAnn.kindValues": "The entry kind is label, line or region.",
   "@commands.romAnn.kindValues": {
     "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Argument error of 'rom-ann-provenance'. 'label', 'line' and 'region' are the command's literal arguments: never translate them."
   },
-  "commands.romAnn.provenanceValues": "The provenance is observed or manual (derived is the formatter's).",
+  "commands.romAnn.provenanceValues": "The provenance is observed, manual or source (derived is the formatter's).",
   "@commands.romAnn.provenanceValues": {
-    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Argument error of 'rom-ann-provenance'. 'observed', 'manual' and 'derived' are literal values: never translate them."
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Argument error of 'rom-ann-provenance'. 'observed', 'manual', 'source' and 'derived' are literal values: never translate them."
+  },
+  "commands.romAnn.sourceNeedsCode": "{path} names no source code (sourceCode), so no entry in it can be marked source.",
+  "@commands.romAnn.sourceNeedsCode": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Error of 'rom-ann-provenance'. 'sourceCode' is a literal JSON key and 'source' a literal value: never translate them.",
+    "placeholders": {
+      "path": "The working copy's path"
+    }
   },
   "commands.romAnn.shippedReadOnly": "A shipped sidecar is never edited here.",
   "@commands.romAnn.shippedReadOnly": {

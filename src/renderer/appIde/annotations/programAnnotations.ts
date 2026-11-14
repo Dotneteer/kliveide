@@ -27,7 +27,7 @@ export const ANNOTATION_READABLE_SCHEMA_VERSIONS = [1, 2, 3];
 
 /**
  * The highest bank number each bank space can hold (`BankSpace.maxBank`; `rom` is the 16K pages of a
- * ROM file, up to a 128K file).
+ * ROM file, up to a 512K file: the Z88's OZ ROMs).
  */
 export const ANNOTATION_MACHINE_MAX_BANK: Record<AnnotationMachine, number> = {
   next: 111,
@@ -42,7 +42,9 @@ export const ANNOTATION_MACHINE_MAX_BANK: Record<AnnotationMachine, number> = {
   tvc: 7,
   // --- The Enterprise: segments by their own number (EXOS 00h-01h ... RAM F8h-FFh)
   ep: 255,
-  rom: 7
+  // --- The Cambridge Z88: banks by their own number (slot 0's ROM 00h-1Fh, internal RAM 20h-3Fh, cards)
+  z88: 255,
+  rom: 31
 };
 
 export const ANNOTATION_MACHINES = Object.keys(ANNOTATION_MACHINE_MAX_BANK) as AnnotationMachine[];
@@ -508,9 +510,19 @@ export type ParseAnnotationsOptions = {
  * its own keys, so they survive a user edit untouched.
  */
 export type RomSidecarExtras = {
-  pages?: Record<string, { crc32: string; name: string }>;
+  pages?: Record<
+    string,
+    {
+      crc32: string;
+      name: string;
+      /** Where each run of the page runs (`RomPageSegment` in `romDecoder.ts`): a Z88 OZ bank's segments */
+      segments?: { start: number; segment: number }[];
+    }
+  >;
+  /** The published source code the `source` entries come from (D-OZ3 of the Z88 OZ plan). */
+  sourceCode?: { repository: string; tag?: string; commit: string };
   inherits?: { sidecar: string; page: number }[];
-  provenance?: Record<string, "observed" | "manual" | "derived">;
+  provenance?: Record<string, "observed" | "manual" | "derived" | "source">;
   level?: number;
 };
 

@@ -85,6 +85,7 @@ export const E2E_CORE_TESTS: string[] = [
   "test/z88/z88-keyboard.test.ts",
   "test/z88/z88-lcd.test.ts",
   "test/z88/z88-oz47-keyclick.test.ts",
+  "test/z88/z88-rom-sources.test.ts",
   "test/z88/z88-sleep-and-boot.test.ts",
   "test/z88/z88-timeout-coma.test.ts",
   "test/z88/z88-wasm-build.test.ts",

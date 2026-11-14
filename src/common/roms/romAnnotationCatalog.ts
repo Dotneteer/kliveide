@@ -1,5 +1,16 @@
 import { NEXT_ROM_SETS, nextRomAnnotationFile, type NextRomSet } from "@common/zxnext/romSets";
-import { MI_ENTERPRISE, MI_HT1080Z, MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48, MI_TVC, MI_ZX80, MI_ZX81, MI_ZXNEXT } from "@common/machines/constants";
+import {
+  MI_ENTERPRISE,
+  MI_HT1080Z,
+  MI_SPECTRUM_128,
+  MI_SPECTRUM_3E,
+  MI_SPECTRUM_48,
+  MI_TVC,
+  MI_Z88,
+  MI_ZX80,
+  MI_ZX81,
+  MI_ZXNEXT
+} from "@common/machines/constants";
 
 /*
  * The ROMs the Debug › ROM Annotations menu offers, by machine type.
@@ -76,6 +87,16 @@ export const ROM_ANNOTATION_CATALOG: readonly RomCatalogMachine[] = [
       [...pages("ep-exos21.rom", 2), ...files("ep-basic21.rom")],
       [...pages("ep-exos20.rom", 2), ...files("ep-basic20.rom")],
       pages("ep-exdos13.rom", 2)
+    ]
+  },
+  {
+    machineId: MI_Z88,
+    // --- OZ 4.7: the banks that hold something (`KNOWN_ROM_PAGES`); the empty ones are left out
+    groups: [
+      [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x10, 0x1f].map((page) => ({
+        file: "z88v47.rom",
+        page
+      }))
     ]
   }
 ];

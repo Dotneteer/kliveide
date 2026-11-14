@@ -47,7 +47,8 @@ export class Z88CustomDisassembler implements ICustomDisassembler {
       const newItem: DisassemblyItem = {
         address: peekResult.offset,
         opCodes: [peekResult.opcode, opByte],
-        instruction: `fpp ${apiName}`
+        instruction: `fpp ${apiName}`,
+        notAssemblable: true
       };
       this._api.addDisassemblyItem(newItem);
       return true;
@@ -67,17 +68,21 @@ export class Z88CustomDisassembler implements ICustomDisassembler {
       const newItem: DisassemblyItem = {
         address: peekResult.offset,
         opCodes,
-        instruction: `oz ${apiName}`
+        instruction: `oz ${apiName}`,
+        notAssemblable: true
       };
       this._api.addDisassemblyItem(newItem);
       if (opByte === 0x93) {
-        // --- Special case, add a 0-terminated string
+        // --- Special case, add a 0-terminated string: its own row, at its own address, with its bytes
+        const stringStart = peekResult.offset + opCodes.length;
+        const stringBytes: number[] = [];
         let str = ".defb ";
         let ch = 0;
         let isFirst = true;
         let usedString = false;
         do {
           ch = this._api.fetch().opcode;
+          stringBytes.push(ch);
           if (ch >= 32 && ch <= 127) {
             if (usedString) {
               str += String.fromCharCode(ch);
@@ -101,8 +106,8 @@ export class Z88CustomDisassembler implements ICustomDisassembler {
           isFirst = false;
         } while (ch);
         const strItem: DisassemblyItem = {
-          address: peekResult.offset,
-          opCodes: [],
+          address: stringStart & 0xffff,
+          opCodes: stringBytes,
           instruction: str
         };
         this._api.addDisassemblyItem(strItem);
@@ -124,7 +129,8 @@ export class Z88CustomDisassembler implements ICustomDisassembler {
       const newItem: DisassemblyItem = {
         address: peekResult.offset,
         opCodes: [peekResult.opcode, byte1, byte2, byte3],
-        instruction: `extcall $${addr.toString(16).padStart(6, "").toLowerCase()}`
+        instruction: `extcall $${addr.toString(16).padStart(6, "").toLowerCase()}`,
+        notAssemblable: true
       };
       this._api.addDisassemblyItem(newItem);
       return true;
@@ -135,7 +141,8 @@ export class Z88CustomDisassembler implements ICustomDisassembler {
       const newItem: DisassemblyItem = {
         address: peekResult.offset,
         opCodes: [peekResult.opcode],
-        instruction: "rst oz_mbp"
+        instruction: "rst oz_mbp",
+        notAssemblable: true
       };
       this._api.addDisassemblyItem(newItem);
       return true;

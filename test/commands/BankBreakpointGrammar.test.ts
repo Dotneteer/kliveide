@@ -133,8 +133,13 @@ describe("bp-set bank-relative grammar", () => {
     expect(on48.errors[0].message).toContain("not in this machine's memory");
   });
 
+  it("accepts the Z88's banks, by their own numbers", async () => {
+    expect((await validate("0A:+$2400", "z88")).errors).toEqual([]);
+    expect((await validate("FF:+$0100", "z88")).errors).toEqual([]);
+  });
+
   it("is refused on a machine without banks", async () => {
-    for (const machineId of ["zx81", "z88"]) {
+    for (const machineId of ["zx81"]) {
       const { errors } = await validate("01:+$0100", machineId);
       expect(errors.length).toEqual(1);
       expect(errors[0].message).toContain("not supported on this machine");

@@ -1,6 +1,14 @@
 import { MemorySectionType } from "@abstractions/MemorySection";
 import type { RomDecoder, RomInstruction } from "@common/roms/romAnnotationTools";
-import { romKindHasBasicCalls, romKindIsEnterprise, romKindIsTvc, romKindOrigin, romKindUsesZ80N, type RomPageKind } from "@common/roms/romIdentity";
+import {
+  romKindHasBasicCalls,
+  romKindIsEnterprise,
+  romKindIsTvc,
+  romKindIsZ88,
+  romKindOrigin,
+  romKindUsesZ80N,
+  type RomPageKind
+} from "@common/roms/romIdentity";
 
 import { MemorySection } from "@renderer/appIde/disassemblers/common-types";
 import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z80-disassembler";
@@ -19,6 +27,7 @@ import {
   EpCustomDisassembler
 } from "@renderer/appIde/disassemblers/z80-disassembler/ep-disassembler";
 import { ChainedCustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/rom-gated-disassembler";
+import { Z88CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z88-custom.disassembler";
 
 /**
  * Install the ROM's own decoding on a disassembler: the report code after `RST $08` and the
@@ -28,7 +37,8 @@ import { ChainedCustomDisassembler } from "@renderer/appIde/disassemblers/z80-di
  * error code after `RST $08` on the ZX80's 4K ROM, the syntax-check byte after `RST $08` (and the
  * tables the IDE lists as data) on the HT-1080Z's BASIC ROM, the function code after `RST $30` on the
  * TVC's BASIC ROMs, the EXOS function code after `RST 30h` on the Enterprise's ROMs (and IS-BASIC's
- * call byte after `RST 10h` on the pages that hold IS-BASIC). Any
+ * call byte after `RST 10h` on the pages that hold IS-BASIC), the OZ call after `RST 20h` and the
+ * floating-point operation after `RST 18h` on the Z88's OZ banks. Any
  * other page decodes as plain Z80. Shared by the authoring tools and the ROM page documents, so a
  * listing and the level report never disagree about where the code is.
  */
@@ -55,6 +65,28 @@ export function prepareRomDisassembler(
       new ChainedCustomDisassembler([new EpCustomDisassembler(), new EpBasicCustomDisassembler()])
     );
   } else if (romKindIsEnterprise(kind)) disassembler.setCustomDisassembler(new EpCustomDisassembler());
+  if (romKindIsZ88(kind)) disassembler.setCustomDisassembler(new Z88CustomDisassembler());
+}
+
+/**
+ * Where a run of a page runs, on a page whose runs do not all share one address (a Z88 OZ bank
+ * holds code for several segments): a ROM sidecar's `pages` entry lists `{ start, segment }`, and a
+ * run belongs to the last entry at or before its start. OZ places code so that the low 14 bits of its
+ * address are its offset in the bank, so the segment alone gives the address.
+ */
+export type RomPageSegment = { start: number; segment: number };
+
+/** The address a run starting at `start` runs at: its segment's, else the kind's (`romKindOrigin`). */
+export function romRunOrigin(
+  kind: RomPageKind | undefined,
+  segments: readonly RomPageSegment[] | undefined,
+  start: number
+): number {
+  let best: RomPageSegment | undefined;
+  for (const entry of segments ?? []) {
+    if (entry.start <= start && (best === undefined || entry.start >= best.start)) best = entry;
+  }
+  return best === undefined ? romKindOrigin(kind) : (best.segment & 0x03) * 0x4000;
 }
 
 /**
@@ -63,13 +95,18 @@ export function prepareRomDisassembler(
  * own disassembler"). The ROM's custom decoding runs over the whole page — report codes after
  * `RST $08`, calculator literals after `RST $28` — so they are not taken for code.
  */
-export function romDecoderFor(kind: RomPageKind | undefined): RomDecoder {
+export function romDecoderFor(
+  kind: RomPageKind | undefined,
+  segments?: readonly RomPageSegment[]
+): RomDecoder {
   const decode = decoderAtZero(kind);
-  const origin = romKindOrigin(kind);
-  if (!origin) return decode;
+  if (!segments?.length && !romKindOrigin(kind)) return decode;
   // --- A page that runs above $0000 is decoded at its own address (with its own custom decoding),
-  // --- so that its absolute jumps name its own offsets; a target outside the page is not the page's
+  // --- so that its absolute jumps name its own offsets; a target outside the page is not the page's.
+  // --- With segments, each run at the address of the segment it starts in
   return async (bytes, start, end) => {
+    const origin = romRunOrigin(kind, segments, start);
+    if (!origin) return decode(bytes, start, end);
     const memory = new Uint8Array(origin + bytes.length);
     memory.set(bytes, origin);
     return (await decode(memory, origin + start, origin + end)).map(({ offset, length, target }) => ({

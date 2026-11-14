@@ -119,7 +119,8 @@ describe("LabelCommand", () => {
     it("accepts every machine with a bank space, and refuses the others", async () => {
       expect(await validate({ name: "X" }, { machineId: "sp128" })).toEqual([]);
       expect(await validate({ name: "X" }, { machineId: "sp48" })).toEqual([]);
-      const errors = await validate({ name: "X" }, { machineId: "z88" });
+      expect(await validate({ name: "X" }, { machineId: "z88" })).toEqual([]);
+      const errors = await validate({ name: "X" }, { machineId: "c64" });
       expect(errors[0].message).toContain("cannot be annotated");
     });
 

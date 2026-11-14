@@ -134,12 +134,13 @@ function format(check) {
   );
 }
 
-function decoderFor(romFile, page) {
+function decoderFor(romFile, page, json) {
   const { romDecoderFor } = require(join(root, "src/renderer/appIde/annotations/romDecoder.ts"));
   const bytes = romBytes(romFile);
   const pageBytes = bytes.subarray(page * 0x4000, Math.min(bytes.length, (page + 1) * 0x4000));
   const kind = identity.knownRomPageKind(identity.romPageIdentity(pageBytes));
-  return { decode: romDecoderFor(kind), pageBytes };
+  // --- A page whose runs sit in different segments (a Z88 OZ bank) says so in its `pages` entry
+  return { decode: romDecoderFor(kind, json?.pages?.[page]?.segments), pageBytes };
 }
 
 /**
@@ -167,7 +168,7 @@ async function level(only) {
     const { json } = readSidecar(name);
     const romFile = romFileOf(name);
     for (const page of Object.keys(json.banks ?? {})) {
-      const { decode, pageBytes } = decoderFor(romFile, Number(page));
+      const { decode, pageBytes } = decoderFor(romFile, Number(page), json);
       const report = await tools.measureRomLevel(await measuredBank(json, page, pageBytes), pageBytes, decode);
       const missing = tools.missingProvenance(json);
       console.log(
@@ -189,7 +190,7 @@ async function skeleton(name, page) {
     ? readSidecar(name).json
     : { banks: { [page]: { regions: [{ start: 0, end: 0x3fff, type: "disassemble" }] } } };
   const romFile = romFileOf(name.endsWith(".dis") ? name : `${name}.dis`);
-  const { decode, pageBytes } = decoderFor(romFile, page);
+  const { decode, pageBytes } = decoderFor(romFile, page, sidecar);
   const bank = await measuredBank(sidecar, String(page), pageBytes);
   const report = await tools.measureRomLevel(bank, pageBytes, decode);
   console.log(`// ${report.unlabelledTargets.length} unlabelled target(s) in ${romFile} page ${page}:`);

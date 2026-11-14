@@ -43,6 +43,7 @@ describe("createRomAnnotationsMenu", () => {
       "ZX Spectrum 128K",
       "ZX Spectrum +2A/+3/+2E/+3E",
       "ZX Spectrum Next",
+      "Cambridge Z88",
       "Sinclair ZX81",
       "Sinclair ZX80",
       "HT-1080Z",

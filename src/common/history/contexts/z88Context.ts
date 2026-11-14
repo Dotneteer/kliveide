@@ -5,8 +5,8 @@
  *   4-11 the bank behind each 8K page, which covers the split segment 0
  *   12   COM.RAMS (bit 2): bank $20 rather than $00 at $0000-$1FFF
  *
- * The Z88's `getPartition` names no partition yet, so neither does the decoder (D4); the banks are
- * in the detail pane's text instead.
+ * The decoder names the partition the machine's `getPartition` names (D4): the bank behind the
+ * address's 8K page, as SR0 is written for $2000-$3FFF.
  */
 
 export type Z88HistoryContext = {
@@ -24,8 +24,8 @@ export function decodeZ88Context(context: Uint8Array): Z88HistoryContext {
   };
 }
 
-export function z88PartitionFor(_context: Uint8Array, _address: number): number | undefined {
-  return undefined;
+export function z88PartitionFor(context: Uint8Array, address: number): number | undefined {
+  return context[4 + ((address >> 13) & 0x07)];
 }
 
 export function describeZ88Context(context: Uint8Array): string {

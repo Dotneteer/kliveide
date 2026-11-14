@@ -2307,6 +2307,11 @@
     "context": "Mode button in the ROM annotation editor (a document listing a ROM annotation sidecar file's pages)'s header: new entries are recorded as written by hand. Lower case.",
     "maxChars": 10
   },
+  "panels.rom.source": "source",
+  "@panels.rom.source": {
+    "context": "Mode button in the ROM annotation editor (a document listing a ROM annotation sidecar file's pages)'s header: new entries are recorded as taken from the ROM's published source code. Shown only for a file that names its source code. Lower case.",
+    "maxChars": 10
+  },
   "panels.rom.revealExplorer": "Reveal in File Explorer",
   "@panels.rom.revealExplorer": {
     "context": "Tooltip of the button in the ROM annotation editor (a document listing a ROM annotation sidecar file's pages) that shows the file in the Windows file manager. File Explorer is Windows' name for it."

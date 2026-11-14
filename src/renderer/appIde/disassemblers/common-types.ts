@@ -685,6 +685,13 @@ export interface DisassemblyItem {
   isPrefixItem?: boolean;
 
   /**
+   * The row's text is a listing convention the assembler cannot read: the Z88's `oz OS_Bye` (RST 20h with
+   * its call bytes), `fpp`, `extcall`. Source export writes its bytes as `.defb`, with the text as the
+   * comment, so the export still reassembles.
+   */
+  notAssemblable?: boolean;
+
+  /**
    * The optional prefix comment
    */
   prefixComment?: string;

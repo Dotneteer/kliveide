@@ -6,7 +6,7 @@ repository root. The formatter, the index, `level`, `skeleton`, `bind` and `cove
 
 | Script | What it does |
 |---|---|
-| `sp48-dis.cjs`, `zx81-dis.cjs`, `zx80-dis.cjs`, `ht1080z-dis.cjs`, `tvc-dis.cjs`, `ep-dis.cjs` | A page's listing through Klive's disassembler with its ROM kind's decoding, shaped by the sidecar's regions. |
+| `sp48-dis.cjs`, `zx81-dis.cjs`, `zx80-dis.cjs`, `ht1080z-dis.cjs`, `tvc-dis.cjs`, `ep-dis.cjs`, `z88-dis.cjs` | A page's listing through Klive's disassembler with its ROM kind's decoding, shaped by the sidecar's regions. `z88-dis.cjs` decodes each run at the address of its segment (the page's `segments`). |
 | `listing-range.py` | Prints address ranges of a listing. |
 | `annotated-view.py` | A range with the sidecar's labels, synopsis heads and comments. |
 | `merge-drafts.py`, `apply-draft.py`, `apply-comments.py`, `apply-annotations.cjs` | Merge helpers' JSON drafts or comment lists into a sidecar, through the formatter. |

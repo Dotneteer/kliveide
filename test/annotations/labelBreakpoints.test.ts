@@ -190,6 +190,8 @@ describe("conditions", () => {
     });
     expect(result.errors).toEqual([]);
     expect(conditionMachineFacts(MI_ZX81, {}).bankLabels).toBe(true);
-    expect(conditionMachineFacts("z88", {}).bankLabels).toBe(false);
+    // --- The Z88 has a bank space too (its banks by number); the C64 still has none
+    expect(conditionMachineFacts("z88", {}).bankLabels).toBe(true);
+    expect(conditionMachineFacts("c64", {}).bankLabels).toBe(false);
   });
 });

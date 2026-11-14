@@ -8,8 +8,10 @@ import {
   buildRomIndex,
   formatRomIndex,
   formatRomSidecar,
+  hasSourceCode,
   measureRomLevel,
   missingProvenance,
+  PROVENANCE_VALUES,
   strayProvenance
 } from "@common/roms/romAnnotationTools";
 import { knownRomPageKind, romPageIdentity } from "@common/roms/romIdentity";
@@ -70,7 +72,9 @@ describe("the shipped ROM sidecars", () => {
       expect(missingProvenance(raw)).toEqual([]);
       expect(strayProvenance(raw)).toEqual([]);
       for (const value of Object.values(raw.provenance ?? {})) {
-        expect(["observed", "manual", "derived"]).toContain(value);
+        expect(PROVENANCE_VALUES).toContain(value);
+        // --- An entry taken from the ROM's source code needs the file to name that code (D-OZ3)
+        if (value === "source") expect(hasSourceCode(raw)).toBe(true);
       }
     });
 
@@ -89,7 +93,11 @@ describe("the shipped ROM sidecars", () => {
       expect(missing).toEqual([]);
       for (const [page, bank] of Object.entries<any>(annotations.banks)) {
         const bytes = rom.subarray(Number(page) * 0x4000, Math.min(rom.length, (Number(page) + 1) * 0x4000));
-        const report = await measureRomLevel(bank, bytes, romDecoderFor(knownRomPageKind(romPageIdentity(bytes))));
+        const report = await measureRomLevel(
+          bank,
+          bytes,
+          romDecoderFor(knownRomPageKind(romPageIdentity(bytes)), raw.pages?.[page]?.segments)
+        );
         expect(report.misplacedLabels).toEqual([]);
         // --- The recorded level is never more than the measured one (§5.6)
         expect(report.level).toBeGreaterThanOrEqual(raw.level ?? 0);

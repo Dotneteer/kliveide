@@ -7,6 +7,8 @@ import {
   MC_TVC_MODEL,
   MI_ENTERPRISE,
   MC_EP_MODEL,
+  MC_Z88_INTRAM,
+  MI_Z88,
   MI_SCORPION,
   MI_SPECTRUM_128,
   MI_SPECTRUM_3E,
@@ -52,6 +54,11 @@ import {
  *   §11): any 16K page can show any segment, so every segment is a bank, its number the partition. The
  *   ROM segments (EXOS 00h-01h, the cartridge 04h, the FILE: ROM 10h, EXDOS 20h-21h) are ROM pages under
  *   their own segment numbers; the 64's missing F8h-FBh are not RAM.
+ * - `z88`: the Cambridge Z88's 256 banks, by their own number, any of them in any segment the Blink
+ *   pages (`dev/plans/Z88_OZ47_ROM_ANNOTATIONS_PLAN.md`, Phase 1). Segments 1-3 show a whole bank;
+ *   segment 0 is two 8K halves: $0000-$1FFF is bank $00 (or RAM bank $20 with COM.RAMS) and
+ *   $2000-$3FFF is the half of bank `SR0 & $FE` that bit 0 of SR0 picks. The slot 0 banks $00-$1F are
+ *   ROM pages under their own bank numbers.
  */
 
 /** Which bank space a machine's annotations are numbered in. Not a machine model. */
@@ -67,6 +74,7 @@ export type AnnotationMachine =
   | "ht1080z"
   | "tvc"
   | "ep"
+  | "z88"
   | "rom";
 
 /** One partition index per 8K slot, as `resolveMem64kPartitions` / `getCurrentPartitions` give it. */
@@ -522,6 +530,92 @@ export function epBankSpace(is128: boolean): BankSpace {
 }
 
 // ------------------------------------------------------------------------------------------------
+// The Cambridge Z88: 256 banks, any of them in any segment
+
+/** The banks of slot 0, which holds the ROM (OZ): $00-$1F. */
+export const Z88_ROM_BANK_COUNT = 0x20;
+
+/** The first bank of the internal RAM (slot 0's RAM half). */
+export const Z88_FIRST_RAM_BANK = 0x20;
+
+/** The internal RAM's size in bytes for an `MC_Z88_INTRAM` mask (`z88InternalRamSizeInBytes`'s rule). */
+function z88InternalRamBytes(mask: unknown): number {
+  switch (mask) {
+    case 0x00:
+      return 0;
+    case 0x01:
+      return 0x8000;
+    case 0x03:
+      return 0x10000;
+    case 0x07:
+      return 0x20000;
+    case 0x0f:
+      return 0x40000;
+    default:
+      return 0x80000;
+  }
+}
+
+/**
+ * The bank and offset behind each 8K page, by the core's own rule (`z88SetMemoryPageInfo` in
+ * `z88-memory.c`): page 0 is the lower half of bank $00 (or $20), page 1 the half of `SR0 & $FE`
+ * that bit 0 of SR0 picks, and pages 2-7 are the halves of the bank their segment shows.
+ */
+function z88PageSite(slots: SlotPaging, page: number): BankSite | undefined {
+  const bank = slots?.[page];
+  if (bank === undefined) return undefined;
+  if (page === 0) return { bank, offset: 0 };
+  if (page === 1) return { bank: bank & 0xfe, offset: (bank & 0x01) * 0x2000 };
+  return { bank, offset: (page & 1) * 0x2000 };
+}
+
+/** The Z88 bank space, with `ramBytes` of internal RAM from bank $20 */
+export function z88BankSpace(ramBytes: number): BankSpace {
+  const ramBanks = Array.from({ length: Math.max(0, ramBytes >> 14) }, (_, i) => Z88_FIRST_RAM_BANK + i);
+  const isRom = (bank: number) => bank >= 0 && bank < Z88_ROM_BANK_COUNT;
+  return {
+    id: "z88",
+    bankSize: BANK_SIZE,
+    maxBank: 0xff,
+    ramBanks,
+    extendedSet: false,
+    bankBreakpoints: true,
+    siteAt(address, slots) {
+      const page = (address >> 13) & 0x07;
+      const site = z88PageSite(slots, page);
+      if (!site) return undefined;
+      const offset = site.offset + (address & 0x1fff);
+      return isRom(site.bank)
+        ? { kind: "rom", partition: site.bank, offset }
+        : { kind: "bank", bank: site.bank, offset };
+    },
+    addressesOf(site, slots) {
+      const result: number[] = [];
+      for (let page = 0; page < 8; page++) {
+        const shown = z88PageSite(slots, page);
+        if (!shown || shown.bank !== site.bank) continue;
+        if (site.offset >= shown.offset && site.offset < shown.offset + 0x2000) {
+          result.push(page * 0x2000 + site.offset - shown.offset);
+        }
+      }
+      return result;
+    },
+    partitionOf: (site) => site.bank,
+    // --- Segment 0's two halves, then segments 1-3
+    candidateAddresses: (site) => [
+      ...(site.offset < 0x2000 ? [site.offset] : []),
+      0x2000 + (site.offset & 0x1fff),
+      0x4000 + site.offset,
+      0x8000 + site.offset,
+      0xc000 + site.offset
+    ],
+    // --- OZ runs most of its code (and applications) in segment 3
+    defaultOffsetIndex: () => 3,
+    isRomPartition: isRom
+  };
+}
+
+// ------------------------------------------------------------------------------------------------
 // Choosing one
 
 /** The ZX80/ZX81 model a machine configuration describes (`resolveZx8081Hardware`'s rule). */
@@ -538,8 +632,8 @@ export function zx8081MemoryModelOf(
 }
 
 /**
- * The bank space of a machine, or `undefined` for one whose memory cannot be annotated (the Z88,
- * the C64). **The only place a machine id is checked** for annotation arithmetic.
+ * The bank space of a machine, or `undefined` for one whose memory cannot be annotated (the C64).
+ * **The only place a machine id is checked** for annotation arithmetic.
  *
  * @param config the machine's model configuration; only the ZX80/ZX81 need it
  */
@@ -569,6 +663,8 @@ export function bankSpaceFor(
       return tvcBankSpace(config?.[MC_TVC_MODEL] === "64p");
     case MI_ENTERPRISE:
       return epBankSpace(config?.[MC_EP_MODEL] !== "64");
+    case MI_Z88:
+      return z88BankSpace(z88InternalRamBytes(config?.[MC_Z88_INTRAM]));
     default:
       return undefined;
   }
@@ -599,6 +695,8 @@ export function bankSpaceForAnnotationMachine(machine: AnnotationMachine): BankS
       return tvcBankSpace(true);
     case "ep":
       return epBankSpace(true);
+    case "z88":
+      return z88BankSpace(z88InternalRamBytes(undefined));
     default:
       return undefined;
   }

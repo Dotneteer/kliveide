@@ -1,5 +1,6 @@
 import { useT } from "@common/i18n/useT";
 import { managedSidecarOf } from "@common/roms/romSidecarPaths";
+import { hasSourceCode } from "@common/roms/romAnnotationTools";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import classnames from "classnames";
 
@@ -188,6 +189,11 @@ const RomAnnotationEditorPanel = ({
 
   const raw = loaded.status === "loaded" ? loaded.raw : undefined;
   const isRomSidecar = raw?.machine === "rom";
+  // --- Only a sidecar that names its source code can record entries as taken from it (D-OZ3)
+  const hasCode = !!raw && hasSourceCode(raw);
+  useEffect(() => {
+    if (loaded.status === "loaded" && !hasCode && provenanceMode === "source") setRomProvenanceMode("observed");
+  }, [loaded.status, hasCode, provenanceMode]);
 
   // --- The pages, matched to ROM bytes once per file (the CRCs do not change with edits)
   const pagesKey = raw ? JSON.stringify(raw.pages ?? {}) : "";
@@ -512,6 +518,18 @@ const RomAnnotationEditorPanel = ({
                     >
                       {t("panels.rom.manual")}
                     </button>
+                    {hasCode && (
+                      <button
+                        type="button"
+                        className={classnames(styles.segment, {
+                          [styles.segmentActive]: provenanceMode === "source"
+                        })}
+                        aria-pressed={provenanceMode === "source"}
+                        onClick={() => setRomProvenanceMode("source")}
+                      >
+                        {t("panels.rom.source")}
+                      </button>
+                    )}
                   </span>
                 </section>
               )}

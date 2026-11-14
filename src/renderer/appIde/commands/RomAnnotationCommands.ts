@@ -7,7 +7,7 @@ import type { IDocumentHubService } from "@renderer/abstractions/IDocumentHubSer
 import type { MainApi } from "@common/messaging/MainApi";
 
 import { ROM_ANNOTATION_EDITOR } from "@common/state/common-ids";
-import { formatRomSidecar, type Provenance } from "@common/roms/romAnnotationTools";
+import { formatRomSidecar, hasSourceCode, type Provenance } from "@common/roms/romAnnotationTools";
 import { romPageIdentity } from "@common/roms/romIdentity";
 import { canonicalShippedSidecar, isShippedSidecarShape } from "@common/roms/romSidecarPaths";
 import {
@@ -329,7 +329,8 @@ export class RomAnnotationProvenanceCommand extends IdeCommandBase<ProvenanceArg
   get description() {
     return t("commands.romAnn.provenanceDescription");
   }
-  readonly usage = "rom-ann-provenance <rom>|<sidecar.dis> <offset> label|line|region observed|manual [-page <n>]";
+  readonly usage =
+    "rom-ann-provenance <rom>|<sidecar.dis> <offset> label|line|region observed|manual|source [-page <n>]";
   readonly argumentInfo: CommandArgumentInfo = {
     mandatory: [
       { name: "rom", type: "string" },
@@ -345,7 +346,7 @@ export class RomAnnotationProvenanceCommand extends IdeCommandBase<ProvenanceArg
     if (!["label", "line", "region"].includes(String(args.kind))) {
       messages.push(validationError(t("commands.romAnn.kindValues")));
     }
-    if (!["observed", "manual"].includes(String(args.provenance))) {
+    if (!["observed", "manual", "source"].includes(String(args.provenance))) {
       messages.push(validationError(t("commands.romAnn.provenanceValues")));
     }
     return messages;
@@ -360,6 +361,10 @@ export class RomAnnotationProvenanceCommand extends IdeCommandBase<ProvenanceArg
     const text = await readText(context, path);
     if (text === undefined) return commandError(t("commands.romAnn.cannotRead", { path }));
     const raw = JSON.parse(text);
+    // --- `source` names the file's source code, which only a sidecar with `sourceCode` has (D-OZ3)
+    if (args.provenance === "source" && !hasSourceCode(raw)) {
+      return commandError(t("commands.romAnn.sourceNeedsCode", { path }));
+    }
     const page = args["-page"] ?? 0;
     const key = `${page}:${args.offset}:${args.kind}`;
     const next = withProvenance(raw, key, args.provenance as Exclude<Provenance, "derived">);
