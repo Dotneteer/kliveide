@@ -48,6 +48,14 @@
   "@settings.general.closeEmu.title": {
     "context": "Settings dialog, General page, 'Windows' group: label of an on/off switch."
   },
+  "settings.general.focusEmuOnRun.title": "Focus the emulator after Run or Debug",
+  "@settings.general.focusEmuOnRun.title": {
+    "context": "Settings dialog, General page, 'Windows' group: label of an on/off switch. 'Run' and 'Debug' are the IDE commands that build the project and start it in the emulator. Its help text: 'Once the program has started, the emulator window gets the keyboard focus, so the keys you press reach the machine'"
+  },
+  "settings.general.focusEmuOnRun.description": "Once the program has started, the emulator window gets the keyboard focus, so the keys you press reach the machine",
+  "@settings.general.focusEmuOnRun.description": {
+    "context": "Help text under the setting 'Focus the emulator after Run or Debug' (Settings dialog, General page). Wraps over several lines."
+  },
   "settings.general.navRecordTabSwitch.title": "Record tab switches in the navigation history",
   "@settings.general.navRecordTabSwitch.title": {
     "context": "Settings dialog, General page, 'Navigation' group: label of an on/off switch. Its help text: 'Go Back and Go Forward also step through the tabs you switched between'"

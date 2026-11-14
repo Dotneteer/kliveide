@@ -51,6 +51,8 @@ import {
   modelTypeToMachineType
 } from "@renderer/appIde/utils/compile-code";
 import { t } from "@common/i18n/i18n";
+import { getGlobalSetting } from "@renderer/core/RendererProvider";
+import { SETTING_IDE_FOCUS_EMU_ON_RUN } from "@common/settings/setting-const";
 import {
   describeHt1080zPlacementProblem,
   isHt1080zPlacementProblem,
@@ -942,6 +944,7 @@ export async function injectCode(
     await context.emuApi.startZ88Application(z88Card.file, z88Card.sizeKb, z88Card.appKey, operationType === "debug");
     context.output.writeLine(t("commands.compile.z88CardStarted", { file: z88Card.file, key: z88Card.appKey }));
     context.store.dispatch(incInjectionVersionAction());
+    await focusEmulatorAfterStart(context, !!unitTestOf);
     return commandSuccessWith(
       operationType === "debug" ? t("commands.compile.startedDebug") : t("commands.compile.started")
     );
@@ -973,6 +976,7 @@ export async function injectCode(
     await context.emuApi.startTapeLoad(operationType === "debug");
     context.output.writeLine(t("commands.compile.programFileLoaded", { file: programFile, bytes: bytes.length, machine }));
     context.store.dispatch(incInjectionVersionAction());
+    await focusEmulatorAfterStart(context, !!unitTestOf);
     return commandSuccessWith(
       operationType === "debug" ? t("commands.compile.startedDebug") : t("commands.compile.started")
     );
@@ -1115,7 +1119,24 @@ export async function injectCode(
 
   // --- Injection done
   dispatch(incInjectionVersionAction());
+  if (operationType !== "inject") await focusEmulatorAfterStart(context, !!unitTest);
   return commandSuccessWith(returnMessage);
+}
+
+/**
+ * Once Run or Debug has started the program, hands the keyboard to the emulator window (setting
+ * `SETTING_IDE_FOCUS_EMU_ON_RUN`, on by default), so the keys the user presses next reach the
+ * machine rather than the IDE that launched it. A unit test's debug run is left alone: it waits for
+ * no keys, and the user is looking at the test in the IDE. Best effort - a window that cannot be
+ * focused does not make the run fail.
+ */
+export async function focusEmulatorAfterStart(context: IdeCommandContext, isUnitTest = false): Promise<void> {
+  if (isUnitTest || !getGlobalSetting(context.store, SETTING_IDE_FOCUS_EMU_ON_RUN)) return;
+  try {
+    await context.mainApi.focusEmuWindow();
+  } catch {
+    // --- Intentionally ignored
+  }
 }
 
 /** The decimal entry the TVC's `USR` calls, for the inject message */

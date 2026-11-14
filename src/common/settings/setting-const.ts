@@ -93,6 +93,8 @@ export const SETTING_IDE_ACTIVE_TOOL = "ideViewOptions.activeTool";
 export const SETTING_IDE_ACTIVE_OUTPUT_PANE = "ideViewOptions.activeOutputPane";
 export const SETTING_IDE_OPEN_LAST_PROJECT = "ideBehavior.openLastProject";
 export const SETTING_IDE_CLOSE_EMU = "ideBehavior.closeEmuWithIde";
+/** Give the emulator window the keyboard focus once Run or Debug has started the program: on */
+export const SETTING_IDE_FOCUS_EMU_ON_RUN = "ideBehavior.focusEmuOnRun";
 export const SETTING_IDE_NAV_RECORD_TAB_SWITCH = "ideBehavior.navRecordTabSwitches";
 // --- The display language (`dev/ai/localization.md`, D8): "system" or a `languages.ts` id
 export const SETTING_IDE_LANGUAGE = "ideViewOptions.language";

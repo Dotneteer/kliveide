@@ -61,6 +61,7 @@ import {
   SETTING_IDE_ACTIVE_OUTPUT_PANE,
   SETTING_IDE_ACTIVE_TOOL,
   SETTING_IDE_CLOSE_EMU,
+  SETTING_IDE_FOCUS_EMU_ON_RUN,
   SETTING_IDE_NAV_RECORD_TAB_SWITCH,
   SETTING_IDE_LANGUAGE,
   SETTING_IDE_I18N_SHOW_KEYS,
@@ -747,6 +748,16 @@ const settingDefinitions: Setting[] = [
   {
     id: SETTING_IDE_CLOSE_EMU,
     title: "Close Emulator when IDE is closed",
+    type: "boolean",
+    defaultValue: true,
+    saveWithIde: true,
+    boundTo: "ide"
+  },
+  {
+    id: SETTING_IDE_FOCUS_EMU_ON_RUN,
+    title: "Focus the emulator after Run or Debug",
+    description:
+      "When Run or Debug has started the program, the emulator window gets the keyboard focus, so the keys you press reach the machine.",
     type: "boolean",
     defaultValue: true,
     saveWithIde: true,
