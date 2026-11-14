@@ -101,6 +101,51 @@ export const ROM_ANNOTATION_CATALOG: readonly RomCatalogMachine[] = [
   }
 ];
 
+/**
+ * A machine type's ROM files, in catalog order, each once: what the menu lists. A file's pages are not
+ * menu items; the ROM annotation editor lists them (`ownPagesOf`).
+ */
+export function romCatalogFiles(machine: RomCatalogMachine): RomCatalogEntry[][] {
+  return machine.groups
+    .map((group) => {
+      const seen = new Set<string>();
+      return group.filter((entry) => !seen.has(entry.file) && seen.add(entry.file)).map(({ file }) => ({ file }));
+    })
+    .filter((group) => group.length > 0);
+}
+
+/** The pages of a ROM file the catalog lists (every page Klive knows of it), in page order. */
+export function catalogPagesOf(file: string, catalog: readonly RomCatalogMachine[] = ROM_ANNOTATION_CATALOG): number[] {
+  const pages = new Set<number>();
+  for (const machine of catalog) {
+    for (const entry of machine.groups.flat()) if (entry.file === file) pages.add(entry.page ?? 0);
+  }
+  return [...pages].sort((a, b) => a - b);
+}
+
+/**
+ * The pages of a ROM file that its own sidecar describes: the catalog's pages whose bytes no other
+ * shipped sidecar describes. `enNextLG.rom` differs from `enNextZX.rom` in page 2 only, so its other
+ * pages are `enNextZX.rom.dis`'s and only page 2 is its own.
+ *
+ * @param file The file, by its path under `roms/` (`zxnext/nextzxos-2.08/enNextLG.rom`)
+ * @param crcOf A page's CRC-32, or `undefined` when the file has no such page
+ * @param index The shipped sidecars by page CRC (`rom-annotations.index.json`)
+ */
+export function ownPagesOf(
+  file: string,
+  crcOf: (page: number) => string | undefined,
+  index: Readonly<Record<string, { sidecar: string; page: number }>>,
+  catalog: readonly RomCatalogMachine[] = ROM_ANNOTATION_CATALOG
+): number[] {
+  return catalogPagesOf(file, catalog).filter((page) => {
+    const crc = crcOf(page);
+    if (crc === undefined) return false;
+    const shipped = index[crc];
+    return !shipped || shipped.sidecar === `${file}.dis`;
+  });
+}
+
 /** A catalog entry's file name, without its folder: what the menu shows (`enNextZX.rom`). */
 export function romCatalogFileName(entry: RomCatalogEntry): string {
   return entry.file.split("/").pop() ?? entry.file;

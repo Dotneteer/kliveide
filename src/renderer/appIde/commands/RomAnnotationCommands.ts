@@ -9,6 +9,7 @@ import type { MainApi } from "@common/messaging/MainApi";
 import { ROM_ANNOTATION_EDITOR } from "@common/state/common-ids";
 import { formatRomSidecar, hasSourceCode, type Provenance } from "@common/roms/romAnnotationTools";
 import { romPageIdentity } from "@common/roms/romIdentity";
+import { ownPagesOf } from "@common/roms/romAnnotationCatalog";
 import { canonicalShippedSidecar, isShippedSidecarShape } from "@common/roms/romSidecarPaths";
 import {
   SHIPPED_ROM_FOLDER,
@@ -69,6 +70,24 @@ function pageOf(bytes: Uint8Array, page: number): Uint8Array | undefined {
  */
 function isShippedRomName(rom: string): boolean {
   return isShippedSidecarShape(rom.replace(/\\/g, "/"));
+}
+
+/**
+ * The page `rom-ann-open <rom>` opens when no `-page` is given: the first page of the file that its own
+ * sidecar describes (`ownPagesOf`). `enNextLG.rom` opens at page 2, its own; its other pages are
+ * `enNextZX.rom`'s. A ROM that is not one of the shipped ones opens at page 0.
+ */
+async function ownFirstPageOf(context: IdeCommandContext, rom: string): Promise<number> {
+  if (!isShippedRomName(rom)) return 0;
+  const file = canonicalShippedSidecar(`${rom.replace(/\\/g, "/")}.dis`).replace(/\.dis$/i, "");
+  const bytes = await context.mainApi.readBinaryFile(`${SHIPPED_ROM_FOLDER}/${file}`).catch(() => undefined);
+  if (!bytes) return 0;
+  const index = await readShippedIndex(context.mainApi);
+  const crcOf = (page: number) => {
+    const slice = pageOf(bytes, page);
+    return slice ? romPageIdentity(slice).crc32 : undefined;
+  };
+  return ownPagesOf(file, crcOf, index)[0] ?? 0;
 }
 
 /**
@@ -164,7 +183,8 @@ async function validateRom(args: RomArgs, mandatory: boolean): Promise<Validatio
   const messages: ValidationMessage[] = [];
   if (mandatory && !args.rom?.trim()) messages.push(validationError(t("commands.romAnn.nameRom")));
   const page = args["-page"];
-  if (page !== undefined && (!Number.isInteger(page) || page < 0 || page > 15)) {
+  // --- A ROM file of up to 512K: the Z88's OZ ROMs have 32 pages
+  if (page !== undefined && (!Number.isInteger(page) || page < 0 || page > 31)) {
     messages.push(validationError(t("commands.romAnn.pageValues")));
   }
   return messages;
@@ -228,7 +248,9 @@ export class RomAnnotationOpenCommand extends IdeCommandBase<OpenArgs> {
       await openRomAnnotationEditor(hub, resolved.path);
       return commandSuccess;
     }
-    const target = await romTargetOf(context, args.rom!, args["-page"] ?? 0);
+    // --- No page: the file's own first page (the menu opens a file; the editor lists its pages)
+    const page = args["-page"] ?? (await ownFirstPageOf(context, args.rom!));
+    const target = await romTargetOf(context, args.rom!, page);
     if ("error" in target) return commandError(target.error);
     const exists = await context.service.projectService
       .readFileContent(target.workingPath, false)

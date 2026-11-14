@@ -840,14 +840,6 @@
   "@menu.debug.romAnnotations": {
     "context": "Debug menu: a submenu with one submenu per machine type, each listing the ROM files Klive ships for that machine; picking one opens that ROM's annotations (its labels, comments and data regions, which the user can edit) in the ROM annotation editor of the IDE window."
   },
-  "menu.debug.romAnnotationsPage": "{file}, page {page}",
-  "@menu.debug.romAnnotationsPage": {
-    "context": "Debug › ROM Annotations › (machine type): an item for one 16K page of a ROM file that holds several pages (the ZX Spectrum Next's 64K NextZXOS ROM). Picking it opens that page's annotations.",
-    "placeholders": {
-      "file": "The ROM file's name, shown verbatim, e.g. 'enNextZX.rom'",
-      "page": "The page's number within the file, from 0"
-    }
-  },
   "menu.debug.romAnnotationsFailed": "ROM Annotations",
   "@menu.debug.romAnnotationsFailed": {
     "context": "Title of the error message box shown when an item of Debug › ROM Annotations cannot open the ROM's annotations; the message below it says why. Use the same words as the 'ROM Annotations' submenu.",

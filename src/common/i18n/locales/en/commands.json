@@ -1503,7 +1503,7 @@
   "@commands.romAnn.nameRom": {
     "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Argument error of the rom-ann-* commands. 'sp48.rom' is an example file name: keep it."
   },
-  "commands.romAnn.pageValues": "-page: a page number from 0 to 15",
+  "commands.romAnn.pageValues": "-page: a page number from 0 to 31",
   "@commands.romAnn.pageValues": {
     "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Argument error. '-page' is the option name."
   },

@@ -3,6 +3,7 @@ import type { MainApi } from "@common/messaging/MainApi";
 
 import { romPageIdentity, type RomPageKind, knownRomPageKind } from "@common/roms/romIdentity";
 import { managedSidecarOf } from "@common/roms/romSidecarPaths";
+import { ownPagesOf } from "@common/roms/romAnnotationCatalog";
 import { readShippedIndex, SHIPPED_ROM_FOLDER } from "./romAnnotationLoader";
 
 /*
@@ -32,6 +33,11 @@ export type RomPageMatch = {
   kind?: RomPageKind;
   /** Every place looked in, for the message when nothing matched. */
   searched: string[];
+  /**
+   * `false` for a page of the ROM file the sidecar does not name yet (`ownUnlistedPages`): the editor
+   * lists it, and opening it adds it to the file. Absent for a page the sidecar names.
+   */
+  listed?: boolean;
 };
 
 export type RomMatchDeps = {
@@ -140,4 +146,35 @@ export async function matchRomPages(
     result.push(match);
   }
   return result.sort((a, b) => a.page - b.page);
+}
+
+/**
+ * The pages of a sidecar's ROM file it does not name yet: the file's own pages (`ownPagesOf`) missing
+ * from its `pages`. The ROM annotation editor lists a file's every page, not only the annotated ones
+ * (Debug › ROM Annotations opens a file, not a page). Only a shipped sidecar or a working copy of one
+ * has a ROM file Klive knows; any other sidecar gets none.
+ *
+ * @returns The missing pages, keyed by page, with their CRCs
+ */
+export async function ownUnlistedPages(
+  deps: Pick<RomMatchDeps, "files">,
+  sidecarPath: string,
+  pages: Record<string, unknown>
+): Promise<Record<string, { crc32: string }>> {
+  const managed = managedSidecarOf(sidecarPath);
+  if (!managed) return {};
+  const file = managed.sidecar.replace(/\.dis$/i, "");
+  const bytes = await deps.files.readBinaryFile(`${SHIPPED_ROM_FOLDER}/${file}`).catch(() => undefined);
+  if (!bytes) return {};
+  const index = await readShippedIndex(deps.files);
+  const crcOf = (page: number) => {
+    const slice = pageOf(bytes, page);
+    return slice ? romPageIdentity(slice).crc32 : undefined;
+  };
+  const result: Record<string, { crc32: string }> = {};
+  for (const page of ownPagesOf(file, crcOf, index)) {
+    if (String(page) in (pages ?? {})) continue;
+    result[String(page)] = { crc32: crcOf(page)! };
+  }
+  return result;
 }
