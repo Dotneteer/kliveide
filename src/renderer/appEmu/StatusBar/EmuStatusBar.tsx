@@ -38,9 +38,15 @@ type EmuStatusBarProps = {
    * debugging aids that change every few frames, which is noise to someone just using the machine.
    */
   showPerformanceInfo?: boolean;
+  /**
+   * Whether the frame readouts follow the machine. The full screen mode keeps the bar mounted off
+   * screen, so it can slide in, and passes `false` while it is hidden
+   * (`dev/plans/EMU_FULL_SCREEN_MODE_PLAN.md` §4.3). Defaults to `true`.
+   */
+  live?: boolean;
 }
 
-export const EmuStatusBar = ({ show, showPerformanceInfo = true }: EmuStatusBarProps) => {
+export const EmuStatusBar = ({ show, showPerformanceInfo = true, live = true }: EmuStatusBarProps) => {
   const t = useT();
   const { machineService } = useAppServices();
   const controller = useMachineController();
@@ -76,7 +82,7 @@ export const EmuStatusBar = ({ show, showPerformanceInfo = true }: EmuStatusBarP
   // --- Read by the frame handler, which is subscribed once per controller: a ref keeps it current
   // --- without resubscribing, and lets it skip the re-render while nothing would show the stats.
   const statsVisible = useRef(false);
-  statsVisible.current = show && showPerformanceInfo;
+  statsVisible.current = show && live && showPerformanceInfo;
 
   const onFrameCompleted = (completed: FrameCompletedArgs) => {
     if (!statsVisible.current) return;

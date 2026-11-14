@@ -1,7 +1,7 @@
 # Emulator Full Screen Mode Plan
 
-**Status: approved (2026-11-14).** Nothing is implemented yet. The decisions are in §3 (Q1-Q4, all
-settled by the project author); Q2 still has to be confirmed by the Phase 0 spike.
+**Status: done (2026-11-14).** All phases are implemented and checked on macOS; §7 is the as-built
+record, including what was not checked (Windows and Linux, the macOS menu bar under a real pointer).
 
 A full screen mode for the emulator window that shows only the machine: the emulator picture and, when
 it is switched on, the virtual keyboard. The toolbar, the status bar and the machine's tool strip (the
@@ -190,7 +190,97 @@ in the overlay (it spans the window width).
 
 - **Picture rescale on reveal**: guarded by overlaying, and by a test that the emulator area's size does
   not depend on the reveal state.
-- **Keys leaking to the machine**: the shortcut is a menu accelerator; confirm the chord does not reach
-  `useEmulatorKeyboard` as machine keys (F9 is unmapped on current keyboards; check the key mappings).
-- **macOS menu bar collision**: Q2 / Phase 0.
+- **Keys leaking to the machine**: the shortcut is a menu accelerator. F9 *is* mapped on one machine:
+  the Videoton TVC's ű (`TvcKeyMappings.ts`). The chord was already Toggle Full Screen before this plan,
+  so this is not new; whether the TVC also sees the press is open (§7).
+- **macOS menu bar collision**: Q2 / Phase 0, see §7.
 - **Portal popups** closing the bar under the pointer: explicit popup-open signal (§4.2).
+
+## 7. As built (2026-11-14)
+
+### Phase 0: what was checked, and where
+
+Checked on macOS only, in the running app over CDP with real input events (`Input.dispatchMouseEvent`,
+the app menu and `Ctrl+Shift+F9` through System Events):
+
+- Simple full screen (D2) fills the screen: the page went from 657x463 to 1752x986 CSS px, which is the
+  1920x1080-point display at the window's 1.1 page zoom; leaving put the window back at the same size
+  and position (657x463 at 600,270).
+- `mousemove` reaches the page at `clientY = 1` and at the last row, and the reveal model runs on it.
+- **Not checked here:** the system menu bar under a *real* pointer (a CDP event is synthetic and never
+  reaches the OS), and Windows and Linux at all (native `setFullScreen` there; the main-process logic
+  is unit-tested). The project author then found the menu bar does come down (next section).
+
+### The macOS menu bar (found in use, 2026-11-14)
+
+Simple full screen only *auto-hides* the menu bar: with the pointer at the top edge it slid down over
+the revealed toolbar and hid it. Q2's fallback was taken, in simple full screen rather than native:
+
+- Main measures the menu bar before the window goes full screen, while the display still reserves it
+  (`workArea.y - bounds.y`; 24 pt when the user has set the menu bar to hide itself all the time and
+  nothing is reserved), and publishes it with the mode (`emuFullScreenTopInset`, points).
+- The renderer turns points into CSS pixels with the window's geometry (it covers its display, so
+  `innerHeight / screen.height`, which carries the page zoom) and sets `--emu-full-screen-inset` on the
+  toolbar: revealed, it sits under the menu bar; hidden, it travels its height plus the inset.
+- The pointer on the menu bar (above the toolbar) keeps the toolbar, and a `mouseleave` through the top
+  edge on macOS means "onto the menu bar", not "out of the window".
+- Trade-off, accepted: once the pointer moves down onto the toolbar, macOS hides its menu bar and a
+  strip of picture shows above the toolbar until the toolbar goes. The toolbar does not follow it up,
+  which would pull it from under the pointer.
+- Hiding the menu bar for real needs `NSApplicationPresentationHideMenuBar`, which Electron exposes only
+  through kiosk mode (which also disables Cmd+Tab and Force Quit); a native helper is the option if the
+  strip turns out to be unacceptable.
+- Checked in the running app: a 24 pt menu bar gave a 22 px inset at the window's 1.1 zoom, the toolbar
+  revealed at y = 22 and hid fully off screen. Not checked: a Mac with a notch (a taller menu bar,
+  measured the same way), and the Dock, which simple full screen also auto-hides and which could come up
+  over the status bar at the bottom edge.
+
+### Phase 1: the mode
+
+- `AppState.emuFullScreenMode` / `setEmuFullScreenModeAction` (`app-state-flags-reducer.ts`); no menu
+  checkbox: View › Toggle Full Screen keeps its label and routes the emulator window to the mode (D1).
+- `src/main/emu-full-screen-mode.ts`: enter (simple full screen on macOS when it exists, native
+  otherwise, nothing when the window is already full screen), leave (undoes exactly what entering did),
+  `leave-full-screen` ends the mode, `resetEmuFullScreenMode` when the windows are re-created.
+- macOS simple full screen is invisible to `isFullScreen()`, so three places learned
+  `isSimpleFullScreen()`: `WindowStateManager.isNormal` (the saved bounds stay the pre-mode ones, Q4),
+  `emu-window-sizing` (no resize to a machine's size while full screen, Fit Window disabled) and the View
+  menu's `emuResizable` (`isAnyFullScreen`).
+- The tool strip is hidden by `EmulatorPanel` reading the mode (D3); it refits as it does for the
+  strip's own setting.
+
+### Phase 2: the reveal
+
+- `appEmu/fullScreen/fullScreenChromeModel.ts` (pure; zone 4px, dwell 120ms, grace 600ms),
+  `useFullScreenChrome.ts` (document `mousemove`/`mouseleave`, `pointerlockchange`, one timer, a
+  `MutationObserver` on `#overlayRoot`), `FullScreenEdgeBar.tsx` + `.module.scss`.
+- "Held": a dialog (`dimMenu`) or a `role="menu"` / `role="listbox"` popup in `#overlayRoot` (the
+  toolbar's split-button and overflow menus, `Dropdown`). A pointer anywhere in `#overlayRoot` counts as
+  over the bars. "Captured" is `document.pointerLockElement`.
+- **Changed from §4.3:** the edge-bar wrapper is in the tree in both modes (`display: contents` when the
+  mode is off) instead of `EmuApp` branching. The first build swapped element types, which remounted
+  `EmuStatusBar`; a remounted consumer of `useMachineController` has no controller until the next
+  machine change, and the revealed bar showed 0.000 MHz with frozen readouts. `EmuStatusBar` got a `live`
+  prop so the mounted-but-hidden bar does no per-frame work.
+
+### Phase 3: verification
+
+- Running app (macOS): enter/leave by menu and by `Ctrl+Shift+F9`; both bars reveal after the dwell,
+  stay over the bar, leave after the grace, and a quick touch of the edge reveals nothing; the canvas
+  rectangle is identical with a bar shown and hidden; the status bar shows 3.500 MHz; the virtual
+  keyboard shows and hides inside the mode.
+- Not checked in the running app: the Z88 and the Next (their strips use the same path as the
+  Spectrum's media strip, which was), mouse capture on the Next (unit-tested in the model), the recording
+  overlay.
+- Tests: `test/emu/full-screen-chrome-model.test.ts`, `test/emu/full-screen-chrome.test.tsx`,
+  `test/main/emu-full-screen-mode.test.ts`, and the routing cases in `test/main/app-menu-structure.test.ts`.
+- Docs: the emulator window guide's "Full screen mode" section and a line on the shortcuts page.
+  `dev/ai/ui-theming-intent-and-lessons.md`: "Chrome Revealed Over The Emulator Picture Lies Over It,
+  And Never Remounts".
+
+### Open
+
+- Whether the TVC receives the ű key when `Ctrl+Shift+F9` is pressed (pre-existing; the chord is the
+  old Toggle Full Screen's).
+- Windows/Linux behaviour (Phase 0); the toolbar under the menu bar on a Mac with a notch; the Dock at
+  the bottom edge over the status bar.

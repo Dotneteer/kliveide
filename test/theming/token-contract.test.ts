@@ -67,6 +67,13 @@ const RUNTIME_PROVIDED = new Set([
    */
   "--bank-browser-height",
   /*
+   * Set on the emulator's full screen toolbar (`appEmu/fullScreen/FullScreenEdgeBar.tsx`) from the
+   * macOS menu bar's measured height, which main reads from the display: the menu bar slides down at
+   * the top edge too, so the toolbar is revealed under it. A measurement, not a theme value; without
+   * it the bar sits at the edge.
+   */
+  "--emu-full-screen-inset",
+  /*
    * Set per element by `NextPaletteViewer`'s swatch, from that swatch's own luminance.
    *
    * This one cannot come from the token layer even in principle: the quadrant rule it colours is

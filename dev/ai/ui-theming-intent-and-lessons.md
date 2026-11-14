@@ -3042,6 +3042,31 @@ extra files.
 A ZX Spectrum 48 has no pointing device, and a toolbar button offering to capture a mouse for it is
 a promise the machine cannot keep.
 
+## Chrome Revealed Over The Emulator Picture Lies Over It, And Never Remounts
+
+The emulator window's full screen mode (`dev/plans/EMU_FULL_SCREEN_MODE_PLAN.md`) slides the toolbar
+and the status bar in at the screen edges. Three rules came out of it, and hold for any chrome that
+appears on demand over the picture:
+
+- **It overlays the picture; it never enters the layout.** The picture is fitted to its panel
+  (above), so a bar that pushed the panel would rescale the emulated screen every time the pointer
+  touched an edge. The bars are `position: fixed` (`appEmu/fullScreen/FullScreenEdgeBar.module.scss`),
+  and the check is the canvas rectangle staying identical with a bar shown and hidden.
+- **Switching the mode keeps the same elements.** The bars' wrapper is in the tree in both modes,
+  `display: contents` while the mode is off. Swapping element types remounted `EmuStatusBar`, and a
+  remounted consumer of `useMachineController` has no controller until the next machine change: the
+  bar showed 0.000 MHz and frozen readouts. Any component built on that hook must not be remounted to
+  restyle it.
+- **Slide with the motion tokens, hide with `visibility` delayed to the slide's end, and make the hidden
+  bar `inert`.** `transform` slides (`--duration-base`, `--ease-out`); `visibility` switches after the
+  slide out so the bar animates yet takes no pointer or focus once gone; `prefers-reduced-motion`
+  turns the slide off. A bar that is kept mounted off screen still runs its per-frame work unless told
+  otherwise: `EmuStatusBar`'s `live` stops its readouts while it is hidden.
+- **On macOS the top edge belongs to the menu bar first.** Neither native nor simple full screen removes
+  it; it only auto-hides and slides down at the top edge. A bar revealed there sits below it
+  (`--emu-full-screen-inset`, the menu bar's measured height in CSS pixels), and travels that inset as
+  well as its own height when it hides. Points from main become CSS pixels through the page zoom.
+
 ## An Editor Diagnostic Marks The Text Its Compiler Can Vouch For
 
 A compile error's squiggle covers the exact range only when the language says its compiler's

@@ -60,6 +60,7 @@ import { getEmuApi, registerMainToEmuMessenger } from "@messaging/MainToEmuMesse
 import { BORIEL_SETUP_DIALOG } from "@messaging/dialog-ids";
 import { scheduleBorielSetupOffer } from "./boriel-integration/boriel-main";
 import { getIdeApi, registerMainToIdeMessenger } from "@messaging/MainToIdeMessenger";
+import { onEmuWindowLeftFullScreen, resetEmuFullScreenMode } from "./emu-full-screen-mode";
 import { createSettingsReader } from "@utils/SettingsReader";
 import { readAdvancedDebuggingSetting } from "@common/features/advancedDebugging";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_DOCK, MEDIA_MICRODRIVES, MEDIA_TAPE } from "@common/structs/project-const";
@@ -228,6 +229,8 @@ async function initializeMachineTypes() {
 async function createAppWindows() {
   // --- Reset renderer window flags used during re-activation
   machineTypeInitialized = false;
+  // --- A re-created emulator window starts with its normal chrome
+  resetEmuFullScreenMode((action) => mainStore.dispatch(action, "main"));
   allowCloseIde = false;
   ideSaved = false;
   lastStayOnTopValue = undefined;
@@ -638,6 +641,12 @@ async function createAppWindows() {
   // --- Sign when EMU loses the focus
   emuWindow.on("blur", () => {
     mainStore.dispatch(emuFocusedAction(false), "main");
+  });
+
+  // --- Leaving native full screen by any route (the green button, Ctrl+Cmd+F, the OS's gesture)
+  // --- also ends the emulator's full screen mode (`dev/plans/EMU_FULL_SCREEN_MODE_PLAN.md` §2.1)
+  emuWindow.on("leave-full-screen", () => {
+    onEmuWindowLeftFullScreen((action) => mainStore.dispatch(action, "main"));
   });
 
   // --- Close the emu window with the IDE window

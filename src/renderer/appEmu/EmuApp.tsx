@@ -20,7 +20,9 @@ import {
 import { EmuDialogBridge } from "./EmuDialogBridge";
 import { useEmuRecordingManager, useEmuStartup } from "./useEmuStartup";
 import { useEmuFileDrop } from "./useEmuFileDrop";
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
+import { FullScreenEdgeBar } from "./fullScreen/FullScreenEdgeBar";
+import { useCssPixelsPerPoint, useFullScreenChrome } from "./fullScreen/useFullScreenChrome";
 
 const EmuApp = () => {
   // --- Used services
@@ -40,6 +42,22 @@ const EmuApp = () => {
   const dimmed = useSelector((s) => s.dimMenu ?? false);
   const isWindows = useSelector((s) => s.isWindows ?? false);
 
+  // --- The full screen mode (`dev/plans/EMU_FULL_SCREEN_MODE_PLAN.md`): the toolbar and the status
+  // --- bar leave the layout and slide in over the picture at the screen edges, whatever their settings
+  const fullScreenMode = useSelector((s) => s.emuFullScreenMode ?? false);
+  // --- The macOS menu bar slides down at the top edge too: the toolbar is revealed under it
+  const topInsetPt = useSelector((s) => s.emuFullScreenTopInset ?? 0);
+  const topInset = Math.round(topInsetPt * useCssPixelsPerPoint(fullScreenMode && topInsetPt > 0));
+  const toolbarBarRef = useRef<HTMLDivElement>(null);
+  const statusBarBarRef = useRef<HTMLDivElement>(null);
+  const { toolbarShown, statusBarShown } = useFullScreenChrome(
+    fullScreenMode,
+    toolbarBarRef,
+    statusBarBarRef,
+    dimmed,
+    topInset
+  );
+
   useEmuStartup({ appServices, dispatch, isWindows, messenger, store });
 
   // --- Snapshots and tapes dropped onto the window (D10)
@@ -50,9 +68,27 @@ const EmuApp = () => {
     <RecordingContext.Provider value={recordingManagerRef}>
     <FullPanel id="appMain" data-testid="emu-app" dataAppReady={emuLoaded ? "true" : "false"}>
       <EmuDialogBridge />
-      {showToolbar && <Toolbar ide={false} kliveProjectLoaded={kliveProjectLoaded} recordingManagerRef={recordingManagerRef} />}
+      {/* --- The same elements in both modes: neither the bars nor `EmulatorArea` (the machine) remount */}
+      <FullScreenEdgeBar
+        edge="top"
+        active={fullScreenMode}
+        shown={toolbarShown}
+        inset={topInset}
+        ref={toolbarBarRef}
+      >
+        {(fullScreenMode || showToolbar) && (
+          <Toolbar ide={false} kliveProjectLoaded={kliveProjectLoaded} recordingManagerRef={recordingManagerRef} />
+        )}
+      </FullScreenEdgeBar>
       <EmulatorArea />
-      <EmuStatusBar show={showStatusBar} showPerformanceInfo={showPerformanceInfo} />
+      <FullScreenEdgeBar edge="bottom" active={fullScreenMode} shown={statusBarShown} ref={statusBarBarRef}>
+        {/* --- In the mode it stays mounted while hidden, so it can slide; its readouts run only on screen */}
+        <EmuStatusBar
+          show={fullScreenMode || showStatusBar}
+          live={!fullScreenMode || statusBarShown}
+          showPerformanceInfo={showPerformanceInfo}
+        />
+      </FullScreenEdgeBar>
       <BackDrop visible={dimmed} />
     </FullPanel>
     </RecordingContext.Provider>
