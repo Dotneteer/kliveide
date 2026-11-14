@@ -2721,6 +2721,28 @@ secondary accent (`--color-tbu-block`), so it reads apart from the instruction r
 hue. Any future "program of writes" listing (a DMA or Copper program outside its own panel) should
 look the same.
 
+### A key that starts something is a key cap, not a chip
+
+The TBBLUE.FW viewer's "Started by" column names the keys that start each firmware module (`Space`,
+`U`, `A D V R`, `N + X`). They are `<kbd>` key caps: `--surface-raised` with a `--border-strong` edge,
+2px at the bottom, `--text-primary`, the radius of a small control (`--color-fw-key*` /
+`--bgcolor-fw-key` at L4). No hue: a key is not a status and not the accent, and a tinted chip would
+read as a verdict. Keys pressed together are joined by a dimmed `+`; alternatives sit side by side.
+
+### A table row that only repeats another one recedes
+
+An entry that repeats another's data (TBBLUE.FW's entries 1 and 3, which point at the boot module) is
+drawn in `--text-tertiary` across the whole row, and its note says which entry it repeats. Selecting
+it shows the module it repeats. Dimming, not hiding: the row is part of the file's structure, and the
+reader needs to see it is there.
+
+### A picture from machine data is drawn at an integer scale, pixels sharp
+
+The firmware's test card (256×192 Layer 2) is a `<canvas>` at its own size, shown at 2× with
+`image-rendering: pixelated` and `max-width: 100%`, and coloured with the core's own 3-to-8-bit levels
+(`rgb333Rgb`, beside `rgb333Css` in `layerMix.ts`), so the same 9-bit colour looks the same here as in
+the emulator and the palette panels.
+
 ### A data table's cells are one line
 
 A table row built from `DataRow` cells grows when a cell wraps (`DataValue` is `display: flex`, so

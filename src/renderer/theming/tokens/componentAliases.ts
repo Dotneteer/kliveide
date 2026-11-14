@@ -1012,5 +1012,21 @@ export const componentAliases: Record<string, string> = {
   "--color-tbu-warning": "var(--status-warning)",
   "--color-tbu-error": "var(--status-error)",
   "--bgcolor-tbu-selected": "var(--accent-subtle)",
-  "--color-tbu-block": "var(--accent-secondary-text)"
+  "--color-tbu-block": "var(--accent-secondary-text)",
+
+  // --- TBBLUE.FW viewer (`dev/plans/TBBLUE_FW_VIEWER_PLAN.md` D7) ---------------------------------
+  /*
+   * The TBU viewer's verdict and selection colours. An alias entry (one that repeats the boot module's
+   * blocks) recedes into the tertiary text. The key caps that say which key starts a module are a
+   * raised surface with a strong edge, thicker at the bottom: a key, not a chip, and no hue, since a
+   * key is not a status.
+   */
+  "--color-fw-ok": "var(--status-success)",
+  "--color-fw-warning": "var(--status-warning)",
+  "--color-fw-error": "var(--status-error)",
+  "--color-fw-dim": "var(--text-tertiary)",
+  "--bgcolor-fw-selected": "var(--accent-subtle)",
+  "--color-fw-key": "var(--text-primary)",
+  "--bgcolor-fw-key": "var(--surface-raised)",
+  "--color-fw-key-border": "var(--border-strong)"
 };

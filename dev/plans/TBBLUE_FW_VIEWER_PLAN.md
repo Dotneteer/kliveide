@@ -189,11 +189,31 @@ for Phase 2:
 - `findFwVersion` finds 1.44, 1.45 and 1.46 in the three cards' boot modules; the 2019 file has none of
   that form, and both opt-in real files (2019, the KS2 image) read with no errors.
 
-### Phase 2 — Viewer and registration
+### Phase 2 — Viewer and registration — done
 
 - The chosen layout on `GenericFilePanel`, the data primitives, the tape viewer's `TimelineStrip` for the
   map, the disassembly colours; `FW_VIEWER` registered by name; texts through `t()`; a jsdom test;
   checked in the running IDE on the four real files.
+
+**As built (2026-11-14), done.**
+
+- `FwFileViewerPanel.tsx` (+ `.module.scss`), layout A: File (version, size, map use, layout, verdict,
+  problems; the map's dump), Modules (the `TimelineStrip` over the distinct modules, then the table with
+  key caps, aliases dimmed), the selected module (what, keys, blocks, file range, kind and address,
+  padding, up to 12 texts; the module's dump and its whole disassembly in the static memory dump), then
+  the content: **the first 256 instructions** at `$6000` (a 35K module is ~15,000 instructions, too
+  many rows for a document that scrolls as one; the whole module is one click away), or the test card.
+- An alias row selects the module it repeats; in the 2019 layout entries 1 and 3 read "Editor (old
+  place)" and "Cores (old place)". Key names are not translated; the updater's keys are "U, or DRIVE +
+  M1 held at power-on".
+- `rgb333Rgb` added beside `rgb333Css` in `layerMix.ts`, so the picture uses the core's colour levels.
+- Registry: `FW_VIEWER`, `matchType: "name"` for `TBBLUE.FW`. 83 keys under `panels.next.fw.*`, from
+  whole-key tables. Colours `--color-fw-*`, `--bgcolor-fw-*`; the rules are in
+  `dev/ai/ui-theming-intent-and-lessons.md` (key caps, receding alias rows, the pixel-exact picture).
+- Tests: `test/renderer/FwFileViewerPanel.test.tsx` (7), `test/renderer/fwFileType.test.ts` (8).
+- Checked in the running IDE on firmware 1.46 (boot, updater, module 9, screens, the test card, the
+  listing): no console errors. It showed one fault the tests could not: "3,072 B" (module 13) touched
+  the Note column in a `7ch` Size column, now `9ch`.
 
 ### Phase 3 — Machine › SD Card › Show TBBLUE.FW
 

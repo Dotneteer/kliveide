@@ -2426,5 +2426,413 @@
   "panels.next.tbu.packet.stop.noSync": "No sync word was found, so the bitstream cannot be listed.",
   "@panels.next.tbu.packet.stop.noSync": {
     "context": "Warning in the bitstream section of the TBBLUE.TBU viewer (the ZX Spectrum Next core update file)."
+  },
+  "panels.next.fw.problem.tooShort": "The file is shorter than its 512-byte module map.",
+  "@panels.next.fw.problem.tooShort": {
+    "context": "Shown instead of the viewer when the file ends before its map, in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block)."
+  },
+  "panels.next.fw.problem.notFirmware": "This is not a TBBLUE.FW file: its map does not start with a module at block 0.",
+  "@panels.next.fw.problem.notFirmware": {
+    "context": "Shown instead of the viewer when the file is not a firmware file, in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block). TBBLUE.FW is a file name."
+  },
+  "panels.next.fw.problem.notBlockAligned": "The file size is not a whole number of 512-byte blocks.",
+  "@panels.next.fw.problem.notBlockAligned": {
+    "context": "Problem line in the File section of the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block)."
+  },
+  "panels.next.fw.problem.trailingData": "The file has data after its last module.",
+  "@panels.next.fw.problem.trailingData": {
+    "context": "Problem line in the File section of the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block). Informational."
+  },
+  "panels.next.fw.problem.entryOutOfRange": "Module {entry} lies beyond the end of the file.",
+  "@panels.next.fw.problem.entryOutOfRange": {
+    "context": "Problem line in the File section of the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block).",
+    "placeholders": {
+      "entry": "The map entry's number, from 0"
+    }
+  },
+  "panels.next.fw.problem.entryOverlap": "Modules {entry} and {other} partly overlap.",
+  "@panels.next.fw.problem.entryOverlap": {
+    "context": "Problem line in the File section of the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block).",
+    "placeholders": {
+      "entry": "A map entry's number",
+      "other": "The other entry's number"
+    }
+  },
+  "panels.next.fw.problem.noUpdater": "Entry 2 is not an updater module. The anti-brick core loads entry 2 to repair a broken core.",
+  "@panels.next.fw.problem.noUpdater": {
+    "context": "Problem line in the File section of the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block)."
+  },
+  "panels.next.fw.module.boot": "Boot",
+  "@panels.next.fw.module.boot": {
+    "context": "Name of a firmware module in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block). Keep it short: it is a table column of 20 characters."
+  },
+  "panels.next.fw.module.editorOld": "Old editor",
+  "@panels.next.fw.module.editorOld": {
+    "context": "Name of a firmware module in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block). Keep it short: it is a table column of 20 characters."
+  },
+  "panels.next.fw.module.updater": "Updater",
+  "@panels.next.fw.module.updater": {
+    "context": "Name of a firmware module in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block). Keep it short: it is a table column of 20 characters."
+  },
+  "panels.next.fw.module.coresOld": "Old cores",
+  "@panels.next.fw.module.coresOld": {
+    "context": "Name of a firmware module in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block). Keep it short: it is a table column of 20 characters."
+  },
+  "panels.next.fw.module.editor": "Editor",
+  "@panels.next.fw.module.editor": {
+    "context": "Name of a firmware module in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block). Keep it short: it is a table column of 20 characters."
+  },
+  "panels.next.fw.module.cores": "Cores",
+  "@panels.next.fw.module.cores": {
+    "context": "Name of a firmware module in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block). Keep it short: it is a table column of 20 characters."
+  },
+  "panels.next.fw.module.testCard": "Test card",
+  "@panels.next.fw.module.testCard": {
+    "context": "Name of a firmware module in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block). Keep it short: it is a table column of 20 characters."
+  },
+  "panels.next.fw.module.reset": "Reset",
+  "@panels.next.fw.module.reset": {
+    "context": "Name of a firmware module in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block). Keep it short: it is a table column of 20 characters."
+  },
+  "panels.next.fw.module.screens": "Screens",
+  "@panels.next.fw.module.screens": {
+    "context": "Name of a firmware module in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block). Keep it short: it is a table column of 20 characters."
+  },
+  "panels.next.fw.module.editorOldReal": "Editor (old place)",
+  "@panels.next.fw.module.editorOldReal": {
+    "context": "Name of a firmware module in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block). In old firmware files, entry 1 is the editor itself."
+  },
+  "panels.next.fw.module.coresOldReal": "Cores (old place)",
+  "@panels.next.fw.module.coresOldReal": {
+    "context": "Name of a firmware module in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block). In old firmware files, entry 3 is the extra cores module itself."
+  },
+  "panels.next.fw.module.numbered": "Module {index}",
+  "@panels.next.fw.module.numbered": {
+    "context": "Name of a firmware module in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block). For an entry no published source names.",
+    "placeholders": {
+      "index": "The map entry's number"
+    }
+  },
+  "panels.next.fw.what.boot": "The start-up screen, then the machine",
+  "@panels.next.fw.what.boot": {
+    "context": "What a firmware module does, in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block)."
+  },
+  "panels.next.fw.what.editorOld": "The editor's old place",
+  "@panels.next.fw.what.editorOld": {
+    "context": "What a firmware module does, in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block)."
+  },
+  "panels.next.fw.what.updater": "Writes the core from TBBLUE.TBU to the flash",
+  "@panels.next.fw.what.updater": {
+    "context": "What a firmware module does, in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block). TBBLUE.TBU is a file name."
+  },
+  "panels.next.fw.what.coresOld": "The extra cores module's old place",
+  "@panels.next.fw.what.coresOld": {
+    "context": "What a firmware module does, in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block)."
+  },
+  "panels.next.fw.what.editor": "The settings menu (config.ini)",
+  "@panels.next.fw.what.editor": {
+    "context": "What a firmware module does, in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block). config.ini is a file name."
+  },
+  "panels.next.fw.what.cores": "The extra cores menu",
+  "@panels.next.fw.what.cores": {
+    "context": "What a firmware module does, in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block)."
+  },
+  "panels.next.fw.what.testCard": "The video mode test card",
+  "@panels.next.fw.what.testCard": {
+    "context": "What a firmware module does, in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block)."
+  },
+  "panels.next.fw.what.reset": "Resets config.ini to its defaults",
+  "@panels.next.fw.what.reset": {
+    "context": "What a firmware module does, in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block). config.ini is a file name."
+  },
+  "panels.next.fw.what.screens": "The test card picture and the start-up text (data)",
+  "@panels.next.fw.what.screens": {
+    "context": "What a firmware module does, in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block)."
+  },
+  "panels.next.fw.what.alias": "Same blocks as module {index}, for old loaders",
+  "@panels.next.fw.what.alias": {
+    "context": "What a firmware module does, in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block). An alias entry.",
+    "placeholders": {
+      "index": "The entry it repeats"
+    }
+  },
+  "panels.next.fw.what.unnamedCode": "A code module no published source names",
+  "@panels.next.fw.what.unnamedCode": {
+    "context": "What a firmware module does, in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block)."
+  },
+  "panels.next.fw.what.unnamedData": "A data block no published source names",
+  "@panels.next.fw.what.unnamedData": {
+    "context": "What a firmware module does, in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block)."
+  },
+  "panels.next.fw.heading.file": "File",
+  "@panels.next.fw.heading.file": {
+    "context": "Heading of the section about the whole file in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block)."
+  },
+  "panels.next.fw.heading.modules": "Modules",
+  "@panels.next.fw.heading.modules": {
+    "context": "Heading of the section with the map strip and the modules table in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block)."
+  },
+  "panels.next.fw.heading.module": "Module {index} · {name}",
+  "@panels.next.fw.heading.module": {
+    "context": "Heading of the selected module's section in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block).",
+    "placeholders": {
+      "index": "The map entry's number",
+      "name": "The module's name"
+    }
+  },
+  "panels.next.fw.heading.listing": "Disassembly",
+  "@panels.next.fw.heading.listing": {
+    "context": "Heading of the section listing the start of the selected code module's Z80 disassembly in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block)."
+  },
+  "panels.next.fw.heading.picture": "Test card",
+  "@panels.next.fw.heading.picture": {
+    "context": "Heading of the section showing the screens block's picture (the video test card) in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block)."
+  },
+  "panels.next.fw.verdict.ok": "No problems",
+  "@panels.next.fw.verdict.ok": {
+    "context": "Verdict at the end of the File heading of the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block)."
+  },
+  "panels.next.fw.verdict.errors": "{errors, plural, one {# error} other {# errors}}",
+  "@panels.next.fw.verdict.errors": {
+    "context": "Verdict at the end of the File heading of the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block).",
+    "placeholders": {
+      "errors": "Number of errors"
+    }
+  },
+  "panels.next.fw.verdict.warnings": "{warnings, plural, one {# warning} other {# warnings}}",
+  "@panels.next.fw.verdict.warnings": {
+    "context": "Verdict at the end of the File heading of the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block).",
+    "placeholders": {
+      "warnings": "Number of warnings"
+    }
+  },
+  "panels.next.fw.verdict.both": "{errors, plural, one {# error} other {# errors}}, {warnings, plural, one {# warning} other {# warnings}}",
+  "@panels.next.fw.verdict.both": {
+    "context": "Verdict at the end of the File heading of the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block).",
+    "placeholders": {
+      "errors": "Number of errors",
+      "warnings": "Number of warnings"
+    }
+  },
+  "panels.next.fw.label.firmware": "Firmware",
+  "@panels.next.fw.label.firmware": {
+    "context": "Field label in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block). Keep it short: the label column is 14 characters."
+  },
+  "panels.next.fw.label.fileSize": "File size",
+  "@panels.next.fw.label.fileSize": {
+    "context": "Field label in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block). Keep it short: the label column is 14 characters."
+  },
+  "panels.next.fw.label.map": "Module map",
+  "@panels.next.fw.label.map": {
+    "context": "Field label in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block). Keep it short: the label column is 14 characters."
+  },
+  "panels.next.fw.label.layout": "Layout",
+  "@panels.next.fw.label.layout": {
+    "context": "Field label in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block). Keep it short: the label column is 14 characters."
+  },
+  "panels.next.fw.label.what": "What",
+  "@panels.next.fw.label.what": {
+    "context": "Field label in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block). Keep it short: the label column is 14 characters."
+  },
+  "panels.next.fw.label.startedBy": "Started by",
+  "@panels.next.fw.label.startedBy": {
+    "context": "Field label in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block). Keep it short: the label column is 14 characters."
+  },
+  "panels.next.fw.label.blocks": "Blocks",
+  "@panels.next.fw.label.blocks": {
+    "context": "Field label in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block). Keep it short: the label column is 14 characters."
+  },
+  "panels.next.fw.label.range": "File range",
+  "@panels.next.fw.label.range": {
+    "context": "Field label in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block). Keep it short: the label column is 14 characters."
+  },
+  "panels.next.fw.label.kind": "Kind",
+  "@panels.next.fw.label.kind": {
+    "context": "Field label in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block). Keep it short: the label column is 14 characters."
+  },
+  "panels.next.fw.label.tail": "Padding",
+  "@panels.next.fw.label.tail": {
+    "context": "Field label in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block). Keep it short: the label column is 14 characters."
+  },
+  "panels.next.fw.label.texts": "Texts",
+  "@panels.next.fw.label.texts": {
+    "context": "Field label in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block). Keep it short: the label column is 14 characters."
+  },
+  "panels.next.fw.versionUnknown": "Not found",
+  "@panels.next.fw.versionUnknown": {
+    "context": "Value of the Firmware field when no version text is found, in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block)."
+  },
+  "panels.next.fw.versionTooltip": "The version text the boot module prints on the start-up screen, after \"Firmware v\".",
+  "@panels.next.fw.versionTooltip": {
+    "context": "Tooltip of the Firmware field in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block)."
+  },
+  "panels.next.fw.fileSize": "{bytes} bytes, {blocks} blocks",
+  "@panels.next.fw.fileSize": {
+    "context": "Value of the File size field in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block).",
+    "placeholders": {
+      "bytes": "Size in bytes, formatted",
+      "blocks": "Size in 512-byte blocks, formatted"
+    }
+  },
+  "panels.next.fw.mapUse": "{count} of {capacity} entries, {aliases} of them aliases",
+  "@panels.next.fw.mapUse": {
+    "context": "Value of the Module map field in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block).",
+    "placeholders": {
+      "count": "Entries used",
+      "capacity": "Entries that fit (128)",
+      "aliases": "Entries that repeat another one"
+    }
+  },
+  "panels.next.fw.layout.current": "Current (entries 1 and 3 repeat the boot module)",
+  "@panels.next.fw.layout.current": {
+    "context": "Value of the Layout field in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block)."
+  },
+  "panels.next.fw.layout.old": "Old (2019 and earlier: entries 1 and 3 are modules of their own)",
+  "@panels.next.fw.layout.old": {
+    "context": "Value of the Layout field in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block)."
+  },
+  "panels.next.fw.entryCount": "{count, plural, one {# entry} other {# entries}}",
+  "@panels.next.fw.entryCount": {
+    "context": "Detail at the end of the Modules heading in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block).",
+    "placeholders": {
+      "count": "Number of map entries"
+    }
+  },
+  "panels.next.fw.map.header": "Module map, 512 bytes",
+  "@panels.next.fw.map.header": {
+    "context": "Tooltip of the map's segment in the file map strip of the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block)."
+  },
+  "panels.next.fw.map.module": "{index} · {name} · {size}",
+  "@panels.next.fw.map.module": {
+    "context": "Tooltip of a module's segment in the file map strip of the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block).",
+    "placeholders": {
+      "index": "The entry's number",
+      "name": "The module's name",
+      "size": "Its size, e.g. 32K"
+    }
+  },
+  "panels.next.fw.col.module": "Module",
+  "@panels.next.fw.col.module": {
+    "context": "Column heading of the modules table in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block). Keep it short."
+  },
+  "panels.next.fw.col.keys": "Started by",
+  "@panels.next.fw.col.keys": {
+    "context": "Column heading of the modules table in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block). Keep it short."
+  },
+  "panels.next.fw.col.blocks": "Blocks",
+  "@panels.next.fw.col.blocks": {
+    "context": "Column heading of the modules table in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block). Keep it short."
+  },
+  "panels.next.fw.col.offset": "Offset",
+  "@panels.next.fw.col.offset": {
+    "context": "Column heading of the modules table in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block). Keep it short."
+  },
+  "panels.next.fw.col.size": "Size",
+  "@panels.next.fw.col.size": {
+    "context": "Column heading of the modules table in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block). Keep it short."
+  },
+  "panels.next.fw.col.note": "Note",
+  "@panels.next.fw.col.note": {
+    "context": "Column heading of the modules table in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block). Keep it short."
+  },
+  "panels.next.fw.mapDump": "Show the 512-byte module map as a memory dump",
+  "@panels.next.fw.mapDump": {
+    "context": "Tooltip of a button in the File heading of the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block)."
+  },
+  "panels.next.fw.mapDumpTitle": "{source} - Map",
+  "@panels.next.fw.mapDumpTitle": {
+    "context": "Title of the memory dump document of the module map, opened from the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block).",
+    "placeholders": {
+      "source": "The file's name or project path"
+    }
+  },
+  "panels.next.fw.moduleDump": "Show the module as a memory dump",
+  "@panels.next.fw.moduleDump": {
+    "context": "Tooltip of a button in the selected module's heading in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block)."
+  },
+  "panels.next.fw.moduleDisassembly": "Show the whole module's disassembly",
+  "@panels.next.fw.moduleDisassembly": {
+    "context": "Tooltip of a button in the selected code module's heading in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block)."
+  },
+  "panels.next.fw.moduleDumpTitle": "{source} - {name}",
+  "@panels.next.fw.moduleDumpTitle": {
+    "context": "Title of the memory dump document of a module, opened from the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block).",
+    "placeholders": {
+      "source": "The file's name or project path",
+      "name": "The module's name"
+    }
+  },
+  "panels.next.fw.updaterKeys": "U, or DRIVE + M1 held at power-on",
+  "@panels.next.fw.updaterKeys": {
+    "context": "Value of the Started by field for the updater module in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block). U is a key, DRIVE and M1 are the Next's buttons: keep them as they are."
+  },
+  "panels.next.fw.blockRange": "{from}-{to} after the map · {count} blocks",
+  "@panels.next.fw.blockRange": {
+    "context": "Value of the Blocks field in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block).",
+    "placeholders": {
+      "from": "First block",
+      "to": "Last block",
+      "count": "Number of blocks, formatted"
+    }
+  },
+  "panels.next.fw.fileRange": "{from}-{to} · {size}",
+  "@panels.next.fw.fileRange": {
+    "context": "Value of the File range field in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block).",
+    "placeholders": {
+      "from": "First byte offset in hex",
+      "to": "Last byte offset in hex",
+      "size": "Size, e.g. 32K"
+    }
+  },
+  "panels.next.fw.kind.code": "Code, run at {address}",
+  "@panels.next.fw.kind.code": {
+    "context": "Value of the Kind field for a code module in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block).",
+    "placeholders": {
+      "address": "The load address in hex, $6000"
+    }
+  },
+  "panels.next.fw.kind.data": "Data",
+  "@panels.next.fw.kind.data": {
+    "context": "Value of the Kind field for a data block in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block)."
+  },
+  "panels.next.fw.tail": "{data} bytes, then {padding} bytes of $00",
+  "@panels.next.fw.tail": {
+    "context": "Value of the Padding field: the module's own bytes and the zero padding after them, in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block).",
+    "placeholders": {
+      "data": "Bytes, formatted",
+      "padding": "Padding bytes, formatted"
+    }
+  },
+  "panels.next.fw.moreTexts": "More texts: show the module as a memory dump",
+  "@panels.next.fw.moreTexts": {
+    "context": "Last line of the Texts list when the module has more texts than are listed, in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block)."
+  },
+  "panels.next.fw.listingMeta": "at {address} · the first {count} instructions",
+  "@panels.next.fw.listingMeta": {
+    "context": "Detail at the end of the Disassembly heading in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block).",
+    "placeholders": {
+      "address": "The load address in hex",
+      "count": "How many instructions are listed"
+    }
+  },
+  "panels.next.fw.listingMore": "The whole module opens with the disassembly button in the module's heading.",
+  "@panels.next.fw.listingMore": {
+    "context": "Last line of the Disassembly section in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block)."
+  },
+  "panels.next.fw.pictureMeta": "Layer 2, {width}×{height}",
+  "@panels.next.fw.pictureMeta": {
+    "context": "Detail at the end of the Test card heading in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block).",
+    "placeholders": {
+      "width": "Picture width in pixels",
+      "height": "Picture height in pixels"
+    }
+  },
+  "panels.next.fw.pictureAlt": "The video test card picture in the firmware's screens block",
+  "@panels.next.fw.pictureAlt": {
+    "context": "Accessible description of the test card picture in the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block)."
+  },
+  "panels.next.fw.pictureMissing": "The screens block is too short to hold the test card picture.",
+  "@panels.next.fw.pictureMissing": {
+    "context": "Warning in the Test card section of the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block)."
   }
 }

@@ -1,0 +1,149 @@
+/*
+ * The TBBLUE.FW viewer (`dev/plans/TBBLUE_FW_VIEWER_PLAN.md`, layout A). Colours are L4 aliases
+ * (`--color-fw-*`, `--bgcolor-fw-*` in `componentAliases.ts`); the file map is the tape viewer's
+ * `TimelineStrip`, and the listing takes the disassembly colour set.
+ */
+
+.view {
+  display: flex;
+  flex-direction: column;
+}
+
+.ok.ok {
+  color: var(--color-fw-ok);
+}
+
+.warning.warning {
+  color: var(--color-fw-warning);
+}
+
+.error.error {
+  color: var(--color-fw-error);
+}
+
+.dim.dim {
+  color: var(--color-fw-dim);
+}
+
+/* --- The file map: the strip draws its selection ring outside the bar, so it needs room around it */
+.map {
+  padding: var(--space-1) var(--space-2);
+}
+
+/* --- The modules table: a fixed `ch` track per column, the note column takes the rest (M2) */
+.table {
+  min-width: 100ch;
+}
+
+.head {
+  border-bottom: 1px solid var(--border-default);
+}
+
+.row.selected {
+  background: var(--bgcolor-fw-selected);
+}
+
+/* --- An alias repeats another entry's blocks: it recedes, its note says which */
+.row.alias > * {
+  color: var(--color-fw-dim);
+}
+
+/* --- A data row is one line: a cell that does not fit is cut with an ellipsis, never wrapped */
+.table .row > *,
+.table .head > *,
+.listingRow > * {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cNum {
+  width: 4ch;
+}
+
+.cName {
+  /* --- "Cores (old place)" and a gap before the keys */
+  width: 20ch;
+}
+
+.cKeys {
+  width: 16ch;
+}
+
+.cBlocks {
+  width: 10ch;
+}
+
+.cOffset {
+  width: 9ch;
+}
+
+.cSize {
+  /* --- "3,072 B" (a small data block) and a gap before the note */
+  width: 9ch;
+}
+
+.cNote {
+  flex: 1 1 auto;
+  min-width: 14ch;
+}
+
+/* --- Key caps: the keys that start a module */
+.keys {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.keyGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.key {
+  font: inherit;
+  line-height: 1.2;
+  min-width: 2ch;
+  padding: 0 var(--space-1);
+  text-align: center;
+  color: var(--color-fw-key);
+  background: var(--bgcolor-fw-key);
+  border: 1px solid var(--color-fw-key-border);
+  border-bottom-width: 2px;
+  border-radius: var(--radius-sm);
+}
+
+.plus {
+  color: var(--color-fw-dim);
+}
+
+/* --- The listing: address, bytes, instruction */
+.listing {
+  min-width: 52ch;
+}
+
+.lAddress {
+  width: 7ch;
+}
+
+.lBytes {
+  width: 14ch;
+}
+
+.lInstruction {
+  flex: 1 1 auto;
+}
+
+/* --- The test card at twice its size, its pixels kept square and sharp */
+.picture {
+  padding: var(--space-2);
+}
+
+.picture canvas {
+  display: block;
+  width: 512px;
+  max-width: 100%;
+  image-rendering: pixelated;
+  border: 1px solid var(--border-default);
+}
