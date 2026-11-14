@@ -163,11 +163,31 @@ named only in the current layout (D3).
   `.local/`) before committing to show it.
 - The 2019 layout: confirm the old order from the old packer, or show it numbered.
 
-### Phase 1 — Reader and tests
+### Phase 1 — Reader and tests — done
 
 - `fwFile.ts` with `parseFwFile(bytes)`; tests on files built in the test (current layout, aliases,
   unnamed entries, the old layout, every problem), plus an opt-in check of real files
   (`FW_REAL_FILES`) and a unit test reading TBBLUE.FW from the three committed cards.
+
+**As built (2026-11-14), done.** `src/common/zxnext/fwFile.ts`, `test/zxnext/fwFile.test.ts` (15 tests on
+built files) and `test/main/fw-cards.test.ts` (5, the three committed cards; plus `FW_REAL_FILES`). Notes
+for Phase 2:
+
+- `parseFwFile` reads the map until the first entry of no blocks; a file whose first entry is missing
+  or does not start at block 0 is `notFirmware` (format `unknown`, the viewer refuses it).
+- Names follow D3; `aliasOf` points at the first entry with the same blocks (0 for 1.44-1.46's 1 and 3).
+  Overlap is checked only against entries that are not aliases, so an alias never reports one.
+- Problems: `tooShort`, `notFirmware` (errors); `entryOutOfRange`, `entryOverlap` (errors);
+  `noUpdater` (warning: entry 2 missing or an alias, what the anti-brick ROM loads); `notBlockAligned`
+  (warning); `trailingData` (info).
+- `kind` is `code` when the module starts with `31 FF FF F3`; then `runsAt` is `$6000`.
+- `fwModuleTexts(data, entry, limit)` gives a module's texts (D8): runs of 6+ printable characters with
+  4+ letters and 3+ different characters, which drops picture bytes such as `$%%%%%%`.
+- `readFwTestCard(data, entry)` gives the test card's 49,152 indexes and 256 9-bit palette entries
+  (`(byte0 << 1) | (byte1 & 1)`, the uncarried ones 0). On 1.46 the picture uses 113 colours and its top
+  left pixel is red (`$1C0`), as the hand-drawn picture showed.
+- `findFwVersion` finds 1.44, 1.45 and 1.46 in the three cards' boot modules; the 2019 file has none of
+  that form, and both opt-in real files (2019, the KS2 image) read with no errors.
 
 ### Phase 2 — Viewer and registration
 
