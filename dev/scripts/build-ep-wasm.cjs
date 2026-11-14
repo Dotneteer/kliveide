@@ -8,6 +8,7 @@ const { Z80_CONDITION_EXPORTS, Z80_CONDITION_VOLATILE_SYMBOLS } = require("./z80
 const { Z80_HISTORY_EXPORTS, Z80_HISTORY_VOLATILE_SYMBOLS } = require("./z80-history-exports.cjs");
 const { Z80_PROFILE_EXPORTS, Z80_PROFILE_VOLATILE_SYMBOLS } = require("./z80-profile-exports.cjs");
 const { REPO_ROOT } = require("./repo-root.cjs");
+const { KLIVE_AUDIO_CHANNEL_VOLATILE_SYMBOLS, zxAudioChannelExports } = require("./zx-audio-channel-exports.cjs");
 const {
   discardWasmOutput,
   layoutMapArgs,
@@ -35,7 +36,19 @@ const EP_VOLATILE_SYMBOLS = [
   // --- The execution-history ring (EXECUTION_HISTORY_ALL_CORES_PLAN)
   ...Z80_HISTORY_VOLATILE_SYMBOLS,
   // --- The access profile: flags, counters and time (CODE_COVERAGE_AND_HEAT_MAP_PLAN T4, T7)
-  ...Z80_PROFILE_VOLATILE_SYMBOLS
+  ...Z80_PROFILE_VOLATILE_SYMBOLS,
+  // --- The audio mixer's gains, taps and heard mix (`dev/plans/AUDIO_MIXER_PLAN.md` §3.1): a gain
+  // --- change between recording and a Step Back must not read as a diverged replay
+  ...KLIVE_AUDIO_CHANNEL_VOLATILE_SYMBOLS,
+  "epAudioHeardSamples",
+  "epHeardLevelLeft",
+  "epHeardLevelRight",
+  "epHeardAccumulatedLeft",
+  "epHeardAccumulatedRight",
+  "epHeardDcPrevInLeft",
+  "epHeardDcPrevInRight",
+  "epHeardDcPrevOutLeft",
+  "epHeardDcPrevOutRight"
 ];
 
 /*
@@ -76,6 +89,8 @@ const productionExports = [
   // --- The debugger's in-core loop (`z80-debug-loop.c`)
   ...debugLoopExports("ep"),
   "epAudioSamplesPtr",
+  // --- The audio mixer
+  ...zxAudioChannelExports("ep"),
   "epCartRomPtr",
   "epExdosRomPtr",
   "epExosRomPtr",

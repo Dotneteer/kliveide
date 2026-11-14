@@ -9,6 +9,7 @@ import { WASM_CORE_CONDITION_PLAN_WORDS } from "@emu/machines/wasmDebugLoopLayou
 import { CONDITION_CORE_EXPORTS, type ConditionCoreExports } from "@emu/machines/conditionStore";
 import { Z80_HISTORY_CORE_EXPORTS, type Z80HistoryCoreExports } from "@emu/machines/history/WasmHistoryReader";
 import { WASM_ACCESS_LOG_CAPACITY } from "@emu/machines/wasmAccessLog";
+import { audioChannelExportNames, type AudioChannelCoreExports } from "../../wasmAudioChannelMixer";
 
 export const EP_WASM_V2_ARTIFACT_NAME = "ep.wasm";
 
@@ -19,6 +20,7 @@ export type EpWasmV2ExportFunction = (...args: number[]) => number;
 
 export type EpWasmV2Exports = WebAssembly.Exports &
   ConditionCoreExports &
+  AudioChannelCoreExports<"ep"> &
   Z80HistoryCoreExports & {
     memory: WebAssembly.Memory;
   } & {
@@ -81,6 +83,8 @@ export type EpWasmV2Runtime = EpWasmV2Views & {
 export const epWasmV2RequiredExports = [
   "memory",
   "epAudioSamplesPtr",
+  // --- The audio mixer's gains and taps (`audioChannelTables.ts`)
+  ...audioChannelExportNames("ep"),
   "epBreakpointFlagsPtr",
   "epCartRomPtr",
   "epCondPlanPtr",

@@ -42,6 +42,8 @@ import {
   type MachineStateParts
 } from "../state/wasmStateImage";
 import { fillCoreBytes, writeCoreBytes } from "@emu/machines/reverse/coreMemoryWrites";
+import { createFixedAudioMixer, Z88_AUDIO_CHANNELS } from "../audioChannelTables";
+import type { IAudioChannelMixer } from "@emu/abstractions/IAudioChannelMixer";
 
 /** The size of a slot's region in the 4 MB physical memory */
 const Z88_SLOT_SIZE = 0x10_0000;
@@ -211,6 +213,9 @@ export class Z88WasmV2Machine extends Z88WasmHost implements IExecutionHistorySo
 
   public readonly implementation = "wasm" as const;
   public wasmV2Runtime?: Z88WasmV2Runtime;
+
+  /** The audio mixer's gains and taps (`audioChannelTables.ts`) */
+  readonly audioMixer: IAudioChannelMixer = createFixedAudioMixer("z88", Z88_AUDIO_CHANNELS, () => this.wasmV2Runtime);
 
   /** The cards the backend holds, by slot */
   private readonly cards: (Z88CardSpec | undefined)[] = [undefined, undefined, undefined, undefined];

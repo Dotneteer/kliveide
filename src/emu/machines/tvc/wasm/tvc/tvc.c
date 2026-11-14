@@ -163,6 +163,9 @@ static void tvcFrameEnds(uint32_t newStart);
 #include "tvc-hbf.c"
 #include "tvc-keyboard.c"
 #include "tvc-crtc.c"
+/* The audio mixer: the sound generator is the one source (`common/wasm/audio-channels.c`) */
+#define KLIVE_AUDIO_CHANNELS 1u
+#include "../../../common/wasm/audio-channels.c"
 #include "tvc-audio.c"
 #include "tvc-tape.c"
 #include "tvc-video.c"

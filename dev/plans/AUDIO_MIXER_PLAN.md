@@ -94,7 +94,7 @@ Three options, mocked up side by side (§5). Whatever is chosen:
    unchanged; solo of the beeper gives the beeper's samples bit-exactly.
 2. **(Done, 2026-11-14.) Next mixer**: TurboSound x3, DAC A-D, Pi I2S, beeper/MIC/tape, through
    `zxnext-audio-mixer.c`; tests in `test/zxnext-hw/audio/`, every profile.
-3. **Z88, HT-1080Z, TVC, Enterprise** taps and masks; one harness test per machine.
+3. **(Done, 2026-11-14.) Z88, HT-1080Z, TVC, Enterprise** taps and gains; tests for each machine.
 4. **Host API + analysis** (FFT, peak/RMS, IPC frame), unit-tested with synthetic tones (a 1 kHz
    square must peak at the 1 kHz bin with odd harmonics).
 5. **UI**: the mixer document (B) and the emulator popover (C), plus settings persistence and the "no sound" hiding rule.
@@ -190,3 +190,27 @@ A and C can coexist with B (C for quick muting, B for analysis).
 - **Tests**: `test/zxnext-hw/audio/audio-mixer.test.ts`, every profile.
 - **Shared host class**: `src/emu/machines/wasmAudioChannelMixer.ts` drives any core with the mixer
   exports from a channel table (`zxSpectrum/spectrumAudioChannels.ts`, `zxNext/nextAudioChannels.ts`).
+
+### Phase 3 (Z88, HT-1080Z, TVC, Enterprise)
+
+- **Common module** `src/emu/machines/common/wasm/audio-channels.c` (Z88, HT-1080Z, TVC, Enterprise): gains in
+  milli, the unity flag, the taps (int16, 32768 per 1.0 of the core's output), and
+  the functions each core's five export wrappers call. Its statics are `__attribute__((used))`: without
+  it the compiler reshaped them per core (a one-channel gain table became a scalar, a flag the
+  Enterprise never reads vanished) and their names left the linker map the volatile list needs.
+- **Z88 (Speaker) and TVC (Sound)**: one source and a linear DC filter, so the gain goes after the
+  filter and before the clamp; the filter stays the machine's. Taps: the level before the filter.
+- **HT-1080Z (Beeper, AY A-C)**: the common module too (slot 0 the beeper, 1-3 the AY), so it still
+  shares only the AY with the Spectrum (the CPU contract's rule, `HT1080Z_PLAN.md` §5): the shared AY
+  takes its per-channel gain from `SP128_PSG_CHANNEL_GAIN(channel)`, which each includer maps onto its
+  own gains. A heard DC filter of its own on the beeper and the AY's heard sum. Muted after the boot, the output decays from the silent AY's offset through that filter
+  with no step.
+- **Enterprise (Tone 0-2, Noise)**: every stage after DAVE's channels is linear, so a heard chain runs
+  the same sum (with each channel's gain), low-pass, average and DC filter in volatile scalars, and
+  is always what the host plays (bit for bit the core's own at unity from a reset, and no step when
+  the gains return to unity). A channel's contribution is its amplitude while its output is 1, or in
+  D/A mode channel 0's amplitude x 4; its tap is the mean of its two sides, accumulated always.
+- **Checked against master's cores**: 40 frames of each machine's scene, and the Enterprise in D/A
+  mode and with ring modulation, high-pass and the variable noise, hash the same.
+- **Host**: `src/emu/machines/audioChannelTables.ts` (the four tables, `createFixedAudioMixer`).
+- **Tests**: `test/wasm/audio-mixer-cores.test.ts`.

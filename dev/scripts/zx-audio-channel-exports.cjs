@@ -1,9 +1,11 @@
 /*
- * The audio mixer's exports and statics (`dev/plans/AUDIO_MIXER_PLAN.md` §3.1). The Spectrum family's
- * cores share them (`src/emu/machines/zxSpectrum/wasm/common/zx-spectrum-audio-channels.c`): the 48K
- * (and the Timex, which builds the 48K's source), 128K and +2E/+3E build scripts add them with their
- * own prefix, and `src/emu/machines/zxSpectrum/spectrumAudioChannels.ts` is the TypeScript side. The
- * Next exports the same functions (`zxnext-audio-channels.c`) and lists its own volatile statics.
+ * The audio mixer's exports and statics (`dev/plans/AUDIO_MIXER_PLAN.md` §3.1). Every core with sound
+ * exports the same functions under its prefix (`zxAudioChannelExports`); the TypeScript side is
+ * `src/emu/machines/wasmAudioChannelMixer.ts`. The statics come from three modules: the Spectrum
+ * family's `zx-spectrum-audio-channels.c` (48K and Timex, 128K, +2E/+3E, and the HT-1080Z, whose AY
+ * is the Spectrum's), the Next's `zxnext-audio-channels.c` (listed in its own build script), and
+ * `common/wasm/audio-channels.c` (the Z88, the TVC, the Enterprise). Each core adds its own heard-mix
+ * statics.
  */
 
 /** The export names without the core's prefix */
@@ -46,6 +48,18 @@ const ZX_AUDIO_PSG_VOLATILE_SYMBOLS = [
 ];
 
 /**
+ * The statics of `common/wasm/audio-channels.c` (the Z88, the TVC, the Enterprise): the gains, the
+ * taps. Each core adds its own heard-mix statics.
+ */
+const KLIVE_AUDIO_CHANNEL_VOLATILE_SYMBOLS = [
+  "kliveAudioChannelGain",
+  "kliveAudioChannelGainMilli",
+  "kliveAudioGainsUnity",
+  "kliveAudioTapsEnabled",
+  "kliveAudioTaps"
+];
+
+/**
  * The mixer's exports of one core
  * @param {string} prefix The core's export prefix
  */
@@ -57,5 +71,6 @@ module.exports = {
   ZX_AUDIO_CHANNEL_EXPORT_SUFFIXES,
   ZX_AUDIO_CHANNEL_VOLATILE_SYMBOLS,
   ZX_AUDIO_PSG_VOLATILE_SYMBOLS,
+  KLIVE_AUDIO_CHANNEL_VOLATILE_SYMBOLS,
   zxAudioChannelExports
 };

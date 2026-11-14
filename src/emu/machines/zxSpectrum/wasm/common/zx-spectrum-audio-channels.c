@@ -43,6 +43,8 @@
 #define ZX_AUDIO_TAP_CAPACITY 2048u
 /* The highest gain the host may set, x4 */
 #define ZX_AUDIO_MAX_GAIN_MILLI 4000u
+/* The AY's channel gains for `zx-spectrum-psg.c` */
+#define SP128_PSG_CHANNEL_GAIN(channel) zxAudioChannelGain[ZX_AUDIO_CH_AY_A + (channel)]
 
 static double zxAudioChannelGain[ZX_AUDIO_CHANNELS] = { 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 };
 static uint32_t zxAudioChannelGainMilli[ZX_AUDIO_CHANNELS] = { 1000u, 1000u, 1000u, 1000u, 1000u, 1000u };
@@ -58,7 +60,7 @@ static double zxAudioHeardDcPrevInputRight;
 static double zxAudioHeardDcPrevOutputLeft;
 static double zxAudioHeardDcPrevOutputRight;
 
-static void zxAudioResetHeard(void) {
+static inline void zxAudioResetHeard(void) {
   zxAudioHeardDcPrevInputLeft = 0.0;
   zxAudioHeardDcPrevInputRight = 0.0;
   zxAudioHeardDcPrevOutputLeft = 0.0;

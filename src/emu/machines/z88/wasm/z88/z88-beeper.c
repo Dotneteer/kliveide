@@ -21,6 +21,11 @@
 #define Z88_TACT_HALF_WRAP 2147483648.0
 
 static double z88AudioSamples[Z88_AUDIO_SAMPLE_CAPACITY * 2u];
+/* The audio mixer's heard mix (`common/wasm/audio-channels.c`), which the host plays: the speaker
+   with its gain. One source and a linear filter, so the gain goes after the filter, before the clamp,
+   and the filter's state stays the machine's alone. Volatile. */
+static double z88AudioHeardSamples[Z88_AUDIO_SAMPLE_CAPACITY * 2u];
+_Static_assert(Z88_AUDIO_SAMPLE_CAPACITY <= KLIVE_AUDIO_TAP_CAPACITY, "The audio taps are smaller than the sample buffer");
 static uint32_t z88AudioSampleCount;
 static uint32_t z88AudioSampleRate;
 static uint32_t z88AudioOverflows;
@@ -76,12 +81,17 @@ static void z88SetNextAudioSample(void) {
   double out = raw - z88DcPrevInput + z88DcAlpha * z88DcPrevOutput;
   z88DcPrevInput = raw;
   z88DcPrevOutput = out;
+  const double heard = kliveAudioGainsUnity ? 0.0 : kliveAudioClamp(out * kliveAudioChannelGain[0]);
   if (out > 1.0) out = 1.0;
   if (out < -1.0) out = -1.0;
 
   if (z88AudioSampleCount < Z88_AUDIO_SAMPLE_CAPACITY) {
     z88AudioSamples[z88AudioSampleCount * 2u] = out;
     z88AudioSamples[z88AudioSampleCount * 2u + 1u] = out;
+    z88AudioHeardSamples[z88AudioSampleCount * 2u] = kliveAudioGainsUnity ? out : heard;
+    z88AudioHeardSamples[z88AudioSampleCount * 2u + 1u] = kliveAudioGainsUnity ? out : heard;
+    int16_t *tap = kliveAudioTapRow(z88AudioSampleCount);
+    if (tap) tap[0] = kliveAudioTapWord(raw);
     z88AudioSampleCount++;
   } else {
     z88AudioOverflows++;
@@ -110,7 +120,14 @@ void z88SetAudioSampleRate(uint32_t rate, double dcAlpha) {
   z88DcAlpha = rate ? dcAlpha : 0.0;
 }
 
-uint32_t z88AudioSamplesPtr(void) { return (uint32_t)(uintptr_t)z88AudioSamples; }
+/* What the host plays: the audio mixer's heard mix, the core's own samples while the gain is unity */
+uint32_t z88AudioSamplesPtr(void) { return (uint32_t)(uintptr_t)z88AudioHeardSamples; }
+/* The audio mixer (`common/wasm/audio-channels.c`) */
+void z88AudioSetChannelGain(uint32_t channel, uint32_t milli) { kliveAudioSetChannelGainMilli(channel, milli); }
+uint32_t z88AudioGetChannelGain(uint32_t channel) { return kliveAudioGetChannelGainMilli(channel); }
+void z88AudioSetTapsEnabled(uint32_t enabled) { kliveAudioSetTapsEnabled(enabled); }
+uint32_t z88AudioTapsPtr(void) { return (uint32_t)(uintptr_t)kliveAudioTaps; }
+uint32_t z88GetAudioChannelCount(void) { return KLIVE_AUDIO_CHANNELS; }
 uint32_t z88GetAudioSampleCapacity(void) { return Z88_AUDIO_SAMPLE_CAPACITY; }
 uint32_t z88GetAudioSampleCount(void) { return z88AudioSampleCount; }
 uint32_t z88GetAudioSampleRate(void) { return z88AudioSampleRate; }

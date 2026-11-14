@@ -151,6 +151,9 @@ static inline void z88BusNewInstruction(void);
 #include "z88-cards.c"
 #include "z88-keyboard.c"
 #include "z88-screen.c"
+/* The audio mixer: the speaker is the one source (`common/wasm/audio-channels.c`) */
+#define KLIVE_AUDIO_CHANNELS 1u
+#include "../../../common/wasm/audio-channels.c"
 #include "z88-beeper.c"
 
 /*
@@ -329,6 +332,7 @@ static void z88ResetMachine(void) {
   for (uint32_t i = 0u; i < Z88_PIXEL_BUFFER_WORDS; i++) z88PixelBuffer[i] = 0u;
   z88BeeperReset();
   for (uint32_t i = 0u; i < Z88_AUDIO_SAMPLE_CAPACITY * 2u; i++) z88AudioSamples[i] = 0.0;
+  for (uint32_t i = 0u; i < Z88_AUDIO_SAMPLE_CAPACITY * 2u; i++) z88AudioHeardSamples[i] = 0.0;
 }
 
 /*

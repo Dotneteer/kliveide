@@ -12,12 +12,12 @@
 // Spectrums, whose AY runs at the CPU clock / 2 (the AY divides its input by 8); the HT-1080Z
 // clocks its AY at the CPU clock, so it uses 8. Both are #undef'd at the end of this file.
 //
-// A Spectrum core also defines SP128_PSG_CHANNEL_TAPS, after including
-// `zx-spectrum-audio-channels.c`: each channel then keeps its own average level per host sample for
+// A core may also define SP128_PSG_CHANNEL_TAPS and SP128_PSG_CHANNEL_GAIN(channel) - the audio
+// mixer's gain of AY channel 0-2 (`zx-spectrum-audio-channels.c` defines it for the Spectrums, the
+// HT-1080Z maps it onto `common/wasm/audio-channels.c`): each channel then keeps its own average level per host sample for
 // the mixer's taps (`sp128PsgChannelAudioLevel`, accumulated always, so it is a function of the
 // machine alone), and a second sum with the mixer's gains is kept for the heard mix
-// (`sp128PsgHeardAudioLevel`, volatile). The core's own sum is untouched. The HT-1080Z does not
-// define it (yet), and its core stays as it was.
+// (`sp128PsgHeardAudioLevel`, volatile). The core's own sum is untouched.
 
 #ifndef SP128_PSG_CLOCK_STEP
 #define SP128_PSG_CLOCK_STEP 16u
@@ -86,6 +86,9 @@ static uint8_t sp128PsgMixerTablesInitialized;
 static double sp128PsgVolumeTable[16];
 static double sp128PsgEnvelopeTable[16];
 #ifdef SP128_PSG_CHANNEL_TAPS
+#ifndef SP128_PSG_CHANNEL_GAIN
+#error "Define SP128_PSG_CHANNEL_GAIN(channel) with SP128_PSG_CHANNEL_TAPS"
+#endif
 /* Each channel's routed output now, its integral since the last host sample, and that sample's
    average: the audio mixer's tap, before the channel's gain */
 static double sp128PsgChannelRouted[3];
@@ -347,7 +350,7 @@ static void sp128PsgGenerateStreamSample(void) {
 #ifdef SP128_PSG_CHANNEL_TAPS
     const double channelRouted = sp128PsgStreamOutput[channel] * SP128_PSG_ROUTE_GAIN;
     sp128PsgChannelRouted[channel] = channelRouted;
-    heardRoutedOutput += channelRouted * zxAudioChannelGain[ZX_AUDIO_CH_AY_A + channel];
+    heardRoutedOutput += channelRouted * SP128_PSG_CHANNEL_GAIN(channel);
 #endif
   }
   sp128PsgCurrentOutput = diagnosticOutput;

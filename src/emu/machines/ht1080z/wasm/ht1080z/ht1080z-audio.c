@@ -29,6 +29,16 @@
 #define HT_BEEPER_GAIN 0.5
 #define HT_AUDIO_EPSILON 1.0e-7
 
+/*
+ * The audio mixer (`common/wasm/audio-channels.c`): slot 0 the port-FF beeper, 1-3 the AY's A-C. The
+ * PSG keeps each channel's level for the taps and a sum with the gains for the heard mix.
+ */
+#define KLIVE_AUDIO_CHANNELS 4u
+#include "../../../common/wasm/audio-channels.c"
+#define HT_AUDIO_CH_BEEPER 0u
+#define HT_AUDIO_CH_AY_A 1u
+#define SP128_PSG_CHANNEL_TAPS
+#define SP128_PSG_CHANNEL_GAIN(channel) kliveAudioChannelGain[HT_AUDIO_CH_AY_A + (channel)]
 #define sp128Tacts htFrameTacts
 #include "../../../zxSpectrum/wasm/common/zx-spectrum-psg.c"
 #undef sp128Tacts
@@ -43,6 +53,12 @@ static double htAudioNextSampleTact;
 static double htDcAlpha;
 static double htDcPrevInput;
 static double htDcPrevOutput;
+/* The audio mixer's heard mix, which the host plays: the same filter on the sum with the gains, in
+   volatile state (bit for bit the core's own samples at unity) */
+static double htAudioHeardSamples[HT_AUDIO_SAMPLE_CAPACITY * 2u];
+static double htHeardDcPrevInput;
+static double htHeardDcPrevOutput;
+_Static_assert(HT_AUDIO_SAMPLE_CAPACITY <= KLIVE_AUDIO_TAP_CAPACITY, "The audio taps are smaller than the sample buffer");
 
 /* The beeper: its level now (-1, 0, 1), and its level integrated since the last sample */
 static double htBeeperLevel;
@@ -85,9 +101,25 @@ static void HT_NOINLINE htAudioEmitSample(void) {
   htDcPrevOutput = out;
   if (out > 1.0) out = 1.0;
   if (out < -1.0) out = -1.0;
+  // --- The heard mix: the core's own input at unity, else the beeper and the AY with their gains
+  const double heardRaw = kliveAudioGainsUnity
+    ? raw
+    : beeper * HT_BEEPER_GAIN * kliveAudioChannelGain[HT_AUDIO_CH_BEEPER] + sp128PsgHeardAudioLevel();
+  double heard = heardRaw - htHeardDcPrevInput + htDcAlpha * htHeardDcPrevOutput;
+  htHeardDcPrevInput = heardRaw;
+  htHeardDcPrevOutput = heard;
+  if (heard > 1.0) heard = 1.0;
+  if (heard < -1.0) heard = -1.0;
   if (htAudioSampleCount < HT_AUDIO_SAMPLE_CAPACITY) {
     htAudioSamples[htAudioSampleCount * 2u] = out;
     htAudioSamples[htAudioSampleCount * 2u + 1u] = out;
+    htAudioHeardSamples[htAudioSampleCount * 2u] = heard;
+    htAudioHeardSamples[htAudioSampleCount * 2u + 1u] = heard;
+    int16_t *tap = kliveAudioTapRow(htAudioSampleCount);
+    if (tap) {
+      tap[HT_AUDIO_CH_BEEPER] = kliveAudioTapWord(beeper * HT_BEEPER_GAIN);
+      for (uint32_t ch = 0u; ch < 3u; ch++) tap[HT_AUDIO_CH_AY_A + ch] = kliveAudioTapWord(sp128PsgChannelAudioLevel(ch));
+    }
     htAudioSampleCount++;
   } else {
     htAudioOverflows++;
@@ -132,6 +164,8 @@ static void htAudioReset(void) {
   htAudioNextSampleTact = (double)htFrameTacts + htAudioSampleLength;
   htDcPrevInput = 0.0;
   htDcPrevOutput = 0.0;
+  htHeardDcPrevInput = 0.0;
+  htHeardDcPrevOutput = 0.0;
   htBeeperLevel = 0.0;
   htBeeperAccumulated = 0.0;
   htBeeperAccumulatedTacts = 0.0;
@@ -166,7 +200,15 @@ void ht1080zSetAudioSampleRate(uint32_t rate, double dcAlpha) {
   htDcAlpha = rate ? dcAlpha : 0.0;
 }
 
-uint32_t ht1080zAudioSamplesPtr(void) { return (uint32_t)(uintptr_t)htAudioSamples; }
+/* What the host plays: the audio mixer's heard mix (bit for bit the core's own samples at unity) */
+uint32_t ht1080zAudioSamplesPtr(void) { return (uint32_t)(uintptr_t)htAudioHeardSamples; }
+
+/* The audio mixer (`common/wasm/audio-channels.c`; slots: 0 the beeper, 1-3 the AY) */
+void ht1080zAudioSetChannelGain(uint32_t channel, uint32_t milli) { kliveAudioSetChannelGainMilli(channel, milli); }
+uint32_t ht1080zAudioGetChannelGain(uint32_t channel) { return kliveAudioGetChannelGainMilli(channel); }
+void ht1080zAudioSetTapsEnabled(uint32_t enabled) { kliveAudioSetTapsEnabled(enabled); }
+uint32_t ht1080zAudioTapsPtr(void) { return (uint32_t)(uintptr_t)kliveAudioTaps; }
+uint32_t ht1080zGetAudioChannelCount(void) { return KLIVE_AUDIO_CHANNELS; }
 uint32_t ht1080zGetAudioSampleCapacity(void) { return HT_AUDIO_SAMPLE_CAPACITY; }
 uint32_t ht1080zGetAudioSampleCount(void) { return htAudioSampleCount; }
 uint32_t ht1080zGetAudioSampleRate(void) { return htAudioSampleRate; }

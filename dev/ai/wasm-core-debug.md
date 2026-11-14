@@ -61,8 +61,10 @@ editing a shared core source rebuilds every core).
   in volatile statics that the host reads, the core's own path untouched (`zx-spectrum-audio-channels.c`,
   `zxnext-audio-channels.c`); test it by comparing every non-volatile byte of a run with the setting
   changed mid-run against a plain run (the Next session's `memoryDifferences`). A static the compiler
-  splits (a small array becomes `name.0`, `name.1`, ...) cannot be listed as volatile by name: keep
-  it a function of the machine alone instead, or make it bigger or scalar.
+  reshapes (a small array split into `name.0`, `name.1`, ...; a one-element table turned scalar; a
+  flag nothing reads dropped) leaves the linker map, and the volatile list cannot name it: mark it
+  `__attribute__((used))` (`common/wasm/audio-channels.c`), or keep it a function of the machine
+  alone so it needs no listing.
 - **T10 Below about 3%, a speed difference is not measurable here:** byte-identical builds measured up
   to 2.9% apart, and inlining decisions move results by several percent. Decide on sizes, repeated runs
   or differences well above 3%.
