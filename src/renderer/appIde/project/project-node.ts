@@ -222,6 +222,9 @@ export function getFileTypeEntry(filename: string, store: Store<AppState>): File
       case "full":
         match = name === pattern;
         break;
+      case "name":
+        match = name.slice(Math.max(name.lastIndexOf("/"), name.lastIndexOf("\\")) + 1) === pattern;
+        break;
       case "starts":
         match = name.startsWith(pattern);
         break;

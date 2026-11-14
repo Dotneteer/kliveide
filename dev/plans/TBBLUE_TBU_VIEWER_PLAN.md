@@ -293,6 +293,31 @@ decodes to its last data byte and ends with a DESYNC). What the real bitstreams 
 - Verify in the running IDE on the three real files (screenshot), and update
   `dev/ai/ui-theming-intent-and-lessons.md` only if a new style rule comes out of it.
 
+**As built (2026-11-14), done.** The Bitstream section uses style 3, the listing (chosen by the project
+author from the mockup).
+
+- `TbuFileViewerPanel.tsx` (+ `.module.scss`): four `ExpandableRow` sections, File, Cores, Core n and
+  Bitstream, each with its expanded state and the selected record in the document's view state. The
+  dumps are `SmallIconButton`s in the headings: the header in File (and the single image of a legacy
+  file beside it), the image in the core's heading.
+- **The file map is the tape viewer's `TimelineStrip`**, as the theming rules require of a proportional
+  strip, not the labelled, hatched blocks of the mockup: tones `header` / `code` (Next core images) /
+  `data` (others) / `unplayable` (an image with an error), one segment per distinct image. Padding sizes
+  are in the core's details instead.
+- Registry: `matchType: "name"` (new; base name, either separator) with `ignoreCase`, before `.nex`.
+  `test/renderer/tbuFileType.test.ts` pins it (10 cases).
+- Texts: 95 keys under `panels.next.tbu.*`. Problem, board and stop texts come from whole-key tables,
+  so the catalog check sees every key (template-built keys were reported unused).
+- Colours: `--color-tbu-ok/-warning/-error` (status hues), `--bgcolor-tbu-selected` (accent subtle),
+  `--color-tbu-block` (secondary accent, for frame-data rows); the listing takes the disassembly set.
+  The rules are folded into `dev/ai/ui-theming-intent-and-lessons.md`.
+- `test/renderer/TbuFileViewerPanel.test.tsx` (5 tests): sections, selection, a damaged image, a
+  non-TBU file, the dumps.
+- Checked in the running IDE with the doc-shots harness (a temporary recipe, not committed) on the
+  3.02.03 file, the KS2 image's file and the 2019 legacy file: no console errors. The running app
+  showed one bug the tests could not: the Slot column wrapped "1 · Next core" and doubled every row's
+  height; the cells are now one line (`nowrap`, ellipsis).
+
 ### Phase 3 — Extract an image (optional, after review of Phase 2)
 
 - "Save image as…" per core: writes the image as `maketbu pull` would (all its sectors, trailer included)

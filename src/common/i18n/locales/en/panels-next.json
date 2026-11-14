@@ -1897,5 +1897,534 @@
   "panels.next.promote.failed": "The label could not be added to this bank.",
   "@panels.next.promote.failed": {
     "context": "Error when adding a local label to a NEX bank from the debugger."
+  },
+  "panels.next.tbu.problem.tooShort": "The file is shorter than its 512-byte header.",
+  "@panels.next.tbu.problem.tooShort": {
+    "context": "Shown instead of the viewer when the file ends before its header does, in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file)."
+  },
+  "panels.next.tbu.problem.notTbu": "This is not a TBBLUE.TBU file: it does not start with the TBUFILE magic word.",
+  "@panels.next.tbu.problem.notTbu": {
+    "context": "Shown instead of the viewer when the file is not a core update file at all, in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file). TBUFILE is a literal and is not translated."
+  },
+  "panels.next.tbu.problem.notSectorAligned": "The file size is not a whole number of 512-byte sectors.",
+  "@panels.next.tbu.problem.notSectorAligned": {
+    "context": "Problem line in the File section of the TBBLUE.TBU viewer (the ZX Spectrum Next core update file)."
+  },
+  "panels.next.tbu.problem.trailingData": "The file has data after its last core image.",
+  "@panels.next.tbu.problem.trailingData": {
+    "context": "Problem line in the File section of the TBBLUE.TBU viewer (the ZX Spectrum Next core update file). Informational."
+  },
+  "panels.next.tbu.problem.indexNotTerminated": "The core index has no end marker ($FF).",
+  "@panels.next.tbu.problem.indexNotTerminated": {
+    "context": "Problem line in the File section of the TBBLUE.TBU viewer (the ZX Spectrum Next core update file)."
+  },
+  "panels.next.tbu.problem.recordLength": "Record {record} does not have the usual length of 15 bytes.",
+  "@panels.next.tbu.problem.recordLength": {
+    "context": "Problem line in the File section of the TBBLUE.TBU viewer (the ZX Spectrum Next core update file).",
+    "placeholders": {
+      "record": "The record's number, from 1"
+    }
+  },
+  "panels.next.tbu.problem.duplicateRecord": "Record {record} repeats record {other}: same slot, board and core version.",
+  "@panels.next.tbu.problem.duplicateRecord": {
+    "context": "Problem line in the File section of the TBBLUE.TBU viewer (the ZX Spectrum Next core update file).",
+    "placeholders": {
+      "record": "A record number",
+      "other": "The earlier record's number"
+    }
+  },
+  "panels.next.tbu.problem.imageOutOfRange": "Core {record}'s image lies beyond the end of the file.",
+  "@panels.next.tbu.problem.imageOutOfRange": {
+    "context": "Problem line in the File section of the TBBLUE.TBU viewer (the ZX Spectrum Next core update file).",
+    "placeholders": {
+      "record": "The record's number"
+    }
+  },
+  "panels.next.tbu.problem.imageOverlap": "The images of cores {record} and {other} partly overlap.",
+  "@panels.next.tbu.problem.imageOverlap": {
+    "context": "Problem line in the File section of the TBBLUE.TBU viewer (the ZX Spectrum Next core update file).",
+    "placeholders": {
+      "record": "A record number",
+      "other": "The other record's number"
+    }
+  },
+  "panels.next.tbu.problem.checksumMismatch": "Core {record}'s checksum does not match. The updater stops with FAIL before it erases anything.",
+  "@panels.next.tbu.problem.checksumMismatch": {
+    "context": "Problem line in the File section of the TBBLUE.TBU viewer (the ZX Spectrum Next core update file). FAIL is the updater's on-screen message and is not translated.",
+    "placeholders": {
+      "record": "The record's number"
+    }
+  },
+  "panels.next.tbu.problem.trailerMismatch": "Core {record}'s last sector names a different slot, board or version than its index record.",
+  "@panels.next.tbu.problem.trailerMismatch": {
+    "context": "Problem line in the File section of the TBBLUE.TBU viewer (the ZX Spectrum Next core update file).",
+    "placeholders": {
+      "record": "The record's number"
+    }
+  },
+  "panels.next.tbu.problem.partMismatch": "Core {record}'s bitstream is for another board's FPGA.",
+  "@panels.next.tbu.problem.partMismatch": {
+    "context": "Problem line in the File section of the TBBLUE.TBU viewer (the ZX Spectrum Next core update file).",
+    "placeholders": {
+      "record": "The record's number"
+    }
+  },
+  "panels.next.tbu.problem.tooBigForSlot": "Core {record}'s image is larger than the board's flash slot.",
+  "@panels.next.tbu.problem.tooBigForSlot": {
+    "context": "Problem line in the File section of the TBBLUE.TBU viewer (the ZX Spectrum Next core update file).",
+    "placeholders": {
+      "record": "The record's number"
+    }
+  },
+  "panels.next.tbu.problem.legacySizeMismatch": "The image size in the header does not match the file.",
+  "@panels.next.tbu.problem.legacySizeMismatch": {
+    "context": "Problem line in the File section of the TBBLUE.TBU viewer (the ZX Spectrum Next core update file). For the old single-core format."
+  },
+  "panels.next.tbu.problem.legacyChecksumMismatch": "The image's XOR checksum does not match.",
+  "@panels.next.tbu.problem.legacyChecksumMismatch": {
+    "context": "Problem line in the File section of the TBBLUE.TBU viewer (the ZX Spectrum Next core update file). For the old single-core format."
+  },
+  "panels.next.tbu.problem.legacyNotNext": "This update file is not for the ZX Spectrum Next.",
+  "@panels.next.tbu.problem.legacyNotNext": {
+    "context": "Problem line in the File section of the TBBLUE.TBU viewer (the ZX Spectrum Next core update file). For the old single-core format, which other FPGA boards used too."
+  },
+  "panels.next.tbu.verdict.ok": "No problems",
+  "@panels.next.tbu.verdict.ok": {
+    "context": "Verdict at the end of the File heading of the TBBLUE.TBU viewer (the ZX Spectrum Next core update file)."
+  },
+  "panels.next.tbu.verdict.errors": "{errors, plural, one {# error} other {# errors}}",
+  "@panels.next.tbu.verdict.errors": {
+    "context": "Verdict at the end of the File heading of the TBBLUE.TBU viewer (the ZX Spectrum Next core update file).",
+    "placeholders": {
+      "errors": "Number of errors"
+    }
+  },
+  "panels.next.tbu.verdict.warnings": "{warnings, plural, one {# warning} other {# warnings}}",
+  "@panels.next.tbu.verdict.warnings": {
+    "context": "Verdict at the end of the File heading of the TBBLUE.TBU viewer (the ZX Spectrum Next core update file).",
+    "placeholders": {
+      "warnings": "Number of warnings"
+    }
+  },
+  "panels.next.tbu.verdict.both": "{errors, plural, one {# error} other {# errors}}, {warnings, plural, one {# warning} other {# warnings}}",
+  "@panels.next.tbu.verdict.both": {
+    "context": "Verdict at the end of the File heading of the TBBLUE.TBU viewer (the ZX Spectrum Next core update file).",
+    "placeholders": {
+      "errors": "Number of errors",
+      "warnings": "Number of warnings"
+    }
+  },
+  "panels.next.tbu.heading.file": "File",
+  "@panels.next.tbu.heading.file": {
+    "context": "Heading of the section about the whole file in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file)."
+  },
+  "panels.next.tbu.heading.cores": "Cores",
+  "@panels.next.tbu.heading.cores": {
+    "context": "Heading of the section with the file map and the table of FPGA cores in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file)."
+  },
+  "panels.next.tbu.heading.core": "Core {number} · {name}",
+  "@panels.next.tbu.heading.core": {
+    "context": "Heading of the section about the selected core in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file).",
+    "placeholders": {
+      "number": "The record's number",
+      "name": "The file name the core would have when extracted, e.g. zxnext-4-30303.bin"
+    }
+  },
+  "panels.next.tbu.heading.bitstream": "Bitstream",
+  "@panels.next.tbu.heading.bitstream": {
+    "context": "Heading of the section listing the selected core's FPGA configuration packets in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file)."
+  },
+  "panels.next.tbu.label.format": "Format",
+  "@panels.next.tbu.label.format": {
+    "context": "Field label in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file). Keep it short: the label column is 14 characters."
+  },
+  "panels.next.tbu.label.fileSize": "File size",
+  "@panels.next.tbu.label.fileSize": {
+    "context": "Field label in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file). Keep it short: the label column is 14 characters."
+  },
+  "panels.next.tbu.label.machine": "Machine",
+  "@panels.next.tbu.label.machine": {
+    "context": "Field label in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file). Keep it short: the label column is 14 characters."
+  },
+  "panels.next.tbu.label.index": "Index",
+  "@panels.next.tbu.label.index": {
+    "context": "Field label in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file). Keep it short: the label column is 14 characters."
+  },
+  "panels.next.tbu.label.hardware": "Hardware",
+  "@panels.next.tbu.label.hardware": {
+    "context": "Field label in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file). Keep it short: the label column is 14 characters."
+  },
+  "panels.next.tbu.label.core": "Core",
+  "@panels.next.tbu.label.core": {
+    "context": "Field label in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file). Keep it short: the label column is 14 characters."
+  },
+  "panels.next.tbu.label.imageSize": "Image size",
+  "@panels.next.tbu.label.imageSize": {
+    "context": "Field label in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file). Keep it short: the label column is 14 characters."
+  },
+  "panels.next.tbu.label.checksum": "Checksum",
+  "@panels.next.tbu.label.checksum": {
+    "context": "Field label in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file). Keep it short: the label column is 14 characters."
+  },
+  "panels.next.tbu.label.fpga": "FPGA",
+  "@panels.next.tbu.label.fpga": {
+    "context": "Field label in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file). Keep it short: the label column is 14 characters."
+  },
+  "panels.next.tbu.label.slot": "Slot",
+  "@panels.next.tbu.label.slot": {
+    "context": "Field label in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file). Keep it short: the label column is 14 characters."
+  },
+  "panels.next.tbu.label.board": "Board",
+  "@panels.next.tbu.label.board": {
+    "context": "Field label in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file). Keep it short: the label column is 14 characters."
+  },
+  "panels.next.tbu.label.image": "Image",
+  "@panels.next.tbu.label.image": {
+    "context": "Field label in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file). Keep it short: the label column is 14 characters."
+  },
+  "panels.next.tbu.label.shared": "Shared",
+  "@panels.next.tbu.label.shared": {
+    "context": "Field label in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file). Keep it short: the label column is 14 characters."
+  },
+  "panels.next.tbu.label.bitstream": "Bitstream",
+  "@panels.next.tbu.label.bitstream": {
+    "context": "Field label in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file). Keep it short: the label column is 14 characters."
+  },
+  "panels.next.tbu.label.slotFit": "Slot fit",
+  "@panels.next.tbu.label.slotFit": {
+    "context": "Field label in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file). Keep it short: the label column is 14 characters."
+  },
+  "panels.next.tbu.label.trailer": "Last sector",
+  "@panels.next.tbu.label.trailer": {
+    "context": "Field label in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file). Keep it short: the label column is 14 characters."
+  },
+  "panels.next.tbu.format.multi": "Multi-core",
+  "@panels.next.tbu.format.multi": {
+    "context": "Value of the Format field: the current format, with one record per core, in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file)."
+  },
+  "panels.next.tbu.format.legacy": "Legacy single-core",
+  "@panels.next.tbu.format.legacy": {
+    "context": "Value of the Format field: the old format from 2019 and earlier, in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file)."
+  },
+  "panels.next.tbu.bytes": "{count, plural, one {# byte} other {# bytes}}",
+  "@panels.next.tbu.bytes": {
+    "context": "A size in bytes in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file).",
+    "placeholders": {
+      "count": "Number of bytes"
+    }
+  },
+  "panels.next.tbu.indexUse": "{count} of {capacity} records",
+  "@panels.next.tbu.indexUse": {
+    "context": "Value of the Index field: how many of the header's record slots are used, in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file).",
+    "placeholders": {
+      "count": "Records used",
+      "capacity": "Records that fit (32)"
+    }
+  },
+  "panels.next.tbu.legacySize": "{stated} bytes stated, {actual} in the file",
+  "@panels.next.tbu.legacySize": {
+    "context": "Value of the Image size field for the old single-core format, in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file).",
+    "placeholders": {
+      "stated": "Size in the header, formatted",
+      "actual": "Size found, formatted"
+    }
+  },
+  "panels.next.tbu.checksumOk": "{stored} matches",
+  "@panels.next.tbu.checksumOk": {
+    "context": "Value of the Checksum field when the stored checksum is right, in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file).",
+    "placeholders": {
+      "stored": "Stored checksum in hex"
+    }
+  },
+  "panels.next.tbu.checksumBad": "{stored} stored, {computed} computed: the image is damaged",
+  "@panels.next.tbu.checksumBad": {
+    "context": "Value of the Checksum field when the checksum is wrong, in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file).",
+    "placeholders": {
+      "stored": "Stored checksum in hex",
+      "computed": "Computed checksum in hex"
+    }
+  },
+  "panels.next.tbu.checksumMissing": "{stored} stored, not checked: the image is not all in the file",
+  "@panels.next.tbu.checksumMissing": {
+    "context": "Value of the Checksum field when the image is cut short, in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file).",
+    "placeholders": {
+      "stored": "Stored checksum in hex"
+    }
+  },
+  "panels.next.tbu.coreCount": "{count, plural, one {# core} other {# cores}}",
+  "@panels.next.tbu.coreCount": {
+    "context": "Detail at the end of the Cores heading in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file).",
+    "placeholders": {
+      "count": "Number of core records"
+    }
+  },
+  "panels.next.tbu.boardName.0": "Issue 2",
+  "@panels.next.tbu.boardName.0": {
+    "context": "A ZX Spectrum Next board, in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file). Issue is the board revision."
+  },
+  "panels.next.tbu.boardName.1": "Issue 3",
+  "@panels.next.tbu.boardName.1": {
+    "context": "A ZX Spectrum Next board, in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file). Issue is the board revision."
+  },
+  "panels.next.tbu.boardName.2": "Issue 4 (KS2)",
+  "@panels.next.tbu.boardName.2": {
+    "context": "A ZX Spectrum Next board, in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file). KS2 is the Kickstarter 2 model name, not translated."
+  },
+  "panels.next.tbu.boardName.3": "Issue 5 (KS3)",
+  "@panels.next.tbu.boardName.3": {
+    "context": "A ZX Spectrum Next board, in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file). KS3 is the Kickstarter 3 model name, not translated."
+  },
+  "panels.next.tbu.boardName.other": "Issue {issue}",
+  "@panels.next.tbu.boardName.other": {
+    "context": "A board revision the viewer does not know, in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file).",
+    "placeholders": {
+      "issue": "The board issue number"
+    }
+  },
+  "panels.next.tbu.boardVariant": "{board}, variant {variant}",
+  "@panels.next.tbu.boardVariant": {
+    "context": "A board with a variant number from the file (meaning not documented), in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file).",
+    "placeholders": {
+      "board": "The board, e.g. Issue 2",
+      "variant": "The variant number"
+    }
+  },
+  "panels.next.tbu.slot.next": "1 · Next core",
+  "@panels.next.tbu.slot.next": {
+    "context": "Slot column/field: the core goes to flash slot 1, the ZX Spectrum Next core, in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file)."
+  },
+  "panels.next.tbu.slot.antiBrick": "0 · Anti-brick",
+  "@panels.next.tbu.slot.antiBrick": {
+    "context": "Slot column/field: the core goes to flash slot 0, the anti-brick core, in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file)."
+  },
+  "panels.next.tbu.slot.type": "Type {type}",
+  "@panels.next.tbu.slot.type": {
+    "context": "Slot column/field for a record type whose slot is not known, in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file).",
+    "placeholders": {
+      "type": "The record's type byte"
+    }
+  },
+  "panels.next.tbu.fpga.unknown": "Not recognised",
+  "@panels.next.tbu.fpga.unknown": {
+    "context": "Value of the FPGA field when the bitstream's FPGA cannot be found, in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file)."
+  },
+  "panels.next.tbu.fpga.unknownPart": "Unknown part",
+  "@panels.next.tbu.fpga.unknownPart": {
+    "context": "Part name when the IDCODE is not a known FPGA, in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file)."
+  },
+  "panels.next.tbu.fpga.part": "{part} ({family}) · IDCODE {idcode} at +{offset}",
+  "@panels.next.tbu.fpga.part": {
+    "context": "Value of the FPGA field in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file). IDCODE is the Xilinx register name and is not translated.",
+    "placeholders": {
+      "part": "FPGA part name, e.g. XC7A15T",
+      "family": "Spartan-6 or 7-series",
+      "idcode": "The IDCODE in hex",
+      "offset": "Byte offset in the image"
+    }
+  },
+  "panels.next.tbu.sharedWith": "Same image as {records}",
+  "@panels.next.tbu.sharedWith": {
+    "context": "Note in the cores table and the Shared field: these records use the very same image bytes, in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file).",
+    "placeholders": {
+      "records": "Record numbers, comma-separated"
+    }
+  },
+  "panels.next.tbu.boardByte": "{byte} · {board}",
+  "@panels.next.tbu.boardByte": {
+    "context": "Value of the Board field: the raw board byte and its meaning, in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file).",
+    "placeholders": {
+      "byte": "The byte in hex",
+      "board": "The board text"
+    }
+  },
+  "panels.next.tbu.boardByteTooltip": "Low four bits: the board ID NextReg $0F reports. High four bits: a variant, whose meaning is not documented.",
+  "@panels.next.tbu.boardByteTooltip": {
+    "context": "Tooltip of the Board field in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file)."
+  },
+  "panels.next.tbu.imageRange": "{from}-{to} · {sectors} sectors",
+  "@panels.next.tbu.imageRange": {
+    "context": "Value of the Image field: where the image is in the file, in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file).",
+    "placeholders": {
+      "from": "First byte offset in hex",
+      "to": "Last byte offset in hex",
+      "sectors": "Number of 512-byte sectors, formatted"
+    }
+  },
+  "panels.next.tbu.bitstreamSize": "{data} bytes, then {padding} bytes of $FF",
+  "@panels.next.tbu.bitstreamSize": {
+    "context": "Value of the Bitstream field: the bitstream's own bytes and the padding after it, in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file).",
+    "placeholders": {
+      "data": "Bitstream bytes, formatted",
+      "padding": "Padding bytes, formatted"
+    }
+  },
+  "panels.next.tbu.slotFit": "{size} of the {slot} slot",
+  "@panels.next.tbu.slotFit": {
+    "context": "Value of the Slot fit field: the image size against the flash slot size, in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file).",
+    "placeholders": {
+      "size": "Image size, e.g. 2,144K",
+      "slot": "Slot size, e.g. 2,176K"
+    }
+  },
+  "panels.next.tbu.trailer.none": "No identification sector",
+  "@panels.next.tbu.trailer.none": {
+    "context": "Value of the Last sector field when the image does not end with one, in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file)."
+  },
+  "panels.next.tbu.trailer.matches": "{text} · matches the record",
+  "@panels.next.tbu.trailer.matches": {
+    "context": "Value of the Last sector field in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file).",
+    "placeholders": {
+      "text": "The sector's own text, e.g. ZXN ISSUE 4 ZX SPECTRUM NEXT (not translated)"
+    }
+  },
+  "panels.next.tbu.trailer.peer": "{text} · names record {record}, which shares this image",
+  "@panels.next.tbu.trailer.peer": {
+    "context": "Value of the Last sector field for a shared image whose sector names another record, in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file).",
+    "placeholders": {
+      "text": "The sector's own text",
+      "record": "The record it names"
+    }
+  },
+  "panels.next.tbu.trailer.differs": "{text} · does not match the record",
+  "@panels.next.tbu.trailer.differs": {
+    "context": "Value of the Last sector field in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file).",
+    "placeholders": {
+      "text": "The sector's own text"
+    }
+  },
+  "panels.next.tbu.headerDump": "Show the 512-byte header as a memory dump",
+  "@panels.next.tbu.headerDump": {
+    "context": "Tooltip of a button in the File heading of the TBBLUE.TBU viewer (the ZX Spectrum Next core update file)."
+  },
+  "panels.next.tbu.headerDumpTitle": "{source} - Header",
+  "@panels.next.tbu.headerDumpTitle": {
+    "context": "Title of the memory dump document of the file's header, opened from the TBBLUE.TBU viewer (the ZX Spectrum Next core update file).",
+    "placeholders": {
+      "source": "The file's project path"
+    }
+  },
+  "panels.next.tbu.imageDump": "Show the image as a memory dump",
+  "@panels.next.tbu.imageDump": {
+    "context": "Tooltip of a button in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file) that opens the selected core's image bytes."
+  },
+  "panels.next.tbu.imageDumpTitle": "{source} - {name}",
+  "@panels.next.tbu.imageDumpTitle": {
+    "context": "Title of the memory dump document of a core image, opened from the TBBLUE.TBU viewer (the ZX Spectrum Next core update file).",
+    "placeholders": {
+      "source": "The file's project path",
+      "name": "The core's file name, e.g. zxnext-4-30303.bin"
+    }
+  },
+  "panels.next.tbu.map.header": "Header, 512 bytes",
+  "@panels.next.tbu.map.header": {
+    "context": "Tooltip of the header segment in the file map of the TBBLUE.TBU viewer (the ZX Spectrum Next core update file)."
+  },
+  "panels.next.tbu.map.image": "Cores {records} · {offset} · {size}",
+  "@panels.next.tbu.map.image": {
+    "context": "Tooltip of an image segment in the file map of the TBBLUE.TBU viewer (the ZX Spectrum Next core update file).",
+    "placeholders": {
+      "records": "Record numbers, e.g. #1, #5",
+      "offset": "File offset in hex",
+      "size": "Size, e.g. 480K"
+    }
+  },
+  "panels.next.tbu.col.slot": "Slot",
+  "@panels.next.tbu.col.slot": {
+    "context": "Column heading of the cores table in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file). Keep it short."
+  },
+  "panels.next.tbu.col.board": "Board",
+  "@panels.next.tbu.col.board": {
+    "context": "Column heading of the cores table in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file). Keep it short."
+  },
+  "panels.next.tbu.col.core": "Core",
+  "@panels.next.tbu.col.core": {
+    "context": "Column heading of the cores table in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file). Keep it short."
+  },
+  "panels.next.tbu.col.offset": "Offset",
+  "@panels.next.tbu.col.offset": {
+    "context": "Column heading of the cores table in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file). Keep it short."
+  },
+  "panels.next.tbu.col.size": "Size",
+  "@panels.next.tbu.col.size": {
+    "context": "Column heading of the cores table in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file). Keep it short."
+  },
+  "panels.next.tbu.col.checksum": "Checksum",
+  "@panels.next.tbu.col.checksum": {
+    "context": "Column heading of the cores table in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file). Keep it short."
+  },
+  "panels.next.tbu.col.fpga": "FPGA",
+  "@panels.next.tbu.col.fpga": {
+    "context": "Column heading of the cores table in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file). Keep it short."
+  },
+  "panels.next.tbu.col.note": "Note",
+  "@panels.next.tbu.col.note": {
+    "context": "Column heading of the cores table in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file). Keep it short."
+  },
+  "panels.next.tbu.bitstreamMeta": "{family} · {count, plural, one {# packet} other {# packets}} · {frame} bytes of frame data",
+  "@panels.next.tbu.bitstreamMeta": {
+    "context": "Detail at the end of the Bitstream heading in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file).",
+    "placeholders": {
+      "family": "Spartan-6 or 7-series (not translated)",
+      "count": "Number of packets",
+      "frame": "Frame data bytes, formatted"
+    }
+  },
+  "panels.next.tbu.packet.sync": "sync word",
+  "@panels.next.tbu.packet.sync": {
+    "context": "Comment in the bitstream listing of the TBBLUE.TBU viewer (the ZX Spectrum Next core update file). The row of the bitstream's synchronisation word."
+  },
+  "panels.next.tbu.packet.repeat": "{count} in a row",
+  "@panels.next.tbu.packet.repeat": {
+    "context": "Comment in the bitstream listing of the TBBLUE.TBU viewer (the ZX Spectrum Next core update file). On a NOP row that stands for several NOPs.",
+    "placeholders": {
+      "count": "How many NOPs"
+    }
+  },
+  "panels.next.tbu.packet.block": "{bytes} bytes",
+  "@panels.next.tbu.packet.block": {
+    "context": "Comment in the bitstream listing of the TBBLUE.TBU viewer (the ZX Spectrum Next core update file). On a long block write.",
+    "placeholders": {
+      "bytes": "Bytes, formatted"
+    }
+  },
+  "panels.next.tbu.packet.frameDataCrc": "{bytes} bytes of frame data, then AUTO CRC {crc}",
+  "@panels.next.tbu.packet.frameDataCrc": {
+    "context": "Comment in the bitstream listing of the TBBLUE.TBU viewer (the ZX Spectrum Next core update file). On a Spartan-6 frame data block. AUTO CRC is Xilinx's name, not translated.",
+    "placeholders": {
+      "bytes": "Bytes, formatted",
+      "crc": "The CRC in hex"
+    }
+  },
+  "panels.next.tbu.packet.words": "{count, plural, one {# word} other {# words}}",
+  "@panels.next.tbu.packet.words": {
+    "context": "Comment in the bitstream listing of the TBBLUE.TBU viewer (the ZX Spectrum Next core update file). The value of a packet longer than two words.",
+    "placeholders": {
+      "count": "Number of words"
+    }
+  },
+  "panels.next.tbu.packet.stop.unknownWord": "The listing stops at {offset}: the bytes there are not a packet.",
+  "@panels.next.tbu.packet.stop.unknownWord": {
+    "context": "Warning at the end of the bitstream listing in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file).",
+    "placeholders": {
+      "offset": "Byte offset in hex"
+    }
+  },
+  "panels.next.tbu.packet.stop.truncated": "The listing stops at {offset}: a packet runs past the end of the image.",
+  "@panels.next.tbu.packet.stop.truncated": {
+    "context": "Warning at the end of the bitstream listing in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file).",
+    "placeholders": {
+      "offset": "Byte offset in hex"
+    }
+  },
+  "panels.next.tbu.packet.stop.limit": "The listing stops at {offset}: too many packets to list.",
+  "@panels.next.tbu.packet.stop.limit": {
+    "context": "Warning at the end of the bitstream listing in the TBBLUE.TBU viewer (the ZX Spectrum Next core update file).",
+    "placeholders": {
+      "offset": "Byte offset in hex"
+    }
+  },
+  "panels.next.tbu.packet.stop.noSync": "No sync word was found, so the bitstream cannot be listed.",
+  "@panels.next.tbu.packet.stop.noSync": {
+    "context": "Warning in the bitstream section of the TBBLUE.TBU viewer (the ZX Spectrum Next core update file)."
   }
 }

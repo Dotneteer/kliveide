@@ -44,6 +44,8 @@ export const DISK_EXPLORER = "DiskExplorer";
 /** The Disk Explorer for hard-disk images: `.img`, `.hdf`, `.cim` (DISK_IMAGES_AND_FILE_SYSTEMS_PLAN C2) */
 export const HARD_DISK_EXPLORER = "HardDiskExplorer";
 export const NEX_VIEWER = "NexViewer";
+/** The ZX Spectrum Next core update file, `TBBLUE.TBU` (`dev/plans/TBBLUE_TBU_VIEWER_PLAN.md`) */
+export const TBU_VIEWER = "TbuViewer";
 // --- A ROM sidecar opened for editing (`dev/plans/ROM_ANNOTATION_EDITING_PLAN.md` R4)
 export const ROM_ANNOTATION_EDITOR = "RomAnnotationEditor";
 export const Z88_SNAPSHOT_VIEWER = "Z88SnapshotViewer";

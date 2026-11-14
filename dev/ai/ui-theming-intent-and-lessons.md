@@ -2703,6 +2703,31 @@ bar whose segments are as wide as their share of a whole. What carries over to a
   the least (the 48K-only RAM, `--surface-panel`), aliased as `--bgcolor-memory-map-*`; what loads
   onto them takes the timeline's code/BASIC segment colours and selection ring, so a part is one
   colour in both graphics. Zone labels are `--data-secondary`, and only the big zones carry one.
+- **A file map is the same strip over bytes** (the TBBLUE.TBU viewer's Cores section): one item per
+  distinct image in file order, the header first in the `header` tone, the images that hold the
+  file's main subject (Next cores) `code`, other images `data`, and an image with an error
+  `unplayable`. Records that share one image are one segment; selecting a record rings its image.
+  It stays the thin bar: what a mockup drew inside the blocks (labels, hatched padding) goes in the
+  tooltip and the details, not in a new strip.
+
+### A configuration listing borrows the disassembly colours; a block that is not an instruction takes the secondary accent
+
+The TBBLUE.TBU viewer's Bitstream section lists FPGA configuration packets as a listing: offset
+(`address`), operation (`instruction`), register and value (`operand`), and a `; comment`
+(`comment`) with the command or part name, all from `controls/data/DisassemblyText`. A NOP is drawn
+in the comment colour (it does nothing) and a run of them is one row with a count. The one row kind
+that is not a register write - a frame-data block, 99.9% of the image - colours its comment in the
+secondary accent (`--color-tbu-block`), so it reads apart from the instruction rows without a new
+hue. Any future "program of writes" listing (a DMA or Copper program outside its own panel) should
+look the same.
+
+### A data table's cells are one line
+
+A table row built from `DataRow` cells grows when a cell wraps (`DataValue` is `display: flex`, so
+the text wraps inside it): the TBU cores table first drew "1 · Next core" on two lines in a `12ch`
+column and every row doubled its height. Size the column from its longest text, and give the row's
+cells `white-space: nowrap; overflow: hidden; text-overflow: ellipsis` so a translated text that
+still does not fit is cut, not wrapped.
 
 ### A categorical bar that already spends both accents: fixed hues, named by its tooltip
 

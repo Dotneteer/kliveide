@@ -12,6 +12,7 @@ import {
   DISK_EXPLORER,
   HARD_DISK_EXPLORER,
   NEX_VIEWER,
+  TBU_VIEWER,
   ROM_ANNOTATION_EDITOR,
   Z88_SNAPSHOT_VIEWER,
   SPECTRUM_SNAPSHOT_VIEWER,
@@ -122,6 +123,7 @@ import {
 } from "@common/machines/constants";
 import { BlinkPanel } from "./appIde/SideBarPanels/BlinkPanel";
 import { createNexFileViewerPanel } from "./appIde/DocumentPanels/Next/NexFileViewerPanel";
+import { createTbuFileViewerPanel } from "./appIde/DocumentPanels/Next/TbuFileViewerPanel";
 import { createRomAnnotationEditorPanel } from "./appIde/DocumentPanels/Rom/RomAnnotationEditorPanel";
 import { createZ88SnapshotViewerPanel } from "./appIde/DocumentPanels/Z88/Z88SnapshotViewerPanel";
 import { createSpectrumSnapshotViewerPanel } from "./appIde/DocumentPanels/Spectrum/SpectrumSnapshotViewerPanel";
@@ -635,6 +637,12 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     navigation: fileDocumentNavigationAdapter
   },
   {
+    // --- The Next's core update file (`dev/plans/TBBLUE_TBU_VIEWER_PLAN.md`)
+    id: TBU_VIEWER,
+    renderer: createTbuFileViewerPanel,
+    icon: "cpu"
+  },
+  {
     // --- `.sna`, `.z80` and `.szx` (`dev/plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.8)
     id: SPECTRUM_SNAPSHOT_VIEWER,
     renderer: createSpectrumSnapshotViewerPanel,
@@ -1066,6 +1074,18 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     subType: "json",
     icon: "note",
     isReadOnly: true
+  },
+  // --- The ZX Spectrum Next's core update file, by its exact name only: other `.tbu` files are not
+  // --- this format (`dev/plans/TBBLUE_TBU_VIEWER_PLAN.md` D1). FAT cards give it in any case.
+  {
+    matchType: "name",
+    pattern: "TBBLUE.TBU",
+    ignoreCase: true,
+    editor: TBU_VIEWER,
+    icon: "cpu",
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true
   },
   {
     matchType: "ends",
