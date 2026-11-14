@@ -6553,6 +6553,8 @@ export type MessageKey =
   | "settings.general.fileManagerDeletePermanently.description"
   | "settings.general.fileManagerDeletePermanently.title"
   | "settings.general.fileManagerShowHidden.title"
+  | "settings.general.focusEmuOnRun.description"
+  | "settings.general.focusEmuOnRun.title"
   | "settings.general.navRecordTabSwitch.description"
   | "settings.general.navRecordTabSwitch.title"
   | "settings.general.openLastProject.title"

@@ -116,6 +116,7 @@ import {
   SETTING_EMU_ZOOM_STEP,
   SETTING_IDE_BP_GROUP_BY_KIND,
   SETTING_IDE_CLOSE_EMU,
+  SETTING_IDE_FOCUS_EMU_ON_RUN,
   SETTING_IDE_I18N_SHOW_KEYS,
   SETTING_IDE_LANGUAGE,
   SETTING_IDE_MAXIMIZE_TOOLS,
@@ -329,6 +330,15 @@ export const SETTINGS_ROWS: SettingsRow[] = [
     editor: "switch",
     source: setting(SETTING_IDE_CLOSE_EMU),
     replaces: "IDE › IDE Settings"
+  },
+  {
+    id: "focusEmuOnRun",
+    page: "general",
+    groupKey: "settings.group.windows",
+    titleKey: "settings.general.focusEmuOnRun.title",
+    descriptionKey: "settings.general.focusEmuOnRun.description",
+    editor: "switch",
+    source: setting(SETTING_IDE_FOCUS_EMU_ON_RUN)
   },
   {
     id: "navRecordTabSwitch",
