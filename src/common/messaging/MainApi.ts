@@ -18,6 +18,7 @@ import type { UnitTestRunRequest, UnitTestRunResponse } from "@common/unit-tests
 import type { AddUnitTestSupportResult } from "@main/unit-tests/addUnitTestSupport";
 import { MessengerBase } from "./MessengerBase";
 import type { AppState } from "@common/state/AppState";
+import type { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
 import type { NavigationEntry } from "@renderer/abstractions/NavigationLocation";
 import type {
   FloatingDocumentRequest,
@@ -1157,6 +1158,15 @@ class MainApiImpl {
   }
 
   /**
+   * Runs a command in the IDE window: a floating window's document command bar (build, run, load a
+   * tape or a NEX) acts on the project and the machine, and its output belongs in the IDE's panes.
+   * @param _commandText The command
+   */
+  async executeIdeCommand(_commandText: string): Promise<IdeCommandResult> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * A floating window steps the IDE's navigation history (Go Back / Go Forward); the window that
    * shows the location it reaches comes forward.
    * @param _direction -1: back, 1: forward
@@ -1315,6 +1325,7 @@ const UNBOUNDED_MAIN_METHODS = [
   "runUiAction",
   // --- Runs an IDE command, which may itself wait on the user
   "navigateInIde",
+  "executeIdeCommand",
   // --- Restoring a location may open a document, which may ask the user
   "stepNavigation",
   "restoreFloatingNavigation",

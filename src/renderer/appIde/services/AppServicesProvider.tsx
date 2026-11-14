@@ -3,7 +3,7 @@ import { createMachineService } from "@renderer/appEmu/MachineService";
 import { useRendererContext } from "@renderer/core/RendererProvider";
 import { createUiService } from "@renderer/core/UiServices";
 import { createValidationService } from "@renderer/core/ValidationService";
-import { useContext, useRef, createContext } from "react";
+import { useContext, useMemo, useRef, createContext } from "react";
 import { createInteractiveCommandsService } from "./IdeCommandService";
 import { createOutputPaneService } from "./OuputPaneService";
 import { createProjectService } from "./ProjectService";
@@ -29,6 +29,22 @@ export function useAppServices (): AppServices {
     throw new Error("useAppServices must be used within an AppServicesProvider.");
   }
   return services;
+}
+
+/**
+ * Replaces some of the app services for a part of the tree: a floating window's document command bar
+ * runs its commands in the IDE (`dev/plans/FLOATING_DOCUMENT_WINDOWS_PLAN.md` §7)
+ */
+export function AppServicesOverride({
+  services,
+  children
+}: {
+  services: Partial<AppServices>;
+  children?: React.ReactNode;
+}) {
+  const parent = useAppServices();
+  const value = useMemo(() => ({ ...parent, ...services }), [parent, services]);
+  return <AppServicesContext.Provider value={value}>{children}</AppServicesContext.Provider>;
 }
 
 /**

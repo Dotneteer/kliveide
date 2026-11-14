@@ -1,4 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+
+// --- Dock drops the IDE's kept editor model; the real one wakes Monaco's services
+vi.mock("@renderer/features/editor/editorModelCache", () => ({
+  dropEditorModel: vi.fn(),
+  setEditorModelDropper: vi.fn()
+}));
+import { dropEditorModel } from "@renderer/features/editor/editorModelCache";
 import { CODE_EDITOR, MEMORY_EDITOR, MEMORY_PANEL_ID } from "@common/state/common-ids";
 import { createDocumentHubService } from "@renderer/appIde/services/DocumentHubService";
 import { createProjectService } from "@renderer/appIde/services/ProjectService";
@@ -194,6 +201,8 @@ describe("moving a document between windows (plan §3.4)", () => {
     expect(area2.getActiveDocument()?.editPosition).toEqual({ line: 17, column: 5 });
     expect(area2.getDocumentViewState(FILE)).toEqual(viewState);
     expect(activateArea).toHaveBeenCalledWith("document-area-2");
+    // --- The IDE's kept editor model would show the text from before the pop-out
+    expect(dropEditorModel).toHaveBeenCalledWith(FILE);
   });
 
   it("docks into the active area when the source area is gone", async () => {
@@ -410,5 +419,24 @@ describe("a satellite's services (plan §3.1, §3.5)", () => {
       "main"
     );
     expect(store.dispatch).toHaveBeenCalledWith({ type: "SET_THEME" }, "main");
+  });
+});
+
+describe("a floating window's document command bar", () => {
+  it("runs its commands in the IDE and keeps the rest of the command service", async () => {
+    const { createIdeForwardingCommandService } = await import("@renderer/appFloat/ideForwardingCommandService");
+    const local: any = {
+      executeCommand: vi.fn(async () => ({ success: true })),
+      getCommandByIdOrAlias: vi.fn(() => ({ id: "x" }))
+    };
+    const mainApi = { executeIdeCommand: vi.fn(async () => ({ success: true, value: 7 })) };
+    const forwarding = createIdeForwardingCommandService(local, mainApi as any);
+
+    const result = await forwarding.executeCommand("run-build-function buildCode", {} as any);
+
+    expect(result).toEqual({ success: true, value: 7 });
+    expect(mainApi.executeIdeCommand).toHaveBeenCalledWith("run-build-function buildCode");
+    expect(local.executeCommand).not.toHaveBeenCalled();
+    expect(forwarding.getCommandByIdOrAlias("x")).toEqual({ id: "x" });
   });
 });

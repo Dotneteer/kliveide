@@ -117,6 +117,7 @@ import type {
 } from "@messaging/floating-documents";
 import type { AppState } from "@common/state/AppState";
 import type { NavigationEntry } from "@renderer/abstractions/NavigationLocation";
+import type { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
 
 import {
   ejectMediaFile as ejectMachineMedia,
@@ -1623,6 +1624,15 @@ class MainMessageProcessor {
     const position =
       line !== undefined ? ` ${Math.trunc(line)}${column !== undefined ? ` ${Math.trunc(column)}` : ""}` : "";
     await getIdeApi().executeCommand(`nav "${filename.replace(/"/g, '\\"')}"${position} -r definition`);
+  }
+
+  async executeIdeCommand(commandText: string): Promise<IdeCommandResult> {
+    if (typeof commandText !== "string" || !commandText.trim()) {
+      return { success: false, finalMessage: "No command to run." } as IdeCommandResult;
+    }
+    // --- A command that opens a document there (a script's output) brings the IDE forward
+    if (/^\s*script-output\b/.test(commandText)) bringIdeWindowForward();
+    return await getIdeApi().executeCommand(commandText);
   }
 
   async recordNavigation(from?: NavigationEntry, to?: NavigationEntry): Promise<void> {

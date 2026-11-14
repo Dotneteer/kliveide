@@ -4,6 +4,7 @@ import { useT } from "@common/i18n/useT";
 import type { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
 import { documentDisplayName } from "@renderer/features/documents/specialDocuments";
 import styles from "./FloatHeader.module.scss";
+import type { ReactNode } from "react";
 
 /**
  * The size of the document glyph and the marks: the document tab's (see `TAB_ICON_SIZE` in
@@ -19,6 +20,8 @@ type Props = {
   isLocked?: boolean;
   /** An operation is under way: the buttons wait */
   busy?: boolean;
+  /** The document's command bar (the one its tab strip shows in the IDE), if it has one */
+  commandBar?: ReactNode;
   onDock: () => void;
   onClose: () => void;
 };
@@ -28,7 +31,15 @@ type Props = {
  * document's icon and name with the marks its tab shows, then Dock and Close. The window is
  * frameless, so the header is its drag region.
  */
-export const FloatHeader = ({ document, hasChanges, isLocked, busy, onDock, onClose }: Props) => {
+export const FloatHeader = ({
+  document,
+  hasChanges,
+  isLocked,
+  busy,
+  commandBar,
+  onDock,
+  onClose
+}: Props) => {
   const t = useT();
   const dockRef = useTooltipRef<HTMLButtonElement>();
   const closeRef = useTooltipRef<HTMLButtonElement>();
@@ -97,6 +108,11 @@ export const FloatHeader = ({ document, hasChanges, isLocked, busy, onDock, onCl
           </span>
         )}
       </span>
+      {commandBar && (
+        <span className={styles.commands} data-testid="float-commands">
+          {commandBar}
+        </span>
+      )}
       <span className={styles.buttons}>
         <button
           ref={dockRef}

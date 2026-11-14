@@ -1291,7 +1291,9 @@ its title bar: the whole strip is `-webkit-app-region: drag` and only the button
 reuses the document strip's chrome rather than inventing a title-bar look: `--strip-tabbar` height,
 `--bgcolor-docsheader` with the `--color-doc-seam` rule as a background layer, the tab's 16px glyph and
 `--font-size-300` name, and the same marks in the same order (dirty dot, read-only shield, lock). The
-two actions are text buttons with an icon (**Dock**, **Close**), not bare icons: they are the window's
+document's command bar (`DocumentCommandBar`, the tab strip's icon buttons) comes along unchanged
+between the marks and the window's own actions, so a document has the same buttons in both places. The
+two window actions are text buttons with an icon (**Dock**, **Close**), not bare icons: they are the window's
 only controls and must read without a tooltip. A menu item that cannot run says why in its
 `trailing` slot ("4 windows open"), because context menu rows have no tooltip.
 

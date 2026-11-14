@@ -64,6 +64,19 @@ const PROGRAM = ["Start:", "    ld a,1", "    ld b,2", "    ret", ""].join("\n")
     const folder = path.join(projects, "floatcheck");
     fs.writeFileSync(path.join(folder, "code", "code.kz80.asm"), PROGRAM);
     fs.writeFileSync(path.join(folder, "code", "other.kz80.asm"), PROGRAM);
+    // --- A tape: a document type with its own command bar (Load/Run buttons)
+    const tapHeader = Buffer.alloc(19);
+    tapHeader[0] = 0x00; // tapHeader block
+    tapHeader[1] = 0x03; // CODE
+    Buffer.from("floatcheck").copy(tapHeader, 2);
+    tapHeader.writeUInt16LE(4, 12);
+    tapHeader.writeUInt16LE(0x8000, 14);
+    tapHeader.writeUInt16LE(0x8000, 16);
+    tapHeader[18] = tapHeader.subarray(0, 18).reduce((x, b) => x ^ b, 0);
+    const data = Buffer.from([0xff, 0x3e, 0x01, 0xc9, 0x00]);
+    data[4] = data.subarray(0, 4).reduce((x, b) => x ^ b, 0);
+    const block = (b) => Buffer.concat([Buffer.from([b.length & 0xff, b.length >> 8]), b]);
+    fs.writeFileSync(path.join(folder, "game.tap"), Buffer.concat([block(tapHeader), block(data)]));
     await cmd(`open "${folder}"`, 8000);
     await cmd("nav code/code.kz80.asm 3", 3000);
     check((await tabNames()).includes("code.kz80.asm"), "the document is open in the IDE");
@@ -88,6 +101,21 @@ const PROGRAM = ["Start:", "    ld a,1", "    ld b,2", "    ret", ""].join("\n")
     await sleep(500);
     check(!(await tabNames()).includes("code.kz80.asm"), "the tab left the IDE");
     await shot(float, "popped-out");
+
+    // --- The document's command bar (here the build root's) is in the header, and runs in the IDE
+    const commandButtons = await float.evaluate(
+      () => document.querySelectorAll('[data-testid="float-commands"] button').length
+    );
+    check(commandButtons >= 4, `the header shows the build root's command buttons (${commandButtons})`);
+    await float.locator('[data-testid="float-commands"] button').first().click();
+    const compiled = await waitFor(
+      async () => !(await ide.evaluate(() => document.body.innerText)).includes("Not compiled yet"),
+      20000
+    );
+    check(!!compiled, "Compile in the floating header builds the project in the IDE");
+    // --- Compile shows the Build output in the IDE, as it does from the tab strip: back to Commands
+    await ide.getByText(/^commands$/i).first().click();
+    await sleep(500);
 
     // --- An edit made in the floating window
     await float.click(".monaco-editor .view-lines");
@@ -158,6 +186,23 @@ const PROGRAM = ["Start:", "    ld a,1", "    ld b,2", "    ret", ""].join("\n")
       check(!!closed, "Close destroys the floating window");
       await sleep(500);
       check(!(await tabNames()).includes("code.kz80.asm"), "Close does not put the document back");
+    }
+
+    // --- A document type's own command bar (a tape's launch buttons) comes along too
+    await cmd("nav game.tap", 2500);
+    await popOut("game.tap");
+    const tape = await waitFor(() => floatWindow());
+    if (tape) {
+      await waitFor(() => tape.evaluate(() => document.querySelector('[data-app-ready="true"]') !== null));
+      const tapeButtons = await waitFor(() =>
+        tape.evaluate(() => document.querySelectorAll('[data-testid="float-commands"] button').length)
+      );
+      check(!!tapeButtons, `a tape's launch buttons are in the floating header (${tapeButtons ?? 0})`);
+      await shot(tape, "tape");
+      await tape.click('[data-testid="float-close"]');
+      await waitFor(async () => !floatWindow());
+    } else {
+      check(false, "the tape pops out");
     }
 
     // --- A machine document floats too, and keeps working across a machine change (plan §2.3):

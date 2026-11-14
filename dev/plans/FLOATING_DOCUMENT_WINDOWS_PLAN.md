@@ -320,6 +320,11 @@ All decided by the project author on 2026-11-14.
 - **Quit.** A floating window destroyed during a quit while its save request was pending stalled the
   quit (the request has no timeout): its save now ends when the window is gone.
 - **Guides screenshot.** `dev/scripts/doc-shots/recipes/guides-floating.cjs`.
+- **The document's command bar in the header** (not in the plan, asked for by the author): the icon
+  buttons the tab strip shows for the document (`DocumentCommandBar`: a build root's Compile, Inject,
+  Run, Debug and Show Script Output; a tape's, NEX's, snapshot's or script's launch buttons) sit in the
+  floating header. Their commands run in the IDE (`MainApi.executeIdeCommand`, through a command service
+  override for the bar only), where their output panes and the documents they open are.
 
 ### Open
 

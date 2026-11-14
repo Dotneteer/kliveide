@@ -23,6 +23,7 @@ import {
 } from "@renderer/features/documents/floatingDocumentTransfer";
 import { documentDisplayName } from "@renderer/features/documents/specialDocuments";
 import { FloatHeader } from "./FloatHeader";
+import { FloatCommandBar } from "./FloatCommandBar";
 import { setSatelliteController } from "./satelliteController";
 import styles from "./FloatApp.module.scss";
 
@@ -257,6 +258,7 @@ const FloatApp = ({ slot }: Props) => {
         hasChanges={hasChanges}
         isLocked={isLocked}
         busy={busy}
+        commandBar={loadState === "ready" ? <FloatCommandBar hub={hub} /> : undefined}
         onDock={() => void dockWindow()}
         onClose={() => void closeWindow()}
       />

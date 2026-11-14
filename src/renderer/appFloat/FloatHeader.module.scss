@@ -48,6 +48,17 @@
   font-size: var(--font-size-300);
 }
 
+/*
+ * The document's command bar, as its tab strip shows it in the IDE: the same icon buttons, between the
+ * marks and Dock/Close, out of the drag region so they click.
+ */
+.commands {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  -webkit-app-region: no-drag;
+}
+
 .buttons {
   display: flex;
   align-items: center;
