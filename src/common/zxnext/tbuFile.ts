@@ -454,10 +454,12 @@ function readMultiCore(data: Uint8Array, file: TbuFile): void {
     const trailer = readTrailer(data, end - TBU_SECTOR);
     if (trailer) {
       const flash = trailer.flash;
+      // --- The flash record holds the board ID alone (NextReg $0F), not the variant: 26.11a's `$10`
+      // --- and `$20` images both say `$00`
       const matchesRecord =
         !!flash &&
         flash.type === record.type &&
-        flash.boardByte === record.boardByte &&
+        (flash.boardByte === record.boardByte || flash.boardByte === record.boardId) &&
         flash.coreMajor === record.coreMajor &&
         flash.coreSub === record.coreSub;
       record.trailer = { ...trailer, matchesRecord };

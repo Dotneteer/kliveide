@@ -82,6 +82,7 @@ import { MDR_SLOT_SIZE } from "@emu/machines/microdrive/mdrImage";
 import { defaultDiskFolder, defaultFolderForDiskType } from "./disk-folders";
 import { beginDiskImageEdit, cancelDiskImageEdit, commitDiskImageEdit } from "./disk-image-edit";
 import { createHardDiskImage, hardDiskFileClusters, queryHardDisk, readHardDiskFile } from "./hard-disk-images";
+import { readNextSdCardFile } from "./next-sd-card-file";
 import { copyFolderToHardDiskSafely, editHardDiskSafely } from "./hard-disk-edit";
 import type { DiskEdit } from "@common/diskfs/edit";
 import type { FmConflictDecision, FmTransferRequest } from "@common/fileManager/fmJobTypes";
@@ -385,6 +386,13 @@ class MainMessageProcessor {
     if (typeof filePath !== "string" || typeof name !== "string") throw new Error("An image and a file name are required");
     // --- Input validated
     return readHardDiskFile(filePath, name, partition);
+  }
+
+  readNextSdCardFile(name: string) {
+    // Input validation
+    if (typeof name !== "string" || !name) throw new Error("A file name is required");
+    // --- Input validated
+    return readNextSdCardFile(name);
   }
 
   hardDiskFileClusters(filePath: string, name: string, partition?: number) {

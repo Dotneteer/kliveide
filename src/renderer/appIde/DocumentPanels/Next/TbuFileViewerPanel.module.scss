@@ -28,7 +28,7 @@
 
 /* --- The cores table: a fixed `ch` track per column, the note column takes the rest (M2) */
 .table {
-  min-width: 100ch;
+  min-width: 104ch;
 }
 
 .head {
@@ -57,7 +57,8 @@
 }
 
 .cBoard {
-  width: 18ch;
+  /* --- "Issue 2, variant 2" and a gap before the Core column */
+  width: 22ch;
 }
 
 .cCore {

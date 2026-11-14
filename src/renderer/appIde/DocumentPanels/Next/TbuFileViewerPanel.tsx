@@ -71,7 +71,7 @@ const TbuFileViewerPanel = ({ document, contents, viewState }: DocumentProps<Tbu
     viewState={viewState}
     apiLoaded={() => {}}
     fileLoader={loadTbuFileContents}
-    validRenderer={(ctx) => <TbuView ctx={ctx} source={document.node?.projectPath ?? document.id} />}
+    validRenderer={(ctx) => <TbuView ctx={ctx} source={document.node?.projectPath ?? document.name ?? document.id} />}
   />
 );
 

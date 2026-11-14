@@ -347,6 +347,17 @@ describe("TBBLUE.TBU problems", () => {
     expect(codes(data)).toEqual(["trailerMismatch"]);
   });
 
+  it("accepts a trailer that names only the board ID of a variant record", () => {
+    // --- As 26.11a's `$10` image: its last sector says board `$00`
+    const data = buildTbu([{ board: 0x10, sectors: 3 }]);
+    const flashAt = 512 + 2 * 512 + "ZX SPECTRUM NEXT\0ZXN ISSUE 2 ZX SPECTRUM NEXT\0".length;
+    data[flashAt + 2] = 0x00;
+    new DataView(data.buffer).setUint16(25 + 13, fletcher16(data, 0, 512, 512 + 3 * 512), true);
+    const tbu = parseTbuFile(data);
+    expect(tbu.problems).toEqual([]);
+    expect(tbu.records[0].trailer!.matchesRecord).toBe(true);
+  });
+
   it("accepts an image with no trailer", () => {
     const record = parseTbuFile(buildTbu([{ board: 2, trailer: false }])).records[0];
     expect(record.trailer).toBeUndefined();

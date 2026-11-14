@@ -2725,7 +2725,9 @@ look the same.
 
 A table row built from `DataRow` cells grows when a cell wraps (`DataValue` is `display: flex`, so
 the text wraps inside it): the TBU cores table first drew "1 · Next core" on two lines in a `12ch`
-column and every row doubled its height. Size the column from its longest text, and give the row's
+column and every row doubled its height. Size the column from the longest text the *data* can produce,
+not the common case (the Board column was sized for "Issue 4 (KS2)" and a real card's "Issue 2,
+variant 2" then ran into the next column), and give the row's
 cells `white-space: nowrap; overflow: hidden; text-overflow: ellipsis` so a translated text that
 still does not fit is cut, not wrapped.
 

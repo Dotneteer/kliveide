@@ -1,6 +1,6 @@
 # TBBLUE.TBU Viewer Plan
 
-**Status: done (2026-11-14).** Phases 0, 1, 2a, 2b and 4 are complete; Phase 3 was skipped by the
+**Status: done (2026-11-14).** Phases 0, 1, 2a, 2b, 4 and 5 are complete; Phase 3 was skipped by the
 project author's decision and is kept as an open idea. Each phase has an "As built" note below.
 
 A read-only document viewer for the ZX Spectrum Next core update file, `TBBLUE.TBU`, so its contents can be
@@ -359,6 +359,37 @@ answers that once without the viewer writing files.
 - Goldens: the route and the image added. `npm run doc:build && npm run doc:check` pass (prose: 0
   findings).
 - Changeset: `dev/changes/tbblue-tbu-viewer-c0f6.md` (feature).
+
+### Phase 5 — Machine › SD Card › Show TBBLUE.TBU (added at the project author's request)
+
+**As built (2026-11-14), done.** Placement chosen from a menu mockup (`.local/tbu-mockup/menu.html`,
+not committed): option A, the SD Card submenu, over View and the Machine menu's top level.
+
+- Main: `src/main/next-sd-card-file.ts` `readNextSdCardFile(name)` reads a file from the card the Next
+  uses (`activeSdCardFile()`), under `withSdCardAccess`; before the model's working copy exists it reads
+  the model's base image, which the working copy is made from. Errors are codes (`noCard`, `notFound`,
+  `unreadable`) in `@common/zxnext/nextSdCardFile`; `MainApi.readNextSdCardFile` exposes it. The CIM
+  handler writes and syncs every sector at once, so a read under the lock sees the card as it is.
+- Menu: `show_tbu` in `sdCardMenuRenderer`, after Reset and before a KS3's second-card items, enabled in
+  every machine state. Its click brings up the IDE (`showIdeWindow`, imported at the click so the menus
+  load without the app's entry module), runs `show-tbu`, and shows a failure in a message box.
+- Command: `show-tbu` (`TbuCommands.ts`) opens a read-only document `tbuCard:<card>` named
+  `TBBLUE.TBU · <card file>`; a document of the same card is closed and reopened, so it is always a
+  fresh read. The viewer's dump titles use the document's name when it has no project node.
+- Tests: `test/main/next-sd-card-file.test.ts` (5, reading the committed 26.11 card, so the whole 26.11a
+  file is checked: seven records, every checksum right, every part identified), `zx-next-tbu-menu.test.ts`
+  (4), `test/renderer/tbuCommands.test.ts` (6). Checked in the running IDE through the real menu item on
+  a fresh project (default model ks2-30204, whose card is the 2.10 release with six records): the tab
+  opens, a second click replaces it, no console errors.
+- **What the full 26.11a file taught: the identification sector holds the board ID alone, not the
+  variant.** The `$10` and `$20` images both name board `$00`, so a trailer now matches a record when it
+  names either the record's full board byte or its board ID; the first reading flagged record 4 of
+  26.11a. The type-3 images (909 sectors) have no identification sector, and the Issue 2 variant images
+  differ in size (variant 1: 464,752 bytes of bitstream; variants 0 and 2: 464,476).
+- The Board column was widened to `22ch`: "Issue 2, variant 2" filled `18ch` and touched the Core
+  column.
+- Docs: the guide opens with the menu path; `show-tbu` is in the command reference after `show-copper`;
+  the SD card guide links the page. The changeset was extended, not duplicated.
 
 ## 5. Risks and open questions
 

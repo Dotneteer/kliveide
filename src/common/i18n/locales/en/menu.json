@@ -989,5 +989,13 @@
   "menu.file.fileManager": "File Manager...",
   "@menu.file.fileManager": {
     "context": "File menu item that opens the File Manager document (a two-pane file manager) in the IDE window."
+  },
+  "menu.next.showTbu": "Show TBBLUE.TBU",
+  "@menu.next.showTbu": {
+    "context": "Machine › SD Card menu item (ZX Spectrum Next): opens the core update file TBBLUE.TBU from the current SD card in the TBU viewer. TBBLUE.TBU is a file name: keep it as is."
+  },
+  "menu.next.showTbuFailed": "Cannot Show TBBLUE.TBU",
+  "@menu.next.showTbuFailed": {
+    "context": "Title of the message box when Machine › SD Card › Show TBBLUE.TBU fails (no card, no such file on the card). TBBLUE.TBU is a file name."
   }
 }

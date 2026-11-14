@@ -14,19 +14,25 @@ release contains.
 
 *Applies to: ZX Spectrum Next core update files. The viewer only reads the file; it never changes it.*
 
-## Opening the file
+## Opening the file on your SD card
+
+With the ZX Spectrum Next selected, choose **Machine › SD Card › Show TBBLUE.TBU**, or type
+`show-tbu` at the command prompt. Klive reads `TBBLUE.TBU` from the root folder of the card the
+machine uses: the model's own card, or the image you chose with **Select Image...**. It works while
+the machine runs, and each time you choose it, it reads the card again. The tab is named after the
+card, for example **TBBLUE.TBU · ks2-30303.cim**.
+
+The update file on the card is the one the updater would write when you press U, so this is the
+quickest way to see which core an update would put on your board.
+
+## Opening a file from elsewhere
 
 <Steps>
 
 ### Put the file in your project
 
-Copy `TBBLUE.TBU` into your project folder: from a system release of the Next's distribution, or
-from your SD card. To take it from the emulated card, stop the machine and copy it out with
-`ncp`:
-
-```
-ncp from "/TBBLUE.TBU" "./TBBLUE.TBU"
-```
+Copy `TBBLUE.TBU` into your project folder, for example from a system release of the Next's
+distribution or from a real card.
 
 ### Open it
 
