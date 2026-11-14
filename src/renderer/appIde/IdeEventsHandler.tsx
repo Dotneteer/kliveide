@@ -21,7 +21,7 @@ import { AppState } from "@common/state/AppState";
 import { Store } from "@common/state/redux-light";
 import { hasSourceLevelDebug, isDebuggableCompilerOutput } from "./utils/compiler-utils";
 import { locateSource } from "./utils/source-location";
-import { restoreLastOpenDocuments } from "./restoreLastOpenDocuments";
+import { restoreFloatingDocuments, restoreLastOpenDocuments } from "./restoreLastOpenDocuments";
 import { revealNexBankAtPc } from "./DocumentPanels/Next/nexBankReveal";
 import { nexBankDumpId, nexBankDumpTitle } from "./DocumentPanels/Next/nexBankDocument";
 import { openStaticMemoryDump } from "@renderer/features/memory/StaticMemoryDump";
@@ -102,6 +102,8 @@ export const IdeEventsHandler = () => {
       // --- anyway, silently dropping every tab instead of actually restoring any of them.
       if (projectTreeLoaded) {
         await restoreLastOpenDocuments(projectService, store);
+        // --- The documents that were floating reopen in their windows (FLOATING_DOCUMENT_WINDOWS_PLAN Q3)
+        await restoreFloatingDocuments(store, mainApi, projectService);
       } else {
         console.error("Skipping document restoration because the project tree failed to load");
       }

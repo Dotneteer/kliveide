@@ -22,6 +22,9 @@ import { incProjectViewStateVersionAction } from "@common/state/actions";
 import { getFileTypeEntry } from "@renderer/appIde/project/project-node";
 import ScrollViewer, { ScrollViewerApi } from "@renderer/controls/ScrollViewer";
 import { SmallIconButton } from "@renderer/controls/IconButton";
+import { useMainApi } from "@renderer/core/MainApi";
+import { getPopOutBlocker, popOutDocument } from "./floatingDocumentTransfer";
+import { MAX_FLOATING_WINDOWS } from "@common/messaging/messages-core";
 import {
   ContextMenu,
   ContextMenuItem,
@@ -40,8 +43,11 @@ import {
 export const DocumentsHeader = () => {
   const t = useT();
   const dispatch = useDispatch();
-  const { store } = useRendererContext();
+  const { store, messageSource } = useRendererContext();
   const { projectService, navigationHistoryService } = useAppServices();
+  const mainApi = useMainApi();
+  // --- The Pop Out item's state follows the number of floating windows (MAX_FLOATING_WINDOWS)
+  useSelector((s) => Object.keys(s.floatingDocuments ?? {}).length);
   const documentHubService = useDocumentHubService();
   const documentAreaGridApi = useDocumentAreaGridApi();
   const documentAreaId = useDocumentAreaId();
@@ -289,6 +295,41 @@ export const DocumentsHeader = () => {
     documentHubService.moveDocument(sourceId, targetId, after);
   };
 
+  // --- Pop Out to Window (`dev/plans/FLOATING_DOCUMENT_WINDOWS_PLAN.md` §2.1): only the IDE window
+  // --- pops documents out; a floating window holds one document and has no tab strip
+  const tabPopOut =
+    messageSource === "ide"
+      ? (documentId: string) => {
+          setAwaiting(true);
+          popOutDocument({
+            hub: documentHubService,
+            documentId,
+            sourceAreaId: documentAreaId,
+            projectService,
+            mainApi
+          })
+            .then((result) => {
+              if (result?.error && result.error !== "alreadyFloating") {
+                console.error(`Cannot pop out ${documentId}: ${result.error}`, result);
+              }
+            })
+            .catch((err) => console.error(`Cannot pop out ${documentId}:`, err))
+            .finally(() => setAwaiting(false));
+        }
+      : undefined;
+
+  const getPopOutBlockedReason = (document: ProjectDocumentState): string | undefined => {
+    switch (getPopOutBlocker(document, store.getState())) {
+      case "limit":
+        return t("documents.tab.popOutLimit", { count: MAX_FLOATING_WINDOWS });
+      case "notFloatable":
+      case "noProject":
+        return t("documents.tab.popOutNotFloatable");
+      default:
+        return undefined;
+    }
+  };
+
   const moveTab = (documentId: string, offset: -1 | 1) => {
     const sourceIndex = openDocs?.findIndex((document) => document.id === documentId) ?? -1;
     const targetDocument = openDocs?.[sourceIndex + offset];
@@ -327,6 +368,8 @@ export const DocumentsHeader = () => {
           onTabDoubleClicked={tabDoubleClicked}
           onTabMoveLeft={(documentId) => moveTab(documentId, -1)}
           onTabMoveRight={(documentId) => moveTab(documentId, 1)}
+          onTabPopOut={tabPopOut}
+          getPopOutBlockedReason={getPopOutBlockedReason}
           onTabMoveToNextArea={
             documentAreaGridApi && documentAreaId && documentAreaState?.hasNextArea
               ? async (documentId) =>

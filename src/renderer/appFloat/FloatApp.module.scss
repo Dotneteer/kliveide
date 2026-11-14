@@ -1,0 +1,13 @@
+@use "@styles/core.scss" as *;
+
+/* The text a floating window shows while its document opens, or when it cannot */
+.message {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-3);
+  color: var(--color-doc-inactiveText);
+  font-size: var(--font-size-300);
+  background: var(--bgcolor-docscontainer);
+}

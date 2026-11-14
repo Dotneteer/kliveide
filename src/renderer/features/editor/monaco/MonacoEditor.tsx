@@ -115,9 +115,19 @@ import { publishEditorCursorPosition } from "./monacoCursorPosition";
 import { getNormalizedLineNumberSelection } from "./monacoLineNumberSelection";
 import { pasteTextIntoEditor } from "./monacoClipboard";
 import { BackgroundCompileScheduler } from "./monacoBackgroundCompile";
+import { setEditorModelDropper } from "../editorModelCache";
 import { t } from "@common/i18n/i18n";
 
 export { initializeMonaco } from "./monacoBootstrap";
+
+// --- A document docked back from a floating window drops the model kept for its path
+// --- (`editorModelCache.ts`): `@monaco-editor/react` names a `path` model by `Uri.parse(path)`
+setEditorModelDropper((path) => {
+  const uri = monacoEditor.Uri.parse(path).toString();
+  for (const model of monacoEditor.editor.getModels()) {
+    if (model.uri.toString() === uri) model.dispose();
+  }
+});
 
 let MAX_BP_UNDO_STACK = 64;
 

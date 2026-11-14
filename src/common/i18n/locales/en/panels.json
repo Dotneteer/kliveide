@@ -364,6 +364,49 @@
   "@documents.tab.moveToNextArea": {
     "context": "Context-menu item of a document tab (right-click): moves this document into the next pane of a split editor."
   },
+  "documents.tab.popOut": "Pop Out to Window",
+  "@documents.tab.popOut": {
+    "context": "Context-menu item of a document tab (right-click): moves this document out of the IDE into a window of its own that the user can move and resize freely."
+  },
+  "documents.tab.popOutLimit": "{count, plural, one {# window open} other {# windows open}}",
+  "@documents.tab.popOutLimit": {
+    "context": "Short note shown beside the disabled 'Pop Out to Window' menu item: at most this many document windows can be open at a time, and that many already are. Keep it short, it sits at the right end of a menu row.",
+    "placeholders": {
+      "count": "The most document windows that can be open at a time (4)"
+    }
+  },
+  "documents.tab.popOutNotFloatable": "Not available",
+  "@documents.tab.popOutNotFloatable": {
+    "context": "Short note shown beside the disabled 'Pop Out to Window' menu item when this kind of document cannot be moved into a window of its own. Keep it short, it sits at the right end of a menu row."
+  },
+  "documents.float.dock": "Dock",
+  "@documents.float.dock": {
+    "context": "Button in the title bar of a separate document window: puts the document back into the IDE's main window (as a tab) and closes this window."
+  },
+  "documents.float.dockTooltip": "Put the document back into the IDE window",
+  "@documents.float.dockTooltip": {
+    "context": "Tooltip of the Dock button in the title bar of a separate document window."
+  },
+  "documents.float.close": "Close",
+  "@documents.float.close": {
+    "context": "Button in the title bar of a separate document window: closes the document (asking about unsaved changes, like closing its tab) and the window."
+  },
+  "documents.float.closeTooltip": "Close the document and this window",
+  "@documents.float.closeTooltip": {
+    "context": "Tooltip of the Close button in the title bar of a separate document window."
+  },
+  "documents.float.modified": "Modified",
+  "@documents.float.modified": {
+    "context": "Tooltip of the dot in the title bar of a separate document window, shown while the document has unsaved changes."
+  },
+  "documents.float.loading": "Opening the document…",
+  "@documents.float.loading": {
+    "context": "Shown in a separate document window while the document it holds is being opened."
+  },
+  "documents.float.notAvailable": "This document cannot be opened in this window.",
+  "@documents.float.notAvailable": {
+    "context": "Shown in a separate document window when the document it should hold cannot be opened (its file was removed, or the project closed)."
+  },
   "documents.tab.splitRight": "Split Editor Right",
   "@documents.tab.splitRight": {
     "context": "Context-menu item of a document tab (right-click): splits the editor area, opening this document in a new pane on the right."

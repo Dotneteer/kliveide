@@ -40,6 +40,18 @@ export function appStateFlagsReducer (
     case "IDE_FOCUSED":
       return { ...state, ideFocused: payload?.flag };
 
+    case "SET_FLOATING_DOCUMENT": {
+      const slot = payload?.index;
+      if (typeof slot !== "number") return state;
+      const floatingDocuments = { ...(state.floatingDocuments ?? {}) };
+      if (payload?.value) {
+        floatingDocuments[slot] = payload.value;
+      } else {
+        delete floatingDocuments[slot];
+      }
+      return { ...state, floatingDocuments };
+    }
+
     case "DIM_MENU":
       return { ...state, dimMenu: payload?.flag };
 

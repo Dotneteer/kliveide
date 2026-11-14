@@ -1,9 +1,12 @@
 import { AppState } from "@common/state/AppState";
 import { Store } from "@common/state/redux-light";
 import { IProjectService } from "@renderer/abstractions/IProjectService";
+import type { MainApi } from "@common/messaging/MainApi";
+import { findFloatingSlot } from "@common/messaging/floating-documents";
 import {
   DOCS_WORKSPACE,
   getMultiAreaDocumentWorkspace,
+  getSavedFloatingDocuments,
   type SavedDocumentAreaInfo,
   type SavedDocumentInfo
 } from "@renderer/features/documents/useDocumentWorkspacePersistence";
@@ -91,6 +94,40 @@ export async function restoreLastOpenDocuments(
   projectService.setActiveDocumentHubService(activeAreaHub);
 }
 
+/**
+ * Reopens the documents that were floating when the workspace was saved, each in its window with
+ * its bounds (`dev/plans/FLOATING_DOCUMENT_WINDOWS_PLAN.md` Q3). A document already open in the IDE
+ * (or already floating) is left where it is; one that no longer exists is skipped.
+ */
+export async function restoreFloatingDocuments(
+  store: Store<AppState>,
+  mainApi: Pick<MainApi, "openFloatingDocument">,
+  projectService?: IProjectService
+): Promise<void> {
+  const state = store.getState();
+  const projectPath = state.project?.folderPath;
+  if (!projectPath) return;
+  const saved = getSavedFloatingDocuments(state.workspaceSettings?.[DOCS_WORKSPACE]);
+  for (const floating of saved) {
+    const id = floating.document.id;
+    if (findFloatingSlot(store.getState(), id)) continue;
+    if (projectService?.getDocumentHubServiceInstances().some((hub) => hub.isOpen(id))) continue;
+    const isProjectFile = id.startsWith(`${projectPath}/`);
+    if (isProjectFile && projectService && !projectService.getNodeForFile(id)) continue;
+    if (!isProjectFile && !isWorkspaceRestorableSpecialDocument(floating.document)) continue;
+    try {
+      const result = await mainApi.openFloatingDocument({
+        document: floating.document,
+        sourceAreaId: floating.sourceAreaId,
+        bounds: floating.bounds
+      });
+      if (result?.error === "limit") break;
+    } catch (err) {
+      console.error(`Failed to reopen the floating document '${id}':`, err);
+    }
+  }
+}
+
 async function restoreAreaDocuments(
   area: SavedDocumentAreaInfo,
   documentHubService: ReturnType<IProjectService["getActiveDocumentHubService"]>,
@@ -132,7 +169,12 @@ async function restoreAreaDocuments(
   return { firstRestoredDocId, restoredActiveDocId };
 }
 
-function restoreDocument(
+/**
+ * Turns a saved document back into an openable one, with its position and view state: what the
+ * workspace restore does, and what moving a document between windows does
+ * (`dev/plans/FLOATING_DOCUMENT_WINDOWS_PLAN.md` §3.4). Undefined when it cannot be restored.
+ */
+export function restoreDocument(
   savedDocument: SavedDocumentInfo,
   projectPath: string,
   projectService: IProjectService,

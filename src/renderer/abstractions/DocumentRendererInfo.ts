@@ -31,6 +31,13 @@ export type DocumentRendererInfo = {
   openPermanent?: boolean;
 
   /**
+   * `false` keeps this kind of document out of floating windows: Pop Out to Window is disabled for
+   * it (`dev/plans/FLOATING_DOCUMENT_WINDOWS_PLAN.md` Q5). Every other kind the workspace can restore
+   * may float.
+   */
+  floatable?: boolean;
+
+  /**
    * How documents of this type take part in the navigation history (Go Back / Go Forward). Omit it
    * and the type never becomes a history entry.
    */

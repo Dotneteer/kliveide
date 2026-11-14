@@ -26,7 +26,6 @@ import { is } from "@electron-toolkit/utils";
 
 import {
   defaultResponse,
-  errorResponse,
   RequestMessage,
   ResponseMessage
 } from "@messaging/messages-core";
@@ -59,7 +58,22 @@ import { Unsubscribe } from "@state/redux-light";
 import { getEmuApi, registerMainToEmuMessenger } from "@messaging/MainToEmuMessenger";
 import { BORIEL_SETUP_DIALOG } from "@messaging/dialog-ids";
 import { scheduleBorielSetupOffer } from "./boriel-integration/boriel-main";
-import { getIdeApi, registerMainToIdeMessenger } from "@messaging/MainToIdeMessenger";
+import { registerMainToIdeMessenger } from "@messaging/MainToIdeMessenger";
+import { handleRendererRequest } from "./renderer-request-handler";
+import {
+  getFloatingWindows,
+  initFloatingWindows,
+  isFloatingWindowFocused,
+  saveAllIdeRenderersBeforeQuit
+} from "./floating-windows-host";
+import {
+  FLOATING_WINDOW_DEFAULT_HEIGHT,
+  FLOATING_WINDOW_DEFAULT_WIDTH,
+  FLOATING_WINDOW_MIN_HEIGHT,
+  FLOATING_WINDOW_MIN_WIDTH
+} from "./floating-windows";
+import type { FloatSlot } from "@messaging/messages-core";
+import type { FloatingWindowBounds } from "@messaging/floating-documents";
 import { onEmuWindowLeftFullScreen, resetEmuFullScreenMode } from "./emu-full-screen-mode";
 import { createSettingsReader } from "@utils/SettingsReader";
 import { readAdvancedDebuggingSetting } from "@common/features/advancedDebugging";
@@ -341,6 +355,14 @@ async function createAppWindows() {
   registerMainToEmuMessenger(emuWindow);
   registerMainToIdeMessenger(ideWindow);
 
+  // --- Floating document windows (`dev/plans/FLOATING_DOCUMENT_WINDOWS_PLAN.md` §3.6)
+  initFloatingWindows({
+    createWindow: createFloatingWindow,
+    defaultBounds: defaultFloatingWindowBounds,
+    showIdeWindow
+  });
+  let lastFolderPath = mainStore.getState()?.project?.folderPath;
+
   // --- Prepare the main menu. Update items on application state change
   Menu.setApplicationMenu(null);
   invalidateMenuCache();
@@ -520,6 +542,17 @@ async function createAppWindows() {
       emuWindow?.setAlwaysOnTop(isEmuOnTop, process.platform === "linux" ? "normal" : undefined);
     }
 
+    // --- The project changed: its floating windows close, after their saves are flushed (plan §2.3)
+    const folderPath = state?.project?.folderPath;
+    if (folderPath !== lastFolderPath) {
+      const hadProject = !!lastFolderPath;
+      lastFolderPath = folderPath;
+      const floating = getFloatingWindows();
+      if (hadProject && floating && floating.count > 0) {
+        void floating.saveAllBeforeQuit().finally(() => floating.destroyAll());
+      }
+    }
+
     // --- Adjust menu items whenever the app state changes
     setupMenu(emuWindow, ideWindow);
   });
@@ -666,8 +699,10 @@ async function createAppWindows() {
         return;
       }
 
-      // --- Close both renderer windows (unless already disposed)
+      // --- Close both renderer windows (unless already disposed), and the floating ones
       allowCloseIde = true;
+      getFloatingWindows()?.setQuitting(true);
+      getFloatingWindows()?.destroyAll();
       ideWindow?.close();
       emuWindow.close();
     } else {
@@ -690,6 +725,7 @@ app.whenReady().then(() => {
 // --- When the user is about to quit the app, allow closing the IDE window
 app.on("before-quit", (_e) => {
   allowCloseIde = true;
+  getFloatingWindows()?.setQuitting(true);
   ideWindowStateSaved = true;
   saveAppSettings();
   // --- The connection file must not outlive the process (COMMAND_LINE_AUTOMATION_PLAN D5)
@@ -732,63 +768,32 @@ app.on("activate", () => {
 // https://www.electronjs.org/docs/latest/api/app#appsetaboutpaneloptionsoptions
 // app.setAboutPanelOptions(...);
 
-// --- This channel processes emulator requests and sends the results back
-ipcMain.on("EmuToMain", async (_ev, msg: RequestMessage) => {
-  let response: ResponseMessage | null;
-  try {
-    // --- `forwardActions` dispatches into the main store, and a malformed action or a throwing
-    // --- reducer would otherwise reject this handler's promise, leaving the sender with no
-    // --- response at all - a permanent hang on its side.
-    response = await forwardActions(msg);
-    if (response === null) {
-      response = await processRendererToMainMessages(msg, emuWindow);
-    }
-  } catch (err) {
-    response = errorResponse(String(err));
-  }
-  // --- Never leave the sender without a response: it is waiting on this correlation ID.
-  if (!response) {
-    response = errorResponse(`No response was produced for the request '${msg.type}'.`);
-  }
-  response.correlationId = msg.correlationId;
-  response.sourceId = "main";
-  if (emuWindow?.isDestroyed() === false) {
-    emuWindow.webContents.send("EmuToMainResponse", response);
-  } else {
-    console.warn(
-      `[ipc] Dropping EmuToMain response (correlationId ${msg.correlationId}): the emulator ` +
-        `window is gone. The caller in that window will not receive a reply.`
-    );
-  }
-});
+// --- The renderers' requests: the emulator, the IDE and the floating document windows share one
+// --- handler, which answers the renderer that sent the request
+// --- (`dev/plans/FLOATING_DOCUMENT_WINDOWS_PLAN.md` §3.2)
+function registerRendererRequestChannel(
+  requestChannel: "EmuToMain" | "IdeToMain" | "FloatToMain",
+  responseChannel: "EmuToMainResponse" | "IdeToMainResponse" | "FloatToMainResponse",
+  fallbackWindow: () => BrowserWindow | null
+): void {
+  ipcMain.on(requestChannel, async (ev, msg: RequestMessage) => {
+    const sender = ev?.sender;
+    const window =
+      (sender && !sender.isDestroyed() ? BrowserWindow.fromWebContents(sender) : null) ??
+      fallbackWindow();
+    await handleRendererRequest({
+      msg,
+      sender,
+      responseChannel,
+      forwardActions,
+      processRequest: (request) => processRendererToMainMessages(request, window)
+    });
+  });
+}
 
-// --- This channel processes ide requests and sends the results back
-ipcMain.on("IdeToMain", async (_ev, msg: RequestMessage) => {
-  let response: ResponseMessage | null;
-  try {
-    // --- See the EmuToMain handler above: a throwing dispatch must not rob the sender of a reply.
-    response = await forwardActions(msg);
-    if (response === null) {
-      response = await processRendererToMainMessages(msg, ideWindow);
-    }
-  } catch (err) {
-    response = errorResponse(String(err));
-  }
-  // --- Never leave the sender without a response: it is waiting on this correlation ID.
-  if (!response) {
-    response = errorResponse(`No response was produced for the request '${msg.type}'.`);
-  }
-  response.correlationId = msg.correlationId;
-  response.sourceId = "main";
-  if (ideWindow?.isDestroyed() === false) {
-    ideWindow.webContents.send("IdeToMainResponse", response);
-  } else {
-    console.warn(
-      `[ipc] Dropping IdeToMain response (correlationId ${msg.correlationId}): the IDE window ` +
-        `is gone. The caller in that window will not receive a reply.`
-    );
-  }
-});
+registerRendererRequestChannel("EmuToMain", "EmuToMainResponse", () => emuWindow);
+registerRendererRequestChannel("IdeToMain", "IdeToMainResponse", () => ideWindow);
+registerRendererRequestChannel("FloatToMain", "FloatToMainResponse", () => ideWindow);
 
 // --- Handle custom token loading requests from renderer
 ipcMain.handle("load-custom-tokens", async (_event, languageId: string) => {
@@ -818,9 +823,88 @@ async function forwardActions(message: RequestMessage): Promise<ResponseMessage 
   return defaultResponse();
 }
 
+// --- The save that runs while the app closes: the IDE window and the emulator window both start it,
+// --- and they must share one. A second request to the IDE, sent while its window is already going
+// --- down, is never answered, and `saveAllBeforeQuit` has no timeout: the quit stalled for good.
+let saveOnClosePending: Promise<boolean> | undefined;
+
 async function saveOnClose() {
-  ideSaved = await getIdeApi().saveAllBeforeQuit();
-  return ideSaved;
+  saveOnClosePending ??= (async () => {
+    // --- The floating windows first, then the IDE: `false` from any of them stops the quit (plan §3.3)
+    ideSaved = await saveAllIdeRenderersBeforeQuit();
+    return ideSaved;
+  })().finally(() => {
+    saveOnClosePending = undefined;
+  });
+  return await saveOnClosePending;
+}
+
+/**
+ * Creates the window of a floating document (`dev/plans/FLOATING_DOCUMENT_WINDOWS_PLAN.md` §2.2):
+ * frameless, with Klive's own header, the same renderer bundle in satellite mode (`?float=<slot>`)
+ */
+function createFloatingWindow(slot: FloatSlot, bounds: FloatingWindowBounds | undefined): BrowserWindow {
+  const window = new BrowserWindow({
+    title: "Klive document",
+    icon: join(process.env.PUBLIC, "images/klive-logo.png"),
+    frame: false,
+    minWidth: FLOATING_WINDOW_MIN_WIDTH,
+    minHeight: FLOATING_WINDOW_MIN_HEIGHT,
+    x: bounds?.x,
+    y: bounds?.y,
+    width: bounds?.width ?? FLOATING_WINDOW_DEFAULT_WIDTH,
+    height: bounds?.height ?? FLOATING_WINDOW_DEFAULT_HEIGHT,
+    webPreferences: {
+      preload,
+      nodeIntegration: true,
+      contextIsolation: false,
+      webSecurity: false,
+      backgroundThrottling: false,
+      enableWebSQL: false,
+      spellcheck: false
+    },
+    show: true
+  });
+
+  // --- The window takes the IDE's menu (its accelerators) at the next menu update; a reused slot must
+  // --- not keep the previous window's menu signature
+  invalidateMenuCache();
+
+  const floatQuery = `?float=${slot}`;
+  const devUrl = process.env["ELECTRON_RENDERER_URL"];
+  if (is.dev && devUrl) {
+    window.loadURL(devUrl + floatQuery + `&apppath=${encodeURIComponent(app.getAppPath())}`);
+  } else {
+    window.loadFile(join(__dirname, "../renderer/index.html"), {
+      search: floatQuery + `&apppath=${encodeURIComponent(process.resourcesPath)}`
+    });
+  }
+  window.webContents.on("did-finish-load", () => {
+    if (appSettings.windowStates?.ideZoomFactor != undefined) {
+      window.webContents.setZoomFactor(appSettings.windowStates?.ideZoomFactor ?? 1.0);
+    }
+  });
+  window.webContents.setWindowOpenHandler(({ url }) => {
+    if (url.startsWith("https:")) shell.openExternal(url);
+    return { action: "deny" };
+  });
+  return window;
+}
+
+/**
+ * Where a new floating window opens: near the IDE window, each further one a little lower and to
+ * the right so they do not cover each other exactly
+ */
+function defaultFloatingWindowBounds(): FloatingWindowBounds | undefined {
+  if (!ideWindow || ideWindow.isDestroyed()) return undefined;
+  const ide = ideWindow.getBounds();
+  const offset = 40 + 24 * (getFloatingWindows()?.count ?? 0);
+  return {
+    x: ide.x + offset,
+    y: ide.y + offset,
+    width: Math.min(FLOATING_WINDOW_DEFAULT_WIDTH, Math.max(FLOATING_WINDOW_MIN_WIDTH, ide.width - offset)),
+    height: Math.min(FLOATING_WINDOW_DEFAULT_HEIGHT, Math.max(FLOATING_WINDOW_MIN_HEIGHT, ide.height - offset))
+  };
 }
 
 export function isEmuWindowFocused() {
@@ -844,8 +928,15 @@ export function isEmuWindowVisible() {
   return (emuWindow?.isDestroyed() ?? false) === false && emuWindow.isVisible?.();
 }
 
+/**
+ * Whether the IDE has the focus: its window, or a floating document window, which counts as the IDE
+ * for the menus (`dev/plans/FLOATING_DOCUMENT_WINDOWS_PLAN.md` §3.6)
+ */
 export function isIdeWindowFocused() {
-  return (ideWindow?.isDestroyed() ?? false) === false && ideWindow.isFocused?.();
+  return (
+    ((ideWindow?.isDestroyed() ?? false) === false && !!ideWindow.isFocused?.()) ||
+    isFloatingWindowFocused()
+  );
 }
 
 export function isIdeWindowVisible() {

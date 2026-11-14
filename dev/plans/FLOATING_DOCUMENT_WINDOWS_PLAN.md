@@ -1,7 +1,8 @@
 # Floating Document Windows Plan
 
-**Status: approved (2026-11-14).** Nothing is implemented yet. The decisions are in §4 (Q1-Q6, all
-settled by the project author).
+**Status: implemented (2026-11-14), branch `feature/floating-document-windows`.** The decisions are in
+§4 (Q1-Q6, all settled by the project author); what was built, and what is still open, is in §7. The
+durable rules for later features are `dev/patterns/satellite-renderers.md`.
 
 A document tab in the IDE can pop out into its own window: a real Electron `BrowserWindow`, moved and
 resized like the IDE and emulator windows. The window shows the one document and a header with two
@@ -192,6 +193,9 @@ All decided by the project author on 2026-11-14.
   that turns out not to work floating is marked `floatable: false` in the registry.
 - **Q6. Dragging a tab out to pop it out: not in this plan.** The context menu first; dragging is a
   follow-up.
+- **Q7. The limit is 4 floating windows, not 8** (decided 2026-11-14, after the measurement in §7: about
+  310 MB of working set per window). `MAX_FLOATING_WINDOWS` is the one place it lives; the 8 in §1-§6
+  is the original plan's number, superseded.
 
 ## 5. Phases
 
@@ -252,3 +256,76 @@ All decided by the project author on 2026-11-14.
   satellites.
 - **Memory**: each window is a renderer process with its own Monaco and services (~100-200 MB each); 8 is
   the cap for that reason. Measured in Phase 4.
+
+## 7. As built (2026-11-14)
+
+- **Phase 0.** `messages-core.ts` has `FloatSource`/`floatSlotOf`/`MAX_FLOATING_WINDOWS` and the
+  `FloatToMain*`/`MainToFloat*` channels. The three request channels share
+  `src/main/renderer-request-handler.ts`, which answers `event.sender`. The main store delivers every
+  action to every live renderer except its source (`src/main/renderer-routing.ts`); each renderer gets
+  its own copy of the message (the old code handed one object to both messengers, which shared a
+  correlation ID). `ide-api-routing.ts` classifies every `IdeApi` method, with a fifth class, `float`,
+  for the calls only a floating window answers (`revealFloatingDocument`, `floatingDocumentRenamed`,
+  `requestFloatingClose`). The main call sites were reviewed by method: output, dialogs, commands and
+  the project structure stay IDE-only; `annotationFileChanged`/`diskImageChanged` broadcast;
+  `showMemory`/`showDisassembly`/`showBasic` go to the window holding the document;
+  `saveAllBeforeQuit` fans out (`saveAllIdeRenderersBeforeQuit`, also on a project switch).
+- **Phase 1-2.** `src/main/floating-windows.ts` (`FloatingWindowManager`, rules tested with fake
+  windows) and `floating-windows-host.ts` (the app's instance). No temporary developer command was
+  needed: Pop Out landed in the same change. The satellite bootstrap is `?float=<slot>` in
+  `main.tsx`, which reads `MainApi.getFullState()` before rendering. In a satellite, `dispatch(..., "ide")`
+  is forwarded under the window's source and actions from main are replayed as `"main"`, so nothing
+  echoes. Pop Out and Dock save the document first: the delayed saves **and** the view's
+  `beforeDocumentDisposal` (found in the running app: an unsaved edit was lost on Dock without it).
+  Dock also drops the IDE's kept Monaco model for the path (`editorModelCache.ts`): the editor keeps
+  one model per path (`keepCurrentModel`), which otherwise showed the text from before the pop-out.
+  The quit's `saveOnClose` is now one shared promise: the IDE and emulator windows both start it, and a
+  second `saveAllBeforeQuit` sent to a closing IDE window was never answered (the quit stalled).
+- **Phase 3.** A focused floating window counts as the IDE (`ideFocused`, `isIdeWindowFocused`).
+  Monaco's own keys work in the window; `nav` from a floating document to another one opens it in the
+  IDE (`MainApi.navigateInIde`), and `nav`/the Explorer to a floating document focus its window and move
+  its view. Satellite-local dialogs open in the satellite (`IdeDialogBridge`). Workspace version 3 saves
+  `floating` (document, source area, bounds); version 2 reads as having none. The running-app check is
+  `dev/scripts/floating-windows-ide-check.cjs`.
+- **Phase 4 (partly).** Memory, Disassembly and BASIC can float (they are restorable special
+  documents); the View menu's toggles go to the window that holds them. No kind has been marked
+  `floatable: false` yet (the flag exists on `DocumentRendererInfo` and reaches the tab menu).
+- **Phase 5.** Guide section "A document in its own window" in `guides/editing/editor.mdx`; the
+  header's style rules in `dev/ai/ui-theming-intent-and-lessons.md`.
+
+### Finished after the first commit (2026-11-14)
+
+- **Menu and shortcuts.** The menu commands main runs in the IDE (`getIdeApi().executeCommand`) act on
+  the machine or the project (run, coverage, profiler, state files, history export), so they rightly
+  stay with the IDE. The real gap was the menu itself: on macOS `setupMenu` filled the submenus only
+  for the focused emulator or IDE window, so a focused floating window left the menu bar empty and its
+  accelerators dead; elsewhere floating windows had no menu. A focused floating window now gets the
+  IDE's menu (macOS), and every floating window gets one elsewhere (`test/main/app-menu-floating.test.ts`).
+  `useNavigationShortcuts` is mounted in the floating window too.
+- **One navigation history.** The IDE's `NavigationHistoryService` is the only history. A floating
+  window's service is `setRemote`: it records its jumps in the IDE (`MainApi.recordNavigation`) and
+  steps from its own location (`stepNavigation`). The IDE restores a floating document's entries in its
+  window (`setFloatingRestorer` → `restoreFloatingNavigation` → `IdeApi.restoreNavigation`), never as a
+  second copy. A `nav` from a floating window to another document passes its origin, and a recorded
+  `nav` from the IDE into a floating document records its destination
+  (`test/navigation/floatingNavigationHistory.test.ts`).
+- **Machine change.** Klive has no rule that closes documents on a machine change (only a few commands
+  close their own documents); each panel follows the machine. The IDE check pops out the Memory view
+  and switches the machine: the window keeps showing memory. No kind needed `floatable: false`.
+- **Cost.** `dev/scripts/floating-windows-cost.cjs`, measured 2026-11-14 on macOS: each window shows its
+  document about 0.74 s after Pop Out, steady to the eighth; each floating renderer's working set is
+  about 310 MB (the IDE renderer's is about 310-370 MB), 8 windows add about 2.5 GB of working set
+  (shared pages counted, so an upper bound). That is above this plan's 100-200 MB estimate, and the
+  limit was lowered to 4 (Q7); the cost script now opens as many windows as the limit allows.
+- **Quit.** A floating window destroyed during a quit while its save request was pending stalled the
+  quit (the request has no timeout): its save now ends when the window is gone.
+- **Guides screenshot.** `dev/scripts/doc-shots/recipes/guides-floating.cjs`.
+- **The document's command bar in the header** (not in the plan, asked for by the author): the icon
+  buttons the tab strip shows for the document (`DocumentCommandBar`: a build root's Compile, Inject,
+  Run, Debug and Show Script Output; a tape's, NEX's, snapshot's or script's launch buttons) sit in the
+  floating header. Their commands run in the IDE (`MainApi.executeIdeCommand`, through a command service
+  override for the bar only), where their output panes and the documents they open are.
+
+### Open
+
+- Dragging a tab out (Q6) is not part of this plan.

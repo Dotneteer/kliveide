@@ -20,6 +20,9 @@ import { isLibraryPath, LIBRARY_FOLDER, libraryFile } from "@main/kbasic/stdlib"
 import { getDocumentAreaCommandTarget } from "@renderer/features/documents/documentAreaCommandTarget";
 import { type DocumentAreaGridApi } from "@renderer/features/documents/DocumentAreaGrid";
 import { t } from "@common/i18n/i18n";
+import { isFloatSource } from "@common/messaging/messages-core";
+import { getFloatingDocuments } from "@common/messaging/floating-documents";
+import { routeToFloatingDocument } from "@renderer/features/documents/floatingDocumentTransfer";
 
 type NavigateToDocumentCommandArgs = {
   filename: string;
@@ -77,6 +80,12 @@ export class NavigateToDocumentCommand extends IdeCommandBase<NavigateToDocument
     const projNode = context.service.projectService.getNodeForFile(args.filename);
     if (!projNode) {
       return commandError(t("commands.navDoc.notFound", { file: args.filename }));
+    }
+
+    // --- Floating document windows (`dev/plans/FLOATING_DOCUMENT_WINDOWS_PLAN.md` §2.3)
+    if (await this.navigateElsewhere(context, projNode.data.fullPath, args)) {
+      writeSuccessMessage(context.output, t("commands.navDoc.navigated", { file: args.filename }));
+      return commandSuccess;
     }
 
     // --- Move there; with `-r`, as a jump the navigation history records.
@@ -140,6 +149,57 @@ export class NavigateToDocumentCommand extends IdeCommandBase<NavigateToDocument
     }
     writeSuccessMessage(context.output, t("commands.navDoc.navigated", { file: args.filename }));
     return commandSuccess;
+  }
+
+  /**
+   * Sends the navigation to the window that should show the document; true when it went there.
+   *
+   * - A floating document is focused in its window, which moves its view (plan §2.3).
+   * - In a floating window, another document opens in the IDE window, which comes forward; the
+   *   window's own document stays here.
+   */
+  private async navigateElsewhere(
+    context: IdeCommandContext,
+    documentId: string,
+    args: NavigateToDocumentCommandArgs
+  ): Promise<boolean> {
+    const isSatellite = isFloatSource(context.messageSource);
+    if (isSatellite) {
+      const ownHub = context.service.projectService.getActiveDocumentHubService();
+      if (ownHub?.isOpen(documentId)) return false;
+      // --- The jump starts here: the IDE's history records it from this window's location
+      const origin = context.service.navigationHistoryService?.captureCurrent?.(
+        (args["-r"] as NavigationReason | undefined) ?? "definition"
+      );
+      await context.mainApi.navigateInIde(documentId, args.lineNo, args.columnNo, origin);
+      return true;
+    }
+    const floatingType = getFloatingDocuments(context.store.getState()).find(
+      (entry) => entry.document?.id === documentId
+    )?.document.type;
+    if (!floatingType) return false;
+    const reason = args["-r"] as NavigationReason | undefined;
+    const from = reason ? context.service.navigationHistoryService?.captureCurrent?.(reason) : undefined;
+    const routed = await routeToFloatingDocument(
+      context.store,
+      context.mainApi,
+      documentId,
+      args.lineNo,
+      args.columnNo
+    );
+    // --- A recorded jump into a floating document: the IDE's history keeps it, its destination is
+    // --- the position asked for (the window shows it; this one cannot capture it)
+    if (routed && reason && args.lineNo !== undefined) {
+      context.service.navigationHistoryService?.recordExternal?.(from, {
+        documentId,
+        documentType: floatingType,
+        title: documentId.split("/").pop() ?? documentId,
+        locator: { kind: "text", line: args.lineNo, column: Math.max(args.columnNo ?? 1, 1) },
+        reason,
+        time: Date.now()
+      });
+    }
+    return routed;
   }
 
   /**

@@ -3,7 +3,8 @@ import {
   RequestMessage,
   ResponseMessage,
   defaultResponse,
-  errorResponse
+  errorResponse,
+  type MessageSource
 } from "@messaging/messages-core";
 import { AppState } from "@state/AppState";
 import {
@@ -29,6 +30,14 @@ import { OutputPaneBuffer } from "./ToolArea/OutputPaneBuffer";
 import type { CapturedCommandResult } from "@common/messaging/IdeApi";
 import { openRendererDialog } from "@renderer/controls/overlay/dialogRequestBridge";
 import { reloadAnnotationSessionFromDisk } from "./annotations/annotationSession";
+import type {
+  DockedDocumentRequest,
+  FloatingDocumentReveal
+} from "@common/messaging/floating-documents";
+import { getSatelliteController } from "@renderer/appFloat/satelliteController";
+import type { NavigationEntry } from "@renderer/abstractions/NavigationLocation";
+import type { INavigationHistoryService } from "@renderer/abstractions/INavigationHistoryService";
+import { openDockedDocument } from "@renderer/features/documents/floatingDocumentTransfer";
 
 /**
  * Handles IDE-related IPC messages and operations invoked from other processes.
@@ -52,7 +61,8 @@ class IdeMessageProcessor {
     private readonly outputPaneService: IOutputPaneService,
     private readonly ideCommandsService: IIdeCommandService,
     private readonly projectService: IProjectService,
-    private readonly scriptService: IScriptService
+    private readonly scriptService: IScriptService,
+    private readonly navigationHistoryService?: INavigationHistoryService
   ) {}
 
   /**
@@ -307,6 +317,104 @@ class IdeMessageProcessor {
     // --- No input to validate
     return convertToProjectStructure(this.store, this.projectService.getProjectTree());
   }
+
+  /**
+   * Another renderer saved a file: drop it from this one's file-content cache
+   * (`dev/plans/FLOATING_DOCUMENT_WINDOWS_PLAN.md` §3.5)
+   * @param filePath The saved file's path
+   */
+  fileContentChanged(filePath: string) {
+    if (typeof filePath !== "string" || !filePath) return;
+    this.projectService.forgetFile(filePath);
+  }
+
+  /**
+   * A document comes back from a floating window (Dock): it opens in the area it came from when
+   * that still exists, otherwise in the active one
+   * @param request The document and its source area
+   */
+  async openDockedDocument(request: DockedDocumentRequest) {
+    if (!request || typeof request.document?.id !== "string") return false;
+    return await openDockedDocument(this.projectService, this.store, request);
+  }
+
+  /**
+   * Floating windows only: moves the view of the window's document
+   */
+  async revealFloatingDocument(reveal: FloatingDocumentReveal) {
+    if (!reveal || typeof reveal.documentId !== "string") return;
+    await requireSatellite().reveal(reveal);
+  }
+
+  /**
+   * Floating windows only: the file of the window's document was renamed
+   */
+  async floatingDocumentRenamed(oldId: string, newId: string) {
+    if (typeof oldId !== "string" || typeof newId !== "string") return;
+    await requireSatellite().renamed(oldId, newId);
+  }
+
+  /**
+   * Floating windows only: the OS asked to close the window
+   */
+  async requestFloatingClose() {
+    return await requireSatellite().requestClose();
+  }
+
+  /**
+   * Records a jump a floating window made (FLOATING_DOCUMENT_WINDOWS_PLAN §3.5)
+   */
+  recordNavigation(from?: NavigationEntry, to?: NavigationEntry) {
+    if ((from && !isEntry(from)) || (to && !isEntry(to))) return;
+    this.navigationHistoryService?.recordExternal?.(from, to);
+  }
+
+  /**
+   * Steps the history from a floating window's location
+   */
+  async stepNavigation(direction: -1 | 1, current?: NavigationEntry) {
+    if (direction !== -1 && direction !== 1) return { moved: false };
+    if (current && !isEntry(current)) return { moved: false };
+    const moved = (await this.navigationHistoryService?.stepFrom?.(direction, current)) ?? false;
+    const documentId = this.projectService.getActiveDocumentHubService()?.getActiveDocument()?.id;
+    return { moved, documentId };
+  }
+
+  /**
+   * The next recorded jump starts at a floating window's location
+   */
+  setNavigationOrigin(origin?: NavigationEntry) {
+    if (origin && !isEntry(origin)) return;
+    this.navigationHistoryService?.setNextJumpOrigin?.(origin);
+  }
+
+  /**
+   * Floating windows only: restores a location of the window's document
+   */
+  async restoreNavigation(entry: NavigationEntry) {
+    if (!isEntry(entry)) return false;
+    requireSatellite();
+    return (await this.navigationHistoryService?.restoreExternal?.(entry)) ?? false;
+  }
+}
+
+function isEntry(value: unknown): value is NavigationEntry {
+  const entry = value as NavigationEntry;
+  return (
+    !!entry &&
+    typeof entry === "object" &&
+    typeof entry.documentId === "string" &&
+    typeof entry.documentType === "string" &&
+    !!entry.locator
+  );
+}
+
+function requireSatellite() {
+  const controller = getSatelliteController();
+  if (!controller) {
+    throw new Error("This window is not a floating document window.");
+  }
+  return controller;
 }
 
 /**
@@ -317,7 +425,8 @@ class IdeMessageProcessor {
 export async function processMainToIdeMessages(
   message: RequestMessage,
   store: Store<AppState>,
-  appServices: AppServices
+  appServices: AppServices,
+  forwardedActionSource?: MessageSource
 ): Promise<ResponseMessage> {
   switch (message.type) {
     case "ForwardAction":
@@ -325,17 +434,24 @@ export async function processMainToIdeMessages(
       // --- This deliberately needs nothing but the store, so state broadcast from the main
       // --- process still lands while this window is still starting up and its app services do
       // --- not exist yet.
-      store.dispatch(message.action, message.sourceId);
+      store.dispatch(message.action, forwardedActionSource ?? message.sourceId);
       break;
 
     case "ApiMethodRequest":
-      const { outputPaneService, ideCommandsService, projectService, scriptService } = appServices;
+      const {
+        outputPaneService,
+        ideCommandsService,
+        projectService,
+        scriptService,
+        navigationHistoryService
+      } = appServices;
       const ideMessageProcessor = new IdeMessageProcessor(
         store,
         outputPaneService,
         ideCommandsService,
         projectService,
-        scriptService
+        scriptService,
+        navigationHistoryService
       );
 
       // --- We accept only methods defined in the MainMessageProcessor

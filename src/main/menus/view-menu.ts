@@ -3,6 +3,7 @@
  * window, navigation, zoom and full screen, and one light/dark switch. Fonts, the accent, the editor
  * options and the layout preferences are in Settings.
  */
+import { ideApiForDocument } from "@main/floating-windows-host";
 import type { MenuItemConstructorOptions } from "electron";
 
 import { setThemeAction, setVolatileDocStateAction } from "@state/actions";
@@ -38,7 +39,8 @@ export function createMachineViewsMenu(context: MenuContext): MenuItemConstructo
       checked: !!volatileDocs[MEMORY_PANEL_ID],
       click: async () => {
         context.ensureIdeWindow();
-        await getIdeApi().showMemory(!volatileDocs[MEMORY_PANEL_ID]);
+        // --- The window that holds the memory view, if it floats (FLOATING_DOCUMENT_WINDOWS_PLAN §3.3)
+        await ideApiForDocument(MEMORY_PANEL_ID).showMemory(!volatileDocs[MEMORY_PANEL_ID]);
         mainStore.dispatch(setVolatileDocStateAction(MEMORY_PANEL_ID, !volatileDocs[MEMORY_PANEL_ID]));
       }
     },
@@ -49,7 +51,7 @@ export function createMachineViewsMenu(context: MenuContext): MenuItemConstructo
       checked: !!volatileDocs[DISASSEMBLY_PANEL_ID],
       click: async () => {
         context.ensureIdeWindow();
-        await getIdeApi().showDisassembly(!volatileDocs[DISASSEMBLY_PANEL_ID]);
+        await ideApiForDocument(DISASSEMBLY_PANEL_ID).showDisassembly(!volatileDocs[DISASSEMBLY_PANEL_ID]);
         mainStore.dispatch(
           setVolatileDocStateAction(DISASSEMBLY_PANEL_ID, !volatileDocs[DISASSEMBLY_PANEL_ID])
         );

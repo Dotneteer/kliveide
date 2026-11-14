@@ -74,6 +74,18 @@ export const ideFocusedAction: ActionCreator = (flag: boolean) => ({
   payload: { flag }
 });
 
+/**
+ * Records (or, with `undefined`, clears) the floating document window in a slot
+ * (`dev/plans/FLOATING_DOCUMENT_WINDOWS_PLAN.md` §3.4)
+ */
+export const setFloatingDocumentAction: ActionCreator = (
+  slot: number,
+  entry?: import("@common/messaging/floating-documents").FloatingDocumentEntry
+) => ({
+  type: "SET_FLOATING_DOCUMENT",
+  payload: { index: slot, value: entry }
+});
+
 export const setThemeAction: ActionCreator = (id: string) => ({
   type: "SET_THEME",
   payload: { id }

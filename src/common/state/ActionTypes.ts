@@ -10,6 +10,7 @@ export interface ActionTypes {
   SET_THEME: null;
   SET_ACCENT: null;
   IDE_FOCUSED: null,
+  SET_FLOATING_DOCUMENT: null,
   EMU_FOCUSED: null,
   DIM_MENU: null,
   SET_EMU_FULL_SCREEN_MODE: null,

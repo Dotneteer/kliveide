@@ -3,12 +3,14 @@ import { createMachineService } from "@renderer/appEmu/MachineService";
 import { useRendererContext } from "@renderer/core/RendererProvider";
 import { createUiService } from "@renderer/core/UiServices";
 import { createValidationService } from "@renderer/core/ValidationService";
-import { useContext, useRef, createContext } from "react";
+import { useContext, useMemo, useRef, createContext } from "react";
 import { createInteractiveCommandsService } from "./IdeCommandService";
 import { createOutputPaneService } from "./OuputPaneService";
 import { createProjectService } from "./ProjectService";
 import { createScriptService } from "./ScriptService";
 import { createNavigationHistoryService } from "./navigationHistoryServiceFactory";
+import { createMainApi } from "@common/messaging/MainApi";
+import { findFloatingSlot } from "@common/messaging/floating-documents";
 
 // =====================================================================================================================
 /**
@@ -29,10 +31,36 @@ export function useAppServices (): AppServices {
   return services;
 }
 
+/**
+ * Replaces some of the app services for a part of the tree: a floating window's document command bar
+ * runs its commands in the IDE (`dev/plans/FLOATING_DOCUMENT_WINDOWS_PLAN.md` §7)
+ */
+export function AppServicesOverride({
+  services,
+  children
+}: {
+  services: Partial<AppServices>;
+  children?: React.ReactNode;
+}) {
+  const parent = useAppServices();
+  const value = useMemo(() => ({ ...parent, ...services }), [parent, services]);
+  return <AppServicesContext.Provider value={value}>{children}</AppServicesContext.Provider>;
+}
+
+/**
+ * Which IDE renderer the services run in: the IDE window, or a floating document window in
+ * "satellite" mode (`dev/plans/FLOATING_DOCUMENT_WINDOWS_PLAN.md` §3.1). A satellite runs the same
+ * services, so every document panel works unchanged; its document hubs take IDs from their own range.
+ */
+export type AppServicesRole = "ide" | "satellite";
+
 type Props = {
+  role?: AppServicesRole;
+  /** The first document hub ID of a satellite is one above this */
+  hubIdBase?: number;
   children?: React.ReactNode;
 };
-export function AppServicesProvider ({ children }: Props) {
+export function AppServicesProvider ({ role = "ide", hubIdBase, children }: Props) {
   const { store, messenger, messageSource } = useRendererContext();
 
   const servicesRef = useRef<AppServices | undefined>(undefined);
@@ -42,7 +70,9 @@ export function AppServicesProvider ({ children }: Props) {
       messenger,
       messageSource
     );
-    const projectService = createProjectService(store, messenger);
+    const projectService = createProjectService(store, messenger, {
+      hubIdBase: role === "satellite" ? hubIdBase : undefined
+    });
     const navigationHistoryService = createNavigationHistoryService(store, projectService, messenger);
     servicesRef.current = {
       uiService: createUiService(),
@@ -56,6 +86,23 @@ export function AppServicesProvider ({ children }: Props) {
     };
     ideCommandsService.setAppServices(servicesRef.current);
     navigationHistoryService.setAppServices(servicesRef.current);
+
+    // --- One navigation history, owned by the IDE (FLOATING_DOCUMENT_WINDOWS_PLAN §3.5): a floating
+    // --- window records and steps through it; the IDE restores a floating document's locations in
+    // --- its window
+    const mainApi = createMainApi(messenger);
+    if (role === "satellite") {
+      navigationHistoryService.setRemote?.({
+        record: (from, to) => mainApi.recordNavigation(from, to),
+        step: (direction, current) => mainApi.stepNavigation(direction, current)
+      });
+    } else {
+      navigationHistoryService.setFloatingRestorer?.((entry) =>
+        findFloatingSlot(store.getState(), entry.documentId)
+          ? mainApi.restoreFloatingNavigation(entry)
+          : undefined
+      );
+    }
   }
 
   return (

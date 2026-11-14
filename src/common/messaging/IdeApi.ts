@@ -3,6 +3,12 @@ import { buildMessagingProxy } from "./MessageProxy";
 import { MessengerBase } from "./MessengerBase";
 import { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
 import { ProjectStructure } from "@main/ksx-runner/ProjectStructure";
+import type { MessageSource } from "./messages-core";
+import type { NavigationEntry } from "@renderer/abstractions/NavigationLocation";
+import type {
+  DockedDocumentRequest,
+  FloatingDocumentReveal
+} from "./floating-documents";
 
 const NO_PROXY_ERROR = "Method should be implemented by a proxy.";
 
@@ -151,7 +157,97 @@ abstract class IdeApiImpl {
   async getProjectStructure(): Promise<ProjectStructure> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
+
+  /**
+   * A renderer saved a file: the others drop it from their file-content cache
+   * (`dev/plans/FLOATING_DOCUMENT_WINDOWS_PLAN.md` §3.5).
+   * @param _filePath The saved file's path
+   */
+  async fileContentChanged(_filePath: string): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Opens a document coming back from a floating window (Dock) in the IDE (plan §3.4).
+   * @param _request The document and the area it came from
+   */
+  async openDockedDocument(_request: DockedDocumentRequest): Promise<boolean> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * A floating window: moves the view of its document to a position (opening a floating document
+   * elsewhere focuses its window and navigates there, plan §2.3).
+   * @param _reveal Where to go
+   */
+  async revealFloatingDocument(_reveal: FloatingDocumentReveal): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * A floating window: the file of its document was renamed in the Explorer.
+   * @param _oldId The document's old ID (path)
+   * @param _newId The document's new ID (path)
+   */
+  async floatingDocumentRenamed(_oldId: string, _newId: string): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * A floating window: the OS asked to close it (Alt+F4, Cmd+W). It runs the same path as its
+   * Close button (plan Q4): saves, the prompts for unsaved documents, then main destroys it.
+   */
+  async requestFloatingClose(): Promise<boolean> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Records a jump a floating window made in the IDE's navigation history (one history, owned by the
+   * IDE: FLOATING_DOCUMENT_WINDOWS_PLAN §3.5).
+   * @param _from Where the jump started
+   * @param _to Where it ended
+   */
+  async recordNavigation(_from?: NavigationEntry, _to?: NavigationEntry): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Steps the IDE's navigation history from a floating window's current location.
+   * @param _direction -1: Go Back, 1: Go Forward
+   * @param _current Where the floating window is now
+   */
+  async stepNavigation(
+    _direction: -1 | 1,
+    _current?: NavigationEntry
+  ): Promise<NavigationStepResult> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * The next jump the IDE records starts at this location in a floating window (a `nav` from there to
+   * another document runs in the IDE).
+   * @param _origin The floating window's location
+   */
+  async setNavigationOrigin(_origin?: NavigationEntry): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * A floating window: restores a location of its own document that the IDE's history steps to.
+   * @param _entry The location
+   */
+  async restoreNavigation(_entry: NavigationEntry): Promise<boolean> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
 }
+
+/** What a step of the navigation history did */
+export type NavigationStepResult = {
+  /** The history moved */
+  moved: boolean;
+  /** The document now current in the IDE (main brings the IDE forward unless it floats) */
+  documentId?: string;
+};
 
 /** A command's result with its output (`executeCommandCaptured`) */
 export type CapturedCommandResult = IdeCommandResult & {
@@ -177,11 +273,25 @@ const UNBOUNDED_IDE_METHODS = [
   "executeCommand",
   "executeCommandCaptured",
   // --- Saves every dirty document on the quit path
-  "saveAllBeforeQuit"
+  "saveAllBeforeQuit",
+  // --- May ask the user about unsaved documents
+  "requestFloatingClose"
 ] as const;
 
-export function createIdeApi(messenger: MessengerBase): IdeApiImpl {
-  return buildMessagingProxy(new ProxyIdeApiImpl(), messenger, "ide", {
+/**
+ * The names of every method of the IDE API (the routing table's test reads them)
+ */
+export function getIdeApiMethodNames(): string[] {
+  return Object.getOwnPropertyNames(IdeApiImpl.prototype).filter((name) => name !== "constructor");
+}
+
+/**
+ * Creates the IDE API proxy over a messenger
+ * @param messenger The messenger to the IDE renderer
+ * @param targetId The renderer the requests go to: the IDE, or a floating window
+ */
+export function createIdeApi(messenger: MessengerBase, targetId: MessageSource = "ide"): IdeApiImpl {
+  return buildMessagingProxy(new ProxyIdeApiImpl(), messenger, targetId, {
     unboundedMethods: UNBOUNDED_IDE_METHODS
   });
 }

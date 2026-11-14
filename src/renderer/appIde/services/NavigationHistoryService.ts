@@ -23,6 +23,24 @@ import { NavigationHistory } from "../navigation/NavigationHistory";
 /** Finds the navigation adapter of a document type; undefined means the type does not take part. */
 export type NavigationAdapterLookup = (documentType: string) => DocumentNavigationAdapter | undefined;
 
+/**
+ * How a floating document window shares the IDE's history
+ * (`dev/plans/FLOATING_DOCUMENT_WINDOWS_PLAN.md` §3.5): it keeps no history of its own, it reports its
+ * jumps to the IDE and steps through the IDE's history, passing where it is now.
+ */
+export type RemoteNavigationHistory = {
+  /** Records a jump made in the floating window */
+  record(from: NavigationEntry | undefined, to: NavigationEntry | undefined): Promise<void>;
+  /** Steps the IDE's history back (-1) or forward (1) from the window's current location */
+  step(direction: -1 | 1, current: NavigationEntry | undefined): Promise<boolean>;
+};
+
+/**
+ * Restores an entry whose document floats in its own window; undefined when it does not float, and
+ * the IDE restores it as usual
+ */
+export type FloatingEntryRestorer = (entry: NavigationEntry) => Promise<boolean> | undefined;
+
 /** Reasons the "record tab switches" setting silences. */
 const TAB_SWITCH_REASONS: ReadonlySet<NavigationReason> = new Set(["tabSwitch", "explorer"]);
 
@@ -43,6 +61,9 @@ export class NavigationHistoryService implements INavigationHistoryService {
   private _lastPublished: NavigationHistoryState | undefined;
   private _lastDocumentHubState: unknown;
   private _trackingAdapters = new Set<DocumentNavigationAdapter>();
+  private _remote: RemoteNavigationHistory | undefined;
+  private _floatingRestorer: FloatingEntryRestorer | undefined;
+  private _nextJumpOrigin: NavigationEntry | undefined;
 
   constructor(
     private readonly store: Store<AppState>,
@@ -91,16 +112,78 @@ export class NavigationHistoryService implements INavigationHistoryService {
     return this._restoring;
   }
 
+  /**
+   * A floating window: hands the history to the IDE's (FLOATING_DOCUMENT_WINDOWS_PLAN §3.5). The
+   * window's service then records and steps through the IDE, and publishes no history state.
+   */
+  setRemote(remote: RemoteNavigationHistory | undefined): void {
+    this._remote = remote;
+  }
+
+  /**
+   * The IDE: restores the entries of floating documents in their windows instead of opening a second
+   * copy of the document here
+   */
+  setFloatingRestorer(restorer: FloatingEntryRestorer | undefined): void {
+    this._floatingRestorer = restorer;
+  }
+
+  /**
+   * The IDE: where the next recorded jump starts, when it starts in a floating window (a `nav` there
+   * to another document runs here)
+   */
+  setNextJumpOrigin(origin: NavigationEntry | undefined): void {
+    this._nextJumpOrigin = origin;
+  }
+
+  /**
+   * The IDE: records a jump a floating window made
+   */
+  recordExternal(from: NavigationEntry | undefined, to: NavigationEntry | undefined): void {
+    if (this._remote) return;
+    this._history.record(from, to);
+    this.publish();
+  }
+
+  /**
+   * The IDE: steps back (-1) or forward (1) from a floating window's current location
+   */
+  async stepFrom(direction: -1 | 1, current: NavigationEntry | undefined): Promise<boolean> {
+    if (this._restoring || this._remote) return false;
+    const index =
+      direction < 0 ? this._history.prepareBack(current) : this._history.prepareForward(current);
+    return await this.restoreFrom(index, direction);
+  }
+
+  /**
+   * A floating window: restores an entry of its own document, which the IDE's history asked for
+   */
+  async restoreExternal(entry: NavigationEntry): Promise<boolean> {
+    this._restoring = true;
+    try {
+      return await this.restoreEntry(entry, true);
+    } finally {
+      this._restoring = false;
+    }
+  }
+
   async recordJump<T>(reason: NavigationReason, jump: () => Promise<T> | T): Promise<T> {
     if (this._restoring || this._recording || !this.shouldRecord(reason)) {
+      this._nextJumpOrigin = undefined;
       return await jump();
     }
     this._recording = true;
     try {
-      const from = this.captureCurrent(reason);
+      const origin = this._nextJumpOrigin;
+      this._nextJumpOrigin = undefined;
+      const from = origin ?? this.captureCurrent(reason);
       const result = await jump();
       const to = this.captureCurrent(reason);
-      this._history.record(from, to);
+      if (this._remote) {
+        void this._remote.record(from, to).catch(() => {});
+      } else {
+        this._history.record(from, to);
+      }
       return result;
     } finally {
       this._recording = false;
@@ -133,12 +216,14 @@ export class NavigationHistoryService implements INavigationHistoryService {
 
   async goBack(): Promise<boolean> {
     if (this._restoring) return false;
+    if (this._remote) return await this._remote.step(-1, this.captureCurrent());
     const index = this._history.prepareBack(this.captureCurrent());
     return await this.restoreFrom(index, -1);
   }
 
   async goForward(): Promise<boolean> {
     if (this._restoring) return false;
+    if (this._remote) return await this._remote.step(1, this.captureCurrent());
     const index = this._history.prepareForward(this.captureCurrent());
     return await this.restoreFrom(index, 1);
   }
@@ -155,10 +240,12 @@ export class NavigationHistoryService implements INavigationHistoryService {
   }
 
   canGoBack(): boolean {
+    if (this._remote) return !!this.store.getState()?.ideView?.navHistory?.canGoBack;
     return this._history.canGoBack(this.captureCurrent());
   }
 
   canGoForward(): boolean {
+    if (this._remote) return !!this.store.getState()?.ideView?.navHistory?.canGoForward;
     return this._history.canGoForward();
   }
 
@@ -220,7 +307,18 @@ export class NavigationHistoryService implements INavigationHistoryService {
     }
   }
 
-  private async restoreEntry(entry: NavigationEntry): Promise<boolean> {
+  private async restoreEntry(entry: NavigationEntry, local = false): Promise<boolean> {
+    // --- A floating document's entry is restored in its window
+    if (!local) {
+      const floating = this._floatingRestorer?.(entry);
+      if (floating) {
+        try {
+          return await floating;
+        } catch {
+          return false;
+        }
+      }
+    }
     const adapter = this.getAdapter(entry.documentType);
     const services = this._services;
     if (!adapter || !services) return false;
@@ -306,6 +404,8 @@ export class NavigationHistoryService implements INavigationHistoryService {
   }
 
   private publish(): void {
+    // --- A floating window's history is the IDE's: the IDE publishes the state
+    if (this._remote) return;
     this.syncTracking();
     const state: NavigationHistoryState = {
       canGoBack: this._history.canGoBack(this.captureCurrent()),

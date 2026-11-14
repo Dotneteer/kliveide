@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Audio Mixer Mockups</title>
+<style>
+:root{
+  --bg:#1b1d22; --surface:#22252b; --chrome:#2a2d34; --header1:#30343c; --header2:#282b31;
+  --border:#3a3e47; --text:#d6d8dd; --muted:#8b909b; --label:#a3a8b3;
+  --accent:#4f8cff; --accent2:#c58bff; --value:#7fb2ff; --warn:#e3b341; --err:#f0716b;
+  --g-beeper:#f2b84b; --g-tape:#a7adb8; --g-ay1:#5aa2ff; --g-ay2:#3cc9b4; --g-ay3:#b48cff;
+  --g-dac:#7bd36b; --g-i2s:#ff7fb0; --g-dave:#ff9a5a; --g-tvc:#7bd36b;
+  --mono: "SF Mono", Menlo, Consolas, monospace; --sans: -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:12px/1.4 var(--sans)}
+header.top{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--chrome);position:sticky;top:0;z-index:5}
+header.top h1{font-size:14px;margin:0;font-weight:600;letter-spacing:.02em}
+.tabs{display:flex;gap:2px;background:var(--bg);padding:2px;border-radius:6px}
+.tabs button{all:unset;cursor:pointer;padding:5px 12px;border-radius:4px;color:var(--muted);font-weight:500}
+.tabs button[aria-selected=true]{background:var(--accent);color:#fff}
+select{background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:4px 6px;font:inherit}
+.note{color:var(--muted);max-width:980px;padding:10px 16px 0;margin:0}
+.note b{color:var(--text)}
+main{padding:12px 16px 32px}
+.win{border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface);max-width:1280px}
+.titlebar{height:28px;display:flex;align-items:center;gap:6px;padding:0 10px;background:var(--chrome);border-bottom:1px solid var(--border);color:var(--muted)}
+.dot{width:10px;height:10px;border-radius:50%;background:#555}
+.empty{padding:48px 16px;text-align:center;color:var(--muted)}
+.empty .big{font-size:14px;color:var(--text);margin-bottom:6px}
+canvas{display:block}
+canvas.mh{width:100%;min-width:0}
+.arow,.prow{grid-template-columns:40px 9ch minmax(0,1fr) 92px}
+.prow{grid-template-columns:40px 10ch minmax(0,1fr) 5ch}
+/* shared controls */
+.ms{display:inline-flex;gap:2px}
+.ms button{all:unset;cursor:pointer;width:18px;height:16px;line-height:16px;text-align:center;font:600 10px var(--sans);border-radius:3px;background:var(--bg);color:var(--muted);border:1px solid var(--border)}
+.ms button.m.on{background:var(--err);color:#111;border-color:var(--err)}
+.ms button.s.on{background:var(--warn);color:#111;border-color:var(--warn)}
+.chip{display:inline-block;width:8px;height:8px;border-radius:2px;flex:none}
+.val{font-family:var(--mono);color:var(--value)}
+.dim{opacity:.38}
+/* ---------- Option A: sidebar ---------- */
+.ide{display:grid;grid-template-columns:44px 340px 1fr;height:560px}
+.actbar{background:var(--chrome);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:14px;padding-top:12px}
+.actbar span{width:20px;height:20px;border-radius:4px;border:2px solid var(--muted);opacity:.5}
+.actbar span.on{border-color:var(--accent);opacity:1}
+.side{border-right:1px solid var(--border);overflow:auto;background:var(--surface)}
+.phead{height:26px;display:flex;align-items:center;justify-content:space-between;padding:0 8px;background:linear-gradient(var(--header1),var(--header2));border-bottom:1px solid var(--border);font:600 11px var(--sans);text-transform:uppercase;letter-spacing:.04em;color:var(--label)}
+.phead .acts{display:flex;gap:6px;text-transform:none;font-weight:400}
+.phead .acts a{color:var(--muted);cursor:pointer}
+.grp{padding:6px 8px 2px;color:var(--muted);font:600 10px var(--sans);text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;gap:6px}
+.arow{display:grid;grid-template-columns:40px 9ch 1fr 92px;align-items:center;gap:6px;height:22px;padding:0 8px}
+.arow:hover{background:#ffffff08}
+.arow.sel{background:#4f8cff22}
+.arow .name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--label)}
+.editor{background:var(--bg);display:flex;flex-direction:column}
+.editor .doctabs{height:30px;background:var(--chrome);border-bottom:1px solid var(--border);display:flex;align-items:end;padding-left:8px}
+.editor .doctabs span{padding:6px 12px;color:var(--muted)}
+.editor .doctabs span.on{background:var(--bg);color:var(--text);border:1px solid var(--border);border-bottom:none;border-radius:4px 4px 0 0}
+.code{padding:12px 16px;font-family:var(--mono);color:#6a7080;line-height:1.7}
+.adetail{border-top:1px solid var(--border);padding:8px}
+.adetail .row{display:flex;justify-content:space-between;color:var(--muted);margin-bottom:4px}
+/* ---------- Option B: console ---------- */
+.doc{display:flex;flex-direction:column;height:640px;background:var(--bg)}
+.toolbar{height:32px;display:flex;align-items:center;gap:12px;padding:0 10px;background:var(--chrome);border-bottom:1px solid var(--border);color:var(--muted)}
+.toolbar .sp{flex:1}
+.toolbar label{display:flex;gap:4px;align-items:center}
+.strips{display:flex;gap:6px;padding:8px;overflow-x:auto;border-bottom:1px solid var(--border);flex:none}
+.sgroup{display:flex;flex-direction:column;gap:4px}
+.sgroup .gl{font:600 10px var(--sans);text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding-left:2px;border-left:2px solid;padding-left:5px}
+.sgroup .row{display:flex;gap:4px}
+.strip{width:64px;background:var(--surface);border:1px solid var(--border);border-radius:5px;display:flex;flex-direction:column;align-items:center;gap:5px;padding:5px 4px;cursor:pointer}
+.strip.sel{outline:2px solid var(--accent);outline-offset:-1px}
+.strip .lbl{font-weight:600;color:var(--label);font-size:11px;white-space:nowrap}
+.strip .mid{display:flex;gap:4px;align-items:stretch;height:120px}
+.strip input[type=range]{writing-mode:vertical-lr;direction:rtl;width:14px;height:120px;margin:0;accent-color:var(--accent)}
+.strip .db{font:10px var(--mono);color:var(--value)}
+.strip.master{width:76px;background:#2d3139}
+.analyzer{flex:1;display:grid;grid-template-columns:1fr 260px;min-height:0}
+.analyzer .main{position:relative;min-height:0;padding:8px;display:flex;flex-direction:column;gap:6px}
+.analyzer .main .hdr{display:flex;align-items:center;gap:10px}
+.seg{display:inline-flex;border:1px solid var(--border);border-radius:4px;overflow:hidden}
+.seg button{all:unset;cursor:pointer;padding:2px 9px;color:var(--muted)}
+.seg button.on{background:var(--accent);color:#fff}
+.analyzer canvas.big{flex:1;width:100%;min-height:0;background:#15171b;border:1px solid var(--border);border-radius:4px}
+.analyzer .info{border-left:1px solid var(--border);padding:8px 10px;background:var(--surface)}
+.kv{display:grid;grid-template-columns:12ch 1fr;row-gap:3px}
+.kv span:nth-child(odd){color:var(--label)}
+/* ---------- Option C: emulator popover ---------- */
+.emu{position:relative;height:600px;background:#111;display:flex;flex-direction:column}
+.emutb{height:36px;background:var(--chrome);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;padding:0 10px}
+.emutb .b{width:24px;height:24px;border-radius:4px;background:#ffffff0d}
+.emutb .split{display:flex;border:1px solid var(--accent);border-radius:4px;overflow:hidden}
+.emutb .split span{height:24px;display:flex;align-items:center;justify-content:center;color:var(--text)}
+.emutb .split span:first-child{width:28px}
+.emutb .split span:last-child{width:14px;background:#4f8cff33;font-size:9px}
+.screen{flex:1;display:flex;align-items:center;justify-content:center}
+.screen .tv{width:512px;height:384px;max-width:90%;background:#cfcfcf;border:32px solid #2a2fd0;display:flex;align-items:end;padding:6px;font:14px var(--mono);color:#000}
+.pop{position:absolute;top:40px;left:150px;width:340px;background:var(--surface);border:1px solid var(--border);border-radius:6px;box-shadow:0 12px 32px #0008}
+.pop .ph{display:flex;justify-content:space-between;align-items:center;padding:6px 10px;border-bottom:1px solid var(--border);font:600 11px var(--sans);text-transform:uppercase;color:var(--label)}
+.pop .master{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--border)}
+.pop .master input{flex:1;accent-color:var(--accent)}
+.prow{display:grid;grid-template-columns:40px 10ch 1fr 5ch;gap:8px;align-items:center;height:24px;padding:0 10px}
+.pop .foot{border-top:1px solid var(--border);padding:7px 10px;display:flex;justify-content:space-between}
+.pop .foot a{color:var(--accent);cursor:pointer}
+.pop .body{max-height:420px;overflow:auto;padding:4px 0}
+/* comparison */
+table.cmp{border-collapse:collapse;margin-top:16px;max-width:1280px;width:100%}
+table.cmp th,table.cmp td{border:1px solid var(--border);padding:6px 8px;text-align:left;vertical-align:top}
+table.cmp th{background:var(--chrome);color:var(--label);font-weight:600}
+@media (max-width:900px){.ide{grid-template-columns:0 1fr 0}.actbar,.editor{display:none}.analyzer{grid-template-columns:1fr}.analyzer .info{display:none}}
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>Klive · Audio mixer &amp; visualizer: mockups</h1>
+  <div class="tabs" role="tablist" id="opts">
+    <button role="tab" data-opt="A" aria-selected="true">A · Sidebar panel</button>
+    <button role="tab" data-opt="B">B · Mixer document</button>
+    <button role="tab" data-opt="C">C · Emulator popover</button>
+  </div>
+  <label>Machine <select id="machine"></select></label>
+</header>
+<p class="note" id="optnote"></p>
+<main>
+  <div id="view"></div>
+  <table class="cmp">
+    <tr><th></th><th>A · Sidebar panel</th><th>B · Mixer document</th><th>C · Emulator popover</th></tr>
+    <tr><td>Where</td><td>IDE activity bar → “Sound” sidebar panel, beside Z80 CPU / ULA panels</td><td>A document tab in the IDE (View → Audio Mixer)</td><td>Emulator toolbar, the chevron of the sound split button</td></tr>
+    <tr><td>Mute / solo / level</td><td>Mute, solo; level in the detail strip</td><td>Mute, solo, fader per channel, master</td><td>Mute, solo, master volume</td></tr>
+    <tr><td>Amplitude</td><td>Horizontal meter with peak hold</td><td>Vertical meter + dB readout</td><td>Horizontal meter</td></tr>
+    <tr><td>Spectrum</td><td>Mini strip per row; selected row larger</td><td>Mini per strip; large spectrum / scope / spectrogram for the selected channel</td><td>None (link opens B)</td></tr>
+    <tr><td>Fits Next (20 channels)</td><td>Yes, grouped and scrollable</td><td>Yes, grouped strips scroll sideways</td><td>Yes, scrollable list</td></tr>
+    <tr><td>Cost</td><td>Low: reuses DataPanel rows</td><td>Highest: new document + analyzer</td><td>Low: one popover</td></tr>
+  </table>
+</main>
+
+<script>
+/* ---------------- channel model (from the plan's §2) ---------------- */
+const G = {beeper:'--g-beeper',tape:'--g-tape',ay1:'--g-ay1',ay2:'--g-ay2',ay3:'--g-ay3',dac:'--g-dac',i2s:'--g-i2s',dave:'--g-dave',tvc:'--g-tvc'};
+const ay = (g,prefix,label,f) => [
+  {id:prefix+'a',label:'A',group:g,glabel:label,sig:{k:'sq',f:f[0],amp:.55,arp:[1,1.26,1.5]}},
+  {id:prefix+'b',label:'B',group:g,glabel:label,sig:{k:'sq',f:f[1],amp:.45,env:true}},
+  {id:prefix+'c',label:'C',group:g,glabel:label,sig:{k:'noise',amp:.3,gate:.4}}];
+const spBase = [
+  {id:'ear',label:'Beeper',group:'beeper',glabel:'ULA',sig:{k:'beep',f:660,amp:.6}},
+  {id:'mic',label:'MIC',group:'beeper',glabel:'ULA',sig:{k:'silent'}},
+  {id:'tape',label:'Tape',group:'tape',glabel:'Tape',sig:{k:'tape',amp:.35}}];
+const MACHINES = {
+  sp48:{name:'ZX Spectrum 48K',ch:[...spBase]},
+  sp128:{name:'ZX Spectrum 128K / +2 / +3e',ch:[...spBase,...ay('ay1','ay','AY-3-8912',[220,330])]},
+  timex:{name:'Timex TC2068',ch:[spBase[0],spBase[2],...ay('ay1','ay','AY (SCLD)',[247,370])]},
+  next:{name:'ZX Spectrum Next',ch:[...spBase,
+    ...ay('ay1','t1','TurboSound AY1',[220,330]),...ay('ay2','t2','TurboSound AY2',[294,440]),...ay('ay3','t3','TurboSound AY3',[165,110]),
+    {id:'dA',label:'DAC A',group:'dac',glabel:'DAC (Specdrum / Covox)',sig:{k:'drum',amp:.6}},
+    {id:'dB',label:'DAC B',group:'dac',glabel:'DAC (Specdrum / Covox)',sig:{k:'silent'}},
+    {id:'dC',label:'DAC C',group:'dac',glabel:'DAC (Specdrum / Covox)',sig:{k:'silent'}},
+    {id:'dD',label:'DAC D',group:'dac',glabel:'DAC (Specdrum / Covox)',sig:{k:'drum',amp:.6,off:.5}},
+    {id:'iL',label:'I2S L',group:'i2s',glabel:'Pi I2S',sig:{k:'chord',amp:.3}},
+    {id:'iR',label:'I2S R',group:'i2s',glabel:'Pi I2S',sig:{k:'chord',amp:.3,det:1.01}}]},
+  z88:{name:'Cambridge Z88',ch:[{id:'spk',label:'Speaker',group:'beeper',glabel:'Blink',sig:{k:'beep',f:3200,amp:.5,sparse:true}}]},
+  ht:{name:'HT-1080Z',ch:[{id:'ff',label:'Beeper',group:'beeper',glabel:'Port FF',sig:{k:'beep',f:520,amp:.5}},...ay('ay1','ay','AY (mono)',[196,294])]},
+  tvc:{name:'Videoton TVC',ch:[{id:'snd',label:'Sound',group:'tvc',glabel:'Sound generator',sig:{k:'sq',f:392,amp:.5,arp:[1,1.12,1.33,1.5]}}]},
+  ep:{name:'Enterprise 128',ch:[
+    {id:'t0',label:'Tone 0',group:'dave',glabel:'DAVE',sig:{k:'sq',f:262,amp:.5,arp:[1,1.25,1.5,2]}},
+    {id:'t1',label:'Tone 1',group:'dave',glabel:'DAVE',sig:{k:'sq',f:131,amp:.45}},
+    {id:'t2',label:'Tone 2',group:'dave',glabel:'DAVE',sig:{k:'sq',f:523,amp:.3,env:true}},
+    {id:'nz',label:'Noise',group:'dave',glabel:'DAVE',sig:{k:'noise',amp:.25,gate:.3}}]},
+  zx81:{name:'ZX81 (no sound)',ch:null},
+};
+
+/* ---------------- state ---------------- */
+let opt='A', mk='next', sel=null, anaMode='spectrum';
+const st = {}; // id -> {mute,solo,gain,peak,rms,peakHold,spec}
+const SR=44100, N=1024;
+function S(id){return st[mk+':'+id] ??= {mute:false,solo:false,gain:1,peak:0,rms:0,hold:0,spec:new Float32Array(64),buf:new Float32Array(N),ph:0,rng:1}}
+function chans(){return MACHINES[mk].ch||[]}
+function audible(c){const any=chans().some(x=>S(x.id).solo);const s=S(c.id);return any?s.solo:!s.mute}
+function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim()}
+
+/* ---------------- synthetic signals ---------------- */
+let T=0;
+function gen(c){
+  const s=S(c.id), g=c.sig, b=s.buf; let ph=s.ph;
+  for(let i=0;i<N;i++){
+    const t=T+i/SR; let v=0;
+    switch(g.k){
+      case 'sq':{const step=Math.floor(t*4)%(g.arp?.length||1);const f=g.f*(g.arp?g.arp[step]:1);ph+=f/SR;
+        let a=g.amp; if(g.env) a*=1-((t*2)%1); v=(ph%1<.5?1:-1)*a;break}
+      case 'beep':{const on=g.sparse?(t%1.2<.15):(Math.floor(t*3)%3!==2);const f=g.f*(1+.5*((Math.floor(t*3))%2));ph+=f/SR;v=on?(ph%1<.5?1:-1)*g.amp:0;break}
+      case 'noise':{s.rng=(s.rng*1103515245+12345)&0x7fffffff;const on=(t*3%1)<g.gate;v=on?((s.rng>>16&1)?1:-1)*g.amp*(1-(t*3%1)/g.gate):0;break}
+      case 'tape':{const blk=t%2.5;const f=blk<1.2?808:(blk<2.2?(Math.sin(t*900)>0?1023:2046):0);ph+=f/SR;v=f?(ph%1<.5?1:-1)*g.amp:0;break}
+      case 'drum':{const p=((t+(g.off||0))*2)%1;v=Math.sin(2*Math.PI*(60+120*(1-p))*p)*Math.exp(-p*9)*g.amp;break}
+      case 'chord':{const d=g.det||1;v=g.amp*(Math.sin(2*Math.PI*261.6*d*t)+Math.sin(2*Math.PI*329.6*d*t)+Math.sin(2*Math.PI*392*d*t))/2.2;break}
+      default:v=0;
+    }
+    b[i]=v*s.gain;
+  }
+  s.ph=ph%1;
+}
+/* radix-2 FFT, Hann window, log-binned to 64 bands (40 Hz .. 16 kHz) */
+const re=new Float32Array(N), im=new Float32Array(N), hann=Float32Array.from({length:N},(_,i)=>.5-.5*Math.cos(2*Math.PI*i/(N-1)));
+function fft(){for(let i=1,j=0;i<N;i++){let bit=N>>1;for(;j&bit;bit>>=1)j^=bit;j^=bit;if(i<j){[re[i],re[j]]=[re[j],re[i]];[im[i],im[j]]=[im[j],im[i]]}}
+  for(let len=2;len<=N;len<<=1){const a=-2*Math.PI/len,wr=Math.cos(a),wi=Math.sin(a);for(let i=0;i<N;i+=len){let cr=1,ci=0;for(let k=0;k<len/2;k++){const p=i+k,q=p+len/2;const tr=re[q]*cr-im[q]*ci,ti=re[q]*ci+im[q]*cr;re[q]=re[p]-tr;im[q]=im[p]-ti;re[p]+=tr;im[p]+=ti;const nr=cr*wr-ci*wi;ci=cr*wi+ci*wr;cr=nr}}}}
+const BANDS=64, bandEdges=Array.from({length:BANDS+1},(_,i)=>40*Math.pow(16000/40,i/BANDS));
+function analyse(c){const s=S(c.id),b=s.buf;let pk=0,sum=0;
+  for(let i=0;i<N;i++){const v=b[i];pk=Math.max(pk,Math.abs(v));sum+=v*v;re[i]=v*hann[i];im[i]=0}
+  s.peak=pk;s.rms=Math.sqrt(sum/N);s.hold=Math.max(pk,s.hold*.97);fft();
+  for(let k=0;k<BANDS;k++){const lo=Math.max(1,Math.floor(bandEdges[k]*N/SR)),hi=Math.max(lo+1,Math.ceil(bandEdges[k+1]*N/SR));let m=0;
+    for(let j=lo;j<hi&&j<N/2;j++)m=Math.max(m,Math.hypot(re[j],im[j]));
+    const db=20*Math.log10(m/(N/4)+1e-6);const v=Math.max(0,Math.min(1,(db+60)/60));s.spec[k]=Math.max(v,s.spec[k]*.85)}}
+
+/* ---------------- drawing helpers ---------------- */
+function fit(cv){const r=cv.getBoundingClientRect(),d=devicePixelRatio||1;const w=Math.max(1,Math.round(r.width*d)),h=Math.max(1,Math.round(r.height*d));if(cv.width!==w||cv.height!==h){cv.width=w;cv.height=h}return cv.getContext('2d')}
+function drawMeterH(cv,s,col,on){const x=fit(cv),w=cv.width,h=cv.height;x.clearRect(0,0,w,h);x.fillStyle='#ffffff10';x.fillRect(0,0,w,h);
+  const lv=v=>Math.max(0,Math.min(1,(20*Math.log10(v+1e-6)+48)/48));
+  x.globalAlpha=on?1:.3;x.fillStyle=col;x.fillRect(0,0,w*lv(s.rms),h);x.globalAlpha=on?.45:.15;x.fillRect(0,0,w*lv(s.peak),h);x.globalAlpha=1;
+  x.fillStyle=s.hold>.98?css('--err'):'#fff';x.fillRect(Math.min(w-2,w*lv(s.hold)),0,2,h)}
+function drawMeterV(cv,s,col,on){const x=fit(cv),w=cv.width,h=cv.height;x.clearRect(0,0,w,h);x.fillStyle='#ffffff10';x.fillRect(0,0,w,h);
+  const lv=v=>Math.max(0,Math.min(1,(20*Math.log10(v+1e-6)+48)/48));
+  x.globalAlpha=on?1:.3;x.fillStyle=col;const r=lv(s.rms)*h;x.fillRect(0,h-r,w,r);x.globalAlpha=on?.45:.15;const p=lv(s.peak)*h;x.fillRect(0,h-p,w,p);x.globalAlpha=1;
+  x.fillStyle='#fff';x.fillRect(0,h-lv(s.hold)*h,w,2)}
+function drawSpec(cv,s,col,on,grid){const x=fit(cv),w=cv.width,h=cv.height;x.clearRect(0,0,w,h);
+  if(grid){x.strokeStyle='#ffffff14';x.fillStyle=css('--muted');x.font=`${10*devicePixelRatio}px sans-serif`;
+    for(const f of [100,250,500,1000,2000,4000,8000]){const px=w*Math.log(f/40)/Math.log(16000/40);x.beginPath();x.moveTo(px,0);x.lineTo(px,h);x.stroke();x.fillText(f>=1000?f/1000+'k':f,px+3,h-4)}
+    for(let d=1;d<6;d++){const py=h*d/6;x.beginPath();x.moveTo(0,py);x.lineTo(w,py);x.stroke()}}
+  const bw=w/BANDS;x.fillStyle=col;x.globalAlpha=on?.95:.25;
+  for(let k=0;k<BANDS;k++){const v=s.spec[k]*h;x.fillRect(k*bw+ (grid?1:0),h-v,Math.max(1,bw-(grid?2:0.5)),v)}x.globalAlpha=1}
+function drawScope(cv,s,col){const x=fit(cv),w=cv.width,h=cv.height;x.clearRect(0,0,w,h);x.strokeStyle='#ffffff14';x.beginPath();x.moveTo(0,h/2);x.lineTo(w,h/2);x.stroke();
+  x.strokeStyle=col;x.lineWidth=1.5*devicePixelRatio;x.beginPath();const n=512;for(let i=0;i<n;i++){const px=i/n*w,py=h/2-s.buf[i]*h*.45;i?x.lineTo(px,py):x.moveTo(px,py)}x.stroke()}
+function drawSpectrogram(cv,s,col){const x=fit(cv),w=cv.width,h=cv.height;const colw=Math.max(2,Math.round(3*devicePixelRatio));x.drawImage(cv,-colw,0);
+  const bh=h/BANDS;for(let k=0;k<BANDS;k++){const v=s.spec[k];x.fillStyle=`rgba(${hex(col)},${v*v})`;x.clearRect(w-colw,h-(k+1)*bh,colw,bh+1);x.fillStyle='#15171b';x.fillRect(w-colw,h-(k+1)*bh,colw,bh+1);x.fillStyle=`rgba(${hex(col)},${v})`;x.fillRect(w-colw,h-(k+1)*bh,colw,bh+1)}}
+function hex(c){const m=c.replace('#','');return [0,2,4].map(i=>parseInt(m.substr(i,2),16)).join(',')}
+function dbStr(v){const d=20*Math.log10(v+1e-6);return d<-60?'−∞':d.toFixed(1)}
+
+/* ---------------- views ---------------- */
+const NOTES={
+  A:'<b>Option A</b>: a “Sound” sidebar panel in the IDE, built from the dense data rows the register panels use. One row per channel: mute/solo, an RMS + peak meter and a mini spectrum. Click a row to see its larger spectrum below the list.',
+  B:'<b>Option B</b>: a mixer document. Channel strips grouped by chip (fader, meter, mute/solo, mini spectrum); a master strip; and an analyzer for the selected channel with spectrum, oscilloscope or spectrogram. Click a strip to analyse it.',
+  C:'<b>Option C</b>: a popover from the emulator’s sound split button, where volume is already set. Quick mute/solo and meters for players; “Open analyzer” opens option B.'};
+function msHtml(c){const s=S(c.id);return `<span class="ms"><button class="m ${s.mute?'on':''}" data-act="mute" data-id="${c.id}" title="Mute">M</button><button class="s ${s.solo?'on':''}" data-act="solo" data-id="${c.id}" title="Solo">S</button></span>`}
+function groups(){const out=[];for(const c of chans()){let g=out.find(x=>x.glabel===c.glabel);if(!g)out.push(g={glabel:c.glabel,group:c.group,ch:[]});g.ch.push(c)}return out}
+function noSound(){return `<div class="empty"><div class="big">${MACHINES[mk].name} has no sound output</div>The mixer is not offered for this machine: no sidebar panel, no menu command, no popover entry.</div>`}
+
+function render(){
+  document.getElementById('optnote').innerHTML=NOTES[opt];
+  const v=document.getElementById('view'); const has=!!MACHINES[mk].ch;
+  if(has && (!sel||!chans().find(c=>c.id===sel))) sel=chans()[0].id;
+  if(opt==='A'){
+    v.innerHTML=`<div class="win"><div class="titlebar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>&nbsp; Klive IDE</div>
+    <div class="ide"><div class="actbar"><span></span><span></span><span class="on"></span><span></span></div>
+    <div class="side"><div class="phead">Sound mixer<span class="acts">${has?'<a data-act="reset">Reset</a><a data-act="unmute">Unmute all</a>':''}</span></div>
+    ${has?groups().map(g=>`<div class="grp"><span class="chip" style="background:var(${G[g.group]})"></span>${g.glabel}</div>`+g.ch.map(c=>`
+      <div class="arow ${c.id===sel?'sel':''}" data-sel="${c.id}">${msHtml(c)}<span class="name ${audible(c)?'':'dim'}">${c.label}</span>
+      <canvas class="mh" data-id="${c.id}" style="height:6px"></canvas><canvas class="sp" data-id="${c.id}" style="height:16px;width:92px"></canvas></div>`).join('')).join('')
+      +`<div class="adetail"><div class="row"><span>Selected: <b style="color:var(--text)" id="selname"></b></span><span class="val" id="seldb"></span></div>
+       <canvas class="spbig" data-id="${sel}" style="height:90px;width:100%;background:#15171b;border:1px solid var(--border);border-radius:3px"></canvas>
+       <div class="row" style="margin-top:6px"><span>Level</span><input type="range" min="0" max="150" value="${Math.round(S(sel).gain*100)}" data-act="gain" data-id="${sel}" style="flex:1;margin-left:8px;accent-color:var(--accent)"></div></div>`
+      :noSound()}</div>
+    <div class="editor"><div class="doctabs"><span class="on">main.kz80.asm</span><span>music.kz80.asm</span></div>
+    <div class="code">; editor area (unchanged)<br>      ld a,7<br>      ld hl,tune<br>      call play_ay<br>      ...</div></div></div></div>`;
+  } else if(opt==='B'){
+    v.innerHTML=`<div class="win"><div class="titlebar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>&nbsp; Klive IDE · Audio Mixer</div>
+    ${has?`<div class="doc"><div class="toolbar"><b style="color:var(--text)">${MACHINES[mk].name}</b><span class="sp"></span>
+      <label><input type="checkbox"> Record unmuted</label><a data-act="unmute" style="cursor:pointer;color:var(--accent)">Unmute all</a><a data-act="reset" style="cursor:pointer;color:var(--accent)">Reset</a></div>
+    <div class="strips">${groups().map(g=>`<div class="sgroup"><div class="gl" style="border-color:var(${G[g.group]})">${g.glabel}</div><div class="row">${g.ch.map(c=>`
+      <div class="strip ${c.id===sel?'sel':''}" data-sel="${c.id}"><span class="lbl ${audible(c)?'':'dim'}">${c.label}</span>
+      <canvas class="sp" data-id="${c.id}" style="width:54px;height:22px;background:#15171b;border-radius:2px"></canvas>
+      <div class="mid"><canvas class="mv" data-id="${c.id}" style="width:8px;height:120px"></canvas><input type="range" min="0" max="150" value="${Math.round(S(c.id).gain*100)}" data-act="gain" data-id="${c.id}"></div>
+      <span class="db" data-db="${c.id}">−∞</span>${msHtml(c)}</div>`).join('')}</div></div>`).join('')}
+      <div class="sgroup"><div class="gl" style="border-color:var(--accent)">Out</div><div class="row"><div class="strip master"><span class="lbl">Master</span>
+      <canvas class="sp" data-id="__mix" style="width:66px;height:22px;background:#15171b;border-radius:2px"></canvas>
+      <div class="mid"><canvas class="mv" data-id="__mix" style="width:10px;height:120px"></canvas><input type="range" min="0" max="100" value="80"></div><span class="db" data-db="__mix"></span><span style="height:16px"></span></div></div></div></div>
+    <div class="analyzer"><div class="main"><div class="hdr"><b id="selname"></b><span class="seg">${['spectrum','scope','spectrogram'].map(m=>`<button data-mode="${m}" class="${m===anaMode?'on':''}">${m[0].toUpperCase()+m.slice(1)}</button>`).join('')}</span><span class="sp"></span></div>
+      <canvas class="big" id="big" data-id="${sel}"></canvas></div>
+      <div class="info"><div class="kv"><span>Channel</span><span id="i-name"></span><span>Source</span><span id="i-src"></span><span>State</span><span id="i-state"></span><span>Peak</span><span class="val" id="i-pk"></span><span>RMS</span><span class="val" id="i-rms"></span><span>Strongest</span><span class="val" id="i-f"></span><span>Gain</span><span class="val" id="i-g"></span></div>
+      <p style="color:var(--muted);margin-top:12px">For an AY channel the side panel could add the chip's own view: tone period, volume/envelope, mixer bits (R7).</p></div></div></div>`
+    :noSound()}</div>`;
+  } else {
+    v.innerHTML=`<div class="win"><div class="titlebar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>&nbsp; Klive Emulator</div>
+    <div class="emu"><div class="emutb"><span class="b"></span><span class="b"></span><span class="b"></span><span style="width:12px"></span><span class="b"></span><span class="b"></span>
+      <span class="split" title="Sound"><span>🔊</span><span>▼</span></span><span class="b"></span></div>
+    <div class="screen"><div class="tv">© 1986 Sinclair Research Ltd</div></div>
+    <div class="pop"><div class="ph">Sound<span style="font-weight:400;text-transform:none;color:var(--muted)">${MACHINES[mk].name}</span></div>
+      ${has?`<div class="master"><span>Volume</span><input type="range" value="80"><span class="val">80%</span></div>
+      <div class="body">${groups().map(g=>`<div class="grp"><span class="chip" style="background:var(${G[g.group]})"></span>${g.glabel}</div>`+g.ch.map(c=>`
+        <div class="prow">${msHtml(c)}<span class="${audible(c)?'':'dim'}" style="color:var(--label)">${c.label}</span><canvas class="mh" data-id="${c.id}" style="height:6px"></canvas><span class="val" data-db="${c.id}" style="text-align:right;font-size:10px"></span></div>`).join('')).join('')}</div>
+      <div class="foot"><a data-act="unmute">Unmute all</a><a data-act="openB">Open analyzer…</a></div>`
+      :`<div class="empty" style="padding:20px">No sound output. The popover shows only the volume menu it has today; there is nothing to mix.</div>`}</div></div></div>`;
+  }
+  bigInit=false;
+}
+
+/* ---------------- loop ---------------- */
+let bigInit=false; const mix={buf:new Float32Array(N),spec:new Float32Array(64),peak:0,rms:0,hold:0};
+function tick(){
+  const cs=chans();
+  if(cs.length){mix.buf.fill(0);
+    for(const c of cs){gen(c);analyse(c);if(audible(c)){const b=S(c.id).buf;for(let i=0;i<N;i++)mix.buf[i]+=b[i]*.5}}
+    st[mk+':__mix']=Object.assign(S('__mix'),{buf:mix.buf});analyse({id:'__mix'});}
+  T+=N/SR;
+  const colOf=id=>{const c=cs.find(x=>x.id===id);return c?css(G[c.group]):css('--accent')};
+  const onOf=id=>{const c=cs.find(x=>x.id===id);return c?audible(c):true};
+  document.querySelectorAll('canvas.mh').forEach(cv=>drawMeterH(cv,S(cv.dataset.id),colOf(cv.dataset.id),onOf(cv.dataset.id)));
+  document.querySelectorAll('canvas.mv').forEach(cv=>drawMeterV(cv,S(cv.dataset.id),colOf(cv.dataset.id),onOf(cv.dataset.id)));
+  document.querySelectorAll('canvas.sp').forEach(cv=>drawSpec(cv,S(cv.dataset.id),colOf(cv.dataset.id),onOf(cv.dataset.id),false));
+  document.querySelectorAll('canvas.spbig').forEach(cv=>drawSpec(cv,S(cv.dataset.id),colOf(cv.dataset.id),onOf(cv.dataset.id),true));
+  document.querySelectorAll('[data-db]').forEach(e=>e.textContent=dbStr(S(e.dataset.db).peak));
+  const sc=cs.find(c=>c.id===sel);
+  if(sc){const s=S(sel);const n=document.getElementById('selname');if(n)n.textContent=sc.glabel+' · '+sc.label;
+    const sd=document.getElementById('seldb');if(sd)sd.textContent=dbStr(s.peak)+' dBFS';
+    const big=document.getElementById('big');
+    if(big){const col=colOf(sel);if(anaMode==='spectrum')drawSpec(big,s,col,audible(sc),true);else if(anaMode==='scope')drawScope(big,s,col);else{if(!bigInit){const x=fit(big);x.fillStyle='#15171b';x.fillRect(0,0,big.width,big.height);bigInit=true}drawSpectrogram(big,s,col)}
+      let mk2=0;for(let k=1;k<BANDS;k++)if(s.spec[k]>s.spec[mk2])mk2=k;
+      const set=(i,t)=>{const e=document.getElementById(i);if(e)e.textContent=t};
+      set('i-name',sc.label);set('i-src',sc.glabel);set('i-state',audible(sc)?(s.solo?'Solo':'Playing'):'Muted');set('i-pk',dbStr(s.peak)+' dBFS');set('i-rms',dbStr(s.rms)+' dBFS');
+      set('i-f',s.peak>.001?Math.round(Math.sqrt(bandEdges[mk2]*bandEdges[mk2+1]))+' Hz':'–');set('i-g',Math.round(s.gain*100)+'%')}}
+  requestAnimationFrame(tick);
+}
+
+/* ---------------- events ---------------- */
+const msel=document.getElementById('machine');
+msel.innerHTML=Object.entries(MACHINES).map(([k,m])=>`<option value="${k}" ${k===mk?'selected':''}>${m.name}</option>`).join('');
+msel.onchange=()=>{mk=msel.value;sel=null;render()};
+document.getElementById('opts').onclick=e=>{const b=e.target.closest('button');if(!b)return;opt=b.dataset.opt;document.querySelectorAll('#opts button').forEach(x=>x.setAttribute('aria-selected',x===b));render()};
+document.addEventListener('click',e=>{
+  const a=e.target.closest('[data-act]'),m=e.target.closest('[data-mode]'),r=e.target.closest('[data-sel]');
+  if(m){anaMode=m.dataset.mode;render();return}
+  if(a){const act=a.dataset.act;
+    if(act==='mute'){S(a.dataset.id).mute^=1;render();return}
+    if(act==='solo'){S(a.dataset.id).solo^=1;render();return}
+    if(act==='unmute'){chans().forEach(c=>{S(c.id).mute=false;S(c.id).solo=false});render();return}
+    if(act==='reset'){chans().forEach(c=>Object.assign(S(c.id),{mute:false,solo:false,gain:1}));render();return}
+    if(act==='openB'){document.querySelector('#opts [data-opt=B]').click();return}
+    if(act==='gain')return;}
+  if(r&&r.dataset.sel!==sel){sel=r.dataset.sel;render()}
+});
+document.addEventListener('input',e=>{if(e.target.dataset.act==='gain'){S(e.target.dataset.id).gain=e.target.value/100}});
+render();requestAnimationFrame(tick);
+</script>
+</body>
+</html>

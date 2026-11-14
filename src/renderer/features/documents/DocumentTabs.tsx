@@ -31,6 +31,10 @@ type DocumentTabsProps = {
   onTabMoveRight?: (documentId: string) => void;
   onTabMoveToNextArea?: (documentId: string) => void;
   onTabMoveToPreviousArea?: (documentId: string) => void;
+  /** Pops a document out into a floating window */
+  onTabPopOut?: (documentId: string) => void;
+  /** Why a document cannot pop out; undefined when it can */
+  getPopOutBlockedReason?: (document: ProjectDocumentState) => string | undefined;
   onSplitRight?: () => void;
   onSplitDown?: () => void;
   onTabMoved: (
@@ -62,6 +66,8 @@ export function DocumentTabs({
   onTabMoveRight,
   onTabMoveToNextArea,
   onTabMoveToPreviousArea,
+  onTabPopOut,
+  getPopOutBlockedReason,
   onSplitRight,
   onSplitDown,
   onTabMoved,
@@ -135,6 +141,7 @@ export function DocumentTabs({
     >
       {openDocs.map((document, idx) => {
         const docName = tabLabels.get(document.id) ?? documentDisplayName(document);
+        const popOutBlockedReason = onTabPopOut ? getPopOutBlockedReason?.(document) : undefined;
         return (
           <DocumentTab
             key={document.id}
@@ -163,6 +170,10 @@ export function DocumentTabs({
             tabMoveRight={() => onTabMoveRight?.(document.id)}
             tabMoveToNextArea={() => onTabMoveToNextArea?.(document.id)}
             tabMoveToPreviousArea={() => onTabMoveToPreviousArea?.(document.id)}
+            tabPopOut={
+              onTabPopOut && !popOutBlockedReason ? () => onTabPopOut(document.id) : undefined
+            }
+            popOutBlockedReason={popOutBlockedReason}
             tabSplitRight={onSplitRight}
             tabSplitDown={onSplitDown}
             tabDragEnd={() => {

@@ -1,10 +1,10 @@
 import fs from "fs";
+import { broadcastToIdeRenderers } from "./floating-windows-host";
 import path from "path";
 
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_MICRODRIVES } from "@common/structs/project-const";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { getEmuApi } from "@messaging/MainToEmuMessenger";
-import { getIdeApi } from "@messaging/MainToIdeMessenger";
 import { mainStore } from "./main-store";
 
 /*
@@ -88,9 +88,7 @@ export async function commitDiskImageEdit (
     }
     // --- Every open view of the image reloads, whoever made the edit: a `disk add` from the command
     // --- prompt left an open Disk Explorer showing the old files
-    void getIdeApi()
-      .diskImageChanged(filePath)
-      .catch(() => {});
+    void broadcastToIdeRenderers((api) => api.diskImageChanged(filePath));
   } finally {
     if (start.resume) {
       await getEmuApi().issueMachineCommand(start.debug ? "debug" : "start");
