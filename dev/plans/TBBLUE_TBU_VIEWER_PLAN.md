@@ -37,7 +37,7 @@ Index record (15 bytes, little-endian):
 | Offset | Size | Field | Meaning |
 |---|---|---|---|
 | 0 | 1 | length | 15 (the walk advances by this, not by a constant); `$FF` = end of list |
-| 1 | 1 | type | 1 = ZX Spectrum Next core (slot 1); 0 = anti-brick core (slot 0) |
+| 1 | 1 | type | 1 = ZX Spectrum Next core (slot 1); 0 = anti-brick core (slot 0); 3 in 26.11a, meaning unconfirmed (§1a) |
 | 2 | 1 | board ID | NextReg `$0F` value: board issue − 2 (0 = Issue 2, 1 = Issue 3, 2 = Issue 4, 3 = Issue 5). **Newer files use more values** (`$10`, `$20`, `$40`, `$41` in 26.11a; see §1a) |
 | 3 | 1 | core major | NextReg `$01`: major in the high nibble, minor in the low (`$32` = 3.02) |
 | 4 | 1 | core sub-minor | NextReg `$0E` (`$03` → 3.02.03) |
@@ -117,10 +117,37 @@ catalogue already recorded in `dev/research/zxnext-ks2-vs-ks3.md` §2 (no new do
 - `TBBLUE.HDMI.TBU` is not in the distribution; the HDMI and VGA builds for Issue 2 are records in the one
   `TBBLUE.TBU`. **So D1 stays: `TBBLUE.TBU` only.**
 
-**Still open from Phase 0:** the full 26.11a header (512 bytes: the type bytes and the `$10`/`$20`/`$40`/
-`$41` records), to pin the variant reading with a real example. It needs reading the first 512 bytes of
-the distribution's `TBBLUE.TBU` (or the user's own copy of it); asked of the project author before
-downloading anything.
+**The 26.11a header, read [bin].** The first 512 bytes of the distribution's `TBBLUE.TBU` (`master`,
+fetched 2026-11-14 with a range request, with the project author's approval; the whole file is 5,839,872
+bytes, which is exactly where the last image ends). The index holds 7 records (106 bytes, `$FF` after):
+
+| # | Type | Board byte | Core | Sector offset | Sectors | Checksum |
+|---|---|---|---|---|---|---|
+| 1 | 1 | `$20` | 3.03.03 | 0 | 960 | `$7214` |
+| 2 | 1 | `$02` | 3.03.03 | 960 | 4,288 | `$9A66` |
+| 3 | 1 | `$03` | 3.03.03 | 5,248 | 4,288 | `$3B31` |
+| 4 | 1 | `$10` | 3.03.03 | 9,536 | 960 | `$1F5A` |
+| 5 | 1 | `$00` | 3.03.03 | 0 | 960 | `$7214` |
+| 6 | **3** | `$40` | 3.02.04 | 10,496 | 909 | `$C462` |
+| 7 | **3** | `$41` | 3.02.04 | 10,496 | 909 | `$C462` |
+
+What this changes:
+
+- **Records can share an image.** 1 and 5, and 6 and 7, have the same offset, length and checksum. The
+  viewer groups them ("shared with record n") and reports an overlap only when two ranges overlap
+  without being identical. The checksum is computed once per distinct image.
+- **Type 3 exists.** `maketbu.c` knows only 0 (anti-brick, slot 0) and 1 (Next core, slot 1). Type 3 is
+  used for a 3.02.04 core on boards `$40`/`$41`, low nibble 0 and 1 (Issue 2 and Issue 3); the release
+  notes' "TestCard core" for the Issue 2 HDMI/VGA split is the likely meaning, and type 3 may be the slot
+  it goes to (slots 2-7 are reserved). Both are **unconfirmed**: the viewer shows "type 3" and "variant 4"
+  as raw values with no name until a source states them.
+- **The order is not by board**, and three records serve Issue 2 (`$00`, `$10`, `$20`, variants 0, 1, 2),
+  with `$00` and `$20` the same image. Which variant is HDMI and which VGA is still not known.
+- **Image sizes vary**: 909 sectors for the type-3 image. Its trailer was not read (only the header was
+  fetched); the parser treats the trailer as optional and reports what it finds.
+
+Phase 1's tests get a fixture header built to this shape (shared images, type 3, variants, unsorted), and
+the optional real-file check can take this file. The 512 bytes are not committed; the test builds its own.
 
 ### A finding about the article
 
@@ -165,7 +192,7 @@ after it need correcting (Phase 4, with `boot-figures.cjs`, which generates the 
    - A "Show dump" button that opens the image in the static memory dump (`openStaticMemoryDump`, as the
      SCR viewer does), plus one for the 512-byte header.
 4. **Problems list**: bad magic, wrong machine string, index not terminated, record length ≠ 15, an image
-   beyond the end of file or overlapping another, a file size that is not a whole number of sectors,
+   beyond the end of file or partly overlapping another (identical ranges are a shared image, not a problem), a file size that is not a whole number of sectors,
    duplicate board/type/version, checksum mismatch, trailer mismatch, and (informational) boards of the
    current profiles with no core in the file.
 5. **Legacy files**: the summary shows hardware ID and name, version, stated vs actual size and the XOR
@@ -173,7 +200,7 @@ after it need correcting (Phase 4, with `boot-figures.cjs`, which generates the 
 
 ## 4. Phases
 
-### Phase 0 — Spike (no product code) — done except the 26.11a header; results in §1a
+### Phase 0 — Spike (no product code) — done; results in §1a
 
 - Confirm what string reaches `getNodeFileType` (full path or name) from the Explorer and the document
   hub, and choose D1's mechanism.
