@@ -15,6 +15,7 @@ const { Z80_HISTORY_EXPORTS, Z80_HISTORY_VOLATILE_SYMBOLS } = require("./z80-his
 const { Z80_PROFILE_EXPORTS, Z80_PROFILE_VOLATILE_SYMBOLS } = require("./z80-profile-exports.cjs");
 const { ZXNEXT_ARTIFACTS, artifactDefines } = require("./zxnext-artifacts.cjs");
 const { REPO_ROOT } = require("./repo-root.cjs");
+const { zxAudioChannelExports } = require("./zx-audio-channel-exports.cjs");
 
 /**
  * Statics a Klive state file leaves out (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` trap 10):
@@ -103,7 +104,24 @@ const ZXNEXT_VOLATILE_SYMBOLS = [
   // --- The access profile: flags, counters, time and its never-wrapping 28 MHz clock
   // --- (CODE_COVERAGE_AND_HEAT_MAP_PLAN T4, T7, D8)
   ...Z80_PROFILE_VOLATILE_SYMBOLS,
-  "zxnextProfileTicks28"
+  "zxnextProfileTicks28",
+  // --- The audio mixer (`zxnext-audio-channels.c`): the gains, the taps and the heard mix that follows
+  // --- the gains - a gain change between recording and a Step Back must not read as a diverged replay
+  "zxnextAudioChannelGain",
+  "zxnextAudioChannelGainMilli",
+  "zxnextAudioGainsUnity",
+  "zxnextAudioTapsEnabled",
+  "zxnextAudioTaps",
+  "zxnextMixerHeardLeft",
+  "zxnextMixerHeardRight",
+  "zxnextMixerHeardPsgLeft",
+  "zxnextMixerHeardPsgRight",
+  "zxnextPsgHeardCurrentLeft",
+  "zxnextPsgHeardCurrentRight",
+  "zxnextPsgHeardAccumulatedLeft",
+  "zxnextPsgHeardAccumulatedRight",
+  "zxnextPsgHeardSampleLeft",
+  "zxnextPsgHeardSampleRight"
 ];
 
 const root = REPO_ROOT;
@@ -403,6 +421,8 @@ const productionExports = [
   "zxnextGetAudioMixerSampleCount",
   "zxnextGetAudioMixerSampleLeft",
   "zxnextGetAudioMixerSampleRight",
+  // --- The audio mixer (`dev/plans/AUDIO_MIXER_PLAN.md` §3.1): the same exports as the Spectrum cores'
+  ...zxAudioChannelExports("zxnext"),
   "zxnextDivMmcBeforeFetch",
   "zxnextDivMmcAfterFetch",
   "zxnextDivMmcArmNmi",

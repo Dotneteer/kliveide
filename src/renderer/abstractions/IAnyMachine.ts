@@ -1,3 +1,4 @@
+import type { IAudioChannelMixer } from "@emu/abstractions/IAudioChannelMixer";
 import { CodeToInject } from "@abstractions/CodeToInject";
 import { ILiteEvent } from "@abstractions/ILiteEvent";
 import { KeyMapping } from "@abstractions/KeyMapping";
@@ -32,6 +33,13 @@ export interface IAnyMachine extends IAnyCpu, IMachineEventHandler {
    * Apply a soft reset on the first start?
    */
   readonly softResetOnFirstStart?: boolean;
+
+  /**
+   * The machine's sound sources one by one, for the audio mixer (`dev/plans/AUDIO_MIXER_PLAN.md`).
+   * Undefined on a machine without sound, and on one whose core does not offer them yet: the mixer is
+   * not offered for it.
+   */
+  readonly audioMixer?: IAudioChannelMixer;
 
   /**
    * The machine configuration

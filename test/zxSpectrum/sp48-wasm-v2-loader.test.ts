@@ -13,6 +13,7 @@ import {
 } from "@emu/machines/zxSpectrum48/wasm/Sp48WasmV2Loader";
 import { afterEach, describe, expect, it } from "vitest";
 import { rzxCoreExportNames } from "@emu/machines/zxSpectrum/rzx/rzxCoreBridge";
+import { zxAudioChannelExportNames } from "@emu/machines/zxSpectrum/spectrumAudioChannels";
 
 describe("ZX Spectrum 48K WASM v2 loader", () => {
   afterEach(() => resetSp48WasmV2ModuleCache());
@@ -392,6 +393,7 @@ function fakeV2Instance(overrides: Partial<Sp48WasmV2Exports> = {}): Promise<Sp4
       sp48TapeGetSaveDataCapacity: () => 0x100,
       // --- RZX playback and recording
       ...Object.fromEntries(rzxCoreExportNames("sp48").map((name) => [name, () => 0])),
+      ...Object.fromEntries(zxAudioChannelExportNames("sp48").map((name) => [name, () => 0])),
       ...overrides
     } as Sp48WasmV2Exports
   });

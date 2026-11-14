@@ -10,6 +10,11 @@ const {
   stampWasmLayout
 } = require("./wasm-layout.cjs");
 const { RZX_VOLATILE_SYMBOLS, rzxExports } = require("./rzx-core-exports.cjs");
+const {
+  ZX_AUDIO_CHANNEL_VOLATILE_SYMBOLS,
+  ZX_AUDIO_PSG_VOLATILE_SYMBOLS,
+  zxAudioChannelExports
+} = require("./zx-audio-channel-exports.cjs");
 const { divMmcClassicExports } = require("./divmmc-classic-exports.cjs");
 const { if1Exports } = require("./if1-exports.cjs");
 const { cpuExports, debugLoopExports, debugLoopVolatileSymbols, Z80_ACCESS_LOG_VOLATILE_SYMBOLS } = require("./z80-cpu-exports.cjs");
@@ -31,6 +36,9 @@ const SP128_VOLATILE_SYMBOLS = [
   ...Z80_ACCESS_LOG_VOLATILE_SYMBOLS,
   // --- An RZX session in progress (`zx-spectrum-rzx.c`)
   ...RZX_VOLATILE_SYMBOLS,
+  // --- The audio mixer's gains and taps (`zx-spectrum-audio-channels.c`)
+  ...ZX_AUDIO_CHANNEL_VOLATILE_SYMBOLS,
+  ...ZX_AUDIO_PSG_VOLATILE_SYMBOLS,
   // --- The execution-history ring (EXECUTION_HISTORY_ALL_CORES_PLAN)
   ...Z80_HISTORY_VOLATILE_SYMBOLS,
   // --- The access profile: flags, counters and time (CODE_COVERAGE_AND_HEAT_MAP_PLAN T4, T7)
@@ -268,6 +276,8 @@ const productionExports = [
   "sp128GetDiagnosticFlags",
   // --- RZX playback and recording (`dev/plans/RZX_PLAN.md` §4.2)
   ...rzxExports("sp128"),
+  // --- The audio mixer (`dev/plans/AUDIO_MIXER_PLAN.md` §3.1)
+  ...zxAudioChannelExports("sp128"),
   // --- The DivMMC and its SD card (`zx-spectrum-divmmc-classic.c`)
   ...divMmcClassicExports("sp128")
 ];

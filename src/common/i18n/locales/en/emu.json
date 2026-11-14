@@ -1156,5 +1156,110 @@
   "emu.piI2s.wav.badRate": "The WAV file's sample rate is not valid",
   "@emu.piI2s.wav.badRate": {
     "context": "Error of the ZX Spectrum Next's Raspberry Pi audio input (the 'pi-audio' IDE command), shown after 'Cannot play it on the Pi audio input: '. "
+  },
+  "emu.audioMixer.channel.beeper": "Beeper",
+  "@emu.audioMixer.channel.beeper": {
+    "context": "Audio mixer (a list of the emulated machine's sound sources, each with a level meter, a spectrum, mute and solo buttons and a level fader): the name of the beeper channel, the sound the program makes by toggling the EAR output of the ZX Spectrum's ULA. Shown above a narrow channel strip.",
+    "maxChars": 10
+  },
+  "emu.audioMixer.channel.mic": "MIC",
+  "@emu.audioMixer.channel.mic": {
+    "context": "Audio mixer (a list of the emulated machine's sound sources, each with a level meter, a spectrum, mute and solo buttons and a level fader): the name of the channel of the ULA's MIC output (the line that saves to tape), which also reaches the speaker quietly. MIC is the name of the socket on the machine: keep it.",
+    "maxChars": 10
+  },
+  "emu.audioMixer.channel.tape": "Tape",
+  "@emu.audioMixer.channel.tape": {
+    "context": "Audio mixer (a list of the emulated machine's sound sources, each with a level meter, a spectrum, mute and solo buttons and a level fader): the name of the channel that plays the tape being loaded (the cassette's signal on the EAR input).",
+    "maxChars": 10
+  },
+  "emu.audioMixer.channel.ayA": "A",
+  "@emu.audioMixer.channel.ayA": {
+    "context": "Audio mixer (a list of the emulated machine's sound sources, each with a level meter, a spectrum, mute and solo buttons and a level fader): the name of the AY sound chip's tone channel A. The chip's channels are called A, B and C: keep the letter.",
+    "maxChars": 10
+  },
+  "emu.audioMixer.channel.ayB": "B",
+  "@emu.audioMixer.channel.ayB": {
+    "context": "Audio mixer (a list of the emulated machine's sound sources, each with a level meter, a spectrum, mute and solo buttons and a level fader): the name of the AY sound chip's tone channel B. The chip's channels are called A, B and C: keep the letter.",
+    "maxChars": 10
+  },
+  "emu.audioMixer.channel.ayC": "C",
+  "@emu.audioMixer.channel.ayC": {
+    "context": "Audio mixer (a list of the emulated machine's sound sources, each with a level meter, a spectrum, mute and solo buttons and a level fader): the name of the AY sound chip's tone channel C. The chip's channels are called A, B and C: keep the letter.",
+    "maxChars": 10
+  },
+  "emu.audioMixer.group.ula": "ULA",
+  "@emu.audioMixer.group.ula": {
+    "context": "Audio mixer (a list of the emulated machine's sound sources, each with a level meter, a spectrum, mute and solo buttons and a level fader): the heading of the group of the ULA's channels (the beeper and MIC). ULA is the name of the chip: keep it.",
+    "maxChars": 24
+  },
+  "emu.audioMixer.group.tape": "Tape",
+  "@emu.audioMixer.group.tape": {
+    "context": "Audio mixer (a list of the emulated machine's sound sources, each with a level meter, a spectrum, mute and solo buttons and a level fader): the heading of the group holding the tape channel.",
+    "maxChars": 24
+  },
+  "emu.audioMixer.group.ay": "AY-3-8912",
+  "@emu.audioMixer.group.ay": {
+    "context": "Audio mixer (a list of the emulated machine's sound sources, each with a level meter, a spectrum, mute and solo buttons and a level fader): the heading of the group of the AY sound chip's three channels. AY-3-8912 is the chip's part number: keep it.",
+    "maxChars": 24
+  },
+  "emu.audioMixer.channel.micTape": "MIC / Tape",
+  "@emu.audioMixer.channel.micTape": {
+    "context": "Audio mixer (a list of the emulated machine's sound sources, each with a level meter, a spectrum, mute and solo buttons and a level fader): on the ZX Spectrum Next, the name of the channel of the MIC line, which on that machine also carries the tape being loaded (the hardware joins them into one signal, so they share one channel). MIC is the name of the socket: keep it.",
+    "maxChars": 10
+  },
+  "emu.audioMixer.channel.dacA": "A",
+  "@emu.audioMixer.channel.dacA": {
+    "context": "Audio mixer (a list of the emulated machine's sound sources, each with a level meter, a spectrum, mute and solo buttons and a level fader): the name of DAC channel A of the ZX Spectrum Next (its four 8-bit sample players, used by Specdrum, Covox and Soundrive programs). The DAC's channels are called A to D: keep the letter.",
+    "maxChars": 10
+  },
+  "emu.audioMixer.channel.dacB": "B",
+  "@emu.audioMixer.channel.dacB": {
+    "context": "Audio mixer (a list of the emulated machine's sound sources, each with a level meter, a spectrum, mute and solo buttons and a level fader): the name of DAC channel B of the ZX Spectrum Next (its four 8-bit sample players, used by Specdrum, Covox and Soundrive programs). The DAC's channels are called A to D: keep the letter.",
+    "maxChars": 10
+  },
+  "emu.audioMixer.channel.dacC": "C",
+  "@emu.audioMixer.channel.dacC": {
+    "context": "Audio mixer (a list of the emulated machine's sound sources, each with a level meter, a spectrum, mute and solo buttons and a level fader): the name of DAC channel C of the ZX Spectrum Next (its four 8-bit sample players, used by Specdrum, Covox and Soundrive programs). The DAC's channels are called A to D: keep the letter.",
+    "maxChars": 10
+  },
+  "emu.audioMixer.channel.dacD": "D",
+  "@emu.audioMixer.channel.dacD": {
+    "context": "Audio mixer (a list of the emulated machine's sound sources, each with a level meter, a spectrum, mute and solo buttons and a level fader): the name of DAC channel D of the ZX Spectrum Next (its four 8-bit sample players, used by Specdrum, Covox and Soundrive programs). The DAC's channels are called A to D: keep the letter.",
+    "maxChars": 10
+  },
+  "emu.audioMixer.channel.piLeft": "Left",
+  "@emu.audioMixer.channel.piLeft": {
+    "context": "Audio mixer (a list of the emulated machine's sound sources, each with a level meter, a spectrum, mute and solo buttons and a level fader): the left channel of the ZX Spectrum Next's Pi I2S audio input (sound sent from its Raspberry Pi accelerator).",
+    "maxChars": 10
+  },
+  "emu.audioMixer.channel.piRight": "Right",
+  "@emu.audioMixer.channel.piRight": {
+    "context": "Audio mixer (a list of the emulated machine's sound sources, each with a level meter, a spectrum, mute and solo buttons and a level fader): the right channel of the ZX Spectrum Next's Pi I2S audio input (sound sent from its Raspberry Pi accelerator).",
+    "maxChars": 10
+  },
+  "emu.audioMixer.group.turboSound1": "TurboSound AY1",
+  "@emu.audioMixer.group.turboSound1": {
+    "context": "Audio mixer (a list of the emulated machine's sound sources, each with a level meter, a spectrum, mute and solo buttons and a level fader): the heading of the group of the ZX Spectrum Next's sound chip number 1 (of three AY chips, together called TurboSound). TurboSound and AY are names: keep them.",
+    "maxChars": 24
+  },
+  "emu.audioMixer.group.turboSound2": "TurboSound AY2",
+  "@emu.audioMixer.group.turboSound2": {
+    "context": "Audio mixer (a list of the emulated machine's sound sources, each with a level meter, a spectrum, mute and solo buttons and a level fader): the heading of the group of the ZX Spectrum Next's sound chip number 2 (of three AY chips, together called TurboSound). TurboSound and AY are names: keep them.",
+    "maxChars": 24
+  },
+  "emu.audioMixer.group.turboSound3": "TurboSound AY3",
+  "@emu.audioMixer.group.turboSound3": {
+    "context": "Audio mixer (a list of the emulated machine's sound sources, each with a level meter, a spectrum, mute and solo buttons and a level fader): the heading of the group of the ZX Spectrum Next's sound chip number 3 (of three AY chips, together called TurboSound). TurboSound and AY are names: keep them.",
+    "maxChars": 24
+  },
+  "emu.audioMixer.group.dac": "DAC",
+  "@emu.audioMixer.group.dac": {
+    "context": "Audio mixer (a list of the emulated machine's sound sources, each with a level meter, a spectrum, mute and solo buttons and a level fader): the heading of the group of the ZX Spectrum Next's four 8-bit DAC channels (digital-to-analogue converters that play samples). Keep DAC as an abbreviation if your language uses it.",
+    "maxChars": 24
+  },
+  "emu.audioMixer.group.pi": "Pi I2S",
+  "@emu.audioMixer.group.pi": {
+    "context": "Audio mixer (a list of the emulated machine's sound sources, each with a level meter, a spectrum, mute and solo buttons and a level fader): the heading of the group of the ZX Spectrum Next's Pi I2S audio input (sound sent from its Raspberry Pi accelerator over I2S, a digital audio link). Pi and I2S are names: keep them.",
+    "maxChars": 24
   }
 }

@@ -10,6 +10,7 @@ const {
   stampWasmLayout
 } = require("./wasm-layout.cjs");
 const { SP48_VOLATILE_SYMBOLS, productionExports: sp48Exports } = require("./build-sp48-wasm.cjs");
+const { ZX_AUDIO_PSG_VOLATILE_SYMBOLS } = require("./zx-audio-channel-exports.cjs");
 const { REPO_ROOT } = require("./repo-root.cjs");
 
 /**
@@ -17,7 +18,8 @@ const { REPO_ROOT } = require("./repo-root.cjs");
  * SCLD switched on, so it exports everything the 48K core does (under the same `sp48` names, which
  * lets the host reuse the 48K's loader) plus the SCLD's own `timex*` functions.
  */
-const TIMEX_VOLATILE_SYMBOLS = [...SP48_VOLATILE_SYMBOLS];
+// --- The 2068s' AY in the audio mixer's heard mix (`zx-spectrum-psg.c`, `SP128_PSG_CHANNEL_TAPS`)
+const TIMEX_VOLATILE_SYMBOLS = [...SP48_VOLATILE_SYMBOLS, ...ZX_AUDIO_PSG_VOLATILE_SYMBOLS];
 
 const root = REPO_ROOT;
 const source = resolve(root, "src/emu/machines/timex/wasm/timex/timex.c");

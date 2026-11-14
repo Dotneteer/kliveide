@@ -68,6 +68,8 @@ import type { IRzxMachine, IRzxSession } from "../zxSpectrum/rzx/rzxSession";
 import { spectrumWasmBeamPosition } from "../zxSpectrum/WasmSpectrumSupport";
 import type { BeamPosition } from "@common/utils/beamGeometry";
 import { fillCoreBytes, writeCoreBytes } from "@emu/machines/reverse/coreMemoryWrites";
+import { createSpectrumAudioMixer } from "../zxSpectrum/spectrumAudioChannels";
+import type { IAudioChannelMixer } from "@emu/abstractions/IAudioChannelMixer";
 
 const WASM_AUDIO_SAMPLE_SCALE = 32768.0;
 
@@ -195,6 +197,9 @@ export class ZxSpectrumP3eWasmV2Machine
 
   public readonly implementation = "wasm" as const;
   public wasmV2Runtime?: SpP3eWasmV2Runtime;
+
+  /** The audio mixer's gains and taps (`spectrumAudioChannels.ts`) */
+  readonly audioMixer: IAudioChannelMixer = createSpectrumAudioMixer("spp3e", () => this.wasmV2Runtime, () => true);
 
   /** The DivMMC (`dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md` C4): with `MC_DIVMMC`, connected at setup */
   readonly divMmc = new DivMmcSupport("spp3e", {

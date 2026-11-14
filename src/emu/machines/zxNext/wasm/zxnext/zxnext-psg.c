@@ -65,6 +65,22 @@ static uint32_t zxnextPsgSampleRight;
 
 static void zxnextPsgRefreshCurrentStereoOutput(void);
 
+/*
+ * The audio mixer (zxnext-audio-channels.c). Per channel (chip x 3 + channel): its output while its
+ * chip is heard (TurboSound on, or the selected chip), the integral since the last host sample and that
+ * sample's average - the taps, accumulated always, so they are a function of the machine alone. And
+ * the stereo sum with the mixer's gains, its integral and average - the heard mix's PSG, volatile.
+ */
+static uint32_t zxnextPsgChannelCurrent[9];
+static double zxnextPsgChannelAccumulated[9];
+static double zxnextPsgChannelAverage[9];
+static double zxnextPsgHeardCurrentLeft;
+static double zxnextPsgHeardCurrentRight;
+static double zxnextPsgHeardAccumulatedLeft;
+static double zxnextPsgHeardAccumulatedRight;
+static double zxnextPsgHeardSampleLeft;
+static double zxnextPsgHeardSampleRight;
+
 static inline uint32_t zxnextPsgHeld(void) { return zxnextPsgMode == 0x03u; }
 static inline uint32_t zxnextPsgAyMode(void) { return (zxnextPsgMode & 0x01u) != 0u; }
 
@@ -99,6 +115,9 @@ static void zxnextPsgResetAudioWindow(void) {
   zxnextPsgAccumulatedLeft = 0.0;
   zxnextPsgAccumulatedRight = 0.0;
   zxnextPsgAccumulatedTacts = 0.0;
+  for (uint32_t i = 0u; i < 9u; i++) zxnextPsgChannelAccumulated[i] = 0.0;
+  zxnextPsgHeardAccumulatedLeft = 0.0;
+  zxnextPsgHeardAccumulatedRight = 0.0;
 }
 
 static void zxnextPsgReset(void) {
@@ -117,6 +136,14 @@ static void zxnextPsgReset(void) {
   zxnextPsgSampleLeftExact = 0.0;
   zxnextPsgSampleRightExact = 0.0;
   zxnextPsgSampleRight = 0u;
+  for (uint32_t i = 0u; i < 9u; i++) {
+    zxnextPsgChannelCurrent[i] = 0u;
+    zxnextPsgChannelAverage[i] = 0.0;
+  }
+  zxnextPsgHeardCurrentLeft = 0.0;
+  zxnextPsgHeardCurrentRight = 0.0;
+  zxnextPsgHeardSampleLeft = 0.0;
+  zxnextPsgHeardSampleRight = 0.0;
   zxnextPsgResetAudioWindow();
 }
 
@@ -336,6 +363,11 @@ static void zxnextPsgAccumulateCurrentOutputUntil(double frameTact28) {
   zxnextPsgAccumulatedLeft += (double)zxnextPsgCurrentLeft * duration;
   zxnextPsgAccumulatedRight += (double)zxnextPsgCurrentRight * duration;
   zxnextPsgAccumulatedTacts += duration;
+  for (uint32_t i = 0u; i < 9u; i++) {
+    zxnextPsgChannelAccumulated[i] += (double)zxnextPsgChannelCurrent[i] * duration;
+  }
+  zxnextPsgHeardAccumulatedLeft += zxnextPsgHeardCurrentLeft * duration;
+  zxnextPsgHeardAccumulatedRight += zxnextPsgHeardCurrentRight * duration;
   zxnextPsgLastAccumulationFrameTact = frameTact28;
 }
 
@@ -375,16 +407,27 @@ static void zxnextPsgPrepareAudioSample(double sampleEndFrameTact28) {
     zxnextPsgSampleRightExact = right;
     zxnextPsgSampleLeft = (uint32_t)(left >= 0.0 ? left + 0.5 : 0.0);
     zxnextPsgSampleRight = (uint32_t)(right >= 0.0 ? right + 0.5 : 0.0);
+    for (uint32_t i = 0u; i < 9u; i++) {
+      zxnextPsgChannelAverage[i] = zxnextPsgChannelAccumulated[i] / zxnextPsgAccumulatedTacts;
+    }
+    zxnextPsgHeardSampleLeft = zxnextPsgHeardAccumulatedLeft / zxnextPsgAccumulatedTacts;
+    zxnextPsgHeardSampleRight = zxnextPsgHeardAccumulatedRight / zxnextPsgAccumulatedTacts;
   } else {
     zxnextPsgSampleLeftExact = (double)zxnextPsgCurrentLeft;
     zxnextPsgSampleRightExact = (double)zxnextPsgCurrentRight;
     zxnextPsgSampleLeft = zxnextPsgCurrentLeft;
     zxnextPsgSampleRight = zxnextPsgCurrentRight;
+    for (uint32_t i = 0u; i < 9u; i++) zxnextPsgChannelAverage[i] = (double)zxnextPsgChannelCurrent[i];
+    zxnextPsgHeardSampleLeft = zxnextPsgHeardCurrentLeft;
+    zxnextPsgHeardSampleRight = zxnextPsgHeardCurrentRight;
   }
 
   zxnextPsgAccumulatedLeft = 0.0;
   zxnextPsgAccumulatedRight = 0.0;
   zxnextPsgAccumulatedTacts = 0.0;
+  for (uint32_t i = 0u; i < 9u; i++) zxnextPsgChannelAccumulated[i] = 0.0;
+  zxnextPsgHeardAccumulatedLeft = 0.0;
+  zxnextPsgHeardAccumulatedRight = 0.0;
 }
 
 static uint32_t zxnextPsgGetSelectedChip(void) { return zxnextPsgSelectedChip; }
@@ -434,6 +477,37 @@ static void zxnextPsgRefreshCurrentStereoOutput(void) {
 
   zxnextPsgCurrentLeft = psgLeft;
   zxnextPsgCurrentRight = psgRight;
+
+  /* The audio mixer: each channel's output while its chip is heard (the taps), and the stereo sum
+     routed as zxnextPsgGetStereoLeft/Right route it, each channel with its gain (the heard mix) */
+  double heardLeft = 0.0;
+  double heardRight = 0.0;
+  for (uint32_t chip = 0u; chip < 3u; chip++) {
+    const uint32_t heard = zxnextPsgGetTurbosoundEnabled() || chip == zxnextPsgGetSelectedChip();
+    const uint32_t *out = zxnextPsgChips[chip].currentOutput;
+    for (uint32_t channel = 0u; channel < 3u; channel++) {
+      zxnextPsgChannelCurrent[chip * 3u + channel] = heard ? out[channel] : 0u;
+    }
+    if (!heard) continue;
+    const double *gain = &zxnextAudioChannelGain[ZXNEXT_AUDIO_CH_AY + chip * 3u];
+    const double a = (double)out[0] * gain[0];
+    const double b = (double)out[1] * gain[1];
+    const double c = (double)out[2] * gain[2];
+    const uint8_t pan = zxnextPsgChipPanning[chip];
+    if (pan != 0u && pan != 1u) {
+      heardLeft += zxnextPsgChipMonoMode[chip] ? a + b + c : (zxnextPsgAyStereoMode ? a + c : a + b);
+    }
+    if (pan != 0u && pan != 2u) {
+      heardRight += zxnextPsgChipMonoMode[chip] ? a + b + c : b + c;
+    }
+  }
+  zxnextPsgHeardCurrentLeft = heardLeft;
+  zxnextPsgHeardCurrentRight = heardRight;
+}
+
+/* A TurboSound channel's (chip x 3 + channel) average over the last host sample, before its gain */
+static double zxnextPsgChannelAudioLevel(uint32_t index) {
+  return index < 9u ? zxnextPsgChannelAverage[index] : 0.0;
 }
 
 static uint32_t zxnextPsgGetSampleLeft(void) { return zxnextPsgSampleLeft; }

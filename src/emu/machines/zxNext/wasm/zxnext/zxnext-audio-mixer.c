@@ -36,6 +36,21 @@ static double zxnextMixerBeeperDcPrevOutputEar;
 static double zxnextMixerBeeperDcPrevOutputMic;
 static int32_t zxnextMixerSamplesLeft[ZXNEXT_AUDIO_SAMPLE_CAPACITY];
 static int32_t zxnextMixerSamplesRight[ZXNEXT_AUDIO_SAMPLE_CAPACITY];
+/* The speaker's diverted beeper, EAR and MIC apart (their sum is zxnextMixerSpeakerBeeper), so the
+   heard mix can give each its gain */
+static int32_t zxnextMixerSpeakerEar;
+static int32_t zxnextMixerSpeakerMic;
+
+/*
+ * The audio mixer's heard mix (zxnext-audio-channels.c): the same sum with each source's gain, into
+ * these words, which the host plays (the sample getters return them). Volatile, as are the PSG's
+ * gained levels they take (point-sampled for HDMI, as the core's own mix).
+ */
+_Static_assert(ZXNEXT_AUDIO_SAMPLE_CAPACITY <= ZXNEXT_AUDIO_TAP_CAPACITY, "The audio taps are smaller than the sample buffer");
+static int32_t zxnextMixerHeardLeft[ZXNEXT_AUDIO_SAMPLE_CAPACITY];
+static int32_t zxnextMixerHeardRight[ZXNEXT_AUDIO_SAMPLE_CAPACITY];
+static double zxnextMixerHeardPsgLeft;
+static double zxnextMixerHeardPsgRight;
 
 static int32_t zxnextMixerClampWord(int32_t value) {
   if (value > 32767) return 32767;
@@ -80,7 +95,11 @@ static void zxnextAudioMixerReset(void) {
   zxnextMixerEarRaw = 0.0;
   zxnextMixerMicRaw = 0.0;
   zxnextMixerSpeakerBeeper = 0;
+  zxnextMixerSpeakerEar = 0;
+  zxnextMixerSpeakerMic = 0;
   zxnextMixerBeeperDiverted = 0u;
+  zxnextMixerHeardPsgLeft = 0.0;
+  zxnextMixerHeardPsgRight = 0.0;
   zxnextMixerVolumeScaleMilli = 1000u;
   zxnextMixerBeeperDcPrevInputEar = 0.0;
   zxnextMixerBeeperDcPrevInputMic = 0.0;
@@ -91,6 +110,8 @@ static void zxnextAudioMixerReset(void) {
   for (uint32_t i = 0u; i < ZXNEXT_AUDIO_SAMPLE_CAPACITY; i++) {
     zxnextMixerSamplesLeft[i] = 0;
     zxnextMixerSamplesRight[i] = 0;
+    zxnextMixerHeardLeft[i] = 0;
+    zxnextMixerHeardRight[i] = 0;
   }
 }
 
@@ -221,6 +242,85 @@ static int32_t zxnextAudioMixerGetMixedSide(uint32_t isRight) {
   return (int32_t)scaled;
 }
 
+/*
+ * The heard mix: zxnextAudioMixerCentredSide / HardwareSum / GetMixedSide with each source's gain. A
+ * DAC channel and the Pi are scaled about their rests and the beeper after its DC filter, so a muted
+ * source is silence; the jack's wrap and each output's gain apply to the gained sum, as the hardware
+ * would to a mix without that source.
+ */
+static inline double zxnextHeardGain(uint32_t channel) { return zxnextAudioChannelGain[channel]; }
+
+static double zxnextHeardDacCentred(uint32_t isRight) {
+  const uint32_t first = isRight ? 2u : 0u;
+  double sum = 0.0;
+  for (uint32_t i = first; i < first + 2u; i++) {
+    sum += ((double)zxnextDacGetChannel(i) - 128.0) * 4.0 * zxnextHeardGain(ZXNEXT_AUDIO_CH_DAC + i);
+  }
+  return sum;
+}
+
+static double zxnextHeardPi(uint32_t isRight) {
+  return isRight
+    ? (double)zxnextMixerPiRight * zxnextHeardGain(ZXNEXT_AUDIO_CH_PI_RIGHT)
+    : (double)zxnextMixerPiLeft * zxnextHeardGain(ZXNEXT_AUDIO_CH_PI_LEFT);
+}
+
+static double zxnextHeardCentredSide(uint32_t isRight) {
+  double mixed = (double)zxnextMixerEarLevel * zxnextHeardGain(ZXNEXT_AUDIO_CH_EAR)
+    + (double)zxnextMixerMicLevel * zxnextHeardGain(ZXNEXT_AUDIO_CH_MIC);
+  mixed += (isRight ? zxnextMixerHeardPsgRight : zxnextMixerHeardPsgLeft) / 257.0;
+  mixed += zxnextHeardDacCentred(isRight);
+  mixed += zxnextHeardPi(isRight);
+  return mixed;
+}
+
+static double zxnextHeardHardwareSum(uint32_t isRight) {
+  double sum = zxnextMixerEarRaw * zxnextHeardGain(ZXNEXT_AUDIO_CH_EAR)
+    + zxnextMixerMicRaw * zxnextHeardGain(ZXNEXT_AUDIO_CH_MIC);
+  sum += (isRight ? zxnextMixerHeardPsgRight : zxnextMixerHeardPsgLeft) / 257.0;
+  sum += 2.0 * 128.0 * 4.0 + zxnextHeardDacCentred(isRight);
+  sum += zxnextHeardPi(isRight) + 512.0;
+  return sum;
+}
+
+static double zxnextHeardJackSide(uint32_t isRight) {
+  double mixed = zxnextHeardCentredSide(isRight);
+  const double sum = zxnextHeardHardwareSum(isRight);
+  if (sum >= 4096.0) mixed -= 4096.0 * zxnextMixerFloor(sum / 4096.0);
+  return mixed;
+}
+
+static int32_t zxnextHeardMixedSide(uint32_t isRight) {
+  double mixed;
+  double gain;
+  switch (zxnextMixerOutput) {
+    case ZXNEXT_AUDIO_OUT_SPEAKER:
+      gain = ZXNEXT_SPEAKER_GAIN;
+      if ((zxnextNextRegs[0x08u] & 0x10u) == 0u) {
+        mixed = 0.0;
+      } else if (zxnextMixerBeeperDiverted) {
+        mixed = 2.0 * ((double)zxnextMixerSpeakerEar * zxnextHeardGain(ZXNEXT_AUDIO_CH_EAR)
+          + (double)zxnextMixerSpeakerMic * zxnextHeardGain(ZXNEXT_AUDIO_CH_MIC));
+      } else {
+        mixed = zxnextHeardJackSide(0u) + zxnextHeardJackSide(1u);
+      }
+      break;
+    case ZXNEXT_AUDIO_OUT_HDMI:
+      gain = ZXNEXT_HDMI_GAIN;
+      mixed = (zxnextNextRegs[0x09u] & 0x04u) != 0u ? 0.0 : zxnextHeardCentredSide(isRight);
+      break;
+    default:
+      gain = ZXNEXT_MIXER_GAIN;
+      mixed = zxnextHeardJackSide(isRight);
+      break;
+  }
+  double scaled = zxnextMixerTrunc(mixed * gain);
+  scaled = zxnextMixerFloor(scaled * ((double)zxnextMixerVolumeScaleMilli / 1000.0));
+  if (scaled > 32767.0) scaled = 32767.0;
+  if (scaled < -32768.0) scaled = -32768.0;
+  return (int32_t)scaled;
+}
+
 static void zxnextAudioMixerSetOutput(uint32_t output) {
   zxnextMixerOutput = output <= ZXNEXT_AUDIO_OUT_HDMI ? output : ZXNEXT_AUDIO_OUT_JACK;
 }
@@ -237,8 +337,13 @@ static int32_t zxnextAudioMixerGetMixedRightWord(void) {
 
 static uint32_t zxnextAudioMixerAppendCurrentSample(void) {
   if (zxnextMixerSampleCount >= ZXNEXT_AUDIO_SAMPLE_CAPACITY) return 0u;
-  zxnextMixerSamplesLeft[zxnextMixerSampleCount] = zxnextAudioMixerGetMixedLeftWord();
-  zxnextMixerSamplesRight[zxnextMixerSampleCount] = zxnextAudioMixerGetMixedRightWord();
+  const int32_t left = zxnextAudioMixerGetMixedLeftWord();
+  const int32_t right = zxnextAudioMixerGetMixedRightWord();
+  zxnextMixerSamplesLeft[zxnextMixerSampleCount] = left;
+  zxnextMixerSamplesRight[zxnextMixerSampleCount] = right;
+  /* The heard mix: the core's own words while every gain is at unity */
+  zxnextMixerHeardLeft[zxnextMixerSampleCount] = zxnextAudioGainsUnity ? left : zxnextHeardMixedSide(0u);
+  zxnextMixerHeardRight[zxnextMixerSampleCount] = zxnextAudioGainsUnity ? right : zxnextHeardMixedSide(1u);
   zxnextMixerSampleCount++;
   return 1u;
 }
@@ -275,6 +380,8 @@ static void zxnextAudioMixerRefreshCurrentSources(double sampleEndTact, double s
   /* ~6450 `beep_spkr_excl`: with $06 bit 6 and the internal speaker ($08 bit 4) on, the beeper goes
      to the speaker only - EAR and MIC leave the mix */
   zxnextMixerSpeakerBeeper = ear + mic;
+  zxnextMixerSpeakerEar = ear;
+  zxnextMixerSpeakerMic = mic;
   zxnextMixerBeeperDiverted =
     (zxnextNextRegs[0x06u] & 0x40u) != 0u && (zxnextNextRegs[0x08u] & 0x10u) != 0u ? 1u : 0u;
   if (zxnextMixerBeeperDiverted) {
@@ -289,6 +396,23 @@ static void zxnextAudioMixerRefreshCurrentSources(double sampleEndTact, double s
   zxnextMixerPsgRight = pointSampled ? (double)zxnextPsgCurrentRight : zxnextPsgGetSampleRightExact();
   zxnextMixerPiLeft = zxnextPiI2sGetMixLeft();
   zxnextMixerPiRight = zxnextPiI2sGetMixRight();
+  zxnextMixerHeardPsgLeft = pointSampled ? zxnextPsgHeardCurrentLeft : zxnextPsgHeardSampleLeft;
+  zxnextMixerHeardPsgRight = pointSampled ? zxnextPsgHeardCurrentRight : zxnextPsgHeardSampleRight;
+
+  /* The taps: each source before its gain, in the jack's units (the sample this refresh is for) */
+  if (zxnextAudioTapsEnabled && zxnextMixerSampleCount < ZXNEXT_AUDIO_SAMPLE_CAPACITY) {
+    int16_t *tap = &zxnextAudioTaps[zxnextMixerSampleCount * ZXNEXT_AUDIO_CHANNELS];
+    tap[ZXNEXT_AUDIO_CH_EAR] = zxnextAudioTapWord(earIn * 512.0);
+    tap[ZXNEXT_AUDIO_CH_MIC] = zxnextAudioTapWord(micIn * 128.0);
+    for (uint32_t i = 0u; i < 9u; i++) {
+      tap[ZXNEXT_AUDIO_CH_AY + i] = zxnextAudioTapWord(zxnextPsgChannelAudioLevel(i) / 257.0);
+    }
+    for (uint32_t i = 0u; i < 4u; i++) {
+      tap[ZXNEXT_AUDIO_CH_DAC + i] = zxnextAudioTapWord(((double)zxnextDacGetChannel(i) - 128.0) * 4.0);
+    }
+    tap[ZXNEXT_AUDIO_CH_PI_LEFT] = zxnextAudioTapWord((double)zxnextMixerPiLeft);
+    tap[ZXNEXT_AUDIO_CH_PI_RIGHT] = zxnextAudioTapWord((double)zxnextMixerPiRight);
+  }
 }
 
 static void zxnextAudioMixerSetNextSample(uint32_t frameTacts28) {
@@ -315,9 +439,10 @@ static void zxnextAudioMixerSetNextSample(uint32_t frameTacts28) {
 }
 
 static uint32_t zxnextAudioMixerGetSampleCount(void) { return zxnextMixerSampleCount; }
+/* What the host plays: the heard mix (the core's own words while every gain is at unity) */
 static int32_t zxnextAudioMixerGetSampleLeft(uint32_t index) {
-  return index < zxnextMixerSampleCount ? zxnextMixerSamplesLeft[index] : 0;
+  return index < zxnextMixerSampleCount ? zxnextMixerHeardLeft[index] : 0;
 }
 static int32_t zxnextAudioMixerGetSampleRight(uint32_t index) {
-  return index < zxnextMixerSampleCount ? zxnextMixerSamplesRight[index] : 0;
+  return index < zxnextMixerSampleCount ? zxnextMixerHeardRight[index] : 0;
 }

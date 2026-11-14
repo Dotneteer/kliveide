@@ -38,24 +38,32 @@ role). The Next's list follows its profile (Pi I2S only where the model has it).
 The cores already compute each source's level before summing it. Each audio-producing core gains:
 
 - **A channel tap buffer**: per host audio sample, the level of each source *after* its own volume
-  stage and *before* the mix and the DC filter. Int16 per channel, laid out
+  stage, *before* its mixer gain (a pre-fader tap: a muted channel's meter still moves) and before
+  the mix and the DC filter. Int16 per channel, laid out
   `[sample][channel]`, capacity = the existing `*_AUDIO_SAMPLE_CAPACITY`. Written only while taps
   are enabled (`<core>AudioSetTapsEnabled(1)`), so a closed mixer costs one branch per sample.
-- **A mute mask and per-channel gain** (`<core>AudioSetChannelGain(ch, milli)`): applied in the mixer
-  before summing. Mute is gain 0. Default gain 1000 for every channel.
+- **A per-channel gain** (`<core>AudioSetChannelGain(ch, milli)`), applied in a parallel *heard*
+  mix: the core's own mix stays exactly as it was, and the heard mix applies the gains into its own
+  buffer, which is what the host plays. Mute is gain 0. Default gain 1000 for every channel.
 
 Mute and gain change **only the output mix**. They never feed back into machine state: the TVC's
 sound interrupt, the Z88's SBIT, the AY's registers and envelopes, DAVE's ring modulation and the
 Next's `beep_spkr_excl` keep running exactly as before. A debug-loop replay with a different mute
 mask must stop at the same places (`test/wasm/debug-loop-equivalence.test.ts` stays green).
 
-The gain and mask are **volatile-safe**: they are host settings, not machine state, so they are not
-saved in snapshots or checkpoints and are not part of the reverse-execution history.
+**The gains and the taps switch change only volatile statics** (D4). Reverse debugging compares
+replayed memory with its keyframes and calls a difference a diverged replay (`ReplayDesyncError`);
+a user may change a gain between recording and a Step Back. So the gains, the taps, the heard mix
+and everything downstream of a gain (its DC filter, the PSG's gained sums) are volatile, and every
+other static the mixer adds is a function of the machine alone. A test per core family proves it:
+a run with gains and taps changed mid-run leaves every non-volatile byte equal to a plain run's.
 
 ### 3.2 Host side
 
-- `IAnyMachine.getAudioChannels(): AudioChannelInfo[] | undefined` (undefined = no sound, no mixer).
-- `setAudioChannelGain(id, gain)`, `setAudioTapsEnabled(on)`, `getAudioChannelTaps(): Int16Array`.
+- `IAnyMachine.audioMixer?: IAudioChannelMixer` (`src/emu/abstractions/IAudioChannelMixer.ts`),
+  undefined on a machine without sound: `getAudioChannels()`, `setAudioChannelGain(id, gain)`,
+  `setAudioTapsEnabled(on)`, `getAudioChannelTaps()`. The machine knows only gains; solo is resolved
+  into gains by the UI.
 - The emulator process forwards a **reduced frame** to the IDE window when someone is watching:
   per channel peak, RMS and a 512-point magnitude spectrum (or the raw taps for the selected
   channel's scope). Analysis runs in the emulator renderer (one radix-2 FFT per channel per frame:
@@ -81,10 +89,10 @@ Three options, mocked up side by side (§5). Whatever is chosen:
 
 ## 4. Phases
 
-1. **Channel model + taps in the shared Spectrum code** (beeper, tape, PSG): 48K, 128K, +3e, Timex,
+1. **(Done, 2026-11-14, branch `feature/audio-mixer`.) Channel model + taps in the shared Spectrum code** (beeper, tape, PSG): 48K, 128K, +3e, Timex,
    Scorpion. Harness tests: a muted AY channel is silent in the mix and the machine's state hash is
    unchanged; solo of the beeper gives the beeper's samples bit-exactly.
-2. **Next mixer**: TurboSound x3, DAC A-D, Pi I2S, beeper/MIC/tape, through
+2. **(Done, 2026-11-14.) Next mixer**: TurboSound x3, DAC A-D, Pi I2S, beeper/MIC/tape, through
    `zxnext-audio-mixer.c`; tests in `test/zxnext-hw/audio/`, every profile.
 3. **Z88, HT-1080Z, TVC, Enterprise** taps and masks; one harness test per machine.
 4. **Host API + analysis** (FFT, peak/RMS, IPC frame), unit-tested with synthetic tones (a 1 kHz
@@ -109,9 +117,76 @@ A and C can coexist with B (C for quick muting, B for analysis).
 
 - D1 (proposed): taps and masks in the cores, not a re-synthesis in TypeScript.
 - D2 (proposed): recordings follow the mixer, with an opt-out.
+- D4 (decided 2026-11-14): the gains and the taps switch change only volatile statics; the host
+  plays a heard mix computed beside the core's own (§3.1).
 - D3 (decided 2026-11-14): placement is **B + C** - the mixer document for analysis and the
   emulator popover for quick muting; option A is not built.
 - Solo: a channel's S button makes it audible on its own; while any channel is soloed, only soloed
   channels play, whatever their mute state. Clearing every solo restores the mute states as they were.
-- Q2: tape as a channel of its own, or part of the beeper (it shares the EAR line)?
+- Q2 (answered in the build): the tape is its own channel on the Spectrum family; on the Next it shares the MIC line's channel, which the hardware XORs it into.
 - Q3: should AY channels in ABC/ACB stereo show their pan position in the mixer, and be pannable?
+
+## 7. As built
+
+### Phase 1 (Spectrum family)
+
+- **Core module** `src/emu/machines/zxSpectrum/wasm/common/zx-spectrum-audio-channels.c`: six fixed
+  slots (beeper, MIC, tape, AY A-C), gains in milli (0-4000, 1000 = unity), the taps
+  (`int16 [sample][6]`, written only while on). Included by the sp48 (and Timex), sp128 and spp3e
+  cores before the PSG and the beeper. Exports `<core>AudioSetChannelGain`, `AudioGetChannelGain`,
+  `AudioSetTapsEnabled`, `AudioTapsPtr`, `GetAudioChannelCount` (`dev/scripts/zx-audio-channel-exports.cjs`).
+- **The heard mix** (`zxAudioHeardSamples`, with its own DC filter): the core's own mix, filter and
+  buffer run exactly as before; `<core>AudioSamplesPtr` now points at the heard buffer. At unity the
+  heard mix takes the core's own filter input, so the output is bit-identical; otherwise the beeper
+  takes its gained form and the AY its gained sum (`sp128PsgHeard*`). Nothing reads the core's own
+  sample buffer any more, so the compiler drops it, and the 48K's frame-boundary scratch list
+  (`sp48AudioSamples`) is empty. Checked against master's cores: 50 frames of beeper + AY
+  tone/noise/envelope on the 48K, 128K and +3E at 44.1 and 48 kHz, both Timex models and a real
+  tape load hash the same.
+- **The first cut broke D4** (gains applied inside the core's own mix, so its DC filter state - in
+  every keyframe - followed the gains); it was reworked into the heard mix before it was committed.
+- **The beeper's gained form** splits the four-level EAR/MIC table into an EAR part (0.66), a MIC
+  part (0.33) and both at once (2/3 EAR gain + 1/3 MIC gain, so 1.0 at unity), weighted by the time
+  each state held within the sample.
+- **The tape is its own channel (Q2 decided this way).** While a tape loads, the EAR line carries the
+  tape (`effectiveAudioEarBit`), so the EAR part of the level goes to the tape channel's gain and tap,
+  and the beeper's tap is zero.
+- **The HT-1080Z is untouched**: the AY's taps are behind `SP128_PSG_CHANNEL_TAPS`, which only the
+  Spectrum cores define (phase 3 adds the HT-1080Z).
+- **Volatile statics**: the gains, the unity flag, the taps switch and buffer, the heard buffer and
+  its DC filter (`dev/scripts/zx-audio-channel-exports.cjs`), and on the cores with an AY its heard
+  sums. The AY's per-channel tap statics are accumulated always, so they follow the machine alone and
+  are not listed (the compiler splits those three-element arrays into one global per element anyway).
+- **Saved states**: the new statics change each core's layout fingerprint, so state files saved by
+  older builds do not load in these cores (as with any core change that adds statics).
+- **Tap scale**: a tap is converted as the frame's samples are (/ 32768), so it reads as the
+  channel's share of the output; each core scales its output its own way (the 128K by 24576).
+- **Host**: `SpectrumAudioMixer` (`src/emu/machines/zxSpectrum/spectrumAudioChannels.ts`) on the 48K,
+  128K (and Scorpion), +3E and Timex machines; the Timex lists the AY only on the 2068s. Channel and
+  group names are `emu.audioMixer.*` keys.
+- **Tests**: `test/wasm/zxSpectrum/wasm-audio-channels.test.ts` (channel lists, unity unchanged with
+  gains touched and taps on, all-muted silence, machine state independent of gains, pre-fader taps,
+  gain clamping, AY channel A's gain, the Timex models, tape routing).
+
+### Phase 2 (ZX Spectrum Next)
+
+- **Core module** `zxnext-audio-channels.c`: 17 slots - EAR, the MIC line, TurboSound AY1-AY3 A-C,
+  DAC A-D, Pi I2S left/right - with the same exports as the Spectrum cores (`zxnextAudioSetChannelGain`
+  ...). Every profile has every source, so the list does not follow the model.
+- **The tape shares the MIC channel** ("MIC / Tape"): the Next XORs the tape input and the Pi's EAR
+  bit into the MIC line (`beep_mic_final`, zxnext-beeper.c), so they cannot be told apart in the sound.
+- **The heard mix** (`zxnextMixerHeardLeft/Right`) is the core's own mix - jack with its 12-bit wrap,
+  speaker (diverted beeper included), HDMI (point-sampled) - with each source's gain: the beeper after
+  its DC filter, the DACs and the Pi about their rests, TurboSound per channel through the same
+  routing (ABC/ACB, mono, panning, TurboSound on or the selected chip). At unity it copies the core's
+  own words. The sample getters return it. A muted source plays exactly as a silent one (tests: a
+  muted AY channel equals one at volume 0, a muted DAC one at $80).
+- **TurboSound's per-channel levels** (`zxnextPsgChannel*`) are accumulated always (machine-only);
+  its gained sums (`zxnextPsgHeard*`) are volatile.
+- **Taps** are in the jack's units x 12.8, the scale of the jack's output words.
+- **Checked against master's cores**: 40 frames of beeper + all three AYs (tones, noise, envelope) +
+  three DAC channels, on all four profiles, all three outputs, beeper diverted and not, hash the same.
+- **Harness**: the Next session has `audioMixer` and `memoryDifferences(other)` (README, self-tests).
+- **Tests**: `test/zxnext-hw/audio/audio-mixer.test.ts`, every profile.
+- **Shared host class**: `src/emu/machines/wasmAudioChannelMixer.ts` drives any core with the mixer
+  exports from a channel table (`zxSpectrum/spectrumAudioChannels.ts`, `zxNext/nextAudioChannels.ts`).

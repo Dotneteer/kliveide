@@ -72,6 +72,8 @@ import { Interface1MachineSupport } from "../zxSpectrum/if1/Interface1MachineSup
 import { sp128MicrodriveBootFlow } from "../zxSpectrum/if1/microdriveBootFlows";
 import type { MessengerBase } from "@common/messaging/MessengerBase";
 import type { SdRevertResult, SdUndoEntry, SdUndoLog } from "@emu/machines/reverse/SdUndoLog";
+import { createSpectrumAudioMixer } from "../zxSpectrum/spectrumAudioChannels";
+import type { IAudioChannelMixer } from "@emu/abstractions/IAudioChannelMixer";
 
 const WASM_AUDIO_SAMPLE_SCALE = 32768.0;
 
@@ -193,6 +195,9 @@ export class ZxSpectrum128WasmV2Machine
 
   public readonly implementation = "wasm" as const;
   public wasmV2Runtime?: Sp128WasmV2Runtime;
+
+  /** The audio mixer's gains and taps (`spectrumAudioChannels.ts`) */
+  readonly audioMixer: IAudioChannelMixer = createSpectrumAudioMixer("sp128", () => this.wasmV2Runtime, () => true);
   /** The RZX session playing or recording on this machine (`dev/plans/RZX_PLAN.md` §4.3) */
   public rzxSession?: IRzxSession;
   private rzxCoreBridge?: RzxCoreBridge;

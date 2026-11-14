@@ -79,6 +79,11 @@ export class TimexWasmV2Machine extends ZxSpectrum48WasmV2Machine {
   /** The cartridge in the DOCK */
   private dockImage?: DckImage;
 
+  /** The 2068s' AY joins the audio mixer; the TC2048 has none */
+  protected override hasAudioMixerAy(): boolean {
+    return this.timexModel?.is2068 === true;
+  }
+
   constructor(modelInfo?: MachineModel, config?: MachineConfigSet, loaderOptions?: Sp48WasmV2LoaderOptions) {
     super(modelInfo, config, timexLoaderOptions(loaderOptions));
     this.timexModel = getTimexModel(modelInfo?.config ?? config);

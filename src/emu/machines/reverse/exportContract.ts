@@ -71,6 +71,10 @@ const OVERRIDES: Record<string, ExportClass> = {
   RzxRecMarkBlockStart: "debug",
   // --- ... but these move the machine's own tact counter
   RzxSetFrameTact: "journaled",
+  // --- The audio mixer's gains and tap switch (`zx-spectrum-audio-channels.c`) are volatile: the
+  // --- user's listening setup, which the machine never reads and replay does not need
+  AudioSetChannelGain: "debug",
+  AudioSetTapsEnabled: "debug",
   // --- The layer debug view and the beam preview write only their volatile buffers
   ProbePixel: "debug",
   RecomposeForDebug: "debug",
