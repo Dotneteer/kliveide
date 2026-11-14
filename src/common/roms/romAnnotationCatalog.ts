@@ -1,5 +1,16 @@
 import { NEXT_ROM_SETS, nextRomAnnotationFile, type NextRomSet } from "@common/zxnext/romSets";
-import { MI_ENTERPRISE, MI_HT1080Z, MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48, MI_TVC, MI_ZX80, MI_ZX81, MI_ZXNEXT } from "@common/machines/constants";
+import {
+  MI_ENTERPRISE,
+  MI_HT1080Z,
+  MI_SPECTRUM_128,
+  MI_SPECTRUM_3E,
+  MI_SPECTRUM_48,
+  MI_TVC,
+  MI_Z88,
+  MI_ZX80,
+  MI_ZX81,
+  MI_ZXNEXT
+} from "@common/machines/constants";
 
 /*
  * The ROMs the Debug › ROM Annotations menu offers, by machine type.
@@ -77,8 +88,63 @@ export const ROM_ANNOTATION_CATALOG: readonly RomCatalogMachine[] = [
       [...pages("ep-exos20.rom", 2), ...files("ep-basic20.rom")],
       pages("ep-exdos13.rom", 2)
     ]
+  },
+  {
+    machineId: MI_Z88,
+    // --- OZ 4.7: the banks that hold something (`KNOWN_ROM_PAGES`); the empty ones are left out
+    groups: [
+      [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x10, 0x1f].map((page) => ({
+        file: "z88v47.rom",
+        page
+      }))
+    ]
   }
 ];
+
+/**
+ * A machine type's ROM files, in catalog order, each once: what the menu lists. A file's pages are not
+ * menu items; the ROM annotation editor lists them (`ownPagesOf`).
+ */
+export function romCatalogFiles(machine: RomCatalogMachine): RomCatalogEntry[][] {
+  return machine.groups
+    .map((group) => {
+      const seen = new Set<string>();
+      return group.filter((entry) => !seen.has(entry.file) && seen.add(entry.file)).map(({ file }) => ({ file }));
+    })
+    .filter((group) => group.length > 0);
+}
+
+/** The pages of a ROM file the catalog lists (every page Klive knows of it), in page order. */
+export function catalogPagesOf(file: string, catalog: readonly RomCatalogMachine[] = ROM_ANNOTATION_CATALOG): number[] {
+  const pages = new Set<number>();
+  for (const machine of catalog) {
+    for (const entry of machine.groups.flat()) if (entry.file === file) pages.add(entry.page ?? 0);
+  }
+  return [...pages].sort((a, b) => a - b);
+}
+
+/**
+ * The pages of a ROM file that its own sidecar describes: the catalog's pages whose bytes no other
+ * shipped sidecar describes. `enNextLG.rom` differs from `enNextZX.rom` in page 2 only, so its other
+ * pages are `enNextZX.rom.dis`'s and only page 2 is its own.
+ *
+ * @param file The file, by its path under `roms/` (`zxnext/nextzxos-2.08/enNextLG.rom`)
+ * @param crcOf A page's CRC-32, or `undefined` when the file has no such page
+ * @param index The shipped sidecars by page CRC (`rom-annotations.index.json`)
+ */
+export function ownPagesOf(
+  file: string,
+  crcOf: (page: number) => string | undefined,
+  index: Readonly<Record<string, { sidecar: string; page: number }>>,
+  catalog: readonly RomCatalogMachine[] = ROM_ANNOTATION_CATALOG
+): number[] {
+  return catalogPagesOf(file, catalog).filter((page) => {
+    const crc = crcOf(page);
+    if (crc === undefined) return false;
+    const shipped = index[crc];
+    return !shipped || shipped.sidecar === `${file}.dis`;
+  });
+}
 
 /** A catalog entry's file name, without its folder: what the menu shows (`enNextZX.rom`). */
 export function romCatalogFileName(entry: RomCatalogEntry): string {

@@ -12,8 +12,31 @@ import { romCrc32 } from "./romIdentity";
 /** A shipped sidecar as raw JSON: the model plus the ROM sidecar's own keys (§5.1). */
 export type RawRomSidecar = Record<string, any>;
 
-/** The provenance an entry carries (§6). */
-export type Provenance = "observed" | "manual" | "derived";
+/**
+ * The provenance an entry carries (§6). `source` is an entry taken from the ROM's own published source
+ * code, allowed only in a sidecar whose `sourceCode` names it (the OZ exemption from D4,
+ * `dev/plans/Z88_OZ47_ROM_ANNOTATIONS_PLAN.md` D-OZ3).
+ */
+export type Provenance = "observed" | "manual" | "derived" | "source";
+
+/** Every provenance value, in the order the tools list them. */
+export const PROVENANCE_VALUES: readonly Provenance[] = ["observed", "manual", "derived", "source"];
+
+/**
+ * Whether a sidecar names the published source code its `source` entries come from: a `sourceCode`
+ * with a repository and a commit. Without it, a `source` provenance names nothing.
+ */
+export function hasSourceCode(sidecar: RawRomSidecar): boolean {
+  const code = sidecar.sourceCode;
+  return (
+    !!code &&
+    typeof code === "object" &&
+    typeof code.repository === "string" &&
+    code.repository.length > 0 &&
+    typeof code.commit === "string" &&
+    code.commit.length > 0
+  );
+}
 
 // ------------------------------------------------------------------------------------------------
 // Formatting
@@ -23,6 +46,7 @@ const TOP_KEYS = [
   "schemaVersion",
   "machine",
   "source",
+  "sourceCode",
   "authoring",
   "level",
   "pages",

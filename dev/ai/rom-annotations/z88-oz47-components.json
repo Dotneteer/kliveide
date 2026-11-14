@@ -1,0 +1,20 @@
+{
+  "about": "The OZ 4.7 components dev/scripts/import-oz-source.cjs --all imports into z88v47.rom.dis, in order: each with its module or project (relative to the OZ checkout), its bank (rom.ldm with def/oz.def's and def/sysapps.def's slot 0 constants), and the build flags its makefile passes. A later component of a bank merges into it. dev/plans/Z88_OZ47_ROM_ANNOTATIONS_PLAN.md, Phase 2.",
+  "components": [
+    { "module": "os/kernel0.prj", "bank": 0, "defines": ["COMPILE_BINARY"], "includes": ["lowram"] },
+    { "module": "os/ostables.prj", "bank": 0 },
+    { "module": "os/kernel1.prj", "bank": 1, "defines": ["COMPILE_BINARY"], "includes": ["lowram"] },
+    { "module": "gn/gn.prj", "bank": 3 },
+    { "module": "apps/diary/diary.prj", "bank": 4 },
+    { "module": "apps/clock/clcalalm.prj", "bank": 4 },
+    { "module": "apps/panelprted/panelped.prj", "bank": 7 },
+    { "module": "apps/terminal/terminal.prj", "bank": 7 },
+    { "module": "apps/calculator/calculator.prj", "bank": 7 },
+    { "module": "apps/impexport/impexp.prj", "bank": 7 },
+    { "module": "apps/eazylink/eazylink.prj", "bank": 10 },
+    { "module": "apps/filer/filer.prj", "bank": 10 },
+    { "module": "apps/flashstore/flashstore.prj", "bank": 11 },
+    { "module": "dc/indexdc.prj", "bank": 12 },
+    { "module": "fp/fpp.asm", "bank": 13 }
+  ]
+}

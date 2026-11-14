@@ -2307,6 +2307,20 @@
     "context": "Mode button in the ROM annotation editor (a document listing a ROM annotation sidecar file's pages)'s header: new entries are recorded as written by hand. Lower case.",
     "maxChars": 10
   },
+  "panels.rom.notAnnotated": "not annotated yet",
+  "@panels.rom.notAnnotated": {
+    "context": "In the ROM annotation editor's page list (one row per 16K page of the ROM file): shown instead of the page's name for a page the annotation file does not cover yet. Lower case.",
+    "maxChars": 24
+  },
+  "panels.rom.unlistedTitle": "This page is not annotated yet. Opening it adds it to this file.",
+  "@panels.rom.unlistedTitle": {
+    "context": "Tooltip of a row in the ROM annotation editor's page list (one row per 16K page of the ROM file), for a page the annotation file does not cover yet. 'this file' is the annotation file being edited."
+  },
+  "panels.rom.source": "source",
+  "@panels.rom.source": {
+    "context": "Mode button in the ROM annotation editor (a document listing a ROM annotation sidecar file's pages)'s header: new entries are recorded as taken from the ROM's published source code. Shown only for a file that names its source code. Lower case.",
+    "maxChars": 10
+  },
   "panels.rom.revealExplorer": "Reveal in File Explorer",
   "@panels.rom.revealExplorer": {
     "context": "Tooltip of the button in the ROM annotation editor (a document listing a ROM annotation sidecar file's pages) that shows the file in the Windows file manager. File Explorer is Windows' name for it."

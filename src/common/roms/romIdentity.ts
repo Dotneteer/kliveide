@@ -74,7 +74,11 @@ export type RomPageKind =
   | "next-divmmc"
   | "next-multiface"
   // --- The anti-brick core's boot ROM (`bootrom_ab.bin`), extracted from the FPGA core's VHDL
-  | "next-boot";
+  | "next-boot"
+  // --- The Cambridge Z88's OZ ROM banks: RST 20h is followed by the OZ call's one or two bytes, RST 18h
+  // --- by the floating-point operation. Each run of code is listed in the segment it runs in
+  // --- (`romDecoderFor`'s `segments`), $C000 when the sidecar does not say
+  | "z88-oz";
 
 /** A known ROM page: its file (relative to `src/public/roms`), what it holds, and its 16K page. */
 export type KnownRomPage = {
@@ -177,7 +181,26 @@ export const KNOWN_ROM_PAGES: Readonly<Record<string, KnownRomPage>> = {
   "55f96251": { file: "ep-basic21.rom", kind: "ep-basic" },
   "1228de34": { file: "ep-basic20.rom", kind: "ep-basic" },
   d1e46955: { file: "ep-exdos13.rom", kind: "ep-ext", page: 0 },
-  d1333188: { file: "ep-exdos13.rom", kind: "ep-ext", page: 1 }
+  d1333188: { file: "ep-exdos13.rom", kind: "ep-ext", page: 1 },
+  // --- The Cambridge Z88's OZ 4.7 (slot 0 build of tag V4.7, `dev/ai/rom-annotations/z88-authoring-guide.md`):
+  // --- every bank that holds something. Banks of only $FF are the same bytes in every ROM, so they are
+  // --- not listed: their CRC cannot say which ROM they belong to
+  "007cedde": { file: "z88v47.rom", kind: "z88-oz", page: 0 },
+  "2017da5d": { file: "z88v47.rom", kind: "z88-oz", page: 1 },
+  d4e5a522: { file: "z88v47.rom", kind: "z88-oz", page: 2 },
+  "2aa311c4": { file: "z88v47.rom", kind: "z88-oz", page: 3 },
+  "55151167": { file: "z88v47.rom", kind: "z88-oz", page: 4 },
+  "28e683fd": { file: "z88v47.rom", kind: "z88-oz", page: 5 },
+  "6f97110f": { file: "z88v47.rom", kind: "z88-oz", page: 6 },
+  "7c7f4303": { file: "z88v47.rom", kind: "z88-oz", page: 7 },
+  a2e9469c: { file: "z88v47.rom", kind: "z88-oz", page: 8 },
+  c0559406: { file: "z88v47.rom", kind: "z88-oz", page: 9 },
+  d5330412: { file: "z88v47.rom", kind: "z88-oz", page: 10 },
+  "05384d83": { file: "z88v47.rom", kind: "z88-oz", page: 11 },
+  fe619c3e: { file: "z88v47.rom", kind: "z88-oz", page: 12 },
+  "6979f058": { file: "z88v47.rom", kind: "z88-oz", page: 13 },
+  "252d4bba": { file: "z88v47.rom", kind: "z88-oz", page: 16 },
+  "6c007aa0": { file: "z88v47.rom", kind: "z88-oz", page: 31 }
 };
 
 /**
@@ -190,6 +213,9 @@ export const KNOWN_ROM_PAGES: Readonly<Record<string, KnownRomPage>> = {
  *
  * The Enterprise's ROM segments run at $C000: EXOS pages its own segments into page 3 (its reset code
  * jumps from $0000 straight to $C02E), and enters an extension ROM there.
+ *
+ * A Z88 OZ bank holds code for different segments (bank $0A: EazyLink at $8000, the Filer at $E400);
+ * this is its default, segment 3. A sidecar's `segments` say where each run really runs.
  */
 export function romKindOrigin(kind: RomPageKind | undefined): number {
   switch (kind) {
@@ -204,6 +230,7 @@ export function romKindOrigin(kind: RomPageKind | undefined): number {
     case "ep-exos-basic":
     case "ep-basic":
     case "ep-ext":
+    case "z88-oz":
       return 0xc000;
     default:
       return 0;
@@ -223,6 +250,11 @@ export function romKindIsEnterprise(kind: RomPageKind | undefined): boolean {
 /** Whether a page of this kind holds IS-BASIC code, whose `RST 10h` is followed by the routine's byte. */
 export function romKindHasBasicCalls(kind: RomPageKind | undefined): boolean {
   return kind === "ep-exos-basic" || kind === "ep-basic";
+}
+
+/** Whether a page of this kind is the Z88's, whose `RST 20h` is an OZ call followed by its code. */
+export function romKindIsZ88(kind: RomPageKind | undefined): boolean {
+  return kind === "z88-oz";
 }
 
 /** Whether a page of this kind is the Next's, whose code uses the Z80N's extra opcodes. */

@@ -1,5 +1,6 @@
 import { useT } from "@common/i18n/useT";
 import { managedSidecarOf } from "@common/roms/romSidecarPaths";
+import { formatRomSidecar, hasSourceCode } from "@common/roms/romAnnotationTools";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import classnames from "classnames";
 
@@ -25,7 +26,11 @@ import {
   checkRomSidecar,
   type RomSidecarCheck
 } from "@renderer/appIde/annotations/romSidecarCheck";
-import { matchRomPages, type RomPageMatch } from "@renderer/appIde/annotations/romSidecarMatch";
+import {
+  matchRomPages,
+  ownUnlistedPages,
+  type RomPageMatch
+} from "@renderer/appIde/annotations/romSidecarMatch";
 import { shippedChangedSince } from "@renderer/appIde/annotations/romWorkingCopy";
 import {
   getRomProvenanceMode,
@@ -188,15 +193,23 @@ const RomAnnotationEditorPanel = ({
 
   const raw = loaded.status === "loaded" ? loaded.raw : undefined;
   const isRomSidecar = raw?.machine === "rom";
+  // --- Only a sidecar that names its source code can record entries as taken from it (D-OZ3)
+  const hasCode = !!raw && hasSourceCode(raw);
+  useEffect(() => {
+    if (loaded.status === "loaded" && !hasCode && provenanceMode === "source") setRomProvenanceMode("observed");
+  }, [loaded.status, hasCode, provenanceMode]);
 
-  // --- The pages, matched to ROM bytes once per file (the CRCs do not change with edits)
+  // --- The pages, matched to ROM bytes once per file (the CRCs do not change with edits): the ones
+  // --- the file names, and the ROM file's other own pages, listed but not annotated yet
   const pagesKey = raw ? JSON.stringify(raw.pages ?? {}) : "";
   useEffect(() => {
     if (!raw || !isRomSidecar) return undefined;
     let cancelled = false;
-    void matchRomPages({ files: mainApi, emuApi }, path, raw.pages ?? {}).then((found) => {
-      if (!cancelled) setMatches(found);
-    });
+    void (async () => {
+      const unlisted = await ownUnlistedPages({ files: mainApi }, path, raw.pages ?? {});
+      const found = await matchRomPages({ files: mainApi, emuApi }, path, { ...(raw.pages ?? {}), ...unlisted });
+      if (!cancelled) setMatches(found.map((m) => (String(m.page) in unlisted ? { ...m, listed: false } : m)));
+    })();
     return () => {
       cancelled = true;
     };
@@ -238,9 +251,31 @@ const RomAnnotationEditorPanel = ({
     if (location !== "shipped" && isRomSidecar) requestRomAnnotationsReload();
   }, [location, isRomSidecar]);
 
+  /**
+   * Add a page the file does not name yet to its `pages`, so what is annotated on it binds by CRC. `pages`
+   * is not the annotation session's (it rewrites only its own keys), so it is written to the file here.
+   */
+  const listPage = useCallback(
+    async (match: RomPageMatch) => {
+      await flushAnnotationSession(path);
+      const text = await projectService.readFileContent(path, false);
+      if (typeof text !== "string") return;
+      const next = JSON.parse(text);
+      next.pages = {
+        ...(next.pages ?? {}),
+        [String(match.page)]: { crc32: match.crc32, name: fileNameOf(path).replace(/\.dis$/i, "") }
+      };
+      const formatted = formatRomSidecar(next);
+      await projectService.saveFileContent(path, formatted);
+      setLoaded({ status: "loaded", text: formatted, raw: JSON.parse(formatted) });
+    },
+    [path, projectService]
+  );
+
   const openPage = useCallback(
     async (match: RomPageMatch, view: "disassembly" | "memory", topAddress?: number) => {
       if (!match.bytes) return;
+      if (match.listed === false && !readOnly) await listPage(match);
       await openStaticMemoryDump(
         documentHubService,
         `rom:${path}:${match.page}`,
@@ -263,7 +298,7 @@ const RomAnnotationEditorPanel = ({
         }
       );
     },
-    [documentHubService, path, readOnly, t]
+    [documentHubService, listPage, path, readOnly, t]
   );
 
   /** The next unlabelled control-transfer target of a page, cycling: the level 1 to-do list. */
@@ -512,6 +547,18 @@ const RomAnnotationEditorPanel = ({
                     >
                       {t("panels.rom.manual")}
                     </button>
+                    {hasCode && (
+                      <button
+                        type="button"
+                        className={classnames(styles.segment, {
+                          [styles.segmentActive]: provenanceMode === "source"
+                        })}
+                        aria-pressed={provenanceMode === "source"}
+                        onClick={() => setRomProvenanceMode("source")}
+                      >
+                        {t("panels.rom.source")}
+                      </button>
+                    )}
                   </span>
                 </section>
               )}
@@ -593,6 +640,8 @@ const RomAnnotationEditorPanel = ({
               {matches.map((match) => {
                 const targets = check?.unlabelledTargets[String(match.page)];
                 const level = check?.levels[String(match.page)];
+                // --- A page of the ROM file the sidecar does not name yet: nothing to measure
+                const unlisted = match.listed === false;
                 const next =
                   targets && targets.length > 0
                     ? (targets.find((target) => target > (visitedTargets[match.page] ?? -1)) ??
@@ -603,6 +652,7 @@ const RomAnnotationEditorPanel = ({
                     key={match.page}
                     className={classnames(styles.pageGrid, styles.pageRow)}
                     role="row"
+                    title={unlisted && !readOnly ? t("panels.rom.unlistedTitle") : undefined}
                   >
                     <span className={styles.pageNumber}>{match.page}</span>
                     <span
@@ -611,7 +661,12 @@ const RomAnnotationEditorPanel = ({
                         match.foundAt ? t("panels.rom.foundIn", { from: match.foundAt }) : undefined
                       }
                     >
-                      {match.name ?? ""} <span className={styles.secondary}>{match.crc32}</span>
+                      {unlisted ? (
+                        <span className={styles.secondary}>{t("panels.rom.notAnnotated")}</span>
+                      ) : (
+                        (match.name ?? "")
+                      )}{" "}
+                      <span className={styles.secondary}>{match.crc32}</span>
                     </span>
                     {match.bytes ? (
                       <>
@@ -623,7 +678,9 @@ const RomAnnotationEditorPanel = ({
                           })}
                         >
                           {targets === undefined
-                            ? "…"
+                            ? unlisted
+                              ? "—"
+                              : "…"
                             : targets.length > 0
                               ? targets.length
                               : t("panels.rom.toLabelNone")}
@@ -672,7 +729,11 @@ const RomAnnotationEditorPanel = ({
                             />
                           </span>
                           <span>
-                            {level === undefined ? "…" : t("panels.rom.levelValue", { level })}
+                            {level === undefined
+                              ? unlisted
+                                ? "—"
+                                : "…"
+                              : t("panels.rom.levelValue", { level })}
                           </span>
                         </HoverCard>
                         <span className={styles.rowActions}>

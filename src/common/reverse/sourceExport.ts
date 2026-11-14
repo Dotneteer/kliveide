@@ -257,7 +257,12 @@ export async function exportSource(options: SourceExportOptions): Promise<Source
         // --- The CPU wraps PC round $FFFF; the assembler measures the distance without wrapping
         defbRows(offset, bytes, `${instruction} (the jump wraps round $FFFF)`, label);
         notes.push(t("media.export.wrapsAsDefb", { address: hex4(addressOf(offset)), instruction }));
-      } else if (reason || !instruction || instruction.startsWith(".") && !/^\.def[bwm]\b/i.test(instruction)) {
+      } else if (
+        reason ||
+        !instruction ||
+        item.notAssemblable ||
+        (instruction.startsWith(".") && !/^\.def[bwm]\b/i.test(instruction))
+      ) {
         defbRows(offset, bytes, `${instruction || "?"}${reason ? ` (${describeNonCanonical(reason)})` : ""}`, label);
         if (reason) {
           notes.push(

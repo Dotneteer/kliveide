@@ -1,8 +1,11 @@
 import {
   formatRomSidecar,
+  hasSourceCode,
   measureRomLevel,
   missingProvenance,
+  PROVENANCE_VALUES,
   strayProvenance,
+  type Provenance,
   type RawRomSidecar
 } from "@common/roms/romAnnotationTools";
 import { t } from "@common/i18n/i18n";
@@ -113,8 +116,10 @@ export async function checkRomSidecar(
   const stray = strayProvenance(raw);
   if (stray.length > 0) problems.push(t("media.romCheck.strayProvenance", { entries: stray.join(", ") }));
   for (const [key, value] of Object.entries(raw.provenance ?? {})) {
-    if (!["observed", "manual", "derived"].includes(value as string)) {
+    if (!PROVENANCE_VALUES.includes(value as Provenance)) {
       problems.push(t("media.romCheck.badProvenance", { key, value: String(value) }));
+    } else if (value === "source" && !hasSourceCode(raw)) {
+      problems.push(t("media.romCheck.sourceWithoutCode", { key }));
     }
   }
 
@@ -136,7 +141,12 @@ export async function checkRomSidecar(
   for (const [page, bank] of Object.entries<any>(measuredBanks)) {
     const bytes = pageBytes(Number(page));
     if (!bytes) continue;
-    const report = await measureRomLevel(bank, bytes, romDecoderFor(knownRomPageKind(romPageIdentity(bytes))));
+    const segments = raw.pages?.[page]?.segments;
+    const report = await measureRomLevel(
+      bank,
+      bytes,
+      romDecoderFor(knownRomPageKind(romPageIdentity(bytes)), segments)
+    );
     levels[page] = report.level;
     unlabelledTargets[page] = report.unlabelledTargets;
     midInstructionTargets[page] = report.midInstructionTargets;

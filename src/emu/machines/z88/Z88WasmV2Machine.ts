@@ -946,6 +946,21 @@ export class Z88WasmV2Machine extends Z88WasmHost implements IExecutionHistorySo
   }
 
   /**
+   * The ROM pages, as the ROM annotations see them: every bank of the slot 0 card ($00 up to its
+   * size), under its own bank number, which is how the `z88` bank space numbers ROM partitions. A
+   * 128K ROM reports banks $00-$07; the banks above it are its mirrors. An empty slot 0 reports none.
+   */
+  protected override getRomPartitionImages(): Map<number, Uint8Array> {
+    const images = new Map<number, Uint8Array>();
+    const mask = this.requireWasmV2Runtime().exports.z88GetSlotChipMask(0);
+    if (!mask) return images;
+    for (let bank = 0; bank <= (mask & 0x1f); bank++) {
+      images.set(bank, this.getMemoryPartition(bank).slice());
+    }
+    return images;
+  }
+
+  /**
    * The raw storage at bank index `index` of the 4 MB physical memory, with no card mirroring:
    * what a whole-memory digest hashes. The IDE wants `getMemoryPartition`.
    */
@@ -981,6 +996,15 @@ export class Z88WasmV2Machine extends Z88WasmHost implements IExecutionHistorySo
   }
 
   /** The bank mapped into each 8K page */
+  /**
+   * The bank behind an address, as the core pages it (`z88PageBank`): what the IDE's slot paging and the
+   * bank breakpoints are matched against (`z88BankSpace` in `@common/annotations/bankSpace`). For
+   * $2000-$3FFF it is SR0 as written: bit 0 picks the half of bank `SR0 & $FE` the bank space shows.
+   */
+  override getPartition(address: number): number | undefined {
+    return this.requireWasmV2Runtime().exports.z88GetPageBank((address >> 13) & 0x07);
+  }
+
   getCurrentPartitions(): number[] {
     const wasm = this.requireWasmV2Runtime().exports;
     return [0, 1, 2, 3, 4, 5, 6, 7].map((page) => wasm.z88GetPageBank(page));

@@ -193,12 +193,13 @@ rename, change or remove any shipped label, comment or region, and only the work
 Without a working copy, the shipped annotations are shown and a ROM row cannot be edited.
 
 Opening a working copy (from **Open ROM Annotations** on a ROM row, from **Debug › ROM
-Annotations** (pick the machine type, then the ROM), with
+Annotations** (pick the machine type, then the ROM file), with
 [`rom-ann-open`](/en/reference/commands#rom-ann-open), or by opening the `.rom.dis` file) shows
 the **ROM annotation editor**. It finds the ROM by its bytes and shows two panes: on the left,
 everything about the file; on the right, its pages, one row each with the ROM's name and CRC, its
-size, its labels, how many targets still need one (**To label**) and its completeness level. The
-row's disassembly icon opens a page with everything a NEX bank has: select rows, right-click for the annotation menu, or use the
+size, its labels, how many targets still need one (**To label**) and its completeness level. Every
+page of the ROM file is listed; a page not annotated yet says so, and opening it adds it to the
+working copy. The row's disassembly icon opens a page with everything a NEX bank has: select rows, right-click for the annotation menu, or use the
 shortcuts (`L` label, `C` end-of-line comment, `Shift+C` synopsis, `O` operand label, `M`/`R` manage
 labels/regions, `B` bank comment). No machine needs to be running. If no ROM matches the file, the
 editor says so and shows nothing else. With a working copy in place, ROM rows of the live view are

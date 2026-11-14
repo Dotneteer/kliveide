@@ -43,6 +43,7 @@ describe("createRomAnnotationsMenu", () => {
       "ZX Spectrum 128K",
       "ZX Spectrum +2A/+3/+2E/+3E",
       "ZX Spectrum Next",
+      "Cambridge Z88",
       "Sinclair ZX81",
       "Sinclair ZX80",
       "HT-1080Z",
@@ -51,25 +52,19 @@ describe("createRomAnnotationsMenu", () => {
     ]);
   });
 
-  it("separates the ROM sets, and names a page of a multi-page file", () => {
+  it("separates the ROM sets, and lists each file once, whatever its pages", () => {
     const menu = createRomAnnotationsMenu(machineRegistry, vi.fn());
     const nextReleases = submenu(submenu(menu).find((item) => item.label === "ZX Spectrum Next")!);
     // --- One submenu per NextZXOS release: the releases' files have the same names
     expect(shape(nextReleases)).toEqual(["NextZXOS 2.08", "NextZXOS 2.10", "NextZXOS 2.10a"]);
     const next = submenu(nextReleases[0]);
+    // --- One item per file: the ROM annotation editor lists a file's pages
     expect(shape(next)).toEqual([
-      "enNextZX.rom, page 0",
-      "enNextZX.rom, page 1",
-      "enNextZX.rom, page 2",
-      "enNextZX.rom, page 3",
+      "enNextZX.rom",
       "---",
-      "enNextLG.rom, page 0",
-      "enNextLG.rom, page 1",
-      "enNextLG.rom, page 2",
-      "enNextLG.rom, page 3",
+      "enNextLG.rom",
       "---",
-      "enAltZX.rom, page 0",
-      "enAltZX.rom, page 1",
+      "enAltZX.rom",
       "---",
       "enNxtmmc.rom",
       "enNextMf.rom",
@@ -77,25 +72,28 @@ describe("createRomAnnotationsMenu", () => {
       "bootrom_ab.bin"
     ]);
     // --- A Next item is labelled by the file name, and its id carries the set's path
-    expect(next[0].id).toBe("rom_ann_zxnext_zxnext/nextzxos-2.08/enNextZX.rom_0");
+    expect(next[0].id).toBe("rom_ann_zxnext_zxnext/nextzxos-2.08/enNextZX.rom");
+    // --- The Z88's OZ 4.7: one item for the 512K file
+    const z88 = submenu(submenu(menu).find((item) => item.label === "Cambridge Z88")!);
+    expect(shape(z88)).toEqual(["z88v47.rom"]);
     const sp128 = submenu(submenu(menu).find((item) => item.label === "ZX Spectrum 128K")!);
     expect(shape(sp128)).toEqual(["sp128-0.rom", "sp128-1.rom"]);
   });
 
-  it("skips a machine type with no ROMs, and passes the picked page on", async () => {
+  it("skips a machine type with no ROMs, and passes the picked file on, with no page", async () => {
     const registry: MachineInfo[] = [
       { machineId: "none", displayName: "No ROMs", charSet: {}, features: {} },
       { machineId: "some", displayName: "Some ROMs", charSet: {}, features: {} }
     ];
     const open = vi.fn(async () => {});
     const menu = createRomAnnotationsMenu(registry, open, [
-      { machineId: "some", groups: [[{ file: "a.rom" }], [{ file: "b.rom", page: 1 }]] }
+      { machineId: "some", groups: [[{ file: "a.rom" }], [{ file: "b.rom", page: 1 }, { file: "b.rom", page: 2 }]] }
     ]);
     expect(shape(submenu(menu))).toEqual(["Some ROMs"]);
     const items = submenu(submenu(menu)[0]);
-    expect(items.map((item) => item.id)).toEqual(["rom_ann_some_a.rom", undefined, "rom_ann_some_b.rom_1"]);
+    expect(items.map((item) => item.id)).toEqual(["rom_ann_some_a.rom", undefined, "rom_ann_some_b.rom"]);
     await (items[2].click as any)();
-    expect(open).toHaveBeenCalledWith({ file: "b.rom", page: 1 });
+    expect(open).toHaveBeenCalledWith({ file: "b.rom" });
   });
 });
 

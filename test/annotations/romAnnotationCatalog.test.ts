@@ -6,8 +6,11 @@ import { machineRegistry } from "@common/machines/machine-registry";
 import { KNOWN_ROM_PAGES, romCrc32 } from "@common/roms/romIdentity";
 import {
   ROM_ANNOTATION_CATALOG,
+  catalogPagesOf,
+  ownPagesOf,
   romAnnotationOpenCommand,
-  romCatalogFileName
+  romCatalogFileName,
+  romCatalogFiles
 } from "@common/roms/romAnnotationCatalog";
 import { NEXT_ROM_SETS } from "@common/zxnext/romSets";
 
@@ -91,3 +94,33 @@ describe("ROM_ANNOTATION_CATALOG", () => {
     expect(next.groups[4]).toEqual([{ file: "zxnext/nextzxos-2.08/bootrom_ab.bin" }]);
   });
 });
+
+describe("a ROM file's pages", () => {
+  it("lists each file once per group, without its pages", () => {
+    const z88 = ROM_ANNOTATION_CATALOG.find((machine) => machine.machineId === "z88")!;
+    expect(romCatalogFiles(z88)).toEqual([[{ file: "z88v47.rom" }]]);
+    for (const machine of ROM_ANNOTATION_CATALOG) {
+      for (const group of romCatalogFiles(machine)) {
+        const files = group.map((entry) => entry.file);
+        expect(new Set(files).size, machine.machineId).toBe(files.length);
+        expect(group.every((entry) => entry.page === undefined), machine.machineId).toBe(true);
+      }
+    }
+  });
+
+  it("knows the pages of a file the catalog lists", () => {
+    expect(catalogPagesOf("z88v47.rom")).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 16, 31]);
+    expect(catalogPagesOf("sp48.rom")).toEqual([0]);
+  });
+
+  it("gives a file only the pages no other shipped sidecar describes", () => {
+    const next = "zxnext/nextzxos-2.08/enNextLG.rom";
+    const zx = "zxnext/nextzxos-2.08/enNextZX.rom";
+    // --- enNextLG.rom differs from enNextZX.rom in page 2 only: its other pages are enNextZX.rom.dis's
+    expect(ownPagesOf(next, (p) => crcOf(next, p), index)).toEqual([2]);
+    expect(ownPagesOf(zx, (p) => crcOf(zx, p), index)).toEqual([0, 1, 2, 3]);
+    // --- A file no shipped sidecar describes owns every page the catalog knows
+    expect(ownPagesOf("z88v47.rom", (p) => crcOf("z88v47.rom", p), index)).toEqual(catalogPagesOf("z88v47.rom"));
+  });
+});
+

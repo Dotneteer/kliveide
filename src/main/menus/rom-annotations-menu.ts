@@ -1,7 +1,8 @@
 /*
  * Debug › ROM Annotations: a submenu per machine type, each
- * with the ROMs Klive ships for it (`ROM_ANNOTATION_CATALOG`). An item opens that ROM page's
- * annotations in the IDE through `rom-ann-open ... -create`.
+ * with the ROM files Klive ships for it (`ROM_ANNOTATION_CATALOG`), one item per file. An item opens the
+ * file's annotations in the IDE through `rom-ann-open ... -create`; the ROM annotation editor lists the
+ * file's pages.
  */
 import { dialog, type BrowserWindow, type MenuItemConstructorOptions } from "electron";
 import { NEXT_ROM_SETS, type NextRomSetId } from "@common/zxnext/romSets";
@@ -11,6 +12,7 @@ import {
   ROM_ANNOTATION_CATALOG,
   romAnnotationOpenCommand,
   romCatalogFileName,
+  romCatalogFiles,
   type RomCatalogEntry,
   type RomCatalogMachine
 } from "@common/roms/romAnnotationCatalog";
@@ -21,10 +23,9 @@ import { t } from "@common/i18n/i18n";
 
 export const ROM_ANNOTATIONS_MENU_ID = "rom_annotations";
 
-/** The label of a ROM page's item: the file name (not its folder), and the page for a multi-page file. */
+/** The label of a ROM file's item: its name, not its folder (the Next's sets have submenus). */
 export function romEntryLabel(entry: RomCatalogEntry): string {
-  const file = romCatalogFileName(entry);
-  return entry.page === undefined ? file : t("menu.debug.romAnnotationsPage", { file, page: String(entry.page) });
+  return romCatalogFileName(entry);
 }
 
 /** The ROM set folder of a catalog file (`zxnext/nextzxos-2.08/enNextZX.rom`), or undefined for a flat one */
@@ -42,7 +43,7 @@ function romSetLabel(setId: string): string {
 /**
  * Builds the ROM Annotations submenu.
  * @param registry The registered machines: they name the machine types and give their order
- * @param open Called with the ROM page the user picks
+ * @param open Called with the ROM file the user picks
  * @param catalog The ROMs by machine type
  */
 export function createRomAnnotationsMenu(
@@ -57,13 +58,13 @@ export function createRomAnnotationsMenu(
     // --- A machine with several ROM set folders (the Next's NextZXOS releases) gets a submenu per
     // --- set, named after the release: the sets' files have the same names
     const bySet = new Map<string, MenuItemConstructorOptions[]>();
-    roms.groups.forEach((group) => {
+    romCatalogFiles(roms).forEach((group) => {
       const set = romSetFolderOf(group[0]?.file) ?? "";
       const items = bySet.get(set) ?? [];
       if (items.length > 0) items.push({ type: "separator" });
       for (const entry of group) {
         items.push({
-          id: `rom_ann_${machine.machineId}_${entry.file}${entry.page === undefined ? "" : `_${entry.page}`}`,
+          id: `rom_ann_${machine.machineId}_${entry.file}`,
           label: romEntryLabel(entry),
           click: async () => {
             await open(entry);
@@ -86,7 +87,7 @@ export function createRomAnnotationsMenu(
 }
 
 /**
- * Opens a ROM page's annotations in the IDE window, and says why in a message box when it cannot.
+ * Opens a ROM file's annotations in the IDE window, and says why in a message box when it cannot.
  * @param ensureIdeWindow Shows the IDE window, where the editor opens
  * @param window The window the message box belongs to
  */

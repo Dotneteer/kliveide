@@ -63,7 +63,8 @@ describe("bankSpaceFor", () => {
     expect(bankSpaceFor(MI_TIMEX)?.id).toBe("timex");
     expect(bankSpaceFor(MI_ZX81)?.id).toBe("zx81");
     expect(bankSpaceFor(MI_ZX80)?.id).toBe("zx80");
-    expect(bankSpaceFor("z88")).toBeUndefined();
+    // --- The Z88's banks (`z88RomPages.test.ts`); the C64's memory still cannot be annotated
+    expect(bankSpaceFor("z88")?.id).toBe("z88");
     expect(bankSpaceFor("c64")).toBeUndefined();
   });
 });

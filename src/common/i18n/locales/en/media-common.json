@@ -194,6 +194,13 @@
       "value": "The value found"
     }
   },
+  "media.romCheck.sourceWithoutCode": "{key}: the provenance \"source\" needs the file's sourceCode (the repository and commit the entry comes from).",
+  "@media.romCheck.sourceWithoutCode": {
+    "context": "Reason a ROM annotation working copy cannot be shipped (the ROM annotation editor's check panel and the rom-ann-check command output). \"source\" and \"sourceCode\" are literal JSON values and keys in the file; keep them untranslated.",
+    "placeholders": {
+      "key": "Entry id"
+    }
+  },
   "media.romCheck.misplacedLabel": "Page {page}: the label {name} is not on an instruction start inside code.",
   "@media.romCheck.misplacedLabel": {
     "context": "Reason a ROM annotation working copy cannot be shipped (the ROM annotation editor's check panel and the rom-ann-check command output).",

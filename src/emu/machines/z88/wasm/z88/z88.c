@@ -393,8 +393,8 @@ uint32_t z88GetCpuSigInt(void) { return z80GetSigInt(); }
 // Breakpoint conditions (`dev/plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`): the shared evaluator, with
 // this machine's side-effect-free reads. `z88MemoryPeek` reads through the paging with no timing, no
 // bus event, no flash command abort and no empty-slot generator step. A partition is a 16K bank as `getMemoryPartition` in `Z88WasmV2Machine.ts` reads it
-// (`z88BankStorageOffset`: a small card is mirrored across its slot). `page()` stays "no value", as
-// the machine's `getPartition` does not report the Z88's paging yet.
+// (`z88BankStorageOffset`: a small card is mirrored across its slot). `page()` is the bank behind the
+// address's 8K page (`z88PageBank`), as the machine's `getPartition` reports it.
 // -----------------------------------------------------------------------------
 
 static uint32_t condZ88PeekPartition(int32_t partition, uint32_t address) {
@@ -407,6 +407,7 @@ static uint32_t condZ88PeekPartition(int32_t partition, uint32_t address) {
 
 #define COND_PEEK(address) ((uint32_t)z88MemoryPeek((uint16_t)((address) & 0xffffu)))
 #define COND_PEEK_PARTITION(partition, address) condZ88PeekPartition(partition, address)
+#define COND_PARTITION_OF(address) ((int64_t)z88PageBank[((address) >> 13) & 0x07u])
 #include "../../../../z80/wasm/z80-condition.c"
 
 // -----------------------------------------------------------------------------
@@ -420,8 +421,7 @@ static uint32_t condZ88PeekPartition(int32_t partition, uint32_t address) {
 //   0-3  SR0-SR3, the segment registers
 //   4-11 the bank behind each 8K page (`z88PageBank`), which covers the split segment 0
 //   12   COM.RAMS (bit 2): bank $20 rather than $00 at $0000-$1FFF
-// The Z88's `getPartition` names no partition yet (the breakpoint conditions' `page()` says the same),
-// so its decoder names none either (D4).
+// The decoder names the partition the machine's `getPartition` names: the bank of the 8K page (D4).
 // -----------------------------------------------------------------------------
 
 static inline void z88HistoryContext(uint32_t kind, uint8_t *out) {

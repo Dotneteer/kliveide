@@ -34,7 +34,8 @@
   },
   "lastMemoryWriteValue": 0,
   "lastIoReadValue": 255,
-  "lastIoWriteValue": 1
+  "lastIoWriteValue": 1,
+  "pcPartition": 0
  },
  "OZ50 after booting and a few keys: getCpuStateChunk()": {
   "state": 0,
@@ -898,14 +899,14 @@
    32815
   ],
   "slotPartitions": [
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null
+   32,
+   33,
+   33,
+   33,
+   13,
+   13,
+   0,
+   0
   ]
  },
  "OZ50 after booting and a few keys: getMemoryContents()": {
@@ -938,14 +939,14 @@
    "00"
   ],
   "slotPartitions": [
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null
+   32,
+   33,
+   33,
+   33,
+   13,
+   13,
+   0,
+   0
   ],
   "selectedRom": 0,
   "selectedBank": 0,
@@ -954,7 +955,7 @@
  },
  "OZ50 after booting and a few keys: getMemoryContents(<every bank>)": {
   "steps": 256,
-  "sha256": "820ba3cbbff24d8c2f6e9f95b2c8231e3755f5233f227f805d699d9121eef4ad"
+  "sha256": "b795340e0a7259c4842a4b98478416f52317be8bdb3ab8de5120f601bf5ece67"
  },
  "OZ40 after booting and a few keys: getCpuState()": {
   "af": 84,
@@ -991,7 +992,8 @@
   },
   "lastMemoryWriteValue": 117,
   "lastIoReadValue": 255,
-  "lastIoWriteValue": 33
+  "lastIoWriteValue": 33,
+  "pcPartition": 0
  },
  "OZ40 after booting and a few keys: getCpuStateChunk()": {
   "state": 0,
@@ -1855,14 +1857,14 @@
    12822
   ],
   "slotPartitions": [
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null
+   32,
+   0,
+   33,
+   33,
+   7,
+   7,
+   0,
+   0
   ]
  },
  "OZ40 after booting and a few keys: getMemoryContents()": {
@@ -1895,14 +1897,14 @@
    "00"
   ],
   "slotPartitions": [
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null
+   32,
+   0,
+   33,
+   33,
+   7,
+   7,
+   0,
+   0
   ],
   "selectedRom": 0,
   "selectedBank": 0,
@@ -1911,7 +1913,7 @@
  },
  "OZ40 after booting and a few keys: getMemoryContents(<every bank>)": {
   "steps": 256,
-  "sha256": "9d2e5ecc97e8783ae8b712f3ad3b5690d969b6681ef32715ba67c2064f88c54a"
+  "sha256": "6fcaa7f209e759bac4e762f80617096c6e508ce5de3e8b1f6e0f3544adf70ab3"
  },
  "OZ30 after booting and a few keys: getCpuState()": {
   "af": 1860,
@@ -1948,7 +1950,8 @@
   },
   "lastMemoryWriteValue": 188,
   "lastIoReadValue": 255,
-  "lastIoWriteValue": 33
+  "lastIoWriteValue": 33,
+  "pcPartition": 0
  },
  "OZ30 after booting and a few keys: getCpuStateChunk()": {
   "state": 0,
@@ -2812,14 +2815,14 @@
    12822
   ],
   "slotPartitions": [
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null
+   32,
+   0,
+   33,
+   33,
+   7,
+   7,
+   0,
+   0
   ]
  },
  "OZ30 after booting and a few keys: getMemoryContents()": {
@@ -2852,14 +2855,14 @@
    "00"
   ],
   "slotPartitions": [
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null
+   32,
+   0,
+   33,
+   33,
+   7,
+   7,
+   0,
+   0
   ],
   "selectedRom": 0,
   "selectedBank": 0,
@@ -2868,7 +2871,7 @@
  },
  "OZ30 after booting and a few keys: getMemoryContents(<every bank>)": {
   "steps": 256,
-  "sha256": "3eb1df746ed234bd0745971e7fbc436b4c56a86ca833e4a1efb3ba464677ef68"
+  "sha256": "83a4be2a724f50a8ddf168f964e216f41bae91ff58480a11b617798520b26b3a"
  },
  "stopped mid-frame, a card in command mode: getCpuState()": {
   "af": 65535,
@@ -2904,7 +2907,8 @@
    "sha256": "513c6c7299980ea60165ba66ab57dff3a4629b91bfff3749979f52ae27c2574a"
   },
   "lastMemoryWriteValue": 144,
-  "lastIoWriteValue": 65
+  "lastIoWriteValue": 65,
+  "pcPartition": 34
  },
  "stopped mid-frame, a card in command mode: getCpuStateChunk()": {
   "state": 0,
@@ -3768,14 +3772,14 @@
    65535
   ],
   "slotPartitions": [
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null
+   32,
+   33,
+   33,
+   33,
+   34,
+   34,
+   65,
+   65
   ]
  },
  "stopped mid-frame, a card in command mode: getMemoryContents()": {
@@ -3808,14 +3812,14 @@
    "41"
   ],
   "slotPartitions": [
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null
+   32,
+   33,
+   33,
+   33,
+   34,
+   34,
+   65,
+   65
   ],
   "selectedRom": 0,
   "selectedBank": 0,
@@ -3824,7 +3828,7 @@
  },
  "stopped mid-frame, a card in command mode: getMemoryContents(<every bank>)": {
   "steps": 256,
-  "sha256": "99b7fafb83bd6e3ca8d6fbaf7bbc621ff8d7dfceebb1342b5cc7c1218847ea98"
+  "sha256": "b5c3d4095986482e73565be88b9c9915d08e13f1d879ce191942c79984be322a"
  },
  "register edits: getCpuState()": {
   "af": 23205,
@@ -3859,7 +3863,8 @@
    "byteLength": 16,
    "sha256": "cd5f6c7f3115457e9a97e919c87cef3eced9bc4a9e3d3e9aa0df24539b7f98d1"
   },
-  "lastMemoryWriteValue": 0
+  "lastMemoryWriteValue": 0,
+  "pcPartition": 34
  },
  "register edits, after the dump: getCpuState()": {
   "af": 15912,
@@ -3894,7 +3899,8 @@
    "byteLength": 16,
    "sha256": "cd5f6c7f3115457e9a97e919c87cef3eced9bc4a9e3d3e9aa0df24539b7f98d1"
   },
-  "lastMemoryWriteValue": 62
+  "lastMemoryWriteValue": 62,
+  "pcPartition": 34
  },
  "register edits, after the dump: getCpuStateChunk()": {
   "state": 0,
@@ -4758,14 +4764,14 @@
    0
   ],
   "slotPartitions": [
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null
+   32,
+   33,
+   33,
+   33,
+   34,
+   34,
+   35,
+   35
   ]
  },
  "register edits, after the dump: getMemoryContents()": {
@@ -4798,14 +4804,14 @@
    "23"
   ],
   "slotPartitions": [
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null
+   32,
+   33,
+   33,
+   33,
+   34,
+   34,
+   35,
+   35
   ],
   "selectedRom": 0,
   "selectedBank": 0,
@@ -4814,7 +4820,7 @@
  },
  "register edits, after the dump: getMemoryContents(<every bank>)": {
   "steps": 256,
-  "sha256": "4f672153a938b7aad7c52a411072d53798f335e2a2b93a457a2144891ec80c31"
+  "sha256": "ffb4f5cc48433dccc75a4aa31e6205c971659d163bd12b4633c893dcda85ab59"
  },
  "memory edits: getCpuState()": {
   "af": 65535,
@@ -4847,7 +4853,8 @@
   "lastMemoryWrites": {
    "byteLength": 16,
    "sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb"
-  }
+  },
+  "pcPartition": 34
  },
  "memory edits: getCpuStateChunk()": {
   "state": 0,
@@ -5711,14 +5718,14 @@
    0
   ],
   "slotPartitions": [
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null
+   32,
+   33,
+   33,
+   33,
+   34,
+   34,
+   65,
+   65
   ]
  },
  "memory edits: getMemoryContents()": {
@@ -5751,14 +5758,14 @@
    "41"
   ],
   "slotPartitions": [
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null
+   32,
+   33,
+   33,
+   33,
+   34,
+   34,
+   65,
+   65
   ],
   "selectedRom": 0,
   "selectedBank": 0,
@@ -5767,6 +5774,6 @@
  },
  "memory edits: getMemoryContents(<every bank>)": {
   "steps": 256,
-  "sha256": "399e2448b3f389bfda0f74d25a8a351531b847603d8f922b46126b61d482a824"
+  "sha256": "052ece65e09ee13152bb1ea3c0f5810741d733d0d2237e9399bb745f43f17578"
  }
 }
