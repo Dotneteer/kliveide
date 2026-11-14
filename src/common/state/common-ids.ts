@@ -46,6 +46,8 @@ export const HARD_DISK_EXPLORER = "HardDiskExplorer";
 export const NEX_VIEWER = "NexViewer";
 /** The ZX Spectrum Next core update file, `TBBLUE.TBU` (`dev/plans/TBBLUE_TBU_VIEWER_PLAN.md`) */
 export const TBU_VIEWER = "TbuViewer";
+/** The ZX Spectrum Next firmware file, `TBBLUE.FW` (`dev/plans/TBBLUE_FW_VIEWER_PLAN.md`) */
+export const FW_VIEWER = "FwViewer";
 // --- A ROM sidecar opened for editing (`dev/plans/ROM_ANNOTATION_EDITING_PLAN.md` R4)
 export const ROM_ANNOTATION_EDITOR = "RomAnnotationEditor";
 export const Z88_SNAPSHOT_VIEWER = "Z88SnapshotViewer";

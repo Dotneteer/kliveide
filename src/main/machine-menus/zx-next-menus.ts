@@ -119,7 +119,13 @@ export const sdCardMenuRenderer: MachineMenuRenderer = (windowInfo) => {
   items.push({
     id: "show_tbu",
     label: t("menu.next.showTbu"),
-    click: async () => await showNextTbu(windowInfo.ideWindow ?? emuWindow)
+    click: async () => await showNextSdCardFile(windowInfo.ideWindow ?? emuWindow, "show-tbu", t("menu.next.showTbuFailed"))
+  });
+  // --- The firmware file beside it (`dev/plans/TBBLUE_FW_VIEWER_PLAN.md`, Phase 3)
+  items.push({
+    id: "show_fw",
+    label: t("menu.next.showFw"),
+    click: async () => await showNextSdCardFile(windowInfo.ideWindow ?? emuWindow, "show-fw", t("menu.next.showFwFailed"))
   });
   // --- A board with a second card reader (the KS3): card 1, an empty slot until an image is chosen
   if (nextProfileOf(appState.emulatorState?.modelId).sdReaders === 2) {
@@ -621,21 +627,22 @@ export const nextDebugMenuRenderer: MachineMenuRenderer = () => [
 ];
 
 /**
- * Machine › SD Card › Show TBBLUE.TBU: the document opens in the IDE, so the IDE window comes up first;
- * a card without the file (or no card) is said in a message box, not only in the Build pane.
+ * Machine › SD Card › Show TBBLUE.TBU / Show TBBLUE.FW: the document opens in the IDE, so the IDE window
+ * comes up first; a card without the file (or no card) is said in a message box, not only in the Build
+ * pane.
  */
-async function showNextTbu(window: BrowserWindow): Promise<void> {
+async function showNextSdCardFile(window: BrowserWindow, command: string, failedTitle: string): Promise<void> {
   // --- Loaded at the click: the app's entry module must not load with the menus (tests build them)
   const { showIdeWindow } = await import("../index");
   showIdeWindow();
-  const result = await getIdeApi().executeCommand("show-tbu");
+  const result = await getIdeApi().executeCommand(command);
   if (result?.success) return;
   // --- As every menu-started message box: the menu stays dimmed while it is up
   mainStore.dispatch(dimMenuAction(true));
   try {
     await dialog.showMessageBox(window, {
       type: "error",
-      title: t("menu.next.showTbuFailed"),
+      title: failedTitle,
       message: result?.finalMessage ?? t("messages.command.failed")
     });
   } finally {

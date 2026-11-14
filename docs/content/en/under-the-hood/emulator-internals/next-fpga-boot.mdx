@@ -524,8 +524,17 @@ is why the firmware can be updated by copying a file, without touching the flash
 `TBBLUE.FW` is not one program but a small library of them. Its first 512-byte block is a **map**: for each
 module, the block it starts at and how many blocks it is long. The boot ROM reads the map and loads only the
 module it needs. The modules are the **boot** module, the **updater**, the settings **editor**, the **extra
-cores** module, a video **test card**, a module that **resets** `config.ini` to its defaults, and the
-start-up **screens**. A module that needs another one loads it the same way and jumps to it.
+cores** module, a video **test card**, and a module that **resets** `config.ini` to its defaults; one more
+entry is not a program but a block of data, the **screens**, with the test card's picture and the start-up
+screen's text. A module that needs another one loads it the same way and jumps to it. Every module is loaded
+at `$6000` and runs from there.
+
+The map has two curious entries, the second and the fourth, which point at the boot module again. That is
+on purpose: they are where the editor and the extra cores module used to be, and an old loader that still
+starts them gets the boot module instead of something unexpected. And the map keeps growing: firmware 1.46,
+in System/Next 26.11a, has seventeen entries, eight of which no published source names yet. You can look at
+all of them yourself: open `TBBLUE.FW` in Klive, or choose **Machine › SD Card › Show TBBLUE.FW**, and the
+[firmware viewer](/en/guides/next/fw-files/) lists the modules, the keys that start them and each one's code.
 
 The keys you hold decide the module, and **when** you hold them matters. Keys are read at two moments:
 

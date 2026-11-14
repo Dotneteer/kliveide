@@ -335,6 +335,11 @@ export function rgb333Css(rgb: number): string {
   return `#${h(rgb >> 6)}${h(rgb >> 3)}${h(rgb)}`;
 }
 
+/** `[r, g, b]` (0-255) of a 9-bit colour, with the same levels as `rgb333Css`, for drawing into pixels */
+export function rgb333Rgb(rgb: number): [number, number, number] {
+  return [LEVELS[(rgb >> 6) & 7], LEVELS[(rgb >> 3) & 7], LEVELS[rgb & 7]];
+}
+
 /** The 9-bit colour as hex text: `$1C7` */
 export function rgb333Hex(rgb: number): string {
   return `$${(rgb & 0x1ff).toString(16).toUpperCase().padStart(3, "0")}`;

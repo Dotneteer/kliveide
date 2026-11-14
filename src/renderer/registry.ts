@@ -13,6 +13,7 @@ import {
   HARD_DISK_EXPLORER,
   NEX_VIEWER,
   TBU_VIEWER,
+  FW_VIEWER,
   ROM_ANNOTATION_EDITOR,
   Z88_SNAPSHOT_VIEWER,
   SPECTRUM_SNAPSHOT_VIEWER,
@@ -124,6 +125,7 @@ import {
 import { BlinkPanel } from "./appIde/SideBarPanels/BlinkPanel";
 import { createNexFileViewerPanel } from "./appIde/DocumentPanels/Next/NexFileViewerPanel";
 import { createTbuFileViewerPanel } from "./appIde/DocumentPanels/Next/TbuFileViewerPanel";
+import { createFwFileViewerPanel } from "./appIde/DocumentPanels/Next/FwFileViewerPanel";
 import { createRomAnnotationEditorPanel } from "./appIde/DocumentPanels/Rom/RomAnnotationEditorPanel";
 import { createZ88SnapshotViewerPanel } from "./appIde/DocumentPanels/Z88/Z88SnapshotViewerPanel";
 import { createSpectrumSnapshotViewerPanel } from "./appIde/DocumentPanels/Spectrum/SpectrumSnapshotViewerPanel";
@@ -643,6 +645,12 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     icon: "cpu"
   },
   {
+    // --- The Next's firmware file (`dev/plans/TBBLUE_FW_VIEWER_PLAN.md`)
+    id: FW_VIEWER,
+    renderer: createFwFileViewerPanel,
+    icon: "cpu"
+  },
+  {
     // --- `.sna`, `.z80` and `.szx` (`dev/plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.8)
     id: SPECTRUM_SNAPSHOT_VIEWER,
     renderer: createSpectrumSnapshotViewerPanel,
@@ -1082,6 +1090,17 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     pattern: "TBBLUE.TBU",
     ignoreCase: true,
     editor: TBU_VIEWER,
+    icon: "cpu",
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true
+  },
+  // --- The Next's firmware file, by its exact name only (`dev/plans/TBBLUE_FW_VIEWER_PLAN.md` D1)
+  {
+    matchType: "name",
+    pattern: "TBBLUE.FW",
+    ignoreCase: true,
+    editor: FW_VIEWER,
     icon: "cpu",
     isBinary: true,
     isReadOnly: true,

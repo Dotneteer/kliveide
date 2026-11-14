@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 
 import { parseTbuFile } from "@common/zxnext/tbuFile";
+import { parseFwFile } from "@common/zxnext/fwFile";
 
 /*
  * Reading a file from the ZX Spectrum Next's current SD card (`dev/plans/TBBLUE_TBU_VIEWER_PLAN.md`,
@@ -50,6 +51,13 @@ describe("readNextSdCardFile", () => {
     expect(tbu.records.map((r) => r.bitstream?.part)).toEqual([
       "XC6SLX16", "XC7A15T", "XC7A35T", "XC6SLX16", "XC6SLX16", "XC6SLX16", "XC6SLX16"
     ]);
+  });
+
+  it("reads TBBLUE.FW from the same card", async () => {
+    Object.assign(cards, { active: CARD_2611, workingCopy: path.join(dir, "ks3.cim"), baseImage: CARD_2611 });
+    const result = await read("TBBLUE.FW");
+    expect(result.error).toBeUndefined();
+    expect(parseFwFile(result.contents!).version).toBe("1.46");
   });
 
   it("reads the model's base image while its working copy does not exist yet", async () => {
