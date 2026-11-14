@@ -72,25 +72,73 @@ Background: the Under the Hood article `docs/content/en/under-the-hood/emulator-
   (`FW_TILEMAP_DAT_SIZE` 2,464 per machine id) and its palette (13); the boot module seeks to
   `49152 + 227 + 8896 × s[mach_id]`. Whether the picture and palette can be drawn is Phase 0.
 
+### 1a. Phase 0 results (2026-11-14)
+
+**The 26.11a notes on KS3** [doc]: the "should NOT have a TBBLUE.FW" sentence is about the **fresh
+update card** a KS3 owner prepares for `updater.bas` ("Copy the install.bas, updater.bas and
+sn-update-26.11a.dsu files onto the root of a fresh card, which should NOT have a TBBLUE.FW file on its
+root"), because the anti-brick boot ROM boots from whichever card holds the file [rom]. It says nothing
+against TBBLUE.FW on a KS3's system card; the release calls 1.46 "Firmware 1.46 for all Nexts and
+Clones". D6 is corrected below.
+
+**Entries 9-16 of firmware 1.46** [bin]: each is either a code module, starting with the stub every
+named module starts with (`31 FF FF F3`: `ld sp,$FFFF / di`), or data. Their texts (observed, **not
+names**):
+
+| # | Kind | Blocks | Texts in it |
+|---|---|---|---|
+| 9 | code | 69 | "Flash core", "Erase core", "No other core on the card" |
+| 10 | code | 63 | `/machines/`, `/core.cfg`, `userfile=`, `filetypes=` |
+| 11 | code | 66 | `/machines/%s/core.cfg`, `romnote=`, `resource=` |
+| 12 | code | 52 | `FILESEL1`, `core.cfg`, `roms.inf` |
+| 13 | data | 6 | the credits: "The Creators", "Victor Trucco", "Fabio Belavenuto", ... |
+| 14 | code | 66 | "%s (KS%c) - %s - %uK", `config.ini`, `espreset=`, `timing=` |
+| 15 | code | 48 | "The credits cannot be read.", "SPACE pause" |
+| 16 | data | 210 | starts with `SCRLM`: graphics |
+
+No source names them, so the viewer does not either (D3). What it can show truthfully is each entry's
+**kind** (code by the stub, otherwise data) and **the texts it contains** (D8).
+
+**The oldest core** [bin]: in 1.44 the value 3.01.10 sits in the boot module's initialised data
+(`0A 01 03 00` after a `6B 6D`); 1.45 and 1.46 still print "You need at least core v" but hold the value
+elsewhere (not as those bytes, not as an `ld hl,nn` / `ld de,$0003` pair). Finding it means reverse
+engineering each version's boot module, so **the viewer does not show it** (the article states 1.44's).
+
+**The screens block** [src][bin]: from the test card module (`videotest.c`): the 256×192 Layer 2 picture
+(49,152 bytes, one palette index per pixel), then **227 bytes of 9-bit palette entries**, two bytes each
+(first `RRRGGGBB`, second bit 0 the low blue bit; white is `$01FF`), the rest of the 256 entries zero;
+then per-machine tilemap data (the start-up text, 8 × 8,896 bytes from offset 49,379), the tilemap
+palette (13 bytes) and more tilemap data. **The Layer 2 picture is the video test card**, not a
+start-up logo: drawn by hand from 1.46 and 1.44 (113 colours each) it is the ZXN test card exactly.
+The viewer shows it (D5).
+
+**The 2019 layout** [bin]: entries 0-3 are the same modules by position, read from their texts: 0
+"TBBLUE BOOT ROM" (boot), 1 the editor (the joystick names), 2 "Anti-Brick ... Updater", 3 "Extra Cores
+Updater"; 4 and 5 are data. So `FW_BLK_OLD_EDITOR` and `FW_BLK_OLD_CORES` are where the editor and the
+cores module **used to be**: names 0-3 hold in both layouts, as "Editor (old place)" and "Cores (old
+place)" when they are real modules, and as aliases of Boot when they repeat entry 0. Entries 4-8 are
+named only in the current layout (D3).
+
 ## 2. Decisions
 
 - **D1. Match by file name only** (`TBBLUE.FW`, any case), with the TBU viewer's `matchType: "name"`.
 - **D2. A pure reader**, `src/common/zxnext/fwFile.ts`: bytes in, a model out (map entries, aliases,
   names where the layout is the current one, module ranges and padding, version and oldest core when
   found, problems as codes). Never throws (D3 of the TBU plan).
-- **D3. Names by index only for the current layout** (entries 1 and 3 alias entry 0); otherwise entry 0
-  is "boot" and entry 2 "updater" only if the anti-brick ROM's own reading applies (Phase 0), and the
-  rest are numbered. Entries past 8 are always numbered. No name is invented.
+- **D3. Names by index from the published source.** Entries 0-3 in every layout (1 and 3 are "Editor
+  (old place)" / "Cores (old place)" when real, aliases of Boot when they repeat entry 0); entries 4-8
+  only in the current layout (where 1 and 3 are aliases). Everything else is numbered. No name is
+  invented (§1a).
 - **D4. Problems**: not a firmware file (map entries pointing past the end, or a file under 512 bytes),
   a file that is not whole blocks, data after the last module, partly overlapping modules (exact
   repeats are aliases, not problems), an entry 0 or 2 that is missing (the boot ROM needs 2, the
   loaders need 0).
-- **D5. A module's content**: code modules open in the static memory dump at `$6000` with disassembly
-  on (the NEX bank's way); the in-viewer listing (depending on the layout chosen) uses the same
-  disassembler. The screens block shows its picture if Phase 0 can decode it, otherwise its bytes.
+- **D5. A module's content**: a code module's disassembly at `$6000` in the viewer (Klive's Z80N
+  disassembler, the listing colours), and in the static memory dump on demand. The screens block shows
+  its **test card picture** (Layer 2 and its 9-bit palette, §1a), the rest of it as bytes in the dump.
 - **D6. Machine › SD Card › Show TBBLUE.FW** and `show-fw`, beside Show TBBLUE.TBU, through
-  `readNextSdCardFile`. A card without the file (the 26.11a notes say a KS3 card should have none) says
-  so in the message box; that is not an error of the card.
+  `readNextSdCardFile`. A card without the file says so in the message box, as for TBBLUE.TBU. (The
+  26.11a "no TBBLUE.FW" note is about a KS3's separate update card, §1a.)
 - **D7. Layout A, like the TBU viewer** (chosen by the project author from the mockups,
   `.local/fw-mockup/index.html`, 2026-11-14; B "keys first" and C "list and tabs" not taken): File
   (version, size, oldest core, verdict), Modules (the map as a `TimelineStrip` over the distinct blocks,
@@ -98,10 +146,14 @@ Background: the Under the Hood article `docs/content/en/under-the-hood/emulator-
   pointing at entry 0), the selected module's details (what it is, its keys, block and file range, where
   it runs, its `$00` tail, the alias note), then its content: the disassembly at `$6000` for a code
   module, the picture (or its bytes) for the screens block. The key glyphs come from B, as a column.
+  The File section drops "oldest core" (§1a).
+- **D8. Every module's kind and texts.** Code (it starts with the `31 FF FF F3` stub) or data, and the
+  printable runs of six or more characters it contains, in the details. This is how an unnamed entry
+  (1.46's 9-16) is told apart without inventing a name.
 
 ## 3. Phases
 
-### Phase 0 — Spike (no product code)
+### Phase 0 — Spike (no product code) — done; results in §1a
 
 - Read the 26.11a release notes on TBBLUE.FW and KS3, and record what they mean for D6.
 - Entries 9-16 of 1.46: what each looks like (a code module's stub at its start, `31 FF FF F3`, or data),
