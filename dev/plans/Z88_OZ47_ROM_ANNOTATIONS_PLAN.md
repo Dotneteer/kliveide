@@ -3,10 +3,10 @@
 **Status:** In progress (2026-11-14). Phase 0 done (the build identified; no rebuild, D-OZ5). Phase 1
 done (Z88 bank space, ROM pages, `z88-oz` decoding, `source` provenance; checked in the running IDE).
 Phase 2 done (2026-11-15): every component with source imports (banks 0-8, $0A-$0D and $1F), and each bank
-reassembles byte for byte. Phase 3 under way (2026-11-15): every annotated bank measures level 2 (not recorded yet); level 2
+reassembles byte for byte. Phase 3 done (2026-11-15): every annotated bank measures level 2, and the sidecar records it; level 2
 counts routines (D-OZ6) and bank 9 is left out (D-OZ7). The system banks are level 2: the kernel (0, 1),
 bank 2, GN (3), MTH (8), DC and Index ($0C), the FPP ($0D) and the file area ($10); so are banks 4, 7,
-$0A (EazyLink, the Filer), $0B (FlashStore) and $1F (the ROM header). PipeDream (5, 6) completed it. The rename proposals are reviewed, the IDE names operands across runs and banks, and the coverage run is clean. Left: recording the level. **To continue in a new session, read "Handoff (2026-11-15)" at the end of Phase 3.**
+$0A (EazyLink, the Filer), $0B (FlashStore) and $1F (the ROM header). PipeDream (5, 6) completed it. The rename proposals are reviewed, the IDE names operands across runs and banks, and the coverage run is clean. Left: Phase 4, shipping, which waits for Q1 (the permission's wording). **To continue in a new session, read "Handoff (2026-11-15)" at the end of Phase 3.**
 **Goal:** a shipped sidecar `src/public/roms/z88v47.rom.dis` that annotates the OZ 4.7 ROM's banks to
 level 2 (all but bank 9, D-OZ7). It is built mostly from the OZ project's own assembler source,
 <https://bitbucket.org/cambridge/oz/src/V4.7/>, which the owner has given permission to use.
@@ -354,6 +354,11 @@ addresses (the pilot's finding); and copying the result into `src/public/roms/z8
    against what is executed.
 5. Record `level: 2` once the tool measures it. Regenerate `rom-annotations.index.json`.
 
+   *Done (2026-11-15):* the authored file's top-level `level` (2) is copied into the sidecar by the import;
+   the readiness check refuses a page that measures less (a copy recording 3 fails on all 16 pages). The
+   index lists only the shipped sidecars in `src/public/roms/`, so it gains `z88v47.rom.dis` when the file
+   ships (Phase 4); `npm run rom:annotations -- --check` passes unchanged.
+
 ### Phase 3 status (2026-11-15)
 
 Done, on branch `dotneteer/z88-oz47-phase2`:
@@ -448,7 +453,7 @@ Debug > ROM Annotations > z88v47.rom shows each page's level and its "To label" 
 **Where it stands.** Phase 2 and most of Phase 3 are merged into master (pull request "Z88 OZ 4.7 ROM
 annotations: Phase 2 and most of Phase 3"); work goes on on branch `dotneteer/z88-oz47-phase3`. Every
 annotated bank (0-8, $0A-$0D, $10, $1F) measures level 2; no synopsis is missing. Bank 9 is out (D-OZ7). The
-`level: 2` is not recorded in the sidecar yet. The branch carries an `internal`
+sidecar records `level: 2`, and the coverage run is clean. The branch carries an `internal`
 changeset (`dev/changes/cambridge-z88-oz-4-7-1a32.md`, at the developer's request); **the session that
 finishes the plan turns it into the `feature` changeset**
 ("Cambridge Z88 ROM annotations" for OZ 4.7) instead of adding a second one.
@@ -474,9 +479,11 @@ names several modules share), check each draft (`z88-synopsis-merge.cjs <slice>:
 sample, merge, re-import, check, reassemble, install the working copy, append `z88-synopsis-notes.cjs`
 output to `z88-oz47-review.md` and add a `PROVENANCE.md` entry. Ask the helpers for decimal IY offsets.
 
-**Next steps, in order:**
-1. **Record `level: 2`** once every bank measures it, regenerate `rom-annotations.index.json`; then Phase 4,
-   which waits for Q1 (the permission's wording) before anything ships.
+**Next steps, in order:** Phase 3 is done. Phase 4 (below) ships the sidecar, and it waits for **Q1**, the
+exact wording of the owner's permission (D-OZ2), which only the developer can supply. Then: copy
+`.local/oz-import/z88v47.rom.dis` to `src/public/roms/z88v47.rom.dis`, run `npm run rom:annotations` (format and
+index), add the permission notice and `THIRD_PARTY_NOTICES.md` entry, and turn the branch's changeset into the
+`feature` one. The FlashStore fault the coverage run found is open but does not block it.
 
 **Checks after each batch.** The reassembly template: copy
 `dev/ai/rom-annotations/tools/reassemble-test.ts.txt` to `test/reverse-eng/zz-reassemble.test.ts`, run

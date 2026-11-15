@@ -209,6 +209,9 @@ function applyAuthored(file) {
   let labels = 0;
   let lines = 0;
   let regions = 0;
+  // --- The level the author records (README, "Completeness levels"): never above what the tool measures,
+  // --- which the readiness check (`check-annotations.cjs`, the IDE's) enforces page by page
+  if (typeof authored.level === "number") sidecar.level = authored.level;
   for (const [key, entries] of Object.entries(authored.banks)) {
     const bank = (sidecar.banks[key] ??= { offsetIndex: 0, regions: [], localLabels: [], lineAnnotations: {} });
     if (!sidecar.pages[key]) {

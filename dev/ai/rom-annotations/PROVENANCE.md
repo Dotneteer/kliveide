@@ -2668,3 +2668,11 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
   the note); it is idempotent.
 - **Sources:** the OZ V4.7 source's label names (D-OZ1); the entries are `source`.
 - **Level:** unchanged, 2 on every bank. Not shipped yet (Q1).
+
+### 2026-11-15 — Cambridge Z88: OZ 4.7, level 2 recorded
+
+- **What:** the sidecar records `level: 2` (the authored file's top-level `level`, copied by the import).
+- **How:** `check-annotations.cjs` measures level 2 on every annotated page (banks 0-8, $0A-$0D, $10, $1F;
+  bank 9 left out, D-OZ7) with no problems, every bank reassembles byte for byte, and the coverage run
+  (`tools/z88-coverage-run.ts.txt`) finds no code in a data region and no unlisted executed start.
+- **Level:** 2, recorded. Not shipped yet (Q1).
