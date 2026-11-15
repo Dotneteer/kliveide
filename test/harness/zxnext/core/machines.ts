@@ -97,7 +97,7 @@ export type CreateCoreOptions = {
   /**
    * The real-time clock's host side (`dev/ai/zxnext-rtc.md`), set before `setup()` seeds
    * the clock: what it follows, keeping it, the store and a fake host clock. Unset: emulated time,
-   * not kept - every test that does not ask stays deterministic.
+   * not kept, seeded from `HARNESS_RTC_HOST_TIME` - every test that does not ask stays deterministic.
    */
   rtc?: NextRtcOptions;
 };
@@ -106,9 +106,18 @@ export type NextRtcOptions = {
   clock?: NextRtcClockMode;
   keep?: boolean;
   store?: NextRtcStore;
-  /** Host milliseconds (`Date.now` by default) */
+  /** Host milliseconds; unset, the fixed `HARNESS_RTC_HOST_TIME` (never the real `Date.now`) */
   now?: () => number;
 };
+
+/**
+ * The host time a harness machine's real-time clock is seeded from when the test gives no `rtc.now`:
+ * 2026-01-01 12:00:00, built from local fields so the registers read the same in every timezone. The
+ * machine seeds the DS1307's time registers from its host clock at setup (`NextRtcHost.seed`); with the
+ * real `Date.now`, two sessions created in different seconds differ in `zxnextRtcRegs`, which made every
+ * test comparing two machines' memory fail now and then (the audio mixer's "non-volatile byte" test).
+ */
+export const HARNESS_RTC_HOST_TIME = new Date(2026, 0, 1, 12, 0, 0).getTime();
 
 export async function createCore(options: CreateCoreOptions = {}): Promise<NextMachine> {
   const profile = options.profile ?? IMPLICIT_NEXT_PROFILE_ID;
@@ -120,7 +129,8 @@ export async function createCore(options: CreateCoreOptions = {}): Promise<NextM
   });
   machine.setMachineProperty(FILE_PROVIDER, new HarnessFileProvider());
   if (options.audioSampleRate) machine.setMachineProperty(AUDIO_SAMPLE_RATE, options.audioSampleRate);
-  if (options.rtc?.now) machine.setMachineProperty(NEXT_RTC_HOST_CLOCK, options.rtc.now);
+  // --- A fixed host clock unless the test brings its own: the seeded time is the same in every session
+  machine.setMachineProperty(NEXT_RTC_HOST_CLOCK, options.rtc?.now ?? (() => HARNESS_RTC_HOST_TIME));
   if (options.rtc?.store) machine.setMachineProperty(NEXT_RTC_STORE, options.rtc.store);
   if (options.rtc?.clock) machine.setMachineProperty(NEXT_RTC_CLOCK, options.rtc.clock);
   if (options.rtc?.keep !== undefined) machine.setMachineProperty(NEXT_RTC_KEEP, options.rtc.keep);

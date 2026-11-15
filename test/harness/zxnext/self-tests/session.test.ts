@@ -1,5 +1,5 @@
 import { resolve } from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { createSession } from "../script/session";
 
@@ -283,6 +283,22 @@ describe("harness session", () => {
     expect(a.memoryDifferences(b)).toEqual([]);
     a.poke(0xc000, 0x5a);
     expect(a.memoryDifferences(b).length).toBeGreaterThan(0);
+  });
+
+  it("memoryDifferences: two sessions created seconds apart are equal (the clock does not follow the host)", async () => {
+    // --- The real-time clock is seeded at setup; with the host's wall clock, a second boundary between
+    // --- two createSession calls made them differ in the DS1307's registers (a flaky audio-mixer test)
+    const now = vi.spyOn(Date, "now");
+    try {
+      now.mockReturnValue(new Date(2030, 5, 1, 8, 0, 0).getTime());
+      const a = await createSession();
+      now.mockReturnValue(new Date(2030, 5, 1, 8, 0, 2).getTime());
+      const b = await createSession();
+      expect(a.memoryDifferences(b)).toEqual([]);
+      expect(a.rtcRegister(0)).toBe(b.rtcRegister(0));
+    } finally {
+      now.mockRestore();
+    }
   });
 
   it("attachSdCard: a sector read's frame command is answered from the image; sync runs refuse it", async () => {
