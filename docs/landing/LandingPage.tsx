@@ -144,53 +144,53 @@ export default function LandingPage({ lang }: Readonly<{ lang: string }>) {
               <a href={site.releasesPage}>{t("hero.otherPlatforms")}</a>
             </p>
           </div>
-          <aside className="lp-glance" aria-labelledby="lp-glance-title">
-            <h2 id="lp-glance-title">{t("glance.title")}</h2>
-            <dl>
-              {site.latestRelease !== "0.0.0" && (
-                <div>
-                  <dt>{t("glance.version")}</dt>
-                  <dd>
-                    <span className="lp-mono">{site.latestRelease}</span>
-                  </dd>
-                </div>
-              )}
-              <div>
-                <dt>{t("glance.runsOn")}</dt>
-                <dd>macOS, Windows, Linux</dd>
-              </div>
-              <div>
-                <dt>{t("glance.licence")}</dt>
-                <dd>{t("glance.licenceValue")}</dd>
-              </div>
-              {/* --- Without a release there is no version cell: the interface takes the row alone */}
-              <div className={site.latestRelease === "0.0.0" ? "lp-glance-wide" : undefined}>
-                <dt>{t("glance.interface")}</dt>
-                <dd>{t("glance.interfaceValue")}</dd>
-              </div>
-              <div className="lp-glance-wide">
-                <dt>{t("glance.languages")}</dt>
-                <dd>{t("glance.languagesValue")}</dd>
-              </div>
-              <div className="lp-glance-wide">
-                <dt>{t("glance.worksWith")}</dt>
-                <dd>sjasmplus, Boriel BASIC, z88dk, PASTA/80</dd>
-              </div>
-            </dl>
-          </aside>
+          <div className="lp-top-media">
+            <HeroCarousel
+              slides={slides}
+              label={t("hero.carousel.label")}
+              previousLabel={t("hero.carousel.previous")}
+              nextLabel={t("hero.carousel.next")}
+              slideLabel={t("hero.carousel.slide")}
+              pauseLabel={t("hero.carousel.pause")}
+              playLabel={t("hero.carousel.play")}
+              openLabel={t("viewer.open")}
+            />
+          </div>
         </section>
 
-        <section className="lp-carousel-band">
-          <HeroCarousel
-            slides={slides}
-            label={t("hero.carousel.label")}
-            previousLabel={t("hero.carousel.previous")}
-            nextLabel={t("hero.carousel.next")}
-            slideLabel={t("hero.carousel.slide")}
-            pauseLabel={t("hero.carousel.pause")}
-            playLabel={t("hero.carousel.play")}
-            openLabel={t("viewer.open")}
-          />
+        {/* --- The facts as one strip under the first screen, a data sheet's header row */}
+        <section className="lp-glance" aria-labelledby="lp-glance-title">
+          <h2 id="lp-glance-title">{t("glance.title")}</h2>
+          <dl>
+            {site.latestRelease !== "0.0.0" && (
+              <div>
+                <dt>{t("glance.version")}</dt>
+                <dd>
+                  <span className="lp-mono">{site.latestRelease}</span>
+                </dd>
+              </div>
+            )}
+            <div>
+              <dt>{t("glance.runsOn")}</dt>
+              <dd>macOS, Windows, Linux</dd>
+            </div>
+            <div>
+              <dt>{t("glance.licence")}</dt>
+              <dd>{t("glance.licenceValue")}</dd>
+            </div>
+            <div>
+              <dt>{t("glance.interface")}</dt>
+              <dd>{t("glance.interfaceValue")}</dd>
+            </div>
+            <div>
+              <dt>{t("glance.languages")}</dt>
+              <dd>{t("glance.languagesValue")}</dd>
+            </div>
+            <div>
+              <dt>{t("glance.worksWith")}</dt>
+              <dd>sjasmplus, Boriel BASIC, z88dk, PASTA/80</dd>
+            </div>
+          </dl>
         </section>
 
         <section className="lp-sec lp-two">

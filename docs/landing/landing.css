@@ -213,20 +213,23 @@ div.lp-body {
   filter: brightness(1.08);
 }
 
-/* ------------------------------------------------------------------ headline and "At a glance" */
+/* ------------------------------------------------------------------ the first screen: headline and carousel */
 
+/* --- The first screen holds the whole pitch: the headline and its actions on the left, the carousel
+   --- on the right, both fully visible without scrolling. The carousel is as wide as its column or as
+   --- the screen's height allows (see .lp-top-media .lp-carousel), whichever is smaller. */
 .lp-top {
   display: grid;
-  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
-  gap: 4rem;
-  align-items: start;
-  padding: 3.5rem 0 var(--lp-section-gap);
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: 3rem;
+  align-items: center;
+  padding: 2rem 0;
 }
 
 .lp-top h1 {
   margin-bottom: 1rem;
   max-width: 15ch;
-  font-size: clamp(2.25rem, 4.2vw, 3.25rem);
+  font-size: clamp(2.25rem, 3.4vw, 3.25rem);
   line-height: 1.1;
 }
 
@@ -257,10 +260,14 @@ div.lp-body {
   min-width: 0;
 }
 
-/* --- "At a glance": a spec card. A panel on the page's own paper with a hairline edge, its title on
-   --- the chrome tone, and the facts as labelled cells (label over value) in two columns, divided by
-   --- hairlines. The long list of tools takes a whole row. */
+/* --- "At a glance": one strip under the first screen, like a data sheet's header row. Its title is
+   --- the first cell, on the chrome tone; the facts follow as labelled cells (label over value),
+   --- divided by hairlines (1px grid gaps over --site-line). They wrap to more rows on narrower
+   --- screens, and the title goes on top below 760px. */
 .lp-glance {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  margin-bottom: var(--lp-section-gap);
   border: 1px solid var(--site-line);
   border-radius: 8px;
   background: var(--site-panel);
@@ -268,30 +275,37 @@ div.lp-body {
 }
 
 .lp-glance h2 {
-  padding: 0.875rem 1.25rem;
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.5rem;
   background: var(--site-chrome);
-  border-bottom: 1px solid var(--site-line);
+  border-right: 1px solid var(--site-line);
   font-size: 1.125rem;
   line-height: 1.3;
+  white-space: nowrap;
 }
 
 .lp-glance dl {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
   gap: 1px;
   margin: 0;
   /* --- The 1px gaps show this colour: the hairlines between the cells */
   background: var(--site-line);
 }
 
+/* --- On a wide screen the six facts stand in one row, each column weighted by how long its value is
+   --- (the version is short, the list of tools long), so no value breaks into three lines */
+@media (min-width: 1100px) {
+  .lp-glance dl:has(> div:nth-child(6)) {
+    grid-template-columns: 0.7fr 1.15fr 1.25fr 1fr 1.25fr 1.6fr;
+  }
+}
+
 .lp-glance dl > div {
   min-width: 0;
   padding: 0.875rem 1.25rem 1rem;
   background: var(--site-panel);
-}
-
-.lp-glance .lp-glance-wide {
-  grid-column: 1 / -1;
 }
 
 .lp-glance dt {
@@ -310,20 +324,34 @@ div.lp-body {
   font-size: 1rem;
 }
 
-/* ------------------------------------------------------------------ the hero carousel */
+@media (max-width: 760px) {
+  .lp-glance {
+    grid-template-columns: minmax(0, 1fr);
+  }
 
-.lp-carousel-band {
-  margin-bottom: var(--lp-section-gap);
+  .lp-glance h2 {
+    border-right: 0;
+    border-bottom: 1px solid var(--site-line);
+  }
 }
+
+/* ------------------------------------------------------------------ the hero carousel */
 
 .lp-carousel {
   display: grid;
   gap: 0.625rem;
-  /* --- The whole picture and its bar fit the screen below the header: the frame is 16:10, so its
-     --- width is 1.6 times the height left over (the header, the bar, and a little room above and
-     --- below). On a phone the column's width is the smaller of the two. */
-  width: min(100%, max(18rem, calc((100svh - var(--site-header-height) - 6.5rem) * 1.6)));
-  margin: 0 auto;
+}
+
+/* --- The whole picture and its bar fit the first screen: the frame is 16:10, so its width is 1.6
+   --- times the height left over (the rule, the header, the hero's padding, the bar and its gap).
+   --- In a narrow column, or on a phone, the column's width is the smaller of the two. */
+.lp-top-media {
+  min-width: 0;
+}
+
+.lp-top-media .lp-carousel {
+  width: min(100%, max(18rem, calc((100svh - 6px - var(--site-header-height) - 4rem - 3.125rem) * 1.6)));
+  margin-left: auto;
 }
 
 .lp-carousel-frame {
@@ -780,6 +808,10 @@ div.lp-body {
   .lp-feature {
     grid-template-columns: minmax(0, 1fr);
     gap: 2rem;
+  }
+
+  .lp-top-media .lp-carousel {
+    margin: 0 auto;
   }
 
   .lp-header-in {
