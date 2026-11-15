@@ -4,7 +4,16 @@
 
 ### Highlights
 
+- **ZX Spectrum Next core 3.03.03 models:** KS2 and KS3 boot NextZXOS 2.10a, with the zxnDDMA, and
+  the KS3 has the issue 5 board's 4 MB of SRAM and second SD card reader.
+- **The audio mixer:** mute, solo and set the level of every sound source of every machine, with
+  live meters, spectra, a scope and a spectrogram.
+- **Floating document windows:** pop a document out of the IDE into a window of its own, onto a
+  second screen or next to the emulator.
+- **Full screen emulator:** the machine's picture alone fills the screen, with the toolbar and the
+  status bar sliding in at the edges.
 - **Cambridge Z88 ROM annotations:** OZ 4.7's code named and explained, from OZ's own source.
+- **Boriel BASIC 2.0.0**, its first release, now comes with Klive.
 
 ### Features
 
