@@ -6,6 +6,7 @@ import type { Channel, RequestMessage } from "@messaging/messages-core";
 import type { IFileProvider } from "@renderer/core/IFileProvider";
 import type { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
 import type { IZ88IdeMachine } from "@emu/machines/z88/IZ88IdeMachine";
+import type { IAccessProfileSource } from "@emu/abstractions/IAccessProfileSource";
 
 import createAppStore from "@state/store";
 import { machineRegistry } from "@common/machines/machine-registry";
@@ -16,10 +17,11 @@ import { Z88WasmV2Machine } from "@emu/machines/z88/Z88WasmV2Machine";
 import { buildZ88Wasm, productionOutput, waitForZ88WasmBuildLock } from "../../../../dev/scripts/build-z88-wasm.cjs";
 
 /**
- * The Z88 machine the harness drives: only the machine API (`IZ88Machine`) and the IDE surface
- * (`IZ88IdeMachine`), never the core's exports directly.
+ * The Z88 machine the harness drives: only the machine API (`IZ88Machine`), the IDE surface
+ * (`IZ88IdeMachine`) and the access profile as the IDE reads it (`IAccessProfileSource`), never the
+ * core's exports directly.
  */
-export type Z88HarnessMachine = IZ88Machine & IZ88IdeMachine;
+export type Z88HarnessMachine = IZ88Machine & IZ88IdeMachine & IAccessProfileSource;
 
 /** The repo root; the tests start in it, and `__dirname` is not reliable under Vite's transform. */
 export const REPO_ROOT = findRepoRoot(process.cwd());

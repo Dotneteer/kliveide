@@ -6,7 +6,7 @@ Phase 2 done (2026-11-15): every component with source imports (banks 0-8, $0A-$
 reassembles byte for byte. Phase 3 under way (2026-11-15): every annotated bank measures level 2 (not recorded yet); level 2
 counts routines (D-OZ6) and bank 9 is left out (D-OZ7). The system banks are level 2: the kernel (0, 1),
 bank 2, GN (3), MTH (8), DC and Index ($0C), the FPP ($0D) and the file area ($10); so are banks 4, 7,
-$0A (EazyLink, the Filer), $0B (FlashStore) and $1F (the ROM header). PipeDream (5, 6) completed it. The rename proposals are reviewed, and the IDE names operands across runs and banks. Left: coverage runs, recording the level. **To continue in a new session, read "Handoff (2026-11-15)" at the end of Phase 3.**
+$0A (EazyLink, the Filer), $0B (FlashStore) and $1F (the ROM header). PipeDream (5, 6) completed it. The rename proposals are reviewed, the IDE names operands across runs and banks, and the coverage run is clean. Left: recording the level. **To continue in a new session, read "Handoff (2026-11-15)" at the end of Phase 3.**
 **Goal:** a shipped sidecar `src/public/roms/z88v47.rom.dis` that annotates the OZ 4.7 ROM's banks to
 level 2 (all but bank 9, D-OZ7). It is built mostly from the OZ project's own assembler source,
 <https://bitbucket.org/cambridge/oz/src/V4.7/>, which the owner has given permission to use.
@@ -424,9 +424,20 @@ Done, on branch `dotneteer/z88-oz47-phase2`:
   References agree with the listing). Measured over all banks: about 1,500 more operands named, none renamed
   except bank 2's four wrong keymap names (now `LowRAMcode`). Tests: `test/annotations/romRunNaming.test.ts`;
   in the running IDE, `dev/scripts/z88-rom-listing-ide-check.cjs`.
+- **Coverage runs** (2026-11-15, Phase 3 step 4): `tools/z88-coverage-run.ts.txt` boots OZ 4.7 on the Z88
+  harness with the access profile on (new session methods `profile`, `resetProfile`, `profileFlags`),
+  visits all 15 applications with some typing (BBC BASIC with floating point, PipeDream, the Diary, the
+  Calculator, the Filer, ...) and checks every bank: **no byte fetched as code lies in a data region, and
+  every executed instruction start is one the sidecar lists.** Listed instructions that ran: 63% of bank 0,
+  39% of bank 1, 55% of GN, 62% of bank 2 (LOWRAM), 31% of PipeDream's bank 6, 6% of bank $0A (EazyLink and
+  the Filer, which barely run without a serial link). Found on the way: arrow keys in FlashStore with no
+  card, at the run's pace, once left OZ looping in LOWRAM with bank 0's IntKbd bytes executed at every
+  alignment (`z88-oz47-review.md`, "Coverage runs"), a fault of OZ or of the emulator, not of the sidecar;
+  the run now only opens FlashStore.
 
 Open:
-- Coverage runs (step 4).
+- **The FlashStore fault** the coverage run found (`z88-oz47-review.md`, "Coverage runs"): OZ's or the
+  emulator's; it does not block the sidecar.
 
 **Seeing the state:** after every session, `node dev/scripts/import-oz-source.cjs --all`, then copy
 `.local/oz-import/z88v47.rom.dis` over `~/Klive/RomAnnotations/z88v47.rom.dis` (the IDE reloads it).
@@ -464,8 +475,7 @@ sample, merge, re-import, check, reassemble, install the working copy, append `z
 output to `z88-oz47-review.md` and add a `PROVENANCE.md` entry. Ask the helpers for decimal IY offsets.
 
 **Next steps, in order:**
-1. **Coverage runs** (Phase 3 step 4) on `test/harness/z88/`.
-2. **Record `level: 2`** once every bank measures it, regenerate `rom-annotations.index.json`; then Phase 4,
+1. **Record `level: 2`** once every bank measures it, regenerate `rom-annotations.index.json`; then Phase 4,
    which waits for Q1 (the permission's wording) before anything ships.
 
 **Checks after each batch.** The reassembly template: copy

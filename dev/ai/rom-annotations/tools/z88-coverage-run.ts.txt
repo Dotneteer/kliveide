@@ -1,0 +1,155 @@
+// The coverage run of a Z88 OZ ROM sidecar (dev/plans/Z88_OZ47_ROM_ANNOTATIONS_PLAN.md, Phase 3 step 4): boots
+// OZ 4.7 on the Z88 harness (test/harness/z88/) with the access profile on, visits every application with some
+// typing (the Index, BBC BASIC with floating point, PipeDream, the Diary, the Calculator, the Filer, ...), and
+// checks what ran against the sidecar's regions:
+//   - a byte fetched as code (PF_CODE) in a data region (bytes/words/text/defc/fill/skip) is a data region the
+//     run disproves;
+//   - an executed instruction start (PF_EXECUTED) the sidecar's decoding does not list as one (inside a listed
+//     instruction, or in no code region) is a decode slip;
+// and reports per bank how much of its listed code ran. LOWRAM runs from RAM bank $20 at $0000, so its flags are
+// read there and checked against bank 2's LOWRAM run ($0800 on).
+// Not a test that runs in CI: copy it into test/reverse/ (a core-tier folder, build/e2e-tests.ts), run it, delete it.
+//   cp dev/ai/rom-annotations/tools/z88-coverage-run.ts.txt test/reverse/zz-z88-coverage.test.ts
+//   SIDECAR=.local/oz-import/z88v47.rom.dis npx vitest run --config build/vitest.config.ts --project e2e-cores test/reverse/zz-z88-coverage.test.ts
+//   rm test/reverse/zz-z88-coverage.test.ts
+// The report goes to .local/oz-coverage/ (report.txt, coverage.json).
+import { describe, expect, it } from "vitest";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+
+import { PF_CODE, PF_EXECUTED } from "@common/profile/profileTypes";
+import { romDecoderFor } from "@renderer/appIde/annotations/romDecoder";
+import { createZ88Session, type Z88Key, type Z88TestSession } from "../harness/z88";
+
+const SIDECAR = process.env.SIDECAR ?? ".local/oz-import/z88v47.rom.dis";
+const OUT = ".local/oz-coverage";
+const BANK = 0x4000;
+const LOWRAM = { bank: 2, start: 0x0800, ramBank: 0x20 };
+
+function press(s: Z88TestSession, keys: Z88Key[], hold = 3, after = 10) {
+  s.keyDown(...keys);
+  s.runFrames(hold);
+  s.keyUp(...keys);
+  s.runFrames(after);
+}
+
+const SHIFTED: Record<string, Z88Key> = { "+": "Equal", "*": "N8", "(": "N9", ")": "N0", '"': "Quote", "$": "N4", ":": "Semicolon" };
+const PLAIN: Record<string, Z88Key> = { " ": "Space", "=": "Equal", "-": "Minus", "/": "Slash", ".": "Period", ",": "Comma", ";": "Semicolon", "\n": "Enter" };
+
+function type(s: Z88TestSession, text: string) {
+  for (const ch of text) {
+    if (/[A-Z]/.test(ch)) press(s, [ch as Z88Key]);
+    else if (/[0-9]/.test(ch)) press(s, [`N${ch}` as Z88Key]);
+    else if (SHIFTED[ch]) press(s, ["ShiftL", SHIFTED[ch]]);
+    else if (PLAIN[ch]) press(s, [PLAIN[ch]]);
+    else throw new Error(`no key for '${ch}'`);
+  }
+}
+
+/** Activates an application by its □ key (mth/appdors.asm), then runs what it does */
+function visit(s: Z88TestSession, key: Z88Key, then: (s: Z88TestSession) => void) {
+  press(s, ["Square", key], 4, 300);
+  then(s);
+  press(s, ["Index"], 4, 200);
+}
+
+const arrows = (s: Z88TestSession) => {
+  for (const k of ["Down", "Down", "Right", "Up", "Left"] as Z88Key[]) press(s, [k], 3, 30);
+};
+
+describe("coverage run of the Z88 OZ ROM sidecar", () => {
+  it("checks the regions against what runs", async () => {
+    const s = await createZ88Session({ model: "OZ47", rom: "model", audioSampleRate: 44_100 });
+    s.profile(true);
+    s.runFrames(2000);
+
+    arrows(s); // the Index
+    visit(s, "B", (s) => type(s, "PRINT 2*SIN(1)+SQR(2)\nFOR I=1 TO 20:PRINT I;:NEXT\nA$=\"HELLO\":PRINT LEN(A$),EXP(1.5)/3\n"));
+    visit(s, "P", (s) => {
+      type(s, "HELLO WORLD\n123\n45.5\n");
+      arrows(s);
+    });
+    visit(s, "D", (s) => {
+      type(s, "MEETING AT TEN\n");
+      arrows(s);
+    });
+    visit(s, "R", (s) => type(s, "12*3=45/9=1.5+2="));
+    visit(s, "C", arrows);
+    visit(s, "T", arrows);
+    visit(s, "A", arrows);
+    visit(s, "F", (s) => {
+      arrows(s);
+      press(s, ["Enter"], 3, 100);
+      press(s, ["Escape"], 3, 100);
+    });
+    // --- FlashStore (no card fitted) is only opened: arrow keys in it at this pace once left OZ looping in
+    // --- LOWRAM with bank 0's IntKbd bytes executed at every alignment (z88-oz47-review.md, "Coverage runs")
+    visit(s, "J", (s) => s.runFrames(100));
+    visit(s, "E", arrows);
+    visit(s, "S", arrows);
+    visit(s, "V", (s) => press(s, ["Escape"], 3, 100));
+    visit(s, "X", (s) => press(s, ["Escape"], 3, 100));
+    visit(s, "L", (s) => press(s, ["Escape"], 3, 100));
+    s.runFrames(500);
+
+    // --- The run must end in OZ, not in a crash: the Index's key wait runs from segment 3
+    const pc = s.registers().pc;
+    expect(pc >= 0x4000, `the run ended at $${pc.toString(16)}, not in OZ's own code: check the scenario`).toBe(true);
+
+    const sidecar = JSON.parse(readFileSync(SIDECAR, "utf8"));
+    const rom = new Uint8Array(readFileSync(join("src/public/roms", sidecar.source.fileName)));
+    const lines: string[] = [];
+    const json: Record<string, unknown> = {};
+    let problems = 0;
+    for (const key of Object.keys(sidecar.banks)) {
+      const bank = Number(key);
+      const bytes = rom.subarray(bank * BANK, (bank + 1) * BANK);
+      const regions: { start: number; end: number; type: string }[] = sidecar.banks[key].regions ?? [];
+      const segments = sidecar.pages?.[key]?.segments;
+      const flags = new Uint8Array(s.profileFlags(bank * BANK, BANK));
+      // --- LOWRAM's code runs from RAM bank $20: its flags are the run's, offset by its storage
+      if (bank === LOWRAM.bank) {
+        const ram = s.profileFlags(LOWRAM.ramBank * BANK, 0x0400);
+        for (let i = 0; i < ram.length && LOWRAM.start + i < BANK; i++) flags[LOWRAM.start + i] |= ram[i];
+      }
+      const regionAt = (offset: number) => regions.find((r) => offset >= r.start && offset <= r.end);
+      // --- The sidecar's decoding: instruction starts of every code region
+      const decode = romDecoderFor("z88-oz", segments);
+      const starts = new Set<number>();
+      let listed = 0;
+      for (const r of regions.filter((r) => r.type === "disassemble")) {
+        for (const ins of await decode(bytes, r.start, r.end)) {
+          if (ins.offset < r.start || ins.offset > r.end) continue;
+          starts.add(ins.offset);
+          listed++;
+        }
+      }
+      let executed = 0;
+      const dataCode: string[] = [];
+      const slips: string[] = [];
+      for (let offset = 0; offset < BANK; offset++) {
+        const f = flags[offset];
+        if (!f) continue;
+        const region = regionAt(offset);
+        if (f & PF_CODE && region && region.type !== "disassemble") {
+          dataCode.push(`$${offset.toString(16).padStart(4, "0")} (${region.type} $${region.start.toString(16)}-$${region.end.toString(16)})`);
+        }
+        if (f & PF_EXECUTED) {
+          if (starts.has(offset)) executed++;
+          else if (region?.type === "disassemble" || !region) slips.push(`$${offset.toString(16).padStart(4, "0")}`);
+        }
+      }
+      problems += dataCode.length + slips.length;
+      const percent = listed ? ((100 * executed) / listed).toFixed(1) : "-";
+      lines.push(`bank ${key}: ${executed}/${listed} listed instructions ran (${percent}%), ${dataCode.length} code byte(s) in data, ${slips.length} executed start(s) not listed`);
+      for (const d of dataCode.slice(0, 40)) lines.push(`  code in data: ${d}`);
+      for (const d of slips.slice(0, 40)) lines.push(`  not listed:   ${d}`);
+      json[key] = { listed, executed, dataCode, slips };
+    }
+    mkdirSync(OUT, { recursive: true });
+    writeFileSync(join(OUT, "report.txt"), lines.join("\n") + "\n");
+    writeFileSync(join(OUT, "coverage.json"), JSON.stringify(json, null, 1));
+    console.log(lines.filter((l) => l.startsWith("bank")).join("\n"));
+    expect(problems, `${problems} problem(s): ${OUT}/report.txt`).toBe(0);
+  }, 600_000);
+});

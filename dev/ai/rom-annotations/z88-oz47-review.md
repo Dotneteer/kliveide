@@ -292,3 +292,17 @@ that a later pass should confirm. Plan: `dev/plans/Z88_OZ47_ROM_ANNOTATIONS_PLAN
 - (merge) pd5-3 wrote IY offsets in hex; they were converted to decimal, as the other slices write them, before the merge.
 - (merge) Follow-up: pd6-4 found four inline printer strings after calls to L_EDC2 (after L_ED5B, L_ED6F, L_EDE6 and L_EDF5) that the source writes as instructions; they reassemble, but the listing shows them as code. A data region there (in z88-oz47-authored.json) would list them as strings.
 - (merge) Done: the four printer strings are observed text regions in z88-oz47-authored.json ($ED86, $EDA0, $EE08, $EE18); bank 6 reassembles.
+
+## Coverage runs (2026-11-15)
+
+- `tools/z88-coverage-run.ts.txt` over the whole sidecar: no byte fetched as code in a data region, and no
+  executed instruction start the sidecar does not list, in any bank (`.local/oz-coverage/report.txt`).
+- **Open, not the sidecar's:** in the first version of the run, FlashStore (□J, no card fitted) was given arrow
+  keys (Down, Down, Right, Up, Left; 3 frames held, 30 between) after BBC BASIC (three lines
+  in one visit), PipeDream, the Diary, the Calculator, the Calendar, the Clock, the Alarm and the Filer.
+  After the second Down OZ stayed in LOWRAM ($0128, $0243, $0038, $011E at later samples, the history
+  recorder silent: snoozing), and bank 0's IntKbd ($18D5-$1920) had the "executed" flag on almost every
+  byte, operands included: its bytes ran at every alignment, so the CPU was running them from somewhere
+  they are not code. The same keys a frame at a time, or with BASIC's lines in three visits, did not do
+  it. Whether OZ 4.7's FlashStore or the emulator is at fault is not known; reproduce with the run's
+  first version (the scenario above) and the execution history before the second Down.

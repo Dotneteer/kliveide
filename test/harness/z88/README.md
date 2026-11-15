@@ -70,6 +70,7 @@ Methods returning `this` chain.
 | Audio | `startAudio()` `audio()` | Samples of every completed frame (DC-filtered: level changes show as jumps) |
 | Snapshots | `loadSnapshot(bytes, nowMs?)` `insertedCards()` | Parses and maps a `.z88` file, then `loadSnapshotState`; `nowMs` defaults to the file's stop time (no RTC catch-up). Returns the snapshot, its mapping and the restored TIM0-4. |
 | History | `recordHistory(on)` `clearHistory()` `historyInfo()` `history(count?)` `historyFrom(sequence, count)` | The execution-history recorder (`dev/plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`), shared with every harness (`../historySupport.ts`). A snoozed CPU records nothing. |
+| Profile | `profile(on, { counters? })` `resetProfile()` `profileFlags(offset, length?)` | The access profile (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`) as the IDE reads it: `PF_*` flag bytes by profile offset, the 4 MB physical memory (`src/common/profile/layouts/z88.ts`: bank N's offset O is N * $4000 + O). The OZ ROM sidecar's coverage run uses it (`dev/ai/rom-annotations/tools/z88-coverage-run.ts.txt`). |
 | Escape hatch | `s.machine` | Avoid in tests; add a method instead |
 
 ## Rules

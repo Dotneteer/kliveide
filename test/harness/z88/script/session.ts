@@ -540,6 +540,30 @@ export class Z88TestSession {
   historyFrom(fromSequence: number, count: number): { records: HistoryRecord[]; gone: boolean } {
     return historyFromOf(this.machine, fromSequence, count);
   }
+
+  // ==========================================================================================
+  // Access profile (`dev/plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`): code coverage and the heat map, as
+  // the IDE reads them through `IAccessProfileSource`. Offsets are profile offsets, the 4 MB physical
+  // memory (`src/common/profile/layouts/z88.ts`): bank N's byte at offset O is N * $4000 + O.
+
+  /** Turns the access profile on or off; `counters` keeps counts and time as well as the flags */
+  profile(on = true, { counters = false }: { counters?: boolean } = {}): this {
+    this.machine.setProfiling(on, counters);
+    return this;
+  }
+
+  /** Clears every flag, count and time bucket, as `coverage reset` does */
+  resetProfile(): this {
+    this.machine.resetProfile();
+    return this;
+  }
+
+  /** The flag bytes (`PF_*` in `profileTypes.ts`) of `length` bytes from profile offset `offset` */
+  profileFlags(offset: number, length = 1): Uint8Array {
+    const flags = this.machine.readProfileFlags(offset, length);
+    if (!flags) throw new Error("The machine's core is not loaded.");
+    return flags;
+  }
 }
 
 /** The key code of a key name */

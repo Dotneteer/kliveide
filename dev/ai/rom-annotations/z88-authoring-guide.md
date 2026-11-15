@@ -153,6 +153,13 @@ section says what is done, how to check it and what is left.
   shared by two modules of a bank) carries "OZ source name: <name>." in its synopsis, after the summary
   and before the contract. `tools/z88-source-name-notes.cjs` writes them into the authored file from the
   table and the import (re-run it, then `--all`, after changing a rename; it replaces its own note).
+- **The coverage run** (`tools/z88-coverage-run.ts.txt`, run as its header says): boots OZ 4.7 on the Z88
+  harness with the access profile on, visits every application with some typing, and fails on a byte
+  fetched as code in a data region or an executed instruction start the sidecar does not list (LOWRAM's
+  flags are read from RAM bank $20). The report, with each bank's share of listed instructions that ran,
+  goes to `.local/oz-coverage/`. Run it after changing regions. A crashed scenario floods the flags with
+  misaligned "starts" (see `z88-oz47-review.md`, "Coverage runs"), so it also fails when the run does not
+  end in OZ's own code.
 - **Inline strings the source writes as code:** PipeDream's printer strings after `call LEDE1` (`$05`,
   the code, 0) are instructions in the reverse-engineered source (`dec b / ld sp,$005D`). They are
   `observed` text regions in the authored file; look for the same pattern after any routine that reads

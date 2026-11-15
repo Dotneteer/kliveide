@@ -137,3 +137,30 @@ loop: jr loop
     expect(s.audio().length).toBeLessThanOrEqual(2410);
   });
 });
+
+describe("Z88 harness session - access profile", () => {
+  it("flags the bytes the program fetched as code, by their physical storage", async () => {
+    const s = await createZ88Session();
+    await s.loadCode(`
+      .org $8000
+start:
+      ld a,$42
+      ld ($c000),a
+done:
+      jr done
+    `);
+    s.profile(true);
+    s.runTo("done");
+    s.step(1);
+    // --- $8000 is bank $22: profile offset $080000 + 2 * $4000 (layouts/z88.ts)
+    const base = 0x08_0000 + 2 * 0x4000;
+    const flags = Array.from(s.profileFlags(base, 6));
+    // --- ld a,n: executed (bit 0) and code (bit 1) on the opcode, code only on the operand
+    expect(flags.map((f) => f & 0x03)).toEqual([0x03, 0x02, 0x03, 0x02, 0x02, 0x03]);
+    // --- The store lands in bank $23 as a write (bit 3)
+    expect(s.profileFlags(0x08_0000 + 3 * 0x4000, 1)[0] & 0x08).toBe(0x08);
+
+    s.resetProfile();
+    expect(Array.from(s.profileFlags(base, 6))).toEqual([0, 0, 0, 0, 0, 0]);
+  });
+});
