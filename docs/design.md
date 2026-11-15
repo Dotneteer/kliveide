@@ -10,7 +10,7 @@ App's Palette"); where the two differ, that file wins and this one is corrected.
 - Genre: modern-minimal (a developer tool), with a long-document body for the docs.
 - Shape of the landing page: a data sheet. The first screen is the headline and its actions on the
   left (5fr) with the screenshot carousel on the right (7fr), both whole without scrolling; under it
-  the "At a glance" strip, then tables (machines, also included, write/build/run/debug) and feature
+  the "At a glance" facts, then tables (machines, also included, write/build/run/debug) and feature
   rows always text left and picture right.
 - Theme: custom, the app's own palette (vibe: "the IDE's own colours, a data sheet").
 - Posture: restrained. The one accent is Sinclair Blue; the four Spectrum colours appear only as
@@ -24,7 +24,9 @@ the app's L1 values (`src/renderer/theming/tokens/palette.ts`). The light theme 
 dark one the way the app derives it; never tune one by hand. The roles:
 - Paper: `--site-bg`, `--site-panel`, `--site-chrome`, `--site-raised`, `--site-hover`
 - Ink: `--site-fg` (body text, full colour), `--site-muted` and `--site-subtle` (secondary details only)
-- Rules: `--site-line`, `--site-line-strong`; sections are divided by a 2px rule in the text colour
+- Rules: `--site-line`, `--site-line-strong`. Sections are not divided by rules: every other section
+  is a full-width band on `--site-chrome` (`.lp-band`: Machines / Also included and What Klive does),
+  with a hairline at its top edge. No 2px text-colour rules anywhere.
 - Accent: `--site-accent`, `--site-on-accent`, `--site-accent-soft`
 - Spectrum: `--site-stripe-*` (the rule), `--site-spectrum-*` (the feature squares)
 - Type: `--site-font-display` and `--site-font-body` are both Overpass, with its real italic;
@@ -58,11 +60,11 @@ dark one the way the app derives it; never tune one by hand. The roles:
   menu, and below 420px the language button keeps only its globe: every language fits 320px.
 
 ## At a glance
-- One full-width strip under the first screen: `--site-panel` with a 1px `--site-line` edge and an
-  8px radius (no heavy box), its title as the first cell on `--site-chrome`, then the six facts as
-  label-over-value cells divided by hairlines, in one row from 1100px (columns weighted by value
-  length), wrapping below, two columns on a phone with the title on top. The labels are bold,
-  sentence case, in `--site-muted`; the version is the only mono value. No pills or tags.
+- Two groups of facts under the sheet's 2px rule, no panel: "Get it" (version, platforms, licence)
+  and "Write in" (languages, tools), each a bold heading over one or two sentences. They use the
+  hero's columns (5fr / 7fr), so each group stands under the hero half above it, and stack below
+  960px. The section's "At a glance" heading is for screen readers only. The version is the only mono
+  value. No pills, tags, cards or label/value grids.
 
 ## Docs pages
 - Running text stops at 62ch (about 86 characters); figures, screenshots, code and tables keep the
@@ -95,11 +97,11 @@ dark one the way the app derives it; never tune one by hand. The roles:
 ## Waivers
 Hallmark rules this site breaks on purpose, each with its reason:
 - **58, about 80 words per screen, and the hero's "headline, one sentence, actions".** Waived: the
-  landing page is a data sheet, and its "At a glance" strip follows the first screen on purpose.
+  landing page is a data sheet, and its "At a glance" facts follow the first screen on purpose.
   The feature texts are kept to about 30 words each so no screen runs far past the limit.
 - **59, 120px between sections.** Waived (confirmed by the author): the sheet's sections are
-  divided by 2px rules, not by space, with one gap token (`--lp-section-gap`, 3rem); rendered, the
-  gaps are 66 to 110px, the hero and its carousel the closest pair.
+  divided by alternating chrome-tone bands, not by space alone, with one gap token
+  (`--lp-section-gap`, 3rem) inside and between them.
 - **78, section headings about 52px.** Waived (confirmed by the author): a data sheet's section
   headings label the table under them. They are 2rem (32px), above the feature headings (1.75rem)
   they contain, never below them.

@@ -3318,9 +3318,14 @@ drift. Change a neutral or the default accent in the app, and the site changes w
   are bold body type in sentence case; body text is full colour, grey only for secondary details;
   links are underlined, without arrows.
 - **The landing page is a data sheet:** the first screen is the headline beside the carousel, then
-  the "At a glance" strip, then tables (machines, also included, the four steps) and feature rows that are always
-  text left, picture right. Sections are divided by a 2px rule in the text colour, with one gap
-  (`--lp-section-gap`). A feature's heading is its link to the docs (no "Read more"), and its text
+  the "At a glance" facts, then tables (machines, also included, the four steps) and feature rows that are always
+  text left, picture right. **Sections are divided by alternating bands, not rules** (`.lp-band` in
+  `landing.css`, one gap `--lp-section-gap`): every other section sits on `--site-chrome` across the
+  whole window, drawn as a `box-shadow` spread of 100vmax clipped back with `clip-path: inset(0
+  -100vmax)`, so the section keeps the column's width and the page never scrolls sideways. The author
+  found the 2px text-colour rules heavy and picked bands from four options seen on the live page
+  (hairlines, space only, bands, a Spectrum mark over each heading). Use `--site-chrome`, not
+  `--site-panel`: the panel tone is 2% off the page colour and the band vanished in the dark theme. A feature's heading is its link to the docs (no "Read more"), and its text
   stays near 30 words. The page ends on its job: the Download button again, with the tutorial.
 - **The landing header is one row that never scrolls the page sideways:** its links mirror the docs'
   navbar tabs and hide below the width the longest language needs (`.lp-nav` in
@@ -3363,11 +3368,12 @@ drift. Change a neutral or the default accent in the app, and the site changes w
   under it (the carousel started near the fold, so a visitor saw only its top, and the card left a
   wide empty gap beside the headline), and the same with the carousel merely sized to the viewport
   (still below the fold). The screenshots are the pitch; they belong on the first screen.
-- **"At a glance" is a strip under the first screen, not a boxed table or a side card:** the 2px
-  text-colour box read as heavy. A panel with a hairline edge, the title as its first cell on the
-  chrome tone, the facts as label-over-value cells, hairlines drawn by a 1px grid gap over
-  `--site-line`. In one row from 1100px with columns weighted by value length (equal columns broke
-  the tool list into three lines); two columns on a phone. Still no pills: the facts are plain text.
+- **"At a glance" is two groups of sentences, not a table, card or strip of cells** (the author picked
+  it from four mockups, without a third "Speaks" group): "Get it" and "Write in", bold headings over
+  plain sentences under the sheet's 2px rule, on the hero's 5fr / 7fr columns. Rejected on the way:
+  the 2px text-colour box beside the headline (heavy), a spec card with a chrome title strip and
+  label/value cells (still a box), and a full-width strip of six label/value cells (busy, and
+  values broke into two or three lines). Facts read better as sentences than as a form.
 - **The hero is a carousel of real screenshots** (`docs/landing/HeroCarousel.tsx`): a 16:10 frame on
   the app's canvas colour, so pictures of another shape (the emulator) sit centred on the IDE's own
   dark ground rather than on the page. Pictures fly sideways in the direction of travel (forward:

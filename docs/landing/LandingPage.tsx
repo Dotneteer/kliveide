@@ -158,42 +158,34 @@ export default function LandingPage({ lang }: Readonly<{ lang: string }>) {
           </div>
         </section>
 
-        {/* --- The facts as one strip under the first screen, a data sheet's header row */}
+        {/* --- The facts under the first screen, in two groups under the sheet's 2px rule: "Get it" under
+            --- the headline, "Write in" under the carousel. The version is set in the mono face. */}
         <section className="lp-glance" aria-labelledby="lp-glance-title">
-          <h2 id="lp-glance-title">{t("glance.title")}</h2>
-          <dl>
-            {site.latestRelease !== "0.0.0" && (
-              <div>
-                <dt>{t("glance.version")}</dt>
-                <dd>
-                  <span className="lp-mono">{site.latestRelease}</span>
-                </dd>
-              </div>
-            )}
-            <div>
-              <dt>{t("glance.runsOn")}</dt>
-              <dd>macOS, Windows, Linux</dd>
-            </div>
-            <div>
-              <dt>{t("glance.licence")}</dt>
-              <dd>{t("glance.licenceValue")}</dd>
-            </div>
-            <div>
-              <dt>{t("glance.interface")}</dt>
-              <dd>{t("glance.interfaceValue")}</dd>
-            </div>
-            <div>
-              <dt>{t("glance.languages")}</dt>
-              <dd>{t("glance.languagesValue")}</dd>
-            </div>
-            <div>
-              <dt>{t("glance.worksWith")}</dt>
-              <dd>sjasmplus, Boriel BASIC, z88dk, PASTA/80</dd>
-            </div>
-          </dl>
+          <h2 id="lp-glance-title" className="lp-sr-only">
+            {t("glance.title")}
+          </h2>
+          <div>
+            <h3>{t("glance.getIt")}</h3>
+            <p>
+              {(() => {
+                const [before, after = ""] = t("glance.getItText", { version: "\u0000" }).split("\u0000");
+                return (
+                  <>
+                    {before}
+                    <span className="lp-mono">{site.latestRelease}</span>
+                    {after}
+                  </>
+                );
+              })()}
+            </p>
+          </div>
+          <div>
+            <h3>{t("glance.writeIn")}</h3>
+            <p>{t("glance.writeInText")}</p>
+          </div>
         </section>
 
-        <section className="lp-sec lp-two">
+        <section className="lp-sec lp-two lp-band">
           <div>
             <h2>{t("machines.title")}</h2>
             <table>
@@ -242,7 +234,7 @@ export default function LandingPage({ lang }: Readonly<{ lang: string }>) {
           </table>
         </section>
 
-        <section className="lp-sec lp-features">
+        <section className="lp-sec lp-features lp-band">
           <h2>{t("features.title")}</h2>
           {features.map((f, i) => {
             const title = t(`feature.${f.id}.title`);

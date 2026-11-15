@@ -24,7 +24,7 @@ body:has(.lp-body) {
 
 body.lp-body,
 div.lp-body {
-  /* --- One gap for every section of the sheet; the 2px rules, not the space, divide them */
+  /* --- One gap for every section of the sheet; the alternating bands, not rules, divide them */
   --lp-section-gap: 3rem;
   margin: 0;
   background: var(--site-bg);
@@ -260,78 +260,43 @@ div.lp-body {
   min-width: 0;
 }
 
-/* --- "At a glance": one strip under the first screen, like a data sheet's header row. Its title is
-   --- the first cell, on the chrome tone; the facts follow as labelled cells (label over value),
-   --- divided by hairlines (1px grid gaps over --site-line). They wrap to more rows on narrower
-   --- screens, and the title goes on top below 760px. */
+/* --- "At a glance" (option C of the author's mockups): two groups of facts, each a bold heading over
+   --- one or two sentences. The columns are the hero's (5fr / 7fr, 3rem gap),
+   --- so "Get it" stands under the headline and "Write in" under the carousel. The section's own
+   --- heading is for screen readers only. */
 .lp-glance {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: 1rem 3rem;
   margin-bottom: var(--lp-section-gap);
-  border: 1px solid var(--site-line);
-  border-radius: 8px;
-  background: var(--site-panel);
-  overflow: hidden;
 }
 
-.lp-glance h2 {
-  display: flex;
-  align-items: center;
-  padding: 1rem 1.5rem;
-  background: var(--site-chrome);
-  border-right: 1px solid var(--site-line);
+.lp-glance h3 {
+  margin-bottom: 0.375rem;
   font-size: 1.125rem;
   line-height: 1.3;
+}
+
+.lp-glance p {
+  margin: 0;
+  max-width: 34rem;
+}
+
+.lp-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
   white-space: nowrap;
+  border: 0;
 }
 
-.lp-glance dl {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
-  gap: 1px;
-  margin: 0;
-  /* --- The 1px gaps show this colour: the hairlines between the cells */
-  background: var(--site-line);
-}
-
-/* --- On a wide screen the six facts stand in one row, each column weighted by how long its value is
-   --- (the version is short, the list of tools long), so no value breaks into three lines */
-@media (min-width: 1100px) {
-  .lp-glance dl:has(> div:nth-child(6)) {
-    grid-template-columns: 0.7fr 1.15fr 1.25fr 1fr 1.25fr 1.6fr;
-  }
-}
-
-.lp-glance dl > div {
-  min-width: 0;
-  padding: 0.875rem 1.25rem 1rem;
-  background: var(--site-panel);
-}
-
-.lp-glance dt {
-  margin-bottom: 0.25rem;
-  font-size: 0.875rem;
-  font-weight: 700;
-  color: var(--site-muted);
-}
-
-.lp-glance dd {
-  margin: 0;
-  line-height: 1.4;
-}
-
-.lp-glance .lp-mono {
-  font-size: 1rem;
-}
-
-@media (max-width: 760px) {
+@media (max-width: 960px) {
   .lp-glance {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .lp-glance h2 {
-    border-right: 0;
-    border-bottom: 1px solid var(--site-line);
   }
 }
 
@@ -505,7 +470,19 @@ div.lp-body {
 
 .lp-sec {
   padding: var(--lp-section-gap) 0;
-  border-top: 2px solid var(--site-fg);
+}
+
+/* --- No rules between sections: every other section is a band on the chrome tone, across the whole
+   --- window (the author's option C of four; a 2px text-colour rule read as heavy). The band is drawn
+   --- as a shadow spread far past the column and clipped back to the section's own height, so the
+   --- section keeps the column's width and the page never scrolls sideways. Machines / Also included
+   --- and What Klive does are the bands; the four steps between them and the closing download stay on
+   --- the page colour. A hairline at the band's top keeps its edge in the light theme. */
+.lp-band {
+  background: var(--site-chrome);
+  box-shadow: 0 0 0 100vmax var(--site-chrome);
+  clip-path: inset(0 -100vmax);
+  border-top: 1px solid var(--site-line);
 }
 
 .lp-sec > h2,
@@ -676,7 +653,6 @@ div.lp-body {
   justify-content: space-between;
   gap: 1.5rem;
   padding: var(--lp-section-gap) 0;
-  border-top: 2px solid var(--site-fg);
 }
 
 .lp-end h2 {

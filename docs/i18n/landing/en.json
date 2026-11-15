@@ -61,43 +61,23 @@
   },
   "glance.title": "At a glance",
   "@glance.title": {
-    "context": "Heading of the small table of facts beside the headline."
+    "context": "Heading of the facts under the first screen, read by screen readers only: the two groups below it ('Get it', 'Write in') are what sighted visitors see."
   },
-  "glance.version": "Version",
-  "@glance.version": {
-    "context": "Row label in the 'At a glance' table; the value is a version number like 0.64.0."
+  "glance.getIt": "Get it",
+  "@glance.getIt": {
+    "context": "Heading of the first group of facts under the first screen: the version, the platforms and the licence. Short, like a column heading."
   },
-  "glance.runsOn": "Runs on",
-  "@glance.runsOn": {
-    "context": "Row label in the 'At a glance' table; the value lists macOS, Windows and Linux."
+  "glance.getItText": "Version {version} for macOS, Windows and Linux. Free and open source under the MIT licence.",
+  "@glance.getItText": {
+    "context": "The text under 'Get it'. {version} is a version number like 0.68.0. 'MIT' is the licence's name: never translated."
   },
-  "glance.licence": "Licence",
-  "@glance.licence": {
-    "context": "Row label in the 'At a glance' table: the software licence."
+  "glance.writeIn": "Write in",
+  "@glance.writeIn": {
+    "context": "Heading of the second group of facts: the programming languages you write your programs in with Klive, and the tools Klive works with. Short, like a column heading."
   },
-  "glance.licenceValue": "MIT, free and open source",
-  "@glance.licenceValue": {
-    "context": "The value of the 'Licence' row. 'MIT' is the licence's name: never translated."
-  },
-  "glance.languages": "Languages",
-  "@glance.languages": {
-    "context": "Row label in the 'At a glance' table: the programming languages you can write your programs in with Klive."
-  },
-  "glance.languagesValue": "Z80 assembly, ZX BASIC, C",
-  "@glance.languagesValue": {
-    "context": "The value of the 'Languages' row. 'Z80', 'ZX BASIC' and 'C' (the programming language) are never translated."
-  },
-  "glance.worksWith": "Works with",
-  "@glance.worksWith": {
-    "context": "Row label in the 'At a glance' table; the value lists external tools (sjasmplus, Boriel BASIC, z88dk, PASTA/80)."
-  },
-  "glance.interface": "Interface",
-  "@glance.interface": {
-    "context": "Row label in the 'At a glance' table: the languages of Klive's user interface."
-  },
-  "glance.interfaceValue": "In six languages",
-  "@glance.interfaceValue": {
-    "context": "The value of the 'Interface' row."
+  "glance.writeInText": "Z80 assembly, ZX BASIC and C. Klive works with sjasmplus, Boriel BASIC, z88dk and PASTA/80.",
+  "@glance.writeInText": {
+    "context": "The text under 'Write in'. 'Z80', 'ZX BASIC', 'C' (the programming language) and the tool names (sjasmplus, Boriel BASIC, z88dk, PASTA/80) are never translated."
   },
   "hero.download": "Download for {os}",
   "@hero.download": {
