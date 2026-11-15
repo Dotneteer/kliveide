@@ -792,6 +792,8 @@ void spp3eWritePort(uint32_t address, uint32_t value);
 #undef sp48KeyboardSelectedLineValue
 #undef sp48KeyboardLines
 
+#include "../../../zxSpectrum/wasm/common/zx-spectrum-audio-channels.c"
+#define SP128_PSG_CHANNEL_TAPS
 #define sp128Tacts spp3eTacts
 #include "../../../zxSpectrum/wasm/common/zx-spectrum-psg.c"
 #undef sp128Tacts
@@ -804,6 +806,9 @@ void spp3eWritePort(uint32_t address, uint32_t value);
 #define SP48_AUDIO_BEFORE_SAMPLE(sampleEndTact) sp128PsgPrepareAudioSample(sampleEndTact)
 #define SP48_AUDIO_EXTRA_LEFT() sp128PsgAudioLevel()
 #define SP48_AUDIO_EXTRA_RIGHT() sp128PsgAudioLevel()
+#define SP48_AUDIO_AY_CHANNEL_LEVEL(channel) sp128PsgChannelAudioLevel(channel)
+#define SP48_AUDIO_HEARD_EXTRA_LEFT() sp128PsgHeardAudioLevel()
+#define SP48_AUDIO_HEARD_EXTRA_RIGHT() sp128PsgHeardAudioLevel()
 #define sp48TapeMode spp3eTapeMode
 #define sp48TapeEarBit spp3eTapeEarBit
 #define sp48EarBit spp3eEarBit
@@ -879,6 +884,9 @@ void spp3eWritePort(uint32_t address, uint32_t value);
 #undef sp48EarBit
 #undef sp48TapeEarBit
 #undef sp48TapeMode
+#undef SP48_AUDIO_AY_CHANNEL_LEVEL
+#undef SP48_AUDIO_HEARD_EXTRA_LEFT
+#undef SP48_AUDIO_HEARD_EXTRA_RIGHT
 #undef SP48_AUDIO_EXTRA_RIGHT
 #undef SP48_AUDIO_EXTRA_LEFT
 #undef SP48_AUDIO_BEFORE_SAMPLE
@@ -1297,7 +1305,9 @@ uint8_t *spp3eMemoryPtr(void) { return spp3eMemory; }
 uint8_t *spp3eRamPtr(void) { return spp3eRam; }
 uint8_t *spp3eRomPtr(void) { return spp3eRom; }
 uint32_t *spp3ePixelBufferPtr(void) { return spp3ePixelBuffer; }
-Spp3eAudioSample *spp3eAudioSamplesPtr(void) { return spp3eAudioSamples; }
+/* What the host plays: the audio mixer's heard mix (`zx-spectrum-audio-channels.c`), the core's own
+   samples bit for bit while every gain is at unity */
+Spp3eAudioSample *spp3eAudioSamplesPtr(void) { return (Spp3eAudioSample *)zxAudioHeardSamples; }
 uint8_t *spp3eKeyboardLinesPtr(void) { return spp3eKeyboardLines; }
 uint8_t *spp3eDiskDataPtr(void) { return spp3eDiskData[0]; }
 uint8_t *spp3eDiskBDataPtr(void) { return spp3eDiskData[1]; }
@@ -2734,6 +2744,28 @@ uint32_t spp3eGetScreenWidth(void) { return spp3eUlaCurrentScreenWidth(); }
 uint32_t spp3eGetScreenHeight(void) { return spp3eUlaCurrentScreenHeight(); }
 uint32_t spp3eGetPixelBufferStartOffset(void) { return 0u; }
 uint32_t spp3eGetAudioSampleCapacity(void) { return SPP3E_AUDIO_SAMPLE_CAPACITY; }
+
+/* The audio mixer (`zx-spectrum-audio-channels.c`): a channel's gain in milli (1000 = unity, 0 =
+   mute), the taps' switch, buffer and stride (channels per sample) */
+void spp3eAudioSetChannelGain(uint32_t channel, uint32_t milli) {
+  zxAudioSetChannelGainMilli(channel, milli);
+}
+
+uint32_t spp3eAudioGetChannelGain(uint32_t channel) {
+  return zxAudioGetChannelGainMilli(channel);
+}
+
+void spp3eAudioSetTapsEnabled(uint32_t enabled) {
+  zxAudioSetTapsEnabled(enabled);
+}
+
+int16_t *spp3eAudioTapsPtr(void) {
+  return zxAudioTaps;
+}
+
+uint32_t spp3eGetAudioChannelCount(void) {
+  return ZX_AUDIO_CHANNELS;
+}
 uint32_t spp3eGetAudioSampleCount(void) { return spp3eAudioSampleCount; }
 uint32_t spp3eGetAudioSampleRate(void) { return spp3eAudioSampleRate; }
 void spp3eSetAudioSampleRate(uint32_t value) {

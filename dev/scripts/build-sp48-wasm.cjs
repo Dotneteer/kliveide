@@ -10,6 +10,10 @@ const {
   stampWasmLayout
 } = require("./wasm-layout.cjs");
 const { RZX_VOLATILE_SYMBOLS, rzxExports } = require("./rzx-core-exports.cjs");
+const {
+  ZX_AUDIO_CHANNEL_VOLATILE_SYMBOLS,
+  zxAudioChannelExports
+} = require("./zx-audio-channel-exports.cjs");
 const { divMmcClassicExports } = require("./divmmc-classic-exports.cjs");
 const { if1Exports } = require("./if1-exports.cjs");
 const { cpuExports, debugLoopExports, debugLoopVolatileSymbols, Z80_ACCESS_LOG_VOLATILE_SYMBOLS } = require("./z80-cpu-exports.cjs");
@@ -24,13 +28,16 @@ const { REPO_ROOT } = require("./repo-root.cjs");
  * core's bytes there.
  */
 /*
- * Frame-boundary scratch (`dev/plans/REVERSE_DEBUGGING_PLAN.md` T5): the frame's audio samples, which
- * the core rewrites before it reads them. Keyframes taken at a frame boundary leave them out; the T5
- * proof in `test/wasm/reverse/journal-replay-determinism.test.ts` checks every keyframe interval.
+ * Frame-boundary scratch (`dev/plans/REVERSE_DEBUGGING_PLAN.md` T5): buffers the core rewrites before
+ * it reads them, which keyframes taken at a frame boundary leave out; the T5 proof in
+ * `test/wasm/reverse/journal-replay-determinism.test.ts` checks every keyframe interval.
+ * None at present: the frame's audio samples were the one, until the host began playing the audio
+ * mixer's heard mix (`zxAudioHeardSamples`, volatile, so always left out); nothing reads the core's own
+ * sample buffer since, and the compiler drops it.
  * Not scratch: the picture, which a step back shows half drawn (D18), and the beeper's transition
  * buffers, whose transitions not yet turned into samples carry over into the next frame.
  */
-const SP48_SCRATCH_SYMBOLS = ["sp48AudioSamples"];
+const SP48_SCRATCH_SYMBOLS = [];
 
 const SP48_VOLATILE_SYMBOLS = [
   // --- The IDE's breakpoint conditions and the per-instruction access log they read: debugging
@@ -40,6 +47,8 @@ const SP48_VOLATILE_SYMBOLS = [
   ...Z80_ACCESS_LOG_VOLATILE_SYMBOLS,
   // --- An RZX session in progress (`zx-spectrum-rzx.c`)
   ...RZX_VOLATILE_SYMBOLS,
+  // --- The audio mixer's gains and taps (`zx-spectrum-audio-channels.c`)
+  ...ZX_AUDIO_CHANNEL_VOLATILE_SYMBOLS,
   // --- The execution-history ring and the model byte of its contexts (EXECUTION_HISTORY_ALL_CORES_PLAN)
   ...Z80_HISTORY_VOLATILE_SYMBOLS,
   "sp48HistoryModel",
@@ -214,7 +223,9 @@ const productionExports = [
   "sp48GetEarBitChangedFrom1Tacts",
   "sp48GetDiagnosticFlags",
   // --- RZX playback and recording (`dev/plans/RZX_PLAN.md` §4.2)
-  ...rzxExports("sp48")
+  ...rzxExports("sp48"),
+  // --- The audio mixer (`dev/plans/AUDIO_MIXER_PLAN.md` §3.1)
+  ...zxAudioChannelExports("sp48")
 ];
 
 const buildModes = {

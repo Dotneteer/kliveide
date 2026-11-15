@@ -134,6 +134,7 @@ import type { PiI2sSourceSpec, PiI2sStatus } from "@common/zxnext/piI2s";
 import { isPiI2sMachine } from "@emu/machines/zxNext/piI2s/PiI2sSource";
 import { piI2sSourceFromSpec } from "@emu/machines/zxNext/piI2s/piI2sSourceFromSpec";
 import { WavDecodeError, type WavDecodeFailure } from "@emu/machines/zxNext/piI2s/wavDecoder";
+import { audioMixerMonitor } from "@renderer/features/emulator/audioMixerMonitor";
 
 const borderColors = ULA_BORDER_COLOR_NAMES;
 
@@ -1737,6 +1738,13 @@ class EmuMessageProcessor {
   /**
    * Gets the ZX Spectrum Next layer state (the Layers document's snapshot, LAYER_COMPOSITION_PLAN D9).
    */
+  /**
+   * The audio mixer's measures (`audioMixerMonitor.ts`): null when the machine has no sound
+   */
+  getAudioMixerFrame() {
+    return audioMixerMonitor.requestFrame() ?? null;
+  }
+
   getNextLayerState(options?: { thumbnails?: boolean }) {
     const controller = this.machineService.getMachineController();
     if (!controller) {

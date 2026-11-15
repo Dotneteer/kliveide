@@ -45,6 +45,7 @@ import {
   TILEMAP_EDITOR,
   LAYER2_EDITOR,
   LAYERS_EDITOR,
+  AUDIO_MIXER_EDITOR,
   DISASSEMBLY_EDITOR,
   UNKNOWN_EDITOR
 } from "@state/common-ids";
@@ -216,6 +217,7 @@ import { VicPanel } from "./appIde/SideBarPanels/VicPanel";
 import { WatchPanel } from "./appIde/SideBarPanels/WatchPanel";
 import { turboPascalLanguageProvider } from "./appIde/project/turboPascalLanguageProvider";
 import { cLanguageProvider } from "./appIde/project/cLanguageProvider";
+import { createAudioMixerDocumentPanel } from "./appIde/DocumentPanels/AudioMixer/AudioMixerDocumentPanel";
 
 const ACTIVITY_FILE_ID = "file-view";
 const ACTIVITY_DEBUG_ID = "debug-view";
@@ -552,6 +554,11 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     id: LAYERS_EDITOR,
     renderer: createLayersDocumentPanel,
     icon: "layers"
+  },
+  {
+    id: AUDIO_MIXER_EDITOR,
+    renderer: createAudioMixerDocumentPanel,
+    icon: "audio-lines"
   },
   {
     id: COMMAND_RESULT_EDITOR,

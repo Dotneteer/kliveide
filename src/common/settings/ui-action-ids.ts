@@ -8,6 +8,8 @@ export type UiActionId =
   /** The Settings dialog reports the page it shows, so the next page-less open returns to it */
   | "settings:page-shown"
   | "open-machine-selector"
+  /** The emulator's sound popover: shows the IDE and opens its Audio Mixer document */
+  | "open:audio-mixer"
   | "toggle-ide-emu-recording"
   | "set:clockMultiplier"
   | "set:soundLevel"

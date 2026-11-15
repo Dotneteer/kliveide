@@ -5,6 +5,7 @@ import { Z80_HISTORY_CORE_EXPORTS, type Z80HistoryCoreExports } from "@emu/machi
 import { WASM_ACCESS_LOG_CAPACITY } from "../../wasmAccessLog";
 import { OFFS_ERR_PAGE } from "../nextMemoryLayout";
 import { ZXNEXT_FRAME_TRACE_CAPACITY, ZXNEXT_FRAME_TRACE_HEADER_SIZE, ZXNEXT_FRAME_TRACE_RECORD_SIZE } from "./frameTraceLayout";
+import { audioChannelExportNames, type AudioChannelCoreExports } from "../../wasmAudioChannelMixer";
 
 /** The implicit Next model's artifact, when the caller names none (`nextProfiles.ts`, D3) */
 const DEFAULT_ARTIFACT_NAME = nextProfileOf().wasmArtifact;
@@ -26,7 +27,7 @@ export const ZXNEXT_NO_PARTITION = 0x7fffffff;
 
 export type ZxNextWasmV2ExportFunction = (...args: number[]) => number;
 
-export type ZxNextWasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Z80HistoryCoreExports & {
+export type ZxNextWasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Z80HistoryCoreExports & AudioChannelCoreExports<"zxnext"> & {
   memory: WebAssembly.Memory;
   zxnextMemoryPtr: ZxNextWasmV2ExportFunction;
   zxnextPixelBufferPtr: ZxNextWasmV2ExportFunction;
@@ -829,6 +830,8 @@ const requiredV2Exports = [
   "zxnextGetAudioMixerSampleCount",
   "zxnextGetAudioMixerSampleLeft",
   "zxnextGetAudioMixerSampleRight",
+  // --- The audio mixer's gains and taps (`nextAudioChannels.ts`)
+  ...audioChannelExportNames("zxnext"),
   "zxnextDivMmcBeforeFetch",
   "zxnextDivMmcAfterFetch",
   "zxnextDivMmcArmNmi",

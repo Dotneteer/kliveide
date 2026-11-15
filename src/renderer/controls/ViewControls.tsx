@@ -2,9 +2,10 @@ import { useDispatch, useGlobalSetting, useSelector } from "@renderer/core/Rende
 import { muteSoundAction } from "@state/actions";
 import { IconButton } from "./IconButton";
 import { ToolbarSeparator } from "./ToolbarSeparator";
-import { MutableRefObject, useCallback } from "react";
+import { MutableRefObject, useCallback, useState } from "react";
 import { machineRegistry } from "@common/machines/machine-registry";
-import { BEAM_POSITION_MACHINE_IDS, MF_MOUSE_SUPPORT, MF_TAPE_SUPPORT } from "@common/machines/constants";
+import { BEAM_POSITION_MACHINE_IDS, MF_AUDIO_MIXER, MF_MOUSE_SUPPORT, MF_TAPE_SUPPORT } from "@common/machines/constants";
+import { SoundPopover } from "@renderer/features/audioMixer/SoundPopover";
 import { useMainApi } from "@renderer/core/MainApi";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import type { RecordingManager } from "@renderer/appEmu/recording/RecordingManager";
@@ -66,6 +67,10 @@ export const ViewControls = ({ recordingManagerRef }: Props) => {
   const windowRecording = useSelector((s) => s.emulatorState?.windowRecordingState === "recording");
   // --- The sound level and the recordings, next to their buttons (`dev/plans/MENU_REDESIGN_PLAN.md` §5)
   const [soundMenu, soundMenuApi] = useContextMenuState();
+  // --- A machine with sound gets the sound popover instead (`dev/plans/AUDIO_MIXER_PLAN.md` §3.4)
+  const hasAudioMixer = machineInfo?.features?.[MF_AUDIO_MIXER] ?? false;
+  const [soundPopoverAnchor, setSoundPopoverAnchor] = useState<HTMLElement | null>(null);
+  const closeSoundPopover = useCallback(() => setSoundPopoverAnchor(null), []);
   const [recordMenu, recordMenuApi] = useContextMenuState();
 
   const saveProject = useCallback(async () => {
@@ -315,9 +320,24 @@ export const ViewControls = ({ recordingManagerRef }: Props) => {
           title={muted ? t("toolbar.sound.unmute") : t("toolbar.sound.mute")}
           clicked={toggleMute}
           dropdownTitle={t("toolbar.sound.level")}
-          dropdownClicked={(e) => soundMenuApi.showAt(e.currentTarget)}
+          dropdownClicked={(e) => {
+            if (!hasAudioMixer) {
+              soundMenuApi.showAt(e.currentTarget);
+              return;
+            }
+            const anchor = e.currentTarget as HTMLElement;
+            setSoundPopoverAnchor((open) => (open ? null : anchor));
+          }}
         />
       </ToolbarGroup>
+      {soundPopoverAnchor && (
+        <SoundPopover
+          anchor={soundPopoverAnchor}
+          soundLevel={soundLevel}
+          onSoundLevel={(value) => void mainApi.runUiAction("set:soundLevel", value)}
+          onClose={closeSoundPopover}
+        />
+      )}
       {soundMenu.contextVisible && (
         <ContextMenu state={soundMenu} onClickOutside={soundMenuApi.conceal}>
           {SOUND_LEVELS.map((level) => (

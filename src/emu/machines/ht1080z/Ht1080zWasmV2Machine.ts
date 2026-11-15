@@ -47,6 +47,8 @@ import type { AudioSample } from "@emu/abstractions/IAudioDevice";
 import type { ISpectrumPsgDevice } from "../zxSpectrum/ISpectrumPsgDevice";
 import type { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 import { WasmSpectrumPsgDevice } from "../zxSpectrum/WasmSpectrumSupport";
+import { createFixedAudioMixer, HT1080Z_AUDIO_CHANNELS } from "../audioChannelTables";
+import type { IAudioChannelMixer } from "@emu/abstractions/IAudioChannelMixer";
 
 /** The ROM's wait-for-key loop (`JR 0049h` at 004Eh): where a tape-load flow finds BASIC idle */
 const HT1080Z_KEY_WAIT_LOOP = 0x004e;
@@ -176,6 +178,9 @@ export class Ht1080zWasmV2Machine extends Ht1080zWasmHost implements IExecutionH
 
   public readonly implementation = "wasm" as const;
   public wasmV2Runtime?: Ht1080zWasmV2Runtime;
+
+  /** The audio mixer's gains and taps (`audioChannelTables.ts`) */
+  readonly audioMixer: IAudioChannelMixer = createFixedAudioMixer("ht1080z", HT1080Z_AUDIO_CHANNELS, () => this.wasmV2Runtime);
 
   private screenPixels?: Uint32Array;
   private screenPixelBytes?: Uint8ClampedArray;

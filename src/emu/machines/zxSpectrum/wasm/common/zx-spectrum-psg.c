@@ -11,6 +11,13 @@
 // file. The clock step is the number of the host's tacts per AY prescaler step: 16 on the
 // Spectrums, whose AY runs at the CPU clock / 2 (the AY divides its input by 8); the HT-1080Z
 // clocks its AY at the CPU clock, so it uses 8. Both are #undef'd at the end of this file.
+//
+// A core may also define SP128_PSG_CHANNEL_TAPS and SP128_PSG_CHANNEL_GAIN(channel) - the audio
+// mixer's gain of AY channel 0-2 (`zx-spectrum-audio-channels.c` defines it for the Spectrums, the
+// HT-1080Z maps it onto `common/wasm/audio-channels.c`): each channel then keeps its own average level per host sample for
+// the mixer's taps (`sp128PsgChannelAudioLevel`, accumulated always, so it is a function of the
+// machine alone), and a second sum with the mixer's gains is kept for the heard mix
+// (`sp128PsgHeardAudioLevel`, volatile). The core's own sum is untouched.
 
 #ifndef SP128_PSG_CLOCK_STEP
 #define SP128_PSG_CLOCK_STEP 16u
@@ -78,6 +85,21 @@ static int32_t sp128PsgCurrentOutput;
 static uint8_t sp128PsgMixerTablesInitialized;
 static double sp128PsgVolumeTable[16];
 static double sp128PsgEnvelopeTable[16];
+#ifdef SP128_PSG_CHANNEL_TAPS
+#ifndef SP128_PSG_CHANNEL_GAIN
+#error "Define SP128_PSG_CHANNEL_GAIN(channel) with SP128_PSG_CHANNEL_TAPS"
+#endif
+/* Each channel's routed output now, its integral since the last host sample, and that sample's
+   average: the audio mixer's tap, before the channel's gain */
+static double sp128PsgChannelRouted[3];
+static double sp128PsgChannelAccumulated[3];
+static double sp128PsgChannelLevel[3];
+/* The routed sum with the mixer's gains, its integral and its sample average: the heard mix's AY
+   (volatile: they follow the gains) */
+static double sp128PsgHeardRoutedOutput;
+static double sp128PsgHeardAccumulatedOutput;
+static double sp128PsgHeardAudioSampleLevel;
+#endif
 
 static const uint8_t sp128AyReadMasks[16] = {
   0xffu, 0x0fu, 0xffu, 0x0fu, 0xffu, 0x0fu, 0x1fu, 0xffu,
@@ -188,6 +210,16 @@ static void resetPsg(void) {
   sp128PsgLastAccumulationTact = (double)sp128Tacts;
   sp128PsgAudioSampleLevel = 0.0;
   sp128PsgCurrentOutput = 0;
+#ifdef SP128_PSG_CHANNEL_TAPS
+  for (uint32_t channel = 0u; channel < 3u; channel++) {
+    sp128PsgChannelRouted[channel] = 0.0;
+    sp128PsgChannelAccumulated[channel] = 0.0;
+    sp128PsgChannelLevel[channel] = 0.0;
+  }
+  sp128PsgHeardRoutedOutput = 0.0;
+  sp128PsgHeardAccumulatedOutput = 0.0;
+  sp128PsgHeardAudioSampleLevel = 0.0;
+#endif
 }
 
 static void sp128PsgSetTonePeriod(uint32_t channel) {
@@ -299,6 +331,9 @@ static void sp128PsgGenerateStreamSample(void) {
 
   int32_t diagnosticOutput = 0;
   double routedOutput = 0.0;
+#ifdef SP128_PSG_CHANNEL_TAPS
+  double heardRoutedOutput = 0.0;
+#endif
   for (uint32_t channel = 0u; channel < 3u; channel++) {
     Sp128PsgTone *tone = &sp128PsgTone[channel];
     const uint8_t toneVolume = tone->volume;
@@ -312,9 +347,17 @@ static void sp128PsgGenerateStreamSample(void) {
     }
     diagnosticOutput += sp128AyVolumeTable[volumeIndex & 0x0fu];
     routedOutput += sp128PsgStreamOutput[channel] * SP128_PSG_ROUTE_GAIN;
+#ifdef SP128_PSG_CHANNEL_TAPS
+    const double channelRouted = sp128PsgStreamOutput[channel] * SP128_PSG_ROUTE_GAIN;
+    sp128PsgChannelRouted[channel] = channelRouted;
+    heardRoutedOutput += channelRouted * SP128_PSG_CHANNEL_GAIN(channel);
+#endif
   }
   sp128PsgCurrentOutput = diagnosticOutput;
   sp128PsgCurrentRoutedOutput = routedOutput;
+#ifdef SP128_PSG_CHANNEL_TAPS
+  sp128PsgHeardRoutedOutput = heardRoutedOutput;
+#endif
 }
 
 static void sp128PsgAccumulateCurrentOutputUntil(double tact) {
@@ -324,6 +367,12 @@ static void sp128PsgAccumulateCurrentOutputUntil(double tact) {
   const double duration = tact - sp128PsgLastAccumulationTact;
   sp128PsgAccumulatedOutput += sp128PsgCurrentRoutedOutput * duration;
   sp128PsgAccumulatedTacts += duration;
+#ifdef SP128_PSG_CHANNEL_TAPS
+  for (uint32_t channel = 0u; channel < 3u; channel++) {
+    sp128PsgChannelAccumulated[channel] += sp128PsgChannelRouted[channel] * duration;
+  }
+  sp128PsgHeardAccumulatedOutput += sp128PsgHeardRoutedOutput * duration;
+#endif
   sp128PsgLastAccumulationTact = tact;
 }
 
@@ -340,6 +389,14 @@ static void sp128PsgPrepareAudioSample(double sampleEndTact) {
   sp128PsgAdvanceToTact(sampleEndTact);
   if (sp128PsgAccumulatedTacts > 0.0) {
     sp128PsgAudioSampleLevel = sp128PsgAccumulatedOutput / sp128PsgAccumulatedTacts;
+#ifdef SP128_PSG_CHANNEL_TAPS
+    for (uint32_t channel = 0u; channel < 3u; channel++) {
+      sp128PsgChannelLevel[channel] = sp128PsgChannelAccumulated[channel] / sp128PsgAccumulatedTacts;
+      sp128PsgChannelAccumulated[channel] = 0.0;
+    }
+    sp128PsgHeardAudioSampleLevel = sp128PsgHeardAccumulatedOutput / sp128PsgAccumulatedTacts;
+    sp128PsgHeardAccumulatedOutput = 0.0;
+#endif
     sp128PsgAccumulatedOutput = 0.0;
     sp128PsgAccumulatedTacts = 0.0;
   }
@@ -348,6 +405,18 @@ static void sp128PsgPrepareAudioSample(double sampleEndTact) {
 static double sp128PsgAudioLevel(void) {
   return sp128PsgAudioSampleLevel;
 }
+
+#ifdef SP128_PSG_CHANNEL_TAPS
+/* A channel's (0-2) average routed level over the last host sample, before its gain */
+static double sp128PsgChannelAudioLevel(uint32_t channel) {
+  return channel < 3u ? sp128PsgChannelLevel[channel] : 0.0;
+}
+
+/* The AY's average over the last host sample with the mixer's gains */
+static double sp128PsgHeardAudioLevel(void) {
+  return sp128PsgHeardAudioSampleLevel;
+}
+#endif
 
 static void sp128PsgAddressWrite(uint32_t value) {
   sp128PsgAdvanceToTact((double)sp128Tacts);

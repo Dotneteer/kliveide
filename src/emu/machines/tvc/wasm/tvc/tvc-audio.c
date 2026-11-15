@@ -32,6 +32,11 @@
 #define TVC_SOUND_REANCHOR_HALVES 0x40000000u
 
 static double tvcAudioSamples[TVC_AUDIO_SAMPLE_CAPACITY * 2u];
+/* The audio mixer's heard mix (`common/wasm/audio-channels.c`), which the host plays: the sound
+   generator with its gain. One source and a linear filter, so the gain goes after the filter, before
+   the clamp, and the filter's state stays the machine's alone. Volatile. */
+static double tvcAudioHeardSamples[TVC_AUDIO_SAMPLE_CAPACITY * 2u];
+_Static_assert(TVC_AUDIO_SAMPLE_CAPACITY <= KLIVE_AUDIO_TAP_CAPACITY, "The audio taps are smaller than the sample buffer");
 static uint32_t tvcAudioSampleCount;
 static uint32_t tvcAudioSampleRate;
 static uint32_t tvcAudioOverflows;
@@ -122,11 +127,16 @@ static void TVC_NOINLINE tvcAudioEmitSample(void) {
   double out = raw - tvcDcPrevInput + tvcDcAlpha * tvcDcPrevOutput;
   tvcDcPrevInput = raw;
   tvcDcPrevOutput = out;
+  const double heard = kliveAudioGainsUnity ? 0.0 : kliveAudioClamp(out * kliveAudioChannelGain[0]);
   if (out > 1.0) out = 1.0;
   if (out < -1.0) out = -1.0;
   if (tvcAudioSampleCount < TVC_AUDIO_SAMPLE_CAPACITY) {
     tvcAudioSamples[tvcAudioSampleCount * 2u] = out;
     tvcAudioSamples[tvcAudioSampleCount * 2u + 1u] = out;
+    tvcAudioHeardSamples[tvcAudioSampleCount * 2u] = kliveAudioGainsUnity ? out : heard;
+    tvcAudioHeardSamples[tvcAudioSampleCount * 2u + 1u] = kliveAudioGainsUnity ? out : heard;
+    int16_t *tap = kliveAudioTapRow(tvcAudioSampleCount);
+    if (tap) tap[0] = kliveAudioTapWord(raw);
     tvcAudioSampleCount++;
   } else {
     tvcAudioOverflows++;
@@ -192,7 +202,14 @@ void tvcSetAudioSampleRate(uint32_t rate, double dcAlpha) {
   tvcAudioLastPoint = tvcAudioNow();
 }
 
-uint32_t tvcAudioSamplesPtr(void) { return (uint32_t)(uintptr_t)tvcAudioSamples; }
+/* What the host plays: the audio mixer's heard mix, the core's own samples while the gain is unity */
+uint32_t tvcAudioSamplesPtr(void) { return (uint32_t)(uintptr_t)tvcAudioHeardSamples; }
+/* The audio mixer (`common/wasm/audio-channels.c`) */
+void tvcAudioSetChannelGain(uint32_t channel, uint32_t milli) { kliveAudioSetChannelGainMilli(channel, milli); }
+uint32_t tvcAudioGetChannelGain(uint32_t channel) { return kliveAudioGetChannelGainMilli(channel); }
+void tvcAudioSetTapsEnabled(uint32_t enabled) { kliveAudioSetTapsEnabled(enabled); }
+uint32_t tvcAudioTapsPtr(void) { return (uint32_t)(uintptr_t)kliveAudioTaps; }
+uint32_t tvcGetAudioChannelCount(void) { return KLIVE_AUDIO_CHANNELS; }
 uint32_t tvcGetAudioSampleCapacity(void) { return TVC_AUDIO_SAMPLE_CAPACITY; }
 uint32_t tvcGetAudioSampleCount(void) { return tvcAudioSampleCount; }
 uint32_t tvcGetAudioSampleRate(void) { return tvcAudioSampleRate; }

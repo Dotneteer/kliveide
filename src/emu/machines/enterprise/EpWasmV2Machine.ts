@@ -82,6 +82,8 @@ import { DSK_WHOLE_IMAGE_KEY } from "../disk/disk-changes";
 import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import { EpTapeRecorder, isEpTapeFile } from "./EpTapeFile";
 import type { MessengerBase as Messenger } from "@common/messaging/MessengerBase";
+import { createFixedAudioMixer, EP_AUDIO_CHANNELS } from "../audioChannelTables";
+import type { IAudioChannelMixer } from "@emu/abstractions/IAudioChannelMixer";
 
 /** The DC filter's cut-off, as the other cores' (`AudioDeviceBase.DC_FILTER_CUTOFF_HZ`); the core has no `exp` */
 const DC_FILTER_CUTOFF_HZ = 1.4;
@@ -223,6 +225,9 @@ export class EpWasmV2Machine extends EpWasmHost implements IExecutionHistorySour
 
   public readonly implementation = "wasm" as const;
   public wasmV2Runtime?: EpWasmV2Runtime;
+
+  /** The audio mixer's gains and taps (`audioChannelTables.ts`) */
+  readonly audioMixer: IAudioChannelMixer = createFixedAudioMixer("ep", EP_AUDIO_CHANNELS, () => this.wasmV2Runtime);
 
   private screenPixels?: Uint32Array;
   private screenPixelBytes?: Uint8ClampedArray;

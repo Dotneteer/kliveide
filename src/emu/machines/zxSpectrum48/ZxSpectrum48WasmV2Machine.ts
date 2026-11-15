@@ -64,6 +64,8 @@ import type { IRzxMachine, IRzxSession } from "../zxSpectrum/rzx/rzxSession";
 import { spectrumWasmBeamPosition } from "../zxSpectrum/WasmSpectrumSupport";
 import type { BeamPosition } from "@common/utils/beamGeometry";
 import { writeCoreBytes } from "@emu/machines/reverse/coreMemoryWrites";
+import { createSpectrumAudioMixer } from "../zxSpectrum/spectrumAudioChannels";
+import type { IAudioChannelMixer } from "@emu/abstractions/IAudioChannelMixer";
 
 const WASM_AUDIO_SAMPLE_SCALE = 32768.0;
 
@@ -191,6 +193,18 @@ export class ZxSpectrum48WasmV2Machine
 
   public readonly implementation = "wasm" as const;
   public wasmV2Runtime?: Sp48WasmV2Runtime;
+
+  /** The audio mixer's gains and taps (`spectrumAudioChannels.ts`) */
+  readonly audioMixer: IAudioChannelMixer = createSpectrumAudioMixer(
+    "sp48",
+    () => this.wasmV2Runtime,
+    () => this.hasAudioMixerAy()
+  );
+
+  /** Whether the model's AY joins the mixer: the 48K has none (the Timex 2068s override this) */
+  protected hasAudioMixerAy(): boolean {
+    return false;
+  }
 
   /**
    * The DivMMC (`dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md` C4): with `MC_DIVMMC`, connected at setup.

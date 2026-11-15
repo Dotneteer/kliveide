@@ -9,6 +9,7 @@
 import { WASM_CORE_CONDITION_PLAN_WORDS } from "@emu/machines/wasmDebugLoopLayout";
 import { CONDITION_CORE_EXPORTS, type ConditionCoreExports } from "@emu/machines/conditionStore";
 import { Z80_HISTORY_CORE_EXPORTS, type Z80HistoryCoreExports } from "@emu/machines/history/WasmHistoryReader";
+import { audioChannelExportNames, type AudioChannelCoreExports } from "../../wasmAudioChannelMixer";
 
 export const Z88_WASM_V2_ARTIFACT_NAME = "cambridge-z88.wasm";
 
@@ -22,7 +23,7 @@ export const Z88_WASM_V2_KEYBOARD_LINE_COUNT = 8;
 
 export type Z88WasmV2ExportFunction = (...args: number[]) => number;
 
-export type Z88WasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Z80HistoryCoreExports & {
+export type Z88WasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Z80HistoryCoreExports & AudioChannelCoreExports<"z88"> & {
   memory: WebAssembly.Memory;
 } & {
   [Name in Exclude<(typeof z88WasmV2RequiredExports)[number], "memory" | (typeof CONDITION_CORE_EXPORTS)[number] | (typeof Z80_HISTORY_CORE_EXPORTS)[number]>]: Z88WasmV2ExportFunction;
@@ -84,6 +85,8 @@ export const z88WasmV2RequiredExports = [
   "z88PixelBufferPtr",
   "z88GetPixelBufferCapacity",
   "z88AudioSamplesPtr",
+  // --- The audio mixer's gains and taps (`audioChannelTables.ts`)
+  ...audioChannelExportNames("z88"),
   "z88GetAudioSampleCapacity",
   "z88KeyboardLinesPtr",
   // --- Keyboard and sleep

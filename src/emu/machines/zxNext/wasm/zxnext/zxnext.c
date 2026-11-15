@@ -246,6 +246,7 @@ static uint8_t micBit;
 #include "zxnext-copper.c"
 #include "zxnext-beeper.c"
 #include "zxnext-dac.c"
+#include "zxnext-audio-channels.c"
 #include "zxnext-psg.c"
 #include "zxnext-audio-mixer.c"
 #include "zxnext-ctc.c"
@@ -1012,6 +1013,16 @@ void zxnextSetNextAudioMixerSample(uint32_t frameTacts28) { zxnextAudioMixerSetN
 uint32_t zxnextGetAudioMixerSampleCount(void) { return zxnextAudioMixerGetSampleCount(); }
 int32_t zxnextGetAudioMixerSampleLeft(uint32_t index) { return zxnextAudioMixerGetSampleLeft(index); }
 int32_t zxnextGetAudioMixerSampleRight(uint32_t index) { return zxnextAudioMixerGetSampleRight(index); }
+
+/* The audio mixer (zxnext-audio-channels.c): a source's gain in milli (1000 = unity, 0 = mute), the
+   taps' switch, buffer and stride (sources per sample) */
+void zxnextAudioSetChannelGain(uint32_t channel, uint32_t milli) { zxnextAudioSetChannelGainMilli(channel, milli); }
+uint32_t zxnextAudioGetChannelGain(uint32_t channel) {
+  return channel < ZXNEXT_AUDIO_CHANNELS ? zxnextAudioChannelGainMilli[channel] : 0u;
+}
+void zxnextAudioSetTapsEnabled(uint32_t enabled) { zxnextAudioTapsEnabled = enabled != 0u ? 1u : 0u; }
+int16_t *zxnextAudioTapsPtr(void) { return zxnextAudioTaps; }
+uint32_t zxnextGetAudioChannelCount(void) { return ZXNEXT_AUDIO_CHANNELS; }
 
 // -----------------------------------------------------------------------------
 // Breakpoint conditions (`dev/plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`): the shared evaluator, with

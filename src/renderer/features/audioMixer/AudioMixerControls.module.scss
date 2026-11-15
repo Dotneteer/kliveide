@@ -1,0 +1,50 @@
+@use "@styles/core.scss" as *;
+
+/*
+ * The audio mixer's mute and solo buttons (`dev/plans/AUDIO_MIXER_PLAN.md` §3.4). On: mute in the
+ * error hue, solo in the warning hue - a mixing desk's red and yellow, from the status tokens, so they
+ * read the same with every accent.
+ */
+.muteSolo {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.mute,
+.solo {
+  all: unset;
+  cursor: pointer;
+  box-sizing: border-box;
+  width: 2.2ch;
+  height: calc(var(--font-size-50) * 1.6);
+  line-height: calc(var(--font-size-50) * 1.6);
+  text-align: center;
+  font-size: var(--font-size-50);
+  font-weight: 600;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--border-default);
+  background: var(--surface-canvas);
+  color: var(--text-secondary);
+
+  &:hover {
+    border-color: var(--border-strong);
+    color: var(--text-primary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 1px;
+  }
+}
+
+.mute.on {
+  background: var(--status-error);
+  border-color: var(--status-error);
+  color: var(--surface-canvas);
+}
+
+.solo.on {
+  background: var(--status-warning);
+  border-color: var(--status-warning);
+  color: var(--surface-canvas);
+}

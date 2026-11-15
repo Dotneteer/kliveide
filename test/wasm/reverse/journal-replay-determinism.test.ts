@@ -649,7 +649,12 @@ const cores: [SpikeCoreId, MachineFactory, string[], string?][] = [
 ];
 
 /** The cores whose layout stamp names frame-boundary scratch (T5): only they get the scratch proof */
-const SCRATCH_CORES: SpikeCoreId[] = ["sp48", "zxnext"];
+/*
+ * The cores with frame-boundary scratch. The 48K's one buffer was its audio samples, until the host
+ * began playing the audio mixer's heard mix (volatile, `zx-spectrum-audio-channels.c`): nothing reads
+ * the core's own buffer since, so the compiler drops it and the 48K has none to prove.
+ */
+const SCRATCH_CORES: SpikeCoreId[] = ["zxnext"];
 
 /*
  * T5's proof (`dev/plans/REVERSE_DEBUGGING_PLAN.md` Phase 3): a lean keyframe - one that leaves the

@@ -91,6 +91,7 @@ import {
   SETTING_EDITOR_SELECTION_HIGHLIGHT,
   SETTING_EDITOR_OCCURRENCES_HIGHLIGHT,
   SETTING_EMU_KEYBOARD_HEIGHT,
+  SETTING_EMU_AUDIO_MIXER,
   SETTING_EMU_KEYBOARD_HEIGHTS,
   SETTING_EMU_SHOW_PERFORMANCE_INFO,
   SETTING_EDITOR_QUICK_SUGGESTION_DELAY,
@@ -588,6 +589,17 @@ const settingDefinitions: Setting[] = [
     defaultValue: "33%",
     saveWithIde: true,
     volatile: true
+  },
+  {
+    // --- The audio mixer (dev/plans/AUDIO_MIXER_PLAN.md): each machine type's channels' mute, solo
+    // --- and fader, keyed by machine ID, then by channel ID (`AudioMixerSettingsByMachine`)
+    id: SETTING_EMU_AUDIO_MIXER,
+    title: "Audio mixer",
+    description: "Each machine type's audio mixer: which sound sources are muted or soloed, and their levels.",
+    type: "object",
+    defaultValue: {},
+    saveWithIde: true,
+    boundTo: "emu"
   },
   {
     // --- Each machine's keyboard height, keyed by machine ID (issue #1377). A machine with no

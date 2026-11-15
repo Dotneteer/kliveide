@@ -83,6 +83,37 @@ static uint8_t epSquarePrev;
 /* The sides' levels this tick (0-252), before the low-pass */
 static uint32_t epAudioRaw[2];
 
+/*
+ * The audio mixer (`common/wasm/audio-channels.c`). Every stage after the channels is linear - the
+ * sum per side, the board's low-pass, the average per sample, the DC filter - so the heard mix runs
+ * the same chain on the sum with each channel's gain: at unity the same numbers, bit for bit. Its
+ * state is volatile, in scalars (the compiler may split a two-element array, which would lose its
+ * name for the volatile list). A channel's contribution to a side is its amplitude while its output
+ * is 1, or, while the side is in D/A mode, channel 0's amplitude x 4 alone.
+ *
+ * The taps: each channel's mean contribution to the two sides (0-252 scale), integrated since the
+ * last sample - accumulated always, so a function of the machine alone.
+ */
+static double epHeardLevelLeft;
+static double epHeardLevelRight;
+static double epHeardAccumulatedLeft;
+static double epHeardAccumulatedRight;
+static double epHeardDcPrevInLeft;
+static double epHeardDcPrevInRight;
+static double epHeardDcPrevOutLeft;
+static double epHeardDcPrevOutRight;
+static double epAudioHeardSamples[EP_AUDIO_SAMPLE_CAPACITY * 2u];
+_Static_assert(EP_AUDIO_SAMPLE_CAPACITY <= KLIVE_AUDIO_TAP_CAPACITY, "The audio taps are smaller than the sample buffer");
+static double epChannelTapLevel[4];
+static double epChannelTapAccumulated[4];
+
+/* Channel `ch`'s contribution to `side` this tick (0-252 scale) */
+static inline uint32_t epChannelContribution(uint32_t side, uint32_t ch) {
+  const uint8_t *amp = &epDaveReg[8u + side * 4u];
+  if (epDaveReg[7] & (side ? 0x10u : 0x08u)) return ch == 0u ? 4u * (amp[0] & 0x3fu) : 0u;
+  return epChOut[ch] ? (uint32_t)(amp[ch] & 0x3fu) : 0u;
+}
+
 /* The variable poly's length (A6h bits 3-2: 17, 15, 11, 9) and its taps */
 static const uint8_t epVarLength[4] = {17u, 15u, 11u, 9u};
 static const uint8_t epVarTapA[4] = {16u, 14u, 10u, 8u};
@@ -167,6 +198,9 @@ static inline void epAudioIntegrateUntil(double point) {
   epAudioAccumulated[0] += epAudioLevel[0] * d;
   epAudioAccumulated[1] += epAudioLevel[1] * d;
   epAudioAccumulatedHalves += d;
+  epHeardAccumulatedLeft += epHeardLevelLeft * d;
+  epHeardAccumulatedRight += epHeardLevelRight * d;
+  for (uint32_t ch = 0u; ch < 4u; ch++) epChannelTapAccumulated[ch] += epChannelTapLevel[ch] * d;
   epAudioLastPoint = point;
 }
 
@@ -201,6 +235,18 @@ static void epAudioTickEnd(uint32_t at, uint8_t reloaded) {
   epAudioIntegrateUntil(epAudioPointOf(at));
   epAudioLevel[0] += EP_AUDIO_LOWPASS_ALPHA * ((double)epAudioRaw[0] - epAudioLevel[0]);
   epAudioLevel[1] += EP_AUDIO_LOWPASS_ALPHA * ((double)epAudioRaw[1] - epAudioLevel[1]);
+  // --- The audio mixer: the heard chain's sides with each channel's gain, and the channels' taps
+  double heardLeft = 0.0;
+  double heardRight = 0.0;
+  for (uint32_t ch = 0u; ch < 4u; ch++) {
+    const uint32_t left = epChannelContribution(0u, ch);
+    const uint32_t right = epChannelContribution(1u, ch);
+    heardLeft += (double)left * kliveAudioChannelGain[ch];
+    heardRight += (double)right * kliveAudioChannelGain[ch];
+    epChannelTapLevel[ch] = (double)(left + right) * 0.5;
+  }
+  epHeardLevelLeft += EP_AUDIO_LOWPASS_ALPHA * (heardLeft - epHeardLevelLeft);
+  epHeardLevelRight += EP_AUDIO_LOWPASS_ALPHA * (heardRight - epHeardLevelRight);
 }
 
 // -----------------------------------------------------------------------------
@@ -223,10 +269,34 @@ static void EP_NOINLINE epAudioEmitSample(void) {
     out[side] = v;
     epAudioAccumulated[side] = 0.0;
   }
+  // --- The heard chain's sample (the same steps), and the taps
+  const double halves = epAudioAccumulatedHalves;
+  const double heardLevelLeft = halves > 0.0 ? epHeardAccumulatedLeft / halves : epHeardLevelLeft;
+  const double heardLevelRight = halves > 0.0 ? epHeardAccumulatedRight / halves : epHeardLevelRight;
+  const double heardRawLeft = heardLevelLeft / 252.0 * EP_AUDIO_GAIN;
+  const double heardRawRight = heardLevelRight / 252.0 * EP_AUDIO_GAIN;
+  const double heardLeft = heardRawLeft - epHeardDcPrevInLeft + epDcAlpha * epHeardDcPrevOutLeft;
+  const double heardRight = heardRawRight - epHeardDcPrevInRight + epDcAlpha * epHeardDcPrevOutRight;
+  epHeardDcPrevInLeft = heardRawLeft;
+  epHeardDcPrevInRight = heardRawRight;
+  epHeardDcPrevOutLeft = heardLeft;
+  epHeardDcPrevOutRight = heardRight;
+  epHeardAccumulatedLeft = 0.0;
+  epHeardAccumulatedRight = 0.0;
+  int16_t *tap = kliveAudioTapRow(epAudioSampleCount);
+  for (uint32_t ch = 0u; ch < 4u; ch++) {
+    const double level = halves > 0.0 ? epChannelTapAccumulated[ch] / halves : epChannelTapLevel[ch];
+    if (tap) tap[ch] = kliveAudioTapWord(level / 252.0 * EP_AUDIO_GAIN);
+    epChannelTapAccumulated[ch] = 0.0;
+  }
   epAudioAccumulatedHalves = 0.0;
   if (epAudioSampleCount < EP_AUDIO_SAMPLE_CAPACITY) {
     epAudioSamples[epAudioSampleCount * 2u] = out[0];
     epAudioSamples[epAudioSampleCount * 2u + 1u] = out[1];
+    /* Always the heard chain: from a reset at unity it is the core's own words, and after a gain
+       change it carries on without a step when the gains return to unity */
+    epAudioHeardSamples[epAudioSampleCount * 2u] = kliveAudioClamp(heardLeft);
+    epAudioHeardSamples[epAudioSampleCount * 2u + 1u] = kliveAudioClamp(heardRight);
     epAudioSampleCount++;
   } else {
     epAudioOverflows++;
@@ -279,6 +349,18 @@ static void epAudioReset(void) {
   epSquareCount = 0u;
   epSquare = 0u;
   epSquarePrev = 0u;
+  epHeardLevelLeft = 0.0;
+  epHeardLevelRight = 0.0;
+  epHeardAccumulatedLeft = 0.0;
+  epHeardAccumulatedRight = 0.0;
+  epHeardDcPrevInLeft = 0.0;
+  epHeardDcPrevInRight = 0.0;
+  epHeardDcPrevOutLeft = 0.0;
+  epHeardDcPrevOutRight = 0.0;
+  for (uint32_t ch = 0u; ch < 4u; ch++) {
+    epChannelTapLevel[ch] = 0.0;
+    epChannelTapAccumulated[ch] = 0.0;
+  }
 }
 
 /* The host's sample rate (0 stops the samples) and the DC filter's coefficient (`exp(-2 pi fc / rate)`) */
@@ -291,9 +373,19 @@ void epSetAudioSampleRate(uint32_t rate, double dcAlpha) {
   epAudioAccumulatedHalves = 0.0;
   epAudioAccumulated[0] = 0.0;
   epAudioAccumulated[1] = 0.0;
+  epHeardAccumulatedLeft = 0.0;
+  epHeardAccumulatedRight = 0.0;
+  for (uint32_t ch = 0u; ch < 4u; ch++) epChannelTapAccumulated[ch] = 0.0;
 }
 
-uint32_t epAudioSamplesPtr(void) { return (uint32_t)(uintptr_t)epAudioSamples; }
+/* What the host plays: the audio mixer's heard mix (bit for bit the core's own samples at unity) */
+uint32_t epAudioSamplesPtr(void) { return (uint32_t)(uintptr_t)epAudioHeardSamples; }
+/* The audio mixer (`common/wasm/audio-channels.c`) */
+void epAudioSetChannelGain(uint32_t channel, uint32_t milli) { kliveAudioSetChannelGainMilli(channel, milli); }
+uint32_t epAudioGetChannelGain(uint32_t channel) { return kliveAudioGetChannelGainMilli(channel); }
+void epAudioSetTapsEnabled(uint32_t enabled) { kliveAudioSetTapsEnabled(enabled); }
+uint32_t epAudioTapsPtr(void) { return (uint32_t)(uintptr_t)kliveAudioTaps; }
+uint32_t epGetAudioChannelCount(void) { return KLIVE_AUDIO_CHANNELS; }
 uint32_t epGetAudioSampleCapacity(void) { return EP_AUDIO_SAMPLE_CAPACITY; }
 uint32_t epGetAudioSampleCount(void) { return epAudioSampleCount; }
 uint32_t epGetAudioSampleRate(void) { return epAudioSampleRate; }

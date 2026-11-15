@@ -25,6 +25,7 @@ import {
 import { type MenuContext, windowInfoOf } from "./menu-context";
 import { createBooleanSettingsMenu, filterVisibleItems, tidySeparators } from "./menu-utils";
 import { t } from "@common/i18n/i18n";
+import { MF_AUDIO_MIXER } from "@common/machines/constants";
 
 /** View › Machine Views: the memory and disassembly views, then the machine's own */
 export function createMachineViewsMenu(context: MenuContext): MenuItemConstructorOptions[] {
@@ -57,6 +58,19 @@ export function createMachineViewsMenu(context: MenuContext): MenuItemConstructo
         );
       }
     },
+    // --- The audio mixer, for every machine with sound (`dev/plans/AUDIO_MIXER_PLAN.md` §3.4)
+    ...(context.currentMachine?.features?.[MF_AUDIO_MIXER]
+      ? [
+          {
+            id: "show_audio_mixer",
+            label: t("menu.view.audioMixer"),
+            click: async () => {
+              context.ensureIdeWindow();
+              await getIdeApi().executeCommand("show-audio-mixer");
+            }
+          }
+        ]
+      : []),
     ...(machineViews.length ? [{ type: "separator" as const }] : []),
     ...(machineViews as MenuItemConstructorOptions[])
   ]);

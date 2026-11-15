@@ -504,7 +504,7 @@ const workloadsNext: Workload[] = [
   }
 ];
 
-const CANDIDATES_48 = ["sp48PixelBuffer", "sp48AudioSamples", "sp48AudioTransitionTacts", "sp48AudioTransitionMic"];
+const CANDIDATES_48 = ["sp48PixelBuffer", "zxAudioHeardSamples", "sp48AudioTransitionTacts", "sp48AudioTransitionMic"];
 const CANDIDATES_NEXT = [
   "zxnextPixelBuffer",
   "zxnextLayerUla",

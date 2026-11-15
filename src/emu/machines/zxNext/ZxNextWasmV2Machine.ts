@@ -110,6 +110,8 @@ import { writeCoreBytes } from "@emu/machines/reverse/coreMemoryWrites";
 import { PI_I2S_MAX_RATE, type PiI2sSource } from "./piI2s/PiI2sSource";
 import type { PiI2sStatus } from "@common/zxnext/piI2s";
 import { revertSdWrites, type SdRevertResult, type SdUndoEntry, type SdUndoLog } from "@emu/machines/reverse/SdUndoLog";
+import { createNextAudioMixer } from "./nextAudioChannels";
+import type { IAudioChannelMixer } from "@emu/abstractions/IAudioChannelMixer";
 
 const WASM_AUDIO_SAMPLE_SCALE = 32768.0;
 
@@ -200,6 +202,9 @@ export class ZxNextWasmV2Machine
 {
   public readonly implementation = "wasm" as const;
   public wasmV2Runtime?: ZxNextWasmV2Runtime;
+
+  /** The audio mixer's gains and taps (`nextAudioChannels.ts`) */
+  readonly audioMixer: IAudioChannelMixer = createNextAudioMixer(() => this.wasmV2Runtime);
   public readonly screenDevice: {
     readonly renderingTactTable: { phase: number }[];
     readonly borderColor: number;

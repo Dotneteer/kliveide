@@ -63,6 +63,8 @@ import { keyCode, type NextKey } from "./keys";
 import { joyBits, setJoystickState, type JoyButton, type JoySide } from "./joystick";
 import { mouseButtonBits, sendMousePacket, type MouseEvent } from "./mouse";
 import { createSp48Session } from "../../sp48";
+import type { IAudioChannelMixer } from "@emu/abstractions/IAudioChannelMixer";
+import { readWasmLayout } from "@emu/machines/state/wasmLayout";
 
 /*
  * The scripting layer of the ZX Spectrum Next test harness: one real machine (the WASM core), driven
@@ -1499,6 +1501,32 @@ export class NextTestSession {
   audio(): AudioSample[] {
     if (!this.recording) throw new Error("Call startAudio() first.");
     return this.recording;
+  }
+  /**
+   * The audio mixer's per-source gains and taps (`dev/plans/AUDIO_MIXER_PLAN.md`), as the IDE's mixer
+   * drives them: a host setting, which changes only what the recorded audio hears.
+   */
+  get audioMixer(): IAudioChannelMixer {
+    return this.machine.audioMixer;
+  }
+  /**
+   * Where this core's memory differs from another session's (up to 8 addresses), outside the volatile
+   * statics and the C stack: what a state file keeps and reverse debugging's keyframes compare. Empty
+   * when the two machines are in the same state.
+   */
+  memoryDifferences(other: NextTestSession): number[] {
+    const runtime = this.machine.wasmV2Runtime!;
+    const layout = readWasmLayout(runtime.module);
+    if (!layout) throw new Error("The core has no layout stamp");
+    const skip: [number, number][] = layout.volatile.map((v) => [v.address, v.address + v.size]);
+    if (layout.stack) skip.push([layout.stack.address, layout.stack.address + layout.stack.size]);
+    const a = new Uint8Array(runtime.memoryBuffer);
+    const b = new Uint8Array(other.machine.wasmV2Runtime!.memoryBuffer);
+    const out: number[] = [];
+    for (let i = 0; i < a.length && out.length < 8; i++) {
+      if (a[i] !== b[i] && !skip.some(([from, to]) => i >= from && i < to)) out.push(i);
+    }
+    return out;
   }
 }
 

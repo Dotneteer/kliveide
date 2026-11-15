@@ -9,6 +9,7 @@ import { WASM_CORE_CONDITION_PLAN_WORDS } from "@emu/machines/wasmDebugLoopLayou
 import { CONDITION_CORE_EXPORTS, type ConditionCoreExports } from "@emu/machines/conditionStore";
 import { Z80_HISTORY_CORE_EXPORTS, type Z80HistoryCoreExports } from "@emu/machines/history/WasmHistoryReader";
 import { WASM_ACCESS_LOG_CAPACITY } from "@emu/machines/wasmAccessLog";
+import { audioChannelExportNames, type AudioChannelCoreExports } from "../../wasmAudioChannelMixer";
 
 export const HT1080Z_WASM_V2_ARTIFACT_NAME = "ht1080z.wasm";
 
@@ -17,7 +18,7 @@ export const HT1080Z_WASM_V2_KEYBOARD_LINE_COUNT = 8;
 export type Ht1080zWasmV2ExportFunction = (...args: number[]) => number;
 
 export type Ht1080zWasmV2Exports = WebAssembly.Exports &
-  ConditionCoreExports & Z80HistoryCoreExports & {
+  ConditionCoreExports & Z80HistoryCoreExports & AudioChannelCoreExports<"ht1080z"> & {
     memory: WebAssembly.Memory;
   } & {
     [Name in Exclude<
@@ -169,6 +170,8 @@ export const ht1080zWasmV2RequiredExports = [
   "ht1080zSetVideoDash",
   "ht1080zSetVideoPage",
   "ht1080zAudioSamplesPtr",
+  // --- The audio mixer's gains and taps (`audioChannelTables.ts`)
+  ...audioChannelExportNames("ht1080z"),
   "ht1080zGetAudioOverflows",
   "ht1080zGetAudioSampleCapacity",
   "ht1080zGetAudioSampleCount",

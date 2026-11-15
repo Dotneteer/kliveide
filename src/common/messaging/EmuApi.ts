@@ -70,6 +70,7 @@ import type {
   RzxStopRecordingResult,
   RzxVideoOptions
 } from "@common/spectrum/rzx/rzxCommandTypes";
+import type { AudioMixerFrame } from "@common/audio/audioMixerModel";
 
 const NO_PROXY_ERROR = "Method should be implemented by a proxy.";
 
@@ -877,6 +878,15 @@ class EmuApiImpl {
    * changes the machine.
    */
   async getNextLayerState(_options?: { thumbnails?: boolean }): Promise<NextLayerState> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * The audio mixer's measures (`dev/plans/AUDIO_MIXER_PLAN.md` §3.2): every sound source's level,
+   * spectrum and waveform, and the output's. Asking keeps the machine's taps on; a second without a
+   * request switches them off. Null when the machine has no sound (or no machine is running).
+   */
+  async getAudioMixerFrame(): Promise<AudioMixerFrame | null> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 

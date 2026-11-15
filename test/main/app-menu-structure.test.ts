@@ -302,6 +302,7 @@ describe("the application menu", () => {
     expect(labels(submenu(menu(template, "View"), "Machine Views"))).toEqual([
       "Memory",
       "Disassembly",
+      "Audio Mixer",
       "BASIC Listing",
       "Copper List",
       "Sprite Inspector",
@@ -309,6 +310,16 @@ describe("the application menu", () => {
       "Layer 2 Inspector",
       "Layers"
     ]);
+  });
+
+  it("offers the Audio Mixer on every machine with sound, and not on one without", () => {
+    const views = (machineId: string) => labels(submenu(menu(buildMenu(machineId, undefined, "emu"), "View"), "Machine Views"));
+    for (const machineId of ["sp48", "sp128", "zxnext", "z88", "tvc", "ep"]) {
+      expect(views(machineId), machineId).toContain("Audio Mixer");
+    }
+    for (const machineId of ["zx81", "zx80", "c64"]) {
+      expect(views(machineId), machineId).not.toContain("Audio Mixer");
+    }
   });
 
   it("offers Export Disassembly as Source... on every machine whose memory can be annotated", () => {

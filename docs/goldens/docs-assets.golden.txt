@@ -116,6 +116,9 @@
 /images/en/guides/editing/editor/error.webp
 /images/en/guides/editing/editor/hover.webp
 /images/en/guides/editing/navigation/history.webp
+/images/en/guides/emulator/audio-mixer/document.webp
+/images/en/guides/emulator/audio-mixer/popover.webp
+/images/en/guides/emulator/audio-mixer/spectrogram.webp
 /images/en/guides/emulator/emulator-window/window.webp
 /images/en/guides/emulator/emulator-window/window.webp.json
 /images/en/guides/emulator/keyboard/mouse-capture.webp

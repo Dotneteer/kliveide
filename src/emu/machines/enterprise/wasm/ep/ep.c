@@ -177,6 +177,9 @@ static void epTapeReset(void);
 #include "ep-memory.c"
 #include "ep-keyboard.c"
 #include "ep-dave.c"
+/* The audio mixer: DAVE's tone channels 0-2 and the noise channel (`common/wasm/audio-channels.c`) */
+#define KLIVE_AUDIO_CHANNELS 4u
+#include "../../../common/wasm/audio-channels.c"
 #include "ep-audio.c"
 #include "ep-nick.c"
 #include "ep-exdos.c"

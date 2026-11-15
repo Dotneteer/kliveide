@@ -261,6 +261,30 @@ describe("harness session", () => {
     expect(last()).toBeGreaterThan(0.1);
   });
 
+  it("audioMixer: a source's gain changes what the stream plays", async () => {
+    // --- DAC A at $FF: muting it silences the jack
+    const s = await createSession({ audioSampleRate: 44_100 });
+    await s.loadCode(` .org $8000\n jr $`);
+    s.setNextReg(0x08, 0x08).out(0x1f, 0xff);
+    const last = () => s.startAudio().runFrames(1).audio().at(-1)!.left;
+    expect(s.audioMixer.getAudioChannels().map((c) => c.id)).toContain("dacA");
+    expect(last()).toBeGreaterThan(0.1);
+    s.audioMixer.setAudioChannelGain("dacA", 0);
+    expect(last()).toBe(0);
+  });
+
+  it("memoryDifferences: finds a byte that differs, and none in two equal machines", async () => {
+    const a = await createSession();
+    const b = await createSession();
+    await a.loadCode(` .org $8000\n jr $`);
+    await b.loadCode(` .org $8000\n jr $`);
+    a.runFrames(2);
+    b.runFrames(2);
+    expect(a.memoryDifferences(b)).toEqual([]);
+    a.poke(0xc000, 0x5a);
+    expect(a.memoryDifferences(b).length).toBeGreaterThan(0);
+  });
+
   it("attachSdCard: a sector read's frame command is answered from the image; sync runs refuse it", async () => {
     // --- select SD card 0, CMD17 for sector 3, poll for the $FE token, read 512 bytes to $A000
     const program = `

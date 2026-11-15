@@ -320,9 +320,11 @@ static void renderUlaUntilCurrentTact(void);
 static void renderUlaBeforeWrite(void);
 static uint32_t normalizeClockMultiplier(uint32_t value);
 
+#include "../../../zxSpectrum/wasm/common/zx-spectrum-audio-channels.c"
 #ifdef SP48_SCLD
 /* The TC2068/TS2068's AY-3-8912 (`zx-spectrum-psg.c`, as the 128K's), clocked at CPU / 2 */
 #define sp128Tacts sp48Tacts
+#define SP128_PSG_CHANNEL_TAPS
 #include "../../../zxSpectrum/wasm/common/zx-spectrum-psg.c"
 #undef sp128Tacts
 #endif
@@ -614,6 +616,9 @@ static void SP48_CPU_NOINLINE sp48CpuDelayAddressBusAccess(uint32_t address) {
   do { if (sp48TimexHasAy != 0u) sp128PsgPrepareAudioSample(sampleEndTact); } while (0)
 #define SP48_AUDIO_EXTRA_LEFT() (sp48TimexHasAy != 0u ? sp128PsgAudioLevel() : 0.0)
 #define SP48_AUDIO_EXTRA_RIGHT() (sp48TimexHasAy != 0u ? sp128PsgAudioLevel() : 0.0)
+#define SP48_AUDIO_AY_CHANNEL_LEVEL(channel) (sp48TimexHasAy != 0u ? sp128PsgChannelAudioLevel(channel) : 0.0)
+#define SP48_AUDIO_HEARD_EXTRA_LEFT() (sp48TimexHasAy != 0u ? sp128PsgHeardAudioLevel() : 0.0)
+#define SP48_AUDIO_HEARD_EXTRA_RIGHT() (sp48TimexHasAy != 0u ? sp128PsgHeardAudioLevel() : 0.0)
 #endif
 #include "../../../zxSpectrum/wasm/common/zx-spectrum-beeper.c"
 #ifdef SP48_SCLD
@@ -984,8 +989,10 @@ uint32_t *sp48PixelBufferPtr(void) {
   return sp48PixelBuffer;
 }
 
+/* What the host plays: the audio mixer's heard mix (`zx-spectrum-audio-channels.c`), the core's own
+   samples bit for bit while every gain is at unity */
 Sp48AudioSample *sp48AudioSamplesPtr(void) {
-  return sp48AudioSamples;
+  return (Sp48AudioSample *)zxAudioHeardSamples;
 }
 
 uint8_t *sp48KeyboardLinesPtr(void) {
@@ -1025,6 +1032,28 @@ uint32_t sp48GetAudioSampleCount(void) {
 
 uint32_t sp48GetAudioSampleCapacity(void) {
   return SP48_AUDIO_SAMPLE_CAPACITY;
+}
+
+/* The audio mixer (`zx-spectrum-audio-channels.c`): a channel's gain in milli (1000 = unity, 0 =
+   mute), the taps' switch, buffer and stride (channels per sample) */
+void sp48AudioSetChannelGain(uint32_t channel, uint32_t milli) {
+  zxAudioSetChannelGainMilli(channel, milli);
+}
+
+uint32_t sp48AudioGetChannelGain(uint32_t channel) {
+  return zxAudioGetChannelGainMilli(channel);
+}
+
+void sp48AudioSetTapsEnabled(uint32_t enabled) {
+  zxAudioSetTapsEnabled(enabled);
+}
+
+int16_t *sp48AudioTapsPtr(void) {
+  return zxAudioTaps;
+}
+
+uint32_t sp48GetAudioChannelCount(void) {
+  return ZX_AUDIO_CHANNELS;
 }
 
 uint32_t sp48GetTactsInFrame(void) {
