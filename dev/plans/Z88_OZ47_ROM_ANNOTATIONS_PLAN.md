@@ -6,7 +6,7 @@ Phase 2 done (2026-11-15): every component with source imports (banks 0-8, $0A-$
 reassembles byte for byte. Phase 3 under way (2026-11-15): every bank level 1, bank $10 level 2; level 2
 counts routines (D-OZ6) and bank 9 is left out (D-OZ7). The system banks are level 2: the kernel (0, 1),
 bank 2, GN (3), MTH (8), DC and Index ($0C), the FPP ($0D) and the file area ($10); so are banks 4 and 7.
-Left: PipeDream (5, 6), EazyLink and the Filer ($0A), FlashStore ($0B) and the ROM header (1,411 labels). **To continue, read "Phase 3 status".**
+Left: PipeDream (5, 6), EazyLink and the Filer ($0A), FlashStore ($0B) and the ROM header (1,411 labels). **To continue in a new session, read "Handoff (2026-11-15)" at the end of Phase 3.**
 **Goal:** a shipped sidecar `src/public/roms/z88v47.rom.dis` that annotates the OZ 4.7 ROM's banks to
 level 2 (all but bank 9, D-OZ7). It is built mostly from the OZ project's own assembler source,
 <https://bitbucket.org/cambridge/oz/src/V4.7/>, which the owner has given permission to use.
@@ -413,6 +413,66 @@ Open:
 **Seeing the state:** after every session, `node dev/scripts/import-oz-source.cjs --all`, then copy
 `.local/oz-import/z88v47.rom.dis` over `~/Klive/RomAnnotations/z88v47.rom.dis` (the IDE reloads it).
 Debug > ROM Annotations > z88v47.rom shows each page's level and its "To label" count.
+
+### Handoff (2026-11-15): how to continue Phase 3 in a new session
+
+**Where it stands.** Branch `dotneteer/z88-oz47-phase2` (pull request "Z88 OZ 4.7 ROM annotations:
+Phase 2 and most of Phase 3"), committed and clean. Banks 0-4, 7, 8, $0C, $0D and $10 measure level 2;
+banks 5, 6, $0A, $0B and $1F measure level 1. Bank 9 is out (D-OZ7). The branch carries an `internal`
+changeset (`dev/changes/cambridge-z88-oz-4-7-1a32.md`, at the developer's request); **the session that
+finishes the plan turns it into the `feature` changeset**
+("Cambridge Z88 ROM annotations" for OZ 4.7) instead of adding a second one.
+
+**Read first:** this plan's decisions (D-OZ1 to D-OZ7) and "Phase 3 status" above,
+`dev/ai/rom-annotations/z88-authoring-guide.md` (its "Phase 3" section), `README.md` beside it,
+`helper-briefs/z88-draft-synopses.md` and the top of `z88-oz47-review.md`.
+
+**Set up** (the OZ source and every intermediate file are git-ignored, so a fresh checkout has none):
+1. `git clone https://bitbucket.org/cambridge/oz.git .local/oz47/oz` and
+   `git -C .local/oz47/oz checkout V4.7` (commit `603c979a`), if `.local/oz47/oz` is missing.
+2. `node dev/scripts/import-oz-source.cjs --all` must print "All 23 components imported.", the filler line
+   (22 runs) and "Hand-written entries applied: 16 label(s), 1789 line annotation(s), 5 region(s)" (the line
+   count grows with every merged batch). The result is `.local/oz-import/z88v47.rom.dis`.
+3. `node dev/ai/rom-annotations/tools/check-annotations.cjs .local/oz-import/z88v47.rom.dis`: `"problems": []`,
+   and `labelsWithoutSynopsis` is the work left per bank.
+
+**Next steps, in order:**
+1. **Synopses for the remaining banks**, one batch per session or per user request, each the same way:
+   - pack: `node dev/ai/rom-annotations/tools/z88-synopsis-pack.cjs <bank[,bank]> <source folders> .local/oz-synopses/<name>-pack.json`
+     (PipeDream: banks `5` and `6` separately, folder `apps/pipedream`; bank $0A `10` with
+     `apps/eazylink,apps/filer`; bank $0B `11` with `apps/flashstore`; the header `31` with `mth`);
+   - split: `z88-synopsis-split.cjs <pack> <n> .local/oz-synopses/<name>`, about 70-80 labels a slice;
+   - one helper agent per slice with the brief (its task names the slice, the draft path
+     `.local/oz-synopses/drafts/<slice>.json`, the program and its run address, and how to resolve names
+     several modules share); helpers name scratch files after their slice;
+   - check each draft (`z88-synopsis-merge.cjs <slice>:<draft> --dry-run`), read a sample, merge them all,
+     re-run the import and the check, reassemble the banks with the template (below), install the working
+     copy, append `z88-synopsis-notes.cjs` output to `z88-oz47-review.md`, and add a `PROVENANCE.md` entry.
+   PipeDream is one 32K program over banks 5 and 6: give its helpers the run addresses ($8000 and $C000)
+   and tell them a call into the other half is a call into the other bank.
+2. **The rename proposals** in `z88-label-renames.json` (about 590 machine proposals): review them, at
+   least the routine names, and hand-edit poor ones (an edited entry wins on the next import).
+3. **Across banks:** a listing names labels of its own bank only, so PipeDream's calls between its halves,
+   the Filer's run (bank $0A, segment 3) and LOWRAM's jumps show addresses.
+4. **Coverage runs** (Phase 3 step 4) on `test/harness/z88/`.
+5. **Record `level: 2`** once every bank measures it, regenerate `rom-annotations.index.json`; then Phase 4,
+   which waits for Q1 (the permission's wording) before anything ships.
+
+**Checks after each batch.** The reassembly template: copy
+`dev/ai/rom-annotations/tools/reassemble-test.ts.txt` to `test/reverse-eng/zz-reassemble.test.ts`, run
+`PAGE=<bank> SIDECAR=.local/oz-import/z88v47.rom.dis ROM=z88v47.rom npx vitest run --config build/vitest.config.ts --project node test/reverse-eng/zz-reassemble.test.ts`
+for each bank touched, then delete the copy. Code changes also need the focused tests
+(`test/annotations/`, `test/z88/`) and `npm run build:check`.
+
+**Installing the working copy for the developer.** Back up `~/Klive/RomAnnotations/z88v47.rom.dis`
+(`.phase3x-backup`), copy the new import over it, and check the backup differs from the new import only by
+the batch's entries: `node dev/ai/rom-annotations/tools/z88-working-copy-diff.cjs <backup> <new>` prints one
+line per difference (regions are ignored: the IDE re-saves the file in its own form, merging code regions,
+which is not a content change). Any difference beyond the batch is the developer's edit: stop and ask.
+
+**Shell traps met in this work:** zsh does not split an unquoted `$VAR` into words, so pass a list of
+arguments written out; a heredoc in the same command as `rm` is refused by the safety check, so write
+scripts with the file tool and delete in a separate plain command.
 
 ### Phase 4 — Records and shipping
 
