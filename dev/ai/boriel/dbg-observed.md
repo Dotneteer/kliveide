@@ -1,4 +1,4 @@
-# The `.dbg` file and run-time layouts, as observed (zxbc 2.0.0-beta25, re-checked on beta29)
+# The `.dbg` file and run-time layouts, as observed (zxbc 2.0.0-beta25, re-checked on beta29 and 2.0.0)
 
 The published format is at <https://zxbasic.readthedocs.io/en/v2.0/debug_format/>. This file records
 what the compiler **actually writes**, checked by running the programs on Klive's real 48K harness.

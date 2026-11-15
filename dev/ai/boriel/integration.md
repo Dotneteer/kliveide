@@ -17,9 +17,9 @@ Boriel BASIC cannot do compared with Klive BASIC is `limitations.md`.
 | B4 | Each installer carries **only its own platform's kit**, staged into `extraResources` (see "The kits in the build"). |
 | B5 | The kit is extracted by Klive's own code (`src/main/tool-install/archive.ts`, shared with sjasmplus): no `tar`/`unzip` process, no new dependency. |
 | B6 | Boriel builds read Klive's `'@name value` header options and translate them to zxbc flags (`options.md`), so one `program.zxbas` builds under both compilers. |
-| B-L1 | **Redistribution.** The project author holds Boriel's written permission (email) to bundle the beta kit. The kit ships no LICENSE file (`lib/NOTICE.md` names a proprietary licence for the binaries and calls `lib/` MIT apart from 216 header-less files), so a **production version needs its licence text in the installer and in `THIRD_PARTY_NOTICES.md`**. The UI says "Boriel BASIC 2.0 beta, redistributed with the author's permission". |
+| B-L1 | **Redistribution.** The project author holds Boriel's written permission (email) to bundle the beta kit; on 2026-11-15 the author confirmed it covers the 2.0.0 release too. The kit ships no LICENSE file (`lib/NOTICE.md` names a proprietary licence for the binaries and calls `lib/` MIT apart from 216 header-less files), so a **production version needs its licence text in the installer and in `THIRD_PARTY_NOTICES.md`**. The UI says "Boriel BASIC 2.0 beta, redistributed with the author's permission". |
 | B-T1 | **zxbc never runs in CI.** zxbc's output for Klive's own small programs is committed as fixtures in `test/boriel/fixtures/` (regenerated with `npm run boriel:fixtures`, never edited); CI tests the adapter and the debugger on them. This is an exception to Klive BASIC's D12, limited to that folder. Tests that run the real zxbc skip when no kit is installed. |
-| B-T2 | **The version is pinned** in `dev/vendor/boriel-basic/kit.json` (now `2.0.0-beta29`). A version change is deliberate and follows `updating.md`. |
+| B-T2 | **The version is pinned** in `dev/vendor/boriel-basic/kit.json` (now `2.0.0`). A version change is deliberate and follows `updating.md`. |
 
 ## The kits in the build
 

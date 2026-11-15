@@ -1,6 +1,6 @@
 # Boriel BASIC test fixtures
 
-Output of **Boriel BASIC `zxbc` 2.0.0-beta29** (the version `dev/vendor/boriel-basic/kit.json` pins) for
+Output of **Boriel BASIC `zxbc` 2.0.0** (the version `dev/vendor/boriel-basic/kit.json` pins) for
 Klive's own small test programs, committed so CI can test the `.dbg` adapter and the debugger without
 running zxbc (`dev/ai/boriel/integration.md`, decision B-T1).
 
@@ -26,7 +26,7 @@ Each folder holds:
   Klive BASIC (`dev/ai/kbasic/compiler.md`, "Provenance (hard rule)").
 - **Licence.** The binaries contain zxbc's runtime library, which its `lib/NOTICE.md` describes as MIT
   (216 runtime files carry no header; see `lib/UNLICENSED_FILES.txt` in the kit). Klive redistributes
-  this beta with Boriel's written permission.
+  it with Boriel's written permission.
 - **Never edit the generated files by hand.** Regenerate them:
 
   ```
