@@ -134,6 +134,29 @@ describe("assembling a CHANGELOG section", () => {
     expect(formatEntry("short line", [])).toBe("- short line");
   });
 
+  it("rewraps a paragraph the bullet's indent pushed over 100 columns, leaving no orphan word", () => {
+    // Wrapped at exactly 100 columns, as changesets are: the indent pushes lines 1 and 2 over.
+    const body = [
+      "**One ROM Annotations item per ROM file:** Debug › ROM Annotations lists each ROM file once, instead",
+      "of once per 16K page. The ROM annotation editor lists all the file's pages, including those notably,",
+      "annotated `with a code span` yet."
+    ].join("\n");
+    expect(body.split("\n").slice(0, 2).every((l) => [...l].length === 100)).toBe(true);
+    const lines = formatEntry(body, []).split("\n");
+    expect(lines.every((l) => [...l].length <= 100)).toBe(true);
+    expect(lines.slice(0, -1).every((l) => [...l].length > 80)).toBe(true);
+    expect(lines.slice(1).every((l) => l.startsWith("  ") && !l.startsWith("   "))).toBe(true);
+    expect(lines.join(" ").replace(/\s+/g, " ")).toBe(`- ${body.replace(/\n/g, " ")}`);
+    expect(lines.join("\n")).toContain("`with a code span`");
+  });
+
+  it("counts characters, not UTF-16 units, and leaves fitting paragraphs as written", () => {
+    const fits = `${"x".repeat(90)} › › ›\nshort second line.`;
+    expect(formatEntry(fits, [])).toBe(`- ${"x".repeat(90)} › › ›\n  short second line.`);
+    const listBody = "Intro paragraph.\n\n- item one\n- item two";
+    expect(formatEntry(listBody, [])).toBe("- Intro paragraph.\n\n  - item one\n  - item two");
+  });
+
   it("puts entries in the fixed section order, oldest changeset first", () => {
     const section = assembleSection({
       version: "0.64.0",

@@ -269,19 +269,54 @@ function withIssues(text, issues) {
 
 const MAX_COLUMNS = 100;
 
+/** A line's width in characters, not UTF-16 units (`›` and `µ` are common in entries) */
+function width(text) {
+  return [...text].length;
+}
+
+/** A line that starts a paragraph of its own: a list item, a table row or a code fence */
+const BLOCK_START = /^\s*(?:[-*] |\d+\. |\||```)/;
+
+/**
+ * Splits indented entry lines into paragraphs: a list item, table row or code fence starts one,
+ * a blank line ends one, and every other line continues the paragraph above it.
+ */
+function paragraphs(lines) {
+  const out = [];
+  for (const line of lines) {
+    const last = out[out.length - 1];
+    if (!last || !line.trim() || !last[last.length - 1].trim() || BLOCK_START.test(line)) out.push([line]);
+    else last.push(line);
+  }
+  return out;
+}
+
+/**
+ * Wraps a paragraph to MAX_COLUMNS. One that fits is left as written. One that does not (a
+ * changeset wrapped at 100 columns before the bullet's indent was added, or a line the issue
+ * numbers pushed over) is joined and wrapped again as a whole, so no word is left on a line of
+ * its own. Table rows and code fences are never joined.
+ */
+function wrapParagraph(lines, indent) {
+  if (lines.every((line) => width(line) <= MAX_COLUMNS)) return lines;
+  if (/^\s*(?:\||```)/.test(lines[0])) return lines;
+  const joined = lines.map((line, i) => (i === 0 ? line.trimEnd() : line.trim())).join(" ");
+  return wrapLine(joined, indent);
+}
+
 /**
  * Wraps a line longer than MAX_COLUMNS at spaces, never inside an inline code span (the website
  * escapes line by line); continuation lines get `indent`. Shorter lines are left as written.
  */
 function wrapLine(line, indent) {
-  if (line.length <= MAX_COLUMNS) return [line];
+  if (width(line) <= MAX_COLUMNS) return [line];
   const lead = /^\s*(?:[-*] )?/.exec(line)[0];
   const words = line.slice(lead.length).match(/(?:`[^`]*`|[^\s`])+/g) ?? [];
   const out = [];
   let current = lead;
   for (const word of words) {
     const prefix = out.length ? indent : lead;
-    if (current.length > prefix.length && current.length + 1 + word.length > MAX_COLUMNS) {
+    if (current.length > prefix.length && width(current) + 1 + width(word) > MAX_COLUMNS) {
       out.push(current);
       current = indent + word;
     } else {
@@ -293,15 +328,17 @@ function wrapLine(line, indent) {
 }
 
 /**
- * One CHANGELOG entry: a bullet whose continuation lines are indented by two spaces. Lines over
- * 100 columns (a one-line highlight, or a line the issue numbers pushed over) are wrapped.
+ * One CHANGELOG entry: a bullet whose continuation lines are indented by two spaces. A paragraph
+ * with a line over 100 columns is wrapped again as a whole (`wrapParagraph`).
  */
 function formatEntry(body, issues = []) {
   const text = withIssues(String(body).trim(), issues);
   const lines = /^[-*] /.test(text)
     ? text.split("\n")
     : text.split("\n").map((line, i) => (i === 0 ? `- ${line}` : line.trim() ? `  ${line}` : ""));
-  return lines.flatMap((line) => wrapLine(line, "  ")).join("\n");
+  return paragraphs(lines)
+    .flatMap((para) => wrapParagraph(para, "  "))
+    .join("\n");
 }
 
 /** Orders changesets by when they were added (`addedAt`, ms), then by file name */
