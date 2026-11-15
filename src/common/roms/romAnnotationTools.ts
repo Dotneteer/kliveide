@@ -38,6 +38,18 @@ export function hasSourceCode(sidecar: RawRomSidecar): boolean {
   );
 }
 
+/**
+ * The labels of a page that its source uses only as jump targets inside a routine (`.loop`, `.exit`):
+ * the page entry's `jumpLabels`, bank offsets. Level 2 asks a synopsis of every labelled routine, and
+ * these are not routines (D-OZ6 of the Z88 OZ plan). Only a sidecar imported from its source, one that
+ * names its `sourceCode`, can say so; for any other the set is empty and every label counts.
+ */
+export function jumpLabelsOf(sidecar: RawRomSidecar, page: number | string): ReadonlySet<number> {
+  const offsets = sidecar.pages?.[String(page)]?.jumpLabels;
+  if (!hasSourceCode(sidecar) || !Array.isArray(offsets)) return new Set();
+  return new Set(offsets.filter((offset: unknown): offset is number => typeof offset === "number"));
+}
+
 // ------------------------------------------------------------------------------------------------
 // Formatting
 
@@ -264,12 +276,14 @@ export type RomLevelReport = {
  * Level 1: every `CALL`/`JP`/`RST`/`JR`/`DJNZ` target inside the page that code regions reach has a
  * label — every one that is an instruction start; one inside an instruction cannot have a label and
  * is reported apart (`midInstructionTargets`). (Every data region being marked is the author's judgement; the coverage tool is what
- * suggests them.) Level 2: level 1, and every label has a synopsis comment.
+ * suggests them.) Level 2: level 1, and every label has a synopsis comment, except the `jumpLabels`
+ * (`jumpLabelsOf`): a source-imported page's jump targets inside a routine, which are not routines.
  */
 export async function measureRomLevel(
   bank: Record<string, any>,
   bytes: Uint8Array,
-  decode: RomDecoder
+  decode: RomDecoder,
+  jumpLabels: ReadonlySet<number> = new Set()
 ): Promise<RomLevelReport> {
   const labels: { name: string; value: number }[] = bank.localLabels ?? [];
   const labelled = new Set(labels.map((label) => label.value));
@@ -304,7 +318,9 @@ export async function measureRomLevel(
     .filter((target) => !labelled.has(target) && !starts.has(target))
     .sort((a, b) => a - b);
   const synopsisAt = (offset: number) => !!bank.lineAnnotations?.[String(offset)]?.synopsis;
-  const labelsWithoutSynopsis = labels.filter((l) => !synopsisAt(l.value)).map((l) => l.name);
+  const labelsWithoutSynopsis = labels
+    .filter((l) => !synopsisAt(l.value) && !jumpLabels.has(l.value))
+    .map((l) => l.name);
   const misplacedLabels = labels
     .filter((l) => inCode(l.value) && !starts.has(l.value))
     .map((l) => l.name);

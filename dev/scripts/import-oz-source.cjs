@@ -155,8 +155,46 @@ function importAll(argv) {
     for (const l of lines.filter((x) => /^(placed|STOP|target|level)/.test(x))) console.log(`     ${l}`);
   }
   console.log(failed ? `\n${failed} component(s) did not import cleanly` : `\nAll ${components.length} components imported.`);
+  if (!failed) console.log(fillGaps(out));
   if (!failed) console.log(applyAuthored(out));
   process.exit(failed ? 1 : 0);
+}
+
+/**
+ * The bytes no component covers, between components and after the last one, are the build's $FF
+ * filler: each such run becomes a `fill` region (listed as one `.fillb n,$FF` row instead of `rst $38`
+ * rows), `observed`. A run with any other byte stays as it is and is reported.
+ */
+function fillGaps(file) {
+  const sidecar = JSON.parse(readFileSync(file, "utf8"));
+  const rom = new Uint8Array(readFileSync(join(root, "src/public/roms/z88v47.rom")));
+  let filled = 0;
+  let bytesFilled = 0;
+  const other = [];
+  for (const [key, bank] of Object.entries(sidecar.banks)) {
+    const bytes = rom.subarray(Number(key) * 0x4000, (Number(key) + 1) * 0x4000);
+    const covered = new Uint8Array(0x4000);
+    for (const r of bank.regions) covered.fill(1, r.start, r.end + 1);
+    for (let i = 0; i < 0x4000; ) {
+      if (covered[i]) {
+        i++;
+        continue;
+      }
+      let j = i;
+      while (j < 0x4000 && !covered[j]) j++;
+      if (bytes.subarray(i, j).every((v) => v === 0xff)) {
+        bank.regions.push({ start: i, end: j - 1, type: "bytes", decode: "fill" });
+        sidecar.provenance[`${key}:${i}:region`] = "observed";
+        filled++;
+        bytesFilled += j - i;
+      } else other.push(`bank ${key} $${hex4(i)}-$${hex4(j - 1)}`);
+      i = j;
+    }
+    bank.regions.sort((a, b) => a.start - b.start);
+  }
+  writeFileSync(file, tools.formatRomSidecar(sidecar));
+  const notFiller = other.length ? `; not filler: ${other.join(", ")}` : "";
+  return `Filler: ${filled} run(s) of $FF, ${bytesFilled} bytes, as fill regions${notFiller}.`;
 }
 
 /**
@@ -349,6 +387,11 @@ if (process.argv.includes("--all")) importAll(process.argv.slice(2).filter((a) =
     const proposals = {};
     let renamed = 0;
     const stemOf = (file) => file.split("/").pop().replace(/\.asm$/i, "").replace(/\W/g, "");
+    // --- A label in code that is not a routine, only a jump target inside one, needs no synopsis for
+    // --- level 2 (D-OZ6): the page's `jumpLabels`. A label with a header stays a routine
+    const kindAt = new Map(result.lines.map((line) => [line.offset, line.kind]));
+    const routines = routineNames(o.oz);
+    const jumpOffsets = [];
     for (const label of result.labels) {
       // --- A macro's own label (`.\start` in a DOR macro) is not the source's
       if (label.internal) continue;
@@ -372,6 +415,9 @@ if (process.argv.includes("--all")) importAll(process.argv.slice(2).filter((a) =
       names.add(name);
       labels.push({ name, value: label.offset });
       provenance[`${bankNo}:${label.offset}:label`] = "source";
+      if (!routines.has(label.name) && kindAt.get(label.offset) === "code" && !label.header.length) {
+        jumpOffsets.push(label.offset);
+      }
       if (label.header.length) {
         lineAnnotations[label.offset] = { synopsis: ozHeaderSynopsis(label.header) };
       }
@@ -415,7 +461,16 @@ if (process.argv.includes("--all")) importAll(process.argv.slice(2).filter((a) =
       ...((o.merge ? sidecar.pages[key]?.segments : undefined) ?? []).filter((s) => outside(s.start)),
       { start: result.start, segment, ...(o.at !== undefined && result.org !== undefined ? { address: result.org } : {}) }
     ].sort((a, b) => a.start - b.start);
-    sidecar.pages[key] = { crc32: romPageIdentity(bankBytes).crc32, name: `OZ 4.7, bank ${hex2(bankNo)}h`, segments };
+    const jumpLabels = [
+      ...((o.merge ? sidecar.pages[key]?.jumpLabels : undefined) ?? []).filter(outside),
+      ...jumpOffsets
+    ].sort((a, b) => a - b);
+    sidecar.pages[key] = {
+      crc32: romPageIdentity(bankBytes).crc32,
+      name: `OZ 4.7, bank ${hex2(bankNo)}h`,
+      segments,
+      ...(jumpLabels.length ? { jumpLabels } : {})
+    };
     // --- The IDE lists a bank at one address (`offsetIndex`, a segment): the segment of its largest
     // --- run, so that the most jumps show their labels. A run of another segment (bank $0A's Filer)
     // --- or with its own address (LOWRAM) is listed at that segment's address too
@@ -434,7 +489,7 @@ if (process.argv.includes("--all")) importAll(process.argv.slice(2).filter((a) =
     writeFileSync(o.out, tools.formatRomSidecar(sidecar));
 
     // --- The level, as the readiness check measures it
-    const level = await tools.measureRomLevel(bank, bankBytes, romDecoderFor("z88-oz", segments));
+    const level = await tools.measureRomLevel(bank, bankBytes, romDecoderFor("z88-oz", segments), new Set(jumpLabels));
 
     const codeBytes = result.lines.filter((l) => l.kind === "code").reduce((s, l) => s + l.length, 0);
     const dataBytes = result.lines.filter((l) => l.kind === "data").reduce((s, l) => s + l.length, 0);
@@ -466,6 +521,43 @@ if (process.argv.includes("--all")) importAll(process.argv.slice(2).filter((a) =
   console.error(err);
   process.exit(1);
 });
+
+/**
+ * The names the OZ source uses as routines anywhere: exported (`xdef`), called (`call`, `extcall`,
+ * conditional or not) or listed in a table (`defw`, `defp`, `dw`). Read once per process.
+ */
+let routineNameCache;
+function routineNames(ozDir) {
+  if (routineNameCache) return routineNameCache;
+  const { readdirSync } = require("node:fs");
+  const names = new Set();
+  const add = (list) => {
+    for (const item of list.split(",")) {
+      const name = /^\s*([A-Za-z_]\w*)/.exec(item)?.[1];
+      if (name) names.add(name);
+    }
+  };
+  (function walk(dir) {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (entry.name.startsWith(".")) continue;
+      const path = join(dir, entry.name);
+      if (entry.isDirectory()) walk(path);
+      else if (/\.asm$/i.test(entry.name)) {
+        for (const row of readFileSync(path, "latin1").split(/\r?\n/)) {
+          const code = row.replace(/;.*/, "");
+          const exported = /^\s*xdef\s+(.*)$/i.exec(code);
+          if (exported) add(exported[1]);
+          const called = /\b(?:call|extcall)\s+(?:(?:n?z|n?c|po|pe|p|m)\s*,\s*)?([A-Za-z_]\w*)/i.exec(code);
+          if (called) names.add(called[1]);
+          const table = /^\s*(?:\.\w+\s+)?(?:defw|defp|dw)\s+(.*)$/i.exec(code);
+          if (table) add(table[1]);
+        }
+      }
+    }
+  })(ozDir);
+  routineNameCache = names;
+  return names;
+}
 
 function hex2(v) {
   return v.toString(16).toUpperCase().padStart(2, "0");

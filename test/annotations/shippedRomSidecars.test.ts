@@ -9,6 +9,7 @@ import {
   formatRomIndex,
   formatRomSidecar,
   hasSourceCode,
+  jumpLabelsOf,
   measureRomLevel,
   missingProvenance,
   PROVENANCE_VALUES,
@@ -96,7 +97,8 @@ describe("the shipped ROM sidecars", () => {
         const report = await measureRomLevel(
           bank,
           bytes,
-          romDecoderFor(knownRomPageKind(romPageIdentity(bytes)), raw.pages?.[page]?.segments)
+          romDecoderFor(knownRomPageKind(romPageIdentity(bytes)), raw.pages?.[page]?.segments),
+          jumpLabelsOf(raw, page)
         );
         expect(report.misplacedLabels).toEqual([]);
         // --- The recorded level is never more than the measured one (§5.6)

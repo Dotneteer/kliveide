@@ -1,6 +1,7 @@
 import {
   formatRomSidecar,
   hasSourceCode,
+  jumpLabelsOf,
   measureRomLevel,
   missingProvenance,
   PROVENANCE_VALUES,
@@ -122,6 +123,12 @@ export async function checkRomSidecar(
       problems.push(t("media.romCheck.sourceWithoutCode", { key }));
     }
   }
+  // --- Only a sidecar imported from its source can exempt a page's jump targets from level 2
+  if (!hasSourceCode(raw)) {
+    for (const [page, info] of Object.entries<any>(raw.pages ?? {})) {
+      if (info?.jumpLabels !== undefined) problems.push(t("media.romCheck.jumpLabelsWithoutCode", { page }));
+    }
+  }
 
   // --- An inheriting sidecar is measured as the page it describes: with its inherited entries
   let measuredBanks: Record<string, any> = raw.banks ?? {};
@@ -145,7 +152,8 @@ export async function checkRomSidecar(
     const report = await measureRomLevel(
       bank,
       bytes,
-      romDecoderFor(knownRomPageKind(romPageIdentity(bytes)), segments)
+      romDecoderFor(knownRomPageKind(romPageIdentity(bytes)), segments),
+      jumpLabelsOf(raw, page)
     );
     levels[page] = report.level;
     unlabelledTargets[page] = report.unlabelledTargets;

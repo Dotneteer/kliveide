@@ -141,6 +141,12 @@ section says what is done, how to check it and what is left.
   the changed ones.
 - **The listing address:** each bank's `offsetIndex` is the segment of its largest run, so the IDE lists it
   where most of it runs and names jumps inside it.
+- **Filler:** `--all` makes every $FF run no component covers a `fill` region (`.fillb n,$FF`), `observed`;
+  a run with another byte in it would be reported, and none is.
+- **Level 2 counts routines** (plan D-OZ6): a label in code that the source never exports, calls or lists
+  in a `defw`/`defp` table, and that has no header, is a jump target inside a routine. The importer lists
+  them in the page entry's `jumpLabels`, and the level measure needs no synopsis for them. Data labels
+  still need one. `.local/oz-evidence/remaining.cjs` (not committed) counts what is left per bank.
 - **To see the current state in the IDE,** copy `.local/oz-import/z88v47.rom.dis` over
   `~/Klive/RomAnnotations/z88v47.rom.dis`. The IDE follows that file and reloads it.
 

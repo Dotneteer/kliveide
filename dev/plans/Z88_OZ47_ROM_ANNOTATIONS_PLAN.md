@@ -2,13 +2,12 @@
 
 **Status:** In progress (2026-11-14). Phase 0 done (the build identified; no rebuild, D-OZ5). Phase 1
 done (Z88 bank space, ROM pages, `z88-oz` decoding, `source` provenance; checked in the running IDE).
-Phase 2 done apart from two hand-made banks (2026-11-15): every component with source imports (banks 0-8,
-$0A-$0D and $1F), and each bank reassembles byte for byte. Bank 9 (BBC BASIC, no source) waits for the
-developer's decision, and bank $10 (the FlashStore file area) is one `bytes` region to add by hand.
-Phase 3 under way (2026-11-15): every bank level 1, bank $10 level 2; the open decisions are
-"Phase 3 status" below. **To continue, read "Phase 3 status".**
-**Goal:** a shipped sidecar `src/public/roms/z88v47.rom.dis` that annotates all 32 16K banks of the
-OZ 4.7 ROM to level 2. It is built mostly from the OZ project's own assembler source,
+Phase 2 done (2026-11-15): every component with source imports (banks 0-8, $0A-$0D and $1F), and each bank
+reassembles byte for byte. Phase 3 under way (2026-11-15): every bank level 1, bank $10 level 2; level 2
+counts routines (D-OZ6) and bank 9 is left out (D-OZ7). What is left is the synopsis work, 2,192
+routines and 991 data labels. **To continue, read "Phase 3 status".**
+**Goal:** a shipped sidecar `src/public/roms/z88v47.rom.dis` that annotates the OZ 4.7 ROM's banks to
+level 2 (all but bank 9, D-OZ7). It is built mostly from the OZ project's own assembler source,
 <https://bitbucket.org/cambridge/oz/src/V4.7/>, which the owner has given permission to use.
 
 Read first: `dev/ai/rom-annotations/README.md` (file format, levels, tools, Q1), `dev/patterns/annotations.md`
@@ -43,6 +42,16 @@ template for the Z88 one).
   the source instruction or data at that point matches the bytes. Wherever the walk fails, it stops, and
   that part goes on the review list. This check works line by line, which is finer than comparing whole
   banks.
+- **D-OZ6. Level 2 counts routines, not every label** (2026-11-15, the developer). The README's level 2
+  asks a synopsis "for every labelled routine"; the OZ source also labels the jump targets inside its
+  routines (7,290 of them). The importer records, per page, the labels in code that the source never
+  exports (`xdef`), calls (`call`, `extcall`) or lists in a table (`defw`, `defp`) and that have no
+  header: the page entry's `jumpLabels`. `measureRomLevel` skips those (`jumpLabelsOf`), and only a
+  sidecar with `sourceCode` may have them (the IDE's check reports one without). Data labels still need
+  a synopsis, as in every sidecar: a table's synopsis says what it holds.
+- **D-OZ7. Bank 9, BBC BASIC, is left out** (2026-11-15, the developer). It has no source in the
+  repository (`apps/bbcbasic/basic.dat`, R.T. Russell's binary), and annotating it from scratch is not
+  part of this plan.
 
 ## 2. Facts established so far
 
@@ -361,20 +370,21 @@ Done, on branch `dotneteer/z88-oz47-phase2`:
   -> `Changes:`/`Keeps:` lists; 483 synopses carry a contract. Each stays `source` (D-OZ4).
 - **The IDE lists each bank at its segment** (`offsetIndex`, the segment of the bank's largest run), so a
   jump inside the bank shows its label (`call MS2BankK1`, `jr nc,init_pipedream`).
+- **Filler:** every run of $FF no component covers (between components, after the last) is a `fill`
+  region, `observed`: 22 runs, 59,618 bytes, listed as `.fillb` rows instead of `rst $38`.
+- **Level 2 counts routines** (D-OZ6): each page's `jumpLabels` holds its local jump targets. Left for
+  level 2 (`.local/oz-evidence/remaining.cjs`): **2,192 routines and 991 data labels** without a synopsis
+  (bank 8, MTH, is 359 data labels; PipeDream's banks 5 and 6 have 809 routines).
 - The working copy `~/Klive/RomAnnotations/z88v47.rom.dis` is the current result (see "Seeing the state").
 
 Open:
-- **Level 2's scope, the developer's decision.** Level 2 asks for a synopsis on every label. Of 10,174+
-  labels, 2,884 are routines (exported with `xdef`, or called) and 956 of them have a synopsis; 7,290 are
-  local jump targets inside routines (`.loop`, `bsf_2`). Every label means about 8,800 synopses to write,
-  routines only about 1,900, which needs the level tool to tell a routine from a local label for a sidecar
-  with `sourceCode`. Measured with `.local/oz-evidence/routines.cjs` (not committed).
-- **Bank 9, BBC BASIC:** no source; annotate from scratch under D4, or leave out. The developer's decision.
+- **The synopses**, bank by bank: written from the code and the source's own comments, in the house
+  style, as `manual` entries in `z88-oz47-authored.json` (a source header that exists is already used).
 - **The rename proposals** (`z88-label-renames.json`) are still unreviewed.
 - **Across banks:** PipeDream's two halves call each other (`call LD65D` in bank 5 is bank 6's code); a
   listing names labels of its own bank only. A bank $0A Filer jump and LOWRAM's jumps are listed in the
   bank's main segment, so they show addresses too.
-- Coverage runs (step 4) and the synopsis work, after the scope decision.
+- Coverage runs (step 4).
 
 **Seeing the state:** after every session, `node dev/scripts/import-oz-source.cjs --all`, then copy
 `.local/oz-import/z88v47.rom.dis` over `~/Klive/RomAnnotations/z88v47.rom.dis` (the IDE reloads it).

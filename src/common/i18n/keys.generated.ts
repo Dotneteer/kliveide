@@ -2814,6 +2814,7 @@ export type MessageKey =
   | "media.romCheck.inheritedMissing"
   | "media.romCheck.inheritedUnread"
   | "media.romCheck.invalidLabel"
+  | "media.romCheck.jumpLabelsWithoutCode"
   | "media.romCheck.levelTooHigh"
   | "media.romCheck.machineNotRom"
   | "media.romCheck.misplacedLabel"
