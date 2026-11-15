@@ -13,6 +13,12 @@ body {
   font-family: var(--site-font-body);
 }
 
+/* --- One frame for the whole site: the docs' navbar and columns stand as wide as the landing page's
+   --- (app/tokens.css). `html:root` outranks the `:root` block that Nextra's <Head> writes. */
+html:root {
+  --nextra-content-width: var(--site-content-width);
+}
+
 article h1,
 article h2,
 article h3,
@@ -32,6 +38,15 @@ article h4 {
    --- not on each block, because a `ch` measured in a code block's mono face is a different width. */
 article > main {
   max-width: 70ch;
+}
+
+/* --- The article's side padding: the same 2.5rem gap to the sidebar and to the table of contents.
+   --- With the frame (--site-content-width, 82rem) sized to the columns, the article fills its place
+   --- and the two gaps are equal; Nextra's own 3rem plus the slack left 48px and 161px. */
+@media (min-width: 768px) {
+  article:has(> main) {
+    padding-inline: 2.5rem;
+  }
 }
 
 /* --- The search field's edge: Nextra draws it with a 5% tint only, 1.12:1 against the navbar in the
@@ -125,64 +140,76 @@ article figure + ol > li::before {
   font: 700 0.8125rem/1 var(--site-font-body);
 }
 
-/* --- The navbar's language selector (page-components/DocsLanguageSwitch.tsx) */
-.site-lang {
-  position: relative;
+/* --- The navbar is the landing page's header (landing/landing.css, .lp-header), item for item: a
+   --- solid bar on the page's own colour (not Nextra's see-through blur, Hallmark 42), the brand, the
+   --- area links beside it in the landing's size and colour, then the search field and the shared
+   --- tools (app/site-header.css). Nextra's nav lays its children out as: logo link, links, search,
+   --- our children, the phone menu button. */
+/* --- Its height stays Nextra's own --nextra-navbar-height (64px, equal to --site-header-height):
+   --- Nextra reads that property as a literal IntersectionObserver rootMargin, so a var() there
+   --- throws and the docs page fails to load. */
+.nextra-navbar-blur {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: var(--site-bg);
+  border-color: var(--site-line);
 }
 
-.site-lang > button {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  height: 2rem;
-  padding: 0 0.5rem;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  color: inherit;
-  opacity: 0.8;
+.nextra-navbar > nav {
+  gap: 0.5rem;
 }
 
-.site-lang > button:hover,
-.site-lang > button[aria-expanded="true"] {
-  opacity: 1;
-  background: rgb(127 127 127 / 0.12);
-}
-
-.site-lang ul {
-  position: absolute;
-  right: 0;
-  top: calc(100% + 0.375rem);
-  z-index: 30;
-  min-width: 16rem;
-  width: max-content;
-  margin: 0;
-  padding: 0.375rem;
-  list-style: none;
-  background: var(--site-raised);
-  border: 1px solid var(--site-line);
-  border-radius: 8px;
-  box-shadow: 0 16px 40px rgb(0 0 0 / 0.28);
-}
-
-.site-lang a {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 1.5rem;
+.nextra-navbar > nav > a:first-child {
+  flex: none;
+  margin-inline-end: 1.5rem;
   white-space: nowrap;
-  padding: 0.4rem 0.625rem;
-  border-radius: 5px;
+}
+
+.nextra-navbar > nav > div:first-of-type {
+  gap: 1.5rem;
+}
+
+.nextra-navbar > nav > div:first-of-type > a,
+.nextra-navbar > nav > div:first-of-type > button {
   font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--site-muted);
 }
 
-.site-lang a:hover,
-.site-lang a[aria-current="true"] {
-  background: var(--site-accent-soft);
+.nextra-navbar > nav > div:first-of-type > a:hover,
+.nextra-navbar > nav > div:first-of-type > a[aria-current] {
+  color: var(--site-fg);
 }
 
-.site-lang small {
-  color: var(--site-subtle);
-  font-family: var(--site-font-mono);
+.nextra-navbar .nextra-search {
+  margin-inline-end: 0.5rem;
+}
+
+/* --- Narrower screens, as on the landing page: the row never clips a link. With the search field the
+   --- docs need more room than the landing page (German, the longest, about 1210px), so between that
+   --- width and Nextra's phone layout (767px) the area links and GitHub move into the shared menu
+   --- button. Below 768px Nextra's own menu button (the sidebar, with the areas) takes over, and the
+   --- GitHub icon comes back. */
+.nextra-navbar .site-menu {
+  display: none;
+}
+
+@media (max-width: 1240px) and (min-width: 768px) {
+  .nextra-navbar > nav > div:first-of-type,
+  .nextra-navbar .site-github {
+    display: none;
+  }
+
+  .nextra-navbar .site-menu {
+    display: block;
+  }
+}
+
+/* --- Without the links beside it, the brand keeps the left edge and the rest goes right */
+@media (max-width: 1240px) {
+  .nextra-navbar > nav > a:first-child {
+    margin-inline-end: auto;
+  }
 }
 
 /* --- The notice on a translated page whose English original changed */

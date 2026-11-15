@@ -92,15 +92,6 @@
     "hero.carousel.play": "19b267d0adf79367",
     "nav.underTheHood": "91ba162b681d6b6e",
     "glance.title": "fca77b7e3a12263f",
-    "glance.version": "2da600bf94048431",
-    "glance.runsOn": "5703321d0ec8c416",
-    "glance.licence": "fef8e889dc3bc414",
-    "glance.licenceValue": "90b606d5fcc47e23",
-    "glance.languages": "db07be184479f340",
-    "glance.languagesValue": "fa77fc09e1e704c3",
-    "glance.worksWith": "a129a012ae28365d",
-    "glance.interface": "7b4db7ef1fa23cfb",
-    "glance.interfaceValue": "31a2818b1b52211a",
     "machines.clonesLabel": "7a5a99d8ec2f8a31",
     "also.title": "ca1032469891955d",
     "loop.title": "5f7e4ca528348216",
@@ -117,7 +108,11 @@
     "viewer.close": "bbfa773e5a63a5ea",
     "viewer.count": "70221969d7558c01",
     "nav.library": "b8100f5ba8bd048a",
-    "slide.reverse": "841e6a466d483b08"
+    "slide.reverse": "841e6a466d483b08",
+    "glance.getIt": "83d98fe30a5e0e4c",
+    "glance.getItText": "b84f2766160fda12",
+    "glance.writeIn": "8e001a55a4279c85",
+    "glance.writeInText": "2a9ebc1ecf68fc4a"
   },
   "ui": {
     "area.get-started": "bd2cb051773a703f",

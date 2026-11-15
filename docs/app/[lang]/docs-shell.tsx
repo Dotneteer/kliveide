@@ -13,7 +13,12 @@ import { getPageMap } from "nextra/page-map";
 import { LOCALE_NAMES, LOCALES } from "../../i18n/locales.mjs";
 import { uiTranslator } from "../../i18n/ui";
 import DocsLanguageSwitch from "../../page-components/DocsLanguageSwitch";
+import DocsThemeToggle from "../../page-components/DocsThemeToggle";
+import { GITHUB_ICON, GITHUB_URL } from "../../page-components/SiteIcons";
+import SiteMenu from "../../page-components/SiteMenu";
+import { landingTranslator } from "../../landing/i18n";
 import "nextra-theme-docs/style.css";
+import "../site-header.css";
 import "./(docs)/custom.css";
 
 // Must match `basePath` in next.config.mjs; see docs/.env.production.
@@ -50,13 +55,18 @@ type DocsShellProps = Readonly<{
 
 export async function DocsShell({ children, lang }: DocsShellProps) {
   const t = uiTranslator(lang);
+  // --- The header's own labels are the landing page's, so both headers say the same thing
+  const header = landingTranslator(lang);
   const pageMap = await getPageMap(`/${lang}`);
   const routes: Record<string, string[]> = {};
   for (const locale of LOCALES) routes[locale] = routesOf((await getPageMap(`/${locale}`)) as PageMapNode[]);
   const languages: [string, string][] = LOCALES.map((id: string) => [id, (LOCALE_NAMES as Record<string, string>)[id] ?? id]);
 
+  // --- The landing page's header, item for item: brand, the area links beside it, then the
+  // --- language, theme and GitHub (app/site-header.css); the docs add only their search field
   const navbar = (
     <Navbar
+      align="left"
       logo={
         <span className="site-brand">
           <img src={`${basePath}/images/klive-logo.svg`} alt="" width={28} height={28} />
@@ -64,14 +74,19 @@ export async function DocsShell({ children, lang }: DocsShellProps) {
         </span>
       }
       logoLink={lang === "en" ? "/" : `/${lang}/`}
-      projectLink="https://github.com/Dotneteer/kliveide"
     >
       <DocsLanguageSwitch label={t("language.label")} languages={languages} routes={routes} />
+      <DocsThemeToggle label={header("nav.theme")} />
+      <SiteMenu lang={lang} />
+      <a className="site-icon-button site-github" href={GITHUB_URL} aria-label={header("nav.github")} title={header("nav.github")}>
+        {GITHUB_ICON}
+      </a>
     </Navbar>
   );
 
   return (
     <Layout
+      banner={<div className="site-rule" aria-hidden="true" />}
       navbar={navbar}
       pageMap={pageMap}
       docsRepositoryBase="https://github.com/Dotneteer/kliveide/tree/master/docs"

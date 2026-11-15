@@ -19,9 +19,10 @@ import { FEATURES, HERO_SLIDES, SHOWN_FEATURES, type Feature } from "./features"
 import HeroCarousel from "./HeroCarousel";
 import { docsHref, landingHref, landingTranslator } from "./i18n";
 import { readSiteInfo, versionAtMost } from "./site-info";
+import { GITHUB_ICON, GITHUB_URL as GITHUB } from "../page-components/SiteIcons";
+import SiteMenu, { SITE_NAV } from "../page-components/SiteMenu";
 
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-const GITHUB = "https://github.com/Dotneteer/kliveide";
 
 const LOGO = (
   <svg viewBox="0 0 200 200" aria-hidden="true">
@@ -44,14 +45,7 @@ const EXPAND = (
   </span>
 );
 
-/** The header's links to the documentation areas: their text key and area */
-const NAV = [
-  ["nav.getStarted", "get-started"],
-  ["nav.guides", "guides"],
-  ["nav.reference", "reference"],
-  ["nav.underTheHood", "under-the-hood"],
-  ["nav.library", "library"]
-] as const;
+
 
 /** The steps of the "Write, build, run, debug" table */
 const LOOP = ["write", "build", "run", "debug"] as const;
@@ -104,7 +98,7 @@ export default function LandingPage({ lang }: Readonly<{ lang: string }>) {
       <a className="lp-skip" href="#main">
         {t("nav.skip")}
       </a>
-      <div className="lp-rule" aria-hidden="true" />
+      <div className="site-rule" aria-hidden="true" />
       <header className="lp-header">
         <div className="lp-header-in">
           <Link className="lp-brand" href={landingHref(lang)}>
@@ -112,7 +106,7 @@ export default function LandingPage({ lang }: Readonly<{ lang: string }>) {
             <span>Klive IDE</span>
           </Link>
           <nav className="lp-nav" aria-label="Klive">
-            {NAV.map(([key, area]) => (
+            {SITE_NAV.map(([key, area]) => (
               <Link key={area} href={docsHref(lang, area)}>
                 {t(key)}
               </Link>
@@ -121,30 +115,10 @@ export default function LandingPage({ lang }: Readonly<{ lang: string }>) {
           <div className="lp-tools">
             <LanguageSelect current={lang} label={t("nav.language")} languages={languages} />
             <ThemeToggle label={t("nav.theme")} />
-            {/* --- Where the links do not fit (below 900px) they move into this menu, with GitHub.
-                --- A native disclosure: it opens and its links work without script. */}
-            <details className="lp-menu">
-              <summary className="lp-icon-button" aria-label={t("nav.menu")} title={t("nav.menu")}>
-                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-                  <path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                </svg>
-              </summary>
-              <nav className="lp-menu-list" aria-label={t("nav.menu")}>
-                {NAV.map(([key, area]) => (
-                  <Link key={area} href={docsHref(lang, area)}>
-                    {t(key)}
-                  </Link>
-                ))}
-                <a href={GITHUB}>{t("nav.github")}</a>
-              </nav>
-            </details>
-            <a className="lp-icon-button lp-github" href={GITHUB} aria-label={t("nav.github")} title={t("nav.github")}>
-              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-                <path
-                  fill="currentColor"
-                  d="M12 2a10 10 0 0 0-3.2 19.5c.5.1.7-.2.7-.5v-1.7c-2.8.6-3.4-1.3-3.4-1.3-.5-1.2-1.1-1.5-1.1-1.5-.9-.6.1-.6.1-.6 1 .1 1.5 1 1.5 1 .9 1.6 2.4 1.1 3 .9.1-.7.4-1.1.6-1.4-2.2-.3-4.6-1.1-4.6-5 0-1.1.4-2 1-2.7-.1-.3-.4-1.3.1-2.7 0 0 .8-.3 2.8 1a9.6 9.6 0 0 1 5 0c1.9-1.3 2.8-1 2.8-1 .5 1.4.2 2.4.1 2.7.6.7 1 1.6 1 2.7 0 3.9-2.3 4.7-4.6 5 .4.3.7.9.7 1.9v2.8c0 .3.2.6.7.5A10 10 0 0 0 12 2Z"
-                />
-              </svg>
+            {/* --- Below 900px the links and GitHub move into this menu (landing.css) */}
+            <SiteMenu lang={lang} />
+            <a className="site-icon-button lp-github" href={GITHUB} aria-label={t("nav.github")} title={t("nav.github")}>
+              {GITHUB_ICON}
             </a>
           </div>
         </div>
@@ -170,57 +144,48 @@ export default function LandingPage({ lang }: Readonly<{ lang: string }>) {
               <a href={site.releasesPage}>{t("hero.otherPlatforms")}</a>
             </p>
           </div>
-          <div className="lp-glance">
-            <h2>{t("glance.title")}</h2>
-            <table>
-              <tbody>
-                {site.latestRelease !== "0.0.0" && (
-                  <tr>
-                    <th scope="row">{t("glance.version")}</th>
-                    <td>
-                      <span className="lp-mono">{site.latestRelease}</span>
-                    </td>
-                  </tr>
-                )}
-                <tr>
-                  <th scope="row">{t("glance.runsOn")}</th>
-                  <td>macOS, Windows, Linux</td>
-                </tr>
-                <tr>
-                  <th scope="row">{t("glance.licence")}</th>
-                  <td>{t("glance.licenceValue")}</td>
-                </tr>
-                <tr>
-                  <th scope="row">{t("glance.languages")}</th>
-                  <td>{t("glance.languagesValue")}</td>
-                </tr>
-                <tr>
-                  <th scope="row">{t("glance.worksWith")}</th>
-                  <td>sjasmplus, Boriel BASIC, z88dk, PASTA/80</td>
-                </tr>
-                <tr>
-                  <th scope="row">{t("glance.interface")}</th>
-                  <td>{t("glance.interfaceValue")}</td>
-                </tr>
-              </tbody>
-            </table>
+          <div className="lp-top-media">
+            <HeroCarousel
+              slides={slides}
+              label={t("hero.carousel.label")}
+              previousLabel={t("hero.carousel.previous")}
+              nextLabel={t("hero.carousel.next")}
+              slideLabel={t("hero.carousel.slide")}
+              pauseLabel={t("hero.carousel.pause")}
+              playLabel={t("hero.carousel.play")}
+              openLabel={t("viewer.open")}
+            />
           </div>
         </section>
 
-        <section className="lp-carousel-band">
-          <HeroCarousel
-            slides={slides}
-            label={t("hero.carousel.label")}
-            previousLabel={t("hero.carousel.previous")}
-            nextLabel={t("hero.carousel.next")}
-            slideLabel={t("hero.carousel.slide")}
-            pauseLabel={t("hero.carousel.pause")}
-            playLabel={t("hero.carousel.play")}
-            openLabel={t("viewer.open")}
-          />
+        {/* --- The facts under the first screen, in two groups under the sheet's 2px rule: "Get it" under
+            --- the headline, "Write in" under the carousel. The version is set in the mono face. */}
+        <section className="lp-glance" aria-labelledby="lp-glance-title">
+          <h2 id="lp-glance-title" className="lp-sr-only">
+            {t("glance.title")}
+          </h2>
+          <div>
+            <h3>{t("glance.getIt")}</h3>
+            <p>
+              {(() => {
+                const [before, after = ""] = t("glance.getItText", { version: "\u0000" }).split("\u0000");
+                return (
+                  <>
+                    {before}
+                    <span className="lp-mono">{site.latestRelease}</span>
+                    {after}
+                  </>
+                );
+              })()}
+            </p>
+          </div>
+          <div>
+            <h3>{t("glance.writeIn")}</h3>
+            <p>{t("glance.writeInText")}</p>
+          </div>
         </section>
 
-        <section className="lp-sec lp-two">
+        <section className="lp-sec lp-two lp-band">
           <div>
             <h2>{t("machines.title")}</h2>
             <table>
@@ -269,7 +234,7 @@ export default function LandingPage({ lang }: Readonly<{ lang: string }>) {
           </table>
         </section>
 
-        <section className="lp-sec lp-features">
+        <section className="lp-sec lp-features lp-band">
           <h2>{t("features.title")}</h2>
           {features.map((f, i) => {
             const title = t(`feature.${f.id}.title`);

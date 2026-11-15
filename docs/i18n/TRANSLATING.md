@@ -2,7 +2,8 @@
 
 The website's landing page, its chrome (search, menus, notices) and the **Get Started** pages are
 translated into every language the Klive app supports. The other documentation stays in English
-for now; a translated site links to it, marked "(English)".
+for now; a translated site links to it under the area's translated name (the navbar shows no
+"(English)" mark, so it matches the landing page's header; the `area.englishOnly` text is unused).
 
 This guide is for whoever translates - a person or an AI model. Read the app's guide first,
 `src/common/i18n/locales/TRANSLATING.md`: the tone, the glossary (`glossary.json`) and the list of

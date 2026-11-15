@@ -79,3 +79,18 @@
   --site-accent-soft: rgb(69 165 230 / 0.14);
   color-scheme: dark;
 }
+
+/*
+ * The site's frame, shared by the landing page and the documentation, so the header and the page
+ * stand at the same width and height whichever one a visitor is on. Nextra's own width
+ * (`--nextra-content-width`) is set from these in app/[lang]/(docs)/custom.css; its navbar is 4rem
+ * (64px) tall and has a 1.5rem gutter of its own; keep --site-header-height equal to its
+ * --nextra-navbar-height, which must stay a literal length.
+ */
+:root {
+  /* --- 82rem: the docs' sidebar (16rem) + 2.5rem + the article's 70ch measure + 2.5rem + the table of
+     --- contents (16rem), with no slack beside the article; at 90rem it stood in 160px of empty space */
+  --site-content-width: 82rem;
+  --site-gutter: 1.5rem;
+  --site-header-height: 4rem;
+}

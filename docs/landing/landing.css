@@ -14,9 +14,17 @@
   box-sizing: border-box;
 }
 
+/* --- A translated landing page renders inside app/[lang]/layout.tsx's plain <body>, which keeps the
+   --- browser's 8px margin unless the page takes it away: that margin was a strip of the browser's
+   --- white above the Spectrum rule on every language but English */
+body:has(.lp-body) {
+  margin: 0;
+  background: var(--site-bg);
+}
+
 body.lp-body,
 div.lp-body {
-  /* --- One gap for every section of the sheet; the 2px rules, not the space, divide them */
+  /* --- One gap for every section of the sheet; the alternating bands, not rules, divide them */
   --lp-section-gap: 3rem;
   margin: 0;
   background: var(--site-bg);
@@ -75,14 +83,15 @@ div.lp-body {
   font-size: 0.875rem;
 }
 
-/* --- One content width for every band */
+/* --- One content width for every band, the same frame as the docs' navbar and columns
+   --- (app/tokens.css), so moving between the landing page and the docs moves nothing */
 .lp-header-in,
 .lp-main,
 .lp-footer-in {
-  max-width: 76rem;
+  max-width: var(--site-content-width);
   margin: 0 auto;
-  padding-left: max(1.25rem, env(safe-area-inset-left, 0px));
-  padding-right: max(1.25rem, env(safe-area-inset-right, 0px));
+  padding-left: max(var(--site-gutter), env(safe-area-inset-left, 0px));
+  padding-right: max(var(--site-gutter), env(safe-area-inset-right, 0px));
 }
 
 /* --- Hidden above the page rather than off to its side, so it never widens the page */
@@ -107,18 +116,6 @@ div.lp-body {
   outline-offset: 2px;
 }
 
-/* --- The Spectrum rule: the logo's four stripes as one thin band */
-.lp-rule {
-  height: 6px;
-  background: linear-gradient(
-    90deg,
-    var(--site-stripe-red) 0 25%,
-    var(--site-stripe-yellow) 25% 50%,
-    var(--site-stripe-green) 50% 75%,
-    var(--site-stripe-cyan) 75%
-  );
-}
-
 /* ------------------------------------------------------------------ header */
 
 .lp-header {
@@ -134,7 +131,7 @@ div.lp-body {
   display: flex;
   align-items: center;
   gap: 2rem;
-  height: 3.75rem;
+  height: var(--site-header-height);
 }
 
 .lp-brand {
@@ -177,115 +174,9 @@ div.lp-body {
   gap: 0.5rem;
 }
 
-.lp-icon-button,
-.lp-lang-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  height: 2.25rem;
-  min-width: 2.25rem;
-  justify-content: center;
-  padding: 0 0.5rem;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  background: none;
-  color: var(--site-muted);
-  font: inherit;
-  font-size: 0.875rem;
-  cursor: pointer;
-}
-
-.lp-icon-button:hover,
-.lp-lang-button:hover,
-.lp-lang-button[aria-expanded="true"] {
-  color: var(--site-fg);
-  background: var(--site-hover);
-}
-
-.lp-lang {
-  position: relative;
-}
-
-.lp-lang-menu {
-  position: absolute;
-  right: 0;
-  top: calc(100% + 0.375rem);
-  min-width: 16rem;
-  width: max-content;
-  margin: 0;
-  padding: 0.375rem;
-  list-style: none;
-  background: var(--site-raised);
-  border: 1px solid var(--site-line);
-  border-radius: 8px;
-  box-shadow: 0 16px 40px rgb(0 0 0 / 0.28);
-}
-
-.lp-lang-menu a {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 1.5rem;
-  white-space: nowrap;
-  padding: 0.4rem 0.625rem;
-  border-radius: 5px;
-  text-decoration: none;
-  font-size: 0.9375rem;
-}
-
-.lp-lang-menu a:hover,
-.lp-lang-menu a[aria-current="true"] {
-  background: var(--site-accent-soft);
-}
-
-/* --- The phone menu: the header's links and GitHub, below the width where they fit in the row */
-.lp-menu {
-  position: relative;
+/* --- The menu (app/site-header.css) shows only where the links do not fit; see the 900px rule */
+.lp-tools .site-menu {
   display: none;
-}
-
-.lp-menu > summary {
-  list-style: none;
-}
-
-.lp-menu > summary::-webkit-details-marker {
-  display: none;
-}
-
-.lp-menu[open] > summary {
-  color: var(--site-fg);
-  background: var(--site-hover);
-}
-
-.lp-menu-list {
-  position: absolute;
-  right: 0;
-  top: calc(100% + 0.375rem);
-  display: grid;
-  min-width: 14rem;
-  width: max-content;
-  padding: 0.375rem;
-  background: var(--site-raised);
-  border: 1px solid var(--site-line);
-  border-radius: 8px;
-  box-shadow: 0 16px 40px rgb(0 0 0 / 0.28);
-}
-
-.lp-menu-list a {
-  padding: 0.5rem 0.625rem;
-  border-radius: 5px;
-  text-decoration: none;
-  font-size: 0.9375rem;
-  white-space: nowrap;
-}
-
-.lp-menu-list a:hover {
-  background: var(--site-accent-soft);
-}
-
-.lp-lang-menu small {
-  color: var(--site-subtle);
-  font-family: var(--site-font-mono);
 }
 
 /* ------------------------------------------------------------------ buttons */
@@ -322,20 +213,23 @@ div.lp-body {
   filter: brightness(1.08);
 }
 
-/* ------------------------------------------------------------------ headline and "At a glance" */
+/* ------------------------------------------------------------------ the first screen: headline and carousel */
 
+/* --- The first screen holds the whole pitch: the headline and its actions on the left, the carousel
+   --- on the right, both fully visible without scrolling. The carousel is as wide as its column or as
+   --- the screen's height allows (see .lp-top-media .lp-carousel), whichever is smaller. */
 .lp-top {
   display: grid;
-  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
-  gap: 4rem;
-  align-items: start;
-  padding: 3.5rem 0 var(--lp-section-gap);
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: 3rem;
+  align-items: center;
+  padding: 2rem 0;
 }
 
 .lp-top h1 {
   margin-bottom: 1rem;
   max-width: 15ch;
-  font-size: clamp(2.25rem, 4.2vw, 3.25rem);
+  font-size: clamp(2.25rem, 3.4vw, 3.25rem);
   line-height: 1.1;
 }
 
@@ -362,33 +256,67 @@ div.lp-body {
   color: var(--site-accent);
 }
 
+.lp-top-copy {
+  min-width: 0;
+}
+
+/* --- "At a glance" (option C of the author's mockups): two groups of facts, each a bold heading over
+   --- one or two sentences. The columns are the hero's (5fr / 7fr, 3rem gap),
+   --- so "Get it" stands under the headline and "Write in" under the carousel. The section's own
+   --- heading is for screen readers only. */
 .lp-glance {
-  border: 2px solid var(--site-fg);
-  padding: 1.25rem 1.5rem 1rem;
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: 1rem 3rem;
+  margin-bottom: var(--lp-section-gap);
 }
 
-.lp-glance h2 {
-  margin-bottom: 0.5rem;
+.lp-glance h3 {
+  margin-bottom: 0.375rem;
   font-size: 1.125rem;
+  line-height: 1.3;
 }
 
-.lp-glance th {
-  width: 8.5rem;
+.lp-glance p {
+  margin: 0;
+  max-width: 34rem;
 }
 
-.lp-glance tr:first-child > * {
-  border-top: 0;
+.lp-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 960px) {
+  .lp-glance {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 /* ------------------------------------------------------------------ the hero carousel */
 
-.lp-carousel-band {
-  margin-bottom: var(--lp-section-gap);
-}
-
 .lp-carousel {
   display: grid;
   gap: 0.625rem;
+}
+
+/* --- The whole picture and its bar fit the first screen: the frame is 16:10, so its width is 1.6
+   --- times the height left over (the rule, the header, the hero's padding, the bar and its gap).
+   --- In a narrow column, or on a phone, the column's width is the smaller of the two. */
+.lp-top-media {
+  min-width: 0;
+}
+
+.lp-top-media .lp-carousel {
+  width: min(100%, max(18rem, calc((100svh - 6px - var(--site-header-height) - 4rem - 3.125rem) * 1.6)));
+  margin-left: auto;
 }
 
 .lp-carousel-frame {
@@ -542,7 +470,19 @@ div.lp-body {
 
 .lp-sec {
   padding: var(--lp-section-gap) 0;
-  border-top: 2px solid var(--site-fg);
+}
+
+/* --- No rules between sections: every other section is a band on the chrome tone, across the whole
+   --- window (the author's option C of four; a 2px text-colour rule read as heavy). The band is drawn
+   --- as a shadow spread far past the column and clipped back to the section's own height, so the
+   --- section keeps the column's width and the page never scrolls sideways. Machines / Also included
+   --- and What Klive does are the bands; the four steps between them and the closing download stay on
+   --- the page colour. A hairline at the band's top keeps its edge in the light theme. */
+.lp-band {
+  background: var(--site-chrome);
+  box-shadow: 0 0 0 100vmax var(--site-chrome);
+  clip-path: inset(0 -100vmax);
+  border-top: 1px solid var(--site-line);
 }
 
 .lp-sec > h2,
@@ -713,7 +653,6 @@ div.lp-body {
   justify-content: space-between;
   gap: 1.5rem;
   padding: var(--lp-section-gap) 0;
-  border-top: 2px solid var(--site-fg);
 }
 
 .lp-end h2 {
@@ -847,6 +786,10 @@ div.lp-body {
     gap: 2rem;
   }
 
+  .lp-top-media .lp-carousel {
+    margin: 0 auto;
+  }
+
   .lp-header-in {
     gap: 1.25rem;
   }
@@ -865,7 +808,7 @@ div.lp-body {
   }
 
   /* --- The menu takes the GitHub icon's place, so the row is no wider than before */
-  .lp-menu {
+  .lp-tools .site-menu {
     display: block;
   }
 }
@@ -880,14 +823,6 @@ div.lp-body {
   .lp-loop td {
     display: block;
     width: auto;
-  }
-}
-
-/* --- The tools row must fit 320px in every language. Below this width the language button keeps
-   --- only its globe (its accessible name stays "Language"): with the name, Portuguese needs 385px */
-@media (max-width: 420px) {
-  .lp-lang-name {
-    display: none;
   }
 }
 

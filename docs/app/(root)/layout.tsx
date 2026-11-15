@@ -7,6 +7,7 @@
 import { fontVariables } from "../fonts";
 import { themeBootScript } from "../../landing/ThemeToggle";
 import "../tokens.css";
+import "../site-header.css";
 import "../../landing/landing.css";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
