@@ -6,6 +6,7 @@ import {
   evaluateRelocatable,
   instructionShape,
   joinContinuations,
+  ozHeaderSynopsis,
   shortLabelName,
   splitArguments,
   splitComment,
@@ -332,6 +333,48 @@ describe("the OZ call forms and macros", () => {
     const result = alignOzModule({ path: "m.asm", text, bytes: rom.bytes, defines: [], reader: noIncludes, decodeAt: rom.decodeAt });
     expect(result.stop).toBeUndefined();
     expect(result.end).toBe(1);
+  });
+});
+
+describe("routine headers", () => {
+  it("keeps the whole comment block above a label, separators dropped, empty lines as breaks", () => {
+    const text = [
+      "        org $C000",
+      "; ****************",
+      "; write a string",
+      ";",
+      "; IN:    HL = string",
+      "; ****************",
+      "",
+      ".Sop",
+      "        ret"
+    ].join("\n");
+    const rom = bank([0xc9], { 0: { length: 1, text: "ret" } });
+    const result = alignOzModule({ path: "m.asm", text, bytes: rom.bytes, defines: [], reader: noIncludes, decodeAt: rom.decodeAt });
+    expect(result.labels[0].header).toEqual(["write a string", "", "IN:    HL = string"]);
+  });
+
+  it("turns IN/OUT/CHG into the house contract, with the register masks as lists", () => {
+    expect(
+      ozHeaderSynopsis(["write local string", "", "IN:    HL = string", "OUT:   HL = null", "", "CHG:   .F....HL/...."])
+    ).toBe("write local string\nEntry: HL = string.\nExit: HL = null.\nChanges: F, HL.");
+    expect(
+      ozHeaderSynopsis([
+        "OS_Out entry",
+        "IN:",
+        "    A = character",
+        "OUT:",
+        "    Fc = 0 always",
+        "Registers changed after return to caller:",
+        "    A.BCDEHL/IXIY same",
+        "    .F....../.... different"
+      ])
+    ).toBe("OS_Out entry\nEntry: A = character.\nExit: Fc = 0 always.\nChanges: F.\nKeeps: A, BC, DE, HL, IX, IY.");
+    expect(ozHeaderSynopsis(["CHG:   .FB...HL/.... af......", "OUT if call failed:", "    Fc = 1, A = error"])).toBe(
+      "Error: Fc = 1, A = error.\nChanges: F, B, HL, AF'."
+    );
+    // --- Without keywords the header stays as written
+    expect(ozHeaderSynopsis(["bind in extended address"])).toBe("bind in extended address");
   });
 });
 

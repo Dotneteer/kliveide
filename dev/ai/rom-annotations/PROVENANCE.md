@@ -2567,3 +2567,14 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
   `src/public/roms/`: the permission's wording (Q1) must be settled before it ships.
 - **Level:** measured 1 on twelve banks, 0 on banks 0 and 7 (11 `jr $` hang loops with no source label).
   Nothing recorded yet.
+
+### 2026-11-15 — Cambridge Z88: OZ 4.7, Phase 3 begins (hand-written entries, contracts, bank $10)
+
+- **What:** 16 `observed` labels with synopses in `dev/ai/rom-annotations/z88-oz47-authored.json`: the 11
+  hang loops of banks 0 and 7 (each a `JR` to itself, `38 FE` or `18 FE`, after a call that fails or does not
+  come back), and bank $10, the FlashStore file area (one file entry: name length $0C, `/welcome.pdd`, a
+  4-byte length $00001543, the document, then $FF to the end). The imported headers were rewritten into the
+  `Entry:/Exit:/Error:/Changes:/Keeps:` contract by rule (Q5); those stay `source`.
+- **Sources:** the ROM bytes (`z88-dis.cjs` listings) for every `observed` entry; the file area's document
+  matches `filearea/welcome.pdd` of the OZ source byte for byte.
+- **Level:** measured 1 on every imported bank, 2 on bank $10. Nothing recorded yet.

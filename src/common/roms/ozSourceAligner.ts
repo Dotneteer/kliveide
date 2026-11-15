@@ -887,6 +887,15 @@ export function splitConcatenation(item: string): string[] {
 // ------------------------------------------------------------------------------------------------
 // The walk
 
+/** Lines without the empty ones at either end */
+function trimBlankLines(lines: string[]): string[] {
+  let from = 0;
+  let to = lines.length;
+  while (from < to && !lines[from].trim()) from++;
+  while (to > from && !lines[to - 1].trim()) to--;
+  return lines.slice(from, to);
+}
+
 /** Places a module's lines on the bank's bytes (see the file's header). */
 export function alignOzModule(input: OzAlignInput): OzAlignResult & { problems: string[] } {
   const { lines, symbols, problems, macros } = prepare(input);
@@ -907,9 +916,12 @@ export function alignOzModule(input: OzAlignInput): OzAlignResult & { problems: 
     if (line.blank) continue;
     if (line.commentOnly) {
       const text = line.comment ?? "";
-      // --- A separator (`;       ----`) or an empty comment line ends a header
-      if (/^[-=*\s]*$/.test(text)) header = [];
-      else header.push(text);
+      // --- A header is the comment block above a label, up to the last statement. A separator
+      // --- (`; ****`, `;       ----`) is dropped, an empty comment line is a paragraph break
+      if (/^[-=*~#\s]*$/.test(text)) {
+        if (!/^\s*$/.test(text)) continue;
+        if (header.length && header[header.length - 1] !== "") header.push("");
+      } else header.push(text);
       continue;
     }
     if (line.label) {
@@ -918,7 +930,7 @@ export function alignOzModule(input: OzAlignInput): OzAlignResult & { problems: 
         offset,
         file: line.file,
         line: line.line,
-        header,
+        header: trimBlankLines(header),
         ...(line.internal ? { internal: true } : {})
       });
       symbols.set(line.label, { offset });
@@ -1147,6 +1159,128 @@ function withCase(word: string, abbreviation: string): string {
   if (word === word.toUpperCase()) return abbreviation.toUpperCase();
   if (word[0] === word[0].toUpperCase()) return abbreviation[0].toUpperCase() + abbreviation.slice(1);
   return abbreviation;
+}
+
+// ------------------------------------------------------------------------------------------------
+// Routine headers as synopses (Q5 of the plan)
+
+/** The keyword lines of an OZ routine header, and the contract part each one becomes */
+const HEADER_KEYWORDS: [RegExp, "Entry" | "Exit" | "Error" | "Changes" | "Registers"][] = [
+  [/^IN\s*:\s*/i, "Entry"],
+  [/^OUT\s+if\s+(?:the\s+)?call\s+succeeded\s*:\s*/i, "Exit"],
+  [/^OUT\s+if\s+(?:the\s+)?call\s+failed\s*:\s*/i, "Error"],
+  [/^OUT\s*:\s*/i, "Exit"],
+  [/^CHG\s*:\s*/i, "Changes"],
+  [/^Registers\s+changed[^:]*:\s*/i, "Registers"]
+];
+
+/**
+ * An OZ register mask, `AFBCDEHL/IXIY` with a `.` for each register not meant (`.F....HL/....`),
+ * optionally followed by the alternates in lower case (`af......`) and `same` or `different`.
+ */
+const REGISTER_MASK =
+  /^([.A-Za-z]{8})\/([.A-Za-z]{4})(?:\s+([.a][.f][.b][.c][.d][.e][.h][.l])(?![a-z]))?(?:\s+(same|different))?\s*(.*)$/;
+
+/** The registers a mask names, in the house style's order: pairs where both halves are named */
+function maskRegisters(main: string, index: string, alternates?: string): string[] {
+  const names: string[] = [];
+  const pairs = ["AF", "BC", "DE", "HL"];
+  for (let i = 0; i < 4; i++) {
+    const [hi, lo] = [main[2 * i] !== ".", main[2 * i + 1] !== "."];
+    if (hi && lo) names.push(pairs[i]);
+    else if (hi) names.push(pairs[i][0]);
+    else if (lo) names.push(pairs[i][1]);
+  }
+  if (index.slice(0, 2) !== "..") names.push("IX");
+  if (index.slice(2, 4) !== "..") names.push("IY");
+  if (alternates) {
+    for (let i = 0; i < 4; i++) {
+      const [hi, lo] = [alternates[2 * i] !== ".", alternates[2 * i + 1] !== "."];
+      if (hi && lo) names.push(`${pairs[i]}'`);
+      else if (hi) names.push(`${pairs[i][0]}'`);
+      else if (lo) names.push(`${pairs[i][1]}'`);
+    }
+  }
+  return names;
+}
+
+/** Words wrapped at `width` columns */
+function wrapWords(text: string, width: number): string[] {
+  const out: string[] = [];
+  let line = "";
+  for (const word of text.split(/\s+/).filter(Boolean)) {
+    if (line && line.length + 1 + word.length > width) {
+      out.push(line);
+      line = word;
+    } else line = line ? `${line} ${word}` : word;
+  }
+  if (line) out.push(line);
+  return out;
+}
+
+/**
+ * An OZ routine header as a synopsis in the house style (README, "A subroutine's synopsis ends with its
+ * contract"): the description first, as written, then `Entry:` (from `IN:`), `Exit:` (`OUT:`, "OUT if
+ * call succeeded"), `Error:` ("OUT if call failed"), `Changes:` and `Keeps:` (from `CHG:` or the
+ * "Registers changed after return" masks, `same`/`different`), each one line wrapped at 92 columns.
+ * A header without these keywords is kept as written.
+ */
+export function ozHeaderSynopsis(header: readonly string[]): string {
+  const description: string[] = [];
+  const parts: Record<"Entry" | "Exit" | "Error" | "Changes" | "Keeps", string[]> = {
+    Entry: [],
+    Exit: [],
+    Error: [],
+    Changes: [],
+    Keeps: []
+  };
+  let section: (typeof HEADER_KEYWORDS)[number][1] | undefined;
+  let found = false;
+  const add = (text: string) => {
+    if (!text || !section) return;
+    if (section === "Changes" || section === "Registers") {
+      const m = REGISTER_MASK.exec(text);
+      if (m) {
+        const names = maskRegisters(m[1], m[2], m[3]);
+        const target = section === "Registers" && m[4] === "same" ? "Keeps" : "Changes";
+        parts[target].push(names.length ? names.join(", ") : "none");
+        if (m[5]) parts[target].push(m[5].replace(/^[+;,\s]+/, ""));
+        return;
+      }
+      parts.Changes.push(text);
+      return;
+    }
+    parts[section].push(text);
+  };
+  for (const raw of header) {
+    const line = raw.trim();
+    const keyword = HEADER_KEYWORDS.find(([pattern]) => pattern.test(line));
+    if (keyword) {
+      found = true;
+      section = keyword[1];
+      add(line.replace(keyword[0], "").trim());
+      continue;
+    }
+    // --- An empty line ends a part; text after it is description again
+    if (!line) {
+      section = undefined;
+      if (description.length && description[description.length - 1] !== "") description.push("");
+      continue;
+    }
+    if (section) add(line);
+    else description.push(raw.trimEnd());
+  }
+  if (!found) return header.join("\n");
+  while (description.length && !description[description.length - 1]) description.pop();
+  const contract: string[] = [];
+  for (const key of ["Entry", "Exit", "Error", "Changes", "Keeps"] as const) {
+    if (!parts[key].length) continue;
+    const separator = key === "Changes" || key === "Keeps" ? ", " : "; ";
+    let text = parts[key].join(separator).replace(/\s+/g, " ").trim();
+    if (!/[.!?]$/.test(text)) text += ".";
+    contract.push(...wrapWords(`${key}: ${text}`, 92));
+  }
+  return [...description, ...contract].join("\n");
 }
 
 /**

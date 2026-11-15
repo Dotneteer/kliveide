@@ -1,0 +1,44 @@
+{
+  "about": "Hand-written entries for z88v47.rom.dis that the OZ source does not provide (dev/plans/Z88_OZ47_ROM_ANNOTATIONS_PLAN.md, Phase 3). dev/scripts/import-oz-source.cjs --all applies them after the import, so a re-import keeps them: a label replaces the one at its offset, a synopsis or comment replaces the imported one, a region replaces the regions it overlaps, and a bank the import does not cover gets its page from `page`. Every entry carries its provenance (observed, manual or derived); offsets are bank offsets. Written in Klive's own words.",
+  "banks": {
+    "0": {
+      "labels": [
+        { "name": "bsf_crash", "value": 443, "provenance": "observed", "synopsis": "Hangs in a loop to itself: OS_Mfr could not give the RAM page the bad-memory handler asked for." },
+        { "name": "u1_crash", "value": 591, "provenance": "observed", "synopsis": "Hangs in a loop to itself: OS_Mfr could not give the RAM page asked for." },
+        { "name": "OSBye_crash", "value": 1556, "provenance": "observed", "synopsis": "Hangs in a loop to itself: DC_Bye does not come back to the process that ended." },
+        { "name": "dordel_crash", "value": 1952, "provenance": "observed", "synopsis": "Hangs in a loop to itself when B is 0." },
+        { "name": "cerh_crash", "value": 3267, "provenance": "observed", "synopsis": "Hangs in a loop to itself: the call to $00B7 before it is not expected to come back." },
+        { "name": "opdir_crash", "value": 3598, "provenance": "observed", "synopsis": "Hangs in a loop to itself: OS_Dor failed while the directory was opened." },
+        { "name": "PrevCmd_crash", "value": 11300, "provenance": "observed", "synopsis": "Hangs in a loop to itself when HL - DE borrows (Fc set)." },
+        { "name": "NextCmd_crash", "value": 11308, "provenance": "observed", "synopsis": "Hangs in a loop to itself when HL + DE overflows (Fc set)." },
+        { "name": "aab_crash", "value": 13435, "provenance": "observed", "synopsis": "Hangs in a loop to itself when Fc is set, an error from the call before it." }
+      ]
+    },
+    "7": {
+      "labels": [
+        { "name": "init_crash", "value": 71, "provenance": "observed", "synopsis": "Hangs in a loop to itself: OS_Bye does not come back." },
+        { "name": "Exit_crash", "value": 1526, "provenance": "observed", "synopsis": "Hangs in a loop to itself: OS_Bye does not come back." }
+      ]
+    },
+    "16": {
+      "page": { "name": "OZ 4.7, bank 10h (FlashStore file area)", "segments": [{ "start": 0, "segment": 0 }] },
+      "labels": [
+        { "name": "FileArea", "value": 0, "provenance": "observed", "synopsis": "The ROM's FlashStore file area, the preset 'oz' file area below the OZ banks. It holds one\nfile entry: the name's length, the name, the file's length (4 bytes, low byte first) and its\nbytes. The rest of the bank is $FF, free space for more entries." },
+        { "name": "WelcomeName", "value": 1, "provenance": "observed", "synopsis": "The file's name, /welcome.pdd (12 characters)." },
+        { "name": "WelcomeLength", "value": 13, "provenance": "observed", "synopsis": "The file's length: $00001543, 5443 bytes." },
+        { "name": "WelcomeData", "value": 17, "provenance": "observed", "synopsis": "The file, a PipeDream document: the OZ 4.7 release notes (filearea/welcome.pdd in the\nOZ source)." },
+        { "name": "FileAreaFree", "value": 5460, "provenance": "observed", "synopsis": "Free space to the end of the bank: every byte $FF." }
+      ],
+      "lines": {
+        "0": { "comment": "Length of the file's name", "provenance": "observed" }
+      },
+      "regions": [
+        { "start": 0, "end": 0, "type": "bytes", "provenance": "observed" },
+        { "start": 1, "end": 12, "type": "bytes", "decode": "text", "provenance": "observed" },
+        { "start": 13, "end": 16, "type": "bytes", "provenance": "observed" },
+        { "start": 17, "end": 5459, "type": "bytes", "decode": "text", "provenance": "observed" },
+        { "start": 5460, "end": 16383, "type": "bytes", "decode": "fill", "provenance": "observed" }
+      ]
+    }
+  }
+}

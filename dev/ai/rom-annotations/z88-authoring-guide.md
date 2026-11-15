@@ -129,5 +129,20 @@ new label-name proposals in `z88-label-renames.json`. Names in that table are `s
 proposals until someone reviews them; an entry edited by hand wins. The plan's Phase 2 "Handoff"
 section says what is done, how to check it and what is left.
 
+## Phase 3: hand-written entries and the IDE
+
+- **Never edit the generated sidecar.** An entry the source does not give goes in
+  `z88-oz47-authored.json` (a label with its synopsis, a line, a region, a page for a bank the import does
+  not cover), each with its provenance; `--all` applies the file last, so a re-import keeps it.
+- **Headers become contracts** (`ozHeaderSynopsis` in the aligner): the description as written, then
+  `Entry:`/`Exit:`/`Error:` from `IN:`/`OUT:`/"OUT if call failed", and `Changes:`/`Keeps:` from OZ's
+  register masks. A mask is `AFBCDEHL/IXIY` with `.` for a register not meant, optionally followed by the
+  alternates in lower case (`af......`) and `same` (kept) or `different` (changed); a bare `CHG:` mask lists
+  the changed ones.
+- **The listing address:** each bank's `offsetIndex` is the segment of its largest run, so the IDE lists it
+  where most of it runs and names jumps inside it.
+- **To see the current state in the IDE,** copy `.local/oz-import/z88v47.rom.dis` over
+  `~/Klive/RomAnnotations/z88v47.rom.dis`. The IDE follows that file and reloads it.
+
 Decoder facts learned on the way: `EXTCALL` (OZ 4.5+) is `RST 28h` plus 4 bytes, the address, the
 bank and a spare byte OZ skips. OZ 3.x and 4.0 have no `EXTCALL`: their $0028 is ordinary code.

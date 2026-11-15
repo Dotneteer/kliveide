@@ -33,7 +33,7 @@ const { dirname, join, resolve } = require("node:path");
 const { registerTsRuntime } = require("./lib/ts-runtime.cjs");
 
 const root = registerTsRuntime();
-const { alignOzModule, shortLabelName } = require(join(root, "src/common/roms/ozSourceAligner.ts"));
+const { alignOzModule, ozHeaderSynopsis, shortLabelName } = require(join(root, "src/common/roms/ozSourceAligner.ts"));
 const { MemorySectionType } = require(join(root, "src/common/abstractions/MemorySection.ts"));
 const { MemorySection } = require(join(root, "src/renderer/appIde/disassemblers/common-types.ts"));
 const { Z80Disassembler } = require(join(root, "src/renderer/appIde/disassemblers/z80-disassembler/z80-disassembler.ts"));
@@ -155,7 +155,59 @@ function importAll(argv) {
     for (const l of lines.filter((x) => /^(placed|STOP|target|level)/.test(x))) console.log(`     ${l}`);
   }
   console.log(failed ? `\n${failed} component(s) did not import cleanly` : `\nAll ${components.length} components imported.`);
+  if (!failed) console.log(applyAuthored(out));
   process.exit(failed ? 1 : 0);
+}
+
+/**
+ * The hand-written entries of `z88-oz47-authored.json` over the imported sidecar (Phase 3): a label
+ * replaces the one at its offset, a synopsis or comment the imported one, a region the regions it
+ * overlaps; a bank the import does not cover gets its page. Each entry keeps its own provenance.
+ */
+function applyAuthored(file) {
+  const authored = JSON.parse(readFileSync(join(root, "dev/ai/rom-annotations/z88-oz47-authored.json"), "utf8"));
+  const sidecar = JSON.parse(readFileSync(file, "utf8"));
+  const rom = new Uint8Array(readFileSync(join(root, "src/public/roms/z88v47.rom")));
+  let labels = 0;
+  let lines = 0;
+  let regions = 0;
+  for (const [key, entries] of Object.entries(authored.banks)) {
+    const bank = (sidecar.banks[key] ??= { offsetIndex: 0, regions: [], localLabels: [], lineAnnotations: {} });
+    if (!sidecar.pages[key]) {
+      const bytes = rom.subarray(Number(key) * 0x4000, (Number(key) + 1) * 0x4000);
+      sidecar.pages[key] = { crc32: romPageIdentity(bytes).crc32, name: entries.page?.name ?? `OZ 4.7, bank ${hex2(Number(key))}h` };
+    }
+    if (entries.page?.segments) sidecar.pages[key].segments = entries.page.segments;
+    for (const { name, value, provenance, synopsis } of entries.labels ?? []) {
+      bank.localLabels = bank.localLabels.filter((l) => l.value !== value && l.name !== name);
+      bank.localLabels.push({ name, value });
+      sidecar.provenance[`${key}:${value}:label`] = provenance;
+      labels++;
+      if (synopsis) {
+        (bank.lineAnnotations[value] ??= {}).synopsis = synopsis;
+        sidecar.provenance[`${key}:${value}:line`] = provenance;
+        lines++;
+      }
+    }
+    for (const [offset, { provenance, ...entry }] of Object.entries(entries.lines ?? {})) {
+      Object.assign((bank.lineAnnotations[offset] ??= {}), entry);
+      sidecar.provenance[`${key}:${offset}:line`] = provenance;
+      lines++;
+    }
+    for (const { provenance, ...region } of entries.regions ?? []) {
+      for (const old of bank.regions.filter((r) => r.end >= region.start && r.start <= region.end)) {
+        delete sidecar.provenance[`${key}:${old.start}:region`];
+      }
+      bank.regions = bank.regions.filter((r) => r.end < region.start || r.start > region.end);
+      bank.regions.push(region);
+      sidecar.provenance[`${key}:${region.start}:region`] = provenance;
+      regions++;
+    }
+    bank.localLabels.sort((a, b) => a.value - b.value);
+    bank.regions.sort((a, b) => a.start - b.start);
+  }
+  writeFileSync(file, tools.formatRomSidecar(sidecar));
+  return `Hand-written entries applied: ${labels} label(s), ${lines} line annotation(s), ${regions} region(s).`;
 }
 
 if (process.argv.includes("--all")) importAll(process.argv.slice(2).filter((a) => a !== "--all"));
@@ -321,7 +373,7 @@ if (process.argv.includes("--all")) importAll(process.argv.slice(2).filter((a) =
       labels.push({ name, value: label.offset });
       provenance[`${bankNo}:${label.offset}:label`] = "source";
       if (label.header.length) {
-        lineAnnotations[label.offset] = { synopsis: label.header.join("\n") };
+        lineAnnotations[label.offset] = { synopsis: ozHeaderSynopsis(label.header) };
       }
     }
     for (const line of result.lines) {
@@ -364,6 +416,15 @@ if (process.argv.includes("--all")) importAll(process.argv.slice(2).filter((a) =
       { start: result.start, segment, ...(o.at !== undefined && result.org !== undefined ? { address: result.org } : {}) }
     ].sort((a, b) => a.start - b.start);
     sidecar.pages[key] = { crc32: romPageIdentity(bankBytes).crc32, name: `OZ 4.7, bank ${hex2(bankNo)}h`, segments };
+    // --- The IDE lists a bank at one address (`offsetIndex`, a segment): the segment of its largest
+    // --- run, so that the most jumps show their labels. A run of another segment (bank $0A's Filer)
+    // --- or with its own address (LOWRAM) is listed at that segment's address too
+    const covered = new Map();
+    segments.forEach((s, i) => {
+      const length = (segments[i + 1]?.start ?? 0x4000) - s.start;
+      covered.set(s.segment, (covered.get(s.segment) ?? 0) + length);
+    });
+    bank.offsetIndex = [...covered].sort((a, b) => b[1] - a[1])[0][0] & 0x03;
     sidecar.banks[key] = bank;
     for (const k of Object.keys(sidecar.provenance)) {
       if (!k.startsWith(`${bankNo}:`)) continue;
