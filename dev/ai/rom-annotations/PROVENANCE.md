@@ -2601,3 +2601,15 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
   calculation.
 - **Sources:** the OZ V4.7 source (commit `603c979a`, D-OZ1) and the ROM bytes; the entries are `source`.
 - **Level:** measured 2 on banks 3, $0C and $0D; each reassembles byte for byte. Not shipped yet (Q1).
+
+### 2026-11-15 — Cambridge Z88: OZ 4.7, bank 2 and MTH (bank 8) to level 2
+
+- **What:** 433 synopses in `z88-oz47-authored.json`: bank 2's keymaps, LOWRAM routines and date filter
+  tables (74), and MTH's System Token Table, the applications' MTH commands and help pages, the application
+  DORs, the Panel preference defaults and the error table (359, all data).
+- **How:** as before (`tools/z88-synopsis-pack.cjs`, five helpers with `helper-briefs/z88-draft-synopses.md`,
+  `tools/z88-synopsis-merge.cjs`); the token texts and help pages were expanded from the ROM bytes with the
+  token table, and keymap pair counts read from the bytes. The helpers' notes are in `z88-oz47-review.md`.
+  `z88-dis.cjs` was fixed to list a run stored away from where it runs (LOWRAM).
+- **Sources:** the OZ V4.7 source (commit `603c979a`, D-OZ1) and the ROM bytes; the entries are `source`.
+- **Level:** measured 2 on banks 2 and 8; both reassemble byte for byte. Not shipped yet (Q1).

@@ -4,8 +4,9 @@
 done (Z88 bank space, ROM pages, `z88-oz` decoding, `source` provenance; checked in the running IDE).
 Phase 2 done (2026-11-15): every component with source imports (banks 0-8, $0A-$0D and $1F), and each bank
 reassembles byte for byte. Phase 3 under way (2026-11-15): every bank level 1, bank $10 level 2; level 2
-counts routines (D-OZ6) and bank 9 is left out (D-OZ7). The kernel (banks 0, 1), GN (3), DC and Index
-($0C) and the FPP ($0D) are level 2; the synopsis work goes on bank by bank (2,430 labels left). **To continue, read "Phase 3 status".**
+counts routines (D-OZ6) and bank 9 is left out (D-OZ7). The system banks are level 2: the kernel (0, 1),
+bank 2, GN (3), MTH (8), DC and Index ($0C), the FPP ($0D) and the file area ($10); the applications'
+synopses are left (1,997 labels). **To continue, read "Phase 3 status".**
 **Goal:** a shipped sidecar `src/public/roms/z88v47.rom.dis` that annotates the OZ 4.7 ROM's banks to
 level 2 (all but bank 9, D-OZ7). It is built mostly from the OZ project's own assembler source,
 <https://bitbucket.org/cambridge/oz/src/V4.7/>, which the owner has given permission to use.
@@ -386,10 +387,16 @@ Done, on branch `dotneteer/z88-oz47-phase2`:
   way, by four helpers (GN 89, DC and Index 67 + 66, FPP 55). All three banks reassemble byte for byte.
   The FPP helper worked out the number format from the code (C = 0: a 32-bit integer in HLhl; otherwise a
   float 1.m x 2^(C-$80) with the sign in H bit 7), recorded in the review notes.
+- **Bank 2 and MTH (bank 8) are level 2** (2026-11-15): 433 synopses by five helpers: the seven keymaps
+  and their dead-key tables, LOWRAM's routines (at their RAM addresses), the date filters (74); the System
+  Token Table, the applications' MTH commands and help pages, the 15 application DORs, the Panel
+  preference defaults and the error table (359). Both banks reassemble byte for byte. `z88-dis.cjs` now
+  lists LOWRAM at its RAM address (a run with its own `address`).
 
 Open:
-- **The synopses of the other banks**, the same way, one bank group at a time: bank 2 (74), MTH (bank 8,
-  359 data labels), then the applications (banks 4, 5, 6, 7, $0A, $0B) and the ROM header (2). The method:
+- **The synopses of the applications**, the same way, one bank group at a time: banks 4 (Diary, Clock,
+  Calendar, Alarm: 309), 5 and 6 (PipeDream: 414 + 481), 7 (Panel, PrinterEd, Terminal, Calculator,
+  Imp/Export: 277), $0A (EazyLink, Filer: 288), $0B (FlashStore: 226) and the ROM header ($1F, 2). The method:
   `node dev/ai/rom-annotations/tools/z88-synopsis-pack.cjs <banks> <source folders> .local/oz-synopses/<name>-pack.json`,
   `z88-synopsis-split.cjs` into slices of about 80, one helper per slice with the brief, then
   `z88-synopsis-merge.cjs` (a `--dry-run` first) and `z88-synopsis-notes.cjs` for the review file.

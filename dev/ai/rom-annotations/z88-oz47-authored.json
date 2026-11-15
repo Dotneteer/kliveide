@@ -1969,6 +1969,306 @@
         }
       }
     },
+    "2": {
+      "lines": {
+        "64": {
+          "synopsis": "Shift table of the British keymap (KeyMap_UK, used for the UK, US, IS, JP and TR country\nsettings), at offset $40 of the keymap's page, after the 64-byte key matrix. A count byte,\nthen that many pairs (key code, code with Shift held) in ascending key-code order, for the\nkeys outside A-Z that are not in the Caps table. This keymap has 23 pairs. The Caps,\nDiamond, Square and dead-key tables follow it; at reset the country setup (os/spnq1.asm)\nrecords where each starts, and the keyboard driver (os/kbd.asm) searches them.",
+          "provenance": "source"
+        },
+        "111": {
+          "synopsis": "Caps table of the British keymap: a count byte, then that many pairs (lower case, upper\ncase) of keys outside A-Z that CAPS LOCK and Shift switch between. The table is empty here\n(count 0).",
+          "provenance": "source"
+        },
+        "112": {
+          "synopsis": "Diamond table of the British keymap: a count byte, then that many pairs (key code, code with\nDiamond held) in ascending key-code order, for keys outside A-Z; Diamond with a letter gives\n$01-$1A without the table. This keymap has 11 pairs.",
+          "provenance": "source"
+        },
+        "135": {
+          "synopsis": "Square table of the British keymap: a count byte, then that many pairs (key code, code with\nSquare held) in ascending key-code order, for keys outside A-Z; Square with a letter gives\n$81-$9A without the table. This keymap has 9 pairs.",
+          "provenance": "source"
+        },
+        "154": {
+          "synopsis": "Dead-key table of the British keymap: a count byte, then that many pairs (dead key code, low\nbyte of the address of its subtable in this page) in ascending key-code order. The table is\nempty here (count 0); $FF filler follows up to the next keymap's page.",
+          "provenance": "source"
+        },
+        "320": {
+          "synopsis": "Shift table of the French keymap (KeyMap_FR, used for the FR and CH country settings), at\noffset $40 of the keymap's page, after the 64-byte key matrix. A count byte, then that many\npairs (key code, code with Shift held) in ascending key-code order, for the keys outside A-Z\nthat are not in the Caps table. This keymap has 23 pairs. The Caps, Diamond, Square and\ndead-key tables follow it; at reset the country setup (os/spnq1.asm) records where each\nstarts, and the keyboard driver (os/kbd.asm) searches them.",
+          "provenance": "source"
+        },
+        "367": {
+          "synopsis": "Caps table of the French keymap: a count byte, then that many pairs (lower case, upper case)\nof keys outside A-Z that CAPS LOCK and Shift switch between. This keymap has 21 pairs. The\npairs are the Shift table's without Escape and Space, so CAPS LOCK also gives the digits of\nthe top row.",
+          "provenance": "source"
+        },
+        "410": {
+          "synopsis": "Diamond table of the French keymap: a count byte, then that many pairs (key code, code with\nDiamond held) in ascending key-code order, for keys outside A-Z; Diamond with a letter gives\n$01-$1A without the table. This keymap has 23 pairs.",
+          "provenance": "source"
+        },
+        "457": {
+          "synopsis": "Square table of the French keymap: a count byte, then that many pairs (key code, code with\nSquare held) in ascending key-code order, for keys outside A-Z; Square with a letter gives\n$81-$9A without the table. This keymap has 14 pairs.",
+          "provenance": "source"
+        },
+        "486": {
+          "synopsis": "Dead-key table of the French keymap: a count byte, then that many pairs (dead key code, low\nbyte of the address of its subtable in this page) in ascending key-code order. This keymap\nhas 2 dead keys. The entries are $AE (^) to deadkey1 and $AF (diaeresis) to deadkey2.",
+          "provenance": "source"
+        },
+        "491": {
+          "synopsis": "Dead-key subtable of the French keymap for the circumflex dead key ($AE): the character\nshown in the OZ window while the dead key waits ($DE), then a count byte (5) and 5 pairs\n(key code, accented character) for a, e, i, o and u.",
+          "provenance": "source"
+        },
+        "503": {
+          "synopsis": "Dead-key subtable of the French keymap for the diaeresis dead key ($AF): the character shown\nin the OZ window while the dead key waits ($A2), then a count byte (9) and 9 pairs (key\ncode, accented character) for A, E, O, U, a, e, i, o and u.",
+          "provenance": "source"
+        },
+        "832": {
+          "synopsis": "Shift table of the Danish keymap (KeyMap_DK, used for the DK and NO country settings), at\noffset $40 of the keymap's page, after the 64-byte key matrix. A count byte, then that many\npairs (key code, code with Shift held) in ascending key-code order, for the keys outside A-Z\nthat are not in the Caps table. This keymap has 23 pairs. The Caps, Diamond, Square and\ndead-key tables follow it; at reset the country setup (os/spnq1.asm) records where each\nstarts, and the keyboard driver (os/kbd.asm) searches them.",
+          "provenance": "source"
+        },
+        "879": {
+          "synopsis": "Caps table of the Danish keymap: a count byte, then that many pairs (lower case, upper case)\nof keys outside A-Z that CAPS LOCK and Shift switch between. This keymap has 3 pairs. The\npairs are å/Å, æ/Æ and ø/Ø ($DA/$EA, $DB/$EB, $DD/$ED).",
+          "provenance": "source"
+        },
+        "886": {
+          "synopsis": "Diamond table of the Danish keymap: a count byte, then that many pairs (key code, code with\nDiamond held) in ascending key-code order, for keys outside A-Z; Diamond with a letter gives\n$01-$1A without the table. This keymap has 15 pairs.",
+          "provenance": "source"
+        },
+        "917": {
+          "synopsis": "Square table of the Danish keymap: a count byte, then that many pairs (key code, code with\nSquare held) in ascending key-code order, for keys outside A-Z; Square with a letter gives\n$81-$9A without the table. This keymap has 13 pairs.",
+          "provenance": "source"
+        },
+        "944": {
+          "synopsis": "Dead-key table of the Danish keymap: a count byte, then that many pairs (dead key code, low\nbyte of the address of its subtable in this page) in ascending key-code order. The table is\nempty here (count 0); $FF filler follows up to the next keymap's page.",
+          "provenance": "source"
+        },
+        "1088": {
+          "synopsis": "Shift table of the Finnish/Swedish keymap (KeyMap_FI, used for the FI and SE country\nsettings), at offset $40 of the keymap's page, after the 64-byte key matrix. A count byte,\nthen that many pairs (key code, code with Shift held) in ascending key-code order, for the\nkeys outside A-Z that are not in the Caps table. This keymap has 23 pairs. The Caps,\nDiamond, Square and dead-key tables follow it; at reset the country setup (os/spnq1.asm)\nrecords where each starts, and the keyboard driver (os/kbd.asm) searches them.",
+          "provenance": "source"
+        },
+        "1135": {
+          "synopsis": "Caps table of the Finnish/Swedish keymap: a count byte, then that many pairs (lower case,\nupper case) of keys outside A-Z that CAPS LOCK and Shift switch between. This keymap has 3\npairs. The pairs are ö/Ö, ä/Ä and å/Å ($A5/$A7, $A6/$A8, $DA/$EA).",
+          "provenance": "source"
+        },
+        "1142": {
+          "synopsis": "Diamond table of the Finnish/Swedish keymap: a count byte, then that many pairs (key code,\ncode with Diamond held) in ascending key-code order, for keys outside A-Z; Diamond with a\nletter gives $01-$1A without the table. This keymap has 15 pairs.",
+          "provenance": "source"
+        },
+        "1173": {
+          "synopsis": "Square table of the Finnish/Swedish keymap: a count byte, then that many pairs (key code,\ncode with Square held) in ascending key-code order, for keys outside A-Z; Square with a\nletter gives $81-$9A without the table. This keymap has 13 pairs.",
+          "provenance": "source"
+        },
+        "1200": {
+          "synopsis": "Dead-key table of the Finnish/Swedish keymap: a count byte, then that many pairs (dead key\ncode, low byte of the address of its subtable in this page) in ascending key-code order. The\ntable is empty here (count 0); $FF filler follows up to the next keymap's page.",
+          "provenance": "source"
+        },
+        "1344": {
+          "synopsis": "Shift table of the German keymap (KeyMap_DE, used for the DE country settings), at offset\n$40 of the keymap's page, after the 64-byte key matrix. A count byte, then that many pairs\n(key code, code with Shift held) in ascending key-code order, for the keys outside A-Z that\nare not in the Caps table. This keymap has 23 pairs. The Caps, Diamond, Square and dead-key\ntables follow it; at reset the country setup (os/spnq1.asm) records where each starts, and\nthe keyboard driver (os/kbd.asm) searches them.",
+          "provenance": "source"
+        },
+        "1391": {
+          "synopsis": "Caps table of the German keymap: a count byte, then that many pairs (lower case, upper case)\nof keys outside A-Z that CAPS LOCK and Shift switch between. This keymap has 3 pairs. The\npairs are ö/Ö, ä/Ä and ü/Ü ($A5/$A7, $A6/$A8, $DC/$EC).",
+          "provenance": "source"
+        },
+        "1398": {
+          "synopsis": "Diamond table of the German keymap: a count byte, then that many pairs (key code, code with\nDiamond held) in ascending key-code order, for keys outside A-Z; Diamond with a letter gives\n$01-$1A without the table. This keymap has 25 pairs.",
+          "provenance": "source"
+        },
+        "1449": {
+          "synopsis": "Square table of the German keymap: a count byte, then that many pairs (key code, code with\nSquare held) in ascending key-code order, for keys outside A-Z; Square with a letter gives\n$81-$9A without the table. This keymap has 14 pairs.",
+          "provenance": "source"
+        },
+        "1478": {
+          "synopsis": "Dead-key table of the German keymap: a count byte, then that many pairs (dead key code, low\nbyte of the address of its subtable in this page) in ascending key-code order. The table is\nempty here (count 0); $FF filler follows up to the next keymap's page.",
+          "provenance": "source"
+        },
+        "1600": {
+          "synopsis": "Shift table of the Spanish keymap (KeyMap_ES, used for the ES country settings), at offset\n$40 of the keymap's page, after the 64-byte key matrix. A count byte, then that many pairs\n(key code, code with Shift held) in ascending key-code order, for the keys outside A-Z that\nare not in the Caps table. This keymap has 25 pairs. The Caps, Diamond, Square and dead-key\ntables follow it; at reset the country setup (os/spnq1.asm) records where each starts, and\nthe keyboard driver (os/kbd.asm) searches them.",
+          "provenance": "source"
+        },
+        "1651": {
+          "synopsis": "Caps table of the Spanish keymap: a count byte, then that many pairs (lower case, upper\ncase) of keys outside A-Z that CAPS LOCK and Shift switch between. The table is empty here\n(count 0).",
+          "provenance": "source"
+        },
+        "1652": {
+          "synopsis": "Diamond table of the Spanish keymap: a count byte, then that many pairs (key code, code with\nDiamond held) in ascending key-code order, for keys outside A-Z; Diamond with a letter gives\n$01-$1A without the table. This keymap has 19 pairs.",
+          "provenance": "source"
+        },
+        "1691": {
+          "synopsis": "Square table of the Spanish keymap: a count byte, then that many pairs (key code, code with\nSquare held) in ascending key-code order, for keys outside A-Z; Square with a letter gives\n$81-$9A without the table. This keymap has 10 pairs.",
+          "provenance": "source"
+        },
+        "1712": {
+          "synopsis": "Dead-key table of the Spanish keymap: a count byte, then that many pairs (dead key code, low\nbyte of the address of its subtable in this page) in ascending key-code order. This keymap\nhas 4 dead keys. The entries are $AC (acute) to deadkeysp1, $AD (grave) to deadkeysp2, $AE\n(^) to deadkeysp3 and $AF (diaeresis) to deadkeysp4.",
+          "provenance": "source"
+        },
+        "1721": {
+          "synopsis": "Dead-key subtable of the Spanish keymap for the acute dead key ($AC): the character shown in\nthe OZ window while the dead key waits ($A7), then a count byte (5) and 5 pairs (key code,\naccented character) for a, e, i, o and u.",
+          "provenance": "source"
+        },
+        "1733": {
+          "synopsis": "Dead-key subtable of the Spanish keymap for the grave dead key ($AD): the character shown in\nthe OZ window while the dead key waits ($9D), then a count byte (5) and 5 pairs (key code,\naccented character) for a, e, i, o and u.",
+          "provenance": "source"
+        },
+        "1745": {
+          "synopsis": "Dead-key subtable of the Spanish keymap for the circumflex dead key ($AE): the character\nshown in the OZ window while the dead key waits ($DE), then a count byte (5) and 5 pairs\n(key code, accented character) for a, e, i, o and u.",
+          "provenance": "source"
+        },
+        "1757": {
+          "synopsis": "Dead-key subtable of the Spanish keymap for the diaeresis dead key ($AF): the character\nshown in the OZ window while the dead key waits ($A2), then a count byte (9) and 9 pairs\n(key code, accented character) for A, E, O, U, a, e, i, o and u.",
+          "provenance": "source"
+        },
+        "1856": {
+          "synopsis": "Shift table of the Italian keymap (KeyMap_IT, used for the IT country settings), at offset\n$40 of the keymap's page, after the 64-byte key matrix. A count byte, then that many pairs\n(key code, code with Shift held) in ascending key-code order, for the keys outside A-Z that\nare not in the Caps table. This keymap has 23 pairs. The Caps, Diamond, Square and dead-key\ntables follow it; at reset the country setup (os/spnq1.asm) records where each starts, and\nthe keyboard driver (os/kbd.asm) searches them.",
+          "provenance": "source"
+        },
+        "1903": {
+          "synopsis": "Caps table of the Italian keymap: a count byte, then that many pairs (lower case, upper\ncase) of keys outside A-Z that CAPS LOCK and Shift switch between. This keymap has 21 pairs.",
+          "provenance": "source"
+        },
+        "1946": {
+          "synopsis": "Diamond table of the Italian keymap: a count byte, then that many pairs (key code, code with\nDiamond held) in ascending key-code order, for keys outside A-Z; Diamond with a letter gives\n$01-$1A without the table. This keymap has 11 pairs.",
+          "provenance": "source"
+        },
+        "1969": {
+          "synopsis": "Square table of the Italian keymap: a count byte, then that many pairs (key code, code with\nSquare held) in ascending key-code order, for keys outside A-Z; Square with a letter gives\n$81-$9A without the table. This keymap has 5 pairs.",
+          "provenance": "source"
+        },
+        "1980": {
+          "synopsis": "Dead-key table of the Italian keymap: a count byte, then that many pairs (dead key code, low\nbyte of the address of its subtable in this page) in ascending key-code order. The table is\nempty here (count 0); $FF filler follows up to the next keymap's page.",
+          "provenance": "source"
+        },
+        "2048": {
+          "synopsis": "Start of the LOWRAM code (rst.asm, low_int.asm, memfunc.asm, flash.asm), which the reset\ncode (os/reset.asm) copies from this bank into RAM bank $20 and runs at $0000, up to\nLowRAMcode_end. It holds the RST vectors, the interrupt entries, the OZ call dispatch and\nreturn, the fast bank binding (RST 30H, EXTCALL) and the flash chip routines. At $0000\nitself is the RST 00 reset entry: it disables interrupts and writes 0 to BL_COM, which binds\nROM bank 0 into the lower 8K of segment 0, so execution continues in bank 0's boot code.\nEntry: none.",
+          "provenance": "source"
+        },
+        "2104": {
+          "synopsis": "Maskable interrupt entry (RST 38H, interrupt mode 1): a JP to LOWRAM_INT. The jump's address\nis patched: nmi_halt points it at kernel 0's HW_INT before the machine enters coma, and\nNMIWakeup restores LOWRAM_INT.\nEntry: none.",
+          "provenance": "source"
+        },
+        "2125": {
+          "synopsis": "Default application error handler, installed by OS_Erh when HL = 0 and at process start\n(DefErrHandler + 1 when the application DOR sets AT2_Ie, ignore errors). CallErrorHandler\ncalls it through JpAHL with the error in AF. When Fz = 1 (a fatal error) it returns AF\nunchanged, so CallErrorHandler shows the error with GN_Err. Otherwise, and always from the\nsecond byte, CP A gives Fc = 0, Fz = 1, which returns the error to the program.\nEntry: A = error code; Fc = 1; Fz = 1 for a fatal error.\nExit: Fz = 1 on entry: AF unchanged; else Fc = 0, Fz = 1.\nChanges: F.",
+          "provenance": "source"
+        },
+        "2138": {
+          "synopsis": "Second half of the dispatch of a two-byte OZ call (os/oz2call.asm jumps here): pops the code\nbank into A and binds it into segment 3 (MS3BankA), pops the caller's AF and returns, which\ngoes to the function address the dispatcher pushed under them. Its last two instructions\n(noEI: POP AF, RET) are also LOWRAM_NMI's exit when interrupts stay disabled.\nEntry: stack: code bank in A of the top word, then the caller's AF, then the function\naddress.\nExit: S3 = code bank; AF = caller's AF.",
+          "provenance": "source"
+        },
+        "2150": {
+          "synopsis": "Non-maskable interrupt entry (NMI at $0066): a JP to LOWRAM_NMI. The jump's address is\npatched like OZ_INT's: nmi_halt points it at kernel 0's HW_NMI before coma and NMIWakeup\nrestores it; the OZ update code (dc/ozupdate.asm) replaces the JP with RET while it\nreprograms the flash.\nEntry: none.",
+          "provenance": "source"
+        },
+        "2153": {
+          "synopsis": "Handles a non-maskable interrupt from the Blink. If SP is in page $00xx the machine is still\nin its start-up code and it restarts at RST 00. Otherwise it saves I and the interrupt state\n(IFF2, read through LD A,I), disables interrupts, binds kernel 0 into segment 3, calls\nNMIEntry there, restores segment 3 and returns, enabling interrupts only when they were\nenabled before. It returns with RET, not RETN, because NMIEntry uses EI and DI around HALT.\nEntry: none.\nKeeps: AF, HL.",
+          "provenance": "source"
+        },
+        "2189": {
+          "synopsis": "Return path of an OZ call that never calls the application's error handler: the caller gets\nthe handler's AF, BC, DE and HL. It pops the stacked S2/S3 word, clears the carry of that\ncopy so OZErrorHandler is skipped, restores segment 3 from the stacked S2/S3 word (only\nBLSC_SR3 and BL_SR3 are written), decrements ubAppCallLevel and returns to the caller of the\nOZ call.\nEntry: AF, BC, DE, HL = results; stack: S2/S3 word, then the return address.\nExit: AF, BC, DE, HL as on entry; S3 restored.",
+          "provenance": "source"
+        },
+        "2194": {
+          "synopsis": "Return path of an OZ call that gives the caller the handler's AF, BC, DE and HL (EXX here\nand again in OZCallReturn3, so the main set is kept); falls into OZCallReturn2. Like the\nother return entries it restores segment 3 from the stacked S2/S3 word (only BLSC_SR3 and\nBL_SR3 are written), decrements ubAppCallLevel and returns to the caller of the OZ call;\nunlike OZCallReturn0, when the result has Fc = 1 and the call level reaches 0 (the\napplication's outermost call) it calls OZErrorHandler.\nEntry: AF, BC, DE, HL = results; stack: S2/S3 word, then the return address.\nExit: AF, BC, DE, HL as on entry; S3 restored.\nError: Fc = 1, A = error code; the application's error handler may run first.",
+          "provenance": "source"
+        },
+        "2195": {
+          "synopsis": "Return path of an OZ call that gives the caller the handler's AF but its own BC, DE and HL\nfrom the alternate set (EX AF,AF' here, EXX in OZCallReturn3); falls into OZCallReturn3. The\ntail is OZCallReturn1's, error handler call included.\nEntry: AF = result; BC', DE', HL' = the caller's values; stack: S2/S3 word, then the return\naddress.\nExit: AF = result; BC, DE, HL = the caller's values; S3 restored.\nError: Fc = 1, A = error code; the application's error handler may run first.",
+          "provenance": "source"
+        },
+        "2196": {
+          "synopsis": "Return path of an OZ call that gives the caller back its own AF, BC, DE and HL from the\nalternate sets (EXX here; AF' is swapped in by the common tail); falls into OZCallReturnFP.\nThe error handler check uses the caller's own carry.\nEntry: AF', BC', DE', HL' = the caller's values; stack: S2/S3 word, then the return address.\nExit: AF, BC, DE, HL = the caller's values; S3 restored.",
+          "provenance": "source"
+        },
+        "2197": {
+          "synopsis": "Return path of an FPP call (fp/fpp.asm): the caller gets its own AF from the alternate set\nand the handler's BC, DE and HL. It pops the stacked S2/S3 word, sets its carry, restores\nsegment 3 from the stacked S2/S3 word (only BLSC_SR3 and BL_SR3 are written), decrements\nubAppCallLevel and returns to the caller of the OZ call; when AF' has Fc = 1 and the call\nlevel reaches 0 it calls OZErrorHandler.\nEntry: BC, DE, HL = results; AF' = AF to return; stack: S2/S3 word, then the return address.\nExit: AF = AF' on entry; BC, DE, HL as on entry; S3 restored.",
+          "provenance": "source"
+        },
+        "2218": {
+          "synopsis": "Calls the application's error handler for an OZ call that returned an error. Returns at once\nwhen Fc = 0. Otherwise binds kernel 0 into segment 3, calls CallErrorHandler (os/error.asm)\nwith A = the bank to bind for the handler and the error in AF', then rebinds that bank into\nsegment 3 through MS3BankA.\nEntry: A = bank of segment 3 to restore; Fc = 1 to call the handler; AF' = error result.\nExit: segment 3 = the bank in A.",
+          "provenance": "source"
+        },
+        "2231": {
+          "synopsis": "Calls the routine at HL in the bank in A bound into segment 3: binds A through MS3BankA,\nswaps AF so the routine gets AF', calls it through JpHL, swaps its returned AF into AF',\nthen falls into MS3Kernel0, which binds kernel 0 back into segment 3. Used to call an\napplication's error handler and entry points (error.asm, process0.asm).\nEntry: A = bank; HL = address in segment 3; AF' = AF for the routine.\nExit: AF' = AF returned by the routine; A = KN0_BNK; segment 3 = kernel 0.\nChanges: AF, AF', and what the routine changes.",
+          "provenance": "source"
+        },
+        "2239": {
+          "synopsis": "Binds kernel bank 0 into segment 3: loads A = KN0_BNK and falls into MS3BankA.\nEntry: none.\nExit: A = KN0_BNK; segment 3 = kernel 0.\nChanges: A.",
+          "provenance": "source"
+        },
+        "2241": {
+          "synopsis": "Binds the bank in A into segment 3: writes it to the soft copy BLSC_SR3 and to port BL_SR3.\nEntry: A = bank.\nExit: segment 3 = bank in A.\nKeeps: AF, BC, DE, HL.",
+          "provenance": "source"
+        },
+        "2273": {
+          "synopsis": "Jumps to the address in HL (JP (HL)); CALL JpHL calls it. It is also the end of CallOZMain,\nwhich reaches it with HL = $FFnn, the entry for call byte nn in OS_TBL of kernel 0, bound in\nsegment 3. Called from JpAHL, ExtCallK0 and pfilter0.asm.\nEntry: HL = address.",
+          "provenance": "source"
+        },
+        "2445": {
+          "synopsis": "Calls kernel 0's BothShifts through ExtCallK0 (on the system stack, with kernel 0 bound into\nsegment 3) and returns its result. Used by the interrupt handler while the keyboard is\nlocked, to see whether both Shift keys are down.\nEntry: none.\nExit: Fc = 0 when only both Shift keys (and maybe Shift Lock) are down, A bit 4 = Shift\nLock; Fc = 1, Fz = 1 when one Shift key is down; Fc = 1, Fz = 0 when other keys are down.\nChanges: AF, BC.\nKeeps: DE, HL.",
+          "provenance": "source"
+        },
+        "2608": {
+          "synopsis": "Disables the UART interrupt (clears BM_INTUART in BLSC_INT and writes it to BL_INT) until\nthe serial receive buffer is emptied. Called by the RDRF interrupt code when the buffer is\nfull.\nEntry: none.\nChanges: AF.",
+          "provenance": "source"
+        },
+        "2634": {
+          "synopsis": "Reloads the automatic switch-off counter ubTimeoutCnt from the Panel's time-out ubTimeout\n(minutes). A non-zero value is stored plus one, so the counter is not 30 seconds shorter\nthan set; 0 (no time-out) is stored as it is. Called on each key press and while the small\ntimer runs.\nEntry: none.\nKeeps: all registers.",
+          "provenance": "source"
+        },
+        "2664": {
+          "synopsis": "Drives the beeper on each TICK interrupt (unless ITSK_B_PREEMPTION is set).\n1. With no sound running (ubSoundCount = 0): a pending keyclick (KBF_B_BEEP) is cleared and\nturns the speaker on; otherwise the speaker is silenced if it runs.\n2. Otherwise it sets the speaker for the current phase (intb_beep4: odd ubSoundCount = mark,\nsounding; even = space) and decrements ubSoundActive.\n3. When that reaches 0 it decrements ubSoundCount and loads ubSoundActive with the next\nspace or mark count, skipping zero counts; at count 0 the speaker is silenced. The speaker\nis set by bit BB_COMSRUN of BLSC_COM, written to BL_COM.\nEntry: none.\nChanges: AF, HL.",
+          "provenance": "source"
+        },
+        "2724": {
+          "synopsis": "Sets the speaker for a beep phase: clears BB_COMSRUN in BLSC_COM, sets it again when Fc = 1\nand the sound setting cSound is 'Y' (the 3K2 tone drives the speaker), and writes BLSC_COM\nto BL_COM.\nEntry: Fc = 1 for a mark (sounding) phase, Fc = 0 for a space.\nChanges: AF, HL.",
+          "provenance": "source"
+        },
+        "2908": {
+          "synopsis": "Finds the slot of the code that made an EXTCALL with a slot-relative bank ($00-$3F): reads\nthe soft copy of the bank bound in the segment that H addresses and returns its slot bits.\nExtCall ORs them with the relative bank number.\nEntry: H = high byte of an address in the calling code.\nExit: A = slot mask (bits 7-6 of the bound bank); BC = address of the segment's soft copy.\nChanges: AF, BC.",
+          "provenance": "source"
+        },
+        "3019": {
+          "synopsis": "End of the LOWRAM code: the first address after the block that the reset code copies to RAM.\nThe assembly fails if it reaches SV_PRESERVED_RAM ($0400).",
+          "provenance": "source"
+        },
+        "13056": {
+          "synopsis": "Date filter table of the UK, run at $7300 in segment 1, also used for the US, IS, JP and TR\ncountry settings. The country setup (os/spnq1.asm) stores the address of the selected\ncountry's table in uwGnDateFilter; GN_Gdt and GN_Pdt (gn/gnaconv.asm) and GNLdm\n(gn/gnldm.asm) open it with GN_Flo. It translates between the language's words and the\none-byte codes of the GN date routines (GN_Pdt uses reverse mode). Layout: a word, the\ntable's length; a byte of left-hand flags and one of right-hand flags (FL_ALPHA, FL_ISO,\n...); then pairs of length-prefixed strings, the length byte counting itself: the word, then\nthe code: $81-$87 the days, $A1-$A7 their short names, $88-$8B the ordinal suffixes, $8C/$8D\nAD and BC, $C1-$CC the months, $E1-$EC their short names, $91-$93 today, yesterday and\ntomorrow.",
+          "provenance": "source"
+        },
+        "13416": {
+          "synopsis": "End of the UK date filter and start of the French one (DateFilter_FR, used for the FR and CH\ncountry settings), with the same layout as DateFilter_UK.",
+          "provenance": "source"
+        },
+        "13771": {
+          "synopsis": "End of the French date filter and start of the Danish one (DateFilter_DK, used for the DK\ncountry setting), with the same layout as DateFilter_UK.",
+          "provenance": "source"
+        },
+        "14117": {
+          "synopsis": "End of the Danish date filter and start of the Norwegian one (DateFilter_NO, used for the NO\ncountry setting), with the same layout as DateFilter_UK.",
+          "provenance": "source"
+        },
+        "14462": {
+          "synopsis": "End of the Norwegian date filter and start of the Swedish one (DateFilter_SE, used for the\nSE country setting), with the same layout as DateFilter_UK.",
+          "provenance": "source"
+        },
+        "14809": {
+          "synopsis": "End of the Swedish date filter and start of the Finnish one (DateFilter_FI, used for the FI\ncountry setting), with the same layout as DateFilter_UK.",
+          "provenance": "source"
+        },
+        "15177": {
+          "synopsis": "End of the Finnish date filter and start of the Italian one (DateFilter_IT, used for the IT\ncountry setting), with the same layout as DateFilter_UK.",
+          "provenance": "source"
+        },
+        "15533": {
+          "synopsis": "End of the Italian date filter and start of the Spanish one (DateFilter_ES, used for the ES\ncountry setting), with the same layout as DateFilter_UK.",
+          "provenance": "source"
+        },
+        "15868": {
+          "synopsis": "End of the Spanish date filter and start of the German one (DateFilter_DE, used for the DE\ncountry setting), with the same layout as DateFilter_UK.",
+          "provenance": "source"
+        },
+        "16220": {
+          "synopsis": "End of the German date filter, the last of the date filter tables; $FF filler follows.",
+          "provenance": "source"
+        }
+      }
+    },
     "3": {
       "lines": {
         "1173": {
@@ -2344,6 +2644,1446 @@
           "synopsis": "Hangs in a loop to itself: OS_Bye does not come back."
         }
       ]
+    },
+    "8": {
+      "lines": {
+        "0": {
+          "synopsis": "The System Token Table: the token base shared by the MTH of most built-in applications and\npopdowns, whose application DORs (dorappl in mth/appdors.asm) point at it. Layout: byte 0,\nthe recursive token boundary ($80); byte 1, the number of tokens ($80, so tokens $80-$FF);\nthen $81 words, each an offset from SysTokenBase: the start of tokens $80 to $FF in order\nand, last, the end of the table (end_tokens). A token's length is the next offset minus its\nown; the token texts follow the offsets, from token80 on. OS_Wrt reads it (WriteToken in\nos/token.asm): a byte $80-$FF is looked up in the active application's token base (set by\nOS_Wtb). With bit 7 of the boundary set, as here, every byte of a token goes back through\nOS_Wrt, so tokens nest; with bit 7 clear, only tokens from $80 + boundary upwards do. A $7F\nbyte in a token prints CR, LF.",
+          "provenance": "source"
+        },
+        "260": {
+          "synopsis": "System token $80: the VDU sequence SOH \"T\" (2 bytes, $01 and \"T\"), which toggles the tiny\nfont. Help texts put it on both sides of a word (\"A $80FAIL$80 message\" in mth/appmth.asm)\nto show that word in tiny characters.",
+          "provenance": "source"
+        },
+        "262": {
+          "synopsis": "System token $81: the text \"ou\" (2 bytes), stored as plain characters.",
+          "provenance": "source"
+        },
+        "264": {
+          "synopsis": "System token $82: the text \"e \" (2 bytes), stored as plain characters.",
+          "provenance": "source"
+        },
+        "266": {
+          "synopsis": "System token $83: the text \" returns \" (7 bytes). Bytes: \" \", token $8D, \"turn\", token $8E.",
+          "provenance": "source"
+        },
+        "273": {
+          "synopsis": "System token $84: the text \"t \" (2 bytes), stored as plain characters.",
+          "provenance": "source"
+        },
+        "275": {
+          "synopsis": "System token $85: the text \"in\" (2 bytes), stored as plain characters.",
+          "provenance": "source"
+        },
+        "277": {
+          "synopsis": "System token $86: the text \"er\" (2 bytes), stored as plain characters.",
+          "provenance": "source"
+        },
+        "279": {
+          "synopsis": "System token $87: the text \"tion\" (3 bytes). Bytes: \"ti\", token $BC.",
+          "provenance": "source"
+        },
+        "282": {
+          "synopsis": "System token $88: the text \"th\" (2 bytes), stored as plain characters.",
+          "provenance": "source"
+        },
+        "284": {
+          "synopsis": "System token $89: the text \"of \" (3 bytes), stored as plain characters.",
+          "provenance": "source"
+        },
+        "287": {
+          "synopsis": "System token $8A: the text \"olumn\" (5 bytes), stored as plain characters.",
+          "provenance": "source"
+        },
+        "292": {
+          "synopsis": "System token $8B: the text \"le\" (2 bytes), stored as plain characters.",
+          "provenance": "source"
+        },
+        "294": {
+          "synopsis": "System token $8C: the text \"ar\" (2 bytes), stored as plain characters.",
+          "provenance": "source"
+        },
+        "296": {
+          "synopsis": "System token $8D: the text \"re\" (2 bytes), stored as plain characters.",
+          "provenance": "source"
+        },
+        "298": {
+          "synopsis": "System token $8E: the text \"s \" (2 bytes), stored as plain characters.",
+          "provenance": "source"
+        },
+        "300": {
+          "synopsis": "System token $8F: the text \"or\" (2 bytes), stored as plain characters.",
+          "provenance": "source"
+        },
+        "302": {
+          "synopsis": "System token $90: the text \"ig\" (2 bytes), stored as plain characters.",
+          "provenance": "source"
+        },
+        "304": {
+          "synopsis": "System token $91: the text \"at\" (2 bytes), stored as plain characters.",
+          "provenance": "source"
+        },
+        "306": {
+          "synopsis": "System token $92: the text \"the \" (2 bytes). Bytes: token $88, token $82.",
+          "provenance": "source"
+        },
+        "308": {
+          "synopsis": "System token $93: the text \"an\" (2 bytes), stored as plain characters.",
+          "provenance": "source"
+        },
+        "310": {
+          "synopsis": "System token $94: the text \"Copyright (C) \" (8 bytes). Bytes: token $DE, \"r\", token $CC,\ntoken $84, \"(C) \".",
+          "provenance": "source"
+        },
+        "318": {
+          "synopsis": "System token $95: the text \"al\" (2 bytes), stored as plain characters.",
+          "provenance": "source"
+        },
+        "320": {
+          "synopsis": "System token $96: the text \"Delete \" (5 bytes). Bytes: \"De\", token $8B, \"t\", token $82.",
+          "provenance": "source"
+        },
+        "325": {
+          "synopsis": "System token $97: the text \"Next \" (4 bytes). Bytes: \"Nex\", token $84.",
+          "provenance": "source"
+        },
+        "329": {
+          "synopsis": "System token $98: the text \"Previous \" (6 bytes). Bytes: \"P\", token $8D, \"vi\", token $81,\ntoken $8E.",
+          "provenance": "source"
+        },
+        "335": {
+          "synopsis": "System token $99: the text \"haracter\" (6 bytes). Bytes: \"h\", token $8C, \"act\", token $86.",
+          "provenance": "source"
+        },
+        "341": {
+          "synopsis": "System token $9A: a full stop and a new line (2 bytes). Bytes: \".\", $7F; the token writer\nprints $7F as CR, LF.",
+          "provenance": "source"
+        },
+        "343": {
+          "synopsis": "System token $9B: the text \"mo\" (2 bytes), stored as plain characters.",
+          "provenance": "source"
+        },
+        "345": {
+          "synopsis": "System token $9C: the text \"Function\" (4 bytes). Bytes: \"F\", token $D0, \"c\", token $87.",
+          "provenance": "source"
+        },
+        "349": {
+          "synopsis": "System token $9D: the text \"ow\" (2 bytes), stored as plain characters.",
+          "provenance": "source"
+        },
+        "351": {
+          "synopsis": "System token $9E: the text \"to\" (2 bytes), stored as plain characters.",
+          "provenance": "source"
+        },
+        "353": {
+          "synopsis": "System token $9F: the text \"radians\" (5 bytes). Bytes: token $E2, \"di\", token $93, \"s\".",
+          "provenance": "source"
+        },
+        "358": {
+          "synopsis": "System token $A0: the text \"list\" (3 bytes). Bytes: \"l\", token $F4, \"t\".",
+          "provenance": "source"
+        },
+        "361": {
+          "synopsis": "System token $A1: the text \"number \" (6 bytes). Bytes: \"numb\", token $86, \" \".",
+          "provenance": "source"
+        },
+        "367": {
+          "synopsis": "System token $A2: the text \"en\" (2 bytes), stored as plain characters.",
+          "provenance": "source"
+        },
+        "369": {
+          "synopsis": "System token $A3: the text \"in \" (2 bytes). Bytes: token $85, \" \".",
+          "provenance": "source"
+        },
+        "371": {
+          "synopsis": "System token $A4: the text \", \" (2 bytes), stored as plain characters.",
+          "provenance": "source"
+        },
+        "373": {
+          "synopsis": "System token $A5: the text \"lo\" (2 bytes), stored as plain characters.",
+          "provenance": "source"
+        },
+        "375": {
+          "synopsis": "System token $A6: the text \"Fi\" (2 bytes), stored as plain characters.",
+          "provenance": "source"
+        },
+        "377": {
+          "synopsis": "System token $A7: the text \"Cursor Right\" (6 bytes). Bytes: token $DC, \" \", \"R\", token $90,\n\"ht\".",
+          "provenance": "source"
+        },
+        "383": {
+          "synopsis": "System token $A8: the text \"Cursor Left\" (6 bytes). Bytes: token $DC, \" \", \"Left\".",
+          "provenance": "source"
+        },
+        "389": {
+          "synopsis": "System token $A9: the text \"Line\" (3 bytes). Bytes: \"L\", token $85, \"e\".",
+          "provenance": "source"
+        },
+        "392": {
+          "synopsis": "System token $AA: the text \": \" (2 bytes), stored as plain characters.",
+          "provenance": "source"
+        },
+        "394": {
+          "synopsis": "System token $AB: the text \"Co\" (2 bytes), stored as plain characters.",
+          "provenance": "source"
+        },
+        "396": {
+          "synopsis": "System token $AC: the text \"Down\" (3 bytes). Bytes: \"D\", token $9D, \"n\".",
+          "provenance": "source"
+        },
+        "399": {
+          "synopsis": "System token $AD: the text \"Active Day\" (8 bytes). Bytes: \"Activ\", token $82, \"D\", token\n$FB.",
+          "provenance": "source"
+        },
+        "407": {
+          "synopsis": "System token $AE: the text \"il\" (2 bytes), stored as plain characters.",
+          "provenance": "source"
+        },
+        "409": {
+          "synopsis": "System token $AF: the text \"te\" (2 bytes), stored as plain characters.",
+          "provenance": "source"
+        },
+        "411": {
+          "synopsis": "System token $B0: a closing double quote, a full stop and a new line (2 bytes). Bytes: a\ndouble quote, token $9A.",
+          "provenance": "source"
+        },
+        "413": {
+          "synopsis": "System token $B1: the text \"ESCAPE\" (6 bytes), stored as plain characters.",
+          "provenance": "source"
+        },
+        "419": {
+          "synopsis": "System token $B2: the text \"d \" (2 bytes), stored as plain characters.",
+          "provenance": "source"
+        },
+        "421": {
+          "synopsis": "System token $B3: the text \"ke\" (2 bytes), stored as plain characters.",
+          "provenance": "source"
+        },
+        "423": {
+          "synopsis": "System token $B4: the text \"ch\" (2 bytes), stored as plain characters.",
+          "provenance": "source"
+        },
+        "425": {
+          "synopsis": "System token $B5: the text \"Column\" (2 bytes). Bytes: \"C\", token $8A.",
+          "provenance": "source"
+        },
+        "427": {
+          "synopsis": "System token $B6: the text \"Directory\" (7 bytes). Bytes: \"Di\", token $8D, \"ct\", token $8F,\n\"y\".",
+          "provenance": "source"
+        },
+        "434": {
+          "synopsis": "System token $B7: the text \" is \" (3 bytes). Bytes: \" i\", token $8E.",
+          "provenance": "source"
+        },
+        "437": {
+          "synopsis": "System token $B8: the text \"Logical \" (7 bytes). Bytes: \"Logic\", token $95, \" \".",
+          "provenance": "source"
+        },
+        "444": {
+          "synopsis": "System token $B9: the text \"Up\" (2 bytes), stored as plain characters.",
+          "provenance": "source"
+        },
+        "446": {
+          "synopsis": "System token $BA: the text \"File\" (2 bytes). Bytes: token $A6, token $8B.",
+          "provenance": "source"
+        },
+        "448": {
+          "synopsis": "System token $BB: the text \"to \" (2 bytes). Bytes: token $9E, \" \".",
+          "provenance": "source"
+        },
+        "450": {
+          "synopsis": "System token $BC: the text \"on\" (2 bytes), stored as plain characters.",
+          "provenance": "source"
+        },
+        "452": {
+          "synopsis": "System token $BD: the text \"Sav\" (2 bytes). Bytes: \"S\", token $F9.",
+          "provenance": "source"
+        },
+        "454": {
+          "synopsis": "System token $BE: the text \"e Position\" (5 bytes). Bytes: token $82, \"Po\", token $F3, token\n$87.",
+          "provenance": "source"
+        },
+        "459": {
+          "synopsis": "System token $BF: the text \"pplication\" (6 bytes). Bytes: \"p\", token $D9, \"ica\", token $87.",
+          "provenance": "source"
+        },
+        "465": {
+          "synopsis": "System token $C0: the text \"ing \" (3 bytes). Bytes: token $85, \"g \".",
+          "provenance": "source"
+        },
+        "468": {
+          "synopsis": "System token $C1: the text \"(n)\" (3 bytes), stored as plain characters.",
+          "provenance": "source"
+        },
+        "471": {
+          "synopsis": "System token $C2: the text \"sp\" (2 bytes), stored as plain characters.",
+          "provenance": "source"
+        },
+        "473": {
+          "synopsis": "System token $C3: the text \"ate\" (2 bytes). Bytes: token $91, \"e\".",
+          "provenance": "source"
+        },
+        "475": {
+          "synopsis": "System token $C4: the text \"device\" (5 bytes). Bytes: \"devi\", token $C9.",
+          "provenance": "source"
+        },
+        "480": {
+          "synopsis": "System token $C5: the text \"Block\" (4 bytes). Bytes: \"B\", token $A5, \"ck\".",
+          "provenance": "source"
+        },
+        "484": {
+          "synopsis": "System token $C6: the text \"ur\" (2 bytes), stored as plain characters.",
+          "provenance": "source"
+        },
+        "486": {
+          "synopsis": "System token $C7: the text \"ele\" (2 bytes). Bytes: \"e\", token $8B.",
+          "provenance": "source"
+        },
+        "488": {
+          "synopsis": "System token $C8: the text \"Re\" (2 bytes), stored as plain characters.",
+          "provenance": "source"
+        },
+        "490": {
+          "synopsis": "System token $C9: the text \"ce\" (2 bytes), stored as plain characters.",
+          "provenance": "source"
+        },
+        "492": {
+          "synopsis": "System token $CA: the text \"st \" (2 bytes). Bytes: \"s\", token $84.",
+          "provenance": "source"
+        },
+        "494": {
+          "synopsis": "System token $CB: the text \"Insert \" (5 bytes). Bytes: \"Ins\", token $86, token $84.",
+          "provenance": "source"
+        },
+        "499": {
+          "synopsis": "System token $CC: the text \"igh\" (2 bytes). Bytes: token $90, \"h\".",
+          "provenance": "source"
+        },
+        "501": {
+          "synopsis": "System token $CD: the text \"ma\" (2 bytes), stored as plain characters.",
+          "provenance": "source"
+        },
+        "503": {
+          "synopsis": "System token $CE: the text \". \" (2 bytes), stored as plain characters.",
+          "provenance": "source"
+        },
+        "505": {
+          "synopsis": "System token $CF: the text \"la\" (2 bytes), stored as plain characters.",
+          "provenance": "source"
+        },
+        "507": {
+          "synopsis": "System token $D0: the text \"un\" (2 bytes), stored as plain characters.",
+          "provenance": "source"
+        },
+        "509": {
+          "synopsis": "System token $D1: the text \"Align\" (4 bytes). Bytes: \"Al\", token $90, \"n\".",
+          "provenance": "source"
+        },
+        "513": {
+          "synopsis": "System token $D2: the text \"ENTER\" (5 bytes), stored as plain characters.",
+          "provenance": "source"
+        },
+        "518": {
+          "synopsis": "System token $D3: the text \"Word\" (3 bytes). Bytes: \"W\", token $8F, \"d\".",
+          "provenance": "source"
+        },
+        "521": {
+          "synopsis": "System token $D4: the text \"Screen \" (5 bytes). Bytes: \"Sc\", token $8D, token $A2, \" \".",
+          "provenance": "source"
+        },
+        "526": {
+          "synopsis": "System token $D5: the text \"qual to\" (5 bytes). Bytes: \"qu\", token $95, \" \", token $9E.",
+          "provenance": "source"
+        },
+        "531": {
+          "synopsis": "System token $D6: the text \"y \" (2 bytes), stored as plain characters.",
+          "provenance": "source"
+        },
+        "533": {
+          "synopsis": "System token $D7: the text \"m \" (2 bytes), stored as plain characters.",
+          "provenance": "source"
+        },
+        "535": {
+          "synopsis": "System token $D8: the text \"commands\" (6 bytes). Bytes: \"c\", token $E9, \"m\", token $93,\n\"ds\".",
+          "provenance": "source"
+        },
+        "541": {
+          "synopsis": "System token $D9: \"pl\", 2 plain characters.",
+          "provenance": "source"
+        },
+        "543": {
+          "synopsis": "System token $DA, \"Cursor Up\" (3 bytes): token $DC \"Cursor\", a space and token $B9 \"Up\".",
+          "provenance": "source"
+        },
+        "546": {
+          "synopsis": "System token $DB, \"Cursor Down\" (3 bytes): token $DC \"Cursor\", a space and token $AC \"Down\".",
+          "provenance": "source"
+        },
+        "549": {
+          "synopsis": "System token $DC, \"Cursor\" (4 bytes): \"C\", token $C6 \"ur\", \"s\" and token $8F \"or\".",
+          "provenance": "source"
+        },
+        "553": {
+          "synopsis": "System token $DD, \"Mar\" (2 bytes): \"M\" and token $8C \"ar\".",
+          "provenance": "source"
+        },
+        "555": {
+          "synopsis": "System token $DE, \"Copy\" (3 bytes): token $AB \"Co\" and \"py\".",
+          "provenance": "source"
+        },
+        "558": {
+          "synopsis": "System token $DF, \"End of \" (4 bytes): \"En\", token $B2 \"d \" and token $89 \"of \".",
+          "provenance": "source"
+        },
+        "562": {
+          "synopsis": "System token $E0, \"Rubout\" (5 bytes): \"Rub\", token $81 \"ou\" and \"t\".",
+          "provenance": "source"
+        },
+        "567": {
+          "synopsis": "System token $E1: \"Load\", 4 plain characters.",
+          "provenance": "source"
+        },
+        "571": {
+          "synopsis": "System token $E2: \"ra\", 2 plain characters.",
+          "provenance": "source"
+        },
+        "573": {
+          "synopsis": "System token $E3, \"Select \" (4 bytes): \"S\", token $C7 \"ele\", \"c\" and token $84 \"t \".",
+          "provenance": "source"
+        },
+        "577": {
+          "synopsis": "System token $E4: \"de\", 2 plain characters.",
+          "provenance": "source"
+        },
+        "579": {
+          "synopsis": "System token $E5: \"hi\", 2 plain characters.",
+          "provenance": "source"
+        },
+        "581": {
+          "synopsis": "System token $E6, \"value \" (4 bytes): \"v\", token $95 \"al\", \"u\" and token $82 \"e \".",
+          "provenance": "source"
+        },
+        "585": {
+          "synopsis": "System token $E7, \"range\" (4 bytes): \"r\", token $93 \"an\" and \"ge\".",
+          "provenance": "source"
+        },
+        "589": {
+          "synopsis": "System token $E8: \"Ex\", 2 plain characters.",
+          "provenance": "source"
+        },
+        "591": {
+          "synopsis": "System token $E9: \"om\", 2 plain characters.",
+          "provenance": "source"
+        },
+        "593": {
+          "synopsis": "System token $EA, \"Insert/Overtype\" (13 bytes): \"Ins\", token $86 \"er\", \"t/Ov\", token $86\n\"er\" and \"type\".",
+          "provenance": "source"
+        },
+        "606": {
+          "synopsis": "System token $EB: \"se\", 2 plain characters.",
+          "provenance": "source"
+        },
+        "608": {
+          "synopsis": "System token $EC, \"Option\" (3 bytes): \"Op\" and token $87 \"tion\".",
+          "provenance": "source"
+        },
+        "611": {
+          "synopsis": "System token $ED: \"am\", 2 plain characters.",
+          "provenance": "source"
+        },
+        "613": {
+          "synopsis": "System token $EE, \"File Card\" (5 bytes): token $BA \"File\", \" C\", token $8C \"ar\" and \"d\".",
+          "provenance": "source"
+        },
+        "618": {
+          "synopsis": "System token $EF, \"er \" (2 bytes): token $86 \"er\" and a space.",
+          "provenance": "source"
+        },
+        "620": {
+          "synopsis": "System token $F0: \"st\", 2 plain characters.",
+          "provenance": "source"
+        },
+        "622": {
+          "synopsis": "System token $F1: \"pr\", 2 plain characters.",
+          "provenance": "source"
+        },
+        "624": {
+          "synopsis": "System token $F2: \" c\", 2 plain characters.",
+          "provenance": "source"
+        },
+        "626": {
+          "synopsis": "System token $F3: \"si\", 2 plain characters.",
+          "provenance": "source"
+        },
+        "628": {
+          "synopsis": "System token $F4: \"is\", 2 plain characters.",
+          "provenance": "source"
+        },
+        "630": {
+          "synopsis": "System token $F5, \"date\" (2 bytes): \"d\" and token $C3 \"ate\".",
+          "provenance": "source"
+        },
+        "632": {
+          "synopsis": "System token $F6, \"Operators\" (6 bytes): \"Op\", token $86 \"er\", token $91 \"at\", token $8F\n\"or\" and \"s\".",
+          "provenance": "source"
+        },
+        "638": {
+          "synopsis": "System token $F7, \"Match\" (3 bytes): \"M\", token $91 \"at\" and token $B4 \"ch\".",
+          "provenance": "source"
+        },
+        "641": {
+          "synopsis": "System token $F8, \"First \" (3 bytes): token $A6 \"Fi\", \"r\" and token $CA \"st \".",
+          "provenance": "source"
+        },
+        "644": {
+          "synopsis": "System token $F9: \"av\", 2 plain characters.",
+          "provenance": "source"
+        },
+        "646": {
+          "synopsis": "System token $FA, \"Slot\" (3 bytes): \"S\", token $A5 \"lo\" and \"t\".",
+          "provenance": "source"
+        },
+        "649": {
+          "synopsis": "System token $FB: \"ay\", 2 plain characters.",
+          "provenance": "source"
+        },
+        "651": {
+          "synopsis": "System token $FC: \"it\", 2 plain characters.",
+          "provenance": "source"
+        },
+        "653": {
+          "synopsis": "System token $FD, \"Files\" (2 bytes): token $BA \"File\" and \"s\".",
+          "provenance": "source"
+        },
+        "655": {
+          "synopsis": "System token $FE, \"Print\" (4 bytes): \"Pr\", token $85 \"in\" and \"t\".",
+          "provenance": "source"
+        },
+        "659": {
+          "synopsis": "System token $FF, \"Swap Case\" (8 bytes): \"Swap Ca\" and token $EB \"se\".",
+          "provenance": "source"
+        },
+        "667": {
+          "synopsis": "End of the system token strings: the 129th offset in SysTokenBase points here, which gives\ntoken $FF its length. No byte of its own; CopyrightMsg follows.",
+          "provenance": "source"
+        },
+        "852": {
+          "synopsis": "Tokenised text of the Hall of Fame page: the developers of OZ, those of the Cambridge\nComputer releases up to V4.0 and those of the later versions. $7F breaks a line; a 0 ends\nit. MTH_HallOfFame prints it with MTHFullPage (system tokens forced); cursor left on the\ncopyright page reaches it.",
+          "provenance": "source"
+        },
+        "1050": {
+          "synopsis": "Index's MTH commands: the command block that IndexDOR points to, read by the kernel's MTH\ncode (GetAppCommands, os/mth0.asm) for the menus, the help and the command keys. Topics:\nCommands (15 commands, 2 of them hidden: HARD and NQ) and Info (2 entries, \"Description\" and\n\"Card insertion\", each with a help page). Layout: CMD_MARK (0); one mthcmd record per\ncommand (length, command code, key sequence and 0, tokenised name, help page offset high\nbyte first when CMDF_HELP is set, CMDF_* attributes, length again); TPC_SEP (1) between\ntopics; CMD_MARK.",
+          "provenance": "source"
+        },
+        "1295": {
+          "synopsis": "Index's help pages: the main page, \"The application manager.\", tokenised text with $7F for a\nnew line, ended by 0. The DOR points to it; the help page offsets of the topics and commands\ncount from here.",
+          "provenance": "source"
+        },
+        "1309": {
+          "synopsis": "Index's help page for the Info topic: empty, a single 0.",
+          "provenance": "source"
+        },
+        "1310": {
+          "synopsis": "Index's help page for the Info entry \"Description\": what the popdown does: launching,\nreviving or killing suspended activities, installing or removing applications, and system\ninformation.",
+          "provenance": "source"
+        },
+        "1414": {
+          "synopsis": "Index's help page for the Info entry \"Card insertion\": cards are inserted and removed only\nfrom the Index, a ROM card in use stays in, and a FAIL message needs a reset.",
+          "provenance": "source"
+        },
+        "1576": {
+          "synopsis": "Index's help page for the Commands topic: empty, a single 0.",
+          "provenance": "source"
+        },
+        "1577": {
+          "synopsis": "Index's help page for the Card Display command (<>CARD): the resources of the inserted\ncards, the free space of the selected RAM device and its graphic map of used and free\nmemory.",
+          "provenance": "source"
+        },
+        "1762": {
+          "synopsis": "Index's help page for the Install Application command (<>INS): enter the name of a .app file\n(it can be marked in the Filer); the ap0... files must be in the same directory.",
+          "provenance": "source"
+        },
+        "1884": {
+          "synopsis": "Index's help page for the Remove Application command (<>RMV): the application's suspended\nactivities must be killed first; an installation of several applications is removed by\nselecting the first one.",
+          "provenance": "source"
+        },
+        "1995": {
+          "synopsis": "Index's help page for the Update OZ command (<>UPD): updates OZ in slot 0 or 1 from the\nupdate package files on the RAM device.",
+          "provenance": "source"
+        },
+        "2114": {
+          "synopsis": "PipeDream's MTH commands: the command block that PipeDreamDOR points to, read by the\nkernel's MTH code (GetAppCommands, os/mth0.asm) for the menus, the help and the command\nkeys. Topics: Info (10 entries, each with a help page: the function groups, operators and\nwildcards), Blocks (13), Cursor (22, 2 hidden), Edit (25, 2 hidden), Files (7), Layout (17),\nOptions (1) and Print (13). Layout: CMD_MARK (0); one mthcmd record per command (length,\ncommand code, key sequence and 0, tokenised name, help page offset high byte first when\nCMDF_HELP is set, CMDF_* attributes, length again); TPC_SEP (1) between topics; CMD_MARK.",
+          "provenance": "source"
+        },
+        "3379": {
+          "synopsis": "PipeDream's help pages: the main page, \"PipeDream is a combined Word-processor, Spreadsheet\nand Database application.\", tokenised text with $7F for a new line, ended by 0. The DOR\npoints to it; the help page offsets of the topics and commands count from here.",
+          "provenance": "source"
+        },
+        "3428": {
+          "synopsis": "PipeDream's help page for the Info topic: \"Describes functions, operators and wildcards.\"",
+          "provenance": "source"
+        },
+        "3461": {
+          "synopsis": "PipeDream's help page for the Info entry \"Trig. Functions\": COS, SIN, TAN, ACS, ASN, ATN,\nRAD and DEG.",
+          "provenance": "source"
+        },
+        "3615": {
+          "synopsis": "PipeDream's help page for the Info entry \"Log. Functions\": LN, LOG and EXP.",
+          "provenance": "source"
+        },
+        "3692": {
+          "synopsis": "PipeDream's help page for the Info entry \"List Functions\": CHOOSE, COUNT, MAX, MIN and SUM.",
+          "provenance": "source"
+        },
+        "3878": {
+          "synopsis": "PipeDream's help page for the Info entry \"Slot Functions\": COL, INDEX, LOOKUP and ROW.",
+          "provenance": "source"
+        },
+        "4057": {
+          "synopsis": "PipeDream's help page for the Info entry \"Integer & Date Functions\": ABS, DAY, MONTH, PI,\nSGN, SQR and YEAR.",
+          "provenance": "source"
+        },
+        "4195": {
+          "synopsis": "PipeDream's help page for the Info entry \"Conditionals\": IF(boolean,then,else) with an\nexample.",
+          "provenance": "source"
+        },
+        "4299": {
+          "synopsis": "PipeDream's help page for the Info entry \"Operators\": the arithmetic operators + - * / and\n^.",
+          "provenance": "source"
+        },
+        "4345": {
+          "synopsis": "PipeDream's help page for the Info entry \"Logical Operators\": & (AND), | (OR) and ! (NOT).",
+          "provenance": "source"
+        },
+        "4367": {
+          "synopsis": "PipeDream's help page for the Info entry \"Relational Operators\": < <= <> = > and >=.",
+          "provenance": "source"
+        },
+        "4432": {
+          "synopsis": "PipeDream's help page for the Info entry \"Wildcards\": ^? for any single character and ^# for\nany number of characters.",
+          "provenance": "source"
+        },
+        "4481": {
+          "synopsis": "Diary's MTH commands: the command block that DiaryDOR points to, read by the kernel's MTH\ncode (GetAppCommands, os/mth0.asm) for the menus, the help and the command keys. Topics:\nBlocks (10 commands), Cursor (23), Edit (14, 2 hidden) and Files (2). Layout: CMD_MARK (0);\none mthcmd record per command (length, command code, key sequence and 0, tokenised name,\nhelp page offset high byte first when CMDF_HELP is set, CMDF_* attributes, length again);\nTPC_SEP (1) between topics; CMD_MARK.",
+          "provenance": "source"
+        },
+        "4934": {
+          "synopsis": "Diary's help pages: the main page, \"A 'Page a Day' diary.\", tokenised text with $7F for a\nnew line, ended by 0. The DOR points to it; the help page offsets of the topics and commands\ncount from here. The page adds that the Calendar popdown, selected from the Diary, views\nactive days and moves between them.",
+          "provenance": "source"
+        },
+        "5036": {
+          "synopsis": "PrinterEd's MTH commands: the command block that PrEdDOR points to, read by the kernel's MTH\ncode (GetAppCommands, os/mth0.asm) for the menus, the help and the command keys. Topics:\nCursor (10 commands, among them Page 1/2, Page 2/2 and ISO Translations) and Files (5, among\nthem Update Driver). Layout: CMD_MARK (0); one mthcmd record per command (length, command\ncode, key sequence and 0, tokenised name, help page offset high byte first when CMDF_HELP is\nset, CMDF_* attributes, length again); TPC_SEP (1) between topics; CMD_MARK.",
+          "provenance": "source"
+        },
+        "5191": {
+          "synopsis": "PrinterEd's help pages: the main page, \"The printer driver editor.\", tokenised text with $7F\nfor a new line, ended by 0. The DOR points to it; the help page offsets of the topics and\ncommands count from here. The page adds that the default driver is Epson FX and that File\nUpdate installs the edited settings.",
+          "provenance": "source"
+        },
+        "5306": {
+          "synopsis": "Panel's MTH commands: the command block that PanelDOR points to, read by the kernel's MTH\ncode (GetAppCommands, os/mth0.asm) for the menus, the help and the command keys. Topics:\nCursor (7 commands) and Files (3: Load, Save, New). Layout: CMD_MARK (0); one mthcmd record\nper command (length, command code, key sequence and 0, tokenised name, help page offset high\nbyte first when CMDF_HELP is set, CMDF_* attributes, length again); TPC_SEP (1) between\ntopics; CMD_MARK.",
+          "provenance": "source"
+        },
+        "5388": {
+          "synopsis": "Panel's help pages: the main page, \"The Panel controls system preference settings.\",\ntokenised text with $7F for a new line, ended by 0. The DOR points to it; the help page\noffsets of the topics and commands count from here.",
+          "provenance": "source"
+        },
+        "5429": {
+          "synopsis": "Filer's MTH commands: the command block that FilerDOR points to, read by the kernel's MTH\ncode (GetAppCommands, os/mth0.asm) for the menus, the help and the command keys. Topics:\nCommands (25 commands, 1 hidden: TAB for Select Extra File). Layout: CMD_MARK (0); one\nmthcmd record per command (length, command code, key sequence and 0, tokenised name, help\npage offset high byte first when CMDF_HELP is set, CMDF_* attributes, length again); TPC_SEP\n(1) between topics; CMD_MARK.",
+          "provenance": "source"
+        },
+        "5689": {
+          "synopsis": "Filer's help pages: the main page, \"The File manager application.\", tokenised text with $7F\nfor a new line, ended by 0. The DOR points to it; the help page offsets of the topics and\ncommands count from here. The page adds that a file marked in the Filer, opened from an\napplication's File Load, saves typing its name.",
+          "provenance": "source"
+        },
+        "5810": {
+          "synopsis": "Alarm's MTH commands: the command block that AlarmDOR points to, read by the kernel's MTH\ncode (GetAppCommands, os/mth0.asm) for the menus, the help and the command keys. Topics:\nCommands (6 commands: Set, Clear and View Alarm, Exit, Load and Save Alarms). Layout:\nCMD_MARK (0); one mthcmd record per command (length, command code, key sequence and 0,\ntokenised name, help page offset high byte first when CMDF_HELP is set, CMDF_* attributes,\nlength again); TPC_SEP (1) between topics; CMD_MARK.",
+          "provenance": "source"
+        },
+        "5895": {
+          "synopsis": "Alarm's help pages: the main page, \"Set either single or repeating alarm events ...\",\ntokenised text with $7F for a new line, ended by 0. The DOR points to it; the help page\noffsets of the topics and commands count from here. The page goes on: the alarm sounds the\nbell or executes commands that launch applications or resources.",
+          "provenance": "source"
+        },
+        "5975": {
+          "synopsis": "Terminal's MTH commands: the command block that TerminalDOR points to, read by the kernel's\nMTH code (GetAppCommands, os/mth0.asm) for the menus, the help and the command keys. Topics:\nCommands (25 commands: control codes such as BS, BEL, CR, XON/XOFF and ESC, cursor keys and\nFunctions 1 to 4; 1 hidden: SHIFT DEL as Backspace). Layout: CMD_MARK (0); one mthcmd record\nper command (length, command code, key sequence and 0, tokenised name, help page offset high\nbyte first when CMDF_HELP is set, CMDF_* attributes, length again); TPC_SEP (1) between\ntopics; CMD_MARK.",
+          "provenance": "source"
+        },
+        "6196": {
+          "synopsis": "Terminal's help pages: the main page, \"Terminal allows Digital VT52 communication to another\ncomputer using the Serial Port.\", tokenised text with $7F for a new line, ended by 0. The\nDOR points to it; the help page offsets of the topics and commands count from here.",
+          "provenance": "source"
+        },
+        "6261": {
+          "synopsis": "Imp/Export's MTH commands: the command block that ImpExpDOR points to, read by the kernel's\nMTH code (GetAppCommands, os/mth0.asm) for the menus, the help and the command keys. Topics:\nInfo (1 entry, \"XY-modem transfer protocol\", with a help page). Layout: CMD_MARK (0); one\nmthcmd record per command (length, command code, key sequence and 0, tokenised name, help\npage offset high byte first when CMDF_HELP is set, CMDF_* attributes, length again); TPC_SEP\n(1) between topics; CMD_MARK.",
+          "provenance": "source"
+        },
+        "6291": {
+          "synopsis": "Imp/Export's help pages: the main page, \"This File Transfer Program allows Files to be\nshared with other computers.\", tokenised text with $7F for a new line, ended by 0. The DOR\npoints to it; the help page offsets of the topics and commands count from here. The page\nadds that the serial port's speed and protocol are set in the Panel.",
+          "provenance": "source"
+        },
+        "6370": {
+          "synopsis": "Imp/Export's help page for the Info topic: empty, a single 0.",
+          "provenance": "source"
+        },
+        "6371": {
+          "synopsis": "Imp/Export's help page for the Info entry \"XY-modem transfer protocol\": the X, Y, C and K\nkeys (Xmodem or Ymodem, checksum or CRC, 128-byte or 1K blocks) and the settings advised for\nspeed.",
+          "provenance": "source"
+        },
+        "6544": {
+          "synopsis": "EazyLink's MTH commands: the command block that EasyLinkDOR points to, read by the kernel's\nMTH code (GetAppCommands, os/mth0.asm) for the menus, the help and the command keys. Topics:\nCommands (2 commands, codes $80 and $81: enable and disable RS232 logging). Layout: CMD_MARK\n(0); one mthcmd record per command (length, command code, key sequence and 0, tokenised\nname, help page offset high byte first when CMDF_HELP is set, CMDF_* attributes, length\nagain); TPC_SEP (1) between topics; CMD_MARK.",
+          "provenance": "source"
+        },
+        "6594": {
+          "synopsis": "EazyLink's help pages: the main page, \"Fast Client/Server Remote File Management between Z88\nand desktop ...\", tokenised text with $7F for a new line, ended by 0. The DOR points to it;\nthe help page offsets of the topics and commands count from here. The page goes on:\nincluding support for PC-LINK II clients.",
+          "provenance": "source"
+        },
+        "6682": {
+          "synopsis": "FlashStore's MTH commands: the command block that FlashstoreDOR points to, read by the\nkernel's MTH code (GetAppCommands, os/mth0.asm) for the menus, the help and the command\nkeys. Topics: Commands (16 commands, 3 hidden: CE, ER and EF, aliases of CF, FE and FL; 11\nhave a help page). Layout: CMD_MARK (0); one mthcmd record per command (length, command\ncode, key sequence and 0, tokenised name, help page offset high byte first when CMDF_HELP is\nset, CMDF_* attributes, length again); TPC_SEP (1) between topics; CMD_MARK.",
+          "provenance": "source"
+        },
+        "6959": {
+          "synopsis": "FlashStore's help pages: the main page, \"Rakewell Flash Cards and Ram File manager.\",\ntokenised text with $7F for a new line, ended by 0. The DOR points to it; the help page\noffsets of the topics and commands count from here.",
+          "provenance": "source"
+        },
+        "6991": {
+          "synopsis": "FlashStore's help page for the Commands topic: empty, a single 0.",
+          "provenance": "source"
+        },
+        "6992": {
+          "synopsis": "FlashStore's help page for the Select Card command (<>SC): \"Select which File Card to use\nwhen you have more than one.\"",
+          "provenance": "source"
+        },
+        "7024": {
+          "synopsis": "FlashStore's help page for the Catalogue Card Files command (<>CF): \"Lists Filenames on File\nCard Area to PipeDream File.\"",
+          "provenance": "source"
+        },
+        "7054": {
+          "synopsis": "FlashStore's help page for the Select Ram device command (<>SV): \"Changes default Ram device\nfor this session.\"",
+          "provenance": "source"
+        },
+        "7084": {
+          "synopsis": "FlashStore's help page for the Save Files to Card command (<>FS): \"Saves Files from Ram\ndevice to File Card Area.\"",
+          "provenance": "source"
+        },
+        "7107": {
+          "synopsis": "FlashStore's help page for the Fetch File from Card command (<>FL): \"Fetches a File from\nFile Card Area to Ram device.\"",
+          "provenance": "source"
+        },
+        "7135": {
+          "synopsis": "FlashStore's help page for the <>FE command (Erase File from Card): \"Marks a File in File\nCard Area as deleted.\" Tokenised text: $7F is a new line, $80-$FF are tokens from\nSysTokenBase, $00 ends it. Its offset from FlashStoreHelp is in the command's mthcmd entry\nin FlashStoreCommands.",
+          "provenance": "source"
+        },
+        "7158": {
+          "synopsis": "FlashStore's help page for the <>BF command (Backup Files from Ram): \"Saves all Files from\nRam device to File Card Area.\" Tokenised text: $7F is a new line, $80-$FF are tokens from\nSysTokenBase, $00 ends it. Its offset from FlashStoreHelp is in the command's mthcmd entry\nin FlashStoreCommands.",
+          "provenance": "source"
+        },
+        "7184": {
+          "synopsis": "FlashStore's help page for the <>RF command (Restore Files to Ram): \"Fetches all Files from\nFile Card Area to Ram device.\" Tokenised text: $7F is a new line, $80-$FF are tokens from\nSysTokenBase, $00 ends it. Its offset from FlashStoreHelp is in the command's mthcmd entry\nin FlashStoreCommands.",
+          "provenance": "source"
+        },
+        "7213": {
+          "synopsis": "FlashStore's help page for the <>FFA command (Format File Area): \"Formats and erases\ncomplete File Card Area.\" Tokenised text: $7F is a new line, $80-$FF are tokens from\nSysTokenBase, $00 ends it. Its offset from FlashStoreHelp is in the command's mthcmd entry\nin FlashStoreCommands.",
+          "provenance": "source"
+        },
+        "7238": {
+          "synopsis": "FlashStore's help page for the <>TFV command (Toggle File View): \"Changes between browsing\nonly saved Files or also Files marked as deleted.\" Tokenised text: $7F is a new line,\n$80-$FF are tokens from SysTokenBase, $00 ends it. Its offset from FlashStoreHelp is in the\ncommand's mthcmd entry in FlashStoreCommands.",
+          "provenance": "source"
+        },
+        "7286": {
+          "synopsis": "FlashStore's help page for the <>FC command (Copy all Files to Card): \"Copy saved Files in\ncurrent File Card Area to another flash card in a different Slot.\" Tokenised text: $7F is a\nnew line, $80-$FF are tokens from SysTokenBase, $00 ends it. Its offset from FlashStoreHelp\nis in the command's mthcmd entry in FlashStoreCommands.",
+          "provenance": "source"
+        },
+        "7333": {
+          "synopsis": "BBC BASIC's help pages: the main help page only, \"A BBC BASIC language. A built-in Z80\nassembler enables compilation and embedding of machine code inside your programs.\" Tokenised\ntext: $7F is a new line, $80-$FF are tokens from SysTokenBase, $00 ends it. BBC BASIC has no\nMTH topics or commands; BasicDOR's help record points here.",
+          "provenance": "source"
+        },
+        "7422": {
+          "synopsis": "Calculator's help pages: the main help page only, \"A simple pocket calculator with some\nuseful Imperial to Metric conversion functions.\" Tokenised text: $7F is a new line, $80-$FF\nare tokens from SysTokenBase, $00 ends it. Calculator has no MTH topics or commands;\nCalculatorDOR's help record points here.",
+          "provenance": "source"
+        },
+        "7483": {
+          "synopsis": "Calendar's help pages: the main help page only, \"A monthly view calendar. To manually jump\nto a date, press the ENTER key. Use the Cursor keys together with the shift and diamond keys\nto navigate through days, months and years. A mark on a day indicates an entry is made in\nthe Diary.\" Tokenised text: $7F is a new line, $80-$FF are tokens from SysTokenBase, $00\nends it. Calendar has no MTH topics or commands; CalendarDOR's help record points here.",
+          "provenance": "source"
+        },
+        "7632": {
+          "synopsis": "Clock's help pages: the main help page only, \"Displays the current day, date and time. Set\nthe current date and time here to ensure that alarm events execute on time and applications\nuse correct data.\" Tokenised text: $7F is a new line, $80-$FF are tokens from SysTokenBase,\n$00 ends it. Clock has no MTH topics or commands; ClockDOR's help record points here.",
+          "provenance": "source"
+        },
+        "7726": {
+          "synopsis": "Index's application DOR, the first in the ROM's chain: the front DOR at $3FC0 (romhdr.asm)\nlinks to it. Built by dorappl (def/macros.def), the layout every application DOR here\nshares:\n1. Three 3-byte pointers (offset, bank): parent, brother (the next application DOR) and son;\nonly the brother is set.\n2. Type Dm_Rom ($83) and the length of the rest.\n3. Dt_Inf ($40) record: 2 reserved bytes, key letter, continuous RAM pages, environment\nestimate, unsafe and safe stack workspace (words), entry address (word), the banks bound\ninto S0-S3 on entry, type (AT_xxx) and type 2 (AT2_xxx).\n4. Dt_Hlp ($48) record: 3-byte pointers to the MTH topics, commands, help page and token\nbase (SysTokenBase); an absent one points at the DOR's own zero parent pointer.\n5. Dt_Nam ($4E) record: the name, zero-terminated; then $FF ends the DOR. Index: key 'I',\nAT_Good|AT_Popd|AT_Ones (a popdown, one instance), entry IDX_ENT with IDX_BNK in S3; MTH\nIndexTopics, IndexCommands, IndexHelp; next DiaryDOR.",
+          "provenance": "source"
+        },
+        "7780": {
+          "synopsis": "Diary's application DOR (\"Diary\"), laid out as IndexDOR (dorappl): key 'D', AT_Good\n(multiple diaries allowed; was AT_Good|AT_Ones), entry DIA_ENT with DIA_BNK in S3; MTH\nDiaryTopics, DiaryCommands, DiaryHelp; next PipeDreamDOR.",
+          "provenance": "source"
+        },
+        "7834": {
+          "synopsis": "PipeDream's application DOR (\"Pipedream\"), laid out as IndexDOR (dorappl): key 'P', AT_Good,\nentry PDR_ENT with PDR_BNK in S2 and PDR_BNK+1 in S3 (its 32K of code); MTH PipeDreamTopics,\nPipeDreamCommands, PipeDreamHelp; next BasicDOR.",
+          "provenance": "source"
+        },
+        "7892": {
+          "synopsis": "BBC BASIC's application DOR (\"BBC Basic\"), laid out as IndexDOR (dorappl): key 'B',\nAT_Bad|AT_Draw, AT2_Cl (Caps Lock set on entry), entry BAS_ENT with BAS_BNK in S3; no topics\nor commands, help page BasicHelp; next CalculatorDOR.",
+          "provenance": "source"
+        },
+        "7950": {
+          "synopsis": "Calculator's application DOR (\"Calculator\"), laid out as IndexDOR (dorappl): key 'R',\nAT_Good|AT_Popd (a popdown), entry CCL_ENT with CCL_BNK in S3; no topics or commands, help\npage CalculatorHelp; next CalendarDOR.",
+          "provenance": "source"
+        },
+        "8009": {
+          "synopsis": "Calendar's application DOR (\"Calendar\"), laid out as IndexDOR (dorappl): key 'C',\nAT_Good|AT_Popd, AT2_Ie (ignore error returns), entry CAL_ENT with CAL_BNK in S3; no topics\nor commands, help page CalendarHelp; next ClockDOR.",
+          "provenance": "source"
+        },
+        "8066": {
+          "synopsis": "Clock's application DOR (\"Clock\"), laid out as IndexDOR (dorappl): key 'T', AT_Good|AT_Popd,\nAT2_Ie, entry CLK_ENT with CLK_BNK in S3; no topics or commands, help page ClockHelp; next\nAlarmDOR.",
+          "provenance": "source"
+        },
+        "8120": {
+          "synopsis": "Alarm's application DOR (\"Alarm\"), laid out as IndexDOR (dorappl): key 'A', AT_Good|AT_Popd,\nAT2_Ie, entry ALM_ENT with ALM_BNK in S3; MTH AlarmTopics, AlarmCommands, AlarmHelp; next\nFilerDOR.",
+          "provenance": "source"
+        },
+        "8174": {
+          "synopsis": "Filer's application DOR (\"Filer\"), laid out as IndexDOR (dorappl): key 'F',\nAT_Good|AT_Popd|AT_Film (the file manager), entry FLR_ENT with FLR_BNK in S3; MTH\nFilerTopics, FilerCommands, FilerHelp; next FlashstoreDOR.",
+          "provenance": "source"
+        },
+        "8228": {
+          "synopsis": "FlashStore's application DOR (\"FlashStore\"), laid out as IndexDOR (dorappl): key 'J',\nAT_Ugly|AT_Popd (killed on pre-emption), entry FST_ENT with FST_BNK in S3; MTH\nFlashStoreTopics, FlashStoreCommands, FlashStoreHelp; next PrEdDOR.",
+          "provenance": "source"
+        },
+        "8287": {
+          "synopsis": "PrinterEd's application DOR (\"PrinterEd\"), laid out as IndexDOR (dorappl): key 'E',\nAT_Good|AT_Ones (one instance), entry PED_ENT with PED_BNK in S3; MTH PrinterEdTopics,\nPrinterEdCommands, PrinterEdHelp; next PanelDOR.",
+          "provenance": "source"
+        },
+        "8345": {
+          "synopsis": "Panel's application DOR (\"Panel\"), laid out as IndexDOR (dorappl): key 'S', AT_Good|AT_Popd,\nentry PNL_ENT with PNL_BNK in S3; MTH PanelTopics, PanelCommands, PanelHelp; next\nTerminalDOR.",
+          "provenance": "source"
+        },
+        "8399": {
+          "synopsis": "Terminal's application DOR (\"Terminal\"), laid out as IndexDOR (dorappl): key 'V',\nAT_Good|AT_Ones|AT_Draw, AT2_Ie, entry TRM_ENT with TRM_BNK in S3; MTH TerminalTopics,\nTerminalCommands, TerminalHelp; next ImpExpDOR.",
+          "provenance": "source"
+        },
+        "8456": {
+          "synopsis": "Imp-Export's application DOR (\"Imp-Export\"), laid out as IndexDOR (dorappl): key 'X',\nAT_Ugly|AT_Popd, entry IXP_ENT with IXP_BNK in S3; MTH ImpExpTopics, ImpExpCommands,\nImpExpHelp; next EasyLinkDOR.",
+          "provenance": "source"
+        },
+        "8515": {
+          "synopsis": "EazyLink's application DOR (\"EazyLink\"), laid out as IndexDOR (dorappl): key 'L',\nAT_Ugly|AT_Popd, entry EAZ_ENT with EAZ_BNK in S2 and nothing in S3; MTH EazyLinkTopics,\nEazyLinkCommands, EazyLinkHelp; the last DOR of the chain: its brother pointer is zero.",
+          "provenance": "source"
+        },
+        "8663": {
+          "synopsis": "Panel default for PA_Mct (timeout in minutes): one byte, 5. PrefTbl1's entry $01 holds its\noffset; the length is the next entry minus this one. Entry $00 (PA_Gfi) points here too,\nwith length 0. OS_Nq's panel reasons (NqPanel, os/spnq1.asm) return it through\nGetDefPrefDest when no saved value exists.",
+          "provenance": "source"
+        },
+        "8664": {
+          "synopsis": "Panel default for PA_Rep (keyboard repeat rate): one byte, 6. PrefTbl1's entry $02 holds its\noffset; the length is the next entry minus this one.",
+          "provenance": "source"
+        },
+        "8665": {
+          "synopsis": "Panel default for PA_Kcl (keyclick): 'N'. PrefTbl1's entry $03 holds its offset; the length\nis the next entry minus this one.",
+          "provenance": "source"
+        },
+        "8666": {
+          "synopsis": "Panel default for PA_Snd (sound): 'Y'. PrefTbl1's entry $04 holds its offset; the length is\nthe next entry minus this one.",
+          "provenance": "source"
+        },
+        "8667": {
+          "synopsis": "Panel default for PA_Bad (default bad process size in K): one byte, 40. PrefTbl1's entry $05\nholds its offset; the length is the next entry minus this one.",
+          "provenance": "source"
+        },
+        "8668": {
+          "synopsis": "Panel default for PA_Loc (country keyboard letter): 'U', the UK keyboard (CL_UK). PrefTbl1's\nentry $06 holds its offset; the length is the next entry minus this one.",
+          "provenance": "source"
+        },
+        "8669": {
+          "synopsis": "Panel default for PA_Iov (insert or overtype): 'I', insert. PrefTbl1's entry $10 holds its\noffset; the length is the next entry minus this one. Entries $07-$0F (unused) point here\ntoo, each with length 0.",
+          "provenance": "source"
+        },
+        "8670": {
+          "synopsis": "Panel default for PA_Dat (date format): 'E' (the other value is 'A'). PrefTbl1's entry $11\nholds its offset; the length is the next entry minus this one.",
+          "provenance": "source"
+        },
+        "8671": {
+          "synopsis": "Panel default for PA_Map (PipeDream map): 'Y'. PrefTbl1's entry $12 holds its offset; the\nlength is the next entry minus this one.",
+          "provenance": "source"
+        },
+        "8672": {
+          "synopsis": "Panel default for PA_Msz (map size in pixels): 'P'. PrefTbl1's entry $13 holds its offset;\nthe length is the next entry minus this one.",
+          "provenance": "source"
+        },
+        "8673": {
+          "synopsis": "Panel default for PA_Dev (default device): \":RAM.0\", 6 bytes with no terminator. PrefTbl1's\nentry $15 holds its offset; the length is the next entry minus this one. Entry $14 (PA_Dir,\nthe default directory) points here too, with length 0: an empty string.",
+          "provenance": "source"
+        },
+        "8679": {
+          "synopsis": "Panel default for PA_Txb (transmit baud rate): the word 9600. PrefTbl1's entry $16 holds its\noffset; the length is the next entry minus this one.",
+          "provenance": "source"
+        },
+        "8681": {
+          "synopsis": "Panel default for PA_Rxb (receive baud rate): the word 9600. PrefTbl1's entry $17 holds its\noffset; the length is the next entry minus this one.",
+          "provenance": "source"
+        },
+        "8683": {
+          "synopsis": "Panel default for PA_Xon (Xon/Xoff): 'N', no Xon/Xoff. PrefTbl1's entry $18 holds its\noffset; the length is the next entry minus this one.",
+          "provenance": "source"
+        },
+        "8684": {
+          "synopsis": "Panel default for PA_Par (parity): 'N', no parity. PrefTbl1's entry $19 holds its offset;\nthe length is the next entry minus this one.",
+          "provenance": "source"
+        },
+        "8685": {
+          "synopsis": "Panel default for PA_Ptr (printer name): \"Epson\" and a zero byte. PrefTbl1's entry $20 holds\nits offset; the length is the next entry minus this one. Entries $1A-$1F (unused) point here\ntoo, each with length 0.",
+          "provenance": "source"
+        },
+        "8691": {
+          "synopsis": "Panel default for PA_Alf (allow linefeed): 'Y'. PrefTbl1's entry $21 holds its offset; the\nlength is the next entry minus this one.",
+          "provenance": "source"
+        },
+        "8692": {
+          "synopsis": "Panel default for PA_Pon (printer on sequence): 5 bytes 27,64,27,82,0: ESC @ and ESC R 0.\nPrefTbl1's entry $22 holds its offset; the length is the next entry minus this one.",
+          "provenance": "source"
+        },
+        "8697": {
+          "synopsis": "Panel default for PA_Eop (end of page sequence): one byte, 12 (form feed). PrefTbl1's entry\n$24 holds its offset; the length is the next entry minus this one. Entry $23 (PA_Pof, the\nprinter off sequence) points here too, with length 0: no sequence.",
+          "provenance": "source"
+        },
+        "8698": {
+          "synopsis": "Panel default for PA_On1 (underline on): 3 bytes 27,45,1: ESC - 1. PrefTbl1's entry $28\nholds its offset; the length is the next entry minus this one. Entries $25-$27 (PA_Mip,\nPA_Mis, PA_Mio, the HMI sequences) point here too, each with length 0.",
+          "provenance": "source"
+        },
+        "8701": {
+          "synopsis": "Panel default for PA_On1+1 (underline off): 3 bytes 27,45,0: ESC - 0. PrefTbl1's entry $29\nholds its offset; the length is the next entry minus this one.",
+          "provenance": "source"
+        },
+        "8704": {
+          "synopsis": "Panel default for PA_On1+2 (underline off at CR): 'Y'. PrefTbl1's entry $2A holds its\noffset; the length is the next entry minus this one.",
+          "provenance": "source"
+        },
+        "8705": {
+          "synopsis": "Panel default for PA_On2 (bold on): 2 bytes 27,69: ESC E. PrefTbl1's entry $2C holds its\noffset; the length is the next entry minus this one. Entry $2B (PA_On1+3, underline's\nspecial character) points here too, with length 0.",
+          "provenance": "source"
+        },
+        "8707": {
+          "synopsis": "Panel default for PA_On2+1 (bold off): 2 bytes 27,70: ESC F. PrefTbl1's entry $2D holds its\noffset; the length is the next entry minus this one.",
+          "provenance": "source"
+        },
+        "8709": {
+          "synopsis": "Panel default for PA_On2+2 (bold off at CR): 'Y'. PrefTbl1's entry $2E holds its offset; the\nlength is the next entry minus this one.",
+          "provenance": "source"
+        },
+        "8710": {
+          "synopsis": "Panel default for PA_On4 (italics on): 2 bytes 27,52: ESC 4. PrefTbl1's entry $34 holds its\noffset; the length is the next entry minus this one. Entries $2F-$33 (bold's special\ncharacter and all of highlight 3, the extended sequence) point here too, each with length 0.",
+          "provenance": "source"
+        },
+        "8712": {
+          "synopsis": "Panel default for PA_On4+1 (italics off): 2 bytes 27,53: ESC 5. PrefTbl1's entry $35 holds\nits offset; the length is the next entry minus this one.",
+          "provenance": "source"
+        },
+        "8714": {
+          "synopsis": "Panel default for PA_On4+2 (italics off at CR): 'Y'. PrefTbl1's entry $36 holds its offset;\nthe length is the next entry minus this one.",
+          "provenance": "source"
+        },
+        "8715": {
+          "synopsis": "Panel default for PA_On5 (subscript on): 3 bytes 27,83,1: ESC S 1. PrefTbl1's entry $38\nholds its offset; the length is the next entry minus this one. Entry $37 (PA_On4+3) points\nhere too, with length 0.",
+          "provenance": "source"
+        },
+        "8718": {
+          "synopsis": "Panel default for PA_On5+1 (subscript off): 2 bytes 27,84: ESC T. PrefTbl1's entry $39 holds\nits offset; the length is the next entry minus this one.",
+          "provenance": "source"
+        },
+        "8720": {
+          "synopsis": "Panel default for PA_On5+2 (subscript off at CR): 'Y'. PrefTbl1's entry $3A holds its\noffset; the length is the next entry minus this one.",
+          "provenance": "source"
+        },
+        "8721": {
+          "synopsis": "Panel default for PA_On6 (superscript on): 3 bytes 27,83,0: ESC S 0. PrefTbl1's entry $3C\nholds its offset; the length is the next entry minus this one. Entry $3B (PA_On5+3) points\nhere too, with length 0.",
+          "provenance": "source"
+        },
+        "8724": {
+          "synopsis": "Panel default for PA_On6+1 (superscript off): 2 bytes 27,84: ESC T. PrefTbl1's entry $3D\nholds its offset; the length is the next entry minus this one.",
+          "provenance": "source"
+        },
+        "8726": {
+          "synopsis": "Panel default for PA_On6+2 (superscript off at CR): 'Y'. PrefTbl1's entry $3E holds its\noffset; the length is the next entry minus this one.",
+          "provenance": "source"
+        },
+        "8727": {
+          "synopsis": "Panel default for PA_On7 (alternate font on): one byte, 15 (SI). PrefTbl1's entry $40 holds\nits offset; the length is the next entry minus this one. Entry $3F (PA_On6+3) points here\ntoo, with length 0.",
+          "provenance": "source"
+        },
+        "8728": {
+          "synopsis": "Panel default for PA_On7+1 (alternate font off): one byte, 18 (DC2). PrefTbl1's entry $41\nholds its offset; the length is the next entry minus this one.",
+          "provenance": "source"
+        },
+        "8729": {
+          "synopsis": "Panel default for PA_On7+2 (alternate font off at CR): 'N'. PrefTbl1's entry $42 holds its\noffset; the length is the next entry minus this one.",
+          "provenance": "source"
+        },
+        "8730": {
+          "synopsis": "Panel default for PA_On8 (user defined highlight on): 3 bytes 27,120,1: ESC x 1. PrefTbl1's\nentry $44 holds its offset; the length is the next entry minus this one. Entry $43\n(PA_On7+3) points here too, with length 0.",
+          "provenance": "source"
+        },
+        "8733": {
+          "synopsis": "Panel default for PA_On8+1 (user defined highlight off): 3 bytes 27,120,0: ESC x 0.\nPrefTbl1's entry $45 holds its offset; the length is the next entry minus this one.",
+          "provenance": "source"
+        },
+        "8736": {
+          "synopsis": "Panel default for PA_On8+2 (user defined highlight off at CR): 'N'. PrefTbl1's entry $46\nholds its offset; the length is the next entry minus this one. Entry $47 (PA_On8+3) has\nlength 0.",
+          "provenance": "source"
+        },
+        "8737": {
+          "synopsis": "Default for PA_Tr1, the character to translate when printing: one byte, 161 (inverted\nexclamation mark). PrefTbl1's entry $48 holds its offset; the length is the next entry minus\nthis one. Defaults for an Epson FX-80 compatible printer. OS_Nq's panel reasons (NqPanel,\nos/spnq1.asm) return it through GetDefPrefDest when no saved value exists.",
+          "provenance": "source"
+        },
+        "8738": {
+          "synopsis": "Default for PA_Tr1+1, the sequence printed for character 161: 7 bytes 27,82,7,91,27,82,0,\nwhich is ESC R 7 (select international character set 7), the character 91, then ESC R 0.\nPrefTbl1's entry $49 holds its offset.",
+          "provenance": "source"
+        },
+        "8745": {
+          "synopsis": "Default for PA_Tr2, the character to translate when printing: one byte, 163 (pound sign).\nPrefTbl1's entry $4A holds its offset; the length is the next entry minus this one.",
+          "provenance": "source"
+        },
+        "8746": {
+          "synopsis": "Default for PA_Tr2+1, the sequence printed for character 163: 7 bytes 27,82,3,35,27,82,0,\nwhich is ESC R 3 (select international character set 3), the character 35, then ESC R 0.\nPrefTbl1's entry $4B holds its offset.",
+          "provenance": "source"
+        },
+        "8753": {
+          "synopsis": "Default for PA_Tr3, the character to translate when printing: one byte, 167 (section sign).\nPrefTbl1's entry $4C holds its offset; the length is the next entry minus this one.",
+          "provenance": "source"
+        },
+        "8754": {
+          "synopsis": "Default for PA_Tr3+1, the sequence printed for character 167: 7 bytes 27,82,1,93,27,82,0,\nwhich is ESC R 1 (select international character set 1), the character 93, then ESC R 0.\nPrefTbl1's entry $4D holds its offset.",
+          "provenance": "source"
+        },
+        "8761": {
+          "synopsis": "Default for PA_Tr4, the character to translate when printing: one byte, 176 (degree sign).\nPrefTbl1's entry $4E holds its offset; the length is the next entry minus this one.",
+          "provenance": "source"
+        },
+        "8762": {
+          "synopsis": "Default for PA_Tr4+1, the sequence printed for character 176: 7 bytes 27,82,1,91,27,82,0,\nwhich is ESC R 1 (select international character set 1), the character 91, then ESC R 0.\nPrefTbl1's entry $4F holds its offset.",
+          "provenance": "source"
+        },
+        "8769": {
+          "synopsis": "Default for PA_Tr5, the character to translate when printing: one byte, 191 (inverted\nquestion mark). PrefTbl1's entry $50 holds its offset; the length is the next entry minus\nthis one.",
+          "provenance": "source"
+        },
+        "8770": {
+          "synopsis": "Default for PA_Tr5+1, the sequence printed for character 191: 7 bytes 27,82,7,93,27,82,0,\nwhich is ESC R 7 (select international character set 7), the character 93, then ESC R 0.\nPrefTbl1's entry $51 holds its offset.",
+          "provenance": "source"
+        },
+        "8777": {
+          "synopsis": "Default for PA_Tr6, the character to translate when printing: one byte, 196 (A with\ndiaeresis). PrefTbl1's entry $52 holds its offset; the length is the next entry minus this\none.",
+          "provenance": "source"
+        },
+        "8778": {
+          "synopsis": "Default for PA_Tr6+1, the sequence printed for character 196: 7 bytes 27,82,2,91,27,82,0,\nwhich is ESC R 2 (select international character set 2), the character 91, then ESC R 0.\nPrefTbl1's entry $53 holds its offset.",
+          "provenance": "source"
+        },
+        "8785": {
+          "synopsis": "Default for PA_Tr7, the character to translate when printing: one byte, 197 (A with ring).\nPrefTbl1's entry $54 holds its offset; the length is the next entry minus this one.",
+          "provenance": "source"
+        },
+        "8786": {
+          "synopsis": "Default for PA_Tr7+1, the sequence printed for character 197: 7 bytes 27,82,4,93,27,82,0,\nwhich is ESC R 4 (select international character set 4), the character 93, then ESC R 0.\nPrefTbl1's entry $55 holds its offset.",
+          "provenance": "source"
+        },
+        "8793": {
+          "synopsis": "Default for PA_Tr8, the character to translate when printing: one byte, 198 (AE ligature).\nPrefTbl1's entry $56 holds its offset; the length is the next entry minus this one.",
+          "provenance": "source"
+        },
+        "8794": {
+          "synopsis": "Default for PA_Tr8+1, the sequence printed for character 198: 7 bytes 27,82,4,91,27,82,0,\nwhich is ESC R 4 (select international character set 4), the character 91, then ESC R 0.\nPrefTbl1's entry $57 holds its offset.",
+          "provenance": "source"
+        },
+        "8801": {
+          "synopsis": "Default for PA_Tr9, the character to translate when printing: one byte, 199 (C with\ncedilla). PrefTbl1's entry $58 holds its offset; the length is the next entry minus this\none.",
+          "provenance": "source"
+        },
+        "8802": {
+          "synopsis": "Default for PA_Tr9+1, the sequence printed for character 199: 7 bytes 27,82,14,92,27,82,0,\nwhich is ESC R 14 (select international character set 14), the character 92, then ESC R 0.\nPrefTbl1's entry $59 holds its offset. Its length runs to PrefTbl2, the last entry of\nPrefTbl1.",
+          "provenance": "source"
+        },
+        "8874": {
+          "synopsis": "Default for PA_Tr10 (ISO translation 1), the character to translate when printing: one byte,\n208 (N with tilde, as the source comments it). PrefTbl2's entry $00 holds its offset; the\nlength is the next entry minus this one.",
+          "provenance": "source"
+        },
+        "8875": {
+          "synopsis": "Default for PA_Tr10 (ISO translation 1)+1, the sequence printed for character 208: 7 bytes\n27,82,7,92,27,82,0, which is ESC R 7 (select international character set 7), the character\n92, then ESC R 0. PrefTbl2's entry $01 holds its offset.",
+          "provenance": "source"
+        },
+        "8882": {
+          "synopsis": "Default for PA_Tr11 (ISO translation 2), the character to translate when printing: one byte,\n214 (O with diaeresis). PrefTbl2's entry $02 holds its offset; the length is the next entry\nminus this one.",
+          "provenance": "source"
+        },
+        "8883": {
+          "synopsis": "Default for PA_Tr11 (ISO translation 2)+1, the sequence printed for character 214: 7 bytes\n27,82,2,92,27,82,0, which is ESC R 2 (select international character set 2), the character\n92, then ESC R 0. PrefTbl2's entry $03 holds its offset.",
+          "provenance": "source"
+        },
+        "8890": {
+          "synopsis": "Default for PA_Tr12 (ISO translation 3), the character to translate when printing: one byte,\n216 (O with stroke). PrefTbl2's entry $04 holds its offset; the length is the next entry\nminus this one.",
+          "provenance": "source"
+        },
+        "8891": {
+          "synopsis": "Default for PA_Tr12 (ISO translation 3)+1, the sequence printed for character 216: 7 bytes\n27,82,4,92,27,82,0, which is ESC R 4 (select international character set 4), the character\n92, then ESC R 0. PrefTbl2's entry $05 holds its offset.",
+          "provenance": "source"
+        },
+        "8898": {
+          "synopsis": "Default for PA_Tr13 (ISO translation 4), the character to translate when printing: one byte,\n220 (U with diaeresis). PrefTbl2's entry $06 holds its offset; the length is the next entry\nminus this one.",
+          "provenance": "source"
+        },
+        "8899": {
+          "synopsis": "Default ISO translation 13, the printer output for 220 (capital U diaeresis): 7 bytes,\n27,82,2,93,27,82,0. For an Epson FX-80 compatible printer: ESC R 2 selects character set 2,\ncode 93 prints in it, and ESC R 0 selects set 0 again. Its length is the distance to the\nnext PrefTbl2 offset; the closing 0 is part of ESC R 0.",
+          "provenance": "source"
+        },
+        "8906": {
+          "synopsis": "Default ISO translation 14, the character to translate: 223 ($DF), ISO 8859-1 small sharp s.\nOne byte; PrefTbl2's tr14 offset pair points here and at Tr14out, and OS_Nq (GetDefPrefDest)\ncopies it when no translation 14 is saved in the Panel's data.",
+          "provenance": "source"
+        },
+        "8907": {
+          "synopsis": "Default ISO translation 14, the printer output for 223 (small sharp s): 7 bytes,\n27,82,2,126,27,82,0. For an Epson FX-80 compatible printer: ESC R 2 selects character set 2,\ncode 126 prints in it, and ESC R 0 selects set 0 again. Its length is the distance to the\nnext PrefTbl2 offset; the closing 0 is part of ESC R 0.",
+          "provenance": "source"
+        },
+        "8914": {
+          "synopsis": "Default ISO translation 15, the character to translate: 224 ($E0), ISO 8859-1 small a grave.\nOne byte; PrefTbl2's tr15 offset pair points here and at Tr15out, and OS_Nq (GetDefPrefDest)\ncopies it when no translation 15 is saved in the Panel's data.",
+          "provenance": "source"
+        },
+        "8915": {
+          "synopsis": "Default ISO translation 15, the printer output for 224 (small a grave): 7 bytes,\n27,82,1,64,27,82,0. For an Epson FX-80 compatible printer: ESC R 1 selects character set 1,\ncode 64 prints in it, and ESC R 0 selects set 0 again. Its length is the distance to the\nnext PrefTbl2 offset; the closing 0 is part of ESC R 0.",
+          "provenance": "source"
+        },
+        "8922": {
+          "synopsis": "Default ISO translation 16, the character to translate: 225 ($E1), ISO 8859-1 small a acute.\nOne byte; PrefTbl2's tr16 offset pair points here and at Tr16out, and OS_Nq (GetDefPrefDest)\ncopies it when no translation 16 is saved in the Panel's data.",
+          "provenance": "source"
+        },
+        "8923": {
+          "synopsis": "Default ISO translation 16, the printer output for 225 (small a acute): 7 bytes,\n27,82,11,64,27,82,0. For an Epson FX-80 compatible printer: ESC R 11 selects character set\n11, code 64 prints in it, and ESC R 0 selects set 0 again. Its length is the distance to the\nnext PrefTbl2 offset; the closing 0 is part of ESC R 0.",
+          "provenance": "source"
+        },
+        "8930": {
+          "synopsis": "Default ISO translation 17, the character to translate: 226 ($E2), ISO 8859-1 small a\ncircumflex. One byte; PrefTbl2's tr17 offset pair points here and at Tr17out, and OS_Nq\n(GetDefPrefDest) copies it when no translation 17 is saved in the Panel's data.",
+          "provenance": "source"
+        },
+        "8931": {
+          "synopsis": "Default ISO translation 17, the printer output for 226 (small a circumflex): 7 bytes,\n27,82,14,36,27,82,0. For an Epson FX-80 compatible printer: ESC R 14 selects character set\n14, code 36 prints in it, and ESC R 0 selects set 0 again. Its length is the distance to the\nnext PrefTbl2 offset; the closing 0 is part of ESC R 0.",
+          "provenance": "source"
+        },
+        "8938": {
+          "synopsis": "Default ISO translation 18, the character to translate: 228 ($E4), ISO 8859-1 small a\ndiaeresis. One byte; PrefTbl2's tr18 offset pair points here and at Tr18out, and OS_Nq\n(GetDefPrefDest) copies it when no translation 18 is saved in the Panel's data.",
+          "provenance": "source"
+        },
+        "8939": {
+          "synopsis": "Default ISO translation 18, the printer output for 228 (small a diaeresis): 7 bytes,\n27,82,2,123,27,82,0. For an Epson FX-80 compatible printer: ESC R 2 selects character set 2,\ncode 123 prints in it, and ESC R 0 selects set 0 again. Its length is the distance to the\nnext PrefTbl2 offset; the closing 0 is part of ESC R 0.",
+          "provenance": "source"
+        },
+        "8946": {
+          "synopsis": "Default ISO translation 19, the character to translate: 229 ($E5), ISO 8859-1 small a ring.\nOne byte; PrefTbl2's tr19 offset pair points here and at Tr19out, and OS_Nq (GetDefPrefDest)\ncopies it when no translation 19 is saved in the Panel's data.",
+          "provenance": "source"
+        },
+        "8947": {
+          "synopsis": "Default ISO translation 19, the printer output for 229 (small a ring): 7 bytes,\n27,82,4,125,27,82,0. For an Epson FX-80 compatible printer: ESC R 4 selects character set 4,\ncode 125 prints in it, and ESC R 0 selects set 0 again. Its length is the distance to the\nnext PrefTbl2 offset; the closing 0 is part of ESC R 0.",
+          "provenance": "source"
+        },
+        "8954": {
+          "synopsis": "Default ISO translation 20, the character to translate: 230 ($E6), ISO 8859-1 small ae. One\nbyte; PrefTbl2's tr20 offset pair points here and at Tr20out, and OS_Nq (GetDefPrefDest)\ncopies it when no translation 20 is saved in the Panel's data.",
+          "provenance": "source"
+        },
+        "8955": {
+          "synopsis": "Default ISO translation 20, the printer output for 230 (small ae): 7 bytes,\n27,82,4,123,27,82,0. For an Epson FX-80 compatible printer: ESC R 4 selects character set 4,\ncode 123 prints in it, and ESC R 0 selects set 0 again. Its length is the distance to the\nnext PrefTbl2 offset; the closing 0 is part of ESC R 0.",
+          "provenance": "source"
+        },
+        "8962": {
+          "synopsis": "Default ISO translation 21, the character to translate: 231 ($E7), ISO 8859-1 small c\ncedilla. One byte; PrefTbl2's tr21 offset pair points here and at Tr21out, and OS_Nq\n(GetDefPrefDest) copies it when no translation 21 is saved in the Panel's data.",
+          "provenance": "source"
+        },
+        "8963": {
+          "synopsis": "Default ISO translation 21, the printer output for 231 (small c cedilla): 7 bytes,\n27,82,1,92,27,82,0. For an Epson FX-80 compatible printer: ESC R 1 selects character set 1,\ncode 92 prints in it, and ESC R 0 selects set 0 again. Its length is the distance to the\nnext PrefTbl2 offset; the closing 0 is part of ESC R 0.",
+          "provenance": "source"
+        },
+        "8970": {
+          "synopsis": "Default ISO translation 22, the character to translate: 232 ($E8), ISO 8859-1 small e grave.\nOne byte; PrefTbl2's tr22 offset pair points here and at Tr22out, and OS_Nq (GetDefPrefDest)\ncopies it when no translation 22 is saved in the Panel's data.",
+          "provenance": "source"
+        },
+        "8971": {
+          "synopsis": "Default ISO translation 22, the printer output for 232 (small e grave): 7 bytes,\n27,82,14,125,27,82,0. For an Epson FX-80 compatible printer: ESC R 14 selects character set\n14, code 125 prints in it, and ESC R 0 selects set 0 again. Its length is the distance to\nthe next PrefTbl2 offset; the closing 0 is part of ESC R 0.",
+          "provenance": "source"
+        },
+        "8978": {
+          "synopsis": "Default ISO translation 23, the character to translate: 233 ($E9), ISO 8859-1 small e acute.\nOne byte; PrefTbl2's tr23 offset pair points here and at Tr23out, and OS_Nq (GetDefPrefDest)\ncopies it when no translation 23 is saved in the Panel's data.",
+          "provenance": "source"
+        },
+        "8979": {
+          "synopsis": "Default ISO translation 23, the printer output for 233 (small e acute): 7 bytes,\n27,82,14,123,27,82,0. For an Epson FX-80 compatible printer: ESC R 14 selects character set\n14, code 123 prints in it, and ESC R 0 selects set 0 again. Its length is the distance to\nthe next PrefTbl2 offset; the closing 0 is part of ESC R 0.",
+          "provenance": "source"
+        },
+        "8986": {
+          "synopsis": "Default ISO translation 24, the character to translate: 234 ($EA), ISO 8859-1 small e\ncircumflex. One byte; PrefTbl2's tr24 offset pair points here and at Tr24out, and OS_Nq\n(GetDefPrefDest) copies it when no translation 24 is saved in the Panel's data.",
+          "provenance": "source"
+        },
+        "8987": {
+          "synopsis": "Default ISO translation 24, the printer output for 234 (small e circumflex): 7 bytes,\n27,82,14,93,27,82,0. For an Epson FX-80 compatible printer: ESC R 14 selects character set\n14, code 93 prints in it, and ESC R 0 selects set 0 again. Its length is the distance to the\nnext PrefTbl2 offset; the closing 0 is part of ESC R 0.",
+          "provenance": "source"
+        },
+        "8994": {
+          "synopsis": "Default ISO translation 25, the character to translate: 235 ($EB), ISO 8859-1 small e\ndiaeresis. One byte; PrefTbl2's tr25 offset pair points here and at Tr25out, and OS_Nq\n(GetDefPrefDest) copies it when no translation 25 is saved in the Panel's data.",
+          "provenance": "source"
+        },
+        "8995": {
+          "synopsis": "Default ISO translation 25, the printer output for 235 (small e diaeresis): 7 bytes,\n27,82,15,123,27,82,0. For an Epson FX-80 compatible printer: ESC R 15 selects character set\n15, code 123 prints in it, and ESC R 0 selects set 0 again. Its length is the distance to\nthe next PrefTbl2 offset; the closing 0 is part of ESC R 0.",
+          "provenance": "source"
+        },
+        "9002": {
+          "synopsis": "Default ISO translation 26, the character to translate: 237 ($ED), ISO 8859-1 small i acute.\nOne byte; PrefTbl2's tr26 offset pair points here and at Tr26out, and OS_Nq (GetDefPrefDest)\ncopies it when no translation 26 is saved in the Panel's data.",
+          "provenance": "source"
+        },
+        "9003": {
+          "synopsis": "Default ISO translation 26, the printer output for 237 (small i acute): 7 bytes,\n27,82,11,123,27,82,0. For an Epson FX-80 compatible printer: ESC R 11 selects character set\n11, code 123 prints in it, and ESC R 0 selects set 0 again. Its length is the distance to\nthe next PrefTbl2 offset; the closing 0 is part of ESC R 0.",
+          "provenance": "source"
+        },
+        "9010": {
+          "synopsis": "Default ISO translation 27, the character to translate: 238 ($EE), ISO 8859-1 small i\ncircumflex. One byte; PrefTbl2's tr27 offset pair points here and at Tr27out, and OS_Nq\n(GetDefPrefDest) copies it when no translation 27 is saved in the Panel's data.",
+          "provenance": "source"
+        },
+        "9011": {
+          "synopsis": "Default ISO translation 27, the printer output for 238 (small i circumflex): 7 bytes,\n27,82,14,91,27,82,0. For an Epson FX-80 compatible printer: ESC R 14 selects character set\n14, code 91 prints in it, and ESC R 0 selects set 0 again. Its length is the distance to the\nnext PrefTbl2 offset; the closing 0 is part of ESC R 0.",
+          "provenance": "source"
+        },
+        "9018": {
+          "synopsis": "Default ISO translation 28, the character to translate: 239 ($EF), ISO 8859-1 small i\ndiaeresis. One byte; PrefTbl2's tr28 offset pair points here and at Tr28out, and OS_Nq\n(GetDefPrefDest) copies it when no translation 28 is saved in the Panel's data.",
+          "provenance": "source"
+        },
+        "9019": {
+          "synopsis": "Default ISO translation 28, the printer output for 239 (small i diaeresis): 7 bytes,\n27,82,14,126,27,82,0. For an Epson FX-80 compatible printer: ESC R 14 selects character set\n14, code 126 prints in it, and ESC R 0 selects set 0 again. Its length is the distance to\nthe next PrefTbl2 offset; the closing 0 is part of ESC R 0.",
+          "provenance": "source"
+        },
+        "9026": {
+          "synopsis": "Default ISO translation 29, the character to translate: 241 ($F1), ISO 8859-1 small n tilde.\nOne byte; PrefTbl2's tr29 offset pair points here and at Tr29out, and OS_Nq (GetDefPrefDest)\ncopies it when no translation 29 is saved in the Panel's data.",
+          "provenance": "source"
+        },
+        "9027": {
+          "synopsis": "Default ISO translation 29, the printer output for 241 (small n tilde): 7 bytes,\n27,82,7,124,27,82,0. For an Epson FX-80 compatible printer: ESC R 7 selects character set 7,\ncode 124 prints in it, and ESC R 0 selects set 0 again. Its length is the distance to the\nnext PrefTbl2 offset; the closing 0 is part of ESC R 0.",
+          "provenance": "source"
+        },
+        "9034": {
+          "synopsis": "Default ISO translation 30, the character to translate: 242 ($F2), ISO 8859-1 small o grave.\nOne byte; PrefTbl2's tr30 offset pair points here and at Tr30out, and OS_Nq (GetDefPrefDest)\ncopies it when no translation 30 is saved in the Panel's data.",
+          "provenance": "source"
+        },
+        "9035": {
+          "synopsis": "Default ISO translation 30, the printer output for 242 (small o grave): 7 bytes,\n27,82,6,124,27,82,0. For an Epson FX-80 compatible printer: ESC R 6 selects character set 6,\ncode 124 prints in it, and ESC R 0 selects set 0 again. Its length is the distance to the\nnext PrefTbl2 offset; the closing 0 is part of ESC R 0.",
+          "provenance": "source"
+        },
+        "9042": {
+          "synopsis": "Default ISO translation 31, the character to translate: 243 ($F3), ISO 8859-1 small o acute.\nOne byte; PrefTbl2's tr31 offset pair points here and at Tr31out, and OS_Nq (GetDefPrefDest)\ncopies it when no translation 31 is saved in the Panel's data.",
+          "provenance": "source"
+        },
+        "9043": {
+          "synopsis": "Default ISO translation 31, the printer output for 243 (small o acute): 7 bytes,\n27,82,11,125,27,82,0. For an Epson FX-80 compatible printer: ESC R 11 selects character set\n11, code 125 prints in it, and ESC R 0 selects set 0 again. Its length is the distance to\nthe next PrefTbl2 offset; the closing 0 is part of ESC R 0.",
+          "provenance": "source"
+        },
+        "9050": {
+          "synopsis": "Default ISO translation 32, the character to translate: 244 ($F4), ISO 8859-1 small o\ncircumflex. One byte; PrefTbl2's tr32 offset pair points here and at Tr32out, and OS_Nq\n(GetDefPrefDest) copies it when no translation 32 is saved in the Panel's data.",
+          "provenance": "source"
+        },
+        "9051": {
+          "synopsis": "Default ISO translation 32, the printer output for 244 (small o circumflex): 7 bytes,\n27,82,14,96,27,82,0. For an Epson FX-80 compatible printer: ESC R 14 selects character set\n14, code 96 prints in it, and ESC R 0 selects set 0 again. Its length is the distance to the\nnext PrefTbl2 offset; the closing 0 is part of ESC R 0.",
+          "provenance": "source"
+        },
+        "9058": {
+          "synopsis": "Default ISO translation 33, the character to translate: 246 ($F6), ISO 8859-1 small o\ndiaeresis. One byte; PrefTbl2's tr33 offset pair points here and at Tr33out, and OS_Nq\n(GetDefPrefDest) copies it when no translation 33 is saved in the Panel's data.",
+          "provenance": "source"
+        },
+        "9059": {
+          "synopsis": "Default ISO translation 33, the printer output for 246 (small o diaeresis): 7 bytes,\n27,82,2,124,27,82,0. For an Epson FX-80 compatible printer: ESC R 2 selects character set 2,\ncode 124 prints in it, and ESC R 0 selects set 0 again. Its length is the distance to the\nnext PrefTbl2 offset; the closing 0 is part of ESC R 0.",
+          "provenance": "source"
+        },
+        "9066": {
+          "synopsis": "Default ISO translation 34, the character to translate: 248 ($F8), ISO 8859-1 small o\nstroke. One byte; PrefTbl2's tr34 offset pair points here and at Tr34out, and OS_Nq\n(GetDefPrefDest) copies it when no translation 34 is saved in the Panel's data.",
+          "provenance": "source"
+        },
+        "9067": {
+          "synopsis": "Default ISO translation 34, the printer output for 248 (small o stroke): 7 bytes,\n27,82,4,124,27,82,0. For an Epson FX-80 compatible printer: ESC R 4 selects character set 4,\ncode 124 prints in it, and ESC R 0 selects set 0 again. Its length is the distance to the\nnext PrefTbl2 offset; the closing 0 is part of ESC R 0.",
+          "provenance": "source"
+        },
+        "9074": {
+          "synopsis": "Default ISO translation 35, the character to translate: 249 ($F9), ISO 8859-1 small u grave.\nOne byte; PrefTbl2's tr35 offset pair points here and at Tr35out, and OS_Nq (GetDefPrefDest)\ncopies it when no translation 35 is saved in the Panel's data.",
+          "provenance": "source"
+        },
+        "9075": {
+          "synopsis": "Default ISO translation 35, the printer output for 249 (small u grave): 7 bytes,\n27,82,6,96,27,82,0. For an Epson FX-80 compatible printer: ESC R 6 selects character set 6,\ncode 96 prints in it, and ESC R 0 selects set 0 again. Its length is the distance to the\nnext PrefTbl2 offset; the closing 0 is part of ESC R 0.",
+          "provenance": "source"
+        },
+        "9082": {
+          "synopsis": "Default ISO translation 36, the character to translate: 250 ($FA), ISO 8859-1 small u acute.\nOne byte; PrefTbl2's tr36 offset pair points here and at Tr36out, and OS_Nq (GetDefPrefDest)\ncopies it when no translation 36 is saved in the Panel's data.",
+          "provenance": "source"
+        },
+        "9083": {
+          "synopsis": "Default ISO translation 36, the printer output for 250 (small u acute): 7 bytes,\n27,82,11,126,27,82,0. For an Epson FX-80 compatible printer: ESC R 11 selects character set\n11, code 126 prints in it, and ESC R 0 selects set 0 again. Its length is the distance to\nthe next PrefTbl2 offset; the closing 0 is part of ESC R 0.",
+          "provenance": "source"
+        },
+        "9090": {
+          "synopsis": "Default ISO translation 37, the character to translate: 251 ($FB), ISO 8859-1 small u\ncircumflex. One byte; PrefTbl2's tr37 offset pair points here and at Tr37out, and OS_Nq\n(GetDefPrefDest) copies it when no translation 37 is saved in the Panel's data.",
+          "provenance": "source"
+        },
+        "9091": {
+          "synopsis": "Default ISO translation 37, the printer output for 251 (small u circumflex): 7 bytes,\n27,82,14,94,27,82,0. For an Epson FX-80 compatible printer: ESC R 14 selects character set\n14, code 94 prints in it, and ESC R 0 selects set 0 again. Its length is the distance to the\nnext PrefTbl2 offset; the closing 0 is part of ESC R 0.",
+          "provenance": "source"
+        },
+        "9098": {
+          "synopsis": "Default ISO translation 38, the character to translate: 252 ($FC), ISO 8859-1 small u\ndiaeresis. One byte; PrefTbl2's tr38 offset pair points here and at Tr38out, and OS_Nq\n(GetDefPrefDest) copies it when no translation 38 is saved in the Panel's data.",
+          "provenance": "source"
+        },
+        "9099": {
+          "synopsis": "Default ISO translation 38, the printer output for 252 (small u diaeresis): 7 bytes,\n27,82,2,125,27,82,0. For an Epson FX-80 compatible printer: ESC R 2 selects character set 2,\ncode 125 prints in it, and ESC R 0 selects set 0 again. Its length is the distance to the\nnext PrefTbl2 offset; the closing 0 is part of ESC R 0.",
+          "provenance": "source"
+        },
+        "9275": {
+          "synopsis": "Error text \"Unknown error\", zero-terminated (MTH bank). The fallback text: FindErrStr\nreturns it, with Fz = 1 (fatal), for a code ErrStr_tbl does not list, and GN_Esp returns it\nfor RC_Quit.",
+          "provenance": "source"
+        },
+        "9289": {
+          "synopsis": "Error text \"Escape\", zero-terminated. ErrStr_tbl points here for RC_Esc; GN_Esp returns it\nin BHL (bank MTH_BNK).",
+          "provenance": "source"
+        },
+        "9296": {
+          "synopsis": "Error text \"Timeout\", zero-terminated. ErrStr_tbl points here for RC_Time; GN_Esp returns it\nin BHL (bank MTH_BNK).",
+          "provenance": "source"
+        },
+        "9304": {
+          "synopsis": "Error text \"Not applicable\", zero-terminated. ErrStr_tbl points here for RC_Na, marked fatal\n(Fz = 1); GN_Esp returns it in BHL (bank MTH_BNK).",
+          "provenance": "source"
+        },
+        "9319": {
+          "synopsis": "Error text \"No room\", zero-terminated. ErrStr_tbl points here for RC_Room and RC_Pre; GN_Esp\nreturns it in BHL (bank MTH_BNK).",
+          "provenance": "source"
+        },
+        "9327": {
+          "synopsis": "Error text \"Bad handle\", zero-terminated. ErrStr_tbl points here for RC_Hand, marked fatal\n(Fz = 1); GN_Esp returns it in BHL (bank MTH_BNK).",
+          "provenance": "source"
+        },
+        "9338": {
+          "synopsis": "Error text \"End of file\", zero-terminated. ErrStr_tbl points here for RC_Eof; GN_Esp returns\nit in BHL (bank MTH_BNK).",
+          "provenance": "source"
+        },
+        "9350": {
+          "synopsis": "Error text \"Filter full\", zero-terminated. ErrStr_tbl points here for RC_Flf; GN_Esp returns\nit in BHL (bank MTH_BNK).",
+          "provenance": "source"
+        },
+        "9362": {
+          "synopsis": "Error text \"Overflow\", zero-terminated. ErrStr_tbl points here for RC_Ovf; GN_Esp returns it\nin BHL (bank MTH_BNK).",
+          "provenance": "source"
+        },
+        "9371": {
+          "synopsis": "Error text \"Bad syntax\", zero-terminated. ErrStr_tbl points here for RC_Sntx; GN_Esp returns\nit in BHL (bank MTH_BNK).",
+          "provenance": "source"
+        },
+        "9382": {
+          "synopsis": "Error text \"Wrap\", zero-terminated. ErrStr_tbl points here for RC_Wrap; GN_Esp returns it in\nBHL (bank MTH_BNK).",
+          "provenance": "source"
+        },
+        "9387": {
+          "synopsis": "Error text \"Internal error\", zero-terminated. ErrStr_tbl points here for RC_Unk, RC_Bad,\nRC_Ms and RC_Err, marked fatal (Fz = 1); GN_Esp returns it in BHL (bank MTH_BNK).",
+          "provenance": "source"
+        },
+        "9402": {
+          "synopsis": "Error text \"Unexpected type\", zero-terminated. ErrStr_tbl points here for RC_Type, marked\nfatal (Fz = 1); GN_Esp returns it in BHL (bank MTH_BNK).",
+          "provenance": "source"
+        },
+        "9418": {
+          "synopsis": "Error text \"File not found\", zero-terminated. ErrStr_tbl points here for RC_Onf; GN_Esp\nreturns it in BHL (bank MTH_BNK).",
+          "provenance": "source"
+        },
+        "9433": {
+          "synopsis": "Error text \"Read protected\", zero-terminated. ErrStr_tbl points here for RC_Rp; GN_Esp\nreturns it in BHL (bank MTH_BNK).",
+          "provenance": "source"
+        },
+        "9448": {
+          "synopsis": "Error text \"Write protected\", zero-terminated. ErrStr_tbl points here for RC_Wp; GN_Esp\nreturns it in BHL (bank MTH_BNK).",
+          "provenance": "source"
+        },
+        "9464": {
+          "synopsis": "Error text \"In use\", zero-terminated. ErrStr_tbl points here for RC_Use; GN_Esp returns it\nin BHL (bank MTH_BNK).",
+          "provenance": "source"
+        },
+        "9471": {
+          "synopsis": "Error text \"Divide by 0\", zero-terminated. ErrStr_tbl points here for RC_Dvz; GN_Esp returns\nit in BHL (bank MTH_BNK).",
+          "provenance": "source"
+        },
+        "9483": {
+          "synopsis": "Error text \"Number too big\", zero-terminated. ErrStr_tbl points here for RC_Tbg; GN_Esp\nreturns it in BHL (bank MTH_BNK).",
+          "provenance": "source"
+        },
+        "9498": {
+          "synopsis": "Error text \"-ve root\", zero-terminated. ErrStr_tbl points here for RC_Nvr; GN_Esp returns it\nin BHL (bank MTH_BNK).",
+          "provenance": "source"
+        },
+        "9507": {
+          "synopsis": "Error text \"Log range\", zero-terminated. ErrStr_tbl points here for RC_Lgr; GN_Esp returns\nit in BHL (bank MTH_BNK).",
+          "provenance": "source"
+        },
+        "9517": {
+          "synopsis": "Error text \"Accuracy lost\", zero-terminated. ErrStr_tbl points here for RC_Acl; GN_Esp\nreturns it in BHL (bank MTH_BNK).",
+          "provenance": "source"
+        },
+        "9531": {
+          "synopsis": "Error text \"Exponent range\", zero-terminated. ErrStr_tbl points here for RC_Exr; GN_Esp\nreturns it in BHL (bank MTH_BNK).",
+          "provenance": "source"
+        },
+        "9546": {
+          "synopsis": "Error text \"Bad number\", zero-terminated. ErrStr_tbl points here for RC_Bdn; GN_Esp returns\nit in BHL (bank MTH_BNK).",
+          "provenance": "source"
+        },
+        "9557": {
+          "synopsis": "Error text \"Bad filename\", zero-terminated. ErrStr_tbl points here for RC_Ivf; GN_Esp\nreturns it in BHL (bank MTH_BNK).",
+          "provenance": "source"
+        },
+        "9570": {
+          "synopsis": "Error text \"Cannot satisfy request\", zero-terminated. ErrStr_tbl points here for RC_Push and\nRC_Fail; GN_Esp returns it in BHL (bank MTH_BNK).",
+          "provenance": "source"
+        },
+        "9593": {
+          "synopsis": "Error text \"Already exists\", zero-terminated. ErrStr_tbl points here for RC_Exis; GN_Esp\nreturns it in BHL (bank MTH_BNK).",
+          "provenance": "source"
+        },
+        "9608": {
+          "synopsis": "Error text \"File type mismatch\", zero-terminated. ErrStr_tbl points here for RC_Ftm; GN_Esp\nreturns it in BHL (bank MTH_BNK).",
+          "provenance": "source"
+        },
+        "9627": {
+          "synopsis": "Error text \"Frame error\", zero-terminated. ErrStr_tbl points here for RC_Frm; GN_Esp returns\nit in BHL (bank MTH_BNK).",
+          "provenance": "source"
+        },
+        "9639": {
+          "synopsis": "Error text \"Suspended\", zero-terminated. ErrStr_tbl points here for RC_Susp; GN_Esp returns\nit in BHL (bank MTH_BNK).",
+          "provenance": "source"
+        },
+        "9649": {
+          "synopsis": "Error text \"Redraw\", zero-terminated. ErrStr_tbl points here for RC_Draw; GN_Esp returns it\nin BHL (bank MTH_BNK).",
+          "provenance": "source"
+        },
+        "9656": {
+          "synopsis": "Error text \"Flash VPP low\", zero-terminated. ErrStr_tbl points here for RC_VPL; GN_Esp\nreturns it in BHL (bank MTH_BNK).",
+          "provenance": "source"
+        },
+        "9670": {
+          "synopsis": "Error text \"UV Eprom not fully cleared, erase again\", zero-terminated. ErrStr_tbl points\nhere for RC_EPNE; GN_Esp returns it in BHL (bank MTH_BNK).",
+          "provenance": "source"
+        },
+        "9710": {
+          "synopsis": "Error text \"Flash/UV Eprom Write error\", zero-terminated. ErrStr_tbl points here for RC_BWR;\nGN_Esp returns it in BHL (bank MTH_BNK).",
+          "provenance": "source"
+        },
+        "9737": {
+          "synopsis": "Error text \"Flash Erase error\", zero-terminated. ErrStr_tbl points here for RC_BER; GN_Esp\nreturns it in BHL (bank MTH_BNK).",
+          "provenance": "source"
+        },
+        "9755": {
+          "synopsis": "Error text \"Flash chip unknown\", zero-terminated. ErrStr_tbl points here for RC_NFE; GN_Esp\nreturns it in BHL (bank MTH_BNK).",
+          "provenance": "source"
+        },
+        "9774": {
+          "synopsis": "Error text \"Flash chip contains OZ\", zero-terminated. ErrStr_tbl points here for RC_NOZ;\nGN_Esp returns it in BHL (bank MTH_BNK).",
+          "provenance": "source"
+        },
+        "9797": {
+          "synopsis": "Error text \"Battery Low\", zero-terminated. ErrStr_tbl points here for RC_BTL; GN_Esp returns\nit in BHL (bank MTH_BNK).",
+          "provenance": "source"
+        }
+      }
     },
     "12": {
       "lines": {

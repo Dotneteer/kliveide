@@ -7,7 +7,9 @@
 
 You write synopses for the labels listed in ONE slice file (given in your task), for Klive IDE's annotation
 of the Cambridge Z88's OZ 4.7 ROM (`src/public/roms/z88v47.rom`). You only WRITE ONE DRAFT FILE (given in
-your task); you do not edit the repository, any sidecar or anything outside your draft.
+your task); you do not edit the repository, any sidecar or anything outside your draft. Other helpers run
+at the same time and share the scratchpad: name any scratch file after your slice (`mth-2-gen.cjs`), never
+a generic name.
 
 ## What you may read
 - **The OZ source is allowed and is the main evidence.** OZ 4.7 is annotated from its own source with the
