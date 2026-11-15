@@ -17,6 +17,25 @@ const FORMATS: { value: SprFormat; labelKey: MessageKey; titleKey: MessageKey }[
   { value: "4bit", labelKey: "panels.spriteEditor.format.4bit", titleKey: "panels.spriteEditor.format.4bitTitle" }
 ];
 
+/**
+ * A 4-bit sheet holds patterns, not sprites (one 8-bit sprite reads as two of them), so every
+ * label that names the item has a "pattern" twin. Spelled out, not built from the key, so the
+ * i18n key check sees each one used.
+ */
+const PATTERN_KEYS = {
+  "panels.spriteEditor.duplicate": "panels.spriteEditor.duplicate4",
+  "panels.spriteEditor.cutSprite": "panels.spriteEditor.cutSprite4",
+  "panels.spriteEditor.copySprite": "panels.spriteEditor.copySprite4",
+  "panels.spriteEditor.deleteSprite": "panels.spriteEditor.deleteSprite4",
+  "panels.spriteEditor.moveLeft": "panels.spriteEditor.moveLeft4",
+  "panels.spriteEditor.moveRight": "panels.spriteEditor.moveRight4",
+  "panels.spriteEditor.add": "panels.spriteEditor.add4",
+  "panels.spriteEditor.separate": "panels.spriteEditor.separate4",
+  "panels.spriteEditor.merge": "panels.spriteEditor.merge4",
+  "panels.spriteEditor.position": "panels.spriteEditor.position4"
+} as const satisfies Record<string, MessageKey>;
+type ItemKey = keyof typeof PATTERN_KEYS;
+
 type Props = {
   spriteCount: number;
   selectedIndex: number;
@@ -76,6 +95,7 @@ export const SpriteSheetToolbar = memo(
     onToggleSeparated
   }: Props) => {
     const t = useT();
+    const k = (key: ItemKey): MessageKey => (format === "4bit" ? PATTERN_KEYS[key] : key);
     return (
     <div className={styles.sheetToolbar} role="toolbar" aria-label={t("panels.spriteEditor.sheet")}>
       <SmallIconButton iconName="undo" title={t("panels.spriteEditor.undo")} enable={canUndo} clicked={onUndo} />
@@ -83,7 +103,7 @@ export const SpriteSheetToolbar = memo(
       <ToolbarSeparator small={true} />
       <SmallIconButton
         iconName="spr-duplicate"
-        title={t("panels.spriteEditor.duplicate")}
+        title={t(k("panels.spriteEditor.duplicate"))}
         enable={spriteCount > 0}
         clicked={onDuplicate}
       />
@@ -99,14 +119,14 @@ export const SpriteSheetToolbar = memo(
         title={
           hasSelection
             ? t("panels.spriteEditor.cutRegion")
-            : t("panels.spriteEditor.cutSprite")
+            : t(k("panels.spriteEditor.cutSprite"))
         }
         enable={hasSelection || spriteCount > 1}
         clicked={onCut}
       />
       <SmallIconButton
         iconName="spr-copy"
-        title={hasSelection ? t("panels.spriteEditor.copyRegion") : t("panels.spriteEditor.copySprite")}
+        title={hasSelection ? t("panels.spriteEditor.copyRegion") : t(k("panels.spriteEditor.copySprite"))}
         enable={true}
         clicked={onCopy}
       />
@@ -118,32 +138,32 @@ export const SpriteSheetToolbar = memo(
       />
       <SmallIconButton
         iconName="spr-delete"
-        title={hasSelection ? t("panels.spriteEditor.clearRegion") : t("panels.spriteEditor.deleteSprite")}
+        title={hasSelection ? t("panels.spriteEditor.clearRegion") : t(k("panels.spriteEditor.deleteSprite"))}
         enable={hasSelection || spriteCount > 1}
         clicked={onDelete}
       />
       <SmallIconButton
         iconName="spr-move-left"
-        title={t("panels.spriteEditor.moveLeft")}
+        title={t(k("panels.spriteEditor.moveLeft"))}
         enable={selectedIndex > 0}
         clicked={onMoveLeft}
       />
       <SmallIconButton
         iconName="spr-move-right"
-        title={t("panels.spriteEditor.moveRight")}
+        title={t(k("panels.spriteEditor.moveRight"))}
         enable={selectedIndex < spriteCount - 1}
         clicked={onMoveRight}
       />
       <SmallIconButton
         iconName="plus"
-        title={t("panels.spriteEditor.add")}
+        title={t(k("panels.spriteEditor.add"))}
         enable={spriteCount > 0}
         clicked={onAdd}
       />
       <ToolbarSeparator small={true} />
       <SmallIconButton
         iconName="spr-separate"
-        title={separated ? t("panels.spriteEditor.merge") : t("panels.spriteEditor.separate")}
+        title={separated ? t(k("panels.spriteEditor.merge")) : t(k("panels.spriteEditor.separate"))}
         selected={separated}
         enable={true}
         clicked={onToggleSeparated}
@@ -168,7 +188,7 @@ export const SpriteSheetToolbar = memo(
         <>
           <ToolbarSeparator small={true} />
           <LabelSeparator width={8} />
-          <Text text={t("panels.spriteEditor.position", { index: selectedIndex + 1, count: spriteCount })} />
+          <Text text={t(k("panels.spriteEditor.position"), { index: selectedIndex + 1, count: spriteCount })} />
         </>
       )}
     </div>

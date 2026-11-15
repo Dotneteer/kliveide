@@ -1061,6 +1061,7 @@ export const SpriteEditor = ({ context, readOnly }: Props) => {
         transparencyIndex={viewTransparency}
         separated={!!spriteImagesSeparated}
         showTransparencyColor={!!showTrancparencyColor}
+        fourBit={format === "4bit"}
         onSelect={navigate}
         onReorder={isReadOnly ? noop : handleReorder}
         height={sheetHeight}

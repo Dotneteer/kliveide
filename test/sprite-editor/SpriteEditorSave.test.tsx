@@ -1540,6 +1540,21 @@ describe("SpriteEditor - 4-bit sheets", () => {
     expect(container.textContent).toContain("Pattern 1 of 2 · 16×16 · 4bpp");
   });
 
+  it("names the items patterns in the sheet's toolbar and strip in 4-bit mode", () => {
+    const { container } = renderWith(fileOf(1), { spriteFormat: "4bit" });
+    expect(container.textContent).toContain("Pattern #1 of 2");
+    expect(container.textContent).toContain("2 patterns");
+    expect(button(container, "Add new pattern")).toBeTruthy();
+    expect(button(container, "Duplicate pattern")).toBeTruthy();
+    expect(sheetCells(container)[0].getAttribute("aria-label")).toMatch(/^Pattern 1/);
+
+    fireEvent.click(formatButton(container, "8-bit"));
+    expect(container.textContent).toContain("Sprite #1 of 1");
+    expect(container.textContent).toContain("1 sprite");
+    expect(button(container, "Add new sprite")).toBeTruthy();
+    expect(sheetCells(container)[0].getAttribute("aria-label")).toMatch(/^Sprite 1/);
+  });
+
   it("writes a 4-bit edit packed, two pixels per byte, high nibble first", () => {
     const { container } = renderWith(new Uint8Array(128), { spriteFormat: "4bit", pencilColorIndex: 0x2b });
     selectPencil(container);

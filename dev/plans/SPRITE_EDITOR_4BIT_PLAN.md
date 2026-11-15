@@ -79,5 +79,6 @@ the Sprite Inspector and the NEX Sprites view already handle them; the editor ca
   rather than a changed 8-bit one, so the existing translations stay current.
 - Checked in the running app (doc-shots harness, a Next project, a two-pattern 4-bit file): 1 sprite
   in 8-bit, 2 patterns in 4-bit, 16 swatches, offset 14 drawn from `$E0`..`$EF`, file unchanged.
-- Not changed: the toolbar's "Sprite #n of m" and the sheet's "n sprites" count still say "sprite" in
-  4-bit mode.
+- In 4-bit mode the sheet toolbar's tooltips and position ("Pattern #n of m"), the sheet's count and
+  the cells' accessible names say "pattern". Each has a `…4` message of its own next to the 8-bit one;
+  the toolbar picks it from an explicit table (`PATTERN_KEYS`) so the i18n key check sees every key.
