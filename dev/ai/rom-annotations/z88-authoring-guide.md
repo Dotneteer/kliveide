@@ -147,6 +147,13 @@ section says what is done, how to check it and what is left.
   in a `defw`/`defp` table, and that has no header, is a jump target inside a routine. The importer lists
   them in the page entry's `jumpLabels`, and the level measure needs no synopsis for them. Data labels
   still need one. `.local/oz-evidence/remaining.cjs` (not committed) counts what is left per bank.
+- **Synopses are drafted by helpers from the source** (`helper-briefs/z88-draft-synopses.md`), about 80
+  labels per helper, and merged with `tools/z88-synopsis-merge.cjs`, which mends the helpers' wraps and
+  ends each contract part with a full stop. They are `source` entries: written from the OZ source under
+  D-OZ1, and a line's synopsis shares its provenance with the imported comment. Lessons from the kernel:
+  a source label name is often defined in several modules (`dmwd_2` in `mth0` and `mth1`), so a caller list
+  found by name needs checking; helpers should follow the code where the source comment disagrees, and
+  record the disagreement in `z88-oz47-review.md`.
 - **To see the current state in the IDE,** copy `.local/oz-import/z88v47.rom.dis` over
   `~/Klive/RomAnnotations/z88v47.rom.dis`. The IDE follows that file and reloads it.
 

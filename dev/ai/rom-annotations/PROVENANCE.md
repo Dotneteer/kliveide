@@ -2578,3 +2578,15 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
 - **Sources:** the ROM bytes (`z88-dis.cjs` listings) for every `observed` entry; the file area's document
   matches `filearea/welcome.pdd` of the OZ source byte for byte.
 - **Level:** measured 1 on every imported bank, 2 on bank $10. Nothing recorded yet.
+
+### 2026-11-15 — Cambridge Z88: OZ 4.7, the kernel banks (0 and 1) to level 2
+
+- **What:** 476 synopses, one for every routine and data label of banks 0 and 1 that level 2 asks for
+  (D-OZ6: jump targets inside routines excepted), in `dev/ai/rom-annotations/z88-oz47-authored.json`.
+- **How:** six helper agents, about 80 labels each, with `helper-briefs/z88-draft-synopses.md` and a context
+  pack per label (`tools/z88-synopsis-pack.cjs`: the source definition, the routine's text, its callers);
+  doubtful points were checked against the bytes with `z88-dis.cjs`. The drafts were checked against their
+  slices, re-wrapped and merged (`tools/z88-synopsis-merge.cjs`). Their notes are in `z88-oz47-review.md`.
+- **Sources:** the OZ V4.7 source (commit `603c979a`), used under the owner's permission (D-OZ1), and the ROM
+  bytes. The entries are `source`. Not shipped yet (Q1).
+- **Level:** measured 2 on banks 0 and 1 (and $10); both reassemble byte for byte.

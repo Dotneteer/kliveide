@@ -1,43 +1,2072 @@
 {
-  "about": "Hand-written entries for z88v47.rom.dis that the OZ source does not provide (dev/plans/Z88_OZ47_ROM_ANNOTATIONS_PLAN.md, Phase 3). dev/scripts/import-oz-source.cjs --all applies them after the import, so a re-import keeps them: a label replaces the one at its offset, a synopsis or comment replaces the imported one, a region replaces the regions it overlaps, and a bank the import does not cover gets its page from `page`. Every entry carries its provenance (observed, manual or derived); offsets are bank offsets. Written in Klive's own words.",
+  "about": "Hand-written entries for z88v47.rom.dis that the OZ source does not provide (dev/plans/Z88_OZ47_ROM_ANNOTATIONS_PLAN.md, Phase 3). dev/scripts/import-oz-source.cjs --all applies them after the import, so a re-import keeps them: a label replaces the one at its offset, a synopsis or comment replaces the imported one, a region replaces the regions it overlaps, and a bank the import does not cover gets its page from `page`. Every entry carries its provenance: observed (from the bytes), manual or derived, or source for a synopsis written from the OZ source code (allowed by D-OZ1; a line's synopsis and its imported comment share one provenance); offsets are bank offsets, in decimal. Synopses are drafted per slice with helper-briefs/z88-draft-synopses.md.",
   "banks": {
     "0": {
       "labels": [
-        { "name": "bsf_crash", "value": 443, "provenance": "observed", "synopsis": "Hangs in a loop to itself: OS_Mfr could not give the RAM page the bad-memory handler asked for." },
-        { "name": "u1_crash", "value": 591, "provenance": "observed", "synopsis": "Hangs in a loop to itself: OS_Mfr could not give the RAM page asked for." },
-        { "name": "OSBye_crash", "value": 1556, "provenance": "observed", "synopsis": "Hangs in a loop to itself: DC_Bye does not come back to the process that ended." },
-        { "name": "dordel_crash", "value": 1952, "provenance": "observed", "synopsis": "Hangs in a loop to itself when B is 0." },
-        { "name": "cerh_crash", "value": 3267, "provenance": "observed", "synopsis": "Hangs in a loop to itself: the call to $00B7 before it is not expected to come back." },
-        { "name": "opdir_crash", "value": 3598, "provenance": "observed", "synopsis": "Hangs in a loop to itself: OS_Dor failed while the directory was opened." },
-        { "name": "PrevCmd_crash", "value": 11300, "provenance": "observed", "synopsis": "Hangs in a loop to itself when HL - DE borrows (Fc set)." },
-        { "name": "NextCmd_crash", "value": 11308, "provenance": "observed", "synopsis": "Hangs in a loop to itself when HL + DE overflows (Fc set)." },
-        { "name": "aab_crash", "value": 13435, "provenance": "observed", "synopsis": "Hangs in a loop to itself when Fc is set, an error from the call before it." }
-      ]
+        {
+          "name": "bsf_crash",
+          "value": 443,
+          "provenance": "observed",
+          "synopsis": "Hangs in a loop to itself: OS_Mfr could not give the RAM page the bad-memory handler asked for."
+        },
+        {
+          "name": "u1_crash",
+          "value": 591,
+          "provenance": "observed",
+          "synopsis": "Hangs in a loop to itself: OS_Mfr could not give the RAM page asked for."
+        },
+        {
+          "name": "OSBye_crash",
+          "value": 1556,
+          "provenance": "observed",
+          "synopsis": "Hangs in a loop to itself: DC_Bye does not come back to the process that ended."
+        },
+        {
+          "name": "dordel_crash",
+          "value": 1952,
+          "provenance": "observed",
+          "synopsis": "Hangs in a loop to itself when B is 0."
+        },
+        {
+          "name": "cerh_crash",
+          "value": 3267,
+          "provenance": "observed",
+          "synopsis": "Hangs in a loop to itself: the call to $00B7 before it is not expected to come back."
+        },
+        {
+          "name": "opdir_crash",
+          "value": 3598,
+          "provenance": "observed",
+          "synopsis": "Hangs in a loop to itself: OS_Dor failed while the directory was opened."
+        },
+        {
+          "name": "PrevCmd_crash",
+          "value": 11300,
+          "provenance": "observed",
+          "synopsis": "Hangs in a loop to itself when HL - DE borrows (Fc set)."
+        },
+        {
+          "name": "NextCmd_crash",
+          "value": 11308,
+          "provenance": "observed",
+          "synopsis": "Hangs in a loop to itself when HL + DE overflows (Fc set)."
+        },
+        {
+          "name": "aab_crash",
+          "value": 13435,
+          "provenance": "observed",
+          "synopsis": "Hangs in a loop to itself when Fc is set, an error from the call before it."
+        }
+      ],
+      "lines": {
+        "56": {
+          "synopsis": "Maskable interrupt entry at $0038, run in two situations: at $0038 while bank 0 is paged at\n$0000 after a hard reset, and at $C038 through the low-RAM INT vector, which nmi_halt points\nhere before the machine enters coma. I <> 0 means a wake-up from coma and goes to NMIWakeup.\nI = 0 means a reset: SP is pointed at a two-byte stack in this ROM and VerifySlotType checks\nslot 1 (D = 1, E = $3F), returning to Bootstrap through that stack.\nEntry: I = 0 during reset, COMA_RDSK in coma.\nChanges: AF, DE, SP (reset path).",
+          "provenance": "source"
+        },
+        "72": {
+          "synopsis": "Reset step reached through the ROM stack after VerifySlotType: decides whether OZ in slot 1\nboots instead of this one. If slot 1 holds a bootable ROM (BU_B_ROM in D) whose card header\nsubtype is CB_OS1 ('Z') and the Escape key is not the only key held, it jumps to the card's\nCH_HOOK ($BFF8 in S2) to boot the slot 1 OZ. Otherwise it falls into Boot_reset.\nEntry: D = slot type from VerifySlotType; slot 1's top bank bound in S2.\nChanges: AF, BC.",
+          "provenance": "source"
+        },
+        "93": {
+          "synopsis": "Continues the reset in this OZ: binds kernel bank 1 into segment 2 (port BL_SR2) and jumps\nto Reset there, which initialises internal RAM, the Blink, the low-RAM code and SP. Also the\ntarget of the ROM header's reset path of an OZ that runs from slot 1.\nEntry: none.\nChanges: A.",
+          "provenance": "source"
+        },
+        "102": {
+          "synopsis": "Non-maskable interrupt entry at $0066, run while bank 0 is paged at $0000 after a reset and\nat $C066 through the low-RAM NMI vector while the machine is in coma. If SP is in page $00xx\nthe machine is still starting up and Reset0 restarts it. Otherwise it binds kernel bank 0\ninto segment 3 and continues at HW_NMI2.\nEntry: none.\nChanges: AF, HL.",
+          "provenance": "source"
+        },
+        "123": {
+          "synopsis": "Entry of the OZ call table for the two-byte GN calls: selects bank GN_BNK and the GN_TBL\npage, then shares the dispatcher with CallOS2byte. The dispatcher steps the caller's PC past\nthe second opcode byte, builds the OS frame (OSFramePushMain), reads the function address\nfrom the bank's table at the second opcode byte, binds kernel bank 1 into S2 and the code\nbank into S3, and jumps to the function. The function returns to $xx03 of the table page in\nS3, the bank's exit through the OS frame.\nEntry: E = second opcode byte; the caller's BC, DE, HL in the alternate set and AF in AF';\nstack holds the S2/S3 bindings and the caller's PC (as CallOZMain leaves them).\nExit: into the function with the caller's registers, Fz = 1, Fc = 0, IY = OS frame.",
+          "provenance": "source"
+        },
+        "129": {
+          "synopsis": "Entry of the OZ call table for the two-byte OS calls ($xx06 codes): selects kernel bank 0\nand the OS_TBL page ($FFxx) and runs the dispatcher shared with CallGN, which reads the\nfunction address from the word table at the end of OS_TBL and jumps to it in segment 3.\nEntry: E = second opcode byte; the caller's registers in the alternate set and AF', as\nCallOZMain leaves them.\nExit: into the function with the caller's registers, Fz = 1, Fc = 0, IY = OS frame.",
+          "provenance": "source"
+        },
+        "170": {
+          "synopsis": "Handler of unused OZ call table entries: returns to the caller through OZCallReturn2 with Fc\n= 1 and A = RC_OK (zero), the caller's other registers unchanged.\nEntry: none.\nError: Fc = 1, A = RC_OK.",
+          "provenance": "source"
+        },
+        "204": {
+          "synopsis": "OS_Dom: opens the director's memory pool (internal two-byte call $FE06), calling OS_Mop with\nA = MM_S1|MM_MUL|MM_FIX and BC = 0.\nEntry: none.\nExit: IX = memory pool handle.\nError: Fc = 1, A = error code from OS_Mop.",
+          "provenance": "source"
+        },
+        "212": {
+          "synopsis": "Sets up the fixed RAM of a bad or ugly application when it is entered; does nothing for a\nwell-behaved one.\n1. Size in pages: ubAppContRAM, or the default ubBadSize (in KB) times 4 when zero, at most\n160 pages (40K), and at most 32 pages (8K) on a machine without a 128K RAM card.\n2. Stores the size in ubAppContRAM and the size plus 32 pages in ubBadInfoEndPage.\n3. Sets ubAppBindings: S0 = $21, then the expansion's first banks for S1 and S2 when the\narea needs them.\n4. Opens a memory pool (OS_Mop) into pAppBadMemHandle and allocates the pages with\nAllocBadRAM2; on failure CloseBadRAM frees what was allocated.\nEntry: application DOR flags in ubAppDORFlags.\nExit: Fc = 0 (Fz = 1 for a well-behaved application).\nError: Fc = 1, A = error code.\nKeeps: IX.",
+          "provenance": "source"
+        },
+        "305": {
+          "synopsis": "For a bad or ugly application, closes the memory pool in pAppBadMemHandle (OS_Mcl), which\nfrees all its bad application memory.\nEntry: none.\nKeeps: AF, IX.",
+          "provenance": "source"
+        },
+        "323": {
+          "synopsis": "For a bad or ugly application, allocates the swap pages of its fixed area (AllocBadRAM2) and\nthen exchanges, page by page, the contents of the fixed area with the pages its table\nentries name (BadSwapAll, which follows). An entry with bank 0 or 1 is skipped; a fixed page\nthat is still free is marked allocated and its entry flagged to be freed later.\nEntry: none.\nExit: AF as AllocBadRAM2 left it: Fc = 0 when all pages were found.\nError: Fc = 1, A = error code.",
+          "provenance": "source"
+        },
+        "389": {
+          "synopsis": "Swaps the fixed area of a bad or ugly application back with BC = DE = 0, so no page is\nfreed; falls into BadSwapAndFree.\nEntry: none.\nChanges: AF, BC, DE.",
+          "provenance": "source"
+        },
+        "394": {
+          "synopsis": "For a bad or ugly application, swaps its fixed area back (BadSwapAll), then frees the swap\npages of the region the application reported as unused: from the page of BC (rounded up) to\nthe page before D. Entries with bank 0 are left; freed entries get bank 0.\nEntry: BC = start, DE = end of the unused region (from the enquiry entry, see\nAppReleaseMem).",
+          "provenance": "source"
+        },
+        "410": {
+          "synopsis": "Entry inside BadSwapAndFree, after the swap: frees the swap pages of the table for the page\nnumbers from E to A - 1 with OS_Mfr, then restores the bindings. Also used by AllocBadRAM2\nto free what it allocated before an allocation failed.\nEntry: A = end page number, E = first page number.\nExit: returns at once when A <= E.",
+          "provenance": "source"
+        },
+        "457": {
+          "synopsis": "Fills the bad application's page table (pAppBadMemTable, two bytes per page: page with flag\nbit 7, then bank). For each entry without a bank: if the fixed page is free it is claimed in\nplace (bank 1, page 0), else a page is allocated with OS_Mal and its page and bank are\nrecorded. On an allocation error the pages got so far are freed (bsf_1). Clears the flag bit\nin every entry at the end.\nEntry: ubAppContRAM = number of pages; pAppBadMemHandle = memory pool.\nExit: Fc = 0.\nError: Fc = 1, A = error code from OS_Mal.",
+          "provenance": "source"
+        },
+        "609": {
+          "synopsis": "Copies the 256-byte page at AH0 into the stack temporary buffer (pStkTempStkTop): sets Fc =\n0 and goes into CopyPage, which binds bank A into S1 and copies HL to DE.\nEntry: A = bank; H = page address in S1.\nExit: DE = buffer + 256; BC = $100; L = 0.\nChanges: BC, DE, L, S1 binding.",
+          "provenance": "source"
+        },
+        "612": {
+          "synopsis": "Copies the stack temporary buffer (pStkTempStkTop) over the 256-byte page at AH0: sets Fc =\n1 and goes into CopyPage, which binds bank A into S1 and copies DE to HL.\nEntry: A = bank; H = page address in S1.\nExit: DE = buffer + 256; BC = $100; L = 0.\nChanges: BC, DE, L, S1 binding.",
+          "provenance": "source"
+        },
+        "639": {
+          "synopsis": "Tests whether the running application is bad or ugly: A = ubAppDORFlags AND\n(AT_BAD|AT_UGLY).\nEntry: none.\nExit: Fz = 1 for a well-behaved application; Fc = 0.\nChanges: AF.",
+          "provenance": "source"
+        },
+        "645": {
+          "synopsis": "Reads the page of the bad memory table entry at IY (flag bit 7 removed), then falls into\nsub_C3F8 to read its bank.\nEntry: IY = table entry.\nExit: H = page; A = bank; Fc = 1 if bank 0, Fz = 1 if bank 1.\nChanges: AF, H.",
+          "provenance": "source"
+        },
+        "650": {
+          "synopsis": "Reads the bank of the bad memory table entry at IY and compares it with 1.\nEntry: IY = table entry.\nExit: A = bank; Fc = 1 if bank 0; Fz = 1 if bank 1.\nChanges: AF.",
+          "provenance": "source"
+        },
+        "698": {
+          "synopsis": "Loop step of the bad memory table walks: moves IY to the next entry and the page number to\nthe next page. Past page $3F (the b20 swap area) it binds the expansion's first RAM bank\ninto S2, and when that is not slot 1 it jumps from page $40 to $80, skipping b21. The\ncaller's loop keeps BC and the page number on the stack: they are popped here.\nEntry: stack = return address, page number, loop counter (BC).\nExit: HL = next page number; B = counter - 1; Fz = 1 when it reaches zero; IY + 2.\nChanges: AF, BC, DE, HL, IY.",
+          "provenance": "source"
+        },
+        "806": {
+          "synopsis": "Converts a value 0-15 into its upper-case hexadecimal digit.\nEntry: A = value (0-15).\nExit: A = '0'-'9' or 'A'-'F'.\nChanges: AF.",
+          "provenance": "source"
+        },
+        "847": {
+          "synopsis": "Writes the null-terminated string at HL, given in the OZ caller's address space, to standard\noutput. Below $8000 it is read with the current bindings; in segment 2 or 3 the caller's\nbank from the OS frame (OSFrame_S2 or OSFrame_S3) is bound into S1 first (bind_strptr).\nEntry: HL = string; IY = OS frame.\nExit: HL = byte after the terminator (an S1 address when the bank was rebound).",
+          "provenance": "source"
+        },
+        "861": {
+          "synopsis": "Binds bank B into segment 1 (OSBixS1, HL moved into S1), writes the null-terminated string\nat HL with OSOutString and restores the previous S1 binding (OSBoxS1).\nEntry: B = bank; HL = string.\nExit: HL = byte after the terminator, as an S1 address.",
+          "provenance": "source"
+        },
+        "872": {
+          "synopsis": "Writes the null-terminated string at HL to standard output a character at a time\n(OsOutKernel: the screen driver, or DC_Out while a CLI is active). The characters are read\nwith PeekHLinc, which takes a pointer crossing from S1 into S2 into the caller's S2 bank.\nEntry: HL = string; IY = OS frame.\nExit: HL = byte after the terminator; A = 0; Fz = 1.",
+          "provenance": "source"
+        },
+        "1402": {
+          "synopsis": "Last step before an application is entered or resumed: checks the stack limits, binds the\napplication's banks into S0-S2 (AppBindS012), restores the call level from ubOldCallLevel,\nincrements the resumption cycle (ubAppResCycle), loads SP from pAppStackPtr and jumps to the\nreturn address.\nEntry: return address on the stack.\nExit: SP = pAppStackPtr.\nChanges: BC, DE, HL, SP.\nKeeps: AF.",
+          "provenance": "source"
+        },
+        "1426": {
+          "synopsis": "Binds the running application's S2, S1 and S0 banks from ubAppBindings+2 down to\nubAppBindings, through BindSx; a zero entry leaves that segment as it is.\nEntry: none.\nChanges: AF, BC, HL.",
+          "provenance": "source"
+        },
+        "1438": {
+          "synopsis": "Binds the bank at (HL) into the segment whose soft copy is at BC, writing the soft copy and\nthe port C (the soft copy's low byte is the port number); a zero bank is skipped. Then steps\nHL and BC back by one (cpd) for the next lower segment.\nEntry: HL = wanted bank; BC = soft copy address (BLSC_SRx).\nExit: HL - 1; BC - 1.\nChanges: AF, BC, HL.",
+          "provenance": "source"
+        },
+        "1510": {
+          "synopsis": "Raises the application's environment overhead (uwAppEnvOverhead) to the size of the file IX\nwhen that is larger.\nEntry: IX = environment file handle.\nError: Fc = 1 when GetFileSize fails.\nChanges: AF, DE, HL.",
+          "provenance": "source"
+        },
+        "1558": {
+          "synopsis": "Releases memory when the running application is stacked (OS_Stk). A well-behaved application\nonly has its environment file closed (CloseAppEnvHnd). An ugly one releases all its bad\nmemory (AppReleaseAllMem). A bad one is asked through its enquiry entry (entry point + 3, in\nits S3 bank, called with A = RC_Esc): Fc = 0 returns the unused region in BC to DE, which\nBadSwapAndFree frees; Fc = 1 releases everything.\nEntry: none.",
+          "provenance": "source"
+        },
+        "1585": {
+          "synopsis": "Swaps the bad application's fixed area back without freeing any page (BC = DE = $2000, an\nempty unused region), then closes the environment file (CloseAppEnvHnd).\nEntry: none.",
+          "provenance": "source"
+        },
+        "1593": {
+          "synopsis": "Closes the application's environment file handle (pAppEnvHandle) with OS_Cl and falls into\nSetAppEnvHandle, which stores IX as OS_Cl leaves it.\nEntry: none.",
+          "provenance": "source"
+        },
+        "1600": {
+          "synopsis": "Stores IX as the application's environment file handle (pAppEnvHandle).\nEntry: IX = handle.\nChanges: none.",
+          "provenance": "source"
+        },
+        "1630": {
+          "synopsis": "OS_Dor: the DOR (Document Object Record) interface. Builds the OS frame, runs OSDorMain with\nthe reason code in B and leaves through OSFramePop.\nEntry: A = reason code (DR_Get ... DR_Rd2); IX = DOR handle, HL, BC, DE as the reason needs.\nExit: as the reason defines (IX = handle, A = DOR type, BC, records).\nError: Fc = 1, A = error code (RC_Unk for an unknown reason).",
+          "provenance": "source"
+        },
+        "1640": {
+          "synopsis": "Dispatches OS_Dor on the reason code in B, with a chain of djnz tests: DR_Get (handle for\nthe name \":\"), DR_Dup, DR_Sib, DR_Son, DR_Fre, DR_Cre, DR_Del, DR_Ins, DR_Rd, DR_Wr and\nDR_Rd2 (handled as DR_Rd).\nEntry: B = reason code; IY = OS frame; IX, HL as the reason needs.\nError: Fc = 1, A = error code (RC_Unk for an unknown reason).",
+          "provenance": "source"
+        },
+        "1875": {
+          "synopsis": "Frees the DOR handle IX (DORHndleFreeDrct) and returns with AF as it was, so an error code\nin A and Fc pass through.\nEntry: IX = DOR handle; AF = result to return.\nKeeps: AF.",
+          "provenance": "source"
+        },
+        "1881": {
+          "synopsis": "Frees the device-type (HND_DEV) handle IX with FreeHandle.\nEntry: IX = handle.\nExit: Fc = 0, IX = 0.\nError: Fc = 1, A = error code.",
+          "provenance": "source"
+        },
+        "2179": {
+          "synopsis": "Part of OS_Dor DR_Rd: record 1 is the DOR's son pointer. Points HL at the son pointer field\nof the DOR and gives its length.\nEntry: HL = DOR (S2 address).\nExit: HL = son pointer field; C = 2; Fz kept (1), Fc = 0.\nChanges: BC, HL.",
+          "provenance": "source"
+        },
+        "2340": {
+          "synopsis": "Checks the DOR handle IX, binds its DOR's bank into segment 2 and returns the DOR's address\nthere, together with the OZ caller's DE from the OS frame.\nEntry: IX = DOR handle; IY = OS frame.\nExit: HL = DOR (S2 address); DE = caller's DE; Fc = 0.\nError: Fc = 1, A = error code (RC_Hand).\nChanges: AF, DE, HL.",
+          "provenance": "source"
+        },
+        "2378": {
+          "synopsis": "Scans the handles of type B (FindHandle, C = 0: no dynamic ID check) for one other than IX\nthat points at the same DOR (bank and address).\nEntry: IX = handle; B = handle type; C = 0.\nExit: Fc = 0 when no other handle uses the DOR.\nError: Fc = 1, A = RC_Use.\nKeeps: IX, IY.",
+          "provenance": "source"
+        },
+        "2448": {
+          "synopsis": "Stores the DOR pointer BHL in handle IX, with HL turned into a segment 2 address.\nEntry: IX = handle; BHL = DOR.\nExit: H = H with bit 7 set and bit 6 clear.\nChanges: H.",
+          "provenance": "source"
+        },
+        "2462": {
+          "synopsis": "Checks that IX is a device-type (HND_DEV) handle with a nonzero DOR bank.\nEntry: IX = handle.\nExit: Fc = 0.\nError: Fc = 1, A = error code (RC_Hand for bank 0).\nChanges: AF.",
+          "provenance": "source"
+        },
+        "2479": {
+          "synopsis": "OS_Alm: the alarm manipulation call. Builds the OS frame, sets Fz in it, and calls OSAlmMain\nin kernel bank 1 with interrupts disabled. Then requests an OZ window redraw and leaves\nthrough OSFramePopX.\nEntry: A = reason code (AH_SUSP ... AH_ARES); B and others as the reason needs.\nExit: as OSAlmMain sets the frame.",
+          "provenance": "source"
+        },
+        "2506": {
+          "synopsis": "Processes the first alarm in the list (pFirstAlarm): when the bank byte of its handler\n(ahnd_Func+2) is zero it calls GN_Alp with IX = the handler word; otherwise does nothing.\nCalled from the keyboard input loop when an alarm has expired.\nEntry: none.\nKeeps: AF, AF', the alternate BC, DE, HL, IX.",
+          "provenance": "source"
+        },
+        "2599": {
+          "synopsis": "Waits, snoozing a tick at a time with the timer and global interrupts enabled, until no key\nis down, then falls into NMI_Off.\nEntry: none.\nChanges: AF, BC, DE, HL.",
+          "provenance": "source"
+        },
+        "2606": {
+          "synopsis": "Keeps the machine switched off after a power-fail or coma NMI: sleeps until a key is pressed\nand stays off unless both Shift keys are down (BothShifts). With both Shifts held it waits;\nonce no key is down it returns. Any other key goes back to NMI_Off0.\nEntry: none.\nChanges: AF, BC, DE, HL.",
+          "provenance": "source"
+        },
+        "2656": {
+          "synopsis": "Switches the machine off: disables keyboard reading from the interrupt (KBF_B_SWOFF), turns\nthe LCD off and snoozes, waking for alarms (next alarm time from ubNextAlmMinutesB) and\nkeys. It stays off until an alarm task is pending or both Shift keys are pressed; Caps Lock\nheld with them sets the keyboard lock. Then restores the keyboard flags, resets the timeout,\nclears ITSK_B_SHUTDOWN and turns the LCD on.\nEntry: none.\nChanges: AF, BC.\nKeeps: DE, HL.",
+          "provenance": "source"
+        },
+        "2858": {
+          "synopsis": "Entry inside OSWaitMain: snoozes until the next tick or interrupt, with H = the INT soft\ncopy with keyboard wait set and the global interrupt bit clear (snooze, not coma) and L =\nBM_TACKTICK; falls into DoSnooze.\nEntry: none.\nExit: H = INT mask used; L = BM_TACKTICK.\nChanges: HL.",
+          "provenance": "source"
+        },
+        "3108": {
+          "synopsis": "Continuation of HW_NMI2, reached through a return address stored in ROM after UpdSoftClock.\nRestores SP from IX and prepares the coma: with Fc = 1 (fewer than three NMIs this second) C\n= 0, so the machine wakes after the coma; with Fc = 0, C is nonzero and the machine stays\noff (NMI_Off on wake-up). Resets the COM register keeping RAM bank $20 at $0000, sets I =\nCOMA_RDSK and jumps to Halt.\nEntry: A = count; HL = TIM2|TIM1; Fc from UpdSoftClock; IX = saved SP; C = port BL_TIM2.",
+          "provenance": "source"
+        },
+        "3231": {
+          "synopsis": "Runs the application's error handler for an OZ call that returned an error. Stores the error\nin ubAppLastError, gets Fz from GN_Esp (fatal error) and calls the handler\n(pAppErrorHandler) in bank A with Fc = 1 and A = error. The handler's answer: Fc = 1: GN_Err\nshows the error box and its result is offered to the handler again; Fc = 0, Fz = 1: return;\nFc = 0, Fz = 0: the handler is called once more and the system stops in an endless loop.\nEntry: A = S3 bank of the handler; AF' = error code and flags.\nExit: AF' = handler's A with Fc = 1.\nKeeps: AF, BC, DE, HL and the alternate BC, DE, HL.",
+          "provenance": "source"
+        },
+        "3380": {
+          "synopsis": "Sets the Escape flag (ITSK_B_ESC in ubIntTaskToDo) when Escape detection is enabled for the\nrunning application (bit 7 of ubAppKbdBits).\nEntry: none.\nExit: Fz = 1 when detection is disabled and nothing was set.\nChanges: F, HL.",
+          "provenance": "source"
+        },
+        "3518": {
+          "synopsis": "Part of OS_Op: sets the file's attributes to its flags (bits 7-3) and the open mode from the\nframe's A, reads or writes the DOR's son pointer (record 1, 2 bytes) from or into\nfhnd_firstblk of the handle with OS_Dor, and falls into the type change from device\n(HND_DEV) to file handle (HND_FILE).\nEntry: A = DR_RD (open existing) or DR_WR (new file); IX = handle; IY = OS frame.\nError: Fc = 1, A = error code.",
+          "provenance": "source"
+        },
+        "3574": {
+          "synopsis": "Part of OS_Op: creates a file or directory DOR under the directory handle IX (DR_CRE), sets\nits name and update and creation dates (FileNameDate), inserts it as a son of the parent\n(DR_INS; a failure there hangs) and frees the parent's handle.\nEntry: B = DOR type (DN_FIL or DN_DIR); IX = parent directory handle; caller's HL = name.\nExit: IX = handle of the new DOR.\nError: Fc = 1, A = error code (the parent handle is freed).",
+          "provenance": "source"
+        },
+        "3642": {
+          "synopsis": "Entry inside OSCl for a writable file: writes the file size (GetFileSize, DEHL) into the\nDOR's 'X' (extent) record, then frees the data of a memory file and the handle\n(DORHndleFreeDrct). OSClDel uses it to close a file without deleting it.\nEntry: IX = handle (device type).",
+          "provenance": "source"
+        },
+        "3677": {
+          "synopsis": "Changes handle IX from a file handle (HND_FILE) back to a device handle (HND_DEV).\nEntry: IX = handle.\nExit: Fc = 0.\nError: Fc = 1, A = error code; Fz = 1 for a special (below 256) handle.",
+          "provenance": "source"
+        },
+        "3684": {
+          "synopsis": "Changes file handle IX to a device handle (oscl_f2d) and deletes the file (OS_Del), closing\nit. Used for temporary files and files with a write error.\nEntry: IX = file handle.",
+          "provenance": "source"
+        },
+        "3847": {
+          "synopsis": "OS_Mv body: moves BC bytes between the stream IX and memory. A special handle goes to\nOsMvSpecial. For a file, HL <> 0 writes from HL to the file (DE must be 0, file writable)\nand DE <> 0 reads from the file to DE (HL must be 0, file readable). Puts the updated BC, DE\nand HL into the OS frame; a write error marks the file to be deleted.\nEntry: IX = handle; BC = count; caller's DE and HL from the OS frame.\nError: Fc = 1, A = error code (RC_Bad, RC_Wp, RC_Rp, RC_Hand).",
+          "provenance": "source"
+        },
+        "3965": {
+          "synopsis": "OS_Gb/OS_Gbt body: gets a byte from handle IX. Special handles: 5 reads the serial port\n(OSSiGbt), 1 the keyboard buffer, 4 (NUL) gives RC_Eof, 6 (standard input) goes to OSTin, 2,\n3, 7 and 8 give RC_Rp, others RC_Hand. A file handle must be readable (RdFileByte).\nEntry: IX = handle; BC = timeout (-1 = none).\nExit: Fc = 0, A = byte.\nError: Fc = 1, A = error code (RC_Rp, RC_Eof, RC_Hand, RC_Time).",
+          "provenance": "source"
+        },
+        "4050": {
+          "synopsis": "OS_Pb/OS_Pbt body: writes the frame's A to handle IX. Special handles: 5 writes the serial\nport (OSSiPbt), 2 the screen driver, 3 the printer (OS_Prt), 4 (NUL) discards it, 7 standard\noutput (OS_Out), 8 the direct printer filter; 1 and 6 give RC_Wp, others RC_Hand. A file\nhandle must be writable (WrFileByte); a write error marks it for deletion.\nEntry: IX = handle; BC = timeout (-1 = none); IY = OS frame with the byte in A.\nExit: Fc = 0.\nError: Fc = 1, A = error code (RC_Wp, RC_Hand, ...).",
+          "provenance": "source"
+        },
+        "4162": {
+          "synopsis": "OS_Frm body: answers reason B for handle IX. FA_PTR: the file position, or for IX = 0 or -1\nthe number of free handles (high word) and the OZ version (low word). FA_EXT: the file size,\nor the free RAM. FA_EOF: Fz = 1 at end of file, or for IX = 0 or -1 when the machine is\nexpanded. FA_BST: the serial buffer status of handle 5 (OS_Si SI_ENQ) in the frame's HL and\nDE. The 32-bit results go to the caller's DE buffer, or to its DEBC when DE = 0.\nEntry: B = reason code; IX = handle; IY = OS frame.\nError: Fc = 1, A = error code (RC_Unk, RC_Hand, RC_Na).",
+          "provenance": "source"
+        },
+        "4334": {
+          "synopsis": "OS_Fwm body: for file IX, FA_PTR sets the sequential pointer (expanding the file if needed)\nand FA_EXT sets the file size, keeping the position; the 32-bit value is read from HL. A\nwrite error marks the file to be deleted. Handles 0 and -1 return without action.\nEntry: B = reason code; IX = file handle; HL = pointer to the 32-bit value.\nError: Fc = 1, A = error code (RC_Unk for an unknown reason).",
+          "provenance": "source"
+        },
+        "4448": {
+          "synopsis": "OS_Si SI_SFT: soft reset of the serial port. Calls OSSiSft1 in kernel bank 1 through\nEXTCALL, which sets the default timeout, applies the Panel speeds, the transmit mode and the\nUART interrupt.\nEntry: none.",
+          "provenance": "source"
+        },
+        "4838": {
+          "synopsis": "Part of OS_Si SI_PX: writes the byte in A to the serial port with the default timeout\n(OSSiPbt with BC = -1), using the alternate registers.\nEntry: A = byte.\nExit: Fc = 0.\nError: Fc = 1, A = error code (RC_Time, RC_Esc, RC_Susp).\nKeeps: BC, DE, HL.",
+          "provenance": "source"
+        },
+        "4943": {
+          "synopsis": "Reads a byte from the serial port with the default timeout (OSSiGbt with BC = uwSerTimeout),\nusing the alternate registers. Used by SI_GX and SI_GXT.\nExit: Fc = 0, A = byte.\nError: Fc = 1, A = error code (RC_Time, ...).\nKeeps: BC, DE, HL.",
+          "provenance": "source"
+        },
+        "5051": {
+          "synopsis": "Part of OS_Si SI_GXT: reads a byte from the serial port and decodes Escape sequences: ESC\n'B' followed by two hexadecimal digits gives that byte value; ESC followed by any other\ncharacter is a terminator.\nExit: Fc = 0, Fz = 0, E = byte, A = $FF; or Fc = 0, Fz = 1, A = character after ESC.\nError: Fc = 1, A = error code.\nChanges: AF, E.",
+          "provenance": "source"
+        },
+        "5093": {
+          "synopsis": "Converts an ASCII hexadecimal digit into its value: '0'-'9' give 0-9, anything from ':'\nupwards has $37 subtracted, so 'A'-'F' give 10-15 (lower case is not handled).\nEntry: A = digit.\nExit: A = value.\nChanges: AF.",
+          "provenance": "source"
+        },
+        "5103": {
+          "synopsis": "OS_Ht: hardware time manipulation (internal two-byte call $F206). HT_RES waits until the\nTIM0 tick counter reads zero and pulses BM_COMRESTIM to reset the hardware timer. HT_RD\ncopies TIM0-TIM4 (TIM0 in 1/100 s) to the caller's 5-byte buffer at HL. HT_MDT returns BHL =\nthe month/date/time block (uwSysDateLow in bank $20).\nEntry: A = reason code (HT_RES, HT_RD, HT_MDT); HL = buffer for HT_RD; IY = OS frame.\nError: Fc = 1, A = RC_Unk.",
+          "provenance": "source"
+        },
+        "5251": {
+          "synopsis": "Builds the OS frame for a one-byte OZ call handler: takes the handler's return address and\nthe caller's S2/S3 bindings off the stack, binds kernel bank 1 into segment 2 and falls into\nOSFramePushMain.\nEntry: stack = return address, then the S2/S3 bindings and the caller's PC (as CallOZMain\nleaves them); caller's BC, DE, HL in the alternate set and AF in AF'; DE = OZ call word.\nExit: the caller's registers; IY = OS frame; frame's F = 0.\nChanges: AF', IY and the alternate BC, DE, HL.",
+          "provenance": "source"
+        },
+        "5256": {
+          "synopsis": "Pushes the OS frame (see OSFrame_* in oz.def): the S2/S3 bindings, HL, DE, BC and AF of the\ncaller, the OZ call word, the bindings again and IY; points IY at it, clears the frame's F,\nand returns to HL with the caller's registers.\nEntry: HL = return address; BC = S2/S3 bindings; DE = OZ call word; caller's BC, DE, HL in\nthe alternate set and AF in AF'.\nExit: the caller's registers; IY = OS frame.\nChanges: AF', IY and the alternate BC, DE, HL.",
+          "provenance": "source"
+        },
+        "5294": {
+          "synopsis": "Removes the OS frame and returns to the OZ caller. With Fc = 1, A and F are returned as\ngiven (the error); with Fc = 0 it goes into OSFramePopX and the frame's AF is returned.\nEntry: IY = OS frame (at SP); Fc = 1, A = error code, or Fc = 0.\nExit: through OZCallReturn1: BC, DE, HL from the frame, IY and the S2 and S3 bindings\nrestored.",
+          "provenance": "source"
+        },
+        "5296": {
+          "synopsis": "Removes the OS frame without an error: restores IY and the S2 binding, returns the frame's\nAF, BC, DE and HL, and leaves through OZCallReturn1, which restores S3 and decrements the\ncall level.\nEntry: IY = OS frame (at SP).\nExit: AF, BC, DE, HL from the frame.",
+          "provenance": "source"
+        },
+        "5311": {
+          "synopsis": "Reads the OZ caller's BC from the OS frame.\nEntry: IY = OS frame.\nExit: BC = caller's BC.\nChanges: BC.",
+          "provenance": "source"
+        },
+        "5318": {
+          "synopsis": "Reads the OZ caller's DE from the OS frame.\nEntry: IY = OS frame.\nExit: DE = caller's DE.\nChanges: DE.",
+          "provenance": "source"
+        },
+        "5325": {
+          "synopsis": "Reads the OZ caller's HL from the OS frame.\nEntry: IY = OS frame.\nExit: HL = caller's HL.\nChanges: HL.",
+          "provenance": "source"
+        },
+        "5332": {
+          "synopsis": "Stores BC in the OS frame as the value the OZ caller gets back.\nEntry: IY = OS frame; BC = value.\nChanges: none.",
+          "provenance": "source"
+        },
+        "5339": {
+          "synopsis": "Stores C in the OS frame and falls into PutOSFrame_DE: the caller gets CDE back.\nEntry: IY = OS frame; CDE = value.\nChanges: none.",
+          "provenance": "source"
+        },
+        "5342": {
+          "synopsis": "Stores DE in the OS frame as the value the OZ caller gets back.\nEntry: IY = OS frame; DE = value.\nChanges: none.",
+          "provenance": "source"
+        },
+        "5349": {
+          "synopsis": "Stores B in the OS frame and falls into PutOSFrame_HL: the caller gets BHL back.\nEntry: IY = OS frame; BHL = value.\nChanges: none.",
+          "provenance": "source"
+        },
+        "5352": {
+          "synopsis": "Stores HL in the OS frame as the value the OZ caller gets back.\nEntry: IY = OS frame; HL = value.\nChanges: none.",
+          "provenance": "source"
+        },
+        "5446": {
+          "synopsis": "Binds bank C into segment 1 and bank B into segment 2, updating both soft copies (BLSC_SR1,\nBLSC_SR2) and the ports.\nEntry: C = S1 bank; B = S2 bank.\nChanges: A.",
+          "provenance": "source"
+        },
+        "5457": {
+          "synopsis": "Binds bank B into segment 1: copies B into A and falls into MS1BankA.\nEntry: B = bank.\nExit: A = B; bank B bound in S1 and recorded in BLSC_SR1.\nChanges: A.",
+          "provenance": "source"
+        },
+        "5458": {
+          "synopsis": "Binds bank A into segment 1: records it in the soft copy BLSC_SR1 and writes it to the\nBL_SR1 port.\nEntry: A = bank.\nExit: bank A bound in S1 and recorded in BLSC_SR1.\nChanges: none.",
+          "provenance": "source"
+        },
+        "5467": {
+          "synopsis": "Binds bank B into segment 2: copies B into A and jumps to MS2BankA.\nEntry: B = bank.\nExit: A = B; bank B bound in S2 and recorded in BLSC_SR2.\nChanges: A.",
+          "provenance": "source"
+        },
+        "5475": {
+          "synopsis": "Binds bank A into segment 2: records it in the soft copy BLSC_SR2 and writes it to the\nBL_SR2 port. MS2BankK1 falls into it with the other half of the kernel (KN1_BNK).\nEntry: A = bank.\nExit: bank A bound in S2 and recorded in BLSC_SR2.\nChanges: none.",
+          "provenance": "source"
+        },
+        "5532": {
+          "synopsis": "Builds the free list of the handle table at reset: walks the NUMHANDLES (96) entries from\nHandles, marks each free (type and dynamic ID zero) and links it to the previous one, so\npFirstHandle ends on the last entry.\nEntry: none.\nExit: every handle free and chained through hnd_Next from pFirstHandle.\nChanges: AF, B, DE, IX.",
+          "provenance": "source"
+        },
+        "5840": {
+          "synopsis": "Reads a byte at HL in the caller's address space with PeekHL, then increments HL.\nEntry: HL = address (IY = OS frame when HL >= $8000).\nExit: A = byte; HL = HL + 1.\nChanges: AF, HL, AF'.",
+          "provenance": "source"
+        },
+        "5845": {
+          "synopsis": "Increments HL, then reads the byte there with PeekHL. Nothing in the source calls it.\nEntry: HL = address - 1 (IY = OS frame when the address is >= $8000).\nExit: A = byte; HL = HL + 1.\nChanges: AF, HL, AF'.",
+          "provenance": "source"
+        },
+        "5848": {
+          "synopsis": "Reads the byte at BHL. With B = 0 the address is local and falls into PeekHL; otherwise bank\nB is bound into S1 for the read (HL masked into S1) and the previous S1 binding is put back.\nEntry: B = bank (0 = local pointer); HL = address.\nExit: A = byte; BHL unchanged.\nChanges: AF, AF'.",
+          "provenance": "source"
+        },
+        "5852": {
+          "synopsis": "Reads the byte at the local address HL as the caller sees it. Below $8000 it reads directly.\nAt $8000 and above, where the kernel is bound, it binds the caller's S2 or S3 bank\n(OSFrame_S2/OSFrame_S3, chosen by A14) into S1, reads through the S1 window and restores S1.\nEntry: HL = address; IY = OS frame.\nExit: A = byte; HL unchanged.\nChanges: AF, AF' (only when HL >= $8000).",
+          "provenance": "source"
+        },
+        "5915": {
+          "synopsis": "Reads the byte at BHL with PeekBHL, then falls into IncBHL to advance the pointer. For an\nextended pointer (B <> 0) a carry out of the 16K segment keeps A14-A15 of H and increments\nthe bank instead.\nEntry: BHL = address (B = 0 for a local pointer).\nExit: A = byte; BHL = next address.\nChanges: AF, B, HL, AF'.",
+          "provenance": "source"
+        },
+        "5935": {
+          "synopsis": "Writes A at BHL with PokeBHL, then jumps to IncBHL to advance the pointer, moving to the\nnext bank when an extended pointer crosses the end of its segment.\nEntry: A = byte; BHL = address (B = 0 for a local pointer).\nExit: A unchanged; BHL = next address.\nChanges: F, B, HL, AF'.",
+          "provenance": "source"
+        },
+        "5941": {
+          "synopsis": "Writes A at the local address HL with PokeHL, then increments HL.\nEntry: A = byte; HL = address (IY = OS frame when HL >= $8000).\nExit: A unchanged; HL = HL + 1; B = 0.\nChanges: F, B, HL, AF'.",
+          "provenance": "source"
+        },
+        "5946": {
+          "synopsis": "Writes A at the local address HL as the caller sees it: sets B = 0, steps HL back and\nforward again through IncBHL (no net change) and falls into PokeBHL, which writes at $8000\nand above through the caller's S2 or S3 bank bound into S1.\nEntry: A = byte; HL = address; IY = OS frame when HL >= $8000.\nExit: A and HL unchanged; B = 0.\nChanges: F, B, AF'.",
+          "provenance": "source"
+        },
+        "6102": {
+          "synopsis": "Minute part of the RTC service, called by Int_RTCM after the acknowledge: reads the clock\nwith ReadHWClock and, when an alarm is pending, counts the 24-bit minute counter at\nuwNextAlmMinutes up towards zero. When it reaches zero and the seconds counter\nubNextAlmSeconds is zero too, it goes to ProcessAlm to activate the alarm.\nEntry: none.\nChanges: AF, BC, D, HL.",
+          "provenance": "source"
+        },
+        "6137": {
+          "synopsis": "Entry inside Int_RTCS after the second-tick acknowledge, the second part of the RTC service:\nreads the clock with ReadHWClock and, when an alarm is pending and no minutes are left,\ncounts ubNextAlmSeconds up towards zero. At zero (or when it already was zero) it falls into\nProcessAlm, which clears IST_B_ALARM, sets AHNF_B_ACTIVE in the next alarm's handle and\nfalls into IncActiveAlm.\nEntry: none.\nChanges: AF, BC, D, HL.",
+          "provenance": "source"
+        },
+        "6175": {
+          "synopsis": "Counts one more active alarm in ubNumActiveAlm and jumps to MySetPndngAlmTsk to update the\nalarm task request.\nEntry: none.\nChanges: AF, HL.",
+          "provenance": "source"
+        },
+        "6181": {
+          "synopsis": "Counts one active alarm less in ubNumActiveAlm and falls into MySetPndngAlmTsk to update the\nalarm task request.\nEntry: none.\nChanges: AF, HL.",
+          "provenance": "source"
+        },
+        "6185": {
+          "synopsis": "Updates the alarm task request in ubIntTaskToDo. When alarms are enabled (ubAlmDisableCnt =\n0) and at least one is active (ubNumActiveAlm), it sets ITSK_B_ALARM and, if\nITSK_B_PREEMPTION is set, locks the keyboard (KBF_B_LOCKED in KbdData); otherwise it clears\nITSK_B_ALARM.\nEntry: none.\nChanges: AF, HL.",
+          "provenance": "source"
+        },
+        "6214": {
+          "synopsis": "Reads the hardware clock (TIM0-TIM4, through ReadRTC) into time buffer A (ubTIM0_A) when bit\n0 of ubTimeBufferSelect is 1, otherwise into buffer B (ubTIM0_B), then flips the selector,\nsets IST_B_ALMTIMEOK in ubIntStatus and tests IST_B_ALARM.\nEntry: none.\nExit: Fz = 0 when an alarm is pending, Fz = 1 when none; HL = ubIntStatus.\nChanges: AF, BC, D, HL.",
+          "provenance": "source"
+        },
+        "6327": {
+          "synopsis": "Resets the random seed index ubRandomPtr to the first of the 4 seed bytes (ubRandom1), so\nUpdateRnd starts over.\nEntry: none.\nChanges: A.",
+          "provenance": "source"
+        },
+        "6696": {
+          "synopsis": "Puts a keycode into the keyboard buffer; GetKey falls into it. ESC sets the escape flag\nthrough MaySetEsc when enabled, then DeadKeys may swallow or translate the key. Otherwise it\nsets KBF_B_KEY, writes the key at ubKbBufWrPos in the 32-byte circular buffer, advances the\nwrite position and sets ITSK_B_BUFFER. A full buffer loses the key. Runs inside the\ninterrupt, so it does not disable interrupts.\nEntry: A = keycode; IX = KbdData.\nExit: Fc = 1 when the key was swallowed by DeadKeys.\nChanges: AF, BC, D, HL.",
+          "provenance": "source"
+        },
+        "6737": {
+          "synopsis": "Handles the special keys and qualifiers for a key from the matrix:\n1. CAPS LOCK: disables repeat and toggles caps lock; with <> it forces CAPS, with [] it\nforces caps; redraws the OZ window (DrawOZwd) and returns through SetKeyDown (swallowed).\n2. ESC: disables repeat. With SHIFT or <> while a CLI is active it records the qualifier\n(CLISHIFT/CLIDMND bits of ubIntStatus), asks for an OZ window update and swallows the key;\nwith SHIFT or <> and no CLI it swallows the key; plain ESC goes to ApplyQlfrsToESC.\n3. Any other key goes to ApplyQlfrsToA for the qualifier translations.\nEntry: A = internal keycode; D = qualifiers (QB_SHIFT, QB_DIAMOND, QB_SQUARE); IX = KbdData.\nExit: Fc = 0, A = keycode to store.\nError: Fc = 1 when the key is to be ignored.",
+          "provenance": "source"
+        },
+        "6801": {
+          "synopsis": "Sets KBF_B_KEY in the keyboard flags (KbdData) to record that a key is down, and returns Fc\n= 1 so a caller can return through it to swallow the key.\nEntry: none.\nExit: Fc = 1.\nChanges: F.\nKeeps: HL.",
+          "provenance": "source"
+        },
+        "6842": {
+          "synopsis": "Looks up a keycode in a translation table of sorted pairs: a length byte, then pairs of\n(key, translated key) in ascending key order. The search stops early at a larger key.\nTranslateTable reaches it after finding the table.\nEntry: A = keycode; HL = table.\nExit: Fc = 0, A = translated key.\nError: Fc = 1, A unchanged when the key is not in the table.\nChanges: F, B, HL.",
+          "provenance": "source"
+        },
+        "7051": {
+          "synopsis": "Entry inside DeadKeys: cancels a pending dead key. Clears ubKmDeadchar (shown as a space in\nthe OZ window) and ubKmDeadsub, redraws the OZ window (DrawOZwd) and returns Fc = 1, which\nDeadKeys' callers read as a swallowed key.\nEntry: none.\nExit: Fc = 1; A = 0.\nKeeps: BC.",
+          "provenance": "source"
+        },
+        "7214": {
+          "synopsis": "Table of 9 bytes read by FindOtherKey, three rows of three: the masks of the non-qualifier\nkeys in keyboard rows 0-5, 6 and 7 ($FF, $AF, $3F); the SHIFT key bit in those rows (none,\n$40 left SHIFT, $80 right SHIFT); and the kbd_flags bit set for the qualifier in rows 6 and\n7 (none, KBF_DMND, KBF_SQR).",
+          "provenance": "source"
+        },
+        "7382": {
+          "synopsis": "Body of OS_Mop: opens a memory pool. Allocates a memory handle, stores the flags from the\ncaller's A in mhnd_AllocFlags and, with MM_B_SLT, the slot or bank in C as\nmhnd_ExclusiveBank (not documented). Unless MM_B_MUL is set, SetExclusiveBank then chooses\none bank for the pool.\nEntry: OSFrame_A = flags; C = slot/bank when MM_B_SLT is set.\nExit: Fc = 0, IX = memory handle.\nError: Fc = 1, A = error code from AllocHandle.",
+          "provenance": "source"
+        },
+        "7417": {
+          "synopsis": "Body of OS_Mcl: closes a memory pool. Verifies the memory handle, then for slots 3 to 0\nbinds the slot's MAT in S2 and frees every page in the handle's allocation chain for that\nslot. The chain's last entry must point back at the handle, otherwise it fails through\nOZwd__fail. Finally it frees the handle.\nEntry: IX = memory handle.\nError: Fc = 1, A = error code (bad handle).",
+          "provenance": "source"
+        },
+        "7504": {
+          "synopsis": "Body of OS_Mal: allocates memory from a pool.\n1. A size above 256 bytes goes to mal_block, which finds and allocates whole pages with\nOS_Fma and OS_Axm.\n2. A size of 256 allocates a whole page with osmal_AllocPage.\n3. A smaller size first looks for a big enough chunk in the split pages already allocated\nfrom slots 3 to 0 (ValidatePage, AllocChunk); failing that it allocates a new page, makes it\none free chunk of 255 bytes at offset 1 and allocates from it. The address is returned for\nthe pool's segment; in segment 0 it is in $2000-$3FFF, and a page from the upper half of a\nbank is returned with the odd bank number. Unless MM_B_MUL is set the bank becomes the\npool's exclusive bank.\nEntry: BC = size; IX = memory handle; IY = OS frame.\nExit: Fc = 0; OSFrame BHL = memory; OSFrame_C = segment.\nError: Fc = 1, A = error code (RC_Fail for a bad size, RC_Room).",
+          "provenance": "source"
+        },
+        "7695": {
+          "synopsis": "Allocates a whole free page for the pool: takes the pool's exclusive bank or slot (or, not\ndocumented, the slot in the caller's A when it is $01-$1F and no bank is set), finds a free\npage with FindFreePage and falls into MarkPageAsAllctd to link it into the handle's chain.\nEntry: IX = memory handle; IY = OS frame.\nExit: Fc = 0, HL = MAT entry of the page.\nError: Fc = 1, A = RC_Room.",
+          "provenance": "source"
+        },
+        "8163": {
+          "synopsis": "Checks for OS_Axm that each of L pages from the page in OSFrame_H is free, calling axm_vp\nfor each and advancing OSFrame_H.\nEntry: L = number of pages; OSFrame_B = bank; OSFrame_H = first page; IX = memory handle.\nExit: Fc = 0, all pages free; OSFrame_H = past the last page.\nError: Fc = 1, A = RC_Fail (no RAM in bank) or RC_Room (a page already allocated).",
+          "provenance": "source"
+        },
+        "8176": {
+          "synopsis": "Checks for OS_Axm that one page is free: finds its MAT entry with GetPageMAT for the bank in\nOSFrame_B and the pool's segment, and tests its next pointer.\nEntry: OSFrame_B = bank; OSFrame_H = page address high byte; IX = memory handle.\nExit: Fc = 0 when the page is free.\nError: Fc = 1, A = RC_Fail (no RAM in bank) or RC_Room (page allocated).",
+          "provenance": "source"
+        },
+        "8242": {
+          "synopsis": "Checks for OS_Fxm that each of L pages from the page in OSFrame_H is allocated, calling\nfxm_vp for each and advancing OSFrame_H.\nEntry: L = number of pages; OSFrame_B = bank; OSFrame_H = first page; IX = memory handle.\nExit: Fc = 0, all pages allocated; OSFrame_H = past the last page.\nError: Fc = 1, A = RC_Fail.",
+          "provenance": "source"
+        },
+        "8255": {
+          "synopsis": "Checks for OS_Fxm that one page is allocated: finds its MAT entry with GetPageMAT for the\nbank in OSFrame_B and the pool's segment, and tests its next pointer.\nEntry: OSFrame_B = bank; OSFrame_H = page address high byte; IX = memory handle.\nExit: Fc = 0 when the page is in use.\nError: Fc = 1, A = RC_Fail (no RAM in bank, or page already free).",
+          "provenance": "source"
+        },
+        "8288": {
+          "synopsis": "Allocates one explicit page for OS_Axp and OS_Axm: finds its MAT entry with GetPageMAT and,\nwhen it is free, jumps to MarkPageAsAllctd to add it to the pool's chain.\nEntry: B = bank; OSFrame_H = page address high byte; IX = memory handle.\nExit: Fc = 0, HL = MAT entry of the page.\nError: Fc = 1, A = RC_Fail (no RAM in bank) or RC_Room (page already allocated).",
+          "provenance": "source"
+        },
+        "8311": {
+          "synopsis": "Checks the arguments of OS_Axm and OS_Fxm: L must be 1 to 64 pages (32 for a segment 0\npool), a full 64 (or 32) needs a page offset of zero, and the run must not cross the end of\nthe bank. Falls into AxpPrepare.\nEntry: H = page address high byte; L = number of pages; IX = memory handle; IY = OS frame.\nExit: as AxpPrepare.\nError: Fc = 1, A = RC_Fail.",
+          "provenance": "source"
+        },
+        "8351": {
+          "synopsis": "Checks the handle for OS_Axp, OS_Axm and OS_Fxm and fits the page address to the pool's\nsegment: puts the segment bits of mhnd_AllocFlags into H. For a segment 0 pool an address in\nthe upper half sets bit 0 of OSFrame_B (odd bank) and H is moved to $2000-$3FFF. Stores the\nresult in OSFrame_H.\nEntry: H = page address high byte; IX = memory handle; IY = OS frame.\nExit: Fc = 0; H = OSFrame_H = adjusted page.\nError: Fc = 1, A = error code from VerifyHandle.",
+          "provenance": "source"
+        },
+        "8412": {
+          "synopsis": "Finds a free page for a pool from its exclusive bank or slot: D = 0 searches every slot\n(FndFrePgeAnySlot), D below $20 is a slot (FndFreePageSlotD), any other value a bank\n(FndFreePageBankD).\nEntry: D = exclusive bank or slot (0 = any); E = allocation flags.\nExit: Fc = 0, HL = MAT entry of a free page.\nError: Fc = 1, A = RC_Room.",
+          "provenance": "source"
+        },
+        "8742": {
+          "synopsis": "Counts one free RAM page less in uwFreeRAMPages.\nEntry: none.\nChanges: none.",
+          "provenance": "source"
+        },
+        "8811": {
+          "synopsis": "Joins neighbouring free chunks in a split page: follows the chunk list from the link at\noffset 0 (each chunk holds its size and the link to the next) and merges a chunk with the\nnext when they touch. Stops at the end of the list, at the end of the page or at a chunk\nlinked to itself.\nEntry: H = page (bound in).\nChanges: AF, DE, L.",
+          "provenance": "source"
+        },
+        "8925": {
+          "synopsis": "Scans one slot for OS_Fma. Turns the slot number into its first bank (slot 0 starts at bank\n$20) in OSFrame_B, binds the slot's MAT in S2 (MS2SlotMAT67) and puts the last bank + 1 in\nOSFrame_C. Then for each bank it counts the free pages at the offset in OSFrame_H (or, with\nFM_B_NOF, finds a run anywhere with fma_nof), honouring FM_B_FIX and FM_B_EVN.\nEntry: A = OS_Fma options with the slot in bits 0-1; OSFrame_H = page offset; OSFrame_L =\npages wanted; IY = OS frame.\nExit: Fc = 0, OSFrame_B = bank with room.\nError: Fc = 1, A = RC_Room when no bank has room; Fc = 1 with no error code when the slot\nhas no RAM.",
+          "provenance": "source"
+        },
+        "9021": {
+          "synopsis": "Accepts a bank for OS_Fma's FM_B_EVN option: without the option it returns Fz = 1; with it,\nFz = 1 only when the bank in OSFrame_B is even.\nEntry: OSFrame_A = options; OSFrame_B = bank.\nExit: Fz = 1 when the bank is accepted.",
+          "provenance": "source"
+        },
+        "9031": {
+          "synopsis": "For OS_Fma's FM_B_NOF option: finds the first run of OSFrame_L free pages in the bank whose\nMAT starts at HL, skipping swappable pages when FM_B_FIX is asked for. The run's first page\noffset is put in OSFrame_H.\nEntry: HL = bank's first MAT entry; OSFrame_A = options; OSFrame_L = pages wanted.\nExit: Fc = 0, HL = bank's first MAT entry; OSFrame_H = page offset.\nError: Fc = 1 when no run is found.",
+          "provenance": "source"
+        },
+        "9082": {
+          "synopsis": "Chooses the exclusive bank of a memory pool: the bank with the most unused pages within the\npool's limit in mhnd_ExclusiveBank (0 = any slot, below $20 = a slot, otherwise that bank),\ncounted by FndUnsdBnkAnySlt, FindUnusedBank or CntUnsdPgsInBank. The bank is stored in\nmhnd_ExclusiveBank when one with free pages is found.\nEntry: IX = memory handle.",
+          "provenance": "source"
+        },
+        "9339": {
+          "synopsis": "Entry inside Chk128KB, after slots 1 and 2: checks whether slot 0 holds at least 128K of RAM\n(ubSlotRamSize).\nEntry: none.\nExit: A = $21; Fc = 0 when slot 0 has 128K or more, Fc = 1 when less.",
+          "provenance": "source"
+        },
+        "9347": {
+          "synopsis": "Adds a RAM card inserted in a slot: initialises its RAM with InitSlotRAM, binds the other\nhalf of the kernel in S2 and, for slot 1 or 2, calls ExpandMachine (which expands the\nmachine when the card has 128K or more). Falls into MountAllRAM.\nEntry: A = first bank of the slot ($40, $80 or $C0).",
+          "provenance": "source"
+        },
+        "9367": {
+          "synopsis": "Writes the front DORs of the RAM devices, from RAMDORtable. For each entry it binds the bank\nin S1 and, when the bank has RAM (RAM.- always), copies RAMFrontDOR with the device's\ncharacter to the DOR address. RAM.0-RAM.3 also get the CT_RAM tag at $4000; RAM.- gets\nAPPFrontDOR at $4060. On a soft reset a bank already tagged is left alone.\nEntry: none.\nChanges: AF, BC, DE, HL.",
+          "provenance": "source"
+        },
+        "9453": {
+          "synopsis": "Table of the RAM devices for MountAllRAM, 3 bytes each, ended by a 0 byte: bank, DOR address\nlow byte (at $40xx in S1) and the device character ('-' for RAM.-, '0' to '3' for\nRAM.0-RAM.3).",
+          "provenance": "source"
+        },
+        "9469": {
+          "synopsis": "Template of a RAM device's front DOR, 19 bytes, copied by MountAllRAM: three 3-byte links\n($FF,0,0 then zeros), type DM_DEV, length 9, DT_NAM key, name length 6, \"RAM.\" (the device\ncharacter is written after it), then the 0 name terminator and the $FF end mark.",
+          "provenance": "source"
+        },
+        "9488": {
+          "synopsis": "Template of the APPL device's front DOR, 19 bytes, which MountAllRAM copies to $4060 in the\nRAM.- bank: three empty 3-byte links, type DN_APL, length 8, DT_NAM key, name length 5,\n\"APPL\", 0 and the $FF end mark.",
+          "provenance": "source"
+        },
+        "9804": {
+          "synopsis": "Marks in the MAT the blocks used by a chain of filesystem DORs, recursively; MarkAllFsBlocks\nis its entry for the root. For each DOR from DE it marks the DOR's own block (MarkFsBlock),\nthen the blocks of a file (MarkFileBlocks) or, for a directory or device, the DORs below it\nby a recursive call, and moves on to the brother. S1 and HL are saved for each level.\nEntry: DE = file pointer of the first DOR (0 = none).\nExit: S1 and HL restored.\nError: a bad DOR type or a MarkFsBlock error prints \"FS Error\" with OS_Pout and returns.",
+          "provenance": "source"
+        },
+        "10217": {
+          "synopsis": "Prints the null-terminated string that follows the call, returning past it. A $7F byte\nstarts a code taken from the next byte (case ignored): A prints the active application's\nname, T the active topic, F the active command, C, L, N and R set the justification, D\nresets the screen toggles; $7F $7F prints $7F. Characters go out through OS_Out.\nEntry: string inline after the call.\nChanges: AF; BC, DE and HL when a $7F code runs.",
+          "provenance": "source"
+        },
+        "10283": {
+          "synopsis": "Jumps to the address in DE: a call to it calls the routine at DE.\nEntry: DE = routine address.",
+          "provenance": "source"
+        },
+        "10285": {
+          "synopsis": "Sets centre justification: sends SOH \"2JC\" through OS_Out.\nEntry: none.\nChanges: AF, B.",
+          "provenance": "source"
+        },
+        "10289": {
+          "synopsis": "Sets right justification: sends SOH \"2JR\" through OS_Out.\nEntry: none.\nChanges: AF, B.",
+          "provenance": "source"
+        },
+        "10293": {
+          "synopsis": "Sets normal justification: sends SOH \"2JN\" through OS_Out.\nEntry: none.\nChanges: AF, B.",
+          "provenance": "source"
+        },
+        "10297": {
+          "synopsis": "Sends the justification sequence SOH \"2J\" followed by the character in A (C, L, N or R)\nthrough OS_Out; the other Justify entries load the character into B and join it.\nEntry: A = justification character.\nChanges: AF, B.",
+          "provenance": "source"
+        },
+        "10311": {
+          "synopsis": "Draws the help window of the active topic: the heading \"The <application> <topic> topic\",\nthe topic's help text (PrintTopicHelp), and the key hints for the other topics, for going\nback to the application and, when the topic has command help, for its entries. Ends through\nHelp2Wd_bottom.\nEntry: none.\nError: Fc = 1 when input is pending (from InitHelpWd or the printing).",
+          "provenance": "source"
+        },
+        "10463": {
+          "synopsis": "Sends SOH SD_DTS, which resets the screen driver's toggles; falls into ScrDrv_SOH_A.\nEntry: none.\nChanges: AF.",
+          "provenance": "source"
+        },
+        "10465": {
+          "synopsis": "Sends a screen driver code: SOH followed by A, through OS_Out.\nEntry: A = code.\nChanges: AF.",
+          "provenance": "source"
+        },
+        "10474": {
+          "synopsis": "Draws the help window of the active command: a heading with the application's name, the\ncommand's name and key sequence, the command's help text (PrintTopicHelp), and the key hints\nfor the other entries and for going back to the topic. Ends through Help2Wd_bottom.\nEntry: none.\nError: Fc = 1 when input is pending (from InitHelpWd or the printing).",
+          "provenance": "source"
+        },
+        "10609": {
+          "synopsis": "Prints the name of the help's active application (ubHlpActiveApp): finds its DOR with\nGetAppDOR, binds it in with OSBixS1 and prints the name at ADOR_NAME with OS_Bout.\nEntry: none.",
+          "provenance": "source"
+        },
+        "10628": {
+          "synopsis": "Loads the active help topic number (ubHlpActiveTpc) and falls into PrintTopic.\nEntry: none.",
+          "provenance": "source"
+        },
+        "10631": {
+          "synopsis": "Prints the name of topic A of the active help application: binds in the topic list\n(GetHlpTopics, OSBixS1), skips to the topic with SkipNTopics and writes its tokenized name\nwith MayWrt, between the screen driver toggles of MTH_ToggleLT.\nEntry: A = topic number.\nKeeps: AF.",
+          "provenance": "source"
+        },
+        "10664": {
+          "synopsis": "Prints the name of the active command (ubHlpActiveCmd) of the active topic: binds in the\ncommand list, finds the topic (GetCmdTopicByNum) and the command (GetRealCmdPos), skips its\nkey sequence and writes the tokenized name with MayWrt.\nEntry: none.",
+          "provenance": "source"
+        },
+        "10706": {
+          "synopsis": "Prints a help text given by its offset: returns when input is pending or the offset is 0,\notherwise adds the offset to the help base (GetHlpHelp), moving to the next bank on a carry\nout of the segment, and falls into MTHPrintTknzd.\nEntry: BC = help text offset (0 = none).\nError: Fc = 1 when input is pending.",
+          "provenance": "source"
+        },
+        "10730": {
+          "synopsis": "Prints a tokenized text at BHL, centred (JustifyC), until its end or until input arrives;\nbinds it in with OSBixS1 and writes it with OSWrt. Falls into InputEmpty.\nEntry: BHL = text (address in segment 0 form).\nExit: Fc = 0 when no input is pending.\nError: Fc = 1 when input is pending.",
+          "provenance": "source"
+        },
+        "10772": {
+          "synopsis": "Prints the inline string after the call with MTHPrint when no input is pending. When input\nis pending it drops the string's return address and returns to its caller's caller, so the\ncalling routine ends with Fc = 1.\nEntry: string inline after the call.\nError: Fc = 1, caller abandoned, when input is pending.",
+          "provenance": "source"
+        },
+        "10781": {
+          "synopsis": "The 12-character path prefix \":ROM.*/HELP/\" (no terminator). OpenAppHelpFile copies it to\nthe stack and appends the application's name to open its help file.",
+          "provenance": "source"
+        },
+        "10861": {
+          "synopsis": "Gets a DOR handle for a filename: calls GN_Opf with OP_DOR, a local name and no output\nbuffer.\nEntry: HL = filename (local pointer).\nExit: Fc = 0, IX = DOR handle.\nError: Fc = 1, A = error code.\nKeeps: BC.",
+          "provenance": "source"
+        },
+        "10875": {
+          "synopsis": "Moves the help to the next application: GetAppDOR with ubHlpActiveApp + 1, then stores the\nreturned ID in ubHlpActiveApp.\nEntry: none.\nExit: BHL = application DOR; A = application ID.",
+          "provenance": "source"
+        },
+        "10881": {
+          "synopsis": "Moves the help to the previous application: GetAppDOR with ubHlpActiveApp - 1, then stores\nthe returned ID in ubHlpActiveApp.\nEntry: none.\nExit: BHL = application DOR; A = application ID.",
+          "provenance": "source"
+        },
+        "10892": {
+          "synopsis": "Makes application A the help's active application (ubHlpActiveApp) and falls into GetAppDOR,\nwhich finds its DOR, records it in eHlpAppDOR and copies its topic, command, help and token\npointers when no MTH help file is open.\nEntry: A = application ID (bit 7 = installed APP, bits 5-6 = slot, bits 0-4 = number).\nExit: BHL = application DOR; A = application ID found.\nError: Fc = 1, A = RC_Esc when the ID is past the last application.",
+          "provenance": "source"
+        },
+        "11063": {
+          "synopsis": "Returns the help text base of the active help application in BHL; falls into GetHlp_sub with\nthe eHlpHelp pointer.\nEntry: none.\nExit: BHL = help text base (address in segment 0 form).\nChanges: AF, BC, HL.",
+          "provenance": "source"
+        },
+        "11067": {
+          "synopsis": "Returns the token table of the active help application in BHL. It is the system token table\n(MTH_BNK, SysTokenBase) when SF1_B_SYSTOKENS is set or the application's pointer is $FFFFFF\n(or $3F3FFF), otherwise the application's own (GetHlp_sub with eHlpTokens).\nEntry: none.\nExit: BHL = token table.\nChanges: AF, BC, HL.",
+          "provenance": "source"
+        },
+        "11092": {
+          "synopsis": "Returns the topic list of the active help application in BHL; jumps to GetHlp_sub with the\neHlpTopics pointer.\nEntry: none.\nExit: BHL = topic list (address in segment 0 form).\nChanges: AF, BC, HL.",
+          "provenance": "source"
+        },
+        "11103": {
+          "synopsis": "Reads one of the help pointers (topics, commands, help, tokens) as BHL. When the help's\napplication DOR (eHlpAppDOR) is the running application's (eAppDOR_2) it reads the\napplication's own copy (eAppTopics_2 and on), otherwise the help copy at eHlpTopics and on.\nA14-A15 of H are cleared.\nEntry: L = low byte of the pointer's bank byte in the eHlpTopics block.\nExit: BHL = pointer (address in segment 0 form).\nChanges: AF, BC, HL.",
+          "provenance": "source"
+        },
+        "11188": {
+          "synopsis": "Moves HL from the start mark of a topic/command list to the first entry of topic A, skipping\nwhole topics with NextTopic.\nEntry: HL = start mark of the list; A = topic number (1 = first).\nExit: Fc = 0, HL = first entry of the topic.\nError: Fc = 1 when the list ends first.\nChanges: AF, B, DE, HL.",
+          "provenance": "source"
+        },
+        "11200": {
+          "synopsis": "Finds command A of the topic around HL and its place on screen: rewinds to the topic's\nstart, then steps forward with NextCommand, counting the position and the column and row\n(from column 1, row 0). Hidden commands are passed over: a hidden target gives the next\nvisible command, or the previous one at the topic's end, and a search that finds none starts\nagain with command 1.\nEntry: HL = an entry of the topic; A = command number.\nExit: Fc = 0, A = position; HL = command; D = column; E = row.\nError: Fc = 1, A = 0 when the list holds no command; a fallback also returns Fc = 1.",
+          "provenance": "source"
+        },
+        "11276": {
+          "synopsis": "Moves HL past the end-of-topic mark to the first entry of the next topic, stepping with\nNextCommand.\nEntry: HL = an entry of the topic; D = column; E = row.\nExit: Fc = 0, HL = first entry of the next topic; DE updated.\nError: Fc = 1 at the end of the list.\nChanges: AF, DE, HL.",
+          "provenance": "source"
+        },
+        "11339": {
+          "synopsis": "Reads the help pointer of a topic or command definition through GetAttr_Help and tests its\nCMDF_HELP attribute bit.\nEntry: HL = topic or command definition (its length byte first).\nExit: Fz = 0, DE = help pointer when the entry has help; Fz = 1, DE = 0 when it has none; Fc\n= 0 in both cases (the source comment's Fc = 1 does not happen: AND clears Fc).\nChanges: AF, DE.\nKeeps: BC, HL.",
+          "provenance": "source"
+        },
+        "11370": {
+          "synopsis": "Fetches the DOR of the application whose help is shown (ubHlpActiveApp) with GetAppDOR and\nfalls into ChgHelpFile to switch the help file to it.\nEntry: none (reads ubHlpActiveApp).",
+          "provenance": "source"
+        },
+        "11376": {
+          "synopsis": "Closes the open help file (frees the DOR handle in pMTHHelpHandle with OS_Dor DR_FRE) and,\nunless A = 0, opens the help file of the application whose DOR is at BHL: binds the DOR into\nS1, binds kernel bank 1 into S2 and calls OpenAppHelpFile with the DOR's name. The new\nhandle is stored in pMTHHelpHandle.\nEntry: A = application ID, 0 to close only; BHL = application DOR.\nExit: pMTHHelpHandle = handle of the new help file (or what DR_FRE left).",
+          "provenance": "source"
+        },
+        "11415": {
+          "synopsis": "Draws the MTH menu window of the active topic (ubHlpActiveTpc).\n1. Defines and clears window 6 across the screen.\n2. Without topics it prints \"<application> has no topics\"; a topic without commands prints\n\"The <application> <topic> topic has no functions\"; both return Fc = 1.\n3. Otherwise it lists the topic's commands that are not hidden in columns of 8 rows\n(InitMenuColumnE starts a column, CMDF_B_COLUMN forces one), each name followed by its key\nsequence (PrintCmdSequence); it stops early when input is waiting.\n4. When the list is done it calls DrawMenuWd2 for the topic line and key hints.\nEntry: none (reads ubHlpActiveTpc).\nExit: Fc = 0 when the menu was drawn; Fc = 1 when there was nothing to list or input is\nwaiting.",
+          "provenance": "source"
+        },
+        "11542": {
+          "synopsis": "Shared exit of DrawMenuWd for a topic list or a topic with nothing to show: sets Fc = 1 and\nreturns.\nEntry: none.\nExit: Fc = 1.",
+          "provenance": "source"
+        },
+        "11632": {
+          "synopsis": "Starts the first menu column: sets D = 1 and falls into InitMenuColumnE.\nEntry: none.\nExit: as InitMenuColumn (D = 2, E = 0 when the column was opened).",
+          "provenance": "source"
+        },
+        "11634": {
+          "synopsis": "Sets the column width E = 27 and falls into InitMenuColumn, which defines window 7 at column\nD of the menu: x = 28 * (D - 1), width E, 8 rows, and clears window 6. A width under 16\nplaces the window at x = 85, the narrow last column.\nEntry: D = column number (1 to 3 for a full column).\nExit: Fc = 0; D = D + 1 and E = 0 when the column was opened; D and E unchanged when the\ncolumn would pass x = 93.\nKeeps: HL.",
+          "provenance": "source"
+        },
+        "11693": {
+          "synopsis": "Prints the key sequence of a command right justified, then a space, CR and LF. A sequence\nstarting with a letter is printed as the <> symbol followed by the string; any other first\nbyte is printed as a key name by MTHPrintKeycode.\nEntry: HL = command definition (length byte, command code, key sequence).\nKeeps: DE, HL.",
+          "provenance": "source"
+        },
+        "11781": {
+          "synopsis": "Compares the key sequence of a command with the typed OZ command buffer. Called by FindCmd\nfor each command of the application.\nEntry: HL = command's key sequence (zero terminated); DE = typed buffer (OZcmdBuf).\nExit: Fc = 0, Fz = 1 when they match exactly (or the buffer is empty and the command starts\nwith '@'); Fc = 0, Fz = 0 when the buffer is a prefix of the command.\nError: Fc = 1 when they differ or the command's sequence is empty.\nChanges: AF.\nKeeps: BC, DE, HL.",
+          "provenance": "source"
+        },
+        "11815": {
+          "synopsis": "OS_Wtb: sets the token table base used to expand tokens. A new base with B = 0 and HL not\nzero is a local address, turned into a bank and address by FixPtr. The base is stored in\neAppTokens_2; the old base is returned in the caller's OS frame.\nEntry: BHL = new token table base (0 for none).\nExit: Fc = 0; BHL = previous token table base.",
+          "provenance": "source"
+        },
+        "11845": {
+          "synopsis": "Writes A through OS_Wrt unless it is a control code: a byte below $20 returns Fc = 1 without\noutput, which ends DrawMenuWd's name loop at the terminating zero.\nEntry: A = character or token.\nExit: Fc = 0 after writing; Fc = 1 when A < $20 (A unchanged).",
+          "provenance": "source"
+        },
+        "11848": {
+          "synopsis": "OS_Wrt: writes a character or token to standard output: 1 to $7E as is, $7F as CR and LF,\nand $80 to $FF as the token of the help token table (WrFarToken), or as the byte itself when\nthere is no token table. Tokens may contain tokens.\nEntry: A = character or token code.\nExit: Fc = 0.\nError: Fc = 1, A = RC_Eof when A = 0.\nChanges: AF, BC, DE.\nKeeps: HL.",
+          "provenance": "source"
+        },
+        "11884": {
+          "synopsis": "Writes token E from the help token table (GetHlpTokens): binds the table's bank into S2\n(setting bit 7 of its address), prints the token with WriteToken and restores S2.\nEntry: E = token code ($80 to $FF).\nExit: Fc = 0, Fz = 0, A = $7F when the token was handled.\nError: Fc = 1, Fz = 1 when there is no token table.",
+          "provenance": "source"
+        },
+        "11907": {
+          "synopsis": "Prints one token from a token table. The table starts with the recursion boundary byte and\nthe number of tokens, followed by a word offset per token (the next one marks its end).\nTokens numbered from the boundary up (all of them when its bit 7 is set) are printed through\nOS_Wrt so they can hold tokens; the others go to OS_Out. $7F prints as CR and LF.\nEntry: HL = token table base; E = token code ($80 + number).\nExit: Fc = 0; BC = table base.\nError: Fc = 1 when the token number is not below the number of tokens.\nChanges: AF, BC, DE, HL.",
+          "provenance": "source"
+        },
+        "11987": {
+          "synopsis": "Reads two bytes of the token table and falls into GetTokenChar for the second one.\nEntry: BC = token table base; HL = offset.\nExit: E = byte at BC + HL; A = D = byte at BC + HL + 1; HL = HL + 2.\nChanges: A, DE, HL.\nKeeps: BC.",
+          "provenance": "source"
+        },
+        "11991": {
+          "synopsis": "Reads one byte of the token table.\nEntry: BC = token table base; HL = offset.\nExit: A = D = byte at BC + HL; HL = HL + 1.\nChanges: A, D, HL.\nKeeps: BC, E.",
+          "provenance": "source"
+        },
+        "12142": {
+          "synopsis": "Reads standard input with BC = $FFFF, the default timeout of RdKbBuffer; falls into RdStdin.\nEntry: none.\nExit: as RdStdin.",
+          "provenance": "source"
+        },
+        "12145": {
+          "synopsis": "Reads a byte from standard input. With a CLI active it reads from the CLI (DC_In, after\nUpdateRnd and ResetTimeout), reads again at the end of a CLI file and marks a read ESC with\nMaySetEsc. Otherwise it jumps to RdKbBuffer to wait for a key in the keyboard buffer.\nEntry: BC = timeout ($FFFF for the default).\nExit: Fc = 0, A = byte; BC = time remaining (keyboard).\nError: Fc = 1, A = error code (RC_Time, RC_Esc, RC_Susp, or the CLI's error).",
+          "provenance": "source"
+        },
+        "12302": {
+          "synopsis": "The body of OS_In and OS_Tin: reads a character for the application.\n1. Saves the timeout, pushes IX and IY as OS_Ent does, records SP in pAppStackPtr, the S0 to\nS2 bindings in ubAppBindings and the call level in ubOldCallLevel.\n2. Runs DoTasks (switch off, expired alarms, OZ window).\n3. A pending second byte of an extended character (SF1_B_XTNDCHAR) is returned now.\n4. Otherwise reads a byte with RdStdin; MENU, HELP and INDEX (ostin_tbl) go to DoHelp, other\nkeys through sub_EF92, the <> and [] command handling.\n5. An extended character returns A = 0 with Fz = 1 in the OS frame and keeps the character\nfor the next call. ostin_4, inside it, is where an application is entered from OS_Ent.\nEntry: BC = timeout ($FFFF for none).\nExit: Fc = 0, A = character.\nError: Fc = 1, A = error code (RC_Time, RC_Esc, RC_Susp).",
+          "provenance": "source"
+        },
+        "12443": {
+          "synopsis": "Table of 3 bytes: the keys OSTinMain hands to DoHelp, IN_MEN, IN_HLP and IN_IDX (searched\nwith CPIR).",
+          "provenance": "source"
+        },
+        "12446": {
+          "synopsis": "Applies a pending <> or [] of the OZ window to a key. With neither pending, or with letters\nalready typed into OZcmdBuf, the key is returned as it is. Otherwise <> adds the QUAL_CTRL\nand [] the QUAL_ALT qualifier (ApplyQualifiers) and the OZ command is cancelled.\nEntry: A = key; HL = ubSysFlags1.\nExit: Fc = 0, A = key, qualified when ApplyQualifiers accepted it.\nError: Fc = 1, A = key when the key is <> or [] itself and one of them is pending.\nChanges: AF, BC, DE.",
+          "provenance": "source"
+        },
+        "12490": {
+          "synopsis": "Passes one key through the OZ window's command handling. <> or [] starts a command (the\nsymbol is shown, the buffer cleared); following keys are converted by Char2OZwdChar, added\nto OZcmdBuf and matched against the application's commands (FindCmd); [] keys are also\npassed to the CLI with DC_Alt. Control keys cancel the command. A key outside a command is\nreturned to the caller.\nEntry: A = key.\nExit: Fc = 0, A = key or matched command code for the application; Fz = 1 asks OSTinMain to\nreturn it as an extended character.\nError: Fc = 1, A = 0 when the key was taken by the command handling.",
+          "provenance": "source"
+        },
+        "12531": {
+          "synopsis": "Entry inside sub_EF92 for the []+ and []- keys ($80, $9F), also used by DoHelp to send a\nmade-up []I: cancels any OZ command, then handles A as a [] command key. A control code\ncancels; otherwise [] becomes active, $80 shows as '+', $9F as '-', the key is shown in the\nOZ window and passed to DC_Alt.\nEntry: A = key ($80 to $9F).\nExit: as sub_EF92.",
+          "provenance": "source"
+        },
+        "12709": {
+          "synopsis": "Table of 5 bytes: the keys for the <> command codes $E0 to $E4, IN_SPC, IN_ENT, IN_TAB,\nIN_DEL and IN_ESC, read by sub_EF92.",
+          "provenance": "source"
+        },
+        "12714": {
+          "synopsis": "Converts a key into the character the OZ window shows. A foreign key becomes its ISO\ncharacter through Key2Chr_tbl (Fc = 0). System keys: $00, $1B to $1F and $7F give Fc = 1\n($7F with Fz = 1); $01 to $1A give Fc = 1 with A = 'A' to 'Z'; $20 to $7E give Fc = 0, Fz =\n0; $A0 and $A3 give Fc = 0, Fz = 1; the others Fc = 1.\nEntry: A = key.\nExit: A = character; B = the original key (system keys) or the character (foreign).\nChanges: AF, B.",
+          "provenance": "source"
+        },
+        "12760": {
+          "synopsis": "Cancels the OZ window's command: ends a pending [] for the CLI (DC_Alt with 0), clears\nubSysFlags1, the dead key (kbd_lastkey) and OZcmdBuf, and redraws the OZ window.\nEntry: none.\nKeeps: AF, BC, DE, HL.",
+          "provenance": "source"
+        },
+        "12791": {
+          "synopsis": "Appends a character, upper-cased by AtoN_upper, to the OZ command buffer (OZcmdBuf, at most\n4 characters and a zero) and redraws the OZ window. With A = 0 it writes a zero, which\nclears the buffer after a cancel.\nEntry: A = character.\nExit: Fc = 0, A unchanged.\nError: Fc = 1 when the buffer is full; the command is cancelled.\nChanges: F, B, HL.",
+          "provenance": "source"
+        },
+        "12822": {
+          "synopsis": "Runs the tasks the interrupt left in ubIntTaskToDo: a switch-off request (OSOff), an expired\nalarm (DoAlarms) and an OZ window refresh (DrawOZwd). Returns at once when none is pending.\nEntry: none.\nChanges: AF.",
+          "provenance": "source"
+        },
+        "12859": {
+          "synopsis": "A lone RET. OSSpMain and OSNqMain (kernel bank 1) push its address before jumping to a\nreason's handler, so the handler returns through it.\nEntry: none.",
+          "provenance": "source"
+        },
+        "12869": {
+          "synopsis": "Uses the handle structure laid over the system variables at pFsMemPool (its first block,\nposition and attribute are pFsMemFirstBlock, eFsMemFilePos and ubFsMemAttr): sets its first\nblock to DE and rewinds it (SetFhnFirstBlock).\nEntry: DE = file pointer of the first block.\nExit: IX = pFsMemPool; as RewindFile.",
+          "provenance": "source"
+        },
+        "12875": {
+          "synopsis": "Points IX at the handle structure at pFsMemPool and falls into InitMemHandle.\nEntry: none.\nExit: IX = pFsMemPool; as InitMemHandle.",
+          "provenance": "source"
+        },
+        "12879": {
+          "synopsis": "Clears a memory file handle for a new file: keeps only its readable, writable and memory\nattribute flags and falls into AllocFirstBlock.\nEntry: IX = file handle.\nExit: as AllocFirstBlock.",
+          "provenance": "source"
+        },
+        "12887": {
+          "synopsis": "Clears the handle's first block, allocates a new block (AllocHandleBlock) and falls into\nSetFhnFirstBlock to make it the first block and rewind.\nEntry: IX = file handle.\nExit: Fc = 0; DE = file pointer of the block; position at its first data byte.\nError: Fc = 1, A = error code (RC_Room, or OS_Mal's).",
+          "provenance": "source"
+        },
+        "12898": {
+          "synopsis": "Stores DE as the handle's first block and falls into RewindFile.\nEntry: IX = file handle; DE = file pointer of the first block.\nExit: as RewindFile.",
+          "provenance": "source"
+        },
+        "12904": {
+          "synopsis": "Rewinds a memory file: reads the handle's first block and falls into fsAdvanceBlock.\nEntry: IX = file handle.\nExit: as fsAdvanceBlock; DE = first block.",
+          "provenance": "source"
+        },
+        "12910": {
+          "synopsis": "Makes block DE the handle's current block, with the position on its first data byte (block\nstart + 2). A file pointer is D = bank, E = 64-byte block in the bank; a block holds the\nnext block's pointer in bytes 0 and 1 (D = 0 in the last block, whose byte 0 is then its\nbyte count) and FSBLOCK_SIZE (62) data bytes.\nEntry: IX = file handle; DE = file pointer of the block.\nExit: BHL = memory pointer of the block (HL in S2); C = 2.\nChanges: BC, HL.\nKeeps: AF, DE.",
+          "provenance": "source"
+        },
+        "12928": {
+          "synopsis": "Frees the data of a memory file: takes the handle's first block, clears it in the handle and\njumps to FreeMemData when there was one.\nEntry: IX = file handle.\nExit: as FreeMemData.",
+          "provenance": "source"
+        },
+        "12946": {
+          "synopsis": "Returns a chain of file blocks to the free lists: each block, followed through its link,\ngoes to AddAvailableFsBlock. Returns at once for DE = 0.\nEntry: DE = file pointer of the first block.\nExit: Fc = 0.\nChanges: AF, BC, DE, HL.",
+          "provenance": "source"
+        },
+        "12972": {
+          "synopsis": "Converts the handle's current block into a memory pointer (FilePtr2MemPtr), without binding\nit.\nEntry: IX = file handle.\nExit: Fc = 0; BHL = memory pointer of the current block (HL in S2); C = 2.\nChanges: F, BC, HL.\nKeeps: DE.",
+          "provenance": "source"
+        },
+        "12984": {
+          "synopsis": "Marks a block free: stores DE as its link and the signature $DE $AD in bytes 2 and 3, which\nAddAvailableFsBlock2 looks for.\nEntry: HL = memory pointer of the block (bound in); DE = file pointer of the next block.\nExit: L = L + 3.\nChanges: L.",
+          "provenance": "source"
+        },
+        "12994": {
+          "synopsis": "Makes a slot's free-block chain the current one: copies its head from uwSlotAvailFsBlocks\ninto uwFsAvailBlock and leaves the address of the slot's entry on the stack, under the\nreturn address, for SetSlotBlocks.\nEntry: B = slot (0 to 3).\nExit: (SP + 2) = address of the slot's entry.\nChanges: A, HL'.\nKeeps: BC, DE, HL.",
+          "provenance": "source"
+        },
+        "13016": {
+          "synopsis": "Pops the slot entry left by GetSlotBlocks and stores the head of the current free-block\nchain (uwFsAvailBlock) back into it.\nEntry: the slot entry address under the return address.\nChanges: DE', HL'.\nKeeps: AF, BC, DE, HL.",
+          "provenance": "source"
+        },
+        "13033": {
+          "synopsis": "Allocates a 64-byte file block for a handle. When the handle's attributes carry a slot (bits\n3 and 4 beside other flags) the block comes from that slot; otherwise slots 1, 2, 3 and 0\nare tried in turn.\nEntry: IX = file handle.\nExit: Fc = 0; DE = file pointer of the block; BHL = its memory pointer; C = 2.\nError: Fc = 1, A = RC_Room (no RAM) or OS_Mal's error.",
+          "provenance": "source"
+        },
+        "13043": {
+          "synopsis": "Entry inside AllocHandleBlock that allocates the block from one slot: fails with RC_Room\nwhen the slot has no RAM (ubSlotRamSize), otherwise takes a block from the slot's free chain\n(GetSlotBlocks, fsGetBlock with OS_Mal flags slot OR $10, SetSlotBlocks). The alarm\napplication's own label ahb_1 is a different one.\nEntry: IX = file handle; A = slot in bits 7 and 6.\nExit: Fc = 0; DE = file pointer of the block; BHL = its memory pointer.\nError: Fc = 1, A = RC_Room or OS_Mal's error.",
+          "provenance": "source"
+        },
+        "13089": {
+          "synopsis": "Takes a block from the current free chain (fsGetAvailableBlock); when the chain is empty it\nallocates a new page of blocks (fsAllocBlock) and tries again.\nEntry: A = OS_Mal flags; uwFsAvailBlock = current free chain.\nExit: Fc = 0; DE = file pointer of the block; BHL = its memory pointer; C = 2.\nError: Fc = 1, A = OS_Mal's error.",
+          "provenance": "source"
+        },
+        "13105": {
+          "synopsis": "Allocates a 256-byte page from the file system's memory pool (pFsMemPool) with OS_Mal and\nsplits it into four free 64-byte blocks, each linked to the next, the last to the old head\nof uwFsAvailBlock; the page's first block becomes the new head.\nEntry: A = OS_Mal flags.\nExit: Fc = 0.\nError: Fc = 1, A = OS_Mal's error.\nKeeps: IX.",
+          "provenance": "source"
+        },
+        "13234": {
+          "synopsis": "Puts a freed block into the current free chain (uwFsAvailBlock, set by GetSlotBlocks).\n1. If a lower block of the same page is free ($DEAD and in the chain, FindPrevBlock), the\nblock is linked in after it.\n2. Else if a higher block of the page is free, it is linked in before it.\n3. Else it becomes the head of the chain.\n4. When all four blocks of the page then follow each other in the chain they are taken out\nand the page is given back with OS_Mfr; an error there hangs (JR to itself).\nEntry: DE = file pointer of the block.\nExit: Fc = 0.\nKeeps: HL.",
+          "provenance": "source"
+        },
+        "13505": {
+          "synopsis": "Opens a memory file (OS_Op with OP_MEM) and makes it HL bytes long by seeking there\n(SeekFileMayExpand). A size of 0 opens nothing and returns IX = 0. On an error the file is\nclosed again.\nEntry: HL = size.\nExit: Fc = 0; IX = handle of the memory file (0 for size 0).\nError: Fc = 1, A = error code.",
+          "provenance": "source"
+        },
+        "13535": {
+          "synopsis": "Converts a file pointer into a memory pointer (FilePtr2MemPtr) and falls into fsMS2BankB to\nbind its bank into S2.\nEntry: DE = file pointer.\nExit: BHL = memory pointer, bound in S2; C = 2; the old bindings on the stack, for\nfsRestoreS2.\nKeeps: AF, DE.",
+          "provenance": "source"
+        },
+        "13538": {
+          "synopsis": "Binds bank B into S2 and leaves the previous S1 and S2 bindings on the stack under the\nreturn address; the caller must call fsRestoreS2 before it returns.\nEntry: B = bank.\nExit: (SP) = previous S1 and S2 bindings.\nChanges: AF', HL'.\nKeeps: AF, BC, DE, HL.",
+          "provenance": "source"
+        },
+        "13553": {
+          "synopsis": "Stores DE at (HL) and (HL + 1), the link of a bound block, and falls into fsRestoreS2.\nEntry: HL = memory pointer of the link; DE = file pointer; bindings left by fsMS2BankB.\nExit: as fsRestoreS2; L = L + 1.",
+          "provenance": "source"
+        },
+        "13556": {
+          "synopsis": "Undoes fsMS2BankB: pops the saved bindings word under the return address and binds the saved\nS2 bank again.\nEntry: (SP + 2) = bindings saved by fsMS2BankB.\nExit: B = the S2 bank bound again.\nChanges: B, AF', HL'.\nKeeps: AF, C, DE, HL.",
+          "provenance": "source"
+        },
+        "13643": {
+          "synopsis": "Entry inside MoveToFromFile that moves BC bytes between the file's current position and a\nbuffer inside one 16K segment, block by block. The buffer is bound into S1: a far buffer by\nits bank, a local one by the bank its segment has (S2 and S3 from the caller's OS frame);\nthe file blocks are bound into S2. A write extends the last block and allocates new blocks\n(AllocHandleBlock). The S1 and S2 bindings are restored.\nEntry: DHL = buffer (D = 0 for a local address); BC = count; IX = file handle; Fc of F' = 1\nto write, 0 to read; IY = OS frame.\nExit: Fc = 0; HL = HL + bytes moved; BC = bytes not moved.\nError: Fc = 1, A = RC_Eof (read past the end) or AllocHandleBlock's error.\nKeeps: DE, IY.",
+          "provenance": "source"
+        },
+        "13950": {
+          "synopsis": "Saves an application's state into a new process handle (AllocHandle HND_PROC) holding a\nmemory file: record $A0 with the application variables (SaveAppVars), record $A1 with the\nstack from pAppStackPtr to pAppUnSafeArea, the screen (SaveScreen) when the application has\nAT_Draw, then the end mark $00 $0E $0F.\nEntry: none.\nExit: Fc = 0; IX = process handle.\nError: jumps to FreeMemHandle to free the handle.",
+          "provenance": "source"
+        },
+        "14034": {
+          "synopsis": "Restores an application's state saved by SaveAllAppData: rewinds the process file, reads the\nvariables (LoadAppVars), the stack (record $A1), the screen when the application has\nAT_Draw, and checks the end mark. Any failure jumps to OZwd__fail. The first end-mark byte\nis not checked (OR A clears Fc before its JR C).\nEntry: IX = process handle.\nExit: Fc = 0; A = 1, Fz = 0 when the screen was restored; A = 0, Fz = 1 when not.",
+          "provenance": "source"
+        },
+        "14116": {
+          "synopsis": "Writes the application's static handle low byte into a saved process: rewinds the file and\noverwrites the first byte of the $A0 record's data (after type and length).\nEntry: IX = process handle; C = low byte of the application's static handle.\nExit: as WrFileByte.",
+          "provenance": "source"
+        },
+        "14134": {
+          "synopsis": "Writes record $A0: the $40 bytes of application variables from uwAppStaticHnd\n(WrHeaderedData).\nEntry: IX = file handle.\nExit: as WrHeaderedData.",
+          "provenance": "source"
+        },
+        "14145": {
+          "synopsis": "Reads record $A0 back into the $40 bytes of application variables at uwAppStaticHnd\n(RdHeaderedData).\nEntry: IX = file handle.\nExit: as RdHeaderedData (Fc = 1, A = RC_Type when the next record is not $A0).",
+          "provenance": "source"
+        },
+        "14156": {
+          "synopsis": "Tells whether a memory file is at its end: compares the position with the byte count of the\ncurrent block and, at the end of a full block, looks at the next block. The block's bank is\nleft bound in S2.\nEntry: IX = file handle.\nExit: Fc = 0 when bytes are left.\nError: Fc = 1, A = RC_Eof at the end of the file.\nChanges: AF, BC, DE, HL.",
+          "provenance": "source"
+        },
+        "14265": {
+          "synopsis": "Adds FSBLOCK_SIZE (62) to the 32-bit counter DE'HL', falling into Add_dehl_A.\nEntry: DE'HL' = counter.\nExit: DE'HL' = DE'HL' + 62.\nChanges: AF, BC'.",
+          "provenance": "source"
+        },
+        "14267": {
+          "synopsis": "Adds A to the 32-bit counter in the alternate registers DE'HL'.\nEntry: A = value; DE'HL' = counter.\nExit: DE'HL' = DE'HL' + A.\nChanges: F, BC', DE', HL'.\nKeeps: A.",
+          "provenance": "source"
+        },
+        "14279": {
+          "synopsis": "Subtracts FSBLOCK_SIZE (62) from the 32-bit counter DE'HL', falling into Sub_dehl_A.\nExit: as Sub_dehl_A.",
+          "provenance": "source"
+        },
+        "14281": {
+          "synopsis": "Subtracts A from the 32-bit counter in the alternate registers DE'HL'.\nEntry: A = value; DE'HL' = counter.\nExit: DE'HL' = DE'HL' - A; A = new L'; Fc = 1 when the result went below zero.\nChanges: AF, BC', DE', HL'.",
+          "provenance": "source"
+        },
+        "14296": {
+          "synopsis": "Starts a walk through a file's blocks: DE = the handle's first block, DE'HL' = 0.\nEntry: IX = file handle.\nExit: DE = file pointer of the first block; DE'HL' = 0.\nChanges: DE, DE', HL'.",
+          "provenance": "source"
+        },
+        "14310": {
+          "synopsis": "Moves the file position to DEHL (SeekFile); when that is past the end, the file is extended\nby the missing bytes (ExpandFile).\nEntry: IX = file handle; DEHL = position.\nExit: Fc = 0, position set.\nError: Fc = 1, A = error code (RC_Wp, or the write's error).",
+          "provenance": "source"
+        },
+        "14345": {
+          "synopsis": "Extends a memory file at its end by DE'HL' bytes, writing filler in pieces of 32 bytes\n(expf_3).\nEntry: IX = file handle, positioned at the end; DE'HL' = bytes to add.\nExit: Fc = 0.\nError: Fc = 1, A = RC_Wp when the file is not writable, or the write's error.",
+          "provenance": "source"
+        },
+        "14380": {
+          "synopsis": "Entry inside ExpandFile that writes BC bytes of filler with MvToFile from D = $10, HL =\nbyte_F843 (a far pointer: bank $10, the address taken into S1).\nEntry: BC = count (up to 32); IX = file handle.\nExit: as MvToFile.",
+          "provenance": "source"
+        },
+        "14388": {
+          "synopsis": "32 bytes of $3F, the filler ExpandFile means to write into new file space (expf_3 points at\nit, but with bank $10; see the notes).",
+          "provenance": "source"
+        },
+        "14457": {
+          "synopsis": "Entry inside SeekFile that sets the position's low byte to L + A + E + 2: the block start,\nA, the last block's byte count E and the 2 link bytes. Called with A = 0 to put the position\nafter the last byte of the file.\nEntry: IX = file handle; A = bytes; E = byte count of the last block; L = block start.\nExit: Fc = 0; (ix+fhnd_filepos_lo) set.",
+          "provenance": "source"
+        },
+        "14478": {
+          "synopsis": "Writes a byte at the file's position and advances it; writing past the last byte extends the\nlast block, and at the end of a block fsmv_4 moves into (or allocates) the next one.\nEntry: IX = file handle; A = byte.\nExit: Fc = 0, A = byte.\nError: Fc = 1, A = error code (no room for a new block).\nKeeps: BC, DE, HL.",
+          "provenance": "source"
+        },
+        "14481": {
+          "synopsis": "Reads the byte at the file's position and advances it; at the end of a block fsmv_4 moves\ninto the next one.\nEntry: IX = file handle.\nExit: Fc = 0, A = byte.\nError: Fc = 1, A = RC_Eof at the end of the file.\nKeeps: BC, DE, HL.",
+          "provenance": "source"
+        },
+        "14569": {
+          "synopsis": "Fatal error display: shows FAIL flashing in the first row of the OZ window and loops here\nfor ever. Reached by a jump when the system state cannot be trusted.\nEntry: none.\nExit: never returns.",
+          "provenance": "source"
+        },
+        "14583": {
+          "synopsis": "Shows CARD flashing in the first row of the OZ window, with the screen bound in S1 for the\nwrite (ScreenOpen, ScreenClose).\nEntry: none.\nChanges: AF, BC, HL.",
+          "provenance": "source"
+        },
+        "14588": {
+          "synopsis": "Shows INDEX flashing in the first row of the OZ window, with the screen bound in S1 for the\nwrite (ScreenOpen, ScreenClose).\nEntry: none.\nChanges: AF, BC, HL.",
+          "provenance": "source"
+        },
+        "14604": {
+          "synopsis": "Redraws the OZ window, the right edge of the screen, and acknowledges the refresh request\n(ITSK_B_OZWINDOW).\n1. Row 1: OZ in grey, or LOCKOUT flashing when the keyboard is locked.\n2. Row 2: the keymap's country letters; row 3: CLI flashing while a CLI runs; row 4: the\nbell while an alarm is shown.\n3. Rows 6 and 7: BAT LOW when the battery is low; row 8: the CAPS state.\n4. Rows 5 to 8: the dead key, or the [] or <> symbol and up to 4 typed command characters,\ngrey while a command is active.\nEntry: none.\nExit: Fc = 0.\nChanges: AF, BC, DE, HL.",
+          "provenance": "source"
+        },
+        "14811": {
+          "synopsis": "Tells whether an OZ command is shown: <> or [] pending, or a character in OZcmdBuf below\n$80, and gives the attribute to draw with.\nEntry: none.\nExit: Fc = 0, A = grey attribute when a command is active; Fc = 1, A = normal attribute\n(LCDA_HIRES, LCDA_UNDERLINE, LCDA_CH8) when not; HL = OZcmdBuf.\nChanges: AF, HL.",
+          "provenance": "source"
+        },
+        "14834": {
+          "synopsis": "Writes the blank character pair (OZW_BLANK) in the normal attribute; falls into OZwd_write.\nEntry: HL = screen address of an OZ window row.\nExit: as VDUputBCA.\nChanges: A, BC, L.",
+          "provenance": "source"
+        },
+        "14837": {
+          "synopsis": "Writes character pair BC in the normal OZ window attribute; falls into VDUputBCA.\nEntry: HL = screen address; BC = characters.\nChanges: A, L.",
+          "provenance": "source"
+        },
+        "14839": {
+          "synopsis": "Writes two characters with their attribute into screen memory: B, A, C, A.\nEntry: HL = screen address; B, C = characters; A = attribute.\nExit: L = L + 3.\nChanges: L.",
+          "provenance": "source"
+        },
+        "14847": {
+          "synopsis": "Writes character pair BC in the grey OZ window attribute (VDUputBCA).\nEntry: HL = screen address; BC = characters.\nChanges: A, L.",
+          "provenance": "source"
+        },
+        "14851": {
+          "synopsis": "Writes two characters to the OZ window, flashing: loads A with the hires, flash, underline\nand CH8 attributes and jumps to VDUputBCA. The screen must be bound in (ScreenOpen).\nEntry: HL = screen address of the character cell; B = first character; C = second character.\nExit: (HL) = B, (HL+2) = C, both with the attribute in the following byte; L advanced by 3.\nChanges: A, L.",
+          "provenance": "source"
+        },
+        "14873": {
+          "synopsis": "Undoes ScreenOpen: takes the return address and the S1 binding that ScreenOpen pushed from\nthe stack and binds that bank into segment 1 again through MS1BankA. Must be called at the\nsame stack level as the ScreenOpen it closes.\nEntry: the stack holds the S1 bank (and flags) that ScreenOpen saved.\nExit: segment 1 bound as before ScreenOpen; A = that bank; F as it was at ScreenOpen.\nChanges: AF, HL.",
+          "provenance": "source"
+        },
+        "14991": {
+          "synopsis": "ToggleScrDrvFlags: applies an attribute letter's masks and toggle bits to the window's\nflags: flagsLo = (flagsLo AND C) XOR E and flagsHi = (flagsHi AND B) XOR D. Characters that\nare not letters are ignored.\nEntry: A = attribute character; BC = keep masks (high, low); DE = toggle bits (high, low),\nas ScrDrvGetAttrBts returns them; IX = window frame.\nExit: Fc = 0, window flags updated; A = new flagsHi.\nError: Fc = 1 when A is not a letter (nothing changed).\nChanges: AF, AF'.",
+          "provenance": "source"
+        },
+        "15044": {
+          "synopsis": "Carriage return (CR) of the screen driver: moves the cursor to the window's first column.\nEntry: IX = window frame; HL = cursor position (H line, L byte offset in the line).\nExit: L = the window's start column (wdf_startx).\nChanges: L.",
+          "provenance": "source"
+        },
+        "15193": {
+          "synopsis": "Line feed of the screen driver: moves the cursor down one line. ScrollLock first holds the\noutput while the scroll-lock keys are down. Past the last line the window scrolls up (after\na Delay300Kclocks pause when the window's delay flag is set) if vertical scrolling is on,\notherwise the cursor wraps to the first line.\nEntry: IX = window frame; HL = cursor position (H line, L byte offset).\nExit: Fc = 0, moved down within the window; Fc = 1, the window scrolled or the cursor\nwrapped; H = new line.\nChanges: AF, H; BC, DE when the window scrolls.",
+          "provenance": "source"
+        },
+        "15246": {
+          "synopsis": "Form feed (FF), clears the window: draws the side borders when the window has them\n(WdBorders), resets the control prefix (Zero_ctrlprefix), puts the cursor at the top left\nand falls into ClearEOWm.\nEntry: IX = window frame.\nExit: window cleared; HL = window start (H = first line, L = first column).\nChanges: AF, BC, DE, HL.",
+          "provenance": "source"
+        },
+        "15260": {
+          "synopsis": "Clears from the cursor to the end of the window, line by line through ceol_1, moving to the\nnext line with CursorDown while vertical scrolling is switched off; when the cursor wraps it\nfalls into GetWdStartXY. The fill is a space in the window's colours (sub_FD8B), or, when\nopen-flag bit 6 is set, character $A0 in hires (and $FF in reverse, flash and grey when bit\n5 is set too).\nEntry: IX = window frame; HL = cursor position.\nExit: HL = window start (first line, first column).\nChanges: AF, BC, DE, HL.",
+          "provenance": "source"
+        },
+        "15304": {
+          "synopsis": "Returns the window's top-left position.\nEntry: IX = window frame.\nExit: H = first line (wdf_starty); L = first column (wdf_startx).\nChanges: HL.",
+          "provenance": "source"
+        },
+        "15311": {
+          "synopsis": "Clears from the cursor to the end of the line with a space in the window's colours: sets BC\nfrom sub_FD8B and falls into ceol_1.\nEntry: IX = window frame; HL = cursor position.\nExit: Fc = 0, line cleared; HL unchanged.\nError: Fc = 1 when HL is outside the window (nothing written).\nChanges: AF, BC, E.",
+          "provenance": "source"
+        },
+        "15314": {
+          "synopsis": "Entry inside ClearEOL: fills the line from the cursor to the window's last column with the\ncharacter and attribute in BC. When the window's grey or ungrey open flag is set (during +G\nor -G) it rewrites the existing characters with their attribute greyed or ungreyed instead;\nopen-flag bits 6 and 5 select the pattern fill that ClearEOWm uses.\nEntry: IX = window frame; HL = cursor position; C = character; B = attribute.\nExit: Fc = 0, Fz = 1; HL unchanged.\nError: Fc = 1 when HL is outside the window (nothing written).\nChanges: AF, BC, E.",
+          "provenance": "source"
+        },
+        "15418": {
+          "synopsis": "Scrolls the window up one line: copies each line from the second to the last one line up\n(su_2), clears the last line (ClearEOL), then moves the cursor up one line unless that would\nleave the window.\nEntry: IX = window frame; HL = cursor position.\nExit: Fc = 0; H = the cursor's line, one less when still inside the window; L unchanged.\nChanges: AF, BC, DE, H.",
+          "provenance": "source"
+        },
+        "15444": {
+          "synopsis": "Step of ScrollUp: copies line H of the window onto line H-1 (from the first column, the\nwindow's width plus one character, attributes included) when both lines are inside it.\nEntry: IX = window frame; H = source line.\nExit: Fc = 0, line copied; Fc = 1, line H or H-1 is outside the window (nothing copied); H\nunchanged.\nChanges: AF, BC, DE, L.",
+          "provenance": "source"
+        },
+        "15472": {
+          "synopsis": "Scrolls the window down one line: copies each line from the last but one to the first one\nline down (sd_2), clears the first line (ClearEOL), then moves the cursor down one line\nunless that would leave the window.\nEntry: IX = window frame; HL = cursor position.\nExit: Fc = 0; H = the cursor's line, one more when still inside the window; L unchanged.\nChanges: AF, BC, DE, H.",
+          "provenance": "source"
+        },
+        "15498": {
+          "synopsis": "Step of ScrollDown: copies line H of the window onto line H+1 (from the first column, the\nwindow's width plus one character, attributes included) when both lines are inside it.\nEntry: IX = window frame; H = source line.\nExit: Fc = 0, line copied; Fc = 1, line H or H+1 is outside the window (nothing copied); H\nunchanged.\nChanges: AF, BC, DE, L.",
+          "provenance": "source"
+        },
+        "15526": {
+          "synopsis": "Returns the window's bottom-right position.\nEntry: IX = window frame.\nExit: H = last line (wdf_endy); L = last column (wdf_endx).\nChanges: HL.",
+          "provenance": "source"
+        },
+        "15533": {
+          "synopsis": "Returns the fill used to clear the window: character 0 with the window's reverse, flash,\ngrey and underline attributes.\nEntry: IX = window frame.\nExit: B = attribute (wdf_flagsLo masked); C = 0.\nChanges: AF, BC.",
+          "provenance": "source"
+        },
+        "15542": {
+          "synopsis": "Draws the window's side borders: a vertical bar (character $18A) one character left and one\ncharacter right of every line. When the brackets flag is set, the first line gets the shelf\nbrackets ($1BE on the left, $1BF on the right) instead of the bars.\nEntry: IX = window frame; C = the window's open flags (wdf_OpenFlags).\nChanges: AF, B, HL.",
+          "provenance": "source"
+        },
+        "15603": {
+          "synopsis": "Checks that the cursor position is inside the window: tests the line (NewYValid) and then\nfalls into NewXValid for the column.\nEntry: IX = window frame; H = line; L = column byte offset.\nExit: Fc = 0 when both are inside the window; Fc = 1 otherwise.\nChanges: AF.",
+          "provenance": "source"
+        },
+        "15661": {
+          "synopsis": "Sounds two bleeps (OS_Blp with A = 2, B = 5, C = 10).\nEntry: none.\nKeeps: AF, BC.",
+          "provenance": "source"
+        },
+        "15670": {
+          "synopsis": "Bell (BEL) of the screen driver: sounds one bleep (OS_Blp with A = 1, B = 0, C = 20).\nEntry: none.\nKeeps: AF, BC.",
+          "provenance": "source"
+        },
+        "15695": {
+          "synopsis": "Restores the screen from a file: sets E = 0 (read) and falls into SrScreen, which binds the\nscreen in, reads 8 blocks of type $A3 of 228 bytes each (the 114 characters of a line after\nthe first 10) into the screen lines with RdHeaderedData, redraws the OZ window (DrawOZwd)\nand restores the S1 binding.\nEntry: the filing-system stream that RdHeaderedData reads is set up by the caller.\nExit: Fc = 0, screen restored.\nError: Fc = 1, A = error code (RC_Type when a block has the wrong type).",
+          "provenance": "source"
+        },
+        "15699": {
+          "synopsis": "Saves the screen to a file: sets E = $FF (write) and falls into SrScreen, which binds the\nscreen in and writes the 8 lines as blocks of type $A3 of 228 bytes each (the 114 characters\nafter the first 10) with WrHeaderedData, redraws the OZ window and restores the S1 binding.\nEntry: the filing-system stream that WrHeaderedData writes is set up by the caller.\nExit: Fc = 0, screen saved.\nError: Fc = 1, A = error code.",
+          "provenance": "source"
+        },
+        "15737": {
+          "synopsis": "Reads or writes one headered block for SrScreen: WrHeaderedData when E = $FF, RdHeaderedData\nwhen E = 0.\nEntry: E = $FF (write) or 0 (read); A = block type; BC = length; HL = local address.\nExit: Fc = 0, block transferred.\nError: Fc = 1, A = error code.\nKeeps: DE.",
+          "provenance": "source"
+        }
+      }
+    },
+    "1": {
+      "lines": {
+        "10": {
+          "synopsis": "OS_Sci: alters the screen information, the base addresses of LORES0, LORES1, HIRES0, HIRES1\nand the screen base file. The address in BHL is reduced to the Blink register value by the\nreason's granularity (OSSciTable), the old value is read from the soft copies at $046x and\n$047x and returned, and the new one is written when B is not 0. Setting the screen base also\nreinitialises the screen: windows 7 and 8, the application window and the OZ window are set\nup again.\nEntry: A = reason (SC_LR0, SC_LR1, SC_HR0, SC_HR1 or SC_SBR); B = 0 to read, otherwise BHL =\nnew address.\nExit: Fc = 0; BHL = old address (in the caller's OS frame).\nError: Fc = 1, A = RC_Fail (reason not 1-5).\nChanges: AF, BC, DE, HL.",
+          "provenance": "source"
+        },
+        "206": {
+          "synopsis": "Key2MetaTable's character list for the special keys: a mask byte (7) and the 8 meta letters\n\" ETX?MIH\" (Enter, Tab, Del, Esc, Menu, Index, Help per the source). Key2Meta masks the key\ncode with the mask byte and picks the letter.",
+          "provenance": "source"
+        },
+        "215": {
+          "synopsis": "Key2MetaTable's character list for control characters: a mask byte ($1F) and 32 meta\ncharacters, \"=\", \"A\"-\"Z\", \"[\", \"\\\", \"]\", the pound sign ($A3) and \"-\". Key2Meta masks the\nkey code with the mask byte and picks the character.",
+          "provenance": "source"
+        },
+        "248": {
+          "synopsis": "Key2MetaTable's character list for the CTRL key itself: a mask byte (0) and \"C\".",
+          "provenance": "source"
+        },
+        "250": {
+          "synopsis": "Key2MetaTable's character list for the ALT key itself: a mask byte (0) and \"A\".",
+          "provenance": "source"
+        },
+        "252": {
+          "synopsis": "End of Key2MetaTable (the source checks that the table stays in one page). The same address\nstarts CLI2KeyTable, used by CLIchar2key: a length byte (24) and 12 pairs of a letter after\n\"~\" in a CLI string and its key code (D down, E enter, H help, I index, L left, M menu, R\nright, T tab, U up, X del, C ctrl, A alt).",
+          "provenance": "source"
+        },
+        "407": {
+          "synopsis": "Common exit of the OS_Epr calls (entry inside ozFleEprFindFile): returns BHL to the caller\nthrough PutOSFrame_BHL and, when Fz = 1, sets Fz in the caller's frame (ret_fz).\nEntry: BHL = value to return; Fz = 1 to return Fz = 1; IY = OS frame.\nExit: frame B, H, L set; frame Fz set when Fz = 1 (it is 0 by default).",
+          "provenance": "source"
+        },
+        "1239": {
+          "synopsis": "Clears bits in the Blink COM register: complements the mask, ANDs it into the soft copy\nBLSC_COM with interrupts disabled (chgcom_1), writes the soft copy and BL_COM, and enables\ninterrupts again.\nEntry: A = bits to clear.\nExit: A = new COM value; interrupts enabled.\nChanges: AF.",
+          "provenance": "source"
+        },
+        "1253": {
+          "synopsis": "Shared step of OrCom and AndCom: disables interrupts (so that slot polling cannot run while\na byte is blown) and reads the COM soft copy.\nEntry: A = new bits.\nExit: B = new bits; A = BLSC_COM; interrupts disabled.\nChanges: A, B.",
+          "provenance": "source"
+        },
+        "1259": {
+          "synopsis": "Makes a caller's local pointer reachable in segment 1: a pointer in segment 2 or 3 has the\ncaller's S2 or S3 bank (from the OS frame) bound into S1 and is moved into S1; a pointer\nbelow $8000 is taken to be in S1 already and the S1 binding is only read (OZ_MGB).\nEntry: HL = caller's local pointer; IY = OS frame.\nExit: HL = the pointer in segment 1; B = previous S1 bank (to restore with OZ_MPB); C =\nMS_S1.\nChanges: B, C, HL.",
+          "provenance": "source"
+        },
+        "1325": {
+          "synopsis": "Entry inside SetBlinkScreen, called when Fz = 1: sets the LCD-on bit (BB_COMLCDON) in A.\nEntry: A = COM register value.\nExit: A with the LCD-on bit set.\nChanges: A.",
+          "provenance": "source"
+        },
+        "1328": {
+          "synopsis": "Switches the LCD on: calls SetBlinkScreen with Fz = 1, which sets the LCD-on bit in the COM\nsoft copy and the Blink COM register. Used after blowing or erasing flash.\nEntry: none.\nKeeps: AF, BC, DE, HL.",
+          "provenance": "source"
+        },
+        "1723": {
+          "synopsis": "Step of FleEprXfrBlkSize when the rest of the file fits in the current bank: the whole\nremaining size becomes the block size.\nEntry: DE' = remaining file size (at most 16K; C' is not changed).\nExit: HL' = block size (the remaining size); DE' = 0.\nChanges: DE', HL'.",
+          "provenance": "source"
+        },
+        "1730": {
+          "synopsis": "Step of FleEprXfrBlkSize when the rest of the file crosses the bank boundary: the block is\nDE bytes, and the remaining size CDE' is reduced by it.\nEntry: DE = block size; CDE' = remaining file size; Fc = 0.\nExit: HL' = block size; CDE' = CDE' - DE.\nChanges: C', DE', HL'.\nKeeps: AF, DE.",
+          "provenance": "source"
+        },
+        "1905": {
+          "synopsis": "Step of DefHdrPos: looks for a file area header in the bank below the given one. The bank is\nmoved into the upper 512K when the card has 32 banks, and ChkFileEprHdr checks it.\nEntry: A = bank above the file area (slot relative); E = card size in 16K banks; C = slot\nnumber.\nExit: Fc = 0; Fz = 1, header found: A = sub type, B = absolute bank of the header, C = size\nof the file area in banks; Fz = 0, no header: B = absolute bank where a new header would go,\nC = potential size of the file area in banks.\nChanges: AF, BC, E.",
+          "provenance": "source"
+        },
+        "1933": {
+          "synopsis": "Returns the no-room error for DefHdrPos when the application area leaves no 64K block for a\nfile area (called with CALL Z and CALL C).\nExit: Fc = 1, A = RC_ROOM.\nChanges: AF.",
+          "provenance": "source"
+        },
+        "1980": {
+          "synopsis": "ValidateOzWaterMark: checks for an \"oz\" watermark at the top of a bank. It reads the size\nbyte, the sub type and the \"oz\" word, then writes 0 over the word and reads it again: only a\nword that is still \"oz\" (ROM or flash, not RAM) counts. A changed word is written back.\nEntry: BHL = absolute pointer to the size byte ($3FFC, or $3FEC in an application header).\nExit: Fz = 1, watermark found: C = sub type, D = size of the area in banks; Fz = 0, not\nfound.\nChanges: AF, C, DE.\nKeeps: B, HL.",
+          "provenance": "source"
+        },
+        "2739": {
+          "synopsis": "Stores one character of a file name for FetchFilename and advances the buffer pointer.\nEntry: A = character; CDE = buffer pointer (C = bank).\nExit: (CDE) = A; DE + 1.\nChanges: DE.\nKeeps: BC, HL.",
+          "provenance": "source"
+        },
+        "2858": {
+          "synopsis": "Adds a file entry's size to the sum of active file space for CalcFileSpace.\nEntry: CDE = size of the entry (header and image); BHL' = sum so far.\nExit: BHL' = BHL' + CDE.\nChanges: B', HL', IX (CalcFileSpace saves IX).\nKeeps: AF.",
+          "provenance": "source"
+        },
+        "2878": {
+          "synopsis": "Adds a file entry's size to the sum of deleted file space for CalcFileSpace.\nEntry: CDE = size of the entry (header and image); CDE' = sum so far.\nExit: CDE' = CDE' + CDE.\nChanges: C', DE', IX (CalcFileSpace saves IX).\nKeeps: AF.",
+          "provenance": "source"
+        },
+        "3014": {
+          "synopsis": "Counts a deleted file entry for FileEprCntFiles, which calls it with the register sets\nexchanged: the deleted-file counter DE is incremented unless the entry's file length (CDE in\nthe other set) is 0, the null file of Intel flash cards. Fz is kept, so the following CALL\nNZ, ActiveFile is skipped.\nEntry: DE = deleted-file count; CDE' = file length; Fz = 1.\nExit: DE = DE + 1 for a real file.\nChanges: DE, AF'.",
+          "provenance": "source"
+        },
+        "3025": {
+          "synopsis": "Counts an active file entry for FileEprCntFiles.\nEntry: HL = active-file count (in the exchanged register set).\nExit: HL = HL + 1.\nChanges: HL.",
+          "provenance": "source"
+        },
+        "3390": {
+          "synopsis": "Error exit of BuildFileEntHdr when no file area is found: drops the two words of the entry\nsize and the File Entry pointer from the stack, the last of which restores HL.\nExit: Fc = 1, A = RC_Onf; HL = HL on entry to BuildFileEntHdr.\nChanges: AF, HL.",
+          "provenance": "source"
+        },
+        "3790": {
+          "synopsis": "Error return of the flash erase routines.\nExit: Fc = 1, A = RC_BER (block or sector erase failed).\nChanges: AF.",
+          "provenance": "source"
+        },
+        "3794": {
+          "synopsis": "Error return of the flash write routines.\nExit: Fc = 1, A = RC_BWR (byte not written).\nChanges: AF.",
+          "provenance": "source"
+        },
+        "4069": {
+          "synopsis": "Table of the known flash chips, read by FlashEprCardId: a count byte (7), then 7 entries of\n6 bytes: device code, manufacturer code, size in 16K banks, chip generation (FE_28F or\nFE_29F) and a word pointing to the chip's name string (mnem_i004 and the following).",
+          "provenance": "source"
+        },
+        "4112": {
+          "synopsis": "Name string of the Intel I28F004S5 flash chip, \"I28F004S5 (512K)\", null-terminated.",
+          "provenance": "source"
+        },
+        "4129": {
+          "synopsis": "Name string \"I28F008S5 (1Mb)\", null-terminated, shared by the Intel I28F008SA and I28F008S5\nentries of DeviceCodeTable.",
+          "provenance": "source"
+        },
+        "4145": {
+          "synopsis": "Name string of the AMD AM29F010B flash chip, \"AM29F010B (128K)\", null-terminated.",
+          "provenance": "source"
+        },
+        "4162": {
+          "synopsis": "Name string of the AMD AM29F040B flash chip, \"AM29F040B (512K)\", null-terminated.",
+          "provenance": "source"
+        },
+        "4179": {
+          "synopsis": "Name string of the AMD AM29F080B flash chip, \"AM29F080B (1Mb)\", null-terminated.",
+          "provenance": "source"
+        },
+        "4195": {
+          "synopsis": "Name string of the AMIC29F040B flash chip, \"AMIC29F040B (512K)\", null-terminated.",
+          "provenance": "source"
+        },
+        "4496": {
+          "synopsis": "Copies a file entry to the file area of a flash card for FlshEprCpyFleEnt: gets a new entry\npointer (FleEprNewFileEnt), then blows the entry block by block, each block ending at a bank\nboundary (FleEprXfrBlkSize, FlashEprCopyBlock). If a block fails, the new entry is marked as\ndeleted.\nEntry: C = slot number; IY = work buffer with SrcFileEntry, SrcFileSize and FepType set.\nExit: Fc = 0, entry copied.\nError: Fc = 1, A = error code (no file area, or the write error of FlashEprCopyBlock).\nChanges: AF, BC, DE, HL, IX, BC', DE', HL'.",
+          "provenance": "source"
+        },
+        "4792": {
+          "synopsis": "The null file that SaveNullFile blows at the bottom of an Intel flash card after formatting:\n6 bytes, a file entry with a 1-character name ($00) and a file length of 0.",
+          "provenance": "source"
+        },
+        "5070": {
+          "synopsis": "Returns the flash chip generation of the card that holds a bank, for FlshEprStdFleHdr: the\nslot comes from the bank (GetSlotNo) and the type from FlashEprCardId.\nEntry: B = absolute bank.\nExit: Fc = 0, A = FE_28F or FE_29F.\nError: Fc = 1, A = RC_NFE (no known flash chip).\nChanges: AF.\nKeeps: BC, DE, HL.",
+          "provenance": "source"
+        },
+        "5081": {
+          "synopsis": "The last 6 bytes of a new \"oz\" file area header, copied by FlshEprStdFleHdr to $3FFA: the\nhigh word of the random id ($01, $80), a size placeholder ($40), a sub type placeholder\n($FF), both overwritten afterwards, and \"oz\".",
+          "provenance": "source"
+        },
+        "5472": {
+          "synopsis": "Body of OS_Fn (OSFn calls it inside the OS frame): exchanges A and B and dispatches on the\nreason: FN_AH allocates a handle (AllocHandle), FN_VH verifies one (VerifyHandle), FN_FH\nfrees one (FreeHandle), FN_GH finds one by type and dynamic id (FindHandle), and FN_NH finds\nthe next handle of the same type.\nEntry: A = reason (FN_AH to FN_NH); B = handle type; C = dynamic id (FN_GH); IX = handle.\nExit: Fc = 0; IX = handle (FN_AH, FN_GH, FN_NH).\nError: Fc = 1, A = error code (RC_Unk for an unknown reason, RC_Eof after the last handle).",
+          "provenance": "source"
+        },
+        "5525": {
+          "synopsis": "Initialises a device handle: FindHandleDOR takes the first device in DevTable whose id is at\nleast A + 1 and that is present (RAM fitted, ROM or file area found). The device id, the\napplication slot of a ROM device, the DOR's address and the handle flags are stored, then\nthe DOR's bank is bound into S2 and its type returned (GetDORType).\nEntry: A = device id - 1; IX = handle.\nExit: Fc = 0, A = DOR type (Fz = 1 when it is 0); the DOR's bank bound into S2.\nError: Fc = 1, A = RC_Fail (no such device left in DevTable).\nChanges: AF, BC, DE, HL.",
+          "provenance": "source"
+        },
+        "5757": {
+          "synopsis": "DOR of the SCR.0 (screen) device, 20 bytes: the three link pointers (parent, brother, son, 3\nbytes each), type Dm_Chd, the length, the name record \"SCR.0\" and $FF. The parent field\nholds its handle for OS_Nq ($8606, NQ_Shn).",
+          "provenance": "source"
+        },
+        "5777": {
+          "synopsis": "DOR of the PRT.0 (printer) device, 20 bytes: the three link pointers (parent, brother, son,\n3 bytes each), type Dm_Chd, the length, the name record \"PRT.0\" and $FF. The parent field\nholds its handle for OS_Nq ($8609, NQ_Phn).",
+          "provenance": "source"
+        },
+        "5797": {
+          "synopsis": "DOR of the COM.0 (serial port) device, 20 bytes: the three link pointers (parent, brother,\nson, 3 bytes each), type Dm_Chd, the length, the name record \"COM.0\" and $FF. The parent\nfield holds its handle for OS_Nq ($8C1E, NQ_Chn).",
+          "provenance": "source"
+        },
+        "5817": {
+          "synopsis": "DOR of the NUL.0 (null) device, 20 bytes: the three link pointers (parent, brother, son, 3\nbytes each), type Dm_Chd, the length, the name record \"NUL.0\" and $FF. The parent field\nholds its handle for OS_Nq ($860C, NQ_Nhn).",
+          "provenance": "source"
+        },
+        "5837": {
+          "synopsis": "DOR of the INP.0 (input) device, 20 bytes: the three link pointers (parent, brother, son, 3\nbytes each), type Dm_Chd, the length, the name record \"INP.0\" and $FF. The parent field\nholds its handle for OS_Nq ($8615, NQ_Ihn).",
+          "provenance": "source"
+        },
+        "5857": {
+          "synopsis": "DOR of the OUT.0 (output) device, 20 bytes: the three link pointers (parent, brother, son, 3\nbytes each), type Dm_Chd, the length, the name record \"OUT.0\" and $FF. The parent field\nholds its handle for OS_Nq ($8618, NQ_Ohn).",
+          "provenance": "source"
+        },
+        "5897": {
+          "synopsis": "DOR of the ROM.1 device, 20 bytes: the parent and brother pointers (0), the son pointer to\nthe ROM Front DOR at the top of slot 1 (ROM_DOR in S2, bank RO1_BNK), type DM_ROM, the\nlength, the name record \"ROM.1\" and $FF.",
+          "provenance": "source"
+        },
+        "5917": {
+          "synopsis": "DOR of the ROM.2 device, 20 bytes: the parent and brother pointers (0), the son pointer to\nthe ROM Front DOR at the top of slot 2 (ROM_DOR in S2, bank RO2_BNK), type DM_ROM, the\nlength, the name record \"ROM.2\" and $FF.",
+          "provenance": "source"
+        },
+        "5937": {
+          "synopsis": "DOR of the ROM.3 device, 20 bytes: the parent and brother pointers (0), the son pointer to\nthe ROM Front DOR at the top of slot 3 (ROM_DOR in S2, bank RO3_BNK), type DM_ROM, the\nlength, the name record \"ROM.3\" and $FF.",
+          "provenance": "source"
+        },
+        "5957": {
+          "synopsis": "DOR of the APP.- device, 20 bytes: the parent and brother pointers (0), the son pointer to\nthe Front DOR of the installed applications (APX_DOR in S2, bank APX_BNK), type DM_ROM, the\nlength, the name record \"APP.-\" and $FF.",
+          "provenance": "source"
+        },
+        "5977": {
+          "synopsis": "DOR of the EPR.0 device of the Eprom filing system, 20 bytes: the three link pointers (all\n0), type Dm_Epr, the length, the name record \"EPR.0\" and $FF.",
+          "provenance": "source"
+        },
+        "5997": {
+          "synopsis": "DOR of the EPR.1 device of the Eprom filing system, 20 bytes: the three link pointers (all\n0), type Dm_Epr, the length, the name record \"EPR.1\" and $FF.",
+          "provenance": "source"
+        },
+        "6017": {
+          "synopsis": "DOR of the EPR.2 device of the Eprom filing system, 20 bytes: the three link pointers (all\n0), type Dm_Epr, the length, the name record \"EPR.2\" and $FF.",
+          "provenance": "source"
+        },
+        "6037": {
+          "synopsis": "DOR of the EPR.3 device of the Eprom filing system, 20 bytes: the three link pointers (all\n0), type Dm_Epr, the length, the name record \"EPR.3\" and $FF.",
+          "provenance": "source"
+        },
+        "6057": {
+          "synopsis": "Resets the machine, entered from Boot_reset with kernel bank 1 in S2; it never returns.\n1. A hard reset (the flap was open, or bank $21 does not start with the RAM tag) fills banks\n$21 and $20 with 0; a soft reset clears bank $20 except the preserved system variables. The\ntype ($00 hard, $FF soft) goes to ubResetType.\n2. Writes InitData to the Blink and its soft copies, copies the low-RAM code into bank $20,\nmaps it at $0000 (COM), sets SP = $2000 and the kernel bank soft copies.\n3. Resets the handles, sets the screen addresses with OS_Sci, clears the buffers\n(InitBuffers) and prints \"HARD RESET ...\" or \"SOFT RESET ...\".\n4. Allocates the filing-system memory pool, initialises RAM, marks the system and swap pages\nand expands the machine when a 128K card is present (ExpandMachine).\n5. After a soft reset restores the panel (PreserveSysPanel); sets the time (TimeReset), the\nrandom seed and the RAM devices, moves the screen base file to bank $21 and resets the\nserial interface.\n6. Sets the default device to the expanded RAM card (defDev), installs the panel defaults,\nenables interrupts and enters the Index (OS_Ent) in an endless loop.\nEntry: A' = interrupt status (its flap-open bit is tested).",
+          "provenance": "source"
+        },
+        "6430": {
+          "synopsis": "The default device name \":RAM.0\" (6 bytes, no terminator). Reset copies it to $1800, and\nwhen an expanded RAM card is found replaces the digit with its slot and sets it with OS_Sp\nPA_Dev.",
+          "provenance": "source"
+        },
+        "6475": {
+          "synopsis": "PreserveSystemPanel: gives the panel values kept over a soft reset back to the panel,\ncalling OS_Sp with a length of 1 for PA_Loc down to $8001 with cCountry, ubBadSize, cSound,\ncKeyclick, ubRepeat and ubTimeout.\nEntry: none.\nChanges: AF, HL.\nKeeps: BC.",
+          "provenance": "source"
+        },
+        "6492": {
+          "synopsis": "Sets the clock at reset. After a soft reset the elapsed time from the hardware clock copy\n(ubTIM1_A, or ubTIM1_B when bit 0 of ubTimeBufferSelect is set) updates the base time\n(GN_Msc MT_UBT); after a hard reset SetInitialTime sets the date and time of the build\n(GN_Dei, GN_Pmd, GN_Pmt). Both end in IntSecond.\nEntry: ubResetType ($00 hard, $FF soft).",
+          "provenance": "source"
+        },
+        "6551": {
+          "synopsis": "Blink initialisation table read by Reset: pairs of port and value, ended by 0. SR2 gets\nkernel bank 1, the timer interrupt mask and acknowledge get tick, second and minute, INT\nenables flap, battery low, time and global interrupts, ACK acknowledges A19, flap, battery\nlow and keyboard, and EPR gets 0. Each value also goes to the port's soft copy.",
+          "provenance": "source"
+        },
+        "6596": {
+          "synopsis": "Zeroes BC bytes from HL: clears the first byte and copies it forward with LDIR. InitBuffers\ncalls it for the serial receive buffer and the keyboard buffer, then sets HL = KbdData and\nBC = kbd_SIZEOF and falls into it for the keyboard variables.\nEntry: HL = the area; BC = its length (at least 2: BC is decremented before the LDIR); HL\nnot at a $xxFF address (DE is made with INC E).\nExit: the area is zero; BC = 0; HL = its last byte; DE = the byte after it.\nChanges: BC, DE, HL; F (P/V).\nKeeps: A, IX, IY.",
+          "provenance": "source"
+        },
+        "6989": {
+          "synopsis": "OS_Cli: the CLI interface (internal). Reason 0 (undocumented) returns at once through\nOZCallReturn2 with A = ubCLIActiveCnt and IX = KbdData. Any other reason builds the OS frame\n(OSFramePush), exchanges A and B so that B holds the reason, runs OSCliMain and returns\nthrough OSFramePop.\nEntry: A = reason: 0, or CL_RIM, CL_MBC, CL_CMB, CL_INC, CL_DEC, CL_RES, CL_ACK (1-7); the\nother registers as the reason needs them (see OSCliMain).\nExit: reason 0: A = the CLI use count; IX = KbdData. Others: as OSCliMain.\nError: Fc = 1, A = RC_Unk for a reason above 7; others as OSCliMain.",
+          "provenance": "source"
+        },
+        "7016": {
+          "synopsis": "The body of OS_Cli: counts B down with DJNZ to pick the reason, with HL = ubCLIActiveCnt and\nFc = 0. Results go into the OS frame (IY). CL_RIM: reads raw input from the keyboard buffer\n(RdKbBuffer) with BC as the timeout; returns BC = the time left, D = 0, E = the character.\nCL_MBC: E = a character, D = its qualifiers; translates it (CLIchar2key for a control code\nor a special key, then ApplyQualifiers) and returns E = the result, D = 0. CL_CMB: E = a key\ncode; returns E = the base character and D = its qualifiers (Key2Meta). CL_INC: increments\nthe CLI use count; when it was 0, first clears IST_B_CLISHIFT and IST_B_CLIDMND in\nubIntStatus. CL_DEC decrements it, CL_RES sets it to 0. These three then request an OZ\nwindow redraw (SetPendingOZwd). CL_ACK: D = the keys to acknowledge (QUAL_B_CTRL clears\nIST_B_CLIDMND, QUAL_B_SHIFT clears IST_B_CLISHIFT); returns D = the remaining IST_CLISHIFT\nand IST_CLIDMND bits and Fz = 1 when neither is set.\nEntry: B = reason (1-7); A = the caller's B; C, DE as the reason needs; IY = the OS frame.\nExit: Fc = 0; the results in the OS frame as above.\nError: Fc = 1, A = error code (from RdKbBuffer, or RC_Unk for an unknown reason).",
+          "provenance": "source"
+        },
+        "7190": {
+          "synopsis": "Finds the application after the one in C: asks GetAppDOR for application C + 1 and returns\nits number in BC. OS_Poll calls it with BC = the caller's IX.\nEntry: C = the current application number (0 for the start of the list).\nExit: Fc = 0; BC = the next application's number (B = 0).\nError: Fc = 1, A = RC_Eof when there is no further application.\nChanges: AF, BC, and what GetAppDOR changes.",
+          "provenance": "source"
+        },
+        "7264": {
+          "synopsis": "Checks that DE lies between BC and HL. ChkStkLimits uses it for the application stack\npointer and the unsafe area start, with HL = $1FFE and BC = $1820, and freezes when either\nis outside.\nEntry: DE = the value; HL = the upper limit; BC = the lower limit.\nExit: Fc = 0 when BC <= DE <= HL; Fc = 1 when DE is above HL or below BC.\nChanges: F.\nKeeps: A, BC, DE, HL, IX, IY.",
+          "provenance": "source"
+        },
+        "7312": {
+          "synopsis": "OS_Nq for the process enquiries ($86xx: NQ_Ain to NQ_Btl), entered from OSNqMain with the\nreason's low byte in A and C. Rejects a low byte of $27 or more, else jumps into\nOSNqPrcssTable, a table of 13 JP instructions (NQAin, NQKhn, NQShn, NQPhn, NQNhn, NQWai,\nNQCom, NQIhn, NQOhn, NQRhn, NQVoz, NQRoz, NqBtl).\nEntry: A = C = the reason's low byte (a multiple of 3); B = 0; IY = the OS frame.\nExit: as the handler.\nError: Fc = 1, A = RC_Unk for a reason out of range.",
+          "provenance": "source"
+        },
+        "7655": {
+          "synopsis": "Waits for ESC or Q: reads raw keys with OS_Cli CL_RIM and no timeout until one arrives that\nis ESC or Q (either case), with no qualifier byte. An escape condition (RC_Esc) is\nacknowledged with OS_Esc and ends the wait too; RC_Susp and other errors read again. NQVoz's\nerror box uses it.\nEntry: none.\nExit: Fz = 1 always; A = ESC or 'Q' for a key, or OS_Esc's result after an escape.\nChanges: AF, BC, DE.",
+          "provenance": "source"
+        },
+        "7691": {
+          "synopsis": "GN_Win window definition for NQVoz's error box (7 bytes): $D1 (window 1, bars, banner and\nbottom line, a grey pop-up, 7-pixel banner), X = 20, Y = 0, width 45, height 8, and the\nbanner pointer errbanner.",
+          "provenance": "source"
+        },
+        "7698": {
+          "synopsis": "The error box's banner text: \"ERROR\" and a 0. ErrWinDef points to it.",
+          "provenance": "source"
+        },
+        "7704": {
+          "synopsis": "Reads the running OZ version: OS_Frm with A = FA_PTR, IX = -1 and DE = 0, which returns it\nin DEBC. NQVoz compares C with the version an application asks for.\nEntry: none.\nExit: DEBC = OS_Frm's result; C = the OZ version (e.g. $47).\nChanges: AF, BC, DE.\nKeeps: IX.",
+          "provenance": "source"
+        },
+        "7734": {
+          "synopsis": "The OZ revision number, a 32-bit value (ozrev) stored low word first; $0603C979 in this ROM.\nNQRoz returns it in DEBC.",
+          "provenance": "source"
+        },
+        "8026": {
+          "synopsis": "Sets up the slot loop shared by StoreCardIDs and ChkCardChange: D = 3 slots to visit (slot 3\ndown to 1), E = $3F (the source calls it the maximum card size), and HL' = the end of slot\n3's 4-byte card ID (ulSlot3ID + 4); the IDs are stored downwards from there.\nEntry: none.\nExit: D = 3; E = $3F; HL' = ulSlot3ID + 4.\nChanges: DE, HL'.",
+          "provenance": "source"
+        },
+        "8047": {
+          "synopsis": "OS_Op with OP_MEM: opens a memory file. Allocates a file handle (AllocHandle, HND_FILE),\ninitialises it as a memory file (InitMemHandle), copies C bytes from BHL into it (MvToFile),\nmarks it readable, writable and memory, and rewinds it (RewindFile). If the copy fails, the\nhandle is freed (FreeMemHandle).\nEntry: BHL = the data; C = its length.\nExit: Fc = 0; IX = the new handle, positioned at the start.\nError: Fc = 1, A = error code.",
+          "provenance": "source"
+        },
+        "8106": {
+          "synopsis": "Writes a file DOR's name and dates. With Fz = 1 it first copies the 17-byte name at the\ncaller's HL (the OS frame) into a stack buffer and writes it as the 'N' record (OS_Dor\nDR_WR; a failure hangs in a loop). Then it reads the machine date and time (GN_Gmd, GN_Gmt,\nagain while they are inconsistent) and writes them as the 'U' (update) record, and also as\nthe 'C' (create) record when Fc = 1.\nEntry: IX = the DOR handle; Fz = 1 to rename (the name at the caller's HL); Fc = 1 to set\nthe creation date too; IY = the OS frame.\nExit: the records written; the 17-byte stack buffer released.",
+          "provenance": "source"
+        },
+        "8180": {
+          "synopsis": "OS_Map: map control, the graphics area that PipeDream's map uses. Runs OSMapMain with IX\nkept.\nEntry: C = reason (MP_WR, MP_DEF, MP_GRA, MP_DEL, MP_MEM); the other registers as OSMapMain.\nExit: as OSMapMain.\nKeeps: IX.",
+          "provenance": "source"
+        },
+        "8188": {
+          "synopsis": "The body of OS_Map: picks the reason in C with DJNZ. MP_WR writes one pixel line: E = the\nrow (masked to 0-63), HL = the line's data in the caller's space; the line is the window's\nmap width (GetMapWidth) / 8 bytes, poked 8 bytes apart into the HIRES0 bank (the bank and\naddress come from BLSC_PB2L/PB2H). MP_DEF and MP_GRA define the map (_mp_def). MP_DEL does\nnothing and returns Fc = 0. MP_MEM: B = an MS_Sx segment specifier; defines the map, then\nreturns DE = the widths from _mp_def, B = the map's bank, C = the segment specifier, and HL\n= the map's base (OS_Sci SC_HR0) addressed in that segment.\nEntry: C = reason; A = the window; as above; IY = the OS frame.\nExit: as above.\nError: Fc = 1, A = RC_Unk for a reason above MP_MEM; Fc = 1 when the window is not found.",
+          "provenance": "source"
+        },
+        "8268": {
+          "synopsis": "Defines a map (MP_DEF; also MP_GRA and MP_MEM). Opens the screen data, finds the window\n(GetWindowFrame) and gets the map size (sub_9EBC). When there is a map, it defines the\nwindow (SOH 7 #) at X = 94 - C characters, Y = 0, C characters wide, 8 lines high, selects\nand clears it with the active window kept (GetCurrentWdInfo, RestoreActiveWd), and sets the\nwindow's right margin to D, the pixel width. Returns BC to the caller through the OS frame.\nEntry: A = the window; C = the reason (MP_GRA and MP_MEM take the width from the caller's L,\nMP_DEF from the Panel); IY = the OS frame.\nExit: Fc = 0; BC (and the frame's BC) = B the pixel width, C the width in characters; BC = 0\nwhen there is no map (PA_Map not 'Y', or size 0).\nError: Fc = 1, A = RC_Hand when the window is not found.",
+          "provenance": "source"
+        },
+        "8392": {
+          "synopsis": "Works out the map's size for _mp_def. Asks whether there is a map (sub_9F0C, 'Y' for MP_GRA\nand MP_MEM) and its width in pixels (sub_9EF6). A width above 96 is cut to 96 unless 128K of\nRAM was found (Chk128KB).\nEntry: IY = the OS frame (its C is the reason, its L the width for MP_GRA and MP_MEM).\nExit: Fc = 0; B = the width in pixels; D = the width rounded up to a multiple of 8 ($FF\nabove 248); C = the width in 6-pixel characters, (D - 1) / 6 + 1.\nError: Fc = 1, BC = 0 when there is no map, the width is 0 or OS_Nq fails.",
+          "provenance": "source"
+        },
+        "8450": {
+          "synopsis": "Gets the map's width in pixels: the caller's L for MP_GRA and MP_MEM, else the Panel setting\nPA_Msz (sub_9F17); a value above 255 gives $FF.\nEntry: IY = the OS frame.\nExit: Fc = 0; L = the width.\nError: Fc = 1 from OS_Nq.",
+          "provenance": "source"
+        },
+        "8475": {
+          "synopsis": "Gets whether the map is on: L = 'Y' for MP_GRA and MP_MEM; otherwise sets BC = PA_Map and\nfalls into sub_9F17 to read the Panel setting ('Y' or 'N').\nEntry: IY = the OS frame.\nExit: L = 'Y' or 'N'.\nError: Fc = 1 from OS_Nq.",
+          "provenance": "source"
+        },
+        "8489": {
+          "synopsis": "Reads a 2-byte Panel setting with OS_Nq (A = 2, the buffer on the stack).\nEntry: BC = the parameter (PA_xxx).\nExit: HL = the value.\nError: Fc = 1, A = error code from OS_Nq.\nChanges: AF, DE, HL.",
+          "provenance": "source"
+        },
+        "8678": {
+          "synopsis": "Copies the active application's MTH pointers (eAppDOR_2 to eAppTokens_2: five 3-byte\npointers, DOR, topics, commands, help and tokens) over the help pointers (eHlpAppDOR to\neHlpTokens). Falls into the copy shared with CopyMTHHelp_App.\nEntry: none.\nExit: the 15 bytes copied; BC = 0.\nChanges: BC, DE, HL; F (P/V, H, N).\nKeeps: A, Fc, IX, IY.",
+          "provenance": "source"
+        },
+        "8686": {
+          "synopsis": "Copies the help MTH pointers (eHlpAppDOR to eHlpTokens, 15 bytes) back over the active\napplication's (eAppDOR_2 to eAppTokens_2).\nEntry: none.\nExit: the 15 bytes copied; BC = 0.\nChanges: BC, DE, HL; F (P/V, H, N).\nKeeps: A, Fc, IX, IY.",
+          "provenance": "source"
+        },
+        "8698": {
+          "synopsis": "Calls OS_Sr and stores the IX it returns in pMTHScreenSave: the help system saves, restores\nand frees the user screen through it.\nEntry: A = the OS_Sr reason (SR_SUS, SR_RUS, SR_FUS); IX as OS_Sr needs.\nExit: as OS_Sr; pMTHScreenSave = IX.",
+          "provenance": "source"
+        },
+        "8705": {
+          "synopsis": "Draws the key legend beside the command menu (DrawMenuWd calls it), centred in tiny type,\nfour lines: MENU \"ADVANCE\" (HELP \"BROWSE\" when the active topic is an information topic),\nthe arrows \"SELECT\", ENTER \"ACTION\" (\"DETAIL\"), and ESC \"RESUME\". When no user screen was\nsaved (pMTHScreenSave high byte 0) the select and action lines become \"MEMORY LOW\".\nEntry: none (reads ubHlpActiveTpc).",
+          "provenance": "source"
+        },
+        "8778": {
+          "synopsis": "Entry inside DrawMenuWd2: prints the symbol of key A (MTHPrintKeycode), then the string that\nstarts at HL + 1 (OS_Bout, which leaves HL after its terminator). DrawMenuWd2 calls it for\nthe first line and falls into it for the third.\nEntry: A = the key code; HL = the byte before the string.\nExit: HL = the byte after the string's 0.",
+          "provenance": "source"
+        },
+        "8800": {
+          "synopsis": "The legend for an ordinary topic: SD_MNU (the MENU key), then \"\\nADVANCE\" and \"\\nACTION\",\neach ended by a 0. DrawMenuWd2 prints them through dmwd_2.",
+          "provenance": "source"
+        },
+        "8818": {
+          "synopsis": "The legend for an information topic: SD_HLP (the HELP key), then \"\\nBROWSE\" and \"\\nDETAIL\",\neach ended by a 0. DrawMenuWd2 prints them through dmwd_2.",
+          "provenance": "source"
+        },
+        "8835": {
+          "synopsis": "MENU in the menu: moves to the next page of topics. Checks there are two command topics\n(mnu_m2), increments ubHlpActiveHelp, finds the next non-information topic after the active\none and falls into SetHlpActiveTpc.\nEntry: none.\nExit: as SetHlpActiveTpc; Fc = 1 when there is no further topic.",
+          "provenance": "source"
+        },
+        "8845": {
+          "synopsis": "Makes topic A the active one. When Fc = 1, or the topic window's line (ubHlpActiveHelp) is 8\nor more, it resets the line to 1 and moves to the first non-information topic from A\n(GetNonInfoTopicByNum).\nEntry: A = the topic number; Fc = 1 to reset the line.\nExit: Fc = 0; ubHlpActiveTpc (and maybe ubHlpActiveHelp) set.",
+          "provenance": "source"
+        },
+        "8873": {
+          "synopsis": "SHIFT MENU in the menu: moves to the previous topic. Checks there are two command topics\n(mnu_m2), decrements ubHlpActiveHelp, finds the previous non-information topic and goes to\nSetHlpActiveTpc.\nEntry: none.\nExit: as SetHlpActiveTpc.",
+          "provenance": "source"
+        },
+        "8885": {
+          "synopsis": "Checks that the application has at least two non-information (command) topics; if so,\nselects the first command (ubHlpActiveCmd = 1).\nEntry: none.\nExit: Fc = 0; HL = ubHlpActiveHelp.\nError: Fc = 1 when there are fewer than two such topics.",
+          "provenance": "source"
+        },
+        "8900": {
+          "synopsis": "UP in the menu: A = the active command (ubHlpActiveCmd), and falls into loc_A0C8 to find the\none before it.",
+          "provenance": "source"
+        },
+        "8903": {
+          "synopsis": "Entry inside mnu_up2: finds the command before command A. Looks up A - 1, A - 2, ...\n(GetCmdAttrByNum) until the position it reports is not A.\nEntry: A = the command number.\nExit: Fc = 0, Fz = 0; A = the previous command's position.\nError: Fc = 1, Fz = 1 when A is 1 and the lookup gives 1 back.\nChanges: AF, BC, and what GetCmdAttrByNum changes.",
+          "provenance": "source"
+        },
+        "8963": {
+          "synopsis": "Fills the first 3 bytes of the help state saved on entry to help (the 20-byte copy that\nExitHelp restores): with the current command, topic and line (ubHlpActiveCmd to\nubHlpActiveHelp) when help shows the suspended application (GetHlp_sub) and its active topic\nexists and is not an information topic, else with 1, 1, 1 (dummy).\nEntry: IY = DoHelp's frame, whose first word points at the saved state.\nExit: Fz = 1 when the help values were kept, Fz = 0 when they were reset; DE = the saved\nubHlpActiveApp byte.\nChanges: AF, BC, DE, HL.",
+          "provenance": "source"
+        },
+        "9002": {
+          "synopsis": "Three 1 bytes: the command, topic and line that MayRstAppHlpData stores when it resets the\nsaved help state.",
+          "provenance": "source"
+        },
+        "9005": {
+          "synopsis": "Waits for a key in the help pages and jumps to its handler. The return address points at a\ntable: entries of a key code byte and a handler word, ended by a 0; the entry for code 1 is\nthe page's own redraw. Never returns to the table.\n1. Examines the input (OS_Xin). When there is none but ubSysFlags1 has SF1_B_INPUTPENDING,\ntakes code 1.\n2. Reads a key (RdStdinNoTO). RC_Susp reads again; ESC is acknowledged (OS_Esc SC_ACK) and\npassed as IN_ESC; another error leaves help with Fc = 1.\n3. INDEX becomes $89. That, the [] key and codes $80-$9F leave help with Fc = 1, A = the\ncode. ESC and DEL leave help with A = RC_Susp, Fc = 1.\n4. Otherwise looks the key up in the table and jumps to its handler with A = the key and Fc\n= 0. A key not in the table goes to RetryKeyJump, which handles OZ's own command keys\n(beeping when memory is low) and waits again.\nEntry: (SP) = the key table; IY = DoHelp's frame.\nExit: to the key's handler, or out of help through ExitKeyJump.",
+          "provenance": "source"
+        },
+        "9091": {
+          "synopsis": "The copyright page: prints CopyrightMsg (in mth/systoken.asm) as a full page (MTHFullPage)\nand falls into cr_waitkey.",
+          "provenance": "source"
+        },
+        "9097": {
+          "synopsis": "Waits for a key on the copyright page (MTH_KeyJump, its table follows the call): HELP goes\nto the first application's help (cr_hlp), LEFT to MTH_HallOfFame, RIGHT to MTH_Help; MENU,\nUP, DOWN and ENTER wait again.",
+          "provenance": "source"
+        },
+        "9125": {
+          "synopsis": "The hall of fame page: prints HallOfFameMsg (in mth/systoken.asm) as a full page\n(MTHFullPage) and falls into hf_waitkey.",
+          "provenance": "source"
+        },
+        "9131": {
+          "synopsis": "Waits for a key on the hall of fame page (MTH_KeyJump, its table follows the call): HELP\ngoes to the first application's help (cr_hlp), RIGHT to MTH_Copyright, ENTER to cr_waitkey;\nMENU, UP, DOWN and LEFT wait again.",
+          "provenance": "source"
+        },
+        "9159": {
+          "synopsis": "Prints a tokenized page across the screen: defines window 6 (X = 1, Y = 0, 92 wide, 8 high,\ntype $81), selects and clears it, centres the text, and prints the text from the MTH bank\n(MTHPrintTokenized) with the system tokens (SF1_B_SYSTOKENS set, then ubSysFlags1 restored).\nEntry: HL = the tokenized text in the MTH bank (MTH_BNK).\nChanges: AF, B, HL, and what MTHPrintTokenized changes.",
+          "provenance": "source"
+        },
+        "9203": {
+          "synopsis": "The application help page: returns to the application whose help was shown\n(SetHlpAppChgFile), sets the line, topic and command to 1, draws the page (DrawHelpWd) and\nfalls into hlp_waitkey.",
+          "provenance": "source"
+        },
+        "9212": {
+          "synopsis": "Waits for a key on the application help page (MTH_KeyJump, its table follows the call): HELP\nto help_help, MENU to topic_menu, UP to help_up, DOWN to help_down, LEFT to MTH_Copyright,\nRIGHT to help_right; ENTER waits again.",
+          "provenance": "source"
+        },
+        "9240": {
+          "synopsis": "UP on the help page: moves to the previous application (PrevAppDOR) and shows its help\n(MTH_Help).",
+          "provenance": "source"
+        },
+        "9245": {
+          "synopsis": "HELP on the help page: when the application has a topic with help (GetFirstTopicHelp), goes\nto MTH_Topic; otherwise falls into help_down.",
+          "provenance": "source"
+        },
+        "9250": {
+          "synopsis": "DOWN on the help page: moves to the next application (NextAppDOR) and shows its help\n(MTH_Help).",
+          "provenance": "source"
+        },
+        "9255": {
+          "synopsis": "RIGHT on the help page: when the application has a topic with help (GetFirstTopicHelp),\nfalls into MTH_Topic; otherwise waits again (hlp_waitkey).",
+          "provenance": "source"
+        },
+        "9260": {
+          "synopsis": "The topic help page: selects the first command (ubHlpActiveCmd = 1), draws the active\ntopic's help (DrawTopicHelpWd) and falls into topic_waitkey.",
+          "provenance": "source"
+        },
+        "9266": {
+          "synopsis": "Waits for a key on the topic help page (MTH_KeyJump, its table follows the call): HELP to\ntopic_help, MENU to topic_menu, UP to topic_up, DOWN to topic_down, LEFT to MTH_Help, RIGHT\nto topic_right; ENTER waits again.",
+          "provenance": "source"
+        },
+        "9294": {
+          "synopsis": "DOWN on the topic page: B = 1, and goes on at topic_up's search for the next topic with\nhelp.",
+          "provenance": "source"
+        },
+        "9298": {
+          "synopsis": "UP on the topic page: B = -1. When at least two topics have help (Get2ndTopicHelp), steps\nfrom the active topic by B, wrapping, to the next one with help, makes it active\n(SetHlpActiveTpc, Fc = 0) and shows it (MTH_Topic); otherwise waits again.",
+          "provenance": "source"
+        },
+        "9328": {
+          "synopsis": "HELP on the topic page: shows the topic's first command with help (MTH_Command); without\none, the next topic with help (MTH_Topic), and after the last topic the next application's\nhelp (help_down).",
+          "provenance": "source"
+        },
+        "9344": {
+          "synopsis": "RIGHT on the topic page: when the topic has a command with help (GetFirstCmdHelp), makes it\nactive and falls into MTH_Command; otherwise waits again.",
+          "provenance": "source"
+        },
+        "9353": {
+          "synopsis": "The command help page: draws the active command's help (DrawCmdHelpWd) and falls into\ncmd_waitkey.",
+          "provenance": "source"
+        },
+        "9356": {
+          "synopsis": "Waits for a key on the command help page (MTH_KeyJump, its table follows the call): HELP to\ncmd_help, MENU to topic_menu, UP to cmd_up, DOWN to cmd_down, LEFT to MTH_Topic; RIGHT and\nENTER wait again.",
+          "provenance": "source"
+        },
+        "9384": {
+          "synopsis": "UP on the command page: D = -1, and goes on at cmd_down's search for the previous command\nwith help.",
+          "provenance": "source"
+        },
+        "9388": {
+          "synopsis": "DOWN on the command page: D = 1. Steps from the active command by D, wrapping, to the next\ncommand whose attributes have CMDF_B_HELP, makes it active and shows it (MTH_Command); after\na full round the active command stays.",
+          "provenance": "source"
+        },
+        "9417": {
+          "synopsis": "HELP on the command page: shows the next command with help (MTH_Command); without one, goes\non at topic_nxhelp (the next topic with help, or the next application).",
+          "provenance": "source"
+        },
+        "9428": {
+          "synopsis": "MENU from the help pages: updates the saved help state (MayRstAppHlpData), resets the line,\ntopic and command to 1 when it was reset, makes the suspended application active again\n(SetActiveAppDOR, ChgHelpFile) and falls into menu_entry.",
+          "provenance": "source"
+        },
+        "9441": {
+          "synopsis": "The command menu. Finds the first command topic, makes the active topic at least that one\nwith its line in the topic window (ubHlpActiveHelp) at most 7, and moves it to a command\ntopic (GetNonInfoTopicByNum). Then (loc_A2AD, also reached from DoHelp for an information\ntopic) draws the topic window (DrawTopicWd) and, when no input is waiting, marks the active\ntopic on its line in window 7; draws the menu (DrawMenuWd), selects window 6 (X = 1, Y = 0,\n92 wide, 8 high), highlights the active command (sub_A3EC, MTHHighlight) and waits\n(MTH_KeyJump): HELP to mnu_help, MENU to mnu_menu, SHIFT MENU to mnu_smenu, UP, DOWN, LEFT,\nRIGHT and ENTER to mnu_up, mnu_down, mnu_left, mnu_right and mnu_enter.",
+          "provenance": "source"
+        },
+        "9627": {
+          "synopsis": "MENU in the menu: next topic page (mnu_menu2); redraws the menu (menu_entry), or waits again\nwhen there is none.",
+          "provenance": "source"
+        },
+        "9635": {
+          "synopsis": "SHIFT MENU in the menu: previous topic page (mnu_smenu2); redraws the menu (menu_entry), or\nwaits again when there is none.",
+          "provenance": "source"
+        },
+        "9640": {
+          "synopsis": "UP in the menu: finds the previous command (mnu_up2) and moves the highlight to it\n(loc_A2C4).",
+          "provenance": "source"
+        },
+        "9645": {
+          "synopsis": "DOWN in the menu: moves the highlight to the command after the active one (loc_A2C4).",
+          "provenance": "source"
+        },
+        "9651": {
+          "synopsis": "ENTER in the menu: runs the active command. A command marked CMDF_B_SAFE beeps (Beep_X). A\ncommand with code 0 shows its help (DrawTopicWd, MTH_Command). Otherwise, when memory is not\nlow, help ends with A = the command code, Fc = 0, Fz = 1 (ExitKeyJump); when it is low, it\nbeeps.",
+          "provenance": "source"
+        },
+        "9689": {
+          "synopsis": "RIGHT in the menu: when the menu has one column (GetCmdAttrByNum for command 0 gives D = 1),\nacts as DOWN. Otherwise searches forward from the active command (GetNextCmdAttr) for the\ncommand in the next column on the same row, D being the column and E the row, and moves the\nhighlight to it (loc_A2C4).",
+          "provenance": "source"
+        },
+        "9753": {
+          "synopsis": "LEFT in the menu: when the menu has one column (GetCmdAttrByNum for command 0 gives D = 1),\nacts as UP. Otherwise searches backward from the active command (loc_A0C8) for the command\nin the previous column on the same row and moves the highlight to it (loc_A2C4).",
+          "provenance": "source"
+        },
+        "9837": {
+          "synopsis": "HELP in the menu: redraws the topic window (DrawTopicWd), then shows the application help\n(MTH_Help) for an information topic, else the active command's help (MTH_Command), else the\ntopic's (MTH_Topic), else the application's.",
+          "provenance": "source"
+        },
+        "9872": {
+          "synopsis": "Moves the cursor to command A's place in the menu window: column 28 * (D - 1) and row E from\nGetCmdAttrByNum.\nEntry: A = the command number.\nExit: Fc = 0; A = the command's position; C = its row; B = 0; the cursor at its place.\nError: Fc = 1 when the command does not exist, its column starts at 66 or beyond, or no user\nscreen was saved (pMTHScreenSave high byte 0).",
+          "provenance": "source"
+        },
+        "9916": {
+          "synopsis": "Opens an application's help: builds \":ROM.*/HELP/\" and the 17-byte application name in a\n29-byte stack buffer, opens its DOR (FilenameDOR), reads the 12-byte 'H' record (the topics,\ncommands, help and tokens pointers) into eHlpTopics and fixes their slot (CopyAppPointers).\nThe DOR handle is freed if the read fails.\nEntry: HL = the application name.\nExit: Fc = 0; IX = the help DOR handle; eHlpTopics to eHlpTokens set.\nError: Fc = 1, A = error code.",
+          "provenance": "source"
+        },
+        "9968": {
+          "synopsis": "Toggles reverse video over the 27 characters from the cursor (SOH R, SOH 2 E 27, SOH R): the\nhighlight bar of a menu command.\nEntry: the cursor at the command.\nChanges: F.",
+          "provenance": "source"
+        },
+        "9980": {
+          "synopsis": "Starts the right-hand box of a help page, when no input is waiting (MayMTHPrint): defines\nwindow 6 (X = 63, Y = 0, 30 wide, 8 high, type $81), selects and clears it and prints \"FOR\nMORE INFORMATION:\" centred in tiny type.\nEntry: none.\nExit: Fc = 1 when input was waiting (nothing printed).",
+          "provenance": "source"
+        },
+        "10026": {
+          "synopsis": "Ends the right-hand box of a help page, when no input is waiting (MayMTHPrint): two lines of\nkey legends, MENU \"topic entries\", HELP \"browse\", INDEX \"the manager\" and ESC \"resume\".\nEntry: none.\nExit: Fc = 1 when input was waiting (nothing printed).",
+          "provenance": "source"
+        },
+        "10091": {
+          "synopsis": "Saves the active window for RestoreActiveWd: asks OS_Nq NQ_Wcur for the current window and\nleaves two words on the caller's stack, HL with H = the window number, then IX. The caller\nmust call RestoreActiveWd before it returns.\nEntry: none.\nExit: the two words pushed.\nChanges: AF, HL (the return address), and what OS_Nq NQ_Wcur returns.",
+          "provenance": "source"
+        },
+        "10103": {
+          "synopsis": "Undoes GetCurrentWdInfo: takes the two words from the stack, restores IX and selects the\nsaved window again with SOH 2 H and its number.\nEntry: the two words GetCurrentWdInfo left on the stack.\nExit: IX restored; the saved window active; H = its number.\nChanges: HL, IX.\nKeeps: AF.",
+          "provenance": "source"
+        },
+        "10121": {
+          "synopsis": "Draws the topic window (window 7): the application name (InitTopicWd), then seven lines of\ncommand topic names (PrintTopic between MTH_ToggleLT calls), from topic 1, or from the\nactive topic minus 6 when it is beyond 7. The active window is kept.\nEntry: none (reads ubHlpActiveTpc).",
+          "provenance": "source"
+        },
+        "10190": {
+          "synopsis": "Sends SOH L and SOH T, which toggle the caps (L) and tiny (T) attributes.\nEntry: none.\nKeeps: AF.",
+          "provenance": "source"
+        },
+        "10200": {
+          "synopsis": "Clears the topic window's top line: selects window 7, resets underline, clears line 0 and\nprints the application name in tiny, caps and underline without reverse and grey, then\ntoggles underline and grey. The active window is kept.\nEntry: none.",
+          "provenance": "source"
+        },
+        "10245": {
+          "synopsis": "Draws the application help page: the window (InitHelpWd), the application name and its help\ntext (GetHlpHelp, MTHPrintTokenized), then the right-hand box (Help2Wd_Top) with \"other\nprograms\" and the up and down arrows, \" about <name> topics\" and the right arrow when a\ntopic has help, and the key legends (Help2Wd_bottom).\nEntry: none.\nExit: Fc = 1 when input was waiting and drawing stopped.",
+          "provenance": "source"
+        },
+        "10338": {
+          "synopsis": "Defines the help window (window 6 at column 1, row 0, 61 by 8, flags $81), selects and\nclears it and sets centred justification, through MayMTHPrint. Nothing is drawn when a key\nis waiting: MayMTHPrint then returns straight to this routine's caller.\nEntry: none.\nExit: Fc = 0, window 6 drawn and selected.\nError: Fc = 1 when input is pending (nothing drawn).",
+          "provenance": "source"
+        },
+        "10358": {
+          "synopsis": "Finds the second command of the active topic that has a help page: calls GetFirstCmdHelp,\nthen falls into GetNextCmdHelp.\nEntry: ubHlpActiveTpc = active topic.\nExit: as GetNextCmdHelp.\nChanges: AF, BC, DE, HL, IX.",
+          "provenance": "source"
+        },
+        "10361": {
+          "synopsis": "Finds the next command of the active topic after command A that has a help page (the\nCMDF_B_HELP attribute bit), going on through GetCmdAttrByNum.\nEntry: A = command number to start after; ubHlpActiveTpc = active topic.\nExit: Fc = 0, A = number of the command found; B = its attributes; C = its command code; HL\n= its definition; DE = as GetCmdAttrByNum.\nError: Fc = 1 when no further command has help.\nChanges: AF, BC, DE, HL, IX.",
+          "provenance": "source"
+        },
+        "10364": {
+          "synopsis": "Finds the first command of the active topic that has a help page: starts with command 1 and\ncalls GetCmdAttrByNum until a command has the CMDF_B_HELP attribute bit set.\nEntry: ubHlpActiveTpc = active topic.\nExit: Fc = 0, A = number of the command found; B = its attributes; C = its command code; HL\n= its definition; DE = as GetCmdAttrByNum.\nError: Fc = 1 when no command of the topic has help.\nChanges: AF, BC, DE, HL, IX.",
+          "provenance": "source"
+        },
+        "10376": {
+          "synopsis": "Steps to the next command: increments A and falls into GetCmdAttrByNum.\nEntry: A = current command number; ubHlpActiveTpc = active topic.\nExit: as GetCmdAttrByNum for command A+1.\nChanges: AF, BC, DE, HL, IX.",
+          "provenance": "source"
+        },
+        "10377": {
+          "synopsis": "Looks up command A of the active help topic and returns its attributes. Binds in the help\ncommand list (GetHlpCommands, OSBixS1), skips to topic ubHlpActiveTpc (GetCmdTopicByNum),\nturns the count into a real position past hidden commands (GetRealCmdPosition), reads the\ncommand code and the attribute byte (GetAttr), then restores segment 1 (OSBoxS1).\nEntry: A = command number within the active topic; ubHlpActiveTpc = active topic.\nExit: A = command position; B = attribute byte (CMDF_xxx); C = command code; HL = command\ndefinition (in the list's bank, which is no longer bound); DE = the column and row\nGetRealCmdPosition left in DE.\nError: Fc = 1, A = 0 when the topic does not exist (B, C, HL not set); Fc = 1 also comes\nfrom GetRealCmdPosition at the start or end of the topic, with B, C and HL still set.\nCallers rely on A = 0 at the end of the list to wrap round.\nChanges: AF, BC, DE, HL, IX.",
+          "provenance": "source"
+        },
+        "10421": {
+          "synopsis": "Finds the second help topic that has a help page: calls GetFirstTpcHelp, then falls into\nGetNextTopicHelp.\nEntry: none.\nExit: as GetNextTopicHelp.\nChanges: AF, BC, D, HL.",
+          "provenance": "source"
+        },
+        "10424": {
+          "synopsis": "Finds the next topic after topic A that has a help page (the help bit, bit 4, of its\nattribute byte), going on through GetTpcAttrByNum.\nEntry: A = topic number to start after.\nExit: Fc = 0, A = number of the topic found; D = its attributes (TPCF_xxx); HL = its\ndefinition.\nError: Fc = 1 when no further topic has help.\nChanges: AF, BC, D, HL.",
+          "provenance": "source"
+        },
+        "10427": {
+          "synopsis": "Finds the first help topic that has a help page: starts with topic 1 and calls\nGetTpcAttrByNum until a topic has the help bit (bit 4) of its attributes set.\nEntry: none.\nExit: Fc = 0, A = number of the topic found; D = its attributes (TPCF_xxx); HL = its\ndefinition.\nError: Fc = 1 when no topic has help.\nChanges: AF, BC, D, HL.",
+          "provenance": "source"
+        },
+        "10439": {
+          "synopsis": "Finds the first topic that is not an INFO topic: sets A = 1 and falls into GtNnInfoTpcByNum.\nEntry: none.\nExit: as GtNnInfoTpcByNum.\nChanges: AF, BC, D, HL.",
+          "provenance": "source"
+        },
+        "10441": {
+          "synopsis": "Finds the first topic, from topic A upwards, that is not an INFO topic (TPCF_B_INFO clear in\nits attributes), calling GetTpcAttrByNum for each.\nEntry: A = topic number to start with.\nExit: Fc = 0, A = number of the topic found; D = its attributes; HL = its definition.\nError: Fc = 1 when the list ends first.\nChanges: AF, BC, D, HL.",
+          "provenance": "source"
+        },
+        "10448": {
+          "synopsis": "Entry inside GtNnInfoTpcByNum: increments A and goes on searching from the next topic for\none that is not an INFO topic.\nEntry: A = current topic number.\nExit: as GtNnInfoTpcByNum.\nChanges: AF, BC, D, HL.",
+          "provenance": "source"
+        },
+        "10451": {
+          "synopsis": "Decrements A and searches from there with GtNnInfoTpcByNum. The search runs upwards, so when\ntopic A-1 is an INFO topic the result is the next non-INFO topic after it.\nEntry: A = current topic number.\nExit: as GtNnInfoTpcByNum.\nChanges: AF, BC, D, HL.",
+          "provenance": "source"
+        },
+        "10478": {
+          "synopsis": "Prints the key legend of an internal key code: looks A up in CmdKeycodeTbl (3-byte entries:\nkey code, modifier symbol, key symbol, ended by 0) and prints SOH and the modifier symbol\nwhen there is one, then SOH and the key symbol, through ScrDrv_SOH_A (OS_Out). Prints\nnothing for a code not in the table.\nEntry: A = internal key code (IN_xxx).\nExit: legend printed.\nChanges: AF, BC.\nKeeps: DE, HL.",
+          "provenance": "source"
+        },
+        "10601": {
+          "synopsis": "Starts help for an application: stores A as the active help application (ubHlpActiveApp) and\nfalls into InitHlpActHelp, which sets help page, topic and command to 1.\nEntry: A = application number.\nExit: ubHlpActiveApp = A; ubHlpActiveHelp, ubHlpActiveTpc, ubHlpActiveCmd = 1; A = 1.\nChanges: AF.",
+          "provenance": "source"
+        },
+        "10604": {
+          "synopsis": "Sets the active help page, topic and command to 1: loads A = 1 and falls into\nSetHlpActiveHelp.\nEntry: none.\nExit: ubHlpActiveHelp, ubHlpActiveTpc, ubHlpActiveCmd = 1; A = 1.\nChanges: AF.",
+          "provenance": "source"
+        },
+        "10606": {
+          "synopsis": "Stores A as the active help page (ubHlpActiveHelp), sets the active topic to 1 and falls\ninto InitHlpActiveCmd.\nEntry: A = help page number.\nExit: ubHlpActiveHelp = A; ubHlpActiveTpc, ubHlpActiveCmd = 1; A = 1.\nChanges: AF.",
+          "provenance": "source"
+        },
+        "10614": {
+          "synopsis": "Selects the first command of the active topic: sets ubHlpActiveCmd to 1.\nEntry: none.\nExit: ubHlpActiveCmd = 1; A = 1.\nChanges: AF.",
+          "provenance": "source"
+        },
+        "10795": {
+          "synopsis": "OS_Sp main part, called by OSSp in kernel 0 after OSFramePush. Checks the reason's high byte\n($80-$8E), pushes NqSp_ret as the return address and jumps through OSSpTable (one JP per 3\nin the high byte): $80xx SpPanel (Panel and PrinterEd settings), $83xx, $86xx and $89xx do\nnothing, $8Cxx hands the frame to DC_Sp (Director and CLI settings).\nEntry: B = reason high byte; IY = OS frame (C, A, HL of the call are read from it).\nExit: as the handler; the handler gets A = C = reason low byte, B = 0.\nError: Fc = 1, A = RC_Unk when B is outside $80-$8E.",
+          "provenance": "source"
+        },
+        "10846": {
+          "synopsis": "OS_Nq main part, called by OSNq in kernel 0 after OSFramePush. Checks the reason's high byte\n($80-$8E), pushes NqSp_ret as the return address and jumps through OSNqTable (one JP per 3\nin the high byte): $80xx NqPanel, $83xx OSNqWindow, $86xx OSNqProcess, $89xx OSNqMemory,\n$8Cxx OSNqDirector (DC_Nq).\nEntry: B = reason high byte; IY = OS frame (C, A, DE of the call are read from it).\nExit: as the handler; the handler gets A = C = reason low byte, B = 0.\nError: Fc = 1, A = RC_Unk when B is outside $80-$8E.",
+          "provenance": "source"
+        },
+        "11008": {
+          "synopsis": "Copies the default value of a Panel or ISO-translation setting into a buffer and falls into\nNqGetDest. The reason's low byte (OSFrame_C) indexes PrefTbl1 (panel, bit 7 clear) or\nPrefTbl2 (ISO, bit 7 set) in the MTH bank, which hold byte offsets: the data starts at the\nentry's offset and its length is the next offset minus this one.\nEntry: IX = temporary buffer (NqPanel makes 256 bytes on the stack); IY = OS frame.\nExit: DE = IX (the default value); C = its length; HL = caller's destination buffer; A =\ncaller's buffer size (see NqGetDest).\nChanges: AF, BC, DE, HL.",
+          "provenance": "source"
+        },
+        "11057": {
+          "synopsis": "Finds where OS_Nq returns its data: the caller's buffer from the frame's DE, and its size\nfrom the frame's A. When the caller passed DE = 2, the value is returned in DE itself: the\nframe's DE is cleared and HL points to OSFrame_E, with A = 2.\nEntry: DE = source data; C = data length; IY = OS frame.\nExit: HL = destination; A = buffer size (2 when DE = 2 was passed).\nChanges: AF, HL.\nKeeps: BC, DE.",
+          "provenance": "source"
+        },
+        "11272": {
+          "synopsis": "Skips one attribute of the saved preferences data: reads its length byte from the memory\nfile with RdFileByte and reads past that many bytes.\nEntry: memory file positioned on an attribute's length byte.\nExit: Fc = 0, positioned on the next attribute; A = 0 when the length was 0.\nError: Fc = 1, A = error code from RdFileByte.\nChanges: AF, B.",
+          "provenance": "source"
+        },
+        "11286": {
+          "synopsis": "Checks the length given to OS_Sp for a Panel or ISO setting against the default length in\nPrefTbl1/PrefTbl2 (MTH bank). The length is the frame's A, or 2 when the frame's DE is 2.\nEntry: IY = OS frame (C = reason low byte, A = length, DE = data or 2).\nExit: C = the default length; Fz = 1 when the given length is 255 (A = 0) or when it and the\ndefault length are both 0; Fz = 0 otherwise (SpPanel then writes the attribute).\nChanges: AF, BC, DE, HL.",
+          "provenance": "source"
+        },
+        "11340": {
+          "synopsis": "Copies one byte from the old preferences data to the new memory file: reads it with\nPanelFsRdByte and falls into MemFsWrByte.\nEntry: both file states set up by SpPanel.\nExit: Fc = 0, A = the byte copied.\nError: Fc = 1, A = error code.\nChanges: AF, DE, HL.",
+          "provenance": "source"
+        },
+        "11344": {
+          "synopsis": "Writes A to the new preferences memory file: switches the file position to it (UseMemFs) and\njumps to WrFileByte.\nEntry: A = byte.\nExit: Fc = 0, byte written.\nError: Fc = 1, A = error code.\nChanges: AF, DE, HL.",
+          "provenance": "source"
+        },
+        "11350": {
+          "synopsis": "Reads a byte of the old preferences data: switches the file position to it (UsePanelFs) and\njumps to RdFileByte.\nEntry: none.\nExit: Fc = 0, A = byte read.\nError: Fc = 1, A = error code (end of file included).\nChanges: AF, DE, HL.",
+          "provenance": "source"
+        },
+        "11356": {
+          "synopsis": "Switches the kernel memory file position to the old preferences data: saves the 4-byte\neFsMemFilePos in pMTHScreenSave and loads it from lFsPanelArea. UseMemFs switches back.\nEntry: none.\nExit: eFsMemFilePos = the panel data's position.\nChanges: DE, HL.\nKeeps: AF, BC.",
+          "provenance": "source"
+        },
+        "11381": {
+          "synopsis": "Switches the kernel memory file position to the new preferences memory file: saves the\n4-byte eFsMemFilePos in lFsPanelArea and loads it from pMTHScreenSave. UsePanelFs switches\nback.\nEntry: none.\nExit: eFsMemFilePos = the new file's position.\nChanges: DE, HL.\nKeeps: AF, BC.",
+          "provenance": "source"
+        },
+        "11630": {
+          "synopsis": "Makes pPrefs1 the current preferences data: stores DE in pPrefs1, clears IST_B_2 at (HL) and\nreturns the other pointer, pPrefs2.\nEntry: DE = new preferences data; HL = ubIntStatus.\nExit: DE = pPrefs2 (the previous data).\nChanges: DE.\nKeeps: AF.",
+          "provenance": "source"
+        },
+        "11641": {
+          "synopsis": "Makes pPrefs2 the current preferences data: stores DE in pPrefs2, sets IST_B_2 at (HL) and\nreturns the other pointer, pPrefs1.\nEntry: DE = new preferences data; HL = ubIntStatus.\nExit: DE = pPrefs1 (the previous data).\nChanges: DE.\nKeeps: AF.",
+          "provenance": "source"
+        },
+        "11744": {
+          "synopsis": "Table of country settings read by RstRdPanelAttrs: a count byte ($0E), then 14 entries of 6\nbytes: the PA_Loc country letter, the date filter table (word), two country-ID letters with\nbit 7 set (for the OZ window) and the keymap's page in the keymap bank. The first entry (UK)\nis the default when the country is not found.",
+          "provenance": "source"
+        },
+        "11850": {
+          "synopsis": "OS_Out to the screen: opens the screen, takes the active window (sbf_ActiveWd) in IX, hides\nthe cursor, puts the byte through OSOut_Put, stores the cursor position, shows the cursor\nagain and closes the screen.\nEntry: A = byte to write.\nExit: Fc = 0.\nKeeps: IX.",
+          "provenance": "source"
+        },
+        "11880": {
+          "synopsis": "Puts one byte through the screen driver. While a prefix sequence is open (sbf_CtrlPrefix not\n0) the byte goes to OsOut_Prefixed. Otherwise a control code cancels the prefix: CR, BEL,\nBS, HT, LF, VT and FF run their handlers, ESC is ignored, and any other code below $20\nstarts a prefix sequence (stored in sbf_CtrlPrefix, buffer cleared by OSIsq). A printable\nbyte is upper-cased when the window has caps (WDFH_B_CAPS) and falls into ScrD_PutChar.\nEntry: A = byte; IX = active window; HL = cursor position.\nExit: HL = new cursor position.",
+          "provenance": "source"
+        },
+        "12006": {
+          "synopsis": "Gives the character code of the user-defined character numbered in sbf_VDU1: the number is\ntaken modulo 64 with 128K or more RAM (codes $C0-$FF) and modulo 32 otherwise ($E0-$FF),\nchecked with Chk128KB, and complemented.\nEntry: sbf_VDU1 = character number.\nExit: A = complement of the number ($C0-$FF).\nChanges: AF.",
+          "provenance": "source"
+        },
+        "12056": {
+          "synopsis": "Searches a column of the 4-byte-per-entry key/character/LORES table (Key2Chr_tbl,\nChr2VDU_tbl or VDU2Chr_tbl) for A. The search ends at an entry whose byte in this column and\nthe next are both 0. VDU2ChrCode loads HL = VDU2Chr_tbl and falls in here.\nEntry: A = byte to find; HL = the column's label.\nExit: Fc = 0, Fz = 1, HL = the matching entry's byte in the next column.\nError: Fc = 1 when not found (HL near the table's end).\nChanges: F, HL.\nKeeps: A, DE.",
+          "provenance": "source"
+        },
+        "12135": {
+          "synopsis": "Tells whether a character has bold and tiny variants in the LORES font: codes $08-$7F do.\nEntry: A = character code.\nExit: Fc = 0 when A is $08-$7F; Fc = 1 otherwise.\nChanges: F.",
+          "provenance": "source"
+        },
+        "12162": {
+          "synopsis": "Stores one byte of a prefix (SOH) sequence in its buffer: +0 the count of bytes still\nexpected, +1 the low byte of the write pointer, then the bytes. The first byte sets the\nlength: $80-$94 gives length 0-20, a digit gives its value, and any other byte is stored as\na one-byte sequence. A length of 0 cancels the sequence (falls into Zero_ctrlprefix). When\nthe last byte arrives, +0 is set to the sequence length.\nEntry: A = byte; HL = sequence buffer (sbf_PrefixSeq).\nExit: Fc = 0, A = 0 when the sequence is complete; Fc = 1 while bytes are still expected (A\n= -1, or the length that was set).",
+          "provenance": "source"
+        },
+        "12190": {
+          "synopsis": "Ends the open prefix sequence: clears sbf_CtrlPrefix. StorePrefixed falls in here when a\nsequence length of 0 is given.\nEntry: none.\nExit: sbf_CtrlPrefix = 0.\nKeeps: all registers and flags.",
+          "provenance": "source"
+        },
+        "12314": {
+          "synopsis": "Shows the cursor of window IX when the window has a cursor (WDFH_B_CURSOR) and it is not on\nalready: saves the attribute byte at the cursor cell in wdf_crsrattr and sets it to flash\n(LORES cells also get the LORES cursor bits), then sets WDFH_B_CURSORON.\nEntry: IX = window frame.\nExit: HL = cursor cell's attribute byte when shown.\nChanges: AF, HL.",
+          "provenance": "source"
+        },
+        "12347": {
+          "synopsis": "Hides the cursor of window IX: when WDFH_B_CURSORON is set, puts the saved attribute byte\n(wdf_crsrattr) back at the cursor cell and clears the flag.\nEntry: IX = window frame.\nExit: HL = cursor position (L = wdf_crsrx, H = wdf_crsry).\nChanges: AF, HL.",
+          "provenance": "source"
+        },
+        "12369": {
+          "synopsis": "Turns window coordinates into a screen position: L = 2*C + wdf_startx (two bytes per\ncharacter cell), H = B + wdf_starty.\nEntry: B = row; C = column; IX = window frame.\nExit: HL = screen position.\nChanges: AF, HL.",
+          "provenance": "source"
+        },
+        "12382": {
+          "synopsis": "Turns a screen position into window coordinates, the inverse of ScrD_GetNewXY: C = (L -\nwdf_startx) / 2, B = H - wdf_starty.\nEntry: HL = screen position; IX = window frame.\nExit: B = row; C = column.\nChanges: AF, BC.",
+          "provenance": "source"
+        },
+        "12395": {
+          "synopsis": "Screen driver command \"JC\": sets centred justification (3) by counting E up through\nSetLeftJustify and SetRightJustify into SetNormalJustify.\nEntry: E = 0 (set by CallFuncDE); IX = window frame.\nExit: justification bits of wdf_flagsHi = 3.\nChanges: AF, E.",
+          "provenance": "source"
+        },
+        "12396": {
+          "synopsis": "Screen driver command \"JL\": sets left justification (2); falls through SetRightJustify into\nSetNormalJustify.\nEntry: E = 0 (set by CallFuncDE); IX = window frame.\nExit: justification bits of wdf_flagsHi = 2.\nChanges: AF, E.",
+          "provenance": "source"
+        },
+        "12397": {
+          "synopsis": "Screen driver command \"JR\": sets right justification (1); falls into SetNormalJustify.\nEntry: E = 0 (set by CallFuncDE); IX = window frame.\nExit: justification bits of wdf_flagsHi = 1.\nChanges: AF, E.",
+          "provenance": "source"
+        },
+        "12398": {
+          "synopsis": "Screen driver command \"JN\": writes E into the justification bits (WDFH_JUSTIFICATION) of\nwdf_flagsHi; E = 0 means normal justification.\nEntry: E = justification (0 normal, 1 right, 2 left, 3 centre); IX = window frame.\nExit: wdf_flagsHi updated.\nChanges: AF.",
+          "provenance": "source"
+        },
+        "12414": {
+          "synopsis": "Makes room for the next character under the window's justification. With normal\njustification it does nothing. Otherwise it finds the edges of the text on the cursor's row\n(a null cell or the window edge, from the right margin, the left margin or the middle of the\nmargins) and, unless the target cell is already null, moves the characters between the edges\none cell (two bytes) to the left.\nEntry: HL = cursor position; IX = window frame.\nExit: HL = the cell the next character goes to.\nChanges: AF, BC, DE, HL, AF'.",
+          "provenance": "source"
+        },
+        "12609": {
+          "synopsis": "Checks a new row against window IX: builds the position with row C and the cursor's column\n(ScrD_GetNewXY) and tests it with NewYValid.\nEntry: C = new row; HL = cursor position; IX = window frame.\nExit: Fc = 0, D = the new row's screen line, E = cursor column byte.\nError: Fc = 1 when the row is outside the window.\nChanges: AF, B, DE.\nKeeps: HL.",
+          "provenance": "source"
+        },
+        "12799": {
+          "synopsis": "Resets the attributes of window IX: clears wdf_flagsHi, wdf_f2, wdf_f6 and wdf_flagsLo.\nInitWindowFrame falls in here; it is also the $7F function of ScrDrvAttrTable (reset all\ntoggles).\nEntry: IX = window frame.\nExit: Fc = 0, Fz = 1; BC = 0.\nChanges: F, BC.",
+          "provenance": "source"
+        },
+        "12827": {
+          "synopsis": "Entry inside SelClearWd: resets the window's attributes (ResetWdAttrs), marks it initialised\n(WDF2_B_INITIALIZED) and jumps to ClearScr. SelInitWd calls it when a window is selected for\nthe first time.\nEntry: IX = window frame.\nExit: as ClearScr.",
+          "provenance": "source"
+        },
+        "12867": {
+          "synopsis": "Reads the cursor position of window IX. SelHoldWd falls in here after selecting a window.\nEntry: IX = window frame.\nExit: L = wdf_crsrx; H = wdf_crsry.\nChanges: HL.",
+          "provenance": "source"
+        },
+        "12874": {
+          "synopsis": "Stores HL as the cursor position of window IX.\nEntry: HL = cursor position; IX = window frame.\nExit: wdf_crsrx = L; wdf_crsry = H.\nKeeps: all registers.",
+          "provenance": "source"
+        },
+        "12910": {
+          "synopsis": "Checks a window number argument: the screen driver passes it less $20, so A + $20 must be\nthe digit '1'-'8'.\nEntry: A = window digit - $20.\nExit: Fc = 0, A = window index 0-7.\nError: Fc = 1 when it is not '1'-'8'.\nChanges: AF.",
+          "provenance": "source"
+        },
+        "13014": {
+          "synopsis": "Screen driver command \".\": passes the rest of the sequence to DC_Gen, with BHL = sbf_VDU1 in\nthe screen base bank (ubScreenBase) and C = the sequence length less 1.\nEntry: sbf_PrefixSeq = sequence length.\nExit: as DC_Gen.\nKeeps: HL.",
+          "provenance": "source"
+        },
+        "13032": {
+          "synopsis": "Table of the screen driver's SOH commands, read by FindSDCmd: 27 entries of 4 bytes (the\ncommand letter, a second byte that must match sbf_VDU1 or 0 for any, the handler's address),\nended by 0. CallFuncDE calls the handler with A, B, C = the next three sequence bytes less\n$20 and E = 0.",
+          "provenance": "source"
+        },
+        "13141": {
+          "synopsis": "Table of the screen driver's one-letter SOH sequences, read by ScrDrvGetAttrBits. Three\nkinds of 3-byte entries, ended by 0: 12 attribute toggles (letter, wdf_flagsLo bits,\nwdf_flagsHi bits); three functions ($FF scroll up, $FE scroll down, $7F ResetWdAttrs) with\nthe handler's address; 27 special characters (code, LORES code, control byte: bit 0 selects\nLORES $100-$1FF, bits 1-2 make it 2 or 3 cells wide).",
+          "provenance": "source"
+        },
+        "13398": {
+          "synopsis": "Frees a handle and its memory: FreeMemData0 releases the data, FreeHandle releases the\nhandle by its type (hnd_Type). Entry inside OSSr_FUS after its handle check; file and\nfilesystem code jump here too.\nEntry: IX = handle.\nExit: handle and memory freed.\nKeeps: AF.",
+          "provenance": "source"
+        },
+        "13537": {
+          "synopsis": "Key-to-character table, one table seen through three labels a byte apart: 90 entries of 4\nbytes (internal key code, ISO Latin-1 code, LORES font code low byte, high byte), bold and\ntiny variants included, followed by zero bytes that end the search. OS_In searches this\ncolumn with Chr2ScreenCode to turn a foreign key code into its ISO character.",
+          "provenance": "source"
+        },
+        "13538": {
+          "synopsis": "Second column of the key-to-character table (see Key2Chr_tbl): the ISO Latin-1 code of each\nentry. Char2VDU searches it with Chr2ScreenCode to find a character's LORES code, read from\nthe next two bytes.",
+          "provenance": "source"
+        },
+        "13539": {
+          "synopsis": "Third column of the key-to-character table (see Key2Chr_tbl): the low byte of each entry's\nLORES font code, followed by the high byte. VDU2ChrCode searches it with Chr2ScreenCode.",
+          "provenance": "source"
+        },
+        "14094": {
+          "synopsis": "OS_Si SI_FTX (flush transmit buffer), kernel 1 part: not available.\nEntry: none.\nError: Fc = 1, A = RC_Na always.\nChanges: AF.",
+          "provenance": "source"
+        },
+        "14104": {
+          "synopsis": "Reads a Panel parameter into DE: calls OS_Nq with DE = 2, which returns the value in DE.\nEntry: BC = parameter (PA_xxx).\nExit: DE = value.\nChanges: AF, DE.",
+          "provenance": "source"
+        },
+        "14110": {
+          "synopsis": "Turns a baud rate into its register code: looks DE up in BaudRates and returns its index. A\nrate not in the table gives BR_9600.\nEntry: DE = baud rate.\nExit: Fc = 0, A = code 0-7.\nChanges: AF, BC, DE, HL, AF'.",
+          "provenance": "source"
+        },
+        "14143": {
+          "synopsis": "Table of the baud rates the serial port supports, read by BaudToReg: 8 words (75, 300, 600,\n1200, 2400, 9600, 19200, 38400) in register code order, ended by a zero word.",
+          "provenance": "source"
+        },
+        "14387": {
+          "synopsis": "Printer filter, one character. FF, LF and CR go to PrntFF, PrntLF and PrntCR. Any other\ncharacter first sends pending attribute changes (ApplyAttrs); a space is only counted in\nPendingSpaces. Otherwise pending spaces are printed, then:\n1. When an attribute that is on uses a placeholder, its 'on' string is printed with the\nplaceholder replaced by the character.\n2. Otherwise the character is looked up in Translations; a match prints its translation\nstring (OS_Nq), and anything else goes to PutChar as it is.\nEntry: A = character, also in prtInChar; StackBufPtr = 33-byte stack buffer.\nExit: Fc = 0.\nError: Fc = 1 from the serial output.",
+          "provenance": "source"
+        },
+        "14548": {
+          "synopsis": "Sends a byte to the printer: when output is enabled (PRT_B_ENABLED in Flags) writes it to\nthe serial port with OSSiPbt and the default timeout (BC = -1).\nEntry: A = byte.\nExit: Fc = 0 (also when output is disabled).\nError: as OSSiPbt.\nKeeps: BC, HL.",
+          "provenance": "source"
+        },
+        "14700": {
+          "synopsis": "Table of 6 words: the handlers of the printer filter's control sequences after the 8\nattribute letters of CtrlChars, in its order: FilterOn ('['), FilterOff (']'), Microspace\n('h'), ResetAttrs ('s'), SetPageLen ('p'), SendHex ('$'). OSPrtPrntCtrlSeq reads it.",
+          "provenance": "source"
+        },
+        "14712": {
+          "synopsis": "The printer filter's control sequence letters, ended by 0, searched by OSPrtPrntCtrlSeq\nafter OR $20: \"ubxilrae\" (attributes 0-7, toggled in AttrUnderline to AttrUserdef), then\n'{', '}', 'h', 's', 'p', '$' (handlers in CtrlSeqFuncs; '{' and '}' match '[' and ']').",
+          "provenance": "source"
+        },
+        "14757": {
+          "synopsis": "Converts an ASCII hex digit ('0'-'9', 'A'-'F' or 'a'-'f') to its value.\nEntry: A = character.\nExit: Fc = 1, A = value 0-15.\nError: Fc = 0 when A is not a hex digit.\nChanges: AF.",
+          "provenance": "source"
+        },
+        "14919": {
+          "synopsis": "Sends the pending attribute changes: for each of the 8 printer attributes, from AttrUserdef\ndown to AttrUnderline, with PRA_B_PENDING set, prints pending spaces and toggles it with\nToggleAttr (C = the new state).\nEntry: none.\nExit: Fc = 0.\nError: Fc = 1 from the serial output.\nChanges: AF, BC, DE, HL.",
+          "provenance": "source"
+        },
+        "14947": {
+          "synopsis": "Toggles a printer attribute: flips PRA_B_ON at (HL), clears PRA_B_PENDING and, unless the\nattribute uses a placeholder, prints its 'on' or 'off' string (GetPAtoggle,\nPrntStackBuffer).\nEntry: HL = attribute byte; B = attribute number 1-8; C = 1 for on, 0 for off.\nExit: Fc = 0.\nError: Fc = 1 from the serial output.\nChanges: AF, DE.\nKeeps: BC, HL.",
+          "provenance": "source"
+        },
+        "14988": {
+          "synopsis": "Prints the spaces counted in PendingSpaces with PutChar and clears the count.\nEntry: none.\nExit: Fc = 0; A = $20 after printing, A = 0 when there were none.\nError: Fc = 1 from the serial output (count kept).\nKeeps: BC.",
+          "provenance": "source"
+        },
+        "15013": {
+          "synopsis": "Reads a Panel or PrinterEd parameter into DE: OS_Nq with DE = 2, then tests the length.\nEntry: BC = parameter.\nExit: DE = value; A = returned length; Fz = 1 when it is 0 (parameter not set); Fc = 0.\nChanges: AF, DE.",
+          "provenance": "source"
+        },
+        "15020": {
+          "synopsis": "Gives the OS_Nq reason of a printer translation's character: B = $80, C = $48 + 2*A for\nTr1-Tr9 (A = 0-8) and $6E + 2*A for Tr10 upwards. The translation string is the next reason\n(BC + 1).\nEntry: A = translation index from 0.\nExit: BC = reason.\nChanges: AF, BC.",
+          "provenance": "source"
+        },
+        "15033": {
+          "synopsis": "Resets the printer filter's state: clears the on and pending bits of the 8 attributes,\nkeeping their reset-at-CR and placeholder bits, sets PendingSpaces and Rows to 0 and PageLen\nto 66.\nEntry: none.\nExit: A = 66.\nChanges: AF, B, HL.",
+          "provenance": "source"
+        }
+      }
     },
     "7": {
       "labels": [
-        { "name": "init_crash", "value": 71, "provenance": "observed", "synopsis": "Hangs in a loop to itself: OS_Bye does not come back." },
-        { "name": "Exit_crash", "value": 1526, "provenance": "observed", "synopsis": "Hangs in a loop to itself: OS_Bye does not come back." }
+        {
+          "name": "init_crash",
+          "value": 71,
+          "provenance": "observed",
+          "synopsis": "Hangs in a loop to itself: OS_Bye does not come back."
+        },
+        {
+          "name": "Exit_crash",
+          "value": 1526,
+          "provenance": "observed",
+          "synopsis": "Hangs in a loop to itself: OS_Bye does not come back."
+        }
       ]
     },
     "16": {
-      "page": { "name": "OZ 4.7, bank 10h (FlashStore file area)", "segments": [{ "start": 0, "segment": 0 }] },
+      "page": {
+        "name": "OZ 4.7, bank 10h (FlashStore file area)",
+        "segments": [
+          {
+            "start": 0,
+            "segment": 0
+          }
+        ]
+      },
       "labels": [
-        { "name": "FileArea", "value": 0, "provenance": "observed", "synopsis": "The ROM's FlashStore file area, the preset 'oz' file area below the OZ banks. It holds one\nfile entry: the name's length, the name, the file's length (4 bytes, low byte first) and its\nbytes. The rest of the bank is $FF, free space for more entries." },
-        { "name": "WelcomeName", "value": 1, "provenance": "observed", "synopsis": "The file's name, /welcome.pdd (12 characters)." },
-        { "name": "WelcomeLength", "value": 13, "provenance": "observed", "synopsis": "The file's length: $00001543, 5443 bytes." },
-        { "name": "WelcomeData", "value": 17, "provenance": "observed", "synopsis": "The file, a PipeDream document: the OZ 4.7 release notes (filearea/welcome.pdd in the\nOZ source)." },
-        { "name": "FileAreaFree", "value": 5460, "provenance": "observed", "synopsis": "Free space to the end of the bank: every byte $FF." }
+        {
+          "name": "FileArea",
+          "value": 0,
+          "provenance": "observed",
+          "synopsis": "The ROM's FlashStore file area, the preset 'oz' file area below the OZ banks. It holds one\nfile entry: the name's length, the name, the file's length (4 bytes, low byte first) and its\nbytes. The rest of the bank is $FF, free space for more entries."
+        },
+        {
+          "name": "WelcomeName",
+          "value": 1,
+          "provenance": "observed",
+          "synopsis": "The file's name, /welcome.pdd (12 characters)."
+        },
+        {
+          "name": "WelcomeLength",
+          "value": 13,
+          "provenance": "observed",
+          "synopsis": "The file's length: $00001543, 5443 bytes."
+        },
+        {
+          "name": "WelcomeData",
+          "value": 17,
+          "provenance": "observed",
+          "synopsis": "The file, a PipeDream document: the OZ 4.7 release notes (filearea/welcome.pdd in the\nOZ source)."
+        },
+        {
+          "name": "FileAreaFree",
+          "value": 5460,
+          "provenance": "observed",
+          "synopsis": "Free space to the end of the bank: every byte $FF."
+        }
       ],
       "lines": {
-        "0": { "comment": "Length of the file's name", "provenance": "observed" }
+        "0": {
+          "comment": "Length of the file's name",
+          "provenance": "observed"
+        }
       },
       "regions": [
-        { "start": 0, "end": 0, "type": "bytes", "provenance": "observed" },
-        { "start": 1, "end": 12, "type": "bytes", "decode": "text", "provenance": "observed" },
-        { "start": 13, "end": 16, "type": "bytes", "provenance": "observed" },
-        { "start": 17, "end": 5459, "type": "bytes", "decode": "text", "provenance": "observed" },
-        { "start": 5460, "end": 16383, "type": "bytes", "decode": "fill", "provenance": "observed" }
+        {
+          "start": 0,
+          "end": 0,
+          "type": "bytes",
+          "provenance": "observed"
+        },
+        {
+          "start": 1,
+          "end": 12,
+          "type": "bytes",
+          "decode": "text",
+          "provenance": "observed"
+        },
+        {
+          "start": 13,
+          "end": 16,
+          "type": "bytes",
+          "provenance": "observed"
+        },
+        {
+          "start": 17,
+          "end": 5459,
+          "type": "bytes",
+          "decode": "text",
+          "provenance": "observed"
+        },
+        {
+          "start": 5460,
+          "end": 16383,
+          "type": "bytes",
+          "decode": "fill",
+          "provenance": "observed"
+        }
       ]
     }
   }

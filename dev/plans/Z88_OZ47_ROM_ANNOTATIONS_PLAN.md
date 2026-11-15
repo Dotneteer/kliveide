@@ -4,8 +4,8 @@
 done (Z88 bank space, ROM pages, `z88-oz` decoding, `source` provenance; checked in the running IDE).
 Phase 2 done (2026-11-15): every component with source imports (banks 0-8, $0A-$0D and $1F), and each bank
 reassembles byte for byte. Phase 3 under way (2026-11-15): every bank level 1, bank $10 level 2; level 2
-counts routines (D-OZ6) and bank 9 is left out (D-OZ7). What is left is the synopsis work, 2,192
-routines and 991 data labels. **To continue, read "Phase 3 status".**
+counts routines (D-OZ6) and bank 9 is left out (D-OZ7). The kernel banks 0 and 1 are level 2; the
+synopsis work goes on bank by bank (2,707 labels left). **To continue, read "Phase 3 status".**
 **Goal:** a shipped sidecar `src/public/roms/z88v47.rom.dis` that annotates the OZ 4.7 ROM's banks to
 level 2 (all but bank 9, D-OZ7). It is built mostly from the OZ project's own assembler source,
 <https://bitbucket.org/cambridge/oz/src/V4.7/>, which the owner has given permission to use.
@@ -377,9 +377,19 @@ Done, on branch `dotneteer/z88-oz47-phase2`:
   (bank 8, MTH, is 359 data labels; PipeDream's banks 5 and 6 have 809 routines).
 - The working copy `~/Klive/RomAnnotations/z88v47.rom.dis` is the current result (see "Seeing the state").
 
+- **The kernel (banks 0 and 1) is level 2** (2026-11-15): 476 synopses drafted by six helpers from the OZ
+  source (`helper-briefs/z88-draft-synopses.md`, about 80 labels each), checked, re-wrapped and merged with
+  `tools/z88-synopsis-*.cjs` into `z88-oz47-authored.json` as `source` entries. Both banks reassemble byte
+  for byte. The helpers' findings (possible OZ bugs, source comments the code contradicts, doubts) are in
+  `dev/ai/rom-annotations/z88-oz47-review.md`.
+
 Open:
-- **The synopses**, bank by bank: written from the code and the source's own comments, in the house
-  style, as `manual` entries in `z88-oz47-authored.json` (a source header that exists is already used).
+- **The synopses of the other banks**, the same way, one bank group at a time: GN (bank 3, 89), DC and
+  Index (bank $0C, 133), the FPP (bank $0D, 55), bank 2 (74), MTH (bank 8, 359 data labels), then the
+  applications (banks 4, 5, 6, 7, $0A, $0B) and the ROM header (2). The method:
+  `node dev/ai/rom-annotations/tools/z88-synopsis-pack.cjs <banks> <source folders> .local/oz-synopses/<name>-pack.json`,
+  `z88-synopsis-split.cjs` into slices of about 80, one helper per slice with the brief, then
+  `z88-synopsis-merge.cjs` (a `--dry-run` first) and `z88-synopsis-notes.cjs` for the review file.
 - **The rename proposals** (`z88-label-renames.json`) are still unreviewed.
 - **Across banks:** PipeDream's two halves call each other (`call LD65D` in bank 5 is bank 6's code); a
   listing names labels of its own bank only. A bank $0A Filer jump and LOWRAM's jumps are listed in the
