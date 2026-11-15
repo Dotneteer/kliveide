@@ -133,7 +133,13 @@ section says what is done, how to check it and what is left.
 
 - **Never edit the generated sidecar.** An entry the source does not give goes in
   `z88-oz47-authored.json` (a label with its synopsis, a line, a region, a page for a bank the import does
-  not cover), each with its provenance; `--all` applies the file last, so a re-import keeps it.
+  not cover), each with its provenance; `--all` applies the file last, so a re-import keeps it. A region
+  takes only the bytes it covers: an imported region it overlaps keeps its parts on either side, so a
+  four-byte data region inside code (an inline string after a `call`) leaves the code around it.
+- **Inline strings the source writes as code:** PipeDream's printer strings after `call LEDE1` (`$05`,
+  the code, 0) are instructions in the reverse-engineered source (`dec b / ld sp,$005D`). They are
+  `observed` text regions in the authored file; look for the same pattern after any routine that reads
+  its argument from the return address (`ex (sp),hl`).
 - **Headers become contracts** (`ozHeaderSynopsis` in the aligner): the description as written, then
   `Entry:`/`Exit:`/`Error:` from `IN:`/`OUT:`/"OUT if call failed", and `Changes:`/`Keeps:` from OZ's
   register masks. A mask is `AFBCDEHL/IXIY` with `.` for a register not meant, optionally followed by the

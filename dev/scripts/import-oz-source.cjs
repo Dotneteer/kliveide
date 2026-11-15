@@ -199,8 +199,8 @@ function fillGaps(file) {
 
 /**
  * The hand-written entries of `z88-oz47-authored.json` over the imported sidecar (Phase 3): a label
- * replaces the one at its offset, a synopsis or comment the imported one, a region the regions it
- * overlaps; a bank the import does not cover gets its page. Each entry keeps its own provenance.
+ * replaces the one at its offset, a synopsis or comment the imported one, a region the bytes it
+ * overlaps (an overlapped region keeps its parts outside); a bank the import does not cover gets its page. Each entry keeps its own provenance.
  */
 function applyAuthored(file) {
   const authored = JSON.parse(readFileSync(join(root, "dev/ai/rom-annotations/z88-oz47-authored.json"), "utf8"));
@@ -233,10 +233,24 @@ function applyAuthored(file) {
       lines++;
     }
     for (const { provenance, ...region } of entries.regions ?? []) {
-      for (const old of bank.regions.filter((r) => r.end >= region.start && r.start <= region.end)) {
+      // --- An overlapped region keeps the parts outside the new one (code around an inline string)
+      const kept = [];
+      for (const old of bank.regions) {
+        if (old.end < region.start || old.start > region.end) {
+          kept.push(old);
+          continue;
+        }
+        const oldProvenance = sidecar.provenance[`${key}:${old.start}:region`];
         delete sidecar.provenance[`${key}:${old.start}:region`];
+        const parts = [];
+        if (old.start < region.start) parts.push({ ...old, end: region.start - 1 });
+        if (old.end > region.end) parts.push({ ...old, start: region.end + 1 });
+        for (const part of parts) {
+          kept.push(part);
+          if (oldProvenance) sidecar.provenance[`${key}:${part.start}:region`] = oldProvenance;
+        }
       }
-      bank.regions = bank.regions.filter((r) => r.end < region.start || r.start > region.end);
+      bank.regions = kept;
       bank.regions.push(region);
       sidecar.provenance[`${key}:${region.start}:region`] = provenance;
       regions++;

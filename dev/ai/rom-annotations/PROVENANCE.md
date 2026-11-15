@@ -2633,3 +2633,15 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
   address falls in. The helpers' notes are in `z88-oz47-review.md`.
 - **Sources:** the OZ V4.7 source (commit `603c979a`, D-OZ1) and the ROM bytes; the entries are `source`.
 - **Level:** measured 2 on banks $0A, $0B and $1F; each reassembles byte for byte. Not shipped yet (Q1).
+
+### 2026-11-15 — Cambridge Z88: OZ 4.7, PipeDream (banks 5 and 6) to level 2
+
+- **What:** 895 synopses in `z88-oz47-authored.json`: PipeDream's bank 5 (414) and bank 6 (481), one 32K
+  program run at $8000-$FFFF. With them every annotated bank measures level 2.
+- **How:** as before, twelve helpers with `helper-briefs/z88-draft-synopses.md`, plus a PipeDream note on
+  the two banks' run addresses and on the source's machine names (it was reverse engineered from OZ 3.21,
+  so most routines were described from the code, not from the label). The helpers decoded PipeDream's
+  message table and MTH command codes from the ROM and `mth/appmth.asm`. Their notes are in
+  `z88-oz47-review.md`.
+- **Sources:** the OZ V4.7 source (commit `603c979a`, D-OZ1) and the ROM bytes; the entries are `source`.
+- **Level:** measured 2 on banks 5 and 6; both reassemble byte for byte. Not shipped yet (Q1).

@@ -3,10 +3,10 @@
 **Status:** In progress (2026-11-14). Phase 0 done (the build identified; no rebuild, D-OZ5). Phase 1
 done (Z88 bank space, ROM pages, `z88-oz` decoding, `source` provenance; checked in the running IDE).
 Phase 2 done (2026-11-15): every component with source imports (banks 0-8, $0A-$0D and $1F), and each bank
-reassembles byte for byte. Phase 3 under way (2026-11-15): every bank level 1, all but PipeDream level 2; level 2
+reassembles byte for byte. Phase 3 under way (2026-11-15): every annotated bank measures level 2 (not recorded yet); level 2
 counts routines (D-OZ6) and bank 9 is left out (D-OZ7). The system banks are level 2: the kernel (0, 1),
 bank 2, GN (3), MTH (8), DC and Index ($0C), the FPP ($0D) and the file area ($10); so are banks 4, 7,
-$0A (EazyLink, the Filer), $0B (FlashStore) and $1F (the ROM header). Left: PipeDream (5, 6; 895 labels). **To continue in a new session, read "Handoff (2026-11-15)" at the end of Phase 3.**
+$0A (EazyLink, the Filer), $0B (FlashStore) and $1F (the ROM header). PipeDream (5, 6) completed it. Left: the rename review, labels across banks, coverage runs, recording the level. **To continue in a new session, read "Handoff (2026-11-15)" at the end of Phase 3.**
 **Goal:** a shipped sidecar `src/public/roms/z88v47.rom.dis` that annotates the OZ 4.7 ROM's banks to
 level 2 (all but bank 9, D-OZ7). It is built mostly from the OZ project's own assembler source,
 <https://bitbucket.org/cambridge/oz/src/V4.7/>, which the owner has given permission to use.
@@ -399,13 +399,17 @@ Done, on branch `dotneteer/z88-oz47-phase2`:
 - **Banks $0A, $0B and $1F are level 2** (2026-11-15, branch `dotneteer/z88-oz47-phase3`): 516 synopses
   by seven helpers: EazyLink and the Filer (288), FlashStore (226), and the ROM header's two, written by
   hand. All three banks reassemble byte for byte.
+- **PipeDream (banks 5 and 6) is level 2** (2026-11-15): 895 synopses by twelve helpers, so **every
+  annotated bank measures level 2**. Its source was reverse engineered from OZ 3.21 (machine names like
+  `L_80BE`, few comments), so the helpers worked from the code, with a PipeDream note on the two banks' run
+  addresses. Both banks reassemble byte for byte.
+- **PipeDream's inline printer strings** (2026-11-15): the four strings after calls to `LEDE1` (`L_EDC2` in
+  the source; at $ED86, $EDA0, $EE08 and $EE18) are written as instructions in the source. They are now
+  `observed` text regions with comments in `z88-oz47-authored.json`. The import now cuts an authored region
+  out of the region it overlaps instead of dropping that region whole, so the code around them stays.
+  Bank 6 reassembles byte for byte.
 
 Open:
-- **The synopses of PipeDream**, the same way: banks 5 and 6 (414 + 481), the last banks below level 2.
-  The method:
-  `node dev/ai/rom-annotations/tools/z88-synopsis-pack.cjs <banks> <source folders> .local/oz-synopses/<name>-pack.json`,
-  `z88-synopsis-split.cjs` into slices of about 80, one helper per slice with the brief, then
-  `z88-synopsis-merge.cjs` (a `--dry-run` first) and `z88-synopsis-notes.cjs` for the review file.
 - **The rename proposals** (`z88-label-renames.json`) are still unreviewed.
 - **Across banks:** PipeDream's two halves call each other (`call LD65D` in bank 5 is bank 6's code); a
   listing names labels of its own bank only. A bank $0A Filer jump and LOWRAM's jumps are listed in the
@@ -419,8 +423,9 @@ Debug > ROM Annotations > z88v47.rom shows each page's level and its "To label" 
 ### Handoff (2026-11-15): how to continue Phase 3 in a new session
 
 **Where it stands.** Phase 2 and most of Phase 3 are merged into master (pull request "Z88 OZ 4.7 ROM
-annotations: Phase 2 and most of Phase 3"); work goes on on branch `dotneteer/z88-oz47-phase3`. Banks 0-4,
-7, 8, $0A-$0D, $10 and $1F measure level 2; only PipeDream's banks 5 and 6 measure level 1. Bank 9 is out (D-OZ7). The branch carries an `internal`
+annotations: Phase 2 and most of Phase 3"); work goes on on branch `dotneteer/z88-oz47-phase3`. Every
+annotated bank (0-8, $0A-$0D, $10, $1F) measures level 2; no synopsis is missing. Bank 9 is out (D-OZ7). The
+`level: 2` is not recorded in the sidecar yet. The branch carries an `internal`
 changeset (`dev/changes/cambridge-z88-oz-4-7-1a32.md`, at the developer's request); **the session that
 finishes the plan turns it into the `feature` changeset**
 ("Cambridge Z88 ROM annotations" for OZ 4.7) instead of adding a second one.
@@ -433,31 +438,26 @@ finishes the plan turns it into the `feature` changeset**
 1. `git clone https://bitbucket.org/cambridge/oz.git .local/oz47/oz` and
    `git -C .local/oz47/oz checkout V4.7` (commit `603c979a`), if `.local/oz47/oz` is missing.
 2. `node dev/scripts/import-oz-source.cjs --all` must print "All 23 components imported.", the filler line
-   (22 runs) and "Hand-written entries applied: 16 label(s), 2305 line annotation(s), 5 region(s)" (the line
-   count grows with every merged batch). The result is `.local/oz-import/z88v47.rom.dis`.
+   (22 runs) and "Hand-written entries applied: 16 label(s), 3204 line annotation(s), 9 region(s)". The result is `.local/oz-import/z88v47.rom.dis`.
 3. `node dev/ai/rom-annotations/tools/check-annotations.cjs .local/oz-import/z88v47.rom.dis`: `"problems": []`,
-   and `labelsWithoutSynopsis` is the work left per bank.
+   and `labelsWithoutSynopsis` is 0 for every bank.
+
+**How the synopses were written** (for a later OZ release, or a redo of one bank): pack the labels
+(`tools/z88-synopsis-pack.cjs <bank[,bank]> <source folders> .local/oz-synopses/<name>-pack.json`), split
+them (`z88-synopsis-split.cjs <pack> <n> .local/oz-synopses/<name>`, about 70-80 labels a slice), give one
+helper agent per slice the brief (`helper-briefs/z88-draft-synopses.md`; its task names the slice, the
+draft path `.local/oz-synopses/drafts/<slice>.json`, the program and its run address, and how to resolve
+names several modules share), check each draft (`z88-synopsis-merge.cjs <slice>:<draft> --dry-run`), read a
+sample, merge, re-import, check, reassemble, install the working copy, append `z88-synopsis-notes.cjs`
+output to `z88-oz47-review.md` and add a `PROVENANCE.md` entry. Ask the helpers for decimal IY offsets.
 
 **Next steps, in order:**
-1. **Synopses for PipeDream** (the only banks left; $0A, $0B and $1F were done the same way), one batch
-   per session or per user request:
-   - pack: `node dev/ai/rom-annotations/tools/z88-synopsis-pack.cjs <bank[,bank]> <source folders> .local/oz-synopses/<name>-pack.json`
-     (PipeDream: banks `5` and `6` separately, folder `apps/pipedream`);
-   - split: `z88-synopsis-split.cjs <pack> <n> .local/oz-synopses/<name>`, about 70-80 labels a slice;
-   - one helper agent per slice with the brief (its task names the slice, the draft path
-     `.local/oz-synopses/drafts/<slice>.json`, the program and its run address, and how to resolve names
-     several modules share); helpers name scratch files after their slice;
-   - check each draft (`z88-synopsis-merge.cjs <slice>:<draft> --dry-run`), read a sample, merge them all,
-     re-run the import and the check, reassemble the banks with the template (below), install the working
-     copy, append `z88-synopsis-notes.cjs` output to `z88-oz47-review.md`, and add a `PROVENANCE.md` entry.
-   PipeDream is one 32K program over banks 5 and 6: give its helpers the run addresses ($8000 and $C000)
-   and tell them a call into the other half is a call into the other bank.
-2. **The rename proposals** in `z88-label-renames.json` (about 590 machine proposals): review them, at
+1. **The rename proposals** in `z88-label-renames.json` (about 590 machine proposals): review them, at
    least the routine names, and hand-edit poor ones (an edited entry wins on the next import).
-3. **Across banks:** a listing names labels of its own bank only, so PipeDream's calls between its halves,
+2. **Across banks:** a listing names labels of its own bank only, so PipeDream's calls between its halves,
    the Filer's run (bank $0A, segment 3) and LOWRAM's jumps show addresses.
-4. **Coverage runs** (Phase 3 step 4) on `test/harness/z88/`.
-5. **Record `level: 2`** once every bank measures it, regenerate `rom-annotations.index.json`; then Phase 4,
+3. **Coverage runs** (Phase 3 step 4) on `test/harness/z88/`.
+4. **Record `level: 2`** once every bank measures it, regenerate `rom-annotations.index.json`; then Phase 4,
    which waits for Q1 (the permission's wording) before anything ships.
 
 **Checks after each batch.** The reassembly template: copy
