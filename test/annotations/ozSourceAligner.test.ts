@@ -5,9 +5,12 @@ import {
   evaluateOzExpression,
   evaluateRelocatable,
   instructionShape,
+  joinContinuations,
+  ozHeaderSynopsis,
   shortLabelName,
   splitArguments,
   splitComment,
+  splitConcatenation,
   type OzDecodedInstruction
 } from "@common/roms/ozSourceAligner";
 
@@ -36,6 +39,24 @@ describe("reading mpm source", () => {
   it("splits arguments at top-level commas only", () => {
     expect(splitArguments("a, (ix+3)")).toEqual(["a", "(ix+3)"]);
     expect(splitArguments('"x,y", 1, (2,3)')).toEqual(['"x,y"', "1", "(2,3)"]);
+    expect(splitArguments('["Info"], [Topics,MTHB], 2')).toEqual(['["Info"]', "[Topics,MTHB]", "2"]);
+  });
+
+  it("joins a statement continued by a lone backslash, the rest of its rows comments", () => {
+    const rows = ["  dorappl \"Index\", 'I',   \\ Name and Key", "    IDX_ENT,   \\ Entry", "    MTHB", "  ret"];
+    expect(joinContinuations(rows)).toEqual(["  dorappl \"Index\", 'I', IDX_ENT, MTHB", "", "", "  ret"]);
+    // --- A macro body's \\param and a backslash in a string or after a ; are no continuation
+    expect(joinContinuations(["  defb \\len", '  defm "a \\ b"', "  ret ; a \\ b"])).toEqual([
+      "  defb \\len",
+      '  defm "a \\ b"',
+      "  ret ; a \\ b"
+    ]);
+  });
+
+  it("splits a byte item into the strings and values joined by dots", () => {
+    expect(splitConcatenation('"C".$8C.$B2."D"')).toEqual(['"C"', "$8C", "$B2", '"D"']);
+    expect(splitConcatenation('"a.b"')).toEqual(['"a.b"']);
+    expect(splitConcatenation("'.'")).toEqual(["'.'"]);
   });
 
   it("evaluates mpm expressions", () => {
@@ -215,6 +236,12 @@ describe("relocatable values", () => {
     expect(evaluateRelocatable("End - $ - 1", symbols, 0x10, 0xc000)).toBe(7);
     expect(evaluateRelocatable("$0021-$PC", symbols, 0x14, 0xc000)).toBe(0x0d);
   });
+
+  it("counts $PC from the module's start, also for a module stored away from its org", () => {
+    // --- LOWRAM: org $0000, stored at $0800 (base -$0800); at offset $0804 `$PC` is 4
+    expect(evaluateRelocatable("$0008-$PC", symbols, 0x0804, -0x0800, 0x0800)).toBe(4);
+    expect(evaluateRelocatable("Label", symbols, 0x0804, -0x0800, 0x0800)).toBe(-0x07f0);
+  });
 });
 
 describe("the OZ call forms and macros", () => {
@@ -260,12 +287,94 @@ describe("the OZ call forms and macros", () => {
     expect(result.stop?.reason).toMatch(/dt_nam macro's error/);
   });
 
+  it("passes a bracketed argument as written, and an expression argument as one operand", () => {
+    const defs = [
+      "macro mthtpc (name, tpcattr = 0)",
+      "        defm \\name",
+      "if \\tpcattr & $10",
+      "        defb $FF",
+      "endif",
+      "        defb \\tpcattr",
+      "endmacro"
+    ].join("\n");
+    const macroReader = { include: () => ({ path: "macros.def", text: defs }) };
+    // --- "Info", and $01|$02: no help byte, though `$01|$02 & $10` would be 1
+    const text = ['        include "macros.def"', "        org $C000", '        mthtpc  ["Info"], $01|$02'].join("\n");
+    const rom = bank([0x49, 0x6e, 0x66, 0x6f, 0x03], {});
+    const result = alignOzModule({ path: "m.asm", text, bytes: rom.bytes, defines: [], reader: macroReader, decodeAt: rom.decodeAt });
+    expect(result.stop).toBeUndefined();
+    expect(result.end).toBe(5);
+  });
+
+  it("reads defp address,bank as one 3-byte pointer and defm's concatenations", () => {
+    const text = ["        org $C000", ".Here", "        defp    Here, $08", '        defm    "C".$8C, \'.\''].join("\n");
+    const rom = bank([0x00, 0xc0, 0x08, 0x43, 0x8c, 0x2e], {});
+    const result = alignOzModule({ path: "m.asm", text, bytes: rom.bytes, defines: [], reader: noIncludes, decodeAt: rom.decodeAt });
+    expect(result.stop).toBeUndefined();
+    expect(result.lines.map((l) => [l.offset, l.length])).toEqual([[0, 3], [3, 3]]);
+  });
+
+  it("reads an included .asm in place, a .def for its symbols only", () => {
+    const files: Record<string, string> = { "rst.asm": ".Code\n        ret", "x.def": "defc Value = 7\n        defb 1" };
+    const reader = { include: (_from: string, name: string) => (files[name] ? { path: name, text: files[name] } : undefined) };
+    const text = ['        include "x.def"', "        org $0000", '        include "rst.asm"', "        defb Value"].join("\n");
+    // --- Stored at $0800, as LOWRAM is
+    const rom = { bytes: new Uint8Array(0x4000), decodeAt: (o: number) => (o === 0x800 ? { length: 1, text: "ret" } : undefined) };
+    rom.bytes.set([0xc9, 0x07], 0x800);
+    const result = alignOzModule({ path: "m.asm", text, bytes: rom.bytes, defines: [], reader, decodeAt: rom.decodeAt, base: -0x800, start: 0x800 });
+    expect(result.stop).toBeUndefined();
+    expect(result.labels.map((l) => [l.name, l.offset])).toEqual([["Code", 0x800]]);
+    expect(result.end).toBe(0x802);
+  });
+
   it("reads defgroup's consecutive values", () => {
     const text = ["defgroup", "    a_zero, a_one", "    b_ten = 10, b_eleven", "enddef", "        org $C000", "        defb b_eleven"].join("\n");
     const rom = bank([11], {});
     const result = alignOzModule({ path: "m.asm", text, bytes: rom.bytes, defines: [], reader: noIncludes, decodeAt: rom.decodeAt });
     expect(result.stop).toBeUndefined();
     expect(result.end).toBe(1);
+  });
+});
+
+describe("routine headers", () => {
+  it("keeps the whole comment block above a label, separators dropped, empty lines as breaks", () => {
+    const text = [
+      "        org $C000",
+      "; ****************",
+      "; write a string",
+      ";",
+      "; IN:    HL = string",
+      "; ****************",
+      "",
+      ".Sop",
+      "        ret"
+    ].join("\n");
+    const rom = bank([0xc9], { 0: { length: 1, text: "ret" } });
+    const result = alignOzModule({ path: "m.asm", text, bytes: rom.bytes, defines: [], reader: noIncludes, decodeAt: rom.decodeAt });
+    expect(result.labels[0].header).toEqual(["write a string", "", "IN:    HL = string"]);
+  });
+
+  it("turns IN/OUT/CHG into the house contract, with the register masks as lists", () => {
+    expect(
+      ozHeaderSynopsis(["write local string", "", "IN:    HL = string", "OUT:   HL = null", "", "CHG:   .F....HL/...."])
+    ).toBe("write local string\nEntry: HL = string.\nExit: HL = null.\nChanges: F, HL.");
+    expect(
+      ozHeaderSynopsis([
+        "OS_Out entry",
+        "IN:",
+        "    A = character",
+        "OUT:",
+        "    Fc = 0 always",
+        "Registers changed after return to caller:",
+        "    A.BCDEHL/IXIY same",
+        "    .F....../.... different"
+      ])
+    ).toBe("OS_Out entry\nEntry: A = character.\nExit: Fc = 0 always.\nChanges: F.\nKeeps: A, BC, DE, HL, IX, IY.");
+    expect(ozHeaderSynopsis(["CHG:   .FB...HL/.... af......", "OUT if call failed:", "    Fc = 1, A = error"])).toBe(
+      "Error: Fc = 1, A = error.\nChanges: F, B, HL, AF'."
+    );
+    // --- Without keywords the header stays as written
+    expect(ozHeaderSynopsis(["bind in extended address"])).toBe("bind in extended address");
   });
 });
 

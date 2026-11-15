@@ -2551,3 +2551,75 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
 - **Sources:** the ROM bytes only (`sp48-dis.cjs` listings of both sets, byte diffs). The review lists
   are in `carry-review/nextzxos-26.11/`.
 - **Level:** 2 on every page, measured and recorded. No boot ROM: core 3.03.00's is not published.
+
+### 2026-11-15 — Cambridge Z88: OZ 4.7 (`z88v47.rom`) imported from its source, banks 0-8, $0A-$0D and $1F (not shipped yet)
+
+- **What:** every OZ 4.7 component that has source in the repository, placed on the ROM by
+  `dev/scripts/import-oz-source.cjs --all` (23 components, `dev/ai/rom-annotations/z88-oz47-components.json`):
+  the kernel, GN, DC/Index, the FPP, MTH, the keymaps, fonts, LOWRAM and date filter of bank 2, the ROM header,
+  and every application except BBC BASIC. Earlier sessions (2026-11-14) imported banks 0, 1, 3, 4, 7 and
+  $0A-$0D; this one added PipeDream (banks 5-6), bank 2, MTH (bank 8) and the header (bank $1F).
+- **How:** the aligner walks the source in link order over Klive's own decoding of each bank and keeps a label
+  or comment only where the source line's instruction or bytes match the ROM there (D-OZ5). Every entry is
+  `source`. LOWRAM is listed at its RAM address ($0000) through its run's `address`.
+- **Sources:** the OZ repository, `https://bitbucket.org/cambridge/oz`, tag V4.7 (commit `603c979a`), used
+  under the owner's permission (D-OZ1; the D4 exemption). The result is in `.local/oz-import/`, not in
+  `src/public/roms/`: the permission's wording (Q1) must be settled before it ships.
+- **Level:** measured 1 on twelve banks, 0 on banks 0 and 7 (11 `jr $` hang loops with no source label).
+  Nothing recorded yet.
+
+### 2026-11-15 — Cambridge Z88: OZ 4.7, Phase 3 begins (hand-written entries, contracts, bank $10)
+
+- **What:** 16 `observed` labels with synopses in `dev/ai/rom-annotations/z88-oz47-authored.json`: the 11
+  hang loops of banks 0 and 7 (each a `JR` to itself, `38 FE` or `18 FE`, after a call that fails or does not
+  come back), and bank $10, the FlashStore file area (one file entry: name length $0C, `/welcome.pdd`, a
+  4-byte length $00001543, the document, then $FF to the end). The imported headers were rewritten into the
+  `Entry:/Exit:/Error:/Changes:/Keeps:` contract by rule (Q5); those stay `source`.
+- **Sources:** the ROM bytes (`z88-dis.cjs` listings) for every `observed` entry; the file area's document
+  matches `filearea/welcome.pdd` of the OZ source byte for byte.
+- **Level:** measured 1 on every imported bank, 2 on bank $10. Nothing recorded yet.
+
+### 2026-11-15 — Cambridge Z88: OZ 4.7, the kernel banks (0 and 1) to level 2
+
+- **What:** 476 synopses, one for every routine and data label of banks 0 and 1 that level 2 asks for
+  (D-OZ6: jump targets inside routines excepted), in `dev/ai/rom-annotations/z88-oz47-authored.json`.
+- **How:** six helper agents, about 80 labels each, with `helper-briefs/z88-draft-synopses.md` and a context
+  pack per label (`tools/z88-synopsis-pack.cjs`: the source definition, the routine's text, its callers);
+  doubtful points were checked against the bytes with `z88-dis.cjs`. The drafts were checked against their
+  slices, re-wrapped and merged (`tools/z88-synopsis-merge.cjs`). Their notes are in `z88-oz47-review.md`.
+- **Sources:** the OZ V4.7 source (commit `603c979a`), used under the owner's permission (D-OZ1), and the ROM
+  bytes. The entries are `source`. Not shipped yet (Q1).
+- **Level:** measured 2 on banks 0 and 1 (and $10); both reassemble byte for byte.
+
+### 2026-11-15 — Cambridge Z88: OZ 4.7, GN, DC and Index, and the FPP (banks 3, $0C, $0D) to level 2
+
+- **What:** 277 synopses in `z88-oz47-authored.json`: GN (89), the DC calls and the Index popdown (133) and
+  the floating-point package (55), every label level 2 asks for in those banks.
+- **How:** as for the kernel: context packs (`tools/z88-synopsis-pack.cjs`), four helper agents with
+  `helper-briefs/z88-draft-synopses.md`, checked and merged with `tools/z88-synopsis-merge.cjs`; the helpers'
+  notes are in `z88-oz47-review.md`. The FPP's constants (sqrt 2, ln 2, pi/4, tan(pi/8)) were checked by
+  calculation.
+- **Sources:** the OZ V4.7 source (commit `603c979a`, D-OZ1) and the ROM bytes; the entries are `source`.
+- **Level:** measured 2 on banks 3, $0C and $0D; each reassembles byte for byte. Not shipped yet (Q1).
+
+### 2026-11-15 — Cambridge Z88: OZ 4.7, bank 2 and MTH (bank 8) to level 2
+
+- **What:** 433 synopses in `z88-oz47-authored.json`: bank 2's keymaps, LOWRAM routines and date filter
+  tables (74), and MTH's System Token Table, the applications' MTH commands and help pages, the application
+  DORs, the Panel preference defaults and the error table (359, all data).
+- **How:** as before (`tools/z88-synopsis-pack.cjs`, five helpers with `helper-briefs/z88-draft-synopses.md`,
+  `tools/z88-synopsis-merge.cjs`); the token texts and help pages were expanded from the ROM bytes with the
+  token table, and keymap pair counts read from the bytes. The helpers' notes are in `z88-oz47-review.md`.
+  `z88-dis.cjs` was fixed to list a run stored away from where it runs (LOWRAM).
+- **Sources:** the OZ V4.7 source (commit `603c979a`, D-OZ1) and the ROM bytes; the entries are `source`.
+- **Level:** measured 2 on banks 2 and 8; both reassemble byte for byte. Not shipped yet (Q1).
+
+### 2026-11-15 — Cambridge Z88: OZ 4.7, banks 4 and 7 to level 2
+
+- **What:** 586 synopses in `z88-oz47-authored.json`: bank 4's Diary and its Clock, Calendar and Alarm
+  popdowns (309), and bank 7's Panel and PrinterEd, Terminal, Calculator and Imp/Export (277).
+- **How:** as before, eight helpers with `helper-briefs/z88-draft-synopses.md`; where several modules of a
+  bank define the same name, each label was matched to the module its address falls in and checked against
+  the bytes with `z88-dis.cjs`. The helpers' notes are in `z88-oz47-review.md`.
+- **Sources:** the OZ V4.7 source (commit `603c979a`, D-OZ1) and the ROM bytes; the entries are `source`.
+- **Level:** measured 2 on banks 4 and 7; both reassemble byte for byte. Not shipped yet (Q1).

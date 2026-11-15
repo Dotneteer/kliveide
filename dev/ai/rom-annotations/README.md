@@ -141,7 +141,7 @@ Always run the formatter before committing: the files are diffed one entry per l
 | Level | Content |
 |---|---|
 | 1 | Every `CALL`/`JP`/`RST`/`JR`/`DJNZ` target reached from code regions has a label; every data region is marked (tables, messages, the character set, calculator literals). |
-| 2 | Level 1, plus a synopsis for every labelled routine (inputs, outputs, registers changed) and an end-of-line comment where an instruction's purpose is not obvious. |
+| 2 | Level 1, plus a synopsis for every labelled routine (inputs, outputs, registers changed) and an end-of-line comment where an instruction's purpose is not obvious. The tool asks it of every label, except, in a sidecar imported from its source (`sourceCode`), the page's `jumpLabels`: jump targets inside a routine (Z88 OZ plan D-OZ6). |
 | 3 | Comments on every non-trivial line. Not a goal. |
 
 `level` measures the label rules; marking every data region is the author's judgement,

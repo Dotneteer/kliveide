@@ -320,20 +320,24 @@ export function evaluateOzExpression(
  * An expression as mpm's relocatable arithmetic gives it. Labels and `$` are relocatable: an
  * expression whose result moves with the base (`defw Label`, `ld hl,Label+3`) is an address, and
  * gets the segment's base; one that does not (`\end - $ - 1`, the difference of two addresses) or
- * moves the other way (`$0021-$PC`, the room left to an offset) is counted from the bank's start.
- * Evaluating it at two bases tells which.
+ * moves the other way (`$0021-$PC`, the room left to an offset) is counted from the module's start,
+ * as mpm's `$PC` is. Evaluating it at two bases tells which.
+ *
+ * @param moduleStart The bank offset the module starts at (LOWRAM: $0800, where it is stored)
  */
 export function evaluateRelocatable(
   text: string,
   symbols: Symbols,
   pc: number | undefined,
-  base: number
+  base: number,
+  moduleStart = 0
 ): number | undefined {
-  const relative = evaluateOzExpression(text, symbols, pc, false, 0);
-  if (relative === undefined || base === 0) return relative;
+  const relativeBase = -moduleStart;
+  const relative = evaluateOzExpression(text, symbols, pc, false, relativeBase);
+  if (relative === undefined || base === relativeBase) return relative;
   const absolute = evaluateOzExpression(text, symbols, pc, false, base);
   if (absolute === undefined) return undefined;
-  return absolute - relative === base ? absolute : relative;
+  return absolute - relative === base - relativeBase ? absolute : relative;
 }
 
 function literal(token: string): number | undefined {
@@ -393,8 +397,8 @@ export function splitArguments(text: string): string[] {
       current += text.slice(i, i + 3);
       i += 2;
       continue;
-    } else if (ch === "(") depth++;
-    else if (ch === ")") depth--;
+    } else if (ch === "(" || ch === "[") depth++;
+    else if (ch === ")" || ch === "]") depth--;
     else if (ch === "," && depth === 0) {
       parts.push(current.trim());
       current = "";
@@ -560,7 +564,7 @@ function prepare(input: OzAlignInput): Prepared {
     let inDefgroup = false;
     let defgroupNext = 0;
     let macro: OzMacro | undefined;
-    const rows = text.split(/\r?\n/);
+    const rows = joinContinuations(text.split(/\r?\n/));
     for (let index = 0; index < rows.length; index++) {
       const parsed = parseLine(path, index + 1, rows[index]);
       const op = parsed.op;
@@ -653,7 +657,9 @@ function prepare(input: OzAlignInput): Prepared {
           if (!file) {
             problems.push(`${path}:${index + 1}: include "${name}" not found (its symbols are unknown)`);
           } else {
-            read(file.path, file.text, false, depth + 1);
+            // --- An included `.asm` is the module's own code, read in place (LOWRAM's `rst.asm`); a `.def`
+            // --- or `.inc` gives symbols only
+            read(file.path, file.text, own && /\.asm$/i.test(file.path), depth + 1);
           }
           continue;
         }
@@ -684,6 +690,41 @@ function prepare(input: OzAlignInput): Prepared {
 }
 
 /**
+ * Rows with mpm's line continuation joined: a `\` on its own (after a space or a comma, before a space
+ * or the end, outside strings) continues the statement on the next row, and the rest of its row is a
+ * comment (`dorappl "Index", 'I',   \ Application Name and Key`). The statement is on its first row;
+ * the rows it took are left empty, so every row keeps its line number.
+ */
+export function joinContinuations(rows: string[]): string[] {
+  const out = [...rows];
+  const continuation = (row: string): number => {
+    let quote: string | undefined;
+    for (let i = 0; i < row.length; i++) {
+      const ch = row[i];
+      if (quote) {
+        if (ch === quote) quote = undefined;
+        continue;
+      }
+      if (ch === ";") return -1;
+      if (ch === '"') quote = ch;
+      else if (ch === "'" && row[i + 2] === "'") i += 2;
+      else if (ch === "\\" && /[\s,]/.test(row[i - 1] ?? "") && /^(\s|$)/.test(row.slice(i + 1))) return i;
+    }
+    return -1;
+  };
+  for (let index = 0; index < out.length; index++) {
+    let at = continuation(out[index]);
+    let next = index + 1;
+    while (at >= 0 && next < out.length) {
+      out[index] = `${out[index].slice(0, at).trimEnd()} ${out[next].trim()}`;
+      out[next++] = "";
+      at = continuation(out[index]);
+    }
+  }
+  return out;
+}
+
+/**
  * A macro call's lines, as mpm expands it (`def/macros.def`): `\param` is the argument (or its default),
  * `\%` the number of arguments given, `\$?[n]` whether argument n is given, and any other `\name` a
  * label of this expansion's own (`.\start`). The body's `IF`s are decided here, `exitmacro` ends the
@@ -697,10 +738,14 @@ function expandMacro(
   symbols: Symbols,
   nextId: () => number
 ): { lines: SourceLine[] } | { error: string } {
-  const args = call.args?.trim() ? splitArguments(call.args) : [];
+  // --- An argument in brackets is passed as written, commas and all (`mthtpc ["Info"], ...`)
+  const args = (call.args?.trim() ? splitArguments(call.args) : []).map((a) => /^\[(.*)\]$/.exec(a)?.[1].trim() ?? a);
   const given = (n: number) => args[n] !== undefined && args[n] !== "";
   const id = nextId();
   const valueOf = (i: number) => (given(i) ? args[i] : (macro.params[i]?.fallback ?? ""));
+  // --- An expression argument is one operand, as mpm evaluates it: `\cmdattr & CMDF_HELP` with
+  // --- `CMDF_COLUMN|CMDF_SAFE` is `(CMDF_COLUMN|CMDF_SAFE) & CMDF_HELP`. A string is left as written
+  const asOperand = (arg: string) => (/["']/.test(arg) || !/[|&+\-*/%<>^~]/.test(arg) ? arg : `(${arg})`);
   const paramIndex = (word: string) => macro.params.findIndex((p) => p.name.toLowerCase() === word.toLowerCase());
   const substitute = (row: string) =>
     row
@@ -714,7 +759,7 @@ function expandMacro(
       .replace(/\\\$\$/g, valueOf(0))
       .replace(/\\([A-Za-z_][\w]*)/g, (_, word: string) => {
         const i = macro.params.findIndex((p) => p.name.toLowerCase() === word.toLowerCase());
-        return i >= 0 ? valueOf(i) : `${word}__m${id}`;
+        return i >= 0 ? asOperand(valueOf(i)) : `${word}__m${id}`;
       });
 
   const lines: SourceLine[] = [];
@@ -781,9 +826,23 @@ function dataBytes(
     const fill = m[2] !== undefined ? value(m[2]) : 0;
     return new Array(count).fill(fill === undefined ? undefined : fill & 0xff);
   }
+  // --- `defp address,bank`: a 3-byte pointer, the address's word and the bank (the DORs' MTH pointers)
+  if (op === "defp") {
+    const items = splitArguments(args).filter((item) => item);
+    if (items.length === 2) {
+      const [address, bank] = [value(items[0]), value(items[1])];
+      return [
+        address === undefined ? undefined : address & 0xff,
+        address === undefined ? undefined : (address >> 8) & 0xff,
+        bank === undefined ? undefined : bank & 0xff
+      ];
+    }
+  }
   const width = op === "defw" || op === "dw" ? 2 : op === "defp" ? 3 : op === "defl" ? 4 : 1;
   const bytes: (number | undefined)[] = [];
-  for (const item of splitArguments(args)) {
+  // --- A byte item is pieces joined by `.`, strings and values: `"C".$8C.$B2."D"`
+  const items = splitArguments(args).flatMap((item) => (width === 1 ? splitConcatenation(item) : [item]));
+  for (const item of items) {
     if (!item) continue;
     const string = /^"(.*)"$/.exec(item);
     if (string) {
@@ -797,8 +856,45 @@ function dataBytes(
   return bytes;
 }
 
+/**
+ * An mpm byte item's pieces: strings and values joined by `.` outside quotes (`"Sys".$AF.$D7."Inf"`).
+ * An item with an empty piece is not a concatenation, and stays one piece.
+ */
+export function splitConcatenation(item: string): string[] {
+  const pieces: string[] = [];
+  let quote = false;
+  let current = "";
+  for (let i = 0; i < item.length; i++) {
+    const ch = item[i];
+    // --- A character literal is one piece (`'.'`)
+    if (!quote && ch === "'" && item[i + 2] === "'") {
+      current += item.slice(i, i + 3);
+      i += 2;
+      continue;
+    }
+    if (ch === '"' && item[i - 1] !== "\\") quote = !quote;
+    if (ch === "." && !quote) {
+      pieces.push(current.trim());
+      current = "";
+      continue;
+    }
+    current += ch;
+  }
+  pieces.push(current.trim());
+  return pieces.every((p) => p) ? pieces : [item];
+}
+
 // ------------------------------------------------------------------------------------------------
 // The walk
+
+/** Lines without the empty ones at either end */
+function trimBlankLines(lines: string[]): string[] {
+  let from = 0;
+  let to = lines.length;
+  while (from < to && !lines[from].trim()) from++;
+  while (to > from && !lines[to - 1].trim()) to--;
+  return lines.slice(from, to);
+}
 
 /** Places a module's lines on the bank's bytes (see the file's header). */
 export function alignOzModule(input: OzAlignInput): OzAlignResult & { problems: string[] } {
@@ -820,9 +916,12 @@ export function alignOzModule(input: OzAlignInput): OzAlignResult & { problems: 
     if (line.blank) continue;
     if (line.commentOnly) {
       const text = line.comment ?? "";
-      // --- A separator (`;       ----`) or an empty comment line ends a header
-      if (/^[-=*\s]*$/.test(text)) header = [];
-      else header.push(text);
+      // --- A header is the comment block above a label, up to the last statement. A separator
+      // --- (`; ****`, `;       ----`) is dropped, an empty comment line is a paragraph break
+      if (/^[-=*~#\s]*$/.test(text)) {
+        if (!/^\s*$/.test(text)) continue;
+        if (header.length && header[header.length - 1] !== "") header.push("");
+      } else header.push(text);
       continue;
     }
     if (line.label) {
@@ -831,7 +930,7 @@ export function alignOzModule(input: OzAlignInput): OzAlignResult & { problems: 
         offset,
         file: line.file,
         line: line.line,
-        header,
+        header: trimBlankLines(header),
         ...(line.internal ? { internal: true } : {})
       });
       symbols.set(line.label, { offset });
@@ -868,7 +967,8 @@ export function alignOzModule(input: OzAlignInput): OzAlignResult & { problems: 
     if (start === undefined) start = offset;
     // --- An expression's value here: labels and `$` relocatable, from this segment's base
     const here = offset;
-    const value = (text: string) => evaluateRelocatable(text, symbols, here, base);
+    const moduleStart = start;
+    const value = (text: string) => evaluateRelocatable(text, symbols, here, base, moduleStart);
 
     // --- A macro (`dorchd`, `mthcmd`, ...): its expansion takes the call's place, line by line
     const macro = macros.get(op);
@@ -1059,6 +1159,128 @@ function withCase(word: string, abbreviation: string): string {
   if (word === word.toUpperCase()) return abbreviation.toUpperCase();
   if (word[0] === word[0].toUpperCase()) return abbreviation[0].toUpperCase() + abbreviation.slice(1);
   return abbreviation;
+}
+
+// ------------------------------------------------------------------------------------------------
+// Routine headers as synopses (Q5 of the plan)
+
+/** The keyword lines of an OZ routine header, and the contract part each one becomes */
+const HEADER_KEYWORDS: [RegExp, "Entry" | "Exit" | "Error" | "Changes" | "Registers"][] = [
+  [/^IN\s*:\s*/i, "Entry"],
+  [/^OUT\s+if\s+(?:the\s+)?call\s+succeeded\s*:\s*/i, "Exit"],
+  [/^OUT\s+if\s+(?:the\s+)?call\s+failed\s*:\s*/i, "Error"],
+  [/^OUT\s*:\s*/i, "Exit"],
+  [/^CHG\s*:\s*/i, "Changes"],
+  [/^Registers\s+changed[^:]*:\s*/i, "Registers"]
+];
+
+/**
+ * An OZ register mask, `AFBCDEHL/IXIY` with a `.` for each register not meant (`.F....HL/....`),
+ * optionally followed by the alternates in lower case (`af......`) and `same` or `different`.
+ */
+const REGISTER_MASK =
+  /^([.A-Za-z]{8})\/([.A-Za-z]{4})(?:\s+([.a][.f][.b][.c][.d][.e][.h][.l])(?![a-z]))?(?:\s+(same|different))?\s*(.*)$/;
+
+/** The registers a mask names, in the house style's order: pairs where both halves are named */
+function maskRegisters(main: string, index: string, alternates?: string): string[] {
+  const names: string[] = [];
+  const pairs = ["AF", "BC", "DE", "HL"];
+  for (let i = 0; i < 4; i++) {
+    const [hi, lo] = [main[2 * i] !== ".", main[2 * i + 1] !== "."];
+    if (hi && lo) names.push(pairs[i]);
+    else if (hi) names.push(pairs[i][0]);
+    else if (lo) names.push(pairs[i][1]);
+  }
+  if (index.slice(0, 2) !== "..") names.push("IX");
+  if (index.slice(2, 4) !== "..") names.push("IY");
+  if (alternates) {
+    for (let i = 0; i < 4; i++) {
+      const [hi, lo] = [alternates[2 * i] !== ".", alternates[2 * i + 1] !== "."];
+      if (hi && lo) names.push(`${pairs[i]}'`);
+      else if (hi) names.push(`${pairs[i][0]}'`);
+      else if (lo) names.push(`${pairs[i][1]}'`);
+    }
+  }
+  return names;
+}
+
+/** Words wrapped at `width` columns */
+function wrapWords(text: string, width: number): string[] {
+  const out: string[] = [];
+  let line = "";
+  for (const word of text.split(/\s+/).filter(Boolean)) {
+    if (line && line.length + 1 + word.length > width) {
+      out.push(line);
+      line = word;
+    } else line = line ? `${line} ${word}` : word;
+  }
+  if (line) out.push(line);
+  return out;
+}
+
+/**
+ * An OZ routine header as a synopsis in the house style (README, "A subroutine's synopsis ends with its
+ * contract"): the description first, as written, then `Entry:` (from `IN:`), `Exit:` (`OUT:`, "OUT if
+ * call succeeded"), `Error:` ("OUT if call failed"), `Changes:` and `Keeps:` (from `CHG:` or the
+ * "Registers changed after return" masks, `same`/`different`), each one line wrapped at 92 columns.
+ * A header without these keywords is kept as written.
+ */
+export function ozHeaderSynopsis(header: readonly string[]): string {
+  const description: string[] = [];
+  const parts: Record<"Entry" | "Exit" | "Error" | "Changes" | "Keeps", string[]> = {
+    Entry: [],
+    Exit: [],
+    Error: [],
+    Changes: [],
+    Keeps: []
+  };
+  let section: (typeof HEADER_KEYWORDS)[number][1] | undefined;
+  let found = false;
+  const add = (text: string) => {
+    if (!text || !section) return;
+    if (section === "Changes" || section === "Registers") {
+      const m = REGISTER_MASK.exec(text);
+      if (m) {
+        const names = maskRegisters(m[1], m[2], m[3]);
+        const target = section === "Registers" && m[4] === "same" ? "Keeps" : "Changes";
+        parts[target].push(names.length ? names.join(", ") : "none");
+        if (m[5]) parts[target].push(m[5].replace(/^[+;,\s]+/, ""));
+        return;
+      }
+      parts.Changes.push(text);
+      return;
+    }
+    parts[section].push(text);
+  };
+  for (const raw of header) {
+    const line = raw.trim();
+    const keyword = HEADER_KEYWORDS.find(([pattern]) => pattern.test(line));
+    if (keyword) {
+      found = true;
+      section = keyword[1];
+      add(line.replace(keyword[0], "").trim());
+      continue;
+    }
+    // --- An empty line ends a part; text after it is description again
+    if (!line) {
+      section = undefined;
+      if (description.length && description[description.length - 1] !== "") description.push("");
+      continue;
+    }
+    if (section) add(line);
+    else description.push(raw.trimEnd());
+  }
+  if (!found) return header.join("\n");
+  while (description.length && !description[description.length - 1]) description.pop();
+  const contract: string[] = [];
+  for (const key of ["Entry", "Exit", "Error", "Changes", "Keeps"] as const) {
+    if (!parts[key].length) continue;
+    const separator = key === "Changes" || key === "Keeps" ? ", " : "; ";
+    let text = parts[key].join(separator).replace(/\s+/g, " ").trim();
+    if (!/[.!?]$/.test(text)) text += ".";
+    contract.push(...wrapWords(`${key}: ${text}`, 92));
+  }
+  return [...description, ...contract].join("\n");
 }
 
 /**

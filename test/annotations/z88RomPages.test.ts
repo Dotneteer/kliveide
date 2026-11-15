@@ -12,7 +12,7 @@ import {
   isRomPartitionOf,
   z88BankSpace
 } from "@common/annotations/bankSpace";
-import { hasSourceCode, PROVENANCE_VALUES } from "@common/roms/romAnnotationTools";
+import { hasSourceCode, jumpLabelsOf, measureRomLevel, PROVENANCE_VALUES } from "@common/roms/romAnnotationTools";
 import { MC_Z88_INTRAM, MI_Z88 } from "@common/machines/constants";
 
 /*
@@ -149,6 +149,24 @@ describe("the z88-oz decoder", () => {
     expect(romRunOrigin("z88-oz", undefined, 0x2400)).toBe(0xc000);
     expect(romRunOrigin("z88-oz", [{ start: 0x0800, segment: 0 }], 0x0800)).toBe(0x0000);
   });
+
+  it("decodes a run stored away from where it runs at its own address, its targets inside it", async () => {
+    // --- LOWRAM: stored at $0800, runs at $0000; JP $0010 is its own offset $0810, JP $1234 is not the page's
+    const bytes = new Uint8Array(0x4000);
+    bytes.set([0xc3, 0x10, 0x00, 0xc3, 0x34, 0x12], 0x0800);
+    const segments = [
+      { start: 0x0000, segment: 0 },
+      { start: 0x0800, segment: 0, address: 0x0000 },
+      { start: 0x0c00, segment: 0 }
+    ];
+    expect(romRunOrigin("z88-oz", segments, 0x0800)).toBe(-0x0800);
+    const decode = romDecoderFor("z88-oz", segments);
+    const listed = await decode(bytes, 0x0800, 0x0805);
+    expect(listed.map((i) => [i.offset, i.target])).toEqual([
+      [0x0800, 0x0810],
+      [0x0803, undefined]
+    ]);
+  });
 });
 
 describe("the source provenance", () => {
@@ -161,5 +179,34 @@ describe("the source provenance", () => {
         sourceCode: { repository: "https://bitbucket.org/cambridge/oz", tag: "V4.7", commit: "603c979a" }
       })
     ).toBe(true);
+  });
+});
+
+describe("jump labels (level 2 counts routines)", () => {
+  const sourceCode = { repository: "https://bitbucket.org/cambridge/oz", tag: "V4.7", commit: "603c979a" };
+  // --- A routine at 0 (CALL'd), a jump target inside it at 4: JR $+2 / NOP / JR back / RET
+  const bytes = new Uint8Array([0x18, 0x02, 0x00, 0x00, 0x18, 0xfa, 0xc9]);
+  const bank = {
+    regions: [{ start: 0, end: 6, type: "disassemble" }],
+    localLabels: [
+      { name: "Routine", value: 0 },
+      { name: "loop", value: 4 }
+    ],
+    lineAnnotations: { "0": { synopsis: "A routine" } }
+  };
+
+  it("are read only from a sidecar that names its source code", () => {
+    const pages = { "3": { crc32: "0", name: "x", jumpLabels: [4] } };
+    expect([...jumpLabelsOf({ sourceCode, pages }, 3)]).toEqual([4]);
+    expect([...jumpLabelsOf({ pages }, 3)]).toEqual([]);
+    expect([...jumpLabelsOf({ sourceCode, pages }, 4)]).toEqual([]);
+  });
+
+  it("need no synopsis for level 2; every other label still does", async () => {
+    const decode = romDecoderFor(undefined);
+    expect((await measureRomLevel(bank, bytes, decode)).labelsWithoutSynopsis).toEqual(["loop"]);
+    const report = await measureRomLevel(bank, bytes, decode, new Set([4]));
+    expect(report.labelsWithoutSynopsis).toEqual([]);
+    expect(report.level).toBe(2);
   });
 });

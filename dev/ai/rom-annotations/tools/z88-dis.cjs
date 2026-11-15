@@ -90,8 +90,11 @@ const { knownRomPageKind, romPageIdentity } = require(join(root, "src/common/rom
       .filter((r) => r.start <= runEnd && r.end >= runStart)
       .map((r) => new MemorySection(origin + Math.max(r.start, runStart), origin + Math.min(r.end, runEnd), types[r.type]));
     if (sections.length === 0) continue;
-    const memory = new Uint8Array(origin + bytes.length);
-    memory.set(bytes, origin);
+    // --- A run stored above where it runs (LOWRAM: offset $0800 runs at $0000) has its offset 0 below
+    // --- address 0: the bytes before address 0 are left out
+    const skip = Math.max(0, -origin);
+    const memory = new Uint8Array(Math.max(0, origin + bytes.length));
+    memory.set(bytes.subarray(skip), origin + skip);
     const d = new Z80Disassembler(sections, memory, undefined, { allowExtendedSet: false });
     prepareRomDisassembler(d, kind);
     const out = await d.disassemble(origin + runStart, origin + runEnd);

@@ -194,6 +194,13 @@
       "value": "The value found"
     }
   },
+  "media.romCheck.jumpLabelsWithoutCode": "Page {page}: \"jumpLabels\" is allowed only in a file imported from its source code (one with a sourceCode).",
+  "@media.romCheck.jumpLabelsWithoutCode": {
+    "context": "Reason a ROM annotation working copy cannot be shipped (the ROM annotation editor's check panel and the rom-ann-check command output). \"jumpLabels\" and \"sourceCode\" are literal JSON keys in the file; keep them untranslated. jumpLabels lists labels that are only jump targets inside a routine, which then need no description.",
+    "placeholders": {
+      "page": "ROM page number"
+    }
+  },
   "media.romCheck.sourceWithoutCode": "{key}: the provenance \"source\" needs the file's sourceCode (the repository and commit the entry comes from).",
   "@media.romCheck.sourceWithoutCode": {
     "context": "Reason a ROM annotation working copy cannot be shipped (the ROM annotation editor's check panel and the rom-ann-check command output). \"source\" and \"sourceCode\" are literal JSON values and keys in the file; keep them untranslated.",

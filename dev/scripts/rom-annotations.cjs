@@ -169,7 +169,12 @@ async function level(only) {
     const romFile = romFileOf(name);
     for (const page of Object.keys(json.banks ?? {})) {
       const { decode, pageBytes } = decoderFor(romFile, Number(page), json);
-      const report = await tools.measureRomLevel(await measuredBank(json, page, pageBytes), pageBytes, decode);
+      const report = await tools.measureRomLevel(
+        await measuredBank(json, page, pageBytes),
+        pageBytes,
+        decode,
+        tools.jumpLabelsOf(json, page)
+      );
       const missing = tools.missingProvenance(json);
       console.log(
         `${name} page ${page}: level ${report.level} (recorded ${json.level ?? 0}); ` +
