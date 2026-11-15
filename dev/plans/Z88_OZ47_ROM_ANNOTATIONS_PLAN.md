@@ -1,12 +1,11 @@
 # Cambridge Z88 OZ 4.7 ROM Annotations — Plan
 
-**Status:** In progress (2026-11-14). Phase 0 done (the build identified; no rebuild, D-OZ5). Phase 1
-done (Z88 bank space, ROM pages, `z88-oz` decoding, `source` provenance; checked in the running IDE).
-Phase 2 done (2026-11-15): every component with source imports (banks 0-8, $0A-$0D and $1F), and each bank
-reassembles byte for byte. Phase 3 under way (2026-11-15): every bank level 1, bank $10 level 2; level 2
-counts routines (D-OZ6) and bank 9 is left out (D-OZ7). The system banks are level 2: the kernel (0, 1),
-bank 2, GN (3), MTH (8), DC and Index ($0C), the FPP ($0D) and the file area ($10); so are banks 4 and 7.
-Left: PipeDream (5, 6), EazyLink and the Filer ($0A), FlashStore ($0B) and the ROM header (1,411 labels). **To continue in a new session, read "Handoff (2026-11-15)" at the end of Phase 3.**
+**Status:** Done (2026-11-15). `src/public/roms/z88v47.rom.dis` ships at level 2: every OZ 4.7 bank that has
+source (banks 0-8, $0A-$0D, $10 and $1F) is imported from OZ's own source with its author's permission
+(D-OZ1, D-OZ2, recorded in `src/public/roms/z88-roms-readme.txt` and `THIRD_PARTY_NOTICES.md`); bank 9,
+BBC BASIC, is left out (D-OZ7). Each bank reassembles byte for byte, and the coverage run is clean. The ROM
+page listing names operands across runs and banks (`romRunNaming.ts`). What is left is in "Follow-ups".
+The durable record of how it is built and updated is `dev/ai/rom-annotations/z88-authoring-guide.md`.
 **Goal:** a shipped sidecar `src/public/roms/z88v47.rom.dis` that annotates the OZ 4.7 ROM's banks to
 level 2 (all but bank 9, D-OZ7). It is built mostly from the OZ project's own assembler source,
 <https://bitbucket.org/cambridge/oz/src/V4.7/>, which the owner has given permission to use.
@@ -27,7 +26,9 @@ template for the Z88 one).
   who granted it, when, and its scope (shipping labels and comments derived from the GPL v2 source inside
   an MIT application, and under which notice). It goes in `src/public/roms/z88-roms-readme.txt`, with an
   entry in `THIRD_PARTY_NOTICES.md` that credits the OZ authors and the repository and tag.
-  *Open: the exact wording, which needs the author's input (Q1).*
+  *Done (2026-11-15):* the developer supplied the wording (Q1), recorded verbatim in both places:
+  "I, Gunther Strube, allow the Klive IDE project to use the Cambridge Z88 OZ source code to be publicly
+  used in the ROM annotations." 
 - **D-OZ3. A new provenance value, `source`,** marks an entry taken from the original source. It sits
   beside `observed`, `manual` and `derived`. `shippedRomSidecars.test.ts` accepts it only in a sidecar
   whose header names a source (a new `source` key: repository, tag, commit). That keeps `source` from
@@ -75,7 +76,8 @@ template for the Z88 one).
 
 ## 3. Open questions
 
-- **Q1.** The permission's exact scope and wording (D-OZ2). Phase 3 cannot ship without it.
+- **Q1. Answered (2026-11-15):** the wording, from the developer, is recorded in
+  `src/public/roms/z88-roms-readme.txt` and `THIRD_PARTY_NOTICES.md` (D-OZ2).
 - **Q2. Answered (2026-11-14):** the slot 0 build of the V4.7 tag, commit `603c979a`. The ROM carries
   that revision at $5E36, in the lower kernel bank, which is bank 1 only in slot 0. Evidence and the
   bank map are in `dev/ai/rom-annotations/z88-authoring-guide.md`. There is no rebuild to compare
@@ -264,9 +266,8 @@ get `observed` labels in Phase 3.
 
 Labels Klive cannot take as they are (519: over 16 characters, or a name two modules of a bank share)
 are in `dev/ai/rom-annotations/z88-label-renames.json`. `shortLabelName` proposed them, by abbreviations
-and dropping inner vowels, never blind truncation, and `--all --write-renames` recorded them. **They
-are machine proposals, not reviewed yet:** reviewing them, or the ones that matter, is Phase 3 work.
-A hand-edited entry wins on every later import.
+and dropping inner vowels, never blind truncation, and `--all --write-renames` recorded them. They were
+reviewed in Phase 3 (2026-11-15). A hand-edited entry wins on every later import.
 
 The Z88 decoder was fixed along the way. OZ 4.5+'s `EXTCALL` is `RST 28h` plus **4** bytes (address,
 bank and a byte OZ skips; `ExtCall` in `os/lowram/memfunc.asm`), not 3. An `OS_Pout` string with `"` or
@@ -355,6 +356,11 @@ addresses (the pilot's finding); and copying the result into `src/public/roms/z8
    against what is executed.
 5. Record `level: 2` once the tool measures it. Regenerate `rom-annotations.index.json`.
 
+   *Done (2026-11-15):* the authored file's top-level `level` (2) is copied into the sidecar by the import;
+   the readiness check refuses a page that measures less (a copy recording 3 fails on all 16 pages). The
+   index lists only the shipped sidecars in `src/public/roms/`, so it gains `z88v47.rom.dis` when the file
+   ships (Phase 4); `npm run rom:annotations -- --check` passes unchanged.
+
 ### Phase 3 status (2026-11-15)
 
 Done, on branch `dotneteer/z88-oz47-phase2`:
@@ -396,19 +402,49 @@ Done, on branch `dotneteer/z88-oz47-phase2`:
   Calendar and Alarm popdowns (309); the Panel and PrinterEd, Terminal, the Calculator and Imp/Export with
   its X/Y-modem (277). The helpers placed each of bank 7's reused names (`Exit`, `main_2`, `ToUpper`) in the
   module its address falls in. Both banks reassemble byte for byte.
+- **Banks $0A, $0B and $1F are level 2** (2026-11-15, branch `dotneteer/z88-oz47-phase3`): 516 synopses
+  by seven helpers: EazyLink and the Filer (288), FlashStore (226), and the ROM header's two, written by
+  hand. All three banks reassemble byte for byte.
+- **PipeDream (banks 5 and 6) is level 2** (2026-11-15): 895 synopses by twelve helpers, so **every
+  annotated bank measures level 2**. Its source was reverse engineered from OZ 3.21 (machine names like
+  `L_80BE`, few comments), so the helpers worked from the code, with a PipeDream note on the two banks' run
+  addresses. Both banks reassemble byte for byte.
+- **PipeDream's inline printer strings** (2026-11-15): the four strings after calls to `LEDE1` (`L_EDC2` in
+  the source; at $ED86, $EDA0, $EE08 and $EE18) are written as instructions in the source. They are now
+  `observed` text regions with comments in `z88-oz47-authored.json`. The import now cuts an authored region
+  out of the region it overlaps instead of dropping that region whole, so the code around them stays.
+  Bank 6 reassembles byte for byte.
+- **The rename proposals are reviewed** (2026-11-15): 347 of the 574 names `shortLabelName` proposed
+  (`AllcMemFle_SzeHL`, `cl_nt_op_fl_qt_t`) are replaced in `z88-label-renames.json` by readable ones
+  (`AllocMemFile_HL`, `cant_open_quit`), one abbreviation per word and none clashing with a label of any
+  bank; the 75 synopses that named an old label name the new one. Every bank still reassembles byte for
+  byte and measures level 2. Each of the 588 renamed labels has "OZ source name: <name>." in its synopsis
+  (after the summary, before the contract), so it can be found in the OZ source:
+  `tools/z88-source-name-notes.cjs` writes them into the authored file; run it again after a rename changes.
+
+- **Across runs and banks** (2026-11-15): the ROM page document listed a page at one address and named an
+  operand from that page's labels only, so the Filer's calls (bank $0A, run at $E400, listed at $8000),
+  LOWRAM's jumps (bank 2, run at $0000) and the calls between the kernel's and PipeDream's halves showed
+  addresses, and some LOWRAM operands were named after keymap labels at the same offset. Now an absolute
+  operand is resolved where its run runs, and a jump or call target or `.defw` word outside the page from the
+  pages in its `pagedWith` (`src/renderer/appIde/annotations/romRunNaming.ts`; Go to Definition and Find
+  References agree with the listing). Measured over all banks: about 1,500 more operands named, none renamed
+  except bank 2's four wrong keymap names (now `LowRAMcode`). Tests: `test/annotations/romRunNaming.test.ts`;
+  in the running IDE, `dev/scripts/z88-rom-listing-ide-check.cjs`.
+- **Coverage runs** (2026-11-15, Phase 3 step 4): `tools/z88-coverage-run.ts.txt` boots OZ 4.7 on the Z88
+  harness with the access profile on (new session methods `profile`, `resetProfile`, `profileFlags`),
+  visits all 15 applications with some typing (BBC BASIC with floating point, PipeDream, the Diary, the
+  Calculator, the Filer, ...) and checks every bank: **no byte fetched as code lies in a data region, and
+  every executed instruction start is one the sidecar lists.** Listed instructions that ran: 63% of bank 0,
+  39% of bank 1, 55% of GN, 62% of bank 2 (LOWRAM), 31% of PipeDream's bank 6, 6% of bank $0A (EazyLink and
+  the Filer, which barely run without a serial link). Found on the way: arrow keys in FlashStore with no
+  card, at the run's pace, once left OZ looping in LOWRAM with bank 0's IntKbd bytes executed at every
+  alignment (`z88-oz47-review.md`, "Coverage runs"), a fault of OZ or of the emulator, not of the sidecar;
+  the run now only opens FlashStore.
 
 Open:
-- **The synopses of the remaining applications**, the same way, one bank group at a time: banks 5 and 6
-  (PipeDream: 414 + 481), $0A (EazyLink, Filer: 288), $0B (FlashStore: 226) and the ROM header ($1F, 2).
-  The method:
-  `node dev/ai/rom-annotations/tools/z88-synopsis-pack.cjs <banks> <source folders> .local/oz-synopses/<name>-pack.json`,
-  `z88-synopsis-split.cjs` into slices of about 80, one helper per slice with the brief, then
-  `z88-synopsis-merge.cjs` (a `--dry-run` first) and `z88-synopsis-notes.cjs` for the review file.
-- **The rename proposals** (`z88-label-renames.json`) are still unreviewed.
-- **Across banks:** PipeDream's two halves call each other (`call LD65D` in bank 5 is bank 6's code); a
-  listing names labels of its own bank only. A bank $0A Filer jump and LOWRAM's jumps are listed in the
-  bank's main segment, so they show addresses too.
-- Coverage runs (step 4).
+- **The FlashStore fault** the coverage run found (`z88-oz47-review.md`, "Coverage runs"): OZ's or the
+  emulator's; it does not block the sidecar.
 
 **Seeing the state:** after every session, `node dev/scripts/import-oz-source.cjs --all`, then copy
 `.local/oz-import/z88v47.rom.dis` over `~/Klive/RomAnnotations/z88v47.rom.dis` (the IDE reloads it).
@@ -416,9 +452,10 @@ Debug > ROM Annotations > z88v47.rom shows each page's level and its "To label" 
 
 ### Handoff (2026-11-15): how to continue Phase 3 in a new session
 
-**Where it stands.** Branch `dotneteer/z88-oz47-phase2` (pull request "Z88 OZ 4.7 ROM annotations:
-Phase 2 and most of Phase 3"), committed and clean. Banks 0-4, 7, 8, $0C, $0D and $10 measure level 2;
-banks 5, 6, $0A, $0B and $1F measure level 1. Bank 9 is out (D-OZ7). The branch carries an `internal`
+**Where it stands.** Phase 2 and most of Phase 3 are merged into master (pull request "Z88 OZ 4.7 ROM
+annotations: Phase 2 and most of Phase 3"); work goes on on branch `dotneteer/z88-oz47-phase3`. Every
+annotated bank (0-8, $0A-$0D, $10, $1F) measures level 2; no synopsis is missing. Bank 9 is out (D-OZ7). The
+sidecar records `level: 2`, and the coverage run is clean. The branch carries an `internal`
 changeset (`dev/changes/cambridge-z88-oz-4-7-1a32.md`, at the developer's request); **the session that
 finishes the plan turns it into the `feature` changeset**
 ("Cambridge Z88 ROM annotations" for OZ 4.7) instead of adding a second one.
@@ -431,32 +468,21 @@ finishes the plan turns it into the `feature` changeset**
 1. `git clone https://bitbucket.org/cambridge/oz.git .local/oz47/oz` and
    `git -C .local/oz47/oz checkout V4.7` (commit `603c979a`), if `.local/oz47/oz` is missing.
 2. `node dev/scripts/import-oz-source.cjs --all` must print "All 23 components imported.", the filler line
-   (22 runs) and "Hand-written entries applied: 16 label(s), 1789 line annotation(s), 5 region(s)" (the line
-   count grows with every merged batch). The result is `.local/oz-import/z88v47.rom.dis`.
+   (22 runs) and "Hand-written entries applied: 16 label(s), 3608 line annotation(s), 9 region(s)". The result is `.local/oz-import/z88v47.rom.dis`.
 3. `node dev/ai/rom-annotations/tools/check-annotations.cjs .local/oz-import/z88v47.rom.dis`: `"problems": []`,
-   and `labelsWithoutSynopsis` is the work left per bank.
+   and `labelsWithoutSynopsis` is 0 for every bank.
 
-**Next steps, in order:**
-1. **Synopses for the remaining banks**, one batch per session or per user request, each the same way:
-   - pack: `node dev/ai/rom-annotations/tools/z88-synopsis-pack.cjs <bank[,bank]> <source folders> .local/oz-synopses/<name>-pack.json`
-     (PipeDream: banks `5` and `6` separately, folder `apps/pipedream`; bank $0A `10` with
-     `apps/eazylink,apps/filer`; bank $0B `11` with `apps/flashstore`; the header `31` with `mth`);
-   - split: `z88-synopsis-split.cjs <pack> <n> .local/oz-synopses/<name>`, about 70-80 labels a slice;
-   - one helper agent per slice with the brief (its task names the slice, the draft path
-     `.local/oz-synopses/drafts/<slice>.json`, the program and its run address, and how to resolve names
-     several modules share); helpers name scratch files after their slice;
-   - check each draft (`z88-synopsis-merge.cjs <slice>:<draft> --dry-run`), read a sample, merge them all,
-     re-run the import and the check, reassemble the banks with the template (below), install the working
-     copy, append `z88-synopsis-notes.cjs` output to `z88-oz47-review.md`, and add a `PROVENANCE.md` entry.
-   PipeDream is one 32K program over banks 5 and 6: give its helpers the run addresses ($8000 and $C000)
-   and tell them a call into the other half is a call into the other bank.
-2. **The rename proposals** in `z88-label-renames.json` (about 590 machine proposals): review them, at
-   least the routine names, and hand-edit poor ones (an edited entry wins on the next import).
-3. **Across banks:** a listing names labels of its own bank only, so PipeDream's calls between its halves,
-   the Filer's run (bank $0A, segment 3) and LOWRAM's jumps show addresses.
-4. **Coverage runs** (Phase 3 step 4) on `test/harness/z88/`.
-5. **Record `level: 2`** once every bank measures it, regenerate `rom-annotations.index.json`; then Phase 4,
-   which waits for Q1 (the permission's wording) before anything ships.
+**How the synopses were written** (for a later OZ release, or a redo of one bank): pack the labels
+(`tools/z88-synopsis-pack.cjs <bank[,bank]> <source folders> .local/oz-synopses/<name>-pack.json`), split
+them (`z88-synopsis-split.cjs <pack> <n> .local/oz-synopses/<name>`, about 70-80 labels a slice), give one
+helper agent per slice the brief (`helper-briefs/z88-draft-synopses.md`; its task names the slice, the
+draft path `.local/oz-synopses/drafts/<slice>.json`, the program and its run address, and how to resolve
+names several modules share), check each draft (`z88-synopsis-merge.cjs <slice>:<draft> --dry-run`), read a
+sample, merge, re-import, check, reassemble, install the working copy, append `z88-synopsis-notes.cjs`
+output to `z88-oz47-review.md` and add a `PROVENANCE.md` entry. Ask the helpers for decimal IY offsets.
+
+**Next steps:** none in this plan; it is done (Phase 4). Changes to the shipped file go through the import
+(`z88-authoring-guide.md`, "Shipping and updating"); the follow-ups are in §5.
 
 **Checks after each batch.** The reassembly template: copy
 `dev/ai/rom-annotations/tools/reassemble-test.ts.txt` to `test/reverse-eng/zz-reassemble.test.ts`, run
@@ -474,7 +500,17 @@ which is not a content change). Any difference beyond the batch is the developer
 arguments written out; a heredoc in the same command as `rm` is refused by the safety check, so write
 scripts with the file tool and delete in a separate plain command.
 
-### Phase 4 — Records and shipping
+### Phase 4 — Records and shipping (done, 2026-11-15)
+
+*As built:* the developer supplied the permission's wording (Q1); it is recorded verbatim in
+`src/public/roms/z88-roms-readme.txt` and `THIRD_PARTY_NOTICES.md`. The import was copied to
+`src/public/roms/z88v47.rom.dis` and `npm run rom:annotations` added its 15 pages to
+`rom-annotations.index.json`. The README's D4 section names the exemption, `CLOSING_THE_GAPS_PLAN.md` D4
+has its one-line note, the README's "Order of work" and the competitive analysis (§2, §3 and the gap
+table's closed list) list the Z88, and the guide has "Shipping and updating". The branch's changeset is
+now the plan's `feature` entry (`dev/changes/cambridge-z88-oz-4-7-1a32.md`). Checks: `test/annotations/`,
+`test/z88/`, the Z88 harness's self-tests, `npm run build:check`, `npm run rom:annotations -- --check`,
+`npm run lint:renderer` and `npm run test:slow`.
 
 1. `dev/ai/rom-annotations/z88-authoring-guide.md`: banks and their origins, the build, the importer, the
    exemption, and what was learned. Update `README.md`'s D4 section and "Order of work".
@@ -488,6 +524,8 @@ scripts with the file tool and delete in a separate plain command.
 
 ## 5. Follow-ups (not in this plan)
 
+- **The FlashStore fault** the coverage run found (`z88-oz47-review.md`, "Coverage runs"): OZ's or the
+  emulator's, to be investigated on its own.
 - The other OZ releases Klive ships (`z88v50b`, `z88ukv40`), imported from their own tags with the same
   importer, if the permission covers them.
 - The pre-OZ-4 ROMs (`z88ukv30` and the national 3.x ROMs) have no source in the repository and stay

@@ -2623,3 +2623,64 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
   the bytes with `z88-dis.cjs`. The helpers' notes are in `z88-oz47-review.md`.
 - **Sources:** the OZ V4.7 source (commit `603c979a`, D-OZ1) and the ROM bytes; the entries are `source`.
 - **Level:** measured 2 on banks 4 and 7; both reassemble byte for byte. Not shipped yet (Q1).
+
+### 2026-11-15 — Cambridge Z88: OZ 4.7, banks $0A, $0B and $1F to level 2
+
+- **What:** 516 synopses in `z88-oz47-authored.json`: bank $0A's EazyLink and Filer (288), bank $0B's
+  FlashStore (226) and the ROM header in bank $1F (2).
+- **How:** as before, seven helpers with `helper-briefs/z88-draft-synopses.md` (the header written by hand);
+  where EazyLink, the Filer and FlashStore define the same name, each label was matched to the module its
+  address falls in. The helpers' notes are in `z88-oz47-review.md`.
+- **Sources:** the OZ V4.7 source (commit `603c979a`, D-OZ1) and the ROM bytes; the entries are `source`.
+- **Level:** measured 2 on banks $0A, $0B and $1F; each reassembles byte for byte. Not shipped yet (Q1).
+
+### 2026-11-15 — Cambridge Z88: OZ 4.7, PipeDream (banks 5 and 6) to level 2
+
+- **What:** 895 synopses in `z88-oz47-authored.json`: PipeDream's bank 5 (414) and bank 6 (481), one 32K
+  program run at $8000-$FFFF. With them every annotated bank measures level 2.
+- **How:** as before, twelve helpers with `helper-briefs/z88-draft-synopses.md`, plus a PipeDream note on
+  the two banks' run addresses and on the source's machine names (it was reverse engineered from OZ 3.21,
+  so most routines were described from the code, not from the label). The helpers decoded PipeDream's
+  message table and MTH command codes from the ROM and `mth/appmth.asm`. Their notes are in
+  `z88-oz47-review.md`.
+- **Sources:** the OZ V4.7 source (commit `603c979a`, D-OZ1) and the ROM bytes; the entries are `source`.
+- **Level:** measured 2 on banks 5 and 6; both reassemble byte for byte. Not shipped yet (Q1).
+
+### 2026-11-15 — Cambridge Z88: OZ 4.7, the label renames reviewed
+
+- **What:** 347 of the 574 machine-proposed names in `z88-label-renames.json` (OZ source labels over 16
+  characters, or shared by two modules of a bank) replaced by readable ones; the 75 authored synopses and
+  15 review notes that named an old label name the new one.
+- **How:** every proposal read; a name was replaced where dropped vowels made it hard to read
+  (`AllcMemFle_SzeHL` -> `AllocMemFile_HL`), keeping one abbreviation per word and a short module suffix
+  for a shared name. A script checked each new name (16 characters at most, unique across all banks,
+  case-insensitive) before applying it.
+- **Sources:** the OZ V4.7 source's own label names (D-OZ1); no content changed.
+- **Level:** every bank still measures 2 and reassembles byte for byte. Not shipped yet (Q1).
+
+### 2026-11-15 — Cambridge Z88: OZ 4.7, source names of the renamed labels
+
+- **What:** each of the 588 labels the rename table changed now says "OZ source name: <name>." in its
+  synopsis, so it can be found in the OZ source; 257 of them, jump targets inside routines, had no
+  synopsis and now hold only that line.
+- **How:** `tools/z88-source-name-notes.cjs` reads `z88-label-renames.json` and the import, and writes
+  the notes into `z88-oz47-authored.json` (a synopsis imported from an OZ header is copied there with
+  the note); it is idempotent.
+- **Sources:** the OZ V4.7 source's label names (D-OZ1); the entries are `source`.
+- **Level:** unchanged, 2 on every bank. Not shipped yet (Q1).
+
+### 2026-11-15 — Cambridge Z88: OZ 4.7, level 2 recorded
+
+- **What:** the sidecar records `level: 2` (the authored file's top-level `level`, copied by the import).
+- **How:** `check-annotations.cjs` measures level 2 on every annotated page (banks 0-8, $0A-$0D, $10, $1F;
+  bank 9 left out, D-OZ7) with no problems, every bank reassembles byte for byte, and the coverage run
+  (`tools/z88-coverage-run.ts.txt`) finds no code in a data region and no unlisted executed start.
+- **Level:** 2, recorded. Not shipped yet (Q1).
+
+### 2026-11-15 — Cambridge Z88: OZ 4.7 shipped
+
+- **What:** `src/public/roms/z88v47.rom.dis` ships at level 2 (the import, unchanged), with its 15 pages in
+  `rom-annotations.index.json`.
+- **Permission:** Gunther Strube's, worded by the developer (plan Q1) and recorded verbatim in
+  `src/public/roms/z88-roms-readme.txt` and `THIRD_PARTY_NOTICES.md`: the D4 exemption of the plan's D-OZ1.
+- **Level:** 2, recorded and shipped.

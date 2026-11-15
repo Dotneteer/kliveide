@@ -199,8 +199,8 @@ function fillGaps(file) {
 
 /**
  * The hand-written entries of `z88-oz47-authored.json` over the imported sidecar (Phase 3): a label
- * replaces the one at its offset, a synopsis or comment the imported one, a region the regions it
- * overlaps; a bank the import does not cover gets its page. Each entry keeps its own provenance.
+ * replaces the one at its offset, a synopsis or comment the imported one, a region the bytes it
+ * overlaps (an overlapped region keeps its parts outside); a bank the import does not cover gets its page. Each entry keeps its own provenance.
  */
 function applyAuthored(file) {
   const authored = JSON.parse(readFileSync(join(root, "dev/ai/rom-annotations/z88-oz47-authored.json"), "utf8"));
@@ -209,6 +209,9 @@ function applyAuthored(file) {
   let labels = 0;
   let lines = 0;
   let regions = 0;
+  // --- The level the author records (README, "Completeness levels"): never above what the tool measures,
+  // --- which the readiness check (`check-annotations.cjs`, the IDE's) enforces page by page
+  if (typeof authored.level === "number") sidecar.level = authored.level;
   for (const [key, entries] of Object.entries(authored.banks)) {
     const bank = (sidecar.banks[key] ??= { offsetIndex: 0, regions: [], localLabels: [], lineAnnotations: {} });
     if (!sidecar.pages[key]) {
@@ -216,6 +219,8 @@ function applyAuthored(file) {
       sidecar.pages[key] = { crc32: romPageIdentity(bytes).crc32, name: entries.page?.name ?? `OZ 4.7, bank ${hex2(Number(key))}h` };
     }
     if (entries.page?.segments) sidecar.pages[key].segments = entries.page.segments;
+    // --- The pages paged in while this one runs: the listing names its operands into them (romRunNaming.ts)
+    if (entries.page?.pagedWith) sidecar.pages[key].pagedWith = entries.page.pagedWith;
     for (const { name, value, provenance, synopsis } of entries.labels ?? []) {
       bank.localLabels = bank.localLabels.filter((l) => l.value !== value && l.name !== name);
       bank.localLabels.push({ name, value });
@@ -233,10 +238,24 @@ function applyAuthored(file) {
       lines++;
     }
     for (const { provenance, ...region } of entries.regions ?? []) {
-      for (const old of bank.regions.filter((r) => r.end >= region.start && r.start <= region.end)) {
+      // --- An overlapped region keeps the parts outside the new one (code around an inline string)
+      const kept = [];
+      for (const old of bank.regions) {
+        if (old.end < region.start || old.start > region.end) {
+          kept.push(old);
+          continue;
+        }
+        const oldProvenance = sidecar.provenance[`${key}:${old.start}:region`];
         delete sidecar.provenance[`${key}:${old.start}:region`];
+        const parts = [];
+        if (old.start < region.start) parts.push({ ...old, end: region.start - 1 });
+        if (old.end > region.end) parts.push({ ...old, start: region.end + 1 });
+        for (const part of parts) {
+          kept.push(part);
+          if (oldProvenance) sidecar.provenance[`${key}:${part.start}:region`] = oldProvenance;
+        }
       }
-      bank.regions = bank.regions.filter((r) => r.end < region.start || r.start > region.end);
+      bank.regions = kept;
       bank.regions.push(region);
       sidecar.provenance[`${key}:${region.start}:region`] = provenance;
       regions++;

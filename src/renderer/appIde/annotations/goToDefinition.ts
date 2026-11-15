@@ -124,13 +124,14 @@ export function goToDefinitionTarget(args: {
 
   for (const operand of item.operandCandidates ?? []) {
     // --- Only an operand the listing put a name on. A bare number is not a definition to visit.
-    if (!operand.resolvedText) continue;
+    // --- One the listing named from another page (`labelOutsideBank`) has no definition in this one.
+    if (!operand.resolvedText || operand.labelOutsideBank) continue;
 
     const label = resolveOperandLabel(
       annotations,
       bankAnnotation,
       { bankOffset, operandIndex: operand.operandIndex, operandValue: operand.operandValue },
-      addressOffset
+      operand.labelAddressOffset ?? addressOffset
     );
     if (!label) continue;
 

@@ -44,6 +44,7 @@ import {
 } from "@renderer/appIde/annotations/romAnnotationLoader";
 import { parseAnnotations } from "@renderer/appIde/annotations/programAnnotations";
 import { requestRomAnnotationsReload } from "@renderer/appIde/annotations/romAnnotations";
+import { romPageLayoutsOf } from "@renderer/appIde/annotations/romRunNaming";
 import {
   romExportVerdictText,
   runRomSourceExport
@@ -193,6 +194,8 @@ const RomAnnotationEditorPanel = ({
 
   const raw = loaded.status === "loaded" ? loaded.raw : undefined;
   const isRomSidecar = raw?.machine === "rom";
+  // --- Where each page runs, so a page's listing names operands where they run (`romRunNaming.ts`)
+  const romPageLayouts = useMemo(() => romPageLayoutsOf(raw), [raw]);
   // --- Only a sidecar that names its source code can record entries as taken from it (D-OZ3)
   const hasCode = !!raw && hasSourceCode(raw);
   useEffect(() => {
@@ -294,11 +297,12 @@ const RomAnnotationEditorPanel = ({
           ...(readOnly ? { annotationReadOnly: true } : {}),
           disassemblyFlavor: "rom",
           ...(match.kind ? { romPageKind: match.kind } : {}),
+          ...(romPageLayouts ? { romPageLayouts } : {}),
           ...(topAddress !== undefined ? { topAddress } : {})
         }
       );
     },
-    [documentHubService, listPage, path, readOnly, t]
+    [documentHubService, listPage, path, readOnly, romPageLayouts, t]
   );
 
   /** The next unlabelled control-transfer target of a page, cycling: the level 1 to-do list. */

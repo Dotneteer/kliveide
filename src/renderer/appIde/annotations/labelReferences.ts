@@ -74,12 +74,13 @@ export function referenceSubjectsOf(
   if (global) add({ name: global.name, scope: "global", value: global.value }, "row");
 
   for (const operand of item.operandCandidates ?? []) {
-    if (!operand.resolvedText) continue;
+    // --- Resolved as the listing resolved it: a name from another page is not a label of this one
+    if (!operand.resolvedText || operand.labelOutsideBank) continue;
     const label = resolveOperandLabel(
       annotations,
       bankAnnotation,
       { bankOffset: bankOffset & ANNOTATION_BANK_LAST_OFFSET, operandIndex: operand.operandIndex, operandValue: operand.operandValue },
-      addressOffset
+      operand.labelAddressOffset ?? addressOffset
     );
     if (label) add(label, { operandIndex: operand.operandIndex });
   }
@@ -151,12 +152,12 @@ function forEachNamingRow(
     const bankOffset = item.annotation?.bankOffset;
     if (bankOffset !== undefined) {
       for (const operand of item.operandCandidates ?? []) {
-        if (!operand.resolvedText) continue;
+        if (!operand.resolvedText || operand.labelOutsideBank) continue;
         const resolved = resolveOperandLabel(
           annotations,
           bankAnnotation,
           { bankOffset: bankOffset & ANNOTATION_BANK_LAST_OFFSET, operandIndex: operand.operandIndex, operandValue: operand.operandValue },
-          addressOffset
+          operand.labelAddressOffset ?? addressOffset
         );
         if (resolved) names.add(labelKey(resolved));
       }

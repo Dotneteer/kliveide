@@ -46,6 +46,22 @@ export type DisassemblyOperandInfo = {
    * and needs to know which run of characters to paint.
    */
   resolvedText?: string;
+
+  /**
+   * The address offset the annotation lookup resolved this operand against, when it was not the
+   * listing's own: a ROM page whose runs execute at different addresses (a Z88 OZ bank lists the
+   * Filer with EazyLink, and stores LOWRAM away from where it runs). Set by the listing's resolver
+   * (`absoluteOperandOffset` in `annotatedDisassembly.ts`), read by "Go to definition" and "Find
+   * references", so they resolve the operand exactly as the listing printed it.
+   */
+  labelAddressOffset?: number;
+
+  /**
+   * The value is not an address of this page at all (it lies in another segment, or in a run of the
+   * page that is elsewhere when this one runs), so no label of this page may answer for it. A name it
+   * shows came from another page (`pagedWith`). Set and read as `labelAddressOffset` is.
+   */
+  labelOutsideBank?: boolean;
 };
 
 export type DisassemblyOperandLabelResolver = (

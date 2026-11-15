@@ -40,6 +40,11 @@ import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler
 import { Z88CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z88-custom.disassembler";
 import { Ht1080zCustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/ht1080z-disassembler";
 import { prepareRomDisassembler } from "@renderer/appIde/annotations/romDecoder";
+import {
+  absoluteOperandOffsetFor,
+  pagedWithOperandLabelResolver,
+  type RomPageLayouts
+} from "@renderer/appIde/annotations/romRunNaming";
 import { romSysVarsFor } from "@renderer/appIde/annotations/romSysVars";
 import { createSysVarOperandLabelResolver } from "@renderer/appIde/disassemblers/sys-var-operand-labels";
 import { romKindUsesZ80N, type RomPageKind } from "@common/roms/romIdentity";
@@ -215,6 +220,12 @@ type MemoryDumpViewState = {
    */
   romPageKind?: RomPageKind;
   /**
+   * With `disassemblyFlavor: "rom"`: where each page of the sidecar runs (`segments`) and which pages
+   * are paged in with it (`pagedWith`), so an absolute operand is named where it runs, not where the
+   * page is listed (`romRunNaming.ts`). Set by the opener from the sidecar's `pages`.
+   */
+  romPageLayouts?: RomPageLayouts;
+  /**
    * How the Graphics view reads the bytes (`dev/patterns/reverse-engineering-tools.md`, "Graphics finder"). View
    * state, never the sidecar: sweeping the width is how graphics are *found*, and a write per step
    * would turn browsing into editing. A graphic that has been found is named, which is a write.
@@ -254,6 +265,7 @@ type StaticMemoryDumpOptions = {
   annotationReadOnly?: boolean;
   disassemblyFlavor?: StaticDisassemblyFlavor;
   romPageKind?: RomPageKind;
+  romPageLayouts?: RomPageLayouts;
 
   /**
    * Address to bring into view when the document opens, in the listing's own numbering — that is,
@@ -1391,6 +1403,21 @@ const StaticMemoryDump = ({
     projectService
   );
 
+  // --- A ROM page whose runs execute at different addresses (a Z88 OZ bank) names an absolute operand
+  // --- where it runs, and from the pages paged in with it (`romRunNaming.ts`)
+  const romPageLayouts = isRomListing ? currentViewState.romPageLayouts : undefined;
+  const absoluteOperandOffset = useMemo(
+    () =>
+      viewAnnotationBank === undefined
+        ? undefined
+        : absoluteOperandOffsetFor(romPageKind, romPageLayouts?.[String(viewAnnotationBank)]),
+    [romPageKind, romPageLayouts, viewAnnotationBank]
+  );
+  const otherPageOperandLabelResolver = useMemo(
+    () => pagedWithOperandLabelResolver(listingAnnotations, romPageKind, romPageLayouts, viewAnnotationBank),
+    [listingAnnotations, romPageKind, romPageLayouts, viewAnnotationBank]
+  );
+
   useEffect(() => {
     if (!disassemblyEnabled || viewMode !== "disassembly") return undefined;
     let cancelled = false;
@@ -1408,7 +1435,9 @@ const StaticMemoryDump = ({
             fallbackOperandLabelResolver: sysVarLabelResolver,
             hideScreenArea,
             allowExtendedSet: annotationMachine === "next",
-            prepareDisassembler: prepareRomListing
+            prepareDisassembler: prepareRomListing,
+            absoluteOperandOffset,
+            otherPageOperandLabelResolver
           })
         : undefined;
       let outputItems = annotationItems;
@@ -1491,6 +1520,8 @@ const StaticMemoryDump = ({
     romPageKind,
     prepareRomListing,
     sysVarLabelResolver,
+    absoluteOperandOffset,
+    otherPageOperandLabelResolver,
     viewMode
   ]);
 
@@ -2051,6 +2082,7 @@ export async function openStaticMemoryDump(
         ...(options.annotationMachine ? { annotationMachine: options.annotationMachine } : {}),
         disassemblyFlavor: options.disassemblyFlavor,
         ...(options.romPageKind ? { romPageKind: options.romPageKind } : {}),
+        ...(options.romPageLayouts ? { romPageLayouts: options.romPageLayouts } : {}),
         ...(options.annotationReadOnly ? { annotationReadOnly: true } : {}),
         topAddress: options.topAddress
       } satisfies MemoryDumpViewState,

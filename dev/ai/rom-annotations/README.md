@@ -35,6 +35,16 @@ remembered one, however descriptive it sounds; so is a whole prefix family (`PO_
 Name a routine from what its code does, after reading it. The sp48 sessions had to rename 99
 labels that slipped through this way (`PROVENANCE.md`, 2026-10-20).
 
+### The one exemption: the Cambridge Z88's OZ (Z88 OZ plan D-OZ1)
+
+`z88v47.rom.dis` is annotated **from OZ's own assembler source**, with the permission of Gunther Strube
+for the OZ project, recorded on 2026-11-15 (`src/public/roms/z88-roms-readme.txt`,
+`THIRD_PARTY_NOTICES.md`). The exemption covers OZ 4.7 and the other OZ releases built from the same
+repository (<https://bitbucket.org/cambridge/oz>), and nothing else: every other ROM, and the Z88's
+pre-OZ-4 ROMs that have no source there, stay under D4 unchanged. An entry taken from the source has
+provenance `source`, allowed only in a file whose `sourceCode` names the repository, tag and commit. How
+the source is placed on the ROM is `z88-authoring-guide.md`.
+
 ## What may be used
 
 - **The ROM bytes**, through Klive's own disassembler (`romDecoder.ts`, which also runs
@@ -207,4 +217,6 @@ table from the +3 manual first), and the ZX81 and ZX80 ROMs. The HT-1080Z's are 
 character generators (`ht1080z-authoring-guide.md`). The Videoton TVC's are next: BASIC 1.2's SYS chips, its EXTH, BASIC 2.2's three chips,
 then VT-DOS (`tvc-authoring-guide.md`). The Enterprise's are under way: EXOS 2.1 (both segments), the IS-BASIC 2.1
 cartridge and the 64's EXOS 2.0 (both segments) are done to level 2; then IS-BASIC 2.0, and EXDOS 1.3 last
-(`ep-authoring-guide.md`).
+(`ep-authoring-guide.md`). The Cambridge Z88's OZ 4.7 (`z88v47.rom.dis`) is shipped at level 2, imported from
+OZ's own source under the exemption above (`z88-authoring-guide.md`); bank 9, BBC BASIC, is left out. The
+other OZ releases (`z88v50b`, `z88ukv40`) can be imported from their own tags the same way.

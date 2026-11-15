@@ -517,6 +517,12 @@ export type RomSidecarExtras = {
       name: string;
       /** Where each run of the page runs (`RomPageSegment` in `romDecoder.ts`): a Z88 OZ bank's segments */
       segments?: { start: number; segment: number; address?: number }[];
+      /**
+       * The other pages paged in while this one runs (`RomPagedWith` in `romRunNaming.ts`), whose labels
+       * name this page's absolute operands that are not its own addresses: a Z88 kernel bank's calls into
+       * the other one, PipeDream's between its two banks, any bank's into LOWRAM (`start` picks one run)
+       */
+      pagedWith?: { page: number; start?: number }[];
       /** Labels the source uses only as jumps inside a routine (`jumpLabelsOf`); with `sourceCode` only */
       jumpLabels?: number[];
     }

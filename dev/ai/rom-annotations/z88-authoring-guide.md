@@ -9,7 +9,8 @@ specific to the Z88's OZ 4.7 ROM, `src/public/roms/z88v47.rom`. The plan is
 D4 has an exception for OZ, granted with the owner's permission (plan D-OZ1, D-OZ2): the
 annotations come from the OZ project's own assembler source, <https://bitbucket.org/cambridge/oz>,
 and are imported by a script, never copied by hand. Entries are marked `source` (plan D-OZ3). The
-OZ source is GPL v2. Nothing from it ships until the permission is recorded (plan Q1).
+OZ source is GPL v2. The permission, from Gunther Strube, is recorded verbatim in
+`src/public/roms/z88-roms-readme.txt` and `THIRD_PARTY_NOTICES.md` (2026-11-15).
 
 The pre-OZ-4 ROMs (`z88ukv30` and the national 3.x ROMs) are **not** covered: they stay under D4.
 So does any ROM Klive annotates by carrying from this sidecar.
@@ -82,7 +83,20 @@ to be a property of a region (or of a run of a page), not of the whole page.
   also has `"address"`, the address its first byte runs at: LOWRAM, at $0800 in bank 2, is
   `{ "start": 2048, "segment": 0, "address": 0 }`. Such a run is decoded at that address, and only a
   target inside the run is the page's. The level check, the CLI and
-  `z88-dis.cjs` use it. The IDE's ROM page document lists every page at $0000, as on every machine.
+  `z88-dis.cjs` use it. The IDE's ROM page document lists a page at its `offsetIndex`, and names an
+  absolute operand (a `jp`/`call` target, an `ld rr,nn` value, a `.defw` word) where the instruction's run
+  runs, and only into a run at the same address (`romRunNaming.ts`): the Filer's `call $EFF8` is
+  `call PrntDotClose` though bank $0A is listed at EazyLink's $8000, and LOWRAM's `jp $00E2` is
+  `jp FPPmain`, not the keymap label at offset $00E2. A relative jump keeps the listed address.
+- **Across banks:** a page's `pagedWith` (`[{ "page": n }, { "page": 2, "start": 2048 }]`) lists the pages
+  paged in while it runs; the listing names a jump or call target, or a `.defw` word, that is not the
+  page's own address from their labels (`start` picks one run: LOWRAM). Never an `ld rr,nn` value: it is
+  as often a number as an address (EazyLink's `ld hl,$0000` is not LOWRAM's entry). OZ 4.7's are in
+  `z88-oz47-authored.json`'s `page` entries: the kernel banks 0 and 1 with each other, PipeDream's 5 and 6
+  with each other, and every code bank with LOWRAM. Go to Definition and Find References resolve an operand
+  as the listing did (the operand records it: `labelAddressOffset`, `labelOutsideBank`); a name from
+  another page has no definition in this one. Checked in the running IDE by
+  `node dev/scripts/z88-rom-listing-ide-check.cjs`.
 - **Provenance `source`** needs the file's `sourceCode` (`{ "repository", "tag", "commit" }`).
 - **Source export:** an `oz`/`fpp`/`extcall` row is written as `.defb` with the call as the comment,
   so an export over OZ code reassembles.
@@ -133,7 +147,24 @@ section says what is done, how to check it and what is left.
 
 - **Never edit the generated sidecar.** An entry the source does not give goes in
   `z88-oz47-authored.json` (a label with its synopsis, a line, a region, a page for a bank the import does
-  not cover), each with its provenance; `--all` applies the file last, so a re-import keeps it.
+  not cover), each with its provenance; `--all` applies the file last, so a re-import keeps it. A region
+  takes only the bytes it covers: an imported region it overlaps keeps its parts on either side, so a
+  four-byte data region inside code (an inline string after a `call`) leaves the code around it.
+- **A renamed label names its source label:** a label the rename table changed (over 16 characters, or
+  shared by two modules of a bank) carries "OZ source name: <name>." in its synopsis, after the summary
+  and before the contract. `tools/z88-source-name-notes.cjs` writes them into the authored file from the
+  table and the import (re-run it, then `--all`, after changing a rename; it replaces its own note).
+- **The coverage run** (`tools/z88-coverage-run.ts.txt`, run as its header says): boots OZ 4.7 on the Z88
+  harness with the access profile on, visits every application with some typing, and fails on a byte
+  fetched as code in a data region or an executed instruction start the sidecar does not list (LOWRAM's
+  flags are read from RAM bank $20). The report, with each bank's share of listed instructions that ran,
+  goes to `.local/oz-coverage/`. Run it after changing regions. A crashed scenario floods the flags with
+  misaligned "starts" (see `z88-oz47-review.md`, "Coverage runs"), so it also fails when the run does not
+  end in OZ's own code.
+- **Inline strings the source writes as code:** PipeDream's printer strings after `call LEDE1` (`$05`,
+  the code, 0) are instructions in the reverse-engineered source (`dec b / ld sp,$005D`). They are
+  `observed` text regions in the authored file; look for the same pattern after any routine that reads
+  its argument from the return address (`ex (sp),hl`).
 - **Headers become contracts** (`ozHeaderSynopsis` in the aligner): the description as written, then
   `Entry:`/`Exit:`/`Error:` from `IN:`/`OUT:`/"OUT if call failed", and `Changes:`/`Keeps:` from OZ's
   register masks. A mask is `AFBCDEHL/IXIY` with `.` for a register not meant, optionally followed by the
@@ -159,3 +190,19 @@ section says what is done, how to check it and what is left.
 
 Decoder facts learned on the way: `EXTCALL` (OZ 4.5+) is `RST 28h` plus 4 bytes, the address, the
 bank and a spare byte OZ skips. OZ 3.x and 4.0 have no `EXTCALL`: their $0028 is ordinary code.
+
+## Shipping and updating (Phase 4, 2026-11-15)
+
+- **The shipped file is the import, unchanged.** `node dev/scripts/import-oz-source.cjs --all`, then copy
+  `.local/oz-import/z88v47.rom.dis` to `src/public/roms/z88v47.rom.dis` and run `npm run rom:annotations`
+  (formats every sidecar and regenerates `rom-annotations.index.json`, which binds each bank by its CRC).
+  Never hand-edit the shipped file: edit `z88-oz47-authored.json` (or the rename table) and import again,
+  so the next import keeps the change.
+- **Before shipping a change:** `check-annotations.cjs` (`"problems": []`, level 2 everywhere), the
+  reassembly template on each bank touched, the coverage run when regions changed, and
+  `test/annotations/` (the shipped-sidecar test checks `source` against `sourceCode`).
+- **The working copy** (`~/Klive/RomAnnotations/z88v47.rom.dis`) wins over the shipped file in the IDE;
+  after shipping, the ROM annotation editor shows whether the shipped file changed since it was taken.
+- **Another OZ release** (`z88v50b`, `z88ukv40`): identify its build as Phase 0 did, add its components
+  and a `.local/<tag>/oz` checkout, import, review the reports, and go through Phases 3 and 4 again; the
+  permission covers every OZ release from the same repository (plan D-OZ1).

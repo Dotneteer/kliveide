@@ -1,5 +1,12 @@
 ---
-type: internal
+type: feature
+highlight: "**Cambridge Z88 ROM annotations:** OZ 4.7's code named and explained, from OZ's own source."
 ---
 
-Cambridge Z88 OZ 4.7 ROM annotations, Phases 2 and 3 (most of it): every OZ 4.7 component with source is imported into a sidecar, ten of its banks are annotated to level 2 and the rest to level 1. Not shipped yet: the sidecar waits for the permission's wording, and this changeset becomes the plan's feature entry when the plan is finished (dev/plans/Z88_OZ47_ROM_ANNOTATIONS_PLAN.md).
+**Cambridge Z88 ROM annotations:** the Disassembly view now names and explains OZ 4.7's code, with
+labels, a description of every routine and table, and comments, across the kernel, GN, DC, the
+floating-point package, LOWRAM and the built-in applications (PipeDream, the Diary, the Filer,
+FlashStore, EazyLink and the rest; BBC BASIC is not covered). They come from the OZ project's own
+source, used with the permission of its author, Gunther Strube. The Z88 can now be annotated like the
+other machines: its ROM banks, RAM and cards, with bank breakpoints. A ROM page listing also names a
+call into another bank, or into code that runs at another address (the Filer, LOWRAM), by its label.

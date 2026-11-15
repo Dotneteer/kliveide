@@ -26,7 +26,8 @@ From the project author, 2026-10-02:
   macros, and the ASSERTION, LOGPOINT and WPMEM source comments, so a DeZog-annotated project debugs
   and tests in Klive unchanged.
 - **D4. ROM annotations are written from scratch**, under Klive BASIC's provenance discipline
-  (`dev/ai/rom-annotations/README.md`).
+  (`dev/ai/rom-annotations/README.md`). One exemption: the Cambridge Z88's OZ releases are annotated
+  from OZ's own source, with its author's permission (`Z88_OZ47_ROM_ANNOTATIONS_PLAN.md`, D-OZ1).
 
 ## Status
 
