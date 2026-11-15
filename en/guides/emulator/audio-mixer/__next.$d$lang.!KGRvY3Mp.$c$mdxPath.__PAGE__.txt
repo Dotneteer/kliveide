@@ -1,0 +1,181 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T15d4,---
+description: "See each sound source of the emulated machine with its level and spectrum, and mute, solo or change the level of any of them."
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# The audio mixer
+
+The audio mixer lists every sound source the emulated machine has (the beeper, each AY channel, the
+Next's DACs, ...) with a live level meter and spectrum, and lets you mute, solo or change the level of
+each one. Use it to hear one voice of a tune on its own, to find which channel makes a noise, or to
+check that your program drives a channel at all.
+
+*Applies to:* every machine with sound. The ZX80 and the ZX81 have no sound output, so they have no mixer.
+
+There are two views of the same mixer:
+
+- **The Audio Mixer document** in the IDE: a strip per source, and an analyser with the selected
+  source's spectrum, waveform or spectrogram.
+- **The sound popover** in the emulator window: the volume, and each source with mute and solo buttons
+  and a level meter.
+
+Both show the same settings: a source muted in one is muted in the other.
+
+<Shot
+  src="guides/emulator/audio-mixer/document.webp"
+  alt="The Audio Mixer document for a ZX Spectrum 128K: strips for the Beeper, MIC, Tape and the AY's channels A, B and C, each with a small spectrum, a level meter, a fader, its level in dB and M and S buttons; an Output strip; below, the spectrum of AY channel C with its facts"
+  caption="The Audio Mixer document on a 128K playing the beeper and all three AY channels"
+  width={760}
+/>
+
+## Open the mixer
+
+- In the IDE: **View › Machine Views › Audio Mixer**, or the `show-audio-mixer` command (alias
+  `shmix`) at the IDE's prompt.
+- In the emulator window: click the arrow beside the sound button on the toolbar. The popover's
+  **Open Audio Mixer...** link opens the document in the IDE.
+
+The mixer measures the sources only while one of its views is open; closed, it costs nothing.
+
+## Mute, solo and level
+
+<Steps>
+
+### Mute a source
+
+Click its **M** button. The source falls silent, but its meter keeps moving: the meters show each
+source's own level, before the mute and the fader, so you can still see what a muted channel plays.
+
+### Solo one or more sources
+
+Click a source's **S** button to hear it alone. Solo more sources to hear them together. While any
+source is soloed, only the soloed ones play, even one that is also muted. Clear the last solo and the
+mutes come back as they were.
+
+### Change a level
+
+Drag a strip's fader: from silent up to one and a half times the source's own level. The facts under
+the analyser show the gain the machine applies now, in percent.
+
+</Steps>
+
+**Unmute all** clears every mute and solo and keeps the faders. **Reset** puts every source back to its
+own level, unmuted.
+
+The settings are kept for each machine type and survive a restart of Klive: mute the 128K's beeper and
+it stays muted on every 128K until you unmute it.
+
+<Shot
+  src="guides/emulator/audio-mixer/popover.webp"
+  alt="The sound popover of the emulator window: the volume levels Mute, Low, Medium, High and Highest with High chosen; the ULA's Beeper and MIC, the Tape, and the AY's A, B and C, each with M and S buttons and a level meter, A muted; Unmute all and Open Audio Mixer links"
+  caption="The sound popover: AY channel A is muted, and its meter still shows what it plays"
+  width={360}
+/>
+
+## Analyse a source
+
+Click a strip's name to select it. The analyser below the strips shows it three ways:
+
+- **Spectrum**: how loud the source is at each frequency, from 40 Hz to 16 kHz.
+- **Scope**: its waveform.
+- **Spectrogram**: its spectrum over time, newest on the right. A tone is a line, an envelope makes it
+  pulse, noise fills a band.
+
+The facts beside it give the source's peak and RMS level, the frequency band where it is loudest, and
+its state (playing, muted, soloed, or silent because another source is soloed).
+
+<Shot
+  src="guides/emulator/audio-mixer/spectrogram.webp"
+  alt="The analyser's spectrogram of AY channel C: horizontal lines at the tone and its harmonics, pulsing with the envelope"
+  caption="The spectrogram of a tone shaped by the AY's envelope"
+  width={760}
+/>
+
+## The sources of each machine
+
+| Machine | Sources |
+|---|---|
+| ZX Spectrum 48K | Beeper, MIC, Tape |
+| ZX Spectrum 128K, +2, +3, +3E, Scorpion | Beeper, MIC, Tape, AY channels A, B and C |
+| Timex TC2048 | Beeper, MIC, Tape |
+| Timex TC2068, TS2068 | Beeper, MIC, Tape, AY channels A, B and C |
+| ZX Spectrum Next | Beeper, MIC / Tape, TurboSound AY1, AY2 and AY3 (channels A, B and C each), DAC A to D, Pi I2S left and right |
+| Cambridge Z88 | Speaker |
+| HT-1080Z | Beeper, AY channels A, B and C |
+| Videoton TVC | Sound |
+| Enterprise 64/128 | DAVE's Tone 0, Tone 1, Tone 2 and Noise |
+
+<Callout type="info" emoji="💡">
+On the Spectrums the tape you load plays through its own **Tape** source. On the Next the tape input
+reaches the speaker through the MIC line, so the two share the **MIC / Tape** source.
+</Callout>
+
+## What the mixer changes
+
+The mixer changes only what you hear and record: a video recording of the screen has the sound as the
+mixer plays it. It never changes the machine. A muted AY channel still runs, its registers read back as
+written, and a program cannot tell. Saved machine states and debugging (stepping back included) are not
+affected by the mixer's settings.
+
+## Related
+
+- [The emulator window](/en/guides/emulator/emulator-window/): the toolbar's sound button
+- [Recording the screen](/en/guides/emulator/screen-recording/)
+- [Commands](/en/reference/commands/#show-audio-mixer): `show-audio-mixer`a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Open the mixer","id":"open-the-mixer","depth":2},{"value":"Mute, solo and level","id":"mute-solo-and-level","depth":2},{"value":"Mute a source","id":"mute-a-source","depth":3},{"value":"Solo one or more sources","id":"solo-one-or-more-sources","depth":3},{"value":"Change a level","id":"change-a-level","depth":3},{"value":"Analyse a source","id":"analyse-a-source","depth":2},{"value":"The sources of each machine","id":"the-sources-of-each-machine","depth":2},{"value":"What the mixer changes","id":"what-the-mixer-changes","depth":2},{"value":"Related","id":"related","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"See each sound source of the emulated machine with its level and spectrum, and mute, solo or change the level of any of them.","title":"The audio mixer","filePath":"content/en/guides/emulator/audio-mixer.mdx","timestamp":1793815370000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"guides/emulator/audio-mixer","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"The audio mixer - Klive IDE"}],["$","meta","1",{"name":"description","content":"See each sound source of the emulated machine with its level and spectrum, and mute, solo or change the level of any of them."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/guides/emulator/audio-mixer/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"OTaH75LY7P7fxF-KlOQ9M"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+32:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["The audio mixer","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The audio mixer lists every sound source the emulated machine has (the beeper, each AY channel, the\nNext’s DACs, …) with a live level meter and spectrum, and lets you mute, solo or change the level of\neach one. Use it to hear one voice of a tune on its own, to find which channel makes a noise, or to\ncheck that your program drives a channel at all."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","em",null,{"children":"Applies to:"}]," every machine with sound. The ZX80 and the ZX81 have no sound output, so they have no mixer."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"There are two views of the same mixer:"}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"The Audio Mixer document"}]," in the IDE: a strip per source, and an analyser with the selected\nsource’s spectrum, waveform or spectrogram."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"The sound popover"}]," in the emulator window: the volume, and each source with mute and solo buttons\nand a level meter."]}],"\n"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Both show the same settings: a source muted in one is muted in the other."}],"\n",["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"760px"},"children":[["$","figcaption",null,{"className":"Shot_label__LxtzD","children":["$undefined",["$","span",null,{"children":"The Audio Mixer document on a 128K playing the beeper and all three AY channels"}]]}],["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/guides/emulator/audio-mixer/document.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/guides/emulator/audio-mixer/document.webp","alt":"The Audio Mixer document for a ZX Spectrum 128K: strips for the Beeper, MIC, Tape and the AY's channels A, B and C, each with a small spectrum, a level meter, a fader, its level in dB and M and S buttons; an Output strip; below, the spectrum of AY channel C with its facts","loading":"lazy","decoding":"async"}],[]]}]]}],"\n",["$","h2",null,{"id":"open-the-mixer","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Open the mixer",["$","$L20",null,{"id":"open-the-mixer"}]]}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["In the IDE: ",["$","strong",null,{"children":"View › Machine Views › Audio Mixer"}],", or the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"show-audio-mixer"}]," command (alias\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"shmix"}],") at the IDE’s prompt."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["In the emulator window: click the arrow beside the sound button on the toolbar. The popover’s\n",["$","strong",null,{"children":"Open Audio Mixer…"}]," link opens the document in the IDE."]}],"\n"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The mixer measures the sources only while one of its views is open; closed, it costs nothing."}],"\n",["$","h2",null,{"id":"mute-solo-and-level","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Mute, solo and level","$L21"]}],"\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31"]]}]
+15:["$","$L32",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@33"}]}]
+1f:true
+36:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+9:300
+21:["$","$L20",null,{"id":"mute-solo-and-level"}]
+22:["$","div",null,{"className":"nextra-steps x:ms-4 x:mb-12 x:border-s x:border-gray-200 x:ps-6 x:dark:border-neutral-800","style":{"--counter-id":"_S_1_"},"children":[["$","h3",null,{"id":"mute-a-source","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Mute a source",["$","$L20",null,{"id":"mute-a-source"}]]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Click its ",["$","strong",null,{"children":"M"}]," button. The source falls silent, but its meter keeps moving: the meters show each\nsource’s own level, before the mute and the fader, so you can still see what a muted channel plays."]}],["$","h3",null,{"id":"solo-one-or-more-sources","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Solo one or more sources",["$","$L20",null,{"id":"solo-one-or-more-sources"}]]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Click a source’s ",["$","strong",null,{"children":"S"}]," button to hear it alone. Solo more sources to hear them together. While any\nsource is soloed, only the soloed ones play, even one that is also muted. Clear the last solo and the\nmutes come back as they were."]}],["$","h3",null,{"id":"change-a-level","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Change a level",["$","$L20",null,{"id":"change-a-level"}]]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Drag a strip’s fader: from silent up to one and a half times the source’s own level. The facts under\nthe analyser show the gain the machine applies now, in percent."}]]}]
+23:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Unmute all"}]," clears every mute and solo and keeps the faders. ",["$","strong",null,{"children":"Reset"}]," puts every source back to its\nown level, unmuted."]}]
+24:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The settings are kept for each machine type and survive a restart of Klive: mute the 128K’s beeper and\nit stays muted on every 128K until you unmute it."}]
+25:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"360px"},"children":[["$","figcaption",null,{"className":"Shot_label__LxtzD","children":["$undefined",["$","span",null,{"children":"The sound popover: AY channel A is muted, and its meter still shows what it plays"}]]}],["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/guides/emulator/audio-mixer/popover.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/guides/emulator/audio-mixer/popover.webp","alt":"The sound popover of the emulator window: the volume levels Mute, Low, Medium, High and Highest with High chosen; the ULA's Beeper and MIC, the Tape, and the AY's A, B and C, each with M and S buttons and a level meter, A muted; Unmute all and Open Audio Mixer links","loading":"lazy","decoding":"async"}],[]]}]]}]
+26:["$","h2",null,{"id":"analyse-a-source","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Analyse a source",["$","$L20",null,{"id":"analyse-a-source"}]]}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Click a strip’s name to select it. The analyser below the strips shows it three ways:"}]
+28:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Spectrum"}],": how loud the source is at each frequency, from 40 Hz to 16 kHz."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Scope"}],": its waveform."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Spectrogram"}],": its spectrum over time, newest on the right. A tone is a line, an envelope makes it\npulse, noise fills a band."]}],"\n"]}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The facts beside it give the source’s peak and RMS level, the frequency band where it is loudest, and\nits state (playing, muted, soloed, or silent because another source is soloed)."}]
+2a:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"760px"},"children":[["$","figcaption",null,{"className":"Shot_label__LxtzD","children":["$undefined",["$","span",null,{"children":"The spectrogram of a tone shaped by the AY's envelope"}]]}],["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/guides/emulator/audio-mixer/spectrogram.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/guides/emulator/audio-mixer/spectrogram.webp","alt":"The analyser's spectrogram of AY channel C: horizontal lines at the tone and its harmonics, pulsing with the envelope","loading":"lazy","decoding":"async"}],[]]}]]}]
+2b:["$","h2",null,{"id":"the-sources-of-each-machine","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The sources of each machine",["$","$L20",null,{"id":"the-sources-of-each-machine"}]]}]
+2c:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Machine","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Sources","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"ZX Spectrum 48K","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Beeper, MIC, Tape","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"ZX Spectrum 128K, +2, +3, +3E, Scorpion","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Beeper, MIC, Tape, AY channels A, B and C","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Timex TC2048","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Beeper, MIC, Tape","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Timex TC2068, TS2068","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Beeper, MIC, Tape, AY channels A, B and C","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"ZX Spectrum Next","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Beeper, MIC / Tape, TurboSound AY1, AY2 and AY3 (channels A, B and C each), DAC A to D, Pi I2S left and right","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Cambridge Z88","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Speaker","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"HT-1080Z","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Beeper, AY channels A, B and C","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Videoton TVC","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],"$L34"],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L35"]}]]}]
+2d:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":"💡"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["On the Spectrums the tape you load plays through its own ",["$","strong",null,{"children":"Tape"}]," source. On the Next the tape input\nreaches the speaker through the MIC line, so the two share the ",["$","strong",null,{"children":"MIC / Tape"}]," source."]}]}]]}]
+2e:["$","h2",null,{"id":"what-the-mixer-changes","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["What the mixer changes",["$","$L20",null,{"id":"what-the-mixer-changes"}]]}]
+2f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The mixer changes only what you hear and record: a video recording of the screen has the sound as the\nmixer plays it. It never changes the machine. A muted AY channel still runs, its registers read back as\nwritten, and a program cannot tell. Saved machine states and debugging (stepping back included) are not\naffected by the mixer’s settings."}]
+30:["$","h2",null,{"id":"related","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Related",["$","$L20",null,{"id":"related"}]]}]
+31:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","$L36",null,{"href":"/en/guides/emulator/emulator-window/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"The emulator window"}],": the toolbar’s sound button"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L36",null,{"href":"/en/guides/emulator/screen-recording/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Recording the screen"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","$L36",null,{"href":"/en/reference/commands/#show-audio-mixer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Commands"}],": ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"show-audio-mixer"}]]}],"\n"]}]
+33:null
+9:C
+34:["$","td",null,{"children":"Sound","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+35:["$","tr",null,{"children":[["$","td",null,{"children":"Enterprise 64/128","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"DAVE’s Tone 0, Tone 1, Tone 2 and Noise","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"
