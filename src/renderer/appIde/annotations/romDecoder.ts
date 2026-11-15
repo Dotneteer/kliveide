@@ -72,21 +72,40 @@ export function prepareRomDisassembler(
  * Where a run of a page runs, on a page whose runs do not all share one address (a Z88 OZ bank
  * holds code for several segments): a ROM sidecar's `pages` entry lists `{ start, segment }`, and a
  * run belongs to the last entry at or before its start. OZ places code so that the low 14 bits of its
- * address are its offset in the bank, so the segment alone gives the address.
+ * address are its offset in the bank, so the segment alone gives the address. A run stored somewhere
+ * other than where it runs also gives its `address`, the address its first byte runs at: OZ's LOWRAM,
+ * stored in bank 2 at $0800 and copied to RAM at $0000 at reset.
  */
-export type RomPageSegment = { start: number; segment: number };
+export type RomPageSegment = { start: number; segment: number; address?: number };
 
-/** The address a run starting at `start` runs at: its segment's, else the kind's (`romKindOrigin`). */
+/** The segment entry a run starting at `start` belongs to, and where the next entry starts. */
+function romRunEntry(
+  segments: readonly RomPageSegment[] | undefined,
+  start: number
+): { entry?: RomPageSegment; next?: number } {
+  let entry: RomPageSegment | undefined;
+  let next: number | undefined;
+  for (const e of segments ?? []) {
+    if (e.start <= start && (entry === undefined || e.start >= entry.start)) entry = e;
+  }
+  for (const e of segments ?? []) {
+    if (entry && e.start > entry.start && (next === undefined || e.start < next)) next = e.start;
+  }
+  return { entry, next };
+}
+
+/**
+ * The address the page's offset 0 has for a run starting at `start`: its segment's, else the kind's
+ * (`romKindOrigin`). With an `address`, `address - entry.start`, which may be below 0 (LOWRAM).
+ */
 export function romRunOrigin(
   kind: RomPageKind | undefined,
   segments: readonly RomPageSegment[] | undefined,
   start: number
 ): number {
-  let best: RomPageSegment | undefined;
-  for (const entry of segments ?? []) {
-    if (entry.start <= start && (best === undefined || entry.start >= best.start)) best = entry;
-  }
-  return best === undefined ? romKindOrigin(kind) : (best.segment & 0x03) * 0x4000;
+  const { entry } = romRunEntry(segments, start);
+  if (entry === undefined) return romKindOrigin(kind);
+  return entry.address !== undefined ? entry.address - entry.start : (entry.segment & 0x03) * 0x4000;
 }
 
 /**
@@ -103,16 +122,22 @@ export function romDecoderFor(
   if (!segments?.length && !romKindOrigin(kind)) return decode;
   // --- A page that runs above $0000 is decoded at its own address (with its own custom decoding),
   // --- so that its absolute jumps name its own offsets; a target outside the page is not the page's.
-  // --- With segments, each run at the address of the segment it starts in
+  // --- With segments, each run at the address of the segment it starts in. A run with its own
+  // --- `address` is not where the rest of the page runs: a target outside the run is not the page's
   return async (bytes, start, end) => {
     const origin = romRunOrigin(kind, segments, start);
     if (!origin) return decode(bytes, start, end);
-    const memory = new Uint8Array(origin + bytes.length);
-    memory.set(bytes, origin);
+    const { entry, next } = romRunEntry(segments, start);
+    const [low, high] =
+      entry?.address !== undefined ? [entry.start, next ?? bytes.length] : [0, bytes.length];
+    // --- Offsets below -origin have no address (a LOWRAM run's origin is below 0)
+    const skip = Math.max(0, -origin);
+    const memory = new Uint8Array(Math.max(0, origin + bytes.length));
+    memory.set(bytes.subarray(skip), origin + skip);
     return (await decode(memory, origin + start, origin + end)).map(({ offset, length, target }) => ({
       offset: offset - origin,
       length,
-      ...(target !== undefined && target >= origin && target < origin + bytes.length
+      ...(target !== undefined && target - origin >= low && target - origin < high
         ? { target: target - origin }
         : {})
     }));

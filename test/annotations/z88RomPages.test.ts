@@ -149,6 +149,24 @@ describe("the z88-oz decoder", () => {
     expect(romRunOrigin("z88-oz", undefined, 0x2400)).toBe(0xc000);
     expect(romRunOrigin("z88-oz", [{ start: 0x0800, segment: 0 }], 0x0800)).toBe(0x0000);
   });
+
+  it("decodes a run stored away from where it runs at its own address, its targets inside it", async () => {
+    // --- LOWRAM: stored at $0800, runs at $0000; JP $0010 is its own offset $0810, JP $1234 is not the page's
+    const bytes = new Uint8Array(0x4000);
+    bytes.set([0xc3, 0x10, 0x00, 0xc3, 0x34, 0x12], 0x0800);
+    const segments = [
+      { start: 0x0000, segment: 0 },
+      { start: 0x0800, segment: 0, address: 0x0000 },
+      { start: 0x0c00, segment: 0 }
+    ];
+    expect(romRunOrigin("z88-oz", segments, 0x0800)).toBe(-0x0800);
+    const decode = romDecoderFor("z88-oz", segments);
+    const listed = await decode(bytes, 0x0800, 0x0805);
+    expect(listed.map((i) => [i.offset, i.target])).toEqual([
+      [0x0800, 0x0810],
+      [0x0803, undefined]
+    ]);
+  });
 });
 
 describe("the source provenance", () => {

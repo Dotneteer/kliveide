@@ -2,8 +2,10 @@
 
 **Status:** In progress (2026-11-14). Phase 0 done (the build identified; no rebuild, D-OZ5). Phase 1
 done (Z88 bank space, ROM pages, `z88-oz` decoding, `source` provenance; checked in the running IDE).
-Phase 2 under way: every code component except PipeDream imports (banks 0, 1, 3, 4, 7, $0A-$0D), and
-they reassemble byte for byte. **To continue, read "Handoff" at the end of Phase 2.**
+Phase 2 done apart from two hand-made banks (2026-11-15): every component with source imports (banks 0-8,
+$0A-$0D and $1F), and each bank reassembles byte for byte. Bank 9 (BBC BASIC, no source) waits for the
+developer's decision, and bank $10 (the FlashStore file area) is one `bytes` region to add by hand.
+**To continue, read "Handoff" at the end of Phase 2.**
 **Goal:** a shipped sidecar `src/public/roms/z88v47.rom.dis` that annotates all 32 16K banks of the
 OZ 4.7 ROM to level 2. It is built mostly from the OZ project's own assembler source,
 <https://bitbucket.org/cambridge/oz/src/V4.7/>, which the owner has given permission to use.
@@ -70,8 +72,8 @@ template for the Z88 one).
 - **Q3.** Listing origin: a per-page origin is **not enough**. Bank $0A holds EazyLink ($8000) and
   the Filer ($E400), and bank $02 mixes tables for several segments. The origin has to belong to a
   region, or to a run of a page. Decided in Phase 1.
-- **Q4.** Should LOWRAM code, which runs from RAM after reset, also be annotated where it is placed in
-  RAM? Proposed: annotate it in the ROM bank only, and look at a RAM binding later.
+- **Q4. Decided (2026-11-15):** LOWRAM is annotated in the ROM bank only (bank 2, $0800-$0BCA), listed
+  at its RAM address through the page's `segments` `address`. A RAM binding can come later.
 - **Q5.** OZ comments are written in the authors' style. Should they be reworded into the house style
   (README, "Write every sidecar in zx81.rom.dis's style"), or kept as they are, with only the 70- and
   92-column limits applied? Proposed: keep end-of-line comments as written (apart from the length
@@ -258,6 +260,24 @@ The Z88 decoder was fixed along the way. OZ 4.5+'s `EXTCALL` is `RST 28h` plus *
 bank and a byte OZ skips; `ExtCall` in `os/lowram/memfunc.asm`), not 3. An `OS_Pout` string with `"` or
 `\` in it is written as hex bytes, so the export reassembles.
 
+*The rest of the components (2026-11-15),* on branch `dotneteer/z88-oz47-phase2`:
+- **PipeDream** (banks 5 and 6) is one module from $8000 to $FFFF. `--banks 5,6` walks it as one 32K span
+  and writes each bank's slice in its own segment (2 and 3). It walks to its end: 2,271 labels, 0 target
+  mismatches, both banks level 1.
+- **Bank 2**: keymaps, the HIRES1 and LORES1 fonts and the date filter (all data), and **LOWRAM**, stored
+  at $0800 and run at $0000. Q4 is decided: it is annotated in bank 2 only, listed at its RAM address.
+  A page's `segments` entry may carry `address`, the address the run's first byte runs at
+  (`romDecoder.ts`, `RomPageSegment`), and `--at 0x0800` places the module there with RAM addresses for
+  its labels and `$PC`. LOWRAM walks to its end: 971 bytes, 82 labels, level 1.
+- **Bank 8, MTH** (`mth/mth.prj`, 7 modules) and **bank $1F**, the ROM header, walk to their ends.
+- New mpm forms the aligner reads (pinned by tests): included `.asm` files read in place, `$PC` counted
+  from the module's start, line continuation with a lone `\`, bracketed macro arguments, expression
+  arguments as one operand, `defm` concatenation with `.`, and `defp address,bank`.
+- `--all` imports 23 components into 14 banks; `check-annotations.cjs` reports no problems. Banks 0 and 7
+  are level 0 (the 11 hang loops), the other twelve level 1. The earlier banks are unchanged, entry for
+  entry. Banks 2, 5, 6, 8 and $1F reassemble byte for byte (the others did before and did not change).
+- `binary` includes were never needed: the fonts are written out as `defb` lines in the source.
+
 ### Handoff (2026-11-14): where Phase 2 stands, and how to continue
 
 **Committed** on branch `dotneteer/z88-disann`: Phases 0-1, the pilot and the ROM Annotations menu
@@ -281,7 +301,11 @@ To pick up in a new session:
 5. Tests: `test/annotations/ozSourceAligner.test.ts` (19), `test/annotations/z88RomPages.test.ts`,
    `test/z88/z88-rom-sources.test.ts`.
 
-**What is left of Phase 2**, in a sensible order:
+**Update (2026-11-15):** items 1-4 below are done (see "The rest of the components" above), except bank
+$10's region, which is Phase 3 hand work. Item 5, bank 9, is still the developer's decision. `--all`
+now prints "All 23 components imported."
+
+**What was left of Phase 2** on 2026-11-14, in a sensible order:
 1. **PipeDream** (`apps/pipedream/pipedream.prj`, banks 5 and 6): one 32K program built with
    `mpm -bc ... -cz80` and split into `pipedream.bn0` (bank 5, at $8000) and `.bn1` (bank 6, run at
    $C000). The import script works on one bank; it needs a walk that continues from bank 5's end into

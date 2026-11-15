@@ -2551,3 +2551,19 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
 - **Sources:** the ROM bytes only (`sp48-dis.cjs` listings of both sets, byte diffs). The review lists
   are in `carry-review/nextzxos-26.11/`.
 - **Level:** 2 on every page, measured and recorded. No boot ROM: core 3.03.00's is not published.
+
+### 2026-11-15 — Cambridge Z88: OZ 4.7 (`z88v47.rom`) imported from its source, banks 0-8, $0A-$0D and $1F (not shipped yet)
+
+- **What:** every OZ 4.7 component that has source in the repository, placed on the ROM by
+  `dev/scripts/import-oz-source.cjs --all` (23 components, `dev/ai/rom-annotations/z88-oz47-components.json`):
+  the kernel, GN, DC/Index, the FPP, MTH, the keymaps, fonts, LOWRAM and date filter of bank 2, the ROM header,
+  and every application except BBC BASIC. Earlier sessions (2026-11-14) imported banks 0, 1, 3, 4, 7 and
+  $0A-$0D; this one added PipeDream (banks 5-6), bank 2, MTH (bank 8) and the header (bank $1F).
+- **How:** the aligner walks the source in link order over Klive's own decoding of each bank and keeps a label
+  or comment only where the source line's instruction or bytes match the ROM there (D-OZ5). Every entry is
+  `source`. LOWRAM is listed at its RAM address ($0000) through its run's `address`.
+- **Sources:** the OZ repository, `https://bitbucket.org/cambridge/oz`, tag V4.7 (commit `603c979a`), used
+  under the owner's permission (D-OZ1; the D4 exemption). The result is in `.local/oz-import/`, not in
+  `src/public/roms/`: the permission's wording (Q1) must be settled before it ships.
+- **Level:** measured 1 on twelve banks, 0 on banks 0 and 7 (11 `jr $` hang loops with no source label).
+  Nothing recorded yet.

@@ -320,20 +320,24 @@ export function evaluateOzExpression(
  * An expression as mpm's relocatable arithmetic gives it. Labels and `$` are relocatable: an
  * expression whose result moves with the base (`defw Label`, `ld hl,Label+3`) is an address, and
  * gets the segment's base; one that does not (`\end - $ - 1`, the difference of two addresses) or
- * moves the other way (`$0021-$PC`, the room left to an offset) is counted from the bank's start.
- * Evaluating it at two bases tells which.
+ * moves the other way (`$0021-$PC`, the room left to an offset) is counted from the module's start,
+ * as mpm's `$PC` is. Evaluating it at two bases tells which.
+ *
+ * @param moduleStart The bank offset the module starts at (LOWRAM: $0800, where it is stored)
  */
 export function evaluateRelocatable(
   text: string,
   symbols: Symbols,
   pc: number | undefined,
-  base: number
+  base: number,
+  moduleStart = 0
 ): number | undefined {
-  const relative = evaluateOzExpression(text, symbols, pc, false, 0);
-  if (relative === undefined || base === 0) return relative;
+  const relativeBase = -moduleStart;
+  const relative = evaluateOzExpression(text, symbols, pc, false, relativeBase);
+  if (relative === undefined || base === relativeBase) return relative;
   const absolute = evaluateOzExpression(text, symbols, pc, false, base);
   if (absolute === undefined) return undefined;
-  return absolute - relative === base ? absolute : relative;
+  return absolute - relative === base - relativeBase ? absolute : relative;
 }
 
 function literal(token: string): number | undefined {
@@ -393,8 +397,8 @@ export function splitArguments(text: string): string[] {
       current += text.slice(i, i + 3);
       i += 2;
       continue;
-    } else if (ch === "(") depth++;
-    else if (ch === ")") depth--;
+    } else if (ch === "(" || ch === "[") depth++;
+    else if (ch === ")" || ch === "]") depth--;
     else if (ch === "," && depth === 0) {
       parts.push(current.trim());
       current = "";
@@ -560,7 +564,7 @@ function prepare(input: OzAlignInput): Prepared {
     let inDefgroup = false;
     let defgroupNext = 0;
     let macro: OzMacro | undefined;
-    const rows = text.split(/\r?\n/);
+    const rows = joinContinuations(text.split(/\r?\n/));
     for (let index = 0; index < rows.length; index++) {
       const parsed = parseLine(path, index + 1, rows[index]);
       const op = parsed.op;
@@ -653,7 +657,9 @@ function prepare(input: OzAlignInput): Prepared {
           if (!file) {
             problems.push(`${path}:${index + 1}: include "${name}" not found (its symbols are unknown)`);
           } else {
-            read(file.path, file.text, false, depth + 1);
+            // --- An included `.asm` is the module's own code, read in place (LOWRAM's `rst.asm`); a `.def`
+            // --- or `.inc` gives symbols only
+            read(file.path, file.text, own && /\.asm$/i.test(file.path), depth + 1);
           }
           continue;
         }
@@ -684,6 +690,41 @@ function prepare(input: OzAlignInput): Prepared {
 }
 
 /**
+ * Rows with mpm's line continuation joined: a `\` on its own (after a space or a comma, before a space
+ * or the end, outside strings) continues the statement on the next row, and the rest of its row is a
+ * comment (`dorappl "Index", 'I',   \ Application Name and Key`). The statement is on its first row;
+ * the rows it took are left empty, so every row keeps its line number.
+ */
+export function joinContinuations(rows: string[]): string[] {
+  const out = [...rows];
+  const continuation = (row: string): number => {
+    let quote: string | undefined;
+    for (let i = 0; i < row.length; i++) {
+      const ch = row[i];
+      if (quote) {
+        if (ch === quote) quote = undefined;
+        continue;
+      }
+      if (ch === ";") return -1;
+      if (ch === '"') quote = ch;
+      else if (ch === "'" && row[i + 2] === "'") i += 2;
+      else if (ch === "\\" && /[\s,]/.test(row[i - 1] ?? "") && /^(\s|$)/.test(row.slice(i + 1))) return i;
+    }
+    return -1;
+  };
+  for (let index = 0; index < out.length; index++) {
+    let at = continuation(out[index]);
+    let next = index + 1;
+    while (at >= 0 && next < out.length) {
+      out[index] = `${out[index].slice(0, at).trimEnd()} ${out[next].trim()}`;
+      out[next++] = "";
+      at = continuation(out[index]);
+    }
+  }
+  return out;
+}
+
+/**
  * A macro call's lines, as mpm expands it (`def/macros.def`): `\param` is the argument (or its default),
  * `\%` the number of arguments given, `\$?[n]` whether argument n is given, and any other `\name` a
  * label of this expansion's own (`.\start`). The body's `IF`s are decided here, `exitmacro` ends the
@@ -697,10 +738,14 @@ function expandMacro(
   symbols: Symbols,
   nextId: () => number
 ): { lines: SourceLine[] } | { error: string } {
-  const args = call.args?.trim() ? splitArguments(call.args) : [];
+  // --- An argument in brackets is passed as written, commas and all (`mthtpc ["Info"], ...`)
+  const args = (call.args?.trim() ? splitArguments(call.args) : []).map((a) => /^\[(.*)\]$/.exec(a)?.[1].trim() ?? a);
   const given = (n: number) => args[n] !== undefined && args[n] !== "";
   const id = nextId();
   const valueOf = (i: number) => (given(i) ? args[i] : (macro.params[i]?.fallback ?? ""));
+  // --- An expression argument is one operand, as mpm evaluates it: `\cmdattr & CMDF_HELP` with
+  // --- `CMDF_COLUMN|CMDF_SAFE` is `(CMDF_COLUMN|CMDF_SAFE) & CMDF_HELP`. A string is left as written
+  const asOperand = (arg: string) => (/["']/.test(arg) || !/[|&+\-*/%<>^~]/.test(arg) ? arg : `(${arg})`);
   const paramIndex = (word: string) => macro.params.findIndex((p) => p.name.toLowerCase() === word.toLowerCase());
   const substitute = (row: string) =>
     row
@@ -714,7 +759,7 @@ function expandMacro(
       .replace(/\\\$\$/g, valueOf(0))
       .replace(/\\([A-Za-z_][\w]*)/g, (_, word: string) => {
         const i = macro.params.findIndex((p) => p.name.toLowerCase() === word.toLowerCase());
-        return i >= 0 ? valueOf(i) : `${word}__m${id}`;
+        return i >= 0 ? asOperand(valueOf(i)) : `${word}__m${id}`;
       });
 
   const lines: SourceLine[] = [];
@@ -781,9 +826,23 @@ function dataBytes(
     const fill = m[2] !== undefined ? value(m[2]) : 0;
     return new Array(count).fill(fill === undefined ? undefined : fill & 0xff);
   }
+  // --- `defp address,bank`: a 3-byte pointer, the address's word and the bank (the DORs' MTH pointers)
+  if (op === "defp") {
+    const items = splitArguments(args).filter((item) => item);
+    if (items.length === 2) {
+      const [address, bank] = [value(items[0]), value(items[1])];
+      return [
+        address === undefined ? undefined : address & 0xff,
+        address === undefined ? undefined : (address >> 8) & 0xff,
+        bank === undefined ? undefined : bank & 0xff
+      ];
+    }
+  }
   const width = op === "defw" || op === "dw" ? 2 : op === "defp" ? 3 : op === "defl" ? 4 : 1;
   const bytes: (number | undefined)[] = [];
-  for (const item of splitArguments(args)) {
+  // --- A byte item is pieces joined by `.`, strings and values: `"C".$8C.$B2."D"`
+  const items = splitArguments(args).flatMap((item) => (width === 1 ? splitConcatenation(item) : [item]));
+  for (const item of items) {
     if (!item) continue;
     const string = /^"(.*)"$/.exec(item);
     if (string) {
@@ -795,6 +854,34 @@ function dataBytes(
     for (let k = 0; k < width; k++) bytes.push(v === undefined ? undefined : (v >> (8 * k)) & 0xff);
   }
   return bytes;
+}
+
+/**
+ * An mpm byte item's pieces: strings and values joined by `.` outside quotes (`"Sys".$AF.$D7."Inf"`).
+ * An item with an empty piece is not a concatenation, and stays one piece.
+ */
+export function splitConcatenation(item: string): string[] {
+  const pieces: string[] = [];
+  let quote = false;
+  let current = "";
+  for (let i = 0; i < item.length; i++) {
+    const ch = item[i];
+    // --- A character literal is one piece (`'.'`)
+    if (!quote && ch === "'" && item[i + 2] === "'") {
+      current += item.slice(i, i + 3);
+      i += 2;
+      continue;
+    }
+    if (ch === '"' && item[i - 1] !== "\\") quote = !quote;
+    if (ch === "." && !quote) {
+      pieces.push(current.trim());
+      current = "";
+      continue;
+    }
+    current += ch;
+  }
+  pieces.push(current.trim());
+  return pieces.every((p) => p) ? pieces : [item];
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -868,7 +955,8 @@ export function alignOzModule(input: OzAlignInput): OzAlignResult & { problems: 
     if (start === undefined) start = offset;
     // --- An expression's value here: labels and `$` relocatable, from this segment's base
     const here = offset;
-    const value = (text: string) => evaluateRelocatable(text, symbols, here, base);
+    const moduleStart = start;
+    const value = (text: string) => evaluateRelocatable(text, symbols, here, base, moduleStart);
 
     // --- A macro (`dorchd`, `mthcmd`, ...): its expansion takes the call's place, line by line
     const macro = macros.get(op);

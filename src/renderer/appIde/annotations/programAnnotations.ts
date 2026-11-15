@@ -516,7 +516,7 @@ export type RomSidecarExtras = {
       crc32: string;
       name: string;
       /** Where each run of the page runs (`RomPageSegment` in `romDecoder.ts`): a Z88 OZ bank's segments */
-      segments?: { start: number; segment: number }[];
+      segments?: { start: number; segment: number; address?: number }[];
     }
   >;
   /** The published source code the `source` entries come from (D-OZ3 of the Z88 OZ plan). */
