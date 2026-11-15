@@ -200,7 +200,7 @@
           "provenance": "source"
         },
         "1875": {
-          "synopsis": "Frees the DOR handle IX (DORHndleFreeDrct) and returns with AF as it was, so an error code\nin A and Fc pass through.\nEntry: IX = DOR handle; AF = result to return.\nKeeps: AF.",
+          "synopsis": "Frees the DOR handle IX (DORHndFreeDirect) and returns with AF as it was, so an error code\nin A and Fc pass through.\nEntry: IX = DOR handle; AF = result to return.\nKeeps: AF.",
           "provenance": "source"
         },
         "1881": {
@@ -272,7 +272,7 @@
           "provenance": "source"
         },
         "3642": {
-          "synopsis": "Entry inside OSCl for a writable file: writes the file size (GetFileSize, DEHL) into the\nDOR's 'X' (extent) record, then frees the data of a memory file and the handle\n(DORHndleFreeDrct). OSClDel uses it to close a file without deleting it.\nEntry: IX = handle (device type).",
+          "synopsis": "Entry inside OSCl for a writable file: writes the file size (GetFileSize, DEHL) into the\nDOR's 'X' (extent) record, then frees the data of a memory file and the handle\n(DORHndFreeDirect). OSClDel uses it to close a file without deleting it.\nEntry: IX = handle (device type).",
           "provenance": "source"
         },
         "3677": {
@@ -440,11 +440,11 @@
           "provenance": "source"
         },
         "6175": {
-          "synopsis": "Counts one more active alarm in ubNumActiveAlm and jumps to MySetPndngAlmTsk to update the\nalarm task request.\nEntry: none.\nChanges: AF, HL.",
+          "synopsis": "Counts one more active alarm in ubNumActiveAlm and jumps to MaySetPendAlmTsk to update the\nalarm task request.\nEntry: none.\nChanges: AF, HL.",
           "provenance": "source"
         },
         "6181": {
-          "synopsis": "Counts one active alarm less in ubNumActiveAlm and falls into MySetPndngAlmTsk to update the\nalarm task request.\nEntry: none.\nChanges: AF, HL.",
+          "synopsis": "Counts one active alarm less in ubNumActiveAlm and falls into MaySetPendAlmTsk to update the\nalarm task request.\nEntry: none.\nChanges: AF, HL.",
           "provenance": "source"
         },
         "6185": {
@@ -464,7 +464,7 @@
           "provenance": "source"
         },
         "6737": {
-          "synopsis": "Handles the special keys and qualifiers for a key from the matrix:\n1. CAPS LOCK: disables repeat and toggles caps lock; with <> it forces CAPS, with [] it\nforces caps; redraws the OZ window (DrawOZwd) and returns through SetKeyDown (swallowed).\n2. ESC: disables repeat. With SHIFT or <> while a CLI is active it records the qualifier\n(CLISHIFT/CLIDMND bits of ubIntStatus), asks for an OZ window update and swallows the key;\nwith SHIFT or <> and no CLI it swallows the key; plain ESC goes to ApplyQlfrsToESC.\n3. Any other key goes to ApplyQlfrsToA for the qualifier translations.\nEntry: A = internal keycode; D = qualifiers (QB_SHIFT, QB_DIAMOND, QB_SQUARE); IX = KbdData.\nExit: Fc = 0, A = keycode to store.\nError: Fc = 1 when the key is to be ignored.",
+          "synopsis": "Handles the special keys and qualifiers for a key from the matrix:\n1. CAPS LOCK: disables repeat and toggles caps lock; with <> it forces CAPS, with [] it\nforces caps; redraws the OZ window (DrawOZwd) and returns through SetKeyDown (swallowed).\n2. ESC: disables repeat. With SHIFT or <> while a CLI is active it records the qualifier\n(CLISHIFT/CLIDMND bits of ubIntStatus), asks for an OZ window update and swallows the key;\nwith SHIFT or <> and no CLI it swallows the key; plain ESC goes to ApplyQualToESC.\n3. Any other key goes to ApplyQualToA for the qualifier translations.\nEntry: A = internal keycode; D = qualifiers (QB_SHIFT, QB_DIAMOND, QB_SQUARE); IX = KbdData.\nExit: Fc = 0, A = keycode to store.\nError: Fc = 1 when the key is to be ignored.",
           "provenance": "source"
         },
         "6801": {
@@ -496,7 +496,7 @@
           "provenance": "source"
         },
         "7695": {
-          "synopsis": "Allocates a whole free page for the pool: takes the pool's exclusive bank or slot (or, not\ndocumented, the slot in the caller's A when it is $01-$1F and no bank is set), finds a free\npage with FindFreePage and falls into MarkPageAsAllctd to link it into the handle's chain.\nEntry: IX = memory handle; IY = OS frame.\nExit: Fc = 0, HL = MAT entry of the page.\nError: Fc = 1, A = RC_Room.",
+          "synopsis": "Allocates a whole free page for the pool: takes the pool's exclusive bank or slot (or, not\ndocumented, the slot in the caller's A when it is $01-$1F and no bank is set), finds a free\npage with FindFreePage and falls into MarkPageAlloc to link it into the handle's chain.\nEntry: IX = memory handle; IY = OS frame.\nExit: Fc = 0, HL = MAT entry of the page.\nError: Fc = 1, A = RC_Room.",
           "provenance": "source"
         },
         "8163": {
@@ -516,7 +516,7 @@
           "provenance": "source"
         },
         "8288": {
-          "synopsis": "Allocates one explicit page for OS_Axp and OS_Axm: finds its MAT entry with GetPageMAT and,\nwhen it is free, jumps to MarkPageAsAllctd to add it to the pool's chain.\nEntry: B = bank; OSFrame_H = page address high byte; IX = memory handle.\nExit: Fc = 0, HL = MAT entry of the page.\nError: Fc = 1, A = RC_Fail (no RAM in bank) or RC_Room (page already allocated).",
+          "synopsis": "Allocates one explicit page for OS_Axp and OS_Axm: finds its MAT entry with GetPageMAT and,\nwhen it is free, jumps to MarkPageAlloc to add it to the pool's chain.\nEntry: B = bank; OSFrame_H = page address high byte; IX = memory handle.\nExit: Fc = 0, HL = MAT entry of the page.\nError: Fc = 1, A = RC_Fail (no RAM in bank) or RC_Room (page already allocated).",
           "provenance": "source"
         },
         "8311": {
@@ -528,7 +528,7 @@
           "provenance": "source"
         },
         "8412": {
-          "synopsis": "Finds a free page for a pool from its exclusive bank or slot: D = 0 searches every slot\n(FndFrePgeAnySlot), D below $20 is a slot (FndFreePageSlotD), any other value a bank\n(FndFreePageBankD).\nEntry: D = exclusive bank or slot (0 = any); E = allocation flags.\nExit: Fc = 0, HL = MAT entry of a free page.\nError: Fc = 1, A = RC_Room.",
+          "synopsis": "Finds a free page for a pool from its exclusive bank or slot: D = 0 searches every slot\n(FindFreePgAnySlt), D below $20 is a slot (FindFreePgSlotD), any other value a bank\n(FindFreePgBankD).\nEntry: D = exclusive bank or slot (0 = any); E = allocation flags.\nExit: Fc = 0, HL = MAT entry of a free page.\nError: Fc = 1, A = RC_Room.",
           "provenance": "source"
         },
         "8742": {
@@ -552,7 +552,7 @@
           "provenance": "source"
         },
         "9082": {
-          "synopsis": "Chooses the exclusive bank of a memory pool: the bank with the most unused pages within the\npool's limit in mhnd_ExclusiveBank (0 = any slot, below $20 = a slot, otherwise that bank),\ncounted by FndUnsdBnkAnySlt, FindUnusedBank or CntUnsdPgsInBank. The bank is stored in\nmhnd_ExclusiveBank when one with free pages is found.\nEntry: IX = memory handle.",
+          "synopsis": "Chooses the exclusive bank of a memory pool: the bank with the most unused pages within the\npool's limit in mhnd_ExclusiveBank (0 = any slot, below $20 = a slot, otherwise that bank),\ncounted by FindUnusedBnkAny, FindUnusedBank or CntUnusedPgsBank. The bank is stored in\nmhnd_ExclusiveBank when one with free pages is found.\nEntry: IX = memory handle.",
           "provenance": "source"
         },
         "9339": {
@@ -1140,7 +1140,7 @@
           "provenance": "source"
         },
         "407": {
-          "synopsis": "Common exit of the OS_Epr calls (entry inside ozFleEprFindFile): returns BHL to the caller\nthrough PutOSFrame_BHL and, when Fz = 1, sets Fz in the caller's frame (ret_fz).\nEntry: BHL = value to return; Fz = 1 to return Fz = 1; IY = OS frame.\nExit: frame B, H, L set; frame Fz set when Fz = 1 (it is 0 by default).",
+          "synopsis": "Common exit of the OS_Epr calls (entry inside ozFileEprFind): returns BHL to the caller\nthrough PutOSFrame_BHL and, when Fz = 1, sets Fz in the caller's frame (ret_fz).\nEntry: BHL = value to return; Fz = 1 to return Fz = 1; IY = OS frame.\nExit: frame B, H, L set; frame Fz set when Fz = 1 (it is 0 by default).",
           "provenance": "source"
         },
         "1239": {
@@ -1164,11 +1164,11 @@
           "provenance": "source"
         },
         "1723": {
-          "synopsis": "Step of FleEprXfrBlkSize when the rest of the file fits in the current bank: the whole\nremaining size becomes the block size.\nEntry: DE' = remaining file size (at most 16K; C' is not changed).\nExit: HL' = block size (the remaining size); DE' = 0.\nChanges: DE', HL'.",
+          "synopsis": "Step of FileEprXferBlkSz when the rest of the file fits in the current bank: the whole\nremaining size becomes the block size.\nEntry: DE' = remaining file size (at most 16K; C' is not changed).\nExit: HL' = block size (the remaining size); DE' = 0.\nChanges: DE', HL'.",
           "provenance": "source"
         },
         "1730": {
-          "synopsis": "Step of FleEprXfrBlkSize when the rest of the file crosses the bank boundary: the block is\nDE bytes, and the remaining size CDE' is reduced by it.\nEntry: DE = block size; CDE' = remaining file size; Fc = 0.\nExit: HL' = block size; CDE' = CDE' - DE.\nChanges: C', DE', HL'.\nKeeps: AF, DE.",
+          "synopsis": "Step of FileEprXferBlkSz when the rest of the file crosses the bank boundary: the block is\nDE bytes, and the remaining size CDE' is reduced by it.\nEntry: DE = block size; CDE' = remaining file size; Fc = 0.\nExit: HL' = block size; CDE' = CDE' - DE.\nChanges: C', DE', HL'.\nKeeps: AF, DE.",
           "provenance": "source"
         },
         "1905": {
@@ -1244,7 +1244,7 @@
           "provenance": "source"
         },
         "4496": {
-          "synopsis": "Copies a file entry to the file area of a flash card for FlshEprCpyFleEnt: gets a new entry\npointer (FleEprNewFileEnt), then blows the entry block by block, each block ending at a bank\nboundary (FleEprXfrBlkSize, FlashEprCopyBlock). If a block fails, the new entry is marked as\ndeleted.\nEntry: C = slot number; IY = work buffer with SrcFileEntry, SrcFileSize and FepType set.\nExit: Fc = 0, entry copied.\nError: Fc = 1, A = error code (no file area, or the write error of FlashEprCopyBlock).\nChanges: AF, BC, DE, HL, IX, BC', DE', HL'.",
+          "synopsis": "Copies a file entry to the file area of a flash card for FlashEprCopyEnt: gets a new entry\npointer (FileEprNewEntry), then blows the entry block by block, each block ending at a bank\nboundary (FileEprXferBlkSz, FlashEprCopyBlock). If a block fails, the new entry is marked as\ndeleted.\nEntry: C = slot number; IY = work buffer with SrcFileEntry, SrcFileSize and FepType set.\nExit: Fc = 0, entry copied.\nError: Fc = 1, A = error code (no file area, or the write error of FlashEprCopyBlock).\nChanges: AF, BC, DE, HL, IX, BC', DE', HL'.",
           "provenance": "source"
         },
         "4792": {
@@ -1252,11 +1252,11 @@
           "provenance": "source"
         },
         "5070": {
-          "synopsis": "Returns the flash chip generation of the card that holds a bank, for FlshEprStdFleHdr: the\nslot comes from the bank (GetSlotNo) and the type from FlashEprCardId.\nEntry: B = absolute bank.\nExit: Fc = 0, A = FE_28F or FE_29F.\nError: Fc = 1, A = RC_NFE (no known flash chip).\nChanges: AF.\nKeeps: BC, DE, HL.",
+          "synopsis": "Returns the flash chip generation of the card that holds a bank, for FlashStdFileHdr: the\nslot comes from the bank (GetSlotNo) and the type from FlashEprCardId.\nEntry: B = absolute bank.\nExit: Fc = 0, A = FE_28F or FE_29F.\nError: Fc = 1, A = RC_NFE (no known flash chip).\nChanges: AF.\nKeeps: BC, DE, HL.",
           "provenance": "source"
         },
         "5081": {
-          "synopsis": "The last 6 bytes of a new \"oz\" file area header, copied by FlshEprStdFleHdr to $3FFA: the\nhigh word of the random id ($01, $80), a size placeholder ($40), a sub type placeholder\n($FF), both overwritten afterwards, and \"oz\".",
+          "synopsis": "The last 6 bytes of a new \"oz\" file area header, copied by FlashStdFileHdr to $3FFA: the\nhigh word of the random id ($01, $80), a size placeholder ($40), a sub type placeholder\n($FF), both overwritten afterwards, and \"oz\".",
           "provenance": "source"
         },
         "5472": {
@@ -1484,7 +1484,7 @@
           "provenance": "source"
         },
         "9002": {
-          "synopsis": "Three 1 bytes: the command, topic and line that MayRstAppHlpData stores when it resets the\nsaved help state.",
+          "synopsis": "Three 1 bytes: the command, topic and line that MayResetAppHelp stores when it resets the\nsaved help state.",
           "provenance": "source"
         },
         "9005": {
@@ -1580,7 +1580,7 @@
           "provenance": "source"
         },
         "9428": {
-          "synopsis": "MENU from the help pages: updates the saved help state (MayRstAppHlpData), resets the line,\ntopic and command to 1 when it was reset, makes the suspended application active again\n(SetActiveAppDOR, ChgHelpFile) and falls into menu_entry.",
+          "synopsis": "MENU from the help pages: updates the saved help state (MayResetAppHelp), resets the line,\ntopic and command to 1 when it was reset, makes the suspended application active again\n(SetActiveAppDOR, ChgHelpFile) and falls into menu_entry.",
           "provenance": "source"
         },
         "9441": {
@@ -1700,7 +1700,7 @@
           "provenance": "source"
         },
         "10439": {
-          "synopsis": "Finds the first topic that is not an INFO topic: sets A = 1 and falls into GtNnInfoTpcByNum.\nEntry: none.\nExit: as GtNnInfoTpcByNum.\nChanges: AF, BC, D, HL.",
+          "synopsis": "Finds the first topic that is not an INFO topic: sets A = 1 and falls into GetNonInfoByNum.\nEntry: none.\nExit: as GetNonInfoByNum.\nChanges: AF, BC, D, HL.",
           "provenance": "source"
         },
         "10441": {
@@ -1708,11 +1708,11 @@
           "provenance": "source"
         },
         "10448": {
-          "synopsis": "Entry inside GtNnInfoTpcByNum: increments A and goes on searching from the next topic for\none that is not an INFO topic.\nEntry: A = current topic number.\nExit: as GtNnInfoTpcByNum.\nChanges: AF, BC, D, HL.",
+          "synopsis": "Entry inside GetNonInfoByNum: increments A and goes on searching from the next topic for\none that is not an INFO topic.\nEntry: A = current topic number.\nExit: as GetNonInfoByNum.\nChanges: AF, BC, D, HL.",
           "provenance": "source"
         },
         "10451": {
-          "synopsis": "Decrements A and searches from there with GtNnInfoTpcByNum. The search runs upwards, so when\ntopic A-1 is an INFO topic the result is the next non-INFO topic after it.\nEntry: A = current topic number.\nExit: as GtNnInfoTpcByNum.\nChanges: AF, BC, D, HL.",
+          "synopsis": "Decrements A and searches from there with GetNonInfoByNum. The search runs upwards, so when\ntopic A-1 is an INFO topic the result is the next non-INFO topic after it.\nEntry: A = current topic number.\nExit: as GetNonInfoByNum.\nChanges: AF, BC, D, HL.",
           "provenance": "source"
         },
         "10478": {
@@ -2660,7 +2660,7 @@
           "provenance": "source"
         },
         "976": {
-          "synopsis": "Delete Line command ($3A). Stores the input buffer, removes the current line from the day's\nlist and frees it (FreeCurrentLine), deactivates any block marker or saved position on it\n(MayInctvteBlkSvd) and fixes the top line. The line after it becomes current; when there is\nnone, the cursor moves up a line. Then the window is redrawn.\nEntry: jumped to from NextOption through Commands_tbl; IX = state block.\nExit: jumps back to NextOption.",
+          "synopsis": "Delete Line command ($3A). Stores the input buffer, removes the current line from the day's\nlist and frees it (FreeCurrentLine), deactivates any block marker or saved position on it\n(MayInactBlkSaved) and fixes the top line. The line after it becomes current; when there is\nnone, the cursor moves up a line. Then the window is redrawn.\nEntry: jumped to from NextOption through Commands_tbl; IX = state block.\nExit: jumps back to NextOption.",
           "provenance": "source"
         },
         "1039": {
@@ -2872,7 +2872,7 @@
           "provenance": "source"
         },
         "6291": {
-          "synopsis": "Stores the input buffer in the current line node. When the node's length differs from the\ntext (or there is no node), the old node is freed and a new one of length + 4 bytes is\ninserted in its place. Then every pointer equal to the old node (block markers, saved\npositions, top line and its previous pointer) is changed to the new one (MayRplceWithCur).\nEntry: IX = state block; the line in the input buffer.\nExit: eTmp = the old node pointer.\nError: no memory goes to ErrQuit (no return).",
+          "synopsis": "Stores the input buffer in the current line node. When the node's length differs from the\ntext (or there is no node), the old node is freed and a new one of length + 4 bytes is\ninserted in its place. Then every pointer equal to the old node (block markers, saved\npositions, top line and its previous pointer) is changed to the new one (MayReplaceCur).\nEntry: IX = state block; the line in the input buffer.\nExit: eTmp = the old node pointer.\nError: no memory goes to ErrQuit (no return).",
           "provenance": "source"
         },
         "6436": {
@@ -2888,7 +2888,7 @@
           "provenance": "source"
         },
         "6580": {
-          "synopsis": "Deactivates the block markers that point at the line in eTmp; when only the end marker is\nleft, it becomes the start. Then continues as MayInctvteSaved.\nEntry: eTmp = pointer of a removed line; IX = state block.\nChanges: AF.\nKeeps: BC, DE, HL.",
+          "synopsis": "Deactivates the block markers that point at the line in eTmp; when only the end marker is\nleft, it becomes the start. Then continues as MayInactSaved.\nEntry: eTmp = pointer of a removed line; IX = state block.\nChanges: AF.\nKeeps: BC, DE, HL.",
           "provenance": "source"
         },
         "6585": {
@@ -3636,7 +3636,7 @@
           "provenance": "source"
         },
         "12917": {
-          "synopsis": "Left arrow in the alarm list: moves the button highlight to the previous of ESC, SET ALARM,\nCLEAR ALARM and VIEW ALARM (the low 2 bits of ubAlmActiveButton), from the first to the\nlast. CLEAR ALARM and VIEW ALARM are refused while no alarm is shown. The shared code at\nalmlr_2 stores the button and redraws the row (AlmHghlghtButton).\nEntry: none.\nExit: Fc = 1, A = RC_Fail (KeyJump0 then reads the next key).\nChanges: AF, BC.",
+          "synopsis": "Left arrow in the alarm list: moves the button highlight to the previous of ESC, SET ALARM,\nCLEAR ALARM and VIEW ALARM (the low 2 bits of ubAlmActiveButton), from the first to the\nlast. CLEAR ALARM and VIEW ALARM are refused while no alarm is shown. The shared code at\nalmlr_2 stores the button and redraws the row (AlmHilightButton).\nEntry: none.\nExit: Fc = 1, A = RC_Fail (KeyJump0 then reads the next key).\nChanges: AF, BC.",
           "provenance": "source"
         },
         "12954": {
@@ -3676,7 +3676,7 @@
           "provenance": "source"
         },
         "13457": {
-          "synopsis": "Prints the button row on row 5 in tiny text (\"ESC SET ALARM CLEAR ALARM VIEW ALARM\") and\nfalls into AlmHghlghtButton.\nEntry: ubAlmActiveButton = the active button.",
+          "synopsis": "Prints the button row on row 5 in tiny text (\"ESC SET ALARM CLEAR ALARM VIEW ALARM\") and\nfalls into AlmHilightButton.\nEntry: ubAlmActiveButton = the active button.",
           "provenance": "source"
         },
         "13525": {
@@ -3684,7 +3684,7 @@
           "provenance": "source"
         },
         "13562": {
-          "synopsis": "Entry inside AlmHghlghtButton: moves to column B, row C, turns reverse on, applies the\nattributes to 12 characters and turns tiny and reverse off (ToggleTR).\nEntry: B = column; C = row (5); tiny text on.\nChanges: AF.",
+          "synopsis": "Entry inside AlmHilightButton: moves to column B, row C, turns reverse on, applies the\nattributes to 12 characters and turns tiny and reverse off (ToggleTR).\nEntry: B = column; C = row (5); tiny text on.\nChanges: AF.",
           "provenance": "source"
         },
         "13576": {
@@ -6884,7 +6884,7 @@
           "provenance": "source"
         },
         "13231": {
-          "synopsis": "Calls a function routine: saves SP in ($1D55) and jumps to the routine at DE (through\nL_9223, JP (HL)). A floating point error inside it ends at L_F3AD, which restores SP and\nreturns from here with Fc = 1 and A = a PipeDream error number.\nEntry: DE = routine address (from FnctnRoutineTbl).\nExit: Fc = 0; result as the routine leaves it ((iy-79), ($1D4D) or HL'HLC).\nError: Fc = 1, A = PipeDream error number (from L_F3AD).",
+          "synopsis": "Calls a function routine: saves SP in ($1D55) and jumps to the routine at DE (through\nL_9223, JP (HL)). A floating point error inside it ends at L_F3AD, which restores SP and\nreturns from here with Fc = 1 and A = a PipeDream error number.\nEntry: DE = routine address (from FuncRoutineTable).\nExit: Fc = 0; result as the routine leaves it ((iy-79), ($1D4D) or HL'HLC).\nError: Fc = 1, A = PipeDream error number (from L_F3AD).",
           "provenance": "source"
         },
         "13264": {
@@ -10228,7 +10228,7 @@
           "provenance": "source"
         },
         "2464": {
-          "synopsis": "Saves the Panel's serial port settings (Fetch_PanelSets) and installs EazyLink's own: 9600\nbaud transmit and receive, no parity, RTS/CTS handshaking (Define_PanelSettings); then falls\ninto EzyLnkSerPortTmt.\nEntry: none.",
+          "synopsis": "Saves the Panel's serial port settings (Fetch_PanelSets) and installs EazyLink's own: 9600\nbaud transmit and receive, no parity, RTS/CTS handshaking (Define_PanelSettings); then falls\ninto EzLinkSerTimeout.\nEntry: none.",
           "provenance": "source"
         },
         "2470": {
@@ -10364,7 +10364,7 @@
           "provenance": "source"
         },
         "4527": {
-          "synopsis": "Writes the bytes the last ReceiveBuffer put into the I/O buffer to the file entry in the\nflash card, then decides how the reception goes on.\n1. When (IY+IObufCtr) is not 0, blows that many bytes from (IY+IObuffer) with OS_Fep\nFEP_Wrbl at the image pointer (IY+FeImgPtr), through segment 1, and stores the advanced\npointer back.\n2. If blowing fails, marks the new entry deleted (MarkDeleted) and blows the size received\nso far (BlowFileEntrySize).\n3. Otherwise adds the block to the file size (AddBlck2FileSize). If the receive status had\nFc = 1, shows \"File aborted.\" and takes the same error path as step 2.\nEntry: AF = the status ReceiveBuffer returned (Fc = 1 serial port error, Fz = 1 end of file\nor timeout); IY = save workspace; IX = EazyLink runtime variables.\nExit: Fc = 0; Fz = 1 at end of file, Fz = 0 when more file data is to come.\nError: Fc = 1 (write or serial port error; the entry is marked deleted).\nChanges: AF, BC, DE, HL.\nKeeps: IX.",
+          "synopsis": "Writes the bytes the last ReceiveBuffer put into the I/O buffer to the file entry in the\nflash card, then decides how the reception goes on.\n1. When (IY+IObufCtr) is not 0, blows that many bytes from (IY+IObuffer) with OS_Fep\nFEP_Wrbl at the image pointer (IY+FeImgPtr), through segment 1, and stores the advanced\npointer back.\n2. If blowing fails, marks the new entry deleted (MarkDeleted) and blows the size received\nso far (BlowFileEntrySize).\n3. Otherwise adds the block to the file size (AddBlk2FileSize). If the receive status had\nFc = 1, shows \"File aborted.\" and takes the same error path as step 2.\nEntry: AF = the status ReceiveBuffer returned (Fc = 1 serial port error, Fz = 1 end of file\nor timeout); IY = save workspace; IX = EazyLink runtime variables.\nExit: Fc = 0; Fz = 1 at end of file, Fz = 0 when more file data is to come.\nError: Fc = 1 (write or serial port error; the entry is marked deleted).\nChanges: AF, BC, DE, HL.\nKeeps: IX.",
           "provenance": "source"
         },
         "4599": {
@@ -10384,7 +10384,7 @@
           "provenance": "source"
         },
         "5081": {
-          "synopsis": "The loop of SearchFilesystem. Fetches the next name from the wildcard handler; for each file\nwhose creation and update date stamps are equal (compare_dates), sends its name\n(Transfer_filename) and contents (Transfer_RamfileImage), then opens it for update and\ncloses it, which gives it a new update date stamp. Directories and other files are skipped.\nExit: Fc = 0 when there are no more names (the wildcard handler is left open).\nError: Fc = 1 on a transmission error, after Clse_wcard_hndlr has released the handler.",
+          "synopsis": "The loop of SearchFilesystem. Fetches the next name from the wildcard handler; for each file\nwhose creation and update date stamps are equal (compare_dates), sends its name\n(Transfer_filename) and contents (Transfer_RamfileImage), then opens it for update and\ncloses it, which gives it a new update date stamp. Directories and other files are skipped.\nExit: Fc = 0 when there are no more names (the wildcard handler is left open).\nError: Fc = 1 on a transmission error, after Close_wcard_hnd has released the handler.",
           "provenance": "source"
         },
         "5258": {
@@ -10440,7 +10440,7 @@
           "provenance": "source"
         },
         "5701": {
-          "synopsis": "Receives a byte from the serial port (RxByte) and, when character translation is on\n(BB_CharTrans), translates it; falls into TrnslteIncoming.\nEntry: IX = EazyLink runtime variables.\nExit: Fc = 0, A = byte.\nError: Fc = 1, A = error code (RC_xxx).\nChanges: AF.\nKeeps: BC, HL.",
+          "synopsis": "Receives a byte from the serial port (RxByte) and, when character translation is on\n(BB_CharTrans), translates it; falls into TransIncoming.\nEntry: IX = EazyLink runtime variables.\nExit: Fc = 0, A = byte.\nError: Fc = 1, A = error code (RC_xxx).\nChanges: AF.\nKeeps: BC, HL.",
           "provenance": "source"
         },
         "5710": {
@@ -10472,27 +10472,27 @@
           "provenance": "source"
         },
         "5965": {
-          "synopsis": "Sends ESC 'N' to the remote computer (Send_ESC_Rspnse).\nExit: Fc = 0, Fz = 0.\nError: Fc = 1 (serial port error).\nChanges: F.\nKeeps: A, BC, DE, HL.",
+          "synopsis": "Sends ESC 'N' to the remote computer (Send_ESC_Resp).\nExit: Fc = 0, Fz = 0.\nError: Fc = 1 (serial port error).\nChanges: F.\nKeeps: A, BC, DE, HL.",
           "provenance": "source"
         },
         "5974": {
-          "synopsis": "Sends ESC 'Y' to the remote computer (Send_ESC_Rspnse).\nExit: Fc = 0, Fz = 0.\nError: Fc = 1 (serial port error).\nChanges: F.\nKeeps: A, BC, DE, HL.",
+          "synopsis": "Sends ESC 'Y' to the remote computer (Send_ESC_Resp).\nExit: Fc = 0, Fz = 0.\nError: Fc = 1 (serial port error).\nChanges: F.\nKeeps: A, BC, DE, HL.",
           "provenance": "source"
         },
         "5983": {
-          "synopsis": "Sends ESC 'Z' to the remote computer (Send_ESC_Rspnse).\nExit: Fc = 0, Fz = 0.\nError: Fc = 1 (serial port error).\nChanges: F.\nKeeps: A, BC, DE, HL.",
+          "synopsis": "Sends ESC 'Z' to the remote computer (Send_ESC_Resp).\nExit: Fc = 0, Fz = 0.\nError: Fc = 1 (serial port error).\nChanges: F.\nKeeps: A, BC, DE, HL.",
           "provenance": "source"
         },
         "5992": {
-          "synopsis": "Sends ESC 'E' to the remote computer (Send_ESC_Rspnse).\nExit: Fc = 0, Fz = 0.\nError: Fc = 1 (serial port error).\nChanges: F.\nKeeps: A, BC, DE, HL.",
+          "synopsis": "Sends ESC 'E' to the remote computer (Send_ESC_Resp).\nExit: Fc = 0, Fz = 0.\nError: Fc = 1 (serial port error).\nChanges: F.\nKeeps: A, BC, DE, HL.",
           "provenance": "source"
         },
         "6001": {
-          "synopsis": "Sends ESC 'F' to the remote computer (Send_ESC_Rspnse).\nExit: Fc = 0, Fz = 0.\nError: Fc = 1 (serial port error).\nChanges: F.\nKeeps: A, BC, DE, HL.",
+          "synopsis": "Sends ESC 'F' to the remote computer (Send_ESC_Resp).\nExit: Fc = 0, Fz = 0.\nError: Fc = 1 (serial port error).\nChanges: F.\nKeeps: A, BC, DE, HL.",
           "provenance": "source"
         },
         "6010": {
-          "synopsis": "Sends CR and LF to the remote computer (Send_ESC_Rspnse).\nExit: Fc = 0, Fz = 0.\nError: Fc = 1 (serial port error).\nChanges: F.\nKeeps: A, BC, DE, HL.",
+          "synopsis": "Sends CR and LF to the remote computer (Send_ESC_Resp).\nExit: Fc = 0, Fz = 0.\nError: Fc = 1 (serial port error).\nChanges: F.\nKeeps: A, BC, DE, HL.",
           "provenance": "source"
         },
         "6019": {
@@ -10512,7 +10512,7 @@
           "provenance": "source"
         },
         "6615": {
-          "synopsis": "Converts an ASCII hex digit to its value in the high nibble (ConvAsciHexNbble, times 16).\nEntry: A = '0' to '9' or 'A' to 'F'.\nExit: A = value * 16.\nChanges: AF.",
+          "synopsis": "Converts an ASCII hex digit to its value in the high nibble (ConvAscHexNibble, times 16).\nEntry: A = '0' to '9' or 'A' to 'F'.\nExit: A = value * 16.\nChanges: AF.",
           "provenance": "source"
         },
         "6623": {
@@ -10588,7 +10588,7 @@
           "provenance": "source"
         },
         "7285": {
-          "synopsis": "The message \"Serial port logging \", led by the sequence 1, \"2H3\" that selects window 3,\nnull-terminated. msg_srdmpfl_enbl or msg_srdmpf_dsble follows it on screen.",
+          "synopsis": "The message \"Serial port logging \", led by the sequence 1, \"2H3\" that selects window 3,\nnull-terminated. msg_serdump_on or msg_serdump_off follows it on screen.",
           "provenance": "source"
         },
         "7310": {
@@ -11376,11 +11376,11 @@
           "provenance": "source"
         },
         "1382": {
-          "synopsis": "VDU sequence (1,\"2JC\"): centre justification. Sent by VduEnblCntrJstfy.",
+          "synopsis": "VDU sequence (1,\"2JC\"): centre justification. Sent by VduCentreJustify.",
           "provenance": "source"
         },
         "1387": {
-          "synopsis": "VDU sequence (1,\"2JN\"): normal (left) justification. Sent by VduEnblNrmlJstfy.",
+          "synopsis": "VDU sequence (1,\"2JN\"): normal (left) justification. Sent by VduNormalJustify.",
           "provenance": "source"
         },
         "1392": {
@@ -11840,7 +11840,7 @@
           "provenance": "source"
         },
         "8484": {
-          "synopsis": "Converts an upper-case ASCII hex digit ('0'-'9', 'A'-'F') into its value 0-15.\nViewBankMmryCmd uses it on the two digits of the bank number the user typed.\nEntry: A = ASCII hex digit.\nExit: A = digit value.\nChanges: AF.",
+          "synopsis": "Converts an upper-case ASCII hex digit ('0'-'9', 'A'-'F') into its value 0-15.\nViewBankMemCmd uses it on the two digits of the bank number the user typed.\nEntry: A = ASCII hex digit.\nExit: A = digit value.\nChanges: AF.",
           "provenance": "source"
         },
         "8579": {
@@ -11848,11 +11848,11 @@
           "provenance": "source"
         },
         "9049": {
-          "synopsis": "String: CR LF, \" Enter memory bank number to view (hexadecimal).\", 0. The prompt of\nViewBankMmryCmd.",
+          "synopsis": "String: CR LF, \" Enter memory bank number to view (hexadecimal).\", 0. The prompt of\nViewBankMemCmd.",
           "provenance": "source"
         },
         "9100": {
-          "synopsis": "String: cursor on (1,\"2+C\") and \" Memory Bank: \", 0. The input label ViewBankMmryCmd prints\nbefore the bank number is typed.",
+          "synopsis": "String: cursor on (1,\"2+C\") and \" Memory Bank: \", 0. The input label ViewBankMemCmd prints\nbefore the bank number is typed.",
           "provenance": "source"
         },
         "9119": {
@@ -11860,7 +11860,7 @@
           "provenance": "source"
         },
         "9129": {
-          "synopsis": "String: \"VIEW MEMORY\", 0. The banner of ViewBankMmryCmd's window and of its memory dump\nview.",
+          "synopsis": "String: \"VIEW MEMORY\", 0. The banner of ViewBankMemCmd's window and of its memory dump\nview.",
           "provenance": "source"
         },
         "9265": {
@@ -11868,7 +11868,7 @@
           "provenance": "source"
         },
         "9319": {
-          "synopsis": "Entry inside FindToMarkDltd, also called by QuickDeleteFile after a Yes: marks the file\nentry as deleted with OS_Epr EP_Delete and reports \"File marked as deleted.\" through\nDispErrMsg (waits for SPACE). On failure it reports \"Error. File was not marked as deleted.\"\nand then also \"File not found.\" (falls into delfile_notfound).\nEntry: BHL = file entry.\nExit: Fc = 0; Fc = 1, A = RC_ESC when ESC answered the message.",
+          "synopsis": "Entry inside FindToMarkDel, also called by QuickDeleteFile after a Yes: marks the file\nentry as deleted with OS_Epr EP_Delete and reports \"File marked as deleted.\" through\nDispErrMsg (waits for SPACE). On failure it reports \"Error. File was not marked as deleted.\"\nand then also \"File not found.\" (falls into delfile_notfound).\nEntry: BHL = file entry.\nExit: Fc = 0; Fc = 1, A = RC_ESC when ESC answered the message.",
           "provenance": "source"
         },
         "9378": {
@@ -11876,7 +11876,7 @@
           "provenance": "source"
         },
         "9394": {
-          "synopsis": "String: CR LF, \" Found\", 0. Printed by FindToMarkDltd before the file's name when the file\nwas found.",
+          "synopsis": "String: CR LF, \" Found\", 0. Printed by FindToMarkDel before the file's name when the file\nwas found.",
           "provenance": "source"
         },
         "9403": {
@@ -11888,7 +11888,7 @@
           "provenance": "source"
         },
         "9474": {
-          "synopsis": "String: \" Mark file as deleted?\", CR LF, 0. The question disp_mrkdl_prmpt prints for\nConfirmDelete.",
+          "synopsis": "String: \" Mark file as deleted?\", CR LF, 0. The question disp_markdel_prm prints for\nConfirmDelete.",
           "provenance": "source"
         },
         "9499": {
@@ -11900,7 +11900,7 @@
           "provenance": "source"
         },
         "9557": {
-          "synopsis": "Exit of RstrFlsCmd when the file area holds no active files (FilesAvailable gives Fz = 1):\nshows \"NO FILES AVAILABLE IN FILE AREA\" through DispErrMsg, which waits for SPACE, and\nreturns from the command.\nExit: as DispErrMsg (Fc = 1, A = RC_ESC when ESC was pressed).\nChanges: HL.",
+          "synopsis": "Exit of RestoreFilesCmd when the file area holds no active files (FilesAvailable gives\nFz = 1): shows \"NO FILES AVAILABLE IN FILE AREA\" through DispErrMsg, which waits for\nSPACE, and returns from the command.\nExit: as DispErrMsg (Fc = 1, A = RC_ESC when ESC was pressed).\nChanges: HL.",
           "provenance": "source"
         },
         "9877": {
@@ -11908,7 +11908,7 @@
           "provenance": "source"
         },
         "9909": {
-          "synopsis": "String: CR LF, \" Enter Device/path.\", 0. The prompt of RstrFlsCmd for the destination.",
+          "synopsis": "String: CR LF, \" Enter Device/path.\", 0. The prompt of RestoreFilesCmd for the destination.",
           "provenance": "source"
         },
         "9931": {
@@ -11920,11 +11920,11 @@
           "provenance": "source"
         },
         "9957": {
-          "synopsis": "String: CR LF, \"Wildcards not allowed.\", 0. Shown by RstrFlsCmd when the destination path\ncontains wildcards.",
+          "synopsis": "String: CR LF, \"Wildcards not allowed.\", 0. Shown by RestoreFilesCmd when the\ndestination path contains wildcards.",
           "provenance": "source"
         },
         "9982": {
-          "synopsis": "String: CR LF, \"Invalid Path\", 0. Shown by RstrFlsCmd when GN_Fex cannot expand the\ndestination path.",
+          "synopsis": "String: CR LF, \"Invalid Path\", 0. Shown by RestoreFilesCmd when GN_Fex cannot expand the\ndestination path.",
           "provenance": "source"
         },
         "9997": {
@@ -11940,7 +11940,7 @@
           "provenance": "source"
         },
         "10498": {
-          "synopsis": "Compares a slot number with the current slot (curslot), for the destination slot selection\nof SelDstntnSlot.\nEntry: A = slot number.\nExit: Fz = 1 when it is the current slot; A = E = slot number.\nChanges: F, E.",
+          "synopsis": "Compares a slot number with the current slot (curslot), for the destination slot selection\nof SelDestSlot.\nEntry: A = slot number.\nExit: Fz = 1 when it is the current slot; A = E = slot number.\nChanges: F, E.",
           "provenance": "source"
         },
         "10535": {
@@ -11960,7 +11960,7 @@
           "provenance": "source"
         },
         "10686": {
-          "synopsis": "String: CR LF, \" Select File Card.\", CR LF, 0. Printed by SelDstntnSlot before the\ndestination slot is chosen.",
+          "synopsis": "String: CR LF, \" Select File Card.\", CR LF, 0. Printed by SelDestSlot before the\ndestination slot is chosen.",
           "provenance": "source"
         },
         "10709": {
@@ -11992,7 +11992,7 @@
           "provenance": "source"
         },
         "10838": {
-          "synopsis": "Formats the file area in the current slot (curslot), after asking:\n1. Clears the greyed screen, updates the statistics (FileEpromSttstcs) and opens the \"FORMAT\nFILE AREA ON FLASH CARD\" window.\n2. Looks for a file area with OS_Epr EP_Req. With one, it warns \"Re-format File Area in slot\nn (All data is lost).\"; without one, it says there is no file area for the card's\napplications (NoAppFileAreaMsg) or that the Flash Card is empty.\n3. Asks \"Format (create new) file area in slot n?\" (default No) and returns on No.\n4. Formats with OS_Fep FEP_FFMT, then resets the file area information (PollFileArea).\n5. Shows \" File Area formatted.\" and waits for SPACE; on an error it shows \"File Area not\nformatted properly!\" and resets the watermark (ResetWatermark).\nEntry: (curslot) = slot to format.\nExit: Fc = 0, Fz = 1, formatted; Fz = 0, the user answered No or ESC.",
+          "synopsis": "Formats the file area in the current slot (curslot), after asking:\n1. Clears the greyed screen, updates the statistics (FileEpromStats) and opens the \"FORMAT\nFILE AREA ON FLASH CARD\" window.\n2. Looks for a file area with OS_Epr EP_Req. With one, it warns \"Re-format File Area in slot\nn (All data is lost).\"; without one, it says there is no file area for the card's\napplications (NoAppFileAreaMsg) or that the Flash Card is empty.\n3. Asks \"Format (create new) file area in slot n?\" (default No) and returns on No.\n4. Formats with OS_Fep FEP_FFMT, then resets the file area information (PollFileArea).\n5. Shows \" File Area formatted.\" and waits for SPACE; on an error it shows \"File Area not\nformatted properly!\" and resets the watermark (ResetWatermark).\nEntry: (curslot) = slot to format.\nExit: Fc = 0, Fz = 1, formatted; Fz = 0, the user answered No or ESC.",
           "provenance": "source"
         },
         "11203": {
@@ -12060,7 +12060,7 @@
           "provenance": "source"
         },
         "11949": {
-          "synopsis": "Shows, centred, \"File Area not detected in slot n.\" with the current slot, greys the command\nwindow (DispCmdWindow) and jumps to FileEpromSttstcs to update the file area statistics\nwindow. The commands jump here when the current slot has no file area.\nEntry: (curslot) = slot number.",
+          "synopsis": "Shows, centred, \"File Area not detected in slot n.\" with the current slot, greys the command\nwindow (DispCmdWindow) and jumps to FileEpromStats to update the file area statistics\nwindow. The commands jump here when the current slot has no file area.\nEntry: (curslot) = slot number.",
           "provenance": "source"
         },
         "11961": {
@@ -12076,19 +12076,19 @@
           "provenance": "source"
         },
         "12100": {
-          "synopsis": "Table of 2 words for DispSlotErrorMsg: the addresses of empty_flcrd1_msg and\nempty_flcrd2_msg, used by dsp_emp_flcr_msg.",
+          "synopsis": "Table of 2 words for DispSlotErrorMsg: the addresses of empty_fcard1_msg and\nempty_fcard2_msg, used by disp_emptycd_msg.",
           "provenance": "source"
         },
         "12104": {
-          "synopsis": "String: CR LF, bold on (1,\"B\"), \"Flash Card is empty in slot \", 0. The first half of\ndsp_emp_flcr_msg's message.",
+          "synopsis": "String: CR LF, bold on (1,\"B\"), \"Flash Card is empty in slot \", 0. The first half of\ndisp_emptycd_msg's message.",
           "provenance": "source"
         },
         "12137": {
-          "synopsis": "String: \".\", bold off (1,\"B\"), 0. The second half of dsp_emp_flcr_msg's message.",
+          "synopsis": "String: \".\", bold off (1,\"B\"), 0. The second half of disp_emptycd_msg's message.",
           "provenance": "source"
         },
         "12141": {
-          "synopsis": "Table of 2 words for DispSlotErrorMsg: the addresses of intlslt_err1_msg and\nintlslt_err2_msg, used by DispIntelSlotErr for an Intel Flash Card outside slot 3.",
+          "synopsis": "Table of 2 words for DispSlotErrorMsg: the addresses of intslot_err1_msg and\nintslot_err2_msg, used by DispIntelSlotErr for an Intel Flash Card outside slot 3.",
           "provenance": "source"
         },
         "12145": {
@@ -12100,7 +12100,7 @@
           "provenance": "source"
         },
         "12258": {
-          "synopsis": "Table of 2 words for DispSlotErrorMsg: the addresses of eprmslt_err1_msg and\neprmslt_err2_msg, used by DispIntelSlotErr for an EPROM outside slot 3.",
+          "synopsis": "Table of 2 words for DispSlotErrorMsg: the addresses of eprslot_err1_msg and\neprslot_err2_msg, used by DispIntelSlotErr for an EPROM outside slot 3.",
           "provenance": "source"
         },
         "12262": {

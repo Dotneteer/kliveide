@@ -2645,3 +2645,15 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
   `z88-oz47-review.md`.
 - **Sources:** the OZ V4.7 source (commit `603c979a`, D-OZ1) and the ROM bytes; the entries are `source`.
 - **Level:** measured 2 on banks 5 and 6; both reassemble byte for byte. Not shipped yet (Q1).
+
+### 2026-11-15 — Cambridge Z88: OZ 4.7, the label renames reviewed
+
+- **What:** 347 of the 574 machine-proposed names in `z88-label-renames.json` (OZ source labels over 16
+  characters, or shared by two modules of a bank) replaced by readable ones; the 75 authored synopses and
+  15 review notes that named an old label name the new one.
+- **How:** every proposal read; a name was replaced where dropped vowels made it hard to read
+  (`AllcMemFle_SzeHL` -> `AllocMemFile_HL`), keeping one abbreviation per word and a short module suffix
+  for a shared name. A script checked each new name (16 characters at most, unique across all banks,
+  case-insensitive) before applying it.
+- **Sources:** the OZ V4.7 source's own label names (D-OZ1); no content changed.
+- **Level:** every bank still measures 2 and reassembles byte for byte. Not shipped yet (Q1).

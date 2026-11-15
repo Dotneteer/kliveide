@@ -23,7 +23,7 @@ that a later pass should confirm. Plan: `dev/plans/Z88_OZ47_ROM_ANNOTATIONS_PLAN
 - (kernel-2) fma_slt (0:8925): on a slot without RAM it returns Fc = 1 with A holding the slot's RAM size byte, not an error code; fma_any replaces it with RC_Room only after the last slot.
 - (kernel-2) MountAllRAM 'skip if no RAM' test: a nonzero byte at the DOR address skips the device (unwritten bank reads non-zero).
 - (kernel-2) Changes lines are left out where callees (DrawOZwd, GetAppDOR, OS_Bout, InitHelpWd) were not traced: PrntAppname, PrintTopic, PrntCommand, the Draw*HelpWd routines, OSMopMain/OSMclMain/OSMalMain, SetExclusiveBank, RebuildMAT, AddRAMCard.
-- (kernel-2) Sidecar labels used for truncated names: MySetPndngAlmTsk, MTHPrintTknzd, GetRealCmdPos, MarkPageAsAllctd, ApplyQlfrsToA/ToESC, DrawOZwd, FndFreePageBankD, FndFreePageSlotD, FndFrePgeAnySlot, FndUnsdBnkAnySlt, CntUnsdPgsInBank.
+- (kernel-2) Sidecar labels used for truncated names: MaySetPendAlmTsk, MTHPrintTknzd, GetRealCmdPos, MarkPageAlloc, ApplyQualToA/ToESC, DrawOZwd, FindFreePgBankD, FindFreePgSlotD, FindFreePgAnySlt, FindUnusedBnkAny, CntUnusedPgsBank.
 - (kernel-3) GetHelpOffs: the source comment says Fc = 1, DE = 0 without help, but AND CMDF_HELP always clears Fc; the result is in Fz. Callers only copy DE to BC.
 - (kernel-3) dmwd_2 (0:11542) is mth0's 'scf; ret'. The mth1.asm caller listed for it (mth1.asm:231) calls mth1's own local dmwd_2 in kernel bank 1, not this one.
 - (kernel-3) InitMenuColumn returns Fc = 0 on both paths (CP 93 / OR A), so DrawMenuWd's 'jr c, dmwd_11' after InitMenuColumnE looks never taken; not verified at run time.
@@ -52,7 +52,7 @@ that a later pass should confirm. Plan: `dev/plans/Z88_OZ47_ROM_ANNOTATIONS_PLAN
 - (kernel-6) GetCmdAttrByNum (1:10377) does not test Fc after GetRealCmdPosition: when that fails (start or end of the topic) B, C, HL are still read and returned with Fc = 1; only a missing topic returns early with A = 0. On that early path DE comes back as the caller's IX (IX is used to carry DE across OSBoxS1).
 - (kernel-6) OSSpMain/OSNqMain accept high bytes $8D and $8E, which land inside the last JP/inline code of OSSpTable/OSNqTable rather than on an entry; only $80, $83, $86, $89, $8C are real reasons.
 - (kernel-6) ResetWdAttrs (1:12799): the source comment says Fz = 0, but cp a leaves Fz = 1; the synopsis says Fz = 1.
-- (kernel-6) GetPrvNonInfoTpc (1:10451) searches upwards from A-1, so it returns the previous non-INFO topic only when A-1 itself is not an INFO topic.
+- (kernel-6) GetPrevNonInfo (1:10451) searches upwards from A-1, so it returns the previous non-INFO topic only when A-1 itself is not an INFO topic.
 - (kernel-6) Key2Chr_tbl, Chr2VDU_tbl and VDU2Chr_tbl are one table at $B4E1 (90 entries, to $B648) seen through three columns; it has no terminator in key2chrt.asm, the zero bytes at $B649 end the Chr2ScreenCode search.
 - (kernel-6) CheckFit (1:11286): when the given length is 255 SpPanel skips writing the attribute (the old one is still dropped), which looks like the way to reset a setting to its default; inferred from SpPanel, not documented.
 
@@ -135,7 +135,7 @@ that a later pass should confirm. Plan: `dev/plans/Z88_OZ47_ROM_ANNOTATIONS_PLAN
 - (b4-2) RemoveError clears row 5 of window 3 while PrntTextXY/ShowError write the message on row 4 and ShowInsertMode uses row 5; described literally, not explained.
 - (b4-2) GetOutHandle has a second source definition in apps/clock/clcalalm.asm; the bank-4 code is the Diary's copy.
 - (b4-2) DoUI: '-' moves to the next item and '.' to the previous one, as the code compares them; whether the keyboard maps cursor keys to these was not checked.
-- (b4-3) GetOutHnd_clcllm ($E9C0) is the clcalalm.asm:461 definition: it is inside the CCA code that starts with the three popdown vectors at $E7EE (jp ClockEnt/CalendarEnt/AlarmEnt). The Diary copy (diary.asm:5318) has identical bytes but lies below $E7EE.
+- (b4-3) GetOutHnd_clcal ($E9C0) is the clcalalm.asm:461 definition: it is inside the CCA code that starts with the three popdown vectors at $E7EE (jp ClockEnt/CalendarEnt/AlarmEnt). The Diary copy (diary.asm:5318) has identical bytes but lies below $E7EE.
 - (b4-3) Calling convention of the popdown helpers: MoveToXYbc/AskDate/AskTime take B = column, C = row. KeyJump enters a handler with BC and DE kept and HL = the caller BC; KeyJump0 passes DE through, and the Calendar keeps the highlighted day in D across its key handlers.
 - (b4-3) Window 5 is used by both the Clock (GN_Win, MainWindowDef: $A5 at (78,0), 14x8) and the Calendar (CalWindow_txt: SOH 7#5 at (42,0), 35x8).
 - (b4-3) Exit ($E7F7) and TestKeys are not in this slice; synopses refer to them by their source names. Cal_Right, Cal_SUpDn, Clock_Enter, HighlightDay, LowlightDay, FindNext/PrevDiaryEntry, DrawMonthDay are also referenced by name and are not in the slice.
@@ -190,10 +190,10 @@ that a later pass should confirm. Plan: `dev/plans/Z88_OZ47_ROM_ANNOTATIONS_PLAN
 - (el-1) EAZYLINK_TESTPROTOCOL code is not assembled in this ROM (checked in the bytes at KillPopdown and PollInput).
 - (el-2) Bank $0A run at $8000; source is the release build (EAZYLINK_TESTPROTOCOL off), checked against the bytes: RxByte/SxByte use OS_Si with BC = 3000 (30 s), rtmflags is (IX+0).
 - (el-2) Two HexNibble copies: 10:5955 is byteio.asm's (module-local, used by Send_ESC_byte_ackn); 10:7210 is crc32file.asm's, the XDEF'd one blockio.asm's Send_ESC_B calls.
-- (el-2) Getbyte/TrnslteIncoming translate incoming bytes through TraTableOut and outgoing through TraTableIn; InstallByte sets TraTableIn(D)=E, TraTableOut(E)=D, so the naming is consistent with that.
+- (el-2) Getbyte/TransIncoming translate incoming bytes through TraTableOut and outgoing through TraTableIn; InstallByte sets TraTableIn(D)=E, TraTableOut(E)=D, so the naming is consistent with that.
 - (el-2) Flush_buffer ends with POP HL / LD A,H: HL returns the caller's AF and the OS_Mv error code is lost (only Fc survives). Write_buffer inherits this.
 - (el-2) filenames_loop leaves the wildcard handler open on the normal end (only the error path closes it); prt_dir_path's Fc reflects only the DOR reopen, write errors go to System_error.
-- (el-2) ConvAsciHexNbble's source comment says 'a'-'f' but it subtracts $37, so only upper-case digits convert correctly.
+- (el-2) ConvAscHexNibble's source comment says 'a'-'f' but it subtracts $37, so only upper-case digits convert correctly.
 - (el-3) EazyLink strings (message13 to Yes_Parameter) are described by their text and the routine that loads them (grep over apps/eazylink); error_message0, ESC_B and ESC_ESC are never loaded by any instruction.
 - (el-3) IBM_TraTableOut is the second half of a 512-byte block copied by Use_StdTranslations; it holds the inverse of IBM_TraTableIn.
 - (el-3) fsize_smaller/fsize_larger/lcdon/SetBlinkScreenOn/mkdir/find_separator also exist in os/osepr and apps/flashstore; the eazylink/lib.asm copies were used (address range of bank 10 segment 2).
@@ -207,17 +207,17 @@ that a later pass should confirm. Plan: `dev/plans/Z88_OZ47_ROM_ANNOTATIONS_PLAN
 - (el-4) GetKey: an OS_In error other than RC_Esc returns Fc = 0 with A = the error (or a clears carry); SelectSlotPrompt then ignores it as an invalid key.
 - (el-4) Conv_to_nibble has no caller in the Filer; the listed callers are FlashStore's own vwfile copy. Same for the dc.asm/index.asm GetLinkCDE/GetLinkBHL, calc.asm PrntReverse, diary MayPageWait/PrntClearEOL/Save callers: different routines with the same names.
 - (fs-1) DisplMenuBar ($C267) is fsapp's entry inside DisplBar and ends with POP AF; the card selection's own DisplMenuBar (selectcard.asm:423) is at $C7F8 and has no label in this slice. ShowMenuBar/RemoveMenuBar jump there. The eazylink callers in DisplMenuBar/RemoveMenuBar's caller lists belong to eazylink's own routines.
-- (fs-1) SlMnuWin_slctcrd ($CBE4) is selectcard.asm's SelectMenuWindow (window 2, cursor off); SelectMenuWindow ($C295) is fsapp's (window 1).
+- (fs-1) SelMenuWin_sel ($CBE4) is selectcard.asm's SelectMenuWindow (window 2, cursor off); SelectMenuWindow ($C295) is fsapp's (window 1).
 - (fs-1) DispSlotSize and DispFreeSpace write into the VDU cache (vdubufptr), not to the screen; FileEpromStatistics calls DispSlotSize directly and then GN_Nln, so whether that output is flushed there was not traced.
 - (fs-1) clsvdu's 1,'S' is described by its bytes only: its exact VDU meaning (scroll toggle?) was not confirmed.
 - (fs-1) The fsapp bar sequences use 1,"2E" (XOR per the source comment) while the card selection bars use 1,"2A"; MenuBar's comment says 15 chars but the byte is 32+17.
 - (fs-2) open_file (11:6922) and HexNibble (11:7280): the slice's callers are EazyLink's own labels of the same name (apps/eazylink); FlashStore's open_file is reached only by the JR NC in the fetch dialog, and its HexNibble only by Int32Hex.
 - (fs-2) no_filearea (11:3453): the callers listed in os/osepr and os/osfep are other modules' labels of the same name; in FlashStore it is reached from dispstats only.
-- (fs-2) farea_bnr_end, allfiles_bnr_end, svdfls_bnr_end, catlg_banner_end are end markers that share their address with the next string (allfiles_banner, savedfiles_banner, norm_sq, catlg_msg); the synopses describe both.
+- (fs-2) farea_bnr_end, allfiles_bnr_end, savedfls_bnr_end, catlg_banner_end are end markers that share their address with the next string (allfiles_banner, savedfiles_banner, norm_sq, catlg_msg); the synopses describe both.
 - (fs-2) curdir, fsv2_bnr and crc32_txt are not referenced anywhere in apps/flashstore (grep).
 - (fs-2) DisplayEpromSize: both branches after the top-bank test do the same thing, so the test has no visible effect; not mentioned in the synopsis.
 - (fs-2) scroll_up/scroll_down: stdio.def calls SD_UP 'scroll upwards', but MoveFileBarUp's comment says the contents move down; the synopses name the code and its user only.
-- (fs-3) no_active_files: 11:9557 ($E555) is restorefiles.asm's copy (bytes 21 95 F0 C3 F5 EE, after RstrFlsCmd's input), 11:10053 ($E745) is copyfiles.asm's (inside CopyFileAreaCmd, after the jr nz). Both are identical code.
+- (fs-3) no_active_files: 11:9557 ($E555) is restorefiles.asm's copy (bytes 21 95 F0 C3 F5 EE, after RestoreFilesCmd's input), 11:10053 ($E745) is copyfiles.asm's (inside CopyFileAreaCmd, after the jr nz). Both are identical code.
 - (fs-3) exec_delete: on EP_Delete failure the source shows markdelete_failed with DispErrMsg and then falls into delfile_notfound, so "File not found." is shown as well (deletefile.asm:198-202). Written as observed; looks like a source slip.
 - (fs-3) nofilearea2_msg has no closing bold toggle (errmsg.asm:222), unlike the other *2_msg strings; noted in its synopsis.
 - (fs-3) createdir's entry registers are what openfile left for GN_Opf (HL = DE = IY filename, C = buffer size, B assumed 0); B is not set by openfile itself, it is 0 after createfile's CPIR for names under 255 bytes.

@@ -6,7 +6,7 @@ Phase 2 done (2026-11-15): every component with source imports (banks 0-8, $0A-$
 reassembles byte for byte. Phase 3 under way (2026-11-15): every annotated bank measures level 2 (not recorded yet); level 2
 counts routines (D-OZ6) and bank 9 is left out (D-OZ7). The system banks are level 2: the kernel (0, 1),
 bank 2, GN (3), MTH (8), DC and Index ($0C), the FPP ($0D) and the file area ($10); so are banks 4, 7,
-$0A (EazyLink, the Filer), $0B (FlashStore) and $1F (the ROM header). PipeDream (5, 6) completed it. Left: the rename review, labels across banks, coverage runs, recording the level. **To continue in a new session, read "Handoff (2026-11-15)" at the end of Phase 3.**
+$0A (EazyLink, the Filer), $0B (FlashStore) and $1F (the ROM header). PipeDream (5, 6) completed it. The rename proposals are reviewed. Left: labels across banks, coverage runs, recording the level. **To continue in a new session, read "Handoff (2026-11-15)" at the end of Phase 3.**
 **Goal:** a shipped sidecar `src/public/roms/z88v47.rom.dis` that annotates the OZ 4.7 ROM's banks to
 level 2 (all but bank 9, D-OZ7). It is built mostly from the OZ project's own assembler source,
 <https://bitbucket.org/cambridge/oz/src/V4.7/>, which the owner has given permission to use.
@@ -264,9 +264,8 @@ get `observed` labels in Phase 3.
 
 Labels Klive cannot take as they are (519: over 16 characters, or a name two modules of a bank share)
 are in `dev/ai/rom-annotations/z88-label-renames.json`. `shortLabelName` proposed them, by abbreviations
-and dropping inner vowels, never blind truncation, and `--all --write-renames` recorded them. **They
-are machine proposals, not reviewed yet:** reviewing them, or the ones that matter, is Phase 3 work.
-A hand-edited entry wins on every later import.
+and dropping inner vowels, never blind truncation, and `--all --write-renames` recorded them. They were
+reviewed in Phase 3 (2026-11-15). A hand-edited entry wins on every later import.
 
 The Z88 decoder was fixed along the way. OZ 4.5+'s `EXTCALL` is `RST 28h` plus **4** bytes (address,
 bank and a byte OZ skips; `ExtCall` in `os/lowram/memfunc.asm`), not 3. An `OS_Pout` string with `"` or
@@ -408,9 +407,13 @@ Done, on branch `dotneteer/z88-oz47-phase2`:
   `observed` text regions with comments in `z88-oz47-authored.json`. The import now cuts an authored region
   out of the region it overlaps instead of dropping that region whole, so the code around them stays.
   Bank 6 reassembles byte for byte.
+- **The rename proposals are reviewed** (2026-11-15): 347 of the 574 names `shortLabelName` proposed
+  (`AllcMemFle_SzeHL`, `cl_nt_op_fl_qt_t`) are replaced in `z88-label-renames.json` by readable ones
+  (`AllocMemFile_HL`, `cant_open_quit`), one abbreviation per word and none clashing with a label of any
+  bank; the 75 synopses that named an old label name the new one. Every bank still reassembles byte for
+  byte and measures level 2.
 
 Open:
-- **The rename proposals** (`z88-label-renames.json`) are still unreviewed.
 - **Across banks:** PipeDream's two halves call each other (`call LD65D` in bank 5 is bank 6's code); a
   listing names labels of its own bank only. A bank $0A Filer jump and LOWRAM's jumps are listed in the
   bank's main segment, so they show addresses too.
@@ -452,12 +455,10 @@ sample, merge, re-import, check, reassemble, install the working copy, append `z
 output to `z88-oz47-review.md` and add a `PROVENANCE.md` entry. Ask the helpers for decimal IY offsets.
 
 **Next steps, in order:**
-1. **The rename proposals** in `z88-label-renames.json` (about 590 machine proposals): review them, at
-   least the routine names, and hand-edit poor ones (an edited entry wins on the next import).
-2. **Across banks:** a listing names labels of its own bank only, so PipeDream's calls between its halves,
+1. **Across banks:** a listing names labels of its own bank only, so PipeDream's calls between its halves,
    the Filer's run (bank $0A, segment 3) and LOWRAM's jumps show addresses.
-3. **Coverage runs** (Phase 3 step 4) on `test/harness/z88/`.
-4. **Record `level: 2`** once every bank measures it, regenerate `rom-annotations.index.json`; then Phase 4,
+2. **Coverage runs** (Phase 3 step 4) on `test/harness/z88/`.
+3. **Record `level: 2`** once every bank measures it, regenerate `rom-annotations.index.json`; then Phase 4,
    which waits for Q1 (the permission's wording) before anything ships.
 
 **Checks after each batch.** The reassembly template: copy
