@@ -14,6 +14,14 @@
   box-sizing: border-box;
 }
 
+/* --- A translated landing page renders inside app/[lang]/layout.tsx's plain <body>, which keeps the
+   --- browser's 8px margin unless the page takes it away: that margin was a strip of the browser's
+   --- white above the Spectrum rule on every language but English */
+body:has(.lp-body) {
+  margin: 0;
+  background: var(--site-bg);
+}
+
 body.lp-body,
 div.lp-body {
   /* --- One gap for every section of the sheet; the 2px rules, not the space, divide them */
@@ -75,14 +83,15 @@ div.lp-body {
   font-size: 0.875rem;
 }
 
-/* --- One content width for every band */
+/* --- One content width for every band, the same frame as the docs' navbar and columns
+   --- (app/tokens.css), so moving between the landing page and the docs moves nothing */
 .lp-header-in,
 .lp-main,
 .lp-footer-in {
-  max-width: 76rem;
+  max-width: var(--site-content-width);
   margin: 0 auto;
-  padding-left: max(1.25rem, env(safe-area-inset-left, 0px));
-  padding-right: max(1.25rem, env(safe-area-inset-right, 0px));
+  padding-left: max(var(--site-gutter), env(safe-area-inset-left, 0px));
+  padding-right: max(var(--site-gutter), env(safe-area-inset-right, 0px));
 }
 
 /* --- Hidden above the page rather than off to its side, so it never widens the page */
@@ -134,7 +143,7 @@ div.lp-body {
   display: flex;
   align-items: center;
   gap: 2rem;
-  height: 3.75rem;
+  height: var(--site-header-height);
 }
 
 .lp-brand {
@@ -362,22 +371,61 @@ div.lp-body {
   color: var(--site-accent);
 }
 
+.lp-top-copy {
+  min-width: 0;
+}
+
+/* --- "At a glance": a spec card. A panel on the page's own paper with a hairline edge, its title on
+   --- the chrome tone, and the facts as labelled cells (label over value) in two columns, divided by
+   --- hairlines. The long list of tools takes a whole row. */
 .lp-glance {
-  border: 2px solid var(--site-fg);
-  padding: 1.25rem 1.5rem 1rem;
+  border: 1px solid var(--site-line);
+  border-radius: 8px;
+  background: var(--site-panel);
+  overflow: hidden;
 }
 
 .lp-glance h2 {
-  margin-bottom: 0.5rem;
+  padding: 0.875rem 1.25rem;
+  background: var(--site-chrome);
+  border-bottom: 1px solid var(--site-line);
   font-size: 1.125rem;
+  line-height: 1.3;
 }
 
-.lp-glance th {
-  width: 8.5rem;
+.lp-glance dl {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1px;
+  margin: 0;
+  /* --- The 1px gaps show this colour: the hairlines between the cells */
+  background: var(--site-line);
 }
 
-.lp-glance tr:first-child > * {
-  border-top: 0;
+.lp-glance dl > div {
+  min-width: 0;
+  padding: 0.875rem 1.25rem 1rem;
+  background: var(--site-panel);
+}
+
+.lp-glance .lp-glance-wide {
+  grid-column: 1 / -1;
+}
+
+.lp-glance dt {
+  margin-bottom: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--site-muted);
+}
+
+.lp-glance dd {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.lp-glance .lp-mono {
+  font-size: 1rem;
 }
 
 /* ------------------------------------------------------------------ the hero carousel */
@@ -389,6 +437,11 @@ div.lp-body {
 .lp-carousel {
   display: grid;
   gap: 0.625rem;
+  /* --- The whole picture and its bar fit the screen below the header: the frame is 16:10, so its
+     --- width is 1.6 times the height left over (the header, the bar, and a little room above and
+     --- below). On a phone the column's width is the smaller of the two. */
+  width: min(100%, max(18rem, calc((100svh - var(--site-header-height) - 6.5rem) * 1.6)));
+  margin: 0 auto;
 }
 
 .lp-carousel-frame {

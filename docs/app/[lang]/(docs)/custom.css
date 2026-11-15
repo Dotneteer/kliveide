@@ -13,6 +13,12 @@ body {
   font-family: var(--site-font-body);
 }
 
+/* --- One frame for the whole site: the docs' navbar and columns stand as wide as the landing page's
+   --- (app/tokens.css). `html:root` outranks the `:root` block that Nextra's <Head> writes. */
+html:root {
+  --nextra-content-width: var(--site-content-width);
+}
+
 article h1,
 article h2,
 article h3,

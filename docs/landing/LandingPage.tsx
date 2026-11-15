@@ -170,41 +170,40 @@ export default function LandingPage({ lang }: Readonly<{ lang: string }>) {
               <a href={site.releasesPage}>{t("hero.otherPlatforms")}</a>
             </p>
           </div>
-          <div className="lp-glance">
-            <h2>{t("glance.title")}</h2>
-            <table>
-              <tbody>
-                {site.latestRelease !== "0.0.0" && (
-                  <tr>
-                    <th scope="row">{t("glance.version")}</th>
-                    <td>
-                      <span className="lp-mono">{site.latestRelease}</span>
-                    </td>
-                  </tr>
-                )}
-                <tr>
-                  <th scope="row">{t("glance.runsOn")}</th>
-                  <td>macOS, Windows, Linux</td>
-                </tr>
-                <tr>
-                  <th scope="row">{t("glance.licence")}</th>
-                  <td>{t("glance.licenceValue")}</td>
-                </tr>
-                <tr>
-                  <th scope="row">{t("glance.languages")}</th>
-                  <td>{t("glance.languagesValue")}</td>
-                </tr>
-                <tr>
-                  <th scope="row">{t("glance.worksWith")}</th>
-                  <td>sjasmplus, Boriel BASIC, z88dk, PASTA/80</td>
-                </tr>
-                <tr>
-                  <th scope="row">{t("glance.interface")}</th>
-                  <td>{t("glance.interfaceValue")}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+          <aside className="lp-glance" aria-labelledby="lp-glance-title">
+            <h2 id="lp-glance-title">{t("glance.title")}</h2>
+            <dl>
+              {site.latestRelease !== "0.0.0" && (
+                <div>
+                  <dt>{t("glance.version")}</dt>
+                  <dd>
+                    <span className="lp-mono">{site.latestRelease}</span>
+                  </dd>
+                </div>
+              )}
+              <div>
+                <dt>{t("glance.runsOn")}</dt>
+                <dd>macOS, Windows, Linux</dd>
+              </div>
+              <div>
+                <dt>{t("glance.licence")}</dt>
+                <dd>{t("glance.licenceValue")}</dd>
+              </div>
+              {/* --- Without a release there is no version cell: the interface takes the row alone */}
+              <div className={site.latestRelease === "0.0.0" ? "lp-glance-wide" : undefined}>
+                <dt>{t("glance.interface")}</dt>
+                <dd>{t("glance.interfaceValue")}</dd>
+              </div>
+              <div className="lp-glance-wide">
+                <dt>{t("glance.languages")}</dt>
+                <dd>{t("glance.languagesValue")}</dd>
+              </div>
+              <div className="lp-glance-wide">
+                <dt>{t("glance.worksWith")}</dt>
+                <dd>sjasmplus, Boriel BASIC, z88dk, PASTA/80</dd>
+              </div>
+            </dl>
+          </aside>
         </section>
 
         <section className="lp-carousel-band">

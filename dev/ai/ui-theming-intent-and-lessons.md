@@ -3330,10 +3330,26 @@ drift. Change a neutral or the default accent in the app, and the site changes w
 - **Theme selection follows next-themes:** a `dark`/`light` class on `<html>` wins, the OS
   preference decides otherwise. The landing page's toggle writes the same `theme` key, so a choice
   holds across the landing page and the docs.
+- **The landing page and the docs share one frame** (`--site-content-width`, `--site-gutter`,
+  `--site-header-height` in `docs/app/tokens.css`; `custom.css` sets Nextra's `--nextra-content-width`
+  from them with `html:root`, which outranks the `:root` block Nextra's `<Head>` writes). The author
+  noticed the landing page's 76rem column and 60px header jumping against the docs' 90rem and 64px.
+  Measure the brand's left edge on both at a width above 90rem when changing either.
+- **A translated landing page renders inside `app/[lang]/layout.tsx`'s plain `<body>`**, which has no
+  stylesheet of its own: the browser's 8px body margin showed as a white strip above the rule on every
+  language but English. `body:has(.lp-body)` in `landing.css` clears it; a page that sets its own body
+  class cannot, because the `[lang]` layout owns `<body>`.
+- **"At a glance" is a spec card, not a boxed table:** the 2px text-colour box with a narrow label
+  column read as heavy and wrapped the long values. Now a panel with a hairline edge, a chrome-tone
+  title strip and label-over-value cells in two columns, hairlines drawn by a 1px grid gap over
+  `--site-line`; long values take a full row. Still no pills: the facts are plain text.
 - **The hero is a carousel of real screenshots** (`docs/landing/HeroCarousel.tsx`): a 16:10 frame on
   the app's canvas colour, so pictures of another shape (the emulator) sit centred on the IDE's own
   dark ground rather than on the page. Pictures fly sideways in the direction of travel (forward:
   in from the right, out to the left), every five seconds; a manual change restarts the count.
+  **The carousel never needs scrolling to see whole**: its width is `min(100%, (100svh - header -
+  6.5rem) * 1.6)`, centred, so the frame and its bar fit below the sticky header; at full column width
+  the 16:10 frame was 760px tall and cut off on a laptop screen.
   Its caption box is always two lines tall, so captions of different lengths never move the page.
   Only the first slide is in the HTML; a slide's neighbours load ahead of it. **The only way to stop
   it is its pause button** (WCAG 2.2.2): implicit stops - on hover, on focus, after the first click,
