@@ -6435,6 +6435,2070 @@
         }
       }
     },
+    "10": {
+      "lines": {
+        "5": {
+          "synopsis": "EazyLink's entry point, reached through the JP at $8000. Checks that the Index gave it its\ncontiguous RAM (IX+2, the end page + 1, must be $20+EAZ_BAD) and that it runs on the OZ it\nwas built for (OS_Nq NQ_Voz); otherwise it leaves through OS_Bye (A = RC_ROOM or 0). Then it\nenables Escape detection, clears MenuBarPosn and UserToggles (line feed conversion and\ntranslations off), calls Appl_Main and jumps to KillPopdown.\nEntry: IX = the application's information block.\nExit: does not return (OS_Bye).",
+          "provenance": "source"
+        },
+        "44": {
+          "synopsis": "EazyLink's error handler, called with the code of a failed serial port or keyboard read\n(from PollInput, the keyboard scan and the byte I/O's timeout check). RC_esc is acknowledged\n(OS_Esc SC_ACK) and, like RC_quit, ends EazyLink: it falls into KillPopdown. Every other\ncode (RC_susp included) returns unchanged.\nEntry: A = error code; Fc = 1.\nExit: A and F unchanged (codes other than RC_esc and RC_quit).\nChanges: none.",
+          "provenance": "source"
+        },
+        "63": {
+          "synopsis": "Entry inside Errhandler: ends EazyLink. Closes any open transfer file (Close_file) and the\nserial port dump files (Close_serportdump_filehandles), restores the Panel's original serial\nport settings, purges the keyboard buffer, sets the Escape state (OS_Esc SC_SET) and quits\nwith OS_Bye, A = 0 (no error message), returning to the Index.\nEntry: IX = start_workspace.\nExit: does not return.",
+          "provenance": "source"
+        },
+        "81": {
+          "synopsis": "EazyLink's main program. Opens the log window (\"3\") and the command window (\"2\"), resets\nboth translation tables to identity and loads the translations, zeroes the I/O handles,\nswitches automatic translation and CRLF conversion off (ESC_T_cmd2, ESC_C_cmd2), saves the\nPanel's serial settings and installs EazyLink's own (Init_PanelSets), points IX at the\nworkspace ($2000) and clears its runtime flags. It writes 'Running', shows the baud rate and\nversion, draws the menu bar and loops in Fetch_synch for ever.\nEntry: none.\nExit: does not return.",
+          "provenance": "source"
+        },
+        "145": {
+          "synopsis": "Text the command window shows (GN_Sop): select window \"2\", the SD_DTS character, then the\nfive menu lines in tiny type (\"2+T\" ... \"2-T\"): toggle translation mode, toggle linefeed\nmode, use ISO translations, load translations, quit EazyLink. Null-terminated.",
+          "provenance": "source"
+        },
+        "277": {
+          "synopsis": "Draws the menu bar in the command window: selects window \"2\" without a cursor, moves to\ncolumn 0, row MenuBarPosn and applies reverse video to 26 characters ($1A).\nEntry: MenuBarPosn = row of the bar (0-4).\nKeeps: AF, HL.",
+          "provenance": "source"
+        },
+        "311": {
+          "synopsis": "VDU string 1, \"3@\", 0: the start of a cursor move; DisplMenuBar and RemoveMenuBar follow it\nwith the column and the row, each + 32.",
+          "provenance": "source"
+        },
+        "315": {
+          "synopsis": "VDU string selecting the command window: 1, \"2H2\" (window \"2\"), 1, \"2-C\" (cursor off),\nnull-terminated. Used by DisplMenuBar and RemoveMenuBar.",
+          "provenance": "source"
+        },
+        "324": {
+          "synopsis": "VDU string that draws the menu bar at the cursor: 1, \"2+R\" (reverse on), then 1, \"2A\",\n32+$1A (apply the attributes to 26 characters), null-terminated.",
+          "provenance": "source"
+        },
+        "333": {
+          "synopsis": "Removes the menu bar from the command window: selects window \"2\" without a cursor, moves to\ncolumn 0, row MenuBarPosn and applies normal video (MenuBarOff) to 26 characters.\nEntry: MenuBarPosn = row of the bar (0-4).\nKeeps: AF, HL.",
+          "provenance": "source"
+        },
+        "367": {
+          "synopsis": "VDU string that removes the menu bar at the cursor: 1, \"2-R\" (reverse off), then 1, \"2A\",\n32+$1A (apply to 26 characters), null-terminated.",
+          "provenance": "source"
+        },
+        "376": {
+          "synopsis": "Waits for a byte from the serial port while it runs the menu. Each key from PollInput is\nhandled here: Cursor Down and Up move the menu bar (wrapping between rows 0 and 4), ENTER\nruns the command under the bar (through Command_lookup), and the codes\nEazyLink_CC_dbgOn/dbgOff ($80/$81) switch serial port logging on and off. When a serial byte\narrives, PollInput returns straight to Poll's caller.\nEntry: IX = start_workspace.\nExit: A = byte received from the serial port.",
+          "provenance": "source"
+        },
+        "459": {
+          "synopsis": "Polls the serial port and the keyboard. Resets PopDownTimeout to $FFFF (about ten minutes),\nthen loops: OS_Si Si_Gbt with a 1/10 second timeout; on a timeout it gives\nCheckHandshakeMode the chance to switch the handshake mode, passes the error to Errhandler\nand scans the keyboard (OS_Tin, 1 cs), whose timeouts count PopDownTimeout down to ShutDown.\nA menu key returns to Poll; a serial byte is dumped to the log file when logging is on, then\nPollInput discards its own and Poll's return addresses and jumps to Poll's caller with the\nbyte.\nEntry: IX = start_workspace.\nExit: Fc = 0, Fz = 0, A = key code (IN_ENT, IN_DWN, IN_UP, $80 or $81) to Poll; or A =\nserial byte, returned to Poll's caller (Fetch_synch).",
+          "provenance": "source"
+        },
+        "595": {
+          "synopsis": "Switches the Z88 off (OS_Off) when the keyboard has been idle for the pop-down timeout\n(about ten minutes), then returns.\nEntry: none.",
+          "provenance": "source"
+        },
+        "612": {
+          "synopsis": "Table of 6 words: the routine for each menu row, indexed by MenuBarPosn: toggle translation,\ntoggle line feed conversion, ISO translations, load translations, KillPopdown, and\ndisp_running. Read by ActivateCommand, which jumps to the entry.",
+          "provenance": "source"
+        },
+        "624": {
+          "synopsis": "Menu command: toggles bit 1 of UserToggles and switches automatic file translation on\n(ESC_T_cmd1) or off (ESC_T_cmd2) to match; then writes 'Running' (falls through to\ndisp_running).\nEntry: IX = start_workspace.\nKeeps: HL.",
+          "provenance": "source"
+        },
+        "645": {
+          "synopsis": "Menu command: toggles bit 0 of UserToggles and switches automatic CRLF conversion on\n(ESC_C_cmd1) or off (ESC_C_cmd2) to match; then writes 'Running' (jumps to disp_running).\nEntry: IX = start_workspace.\nKeeps: HL.",
+          "provenance": "source"
+        },
+        "666": {
+          "synopsis": "Menu command: installs the standard ISO/IBM translation tables (Use_StdTranslations), then\nwrites 'Running' (jumps to disp_running).",
+          "provenance": "source"
+        },
+        "671": {
+          "synopsis": "Menu command: loads the translation tables again from the external \"translate.dat\" file\n(LoadTranslations), then falls into disp_running.",
+          "provenance": "source"
+        },
+        "674": {
+          "synopsis": "Writes the 'Running' message (message1) to the log window through Write_message.\nEntry: none.\nKeeps: AF, HL.",
+          "provenance": "source"
+        },
+        "680": {
+          "synopsis": "EazyLink's main loop, which never returns. Waits for a byte through Poll. $01 starts the\nEazyLink synch (extended_synch): when Check_synch confirms it, the handshake counter is\ncleared, the synch is acknowledged (Send_synch) and Extended_ESC_commands runs one command.\n$05 starts the PCLINK II synch (pclink_synch): after Check_synch it also signals Xon/Xoff\nhandshaking (SignalSerportMode), acknowledges, shows the flashing 'PCLINK II' text and runs\none PCLINK II command (removing the text when that fails). Other bytes, bad synchs and\nfailed acknowledgements are ignored.\nEntry: IX = start_workspace.\nExit: does not return.",
+          "provenance": "source"
+        },
+        "760": {
+          "synopsis": "Runs one command of the EazyLink protocol after a synch: fetches the ESC command\n(FetchBytes) and looks its letter up in EscCommands, jumping to the matching routine of the\nsubroutines table, which returns to the caller. A plain byte instead of ESC <letter> is a\nprotocol error (Msg_Protocol_error); an unknown letter returns.\nEntry: IX = start_workspace.\nError: Fc = 1 when the serial port failed or timed out.",
+          "provenance": "source"
+        },
+        "819": {
+          "synopsis": "VDU string that greys the command window: 1, \"2H2\" (window \"2\"), 1, \"2G+\", null-terminated.\nWritten by GreyCommandWindow.",
+          "provenance": "source"
+        },
+        "828": {
+          "synopsis": "Switches the serial port to Xon/Xoff (software) handshaking: records SerportXonXoffMode in\nCurrentSerportMode, clears SignalSerportMode, writes 'Using Xon/Xoff' and sets the Panel to\nXon/Xoff yes (SetPanel_SoftwareHandshaking, which installs the settings).\nEntry: none.\nKeeps: AF, BC, HL.",
+          "provenance": "source"
+        },
+        "853": {
+          "synopsis": "Switches the serial port to RTS/CTS (hardware) handshaking: records SerportHardwareMode in\nCurrentSerportMode, clears SignalSerportMode, writes 'Using RTS/CTS' and sets the Panel to\nXon/Xoff no (SetPanel_HardwareHandshaking, which installs the settings).\nEntry: none.\nKeeps: AF, BC, HL.",
+          "provenance": "source"
+        },
+        "959": {
+          "synopsis": "Inline OS_Pout string of DisplayPclinkIIText: selects window \"7\", moves to column 0, row 7\nand writes 'PCLINK II' flashing (\"2+F\", grey off with \"2-G\"), then flash off.\nNull-terminated.",
+          "provenance": "source"
+        },
+        "995": {
+          "synopsis": "Inline OS_Pout string of RemovePclinkIIText: selects window \"7\", moves to column 0, row 7\nand clears to the end of the line (1, \"2C\", 253). Null-terminated.",
+          "provenance": "source"
+        },
+        "1277": {
+          "synopsis": "Text \"00/00/0000 00:00:00\", null-terminated: the dummy create and update date stamp that\nESC_U_cmd sends for a file in a file area (\":EPR.x\"), which keeps no dates.",
+          "provenance": "source"
+        },
+        "1464": {
+          "synopsis": "Text \", \" (comma and space), null-terminated, placed after ESC_U_cmd2.",
+          "provenance": "source"
+        },
+        "2211": {
+          "synopsis": "Command ESC \"c\" (and the menu): switches automatic CRLF conversion on. Writes 'Auto CRLF ON'\nto the log window and sets BB_LnfdConv in the runtime flags.\nEntry: IX = start_workspace.\nKeeps: AF, HL.",
+          "provenance": "source"
+        },
+        "2222": {
+          "synopsis": "Command ESC \"C\" (and the menu, and start-up): switches automatic CRLF conversion off. Writes\n'Auto CRLF OFF' to the log window and clears BB_LnfdConv in the runtime flags.\nEntry: IX = start_workspace.\nKeeps: AF, HL.",
+          "provenance": "source"
+        },
+        "2233": {
+          "synopsis": "Command ESC \"t\" (and the menu): switches automatic character translation on. Writes 'Auto\nTranslation ON' and sets BB_CharTrans and its copy BB_CharTransCpy.\nEntry: IX = start_workspace.\nKeeps: AF, HL.",
+          "provenance": "source"
+        },
+        "2248": {
+          "synopsis": "Command ESC \"T\" (and the menu, and start-up): switches automatic character translation off.\nWrites 'Auto Translation OFF' and clears BB_CharTrans and BB_CharTransCpy.\nEntry: IX = start_workspace.\nKeeps: AF, HL.",
+          "provenance": "source"
+        },
+        "2263": {
+          "synopsis": "Starts serial port logging (the <>D key code): creates the dump files\n(Create_serportdump_files) and writes 'Serial port logging enabled' to the log window.\nEntry: IX = start_workspace.\nKeeps: AF, HL.",
+          "provenance": "source"
+        },
+        "2281": {
+          "synopsis": "Stops serial port logging (the <>Z key code): closes the dump files\n(Close_serportdump_filehandles) and writes 'Serial port logging disabled'.\nEntry: IX = start_workspace.\nKeeps: AF, HL.",
+          "provenance": "source"
+        },
+        "2299": {
+          "synopsis": "Closes the serial port dump files: GN_Cl on serfile_in_handle and serfile_out_handle when\nnon-zero, then zeroes both handles and clears BB_SerportLog in the runtime flags.\nEntry: IX = start_workspace.\nKeeps: AF, HL, IX.",
+          "provenance": "source"
+        },
+        "2347": {
+          "synopsis": "Creates the serial port dump files: closes open ones first, then creates \"/rs232rcv.log\" and\n\"/rs232snd.log\" in the default RAM device (CreateFilename), moves their handles from\nfile_handle to serfile_in_handle and serfile_out_handle, and sets BB_SerportLog. When a file\ncannot be created, both are closed (but BB_SerportLog is still set on the way out).\nEntry: IX = start_workspace.\nKeeps: AF, BC, HL, IX.",
+          "provenance": "source"
+        },
+        "2422": {
+          "synopsis": "Switches character translation on for one transfer and remembers the user's setting:\nBB_CharTransCpy gets the current BB_CharTrans, then BB_CharTrans is set. Restore_Traflag\nundoes it.\nEntry: IX = start_workspace.\nKeeps: AF (works in AF', exchanged back).",
+          "provenance": "source"
+        },
+        "2445": {
+          "synopsis": "Restores the translation flag saved by Set_TraFlag: BB_CharTrans is set again when\nBB_CharTransCpy is set, and cleared otherwise.\nEntry: IX = start_workspace.\nKeeps: AF (works in AF', exchanged back).",
+          "provenance": "source"
+        },
+        "2464": {
+          "synopsis": "Saves the Panel's serial port settings (Fetch_PanelSets) and installs EazyLink's own: 9600\nbaud transmit and receive, no parity, RTS/CTS handshaking (Define_PanelSettings); then falls\ninto EzyLnkSerPortTmt.\nEntry: none.",
+          "provenance": "source"
+        },
+        "2470": {
+          "synopsis": "Entry inside Init_PanelSets: sets the OS_Si block I/O timeout to EazyLink_DefaultTimeout\n(3000 cs, 30 seconds) through OS_Si SI_TMO.\nEntry: none.",
+          "provenance": "source"
+        },
+        "2478": {
+          "synopsis": "Copies the Panel's serial port settings to the workspace so KillPopdown can restore them:\ntransmit and receive baud rates (each as a length byte and a word, Cpy_PA_Txb and\nCpy_PA_Rxb), Xon/Xoff (Cpy_PA_Xon) and parity (Cpy_PA_Par), read through OS_Nq.\nEntry: none.\nError: an OS_Nq failure is reported through System_error (GN_Err) and returned, Fc = 1.\nChanges: AF, BC, DE.",
+          "provenance": "source"
+        },
+        "2565": {
+          "synopsis": "Sets the Panel's Xon/Xoff parameter to No (hardware handshaking, OS_Sp PA_Xon), then falls\ninto InstallPanelSets.\nEntry: none.",
+          "provenance": "source"
+        },
+        "2577": {
+          "synopsis": "Sets the Panel's Xon/Xoff parameter to Yes (software handshaking, OS_Sp PA_Xon), then falls\ninto InstallPanelSets.\nEntry: none.",
+          "provenance": "source"
+        },
+        "2587": {
+          "synopsis": "Installs the Panel's serial port parameters (OS_Sp PA_Gfi with A = 0), which applies them to\nthe serial port.\nEntry: none.",
+          "provenance": "source"
+        },
+        "2705": {
+          "synopsis": "Shows the system error message for an error code (GN_Err).\nEntry: A = error code.\nKeeps: AF.",
+          "provenance": "source"
+        },
+        "2711": {
+          "synopsis": "Writes a message as a new line in the log window: selects window \"3\" (vdulog), writes the\nstring (GN_Sop) and a new line (GN_Nln).\nEntry: HL = null-terminated message.\nKeeps: AF, HL.",
+          "provenance": "source"
+        },
+        "2715": {
+          "synopsis": "Inline OS_Pout string of Write_message: 1, \"2H3\", null-terminated, which selects the log\nwindow \"3\".",
+          "provenance": "source"
+        },
+        "2729": {
+          "synopsis": "Saves the current machine time (GN_Gmt) in timestamp (3 bytes, centiseconds), the start of a\ntransfer for Disp_Elapsedtime.\nEntry: none.\nChanges: AF.\nKeeps: BC, DE, HL.",
+          "provenance": "source"
+        },
+        "2751": {
+          "synopsis": "Writes the time passed since Get_Time: reads the machine time (GN_Gmt), stores the\ndifference in timestamp, writes \" in \" and the elapsed time (GN_Ptm to the standard output\nhandle, from OS_Nq NQ_OHN), then a new line.\nEntry: timestamp = the start time from Get_Time.\nChanges: BC, DE, HL.\nKeeps: AF, IX.",
+          "provenance": "source"
+        },
+        "2785": {
+          "synopsis": "Inline OS_Pout string of Disp_Elapsedtime: \" in \", null-terminated.",
+          "provenance": "source"
+        },
+        "2818": {
+          "synopsis": "Writes 'Protocol error: Unknown ESC command.' to the log window (Write_message).\nEntry: none.\nChanges: HL.",
+          "provenance": "source"
+        },
+        "2823": {
+          "synopsis": "Writes 'File aborted.' to the log window (Write_message).\nEntry: none.\nChanges: HL.",
+          "provenance": "source"
+        },
+        "2828": {
+          "synopsis": "Writes 'No Room.' to the log window (Write_message).\nEntry: none.\nChanges: HL.",
+          "provenance": "source"
+        },
+        "2833": {
+          "synopsis": "Writes '- command aborted...' to the log window (Write_message).\nEntry: none.\nChanges: HL.",
+          "provenance": "source"
+        },
+        "2838": {
+          "synopsis": "Writes 'File received' to the log window, followed by the transfer time (Disp_Elapsedtime).\nEntry: timestamp = the start time from Get_Time.\nChanges: BC, DE, HL.\nKeeps: AF.",
+          "provenance": "source"
+        },
+        "2857": {
+          "synopsis": "Writes 'File sent' to the log window, followed by the transfer time (Disp_Elapsedtime).\nEntry: timestamp = the start time from Get_Time.\nChanges: BC, DE, HL.\nKeeps: AF.",
+          "provenance": "source"
+        },
+        "2876": {
+          "synopsis": "GN_Win definition block of the command window: window \"2\" with bars, banner and bottom line\n(2 | 192), at X 0, Y 0, 26 columns ($1A) by 8 rows, banner \"Commands\".",
+          "provenance": "source"
+        },
+        "2883": {
+          "synopsis": "GN_Win definition block of the log window: window \"3\" with bars and banner (3 | 128), at X\n28 ($1C), Y 0, 62 columns ($3E) by 8 rows, banner \"EazyLink\".",
+          "provenance": "source"
+        },
+        "2934": {
+          "synopsis": "Copies the 7-byte wildcard \":RAM.*\" with its terminator to filename_buffer.\nEntry: none.\nExit: HL = filename_buffer; DE = filename_buffer+7; BC = 0.",
+          "provenance": "source"
+        },
+        "3018": {
+          "synopsis": "PCLINK II command ESC \"N\": sends the names of the files that match a path. Fetches the path\nwith acknowledgements (Fetch_pathname_ackn, translation on for it), then sends each matching\nfile name as ESC \"N\" <name> and ends with ESC \"Z\". A failure writes 'command aborted'; the\ntranslation flag is restored in any case.\nEntry: IX = start_workspace.",
+          "provenance": "source"
+        },
+        "3057": {
+          "synopsis": "PCLINK II command ESC \"G\": sends a Z88 file to the PC. Writes 'Send file', fetches the name\n(Fetch_pathname_ackn), opens the file and sends it byte by byte with acknowledgements: a CR\ngoes as CR LF when CRLF conversion is on, a control code below 32 as ESC \"B\" <hex>. Ends\nwith ESC \"Z\" and the 'File sent' time; a failure writes 'command aborted' and closes the\nfile.\nEntry: IX = start_workspace.",
+          "provenance": "source"
+        },
+        "3172": {
+          "synopsis": "PCLINK II command ESC \"Q\": answers ESC \"Y\" and ends EazyLink (KillPopdown). When the answer\ncannot be sent, writes 'command aborted' and returns.\nEntry: IX = start_workspace.",
+          "provenance": "source"
+        },
+        "3235": {
+          "synopsis": "Receives a path name with the PCLINK II byte-by-byte acknowledgement (Getbyte_ackn) into\nfilename_buffer, up to ESC and the byte after it ('Z' or 'F'). Appends '*' and a null,\nkeeping the position of the '*' in buffer.\nEntry: none.\nExit: Fc = 0; filename_buffer = the path + \"*\"; (buffer) = address of the '*'.\nError: Fc = 1 from Getbyte_ackn (serial port error or timeout).\nChanges: AF, HL.",
+          "provenance": "source"
+        },
+        "3264": {
+          "synopsis": "PCLINK II command ESC \"S\": receives files from the PC. Writes 'Receive files', then for each\nESC \"N\" <name> creates the file (directories included) and writes the bytes that follow\nuntil ESC \"E\": ESC \"B\" <hex> gives a raw byte and a LF is dropped when CRLF conversion is\non. ESC \"Z\" ends the batch. A protocol error aborts the file; a full RAM answers $01 to the\nPC.\nEntry: IX = start_workspace.",
+          "provenance": "source"
+        },
+        "3466": {
+          "synopsis": "EazyLink command ESC \"q\": answers ESC \"Y\" and ends EazyLink (KillPopdown). When the answer\ncannot be sent, writes 'command aborted' and returns.\nEntry: IX = start_workspace.",
+          "provenance": "source"
+        },
+        "3569": {
+          "synopsis": "EazyLink command ESC \"n\": sends the names of the files that match a path, each as ESC \"N\"\n<name>, ending with ESC \"Z\". A path in a file card (\":EPR.x\") lists the entries of that\nslot's file area instead (OS_Epr EP_Name). Translation is on while the path is fetched; a\nfailure writes 'command aborted'.\nEntry: IX = start_workspace.",
+          "provenance": "source"
+        },
+        "3662": {
+          "synopsis": "EazyLink command ESC \"b\": receives a batch of files from the PC (ImpExp protocol). Each ESC\n\"N\" <name> is followed by the file's data: a RAM file is created and filled\n(ReceiveRamFile); an \":EPR.x\" name is saved in the slot's file area when it can be written\n(FileEprSaveFile, the older entry of the same name is deleted). On an error the rest of the\nfile is read and ignored up to ESC \"E\". ESC \"Z\" ends the batch.\nEntry: IX = start_workspace.",
+          "provenance": "source"
+        },
+        "3815": {
+          "synopsis": "EazyLink command ESC \"s\": sends the files that match a path to the PC (ImpExp protocol): for\neach file ESC \"N\" <name>, ESC \"F\", the data and ESC \"E\" (Transfer_ RamfileImage), with the\n'File sent' time; ESC \"Z\" ends the batch. An \":EPR.x\" path sends the one matching entry of\nthe slot's file area (FileEprSendFile).\nEntry: IX = start_workspace.",
+          "provenance": "source"
+        },
+        "3975": {
+          "synopsis": "Sends one RAM file's contents to the PC: ESC \"F\", the file's blocks (SendFileBuffer) and ESC\n\"E\" as end-of-file marker.\nEntry: HL = file name; DE = buffer for its expanded name (GN_Opf).\nError: Fc = 1 when sending failed or the file could not be opened (reported through\nSystem_error).",
+          "provenance": "source"
+        },
+        "4014": {
+          "synopsis": "EazyLink command ESC \"k\": backs up files to the PC (ImpExp protocol). Writes 'Backup Files',\nfetches the path and sends the matching files (SearchFilesystem); then writes 'Scanning\ndirectories...', collects the directories of all RAM devices in a file (Get_Directories),\nsends that file and ends with ESC \"Z\".\nEntry: IX = start_workspace.",
+          "provenance": "source"
+        },
+        "4113": {
+          "synopsis": "Receives an ESC-terminated path name (the protocol's 'Z', 'F' or 'N' byte ends it) into\nfilename_buffer, at most 256 bytes, through FetchBlock; the name is null-terminated.\nEntry: IX = start_workspace.\nExit: Fz = 1, A = ESC terminator byte; BC = length; HL = filename_buffer.\nError: Fc = 1 (serial port error or timeout).\nChanges: AF, BC.",
+          "provenance": "source"
+        },
+        "4169": {
+          "synopsis": "Builds the device name \":EPR.x\" in filename_buffer, where x is the slot digit in A, and\nnull-terminates it. Send_Epr_devices sends the result for each slot with a file area.\nEntry: A = slot digit ('0' to '3').\nExit: DE = filename_buffer; A = 0.\nChanges: AF, BC, HL.",
+          "provenance": "source"
+        },
+        "4527": {
+          "synopsis": "Writes the bytes the last ReceiveBuffer put into the I/O buffer to the file entry in the\nflash card, then decides how the reception goes on.\n1. When (IY+IObufCtr) is not 0, blows that many bytes from (IY+IObuffer) with OS_Fep\nFEP_Wrbl at the image pointer (IY+FeImgPtr), through segment 1, and stores the advanced\npointer back.\n2. If blowing fails, marks the new entry deleted (MarkDeleted) and blows the size received\nso far (BlowFileEntrySize).\n3. Otherwise adds the block to the file size (AddBlck2FileSize). If the receive status had\nFc = 1, shows \"File aborted.\" and takes the same error path as step 2.\nEntry: AF = the status ReceiveBuffer returned (Fc = 1 serial port error, Fz = 1 end of file\nor timeout); IY = save workspace; IX = EazyLink runtime variables.\nExit: Fc = 0; Fz = 1 at end of file, Fz = 0 when more file data is to come.\nError: Fc = 1 (write or serial port error; the entry is marked deleted).\nChanges: AF, BC, DE, HL.\nKeeps: IX.",
+          "provenance": "source"
+        },
+        "4599": {
+          "synopsis": "Adds the size of the current I/O buffer, (IY+IObufCtr), to the 24-bit file size at\n(IY+FileSize).\nEntry: IY = save workspace.\nChanges: F, BC, HL.",
+          "provenance": "source"
+        },
+        "4864": {
+          "synopsis": "Stores the received byte in the I/O buffer and counts it, then tells whether the buffer is\nfull.\nEntry: A = byte; HL = next free position in the buffer; IY = save workspace.\nExit: HL = HL + 1; (IY+IObufCtr) incremented; Fc = 0, Fz = 1 when the count equals\n(IY+IObufSize), the buffer is full.\nChanges: F, DE, HL.",
+          "provenance": "source"
+        },
+        "4885": {
+          "synopsis": "Empties the flash save routine's I/O buffer: HL points at its start and the byte count\n(IY+IObufCtr) is reset to 0.\nEntry: IY = save workspace.\nExit: HL = (IY+IObuffer).\nChanges: HL.",
+          "provenance": "source"
+        },
+        "5068": {
+          "synopsis": "Sends every file that matches a wildcard name to the remote computer for the ImpExp backup.\nOpens a wildcard handler with A = 0 (files before directories) and runs filenames_loop when\nit succeeds.\nEntry: HL = wildcard filename; IX = EazyLink runtime variables.\nExit: Fc = 0 when all names are processed.\nError: Fc = 1 (no wildcard handler, or a transmission error).\nKeeps: IX.",
+          "provenance": "source"
+        },
+        "5081": {
+          "synopsis": "The loop of SearchFilesystem. Fetches the next name from the wildcard handler; for each file\nwhose creation and update date stamps are equal (compare_dates), sends its name\n(Transfer_filename) and contents (Transfer_RamfileImage), then opens it for update and\ncloses it, which gives it a new update date stamp. Directories and other files are skipped.\nExit: Fc = 0 when there are no more names (the wildcard handler is left open).\nError: Fc = 1 on a transmission error, after Clse_wcard_hndlr has released the handler.",
+          "provenance": "source"
+        },
+        "5258": {
+          "synopsis": "Writes a line to DIRECTORIES.CLI for every directory below the current one, recursively.\n1. Moves to the first entry with OS_Dor DR_SON; returns Fc = 0 when there is none.\n2. Pushes its name on the path (push_dir_name). For a directory, writes its path\n(prt_dir_path), calls itself for its contents and reopens it (fetch_cur_dir).\n3. Moves to each sibling with DR_SIB, replacing the last path name (upd_dir_name), and\nhandles directories the same way.\n4. When there are no more siblings, removes the name from the path (pop_dir_name).\nEntry: IX = DOR handle of the directory; file_buffer holds its path; (directory_ptr) = top\nof the directory name stack.\nExit: Fc = 0.\nError: Fc = 1 (a directory DOR could not be reopened).",
+          "provenance": "source"
+        },
+        "5315": {
+          "synopsis": "Appends the CLI line of the directory whose path is in file_buffer to DIRECTORIES.CLI. Frees\nthe current DOR handle, opens the file for update, moves to its end ((file_ptr)), writes\ncli_cmd3, the path and cli_cmd5, and closes it. Then adds the length written to (file_ptr)\nand reopens the directory's DOR (fetch_cur_dir).\nEntry: IX = DOR handle; file_buffer = path; (file_ptr) = current length of the file.\nExit: Fc = 0; IX = DOR handle of the directory in file_buffer.\nError: Fc = 1 when the DOR cannot be reopened (a write error is reported by System_error,\nnot in Fc).\nChanges: AF, BC, DE, HL, IX.",
+          "provenance": "source"
+        },
+        "5400": {
+          "synopsis": "Opens the DOR of the path held in file_buffer (OP_DOR through open_file).\nEntry: file_buffer = path.\nExit: Fc = 0; IX = DOR handle.\nError: Fc = 1, A = error code (RC_xxx).\nChanges: AF, BC, DE, HL, IX.",
+          "provenance": "source"
+        },
+        "5411": {
+          "synopsis": "Appends the name of the current DOR to the path in file_buffer and pushes it on the\ndirectory name stack. Puts a '/' before the free position the stack's top points at, reads\nthe name there (DT_NAM, up to 17 bytes) and pushes a pointer past its terminator.\nEntry: IX = DOR handle; (directory_ptr) = top of the stack (in ScratchBuffer).\nExit: (directory_ptr) and IY = new top of the stack.\nChanges: BC, DE, HL, IY.\nKeeps: AF.",
+          "provenance": "source"
+        },
+        "5455": {
+          "synopsis": "Pops the last name off the directory name stack: clears the top entry, moves (directory_ptr)\ndown and null-terminates the path in file_buffer where that name began.\nEntry: (directory_ptr) = top of the stack.\nExit: (directory_ptr) and IY = new top of the stack.\nChanges: HL, IY.\nKeeps: AF.",
+          "provenance": "source"
+        },
+        "5488": {
+          "synopsis": "Replaces the last name of the path with the name of the current DOR: pop_dir_name, then\npush_dir_name.\nEntry: IX = DOR handle.\nChanges: BC, DE, HL, IY.\nKeeps: AF.",
+          "provenance": "source"
+        },
+        "5586": {
+          "synopsis": "Reads the creation and update date stamps of the file named in filename_buffer into\ncreation_date and update_date (rw_date, 6 bytes each) and compares them.\nEntry: filename_buffer = filename.\nExit: A = $FF when the stamps are equal, A = 0 when they differ.\nChanges: AF.\nKeeps: BC, DE, HL, IX.",
+          "provenance": "source"
+        },
+        "5634": {
+          "synopsis": "Opens a file or resource with GN_Opf, for a filename in local memory and an explicit name\nbuffer of 128 bytes.\nEntry: A = open mode (OP_xxx); HL = filename; DE = buffer for the explicit filename.\nExit: Fc = 0; IX = handle; DE = end of the explicit name; B = segments, C = characters in\nthe name.\nError: Fc = 1, A = error code (RC_xxx).\nChanges: AF, BC, DE, IX.",
+          "provenance": "source"
+        },
+        "5641": {
+          "synopsis": "The name of the CLI file the backup writes the RAM devices' directories to,\n\":RAM.-/DIRECTORIES.CLI\", null-terminated.",
+          "provenance": "source"
+        },
+        "5664": {
+          "synopsis": "Length-prefixed text written first to DIRECTORIES.CLI: 3, then \"#F\" and CR.",
+          "provenance": "source"
+        },
+        "5668": {
+          "synopsis": "Length-prefixed text written before each directory path in DIRECTORIES.CLI: 5, then \"|CD|D\".",
+          "provenance": "source"
+        },
+        "5674": {
+          "synopsis": "Length-prefixed text written after each directory path in DIRECTORIES.CLI: 3, then \"~E\" and\nCR.",
+          "provenance": "source"
+        },
+        "5689": {
+          "synopsis": "Sends a synch sequence to the remote computer: the start byte twice, then the end byte.\nEntry: H = start byte; L = end byte.\nExit: Fc = 0.\nError: Fc = 1, A = error code (ESC pressed or timeout).\nChanges: AF, B.",
+          "provenance": "source"
+        },
+        "5701": {
+          "synopsis": "Receives a byte from the serial port (RxByte) and, when character translation is on\n(BB_CharTrans), translates it; falls into TrnslteIncoming.\nEntry: IX = EazyLink runtime variables.\nExit: Fc = 0, A = byte.\nError: Fc = 1, A = error code (RC_xxx).\nChanges: AF.\nKeeps: BC, HL.",
+          "provenance": "source"
+        },
+        "5710": {
+          "synopsis": "Translates a byte received from the remote computer through the table at TraTableOut.\nEntry: A = byte.\nExit: A = translated byte.\nChanges: AF.\nKeeps: BC, HL.",
+          "provenance": "source"
+        },
+        "5719": {
+          "synopsis": "Translates a byte to send to the remote computer through the table at TraTableIn.\nEntry: A = byte.\nExit: A = translated byte.\nChanges: AF.\nKeeps: BC, HL.",
+          "provenance": "source"
+        },
+        "5736": {
+          "synopsis": "Receives a byte from the serial port with OS_Si SI_GBT and a 30 second timeout. When serial\nport logging is on (BB_SerportLog), copies the byte to the input log file. A failure goes to\nCheck_timeout.\nEntry: IX = EazyLink runtime variables.\nExit: Fc = 0, A = byte.\nError: Fc = 1, A = error code (RC_Time on timeout).\nChanges: AF.\nKeeps: BC, HL.",
+          "provenance": "source"
+        },
+        "5767": {
+          "synopsis": "Sends a byte to the serial port with OS_Si SI_PBT and a 30 second timeout. When serial port\nlogging is on (BB_SerportLog), copies the byte to the output log file. A failure goes to\nCheck_timeout.\nEntry: A = byte; IX = EazyLink runtime variables.\nExit: Fc = 0.\nError: Fc = 1, A = error code (RC_Time on timeout).\nKeeps: BC, HL.",
+          "provenance": "source"
+        },
+        "5787": {
+          "synopsis": "Handles a failed serial port transfer: ErrHandler deals with ESC, suspend and quit, and on a\ntimeout (RC_Time) \"Waiting...\" is written to the log window.\nEntry: A = error code (RC_xxx).\nExit: Fc = 1; A = error code.\nChanges: F, HL.",
+          "provenance": "source"
+        },
+        "5797": {
+          "synopsis": "Writes \"Waiting...\" (message2) to the log window with Write_message.\nExit: HL = message2.\nChanges: HL.\nKeeps: AF.",
+          "provenance": "source"
+        },
+        "5955": {
+          "synopsis": "Converts a value 0 to 15 to its ASCII hex digit, '0' to '9' or 'A' to 'F'. This is the\nserial byte module's own copy, used by Send_ESC_byte_ackn.\nEntry: A = value (0 to 15).\nExit: A = ASCII hex digit.\nChanges: AF.",
+          "provenance": "source"
+        },
+        "5965": {
+          "synopsis": "Sends ESC 'N' to the remote computer (Send_ESC_Rspnse).\nExit: Fc = 0, Fz = 0.\nError: Fc = 1 (serial port error).\nChanges: F.\nKeeps: A, BC, DE, HL.",
+          "provenance": "source"
+        },
+        "5974": {
+          "synopsis": "Sends ESC 'Y' to the remote computer (Send_ESC_Rspnse).\nExit: Fc = 0, Fz = 0.\nError: Fc = 1 (serial port error).\nChanges: F.\nKeeps: A, BC, DE, HL.",
+          "provenance": "source"
+        },
+        "5983": {
+          "synopsis": "Sends ESC 'Z' to the remote computer (Send_ESC_Rspnse).\nExit: Fc = 0, Fz = 0.\nError: Fc = 1 (serial port error).\nChanges: F.\nKeeps: A, BC, DE, HL.",
+          "provenance": "source"
+        },
+        "5992": {
+          "synopsis": "Sends ESC 'E' to the remote computer (Send_ESC_Rspnse).\nExit: Fc = 0, Fz = 0.\nError: Fc = 1 (serial port error).\nChanges: F.\nKeeps: A, BC, DE, HL.",
+          "provenance": "source"
+        },
+        "6001": {
+          "synopsis": "Sends ESC 'F' to the remote computer (Send_ESC_Rspnse).\nExit: Fc = 0, Fz = 0.\nError: Fc = 1 (serial port error).\nChanges: F.\nKeeps: A, BC, DE, HL.",
+          "provenance": "source"
+        },
+        "6010": {
+          "synopsis": "Sends CR and LF to the remote computer (Send_ESC_Rspnse).\nExit: Fc = 0, Fz = 0.\nError: Fc = 1 (serial port error).\nChanges: F.\nKeeps: A, BC, DE, HL.",
+          "provenance": "source"
+        },
+        "6019": {
+          "synopsis": "Sends an ESC byte in its encoded form, the four bytes ESC \"B1B\" (ESC_1B), untranslated.\nExit: Fc = 0, Fz = 0.\nError: Fc = 1 (serial port error).\nChanges: F.\nKeeps: A, BC, DE, HL.",
+          "provenance": "source"
+        },
+        "6033": {
+          "synopsis": "Sends the 2-byte sequence at HL untranslated (SendStringRaw, OS_Si SI_PX), copying it to the\noutput log file when serial port logging is on.\nEntry: HL = sequence.\nExit: Fc = 0, Fz = 0.\nError: Fc = 1 (serial port error; A keeps its value).\nChanges: F.\nKeeps: A, BC, DE, HL.",
+          "provenance": "source"
+        },
+        "6261": {
+          "synopsis": "Sends the run of buffer bytes before a byte that needs special handling. SendFileBuffer\ncalls it before it sends an escape, CRLF or ESC B HH sequence, and falls into it after the\nlast byte to send the rest. Nothing is sent when the run is empty.\nEntry: DE = start of the run; HL = position of the byte that ends it; Fc = 0.\nExit: Fc = 0; DE = HL + 1, the start of the next run.\nError: Fc = 1 (serial port error).\nChanges: F, DE.\nKeeps: A, BC, HL.",
+          "provenance": "source"
+        },
+        "6345": {
+          "synopsis": "Entry inside FetchBytes, after ESC 'B': receives the two ASCII hex digits of an encoded byte\n(RxByte) and combines them.\nExit: A = byte; Fc = 0, Fz = 1 (a normal byte).\nError: Fc = 1, A = error code (serial port error or timeout).\nChanges: AF, B.",
+          "provenance": "source"
+        },
+        "6615": {
+          "synopsis": "Converts an ASCII hex digit to its value in the high nibble (ConvAsciHexNbble, times 16).\nEntry: A = '0' to '9' or 'A' to 'F'.\nExit: A = value * 16.\nChanges: AF.",
+          "provenance": "source"
+        },
+        "6623": {
+          "synopsis": "Converts an ASCII hex digit to its value: digits above '9' are taken as 'A' to 'F' (upper\ncase only).\nEntry: A = '0' to '9' or 'A' to 'F'.\nExit: A = 0 to 15.\nChanges: AF.",
+          "provenance": "source"
+        },
+        "6732": {
+          "synopsis": "Installs the built-in translation tables: copies the 512 bytes at IBM_TraTableIn over\nTraTableIn and TraTableOut, and writes \"Using ISO translations\" to the log window.\nChanges: BC, DE, HL.\nKeeps: AF.",
+          "provenance": "source"
+        },
+        "6752": {
+          "synopsis": "Installs one translation pair read from the translation file: TraTableIn(D) = E and\nTraTableOut(E) = D.\nEntry: D = Z88 byte; E = byte on the remote computer.\nChanges: F.\nKeeps: BC, HL.",
+          "provenance": "source"
+        },
+        "6771": {
+          "synopsis": "Reads the next byte of the open file ((file_handle)) with OS_Gb, unless the file is at its\nend (OS_Frm FA_EOF).\nEntry: (file_handle) = open file.\nExit: Fz = 0, A = byte; Fz = 1 at end of file.\nChanges: AF.\nKeeps: DE, IX.",
+          "provenance": "source"
+        },
+        "6829": {
+          "synopsis": "Releases the wildcard handler held in (wildcard_handle) with GN_Wcl.\nKeeps: AF, IX.",
+          "provenance": "source"
+        },
+        "6843": {
+          "synopsis": "Abandons the file being received: closes it (Close_file) and deletes the file named in\nfilename_buffer with GN_Del.\nKeeps: AF, BC, HL.",
+          "provenance": "source"
+        },
+        "6861": {
+          "synopsis": "Puts a byte into the file buffer and counts it ((buffer), (buflen)). When the buffer holds\n1280 bytes it is written to the file with Flush_buffer.\nEntry: A = byte.\nExit: Fc = 0.\nError: Fc = 1 when a full buffer could not be written.\nChanges: F, HL.\nKeeps: A, BC.",
+          "provenance": "source"
+        },
+        "6893": {
+          "synopsis": "Writes the (buflen) bytes of file_buffer to the open file ((file_handle)) with OS_Mv, when\nthere are any, then falls into Reset_buffer_ptrs, which empties the buffer.\nExit: Fc = 0; (buffer) = file_buffer; (buflen) = 0.\nError: Fc = 1 from OS_Mv (A keeps its value, not an error code).\nChanges: F, HL (HL = the AF value on entry).\nKeeps: A, BC, DE, IX.",
+          "provenance": "source"
+        },
+        "6939": {
+          "synopsis": "Reads up to 1280 bytes of the open file ((file_handle)) into file_buffer with OS_Mv and\nstores the number read in (buflen). Nothing is read at end of file.\nExit: Fc = 0, Fz = 0; (buflen) = bytes read.\nError: Fc = 1 (OS_Frm error); Fz = 1 at end of file; an OS_Mv error is not reported.\nChanges: AF, BC, DE, HL.\nKeeps: IX.",
+          "provenance": "source"
+        },
+        "6975": {
+          "synopsis": "Opens a file with GN_Opf (explicit name buffer of 128 bytes) and keeps its handle in\n(file_handle).\nEntry: A = open mode (OP_xxx); HL = filename; DE = buffer for the explicit filename.\nExit: Fc = 0; (file_handle) = handle; DE = end of the explicit name; B = segments, C =\ncharacters in the name.\nError: Fc = 1, A = error code (RC_xxx).\nChanges: AF, BC, DE.\nKeeps: HL, IX.",
+          "provenance": "source"
+        },
+        "6992": {
+          "synopsis": "Reads the size of the open file ((file_handle)) with OS_Frm FA_EXT and stores it as a 32-bit\nvalue at (File_ptr), low word first.\nExit: (File_ptr) = file size; DEBC = file size.\nChanges: AF, BC, DE.\nKeeps: IX.",
+          "provenance": "source"
+        },
+        "7016": {
+          "synopsis": "Closes the open file with GN_Cl and clears (file_handle). Does nothing when (file_handle) is\n0, so it can be called after an error.\nKeeps: AF, HL, IX.",
+          "provenance": "source"
+        },
+        "7210": {
+          "synopsis": "Converts a value 0 to 15 to its ASCII hex digit, '0' to '9' or 'A' to 'F'. This is the\nCRC-32 module's copy, the one other modules call (Send_ESC_B).\nEntry: A = value (0 to 15).\nExit: A = ASCII hex digit.\nChanges: AF.",
+          "provenance": "source"
+        },
+        "7227": {
+          "synopsis": "The name of the translation file LoadTranslations reads, \":*//Translate.dat\",\nnull-terminated.",
+          "provenance": "source"
+        },
+        "7245": {
+          "synopsis": "The wildcard name of the RAM devices, \":RAM.*\", null-terminated.",
+          "provenance": "source"
+        },
+        "7252": {
+          "synopsis": "The text \":EPR.\" without a terminator: EprDev_name copies its 5 bytes and appends the slot\ndigit.",
+          "provenance": "source"
+        },
+        "7257": {
+          "synopsis": "The name of the serial port input log file, \"/rs232rcv.log\", null-terminated (created in the\ndefault RAM device).",
+          "provenance": "source"
+        },
+        "7271": {
+          "synopsis": "The name of the serial port output log file, \"/rs232snd.log\", null-terminated.",
+          "provenance": "source"
+        },
+        "7285": {
+          "synopsis": "The message \"Serial port logging \", led by the sequence 1, \"2H3\" that selects window 3,\nnull-terminated. msg_srdmpfl_enbl or msg_srdmpf_dsble follows it on screen.",
+          "provenance": "source"
+        },
+        "7310": {
+          "synopsis": "The message \"enabled\", null-terminated.",
+          "provenance": "source"
+        },
+        "7318": {
+          "synopsis": "The message \"disabled\", null-terminated.",
+          "provenance": "source"
+        },
+        "7327": {
+          "synopsis": "Two bytes: the start (5) and end (6) bytes of the PCLINK II synch sequence, read by\nFetch_synch.",
+          "provenance": "source"
+        },
+        "7329": {
+          "synopsis": "Two bytes: the start (1) and end (2) bytes of the EazyLink extended protocol synch sequence,\nread by Fetch_synch.",
+          "provenance": "source"
+        },
+        "7331": {
+          "synopsis": "The title \"EazyLink\", null-terminated, of the log window (LogWinDef).",
+          "provenance": "source"
+        },
+        "7340": {
+          "synopsis": "The title \"Commands\", null-terminated, of the command window (CmdWinDef).",
+          "provenance": "source"
+        },
+        "7349": {
+          "synopsis": "The message \"Running\", null-terminated.",
+          "provenance": "source"
+        },
+        "7357": {
+          "synopsis": "The message \"Waiting...\", null-terminated, shown on a serial port timeout.",
+          "provenance": "source"
+        },
+        "7368": {
+          "synopsis": "The message \"Hello\", null-terminated.",
+          "provenance": "source"
+        },
+        "7374": {
+          "synopsis": "The message \"Receive files\", null-terminated.",
+          "provenance": "source"
+        },
+        "7388": {
+          "synopsis": "The message \"Send file\", null-terminated.",
+          "provenance": "source"
+        },
+        "7398": {
+          "synopsis": "The message \"Auto Translation ON\", null-terminated.",
+          "provenance": "source"
+        },
+        "7418": {
+          "synopsis": "The message \"Auto Translation OFF\", null-terminated.",
+          "provenance": "source"
+        },
+        "7439": {
+          "synopsis": "The message \"Auto CRLF ON\", null-terminated.",
+          "provenance": "source"
+        },
+        "7452": {
+          "synopsis": "Zero-terminated message \"Auto CRLF OFF\", written to the log window by ESC_C_cmd2 when the\nclient switches off automatic CRLF conversion (ESC \"C\").",
+          "provenance": "source"
+        },
+        "7466": {
+          "synopsis": "Zero-terminated message \"Receive Files\", written to the log window by ImpExp_Receive (ESC\n\"b\").",
+          "provenance": "source"
+        },
+        "7480": {
+          "synopsis": "Zero-terminated message \"Send Files\", written to the log window by ImpExp_Send (ESC \"s\").",
+          "provenance": "source"
+        },
+        "7491": {
+          "synopsis": "Zero-terminated message \"Backup Files\", written to the log window by ImpExp_Backup (ESC\n\"k\").",
+          "provenance": "source"
+        },
+        "7504": {
+          "synopsis": "Zero-terminated message \"Sending \", printed before each file name while ImpExp_Send sends a\nbatch of RAM files or a file area entry.",
+          "provenance": "source"
+        },
+        "7513": {
+          "synopsis": "Zero-terminated message \"Scanning directories...\", written by ImpExp_Backup before it\ncollects the directories of all RAM devices.",
+          "provenance": "source"
+        },
+        "7537": {
+          "synopsis": "Zero-terminated message \"Using file translations\", written by LoadTranslations after it has\ninstalled the byte pairs of the translation file.",
+          "provenance": "source"
+        },
+        "7561": {
+          "synopsis": "Zero-terminated message \"Using ISO translations\", written by Use_StdTranslations after it\nhas copied the built-in IBM tables into the translation tables.",
+          "provenance": "source"
+        },
+        "7584": {
+          "synopsis": "Zero-terminated message \"Update Translation Table\", written by ESC_Z_cmd before it reloads\nthe translation file.",
+          "provenance": "source"
+        },
+        "7609": {
+          "synopsis": "Zero-terminated message \"Delete file/dir \", written by ESC_R_cmd before the name it deletes.",
+          "provenance": "source"
+        },
+        "7626": {
+          "synopsis": "Zero-terminated message \"Create dir \", written by ESC_Y_cmd before the directory it creates.",
+          "provenance": "source"
+        },
+        "7638": {
+          "synopsis": "Zero-terminated message \"Rename file \", written by ESC_W_cmd before the file it renames.",
+          "provenance": "source"
+        },
+        "7651": {
+          "synopsis": "Zero-terminated message \"Set Z88 Clock\", written by ESC_p_cmd (ESC \"p\") when the client sets\nthe system clock.",
+          "provenance": "source"
+        },
+        "7665": {
+          "synopsis": "Zero-terminated message \"Using Xon/Xoff\", written by UseSoftwareHandshaking.",
+          "provenance": "source"
+        },
+        "7680": {
+          "synopsis": "Zero-terminated message \"Using RTS/CTS\", written by UseHardwareHandshaking.",
+          "provenance": "source"
+        },
+        "7694": {
+          "synopsis": "Zero-terminated message \"File received\", printed in the log window by Msg_file_received,\nfollowed by the elapsed time.",
+          "provenance": "source"
+        },
+        "7708": {
+          "synopsis": "Zero-terminated message \"Change to 38.400bps\", written by ESC_L_cmd before it switches the\nserial port to 38400 baud.",
+          "provenance": "source"
+        },
+        "7728": {
+          "synopsis": "Zero-terminated message \"File sent\", printed in the log window by Msg_file_sent, followed by\nthe elapsed time.",
+          "provenance": "source"
+        },
+        "7738": {
+          "synopsis": "Zero-terminated message \"Escape pressed....\"; no EazyLink code loads its address.",
+          "provenance": "source"
+        },
+        "7757": {
+          "synopsis": "Zero-terminated message \"File open error.\", written by Msg_File_open_error.",
+          "provenance": "source"
+        },
+        "7774": {
+          "synopsis": "Zero-terminated message \"- command aborted...\", written by Msg_Command_aborted.",
+          "provenance": "source"
+        },
+        "7795": {
+          "synopsis": "Zero-terminated message \"Protocol error: Unknown ESC command.\", written by\nMsg_Protocol_error.",
+          "provenance": "source"
+        },
+        "7832": {
+          "synopsis": "Zero-terminated message \"File aborted.\", written by Msg_file_aborted.",
+          "provenance": "source"
+        },
+        "7846": {
+          "synopsis": "Zero-terminated message \"No Room.\", written by Msg_No_Room.",
+          "provenance": "source"
+        },
+        "7855": {
+          "synopsis": "Zero-terminated message \"File Card Write Error.\", written when a received file cannot be\nwritten to a file card.",
+          "provenance": "source"
+        },
+        "7878": {
+          "synopsis": "Zero-terminated protocol response ESC \"Z\", sent by Send_ESC_Z: the end of a list of names or\nfiles.",
+          "provenance": "source"
+        },
+        "7881": {
+          "synopsis": "Zero-terminated protocol response ESC \"F\", sent by Send_ESC_F.",
+          "provenance": "source"
+        },
+        "7884": {
+          "synopsis": "Zero-terminated protocol response ESC \"E\", sent by Send_ESC_E.",
+          "provenance": "source"
+        },
+        "7887": {
+          "synopsis": "Zero-terminated protocol response ESC \"N\", sent by Send_ESC_N before a name.",
+          "provenance": "source"
+        },
+        "7890": {
+          "synopsis": "Zero-terminated protocol response ESC \"Y\", sent by Send_ESC_Y as the acknowledgement of a\ncommand (ESC_A_cmd1 answers the PCLINK II 'Hello' with it).",
+          "provenance": "source"
+        },
+        "7893": {
+          "synopsis": "Zero-terminated protocol response ESC \"B\"; blockio.asm imports it, but no instruction loads\nits address.",
+          "provenance": "source"
+        },
+        "7896": {
+          "synopsis": "Zero-terminated protocol response ESC ESC; blockio.asm imports it, but no instruction loads\nits address.",
+          "provenance": "source"
+        },
+        "7899": {
+          "synopsis": "The 4 bytes ESC \"B1B\" (zero-terminated): the escaped form of an ESC byte in the data stream,\nsent by Send_ESC.",
+          "provenance": "source"
+        },
+        "7904": {
+          "synopsis": "Zero-terminated CR, LF pair, sent by Send_CRLF.",
+          "provenance": "source"
+        },
+        "7907": {
+          "synopsis": "Zero-terminated ESC \"N\" \".\": the current directory entry that ESC_D_cmd2 and the PCLINK II\ndirectory command send first in a directory list.",
+          "provenance": "source"
+        },
+        "7911": {
+          "synopsis": "Zero-terminated ESC \"N\" \"..\": the parent directory entry sent after Current_dir when the\npath is below the root.",
+          "provenance": "source"
+        },
+        "7916": {
+          "synopsis": "Word 9600: the default transmit and receive baud rate that Define_PanelSettings installs\nwith OS_Sp (PA_Txb, PA_Rxb).",
+          "provenance": "source"
+        },
+        "7918": {
+          "synopsis": "Word 38400: the transmit and receive baud rate that ESC_L_cmd installs with OS_Sp when the\nclient asks for light speed (ESC \"L\").",
+          "provenance": "source"
+        },
+        "7920": {
+          "synopsis": "Byte 'N': the Panel value given to OS_Sp for parity none (PA_Par) and for Xon/Xoff off\n(PA_Xon).",
+          "provenance": "source"
+        },
+        "7921": {
+          "synopsis": "Byte 'Y': the Panel value given to OS_Sp for Xon/Xoff on (PA_Xon) by\nSetPanel_SoftwareHandshaking.",
+          "provenance": "source"
+        },
+        "7960": {
+          "synopsis": "Table of words: the handler address of each ESC command, in the order of the command letters\nin EscCommands. EscCommand finds the letter's index, doubles it, reads the word here and\njumps to it.",
+          "provenance": "source"
+        },
+        "8292": {
+          "synopsis": "Table of 256 bytes: the default outgoing (IBM to Z88 ISO) translation, indexed by byte\nvalue. It follows IBM_TraTableIn, and Use_StdTranslations copies both (512 bytes) into\nTraTableIn and TraTableOut.",
+          "provenance": "source"
+        },
+        "8565": {
+          "synopsis": "Entry inside SetBlinkScreen: sets the LCD-on bit (BB_COMLCDON) in A, the COM register value\nbeing built.\nEntry: A = COM value.\nExit: A = COM value with the LCD on.\nChanges: A.",
+          "provenance": "source"
+        },
+        "8568": {
+          "synopsis": "Switches the LCD on: calls SetBlinkScreen with Fz = 1, which sets BB_COMLCDON in the\nBLSC_COM soft copy and writes it to the Blink COM register.\nEntry: none.\nKeeps: AF, BC, DE, HL.",
+          "provenance": "source"
+        },
+        "8735": {
+          "synopsis": "Entry inside FileEprTransferBlockSize: the remaining file image fits in the current bank, so\nthe block is the whole remainder.\nEntry: DE' = remaining file size (at most 16K).\nExit: HL' = block size (the file size); DE' = 0.\nChanges: DE', HL'.",
+          "provenance": "source"
+        },
+        "8742": {
+          "synopsis": "Entry inside FileEprTransferBlockSize: the remaining file image crosses the bank boundary,\nso the block is only the space left in this bank.\nEntry: DE = space left in the bank; CDE' = remaining file size; Fc = 0.\nExit: HL' = block size (the bank space); CDE' = file size less the bank space.\nChanges: BC', DE', HL'.\nKeeps: AF, BC, DE, HL.",
+          "provenance": "source"
+        },
+        "8957": {
+          "synopsis": "Creates one directory: opens the path at IY with GN_Opf in OP_DIR mode and frees the DOR\nhandle it returns. A directory that exists (RC_EXIS) or is in use (RC_USE) counts as\nsuccess.\nEntry: IY = pathname, terminated after the level to create; C = buffer length.\nExit: Fc = 0.\nError: Fc = 1, A = error code.\nChanges: AF, DE, IX.\nKeeps: BC, HL.",
+          "provenance": "source"
+        },
+        "9107": {
+          "synopsis": "Scans backwards from HL for the directory separator '/'.\nEntry: HL = position inside a pathname, after a '/'.\nExit: HL = the separator.\nChanges: HL.\nKeeps: AF.",
+          "provenance": "source"
+        },
+        "9308": {
+          "synopsis": "The Filer's main loop: reads a key with OS_In and acts on it. RC_Quit and RC_Esc leave\nthrough ExitFiler, RC_Draw redraws with InitDisplay. A zero byte is followed by an extended\ncode: ENTER, the four arrows, $20 (ShEnter), $32 (ChDirDown), $31 (ChDirUp) and $21-$30\n(DoCmd with A = 0-15); other keys are ignored.",
+          "provenance": "source"
+        },
+        "9451": {
+          "synopsis": "Zero-terminated mailbox name \"NAME\": ExitFiler writes the first selected file name to this\nmailbox with OS_Sr (SR_WPD).",
+          "provenance": "source"
+        },
+        "9456": {
+          "synopsis": "Tests whether IX holds a handle.\nEntry: IX = handle or 0.\nExit: Fz = 1 when IX = 0; DE = IX.\nChanges: AF, DE.",
+          "provenance": "source"
+        },
+        "10226": {
+          "synopsis": "Closes the source resource if one is open: frees it with OS_Dor (DR_FRE) when bit 4 of\nf_CmdFlags marks a DOR, otherwise closes it with OS_Cl, and writes IX back to\nf_SourceHandle.\nEntry: f_SourceHandle = handle or 0.\nChanges: AF, DE, IX.",
+          "provenance": "source"
+        },
+        "10255": {
+          "synopsis": "Closes the temporary file with OS_Cl if f_TmpFileHandle holds a handle, and writes IX back\nto f_TmpFileHandle.\nEntry: f_TmpFileHandle = handle or 0.\nChanges: AF, DE, IX.",
+          "provenance": "source"
+        },
+        "10271": {
+          "synopsis": "Closes the destination file with OS_Cl if f_DestHandle holds a handle, and writes IX back to\nf_DestHandle.\nEntry: f_DestHandle = handle or 0.\nExit: Fz = 0 when a file was closed; Fz = 1 when there was none.\nChanges: AF, DE, IX.",
+          "provenance": "source"
+        },
+        "10310": {
+          "synopsis": "Frees the DOR handle in IX with OS_Dor (DR_FRE), if IX is not 0.\nEntry: IX = DOR handle or 0.\nChanges: AF, DE.",
+          "provenance": "source"
+        },
+        "10319": {
+          "synopsis": "Opens f_SourceName with OpenFile (GN_Opf): as a DOR (OP_DOR) when bit 4 of f_CmdFlags is\nset, otherwise for reading (OP_IN). Stores IX in f_SourceHandle and A in f_SourceType, also\nafter an error.\nEntry: f_SourceName = name; f_CmdFlags.\nExit: Fc = 0, IX = handle; A = DOR type.\nError: Fc = 1, A = error code.",
+          "provenance": "source"
+        },
+        "10344": {
+          "synopsis": "Reads the source file name into f_SourceName at column 21, row 1 of the current window;\nfalls into InputLine.\nEntry: f_SourceName = the text to edit Exit, Error: as InputLine.",
+          "provenance": "source"
+        },
+        "10350": {
+          "synopsis": "Lets the user edit a file name and checks it: shows the cursor, edits the buffer with GN_Sip\nat the given position (redrawing after RC_Susp), parses the result with GN_Prs, and shows a\nbad name with GN_Err. Ends through ToggleCrsr, which hides the cursor again.\nEntry: DE = buffer, holding the text to edit; B = column, C = row.\nExit: Fc = 0, A = key that ended the input; C = GN_Prs flags.\nError: Fc = 1, A = error code.\nChanges: AF, BC, HL.",
+          "provenance": "source"
+        },
+        "10987": {
+          "synopsis": "Draws the whole Filer screen.\n1. Reads the filename match string (GetMatchString); clears f_NumDirEntries.\n2. Opens the command window with GN_Win and sets up the directory window.\n3. Prints the title: \"NM\" when the match string is not \"*\", \"DIRECTORY \" and the current\ndirectory, expanded with GN_Fex and compressed with GN_Fcm.\n4. If IX is 0, opens the current directory's DOR into f_CurrentDirHandle, freeing it again\nwhen it is not a device or a directory.\n5. Draws the directory window (DrawDirWindow) when there is a directory, then the command\nwindow, and the selector bar (ApplyReverse).\nEntry: IX = current directory DOR handle, or 0.",
+          "provenance": "source"
+        },
+        "11182": {
+          "synopsis": "Zero-terminated \".\", the current directory. The byte before it (ParentDir_txt) makes \"..\".\nInitDisplay expands it to show the current path.",
+          "provenance": "source"
+        },
+        "11184": {
+          "synopsis": "Draws the command window: selects and clears window 1, then prints up to 7 command names\nfrom f_SelectedCmd onwards, one a line, stopping at the last command.\nEntry: f_SelectedCmd.",
+          "provenance": "source"
+        },
+        "11213": {
+          "synopsis": "Draws the directory window: selects and clears window 2, then prints up to 7 lines of 3\nmatching entries, starting with entry f_TopDirEntry (SkipBCMatches). When the top entry lies\npast the end, it is reset to 0 and the window drawn again. Sets f_NumDirEntries to the\nnumber shown.\nEntry: IX = directory DOR handle.\nKeeps: IX.",
+          "provenance": "source"
+        },
+        "11289": {
+          "synopsis": "Prints one line of up to 3 directory entries, starting with the current match: a bullet\narrow for a selected entry, the name padded to 16 characters (directories between PrntDir\ntoggles), and a space. FindMatch moves on to the next entry.\nEntry: IX = DOR of a matching entry, its name in f_StrBuffer.\nExit: B = number of entries printed; Fc = 0 when 3 were printed.\nError: Fc = 1, A = error code when the entries ran out (B < 3).",
+          "provenance": "source"
+        },
+        "11351": {
+          "synopsis": "Sends the VDU sequence 1, \"B\", which toggles bold; Print3Matches prints a directory name\nbetween two of them.\nEntry: none.",
+          "provenance": "source"
+        },
+        "11377": {
+          "synopsis": "Moves to match number BC of a directory: duplicates the directory DOR, takes its first child\nwith OS_Dor (DR_SON) and calls FindMatch BC + 1 times.\nEntry: IX = directory DOR handle (0 gives RC_Eof); BC = matches to skip.\nExit: Fc = 0, IX = DOR of the match, its name in f_StrBuffer.\nError: Fc = 1, A = error code (RC_Eof when the entries ran out).\nKeeps: BC.",
+          "provenance": "source"
+        },
+        "11431": {
+          "synopsis": "Calls FreeDOR (frees the DOR handle in IX if there is one), keeping AF.\nEntry: IX = DOR handle or 0.\nChanges: DE.\nKeeps: AF.",
+          "provenance": "source"
+        },
+        "11437": {
+          "synopsis": "Finds the next directory entry whose name matches f_MatchString: steps to the next sibling\nwith OS_Dor (DR_SIB), unless bit 1 of f_Flags2 says to test the current DOR first, reads its\nname record into f_StrBuffer and matches it with GN_Wsm. Stores the minor type in\nf_SourceType.\nEntry: IX = DOR handle; f_Flags2 bit 1.\nExit: Fc = 0, IX = DOR of the match, its name in f_StrBuffer.\nError: Fc = 1, A = error code (no more entries).\nKeeps: BC.",
+          "provenance": "source"
+        },
+        "11485": {
+          "synopsis": "Reads the current filename match string (OS_Nq, NQ_Fnm) and copies it to f_MatchString with\nCopyExtended.\nEntry: none.",
+          "provenance": "source"
+        },
+        "11526": {
+          "synopsis": "Draws the selector bar: switches reverse on, applies it over the selector's field with\nRemoveHighlight, and switches reverse off.\nEntry: f_ActiveWd; f_SelectorPos.",
+          "provenance": "source"
+        },
+        "11535": {
+          "synopsis": "Applies the current attributes over the selector's field: 24 characters on row f_SelectorPos\nof the command window, or the 18 characters of entry f_SelectorPos in the directory window.\nWithout reverse set, this removes the highlight.\nEntry: f_ActiveWd (0 = command window); f_SelectorPos.\nChanges: AF, BC, DE, HL.",
+          "provenance": "source"
+        },
+        "11565": {
+          "synopsis": "Moves the cursor to directory entry A: row A / 3, column 18 * (A mod 3).\nEntry: A = entry number.\nChanges: AF, BC, DE, HL.",
+          "provenance": "source"
+        },
+        "11656": {
+          "synopsis": "Selects the entry under the selector: stores the path first when the list is empty\n(GetPath), reads the entry's name from the screen, allocates a 22 byte node from f_MemPool,\ncopies the name into it, queues it on the selected list, draws the bullet arrow, counts it\nin f_NumSelected and redraws the bar. An error is shown with GN_Err (RC_Room when 255 are\nselected).\nEntry: f_SelectorPos.\nExit: Fc = 0.\nError: Fc = 1, A = error code.\nKeeps: IX.",
+          "provenance": "source"
+        },
+        "11861": {
+          "synopsis": "Empties the selected-file list: frees every node on f_SelectedList through FreeSelNode and\nsets f_NumSelected to 0.\nEntry: none.\nExit: f_SelectedList null; f_NumSelected = 0; A = 0.\nChanges: AF, BC, DE, HL; S1 binding.\nKeeps: IX, IY.",
+          "provenance": "source"
+        },
+        "11998": {
+          "synopsis": "Reads the three-byte link at IY into CDE (bank in C).\nEntry: IY = a link (offset low, offset high, bank).\nExit: C = bank; DE = offset.\nChanges: C, DE.",
+          "provenance": "source"
+        },
+        "12134": {
+          "synopsis": "Reads the name of the directory entry under the selector from the screen. Moves to entry\nf_SelectorPos (CrsrToPosA), one column right, reads 16 characters with OS_Nq NQ_Rds into\nf_StrBuffer, then removes the spaces and zero-terminates it.\nEntry: f_SelectorPos = entry number in the directory window.\nExit: f_StrBuffer = the entry's name, zero-terminated; DE = its terminator; A = 0.\nChanges: AF, BC, DE, HL.",
+          "provenance": "source"
+        },
+        "12175": {
+          "synopsis": "Prints the right bullet arrow character (VDU 1,$F5) with OS_Pout.\nEntry: none.",
+          "provenance": "source"
+        },
+        "12181": {
+          "synopsis": "Clears the current window from the cursor to the end of the line (VDU 1,\"2C\",$FD).\nEntry: none.",
+          "provenance": "source"
+        },
+        "12189": {
+          "synopsis": "Prints the prompt \"Name :\" at column 13, row 1 of the current window.\nEntry: none.",
+          "provenance": "source"
+        },
+        "12204": {
+          "synopsis": "Prints the prompt \"New name :\" at column 9, row 3 of the current window.\nEntry: none.",
+          "provenance": "source"
+        },
+        "12240": {
+          "synopsis": "Selects window 1, the Filer's commands window (VDU 1,\"2I1\").\nEntry: none.",
+          "provenance": "source"
+        },
+        "12248": {
+          "synopsis": "Selects window 2, the Filer's directory window (VDU 1,\"2I2\").\nEntry: none.",
+          "provenance": "source"
+        },
+        "12256": {
+          "synopsis": "Selects window 3, the window a command works in (VDU 1,\"2I3\").\nEntry: none.",
+          "provenance": "source"
+        },
+        "12264": {
+          "synopsis": "Sets normal justification in the current window (VDU 1,\"2JN\").\nEntry: none.",
+          "provenance": "source"
+        },
+        "12272": {
+          "synopsis": "Sets centre justification in the current window (VDU 1,\"2JC\").\nEntry: none.",
+          "provenance": "source"
+        },
+        "12280": {
+          "synopsis": "Sends VDU 1,\"2.]\", which the screen driver passes to DC_Gen: it stops the output of the\ncurrent CLI going to the printer (sets CLIF_B_DISABLEPRT). PrntDotOpen undoes it.\nEntry: none.",
+          "provenance": "source"
+        },
+        "12288": {
+          "synopsis": "Sends VDU 1,\"2.[\", which the screen driver passes to DC_Gen: it lets the output of the\ncurrent CLI go to the printer again (clears CLIF_B_DISABLEPRT).\nEntry: none.",
+          "provenance": "source"
+        },
+        "12296": {
+          "synopsis": "Toggles the cursor of the current window (VDU 1,\"C\").\nEntry: none.",
+          "provenance": "source"
+        },
+        "12302": {
+          "synopsis": "Toggles the tiny font and the capitals attribute (VDU 1,\"T\",1,\"L\").\nEntry: none.",
+          "provenance": "source"
+        },
+        "12310": {
+          "synopsis": "Toggles underline (VDU 1,\"U\"), then falls into PrntReverse to toggle reverse video.\nEntry: none.",
+          "provenance": "source"
+        },
+        "12315": {
+          "synopsis": "Toggles reverse video (VDU 1,\"R\").\nEntry: none.",
+          "provenance": "source"
+        },
+        "12321": {
+          "synopsis": "Prints \" IN SLOT n\", n being the default File Card slot; DoCmd adds it to the title of a\ncommand whose block ends in 'S'.\nEntry: f_filecardslot = slot (0-3).\nChanges: AF.",
+          "provenance": "source"
+        },
+        "12341": {
+          "synopsis": "Moves the cursor of the current window to column B, row C (VDU 1,\"3@\",32+B,32+C).\nEntry: B = column; C = row.\nKeeps: AF.",
+          "provenance": "source"
+        },
+        "12369": {
+          "synopsis": "GN_Win block of the commands window, read by InitDisplay: byte $91 (@10010000 with window ID\n1), position word $0000, size word $0818, then the address of the banner text (cmds_banner).",
+          "provenance": "source"
+        },
+        "12376": {
+          "synopsis": "The commands window's banner, \"COMMANDS\", zero-terminated.",
+          "provenance": "source"
+        },
+        "12385": {
+          "synopsis": "\"Yes\", zero-terminated: the answer GetYesNo shows for yes.",
+          "provenance": "source"
+        },
+        "12389": {
+          "synopsis": "\"No \", zero-terminated and padded to the width of \"Yes\": the answer GetYesNo shows for no.",
+          "provenance": "source"
+        },
+        "12393": {
+          "synopsis": "\" to \", zero-terminated: printed between the source and destination names of a command\n(DoCmd, TreeCopy).",
+          "provenance": "source"
+        },
+        "12398": {
+          "synopsis": "Table of 16 words: the command block of each Filer command, in the order of the MTH command\ncodes $21-$30: Catalogue files, Catalogue File Card, Save to File Card, Fetch from File\nCard, Copy, Rename, Erase, View, Select Directory, Select Device, Select File Card, Execute,\nCreate Directory, Create File Card, Tree copy and Name match. GetCmdData indexes it. A block\nis a flags byte, the handler's address and the name. Flags: bit 0 ask for a destination\nname; 1 display each file (with Confirm each file); 2 the handler does its own input, so\nDoCmd prompts for nothing; 3 ignore the selected files; 4 open the source as a DOR, not a\nfile; 5 page wait; 6 beep when done; 7 empty the selected list when done. DoCmd calls the\nhandler for each source file in turn; it returns Fc = 1, A = error code to stop, and with\nflag 3 set it is called once.",
+          "provenance": "source"
+        },
+        "12443": {
+          "synopsis": "Command block of the \"Copy \" command, one of the CmdTable entries: flags byte $83 (ask\ndestination, display each file, empty the selected list), the handler's address (Copy), then\nthe name \"Copy \" for the title bar, zero-terminated.",
+          "provenance": "source"
+        },
+        "12446": {
+          "synopsis": "The name text of the Copy command block, \"Copy \", zero-terminated; TreeCopy also prints it\nbefore each file it copies.",
+          "provenance": "source"
+        },
+        "12452": {
+          "synopsis": "Command block of the \"Erase \" command, one of the CmdTable entries: flags byte $92 (display\neach file, source as a DOR, empty the selected list), the handler's address (Erase), then\nthe name \"Erase \" for the title bar, zero-terminated.",
+          "provenance": "source"
+        },
+        "12462": {
+          "synopsis": "Command block of the \"Catalogue files\" command, one of the CmdTable entries: flags byte $A4\n(own input, page wait, empty the selected list), the handler's address (CatalogueFiles),\nthen the name \"Catalogue files\" for the title bar, zero-terminated.",
+          "provenance": "source"
+        },
+        "12481": {
+          "synopsis": "Command block of the \"Save to File Card\" command, one of the CmdTable entries: flags byte\n$C2 (display each file, beep when done, empty the selected list), the handler's address\n(Save), then the name \"Save to File Card\" for the title bar, zero-terminated, followed by\n'S', which makes DoCmd append \" IN SLOT n\" (PrFcSlotNo) to the title.",
+          "provenance": "source"
+        },
+        "12503": {
+          "synopsis": "Command block of the \"Fetch from File Card\" command, one of the CmdTable entries: flags byte\n$0D (ask destination, own input, ignore the selected files), the handler's address (Fetch),\nthen the name \"Fetch from File Card\" for the title bar, zero-terminated, followed by 'S',\nwhich makes DoCmd append \" IN SLOT n\" (PrFcSlotNo) to the title.",
+          "provenance": "source"
+        },
+        "12528": {
+          "synopsis": "Command block of the \"Execute \" command, one of the CmdTable entries: flags byte $08 (ignore\nthe selected files), the handler's address (Execute), then the name \"Execute \" for the title\nbar, zero-terminated.",
+          "provenance": "source"
+        },
+        "12540": {
+          "synopsis": "Command block of the \"Select Directory\" command, one of the CmdTable entries: flags byte $0C\n(own input, ignore the selected files), the handler's address (SelectDir), then the name\n\"Select Directory\" for the title bar, zero-terminated.",
+          "provenance": "source"
+        },
+        "12560": {
+          "synopsis": "Command block of the \"Name match\" command, one of the CmdTable entries: flags byte $0C (own\ninput, ignore the selected files), the handler's address (NameMatch), then the name \"Name\nmatch\" for the title bar, zero-terminated.",
+          "provenance": "source"
+        },
+        "12574": {
+          "synopsis": "Command block of the \"Rename \" command, one of the CmdTable entries: flags byte $90 (source\nas a DOR, empty the selected list), the handler's address (Rename), then the name \"Rename \"\nfor the title bar, zero-terminated.",
+          "provenance": "source"
+        },
+        "12585": {
+          "synopsis": "Command block of the \"View\" command, one of the CmdTable entries: flags byte $80 (empty the\nselected list), the handler's address (View), then the name \"View\" for the title bar,\nzero-terminated.",
+          "provenance": "source"
+        },
+        "12593": {
+          "synopsis": "Command block of the \"Select Device\" command, one of the CmdTable entries: flags byte $0C\n(own input, ignore the selected files), the handler's address (SelectDevice), then the name\n\"Select Device\" for the title bar, zero-terminated.",
+          "provenance": "source"
+        },
+        "12610": {
+          "synopsis": "Command block of the \"Select File Card\" command, one of the CmdTable entries: flags byte $2C\n(own input, ignore the selected files, page wait), the handler's address (SelectFileCard),\nthen the name \"Select File Card\" for the title bar, zero-terminated.",
+          "provenance": "source"
+        },
+        "12630": {
+          "synopsis": "Command block of the \"Create File Card\" command, one of the CmdTable entries: flags byte $2C\n(own input, ignore the selected files, page wait), the handler's address (CreateFileCard),\nthen the name \"Create File Card\" for the title bar, zero-terminated.",
+          "provenance": "source"
+        },
+        "12650": {
+          "synopsis": "Command block of the \"Create Directory\" command, one of the CmdTable entries: flags byte $0C\n(own input, ignore the selected files), the handler's address (CreateDir), then the name\n\"Create Directory\" for the title bar, zero-terminated.",
+          "provenance": "source"
+        },
+        "12670": {
+          "synopsis": "Command block of the \"Catalogue File Card\" command, one of the CmdTable entries: flags byte\n$2C (own input, ignore the selected files, page wait), the handler's address\n(CatalogueEPROM), then the name \"Catalogue File Card\" for the title bar, zero-terminated,\nfollowed by 'S', which makes DoCmd append \" IN SLOT n\" (PrFcSlotNo) to the title.",
+          "provenance": "source"
+        },
+        "12762": {
+          "synopsis": "The Select Device command (CmdTable): asks for a device name, showing the current one, and\nmakes it the current device.\n1. Copies the current device into f_SourceName (GetDev) and edits it (InputSrcName).\n2. Parses it with GN_Pfs. If that fails with A = 9 (RC_Eof; the source says an extension and\n\"/.\" were used), sets the device to the text anyway (OS_Sp, SP_Dev) and asks again.\n3. Accepts only a name with the device and extension flags and no others, whose DOR (GN_Opf,\nOP_DOR) is a device (Dm_Dev); then sets it with OS_Sp SP_Dev, empties f_SourceName and calls\nChgDir. Anything else is RC_Ivf. An error is shown with GN_Err; after RC_Susp the name is\nasked again. Leaves through ToggleCrsr.\nEntry: none.\nExit: Fc = 0.\nError: Fc = 1; A = RC_Esc when ESC was pressed, else the error already shown.",
+          "provenance": "source"
+        },
+        "12872": {
+          "synopsis": "Lets the user choose a File Card slot. SelectFileCard falls into it with its own prompt;\nCreateFileCard calls it with another. Prints the prompt and the help line, then shows the\nslot number (f_filecardslot) under the cursor and reads keys (GetKey): 0-3 choose that slot\nwhen it holds a flash chip (checkflash) or no RAM card (checkram); <>J (LF) moves to the\nnext such slot, wrapping from 3 to 0; ENTER accepts.\nEntry: HL = prompt text, zero-terminated; f_filecardslot = slot shown first.\nExit: Fc = 0; A = IN_ENT; f_filecardslot = the chosen slot.\nError: Fc = 1; A = RC_Esc when ESC was pressed.",
+          "provenance": "source"
+        },
+        "12963": {
+          "synopsis": "Asks whether slot A holds a flash chip (OS_Fep, FEP_CDID).\nEntry: A = slot.\nExit: Fc = 0 when a flash chip was identified, Fc = 1 when not; A = slot.\nKeeps: A, BC.",
+          "provenance": "source"
+        },
+        "12973": {
+          "synopsis": "Asks whether slot A holds RAM (OS_Nq, Nq_Mfp); the error code is ignored.\nEntry: A = slot.\nExit: Fc = 0 when the slot has RAM, Fc = 1 when not; A = E = slot.\nKeeps: A, BC, D.",
+          "provenance": "source"
+        },
+        "12985": {
+          "synopsis": "The Select File Card prompt, \"Select slot for default File Card\", zero-terminated;\nSelectFileCard passes it to SelectSlotPrompt.",
+          "provenance": "source"
+        },
+        "13097": {
+          "synopsis": "Reads a key with OS_In for SelectSlotPrompt; a zero byte (the prefix of an extended key) is\nskipped.\nEntry: none.\nExit: Fc = 0; A = key code. Another OS_In error than RC_Esc also comes back with Fc = 0 and\nA = the error code.\nError: Fc = 1; A = RC_Esc.",
+          "provenance": "source"
+        },
+        "13227": {
+          "synopsis": "The Create File Card prompt, \"Select slot to create or re-format File Card\",\nzero-terminated; CreateFileCard passes it to SelectSlotPrompt.",
+          "provenance": "source"
+        },
+        "13272": {
+          "synopsis": "The Erase command's handler (CmdTable), called by DoCmd for each source file: frees the\nsource DOR (CloseSource) and deletes the file named in f_SourceName with GN_Del.\nEntry: f_SourceName = expanded file name; f_SourceHandle = its DOR handle (or 0).\nExit: Fc = 0; f_SourceHandle = IX after GN_Del.\nError: Fc = 1; A = error code from GN_Del.",
+          "provenance": "source"
+        },
+        "13363": {
+          "synopsis": "The View command's handler (CmdTable): closes the source handle, checks that f_SourceName is\na file (ValidateFileType), opens it for reading and shows it as a hex and ASCII dump\n(ViewFile), then closes it.\nEntry: f_SourceName = expanded file name.\nExit: the file closed again (CloseSource).\nError: Fc = 1; A = error code (RC_Ftm when it is not a file).",
+          "provenance": "source"
+        },
+        "13390": {
+          "synopsis": "The Save to File Card command's handler (CmdTable), called for each source file: closes the\nsource handle, checks that f_SourceName is a file (ValidateFileType) and writes it into the\nfile area of the default slot with OS_Epr EP_NewFile.\nEntry: f_SourceName = expanded file name; f_filecardslot = slot.\nExit: Fc = 0.\nError: Fc = 1; A = error code (RC_Ftm when it is not a file, else from OS_Epr).",
+          "provenance": "source"
+        },
+        "13914": {
+          "synopsis": "Asks for the name of an existing directory or device, for TreeCopy. Edits the buffer\n(InputLine), expands it in place (ExpandFname) and opens its DOR (OpenFile, OP_DOR); the\ntype must be Dm_Dev or Dn_Dir, else RC_Ftm. An error other than RC_Esc is shown with GN_Err,\nand after RC_Susp the input starts again.\nEntry: DE = name buffer (NBUFSIZE); B = column, C = row of the input.\nExit: Fc = 0; buffer = the expanded name.\nError: Fc = 1; A = error code (RC_Esc not shown).\nKeeps: BC, DE.",
+          "provenance": "source"
+        },
+        "13966": {
+          "synopsis": "Finds the end of a file name: moves HL to its first byte below $21.\nEntry: HL = name.\nExit: HL = the terminator; A = it; Fc = 1.\nChanges: AF, HL.",
+          "provenance": "source"
+        },
+        "13973": {
+          "synopsis": "The Create Directory command (CmdTable): asks for a name in an empty input line and creates\nthe directory by opening it with OP_DIR (OpenFile), then frees the handle (FreeDOR). An\nerror other than RC_Esc is shown with GN_Err; after RC_Susp the name is asked again. Leaves\nthrough ToggleCrsr.\nEntry: none.\nExit: Fc = 0.\nError: Fc = 1; A = error code (RC_Esc when ESC was pressed).",
+          "provenance": "source"
+        },
+        "14016": {
+          "synopsis": "The Catalogue files command (CmdTable): lists files with their dates and sizes.\n1. With no files selected, asks for a name (an empty one becomes \"*\"), expands it and opens\na wildcard handler (GN_Opw, forward scan, full path).\n2. Takes each match (GN_Wfn), or each selected file (GetNextSelected), counts its segments\n(GN_Prs) and indents it by one space per segment after the first.\n3. Opens its DOR: a file is printed by CatFile, anything else by its name; then a new line\nwith page wait (PntLF_pagewait).\n4. Closes the wildcard handler at the end (RC_Eof) or on an error; an error other than\nRC_Esc is shown with GN_Err, and after RC_Susp the name is asked again.\nEntry: f_NumSelected, f_SelectedList.\nExit: Fc = 0 when the list ended.\nError: Fc = 1; A = error code (RC_Esc when ESC was pressed).",
+          "provenance": "source"
+        },
+        "14240": {
+          "synopsis": "Prints one line of the catalogue for a file: its name (N record, PrntStr16), its creation\nand update dates (C and U records, GN_Sdo) and its size (X record, GN_Pdn), separated by\nspaces. The records are read into a 17-byte buffer on the stack (ReadSrcRecord); without an\nX record the size is left out.\nEntry: f_SourceHandle = the file's DOR handle.\nChanges: AF, BC, DE, HL, IX.",
+          "provenance": "source"
+        },
+        "14408": {
+          "synopsis": "The Select Directory command (CmdTable): asks for a directory, showing the current one\n(GetDir), then checks it and makes it current (falls into ChgDir). In ChgDir: an empty name\ngoes straight to setting it; otherwise the name's DOR (OpenFile, OP_DOR) must be a directory\nor device, else RC_Ftm. An error is shown with GN_Err; after RC_Susp the name is asked\nagain. Then VerifiedChDir sets it.\nEntry: none.\nExit: Fc = 0.\nError: Fc = 1; A = error code (RC_Esc when ESC was pressed).",
+          "provenance": "source"
+        },
+        "14488": {
+          "synopsis": "Entry inside ChgDir (SelectDir), also called by ChDir: sets the current directory and, when\nfiles are selected, records it in the selected list.\n1. Parses f_SourceName with GN_Pfs and ignores the flags (the source asks what this does and\ncalls it a probable bug); GN_Pfs leaves HL at the end of the first segment.\n2. Sets the current directory from the text at HL (OS_Sp, SP_Dir); ChgDir's empty name\nenters here at this step.\n3. With files selected, walks to the last node of f_SelectedList; a path node there (type 1)\nis freed (FreeSelNode). Then adds the current path as a new node (GetPath).\nEntry: f_SourceName = expanded directory name.\nExit: Fc = 0.\nChanges: AF, BC, DE, HL, IY.",
+          "provenance": "source"
+        },
+        "14545": {
+          "synopsis": "The Name match command (CmdTable): edits the current name match string (OS_Nq, NQ_Fnm) and\nsets the new one (OS_Sp, SP_Fnm). The text must parse as one name segment (GN_Pfs) without\ndirectory or device parts (flags $7C), else RC_Ivf. An error other than RC_Esc is shown with\nGN_Err; after RC_Susp the input starts again. Leaves through ToggleCrsr.\nEntry: none.\nExit: Fc = 0.\nError: Fc = 1; A = error code (RC_Esc when ESC was pressed).",
+          "provenance": "source"
+        },
+        "14625": {
+          "synopsis": "Waits for a key at the end of a page of output when that is allowed: clears the line count\n(f_OutLnCnt) and, when the output is not teed (the NQ_Tot handle is 0) and the command\nenables page wait (f_CmdFlags bit 5), calls OS_Sr SR_PWT, repeating it after RC_Susp.\nEntry: f_CmdFlags.\nExit: Fc = 0; f_OutLnCnt = 0.\nError: Fc = 1; A = error code from SR_PWT (RC_Esc when ESC was pressed).\nChanges: AF, BC.\nKeeps: HL, IX.",
+          "provenance": "source"
+        },
+        "14766": {
+          "synopsis": "Removes the first node of the selected list and frees it (GetLinkBHL, FreeSelNode). It sits\ninside GetNextSelected's code, which calls it and branches around it.\nEntry: f_SelectedList not empty.\nExit: IY = f_SelectedList.\nChanges: AF, BC, DE, HL, IY; S1 binding.",
+          "provenance": "source"
+        },
+        "14828": {
+          "synopsis": "Prints the prompts \"Source :\" at column 11, row 1 and \"Destination :\" at column 6, row 3,\nthen falls into ResetSrcDestName.\nEntry: none.\nExit: f_SourceName and f_DestName empty; A = 0.",
+          "provenance": "source"
+        },
+        "14862": {
+          "synopsis": "Empties f_SourceName and f_DestName by zeroing their first bytes.\nEntry: none.\nExit: A = 0.\nChanges: A.",
+          "provenance": "source"
+        },
+        "14870": {
+          "synopsis": "Tests whether the three-byte link at IY is null.\nEntry: IY = a link.\nExit: Fz = 1 when it is null; A = OR of its bytes.\nChanges: AF.",
+          "provenance": "source"
+        },
+        "14880": {
+          "synopsis": "Reads the three-byte link at IY into BHL (bank in B).\nEntry: IY = a link (offset low, offset high, bank).\nExit: B = bank; HL = offset.\nChanges: B, HL.",
+          "provenance": "source"
+        },
+        "14944": {
+          "synopsis": "Copies the name of the current device (OS_Nq, NQ_Dev) into f_SourceName (CopyExtended).\nEntry: none.\nExit: f_SourceName = device name with its terminator (a byte below $21); DE = the\nterminator; Fc = 0.\nChanges: AF, BC, DE, HL.",
+          "provenance": "source"
+        },
+        "14954": {
+          "synopsis": "Copies the name of the current directory (OS_Nq, NQ_Dir) into f_SourceName; falls into\nCopyExtended.\nEntry: none.\nExit: f_SourceName = directory name with its terminator (a byte below $21); DE = the\nterminator; Fc = 0.\nChanges: AF, BC, DE, HL.",
+          "provenance": "source"
+        },
+        "15062": {
+          "synopsis": "The key loop of the View command's dump (ViewFile): sets up the windows and shows the first\n128 bytes (ResetCurPos, InitView), then moves the cursor on each key (VFGetKey, which works\nout the CRC-32 while no key is pressed). Keys: code $20 (the source says TAB) switches\nbetween the hex and ASCII cursor; left and right move a byte; up and down a line of 16\nbytes, scrolling at the edges; SHIFT up and down ($31, $32) 128 bytes; DIAMOND up and down\ngo to the start and the end of the file.\nEntry: f_SourceHandle open on the file; vf_fptr, vf_fsize set (ViewFile).\nExit: Fc = 1; A = RC_Esc when ESC was pressed.",
+          "provenance": "source"
+        },
+        "15715": {
+          "synopsis": "Converts an ASCII hex digit to its value: a code below '@' has 48 subtracted, any other 55.\nIt does not check the digit. Nothing in the Filer calls it.\nEntry: A = '0'-'9' or 'A'-'F'.\nExit: A = 0-15.\nChanges: AF.",
+          "provenance": "source"
+        },
+        "15810": {
+          "synopsis": "The 16 hex digit characters \"0123456789ABCDEF\", indexed by CalcHexNibble.",
+          "provenance": "source"
+        },
+        "16000": {
+          "synopsis": "Draws the View command's screen: defines window 2 for the dump (column 1, 73 by 8) and\nwindow 3 for the information panel (column 76, 16 by 8), prints the \"VIEW FILE\" banner, the\nCRC-32 caption, a divider and the key help (start/end, page, cursor, hex/ASCII, quit), then\nselects and clears window 2. Called by InitView.\nEntry: none.",
+          "provenance": "source"
+        }
+      }
+    },
+    "11": {
+      "lines": {
+        "116": {
+          "synopsis": "FlashStore's main command loop. It draws the command and file windows and the right-hand\nwindow (file card statistics when the bar is in the menu window, browse help when it is in\nthe file window), pushes its own address as the return address of every command, and then\nreads keys until ESC leaves the application.\n1. Shows the active bar (DisplBar), reads a key (rdch) and removes the bar again; a read\nerror retries.\n2. Polls the current slot's file card watermark (PollFileCardWatermark); when the file area\ndisappeared (Fc = 1) or changed (Fz = 1) it redraws the command and file windows and the\nstatistics.\n3. Dispatches the key: ESC jumps to suicide; the command shortcuts (catalogue, save, fetch,\nbackup, restore, format, select card, erase, default RAM, file view, file area copy) jump to\ntheir commands; the cursor keys move the menu bar (rows 1 to 7, wrapping) or the file bar;\nleft and right switch between the menu and file windows; ENTER (or 'F') runs the menu bar's\ncommand or fetches the selected file; DEL or 'D' marks a file deleted, 'C' copies, 'V' views\na file and 'M' views bank memory. Other keys are ignored.\nEntry: (MenuBarPosn), (barMode), (curslot) set up by the initialisation.\nExit: never returns to its caller while running; ESC leaves through suicide.",
+          "provenance": "source"
+        },
+        "580": {
+          "synopsis": "Reads the bar mode: whether the cursor bar is in the menu window or in the file window.\nEntry: none.\nExit: A = (barMode); Fz = 1 when the bar is in the menu window, Fz = 0 (A = $FF) when it is\nin the file window; Fc = 0.\nChanges: AF.",
+          "provenance": "source"
+        },
+        "609": {
+          "synopsis": "Toggles the cursor bar in the active window: the 17-character menu bar on row (MenuBarPosn)\nof the command window, or the 53-character file bar on row (FileBarPosn) of the file window.\nThe bar is drawn by XOR, so the main loop calls it once to show it and once to remove it.\nEntry: (barMode), (MenuBarPosn), (FileBarPosn).\nChanges: BC, HL.\nKeeps: AF.",
+          "provenance": "source"
+        },
+        "615": {
+          "synopsis": "Entry inside DisplBar, the menu window case: selects window 1 (SelectMenuWindow), places the\ncursor at column 1 of row (MenuBarPosn) with VduCursor and toggles the menu bar (MenuBar).\nIt ends with POP AF, so it is entered only from DisplBar with AF pushed.\nEntry: AF on the stack; (MenuBarPosn) = row of the menu bar.\nChanges: BC, HL.\nKeeps: AF.",
+          "provenance": "source"
+        },
+        "661": {
+          "synopsis": "VDU sequence (1,\"2H1\"): selects window 1, the command window, for the menu bar. Sent by\nDisplMenuBar.",
+          "provenance": "source"
+        },
+        "666": {
+          "synopsis": "VDU sequence: selects window 2, the file window, and switches its cursor and vertical\nscrolling off (1,\"2H2\", 1,\"2-C\", 1,\"2-S\"). Sent by DisplBar for the file bar.",
+          "provenance": "source"
+        },
+        "679": {
+          "synopsis": "VDU sequence that draws the menu bar: reverse video on, the attribute applied by XOR over 17\ncharacters from the cursor (1,\"2E\",32+17), reverse video off. Sending it twice removes the\nbar again.",
+          "provenance": "source"
+        },
+        "692": {
+          "synopsis": "VDU sequence that draws the file bar: reverse video on, the attribute applied by XOR over 53\ncharacters from the cursor (1,\"2E\",32+53), reverse video off.",
+          "provenance": "source"
+        },
+        "705": {
+          "synopsis": "Draws the command window and its menu, like dispcw, and keeps AF.\nEntry: (curslot) = current slot.\nKeeps: AF.",
+          "provenance": "source"
+        },
+        "711": {
+          "synopsis": "Draws the command window (window 1, 17 x 8 at the left, banner \"COMMANDS\") with GN_Win from\nCmdWindowDef and writes the seven menu entries (menu_msg). When the card in the current slot\nhas no write or erase support (SlotWriteSupport returns Fc = 1), it greys out SAVE TO CARD\nand BACKUP FROM RAM (grey_wrercmds).\nEntry: (curslot) = current slot.\nChanges: AF, C (other registers through SlotWriteSupport not traced).",
+          "provenance": "source"
+        },
+        "801": {
+          "synopsis": "Clears the whole application window area: redefines window 1 as the full 94 x 8 area and\nclears it (winbackground).\nEntry: none.\nChanges: HL.",
+          "provenance": "source"
+        },
+        "808": {
+          "synopsis": "Writes a null-terminated string and a newline (GN_Sop, GN_Nln).\nEntry: HL = local pointer to the string.\nKeeps: AF.",
+          "provenance": "source"
+        },
+        "817": {
+          "synopsis": "Greys the whole screen area by defining window 8 over it and switching grey on there\n(grey_msg); used before a pop-up window is drawn.\nEntry: none.\nKeeps: HL.",
+          "provenance": "source"
+        },
+        "826": {
+          "synopsis": "Removes the grey from the whole screen area (ungrey_msg), the reverse of greyscr.\nEntry: none.\nKeeps: HL.",
+          "provenance": "source"
+        },
+        "835": {
+          "synopsis": "Clears window 2, the main window on the right of the command window (clsvdu).\nEntry: none.\nChanges: HL.\nKeeps: AF.",
+          "provenance": "source"
+        },
+        "844": {
+          "synopsis": "Reads a key with OS_In. An extended key (a 0 code first) is read as its second code, and an\nescape condition is returned as the ESC key.\nEntry: none.\nExit: Fc = 0, A = key code (IN_ESC when ESC was pressed).\nError: Fc = 1, A = error code from OS_In (for example RC_SUSP after pre-emption).\nChanges: AF.",
+          "provenance": "source"
+        },
+        "863": {
+          "synopsis": "Waits for a key with OS_Sr SR_PWT (page wait), repeating the wait when it returns RC_SUSP.\nAn extended key (a 0 code first) is read as its second code with OS_In.\nEntry: none.\nExit: Fc = 0, A = key code.\nError: Fc = 1, A = error code from OS_Sr.\nChanges: AF.",
+          "provenance": "source"
+        },
+        "881": {
+          "synopsis": "Asks a yes/no question. It runs the routine at HL, which displays the question, then shows\nthe current answer (the message at DE) and reads keys: 'Y' selects Yes, any other key No,\nENTER accepts the answer shown and ESC aborts. Keys in the input buffer are purged first and\npre-emption is ignored.\nEntry: HL = routine that displays the question (it returns into yesno); DE = default answer,\nyes_msg or no_msg.\nExit: Fc = 0; Fz = 1 for Yes, Fz = 0 for No or ESC.\nChanges: AF, DE, HL.",
+          "provenance": "source"
+        },
+        "959": {
+          "synopsis": "Switches the VDU to centre justification (centerjustify).\nEntry: none.\nKeeps: HL.",
+          "provenance": "source"
+        },
+        "968": {
+          "synopsis": "Switches the VDU back to normal (left) justification (leftjustify).\nEntry: none.\nKeeps: HL.",
+          "provenance": "source"
+        },
+        "986": {
+          "synopsis": "VDU text of the command window's menu: selects window 1, grey off, tiny font on, then the\nseven entries at rows 0 to 6 (TOGGLE FILE VIEW, SELECT CARD, SAVE TO CARD, FETCH FROM CARD,\nBACKUP FROM RAM, RESTORE TO RAM, DEFAULT RAM), each placed with 1,\"3@\",x,y; cursor off.\nWritten by dispcw.",
+          "provenance": "source"
+        },
+        "1139": {
+          "synopsis": "VDU sequence that greys out the SAVE TO CARD (row 2) and BACKUP FROM RAM (row 4) entries of\nthe command window over 17 characters each, then switches grey off. Sent by dispcw when the\ncard in the current slot cannot be written.",
+          "provenance": "source"
+        },
+        "1170": {
+          "synopsis": "VDU sequence: defines window 8 at (0,0), 94 x 8 (1,\"6#8\"), selects it and greys it\n(1,\"2G+\"). Sent by greyscr.",
+          "provenance": "source"
+        },
+        "1187": {
+          "synopsis": "VDU sequence: defines window 8 at (0,0), 94 x 8, selects it and removes the grey (1,\"2G-\").\nSent by ungreyscr.",
+          "provenance": "source"
+        },
+        "1204": {
+          "synopsis": "VDU sequence sent by cls: clears window 2 (1,\"2C2\"), then 1,'S' and a form feed (12).",
+          "provenance": "source"
+        },
+        "1212": {
+          "synopsis": "VDU sequence sent by ClearWindowArea: defines window 1 at (0,0), 94 x 8 (1,\"7#1\") and clears\nit (1,\"2C1\").",
+          "provenance": "source"
+        },
+        "1226": {
+          "synopsis": "VDU sequence that starts a window bar under the banner: tiny, underline and reverse on,\ncentre justification and the cursor at (0,0). Sent by wbar before the caption.",
+          "provenance": "source"
+        },
+        "1242": {
+          "synopsis": "VDU sequence that ends a window bar: cursor at (0,0), the attributes applied over 53\ncharacters (1,\"2A\",85), tiny, underline and reverse off, normal justification. Sent by wbar\nafter the caption.",
+          "provenance": "source"
+        },
+        "1262": {
+          "synopsis": "Message \"Last file failed.\", null-terminated; shown by the fetch and copy commands.",
+          "provenance": "source"
+        },
+        "1280": {
+          "synopsis": "The \"Yes\" answer of yesno: CR, cursor on, \" Yes\" and three backspaces, null-terminated.\nyesno compares DE with this address to tell Yes from No.",
+          "provenance": "source"
+        },
+        "1293": {
+          "synopsis": "The \"No\" answer of yesno: CR, cursor on, \" No \" and three backspaces, null-terminated.",
+          "provenance": "source"
+        },
+        "1306": {
+          "synopsis": "VDU text of the resume prompt: selects window 2, centre justification, flash and tiny on,\n\"PRESS SPACE OR ENTER TO RESUME\" with the key symbols, attributes and cursor off, normal\njustification and CR LF. Written by ResSpace.",
+          "provenance": "source"
+        },
+        "1356": {
+          "synopsis": "VDU sequence (1,\"3-SC\"): no vertical scrolling and no blinking cursor in the window.",
+          "provenance": "source"
+        },
+        "1362": {
+          "synopsis": "VDU sequence (1,\"2+G\"): grey text on.",
+          "provenance": "source"
+        },
+        "1367": {
+          "synopsis": "VDU sequence (1,\"2-G\"): grey text off.",
+          "provenance": "source"
+        },
+        "1372": {
+          "synopsis": "VDU sequence (1,\"2-T\"): tiny font off.",
+          "provenance": "source"
+        },
+        "1377": {
+          "synopsis": "VDU sequence (1,\"2+T\"): tiny font on.",
+          "provenance": "source"
+        },
+        "1382": {
+          "synopsis": "VDU sequence (1,\"2JC\"): centre justification. Sent by VduEnblCntrJstfy.",
+          "provenance": "source"
+        },
+        "1387": {
+          "synopsis": "VDU sequence (1,\"2JN\"): normal (left) justification. Sent by VduEnblNrmlJstfy.",
+          "provenance": "source"
+        },
+        "1392": {
+          "synopsis": "VDU sequence (1,\"2JR\"): right justification.",
+          "provenance": "source"
+        },
+        "1397": {
+          "synopsis": "GN_Win definition block of the command window: window 1 with bars, shelf brackets and banner\n(1 | 128), at (0,0), 17 wide and 8 high, banner \"COMMANDS\". Used by dispcw.",
+          "provenance": "source"
+        },
+        "1404": {
+          "synopsis": "GN_Win definition block of the main window: window 2 with bars, shelf brackets and banner (2\n| 128), at (19,0), 53 wide and 8 high; the banner pointer is 0, so the caller gives it in\nDE. Used by DispMainWindow.",
+          "provenance": "source"
+        },
+        "1916": {
+          "synopsis": "Entry inside DisplayCard (also called by FileEpromStatistics): appends the card size, A x 16\nfollowed by 'K', to the VDU cache at (vdubufptr).\nEntry: A = size of the card in 16K banks; (vdubufptr) = end of the VDU cache.\nExit: (vdubufptr) advanced past the text.\nChanges: AF.\nKeeps: BC, DE, HL.",
+          "provenance": "source"
+        },
+        "1938": {
+          "synopsis": "Appends the free space of the current slot's file area, in K followed by 'K', to the VDU\ncache at (vdubufptr). The free bytes come from OS_Epr EP_FreSp; the value written is the\nquotient of the bytes / 1024 (GN_D24) plus one.\nEntry: (curslot) = slot; (vdubufptr) = end of the VDU cache.\nExit: (vdubufptr) advanced past the text.\nChanges: AF, DE.\nKeeps: BC, HL.",
+          "provenance": "source"
+        },
+        "1972": {
+          "synopsis": "Lets the user choose a slot in the card selection window: the flashing bar under the current\ncard box moves with cursor left and right (wrapping between 0 and 3), keys 0 to 3 select a\nslot directly, ENTER accepts the slot under the bar and ESC aborts. Other keys are ignored.\nEntry: (curslot) = slot of the bar at the start.\nExit: Fc = 0, Fz = 1, (curslot) = selected slot (0 to 3).\nError: Fc = 1 when ESC was pressed.\nChanges: AF, HL.",
+          "provenance": "source"
+        },
+        "2070": {
+          "synopsis": "Shows the flashing reverse menu bar under the current slot's card box: HL = MenuBarOn and\njumps into the card selection's DisplMenuBar ($C7F8).\nEntry: (curslot) = slot.\nChanges: HL.\nKeeps: AF, BC.",
+          "provenance": "source"
+        },
+        "2075": {
+          "synopsis": "Removes the menu bar under the current slot's card box: HL = MenuBarOff and jumps into the\ncard selection's DisplMenuBar ($C7F8).\nEntry: (curslot) = slot.\nChanges: HL.\nKeeps: AF, BC.",
+          "provenance": "source"
+        },
+        "2374": {
+          "synopsis": "Appends a 16-bit number in decimal to the VDU cache at (vdubufptr): converts it to text in\nbuf1 (IntAscii) and copies it with CacheVduString.\nEntry: DE = number.\nExit: (vdubufptr) advanced past the digits; HL = end of the digits in buf1.\nChanges: BC, HL.\nKeeps: AF, DE.",
+          "provenance": "source"
+        },
+        "2480": {
+          "synopsis": "Message \"No Flash Cards found in slots 1-3.\" between bold toggles (1,\"B\"), null-terminated.",
+          "provenance": "source"
+        },
+        "2519": {
+          "synopsis": "VDU prefix of a cursor move (1,\"3@\"); CacheVduCursor follows it with X+32 and Y+32.",
+          "provenance": "source"
+        },
+        "2523": {
+          "synopsis": "VDU text of a card box's top line: the top left corner (1,\"2*C\"), 12 horizontal lines\n(1,\"2*E\") and the top right corner (1,\"2*F\"), null-terminated. Drawn by DrawCardBox.",
+          "provenance": "source"
+        },
+        "2580": {
+          "synopsis": "VDU text of a card box's middle line: the left T-section (1,\"2*K\"), 12 horizontal lines and\nthe right T-section (1,\"2*N\"), null-terminated.",
+          "provenance": "source"
+        },
+        "2637": {
+          "synopsis": "VDU text of a card box's bottom line: the bottom left corner (1,\"2*I\"), 12 horizontal lines\nand the bottom right corner (1,\"2*L\"), null-terminated.",
+          "provenance": "source"
+        },
+        "2694": {
+          "synopsis": "VDU text of a card box's side: one vertical line (1,\"2*J\"), null-terminated.",
+          "provenance": "source"
+        },
+        "2699": {
+          "synopsis": "VDU text of the AMD logo: defines user characters J, K, L and M (each 1,138,'=',char and 8\npixel rows) and displays each after its definition (1,\"2?\",char); null-terminated.",
+          "provenance": "source"
+        },
+        "2764": {
+          "synopsis": "VDU text of the Intel logo: defines user characters N, O, P and Q (8 pixel rows each) and\ndisplays each after its definition; null-terminated.",
+          "provenance": "source"
+        },
+        "2829": {
+          "synopsis": "VDU text of the padlock symbol: defines user character Z (8 pixel rows) and displays it\nbetween two spaces; null-terminated.",
+          "provenance": "source"
+        },
+        "2848": {
+          "synopsis": "Help text of the card selection window: centre justification, no scrolling or cursor, then\n\"Select card with 0 - 3 (bold) or move cursor over card, ENTER to select\" on separate lines;\nnull-terminated.",
+          "provenance": "source"
+        },
+        "2930": {
+          "synopsis": "Card label \"EPROM \" in tiny font, null-terminated.",
+          "provenance": "source"
+        },
+        "2941": {
+          "synopsis": "Card label \"FLASH \" in tiny font, null-terminated.",
+          "provenance": "source"
+        },
+        "2952": {
+          "synopsis": "Card label \"RAM \" in tiny font, null-terminated.",
+          "provenance": "source"
+        },
+        "2961": {
+          "synopsis": "Text \" FREE \" in tiny font, null-terminated.",
+          "provenance": "source"
+        },
+        "2972": {
+          "synopsis": "Text \"APPLICATIONS\" in tiny font, null-terminated.",
+          "provenance": "source"
+        },
+        "2989": {
+          "synopsis": "Text \"NO FILE AREA\" in tiny font, null-terminated.",
+          "provenance": "source"
+        },
+        "3006": {
+          "synopsis": "Text \"SLOT \", null-terminated.",
+          "provenance": "source"
+        },
+        "3012": {
+          "synopsis": "Text \": \", null-terminated.",
+          "provenance": "source"
+        },
+        "3015": {
+          "synopsis": "Text \"EMPTY SLOT\" in tiny font, then tiny off; null-terminated.",
+          "provenance": "source"
+        },
+        "3034": {
+          "synopsis": "VDU sequence: no vertical scrolling and no cursor (1,\"3-SC\"), then tiny font on.",
+          "provenance": "source"
+        },
+        "3044": {
+          "synopsis": "The card selection's SelectMenuWindow: selects window 2 and switches its cursor off\n(1,\"2H2\", 1,\"2-C\"). Sent by its DisplMenuBar before the bar is placed.",
+          "provenance": "source"
+        },
+        "3053": {
+          "synopsis": "VDU sequence that shows the card selection bar: flash and reverse on (1,\"4+F+R\") and the\nattributes applied over 3 characters (1,\"2A\",32+3). Sent by ShowMenuBar.",
+          "provenance": "source"
+        },
+        "3064": {
+          "synopsis": "VDU sequence that removes the card selection bar: flash and reverse off (1,\"4-F-R\") and the\nattributes applied over 3 characters. Sent by RemoveMenuBar.",
+          "provenance": "source"
+        },
+        "3075": {
+          "synopsis": "GN_Win definition block of the card selection window: window 2 with bars, shelf brackets and\nbanner (2 | 128), at (16,0), 56 wide and 8 high; the banner pointer is 0, so the caller\ngives it in DE.",
+          "provenance": "source"
+        },
+        "3082": {
+          "synopsis": "GN_Win definition block of the help window on the right: window 3 with left and right bars\nonly (3 | 64), at (75,0), 18 wide and 8 high. Used by DispHelpText.",
+          "provenance": "source"
+        },
+        "3229": {
+          "synopsis": "Asks OZ whether slot A holds a RAM device (OS_Nq Nq_Mfp).\nEntry: A = slot number.\nExit: Fc = 0, a RAM device: A = total banks of the RAM card; DE = free pages (256 bytes).\nError: Fc = 1, A = RC_ONF when the slot has no RAM device.\nChanges: AF, DE.\nKeeps: BC, HL.",
+          "provenance": "source"
+        },
+        "3304": {
+          "synopsis": "Text \":RAM.\", null-terminated: the device name prefix that GetDefaultRamDevice copies before\nthe slot number.",
+          "provenance": "source"
+        },
+        "3310": {
+          "synopsis": "Message CR LF \" Select RAM device.\" CR LF, null-terminated.",
+          "provenance": "source"
+        },
+        "3334": {
+          "synopsis": "Message shown under the RAM device prompt: \" Use keys 0-3 or <diamond>J to toggle. ENTER to\nselect.\", with VDU symbol codes, null-terminated. Shown by DefaultRamCommand, the backup\ncommand and the copy command before SelectRamDevice.",
+          "provenance": "source"
+        },
+        "3406": {
+          "synopsis": "Body of FileEpromStatistics: fills the file statistics window for the current slot.\n1. Builds the window banner \"SLOT n\" at buf1 from slot_bnr; slot 1 is set left, slot 3\nright, the others centred.\n2. Asks OS_Epr (EP_Req) for a file area in the slot; without one it goes to no_filearea.\n3. Counts the files (FilesAvailable), reads the free space (EP_FreSp) into (free) and the\nactive and deleted space (EP_TotSp) into (active), (deleted) and their sum (total).\n4. Opens the window (InitWindow) and shows the card type (the flash chip's text, or the UV\nEPROM size), the file area size (DisplayEpromSize), the free and used bytes, the counts of\nsaved and deleted files, and the free space bar (DispFreeSpaceBar).\nEntry: (curslot) = slot.\nExit: (file), (fdel), (free), (active), (deleted), (total) updated.\nChanges: AF, BC, DE, HL.",
+          "provenance": "source"
+        },
+        "3453": {
+          "synopsis": "Entry inside dispstats, taken when the slot has no file area or its free space cannot be\nread: opens the file statistics window (InitWindow) and shows \"No File Area\" (nofepr_msg).\nEntry: none.\nChanges: AF, HL.",
+          "provenance": "source"
+        },
+        "3680": {
+          "synopsis": "Shows the size of the current slot's file area at (1,1) of the statistics window, in tiny\ntext: the size in K followed by \"K FILE AREA\". It keeps the size in 16K banks at\n(bytesperline), where FillFreeSpaceBar picks it up.\nEntry: (curslot) = slot; the slot holds a file area.\nExit: (bytesperline) = size of the file area in 16K banks.\nChanges: AF, BC, DE, HL.",
+          "provenance": "source"
+        },
+        "3756": {
+          "synopsis": "Shows the number in DE in decimal at the cursor (IntAscii, GN_Sop).\nEntry: DE = number.\nChanges: BC, HL.",
+          "provenance": "source"
+        },
+        "3899": {
+          "synopsis": "Draws the deleted and the active space of the file area into the free space bar's UDG\ncharacters. It divides the file area's size by 106 to get the bytes one vertical line of the\nbar stands for, draws the deleted space as stippled lines from line 1, then the active space\nas filled lines after them (DispBarLine).\nEntry: (bytesperline) = size of the file area in 16K banks; (deleted), (active) = 24-bit\nbyte counts; (FreeSpaceBar) = base of the bar's UDGs, bound into segment 1.\nExit: (bytesperline) = bytes per bar line.\nChanges: AF, BC, DE, HL.",
+          "provenance": "source"
+        },
+        "4021": {
+          "synopsis": "ORs the pixel mask in C into the UDG byte at (HL): one pixel of a vertical bar line.\nEntry: C = pixel mask; HL = UDG byte.\nKeeps: AF, BC, DE, HL.",
+          "provenance": "source"
+        },
+        "4060": {
+          "synopsis": "Text \"FILE AREA\" followed by the VDU code that turns tiny text off, null-terminated.\nDisplayEpromSize shows it after the size.",
+          "provenance": "source"
+        },
+        "4074": {
+          "synopsis": "Banner text for the file statistics window: the VDU code for centred text followed by \"SLOT\n\". dispstats copies its first 9 bytes to buf1, changes the justify letter for slots 1 and 3\nand adds the slot digit.",
+          "provenance": "source"
+        },
+        "4084": {
+          "synopsis": "Text \"FREE\", null-terminated: follows the free space in the statistics window.",
+          "provenance": "source"
+        },
+        "4089": {
+          "synopsis": "Text \"USED\", null-terminated: follows the used space in the statistics window.",
+          "provenance": "source"
+        },
+        "4094": {
+          "synopsis": "Text \" FILES SAVED\", null-terminated: follows the count of active files.",
+          "provenance": "source"
+        },
+        "4107": {
+          "synopsis": "Text \" FILES DELETED\", null-terminated: follows the count of deleted files.",
+          "provenance": "source"
+        },
+        "4122": {
+          "synopsis": "Message for a slot without a file area: two new lines, then \"No File Area\" centred and\nflashing; it ends by restoring normal justification and turning flashing and the cursor off.\nShown by no_filearea.",
+          "provenance": "source"
+        },
+        "4234": {
+          "synopsis": "GN_Win definition block of the file statistics window (InitWindow): window 3 with bars,\nbrackets and a banner (byte $83), at X = $4A, Y = 0, 18 wide and 8 high; the banner pointer\nis 0, so the banner is the dynamic one passed in DE (buf1).",
+          "provenance": "source"
+        },
+        "4262": {
+          "synopsis": "Entry inside DispFilesWindow: clears the file area window and lists up to 7 file entries\n(DisplayFile), starting with the window's top entry at (WindowFilePtr). Reached by\nMoveToFirstFile and at the end of the page up and page down moves.\nEntry: (WindowFilePtr) = top file entry of the window.\nExit: Fc = 0 when 7 lines were shown; Fc = 1 when the end of the list was reached (\"END\"\nshown).\nChanges: AF, BC, DE, HL; (linecnt).",
+          "provenance": "source"
+        },
+        "4300": {
+          "synopsis": "Sends norm_sq (tiny and grey text off) to the window: the attributes for an active file\nentry.\nEntry: none.\nChanges: HL.\nKeeps: AF.",
+          "provenance": "source"
+        },
+        "4305": {
+          "synopsis": "Sends tiny_sq to the window: tiny, grey text, a grey \"DEL\" mark, then grey off; the\nattributes for a deleted file entry.\nEntry: none.\nChanges: HL.\nKeeps: AF.",
+          "provenance": "source"
+        },
+        "4310": {
+          "synopsis": "Sends the VDU code for right-justified text to the window.\nEntry: none.\nChanges: HL.\nKeeps: AF.",
+          "provenance": "source"
+        },
+        "4315": {
+          "synopsis": "Sends the VDU code for normal, left-justified text to the window; falls into the shared\noutput code (dispsq).\nEntry: none.\nChanges: HL.\nKeeps: AF.",
+          "provenance": "source"
+        },
+        "4324": {
+          "synopsis": "Shows the browse keys help (browsehelp) in the right-hand help window (DispHelpText): shown\nwhile the cursor is in the file window.\nEntry: none.\nKeeps: HL.",
+          "provenance": "source"
+        },
+        "4568": {
+          "synopsis": "Loop inside MoveFileBarPageUp, also called by MoveToLastFile: moves the file cursor up C\nentries through the file entry cache, making each new entry the window's top entry too, then\nredraws the window (DispFiles). It stops early at the top of the list.\nEntry: C = entries to move up; DE = current entry in the cache (from CacheFileEntries);\n(CursorFilePtr) = current entry.\nExit: C = entries left of the C asked for (source comment); (CursorFilePtr), (WindowFilePtr)\nupdated.\nChanges: AF, BC, DE, HL.",
+          "provenance": "source"
+        },
+        "4769": {
+          "synopsis": "Reads the random ID of the current slot's file area header (at $3FF8 of the header bank) and\nthe file area's size: the two make the card's watermark. Part of PollFileCardWatermark.\nEntry: (curslot) = slot.\nExit: Fc = 0: DEBC = random ID; A = size of the file area in 16K banks.\nError: Fc = 1, no file area in the slot.\nChanges: AF, BC, DE, HL, BC', DE', HL' (it swaps the register sets).",
+          "provenance": "source"
+        },
+        "4789": {
+          "synopsis": "Clears the 5-byte watermark (random ID and size of the last seen file area) to zero. It\nleaves the flags alone, so PollFileCardWatermark's Fc = 1 survives it.\nEntry: none.\nExit: A = 0; HL = 0; (watermark) = 0.\nKeeps: F, BC, DE.",
+          "provenance": "source"
+        },
+        "5152": {
+          "synopsis": "Called by CacheFileEntries for each cached entry when it caches only up to the current\nentry: compares BHL with the entry at (IX+0..2) (flentry). When they match, it drops its\nreturn address and leaves CacheFileEntries with Fc = 0 and the cache ending at this entry;\notherwise it returns.\nEntry: BHL = file entry; IX = flentry, the entry to stop at.\nKeeps: AF, BC, DE, HL (when not equal).",
+          "provenance": "source"
+        },
+        "5178": {
+          "synopsis": "Stores the 3-byte file entry pointer BHL at (DE) in the order L, H, B, and advances DE.\nEntry: BHL = file entry; DE = cache slot.\nExit: DE = DE + 3.\nKeeps: AF, BC, HL.",
+          "provenance": "source"
+        },
+        "5205": {
+          "synopsis": "Entry inside GetPrevCachedFilePtr: reads the cached file entry at (DE) into BHL. An all-zero\nentry marks either end of the cached list.\nEntry: DE = cache slot.\nExit: Fc = 0: BHL = file entry.\nError: Fc = 1, BHL = 0: beyond the end of the list.\nChanges: AF, B, HL.\nKeeps: C, DE.",
+          "provenance": "source"
+        },
+        "5385": {
+          "synopsis": "Start of the file area window's banner, \"FILE AREA - CURSOR SELECTS \" (no terminator):\nFileAreaBannerText copies it and appends allfiles_banner or savedfiles_banner.",
+          "provenance": "source"
+        },
+        "5412": {
+          "synopsis": "End marker of filearea_banner, used to compute its length, and the start of allfiles_banner,\n\"SAVED & DELETED FILES\" (no terminator), the banner ending while deleted files are shown.",
+          "provenance": "source"
+        },
+        "5433": {
+          "synopsis": "End marker of allfiles_banner, and the start of savedfiles_banner, \"ONLY SAVED FILES\" (no\nterminator), the banner ending while only active files are shown.",
+          "provenance": "source"
+        },
+        "5449": {
+          "synopsis": "End marker of savedfiles_banner, and the start of norm_sq: the VDU code turning tiny and\ngrey text off, null-terminated, sent by NormalAttrText.",
+          "provenance": "source"
+        },
+        "5455": {
+          "synopsis": "VDU string sent by TinyAttrText before a deleted file entry: tiny and grey on, \"DEL\", grey\noff; null-terminated.",
+          "provenance": "source"
+        },
+        "5468": {
+          "synopsis": "Marker shown after the last file entry: grey off, then \" END \" in tiny, underlined, reverse\ntext; null-terminated. Shown by DisplayFile.",
+          "provenance": "source"
+        },
+        "5490": {
+          "synopsis": "VDU code 1, SD_UP (stdio.def: scroll upwards), null-terminated; MoveFileBarUp sends it\nbefore drawing a new top line.",
+          "provenance": "source"
+        },
+        "5493": {
+          "synopsis": "VDU code 1, SD_DWN (stdio.def: scroll downwards), null-terminated; MoveFileBarDown sends it\nbefore drawing a new bottom line.",
+          "provenance": "source"
+        },
+        "5630": {
+          "synopsis": "Writes the catalogue line for one file entry to the listing file: an \"F \" (active) or \"d \"\n(deleted) mark, the file name padded with spaces, the size right-justified, and a CR; the\n54-byte line goes out through WriteLine (OS_Mv).\nEntry: Fz = 0 active, Fz = 1 deleted (from EP_Stat); BHL = file entry; name at buffer+2; IX\n= file handle.\nChanges: AF, DE; (flen).\nKeeps: BC, HL.",
+          "provenance": "source"
+        },
+        "5707": {
+          "synopsis": "Puts the mark \"F \" (active file) at buffer for CatalogueFile; falls into the shared store\n(dispsq). The flags are left alone.\nEntry: none.\nExit: DE = buffer + 1.\nChanges: A, DE.",
+          "provenance": "source"
+        },
+        "5711": {
+          "synopsis": "Puts the mark \"d \" (deleted file) at buffer for CatalogueFile. The flags are left alone.\nEntry: none.\nExit: DE = buffer + 1.\nChanges: A, DE.",
+          "provenance": "source"
+        },
+        "5728": {
+          "synopsis": "Copies the default listing file name, \"/filearea.pdd\" and its terminator, to (DE), after the\nRAM device name that GetDefaultRamDevice wrote.\nEntry: DE = destination.\nExit: DE = past the terminator; BC = 0.\nChanges: BC, DE, HL.",
+          "provenance": "source"
+        },
+        "5737": {
+          "synopsis": "Base banner of the catalogue command's window, \"CATALOGUE FILES [\" and a terminator, passed\nto FileAreaBannerText with its length (catlg_banner_end - catlg_banner).",
+          "provenance": "source"
+        },
+        "5755": {
+          "synopsis": "End marker of catlg_banner, and the start of catlg_msg: \" List Catalogue to PipeDream file.\"\nafter a new line, null-terminated.",
+          "provenance": "source"
+        },
+        "5792": {
+          "synopsis": "Prompt \" Filename: \" with the cursor turned on, null-terminated: the catalogue command's\nfile name prompt.",
+          "provenance": "source"
+        },
+        "5808": {
+          "synopsis": "Message \" Catalogue written to file.\", null-terminated.",
+          "provenance": "source"
+        },
+        "5836": {
+          "synopsis": "Default name of the catalogue file, \"/filearea.pdd\", null-terminated; copied by\nGetDefaultListingFilename.",
+          "provenance": "source"
+        },
+        "5850": {
+          "synopsis": "PipeDream document header written at the start of a catalogue file (20 bytes): \"%OP%BON\",\nCR, \"%CO:A,60,60%\", a single 60-character column without borders.",
+          "provenance": "source"
+        },
+        "6115": {
+          "synopsis": "After a file was saved, refreshes the file statistics window (FileEpromStatistics) when Fc =\n0, then selects window 2 again (filewindow).\nEntry: Fc = 0 to refresh the statistics.\nKeeps: AF, HL.",
+          "provenance": "source"
+        },
+        "6129": {
+          "synopsis": "Checks that the current slot can take new files: the card must support writing\n(SlotWriteSupport) and hold a file area (OS_Epr EP_Req). On failure it shows the error\n(DispIntelSlotErr or disp_no_filearea_msg).\nEntry: (curslot) = slot.\nExit: Fc = 0, Fz = 1: file area found and writable.\nError: Fc = 1 or Fz = 0, the message was shown.\nChanges: AF, BC, DE, HL.",
+          "provenance": "source"
+        },
+        "6147": {
+          "synopsis": "Ends the save, restore and copy commands: shows \"n file saved.\" (\"files\" unless n is 1)\ncentred, waits for SPACE (ResSpace) and resets the file bar to the first file\n(InitFirstFileBar).\nEntry: (savedfiles) = count.\nKeeps: AF, HL.",
+          "provenance": "source"
+        },
+        "6204": {
+          "synopsis": "Adds 1 to the count of saved files at (savedfiles).\nEntry: none.\nKeeps: AF, BC, DE, HL.",
+          "provenance": "source"
+        },
+        "6484": {
+          "synopsis": "Wildcard \"//*\" and its terminator: the backup command appends it to the chosen RAM device\nname, making \":RAM.n//*\" (every file on the device).",
+          "provenance": "source"
+        },
+        "6488": {
+          "synopsis": "VDU code selecting window 2, null-terminated: sent by UpdateFileAreaStats to return to the\nmain window.",
+          "provenance": "source"
+        },
+        "6493": {
+          "synopsis": "Banner \"SAVE FILES TO FILE CARD AREA\", null-terminated: the save command's window.",
+          "provenance": "source"
+        },
+        "6522": {
+          "synopsis": "Message \" (Wildcards allowed).\" after a new line, null-terminated: shown by the save\ncommand.",
+          "provenance": "source"
+        },
+        "6546": {
+          "synopsis": "Prompt \" Filename: \" with the cursor turned on, null-terminated: used by the save, fetch and\ndelete commands.",
+          "provenance": "source"
+        },
+        "6562": {
+          "synopsis": "Prompt \" Overwrite all files?\" between new lines, null-terminated: asked by the save,\nrestore and copy commands.",
+          "provenance": "source"
+        },
+        "6588": {
+          "synopsis": "Text \".\", null-terminated; nothing in the FlashStore source refers to it.",
+          "provenance": "source"
+        },
+        "6590": {
+          "synopsis": "Banner \"SAVING TO FILE CARD AREA ...\", null-terminated; nothing in the FlashStore source\nrefers to it.",
+          "provenance": "source"
+        },
+        "6619": {
+          "synopsis": "Text \" file\", null-terminated: DispFilesSaved shows it after the count, adding \"s\" for any\ncount but 1.",
+          "provenance": "source"
+        },
+        "6625": {
+          "synopsis": "Text \" saved.\" and CR, LF, null-terminated: ends DispFilesSaved's message.",
+          "provenance": "source"
+        },
+        "6635": {
+          "synopsis": "Message \"File not saved properly - will be re-saved.\" and CR, LF, null-terminated: shown\nwhen saving a file to the card fails with a write error.",
+          "provenance": "source"
+        },
+        "6681": {
+          "synopsis": "Prompt \" File already exists in File Card. Overwrite?\" after a CR, null-terminated.",
+          "provenance": "source"
+        },
+        "6922": {
+          "synopsis": "Step inside the fetch dialog (QuickFetchFile, FindFileToFetch) once the user has entered the\ndestination name at buffer: asks before overwriting an existing file (PromptOverWrFile),\nexpands the name (GN_Fex), creates the RAM file, fetches the file entry into it (OS_Epr\nEP_Fetch) and closes it. On an error it deletes the new file and reports the error (GN_Err);\nfalls into DispCompletedMsg on success.\nEntry: name at buffer; (fbnk), (fadr) = file entry.\nExit: Fc = 0.\nChanges: AF, BC, DE, HL, IX.",
+          "provenance": "source"
+        },
+        "7009": {
+          "synopsis": "Shows \"Completed.\" centred and waits for SPACE (DispErrMsg); ends the fetch and copy\ncommands.\nEntry: none.\nExit: Fc = 0, Fz = 1.\nChanges: AF, HL.",
+          "provenance": "source"
+        },
+        "7231": {
+          "synopsis": "Shows the 16-bit number in HL in decimal at the cursor (IntAscii, GN_Sop).\nEntry: HL = number.\nChanges: BC, HL.",
+          "provenance": "source"
+        },
+        "7280": {
+          "synopsis": "Converts a value of 0-15 in A to its hexadecimal digit, \"0\"-\"9\" or \"A\"-\"F\". Used by\nInt32Hex.\nEntry: A = 0-15.\nExit: A = ASCII digit.\nChanges: AF.",
+          "provenance": "source"
+        },
+        "7318": {
+          "synopsis": "Warning \"WARNING: File is marked as deleted\" in flashing reverse text, null-terminated:\nshown before fetching a deleted file entry.",
+          "provenance": "source"
+        },
+        "7366": {
+          "synopsis": "Message \" Enter filename (* and ? wildcards may be used).\" after a new line,\nnull-terminated: shown by the fetch and delete commands.",
+          "provenance": "source"
+        },
+        "7417": {
+          "synopsis": "Text \" :RAM.\", null-terminated: DisplayFreeRamDevs shows it before each RAM device's slot\ndigit.",
+          "provenance": "source"
+        },
+        "7424": {
+          "synopsis": "Text \"Saved to \" with the cursor turned on, null-terminated: shown before the name of the\nfetched RAM file.",
+          "provenance": "source"
+        },
+        "7438": {
+          "synopsis": "Message \"Completed.\" and CR, LF, null-terminated: shown by DispCompletedMsg.",
+          "provenance": "source"
+        },
+        "7451": {
+          "synopsis": "Prompt \" Save to: \" in bold after a CR, null-terminated: the fetch command's destination\nname prompt.",
+          "provenance": "source"
+        },
+        "7467": {
+          "synopsis": "Message \"File not found in File Area.\", null-terminated: shown when the fetch command finds\nno such file entry.",
+          "provenance": "source"
+        },
+        "7496": {
+          "synopsis": "Text \" bytes \", null-terminated: DispInt returns it as the unit for values below 1K.",
+          "provenance": "source"
+        },
+        "7504": {
+          "synopsis": "Text \"File size = \", null-terminated: shown by DisplayFileSize.",
+          "provenance": "source"
+        },
+        "7517": {
+          "synopsis": "Text \"CRC-32 = \", null-terminated; nothing in the FlashStore source refers to it.",
+          "provenance": "source"
+        },
+        "7527": {
+          "synopsis": "Text \" = \", null-terminated: DisplayFreeRamDevs shows it between a RAM device's name and its\nfree space.",
+          "provenance": "source"
+        },
+        "7531": {
+          "synopsis": "String: \"free\", CR LF, 0. DispFreeRamDevs prints it after the free space of each RAM device\nin the Fetch command's list.",
+          "provenance": "source"
+        },
+        "8484": {
+          "synopsis": "Converts an upper-case ASCII hex digit ('0'-'9', 'A'-'F') into its value 0-15.\nViewBankMmryCmd uses it on the two digits of the bank number the user typed.\nEntry: A = ASCII hex digit.\nExit: A = digit value.\nChanges: AF.",
+          "provenance": "source"
+        },
+        "8579": {
+          "synopsis": "Table of 16 ASCII characters \"0123456789ABCDEF\": the hex digit for each value 0-15, indexed\nby CalcHexNibble.",
+          "provenance": "source"
+        },
+        "9049": {
+          "synopsis": "String: CR LF, \" Enter memory bank number to view (hexadecimal).\", 0. The prompt of\nViewBankMmryCmd.",
+          "provenance": "source"
+        },
+        "9100": {
+          "synopsis": "String: cursor on (1,\"2+C\") and \" Memory Bank: \", 0. The input label ViewBankMmryCmd prints\nbefore the bank number is typed.",
+          "provenance": "source"
+        },
+        "9119": {
+          "synopsis": "String: \"VIEW FILE\", 0. The banner MemDump shows when ViewFileEntryCmd views a file entry.",
+          "provenance": "source"
+        },
+        "9129": {
+          "synopsis": "String: \"VIEW MEMORY\", 0. The banner of ViewBankMmryCmd's window and of its memory dump\nview.",
+          "provenance": "source"
+        },
+        "9265": {
+          "synopsis": "Shows the file entry's name in bold (DispBoldFilename, through the buffer) and asks \"Mark\nfile as deleted?\" with No as the default (yesno).\nEntry: BHL = file entry.\nExit: Fz = 1, the user answered Yes; Fz = 0, No or ESC; BHL = file entry.\nChanges: AF, DE.",
+          "provenance": "source"
+        },
+        "9319": {
+          "synopsis": "Entry inside FindToMarkDltd, also called by QuickDeleteFile after a Yes: marks the file\nentry as deleted with OS_Epr EP_Delete and reports \"File marked as deleted.\" through\nDispErrMsg (waits for SPACE). On failure it reports \"Error. File was not marked as deleted.\"\nand then also \"File not found.\" (falls into delfile_notfound).\nEntry: BHL = file entry.\nExit: Fc = 0; Fc = 1, A = RC_ESC when ESC answered the message.",
+          "provenance": "source"
+        },
+        "9378": {
+          "synopsis": "String: \"File not found.\", 0. Shown by delfile_notfound when the name the user typed is not\nin the file area.",
+          "provenance": "source"
+        },
+        "9394": {
+          "synopsis": "String: CR LF, \" Found\", 0. Printed by FindToMarkDltd before the file's name when the file\nwas found.",
+          "provenance": "source"
+        },
+        "9403": {
+          "synopsis": "String: \"Error. File was not marked as deleted.\", 0. Shown by delfile_failed when OS_Epr\nEP_Delete fails.",
+          "provenance": "source"
+        },
+        "9442": {
+          "synopsis": "String: centre justify on (1,\"2JC\"), \"File marked as deleted.\", justify normal (1,\"2JN\"), 0.\nShown by exec_delete on success.",
+          "provenance": "source"
+        },
+        "9474": {
+          "synopsis": "String: \" Mark file as deleted?\", CR LF, 0. The question disp_mrkdl_prmpt prints for\nConfirmDelete.",
+          "provenance": "source"
+        },
+        "9499": {
+          "synopsis": "String: bold toggle (1,\"B\") and a space, 0. Printed by DispBoldFilename before the file\nname.",
+          "provenance": "source"
+        },
+        "9503": {
+          "synopsis": "String: bold toggle (1,\"B\"), CR LF, 0. Printed by DispBoldFilename after the file name.",
+          "provenance": "source"
+        },
+        "9557": {
+          "synopsis": "Exit of RstrFlsCmd when the file area holds no active files (FilesAvailable gives Fz = 1):\nshows \"NO FILES AVAILABLE IN FILE AREA\" through DispErrMsg, which waits for SPACE, and\nreturns from the command.\nExit: as DispErrMsg (Fc = 1, A = RC_ESC when ESC was pressed).\nChanges: HL.",
+          "provenance": "source"
+        },
+        "9877": {
+          "synopsis": "Prints \" file already exists. Overwrite?\" (after a CR) with GN_Sop. Catalogue, copy, fetch\nand restore pass it to PromptOverWrite or PromptOverWrFile as the routine that shows the\noverwrite question.\nEntry: none.\nChanges: HL.",
+          "provenance": "source"
+        },
+        "9909": {
+          "synopsis": "String: CR LF, \" Enter Device/path.\", 0. The prompt of RstrFlsCmd for the destination.",
+          "provenance": "source"
+        },
+        "9931": {
+          "synopsis": "String: cursor on (1,\"2+C\") and \" Device: \", 0. The input label for the restore destination.",
+          "provenance": "source"
+        },
+        "9945": {
+          "synopsis": "String: \"Saving...\", CR LF, 0. Printed while a file is restored to RAM, and also used by the\nsave files command.",
+          "provenance": "source"
+        },
+        "9957": {
+          "synopsis": "String: CR LF, \"Wildcards not allowed.\", 0. Shown by RstrFlsCmd when the destination path\ncontains wildcards.",
+          "provenance": "source"
+        },
+        "9982": {
+          "synopsis": "String: CR LF, \"Invalid Path\", 0. Shown by RstrFlsCmd when GN_Fex cannot expand the\ndestination path.",
+          "provenance": "source"
+        },
+        "9997": {
+          "synopsis": "String: CR, \" file already exists. Overwrite?\", CR LF, 0. Printed by disp_exis_msg.",
+          "provenance": "source"
+        },
+        "10053": {
+          "synopsis": "Inside CopyFileAreaCmd, reached when FilesAvailable gives Fz = 1 (no active files): shows\n\"NO FILES AVAILABLE IN FILE AREA\" through DispErrMsg, which waits for SPACE, and returns\nfrom the command.\nExit: as DispErrMsg (Fc = 1, A = RC_ESC when ESC was pressed).\nChanges: HL.",
+          "provenance": "source"
+        },
+        "10158": {
+          "synopsis": "Checks that files can be written to the destination slot (dstslot) with SlotWriteSupport.\nWhen they cannot, it makes the destination the current slot for a moment, shows the Intel\nFlash or EPROM slot message (DispIntelSlotErr, waits for SPACE) and puts the current slot\n(curslot) back.\nEntry: (dstslot) = destination slot.\nExit: Fc = 0, the destination supports writing.\nError: Fc = 1; A = the current slot number.\nChanges: AF, BC.",
+          "provenance": "source"
+        },
+        "10498": {
+          "synopsis": "Compares a slot number with the current slot (curslot), for the destination slot selection\nof SelDstntnSlot.\nEntry: A = slot number.\nExit: Fz = 1 when it is the current slot; A = E = slot number.\nChanges: F, E.",
+          "provenance": "source"
+        },
+        "10535": {
+          "synopsis": "Checks with OS_Epr EP_Req whether the slot holds a file area (a File Card), for the\ndestination slot selection.\nEntry: A = slot number.\nExit: Fz = 1, a file area header was found; Fz = 0, none.\nChanges: AF, D, HL.\nKeeps: BC, E.",
+          "provenance": "source"
+        },
+        "10555": {
+          "synopsis": "Prints \" Copying files from Slot x\" with the current slot (curslot) and falls into\nDispToSlotStatus, which adds \" to Slot y\".\nEntry: (curslot), (dstslot).",
+          "provenance": "source"
+        },
+        "10588": {
+          "synopsis": "Prints \" to Slot y\" with the destination slot (dstslot) through disp16bitInt. Ends\nDispCopyStatus, and CopyToSlotPrompt calls it for the single file copy question.\nEntry: (dstslot) = destination slot.",
+          "provenance": "source"
+        },
+        "10646": {
+          "synopsis": "String: \"COPY SELECTED FILE TO ANOTHER FILE CARD\", 0. The banner of QuickCopyFileCmd.",
+          "provenance": "source"
+        },
+        "10686": {
+          "synopsis": "String: CR LF, \" Select File Card.\", CR LF, 0. Printed by SelDstntnSlot before the\ndestination slot is chosen.",
+          "provenance": "source"
+        },
+        "10709": {
+          "synopsis": "String: \" Copying \", 0. The start of DispCopyStatus's line.",
+          "provenance": "source"
+        },
+        "10719": {
+          "synopsis": "String: \" Copy\", 0. Printed by QuickCopyFileCmd before the destination question.",
+          "provenance": "source"
+        },
+        "10725": {
+          "synopsis": "String: \"Only current file card is available.\", 0. Shown by single_filearea when there is no\nother file card to copy to.",
+          "provenance": "source"
+        },
+        "10762": {
+          "synopsis": "String: \" Slot \", 0. Printed before a slot number in the copy messages.",
+          "provenance": "source"
+        },
+        "10769": {
+          "synopsis": "String: \"files \", 0. Part of DispCopyStatus's line.",
+          "provenance": "source"
+        },
+        "10776": {
+          "synopsis": "String: \"from\", 0. Part of DispCopyStatus's line.",
+          "provenance": "source"
+        },
+        "10781": {
+          "synopsis": "String: \" to\", 0. Printed by DispToSlotStatus.",
+          "provenance": "source"
+        },
+        "10838": {
+          "synopsis": "Formats the file area in the current slot (curslot), after asking:\n1. Clears the greyed screen, updates the statistics (FileEpromSttstcs) and opens the \"FORMAT\nFILE AREA ON FLASH CARD\" window.\n2. Looks for a file area with OS_Epr EP_Req. With one, it warns \"Re-format File Area in slot\nn (All data is lost).\"; without one, it says there is no file area for the card's\napplications (NoAppFileAreaMsg) or that the Flash Card is empty.\n3. Asks \"Format (create new) file area in slot n?\" (default No) and returns on No.\n4. Formats with OS_Fep FEP_FFMT, then resets the file area information (PollFileArea).\n5. Shows \" File Area formatted.\" and waits for SPACE; on an error it shows \"File Area not\nformatted properly!\" and resets the watermark (ResetWatermark).\nEntry: (curslot) = slot to format.\nExit: Fc = 0, Fz = 1, formatted; Fz = 0, the user answered No or ESC.",
+          "provenance": "source"
+        },
+        "11203": {
+          "synopsis": "String: \"File Area not formatted properly!\", CR LF, 0. Shown by formaterr.",
+          "provenance": "source"
+        },
+        "11239": {
+          "synopsis": "String: \"FORMAT FILE AREA ON FLASH CARD\", 0. The banner of the format command's window.",
+          "provenance": "source"
+        },
+        "11270": {
+          "synopsis": "String: CR LF, flash on (1,\"F\"), \" Formatting File Area ... \", flash off, 0. Printed while\nOS_Fep formats the file area.",
+          "provenance": "source"
+        },
+        "11303": {
+          "synopsis": "String: CR LF, \" File Area formatted.\", CR LF, 0. Shown after a successful format.",
+          "provenance": "source"
+        },
+        "11329": {
+          "synopsis": "Table of 2 words for DispSlotErrorMsg: the addresses of reformat1_msg and reformat2_msg,\nprinted on either side of the slot number.",
+          "provenance": "source"
+        },
+        "11333": {
+          "synopsis": "String: CR LF, bold on (1,\"B\"), \"Re-format File Area in slot \", 0. The first half of the\nre-format warning (reformat_msgs).",
+          "provenance": "source"
+        },
+        "11366": {
+          "synopsis": "String: \" (All data is lost).\", bold off (1,\"B\"), 0. The second half of the re-format\nwarning (reformat_msgs).",
+          "provenance": "source"
+        },
+        "11389": {
+          "synopsis": "Table of 2 words for DispSlotErrorMsg: the addresses of filefmt_ask1_msg and\nfilefmt_ask2_msg, printed on either side of the slot number.",
+          "provenance": "source"
+        },
+        "11393": {
+          "synopsis": "String: cursor on (1,\"2+C\"), CR, \"Format (create new) file area in slot \", 0. The first half\nof the format question (filefmt_msgs).",
+          "provenance": "source"
+        },
+        "11437": {
+          "synopsis": "String: \"? \", 0. The second half of the format question (filefmt_msgs).",
+          "provenance": "source"
+        },
+        "11813": {
+          "synopsis": "Entry inside openfile, taken when GN_Opf fails with RC_ONF (object not found): expands the\nfilename with GN_Fex, creates the missing directories of its path (createpath) and jumps\nback to openfile to create the file again.\nEntry: HL = filename (local pointer, B = 0); DE = scratch buffer; C = its size.\nExit: as openfile (Fc = 0, IX = handle of the file opened for output).\nError: Fc = 1, A = RC_IVF when the name has wildcards or no file name; Fc = 1, A = error\ncode of GN_Fex or of a directory that could not be made.",
+          "provenance": "source"
+        },
+        "11839": {
+          "synopsis": "Entry inside createpath, the loop that scans backwards from HL for a '/' separator. At the\nseparator (found_separator) it ends the path there with a 0, creates the parent levels first\n(createpath again while B > 0), makes this level with mkdir and puts the '/' back.\nEntry: A = '/'; HL = position to scan back from; B = path levels to create; IY = name.\nExit: Fc = 0, the directory path exists.\nError: Fc = 1, A = error code.\nChanges: AF, DE, HL.",
+          "provenance": "source"
+        },
+        "11860": {
+          "synopsis": "Creates one directory with GN_Opf OP_DIR, the name being the 0-terminated path at IY, and\nfrees the returned DOR handle with OS_Dor DR_FRE. A directory that already exists (RC_USE or\nRC_EXIS) counts as success.\nEntry: IY = directory path name.\nExit: Fc = 0.\nError: Fc = 1, A = error code.\nKeeps: BC, HL.",
+          "provenance": "source"
+        },
+        "11931": {
+          "synopsis": "Reads the address word at HL, for DispSlotErrorMsg's two-string tables.\nEntry: HL = pointer to a word.\nExit: HL = the word; DE = pointer past the word.\nChanges: DE, HL.",
+          "provenance": "source"
+        },
+        "11937": {
+          "synopsis": "Shows, bold and centred, \"No File Area available on Card in slot n.\" with the current slot\n(DispSlotErrorMsg).\nEntry: (curslot) = slot number.\nChanges: HL.",
+          "provenance": "source"
+        },
+        "11943": {
+          "synopsis": "Shows, bold and centred, \"Flash Card is empty in slot n.\" with the current slot\n(DispSlotErrorMsg).\nEntry: (curslot) = slot number.\nChanges: HL.",
+          "provenance": "source"
+        },
+        "11949": {
+          "synopsis": "Shows, centred, \"File Area not detected in slot n.\" with the current slot, greys the command\nwindow (DispCmdWindow) and jumps to FileEpromSttstcs to update the file area statistics\nwindow. The commands jump here when the current slot has no file area.\nEntry: (curslot) = slot number.",
+          "provenance": "source"
+        },
+        "11961": {
+          "synopsis": "Tells the user there are no files to show, without waiting for a key (DispErrMsgNoWait): \"NO\nFILES AVAILABLE IN FILE AREA\" when the file area has neither active nor deleted files (file)\n+ (fdel) = 0, otherwise \"NO FILES AVAILABLE IN CURRENT FILE VIEW\". The commands jump here\nwhen FilesAvailable gives Fz = 1.\nEntry: (file) = active files; (fdel) = deleted files.\nExit: Fz = 1 when the file area holds no files at all.\nChanges: DE, HL.",
+          "provenance": "source"
+        },
+        "12052": {
+          "synopsis": "String: CR LF, bold on (1,\"B\"), \"No File Area available on Card in slot \", 0. The first half\nof NoAppFileAreaMsg's message (no_appflarea_msgs).",
+          "provenance": "source"
+        },
+        "12096": {
+          "synopsis": "String: \".\", bold off (1,\"B\"), 0. The second half of NoAppFileAreaMsg's message.",
+          "provenance": "source"
+        },
+        "12100": {
+          "synopsis": "Table of 2 words for DispSlotErrorMsg: the addresses of empty_flcrd1_msg and\nempty_flcrd2_msg, used by dsp_emp_flcr_msg.",
+          "provenance": "source"
+        },
+        "12104": {
+          "synopsis": "String: CR LF, bold on (1,\"B\"), \"Flash Card is empty in slot \", 0. The first half of\ndsp_emp_flcr_msg's message.",
+          "provenance": "source"
+        },
+        "12137": {
+          "synopsis": "String: \".\", bold off (1,\"B\"), 0. The second half of dsp_emp_flcr_msg's message.",
+          "provenance": "source"
+        },
+        "12141": {
+          "synopsis": "Table of 2 words for DispSlotErrorMsg: the addresses of intlslt_err1_msg and\nintlslt_err2_msg, used by DispIntelSlotErr for an Intel Flash Card outside slot 3.",
+          "provenance": "source"
+        },
+        "12145": {
+          "synopsis": "String: CR LF, bold on (1,\"B\"), \"Intel Flash Card found in slot \", 0. The first half of the\nIntel Flash slot message (intelslot_msgs).",
+          "provenance": "source"
+        },
+        "12181": {
+          "synopsis": "String: \".\", bold off, CR LF, \"You can only format file area, save files or\", CR LF, \"delete\nfiles in slot 3.\", CR LF, 0. The second half of the Intel Flash slot message.",
+          "provenance": "source"
+        },
+        "12258": {
+          "synopsis": "Table of 2 words for DispSlotErrorMsg: the addresses of eprmslt_err1_msg and\neprmslt_err2_msg, used by DispIntelSlotErr for an EPROM outside slot 3.",
+          "provenance": "source"
+        },
+        "12262": {
+          "synopsis": "String: CR LF, bold on (1,\"B\"), \"EPROM found in slot \", 0. The first half of the EPROM slot\nmessage (epromslot_msgs).",
+          "provenance": "source"
+        },
+        "12287": {
+          "synopsis": "String: \".\", bold off, CR LF, \"You can only save files to Eprom in slot 3.\", CR LF,\n\"Further, files or EPROMs cannot be erased in the Z88.\", CR LF, 0. The second half of the\nEPROM slot message.",
+          "provenance": "source"
+        },
+        "12393": {
+          "synopsis": "Table of 2 words for DispSlotErrorMsg: the addresses of nofilearea1_msg and nofilearea2_msg,\nused by disp_no_fra_msg.",
+          "provenance": "source"
+        },
+        "12397": {
+          "synopsis": "String: CR LF, bold on (1,\"B\"), \"File Area not detected in slot \", 0. The first half of\ndisp_no_fra_msg's message (nofilearea_msgs).",
+          "provenance": "source"
+        },
+        "12433": {
+          "synopsis": "String: \".\", CR LF, 0. The second half of disp_no_fra_msg's message. It has no bold toggle,\nso the bold switched on by nofilearea1_msg is not switched off here.",
+          "provenance": "source"
+        },
+        "12437": {
+          "synopsis": "String: tiny on (1,\"2+T\"), \"NO FILES AVAILABLE IN FILE AREA\", tiny off (1,\"2-T\"), CR LF, 0.\nShown by no_files and by both no_active_files exits.",
+          "provenance": "source"
+        },
+        "12479": {
+          "synopsis": "String: tiny on (1,\"2+T\"), \"NO FILES AVAILABLE IN CURRENT FILE VIEW\", tiny off (1,\"2-T\"), CR\nLF, 0. Shown by no_files when the file area has files but none in the current view.",
+          "provenance": "source"
+        }
+      }
+    },
     "12": {
       "lines": {
         "523": {
@@ -7278,6 +9342,18 @@
           "provenance": "observed"
         }
       ]
+    },
+    "31": {
+      "lines": {
+        "16376": {
+          "synopsis": "The card header at the top of the ROM's last bank, which OZ reads to identify the card in a\nslot: the card ID \"TCL\" (Trinity Concepts Limited), the card type CX_OS ($81, an operating\nsystem card), the ROM's size in 16K banks (ROMSIZE, 14) and the subtype CB_APL (0). The \"OZ\"\nwatermark (oz_watermark) follows. Below it, from $3FC0, lie the front DOR that links to the\nfirst application DOR (the Index's, in the MTH bank) and, at $3FEC, the file area's size in\nbanks (16) and its \"oz\" watermark.",
+          "provenance": "source"
+        },
+        "16382": {
+          "synopsis": "The card's watermark: the word CT_ROM, the letters \"OZ\", which mark the card as one that\ncontains an OZ operating system with applications. It ends the card header (eprom_header).",
+          "provenance": "source"
+        }
+      }
     }
   }
 }

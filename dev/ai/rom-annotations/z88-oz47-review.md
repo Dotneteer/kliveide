@@ -179,3 +179,47 @@ that a later pass should confirm. Plan: `dev/plans/Z88_OZ47_ROM_ANNOTATIONS_PLAN
 - (b7-4) clear_prog_ind: I did not establish what SOH "2C" $FD does exactly (I described it as removing the spinner from context).
 - (b7-4) RcvB/MaySendB pass BC = 60000 to OS_Si; the source says 60 s; the OS_Si timeout unit was not checked.
 - (merge) b4-4's Changes: lines list only the registers each routine loads itself, not those the OZ calls inside it may change: a later pass may check them.
+
+## Banks $0A, $0B and $1F: EazyLink, the Filer, FlashStore and the ROM header (2026-11-15)
+
+- (el-1) Errhandler is not installed with OS_Erh; it is called directly with A = error code (PollInput, ScanKeyboard, byteio's Check_timeout).
+- (el-1) PollInput returns a serial byte by popping its own and Poll's return addresses and jumping to Poll's caller (Fetch_synch).
+- (el-1) Command letters follow the order of EscCommands/subroutines in consts.asm: ESC_T_cmd1 = 't' (translation ON), ESC_T_cmd2 = 'T', ESC_C_cmd1 = 'c', ESC_C_cmd2 = 'C'; the subroutines table's own comments have the case swapped.
+- (el-1) PCLINK II table comments in consts.asm call 'S' 'Send file (from Z88)' and 'G' 'Receive'; the code does the opposite (ESC_S_cmd1 receives into the Z88, ESC_G_cmd1 sends a Z88 file). Synopses follow the code.
+- (el-1) Menu bar width is 32+$1A = 26 characters; the source comment says 20.
+- (el-1) EAZYLINK_TESTPROTOCOL code is not assembled in this ROM (checked in the bytes at KillPopdown and PollInput).
+- (el-2) Bank $0A run at $8000; source is the release build (EAZYLINK_TESTPROTOCOL off), checked against the bytes: RxByte/SxByte use OS_Si with BC = 3000 (30 s), rtmflags is (IX+0).
+- (el-2) Two HexNibble copies: 10:5955 is byteio.asm's (module-local, used by Send_ESC_byte_ackn); 10:7210 is crc32file.asm's, the XDEF'd one blockio.asm's Send_ESC_B calls.
+- (el-2) Getbyte/TrnslteIncoming translate incoming bytes through TraTableOut and outgoing through TraTableIn; InstallByte sets TraTableIn(D)=E, TraTableOut(E)=D, so the naming is consistent with that.
+- (el-2) Flush_buffer ends with POP HL / LD A,H: HL returns the caller's AF and the OS_Mv error code is lost (only Fc survives). Write_buffer inherits this.
+- (el-2) filenames_loop leaves the wildcard handler open on the normal end (only the error path closes it); prt_dir_path's Fc reflects only the DOR reopen, write errors go to System_error.
+- (el-2) ConvAsciHexNbble's source comment says 'a'-'f' but it subtracts $37, so only upper-case digits convert correctly.
+- (el-3) EazyLink strings (message13 to Yes_Parameter) are described by their text and the routine that loads them (grep over apps/eazylink); error_message0, ESC_B and ESC_ESC are never loaded by any instruction.
+- (el-3) IBM_TraTableOut is the second half of a 512-byte block copied by Use_StdTranslations; it holds the inverse of IBM_TraTableIn.
+- (el-3) fsize_smaller/fsize_larger/lcdon/SetBlinkScreenOn/mkdir/find_separator also exist in os/osepr and apps/flashstore; the eazylink/lib.asm copies were used (address range of bank 10 segment 2).
+- (el-3) Filer CloseSource/CloseTempFile/CloseDest store IX back after OS_Cl/OS_Dor DR_FRE; os/dor.asm documents DR_FRE as returning IX = 0, so the stored handle is cleared; not verified for OS_Cl.
+- (el-3) Filer MainLoop key codes after a zero byte read from the binary/source: $20 ShEnter, $31 ChDirUp, $32 ChDirDown, $21-$30 DoCmd A = 0-15; the meaning of those codes (menu shortcuts) not traced.
+- (el-3) PrntDir sends 1,"B" (bold toggle); the source comment calls it tiny caps, the synopsis follows the code.
+- (el-4) Command handlers (CmdTable blocks) are entered by DoCmd with jp (hl), the return address loc_ED92 and the command block pointer on the stack; they return Fc = 1, A = error to stop. The flag bits are documented in the CmdTable synopsis.
+- (el-4) Move_XY_BC takes B = column, C = row (VDU 1,'3@',32+B,32+C); SelectSlotPrompt's comment '(X,Y) = (C,B)' is wrong. vwfile's Set_CurPos is the other way round (C = X, B = Y).
+- (el-4) VerifiedChDir: GN_Pfs leaves HL at the end of the first segment (gn/gnfname2.asm header), so SP_Dir is set from the rest of the path; source flags it '!! probable bug'. Synopsis states only the facts.
+- (el-4) PrntDotOpen/PrntDotClose: VDU 1,'2.[' / '2.]' go through the screen driver's TogglePrFilter to DC_Gen (dc/dc.asm:1814), which clears/sets CLIF_B_DISABLEPRT.
+- (el-4) GetKey: an OS_In error other than RC_Esc returns Fc = 0 with A = the error (or a clears carry); SelectSlotPrompt then ignores it as an invalid key.
+- (el-4) Conv_to_nibble has no caller in the Filer; the listed callers are FlashStore's own vwfile copy. Same for the dc.asm/index.asm GetLinkCDE/GetLinkBHL, calc.asm PrntReverse, diary MayPageWait/PrntClearEOL/Save callers: different routines with the same names.
+- (fs-1) DisplMenuBar ($C267) is fsapp's entry inside DisplBar and ends with POP AF; the card selection's own DisplMenuBar (selectcard.asm:423) is at $C7F8 and has no label in this slice. ShowMenuBar/RemoveMenuBar jump there. The eazylink callers in DisplMenuBar/RemoveMenuBar's caller lists belong to eazylink's own routines.
+- (fs-1) SlMnuWin_slctcrd ($CBE4) is selectcard.asm's SelectMenuWindow (window 2, cursor off); SelectMenuWindow ($C295) is fsapp's (window 1).
+- (fs-1) DispSlotSize and DispFreeSpace write into the VDU cache (vdubufptr), not to the screen; FileEpromStatistics calls DispSlotSize directly and then GN_Nln, so whether that output is flushed there was not traced.
+- (fs-1) clsvdu's 1,'S' is described by its bytes only: its exact VDU meaning (scroll toggle?) was not confirmed.
+- (fs-1) The fsapp bar sequences use 1,"2E" (XOR per the source comment) while the card selection bars use 1,"2A"; MenuBar's comment says 15 chars but the byte is 32+17.
+- (fs-2) open_file (11:6922) and HexNibble (11:7280): the slice's callers are EazyLink's own labels of the same name (apps/eazylink); FlashStore's open_file is reached only by the JR NC in the fetch dialog, and its HexNibble only by Int32Hex.
+- (fs-2) no_filearea (11:3453): the callers listed in os/osepr and os/osfep are other modules' labels of the same name; in FlashStore it is reached from dispstats only.
+- (fs-2) farea_bnr_end, allfiles_bnr_end, svdfls_bnr_end, catlg_banner_end are end markers that share their address with the next string (allfiles_banner, savedfiles_banner, norm_sq, catlg_msg); the synopses describe both.
+- (fs-2) curdir, fsv2_bnr and crc32_txt are not referenced anywhere in apps/flashstore (grep).
+- (fs-2) DisplayEpromSize: both branches after the top-bank test do the same thing, so the test has no visible effect; not mentioned in the synopsis.
+- (fs-2) scroll_up/scroll_down: stdio.def calls SD_UP 'scroll upwards', but MoveFileBarUp's comment says the contents move down; the synopses name the code and its user only.
+- (fs-3) no_active_files: 11:9557 ($E555) is restorefiles.asm's copy (bytes 21 95 F0 C3 F5 EE, after RstrFlsCmd's input), 11:10053 ($E745) is copyfiles.asm's (inside CopyFileAreaCmd, after the jr nz). Both are identical code.
+- (fs-3) exec_delete: on EP_Delete failure the source shows markdelete_failed with DispErrMsg and then falls into delfile_notfound, so "File not found." is shown as well (deletefile.asm:198-202). Written as observed; looks like a source slip.
+- (fs-3) nofilearea2_msg has no closing bold toggle (errmsg.asm:222), unlike the other *2_msg strings; noted in its synopsis.
+- (fs-3) createdir's entry registers are what openfile left for GN_Opf (HL = DE = IY filename, C = buffer size, B assumed 0); B is not set by openfile itself, it is 0 after createfile's CPIR for names under 255 bytes.
+- (fs-3) execute_format's error exit goes through DispErrMsg then jp ResetWatermark, so its flags on a format error were not traced; the contract states only the success/No exits.
+- (fs-3) The 1,"2+T" / 1,"2+C" / 1,"F" / 1,"B" VDU codes are described as tiny text, cursor, flash and bold toggles (OZ screen driver codes); the source comments name only some of them.

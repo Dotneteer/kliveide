@@ -2623,3 +2623,13 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
   the bytes with `z88-dis.cjs`. The helpers' notes are in `z88-oz47-review.md`.
 - **Sources:** the OZ V4.7 source (commit `603c979a`, D-OZ1) and the ROM bytes; the entries are `source`.
 - **Level:** measured 2 on banks 4 and 7; both reassemble byte for byte. Not shipped yet (Q1).
+
+### 2026-11-15 — Cambridge Z88: OZ 4.7, banks $0A, $0B and $1F to level 2
+
+- **What:** 516 synopses in `z88-oz47-authored.json`: bank $0A's EazyLink and Filer (288), bank $0B's
+  FlashStore (226) and the ROM header in bank $1F (2).
+- **How:** as before, seven helpers with `helper-briefs/z88-draft-synopses.md` (the header written by hand);
+  where EazyLink, the Filer and FlashStore define the same name, each label was matched to the module its
+  address falls in. The helpers' notes are in `z88-oz47-review.md`.
+- **Sources:** the OZ V4.7 source (commit `603c979a`, D-OZ1) and the ROM bytes; the entries are `source`.
+- **Level:** measured 2 on banks $0A, $0B and $1F; each reassembles byte for byte. Not shipped yet (Q1).
