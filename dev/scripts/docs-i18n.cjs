@@ -302,8 +302,9 @@ function writeMeta(lang) {
     const title = ui[`area.${area}`];
     if (TRANSLATED_AREAS.includes(area)) lines.push(`  ${JSON.stringify(area)}: { type: "page", title: ${JSON.stringify(title)} },`);
     else {
-      const label = ui["area.englishOnly"].replace("{title}", title);
-      lines.push(`  ${JSON.stringify(area)}: { type: "page", title: ${JSON.stringify(label)}, href: "/en/${area}/" },`);
+      // --- The plain name, as on the landing page's header: the two headers say the same thing
+      // --- (docs/design.md, "Controls"). A "(English)" suffix overflowed the navbar in German.
+      lines.push(`  ${JSON.stringify(area)}: { type: "page", title: ${JSON.stringify(title)}, href: "/en/${area}/" },`);
     }
   }
   lines.push("};");

@@ -13,8 +13,9 @@ App's Palette"); where the two differ, that file wins and this one is corrected.
   included, write/build/run/debug), feature rows always text left and picture right.
 - Theme: custom, the app's own palette (vibe: "the IDE's own colours, a data sheet").
 - Posture: restrained. The one accent is Sinclair Blue; the four Spectrum colours appear only as
-  the 6px rule at the top of the landing page and the square before each feature heading, never as a
-  band, a block or behind running text.
+  the 6px rule above the header (on every page, landing and docs alike, as part of the one header)
+  and the square before each feature heading on the landing page, never as a band, a block or behind
+  running text.
 
 ## Tokens
 `docs/app/tokens.css` is the source of truth, and `test/docs/site-tokens.test.ts` keeps it equal to
@@ -43,7 +44,15 @@ dark one the way the app derives it; never tune one by hand. The roles:
   at one width (`--site-content-width`, 90rem), one gutter (`--site-gutter`) and one header height
   (`--site-header-height`, 64px), all in `app/tokens.css`; Nextra's `--nextra-content-width` is set
   from them. Moving between the landing page and the docs moves nothing in the header.
-- The header is one sticky, solid row. Below 900px its links and GitHub move into a `<details>`
+- **One header on every page**, item for item: the 6px rule, then the brand, the five area links
+  beside it, and on the right the language, theme and GitHub buttons. The docs' navbar is Nextra's,
+  restyled to it (`custom.css`), and adds only the search field before the tools. The shared parts
+  (rule, icon buttons, language menu, the menu button) are one stylesheet, `app/site-header.css`,
+  and one set of components (`page-components/SiteIcons.tsx`, `SiteMenu.tsx`); the link names are
+  the landing catalog's, never suffixed with "(English)".
+- The header is one sticky, solid row. In the docs, whose search field takes room, the links and
+  GitHub move into the menu button between 1240px and Nextra's phone layout (767px), where Nextra's
+  own menu (the sidebar) takes over. On the landing page: below 900px its links and GitHub move into a `<details>`
   menu, and below 420px the language button keeps only its globe: every language fits 320px.
 
 ## At a glance

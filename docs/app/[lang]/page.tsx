@@ -6,6 +6,7 @@
 import LandingPage, { landingMetadata } from "../../landing/LandingPage";
 import LanguageSuggestion from "../../landing/LanguageSuggestion";
 import { themeBootScript } from "../../landing/ThemeToggle";
+import "../site-header.css";
 import "../../landing/landing.css";
 
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";

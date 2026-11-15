@@ -84,7 +84,8 @@
  * The site's frame, shared by the landing page and the documentation, so the header and the page
  * stand at the same width and height whichever one a visitor is on. Nextra's own width
  * (`--nextra-content-width`) is set from these in app/[lang]/(docs)/custom.css; its navbar is 4rem
- * (64px) tall and has a 1.5rem gutter of its own.
+ * (64px) tall and has a 1.5rem gutter of its own; keep --site-header-height equal to its
+ * --nextra-navbar-height, which must stay a literal length.
  */
 :root {
   --site-content-width: 90rem;

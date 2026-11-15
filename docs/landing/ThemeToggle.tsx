@@ -3,6 +3,8 @@
  * Light/dark switch. It shares next-themes' storage key and <html> class with the docs (Nextra),
  * so a choice made on either part of the site holds on the other.
  */
+import { MOON_ICON } from "../page-components/SiteIcons";
+
 type Props = Readonly<{ label: string }>;
 
 export default function ThemeToggle({ label }: Props) {
@@ -20,10 +22,8 @@ export default function ThemeToggle({ label }: Props) {
     }
   };
   return (
-    <button type="button" className="lp-icon-button" onClick={toggle} aria-label={label} title={label}>
-      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-        <path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9Z" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-      </svg>
+    <button type="button" className="site-icon-button" onClick={toggle} aria-label={label} title={label}>
+      {MOON_ICON}
     </button>
   );
 }

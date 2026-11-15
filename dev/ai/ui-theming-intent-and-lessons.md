@@ -3288,8 +3288,22 @@ drift. Change a neutral or the default accent in the app, and the site changes w
   a label above a heading, middle-dot lists (`A · B · C`), "Not X. Y." headlines, stock lines
   ("What makes X different", "Ready to...?", "Read more", "Get started" as a button), em and en
   dashes in landing texts, and a see-through blurred header.
-- **The Spectrum colours stay small, on the landing page only:** a 6px four-colour rule at the top
-  and a square before each feature's heading. Never a band, a block or a colour behind running text.
+- **The Spectrum colours stay small:** a 6px four-colour rule above the header on every page (the
+  docs get it through Nextra's `banner` slot, so it sits above the sticky navbar and scrolls away like
+  the landing page's) and a square before each landing feature's heading. Never a band, a block or a
+  colour behind running text.
+- **The landing page and the docs have one header** (the author: "I want to see the same header").
+  Nextra's navbar is restyled to the landing header rather than replaced, so search, the active-area
+  mark and the phone sidebar keep working: `align="left"` puts the links beside the brand, the
+  see-through blur becomes the solid page colour, and the children are the shared language, theme
+  (`DocsThemeToggle`, next-themes' `setTheme`) and GitHub buttons, styled by `app/site-header.css`.
+  Measured: brand, first link, language and GitHub land on the same pixels on both pages. Two traps:
+  **`--nextra-navbar-height` must stay a literal length** (Nextra passes it to an IntersectionObserver
+  as `rootMargin`; a `var()` there throws and the docs page fails to load), and **the area names
+  carry no "(English)" suffix**: the suffix made German's links 700px wide, overflowed the navbar and
+  wrapped the brand, and the landing header never had it. Links to untranslated areas still lead to
+  the English pages. Because the search field takes about 260px, the docs fold their links into the
+  shared menu button below 1240px (German needs about 1210px), not at the landing's 900px.
 - **A mark beside a label lines up with its capitals, not with the line box:** it sits on the
   baseline (`align-items: baseline`) and is `1cap` tall. Overpass puts its capitals above the
   middle of the line, so a mark centred in the line box (`align-items: center`) sits visibly low.
@@ -3311,10 +3325,10 @@ drift. Change a neutral or the default accent in the app, and the site changes w
 - **The landing header is one row that never scrolls the page sideways:** its links mirror the docs'
   navbar tabs and hide below the width the longest language needs (`.lp-nav` in
   `docs/landing/landing.css`, 900px for German's 855px with five links). Below that width the links
-  and GitHub move into a menu (`.lp-menu`, a native `<details>`, so it works without script) that
+  and GitHub move into a menu (`SiteMenu`, `.site-menu`, a native `<details>`, so it works without script) that
   takes the GitHub icon's place. The header is sticky and solid, never see-through. **The tools row (language,
   theme, GitHub) must fit 320px too**: below 420px the language button drops its name and keeps the
-  globe (`.lp-lang-name`), because with the name Portuguese needs 385px. Adding a link, a tool or a
+  globe (`.site-lang-name`), because with the name Portuguese needs 385px. Adding a link, a tool or a
   language means measuring every language again, at each width just above each cut-off, in the
   running site; `.hallmark`'s `sloplint --render` (rule 34) catches a page that scrolls sideways.
 - **Nothing hidden may widen the page:** the skip link waits *above* the page (`transform`), never

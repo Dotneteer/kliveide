@@ -4,6 +4,7 @@
  * every language in its own name (never translated). Hidden while the site has one language.
  */
 import { useEffect, useRef, useState } from "react";
+import { GLOBE_ICON } from "../page-components/SiteIcons";
 
 type Props = Readonly<{
   current: string;
@@ -30,16 +31,13 @@ export default function LanguageSelect({ current, label, languages }: Props) {
   if (languages.length < 2) return null;
   const name = languages.find(([id]) => id === current)?.[1] ?? current;
   return (
-    <div className="lp-lang" ref={ref}>
-      <button type="button" className="lp-lang-button" aria-haspopup="true" aria-expanded={open} aria-label={label} onClick={() => setOpen(!open)}>
-        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-          <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="1.8" />
-          <path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18" fill="none" stroke="currentColor" strokeWidth="1.8" />
-        </svg>
-        <span className="lp-lang-name">{name}</span>
+    <div className="site-lang" ref={ref}>
+      <button type="button" className="site-lang-button" aria-haspopup="true" aria-expanded={open} aria-label={label} onClick={() => setOpen(!open)}>
+        {GLOBE_ICON}
+        <span className="site-lang-name">{name}</span>
       </button>
       {open && (
-        <ul className="lp-lang-menu">
+        <ul className="site-lang-menu">
           {languages.map(([id, native, href]) => (
             <li key={id}>
               <a href={href} hrefLang={id} lang={id} aria-current={id === current ? "true" : undefined}>
