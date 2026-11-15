@@ -1969,6 +1969,366 @@
         }
       }
     },
+    "3": {
+      "lines": {
+        "1173": {
+          "synopsis": "Main body of GN_Gdt, called by GNGdt once the date filter's bank (DAF_BNK) is bound in S1.\n1. Checks that the caller's B (maximum characters) is 1-128, else RC_Bad.\n2. Opens the localised date filter (uwGnDateFilter) with GN_Flo, case-insensitive and with a\nbuffer of B bytes, and copies up to B characters from the source (ReadOsfHL) into it with\nGN_Flw; end of file ends the copy.\n3. Reads the fields back through the filter: numbers with GN_Gdn, filter codes for month and\nweekday names, ordinal suffixes and AD/BC, separated by space, '/', '-', TAB, '.' or the\ncaller's C. The day/month order comes from the caller's A or the PA_Dat setting; a one- or\ntwo-digit year gets the current century.\n4. Converts day, month and year with GNDeiMain and returns the date through Wr_ABC_OsfDE.\n5. Closes the filter and returns the source index (HL < 256) or the advanced pointer.\nEntry: IY = OS frame with the caller's HL = source, DE = destination, A = format, B =\nmaximum characters, C = delimiter (if A bit 5 = 1).\nExit: frame ABC = date (DE < 256) or the date written at DE; frame HL = index or pointer.\nError: frame Fc = 1, A = RC_Bad, RC_Sntx or the read/filter error (PutOsf_Err).",
+          "provenance": "source"
+        },
+        "1727": {
+          "synopsis": "Main body of GN_Pdt, called by GNPdt with the date filter's bank bound in S1 and the date\ncopied to pGnTmpDate. Opens the date filter in reverse mode (20-byte buffer), writes the\nfields as the caller's A and B ask (leading space, weekday, day and month in European,\nAmerican or PA_Dat order, ordinal suffix, 2- or 4-digit year, AD/BC, trailing space), then\nmoves the filter's output to the destination with WriteOsfDE and closes the filter.\nEntry: IY = OS frame (caller's A, B = format, C = delimiter, DE = destination, IX = handle\nif DE < 2); date at pGnTmpDate.\nExit: frame DE = output pointer when it was > 255.\nError: frame Fc = 1, A = RC_Sntx (bad date) or the filter/write error; DE left as it was.\nKeeps: IX.",
+          "provenance": "source"
+        },
+        "1981": {
+          "synopsis": "Writes A into the GN_Pdt output filter with GN_Flw (IX = filter). On an error it discards\nits return address and leaves through pdt_Err, which stores the error in the frame, closes\nthe filter and returns from pdt_0; pdtFlw_spc, placed before it, writes a space.\nEntry: A = character or filter code; IX = filter; IY = OS frame.\nExit: Fc = 0.\nChanges: AF.",
+          "provenance": "source"
+        },
+        "1989": {
+          "synopsis": "Writes the delimiter after a GN_Pdt date field: the caller's C when bit 5 of the caller's A\nis set, otherwise a space; continues in pdtFlw (or pdtFlw_spc).\nEntry: IX = filter; IY = OS frame.\nExit: Fc = 0.\nError: as pdtFlw, leaves GN_Pdt.\nChanges: AF.",
+          "provenance": "source"
+        },
+        "2367": {
+          "synopsis": "Undoes GN_Gtm's OS_Bix of a memory source and updates the caller's pointer: the bytes used\n(HL minus the bound start in BC) are added to the frame's HL, and OS_Box restores the\nsegment bindings saved in DE. HL is subtracted with sbc, so Fc should be 0 on entry.\nEntry: HL = current (bound) source pointer; BC = bound start address from OS_Bix; DE =\nbindings from OS_Bix; IY = OS frame.\nExit: HL = the caller's pointer advanced past the bytes read.\nChanges: AF, BC, HL.",
+          "provenance": "source"
+        },
+        "2653": {
+          "synopsis": "Writes A to GN_Ptm's destination with WriteOsfDE. On an error it discards its return\naddress, stores the error in the frame (PutOsf_Err) and leaves GN_Ptm through ptm_7.\nEntry: A = character; IY = OS frame (DE = destination, IX = handle if DE < 2).\nExit: Fc = 0; frame DE advanced for a memory destination.\nChanges: F.",
+          "provenance": "source"
+        },
+        "3092": {
+          "synopsis": "Table of 9 powers of ten as 32-bit little-endian words, 10^9 down to 10^1. GN_Pdn subtracts\neach one repeatedly from the number to get its decimal digits, most significant first.",
+          "provenance": "source"
+        },
+        "4250": {
+          "synopsis": "Helper of GN_Flo's table scan: keeps the largest entry size seen, E = max(E, A). Fc is\nalways 0 on exit, so the caller's 'bad table' test after it never fires.\nEntry: A = entry size; E = largest so far.\nExit: E = max(E, A); Fc = 0.\nChanges: F, E.",
+          "provenance": "source"
+        },
+        "4742": {
+          "synopsis": "Takes A characters off the front of a filter's buffer: adds A to the written count,\nsubtracts it from the characters left and moves the rest down to the buffer start. Returns\nthe character that was first in the buffer.\nEntry: A = number of characters; IX = filter data (fd_xxx).\nExit: A = the first buffer character before the purge.\nChanges: AF.\nKeeps: BC, DE, HL.",
+          "provenance": "source"
+        },
+        "4790": {
+          "synopsis": "Steps to the next filter table entry: HL += A (the entry's length), then reads the length\nbyte of the entry there.\nEntry: HL = entry; A = its length.\nExit: HL = next entry; A = its length byte.\nChanges: AF, HL.",
+          "provenance": "source"
+        },
+        "4797": {
+          "synopsis": "Converts a lower-case ASCII letter ('a' to 'z') in A to upper case; other values are\nreturned unchanged.\nEntry: A = character.\nExit: A = character, upper case if it was a-z.\nChanges: AF.",
+          "provenance": "source"
+        },
+        "5446": {
+          "synopsis": "Exit of GN_Sip, reached on ENTER, ESC, a special key or an error. Counts the null in the\nlength, stores A, B and C in the frame, restores the window's margins to its full width\n(NQ_Wbox) when single line lock was used, and restores the bindings saved by OS_Bix with\nOS_Box before returning.\nEntry: A = terminating key or error code; B = line length; C = cursor position; IY = OS\nframe; stack top = bindings from OS_Bix.\nExit: frame A = key, B = length including the null, C = cursor position.",
+          "provenance": "source"
+        },
+        "5478": {
+          "synopsis": "GN_Sip's handler of the DEL key: does nothing with the cursor at the start; otherwise moves\nleft. In insert mode it deletes that character (DelChar) and redraws the rest; in overwrite\nmode it replaces it with a space, shortening the line when it was the last one. Returns to\nthe input loop sip_main.\nEntry: B = line length; C = cursor; DE = buffer at the cursor; H bit 2 = overwrite mode.\nError: an output error goes to sip_err.",
+          "provenance": "source"
+        },
+        "5861": {
+          "synopsis": "GN_Sip's handling of a special key (a control key or a key the editor cannot act on): when\nbit 3 of the caller's A asks for special keys to be returned it exits through sip_x with the\nkey, otherwise it goes back to the input loop sip_main.\nEntry: A = key; IY = OS frame.",
+          "provenance": "source"
+        },
+        "6045": {
+          "synopsis": "Moves GN_Sip's cursor one character left (PrintBackChar) and classifies the character there;\ncontinues in ClsBufChar.\nEntry: C = cursor; DE = buffer at the cursor.\nExit: C, DE one less; A = character; flags from GN_Cls.\nChanges: AF, C, DE.",
+          "provenance": "source"
+        },
+        "6050": {
+          "synopsis": "Prints the character at GN_Sip's cursor and moves one right (PrCharBumpC_DE), then\nclassifies the character there; continues in ClsBufChar.\nEntry: C = cursor; DE = buffer at the cursor.\nExit: C, DE one more; A = character; flags from GN_Cls.\nChanges: AF, C, DE.",
+          "provenance": "source"
+        },
+        "6053": {
+          "synopsis": "Reads the character at DE in the caller's buffer (Ld_A_HL) and classifies it with GN_Cls.\nEntry: DE = buffer pointer.\nExit: A = character; Fc = 1 for a letter (Fz = 1 lower case), Fc = 0 and Fz = 1 for a digit,\nFc = 0 and Fz = 0 otherwise.\nChanges: AF.",
+          "provenance": "source"
+        },
+        "6091": {
+          "synopsis": "Moves GN_Sip's cursor one place left on screen and in the buffer: decrements C and DE, then\nprints BS, the character there (a null as a space) and BS again. An output error leaves\nthrough sip_PrChar, which drops one return address and goes to sip_err.\nEntry: C = cursor; DE = buffer at the cursor.\nExit: C, DE one less.\nChanges: AF, C, DE.",
+          "provenance": "source"
+        },
+        "6112": {
+          "synopsis": "Prints the buffer character at DE and moves GN_Sip's cursor right: increments C and DE. An\noutput error leaves through sip_PrChar to sip_err.\nEntry: C = cursor; DE = buffer at the cursor.\nExit: C, DE one more.\nChanges: AF, C, DE.",
+          "provenance": "source"
+        },
+        "6119": {
+          "synopsis": "Inverts the case of a letter for GN_Sip's ^S. Codes below 191 have bit 5 flipped (ASCII\nletters); a code from 191 up is flipped only when it or its lower-case form is in\nInvCaseTable (ISO Latin letters), otherwise it is returned unchanged.\nEntry: A = letter (classified by the caller).\nExit: A = letter in the other case.\nChanges: F, A.\nKeeps: BC, HL.",
+          "provenance": "source"
+        },
+        "6152": {
+          "synopsis": "Table of 9 bytes: the upper-case ISO Latin letters whose case InvCase may invert (196, 197,\n198, 199, 203, 209, 214, 216, 220); the lower-case form is the code + $20.",
+          "provenance": "source"
+        },
+        "6161": {
+          "synopsis": "End of InvCaseTable, used only to count its entries. The same address starts\nSipExtended_tbl, GN_Sip's table of extended keys: a key code and a handler word each.",
+          "provenance": "source"
+        },
+        "6262": {
+          "synopsis": "Fast OS_Bix for a local pointer of the GN caller: when HL is in S2 it binds the caller's S2\ninto S1 and the caller's S3 into S2; when HL is in S3 it binds the caller's S3 into S1 and\nleaves S2 (the source comment says 'S1=caller S2'); HL is then moved into S1. A pointer\nbelow $8000 is left alone. The bindings come from the OS frame.\nEntry: HL = caller's local pointer; IY = OS frame.\nExit: HL = pointer in S0/S1; DE = previous S1 (E) and S2 (D) bindings, for box_s1s2.\nChanges: AF, BC, DE, HL.",
+          "provenance": "source"
+        },
+        "6289": {
+          "synopsis": "Binds bank C into segment 1 and bank B into segment 2, updating the soft copies at BLSC_SR1\nand the ports BL_SR1, BL_SR2. With the DE that bix_s1s2 returned, moved to BC, it restores\nthe bindings.\nEntry: C = bank for S1; B = bank for S2.\nChanges: A.",
+          "provenance": "source"
+        },
+        "7152": {
+          "synopsis": "Opens GN_Err's error window: two bleeps (OS_Blp, A = 2, BC = $050A), the pop-up window\ndescribed by ErrWinDef through GN_Win, then cursor off, centred text and the cursor at the\nwindow's row 2.\nEntry: none.",
+          "provenance": "source"
+        },
+        "7185": {
+          "synopsis": "Prints GN_Err's 'PRESS ESC TO RESUME' line, centred on the last row of the error window.\nEntry: none.",
+          "provenance": "source"
+        },
+        "7235": {
+          "synopsis": "Waits for ESC or Q in GN_Err. Reads raw keys with OS_Cli (CL_RIM, no timeout), ignoring\nextended keys and other keys; a pre-emption (RC_Susp) waits again, an escape condition is\nacknowledged with OS_Esc. It only returns with Fz = 1, so the callers' Fz = 0 loops do not\nrepeat.\nEntry: none.\nExit: Fz = 1; A = ESC, 'Q' (upper or lower case), or after an escape condition.\nChanges: AF, BC, DE.",
+          "provenance": "source"
+        },
+        "7300": {
+          "synopsis": "Searches the error string table ErrStr_tbl (bound in S1 by FindErrStr) for an error code.\nEach entry is 4 bytes: code, flags, string address; a 0 code ends the table.\nEntry: A = error code; MTH_BNK in S1.\nExit: HL = message string; A = flags (Z80F_Z set when the error is fatal); unknown codes\ngive Unknown_err and A = Z80F_Z.\nChanges: AF, C, HL.",
+          "provenance": "source"
+        },
+        "7331": {
+          "synopsis": "GN_Win definition of GN_Err's window: window 1 with banner and bottom line drawn as a pop-up\n(ID byte $D1), at X = 20, Y = 0, 45 characters wide and 8 rows high, with the banner text\nerrbanner.",
+          "provenance": "source"
+        },
+        "7338": {
+          "synopsis": "Banner text of the error window: \"ERROR\", null-terminated.",
+          "provenance": "source"
+        },
+        "8119": {
+          "synopsis": "Reads the character at the end of a wildcard node's current segment (fsn_pWcEndPtr) and\ntells whether the wildcard string ends there.\nEntry: IY = file system node.\nExit: A = character; HL = its address; Fc = 1 when it is below '!' (end of string).\nChanges: AF, HL.",
+          "provenance": "source"
+        },
+        "8522": {
+          "synopsis": "Builds a unique temporary file name in GnTempBuf for GN_Opf's :EPR. support: \":RAM.-/\",\ntwelve letters from the current date and time (GN_Gmd, GN_Gmt, through fnm_gen), and the\nextension \".I\", null-terminated. The callers may replace the 'I' at GnTempBuf+20.\nEntry: none.\nExit: HL = the terminating null in GnTempBuf.\nChanges: AF, BC, DE, HL.",
+          "provenance": "source"
+        },
+        "8561": {
+          "synopsis": "String \":RAM.-/\" (7 bytes, no terminator): the start of opf_utf's temporary file names.",
+          "provenance": "source"
+        },
+        "8568": {
+          "synopsis": "String \"EPR\" (3 bytes, no terminator): GN_Opf compares it, ignoring case, with the device\nname to spot an :EPR.x file card device.",
+          "provenance": "source"
+        },
+        "8571": {
+          "synopsis": "Writes a 3-byte value A, B, C as six letters for opf_utf: each byte through gen_reg, high\nnibble first.\nEntry: A, B, C = bytes; HL = destination.\nExit: HL = past the six letters.\nChanges: AF, HL.",
+          "provenance": "source"
+        },
+        "8582": {
+          "synopsis": "Writes A as two letters 'A' to 'P', one for each nibble, high nibble first.\nEntry: A = byte; HL = destination.\nExit: HL = past the two letters.\nChanges: AF, HL.",
+          "provenance": "source"
+        },
+        "8601": {
+          "synopsis": "Opens the temporary file named in GnTempBuf with GN_Opf (local name, explicit name not\nreturned: DE = 3, C = $FF).\nEntry: A = open mode (OP_IN, OP_OUT).\nExit: IX = handle; Fc = 0.\nError: Fc = 1, A = error code.",
+          "provenance": "source"
+        },
+        "9240": {
+          "synopsis": "Checks a file name extension for GN_Pfs: sets B = 3 and continues in HandlePart, which\naccepts letters, digits, '-', '?' and '*' and marks wildcards in bit 7 of the caller's A.\nEntry: HL = first character after the '.'; IY = OS frame.\nExit: HL = the character that ended the extension; Fc = 0.\nError: Fc = 1, A = RC_Ivf (too long), or RC_Eof for an empty extension.\nChanges: AF, BC, HL.",
+          "provenance": "source"
+        },
+        "9856": {
+          "synopsis": "Matches a node's name (fsn_Buffer) against its wildcard segment, from the character after\nthe separator at fsn_pWcStartPtr, with GN_Wsm.\nEntry: IY = file system node.\nExit: Fz = 1 if it matches, DE = name end, HL = wildcard end; Fz = 0 if not.\nChanges: F, DE, HL.",
+          "provenance": "source"
+        },
+        "9871": {
+          "synopsis": "Loads IX with the DOR handle of a file system node (fsn_pDOR).\nEntry: IY = node.\nExit: IX = DOR handle.\nChanges: IX.",
+          "provenance": "source"
+        },
+        "9883": {
+          "synopsis": "Stores IX as the DOR handle of a file system node (fsn_pDOR).\nEntry: IY = node; IX = DOR handle.\nChanges: none.",
+          "provenance": "source"
+        },
+        "9895": {
+          "synopsis": "Frees the DOR handle in IX with OS_Dor DR_FRE; does nothing when IX is 0.\nEntry: IX = DOR handle or 0.\nChanges: AF.\nKeeps: DE.",
+          "provenance": "source"
+        },
+        "9909": {
+          "synopsis": "Points HL at a file system node's name buffer: HL = IY + fsn_Buffer.\nEntry: IY = node.\nExit: HL = name buffer.\nChanges: F, HL.",
+          "provenance": "source"
+        },
+        "10036": {
+          "synopsis": "String \":\", null-terminated: the name given to OS_Dor DR_GET to get the device root DOR.",
+          "provenance": "source"
+        },
+        "10078": {
+          "synopsis": "Pushes a new 30-byte file system node on the wildcard handler's node list (OS_Mal from\nwc_pMemPool, wc_NodeCount + 1). It continues from the old top node, if any: its flags, a son\nof its DOR (DR_DUP, DR_SON) and its wildcard position (the start again for a \"//\" node);\notherwise it starts at the device root. Then it parses the next segment with GN_Pfs, marking\n\"//\" with FSNF_B_WILDDIR.\nEntry: IX = wildcard handler.\nExit: IY = new node, bound in S1; Fc = 0.\nError: Fc = 1, A = error code; the new node is freed again and IY = the top of the list.\nKeeps: BC, DE, HL.",
+          "provenance": "source"
+        },
+        "10314": {
+          "synopsis": "Unlinks the top node from the wildcard handler's list and frees its 30 bytes (OS_Mfr),\ndecrementing wc_NodeCount. Does nothing when the list is empty.\nEntry: IX = wildcard handler.\nExit: IY = the freed node; flags from OS_Mfr; Fz = 1, A = 0 if the list was empty.\nChanges: AF, BC, DE, HL, IY.",
+          "provenance": "source"
+        },
+        "10374": {
+          "synopsis": "Follows a node's link (fsn_eLink, also a handler's wc_eLink) to the next node and binds it\nin S1.\nEntry: IY = node or wildcard handler.\nExit: IY = next node; Fc = 0.\nError: Fc = 1, A = RC_Eof when the link is null.\nChanges: AF, B, HL, IY.",
+          "provenance": "source"
+        },
+        "10483": {
+          "synopsis": "Classifies a wildcard name character: '*' and '?' give Fc = 0, Fz = 1 (as a digit); anything\nelse falls into FilenameCls ('-' as a digit, otherwise GN_Cls's classes).\nEntry: A = character.\nExit: Fc = 1 for a letter; Fc = 0, Fz = 1 for a digit, '-', '*' or '?'.\nChanges: F.",
+          "provenance": "source"
+        },
+        "10495": {
+          "synopsis": "Tests whether A is a path segment separator: '/', '\\' or ':'.\nEntry: A = character.\nExit: Fz = 1 for a separator.\nChanges: F.",
+          "provenance": "source"
+        },
+        "11887": {
+          "synopsis": "Step of GNDieMain's year loop, accepting a subtraction: drops the AF and Ahl the loop saved\nunder its return address, copies the year-rule counter's bit 0 (the leap year flag) into B',\nthen falls into die_AddHL_DE to add DE years to HL.\nEntry: called from die_9/die_10 inside GNDieMain; DE = years; HL = year count.\nError: as die_AddHL_DE.",
+          "provenance": "source"
+        },
+        "11903": {
+          "synopsis": "Adds DE to HL as a signed sum for GNDieMain. On overflow it drops its return address and the\nsaved weekday and leaves GNDieMain with Fc = 1 (bad date).\nEntry: HL, DE = values; inside GNDieMain's frame.\nExit: HL = HL + DE.\nError: Fc = 1, returned from GNDieMain.\nChanges: F, HL.",
+          "provenance": "source"
+        },
+        "12156": {
+          "synopsis": "Adds cde to Ahl in the alternate set for GNDeiMain (called with the alternate set active).\nOn signed overflow it switches back with exx, drops its return address and leaves GNDeiMain\nwith Fc = 1.\nEntry: A, HL = days; C, DE = days to add.\nExit: AHL = AHL + CDE.\nError: Fc = 1, returned from GNDeiMain.\nChanges: AF, HL.",
+          "provenance": "source"
+        },
+        "12166": {
+          "synopsis": "Step of GNDeiMain's year loop, accepting a subtraction: drops the AF and year the loop saved\nunder its return address, copies B into B' and adds the days cde' to Ahl'. On overflow it\nunwinds GNDeiMain's saved registers and leaves it with Fc = 1.\nEntry: called from dei_4/dei_5 inside GNDeiMain; cde' = days of the year rule.\nExit: Ahl' = Ahl' + cde'.\nError: Fc = 1, returned from GNDeiMain.",
+          "provenance": "source"
+        },
+        "12206": {
+          "synopsis": "Reads one rule of DaysInYears: the number of years and the days in them.\nEntry: IX = DaysInYears entry.\nExit: DE = years; C'DE' = days.\nChanges: DE, C', DE'.",
+          "provenance": "source"
+        },
+        "12224": {
+          "synopsis": "Negates DE and the alternate set's CDE: DE = -DE, C'DE' = -C'DE'.\nEntry: DE = years; C'DE' = days.\nExit: both negated.\nChanges: DE, C', DE', AF'.\nKeeps: AF, HL.",
+          "provenance": "source"
+        },
+        "12247": {
+          "synopsis": "Table of the 5 year rules of the calendar, 5 bytes each: days (3 bytes, low first), then\nyears (word): 3200 years = 1168775 days, 400 = 146097, 100 = 36524, 4 = 1461 and 1 = 365.\nRead through GetYearDays by GNDieMain and GNDeiMain. The 3200-year rule has no leap day (the\nsource notes there is no such official rule).",
+          "provenance": "source"
+        },
+        "12272": {
+          "synopsis": "Table of 12 bytes: the days in each month from March to February (31, 30, 31, 30, 31, 31,\n30, 31, 30, 31, 31, 28), used by GNDieMain and GNDeiMain.",
+          "provenance": "source"
+        },
+        "12284": {
+          "synopsis": "Writes the 11-byte time block (uwGnDateLow/Mid/High and GnHwTimeBuf) back into the system's\nmonth/date/time area, through GN_Wbe.\nEntry: none.\nChanges: AF, BC, DE, HL.",
+          "provenance": "source"
+        },
+        "12298": {
+          "synopsis": "Sets up a copy of the system time block: BHL = its extended address (OS_Ht, A = HT_MDT), DE\n= uwGnDateLow, C = 11 bytes. Shared by GetSysTime and SetSysTime.\nEntry: none.\nExit: BHL = system time area; DE = uwGnDateLow; C = 11.",
+          "provenance": "source"
+        },
+        "12309": {
+          "synopsis": "Copies the 11-byte system time block (address from OS_Ht HT_MDT) into uwGnDateLow/Mid/High\nand GnHwTimeBuf through GN_Rbe.\nEntry: none.\nChanges: AF, BC, DE, HL.",
+          "provenance": "source"
+        },
+        "12369": {
+          "synopsis": "Adds the hardware timer read into GnHwTimeBuf to the 48-bit base value at uwGnDateLow:\nresult = base + GnHwTimeBuf[2..4] * 60 + GnHwTimeBuf[1] (DEBCx60). GetSysDateTime divides it\nby 86 400.\nEntry: GnHwTimeBuf filled by OS_Ht HT_RD.\nExit: HL = high, DE = middle, IY = low word of the sum.\nChanges: AF, BC, DE, HL, IY.",
+          "provenance": "source"
+        },
+        "12427": {
+          "synopsis": "Common exit of a GN call, reached when the function returns into the GN table page, whose\nfirst two jumps lead here. Unwinds the OS frame: restores IY and the S2 binding from it, and\nloads AF, BC, DE, HL from the frame, so the caller gets the values the function stored with\nPutOsf_xxx; leaves through OZCallReturn1, which rebinds S3 and returns.\nEntry: SP = OS frame (return address already taken).",
+          "provenance": "source"
+        },
+        "12443": {
+          "synopsis": "Exit of a GN call that returns its results in registers (GN_Die, GN_Dei, GN_D24 jump here\nwith their return address still on the stack). Drops it, restores IY and the S2 binding from\nthe frame and discards the frame's register copies, so the caller gets AF, BC, DE, HL as the\nfunction left them; leaves through OZCallReturn1.\nEntry: AF, BC, DE, HL = results; stack = return address, OS frame.",
+          "provenance": "source"
+        },
+        "12462": {
+          "synopsis": "Exit of GN_Cls: drops the return address, restores IY and the S2 binding from the frame,\nreturns the function's AF (the classification flags) and the frame's BC, DE, HL; leaves\nthrough OZCallReturn0.\nEntry: AF = result; stack = return address, OS frame.",
+          "provenance": "source"
+        },
+        "12480": {
+          "synopsis": "Binds bank A into segment 2: updates the soft copy BLSC_SR2 and the port BL_SR2. BindS2_C,\nplaced before it, binds bank C.\nEntry: A = bank.\nChanges: none.",
+          "provenance": "source"
+        },
+        "12608": {
+          "synopsis": "Returns a 3-byte value ABC to the GN caller: when the caller's D is 0 it goes into the\nframe's A, B, C (PutOsf_ABC); otherwise C, B and A are written at the caller's DE with\nWriteOsfDE, which advances the frame's DE. Only the last write's result is kept.\nEntry: ABC = value; IY = OS frame.\nExit: flags of the last WriteOsfDE, or as PutOsf_ABC left them.\nChanges: F.",
+          "provenance": "source"
+        },
+        "12634": {
+          "synopsis": "Reads the next byte of the GN caller's source given by the frame's HL (ReadHL) and stores\nthe advanced HL back in the frame.\nEntry: IY = OS frame; IX = handle or filter when the frame's HL is 0 or 1.\nExit: A = byte; Fc = 0.\nError: Fc = 1, A = error code (RC_Eof at the end).\nChanges: AF.",
+          "provenance": "source"
+        },
+        "12646": {
+          "synopsis": "Reads a byte from a GN source: HL = 0 reads the file or device IX (OS_Gb), HL = 1 the filter\nIX (GN_Flr); any other HL reads the caller's memory (Ld_A_HL, using the caller's S2/S3\nbindings) and advances HL.\nEntry: HL = source; IX = handle or filter; IY = OS frame.\nExit: A = byte; Fc = 0; HL + 1 for memory.\nError: Fc = 1, A = error code from OS_Gb or GN_Flr.\nChanges: AF, HL.",
+          "provenance": "source"
+        },
+        "12670": {
+          "synopsis": "Writes A to the GN caller's destination given by the frame's DE (WriteDE) and stores the\nadvanced DE back in the frame.\nEntry: A = byte; IY = OS frame; IX = handle or filter when the frame's DE is 0 or 1.\nExit: Fc = 0.\nError: Fc = 1, A = error code.\nChanges: F.",
+          "provenance": "source"
+        },
+        "12682": {
+          "synopsis": "Writes a byte to a GN destination: DE = 0 writes to the file or device IX (OS_Pb), DE = 1 to\nthe filter IX (GN_Flw), DE = 3 discards it; any other DE writes to the caller's memory\n(Ld_DE_A, using the caller's S2/S3 bindings) and advances DE.\nEntry: A = byte; DE = destination; IX = handle or filter; IY = OS frame.\nExit: Fc = 0; DE + 1 for memory.\nError: Fc = 1, A = error code from OS_Pb or GN_Flw.\nChanges: F, DE.",
+          "provenance": "source"
+        },
+        "12721": {
+          "synopsis": "Puts a byte back into the GN caller's source given by the frame's HL: for memory (H <> 0)\nthe frame's HL is decremented; HL = 0 calls OS_Ugb on handle IX (marked in the source as not\nimplemented); 0 < HL < 256 pushes A back into filter IX with GN_Fpb.\nEntry: A = byte; IY = OS frame.\nChanges: F.",
+          "provenance": "source"
+        },
+        "12900": {
+          "synopsis": "Marks the GN call as failed: stores A in the frame's A and sets Fc in the frame's F, so the\ncaller gets Fc = 1 and A = the error code.\nEntry: A = error code; IY = OS frame.\nChanges: none.",
+          "provenance": "source"
+        },
+        "12908": {
+          "synopsis": "Loads BHL from the OS frame (the caller's B, H, L); continues in GetOsf_HL.\nEntry: IY = OS frame.\nExit: BHL = caller's BHL.\nChanges: B, HL.",
+          "provenance": "source"
+        },
+        "12911": {
+          "synopsis": "Loads HL from the OS frame (the caller's HL).\nEntry: IY = OS frame.\nExit: HL = caller's HL.\nChanges: HL.",
+          "provenance": "source"
+        },
+        "12918": {
+          "synopsis": "Loads BC from the OS frame (the caller's BC).\nEntry: IY = OS frame.\nExit: BC = caller's BC.\nChanges: BC.",
+          "provenance": "source"
+        },
+        "12925": {
+          "synopsis": "Loads DE from the OS frame (the caller's DE).\nEntry: IY = OS frame.\nExit: DE = caller's DE.\nChanges: DE.",
+          "provenance": "source"
+        },
+        "12932": {
+          "synopsis": "Stores DE in the OS frame, returned to the caller as DE.\nEntry: DE = value; IY = OS frame.\nChanges: none.",
+          "provenance": "source"
+        },
+        "12939": {
+          "synopsis": "Stores BHL in the OS frame, returned to the caller as BHL; continues in PutOsf_HL.\nEntry: BHL = value; IY = OS frame.\nChanges: none.",
+          "provenance": "source"
+        },
+        "12942": {
+          "synopsis": "Stores HL in the OS frame, returned to the caller as HL.\nEntry: HL = value; IY = OS frame.\nChanges: none.",
+          "provenance": "source"
+        },
+        "12949": {
+          "synopsis": "Stores A, B and C in the OS frame, returned to the caller; continues in PutOsf_BC.\nEntry: ABC = value; IY = OS frame.\nChanges: none.",
+          "provenance": "source"
+        },
+        "12952": {
+          "synopsis": "Stores BC in the OS frame, returned to the caller as BC.\nEntry: BC = value; IY = OS frame.\nChanges: none.",
+          "provenance": "source"
+        },
+        "13328": {
+          "synopsis": "GN_Crc: calculates a CRC-32. A selects the source: 0 (CRC_MEMA) a local memory area, 1\n(CRC_FILE) an open RAM file from its pointer to the end, 2 (CRC_PARTFILEBYTE) part of a file\nbyte by byte, 3 (CRC_PARTFILEBUF) part of a file through a buffer, 4 (CRC_EPFILE) a file\ncard file entry, 5 (CRC_PARTEPFILE) part of a file entry.\nEntry: A = reason; for 0, 1, 3: HL = buffer, BC = its size, DE = 0 or pointer to the initial\nCRC; IX = file handle for 1-3; 2: HL = bytes to read (-1 = all), DEBC = initial CRC; 4: BHL\n= file entry, DE as above; 5: BHL = file entry or 0, DE = block size, IX = 12-byte state\nblock.\nExit: Fc = 0; DEBC = CRC-32 (complemented when complete).\nError: Fc = 1, A = RC_Bad (bad reason or argument), RC_Eof (partial scan finished, final CRC\nreturned), or the file or file area error.",
+          "provenance": "source"
+        },
+        "13417": {
+          "synopsis": "Runs Scanbuffer until an error or the end of the file, accumulating the CRC of an open RAM\nfile for GN_Crc's CRC_FILE.\nEntry: DE = buffer; BC = its size; IX = file handle; D'E'B'C' = CRC so far.\nExit: Fz = 1 at the end of the file; D'E'B'C' = CRC.\nError: Fc = 1, A = file error (already stored in the frame).",
+          "provenance": "source"
+        },
+        "13471": {
+          "synopsis": "Returns a partial CRC-32 to the GN_Crc caller: switches to the alternate set and stores its\nBC, DE (the running CRC, not complemented) in the frame. Ends CrcRamFileByteIO when the byte\ncount runs out. The source says Fz = 0, but cp a sets Fz = 1.\nEntry: D'E'B'C' = running CRC.\nExit: Fc = 0, Fz = 1; the alternate set is active.\nChanges: AF.",
+          "provenance": "source"
+        },
+        "13806": {
+          "synopsis": "Sets up the running CRC in D'E'B'C' for GN_Crc: $FFFFFFFF when DE = 0, otherwise the four\nbytes (low first) at the caller's address DE (Ld_A_HL). Also copies it to the frame's BC and\nDE.\nEntry: DE = 0 or pointer to the initial CRC; IY = OS frame.\nExit: D'E'B'C' = CRC; main set active.\nChanges: AF, BC', DE', HL'.",
+          "provenance": "source"
+        },
+        "13816": {
+          "synopsis": "Entry inside InitCrc: with the alternate set active holding the CRC in DEBC, stores it in\nthe frame's BC and DE and switches back with exx.\nEntry: alternate set active; DEBC = CRC; IY = OS frame.\nExit: main set active.",
+          "provenance": "source"
+        },
+        "13887": {
+          "synopsis": "Returns the final CRC-32 to the GN_Crc caller: switches to the alternate set, complements\nits DEBC and stores it in the frame's BC and DE.\nEntry: D'E'B'C' = running CRC; IY = OS frame.\nExit: DEBC = final CRC (the alternate set is now active); Fc = 0, Fz = 1.\nChanges: AF, BC, DE.",
+          "provenance": "source"
+        },
+        "13908": {
+          "synopsis": "Stores the remaining file entry size CDE at IX+7..9 (flentry_size) of GN_Crc's partial scan\nblock.\nEntry: CDE = size; IX = state block.\nChanges: none.",
+          "provenance": "source"
+        },
+        "13918": {
+          "synopsis": "Stores the file entry pointer BHL at IX+4..6 (flentry_fptr) of GN_Crc's partial scan block,\nwith the segment bits of H cleared.\nEntry: BHL = pointer; IX = state block.\nChanges: H.",
+          "provenance": "source"
+        }
+      }
+    },
     "7": {
       "labels": [
         {
@@ -1984,6 +2344,766 @@
           "synopsis": "Hangs in a loop to itself: OS_Bye does not come back."
         }
       ]
+    },
+    "12": {
+      "lines": {
+        "523": {
+          "synopsis": "Opens the file named at HL for output: sets the mode to OP_OUT and continues in OpenRead's\ncommon part (skip leading spaces, open with GN_Opf).\nEntry: HL = filename (local pointer).\nExit: IX = file handle; Fc = 0.\nError: Fc = 1, A = error code (from GN_Opf).\nChanges: AF, DE, HL, IX.\nKeeps: BC.",
+          "provenance": "source"
+        },
+        "527": {
+          "synopsis": "Opens the file named at HL for input. Skips leading spaces, then calls GN_Opf with B = 0\n(local name), DE = 3 so no explicit name is kept, and C = $FF. OpenWrite enters the same\ncode with OP_OUT.\nEntry: HL = filename (local pointer).\nExit: IX = file handle; Fc = 0; HL = first non-space of the name.\nError: Fc = 1, A = error code (from GN_Opf).\nChanges: AF, DE, HL, IX.\nKeeps: BC.",
+          "provenance": "source"
+        },
+        "551": {
+          "synopsis": "CLI script \".T>:PRT\", CR, \".S\", 0: tees the CLI's output to the printer, then ends its\ninput. DC_Alt starts it with DC_Icl ([]+P) when no CLI is running.",
+          "provenance": "source"
+        },
+        "562": {
+          "synopsis": "CLI script \".T<:RAM.-/K.sgn\", CR, \".S\", 0: tees keyboard input into the file K.sgn, then\nends its input. DC_Alt starts it with DC_Icl ([]+K) when no CLI is running.",
+          "provenance": "source"
+        },
+        "565": {
+          "synopsis": "Entry inside RedirInKsgn_cli: the filename \":RAM.-/K.sgn\", ended by CR. DC_Alt opens it with\nOpenWrite to rebind a running CLI's input tee ([]+K).",
+          "provenance": "source"
+        },
+        "581": {
+          "synopsis": "CLI script \".T>:RAM.-/S.sgn\", CR, \".S\", 0: tees the screen output into the file S.sgn, then\nends its input. DC_Alt starts it with DC_Icl ([]+S) when no CLI is running.",
+          "provenance": "source"
+        },
+        "584": {
+          "synopsis": "Entry inside RedirOutSsgn_cli: the filename \":RAM.-/S.sgn\", ended by CR. DC_Alt opens it\nwith OpenWrite to rebind a running CLI's output tee ([]+S).",
+          "provenance": "source"
+        },
+        "889": {
+          "synopsis": "Forgets the application waiting to be run: clears pIdxRunProcIX and the bank byte of\neIdxRunProc.\nEntry: none.\nExit: A = 0.\nChanges: AF.",
+          "provenance": "source"
+        },
+        "1291": {
+          "synopsis": "A single zero byte, an empty string. DC_Dq for the default directory returns BHL =\nDC_BNK:zero_byte when the Filer process has no associated directory.",
+          "provenance": "source"
+        },
+        "1952": {
+          "synopsis": "Reads the 3-byte link at IY into CDE.\nEntry: IY = list node (link at +0..+2: low, high, bank).\nExit: C = bank; DE = address.\nChanges: C, DE.",
+          "provenance": "source"
+        },
+        "1962": {
+          "synopsis": "Reads the 3-byte link at IY into BHL.\nEntry: IY = list node or list head (link at +0..+2: low, high, bank).\nExit: B = bank; HL = address.\nChanges: B, HL.",
+          "provenance": "source"
+        },
+        "1972": {
+          "synopsis": "Fills B bytes from HL with zero.\nEntry: HL = start; B = count (0 means 256).\nExit: HL = byte after the block; B = 0; A = 0.\nChanges: AF, B, HL.",
+          "provenance": "source"
+        },
+        "1978": {
+          "synopsis": "Returns an error to the caller of a DC call: stores A in the OS frame's A and sets Fc in its\nF.\nEntry: IY = OS frame; A = error code.\nExit: frame A = error code; frame Fc = 1.\nChanges: none.",
+          "provenance": "source"
+        },
+        "1986": {
+          "synopsis": "Loads the caller's HL from the OS frame.\nEntry: IY = OS frame.\nExit: HL = caller's HL.\nChanges: HL.",
+          "provenance": "source"
+        },
+        "1993": {
+          "synopsis": "Reads a process block's stacked environment, dynamic ID and handle; falls into\nGetProcHandle.\nEntry: IY = process block (bound).\nExit: BHL = prc_stkProcEnv; C = prc_dynid; DE = prc_hndl.\nChanges: BC, DE, HL.",
+          "provenance": "source"
+        },
+        "2005": {
+          "synopsis": "Reads a process block's application handle.\nEntry: IY = process block (bound).\nExit: DE = prc_hndl.\nChanges: DE.",
+          "provenance": "source"
+        },
+        "2012": {
+          "synopsis": "Stores IX as a process block's application handle.\nEntry: IY = process block (bound); IX = handle.\nExit: prc_hndl = IX; DE = IX.\nChanges: DE.",
+          "provenance": "source"
+        },
+        "2200": {
+          "synopsis": "Tests whether IX is the :INP handle (phnd_Ihn).\nEntry: IX = handle.\nExit: Fz = 1 when IX = phnd_Ihn; HL = IX - phnd_Ihn.\nChanges: F, BC, HL.",
+          "provenance": "source"
+        },
+        "2300": {
+          "synopsis": "Rebinds one stream of a CLI with RebindStream, then frees the CLI with FreeCli when none of\nits six streams is left open.\nEntry: IY = CLI block (bound in S1); BC = offset of the stream word (cli_instream ...); A =\nits CLIS_xxx flag; IX = new handle (0 closes the stream).\nExit: as RebindStream, or as FreeCli when the CLI was freed.",
+          "provenance": "source"
+        },
+        "2792": {
+          "synopsis": "Loads the timeout stored in the CLI block (the BC that DC_In was given).\nEntry: IY = CLI block (bound).\nExit: BC = cli_argB:cli_argC.\nChanges: BC.",
+          "provenance": "source"
+        },
+        "2799": {
+          "synopsis": "Frees every CLI: calls FreeCli until it reports that no CLI is left.\nEntry: none.\nExit: Fc = 0; A = RC_Eof (from the last FreeCli); no CLI remains.\nChanges: AF, BC, DE, HL, IX, IY.",
+          "provenance": "source"
+        },
+        "2950": {
+          "synopsis": "Points HL at the CLI's prefix sequence buffer, used with OS_Isq and OS_Wsq.\nEntry: IY = CLI block (bound).\nExit: HL = IY + cli_PrefixBuffer.\nChanges: BC, HL.",
+          "provenance": "source"
+        },
+        "3119": {
+          "synopsis": "Writes a byte to a stream with OS_Pbt, using the CLI's stored timeout.\nEntry: A = byte; IX = handle; IY = CLI block (bound).\nExit: Fc = 0.\nError: Fc = 1, A = error code (from OS_Pbt).\nKeeps: BC.",
+          "provenance": "source"
+        },
+        "3127": {
+          "synopsis": "Frees the most recently invoked CLI, the head of eIdxCliList.\n1. Binds the CLI block into S1 and closes its six streams (RebindStream with IX = 0).\n2. Unlinks it from the list and releases the block with OS_Mfr (pIdxMemHandle).\n3. Decrements the CLI use count (OS_Cli, CL_DEC).\nEntry: none.\nExit: Fc and A as OS_Cli returns them; the CLI's bank stays bound in S1.\nError: Fc = 1, A = RC_Eof when no CLI is running.\nChanges: AF, BC, DE, HL, IX, IY (IY = eIdxCliList).",
+          "provenance": "source"
+        },
+        "3224": {
+          "synopsis": "Writes CDE as the 3-byte link at IY.\nEntry: IY = list node or list head; C = bank; DE = address.\nExit: (IY+0..2) = E, D, C.\nChanges: none.",
+          "provenance": "source"
+        },
+        "3503": {
+          "synopsis": "Reads CLI input up to and including the next CR, then clears CLIF_B_NOTBOL (at the start of\na line again).\nEntry: IY = CLI block (bound).\nExit: Fc = 0; A = CR.\nError: Fc = 1, A = error code (from ReadCliChar).\nChanges: AF, BC, HL.",
+          "provenance": "source"
+        },
+        "3516": {
+          "synopsis": "Reads the rest of the CLI line as a filename and opens it for input (GetRedirectName,\nOpenRead).\nEntry: IY = CLI block (bound).\nExit: IX = file handle; Fc = 0.\nError: Fc = 1, A = error code.",
+          "provenance": "source"
+        },
+        "3523": {
+          "synopsis": "Reads the rest of the CLI line as a filename and opens it for output (GetRedirectName,\nOpenWrite).\nEntry: IY = CLI block (bound).\nExit: IX = file handle; Fc = 0.\nError: Fc = 1, A = error code.",
+          "provenance": "source"
+        },
+        "3530": {
+          "synopsis": "Fills the CLI line buffer up to the end of the line (sets CLIF_B_FILLALL, FillCLIBuffer),\nthen falls into GetLineBuffer to point HL at it.\nEntry: IY = CLI block (bound).\nExit: HL = cli_LineBuffer in the CLI block; Fc = 0.\nError: Fc = 1, A = error code (from FillCLIBuffer).\nChanges: AF, BC, DE, HL, IX.",
+          "provenance": "source"
+        },
+        "3538": {
+          "synopsis": "Points HL at the CLI's line buffer.\nEntry: IY = CLI block (bound).\nExit: HL = IY + cli_LineBuffer; Fc = 0.\nChanges: F, HL.\nKeeps: DE.",
+          "provenance": "source"
+        },
+        "3644": {
+          "synopsis": "Takes the next character of CLI input: tops up the line buffer with FillCLIBuffer, removes\nthe first byte and moves the rest down.\nEntry: IY = CLI block (bound).\nExit: A = C = character; Fc = 0; Fz = 1 when the character is 0.\nError: Fc = 1, A = error code (from FillCLIBuffer).\nChanges: AF, BC, HL.\nKeeps: DE, IX.",
+          "provenance": "source"
+        },
+        "3685": {
+          "synopsis": "Reads the CLI's input stream into the free end of its line buffer with OS_Gbt and the stored\ntimeout. It reads one byte, or, when CLIF_B_FILLALL is set (it is then cleared), up to a CR\nor until the buffer is full. Bytes below $20 other than CR are dropped.\nEntry: IY = CLI block (bound).\nExit: Fc = 0 (also when the read failed but the buffer holds bytes).\nError: Fc = 1, A = error code when the read failed and the buffer is empty.\nChanges: AF, BC, DE, HL, IX (IX = input stream).",
+          "provenance": "source"
+        },
+        "3764": {
+          "synopsis": "Reads the head of the CLI list, the most recently invoked CLI.\nEntry: none.\nExit: BHL = CLI block; Fz = 1 when no CLI is running; A = B or H or L.\nChanges: AF, B, HL.\nKeeps: IY.",
+          "provenance": "source"
+        },
+        "4081": {
+          "synopsis": "Filename \":EPR.?/Boot.cli\", 0: a Boot.cli in any file area. Index tries it after RamBootCLI\nwhen it is started the first time.",
+          "provenance": "source"
+        },
+        "4097": {
+          "synopsis": "Filename \":RAM.?/Boot.cli\", 0: a Boot.cli in any RAM device. Index tries it first when it is\nstarted the first time.",
+          "provenance": "source"
+        },
+        "4113": {
+          "synopsis": "Opens the named file for input (GN_Opf, with a 256-byte explicit name buffer on the stack)\nand starts a new CLI that reads it (DC_Icl with BHL = 0, IX = the file). When DC_Icl fails\nthe file is closed again.\nEntry: HL = filename (local pointer).\nExit: Fc = 0 when the CLI was started; when DC_Icl failed, Fc as OS_Cl returns it.\nError: Fc = 1, A = error code when the file cannot be opened.\nChanges: AF, BC, DE, HL, IX, AF'.",
+          "provenance": "source"
+        },
+        "4233": {
+          "synopsis": "Index's entry after its first run (and after the boot scripts were tried).\n1. When an application is marked to start at boot (pIdxAutoRunAppl), clears the mark and\nenters it.\n2. Otherwise reads the \"NAME\" mailbox (OS_Sr, SR_RPD) into App_Buff1; when it holds a name,\ngoes to AskInstall.\n3. Otherwise falls into IndexRedraw.\nEntry: none.",
+          "provenance": "source"
+        },
+        "4273": {
+          "synopsis": "Redraws Index and falls into MainLoop. When an application ended with an error (IDXF2_ERROR\nin ubIdxFlags2), goes to ShowExitError instead. The commands jump here after changing the\ndisplay.\nEntry: none.",
+          "provenance": "source"
+        },
+        "4284": {
+          "synopsis": "Index's command loop: reads a key with OS_In (marking IDXF1_B_INSIDEOZ while waiting) and\ncalls MayInitIndex before and after. On an error, RC_Quit exits Index with OS_Bye, RC_Draw\ngoes to IndexRedraw, anything else reads again. A key goes to main_2.\nEntry: none.",
+          "provenance": "source"
+        },
+        "4311": {
+          "synopsis": "Entry inside MainLoop: dispatches a key. '0'-'3' go to cmd_ramcrd_sel, 'Y'/'N'/'y'/'n' to\ncmd_insrmv_sel, other plain keys are ignored. A 0 is followed by a command code; codes 1-15\njump through the table at main_3, others are ignored.\nEntry: A = key from OS_In.",
+          "provenance": "source"
+        },
+        "4384": {
+          "synopsis": "Table of 15 words: Index's command handlers for command codes 1-15: right, left, up, down,\nenter, escape, kill, card, 0 (the purge command, removed), info, install, remove, nq,\nupdate, hard reset. Code 9 would jump to address 0.",
+          "provenance": "source"
+        },
+        "4417": {
+          "synopsis": "Clears IDXF1_B_INSIDEOZ. When IDXF1_B_INIT is set, clears it and rebuilds Index: resets the\nselection (InitIndex), rescans the application keys (InitKeys) and redraws (DrawWindow).\nEntry: HL = ubIdxPubFlags.\nKeeps: AF.",
+          "provenance": "source"
+        },
+        "5318": {
+          "synopsis": "GN_Win block of the APPLICATIONS window: window 2 with bars, shelf brackets and an 8-pixel\nbanner; X = 0, Y = 0, width 18, height 8; banner text at appl_banner.",
+          "provenance": "source"
+        },
+        "5325": {
+          "synopsis": "Banner text \"APPLICATIONS\", 0, of ApplWdBlock.",
+          "provenance": "source"
+        },
+        "5338": {
+          "synopsis": "GN_Win block of the SUSPENDED ACTIVITIES window: window 3 with bars, shelf brackets and an\n8-pixel banner; X = 20, Y = 0, width 56, height 8; banner text at proc_banner.",
+          "provenance": "source"
+        },
+        "5345": {
+          "synopsis": "Banner text \"SUSPENDED ACTIVITIES\", 0, of ProcWdBlock.",
+          "provenance": "source"
+        },
+        "5366": {
+          "synopsis": "Selects and clears the application window and lists up to 6 applications from\nubIdxTopApplication on, leaving out Index, each with its key (PrintApp). Stores the count in\nubIdxNApplDisplayed.\nEntry: none.",
+          "provenance": "source"
+        },
+        "5425": {
+          "synopsis": "Selects and clears the process window and lists up to 6 suspended processes from\nubIdxTopProcess on (PrintProcess). When the top process no longer exists, restarts from 0\n(and resets ubIdxSelectorPos when the process window is active). Stores the count in\nubIdxNProcDisplayed and prints \"NONE\" when there is none.\nEntry: none.",
+          "provenance": "source"
+        },
+        "5563": {
+          "synopsis": "Draws the selection bar: toggles reverse on, applies it over the selected line\n(RemoveHighlight) and toggles reverse off again.\nEntry: none.\nChanges: AF, BC.",
+          "provenance": "source"
+        },
+        "5572": {
+          "synopsis": "Moves to column 0 of the selected line (ubIdxSelectorPos) and applies the current attributes\nover it with ApplyA: 50 characters in the application window, 83 in the process window\n(ubIdxActiveWindow). With no attribute on, this removes the bar.\nEntry: none.\nChanges: AF, BC.",
+          "provenance": "source"
+        },
+        "5771": {
+          "synopsis": "Compares the low byte of an application handle with a key table entry.\nEntry: IX = application handle; HL = key table entry.\nExit: Fz = 1 when IXL = (HL); A = IXL.\nChanges: AF.",
+          "provenance": "source"
+        },
+        "5881": {
+          "synopsis": "Moves the cursor to column B, row C of the current window (1, \"3@\", X, Y).\nEntry: B = column; C = row.\nChanges: AF.",
+          "provenance": "source"
+        },
+        "5898": {
+          "synopsis": "Moves the cursor to column A of the current line (1, \"2X\", X).\nEntry: A = column.\nChanges: AF.",
+          "provenance": "source"
+        },
+        "5911": {
+          "synopsis": "Toggles the tiny font (1, \"T\").\nEntry: none.",
+          "provenance": "source"
+        },
+        "5917": {
+          "synopsis": "Toggles reverse video (1, \"R\").\nEntry: none.",
+          "provenance": "source"
+        },
+        "5931": {
+          "synopsis": "Moves the cursor to the top left of the current window and clears to the end of the window\n(1, \"2C\", $FE), clearing all of it.\nEntry: none.",
+          "provenance": "source"
+        },
+        "5944": {
+          "synopsis": "Selects and initialises window 2, the application window (1, \"2I2\").\nEntry: none.",
+          "provenance": "source"
+        },
+        "5952": {
+          "synopsis": "Selects and initialises window 3, the process window (1, \"2I3\").\nEntry: none.",
+          "provenance": "source"
+        },
+        "5960": {
+          "synopsis": "Scrolls the current window up (1, $FF).\nEntry: none.",
+          "provenance": "source"
+        },
+        "5966": {
+          "synopsis": "Applies the toggled display attributes to A characters from the cursor (1, \"2A\", A).\nEntry: A = number of characters.\nKeeps: A.",
+          "provenance": "source"
+        },
+        "5977": {
+          "synopsis": "Index command \"card\" (code 8). Fills CardData, 3 bytes per slot 0-3 (RAM banks, file area\nbanks, ROM banks): RAM from OS_Nq NQ_Mfp, an application card's size from its header byte at\n$3FFC of the top bank (NQ_Slt says BU_ROM), the file area from OS_Epr EP_Req. Then it makes\nthe card window active (ubIdxActiveWindow = 2) and goes to IndexRedraw.\nEntry: none.",
+          "provenance": "source"
+        },
+        "6203": {
+          "synopsis": "GN_Win block of the CARDS window: window 4 with bars, shelf brackets and an 8-pixel banner,\ndrawn as a pop-up on a grey screen; X = 9, Y = 0, width 46, height 8; banner text at\ncards_banner.",
+          "provenance": "source"
+        },
+        "6210": {
+          "synopsis": "Banner text \"CARDS\", 0, of CardWdBlock.",
+          "provenance": "source"
+        },
+        "6216": {
+          "synopsis": "Prints the rows of the card window for slots 3 down to 0 (GetCardData, DisplayCard).\nEntry: CardData filled by cmd_card.\nExit: D = $FF; IY = slot 0's bytes in CardData.",
+          "provenance": "source"
+        },
+        "6232": {
+          "synopsis": "Prints one slot's row of the card window: moves to column 0, row slot + 1, and prints the\nROM size at column 15, the file area at 25 and the RAM at 35 (PrintCardSize).\nEntry: D = slot; IY = the slot's 3 bytes in CardData (RAM, file area, ROM banks).\nKeeps: DE.",
+          "provenance": "source"
+        },
+        "6266": {
+          "synopsis": "Prints a size in 16K banks as kilobytes at a column: C * 16 in a 4-character field followed\nby 'K' (GN_Pdn to the standard output), or \" -\" when C = 0.\nEntry: A = column; C = size in 16K banks.\nKeeps: DE.",
+          "provenance": "source"
+        },
+        "6331": {
+          "synopsis": "Clears the current line and prints \"Are you sure ? \" with the answer in ubIdxYesNo (\"Yes\" or\n\"No\"), then moves the cursor back onto the answer and switches the cursor on.\nEntry: ubIdxYesNo = 'Y'/'y' for yes, anything else for no.\nChanges: AF.",
+          "provenance": "source"
+        },
+        "6392": {
+          "synopsis": "Writes the centred \"PRESS ESC TO RESUME\" line in tiny font (ESC as its key symbol) with\nOS_Pout, then turns centring off again. Used by the info, install, remove and update windows\nbefore they wait for ESC.\nEntry: none (writes to the current window).",
+          "provenance": "source"
+        },
+        "6537": {
+          "synopsis": "Shows the FreeRAM details of a RAM card: the size column (DispCardSizeClmn), a cleared and\nredrawn page map (DispFreeRamMap), the card size and then jumps to the free space text\n(bytes and percentage).\nEntry: slotno, cardsize and freespace set by GetFreeSpace.",
+          "provenance": "source"
+        },
+        "6551": {
+          "synopsis": "Shows FreeRAM for a slot without a RAM card: clears window 2 and the page map, then selects\nand clears window 3 and writes \"(None)\" there.\nEntry: A = error code from GetFreeSpace.\nKeeps: AF.",
+          "provenance": "source"
+        },
+        "6578": {
+          "synopsis": "Writes the card size as \"(<n>K)\" in window 3, where n = cardsize * 16.\nEntry: cardsize = size of the card in 16K banks.",
+          "provenance": "source"
+        },
+        "6729": {
+          "synopsis": "Asks OS_Nq NQ_Mfp for the RAM in the slot held in slotno and stores the card size in banks\nin cardsize and the free space in bytes (free pages * 256) in freespace.\nEntry: slotno = slot number (0-3).\nExit: Fc = 0; cardsize, freespace (32-bit, low word first) set.\nError: Fc = 1, A = RC_Onf when the slot holds no RAM device.\nChanges: AF, BC, DE.",
+          "provenance": "source"
+        },
+        "6757": {
+          "synopsis": "Draws the FreeRAM page map: one pixel for each used 256-byte page of the RAM card, each 16K\nbank being an 8x8 pixel character block, eight blocks to a row (128K).\n1. Binds the card's bottom bank, which holds the allocation table (slot 0: $21), into\nsegment 1, and the HIRES0 map area (GetMapAddress) into segment 2.\n2. For a card below 8 banks it computes a pixel factor by rotating 8 right once per bank\nabove one; otherwise one pixel per page.\n3. Reads the table from $4100 (2 bytes per page, non-zero = used) and plots each used page\n(plot_usedpage) while moving the pixel position (update_pixelptr) per pixel.\n4. Restores the segment 2 and segment 1 bindings.\nEntry: slotno, cardsize.\nChanges: AF, BC, DE, HL, AF', BC', DE', HL'.",
+          "provenance": "source"
+        },
+        "6851": {
+          "synopsis": "Plots one pixel of the page map: ORs the column bit D' into the byte at HL' + BC' (the\ncurrent row of the current 8x8 block). Works in the alternate set.\nEntry: HL' = block base; BC' = row (0-7); D' = column bit; map bound in segment 2.\nChanges: none (AF and HL' are kept).",
+          "provenance": "source"
+        },
+        "6862": {
+          "synopsis": "Moves the page map's pixel position one row down in the current 8x8 block; after the eighth\nrow it calls new_column. Works in the alternate set.\nEntry: HL', BC', D', E' = the map position (see DispFreeRamMap).\nChanges: F, C', D', E', HL'.",
+          "provenance": "source"
+        },
+        "6871": {
+          "synopsis": "Moves the page map's pixel position to the next pixel column (column bit rotated right);\nwhen the bit leaves the block it calls next_matrix. Then starts again at row 0. Runs with\nthe alternate set swapped in by update_pixelptr.\nEntry: C = 8; D = column bit; HL = block base; E = blocks left in the row.\nExit: C = 0; D = next column bit.",
+          "provenance": "source"
+        },
+        "6879": {
+          "synopsis": "Moves the page map's position to the next 8x8 block: HL += BC (8 bytes on); counts the\nblocks of the row in E and reloads it with 8 when a row of eight blocks is done. Runs with\nthe alternate set swapped in.\nEntry: HL = block base; BC = 8; E = blocks left in the row.\nExit: HL = next block; E = blocks left (8 after a full row).",
+          "provenance": "source"
+        },
+        "6885": {
+          "synopsis": "Clears window 2 and writes the size labels beside the page map, right justified: one line\nper 128K row with the running card size in K (\"128K\", \"256K\", ...), or the card size alone\nfor a card below 128K.\nEntry: cardsize = size of the card in 16K banks.",
+          "provenance": "source"
+        },
+        "6940": {
+          "synopsis": "Inline OS_Pout text inside DispCardSizeClmn: \"K \", CR, LF, null, written after each size\nlabel; the code continues after it with the jump back to the label loop.",
+          "provenance": "source"
+        },
+        "7010": {
+          "synopsis": "Selects and clears window 2 with OS_Pout (1,\"2C2\"). Shared by FreeRAM and the Index's ESC\nhandling.\nEntry: none.",
+          "provenance": "source"
+        },
+        "7025": {
+          "synopsis": "The FreeRAM window's banner text: \"FREE RAM\", null-terminated, named by FreeRamWindowDef.",
+          "provenance": "source"
+        },
+        "7034": {
+          "synopsis": "Index command <>INFO (entry in the command table): shows the SYSTEM INFORMATION window.\n1. Gets the :OUT handle (NQ_Ohn) for the number output, opens the window (InfoWdBlock) and\nwrites the captions OZ, BUILD, MACHINE, TYPE, FREE MEMORY, BATTERY, FREE HANDLES.\n2. OZ version and slot (disp_ver); \"Z88\"; type \"expanded\" or \"unexpanded\" from OS_Frm\nFA_EOF; battery \"good\" or \"low\" from NQ_Btl.\n3. Revision (disp_rev) and the build's date and time, assembled in as constants, through\nGN_Dei, GN_Pdt and GN_Ptm.\n4. Free memory in K (OS_Frm FA_EXT divided by 1024) and free handles (OS_Frm FA_PTR).\n5. Sets the active window to 3 (info window, closed by ESC) and jumps to MainLoop.\nEntry: none. Does not return: jumps to MainLoop (IX is kept).",
+          "provenance": "source"
+        },
+        "7545": {
+          "synopsis": "GN_Win definition block of the info windows (SYSTEM INFORMATION and the <>NQ windows):\nwindow 2 with bars, shelf brackets and an 8-pixel banner on a greyed screen, at X = 9, Y =\n0, 64 wide and 8 high; banner pointer 0, so the banner comes in DE.",
+          "provenance": "source"
+        },
+        "7552": {
+          "synopsis": "Banner text of the info window: \"SYSTEM INFORMATION\", null-terminated.",
+          "provenance": "source"
+        },
+        "7571": {
+          "synopsis": "Writes \"rev. \" and the OZ revision as 8 hex digits: OS_Nq NQ_Roz returns it in DEBC, written\nD, E, B, C with OS_Hout.\nEntry: none.",
+          "provenance": "source"
+        },
+        "7597": {
+          "synopsis": "Writes the OZ version as \"<major>.<minor>\" from the low byte of OS_Frm FA_PTR (high nibble\nmajor, low nibble minor), then \" in slot 1\" when OS_Ploz says OZ is not running from slot 0.\nEntry: none.",
+          "provenance": "source"
+        },
+        "7643": {
+          "synopsis": "The text \"unexpanded\", null-terminated. cmd_info writes it for an unexpanded Z88 and writes\nfrom 2 bytes on (\"expanded\") for an expanded one.",
+          "provenance": "source"
+        },
+        "7654": {
+          "synopsis": "The text \"good\", null-terminated: cmd_info's battery state.",
+          "provenance": "source"
+        },
+        "7659": {
+          "synopsis": "The text \"low\", null-terminated: cmd_info's battery state when NQ_Btl reports low.",
+          "provenance": "source"
+        },
+        "7663": {
+          "synopsis": "Index command <>INS (entry in the command table): opens the INSTALL APPLICATION window and\nasks for the .APP filename with GN_Sip into App_Buff1 (up to 128 characters). On ENTER it\ngoes to AskInstall; otherwise it sets the active window to 0 and redraws the Index\n(IndexRedraw).\nEntry: none. Does not return.",
+          "provenance": "source"
+        },
+        "7709": {
+          "synopsis": "Sets the active window to 4 (install), redraws the install window and shows \"Install\n<filename>\", then asks \"Are you sure ?\" with Yes as the default (AreYousure) and jumps to\nMainLoop; ENTER there runs DoInstall.\nEntry: App_Buff1 = filename. Does not return.",
+          "provenance": "source"
+        },
+        "7751": {
+          "synopsis": "Opens the INSTALL APPLICATION window (GN_Win with InstallWdBlock) and defines window 2 as\nits text area (58 x 6 at column 13, row 2), selected and cleared.\nEntry: none.",
+          "provenance": "source"
+        },
+        "7775": {
+          "synopsis": "GN_Win definition block of the install window: window 2 with bars, shelf brackets and an\n8-pixel banner on a greyed screen, at X = 9, Y = 0, 64 wide and 8 high; banner\nInstallBanner.",
+          "provenance": "source"
+        },
+        "7782": {
+          "synopsis": "Banner text of the install window: \"INSTALL APPLICATION\", null-terminated.",
+          "provenance": "source"
+        },
+        "7802": {
+          "synopsis": "Installs an application from RAM files: the .APP header and the .AP0 to .AP6 bank files\nnamed by App_Buff1. Run by ENTER after AskInstall.\n1. Unless the answer was 'y', sets window 0 and redraws the Index. Otherwise draws the\ninstall window and saves SP in App_Stack for the error exit.\n2. Copies 40 bytes of the .APP file to App_Tag (ci_copyfile) and checks the tag (APF_TAG),\nat most 8 banks and no patches; RC_Ftm otherwise.\n3. Opens a memory handle (OS_Mop) and allocates an installation handle (OS_Fn FN_AH,\nHND_INST) that keeps the memory handle.\n4. For each bank entry: works out the pages needed, finds a bank (OS_Fma, even when its\nApp_Even bit is set), allocates the area (OS_Axm) and loads the .AP<n> file into it\n(ci_copyfile); bank, offset page and length go to the Fma table (Fma_AP0, 4 bytes each).\n5. Takes the application DOR (App_DOR, or the son pointer at $3FC6 of relative bank 63 when\nit is 0), stores it in the installation handle and chains it after the last DOR under the\n:APP.- front DOR ($4060 in bank $21).\n6. Walks the new DOR chain and translates each DOR's bank numbers (segments, topics,\ncommands, help, tokens, brother) with ci_TranslateBank, counting the applications.\n7. Restores SP, polls the keys again (InitKeys), writes \"Installation completed.\" and waits\nfor ESC (PressEsc), then jumps to MainLoop.\nError: frees the installation handle, memory and file, stores the error code in\nubIdxErrorCode, sets IDXF2_B_ERROR and redraws the Index. Does not return.",
+          "provenance": "source"
+        },
+        "8382": {
+          "synopsis": "Frees the installation handle: clears App_InstHnd and calls OS_Fn FN_FH with B = HND_INST.\nEntry: IX = installation handle.",
+          "provenance": "source"
+        },
+        "8395": {
+          "synopsis": "Closes the install's (or update's) memory handle: clears App_MemHnd and calls OS_Mcl, which\nfrees the memory allocated through it.\nEntry: IX = memory handle.",
+          "provenance": "source"
+        },
+        "8404": {
+          "synopsis": "Closes the install's open file: clears App_FileHnd and calls GN_Cl.\nEntry: IX = file handle.\nExit: IX = 0.\nChanges: AF, HL, IX.",
+          "provenance": "source"
+        },
+        "8414": {
+          "synopsis": "Tests IX for a null handle.\nEntry: IX = handle.\nExit: Fz = 1 when IX = 0, Fz = 0 otherwise.\nChanges: AF.",
+          "provenance": "source"
+        },
+        "8422": {
+          "synopsis": "Loads one file of the application being installed into memory: puts the extension character\nin A into the third place of App_Buff1's 3-letter extension (which must start with 'A'),\nopens the file (GN_Opf), binds bank B into segment 1, reads DE bytes to the offset HL\n(OS_Mv) and closes the file.\nEntry: A = 'P' or '0'-'7'; B = bank; HL = offset in the bank; DE = length; App_Buff1 =\nfilename.\nExit: file copied; bank B left bound in segment 1; App_FileHnd = 0.\nError: does not return; jumps to the install's error exit (RC_Ftm for a bad extension).\nChanges: AF, DE, HL.\nKeeps: BC, IX.",
+          "provenance": "source"
+        },
+        "8522": {
+          "synopsis": "Translates a bank number of an application's DOR from its relative form ($F8-$FF for bank 7\nto bank 0 of the application) to the bank allocated for it, read from the first byte of its\n4-byte entry in the Fma table (Fma_AP0). Bank 0 is left as it is.\nEntry: A = relative bank number.\nExit: A = absolute bank number.\nChanges: AF.\nKeeps: BC, HL.",
+          "provenance": "source"
+        },
+        "8544": {
+          "synopsis": "Index command <>REM (entry in the command table): starts removing the selected application.\nGets its static handle (GetAppByNum) and keeps it in App_RmvHnd; an application that is not\ninstalled (handle below $80) gives RC_Fail, one that runs (DC_Pol with A = $80) gives\nRC_Use, both shown through the Index's error flag (IDXF2_B_ERROR) and a redraw. Otherwise\nsets the active window to 5, shows \"Remove <name>\" and asks \"Are you sure ?\" with No as the\ndefault, then jumps to MainLoop; ENTER there runs DoRemove.\nEntry: ubIdxTopApplication + ubIdxSelectorPos = the selected application. Does not return.",
+          "provenance": "source"
+        },
+        "8636": {
+          "synopsis": "Removes an installed application. Run by ENTER after the remove question.\n1. Unless the answer was 'y', sets window 0 and redraws the Index.\n2. Finds the installation handle whose DOR matches the application's (OS_Nq NQ_Ain, OS_Fn\nFN_GH/FN_NH with HND_INST); RC_Fail when none does.\n3. When the handle installed several applications, checks with OS_Poll and DC_Pol that none\nof them runs (RC_Use otherwise).\n4. Lowers the static handle of the processes of later applications by the number removed\n(OS_Uash on each stacked process environment).\n5. Unchains the DORs from the :APP.- front DOR ($4060 in bank $21), linking the son or the\npreceding brother to the DOR after the removed group (GetSmallestBrother).\n6. Closes the memory handle (OS_Mcl), frees the installation handle, polls the keys again\n(InitKeys), writes \"Removal completed.\" and waits for ESC; then MainLoop.\nError: stores the error code in ubIdxErrorCode, sets IDXF2_B_ERROR, sets window 0 and\nredraws the Index. Does not return.",
+          "provenance": "source"
+        },
+        "8856": {
+          "synopsis": "Reads the brother pointer of a DOR: binds the DOR's bank into segment 1, reads its\nDOR_BROTHER field and restores segment 1.\nEntry: BHL = DOR.\nExit: BHL = brother DOR (0 when there is none).\nChanges: AF, B, HL.\nKeeps: C, DE, IY.",
+          "provenance": "source"
+        },
+        "8890": {
+          "synopsis": "Follows the brother chain from a DOR as many times as the installation handle has\napplications (ihnd_AppNbOf), giving the DOR that comes after the installed group.\nEntry: BHL = first DOR of the group; IX = installation handle.\nExit: BHL = DOR after the group.\nChanges: AF, B, HL.\nKeeps: C, DE, IY.",
+          "provenance": "source"
+        },
+        "9056": {
+          "synopsis": "Opens the remove window (GN_Win with RemoveWdBlock) and defines window 2 as its text area\n(58 x 6 at column 13, row 2), selected and cleared.\nEntry: none.",
+          "provenance": "source"
+        },
+        "9080": {
+          "synopsis": "GN_Win definition block of the remove window: window 2 with bars, shelf brackets and an\n8-pixel banner on a greyed screen, at X = 9, Y = 0, 64 wide and 8 high; banner RemoveBanner.",
+          "provenance": "source"
+        },
+        "9087": {
+          "synopsis": "Banner text of the remove window: \"REMOVE APPLICATION\", null-terminated.",
+          "provenance": "source"
+        },
+        "9106": {
+          "synopsis": "Index command <>NQ (entry in the command table): shows details of the selected entry. With\nthe application list active (window 0) it shows APPLICATION INFORMATION: name, type (good,\nbad, ugly or popdown), device (ROM.n or APP.-), static handle, segment bindings, entry, and\nthe DOR, brother, topics, commands, help and tokens pointers. With the process list active\nit shows PROCESS INFORMATION for the selected suspended process: PID, name, static and\nprocess handles, flags, associated pointer and length, default device, match string and\ndirectory (nothing for the Index itself or an empty list). Then \"PRESS ESC TO RESUME\",\nactive window 3 and a jump to MainLoop.\nEntry: none. Does not return (IX is kept).",
+          "provenance": "source"
+        },
+        "9913": {
+          "synopsis": "Entry inside nq_cde: writes DE as 4 hex digits (D, then E) with OS_Hout.\nEntry: DE = value.\nChanges: AF.",
+          "provenance": "source"
+        },
+        "9920": {
+          "synopsis": "Reads a 3-byte pointer from an extended address with GN_Rbe: CDE = (BHL).\nEntry: BHL = address of the pointer.\nExit: CDE = pointer; HL = address of its last byte.\nChanges: AF, C, D, E, HL.",
+          "provenance": "source"
+        },
+        "9935": {
+          "synopsis": "Opens the <>NQ window with the given banner (GN_Win with InfoWdBlock), then selects and\nclears window 2 and toggles tiny font.\nEntry: DE = banner text.",
+          "provenance": "source"
+        },
+        "9953": {
+          "synopsis": "Moves the cursor to column 30 of the window (1,\"2X\"), the second column of the <>NQ display.\nEntry: none.",
+          "provenance": "source"
+        },
+        "9985": {
+          "synopsis": "Banner text of the process information window: \"PROCESS INFORMATION\", null-terminated.",
+          "provenance": "source"
+        },
+        "10005": {
+          "synopsis": "The text \"good\", null-terminated: an application type name for <>NQ.",
+          "provenance": "source"
+        },
+        "10010": {
+          "synopsis": "The text \"bad\", null-terminated: an application type name for <>NQ (AT_Bad set).",
+          "provenance": "source"
+        },
+        "10014": {
+          "synopsis": "The text \"ugly\", null-terminated: an application type name for <>NQ (AT_Ugly set).",
+          "provenance": "source"
+        },
+        "10019": {
+          "synopsis": "The text \"popdown\", null-terminated: an application type name for <>NQ (AT_Popd set).",
+          "provenance": "source"
+        },
+        "10241": {
+          "synopsis": "Releases what the OZ update holds: closes the config file (CloseCfgFile) and, when\nApp_MemHnd is not 0, closes the memory handle (ci_CloseMem); then App_MemHnd = 0.\nEntry: none.\nExit: IX = 0.",
+          "provenance": "source"
+        },
+        "10303": {
+          "synopsis": "Closes the OZ update's config file when uwIdxCfgHnd holds a handle (GN_Cl) and stores the\nreturned IX (0) back.\nEntry: uwIdxCfgHnd = file handle or 0.\nExit: IX = 0 when a file was closed; otherwise IX = 0 from uwIdxCfgHnd.\nChanges: AF, IX.",
+          "provenance": "source"
+        },
+        "11303": {
+          "synopsis": "Converts an ASCII hex digit ('0'-'9', 'A'-'F'; upper case only) to its value.\nEntry: A = character.\nExit: Fc = 0, A = 0-15.\nError: Fc = 1, A unchanged, when A is not a hex digit.\nChanges: AF.",
+          "provenance": "source"
+        },
+        "11444": {
+          "synopsis": "Opens the OPERATING SYSTEM UPDATE window (GN_Win with UpdateWdBlock) and defines window 2 as\nits text area (58 x 6 at column 13, row 2), selected and cleared.\nEntry: none.",
+          "provenance": "source"
+        },
+        "11468": {
+          "synopsis": "Wildcard name of the OZ update config file searched in RAM: \":RAM.?/ozs?-*.upd\",\nnull-terminated (the source's comments call it ozupdate.cfg).",
+          "provenance": "source"
+        },
+        "11486": {
+          "synopsis": "Progress text \"CRC Checking \", null-terminated, written before a bank file's name.",
+          "provenance": "source"
+        },
+        "11500": {
+          "synopsis": "Progress text \" bank file\", CR, LF, null-terminated, written after a bank file's name.",
+          "provenance": "source"
+        },
+        "11513": {
+          "synopsis": "Error text \"CRC check failed for \", null-terminated, followed by the bank file's name.",
+          "provenance": "source"
+        },
+        "11535": {
+          "synopsis": "Error text \"Syntax error at line \", null-terminated, followed by the config line number.",
+          "provenance": "source"
+        },
+        "11557": {
+          "synopsis": "Error text \" in 'ozupdate.cfg' file.\", CR, LF, null-terminated, after the line number.",
+          "provenance": "source"
+        },
+        "11584": {
+          "synopsis": "GN_Win definition block of the OZ update window: window 2 with bars, shelf brackets and an\n8-pixel banner on a greyed screen, at X = 9, Y = 0, 64 wide and 8 high; banner UpdateBanner.",
+          "provenance": "source"
+        },
+        "11591": {
+          "synopsis": "Banner text of the OZ update window: \"OPERATING SYSTEM UPDATE\", null-terminated.",
+          "provenance": "source"
+        },
+        "11615": {
+          "synopsis": "Separator table of the config file parser: a length byte (27) followed by the separator\ncharacters (start_separators). The position of a character found by StrChr is its symbol\nnumber (sym_null, sym_dquote, ...).",
+          "provenance": "source"
+        },
+        "11616": {
+          "synopsis": "The 27 separator characters of the config file parser: null, double quote, single quote, ; ,\n. ( { } ) + - * / % ^ = & ~ | : ! < > #, CR and LF, in symbol order.",
+          "provenance": "source"
+        },
+        "11643": {
+          "synopsis": "End of the separator table, used only to compute its length; the $FF filler follows.",
+          "provenance": "source"
+        }
+      }
+    },
+    "13": {
+      "lines": {
+        "261": {
+          "synopsis": "Entry inside FPMod (FP_MOD), reached directly when both numbers are integers and called by\nFPIdv: divides the 32-bit integer HLhl by the 32-bit integer DEde. Both are made positive,\nDivision runs the long division, and the remainder takes the sign of the dividend. There is\nno check for a zero divisor.\nEntry: HLhl = dividend; DEde = divisor (two's complement integers; C and B are not read).\nExit: HLhl = remainder (sign of the dividend), C = 0; DEde = quotient's magnitude; A bit 7 =\n1 when the signs of the numbers differ.\nChanges: AF, BC, DE, HL, bc', de', hl', AF'.",
+          "provenance": "source"
+        },
+        "340": {
+          "synopsis": "Entry inside FPSub: flips the sign bit of DEdeB and goes on at add_2, so HLhlC = HLhlC -\nDEdeB for two floats. Called by sub_0_E35F.\nEntry: HLhlC, DEdeB = floats.\nExit: as add_2 (HLhlC = difference).\nError: A = RC_Tbg on exponent overflow, through FPError, which unwinds to the FP call's\nframe (IY) and returns from the call.\nChanges: AF, BC, DE, HL, bc', de', hl', AF'.",
+          "provenance": "source"
+        },
+        "346": {
+          "synopsis": "Flips the sign bit of HLhlC and goes on at add_2, so HLhlC = DEdeB - HLhlC for two floats.\nUsed by the sine core to fold an argument (pi/4 - x), by FPAsn for 1 - x^2 and by the ATN\nand ACS tails for pi/2 - x.\nEntry: HLhlC, DEdeB = floats.\nExit: as add_2 (HLhlC = DEdeB - HLhlC).\nError: A = RC_Tbg on exponent overflow, through FPError, which unwinds to the FP call's\nframe (IY) and returns from the call.\nChanges: AF, BC, DE, HL, bc', de', hl', AF'.",
+          "provenance": "source"
+        },
+        "366": {
+          "synopsis": "Entry inside FPAdd: adds two floats, HLhlC = HLhlC + DEdeB. A float has C = exponent + $80\n(value = 1.m * 2^(C - $80)), H bit 7 = sign and the mantissa's top 1 implied; C = 0 is zero.\n1. When DEdeB is zero HLhlC is returned; when HLhlC is zero DEdeB is returned (swapped in).\n2. The number with the smaller exponent is moved into HLhlC and shifted right by Fix until\nthe exponents match; the bits shifted out go into bc'.\n3. Equal signs add the mantissas (a carry shifts back one place and raises the exponent);\ndifferent signs subtract them, negating on a borrow, and NormalizeHLhlC realigns the result.\n4. The result is rounded from bc' (IncHLhl, HalfIncHLhl), gets its sign back in H bit 7, and\na zero result becomes FPZer.\nEntry: HLhlC, DEdeB = floats.\nExit: HLhlC = sum (float, or 0).\nError: A = RC_Tbg when the exponent overflows, through FPError, which unwinds to the FP\ncall's frame (IY) and returns from the call.\nChanges: AF, BC, DE, HL, bc', de', hl', AF'.",
+          "provenance": "source"
+        },
+        "454": {
+          "synopsis": "Entry inside FPDiv: divides two floats, HLhlC = HLhlC / DEdeB. The sign is the XOR of the\nsigns; the mantissas, with their top bits put back, go through Division (a 32-bit long\ndivision), plus one more quotient bit (loc_0_E3FB) when the top bit is clear, and the\nquotient is rounded. The exponent is C - B + $80, adjusted for normalisation. A zero\ndividend returns zero; an underflow returns zero.\nEntry: HLhlC = dividend, DEdeB = divisor (floats).\nExit: HLhlC = quotient.\nError: A = RC_Dvz when DEdeB is zero (B = 0), A = RC_Tbg when the exponent overflows,\nthrough FPError, which unwinds to the FP call's frame (IY) and returns from the call.\nChanges: AF, BC, DE, HL, bc', de', hl', AF'.",
+          "provenance": "source"
+        },
+        "601": {
+          "synopsis": "FP_MUL: multiplies HLhlC by DEdeB. When both are integers (B = C = 0) the magnitudes are\nmultiplied into a 64-bit product by div_2 (the integer multiply, despite its name), which\nreturns an integer when the product fits in 31 bits and a float otherwise; any float operand\nturns both into floats (FltBoth) and mul_1 multiplies them. Also called by FPPwr for\nrepeated squaring. The callers listed in apps/calculator/calc.asm call the calculator's own\nFpMul, not this routine.\nEntry: HLhlC, DEdeB = numbers (exponent 0: 32-bit integer in HLhl; otherwise a float).\nExit: Fc = 0; HLhlC = product.\nError: Fc = 1, A = RC_Tbg when a float product overflows.\nChanges: AF, BC, DE, HL, bc', de', hl', AF'.",
+          "provenance": "source"
+        },
+        "609": {
+          "synopsis": "Entry inside FPMul: multiplies two floats, HLhlC = HLhlC * DEdeB. The sign is the XOR of the\nsigns; the mantissas, with their top bits put back, are multiplied by sub_0_E40E (plus a\nlast shift by sub_0_E422 on a carry), the 64-bit product is rounded to 32 bits and the\nexponents are added (mul_2). The FPP's main multiply, used by the series and power routines.\nEntry: HLhlC, DEdeB = floats.\nExit: HLhlC = product; zero when either is zero or the exponent underflows.\nError: A = RC_Tbg when the exponent overflows, through FPError, which unwinds to the FP\ncall's frame (IY) and returns from the call.\nChanges: AF, BC, DE, HL, bc', de', hl', AF'.",
+          "provenance": "source"
+        },
+        "1135": {
+          "synopsis": "Entry inside FPSqr for a float: square root of HLhlC. The exponent is halved (the mantissa\nshifted one place first when the exponent is even), sub_0_E441 produces the root's bits by\nthe restoring method, two more steps (sub_0_E441, sub_0_E47A, loc_0_E3FB) give the rounding\nbit, and the root is rounded. Also called by FPAsn.\nEntry: HLhlC = float.\nExit: HLhlC = square root (zero for zero); A = 0.\nError: A = RC_Nvr when HLhlC is negative, through FPError, which unwinds to the FP call's\nframe (IY) and returns from the call.\nChanges: AF, BC, DE, HL, bc', de', hl'.",
+          "provenance": "source"
+        },
+        "1247": {
+          "synopsis": "Entry inside FPCos for a float: cosine of HLhlC (radians). sub_0_E1DA reduces |x| modulo\npi/4 and returns the count of eighth turns in E; adding 2 (a quarter turn) makes it a sine,\nwhich the shared core loc_0_DCF5 evaluates. Also called by FPTan.\nEntry: HLhlC = float (radians).\nExit: HLhlC = cos x.\nError: A = RC_Acl when |x| >= 2^23, through FPError, which unwinds to the FP call's frame\n(IY) and returns from the call.\nChanges: AF, BC, DE, HL, bc', de', hl', AF', IX.",
+          "provenance": "source"
+        },
+        "1258": {
+          "synopsis": "Entry inside FPSin for a float: sine of HLhlC (radians). sub_0_E1DA reduces |x| modulo pi/4\n(count of eighth turns in E); the sign of x goes into bit 2 of that count and the code falls\ninto sub_0_DCF1, the core shared with cos_1: an odd eighth is folded (pi/4 - r), eighths 0\nand 3 use the sine series in r^2 times r, 1 and 2 the cosine series, and bit 2 gives the\nsign. Also called by FPTan.\nEntry: HLhlC = float (radians).\nExit: HLhlC = sin x.\nError: A = RC_Acl when |x| >= 2^23, through FPError, which unwinds to the FP call's frame\n(IY) and returns from the call.\nChanges: AF, BC, DE, HL, bc', de', hl', AF', IX.",
+          "provenance": "source"
+        },
+        "1387": {
+          "synopsis": "Loads the float 1.0 into DEdeB (DEde = 0, B = $80).\nEntry: none.\nExit: DEdeB = 1.0.\nChanges: B, DE, de'.\nKeeps: AF, C, HL, bc', hl'.",
+          "provenance": "source"
+        },
+        "1528": {
+          "synopsis": "Reciprocal: HLhlC = 1 / HLhlC. Loads 1.0 into DEdeB (LdDEdeB_1) and falls into loc_0_DDFB,\nwhich swaps the two and divides. Used by FPPwr for a negative power, by FPExp and by FPAtn\n(arguments above tan(3*pi/8)).\nEntry: HLhlC = float.\nExit: HLhlC = 1 / x.\nError: A = RC_Dvz when HLhlC is zero, through FPError, which unwinds to the FP call's frame\n(IY) and returns from the call.\nChanges: AF, BC, DE, HL, bc', de', hl', AF'.",
+          "provenance": "source"
+        },
+        "1531": {
+          "synopsis": "Entry inside sub_0_DDF8: swaps HLhlC and DEdeB and jumps to div_1, so HLhlC = DEdeB / HLhlC.\nCalled by FPAsn to form x / sqrt(1 - x^2).\nEntry: HLhlC = divisor, DEdeB = dividend (floats).\nExit: HLhlC = DEdeB / HLhlC.\nError: A = RC_Dvz when HLhlC is zero, through FPError, which unwinds to the FP call's frame\n(IY) and returns from the call.\nChanges: AF, BC, DE, HL, bc', de', hl', AF'.",
+          "provenance": "source"
+        },
+        "1537": {
+          "synopsis": "Loads ln 2 into DEdeB ($3172:$17F8, exponent $7F: 0.6931472). FPExp then adjusts de' and\nloads bc' = $D1CF for 48 bits of ln 2; sub_0_DE0F multiplies the power of two by it.\nEntry: none.\nExit: DEdeB = ln 2.\nChanges: B, DE, de'.\nKeeps: AF, C, HL, bc', hl'.",
+          "provenance": "source"
+        },
+        "1551": {
+          "synopsis": "Entry inside FPLn for a float: natural logarithm of HLhlC. Also called by FPPwr (x^y as\nexp(y ln x)) and through FPLn by FPLog.\n1. Splits x into m * 2^n with m from sqrt(1/2) to sqrt(2): the exponent is set to $80, and\nto $7F when the mantissa reaches sqrt(2) ($3504F333).\n2. t = (m - 1) / (m + 1) (sub_0_E35F); ln m = t * P(t^2), the series evaluated by sub_0_E37D\nfrom the five coefficients after the call.\n3. Adds n * ln 2 (n made a float from the exponent byte, sub_0_DE01) with add_2.\nEntry: HLhlC = float.\nExit: HLhlC = ln x; A = 0.\nError: A = RC_Lgr when x is zero or negative, through FPError, which unwinds to the FP\ncall's frame (IY) and returns from the call.\nChanges: AF, BC, DE, HL, bc', de', hl', AF', IX.",
+          "provenance": "source"
+        },
+        "1694": {
+          "synopsis": "FP_ASN: arc sine of HLhlC, in radians. Computes 1 - x^2 (mul_1, sub_3) and its square root\n(sqr_1); when that is zero (|x| = 1) the result is pi/2 with the sign of x, otherwise x /\nsqrt(1 - x^2) goes to the arc tangent code (loc_0_DEC6 in FPAtn). Also called by FPAcs,\nwhich returns pi/2 minus the result.\nEntry: HLhlC = number (an integer is made a float).\nExit: Fc = 0; HLhlC = arc sine (float).\nError: Fc = 1, A = RC_Nvr when |x| > 1.\nChanges: AF, BC, DE, HL, bc', de', hl', AF', IX.",
+          "provenance": "source"
+        },
+        "2247": {
+          "synopsis": "Loads DEdeB from a 5-byte float at IX in memory order: (IX+0) = e, (IX+1) = d, (IX+2) = E,\n(IX+3) = D, (IX+4) = exponent into B. Reads the coefficient tables of sub_0_E37D and the\nnumber FPPwr keeps on the stack.\nEntry: IX = 5-byte number.\nExit: DEdeB = number.\nChanges: B, DE, de'.\nKeeps: AF, C, HL, IX, bc', hl'.",
+          "provenance": "source"
+        },
+        "2270": {
+          "synopsis": "The number reader of FPVal (FP_VAL): reads unsigned decimal digits at IX into HLhlC. Integer\ndigits accumulate in HLhl (sub_0_E16B); once HLhl would overflow, later digits only raise a\ndecimal exponent (C). An optional '.' starts the fraction digits, counted in B (sub_0_E169),\nand an 'E' or 'e' the exponent (sub_0_E13A). Without point and exponent, a value below 2^31\nis returned as an integer; otherwise HLhl is normalised to a float and multiplied or divided\nby the power of ten from sub_0_E3A4 (in steps of 10^38 for very small numbers).\nEntry: IX = first character after the sign; IY = FP call frame (for ReadByteIX).\nExit: HLhlC = unsigned value (integer or float); IX = first character after the number.\nError: A = RC_Bdn for a second decimal point, A = RC_Tbg when the value overflows, through\nFPError, which unwinds to the FP call's frame (IY) and returns from the call.\nChanges: AF, BC, DE, HL, bc', de', hl', AF', IX.",
+          "provenance": "source"
+        },
+        "2362": {
+          "synopsis": "Reads the exponent after the 'E' of a number for sub_0_E0DE: skips the 'E', blanks and a '+'\nor '-' (GetNumStart), then reads decimal digits into a byte. Two digits give 0 to 99; a\nthird digit or more gives 100. A '-' negates the result.\nEntry: IX = the 'E'; A = 0; IY = FP call frame (for ReadByteIX).\nExit: A = exponent (signed byte); IX = first character after the digits.\nChanges: AF, DE, IX, AF'.\nKeeps: BC, HL.",
+          "provenance": "source"
+        },
+        "2464": {
+          "synopsis": "Converts both numbers to integers: FPFix on DEdeB (swapped in and out by ExHLhlC_DEdeB) and\nthen falls into FPFix for HLhlC. Used by the integer operations (AND, OR, EOR, MOD, DIV)\nwhen either operand is a float.\nEntry: HLhlC, DEdeB = numbers.\nExit: HLhl, DEde = 32-bit integers, C = B = 0.\nError: A = RC_Tbg when a float is 2^31 or more in size, through FPError, which unwinds to\nthe FP call's frame (IY) and returns from the call.\nChanges: AF, BC, DE, HL, bc', de', hl', AF'.",
+          "provenance": "source"
+        },
+        "2473": {
+          "synopsis": "FP_FIX: truncates HLhlC to an integer (towards zero). An integer (C = 0) is returned as it\nis. A float has its top bit put back, is shifted right by Fix until the exponent reaches\n$9F, and is negated when it was negative. Also called by FPNot and FixBoth.\nEntry: HLhlC = number (C = 0: 32-bit two's complement integer in HLhl; otherwise a float, C\n= exponent + $80, H bit 7 = sign).\nExit: Fc = 0; HLhl = integer, C = 0.\nError: Fc = 1, A = RC_Tbg when |x| >= 2^31.\nChanges: AF, C, HL, bc', hl', AF'.",
+          "provenance": "source"
+        },
+        "2488": {
+          "synopsis": "Negates the 32-bit integer HLhl (two's complement: HLhl = 0 - HLhl). The tail of FPFix for a\nnegative number.\nEntry: HLhl = integer.\nExit: HLhl = -HLhl.\nChanges: F, HL, hl'.\nKeeps: A, BC, DE, bc', de'.",
+          "provenance": "source"
+        },
+        "2508": {
+          "synopsis": "Negates the 48-bit mantissa HLhl:bc' (bc' holds the extra low bits) and complements A, which\nholds the sign in add_2. Used by add_2 when subtracting the mantissas borrowed.\nEntry: HLhl:bc' = mantissa; A = sign byte.\nExit: HLhl:bc' = 0 - HLhl:bc'; A = NOT A.\nChanges: AF, HL, bc', hl'.\nKeeps: DE, de'.",
+          "provenance": "source"
+        },
+        "2522": {
+          "synopsis": "Argument reduction for SIN and COS: loads DEdeB = pi/4 (loc_0_DD76) with 16 further bits of\nit in bc' ($2169), and falls into sub_0_E1EA, which reduces |x| modulo pi/4.\nEntry: HLhlC = float.\nExit: HLhlC = remainder, normalised with H bit 7 set (the callers clear it); E = eighth\nturns in x (bit 7 set from 128 on).\nError: A = RC_Acl when |x| >= 2^23 (exponent above $96), through FPError, which unwinds to\nthe FP call's frame (IY) and returns from the call.\nChanges: AF, BC, DE, HL, bc', de', hl', IX.",
+          "provenance": "source"
+        },
+        "2538": {
+          "synopsis": "Reduces |HLhlC| modulo |DEdeB|, the divisor's mantissa extended by 16 more bits in bc': a\nrestoring long division on the 48-bit mantissas, one quotient bit per exponent step, the low\nbits of the quotient collected in C. The remainder is normalised by NormalizeHLhlC. Called\nby FPExp with ln 2 and by sub_0_E1DA with pi/4.\nEntry: HLhlC = dividend, DEdeB = divisor (floats, signs ignored); bc' = 16 more bits of the\ndivisor.\nExit: HLhlC = remainder, normalised with H bit 7 set; E = quotient's low 7 bits, bit 7 set\nonce the quotient reached 128; D bit 7 set; IX = 0.\nChanges: AF, BC, DE, HL, bc', hl', IX.",
+          "provenance": "source"
+        },
+        "2617": {
+          "synopsis": "Normalises a mantissa that carries extra bits: while H bit 7 is clear, shifts HLhl:bc' left\none place and decrements the exponent C. Stops with C = 0 when it runs out (zero or\nunderflow).\nEntry: HLhl:bc' = mantissa; C = exponent.\nExit: H bit 7 set and C reduced, or C = 0.\nChanges: F, C, HL, bc', hl'.",
+          "provenance": "source"
+        },
+        "2635": {
+          "synopsis": "Normalises HLhl with zeros shifted in: while H bit 7 is clear, shifts HLhl left one place\nand decrements C. Stops with C = 0 when it runs out. FPFlt, sub_0_E0DE and sub_0_DE0F make\nfloats from integers with it.\nEntry: HLhl = mantissa; C = exponent.\nExit: H bit 7 set and C reduced, or C = 0.\nChanges: F, C, HL, hl'.",
+          "provenance": "source"
+        },
+        "2648": {
+          "synopsis": "Converts both numbers to floats: FPFlt on DEdeB (swapped in and out by ExHLhlC_DEdeB) and\nthen falls into FPFlt for HLhlC. Called by every two-operand function when either operand is\na float.\nEntry: HLhlC, DEdeB = numbers.\nExit: HLhlC, DEdeB = floats (an integer zero stays zero).\nChanges: AF, BC, DE, HL, de', hl'.",
+          "provenance": "source"
+        },
+        "2657": {
+          "synopsis": "FP_FLT: converts an integer in HLhlC to a float. A float (C <> 0) and zero are returned as\nthey are. Otherwise the magnitude is normalised from exponent $9F (Normalize0HLhlC) and H\nbit 7, the implied top bit, is replaced by the sign. A float's value is 1.m * 2^(C - $80).\nEntry: HLhlC = number (C = 0: 32-bit two's complement integer in HLhl).\nExit: Fc = 0; HLhlC = float (C = exponent + $80, H bit 7 = sign).\nChanges: AF, C, HL, hl'.\nKeeps: B, DE, bc', de'.",
+          "provenance": "source"
+        },
+        "2679": {
+          "synopsis": "Adds 1 to the 32-bit HLhl. Used by the rounding steps and by FPInt and FPSgn.\nEntry: HLhl = value.\nExit: HLhl = HLhl + 1; Fc = 1 when it wrapped from $FFFFFFFF to 0; bc' = 1.\nChanges: F, HL, bc', hl'.\nKeeps: A, BC, DE, de'.",
+          "provenance": "source"
+        },
+        "2699": {
+          "synopsis": "Swaps the numbers HLhlC and DEdeB: exchanges C and B and falls into ExHLhl_DEde.\nEntry: HLhlC, DEdeB = numbers.\nExit: the two swapped; A = old C.\nChanges: A, BC, DE, HL, de', hl'.\nKeeps: F.",
+          "provenance": "source"
+        },
+        "2702": {
+          "synopsis": "Swaps the 32-bit HLhl and DEde in both register sets. Used by sub_0_E16B to put back the\nvalue saved before an overflowing multiply by 10.\nEntry: HLhl, DEde = values.\nExit: the two swapped.\nChanges: DE, HL, de', hl'.\nKeeps: AF, BC, bc'.",
+          "provenance": "source"
+        },
+        "2707": {
+          "synopsis": "Shifts the mantissa HLhl right one place into the extra bits bc' (the bit leaving c' is\nlost) and ORs b' into A', so that A' turns non-zero once a 1 bit has left HLhl (Fix clears\nA' first). Then falls into IncC to raise the exponent.\nEntry: HLhl:bc' = mantissa; C = exponent.\nExit: HLhl:bc' halved; C = C + 1.\nError: A = RC_Tbg when C wraps to 0, through FPError, which unwinds to the FP call's frame\n(IY) and returns from the call.\nChanges: F, C, HL, bc', hl', AF'.",
+          "provenance": "source"
+        },
+        "2719": {
+          "synopsis": "Increments the exponent C; when it wraps to 0 it falls into ErrTooBig.\nEntry: C = exponent.\nExit: C = C + 1.\nError: A = RC_Tbg when C wraps to 0, through FPError, which unwinds to the FP call's frame\n(IY) and returns from the call.\nChanges: F, C.",
+          "provenance": "source"
+        },
+        "2737": {
+          "synopsis": "Tests the 32-bit HLhl for zero: A = H OR L OR h OR l.\nEntry: HLhl = value.\nExit: Fz = 1 when HLhl is zero; A = the OR of its bytes.\nChanges: AF.\nKeeps: BC, DE, HL, bc', de', hl'.",
+          "provenance": "source"
+        },
+        "2817": {
+          "synopsis": "One decade step of FPStr's digit scaling: decrements the decimal exponent B, then multiplies\nthe unnormalised mantissa by 10: C goes up by 3 and HLhl becomes HLhl + HLhl/4 (falls into\nsub_0_E303 and AddHLhl_DEde). The bit carried out of the mantissa comes back in Fc.\nEntry: HLhl = mantissa (top bit set); C = exponent; B = decimal exponent.\nExit: B = B - 1; C = C + 3; HLhl = 1.25 * HLhl (low 32 bits); Fc = carry out; DEde = old\nHLhl.\nChanges: AF, BC, DE, HL, de', hl', AF'.",
+          "provenance": "source"
+        },
+        "2829": {
+          "synopsis": "Adds the 32-bit DEde to HLhl.\nEntry: HLhl, DEde = values.\nExit: HLhl = HLhl + DEde; Fc = carry out; P/V = signed overflow.\nChanges: F, HL, hl'.\nKeeps: A, BC, DE, bc', de'.",
+          "provenance": "source"
+        },
+        "2835": {
+          "synopsis": "Subtracts the 32-bit DEde from HLhl. FPSub and FPAdd try integer arithmetic with it and\nAddHLhl_DEde first, and turn to floats when P/V shows a signed overflow.\nEntry: HLhl, DEde = values.\nExit: HLhl = HLhl - DEde; Fc = borrow; P/V = signed overflow.\nChanges: F, HL, hl'.\nKeeps: A, BC, DE, bc', de'.",
+          "provenance": "source"
+        },
+        "2843": {
+          "synopsis": "Multiplies the 32-bit unsigned HLhl by 10 as ((HLhl * 4) + HLhl) * 2, keeping the original\nin DEde, and falls into HLhl_x2 for the last doubling. Used by sub_0_E16B to collect decimal\ndigits.\nEntry: HLhl = value.\nExit: HLhl = 10 * HLhl; DEde = old HLhl; Fc = 1 on overflow (HLhl then partly multiplied).\nChanges: F, DE, HL, de', hl'.",
+          "provenance": "source"
+        },
+        "2858": {
+          "synopsis": "Doubles the 32-bit HLhl (shift left one place).\nEntry: HLhl = value.\nExit: HLhl = 2 * HLhl; Fc = the bit shifted out.\nChanges: F, HL, hl'.\nKeeps: A, BC, DE, bc', de'.",
+          "provenance": "source"
+        },
+        "2865": {
+          "synopsis": "Shifts the 32-bit HLhl right one place (logical; H bit 7 becomes 0). SrlHLhlC0, the entry\nbefore it, also increments C.\nEntry: HLhl = value.\nExit: HLhl = HLhl / 2; Fc = the bit shifted out.\nChanges: F, HL, hl'.\nKeeps: A, BC, DE, bc', de'.",
+          "provenance": "source"
+        },
+        "2876": {
+          "synopsis": "Copies the number HLhlC into DEdeB: B = C and falls into LdDEde_HLhl.\nEntry: HLhlC = number.\nExit: DEdeB = HLhlC.\nChanges: B, DE, de'.\nKeeps: AF, C, HL, bc', hl'.",
+          "provenance": "source"
+        },
+        "2877": {
+          "synopsis": "Copies the 32-bit HLhl into DEde.\nEntry: HLhl = value.\nExit: DEde = HLhl.\nChanges: DE, de'.\nKeeps: AF, BC, HL, bc', hl'.",
+          "provenance": "source"
+        },
+        "2884": {
+          "synopsis": "Squares HLhlC (LdDEdeB_HLhlC, mul_1) and falls into PushHLhlC, which leaves the square on\nthe stack as well: the set-up of the series in SIN, COS, LN and ATN before sub_0_E37D.\nEntry: HLhlC = float x.\nExit: HLhlC = x^2; x^2 pushed on the caller's stack (three words, as PushHLhlC).\nError: A = RC_Tbg when the square overflows, through FPError, which unwinds to the FP call's\nframe (IY) and returns from the call.\nChanges: AF, BC, DE, HL, bc', de', hl', AF', IX.",
+          "provenance": "source"
+        },
+        "2890": {
+          "synopsis": "Pushes the number HLhlC on the caller's stack and returns: takes the return address into IX,\npushes BC, HL and hl' (hl' on top, six bytes) and jumps back through IX. PopDEdeB takes the\nnumber back into DEdeB.\nEntry: HLhlC = number.\nExit: HLhlC on the stack; SP = SP - 6 for the caller.\nChanges: IX.\nKeeps: AF, BC, DE, HL, bc', de', hl'.",
+          "provenance": "source"
+        },
+        "2899": {
+          "synopsis": "Pops a number pushed by PushHLhlC into DEdeB and returns: takes the return address into IX,\npops de', DE, then the pushed BC, whose C becomes B. C is kept.\nEntry: a number from PushHLhlC on the stack.\nExit: DEdeB = that number; SP = SP + 6 for the caller; A = C.\nChanges: A, B, DE, de', IX.\nKeeps: F, C, HL, bc', hl'.",
+          "provenance": "source"
+        },
+        "2911": {
+          "synopsis": "Computes HLhlC = (x - 1) / (x + 1): x + 1 (add_2 with 1.0) is kept on the stack, x - 1 is\nformed by sub_2, and div_1 divides. Used by FPLn on the mantissa and by FPAtn for arguments\nbetween tan(pi/8) and tan(3*pi/8).\nEntry: HLhlC = float x.\nExit: HLhlC = (x - 1) / (x + 1).\nError: A = RC_Dvz when x = -1, through FPError, which unwinds to the FP call's frame (IY)\nand returns from the call.\nChanges: AF, BC, DE, HL, bc', de', hl', AF', IX.",
+          "provenance": "source"
+        },
+        "2941": {
+          "synopsis": "Evaluates a polynomial whose coefficients follow the CALL as 5-byte floats (mantissa low\nbyte first, exponent last), in Horner form: r = t * c0 + c1, r = r * t + c2, and so on.\nCoefficients have exponents below $80; the first with an exponent of $80 or more (1.0 or\n2.0) is the last one, and the routine returns onto it: its bytes run as four NOPs and an\nADD, so execution goes on after the table.\nEntry: HLhlC = t; t also on the stack under the return address (PushHLhlC or sub_0_E344).\nExit: HLhlC = polynomial value; t still on the stack (the caller pops it with PopDEdeB).\nError: A = RC_Tbg on overflow, through FPError, which unwinds to the FP call's frame (IY)\nand returns from the call.\nChanges: AF, BC, DE, HL, bc', de', hl', AF', IX.",
+          "provenance": "source"
+        },
+        "2980": {
+          "synopsis": "Builds a power of ten in DEdeB by repeated multiplication by 10 (sub_0_E303, rounded),\nkeeping HLhlC. With A from 0 to $7F, DEdeB = 10^A. With A of $80 or more, A is an exponent\nbyte: it stops at the first power of ten whose exponent byte is above A. FPStr scales by it;\nsub_0_E0DE applies the decimal exponent with it.\nEntry: A = power, or exponent limit; HLhlC = number to keep.\nExit: DEdeB = 10^k (positive float); A = k; HLhlC unchanged.\nError: A = RC_Tbg when the power overflows, through FPError, which unwinds to the FP call's\nframe (IY) and returns from the call.\nChanges: AF, B, DE, bc', de', AF'.\nKeeps: C, HL, hl'.",
+          "provenance": "source"
+        },
+        "3067": {
+          "synopsis": "Entry inside Division, called with the alternate register set active: shifts the carry into\nthe remainder HLhl (doubling it), subtracts the divisor BCbc when it fits and shifts the\nquotient bit into DEde, repeating until A counts up to a positive value. With A at 0 or\nabove it gives exactly one more quotient bit; div_1 and sqr_1 use it so.\nEntry: HLhl = remainder; BCbc = divisor; DEde = quotient so far; A = step counter; Fc = bit\nto shift in.\nExit: DEde = quotient with the new bits; HLhl = remainder; A incremented.\nChanges: AF, DE, HL, de', hl'.",
+          "provenance": "source"
+        },
+        "3086": {
+          "synopsis": "Unsigned shift-and-add multiply, called with the alternate register set active (the callers\nload the numbers and EXX): for each step the 64-bit HLhl:DEde moves right one place and BCbc\nis added to HLhl when the bit leaving DEde is 1. Used by mul_1 (32 steps) and the integer\nmultiply div_2 (33 steps).\nEntry: HLhl = 0; DEde = multiplier; BCbc = multiplicand; A = minus the number of steps.\nExit: HLhl:DEde = product; A = 0; Fc = carry from the last addition (mul_1 then shifts once\nmore with sub_0_E422).\nChanges: AF, DE, HL, de', hl'.",
+          "provenance": "source"
+        },
+        "3137": {
+          "synopsis": "The square-root loop of sqr_1, called with the alternate register set active: each step\nshifts two bits of the radicand DEde into the remainder HLhl, tries to subtract the trial\nroot formed in BCbc and keeps or restores, adding one bit to the root. Repeats until A\ncounts up to a positive value.\nEntry: HLhl = remainder; DEde = radicand bits to come; BCbc = root so far; A = minus the\nnumber of steps.\nExit: BCbc = root; HLhl = remainder; A = 0 when the steps ran out.\nChanges: AF, BC, DE, HL, bc', de', hl'.",
+          "provenance": "source"
+        },
+        "3194": {
+          "synopsis": "The last square-root step of sqr_1, with no radicand bits left: doubles the remainder HLhl,\nincrements C and subtracts the trial root BCbc when it fits (undoing it otherwise). When the\ndoubling overflows it subtracts without the test and goes on at the loop's end (loc_0_E46F).\nEntry: HLhl = remainder; BCbc = root; A = step counter (alternate register set active).\nExit: HLhl = new remainder; C incremented when the subtraction stood; A incremented.\nChanges: AF, C, HL, hl'.",
+          "provenance": "source"
+        },
+        "3245": {
+          "synopsis": "Reads the byte at IX for FPVal's number reader. An address in segment 3 ($C000-$FFFF), where\nthe FPP itself runs, is read through segment 1: the caller's S3 bank (from the call frame,\nIY+OSFrame_S3) is bound into segment 1 for the read and BLSC_SR1 is restored after it.\nEntry: IX = address; IY = FP call frame.\nExit: A = byte; DE = IX.\nChanges: A, DE, A' (segment 3 only: it then holds the old BLSC_SR1).\nKeeps: F, BC, HL, IX.",
+          "provenance": "source"
+        },
+        "3286": {
+          "synopsis": "Writes A to the byte at HL for FPStr. An address in segment 3 ($C000-$FFFF), where the FPP\nitself runs, is written through segment 1: the caller's S3 bank (from the call frame,\nIY+OSFrame_S3) is bound into segment 1 for the write and BLSC_SR1 is restored after it.\nEntry: A = byte; HL = address; IY = FP call frame.\nExit: byte written.\nChanges: A' (segment 3 only: it then holds the old BLSC_SR1).\nKeeps: AF, BC, DE, HL.",
+          "provenance": "source"
+        }
+      }
     },
     "16": {
       "page": {

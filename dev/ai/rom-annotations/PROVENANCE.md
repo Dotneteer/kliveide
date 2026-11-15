@@ -2590,3 +2590,14 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
 - **Sources:** the OZ V4.7 source (commit `603c979a`), used under the owner's permission (D-OZ1), and the ROM
   bytes. The entries are `source`. Not shipped yet (Q1).
 - **Level:** measured 2 on banks 0 and 1 (and $10); both reassemble byte for byte.
+
+### 2026-11-15 — Cambridge Z88: OZ 4.7, GN, DC and Index, and the FPP (banks 3, $0C, $0D) to level 2
+
+- **What:** 277 synopses in `z88-oz47-authored.json`: GN (89), the DC calls and the Index popdown (133) and
+  the floating-point package (55), every label level 2 asks for in those banks.
+- **How:** as for the kernel: context packs (`tools/z88-synopsis-pack.cjs`), four helper agents with
+  `helper-briefs/z88-draft-synopses.md`, checked and merged with `tools/z88-synopsis-merge.cjs`; the helpers'
+  notes are in `z88-oz47-review.md`. The FPP's constants (sqrt 2, ln 2, pi/4, tan(pi/8)) were checked by
+  calculation.
+- **Sources:** the OZ V4.7 source (commit `603c979a`, D-OZ1) and the ROM bytes; the entries are `source`.
+- **Level:** measured 2 on banks 3, $0C and $0D; each reassembles byte for byte. Not shipped yet (Q1).

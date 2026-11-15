@@ -55,3 +55,37 @@ that a later pass should confirm. Plan: `dev/plans/Z88_OZ47_ROM_ANNOTATIONS_PLAN
 - (kernel-6) GetPrvNonInfoTpc (1:10451) searches upwards from A-1, so it returns the previous non-INFO topic only when A-1 itself is not an INFO topic.
 - (kernel-6) Key2Chr_tbl, Chr2VDU_tbl and VDU2Chr_tbl are one table at $B4E1 (90 entries, to $B648) seen through three columns; it has no terminator in key2chrt.asm, the zero bytes at $B649 end the Chr2ScreenCode search.
 - (kernel-6) CheckFit (1:11286): when the given length is 255 SpPanel skips writing the attribute (the old one is still dropped), which looks like the way to reset a setting to its default; inferred from SpPanel, not documented.
+
+## GN, DC and Index, the FPP: banks 3, $0C and $0D (2026-11-15)
+
+- (gn-1) gdt_0 (3:1173): GNGdt pushes IX and then the old S1 binding before 'call gdt_0', and gdt_0 pushes nothing before gdt_4's 'ex (sp), ix', so for a handle or filter source (HL < 2) ReadOsfHL appears to get gdt_0's return address as IX, not the caller's IX. The OZ 4.0 layout (no S1 wrapper) had the caller's IX at (sp). Confirmed in the bytes at $C482-$C4BC; not run. Synopsis does not mention it.
+- (gn-1) pdtFlw (3:1981): its error path drops one return address. That is right when called from pdt_0 or tail-jumped from pdtPutDoM/pdtPutMon, but pdtpm_2 'call pdtFlw' is two levels below pdt_0, so a GN_Flw error there looks like it unwinds one level too few. Not stated in the synopsis.
+- (gn-1) GetEscQKey (3:7235): both exits return Fz = 1, so GNErr's 'jr nz, escq_wait_key' and 'jr z, err_7' loops never repeat; written into the synopsis.
+- (gn-1) flo_GetMaxBSize (3:4250): always returns Fc = 0, so GN_Flo's 'jr c, flo_4' (bad table) after it never fires.
+- (gn-1) ReturnCrcPartial (3:13471): source comment says 'Fc = 0, Fz = 0' but 'cp a' gives Fz = 1.
+- (gn-1) bix_s1s2 (3:6262): the source comment 'S1=caller S2' on the HL-in-S3 path is wrong; the code binds caller S3 into S1 and keeps the current S2.
+- (gn-1) GN_ret1b/1c/0: described by which values reach the caller (frame copies vs function registers); the exx bookkeeping inside OZCallReturn0/1 was not traced further.
+- (gn-1) die_17 / AddYearDays: the 'leap year flag' copied into B' is bit 0 of the main B (the rule loop counter) per the source comments; not verified beyond that.
+- (gn-1) InvCaseTable_end (3:6161) shares its address with SipExtended_tbl (no separate label in the slice).
+- (dc-1) The command table main_3 has a 0 word for code 9 (cmd_purge, removed): MainLoop does not filter it, so command code 9 would jump to address 0.
+- (dc-1) FreeCli frees the head of eIdxCliList (the newest CLI), not necessarily the CLI in IY; sub_D0D1 relies on the CLI in IY being the head, as GetCLI binds the head.
+- (dc-1) FreeCli leaves the freed CLI's bank bound in S1; its callers restore S1 themselves.
+- (dc-1) OpenBootCli: if DC_Icl fails the file is closed and Fc follows OS_Cl, so Index then does not try the EPR Boot.cli (index.asm:152 'jr nc, IndexReEntry').
+- (dc-1) Callers listed for MainLoop, main_2, main_3, RemoveHighlight, ApplyA, DisplayCard, ZeroMem and GetLinkCDE include same-named labels in other banks' applications (filer, calculator, panel, flashstore); the synopses describe the bank $0C code only.
+- (dc-1) Screen driver codes used here were checked in os/scrdrv1.asm (ScrDrvCmdTable): 1,"2C",$FE clears to the end of the window, $FD to the end of the line; 1,$FF scrolls up; 1,"2A",n applies the toggled attributes (ApplyScrAttr).
+- (dc-2) DispFreeRamMap's pixel factor loop (freeram.asm factor_loop) rotates 8 right once per bank above one, so it gives 4 for a 2-bank card (correct, 8/2) but 1 for a 4-bank (64K) card where 8/4 = 2 is intended; odd sizes give other values. The synopsis states what the code does, not the comment's '8/card size'.
+- (dc-2) DoInstall's bank loop (install.asm ci_allocmem_1: inc c; cp 7) stops when C reaches 7, so only AP0-AP6 are loaded although the comments say 0-7 and up to 8 banks are accepted. The synopsis says 'each bank entry' and step 4 does not claim AP7.
+- (dc-2) The slice lists os/ossi0.asm:669/677 as callers of ConvHexNibble; ossi0.asm has its own ConvHexNibble (ossi0.asm:684), so those are a name collision, not callers of this bank $0C routine.
+- (dc-2) CfgFilename is ':RAM.?/ozs?-*.upd' although the comments and cfgsyntax2_msg still say 'ozupdate.cfg'; the synopsis records both.
+- (dc-2) Window block layout (InfoWdBlock, InstallWdBlock, RemoveWdBlock, UpdateWdBlock) is read from gn/gnwin.asm's GN_Win header: byte 0 = flags|ID, then X, Y, width, height, banner pointer.
+- (dc-2) DC_Pol contract taken from dc/dc.asm: A bit 7 set tests the application handle in IX; Fz = 1 when not in use. GN_Cl returns IX = 0 (gn/gnfile.asm header), used for CloseCfgFile/ci_CloseFile exits.
+- (dc-2) Changes: lines were left out for routines whose OZ calls (OS_Pout, GN_Win, OS_Hout) I did not trace beyond their headers; DispCardSizeClmn's 'no cursor no scrolling' source comment for 1,'2+T' was not repeated.
+- (fp-1) Number format, as the code uses it: HLhlC (DEdeB) with H the top byte and l (e) the alternate low byte. C = 0: a 32-bit two's complement integer in HLhl. C <> 0: a float of value 1.m * 2^(C - $80) (the Developers' Notes' 0.1m * 2^(C - 127)), the mantissa's top 1 implied and H bit 7 holding the sign; 1.0 = 0,0,0,0,$80; pi = $490FDAA2, $81. In memory (LdDEdeB_IX, the series tables): l, h, L, H, exponent. On the stack (PushHLhlC): BC, HL, hl', six bytes.
+- (fp-1) Errors inside the FPP jump to FPError, which resets SP from IY (the frame FPPmain built in os/lowram/rst.asm) and returns from the FP call with Fc = 1, A = RC_xxx; the internal routines' Error lines say this. Success returns through the $C000 return address FPPmain pushes (cp a: Fc = 0).
+- (fp-1) Division, sub_0_E40E (multiply), sub_0_E441 and sub_0_E47A (square root) and loc_0_E3FB are called with the alternate register set active: their first operations act on the low halves. Their contracts name the registers in the usual sense (HLhl with H the top byte).
+- (fp-1) div_2 (not in this slice) is the integer multiply that FPMul reaches when both operands are integers; its name is from the reverse engineering and is misleading.
+- (fp-1) FPMul's callers listed in the slice are apps/calculator/calc.asm's own FpMul (a case-insensitive name match), not this routine.
+- (fp-1) FPMod/FPIdv (mod_1) have no zero-divisor check, unlike div_1 (RC_Dvz). Not run; read from the code.
+- (fp-1) Possible bug, read from the code and not run: sub_0_E13A keeps the exponent's sign character in AF' (ex af,af' after GetNumStart) while ReadNum -> ReadByteIX replaces A' with the old BLSC_SR1 when IX is in segment 3, so 'E-n' in a string in segment 3 could lose its minus sign.
+- (fp-1) sub_0_E37D's tables end with a coefficient of exponent $80 or $81 (1.0 or 2.0): the routine returns onto those five bytes, which execute as NOP x4 and ADD A,B / ADD A,C. This is why the last coefficient doubles as the terminator.
+- (fp-1) Thresholds checked numerically: $3504F333 at $80 = sqrt 2 (FPLn), $5413CCD0 at $7E = tan(pi/8), $1A82799A at $81 = tan(3*pi/8) (FPAtn), $3172:$17F8 with bc' $D1CF = 48-bit ln 2, $490FDAA2 with bc' $2169 = pi/4.
