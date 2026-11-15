@@ -2613,3 +2613,13 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
   `z88-dis.cjs` was fixed to list a run stored away from where it runs (LOWRAM).
 - **Sources:** the OZ V4.7 source (commit `603c979a`, D-OZ1) and the ROM bytes; the entries are `source`.
 - **Level:** measured 2 on banks 2 and 8; both reassemble byte for byte. Not shipped yet (Q1).
+
+### 2026-11-15 — Cambridge Z88: OZ 4.7, banks 4 and 7 to level 2
+
+- **What:** 586 synopses in `z88-oz47-authored.json`: bank 4's Diary and its Clock, Calendar and Alarm
+  popdowns (309), and bank 7's Panel and PrinterEd, Terminal, Calculator and Imp/Export (277).
+- **How:** as before, eight helpers with `helper-briefs/z88-draft-synopses.md`; where several modules of a
+  bank define the same name, each label was matched to the module its address falls in and checked against
+  the bytes with `z88-dis.cjs`. The helpers' notes are in `z88-oz47-review.md`.
+- **Sources:** the OZ V4.7 source (commit `603c979a`, D-OZ1) and the ROM bytes; the entries are `source`.
+- **Level:** measured 2 on banks 4 and 7; both reassemble byte for byte. Not shipped yet (Q1).

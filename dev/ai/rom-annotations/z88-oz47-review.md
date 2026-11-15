@@ -118,3 +118,64 @@ that a later pass should confirm. Plan: `dev/plans/Z88_OZ47_ROM_ANNOTATIONS_PLAN
 - (mth-4) TrNout strings are ESC R n, c, ESC R 0 (Epson international character set select, per the source's 'Epson FX-80 compatible' comment); I did not name the country of each set n, since sets 11, 14 and 15 are beyond the FX-80's documented 0-8 and I could not verify them.
 - (mth-4) ErrStr_tbl entries are 4 bytes: code, flags (Z80F_Z = fatal), word pointer; GN_Esp (gn/gnerror.asm GNEsp/FindErrStr) puts the flags into the caller's F and returns BHL with B = MTH_BNK. Fatal codes: RC_Unk, RC_Bad, RC_Ms, RC_Err (all Internal_err), RC_Na, RC_Hand, RC_Type.
 - (mth-4) The source's ISO 8859-1 comments are mojibake in the slice (UTF-8 read as Latin-1); the character names come from the defb values, written in ASCII words.
+
+## Banks 4 (Diary, Clock, Calendar, Alarm) and 7 (Panel, PrinterEd, Terminal, Calculator, Imp/Export) (2026-11-15)
+
+- (b4-1) Data model: IX points at the 254-byte state block (eMem_dix_254); dix_* are offsets into it. Dates and the lines of each date are GN_Xin/GN_Xnx XOR-linked lists in the S1 pool (BHL = node, CDE = previous); each list position is a pair Prev/Node (eCurrentDatePrev/eCurrentDate, eSrchLnPrev/eSrchLn, eTopLnPrev/eTopLine). Date node: 9 bytes (link, date +3, line list head +6); line node: link, length at +3, text at +4. The first date's previous pointer is dix_18 in the state block, the first line's is the date node's field at +6.
+- (b4-1) Line buffers (eMem_LineBuffers): input buffer offset 0, Buffer2 $4F, Buffer3 $9E (search string); the replacement string is at state-block offset $7D.
+- (b4-1) Command codes: Commands_tbl index = key code - $20 ($20 MarkBlock .. $40 Save, matching mth/appmth.asm DiaryCommands); NextOption accepts index up to $21, one past the 33-entry table, but MTH defines no code $41.
+- (b4-1) loc_C0E4 (not in this slice) is the common 'show the date in dix_CurrentDate, creating its node' path; loc_D45C/loc_D465/loc_D46B are the redraw-and-return-to-NextOption tails.
+- (b4-1) MayRemoveDate frees the 9-byte date node but not the single empty line node it may hold (observed from the code, no free call for it).
+- (b4-1) sub_D681 reads (ix+DF5E_B_LOADATDATE) = (ix+7) where dix_eSrchDatePrev+1 is meant; the values coincide (both offset 7), so it works.
+- (b4-1) sub_D40C is at $D3CC (source names keep the OZ 4.0 addresses).
+- (b4-2) IX holds the Diary's 254-byte work area (eMem_dix_254) throughout. Its pointer pairs are 6 bytes: the previous entry (stored E, D, C) then the entry itself (L, H, B), so the Get/Put routines move CDE and BHL.
+- (b4-2) Dates and lines are GN_Xnx XOR-linked lists. The date list head is the 3-byte pointer at work-area offset $18, and the 'previous' of the first date is that head's own address, which is why TstPrevNode looks two entries back. A date entry holds its date at +3 and its line list head at +6 (InitSearchDate).
+- (b4-2) GetPrev on a null CDE returns Fc = 1 but A is overwritten by xnx2_1 (A = old B), so RC_Eof is not returned.
+- (b4-2) RdMailDate falls into WrMailDate: after reading the DATE mail it posts 6 bytes (current date plus dix_e24) back. OS_Sr SR_WPD stores only a pointer to that data.
+- (b4-2) RemoveError clears row 5 of window 3 while PrntTextXY/ShowError write the message on row 4 and ShowInsertMode uses row 5; described literally, not explained.
+- (b4-2) GetOutHandle has a second source definition in apps/clock/clcalalm.asm; the bank-4 code is the Diary's copy.
+- (b4-2) DoUI: '-' moves to the next item and '.' to the previous one, as the code compares them; whether the keyboard maps cursor keys to these was not checked.
+- (b4-3) GetOutHnd_clcllm ($E9C0) is the clcalalm.asm:461 definition: it is inside the CCA code that starts with the three popdown vectors at $E7EE (jp ClockEnt/CalendarEnt/AlarmEnt). The Diary copy (diary.asm:5318) has identical bytes but lies below $E7EE.
+- (b4-3) Calling convention of the popdown helpers: MoveToXYbc/AskDate/AskTime take B = column, C = row. KeyJump enters a handler with BC and DE kept and HL = the caller BC; KeyJump0 passes DE through, and the Calendar keeps the highlighted day in D across its key handlers.
+- (b4-3) Window 5 is used by both the Clock (GN_Win, MainWindowDef: $A5 at (78,0), 14x8) and the Calendar (CalWindow_txt: SOH 7#5 at (42,0), 35x8).
+- (b4-3) Exit ($E7F7) and TestKeys are not in this slice; synopses refer to them by their source names. Cal_Right, Cal_SUpDn, Clock_Enter, HighlightDay, LowlightDay, FindNext/PrevDiaryEntry, DrawMonthDay are also referenced by name and are not in the slice.
+- (b4-3) PrntFilename has no ret: it falls into PrntErrorPost (checked at $E615/$E618). ToggleTR falls into ToggleRvrs.
+- (b4-3) Cal_Enter leaves IX pointing at its freed 3-byte stack buffer (ld ix,-3; add ix,sp; ... inc sp x3): IX is not restored.
+- (b4-3) Cl_Set returns AF as it stands after OS_Alm AH_ADEC on success (push af at clset_1), not IN_ENT, so no Exit line is given.
+- (b4-4) No name clashes in this slice: every label's bytes match its definition in calendar.asm or alarm.asm (checked with z88-dis.cjs from $2FD9 to $3BC3).
+- (b4-4) Some caller lists name other modules' labels of the same name: ahb_1 (os/filesys.asm), GetNextAlarm (gn/gnalarm.asm), get_filename (apps/impexport/xy-modem.asm). These are not callers of the bank 4 routines.
+- (b4-4) The diary list is XOR-linked (gn/gnlist.asm, GN_Xnx: IN BHL current, CDE previous; OUT BHL next, CDE = old BHL); OrigDiaryEntry is read with the DATE mail (OS_Sr reads 6 bytes into CurrentDay and OrigDiaryEntry in init_calendar).
+- (b4-4) PressEsc_txt is code (kind code is right): it is AlmView's tail, also called after Load/Save. On RC_Draw it jumps to AlmView whatever the caller.
+- (b4-4) get_filename: an error other than Susp/Esc/Quit goes to do_error, which reports it with GN_Err and returns Fc = 0, so its callers go on as if a name was typed.
+- (b4-4) The DrawHilight toggles (tiny + reverse) stay set while a field is edited; the matching Rm...Hilight toggles them back. ApplyToggles = SOH 2 A n (clcalalm.asm).
+- (b4-4) AlmShowRepeat prints only HL (GN_Pdn with HL = 2 prints BC, loaded from HL); B of the BHL value is ignored.
+- (b4-4) Changes lines through OZ calls (OS_Pout, GN_Sop, GN_Pdn) list only the registers the routine itself loads; I did not trace those calls' own register use.
+- (b7-1) Exit at $C5E7 is panelped.asm's (pools closed, OS_Bye A = 0); main_2 at $C07C is PrinterEd's, main_2_calc at $D6BB the Calculator's (Enter presses the active button). PrntBell at $C6BD is panelped's.
+- (b7-1) CmdEnter's source comment "panel? handle as escape" is misleading: the Panel applies the settings (CmdUpdate) and exits; PrinterEd treats Enter as cursor down.
+- (b7-1) OS_Sp with A = 255 (CmdNew, and CmdUpdate for an entry without a value) is described only as A = 255; I did not trace what the kernel does with that length.
+- (b7-1) UndrawFilenameWd sends 1,"2D2"; described by the bytes it writes, not by its VDU meaning.
+- (b7-1) Terminal putkey after a timeout returns with the flags of the OS_Out that sounded the bell; the callers' jr c expects Fc = 1 there, which is not established, so Exit/Error say only what is sure.
+- (b7-2) Every label of this slice is in the Calculator (apps/calculator/calc.asm); the listing's addresses match the source (checked with z88-dis.cjs, $D786-$D7F9).
+- (b7-2) FReg1 is the FPP's first operand HL (high word), HL' (low word), C (exponent); FReg2 is DE, DE', B. FpSub and FpDiv swap the two before FP_SUB/FP_DIV, so they compute FReg2 - FReg1 and FReg2 / FReg1 (StoM- is memory - value, StoM/ memory / value).
+- (b7-2) IndirectJump (not in this slice): entered with the other register set active, C = index and IX = word table; it jumps to the entry with the main set back and IX = DE. That is why the handlers here get DE = IX (DoStoM's operator pointer, StoM_xxx's memory slot).
+- (b7-2) Unit conversion handlers (UnitCmd_tbl) end the conversion by returning Fc = 1; the cursor ones return Fc = 0 from OR/XOR; ckey_Num/ckey_Dot rely on OS_Pout's Fc = 0.
+- (b7-2) PercMul sets CF_B_3; key_Add and key_Sub keep it (so y x% then + gives y + x*y/100), key_Mul, key_Div and key_Equ clear it. Read from loc_F9AB/loc_FA07, not in this slice.
+- (b7-2) Fix stores 2*digit+1 in varFix; sub_FEBC turns it back into E' = digit for FP_STR, with D' = 0 for digit 9 and D' = 2 otherwise (and D' = E' = 2 when no Fix was set). I did not trace FP_STR's format codes, so the synopsis only says 9 selects a different format.
+- (b7-2) The Gallons factor .219978442 is the source's value (a litre is about 0.21997 imperial gallons); described as given.
+- (b7-3) Calculator floating point: 'FPP register 1' is HL' (low word), HL (high word), C (exponent) and 'register 2' is DE', DE, B, the FPP's own operand registers; an exponent byte of 0 marks an integer (ldFReg2_32, ldFReg2_100). FpSub and FpDiv exchange the registers first, so they compute register 2 - register 1 and register 2 / register 1 (calc.asm 1812-1835).
+- (b7-3) IndirectJump (calc.asm 1284) has an unusual convention: the caller does EXX, loads C (and IX) in the other set, then CALLs; the routine EXXes back and sets IX = DE before jumping (push de / ex (sp),ix / ret). DoStoM and key_Num rely on IX = DE.
+- (b7-3) FP_STR's format in D'/E' (sub_FEBC) is described from the code only (D' = 2, E' = 2 by default; E' = Fix digits, D' = 0 for Fix 9); what the format codes mean in the FPP was not traced.
+- (b7-3) Cmd_BatchRcv and Cmd_EndBatch test Fc on entry (call c, PrntError / jr c), but app_main's dispatcher always enters with Fc = 0 (sla c and add hl,bc on small values), so those paths are dead from there. Receive always returns through SndRcv_End, which ends with OR A (Fc = 0), so brcv_1's RET C is never taken either.
+- (b7-3) Imp_Export ($E400) is JP app_main followed by SCF, RET; nothing in the source explains the SCF, RET, so the synopsis only says they are not reached from the jump.
+- (b7-4) Bank 7 $E600-$F49A is all Imp/Export (impexp.asm to $E9BB, xy-modem.asm from xymodem_init at $E9BC); app_main_xymodem is xy-modem.asm's app_main (bytes at $E9EF: ld a,$0C; oz OS_Out), not impexp.asm's at $E403.
+- (b7-4) Imp/Export's message numbers are a defgroup from 0: ERR_System 0 (print the OZ error), ERR_Response 1, ERR_Data 2, MSG_Eob 3, MSG_Eof 4, ERR_Esc 5, ERR_Name 6, MSG_AllSent 7; Error_n is message n.
+- (b7-4) hw_rxbt/hw_txbt signal the cause of a failure in Fz (1 = timeout, 0 = key pressed); timeout_to_main reads it to print Timeout or Escape. hw_txbt does not keep A on failure (source comment).
+- (b7-4) hw_rxbt's keyboard test reads BL_KBD with the high address byte B' = target second (0-59), so the selected rows vary; bit 7 is always 0, so the A15 row (ESC, per the commented-out is_esc) is always read.
+- (b7-4) RcvFilename returns its result in P/V: F = 4 (Fpe) after a name, F = 0 (Fpo) with a hex byte in A; Receive tests it with jp pe.
+- (b7-4) file_close calls GN_Cl with whatever IX holds; it relies on IX still being the handle open_file returned.
+- (b7-4) send_file returns with Fc = 1 if GN_Pdn fails without freeing the DOR handle; recorded as seen, not tested.
+- (b7-4) send_file builds the Ymodem header in data_buf0 = fname_buf+1, so the header's name is the explicit name without its leading ':' ("RAM.0/..."); it also checks fname_buf+2 = 'A' for RAM.
+- (b7-4) The 'B' key in the X/Y-modem menu has no action (its jump is commented out); end_of_batch_str is unused.
+- (b7-4) clear_prog_ind: I did not establish what SOH "2C" $FD does exactly (I described it as removing the spinner from context).
+- (b7-4) RcvB/MaySendB pass BC = 60000 to OS_Si; the source says 60 s; the OS_Si timeout unit was not checked.
+- (merge) b4-4's Changes: lines list only the registers each routine loads itself, not those the OZ calls inside it may change: a later pass may check them.
