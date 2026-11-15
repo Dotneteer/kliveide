@@ -9,7 +9,8 @@ specific to the Z88's OZ 4.7 ROM, `src/public/roms/z88v47.rom`. The plan is
 D4 has an exception for OZ, granted with the owner's permission (plan D-OZ1, D-OZ2): the
 annotations come from the OZ project's own assembler source, <https://bitbucket.org/cambridge/oz>,
 and are imported by a script, never copied by hand. Entries are marked `source` (plan D-OZ3). The
-OZ source is GPL v2. Nothing from it ships until the permission is recorded (plan Q1).
+OZ source is GPL v2. The permission, from Gunther Strube, is recorded verbatim in
+`src/public/roms/z88-roms-readme.txt` and `THIRD_PARTY_NOTICES.md` (2026-11-15).
 
 The pre-OZ-4 ROMs (`z88ukv30` and the national 3.x ROMs) are **not** covered: they stay under D4.
 So does any ROM Klive annotates by carrying from this sidecar.
@@ -189,3 +190,19 @@ section says what is done, how to check it and what is left.
 
 Decoder facts learned on the way: `EXTCALL` (OZ 4.5+) is `RST 28h` plus 4 bytes, the address, the
 bank and a spare byte OZ skips. OZ 3.x and 4.0 have no `EXTCALL`: their $0028 is ordinary code.
+
+## Shipping and updating (Phase 4, 2026-11-15)
+
+- **The shipped file is the import, unchanged.** `node dev/scripts/import-oz-source.cjs --all`, then copy
+  `.local/oz-import/z88v47.rom.dis` to `src/public/roms/z88v47.rom.dis` and run `npm run rom:annotations`
+  (formats every sidecar and regenerates `rom-annotations.index.json`, which binds each bank by its CRC).
+  Never hand-edit the shipped file: edit `z88-oz47-authored.json` (or the rename table) and import again,
+  so the next import keeps the change.
+- **Before shipping a change:** `check-annotations.cjs` (`"problems": []`, level 2 everywhere), the
+  reassembly template on each bank touched, the coverage run when regions changed, and
+  `test/annotations/` (the shipped-sidecar test checks `source` against `sourceCode`).
+- **The working copy** (`~/Klive/RomAnnotations/z88v47.rom.dis`) wins over the shipped file in the IDE;
+  after shipping, the ROM annotation editor shows whether the shipped file changed since it was taken.
+- **Another OZ release** (`z88v50b`, `z88ukv40`): identify its build as Phase 0 did, add its components
+  and a `.local/<tag>/oz` checkout, import, review the reports, and go through Phases 3 and 4 again; the
+  permission covers every OZ release from the same repository (plan D-OZ1).

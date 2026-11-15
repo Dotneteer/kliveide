@@ -137,3 +137,20 @@ hardware, although it is allowed to sell a product which contains the
 ROMs, so long as the charge is being made for the product, not for the
 ROMs themselves. The copyright messages in the ROMs must be kept.
 ```
+
+## The Cambridge Z88 OZ 4.7 ROM annotations — OZ source, GPL v2, used with permission
+
+`src/public/roms/z88v47.rom.dis` (shipped under `roms/`), the annotations of the Cambridge Z88's OZ 4.7
+ROM, takes most of its labels, routine descriptions and comments from the OZ project's assembler source
+(<https://bitbucket.org/cambridge/oz>, tag `V4.7`, commit `603c979a…`): GPL v2 software by the Cambridge
+Z88 developers, among them Gunther Strube, Thierry Peycru and Jorma Oksanen, over the original binary
+implementation, (C) 1987, 1988 Trinity Concepts Limited, Protechnic Computers Limited and Operating
+Systems Limited. Gunther Strube gave the Klive IDE project this permission, recorded on 2026-11-15:
+
+```
+I, Gunther Strube, allow the Klive IDE project to use the Cambridge Z88 OZ
+source code to be publicly used in the ROM annotations.
+```
+
+The entries taken from the source are marked `source` in the file. The details are kept beside it in
+`z88-roms-readme.txt`.

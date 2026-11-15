@@ -2676,3 +2676,11 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
   bank 9 left out, D-OZ7) with no problems, every bank reassembles byte for byte, and the coverage run
   (`tools/z88-coverage-run.ts.txt`) finds no code in a data region and no unlisted executed start.
 - **Level:** 2, recorded. Not shipped yet (Q1).
+
+### 2026-11-15 — Cambridge Z88: OZ 4.7 shipped
+
+- **What:** `src/public/roms/z88v47.rom.dis` ships at level 2 (the import, unchanged), with its 15 pages in
+  `rom-annotations.index.json`.
+- **Permission:** Gunther Strube's, worded by the developer (plan Q1) and recorded verbatim in
+  `src/public/roms/z88-roms-readme.txt` and `THIRD_PARTY_NOTICES.md`: the D4 exemption of the plan's D-OZ1.
+- **Level:** 2, recorded and shipped.

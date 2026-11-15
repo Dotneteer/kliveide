@@ -62,7 +62,7 @@ developers use it.
 | Call stack, watches | ✅ (+ BASIC and C call stacks) | ✅ | ? | ✗ | ✅ | ◐ |
 | Disassembly insight | ✅ branch verdicts with T-state cost, system-variable operands, T-state measuring | ✅ | ◐ | ◐ | ✅ | ✗ |
 | NEX reverse engineering | ✅ debug any `.nex` with no project, bank breakpoints and watchpoints, entry stop, live bank vs. file diff, `.nex.dis` annotations with Copper/DMA regions | ◐ (DeZog Analyze) | ✗ | ✗ | ✗ (no Next) | ✗ |
-| General reverse engineering | ✅ annotations on every machine; every shipped ROM annotated to level 2 (48K, 128K, +2A/+3/+3E, ZX80/ZX81, every Next ROM set, HT-1080Z, TVC, and the Enterprise's except IS-BASIC 2.0); code/data detection from coverage, graphics finder, SkoolKit, source export verified by reassembly | ◐ | ✗ | ✗ | ✅ | ✗ |
+| General reverse engineering | ✅ annotations on every machine; every shipped ROM annotated to level 2 (48K, 128K, +2A/+3/+3E, ZX80/ZX81, every Next ROM set, HT-1080Z, TVC, the Enterprise's except IS-BASIC 2.0, and the Cambridge Z88's OZ 4.7 from OZ's own source with its author's permission **(after v0.67.0)**); code/data detection from coverage, graphics finder, SkoolKit, source export verified by reassembly | ◐ | ✗ | ✗ | ✅ | ✗ |
 | **Live Next inspectors** | ✅ Copper (with a raster ruler and list checks), Sprite, Tilemap and Layer 2 Inspectors, layer composition with a pixel probe naming the mixer rule (apparently unique) | ✅ (ZEsarUX) | ? | — | — | ✗ |
 | Beam position on the paused screen | ✅ on the Next and every Spectrum model, the picture drawn up to the beam | ✅ (ZEsarUX) | ? | ? | ? | ✗ |
 | Next asset editors | ✅ sprites, palettes, Layer 2 pictures, images | ✗ | ✗ | — | — | ✗ |
@@ -86,7 +86,7 @@ developers use it.
 3. **Next-native:** NextReg, Copper and sprite breakpoints, bank breakpoints, the live inspectors, the
    `.dma`/`.copper` DSLs, `.savenex`, asset editors, a cached NextZXOS boot.
 4. **NEX and ROM reverse engineering:** debug any `.nex` with no project; annotations on every
-   machine; every shipped ROM annotated from scratch.
+   machine; every shipped ROM annotated from scratch (the Z88's OZ 4.7 from OZ's own source, with permission).
 5. **Modern debugging on 1980s machines:** full reverse debugging, coverage, a call-graph profiler,
    deterministic unit tests in CI.
 6. **Engineering credibility:** C/WASM cores citing the hardware sources, real-machine timing suites
@@ -102,7 +102,7 @@ developers use it.
 
 Closed: W1 logpoints and rich breakpoints (G1), W2 reverse debugging (G4), W3 unit tests, coverage and
 profiler (G5), W4 live Next inspectors (G3), W5 snapshots, state files and RZX (G2), W7 reverse
-engineering depth (G7), W9 machine breadth (G9). Their detail is in §2.
+engineering depth (G7; the Z88's OZ 4.7 ROM annotations added after v0.67.0), W9 machine breadth (G9). Their detail is in §2.
 
 **Release status note** (update it to each release; the release PR's checklist asks for it):
 everything above shipped by **v0.67.0** except what §2 marks **(after v0.67.0)**. The landing page

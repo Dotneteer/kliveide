@@ -1,12 +1,11 @@
 # Cambridge Z88 OZ 4.7 ROM Annotations — Plan
 
-**Status:** In progress (2026-11-14). Phase 0 done (the build identified; no rebuild, D-OZ5). Phase 1
-done (Z88 bank space, ROM pages, `z88-oz` decoding, `source` provenance; checked in the running IDE).
-Phase 2 done (2026-11-15): every component with source imports (banks 0-8, $0A-$0D and $1F), and each bank
-reassembles byte for byte. Phase 3 done (2026-11-15): every annotated bank measures level 2, and the sidecar records it; level 2
-counts routines (D-OZ6) and bank 9 is left out (D-OZ7). The system banks are level 2: the kernel (0, 1),
-bank 2, GN (3), MTH (8), DC and Index ($0C), the FPP ($0D) and the file area ($10); so are banks 4, 7,
-$0A (EazyLink, the Filer), $0B (FlashStore) and $1F (the ROM header). PipeDream (5, 6) completed it. The rename proposals are reviewed, the IDE names operands across runs and banks, and the coverage run is clean. Left: Phase 4, shipping, which waits for Q1 (the permission's wording). **To continue in a new session, read "Handoff (2026-11-15)" at the end of Phase 3.**
+**Status:** Done (2026-11-15). `src/public/roms/z88v47.rom.dis` ships at level 2: every OZ 4.7 bank that has
+source (banks 0-8, $0A-$0D, $10 and $1F) is imported from OZ's own source with its author's permission
+(D-OZ1, D-OZ2, recorded in `src/public/roms/z88-roms-readme.txt` and `THIRD_PARTY_NOTICES.md`); bank 9,
+BBC BASIC, is left out (D-OZ7). Each bank reassembles byte for byte, and the coverage run is clean. The ROM
+page listing names operands across runs and banks (`romRunNaming.ts`). What is left is in "Follow-ups".
+The durable record of how it is built and updated is `dev/ai/rom-annotations/z88-authoring-guide.md`.
 **Goal:** a shipped sidecar `src/public/roms/z88v47.rom.dis` that annotates the OZ 4.7 ROM's banks to
 level 2 (all but bank 9, D-OZ7). It is built mostly from the OZ project's own assembler source,
 <https://bitbucket.org/cambridge/oz/src/V4.7/>, which the owner has given permission to use.
@@ -27,7 +26,9 @@ template for the Z88 one).
   who granted it, when, and its scope (shipping labels and comments derived from the GPL v2 source inside
   an MIT application, and under which notice). It goes in `src/public/roms/z88-roms-readme.txt`, with an
   entry in `THIRD_PARTY_NOTICES.md` that credits the OZ authors and the repository and tag.
-  *Open: the exact wording, which needs the author's input (Q1).*
+  *Done (2026-11-15):* the developer supplied the wording (Q1), recorded verbatim in both places:
+  "I, Gunther Strube, allow the Klive IDE project to use the Cambridge Z88 OZ source code to be publicly
+  used in the ROM annotations." 
 - **D-OZ3. A new provenance value, `source`,** marks an entry taken from the original source. It sits
   beside `observed`, `manual` and `derived`. `shippedRomSidecars.test.ts` accepts it only in a sidecar
   whose header names a source (a new `source` key: repository, tag, commit). That keeps `source` from
@@ -75,7 +76,8 @@ template for the Z88 one).
 
 ## 3. Open questions
 
-- **Q1.** The permission's exact scope and wording (D-OZ2). Phase 3 cannot ship without it.
+- **Q1. Answered (2026-11-15):** the wording, from the developer, is recorded in
+  `src/public/roms/z88-roms-readme.txt` and `THIRD_PARTY_NOTICES.md` (D-OZ2).
 - **Q2. Answered (2026-11-14):** the slot 0 build of the V4.7 tag, commit `603c979a`. The ROM carries
   that revision at $5E36, in the lower kernel bank, which is bank 1 only in slot 0. Evidence and the
   bank map are in `dev/ai/rom-annotations/z88-authoring-guide.md`. There is no rebuild to compare
@@ -479,11 +481,8 @@ names several modules share), check each draft (`z88-synopsis-merge.cjs <slice>:
 sample, merge, re-import, check, reassemble, install the working copy, append `z88-synopsis-notes.cjs`
 output to `z88-oz47-review.md` and add a `PROVENANCE.md` entry. Ask the helpers for decimal IY offsets.
 
-**Next steps, in order:** Phase 3 is done. Phase 4 (below) ships the sidecar, and it waits for **Q1**, the
-exact wording of the owner's permission (D-OZ2), which only the developer can supply. Then: copy
-`.local/oz-import/z88v47.rom.dis` to `src/public/roms/z88v47.rom.dis`, run `npm run rom:annotations` (format and
-index), add the permission notice and `THIRD_PARTY_NOTICES.md` entry, and turn the branch's changeset into the
-`feature` one. The FlashStore fault the coverage run found is open but does not block it.
+**Next steps:** none in this plan; it is done (Phase 4). Changes to the shipped file go through the import
+(`z88-authoring-guide.md`, "Shipping and updating"); the follow-ups are in §5.
 
 **Checks after each batch.** The reassembly template: copy
 `dev/ai/rom-annotations/tools/reassemble-test.ts.txt` to `test/reverse-eng/zz-reassemble.test.ts`, run
@@ -501,7 +500,17 @@ which is not a content change). Any difference beyond the batch is the developer
 arguments written out; a heredoc in the same command as `rm` is refused by the safety check, so write
 scripts with the file tool and delete in a separate plain command.
 
-### Phase 4 — Records and shipping
+### Phase 4 — Records and shipping (done, 2026-11-15)
+
+*As built:* the developer supplied the permission's wording (Q1); it is recorded verbatim in
+`src/public/roms/z88-roms-readme.txt` and `THIRD_PARTY_NOTICES.md`. The import was copied to
+`src/public/roms/z88v47.rom.dis` and `npm run rom:annotations` added its 15 pages to
+`rom-annotations.index.json`. The README's D4 section names the exemption, `CLOSING_THE_GAPS_PLAN.md` D4
+has its one-line note, the README's "Order of work" and the competitive analysis (§2, §3 and the gap
+table's closed list) list the Z88, and the guide has "Shipping and updating". The branch's changeset is
+now the plan's `feature` entry (`dev/changes/cambridge-z88-oz-4-7-1a32.md`). Checks: `test/annotations/`,
+`test/z88/`, the Z88 harness's self-tests, `npm run build:check`, `npm run rom:annotations -- --check`,
+`npm run lint:renderer` and `npm run test:slow`.
 
 1. `dev/ai/rom-annotations/z88-authoring-guide.md`: banks and their origins, the build, the importer, the
    exemption, and what was learned. Update `README.md`'s D4 section and "Order of work".
@@ -515,6 +524,8 @@ scripts with the file tool and delete in a separate plain command.
 
 ## 5. Follow-ups (not in this plan)
 
+- **The FlashStore fault** the coverage run found (`z88-oz47-review.md`, "Coverage runs"): OZ's or the
+  emulator's, to be investigated on its own.
 - The other OZ releases Klive ships (`z88v50b`, `z88ukv40`), imported from their own tags with the same
   importer, if the permission covers them.
 - The pre-OZ-4 ROMs (`z88ukv30` and the national 3.x ROMs) have no source in the repository and stay
