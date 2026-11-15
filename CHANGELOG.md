@@ -1,5 +1,19 @@
 # Klive IDE Changelog
 
+## 0.68.1 (2026-11-15)
+
+### Fixes
+
+- The website's landing page showed a thin white strip above its header in every language but
+  English, its header and column did not match the documentation's, and the screenshot carousel
+  started below the first screen, so it could not be seen whole without scrolling. The landing page
+  and the documentation now share one header and width, the first screen shows the headline beside
+  the whole carousel, "At a glance" shows its facts as two short groups under it, and the sections
+  are set apart by alternating bands instead of thick black rules.
+- `klive.project` opened as an editable file without JSON highlighting, and `build.ksx` showed the
+  generic script icon instead of its own: files known by their exact name stopped matching their
+  file type once the IDE looked file types up by full path. `klive.project` is read-only JSON again.
+
 ## 0.68.0 (2026-11-15)
 
 ### Highlights
