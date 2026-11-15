@@ -5,7 +5,16 @@ import { NextPaletteViewer } from "@renderer/controls/NextPaletteViewer";
 import { SmallIconButton } from "@renderer/controls/IconButton";
 import { useT } from "@common/i18n/useT";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { DEFAULT_SPRITE_TRANSPARENCY, serializeSprFile } from "./sprite-file";
+import Dropdown, { type DropdownOption } from "@renderer/controls/Dropdown";
+import {
+  DEFAULT_SPRITE_TRANSPARENCY,
+  DEFAULT_SPR_FORMAT,
+  SprFormat,
+  maxPixelValue,
+  parseSprFile,
+  reinterpretSprSheet,
+  serializeSprFile
+} from "./sprite-file";
 import {
   flipHorizontal,
   flipVertical,
@@ -99,6 +108,34 @@ type FloatingPatch = {
   lifted?: SpriteRegion;
 };
 
+/**
+ * How the sheet in memory maps to the file: its format, the bytes after the last whole pattern, and
+ * the file's bytes as read while nothing has been edited (`SprFileContents.source`). Changed only by
+ * opening the file, a format switch and the first edit (which drops `source`).
+ */
+type SheetShape = { format: SprFormat; trailing?: Uint8Array; source?: Uint8Array };
+
+/**
+ * The sheet in another format. Unedited, the file's own bytes are read again, which is exact;
+ * edited, the sheet is reinterpreted, which keeps every byte it holds (plan D3).
+ */
+const readSheetAs = (
+  sprites: Uint8Array[],
+  sheet: SheetShape,
+  to: SprFormat,
+  fill: number
+) =>
+  sheet.source
+    ? parseSprFile(sheet.source, fill, to)
+    : reinterpretSprSheet({ sprites, trailing: sheet.trailing }, sheet.format, to, fill);
+
+const clampOffset = (value: number | undefined): number =>
+  Number.isFinite(value) ? Math.min(15, Math.max(0, Math.round(value as number))) : 0;
+
+/** Keep only the bits a pixel of the sheet can hold. Returns the same array when nothing changes. */
+const maskPixels = (pixels: Uint8Array, mask: number): Uint8Array =>
+  mask === 0xff || pixels.every((v) => v <= mask) ? pixels : pixels.map((v) => v & mask);
+
 export const SpriteEditor = ({ context, readOnly }: Props) => {
   const t = useT();
   const isReadOnly = !!readOnly;
@@ -141,6 +178,14 @@ export const SpriteEditor = ({ context, readOnly }: Props) => {
    */
   const [doc, setDoc] = useState<SpriteDocument | undefined>(undefined);
   const [currentTool, setCurrentTool] = useState<SpriteTools>();
+  /*
+   * 8-bit or 4-bit, and the palette offset a 4-bit sheet is drawn with
+   * (`dev/plans/SPRITE_EDITOR_4BIT_PLAN.md`). A 4-bit sprite is still 256 pixel values in memory,
+   * each 0..15; only the file boundary packs them, so nothing below the editor knows the format.
+   */
+  const [format, setFormat] = useState<SprFormat>(DEFAULT_SPR_FORMAT);
+  const [paletteOffset, setPaletteOffset] = useState(0);
+  const sheetRef = useRef<SheetShape>({ format: DEFAULT_SPR_FORMAT });
 
   /*
    * The pointer position is NOT editor state.
@@ -173,6 +218,24 @@ export const SpriteEditor = ({ context, readOnly }: Props) => {
    */
   const { palette, transparencyIndex, source, shownBank, liveBank, pinBank } = useSpritePalette();
 
+  /*
+   * What the canvas, the thumbnails, the preview and the readouts draw with.
+   *
+   * A 4-bit pixel is a nibble: it shows palette entry `offset << 4 | nibble` and is transparent when
+   * it equals the low nibble of the transparency index. Handing those components a 16-entry palette
+   * and the transparent nibble keeps their `palette[value]` and `value === transparencyIndex`
+   * exactly as they were (plan D4).
+   */
+  const fourBit = format === "4bit";
+  const pixelMask = maxPixelValue(format);
+  const viewPalette = useMemo(
+    () => (fourBit ? Array.from({ length: 16 }, (_, i) => palette[(paletteOffset << 4) | i]) : palette),
+    [fourBit, palette, paletteOffset]
+  );
+  const viewTransparency = transparencyIndex & pixelMask;
+  const penIndex = (pencilColorIndex ?? 0) & pixelMask;
+  const fillIndex = (fillColorIndex ?? DEFAULT_SPRITE_TRANSPARENCY) & pixelMask;
+
   // --- Set the current state according to the initial view state of the context
   useEffect(() => {
     if (viewStateInitialized.current) return;
@@ -188,10 +251,30 @@ export const SpriteEditor = ({ context, readOnly }: Props) => {
     setShowTrancparencyColor(context.viewState?.showTrancparencyColor ?? false);
     setPencilColorIndex(context.viewState?.pencilColorIndex ?? 0x0f);
     setFillColorIndex(context.viewState?.fillColorIndex ?? DEFAULT_SPRITE_TRANSPARENCY);
-    setDoc(
-      createDocument(context.fileInfo?.sprites, context.viewState?.selectedSpriteIndex ?? 0)
+    /*
+     * The panel parses the file as 8-bit; a sheet remembered as 4-bit is read again as 4-bit here.
+     * The bytes are the same either way, so this cannot lose anything (plan D3). `fileInfo.format`
+     * says which shape the sprites are already in, should the editor be mounted again over them.
+     */
+    const wanted: SprFormat = context.viewState?.spriteFormat === "4bit" ? "4bit" : "8bit";
+    const info = context.fileInfo;
+    const sheet = readSheetAs(
+      info?.sprites ?? [],
+      { format: info?.format ?? DEFAULT_SPR_FORMAT, trailing: info?.trailing, source: info?.source },
+      wanted,
+      transparencyIndex
     );
+    sheetRef.current = { format: wanted, trailing: sheet.trailing, source: info?.source };
+    if (info) {
+      info.sprites = sheet.sprites;
+      info.trailing = sheet.trailing;
+      info.format = wanted;
+    }
+    setFormat(wanted);
+    setPaletteOffset(clampOffset(context.viewState?.paletteOffset));
+    setDoc(createDocument(sheet.sprites, context.viewState?.selectedSpriteIndex ?? 0));
     setCurrentTool(migrateTool(context.viewState?.currentTool));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs once; the transparency only fills an empty sheet
   }, [context.viewState]);
 
   // --- Update the context view state whenever the internal state changes
@@ -205,8 +288,12 @@ export const SpriteEditor = ({ context, readOnly }: Props) => {
       vs.fillColorIndex = fillColorIndex;
       vs.selectedSpriteIndex = selectedSpriteIndex;
       vs.currentTool = currentTool;
+      vs.spriteFormat = format;
+      vs.paletteOffset = paletteOffset;
     });
   }, [
+    format,
+    paletteOffset,
     showGrid,
     showOnionSkin,
     spriteImagesSeparated,
@@ -230,16 +317,21 @@ export const SpriteEditor = ({ context, readOnly }: Props) => {
   const fillRef = useRef<number>();
   const transparencyRef = useRef<number>();
   const toolRef = useRef<SpriteTools>();
+  /** The bits a pixel of this sheet can hold: `$FF`, or `$0F` for a 4-bit sheet. */
+  const maskRef = useRef(pixelMask);
   pencilRef.current = pencilColorIndex;
   fillRef.current = fillColorIndex;
-  transparencyRef.current = transparencyIndex;
+  // --- The value a cleared pixel or a new sprite gets: a nibble in a 4-bit sheet
+  transparencyRef.current = viewTransparency;
   toolRef.current = currentTool;
+  maskRef.current = pixelMask;
 
   const saveNow = useRef<() => Promise<void>>();
   saveNow.current = async () => {
     const current = latestDoc.current;
     if (readOnlyRef.current || !current?.sprites?.length) return;
-    await context.saveToFile(serializeSprFile(current.sprites, context.fileInfo?.trailing));
+    const sheet = sheetRef.current;
+    await context.saveToFile(serializeSprFile(current.sprites, sheet.trailing, sheet.format));
   };
 
   const saveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -288,8 +380,13 @@ export const SpriteEditor = ({ context, readOnly }: Props) => {
       // --- A read-only snapshot never changes: every edit comes through here, so this is the guard
       if (readOnlyRef.current || !next || next === current) return;
       latestDoc.current = next;
+      // --- After an edit the sheet, not the bytes read, is the truth: a format switch reinterprets it
+      sheetRef.current = { ...sheetRef.current, source: undefined };
       // The panel above still owns `fileInfo`; keep its array pointing at the current sheet.
-      if (context.fileInfo) context.fileInfo.sprites = next.sprites;
+      if (context.fileInfo) {
+        context.fileInfo.sprites = next.sprites;
+        context.fileInfo.source = undefined;
+      }
       setDoc(next);
       scheduleSave();
     },
@@ -318,6 +415,50 @@ export const SpriteEditor = ({ context, readOnly }: Props) => {
       commit(applyPixels(current, transform(currentSprite(current))));
     },
     [commit]
+  );
+
+  /*
+   * Read the same bytes as the other format (plan D3).
+   *
+   * Nothing is written: the file does not change, only how it is read. One 8-bit sprite is two
+   * 4-bit patterns, so the selection moves to the first of them (or to the sprite holding the
+   * selected pattern). The history goes, because its sprites are the other shape; so do a marked
+   * region and a floating paste.
+   */
+  const handleSetFormat = useCallback(
+    (to: SprFormat) => {
+      const current = latestDoc.current;
+      const sheet = sheetRef.current;
+      if (readOnlyRef.current || !current || sheet.format === to) return;
+      const next = readSheetAs(current.sprites, sheet, to, transparencyRef.current);
+      sheetRef.current = { format: to, trailing: next.trailing, source: sheet.source };
+      if (context.fileInfo) {
+        context.fileInfo.sprites = next.sprites;
+        context.fileInfo.trailing = next.trailing;
+        context.fileInfo.format = to;
+      }
+      const selected = to === "4bit" ? current.selected * 2 : Math.floor(current.selected / 2);
+      const nextDoc = createDocument(next.sprites, selected);
+      latestDoc.current = nextDoc;
+      floatingRef.current = undefined;
+      setFloating(undefined);
+      setSelection(undefined);
+      setDoc(nextDoc);
+      setFormat(to);
+    },
+    [context.fileInfo]
+  );
+  const handlePaletteOffset = useCallback(
+    (value: string) => setPaletteOffset(clampOffset(parseInt(value, 10))),
+    []
+  );
+  const offsetOptions = useMemo<DropdownOption[]>(
+    () =>
+      Array.from({ length: 16 }, (_, i) => ({
+        value: String(i),
+        label: t("panels.spriteEditor.offsetOption", { offset: i })
+      })),
+    [t]
   );
 
   /*
@@ -521,12 +662,15 @@ export const SpriteEditor = ({ context, readOnly }: Props) => {
     const current = latestDoc.current;
     if (!current) return;
     const clip = spriteClipboard.get();
+    // --- Pixels copied from an 8-bit sheet keep their low nibble in a 4-bit one (plan D5)
+    const mask = maskRef.current;
     if (clip.region) {
       commitFloating();
       const anchor = selectionRef.current ?? { row: 0, col: 0 };
+      const patch = { ...clip.region, pixels: maskPixels(clip.region.pixels, mask) };
       setFloating({
-        patch: clip.region,
-        at: clampPasteOrigin({ row: anchor.row, col: anchor.col }, clip.region)
+        patch,
+        at: clampPasteOrigin({ row: anchor.row, col: anchor.col }, patch)
       });
       return;
     }
@@ -534,7 +678,7 @@ export const SpriteEditor = ({ context, readOnly }: Props) => {
       // A whole sprite pastes as a new sprite after the selection, not over the current one -
       // silently replacing what someone is working on is not what Paste means.
       const next = addSprite(current, transparencyRef.current);
-      commit(applyPixels(next, clip.sprite));
+      commit(applyPixels(next, maskPixels(clip.sprite, mask)));
     }
   }, [commit, commitFloating]);
 
@@ -650,13 +794,14 @@ export const SpriteEditor = ({ context, readOnly }: Props) => {
     (at: SpritePoint) => {
       const current = latestDoc.current;
       if (!current) return;
+      const mask = maskRef.current;
       const result = applyTool(
         currentSprite(current),
         toolRef.current,
         at,
         at,
-        pencilRef.current,
-        fillRef.current
+        (pencilRef.current ?? 0) & mask,
+        fillRef.current === undefined ? undefined : fillRef.current & mask
       );
       if (result) commit(applyPixels(current, result.map));
     },
@@ -700,7 +845,10 @@ export const SpriteEditor = ({ context, readOnly }: Props) => {
   const onionSprite =
     showOnionSkin && selectedSpriteIndex > 0 ? sprites[selectedSpriteIndex - 1] : undefined;
 
-  const spriteLabel = t("panels.spriteEditor.spriteLabel", { index: selectedSpriteIndex + 1, count: sprites.length });
+  const spriteLabel = t(fourBit ? "panels.spriteEditor.spriteLabel4" : "panels.spriteEditor.spriteLabel", {
+    index: selectedSpriteIndex + 1,
+    count: sprites.length
+  });
 
   return (
     /*
@@ -739,6 +887,8 @@ export const SpriteEditor = ({ context, readOnly }: Props) => {
           canPaste={canPaste}
           hasSelection={!!selection}
           separated={!!spriteImagesSeparated}
+          format={format}
+          onSetFormat={handleSetFormat}
           onUndo={handleUndo}
           onRedo={handleRedo}
           onDuplicate={handleDuplicate}
@@ -797,10 +947,10 @@ export const SpriteEditor = ({ context, readOnly }: Props) => {
               onMoveEnd={handleMoveEnd}
               onionSprite={onionSprite}
               spriteMap={spriteMap}
-              palette={palette}
-              transparencyIndex={transparencyIndex}
-              pencilColorIndex={pencilColorIndex}
-              fillColorIndex={fillColorIndex}
+              palette={viewPalette}
+              transparencyIndex={viewTransparency}
+              pencilColorIndex={penIndex}
+              fillColorIndex={fillIndex}
               tool={isReadOnly ? "select" : currentTool}
               hover={hover}
               onCommit={isReadOnly ? noop : handleCommitPixels}
@@ -810,8 +960,9 @@ export const SpriteEditor = ({ context, readOnly }: Props) => {
         </div>
         <SpriteStatusBar
           hover={hover}
-          palette={palette}
-          transparencyIndex={transparencyIndex}
+          palette={viewPalette}
+          transparencyIndex={viewTransparency}
+          fourBit={fourBit}
           spriteLabel={spriteLabel}
         />
       </div>
@@ -823,8 +974,8 @@ export const SpriteEditor = ({ context, readOnly }: Props) => {
               <span className={styles.colorSlot}>
                 <span className={styles.colorSlotLabel}>{t("panels.spriteEditor.pen")}</span>
                 <ColorSample
-                  color={palette[pencilColorIndex]}
-                  isTransparency={pencilColorIndex === transparencyIndex}
+                  color={viewPalette[penIndex]}
+                  isTransparency={penIndex === viewTransparency}
                   xclass={styles.colorSampleLarge}
                 />
               </span>
@@ -837,13 +988,15 @@ export const SpriteEditor = ({ context, readOnly }: Props) => {
               <span className={styles.colorSlot}>
                 <span className={styles.colorSlotLabel}>{t("panels.spriteEditor.fill")}</span>
                 <ColorSample
-                  color={palette[fillColorIndex]}
-                  isTransparency={fillColorIndex === transparencyIndex}
+                  color={viewPalette[fillIndex]}
+                  isTransparency={fillIndex === viewTransparency}
                   xclass={styles.colorSampleLarge}
                 />
               </span>
               <span className={styles.statusSpacer} />
-              <span className={styles.colorIndex}>${pencilColorIndex.toString(16).toUpperCase().padStart(2, "0")}</span>
+              <span className={styles.colorIndex}>
+                ${penIndex.toString(16).toUpperCase().padStart(fourBit ? 1 : 2, "0")}
+              </span>
             </div>
           </div>
       )}
@@ -855,17 +1008,34 @@ export const SpriteEditor = ({ context, readOnly }: Props) => {
               liveBank={liveBank}
               onPinBank={pinBank}
             />
+            {fourBit && (
+              <Dropdown
+                ariaLabel={t("panels.spriteEditor.offsetLabel")}
+                options={offsetOptions}
+                initialValue={String(paletteOffset)}
+                width={96}
+                onChanged={handlePaletteOffset}
+              />
+            )}
           </div>
           <div className={styles.paletteBody}>
+            {/*
+              * A 4-bit sheet can use one row of the palette, the offset's: only those 16 swatches
+              * are shown, labelled with their real indexes (plan D6).
+              */}
             <NextPaletteViewer
               palette={palette}
               cellSize={17}
-              transparencyIndex={transparencyIndex}
+              firstRow={fourBit ? paletteOffset : 0}
+              rowCount={fourBit ? 1 : 16}
+              transparencyIndex={fourBit ? (paletteOffset << 4) | viewTransparency : transparencyIndex}
               allowSelection={!isReadOnly}
               // The viewer has always accepted this and the editor never passed it, so the palette
               // showed no selection at all - not the pen colour restored from the view state, and
               // not the result of the Swap button.
-              selectedIndex={isReadOnly ? undefined : pencilColorIndex}
+              selectedIndex={
+                isReadOnly ? undefined : fourBit ? (paletteOffset << 4) | penIndex : pencilColorIndex
+              }
               onSelection={handleSelectPencilColor}
               onRightClick={handleSelectFillColor}
             />
@@ -876,8 +1046,8 @@ export const SpriteEditor = ({ context, readOnly }: Props) => {
           <SpritePreview
             sprites={sprites}
             selectedIndex={selectedSpriteIndex}
-            palette={palette}
-            transparencyIndex={transparencyIndex}
+            palette={viewPalette}
+            transparencyIndex={viewTransparency}
             initialFps={context.viewState?.animationFps ?? 12}
             onFpsChange={handleFpsChange}
           />
@@ -887,8 +1057,8 @@ export const SpriteEditor = ({ context, readOnly }: Props) => {
       <SpriteSheetBrowser
         sprites={sprites}
         selectedIndex={selectedSpriteIndex}
-        palette={palette}
-        transparencyIndex={transparencyIndex}
+        palette={viewPalette}
+        transparencyIndex={viewTransparency}
         separated={!!spriteImagesSeparated}
         showTransparencyColor={!!showTrancparencyColor}
         onSelect={navigate}

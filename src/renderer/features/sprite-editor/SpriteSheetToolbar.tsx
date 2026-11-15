@@ -4,7 +4,18 @@ import { ToolbarSeparator } from "@renderer/controls/ToolbarSeparator";
 import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import { Text } from "@renderer/controls/layout/Text";
 import { useT } from "@common/i18n/useT";
+import {
+  spriteSegmentClass,
+  spriteSegmentedClass
+} from "@renderer/controls/Next/sprites/SpritePatternSheet";
+import type { MessageKey } from "@common/i18n/keys.generated";
 import styles from "./SpriteEditor.module.scss";
+import type { SprFormat } from "./sprite-file";
+
+const FORMATS: { value: SprFormat; labelKey: MessageKey; titleKey: MessageKey }[] = [
+  { value: "8bit", labelKey: "panels.spriteEditor.format.8bit", titleKey: "panels.spriteEditor.format.8bitTitle" },
+  { value: "4bit", labelKey: "panels.spriteEditor.format.4bit", titleKey: "panels.spriteEditor.format.4bitTitle" }
+];
 
 type Props = {
   spriteCount: number;
@@ -15,6 +26,9 @@ type Props = {
   /** True when a pixel region is marked, which is what Cut/Copy/Delete act on instead of the sprite. */
   hasSelection: boolean;
   separated: boolean;
+  /** How the file's bytes are read. Switching never changes the file. */
+  format: SprFormat;
+  onSetFormat: (format: SprFormat) => void;
   onUndo: () => void;
   onRedo: () => void;
   onDuplicate: () => void;
@@ -47,6 +61,8 @@ export const SpriteSheetToolbar = memo(
     canPaste,
     hasSelection,
     separated,
+    format,
+    onSetFormat,
     onUndo,
     onRedo,
     onDuplicate,
@@ -132,6 +148,22 @@ export const SpriteSheetToolbar = memo(
         enable={true}
         clicked={onToggleSeparated}
       />
+      <ToolbarSeparator small={true} />
+      {/* The same segmented control, and the same words, as the Sprite Inspector's format switch */}
+      <span className={spriteSegmentedClass} role="group" aria-label={t("panels.spriteEditor.format.group")}>
+        {FORMATS.map((f) => (
+          <button
+            key={f.value}
+            type="button"
+            className={spriteSegmentClass}
+            aria-pressed={format === f.value}
+            title={t(f.titleKey)}
+            onClick={() => onSetFormat(f.value)}
+          >
+            {t(f.labelKey)}
+          </button>
+        ))}
+      </span>
       {spriteCount > 0 && (
         <>
           <ToolbarSeparator small={true} />

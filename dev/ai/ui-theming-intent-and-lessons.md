@@ -1248,7 +1248,7 @@ zoom, grid, onion skin, palette, preview, hover readout - stays exactly as in th
 the reader sees what the editor would show. The guard is in the editor's one commit point as well as
 in the hidden UI, so a shortcut that slips through still changes nothing.
 
-Where no editor fits (a tilemap tile is 8×8 4-bit; the sprite editor is 16×16 8-bit throughout), the
+Where no editor fits (a tilemap tile is 8×8 4-bit; the sprite editor's sprites are always 16×16), the
 read-only view is a **viewer built in the editor's shape** rather than a stretched editor: the same bar,
 stage header, rulers (`SpriteRulers` takes a `count`), status line and palette/preview column, and the
 file viewers' root type (`--monospace-font` at `--panel-font-size`), so the two snapshots read as one
@@ -1268,6 +1268,17 @@ whether the bank's annotations are *loaded* (`annotationsShown`), never whether 
 upright comments and accent labels while its own working copy showed the annotated colours: the same
 lines looked finished in one and unfinished in the other. A flag that gates tools must not pick
 colours.
+
+## A Palette Shows Only The Colours The Thing Being Drawn Can Use
+
+A 4-bit sprite can use one row of the palette (its offset's 16 entries), so the sprite editor's palette
+shows **that row only** (`NextPaletteViewer`'s `firstRow`/`rowCount`), not all 256 swatches with 240 of
+them unreachable. The swatches keep their **real indexes** (`$E0`..`$EF`, row label `E`): the selection,
+the transparency mark and the tooltip all speak in palette indexes, and the offset is chosen beside the
+bank switch in the section header. A row shown on its own draws no quadrant rule above itself; the rule
+separates rows, it does not cap a block. A mode switch that changes how a file's bytes are *read*
+(8-bit/4-bit) uses the same segmented control and words as the Sprite Inspector's format switch, so one
+concept has one look across the inspector and the editor.
 
 ## A File Path In A Panel Carries Its Reveal Button
 

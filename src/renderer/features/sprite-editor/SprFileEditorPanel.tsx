@@ -45,6 +45,7 @@ function loadSprFileContents(contents: Uint8Array): {
   fileInfo?: SprFileContents;
   error?: string;
 } {
+  // --- Always 8-bit here: the editor re-reads a sheet remembered as 4-bit (plan D3)
   const { sprites, trailing, warning } = parseSprFile(contents);
-  return { fileInfo: { sprites, trailing, warning } };
+  return { fileInfo: { sprites, trailing, warning, source: contents } };
 }

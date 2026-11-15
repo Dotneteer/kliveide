@@ -12,6 +12,8 @@ type Props = {
   hover: HoverStore;
   palette: number[];
   transparencyIndex: number;
+  /** A 4-bit sheet: a pixel value is one hex digit, a nibble of the palette offset's row. */
+  fourBit?: boolean;
   spriteLabel: string;
 };
 
@@ -28,7 +30,7 @@ type Props = {
  * to re-render the palette, both toolbars and every thumbnail once per pixel.
  */
 export const SpriteStatusBar = memo(
-  ({ hover, palette, transparencyIndex, spriteLabel }: Props) => {
+  ({ hover, palette, transparencyIndex, fourBit, spriteLabel }: Props) => {
     const position = useSyncExternalStore(hover.subscribe, hover.get, hover.get);
     const colorIndex = position?.colorIndex ?? -1;
     const code = colorIndex >= 0 ? palette[colorIndex] : undefined;
@@ -54,7 +56,9 @@ export const SpriteStatusBar = memo(
               isTransparency={colorIndex === transparencyIndex}
               xclass={styles.colorSampleSmall}
             />
-            <span className={styles.statusValue}>${toHexa2(colorIndex)}</span>
+            <span className={styles.statusValue}>
+              ${fourBit ? colorIndex.toString(16).toUpperCase() : toHexa2(colorIndex)}
+            </span>
             <span className={styles.statusMuted}>{getCssStringForPaletteCode(code)}</span>
             {/* Named as 0-7, because that is the scale the Next's components are on. */}
             <span className={styles.statusMuted}>
