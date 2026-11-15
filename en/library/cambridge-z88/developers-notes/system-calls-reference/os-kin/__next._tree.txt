@@ -4,12 +4,14 @@
 :HL["/_next/static/media/9ceb5fb7aeb68b27.p.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
 :HL["/_next/static/media/bccd6a6241c00262-s.p.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
 :HL["/_next/static/media/cf9548a654a0290e-s.p.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
-:HL["/_next/static/css/0f6f87e08ec092cb.css","style"]
+:HL["/_next/static/css/8dd3ce525c8a867d.css","style"]
 :HL["/_next/static/css/11c59cc40cabfed8.css","style"]
-:HL["/_next/static/css/f1a939cc83147393.css","style"]
+:HL["/_next/static/css/4f15911199e1bed2.css","style"]
+:HL["/_next/static/css/c8080524e37a83a7.css","style"]
+:HL["/_next/static/css/e0a06e7d8d9be58e.css","style"]
 :HL["/images/klive-logo.svg","image"]
 4:[["children",{"s":"__PAGE__","h":160}]]
 3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/system-calls-reference/os-kin","s":[]},"h":65600,"c":"$Q4"}]]
 2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
 1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
-0:{"b":"BOMpzZxqxZdg5NIVYfvHr","t":{"t":{"s":"","h":131152,"c":"$Q1"}}}
+0:{"b":"3vhbi6FJM0lllnFxjePnQ","t":{"t":{"s":"","h":131152,"c":"$Q1"}}}
