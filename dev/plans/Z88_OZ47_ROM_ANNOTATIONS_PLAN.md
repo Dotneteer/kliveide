@@ -411,7 +411,9 @@ Done, on branch `dotneteer/z88-oz47-phase2`:
   (`AllcMemFle_SzeHL`, `cl_nt_op_fl_qt_t`) are replaced in `z88-label-renames.json` by readable ones
   (`AllocMemFile_HL`, `cant_open_quit`), one abbreviation per word and none clashing with a label of any
   bank; the 75 synopses that named an old label name the new one. Every bank still reassembles byte for
-  byte and measures level 2.
+  byte and measures level 2. Each of the 588 renamed labels has "OZ source name: <name>." in its synopsis
+  (after the summary, before the contract), so it can be found in the OZ source:
+  `tools/z88-source-name-notes.cjs` writes them into the authored file; run it again after a rename changes.
 
 Open:
 - **Across banks:** PipeDream's two halves call each other (`call LD65D` in bank 5 is bank 6's code); a
@@ -441,7 +443,7 @@ finishes the plan turns it into the `feature` changeset**
 1. `git clone https://bitbucket.org/cambridge/oz.git .local/oz47/oz` and
    `git -C .local/oz47/oz checkout V4.7` (commit `603c979a`), if `.local/oz47/oz` is missing.
 2. `node dev/scripts/import-oz-source.cjs --all` must print "All 23 components imported.", the filler line
-   (22 runs) and "Hand-written entries applied: 16 label(s), 3204 line annotation(s), 9 region(s)". The result is `.local/oz-import/z88v47.rom.dis`.
+   (22 runs) and "Hand-written entries applied: 16 label(s), 3608 line annotation(s), 9 region(s)". The result is `.local/oz-import/z88v47.rom.dis`.
 3. `node dev/ai/rom-annotations/tools/check-annotations.cjs .local/oz-import/z88v47.rom.dis`: `"problems": []`,
    and `labelsWithoutSynopsis` is 0 for every bank.
 

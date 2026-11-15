@@ -136,6 +136,10 @@ section says what is done, how to check it and what is left.
   not cover), each with its provenance; `--all` applies the file last, so a re-import keeps it. A region
   takes only the bytes it covers: an imported region it overlaps keeps its parts on either side, so a
   four-byte data region inside code (an inline string after a `call`) leaves the code around it.
+- **A renamed label names its source label:** a label the rename table changed (over 16 characters, or
+  shared by two modules of a bank) carries "OZ source name: <name>." in its synopsis, after the summary
+  and before the contract. `tools/z88-source-name-notes.cjs` writes them into the authored file from the
+  table and the import (re-run it, then `--all`, after changing a rename; it replaces its own note).
 - **Inline strings the source writes as code:** PipeDream's printer strings after `call LEDE1` (`$05`,
   the code, 0) are instructions in the reverse-engineered source (`dec b / ld sp,$005D`). They are
   `observed` text regions in the authored file; look for the same pattern after any routine that reads

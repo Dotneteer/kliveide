@@ -2657,3 +2657,14 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
   case-insensitive) before applying it.
 - **Sources:** the OZ V4.7 source's own label names (D-OZ1); no content changed.
 - **Level:** every bank still measures 2 and reassembles byte for byte. Not shipped yet (Q1).
+
+### 2026-11-15 — Cambridge Z88: OZ 4.7, source names of the renamed labels
+
+- **What:** each of the 588 labels the rename table changed now says "OZ source name: <name>." in its
+  synopsis, so it can be found in the OZ source; 257 of them, jump targets inside routines, had no
+  synopsis and now hold only that line.
+- **How:** `tools/z88-source-name-notes.cjs` reads `z88-label-renames.json` and the import, and writes
+  the notes into `z88-oz47-authored.json` (a synopsis imported from an OZ header is copied there with
+  the note); it is idempotent.
+- **Sources:** the OZ V4.7 source's label names (D-OZ1); the entries are `source`.
+- **Level:** unchanged, 2 on every bank. Not shipped yet (Q1).
