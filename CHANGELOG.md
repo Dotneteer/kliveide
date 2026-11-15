@@ -1,5 +1,89 @@
 # Klive IDE Changelog
 
+## 0.68.0 (2026-11-15)
+
+### Highlights
+
+- **ZX Spectrum Next core 3.03.03 models:** KS2 and KS3 boot NextZXOS 2.10a, with the zxnDDMA, and
+  the KS3 has the issue 5 board's 4 MB of SRAM and second SD card reader.
+- **The audio mixer:** mute, solo and set the level of every sound source of every machine, with
+  live meters, spectra, a scope and a spectrogram.
+- **Floating document windows:** pop a document out of the IDE into a window of its own, onto a
+  second screen or next to the emulator.
+- **Full screen emulator:** the machine's picture alone fills the screen, with the toolbar and the
+  status bar sliding in at the edges.
+- **Cambridge Z88 ROM annotations:** OZ 4.7's code named and explained, from OZ's own source.
+- **Boriel BASIC 2.0.0**, its first release, now comes with Klive.
+
+### Features
+
+- **ZX Spectrum Next core 3.03.03 models:** two new Next models, KS2 and KS3 with core 3.03.03, boot
+  NextZXOS 2.10a from the System/Next 26.11a distribution, each from its own SD card. Both emulate
+  the zxnDDMA, the DMA's new commands on port `$6B`: physical addresses across the whole SRAM,
+  rectangles, a transparent colour, fill and Layer 2 X,Y positions. At 28 MHz a memory read no
+  longer waits a clock, for the CPU and the DMA alike. The KS3 model has the issue 5 board's 4 MB of
+  SRAM, reached through the zxnDDMA or NextReg `$04` in config mode; the memory view and the bank
+  choosers show its upper 2 MB as Upper RAM pages `U00`-`UFF`. The KS3 model also has the board's
+  second SD card reader: Machine › SD Card puts an image into it.
+- **Focus the emulator after Run or Debug**: once Run or Debug has started your program, the
+  emulator window gets the keyboard focus, so the keys you press reach the machine instead of the
+  IDE. The new **Settings › General › Focus the emulator after Run or Debug** switch (on by default)
+  turns it off.
+- **TBBLUE.TBU viewer**: open the ZX Spectrum Next's core update file to see which cores it carries,
+  for which boards and slots, and where each image sits. The viewer checks every image's checksum as
+  the updater does before it erases a slot, names the FPGA each bitstream is built for, and lists
+  the bitstream's configuration packets. It also reads the older single-core update files. **Machine
+  › SD Card › Show TBBLUE.TBU** (or `show-tbu`) opens the update file on the SD card the Next uses,
+  even while the machine runs.
+- **TBBLUE.FW viewer**: open the ZX Spectrum Next's firmware file to see its modules, the keys that
+  start each one (Space for the settings menu, U for the updater, C for the extra cores, ...), the
+  firmware version, each module's code as a Z80 disassembly at the address it runs at, and the video
+  test card picture it carries. **Machine › SD Card › Show TBBLUE.FW** (or `show-fw`) opens the
+  firmware on the SD card the Next uses.
+- **One ROM Annotations item per ROM file:** Debug › ROM Annotations lists each ROM file once
+  instead of once per 16K page. The ROM annotation editor lists all the file's pages, including
+  those not annotated yet, and opening such a page adds it to your working copy.
+- **Full screen emulator:** **View › Toggle Full Screen** (`Ctrl+Shift+F9`) now fills the screen
+  with the machine alone: its picture and, when it is shown, the virtual keyboard. The toolbar
+  slides in when the mouse reaches the top edge of the screen and the status bar when it reaches the
+  bottom, whether they are switched on or off; they cover the picture without resizing it. The same
+  shortcut puts the window back as it was. In the IDE window the command still only fills the
+  screen.
+- **Floating document windows:** right-click a document's tab and choose **Pop Out to Window** to
+  move it into a window of its own, which you can move and resize freely (onto a second screen, next
+  to the emulator). Its title bar keeps the document's buttons (a build root's Compile and Run, a
+  tape's or a NEX file's launch buttons) and adds **Dock**, which puts the document back into the
+  editor area it came from, and **Close**. Breakpoints, the execution point, the editor's keys and
+  the menu's shortcuts work there as in the IDE; Go Back and Go Forward share one history with the
+  IDE, and opening the document again brings its window to the front. Up to 4 documents can float,
+  and the project reopens them in their windows.
+- **Audio mixer:** every machine with sound now lists its sound sources (the beeper, each AY
+  channel, the Next's TurboSound channels, DACs and Pi I2S input, the Z88's speaker, the TVC's sound
+  generator and the Enterprise's DAVE channels) with a live level meter and spectrum, and lets you
+  mute, solo or change the level of each one. Open it with **View › Machine Views › Audio Mixer**
+  (or `show-audio-mixer`) for an analyser with spectrum, scope and spectrogram, or from the arrow
+  beside the emulator's sound button for quick mutes. The settings are kept for each machine type
+  and never change the emulated machine: saved states and stepping back are unaffected.
+- **Cambridge Z88 ROM annotations:** the Disassembly view now names and explains OZ 4.7's code, with
+  labels, a description of every routine and table, and comments, across the kernel, GN, DC, the
+  floating-point package, LOWRAM and the built-in applications (PipeDream, the Diary, the Filer,
+  FlashStore, EazyLink and the rest; BBC BASIC is not covered). They come from the OZ project's own
+  source, used with the permission of its author, Gunther Strube. The Z88 can now be annotated like
+  the other machines: its ROM banks, RAM and cards, with bank breakpoints. A ROM page listing also
+  names a call into another bank, or into code that runs at another address (the Filer, LOWRAM), by
+  its label.
+- **Boriel BASIC 2.0.0:** Klive now comes with Boriel's `zxbc` 2.0.0, its first release, instead of
+  2.0.0-beta29, and offers to update an older version you have installed.
+
+### Fixes
+
+- ZX Spectrum Next: Run and `nex-run` copied the `.nex` file onto the model's default SD card image,
+  not the card the machine had mounted, so NextZXOS loaded a stale copy from a project's own card.
+  The file now goes to the mounted card, and a card that is not a `.cim` image gives an error.
+- Cambridge Z88: the Disassembly view read the EXTCALL instruction (RST 28h, OZ 4.5 and later) as
+  four bytes instead of five, so it listed the instruction after every EXTCALL wrongly; and Export
+  Disassembly as Source failed to reassemble when an OS_Pout string held a quote or a backslash.
+
 ## 0.67.0 (2026-11-06)
 
 ### Highlights
