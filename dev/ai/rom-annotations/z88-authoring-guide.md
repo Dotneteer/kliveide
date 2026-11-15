@@ -82,7 +82,20 @@ to be a property of a region (or of a run of a page), not of the whole page.
   also has `"address"`, the address its first byte runs at: LOWRAM, at $0800 in bank 2, is
   `{ "start": 2048, "segment": 0, "address": 0 }`. Such a run is decoded at that address, and only a
   target inside the run is the page's. The level check, the CLI and
-  `z88-dis.cjs` use it. The IDE's ROM page document lists every page at $0000, as on every machine.
+  `z88-dis.cjs` use it. The IDE's ROM page document lists a page at its `offsetIndex`, and names an
+  absolute operand (a `jp`/`call` target, an `ld rr,nn` value, a `.defw` word) where the instruction's run
+  runs, and only into a run at the same address (`romRunNaming.ts`): the Filer's `call $EFF8` is
+  `call PrntDotClose` though bank $0A is listed at EazyLink's $8000, and LOWRAM's `jp $00E2` is
+  `jp FPPmain`, not the keymap label at offset $00E2. A relative jump keeps the listed address.
+- **Across banks:** a page's `pagedWith` (`[{ "page": n }, { "page": 2, "start": 2048 }]`) lists the pages
+  paged in while it runs; the listing names a jump or call target, or a `.defw` word, that is not the
+  page's own address from their labels (`start` picks one run: LOWRAM). Never an `ld rr,nn` value: it is
+  as often a number as an address (EazyLink's `ld hl,$0000` is not LOWRAM's entry). OZ 4.7's are in
+  `z88-oz47-authored.json`'s `page` entries: the kernel banks 0 and 1 with each other, PipeDream's 5 and 6
+  with each other, and every code bank with LOWRAM. Go to Definition and Find References resolve an operand
+  as the listing did (the operand records it: `labelAddressOffset`, `labelOutsideBank`); a name from
+  another page has no definition in this one. Checked in the running IDE by
+  `node dev/scripts/z88-rom-listing-ide-check.cjs`.
 - **Provenance `source`** needs the file's `sourceCode` (`{ "repository", "tag", "commit" }`).
 - **Source export:** an `oz`/`fpp`/`extcall` row is written as `.defb` with the call as the comment,
   so an export over OZ code reassembles.

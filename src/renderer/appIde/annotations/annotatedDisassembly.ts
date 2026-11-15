@@ -182,6 +182,20 @@ export type AnnotatedDisassemblyOptions = {
    * (`L8014`). Source export (G7.6) sets it: a generated label has no definition to assemble against.
    */
   noLabelPrefix?: boolean;
+  /**
+   * Where an absolute operand of the page is an address (`absoluteOperandOffsetFor` in
+   * `romRunNaming.ts`): the address offset to look its local label up against, given the bank offset
+   * of the row and the value, or `undefined` when the value is not an address of this page. Absent: the
+   * listing's own offset, for every operand. A relative jump always uses the listing's own.
+   */
+  absoluteOperandOffset?: (bankOffset: number, value: number) => number | undefined;
+  /**
+   * Names an absolute operand that is not an address of this page from the pages paged in with it
+   * (`pagedWithOperandLabelResolver`): an instruction's jump and call targets, and, unlike
+   * `fallbackOperandLabelResolver`, `.defw` words too (its names are annotation labels, as a word's own
+   * are). Never an `ld rr,nn` value, which is as often a number as an address.
+   */
+  otherPageOperandLabelResolver?: DisassemblyOperandLabelResolver;
 };
 
 export async function createAnnotatedDisassemblyItems({
@@ -198,7 +212,9 @@ export async function createAnnotatedDisassemblyItems({
   prepareDisassembler,
   rowLabel,
   charSet,
-  noLabelPrefix
+  noLabelPrefix,
+  absoluteOperandOffset,
+  otherPageOperandLabelResolver
 }: AnnotatedDisassemblyOptions): Promise<DisassemblyItem[] | undefined> {
   const bankAnnotation = getBankAnnotation(annotations, bank);
   if (!bankAnnotation) {
@@ -246,10 +262,16 @@ export async function createAnnotatedDisassemblyItems({
               runEnd,
               decimalView,
               addressOffset,
-              fallbackOperandLabelResolver,
+              chainOperandLabelResolvers(
+                // --- An instruction's jump and call targets only, never an `ld rr,nn` value
+                otherPageOperandLabelResolver &&
+                  ((operand) => (operand.pragma === "L" ? otherPageOperandLabelResolver(operand) : undefined)),
+                fallbackOperandLabelResolver
+              ),
               allowExtendedSet,
               prepareDisassembler,
-              noLabelPrefix
+              noLabelPrefix,
+              absoluteOperandOffset
             ))
           );
         }
@@ -279,7 +301,10 @@ export async function createAnnotatedDisassemblyItems({
             decimalView,
             addressOffset,
             labelOffsets,
-            createWordLabelResolver(annotations, bankAnnotation, addressOffset)
+            chainOperandLabelResolvers(
+              createWordLabelResolver(annotations, bankAnnotation, addressOffset, absoluteOperandOffset),
+              otherPageOperandLabelResolver
+            )
           )
         );
         break;
@@ -360,7 +385,8 @@ async function createInstructionItems(
   fallbackOperandLabelResolver?: DisassemblyOperandLabelResolver,
   allowExtendedSet = true,
   prepareDisassembler?: (disassembler: Z80Disassembler) => void,
-  noLabelPrefix = false
+  noLabelPrefix = false,
+  absoluteOperandOffset?: AnnotatedDisassemblyOptions["absoluteOperandOffset"]
 ): Promise<DisassemblyItem[]> {
   const disassembler = new Z80Disassembler(
     [new MemorySection(start, end, MemorySectionType.Disassemble)],
@@ -371,7 +397,7 @@ async function createInstructionItems(
       decimalMode: decimalView,
       noLabelPrefix,
       operandLabelResolver: chainOperandLabelResolvers(
-        createAnnotationOperandLabelResolver(annotations, bankAnnotation, bank, addressOffset),
+        createAnnotationOperandLabelResolver(annotations, bankAnnotation, bank, addressOffset, absoluteOperandOffset),
         fallbackOperandLabelResolver
       )
     }
@@ -396,26 +422,50 @@ function createAnnotationOperandLabelResolver(
   // --- Kept for call-site symmetry with the other per-bank helpers; the resolver works purely in
   // --- bank-relative offsets, so it never needs the bank number itself.
   _bank: number,
-  addressOffset: number
+  addressOffset: number,
+  absoluteOperandOffset?: AnnotatedDisassemblyOptions["absoluteOperandOffset"]
 ): DisassemblyOperandLabelResolver {
   /*
    * Delegated to `resolveOperandLabel` rather than implemented here.
    *
    * "Go to definition" has to reach the same label this prints, and the only way to guarantee that
    * is for both to run the same rule. Two implementations of "explicit reference first, then value
-   * match" would agree until the day one of them was edited.
+   * match" would agree until the day one of them was edited. The page's own rule for an absolute
+   * operand is recorded on the operand (`operandAddressOffset`), so they read it back from there.
    */
-  return ({ instructionOffset, operandIndex, operandValue }) =>
-    resolveOperandLabel(
+  return (operand) => {
+    const bankOffset = operand.instructionOffset & ANNOTATION_BANK_LAST_OFFSET;
+    const offset = operandAddressOffset(operand, bankOffset, addressOffset, absoluteOperandOffset);
+    if (offset === undefined) return undefined;
+    return resolveOperandLabel(
       annotations,
       bankAnnotation,
-      {
-        bankOffset: instructionOffset & ANNOTATION_BANK_LAST_OFFSET,
-        operandIndex,
-        operandValue
-      },
-      addressOffset
+      { bankOffset, operandIndex: operand.operandIndex, operandValue: operand.operandValue },
+      offset
     )?.name;
+  };
+}
+
+/**
+ * The address offset an operand's local label is looked up against, recorded on the operand when it is
+ * not the listing's own (`labelAddressOffset`), or `undefined`, recorded as `labelOutsideBank`, when the
+ * value is not an address of this page. A relative jump, and any operand of a page without its own
+ * rule, uses the listing's offset.
+ */
+function operandAddressOffset(
+  operand: DisassemblyOperandInfo,
+  bankOffset: number,
+  addressOffset: number,
+  absoluteOperandOffset: AnnotatedDisassemblyOptions["absoluteOperandOffset"]
+): number | undefined {
+  if (!absoluteOperandOffset || operand.pragma === "r") return addressOffset;
+  const offset = absoluteOperandOffset(bankOffset, operand.operandValue);
+  if (offset === undefined) {
+    operand.labelOutsideBank = true;
+    return undefined;
+  }
+  if (offset !== addressOffset) operand.labelAddressOffset = offset;
+  return offset;
 }
 
 
@@ -436,15 +486,20 @@ function createAnnotationOperandLabelResolver(
 function createWordLabelResolver(
   annotations: ProgramAnnotations,
   bankAnnotation: BankAnnotation,
-  addressOffset: number
-): (rowOffset: number, wordIndex: number, value: number) => string | undefined {
-  return (rowOffset, wordIndex, value) =>
-    resolveOperandLabel(
+  addressOffset: number,
+  absoluteOperandOffset?: AnnotatedDisassemblyOptions["absoluteOperandOffset"]
+): DisassemblyOperandLabelResolver {
+  return (operand) => {
+    const bankOffset = operand.instructionOffset & ANNOTATION_BANK_LAST_OFFSET;
+    const offset = operandAddressOffset(operand, bankOffset, addressOffset, absoluteOperandOffset);
+    if (offset === undefined) return undefined;
+    return resolveOperandLabel(
       annotations,
       bankAnnotation,
-      { bankOffset: rowOffset & ANNOTATION_BANK_LAST_OFFSET, operandIndex: wordIndex, operandValue: value },
-      addressOffset
+      { bankOffset, operandIndex: operand.operandIndex, operandValue: operand.operandValue },
+      offset
     )?.name;
+  };
 }
 
 /** Most values a `.defb` / `.defw` row shows before starting a new row. */
@@ -558,7 +613,7 @@ function createWordItems(
   decimalView: boolean,
   addressOffset: number,
   labelOffsets: number[] = [],
-  wordLabel?: (rowOffset: number, wordIndex: number, value: number) => string | undefined
+  wordLabel?: DisassemblyOperandLabelResolver
 ): DisassemblyItem[] {
   const items: DisassemblyItem[] = [];
   for (let offset = start, rowLength = 0; offset <= end; offset += rowLength) {
@@ -570,16 +625,17 @@ function createWordItems(
     for (let idx = 0; idx + 1 < rowLength; idx += 2) {
       const value = contents[offset + idx] | (contents[offset + idx + 1] << 8);
       const defaultText = decimalView ? value.toString(10) : `$${toHexa4(value)}`;
-      const resolvedText = wordLabel?.(offset, idx / 2, value);
-      operandCandidates.push({
+      const operand: DisassemblyOperandInfo = {
         instructionAddress: effectiveAddress(offset, addressOffset),
         instructionOffset: offset,
         operandIndex: idx / 2,
         operandValue: value,
         pragma: "W",
-        defaultText,
-        ...(resolvedText ? { resolvedText } : {})
-      });
+        defaultText
+      };
+      const resolvedText = wordLabel?.(operand);
+      if (resolvedText) operand.resolvedText = resolvedText;
+      operandCandidates.push(operand);
       values.push(resolvedText ?? defaultText);
     }
     items.push({

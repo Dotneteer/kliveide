@@ -6,7 +6,7 @@ Phase 2 done (2026-11-15): every component with source imports (banks 0-8, $0A-$
 reassembles byte for byte. Phase 3 under way (2026-11-15): every annotated bank measures level 2 (not recorded yet); level 2
 counts routines (D-OZ6) and bank 9 is left out (D-OZ7). The system banks are level 2: the kernel (0, 1),
 bank 2, GN (3), MTH (8), DC and Index ($0C), the FPP ($0D) and the file area ($10); so are banks 4, 7,
-$0A (EazyLink, the Filer), $0B (FlashStore) and $1F (the ROM header). PipeDream (5, 6) completed it. The rename proposals are reviewed. Left: labels across banks, coverage runs, recording the level. **To continue in a new session, read "Handoff (2026-11-15)" at the end of Phase 3.**
+$0A (EazyLink, the Filer), $0B (FlashStore) and $1F (the ROM header). PipeDream (5, 6) completed it. The rename proposals are reviewed, and the IDE names operands across runs and banks. Left: coverage runs, recording the level. **To continue in a new session, read "Handoff (2026-11-15)" at the end of Phase 3.**
 **Goal:** a shipped sidecar `src/public/roms/z88v47.rom.dis` that annotates the OZ 4.7 ROM's banks to
 level 2 (all but bank 9, D-OZ7). It is built mostly from the OZ project's own assembler source,
 <https://bitbucket.org/cambridge/oz/src/V4.7/>, which the owner has given permission to use.
@@ -415,10 +415,17 @@ Done, on branch `dotneteer/z88-oz47-phase2`:
   (after the summary, before the contract), so it can be found in the OZ source:
   `tools/z88-source-name-notes.cjs` writes them into the authored file; run it again after a rename changes.
 
+- **Across runs and banks** (2026-11-15): the ROM page document listed a page at one address and named an
+  operand from that page's labels only, so the Filer's calls (bank $0A, run at $E400, listed at $8000),
+  LOWRAM's jumps (bank 2, run at $0000) and the calls between the kernel's and PipeDream's halves showed
+  addresses, and some LOWRAM operands were named after keymap labels at the same offset. Now an absolute
+  operand is resolved where its run runs, and a jump or call target or `.defw` word outside the page from the
+  pages in its `pagedWith` (`src/renderer/appIde/annotations/romRunNaming.ts`; Go to Definition and Find
+  References agree with the listing). Measured over all banks: about 1,500 more operands named, none renamed
+  except bank 2's four wrong keymap names (now `LowRAMcode`). Tests: `test/annotations/romRunNaming.test.ts`;
+  in the running IDE, `dev/scripts/z88-rom-listing-ide-check.cjs`.
+
 Open:
-- **Across banks:** PipeDream's two halves call each other (`call LD65D` in bank 5 is bank 6's code); a
-  listing names labels of its own bank only. A bank $0A Filer jump and LOWRAM's jumps are listed in the
-  bank's main segment, so they show addresses too.
 - Coverage runs (step 4).
 
 **Seeing the state:** after every session, `node dev/scripts/import-oz-source.cjs --all`, then copy
@@ -457,10 +464,8 @@ sample, merge, re-import, check, reassemble, install the working copy, append `z
 output to `z88-oz47-review.md` and add a `PROVENANCE.md` entry. Ask the helpers for decimal IY offsets.
 
 **Next steps, in order:**
-1. **Across banks:** a listing names labels of its own bank only, so PipeDream's calls between its halves,
-   the Filer's run (bank $0A, segment 3) and LOWRAM's jumps show addresses.
-2. **Coverage runs** (Phase 3 step 4) on `test/harness/z88/`.
-3. **Record `level: 2`** once every bank measures it, regenerate `rom-annotations.index.json`; then Phase 4,
+1. **Coverage runs** (Phase 3 step 4) on `test/harness/z88/`.
+2. **Record `level: 2`** once every bank measures it, regenerate `rom-annotations.index.json`; then Phase 4,
    which waits for Q1 (the permission's wording) before anything ships.
 
 **Checks after each batch.** The reassembly template: copy

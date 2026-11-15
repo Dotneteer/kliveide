@@ -216,6 +216,8 @@ function applyAuthored(file) {
       sidecar.pages[key] = { crc32: romPageIdentity(bytes).crc32, name: entries.page?.name ?? `OZ 4.7, bank ${hex2(Number(key))}h` };
     }
     if (entries.page?.segments) sidecar.pages[key].segments = entries.page.segments;
+    // --- The pages paged in while this one runs: the listing names its operands into them (romRunNaming.ts)
+    if (entries.page?.pagedWith) sidecar.pages[key].pagedWith = entries.page.pagedWith;
     for (const { name, value, provenance, synopsis } of entries.labels ?? []) {
       bank.localLabels = bank.localLabels.filter((l) => l.value !== value && l.name !== name);
       bank.localLabels.push({ name, value });

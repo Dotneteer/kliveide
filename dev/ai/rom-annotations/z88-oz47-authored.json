@@ -1,7 +1,18 @@
 {
-  "about": "Hand-written entries for z88v47.rom.dis that the OZ source does not provide (dev/plans/Z88_OZ47_ROM_ANNOTATIONS_PLAN.md, Phase 3). dev/scripts/import-oz-source.cjs --all applies them after the import, so a re-import keeps them: a label replaces the one at its offset, a synopsis or comment replaces the imported one, a region replaces the bytes it covers (an overlapped region keeps its parts on either side), and a bank the import does not cover gets its page from `page`. Every entry carries its provenance: observed (from the bytes), manual or derived, or source for a synopsis written from the OZ source code (allowed by D-OZ1; a line's synopsis and its imported comment share one provenance); offsets are bank offsets, in decimal. Synopses are drafted per slice with helper-briefs/z88-draft-synopses.md.",
+  "about": "Hand-written entries for z88v47.rom.dis that the OZ source does not provide (dev/plans/Z88_OZ47_ROM_ANNOTATIONS_PLAN.md, Phase 3). dev/scripts/import-oz-source.cjs --all applies them after the import, so a re-import keeps them: a label replaces the one at its offset, a synopsis or comment replaces the imported one, a region replaces the bytes it covers (an overlapped region keeps its parts on either side), and a bank the import does not cover gets its page from `page`; a page's `pagedWith` (the pages paged in while it runs, which the IDE names its operands from) is copied to every bank. Every entry carries its provenance: observed (from the bytes), manual or derived, or source for a synopsis written from the OZ source code (allowed by D-OZ1; a line's synopsis and its imported comment share one provenance); offsets are bank offsets, in decimal. Synopses are drafted per slice with helper-briefs/z88-draft-synopses.md.",
   "banks": {
     "0": {
+      "page": {
+        "pagedWith": [
+          {
+            "page": 1
+          },
+          {
+            "page": 2,
+            "start": 2048
+          }
+        ]
+      },
       "labels": [
         {
           "name": "bsf_crash",
@@ -1198,6 +1209,17 @@
       }
     },
     "1": {
+      "page": {
+        "pagedWith": [
+          {
+            "page": 0
+          },
+          {
+            "page": 2,
+            "start": 2048
+          }
+        ]
+      },
       "lines": {
         "10": {
           "synopsis": "OS_Sci: alters the screen information, the base addresses of LORES0, LORES1, HIRES0, HIRES1\nand the screen base file. The address in BHL is reduced to the Blink register value by the\nreason's granularity (OSSciTable), the old value is read from the soft copies at $046x and\n$047x and returned, and the new one is written when B is not 0. Setting the screen base also\nreinitialises the screen: windows 7 and 8, the application window and the OZ window are set\nup again.\nEntry: A = reason (SC_LR0, SC_LR1, SC_HR0, SC_HR1 or SC_SBR); B = 0 to read, otherwise BHL =\nnew address.\nExit: Fc = 0; BHL = old address (in the caller's OS frame).\nError: Fc = 1, A = RC_Fail (reason not 1-5).\nChanges: AF, BC, DE, HL.",
@@ -2506,6 +2528,13 @@
       }
     },
     "2": {
+      "page": {
+        "pagedWith": [
+          {
+            "page": 0
+          }
+        ]
+      },
       "lines": {
         "64": {
           "synopsis": "Shift table of the British keymap (KeyMap_UK, used for the UK, US, IS, JP and TR country\nsettings), at offset $40 of the keymap's page, after the 64-byte key matrix. A count byte,\nthen that many pairs (key code, code with Shift held) in ascending key-code order, for the\nkeys outside A-Z that are not in the Caps table. This keymap has 23 pairs. The Caps,\nDiamond, Square and dead-key tables follow it; at reset the country setup (os/spnq1.asm)\nrecords where each starts, and the keyboard driver (os/kbd.asm) searches them.",
@@ -2834,6 +2863,14 @@
       }
     },
     "3": {
+      "page": {
+        "pagedWith": [
+          {
+            "page": 2,
+            "start": 2048
+          }
+        ]
+      },
       "lines": {
         "1173": {
           "synopsis": "Main body of GN_Gdt, called by GNGdt once the date filter's bank (DAF_BNK) is bound in S1.\n1. Checks that the caller's B (maximum characters) is 1-128, else RC_Bad.\n2. Opens the localised date filter (uwGnDateFilter) with GN_Flo, case-insensitive and with a\nbuffer of B bytes, and copies up to B characters from the source (ReadOsfHL) into it with\nGN_Flw; end of file ends the copy.\n3. Reads the fields back through the filter: numbers with GN_Gdn, filter codes for month and\nweekday names, ordinal suffixes and AD/BC, separated by space, '/', '-', TAB, '.' or the\ncaller's C. The day/month order comes from the caller's A or the PA_Dat setting; a one- or\ntwo-digit year gets the current century.\n4. Converts day, month and year with GNDeiMain and returns the date through Wr_ABC_OsfDE.\n5. Closes the filter and returns the source index (HL < 256) or the advanced pointer.\nEntry: IY = OS frame with the caller's HL = source, DE = destination, A = format, B =\nmaximum characters, C = delimiter (if A bit 5 = 1).\nExit: frame ABC = date (DE < 256) or the date written at DE; frame HL = index or pointer.\nError: frame Fc = 1, A = RC_Bad, RC_Sntx or the read/filter error (PutOsf_Err).",
@@ -3234,6 +3271,14 @@
       }
     },
     "4": {
+      "page": {
+        "pagedWith": [
+          {
+            "page": 2,
+            "start": 2048
+          }
+        ]
+      },
       "lines": {
         "229": {
           "synopsis": "Fills B bytes from HL with zero.\nEntry: HL = start; B = count (0 = 256).\nExit: HL = first byte after the block; A = 0; B = 0.\nChanges: AF, B, HL.",
@@ -4486,6 +4531,17 @@
       }
     },
     "5": {
+      "page": {
+        "pagedWith": [
+          {
+            "page": 6
+          },
+          {
+            "page": 2,
+            "start": 2048
+          }
+        ]
+      },
       "lines": {
         "202": {
           "synopsis": "Wraps the edit line when bit 7 of (IY-69) is set and the line has grown past the column's\nwrap width; called from the main loop after a typed character, when OS_Xin returns Fc = 1.\n1. Returns unless L_8397 says the line can be wrapped and L_835B (for the current row) finds\na break point.\n2. When the cursor (IY-87) lies past the break, moves it back by the break's offset, clears\n(IY-88) and records the next row as the new position (L_82A2).\n3. Runs L_BC66 over the line (output at $1DAA), copies the result back to ($1D3D) and starts\na split with L_8320.\n4. Repeatedly cuts the line at the break found by L_8355, stores the first part as a slot\nwith L_823B (type $80 or $81, with format $0C or $0E when bit 6 of (IY-69) is set,\nalternated by bit 1 of (IY-71)), moves the rest to the start of the buffer and pulls words\nfrom the rows below with L_815B.\n5. Finishes at L_81BE: ends line editing (L_B411), adjusts the rows below when the number of\nrows changed ((IY-3) not 0), sets redraw flags and ends through L_8B80.\nEntry: none.",
@@ -6146,6 +6202,17 @@
       }
     },
     "6": {
+      "page": {
+        "pagedWith": [
+          {
+            "page": 5
+          },
+          {
+            "page": 2,
+            "start": 2048
+          }
+        ]
+      },
       "lines": {
         "39": {
           "synopsis": "Moves the current row forward by A rows (L_BFFC), then copies the current row (IY-26/25) to\n(IY-24/23) (L_C0DB).\nEntry: A = number of rows; (IY-26/25) = current row.\nExit: as L_BFFC; (IY-24/23) = (IY-26/25).\nChanges: AF, BC, DE, HL.",
@@ -8144,6 +8211,14 @@
       ]
     },
     "7": {
+      "page": {
+        "pagedWith": [
+          {
+            "page": 2,
+            "start": 2048
+          }
+        ]
+      },
       "labels": [
         {
           "name": "init_crash",
@@ -9422,6 +9497,14 @@
       }
     },
     "8": {
+      "page": {
+        "pagedWith": [
+          {
+            "page": 2,
+            "start": 2048
+          }
+        ]
+      },
       "lines": {
         "0": {
           "synopsis": "The System Token Table: the token base shared by the MTH of most built-in applications and\npopdowns, whose application DORs (dorappl in mth/appdors.asm) point at it. Layout: byte 0,\nthe recursive token boundary ($80); byte 1, the number of tokens ($80, so tokens $80-$FF);\nthen $81 words, each an offset from SysTokenBase: the start of tokens $80 to $FF in order\nand, last, the end of the table (end_tokens). A token's length is the next offset minus its\nown; the token texts follow the offsets, from token80 on. OS_Wrt reads it (WriteToken in\nos/token.asm): a byte $80-$FF is looked up in the active application's token base (set by\nOS_Wtb). With bit 7 of the boundary set, as here, every byte of a token goes back through\nOS_Wrt, so tokens nest; with bit 7 clear, only tokens from $80 + boundary upwards do. A $7F\nbyte in a token prints CR, LF.",
@@ -10862,6 +10945,14 @@
       }
     },
     "10": {
+      "page": {
+        "pagedWith": [
+          {
+            "page": 2,
+            "start": 2048
+          }
+        ]
+      },
       "lines": {
         "5": {
           "synopsis": "EazyLink's entry point, reached through the JP at $8000. Checks that the Index gave it its\ncontiguous RAM (IX+2, the end page + 1, must be $20+EAZ_BAD) and that it runs on the OZ it\nwas built for (OS_Nq NQ_Voz); otherwise it leaves through OS_Bye (A = RC_ROOM or 0). Then it\nenables Escape detection, clears MenuBarPosn and UserToggles (line feed conversion and\ntranslations off), calls Appl_Main and jumps to KillPopdown.\nEntry: IX = the application's information block.\nExit: does not return (OS_Bye).",
@@ -12426,6 +12517,14 @@
       }
     },
     "11": {
+      "page": {
+        "pagedWith": [
+          {
+            "page": 2,
+            "start": 2048
+          }
+        ]
+      },
       "lines": {
         "116": {
           "synopsis": "FlashStore's main command loop. It draws the command and file windows and the right-hand\nwindow (file card statistics when the bar is in the menu window, browse help when it is in\nthe file window), pushes its own address as the return address of every command, and then\nreads keys until ESC leaves the application.\n1. Shows the active bar (DisplBar), reads a key (rdch) and removes the bar again; a read\nerror retries.\n2. Polls the current slot's file card watermark (PollFileCardWatermark); when the file area\ndisappeared (Fc = 1) or changed (Fz = 1) it redraws the command and file windows and the\nstatistics.\n3. Dispatches the key: ESC jumps to suicide; the command shortcuts (catalogue, save, fetch,\nbackup, restore, format, select card, erase, default RAM, file view, file area copy) jump to\ntheir commands; the cursor keys move the menu bar (rows 1 to 7, wrapping) or the file bar;\nleft and right switch between the menu and file windows; ENTER (or 'F') runs the menu bar's\ncommand or fetches the selected file; DEL or 'D' marks a file deleted, 'C' copies, 'V' views\na file and 'M' views bank memory. Other keys are ignored.\nEntry: (MenuBarPosn), (barMode), (curslot) set up by the initialisation.\nExit: never returns to its caller while running; ESC leaves through suicide.",
@@ -13682,6 +13781,14 @@
       }
     },
     "12": {
+      "page": {
+        "pagedWith": [
+          {
+            "page": 2,
+            "start": 2048
+          }
+        ]
+      },
       "lines": {
         "523": {
           "synopsis": "Opens the file named at HL for output: sets the mode to OP_OUT and continues in OpenRead's\ncommon part (skip leading spaces, open with GN_Opf).\nEntry: HL = filename (local pointer).\nExit: IX = file handle; Fc = 0.\nError: Fc = 1, A = error code (from GN_Opf).\nChanges: AF, DE, HL, IX.\nKeeps: BC.",
@@ -14286,6 +14393,14 @@
       }
     },
     "13": {
+      "page": {
+        "pagedWith": [
+          {
+            "page": 2,
+            "start": 2048
+          }
+        ]
+      },
       "lines": {
         "261": {
           "synopsis": "Entry inside FPMod (FP_MOD), reached directly when both numbers are integers and called by\nFPIdv: divides the 32-bit integer HLhl by the 32-bit integer DEde. Both are made positive,\nDivision runs the long division, and the remainder takes the sign of the dividend. There is\nno check for a zero divisor.\nEntry: HLhl = dividend; DEde = divisor (two's complement integers; C and B are not read).\nExit: HLhl = remainder (sign of the dividend), C = 0; DEde = quotient's magnitude; A bit 7 =\n1 when the signs of the numbers differ.\nChanges: AF, BC, DE, HL, bc', de', hl', AF'.",
