@@ -3123,6 +3123,16 @@ warning hue would read as a warning.
   0..1 value to opacity through a power above 1, so a leakage floor of a few tenths recedes.
 - **A popover that holds controls takes the focus itself** (`tabIndex={-1}`, no outline), not its
   first button: a focus ring on the first of a row of choices reads as the chosen one.
+- **A row that scrolls sideways is a `ScrollViewer` too** (`allowVertical={false}`), never a bare
+  `overflow-x: auto`: the overlay scrollbar matches every other panel, and the mouse wheel scrolls it
+  sideways. The viewer is `height: 100%`, so for a row as tall as its content give it `height: auto`
+  in a `flex: none` slot, lay the content out at `width: max-content`, and pad below it so the
+  overlay bar never covers the last controls (the mixer's M and S buttons).
+- **A chart's axis labels get a strip of their own, never a place on the data.** The mixer's spectrum
+  once wrote its frequency labels at the foot of the bars: a loud band covered them, grey text on the
+  group's hue, unreadable. The labels now sit in a strip below a baseline (`--text-secondary`), and
+  the bars stop at that line. No label colour holds contrast against every hue it may land on, so
+  separate them in space, not by colour.
 
 ## Recommended First Reading For UI Work
 

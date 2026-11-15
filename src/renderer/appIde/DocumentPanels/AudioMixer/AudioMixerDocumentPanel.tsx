@@ -7,6 +7,7 @@ import { useT } from "@common/i18n/useT";
 import type { MessageKey } from "@common/i18n/keys.generated";
 import { EmptyState } from "@renderer/controls/data";
 import { FullPanel } from "@renderer/controls/layout/Panels";
+import ScrollViewer from "@renderer/controls/ScrollViewer";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import type { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import { MixerCanvas, MuteSoloButtons, usePeakHold } from "@renderer/features/audioMixer/AudioMixerControls";
@@ -88,55 +89,58 @@ const AudioMixerDocumentPanel = (_props: DocumentProps) => {
           </button>
         </div>
 
-        <div className={styles.strips}>
-          {groups.map((g) => (
-            <div key={g.group} className={styles.group}>
-              <div className={styles.groupLabel} style={{ borderColor: `var(${g.hue})` }}>
-                {t(g.channels[0].groupLabelKey)}
+        {/* --- The strips scroll sideways when the document is narrow (the Next has twenty) */}
+        <ScrollViewer allowVertical={false} thinScrollBar={true} className={styles.stripsScroller}>
+          <div className={styles.strips}>
+            {groups.map((g) => (
+              <div key={g.group} className={styles.group}>
+                <div className={styles.groupLabel} style={{ borderColor: `var(${g.hue})` }}>
+                  {t(g.channels[0].groupLabelKey)}
+                </div>
+                <div className={styles.groupStrips}>
+                  {g.channels.map((ch) => (
+                    <ChannelStrip
+                      key={ch.id}
+                      channel={ch}
+                      hue={g.hue}
+                      name={nameOf(ch)}
+                      hold={holds[ch.id] ?? 0}
+                      selected={ch.id === current?.id}
+                      audible={isChannelAudible(ch.id, mixer.settings, ids)}
+                      settings={mixer.settings}
+                      onSelect={() => setSelected(ch.id)}
+                      onChange={(change) => void mixer.setChannel(ch.id, change)}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+            <div className={styles.group}>
+              <div className={styles.groupLabel} style={{ borderColor: "var(--accent-solid)" }}>
+                {t("panels.audioMixer.output")}
               </div>
               <div className={styles.groupStrips}>
-                {g.channels.map((ch) => (
-                  <ChannelStrip
-                    key={ch.id}
-                    channel={ch}
-                    hue={g.hue}
-                    name={nameOf(ch)}
-                    hold={holds[ch.id] ?? 0}
-                    selected={ch.id === current?.id}
-                    audible={isChannelAudible(ch.id, mixer.settings, ids)}
-                    settings={mixer.settings}
-                    onSelect={() => setSelected(ch.id)}
-                    onChange={(change) => void mixer.setChannel(ch.id, change)}
-                  />
-                ))}
-              </div>
-            </div>
-          ))}
-          <div className={styles.group}>
-            <div className={styles.groupLabel} style={{ borderColor: "var(--accent-solid)" }}>
-              {t("panels.audioMixer.output")}
-            </div>
-            <div className={styles.groupStrips}>
-              <div className={classnames(styles.strip, styles.output)} title={t("panels.audioMixer.outputTitle")}>
-                <span className={styles.stripName}>{t("panels.audioMixer.output")}</span>
-                <MixerCanvas
-                  className={styles.miniSpectrum}
-                  draw={(c) => drawSpectrum(c, frame.output.spectrum, { hue: "--accent-solid", dim: false })}
-                />
-                <div className={styles.meterRow}>
+                <div className={classnames(styles.strip, styles.output)} title={t("panels.audioMixer.outputTitle")}>
+                  <span className={styles.stripName}>{t("panels.audioMixer.output")}</span>
                   <MixerCanvas
-                    className={styles.meter}
-                    testId="audio-mixer-output-meter"
-                    draw={(c) =>
-                      drawMeter(c, frame.output, holds["*"] ?? 0, { vertical: true, hue: "--accent-solid", dim: false })
-                    }
+                    className={styles.miniSpectrum}
+                    draw={(c) => drawSpectrum(c, frame.output.spectrum, { hue: "--accent-solid", dim: false })}
                   />
+                  <div className={styles.meterRow}>
+                    <MixerCanvas
+                      className={styles.meter}
+                      testId="audio-mixer-output-meter"
+                      draw={(c) =>
+                        drawMeter(c, frame.output, holds["*"] ?? 0, { vertical: true, hue: "--accent-solid", dim: false })
+                      }
+                    />
+                  </div>
+                  <span className={styles.db}>{formatDb(t, frame.output.peak)}</span>
                 </div>
-                <span className={styles.db}>{formatDb(t, frame.output.peak)}</span>
               </div>
             </div>
           </div>
-        </div>
+        </ScrollViewer>
 
         {current && (
           <div className={styles.analyser}>

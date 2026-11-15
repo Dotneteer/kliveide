@@ -5,7 +5,8 @@
  * panel's vocabulary: strips on raised surfaces, grouped by chip with the group's hue
  * (`--audio-group-n`) as a bar beside its label and in its meters and spectra; numbers in
  * `--color-state-value`; the selected strip ringed in the accent. The strips scroll sideways when the
- * document is narrow (the Next has twenty); the analyser takes the rest of the height.
+ * document is narrow (the Next has twenty), in a horizontal-only `ScrollViewer` like every other
+ * scrolling area; the analyser takes the rest of the height.
  */
 .document {
   display: flex;
@@ -44,13 +45,19 @@
   }
 }
 
+.stripsScroller {
+  /* --- As tall as the strips (the ScrollViewer is 100% high by default), never taller */
+  flex: none;
+  height: auto;
+  border-bottom: 1px solid var(--border-default);
+}
+
 .strips {
   display: flex;
+  width: max-content;
   gap: var(--space-2);
-  padding: var(--space-2);
-  overflow-x: auto;
-  flex: none;
-  border-bottom: 1px solid var(--border-default);
+  /* --- Room below the strips for the overlay scrollbar, so it never covers the M and S buttons */
+  padding: var(--space-2) var(--space-2) var(--space-3);
 }
 
 .group {

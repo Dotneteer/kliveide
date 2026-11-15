@@ -81,6 +81,44 @@ module.exports = {
       for (const id of ["tape", "mic"]) if (!silent(state.strips[id])) fail(`${id} should be silent`, state.strips);
       if (!state.analyser) fail("No analyser", state);
 
+      // --- Narrow: the strips scroll sideways in a ScrollViewer, the row as tall as the strips, and
+      // --- the mouse wheel scrolls it
+      const ideSize = (width, height) =>
+        klive.app.evaluate(({ BrowserWindow }, size) => {
+          const win = BrowserWindow.getAllWindows().find((w) => !w.webContents.getURL().includes("?emu"));
+          win?.setContentSize(size.width, size.height);
+        }, { width, height });
+      await ideSize(640, 860);
+      await sleep(1200);
+      const stripsBox = '[data-testid="audio-mixer-document"] [class*="_strips_"]';
+      await klive.ide.locator(stripsBox).hover();
+      await klive.ide.mouse.wheel(0, 300);
+      await sleep(600);
+      const narrow = await klive.ide.evaluate((selector) => {
+        const strips = document.querySelector(selector);
+        const viewport = strips?.closest("[data-overlayscrollbars-viewport]");
+        const host = strips?.closest('[class*="_stripsScroller_"]');
+        if (!strips || !viewport || !host) return { found: false };
+        return {
+          found: true,
+          scrollable: viewport.scrollWidth > viewport.clientWidth,
+          scrolledBy: viewport.scrollLeft,
+          hostHeight: Math.round(host.getBoundingClientRect().height),
+          stripsHeight: Math.round(strips.getBoundingClientRect().height),
+          bar: !!host.querySelector(".os-scrollbar-horizontal")
+        };
+      }, stripsBox);
+      console.log("  narrow ·", JSON.stringify(narrow));
+      if (!narrow.found || !narrow.scrollable || !narrow.bar) fail("The strips do not scroll in a ScrollViewer", narrow);
+      if (narrow.scrolledBy <= 0) fail("The mouse wheel does not scroll the strips sideways", narrow);
+      if (narrow.hostHeight < narrow.stripsHeight) fail("The strip row clips the strips", narrow);
+      await klive.ide.evaluate((selector) => {
+        const viewport = document.querySelector(selector)?.closest("[data-overlayscrollbars-viewport]");
+        if (viewport) viewport.scrollLeft = 0;
+      }, stripsBox);
+      await ideSize(1240, 860);
+      await sleep(1200);
+
       // --- Select AY channel A, mute it: its facts say so, and its meter keeps moving (pre-fader)
       const strip = (id) => klive.ide.locator(`[data-testid="audio-mixer-strip-${id}"]`);
       // --- A strip is selected by its name: its middle is the fader, which keeps its clicks

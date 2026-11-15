@@ -114,28 +114,39 @@ export type SpectrumOptions = { hue: string; dim: boolean; grid?: { sampleRate: 
 
 const GRID_HZ = [100, 250, 500, 1000, 2000, 4000, 8000];
 
-/** The bar spectrum; with `grid`, frequency lines and labels */
+/** The bar spectrum; with `grid`, frequency lines, and their labels in a strip of their own below the bars */
 export function drawSpectrum(canvas: HTMLCanvasElement | null, spectrum: readonly number[], o: SpectrumOptions): void {
   const ctx = fitCanvas(canvas);
   if (!ctx || !canvas) return;
-  const { width: w, height: h } = canvas;
-  ctx.clearRect(0, 0, w, h);
+  const { width: w } = canvas;
+  ctx.clearRect(0, 0, w, canvas.height);
+  // --- The labels never sit on the bars: a loud band would cover them, grey text on the group's hue
+  let h = canvas.height;
   if (o.grid) {
+    const ratio = window.devicePixelRatio || 1;
+    const axis = Math.round(16 * ratio);
+    h = Math.max(1, canvas.height - axis);
     const edges = spectrumBandEdges(o.grid.sampleRate);
     const lo = Math.log(edges[0]);
     const span = Math.log(edges[SPECTRUM_BANDS]) - lo;
     ctx.strokeStyle = tokenColor(canvas, "--border-subtle");
-    ctx.fillStyle = tokenColor(canvas, "--text-tertiary");
-    ctx.font = `${10 * (window.devicePixelRatio || 1)}px sans-serif`;
+    ctx.fillStyle = tokenColor(canvas, "--text-secondary");
+    ctx.font = `${10 * ratio}px sans-serif`;
+    ctx.textBaseline = "middle";
     ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, h + 0.5);
+    ctx.lineTo(w, h + 0.5);
+    ctx.stroke();
     for (const hz of GRID_HZ) {
       const x = ((Math.log(hz) - lo) / span) * w;
       ctx.beginPath();
       ctx.moveTo(x, 0);
-      ctx.lineTo(x, h);
+      ctx.lineTo(x, h + 3 * ratio);
       ctx.stroke();
-      ctx.fillText(hz >= 1000 ? `${hz / 1000}k` : `${hz}`, x + 3, h - 4);
+      ctx.fillText(hz >= 1000 ? `${hz / 1000}k` : `${hz}`, x + 3 * ratio, h + axis / 2);
     }
+    ctx.textBaseline = "alphabetic";
   }
   const bw = w / spectrum.length;
   ctx.fillStyle = tokenColor(canvas, o.hue);
