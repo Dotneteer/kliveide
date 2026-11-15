@@ -40,6 +40,15 @@ article > main {
   max-width: 70ch;
 }
 
+/* --- The article's side padding: the same 2.5rem gap to the sidebar and to the table of contents.
+   --- With the frame (--site-content-width, 82rem) sized to the columns, the article fills its place
+   --- and the two gaps are equal; Nextra's own 3rem plus the slack left 48px and 161px. */
+@media (min-width: 768px) {
+  article:has(> main) {
+    padding-inline: 2.5rem;
+  }
+}
+
 /* --- The search field's edge: Nextra draws it with a 5% tint only, 1.12:1 against the navbar in the
    --- light theme and 1.31:1 in the dark one. A field needs 3:1 (WCAG 1.4.11). Half the text colour
    --- over the page reaches 3.3:1 in light and 4.3:1 in dark. An inset shadow, so the field keeps its

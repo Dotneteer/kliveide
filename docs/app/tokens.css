@@ -88,7 +88,9 @@
  * --nextra-navbar-height, which must stay a literal length.
  */
 :root {
-  --site-content-width: 90rem;
+  /* --- 82rem: the docs' sidebar (16rem) + 2.5rem + the article's 70ch measure + 2.5rem + the table of
+     --- contents (16rem), with no slack beside the article; at 90rem it stood in 160px of empty space */
+  --site-content-width: 82rem;
   --site-gutter: 1.5rem;
   --site-header-height: 4rem;
 }

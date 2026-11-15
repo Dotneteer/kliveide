@@ -42,7 +42,8 @@ dark one the way the app derives it; never tune one by hand. The roles:
 - Small controls (carousel arrows, dots, theme toggle): 2rem square, 6px radius, hover on
   `--site-hover`.
 - The frame is shared: the landing page's header, main column and footer and the docs' navbar stand
-  at one width (`--site-content-width`, 90rem), one gutter (`--site-gutter`) and one header height
+  at one width (`--site-content-width`, 82rem: exactly the docs' sidebar, article and table of
+  contents, with an equal 2.5rem gap on each side of the article), one gutter (`--site-gutter`) and one header height
   (`--site-header-height`, 64px), all in `app/tokens.css`; Nextra's `--nextra-content-width` is set
   from them. Moving between the landing page and the docs moves nothing in the header.
 - **One header on every page**, item for item: the 6px rule, then the brand, the five area links

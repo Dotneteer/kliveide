@@ -3348,7 +3348,12 @@ drift. Change a neutral or the default accent in the app, and the site changes w
   `--site-header-height` in `docs/app/tokens.css`; `custom.css` sets Nextra's `--nextra-content-width`
   from them with `html:root`, which outranks the `:root` block Nextra's `<Head>` writes). The author
   noticed the landing page's 76rem column and 60px header jumping against the docs' 90rem and 64px.
-  Measure the brand's left edge on both at a width above 90rem when changing either.
+  Measure the brand's left edge on both at a width above the frame when changing either. **The frame
+  is sized to the docs' columns, not picked:** 82rem = sidebar 16rem + 2.5rem + the 70ch article
+  (719px) + 2.5rem + table of contents 16rem, with the article's side padding set to 2.5rem
+  (`custom.css`). At Nextra's 90rem the article sat in 48px on one side and 161px on the other, which
+  the author saw as too-wide margins; the landing page follows the same frame, so it narrowed too.
+  Change the article measure and the frame changes with it.
 - **A translated landing page renders inside `app/[lang]/layout.tsx`'s plain `<body>`**, which has no
   stylesheet of its own: the browser's 8px body margin showed as a white strip above the rule on every
   language but English. `body:has(.lp-body)` in `landing.css` clears it; a page that sets its own body
