@@ -4,11 +4,13 @@ import type { PanelRenderer } from "./PanelRenderer";
 import type { FileContentKind } from "@common/ht1080z/basContent";
 
 /**
- * How an entry's pattern is matched. The matcher is mostly given a full path, so `"full"` matches only
- * where a bare name is passed; `"name"` compares the file's own name (the text after the last `/` or
- * `\`), for a format known by its exact name, such as `TBBLUE.TBU`.
+ * How an entry's pattern is matched. The matcher is mostly given a full path, so a file known by its
+ * exact name (`klive.project`, `build.ksx`, `TBBLUE.TBU`) uses `"name"`, which compares the file's own
+ * name (the text after the last `/` or `\`). There is deliberately no whole-string match: one that
+ * compared the path with a bare name silently stopped matching when callers moved to full paths, and
+ * `klive.project` lost its JSON highlighting and read-only state.
  */
-export type PatternMatchType = "starts" | "contains" | "ends" | "full" | "name";
+export type PatternMatchType = "starts" | "contains" | "ends" | "name";
 
 export type FileTypePattern = {
   matchType?: PatternMatchType;
