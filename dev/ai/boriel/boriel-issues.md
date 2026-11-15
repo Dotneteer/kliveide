@@ -1,7 +1,8 @@
-# Issues to report to Boriel (zxbc 2.0.0-beta25, re-checked on beta29)
+# Issues to report to Boriel (zxbc 2.0.0-beta25, re-checked on beta29 and 2.0.0)
 
 Items 3, 11 and 12 are **fixed in 2.0.0-beta29** (seen in the regenerated fixtures, 2026-10-24).
-Items 2, 4, 5 and 9 still show in the beta29 fixtures; the others were not re-run.
+Items 2, 4, 5 and 9 still show in the beta29 fixtures, and in 2.0.0's, which are byte-identical; the
+others were not re-run.
 
 Each item was found during Klive's Phase B0. Each has a minimal program, Klive's own, that
 reproduces it. The project author decides what to send.

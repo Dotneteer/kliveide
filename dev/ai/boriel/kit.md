@@ -1,11 +1,11 @@
-# The Boriel BASIC 2.0.0-beta29 setup kits
+# The Boriel BASIC 2.0.0 setup kits
 
 ## Downloads and hashes
 
 The kits are public: `https://files.boriel-basic.net/v2/<file>`. The URL is recorded in each file's
 `kMDItemWhereFroms`. Boriel publishes no checksums. The beta25 sizes served on 2026-10-17 equalled
-the copies Boriel sent; the beta29 kits were downloaded twice on 2026-10-24 and both copies hashed
-the same. CI fetches by pinned URL and verifies the SHA-256, so the archives need not be committed.
+the copies Boriel sent; the beta29 kits were downloaded twice on 2026-10-24, and the 2.0.0 kits on 2026-11-15, and both
+copies hashed the same. CI fetches by pinned URL and verifies the SHA-256, so the archives need not be committed.
 
 In the source tree the kits live in **`dev/vendor/boriel-basic/`**. `kit.json` there is the
 authoritative copy of the table below (keys are `process.platform`-`process.arch`), and the
@@ -13,18 +13,19 @@ archives sit in the git-ignored `kits/` (see that folder's `README.md`).
 
 | File | Bytes | SHA-256 | Klive installer |
 | --- | --- | --- | --- |
-| `boriel-basic-v2.0.0-beta29_arm64-macos.tar.gz` | 3064810 | `4c940c0e9dd1aae743da6e459ff4837988dccbbb89e0455ddf9e4d4060a746b5` | mac arm64 |
-| `boriel-basic-v2.0.0-beta29_x86_64-macos.tar.gz` | 3326978 | `b535260213e5389a5344f4a163d3278ef4b0d1150cb7007ec799d300318916e2` | mac x64 |
-| `boriel-basic-v2.0.0-beta29_x86_64-linux.tar.gz` | 3409272 | `a9833bc9027c03b2cede88d5a304fee4356b89e40ba77946de55036b6d4c4e69` | linux x64 |
-| `boriel-basic-v2.0.0-beta29_arm64-linux.tar.gz` | 3286878 | `e23484b96d654889ec7c35d8b8c3ad5bcabc58da1a99492619c8e3a21c04660e` | linux arm64 |
-| `boriel-basic-v2.0.0-beta29_x86_64-win.zip` | 13718211 | `60e43ae8c7d819605b3e62c9af2c69dded636bf58b7f9791594a503b6ec512f2` | win x64 |
-| `boriel-basic-v2.0.0-beta29_arm64-win.zip` | 13116287 | `90a783822388e14a0f6b8c3339fff92b949b25258fe151ce32006927707108dc` | none (no win arm64 build) |
-| `boriel-basic-v2.0.0-beta29_armv6-linux.tar.gz` | 3661441 | `ab19cb0f3c242084636447083ab387bcb1636aafed98b87bca59b6945efb8f97` | none (no armv7l build) |
+| `boriel-basic-v2.0.0_arm64-macos.tar.gz` | 3065176 | `55152c5d41656643c1d1ad1de12ea05601fa44aa362702b7a5f43c94dc65e374` | mac arm64 |
+| `boriel-basic-v2.0.0_x86_64-macos.tar.gz` | 3327346 | `1360dbbdc5b5f1aac4437e8315f9f0b3064950e4bdc07cc3d5b1fb79a8595598` | mac x64 |
+| `boriel-basic-v2.0.0_x86_64-linux.tar.gz` | 3409701 | `fabe3b8e97f2355a0ad77c0f0457d5dd2a78d4a502d8bda18a991154876c9579` | linux x64 |
+| `boriel-basic-v2.0.0_arm64-linux.tar.gz` | 3289681 | `0fa5b80bbd8f0625b79fda732032736ab6bf85957bf5d8c6e8c9bba98fcd131a` | linux arm64 |
+| `boriel-basic-v2.0.0_x86_64-win.zip` | 13706885 | `e474b96d286fe34bd1cb908d06f955eb529bd0cb574acade3ebacb15a6e94d45` | win x64 |
+| `boriel-basic-v2.0.0_arm64-win.zip` | 13105025 | `69cd0ed6ec4f430608c0b72aab6c14f4fbde5857f345a6305a0b6a726c7b6cba` | none (no win arm64 build) |
+| `boriel-basic-v2.0.0_armv6-linux.tar.gz` | 3662929 | `5ed26f02d857a3c17ec20ccd9d03092b5272ac858fa5b7b957ced9ea2a3c2263` | none (no armv7l build) |
 
 ## Layout
 
 - One top-level folder, `boriel-basic-v<version>_<arch>-<os>/`. Strip it on extraction.
-- 754 files (Windows: 763; beta25 had 750 and 759), no symlinks, longest path 95 characters. Tarballs use the GNU
+- 754 files (Windows: 763; beta25 had 750 and 759), no symlinks, longest path 88 characters (95
+  in the betas, whose folder name is longer). Tarballs use the GNU
   `ustar  ` magic.
 - **Nine executables:**
   - root: `zxbc`, `zxbasm`, `zxbpp`;
@@ -37,7 +38,8 @@ archives sit in the git-ignored `kits/` (see that folder's `README.md`).
   - Linux: statically linked ELF (no libc dependency).
   - macOS: Mach-O, ad-hoc, linker-signed.
   - Windows: PE32+ console, plus `.pdb` files.
-- `lib/` (runtime and stdlib, the data zxbc links in) is **identical in all seven kits**. `arch/`
+- `lib/` (runtime and stdlib, the data zxbc links in) is **identical in all seven kits**. In 2.0.0
+  `lib/` and `arch/` are byte-identical to beta29's; only the executables changed. `arch/`
   differs only in the tool executables' names.
 - **Windows `.pdb` files are 34.5 MB of the 46 MB unpacked, and nothing loads them**, so the
   installer leaves them out. Checked without running anything (2026-11-04, beta29, both Windows
