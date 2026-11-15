@@ -763,7 +763,7 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
 // --- The registry of ile types
 export const fileTypeRegistry: FileTypeEditor[] = [
   {
-    matchType: "full",
+    matchType: "name",
     pattern: PROJECT_FILE,
     editor: CODE_EDITOR,
     subType: "json",
@@ -771,7 +771,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     icon: "file-project"
   },
   {
-    matchType: "full",
+    matchType: "name",
     pattern: BUILD_FILE,
     editor: CODE_EDITOR,
     subType: "ksx",
@@ -880,7 +880,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     icon: "@file-text-txt"
   },
   {
-    matchType: "full",
+    matchType: "name",
     pattern: "build.ksx",
     editor: CODE_EDITOR,
     subType: "ksx",

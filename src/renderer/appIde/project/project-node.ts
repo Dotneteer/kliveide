@@ -219,9 +219,6 @@ export function getFileTypeEntry(filename: string, store: Store<AppState>): File
     const name = typeEntry.ignoreCase ? lowerName : filename;
     const pattern = typeEntry.ignoreCase ? typeEntry.pattern.toLowerCase() : typeEntry.pattern;
     switch (typeEntry.matchType) {
-      case "full":
-        match = name === pattern;
-        break;
       case "name":
         match = name.slice(Math.max(name.lastIndexOf("/"), name.lastIndexOf("\\")) + 1) === pattern;
         break;
