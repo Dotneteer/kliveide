@@ -14,4 +14,4 @@
 3:[["children",{"s":{"n":"mdxPath","t":"c","k":"guides/debugging/call-stack-variables","s":[]},"h":65600,"c":"$Q4"}]]
 2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
 1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
-0:{"b":"ZHl4Jp-kx9fE9OL26jHOU","t":{"t":{"s":"","h":131152,"c":"$Q1"}}}
+0:{"b":"5dufrC_ZELqvpNUQnxM9b","t":{"t":{"s":"","h":131152,"c":"$Q1"}}}
