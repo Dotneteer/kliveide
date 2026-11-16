@@ -13,6 +13,8 @@ type Props = {
   transparencyIndex: number;
   separated: boolean;
   showTransparencyColor: boolean;
+  /** The sheet is read as 4-bit patterns: the count and the cells' names say "pattern". */
+  fourBit?: boolean;
   onSelect: (index: number) => void;
   /** Reorder: move `from` to the insertion point `to` (see `moveSprite`). */
   onReorder: (from: number, to: number) => void;
@@ -38,6 +40,7 @@ export const SpriteSheetBrowser = memo(
     transparencyIndex,
     separated,
     showTransparencyColor,
+    fourBit,
     onSelect,
     onReorder,
     height,
@@ -78,7 +81,9 @@ export const SpriteSheetBrowser = memo(
         <span>{t("panels.spriteEditor.sheet")}</span>
         <span className={styles.statusSpacer} />
         <span className={styles.sheetCount}>
-          {t("panels.spriteEditor.sheetCount", { count: sprites.length })}
+          {fourBit
+            ? t("panels.spriteEditor.sheetCount4", { count: sprites.length })
+            : t("panels.spriteEditor.sheetCount", { count: sprites.length })}
         </span>
       </div>
       <div className={styles.sheetScroll}>
@@ -94,6 +99,7 @@ export const SpriteSheetBrowser = memo(
             transparencyIndex={transparencyIndex}
             separated={separated}
             showTransparencyColor={showTransparencyColor}
+            fourBit={fourBit}
             onSelect={onSelect}
             dragging={dragFrom === index}
             dropSide={dropAt?.index === index ? (dropAt.after ? "after" : "before") : undefined}
@@ -132,6 +138,7 @@ type CellProps = {
   transparencyIndex: number;
   separated: boolean;
   showTransparencyColor: boolean;
+  fourBit?: boolean;
   onSelect: (index: number) => void;
   dragging: boolean;
   dropSide?: "before" | "after";
@@ -150,6 +157,7 @@ const SheetCell = memo(
     transparencyIndex,
     separated,
     showTransparencyColor,
+    fourBit,
     onSelect,
     dragging,
     dropSide,
@@ -165,9 +173,13 @@ const SheetCell = memo(
         role="option"
         aria-selected={selected}
         aria-label={
-          isEmpty
-            ? t("panels.spriteEditor.cellEmpty", { index: index + 1 })
-            : t("panels.spriteEditor.cell", { index: index + 1 })
+          fourBit
+            ? isEmpty
+              ? t("panels.spriteEditor.cellEmpty4", { index: index + 1 })
+              : t("panels.spriteEditor.cell4", { index: index + 1 })
+            : isEmpty
+              ? t("panels.spriteEditor.cellEmpty", { index: index + 1 })
+              : t("panels.spriteEditor.cell", { index: index + 1 })
         }
         tabIndex={selected ? 0 : -1}
         className={classnames(styles.sheetCell, {

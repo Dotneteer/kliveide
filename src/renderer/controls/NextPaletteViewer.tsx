@@ -14,7 +14,6 @@ import { useT } from "@common/i18n/useT";
 /** A Next palette is always 16x16. */
 const COLUMNS = 16;
 const ROWS = 16;
-const SIZE = COLUMNS * ROWS;
 
 const INDEXES = Array.from({ length: COLUMNS }, (_, i) => i);
 
@@ -61,6 +60,16 @@ type Props = {
    * container narrower than the grid, and degrading beats the clipping the original viewer did.
    */
   cellSize?: number;
+  /**
+   * Show only rows `firstRow` .. `firstRow + rowCount - 1` (both default to the whole palette).
+   *
+   * The sprite editor's 4-bit sheets can use one row - the 16 entries of their palette offset - so
+   * it shows only that row. Indexes stay absolute: the swatches keep their real labels, and
+   * `selectedIndex`, `transparencyIndex` and the callbacks speak in palette indexes as before.
+   * The arrow keys stay inside the visible rows.
+   */
+  firstRow?: number;
+  rowCount?: number;
   usePriority?: boolean;
   transparencyIndex?: number;
   allowSelection?: boolean;
@@ -74,6 +83,8 @@ type Props = {
 export const NextPaletteViewer = ({
   palette,
   cellSize = DEFAULT_CELL_SIZE,
+  firstRow = 0,
+  rowCount = ROWS,
   usePriority = false,
   transparencyIndex,
   allowSelection,
@@ -85,6 +96,12 @@ export const NextPaletteViewer = ({
 }: Props) => {
   const t = useT();
   const [selected, setSelected] = useState<number>();
+  // --- The visible rows, kept inside the palette
+  const rowStart = Math.min(ROWS - 1, Math.max(0, Math.floor(firstRow)));
+  const rows = Math.min(ROWS - rowStart, Math.max(1, Math.floor(rowCount)));
+  const visibleRows = useMemo(() => Array.from({ length: rows }, (_, i) => rowStart + i), [rowStart, rows]);
+  const firstVisible = rowStart * COLUMNS;
+  const visibleSize = rows * COLUMNS;
 
   /*
    * One tooltip for the whole grid, not one per swatch.
@@ -161,7 +178,7 @@ export const NextPaletteViewer = ({
       switch (code) {
         case "ArrowUp":
           newSelected = selected - COLUMNS;
-          if (newSelected < 0) newSelected += SIZE;
+          if (newSelected < firstVisible) newSelected += visibleSize;
           break;
         case "ArrowDown":
           newSelected = selected + COLUMNS;
@@ -170,7 +187,7 @@ export const NextPaletteViewer = ({
            * row wrapped to a swatch that does not exist, and every consumer of the selection then
            * read `palette[256]`, i.e. `undefined`.
            */
-          if (newSelected >= SIZE) newSelected -= SIZE;
+          if (newSelected >= firstVisible + visibleSize) newSelected -= visibleSize;
           break;
         case "ArrowLeft":
           newSelected = (selected & 0xf0) + ((selected - 1) & 0x0f);
@@ -189,7 +206,7 @@ export const NextPaletteViewer = ({
       setSelected(newSelected);
       onSelection?.(newSelected);
     },
-    [selected, onPriority, onOtherKey, onSelection]
+    [selected, firstVisible, visibleSize, onPriority, onOtherKey, onSelection]
   );
 
   const tooltipText = useMemo(() => {
@@ -225,10 +242,11 @@ export const NextPaletteViewer = ({
             {idx.toString(16).toUpperCase()}
           </div>
         ))}
-        {INDEXES.map((row) => (
+        {visibleRows.map((row) => (
           <PaletteRow
             key={row}
             row={row}
+            topRow={rowStart}
             palette={palette}
             usePriority={usePriority}
             transparencyIndex={transparencyIndex}
@@ -251,6 +269,8 @@ export const NextPaletteViewer = ({
 
 type PaletteRowProps = {
   row: number;
+  /** The first row shown: it draws no quadrant rule above itself. */
+  topRow: number;
   palette: number[];
   usePriority?: boolean;
   transparencyIndex?: number;
@@ -272,6 +292,7 @@ type PaletteRowProps = {
  */
 const PaletteRow = ({
   row,
+  topRow,
   palette,
   usePriority,
   transparencyIndex,
@@ -294,7 +315,7 @@ const PaletteRow = ({
             key={col}
             index={index}
             value={palette?.[index] ?? 0}
-            row={row}
+            topRule={row > topRow && row % 4 === 0}
             column={col}
             usePriority={usePriority}
             isTransparency={index === transparencyIndex}
@@ -315,7 +336,8 @@ const PaletteRow = ({
 type PaletteItemProps = {
   index: number;
   value: number;
-  row: number;
+  /** A quadrant rule above this swatch (every fourth row, never above the first one shown). */
+  topRule: boolean;
   column: number;
   usePriority?: boolean;
   isTransparency: boolean;
@@ -346,7 +368,7 @@ const PaletteItem = memo(
   ({
     index,
     value,
-    row,
+    topRule,
     column,
     usePriority,
     isTransparency,
@@ -375,7 +397,7 @@ const PaletteItem = memo(
       <div
         className={classnames(styles.paletteItem, {
           [styles.quadLeft]: column > 0 && column % 4 === 0,
-          [styles.quadTop]: row > 0 && row % 4 === 0,
+          [styles.quadTop]: topRule,
           [styles.selected]: isSelected
         })}
         style={{ backgroundColor: color, ["--palette-rule" as any]: ruleColor }}

@@ -2548,6 +2548,14 @@
       "start": "Hex address"
     }
   },
+  "panels.spriteEditor.spriteLabel4": "Pattern {index} of {count} · 16×16 · 4bpp",
+  "@panels.spriteEditor.spriteLabel4": {
+    "context": "Sprite editor (the editor of ZX Spectrum Next .spr sprite sheets: 16×16 sprites, 8 or 4 bits per pixel). Right end of the status bar under the canvas, when the sheet is read as 4-bit patterns. 'bpp' = bits per pixel.",
+    "placeholders": {
+      "index": "1-based pattern number",
+      "count": "Patterns in the sheet"
+    }
+  },
   "panels.spriteEditor.spriteLabel": "Sprite {index} of {count} · 16×16 · 8bpp",
   "@panels.spriteEditor.spriteLabel": {
     "context": "Sprite editor (the editor of ZX Spectrum Next .spr sprite sheets: 16×16 sprites, 8 bits per pixel). Right end of the status bar under the canvas. 'bpp' = bits per pixel.",
@@ -2696,6 +2704,13 @@
       "count": "Number of sprites"
     }
   },
+  "panels.spriteEditor.sheetCount4": "{count, plural, one {# pattern} other {# patterns}}",
+  "@panels.spriteEditor.sheetCount4": {
+    "context": "Sprite editor (the editor of ZX Spectrum Next .spr sprite sheets: 16×16 sprites, 8 or 4 bits per pixel), when the sheet is read as 4-bit patterns (128 bytes each). Count beside the 'Sheet' heading.",
+    "placeholders": {
+      "count": "Number of patterns"
+    }
+  },
   "panels.spriteEditor.sheetList": "Sprite sheet",
   "@panels.spriteEditor.sheetList": {
     "context": "Sprite editor (the editor of ZX Spectrum Next .spr sprite sheets: 16×16 sprites, 8 bits per pixel). Accessible name (screen readers only) of the strip of sprites."
@@ -2707,9 +2722,23 @@
       "index": "1-based number"
     }
   },
+  "panels.spriteEditor.cell4": "Pattern {index}",
+  "@panels.spriteEditor.cell4": {
+    "context": "Sprite editor (the editor of ZX Spectrum Next .spr sprite sheets: 16×16 sprites, 8 or 4 bits per pixel), when the sheet is read as 4-bit patterns (128 bytes each). Accessible name (screen readers only) of a pattern in the strip.",
+    "placeholders": {
+      "index": "1-based number"
+    }
+  },
   "panels.spriteEditor.cellEmpty": "Sprite {index} (empty)",
   "@panels.spriteEditor.cellEmpty": {
     "context": "Sprite editor (the editor of ZX Spectrum Next .spr sprite sheets: 16×16 sprites, 8 bits per pixel). Accessible name (screen readers only) of an empty sprite in the strip.",
+    "placeholders": {
+      "index": "1-based number"
+    }
+  },
+  "panels.spriteEditor.cellEmpty4": "Pattern {index} (empty)",
+  "@panels.spriteEditor.cellEmpty4": {
+    "context": "Sprite editor (the editor of ZX Spectrum Next .spr sprite sheets: 16×16 sprites, 8 or 4 bits per pixel), when the sheet is read as 4-bit patterns (128 bytes each). Accessible name (screen readers only) of an empty pattern in the strip.",
     "placeholders": {
       "index": "1-based number"
     }
@@ -2734,6 +2763,10 @@
   "@panels.spriteEditor.duplicate": {
     "context": "Sprite editor (the editor of ZX Spectrum Next .spr sprite sheets: 16×16 sprites, 8 bits per pixel). Toolbar above the sheet: tooltip."
   },
+  "panels.spriteEditor.duplicate4": "Duplicate pattern",
+  "@panels.spriteEditor.duplicate4": {
+    "context": "Sprite editor (the editor of ZX Spectrum Next .spr sprite sheets: 16×16 sprites, 8 or 4 bits per pixel), when the sheet is read as 4-bit patterns (128 bytes each). Toolbar above the sheet: tooltip."
+  },
   "panels.spriteEditor.cutRegion": "Cut region (Ctrl+X)",
   "@panels.spriteEditor.cutRegion": {
     "context": "Sprite editor (the editor of ZX Spectrum Next .spr sprite sheets: 16×16 sprites, 8 bits per pixel). Toolbar above the sheet: tooltip while a pixel region is marked."
@@ -2742,6 +2775,10 @@
   "@panels.spriteEditor.cutSprite": {
     "context": "Sprite editor (the editor of ZX Spectrum Next .spr sprite sheets: 16×16 sprites, 8 bits per pixel). Toolbar above the sheet: tooltip. Two lines."
   },
+  "panels.spriteEditor.cutSprite4": "Cut pattern (Ctrl+X)\nMark a region with the select tool to cut pixels instead",
+  "@panels.spriteEditor.cutSprite4": {
+    "context": "Sprite editor (the editor of ZX Spectrum Next .spr sprite sheets: 16×16 sprites, 8 or 4 bits per pixel), when the sheet is read as 4-bit patterns (128 bytes each). Toolbar above the sheet: tooltip. Two lines."
+  },
   "panels.spriteEditor.copyRegion": "Copy region (Ctrl+C)",
   "@panels.spriteEditor.copyRegion": {
     "context": "Sprite editor (the editor of ZX Spectrum Next .spr sprite sheets: 16×16 sprites, 8 bits per pixel). Toolbar above the sheet: tooltip while a pixel region is marked."
@@ -2749,6 +2786,10 @@
   "panels.spriteEditor.copySprite": "Copy sprite (Ctrl+C)",
   "@panels.spriteEditor.copySprite": {
     "context": "Sprite editor (the editor of ZX Spectrum Next .spr sprite sheets: 16×16 sprites, 8 bits per pixel). Toolbar above the sheet: tooltip."
+  },
+  "panels.spriteEditor.copySprite4": "Copy pattern (Ctrl+C)",
+  "@panels.spriteEditor.copySprite4": {
+    "context": "Sprite editor (the editor of ZX Spectrum Next .spr sprite sheets: 16×16 sprites, 8 or 4 bits per pixel), when the sheet is read as 4-bit patterns (128 bytes each). Toolbar above the sheet: tooltip."
   },
   "panels.spriteEditor.paste": "Paste (Ctrl+V)\nA pasted region floats until you place it",
   "@panels.spriteEditor.paste": {
@@ -2762,25 +2803,49 @@
   "@panels.spriteEditor.deleteSprite": {
     "context": "Sprite editor (the editor of ZX Spectrum Next .spr sprite sheets: 16×16 sprites, 8 bits per pixel). Toolbar above the sheet: tooltip."
   },
+  "panels.spriteEditor.deleteSprite4": "Delete pattern",
+  "@panels.spriteEditor.deleteSprite4": {
+    "context": "Sprite editor (the editor of ZX Spectrum Next .spr sprite sheets: 16×16 sprites, 8 or 4 bits per pixel), when the sheet is read as 4-bit patterns (128 bytes each). Toolbar above the sheet: tooltip."
+  },
   "panels.spriteEditor.moveLeft": "Move sprite left\nSelect the previous sprite with [",
   "@panels.spriteEditor.moveLeft": {
     "context": "Sprite editor (the editor of ZX Spectrum Next .spr sprite sheets: 16×16 sprites, 8 bits per pixel). Toolbar above the sheet: tooltip. Two lines; '[' is the shortcut."
+  },
+  "panels.spriteEditor.moveLeft4": "Move pattern left\nSelect the previous pattern with [",
+  "@panels.spriteEditor.moveLeft4": {
+    "context": "Sprite editor (the editor of ZX Spectrum Next .spr sprite sheets: 16×16 sprites, 8 or 4 bits per pixel), when the sheet is read as 4-bit patterns (128 bytes each). Toolbar above the sheet: tooltip. Two lines; '[' is the shortcut."
   },
   "panels.spriteEditor.moveRight": "Move sprite right\nSelect the next sprite with ]",
   "@panels.spriteEditor.moveRight": {
     "context": "Sprite editor (the editor of ZX Spectrum Next .spr sprite sheets: 16×16 sprites, 8 bits per pixel). Toolbar above the sheet: tooltip. Two lines; ']' is the shortcut."
   },
+  "panels.spriteEditor.moveRight4": "Move pattern right\nSelect the next pattern with ]",
+  "@panels.spriteEditor.moveRight4": {
+    "context": "Sprite editor (the editor of ZX Spectrum Next .spr sprite sheets: 16×16 sprites, 8 or 4 bits per pixel), when the sheet is read as 4-bit patterns (128 bytes each). Toolbar above the sheet: tooltip. Two lines; ']' is the shortcut."
+  },
   "panels.spriteEditor.add": "Add new sprite",
   "@panels.spriteEditor.add": {
     "context": "Sprite editor (the editor of ZX Spectrum Next .spr sprite sheets: 16×16 sprites, 8 bits per pixel). Toolbar above the sheet: tooltip."
+  },
+  "panels.spriteEditor.add4": "Add new pattern",
+  "@panels.spriteEditor.add4": {
+    "context": "Sprite editor (the editor of ZX Spectrum Next .spr sprite sheets: 16×16 sprites, 8 or 4 bits per pixel), when the sheet is read as 4-bit patterns (128 bytes each). Toolbar above the sheet: tooltip."
   },
   "panels.spriteEditor.separate": "Separate sprites vertically",
   "@panels.spriteEditor.separate": {
     "context": "Sprite editor (the editor of ZX Spectrum Next .spr sprite sheets: 16×16 sprites, 8 bits per pixel). Toolbar above the sheet: tooltip of the toggle that draws gaps between the sprites in the strip."
   },
+  "panels.spriteEditor.separate4": "Separate patterns vertically",
+  "@panels.spriteEditor.separate4": {
+    "context": "Sprite editor (the editor of ZX Spectrum Next .spr sprite sheets: 16×16 sprites, 8 or 4 bits per pixel), when the sheet is read as 4-bit patterns (128 bytes each). Toolbar above the sheet: tooltip of the toggle that draws gaps between the patterns in the strip."
+  },
   "panels.spriteEditor.merge": "Merge sprites vertically",
   "@panels.spriteEditor.merge": {
     "context": "Sprite editor (the editor of ZX Spectrum Next .spr sprite sheets: 16×16 sprites, 8 bits per pixel). Toolbar above the sheet: tooltip of the toggle that removes the gaps between the sprites in the strip."
+  },
+  "panels.spriteEditor.merge4": "Merge patterns vertically",
+  "@panels.spriteEditor.merge4": {
+    "context": "Sprite editor (the editor of ZX Spectrum Next .spr sprite sheets: 16×16 sprites, 8 or 4 bits per pixel), when the sheet is read as 4-bit patterns (128 bytes each). Toolbar above the sheet: tooltip of the toggle that removes the gaps between the patterns in the strip."
   },
   "panels.spriteEditor.position": "Sprite #{index} of {count}",
   "@panels.spriteEditor.position": {
@@ -2788,6 +2853,48 @@
     "placeholders": {
       "index": "1-based sprite number",
       "count": "Sprites in the sheet"
+    }
+  },
+  "panels.spriteEditor.position4": "Pattern #{index} of {count}",
+  "@panels.spriteEditor.position4": {
+    "context": "Sprite editor (the editor of ZX Spectrum Next .spr sprite sheets: 16×16 sprites, 8 or 4 bits per pixel), when the sheet is read as 4-bit patterns (128 bytes each). Toolbar above the sheet: text at the toolbar's right end.",
+    "placeholders": {
+      "index": "1-based pattern number",
+      "count": "Patterns in the sheet"
+    }
+  },
+  "panels.spriteEditor.format.group": "Pattern format",
+  "@panels.spriteEditor.format.group": {
+    "context": "Sprite editor (the editor of ZX Spectrum Next .spr sprite sheets: 16×16 sprites, 8 or 4 bits per pixel). Toolbar above the sheet: accessible name of the two-button switch choosing how the file's bytes are read (8-bit or 4-bit patterns)."
+  },
+  "panels.spriteEditor.format.8bit": "8-bit",
+  "@panels.spriteEditor.format.8bit": {
+    "context": "Sprite editor (the editor of ZX Spectrum Next .spr sprite sheets: 16×16 sprites, 8 or 4 bits per pixel). Toolbar above the sheet: button of the pattern format switch. One byte per pixel.",
+    "maxChars": 8
+  },
+  "panels.spriteEditor.format.8bitTitle": "Read the file as 8-bit patterns: 256 bytes each, one byte per pixel",
+  "@panels.spriteEditor.format.8bitTitle": {
+    "context": "Sprite editor (the editor of ZX Spectrum Next .spr sprite sheets: 16×16 sprites, 8 or 4 bits per pixel). Tooltip of the '8-bit' pattern format button. Switching does not change the file."
+  },
+  "panels.spriteEditor.format.4bit": "4-bit",
+  "@panels.spriteEditor.format.4bit": {
+    "context": "Sprite editor (the editor of ZX Spectrum Next .spr sprite sheets: 16×16 sprites, 8 or 4 bits per pixel). Toolbar above the sheet: button of the pattern format switch. Two pixels per byte.",
+    "maxChars": 8
+  },
+  "panels.spriteEditor.format.4bitTitle": "Read the file as 4-bit patterns: 128 bytes each, two pixels per byte (high nibble first)",
+  "@panels.spriteEditor.format.4bitTitle": {
+    "context": "Sprite editor (the editor of ZX Spectrum Next .spr sprite sheets: 16×16 sprites, 8 or 4 bits per pixel). Tooltip of the '4-bit' pattern format button. Switching does not change the file. 'Nibble' is half a byte, 4 bits."
+  },
+  "panels.spriteEditor.offsetLabel": "Palette offset",
+  "@panels.spriteEditor.offsetLabel": {
+    "context": "Sprite editor (the editor of ZX Spectrum Next .spr sprite sheets: 16×16 sprites, 8 or 4 bits per pixel). Accessible name of the dropdown beside the sprite palette, shown for 4-bit sheets: which row of 16 palette colours the sheet is drawn with."
+  },
+  "panels.spriteEditor.offsetOption": "Offset {offset}",
+  "@panels.spriteEditor.offsetOption": {
+    "context": "Sprite editor (the editor of ZX Spectrum Next .spr sprite sheets: 16×16 sprites, 8 or 4 bits per pixel). Choice in the palette-offset dropdown of a 4-bit sheet.",
+    "maxChars": 10,
+    "placeholders": {
+      "offset": "A palette offset, 0 to 15"
     }
   },
   "panels.spriteEditor.play": "Play the sheet as an animation",

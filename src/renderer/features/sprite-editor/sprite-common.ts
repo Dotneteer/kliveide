@@ -1,3 +1,5 @@
+import type { SprFormat } from "./sprite-file";
+
 export type SprFileContents = {
   /** Always at least one sprite; `parseSprFile` establishes that invariant. */
   sprites: Uint8Array[];
@@ -11,6 +13,17 @@ export type SprFileContents = {
   trailing?: Uint8Array;
   /** Set when the file was not a clean sequence of whole sprites. Informational, never fatal. */
   warning?: string;
+  /**
+   * The file's bytes as read, until the first edit. The editor reads them in the remembered format,
+   * and a format switch before any edit reads them again: exact even for a file shorter than one
+   * sprite, which the 8-bit parse pads and a reinterpretation would therefore lengthen.
+   */
+  source?: Uint8Array;
+  /**
+   * Which format `sprites` and `trailing` are in. The panel parses as 8-bit (absent); the editor
+   * re-reads the sheet in the remembered format and records it here.
+   */
+  format?: SprFormat;
 };
 
 export type SprFileViewState = {
@@ -38,6 +51,16 @@ export type SprFileViewState = {
   pencilColorIndex?: number;
   fillColorIndex?: number;
   currentTool?: SpriteTools;
+  /**
+   * How the file's bytes are read: 256-byte 8-bit patterns (the default) or 128-byte 4-bit ones.
+   * A `.spr` has no header that could say, so it is the user's choice, remembered per document.
+   */
+  spriteFormat?: SprFormat;
+  /**
+   * Which 16 palette entries a 4-bit sheet is drawn with (0..15, the sprite attribute's palette
+   * offset). A view setting only: on the machine it belongs to each sprite, not to the pattern.
+   */
+  paletteOffset?: number;
 };
 
 export type SpriteTools =

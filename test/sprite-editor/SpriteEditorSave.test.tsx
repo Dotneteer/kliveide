@@ -1507,3 +1507,147 @@ describe("SpriteEditor - reordering the sheet by dragging", () => {
     expect(event.defaultPrevented).toBe(false);
   });
 });
+
+/* --------------------------------------------------------------------------------------------
+ * 4-bit sheets (`dev/plans/SPRITE_EDITOR_4BIT_PLAN.md`).
+ * ------------------------------------------------------------------------------------------ */
+
+describe("SpriteEditor - 4-bit sheets", () => {
+  const renderWith = (contents: Uint8Array, viewState: Record<string, unknown>) =>
+    render(
+      createSprFileEditorPanel({
+        document: { id: "spr-4" } as any,
+        contents,
+        viewState,
+        apiLoaded: () => {}
+      } as any)
+    );
+
+  /** The format switch's buttons have a visible text, not an aria-label. */
+  const formatButton = (container: HTMLElement, text: "8-bit" | "4-bit") => {
+    const matches = [...container.querySelectorAll("button")].filter((b) => b.textContent === text);
+    expect(matches.length).toBe(1);
+    return matches[0] as HTMLButtonElement;
+  };
+
+  const lastViewState = () =>
+    setDocumentViewState.mock.calls[setDocumentViewState.mock.calls.length - 1][1] as Record<string, unknown>;
+
+  it("opens a sheet remembered as 4-bit as 128-byte patterns", () => {
+    const { container } = renderWith(fileOf(1), { spriteFormat: "4bit" });
+    expect(sheetCells(container).length).toBe(2);
+    expect(formatButton(container, "4-bit").getAttribute("aria-pressed")).toBe("true");
+    expect(container.textContent).toContain("Pattern 1 of 2 · 16×16 · 4bpp");
+  });
+
+  it("names the items patterns in the sheet's toolbar and strip in 4-bit mode", () => {
+    const { container } = renderWith(fileOf(1), { spriteFormat: "4bit" });
+    expect(container.textContent).toContain("Pattern #1 of 2");
+    expect(container.textContent).toContain("2 patterns");
+    expect(button(container, "Add new pattern")).toBeTruthy();
+    expect(button(container, "Duplicate pattern")).toBeTruthy();
+    expect(sheetCells(container)[0].getAttribute("aria-label")).toMatch(/^Pattern 1/);
+
+    fireEvent.click(formatButton(container, "8-bit"));
+    expect(container.textContent).toContain("Sprite #1 of 1");
+    expect(container.textContent).toContain("1 sprite");
+    expect(button(container, "Add new sprite")).toBeTruthy();
+    expect(sheetCells(container)[0].getAttribute("aria-label")).toMatch(/^Sprite 1/);
+  });
+
+  it("writes a 4-bit edit packed, two pixels per byte, high nibble first", () => {
+    const { container } = renderWith(new Uint8Array(128), { spriteFormat: "4bit", pencilColorIndex: 0x2b });
+    selectPencil(container);
+    paintPixel(container, 0, 0);
+    paintPixel(container, 0, 3);
+    vi.advanceTimersByTime(1000);
+
+    const written = lastWrite();
+    expect(written.length).toBe(128);
+    // The pen $2B draws nibble $B: x=0 is byte 0's high nibble, x=3 byte 1's low nibble.
+    expect(written[0]).toBe(0xb0);
+    expect(written[1]).toBe(0x0b);
+  });
+
+  it("switching the format re-reads the sheet and writes nothing", () => {
+    const { container } = renderEditor(fileOf(2));
+    expect(sheetCells(container).length).toBe(2);
+
+    fireEvent.click(formatButton(container, "4-bit"));
+    expect(sheetCells(container).length).toBe(4);
+    expect(lastViewState().spriteFormat).toBe("4bit");
+
+    fireEvent.click(formatButton(container, "8-bit"));
+    expect(sheetCells(container).length).toBe(2);
+    vi.advanceTimersByTime(5000);
+    expect(saveFileContent).not.toHaveBeenCalled();
+  });
+
+  it("keeps the bytes of the other format intact when a 4-bit sheet is edited", () => {
+    const { container } = renderEditor(fileOf(1));
+    fireEvent.click(formatButton(container, "4-bit"));
+    // Sprite 1 of the 8-bit file is now patterns 1 and 2; draw on the second one
+    fireEvent.click(sheetCells(container)[1]);
+    selectPencil(container);
+    paintPixel(container, 15, 15);
+    vi.advanceTimersByTime(1000);
+
+    const written = lastWrite();
+    expect(written.length).toBe(SPRITE_SIZE);
+    // Everything but the last byte is the original fill; the last pixel is the pen's nibble ($F)
+    expect([...written.subarray(0, SPRITE_SIZE - 1)].every((v) => v === 1)).toBe(true);
+    expect(written[SPRITE_SIZE - 1]).toBe(0x0f);
+  });
+
+  it("an empty file switched to 4-bit is one blank 4-bit pattern", () => {
+    const { container } = renderEditor(new Uint8Array(0));
+    fireEvent.click(formatButton(container, "4-bit"));
+    expect(sheetCells(container).length).toBe(1);
+
+    selectPencil(container);
+    paintPixel(container, 0, 0);
+    vi.advanceTimersByTime(1000);
+    const written = lastWrite();
+    expect(written.length).toBe(128);
+    // The rest is the transparent nibble of $E3, i.e. 3
+    expect(written[0]).toBe(0xf3);
+    expect(written[1]).toBe(0x33);
+  });
+
+  it("a file of one 4-bit pattern stays one pattern when switched to 4-bit", () => {
+    // Read as 8-bit it is shorter than a sprite and padded to 256 bytes; reinterpreting that padded
+    // sprite would make two patterns and lengthen the file on the next save.
+    const { container } = renderEditor(new Uint8Array(128).fill(0x11));
+    fireEvent.click(formatButton(container, "4-bit"));
+    expect(sheetCells(container).length).toBe(1);
+
+    selectPencil(container);
+    paintPixel(container, 0, 0);
+    vi.advanceTimersByTime(1000);
+    const written = lastWrite();
+    expect(written.length).toBe(128);
+    expect(written[0]).toBe(0xf1);
+    expect(written[127]).toBe(0x11);
+  });
+
+  it("pastes a sprite copied from an 8-bit sheet with its low nibbles", () => {
+    const { container } = renderEditor(fileOf(1, 0).map(() => 0x12));
+    click(container, "Copy sprite");
+    fireEvent.click(formatButton(container, "4-bit"));
+    click(container, "Paste");
+    vi.advanceTimersByTime(1000);
+
+    const written = lastWrite();
+    // Two patterns from the 8-bit sprite, then the pasted one after the first: all $2 pixels
+    expect(written.length).toBe(3 * 128);
+    expect([...written.subarray(128, 256)].every((v) => v === 0x22)).toBe(true);
+  });
+
+  it("shows only the palette offset's row of swatches", () => {
+    const { container } = renderWith(fileOf(1), { spriteFormat: "4bit", paletteOffset: 2 });
+    const swatches = [...container.querySelectorAll('[role="gridcell"]')];
+    expect(swatches.length).toBe(16);
+    expect(swatches[0].getAttribute("aria-label")).toBe("$20");
+    expect(swatches[15].getAttribute("aria-label")).toBe("$2F");
+  });
+});
