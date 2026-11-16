@@ -11,7 +11,8 @@ import {
   SETTINGS_DIALOG,
   DETECT_CODE_DATA_DIALOG,
   BORIEL_SETUP_DIALOG,
-  Z88DK_INTEGRATION_DIALOG
+  Z88DK_INTEGRATION_DIALOG,
+  MAKE_PROJECT_DIALOG
 } from "@messaging/dialog-ids";
 import type { AboutDialogData } from "@common/messaging/about-dialog";
 import { AboutDialog, AboutDialogResult } from "./AboutDialog";
@@ -44,6 +45,11 @@ import { BorielSetupDialog, type BorielSetupDialogResult } from "./boriel/Boriel
 import { Z88dkIntegrationDialog, type Z88dkIntegrationDialogResult } from "./z88dk/Z88dkIntegrationDialog";
 import { SettingsDialog, type SettingsDialogResult } from "./settings/SettingsDialog";
 import { DetectDialog, type DetectDialogResult } from "./detect/DetectDialog";
+import {
+  MakeProjectDialog,
+  type MakeProjectDialogData,
+  type MakeProjectDialogResult
+} from "./makeProject/MakeProjectDialog";
 
 export type IdeDialogResult =
   | NewProjectDialogResult
@@ -56,7 +62,8 @@ export type IdeDialogResult =
   | SettingsDialogResult
   | DetectDialogResult
   | BorielSetupDialogResult
-  | Z88dkIntegrationDialogResult;
+  | Z88dkIntegrationDialogResult
+  | MakeProjectDialogResult;
 
 export type IdeDialogRenderer = (
   data: any,
@@ -97,5 +104,16 @@ export const ideDialogRegistry: Record<number, IdeDialogRenderer> = {
   ),
   [DETECT_CODE_DATA_DIALOG]: (data, controls) => (
     <DetectDialog skoolPath={data?.skoolPath} onClose={(result) => controls.close(result)} />
-  )
+  ),
+  // --- `data` is `MakeProjectDialogData`; without a folder there is nothing to make a project of
+  [MAKE_PROJECT_DIALOG]: (data, controls) =>
+    (data as MakeProjectDialogData)?.folder ? (
+      <MakeProjectDialog
+        data={data as MakeProjectDialogData}
+        onDone={(result) => controls.close(result)}
+        onClose={controls.cancel}
+      />
+    ) : (
+      <></>
+    )
 };

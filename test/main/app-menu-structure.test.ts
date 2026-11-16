@@ -150,6 +150,8 @@ describe("the application menu", () => {
     expect(file).toEqual([
       "New Project...",
       "Open Folder...",
+      // --- Disabled unless a plain folder is open (`dev/plans/PLAIN_FOLDER_TO_PROJECT_PLAN.md` §3.5)
+      "Make Klive Project...",
       "Open File...",
       "File Manager...",
       "Save Snapshot...",
@@ -158,6 +160,19 @@ describe("the application menu", () => {
       "Quick Restore State",
       "Close Folder"
     ]);
+  });
+
+  // --- `dev/plans/PLAIN_FOLDER_TO_PROJECT_PLAN.md` §3.5
+  it("enables Make Klive Project... only while a plain folder is open", () => {
+    const makeItem = () =>
+      menu(createMenuTemplate(createMenuContext(window, window)), "File").find((i) => i.id === "make_project");
+    buildMenu("sp48");
+    env.state.project = undefined;
+    expect(makeItem()?.enabled).toBe(false);
+    env.state.project = { folderPath: "/work/game", isKliveProject: false };
+    expect(makeItem()?.enabled).toBe(true);
+    env.state.project = { folderPath: "/work/game", isKliveProject: true };
+    expect(makeItem()?.enabled).toBe(false);
   });
 
   it("gives a ZX Spectrum 48K a Tape submenu, its ULA options and RZX in Record", () => {

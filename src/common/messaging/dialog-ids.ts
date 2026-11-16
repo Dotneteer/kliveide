@@ -16,6 +16,8 @@ export const DETECT_CODE_DATA_DIALOG = 9;
 export const BORIEL_SETUP_DIALOG = 10;
 // --- z88dk (C) setup (`dev/plans/Z88DK_INTEGRATION_PLAN.md` §4), opened from Settings, `z88dk-setup` and a C build
 export const Z88DK_INTEGRATION_DIALOG = 11;
+// --- Make the open plain folder a Klive project (`dev/plans/PLAIN_FOLDER_TO_PROJECT_PLAN.md` §3.3)
+export const MAKE_PROJECT_DIALOG = 12;
 
 // --- Emulator dialogs
 export const EMU_DIALOG_BASE = 1000;

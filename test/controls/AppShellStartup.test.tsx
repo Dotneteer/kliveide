@@ -126,7 +126,8 @@ describe("app shell startup hooks", () => {
     );
 
     if (opens) {
-      await waitFor(() => expect(openFolder).toHaveBeenCalledWith("c:/workspace/demo"));
+      // --- A plain folder reopened at startup gets the offer to make it a project (decision Q2)
+      await waitFor(() => expect(openFolder).toHaveBeenCalledWith("c:/workspace/demo", true));
     } else {
       await waitFor(() => expect(skipsLastProjectReopen).toHaveBeenCalled());
       await Promise.resolve();
@@ -215,7 +216,8 @@ describe("app shell dialog registries and bridges", () => {
       dialogIds.SETTINGS_DIALOG,
       dialogIds.DETECT_CODE_DATA_DIALOG,
       dialogIds.BORIEL_SETUP_DIALOG,
-      dialogIds.Z88DK_INTEGRATION_DIALOG
+      dialogIds.Z88DK_INTEGRATION_DIALOG,
+      dialogIds.MAKE_PROJECT_DIALOG
     ];
     const expectedEmuIds = [
       dialogIds.FIRST_STARTUP_DIALOG_EMU,

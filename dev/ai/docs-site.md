@@ -114,6 +114,12 @@ Needs RUN".
   for bold UI labels. Custom heading ids (`[#id]`) are part of the structure check, because a
   translated heading otherwise breaks in-page anchors.
 - Pages are served with a trailing slash, hence absolute links (`AGENTS.md`).
+- **Get Started's pages are numbered chapters**: the index's cards carry the number, and every
+  `<Shot figure="n.m">` on a page uses its chapter's `n`. A page inserted into the sequence
+  renumbers the cards and the figures of every later page in English (How Klive handles projects,
+  chapter 5, did this to chapters 5-10). The translations catch up in the next translation round;
+  until then each language keeps its old numbering, without the new page, and is consistent with
+  itself.
 
 ## Open
 

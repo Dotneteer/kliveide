@@ -868,6 +868,12 @@ Disk dialog's fixed 200px fitted the +3's CPC labels and clipped the Pentagon's 
 as `` `${longest label length + 4}ch` `` (the 4ch hold the chevron); the open list takes the trigger's
 width (`--radix-select-trigger-width`), so one value sizes both.
 
+**A `Dropdown`'s "none" entry has a value, never `""`.** Radix `Select` throws on an item whose
+value is the empty string, so a list that starts with "None" or "Use the default" gives that entry a
+sentinel no real option can have (`DEFAULT_BUILD_ROOT = "<default>"` in the Make a Klive project
+dialog), and the model turns the sentinel back into "absent" when it builds its request. An empty
+*value* is fine: it is the trigger's "nothing selected yet", which shows the placeholder.
+
 **A table column's `ch` width covers its header as well as its values.** The Go to References
 list sized its address column for `$0576` (6ch) and its header, `Address`, ran into the next
 column's. Size a column from the longer of its widest value and its header, and give a translated
@@ -1391,6 +1397,11 @@ Export while the machine runs) stays in its place, disabled, and its `title` cha
 action in a header is a `SmallIconButton` with the stock `save` glyph, placed after the panel's other
 actions and before its filter; the context menu carries the row-relative variant ("… from here to
 the newest…") rather than a second header button.
+
+**A context menu item follows the same rule.** `ContextMenuItem`'s `title` is the native tooltip a
+disabled row keeps: **Promote to Build Root** in a plain folder stays in the Explorer's menu, disabled,
+and says the folder is not a Klive project and which item makes it one. Hiding it would leave the
+user wondering where the command went.
 
 ## Where A Timeline Came From Rides In The Reverse Segment, Not A New One
 

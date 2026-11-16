@@ -2319,6 +2319,101 @@
       "seconds": "The time limit in seconds, a number such as 30"
     }
   },
+  "dialog.makeProject.title": "Make a Klive project",
+  "@dialog.makeProject.title": {
+    "context": "Title of the dialog that makes the open plain folder (a folder without a klive.project file) a Klive project, or keeps it as it is."
+  },
+  "dialog.makeProject.lead.offer": "{folder} is not a Klive project. Make it one to build, run and debug it from the IDE, or keep it as a plain folder.",
+  "@dialog.makeProject.lead.offer": {
+    "context": "Text at the top of the dialog when it appears right after the user opened a folder that has no klive.project file.",
+    "placeholders": {
+      "folder": "The full path of the opened folder"
+    }
+  },
+  "dialog.makeProject.lead.menu": "Make {folder} a Klive project. Klive adds a klive.project file and the files of the template you choose.",
+  "@dialog.makeProject.lead.menu": {
+    "context": "Text at the top of the dialog when the user opened it with Make Klive Project...",
+    "placeholders": {
+      "folder": "The full path of the open folder"
+    }
+  },
+  "dialog.makeProject.choice.ariaLabel": "What to do with the folder",
+  "@dialog.makeProject.choice.ariaLabel": {
+    "context": "Accessible name of the radio group with the two choices: make the folder a Klive project, or keep it as a plain folder."
+  },
+  "dialog.makeProject.choice.make": "Make it a Klive project",
+  "@dialog.makeProject.choice.make": {
+    "context": "Radio option: write a klive.project file (and optionally a template's files) into the folder."
+  },
+  "dialog.makeProject.choice.keep": "Keep it as a plain folder",
+  "@dialog.makeProject.choice.keep": {
+    "context": "Radio option: leave the folder unchanged; Klive remembers the choice and does not ask again for this folder."
+  },
+  "dialog.makeProject.field.machineType": "Machine type:",
+  "@dialog.makeProject.field.machineType": {
+    "context": "Label of the dropdown choosing the machine the new project is for."
+  },
+  "dialog.makeProject.field.model": "Model:",
+  "@dialog.makeProject.field.model": {
+    "context": "Label of the dropdown choosing the model of the selected machine."
+  },
+  "dialog.makeProject.field.template": "Template:",
+  "@dialog.makeProject.field.template": {
+    "context": "Label of the dropdown choosing the project template whose files (its build.ksx and a sample program) are copied into the folder. A template is required."
+  },
+  "dialog.makeProject.field.templateAria": "Template",
+  "@dialog.makeProject.field.templateAria": {
+    "context": "Accessible name of the template dropdown."
+  },
+  "dialog.makeProject.field.buildRoot": "Build root:",
+  "@dialog.makeProject.field.buildRoot": {
+    "context": "Label of the dropdown choosing the build root: the source file Klive builds, runs and debugs."
+  },
+  "dialog.makeProject.field.buildRootAria": "Build root",
+  "@dialog.makeProject.field.buildRootAria": {
+    "context": "Accessible name of the build root dropdown."
+  },
+  "dialog.makeProject.buildRoot.template": "The template's build root",
+  "@dialog.makeProject.buildRoot.template": {
+    "context": "First entry of the build root dropdown: use the build root the template defines (its sample program). The other entries are the folder's own source files."
+  },
+  "dialog.makeProject.conflicts.note": "These files already exist. Tick the ones the template may replace; the others are kept.",
+  "@dialog.makeProject.conflicts.note": {
+    "context": "Shown above the list of the template's files that already exist in the folder; each has a checkbox, unticked by default."
+  },
+  "dialog.makeProject.conflicts.blocked": "{path}: not written, something else is already there",
+  "@dialog.makeProject.conflicts.blocked": {
+    "context": "A template file that cannot be written because a folder (or a file where a folder is needed) has its name. Shown instead of a checkbox.",
+    "placeholders": {
+      "path": "The file's path relative to the folder, such as code/program.zxbas"
+    }
+  },
+  "dialog.makeProject.submit.make": "Make Project",
+  "@dialog.makeProject.submit.make": {
+    "context": "Submit button when 'Make it a Klive project' is chosen."
+  },
+  "dialog.makeProject.submit.keep": "Keep Folder",
+  "@dialog.makeProject.submit.keep": {
+    "context": "Submit button when 'Keep it as a plain folder' is chosen."
+  },
+  "dialog.makeProject.error.title": "Make Klive Project Error",
+  "@dialog.makeProject.error.title": {
+    "context": "Title of the error message box shown when making the folder a Klive project fails."
+  },
+  "dialog.makeProject.error.reopen": "The folder is now a Klive project, but reopening it failed: {error}",
+  "@dialog.makeProject.error.reopen": {
+    "context": "Error message box text: the project file was written, but the folder could not be reopened as a project.",
+    "placeholders": {
+      "error": "The error reported by the main process, shown verbatim (usually English)"
+    }
+  },
+  "dialog.makeProject.error.timeout": "Making the folder a Klive project timed out after {seconds} seconds.",
+  "@dialog.makeProject.error.timeout": {
+    "context": "Error shown when a step of making the folder a Klive project (writing the files, reopening the folder, loading it) took longer than the time limit.",
+    "placeholders": {
+      "seconds": "The time limit in seconds, a number such as 30"
+    }
+  },
   "dialog.exportCode.title": "Export Code",
   "@dialog.exportCode.title": {
     "context": "Title bar of the Export Code dialog, which writes the compiled program to a tape file (TAP/TZX), a ZX80/ZX81 program file or an Intel HEX file. 'Export' is a verb here.",

@@ -131,7 +131,9 @@ export function useIdeStartup({
         let projectPath = settings?.project?.folderPath;
         if (projectPath && !cancelled) {
           projectPath = projectPath.replaceAll("\\", "/");
-          await mainApi.openFolder(projectPath);
+          // --- A plain folder reopened at startup gets the offer to make it a Klive project, as one
+          // --- opened from the menu does (`dev/plans/PLAIN_FOLDER_TO_PROJECT_PLAN.md`, decision Q2)
+          await mainApi.openFolder(projectPath, true);
         }
       }
     })();

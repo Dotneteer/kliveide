@@ -41,10 +41,12 @@ import {
   LAST_PROJECT_FOLDER,
   KLIVE_PROJECT_ROOT,
   MEDIA_TAPE,
-  PROJECT_MERGE_FILE,
   BUILD_FILE
 } from "@common/structs/project-const";
 import { getEmuApi } from "@messaging/MainToEmuMessenger";
+import { getIdeApi } from "@messaging/MainToIdeMessenger";
+import { MAKE_PROJECT_DIALOG } from "@messaging/dialog-ids";
+import { forgetPlainFolder, isRememberedPlainFolder } from "./plain-folders";
 import { setMachineType } from "./registeredMachines";
 import { getModelConfig, newProjectModelIds } from "@common/machines/machine-registry";
 import { fileChangeWatcher } from "./file-watcher";
@@ -53,6 +55,17 @@ import { KliveGlobalSettings } from "@common/settings/setting-definitions";
 import { appSettings, getSettingDefinition, saveAppSettings } from "./settings-utils";
 import { get, set } from "lodash";
 import { t } from "@common/i18n/i18n";
+import {
+  copyTemplate,
+  findTemplateConflicts,
+  listTemplateFiles,
+  readTemplateMerge
+} from "./project-template";
+import type {
+  ProjectConversionOptions,
+  ProjectConversionResult,
+  TemplateConflict
+} from "@common/structs/project-conversion";
 
 type ProjectCreationResult = {
   path?: string;
@@ -75,11 +88,7 @@ export async function createKliveProject(
   const selectedTemplateId = templateId ?? "default";
   const projPath = getKliveProjectFolder(projectFolder);
   const fullProjectFolder = path.join(projPath, projectName);
-  const templateFolder = path.join(
-    resolvePublicFilePath(PROJECT_TEMPLATES),
-    machineId,
-    selectedTemplateId
-  );
+  const templateFolder = getTemplateFolder(machineId, selectedTemplateId);
 
   try {
     // --- Check if the folder exists
@@ -92,34 +101,11 @@ export async function createKliveProject(
     // --- Create the project folder
     fs.mkdirSync(fullProjectFolder, { recursive: true });
 
-    // --- Copy templates
-    copyFolderSync(templateFolder, fullProjectFolder, false);
+    // --- Copy templates (the folder is new, so nothing can be in the way)
+    copyTemplate(templateFolder, fullProjectFolder, "all");
 
-    // --- Check project merge file
-    let mergedProps: any = {};
-    try {
-      const mergeFile = path.join(templateFolder, PROJECT_MERGE_FILE);
-      if (fs.existsSync(mergeFile)) {
-        const mergeContents = fs.readFileSync(mergeFile, "utf8");
-        mergedProps = JSON.parse(mergeContents);
-      }
-    } catch (err) {
-      // --- Intentionally ignored
-    }
-
-    // --- Create project files
-    const projectFile = path.join(fullProjectFolder, PROJECT_FILE);
-
-    // --- Set up the initial project structure
-    const projectStructure = getKliveProjectStructureFromState([]);
-    const project = { ...projectStructure, ...mergedProps };
-    project.machineType = machineId;
-    // --- A new project without a model starts on the machine's new-project model (the Next's
-    // --- newest core), so it never falls back to the model old model-less projects mean
-    const newModelId = modelId ?? newProjectModelIds[machineId];
-    project.modelId = newModelId;
-    project.config = getModelConfig(machineId, newModelId);
-    fs.writeFileSync(projectFile, JSON.stringify(project, null, 2));
+    // --- Create the project file
+    writeNewProjectFile(fullProjectFolder, machineId, modelId, readTemplateMerge(templateFolder));
   } catch (err) {
     return {
       errorMessage: String(err)
@@ -129,6 +115,115 @@ export async function createKliveProject(
   return {
     path: fullProjectFolder
   };
+}
+
+/**
+ * Lists the template files that would land on existing items when the template is applied to the
+ * folder. Nothing is written.
+ * @param folder The folder to convert
+ * @param machineId The machine whose template it is
+ * @param templateId The template
+ */
+export function getProjectConversionConflicts(
+  folder: string,
+  machineId: string,
+  templateId: string
+): TemplateConflict[] {
+  return findTemplateConflicts(getTemplateFolder(machineId, templateId), folder);
+}
+
+/**
+ * Makes the open plain folder a Klive project: copies the template's files (replacing only the
+ * existing files `overwrite` names), merges the template's project fragment, and writes
+ * `klive.project` with the machine, model and build root. Everything is checked before anything
+ * is written. The caller reopens the folder so it loads as a project.
+ * @param options What to convert and how
+ */
+export async function convertFolderToProject(
+  options: ProjectConversionOptions
+): Promise<ProjectConversionResult> {
+  const { folder, machineId, modelId, templateId, overwrite = [], buildRoot } = options;
+  try {
+    // --- The folder: the open one, and not a project yet. The project file is built from the
+    // --- IDE's state (open documents, excluded items), which belongs to the open folder only.
+    const project = mainStore.getState().project;
+    if (!folder || !project?.folderPath || path.resolve(folder) !== path.resolve(project.folderPath)) {
+      return { errorMessage: `Only the open folder can be made a Klive project: ${folder}` };
+    }
+    if (project.isKliveProject) {
+      return { errorMessage: `${folder} is already a Klive project.` };
+    }
+    if (!fs.existsSync(folder) || !fs.statSync(folder).isDirectory()) {
+      return { errorMessage: `Folder ${folder} does not exist.` };
+    }
+
+    // --- The template: required. Its `build.ksx` is what Compile, Run and Debug run, so a project
+    // --- made without one could not build (decision Q7)
+    if (!templateId) {
+      return { errorMessage: "Choose a template to make the folder a Klive project." };
+    }
+    const templateFolder = getTemplateFolder(machineId, templateId);
+    if (!fs.existsSync(templateFolder)) {
+      return { errorMessage: `There is no '${templateId}' template for ${machineId}.` };
+    }
+    const templateFiles = listTemplateFiles(templateFolder);
+
+    // --- The build root: inside the folder, and a file that exists or that the template writes
+    if (buildRoot !== undefined) {
+      const isInside =
+        buildRoot.length > 0 &&
+        !path.isAbsolute(buildRoot) &&
+        !buildRoot.includes("\\") &&
+        !buildRoot.split("/").some((part) => part === "" || part === "." || part === "..");
+      const target = path.join(folder, ...buildRoot.split("/"));
+      const exists = isInside && fs.existsSync(target) && fs.statSync(target).isFile();
+      if (!isInside || !(exists || templateFiles.includes(buildRoot))) {
+        return { errorMessage: `The build root ${buildRoot} is not a file in ${folder}.` };
+      }
+    }
+
+    // --- Write: the template's files first, then the project file that makes it a project
+    const copied = copyTemplate(templateFolder, folder, overwrite);
+    const merge = readTemplateMerge(templateFolder);
+    if (buildRoot !== undefined) {
+      merge.builder = { ...(merge.builder ?? {}), roots: [buildRoot] };
+    }
+    writeNewProjectFile(folder, machineId, modelId, merge);
+    forgetPlainFolder(folder);
+    return { written: copied.written, skipped: copied.skipped };
+  } catch (err) {
+    return { errorMessage: String(err) };
+  }
+}
+
+/** The folder of a machine's template; refuses names that would leave the templates folder */
+function getTemplateFolder(machineId: string, templateId: string): string {
+  for (const name of [machineId, templateId]) {
+    if (!name || name === "." || name === ".." || /[\\/]/.test(name)) {
+      throw new Error(`Invalid template name: ${machineId}/${templateId}`);
+    }
+  }
+  return path.join(resolvePublicFilePath(PROJECT_TEMPLATES), machineId, templateId);
+}
+
+/**
+ * Writes the project file of a new project (or of a folder made a project): the IDE's current
+ * project structure, the template's fragment over it, then the machine, model and config.
+ */
+function writeNewProjectFile(
+  folder: string,
+  machineId: string,
+  modelId: string | undefined,
+  merge: Record<string, any>
+): void {
+  const project = { ...getKliveProjectStructureFromState([]), ...merge };
+  project.machineType = machineId;
+  // --- A new project without a model starts on the machine's new-project model (the Next's
+  // --- newest core), so it never falls back to the model old model-less projects mean
+  const newModelId = modelId ?? newProjectModelIds[machineId];
+  project.modelId = newModelId;
+  project.config = getModelConfig(machineId, newModelId);
+  fs.writeFileSync(path.join(folder, PROJECT_FILE), JSON.stringify(project, null, 2));
 }
 
 /**
@@ -150,19 +245,33 @@ export async function openFolder(browserWindow: BrowserWindow): Promise<void> {
       properties: ["openDirectory"]
     });
     if (dialogResult.canceled || dialogResult.filePaths.length < 1) return;
-    await openFolderByPath(dialogResult.filePaths[0]);
+    await openFolderByPath(dialogResult.filePaths[0], { offerConversion: true });
   } finally {
     mainStore.dispatch(dimMenuAction(false));
     mainStore.dispatch(resetCompileAction());
   }
 }
 
+/** How a folder is opened */
+export type OpenFolderOptions = {
+  /**
+   * The user opened the folder (Open Folder, Open Recent, the `open` command): a plain folder gets
+   * the offer to make it a Klive project. So does the IDE's reopen of the last folder at startup
+   * (decision Q2). New Project, automation and the CLI leave it out.
+   */
+  offerConversion?: boolean;
+};
+
 /**
  * Opens the specified path
  * @param projectFolder Folder to open
+ * @param options How the folder is opened
  * @returns null, if the operation is successful; otherwise, the error message
  */
-export async function openFolderByPath(projectFolder: string): Promise<string | null> {
+export async function openFolderByPath(
+  projectFolder: string,
+  options: OpenFolderOptions = {}
+): Promise<string | null> {
   // --- Check if project files exists
   projectFolder = getKliveProjectFolder(projectFolder);
   if (!fs.existsSync(projectFolder)) {
@@ -302,7 +411,24 @@ export async function openFolderByPath(projectFolder: string): Promise<string | 
   appSettings.folders ??= {};
   appSettings.folders[LAST_PROJECT_FOLDER] = projectFolder;
   saveAppSettings();
+
+  // --- A plain folder the user opened: offer to make it a Klive project, unless they already said
+  // --- to keep it plain. A project file that failed to load already got its error dialog.
+  if (options.offerConversion && !isValidProject && !loadError && !isRememberedPlainFolder(projectFolder)) {
+    offerProjectConversion(projectFolder);
+  }
   return loadError;
+}
+
+/**
+ * Shows the IDE's Make Klive Project dialog for the open folder. Not awaited: the open is complete,
+ * and the dialog runs its own sequence (convert, reopen) when the user answers.
+ * @param folder The plain folder just opened
+ */
+function offerProjectConversion(folder: string): void {
+  getIdeApi()
+    .displayDialog(MAKE_PROJECT_DIALOG, { folder, offer: true })
+    .catch((err: unknown) => console.error("Could not offer to make the folder a Klive project", err));
 }
 
 /**
@@ -325,53 +451,6 @@ function reportProjectOpenError(detail: string): void {
   (owner ? dialog.showMessageBox(owner, options) : dialog.showMessageBox(options)).catch(
     (err: unknown) => console.error("Could not show the project-open error", err)
   );
-}
-
-/**
- * Copies a file synchronously
- * @param source Source file
- * @param target Target file
- */
-function copyFileSync(source: string, target: string) {
-  var targetFile = target;
-  if (fs.existsSync(target)) {
-    if (fs.lstatSync(target).isDirectory()) {
-      targetFile = path.join(target, path.basename(source));
-    }
-  }
-  fs.writeFileSync(targetFile, new Uint8Array(fs.readFileSync(source)));
-}
-
-/**
- * Copies the contents of a folder into another synchronously
- * @param source Source folder
- * @param target Target folder
- */
-function copyFolderSync(source: string, target: string, copyRoot = true) {
-  var files = [];
-
-  // --- Check if folder needs to be created or integrated
-  let targetFolder = target;
-  if (copyRoot) {
-    targetFolder = path.join(target, path.basename(source));
-    if (!fs.existsSync(targetFolder)) {
-      fs.mkdirSync(targetFolder);
-    }
-  }
-
-  // --- Copy
-  if (fs.lstatSync(source).isDirectory()) {
-    files = fs.readdirSync(source);
-    files.forEach(function (file) {
-      if (file.startsWith("__$")) return;
-      var curSource = path.join(source, file);
-      if (fs.lstatSync(curSource).isDirectory()) {
-        copyFolderSync(curSource, targetFolder);
-      } else {
-        copyFileSync(curSource, targetFolder);
-      }
-    });
-  }
 }
 
 /**
@@ -535,7 +614,11 @@ function readProjectFileContents(projectFile: string): string | undefined {
 export function saveKliveProject(): Promise<void> {
   const runSave = async () => {
     const projectState = mainStore.getState().project;
-    if (!projectState.folderPath) return;
+    if (!projectState?.folderPath) return;
+    // --- A plain folder (no valid `klive.project`) is never turned into a project behind the
+    // --- user's back. Saving it used to write a full project file, so the folder silently became a
+    // --- project on its next open (issue #1641, `dev/plans/PLAIN_FOLDER_TO_PROJECT_PLAN.md` §3.1).
+    if (!projectState.isKliveProject) return;
 
     try {
       const projectFile = path.join(projectState.folderPath, PROJECT_FILE);

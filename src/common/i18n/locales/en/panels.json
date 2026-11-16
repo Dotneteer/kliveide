@@ -765,6 +765,14 @@
   "@explorer.menu.delete": {
     "context": "Explorer context-menu item (right-click on a project item): deletes the file or folder from disk after a confirmation."
   },
+  "explorer.menu.makeProject": "Make Klive Project...",
+  "@explorer.menu.makeProject": {
+    "context": "Explorer context menu, on the root folder of a plain folder (one without a klive.project file): opens the dialog that makes the folder a Klive project. Same wording as the File menu item. The trailing '...' means it opens a dialog; keep it."
+  },
+  "explorer.menu.buildRootNotProject": "This folder is not a Klive project. Use Make Klive Project... on the folder to make it one.",
+  "@explorer.menu.buildRootNotProject": {
+    "context": "Tooltip of the disabled 'Promote to Build Root' context menu item in a plain folder: says why it is disabled. 'Make Klive Project...' is the name of the menu item on the Explorer's root folder (explorer.menu.makeProject); use the same translation."
+  },
   "explorer.menu.promoteBuildRoot": "Promote to Build Root",
   "@explorer.menu.promoteBuildRoot": {
     "context": "Explorer context-menu item (right-click on a project item): makes this source file the project's build root (the file a build compiles)."

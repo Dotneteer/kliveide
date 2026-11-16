@@ -111,6 +111,10 @@
   "@menu.file.openRecent": {
     "context": "File menu: submenu of recently opened project folders."
   },
+  "menu.file.makeProject": "Make Klive Project...",
+  "@menu.file.makeProject": {
+    "context": "File menu: makes the open plain folder (a folder without a klive.project file) a Klive project. Enabled only while such a folder is open. The trailing '...' means the item opens a dialog; keep it."
+  },
   "menu.file.openFile": "Open File...",
   "@menu.file.openFile": {
     "context": "File menu: opens any file the emulator understands (tape, snapshot, disk, state, RZX recording). The trailing '...' means the item opens a dialog; keep it."

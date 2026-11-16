@@ -42,7 +42,8 @@ export class OpenFolderCommand extends IdeCommandBase<OpenFolderArgs> {
         }
       }
     }
-    const errorMessage = await context.mainApi.openFolder(args.folder);
+    // --- Typed by the user: a plain folder gets the offer to make it a Klive project
+    const errorMessage = await context.mainApi.openFolder(args.folder, true);
     if (errorMessage) {
       return {
         success: false,

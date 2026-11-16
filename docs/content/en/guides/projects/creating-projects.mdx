@@ -56,7 +56,65 @@ You can also create a project from the [command prompt](/en/guides/editing/comma
 
 To open an existing project, choose **File › Open Folder...** or **File › Open Recent**. A folder
 without a valid `klive.project` file opens too, but as a plain folder: no build root, no build bar,
-no Build menu.
+no Build menu. Klive then offers to make it a Klive project; see
+[Make a folder a Klive project](#make-a-folder-a-klive-project).
+
+## Make a folder a Klive project
+
+A folder you created with another tool (an editor, another IDE, a Boriel BASIC setup) has no
+`klive.project` file. When you open it with **File › Open Folder...**, **File › Open Recent** or the
+[`open`](/en/reference/commands#open) command, or when Klive reopens it at startup as the last folder
+you had open, the **Make a Klive project** dialog asks what to do with it. Klive never writes a
+`klive.project` file into a plain folder unless you ask it to.
+
+<Steps>
+
+### Make it a project, or keep it
+
+Choose **Make it a Klive project**, or **Keep it as a plain folder** and click **Keep Folder**. Klive
+remembers the second choice and does not ask again for that folder, however often you open it. The
+choice is stored in Klive's own settings file (`klive.settings` in the `Klive` folder of your home
+folder, under `plainFolders`), never in the folder itself. **Cancel** leaves the folder plain for
+now, and Klive asks again the next time you open it.
+
+### Choose the machine and model
+
+Pick the **Machine type** and the **Model**. The dialog starts on the machine that is running. Only
+machines with project templates are offered, as in **New Project**.
+
+### Choose a template
+
+Every Klive project is made from a template: its `build.ksx` holds the functions behind Compile,
+Run and Debug, so there is no "no template" choice. The template's files, such as `build.ksx` and a
+sample program, are copied into the folder; see
+[Project templates](/en/guides/projects/project-templates/). For a folder with `.bas` or `.zxbas`
+files, the dialog picks the `zx-basic` template when the machine has one, and otherwise the
+machine's `default` template.
+
+### Check the files the template would replace
+
+When a template file already exists in the folder, the dialog lists it with a checkbox, unticked.
+Klive replaces only the files you tick. A file whose name is taken by a folder is listed but never
+written.
+
+### Choose the build root
+
+**Build root** lists the folder's source files, root files first, and starts on the first of them.
+Choose **The template's build root** to build the template's sample program instead.
+
+### Make the project
+
+Click **Make Project**. Klive writes the files, reopens the folder as a Klive project, switches the
+emulator to its machine and opens the build root.
+
+</Steps>
+
+To convert a plain folder later, or after choosing to keep it, choose **File › Make Klive
+Project...**, or right-click the root folder in the Explorer and choose **Make Klive Project...**.
+Once the folder is a Klive project, Klive forgets that you kept it plain.
+
+To have Klive ask again without converting the folder, close Klive and delete the folder's entry
+from the `plainFolders` list in `klive.settings`. The IDE has no command that undoes **Keep Folder**.
 
 ## What a project contains
 

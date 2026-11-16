@@ -4,6 +4,7 @@ export default {
   "meet-the-emulator": "Meet the emulator",
   "load-from-tape": "Load a program from tape",
   "meet-the-ide": "Meet the IDE",
+  "how-projects-work": "How Klive handles projects",
   "first-assembly-program": "Your first assembly program",
   "debug-your-program": "Debug your program",
   "first-basic-program": "Your first BASIC program",

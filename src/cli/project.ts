@@ -41,7 +41,7 @@ export function loadProject(dir: string, cwd: string): CliProject {
   const folder = path.resolve(cwd, dir);
   const file = path.join(folder, PROJECT_FILE);
   if (!fs.existsSync(file)) {
-    throw usageError(`No Klive project in ${folder}: ${PROJECT_FILE} is missing.`);
+    throw usageError(`No Klive project in ${folder}: ${PROJECT_FILE} is missing. Open the folder in the IDE and choose File › Make Klive Project... to make it one.`);
   }
   let content: any;
   try {

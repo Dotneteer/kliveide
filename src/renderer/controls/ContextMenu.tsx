@@ -190,6 +190,11 @@ type ContextMenuItemProps = {
    * switches' icons in the same menu; without an `iconName` it keeps the frame's room empty.
    */
   framedIcon?: boolean;
+  /**
+   * A native tooltip: what the row does, or why it is disabled. Shown on a disabled row too, which
+   * is where it matters most.
+   */
+  title?: string;
 };
 
 export const ContextMenuItem = ({
@@ -202,7 +207,8 @@ export const ContextMenuItem = ({
   trailing,
   selected,
   toggled,
-  framedIcon
+  framedIcon,
+  title
 }: ContextMenuItemProps) => {
   const isSwitch = toggled !== undefined;
   return (
@@ -211,6 +217,7 @@ export const ContextMenuItem = ({
       role={isSwitch ? "menuitemcheckbox" : "menuitem"}
       aria-checked={isSwitch ? toggled : undefined}
       disabled={disabled}
+      title={title}
       aria-current={selected || undefined}
       className={classnames(localStyles.menuItem, {
         [localStyles.dangerous]: dangerous,

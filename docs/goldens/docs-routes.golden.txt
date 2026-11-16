@@ -85,6 +85,7 @@
 /en/get-started/first-assembly-program/index.html
 /en/get-started/first-basic-program/index.html
 /en/get-started/first-next-program/index.html
+/en/get-started/how-projects-work/index.html
 /en/get-started/index.html
 /en/get-started/install/index.html
 /en/get-started/load-from-tape/index.html
