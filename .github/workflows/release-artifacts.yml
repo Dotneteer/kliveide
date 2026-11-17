@@ -35,6 +35,17 @@ jobs:
       - name: Install npm dependencies
         run: npm run bootstrap:ci
 
+      # The ZX Spectrum Next SD base cards are not in git (dev/plans/NEXT_SD_CARDS_PLAN.md D-6): fetched
+      # from kliveide.net and checked against the manifest, cached until the manifest or the fetch changes.
+      - name: Cache the ZX Spectrum Next SD cards
+        uses: actions/cache@v6
+        with:
+          path: .local/next-sd
+          key: next-sd-${{ runner.os }}-${{ hashFiles('src/common/zxnext/nextRomSets.json', 'dev/scripts/next-sd-fetch.cjs', 'dev/scripts/next-sd/cards.cjs') }}
+
+      - name: Fetch the ZX Spectrum Next SD cards
+        run: npm run next-sd:fetch
+
       - name: Build WASM cores and app bundle
         env:
           NODE_OPTIONS: --max-old-space-size=8192
@@ -89,6 +100,11 @@ jobs:
           call artifacts\win-unpacked\resources\cli\klive.cmd run test\cli\fixtures\run48 --frames 10 --screenshot shot.png || exit /b 1
           fc /b shot.png test\cli\fixtures\run48\expected-frame10.png > nul || exit /b 1
 
+      # --- The default ZX Spectrum Next model's SD card must be in the kit (dev/plans/NEXT_SD_CARDS_PLAN.md)
+      - name: Check the bundled ZX Spectrum Next SD card
+        shell: bash
+        run: node dev/scripts/check-packaged-sd-cards.cjs artifacts/win-unpacked/resources
+
       - name: Add install Emulator install kit to artifacts
         uses: actions/upload-artifact@v7
         with:
@@ -121,6 +137,17 @@ jobs:
 
       - name: Install npm dependencies
         run: npm run bootstrap:ci
+
+      # The ZX Spectrum Next SD base cards are not in git (dev/plans/NEXT_SD_CARDS_PLAN.md D-6): fetched
+      # from kliveide.net and checked against the manifest, cached until the manifest or the fetch changes.
+      - name: Cache the ZX Spectrum Next SD cards
+        uses: actions/cache@v6
+        with:
+          path: .local/next-sd
+          key: next-sd-${{ runner.os }}-${{ hashFiles('src/common/zxnext/nextRomSets.json', 'dev/scripts/next-sd-fetch.cjs', 'dev/scripts/next-sd/cards.cjs') }}
+
+      - name: Fetch the ZX Spectrum Next SD cards
+        run: npm run next-sd:fetch
 
       - name: Build WASM cores and app bundle
         env:
@@ -179,6 +206,8 @@ jobs:
           # --- klive run (dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md Phase 2): the picture must match the golden
           ./squashfs-root/resources/cli/klive run ../test/cli/fixtures/run48 --frames 10 --screenshot shot.png
           cmp shot.png ../test/cli/fixtures/run48/expected-frame10.png
+          # --- The default ZX Spectrum Next model's SD card must be in the kit (dev/plans/NEXT_SD_CARDS_PLAN.md)
+          node ../dev/scripts/check-packaged-sd-cards.cjs squashfs-root/resources
           rm -rf squashfs-root
 
       - name: Add install Emulator install kit to artifacts
@@ -203,6 +232,17 @@ jobs:
 
       - name: Install npm dependencies
         run: npm run bootstrap:ci
+
+      # The ZX Spectrum Next SD base cards are not in git (dev/plans/NEXT_SD_CARDS_PLAN.md D-6): fetched
+      # from kliveide.net and checked against the manifest, cached until the manifest or the fetch changes.
+      - name: Cache the ZX Spectrum Next SD cards
+        uses: actions/cache@v6
+        with:
+          path: .local/next-sd
+          key: next-sd-${{ runner.os }}-${{ hashFiles('src/common/zxnext/nextRomSets.json', 'dev/scripts/next-sd-fetch.cjs', 'dev/scripts/next-sd/cards.cjs') }}
+
+      - name: Fetch the ZX Spectrum Next SD cards
+        run: npm run next-sd:fetch
 
       - name: Build WASM cores and app bundle
         env:
@@ -343,6 +383,17 @@ jobs:
       - name: Install npm dependencies
         run: npm run bootstrap:ci
 
+      # The ZX Spectrum Next SD base cards are not in git (dev/plans/NEXT_SD_CARDS_PLAN.md D-6): fetched
+      # from kliveide.net and checked against the manifest, cached until the manifest or the fetch changes.
+      - name: Cache the ZX Spectrum Next SD cards
+        uses: actions/cache@v6
+        with:
+          path: .local/next-sd
+          key: next-sd-${{ runner.os }}-${{ hashFiles('src/common/zxnext/nextRomSets.json', 'dev/scripts/next-sd-fetch.cjs', 'dev/scripts/next-sd/cards.cjs') }}
+
+      - name: Fetch the ZX Spectrum Next SD cards
+        run: npm run next-sd:fetch
+
       - name: Build WASM cores and app bundle
         env:
           NODE_OPTIONS: --max-old-space-size=8192
@@ -482,6 +533,17 @@ jobs:
       - name: Install npm dependencies
         run: npm run bootstrap:ci
 
+      # The ZX Spectrum Next SD base cards are not in git (dev/plans/NEXT_SD_CARDS_PLAN.md D-6): fetched
+      # from kliveide.net and checked against the manifest, cached until the manifest or the fetch changes.
+      - name: Cache the ZX Spectrum Next SD cards
+        uses: actions/cache@v6
+        with:
+          path: .local/next-sd
+          key: next-sd-${{ runner.os }}-${{ hashFiles('src/common/zxnext/nextRomSets.json', 'dev/scripts/next-sd-fetch.cjs', 'dev/scripts/next-sd/cards.cjs') }}
+
+      - name: Fetch the ZX Spectrum Next SD cards
+        run: npm run next-sd:fetch
+
       - name: Build WASM cores and app bundle
         env:
           NODE_OPTIONS: --max-old-space-size=8192
@@ -535,6 +597,11 @@ jobs:
           # --- klive run (dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md Phase 2): the picture must match the golden
           "artifacts/mac-arm64/Klive IDE.app/Contents/Resources/cli/klive" run test/cli/fixtures/run48 --frames 10 --screenshot shot.png
           cmp shot.png test/cli/fixtures/run48/expected-frame10.png
+
+      # --- The default ZX Spectrum Next model's SD card must be in the kit (dev/plans/NEXT_SD_CARDS_PLAN.md)
+      - name: Check the bundled ZX Spectrum Next SD card
+        shell: bash
+        run: node dev/scripts/check-packaged-sd-cards.cjs "artifacts/mac-arm64/Klive IDE.app/Contents/Resources"
 
       - name: Add install Emulator install kit to artifacts
         uses: actions/upload-artifact@v7

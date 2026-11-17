@@ -5,6 +5,8 @@ import type { NextSdCardFileResult } from "@common/zxnext/nextSdCardFile";
 import { readHardDiskFile } from "./hard-disk-images";
 import { activeSdCardFile, defaultSdCardOf } from "./machine-menus/zx-next-menus";
 import { withSdCardAccess } from "./sd-card-access";
+import { mainStore } from "./main-store";
+import { availableCardOf } from "./next-sd/nextSdCards";
 
 /*
  * Reads one file from the SD card the ZX Spectrum Next uses now: the card selected in Machine › SD Card,
@@ -14,17 +16,19 @@ import { withSdCardAccess } from "./sd-card-access";
 export async function readNextSdCardFile(name: string): Promise<NextSdCardFileResult> {
   let card = activeSdCardFile();
   if (!card || !fs.existsSync(card)) {
-    // --- The model's working copy is made from its base image when the machine first starts on it;
-    // --- until then the base image is that very card
-    const { workingCopy, baseImage } = defaultSdCardOf();
-    if (card === workingCopy && fs.existsSync(baseImage)) {
-      card = baseImage;
+    // --- The model's working copy is made from its base card when the machine first starts on it;
+    // --- until then a raw base card is that very card (a gzipped one cannot be read in place)
+    const { workingCopy } = defaultSdCardOf();
+    const baseCard = availableCardOf(mainStore.getState().emulatorState?.modelId);
+    if (card === workingCopy && baseCard && !baseCard.compressed) {
+      card = baseCard.file;
     } else {
       return { card: card ?? "", error: "noCard" };
     }
   }
+  const file = card;
   try {
-    const contents = await withSdCardAccess(() => readHardDiskFile(card, name));
+    const contents = await withSdCardAccess(() => readHardDiskFile(file, name));
     return { card, contents };
   } catch (err) {
     if (err instanceof DiskFsError && err.code === "notFound") return { card, error: "notFound" };

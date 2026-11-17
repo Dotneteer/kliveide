@@ -81,8 +81,9 @@ async function launchKlive({
   panelFontSize = 14,
   /*
    * The user home the app sees (`HOME`), for a run that must not touch the real one: Klive keeps
-   * its SD card image (`~/Klive/ks2.cim`, written by every ZX Spectrum Next launch) and its exports
-   * under it. Unset, the app uses the real home, as every recipe did before this option existed.
+   * its SD card working copies (`~/Klive/<model>.cim`, made from the base card the first time a Next
+   * model runs; a development run takes the base cards from `.local/next-sd/`, `npm run next-sd:fetch`)
+   * and its exports under it. Unset, the app uses the real home, as every recipe did before this option existed.
    */
   userHome,
   /*

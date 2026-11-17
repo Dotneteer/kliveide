@@ -4,24 +4,25 @@ import { delimiter, join } from "node:path";
 
 import { readHardDiskFile } from "@main/hard-disk-images";
 import { fwModuleTexts, parseFwFile, readFwTestCard } from "@common/zxnext/fwFile";
+import type { NextRomSetId } from "@common/zxnext/romSets";
+import { nextSdBaseImage } from "../harness/zxnext/core/sdCards";
 
 /*
- * The real TBBLUE.FW on Klive's committed SD cards (`dev/plans/TBBLUE_FW_VIEWER_PLAN.md` §1a): firmware
+ * The real TBBLUE.FW on Klive's SD base cards (`npm run next-sd:fetch`) (`dev/plans/TBBLUE_FW_VIEWER_PLAN.md` §1a): firmware
  * 1.44 (KS2 card), 1.45 (2.10 card) and 1.46 (26.11 card), read through the same FAT code the viewer's
  * menu item uses. `FW_REAL_FILES` (paths, platform delimiter) checks other files too, never in CI.
  */
 
-const MMC = join(__dirname, "../../src/public/mmc");
-const fwOf = (card: string) => readHardDiskFile(join(MMC, card), "TBBLUE.FW");
+const fwOf = (setId: NextRomSetId) => readHardDiskFile(nextSdBaseImage(setId), "TBBLUE.FW");
 
 const NAMED = ["boot", "editorOld", "updater", "coresOld", "editor", "cores", "testCard", "reset", "screens"];
 
 describe("TBBLUE.FW on the committed cards", () => {
   it.each([
-    ["ks2-base.cim", "1.44", 304640, 9],
-    ["nextzxos-2.10-base.cim", "1.45", 286720, 9],
-    ["nextzxos-26.11-base.cim", "1.46", 635904, 17]
-  ])("%s holds firmware %s", (card, version, size, count) => {
+    ["nextzxos-2.08", "1.44", 304640, 9],
+    ["nextzxos-2.10", "1.45", 286720, 9],
+    ["nextzxos-26.11", "1.46", 635904, 17]
+  ] as const)("the %s card holds firmware %s", (card, version, size, count) => {
     const data = fwOf(card);
     const fw = parseFwFile(data);
     expect(fw.format).toBe("firmware");
@@ -40,7 +41,7 @@ describe("TBBLUE.FW on the committed cards", () => {
   });
 
   it("1.46's unnamed entries are code or data, told by their texts", () => {
-    const data = fwOf("nextzxos-26.11-base.cim");
+    const data = fwOf("nextzxos-26.11");
     const fw = parseFwFile(data);
     const extra = fw.entries.slice(9);
     expect(extra.map((e) => e.name)).toEqual(new Array(8).fill(undefined));
@@ -50,7 +51,7 @@ describe("TBBLUE.FW on the committed cards", () => {
   });
 
   it("the screens block's picture is the test card, with its 113 colours", () => {
-    const data = fwOf("nextzxos-26.11-base.cim");
+    const data = fwOf("nextzxos-26.11");
     const fw = parseFwFile(data);
     const card = readFwTestCard(data, fw.entries[8])!;
     expect(new Set(card.pixels).size).toBe(113);

@@ -18,8 +18,9 @@
  * 3. A FAT32 CIM is created and formatted with Klive's own code (`src/main/fat32/`), and every
  *    tracked file of the distribution except the repository-only ones (`EXCLUDED`) is copied onto it,
  *    folders first, in sorted order.
- * 4. Without `--out`, the image's sha256 is written into the set's `sdBaseImage` entry of
- *    `src/common/zxnext/nextRomSets.json` (only that field). `--out` writes the image elsewhere and
+ * 4. Without `--out`, the image's sha256 and size are written into the set's `sdBaseImage` entry of
+ *    `src/common/zxnext/nextRomSets.json` (only those fields; a changed card also loses its `gzSize`
+ *    and `gzSha256`, which described the old bytes). `--out` writes the image elsewhere and
  *    leaves the manifest alone.
  *
  * The build is deterministic: the FAT code's clock is pinned to `FIXED_TIME` while it runs (every
@@ -321,9 +322,17 @@ async function main() {
     console.log(`Wrote ${outPath}: ${size} bytes, sha256 ${digest}`);
     if (!args.out) {
       const fresh = readManifest();
-      fresh[setId].sdBaseImage = { ...fresh[setId].sdBaseImage, sha256: digest };
+      const previous = fresh[setId].sdBaseImage;
+      const entry = { ...previous, sha256: digest, size };
+      // --- The gzipped card's facts belong to the bytes they were packed from (NEXT_SD_CARDS_PLAN D-6)
+      if (previous.sha256 !== digest) {
+        delete entry.gzSize;
+        delete entry.gzSha256;
+        console.log(`The card changed: its gzSize and gzSha256 are removed until it is packed again.`);
+      }
+      fresh[setId].sdBaseImage = entry;
       writeFileSync(MANIFEST, `${JSON.stringify(fresh, null, 2)}\n`);
-      console.log(`Recorded the sha256 in ${MANIFEST} (${setId}.sdBaseImage).`);
+      console.log(`Recorded the sha256 and size in ${MANIFEST} (${setId}.sdBaseImage).`);
       console.log(`Review and commit: ${set.sdBaseImage.file} and the manifest.`);
     }
   } finally {

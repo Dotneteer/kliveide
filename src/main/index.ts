@@ -78,6 +78,7 @@ import { onEmuWindowLeftFullScreen, resetEmuFullScreenMode } from "./emu-full-sc
 import { createSettingsReader } from "@utils/SettingsReader";
 import { readAdvancedDebuggingSetting } from "@common/features/advancedDebugging";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_DOCK, MEDIA_MICRODRIVES, MEDIA_TAPE } from "@common/structs/project-const";
+import { splitSavedSdCardSlots } from "@main/next-sd/sdCardSlots";
 import { setSelectedMicrodriveFile } from "./machine-menus/interface1-menus";
 
 import { invalidateMenuCache, setupMenu } from "./app-menu";
@@ -124,6 +125,9 @@ process.env.DIST = join(process.env.DIST_ELECTRON, "dist");
 process.env.PUBLIC = app.isPackaged
   ? process.resourcesPath
   : join(process.env.DIST_ELECTRON, "src/public");
+// --- A development run finds the Next's SD base cards where `npm run next-sd:fetch` puts them
+// --- (`dev/plans/NEXT_SD_CARDS_PLAN.md` D-6); a packaged app has only its own
+process.env.KLIVE_NEXT_SD_DEV_CARDS = app.isPackaged ? "" : join(process.env.DIST_ELECTRON, ".local/next-sd");
 
 // --- Disable GPU Acceleration for Windows 7
 if (release().startsWith("6.1")) app.disableHardwareAcceleration();
@@ -416,6 +420,8 @@ async function createAppWindows() {
       mainStore.dispatch(setWindowRecordingPointerAction(windowRecording.pointer ?? true));
       mainStore.dispatch(setWindowRecordingClicksAction(windowRecording.clicks ?? true));
       mainStore.dispatch(setWindowRecordingHiDpiAction(windowRecording.hiDpi ?? false));
+      // --- Settings saved before the DivMMC had a slot of its own keep its card in the Next's
+      appSettings.media = splitSavedSdCardSlots(appSettings.media, appSettings.machineId);
       if (appSettings.media) {
         Object.entries(appSettings.media).forEach(([key, value]) => {
           mainStore.dispatch(setMediaAction(key, value));

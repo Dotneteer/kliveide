@@ -36,6 +36,17 @@ jobs:
       - name: Build all WASM machine cores
         run: npm run build:all-wasm
 
+      # The ZX Spectrum Next SD base cards are not in git (dev/plans/NEXT_SD_CARDS_PLAN.md D-6): fetched
+      # from kliveide.net and checked against the manifest, cached until the manifest or the fetch changes.
+      - name: Cache the ZX Spectrum Next SD cards
+        uses: actions/cache@v6
+        with:
+          path: .local/next-sd
+          key: next-sd-${{ runner.os }}-${{ hashFiles('src/common/zxnext/nextRomSets.json', 'dev/scripts/next-sd-fetch.cjs', 'dev/scripts/next-sd/cards.cjs') }}
+
+      - name: Fetch the ZX Spectrum Next SD cards
+        run: npm run next-sd:fetch
+
       - name: Run the slow tier
         run: npx vitest run --config build/vitest.config.ts --project=e2e-slow --shard=${{ matrix.shard }}/3
         env:

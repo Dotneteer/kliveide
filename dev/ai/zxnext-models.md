@@ -72,9 +72,15 @@ decisions (D-A to D-G) and what to do once the VHDL appears.
 - **D7 - SD card per model.** Each profile has its own base image and working copy; `ks2.cim` stays
   the `ks2-30201` copy (no rename). Machine > SD Card > Default/Reset act on the active model's copy;
   another model's default card counts as no choice, so a model never boots a mismatched NextZXOS. A
-  user-selected SD file still overrides. **New projects start on `ks2-30204`**
-  (`NEW_PROJECT_NEXT_PROFILE_ID`, the registry's `newProjectModelIds`, the default favourite);
-  model-less references still mean `ks2-30201` (D1).
+  user-selected SD file still overrides; one that no longer exists falls back to the model's card.
+  **New projects start on `ks3-30303`**, the default model (`NEW_PROJECT_NEXT_PROFILE_ID`, the
+  registry's `newProjectModelIds`, the default favourite); model-less references still mean
+  `ks2-30201` (D1). **The installer carries only the default model's ROM set's base image**
+  (`extraResources` in `package.json`, `test/scripts/packaged-sd-cards.test.ts`,
+  `dev/scripts/check-packaged-sd-cards.cjs` in the release build): no release up to v0.68.1 shipped
+  any card, and every model booted to "Drive C: not found". A model without a card asks (switch to the
+  default model, select an image, continue) instead. `dev/plans/NEXT_SD_CARDS_PLAN.md` replaces this
+  with downloaded, checked cards.
 - **D8 - ROM annotations follow the annotation provenance rule** (`dev/ai/rom-annotations/README.md`,
   D4 there). A page whose CRC is unchanged reuses its sidecar. For changed pages,
   `npm run rom:annotations:carry -- <fromSidecar> <toRom>` (`dev/scripts/rom-annotations-carry.cjs`,
@@ -198,7 +204,9 @@ decisions (D-A to D-G) and what to do once the VHDL appears.
    define), each with a harness test on every profile; check the older artifacts stay unchanged.
 7. **Annotations.** Unchanged pages reuse sidecars; carry changed ones with
    `npm run rom:annotations:carry`, review, then author; append to `PROVENANCE.md`.
-8. **IDE and docs.** New-project default and favourite if it should change (D7), the models page in
+8. **IDE and docs.** New-project default and favourite if it should change (D7); a new default model
+   also changes the card the installer carries (`extraResources` from `src/public/mmc` in
+   `package.json`, guarded by `test/scripts/packaged-sd-cards.test.ts`). The models page in
    the docs, `npm run i18n:keys` if any text was added, a `feature` changeset, `npm run test:slow`.
 
 KS3 fits the same steps: the board is a profile field and a compile-time define, its top file

@@ -123,7 +123,7 @@ describe("Select Machine dialog", () => {
 
   it("reorders favourites with the buttons and by dropping, keeping separators with their item", () => {
     const h = open();
-    expect(favKeys(h)).toEqual(["sp48/pal", "sp128/sp128", "spp3e/fdd1 |", "zxnext/ks2-30204 |", "z88/OZ50", "zx81/zx81-16k"]);
+    expect(favKeys(h)).toEqual(["sp48/pal", "sp128/sp128", "spp3e/fdd1 |", "zxnext/ks3-30303 |", "z88/OZ50", "zx81/zx81-16k"]);
     h.do({ type: "favoriteMoved", key: "sp48/pal", delta: -1 });
     expect(favKeys(h)[0]).toBe("sp48/pal");
     h.do({ type: "favoriteMoved", key: "spp3e/fdd1", delta: -1 });
@@ -133,10 +133,10 @@ describe("Select Machine dialog", () => {
   });
 
   it("drops the separator of whatever ends up last, and cannot add one there", () => {
-    const h = open().do({ type: "favoriteMoved", key: "zxnext/ks2-30204", delta: 2 });
-    expect(favKeys(h).at(-1)).toBe("zxnext/ks2-30204");
+    const h = open().do({ type: "favoriteMoved", key: "zxnext/ks3-30303", delta: 2 });
+    expect(favKeys(h).at(-1)).toBe("zxnext/ks3-30303");
     const before = favKeys(h);
-    h.do({ type: "separatorToggled", key: "zxnext/ks2-30204" });
+    h.do({ type: "separatorToggled", key: "zxnext/ks3-30303" });
     expect(favKeys(h)).toEqual(before);
     const fav = h.vm.sections[0];
     expect(fav.kind === "favorites" && fav.rows.at(-1)!.canToggleSeparator).toBe(false);

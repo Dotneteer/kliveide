@@ -21,8 +21,9 @@
  * stops at a breakpoint inside it (NextZXOS boots and `.nexload`s the exported NEX); the execution
  * point, the Call Stack (the banked routine and its caller), a bank-local global in the Variables
  * panel, and Step Out to the resident caller are checked. It needs a NextZXOS SD card image: the
- * real `~/Klive/ks2.cim` (or `KBASIC_IDE_CARD=<file>`) is **copied** into the run's own home (the app
- * runs with `HOME` there), so the user's card is never written. Without one the scenario is skipped.
+ * default Next model's base card (`npm run next-sd:fetch`, or `KBASIC_IDE_CARD=<file>`) is **copied** into
+ * the run's own home as that model's working copy (the app runs with `HOME` there), so the user's card
+ * is never written. Without one the scenario is skipped.
  *
  * Then the NEX debug sidecar (plan §8.5): a fresh Klive opens that project without building it and
  * runs the exported NEX with `nex-run -d`; its breakpoint and the panels come from the sidecar.
@@ -41,6 +42,7 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const { launchKlive } = require("./doc-shots/harness.cjs");
+const { defaultNextCard, defaultNextModel } = require("./next-sd/cards.cjs");
 
 const PROGRAM = ['PRINT "one" : PRINT "two"', "SUB greet()", ' PRINT "in sub"', "END SUB", "greet", 'PRINT "end"', ""];
 const STOPS = [
@@ -115,10 +117,10 @@ const DEBUGGER = [
   const shots = process.env.KBASIC_IDE_SHOTS;
   // --- The app's own home: Next launches write the SD card image under it (a copy of the user's card)
   const userHome = path.join(work, "user");
-  const card = process.env.KBASIC_IDE_CARD ?? path.join(os.homedir(), "Klive", "ks2.cim");
-  const hasCard = fs.existsSync(card);
+  const card = defaultNextCard(process.env.KBASIC_IDE_CARD);
+  const hasCard = !!card;
   fs.mkdirSync(path.join(userHome, "Klive"), { recursive: true });
-  if (hasCard) fs.copyFileSync(card, path.join(userHome, "Klive", "ks2.cim"));
+  if (hasCard) fs.copyFileSync(card, path.join(userHome, "Klive", defaultNextModel().workingCopy));
   const only = process.env.KBASIC_IDE_ONLY;
   const failures = [];
   // --- Each part in a fresh Klive: after a machine switch the IDE's project service can keep the
@@ -633,7 +635,7 @@ const DEBUGGER = [
   };
   const parts = only === "next" ? ["next", "nex"] : only === "classic" ? ["classic"] : only === "intel" ? ["intel"] : ["classic", "intel", "next", "nex"];
   for (const part of parts) {
-    if ((part === "next" || part === "nex") && !hasCard) console.log(`skip the ${part} scenario: no NextZXOS SD card image at ${card}`);
+    if ((part === "next" || part === "nex") && !hasCard) console.log(`skip the ${part} scenario: no NextZXOS SD card (npm run next-sd:fetch, or KBASIC_IDE_CARD)`);
     else await runPart(part);
   }
   fs.rmSync(work, { recursive: true, force: true });

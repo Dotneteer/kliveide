@@ -7,7 +7,7 @@ import { CimFile } from "@main/fat32/CimFileManager";
 import { NEXT_ROM_SETS } from "@common/zxnext/romSets";
 import { NEXT_PROFILE_IDS, NEXT_PROFILES } from "@emu/machines/zxNext/nextProfiles";
 import { createSession, type SdCardBacking } from "../../harness/zxnext";
-import { REPO_ROOT } from "../../harness/zxnext/core/machines";
+import { nextSdBaseImage } from "../../harness/zxnext/core/sdCards";
 
 /*
  * Each Next model boots its own NextZXOS from its own base SD card (`dev/ai/zxnext-models.md`
@@ -39,7 +39,7 @@ describe.each(NEXT_PROFILE_IDS)("%s boots NextZXOS", (profileId) => {
 
   it(`from its NextZXOS ${set.nextZxOs} card, into the ROM set's key-wait loop`, async () => {
     const card = join(work, `${profileId}.cim`);
-    copyFileSync(join(REPO_ROOT, "src/public", set.sdBaseImage.file), card);
+    copyFileSync(nextSdBaseImage(set.id), card);
     const sd = cimCard(card);
     try {
       const s = await createSession({ profile: profileId });

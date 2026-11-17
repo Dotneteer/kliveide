@@ -4,12 +4,10 @@ import fs from "fs";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { MachineMenuItem, MachineMenuRenderer } from "@common/machines/info-types";
 import { AppState } from "@common/state/AppState";
-import { MEDIA_SD_CARD, MEDIA_SD_CARD_2 } from "@common/structs/project-const";
+import { MEDIA_DIVMMC_SD_CARD, MEDIA_SD_CARD, MEDIA_SD_CARD_2, SD_CARD_DIVMMC } from "@common/structs/project-const";
 import { mainStore } from "@main/main-store";
 import { saveKliveProject } from "@main/projects";
 import { app, BrowserWindow, dialog } from "electron";
-import { KLIVE_HOME_FOLDER } from "@main/settings";
-import { getKliveHomeBase } from "@main/portable";
 import { dimMenuAction, setMediaAction } from "@common/state/actions";
 import { logEmuEvent } from "@main/registeredMachines";
 import { CimHandler } from "@main/fat32/CimHandlers";
@@ -23,28 +21,31 @@ import { NEXT_AUDIO_OUTPUTS, normalizeNextAudioOutput } from "@common/settings/n
 import { englishLabel } from "@common/i18n/labels";
 import { ensureSdCardBackupIfEnabled } from "./sd-card-backup";
 import { withSdCardAccess } from "../sd-card-access";
+import { availableCardOf, workingCopyPath, writeCardFrom } from "@main/next-sd/nextSdCards";
 import { t } from "@common/i18n/i18n";
-import { NEXT_PROFILE_IDS, nextProfileOf, romSetOf } from "@emu/machines/zxNext/nextProfiles";
+import {
+  NEW_PROJECT_NEXT_PROFILE_ID,
+  NEXT_PROFILE_IDS,
+  nextProfileOf,
+  romSetOf
+} from "@emu/machines/zxNext/nextProfiles";
+import { getMachineName } from "@common/machines/machine-registry";
+import { MI_ZXNEXT } from "@common/machines/constants";
 
 export const SD_CARD_FILE_FOLDER = "sdCardFileFolder";
 
 /**
  * The active Next model's default SD card (`dev/ai/zxnext-models.md` D7): each model has
  * its own working copy in the Klive home folder (`ks2.cim` for KS2 with core 3.02.01, the file every
- * earlier Klive wrote) and its ROM set's base image, so switching models never boots NextZXOS from a
- * card of another release. A user-selected card (`MEDIA_SD_CARD`) still overrides it.
+ * earlier Klive wrote), made from its ROM set's base card (`@main/next-sd/nextSdCards`), so switching
+ * models never boots NextZXOS from a card of another release. A user-selected card (`MEDIA_SD_CARD`)
+ * still overrides it.
  */
 export function defaultSdCardOf(modelId: string | undefined = mainStore.getState().emulatorState?.modelId): {
   /** The working copy's full path */
   workingCopy: string;
-  /** The base image's full path, which a new or reset working copy is copied from */
-  baseImage: string;
 } {
-  const profile = nextProfileOf(modelId);
-  return {
-    workingCopy: path.join(getKliveHomeBase(), KLIVE_HOME_FOLDER, profile.sdWorkingCopy),
-    baseImage: path.join(process.env.PUBLIC ?? "", romSetOf(profile).sdBaseImage.file)
-  };
+  return { workingCopy: workingCopyPath(modelId) };
 }
 
 /** Whether a card is the default working copy of a Next model other than `modelId` */
@@ -306,36 +307,63 @@ export const hotkeyMenuRenderer: MachineMenuRenderer = () => {
   return items;
 };
 
-export async function initializeZxSpectrumNext(modelId?: string): Promise<void> {
-  // --- This is where the SD Card file is stored
-  const { workingCopy: sdCardPath, baseImage: sourceSdCardPath } = defaultSdCardOf(modelId);
-  if (!fs.existsSync(sdCardPath)) {
-    // --- Create the folder if it does not exist
-    fs.mkdirSync(path.dirname(sdCardPath), { recursive: true });
-  }
+/**
+ * Makes the model's default SD card working copy from its ROM set's base card on first use.
+ * @returns Whether the working copy is there now. It is not when the base card is not on this machine
+ * (this Klive ships only the default model's card, `dev/plans/NEXT_SD_CARDS_PLAN.md`) or is not the
+ * manifest's card.
+ */
+export async function initializeZxSpectrumNext(modelId?: string): Promise<boolean> {
+  const sdCardPath = workingCopyPath(modelId);
+  if (isExistingFile(sdCardPath)) return true;
 
-  if (fs.existsSync(sdCardPath) && fs.statSync(sdCardPath).isFile()) {
-    // --- The file exits, we are done
-    return;
+  const baseCard = availableCardOf(modelId);
+  if (!baseCard) return false;
+  try {
+    // --- Written under a temporary name and checked, so a copy cut short never passes for a card
+    await writeCardFrom(baseCard, sdCardPath);
+  } catch (err) {
+    await logEmuEvent(`The SD card could not be made from ${baseCard.file}: ${errorMessage(err)}`, "bright-red");
+    return false;
   }
-
-  // --- Copy the SD Card file from the source
-  if (fs.existsSync(sourceSdCardPath) && fs.statSync(sourceSdCardPath).isFile()) {
-    fs.copyFileSync(sourceSdCardPath, sdCardPath);
-    // --- Create initial backup after copying
-    await ensureSdCardBackupIfEnabled(sdCardPath);
-  }
+  // --- Create initial backup after copying
+  await ensureSdCardBackupIfEnabled(sdCardPath);
+  return true;
 }
 
-export async function setupZxSpectrumNext(modelId?: string): Promise<void> {
+function errorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
+/**
+ * Prepares the SD card of the Next model the emulator switches to (the machine's `setup`).
+ * @returns Another model to switch to instead, when the user chose the default model because the
+ * selected model's SD card is not installed; otherwise nothing.
+ */
+export async function setupZxSpectrumNext(modelId?: string): Promise<string | void> {
   const targetModel = modelId ?? mainStore.getState().emulatorState?.modelId;
   // --- The model being switched to has its own default card (D7): make its working copy on first use
-  await initializeZxSpectrumNext(targetModel);
+  const hasDefaultCard = await initializeZxSpectrumNext(targetModel);
   // --- Check, if the SD Card is set at all. Another model's default card counts as no choice:
   // --- switching models switches default cards
   const appState = mainStore.getState();
   const selected = appState.media?.[MEDIA_SD_CARD];
-  const sdCardFile = isAnotherModelsDefaultSdCard(selected, targetModel) ? undefined : selected;
+  let sdCardFile = isAnotherModelsDefaultSdCard(selected, targetModel) ? undefined : selected;
+  if (sdCardFile && path.resolve(sdCardFile) === path.resolve(defaultSdCardOf(targetModel).workingCopy)) {
+    // --- The model's own default card is no choice either: it is what the default branch sets
+    sdCardFile = undefined;
+  } else if (sdCardFile && !isExistingFile(sdCardFile)) {
+    // --- A card chosen earlier and moved or deleted since: the model's own card instead of no card
+    await logEmuEvent(`ZX Spectrum Next SD card image not found: ${sdCardFile}; using the default card`, "yellow");
+    sdCardFile = undefined;
+  }
+  if (!sdCardFile && !hasDefaultCard) {
+    const substitute = await handleMissingSdCard(targetModel);
+    if (substitute) return substitute;
+    // --- The user may have picked an image in the meantime: only a new choice counts
+    const picked = mainStore.getState().media?.[MEDIA_SD_CARD];
+    if (picked && picked !== selected && isExistingFile(picked)) sdCardFile = picked;
+  }
   if (sdCardFile) {
     // --- Use the file stored in settings
     await logSdCardEvent(sdCardFile);
@@ -351,6 +379,65 @@ export async function setupZxSpectrumNext(modelId?: string): Promise<void> {
   }
 }
 
+function isExistingFile(file: string): boolean {
+  try {
+    return fs.statSync(file).isFile();
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * The selected model's SD card is not installed (its base image is not in this Klive, and it has no
+ * working copy): says so in the Emulator pane and asks what to do instead of booting a Next that
+ * stops with "Drive C: not found".
+ * @returns The default model's id when the user chose to switch to it
+ */
+async function handleMissingSdCard(modelId: string | undefined): Promise<string | undefined> {
+  const model = getMachineName(MI_ZXNEXT, nextProfileOf(modelId).id);
+  const defaultModelId = NEW_PROJECT_NEXT_PROFILE_ID;
+  const defaultModel = getMachineName(MI_ZXNEXT, defaultModelId);
+  await logEmuEvent(
+    `The SD card of the ${model} is not installed (no ${romSetOf(nextProfileOf(modelId)).id} base card)`,
+    "bright-red"
+  );
+  // --- Offering the default model makes sense only when it is another model and its card is there
+  const canSwitch =
+    nextProfileOf(modelId).id !== defaultModelId && availableCardOf(defaultModelId) !== undefined;
+  const buttons = [
+    ...(canSwitch ? [t("messages.sdCard.missingSwitch", { defaultModel })] : []),
+    t("messages.sdCard.missingSelect"),
+    t("messages.sdCard.missingContinue")
+  ];
+  const window = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0];
+  // --- As every message box the main process shows: the menu stays dimmed while it is up
+  mainStore.dispatch(dimMenuAction(true));
+  let response: number;
+  try {
+    const options = {
+      type: "warning" as const,
+      title: t("messages.sdCard.missingTitle"),
+      message: t("messages.sdCard.missing", { model, defaultModel }),
+      buttons,
+      defaultId: 0,
+      cancelId: buttons.length - 1
+    };
+    response = (window ? await dialog.showMessageBox(window, options) : await dialog.showMessageBox(options)).response;
+  } finally {
+    mainStore.dispatch(dimMenuAction(false));
+  }
+  const choice = canSwitch ? response : response + 1;
+  if (choice === 0) {
+    await logEmuEvent(`Switching to the ${defaultModel} instead`);
+    await setupZxSpectrumNext(defaultModelId);
+    return defaultModelId;
+  }
+  if (choice === 1 && window) {
+    await setSdCardFile(window, mainStore.getState());
+  }
+  return undefined;
+}
+
 function getDefaultSdCardFile(): string {
   return getDefaultSdCardPath();
 }
@@ -360,26 +447,31 @@ async function logSdCardEvent(filename: string): Promise<void> {
 }
 
 async function resetToDefaultSdCardFile(): Promise<void> {
-  const { workingCopy: sdCardPath, baseImage: sourceSdCardPath } = defaultSdCardOf();
+  const { workingCopy: sdCardPath } = defaultSdCardOf();
+  const baseCard = availableCardOf(mainStore.getState().emulatorState?.modelId);
+
+  // --- Without the base card there is nothing to reset to: deleting the working copy would only
+  // --- lose the user's card
+  if (!baseCard) {
+    await logEmuEvent(`The SD card cannot be reset: its base card is not installed`, "bright-red");
+    return;
+  }
 
   // --- Rewriting the image must not overlap with emulated sector I/O or a file copy, all of
   // --- which work on the very same file.
-  await withSdCardAccess(async () => {
+  const failure = await withSdCardAccess(async () => {
     // --- Release the cached handler before touching the file. It holds an open descriptor on the
-    // --- image: on Windows that descriptor makes the unlink below fail outright, and everywhere
-    // --- else the cache would happily keep serving a handler bound to the deleted file (the
+    // --- image: on Windows that descriptor makes replacing the file fail outright, and everywhere
+    // --- else the cache would happily keep serving a handler bound to the replaced file (the
     // --- cache is only invalidated when the *file name* changes, and it does not change here).
     invalidateSdCardHandler();
 
-    // --- Get the default SD Card file, and delete the current one
-    if (fs.existsSync(sdCardPath) && fs.statSync(sdCardPath).isFile()) {
-      // --- Delete the file
-      fs.unlinkSync(sdCardPath);
-    }
-
-    // --- Copy the SD Card file from the source
-    if (fs.existsSync(sourceSdCardPath) && fs.statSync(sourceSdCardPath).isFile()) {
-      fs.copyFileSync(sourceSdCardPath, sdCardPath);
+    // --- The fresh card replaces the working copy only once it is complete and checked: a failed
+    // --- reset leaves the user's card as it was
+    try {
+      await writeCardFrom(baseCard, sdCardPath);
+    } catch (err) {
+      return errorMessage(err);
     }
 
     // --- Create backup of reset file
@@ -388,7 +480,12 @@ async function resetToDefaultSdCardFile(): Promise<void> {
     // --- Make the file writeable
     const cimHandler = getSdCardHandler();
     cimHandler.setReadOnly(false);
+    return undefined;
   });
+  if (failure) {
+    await logEmuEvent(`The SD card could not be reset from ${baseCard.file}: ${failure}`, "bright-red");
+    return;
+  }
 
   mainStore.dispatch(setMediaAction(MEDIA_SD_CARD, undefined));
   await saveKliveProject();
@@ -397,9 +494,30 @@ async function resetToDefaultSdCardFile(): Promise<void> {
   await logSdCardEvent(getDefaultSdCardFile());
 }
 
-/** The SD card image file the Next uses now (the media store's, or the default one) */
-export function activeSdCardFile(): string {
+/**
+ * The media slot of the current machine's SD card: the Next's, or the DivMMC's on any other machine
+ * (`dev/plans/NEXT_SD_CARDS_PLAN.md` D-10)
+ */
+export function activeSdCardSlot(): typeof MEDIA_SD_CARD | typeof MEDIA_DIVMMC_SD_CARD {
+  return mainStore.getState().emulatorState?.machineId === MI_ZXNEXT ? MEDIA_SD_CARD : MEDIA_DIVMMC_SD_CARD;
+}
+
+/**
+ * The SD card image file the machine uses now: on a Next the card selected in its slot or the model's
+ * own working copy; on a DivMMC machine the card in the DivMMC's slot, or undefined for an empty slot
+ */
+export function activeSdCardFile(): string | undefined {
+  return activeSdCardSlot() === MEDIA_SD_CARD ? nextSdCardFile() : divMmcSdCardFile();
+}
+
+/** The Next's SD card (card 0): the image selected in its slot, or the model's own working copy */
+export function nextSdCardFile(): string {
   return mainStore.getState().media?.[MEDIA_SD_CARD] ?? getDefaultSdCardFile();
+}
+
+/** The DivMMC's SD card, or undefined for an empty slot */
+export function divMmcSdCardFile(): string | undefined {
+  return mainStore.getState().media?.[MEDIA_DIVMMC_SD_CARD] || undefined;
 }
 
 /** The second SD card's image (card 1, a KS3's second reader), or undefined for an empty slot */
@@ -411,10 +529,8 @@ let cimHandler: CimHandler;
 let currentSdCardFile: string;
 
 // --- Use this function to get the CIM handler
-export function getSdCardHandler(): CimHandler {
-  const appState = mainStore.getState();
-  const sdCardFile = appState.media?.[MEDIA_SD_CARD] ?? getDefaultSdCardFile();
-  
+export function getSdCardHandler(sdCardFile: string = nextSdCardFile()): CimHandler {
+
   // --- Invalidate cache if SD card file has changed
   if (cimHandler && currentSdCardFile !== sdCardFile) {
     cimHandler.close();
@@ -456,15 +572,17 @@ export type SdCardDevice = {
 let rawSdCard: { file: string; device: BlockDevice & { close(): void } } | undefined;
 
 /**
- * The machine's SD card as sectors (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md C5): a `.cim` through
- * its handler (the Next's card, and the default one), a raw `.img` or an `.hdf` (the DivMMC's cards are
- * often those) as a block device over the file
+ * An SD card as sectors (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md C5): a `.cim` through its
+ * handler, a raw `.img` or an `.hdf` (the DivMMC's cards are often those) as a block device over the file.
+ * @param card 0 and 1: a Next's cards; `SD_CARD_DIVMMC`: the DivMMC's (`dev/plans/NEXT_SD_CARDS_PLAN.md` D-10)
  */
 export function getSdCardDevice(card = 0): SdCardDevice {
   if (card === 1) return getSdCard2Device();
-  const sdCardFile = activeSdCardFile();
+  const sdCardFile = card === SD_CARD_DIVMMC ? divMmcSdCardFile() : nextSdCardFile();
+  // --- A DivMMC with no card: an empty slot, which the core treats as no card
+  if (!sdCardFile) return emptySdCardDevice("No SD card image in the DivMMC");
   if (sdCardFile.toLowerCase().endsWith(".cim")) {
-    const handler = getSdCardHandler();
+    const handler = getSdCardHandler(sdCardFile);
     return {
       totalSectors: (handler.cimInfo.maxSize * 2048) / handler.cimInfo.sectorSize,
       readSector: (sector) => handler.readSector(sector),
@@ -488,6 +606,17 @@ export function getSdCardDevice(card = 0): SdCardDevice {
   };
 }
 
+/** A slot with no card: 0 sectors, which the core treats as no card (`zx-spectrum-sd.c`) */
+function emptySdCardDevice(writeError: string): SdCardDevice {
+  return {
+    totalSectors: 0,
+    readSector: () => new Uint8Array(512),
+    writeSector: () => {
+      throw new Error(writeError);
+    }
+  };
+}
+
 /* The second card's open image: a `.cim` through its handler, anything else as a block device */
 let sdCard2:
   | { file: string; cim?: CimHandler; raw?: BlockDevice & { close(): void } }
@@ -507,13 +636,7 @@ function getSdCard2Device(): SdCardDevice {
   const file = activeSdCard2File();
   if (!file) {
     closeSdCard2();
-    return {
-      totalSectors: 0,
-      readSector: () => new Uint8Array(512),
-      writeSector: () => {
-        throw new Error("No card in the second SD card reader");
-      }
-    };
+    return emptySdCardDevice("No card in the second SD card reader");
   }
   if (sdCard2 && sdCard2.file !== file) closeSdCard2();
   if (!sdCard2) {
@@ -568,12 +691,17 @@ async function setSdCardFile(browserWindow: BrowserWindow, state: AppState): Pro
   await setSelectedSdCardFile(dialogResult.filePaths[0]);
 }
 
-export async function setSelectedSdCardFile(filename: string): Promise<void> {
-  // --- Read the file
+/**
+ * Puts an image into an SD card slot: the Next's (`MEDIA_SD_CARD`) or the DivMMC's
+ * (`MEDIA_DIVMMC_SD_CARD`), and remembers its folder for the next selection
+ */
+export async function setSelectedSdCardFile(
+  filename: string,
+  slot: typeof MEDIA_SD_CARD | typeof MEDIA_DIVMMC_SD_CARD = MEDIA_SD_CARD
+): Promise<void> {
   const sdCardFolder = path.dirname(filename);
 
-  // --- Store the last selected tape file
-  mainStore.dispatch(setMediaAction(MEDIA_SD_CARD, filename));
+  mainStore.dispatch(setMediaAction(slot, filename));
   await logSdCardEvent(filename);
 
   // --- Save the folder into settings

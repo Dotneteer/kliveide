@@ -48,7 +48,7 @@ vi.mock("@common/machines/machine-registry", () => ({
     machineId,
     modelId
   })),
-  newProjectModelIds: { zxnext: "ks2-30204" }
+  newProjectModelIds: { zxnext: "ks3-30303" }
 }));
 
 vi.mock("@main/build", () => ({

@@ -1,6 +1,7 @@
 import type { MachineInfo } from "./info-types";
 import { resolveModelId } from "./machine-registry";
 import { MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48, MI_Z88, MI_ZX81, MI_ZXNEXT } from "./constants";
+import { NEW_PROJECT_NEXT_PROFILE_ID } from "@emu/machines/zxNext/nextProfiles";
 
 /**
  * One entry of the Machine › Machine type menu. The order of the stored array is the menu order.
@@ -24,7 +25,8 @@ export const DEFAULT_MACHINE_FAVORITES: readonly MachineFavorite[] = Object.free
   { machineId: MI_SPECTRUM_48, modelId: "pal" },
   { machineId: MI_SPECTRUM_128, modelId: "sp128" },
   { machineId: MI_SPECTRUM_3E, modelId: "fdd1", separatorAfter: true },
-  { machineId: MI_ZXNEXT, modelId: "ks2-30204", separatorAfter: true },
+  // --- The default Next model, the one whose SD card the installer carries
+  { machineId: MI_ZXNEXT, modelId: NEW_PROJECT_NEXT_PROFILE_ID, separatorAfter: true },
   { machineId: MI_Z88, modelId: "OZ50" },
   { machineId: MI_ZX81, modelId: "zx81-16k" }
 ]);

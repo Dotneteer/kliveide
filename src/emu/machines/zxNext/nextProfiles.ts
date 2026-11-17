@@ -105,10 +105,12 @@ export const NEXT_PROFILE_IDS = Object.keys(NEXT_PROFILES) as NextProfileId[];
 export const IMPLICIT_NEXT_PROFILE_ID: NextProfileId = "ks2-30201";
 
 /**
- * The model a *new* project starts on (D7): the newest supported core. Unlike the implicit model,
- * which says what an old reference without a model meant, this is a choice for new work.
+ * The default Next model (D7): the KS3 with the newest core. A new project starts on it, it is the
+ * model the machine type offers, and its ROM set's SD card is the one the installer carries
+ * (`dev/plans/NEXT_SD_CARDS_PLAN.md`, D-2). Unlike the implicit model, which says what an old
+ * reference without a model meant, this is a choice for new work.
  */
-export const NEW_PROJECT_NEXT_PROFILE_ID: NextProfileId = "ks2-30204";
+export const NEW_PROJECT_NEXT_PROFILE_ID: NextProfileId = "ks3-30303";
 
 /**
  * Model ids that are gone, and the profile each now means (D1): `standard` was the one Next model

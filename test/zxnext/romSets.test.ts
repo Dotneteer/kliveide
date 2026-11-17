@@ -74,6 +74,18 @@ describe("the Next ROM sets", () => {
     }
   );
 
+  describe.each(sets)("$id's SD card base image", (set) => {
+    it("has its raw and gzipped sizes and hashes (NEXT_SD_CARDS_PLAN D-5)", () => {
+      const card = set.sdBaseImage;
+      expect(card.sha256).toMatch(/^[0-9a-f]{64}$/);
+      expect(card.gzSha256).toMatch(/^[0-9a-f]{64}$/);
+      expect(card.size).toBeGreaterThan(0);
+      expect(card.size % 512).toBe(0);
+      expect(card.gzSize).toBeGreaterThan(0);
+      expect(card.gzSize).toBeLessThan(card.size);
+    });
+  });
+
   it("names its own files for the pages only it has", () => {
     for (const set of sets) {
       const elsewhere = new Set(

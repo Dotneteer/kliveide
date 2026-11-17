@@ -18,7 +18,8 @@
  *            `counter`; Step Over and Step Out move as in the core tests) and Export (the native file
  *            is the one zcc wrote, byte for byte). `templates:<case>` runs one case (`templates:zxnext`).
  *            The TS2068 case runs when KLIVE_TS2068_ROM names its ROM, like the core tests; the Next
- *            case copies the NextZXOS card ~/Klive/ks2.cim (or Z88DK_IDE_CARD) into its own home.
+ *            case copies the default Next model's base card (`npm run next-sd:fetch`, or Z88DK_IDE_CARD)
+ *            into its own home as that model's working copy.
  *
  *   npx electron-vite build --config build/electron.vite.config.ts
  *   node dev/scripts/z88dk-ide-check.cjs [run|debug|export|zx81|setup|nosetup ...]
@@ -32,13 +33,14 @@ const os = require("node:os");
 const path = require("node:path");
 const { launchKlive } = require("./doc-shots/harness.cjs");
 const { REPO_ROOT } = require("./repo-root.cjs");
+const { defaultNextCard, defaultNextModel } = require("./next-sd/cards.cjs");
 
 const ROOT = process.env.Z88DK_ROOT || path.join(os.homedir(), "z88dk");
 const OUT = path.join(REPO_ROOT, ".local", "z88dk-ide-check");
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /** The NextZXOS SD card image a Next case copies into its own home (as the Klive BASIC and Boriel checks do). */
-const NEXT_CARD = process.env.Z88DK_IDE_CARD ?? path.join(os.homedir(), "Klive", "ks2.cim");
+const NEXT_CARD = defaultNextCard(process.env.Z88DK_IDE_CARD);
 
 async function session(name, { configured = true, globalSettings = {}, card = false, ideViewOptions = {} } = {}) {
   const out = path.join(OUT, name);
@@ -48,7 +50,7 @@ async function session(name, { configured = true, globalSettings = {}, card = fa
   fs.mkdirSync(projects, { recursive: true });
   fs.mkdirSync(path.join(userHome, "Klive"), { recursive: true });
   // --- A fresh home has no NextZXOS card: the Next would stop on "Error reading file ... enAltZX.rom"
-  if (card) fs.copyFileSync(NEXT_CARD, path.join(userHome, "Klive", "ks2.cim"));
+  if (card) fs.copyFileSync(NEXT_CARD, path.join(userHome, "Klive", defaultNextModel().workingCopy));
   const k = await launchKlive({
     home: path.join(out, "klive"),
     userHome,
@@ -160,8 +162,8 @@ async function templateCase(c) {
     console.log(`SKIP ${c.id}: its ROM is not named (KLIVE_TS2068_ROM)`);
     return;
   }
-  if (c.next && !fs.existsSync(NEXT_CARD)) {
-    console.log(`SKIP ${c.id}: no NextZXOS SD card image at ${NEXT_CARD} (Z88DK_IDE_CARD)`);
+  if (c.next && !NEXT_CARD) {
+    console.log(`SKIP ${c.id}: no NextZXOS SD card (npm run next-sd:fetch, or Z88DK_IDE_CARD)`);
     return;
   }
   // --- "Sync the Source with the Current Breakpoint" (a global IDE option, off by default) makes the
