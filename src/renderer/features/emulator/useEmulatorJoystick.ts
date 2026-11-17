@@ -88,7 +88,7 @@ export function useEmulatorJoystick(
    *
    * A direction left pressed is far more visible than a stuck letter - the game simply keeps
    * running to the right - so this is called on every edge where key-ups stop arriving: focus loss,
-   * a dialog opening, the machine leaving `Running`, and a change of bindings.
+   * Command released on macOS, a dialog opening, the machine leaving `Running`, and a change of bindings.
    */
   const releaseAll = useCallback((): void => {
     for (const side of JOYSTICK_SIDES) applyPins(side, 0);
@@ -104,6 +104,16 @@ export function useEmulatorJoystick(
     const handle = (e: KeyboardEvent, down: boolean): void => {
       // --- No connectors, no claim: the key is the emulated keyboard's (see the header comment).
       if (!machine()) return;
+      /*
+       * macOS sends no key-up for a key released while Command is held, so Cmd+Arrow would leave
+       * the pin set. A key that comes with Command is a host shortcut, and letting go of Command
+       * lets go of every pin (the same rule as `useEmulatorKeyboard`).
+       */
+      if (e.code === "MetaLeft" || e.code === "MetaRight" || e.code === "OSLeft" || e.code === "OSRight") {
+        if (!down) releaseAll();
+        return;
+      }
+      if (down && e.metaKey) return;
       let claimed = false;
       for (const side of JOYSTICK_SIDES) {
         const pins = keyMaps[side].get(e.code);
