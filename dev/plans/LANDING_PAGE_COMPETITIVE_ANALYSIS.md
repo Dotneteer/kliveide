@@ -1,6 +1,6 @@
 # Klive vs. ZX Spectrum Development Environments: Competitive Analysis
 
-Status: **current as of 2026-11-06** (compacted; the original 2026-10-02 analysis and its
+Status: **current as of 2026-11-17** (compacted; the original 2026-10-02 analysis and its
 landing-page drafts are in git history). The field (§1) and the competitor columns of §2 are from
 web research of 2026-10-02 (official docs, READMEs, release notes, forums); facts that could not be
 checked against a page are marked **(unverified)** and must be checked before a public page says
@@ -8,7 +8,7 @@ them. The Klive column is kept current under `AGENTS.md`'s standing rule: when a
 `dev/plans/CLOSING_THE_GAPS_PLAN.md` is implemented, update §2 (the Klive column) and §4 (the gaps) in
 the same change.
 
-Klive features are released unless marked **(after v0.67.0)**, meaning they wait in `dev/changes/` for
+Klive features are released unless marked **(after v0.69.0)**, meaning they wait in `dev/changes/` for
 the next release.
 
 ---
@@ -45,7 +45,7 @@ developers use it.
 | All-in-one app | ✅ | ✗ (3-4 tools) | ✗ | ✗ | ✗ | ◐ (VS Code + CSpect) |
 | Win / Mac / Linux | ✅ | ✅ | ◐ (Mono) | ✅ | ✅ | ✅ |
 | 48K / 128K / +2A / +3 / +2E / +3E | ✅ incl. the Amstrad +2A/+3 ROMs; ULA timing checked against the real-machine timing suites (snow, late timing), results published beside real-machine photos | ✅ | ✗ | ✅ (reference) | ◐ (48/128) | ◐ |
-| ZX Spectrum Next | ✅ C/WASM core citing the FPGA VHDL, a hardware test suite of about 30 areas; two models by core version | ✅ | ✅ (reference dev kit) | ✗ | ✗ | via CSpect / MAME |
+| ZX Spectrum Next | ✅ C/WASM core citing the FPGA VHDL, a hardware test suite of about 30 areas; four models (KS2 and KS3 boards, cores 3.02.01 to 3.03.03) | ✅ | ✅ (reference dev kit) | ✗ | ✗ | via CSpect / MAME |
 | Other machines | Z88, Pentagon 128 with Beta 128/TR-DOS, Timex TC2048/TC2068/TS2068, Scorpion ZS-256, ZX80/ZX81 (with machine code run and debugged as a `1 REM` program), HT-1080Z, Videoton TVC 64K/64K+, Enterprise 64/128, C64 (experimental) | Very wide | ✗ | Many clones | CPC, C64 | ✗ |
 | Editor with language intelligence | ✅ asm: compiler-driven completion, hover (macro expansion), rename, references, inlay hints, colour pickers. ◐ BASIC: keyword help, completion, signature help and folding while Boriel builds BASIC | ✅ (VS Code extensions) | ✗ | ✗ | ✗ | ◐ |
 | Built-in assembler | ✅ Klive Z80/Z80N: macros, structs, modules, `.savenex`, `.dma` and `.copper` DSLs | ✗ | ✗ | ✗ | ✗ | ✗ |
@@ -62,11 +62,11 @@ developers use it.
 | Call stack, watches | ✅ (+ BASIC and C call stacks) | ✅ | ? | ✗ | ✅ | ◐ |
 | Disassembly insight | ✅ branch verdicts with T-state cost, system-variable operands, T-state measuring | ✅ | ◐ | ◐ | ✅ | ✗ |
 | NEX reverse engineering | ✅ debug any `.nex` with no project, bank breakpoints and watchpoints, entry stop, live bank vs. file diff, `.nex.dis` annotations with Copper/DMA regions | ◐ (DeZog Analyze) | ✗ | ✗ | ✗ (no Next) | ✗ |
-| General reverse engineering | ✅ annotations on every machine; every shipped ROM annotated to level 2 (48K, 128K, +2A/+3/+3E, ZX80/ZX81, every Next ROM set, HT-1080Z, TVC, the Enterprise's except IS-BASIC 2.0, and the Cambridge Z88's OZ 4.7 from OZ's own source with its author's permission **(after v0.67.0)**); code/data detection from coverage, graphics finder, SkoolKit, source export verified by reassembly | ◐ | ✗ | ✗ | ✅ | ✗ |
+| General reverse engineering | ✅ annotations on every machine; every shipped ROM annotated to level 2 (48K, 128K, +2A/+3/+3E, ZX80/ZX81, every Next ROM set, HT-1080Z, TVC, the Enterprise's except IS-BASIC 2.0, and the Cambridge Z88's OZ 4.7 from OZ's own source with its author's permission); code/data detection from coverage, graphics finder, SkoolKit, source export verified by reassembly | ◐ | ✗ | ✗ | ✅ | ✗ |
 | **Live Next inspectors** | ✅ Copper (with a raster ruler and list checks), Sprite, Tilemap and Layer 2 Inspectors, layer composition with a pixel probe naming the mixer rule (apparently unique) | ✅ (ZEsarUX) | ? | — | — | ✗ |
 | Beam position on the paused screen | ✅ on the Next and every Spectrum model, the picture drawn up to the beam | ✅ (ZEsarUX) | ? | ? | ? | ✗ |
-| Next asset editors | ✅ sprites, palettes, Layer 2 pictures, images | ✗ | ✗ | — | — | ✗ |
-| NextZXOS boot, SD image | ✅ cached boot, a FAT32 driver; tapes on the Next | ✅ | ✅ | — | — | via CSpect |
+| Next asset editors | ✅ sprites (8-bit and 4-bit), palettes, Layer 2 pictures, images | ✗ | ✗ | — | — | ✗ |
+| NextZXOS boot, SD image | ✅ cached boot, a FAT32 driver; each model's SD card checked against its hashes, older models' cards downloaded on demand; tapes on the Next | ✅ | ✅ | — | — | via CSpect |
 | Snapshots and machine state | ✅ `.sna`/`.z80`/`.szx` load, run and save; `.kls` state files with a quick slot on every machine | ✅ | ✗ | ✅ | ✅ | — |
 | RZX recording / playback | ✅ including under the debugger; render to video | ? | ✗ | ✅ | ✅ | ✗ |
 | Tape / disk / storage | ✅ TAP/TZX/`.cas`; DSK and TR-DOS byte-exact with a Disk Explorer; DivMMC/esxDOS with FAT hard-disk images; Interface 1 and Microdrives; a two-pane File Manager across host, images, tapes and machine storage | ✅ | — | ✅ | ◐ | — |
@@ -102,10 +102,10 @@ developers use it.
 
 Closed: W1 logpoints and rich breakpoints (G1), W2 reverse debugging (G4), W3 unit tests, coverage and
 profiler (G5), W4 live Next inspectors (G3), W5 snapshots, state files and RZX (G2), W7 reverse
-engineering depth (G7; the Z88's OZ 4.7 ROM annotations added after v0.67.0), W9 machine breadth (G9). Their detail is in §2.
+engineering depth (G7), W9 machine breadth (G9). Their detail is in §2.
 
 **Release status note** (update it to each release; the release PR's checklist asks for it):
-everything above shipped by **v0.67.0** except what §2 marks **(after v0.67.0)**. The landing page
+everything above shipped by **v0.69.0** except what §2 marks **(after v0.69.0)**. The landing page
 gates each feature and machine on the latest release tag (`docs/landing/features.ts` `since`), so it
 never claims ahead of a release.
 
