@@ -24,6 +24,7 @@ export type UiActionId =
   | "set:windowRecordingClicks"
   | "set:windowRecordingHiDpi"
   | "set:automationEnabled"
+  | "set:advancedDebugging"
   | "set:automationLevel"
   | "set:basicCompiler"
   | "set:z88dkCompiler"

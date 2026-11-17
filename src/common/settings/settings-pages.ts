@@ -10,7 +10,11 @@
  *    `set:` UI action of the same key (`MainApi.runUiAction`, `src/main/ui-actions.ts`).
  * File rows (ROMs, the key mapping) show a value and offer buttons, which run UI actions.
  */
-import { hasMachineFeature, isAdvancedDebuggingEnabled } from "@common/features/advancedDebugging";
+import {
+  hasMachineFeature,
+  isAdvancedDebuggingEnabled,
+  readAdvancedDebuggingSetting
+} from "@common/features/advancedDebugging";
 import type { AppState } from "@state/AppState";
 import type { UiActionId } from "./ui-action-ids";
 import { KliveGlobalSettings } from "./setting-definitions";
@@ -166,6 +170,7 @@ export type SettingsStateKey =
   | "sp48Rom"
   | "keyMappingFile"
   | "automationEnabled"
+  | "advancedDebugging"
   | "automationLevel"
   | "basicCompiler"
   | "borielInstallation"
@@ -780,6 +785,19 @@ export const SETTINGS_ROWS: SettingsRow[] = [
     editor: "switch",
     source: setting(SETTING_IDE_BP_GROUP_BY_KIND)
   },
+  // --- The advanced-debugging switch (`@common/features/advancedDebugging`): a user setting, read once
+  // --- at startup, so a change says it waits for a restart
+  {
+    id: "advancedDebugging",
+    page: "debugging",
+    groupKey: "settings.group.advancedDebugging",
+    titleKey: "settings.debugging.advancedDebugging.title",
+    descriptionKey: "settings.debugging.advancedDebugging.description",
+    describeValue: advancedDebuggingRestartText,
+    editor: "switch",
+    source: state("advancedDebugging"),
+    defaultValue: true
+  },
   // --- Full reverse debugging (`dev/plans/REVERSE_DEBUGGING_PLAN.md` D2, D6)
   {
     id: "reverseDebugging",
@@ -1367,6 +1385,16 @@ function readSetting(appState: AppState | undefined, settingId: string): unknown
   return stored === undefined ? definition?.defaultValue : stored;
 }
 
+/**
+ * The advanced-debugging row's help text while its value differs from the one this session started
+ * with: the switch is read once, at startup, so the change waits for a restart
+ */
+function advancedDebuggingRestartText(value: unknown, appState: AppState | undefined): string | undefined {
+  if (appState?.emulatorState?.advancedDebugging === undefined) return undefined;
+  if (!!value === isAdvancedDebuggingEnabled(appState)) return undefined;
+  return t("settings.debugging.advancedDebugging.restart");
+}
+
 /** What a row shows now */
 export function readSettingsRowValue(row: SettingsRow, appState: AppState | undefined): unknown {
   if (!row.source) return undefined;
@@ -1399,6 +1427,8 @@ export function readSettingsRowValue(row: SettingsRow, appState: AppState | unde
       return appState?.keyMappingFile ?? "";
     case "automationEnabled":
       return parseAutomationSwitch(appState?.userSettings?.automation?.enabled);
+    case "advancedDebugging":
+      return readAdvancedDebuggingSetting(createSettingsReader(appState ?? ({} as AppState)));
     case "automationLevel":
       return parseAutomationLevel(appState?.userSettings?.automation?.level);
     case "basicCompiler":

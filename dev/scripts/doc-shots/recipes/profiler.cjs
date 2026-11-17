@@ -72,7 +72,7 @@ const clickTab = (ide, name) => ide.locator('[role="tab"]', { hasText: name }).f
 module.exports = {
   name: "profiler",
   window: {
-    // --- The profiler is an advanced debugging feature: off unless the user turns it on
+    // --- The profiler is an advanced debugging feature (on by default; seeded so the run does not depend on it)
     userSettings: { features: { advancedDebugging: "1" } },
     ideViewOptions: { profilerInlays: true },
     width: 1360,

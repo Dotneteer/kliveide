@@ -65,7 +65,7 @@ async function waitFor(ide, klive, pred, what) {
 module.exports = {
   name: "execution-history",
   window: {
-    // --- The execution history is an advanced debugging feature: off unless the user turns it on
+    // --- The execution history is an advanced debugging feature (on by default; seeded so the run does not depend on it)
     userSettings: { features: { advancedDebugging: "1" } },
     width: 1200,
     height: 860,

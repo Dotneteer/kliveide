@@ -72,6 +72,7 @@ import { nextRtcForget, nextRtcSetToHost } from "./zxnext-rtc";
 import { toggleWindowRecording } from "./recording/window-recording/windowRecordingController";
 import { focusEmuWindow, getAppWindows, isIdeWindowFocused, isIdeWindowVisible, showIdeWindow } from ".";
 import { t } from "@common/i18n/i18n";
+import { ADVANCED_DEBUGGING_SETTING } from "@common/features/advancedDebugging";
 
 /** The contributor guide the Language page links to (`src/common/i18n/locales/README.md`) */
 export const TRANSLATION_GUIDE_URL =
@@ -285,6 +286,11 @@ export async function runUiAction(actionId: UiActionId, value?: unknown): Promis
     // --- D4, D7) and starts, stops or re-levels itself when they change
     case "set:automationEnabled":
       applyUserSetting(AUTOMATION_ENABLED_SETTING, value ? "1" : "0");
+      return undefined;
+    // --- The advanced-debugging switch is a user setting, the one `set -u features.advancedDebugging`
+    // --- writes; the main process reads it once, at startup (`@common/features/advancedDebugging`)
+    case "set:advancedDebugging":
+      applyUserSetting(ADVANCED_DEBUGGING_SETTING, value ? "1" : "0");
       return undefined;
     case "set:automationLevel":
       if (!(AUTOMATION_LEVELS as readonly unknown[]).includes(value)) return `Unknown automation level: ${value}`;
