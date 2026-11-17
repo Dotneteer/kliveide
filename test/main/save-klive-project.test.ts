@@ -85,7 +85,7 @@ describe("saveKliveProject", () => {
     getState.mockReturnValue({
       emulatorState: { machineId: "sp48", modelId: "pal", clockMultiplier: 1 },
       globalSettings: {},
-      project: { folderPath, buildRoots: [] },
+      project: { folderPath, isKliveProject: true, buildRoots: [] },
       projectSettings: {},
       workspaceSettings: {}
     });
@@ -102,6 +102,58 @@ describe("saveKliveProject", () => {
     expect(fs.existsSync(projectFile)).toBe(true);
     expect(JSON.parse(fs.readFileSync(projectFile, "utf8")).machineType).toBe("sp48");
     expect(projectFileVersionDispatches()).toBe(1);
+  });
+
+  /*
+   * Issue #1641 (`dev/plans/PLAIN_FOLDER_TO_PROJECT_PLAN.md` §3.1): a folder opened without a valid
+   * `klive.project` is a plain folder. Saving used to write a full project file into it, so the
+   * folder silently became a project on its next open.
+   */
+  it.each([
+    ["false", false],
+    ["missing", undefined]
+  ])("writes nothing into a plain folder (isKliveProject %s)", async (_, isKliveProject) => {
+    getState.mockReturnValue({
+      emulatorState: { machineId: "sp48", modelId: "pal", clockMultiplier: 1 },
+      globalSettings: {},
+      project: { folderPath, isKliveProject, buildRoots: [] },
+      projectSettings: {},
+      workspaceSettings: {}
+    });
+    const { saveKliveProject } = await import("@main/projects");
+
+    await saveKliveProject();
+
+    expect(fs.readdirSync(folderPath)).toEqual([]);
+    expect(listBreakpoints).not.toHaveBeenCalled();
+    expect(projectFileVersionDispatches()).toBe(0);
+  });
+
+  it("leaves an invalid project file in a plain folder untouched", async () => {
+    // --- A `klive.project` without `machineType` does not make the folder a project; the user's
+    // --- file is not overwritten with a valid one behind their back either.
+    fs.writeFileSync(projectFile, "{ \"kliveVersion\": \"0.1.0\" }");
+    getState.mockReturnValue({
+      emulatorState: { machineId: "sp48", modelId: "pal", clockMultiplier: 1 },
+      globalSettings: {},
+      project: { folderPath, isKliveProject: false, buildRoots: [] },
+      projectSettings: {},
+      workspaceSettings: {}
+    });
+    const { saveKliveProject } = await import("@main/projects");
+
+    await saveKliveProject();
+
+    expect(fs.readFileSync(projectFile, "utf8")).toBe("{ \"kliveVersion\": \"0.1.0\" }");
+    expect(projectFileVersionDispatches()).toBe(0);
+  });
+
+  it("does nothing when no folder is open", async () => {
+    getState.mockReturnValue({ emulatorState: {}, globalSettings: {}, project: undefined });
+    const { saveKliveProject } = await import("@main/projects");
+
+    await expect(saveKliveProject()).resolves.toBeUndefined();
+    expect(listBreakpoints).not.toHaveBeenCalled();
   });
 
   it("does not rewrite the file or sign a change when nothing changed", async () => {
@@ -133,7 +185,7 @@ describe("saveKliveProject", () => {
     getState.mockReturnValue({
       emulatorState: { machineId: "sp128", modelId: "pal", clockMultiplier: 2 },
       globalSettings: {},
-      project: { folderPath, buildRoots: ["code/code.kz80.asm"] },
+      project: { folderPath, isKliveProject: true, buildRoots: ["code/code.kz80.asm"] },
       projectSettings: {},
       workspaceSettings: {}
     });
@@ -308,7 +360,7 @@ describe("saveKliveProject", () => {
     const state = (logpointGroups: unknown) => ({
       emulatorState: { machineId: "sp48", modelId: "pal", clockMultiplier: 1 },
       globalSettings: {},
-      project: { folderPath, buildRoots: [] },
+      project: { folderPath, isKliveProject: true, buildRoots: [] },
       projectSettings: {},
       workspaceSettings: {},
       logpointGroups
@@ -331,7 +383,7 @@ describe("saveKliveProject", () => {
     const state = (sourceComments: unknown) => ({
       emulatorState: { machineId: "sp48", modelId: "pal", clockMultiplier: 1 },
       globalSettings: {},
-      project: { folderPath, buildRoots: [] },
+      project: { folderPath, isKliveProject: true, buildRoots: [] },
       projectSettings: {},
       workspaceSettings: {},
       sourceComments

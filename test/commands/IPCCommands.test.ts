@@ -54,7 +54,8 @@ describe("OpenFolderCommand", () => {
       const result = await command.execute(context, args);
 
       // Assert
-      expect(context.mainApi.openFolder).toHaveBeenCalledWith("/test/project");
+      // --- Typed by the user, so a plain folder gets the offer to make it a project
+      expect(context.mainApi.openFolder).toHaveBeenCalledWith("/test/project", true);
       expect(result.success).toBe(true);
     });
 

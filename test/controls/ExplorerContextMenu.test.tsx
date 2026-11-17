@@ -33,6 +33,7 @@ describe("ExplorerContextMenu: file-type entries", () => {
         onDelete={noop}
         onExclude={noopAsync}
         onExpandAll={noop}
+        onMakeProject={noop}
         onNewFile={noop}
         onNewFolder={noop}
         onRefresh={noopAsync}
@@ -70,5 +71,84 @@ describe("ExplorerContextMenu: file-type entries", () => {
 
     expect(onConceal).toHaveBeenCalledTimes(1);
     finish();
+  });
+});
+
+// --- `dev/plans/PLAIN_FOLDER_TO_PROJECT_PLAN.md` §3.5 and decision Q6
+describe("ExplorerContextMenu: plain folders", () => {
+  function renderMenu(options: {
+    isKliveProject: boolean;
+    root?: boolean;
+    node?: object;
+    onMakeProject?: () => void;
+  }) {
+    const anchor = document.createElement("div");
+    document.body.appendChild(anchor);
+    const noop = () => {};
+    const noopAsync = async () => {};
+    render(
+      <ExplorerContextMenu
+        appServices={{} as any}
+        isKliveProject={options.isKliveProject}
+        isWindows={false}
+        onClickOutside={noop}
+        onCollapseAll={noop}
+        onConceal={noop}
+        onDelete={noop}
+        onExclude={noopAsync}
+        onExpandAll={noop}
+        onMakeProject={options.onMakeProject ?? noop}
+        onNewFile={noop}
+        onNewFolder={noop}
+        onRefresh={noopAsync}
+        onRename={noop}
+        onReveal={noop}
+        onToggleBuildRoot={noopAsync}
+        selectedContextNode={{ data: options.node ?? { fullPath: "/work/game", isFolder: true } } as any}
+        selectedContextNodeIsFolder={!!options.root}
+        selectedNodeIsBuildRoot={false}
+        selectedNodeIsProjectFile={false}
+        selectedNodeIsRoot={!!options.root}
+        state={{ contextVisible: true, contextRef: anchor, contextX: 0, contextY: 0 }}
+        store={{ getState: () => ({}) } as any}
+      />
+    );
+  }
+
+  it("offers Make Klive Project... on a plain folder's root", async () => {
+    const onMakeProject = vi.fn();
+    renderMenu({ isKliveProject: false, root: true, onMakeProject });
+
+    fireEvent.click(await screen.findByText("Make Klive Project..."));
+
+    expect(onMakeProject).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not offer it in a Klive project", async () => {
+    renderMenu({ isKliveProject: true, root: true });
+    await screen.findByText("Refresh");
+    expect(screen.queryByText("Make Klive Project...")).toBeNull();
+  });
+
+  it("says why Promote to Build Root is disabled in a plain folder", async () => {
+    renderMenu({
+      isKliveProject: false,
+      node: { fullPath: "/work/game/main.bas", isFolder: false, canBeBuildRoot: true }
+    });
+
+    const item = (await screen.findByText("Promote to Build Root")).closest("button");
+    expect(item).toBeDisabled();
+    expect(item?.getAttribute("title")).toContain("Make Klive Project...");
+  });
+
+  it("has no such tooltip in a Klive project", async () => {
+    renderMenu({
+      isKliveProject: true,
+      node: { fullPath: "/work/game/main.bas", isFolder: false, canBeBuildRoot: true }
+    });
+
+    const item = (await screen.findByText("Promote to Build Root")).closest("button");
+    expect(item).not.toBeDisabled();
+    expect(item?.hasAttribute("title")).toBe(false);
   });
 });

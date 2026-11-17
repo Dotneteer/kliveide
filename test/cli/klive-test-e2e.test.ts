@@ -160,7 +160,9 @@ describe("klive test", () => {
 
     const noProject = await klive(["test", "missing-folder"]);
     expect(noProject.code).toBe(3);
-    expect(noProject.err[0]).toMatch(/^No Klive project in .*missing-folder: klive\.project is missing\.$/);
+    expect(noProject.err[0]).toMatch(
+      /^No Klive project in .*missing-folder: klive\.project is missing\. .*File › Make Klive Project\.\.\./
+    );
 
     expect((await klive(["test", "sp48", "--machine", "z88"])).code).toBe(3);
     expect((await klive(["test", "sp48", "--reporter", "fancy"])).code).toBe(3);

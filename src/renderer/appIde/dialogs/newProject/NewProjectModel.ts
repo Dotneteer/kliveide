@@ -265,7 +265,7 @@ export function isComplete(state: NewProjectState): boolean {
  * is the family id (`MachineFamilyId`); the view model replaces it with the family's label.
  */
 export function machineTypeOptionsOf(
-  state: NewProjectState
+  state: Pick<NewProjectState, "availableMachineIds">
 ): (MachineOption & { group: MachineFamilyId })[] {
   const available = state.availableMachineIds;
   return MACHINE_TYPES.filter((t) => !available || available.includes(t.machineId)).map((t) => ({
@@ -276,7 +276,7 @@ export function machineTypeOptionsOf(
 }
 
 /** The models of the selected type; a type with one model has one option (the field is disabled) */
-export function modelOptionsOf(state: NewProjectState): MachineOption[] {
+export function modelOptionsOf(state: Pick<NewProjectState, "machineId">): MachineOption[] {
   return (machineTypeOf(state.machineId)?.models ?? []).map((m) => ({
     value: m.modelId ?? "",
     label: m.label

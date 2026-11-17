@@ -65,4 +65,9 @@ export type AppSettings = {
   borielSetup?: { offeredVersion?: string; declined?: boolean; installedVersion?: string };
   project?: IdeProject;
   recentProjects?: string[];
+  /**
+   * Folders the user chose to keep as plain folders when Klive offered to make them a Klive project
+   * (`dev/plans/PLAIN_FOLDER_TO_PROJECT_PLAN.md` §3.2): the offer is not repeated for them.
+   */
+  plainFolders?: string[];
 };

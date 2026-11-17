@@ -19,8 +19,10 @@ import { openEmulatorFile } from "./open-file";
 import { runUiAction } from "./ui-actions";
 import type { UiActionId } from "@common/settings/ui-action-ids";
 import {
+  convertFolderToProject,
   createKliveProject,
   getKliveProjectFolder,
+  getProjectConversionConflicts,
   openFolder,
   openFolderByPath,
   resolveHomeFilePath,
@@ -30,6 +32,8 @@ import {
   saveKliveProject
 } from "./projects";
 import { getLaunchSwitches, skipsLastProjectReopen } from "./launch-switches";
+import { rememberPlainFolder } from "./plain-folders";
+import type { ProjectConversionOptions } from "@common/structs/project-conversion";
 import { AppSettings, KLIVE_HOME_FOLDER } from "./settings";
 import { getKliveHomeBase } from "./portable";
 import { mainStore } from "./main-store";
@@ -574,11 +578,13 @@ class MainMessageProcessor {
   /**
    * Opens a folder in the IDE or by path, returns error message or null.
    * @param folder Optional folder path to open.
+   * @param offerConversion True when the user opened the folder or the IDE reopened the last one at
+   * startup (a plain folder gets the offer to make it a Klive project).
    * @returns Error message or null if successful.
    */
-  async openFolder(folder?: string): Promise<string | null> {
+  async openFolder(folder?: string, offerConversion?: boolean): Promise<string | null> {
     if (folder) {
-      const errorMessage = await openFolderByPath(folder);
+      const errorMessage = await openFolderByPath(folder, { offerConversion: !!offerConversion });
       if (errorMessage) {
         return errorMessage;
       }
@@ -614,6 +620,32 @@ class MainMessageProcessor {
       throw new Error(createFolderResponse.errorMessage);
     }
     return createFolderResponse.path;
+  }
+
+  /**
+   * Lists the template files that would land on existing items in a folder being made a project.
+   * @param folder The folder to convert.
+   * @param machineId The machine whose template it is.
+   * @param templateId The template.
+   */
+  async getProjectConversionConflicts(folder: string, machineId: string, templateId: string) {
+    return getProjectConversionConflicts(folder, machineId, templateId);
+  }
+
+  /**
+   * Remembers that the user keeps the folder as a plain folder.
+   * @param folder The folder.
+   */
+  async rememberPlainFolder(folder: string) {
+    rememberPlainFolder(folder);
+  }
+
+  /**
+   * Makes the open plain folder a Klive project.
+   * @param options What to convert and how.
+   */
+  async convertFolderToProject(options: ProjectConversionOptions) {
+    return convertFolderToProject(options);
   }
 
   /**

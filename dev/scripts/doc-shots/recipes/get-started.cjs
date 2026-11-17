@@ -9,7 +9,7 @@
  * Translated UIs change every label, so nothing here is selected by its text or aria-label:
  * selectors use CSS-module class prefixes, element order, and the application menu's item ids.
  *
- * `GS_ONLY=emulator,ide,asm,debug,basic,next,export` runs some of the sections (for iterating).
+ * `GS_ONLY=emulator,ide,projects,asm,debug,basic,next,export` runs some of the sections (for iterating).
  */
 const path = require("path");
 const fs = require("fs");
@@ -276,6 +276,40 @@ async function steps(klive) {
       });
       await settingsPage.keyboard.press("Escape");
       await klive.sleep(500);
+    }
+
+    // ------------------------------------------------------------------ How Klive handles projects
+    // --- A folder made with another tool: BASIC sources and no klive.project. Opening it shows the
+    // --- Make a Klive project dialog (`dev/plans/PLAIN_FOLDER_TO_PROJECT_PLAN.md` §3.2)
+    if (wants("projects")) {
+      const plain = fixtureProjectFolder("GetStartedPlainFolder");
+      created.push(plain);
+      fs.mkdirSync(path.join(plain.project, "lib"), { recursive: true });
+      fs.writeFileSync(path.join(plain.project, "main.bas"), '10 PRINT "HELLO"\n');
+      fs.writeFileSync(path.join(plain.project, "lib", "screen.bas"), "SUB Clear()\n  CLS\nEND SUB\n");
+      await focusIde(klive);
+      await klive.cmd(`open "${plain.project}"`, 6000);
+      const deadline = Date.now() + 15000;
+      let dialogPage;
+      while (!dialogPage && Date.now() < deadline) {
+        dialogPage = await pageWithDialog(klive).catch(() => undefined);
+        if (!dialogPage) await klive.sleep(400);
+      }
+      if (!dialogPage) throw new Error("Opening a plain folder did not show the Make a Klive project dialog");
+      // --- The build-root list is filled once the Explorer has read the folder
+      await klive.sleep(1500);
+      await park(dialogPage);
+      await shot('[role="dialog"]', "get-started/make-project.webp", {
+        displayWidth: 620,
+        page: dialogPage,
+        markers: {
+          choice: { selector: '[role="dialog"] [role="radiogroup"]', x: 0.03, y: 0.5 },
+          template: { selector: '[data-testid="make-project-templates"]', x: 0.03, y: 0.5 },
+          buildroot: { selector: '[data-testid="make-project-build-roots"]', x: 0.03, y: 0.5 }
+        }
+      });
+      await dialogPage.keyboard.press("Escape");
+      await klive.sleep(600);
     }
 
     // ------------------------------------------------------------------ Your first assembly program

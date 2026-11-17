@@ -83,6 +83,8 @@
 /images/en/get-started/ide-no-project.webp.json
 /images/en/get-started/ide-tour.webp
 /images/en/get-started/ide-tour.webp.json
+/images/en/get-started/make-project.webp
+/images/en/get-started/make-project.webp.json
 /images/en/get-started/new-project.webp
 /images/en/get-started/next-running.webp
 /images/en/get-started/select-machine.webp

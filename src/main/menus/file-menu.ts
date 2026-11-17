@@ -7,7 +7,7 @@ import type { MenuItemConstructorOptions } from "electron";
 import { closeFolderAction } from "@state/actions";
 import { getEmuApi } from "@messaging/MainToEmuMessenger";
 import { getIdeApi } from "@messaging/MainToIdeMessenger";
-import { NEW_PROJECT_DIALOG } from "@messaging/dialog-ids";
+import { MAKE_PROJECT_DIALOG, NEW_PROJECT_DIALOG } from "@messaging/dialog-ids";
 import { mainStore } from "@main/main-store";
 import { appSettings } from "@main/settings-utils";
 import { fileChangeWatcher } from "@main/file-watcher";
@@ -101,7 +101,7 @@ export function createFileMenu(context: MenuContext): MenuItemConstructorOptions
     label: rp,
     click: async () => {
       if (await closeCurrentFolder(context)) {
-        await openFolderByPath(rp);
+        await openFolderByPath(rp, { offerConversion: true });
       }
     }
   }));
@@ -126,6 +126,18 @@ export function createFileMenu(context: MenuContext): MenuItemConstructorOptions
     ...(recentProjects.length > 0
       ? [{ id: "recent_projects", label: t("menu.file.openRecent"), submenu: recentProjects }]
       : []),
+    {
+      // --- Only while a plain folder is open (`dev/plans/PLAIN_FOLDER_TO_PROJECT_PLAN.md` §3.5)
+      id: "make_project",
+      label: t("menu.file.makeProject"),
+      enabled: !!appState?.project?.folderPath && !appState?.project?.isKliveProject,
+      click: async () => {
+        const folder = mainStore.getState().project?.folderPath;
+        if (!folder) return;
+        context.ensureIdeWindow();
+        await getIdeApi().displayDialog(MAKE_PROJECT_DIALOG, { folder });
+      }
+    },
     { type: "separator" },
     {
       // --- Snapshots, states, RZX recordings and tapes, routed by extension like a dropped file

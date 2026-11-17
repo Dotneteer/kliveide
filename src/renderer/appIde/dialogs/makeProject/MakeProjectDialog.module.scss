@@ -1,0 +1,40 @@
+/*
+ * The Make Klive Project dialog. Colour and spacing come from tokens only
+ * (`dev/ai/ui-theming-intent-and-lessons.md`).
+ */
+
+.lead {
+  margin: 0 0 var(--space-3) 0;
+  color: var(--color-label);
+  overflow-wrap: anywhere;
+}
+
+.dropdownWrapper {
+  display: flex;
+}
+
+.conflicts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+}
+
+.conflictsNote {
+  color: var(--color-secondary-label);
+  margin-bottom: var(--space-1);
+}
+
+// --- Long lists scroll inside the dialog instead of growing it off the screen
+.conflictList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  max-height: 30vh;
+  overflow-y: auto;
+}
+
+.blocked {
+  color: var(--color-secondary-label);
+  overflow-wrap: anywhere;
+}

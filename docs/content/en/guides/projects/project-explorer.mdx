@@ -50,13 +50,14 @@ Right-click a file or folder:
 | Item | Shown for | Does |
 | --- | --- | --- |
 | **Refresh** | The root folder | Reads the folder again from disk. |
+| **Make Klive Project...** | The root folder, in a plain folder | Opens the dialog that makes the folder a Klive project. See [Make a folder a Klive project](/en/guides/projects/creating-projects/#make-a-folder-a-klive-project). |
 | **New file...**, **New folder...** | Folders | Creates an item in the folder. |
 | **Expand all**, **Collapse all** | Folders | Opens or closes every folder below. |
 | **Reveal in Finder** (macOS) / **Reveal in File Explorer** (Windows) | Every item | Shows the item in your system's file manager. |
 | **Rename...** | Every item except the root and `klive.project` | Renames the item. Rename a file to change the extension, and with it the editor that opens it. |
 | **Exclude** | Every item except the root and `klive.project`, in a Klive project | Hides the item from the Explorer. |
 | **Delete** | Every item except the root and `klive.project` | Deletes the item from disk, after you confirm. It does not go to the trash. |
-| **Promote to Build Root** / **Demote from Build Root** | Source files, in a Klive project | Makes the file the [build root](/en/guides/projects/creating-projects/#the-build-root), or stops it being one. |
+| **Promote to Build Root** / **Demote from Build Root** | Source files | Makes the file the [build root](/en/guides/projects/creating-projects/#the-build-root), or stops it being one. In a plain folder it is disabled, and its tooltip points to **Make Klive Project...**. |
 
 Some file types add items of their own. Tapes (`.tap`, `.tzx`) offer to load and run, insert, or
 load and debug the tape, on the machines that can play them; see

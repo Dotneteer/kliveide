@@ -14,6 +14,11 @@ import type {
 import type { SdCardFingerprint } from "@common/machineState/machineStateTypes";
 import type { NextRtcKeptEntry } from "@common/zxnext/nextRtcKept";
 import { buildMessagingProxy } from "./MessageProxy";
+import type {
+  ProjectConversionOptions,
+  ProjectConversionResult,
+  TemplateConflict
+} from "@common/structs/project-conversion";
 import type { UnitTestRunRequest, UnitTestRunResponse } from "@common/unit-tests/unitTestTypes";
 import type { AddUnitTestSupportResult } from "@main/unit-tests/addUnitTestSupport";
 import { MessengerBase } from "./MessengerBase";
@@ -361,9 +366,21 @@ class MainApiImpl {
   /**
    * Opens a folder in the IDE or by path, returns error message or null.
    * @param _folder Optional folder path to open.
+   * @param _offerConversion True when the user opened the folder, or the IDE reopened the last one
+   * at startup: a plain folder then gets the offer to make it a Klive project. Without a folder
+   * (the picker) the offer is always made.
    * @returns Error message or null if successful.
    */
-  async openFolder(_folder?: string): Promise<string | null> {
+  async openFolder(_folder?: string, _offerConversion?: boolean): Promise<string | null> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Remembers that the user keeps the folder as a plain folder, so the offer to make it a Klive
+   * project is not repeated.
+   * @param _folder The folder.
+   */
+  async rememberPlainFolder(_folder: string): Promise<void> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 
@@ -391,6 +408,31 @@ class MainApiImpl {
     _modelId?: string,
     _templateId?: string
   ): Promise<string> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Lists the template files that would replace or collide with existing items when the template
+   * is applied to a folder being made a Klive project. Nothing is written.
+   * @param _folder The folder to convert.
+   * @param _machineId The machine whose template it is.
+   * @param _templateId The template.
+   */
+  async getProjectConversionConflicts(
+    _folder: string,
+    _machineId: string,
+    _templateId: string
+  ): Promise<TemplateConflict[]> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Makes the open plain folder a Klive project. The caller reopens the folder afterwards.
+   * @param _options The folder, machine, model, template, files to overwrite and build root.
+   */
+  async convertFolderToProject(
+    _options: ProjectConversionOptions
+  ): Promise<ProjectConversionResult> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 

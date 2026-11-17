@@ -14,7 +14,11 @@ import {
 } from "@state/actions";
 import { PROJECT_FILE } from "@common/structs/project-const";
 import { EMPTY_ARRAY } from "@renderer/utils/stablerefs";
-import { EXCLUDED_PROJECT_ITEMS_DIALOG, NEW_PROJECT_DIALOG } from "@common/messaging/dialog-ids";
+import {
+  EXCLUDED_PROJECT_ITEMS_DIALOG,
+  MAKE_PROJECT_DIALOG,
+  NEW_PROJECT_DIALOG
+} from "@common/messaging/dialog-ids";
 import { saveProject } from "@renderer/appIde/utils/save-project";
 import { FileTypeEditor } from "@renderer/abstractions/FileTypePattern";
 import { ITreeNode } from "@abstractions/ITreeNode";
@@ -159,6 +163,10 @@ export const ExplorerPanel = () => {
       onDelete={() => openDeleteDialog()}
       onExclude={async () => {
         await ideCommandsService.executeCommand(`p:x "${selectedContextNode.data.projectPath}"`);
+      }}
+      onMakeProject={() => {
+        const folder = store.getState()?.project?.folderPath;
+        if (folder) openIdeDialog(MAKE_PROJECT_DIALOG, { folder });
       }}
       onExpandAll={() => {
         selectedContextNode.expandAll();
@@ -363,10 +371,10 @@ export const ExplorerPanel = () => {
     })();
   };
 
-  const openIdeDialog = (dialogId: number): void => {
+  const openIdeDialog = (dialogId: number, data?: unknown): void => {
     const dialogRenderer = ideDialogRegistry[dialogId];
     if (!dialogRenderer) return;
-    void dialogs.open<IdeDialogResult>((controls) => dialogRenderer(undefined, controls));
+    void dialogs.open<IdeDialogResult>((controls) => dialogRenderer(data, controls));
   };
 
   // --- This function represents a project item component

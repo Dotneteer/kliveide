@@ -23,6 +23,7 @@ type ExplorerContextMenuProps = {
   onDelete: () => void;
   onExclude: () => Promise<void>;
   onExpandAll: () => void;
+  onMakeProject: () => void;
   onNewFile: () => void;
   onNewFolder: () => void;
   onRefresh: () => Promise<void>;
@@ -49,6 +50,7 @@ export function ExplorerContextMenu({
   onDelete,
   onExclude,
   onExpandAll,
+  onMakeProject,
   onNewFile,
   onNewFolder,
   onRefresh,
@@ -69,6 +71,10 @@ export function ExplorerContextMenu({
       {selectedNodeIsRoot && (
         <>
           <ContextMenuItem text={t("explorer.menu.refresh")} clicked={async () => runAsync(onRefresh)} />
+          {/* --- Only for a plain folder (`dev/plans/PLAIN_FOLDER_TO_PROJECT_PLAN.md` §3.5) */}
+          {!isKliveProject && (
+            <ContextMenuItem text={t("explorer.menu.makeProject")} clicked={() => run(onMakeProject)} />
+          )}
         </>
       )}
       {selectedContextNodeIsFolder && (
@@ -110,6 +116,8 @@ export function ExplorerContextMenu({
             text={t(selectedNodeIsBuildRoot ? "explorer.menu.demoteBuildRoot" : "explorer.menu.promoteBuildRoot")}
             clicked={async () => runAsync(onToggleBuildRoot)}
             disabled={!isKliveProject}
+            // --- Says why it is disabled and what to do (decision Q6)
+            title={isKliveProject ? undefined : t("explorer.menu.buildRootNotProject")}
           />
         </>
       )}
