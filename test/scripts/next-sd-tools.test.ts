@@ -89,12 +89,24 @@ describe("downloading a published card", () => {
   });
 });
 
+/*
+ * The publish script makes its commit with `git commit-tree`, which needs an author. A developer's
+ * machine has one; a CI runner has none, and git on Linux will not make one up from the host name
+ * (macOS does), so there every publish failed with "Author identity unknown".
+ */
+const GIT_IDENTITY = {
+  GIT_AUTHOR_NAME: "t",
+  GIT_AUTHOR_EMAIL: "t@t",
+  GIT_COMMITTER_NAME: "t",
+  GIT_COMMITTER_EMAIL: "t@t"
+};
+
 describe.skipIf(!hasPublishedGz)("publishing a card onto gh-pages", () => {
   let remote: string;
   const git = (args: string[], cwd = remote) => execFileSync("git", args, { cwd, encoding: "utf8" }).trim();
   const publish = (...args: string[]) =>
     spawnSync(process.execPath, [path.join(ROOT, "dev/scripts/next-sd-publish.cjs"), SET, ...args], {
-      env: { ...process.env, KLIVE_NEXT_SD_REMOTE: remote },
+      env: { ...process.env, ...GIT_IDENTITY, KLIVE_NEXT_SD_REMOTE: remote },
       encoding: "utf8"
     });
 
@@ -115,14 +127,15 @@ describe.skipIf(!hasPublishedGz)("publishing a card onto gh-pages", () => {
   it("shows what it would push without --push, and pushes nothing", () => {
     const before = git(["rev-parse", "gh-pages"]);
     const result = publish();
-    expect(result.status).toBe(0);
+    expect(result.status, result.stderr).toBe(0);
     expect(result.stdout).toContain("would push");
     expect(git(["rev-parse", "gh-pages"])).toBe(before);
   });
 
   it("adds the card on top of the branch, keeping the site", () => {
     const before = git(["rev-parse", "gh-pages"]);
-    expect(publish("--push").status).toBe(0);
+    const result = publish("--push");
+    expect(result.status, result.stderr).toBe(0);
     expect(git(["rev-parse", "gh-pages~1"])).toBe(before);
     expect(git(["diff", "--name-only", before, "gh-pages"])).toBe(`next-sd/${SET}.cim.gz`);
     expect(git(["cat-file", "-s", `gh-pages:next-sd/${SET}.cim.gz`])).toBe(String(card.gzSize));
