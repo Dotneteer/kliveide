@@ -151,6 +151,27 @@ describe("useEmulatorJoystick", () => {
     expect(lastPins("left")).toBe(0);
   });
 
+  it("lets go when Command is released, since macOS drops the key-ups behind it", () => {
+    render();
+    press("ArrowRight");
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent("keydown", { code: "MetaLeft", metaKey: true }));
+    });
+    // --- No keyup for ArrowRight: macOS swallows it while Command is held.
+    press("MetaLeft", false);
+    expect(lastPins("left")).toBe(0);
+  });
+
+  it("ignores a bound key pressed with Command", () => {
+    render();
+    act(() => {
+      window.dispatchEvent(
+        new KeyboardEvent("keydown", { code: "ArrowRight", metaKey: true, cancelable: true })
+      );
+    });
+    expect(lastPins("left")).toBe(0);
+  });
+
   it("lets go when the machine stops running", () => {
     const { rerender } = render();
     press("ArrowRight");
