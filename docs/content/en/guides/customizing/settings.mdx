@@ -113,13 +113,14 @@ Show the Layers strip, too.
 | Just My Code | Stepping steps over code that has no source. |
 | Sync the source with the current breakpoint | The editor shows the source line where the machine stopped. Also **Debug › Sync Source with Breakpoint** and an IDE toolbar button. |
 | Group breakpoints by kind | Groups the [Breakpoints view](/en/guides/debugging/breakpoints) by breakpoint kind. |
+| Advanced debugging | Turns the [advanced debugging features](/en/guides/customizing/advanced-debugging/) on or off: the execution history, reverse debugging, debug recordings, code coverage and the profiler. On by default. Takes effect when Klive restarts. |
 | Reverse debugging | Stepping back puts the whole machine in the past, and you can continue from there. Takes effect at the next debug session. See [Reverse Debugging](/en/guides/debugging/reverse-debugging). |
 | Memory for the reverse-debugging timeline | How much memory the timeline may use: *Automatic* (512 MB, or a sixteenth of the computer's memory) or a fixed size. More memory reaches further back. |
 | Clear coverage when the machine starts | Coverage and the heat map start over when the machine starts from Stopped. |
 | Clear coverage after code injection | The ROM's boot to the injection point does not show as covered. |
 | Count executions, reads and writes | Off: only whether each byte was executed, read or written, which costs less. |
-| Tint covered source lines | A tinted background in the editor as well as the coverage strip. |
-| Profile hints in the editor | Each routine's first line shows its share of the time and its calls. |
+| Tint covered source lines | A tinted background in the editor as well as the coverage strip. On by default. |
+| Profile hints in the editor | Each routine's first line shows its share of the time and its calls. On by default. |
 
 The two reverse-debugging rows appear while the [advanced debugging features](/en/guides/customizing/advanced-debugging/)
 are on; the five **Coverage and profiling** rows appear on machines with [code coverage](/en/guides/analysis/code-coverage/).

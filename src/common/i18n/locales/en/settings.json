@@ -353,6 +353,18 @@
   "@settings.debugging.groupBreakpoints.title": {
     "context": "Settings dialog, Debugging page, 'Breakpoints' group: label of an on/off switch."
   },
+  "settings.debugging.advancedDebugging.title": "Advanced debugging",
+  "@settings.debugging.advancedDebugging.title": {
+    "context": "Settings dialog, Debugging page, 'Advanced debugging' group: label of an on/off switch. Its help text: 'Execution history, reverse debugging, debug recordings, code coverage and the profiler. Takes effect when Klive restarts'"
+  },
+  "settings.debugging.advancedDebugging.description": "Execution history, reverse debugging, debug recordings, code coverage and the profiler. Takes effect when Klive restarts",
+  "@settings.debugging.advancedDebugging.description": {
+    "context": "Help text under the setting 'Advanced debugging' (Settings dialog, Debugging page). Wraps over several lines."
+  },
+  "settings.debugging.advancedDebugging.restart": "Restart Klive to apply this change",
+  "@settings.debugging.advancedDebugging.restart": {
+    "context": "Help text under the setting 'Advanced debugging' (Settings dialog, Debugging page) after the user changed it: the change waits until Klive is restarted. Replaces the normal help text until then."
+  },
   "settings.debugging.reverseDebugging.title": "Reverse debugging",
   "@settings.debugging.reverseDebugging.title": {
     "context": "Settings dialog, Debugging page, 'Reverse debugging' group: label of an on/off switch. Its help text: 'Step back with the whole machine in the past; takes effect at the next debug session'"
@@ -738,6 +750,11 @@
   },
   "settings.group.breakpoints": "Breakpoints",
   "@settings.group.breakpoints": {
+    "context": "Group heading in the Settings dialog (Debugging page). The style shows it in capitals; write it in your language's normal case.",
+    "maxChars": 28
+  },
+  "settings.group.advancedDebugging": "Advanced debugging",
+  "@settings.group.advancedDebugging": {
     "context": "Group heading in the Settings dialog (Debugging page). The style shows it in capitals; write it in your language's normal case.",
     "maxChars": 28
   },

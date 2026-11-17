@@ -8,7 +8,7 @@ import { Callout } from 'nextra/components'
 
 <Callout type="info">
 This is one of Klive's [advanced debugging features](/en/guides/customizing/advanced-debugging/), which are on by
-default; if you turned them off, run `set -u features.advancedDebugging 1` in the IDE, then restart Klive.
+default; if you turned them off, turn on **Settings › Debugging › Advanced debugging** (or run `set -u features.advancedDebugging 1` in the IDE), then restart Klive.
 </Callout>
 
 The **profiler** answers *where the time went*. While it runs, the emulator measures every
@@ -154,8 +154,8 @@ programs play tricks with the stack, and the profiler is built to stay robust ra
 
 ## In the editor
 
-Turn on **Settings › Debugging › Profile hints in the editor** to see each routine's share and
-calls at the end of its first line while a profile is present:
+While a profile is present, each routine's first line shows its share and calls at its end.
+**Settings › Debugging › Profile hints in the editor** (on by default) turns the hints off:
 
 ![Profile hints in the editor](/images/working-with-ide/profiler-editor.png)
 

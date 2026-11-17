@@ -515,7 +515,7 @@ const settingDefinitions: Setting[] = [
     title: "Tint Covered Source Lines",
     description: "Covered source lines get a tinted background as well as the coverage strip.",
     type: "boolean",
-    defaultValue: false,
+    defaultValue: true,
     saveWithIde: true,
     boundTo: "ide"
   },
@@ -526,7 +526,7 @@ const settingDefinitions: Setting[] = [
       "With a profile present, each routine's first line shows its share of the time and its calls " +
       "(\"9.4% · 1,204 calls\").",
     type: "boolean",
-    defaultValue: false,
+    defaultValue: true,
     saveWithIde: true,
     boundTo: "ide"
   },
