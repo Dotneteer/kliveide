@@ -89,5 +89,17 @@
   "messages.command.title": "Execução de comando",
   "messages.command.succeeded": "Comando executado com sucesso.",
   "messages.command.failed": "Erro ao executar o comando.",
-  "messages.sdCard.select": "Selecionar imagem do cartão SD"
+  "messages.sdCard.select": "Selecionar imagem do cartão SD",
+  "messages.sdCard.check.title": "Cartão SD do ZX Spectrum Next",
+  "messages.sdCard.check.message": "O {model} pode não inicializar a partir do seu cartão SD.",
+  "messages.sdCard.check.missing": "{file} não existe.",
+  "messages.sdCard.check.unreadable": "{file} não pode ser lido como imagem de cartão SD. O arquivo pode estar danificado ou incompleto.",
+  "messages.sdCard.check.noPartition": "{file} não tem uma partição FAT16 ou FAT32 que o NextZXOS possa usar, então o Next para com \"Drive C: not found\".",
+  "messages.sdCard.check.noSystemFiles": "{file} não contém os arquivos de sistema do NextZXOS: {files}.",
+  "messages.sdCard.check.wrongRelease": "{file} contém uma versão do NextZXOS diferente da que o {model} precisa, então o Next para durante a inicialização.",
+  "messages.sdCard.check.reset": "Redefinir o cartão padrão",
+  "messages.sdCard.check.useDefault": "Usar o cartão padrão",
+  "messages.sdCard.check.select": "Selecionar imagem...",
+  "messages.sdCard.check.continue": "Continuar mesmo assim",
+  "messages.sdCard.deleteDownloaded": "Excluir o cartão SD {card} baixado? Um modelo que precisar dele vai baixá-lo de novo."
 }

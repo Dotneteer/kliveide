@@ -1,0 +1,71 @@
+---
+description: "Erfahren Sie, was ein Klive-Projekt ist und was es einem einfachen Ordner hinzufügt, und machen Sie einen Ordner, den Sie mit einem anderen Werkzeug angelegt haben, zu einem Klive-Projekt oder lassen Sie ihn, wie er ist."
+---
+
+import { Callout } from 'nextra/components'
+
+# Wie Klive mit Projekten umgeht
+
+Klive öffnet jeden Ordner, aber es erstellt, führt aus und debuggt den Code eines *Klive-Projekts*. Diese Seite erklärt den Unterschied und was Klive tut, wenn Sie einen Ordner öffnen, den Sie mit einem anderen Werkzeug angelegt haben.
+
+## Ordner und Projekt
+
+Ein Klive-Projekt ist ein Ordner, in dem eine Datei `klive.project` liegt. Jeder andere Ordner ist ein *einfacher Ordner*. Klive öffnet beide: Der Explorer zeigt ihre Dateien, und Sie können sie öffnen und bearbeiten.
+
+Ein Haus-Symbol vor dem Namen des Stammordners im Explorer zeigt an, dass der Ordner ein Klive-Projekt ist.
+
+## Was ein Projekt hinzufügt
+
+| | Einfacher Ordner | Klive-Projekt |
+| --- | --- | --- |
+| Dateien durchsuchen und bearbeiten | Ja | Ja |
+| Den Emulator verwenden, Kassetten und Snapshots laden | Ja | Ja |
+| Ein Build-Root sowie Kompilieren, Ausführen und Debuggen über die Build-Leiste | Nein | Ja |
+| Das Menü **Build** | Nein | Ja |
+| Maschine und Modell, wiederhergestellt beim Öffnen des Ordners | Nein | Ja |
+| Haltepunkte, Überwachungen und geöffnete Dokumente, über Sitzungen hinweg erhalten | Nein | Ja |
+| **Ausschließen** im Explorer sowie Unit-Tests | Nein | Ja |
+
+Das *Build-Root* ist die Hauptquelldatei, die Datei, die Klive kompiliert.
+
+## Ein Projekt anlegen
+
+Wählen Sie **Datei › Neues Projekt...**, wählen Sie eine Maschine, ein Modell und eine Vorlage, und geben Sie dem Projekt einen Namen. Klive legt einen Ordner mit einer Datei `klive.project`, einem Build-Skript `build.ksx` und einem kleinen Programm als Ausgangspunkt an. Die nächste Seite, [Ihr erstes Assemblerprogramm](/de/get-started/first-assembly-program/), führt Sie durch diese Schritte.
+
+## Einen Ordner aus einem anderen Werkzeug öffnen
+
+Wenn Sie einen Ordner ohne Datei `klive.project` mit **Datei › Ordner öffnen...**, **Datei › Zuletzt geöffnet** oder dem Befehl `open` öffnen, fragt Klive, was damit geschehen soll. Klive fragt auch, wenn es einen solchen Ordner beim Start wieder öffnet, weil er zuletzt geöffnet war:
+
+<Shot
+  src="get-started/make-project.webp"
+  alt="Das Dialogfeld „Klive-Projekt anlegen“ für einen Ordner mit BASIC-Dateien, mit der Vorlage zx-basic und main.bas als Build-Root"
+  figure="5.1"
+  caption="Klive bietet an, einen einfachen Ordner zu einem Klive-Projekt zu machen"
+  markers={["choice", "template", "buildroot"]}
+  width={620}
+/>
+
+1. **Zu einem Klive-Projekt machen** oder **Als einfachen Ordner belassen**.
+2. **Vorlage**: Klive kopiert die Dateien der Vorlage in den Ordner: die Datei `build.ksx`, die Kompilieren, Ausführen und Debuggen benötigen, und ein Beispielprogramm. Für einen Ordner mit BASIC-Dateien wählt Klive die Vorlage `zx-basic`, sonst die Vorlage `default` der Maschine.
+3. **Build-Root**: die Datei, die Klive erstellt. Klive listet die Quelldateien des Ordners auf und wählt eine davon aus. Sie können stattdessen **Build-Root der Vorlage** wählen, also das Beispielprogramm.
+
+Wählen Sie auch **Maschinentyp** und **Modell**: Das Dialogfeld zeigt zu Beginn die Maschine, die gerade läuft. Klicken Sie dann auf **Projekt anlegen**. Klive schreibt die Dateien, öffnet den Ordner erneut als Klive-Projekt und öffnet das Build-Root.
+
+Gibt es eine Datei der Vorlage bereits im Ordner, listet das Dialogfeld sie mit einem Kontrollkästchen auf. Klive ersetzt nur die Dateien, die Sie ankreuzen; die anderen bleiben unverändert.
+
+Um den Ordner unverändert zu lassen, wählen Sie **Als einfachen Ordner belassen** und klicken auf **Ordner belassen**: Klive merkt sich die Entscheidung und fragt bei diesem Ordner nicht mehr nach. [Ein Projekt anlegen](/en/guides/projects/creating-projects/#make-a-folder-a-klive-project) beschreibt, wo Klive sie speichert und wie Sie sie rückgängig machen. **Abbrechen** lässt den Ordner ebenfalls unverändert, aber Klive fragt beim nächsten Öffnen erneut.
+
+Um einen einfachen Ordner später zu einem Klive-Projekt zu machen, wählen Sie **Datei › Zu Klive-Projekt machen...**, oder klicken Sie im Explorer mit der rechten Maustaste auf den Stammordner und wählen Sie **Zu Klive-Projekt machen...**.
+
+<Callout type="info">
+Klive ändert einen einfachen Ordner nur, wenn Sie es dazu auffordern. Das Öffnen des Ordners und das Bearbeiten seiner Dateien schreibt keine Datei `klive.project` hinein.
+</Callout>
+
+## Die Dateien, die Klive pflegt
+
+- **`klive.project`** speichert Maschine und Modell des Projekts, sein Build-Root, Haltepunkte, Überwachungen, Projekteinstellungen und den Zustand der IDE. Klive aktualisiert die Datei während der Arbeit; bearbeiten Sie sie daher nicht, solange das Projekt geöffnet ist.
+- **`build.ksx`** enthält die Funktionen hinter Kompilieren, Ausführen und Debuggen sowie das Menü **Build**. Sie dürfen die Datei nach Belieben ändern: siehe [Das Build-System](/en/guides/projects/build-system/).
+
+Mehr dazu unter [Ein Projekt anlegen](/en/guides/projects/creating-projects/) und [Projektvorlagen](/en/guides/projects/project-templates/).
+
+Als Nächstes schreiben Sie [Ihr erstes Assemblerprogramm](/de/get-started/first-assembly-program/).

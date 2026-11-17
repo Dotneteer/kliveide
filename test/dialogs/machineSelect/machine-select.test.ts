@@ -216,3 +216,20 @@ describe("Select Machine dialog", () => {
     expect([formatKb(16), formatKb(2048), formatMhz(985_248)]).toEqual(["16K", "2 MB", "0.985248"]);
   });
 });
+
+describe("a model that needs a download first (NEXT_SD_CARDS_PLAN phase 5)", () => {
+  it("carries a note with the download's size in its rows", () => {
+    const withDownloads = buildCatalogue(machineRegistry, { "zxnext/ks2-30204": 58_595_114 });
+    const state = createInitialState(
+      { favorites: [{ machineId: "zxnext", modelId: "ks2-30204" }] as any, current: { machineId: "sp48" } },
+      machineRegistry
+    );
+    const vm = selectViewModel({ ...state, openSections: [...state.openSections, "zxnext"] }, withDownloads);
+    const favorites = vm.sections.find((s) => s.kind === "favorites") as any;
+    expect(favorites.rows[0].note).toBe("(download needed, 58.6 MB)");
+    const next = vm.sections.find((s) => s.id === "zxnext") as any;
+    const rows = Object.fromEntries(next.rows.map((r: any) => [r.key, r.note]));
+    expect(rows["zxnext/ks2-30204"]).toBe("(download needed, 58.6 MB)");
+    expect(rows["zxnext/ks3-30303"]).toBeUndefined();
+  });
+});

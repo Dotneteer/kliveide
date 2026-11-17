@@ -97,6 +97,7 @@ export function fakeNewProjectPorts(
       getTemplateDirectories: vi.fn(
         service.getTemplateDirectories ?? (async () => ["default", "advanced"])
       ),
+      getModelsNeedingDownload: vi.fn(service.getModelsNeedingDownload ?? (async () => ({}))),
       createProject: vi.fn(service.createProject ?? (async () => "/projects/MyProject")),
       openFolder: vi.fn(service.openFolder ?? (async () => undefined)),
       ensureProjectLoaded: vi.fn(service.ensureProjectLoaded ?? (async () => undefined)),

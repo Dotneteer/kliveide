@@ -58,8 +58,6 @@ export type NextFpgaRomInfo = {
  * card, bundled or downloaded, is accepted only when its bytes have these sizes and hashes.
  */
 export type NextSdBaseImage = {
-  /** The raw card in the repository, relative to `src/public` */
-  file: string;
   /** The raw card's sha256: what identifies the card */
   sha256: string;
   /** The raw card's size in bytes */
@@ -71,8 +69,8 @@ export type NextSdBaseImage = {
   gzSize: number;
   gzSha256: string;
   /**
-   * Distribution paths left off this set's card (`build-next-sd-image.cjs`), so the image stays under
-   * GitHub's 100 MB file limit
+   * Distribution paths left off this set's card (`build-next-sd-image.cjs`). Chosen while the cards were
+   * committed, to stay under GitHub's 100 MB file limit; changing it changes the card's bytes
    */
   exclude?: string[];
 };

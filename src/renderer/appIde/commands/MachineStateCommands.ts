@@ -193,7 +193,10 @@ export class StateLoadCommand extends IdeCommandBase<StateLoadCommandArgs> {
 
     let result: Awaited<ReturnType<typeof context.emuApi.loadMachineStateFile>>;
     try {
-      const currentSdCard = hasSdCard ? await context.mainApi.getSdCardFingerprint() : undefined;
+      // --- The card the state's own machine will use, not the running machine's (a 48K's is the DivMMC's)
+      const currentSdCard = hasSdCard
+        ? await context.mainApi.getSdCardFingerprintFor(header.machineId, header.modelId, true)
+        : undefined;
       result = await context.emuApi.loadMachineStateFile(file, bytes, mode, {
         currentSdCard,
         acceptChangedSdCard: !!args["-y"]

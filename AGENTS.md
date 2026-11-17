@@ -273,8 +273,16 @@ merely uncoloured, which no route diff can see.
   behaviour. Nothing reads "which Next" from a literal: it comes from the active profile.
 - ROM sets are committed in `src/public/roms/zxnext/<setId>/`, recorded in
   `src/common/zxnext/nextRomSets.json` (`npm run next-roms:fetch`, `next-roms:check`); their facts
-  (key-wait loop, tape trap) are proved by `test/zxnext-hw/rom/rom-facts.test.ts`. SD base images
-  are built by `npm run next-sd:build`. Tests find ROMs through `nextRomFile()`/`readNextRom()`.
+  (key-wait loop, tape trap) are proved by `test/zxnext-hw/rom/rom-facts.test.ts`. Tests find ROMs
+  through `nextRomFile()`/`readNextRom()`.
+- **SD base cards are not in git** (`dev/plans/NEXT_SD_CARDS_PLAN.md`): they are published on
+  kliveide.net (`gh-pages:next-sd/`) and **fetched** with `npm run next-sd:fetch` into the git-ignored
+  `.local/next-sd/`, where tests (`nextSdBaseImage(setId)`), the IDE checks and a development Klive
+  find them; CI caches that folder. The installer carries only the default model's card, gzipped;
+  the app downloads the others (`src/main/next-sd/`, the download dialog) and checks every card
+  against the manifest's hashes. A new card: `next-sd:build`, `next-sd:pack`, then
+  `next-sd:publish -- <setId> --push` (the author's, after the manifest is on master); a published card
+  is never rewritten, and at most five are hosted.
 - A version-sensitive hardware test runs every profile (`createSession({ profile })`,
   `forEachProfile`); one that runs only one profile is a review smell.
 

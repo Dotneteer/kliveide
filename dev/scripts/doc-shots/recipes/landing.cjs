@@ -30,7 +30,10 @@ const IDE = "#themeRoot";
 function seedUserHome() {
   const sd = path.join(USER_HOME, "Klive", "ks2.cim");
   fs.mkdirSync(path.dirname(sd), { recursive: true });
-  fs.copyFileSync(path.join(REPO, "src", "public", "mmc", "ks2-base.cim"), sd);
+  // --- The 2.08 card (`ks2-30201`), fetched by `npm run next-sd:fetch`: the repository carries no card
+  const base = require("../../next-sd/cards.cjs").localBase("nextzxos-2.08");
+  if (!fs.existsSync(base)) throw new Error(`${base} is missing: run npm run next-sd:fetch`);
+  fs.copyFileSync(base, sd);
 }
 
 async function park(page) {

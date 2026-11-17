@@ -9,6 +9,11 @@ export type MachineSelectDialogData = {
   favorites: MachineFavorite[];
   /** The machine running now */
   current?: { machineId: string; modelId?: string };
+  /**
+   * The models whose files must be downloaded before they run (a ZX Spectrum Next's SD card,
+   * NEXT_SD_CARDS_PLAN phase 5): `favoriteKey` -> the download's size in bytes
+   */
+  downloadNeeded?: Record<string, number>;
 };
 
 /**

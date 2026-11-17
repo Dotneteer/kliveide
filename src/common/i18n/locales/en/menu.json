@@ -1006,5 +1006,31 @@
   "@menu.view.audioMixer": {
     "context": "Menu item in View > Machine Views: opens the Audio Mixer document, which shows each sound source of the emulated machine and lets the user mute, solo or change its level. Shown only for machines with sound.",
     "maxChars": 24
+  },
+  "menu.machine.downloadNeeded": "{name} (download needed, {size} MB)",
+  "@menu.machine.downloadNeeded": {
+    "context": "A machine model in the Machine › Machine type menu that cannot run before something is downloaded (a ZX Spectrum Next's SD card).",
+    "placeholders": {
+      "name": "The model's name, shown verbatim, e.g. 'ZX Spectrum Next (KS2, core 3.02.04)'",
+      "size": "The download's size in megabytes, e.g. '58.6'"
+    }
+  },
+  "menu.next.downloadedCards": "Downloaded SD Cards",
+  "@menu.next.downloadedCards": {
+    "context": "Submenu of Machine › SD Card on a ZX Spectrum Next: the SD cards Klive downloaded for Next models, which the user may delete to free disk space.",
+    "maxChars": 30
+  },
+  "menu.next.noDownloadedCards": "No Downloaded Cards",
+  "@menu.next.noDownloadedCards": {
+    "context": "Disabled item of Machine › SD Card › Downloaded SD Cards when Klive has downloaded no card.",
+    "maxChars": 30
+  },
+  "menu.next.deleteDownloadedCard": "Delete {card} ({size} MB)...",
+  "@menu.next.deleteDownloadedCard": {
+    "context": "Item of Machine › SD Card › Downloaded SD Cards: deletes one downloaded SD card after asking. Disabled for the card the running model needs.",
+    "placeholders": {
+      "card": "The card's ROM set id, shown verbatim, e.g. 'nextzxos-2.10'",
+      "size": "Its size on disk in megabytes, e.g. '58.6'"
+    }
   }
 }

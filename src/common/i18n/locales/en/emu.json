@@ -609,6 +609,13 @@
   "@emu.machineState.superseded": {
     "context": "Error of loading a machine state: another machine switch started meanwhile."
   },
+  "emu.machine.notReady": "The {machine} cannot run without its SD card",
+  "@emu.machine.notReady": {
+    "context": "Error when loading a machine state or a debug recording of a ZX Spectrum Next model whose SD card is not on this computer, after the user declined to download it.",
+    "placeholders": {
+      "machine": "The machine model's name, shown verbatim, e.g. 'ZX Spectrum Next (KS2, core 3.02.04)'"
+    }
+  },
   "emu.machineState.mismatch": "{reason}. The state was saved by Klive {version} and cannot be loaded into this version",
   "@emu.machineState.mismatch": {
     "context": "Error of loading a machine state saved by a different Klive build that has no portable fallback.",

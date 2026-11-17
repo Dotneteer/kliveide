@@ -193,10 +193,12 @@ export class DebugRecordingLoadCommand extends IdeCommandBase<DebugRecordingLoad
       return commandError(t("commands.debugRecording.readFailed", { file, error: messageOf(err) }));
     }
     let machineId: string;
+    let modelId: string | undefined;
     let hasSdCard: boolean;
     try {
       const read = await readDebugRecording(bytes, { headerOnly: true });
       machineId = read.header.machineId;
+      modelId = read.header.modelId;
       hasSdCard = read.media.some((m) => m.kind === "sd");
     } catch (err) {
       return commandError(t("commands.debugRecording.load.invalid", { file, error: messageOf(err) }));
@@ -206,7 +208,11 @@ export class DebugRecordingLoadCommand extends IdeCommandBase<DebugRecordingLoad
 
     let result: Awaited<ReturnType<typeof context.emuApi.loadDebugRecording>>;
     try {
-      const currentSdCard = hasSdCard ? await context.mainApi.getSdCardFingerprint().catch(() => undefined) : undefined;
+      // --- The card the recording's own machine will use, not the running machine's. No download is
+      // --- offered here: a recording replays without its card, and the machine switch offers it.
+      const currentSdCard = hasSdCard
+        ? await context.mainApi.getSdCardFingerprintFor(machineId, modelId, false).catch(() => undefined)
+        : undefined;
       result = await context.emuApi.loadDebugRecording(file, bytes, await versionOf(context), {
         land: args["-start"] ? "start" : "saved",
         verify: !!args["-verify"],

@@ -96,7 +96,7 @@ Clique em **Executar**, ou prima <kbd>F5</kbd>. No Next, o Klive cria um ficheir
 <Shot
   src="get-started/next-running.webp"
   alt="O emulador do ZX Spectrum Next com um sprite de uma bola vermelha"
-  figure="8.1"
+  figure="9.1"
   caption="Um sprite de hardware no Next"
   width={620}
 />
@@ -104,6 +104,27 @@ Clique em **Executar**, ou prima <kbd>F5</kbd>. No Next, o Klive cria um ficheir
 <Callout type="info" emoji="💡">
 Mude `ld a,120` para outro valor e execute o programa novamente para deslocar a bola para cima ou para baixo. Para ver os atributos e os padrões de todos os sprites enquanto o programa corre, abra o [Inspetor de sprites](/en/guides/next/sprite-inspector/).
 </Callout>
+
+## O cartão SD do Next
+
+Um Next não arranca sem o seu cartão SD: o NextZXOS e os programas que executa estão nele. No Klive, o cartão é um ficheiro de imagem na pasta `Klive` da sua pasta pessoal, e o Klive trata dele:
+
+- O **ZX Spectrum Next (KS3, core 3.03.03)**, o modelo que os novos projetos usam, vem com o seu cartão. Na primeira execução, o Klive faz uma cópia dele, `ks3-30303.cim`, que o Next lê e escreve. Não há nada a fazer.
+- **Os outros modelos do Next** precisam, cada um, da sua própria versão do NextZXOS. Os menus de máquina marcam-nos com "requer transferência" e o tamanho. Da primeira vez que seleciona um deles, o Klive propõe transferir o seu cartão de kliveide.net:
+
+<Shot
+  src="get-started/next-sd-download.webp"
+  alt="A caixa de diálogo Cartão SD do ZX Spectrum Next a propor a transferência do cartão do modelo KS2 core 3.02.04"
+  figure="9.2"
+  caption="Um modelo cujo cartão ainda não está no computador"
+  width={560}
+/>
+
+Clique em **Transferir**. Quando a transferência termina, o modelo arranca. Se o Klive não conseguir aceder à internet, clique em **Copiar URL**, transfira o ficheiro num browser e escolha **Importar ficheiro...**. Se fechar a caixa de diálogo, a máquina que estava a usar mantém-se.
+
+Antes de um Next arrancar, o Klive também verifica o seu cartão. Quando o NextZXOS não consegue arrancar a partir dele (um cartão danificado, por exemplo), o Klive indica o problema e propõe repor o cartão. O cartão antigo é guardado com outro nome, por isso nada se perde.
+
+[O cartão SD do Next](/en/guides/next/sd-card/) explica o menu **Máquina › Cartão SD**, como usar uma imagem de cartão própria e como copiar ficheiros de e para o cartão.
 
 A [referência do assemblador do ZX Spectrum Next](/en/reference/z80-assembler/zx-next/) descreve as instruções do Next, `.savenex` e as restantes funcionalidades do assemblador do Klive dedicadas ao Next.
 

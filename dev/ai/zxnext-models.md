@@ -77,10 +77,16 @@ decisions (D-A to D-G) and what to do once the VHDL appears.
   registry's `newProjectModelIds`, the default favourite); model-less references still mean
   `ks2-30201` (D1). **The installer carries only the default model's ROM set's base image**
   (`extraResources` in `package.json`, `test/scripts/packaged-sd-cards.test.ts`,
-  `dev/scripts/check-packaged-sd-cards.cjs` in the release build): no release up to v0.68.1 shipped
-  any card, and every model booted to "Drive C: not found". A model without a card asks (switch to the
-  default model, select an image, continue) instead. `dev/plans/NEXT_SD_CARDS_PLAN.md` replaces this
-  with downloaded, checked cards.
+  `dev/scripts/check-packaged-sd-cards.cjs` in the release build), gzipped
+  (`<resources>/next-sd/<setId>.cim.gz`): no release up to v0.68.1 shipped any card, and every model
+  booted to "Drive C: not found". **The other cards are downloaded** from
+  `https://kliveide.net/next-sd/<setId>.cim.gz` into `<Klive home>/next-sd/` and accepted only with the
+  manifest's hashes (`dev/plans/NEXT_SD_CARDS_PLAN.md`, D-4, D-5). A model is *ready* when its working
+  copy exists or its set's card is here (D-7); one that is not goes through the gate in
+  `setupZxSpectrumNext`: the download dialog (`NEXT_SD_DOWNLOAD_DIALOG`), and declining it declines the
+  machine change (at startup the default model stands in, `src/main/standInMachine.ts`). Before a Next
+  boots, `checkNextSdCard` checks its card; a card NextZXOS cannot boot opens one dialog (reset, kept
+  aside as `<name>.broken-<stamp>.cim`; another image; continue).
 - **D8 - ROM annotations follow the annotation provenance rule** (`dev/ai/rom-annotations/README.md`,
   D4 there). A page whose CRC is unchanged reuses its sidecar. For changed pages,
   `npm run rom:annotations:carry -- <fromSidecar> <toRom>` (`dev/scripts/rom-annotations-carry.cjs`,
@@ -107,7 +113,9 @@ decisions (D-A to D-G) and what to do once the VHDL appears.
     and compares, by hand only, never in CI.
   - **D9.4** The SD base image is built from the distribution at the set's commit by
     `npm run next-sd:build -- <setId>` (`dev/scripts/build-next-sd-image.cjs`, deterministic) into
-    `src/public/mmc/<setId>-base.cim`, committed, its sha256 in the set's `sdBaseImage`.
+    the git-ignored `.local/next-sd/<setId>-base.cim`, its size and sha256 in the set's `sdBaseImage`.
+    The card is not committed: `npm run next-sd:pack` gzips it and `next-sd:publish` puts it on
+    kliveide.net, where `npm run next-sd:fetch` gets it (`dev/plans/NEXT_SD_CARDS_PLAN.md` D-4, D-6).
   - **D9.5** Layout: one folder per set, `src/public/roms/zxnext/<setId>/` (ROMs and their `.rom.dis`
     sidecars). Every reader finds a file through one helper, `nextRomPath(setId, file)`
     (`src/common/zxnext/romSets.ts`); tests use `nextRomFile()` (`test/harness/zxnext/core/roms.ts`).
@@ -125,7 +133,8 @@ decisions (D-A to D-G) and what to do once the VHDL appears.
 | VHDL scripts | `npm run next-fpga:{fetch,comments,diff}` (`dev/scripts/next-fpga-*.cjs`) |
 | ROM set manifest (provenance, hashes, page CRCs, facts, SD image) | `src/common/zxnext/nextRomSets.json`, typed by `src/common/zxnext/romSets.ts` (`nextRomPath`, `nextRomFolder`) |
 | ROMs and sidecars | `src/public/roms/zxnext/<setId>/` |
-| SD base images | `src/public/mmc/` (`ks2-base.cim` for 2.08, `nextzxos-2.10-base.cim`, `nextzxos-26.11-base.cim`) |
+| SD base images | `https://kliveide.net/next-sd/<setId>.cim.gz` (`gh-pages`), fetched into `.local/next-sd/` by `npm run next-sd:fetch`; the installer's card in `<resources>/next-sd/` |
+| Where the app finds cards, working copies | `src/main/next-sd/nextSdCards.ts` |
 | SD card menus | `src/main/machine-menus/zx-next-menus.ts` |
 | ROM loading, CRC check, facts written to the core | `src/emu/machines/zxNext/ZxNextWasmV2Machine.ts` |
 | NEX minimum-core check | `NexFileViewerPanel.tsx`, against the active model |
@@ -193,8 +202,11 @@ decisions (D-A to D-G) and what to do once the VHDL appears.
    (`npm run next-fpga:comments -- --carry <old> <new>`), and classify the delta with
    `npm run next-fpga:diff` into `dev/ai/zxnext-cores/<old>-to-<new>.md`.
 2. **ROMs.** If the model boots a new NextZXOS: `npm run next-roms:fetch -- <setId> --ref <ref>`,
-   commit the files and manifest entry; `npm run next-sd:build -- <setId>` and commit the image.
-   Otherwise name an existing set.
+   commit the files and manifest entry. Then the card: `npm run next-sd:build -- <setId>` (into
+   `.local/next-sd/`), `npm run next-sd:pack -- <setId>` (records `gzSize`/`gzSha256`), commit the
+   manifest, and once it is on master `npm run next-sd:publish -- <setId> --push` and
+   `npm run next-sd:check-site`. A published card is never re-packed or rewritten. Otherwise name an
+   existing set.
 3. **ROM facts.** Fill in the set's `facts` by hand from the ROM bytes; extend `rom-facts.test.ts`
    and the ROM decoder's inline-data addresses.
 4. **Profile.** Add the record to `NEXT_PROFILES` (new id, never reuse one), the artifact to
@@ -205,9 +217,15 @@ decisions (D-A to D-G) and what to do once the VHDL appears.
 7. **Annotations.** Unchanged pages reuse sidecars; carry changed ones with
    `npm run rom:annotations:carry`, review, then author; append to `PROVENANCE.md`.
 8. **IDE and docs.** New-project default and favourite if it should change (D7); a new default model
-   also changes the card the installer carries (`extraResources` from `src/public/mmc` in
+   also changes the card the installer carries (the `.local/next-sd-stage` filter of `extraResources` in
    `package.json`, guarded by `test/scripts/packaged-sd-cards.test.ts`). The models page in
    the docs, `npm run i18n:keys` if any text was added, a `feature` changeset, `npm run test:slow`.
+
+**At most five Next models exist at a time** (the project author's rule), so at most five cards are on
+the site; `next-sd:publish` refuses a sixth. **Retiring a model** removes its profile and WASM artifact,
+aliases its id to its successor (`NEXT_PROFILE_ALIASES`), and removes its card from `gh-pages` once no
+remaining model uses that set (NEXT_SD_CARDS_PLAN D-11); a downloaded copy stays in users' homes until
+they delete it (Machine > SD Card > Downloaded SD Cards).
 
 KS3 fits the same steps: the board is a profile field and a compile-time define, its top file
 (`zxnext_top_issue*.vhd`) is part of the versioned VHDL.

@@ -7,7 +7,7 @@ import { gzipSync } from "node:zlib";
 
 /*
  * Where the Next's SD cards live and how a working copy is made (`dev/plans/NEXT_SD_CARDS_PLAN.md`,
- * phase 1): the installer's card, gzipped or raw, then a downloaded one; a working copy decompressed
+ * phases 1 and 3): the installer's gzipped card (or, in development, a fetched one), then a downloaded one; a working copy decompressed
  * and checked against the manifest, never left half-written under its real name.
  */
 
@@ -21,7 +21,9 @@ import {
   availableCardOf,
   bundledCardPath,
   downloadedCardPath,
+  downloadedCards,
   isModelReady,
+  needsDownload,
   workingCopyPath,
   writeCardFrom
 } from "@main/next-sd/nextSdCards";
@@ -53,7 +55,8 @@ function put(file: string, bytes: Uint8Array): string {
 }
 
 const bundledGz = () => path.join(process.env.PUBLIC!, "next-sd", `${SET}.cim.gz`);
-const bundledRaw = () => path.join(process.env.PUBLIC!, NEXT_ROM_SETS[SET].sdBaseImage.file);
+const devCards = () => path.join(home.dir, "dev-cards");
+const devRaw = () => path.join(devCards(), `${SET}-base.cim`);
 
 describe("finding a set's base card", () => {
   it("finds none when neither the installer nor a download has it", () => {
@@ -67,10 +70,9 @@ describe("finding a set's base card", () => {
     expect(availableCard(SET)).toEqual({ setId: SET, file: downloadedCardPath(SET), source: "downloaded", compressed: true });
   });
 
-  it("prefers the installer's card, gzipped before raw", () => {
+  it("prefers the installer's card to a downloaded one", () => {
     put(downloadedCardPath(SET), gzipSync(CARD));
-    put(bundledRaw(), CARD);
-    expect(availableCard(SET)).toMatchObject({ file: bundledRaw(), source: "bundled", compressed: false });
+    expect(availableCard(SET)).toMatchObject({ source: "downloaded" });
     put(bundledGz(), gzipSync(CARD));
     expect(availableCard(SET)).toMatchObject({ file: bundledGz(), source: "bundled", compressed: true });
     expect(availableCardOf("ks2-30204")?.file).toBe(bundledGz());
@@ -79,7 +81,7 @@ describe("finding a set's base card", () => {
 
 describe("a development run", () => {
   it("also takes the cards npm run next-sd:fetch puts in .local/next-sd, raw before gzipped", () => {
-    const dev = path.join(home.dir, "dev-cards");
+    const dev = devCards();
     process.env.KLIVE_NEXT_SD_DEV_CARDS = dev;
     try {
       put(path.join(dev, `${SET}.cim.gz`), gzipSync(CARD));
@@ -102,10 +104,15 @@ describe("making a working copy", () => {
   });
 
   it("copies a raw card", async () => {
-    put(bundledRaw(), CARD);
-    const target = path.join(home.dir, "copy.cim");
-    await writeCardFrom(availableCard(SET)!, target);
-    expect(new Uint8Array(fs.readFileSync(target))).toEqual(CARD);
+    put(devRaw(), CARD);
+    process.env.KLIVE_NEXT_SD_DEV_CARDS = devCards();
+    try {
+      const target = path.join(home.dir, "copy.cim");
+      await writeCardFrom(availableCard(SET)!, target);
+      expect(new Uint8Array(fs.readFileSync(target))).toEqual(CARD);
+    } finally {
+      delete process.env.KLIVE_NEXT_SD_DEV_CARDS;
+    }
   });
 
   it("refuses a card that is not the manifest's, and keeps the card it would have replaced", async () => {
@@ -141,5 +148,23 @@ describe("isModelReady", () => {
   it("is false for a working copy that does not pass the check", () => {
     put(workingCopyPath("ks2-30204"), new Uint8Array(4096));
     expect(isModelReady("ks2-30204")).toBe(false);
+  });
+});
+
+describe("the downloaded cards (phase 5)", () => {
+  it("are listed with their sizes on disk", () => {
+    expect(downloadedCards()).toEqual([]);
+    const gz = gzipSync(CARD);
+    put(downloadedCardPath(SET), gz);
+    expect(downloadedCards()).toEqual([{ setId: SET, file: downloadedCardPath(SET), bytes: gz.length }]);
+  });
+
+  it("make a model's need for a download go away, as does a working copy", () => {
+    expect(needsDownload("ks2-30204")).toBe(true);
+    put(workingCopyPath("ks2-30204"), new Uint8Array(512));
+    expect(needsDownload("ks2-30204")).toBe(false);
+    expect(needsDownload("ks2-30201")).toBe(true);
+    put(downloadedCardPath("nextzxos-2.08"), gzipSync(CARD));
+    expect(needsDownload("ks2-30201")).toBe(false);
   });
 });

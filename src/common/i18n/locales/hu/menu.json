@@ -183,5 +183,9 @@
   "menu.next.joystickMode.kempston2": "Kempston 2 ($37 port)",
   "menu.next.joystickMode.md1": "MD 1 ($1F port)",
   "menu.next.joystickMode.md2": "MD 2 ($37 port)",
-  "menu.next.joystickMode.userDefined": "Egyéni (joymap)"
+  "menu.next.joystickMode.userDefined": "Egyéni (joymap)",
+  "menu.machine.downloadNeeded": "{name} (letöltés szükséges, {size} MB)",
+  "menu.next.downloadedCards": "Letöltött SD-kártyák",
+  "menu.next.noDownloadedCards": "Nincs letöltött kártya",
+  "menu.next.deleteDownloadedCard": "A(z) {card} kártya törlése ({size} MB)..."
 }

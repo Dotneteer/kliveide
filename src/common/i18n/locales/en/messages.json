@@ -473,33 +473,6 @@
   "@messages.sdCard.select": {
     "context": "Title of an Open File dialog picking an SD card image for the ZX Spectrum Next."
   },
-  "messages.sdCard.missingTitle": "SD Card Not Installed",
-  "@messages.sdCard.missingTitle": {
-    "context": "Title of a message box shown when a ZX Spectrum Next model is selected whose SD card image is not part of this Klive installation."
-  },
-  "messages.sdCard.missing": "The SD card of the {model} is not installed with this version of Klive, so NextZXOS cannot start on it (it stops with \"Drive C: not found\").\n\nYou can switch to the {defaultModel}, whose SD card is installed, or select an SD card image of your own.",
-  "@messages.sdCard.missing": {
-    "context": "Text of the message box. \"Drive C: not found\" is the machine's own error text: keep it in English, in quotes. Keep the empty line. Buttons: switch model, select an image, continue anyway.",
-    "placeholders": {
-      "model": "The selected ZX Spectrum Next model's name, e.g. \"ZX Spectrum Next (KS2, core 3.02.04)\" (not translated)",
-      "defaultModel": "The default ZX Spectrum Next model's name, e.g. \"ZX Spectrum Next (KS3, core 3.03.03)\" (not translated)"
-    }
-  },
-  "messages.sdCard.missingSwitch": "Switch to the {defaultModel}",
-  "@messages.sdCard.missingSwitch": {
-    "context": "Button in the missing SD card message box: switches the emulator to the default ZX Spectrum Next model instead.",
-    "placeholders": {
-      "defaultModel": "The default ZX Spectrum Next model's name, e.g. \"ZX Spectrum Next (KS3, core 3.03.03)\" (not translated)"
-    }
-  },
-  "messages.sdCard.missingSelect": "Select an Image...",
-  "@messages.sdCard.missingSelect": {
-    "context": "Button in the missing SD card message box: opens a file dialog to pick an SD card image (.cim) for the selected model."
-  },
-  "messages.sdCard.missingContinue": "Continue Without a Card",
-  "@messages.sdCard.missingContinue": {
-    "context": "Button in the missing SD card message box: keeps the selected model although it has no SD card (NextZXOS will not start)."
-  },
   "messages.sdCard.select2": "Select the Image for SD Card 2",
   "@messages.sdCard.select2": {
     "context": "Title of an Open File dialog picking the image for the ZX Spectrum Next KS3's second SD card reader."
@@ -579,5 +552,81 @@
   "@messages.if1.cannotBoot": {
     "context": "Title of the error box when Machine › Interfaces › Boot Cartridge in Microdrive 1 cannot run (for example, the Interface 1 has no ROM).",
     "maxChars": 40
+  },
+  "messages.sdCard.check.title": "ZX Spectrum Next SD Card",
+  "@messages.sdCard.check.title": {
+    "context": "Title of the warning a ZX Spectrum Next shows before it boots from an SD card image NextZXOS (the Next's operating system) cannot boot.",
+    "maxChars": 40
+  },
+  "messages.sdCard.check.message": "The {model} may not boot from its SD card.",
+  "@messages.sdCard.check.message": {
+    "context": "Main sentence of the warning a ZX Spectrum Next shows before it boots from an SD card image NextZXOS (the Next's operating system) cannot boot.",
+    "placeholders": {
+      "model": "The Next model's name, shown verbatim, e.g. 'ZX Spectrum Next (KS3, core 3.03.03)'"
+    }
+  },
+  "messages.sdCard.check.missing": "{file} does not exist.",
+  "@messages.sdCard.check.missing": {
+    "context": "Explanation in the warning a ZX Spectrum Next shows before it boots from an SD card image NextZXOS (the Next's operating system) cannot boot: the image file is gone.",
+    "placeholders": {
+      "file": "The SD card image's full path, shown verbatim"
+    }
+  },
+  "messages.sdCard.check.unreadable": "{file} cannot be read as an SD card image. The file may be damaged or cut short.",
+  "@messages.sdCard.check.unreadable": {
+    "context": "Explanation in the warning a ZX Spectrum Next shows before it boots from an SD card image NextZXOS (the Next's operating system) cannot boot: the file is not a readable card image.",
+    "placeholders": {
+      "file": "The SD card image's full path, shown verbatim"
+    }
+  },
+  "messages.sdCard.check.noPartition": "{file} has no FAT16 or FAT32 partition NextZXOS can use, so the Next stops with \"Drive C: not found\".",
+  "@messages.sdCard.check.noPartition": {
+    "context": "Explanation in the warning a ZX Spectrum Next shows before it boots from an SD card image NextZXOS (the Next's operating system) cannot boot. FAT16/FAT32 are file system names; keep the quoted error message in English, as the machine shows it.",
+    "placeholders": {
+      "file": "The SD card image's full path, shown verbatim"
+    }
+  },
+  "messages.sdCard.check.noSystemFiles": "{file} does not hold NextZXOS's system files: {files}.",
+  "@messages.sdCard.check.noSystemFiles": {
+    "context": "Explanation in the warning a ZX Spectrum Next shows before it boots from an SD card image NextZXOS (the Next's operating system) cannot boot: files NextZXOS needs are missing from the card.",
+    "placeholders": {
+      "file": "The SD card image's full path, shown verbatim",
+      "files": "Paths on the card, shown verbatim, e.g. 'nextzxos/enSystem.sys'"
+    }
+  },
+  "messages.sdCard.check.wrongRelease": "{file} holds another NextZXOS release than the {model} needs, so the Next stops while it starts.",
+  "@messages.sdCard.check.wrongRelease": {
+    "context": "Explanation in the warning a ZX Spectrum Next shows before it boots from an SD card image NextZXOS (the Next's operating system) cannot boot: the card's NextZXOS version does not match the model's ROMs.",
+    "placeholders": {
+      "file": "The SD card image's full path, shown verbatim",
+      "model": "The Next model's name, shown verbatim, e.g. 'ZX Spectrum Next (KS3, core 3.03.03)'"
+    }
+  },
+  "messages.sdCard.check.reset": "Reset to the Default Card",
+  "@messages.sdCard.check.reset": {
+    "context": "Button of the warning a ZX Spectrum Next shows before it boots from an SD card image NextZXOS (the Next's operating system) cannot boot: replaces the model's own card with a fresh one; the old card is kept under another name.",
+    "maxChars": 30
+  },
+  "messages.sdCard.check.useDefault": "Use the Default Card",
+  "@messages.sdCard.check.useDefault": {
+    "context": "Button of the warning a ZX Spectrum Next shows before it boots from an SD card image NextZXOS (the Next's operating system) cannot boot when a card the user picked fails: switches to the model's own card.",
+    "maxChars": 30
+  },
+  "messages.sdCard.check.select": "Select an Image...",
+  "@messages.sdCard.check.select": {
+    "context": "Button of the warning a ZX Spectrum Next shows before it boots from an SD card image NextZXOS (the Next's operating system) cannot boot: picks another SD card image file.",
+    "maxChars": 30
+  },
+  "messages.sdCard.check.continue": "Continue Anyway",
+  "@messages.sdCard.check.continue": {
+    "context": "Button of the warning a ZX Spectrum Next shows before it boots from an SD card image NextZXOS (the Next's operating system) cannot boot: boots the card as it is.",
+    "maxChars": 30
+  },
+  "messages.sdCard.deleteDownloaded": "Delete the downloaded {card} SD card? A model that needs it downloads it again.",
+  "@messages.sdCard.deleteDownloaded": {
+    "context": "Confirmation before Klive deletes an SD card it downloaded for a ZX Spectrum Next model.",
+    "placeholders": {
+      "card": "The card's ROM set id, shown verbatim, e.g. 'nextzxos-2.10'"
+    }
   }
 }

@@ -92,6 +92,7 @@
   "emu.machineState.sdCardChangedConfirm": "A imagem do cartão SD ({file}) mudou desde que o estado foi guardado; o seu sistema de ficheiros pode não corresponder ao que a máquina recorda",
   "emu.machineState.sdCardChanged": "A imagem do cartão SD mudou desde que o estado foi guardado",
   "emu.machineState.superseded": "Outra mudança de máquina substituiu o carregamento do estado",
+  "emu.machine.notReady": "O {machine} não pode ser executado sem o seu cartão SD",
   "emu.machineState.mismatch": "{reason}. O estado foi guardado pelo Klive {version} e não pode ser carregado nesta versão",
   "emu.machineState.loadedFromSzx": "O estado foi guardado pelo Klive {version}, cujo núcleo {core} difere deste; foi carregado a partir da sua parte .szx, que omite a posição exata da cassete, o estado do controlador de disco e os detalhes EI/MEMPTR",
   "emu.machineState.loaded": "Estado da máquina carregado",

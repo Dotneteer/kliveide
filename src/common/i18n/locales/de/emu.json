@@ -92,6 +92,7 @@
   "emu.machineState.sdCardChangedConfirm": "Das SD-Kartenabbild ({file}) hat sich seit dem Speichern des Zustands geändert; sein Dateisystem passt möglicherweise nicht zu dem, was die Maschine sich merkt",
   "emu.machineState.sdCardChanged": "Das SD-Kartenabbild hat sich seit dem Speichern des Zustands geändert",
   "emu.machineState.superseded": "Ein anderer Maschinenwechsel hat das Laden des Zustands ersetzt",
+  "emu.machine.notReady": "Das Modell {machine} kann ohne seine SD-Karte nicht laufen",
   "emu.machineState.mismatch": "{reason}. Der Zustand wurde von Klive {version} gespeichert und kann nicht in diese Version geladen werden",
   "emu.machineState.loadedFromSzx": "Der Zustand wurde von Klive {version} gespeichert, dessen {core}-Kern sich von diesem unterscheidet; er wurde aus seinem .szx-Teil geladen, der die genaue Kassettenposition, den Zustand des Disk-Controllers und die EI/MEMPTR-Details auslässt",
   "emu.machineState.loaded": "Maschinenzustand geladen",

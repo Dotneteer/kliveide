@@ -10,8 +10,8 @@
  * For each card, the first that fits is staged:
  * 1. the staged file itself, when it is the manifest's gzipped card (`gzSha256`) - nothing to do;
  * 2. `.local/next-sd/<setId>.cim.gz`, the published card (`next-sd:fetch`), when it is the manifest's;
- * 3. the raw card (`.local/next-sd/<setId>-base.cim`, or the one still committed in `src/public`),
- *    gzipped here at level 9. Gzip output may differ
+ * 3. the raw card (`.local/next-sd/<setId>-base.cim`), gzipped here at level 9: the path of a card
+ *    that is built but not published yet (a new default model). Gzip output may differ
  *    between zlib versions, so its hash need not be `gzSha256`: the installer's card is accepted by its
  *    raw bytes, which are checked here and again whenever Klive makes a working copy from it.
  */
@@ -34,10 +34,10 @@ function stagedCards() {
   });
 }
 
-/** Gzips the raw card (fetched, or still committed), checked against the manifest first */
+/** Gzips the raw card (fetched or built), checked against the manifest first */
 async function gzipRaw(setId, card, target) {
-  const raw = [cards.localBase(setId), cards.repositoryBase(card)].find((file) => existsSync(file));
-  if (!raw) throw new Error(`${setId}: no card to stage; run npm run next-sd:fetch -- ${setId}`);
+  const raw = cards.localBase(setId);
+  if (!existsSync(raw)) throw new Error(`${setId}: no card to stage; run npm run next-sd:fetch -- ${setId}`);
   if (!(await cards.isRawCard(raw, card))) {
     throw new Error(`${raw} is not the manifest's card (${card.size} bytes, sha256 ${card.sha256})`);
   }
@@ -61,7 +61,7 @@ async function main() {
     await gzipRaw(setId, card, file);
     const matches = await cards.isPublishedGz(file, card);
     console.log(
-      `${name}: gzipped from the repository's card${matches ? "" : " (not byte-identical to the published .gz; the raw card is the manifest's)"}`
+      `${name}: gzipped from ${cards.localBase(setId)}${matches ? "" : " (not byte-identical to the published .gz; the raw card is the manifest's)"}`
     );
   }
 }

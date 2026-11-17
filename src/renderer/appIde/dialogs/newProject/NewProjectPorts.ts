@@ -14,6 +14,8 @@ export type NewProjectDialogResult = NewProjectRequest;
  */
 export type NewProjectServicePort = {
   getTemplateDirectories(machineId: string): Promise<string[]>;
+  // --- The models that need a download before they run (a Next's SD card): `favoriteKey` -> bytes
+  getModelsNeedingDownload(): Promise<Record<string, number>>;
   createProject(request: NewProjectRequest): Promise<string>;
   // --- Resolves to a message when the folder could not be opened, rather than
   // --- rejecting; that is the shape the main process reports in.

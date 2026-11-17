@@ -10,7 +10,7 @@
  *   in the repository (megabytes of FPGA bitstreams): `DOC_SHOTS_TBU` names a real one, from the
  *   system distribution (`gitlab.com/thesmog358/tbblue`); without it the step is skipped.
  * - `fw-files/fw-viewer.webp` and `fw-files/test-card.webp` — the model's own TBBLUE.FW in the FW
- *   viewer, opened through Machine › SD Card › Show TBBLUE.FW (the committed card holds real firmware,
+ *   viewer, opened through Machine › SD Card › Show TBBLUE.FW (the base card holds real firmware,
  *   so no outside file is needed), and the test card picture from its screens block.
  *
  * Like the layer recipes it pokes a program into a paused Next (no NextZXOS needed): the program

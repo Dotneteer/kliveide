@@ -5,6 +5,7 @@ import type { MachineInfo } from "@common/machines/info-types";
 import { favoriteKey } from "@common/machines/machine-favorites";
 import { HardwareSpec, getHardwareSpec } from "@common/machines/hardware-specs";
 import { t as translate } from "@common/i18n/i18n";
+import { formatMegabytes } from "@common/zxnext/nextSdDownload";
 import type { TFunction } from "@common/i18n/useT";
 import {
   FAVORITES_SECTION,
@@ -23,11 +24,15 @@ export type CatalogueEntry = {
   spec?: HardwareSpec;
   /** Lower-case text the filter matches against */
   haystack: string;
+  /** Bytes to download before the model can run (a Next's SD card), when it must be */
+  downloadBytes?: number;
 };
 
 export type ModelRowVm = {
   key: string;
   name: string;
+  /** "download needed, 58.6 MB": a model that cannot run before a download */
+  note?: string;
   selected: boolean;
   running: boolean;
   favorite: boolean;
@@ -36,6 +41,7 @@ export type ModelRowVm = {
 export type FavoriteRowVm = {
   key: string;
   name: string;
+  note?: string;
   selected: boolean;
   running: boolean;
   separatorAfter: boolean;
@@ -97,8 +103,14 @@ export type MachineSelectVm = {
   switchLabel: string;
 };
 
-/** Every model of the registry, in registry order */
-export function buildCatalogue(registry: readonly MachineInfo[]): CatalogueEntry[] {
+/**
+ * Every model of the registry, in registry order
+ * @param downloadNeeded `favoriteKey` -> bytes to download before the model can run
+ */
+export function buildCatalogue(
+  registry: readonly MachineInfo[],
+  downloadNeeded: Record<string, number> = {}
+): CatalogueEntry[] {
   return registry.flatMap((machine) => {
     const models = machine.models?.length
       ? machine.models.map((m) => ({ modelId: m.modelId as string | undefined, name: m.displayName }))
@@ -117,14 +129,16 @@ export function buildCatalogue(registry: readonly MachineInfo[]): CatalogueEntry
         .filter(Boolean)
         .join(" ")
         .toLowerCase();
+      const key = favoriteKey({ machineId: machine.machineId, modelId });
       return {
-        key: favoriteKey({ machineId: machine.machineId, modelId }),
+        key,
         machineId: machine.machineId,
         modelId,
         name,
         machineName: machine.displayName,
         spec,
-        haystack
+        haystack,
+        downloadBytes: downloadNeeded[key]
       };
     });
   });
@@ -146,9 +160,14 @@ export function selectViewModel(
   const filterActive = state.filter.trim() !== "";
   const sections: SectionVm[] = [];
 
+  const noteOf = (e: CatalogueEntry) =>
+    e.downloadBytes
+      ? t("dialog.machineSelect.downloadNeeded", { size: formatMegabytes(e.downloadBytes) })
+      : undefined;
   const modelRow = (e: CatalogueEntry): ModelRowVm => ({
     key: e.key,
     name: e.name,
+    note: noteOf(e),
     selected: e.key === state.selectedKey,
     running: e.key === state.runningKey,
     favorite: favoriteKeys.has(e.key)
@@ -164,6 +183,7 @@ export function selectViewModel(
       rows.push({
         key,
         name: entry.name,
+        note: noteOf(entry),
         selected: key === state.selectedKey,
         running: key === state.runningKey,
         separatorAfter: !!f.separatorAfter && !last,

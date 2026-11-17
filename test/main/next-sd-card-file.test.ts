@@ -10,7 +10,7 @@ import { nextSdBaseImage } from "../harness/zxnext/core/sdCards";
 /*
  * Reading a file from the ZX Spectrum Next's current SD card (`dev/plans/TBBLUE_TBU_VIEWER_PLAN.md`,
  * Phase 5): the card the machine uses, the model's base image before the working copy exists, and
- * the three errors. The happy path reads TBBLUE.TBU from the committed 26.11 base card, so it also
+ * the three errors. The happy path reads TBBLUE.TBU from the fetched 26.11 base card, so it also
  * checks the whole System/Next 26.11a update file against the TBU reader.
  */
 

@@ -140,16 +140,17 @@
     "area.library": "b8100f5ba8bd048a"
   },
   "pages": {
-    "get-started/debug-your-program": "5e12d9572befaf65",
-    "get-started/first-assembly-program": "b6a5d878ff10f363",
-    "get-started/first-basic-program": "36a8d435b6c5e09b",
-    "get-started/first-next-program": "4ac0943ba8bfab69",
-    "get-started/index": "bf6dc8326fcb51db",
+    "get-started/debug-your-program": "545e88f80f862707",
+    "get-started/first-assembly-program": "498e565808dd1736",
+    "get-started/first-basic-program": "09382ea87f4da0f4",
+    "get-started/first-next-program": "e03b99bfeb7759b1",
+    "get-started/index": "3c81ec488911a8ca",
     "get-started/load-from-tape": "34fe0a7f91a1e063",
     "get-started/meet-the-emulator": "cdd9796881ac1379",
-    "get-started/meet-the-ide": "20bbf34c7cced725",
-    "get-started/save-and-share": "16c8b679d87f4bb0",
+    "get-started/meet-the-ide": "00f1d08de90a13d1",
+    "get-started/save-and-share": "549a495ed356b09f",
     "get-started/where-next": "7150226e95ddd1c6",
-    "get-started/install": "17d8a45b155f3104"
+    "get-started/install": "17d8a45b155f3104",
+    "get-started/how-projects-work": "5f1ec6f3e24eb1ba"
   }
 }

@@ -64,7 +64,6 @@
       }
     },
     "sdBaseImage": {
-      "file": "mmc/ks2-base.cim",
       "sha256": "66138b425599135f5aeafe5af6ba15f261e4218e5bb29a3d524f474009edab2a",
       "size": 76611584,
       "gzSize": 37010500,
@@ -149,7 +148,6 @@
       }
     },
     "sdBaseImage": {
-      "file": "mmc/nextzxos-2.10-base.cim",
       "sha256": "6395f56d899afddd959fdd8dd02aef4a0b50804a0306ac1bfb423680571fa518",
       "size": 96010240,
       "gzSize": 58595114,
@@ -224,7 +222,6 @@
     },
     "fpgaRoms": {},
     "sdBaseImage": {
-      "file": "mmc/nextzxos-26.11-base.cim",
       "sha256": "c9d23e9abcf490e14e30767a482c3c061d0bd3a934befc8c5b505cf9db7eef87",
       "size": 51970048,
       "gzSize": 23791074,

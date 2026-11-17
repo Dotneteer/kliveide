@@ -91,6 +91,8 @@ export type NewProjectState = {
    * make a project, so it is not offered.
    */
   availableMachineIds?: string[];
+  /** The models that need a download before they run (a Next's SD card): `favoriteKey` -> bytes */
+  downloadNeeded: Record<string, number>;
   machineId: string;
   modelId?: string;
   projectFolder: string;
@@ -107,6 +109,7 @@ export type NewProjectEvent =
   | { type: "envReplaced"; env: NewProjectEnvironment }
   | { type: "machineChanged"; machineId: string; modelId?: string }
   | { type: "machineTypesSettled"; available: string[] }
+  | { type: "downloadsSettled"; downloadNeeded: Record<string, number> }
   | { type: "projectFolderChanged"; folder: string }
   | { type: "projectNameChanged"; name: string }
   | { type: "templateChanged"; templateId: string }
@@ -152,6 +155,7 @@ export function initialState(
   return {
     env,
     context,
+    downloadNeeded: {},
     machineId,
     modelId: defaultModelOf(machineId, context) ?? INITIAL_MODEL_ID,
     projectFolder: "",
@@ -185,6 +189,8 @@ export const reduce: UiReducer<NewProjectState, NewProjectEvent> = (state, event
     case "envReplaced":
       return event.env.validation === state.env.validation ? state : { ...state, env: event.env };
 
+    case "downloadsSettled":
+      return { ...state, downloadNeeded: event.downloadNeeded };
     case "machineTypesSettled": {
       const next = { ...state, availableMachineIds: event.available };
       // --- Opened over a machine with no templates (the C64): move to the first type that has some

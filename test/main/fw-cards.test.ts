@@ -17,7 +17,7 @@ const fwOf = (setId: NextRomSetId) => readHardDiskFile(nextSdBaseImage(setId), "
 
 const NAMED = ["boot", "editorOld", "updater", "coresOld", "editor", "cores", "testCard", "reset", "screens"];
 
-describe("TBBLUE.FW on the committed cards", () => {
+describe("TBBLUE.FW on the base cards", () => {
   it.each([
     ["nextzxos-2.08", "1.44", 304640, 9],
     ["nextzxos-2.10", "1.45", 286720, 9],

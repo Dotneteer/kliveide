@@ -15,7 +15,7 @@ import { nextSdBaseImage } from "../../harness/zxnext/core/sdCards";
  * flow (`buildNextCodeInjectionFlow`) waits for before it types `.nexload`. A ROM set whose facts were
  * wrong would hang code injection; this catches it before a user does.
  *
- * The card is a copy of the committed base image: NextZXOS writes to it while it boots.
+ * The card is a copy of the fetched base image (`nextSdBaseImage`): NextZXOS writes to it while it boots.
  */
 
 const work = mkdtempSync(join(tmpdir(), "klive-nextzxos-boot-"));

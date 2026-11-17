@@ -14,7 +14,7 @@ import {
 /*
  * The TBBLUE.FW reader (`dev/plans/TBBLUE_FW_VIEWER_PLAN.md` §1, §1a), on files built here in the shape
  * of the real ones: the current layout (entries 1 and 3 alias the boot module), the 2019 layout, and
- * 1.46's unnamed entries. The committed cards' real firmware is read in `test/main/fw-cards.test.ts`.
+ * 1.46's unnamed entries. The base cards' real firmware is read in `test/main/fw-cards.test.ts`.
  */
 
 const STUB = [0x31, 0xff, 0xff, 0xf3];

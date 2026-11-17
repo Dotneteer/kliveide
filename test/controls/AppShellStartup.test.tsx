@@ -231,7 +231,9 @@ describe("app shell dialog registries and bridges", () => {
       dialogIds.MACHINE_SELECT_DIALOG,
       dialogIds.SETTINGS_DIALOG,
       // --- The Boriel BASIC setup offer opens in the emulator window at the first start
-      dialogIds.BORIEL_SETUP_DIALOG
+      dialogIds.BORIEL_SETUP_DIALOG,
+      // --- A Next model's SD card download (NEXT_SD_CARDS_PLAN phase 4)
+      dialogIds.NEXT_SD_DOWNLOAD_DIALOG
     ];
 
     expect(Object.keys(ideDialogRegistry).map(Number).sort((a, b) => a - b)).toEqual(

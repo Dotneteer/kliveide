@@ -1543,7 +1543,8 @@ and the folder field stay neutral. **`--color-secondary-label` is not a green**:
 `--data-secondary`, a grey, so a "working" state painted with it reads as disabled (the SJASMPLUS
 dialog's comment claiming otherwise is stale).
 
-A tool download's **progress bar** (the z88dk dialog, the first one in the app) is a thin 6px track in
+Every download dialog uses this one **progress bar** (the z88dk dialog had it first; the ZX Spectrum Next
+SD card download dialog copies its classes, it does not invent a second bar). It is a thin 6px track in
 `--accent-subtle` with an `--accent-solid` fill, its label and Cancel on the same row; when the size is
 unknown (unpacking, no Content-Length) the fill becomes a sliding block of the same colours rather
 than a bar stuck at zero. Progress is the accent because it is the dialog's current activity, not a
@@ -1566,6 +1567,24 @@ header or status-bar item in `qps` before calling it done.
   (`SETTINGS`, `DISPLAY`) are a settled style; they cope with `ő ű` because Inter's `latin-ext`
   subset is loaded.
 - A language's name is shown in itself (*Deutsch*, *Magyar*) and never translated.
+
+## An Address The User Must Read Wraps; Its Label Does Not
+
+A web address or path the user may copy (the SD card download dialog's card URL) wraps anywhere
+(`overflow-wrap: anywhere`) instead of ending in an ellipsis: the cut-off tail is the file name, the
+part that matters. Its label beside it is `flex: none; white-space: nowrap`, or the flexible value
+squeezes the label onto two lines. A number and its unit in running text are joined by a
+non-breaking space in the message itself ("58.6\u00a0MB"), so a line never starts with the unit. The number itself is
+formatted in the display language (`uiLocale()`, `formatMegabytes`): "58,6" in German, never `toFixed`.
+
+## A Choice That Needs Something First Says So After Its Name, Dimmed
+
+A list entry the user can pick but that needs something before it works (a ZX Spectrum Next model whose
+SD card must be downloaded) keeps its name and adds a dimmed note after it, inside the same name cell:
+"(download needed, 58.6 MB)". Dimmed body text (`opacity: 0.7`), never a status colour and never a
+disabled row: picking it is allowed, and it leads to the download. A native menu, which cannot dim part
+of a label, puts the same words in the label. Putting the note inside the name cell keeps a row's grid
+columns (pill, star) where they were.
 
 ## A Status-Bar Item That Names A Choice Stays Plain Text
 
@@ -2696,7 +2715,10 @@ cartridge) wraps it rather than copying `NexBankBrowser`.
   last of 44 banks carried the selected bank off the top. **`overflow: hidden` on an ancestor kills
   `sticky`; round corners with `overflow: clip`**, which makes no scroll container.
 - **A scroll area is a `ScrollViewer`, never bare `overflow: auto`.** The platform's scrollbar is an
-  unthemed white strip in the dark tone; nothing in the app styles `::-webkit-scrollbar`.
+  unthemed white strip in the dark tone; nothing in the app styles `::-webkit-scrollbar`. Dialogs too:
+  Select Machine's tree and hardware sheet scroll in one each. In a flex column between fixed rows the
+  `ScrollViewer` takes `flex: 1 1 0; height: auto; min-height: 0` (its own `height: 100%` would push the
+  footer out); in a grid cell the cell is a `display: flex` column with `overflow: hidden`.
 - **A viewer with content above its browser fills, it does not scroll** (`fill`, the TAP and HT tape
   viewers): the browser is as tall as the space left below the summary and graphics, so the viewer
   has nothing to scroll and the list and the details are the only scrollers. Bounding it to the whole

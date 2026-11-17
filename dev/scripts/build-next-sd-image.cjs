@@ -7,7 +7,8 @@
  *   npm run next-sd:build -- --list <file.cim>
  *
  * A development step, run once when a Next model is implemented, like `next-roms:fetch`: the image
- * lands in `src/public/mmc/<setId>-base.cim` (the set's `sdBaseImage.file`) and is committed; the
+ * lands in the git-ignored `.local/next-sd/<setId>-base.cim`, where `npm run next-sd:pack` and
+ * `next-sd:publish` take it (`dev/plans/NEXT_SD_CARDS_PLAN.md` D-6: cards are published, not committed); the
  * app and the tests never build it.
  *
  * 1. The distribution, `gitlab.com/thesmog358/tbblue`, is fetched with git over HTTPS (a shallow
@@ -31,16 +32,16 @@
  */
 const { createHash } = require("node:crypto");
 const { registerTsRuntime } = require("./lib/ts-runtime.cjs");
-const { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync, renameSync } = require("node:fs");
-const { join, resolve } = require("node:path");
+const { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync, renameSync } = require("node:fs");
+const { dirname, join, resolve } = require("node:path");
 const { tmpdir } = require("node:os");
 const { execFileSync } = require("node:child_process");
 const { REPO_ROOT } = require("./repo-root.cjs");
+const cards = require("./next-sd/cards.cjs");
 
 const ROOT = REPO_ROOT;
 const MANIFEST = join(ROOT, "src/common/zxnext/nextRomSets.json");
 const ROM_ROOT = join(ROOT, "src/public/roms/zxnext");
-const PUBLIC = join(ROOT, "src/public");
 const REPO_URL = "https://gitlab.com/thesmog358/tbblue.git";
 
 /** The card's size in MB, as `ks2-base.cim` (the hand-built `nextzxos-2.08` card). Its volume
@@ -297,7 +298,7 @@ async function main() {
   const set = manifest[setId];
   if (!set) throw new Error(`'${setId}' is not in ${MANIFEST}.`);
   const commit = set.source.commit;
-  if (!set.sdBaseImage?.file) throw new Error(`'${setId}' has no sdBaseImage.file in the manifest.`);
+  if (!set.sdBaseImage) throw new Error(`'${setId}' has no sdBaseImage in the manifest.`);
 
   let src = args.src ? resolve(args.src) : null;
   let tempDir = null;
@@ -313,7 +314,8 @@ async function main() {
   try {
     checkRoms(src, setId, set);
     const files = cardFiles(src, set.sdBaseImage.exclude);
-    const outPath = args.out ? resolve(args.out) : join(PUBLIC, set.sdBaseImage.file);
+    const outPath = args.out ? resolve(args.out) : cards.localBase(setId);
+    mkdirSync(dirname(outPath), { recursive: true });
     const label = set.source.ref.toUpperCase().substring(0, 11);
     console.log(`Building ${outPath}: ${files.length} files, ${CARD_SIZE_MB} MB card, label "${label}" ...`);
     await buildCard(src, files, outPath, label);
@@ -333,7 +335,7 @@ async function main() {
       fresh[setId].sdBaseImage = entry;
       writeFileSync(MANIFEST, `${JSON.stringify(fresh, null, 2)}\n`);
       console.log(`Recorded the sha256 and size in ${MANIFEST} (${setId}.sdBaseImage).`);
-      console.log(`Review and commit: ${set.sdBaseImage.file} and the manifest.`);
+      console.log(`Commit the manifest; then npm run next-sd:pack -- ${setId} and next-sd:publish -- ${setId}.`);
     }
   } finally {
     if (tempDir && !args.keep) rmSync(tempDir, { recursive: true, force: true });

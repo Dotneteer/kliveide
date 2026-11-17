@@ -47,7 +47,8 @@ import { getEmuApi } from "@messaging/MainToEmuMessenger";
 import { getIdeApi } from "@messaging/MainToIdeMessenger";
 import { MAKE_PROJECT_DIALOG } from "@messaging/dialog-ids";
 import { forgetPlainFolder, isRememberedPlainFolder } from "./plain-folders";
-import { setMachineType } from "./registeredMachines";
+import { changeMachineType } from "./registeredMachines";
+import { chosenMachine, setStandIn } from "./standInMachine";
 import { getModelConfig, newProjectModelIds } from "@common/machines/machine-registry";
 import { fileChangeWatcher } from "./file-watcher";
 import { processBuildFile } from "./build";
@@ -296,11 +297,17 @@ export async function openFolderByPath(
       isValidProject = !!(projectStruct.kliveVersion && projectStruct.machineType);
 
       // --- Apply the machine type saved in the project
-      const machineApplied = await setMachineType(
+      const machineOutcome = await changeMachineType(
         projectStruct.machineType,
         projectStruct.modelId,
         projectStruct.config
       );
+      const machineApplied = machineOutcome === "applied";
+      if (machineOutcome === "declined") {
+        // --- A Next whose SD card the user did not download: the machine that ran stays, and the
+        // --- project keeps its own machine until the user changes the machine (NEXT_SD_CARDS_PLAN Q1)
+        setStandIn({ machineId: projectStruct.machineType, modelId: projectStruct.modelId, config: projectStruct.config });
+      }
 
       // --- Apply settings if the project is valid, merge with current state
       disp(setMachineSpecificAction(projectStruct.machineSpecific));
@@ -349,7 +356,10 @@ export async function openFolderByPath(
         );
       }
 
-      if (machineApplied) {
+      // --- A declined machine (a Next without its SD card) leaves the machine that ran in its place
+      // --- for this project: the breakpoints go onto it, as they would follow any machine change, so
+      // --- the project's next save keeps them and they come along when its own machine runs.
+      if (machineApplied || machineOutcome === "declined") {
         // --- Runtime state is stripped on the way in too: a hand-edited file (or one written by a
         // --- build with a bug) must not seed a hit counter or a condition error.
         const restoredBreakpoints = (projectStruct.debugger?.breakpoints ?? [])
@@ -538,11 +548,13 @@ function getKliveProjectStructureFromState(breakpoints: BreakpointInfo[]): Klive
     }
   });
   const unitTests = rawUnitTestSection(state.project?.folderPath);
+  // --- While a machine stands in for a declined one (a Next without its SD card), the chosen one is kept
+  const chosen = chosenMachine();
   return {
     kliveVersion: app.getVersion(),
-    machineType: emulatorState.machineId,
-    modelId: emulatorState.modelId,
-    config: emulatorState.config,
+    machineType: chosen ? chosen.machineId : emulatorState.machineId,
+    modelId: chosen ? chosen.modelId : emulatorState.modelId,
+    config: chosen ? chosen.config : emulatorState.config,
     clockMultiplier: emulatorState.clockMultiplier,
     soundLevel: emulatorState.soundLevel,
     soundMuted: emulatorState.soundMuted,

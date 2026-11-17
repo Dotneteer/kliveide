@@ -26,6 +26,7 @@ import { mainStore } from "@main/main-store";
 import { type MenuContext, windowInfoOf } from "./menu-context";
 import { hasVisibleItems, submenuContent, tidySeparators } from "./menu-utils";
 import { t } from "@common/i18n/i18n";
+import { nextModelsNeedingDownload } from "@main/next-sd/nextModelGate";
 
 /** Machine › Speed, or nothing for a machine with a fixed clock */
 export function createSpeedMenu(context: MenuContext): MenuItemConstructorOptions[] {
@@ -175,7 +176,8 @@ export function createMachineMenu(context: MenuContext): MenuItemConstructorOpti
     appState?.emulatorState?.machineId,
     appState?.emulatorState?.modelId,
     context.selectMachineType,
-    context.openMachineSelector
+    context.openMachineSelector,
+    nextModelsNeedingDownload()
   );
 
   const speed = createSpeedMenu(context);

@@ -1,6 +1,6 @@
 # ZX Spectrum Next SD cards: one bundled, the rest downloaded and checked
 
-Status: **open** (written 2026-11-17). Phases 0-2 are implemented (2026-11-17); phase 3 is implemented except publishing the cards (step 3, the project author's push) and removing `src/public/mmc` (step 5, after it); phases 4-6 are not started. Read `dev/ai/zxnext-models.md` first: this
+Status: **open** (written 2026-11-17). **Closed (2026-11-17)**: phases 0-6 are implemented; the as-built notes under each phase are the record. Read `dev/ai/zxnext-models.md` first: this
 plan changes its D7 (SD card per model) and D9.4 (base images committed) and its "Adding a model"
 steps. Its D1 (model ids never change; a model-less reference means `ks2-30201`) stays binding.
 
@@ -241,7 +241,7 @@ NextZXOS menu on a fresh home folder, and the other two models show the message 
 6. doc-shots, the IDE checks (`boriel-ide-check`, `kbasic-ide-check`) and the visual tests find cards
    through the helper or the fetch.
 
-**As built so far (2026-11-17):**
+**As built (2026-11-17):**
 - **Publishing is a local script, not a workflow** (`npm run next-sd:publish -- <setId> [--push]`). A
   `workflow_dispatch` workflow runs only from the default branch, and CI could not make the bytes anyway:
   the `.gz` is packed once on the author's machine and `gzSha256` names those bytes (D-6); the 2.08 card
@@ -273,10 +273,16 @@ NextZXOS menu on a fresh home folder, and the other two models show the message 
   fetched base card as its working copy (`defaultNextCard`, `defaultNextModel` in `cards.cjs`, pinned to
   `nextProfiles.ts` by a test). The browser tier clones `~/Klive/ks2.cim` when there is one, else the
   fetched 2.08 card.
-- **Left for after publishing:** step 3 (run `next-sd:publish -- <setId> --push` for the three sets, then
-  `next-sd:check-site`) and step 5 (delete `src/public/mmc`, `next-sd:build` writing into `.local/next-sd/`,
-  and the fallbacks to the committed cards in `next-sd-fetch.cjs`, `stage-next-sd.cjs`, `next-sd-pack.cjs`,
-  `cards.cjs` and `sdCards.ts` removed).
+- **Published (step 3):** the three cards went onto `gh-pages` once `deploy-doc.yml`'s `clean-exclude` was on
+  master, each as its own commit on top of the site; `next-sd:check-site` found all three the manifest's,
+  gzipped and raw. A failing docs deploy never touches `gh-pages`, so the cards are safe while the site is
+  not deploying.
+- **Step 5:** `src/public/mmc` is deleted and the manifest's `sdBaseImage.file` with it: a card's name follows
+  from its set id (`<setId>-base.cim`, `<setId>.cim.gz`). `next-sd:build` writes `.local/next-sd/<setId>-base.cim`;
+  fetch, pack, stage, `defaultNextCard` and `nextSdBaseImage` read only `.local/next-sd/`, and the app's
+  `bundledCardPaths` only the installer's `.gz` and, in development, `.local/next-sd/`. The doc-shots
+  recipes that seeded `~/Klive/ks2.cim` copy the fetched 2.08 card. A set that is not published yet gets its
+  card from `next-sd:build` only.
 
 ### Phase 4 - The download dialog
 
@@ -289,6 +295,21 @@ NextZXOS menu on a fresh home folder, and the other two models show the message 
    through `t()` with translator context.
 3. Tests: controller tests without rendering; the downloader against a local HTTP server (the D-5
    override) for success, a wrong hash, a truncated body, cancel and a refused host.
+
+**As built (2026-11-17):**
+- `src/main/next-sd/downloadNextSdCard.ts`: `downloadNextSdCard` goes through Electron's `net.fetch` (passed
+  in, so tests use Node's against a local server), with `redirect: "manual"`: **a redirect is refused, not
+  followed**, which is how "the one host" is enforced. It asks for `identity`, refuses a `Content-Encoding`,
+  stops reading past `gzSize`, checks `gzSize`/`gzSha256`, and checks the free space for the `.gz` and its
+  working copy first (`fs.statfs`). `importNextSdCard` accepts any `.gz` or raw card **by its raw bytes**, so
+  a card gzipped by another tool imports too; a raw card is gzipped on the way in.
+- `NextSdDownloads` keeps one download per set; the dialog starts it, **polls** its status every 200 ms
+  (`getNextSdCardDownloadStatus`) and may cancel it. Polling was chosen over a main-to-renderer event
+  stream: the status is one small object, and the controller stays testable with a fake `wait`.
+- The dialog (`src/renderer/appEmu/dialogs/nextSdDownload/`, `NEXT_SD_DOWNLOAD_DIALOG`) opens with an
+  offer (the model, download and unpacked sizes, Download, Import a downloaded file..., the address with
+  Copy link) and reuses the z88dk dialog's progress row. Each failure kind has its own sentence, with the
+  technical detail under it.
 
 ### Phase 5 - Every way to a Next goes through the gate
 
@@ -310,6 +331,41 @@ NextZXOS menu on a fresh home folder, and the other two models show the message 
 5. Machine > SD Card gets **Manage downloaded cards...**: what is downloaded, its size, delete (not the
    bundled one, not a card a model in use needs).
 
+**As built (2026-11-17):**
+- **A machine's `setup` may return `false`** (`info-types.ts`): `changeMachineType`
+  (`registeredMachines.ts`) then reports "declined" and leaves the emulator alone; `setMachineType` stays the
+  boolean wrapper. `setupZxSpectrumNext` returns `false` when the card is not here and the download dialog
+  did not get it (`src/main/next-sd/nextModelGate.ts`); the Phase 0 message box and its texts are gone.
+- **Q1 as built:** `src/main/standInMachine.ts` holds the machine the user chose while another runs. At
+  startup a declined Next model is replaced by the default model with `keepStandIn`; opening a project whose
+  Next model is declined keeps the running machine. While a stand-in runs, the settings
+  (`copyStateToAppSettings`) and the project file (`getKliveProjectStructureFromState`) save the chosen
+  machine; any machine change the user makes ends it. A project opened on a declined model still installs
+  its breakpoints on the machine that stays (they follow machine changes like any breakpoint), so its
+  next save keeps them; only a superseded change skips them.
+- **The entry points:** every main-process switch goes through `changeMachineType`, which runs the setup
+  (menus, Select Machine, favourites, New/Make Project and opening a project, startup, the IDE's commands);
+  a machine state file and a debug recording, which the emulator switches itself, first call
+  `MainApi.prepareMachine`. `test/main/next-gate-entry-points.test.ts` pins both. Their SD card check
+  compares the card of the state's own machine (`MainApi.getSdCardFingerprintFor`: the Next model's card,
+  whatever runs now; on a 48K the active card is the DivMMC's), and for a state it offers the model's
+  download first, so a declined download refuses the load before anything changes. **The `klive` CLI needs no
+  gate**: it runs a Next without an SD card (the code is injected), so its machines never ask for one.
+- `checkBootCard` (`zx-next-menus.ts`) runs `checkNextSdCard` on the card a Next is about to boot, at
+  startup and at every Next selection. Its dialog is a main-process message box: Reset to the Default Card
+  (the model's own card; renamed aside first, D-9, and put back when no base card can be had) or Use the
+  Default Card (an image the user picked), Select an Image..., Continue Anyway. **Reset the Default
+  Image...** offers the download when the base card is missing (D-7). An SD card the main process cannot
+  open is logged in the Emulator pane. The check runs when the machine is set up, not on Start or Restart.
+- **Downloaded SD Cards** dims the menu while it asks; lighting it again after the delete is the state
+  change that rebuilds the menu (the menu is rebuilt only on state changes, and deleting a file is none).
+- The model lists mark a model that needs a download with "(download needed, NN MB)": the Machine type
+  menu, the Select Machine dialog (`MachineSelectDialogData.downloadNeeded`) and New Project
+  (`MainApi.getModelsNeedingDownload`). The test is cheap on purpose (`needsDownload`: no base card and
+  no working copy); the full check runs when the model is chosen.
+- Housekeeping is **Machine › SD Card › Downloaded SD Cards**, a submenu (one Delete item per card, with its
+  size) rather than a dialog; the running model's set's card is disabled.
+
 ### Phase 6 - Records, docs and closing
 
 1. `dev/ai/zxnext-models.md`: D7 and D9.4 rewritten for this plan; "Adding a model" gains *build, pack,
@@ -323,14 +379,19 @@ NextZXOS menu on a fresh home folder, and the other two models show the message 
    app on macOS and Windows with no network (default model only, the dialog's offline path).
 5. Changeset (`feature`) for phases 1-5 as one change; the plan's as-built notes; close the plan.
 
+**As built (2026-11-17):** `dev/ai/zxnext-models.md` (D7, D9.4, "Adding a model", where cards live),
+`AGENTS.md`'s Next models section, the SD card guide and the models page are rewritten; one `feature`
+changeset covers phases 1-5 (phase 0 shipped as its own fix). Item 4's packaged-app runs on macOS and
+Windows without a network and the boriel-ide-check parts are left for the release check.
+
 ## Open questions
 
-- **Q1 - Startup on a model that is not ready, and the user declines the download.** Proposed: the
-  session runs the default model and says so; the project's saved model is not rewritten until the
-  user changes the machine on purpose. Needs a way for `setMachineType` to switch without saving.
+- ~~**Q1 - Startup on a model that is not ready, and the user declines the download.**~~ Decided
+  2026-11-17 (the project author): the session runs the default model and says so; the project's saved
+  model is not rewritten until the user changes the machine on purpose. Needs a way for `setMachineType`
+  to switch without saving.
 - ~~**Q2 - D-10's migration**~~ Decided 2026-11-17: by the machine the settings were saved with (D-10).
-- **Q3 - Keep the downloaded `.gz` after the working copy is made?** Proposed yes (Reset needs it;
-  24-58 MB); the housekeeping item lets the user delete it.
-- **Q4 - Is the 2.08 card worth hosting** (`ks2-30201`, the model old projects open on), or should the
-  implicit model move to a newer one with an alias? D1 says model-less references mean `ks2-30201`;
-  changing that is a decision for the project author.
+- ~~**Q3 - Keep the downloaded `.gz` after the working copy is made?**~~ Decided 2026-11-17 (the project
+  author): yes (Reset needs it; 24-58 MB); the housekeeping item lets the user delete it.
+- ~~**Q4 - Is the 2.08 card worth hosting**~~ Settled 2026-11-17: the project author published it with the
+  other two, so `ks2-30201` (the model old projects open on, D1) keeps a card and the implicit model stays.

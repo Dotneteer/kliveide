@@ -45,17 +45,17 @@ export function downloadedCardPath(setId: NextRomSetId): string {
 }
 
 /**
- * The places the installer may carry a set's base card, in the order they are tried: the gzipped
- * card (`next-sd/<setId>.cim.gz`) and the raw one (`sdBaseImage.file`, the 26.11 card of phase 0). In
- * development both are under `src/public`, and a development run also takes the cards
- * `npm run next-sd:fetch` puts in `.local/next-sd/` (`KLIVE_NEXT_SD_DEV_CARDS`, set by `src/main/index.ts`).
+ * The places a set's base card may come with Klive, in the order they are tried: the installer's
+ * gzipped card (`<resources>/next-sd/<setId>.cim.gz`), then, in a development run, the cards
+ * `npm run next-sd:fetch` puts in `.local/next-sd/` (`KLIVE_NEXT_SD_DEV_CARDS`, set by `src/main/index.ts`
+ * when the app is not packaged). The repository carries no card (D-6).
  */
 export function bundledCardPaths(setId: NextRomSetId): AvailableNextSdCard[] {
   const resources = process.env.PUBLIC ?? "";
-  const devCards = process.env.KLIVE_NEXT_SD_DEV_CARDS;
+  // --- Empty: a development run told to have no cards (`src/main/index.ts`)
+  const devCards = process.env.KLIVE_NEXT_SD_DEV_CARDS || undefined;
   return [
     { setId, file: path.join(resources, "next-sd", `${setId}.cim.gz`), source: "bundled", compressed: true },
-    { setId, file: path.join(resources, NEXT_ROM_SETS[setId].sdBaseImage.file), source: "bundled", compressed: false },
     ...(devCards
       ? ([
           { setId, file: path.join(devCards, `${setId}-base.cim`), source: "bundled", compressed: false },
@@ -78,6 +78,15 @@ export function availableCard(setId: NextRomSetId): AvailableNextSdCard | undefi
   return isFile(downloaded) ? { setId, file: downloaded, source: "downloaded", compressed: true } : undefined;
 }
 
+/** The base cards downloaded into `<Klive home>/next-sd`, with their sizes on disk */
+export function downloadedCards(): { setId: NextRomSetId; file: string; bytes: number }[] {
+  return (Object.keys(NEXT_ROM_SETS) as NextRomSetId[])
+    .filter((setId) => NEXT_ROM_SETS[setId].sdBaseImage)
+    .map((setId) => ({ setId, file: downloadedCardPath(setId) }))
+    .filter((card) => isFile(card.file))
+    .map((card) => ({ ...card, bytes: fs.statSync(card.file).size }));
+}
+
 /** A model's working copy: `<Klive home>/<sdWorkingCopy>` */
 export function workingCopyPath(modelId: string | undefined): string {
   return path.join(getKliveHomeBase(), KLIVE_HOME_FOLDER, nextProfileOf(modelId).sdWorkingCopy);
@@ -95,6 +104,14 @@ export function availableCardOf(modelId: string | undefined): AvailableNextSdCar
 export function isModelReady(modelId: string | undefined): boolean {
   if (availableCardOf(modelId)) return true;
   return checkNextSdCard(workingCopyPath(modelId), modelId).status === "ok";
+}
+
+/**
+ * Whether a model needs its card downloaded before it can run, as the model lists show it: no base
+ * card and no working copy. Cheap (two file lookups); the full check runs when the model is chosen.
+ */
+export function needsDownload(modelId: string | undefined): boolean {
+  return !availableCardOf(modelId) && !isFile(workingCopyPath(modelId));
 }
 
 /** A base card that does not have the manifest's bytes */

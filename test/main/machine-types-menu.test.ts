@@ -109,3 +109,24 @@ describe("createMachineTypesMenu", () => {
     expect(items.at(-1)!.id).toBe(SELECT_MACHINE_ITEM_ID);
   });
 });
+
+describe("a model that needs a download first (NEXT_SD_CARDS_PLAN phase 5)", () => {
+  it("says so, with the download's size, and stays selectable", () => {
+    const items = createMachineTypesMenu(
+      registry,
+      [{ machineId: "multi", modelId: "a" }, { machineId: "multi", modelId: "b" }],
+      "multi",
+      "b",
+      vi.fn(),
+      vi.fn(),
+      { "multi/a": 58_595_114 }
+    );
+    expect(shape(items)).toEqual([
+      "Multi A (download needed, 58.6 MB)",
+      "✓ Multi B",
+      "---",
+      "Select machine…"
+    ]);
+    expect(items[0].enabled).not.toBe(false);
+  });
+});
