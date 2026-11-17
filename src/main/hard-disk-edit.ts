@@ -2,11 +2,10 @@ import path from "path";
 
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { getEmuApi } from "@messaging/MainToEmuMessenger";
-import { MEDIA_SD_CARD } from "@common/structs/project-const";
 import type { DiskEdit } from "@common/diskfs/edit";
 import { mainStore } from "./main-store";
 import { withSdCardAccess } from "./sd-card-access";
-import { activeSdCard2File, activeSdCardFile, invalidateSdCardHandler } from "./machine-menus/zx-next-menus";
+import { activeSdCard2File, activeSdCardFile, activeSdCardSlot, invalidateSdCardHandler } from "./machine-menus/zx-next-menus";
 import { copyHostFolderToHardDisk, editHardDisk } from "./hard-disk-images";
 
 /*
@@ -20,7 +19,7 @@ import { copyHostFolderToHardDisk, editHardDisk } from "./hard-disk-images";
 /** Is this image the machine's SD card? */
 export function isActiveSdCard (filePath: string): boolean {
   const media = mainStore.getState().media ?? {};
-  const card = media[MEDIA_SD_CARD] ? activeSdCardFile() : undefined;
+  const card = media[activeSdCardSlot()] ? activeSdCardFile() : undefined;
   // --- A KS3's second card (`MEDIA_SD_CARD_2`) is the machine's too
   const card2 = activeSdCard2File();
   return [card, card2].some((file) => !!file && path.resolve(file) === path.resolve(filePath));

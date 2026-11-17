@@ -14,7 +14,7 @@ import {
   MEDIA_DISK_B,
   MEDIA_MICRODRIVE_1,
   MEDIA_MICRODRIVE_2,
-  MEDIA_SD_CARD,
+  MEDIA_DIVMMC_SD_CARD,
   MEDIA_TAPE
 } from "@common/structs/project-const";
 import { activeSdCardFile } from "../machine-menus/zx-next-menus";
@@ -95,7 +95,7 @@ function currentMedia (): FmMachineMedia {
   const emu = state.emulatorState;
   const fileOf = (v: unknown) => (typeof v === "string" ? v : (v as { diskFile?: string } | undefined)?.diskFile);
   const out: FmMachineMedia = {};
-  if (emu?.machineId === MI_ZXNEXT || (hasDivMmc(emu?.machineId, emu?.modelId, emu?.config) && media[MEDIA_SD_CARD])) {
+  if (emu?.machineId === MI_ZXNEXT || (hasDivMmc(emu?.machineId, emu?.modelId, emu?.config) && media[MEDIA_DIVMMC_SD_CARD])) {
     const card = activeSdCardFile();
     if (card && fs.existsSync(card)) out.sdCard = card;
   }

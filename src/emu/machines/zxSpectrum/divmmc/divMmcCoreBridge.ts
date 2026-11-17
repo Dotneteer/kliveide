@@ -7,12 +7,14 @@
  * `DivMmcSupport` is what a machine class delegates to: it connects the interface with the user's
  * esxDOS ROM, turns the SD card's sector requests into frame commands (the core stops its frame while
  * one waits, as the Next's does), answers them through the main process - the same `readSdCardSector`
- * / `writeSdCardSector` the Next uses, so the card is the one the SD card menu names - and keeps the
+ * / `writeSdCardSector` the Next uses, naming the DivMMC's own card (`SD_CARD_DIVMMC`), the one its menu
+ * names - and keeps the
  * reverse-debugging undo log of the sectors it writes (REVERSE_DEBUGGING_PLAN D14).
  */
 
 import type { MessengerBase } from "@common/messaging/MessengerBase";
 import { createMainApi } from "@common/messaging/MainApi";
+import { SD_CARD_DIVMMC } from "@common/structs/project-const";
 import { writeCoreBytes } from "@emu/machines/reverse/coreMemoryWrites";
 import { revertSdWrites, type SdRevertResult, type SdUndoEntry, type SdUndoLog } from "@emu/machines/reverse/SdUndoLog";
 
@@ -259,7 +261,7 @@ export class DivMmcSupport {
     await this.ensureCardInfo(api);
     if (command.command === "divmmc-sd-read") {
       try {
-        const data = await api.readSdCardSector(command.sector);
+        const data = await api.readSdCardSector(command.sector, SD_CARD_DIVMMC);
         this.answerRead(data instanceof Uint8Array ? data : new Uint8Array(data));
       } catch (err) {
         console.log("DivMMC SD card sector read error", err);
@@ -273,14 +275,14 @@ export class DivMmcSupport {
         if (this.undoLog) {
           let before: Uint8Array | undefined;
           try {
-            const old = await api.readSdCardSector(command.sector);
+            const old = await api.readSdCardSector(command.sector, SD_CARD_DIVMMC);
             before = old instanceof Uint8Array ? old : new Uint8Array(old);
           } catch {
             before = undefined;
           }
           this.undoLog.record(0, command.sector, before);
         }
-        const result = await api.writeSdCardSector(command.sector, command.data);
+        const result = await api.writeSdCardSector(command.sector, command.data, SD_CARD_DIVMMC);
         success = !!result?.persistenceConfirmed;
       } catch (err) {
         console.log("DivMMC SD card sector write error", err);
@@ -311,7 +313,7 @@ export class DivMmcSupport {
   private async ensureCardInfo(api: ReturnType<typeof createMainApi>): Promise<void> {
     if (this.cardInfoLoaded) return;
     try {
-      const info = await api.getSdCardInfo();
+      const info = await api.getSdCardInfo(SD_CARD_DIVMMC);
       this.call("SetSdCardInfo", info.totalSectors);
       this.cardInfoLoaded = true;
     } catch (err) {
@@ -339,7 +341,7 @@ export class DivMmcSupport {
     this.host.invalidateCheckpoints?.();
     const api = createMainApi(messenger);
     return revertSdWrites(entries, {
-      writeSector: async (_card, sector, data) => !!(await api.writeSdCardSector(sector, data))?.success
+      writeSector: async (_card, sector, data) => !!(await api.writeSdCardSector(sector, data, SD_CARD_DIVMMC))?.success
     });
   }
 }

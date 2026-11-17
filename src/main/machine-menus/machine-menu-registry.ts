@@ -24,7 +24,6 @@ import { epTapeMenuRenderer } from "./ep-tape-menus";
 import {
   hotkeyMenuRenderer,
   soundOutputMenuRenderer,
-  initializeZxSpectrumNext,
   nextDebugMenuRenderer,
   nextViewsMenuRenderer,
   sdCardMenuRenderer,
@@ -156,9 +155,8 @@ export const machineMenuRegistry: Record<string, MachineMenuInfo> = {
     soundItems: soundOutputMenuRenderer,
     viewItems: combine(spectrumIdeRenderer, nextViewsMenuRenderer),
     debugItems: nextDebugMenuRenderer,
-    initializer: async () => {
-      await initializeZxSpectrumNext();
-    },
+    // --- No `initializer`: a model's SD card working copy is made the first time the model is set up,
+    // --- not at every start for every user (`dev/plans/NEXT_SD_CARDS_PLAN.md`, phase 2)
     setup: setupZxSpectrumNext
   }
 };

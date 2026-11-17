@@ -4,7 +4,7 @@ import fs from "fs";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { MachineMenuItem, MachineMenuRenderer } from "@common/machines/info-types";
 import { AppState } from "@common/state/AppState";
-import { MEDIA_SD_CARD, MEDIA_SD_CARD_2 } from "@common/structs/project-const";
+import { MEDIA_DIVMMC_SD_CARD, MEDIA_SD_CARD, MEDIA_SD_CARD_2, SD_CARD_DIVMMC } from "@common/structs/project-const";
 import { mainStore } from "@main/main-store";
 import { saveKliveProject } from "@main/projects";
 import { app, BrowserWindow, dialog } from "electron";
@@ -494,9 +494,30 @@ async function resetToDefaultSdCardFile(): Promise<void> {
   await logSdCardEvent(getDefaultSdCardFile());
 }
 
-/** The SD card image file the Next uses now (the media store's, or the default one) */
-export function activeSdCardFile(): string {
+/**
+ * The media slot of the current machine's SD card: the Next's, or the DivMMC's on any other machine
+ * (`dev/plans/NEXT_SD_CARDS_PLAN.md` D-10)
+ */
+export function activeSdCardSlot(): typeof MEDIA_SD_CARD | typeof MEDIA_DIVMMC_SD_CARD {
+  return mainStore.getState().emulatorState?.machineId === MI_ZXNEXT ? MEDIA_SD_CARD : MEDIA_DIVMMC_SD_CARD;
+}
+
+/**
+ * The SD card image file the machine uses now: on a Next the card selected in its slot or the model's
+ * own working copy; on a DivMMC machine the card in the DivMMC's slot, or undefined for an empty slot
+ */
+export function activeSdCardFile(): string | undefined {
+  return activeSdCardSlot() === MEDIA_SD_CARD ? nextSdCardFile() : divMmcSdCardFile();
+}
+
+/** The Next's SD card (card 0): the image selected in its slot, or the model's own working copy */
+export function nextSdCardFile(): string {
   return mainStore.getState().media?.[MEDIA_SD_CARD] ?? getDefaultSdCardFile();
+}
+
+/** The DivMMC's SD card, or undefined for an empty slot */
+export function divMmcSdCardFile(): string | undefined {
+  return mainStore.getState().media?.[MEDIA_DIVMMC_SD_CARD] || undefined;
 }
 
 /** The second SD card's image (card 1, a KS3's second reader), or undefined for an empty slot */
@@ -508,10 +529,8 @@ let cimHandler: CimHandler;
 let currentSdCardFile: string;
 
 // --- Use this function to get the CIM handler
-export function getSdCardHandler(): CimHandler {
-  const appState = mainStore.getState();
-  const sdCardFile = appState.media?.[MEDIA_SD_CARD] ?? getDefaultSdCardFile();
-  
+export function getSdCardHandler(sdCardFile: string = nextSdCardFile()): CimHandler {
+
   // --- Invalidate cache if SD card file has changed
   if (cimHandler && currentSdCardFile !== sdCardFile) {
     cimHandler.close();
@@ -553,15 +572,17 @@ export type SdCardDevice = {
 let rawSdCard: { file: string; device: BlockDevice & { close(): void } } | undefined;
 
 /**
- * The machine's SD card as sectors (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md C5): a `.cim` through
- * its handler (the Next's card, and the default one), a raw `.img` or an `.hdf` (the DivMMC's cards are
- * often those) as a block device over the file
+ * An SD card as sectors (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md C5): a `.cim` through its
+ * handler, a raw `.img` or an `.hdf` (the DivMMC's cards are often those) as a block device over the file.
+ * @param card 0 and 1: a Next's cards; `SD_CARD_DIVMMC`: the DivMMC's (`dev/plans/NEXT_SD_CARDS_PLAN.md` D-10)
  */
 export function getSdCardDevice(card = 0): SdCardDevice {
   if (card === 1) return getSdCard2Device();
-  const sdCardFile = activeSdCardFile();
+  const sdCardFile = card === SD_CARD_DIVMMC ? divMmcSdCardFile() : nextSdCardFile();
+  // --- A DivMMC with no card: an empty slot, which the core treats as no card
+  if (!sdCardFile) return emptySdCardDevice("No SD card image in the DivMMC");
   if (sdCardFile.toLowerCase().endsWith(".cim")) {
-    const handler = getSdCardHandler();
+    const handler = getSdCardHandler(sdCardFile);
     return {
       totalSectors: (handler.cimInfo.maxSize * 2048) / handler.cimInfo.sectorSize,
       readSector: (sector) => handler.readSector(sector),
@@ -585,6 +606,17 @@ export function getSdCardDevice(card = 0): SdCardDevice {
   };
 }
 
+/** A slot with no card: 0 sectors, which the core treats as no card (`zx-spectrum-sd.c`) */
+function emptySdCardDevice(writeError: string): SdCardDevice {
+  return {
+    totalSectors: 0,
+    readSector: () => new Uint8Array(512),
+    writeSector: () => {
+      throw new Error(writeError);
+    }
+  };
+}
+
 /* The second card's open image: a `.cim` through its handler, anything else as a block device */
 let sdCard2:
   | { file: string; cim?: CimHandler; raw?: BlockDevice & { close(): void } }
@@ -604,13 +636,7 @@ function getSdCard2Device(): SdCardDevice {
   const file = activeSdCard2File();
   if (!file) {
     closeSdCard2();
-    return {
-      totalSectors: 0,
-      readSector: () => new Uint8Array(512),
-      writeSector: () => {
-        throw new Error("No card in the second SD card reader");
-      }
-    };
+    return emptySdCardDevice("No card in the second SD card reader");
   }
   if (sdCard2 && sdCard2.file !== file) closeSdCard2();
   if (!sdCard2) {
@@ -665,12 +691,17 @@ async function setSdCardFile(browserWindow: BrowserWindow, state: AppState): Pro
   await setSelectedSdCardFile(dialogResult.filePaths[0]);
 }
 
-export async function setSelectedSdCardFile(filename: string): Promise<void> {
-  // --- Read the file
+/**
+ * Puts an image into an SD card slot: the Next's (`MEDIA_SD_CARD`) or the DivMMC's
+ * (`MEDIA_DIVMMC_SD_CARD`), and remembers its folder for the next selection
+ */
+export async function setSelectedSdCardFile(
+  filename: string,
+  slot: typeof MEDIA_SD_CARD | typeof MEDIA_DIVMMC_SD_CARD = MEDIA_SD_CARD
+): Promise<void> {
   const sdCardFolder = path.dirname(filename);
 
-  // --- Store the last selected tape file
-  mainStore.dispatch(setMediaAction(MEDIA_SD_CARD, filename));
+  mainStore.dispatch(setMediaAction(slot, filename));
   await logSdCardEvent(filename);
 
   // --- Save the folder into settings

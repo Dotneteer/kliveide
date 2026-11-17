@@ -47,10 +47,19 @@ vi.mock("@messaging/MainToEmuMessenger", () => ({ getEmuApi: vi.fn() }));
 vi.mock("@messaging/MainToIdeMessenger", () => ({ getIdeApi: vi.fn() }));
 
 import { createHash } from "node:crypto";
-import { MEDIA_SD_CARD } from "@common/structs/project-const";
+import { MEDIA_DIVMMC_SD_CARD, MEDIA_SD_CARD, SD_CARD_DIVMMC } from "@common/structs/project-const";
 import { NEXT_ROM_SETS, type NextSdBaseImage } from "@common/zxnext/romSets";
 import { nextProfileOf, romSetOf } from "@emu/machines/zxNext/nextProfiles";
-import { defaultSdCardOf, initializeZxSpectrumNext, setupZxSpectrumNext } from "@main/machine-menus/zx-next-menus";
+import {
+  activeSdCardFile,
+  activeSdCardSlot,
+  defaultSdCardOf,
+  getSdCardDevice,
+  initializeZxSpectrumNext,
+  setSelectedSdCardFile,
+  setupZxSpectrumNext
+} from "@main/machine-menus/zx-next-menus";
+import { splitSavedSdCardSlots } from "@main/next-sd/sdCardSlots";
 import { bundledCardPaths } from "@main/next-sd/nextSdCards";
 
 /** The manifest entries a test pointed at its stand-in cards, to restore */
@@ -161,5 +170,98 @@ describe("setting up a Next model's SD card", () => {
     state.media[MEDIA_SD_CARD] = own;
     await setupZxSpectrumNext("ks3-30303");
     expect(state.media[MEDIA_SD_CARD]).toBe(own);
+  });
+});
+
+describe("when a Next's working copy is made", () => {
+  // --- The registry pulls in the whole main process, so this reads its source: the Next names no
+  // --- `initializer`, which `src/main/index.ts` would run for every user at every start
+  it("is not at startup: the Next has no machine initializer, only its setup", () => {
+    const registry = fs.readFileSync(path.join(__dirname, "../../src/main/machine-menus/machine-menu-registry.ts"), "utf8");
+    const next = registry.substring(registry.indexOf("[MI_ZXNEXT]: {"));
+    expect(next).toContain("setup: setupZxSpectrumNext");
+    expect(next).not.toMatch(/^\s*initializer\s*:/m);
+    expect(registry).not.toContain("initializeZxSpectrumNext");
+  });
+});
+
+describe("the Next's and the DivMMC's SD card slots (D-10)", () => {
+  beforeEach(() => {
+    home.dir = fs.mkdtempSync(path.join(os.tmpdir(), "klive-sd-slots-"));
+    state.media = {};
+    state.emulatorState = {};
+  });
+  afterEach(() => {
+    fs.rmSync(home.dir, { recursive: true, force: true });
+  });
+
+  it("a Next reads its own slot, or its model's working copy", () => {
+    state.emulatorState = { machineId: "zxnext", modelId: "ks3-30303" };
+    state.media = { [MEDIA_DIVMMC_SD_CARD]: "/cards/esxdos.img" };
+    expect(activeSdCardSlot()).toBe(MEDIA_SD_CARD);
+    expect(activeSdCardFile()).toBe(defaultSdCardOf("ks3-30303").workingCopy);
+    state.media[MEDIA_SD_CARD] = "/cards/mine.cim";
+    expect(activeSdCardFile()).toBe("/cards/mine.cim");
+  });
+
+  it("a DivMMC machine reads the DivMMC's slot, never the Next's card", () => {
+    state.emulatorState = { machineId: "sp48", modelId: "pal" };
+    state.media = { [MEDIA_SD_CARD]: "/cards/mine.cim" };
+    expect(activeSdCardSlot()).toBe(MEDIA_DIVMMC_SD_CARD);
+    expect(activeSdCardFile()).toBeUndefined();
+    state.media[MEDIA_DIVMMC_SD_CARD] = "/cards/esxdos.img";
+    expect(activeSdCardFile()).toBe("/cards/esxdos.img");
+  });
+
+  it("a DivMMC with no card is an empty slot of no sectors", () => {
+    // --- The machine names its card: the store may still name the previous machine while a new one
+    // --- is set up and asks for its card's size
+    state.emulatorState = { machineId: "zxnext", modelId: "ks3-30303" };
+    state.media = { [MEDIA_SD_CARD]: "/cards/mine.cim" };
+    const device = getSdCardDevice(SD_CARD_DIVMMC);
+    expect(device.totalSectors).toBe(0);
+    expect(() => device.writeSector(0, new Uint8Array(512))).toThrow();
+  });
+
+  it("a DivMMC reads its own card and a Next its own, whichever machine the store names", () => {
+    const img = path.join(home.dir, "esxdos.img");
+    fs.writeFileSync(img, new Uint8Array(4 * 512).fill(0x11));
+    state.emulatorState = { machineId: "sp48", modelId: "pal" };
+    state.media = { [MEDIA_DIVMMC_SD_CARD]: img };
+    expect(getSdCardDevice(SD_CARD_DIVMMC).totalSectors).toBe(4);
+    expect(getSdCardDevice(SD_CARD_DIVMMC).readSector(0)[0]).toBe(0x11);
+    // --- Card 0 is the Next's: its model's working copy, not the DivMMC's image
+    expect(() => getSdCardDevice(0)).toThrow(/ks2\.cim/);
+  });
+
+  it("a DivMMC image goes into the DivMMC's slot", async () => {
+    await setSelectedSdCardFile("/cards/esxdos.img", MEDIA_DIVMMC_SD_CARD);
+    expect(state.media).toEqual({ [MEDIA_DIVMMC_SD_CARD]: "/cards/esxdos.img" });
+  });
+
+  describe("splitting settings saved before the DivMMC's slot", () => {
+    it("keeps the card a Next saved", () => {
+      const media = { [MEDIA_SD_CARD]: "/cards/mine.cim" };
+      expect(splitSavedSdCardSlots(media, "zxnext")).toBe(media);
+    });
+
+    it("moves another machine's card to the DivMMC's slot, whatever its extension", () => {
+      expect(splitSavedSdCardSlots({ [MEDIA_SD_CARD]: "/cards/esxdos.cim", tape: "t.tap" }, "spp3e")).toEqual({
+        tape: "t.tap",
+        [MEDIA_DIVMMC_SD_CARD]: "/cards/esxdos.cim"
+      });
+    });
+
+    it("keeps a DivMMC card already in its own slot", () => {
+      expect(
+        splitSavedSdCardSlots({ [MEDIA_SD_CARD]: "/old.img", [MEDIA_DIVMMC_SD_CARD]: "/new.img" }, "sp48")
+      ).toEqual({ [MEDIA_DIVMMC_SD_CARD]: "/new.img" });
+    });
+
+    it("leaves media without a card alone", () => {
+      expect(splitSavedSdCardSlots(undefined, "sp48")).toBeUndefined();
+      const media = { tape: "t.tap" };
+      expect(splitSavedSdCardSlots(media, "sp48")).toBe(media);
+    });
   });
 });

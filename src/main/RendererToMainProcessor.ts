@@ -76,6 +76,7 @@ import {
   MEDIA_DISK_A, MEDIA_MICRODRIVES,
   MEDIA_DISK_B,
   MEDIA_SD_CARD,
+  SD_CARD_DIVMMC,
   MEDIA_TAPE,
   PROJECT_TEMPLATES
 } from "@common/structs/project-const";
@@ -925,8 +926,8 @@ class MainMessageProcessor {
    */
   async copyToSdCard(srcFile: string, destFile: string) {
     const sdCardPath = activeSdCardFile();
-    if (!sdCardPath.toLowerCase().endsWith(".cim")) {
-      throw new Error(`Klive can copy a file only onto a .cim SD card image, not onto ${sdCardPath}`);
+    if (!sdCardPath?.toLowerCase().endsWith(".cim")) {
+      throw new Error(`Klive can copy a file only onto a .cim SD card image, not onto ${sdCardPath ?? "an empty slot"}`);
     }
     if (!fs.existsSync(sdCardPath)) {
       // --- The folder does not exist, we cannot proceed
@@ -1486,7 +1487,7 @@ class MainMessageProcessor {
     if (!Number.isInteger(sectorIndex) || sectorIndex < 0) {
       throw new Error("Invalid sector index");
     }
-    if (card !== 0 && card !== 1) throw new Error("Invalid SD card");
+    if (card !== 0 && card !== 1 && card !== SD_CARD_DIVMMC) throw new Error("Invalid SD card");
     // --- Input validated
     return withSdCardAccess(() => getSdCardDevice(card).readSector(sectorIndex));
   }
@@ -1507,7 +1508,7 @@ class MainMessageProcessor {
     if (!(data instanceof Uint8Array)) {
       throw new Error("Data must be a Uint8Array");
     }
-    if (card !== 0 && card !== 1) throw new Error("Invalid SD card");
+    if (card !== 0 && card !== 1 && card !== SD_CARD_DIVMMC) throw new Error("Invalid SD card");
     // --- Input validated
     await withSdCardAccess(() => getSdCardDevice(card).writeSector(sectorIndex, data));
 
@@ -1524,7 +1525,7 @@ class MainMessageProcessor {
    * Returns the total number of 512-byte sectors on the mounted SD card image.
    */
   async getSdCardInfo(card = 0): Promise<{ totalSectors: number }> {
-    if (card !== 0 && card !== 1) throw new Error("Invalid SD card");
+    if (card !== 0 && card !== 1 && card !== SD_CARD_DIVMMC) throw new Error("Invalid SD card");
     return withSdCardAccess(() => ({ totalSectors: getSdCardDevice(card).totalSectors }));
   }
 
@@ -1744,7 +1745,7 @@ class MainMessageProcessor {
    */
   async hasNextAutoExec(): Promise<boolean> {
     const sdCardPath = activeSdCardFile();
-    if (!sdCardPath.toLowerCase().endsWith(".cim") || !fs.existsSync(sdCardPath)) {
+    if (!sdCardPath?.toLowerCase().endsWith(".cim") || !fs.existsSync(sdCardPath)) {
       return false;
     }
 

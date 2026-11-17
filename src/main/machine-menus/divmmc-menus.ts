@@ -8,7 +8,7 @@ import { hasDivMmc, isDivMmcMachine } from "@common/machines/divMmc";
 import { getModelConfig } from "@common/machines/machine-registry";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { SETTING_EMU_ESXDOS_ROM } from "@common/settings/setting-const";
-import { MEDIA_SD_CARD } from "@common/structs/project-const";
+import { MEDIA_DIVMMC_SD_CARD } from "@common/structs/project-const";
 import { incMenuVersionAction, setMediaAction } from "@state/actions";
 import { getEmuApi } from "@messaging/MainToEmuMessenger";
 import { mainStore } from "@main/main-store";
@@ -21,8 +21,8 @@ import { SD_CARD_FILE_FOLDER, setSelectedSdCardFile } from "./zx-next-menus";
 /*
  * The DivMMC on the 48K, the 128K and the +2A/+3/+2E/+3E (dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md,
  * C5): Machine › SD Card connects it (the machine config's `MC_DIVMMC`, which restarts the machine),
- * names the card it reads - the same media slot the Next's card uses, so a `.cim`, `.img` or `.hdf` -
- * and presses its NMI button. Its esxDOS ROM is the user's (Settings › Machine), as the TR-DOS ROM is.
+ * names the card it reads - a `.cim`, `.img` or `.hdf` in a media slot of its own (`MEDIA_DIVMMC_SD_CARD`,
+ * `dev/plans/NEXT_SD_CARDS_PLAN.md` D-10), empty until a card is chosen - and presses its NMI button. Its esxDOS ROM is the user's (Settings › Machine), as the TR-DOS ROM is.
  */
 
 const ESXDOS_ROM_SIZE = 0x2000;
@@ -65,11 +65,11 @@ export const divMmcMenuRenderer: MachineMenuRenderer = (windowInfo, machine, mod
       }
     },
     {
-      id: "divmmc_default_sd_card",
-      label: t("menu.divMmc.useDefaultImage"),
-      enabled: isMachineStopped() && !!mainStore.getState().media?.[MEDIA_SD_CARD],
+      id: "divmmc_remove_sd_card",
+      label: t("menu.divMmc.removeImage"),
+      enabled: isMachineStopped() && !!mainStore.getState().media?.[MEDIA_DIVMMC_SD_CARD],
       click: async () => {
-        mainStore.dispatch(setMediaAction(MEDIA_SD_CARD, undefined));
+        mainStore.dispatch(setMediaAction(MEDIA_DIVMMC_SD_CARD, undefined));
         await saveKliveProject();
         saveAppSettings();
       }
@@ -109,9 +109,9 @@ export async function setDivMmcConnected(on: boolean): Promise<void> {
   }
 }
 
-/** Asks for the SD card image the DivMMC reads (the media slot the Next's card uses too) */
+/** Asks for the SD card image the DivMMC reads */
 async function selectDivMmcSdCard(browserWindow: BrowserWindow): Promise<void> {
-  const lastFile = mainStore.getState().media?.[MEDIA_SD_CARD];
+  const lastFile = mainStore.getState().media?.[MEDIA_DIVMMC_SD_CARD];
   const dialogResult = await dialog.showOpenDialog(browserWindow, {
     title: t("messages.sdCard.select"),
     defaultPath: appSettings?.folders?.[SD_CARD_FILE_FOLDER] || (lastFile ? path.dirname(lastFile) : app.getPath("home")),
@@ -122,7 +122,7 @@ async function selectDivMmcSdCard(browserWindow: BrowserWindow): Promise<void> {
     properties: ["openFile"]
   });
   if (dialogResult.canceled || dialogResult.filePaths.length < 1) return;
-  await setSelectedSdCardFile(dialogResult.filePaths[0]);
+  await setSelectedSdCardFile(dialogResult.filePaths[0], MEDIA_DIVMMC_SD_CARD);
 }
 
 /** Forgets the esxDOS ROM: the DivMMC stays off until another is named */

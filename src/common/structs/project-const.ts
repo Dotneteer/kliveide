@@ -13,7 +13,19 @@ export const KEY_MAPPINGS = "keymappings";
 export const MEDIA_TAPE = "tape";
 export const MEDIA_DISK_A = "diskA";
 export const MEDIA_DISK_B = "diskB";
+/** The ZX Spectrum Next's SD card (card 0); unset is the model's own working copy */
 export const MEDIA_SD_CARD = "sdCard";
+/**
+ * The DivMMC's SD card on the 48K, the 128K and the +2A/+3/+2E/+3E (`dev/plans/NEXT_SD_CARDS_PLAN.md`
+ * D-10): a slot of its own, so a DivMMC card never becomes the Next's. Unset is an empty slot.
+ */
+export const MEDIA_DIVMMC_SD_CARD = "divMmcSdCard";
+/**
+ * The card number the DivMMC passes to the main process's SD card sector API (`readSdCardSector`,
+ * `writeSdCardSector`, `getSdCardInfo`): its own slot. 0 and 1 are a ZX Spectrum Next's cards. The
+ * machine names its card, so a request never depends on which machine the store thinks is running.
+ */
+export const SD_CARD_DIVMMC = 2;
 /**
  * A ZX Spectrum Next's second SD card (card 1), on a model with two card readers (the KS3;
  * `dev/plans/ZXNEXT_KS3_FOLLOWUP_PLAN.md` phase 2). No default image: unset is an empty slot.

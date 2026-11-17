@@ -78,6 +78,7 @@ import { onEmuWindowLeftFullScreen, resetEmuFullScreenMode } from "./emu-full-sc
 import { createSettingsReader } from "@utils/SettingsReader";
 import { readAdvancedDebuggingSetting } from "@common/features/advancedDebugging";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_DOCK, MEDIA_MICRODRIVES, MEDIA_TAPE } from "@common/structs/project-const";
+import { splitSavedSdCardSlots } from "@main/next-sd/sdCardSlots";
 import { setSelectedMicrodriveFile } from "./machine-menus/interface1-menus";
 
 import { invalidateMenuCache, setupMenu } from "./app-menu";
@@ -416,6 +417,8 @@ async function createAppWindows() {
       mainStore.dispatch(setWindowRecordingPointerAction(windowRecording.pointer ?? true));
       mainStore.dispatch(setWindowRecordingClicksAction(windowRecording.clicks ?? true));
       mainStore.dispatch(setWindowRecordingHiDpiAction(windowRecording.hiDpi ?? false));
+      // --- Settings saved before the DivMMC had a slot of its own keep its card in the Next's
+      appSettings.media = splitSavedSdCardSlots(appSettings.media, appSettings.machineId);
       if (appSettings.media) {
         Object.entries(appSettings.media).forEach(([key, value]) => {
           mainStore.dispatch(setMediaAction(key, value));

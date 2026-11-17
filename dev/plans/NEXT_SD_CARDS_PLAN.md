@@ -1,6 +1,6 @@
 # ZX Spectrum Next SD cards: one bundled, the rest downloaded and checked
 
-Status: **open** (written 2026-11-17). Phases 0 and 1 are implemented (2026-11-17); phases 2-6 are not started. Read `dev/ai/zxnext-models.md` first: this
+Status: **open** (written 2026-11-17). Phases 0-2 are implemented (2026-11-17); phases 3-6 are not started. Read `dev/ai/zxnext-models.md` first: this
 plan changes its D7 (SD card per model) and D9.4 (base images committed) and its "Adding a model"
 steps. Its D1 (model ids never change; a model-less reference means `ks2-30201`) stays binding.
 
@@ -113,8 +113,11 @@ steps. Its D1 (model ids never change; a model-less reference means `ks2-30201`)
 - **D-9 - Never lose a user's card silently.** A broken working copy is renamed aside
   (`<name>.broken-<yyyymmdd-hhmmss>.cim`) before a new one is made, and the user is told where it is.
 - **D-10 - The Next and the DivMMC get separate media slots**: `MEDIA_SD_CARD` stays the Next's, the
-  DivMMC's card moves to `MEDIA_DIVMMC_SD_CARD`. Migration on settings load: a stored value that is not
-  a `.cim` moves to the DivMMC slot.
+  DivMMC's card moves to `MEDIA_DIVMMC_SD_CARD`. Migration on settings load **by the machine the settings
+  were saved with** (the project author's answer to Q2): a Next keeps the card, any other machine's card
+  moves to the DivMMC slot. **An unset DivMMC slot is an empty slot** (the project author's decision,
+  2026-11-17): the DivMMC no longer falls back to a Next working copy, which esxDOS could not boot anyway;
+  **Use the Default SD Card** became **Remove the SD Card**.
 - **D-11 - Retiring a model** (to stay within five) removes its profile and WASM artifact, aliases its
   id to its successor (`NEXT_PROFILE_ALIASES`, as D1 did for `ks2-30300`), and removes its card from
   the site once no remaining model uses that set. A downloaded card left in `~/Klive/next-sd/` is
@@ -196,6 +199,28 @@ NextZXOS menu on a fresh home folder, and the other two models show the message 
 3. D-10: `MEDIA_DIVMMC_SD_CARD`, the DivMMC menus and `fmService`/`hard-disk-edit` move to it; settings
    migration; tests.
 
+**As built (2026-11-17):**
+- The installer carries `resources/next-sd/nextzxos-26.11.cim.gz` (24 MB instead of 52 MB). It comes
+  from `.local/next-sd-stage/`, which `dev/scripts/stage-next-sd.cjs` (`npm run next-sd:stage`) fills at
+  the end of `npm run build:app`, so every packaging script and every `release-artifacts.yml` job stages
+  it. The stage takes a `.local/next-sd/<setId>.cim.gz` whose hash is `gzSha256` (phase 3's fetch puts it
+  there), else gzips the raw card from the repository and checks its raw bytes.
+  `check-packaged-sd-cards.cjs` decompresses the packaged card and checks the raw size and sha256.
+- No machine `initializer` any more: the Next's was the only one, and it copied a card at every start.
+  A working copy is made in `setupZxSpectrumNext`, the first time its model is set up. A packaged app
+  started on a 48K now writes no card.
+- **The machine names its card in the sector API**: the DivMMC passes `SD_CARD_DIVMMC` (2) to
+  `readSdCardSector`, `writeSdCardSector` and `getSdCardInfo`; 0 and 1 stay the Next's cards. The slot
+  cannot be chosen from the store's machine id, because a Next asks for its cards' sizes during
+  `machine.setup()`, before the emulator publishes the new machine id. `activeSdCardFile()` (store
+  based, for the menus, the file manager, the Disk Explorer's lock and the fingerprint) returns the
+  DivMMC's card or undefined on any machine that is not a Next.
+- The split is `splitSavedSdCardSlots` (`src/main/next-sd/sdCardSlots.ts`), run in `src/main/index.ts`
+  before the saved media are dispatched. Projects save `media` but opening one does not restore it,
+  so the settings are the only place to migrate.
+- Checked on a packaged macOS ARM64 app with an empty home folder: the KS3 3.03.03 made its working
+  copy from the `.gz` and booted to the NextZXOS welcome screen; a 48K start made no card.
+
 ### Phase 3 - Hosting, fetching and the repository
 
 1. `npm run next-sd:pack -- <setId>`: gzip -9 the built card into `.local/next-sd/`, record `gzSize`
@@ -266,7 +291,7 @@ NextZXOS menu on a fresh home folder, and the other two models show the message 
 - **Q1 - Startup on a model that is not ready, and the user declines the download.** Proposed: the
   session runs the default model and says so; the project's saved model is not rewritten until the
   user changes the machine on purpose. Needs a way for `setMachineType` to switch without saving.
-- **Q2 - D-10's migration** guesses by extension. Is a `.cim` ever a DivMMC card in practice?
+- ~~**Q2 - D-10's migration**~~ Decided 2026-11-17: by the machine the settings were saved with (D-10).
 - **Q3 - Keep the downloaded `.gz` after the working copy is made?** Proposed yes (Reset needs it;
   24-58 MB); the housekeeping item lets the user delete it.
 - **Q4 - Is the 2.08 card worth hosting** (`ks2-30201`, the model old projects open on), or should the

@@ -8,17 +8,18 @@ import { newProjectModelOf } from "@common/machines/machine-registry";
 import { MI_ZXNEXT } from "@common/machines/constants";
 
 /*
- * The install kit carries the default ZX Spectrum Next model's SD card, and only that one
- * (`dev/plans/NEXT_SD_CARDS_PLAN.md`, phase 0 and D-2). No release before this test shipped a card:
- * `src/public/mmc` was not in `extraResources`, and the Next booted to "Drive C: not found".
- * `dev/scripts/check-packaged-sd-cards.cjs` checks the built kit itself in the release workflow.
+ * The install kit carries the default ZX Spectrum Next model's SD card, and only that one, gzipped
+ * (`dev/plans/NEXT_SD_CARDS_PLAN.md`, phases 0 and 2, D-2). No release up to v0.68.1 shipped a card,
+ * and the Next booted to "Drive C: not found". `dev/scripts/stage-next-sd.cjs` stages the card at
+ * `npm run build:app`; `dev/scripts/check-packaged-sd-cards.cjs` checks the built kit itself in the
+ * release workflow.
  */
 
 const ROOT = path.join(__dirname, "../..");
 const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, "package.json"), "utf8"));
 
 describe("the SD card in the install kit", () => {
-  const defaultCard = romSetOf(nextProfileOf(NEW_PROJECT_NEXT_PROFILE_ID)).sdBaseImage.file;
+  const defaultSet = romSetOf(nextProfileOf(NEW_PROJECT_NEXT_PROFILE_ID));
 
   it("the default Next model is the KS3 with the newest core, for new projects and the Machine type menu", () => {
     expect(NEW_PROJECT_NEXT_PROFILE_ID).toBe("ks3-30303");
@@ -26,15 +27,29 @@ describe("the SD card in the install kit", () => {
     expect(DEFAULT_MACHINE_FAVORITES.find((f) => f.machineId === MI_ZXNEXT)?.modelId).toBe(NEW_PROJECT_NEXT_PROFILE_ID);
   });
 
-  it("extraResources ships exactly the default model's base image into resources/mmc", () => {
-    const entry = pkg.build.extraResources.find((e: { from: string }) => e.from === "src/public/mmc");
-    expect(entry, "an extraResources entry from src/public/mmc").toBeDefined();
-    expect(entry.to).toBe("mmc");
-    // --- `process.env.PUBLIC` is the resources folder in a packaged app; the card is read at PUBLIC/<file>
-    expect(entry.filter.map((f: string) => `mmc/${f}`)).toEqual([defaultCard]);
+  it("extraResources ships exactly the default model's gzipped card into resources/next-sd", () => {
+    const entry = pkg.build.extraResources.find((e: { from: string }) => e.from === ".local/next-sd-stage");
+    expect(entry, "an extraResources entry from .local/next-sd-stage").toBeDefined();
+    expect(entry.to).toBe("next-sd");
+    // --- `process.env.PUBLIC` is the resources folder in a packaged app; `bundledCardPaths` reads
+    // --- PUBLIC/next-sd/<setId>.cim.gz
+    expect(entry.filter).toEqual([`${defaultSet.id}.cim.gz`]);
   });
 
-  it("the default model's base image is in the repository to be shipped", () => {
-    expect(fs.statSync(path.join(ROOT, "src/public", defaultCard)).isFile()).toBe(true);
+  it("ships no raw card any more", () => {
+    expect(pkg.build.extraResources.some((e: { from: string }) => e.from.includes("mmc"))).toBe(false);
+  });
+
+  it("every packaging path stages the card first", () => {
+    expect(pkg.scripts["build:app"]).toContain("dev/scripts/stage-next-sd.cjs");
+    const packaging = Object.entries<string>(pkg.scripts).filter(
+      ([name, command]) => name.startsWith("build") && /electron-builder|npm run package:/.test(command)
+    );
+    expect(packaging.length).toBeGreaterThan(4);
+    for (const [name, command] of packaging) expect(command, name).toContain("npm run build:app");
+  });
+
+  it("the default model's raw card is in the repository to stage from", () => {
+    expect(fs.statSync(path.join(ROOT, "src/public", defaultSet.sdBaseImage.file)).isFile()).toBe(true);
   });
 });

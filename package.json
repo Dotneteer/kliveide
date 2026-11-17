@@ -26,7 +26,8 @@
     "predev": "install-electron && node dev/scripts/boriel-kit.cjs fetch --current --optional",
     "dev": "electron-vite dev --config build/electron.vite.config.ts",
     "build": "npm run build:app && electron-builder",
-    "build:app": "npm run build:check && electron-vite build --config build/electron.vite.config.ts",
+    "build:app": "npm run build:check && electron-vite build --config build/electron.vite.config.ts && node dev/scripts/stage-next-sd.cjs",
+    "next-sd:stage": "node dev/scripts/stage-next-sd.cjs",
     "build:check": "node dev/scripts/changes.cjs check && node dev/scripts/runtime-index.cjs --check && node dev/scripts/rom-annotations.cjs --check && node dev/scripts/i18n-check.cjs && node dev/scripts/check-types.cjs",
     "i18n:check": "node dev/scripts/i18n-check.cjs",
     "i18n:keys": "node dev/scripts/i18n-check.cjs --update",
@@ -280,10 +281,10 @@
         ]
       },
       {
-        "from": "src/public/mmc",
-        "to": "mmc",
+        "from": ".local/next-sd-stage",
+        "to": "next-sd",
         "filter": [
-          "nextzxos-26.11-base.cim"
+          "nextzxos-26.11.cim.gz"
         ]
       },
       {

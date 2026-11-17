@@ -26,8 +26,9 @@ export async function readNextSdCardFile(name: string): Promise<NextSdCardFileRe
       return { card: card ?? "", error: "noCard" };
     }
   }
+  const file = card;
   try {
-    const contents = await withSdCardAccess(() => readHardDiskFile(card, name));
+    const contents = await withSdCardAccess(() => readHardDiskFile(file, name));
     return { card, contents };
   } catch (err) {
     if (err instanceof DiskFsError && err.code === "notFound") return { card, error: "notFound" };

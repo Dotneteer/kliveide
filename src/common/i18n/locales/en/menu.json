@@ -869,9 +869,9 @@
     "context": "Menu item, an item of the Machine › Interfaces submenu (ZX Spectrum 48K and 128K) or the Machine › SD Card submenu (+2A/+3), where the DivMMC interface (an SD card interface that runs the esxDOS operating system) is set up: picks the SD card image file (.img, .hdf or .cim).",
     "maxChars": 40
   },
-  "menu.divMmc.useDefaultImage": "Use the Default SD Card",
-  "@menu.divMmc.useDefaultImage": {
-    "context": "Menu item, an item of the Machine › Interfaces submenu (ZX Spectrum 48K and 128K) or the Machine › SD Card submenu (+2A/+3), where the DivMMC interface (an SD card interface that runs the esxDOS operating system) is set up: goes back to Klive's default SD card image.",
+  "menu.divMmc.removeImage": "Remove the SD Card",
+  "@menu.divMmc.removeImage": {
+    "context": "Menu item, an item of the Machine › Interfaces submenu (ZX Spectrum 48K and 128K) or the Machine › SD Card submenu (+2A/+3), where the DivMMC interface (an SD card interface that runs the esxDOS operating system) is set up: takes the chosen SD card image out of the DivMMC, which then has no card until another image is selected.",
     "maxChars": 40
   },
   "menu.divMmc.nmi": "Press the NMI Button",
