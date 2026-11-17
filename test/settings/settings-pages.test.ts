@@ -235,6 +235,51 @@ describe("the automation rows (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` D4, D
   });
 });
 
+describe("the advanced-debugging row (`@common/features/advancedDebugging`)", () => {
+  it("reads the user setting set -u writes, on while unset", () => {
+    expect(readSettingsRowValue(row("advancedDebugging"), stateOf({}))).toBe(true);
+    const off = stateOf({ userSettings: { features: { advancedDebugging: "0" } } });
+    expect(readSettingsRowValue(row("advancedDebugging"), off)).toBe(false);
+    const on = stateOf({ userSettings: { features: { advancedDebugging: "1" } } });
+    expect(readSettingsRowValue(row("advancedDebugging"), on)).toBe(true);
+  });
+
+  it("shows everywhere, as a switch that defaults to on", () => {
+    const r = row("advancedDebugging");
+    expect(r.page).toBe("debugging");
+    expect(r.editor).toBe("switch");
+    expect(r.defaultValue).toBe(true);
+    expect(isSettingsRowApplicable(r, stateOf({ emulatorState: { advancedDebugging: false } }))).toBe(true);
+  });
+
+  it("says a change waits for a restart", () => {
+    const r = row("advancedDebugging");
+    const startedOn = stateOf({ emulatorState: { advancedDebugging: true } });
+    expect(r.describeValue?.(true, startedOn)).toBeUndefined();
+    expect(r.describeValue?.(false, startedOn)).toMatch(/restart/i);
+    const startedOff = stateOf({ emulatorState: { advancedDebugging: false } });
+    expect(r.describeValue?.(true, startedOff)).toMatch(/restart/i);
+  });
+
+  it("is found by the words a user would search for", () => {
+    expect(settingsRowMatches(row("advancedDebugging"), "advanced")).toBe(true);
+    expect(settingsRowMatches(row("advancedDebugging"), "history")).toBe(true);
+  });
+});
+
+describe("the debugging switches", () => {
+  it("are all on by default", () => {
+    const debuggingSwitches = SETTINGS_ROWS.filter(
+      (r) =>
+        r.editor === "switch" &&
+        ["advancedDebugging", "reverseDebugging", "profileResetOnStart", "profileResetAfterInjection",
+          "profileCounters", "coverageLineTint", "profilerInlays"].includes(r.id)
+    );
+    expect(debuggingSwitches).toHaveLength(7);
+    for (const r of debuggingSwitches) expect(settingsRowDefault(r, undefined), r.id).toBe(true);
+  });
+});
+
 describe("the ZX Spectrum Next's real-time clock rows (`dev/ai/zxnext-rtc.md`)", () => {
   const RTC_ROWS = ["nextRtcClock", "nextRtcKeep", "nextRtcKept"];
 

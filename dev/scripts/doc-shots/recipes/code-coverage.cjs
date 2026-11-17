@@ -58,8 +58,10 @@ const outputText = (ide) =>
 module.exports = {
   name: "code-coverage",
   window: {
-    // --- Coverage is an advanced debugging feature: off unless the user turns it on
+    // --- Coverage is an advanced debugging feature (on by default; seeded so the run does not depend on it)
     userSettings: { features: { advancedDebugging: "1" } },
+    // --- The editor shot is about coverage: the profiler's hints (on by default) would sit in it too
+    ideViewOptions: { profilerInlays: false },
     width: 1280,
     height: 860,
     sideBarWidth: "200px",

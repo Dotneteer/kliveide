@@ -8,7 +8,7 @@ import { Callout } from 'nextra/components'
 
 <Callout type="info">
 This is one of Klive's [advanced debugging features](/en/guides/customizing/advanced-debugging/), which are on by
-default; if you turned them off, run `set -u features.advancedDebugging 1` in the IDE, then restart Klive.
+default; if you turned them off, turn on **Settings › Debugging › Advanced debugging** (or run `set -u features.advancedDebugging 1` in the IDE), then restart Klive.
 </Callout>
 
 **Code coverage** answers *which parts of the program actually ran*. While it is on, the emulator
@@ -62,8 +62,8 @@ A narrow strip between the line numbers and the text marks every source line tha
 
 <Shot src="guides/analysis/code-coverage/editor-strip.webp" alt="The editor with the coverage strip beside the line numbers, marking lines that ran fully, partly or not at all" caption="The coverage strip in the editor." width={760} />
 
-Hover over the strip to see how many times the line ran. Settings › Debugging › *Tint covered source
-lines* also gives covered lines a tinted background.
+Hover over the strip to see how many times the line ran. Covered lines also get a tinted background;
+turn off Settings › Debugging › *Tint covered source lines* to keep only the strip.
 
 ## In the disassembly
 

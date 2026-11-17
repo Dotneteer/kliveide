@@ -21,21 +21,23 @@ Step Forward and Return to Present buttons. The keyboard shortcuts, the history 
 (`show-history`, `step-back`, `history-export`, `debug-recording-load`, `coverage` and the rest)
 and the **Reverse debugging** and **Coverage and profiling** settings groups work too.
 
-To turn them off, run this command in the IDE's [command prompt](/en/guides/editing/command-prompt/), then restart Klive:
+To turn them off, clear **Settings › Debugging › Advanced debugging**, then restart Klive. Until
+you restart, the setting's help text says the change is waiting. You can also run this command in the
+IDE's [command prompt](/en/guides/editing/command-prompt/) and restart:
 
 ```text
 set -u features.advancedDebugging 0
 ```
 
 While the features are off, Klive does not record the execution history or keep a reverse-debugging
-timeline, so a debug session costs nothing extra. The history commands, and opening a `.klr` file,
-say how to turn the features back on:
+timeline, so a debug session costs nothing extra. Turn the switch back on in the Settings dialog, or
+with the command that the history commands and opening a `.klr` file show:
 
 ```text
 set -u features.advancedDebugging 1
 ```
 
-You should restart Klive after changing the setting.
+Either way, restart Klive after changing the setting.
 
 ## Related
 
