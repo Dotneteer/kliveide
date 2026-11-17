@@ -33,6 +33,19 @@ explains the models.
 
 When the Next starts, it boots NextZXOS from the card, as the real machine does.
 
+### Models whose card is not installed
+
+Klive installs the card of the two core 3.03.03 models (NextZXOS 2.10a). When you select another model
+and it has no card in the Klive folder yet, Klive says so instead of starting a Next that stops with
+"Drive C: not found", and offers three choices:
+
+- **Switch to the ZX Spectrum Next (KS3, core 3.03.03)**, whose card is installed;
+- **Select an Image...**, to use a card image of your own with that model;
+- **Continue Without a Card**, which keeps the model; NextZXOS does not start on it.
+
+A card you selected earlier and then moved or deleted is not used either: the Next goes back to its
+model's default card and says so in the Emulator output.
+
 ## Switching or resetting the card
 
 The **Machine › SD Card** menu has three items, available while the machine is **stopped**:
@@ -41,7 +54,7 @@ The **Machine › SD Card** menu has three items, available while the machine is
 |---|---|
 | **Select Image...** | Uses another `.cim` image as the Next's card. Klive remembers the choice. |
 | **Use the Default Image** | Goes back to the current model's default card in the Klive folder. |
-| **Reset the Default Image...** | Replaces the current model's default card with a fresh copy of the one Klive ships, after asking. Every change made to that card is lost. |
+| **Reset the Default Image...** | Replaces the current model's default card with a fresh copy of the one Klive ships, after asking. Every change made to that card is lost. For a model whose card Klive does not install, it changes nothing. |
 
 <Callout type="warning">
 Reset the default image only when you mean to: it deletes everything programs or you have put on the

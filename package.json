@@ -280,6 +280,13 @@
         ]
       },
       {
+        "from": "src/public/mmc",
+        "to": "mmc",
+        "filter": [
+          "nextzxos-26.11-base.cim"
+        ]
+      },
+      {
         "from": "src/public/keymappings",
         "to": "keymappings",
         "filter": [

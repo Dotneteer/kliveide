@@ -473,6 +473,33 @@
   "@messages.sdCard.select": {
     "context": "Title of an Open File dialog picking an SD card image for the ZX Spectrum Next."
   },
+  "messages.sdCard.missingTitle": "SD Card Not Installed",
+  "@messages.sdCard.missingTitle": {
+    "context": "Title of a message box shown when a ZX Spectrum Next model is selected whose SD card image is not part of this Klive installation."
+  },
+  "messages.sdCard.missing": "The SD card of the {model} is not installed with this version of Klive, so NextZXOS cannot start on it (it stops with \"Drive C: not found\").\n\nYou can switch to the {defaultModel}, whose SD card is installed, or select an SD card image of your own.",
+  "@messages.sdCard.missing": {
+    "context": "Text of the message box. \"Drive C: not found\" is the machine's own error text: keep it in English, in quotes. Keep the empty line. Buttons: switch model, select an image, continue anyway.",
+    "placeholders": {
+      "model": "The selected ZX Spectrum Next model's name, e.g. \"ZX Spectrum Next (KS2, core 3.02.04)\" (not translated)",
+      "defaultModel": "The default ZX Spectrum Next model's name, e.g. \"ZX Spectrum Next (KS3, core 3.03.03)\" (not translated)"
+    }
+  },
+  "messages.sdCard.missingSwitch": "Switch to the {defaultModel}",
+  "@messages.sdCard.missingSwitch": {
+    "context": "Button in the missing SD card message box: switches the emulator to the default ZX Spectrum Next model instead.",
+    "placeholders": {
+      "defaultModel": "The default ZX Spectrum Next model's name, e.g. \"ZX Spectrum Next (KS3, core 3.03.03)\" (not translated)"
+    }
+  },
+  "messages.sdCard.missingSelect": "Select an Image...",
+  "@messages.sdCard.missingSelect": {
+    "context": "Button in the missing SD card message box: opens a file dialog to pick an SD card image (.cim) for the selected model."
+  },
+  "messages.sdCard.missingContinue": "Continue Without a Card",
+  "@messages.sdCard.missingContinue": {
+    "context": "Button in the missing SD card message box: keeps the selected model although it has no SD card (NextZXOS will not start)."
+  },
   "messages.sdCard.select2": "Select the Image for SD Card 2",
   "@messages.sdCard.select2": {
     "context": "Title of an Open File dialog picking the image for the ZX Spectrum Next KS3's second SD card reader."

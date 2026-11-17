@@ -89,6 +89,11 @@ jobs:
           call artifacts\win-unpacked\resources\cli\klive.cmd run test\cli\fixtures\run48 --frames 10 --screenshot shot.png || exit /b 1
           fc /b shot.png test\cli\fixtures\run48\expected-frame10.png > nul || exit /b 1
 
+      # --- The default ZX Spectrum Next model's SD card must be in the kit (dev/plans/NEXT_SD_CARDS_PLAN.md)
+      - name: Check the bundled ZX Spectrum Next SD card
+        shell: bash
+        run: node dev/scripts/check-packaged-sd-cards.cjs artifacts/win-unpacked/resources
+
       - name: Add install Emulator install kit to artifacts
         uses: actions/upload-artifact@v7
         with:
@@ -179,6 +184,8 @@ jobs:
           # --- klive run (dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md Phase 2): the picture must match the golden
           ./squashfs-root/resources/cli/klive run ../test/cli/fixtures/run48 --frames 10 --screenshot shot.png
           cmp shot.png ../test/cli/fixtures/run48/expected-frame10.png
+          # --- The default ZX Spectrum Next model's SD card must be in the kit (dev/plans/NEXT_SD_CARDS_PLAN.md)
+          node ../dev/scripts/check-packaged-sd-cards.cjs squashfs-root/resources
           rm -rf squashfs-root
 
       - name: Add install Emulator install kit to artifacts
@@ -535,6 +542,11 @@ jobs:
           # --- klive run (dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md Phase 2): the picture must match the golden
           "artifacts/mac-arm64/Klive IDE.app/Contents/Resources/cli/klive" run test/cli/fixtures/run48 --frames 10 --screenshot shot.png
           cmp shot.png test/cli/fixtures/run48/expected-frame10.png
+
+      # --- The default ZX Spectrum Next model's SD card must be in the kit (dev/plans/NEXT_SD_CARDS_PLAN.md)
+      - name: Check the bundled ZX Spectrum Next SD card
+        shell: bash
+        run: node dev/scripts/check-packaged-sd-cards.cjs "artifacts/mac-arm64/Klive IDE.app/Contents/Resources"
 
       - name: Add install Emulator install kit to artifacts
         uses: actions/upload-artifact@v7

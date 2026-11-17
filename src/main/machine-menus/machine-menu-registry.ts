@@ -156,7 +156,9 @@ export const machineMenuRegistry: Record<string, MachineMenuInfo> = {
     soundItems: soundOutputMenuRenderer,
     viewItems: combine(spectrumIdeRenderer, nextViewsMenuRenderer),
     debugItems: nextDebugMenuRenderer,
-    initializer: initializeZxSpectrumNext,
+    initializer: async () => {
+      await initializeZxSpectrumNext();
+    },
     setup: setupZxSpectrumNext
   }
 };

@@ -20,7 +20,8 @@ export async function setMachineType(
 ): Promise<boolean> {
   // --- Setup the machine, it it requires a setup
   const machineInfo = machineMenuRegistry[machineId];
-  await machineInfo?.setup?.(modelId);
+  const substitute = await machineInfo?.setup?.(modelId);
+  if (typeof substitute === "string") modelId = substitute;
 
   // --- Set the emulator to the selected machine type and log the event
   const applied = await getEmuApi().setMachineType(machineId, modelId, config);

@@ -90,7 +90,7 @@ describe("MachineSelectDialog — wiring", () => {
     renderWithProviders(<MachineSelectDialog data={data} onResult={vi.fn()} onClose={vi.fn()} />);
 
     fireEvent.click(screen.getByTestId("restore-default-favorites"));
-    expect(screen.getByTestId("favorite-row-zxnext/ks2-30204")).toBeInTheDocument();
+    expect(screen.getByTestId("favorite-row-zxnext/ks3-30303")).toBeInTheDocument();
     expect(screen.getByText("Unsaved menu changes")).toBeInTheDocument();
   });
 

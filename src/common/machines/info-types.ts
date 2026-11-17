@@ -226,6 +226,10 @@ export type MachineMenuInfo = {
   recordItems?: MachineMenuRenderer;
   helpLinks?: HelpLinkInfo[];
   initializer?: () => Promise<void>;
-  /** Runs before the emulator switches to the machine; `modelId` is the model it switches to */
-  setup?: (modelId?: string) => Promise<void>;
+  /**
+   * Runs before the emulator switches to the machine; `modelId` is the model it switches to. It may
+   * return another model of the machine to switch to instead (the Next, when the selected model's
+   * SD card is not installed and the user chose the default model).
+   */
+  setup?: (modelId?: string) => Promise<string | void>;
 };

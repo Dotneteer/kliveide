@@ -299,8 +299,8 @@ describe("NewProjectModel — environment", () => {
 });
 
 describe("NewProjectModel — the Next's new-project model", () => {
-  it("starts a new Next project on the newest core, not on the model old projects mean", () => {
-    expect(defaultModelOf("zxnext", { favorites: [] })).toBe("ks2-30204");
+  it("starts a new Next project on the default model (KS3, newest core), not on the model old projects mean", () => {
+    expect(defaultModelOf("zxnext", { favorites: [] })).toBe("ks3-30303");
     // --- The running model and a favourite still win
     expect(defaultModelOf("zxnext", { favorites: [], running: { machineId: "zxnext", modelId: "ks2-30201" } })).toBe("ks2-30201");
     expect(defaultModelOf("zxnext", { favorites: [{ machineId: "zxnext", modelId: "ks2-30201" }] })).toBe("ks2-30201");
