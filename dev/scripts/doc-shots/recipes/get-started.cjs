@@ -9,7 +9,10 @@
  * Translated UIs change every label, so nothing here is selected by its text or aria-label:
  * selectors use CSS-module class prefixes, element order, and the application menu's item ids.
  *
- * `GS_ONLY=emulator,ide,projects,asm,debug,basic,next,export` runs some of the sections (for iterating).
+ * `GS_ONLY=emulator,ide,projects,asm,debug,basic,next,nextsd,export` runs some of the sections (for iterating).
+ *
+ * The app finds only the default Next model's SD card (`NEXT_CARDS`), as an installed Klive does, so
+ * selecting another Next model opens the download dialog the Next page shows.
  */
 const path = require("path");
 const fs = require("fs");
@@ -79,6 +82,21 @@ async function park(page) {
  * reads the home path before the harness redirects it, so the copy would land in the real home.)
  */
 const USER_HOME = path.join(require("os").tmpdir(), "klive-get-started-home");
+
+/**
+ * The Next SD base cards the app finds: only the default model's (26.11), as the installer carries
+ * only that one. The other models' cards are "not on this computer", which opens the download dialog.
+ */
+const NEXT_CARDS = path.join(require("os").tmpdir(), "klive-get-started-next-cards");
+function seedNextCards() {
+  const cards = require("../../next-sd/cards.cjs");
+  const base = cards.localBase("nextzxos-26.11");
+  if (!fs.existsSync(base)) throw new Error(`${base} is missing: run npm run next-sd:fetch`);
+  fs.rmSync(NEXT_CARDS, { recursive: true, force: true });
+  fs.mkdirSync(NEXT_CARDS, { recursive: true });
+  fs.symlinkSync(base, path.join(NEXT_CARDS, path.basename(base)));
+}
+seedNextCards();
 function seedUserHome() {
   const sd = path.join(USER_HOME, "Klive", "ks2.cim");
   fs.mkdirSync(path.dirname(sd), { recursive: true });
@@ -187,7 +205,8 @@ module.exports = {
     height: 820,
     toolPanelHeight: "200px",
     sideBarWidth: "280px",
-    userHome: USER_HOME
+    userHome: USER_HOME,
+    env: { KLIVE_NEXT_SD_DEV_CARDS: NEXT_CARDS }
   },
 
   async run(klive) {
@@ -452,6 +471,26 @@ async function steps(klive) {
       } finally {
         next.cleanup();
       }
+    }
+
+    // ------------------------------------------------------------------ A Next model whose card is not here
+    if (wants("nextsd")) {
+      // --- Select Machine, filtered to the model, then a double-click switches to it: its card must
+      // --- be downloaded, so the download dialog opens in the emulator window
+      // --- The status bar's machine chip opens Select Machine (the menu cannot be clicked reliably)
+      const start = await klive.emu({ width: 900, height: 640 });
+      await start.locator('button[class*="_chip_"]').first().click();
+      await klive.sleep(1500);
+      const selector = await pageWithDialog(klive);
+      await selector.locator('[role="dialog"] input').first().fill("3.02.04");
+      await klive.sleep(500);
+      await selector.locator('[data-testid="machine-row-zxnext/ks2-30204"]').dblclick();
+      const emu = await klive.emu({ width: 900, height: 640 });
+      await until(emu, () => !!document.querySelector('[data-testid="next-sd-intro"]'), undefined, "the SD card download dialog");
+      await park(emu);
+      await shot('[role="dialog"]', "get-started/next-sd-download.webp", { displayWidth: 560, page: emu });
+      await emu.keyboard.press("Escape");
+      await klive.sleep(800);
     }
 
     // ------------------------------------------------------------------ Save and share your work

@@ -78,12 +78,16 @@
   min-width: 0;
 }
 
+// --- The label stays on one line; the address may break anywhere, so its file name is never cut off
+.urlLabel {
+  flex: none;
+  white-space: nowrap;
+}
+
 .urlText {
   flex: 1 1 auto;
   min-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
   font-family: var(--monospace-font);
   user-select: text;
 }

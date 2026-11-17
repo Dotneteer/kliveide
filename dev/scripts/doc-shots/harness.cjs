@@ -114,6 +114,11 @@ async function launchKlive({
    */
   borielSetup = { declined: true, offeredVersion: "*" },
   /*
+   * More environment variables for the app (`{ KLIVE_NEXT_SD_DEV_CARDS: dir }`, the Next SD base cards
+   * a development run finds). Unset, none.
+   */
+  env = {},
+  /*
    * The UI language (an `id` from `src/common/i18n/languages.ts`). A localized recipe runs once per
    * language and its `shot()` paths get the language as their first folder
    * (`images/<lang>/...`), so a translated page shows the IDE in its own language (R4 of
@@ -170,7 +175,7 @@ async function launchKlive({
     executablePath: require(path.join(REPO, "node_modules", "electron")),
     args: [MAIN, "--showide"],
     cwd: REPO,
-    env: { ...process.env, KLIVE_SETTINGS_FILE: settings, ...(userHome ? { HOME: userHome } : {}) },
+    env: { ...process.env, ...env, KLIVE_SETTINGS_FILE: settings, ...(userHome ? { HOME: userHome } : {}) },
     timeout: 60_000
   });
 

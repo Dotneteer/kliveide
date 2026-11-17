@@ -59,7 +59,7 @@ describe("the offer", () => {
     const h = openDialog();
     expect(h.vm.intro).toBe(
       "The ZX Spectrum Next (KS2, core 3.02.04) boots NextZXOS from an SD card that is not on this computer yet. " +
-        "Klive can download it from kliveide.net: 58.6 MB, 96.0 MB once unpacked."
+        "Klive can download it from kliveide.net: 58.6\u00a0MB, 96.0\u00a0MB once unpacked."
     );
     expect(h.vm.primary).toEqual({ label: "Download", enabled: true });
     expect(h.vm.secondary).toEqual({ label: "Import a downloaded file...", enabled: true });

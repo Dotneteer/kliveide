@@ -52,7 +52,8 @@ export function downloadedCardPath(setId: NextRomSetId): string {
  */
 export function bundledCardPaths(setId: NextRomSetId): AvailableNextSdCard[] {
   const resources = process.env.PUBLIC ?? "";
-  const devCards = process.env.KLIVE_NEXT_SD_DEV_CARDS;
+  // --- Empty: a development run told to have no cards (`src/main/index.ts`)
+  const devCards = process.env.KLIVE_NEXT_SD_DEV_CARDS || undefined;
   return [
     { setId, file: path.join(resources, "next-sd", `${setId}.cim.gz`), source: "bundled", compressed: true },
     ...(devCards

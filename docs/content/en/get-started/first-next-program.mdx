@@ -105,6 +105,27 @@ Click **Run**, or press <kbd>F5</kbd>. On the Next, Klive builds a `.nex` file, 
 Change `ld a,120` to another value and run the program again to move the ball up or down. To see every sprite's attributes and patterns while the program runs, open the [Sprite Inspector](/en/guides/next/sprite-inspector/).
 </Callout>
 
+## The Next's SD card
+
+A Next does not start without its SD card: NextZXOS and the programs you run are on it. In Klive the card is an image file in the `Klive` folder of your home folder, and Klive looks after it for you:
+
+- The **ZX Spectrum Next (KS3, core 3.03.03)**, the model new projects use, comes with its card. The first time it runs, Klive makes a copy of it, `ks3-30303.cim`, which the Next reads and writes. There is nothing to do.
+- **The other Next models** each need their own NextZXOS release. The machine menus mark them with "download needed" and the size. The first time you select one, Klive offers to download its card from kliveide.net:
+
+<Shot
+  src="get-started/next-sd-download.webp"
+  alt="The ZX Spectrum Next SD Card dialog offering to download the card of the KS2 core 3.02.04 model"
+  figure="9.2"
+  caption="A model whose card is not on your computer yet"
+  width={560}
+/>
+
+Click **Download**. When the download is done, the model starts. If Klive cannot reach the internet, click **Copy link**, download the file in a browser, and choose **Import a downloaded file...**. If you close the dialog, the machine you were using stays.
+
+Before a Next starts, Klive also checks its card. When NextZXOS could not boot from it (a damaged card, for example), Klive says what is wrong and offers to reset the card. The old card is kept under another name, so nothing is lost.
+
+[The Next's SD card](/en/guides/next/sd-card/) explains the **Machine › SD Card** menu, how to use a card image of your own, and how to copy files to and from the card.
+
 The [ZX Spectrum Next assembler reference](/en/reference/z80-assembler/zx-next/) describes the Next's instructions, `.savenex` and the other Next features of the Klive assembler.
 
 Next, [save and share your work](/en/get-started/save-and-share/).

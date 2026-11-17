@@ -42,7 +42,7 @@ export const NextSdDownloadView = ({ vm, dispatch }: NextSdDownloadViewProps) =>
       )}
 
       <div className={styles.url}>
-        <span className={styles.muted}>{t("dialog.nextSdDownload.urlLabel")}</span>
+        <span className={`${styles.muted} ${styles.urlLabel}`}>{t("dialog.nextSdDownload.urlLabel")}</span>
         <span className={styles.urlText} title={vm.url.text} data-testid="next-sd-url">
           {vm.url.text}
         </span>

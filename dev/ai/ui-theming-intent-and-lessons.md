@@ -1568,6 +1568,14 @@ header or status-bar item in `qps` before calling it done.
   subset is loaded.
 - A language's name is shown in itself (*Deutsch*, *Magyar*) and never translated.
 
+## An Address The User Must Read Wraps; Its Label Does Not
+
+A web address or path the user may copy (the SD card download dialog's card URL) wraps anywhere
+(`overflow-wrap: anywhere`) instead of ending in an ellipsis: the cut-off tail is the file name, the
+part that matters. Its label beside it is `flex: none; white-space: nowrap`, or the flexible value
+squeezes the label onto two lines. A number and its unit in running text are joined by a
+non-breaking space in the message itself ("58.6\u00a0MB"), so a line never starts with the unit.
+
 ## A Choice That Needs Something First Says So After Its Name, Dimmed
 
 A list entry the user can pick but that needs something before it works (a ZX Spectrum Next model whose

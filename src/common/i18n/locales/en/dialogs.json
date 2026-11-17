@@ -2955,9 +2955,9 @@
     "context": "Title of the ZX Spectrum Next SD card download dialog, which appears when a Next model's SD card (the disk image the Next boots NextZXOS from) is not on this computer yet. 'ZX Spectrum Next' is a machine name: keep it.",
     "maxChars": 40
   },
-  "dialog.nextSdDownload.intro": "The {model} boots NextZXOS from an SD card that is not on this computer yet. Klive can download it from kliveide.net: {download} MB, {size} MB once unpacked.",
+  "dialog.nextSdDownload.intro": "The {model} boots NextZXOS from an SD card that is not on this computer yet. Klive can download it from kliveide.net: {download} MB, {size} MB once unpacked.",
   "@dialog.nextSdDownload.intro": {
-    "context": "Opening paragraph of the ZX Spectrum Next SD card download dialog, which appears when a Next model's SD card (the disk image the Next boots NextZXOS from) is not on this computer yet. 'NextZXOS' (the Next's operating system) and 'kliveide.net' (Klive's website) are names: keep them.",
+    "context": "Opening paragraph of the ZX Spectrum Next SD card download dialog, which appears when a Next model's SD card (the disk image the Next boots NextZXOS from) is not on this computer yet. 'NextZXOS' (the Next's operating system) and 'kliveide.net' (Klive's website) are names: keep them. Keep the non-breaking spaces between the numbers and 'MB'.",
     "placeholders": {
       "model": "The Next model's name, shown verbatim, e.g. 'ZX Spectrum Next (KS2, core 3.02.04)'",
       "download": "The download's size in megabytes, e.g. '58.6'",
