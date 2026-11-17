@@ -2,6 +2,7 @@ import { KeyboardEvent, useEffect, useLayoutEffect, useRef, useState } from "rea
 import classnames from "classnames";
 
 import { Icon } from "@renderer/controls/Icon";
+import ScrollViewer from "@renderer/controls/ScrollViewer";
 import { PanelFilter } from "@renderer/controls/data";
 import { t as translate } from "@common/i18n/i18n";
 import { useT } from "@common/i18n/useT";
@@ -298,19 +299,21 @@ export const MachineSelectView = ({ vm, filter, dispatch, onSwitchRequested }: P
           placeholder={t("dialog.machineSelect.filterPlaceholder")}
           label={t("dialog.machineSelect.filterLabel")}
         />
-        <div
-          ref={treeRef}
-          className={styles.tree}
-          role="tree"
-          aria-label={t("dialog.machineSelect.treeAria")}
-          data-testid="machine-tree"
-          onKeyDown={onTreeKeyDown}
-        >
-          {vm.sections.map(section)}
-          {vm.noMatch && (
-            <div className={styles.hint}>{t("dialog.machineSelect.noMatch", { filter })}</div>
-          )}
-        </div>
+        <ScrollViewer className={styles.treeScroller} allowHorizontal={false}>
+          <div
+            ref={treeRef}
+            className={styles.tree}
+            role="tree"
+            aria-label={t("dialog.machineSelect.treeAria")}
+            data-testid="machine-tree"
+            onKeyDown={onTreeKeyDown}
+          >
+            {vm.sections.map(section)}
+            {vm.noMatch && (
+              <div className={styles.hint}>{t("dialog.machineSelect.noMatch", { filter })}</div>
+            )}
+          </div>
+        </ScrollViewer>
         <div className={styles.navFooter}>
           <button
             type="button"
@@ -324,14 +327,16 @@ export const MachineSelectView = ({ vm, filter, dispatch, onSwitchRequested }: P
         </div>
       </div>
       <div className={styles.sheetPane} data-testid="hardware-sheet">
-        {vm.sheet ? (
-          <HardwareSheet
-            sheet={vm.sheet}
-            onFavoriteToggled={() => dispatch({ type: "favoriteToggled", key: vm.sheet!.key })}
-          />
-        ) : (
-          <div className={styles.hint}>{t("dialog.machineSelect.noSelection")}</div>
-        )}
+        <ScrollViewer allowHorizontal={false}>
+          {vm.sheet ? (
+            <HardwareSheet
+              sheet={vm.sheet}
+              onFavoriteToggled={() => dispatch({ type: "favoriteToggled", key: vm.sheet!.key })}
+            />
+          ) : (
+            <div className={styles.hint}>{t("dialog.machineSelect.noSelection")}</div>
+          )}
+        </ScrollViewer>
       </div>
     </div>
   );

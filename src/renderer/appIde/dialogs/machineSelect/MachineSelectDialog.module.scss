@@ -5,7 +5,7 @@
  * types and models on the left, the selected model's hardware sheet on the right.
  *
  * The body is a fixed-height two-pane frame so the dialog does not jump as sections open and as
- * sheets of different lengths are selected; each pane scrolls on its own. In a narrow window (the
+ * sheets of different lengths are selected; each pane scrolls on its own, in a `ScrollViewer`. In a narrow window (the
  * emulator window of a ZX81 is small) the panes stack.
  */
 .body {
@@ -40,10 +40,14 @@
   }
 }
 
-.tree {
-  flex: 1 1 auto;
+// --- The panes scroll in `ScrollViewer`s (the IDE's overlay scrollbars), not with native ones
+.treeScroller {
+  flex: 1 1 0;
+  height: auto;
   min-height: 0;
-  overflow-y: auto;
+}
+
+.tree {
   padding-bottom: var(--space-1);
 }
 
@@ -302,9 +306,11 @@
 // ---------------------------------------------------------------------------------------------
 
 .sheetPane {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
   min-height: 0;
-  overflow-y: auto;
+  overflow: hidden;
   background: var(--bgcolor-modal-body);
 }
 

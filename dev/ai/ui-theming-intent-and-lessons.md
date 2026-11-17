@@ -2715,7 +2715,10 @@ cartridge) wraps it rather than copying `NexBankBrowser`.
   last of 44 banks carried the selected bank off the top. **`overflow: hidden` on an ancestor kills
   `sticky`; round corners with `overflow: clip`**, which makes no scroll container.
 - **A scroll area is a `ScrollViewer`, never bare `overflow: auto`.** The platform's scrollbar is an
-  unthemed white strip in the dark tone; nothing in the app styles `::-webkit-scrollbar`.
+  unthemed white strip in the dark tone; nothing in the app styles `::-webkit-scrollbar`. Dialogs too:
+  Select Machine's tree and hardware sheet scroll in one each. In a flex column between fixed rows the
+  `ScrollViewer` takes `flex: 1 1 0; height: auto; min-height: 0` (its own `height: 100%` would push the
+  footer out); in a grid cell the cell is a `display: flex` column with `overflow: hidden`.
 - **A viewer with content above its browser fills, it does not scroll** (`fill`, the TAP and HT tape
   viewers): the browser is as tall as the space left below the summary and graphics, so the viewer
   has nothing to scroll and the list and the details are the only scrollers. Bounding it to the whole
