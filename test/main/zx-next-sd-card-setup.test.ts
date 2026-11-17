@@ -46,15 +46,30 @@ vi.mock("@main/settings-utils", () => ({
 vi.mock("@messaging/MainToEmuMessenger", () => ({ getEmuApi: vi.fn() }));
 vi.mock("@messaging/MainToIdeMessenger", () => ({ getIdeApi: vi.fn() }));
 
+import { createHash } from "node:crypto";
 import { MEDIA_SD_CARD } from "@common/structs/project-const";
+import { NEXT_ROM_SETS, type NextSdBaseImage } from "@common/zxnext/romSets";
+import { nextProfileOf, romSetOf } from "@emu/machines/zxNext/nextProfiles";
 import { defaultSdCardOf, initializeZxSpectrumNext, setupZxSpectrumNext } from "@main/machine-menus/zx-next-menus";
+import { bundledCardPaths } from "@main/next-sd/nextSdCards";
 
-/** A stand-in base image: setup copies it, it never parses it */
+/** The manifest entries a test pointed at its stand-in cards, to restore */
+const patchedManifest = new Map<NextSdBaseImage, { size: number; sha256: string }>();
+
+/**
+ * A stand-in raw base image: setup copies it, it never parses it. The model's set's manifest entry is
+ * pointed at its bytes for the test, as the copy checks them.
+ */
 function installBaseImage(modelId: string): string {
-  const { baseImage } = defaultSdCardOf(modelId);
-  fs.mkdirSync(path.dirname(baseImage), { recursive: true });
-  fs.writeFileSync(baseImage, new Uint8Array(4096).fill(0x5a));
-  return baseImage;
+  const setId = romSetOf(nextProfileOf(modelId)).id;
+  const file = bundledCardPaths(setId).find((card) => !card.compressed)!.file;
+  const bytes = new Uint8Array(4096).fill(0x5a);
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, bytes);
+  const entry = NEXT_ROM_SETS[setId].sdBaseImage;
+  if (!patchedManifest.has(entry)) patchedManifest.set(entry, { size: entry.size, sha256: entry.sha256 });
+  Object.assign(entry, { size: bytes.length, sha256: createHash("sha256").update(bytes).digest("hex") });
+  return file;
 }
 
 const workingCopy = (modelId: string) => defaultSdCardOf(modelId).workingCopy;
@@ -73,6 +88,8 @@ describe("setting up a Next model's SD card", () => {
   });
 
   afterEach(() => {
+    for (const [entry, original] of patchedManifest) Object.assign(entry, original);
+    patchedManifest.clear();
     process.env.PUBLIC = savedPublic;
     fs.rmSync(home.dir, { recursive: true, force: true });
   });
@@ -84,6 +101,15 @@ describe("setting up a Next model's SD card", () => {
     expect(fs.existsSync(`${workingCopy("ks3-30303")}.partial`)).toBe(false);
     expect(showMessageBox).not.toHaveBeenCalled();
     expect(state.media[MEDIA_SD_CARD]).toBe(defaultSdCardOf("ks3-30303").workingCopy);
+  });
+
+  it("refuses a base card that is not the manifest's, and makes no working copy", async () => {
+    const file = installBaseImage("ks3-30303");
+    fs.writeFileSync(file, new Uint8Array(4096).fill(0xa5));
+    expect(await initializeZxSpectrumNext("ks3-30303")).toBe(false);
+    expect(fs.existsSync(workingCopy("ks3-30303"))).toBe(false);
+    expect(fs.existsSync(`${workingCopy("ks3-30303")}.partial`)).toBe(false);
+    expect(logEmuEvent.mock.calls.map(([text]) => text).join("\n")).toContain("is not the expected SD card");
   });
 
   it("reports a model whose base image is not installed", async () => {

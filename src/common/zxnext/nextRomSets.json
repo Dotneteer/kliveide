@@ -65,7 +65,10 @@
     },
     "sdBaseImage": {
       "file": "mmc/ks2-base.cim",
-      "sha256": "66138b425599135f5aeafe5af6ba15f261e4218e5bb29a3d524f474009edab2a"
+      "sha256": "66138b425599135f5aeafe5af6ba15f261e4218e5bb29a3d524f474009edab2a",
+      "size": 76611584,
+      "gzSize": 37010500,
+      "gzSha256": "b56a49f58e3acc04ffe9b7ed913b3cb7f1d6803415bcc573b40c58a17cb2f766"
     },
     "facts": {
       "keyWaitLoop": [
@@ -147,7 +150,10 @@
     },
     "sdBaseImage": {
       "file": "mmc/nextzxos-2.10-base.cim",
-      "sha256": "6395f56d899afddd959fdd8dd02aef4a0b50804a0306ac1bfb423680571fa518"
+      "sha256": "6395f56d899afddd959fdd8dd02aef4a0b50804a0306ac1bfb423680571fa518",
+      "size": 96010240,
+      "gzSize": 58595114,
+      "gzSha256": "2e36cf98538055f46fb3e80832dcb2828f70f22195268f3b6993fdd656646568"
     },
     "facts": {
       "keyWaitLoop": [
@@ -220,6 +226,9 @@
     "sdBaseImage": {
       "file": "mmc/nextzxos-26.11-base.cim",
       "sha256": "c9d23e9abcf490e14e30767a482c3c061d0bd3a934befc8c5b505cf9db7eef87",
+      "size": 51970048,
+      "gzSize": 23791074,
+      "gzSha256": "5e26fe81bab4eb3d6307318c4de92ae45bf53e6fe8733cc4ec47c0d56f52977e",
       "exclude": [
         "extras/nextest"
       ]

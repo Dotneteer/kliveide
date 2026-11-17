@@ -19,7 +19,11 @@ const CARD_2611 = path.join(MMC, "nextzxos-26.11-base.cim");
 const cards = { active: "", workingCopy: "", baseImage: "" };
 vi.mock("@main/machine-menus/zx-next-menus", () => ({
   activeSdCardFile: () => cards.active,
-  defaultSdCardOf: () => ({ workingCopy: cards.workingCopy, baseImage: cards.baseImage })
+  defaultSdCardOf: () => ({ workingCopy: cards.workingCopy })
+}));
+vi.mock("@main/next-sd/nextSdCards", () => ({
+  availableCardOf: () =>
+    cards.baseImage && fs.existsSync(cards.baseImage) ? { file: cards.baseImage, compressed: false } : undefined
 }));
 
 let dir: string;

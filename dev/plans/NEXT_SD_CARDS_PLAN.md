@@ -1,6 +1,6 @@
 # ZX Spectrum Next SD cards: one bundled, the rest downloaded and checked
 
-Status: **open** (written 2026-11-17). Phase 0 is implemented (2026-11-17); phases 1-6 are not started. Read `dev/ai/zxnext-models.md` first: this
+Status: **open** (written 2026-11-17). Phases 0 and 1 are implemented (2026-11-17); phases 2-6 are not started. Read `dev/ai/zxnext-models.md` first: this
 plan changes its D7 (SD card per model) and D9.4 (base images committed) and its "Adding a model"
 steps. Its D1 (model ids never change; a model-less reference means `ks2-30201`) stays binding.
 
@@ -167,6 +167,26 @@ NextZXOS menu on a fresh home folder, and the other two models show the message 
    checks that 2.08's card is `wrongRelease` for a 2.10 model.
 4. Creating or resetting a working copy decompresses the `.gz` (stream, to a temp file, then rename),
    so an interrupted copy never leaves a half card under the real name.
+
+**As built (2026-11-17):**
+- `src/main/next-sd/nextSdCards.ts` owns the paths: `bundledCardPaths`/`bundledCardPath` (the
+  installer's `next-sd/<setId>.cim.gz`, then its raw `sdBaseImage.file`), `downloadedCardPath`,
+  `availableCard`/`availableCardOf`, `workingCopyPath`, `isModelReady` and `writeCardFrom`.
+  `defaultSdCardOf` keeps only `workingCopy`; the menus, Reset and `next-sd-card-file.ts` ask the module.
+- `writeCardFrom` checks the **raw** size and sha256 of every working copy it writes, from a raw card or
+  a `.gz`, while streaming (`NextSdCardMismatchError`). A wrong or cut-short card leaves no file and
+  keeps the card it would have replaced, so Reset can no longer lose a working copy.
+- The manifest's `gzSize`/`gzSha256` were recorded by gzipping the committed cards with Node's zlib at
+  level 9 (v22.23.4, macOS); those `.gz` files are kept in `.local/next-sd/` for the bootstrap publish
+  (phase 3, step 3). Until a card is published its gz facts may be re-recorded; `next-sd:build` now
+  records `size` and drops the gz facts when the card's bytes change.
+- `checkNextSdCard(file, modelId)` (`src/main/next-sd/checkNextSdCard.ts`, result type in
+  `src/common/zxnext/nextSdCardCheck.ts`) takes the file explicitly: choosing which card a Next boots
+  stays in `zx-next-menus.ts` (phase 5). A caller that checks the running machine's card wraps it in
+  `withSdCardAccess`. The `.cim` step also rejects a cluster that points past the file's end.
+- Tests: `test/main/next-sd-check.test.ts` (cards built in memory: writing them through `CimHandler`
+  syncs every sector and took 45 s), `next-sd-cards.test.ts`, and `next-sd-check-real.test.ts`, which
+  stays in the unit tier (no core). All four real cards pass, the hand-built 2.08 one included.
 
 ### Phase 2 - Lazy working copies, the bundled `.gz`, separate DivMMC slot
 

@@ -53,6 +53,30 @@ export type NextFpgaRomInfo = {
   pages: string[];
 };
 
+/**
+ * A ROM set's SD card base image. The app's manifest is the trust anchor (NEXT_SD_CARDS_PLAN D-5): a
+ * card, bundled or downloaded, is accepted only when its bytes have these sizes and hashes.
+ */
+export type NextSdBaseImage = {
+  /** The raw card in the repository, relative to `src/public` */
+  file: string;
+  /** The raw card's sha256: what identifies the card */
+  sha256: string;
+  /** The raw card's size in bytes */
+  size: number;
+  /**
+   * The gzipped card's size and sha256 (`<setId>.cim.gz`), the form it is bundled and downloaded in.
+   * A published `.gz` is never re-packed (D-6): gzip output can change with the zlib version.
+   */
+  gzSize: number;
+  gzSha256: string;
+  /**
+   * Distribution paths left off this set's card (`build-next-sd-image.cjs`), so the image stays under
+   * GitHub's 100 MB file limit
+   */
+  exclude?: string[];
+};
+
 export type NextRomSet = {
   id: NextRomSetId;
   /** The NextZXOS version the set carries */
@@ -65,12 +89,8 @@ export type NextRomSet = {
    * beside the set's files so they can be annotated
    */
   fpgaRoms: Readonly<Record<string, NextFpgaRomInfo>>;
-  /** The SD card image a new working copy is made from, relative to `src/public` */
-  /**
-   * `exclude`: distribution paths left off this set's card (`build-next-sd-image.cjs`), so the committed
-   * image stays under GitHub's 100 MB file limit
-   */
-  sdBaseImage: { file: string; sha256: string; exclude?: string[] };
+  /** The SD card image a new working copy is made from (`dev/plans/NEXT_SD_CARDS_PLAN.md`) */
+  sdBaseImage: NextSdBaseImage;
   facts: NextRomFacts;
 };
 

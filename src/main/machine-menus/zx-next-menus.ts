@@ -8,8 +8,6 @@ import { MEDIA_SD_CARD, MEDIA_SD_CARD_2 } from "@common/structs/project-const";
 import { mainStore } from "@main/main-store";
 import { saveKliveProject } from "@main/projects";
 import { app, BrowserWindow, dialog } from "electron";
-import { KLIVE_HOME_FOLDER } from "@main/settings";
-import { getKliveHomeBase } from "@main/portable";
 import { dimMenuAction, setMediaAction } from "@common/state/actions";
 import { logEmuEvent } from "@main/registeredMachines";
 import { CimHandler } from "@main/fat32/CimHandlers";
@@ -23,6 +21,7 @@ import { NEXT_AUDIO_OUTPUTS, normalizeNextAudioOutput } from "@common/settings/n
 import { englishLabel } from "@common/i18n/labels";
 import { ensureSdCardBackupIfEnabled } from "./sd-card-backup";
 import { withSdCardAccess } from "../sd-card-access";
+import { availableCardOf, workingCopyPath, writeCardFrom } from "@main/next-sd/nextSdCards";
 import { t } from "@common/i18n/i18n";
 import {
   NEW_PROJECT_NEXT_PROFILE_ID,
@@ -38,20 +37,15 @@ export const SD_CARD_FILE_FOLDER = "sdCardFileFolder";
 /**
  * The active Next model's default SD card (`dev/ai/zxnext-models.md` D7): each model has
  * its own working copy in the Klive home folder (`ks2.cim` for KS2 with core 3.02.01, the file every
- * earlier Klive wrote) and its ROM set's base image, so switching models never boots NextZXOS from a
- * card of another release. A user-selected card (`MEDIA_SD_CARD`) still overrides it.
+ * earlier Klive wrote), made from its ROM set's base card (`@main/next-sd/nextSdCards`), so switching
+ * models never boots NextZXOS from a card of another release. A user-selected card (`MEDIA_SD_CARD`)
+ * still overrides it.
  */
 export function defaultSdCardOf(modelId: string | undefined = mainStore.getState().emulatorState?.modelId): {
   /** The working copy's full path */
   workingCopy: string;
-  /** The base image's full path, which a new or reset working copy is copied from */
-  baseImage: string;
 } {
-  const profile = nextProfileOf(modelId);
-  return {
-    workingCopy: path.join(getKliveHomeBase(), KLIVE_HOME_FOLDER, profile.sdWorkingCopy),
-    baseImage: path.join(process.env.PUBLIC ?? "", romSetOf(profile).sdBaseImage.file)
-  };
+  return { workingCopy: workingCopyPath(modelId) };
 }
 
 /** Whether a card is the default working copy of a Next model other than `modelId` */
@@ -314,32 +308,31 @@ export const hotkeyMenuRenderer: MachineMenuRenderer = () => {
 };
 
 /**
- * Makes the model's default SD card working copy from its base image on first use.
- * @returns Whether the working copy is there now. It is not when the base image is not installed:
- * this Klive ships only the default model's card (`dev/plans/NEXT_SD_CARDS_PLAN.md`, phase 0).
+ * Makes the model's default SD card working copy from its ROM set's base card on first use.
+ * @returns Whether the working copy is there now. It is not when the base card is not on this machine
+ * (this Klive ships only the default model's card, `dev/plans/NEXT_SD_CARDS_PLAN.md`) or is not the
+ * manifest's card.
  */
 export async function initializeZxSpectrumNext(modelId?: string): Promise<boolean> {
-  // --- This is where the SD Card file is stored
-  const { workingCopy: sdCardPath, baseImage: sourceSdCardPath } = defaultSdCardOf(modelId);
-  if (!fs.existsSync(sdCardPath)) {
-    // --- Create the folder if it does not exist
-    fs.mkdirSync(path.dirname(sdCardPath), { recursive: true });
-  }
+  const sdCardPath = workingCopyPath(modelId);
+  if (isExistingFile(sdCardPath)) return true;
 
-  if (isExistingFile(sdCardPath)) {
-    // --- The file exits, we are done
-    return true;
+  const baseCard = availableCardOf(modelId);
+  if (!baseCard) return false;
+  try {
+    // --- Written under a temporary name and checked, so a copy cut short never passes for a card
+    await writeCardFrom(baseCard, sdCardPath);
+  } catch (err) {
+    await logEmuEvent(`The SD card could not be made from ${baseCard.file}: ${errorMessage(err)}`, "bright-red");
+    return false;
   }
-
-  // --- Copy the SD Card file from the source
-  if (!isExistingFile(sourceSdCardPath)) return false;
-  // --- Copied under a temporary name first, so a copy cut short never passes for a card
-  const partial = `${sdCardPath}.partial`;
-  fs.copyFileSync(sourceSdCardPath, partial);
-  fs.renameSync(partial, sdCardPath);
   // --- Create initial backup after copying
   await ensureSdCardBackupIfEnabled(sdCardPath);
   return true;
+}
+
+function errorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
 }
 
 /**
@@ -405,12 +398,12 @@ async function handleMissingSdCard(modelId: string | undefined): Promise<string 
   const defaultModelId = NEW_PROJECT_NEXT_PROFILE_ID;
   const defaultModel = getMachineName(MI_ZXNEXT, defaultModelId);
   await logEmuEvent(
-    `The SD card of the ${model} is not installed (${defaultSdCardOf(modelId).baseImage} is missing)`,
+    `The SD card of the ${model} is not installed (no ${romSetOf(nextProfileOf(modelId)).id} base card)`,
     "bright-red"
   );
   // --- Offering the default model makes sense only when it is another model and its card is there
   const canSwitch =
-    nextProfileOf(modelId).id !== defaultModelId && isExistingFile(defaultSdCardOf(defaultModelId).baseImage);
+    nextProfileOf(modelId).id !== defaultModelId && availableCardOf(defaultModelId) !== undefined;
   const buttons = [
     ...(canSwitch ? [t("messages.sdCard.missingSwitch", { defaultModel })] : []),
     t("messages.sdCard.missingSelect"),
@@ -454,36 +447,31 @@ async function logSdCardEvent(filename: string): Promise<void> {
 }
 
 async function resetToDefaultSdCardFile(): Promise<void> {
-  const { workingCopy: sdCardPath, baseImage: sourceSdCardPath } = defaultSdCardOf();
+  const { workingCopy: sdCardPath } = defaultSdCardOf();
+  const baseCard = availableCardOf(mainStore.getState().emulatorState?.modelId);
 
-  // --- Without the base image there is nothing to reset to: deleting the working copy would only
+  // --- Without the base card there is nothing to reset to: deleting the working copy would only
   // --- lose the user's card
-  if (!isExistingFile(sourceSdCardPath)) {
-    await logEmuEvent(
-      `The SD card cannot be reset: its base image is not installed (${sourceSdCardPath} is missing)`,
-      "bright-red"
-    );
+  if (!baseCard) {
+    await logEmuEvent(`The SD card cannot be reset: its base card is not installed`, "bright-red");
     return;
   }
 
   // --- Rewriting the image must not overlap with emulated sector I/O or a file copy, all of
   // --- which work on the very same file.
-  await withSdCardAccess(async () => {
+  const failure = await withSdCardAccess(async () => {
     // --- Release the cached handler before touching the file. It holds an open descriptor on the
-    // --- image: on Windows that descriptor makes the unlink below fail outright, and everywhere
-    // --- else the cache would happily keep serving a handler bound to the deleted file (the
+    // --- image: on Windows that descriptor makes replacing the file fail outright, and everywhere
+    // --- else the cache would happily keep serving a handler bound to the replaced file (the
     // --- cache is only invalidated when the *file name* changes, and it does not change here).
     invalidateSdCardHandler();
 
-    // --- Get the default SD Card file, and delete the current one
-    if (fs.existsSync(sdCardPath) && fs.statSync(sdCardPath).isFile()) {
-      // --- Delete the file
-      fs.unlinkSync(sdCardPath);
-    }
-
-    // --- Copy the SD Card file from the source
-    if (fs.existsSync(sourceSdCardPath) && fs.statSync(sourceSdCardPath).isFile()) {
-      fs.copyFileSync(sourceSdCardPath, sdCardPath);
+    // --- The fresh card replaces the working copy only once it is complete and checked: a failed
+    // --- reset leaves the user's card as it was
+    try {
+      await writeCardFrom(baseCard, sdCardPath);
+    } catch (err) {
+      return errorMessage(err);
     }
 
     // --- Create backup of reset file
@@ -492,7 +480,12 @@ async function resetToDefaultSdCardFile(): Promise<void> {
     // --- Make the file writeable
     const cimHandler = getSdCardHandler();
     cimHandler.setReadOnly(false);
+    return undefined;
   });
+  if (failure) {
+    await logEmuEvent(`The SD card could not be reset from ${baseCard.file}: ${failure}`, "bright-red");
+    return;
+  }
 
   mainStore.dispatch(setMediaAction(MEDIA_SD_CARD, undefined));
   await saveKliveProject();
