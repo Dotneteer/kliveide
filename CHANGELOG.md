@@ -1,5 +1,55 @@
 # Klive IDE Changelog
 
+## 0.69.0 (2026-11-17)
+
+### Key fixes
+
+- ZX Spectrum Next: the installer did not include the Next's SD card, so on a new installation every
+  Next model stopped at boot with "Drive C: not found". Klive now installs the card of the ZX
+  Spectrum Next (KS3, core 3.03.03), which is the default Next model for new projects, and a card
+  image that was moved or deleted is replaced by the model's own card.
+
+### Features
+
+- **4-bit sprites in the sprite editor.** A `.spr` sheet can now be read as 4-bit patterns (128
+  bytes, two pixels per byte) with the new 8-bit/4-bit switch in the sheet toolbar, and every tool,
+  undo, copy and paste works on them; the sheet's toolbar and strip then call them patterns. A
+  palette-offset choice picks which 16 colours a 4-bit sheet is drawn with, and the palette shows
+  only that row. Switching never changes the file; the editor remembers the choice for each file.
+- **Advanced debugging in the Settings dialog:** Settings › Debugging has an *Advanced debugging*
+  switch that turns the execution history, reverse debugging, debug recordings, code coverage and
+  the profiler on or off, as `set -u features.advancedDebugging` does; the change takes effect when
+  Klive restarts. *Tint covered source lines* and *Profile hints in the editor* are now on by
+  default.
+- **Make a folder a Klive project:** opening a folder that has no `klive.project` file (one made
+  with another IDE, for example) now offers to make it a Klive project: choose the machine and
+  model, a template (it brings the `build.ksx` that Compile, Run and Debug need) and the build root,
+  and tick which of your files the template may replace. Or keep the folder as it is, and Klive does
+  not ask again; **File › Make Klive Project...** and the Explorer's root folder menu convert it
+  later. Klive no longer writes a `klive.project` file into a plain folder on its own, which made
+  such a folder become a project only the second time it was opened, so **Promote to Build Root**
+  stayed disabled the first time (#1641).
+- **ZX Spectrum Next SD cards on demand:** the older Next models' SD cards (NextZXOS 2.08 and 2.10)
+  are downloaded from kliveide.net the first time you select such a model, with a progress bar and
+  Cancel; **Import a downloaded file...** takes a card downloaded in a browser instead. Klive checks
+  every card against its own records before using it. The machine menus, the Select Machine dialog
+  and New Project mark a model whose card must be downloaded, with the size. Before a Next boots,
+  Klive checks its card and, when NextZXOS could not boot it, says why and offers to reset it
+  (keeping the old card under another name), pick another image or go on. Machine › SD Card ›
+  Downloaded SD Cards deletes downloaded cards. The DivMMC now has an SD card slot of its own, empty
+  until you insert an image (its menu item is now Remove the SD Card), and the installer carries the
+  default model's card compressed.
+
+### Fixes
+
+- Machine states: a state file saved on a ZX Spectrum Next model other than the KS2 core 3.02.01
+  could not be loaded, even on the same model; it failed with "The state belongs to the
+  zxnext/<model> core, not the zxnext core".
+- On macOS, a key pressed together with Command (for example Cmd+P) stayed down on the emulated
+  keyboard, and the machine kept repeating it until reset. Keys pressed with Command now never reach
+  the machine, and every held key and joystick direction is released when Command is let go, the
+  window loses focus, a dialog opens or the machine stops.
+
 ## 0.68.1 (2026-11-15)
 
 ### Fixes
