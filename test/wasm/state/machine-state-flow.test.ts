@@ -14,7 +14,7 @@ import { setMachineConfigAction, setMachineTypeAction, setModelTypeAction } from
 import { DebugSupport } from "@emu/machines/DebugSupport";
 import { MachineController } from "@emu/machines/MachineController";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { MC_DISK_SUPPORT, MC_SP3_ROM_SET, MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48 } from "@common/machines/constants";
+import { MC_DISK_SUPPORT, MC_SP3_ROM_SET, MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48, MI_ZXNEXT } from "@common/machines/constants";
 import { MEDIA_DISK_A, MEDIA_SD_CARD, MEDIA_TAPE } from "@common/structs/project-const";
 import { readKliveStateFile, writeKliveStateFile } from "@common/machineState/kliveStateFile";
 import { parseSpectrumSnapshot } from "@common/spectrum/snapshot/parseSpectrumSnapshot";
@@ -25,6 +25,7 @@ import {
 } from "@renderer/appEmu/machines/machineStateFile";
 import { ResolvingMessenger } from "../../harness/z88";
 import { createHarnessSpectrumMachine } from "../../harness/sp128";
+import { createSession as createNextSession } from "../../harness/zxnext";
 import { buildSzx, patternBank, state128, state48, szxBlock } from "../../spectrum/snapshot/builders";
 import { loadSpectrumSnapshot } from "@renderer/appEmu/machines/spectrumSnapshotLoad";
 import { expectSameBytes } from "../../expectBytes";
@@ -51,7 +52,10 @@ class FakeEmulator {
   async build(machineId: string, modelId: string | undefined, config: MachineConfigSet): Promise<void> {
     await this.controller?.stop();
     this.controller?.dispose();
-    const machine = await createHarnessSpectrumMachine(machineId, modelId, config);
+    const machine =
+      machineId === MI_ZXNEXT
+        ? (await createNextSession({ profile: modelId as any })).machine
+        : await createHarnessSpectrumMachine(machineId, modelId, config);
     this.controller = new MachineController(this.store, new ResolvingMessenger(), machine as any);
     this.controller.debugSupport = new DebugSupport(this.store);
     this.store.dispatch(setMachineTypeAction(machineId), "emu");
@@ -256,6 +260,27 @@ describe("loading a state", () => {
     await emu.until(MachineControllerState.Paused);
     expect((emu.machine as any).wasmV2DiskStates.length).toBe(0);
     expect(result.warnings.join()).toMatch(/Disk A .*detached/);
+  });
+});
+
+describe("state files of the ZX Spectrum Next models", () => {
+  // --- A Next model's state carries `zxnext/<model>` (`stateCoreIdOf`); the file check compared it
+  // --- with the machine id, so every model but the KS2 core 3.02.01 refused its own states
+  it("a state saved on the KS3 core 3.03.03 loads, switching to that model, and on that model again", async () => {
+    const source = await emulator(MI_ZXNEXT, "ks3-30303");
+    await source.controller!.start();
+    await source.until(MachineControllerState.Running);
+    const saved = await saveMachineStateFile(source.ports, { kliveVersion: "0.68.1" });
+    expect(readKliveStateFile(saved.bytes).header).toMatchObject({ machineId: MI_ZXNEXT, coreId: "zxnext/ks3-30303" });
+
+    const emu = await emulator(MI_SPECTRUM_48, "pal");
+    expect(await loadMachineStateFile(emu.ports, "n.kls", saved.bytes, "debug")).toMatchObject({
+      machineId: MI_ZXNEXT,
+      rebuilt: true,
+      path: "image"
+    });
+    await emu.until(MachineControllerState.Paused);
+    expect(await loadMachineStateFile(emu.ports, "n.kls", saved.bytes, "debug")).toMatchObject({ rebuilt: false, path: "image" });
   });
 });
 

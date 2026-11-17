@@ -20,6 +20,7 @@ const showMessageBox = vi.fn();
 const logEmuEvent = vi.fn();
 const displayDialog = vi.fn();
 const checkCard = vi.fn();
+const onDispatch = vi.fn();
 
 vi.mock("electron", () => ({
   app: { getPath: () => os.tmpdir(), isPackaged: false },
@@ -34,6 +35,7 @@ vi.mock("@main/main-store", () => ({
     getState: () => state,
     dispatch: (action: any) => {
       if (action?.type === "SET_MEDIA") state.media[action.payload.id] = action.payload.value;
+      onDispatch(action);
     }
   }
 }));
@@ -60,6 +62,8 @@ import {
   activeSdCardFile,
   activeSdCardSlot,
   defaultSdCardOf,
+  ensureNextSdCardFor,
+  nextSdCardFileFor,
   getSdCardDevice,
   initializeZxSpectrumNext,
   setSelectedSdCardFile,
@@ -163,6 +167,30 @@ describe("setting up a Next model's SD card", () => {
     expect(await setupZxSpectrumNext("ks2-30204")).toBe(false);
     expect(fs.existsSync(workingCopy("ks2-30204"))).toBe(false);
     expect(state.media[MEDIA_SD_CARD]).toBeUndefined();
+  });
+
+  // --- Loading a state saved on a Next from another machine: the card that model boots from
+  it("names the card a model boots from, whatever machine runs: its own, not another model's", () => {
+    state.emulatorState = { machineId: "sp48" };
+    expect(nextSdCardFileFor("ks2-30204")).toBe(workingCopy("ks2-30204"));
+    fs.mkdirSync(path.dirname(workingCopy("ks3-30303")), { recursive: true });
+    fs.writeFileSync(workingCopy("ks3-30303"), new Uint8Array(16));
+    state.media[MEDIA_SD_CARD] = workingCopy("ks3-30303");
+    expect(nextSdCardFileFor("ks2-30204")).toBe(workingCopy("ks2-30204"));
+    const mine = path.join(home.dir, "mine.cim");
+    fs.writeFileSync(mine, new Uint8Array(16));
+    state.media[MEDIA_SD_CARD] = mine;
+    expect(nextSdCardFileFor("ks2-30204")).toBe(mine);
+  });
+
+  it("makes sure that card is here, offering its download", async () => {
+    displayDialog.mockResolvedValue("declined");
+    expect(await ensureNextSdCardFor("ks2-30204")).toBe(false);
+    expect(displayDialog).toHaveBeenCalledTimes(1);
+    installBaseImage("ks3-30303");
+    expect(await ensureNextSdCardFor("ks3-30303")).toBe(true);
+    expect(fs.existsSync(workingCopy("ks3-30303"))).toBe(true);
+    expect(displayDialog).toHaveBeenCalledTimes(1);
   });
 
   it("shows no dialog for a model whose card is here", async () => {
@@ -294,6 +322,7 @@ describe("Machine › SD Card › Downloaded SD Cards", () => {
     state.emulatorState = { modelId: "ks2-30204" };
     showMessageBox.mockReset();
     logEmuEvent.mockReset();
+    onDispatch.mockReset();
   });
   afterEach(() => fs.rmSync(home.dir, { recursive: true, force: true }));
 
@@ -326,6 +355,16 @@ describe("Machine › SD Card › Downloaded SD Cards", () => {
     showMessageBox.mockResolvedValueOnce({ response: 0 });
     await submenu()[0].click();
     expect(fs.existsSync(downloadedCardPath("nextzxos-2.08"))).toBe(false);
+  });
+
+  it("changes the state after the delete, so the menu is rebuilt without the card", async () => {
+    download("nextzxos-2.08");
+    // --- What the menu would be rebuilt to at each state change during the click
+    const menus: string[][] = [];
+    onDispatch.mockImplementation(() => menus.push(submenu().map((i) => i.label)));
+    showMessageBox.mockResolvedValueOnce({ response: 0 });
+    await submenu()[0].click();
+    expect(menus.at(-1)).toEqual(["No Downloaded Cards"]);
   });
 });
 

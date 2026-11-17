@@ -356,7 +356,10 @@ export async function openFolderByPath(
         );
       }
 
-      if (machineApplied) {
+      // --- A declined machine (a Next without its SD card) leaves the machine that ran in its place
+      // --- for this project: the breakpoints go onto it, as they would follow any machine change, so
+      // --- the project's next save keeps them and they come along when its own machine runs.
+      if (machineApplied || machineOutcome === "declined") {
         // --- Runtime state is stripped on the way in too: a hand-edited file (or one written by a
         // --- build with a bug) must not seed a hit counter or a condition error.
         const restoredBreakpoints = (projectStruct.debugger?.breakpoints ?? [])

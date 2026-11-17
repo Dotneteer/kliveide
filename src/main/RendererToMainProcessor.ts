@@ -111,10 +111,15 @@ import { CompileProfile, CompilerOptions, KliveCompilerOutput } from "@abstracti
 import { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
 import {
   activeSdCardFile,
+  divMmcSdCardFile,
+  ensureNextSdCardFor,
   getDefaultSdCardPath,
   getSdCardDevice,
-  invalidateSdCardHandler
+  invalidateSdCardHandler,
+  nextSdCardFileFor
 } from "./machine-menus/zx-next-menus";
+import { MI_ZXNEXT } from "@common/machines/constants";
+import { getMachineName } from "@common/machines/machine-registry";
 import { withSdCardAccess } from "./sd-card-access";
 import { focusEmuWindow as bringEmuWindowToFront, getAppWindows, showIdeWindow } from ".";
 import {
@@ -1321,31 +1326,28 @@ class MainMessageProcessor {
    * @param itemPath The path to show in the file explorer.
    */
   /**
-   * The Next's SD card image and a fingerprint of its content (see `MainApi.getSdCardFingerprint`).
-   * The fingerprint hashes the image's size and its first 8 MB, where the FAT32 boot sector, the
-   * allocation tables and the root directory of every card Klive makes live, so any file change
-   * shows; it ignores the modification time, so a copied card still matches.
+   * The SD card the running machine uses and a fingerprint of its content (see
+   * `MainApi.getSdCardFingerprint` and `fingerprintSdCard`)
    */
   async getSdCardFingerprint(): Promise<SdCardFingerprint | undefined> {
-    const fileName = activeSdCardFile();
-    if (!fileName || !fs.existsSync(fileName)) return undefined;
-    return withSdCardAccess(() => {
-      const size = fs.statSync(fileName).size;
-      const hash = createHash("sha256");
-      hash.update(String(size));
-      const fd = fs.openSync(fileName, "r");
-      try {
-        const chunk = Buffer.alloc(1024 * 1024);
-        for (let offset = 0; offset < Math.min(size, 8 * 1024 * 1024); offset += chunk.length) {
-          const read = fs.readSync(fd, chunk, 0, chunk.length, offset);
-          if (read <= 0) break;
-          hash.update(chunk.subarray(0, read));
-        }
-      } finally {
-        fs.closeSync(fd);
-      }
-      return { fileName, size, fingerprint: hash.digest("hex").slice(0, 32) };
-    });
+    return fingerprintSdCard(activeSdCardFile());
+  }
+
+  /**
+   * The card a state or a recording saved on a machine will use once that machine runs, whatever runs
+   * now (see `MainApi.getSdCardFingerprintFor`). The machine running now may be another one: on a 48K
+   * the active card is the DivMMC's, never the Next's.
+   */
+  async getSdCardFingerprintFor(
+    machineId: string,
+    modelId: string | undefined,
+    offerDownload: boolean
+  ): Promise<SdCardFingerprint | undefined> {
+    if (machineId !== MI_ZXNEXT) return fingerprintSdCard(divMmcSdCardFile());
+    if (offerDownload && !(await ensureNextSdCardFor(modelId))) {
+      throw new Error(t("emu.machine.notReady", { machine: getMachineName(MI_ZXNEXT, modelId) }));
+    }
+    return fingerprintSdCard(nextSdCardFileFor(modelId));
   }
 
   /**
@@ -2111,4 +2113,31 @@ function getTemplateDirs(machineId: string): string[] {
   return fs
     .readdirSync(templateFolder)
     .filter((f) => fs.statSync(path.join(templateFolder, f)).isDirectory());
+}
+
+/**
+ * An SD card image and a fingerprint of its content (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md`
+ * D12), undefined when there is no image file. The fingerprint hashes the image's size and its first
+ * 8 MB, where the FAT32 boot sector, the allocation tables and the root directory of every card Klive
+ * makes live, so any file change shows; it ignores the modification time, so a copied card still matches.
+ */
+async function fingerprintSdCard(fileName: string | undefined): Promise<SdCardFingerprint | undefined> {
+  if (!fileName || !fs.existsSync(fileName)) return undefined;
+  return withSdCardAccess(() => {
+    const size = fs.statSync(fileName).size;
+    const hash = createHash("sha256");
+    hash.update(String(size));
+    const fd = fs.openSync(fileName, "r");
+    try {
+      const chunk = Buffer.alloc(1024 * 1024);
+      for (let offset = 0; offset < Math.min(size, 8 * 1024 * 1024); offset += chunk.length) {
+        const read = fs.readSync(fd, chunk, 0, chunk.length, offset);
+        if (read <= 0) break;
+        hash.update(chunk.subarray(0, read));
+      }
+    } finally {
+      fs.closeSync(fd);
+    }
+    return { fileName, size, fingerprint: hash.digest("hex").slice(0, 32) };
+  });
 }

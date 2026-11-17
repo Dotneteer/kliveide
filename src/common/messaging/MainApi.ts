@@ -576,6 +576,21 @@ class MainApiImpl {
   }
 
   /**
+   * The SD card a state or recording saved on a machine will use once that machine runs, with a
+   * fingerprint: the Next model's card, or the DivMMC's, whatever machine runs now; undefined when
+   * there is no image file.
+   * @param _offerDownload A Next model whose card is not on this computer offers the download first
+   * (NEXT_SD_CARDS_PLAN phase 5) and throws when the user does not get it
+   */
+  async getSdCardFingerprintFor(
+    _machineId: string,
+    _modelId: string | undefined,
+    _offerDownload: boolean
+  ): Promise<SdCardFingerprint | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * The Klive version (the app's package version, "x.y.z").
    */
   async getAppVersion(): Promise<string> {
@@ -1436,6 +1451,8 @@ const UNBOUNDED_MAIN_METHODS = [
   "importNextSdCardFile",
   // --- A machine's setup may wait on the SD card download dialog
   "prepareMachine",
+  // --- So may loading a Next state whose model's card is not on this computer
+  "getSdCardFingerprintFor",
   "downloadSjasmplusRelease",
   "installBoriel",
   "startScreenRecording",

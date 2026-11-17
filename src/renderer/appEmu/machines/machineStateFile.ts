@@ -67,6 +67,11 @@ export type StateMachine = {
   screenWidthInPixels?: number;
   screenHeightInPixels?: number;
   wasmV2Runtime?: { module?: WebAssembly.Module };
+  /**
+   * The id this core writes into its state files: per model on the Next (`stateCoreIdOf`), so the
+   * machine id alone does not name it
+   */
+  reverseCoreId?: string;
 };
 
 export function stateMachineOf(controller: IMachineController | undefined): StateMachine | undefined {
@@ -298,7 +303,9 @@ export async function loadMachineStateFile(
   }
 
   // --- 2. The image, or the portable fallback
-  const mismatch = stateMismatch(header, coreIdOfMachine(header.machineId), machine.wasmV2Runtime?.module);
+  // --- The live core's own id: a Next model's states carry `zxnext/<model>`, which the machine id does not say
+  const liveCoreId = machine.reverseCoreId ?? coreIdOfMachine(header.machineId);
+  const mismatch = stateMismatch(header, liveCoreId, machine.wasmV2Runtime?.module);
   if (mismatch) {
     if (!file.szx) {
       throw new Error(

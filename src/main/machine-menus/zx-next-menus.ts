@@ -521,16 +521,24 @@ function downloadedCardItems(window: BrowserWindow, inUse: string): MachineMenuI
     label: t("menu.next.deleteDownloadedCard", { card: card.setId, size: formatMegabytes(card.bytes) }),
     enabled: card.setId !== inUse,
     click: async () => {
-      const result = await dialog.showMessageBox(window, {
-        type: "question",
-        buttons: [t("common.button.yes"), t("common.button.no")],
-        defaultId: 1,
-        cancelId: 1,
-        title: t("menu.next.downloadedCards"),
-        message: t("messages.sdCard.deleteDownloaded", { card: card.setId })
-      });
-      if (result.response !== 0) return;
-      fs.rmSync(card.file, { force: true });
+      // --- The menu is rebuilt only on a state change, and deleting a file is none: the menu is
+      // --- dimmed while the question is up, and lighting it again after the delete rebuilds it
+      // --- without the card (and with the models that need it marked "download needed" again)
+      mainStore.dispatch(dimMenuAction(true));
+      try {
+        const result = await dialog.showMessageBox(window, {
+          type: "question",
+          buttons: [t("common.button.yes"), t("common.button.no")],
+          defaultId: 1,
+          cancelId: 1,
+          title: t("menu.next.downloadedCards"),
+          message: t("messages.sdCard.deleteDownloaded", { card: card.setId })
+        });
+        if (result.response !== 0) return;
+        fs.rmSync(card.file, { force: true });
+      } finally {
+        mainStore.dispatch(dimMenuAction(false));
+      }
       await logEmuEvent(`Deleted the downloaded SD card ${card.file}`);
     }
   }));
@@ -615,6 +623,29 @@ export function activeSdCardSlot(): typeof MEDIA_SD_CARD | typeof MEDIA_DIVMMC_S
  */
 export function activeSdCardFile(): string | undefined {
   return activeSdCardSlot() === MEDIA_SD_CARD ? nextSdCardFile() : divMmcSdCardFile();
+}
+
+/**
+ * The card a Next model boots from when it is set up (`setupZxSpectrumNext`), whatever machine runs
+ * now: the image selected in the Next's slot, unless it is another model's default card or is gone,
+ * otherwise the model's own working copy (which may not be on this computer yet)
+ */
+export function nextSdCardFileFor(modelId: string | undefined): string {
+  const selected = mainStore.getState().media?.[MEDIA_SD_CARD];
+  if (selected && !isAnotherModelsDefaultSdCard(selected, modelId) && isExistingFile(selected)) return selected;
+  return defaultSdCardOf(modelId).workingCopy;
+}
+
+/**
+ * Makes sure the card a Next model boots from is on this computer: made from a base card that is,
+ * or downloaded through the gate (NEXT_SD_CARDS_PLAN phase 5)
+ * @returns false when the card is not here and the user did not get it
+ */
+export async function ensureNextSdCardFor(modelId: string | undefined): Promise<boolean> {
+  if (isExistingFile(nextSdCardFileFor(modelId))) return true;
+  if (await initializeZxSpectrumNext(modelId)) return true;
+  if (!(await offerNextSdCardDownload(modelId))) return false;
+  return await initializeZxSpectrumNext(modelId);
 }
 
 /** The Next's SD card (card 0): the image selected in its slot, or the model's own working copy */

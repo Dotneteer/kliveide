@@ -340,18 +340,25 @@ NextZXOS menu on a fresh home folder, and the other two models show the message 
   startup a declined Next model is replaced by the default model with `keepStandIn`; opening a project whose
   Next model is declined keeps the running machine. While a stand-in runs, the settings
   (`copyStateToAppSettings`) and the project file (`getKliveProjectStructureFromState`) save the chosen
-  machine; any machine change the user makes ends it.
+  machine; any machine change the user makes ends it. A project opened on a declined model still installs
+  its breakpoints on the machine that stays (they follow machine changes like any breakpoint), so its
+  next save keeps them; only a superseded change skips them.
 - **The entry points:** every main-process switch goes through `changeMachineType`, which runs the setup
   (menus, Select Machine, favourites, New/Make Project and opening a project, startup, the IDE's commands);
   a machine state file and a debug recording, which the emulator switches itself, first call
-  `MainApi.prepareMachine`. `test/main/next-gate-entry-points.test.ts` pins both. **The `klive` CLI needs no
+  `MainApi.prepareMachine`. `test/main/next-gate-entry-points.test.ts` pins both. Their SD card check
+  compares the card of the state's own machine (`MainApi.getSdCardFingerprintFor`: the Next model's card,
+  whatever runs now; on a 48K the active card is the DivMMC's), and for a state it offers the model's
+  download first, so a declined download refuses the load before anything changes. **The `klive` CLI needs no
   gate**: it runs a Next without an SD card (the code is injected), so its machines never ask for one.
 - `checkBootCard` (`zx-next-menus.ts`) runs `checkNextSdCard` on the card a Next is about to boot, at
   startup and at every Next selection. Its dialog is a main-process message box: Reset to the Default Card
   (the model's own card; renamed aside first, D-9, and put back when no base card can be had) or Use the
   Default Card (an image the user picked), Select an Image..., Continue Anyway. **Reset the Default
   Image...** offers the download when the base card is missing (D-7). An SD card the main process cannot
-  open is logged in the Emulator pane.
+  open is logged in the Emulator pane. The check runs when the machine is set up, not on Start or Restart.
+- **Downloaded SD Cards** dims the menu while it asks; lighting it again after the delete is the state
+  change that rebuilds the menu (the menu is rebuilt only on state changes, and deleting a file is none).
 - The model lists mark a model that needs a download with "(download needed, NN MB)": the Machine type
   menu, the Select Machine dialog (`MachineSelectDialogData.downloadNeeded`) and New Project
   (`MainApi.getModelsNeedingDownload`). The test is cheap on purpose (`needsDownload`: no base card and

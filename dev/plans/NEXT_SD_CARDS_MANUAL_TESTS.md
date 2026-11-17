@@ -33,7 +33,9 @@ Windows, `resources/next-sd/` on Linux.
 
 ### Setting up a fresh installation without losing yours
 
-Quit Klive, then move your Klive folder aside, and move it back when you are done:
+Quit Klive first (**Cmd+Q** / **Alt+F4**): a Klive that is still running writes its settings back
+when it quits, which recreates the folder you have just moved. Then move your Klive folder aside, and
+move it back when you are done:
 
 ```bash
 mv ~/Klive ~/Klive.saved
@@ -73,9 +75,11 @@ cp ~/Klive/ks3-30303.cim ~/ks3-30303.good.cim
   ```bash
   head -c 1048576 ~/ks3-30303.good.cim > ~/Klive/ks3-30303.cim
   ```
-- **No partition** (a blank card of the right size; macOS and Linux):
+- **No partition**: a blank raw image, selected with **Machine › SD Card › Select Image...** (a cut
+  `.cim` with zeros appended reads as *unreadable*: the CIM format keeps a cluster index, which then
+  points past the end of the file):
   ```bash
-  head -c 65536 ~/ks3-30303.good.cim > ~/Klive/ks3-30303.cim && dd if=/dev/zero bs=1048576 count=48 >> ~/Klive/ks3-30303.cim
+  dd if=/dev/zero of=~/blank.img bs=1048576 count=48
   ```
 - **Another NextZXOS release**: copy the KS2 core 3.02.01's card over it (after case B8 has made it):
   ```bash
@@ -92,7 +96,7 @@ uses, a card that is missing, a download that was declined, a card kept aside. K
 | ID | Steps | Expected |
 |---|---|---|
 | A1 | Fresh installation. Start Klive. It starts on the ZX Spectrum 48K. | No dialog. `<Klive>` holds no `.cim` file and no `next-sd` folder. |
-| A2 | Choose **File › New Project...**, machine type ZX Spectrum Next, the model it offers, template `default`. Run the project (**F5**). | The model is ZX Spectrum Next (KS3, core 3.03.03). No dialog. `<Klive>/ks3-30303.cim` appears (51,970,048 bytes); NextZXOS boots and runs the program. The Emulator pane names `ks3-30303.cim`. |
+| A2 | Choose **File › New Project...**, machine type ZX Spectrum Next, the model it offers, template `default`. Run the project (**F5**). | The model is ZX Spectrum Next (KS3, core 3.03.03). No dialog. `<Klive>/ks3-30303.cim` appears (51,970,048 bytes; it grows once NextZXOS writes to it); NextZXOS boots and runs the program. The Emulator pane names `ks3-30303.cim`. |
 | A3 | Switch to ZX Spectrum Next (KS2, core 3.03.03) (**Select Machine**). | No dialog: it shares the installer's card. `<Klive>/ks2-30303.cim` appears; NextZXOS 2.10a boots. |
 | A4 | Open **Machine › Machine type**, **Select Machine** (filter "next") and **File › New Project...** with machine type ZX Spectrum Next. | The KS2 core 3.02.04 shows "(download needed, 58.6 MB)" and the KS2 core 3.02.01 "(download needed, 37.0 MB)" in all three places; the core 3.03.03 models show no note. In a native menu the note is part of the label. |
 | A5 | Start Klive with no network at all. Run A2 again. | Same result: the default model never needs the network. |
@@ -105,7 +109,7 @@ uses, a card that is missing, a download that was declined, a card kept aside. K
 | B2 | Click **Copy link**, paste into a text editor. | The address above. The button reads **Copied**. |
 | B3 | Click **Download**. | The bar fills and the label counts "NN.N of 58.6 MB". **Download** and **Import** are disabled, **Cancel** is not. When it finishes, the dialog closes and the KS2 core 3.02.04 starts; NextZXOS 2.10 boots. `<Klive>/next-sd/nextzxos-2.10.cim.gz` (58,595,114 bytes) and `<Klive>/ks2-30204.cim` (96,010,240 bytes) exist; no `.partial` file is left. |
 | B4 | After B3, look at the model lists (A4). | The KS2 core 3.02.04 no longer shows "download needed". |
-| B5 | Missing card again. Start the download and click **Cancel** half-way. | The dialog closes; the previous machine keeps running. `<Klive>/next-sd/` has no `nextzxos-2.10.cim.gz` and no `.partial`. The Emulator pane says the machine stays as it was. |
+| B5 | Missing card again. Start the download and click **Cancel** half-way. A card downloaded on this computer before can come from Electron's HTTP cache (kept on disk, across restarts) too fast to cancel: run B5 before the card's first download. | The dialog closes; the previous machine keeps running. `<Klive>/next-sd/` has no `nextzxos-2.10.cim.gz` and no `.partial`. The Emulator pane says the machine stays as it was. |
 | B6 | Missing card. Close the dialog with **Cancel**, then again with the window's **X** and with **Escape**. | Each time the previous machine stays and nothing is downloaded. |
 | B7 | Missing card. Disconnect the network, click **Download**. | An error under the progress row: Klive could not reach kliveide.net, with the technical detail under it. The main button reads **Retry**; **Import** stays enabled. Reconnect, click **Retry**: the download completes as in B3. |
 | B8 | Select ZX Spectrum Next (KS2, core 3.02.01) with its card missing. Download it. | 37.0 MB; NextZXOS 2.08 boots; `<Klive>/ks2.cim` and `<Klive>/next-sd/nextzxos-2.08.cim.gz` (37,010,500 bytes). |
@@ -157,9 +161,9 @@ Download `https://kliveide.net/next-sd/nextzxos-2.10.cim.gz` in a browser first.
 | G1 | Damage `ks3-30303.cim` (unreadable). Select or start the KS3 core 3.03.03. | A warning: "The ZX Spectrum Next (KS3, core 3.03.03) may not boot from its SD card.", with why (cannot be read as an SD card image), and **Reset to the Default Card**, **Select an Image...**, **Continue Anyway**. The Emulator pane says the same in English. |
 | G2 | In G1, click **Reset to the Default Card**. | `<Klive>/ks3-30303.broken-<yyyymmdd>-<hhmmss>.cim` holds the damaged card; a fresh `ks3-30303.cim` is made; NextZXOS boots. The Emulator pane names the file kept aside. |
 | G3 | Damage it again; click **Continue Anyway**. | The Next starts on the damaged card (and stops at boot as NextZXOS sees it). Nothing is renamed. |
-| G4 | Make the card "no partition". | The warning says it has no FAT16 or FAT32 partition and that the Next would stop with "Drive C: not found". |
+| G4 | Select `~/blank.img` ("no partition" above) as the card, then select the KS3 core 3.03.03 again. | The warning says it has no FAT16 or FAT32 partition and that the Next would stop with "Drive C: not found". |
 | G5 | Make the card "another NextZXOS release". | The warning says the card holds another NextZXOS release than the model needs. |
-| G6 | **Machine › SD Card › Select Image...** a damaged image of your own (a copy), then restart the machine. | The first button reads **Use the Default Card**; it switches to `ks3-30303.cim` and leaves your image untouched. |
+| G6 | **Machine › SD Card › Select Image...** a damaged image of your own (a copy), then select the model again (or restart Klive). The check runs when the machine is set up, not on **Start** or **Restart**. | The first button reads **Use the Default Card**; it switches to `ks3-30303.cim` and leaves your image untouched. |
 | G7 | In G1, click **Select an Image...** and pick a good card. | The Next boots from the picked image; the Emulator pane names it. |
 | G8 | Damage `ks2-30204.cim` and delete `next-sd/nextzxos-2.10.cim.gz`. Select the KS2 core 3.02.04, click **Reset to the Default Card**. | The download dialog opens. **Cancel**: the damaged card is put back under its own name and no `.broken-` file is left; the machine stays as it was. **Download**: the card is reset from the download. |
 

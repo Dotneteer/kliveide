@@ -50,8 +50,9 @@ vi.mock("@main/file-watcher", () => ({
 vi.mock("@main/registeredMachines", () => ({
   setMachineType,
   // --- Opening a project goes through changeMachineType (NEXT_SD_CARDS_PLAN phase 5)
-  changeMachineType: async (...args: any[]) => ((await setMachineType(...args)) ? "applied" : "superseded")
+  changeMachineType: (...args: any[]) => changeMachineType(...args)
 }));
+const changeMachineType = vi.fn();
 
 /** The action that marks the folder open; its payload says whether it is a valid project */
 const openFolderDispatch = () =>
@@ -70,9 +71,46 @@ describe("openFolderByPath", () => {
     getState.mockReturnValue({ project: {} });
     showMessageBox.mockResolvedValue({ response: 0 });
     setMachineType.mockResolvedValue(true);
+    changeMachineType.mockImplementation(async (...args: any[]) =>
+      (await setMachineType(...args)) ? "applied" : "superseded"
+    );
     restoreBreakpoints.mockResolvedValue(undefined);
     displayDialog.mockResolvedValue(undefined);
     delete appSettings.plainFolders;
+  });
+
+  // --- NEXT_SD_CARDS_PLAN Q1: a project whose Next model's card the user did not download
+  describe("the project's breakpoints", () => {
+    const BP = { address: 0x8000, exec: true };
+    beforeEach(() => {
+      fs.writeFileSync(
+        path.join(folderPath, "klive.project"),
+        JSON.stringify({
+          kliveVersion: "0.64.0",
+          machineType: "zxnext",
+          modelId: "ks2-30204",
+          debugger: { schemaVersion: 1, breakpoints: [BP] }
+        })
+      );
+    });
+    const restoredProjectBreakpoints = () =>
+      restoreBreakpoints.mock.calls.filter(([, scope]) => scope?.kind === "project").map(([bps]) => bps);
+
+    it("go onto the machine that stays when the project's machine is declined, so a save keeps them", async () => {
+      changeMachineType.mockResolvedValue("declined");
+      const { openFolderByPath } = await import("@main/projects");
+
+      expect(await openFolderByPath(folderPath)).toBeNull();
+      expect(restoredProjectBreakpoints()).toEqual([[expect.objectContaining({ address: 0x8000 })]]);
+    });
+
+    it("are not installed on a machine another change superseded", async () => {
+      changeMachineType.mockResolvedValue("superseded");
+      const { openFolderByPath } = await import("@main/projects");
+
+      await openFolderByPath(folderPath);
+      expect(restoredProjectBreakpoints()).toEqual([]);
+    });
   });
 
   it("opens a loadable project without reporting anything", async () => {

@@ -15,10 +15,11 @@ import { ValidationMessageType } from "@renderer/abstractions/ValidationMessageT
  * §4.8, Phase 8). The emulator is mocked; `test/wasm/state/machine-state-flow.test.ts` covers it.
  */
 
-function stateBytes(machineId = MI_SPECTRUM_48, media: object[] = []): Uint8Array {
+function stateBytes(machineId = MI_SPECTRUM_48, media: object[] = [], modelId?: string): Uint8Array {
   return writeKliveStateFile({
     header: {
       machineId,
+      modelId,
       kliveVersion: "0.62.1",
       coreId: machineId,
       fingerprint: "a".repeat(32),
@@ -38,6 +39,7 @@ type Setup = {
   files?: Record<string, Uint8Array>;
   loadResult?: object;
   saveError?: string;
+  cardFor?: (...args: any[]) => Promise<any>;
 };
 
 function contextFor(setup: Setup = {}) {
@@ -49,6 +51,9 @@ function contextFor(setup: Setup = {}) {
   });
   const saveBinaryFile = vi.fn(async (path: string) => path);
   const getSdCardFingerprint = vi.fn(async () => ({ fileName: "/c/ks2.cim", size: 1, fingerprint: "f".repeat(32) }));
+  const getSdCardFingerprintFor = vi.fn(
+    setup.cardFor ?? (async () => ({ fileName: "/c/ks2.cim", size: 1, fingerprint: "f".repeat(32) }))
+  );
   const saveMachineStateFile = vi.fn(async () => {
     if (setup.saveError) throw new Error(`Error: ${setup.saveError}`);
     return { bytes: Uint8Array.from([7]), machineName: "ZX Spectrum 48K", pc: 0x8123, warnings: [] };
@@ -79,9 +84,9 @@ function contextFor(setup: Setup = {}) {
       underline: vi.fn()
     },
     emuApi: { saveMachineStateFile, loadMachineStateFile },
-    mainApi: { readBinaryFile, saveBinaryFile, getSdCardFingerprint, getAppVersion: async () => "0.62.1" }
+    mainApi: { readBinaryFile, saveBinaryFile, getSdCardFingerprint, getSdCardFingerprintFor, getAppVersion: async () => "0.62.1" }
   };
-  return { context, lines, saveBinaryFile, saveMachineStateFile, loadMachineStateFile, getSdCardFingerprint };
+  return { context, lines, saveBinaryFile, saveMachineStateFile, loadMachineStateFile, getSdCardFingerprint, getSdCardFingerprintFor };
 }
 
 const errors = (messages: { type: ValidationMessageType; message: string }[]) =>
@@ -189,6 +194,33 @@ describe("state-load", () => {
       currentSdCard: { fileName: "/c/ks2.cim", size: 1, fingerprint: "f".repeat(32) },
       acceptChangedSdCard: false
     });
+  });
+
+  it("asks for the card the state's own model will use, not the running machine's, offering its download", async () => {
+    const files = {
+      "/p/a.kls": stateBytes(MI_ZXNEXT, [{ id: "sdCard", fileName: "/c/ks2.cim", fingerprint: "f".repeat(32) }], "ks2-30204")
+    };
+    const { context, getSdCardFingerprint, getSdCardFingerprintFor, loadMachineStateFile } = contextFor({ files });
+    await new StateLoadCommand().execute(context, { file: "/p/a.kls" });
+    expect(getSdCardFingerprintFor).toHaveBeenCalledWith(MI_ZXNEXT, "ks2-30204", true);
+    expect(getSdCardFingerprint).not.toHaveBeenCalled();
+    expect(loadMachineStateFile).toHaveBeenCalled();
+  });
+
+  it("does not load a Next state whose card the user did not download", async () => {
+    const files = {
+      "/p/a.kls": stateBytes(MI_ZXNEXT, [{ id: "sdCard", fileName: "/c/ks2.cim", fingerprint: "f".repeat(32) }], "ks2-30204")
+    };
+    const { context, loadMachineStateFile } = contextFor({
+      files,
+      cardFor: async () => {
+        throw new Error("The ZX Spectrum Next (KS2, core 3.02.04) cannot run without its SD card");
+      }
+    });
+    const result = await new StateLoadCommand().execute(context, { file: "/p/a.kls" });
+    expect(result.success).toBe(false);
+    expect(result.finalMessage).toContain("cannot run without its SD card");
+    expect(loadMachineStateFile).not.toHaveBeenCalled();
   });
 
   it("refuses a state of another machine type while a project is open (D10)", async () => {
