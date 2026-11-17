@@ -1,6 +1,6 @@
 # ZX Spectrum Next SD cards: one bundled, the rest downloaded and checked
 
-Status: **open** (written 2026-11-17). Phases 0-2 are implemented (2026-11-17); phase 3 is implemented except publishing the cards (step 3, the project author's push) and removing `src/public/mmc` (step 5, after it); phases 4-6 are not started. Read `dev/ai/zxnext-models.md` first: this
+Status: **open** (written 2026-11-17). Phases 0-3 are implemented (2026-11-17); phases 4-6 are not started. Read `dev/ai/zxnext-models.md` first: this
 plan changes its D7 (SD card per model) and D9.4 (base images committed) and its "Adding a model"
 steps. Its D1 (model ids never change; a model-less reference means `ks2-30201`) stays binding.
 
@@ -241,7 +241,7 @@ NextZXOS menu on a fresh home folder, and the other two models show the message 
 6. doc-shots, the IDE checks (`boriel-ide-check`, `kbasic-ide-check`) and the visual tests find cards
    through the helper or the fetch.
 
-**As built so far (2026-11-17):**
+**As built (2026-11-17):**
 - **Publishing is a local script, not a workflow** (`npm run next-sd:publish -- <setId> [--push]`). A
   `workflow_dispatch` workflow runs only from the default branch, and CI could not make the bytes anyway:
   the `.gz` is packed once on the author's machine and `gzSha256` names those bytes (D-6); the 2.08 card
@@ -273,10 +273,16 @@ NextZXOS menu on a fresh home folder, and the other two models show the message 
   fetched base card as its working copy (`defaultNextCard`, `defaultNextModel` in `cards.cjs`, pinned to
   `nextProfiles.ts` by a test). The browser tier clones `~/Klive/ks2.cim` when there is one, else the
   fetched 2.08 card.
-- **Left for after publishing:** step 3 (run `next-sd:publish -- <setId> --push` for the three sets, then
-  `next-sd:check-site`) and step 5 (delete `src/public/mmc`, `next-sd:build` writing into `.local/next-sd/`,
-  and the fallbacks to the committed cards in `next-sd-fetch.cjs`, `stage-next-sd.cjs`, `next-sd-pack.cjs`,
-  `cards.cjs` and `sdCards.ts` removed).
+- **Published (step 3):** the three cards went onto `gh-pages` once `deploy-doc.yml`'s `clean-exclude` was on
+  master, each as its own commit on top of the site; `next-sd:check-site` found all three the manifest's,
+  gzipped and raw. A failing docs deploy never touches `gh-pages`, so the cards are safe while the site is
+  not deploying.
+- **Step 5:** `src/public/mmc` is deleted and the manifest's `sdBaseImage.file` with it: a card's name follows
+  from its set id (`<setId>-base.cim`, `<setId>.cim.gz`). `next-sd:build` writes `.local/next-sd/<setId>-base.cim`;
+  fetch, pack, stage, `defaultNextCard` and `nextSdBaseImage` read only `.local/next-sd/`, and the app's
+  `bundledCardPaths` only the installer's `.gz` and, in development, `.local/next-sd/`. The doc-shots
+  recipes that seeded `~/Klive/ks2.cim` copy the fetched 2.08 card. A set that is not published yet gets its
+  card from `next-sd:build` only.
 
 ### Phase 4 - The download dialog
 
@@ -325,12 +331,12 @@ NextZXOS menu on a fresh home folder, and the other two models show the message 
 
 ## Open questions
 
-- **Q1 - Startup on a model that is not ready, and the user declines the download.** Proposed: the
-  session runs the default model and says so; the project's saved model is not rewritten until the
-  user changes the machine on purpose. Needs a way for `setMachineType` to switch without saving.
+- ~~**Q1 - Startup on a model that is not ready, and the user declines the download.**~~ Decided
+  2026-11-17 (the project author): the session runs the default model and says so; the project's saved
+  model is not rewritten until the user changes the machine on purpose. Needs a way for `setMachineType`
+  to switch without saving.
 - ~~**Q2 - D-10's migration**~~ Decided 2026-11-17: by the machine the settings were saved with (D-10).
-- **Q3 - Keep the downloaded `.gz` after the working copy is made?** Proposed yes (Reset needs it;
-  24-58 MB); the housekeeping item lets the user delete it.
-- **Q4 - Is the 2.08 card worth hosting** (`ks2-30201`, the model old projects open on), or should the
-  implicit model move to a newer one with an alias? D1 says model-less references mean `ks2-30201`;
-  changing that is a decision for the project author.
+- ~~**Q3 - Keep the downloaded `.gz` after the working copy is made?**~~ Decided 2026-11-17 (the project
+  author): yes (Reset needs it; 24-58 MB); the housekeeping item lets the user delete it.
+- ~~**Q4 - Is the 2.08 card worth hosting**~~ Settled 2026-11-17: the project author published it with the
+  other two, so `ks2-30201` (the model old projects open on, D1) keeps a card and the implicit model stays.

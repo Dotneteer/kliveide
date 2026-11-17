@@ -107,7 +107,9 @@ decisions (D-A to D-G) and what to do once the VHDL appears.
     and compares, by hand only, never in CI.
   - **D9.4** The SD base image is built from the distribution at the set's commit by
     `npm run next-sd:build -- <setId>` (`dev/scripts/build-next-sd-image.cjs`, deterministic) into
-    `src/public/mmc/<setId>-base.cim`, committed, its sha256 in the set's `sdBaseImage`.
+    the git-ignored `.local/next-sd/<setId>-base.cim`, its size and sha256 in the set's `sdBaseImage`.
+    The card is not committed: `npm run next-sd:pack` gzips it and `next-sd:publish` puts it on
+    kliveide.net, where `npm run next-sd:fetch` gets it (`dev/plans/NEXT_SD_CARDS_PLAN.md` D-4, D-6).
   - **D9.5** Layout: one folder per set, `src/public/roms/zxnext/<setId>/` (ROMs and their `.rom.dis`
     sidecars). Every reader finds a file through one helper, `nextRomPath(setId, file)`
     (`src/common/zxnext/romSets.ts`); tests use `nextRomFile()` (`test/harness/zxnext/core/roms.ts`).
@@ -125,7 +127,8 @@ decisions (D-A to D-G) and what to do once the VHDL appears.
 | VHDL scripts | `npm run next-fpga:{fetch,comments,diff}` (`dev/scripts/next-fpga-*.cjs`) |
 | ROM set manifest (provenance, hashes, page CRCs, facts, SD image) | `src/common/zxnext/nextRomSets.json`, typed by `src/common/zxnext/romSets.ts` (`nextRomPath`, `nextRomFolder`) |
 | ROMs and sidecars | `src/public/roms/zxnext/<setId>/` |
-| SD base images | `src/public/mmc/` (`ks2-base.cim` for 2.08, `nextzxos-2.10-base.cim`, `nextzxos-26.11-base.cim`) |
+| SD base images | `https://kliveide.net/next-sd/<setId>.cim.gz` (`gh-pages`), fetched into `.local/next-sd/` by `npm run next-sd:fetch`; the installer's card in `<resources>/next-sd/` |
+| Where the app finds cards, working copies | `src/main/next-sd/nextSdCards.ts` |
 | SD card menus | `src/main/machine-menus/zx-next-menus.ts` |
 | ROM loading, CRC check, facts written to the core | `src/emu/machines/zxNext/ZxNextWasmV2Machine.ts` |
 | NEX minimum-core check | `NexFileViewerPanel.tsx`, against the active model |
@@ -205,7 +208,7 @@ decisions (D-A to D-G) and what to do once the VHDL appears.
 7. **Annotations.** Unchanged pages reuse sidecars; carry changed ones with
    `npm run rom:annotations:carry`, review, then author; append to `PROVENANCE.md`.
 8. **IDE and docs.** New-project default and favourite if it should change (D7); a new default model
-   also changes the card the installer carries (`extraResources` from `src/public/mmc` in
+   also changes the card the installer carries (the `.local/next-sd-stage` filter of `extraResources` in
    `package.json`, guarded by `test/scripts/packaged-sd-cards.test.ts`). The models page in
    the docs, `npm run i18n:keys` if any text was added, a `feature` changeset, `npm run test:slow`.
 

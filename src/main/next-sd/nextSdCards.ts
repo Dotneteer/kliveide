@@ -45,17 +45,16 @@ export function downloadedCardPath(setId: NextRomSetId): string {
 }
 
 /**
- * The places the installer may carry a set's base card, in the order they are tried: the gzipped
- * card (`next-sd/<setId>.cim.gz`) and the raw one (`sdBaseImage.file`, the 26.11 card of phase 0). In
- * development both are under `src/public`, and a development run also takes the cards
- * `npm run next-sd:fetch` puts in `.local/next-sd/` (`KLIVE_NEXT_SD_DEV_CARDS`, set by `src/main/index.ts`).
+ * The places a set's base card may come with Klive, in the order they are tried: the installer's
+ * gzipped card (`<resources>/next-sd/<setId>.cim.gz`), then, in a development run, the cards
+ * `npm run next-sd:fetch` puts in `.local/next-sd/` (`KLIVE_NEXT_SD_DEV_CARDS`, set by `src/main/index.ts`
+ * when the app is not packaged). The repository carries no card (D-6).
  */
 export function bundledCardPaths(setId: NextRomSetId): AvailableNextSdCard[] {
   const resources = process.env.PUBLIC ?? "";
   const devCards = process.env.KLIVE_NEXT_SD_DEV_CARDS;
   return [
     { setId, file: path.join(resources, "next-sd", `${setId}.cim.gz`), source: "bundled", compressed: true },
-    { setId, file: path.join(resources, NEXT_ROM_SETS[setId].sdBaseImage.file), source: "bundled", compressed: false },
     ...(devCards
       ? ([
           { setId, file: path.join(devCards, `${setId}-base.cim`), source: "bundled", compressed: false },

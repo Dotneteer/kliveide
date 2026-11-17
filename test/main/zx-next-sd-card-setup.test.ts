@@ -61,20 +61,21 @@ import {
 } from "@main/machine-menus/zx-next-menus";
 import { splitSavedSdCardSlots } from "@main/next-sd/sdCardSlots";
 import { bundledCardPaths } from "@main/next-sd/nextSdCards";
+import { gzipSync } from "node:zlib";
 
 /** The manifest entries a test pointed at its stand-in cards, to restore */
 const patchedManifest = new Map<NextSdBaseImage, { size: number; sha256: string }>();
 
 /**
- * A stand-in raw base image: setup copies it, it never parses it. The model's set's manifest entry is
- * pointed at its bytes for the test, as the copy checks them.
+ * A stand-in base image, gzipped where the installer puts it: setup decompresses it, it never parses
+ * it. The model's set's manifest entry is pointed at its raw bytes for the test, as the copy checks them.
  */
 function installBaseImage(modelId: string): string {
   const setId = romSetOf(nextProfileOf(modelId)).id;
-  const file = bundledCardPaths(setId).find((card) => !card.compressed)!.file;
+  const file = bundledCardPaths(setId).find((card) => card.compressed)!.file;
   const bytes = new Uint8Array(4096).fill(0x5a);
   fs.mkdirSync(path.dirname(file), { recursive: true });
-  fs.writeFileSync(file, bytes);
+  fs.writeFileSync(file, gzipSync(bytes));
   const entry = NEXT_ROM_SETS[setId].sdBaseImage;
   if (!patchedManifest.has(entry)) patchedManifest.set(entry, { size: entry.size, sha256: entry.sha256 });
   Object.assign(entry, { size: bytes.length, sha256: createHash("sha256").update(bytes).digest("hex") });
@@ -114,7 +115,7 @@ describe("setting up a Next model's SD card", () => {
 
   it("refuses a base card that is not the manifest's, and makes no working copy", async () => {
     const file = installBaseImage("ks3-30303");
-    fs.writeFileSync(file, new Uint8Array(4096).fill(0xa5));
+    fs.writeFileSync(file, gzipSync(new Uint8Array(4096).fill(0xa5)));
     expect(await initializeZxSpectrumNext("ks3-30303")).toBe(false);
     expect(fs.existsSync(workingCopy("ks3-30303"))).toBe(false);
     expect(fs.existsSync(`${workingCopy("ks3-30303")}.partial`)).toBe(false);

@@ -75,15 +75,17 @@ async function park(page) {
 
 /**
  * The user home the app sees. The ZX Spectrum Next boots NextZXOS from `~/Klive/ks2.cim` and
- * writes to it, so the run gets a throwaway home with a fresh copy of the bundled base image -
- * the same file a new installation starts from. (Klive copies it on its first start, but it
+ * writes to it, so the run gets a throwaway home with a fresh copy of the 2.08 base card. (Klive copies it on its first start, but it
  * reads the home path before the harness redirects it, so the copy would land in the real home.)
  */
 const USER_HOME = path.join(require("os").tmpdir(), "klive-get-started-home");
 function seedUserHome() {
   const sd = path.join(USER_HOME, "Klive", "ks2.cim");
   fs.mkdirSync(path.dirname(sd), { recursive: true });
-  fs.copyFileSync(path.join(REPO, "src", "public", "mmc", "ks2-base.cim"), sd);
+  // --- The 2.08 card (`ks2-30201`), fetched by `npm run next-sd:fetch`: the repository carries no card
+  const base = require("../../next-sd/cards.cjs").localBase("nextzxos-2.08");
+  if (!fs.existsSync(base)) throw new Error(`${base} is missing: run npm run next-sd:fetch`);
+  fs.copyFileSync(base, sd);
 }
 
 /** Expands or collapses the Debug side bar's sections, by position (their titles are translated). */

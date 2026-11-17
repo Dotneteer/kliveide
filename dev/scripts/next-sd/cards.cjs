@@ -48,8 +48,6 @@ function cardOf(setId, manifest = readManifest()) {
 const gzName = (setId) => `${setId}.cim.gz`;
 const localGz = (setId) => join(LOCAL, gzName(setId));
 const localBase = (setId) => join(LOCAL, `${setId}-base.cim`);
-/** The raw card still committed in the repository (until phase 3, step 5 removes `src/public/mmc`) */
-const repositoryBase = (card) => join(REPO_ROOT, "src/public", card.file);
 
 function baseUrl() {
   const url = process.env.KLIVE_NEXT_SD_BASE_URL || DEFAULT_BASE_URL;
@@ -131,11 +129,6 @@ function gzipCard(raw, target) {
   return writeChecked(target, [createReadStream(raw), createGzip({ level: 9 })], () => undefined);
 }
 
-/** Copies a raw card, checking its bytes */
-function copyRawCard(raw, target, card) {
-  return writeChecked(target, [createReadStream(raw)], (facts) => mismatch(raw, facts, card.size, card.sha256));
-}
-
 /** `GET url` as a stream (redirects followed), or the status when it is not 200 */
 function get(url, method = "GET", redirects = 5) {
   return new Promise((resolvePromise, reject) => {
@@ -196,7 +189,8 @@ function defaultNextCard(override) {
   if (override) return existsSync(override) ? override : undefined;
   const { romSet } = defaultNextModel();
   const card = cardOf(romSet);
-  return [localBase(romSet), repositoryBase(card)].find((file) => existsSync(file) && statSync(file).size === card.size);
+  const file = localBase(romSet);
+  return existsSync(file) && statSync(file).size === card.size ? file : undefined;
 }
 
 module.exports = {
@@ -210,7 +204,6 @@ module.exports = {
   baseUrl,
   cardOf,
   cardSets,
-  copyRawCard,
   downloadGz,
   fileFacts,
   get,
@@ -222,6 +215,5 @@ module.exports = {
   localBase,
   localGz,
   publishedUrl,
-  readManifest,
-  repositoryBase
+  readManifest
 };

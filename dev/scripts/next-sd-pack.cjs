@@ -6,8 +6,8 @@
  *
  *   npm run next-sd:pack -- <setId>
  *
- * The raw card is `.local/next-sd/<setId>-base.cim` (written by `next-sd:build` or `next-sd:fetch`), or
- * the card still committed in `src/public`; it must have the manifest's size and sha256.
+ * The raw card is `.local/next-sd/<setId>-base.cim`, written by `next-sd:build`; it must have the
+ * manifest's size and sha256.
  *
  * **A published card is never re-packed** (D-6): gzip output can change with the zlib version, and the
  * published `.gz` is what `gzSha256` names. The script refuses a set whose card is on the site
@@ -35,8 +35,8 @@ async function main() {
   if (await isPublished(setId)) {
     throw new Error(`${setId} is published at ${cards.publishedUrl(setId)}: a published card is never re-packed (D-6)`);
   }
-  const raw = [cards.localBase(setId), cards.repositoryBase(card)].find((file) => existsSync(file));
-  if (!raw) throw new Error(`${setId}: no raw card; run npm run next-sd:build -- ${setId} first`);
+  const raw = cards.localBase(setId);
+  if (!existsSync(raw)) throw new Error(`${setId}: no raw card; run npm run next-sd:build -- ${setId} first`);
   if (!(await cards.isRawCard(raw, card))) {
     throw new Error(`${raw} is not the manifest's card (${card.size} bytes, sha256 ${card.sha256})`);
   }
