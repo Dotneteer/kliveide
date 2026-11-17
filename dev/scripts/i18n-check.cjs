@@ -224,9 +224,18 @@ async function checkI18n(options = {}) {
   const joined = allText.join("\n");
   // --- Code that builds keys at run time declares the prefix: `// i18n-dynamic: compiler.asm.`
   const dynamicPrefixes = [...joined.matchAll(/i18n-dynamic:\s*([a-z][a-zA-Z0-9.]*\.)/g)].map((m) => m[1]);
+  // Every quoted run of key characters, found in one pass: a substring search per key over the
+  // whole source tree took seconds and timed the check out on CI. The lookahead matches at every
+  // position (quotes may overlap), so a valid key is found exactly where `includes` would find it.
+  const quoted = new Set();
+  for (const m of joined.matchAll(/(?=(["'`])([a-zA-Z0-9.]+)\1)/g)) quoted.add(m[2]);
+  const usedInCode = (key) =>
+    KEY_PATTERN.test(key)
+      ? quoted.has(key)
+      : joined.includes(`"${key}"`) || joined.includes(`'${key}'`) || joined.includes(`\`${key}\``);
   for (const key of english.keys()) {
     if (dynamicPrefixes.some((prefix) => key.startsWith(prefix))) continue;
-    if (!joined.includes(`"${key}"`) && !joined.includes(`'${key}'`) && !joined.includes(`\`${key}\``)) {
+    if (!usedInCode(key)) {
       warnings.push(`en: "${key}" is not used by any source file`);
     }
   }
