@@ -105,6 +105,27 @@ Haz clic en **Ejecutar** o pulsa <kbd>F5</kbd>. En el Next, Klive genera un arch
 Cambia `ld a,120` por otro valor y vuelve a ejecutar el programa para mover la pelota hacia arriba o hacia abajo. Para ver los atributos y los patrones de todos los sprites mientras se ejecuta el programa, abre el [Inspector de sprites](/en/guides/next/sprite-inspector/).
 </Callout>
 
+## La tarjeta SD del Next
+
+Un Next no arranca sin su tarjeta SD: en ella están NextZXOS y los programas que ejecutas. En Klive la tarjeta es un archivo de imagen en la carpeta `Klive` de tu carpeta personal, y Klive se ocupa de ella por ti:
+
+- El **ZX Spectrum Next (KS3, core 3.03.03)**, el modelo que usan los proyectos nuevos, incluye su tarjeta. La primera vez que se ejecuta, Klive hace una copia de ella, `ks3-30303.cim`, que el Next lee y escribe. No tienes que hacer nada.
+- **Los demás modelos de Next** necesitan cada uno su propia versión de NextZXOS. Los menús de máquina los marcan con "requiere descarga" y el tamaño. La primera vez que seleccionas uno, Klive ofrece descargar su tarjeta de kliveide.net:
+
+<Shot
+  src="get-started/next-sd-download.webp"
+  alt="El cuadro de diálogo Tarjeta SD de ZX Spectrum Next ofrece descargar la tarjeta del modelo KS2 core 3.02.04"
+  figure="9.2"
+  caption="Un modelo cuya tarjeta aún no está en tu equipo"
+  width={560}
+/>
+
+Haz clic en **Descargar**. Cuando termina la descarga, el modelo arranca. Si Klive no puede conectarse a internet, haz clic en **Copiar enlace**, descarga el archivo en un navegador y elige **Importar archivo descargado...**. Si cierras el cuadro de diálogo, se mantiene la máquina que estabas usando.
+
+Antes de que arranque un Next, Klive también comprueba su tarjeta. Cuando NextZXOS no puede arrancar desde ella (por ejemplo, si la tarjeta está dañada), Klive indica qué falla y ofrece restablecer la tarjeta. La tarjeta anterior se guarda con otro nombre, así que no se pierde nada.
+
+[La tarjeta SD del Next](/en/guides/next/sd-card/) explica el menú **Máquina › Tarjeta SD**, cómo usar una imagen de tarjeta propia y cómo copiar archivos a la tarjeta y desde ella.
+
 La [referencia del ensamblador para ZX Spectrum Next](/en/reference/z80-assembler/zx-next/) describe las instrucciones del Next, `.savenex` y las demás funciones para el Next del ensamblador de Klive.
 
 A continuación, [guarda y comparte tu trabajo](/es/get-started/save-and-share/).

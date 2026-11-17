@@ -1574,7 +1574,8 @@ A web address or path the user may copy (the SD card download dialog's card URL)
 (`overflow-wrap: anywhere`) instead of ending in an ellipsis: the cut-off tail is the file name, the
 part that matters. Its label beside it is `flex: none; white-space: nowrap`, or the flexible value
 squeezes the label onto two lines. A number and its unit in running text are joined by a
-non-breaking space in the message itself ("58.6\u00a0MB"), so a line never starts with the unit.
+non-breaking space in the message itself ("58.6\u00a0MB"), so a line never starts with the unit. The number itself is
+formatted in the display language (`uiLocale()`, `formatMegabytes`): "58,6" in German, never `toFixed`.
 
 ## A Choice That Needs Something First Says So After Its Name, Dimmed
 

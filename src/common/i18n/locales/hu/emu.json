@@ -92,6 +92,7 @@
   "emu.machineState.sdCardChangedConfirm": "Az SD-kártya-képfájl ({file}) az állapot mentése óta megváltozott; a fájlrendszere eltérhet attól, amire a gép emlékszik",
   "emu.machineState.sdCardChanged": "Az SD-kártya-képfájl az állapot mentése óta megváltozott",
   "emu.machineState.superseded": "Egy másik gépváltás felülírta az állapot betöltését",
+  "emu.machine.notReady": "A(z) {machine} nem futhat SD-kártya nélkül",
   "emu.machineState.mismatch": "{reason}. Az állapotot a Klive {version} mentette, ebbe a verzióba nem tölthető be",
   "emu.machineState.loadedFromSzx": "Az állapotot a Klive {version} mentette, amelynek {core} magja eltér ettől; a .szx részéből töltődött be, amely nem tartalmazza a pontos kazettapozíciót, a lemezvezérlő állapotát és az EI/MEMPTR részleteket",
   "emu.machineState.loaded": "Gépállapot betöltve",

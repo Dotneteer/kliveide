@@ -3,6 +3,7 @@ import type { MachineInfo } from "@common/machines/info-types";
 import { resolveModelId } from "@common/machines/machine-registry";
 import { MachineFavorite, favoriteKey, resolveMachineModel } from "@common/machines/machine-favorites";
 import { t } from "@common/i18n/i18n";
+import { formatMegabytes } from "@common/zxnext/nextSdDownload";
 
 /**
  * Selects a machine type (and model) from the machine menu
@@ -49,7 +50,7 @@ export function createMachineTypesMenu(
     return {
       id: model.modelId ? `machine_${machineId}_${model.modelId}` : `machine_${machineId}`,
       label: download
-        ? t("menu.machine.downloadNeeded", { name: model.displayName, size: (download / 1_000_000).toFixed(1) })
+        ? t("menu.machine.downloadNeeded", { name: model.displayName, size: formatMegabytes(download) })
         : model.displayName,
       type: "checkbox",
       checked: isRunning(machineId, model.modelId),

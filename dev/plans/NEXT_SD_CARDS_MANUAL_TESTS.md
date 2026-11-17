@@ -217,4 +217,6 @@ KLIVE_NEXT_SD_DEV_CARDS="" KLIVE_NEXT_SD_BASE_URL=http://127.0.0.1:8080/next-sd/
 
 | ID | Steps | Expected |
 |---|---|---|
-| L1 | Set the UI language to each offered language and repeat B1, G1 and H3. | Until the next translation round, the new texts show in English inside an otherwise translated UI; nothing shows a message key. |
+| L1 | Set the UI language to each offered language (Español, Português (Brasil), Português (Portugal), Deutsch, Magyar) and repeat A4, B1, G1 and H3. | The dialog, the warning, the menu items and the "download needed" notes are translated; no text is cut off or overflows its button; nothing shows a message key. |
+| L2 | In German or Hungarian, look at the sizes in B1, A4 and H3. | They use the language's decimal comma: "58,6 MB". |
+| L3 | Open the Get Started page "Your first ZX Spectrum Next program" in each language on the site. | The section on the Next's SD card is there, and figure 9.2 shows the dialog in the page's language. |

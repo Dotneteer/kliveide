@@ -25,6 +25,7 @@ import { availableCardOf, downloadedCards, workingCopyPath, writeCardFrom } from
 import { offerNextSdCardDownload } from "@main/next-sd/nextModelGate";
 import { checkNextSdCard } from "@main/next-sd/checkNextSdCard";
 import type { NextSdCardCheck } from "@common/zxnext/nextSdCardCheck";
+import { formatMegabytes } from "@common/zxnext/nextSdDownload";
 import { t } from "@common/i18n/i18n";
 import {
   NEXT_PROFILE_IDS,
@@ -517,7 +518,7 @@ function downloadedCardItems(window: BrowserWindow, inUse: string): MachineMenuI
   if (!cards.length) return [{ id: "downloaded_sd_cards_none", label: t("menu.next.noDownloadedCards"), enabled: false }];
   return cards.map((card) => ({
     id: `delete_sd_card_${card.setId}`,
-    label: t("menu.next.deleteDownloadedCard", { card: card.setId, size: (card.bytes / 1_000_000).toFixed(1) }),
+    label: t("menu.next.deleteDownloadedCard", { card: card.setId, size: formatMegabytes(card.bytes) }),
     enabled: card.setId !== inUse,
     click: async () => {
       const result = await dialog.showMessageBox(window, {

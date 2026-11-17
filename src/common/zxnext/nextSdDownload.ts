@@ -1,4 +1,15 @@
+import { uiLocale } from "@common/i18n/i18n";
 import type { NextRomSetId } from "./romSets";
+
+/**
+ * A card's size in megabytes with one decimal, in the display language's number format ("58.6",
+ * "58,6"): the way the dialog, the model lists and the menus show sizes
+ */
+export function formatMegabytes(bytes: number): string {
+  return new Intl.NumberFormat(uiLocale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(
+    bytes / 1_000_000
+  );
+}
 
 /*
  * What the main process and the emulator window share about downloading a ZX Spectrum Next SD base

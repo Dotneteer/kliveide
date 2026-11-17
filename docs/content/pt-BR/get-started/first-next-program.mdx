@@ -105,6 +105,27 @@ Clique em **Executar**, ou pressione <kbd>F5</kbd>. No Next, o Klive gera um arq
 Mude `ld a,120` para outro valor e execute o programa de novo para mover a bola para cima ou para baixo. Para ver os atributos e os padrões de todos os sprites enquanto o programa roda, abra o [Inspetor de sprites](/en/guides/next/sprite-inspector/).
 </Callout>
 
+## O cartão SD do Next
+
+Um Next não inicia sem o seu cartão SD: o NextZXOS e os programas que você executa estão nele. No Klive, o cartão é um arquivo de imagem na pasta `Klive` da sua pasta pessoal, e o Klive cuida dele para você:
+
+- O **ZX Spectrum Next (KS3, core 3.03.03)**, o modelo que os novos projetos usam, vem com o seu cartão. Na primeira execução, o Klive faz uma cópia dele, `ks3-30303.cim`, que o Next lê e grava. Não há nada a fazer.
+- **Os outros modelos do Next** precisam, cada um, da sua própria versão do NextZXOS. Os menus de máquina os marcam com "download necessário" e o tamanho. Na primeira vez que você seleciona um deles, o Klive oferece baixar o cartão de kliveide.net:
+
+<Shot
+  src="get-started/next-sd-download.webp"
+  alt="A caixa de diálogo Cartão SD do ZX Spectrum Next oferecendo baixar o cartão do modelo KS2 core 3.02.04"
+  figure="9.2"
+  caption="Um modelo cujo cartão ainda não está no seu computador"
+  width={560}
+/>
+
+Clique em **Baixar**. Quando o download termina, o modelo inicia. Se o Klive não conseguir acessar a internet, clique em **Copiar link**, baixe o arquivo em um navegador e escolha **Importar arquivo baixado...**. Se você fechar a caixa de diálogo, a máquina que você estava usando continua.
+
+Antes de um Next iniciar, o Klive também verifica o seu cartão. Quando o NextZXOS não consegue inicializar a partir dele (um cartão danificado, por exemplo), o Klive diz o que está errado e oferece redefinir o cartão. O cartão antigo é mantido com outro nome, então nada se perde.
+
+[O cartão SD do Next](/en/guides/next/sd-card/) explica o menu **Máquina › Cartão SD**, como usar uma imagem de cartão própria e como copiar arquivos para o cartão e a partir dele.
+
 A [referência do montador para o ZX Spectrum Next](/en/reference/z80-assembler/zx-next/) descreve as instruções do Next, o `.savenex` e os outros recursos do montador do Klive voltados para o Next.
 
 Agora, [salve e compartilhe o seu trabalho](/pt-BR/get-started/save-and-share/).

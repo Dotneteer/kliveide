@@ -1,5 +1,6 @@
 import { t } from "@common/i18n/i18n";
 import { favoriteKey } from "@common/machines/machine-favorites";
+import { formatMegabytes } from "@common/zxnext/nextSdDownload";
 import type { MessageKey } from "@common/i18n/keys.generated";
 
 import {
@@ -74,7 +75,7 @@ export function selectViewModel(state: NewProjectState): NewProjectViewModel {
       options: modelOptionsOf(state).map((option) => {
         const bytes = state.downloadNeeded[favoriteKey({ machineId: state.machineId, modelId: option.value || undefined })];
         return bytes
-          ? { ...option, label: `${option.label} ${t("dialog.machineSelect.downloadNeeded", { size: (bytes / 1_000_000).toFixed(1) })}` }
+          ? { ...option, label: `${option.label} ${t("dialog.machineSelect.downloadNeeded", { size: formatMegabytes(bytes) })}` }
           : option;
       }),
       value: state.modelId ?? "",

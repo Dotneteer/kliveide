@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { setLanguage } from "@common/i18n/i18n";
+
 import type {
   NextSdDownloadDialogData,
   NextSdDownloadStatus,
@@ -219,5 +221,14 @@ describe("sizes", () => {
   it("are megabytes with one decimal", () => {
     expect(megabytes(23_791_074)).toBe("23.8");
     expect(megabytes(0)).toBe("0.0");
+  });
+
+  it("follow the display language's number format", () => {
+    setLanguage("de");
+    try {
+      expect(megabytes(58_595_114)).toBe("58,6");
+    } finally {
+      setLanguage("en");
+    }
   });
 });

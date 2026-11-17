@@ -1,5 +1,5 @@
 import { t } from "@common/i18n/i18n";
-import type { NextSdCardFailure } from "@common/zxnext/nextSdDownload";
+import { formatMegabytes, type NextSdCardFailure } from "@common/zxnext/nextSdDownload";
 
 import type { NextSdDownloadState } from "./NextSdDownloadModel";
 
@@ -25,7 +25,7 @@ export type NextSdDownloadViewModel = {
 
 /** Bytes as megabytes with one decimal, the way the dialog shows sizes */
 export function megabytes(bytes: number): string {
-  return (bytes / 1_000_000).toFixed(1);
+  return formatMegabytes(bytes);
 }
 
 export function selectViewModel(state: NextSdDownloadState): NextSdDownloadViewModel {

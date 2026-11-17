@@ -89,5 +89,17 @@
   "messages.command.title": "Parancs végrehajtása",
   "messages.command.succeeded": "A parancs végrehajtása sikeres.",
   "messages.command.failed": "Hiba a parancs végrehajtásakor.",
-  "messages.sdCard.select": "SD-kártya lemezképének kiválasztása"
+  "messages.sdCard.select": "SD-kártya lemezképének kiválasztása",
+  "messages.sdCard.check.title": "ZX Spectrum Next SD-kártya",
+  "messages.sdCard.check.message": "Előfordulhat, hogy a(z) {model} nem tud elindulni az SD-kártyájáról.",
+  "messages.sdCard.check.missing": "A(z) {file} fájl nem létezik.",
+  "messages.sdCard.check.unreadable": "A(z) {file} fájl nem olvasható SD-kártya-képfájlként. Lehet, hogy sérült vagy csonka.",
+  "messages.sdCard.check.noPartition": "A(z) {file} fájlon nincs olyan FAT16 vagy FAT32 partíció, amelyet a NextZXOS használni tud, ezért a Next a „Drive C: not found” üzenettel leáll.",
+  "messages.sdCard.check.noSystemFiles": "A(z) {file} fájlon nincsenek meg a NextZXOS rendszerfájljai: {files}.",
+  "messages.sdCard.check.wrongRelease": "A(z) {file} fájlon a NextZXOS más kiadása van, mint amelyre a(z) {model} gépnek szüksége van, ezért a Next indulás közben leáll.",
+  "messages.sdCard.check.reset": "Kártya visszaállítása",
+  "messages.sdCard.check.useDefault": "Alapértelmezett kártya",
+  "messages.sdCard.check.select": "Képfájl kiválasztása...",
+  "messages.sdCard.check.continue": "Folytatás mindenképp",
+  "messages.sdCard.deleteDownloaded": "Biztosan törli a letöltött {card} SD-kártyát? Az a modell, amelynek szüksége van rá, újra letölti."
 }

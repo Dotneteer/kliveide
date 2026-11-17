@@ -5,6 +5,7 @@ import type { MachineInfo } from "@common/machines/info-types";
 import { favoriteKey } from "@common/machines/machine-favorites";
 import { HardwareSpec, getHardwareSpec } from "@common/machines/hardware-specs";
 import { t as translate } from "@common/i18n/i18n";
+import { formatMegabytes } from "@common/zxnext/nextSdDownload";
 import type { TFunction } from "@common/i18n/useT";
 import {
   FAVORITES_SECTION,
@@ -161,7 +162,7 @@ export function selectViewModel(
 
   const noteOf = (e: CatalogueEntry) =>
     e.downloadBytes
-      ? t("dialog.machineSelect.downloadNeeded", { size: (e.downloadBytes / 1_000_000).toFixed(1) })
+      ? t("dialog.machineSelect.downloadNeeded", { size: formatMegabytes(e.downloadBytes) })
       : undefined;
   const modelRow = (e: CatalogueEntry): ModelRowVm => ({
     key: e.key,

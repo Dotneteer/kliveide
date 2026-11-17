@@ -183,5 +183,9 @@
   "menu.next.joystickMode.kempston2": "Kempston 2 (porta $37)",
   "menu.next.joystickMode.md1": "MD 1 (porta $1F)",
   "menu.next.joystickMode.md2": "MD 2 (porta $37)",
-  "menu.next.joystickMode.userDefined": "Definido pelo usuário (joymap)"
+  "menu.next.joystickMode.userDefined": "Definido pelo usuário (joymap)",
+  "menu.machine.downloadNeeded": "{name} (download necessário, {size} MB)",
+  "menu.next.downloadedCards": "Cartões SD baixados",
+  "menu.next.noDownloadedCards": "Nenhum cartão baixado",
+  "menu.next.deleteDownloadedCard": "Excluir {card} ({size} MB)..."
 }

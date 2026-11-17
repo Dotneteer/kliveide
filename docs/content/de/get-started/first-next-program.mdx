@@ -105,6 +105,27 @@ Klicken Sie auf **Ausführen** oder drücken Sie <kbd>F5</kbd>. Auf dem Next ers
 Ändern Sie `ld a,120` in einen anderen Wert und führen Sie das Programm erneut aus, um den Ball nach oben oder unten zu verschieben. Um die Attribute und Muster aller Sprites zu sehen, während das Programm läuft, öffnen Sie den [Sprite-Inspektor](/en/guides/next/sprite-inspector/).
 </Callout>
 
+## Die SD-Karte des Next
+
+Ein Next startet nicht ohne seine SD-Karte: Auf ihr befinden sich NextZXOS und die Programme, die Sie ausführen. In Klive ist die Karte eine Abbilddatei im Ordner `Klive` in Ihrem Benutzerordner, und Klive kümmert sich für Sie darum:
+
+- Der **ZX Spectrum Next (KS3, core 3.03.03)**, das Modell, das neue Projekte verwenden, bringt seine Karte mit. Beim ersten Start legt Klive davon eine Kopie an, `ks3-30303.cim`, die der Next liest und beschreibt. Sie müssen nichts tun.
+- **Die anderen Next-Modelle** benötigen jeweils ein eigenes NextZXOS-Release. Die Maschinenmenüs kennzeichnen sie mit „Download erforderlich“ und der Größe. Wenn Sie eines davon zum ersten Mal auswählen, bietet Klive an, seine Karte von kliveide.net herunterzuladen:
+
+<Shot
+  src="get-started/next-sd-download.webp"
+  alt="Der Dialog ZX Spectrum Next SD-Karte bietet an, die Karte des Modells KS2 core 3.02.04 herunterzuladen"
+  figure="9.2"
+  caption="Ein Modell, dessen Karte noch nicht auf Ihrem Computer ist"
+  width={560}
+/>
+
+Klicken Sie auf **Herunterladen**. Sobald der Download abgeschlossen ist, startet das Modell. Wenn Klive das Internet nicht erreicht, klicken Sie auf **Link kopieren**, laden Sie die Datei im Browser herunter und wählen Sie **Download importieren...**. Wenn Sie den Dialog schließen, bleibt die bisher verwendete Maschine aktiv.
+
+Bevor ein Next startet, prüft Klive außerdem seine Karte. Wenn NextZXOS von ihr nicht booten könnte (etwa bei einer beschädigten Karte), nennt Klive das Problem und bietet an, die Karte zurückzusetzen. Die alte Karte bleibt unter einem anderen Namen erhalten, es geht also nichts verloren.
+
+[Die SD-Karte des Next](/en/guides/next/sd-card/) erklärt das Menü **Maschine › SD-Karte**, wie Sie ein eigenes Kartenabbild verwenden und wie Sie Dateien auf die Karte und von ihr kopieren.
+
 Die [Assembler-Referenz für den ZX Spectrum Next](/en/reference/z80-assembler/zx-next/) beschreibt die Instruktionen des Next, `.savenex` und die übrigen Next-Funktionen des Klive-Assemblers.
 
 Als Nächstes [speichern Sie Ihre Arbeit und geben sie weiter](/de/get-started/save-and-share/).

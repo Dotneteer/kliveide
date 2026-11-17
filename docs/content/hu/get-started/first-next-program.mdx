@@ -105,6 +105,27 @@ Kattintsunk a **Futtatás** gombra, vagy nyomjuk meg az <kbd>F5</kbd> billentyű
 Írjuk át az `ld a,120` sort egy másik értékre, és futtassuk újra a programot: a labda feljebb vagy lejjebb kerül. Ha a program futása közben minden sprite attribútumait és mintáit látni szeretnénk, nyissuk meg a [Sprite-vizsgálót (angolul)](/en/guides/next/sprite-inspector/).
 </Callout>
 
+## A Next SD-kártyája
+
+A Next nem indul el az SD-kártyája nélkül: ezen van a NextZXOS és az általunk futtatott programok. A Klive-ban a kártya egy képfájl a saját mappánkban lévő `Klive` mappában, és a Klive gondoskodik róla:
+
+- A **ZX Spectrum Next (KS3, core 3.03.03)**, az új projektek által használt modell, a kártyájával együtt érkezik. Az első futtatáskor a Klive másolatot készít róla (`ks3-30303.cim`), ezt olvassa és írja a Next. Nincs vele teendőnk.
+- **A többi Next modellnek** mind a saját NextZXOS-kiadására van szüksége. A gépmenük ezeket a „letöltés szükséges” megjegyzéssel és a mérettel jelölik. Amikor valamelyiket először kiválasztjuk, a Klive felajánlja, hogy letölti a kártyáját a kliveide.net oldalról:
+
+<Shot
+  src="get-started/next-sd-download.webp"
+  alt="A ZX Spectrum Next SD-kártya párbeszédablak, amely a KS2, core 3.02.04 modell kártyájának letöltését ajánlja fel"
+  figure="9.2"
+  caption="Egy modell, amelynek a kártyája még nincs a számítógépünkön"
+  width={560}
+/>
+
+Kattintsunk a **Letöltés** gombra. Amikor a letöltés befejeződik, a modell elindul. Ha a Klive nem éri el az internetet, kattintsunk a **Link másolása** gombra, töltsük le a fájlt egy böngészőben, és válasszuk a **Letöltött fájl importálása...** gombot. Ha bezárjuk a párbeszédablakot, a korábban használt gép marad.
+
+Indítás előtt a Klive a Next kártyáját is ellenőrzi. Ha a NextZXOS nem tudna elindulni róla (például mert a kártya sérült), a Klive megmondja, mi a hiba, és felajánlja a kártya visszaállítását. A régi kártya más néven megmarad, így semmi sem vész el.
+
+A [Next SD-kártyája (angolul)](/en/guides/next/sd-card/) oldal ismerteti a **Gép › SD-kártya** menüt, azt, hogyan használhatunk saját kártya-képfájlt, és hogyan másolhatunk fájlokat a kártyára és a kártyáról.
+
 A [ZX Spectrum Next assembler-referencia (angolul)](/en/reference/z80-assembler/zx-next/) ismerteti a Next utasításait, a `.savenex` direktívát és a Klive assembler többi, Nextre vonatkozó lehetőségét.
 
 Következő lépésként [mentsük és osszuk meg a munkánkat](/hu/get-started/save-and-share/).
