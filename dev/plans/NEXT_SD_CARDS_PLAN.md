@@ -1,6 +1,6 @@
 # ZX Spectrum Next SD cards: one bundled, the rest downloaded and checked
 
-Status: **open** (written 2026-11-17). Phases 0-3 are implemented (2026-11-17); phases 4-6 are not started. Read `dev/ai/zxnext-models.md` first: this
+Status: **open** (written 2026-11-17). **Closed (2026-11-17)**: phases 0-6 are implemented; the as-built notes under each phase are the record. Read `dev/ai/zxnext-models.md` first: this
 plan changes its D7 (SD card per model) and D9.4 (base images committed) and its "Adding a model"
 steps. Its D1 (model ids never change; a model-less reference means `ks2-30201`) stays binding.
 
@@ -296,6 +296,21 @@ NextZXOS menu on a fresh home folder, and the other two models show the message 
 3. Tests: controller tests without rendering; the downloader against a local HTTP server (the D-5
    override) for success, a wrong hash, a truncated body, cancel and a refused host.
 
+**As built (2026-11-17):**
+- `src/main/next-sd/downloadNextSdCard.ts`: `downloadNextSdCard` goes through Electron's `net.fetch` (passed
+  in, so tests use Node's against a local server), with `redirect: "manual"`: **a redirect is refused, not
+  followed**, which is how "the one host" is enforced. It asks for `identity`, refuses a `Content-Encoding`,
+  stops reading past `gzSize`, checks `gzSize`/`gzSha256`, and checks the free space for the `.gz` and its
+  working copy first (`fs.statfs`). `importNextSdCard` accepts any `.gz` or raw card **by its raw bytes**, so
+  a card gzipped by another tool imports too; a raw card is gzipped on the way in.
+- `NextSdDownloads` keeps one download per set; the dialog starts it, **polls** its status every 200 ms
+  (`getNextSdCardDownloadStatus`) and may cancel it. Polling was chosen over a main-to-renderer event
+  stream: the status is one small object, and the controller stays testable with a fake `wait`.
+- The dialog (`src/renderer/appEmu/dialogs/nextSdDownload/`, `NEXT_SD_DOWNLOAD_DIALOG`) opens with an
+  offer (the model, download and unpacked sizes, Download, Import a downloaded file..., the address with
+  Copy link) and reuses the z88dk dialog's progress row. Each failure kind has its own sentence, with the
+  technical detail under it.
+
 ### Phase 5 - Every way to a Next goes through the gate
 
 1. `ensureNextModelReady(modelId, { interactive })` runs in `setupZxSpectrumNext`, which every machine
@@ -316,6 +331,34 @@ NextZXOS menu on a fresh home folder, and the other two models show the message 
 5. Machine > SD Card gets **Manage downloaded cards...**: what is downloaded, its size, delete (not the
    bundled one, not a card a model in use needs).
 
+**As built (2026-11-17):**
+- **A machine's `setup` may return `false`** (`info-types.ts`): `changeMachineType`
+  (`registeredMachines.ts`) then reports "declined" and leaves the emulator alone; `setMachineType` stays the
+  boolean wrapper. `setupZxSpectrumNext` returns `false` when the card is not here and the download dialog
+  did not get it (`src/main/next-sd/nextModelGate.ts`); the Phase 0 message box and its texts are gone.
+- **Q1 as built:** `src/main/standInMachine.ts` holds the machine the user chose while another runs. At
+  startup a declined Next model is replaced by the default model with `keepStandIn`; opening a project whose
+  Next model is declined keeps the running machine. While a stand-in runs, the settings
+  (`copyStateToAppSettings`) and the project file (`getKliveProjectStructureFromState`) save the chosen
+  machine; any machine change the user makes ends it.
+- **The entry points:** every main-process switch goes through `changeMachineType`, which runs the setup
+  (menus, Select Machine, favourites, New/Make Project and opening a project, startup, the IDE's commands);
+  a machine state file and a debug recording, which the emulator switches itself, first call
+  `MainApi.prepareMachine`. `test/main/next-gate-entry-points.test.ts` pins both. **The `klive` CLI needs no
+  gate**: it runs a Next without an SD card (the code is injected), so its machines never ask for one.
+- `checkBootCard` (`zx-next-menus.ts`) runs `checkNextSdCard` on the card a Next is about to boot, at
+  startup and at every Next selection. Its dialog is a main-process message box: Reset to the Default Card
+  (the model's own card; renamed aside first, D-9, and put back when no base card can be had) or Use the
+  Default Card (an image the user picked), Select an Image..., Continue Anyway. **Reset the Default
+  Image...** offers the download when the base card is missing (D-7). An SD card the main process cannot
+  open is logged in the Emulator pane.
+- The model lists mark a model that needs a download with "(download needed, NN MB)": the Machine type
+  menu, the Select Machine dialog (`MachineSelectDialogData.downloadNeeded`) and New Project
+  (`MainApi.getModelsNeedingDownload`). The test is cheap on purpose (`needsDownload`: no base card and
+  no working copy); the full check runs when the model is chosen.
+- Housekeeping is **Machine › SD Card › Downloaded SD Cards**, a submenu (one Delete item per card, with its
+  size) rather than a dialog; the running model's set's card is disabled.
+
 ### Phase 6 - Records, docs and closing
 
 1. `dev/ai/zxnext-models.md`: D7 and D9.4 rewritten for this plan; "Adding a model" gains *build, pack,
@@ -328,6 +371,11 @@ NextZXOS menu on a fresh home folder, and the other two models show the message 
 4. `npm run test:slow`, the `boriel-ide-check` `next` and `banked` parts on a fresh home folder, a packaged
    app on macOS and Windows with no network (default model only, the dialog's offline path).
 5. Changeset (`feature`) for phases 1-5 as one change; the plan's as-built notes; close the plan.
+
+**As built (2026-11-17):** `dev/ai/zxnext-models.md` (D7, D9.4, "Adding a model", where cards live),
+`AGENTS.md`'s Next models section, the SD card guide and the models page are rewritten; one `feature`
+changeset covers phases 1-5 (phase 0 shipped as its own fix). Item 4's packaged-app runs on macOS and
+Windows without a network and the boriel-ide-check parts are left for the release check.
 
 ## Open questions
 

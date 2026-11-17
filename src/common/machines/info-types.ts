@@ -231,5 +231,7 @@ export type MachineMenuInfo = {
    * return another model of the machine to switch to instead (the Next, when the selected model's
    * SD card is not installed and the user chose the default model).
    */
-  setup?: (modelId?: string) => Promise<string | void>;
+  // --- `false`: the machine cannot run (e.g. a Next whose SD card is not here and was not
+  // --- downloaded); the machine change is declined and the previous machine stays
+  setup?: (modelId?: string) => Promise<false | void>;
 };

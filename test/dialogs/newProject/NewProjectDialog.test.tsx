@@ -21,6 +21,7 @@ const validationMock = vi.hoisted(() => ({
 
 const mainApiMock = vi.hoisted(() => ({
   getTemplateDirectories: vi.fn(),
+  getModelsNeedingDownload: vi.fn(),
   createKliveProject: vi.fn(),
   openFolder: vi.fn(),
   showOpenFolderDialog: vi.fn(),
@@ -66,6 +67,7 @@ beforeEach(() => {
   validationMock.isValidPath.mockReturnValue(true);
   validationMock.isValidFilename.mockReturnValue(true);
   mainApiMock.getTemplateDirectories.mockResolvedValue(["default", "advanced"]);
+  mainApiMock.getModelsNeedingDownload.mockResolvedValue({});
   mainApiMock.createKliveProject.mockResolvedValue("/projects/MyProject");
   mainApiMock.openFolder.mockResolvedValue(undefined);
   mainApiMock.showOpenFolderDialog.mockResolvedValue("");

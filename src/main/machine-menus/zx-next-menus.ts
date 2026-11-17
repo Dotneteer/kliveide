@@ -21,10 +21,12 @@ import { NEXT_AUDIO_OUTPUTS, normalizeNextAudioOutput } from "@common/settings/n
 import { englishLabel } from "@common/i18n/labels";
 import { ensureSdCardBackupIfEnabled } from "./sd-card-backup";
 import { withSdCardAccess } from "../sd-card-access";
-import { availableCardOf, workingCopyPath, writeCardFrom } from "@main/next-sd/nextSdCards";
+import { availableCardOf, downloadedCards, workingCopyPath, writeCardFrom } from "@main/next-sd/nextSdCards";
+import { offerNextSdCardDownload } from "@main/next-sd/nextModelGate";
+import { checkNextSdCard } from "@main/next-sd/checkNextSdCard";
+import type { NextSdCardCheck } from "@common/zxnext/nextSdCardCheck";
 import { t } from "@common/i18n/i18n";
 import {
-  NEW_PROJECT_NEXT_PROFILE_ID,
   NEXT_PROFILE_IDS,
   nextProfileOf,
   romSetOf
@@ -113,6 +115,14 @@ export const sdCardMenuRenderer: MachineMenuRenderer = (windowInfo) => {
         await resetToDefaultSdCardFile();
       }
     }
+  });
+  // --- The cards downloaded for the other models (NEXT_SD_CARDS_PLAN phase 5, D-11): a card the running
+  // --- model's set needs stays (Reset makes its working copy from it); the installer's is not listed
+  items.push({
+    id: "downloaded_sd_cards",
+    label: t("menu.next.downloadedCards"),
+    type: "submenu",
+    submenu: downloadedCardItems(emuWindow, romSetOf(nextProfileOf(appState.emulatorState?.modelId)).id)
   });
   // --- The core update file on the card the Next boots from, in the TBU viewer
   // --- (`dev/plans/TBBLUE_TBU_VIEWER_PLAN.md`, Phase 5); a read, so in any machine state
@@ -337,13 +347,14 @@ function errorMessage(err: unknown): string {
 
 /**
  * Prepares the SD card of the Next model the emulator switches to (the machine's `setup`).
- * @returns Another model to switch to instead, when the user chose the default model because the
- * selected model's SD card is not installed; otherwise nothing.
+ * A model whose card is not on this computer goes through the gate (NEXT_SD_CARDS_PLAN phase 5): the
+ * download dialog. Declining it declines the machine change.
+ * @returns false when the model cannot run (its card is not here and the user did not get it)
  */
-export async function setupZxSpectrumNext(modelId?: string): Promise<string | void> {
+export async function setupZxSpectrumNext(modelId?: string): Promise<false | void> {
   const targetModel = modelId ?? mainStore.getState().emulatorState?.modelId;
   // --- The model being switched to has its own default card (D7): make its working copy on first use
-  const hasDefaultCard = await initializeZxSpectrumNext(targetModel);
+  let hasDefaultCard = await initializeZxSpectrumNext(targetModel);
   // --- Check, if the SD Card is set at all. Another model's default card counts as no choice:
   // --- switching models switches default cards
   const appState = mainStore.getState();
@@ -358,11 +369,14 @@ export async function setupZxSpectrumNext(modelId?: string): Promise<string | vo
     sdCardFile = undefined;
   }
   if (!sdCardFile && !hasDefaultCard) {
-    const substitute = await handleMissingSdCard(targetModel);
-    if (substitute) return substitute;
-    // --- The user may have picked an image in the meantime: only a new choice counts
-    const picked = mainStore.getState().media?.[MEDIA_SD_CARD];
-    if (picked && picked !== selected && isExistingFile(picked)) sdCardFile = picked;
+    const model = getMachineName(MI_ZXNEXT, nextProfileOf(targetModel).id);
+    await logEmuEvent(
+      `The SD card of the ${model} is not on this computer (no ${romSetOf(nextProfileOf(targetModel)).id} base card)`,
+      "bright-red"
+    );
+    if (!(await offerNextSdCardDownload(targetModel))) return false;
+    hasDefaultCard = await initializeZxSpectrumNext(targetModel);
+    if (!hasDefaultCard) return false;
   }
   if (sdCardFile) {
     // --- Use the file stored in settings
@@ -377,47 +391,40 @@ export async function setupZxSpectrumNext(modelId?: string): Promise<string | vo
     // --- Ensure backup on startup
     await ensureSdCardBackupIfEnabled(defaultSdCard);
   }
-}
-
-function isExistingFile(file: string): boolean {
-  try {
-    return fs.statSync(file).isFile();
-  } catch {
-    return false;
-  }
+  // --- The card the Next boots from must be one NextZXOS can boot (D-8): say what is wrong, offer a way out
+  return await checkBootCard(targetModel);
 }
 
 /**
- * The selected model's SD card is not installed (its base image is not in this Klive, and it has no
- * working copy): says so in the Emulator pane and asks what to do instead of booting a Next that
- * stops with "Drive C: not found".
- * @returns The default model's id when the user chose to switch to it
+ * Checks the card the Next is about to boot from (NEXT_SD_CARDS_PLAN phase 5, D-8). A card NextZXOS
+ * cannot boot opens one dialog that says why and offers what fits: the model's own card back (a broken
+ * working copy is renamed aside first, D-9), another image, or going on anyway.
+ * @returns false when the user wanted the model's card back and it could not be had
  */
-async function handleMissingSdCard(modelId: string | undefined): Promise<string | undefined> {
+async function checkBootCard(modelId: string | undefined): Promise<false | void> {
+  const card = mainStore.getState().media?.[MEDIA_SD_CARD];
+  if (!card) return;
+  const result = await withSdCardAccess(() => checkNextSdCard(card, modelId));
+  if (result.status === "ok") return;
+
   const model = getMachineName(MI_ZXNEXT, nextProfileOf(modelId).id);
-  const defaultModelId = NEW_PROJECT_NEXT_PROFILE_ID;
-  const defaultModel = getMachineName(MI_ZXNEXT, defaultModelId);
-  await logEmuEvent(
-    `The SD card of the ${model} is not installed (no ${romSetOf(nextProfileOf(modelId)).id} base card)`,
-    "bright-red"
-  );
-  // --- Offering the default model makes sense only when it is another model and its card is there
-  const canSwitch =
-    nextProfileOf(modelId).id !== defaultModelId && availableCardOf(defaultModelId) !== undefined;
+  const ownCard = workingCopyPath(modelId);
+  const isOwnCard = path.resolve(card) === path.resolve(ownCard);
+  await logEmuEvent(`The SD card ${card} may not boot: ${checkSummary(result)}`, "bright-red");
   const buttons = [
-    ...(canSwitch ? [t("messages.sdCard.missingSwitch", { defaultModel })] : []),
-    t("messages.sdCard.missingSelect"),
-    t("messages.sdCard.missingContinue")
+    isOwnCard ? t("messages.sdCard.check.reset") : t("messages.sdCard.check.useDefault"),
+    t("messages.sdCard.check.select"),
+    t("messages.sdCard.check.continue")
   ];
   const window = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0];
-  // --- As every message box the main process shows: the menu stays dimmed while it is up
   mainStore.dispatch(dimMenuAction(true));
   let response: number;
   try {
     const options = {
       type: "warning" as const,
-      title: t("messages.sdCard.missingTitle"),
-      message: t("messages.sdCard.missing", { model, defaultModel }),
+      title: t("messages.sdCard.check.title"),
+      message: t("messages.sdCard.check.message", { model }),
+      detail: checkDetail(result, model),
       buttons,
       defaultId: 0,
       cancelId: buttons.length - 1
@@ -426,16 +433,114 @@ async function handleMissingSdCard(modelId: string | undefined): Promise<string 
   } finally {
     mainStore.dispatch(dimMenuAction(false));
   }
-  const choice = canSwitch ? response : response + 1;
-  if (choice === 0) {
-    await logEmuEvent(`Switching to the ${defaultModel} instead`);
-    await setupZxSpectrumNext(defaultModelId);
-    return defaultModelId;
+
+  if (response === 0) {
+    if (isOwnCard && isExistingFile(ownCard)) {
+      // --- D-9: never lose a card silently. The broken one is kept under another name.
+      const aside = brokenCardName(ownCard, new Date());
+      fs.renameSync(ownCard, aside);
+      await logEmuEvent(`The previous SD card was kept as ${aside}`, "yellow");
+      if (!(await initializeZxSpectrumNext(modelId)) && !(await downloadAndInitialize(modelId))) {
+        fs.renameSync(aside, ownCard);
+        await logEmuEvent(`The SD card was not replaced: its base card is not on this computer`, "bright-red");
+        return false;
+      }
+    } else if (!(await initializeZxSpectrumNext(modelId)) && !(await downloadAndInitialize(modelId))) {
+      return false;
+    }
+    mainStore.dispatch(setMediaAction(MEDIA_SD_CARD, ownCard));
+    await logSdCardEvent(ownCard);
+    return;
   }
-  if (choice === 1 && window) {
-    await setSdCardFile(window, mainStore.getState());
+  if (response === 1 && window) {
+    const picked = await pickSdCardImage(window, mainStore.getState());
+    if (picked) {
+      mainStore.dispatch(setMediaAction(MEDIA_SD_CARD, picked));
+      await logSdCardEvent(picked);
+    }
   }
-  return undefined;
+}
+
+async function downloadAndInitialize(modelId: string | undefined): Promise<boolean> {
+  return (await offerNextSdCardDownload(modelId)) && (await initializeZxSpectrumNext(modelId));
+}
+
+/** `ks3-30303.cim` -> `ks3-30303.broken-20261117-153000.cim` (D-9) */
+export function brokenCardName(file: string, when: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const stamp =
+    `${when.getFullYear()}${pad(when.getMonth() + 1)}${pad(when.getDate())}-` +
+    `${pad(when.getHours())}${pad(when.getMinutes())}${pad(when.getSeconds())}`;
+  const ext = path.extname(file);
+  return path.join(path.dirname(file), `${path.basename(file, ext)}.broken-${stamp}${ext}`);
+}
+
+/** One line for the Emulator pane (English, like every log line) */
+function checkSummary(result: NextSdCardCheck): string {
+  switch (result.status) {
+    case "ok":
+      return "ok";
+    case "missing":
+      return "the file does not exist";
+    case "unreadable":
+      return `it cannot be read (${result.message})`;
+    case "noPartition":
+      return `no partition NextZXOS can mount (${result.message})`;
+    case "noSystemFiles":
+      return `NextZXOS's system files are missing (${result.missing.join(", ")})`;
+    case "wrongRelease":
+      return `it holds NextZXOS ${result.found ?? "of another release"}, not ${result.expected}`;
+  }
+}
+
+/** The dialog's explanation of a failed check */
+function checkDetail(result: NextSdCardCheck, model: string): string {
+  switch (result.status) {
+    case "ok":
+      return "";
+    case "missing":
+      return t("messages.sdCard.check.missing", { file: result.file });
+    case "unreadable":
+      return t("messages.sdCard.check.unreadable", { file: result.file });
+    case "noPartition":
+      return t("messages.sdCard.check.noPartition", { file: result.file });
+    case "noSystemFiles":
+      return t("messages.sdCard.check.noSystemFiles", { file: result.file, files: result.missing.join(", ") });
+    case "wrongRelease":
+      return t("messages.sdCard.check.wrongRelease", { file: result.file, model });
+  }
+}
+
+/** One item per downloaded base card: its name and size, and Delete */
+function downloadedCardItems(window: BrowserWindow, inUse: string): MachineMenuItem[] {
+  const cards = downloadedCards();
+  if (!cards.length) return [{ id: "downloaded_sd_cards_none", label: t("menu.next.noDownloadedCards"), enabled: false }];
+  return cards.map((card) => ({
+    id: `delete_sd_card_${card.setId}`,
+    label: t("menu.next.deleteDownloadedCard", { card: card.setId, size: (card.bytes / 1_000_000).toFixed(1) }),
+    enabled: card.setId !== inUse,
+    click: async () => {
+      const result = await dialog.showMessageBox(window, {
+        type: "question",
+        buttons: [t("common.button.yes"), t("common.button.no")],
+        defaultId: 1,
+        cancelId: 1,
+        title: t("menu.next.downloadedCards"),
+        message: t("messages.sdCard.deleteDownloaded", { card: card.setId })
+      });
+      if (result.response !== 0) return;
+      fs.rmSync(card.file, { force: true });
+      await logEmuEvent(`Deleted the downloaded SD card ${card.file}`);
+    }
+  }));
+}
+
+function isExistingFile(file: string): boolean {
+  try {
+    return fs.statSync(file).isFile();
+  } catch {
+    return false;
+  }
 }
 
 function getDefaultSdCardFile(): string {
@@ -448,14 +553,15 @@ async function logSdCardEvent(filename: string): Promise<void> {
 
 async function resetToDefaultSdCardFile(): Promise<void> {
   const { workingCopy: sdCardPath } = defaultSdCardOf();
-  const baseCard = availableCardOf(mainStore.getState().emulatorState?.modelId);
+  const modelId = mainStore.getState().emulatorState?.modelId;
 
-  // --- Without the base card there is nothing to reset to: deleting the working copy would only
-  // --- lose the user's card
-  if (!baseCard) {
-    await logEmuEvent(`The SD card cannot be reset: its base card is not installed`, "bright-red");
+  // --- Without the base card there is nothing to reset to (D-7: a working copy runs without one,
+  // --- only Reset needs it): offer the download. Declined, the working copy stays as it is.
+  if (!availableCardOf(modelId) && !(await offerNextSdCardDownload(modelId))) {
+    await logEmuEvent(`The SD card was not reset: its base card is not on this computer`, "bright-red");
     return;
   }
+  const baseCard = availableCardOf(modelId);
 
   // --- Rewriting the image must not overlap with emulated sector I/O or a file copy, all of
   // --- which work on the very same file.
@@ -671,6 +777,12 @@ function getSdCard2Device(): SdCardDevice {
  * @returns The data blocks read from the tape, if successful; otherwise, undefined.
  */
 async function setSdCardFile(browserWindow: BrowserWindow, state: AppState): Promise<void> {
+  const picked = await pickSdCardImage(browserWindow, state);
+  if (picked) await setSelectedSdCardFile(picked);
+}
+
+/** Asks for an SD card image for the Next; undefined when the user closed the picker */
+async function pickSdCardImage(browserWindow: BrowserWindow, state: AppState): Promise<string | undefined> {
   const lastFile = state.media?.[MEDIA_SD_CARD];
   const defaultPath =
     appSettings?.folders?.[SD_CARD_FILE_FOLDER] ||
@@ -685,10 +797,8 @@ async function setSdCardFile(browserWindow: BrowserWindow, state: AppState): Pro
     ],
     properties: ["openFile"]
   });
-  if (dialogResult.canceled || dialogResult.filePaths.length < 1) return;
-
-  // --- Read the file
-  await setSelectedSdCardFile(dialogResult.filePaths[0]);
+  if (dialogResult.canceled || dialogResult.filePaths.length < 1) return undefined;
+  return dialogResult.filePaths[0];
 }
 
 /**

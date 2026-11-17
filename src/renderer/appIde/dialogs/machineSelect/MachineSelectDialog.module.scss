@@ -204,6 +204,12 @@
   white-space: nowrap;
 }
 
+// --- "download needed, 58.6 MB" after a model that cannot run yet: dimmed body text, never a colour
+.note {
+  opacity: 0.7;
+  font-size: var(--font-size-50);
+}
+
 .grip {
   display: grid;
   place-content: center;

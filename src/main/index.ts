@@ -87,9 +87,12 @@ import { __WIN32__ } from "./electron-utils";
 import { processRendererToMainMessages } from "./RendererToMainProcessor";
 import { mainStore } from "./main-store";
 import { createWindowStateManager } from "./WindowStateManager";
-import { logEmuEvent, setMachineType } from "./registeredMachines";
+import { changeMachineType, logEmuEvent } from "./registeredMachines";
+import { setStandIn } from "./standInMachine";
+import { NEW_PROJECT_NEXT_PROFILE_ID } from "@emu/machines/zxNext/nextProfiles";
+import { MI_ZXNEXT } from "@common/machines/constants";
 import { getLaunchSwitches, resolveLaunchMachine, START_SWITCH } from "./launch-switches";
-import { resolveModelId } from "@common/machines/machine-registry";
+import { getMachineName, getModelConfig, resolveModelId } from "@common/machines/machine-registry";
 import { parseKeyMappings } from "./key-mappings/keymapping-parser";
 import { setSelectedDiskFile, setSelectedTapeFile } from "./machine-menus/zx-specrum-menus";
 import { setDockFile } from "./machine-menus/timex-menus";
@@ -461,7 +464,23 @@ async function createAppWindows() {
           launchProblems.push(resolved.error);
         }
       }
-      await setMachineType(machineId, modelId, machineConfig);
+      const outcome = await changeMachineType(machineId, modelId, machineConfig);
+      if (outcome === "declined" && machineId === MI_ZXNEXT && modelId !== NEW_PROJECT_NEXT_PROFILE_ID) {
+        // --- The saved Next model's SD card is not here and the user did not download it
+        // --- (NEXT_SD_CARDS_PLAN Q1): this session runs the default model, and the settings keep the
+        // --- saved one until the user changes the machine on purpose
+        setStandIn({ machineId, modelId, config: machineConfig });
+        const standIn = NEW_PROJECT_NEXT_PROFILE_ID;
+        const standInConfig = getModelConfig(MI_ZXNEXT, standIn) ?? {};
+        if ((await changeMachineType(MI_ZXNEXT, standIn, standInConfig, { keepStandIn: true })) === "applied") {
+          await logEmuEvent(
+            `This session runs the ${getMachineName(MI_ZXNEXT, standIn)}; the ${getMachineName(MI_ZXNEXT, modelId)} stays the saved machine`,
+            "yellow"
+          );
+          modelId = standIn;
+          machineConfig = standInConfig;
+        }
+      }
       for (const problem of launchProblems) {
         console.warn(problem);
         await logEmuEvent(problem, "bright-red");

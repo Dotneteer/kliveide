@@ -32,7 +32,7 @@ type Props = {
  * process applies them. Opens in whichever window has the focus, so both dialog registries render it.
  */
 export const MachineSelectDialog = ({ data, onResult, onClose }: Props) => {
-  const catalogue = useMemo(() => buildCatalogue(machineRegistry), []);
+  const catalogue = useMemo(() => buildCatalogue(machineRegistry, data?.downloadNeeded), [data]);
   const [state, dispatch] = useReducer(reduce, undefined, () => createInitialState(data, machineRegistry));
   const t = useT();
   // --- `t` is passed in so the view model's texts follow a language switch

@@ -518,3 +518,23 @@ describe("NewProjectController — environment", () => {
     expect(h.vm).toBe(before);
   });
 });
+
+describe("a model that needs a download first (NEXT_SD_CARDS_PLAN phase 5)", () => {
+  it("is marked in the model list with the download's size", async () => {
+    const h = await openNewProjectDialog({
+      service: { getModelsNeedingDownload: async () => ({ "zxnext/ks2-30204": 58_595_114 }) }
+    });
+    await h.dispatch({ type: "machineTypeSelected", machineId: "zxnext" });
+    const labels = Object.fromEntries(h.vm.model.options.map((o) => [o.value, o.label]));
+    expect(labels["ks2-30204"]).toBe("ZX Spectrum Next (KS2, core 3.02.04) (download needed, 58.6 MB)");
+    expect(labels["ks3-30303"]).toBe("ZX Spectrum Next (KS3, core 3.03.03)");
+  });
+
+  it("lists the models plain when the answer does not come", async () => {
+    const h = await openNewProjectDialog({
+      service: { getModelsNeedingDownload: async () => Promise.reject(new Error("no main process")) }
+    });
+    await h.dispatch({ type: "machineTypeSelected", machineId: "zxnext" });
+    expect(h.vm.model.options.every((o) => !o.label.includes("download needed"))).toBe(true);
+  });
+});

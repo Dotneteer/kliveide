@@ -64,7 +64,7 @@ export class NewProjectController extends UiController<
   protected async handle(intent: NewProjectIntent): Promise<void> {
     switch (intent.type) {
       case "opened":
-        await Promise.all([this.loadAvailableMachineTypes(), this.loadTemplates()]);
+        await Promise.all([this.loadAvailableMachineTypes(), this.loadTemplates(), this.loadDownloads()]);
         return;
 
       case "environmentChanged":
@@ -121,6 +121,15 @@ export class NewProjectController extends UiController<
    * a broken install. If the dialog opened over a type without templates, the reducer moves to the
    * first one that has some, and that one's templates are loaded.
    */
+  /** Which models need a download first; without the answer the models are listed plain */
+  private async loadDownloads(): Promise<void> {
+    try {
+      this.emit({ type: "downloadsSettled", downloadNeeded: (await this.ports.service.getModelsNeedingDownload()) ?? {} });
+    } catch {
+      // --- Only a hint in the list: the gate still runs when the project opens
+    }
+  }
+
   private async loadAvailableMachineTypes(): Promise<void> {
     const results = await Promise.all(
       MACHINE_TYPES.map(async (t) => {

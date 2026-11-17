@@ -1568,6 +1568,15 @@ header or status-bar item in `qps` before calling it done.
   subset is loaded.
 - A language's name is shown in itself (*Deutsch*, *Magyar*) and never translated.
 
+## A Choice That Needs Something First Says So After Its Name, Dimmed
+
+A list entry the user can pick but that needs something before it works (a ZX Spectrum Next model whose
+SD card must be downloaded) keeps its name and adds a dimmed note after it, inside the same name cell:
+"(download needed, 58.6 MB)". Dimmed body text (`opacity: 0.7`), never a status colour and never a
+disabled row: picking it is allowed, and it leads to the download. A native menu, which cannot dim part
+of a label, puts the same words in the label. Putting the note inside the name cell keeps a row's grid
+columns (pill, star) where they were.
+
 ## A Status-Bar Item That Names A Choice Stays Plain Text
 
 The BASIC compiler item (`IdeStatusBar`, `dev/ai/boriel/integration.md`) shows while a

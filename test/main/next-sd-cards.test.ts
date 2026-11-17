@@ -21,7 +21,9 @@ import {
   availableCardOf,
   bundledCardPath,
   downloadedCardPath,
+  downloadedCards,
   isModelReady,
+  needsDownload,
   workingCopyPath,
   writeCardFrom
 } from "@main/next-sd/nextSdCards";
@@ -146,5 +148,23 @@ describe("isModelReady", () => {
   it("is false for a working copy that does not pass the check", () => {
     put(workingCopyPath("ks2-30204"), new Uint8Array(4096));
     expect(isModelReady("ks2-30204")).toBe(false);
+  });
+});
+
+describe("the downloaded cards (phase 5)", () => {
+  it("are listed with their sizes on disk", () => {
+    expect(downloadedCards()).toEqual([]);
+    const gz = gzipSync(CARD);
+    put(downloadedCardPath(SET), gz);
+    expect(downloadedCards()).toEqual([{ setId: SET, file: downloadedCardPath(SET), bytes: gz.length }]);
+  });
+
+  it("make a model's need for a download go away, as does a working copy", () => {
+    expect(needsDownload("ks2-30204")).toBe(true);
+    put(workingCopyPath("ks2-30204"), new Uint8Array(512));
+    expect(needsDownload("ks2-30204")).toBe(false);
+    expect(needsDownload("ks2-30201")).toBe(true);
+    put(downloadedCardPath("nextzxos-2.08"), gzipSync(CARD));
+    expect(needsDownload("ks2-30201")).toBe(false);
   });
 });

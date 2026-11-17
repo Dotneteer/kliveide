@@ -5,9 +5,10 @@ import path from "node:path";
 
 /*
  * Setting up a Next model's SD card when the emulator switches to it (`dev/plans/NEXT_SD_CARDS_PLAN.md`,
- * phase 0). A release carries only the default model's base image, so for another model there is no
- * card to copy: Klive must say so and offer the default model instead of booting a Next that stops
- * with "Drive C: not found". A card chosen earlier and deleted since falls back to the model's own.
+ * phases 0 and 5). A release carries only the default model's base card, so for another model there may
+ * be no card to copy: Klive offers the download (the gate) instead of booting a Next that stops with
+ * "Drive C: not found", and declining it declines the machine change. A card chosen earlier and deleted
+ * since falls back to the model's own.
  */
 
 const home = { dir: "" };
@@ -17,9 +18,11 @@ const state: { media: Record<string, any>; emulatorState: Record<string, any>; i
 };
 const showMessageBox = vi.fn();
 const logEmuEvent = vi.fn();
+const displayDialog = vi.fn();
+const checkCard = vi.fn();
 
 vi.mock("electron", () => ({
-  app: { getPath: () => os.tmpdir() },
+  app: { getPath: () => os.tmpdir(), isPackaged: false },
   dialog: { showMessageBox: (...args: any[]) => showMessageBox(...args), showOpenDialog: vi.fn(async () => ({ canceled: true, filePaths: [] })) },
   BrowserWindow: class {
     static getFocusedWindow = () => ({ id: 1 });
@@ -43,11 +46,14 @@ vi.mock("@main/settings-utils", () => ({
   getSettingValue: vi.fn(),
   setSettingValue: vi.fn()
 }));
-vi.mock("@messaging/MainToEmuMessenger", () => ({ getEmuApi: vi.fn() }));
+vi.mock("@messaging/MainToEmuMessenger", () => ({ getEmuApi: () => ({ displayDialog }) }));
 vi.mock("@messaging/MainToIdeMessenger", () => ({ getIdeApi: vi.fn() }));
+// --- The stand-in cards are not real cards: the boot check passes unless a test says otherwise
+vi.mock("@main/next-sd/checkNextSdCard", () => ({ checkNextSdCard: (...args: any[]) => checkCard(...args) }));
 
 import { createHash } from "node:crypto";
 import { MEDIA_DIVMMC_SD_CARD, MEDIA_SD_CARD, SD_CARD_DIVMMC } from "@common/structs/project-const";
+import { NEXT_SD_DOWNLOAD_DIALOG } from "@common/messaging/dialog-ids";
 import { NEXT_ROM_SETS, type NextSdBaseImage } from "@common/zxnext/romSets";
 import { nextProfileOf, romSetOf } from "@emu/machines/zxNext/nextProfiles";
 import {
@@ -57,8 +63,11 @@ import {
   getSdCardDevice,
   initializeZxSpectrumNext,
   setSelectedSdCardFile,
-  setupZxSpectrumNext
+  setupZxSpectrumNext,
+  brokenCardName,
+  sdCardMenuRenderer
 } from "@main/machine-menus/zx-next-menus";
+import { downloadedCardPath } from "@main/next-sd/nextSdCards";
 import { splitSavedSdCardSlots } from "@main/next-sd/sdCardSlots";
 import { bundledCardPaths } from "@main/next-sd/nextSdCards";
 import { gzipSync } from "node:zlib";
@@ -95,6 +104,8 @@ describe("setting up a Next model's SD card", () => {
     state.emulatorState = {};
     showMessageBox.mockReset();
     logEmuEvent.mockReset();
+    displayDialog.mockReset();
+    checkCard.mockReset().mockImplementation((file: string) => ({ status: "ok", file }));
   });
 
   afterEach(() => {
@@ -127,32 +138,44 @@ describe("setting up a Next model's SD card", () => {
     expect(fs.existsSync(workingCopy("ks2-30204"))).toBe(false);
   });
 
-  it("offers the default model when the selected model's card is not installed, and switches on that choice", async () => {
-    installBaseImage("ks3-30303");
-    showMessageBox.mockResolvedValue({ response: 0 });
-    expect(await setupZxSpectrumNext("ks2-30204")).toBe("ks3-30303");
-    const [, options] = showMessageBox.mock.calls[0];
-    expect(options.message).toContain('"Drive C: not found"');
-    expect(options.buttons).toEqual([
-      "Switch to the ZX Spectrum Next (KS3, core 3.03.03)",
-      "Select an Image...",
-      "Continue Without a Card"
-    ]);
-    expect(state.media[MEDIA_SD_CARD]).toBe(defaultSdCardOf("ks3-30303").workingCopy);
-    expect(logEmuEvent.mock.calls.map(([text]) => text).join("\n")).toContain("is not installed");
-  });
-
-  it("keeps the selected model when the user continues without a card", async () => {
-    installBaseImage("ks3-30303");
-    showMessageBox.mockResolvedValue({ response: 2 });
+  it("offers the download when the model's card is not here, and goes on once it is", async () => {
+    displayDialog.mockImplementation(async () => {
+      // --- The dialog downloads the card: here it is "installed" by the test
+      installBaseImage("ks2-30204");
+      return "ready";
+    });
     expect(await setupZxSpectrumNext("ks2-30204")).toBeUndefined();
+    const [dialogId, data] = displayDialog.mock.calls[0];
+    expect(dialogId).toBe(NEXT_SD_DOWNLOAD_DIALOG);
+    expect(data).toMatchObject({
+      modelId: "ks2-30204",
+      modelName: "ZX Spectrum Next (KS2, core 3.02.04)",
+      setId: "nextzxos-2.10",
+      url: "https://kliveide.net/next-sd/nextzxos-2.10.cim.gz"
+    });
+    expect(fs.existsSync(workingCopy("ks2-30204"))).toBe(true);
     expect(state.media[MEDIA_SD_CARD]).toBe(defaultSdCardOf("ks2-30204").workingCopy);
+    expect(logEmuEvent.mock.calls.map(([text]) => text).join("\n")).toContain("is not on this computer");
   });
 
-  it("does not offer to switch when the default model's own card is missing", async () => {
-    showMessageBox.mockResolvedValue({ response: 1 });
+  it("declines the machine change when the user does not download the card", async () => {
+    displayDialog.mockResolvedValue("declined");
+    expect(await setupZxSpectrumNext("ks2-30204")).toBe(false);
+    expect(fs.existsSync(workingCopy("ks2-30204"))).toBe(false);
+    expect(state.media[MEDIA_SD_CARD]).toBeUndefined();
+  });
+
+  it("shows no dialog for a model whose card is here", async () => {
+    installBaseImage("ks3-30303");
     expect(await setupZxSpectrumNext("ks3-30303")).toBeUndefined();
-    expect(showMessageBox.mock.calls[0][1].buttons).toEqual(["Select an Image...", "Continue Without a Card"]);
+    expect(displayDialog).not.toHaveBeenCalled();
+  });
+
+  it("needs no base card for a model whose working copy exists (D-7)", async () => {
+    fs.mkdirSync(path.dirname(workingCopy("ks2-30204")), { recursive: true });
+    fs.writeFileSync(workingCopy("ks2-30204"), new Uint8Array(512));
+    expect(await setupZxSpectrumNext("ks2-30204")).toBeUndefined();
+    expect(displayDialog).not.toHaveBeenCalled();
   });
 
   it("falls back to the model's own card when the image chosen earlier is gone", async () => {
@@ -171,6 +194,138 @@ describe("setting up a Next model's SD card", () => {
     state.media[MEDIA_SD_CARD] = own;
     await setupZxSpectrumNext("ks3-30303");
     expect(state.media[MEDIA_SD_CARD]).toBe(own);
+  });
+});
+
+describe("the check before a Next boots", () => {
+  let savedPublic: string | undefined;
+
+  beforeEach(() => {
+    home.dir = fs.mkdtempSync(path.join(os.tmpdir(), "klive-next-sd-check-"));
+    savedPublic = process.env.PUBLIC;
+    process.env.PUBLIC = path.join(home.dir, "resources");
+    state.media = {};
+    state.emulatorState = {};
+    showMessageBox.mockReset();
+    logEmuEvent.mockReset();
+    displayDialog.mockReset();
+    checkCard.mockReset();
+  });
+
+  afterEach(() => {
+    for (const [entry, original] of patchedManifest) Object.assign(entry, original);
+    patchedManifest.clear();
+    process.env.PUBLIC = savedPublic;
+    fs.rmSync(home.dir, { recursive: true, force: true });
+  });
+
+  const brokenOnce = () =>
+    checkCard
+      .mockImplementationOnce((file: string) => ({ status: "noPartition", file, message: "no MBR" }))
+      .mockImplementation((file: string) => ({ status: "ok", file }));
+
+  it("says what is wrong, and resets a broken working copy, keeping the old one aside (D-9)", async () => {
+    installBaseImage("ks3-30303");
+    const own = workingCopy("ks3-30303");
+    fs.mkdirSync(path.dirname(own), { recursive: true });
+    fs.writeFileSync(own, new Uint8Array(512).fill(7));
+    brokenOnce();
+    showMessageBox.mockResolvedValue({ response: 0 });
+    expect(await setupZxSpectrumNext("ks3-30303")).toBeUndefined();
+    const [, options] = showMessageBox.mock.calls[0];
+    expect(options.message).toBe("The ZX Spectrum Next (KS3, core 3.03.03) may not boot from its SD card.");
+    expect(options.detail).toContain("has no FAT16 or FAT32 partition");
+    expect(options.buttons).toEqual(["Reset to the Default Card", "Select an Image...", "Continue Anyway"]);
+    const aside = fs.readdirSync(path.dirname(own)).filter((name) => name.includes(".broken-"));
+    expect(aside).toHaveLength(1);
+    expect(new Uint8Array(fs.readFileSync(path.join(path.dirname(own), aside[0])))).toEqual(new Uint8Array(512).fill(7));
+    expect(new Uint8Array(fs.readFileSync(own))).toEqual(new Uint8Array(4096).fill(0x5a));
+    expect(state.media[MEDIA_SD_CARD]).toBe(own);
+  });
+
+  it("puts the broken card back when its base card cannot be had", async () => {
+    const own = workingCopy("ks2-30204");
+    fs.mkdirSync(path.dirname(own), { recursive: true });
+    fs.writeFileSync(own, new Uint8Array(512).fill(7));
+    brokenOnce();
+    showMessageBox.mockResolvedValue({ response: 0 });
+    displayDialog.mockResolvedValue("declined");
+    expect(await setupZxSpectrumNext("ks2-30204")).toBe(false);
+    expect(new Uint8Array(fs.readFileSync(own))).toEqual(new Uint8Array(512).fill(7));
+    expect(fs.readdirSync(path.dirname(own)).filter((name) => name.includes(".broken-"))).toEqual([]);
+  });
+
+  it("boots the card as it is on Continue Anyway", async () => {
+    installBaseImage("ks3-30303");
+    brokenOnce();
+    showMessageBox.mockResolvedValue({ response: 2 });
+    expect(await setupZxSpectrumNext("ks3-30303")).toBeUndefined();
+    expect(state.media[MEDIA_SD_CARD]).toBe(workingCopy("ks3-30303"));
+    expect(fs.readdirSync(path.dirname(workingCopy("ks3-30303"))).filter((name) => name.includes(".broken-"))).toEqual([]);
+  });
+
+  it("offers the model's own card for an image the user picked", async () => {
+    installBaseImage("ks3-30303");
+    const picked = path.join(home.dir, "picked.cim");
+    fs.writeFileSync(picked, new Uint8Array(512));
+    state.media[MEDIA_SD_CARD] = picked;
+    checkCard
+      .mockImplementationOnce((file: string) => ({ status: "wrongRelease", file, expected: "nextzxos-26.11", found: "nextzxos-2.08" }))
+      .mockImplementation((file: string) => ({ status: "ok", file }));
+    showMessageBox.mockResolvedValue({ response: 0 });
+    await setupZxSpectrumNext("ks3-30303");
+    expect(showMessageBox.mock.calls[0][1].buttons[0]).toBe("Use the Default Card");
+    expect(showMessageBox.mock.calls[0][1].detail).toContain("another NextZXOS release");
+    expect(state.media[MEDIA_SD_CARD]).toBe(workingCopy("ks3-30303"));
+    expect(fs.existsSync(picked)).toBe(true);
+  });
+
+  it("names the card kept aside by the time it was replaced", () => {
+    expect(brokenCardName("/home/me/Klive/ks3-30303.cim", new Date(2026, 10, 17, 15, 3, 9))).toBe(
+      path.join("/home/me/Klive", "ks3-30303.broken-20261117-150309.cim")
+    );
+  });
+});
+
+describe("Machine › SD Card › Downloaded SD Cards", () => {
+  beforeEach(() => {
+    home.dir = fs.mkdtempSync(path.join(os.tmpdir(), "klive-next-sd-menu-"));
+    state.media = {};
+    state.emulatorState = { modelId: "ks2-30204" };
+    showMessageBox.mockReset();
+    logEmuEvent.mockReset();
+  });
+  afterEach(() => fs.rmSync(home.dir, { recursive: true, force: true }));
+
+  const submenu = () =>
+    (sdCardMenuRenderer({ emuWindow: { id: 1 } } as any, undefined as any) as any[]).find((i) => i.id === "downloaded_sd_cards")
+      .submenu as any[];
+  const download = (setId: string) => {
+    fs.mkdirSync(path.dirname(downloadedCardPath(setId as any)), { recursive: true });
+    fs.writeFileSync(downloadedCardPath(setId as any), new Uint8Array(2_500_000));
+  };
+
+  it("says so when nothing is downloaded", () => {
+    expect(submenu()).toEqual([expect.objectContaining({ label: "No Downloaded Cards", enabled: false })]);
+  });
+
+  it("lists each card with its size, and keeps the one the running model needs", () => {
+    download("nextzxos-2.08");
+    download("nextzxos-2.10");
+    expect(submenu().map((i) => [i.label, i.enabled])).toEqual([
+      ["Delete nextzxos-2.08 (2.5 MB)...", true],
+      ["Delete nextzxos-2.10 (2.5 MB)...", false]
+    ]);
+  });
+
+  it("deletes a card only when the user says yes", async () => {
+    download("nextzxos-2.08");
+    showMessageBox.mockResolvedValueOnce({ response: 1 });
+    await submenu()[0].click();
+    expect(fs.existsSync(downloadedCardPath("nextzxos-2.08"))).toBe(true);
+    showMessageBox.mockResolvedValueOnce({ response: 0 });
+    await submenu()[0].click();
+    expect(fs.existsSync(downloadedCardPath("nextzxos-2.08"))).toBe(false);
   });
 });
 

@@ -165,7 +165,10 @@ export const MachineSelectView = ({ vm, filter, dispatch, onSwitchRequested }: P
       onDoubleClick={() => onSwitchRequested(row.key)}
     >
       {leafTitle && <span className={styles.chevronSpace} />}
-      <span className={styles.name}>{leafTitle ?? row.name}</span>
+      <span className={styles.name}>
+        {leafTitle ?? row.name}
+        {row.note && <span className={styles.note}> {row.note}</span>}
+      </span>
       {row.running ? <span className={styles.pill}>{t("dialog.machineSelect.running")}</span> : <span />}
       {starButton(row.key, row.favorite)}
     </div>
@@ -210,7 +213,10 @@ export const MachineSelectView = ({ vm, filter, dispatch, onSwitchRequested }: P
         <span className={styles.grip} aria-hidden="true">
           <Icon iconName="grip-vertical" width={12} height={12} fill="currentColor" />
         </span>
-        <span className={styles.name}>{row.name}</span>
+        <span className={styles.name}>
+          {row.name}
+          {row.note && <span className={styles.note}> {row.note}</span>}
+        </span>
         <span className={styles.rowActions}>
           {rowAction("arrow-up", t("dialog.machineSelect.moveUp"), !row.canMoveUp, () =>
             dispatch({ type: "favoriteMoved", key: row.key, delta: -1 })

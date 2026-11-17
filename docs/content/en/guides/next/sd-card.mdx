@@ -15,7 +15,7 @@ files between it and your computer.
 
 ## The default card
 
-On first use of a Next model Klive copies a ready-made card with that model's NextZXOS on it to the
+On first use of a Next model Klive makes a card with that model's NextZXOS on it in the
 `Klive` folder in your home folder (`~/Klive` on macOS and Linux). Each model has its own default card,
 so switching models never boots NextZXOS from a card of another release:
 
@@ -33,18 +33,45 @@ explains the models.
 
 When the Next starts, it boots NextZXOS from the card, as the real machine does.
 
-### Models whose card is not installed
+### Models whose card is downloaded
 
-Klive installs the card of the two core 3.03.03 models (NextZXOS 2.10a). When you select another model
-and it has no card in the Klive folder yet, Klive says so instead of starting a Next that stops with
-"Drive C: not found", and offers three choices:
+Klive installs the card of the two core 3.03.03 models (NextZXOS 2.10a). The other models' cards are
+downloaded from kliveide.net the first time you select one of those models:
 
-- **Switch to the ZX Spectrum Next (KS3, core 3.03.03)**, whose card is installed;
-- **Select an Image...**, to use a card image of your own with that model;
-- **Continue Without a Card**, which keeps the model; NextZXOS does not start on it.
+| Card | Models | Download |
+|---|---|---|
+| NextZXOS 2.08 | KS2, core 3.02.01 | 37.0 MB |
+| NextZXOS 2.10 | KS2, core 3.02.04 | 58.6 MB |
+
+When a model's card is not on your computer, Klive opens a dialog instead of starting a Next that stops
+with "Drive C: not found". The menus and the **Select Machine** dialog mark such a model with
+"download needed" and the size.
+
+- **Download** gets the card, shows its progress, and starts the model when it is done. **Cancel**
+  stops the download.
+- **Import a downloaded file...** takes a card you downloaded in a browser, for a computer that cannot
+  reach kliveide.net from Klive. **Copy link** copies the card's web address.
+- Closing the dialog keeps the machine that was running. If Klive starts on such a model, it runs the
+  ZX Spectrum Next (KS3, core 3.03.03) for that session and keeps your model as the saved one.
+
+Klive checks every card it downloads or imports, and keeps only the card its own records name, so a
+damaged or altered file is never used. A downloaded card is kept in the `next-sd` folder of the Klive
+folder; **Reset the Default Image...** makes a fresh copy from it.
 
 A card you selected earlier and then moved or deleted is not used either: the Next goes back to its
 model's default card and says so in the Emulator output.
+
+### A card NextZXOS cannot boot
+
+Before a Next starts, Klive checks the card it boots from: that it can be read, has a FAT16 or FAT32
+partition, holds NextZXOS's system files, and holds the NextZXOS release the model needs. When one of
+these fails, a dialog says which, and offers:
+
+- **Reset to the Default Card** (for the model's own card): Klive keeps the broken card under a new name
+  (`ks3-30303.broken-20261117-150309.cim`, say), says where in the Emulator output, and makes a fresh card;
+- **Use the Default Card** (for an image you selected): goes back to the model's own card;
+- **Select an Image...**, to use another image;
+- **Continue Anyway**, to boot the card as it is.
 
 ## Switching or resetting the card
 
@@ -54,7 +81,11 @@ The **Machine › SD Card** menu has three items, available while the machine is
 |---|---|
 | **Select Image...** | Uses another `.cim` image as the Next's card. Klive remembers the choice. |
 | **Use the Default Image** | Goes back to the current model's default card in the Klive folder. |
-| **Reset the Default Image...** | Replaces the current model's default card with a fresh copy of the one Klive ships, after asking. Every change made to that card is lost. For a model whose card Klive does not install, it changes nothing. |
+| **Reset the Default Image...** | Replaces the current model's default card with a fresh copy, after asking. Every change made to that card is lost. When the model's card has to be downloaded first, Klive offers the download. |
+
+**Machine › SD Card › Downloaded SD Cards** lists the cards Klive downloaded, with their sizes, and
+deletes one after asking. The card the running model needs stays; a model whose card you deleted
+downloads it again when you select it.
 
 <Callout type="warning">
 Reset the default image only when you mean to: it deletes everything programs or you have put on the

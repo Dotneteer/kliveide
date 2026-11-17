@@ -1,7 +1,7 @@
 import type { MenuItemConstructorOptions } from "electron";
 import type { MachineInfo } from "@common/machines/info-types";
 import { resolveModelId } from "@common/machines/machine-registry";
-import { MachineFavorite, resolveMachineModel } from "@common/machines/machine-favorites";
+import { MachineFavorite, favoriteKey, resolveMachineModel } from "@common/machines/machine-favorites";
 import { t } from "@common/i18n/i18n";
 
 /**
@@ -26,6 +26,7 @@ export const SELECT_MACHINE_ACCELERATOR = "CmdOrCtrl+Shift+M";
  * @param currentModelId The model running now
  * @param select Called when the user picks a machine type
  * @param openSelector Called when the user picks "Select machine…"
+ * @param downloadNeeded `favoriteKey` -> bytes to download before the model can run (a Next's SD card)
  */
 export function createMachineTypesMenu(
   registry: readonly MachineInfo[],
@@ -33,7 +34,8 @@ export function createMachineTypesMenu(
   currentMachineId: string | undefined,
   currentModelId: string | undefined,
   select: MachineTypeSelector,
-  openSelector: () => Promise<void>
+  openSelector: () => Promise<void>,
+  downloadNeeded: Record<string, number> = {}
 ): MenuItemConstructorOptions[] {
   const runningModelId =
     currentMachineId && currentModelId ? resolveModelId(currentMachineId, currentModelId) : undefined;
@@ -43,9 +45,12 @@ export function createMachineTypesMenu(
   const itemFor = (machineId: string, modelId?: string): MenuItemConstructorOptions | undefined => {
     const model = resolveMachineModel(registry, machineId, modelId);
     if (!model) return undefined;
+    const download = downloadNeeded[favoriteKey({ machineId, modelId: model.modelId })];
     return {
       id: model.modelId ? `machine_${machineId}_${model.modelId}` : `machine_${machineId}`,
-      label: model.displayName,
+      label: download
+        ? t("menu.machine.downloadNeeded", { name: model.displayName, size: (download / 1_000_000).toFixed(1) })
+        : model.displayName,
       type: "checkbox",
       checked: isRunning(machineId, model.modelId),
       click: async () => {

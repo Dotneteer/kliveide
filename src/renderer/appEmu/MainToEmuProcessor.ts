@@ -24,7 +24,7 @@ import { ht1080zTapeErrorKey, isHt1080zTapeFor, parseHt1080zTapeFile } from "@em
 import { isTvcCasFileName, parseTvcCasFile } from "@emu/machines/tvc/TvcCasFile";
 import { MI_ENTERPRISE, MI_HT1080Z, MI_TVC } from "@common/machines/constants";
 import { detectCasFormat, type CasFormat } from "@emu/machines/casFormat";
-import { machineRegistry } from "@common/machines/machine-registry";
+import { getMachineName, machineRegistry } from "@common/machines/machine-registry";
 import { isEpTapeFileName, parseEpTapeFile } from "@emu/machines/enterprise/EpTapeFile";
 import { mediaStore } from "@emu/machines/media/media-info";
 import { screenImageOf } from "@common/headless/screenImage";
@@ -651,8 +651,14 @@ class EmuMessageProcessor {
     return {
       getMachineController: () => this.machineService.getMachineController(),
       getEmulatorState: () => store.getState()?.emulatorState ?? {},
-      setMachineType: (machineId, modelId, config) =>
-        this.machineService.setMachineType(machineId, modelId, config),
+      setMachineType: async (machineId, modelId, config) => {
+        // --- The machine's own setup first, as every other way to a machine (a Next's SD card gate,
+        // --- NEXT_SD_CARDS_PLAN phase 5): a state or a recording of a Next needs its card
+        if (!(await createMainApi(this.mainMessenger).prepareMachine(machineId, modelId))) {
+          throw new Error(t("emu.machine.notReady", { machine: getMachineName(machineId, modelId) }));
+        }
+        return this.machineService.setMachineType(machineId, modelId, config);
+      },
       setTape: (file, bytes) => this.setTapeFile(file, bytes, false, true),
       setDisk: (drive, file, bytes) => this.setDiskFile(drive, file, bytes, false, true),
       getMediaFiles: () => ({

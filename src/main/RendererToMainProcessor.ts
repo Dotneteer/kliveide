@@ -14,6 +14,9 @@ import {
   nextSdCardDownloadStatus,
   startNextSdCardDownload
 } from "./next-sd/nextSdDownloadService";
+import { machineMenuRegistry } from "./machine-menus/machine-menu-registry";
+import { logEmuEvent } from "./registeredMachines";
+import { nextModelsNeedingDownload } from "./next-sd/nextModelGate";
 import {
   defaultResponse,
   errorResponse,
@@ -1528,6 +1531,16 @@ class MainMessageProcessor {
     };
   }
 
+  /** The models that need a download before they run, for the model lists (NEXT_SD_CARDS_PLAN phase 5) */
+  async getModelsNeedingDownload(): Promise<Record<string, number>> {
+    return nextModelsNeedingDownload();
+  }
+
+  /** Runs a machine's setup before a switch the emulator makes itself (NEXT_SD_CARDS_PLAN phase 5) */
+  async prepareMachine(machineId: string, modelId?: string): Promise<boolean> {
+    return (await machineMenuRegistry[machineId]?.setup?.(modelId)) !== false;
+  }
+
   /** Starts downloading a Next ROM set's SD base card (NEXT_SD_CARDS_PLAN phase 4) */
   async startNextSdCardDownload(setId: string): Promise<void> {
     startNextSdCardDownload(setId);
@@ -1550,7 +1563,14 @@ class MainMessageProcessor {
    */
   async getSdCardInfo(card = 0): Promise<{ totalSectors: number }> {
     if (card !== 0 && card !== 1 && card !== SD_CARD_DIVMMC) throw new Error("Invalid SD card");
-    return withSdCardAccess(() => ({ totalSectors: getSdCardDevice(card).totalSectors }));
+    try {
+      return await withSdCardAccess(() => ({ totalSectors: getSdCardDevice(card).totalSectors }));
+    } catch (err) {
+      // --- Said where the user looks, not only in the console (NEXT_SD_CARDS_PLAN phase 5): the machine
+      // --- then runs with no card it can read
+      await logEmuEvent(`The SD card cannot be read: ${err instanceof Error ? err.message : String(err)}`, "bright-red");
+      throw err;
+    }
   }
 
   /**

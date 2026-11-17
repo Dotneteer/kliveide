@@ -47,7 +47,11 @@ vi.mock("@main/file-watcher", () => ({
   fileChangeWatcher: { startWatching: vi.fn(), stopWatching: vi.fn() }
 }));
 
-vi.mock("@main/registeredMachines", () => ({ setMachineType }));
+vi.mock("@main/registeredMachines", () => ({
+  setMachineType,
+  // --- Opening a project goes through changeMachineType (NEXT_SD_CARDS_PLAN phase 5)
+  changeMachineType: async (...args: any[]) => ((await setMachineType(...args)) ? "applied" : "superseded")
+}));
 
 /** The action that marks the folder open; its payload says whether it is a valid project */
 const openFolderDispatch = () =>

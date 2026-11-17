@@ -8,6 +8,7 @@ import { getRecentProjects, saveKliveProject, setRecentProjects } from "./projec
 import { getKliveHomeBase } from "./portable";
 import { AppSettings } from "./settings";
 import { ensureSettingsFileDirectory, resolveSettingsFilePath } from "./settings-path";
+import { chosenMachine } from "./standInMachine";
 
 /**
  * Get the specified seeting definition.
@@ -157,9 +158,11 @@ function copyStateToAppSettings(): void {
   appSettings.accent = state.accent;
   appSettings.globalSettings = state.globalSettings;
   appSettings.ideSettings = state.ideSettings;
-  appSettings.machineId = state.emulatorState?.machineId;
-  appSettings.modelId = state.emulatorState?.modelId;
-  appSettings.config = state.emulatorState?.config;
+  // --- While a machine stands in for a declined one (a Next without its SD card), the chosen one is kept
+  const chosen = chosenMachine();
+  appSettings.machineId = chosen ? chosen.machineId : state.emulatorState?.machineId;
+  appSettings.modelId = chosen ? chosen.modelId : state.emulatorState?.modelId;
+  appSettings.config = chosen ? chosen.config : state.emulatorState?.config;
   appSettings.machineSpecific = state.emulatorState?.machineSpecific;
   appSettings.clockMultiplier = state.emulatorState?.clockMultiplier ?? 1;
   appSettings.soundLevel = state.emulatorState?.soundLevel ?? 0.5;

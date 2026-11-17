@@ -77,6 +77,15 @@ export function availableCard(setId: NextRomSetId): AvailableNextSdCard | undefi
   return isFile(downloaded) ? { setId, file: downloaded, source: "downloaded", compressed: true } : undefined;
 }
 
+/** The base cards downloaded into `<Klive home>/next-sd`, with their sizes on disk */
+export function downloadedCards(): { setId: NextRomSetId; file: string; bytes: number }[] {
+  return (Object.keys(NEXT_ROM_SETS) as NextRomSetId[])
+    .filter((setId) => NEXT_ROM_SETS[setId].sdBaseImage)
+    .map((setId) => ({ setId, file: downloadedCardPath(setId) }))
+    .filter((card) => isFile(card.file))
+    .map((card) => ({ ...card, bytes: fs.statSync(card.file).size }));
+}
+
 /** A model's working copy: `<Klive home>/<sdWorkingCopy>` */
 export function workingCopyPath(modelId: string | undefined): string {
   return path.join(getKliveHomeBase(), KLIVE_HOME_FOLDER, nextProfileOf(modelId).sdWorkingCopy);
@@ -94,6 +103,14 @@ export function availableCardOf(modelId: string | undefined): AvailableNextSdCar
 export function isModelReady(modelId: string | undefined): boolean {
   if (availableCardOf(modelId)) return true;
   return checkNextSdCard(workingCopyPath(modelId), modelId).status === "ok";
+}
+
+/**
+ * Whether a model needs its card downloaded before it can run, as the model lists show it: no base
+ * card and no working copy. Cheap (two file lookups); the full check runs when the model is chosen.
+ */
+export function needsDownload(modelId: string | undefined): boolean {
+  return !availableCardOf(modelId) && !isFile(workingCopyPath(modelId));
 }
 
 /** A base card that does not have the manifest's bytes */

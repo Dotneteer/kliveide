@@ -73,6 +73,7 @@ import { toggleWindowRecording } from "./recording/window-recording/windowRecord
 import { focusEmuWindow, getAppWindows, isIdeWindowFocused, isIdeWindowVisible, showIdeWindow } from ".";
 import { t } from "@common/i18n/i18n";
 import { ADVANCED_DEBUGGING_SETTING } from "@common/features/advancedDebugging";
+import { nextModelsNeedingDownload } from "@main/next-sd/nextModelGate";
 
 /** The contributor guide the Language page links to (`src/common/i18n/locales/README.md`) */
 export const TRANSLATION_GUIDE_URL =
@@ -119,7 +120,8 @@ export async function openMachineSelector(): Promise<void> {
     favorites: machineFavorites,
     current: appState?.emulatorState?.machineId
       ? { machineId: appState.emulatorState.machineId, modelId: appState.emulatorState.modelId }
-      : undefined
+      : undefined,
+    downloadNeeded: nextModelsNeedingDownload()
   };
   const result = (await displayDialogInFocusedWindow(MACHINE_SELECT_DIALOG, data)) as
     | MachineSelectDialogResult

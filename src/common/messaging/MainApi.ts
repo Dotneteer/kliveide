@@ -1036,6 +1036,23 @@ class MainApiImpl {
   }
 
   /**
+   * The machine models that need a download before they run (a ZX Spectrum Next's SD card, for the
+   * model lists): `favoriteKey` -> the download's size in bytes
+   */
+  async getModelsNeedingDownload(): Promise<Record<string, number>> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Runs a machine's setup before the emulator switches to it from a file (a machine state, a debug
+   * recording): a ZX Spectrum Next model whose SD card is not here offers its download. False when the
+   * machine cannot run (the user declined).
+   */
+  async prepareMachine(_machineId: string, _modelId?: string): Promise<boolean> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Starts downloading a ZX Spectrum Next ROM set's SD base card (NEXT_SD_CARDS_PLAN phase 4); returns
    * at once. The download dialog polls `getNextSdCardDownloadStatus`.
    * @param _setId The ROM set (`nextRomSets.json`)
@@ -1417,6 +1434,8 @@ const UNBOUNDED_MAIN_METHODS = [
   "copyToSdCard",
   // --- The file picker waits on the user, then a card of up to ~100 MB is checked
   "importNextSdCardFile",
+  // --- A machine's setup may wait on the SD card download dialog
+  "prepareMachine",
   "downloadSjasmplusRelease",
   "installBoriel",
   "startScreenRecording",

@@ -60,6 +60,7 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
       },
       service: {
         getTemplateDirectories: (machineId) => mainApi.getTemplateDirectories(machineId),
+        getModelsNeedingDownload: () => mainApi.getModelsNeedingDownload(),
         createProject: (request) =>
           mainApi.createKliveProject(
             request.machineId,

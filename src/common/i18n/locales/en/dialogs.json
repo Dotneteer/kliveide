@@ -3060,5 +3060,13 @@
     "placeholders": {
       "model": "The Next model's name, shown verbatim, e.g. 'ZX Spectrum Next (KS2, core 3.02.04)'"
     }
+  },
+  "dialog.machineSelect.downloadNeeded": "(download needed, {size} MB)",
+  "@dialog.machineSelect.downloadNeeded": {
+    "context": "Shown after a machine model's name in the Select Machine dialog when the model cannot run before something is downloaded (a ZX Spectrum Next's SD card).",
+    "placeholders": {
+      "size": "The download's size in megabytes, e.g. '58.6'"
+    },
+    "maxChars": 40
   }
 }
