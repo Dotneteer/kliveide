@@ -7,6 +7,13 @@ import type { ScriptStartInfo } from "@abstractions/ScriptStartInfo";
 import type { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
 
 import { app, BrowserWindow, dialog, shell } from "electron";
+import type { NextSdDownloadStatus, NextSdImportResult } from "@common/zxnext/nextSdDownload";
+import {
+  cancelNextSdCardDownload,
+  importNextSdCardFile,
+  nextSdCardDownloadStatus,
+  startNextSdCardDownload
+} from "./next-sd/nextSdDownloadService";
 import {
   defaultResponse,
   errorResponse,
@@ -1519,6 +1526,23 @@ class MainMessageProcessor {
       success: true,
       persistenceConfirmed: true // --- fsyncSync completed inside writeSector()
     };
+  }
+
+  /** Starts downloading a Next ROM set's SD base card (NEXT_SD_CARDS_PLAN phase 4) */
+  async startNextSdCardDownload(setId: string): Promise<void> {
+    startNextSdCardDownload(setId);
+  }
+
+  async getNextSdCardDownloadStatus(setId: string): Promise<NextSdDownloadStatus> {
+    return nextSdCardDownloadStatus(setId);
+  }
+
+  async cancelNextSdCardDownload(setId: string): Promise<void> {
+    cancelNextSdCardDownload(setId);
+  }
+
+  async importNextSdCardFile(setId: string): Promise<NextSdImportResult> {
+    return importNextSdCardFile(this.window, setId);
   }
 
   /**

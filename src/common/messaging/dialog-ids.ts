@@ -28,3 +28,5 @@ export const Z88_INSERT_CARD_DIALOG = EMU_DIALOG_BASE + 4;
 export const Z88_EXPORT_CARD_DIALOG = EMU_DIALOG_BASE + 5;
 export const Z88_CHANGE_RAM_DIALOG = EMU_DIALOG_BASE + 6;
 export const JOYSTICK_BINDINGS_DIALOG = EMU_DIALOG_BASE + 7;
+// --- A ZX Spectrum Next model's SD card is not here: download or import it (NEXT_SD_CARDS_PLAN phase 4)
+export const NEXT_SD_DOWNLOAD_DIALOG = EMU_DIALOG_BASE + 8;

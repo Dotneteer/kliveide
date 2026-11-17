@@ -2949,5 +2949,116 @@
   "dialog.createDisk.folder.hint": "New disks go into the open project's disks folder, or into Klive/Disks when no project is open",
   "@dialog.createDisk.folder.hint": {
     "context": "A note under the 'Disk file folder' field of the Create Disk File dialog, which makes a blank floppy disk image: where the field's starting folder is. 'disks' and 'Klive/Disks' are folder names: keep them as they are. Wraps over two lines."
+  },
+  "dialog.nextSdDownload.title": "ZX Spectrum Next SD Card",
+  "@dialog.nextSdDownload.title": {
+    "context": "Title of the ZX Spectrum Next SD card download dialog, which appears when a Next model's SD card (the disk image the Next boots NextZXOS from) is not on this computer yet. 'ZX Spectrum Next' is a machine name: keep it.",
+    "maxChars": 40
+  },
+  "dialog.nextSdDownload.intro": "The {model} boots NextZXOS from an SD card that is not on this computer yet. Klive can download it from kliveide.net: {download} MB, {size} MB once unpacked.",
+  "@dialog.nextSdDownload.intro": {
+    "context": "Opening paragraph of the ZX Spectrum Next SD card download dialog, which appears when a Next model's SD card (the disk image the Next boots NextZXOS from) is not on this computer yet. 'NextZXOS' (the Next's operating system) and 'kliveide.net' (Klive's website) are names: keep them.",
+    "placeholders": {
+      "model": "The Next model's name, shown verbatim, e.g. 'ZX Spectrum Next (KS2, core 3.02.04)'",
+      "download": "The download's size in megabytes, e.g. '58.6'",
+      "size": "The card's size once unpacked, in megabytes, e.g. '96.0'"
+    }
+  },
+  "dialog.nextSdDownload.progress": "{received} of {total} MB",
+  "@dialog.nextSdDownload.progress": {
+    "context": "Progress text under the progress bar of the ZX Spectrum Next SD card download dialog, which appears when a Next model's SD card (the disk image the Next boots NextZXOS from) is not on this computer yet, while the card downloads.",
+    "placeholders": {
+      "received": "Megabytes downloaded so far, e.g. '12.3'",
+      "total": "The download's size in megabytes, e.g. '58.6'"
+    },
+    "maxChars": 30
+  },
+  "dialog.nextSdDownload.notDownloading": "Not downloading",
+  "@dialog.nextSdDownload.notDownloading": {
+    "context": "Label beside the empty progress bar of the ZX Spectrum Next SD card download dialog before a download starts (the dialog appears when a Next model's SD card is not on this computer yet).",
+    "maxChars": 30
+  },
+  "dialog.nextSdDownload.importing": "Checking the file...",
+  "@dialog.nextSdDownload.importing": {
+    "context": "Shown in the ZX Spectrum Next SD card download dialog, which appears when a Next model's SD card (the disk image the Next boots NextZXOS from) is not on this computer yet while Klive checks a card file the user picked with 'Import a downloaded file...'."
+  },
+  "dialog.nextSdDownload.download": "Download",
+  "@dialog.nextSdDownload.download": {
+    "context": "Main button of the ZX Spectrum Next SD card download dialog, which appears when a Next model's SD card (the disk image the Next boots NextZXOS from) is not on this computer yet: downloads the SD card.",
+    "maxChars": 13
+  },
+  "dialog.nextSdDownload.retry": "Retry",
+  "@dialog.nextSdDownload.retry": {
+    "context": "Main button of the ZX Spectrum Next SD card download dialog, which appears when a Next model's SD card (the disk image the Next boots NextZXOS from) is not on this computer yet after a download failed: tries the download again.",
+    "maxChars": 13
+  },
+  "dialog.nextSdDownload.import": "Import a downloaded file...",
+  "@dialog.nextSdDownload.import": {
+    "context": "Button of the ZX Spectrum Next SD card download dialog, which appears when a Next model's SD card (the disk image the Next boots NextZXOS from) is not on this computer yet for a user who downloaded the card in a browser: picks the downloaded '.cim.gz' or '.cim' file.",
+    "maxChars": 30
+  },
+  "dialog.nextSdDownload.importTitle": "Import a ZX Spectrum Next SD Card",
+  "@dialog.nextSdDownload.importTitle": {
+    "context": "Title of the file picker opened by 'Import a downloaded file...' in the ZX Spectrum Next SD card download dialog, which appears when a Next model's SD card (the disk image the Next boots NextZXOS from) is not on this computer yet."
+  },
+  "dialog.nextSdDownload.importFilter": "SD card images",
+  "@dialog.nextSdDownload.importFilter": {
+    "context": "File-type filter in the file picker opened by 'Import a downloaded file...' in the ZX Spectrum Next SD card download dialog, which appears when a Next model's SD card (the disk image the Next boots NextZXOS from) is not on this computer yet; it lists '.gz' and '.cim' files."
+  },
+  "dialog.nextSdDownload.copy": "Copy link",
+  "@dialog.nextSdDownload.copy": {
+    "context": "Button of the ZX Spectrum Next SD card download dialog, which appears when a Next model's SD card (the disk image the Next boots NextZXOS from) is not on this computer yet beside the card's web address: copies the address, so the user can download the card in a browser.",
+    "maxChars": 13
+  },
+  "dialog.nextSdDownload.copied": "Copied",
+  "@dialog.nextSdDownload.copied": {
+    "context": "Replaces 'Copy link' in the ZX Spectrum Next SD card download dialog, which appears when a Next model's SD card (the disk image the Next boots NextZXOS from) is not on this computer yet once the web address was copied.",
+    "maxChars": 13
+  },
+  "dialog.nextSdDownload.urlLabel": "Web address:",
+  "@dialog.nextSdDownload.urlLabel": {
+    "context": "Label in the ZX Spectrum Next SD card download dialog, which appears when a Next model's SD card (the disk image the Next boots NextZXOS from) is not on this computer yet before the card's web address (a URL), for downloading it in a browser.",
+    "maxChars": 20
+  },
+  "dialog.nextSdDownload.error.network": "Klive could not reach kliveide.net. Check the internet connection, or download the card in a browser and import it.",
+  "@dialog.nextSdDownload.error.network": {
+    "context": "Error in the ZX Spectrum Next SD card download dialog, which appears when a Next model's SD card (the disk image the Next boots NextZXOS from) is not on this computer yet: the download could not connect. 'kliveide.net' is Klive's website: keep it."
+  },
+  "dialog.nextSdDownload.error.http": "The server answered with HTTP status {status}.",
+  "@dialog.nextSdDownload.error.http": {
+    "context": "Error in the ZX Spectrum Next SD card download dialog, which appears when a Next model's SD card (the disk image the Next boots NextZXOS from) is not on this computer yet: the website returned an HTTP error.",
+    "placeholders": {
+      "status": "An HTTP status code, e.g. '404'"
+    }
+  },
+  "dialog.nextSdDownload.error.redirected": "The server sent the download to another address. Klive downloads SD cards only from kliveide.net.",
+  "@dialog.nextSdDownload.error.redirected": {
+    "context": "Error in the ZX Spectrum Next SD card download dialog, which appears when a Next model's SD card (the disk image the Next boots NextZXOS from) is not on this computer yet: the website answered with a redirect, which Klive refuses for safety. 'kliveide.net' is Klive's website: keep it."
+  },
+  "dialog.nextSdDownload.error.noSpace": "There is not enough free disk space. The card needs {size} MB.",
+  "@dialog.nextSdDownload.error.noSpace": {
+    "context": "Error in the ZX Spectrum Next SD card download dialog, which appears when a Next model's SD card (the disk image the Next boots NextZXOS from) is not on this computer yet: the disk is too full for the card and its unpacked copy.",
+    "placeholders": {
+      "size": "Megabytes needed, e.g. '154.6'"
+    }
+  },
+  "dialog.nextSdDownload.error.cancelled": "The download was cancelled.",
+  "@dialog.nextSdDownload.error.cancelled": {
+    "context": "Error in the ZX Spectrum Next SD card download dialog, which appears when a Next model's SD card (the disk image the Next boots NextZXOS from) is not on this computer yet: the download stopped because it was cancelled."
+  },
+  "dialog.nextSdDownload.error.unreadable": "The file could not be read.",
+  "@dialog.nextSdDownload.error.unreadable": {
+    "context": "Error in the ZX Spectrum Next SD card download dialog, which appears when a Next model's SD card (the disk image the Next boots NextZXOS from) is not on this computer yet: the card file the user picked could not be read or unpacked."
+  },
+  "dialog.nextSdDownload.error.wrongDownload": "The downloaded file is not the expected SD card, so Klive did not keep it.",
+  "@dialog.nextSdDownload.error.wrongDownload": {
+    "context": "Error in the ZX Spectrum Next SD card download dialog, which appears when a Next model's SD card (the disk image the Next boots NextZXOS from) is not on this computer yet: the downloaded bytes failed Klive's integrity check (wrong size or checksum)."
+  },
+  "dialog.nextSdDownload.error.wrongImport": "This file is not the SD card of the {model}.",
+  "@dialog.nextSdDownload.error.wrongImport": {
+    "context": "Error in the ZX Spectrum Next SD card download dialog, which appears when a Next model's SD card (the disk image the Next boots NextZXOS from) is not on this computer yet: the file the user imported failed Klive's integrity check.",
+    "placeholders": {
+      "model": "The Next model's name, shown verbatim, e.g. 'ZX Spectrum Next (KS2, core 3.02.04)'"
+    }
   }
 }

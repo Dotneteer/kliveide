@@ -1543,7 +1543,8 @@ and the folder field stay neutral. **`--color-secondary-label` is not a green**:
 `--data-secondary`, a grey, so a "working" state painted with it reads as disabled (the SJASMPLUS
 dialog's comment claiming otherwise is stale).
 
-A tool download's **progress bar** (the z88dk dialog, the first one in the app) is a thin 6px track in
+Every download dialog uses this one **progress bar** (the z88dk dialog had it first; the ZX Spectrum Next
+SD card download dialog copies its classes, it does not invent a second bar). It is a thin 6px track in
 `--accent-subtle` with an `--accent-solid` fill, its label and Cancel on the same row; when the size is
 unknown (unpacking, no Content-Length) the fill becomes a sliding block of the same colours rather
 than a bar stuck at zero. Progress is the accent because it is the dialog's current activity, not a

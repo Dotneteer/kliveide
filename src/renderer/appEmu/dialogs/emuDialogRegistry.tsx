@@ -11,7 +11,8 @@ import {
   JOYSTICK_BINDINGS_DIALOG,
   MACHINE_SELECT_DIALOG,
   SETTINGS_DIALOG,
-  BORIEL_SETUP_DIALOG
+  BORIEL_SETUP_DIALOG,
+  NEXT_SD_DOWNLOAD_DIALOG
 } from "@common/messaging/dialog-ids";
 import type { AboutDialogData } from "@common/messaging/about-dialog";
 import { AboutDialog, AboutDialogResult } from "@renderer/appIde/dialogs/AboutDialog";
@@ -54,6 +55,11 @@ import {
   type BorielSetupDialogResult
 } from "@renderer/appIde/dialogs/boriel/BorielSetupDialog";
 
+import {
+  NextSdDownloadDialog,
+  type NextSdDownloadDialogResult
+} from "./nextSdDownload/NextSdDownloadDialog";
+
 export type EmuDialogResult =
   | JoystickBindingsDialogResult
   | FirstStartDialogResult
@@ -65,7 +71,8 @@ export type EmuDialogResult =
   | AboutDialogResult
   | MachineSelectDialogResult
   | SettingsDialogResult
-  | BorielSetupDialogResult;
+  | BorielSetupDialogResult
+  | NextSdDownloadDialogResult;
 
 export type EmuDialogRenderer = (
   data: any,
@@ -121,5 +128,8 @@ export const emuDialogRegistry: Record<number, EmuDialogRenderer> = {
   [SETTINGS_DIALOG]: (data, controls) => <SettingsDialog data={data} onClose={controls.cancel} />,
   [BORIEL_SETUP_DIALOG]: (data, controls) => (
     <BorielSetupDialog mode={data?.mode} onClose={(result) => controls.close(result)} />
+  ),
+  [NEXT_SD_DOWNLOAD_DIALOG]: (data, controls) => (
+    <NextSdDownloadDialog data={data} onClose={(result) => controls.close(result)} />
   )
 };
