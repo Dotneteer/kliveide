@@ -5,6 +5,7 @@ import path from "node:path";
 
 import { parseTbuFile } from "@common/zxnext/tbuFile";
 import { parseFwFile } from "@common/zxnext/fwFile";
+import { nextSdBaseImage } from "../harness/zxnext/core/sdCards";
 
 /*
  * Reading a file from the ZX Spectrum Next's current SD card (`dev/plans/TBBLUE_TBU_VIEWER_PLAN.md`,
@@ -13,8 +14,7 @@ import { parseFwFile } from "@common/zxnext/fwFile";
  * checks the whole System/Next 26.11a update file against the TBU reader.
  */
 
-const MMC = path.join(__dirname, "../../src/public/mmc");
-const CARD_2611 = path.join(MMC, "nextzxos-26.11-base.cim");
+const CARD_2611 = nextSdBaseImage("nextzxos-26.11");
 
 const cards = { active: "", workingCopy: "", baseImage: "" };
 vi.mock("@main/machine-menus/zx-next-menus", () => ({
@@ -66,7 +66,7 @@ describe("readNextSdCardFile", () => {
 
   it("reads the model's base image while its working copy does not exist yet", async () => {
     const workingCopy = path.join(dir, "ks2.cim");
-    Object.assign(cards, { active: workingCopy, workingCopy, baseImage: path.join(MMC, "ks2-base.cim") });
+    Object.assign(cards, { active: workingCopy, workingCopy, baseImage: nextSdBaseImage("nextzxos-2.08") });
     const result = await read();
     expect(result.card).toBe(cards.baseImage);
     expect(parseTbuFile(result.contents!).format).toBe("multi");

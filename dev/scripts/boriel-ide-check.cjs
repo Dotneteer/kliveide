@@ -6,7 +6,8 @@
  *   run    - an sp48 project with Boriel selected builds, runs, and a syntax error reports E342;
  *   debug  - a breakpoint inside a SUB pauses the machine at source level;
  *   next   - the same inside a FUNCTION on the ZX Spectrum Next, through NextZXOS's .nexload of
- *            zxbc's .nex (needs ~/Klive/ks2.cim, copied);
+ *            zxbc's .nex (needs the default Next model's SD card: `npm run next-sd:fetch`, or
+ *            BORIEL_IDE_CARD=<file>; copied into the run's own home);
  *   export - a TAP export of an sp48 build holds the injected code; a Next build's NEX export
  *            writes the debug sidecar beside it, and `nex-run -d` of that file stops at a source
  *            breakpoint; so does `nex-run -d` of a .nex zxbc built outside Klive, through the .dbg
@@ -28,6 +29,7 @@
  * the kit and, for `next`, a NextZXOS card image.
  */
 const fs = require("node:fs");
+const { defaultNextCard, defaultNextModel } = require("./next-sd/cards.cjs");
 const os = require("node:os");
 const path = require("node:path");
 const { launchKlive } = require("./doc-shots/harness.cjs");
@@ -44,7 +46,12 @@ async function session(name, { card = false, ideViewOptions = {} } = {}) {
   const userHome = path.join(out, "home");
   fs.mkdirSync(projects, { recursive: true });
   fs.mkdirSync(path.join(userHome, "Klive"), { recursive: true });
-  if (card) fs.copyFileSync(path.join(os.homedir(), "Klive", "ks2.cim"), path.join(userHome, "Klive", "ks2.cim"));
+  if (card) {
+    // --- New projects start on the default Next model: its working copy is the card the run boots
+    const source = defaultNextCard(process.env.BORIEL_IDE_CARD);
+    if (!source) throw new Error("No NextZXOS SD card for the Next parts: run npm run next-sd:fetch (or set BORIEL_IDE_CARD)");
+    fs.copyFileSync(source, path.join(userHome, "Klive", defaultNextModel().workingCopy));
+  }
   const k = await launchKlive({ home: path.join(out, "klive"), userHome, userSettings: { zxbasic: { root: ROOT } }, ideViewOptions });
   // --- A close that hangs (seen once, after the ui part) must not hang the whole check: give it 20 s,
   // --- then end this session's own Electron process

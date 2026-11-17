@@ -76,6 +76,17 @@ jobs:
       # Headroom for the test workers' heap: the Klive BASIC suites compile and run many programs.
       # Every listed tier runs: `npm test` skips an e2e tier whose inputs are unchanged since it last
       # passed *on that machine*, and CI has no such record to trust.
+      # The ZX Spectrum Next SD base cards are not in git (dev/plans/NEXT_SD_CARDS_PLAN.md D-6): fetched
+      # from kliveide.net and checked against the manifest, cached until the manifest or the fetch changes.
+      - name: Cache the ZX Spectrum Next SD cards
+        uses: actions/cache@v6
+        with:
+          path: .local/next-sd
+          key: next-sd-${{ runner.os }}-${{ hashFiles('src/common/zxnext/nextRomSets.json', 'dev/scripts/next-sd-fetch.cjs', 'dev/scripts/next-sd/cards.cjs') }}
+
+      - name: Fetch the ZX Spectrum Next SD cards
+        run: npm run next-sd:fetch
+
       - name: Run tests
         run: npx vitest run --config build/vitest.config.ts ${{ matrix.projects }}
         env:

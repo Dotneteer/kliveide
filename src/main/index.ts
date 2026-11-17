@@ -125,6 +125,9 @@ process.env.DIST = join(process.env.DIST_ELECTRON, "dist");
 process.env.PUBLIC = app.isPackaged
   ? process.resourcesPath
   : join(process.env.DIST_ELECTRON, "src/public");
+// --- A development run finds the Next's SD base cards where `npm run next-sd:fetch` puts them
+// --- (`dev/plans/NEXT_SD_CARDS_PLAN.md` D-6); a packaged app has only its own
+process.env.KLIVE_NEXT_SD_DEV_CARDS = app.isPackaged ? "" : join(process.env.DIST_ELECTRON, ".local/next-sd");
 
 // --- Disable GPU Acceleration for Windows 7
 if (release().startsWith("6.1")) app.disableHardwareAcceleration();

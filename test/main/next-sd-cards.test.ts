@@ -77,6 +77,21 @@ describe("finding a set's base card", () => {
   });
 });
 
+describe("a development run", () => {
+  it("also takes the cards npm run next-sd:fetch puts in .local/next-sd, raw before gzipped", () => {
+    const dev = path.join(home.dir, "dev-cards");
+    process.env.KLIVE_NEXT_SD_DEV_CARDS = dev;
+    try {
+      put(path.join(dev, `${SET}.cim.gz`), gzipSync(CARD));
+      expect(availableCard(SET)).toMatchObject({ file: path.join(dev, `${SET}.cim.gz`), source: "bundled", compressed: true });
+      put(path.join(dev, `${SET}-base.cim`), CARD);
+      expect(availableCard(SET)).toMatchObject({ file: path.join(dev, `${SET}-base.cim`), compressed: false });
+    } finally {
+      delete process.env.KLIVE_NEXT_SD_DEV_CARDS;
+    }
+  });
+});
+
 describe("making a working copy", () => {
   it("decompresses a gzipped card", async () => {
     put(bundledGz(), gzipSync(CARD));

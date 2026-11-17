@@ -35,6 +35,17 @@ jobs:
       - name: Install npm dependencies
         run: npm run bootstrap:ci
 
+      # The ZX Spectrum Next SD base cards are not in git (dev/plans/NEXT_SD_CARDS_PLAN.md D-6): fetched
+      # from kliveide.net and checked against the manifest, cached until the manifest or the fetch changes.
+      - name: Cache the ZX Spectrum Next SD cards
+        uses: actions/cache@v6
+        with:
+          path: .local/next-sd
+          key: next-sd-${{ runner.os }}-${{ hashFiles('src/common/zxnext/nextRomSets.json', 'dev/scripts/next-sd-fetch.cjs', 'dev/scripts/next-sd/cards.cjs') }}
+
+      - name: Fetch the ZX Spectrum Next SD cards
+        run: npm run next-sd:fetch
+
       - name: Build WASM cores and app bundle
         env:
           NODE_OPTIONS: --max-old-space-size=8192
@@ -127,6 +138,17 @@ jobs:
       - name: Install npm dependencies
         run: npm run bootstrap:ci
 
+      # The ZX Spectrum Next SD base cards are not in git (dev/plans/NEXT_SD_CARDS_PLAN.md D-6): fetched
+      # from kliveide.net and checked against the manifest, cached until the manifest or the fetch changes.
+      - name: Cache the ZX Spectrum Next SD cards
+        uses: actions/cache@v6
+        with:
+          path: .local/next-sd
+          key: next-sd-${{ runner.os }}-${{ hashFiles('src/common/zxnext/nextRomSets.json', 'dev/scripts/next-sd-fetch.cjs', 'dev/scripts/next-sd/cards.cjs') }}
+
+      - name: Fetch the ZX Spectrum Next SD cards
+        run: npm run next-sd:fetch
+
       - name: Build WASM cores and app bundle
         env:
           NODE_OPTIONS: --max-old-space-size=8192
@@ -210,6 +232,17 @@ jobs:
 
       - name: Install npm dependencies
         run: npm run bootstrap:ci
+
+      # The ZX Spectrum Next SD base cards are not in git (dev/plans/NEXT_SD_CARDS_PLAN.md D-6): fetched
+      # from kliveide.net and checked against the manifest, cached until the manifest or the fetch changes.
+      - name: Cache the ZX Spectrum Next SD cards
+        uses: actions/cache@v6
+        with:
+          path: .local/next-sd
+          key: next-sd-${{ runner.os }}-${{ hashFiles('src/common/zxnext/nextRomSets.json', 'dev/scripts/next-sd-fetch.cjs', 'dev/scripts/next-sd/cards.cjs') }}
+
+      - name: Fetch the ZX Spectrum Next SD cards
+        run: npm run next-sd:fetch
 
       - name: Build WASM cores and app bundle
         env:
@@ -350,6 +383,17 @@ jobs:
       - name: Install npm dependencies
         run: npm run bootstrap:ci
 
+      # The ZX Spectrum Next SD base cards are not in git (dev/plans/NEXT_SD_CARDS_PLAN.md D-6): fetched
+      # from kliveide.net and checked against the manifest, cached until the manifest or the fetch changes.
+      - name: Cache the ZX Spectrum Next SD cards
+        uses: actions/cache@v6
+        with:
+          path: .local/next-sd
+          key: next-sd-${{ runner.os }}-${{ hashFiles('src/common/zxnext/nextRomSets.json', 'dev/scripts/next-sd-fetch.cjs', 'dev/scripts/next-sd/cards.cjs') }}
+
+      - name: Fetch the ZX Spectrum Next SD cards
+        run: npm run next-sd:fetch
+
       - name: Build WASM cores and app bundle
         env:
           NODE_OPTIONS: --max-old-space-size=8192
@@ -488,6 +532,17 @@ jobs:
 
       - name: Install npm dependencies
         run: npm run bootstrap:ci
+
+      # The ZX Spectrum Next SD base cards are not in git (dev/plans/NEXT_SD_CARDS_PLAN.md D-6): fetched
+      # from kliveide.net and checked against the manifest, cached until the manifest or the fetch changes.
+      - name: Cache the ZX Spectrum Next SD cards
+        uses: actions/cache@v6
+        with:
+          path: .local/next-sd
+          key: next-sd-${{ runner.os }}-${{ hashFiles('src/common/zxnext/nextRomSets.json', 'dev/scripts/next-sd-fetch.cjs', 'dev/scripts/next-sd/cards.cjs') }}
+
+      - name: Fetch the ZX Spectrum Next SD cards
+        run: npm run next-sd:fetch
 
       - name: Build WASM cores and app bundle
         env:

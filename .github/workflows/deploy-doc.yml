@@ -83,6 +83,9 @@ jobs:
           # The custom domain survives every deploy because docs/public/CNAME is
           # exported into docs/out; never let a production deploy wipe an
           # in-flight branch preview
-          # published by deploy-doc-preview.yml.
+          # published by deploy-doc-preview.yml, nor the ZX Spectrum Next SD
+          # cards Klive downloads (next-sd/, published by `npm run next-sd:publish`,
+          # dev/plans/NEXT_SD_CARDS_PLAN.md D-4).
           clean-exclude: |
             preview/**
+            next-sd/**

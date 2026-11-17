@@ -8,6 +8,7 @@ import { NEXT_ROM_SETS } from "@common/zxnext/romSets";
 import { NEXT_PROFILE_IDS, nextProfileOf } from "@emu/machines/zxNext/nextProfiles";
 import { checkNextSdCard } from "@main/next-sd/checkNextSdCard";
 import { writeCardFrom } from "@main/next-sd/nextSdCards";
+import { nextSdBaseImage } from "../harness/zxnext/core/sdCards";
 
 /*
  * The SD card check (`dev/plans/NEXT_SD_CARDS_PLAN.md` D-8) on the real base cards: every model's own
@@ -16,8 +17,7 @@ import { writeCardFrom } from "@main/next-sd/nextSdCards";
  * the unit tier.
  */
 
-const PUBLIC = path.join(__dirname, "../../src/public");
-const cardOf = (setId: keyof typeof NEXT_ROM_SETS) => path.join(PUBLIC, NEXT_ROM_SETS[setId].sdBaseImage.file);
+const cardOf = (setId: keyof typeof NEXT_ROM_SETS) => nextSdBaseImage(setId);
 
 describe("checking the real base cards", () => {
   it.each(NEXT_PROFILE_IDS)("passes %s's own card", (modelId) => {

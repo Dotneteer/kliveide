@@ -6,6 +6,7 @@ import { NEW_PROJECT_NEXT_PROFILE_ID, nextProfileOf, romSetOf } from "@emu/machi
 import { DEFAULT_MACHINE_FAVORITES } from "@common/machines/machine-favorites";
 import { newProjectModelOf } from "@common/machines/machine-registry";
 import { MI_ZXNEXT } from "@common/machines/constants";
+import { nextSdBaseImage } from "../harness/zxnext/core/sdCards";
 
 /*
  * The install kit carries the default ZX Spectrum Next model's SD card, and only that one, gzipped
@@ -49,7 +50,7 @@ describe("the SD card in the install kit", () => {
     for (const [name, command] of packaging) expect(command, name).toContain("npm run build:app");
   });
 
-  it("the default model's raw card is in the repository to stage from", () => {
-    expect(fs.statSync(path.join(ROOT, "src/public", defaultSet.sdBaseImage.file)).isFile()).toBe(true);
+  it("the default model's card is here to stage from (npm run next-sd:fetch)", () => {
+    expect(fs.statSync(nextSdBaseImage(defaultSet.id)).isFile()).toBe(true);
   });
 });

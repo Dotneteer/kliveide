@@ -9,9 +9,11 @@ import { CimHandler } from "@main/fat32/CimHandlers";
 import { O_RDONLY } from "@main/fat32/Fat32Types";
 import { Fat32Volume } from "@main/fat32/Fat32Volume";
 import { FileManager } from "@main/fat32/FileManager";
+import { REPO_ROOT } from "../core/machines";
 
 /**
- * One emulated SD card for one browser run: a clone of the developer's `~/Klive/ks2.cim`.
+ * One emulated SD card for one browser run: a clone of the developer's `~/Klive/ks2.cim`, or of the
+ * fetched 2.08 base card.
  *
  * The page's machine reads and writes sectors (NextZXOS does write), and `.nex` files are copied onto
  * it, so it must never be the real image. Each session clones it (copy-on-write where the file system
@@ -27,11 +29,18 @@ export class SdSession {
   readonly cardPath: string;
   private handler?: CimHandler;
 
-  static readonly realCardPath = join(homedir(), "Klive", "ks2.cim");
+  /**
+   * The developer's own card when there is one; else the fetched base card of the implicit model's
+   * set (`npm run next-sd:fetch`, `dev/plans/NEXT_SD_CARDS_PLAN.md`): Klive no longer makes `ks2.cim`
+   * at every start
+   */
+  static readonly realCardPath = existsSync(join(homedir(), "Klive", "ks2.cim"))
+    ? join(homedir(), "Klive", "ks2.cim")
+    : join(REPO_ROOT, ".local/next-sd", "nextzxos-2.08-base.cim");
 
   constructor() {
     if (!existsSync(SdSession.realCardPath)) {
-      throw new Error(`No SD card image at ${SdSession.realCardPath}. Start the ZX Spectrum Next once in Klive to create it.`);
+      throw new Error(`No SD card image at ${SdSession.realCardPath}: run npm run next-sd:fetch`);
     }
     this.folder = mkdtempSync(join(tmpdir(), "klive-visual-sd-"));
     this.cardPath = join(this.folder, "ks2.cim");

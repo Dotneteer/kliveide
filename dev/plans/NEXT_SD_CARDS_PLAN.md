@@ -1,6 +1,6 @@
 # ZX Spectrum Next SD cards: one bundled, the rest downloaded and checked
 
-Status: **open** (written 2026-11-17). Phases 0-2 are implemented (2026-11-17); phases 3-6 are not started. Read `dev/ai/zxnext-models.md` first: this
+Status: **open** (written 2026-11-17). Phases 0-2 are implemented (2026-11-17); phase 3 is implemented except publishing the cards (step 3, the project author's push) and removing `src/public/mmc` (step 5, after it); phases 4-6 are not started. Read `dev/ai/zxnext-models.md` first: this
 plan changes its D7 (SD card per model) and D9.4 (base images committed) and its "Adding a model"
 steps. Its D1 (model ids never change; a model-less reference means `ks2-30201`) stays binding.
 
@@ -240,6 +240,43 @@ NextZXOS menu on a fresh home folder, and the other two models show the message 
    `release.yml` fetches the default card into a staging folder that `extraResources` reads.
 6. doc-shots, the IDE checks (`boriel-ide-check`, `kbasic-ide-check`) and the visual tests find cards
    through the helper or the fetch.
+
+**As built so far (2026-11-17):**
+- **Publishing is a local script, not a workflow** (`npm run next-sd:publish -- <setId> [--push]`). A
+  `workflow_dispatch` workflow runs only from the default branch, and CI could not make the bytes anyway:
+  the `.gz` is packed once on the author's machine and `gzSha256` names those bytes (D-6); the 2.08 card
+  cannot be rebuilt at all. The script commits onto `gh-pages` without a checkout (a temporary index over
+  `git fetch --depth=1 origin gh-pages`), checks the `.gz` against the manifest, never rewrites a published
+  card, refuses a sixth, retries when a docs deploy moved the branch, and pushes only with `--push`.
+  `KLIVE_NEXT_SD_REMOTE` names another remote (the tests use a bare repository).
+- `deploy-doc.yml` keeps `next-sd/**` (`clean-exclude`). **That change must be on master before the
+  first card is published**, or the next docs deploy deletes it.
+- `npm run next-sd:pack -- <setId>` gzips the raw card (`.local/next-sd/<setId>-base.cim`, or the committed
+  one) and records `gzSize`/`gzSha256`; it refuses a set whose card answers 200 on the site. Re-packing the
+  26.11 card gave the bytes recorded in phase 1.
+- `npm run next-sd:fetch [-- <setId>...]`: a raw card that is the manifest's is kept; else a local `.gz`
+  that is the manifest's is decompressed; else the published card is downloaded
+  (`KLIVE_NEXT_SD_BASE_URL`) and decompressed; else, **until step 5**, the committed raw card is copied.
+  `npm run next-sd:check-site` downloads and checks every published card. The shared code is
+  `dev/scripts/next-sd/cards.cjs` (`KLIVE_NEXT_SD_LOCAL` names another local folder for tests).
+- A download that comes back with a `Content-Encoding` is refused: a server that compressed the `.gz`
+  again (or a client that undid it) would not give the published bytes. Phase 4's downloader must ask for
+  `identity` and do the same.
+- Tests find cards through `nextSdBaseImage(setId)` (`test/harness/zxnext/core/sdCards.ts`), which falls
+  back to the committed card until step 5. `test.yml`, `slow-tests.yml` and every `release-artifacts.yml`
+  build fetch the cards behind `actions/cache`, keyed on the manifest and the fetch code.
+- **A development Klive takes the fetched cards too**: `src/main/index.ts` sets
+  `KLIVE_NEXT_SD_DEV_CARDS` to `.local/next-sd` when the app is not packaged, and `bundledCardPaths` tries
+  it after the resources. Step 5 depends on it: without `src/public/mmc` a development run has no card.
+- The Boriel, Klive BASIC and z88dk IDE checks copied `~/Klive/ks2.cim`, which Klive no longer makes at
+  startup and which is not the default model's card since phase 0. They now copy the default model's
+  fetched base card as its working copy (`defaultNextCard`, `defaultNextModel` in `cards.cjs`, pinned to
+  `nextProfiles.ts` by a test). The browser tier clones `~/Klive/ks2.cim` when there is one, else the
+  fetched 2.08 card.
+- **Left for after publishing:** step 3 (run `next-sd:publish -- <setId> --push` for the three sets, then
+  `next-sd:check-site`) and step 5 (delete `src/public/mmc`, `next-sd:build` writing into `.local/next-sd/`,
+  and the fallbacks to the committed cards in `next-sd-fetch.cjs`, `stage-next-sd.cjs`, `next-sd-pack.cjs`,
+  `cards.cjs` and `sdCards.ts` removed).
 
 ### Phase 4 - The download dialog
 
