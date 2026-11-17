@@ -5,6 +5,7 @@ export default {
   "meet-the-emulator": "Ismerkedés az emulátorral",
   "load-from-tape": "Program betöltése kazettáról",
   "meet-the-ide": "Ismerkedés az IDE-vel",
+  "how-projects-work": "Hogyan kezeli a Klive a projekteket?",
   "first-assembly-program": "Az első assembly program",
   "debug-your-program": "A program hibakeresése",
   "first-basic-program": "Az első BASIC program",

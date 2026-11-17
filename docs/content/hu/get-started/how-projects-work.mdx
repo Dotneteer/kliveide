@@ -1,0 +1,71 @@
+---
+description: "Mi a Klive projekt, és mit ad hozzá egy egyszerű mappához; egy másik eszközzel készült mappa Klive projektté alakítása vagy megtartása változatlanul."
+---
+
+import { Callout } from 'nextra/components'
+
+# Hogyan kezeli a Klive a projekteket?
+
+A Klive bármilyen mappát megnyit, de fordítani, futtatni és hibakeresni csak egy *Klive projekt* kódját tudja. Ez az oldal elmagyarázza a különbséget, és azt is, mit tesz a Klive, ha egy másik eszközzel készült mappát nyitunk meg.
+
+## Mappa és projekt
+
+A Klive projekt egy olyan mappa, amelyben van egy `klive.project` fájl. Minden más mappa *egyszerű mappa*. A Klive mindkettőt megnyitja: az intéző mutatja a fájljaikat, és ezeket megnyithatjuk és szerkeszthetjük.
+
+Ha az intézőben a gyökérmappa neve előtt egy ház ikon látható, a mappa Klive projekt.
+
+## Mit ad hozzá egy projekt?
+
+| | Egyszerű mappa | Klive projekt |
+| --- | --- | --- |
+| A fájlok böngészése és szerkesztése | Igen | Igen |
+| Az emulátor használata, kazetták és pillanatképek betöltése | Igen | Igen |
+| Fordítási gyökér, valamint fordítás, futtatás és hibakeresés a fordítási sávról | Nem | Igen |
+| A **Fordítás** menü | Nem | Igen |
+| A gép és a modell visszaállítása a mappa megnyitásakor | Nem | Igen |
+| A töréspontok, a figyelők és a megnyitott dokumentumok megőrzése a munkamenetek között | Nem | Igen |
+| **Kizárás** az intézőben és egységtesztek | Nem | Igen |
+
+A *fordítási gyökér* a fő forrásfájl, az, amelyet a Klive lefordít.
+
+## Projekt létrehozása
+
+Válasszuk a **Fájl › Új projekt...** menüpontot, válasszunk gépet, modellt és sablont, és adjunk nevet a projektnek. A Klive létrehoz egy mappát egy `klive.project` fájllal, egy `build.ksx` fordítási szkripttel és egy kis kiinduló programmal. A következő oldal, [az első assembly program](/hu/get-started/first-assembly-program/), lépésről lépésre végigvezet ezen.
+
+## Másik eszközzel készült mappa megnyitása
+
+Ha egy `klive.project` fájl nélküli mappát nyitunk meg a **Fájl › Mappa megnyitása...** vagy a **Fájl › Legutóbbiak megnyitása** menüponttal, illetve az `open` paranccsal, a Klive megkérdezi, mit kezdjen vele. Akkor is megkérdezi, amikor induláskor újra megnyit egy ilyen mappát, mert legutóbb az volt nyitva:
+
+<Shot
+  src="get-started/make-project.webp"
+  alt="A Klive projekt készítése párbeszédablak egy BASIC fájlokat tartalmazó mappához, a zx-basic sablonnal és a main.bas fájllal mint fordítási gyökérrel"
+  figure="5.1"
+  caption="A Klive felajánlja, hogy egy egyszerű mappából Klive projektet készít"
+  markers={["choice", "template", "buildroot"]}
+  width={620}
+/>
+
+1. **Legyen Klive projekt**, vagy **Maradjon egyszerű mappa**.
+2. **Sablon**: a Klive a sablon fájljait bemásolja a mappába: a `build.ksx` fájlt, amelyre a fordításnak, a futtatásnak és a hibakeresésnek szüksége van, és egy mintaprogramot. BASIC fájlokat tartalmazó mappához a Klive a `zx-basic` sablont választja, egyébként a gép `default` sablonját.
+3. **Fordítási gyökér**: az a fájl, amelyet a Klive lefordít. A Klive felsorolja a mappa forrásfájljait, és kiválaszt közülük egyet. Helyette választhatjuk **A sablon fordítási gyökere** lehetőséget is, vagyis a mintaprogramot.
+
+Válasszuk ki a **Géptípus** és a **Modell** értékét is: a párbeszédablak a futó géppel indul. Ezután kattintsunk a **Projekt készítése** gombra. A Klive kiírja a fájlokat, Klive projektként újra megnyitja a mappát, és megnyitja a fordítási gyökeret.
+
+Ha a sablon valamelyik fájlja már létezik a mappában, a párbeszédablak egy jelölőnégyzettel együtt felsorolja. A Klive csak a bejelölt fájlokat cseréli le; a többi változatlan marad.
+
+Ha a mappát változatlanul szeretnénk hagyni, válasszuk a **Maradjon egyszerű mappa** lehetőséget, és kattintsunk a **Mappa megtartása** gombra: a Klive megjegyzi a döntést, és ennél a mappánál többet nem kérdez rá. A [Projekt létrehozása (angolul)](/en/guides/projects/creating-projects/#make-a-folder-a-klive-project) oldal leírja, hol tárolja ezt a Klive, és hogyan vonható vissza. A **Mégse** is egyszerű mappaként hagyja a mappát, de a Klive a következő megnyitáskor újra rákérdez.
+
+Ha később szeretnénk egy egyszerű mappát Klive projektté alakítani, válasszuk a **Fájl › Klive projekt készítése...** menüpontot, vagy kattintsunk a jobb gombbal az intézőben a gyökérmappára, és válasszuk a **Klive projekt készítése...** menüpontot.
+
+<Callout type="info">
+A Klive csak akkor módosít egy egyszerű mappát, ha erre kérjük. A mappa megnyitása és a fájljai szerkesztése nem ír bele `klive.project` fájlt.
+</Callout>
+
+## A Klive által kezelt fájlok
+
+- A **`klive.project`** a projekt gépét és modelljét, a fordítási gyökerét, a töréspontokat, a figyelőket, a projektbeállításokat és az IDE állapotát tárolja. A Klive munka közben frissíti, ezért ne szerkesszük, amíg a projekt nyitva van.
+- A **`build.ksx`** a fordítás, a futtatás és a hibakeresés mögötti függvényeket, valamint a **Fordítás** menüt tartalmazza. Szabadon módosíthatjuk: lásd [A fordítási rendszer (angolul)](/en/guides/projects/build-system/) oldalt.
+
+Bővebben a [Projekt létrehozása (angolul)](/en/guides/projects/creating-projects/) és a [Projektsablonok (angolul)](/en/guides/projects/project-templates/) oldal ír erről.
+
+Következő lépésként írjuk meg [az első assembly programot](/hu/get-started/first-assembly-program/).
