@@ -2,6 +2,14 @@
 
 ## 0.69.0 (2026-11-17)
 
+### Highlights
+
+- **ZX Spectrum Next SD cards on demand:** the older Next models' cards are downloaded when you
+  first pick one, checked before use, and a card NextZXOS cannot boot is explained and can be reset.
+- **Any folder can become a Klive project:** open a folder made with another IDE and Klive offers
+  to convert it, with the machine, a template and the build root of your choice.
+- **4-bit sprites in the sprite editor**, with every tool and a palette offset for the 16 colours.
+
 ### Key fixes
 
 - ZX Spectrum Next: the installer did not include the Next's SD card, so on a new installation every
