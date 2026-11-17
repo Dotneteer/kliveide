@@ -1,0 +1,71 @@
+---
+description: "Descubre qué es un proyecto Klive y qué añade a una carpeta simple, y convierte una carpeta creada con otra herramienta en un proyecto Klive o déjala como está."
+---
+
+import { Callout } from 'nextra/components'
+
+# Cómo gestiona Klive los proyectos
+
+Klive abre cualquier carpeta, pero compila, ejecuta y depura el código de un *proyecto Klive*. Esta página explica la diferencia y lo que hace Klive cuando abres una carpeta que creaste con otra herramienta.
+
+## Una carpeta y un proyecto
+
+Un proyecto Klive es una carpeta que contiene un archivo `klive.project`. Cualquier otra carpeta es una *carpeta simple*. Klive abre ambas: el Explorador muestra sus archivos y puedes abrirlos y editarlos.
+
+En el Explorador, un icono de una casa delante del nombre de la carpeta raíz indica que la carpeta es un proyecto Klive.
+
+## Qué añade un proyecto
+
+| | Carpeta simple | Proyecto Klive |
+| --- | --- | --- |
+| Examinar y editar los archivos | Sí | Sí |
+| Usar el emulador, cargar cintas e instantáneas | Sí | Sí |
+| Una raíz de compilación, y Compilar, Ejecutar y Depurar desde la barra de compilación | No | Sí |
+| El menú **Compilar** | No | Sí |
+| La máquina y el modelo, restaurados al abrir la carpeta | No | Sí |
+| Puntos de interrupción, inspecciones y documentos abiertos, conservados entre sesiones | No | Sí |
+| **Excluir** en el Explorador, y las pruebas unitarias | No | Sí |
+
+La *raíz de compilación* es el archivo fuente principal, el que compila Klive.
+
+## Crea un proyecto
+
+Elige **Archivo › Nuevo proyecto...**, selecciona una máquina, un modelo y una plantilla, y ponle nombre al proyecto. Klive crea una carpeta con un archivo `klive.project`, un script de compilación `build.ksx` y un pequeño programa con el que empezar. La página siguiente, [Tu primer programa en ensamblador](/es/get-started/first-assembly-program/), te guía paso a paso.
+
+## Abre una carpeta de otra herramienta
+
+Cuando abres una carpeta sin archivo `klive.project` con **Archivo › Abrir carpeta...**, **Archivo › Abrir reciente** o el comando `open`, Klive te pregunta qué hacer con ella. También lo pregunta cuando vuelve a abrir una carpeta así al iniciarse, porque era la última que tenías abierta:
+
+<Shot
+  src="get-started/make-project.webp"
+  alt="El cuadro de diálogo Convertir en un proyecto Klive para una carpeta de archivos BASIC, con la plantilla zx-basic y main.bas como raíz de compilación"
+  figure="5.1"
+  caption="Klive ofrece convertir una carpeta simple en un proyecto Klive"
+  markers={["choice", "template", "buildroot"]}
+  width={620}
+/>
+
+1. **Convertirla en un proyecto Klive** o **Mantenerla como carpeta simple**.
+2. **Plantilla**: Klive copia los archivos de la plantilla en la carpeta: el `build.ksx` que necesitan Compilar, Ejecutar y Depurar, y un programa de ejemplo. Para una carpeta con archivos BASIC, Klive elige la plantilla `zx-basic`; en otro caso, la plantilla `default` de la máquina.
+3. **Raíz de compilación**: el archivo que compila Klive. Klive muestra los archivos fuente de la carpeta y elige uno de ellos. En su lugar, puedes elegir **La raíz de compilación de la plantilla**, el programa de ejemplo.
+
+Elige también el **Tipo de máquina** y el **Modelo**: el cuadro de diálogo empieza con la máquina que está en marcha. Después haz clic en **Convertir en proyecto**. Klive escribe los archivos, vuelve a abrir la carpeta como proyecto Klive y abre la raíz de compilación.
+
+Cuando un archivo de la plantilla ya existe en la carpeta, el cuadro de diálogo lo muestra con una casilla. Klive sustituye solo los archivos que marques; los demás se quedan como están.
+
+Para dejar la carpeta como está, elige **Mantenerla como carpeta simple** y haz clic en **Mantener carpeta**: Klive recuerda la elección y no vuelve a preguntar por esa carpeta. [Crear un proyecto](/en/guides/projects/creating-projects/#make-a-folder-a-klive-project) explica dónde la guarda Klive y cómo deshacerla. **Cancelar** también deja la carpeta como carpeta simple, pero Klive vuelve a preguntar la próxima vez que la abras.
+
+Para convertir más adelante una carpeta simple en un proyecto Klive, elige **Archivo › Convertir en proyecto Klive...**, o haz clic con el botón derecho en la carpeta raíz del Explorador y elige **Convertir en proyecto Klive...**.
+
+<Callout type="info">
+Klive solo modifica una carpeta simple cuando se lo pides. Abrir la carpeta y editar sus archivos no escribe en ella ningún archivo `klive.project`.
+</Callout>
+
+## Los archivos que mantiene Klive
+
+- **`klive.project`** guarda la máquina y el modelo del proyecto, su raíz de compilación, los puntos de interrupción, las inspecciones, la configuración del proyecto y el estado del IDE. Klive lo actualiza mientras trabajas, así que no lo edites mientras el proyecto esté abierto.
+- **`build.ksx`** contiene las funciones que hay detrás de Compilar, Ejecutar y Depurar, y del menú **Compilar**. Puedes modificarlo a tu gusto: consulta [El sistema de compilación](/en/guides/projects/build-system/).
+
+Encontrarás más información en [Crear un proyecto](/en/guides/projects/creating-projects/) y [Plantillas de proyecto](/en/guides/projects/project-templates/).
+
+A continuación, escribe [tu primer programa en ensamblador](/es/get-started/first-assembly-program/).

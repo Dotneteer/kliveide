@@ -5,6 +5,7 @@ export default {
   "meet-the-emulator": "Conoce el emulador",
   "load-from-tape": "Carga un programa desde cinta",
   "meet-the-ide": "Conoce el IDE",
+  "how-projects-work": "Cómo gestiona Klive los proyectos",
   "first-assembly-program": "Tu primer programa en ensamblador",
   "debug-your-program": "Depura tu programa",
   "first-basic-program": "Tu primer programa en BASIC",
