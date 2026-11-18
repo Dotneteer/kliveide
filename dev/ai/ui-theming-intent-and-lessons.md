@@ -2515,7 +2515,13 @@ Its `& + &` margin carries the 12px that, with the header's own 4px gap, reprodu
 the hand-placed `<LabelSeparator width={8} />` used to produce — so the spacers came out of the three
 toolbars that had them, and a new toolbar gets the rhythm without remembering to add one.
 
-Two smaller things from the same pass:
+**A `ToolbarSeparator` never goes in a header that can wrap.** It is `height: 100%`, so once the
+header wraps it takes the whole header's height and makes every line it sits on that tall; with
+`align-content: center` the lines then spill above the header and over the content below. The
+Execution History header did exactly this in a narrow pane (controls at -79px, the filter drawn over
+the first rows). Groups replace separators: the `& + &` margin is the divider.
+
+Smaller things:
 
 - **A group whose contents can vanish needs the group guarded, not just the contents.**
   `NexAnnotationToolbar` returns `null` when it has nothing to show; wrapping it unconditionally left
