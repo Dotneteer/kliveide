@@ -30,6 +30,7 @@ import {
   type GraphicsLook
 } from "@common/reverse/graphicsDecode";
 import type { GraphicCandidate } from "@common/reverse/graphicsCandidates";
+import ScrollViewer from "@renderer/controls/ScrollViewer";
 import styles from "./GraphicsView.module.scss";
 
 /*
@@ -359,25 +360,29 @@ export const GraphicsView = ({
         </div>
       </div>
       {showCandidates && candidates && (
-        <ul className={styles.candidates} aria-label={t("panels.graphics.view.candidates")}>
-          <li className={styles.candidatesNote}>{t("panels.graphics.view.heuristic")}</li>
-          {candidates.length === 0 && <li className={styles.candidatesNote}>{t("panels.graphics.view.nothing")}</li>}
-          {candidates.map((candidate) => (
-            <li key={`${candidate.kind}:${candidate.start}`}>
-              <button
-                type="button"
-                className={styles.candidate}
-                onClick={() => {
-                  if (Object.keys(candidate.look).length) onLookChange(candidate.look);
-                  scrollToOffset(candidate.start, true);
-                  setSelection({ anchor: candidate.start, active: candidate.end });
-                }}
-              >
-                {candidate.description}
-              </button>
-            </li>
-          ))}
-        </ul>
+        <div className={styles.candidates}>
+          <ScrollViewer allowHorizontal={false} thinScrollBar={true}>
+            <ul className={styles.candidateList} aria-label={t("panels.graphics.view.candidates")}>
+              <li className={styles.candidatesNote}>{t("panels.graphics.view.heuristic")}</li>
+              {candidates.length === 0 && <li className={styles.candidatesNote}>{t("panels.graphics.view.nothing")}</li>}
+              {candidates.map((candidate) => (
+                <li key={`${candidate.kind}:${candidate.start}`}>
+                  <button
+                    type="button"
+                    className={styles.candidate}
+                    onClick={() => {
+                      if (Object.keys(candidate.look).length) onLookChange(candidate.look);
+                      scrollToOffset(candidate.start, true);
+                      setSelection({ anchor: candidate.start, active: candidate.end });
+                    }}
+                  >
+                    {candidate.description}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </ScrollViewer>
+        </div>
       )}
       </div>
       <div className={styles.statusLine} aria-live="polite">

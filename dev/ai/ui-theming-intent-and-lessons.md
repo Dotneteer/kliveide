@@ -2733,6 +2733,15 @@ cartridge) wraps it rather than copying `NexBankBrowser`.
   Select Machine's tree and hardware sheet scroll in one each. In a flex column between fixed rows the
   `ScrollViewer` takes `flex: 1 1 0; height: auto; min-height: 0` (its own `height: 100%` would push the
   footer out); in a grid cell the cell is a `display: flex` column with `overflow: hidden`.
+  **The pane keeps its size, border and background; its padding moves to a content `div` inside the
+  viewer** (the Execution History detail, the Sprite Editor's tool rail and inspector). An `auto`-width
+  grid column still sizes to that content through the viewer: the rail stayed 35px and the inspector
+  310px. **A multi-column band that scrolls sideways** (the narrow Execution History detail) puts
+  `columns` and `height: 100%` on the content `div`, so its columns flow past the viewer's width and
+  the viewer scrolls them; the pane itself keeps no `overflow-x`. **A side-bar panel scrolls in the
+  host's viewer** (`DataPanel autoHeight`); `useScrollViewer: false` is only for a panel that brings
+  its own viewer or `VirtualizedList`. Find stragglers in the running app, not by grep: an element
+  outside any `[data-overlayscrollbars-viewport]` whose computed overflow is `auto` or `scroll`.
 - **A viewer with content above its browser fills, it does not scroll** (`fill`, the TAP and HT tape
   viewers): the browser is as tall as the space left below the summary and graphics, so the viewer
   has nothing to scroll and the list and the details are the only scrollers. Bounding it to the whole

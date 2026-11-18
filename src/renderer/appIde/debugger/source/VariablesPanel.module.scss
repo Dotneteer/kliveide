@@ -1,11 +1,9 @@
 /*
  * The Variables panel (plan §10.7): a tree of data rows. Values use the shared
  * `--color-state-value` of the converted register/state panels, so a variable reads like a register
- * does; an evaluation error in a watch uses the status error ink.
+ * does; an evaluation error in a watch uses the status error ink. The side bar's `ScrollViewer`
+ * scrolls it (the panel is `autoHeight`); it has no native scroll area of its own.
  */
-.variablesPanel {
-  overflow: auto;
-}
 
 /* The tree's indent: one `--space-3` per level, set inline as `calc(var(--space-3) * depth)`. */
 .indent {

@@ -459,13 +459,20 @@ th.pinPattern {
   padding: var(--space-2) var(--space-3);
 }
 
+/* --- The band's details scroll through a `ScrollViewer`; the grid cell clips, never a native bar */
+.band .detailsScroll {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .band .details {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-content: start;
   gap: var(--space-1) var(--space-3);
-  min-height: 0;
-  overflow: auto;
 }
 
 /* --- A sentence, a link or the facts of a pattern span both columns of the band's details */

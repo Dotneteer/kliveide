@@ -66,6 +66,7 @@ import { SpriteSheetBrowser } from "./SpriteSheetBrowser";
 import { SpritePreview } from "./SpritePreview";
 import { SpriteRulers } from "./SpriteRulers";
 import { ColorSample } from "./ColorSample";
+import ScrollViewer from "@renderer/controls/ScrollViewer";
 import { cellSizeFromLegacyZoom, useFittedCellSize } from "./useFittedCellSize";
 
 /**
@@ -968,90 +969,94 @@ export const SpriteEditor = ({ context, readOnly }: Props) => {
       </div>
 
       <div className={styles.inspector}>
-      {!readOnly && (
-        <div className={styles.colorsPane}>
-            <div className={styles.colorPair}>
-              <span className={styles.colorSlot}>
-                <span className={styles.colorSlotLabel}>{t("panels.spriteEditor.pen")}</span>
-                <ColorSample
-                  color={viewPalette[penIndex]}
-                  isTransparency={penIndex === viewTransparency}
-                  xclass={styles.colorSampleLarge}
+        <ScrollViewer allowHorizontal={false} thinScrollBar={true}>
+          <div className={styles.inspectorContent}>
+          {!readOnly && (
+            <div className={styles.colorsPane}>
+                <div className={styles.colorPair}>
+                  <span className={styles.colorSlot}>
+                    <span className={styles.colorSlotLabel}>{t("panels.spriteEditor.pen")}</span>
+                    <ColorSample
+                      color={viewPalette[penIndex]}
+                      isTransparency={penIndex === viewTransparency}
+                      xclass={styles.colorSampleLarge}
+                    />
+                  </span>
+                  <SmallIconButton
+                    iconName="spr-swap"
+                    title={t("panels.spriteEditor.swap")}
+                    enable={true}
+                    clicked={handleSwapColors}
+                  />
+                  <span className={styles.colorSlot}>
+                    <span className={styles.colorSlotLabel}>{t("panels.spriteEditor.fill")}</span>
+                    <ColorSample
+                      color={viewPalette[fillIndex]}
+                      isTransparency={fillIndex === viewTransparency}
+                      xclass={styles.colorSampleLarge}
+                    />
+                  </span>
+                  <span className={styles.statusSpacer} />
+                  <span className={styles.colorIndex}>
+                    ${penIndex.toString(16).toUpperCase().padStart(fourBit ? 1 : 2, "0")}
+                  </span>
+                </div>
+              </div>
+          )}
+            <div className={styles.inspectorSection}>
+              <div className={styles.sectionHeader}>
+                <SpritePaletteHeader
+                  source={source}
+                  shownBank={shownBank}
+                  liveBank={liveBank}
+                  onPinBank={pinBank}
                 />
-              </span>
-              <SmallIconButton
-                iconName="spr-swap"
-                title={t("panels.spriteEditor.swap")}
-                enable={true}
-                clicked={handleSwapColors}
+                {fourBit && (
+                  <Dropdown
+                    ariaLabel={t("panels.spriteEditor.offsetLabel")}
+                    options={offsetOptions}
+                    initialValue={String(paletteOffset)}
+                    width={96}
+                    onChanged={handlePaletteOffset}
+                  />
+                )}
+              </div>
+              <div className={styles.paletteBody}>
+                {/*
+                  * A 4-bit sheet can use one row of the palette, the offset's: only those 16 swatches
+                  * are shown, labelled with their real indexes (plan D6).
+                  */}
+                <NextPaletteViewer
+                  palette={palette}
+                  cellSize={17}
+                  firstRow={fourBit ? paletteOffset : 0}
+                  rowCount={fourBit ? 1 : 16}
+                  transparencyIndex={fourBit ? (paletteOffset << 4) | viewTransparency : transparencyIndex}
+                  allowSelection={!isReadOnly}
+                  // The viewer has always accepted this and the editor never passed it, so the palette
+                  // showed no selection at all - not the pen colour restored from the view state, and
+                  // not the result of the Swap button.
+                  selectedIndex={
+                    isReadOnly ? undefined : fourBit ? (paletteOffset << 4) | penIndex : pencilColorIndex
+                  }
+                  onSelection={handleSelectPencilColor}
+                  onRightClick={handleSelectFillColor}
+                />
+              </div>
+            </div>
+            <div className={styles.inspectorSection}>
+              <div className={styles.sectionHeader}>{t("panels.spriteEditor.preview")}</div>
+              <SpritePreview
+                sprites={sprites}
+                selectedIndex={selectedSpriteIndex}
+                palette={viewPalette}
+                transparencyIndex={viewTransparency}
+                initialFps={context.viewState?.animationFps ?? 12}
+                onFpsChange={handleFpsChange}
               />
-              <span className={styles.colorSlot}>
-                <span className={styles.colorSlotLabel}>{t("panels.spriteEditor.fill")}</span>
-                <ColorSample
-                  color={viewPalette[fillIndex]}
-                  isTransparency={fillIndex === viewTransparency}
-                  xclass={styles.colorSampleLarge}
-                />
-              </span>
-              <span className={styles.statusSpacer} />
-              <span className={styles.colorIndex}>
-                ${penIndex.toString(16).toUpperCase().padStart(fourBit ? 1 : 2, "0")}
-              </span>
             </div>
           </div>
-      )}
-        <div className={styles.inspectorSection}>
-          <div className={styles.sectionHeader}>
-            <SpritePaletteHeader
-              source={source}
-              shownBank={shownBank}
-              liveBank={liveBank}
-              onPinBank={pinBank}
-            />
-            {fourBit && (
-              <Dropdown
-                ariaLabel={t("panels.spriteEditor.offsetLabel")}
-                options={offsetOptions}
-                initialValue={String(paletteOffset)}
-                width={96}
-                onChanged={handlePaletteOffset}
-              />
-            )}
-          </div>
-          <div className={styles.paletteBody}>
-            {/*
-              * A 4-bit sheet can use one row of the palette, the offset's: only those 16 swatches
-              * are shown, labelled with their real indexes (plan D6).
-              */}
-            <NextPaletteViewer
-              palette={palette}
-              cellSize={17}
-              firstRow={fourBit ? paletteOffset : 0}
-              rowCount={fourBit ? 1 : 16}
-              transparencyIndex={fourBit ? (paletteOffset << 4) | viewTransparency : transparencyIndex}
-              allowSelection={!isReadOnly}
-              // The viewer has always accepted this and the editor never passed it, so the palette
-              // showed no selection at all - not the pen colour restored from the view state, and
-              // not the result of the Swap button.
-              selectedIndex={
-                isReadOnly ? undefined : fourBit ? (paletteOffset << 4) | penIndex : pencilColorIndex
-              }
-              onSelection={handleSelectPencilColor}
-              onRightClick={handleSelectFillColor}
-            />
-          </div>
-        </div>
-        <div className={styles.inspectorSection}>
-          <div className={styles.sectionHeader}>{t("panels.spriteEditor.preview")}</div>
-          <SpritePreview
-            sprites={sprites}
-            selectedIndex={selectedSpriteIndex}
-            palette={viewPalette}
-            transparencyIndex={viewTransparency}
-            initialFps={context.viewState?.animationFps ?? 12}
-            onFpsChange={handleFpsChange}
-          />
-        </div>
+        </ScrollViewer>
       </div>
 
       <SpriteSheetBrowser

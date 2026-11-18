@@ -20,14 +20,21 @@
   min-height: 0;
 }
 
+/* The candidates pane clips; its `ScrollViewer` scrolls the list, never a native bar */
 .candidates {
+  display: flex;
+  flex-direction: column;
   flex: 0 0 auto;
   width: 30ch;
+  min-height: 0;
+  overflow: hidden;
+  border-left: 1px solid var(--border-subtle);
+}
+
+.candidateList {
   margin: 0;
   padding: var(--space-1);
-  overflow: auto;
   list-style: none;
-  border-left: 1px solid var(--border-subtle);
   font-size: var(--font-size-100);
 }
 

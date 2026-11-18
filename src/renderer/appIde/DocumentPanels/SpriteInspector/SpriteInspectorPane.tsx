@@ -105,7 +105,11 @@ export const SpriteInspectorPane = (props: Props) => {
       </div>
       {layout === "band" ? (
         <div className={styles.inspectorBody}>
-          <div className={styles.details}>{details}</div>
+          <div className={styles.detailsScroll}>
+            <ScrollViewer allowHorizontal={false} thinScrollBar={true}>
+              <div className={styles.details}>{details}</div>
+            </ScrollViewer>
+          </div>
           <div className={styles.mapBox}>{map}</div>
         </div>
       ) : (

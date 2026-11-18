@@ -607,9 +607,12 @@
   color: var(--text-on-accent);
 }
 
+/* The viewer's content scrolls through a `ScrollViewer`; the grid cell clips, never a native bar */
 .viewerBody {
+  display: flex;
+  flex-direction: column;
   min-height: 0;
-  overflow: auto;
+  overflow: hidden;
 }
 
 .viewerBasic,

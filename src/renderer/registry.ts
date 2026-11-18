@@ -365,7 +365,6 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
   withTexts({
     id: "variablesPanel",
     hostActivity: ACTIVITY_DEBUG_ID,
-    useScrollViewer: false,
     renderer: VariablesPanel,
     expandedOnInit: false
   }, { title: "panels.sideBar.variables" }),

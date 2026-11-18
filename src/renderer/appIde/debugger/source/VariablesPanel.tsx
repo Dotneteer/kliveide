@@ -189,7 +189,7 @@ const SourceVariables = ({ info }: { info: SourceLevelDebugInfo }) => {
   const ctx = snapshot ? { info, chain: snapshot.chain, frame, mem: snapshot.mem, lang } : undefined;
 
   return (
-    <DataPanel xclass={styles.variablesPanel}>
+    <DataPanel autoHeight>
       <HistoryPresentBanner subject="variables" />
       {!sections && <EmptyState message={t("panels.side.variables.pause")} />}
       {sections && sections.returned.length > 0 && (
