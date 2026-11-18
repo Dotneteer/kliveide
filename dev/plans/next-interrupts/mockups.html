@@ -1,0 +1,628 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Next Interrupts Mockups</title>
+<style>
+:root{
+  --bg:#1b1d22; --surface:#22252b; --chrome:#2a2d34; --header1:#30343c; --header2:#282b31;
+  --border:#3a3e47; --text:#d6d8dd; --muted:#8b909b; --label:#a3a8b3;
+  --accent:#4f8cff; --accent2:#c58bff; --value:#7fb2ff; --warn:#e3b341; --err:#f0716b; --ok:#6fcf8a;
+  --s-main:#6b7280; --s-line:#ff7fb0; --s-uartrx:#3cc9b4; --s-ctc:#f2b84b; --s-ula:#5aa2ff; --s-uarttx:#b48cff; --s-nmi:#f0716b;
+  --mono: "SF Mono", Menlo, Consolas, monospace; --sans: -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:12px/1.4 var(--sans)}
+header.top{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--chrome);position:sticky;top:0;z-index:5}
+header.top h1{font-size:14px;margin:0;font-weight:600;letter-spacing:.02em}
+.tabs{display:flex;gap:2px;background:var(--bg);padding:2px;border-radius:6px}
+.tabs button{all:unset;cursor:pointer;padding:5px 12px;border-radius:4px;color:var(--muted);font-weight:500}
+.tabs button[aria-selected=true]{background:var(--accent);color:#fff}
+select{background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:4px 6px;font:inherit}
+.note{color:var(--muted);max-width:1100px;padding:10px 16px 0;margin:0}
+.note b{color:var(--text)}
+main{padding:12px 16px 32px}
+.win{border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface);max-width:1280px}
+.titlebar{height:28px;display:flex;align-items:center;gap:6px;padding:0 10px;background:var(--chrome);border-bottom:1px solid var(--border);color:var(--muted)}
+.dot{width:10px;height:10px;border-radius:50%;background:#555}
+.val{font-family:var(--mono);color:var(--value)}
+.mono{font-family:var(--mono)}
+.dim{opacity:.38}
+.chip{display:inline-block;width:8px;height:8px;border-radius:2px;flex:none}
+/* ---------- IDE frame ---------- */
+.ide{display:grid;grid-template-columns:44px 440px 1fr;height:760px}
+.actbar{background:var(--chrome);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:14px;padding-top:12px}
+.actbar span{width:20px;height:20px;border-radius:4px;border:2px solid var(--muted);opacity:.5}
+.actbar span.on{border-color:var(--accent);opacity:1}
+.side{border-right:1px solid var(--border);overflow:auto;background:var(--surface)}
+.phead{height:26px;display:flex;align-items:center;justify-content:space-between;padding:0 8px;background:linear-gradient(var(--header1),var(--header2));border-bottom:1px solid var(--border);font:600 11px var(--sans);text-transform:uppercase;letter-spacing:.04em;color:var(--label)}
+.phead.collapsed{opacity:.6}
+.phead .acts{display:flex;gap:10px;text-transform:none;font-weight:400}
+.phead .acts a{color:var(--muted);cursor:pointer}
+.phead .acts a:hover{color:var(--text)}
+.grp{padding:8px 8px 3px;color:var(--muted);font:600 10px var(--sans);text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;justify-content:space-between}
+.kv{display:grid;grid-template-columns:13ch 1fr;padding:0 8px;row-gap:1px}
+.kv > div{height:20px;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.kv .k{color:var(--label)}
+.kv .sec{color:var(--muted)}
+.warns{margin:6px 8px 2px;display:flex;flex-direction:column;gap:4px}
+.warn{border-left:3px solid var(--warn);background:#e3b34114;padding:4px 6px;border-radius:0 3px 3px 0;color:var(--text)}
+.warn.err{border-color:var(--err);background:#f0716b14}
+.warn.info{border-color:var(--accent);background:#4f8cff14}
+.warn b{font-weight:600}
+.warn .why{color:var(--muted);display:block;margin-top:1px}
+/* the chain */
+.chain{padding:0 0 4px}
+.crow{display:grid;grid-template-columns:4ch 10ch 3ch 3ch 10ch 3ch 1fr;align-items:center;gap:4px;height:21px;padding:0 8px;position:relative}
+.crow.h{color:var(--muted);font:600 10px var(--sans);text-transform:uppercase;letter-spacing:.04em;height:18px}
+.crow:not(.h):hover{background:#ffffff08}
+.crow .idx{color:var(--muted);font-family:var(--mono)}
+.crow .name{color:var(--label);display:flex;align-items:center;gap:5px;white-space:nowrap}
+.crow .flag{font-family:var(--mono);text-align:center}
+.crow .flag.on{color:var(--value)}
+.crow .flag.off{color:#5b606b}
+.st{font-size:10px;font-weight:600;padding:0 5px;border-radius:8px;line-height:15px;justify-self:start;white-space:nowrap}
+.st.idle{color:#6b7080}
+.st.req{background:#e3b34126;color:var(--warn)}
+.st.ack{background:#c58bff26;color:var(--accent2)}
+.st.isr{background:#4f8cff2e;color:var(--value)}
+.st.res{color:#50545e;font-weight:400;font-style:italic}
+.crow .hnd{font-family:var(--mono);color:var(--value);cursor:pointer;text-decoration:underline dotted #7fb2ff66;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crow .hnd.bad{color:var(--err);text-decoration-color:#f0716b66}
+.crow .ring{position:absolute;right:8px;display:none;background:var(--bg);border:1px solid var(--border);color:var(--muted);border-radius:3px;font-size:10px;padding:0 5px;cursor:pointer}
+.crow:hover .ring{display:block}
+.crow.blocked{background:repeating-linear-gradient(135deg,transparent 0 6px,#ffffff05 6px 12px)}
+.crow.blocked .name,.crow.blocked .idx{opacity:.55}
+.crow.res{opacity:.45}
+.blockbar{margin:1px 8px;height:16px;display:flex;align-items:center;gap:6px;color:var(--warn);font-size:10px;border-top:1px dashed #e3b34188}
+.blockbar::before{content:"▼"}
+.legend{padding:4px 8px 8px;color:var(--muted);font-size:10.5px;display:flex;gap:10px;flex-wrap:wrap}
+.editor{background:var(--bg);display:flex;flex-direction:column;min-width:0}
+.editor .doctabs{height:30px;background:var(--chrome);border-bottom:1px solid var(--border);display:flex;align-items:end;padding-left:8px}
+.editor .doctabs span{padding:6px 12px;color:var(--muted)}
+.editor .doctabs span.on{background:var(--bg);color:var(--text);border:1px solid var(--border);border-bottom:none;border-radius:4px 4px 0 0}
+.code{padding:12px 16px;font-family:var(--mono);color:#6a7080;line-height:1.7;white-space:pre}
+.code .cur{background:#4f8cff22;color:var(--text);display:block}
+.code .lbl{color:#d4a65a}
+.code .kw{color:#7fb2ff}
+.code .cm{color:#5d8a5d}
+/* ---------- Timeline document ---------- */
+.doc{display:flex;flex-direction:column;background:var(--bg)}
+.toolbar{min-height:34px;display:flex;align-items:center;gap:6px 12px;padding:4px 10px;background:var(--chrome);border-bottom:1px solid var(--border);color:var(--muted);flex-wrap:wrap}
+.toolbar .sp{flex:1}
+.toolbar label{display:flex;gap:4px;align-items:center;white-space:nowrap}
+.btn{all:unset;cursor:pointer;padding:2px 8px;border:1px solid var(--border);border-radius:4px;color:var(--text);background:var(--surface)}
+.btn:hover{border-color:var(--accent)}
+.seg{display:inline-flex;border:1px solid var(--border);border-radius:4px;overflow:hidden}
+.seg button{all:unset;cursor:pointer;padding:2px 9px;color:var(--muted)}
+.seg button.on{background:var(--accent);color:#fff}
+.tlwrap{display:grid;grid-template-columns:minmax(0,1fr) 300px;min-height:0;border-bottom:1px solid var(--border)}
+.tl{padding:8px 0 8px 8px;overflow:hidden}
+.tl svg{display:block;width:100%}
+.info{border-left:1px solid var(--border);padding:8px 10px;background:var(--surface)}
+.info h3{margin:0 0 6px;font:600 11px var(--sans);text-transform:uppercase;letter-spacing:.04em;color:var(--label)}
+.info .kv{padding:0;grid-template-columns:12ch 1fr}
+.lower{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0}
+.lower > div{min-width:0}
+.lower > div{padding:8px 10px}
+.lower > div + div{border-left:1px solid var(--border)}
+.lower h3{margin:0 0 6px;font:600 11px var(--sans);text-transform:uppercase;letter-spacing:.04em;color:var(--label)}
+table{border-collapse:collapse;width:100%}
+th{color:var(--muted);font:600 10px var(--sans);text-transform:uppercase;letter-spacing:.04em;text-align:left;padding:3px 6px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg)}
+td{padding:2px 6px;font-family:var(--mono);white-space:nowrap}
+td.l{font-family:var(--sans);color:var(--label)}
+tr.ev{cursor:pointer}
+tr.ev:hover{background:#ffffff08}
+tr.ev.sel{background:#4f8cff22}
+.scroll{max-height:220px;overflow:auto}
+.bad{color:var(--err)}
+.good{color:var(--ok)}
+.kind{font-family:var(--sans);font-size:10px;font-weight:600;padding:0 5px;border-radius:8px}
+.kind.req{background:#e3b34126;color:var(--warn)}
+.kind.ack{background:#4f8cff2e;color:var(--value)}
+.kind.reti{background:#6fcf8a22;color:var(--ok)}
+.kind.lost{background:#f0716b26;color:var(--err)}
+/* ---------- Breakpoints ---------- */
+.dlg{max-width:620px;margin:0}
+.dlg .body{padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.dlg fieldset{border:1px solid var(--border);border-radius:6px;padding:8px 10px;margin:0}
+.dlg legend{color:var(--label);padding:0 4px;font-weight:600}
+.dlg .opt{display:grid;grid-template-columns:20px 1fr;gap:2px 4px;align-items:start;padding:4px 0}
+.dlg .opt small{grid-column:2;color:var(--muted)}
+.dlg .row{display:flex;gap:8px;align-items:center}
+.dlg .foot{display:flex;justify-content:flex-end;gap:8px;padding:10px 14px;border-top:1px solid var(--border);background:var(--chrome)}
+.bplist{margin-top:14px;max-width:620px}
+.bprow{display:grid;grid-template-columns:16px 1fr auto;gap:8px;align-items:center;height:22px;padding:0 8px}
+.bprow .ico{width:10px;height:10px;border-radius:2px;transform:rotate(45deg);background:var(--warn)}
+.bprow .hit{color:var(--muted)}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>ZX Spectrum Next: interrupt debugging mockups</h1>
+  <div class="tabs" role="tablist">
+    <button role="tab" aria-selected="true" data-tab="panel">1 · Interrupts side panel</button>
+    <button role="tab" aria-selected="false" data-tab="timeline">2 · Interrupt Timeline document</button>
+    <button role="tab" aria-selected="false" data-tab="bps">3 · Interrupt breakpoints</button>
+  </div>
+</header>
+
+<!-- ===================================================== 1. side panel -->
+<section data-pane="panel">
+  <p class="note">The <b>Interrupts</b> panel (debug activity, Next only, beside Next Registers and Copper) shows the
+  interrupt system as it stands while the machine is paused. Choose a scenario to see each of the traps from
+  the <i>Interrupts: Fourteen Voices, Two Wires</i> article. Hover a chain row to see <b>Ring</b> (NextReg $20);
+  click a handler address to open the disassembly there. Every value is synthetic.</p>
+  <p class="note">Scenario:
+    <select id="scenario">
+      <option value="nest">Raster split during the music (line handler nested in the ULA's)</option>
+      <option value="retn">A maskable handler ended with RETN (the ULA stays in service)</option>
+      <option value="im1">Hardware IM2 on, but the CPU is still in IM 1</option>
+      <option value="lost">Pulse mode: the frame interrupt was lost under DI</option>
+      <option value="polled">UART polled mode, a vector table hole</option>
+      <option value="nmi">Stackless NMI in progress (DRIVE button)</option>
+    </select>
+  </p>
+  <main>
+    <div class="win">
+      <div class="titlebar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>&nbsp; Klive IDE · ZX Spectrum Next (paused)</div>
+      <div class="ide">
+        <div class="actbar"><span></span><span></span><span class="on"></span><span></span><span></span></div>
+        <div class="side">
+          <div class="phead collapsed"><span>› Z80 CPU</span></div>
+          <div class="phead collapsed"><span>› Next Registers</span></div>
+          <div class="phead collapsed"><span>› Copper</span></div>
+          <div class="phead"><span>⌄ Interrupts</span><span class="acts"><a title="Open the Interrupt Timeline document">Timeline ↗</a><a title="Show the NextRegs behind every value">$C0–$CE</a></span></div>
+          <div id="panel"></div>
+          <div class="phead collapsed"><span>› Call Stack</span></div>
+          <div id="callstack" style="padding:4px 8px 8px"></div>
+        </div>
+        <div class="editor">
+          <div class="doctabs"><span class="on">Disassembly</span><span>game.asm</span><span>Interrupt Timeline</span></div>
+          <div class="code" id="code"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</section>
+
+<!-- ===================================================== 2. timeline -->
+<section data-pane="timeline" hidden>
+  <p class="note">The <b>Interrupt Timeline</b> document records interrupt events while the machine runs (a ring in the
+  core of <b>64K events</b>, so the number of frames it holds depends on the program: switch the program to see it) and
+  draws <b>1, 2 or 4 frames</b> at a time as swimlanes, the way the article draws the nesting figure. Page back to the
+  oldest frame to see one the ring has partly overwritten.
+  A bar is a handler <i>running</i>; a hatched bar is a handler <i>in service but interrupted</i>. Ticks: ▲ request,
+  ● acknowledge, ◆ RETI. Click a bar or a row for details. The data comes from a small daisy-chain simulation.</p>
+  <main>
+    <div class="win doc">
+      <div class="toolbar">
+        <select id="prog" title="Mockup only: the program being debugged"><option value="game">Game: ULA, splits, CTC, UART</option><option value="sample">Sample player: CTC 0 at 15.6 kHz</option></select>
+        <span>Frame</span>
+        <button class="btn" id="fprev">◀</button><span class="val" id="fnum">1204</span><button class="btn" id="fnext">▶</button>
+        <span class="seg" id="nframes" title="Frames in view"><button class="on" data-n="1">1 frame</button><button data-n="2">2</button><button data-n="4">4</button></span>
+        <span class="seg" id="zoom" title="Zoom inside the view"><button class="on" data-z="1">All</button><button data-z="4">¼</button><button data-z="16">1/16</button></span>
+        <label><input type="checkbox" id="beam" checked> beam lines</label>
+        <label><input type="checkbox" id="onlyLate"> late only (&gt; 41 T)</label>
+        <span class="sp"></span>
+        <span id="held" title="What the 64K-event ring holds"></span>
+        <span>Recording: <span class="good">● on</span></span>
+        <button class="btn">Clear</button>
+      </div>
+      <div class="tlwrap">
+        <div class="tl"><svg id="tl" viewBox="0 0 900 260"></svg></div>
+        <div class="info" id="evinfo"></div>
+      </div>
+      <div class="lower">
+        <div>
+          <h3>Latency, request → handler's first instruction (last 50 frames)</h3>
+          <table id="lat"></table>
+        </div>
+        <div>
+          <h3>Events in view</h3>
+          <div class="scroll"><table id="evs"></table></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</section>
+
+<!-- ===================================================== 3. breakpoints -->
+<section data-pane="bps" hidden>
+  <p class="note">Interrupt stops are added from the Breakpoints panel ("Add interrupt stop…") or from a chain row's
+  context menu in the Interrupts panel. The core decides <i>whether</i> to stop (a new stop candidate); TypeScript
+  decides what the stop means and how it is shown.</p>
+  <main>
+    <div class="win dlg">
+      <div class="titlebar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>&nbsp; Add interrupt stop</div>
+      <div class="body">
+        <fieldset><legend>Stop when</legend>
+          <label class="opt"><input type="radio" name="k" checked><span>An interrupt is <b>acknowledged</b> from
+            <select><option>Any source</option><option selected>Line interrupt (0)</option><option>UART 0 Rx (1)</option><option>CTC 0 (3)</option><option>ULA (11)</option><option>UART 0 Tx (12)</option></select></span>
+            <small>Stops at the handler's first instruction, with the interrupted PC on the Call Stack.</small></label>
+          <label class="opt"><input type="radio" name="k"><span>An interrupt is <b>lost</b></span>
+            <small>Pulse mode: the pulse ended while interrupts were disabled. The source's status bit is set but no handler ran.</small></label>
+          <label class="opt"><input type="radio" name="k"><span>A maskable handler <b>ends with RETN</b></span>
+            <small>Hardware IM2: RETN executed while a source is in service. Nothing is released; the source and everything below it stay blocked.</small></label>
+          <label class="opt"><input type="radio" name="k"><span><b>RETI outside IM 2</b> while a source is in service</span>
+            <small>The chain releases nothing.</small></label>
+          <label class="opt"><input type="radio" name="k"><span>A request <b>waits longer than</b> <input style="width:7ch;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:3px" value="228"> T-states</span>
+            <small>Catches a raster split that is late because a lower handler ran too long without EI, or the chain was blocked.</small></label>
+          <label class="opt"><input type="radio" name="k"><span>An <b>NMI</b> is taken from
+            <select><option>Any device</option><option>Multiface (M1)</option><option>DivMMC (DRIVE)</option><option>Expansion bus</option></select></span>
+            <small>Stops at $0066, before the device's code runs.</small></label>
+        </fieldset>
+        <div class="row"><label><input type="checkbox"> Only when</label><input style="flex:1;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:3px;padding:3px 6px;font-family:var(--mono)" placeholder="condition, e.g. A == $10"> <label><input type="checkbox"> Log only (don't stop)</label></div>
+      </div>
+      <div class="foot"><button class="btn">Cancel</button><button class="btn" style="background:var(--accent);border-color:var(--accent);color:#fff">Add</button></div>
+    </div>
+    <div class="win bplist">
+      <div class="phead"><span>⌄ Breakpoints</span><span class="acts"><a>Add interrupt stop…</a></span></div>
+      <div class="bprow"><span class="ico"></span><span>Interrupt acknowledged: Line interrupt (0)</span><span class="hit">hits 412</span></div>
+      <div class="bprow"><span class="ico"></span><span>Maskable handler ends with RETN</span><span class="hit">hits 1</span></div>
+      <div class="bprow"><span class="ico" style="background:var(--muted)"></span><span class="dim">Request waits longer than 228 T (log only)</span><span class="hit">hits 7</span></div>
+      <div class="bprow"><span class="ico" style="background:#d33;border-radius:50%;transform:none"></span><span>$8100 <span style="color:var(--muted)">line_split</span></span><span class="hit">hits 412</span></div>
+    </div>
+  </main>
+</section>
+
+<script>
+const $ = s => document.querySelector(s);
+const hex2 = v => "$" + v.toString(16).toUpperCase().padStart(2, "0");
+const hex4 = v => "$" + v.toString(16).toUpperCase().padStart(4, "0");
+
+/* tabs */
+document.querySelectorAll(".tabs button").forEach(b => b.onclick = () => {
+  document.querySelectorAll(".tabs button").forEach(x => x.setAttribute("aria-selected", x === b));
+  document.querySelectorAll("[data-pane]").forEach(p => p.hidden = p.dataset.pane !== b.dataset.tab);
+});
+
+/* ------------------------------------------------ the fourteen sources */
+const SOURCES = [
+  { name: "Line",      color: "--s-line",   ring: "$20 b7" },
+  { name: "UART 0 Rx", color: "--s-uartrx" },
+  { name: "UART 1 Rx", color: "--s-uartrx" },
+  { name: "CTC 0",     color: "--s-ctc",    ring: "$20 b0" },
+  { name: "CTC 1",     color: "--s-ctc",    ring: "$20 b1" },
+  { name: "CTC 2",     color: "--s-ctc",    ring: "$20 b2" },
+  { name: "CTC 3",     color: "--s-ctc",    ring: "$20 b3" },
+  { name: "CTC 4",     reserved: true },
+  { name: "CTC 5",     reserved: true },
+  { name: "CTC 6",     reserved: true },
+  { name: "CTC 7",     reserved: true },
+  { name: "ULA",       color: "--s-ula",    ring: "$20 b6" },
+  { name: "UART 0 Tx", color: "--s-uarttx" },
+  { name: "UART 1 Tx", color: "--s-uarttx" }
+];
+const HANDLERS = { 0: [0x8100, "line_split"], 1: [0x8240, "uart_rx"], 3: [0x8180, "ctc_sample"], 11: [0x8000, "music_frame"], 12: [0x8300, "uart_tx"] };
+
+/* each scenario: mode, cpu, per-source [en, st, state], warnings, call stack, code */
+const SCEN = {
+  nest: {
+    hw: 1, c0: 0xA1, im: 2, iff: [1, 1], int: 0, I: 0xBE, last: 0xA0, pulse: 0,
+    src: { 0: [1, 1, "isr"], 3: [1, 0, "idle"], 11: [1, 1, "isr"], 12: [1, 1, "req"], 1: [1, 0, "idle"] },
+    warns: [["info", "UART 0 Tx is waiting behind the ULA", "It is requesting; it rings as soon as the ULA's handler executes RETI."]],
+    stack: [["INT", "Line (vector $A0)", "music_frame+$3A"], ["INT", "ULA (vector $B6)", "main_loop+$12"]],
+    pc: 0x8106, code: "line_split"
+  },
+  retn: {
+    hw: 1, c0: 0xA1, im: 2, iff: [1, 1], int: 0, I: 0xBE, last: 0xB6, pulse: 0,
+    src: { 0: [1, 1, "idle"], 3: [1, 0, "idle"], 11: [1, 1, "isr"], 12: [1, 1, "req"], 1: [1, 0, "idle"] },
+    warns: [["err", "ULA is in service, but no handler is running", "The Call Stack holds no interrupt frame for it. Its handler most likely ended with RETN ($8044), which releases nothing. The ULA and every source below it are blocked for good."]],
+    stack: [],
+    pc: 0x9012, code: "main"
+  },
+  im1: {
+    hw: 1, c0: 0xA1, im: 1, iff: [1, 1], int: 0, I: 0xBE, last: 0xFF, pulse: 1,
+    src: { 0: [1, 1, "req"], 3: [1, 1, "req"], 11: [1, 1, "idle"], 12: [0, 0, "idle"], 1: [0, 0, "idle"] },
+    warns: [["warn", "Hardware IM2 mode is on, but the CPU is in IM 1", "Only the ULA still rings, as a pulse to $0038. Line and CTC 0 are requesting and wait; they all ring at once when the CPU executes IM 2."]],
+    stack: [],
+    pc: 0x9012, code: "main"
+  },
+  lost: {
+    hw: 0, c0: 0x00, im: 1, iff: [0, 0], int: 0, I: 0x3F, last: 0xFF, pulse: 0,
+    src: { 0: [0, 0, "idle"], 3: [0, 0, "idle"], 11: [1, 1, "idle"], 12: [0, 0, "idle"], 1: [0, 0, "idle"] },
+    warns: [["warn", "Frame interrupt lost at T 456 (line 1)", "The 32 T pulse ended while interrupts were disabled (DI at $9020, T 211). Only the ULA's status bit remembers it."],
+            ["info", "Pulse mode: every source shares one /INT pulse, vector $FF", "The chain's columns below show enables and status bits only."]],
+    stack: [],
+    pc: 0x9031, code: "di"
+  },
+  polled: {
+    hw: 1, c0: 0xA1, im: 2, iff: [1, 1], int: 0, I: 0xBE, last: 0xB6, pulse: 0,
+    src: { 0: [0, 0, "idle"], 3: [1, 0, "idle"], 11: [1, 0, "idle"], 12: [0, 1, "idle"], 1: [0, 1, "idle"], 4: [1, 0, "idle"] },
+    holes: { 4: 0xFFFF },
+    warns: [["info", "UART 0 Rx and Tx are in polled mode", "Their status bits are set with the interrupt off. This is fine when the program polls $C9/$CA."],
+            ["err", "CTC 1 is enabled, but its vector table entry is empty", "$BEA8 holds $FFFF. When CTC 1 fires, the CPU will jump to $FFFF."]],
+    stack: [],
+    pc: 0x9012, code: "main"
+  },
+  nmi: {
+    hw: 1, c0: 0xA9, im: 2, iff: [0, 1], int: 0, I: 0xBE, last: 0xB6, pulse: 0,
+    src: { 0: [1, 0, "idle"], 3: [1, 0, "idle"], 11: [1, 1, "req"], 12: [0, 0, "idle"], 1: [0, 0, "idle"] },
+    nmi: { state: "HOLD", source: "DivMMC (DRIVE button)", stackless: 1, ret: 0x9015 },
+    warns: [["info", "Stackless NMI in progress", "SP went down by 2, but nothing was written. RETN returns to $9015 from $C2/$C3."]],
+    stack: [["NMI", "DivMMC, stackless", "main+$03"]],
+    pc: 0x0066, code: "nmi"
+  }
+};
+
+function vectorOf(s, i) { return (s.c0 & 0xE0) | (i << 1); }
+
+function renderPanel() {
+  const s = SCEN[$("#scenario").value];
+  const vbase = s.c0 & 0xE0;
+  let h = `<div class="grp"><span>Mode</span></div><div class="kv">
+    <div class="k">Mode</div><div>${s.hw ? "<b>Hardware IM2</b>" : "<b>Pulse</b>"} <span class="sec">$C0 = ${hex2(s.c0)}</span></div>
+    <div class="k">CPU</div><div><span class="val">IM ${s.im}</span><span class="sec">IFF1</span><span class="val">${s.iff[0]}</span><span class="sec">IFF2</span><span class="val">${s.iff[1]}</span></div>
+    <div class="k">/INT</div><div><span class="val">${s.int ? "low" : "high"}</span><span class="sec">pulse ($22 b7)</span><span class="val">${s.pulse}</span></div>
+    <div class="k">Vectors</div><div>${s.hw ? `<span class="val">${hex2(vbase)}</span><span class="sec">to</span><span class="val">${hex2(vbase | 0x1A)}</span><span class="sec">last</span><span class="val">${hex2(s.last)}</span>` : `<span class="val">$FF</span><span class="sec">(always, in pulse mode)</span>`}</div>
+    <div class="k">Table</div><div>${s.im === 2 ? `<span class="sec">I =</span><span class="val">${hex2(s.I)}</span><span class="sec">→</span><span class="val">${hex4(s.I * 256 + vbase)}</span>` : `<span class="sec">IM ${s.im}: handler at</span><span class="val">$0038</span>`}</div>
+  </div>`;
+  if (s.warns.length) h += `<div class="warns">${s.warns.map(w => `<div class="warn ${w[0] === "warn" ? "" : w[0]}"><b>${w[1]}</b><span class="why">${w[2]}</span></div>`).join("")}</div>`;
+
+  h += `<div class="grp"><span>Daisy chain (priority order)</span><span style="text-transform:none;font-weight:400">EN $C4–C6 · ST $C8–CA</span></div><div class="chain">
+    <div class="crow h"><span>#</span><span>Source</span><span>EN</span><span>ST</span><span>State</span><span>Vec</span><span>Handler</span></div>`;
+  // the highest-priority source in service blocks everything below it
+  let blocker = -1;
+  if (s.hw) for (let i = 0; i < 14; i++) if ((s.src[i] || [])[2] === "isr") { blocker = i; break; }
+  for (let i = 0; i < 14; i++) {
+    const src = SOURCES[i];
+    if (src.reserved) {
+      if (i === 7) h += `<div class="crow res"><span class="idx">7–10</span><span class="name">CTC 4–7</span><span class="flag off">0</span><span class="flag off">0</span><span class="st res">reserved</span><span></span><span></span></div>`;
+      continue;
+    }
+    const [en, st, state] = s.src[i] || [0, 0, "idle"];
+    const blocked = blocker >= 0 && i > blocker;
+    const label = { idle: "idle", req: "requesting", ack: "acknowledged", isr: "in service" }[state];
+    let hnd = "";
+    if (s.hw && s.im === 2) {
+      const hole = s.holes && s.holes[i];
+      const hd = HANDLERS[i];
+      hnd = hole ? `<span class="hnd bad" title="Word at ${hex4(s.I * 256 + vectorOf(s, i))}">${hex4(hole)} ⚠</span>`
+        : hd ? `<span class="hnd" title="Word at ${hex4(s.I * 256 + vectorOf(s, i))}. Click: open the disassembly">${hex4(hd[0])} ${hd[1]}</span>`
+        : `<span class="sec dim">—</span>`;
+    }
+    h += `<div class="crow ${blocked ? "blocked" : ""}" title="${blocked ? "Blocked: " + SOURCES[blocker].name + " is in service above it" : ""}">
+      <span class="idx">${i}</span>
+      <span class="name"><span class="chip" style="background:var(${src.color})"></span>${src.name}</span>
+      <span class="flag ${en ? "on" : "off"}">${en}</span>
+      <span class="flag ${st ? "on" : "off"}">${st}</span>
+      <span class="st ${state}">${s.hw ? label : (st ? "status set" : "—")}</span>
+      <span class="val">${s.hw ? hex2(vectorOf(s, i)).slice(1) : ""}</span>
+      ${hnd || "<span></span>"}
+      ${src.ring ? `<span class="ring" title="Write ${src.ring} (ignores the enable)">Ring</span>` : ""}
+    </div>`;
+    if (i === blocker) h += `<div class="blockbar">${SOURCES[blocker].name} is in service: the sources below wait for its RETI</div>`;
+  }
+  h += `<div class="crow"><span class="idx">—</span><span class="name"><span class="chip" style="background:#666"></span>Exp. bus</span><span class="flag on">1</span><span class="flag off">0</span><span class="st idle">—</span><span></span><span></span></div>`;
+  h += `</div><div class="legend"><span><span class="st req">requesting</span> waits for permission</span><span><span class="st isr">in service</span> until RETI</span><span>Hatched rows: blocked</span></div>`;
+
+  const n = s.nmi || { state: "IDLE", source: "—", stackless: (s.c0 >> 3) & 1, ret: 0x0000 };
+  h += `<div class="grp"><span>NMI</span></div><div class="kv">
+    <div class="k">Arbiter</div><div><span class="val">${n.state}</span><span class="sec">${n.source}</span></div>
+    <div class="k">Allowed</div><div><span class="sec">M1</span><span class="val">on</span><span class="sec">DRIVE</span><span class="val">on</span><span class="sec">($06 b3/b4)</span></div>
+    <div class="k">I/O trap</div><div><span class="val">off</span><span class="sec">($D8 b0)</span></div>
+    <div class="k">Stackless</div><div><span class="val">${n.stackless ? "on" : "off"}</span><span class="sec">($C0 b3)</span></div>
+    <div class="k">Return</div><div><span class="val">${hex4(n.ret)}</span><span class="sec">($C2/$C3)</span></div>
+  </div><div style="height:8px"></div>`;
+  $("#panel").innerHTML = h;
+
+  $("#callstack").innerHTML = s.stack.length
+    ? s.stack.map(f => `<div style="display:flex;gap:6px;height:20px;align-items:center"><span class="st ${f[0] === "NMI" ? "req" : "isr"}">${f[0]}</span><span>${f[1]}</span><span class="sec" style="color:var(--muted)">from ${f[2]}</span></div>`).join("")
+    : `<span style="color:var(--muted)">No interrupt frames</span>`;
+
+  const CODE = {
+    line_split: [["8100", "line_split:", ""], ["8100", "  push af", ""], ["8101", "  nextreg $16,a", "; scroll the lower half"], ["8106", "  pop af", "", 1], ["8107", "  ei", ""], ["8108", "  reti", "; releases the line interrupt"]],
+    main: [["9010", "main:", ""], ["9010", "  ld a,(frames)", ""], ["9012", "  cp b", "", 1], ["9013", "  jr z,main", ""], ["…", "", ""], ["8044", "  retn", "; ⚠ ends music_frame: releases nothing"]],
+    di: [["9020", "  di", "; T 211, before the pulse"], ["9021", "  ldir", "; 21 × 21 T"], ["9031", "  ei", "; T 652: the pulse ended at T 488", 1]],
+    nmi: [["0066", "nmi:", "; DivMMC ROM"], ["0066", "  push af", "", 1], ["0067", "  …", ""], ["00A0", "  retn", "; returns to $C2/$C3"]]
+  }[s.code];
+  $("#code").innerHTML = CODE.map(([a, t, c, cur]) => `<span class="${cur ? "cur" : ""}">${a.padEnd(6)}${t.endsWith(":") ? `<span class="lbl">${t}</span>` : t.replace(/^(\s+)(\w+)/, '$1<span class="kw">$2</span>')}${c ? "   <span class=\"cm\">" + c + "</span>" : ""}</span>`).join("\n");
+}
+$("#scenario").onchange = renderPanel;
+renderPanel();
+
+/* ------------------------------------------------ timeline: a tiny daisy-chain simulation */
+const FRAME = 70908, LINE = 228;
+const LANES = [
+  { i: -1, name: "Main program", color: "--s-main" },
+  { i: 0, name: "Line", color: "--s-line" },
+  { i: 1, name: "UART 0 Rx", color: "--s-uartrx" },
+  { i: 3, name: "CTC 0", color: "--s-ctc" },
+  { i: 11, name: "ULA", color: "--s-ula" },
+  { i: 12, name: "UART 0 Tx", color: "--s-uarttx" }
+];
+const DUR = { 0: 700, 1: 260, 3: 150, 11: 21000, 12: 320 };
+const RING = 65536, LAST = 1204;
+function rng(seed) { return () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff; }
+let prog = "game";
+
+function simulate(frame) {
+  const r = rng(frame * 7919 + 1);
+  const dur = { ...DUR, 3: prog === "sample" ? 60 : DUR[3] };
+  const reqs = [{ s: 11, t: 228 + 228 }];
+  [96, 168].forEach(l => reqs.push({ s: 0, t: (l - 1) * LINE + 152 }));
+  if (prog === "sample") for (let t = 100; t < FRAME; t += LINE) reqs.push({ s: 3, t });
+  else for (let t = 1500; t < FRAME; t += 8862) reqs.push({ s: 3, t: t + Math.floor(r() * 40) });
+  reqs.push({ s: 12, t: 5200 + Math.floor(r() * 3000) }, { s: 12, t: 30000 + Math.floor(r() * 4000) });
+  reqs.push({ s: 1, t: 15000 + Math.floor(r() * 6000) });
+  reqs.sort((a, b) => a.t - b.t);
+  const events = [], segs = [], pending = [], stack = [];
+  let ri = 0, ackUntil = -1, ackSrc = null, segStart = 0, running = -1;
+  const switchTo = (who, t) => { if (who !== running) { if (t > segStart) segs.push({ s: running, a: segStart, b: t, stack: stack.map(x => x.s) }); segStart = t; running = who; } };
+  for (let t = 0; t < FRAME; t++) {
+    while (ri < reqs.length && reqs[ri].t === t) {
+      const q = reqs[ri++];
+      if (!pending.some(p => p.s === q.s) && !stack.some(x => x.s === q.s)) { pending.push(q); events.push({ k: "req", s: q.s, t }); }
+    }
+    if (ackSrc !== null) {
+      if (t >= ackUntil) {
+        const p = ackSrc; ackSrc = null;
+        switchTo(p.s, t); // close the interrupted runner's segment before the new frame joins the stack
+        stack.push({ s: p.s, left: dur[p.s] + Math.floor(r() * dur[p.s] * 0.15), req: p.t });
+        events.push({ k: "ack", s: p.s, t, lat: t - p.t, vec: 0xA0 | (p.s << 1), pc: stack.length < 2 ? 0x9000 + Math.floor(r() * 0x40) : HANDLERS[stack[stack.length - 2].s][0] + Math.floor(r() * 0x30) });
+      }
+      continue;
+    }
+    const blockIdx = stack.length ? Math.min(...stack.map(x => x.s)) : 99;
+    const cand = pending.filter(p => p.s < blockIdx).sort((a, b) => a.s - b.s)[0];
+    if (cand) {
+      pending.splice(pending.indexOf(cand), 1);
+      ackSrc = cand; ackUntil = t + Math.floor(r() * 22) + 19; // finish the instruction, then 19 T of IM 2 acknowledge
+      continue;
+    }
+    if (stack.length) {
+      const f = stack[stack.length - 1];
+      if (--f.left <= 0) { stack.pop(); events.push({ k: "reti", s: f.s, t }); switchTo(stack.length ? stack[stack.length - 1].s : -1, t + 1); }
+    }
+  }
+  switchTo(-2, FRAME);
+  return { events, segs };
+}
+
+/* the ring is counted in events: how many frames does it hold for this program? */
+const cache = {};
+function held() {
+  if (cache[prog]) return cache[prog];
+  const perFrame = simulate(LAST).events.length;
+  // frames since the machine started are 1..LAST; a ring that is not full yet holds all of them
+  const wrapped = Math.floor(RING / perFrame) < LAST;
+  const full = wrapped ? Math.floor(RING / perFrame) : LAST;
+  const first = LAST - full + 1;
+  const used = wrapped ? RING : perFrame * LAST;
+  // when the ring has wrapped, the frame before the first full one is partly overwritten: only its last events survive
+  const partialCut = wrapped ? FRAME - Math.floor(((RING - perFrame * full) / perFrame) * FRAME) : 0;
+  const lat = {};
+  for (let f = Math.max(first, LAST - 49); f <= LAST; f++) simulate(f).events.filter(e => e.k === "ack").forEach(e => (lat[e.s] = lat[e.s] || []).push(e.lat));
+  return cache[prog] = { perFrame, full, first, used, partialCut, wrapped, lat, latFrames: Math.min(full, 50) };
+}
+
+let frame = LAST, nFrames = 1, zoom = 1, sel = null;
+const fmt = n => n.toLocaleString("en");
+
+function view() {
+  const h = held();
+  const events = [], segs = [];
+  for (let k = 0; k < nFrames; k++) {
+    const f = frame + k, off = k * FRAME, sim = simulate(f);
+    const cut = h.wrapped && f === h.first - 1 ? h.partialCut : 0;
+    sim.events.filter(e => e.t >= cut).forEach(e => events.push({ ...e, f, ft: e.t, t: e.t + off }));
+    sim.segs.filter(sg => sg.b > cut).forEach(sg => segs.push({ ...sg, a: Math.max(sg.a, cut) + off, b: sg.b + off }));
+  }
+  return { events, segs, h };
+}
+
+function renderTimeline() {
+  const { events, segs, h } = view();
+  const total = FRAME * nFrames;
+  $("#fnum").textContent = nFrames === 1 ? fmt(frame) : `${fmt(frame)}–${fmt(frame + nFrames - 1)}`;
+  $("#held").innerHTML = `Held: frames <span class="val">${fmt(h.first)}–${fmt(LAST)}</span> (<b>${fmt(h.full)}</b>) · <span class="val">${fmt(h.used)}</span> / ${fmt(RING)} events${h.wrapped ? ' <span class="bad">(full, oldest overwritten)</span>' : " (all since reset)"} · ${fmt(h.perFrame)}/frame`;
+  const W = 900, LW = 92, H = 270, LH = 34, top = 30;
+  const span = total / zoom;
+  const t0 = sel ? Math.max(0, Math.min(total - span, sel.t - span / 2)) : 0;
+  const X = t => LW + (t - t0) / span * (W - LW - 8);
+  let svg = `<defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#ffffff08"/><line x1="0" y1="0" x2="0" y2="6" stroke="#ffffff30" stroke-width="2"/></pattern><pattern id="gone" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)"><rect width="8" height="8" fill="#f0716b08"/><line x1="0" y1="0" x2="0" y2="8" stroke="#f0716b30" stroke-width="2"/></pattern><clipPath id="clip"><rect x="${LW}" y="0" width="${W - LW}" height="${H}"/></clipPath></defs>`;
+  const bottom = top + LANES.length * LH;
+  // axis: frame-relative T-states and beam lines
+  for (let k = 0; k <= 10; k++) {
+    const t = t0 + span * k / 10, x = X(t), ft = Math.round(t) % FRAME;
+    svg += `<line x1="${x}" y1="${top - 4}" x2="${x}" y2="${bottom}" stroke="#ffffff10"/><text x="${x}" y="22" fill="#8b909b" font-size="9.5" text-anchor="middle">${fmt(ft)}${$("#beam").checked ? " · L" + Math.floor(ft / LINE) : ""}</text>`;
+  }
+  svg += `<g clip-path="url(#clip)">`;
+  // frame boundaries and labels, the overwritten part of a partial frame
+  for (let k = 0; k < nFrames; k++) {
+    const f = frame + k, x = X(k * FRAME);
+    if (k > 0) svg += `<line x1="${x}" y1="0" x2="${x}" y2="${bottom}" stroke="#c58bff" stroke-dasharray="4 3"/>`;
+    const partial = h.wrapped && f === h.first - 1;
+    svg += `<text x="${Math.max(x, LW) + 4}" y="9" fill="${partial ? "#f0716b" : "#c58bff"}" font-size="10" font-weight="600">Frame ${fmt(f)}${partial ? " · partial: older events overwritten" : ""}</text>`;
+    if (partial) svg += `<rect x="${x}" y="${top}" width="${X(k * FRAME + h.partialCut) - x}" height="${bottom - top}" fill="url(#gone)"/>`;
+  }
+  LANES.forEach((ln, li) => {
+    const y = top + li * LH;
+    svg += `<rect x="${LW}" y="${y + 6}" width="${W - LW}" height="${LH - 12}" fill="#ffffff04"/>`;
+    segs.filter(s => s.s === ln.i).forEach(s => svg += `<rect x="${X(s.a)}" y="${y + 8}" width="${Math.max(1, X(s.b) - X(s.a))}" height="${LH - 16}" fill="var(${ln.color})" opacity="${ln.i === -1 ? .35 : .85}" rx="2"/>`);
+    if (ln.i >= 0) segs.filter(s => s.s !== ln.i && s.stack.includes(ln.i)).forEach(s => svg += `<rect x="${X(s.a)}" y="${y + 8}" width="${Math.max(1, X(s.b) - X(s.a))}" height="${LH - 16}" fill="url(#hatch)" stroke="var(${ln.color})" stroke-opacity=".5"/>`);
+    // a dense lane (hundreds of markers) draws only its late acknowledges unless zoomed in
+    const laneEv = events.filter(e => e.s === ln.i);
+    const dense = laneEv.length / (span / FRAME) > 120;
+    laneEv.forEach((e, idx) => {
+      const x = X(e.t), late = e.k === "ack" && e.lat > 41;
+      if ($("#onlyLate").checked && !late) return;
+      if (dense && !late) return;
+      const isSel = sel && sel.t === e.t && sel.s === e.s && sel.k === e.k;
+      const st = isSel ? `stroke="#fff" stroke-width="1.5"` : "";
+      const id = events.indexOf(e);
+      if (e.k === "req") svg += `<path d="M${x - 4} ${y + 6} L${x + 4} ${y + 6} L${x} ${y} Z" fill="var(--warn)" ${st} data-ev="${id}" style="cursor:pointer"/>`;
+      if (e.k === "ack") svg += `<circle cx="${x}" cy="${y + LH / 2}" r="${isSel ? 5 : 3.5}" fill="${late ? "var(--err)" : "#fff"}" ${st} data-ev="${id}" style="cursor:pointer"/>`;
+      if (e.k === "reti") svg += `<path d="M${x} ${y + LH - 10} l4 4 l-4 4 l-4 -4 Z" fill="var(--ok)" ${st} data-ev="${id}" style="cursor:pointer"/>`;
+    });
+    if (dense) svg += `<text x="${W - 12}" y="${y + LH / 2 + 4}" fill="#8b909b" font-size="9.5" text-anchor="end">${fmt(laneEv.filter(e => e.k === "ack").length)} acks, late ones shown · zoom in for all</text>`;
+  });
+  svg += `</g>`;
+  LANES.forEach((ln, li) => {
+    const y = top + li * LH;
+    svg += `<rect x="0" y="${y + 9}" width="3" height="${LH - 18}" fill="var(${ln.color})"/><text x="8" y="${y + LH / 2 + 4}" fill="#a3a8b3" font-size="11">${ln.name}</text>`;
+  });
+  svg += `<text x="${LW}" y="${H - 4}" fill="#8b909b" font-size="10">▲ request   ● acknowledge (red: late)   ◆ RETI   solid: running   hatched: in service, interrupted   ┆ frame boundary</text>`;
+  $("#tl").setAttribute("viewBox", `0 0 ${W} ${H}`);
+  $("#tl").innerHTML = svg;
+  $("#tl").querySelectorAll("[data-ev]").forEach(el => el.onclick = () => select(events[+el.dataset.ev]));
+
+  // event list (capped: a sample player's frame has ~1,000 events)
+  const rows = events.filter(e => !$("#onlyLate").checked || (e.k === "ack" && e.lat > 41));
+  const shown = rows.slice(0, 400);
+  $("#evs").innerHTML = `<tr><th>Frame</th><th>T-state</th><th>Beam</th><th>Source</th><th>Event</th><th>Detail</th></tr>` + shown.map(e => {
+    const isSel = sel && sel.t === e.t && sel.s === e.s && sel.k === e.k;
+    const name = LANES.find(l => l.i === e.s).name;
+    const kind = { req: "request", ack: "ack", reti: "RETI" }[e.k];
+    const det = e.k === "ack" ? `vec ${hex2(e.vec)} · <span class="${e.lat > 41 ? "bad" : ""}">${e.lat} T</span>` : e.k === "reti" ? "released" : "status set";
+    return `<tr class="ev ${isSel ? "sel" : ""}" data-i="${events.indexOf(e)}"><td>${fmt(e.f)}</td><td>${fmt(e.ft)}</td><td>L${Math.floor(e.ft / LINE)}:${e.ft % LINE}</td><td class="l">${name}</td><td><span class="kind ${e.k}">${kind}</span></td><td>${det}</td></tr>`;
+  }).join("") + (rows.length > shown.length ? `<tr><td colspan="6" style="font-family:var(--sans);color:var(--muted)">… ${fmt(rows.length - shown.length)} more (virtualised in the real document)</td></tr>` : "");
+  $("#evs").querySelectorAll("tr.ev").forEach(tr => tr.onclick = () => select(events[+tr.dataset.i]));
+
+  // latency stats over the complete frames held (at most the last 50 in this mockup)
+  $("#lat").innerHTML = `<tr><th>Source</th><th>Taken</th><th>Min</th><th>Avg</th><th>Max</th><th>Jitter</th><th>Budget</th></tr>` + LANES.filter(l => l.i >= 0).map(l => {
+    const a = h.lat[l.i] || [];
+    if (!a.length) return `<tr><td class="l">${l.name}</td><td>0</td><td colspan="5" style="color:var(--muted)">—</td></tr>`;
+    let mn = Infinity, mx = 0, sum = 0; a.forEach(v => { mn = Math.min(mn, v); mx = Math.max(mx, v); sum += v; });
+    const av = (sum / a.length).toFixed(1);
+    return `<tr><td class="l"><span class="chip" style="background:var(${l.color})"></span> ${l.name}</td><td>${fmt(a.length)}</td><td>${mn}</td><td>${av}</td><td class="${mx > 41 ? "bad" : ""}">${fmt(mx)}</td><td>${fmt(mx - mn)}</td><td class="${mx > 41 ? "bad" : "good"}">${mx > 41 ? "over" : "≤ 41 T"}</td></tr>`;
+  }).join("") + `<tr><td colspan="7" style="font-family:var(--sans);color:var(--muted);padding-top:6px;white-space:normal">Over the last ${h.latFrames} complete frames held; a partial frame is never counted. Budget: 0–22 T for the running instruction + 19 T of IM 2 acknowledge (article, "How fast the CPU answers"). A higher value means the source was waiting behind the chain or DI.</td></tr>`;
+
+  // info
+  if (!sel) { $("#evinfo").innerHTML = `<h3>Selection</h3><span style="color:var(--muted)">Click an event on the timeline or in the list.</span>`; return; }
+  const e = sel, name = LANES.find(l => l.i === e.s).name;
+  const ack = e.k === "ack" ? e : events.find(x => x.k === "ack" && x.s === e.s && x.t >= e.t);
+  const req = e.k === "req" ? e : [...events].reverse().find(x => x.k === "req" && x.s === e.s && x.t <= e.t);
+  const reti = events.find(x => x.k === "reti" && x.s === e.s && x.t >= (ack ? ack.t : e.t));
+  $("#evinfo").innerHTML = `<h3>${name}: ${{ req: "request", ack: "acknowledge", reti: "RETI" }[e.k]}</h3><div class="kv">
+    <div class="k">Frame</div><div class="val">${fmt(e.f)}</div>
+    <div class="k">T-state</div><div class="val">${fmt(e.ft)}</div>
+    <div class="k">Beam</div><div class="val">line ${Math.floor(e.ft / LINE)}, col ${e.ft % LINE}</div>
+    <div class="k">Requested</div><div class="val">${req ? fmt(req.ft) : "—"}</div>
+    <div class="k">Taken</div><div class="val">${ack ? fmt(ack.ft) : "—"}</div>
+    <div class="k">Latency</div><div class="val ${ack && ack.lat > 41 ? "bad" : ""}">${ack ? ack.lat + " T" : "—"}</div>
+    <div class="k">Vector</div><div class="val">${ack ? hex2(ack.vec) : "—"}</div>
+    <div class="k">Interrupted</div><div class="val">${ack ? hex4(ack.pc) : "—"}</div>
+    <div class="k">RETI at</div><div class="val">${reti ? fmt(reti.ft) : "—"}</div>
+    <div class="k">Handler ran</div><div class="val">${ack && reti ? fmt(reti.t - ack.t) + " T" : "—"}</div>
+  </div><div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap"><button class="btn">Go to handler</button><button class="btn">Show in Execution History</button></div>`;
+}
+function select(e) { sel = e; renderTimeline(); }
+function oldest() { const h = held(); return h.wrapped ? h.first - 1 : h.first; }
+function clampFrame() { frame = Math.max(oldest(), Math.min(LAST - nFrames + 1, frame)); }
+$("#fprev").onclick = () => { frame--; clampFrame(); sel = null; renderTimeline(); };
+$("#fnext").onclick = () => { frame++; clampFrame(); sel = null; renderTimeline(); };
+$("#fnum").title = "Double-click: jump to the oldest frame held";
+$("#fnum").ondblclick = () => { frame = oldest(); sel = null; renderTimeline(); };
+$("#beam").onchange = renderTimeline;
+$("#onlyLate").onchange = renderTimeline;
+$("#prog").onchange = () => { prog = $("#prog").value; frame = LAST - nFrames + 1; sel = null; renderTimeline(); };
+document.querySelectorAll("#nframes button").forEach(b => b.onclick = () => { document.querySelectorAll("#nframes button").forEach(x => x.classList.toggle("on", x === b)); nFrames = +b.dataset.n; clampFrame(); sel = null; renderTimeline(); });
+document.querySelectorAll("#zoom button").forEach(b => b.onclick = () => { document.querySelectorAll("#zoom button").forEach(x => x.classList.toggle("on", x === b)); zoom = +b.dataset.z; renderTimeline(); });
+renderTimeline();
+</script>
+</body>
+</html>
