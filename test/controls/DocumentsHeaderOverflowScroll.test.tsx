@@ -360,4 +360,116 @@ describe("DocumentsHeader — overflow scroll controls", () => {
       (globalThis as any).ResizeObserver = previousResizeObserver;
     }
   });
+
+  it.each([
+    ["the active tab", 1],
+    ["an inactive tab", 2]
+  ])("scrolls %s entirely into view when it is clicked while partly hidden", async (_, clickedIdx) => {
+    // 6 tabs, 100px each, in a 130px strip. Scrolled to 150 (showing 150-280), tab 1 (100-200) is
+    // cut on the left and tab 2 (200-300) on the right. Clicking either must bring the whole tab into view; for the
+    // active tab nothing else changes, so before the fix the click did nothing at all.
+    const TAB_WIDTH = 100;
+    const CLIENT_WIDTH = 130;
+    const documents = Array.from({ length: 6 }, (_, i) =>
+      createDocument(`/project/src/g${i}.asm`, `g${i}.asm`)
+    );
+    const documentHubService = {
+      closeAllExplorerDocuments: vi.fn(),
+      getActiveDocumentIndex: vi.fn(() => 1),
+      getDocumentViewState: vi.fn(() => ({})),
+      getOpenDocuments: vi.fn(() => documents),
+      getOpenProjectFileDocument: vi.fn(() => Promise.resolve(undefined)),
+      moveDocument: vi.fn(),
+      setActiveDocument: vi.fn(() => Promise.resolve()),
+      setDocumentViewState: vi.fn(),
+      setPermanent: vi.fn()
+    };
+
+    mockSharedDependencies();
+    vi.doMock("@renderer/appIde/services/DocumentServiceProvider", () => ({
+      useDocumentHubService: () => documentHubService,
+      useDocumentHubServiceVersion: () => 1
+    }));
+    vi.doMock("@appIde/services/AppServicesProvider", () => ({
+      useAppServices: () => ({
+        projectService: { projectClosed: { on: vi.fn(), off: vi.fn() } },
+        outputPaneService: { getOutputPaneBuffer: vi.fn() },
+        ideCommandsService: { executeCommand: vi.fn() },
+        navigationHistoryService: {
+          recordJump: (_kind: string, action: () => Promise<void>) => action()
+        }
+      })
+    }));
+
+    let scrollLeft = 0;
+    vi.doMock("@renderer/controls/ScrollViewer", () => ({
+      default: ({
+        apiLoaded,
+        children
+      }: {
+        apiLoaded?: (api: unknown) => void;
+        children?: ReactNode;
+      }) => {
+        const loaded = useRef(false);
+        useEffect(() => {
+          if (loaded.current) return;
+          loaded.current = true;
+          apiLoaded?.({
+            getScrollLeft: () => scrollLeft,
+            getClientWidth: () => CLIENT_WIDTH,
+            scrollToHorizontal: (pos: number) => {
+              scrollLeft = Math.max(0, Math.min(pos, TAB_WIDTH * documents.length - CLIENT_WIDTH));
+            }
+          });
+        }, []);
+        return <div>{children}</div>;
+      }
+    }));
+    vi.doMock("@renderer/features/documents/DocumentTab", () => ({
+      CloseMode: { All: 0, Others: 1, This: 2 },
+      DocumentTab: ({
+        name,
+        tabDisplayed,
+        tabClicked
+      }: {
+        name: string;
+        tabDisplayed?: (el: HTMLDivElement) => void;
+        tabClicked?: () => void;
+      }) => {
+        const idx = documents.findIndex((d) => d.name === name);
+        return (
+          <div
+            data-testid={`tab-${name}`}
+            data-left={idx * TAB_WIDTH}
+            data-width={TAB_WIDTH}
+            onClick={tabClicked}
+            ref={(el) => {
+              if (el) tabDisplayed?.(el as HTMLDivElement);
+            }}
+          >
+            {name}
+          </div>
+        );
+      }
+    }));
+
+    const { DocumentsHeader } = await import("@renderer/features/documents/DocumentsHeader");
+    render(<DocumentsHeader />);
+    for (let i = 0; i < 5; i++) {
+      await act(async () => {
+        await new Promise((r) => requestAnimationFrame(r));
+      });
+    }
+
+    // --- The user scrolls the strip by hand so that both tabs are only partly visible
+    scrollLeft = 150;
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId(`tab-g${clickedIdx}.asm`));
+    });
+
+    const left = clickedIdx * TAB_WIDTH;
+    expect(scrollLeft).toBeLessThanOrEqual(left);
+    expect(scrollLeft + CLIENT_WIDTH).toBeGreaterThanOrEqual(left + TAB_WIDTH);
+  });
 });
