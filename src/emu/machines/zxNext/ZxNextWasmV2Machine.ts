@@ -61,6 +61,8 @@ import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { MemorySectionType } from "@abstractions/MemorySection";
 import { TapeMode } from "@emu/abstractions/TapeMode";
 import { createMainApi } from "@common/messaging/MainApi";
+import { nextPartitionRoles, type PartitionRole } from "@common/annotations/partitionInfo";
+import { layer2Size } from "@common/zxnext/layer2/layer2Decode";
 import { loadZxNextWasmV2, ZXNEXT_NO_PARTITION } from "./wasm/ZxNextWasmV2Loader";
 import {
   allRamBanksFor,
@@ -2155,6 +2157,26 @@ export class ZxNextWasmV2Machine
       slotOffsets: Array.from({ length: 8 }, (_, slot) => ex.zxnextGetMemoryPageReadOffset(slot) >>> 0),
       copperRunning: (ex.zxnextGetCopperStartMode() & 0x03) !== 0
     };
+  }
+
+  /**
+   * Which 8K pages hold the screens, Layer 2 and the tilemap now, from the registers (the Memory and
+   * Disassembly views' Bank map, plan D8). Side-effect free: getters only.
+   */
+  getPartitionRoles(): Record<number, PartitionRole[]> {
+    const ex = this.requireWasmV2Runtime().exports;
+    return nextPartitionRoles(
+      {
+        layer2Bank: ex.zxnextGetLayer2ActiveBank() & 0x7f,
+        layer2ShadowBank: ex.zxnextGetLayer2ShadowBank() & 0x7f,
+        layer2Banks: layer2Size(ex.zxnextGetLayer2Resolution() & 0x03).banks,
+        tilemapBank7: ex.zxnextGetTilemapBaseAddressUseBank7() !== 0,
+        tilemapMsb: ex.zxnextGetTilemapBaseAddressMsb() & 0x3f,
+        tileDefBank7: ex.zxnextGetTilemapDefinitionAddressUseBank7() !== 0,
+        tileDefMsb: ex.zxnextGetTilemapDefinitionAddressMsb() & 0x3f
+      },
+      !!this.partitionOptions.upperRam
+    );
   }
 
   // ─── Layer debugging (`dev/plans/LAYER_COMPOSITION_PLAN.md`) ────────────────────────────────

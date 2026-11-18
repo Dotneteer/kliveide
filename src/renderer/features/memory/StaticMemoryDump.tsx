@@ -66,7 +66,6 @@ import {
 } from "@renderer/appIde/annotations/annotatedDisassembly";
 import { useSysVarOperandLabelResolver } from "@renderer/appIde/DocumentPanels/useSysVarOperandLabels";
 // --- The same wording as the live Disassembly view's switch: one control in two places.
-import { sysVarNamesTitle } from "@renderer/appIde/DocumentPanels/DisassemblyToolbars";
 import { useNexAnnotationEditor } from "@renderer/appIde/DocumentPanels/Next/annotationEditor/useNexAnnotationEditor";
 import {
   formatBankLocation,
@@ -1577,7 +1576,7 @@ const StaticMemoryDump = ({
                 <LabeledSwitch
                   value={sysVarNames}
                   label={t("panels.feature.memory.sysVars")}
-                  title={sysVarNamesTitle()}
+                  title={t("panels.doc.disassembly.sysVarsTitle")}
                   clicked={changeSysVarNames}
                 />
               </PanelHeaderGroup>

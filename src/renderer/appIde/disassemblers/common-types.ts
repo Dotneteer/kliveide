@@ -713,6 +713,14 @@ export interface DisassemblyItem {
   prefixComment?: string;
 
   /**
+   * A rule row of the live Disassembly view rather than an instruction
+   * (`dev/plans/MEMORY_DISASSEMBLY_VIEWS_PLAN.md` §6.1): where the 64K listing enters another slot
+   * (`slot`), or an empty Z88 card slot shown as one row (`empty`). Built by the view for display
+   * only; never handed to the annotation, breakpoint or coverage logic.
+   */
+  separator?: { kind: "slot" | "empty"; text: string };
+
+  /**
    * The number of T-states consumed by the instruction
    */
   tstates?: number;

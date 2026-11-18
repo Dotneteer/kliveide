@@ -26,6 +26,7 @@ import type { DisassemblyItem } from "../disassemblers/common-types";
 import { isDataPragma, splitInstructionOperands } from "@renderer/controls/data/DisassemblyText";
 import { toDecimal3, toDecimal5, toHexa2, toHexa4 } from "../services/ide-commands";
 import styles from "./DisassemblyPanel.module.scss";
+import { FLOW_LANES, type FlowPiece } from "./flowGutter";
 
 /**
  * The command that turns `bp` into a one-shot with its filters kept (Shift+click, O1), or
@@ -427,6 +428,21 @@ type DisassemblyRowProps = DisassemblyRowViewModelParams & {
   selected?: boolean;
   selectedRange?: boolean;
   /**
+   * Reserve the flow gutter (`dev/plans/MEMORY_DISASSEMBLY_VIEWS_PLAN.md` §6.1): a property of the
+   * listing, like `showBranchGutter`. `flow` is this row's pieces of the lanes; `flowKey` sums them
+   * and the highlighted edges up for the memo.
+   */
+  showFlow?: boolean;
+  flow?: readonly FlowPiece[];
+  /** The edges drawn highlighted: the selected row's jumps */
+  flowHighlight?: ReadonlySet<number>;
+  /** The edge of the branch taken at PC, drawn in the verdict hue */
+  flowTaken?: number;
+  flowKey?: string;
+  /** How many rows name this row's label, as printed (§6.1); shown after the label */
+  refCount?: number;
+  onRefsClick?: (item: DisassemblyItem) => void;
+  /**
    * Open the breakpoint editor for this row's breakpoint.
    *
    * Supplied by the panel so the whole listing shares one callback: the disassembly view has no row
@@ -490,9 +506,31 @@ export const DisassemblyRow = memo(function DisassemblyRow({
   showCoverage = false,
   coverage,
   timeShare,
+  showFlow = false,
+  flow,
+  flowHighlight,
+  flowTaken,
+  flowKey: _flowKey,
+  refCount,
+  onRefsClick,
   ...viewModelParams
 }: DisassemblyRowProps) {
   const t = useT();
+  // --- A rule row: where the 64K enters another slot, or an empty card slot
+  if (item.separator) {
+    return (
+      <div
+        className={classnames(styles.item, styles.separatorRow, {
+          [styles.separatorEmpty]: item.separator.kind === "empty"
+        })}
+        style={{ height: rowHeight }}
+        data-testid={`disassembly-row-${index}`}
+        data-separator={item.separator.kind}
+      >
+        {item.separator.text}
+      </div>
+    );
+  }
   const breakpoint = viewModelParams.breakpoint;
   // --- Address-bound and bank-relative breakpoints are both editable: the dialog authors either
   // --- shape. A source-bound one is not — it belongs to the editor's glyph margin, which places
@@ -664,6 +702,9 @@ export const DisassemblyRow = memo(function DisassemblyRow({
             length={breakpoint?.length}
             oneShotCommand={oneShotCommandOf(breakpoint, viewModelParams.partitionLabels)}
           />
+          {showFlow && (
+            <FlowCell pieces={flow} highlight={flowHighlight} taken={flowTaken} />
+          )}
           {/*
             * Rendered whenever the listing has a bank column at all, not merely when *this* row has
             * a label, and at the column's shared width rather than this row's own. See
@@ -698,6 +739,22 @@ export const DisassemblyRow = memo(function DisassemblyRow({
               item.labelSource === "rom" ? styles.romLabel : styles.annotationLabel
             }
           />
+          {refCount !== undefined && (
+            <span
+              className={classnames(styles.refCount, { [styles.refCountNone]: !refCount })}
+              title={t("panels.doc.disassemblyRow.references", { count: refCount })}
+              onClick={
+                onRefsClick
+                  ? (event) => {
+                      event.stopPropagation();
+                      onRefsClick(item);
+                    }
+                  : undefined
+              }
+            >
+              {refCount ? `◂ ${refCount}` : ""}
+            </span>
+          )}
           <div className={styles.tstates}>{viewModel.tstates}</div>
           {/*
             * Rendered on every row once the listing has verdicts at all, empty where the row does
@@ -795,3 +852,70 @@ export const DisassemblyRow = memo(function DisassemblyRow({
     </div>
   );
 });
+
+/**
+ * One row's slice of the flow gutter: each lane that crosses it, and the jumps that leave or arrive
+ * here, drawn in an SVG as tall as the row. Lane 0 is innermost, next to the address. A stub is a
+ * short line out of the row towards where the jump goes; an arrow into the row marks a target.
+ */
+function FlowCell({
+  pieces,
+  highlight,
+  taken
+}: {
+  pieces?: readonly FlowPiece[];
+  highlight?: ReadonlySet<number>;
+  taken?: number;
+}) {
+  const laneX = (lane: number) => `${((FLOW_LANES - Math.min(lane, FLOW_LANES - 1) - 0.5) / FLOW_LANES) * 100}%`;
+  const classOf = (piece: FlowPiece) =>
+    classnames(styles.flowLine, {
+      [styles.flowConditional]: piece.conditional,
+      [styles.flowSelected]: highlight?.has(piece.edge),
+      [styles.flowTaken]: taken === piece.edge
+    });
+  return (
+    <span className={styles.flowGutter} aria-hidden>
+      {pieces?.length ? (
+        <svg width="100%" height="100%">
+          {pieces.map((piece, i) => {
+            const x = laneX(piece.lane);
+            const cls = classOf(piece);
+            switch (piece.kind) {
+              case "pass":
+                return <line key={i} className={cls} x1={x} x2={x} y1="0%" y2="100%" />;
+              case "source":
+              case "target":
+                return (
+                  <g key={i}>
+                    <line className={cls} x1={x} x2="100%" y1="50%" y2="50%" />
+                    <line className={cls} x1={x} x2={x} y1="50%" y2={piece.down ? "100%" : "0%"} />
+                  </g>
+                );
+              case "stubOut":
+              case "stubIn":
+                return (
+                  <g key={i}>
+                    <line className={cls} x1="70%" x2="100%" y1="50%" y2="50%" />
+                    <line className={cls} x1="70%" x2="70%" y1="50%" y2={piece.down ? "100%" : "0%"} />
+                  </g>
+                );
+              default:
+                return null;
+            }
+          })}
+        </svg>
+      ) : null}
+      {pieces?.some((p) => p.kind === "target" || p.kind === "stubIn") && (
+        <span
+          className={classnames(styles.flowArrow, {
+            [styles.flowSelected]: pieces.some((p) => (p.kind === "target" || p.kind === "stubIn") && highlight?.has(p.edge)),
+            [styles.flowTaken]: pieces.some((p) => (p.kind === "target" || p.kind === "stubIn") && p.edge === taken)
+          })}
+        >
+          ▸
+        </span>
+      )}
+    </span>
+  );
+}

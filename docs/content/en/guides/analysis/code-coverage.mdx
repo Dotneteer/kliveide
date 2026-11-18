@@ -90,6 +90,9 @@ so a loop that ran a million times and a routine that ran once are both visible.
 its counts: `E 12 · R 340 · W 2`. A byte the program modified after running it, or ran after writing
 it, is outlined (see [self-modifying code](#self-modifying-code)).
 
+The memory map bar above the dump summarises the heat too: a strip under each slot marks the
+kilobytes that have any, so a busy region is easy to find before scrolling to it.
+
 The `memory-heat` command sets the selector from a script: `memory-heat exec`.
 
 ## Counts and the counter pool

@@ -17,6 +17,7 @@ import { IMachineFrameRunner } from "@emu/machines/MachineFrameRunner";
 import { IMemorySection } from "@abstractions/MemorySection";
 import type { ConditionStore } from "@emu/machines/conditionStore";
 import type { BeamPosition } from "@common/utils/beamGeometry";
+import type { PartitionInfoSet, PartitionRole } from "@common/annotations/partitionInfo";
 
 /**
  * This interface defines the behavior of a virtual machine that integrates the emulator from
@@ -327,6 +328,20 @@ export interface IAnyMachine extends IAnyCpu, IMachineEventHandler {
    * supplies none simply gets no captions.
    */
   getPartitionGroups(): Record<number, string>;
+
+  /**
+   * What each partition is - its kind, size, card and the Bank map's layout
+   * (`@common/annotations/partitionInfo`, `dev/plans/MEMORY_DISASSEMBLY_VIEWS_PLAN.md` §7). Changes
+   * only with the configuration (a Z88 card). A machine without it gets the generic model built from
+   * its label maps.
+   */
+  getPartitionInfo?(): PartitionInfoSet;
+
+  /**
+   * Which partitions hold the screens, Layer 2 and the tilemap right now, from live register state
+   * (D8). Recomputed on every memory refresh, never stored.
+   */
+  getPartitionRoles?(): Record<number, PartitionRole[]>;
 
   /**
    * Gets the current call stack information

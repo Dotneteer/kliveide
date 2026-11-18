@@ -9,41 +9,38 @@ import {
   getBytesPerRow,
   getDefaultSegment,
   resolveMemoryPartition,
-  resolveViewMode,
-  usesTwoColumns
+  resolveViewMode
 } from "@renderer/features/memory/memoryViewModel";
 
 describe("memoryViewModel", () => {
   it("resolves persisted view modes and legacy two-column state", () => {
     expect(resolveViewMode("8x1", true)).toBe("8x1");
-    expect(resolveViewMode("8x2", false)).toBe("8x2");
+    // --- The retired 8x2 layout opens as 16-byte rows (D7)
+    expect(resolveViewMode("8x2", false)).toBe("16x1");
     expect(resolveViewMode("16x1", true)).toBe("16x1");
+    expect(resolveViewMode("32x1", true)).toBe("32x1");
     expect(resolveViewMode(undefined, false)).toBe("8x1");
-    expect(resolveViewMode(undefined, true)).toBe("8x2");
-    expect(resolveViewMode("legacy", undefined)).toBe("8x2");
+    expect(resolveViewMode(undefined, true)).toBe("16x1");
+    expect(resolveViewMode("legacy", undefined)).toBe("16x1");
   });
 
   it("derives layout characteristics from the view mode", () => {
     expect(getBytesPerRow("8x1")).toBe(8);
-    expect(getBytesPerRow("8x2")).toBe(16);
     expect(getBytesPerRow("16x1")).toBe(16);
+    expect(getBytesPerRow("32x1")).toBe(32);
     expect(getByteCount("8x1")).toBe(8);
-    expect(getByteCount("8x2")).toBe(8);
-    expect(getByteCount("16x1")).toBe(16);
-    expect(usesTwoColumns("8x2")).toBe(true);
-    expect(usesTwoColumns("16x1")).toBe(false);
+    expect(getByteCount("32x1")).toBe(32);
   });
 
   it("creates row addresses for the specified memory length and row width", () => {
-    expect(createRowAddresses(0x20, 8)).toEqual([0x00, 0x08, 0x10, 0x18]);
-    expect(createRowAddresses(0x20, 16)).toEqual([0x00, 0x10]);
-    expect(createRowAddresses(0, 16)).toEqual([]);
+    expect(createRowAddresses(0x40, 16)).toEqual([0x00, 0x10, 0x20, 0x30]);
   });
 
-  it("converts top index when switching between 8-byte and 16-byte rows", () => {
-    expect(convertTopIndexForViewMode(9, "8x1", "8x2")).toBe(4);
-    expect(convertTopIndexForViewMode(4, "8x2", "8x1")).toBe(8);
-    expect(convertTopIndexForViewMode(4, "8x2", "16x1")).toBe(4);
+  it("keeps the top byte in view when the row width changes", () => {
+    expect(convertTopIndexForViewMode(9, "8x1", "16x1")).toBe(4);
+    expect(convertTopIndexForViewMode(4, "16x1", "8x1")).toBe(8);
+    expect(convertTopIndexForViewMode(4, "16x1", "32x1")).toBe(2);
+    expect(convertTopIndexForViewMode(3, "32x1", "8x1")).toBe(12);
   });
 
   it("labels segment options with the machine's own partition names", () => {

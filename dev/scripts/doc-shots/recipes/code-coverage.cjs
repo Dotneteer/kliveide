@@ -159,7 +159,7 @@ module.exports = {
       await klive.ide.mouse.move(5, 300);
       await klive.shot('[class*="_documentArea_"], [class*="_documentsContainer_"]', "en/guides/analysis/code-coverage/memory-heat.webp", {
         displayWidth: 760,
-        crop: { x: 0, y: 0, height: 300 },
+        crop: { x: 0, y: 0, height: 460 },
         markers: { heat: { selector: '[class*="_heatCell_"]' } }
       });
 

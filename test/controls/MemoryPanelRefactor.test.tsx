@@ -2,6 +2,7 @@ import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import React, { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { spectrumPartitionInfo } from "@common/annotations/partitionInfo";
 
 type MemoryPanelHarnessOptions = {
   machineId?: string;
@@ -100,7 +101,12 @@ async function renderMemoryPanel({
     getPartitionLabels: vi.fn(() => Promise.resolve(partitionLabels)),
     getPartitionDescriptions: vi.fn(() => Promise.resolve({})),
     getPartitionGroups: vi.fn(() => Promise.resolve({})),
-    getRomFlags: vi.fn(() => Promise.resolve(romFlags))
+    getRomFlags: vi.fn(() => Promise.resolve(romFlags)),
+    // --- The frame's partition model (`@common/annotations/partitionInfo`): a 128K's, built from
+    // --- the labels, where the machine has partitions
+    getPartitionInfo: vi.fn(() =>
+      Promise.resolve(Object.keys(partitionLabels).length ? spectrumPartitionInfo({ labels: partitionLabels }) : undefined)
+    )
   };
   const virtualApi = {
     findStartIndex: vi.fn(() => 0),
@@ -115,6 +121,7 @@ async function renderMemoryPanel({
 
   vi.doMock("@renderer/core/RendererProvider", () => ({
     useDispatch: () => dispatch,
+    useStore: () => ({ getState: () => state, dispatch }),
     useSelector: (selector: (appState: typeof state) => unknown) => selector(state),
     // --- The panel reads the row height through `useRowSizes`, which reads the panel font size.
     // --- Returning undefined lets `getRowSizes` fall back to its default, i.e. the 20/18px these
@@ -134,6 +141,7 @@ async function renderMemoryPanel({
     useAppServices: () => ({
       ideCommandsService: { executeCommand },
       navigationHistoryService,
+      projectService: { readFileContent: vi.fn(() => Promise.reject(new Error("no sidecar"))) },
       machineService: {
         getMachineInfo: () => ({
           machine: {
@@ -263,6 +271,10 @@ async function renderMemoryPanel({
     }
   }));
   // --- The toolbar's Show as graphics button draws an icon, which needs the theme
+  // --- The inspector scrolls in a ScrollViewer, which needs the theme
+  vi.doMock("@renderer/controls/ScrollViewer", () => ({
+    default: ({ children }: { children?: ReactNode }) => <div>{children}</div>
+  }));
   vi.doMock("@renderer/controls/Icon", () => ({
     Icon: ({ iconName }: { iconName: string }) => <span data-testid={`icon-${iconName}`} />
   }));
@@ -371,15 +383,15 @@ afterEach(() => {
 });
 
 describe("MemoryPanel refactor characterization", () => {
-  it("renders the initial 64K two-column memory rows", async () => {
+  it("renders the initial 64K memory rows, 16 bytes each", async () => {
     const { getMemoryContents } = await renderMemoryPanel();
 
     await waitFor(() => {
       expect(getMemoryContents).toHaveBeenCalledWith(undefined);
     });
 
-    expect(screen.getByTestId("dump-0")).toHaveAttribute("data-byte-count", "8");
-    expect(screen.getByTestId("dump-8")).toHaveAttribute("data-byte-count", "8");
+    expect(screen.getByTestId("dump-0")).toHaveAttribute("data-byte-count", "16");
+    expect(screen.getByTestId("dump-16")).toHaveAttribute("data-byte-count", "16");
     expect(screen.getByTestId("dump-0")).toHaveAttribute("data-char-dump", "true");
     expect(screen.getByTestId("memory-list")).toHaveAttribute("data-item-size", "20");
     expect(screen.getByTestId("memory-list")).toHaveAttribute("data-reveal-unmeasured", "true");
@@ -392,22 +404,26 @@ describe("MemoryPanel refactor characterization", () => {
     expect(screen.getByTestId("memory-list")).toHaveAttribute("data-scroll-horizontally", "true");
   });
 
-  it("updates rendered row sections when the view mode changes", async () => {
+  it("updates rendered rows when the bytes per row change", async () => {
     await renderMemoryPanel();
 
-    fireEvent.change(screen.getByLabelText("dropdown-90"), { target: { value: "16x1" } });
+    fireEvent.click(screen.getByRole("button", { name: "8" }));
 
     await waitFor(() => {
-      expect(screen.getByTestId("dump-0")).toHaveAttribute("data-byte-count", "16");
+      expect(screen.getByTestId("dump-0")).toHaveAttribute("data-byte-count", "8");
     });
-    expect(screen.queryByTestId("dump-8")).not.toBeInTheDocument();
-    expect(screen.getByTestId("dump-16")).toHaveAttribute("data-byte-count", "16");
+    expect(screen.getByTestId("dump-8")).toHaveAttribute("data-byte-count", "8");
+
+    fireEvent.click(screen.getByRole("button", { name: "32" }));
+    await waitFor(() => {
+      expect(screen.getByTestId("dump-32")).toHaveAttribute("data-byte-count", "32");
+    });
   });
 
   it("scrolls to the row containing the submitted address", async () => {
     const { virtualApi } = await renderMemoryPanel();
 
-    const goTo = screen.getByLabelText("Go To");
+    const goTo = screen.getByLabelText("Go to");
     fireEvent.focus(goTo);
     fireEvent.change(goTo, { target: { value: "20" } });
     fireEvent.keyDown(goTo, { key: "Enter" });
@@ -435,7 +451,7 @@ describe("MemoryPanel refactor characterization", () => {
       // --- What the history captures as "to": the address asked for, before any re-render.
       during = api.getNavigationLocator();
     });
-    const goTo = screen.getByLabelText("Go To");
+    const goTo = screen.getByLabelText("Go to");
     fireEvent.focus(goTo);
     fireEvent.change(goTo, { target: { value: "25" } });
     fireEvent.keyDown(goTo, { key: "Enter" });
@@ -467,7 +483,9 @@ describe("MemoryPanel refactor characterization", () => {
       partitionLabels: { [-1]: "rom0", 0: "bank0" }
     });
 
-    expect(await screen.findByText("64K View:on")).toBeInTheDocument();
+    // --- The partition row: the 64K chip, pressed, and the machine's partitions as chips
+    expect(await screen.findByRole("button", { name: "64K" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: /^rom0/ })).toBeInTheDocument();
     expect(screen.getByTestId("dump-0")).toHaveAttribute("data-partition", "ROM0");
   });
 
@@ -512,17 +530,17 @@ describe("MemoryPanel refactor characterization", () => {
     });
 
     const renderedAddresses = new Set(dumpRenderLog.map((entry) => entry.address));
-    expect(renderedAddresses).toEqual(new Set([0, 8, 16, 24]));
-    expect(dumpRenderLog.every((entry) => entry.byteCount === 8)).toBe(true);
+    expect(renderedAddresses).toEqual(new Set([0, 16]));
+    expect(dumpRenderLog.every((entry) => entry.byteCount === 16)).toBe(true);
   });
 
-  it("does not re-render visible rows when toolbar dropdown focus only pauses refresh", async () => {
+  it("does not re-render visible rows when the Go to box's focus only pauses refresh", async () => {
     const { dumpRenderLog } = await renderMemoryPanel();
 
     dumpRenderLog.length = 0;
-    const viewModeDropdown = screen.getByLabelText("dropdown-90");
-    fireEvent.focus(viewModeDropdown);
-    fireEvent.blur(viewModeDropdown);
+    const goTo = screen.getByLabelText("Go to");
+    fireEvent.focus(goTo);
+    fireEvent.blur(goTo);
 
     expect(dumpRenderLog).toHaveLength(0);
   });

@@ -48,6 +48,33 @@ export type MemoryDumpSectionProps = {
   editClicked?: (address: number) => void;
   /** Number of hex digits used for the address label. Defaults to 4. */
   addressDigits?: 4 | 6;
+  /**
+   * The live Memory view's marks on this row's bytes (`dev/plans/MEMORY_DISASSEMBLY_VIEWS_PLAN.md`
+   * §5): the cursor, the selection, find matches, memory breakpoints, the changed-since-the-previous-
+   * stop dots and the byte being typed over. Built per visible row; `key` sums them up so the memo
+   * comparators compare one string. Other callers leave it unset.
+   */
+  marks?: ByteMarks;
+  /** A press on a byte (the live view's cursor and selection); `extend` is Shift or a drag */
+  onBytePointer?: (address: number, kind: "down" | "drag", extend: boolean) => void;
+};
+
+/** The marks a row's bytes carry, by index into the row */
+export type ByteMarks = {
+  key: string;
+  cursor?: number;
+  /** The selected indices, `[from, to]` inclusive, clipped to the row */
+  selection?: [number, number];
+  /** Find matches, `[from, to]` inclusive, clipped to the row */
+  found?: readonly [number, number][];
+  /** The current find match */
+  foundCurrent?: [number, number];
+  /** Bytes a memory breakpoint watches */
+  breakpoint?: readonly boolean[];
+  /** Bytes changed since the previous stop */
+  changed?: readonly boolean[];
+  /** Digits typed over the cursor byte, not yet written */
+  editText?: string;
 };
 
 export type MemoryCharacterInfo = {
@@ -89,6 +116,8 @@ const MemoryDumpSectionViewComponent = ({
   isRom,
   editClicked,
   addressDigits = 4,
+  marks,
+  onBytePointer,
   characterInfo
 }: MemoryDumpSectionViewProps) => {
   const [hoveredByteIndex, setHoveredByteIndex] = useState<number | null>(null);
@@ -135,6 +164,8 @@ const MemoryDumpSectionViewComponent = ({
         tooltipCache={characterInfo.tooltipCache}
         hoveredByteIndex={hoveredByteIndex}
         onHoverChange={setHoveredByteIndex}
+        marks={marks}
+        onBytePointer={onBytePointer}
       />
       <LabelSeparator width={8} />
       {charDump && (
@@ -142,6 +173,7 @@ const MemoryDumpSectionViewComponent = ({
           bytes={bytes}
           characterSet={characterInfo.characterSet}
           hoveredByteIndex={hoveredByteIndex}
+          marks={marks}
         />
       )}
     </div>
@@ -171,6 +203,9 @@ export const MemoryDumpSectionView = memo(MemoryDumpSectionViewComponent, (prev,
   if (prev.editClicked !== next.editClicked) return false;
   if (prev.addressDigits !== next.addressDigits) return false;
   if (prev.characterInfo !== next.characterInfo) return false;
+  // --- The live view's marks, summed up in one key
+  if (prev.marks?.key !== next.marks?.key) return false;
+  if (prev.onBytePointer !== next.onBytePointer) return false;
 
   // --- The changed-byte mask, which decides the marks this row draws. There are two hand-written
   // --- comparators on this path (this one and `HexValues`'s) and a prop missing from either is a
@@ -209,9 +244,10 @@ type CharDumpProps = {
   bytes: readonly number[];
   characterSet: Record<number, CharDescriptor>;
   hoveredByteIndex?: number | null;
+  marks?: ByteMarks;
 };
 
-const CharDumpComponent = ({ bytes, characterSet, hoveredByteIndex }: CharDumpProps) => {
+const CharDumpComponent = ({ bytes, characterSet, hoveredByteIndex, marks }: CharDumpProps) => {
   return (
     <>
       <div className={styles.charValues}>
@@ -230,10 +266,14 @@ const CharDumpComponent = ({ bytes, characterSet, hoveredByteIndex }: CharDumpPr
           const valueInfo = characterSet[(value ?? 0x20) & 0xff] ?? {};
           const ch = valueInfo.v ?? ".";
           const isHovered = hoveredByteIndex === i;
+          const selected = !!marks?.selection && i >= marks.selection[0] && i <= marks.selection[1];
           return (
             <span
               key={i}
-              className={isHovered ? styles.charHighlight : styles.charItem}
+              className={classnames(isHovered ? styles.charHighlight : styles.charItem, {
+                [styles.charSelected]: selected && !isHovered,
+                [styles.charCursor]: marks?.cursor === i
+              })}
             >
               {ch}
             </span>
@@ -247,6 +287,7 @@ const CharDumpComponent = ({ bytes, characterSet, hoveredByteIndex }: CharDumpPr
 
 const CharDump = memo(CharDumpComponent, (prev, next) => {
   if (prev.hoveredByteIndex !== next.hoveredByteIndex) return false;
+  if (prev.marks?.key !== next.marks?.key) return false;
   if (prev.characterSet !== next.characterSet) return false;
   if (prev.bytes.length !== next.bytes.length) return false;
   for (let i = 0; i < prev.bytes.length; i++) {
@@ -269,6 +310,8 @@ type HexValuesProps = {
   tooltipCache: readonly string[];
   hoveredByteIndex?: number | null;
   onHoverChange?: (index: number | null) => void;
+  marks?: ByteMarks;
+  onBytePointer?: (address: number, kind: "down" | "drag", extend: boolean) => void;
 };
 
 const HexValuesComponent = ({
@@ -283,7 +326,9 @@ const HexValuesComponent = ({
   editClicked,
   tooltipCache,
   hoveredByteIndex,
-  onHoverChange
+  onHoverChange,
+  marks,
+  onBytePointer
 }: HexValuesProps) => {
   const t = useT();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -317,8 +362,24 @@ const HexValuesComponent = ({
       return;
     }
 
-    onHoverChange?.(getByteIndexAtOffset(x, rect.width, Math.max(hexString.length, fullSectionChars(decimalView)), decimalView, hexParts.length));
-  }, [decimalView, hexParts.length, hexString.length, onHoverChange]);
+    const index = getByteIndexAtOffset(x, rect.width, Math.max(hexString.length, fullSectionChars(decimalView)), decimalView, hexParts.length);
+    onHoverChange?.(index);
+    // --- A drag with the button held extends the selection
+    if (index !== null && e.buttons === 1) onBytePointer?.(address + index, "drag", true);
+  }, [address, decimalView, hexParts.length, hexString.length, onHoverChange, onBytePointer]);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (!onBytePointer || !containerRef.current || e.button !== 0) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const index = getByteIndexAtOffset(
+      e.clientX - rect.left,
+      rect.width,
+      Math.max(hexString.length, fullSectionChars(decimalView)),
+      decimalView,
+      hexParts.length
+    );
+    if (index !== null) onBytePointer(address + index, "down", e.shiftKey);
+  }, [address, decimalView, hexParts.length, hexString.length, onBytePointer]);
 
   const handleMouseLeave = useCallback(() => {
     onHoverChange?.(null);
@@ -433,6 +494,52 @@ const HexValuesComponent = ({
     return overlays.length ? overlays : undefined;
   }, [changedBytes, bytes.length, decimalView, hexString]);
 
+  /*
+   * The live view's marks (§5): each a box at the byte's `ch` position, like the hover overlay -
+   * the row stays one text node. The selection and find matches are washes behind the text
+   * (z-index -1, as the heat cells); the cursor an outline; a breakpoint's bytes an underline; a
+   * byte changed since the previous stop the shared dot in its corner; a pointed byte (a register
+   * holds its address) an underline in the register hue.
+   */
+  const markBoxes = useMemo(() => {
+    if (!marks && !pointedInfo) return undefined;
+    const width = decimalView ? 3 : 2;
+    const stride = width + 1;
+    const boxes: { key: string; className: string; left: string; width: string; text?: string }[] = [];
+    const span = (from: number, to: number, className: string, key: string, text?: string) =>
+      boxes.push({
+        key,
+        className,
+        left: `${from * stride - 0.5}ch`,
+        width: `${(to - from) * stride + width + 1}ch`,
+        text
+      });
+    if (marks?.selection) span(marks.selection[0], marks.selection[1], styles.selectionWash, "sel");
+    marks?.found?.forEach(([from, to], i) => span(from, to, styles.foundWash, `f${i}`));
+    if (marks?.foundCurrent) span(marks.foundCurrent[0], marks.foundCurrent[1], styles.foundCurrent, "fc");
+    for (let i = 0; i < bytes.length; i++) {
+      if (marks?.breakpoint?.[i]) {
+        boxes.push({ key: `b${i}`, className: styles.breakpointMark, left: `${i * stride}ch`, width: `${width}ch` });
+      }
+      if (marks?.changed?.[i]) {
+        boxes.push({ key: `c${i}`, className: styles.changedDot, left: `${i * stride}ch`, width: `${width}ch` });
+      }
+      if (pointedInfo?.[address + i]) {
+        boxes.push({ key: `p${i}`, className: styles.pointedMark, left: `${i * stride}ch`, width: `${width}ch` });
+      }
+    }
+    if (marks?.cursor !== undefined) {
+      boxes.push({
+        key: "cur",
+        className: marks.editText !== undefined ? styles.editingByte : styles.cursorByte,
+        left: `${marks.cursor * stride}ch`,
+        width: `${width}ch`,
+        text: marks.editText !== undefined ? marks.editText.padEnd(width, "_") : undefined
+      });
+    }
+    return boxes.length ? boxes : undefined;
+  }, [marks, pointedInfo, address, bytes.length, decimalView]);
+
   // Determine lastJump byte index - memoized
   const lastJumpByteIndex = useMemo(() => {
     for (let i = 0; i < bytes.length; i++) {
@@ -459,9 +566,15 @@ const HexValuesComponent = ({
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       onMouseOut={handleMouseOut}
+      onMouseDown={handleMouseDown}
       onContextMenu={handleContextMenu}
     >
       {hexString}
+      {markBoxes?.map((box) => (
+        <div key={box.key} className={box.className} style={{ left: box.left, width: box.width }}>
+          {box.text}
+        </div>
+      ))}
       {heatCells?.map((cell) => (
         <div key={`h${cell.index}`} className={cell.className} style={{ left: cell.left, width: cell.width }} />
       ))}
@@ -527,6 +640,8 @@ const HexValues = memo(HexValuesComponent, (prev, next) => {
   if (prev.tooltipCache !== next.tooltipCache) return false;
   if (prev.hoveredByteIndex !== next.hoveredByteIndex) return false;
   if (prev.onHoverChange !== next.onHoverChange) return false;
+  if (prev.marks?.key !== next.marks?.key) return false;
+  if (prev.onBytePointer !== next.onBytePointer) return false;
   if (prev.bytes.length !== next.bytes.length) return false;
 
   // Check if the bytes have changed

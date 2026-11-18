@@ -1,3 +1,4 @@
+import type { PartitionInfoSet, PartitionRole } from "@common/annotations/partitionInfo";
 import type { RomSource } from "@common/roms/romIdentity";
 import type {
   DebugRecordingCompatibility,
@@ -955,6 +956,29 @@ class EmuApiImpl {
   }
 
   /**
+   * What each partition is - kind, size, card, mirrors - and how the Bank map lays them out
+   * (`@common/annotations/partitionInfo`). Undefined on a machine without partitions.
+   */
+  async getPartitionInfo(): Promise<PartitionInfoSet | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Searches the machine's memory for a byte pattern (`dev/plans/MEMORY_DISASSEMBLY_VIEWS_PLAN.md`
+   * phase 4): every partition, or the 64K the CPU sees, without copying it to the renderer.
+   * @param _pattern The bytes; `null` matches any byte
+   * @param _scope `"64k"` or `"partitions"`
+   * @param _limit At most this many matches (the result says whether there were more)
+   */
+  async findMemory(
+    _pattern: (number | null)[],
+    _scope: MemoryFindScope,
+    _limit?: number
+  ): Promise<MemoryFindResult> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Gets the current call stack information.
    */
   async getCallStack(): Promise<CallStackInfo> {
@@ -1644,6 +1668,18 @@ export type BreakpointsInfo = {
 };
 
 // --- The response with the memory contents
+/** Where `findMemory` searches */
+export type MemoryFindScope = "64k" | "partitions";
+
+/** One `findMemory` match: a partition and offset, or an address in the 64K */
+export type MemoryFindMatch = { partition?: number; offset: number };
+
+export type MemoryFindResult = {
+  matches: MemoryFindMatch[];
+  /** More matches were found than the limit let through */
+  truncated: boolean;
+};
+
 export type MemoryInfo = {
   memory: Uint8Array;
   pc: number;
@@ -1671,6 +1707,13 @@ export type MemoryInfo = {
   selectedBank?: number;
   osInitialized: boolean;
   memBreakpoints: BreakpointInfo[];
+  /**
+   * Which partitions hold the screens, Layer 2 and the tilemap now (`getPartitionRoles`), on a
+   * machine that knows; recomputed on every refresh (plan D8)
+   */
+  partitionRoles?: Record<number, PartitionRole[]>;
+  /** The machine's tact counter, which tells one stop from the next (the changed-byte baseline) */
+  tacts?: number;
   /**
    * Set while the history cursor is in the past (`dev/plans/LITE_STEP_BACK_PLAN.md` T2): the
    * registers above are the present's, these are the cursor's, and `bytes` are the bytes the CPU

@@ -26,6 +26,10 @@ export type BankedDisassemblyPanelViewState = {
   sysVarNames?: boolean;
   /** Show the ROM's annotations: labels, comments and regions (§5.5). Defaults to on. */
   romLabels?: boolean;
+  /** The flow gutter (`dev/plans/MEMORY_DISASSEMBLY_VIEWS_PLAN.md` §6.1). Defaults to on. */
+  flow?: boolean;
+  /** The inspector column (D2). Defaults to on. */
+  inspector?: boolean;
 };
 
 export type DisassemblyViewStateValues = {
@@ -40,6 +44,8 @@ export type DisassemblyViewStateValues = {
   bankLabel: boolean;
   sysVarNames: boolean;
   romLabels: boolean;
+  flow?: boolean;
+  inspector?: boolean;
 };
 
 type PersistenceParams = DisassemblyViewStateValues & {
@@ -76,6 +82,8 @@ export function buildDisassemblyPanelViewState(
     screen: values.screen,
     disassOffset: values.disassOffset,
     sysVarNames: values.sysVarNames,
+    flow: values.flow,
+    inspector: values.inspector,
     romLabels: values.romLabels
   };
 }
@@ -158,6 +166,8 @@ export function useDisassemblyViewStatePersistence({
     values.disassOffset,
     values.bankLabel,
     values.sysVarNames,
+    values.flow,
+    values.inspector,
     values.romLabels
   ]);
 }

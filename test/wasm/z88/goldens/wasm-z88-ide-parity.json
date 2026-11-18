@@ -951,11 +951,12 @@
   "selectedRom": 0,
   "selectedBank": 0,
   "memBreakpoints": [],
+  "tacts": 30212100,
   "osInitialized": true
  },
  "OZ50 after booting and a few keys: getMemoryContents(<every bank>)": {
   "steps": 256,
-  "sha256": "b795340e0a7259c4842a4b98478416f52317be8bdb3ab8de5120f601bf5ece67"
+  "sha256": "3a599c7ad4c1c6abc7ebe3b9be56fa40824e3dba51014c4345074199cda7d3bb"
  },
  "OZ40 after booting and a few keys: getCpuState()": {
   "af": 84,
@@ -1909,11 +1910,12 @@
   "selectedRom": 0,
   "selectedBank": 0,
   "memBreakpoints": [],
+  "tacts": 30212100,
   "osInitialized": true
  },
  "OZ40 after booting and a few keys: getMemoryContents(<every bank>)": {
   "steps": 256,
-  "sha256": "6fcaa7f209e759bac4e762f80617096c6e508ce5de3e8b1f6e0f3544adf70ab3"
+  "sha256": "e04a9b62b082448d12a1ac5b4044579a67e4b71d0d86b4236f99a63dfdb16792"
  },
  "OZ30 after booting and a few keys: getCpuState()": {
   "af": 1860,
@@ -2867,11 +2869,12 @@
   "selectedRom": 0,
   "selectedBank": 0,
   "memBreakpoints": [],
+  "tacts": 30212106,
   "osInitialized": true
  },
  "OZ30 after booting and a few keys: getMemoryContents(<every bank>)": {
   "steps": 256,
-  "sha256": "83a4be2a724f50a8ddf168f964e216f41bae91ff58480a11b617798520b26b3a"
+  "sha256": "19af46541de4b5faf2f827e2f656fd8784c105e6bf71a1e6b7926f4db8839093"
  },
  "stopped mid-frame, a card in command mode: getCpuState()": {
   "af": 65535,
@@ -3824,11 +3827,12 @@
   "selectedRom": 0,
   "selectedBank": 0,
   "memBreakpoints": [],
+  "tacts": 114,
   "osInitialized": true
  },
  "stopped mid-frame, a card in command mode: getMemoryContents(<every bank>)": {
   "steps": 256,
-  "sha256": "b5c3d4095986482e73565be88b9c9915d08e13f1d879ce191942c79984be322a"
+  "sha256": "1e478ed50ff88c64cc93a0ebef03623425456822ed482d59966c97abd4f2cada"
  },
  "register edits: getCpuState()": {
   "af": 23205,
@@ -4816,11 +4820,12 @@
   "selectedRom": 0,
   "selectedBank": 0,
   "memBreakpoints": [],
+  "tacts": 32948,
   "osInitialized": true
  },
  "register edits, after the dump: getMemoryContents(<every bank>)": {
   "steps": 256,
-  "sha256": "ffb4f5cc48433dccc75a4aa31e6205c971659d163bd12b4633c893dcda85ab59"
+  "sha256": "9d8fd78379de19fe0158f0fc981e40c9475598df218c05aa9c94d92b377efa59"
  },
  "memory edits: getCpuState()": {
   "af": 65535,
@@ -5770,10 +5775,11 @@
   "selectedRom": 0,
   "selectedBank": 0,
   "memBreakpoints": [],
+  "tacts": 0,
   "osInitialized": true
  },
  "memory edits: getMemoryContents(<every bank>)": {
   "steps": 256,
-  "sha256": "052ece65e09ee13152bb1ea3c0f5810741d733d0d2237e9399bb745f43f17578"
+  "sha256": "2a578d8e108b687a5a80f5454385fba3de829af40542b76c355f4e2c9e07cf35"
  }
 }

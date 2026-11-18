@@ -111,6 +111,10 @@ which has no 16K bank), then the read and write offsets into physical memory. Ho
 each one named. When a NEX file was started with `nex-run` in this session, the tooltip also says
 which of the file's banks the slot holds; see [NEX files](/en/guides/next/nex-files/).
 
+The Memory and Disassembly views show the same paging on their memory map, and their **Bank map**
+marks the pages the ULA screens, Layer 2 and the tilemap live in, read from these registers as the
+machine runs; see [the Memory view](/en/guides/debugging/memory/#look-at-one-partition).
+
 ## The Next Palettes panel
 
 The Next has a palette for each of four devices: **ULA**, **Layer 2**, **Sprites** and **Tilemap**,

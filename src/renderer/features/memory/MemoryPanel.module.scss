@@ -16,3 +16,61 @@
 .memoryRow {
   min-width: max-content;
 }
+
+/* A row where the 64K view enters another slot's partition: a rule along its top (§5.1) */
+.slotBoundary {
+  box-shadow: inset 0 1px 0 var(--border-strong);
+}
+
+/* The column heads over the dump: the rows' font, so the `ch` columns line up */
+.columnHeads {
+  display: flex;
+  align-items: center;
+  min-height: var(--row-panelHeader);
+  padding-left: 0;
+  border-bottom: 1px solid var(--border-default);
+  color: var(--data-secondary);
+  white-space: pre;
+  overflow: hidden;
+
+  > span {
+    flex: 0 0 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.columnBytes {
+  padding-left: 8px;
+}
+
+/* The label gutter (§5.1): the row's first label, then the registers pointing into the row */
+.gutter {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+  height: 100%;
+  padding-right: var(--space-1);
+  overflow: hidden;
+}
+
+.gutterLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-disassembly-label);
+}
+
+.registerTag {
+  flex: 0 0 auto;
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-xs);
+  background: var(--bgcolor-memmap-register);
+  color: var(--color-memmap-register);
+  font-size: var(--font-size-50);
+  font-weight: 700;
+  line-height: 1.4;
+}

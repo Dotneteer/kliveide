@@ -8,6 +8,13 @@ vi.mock("@renderer/registry", () => ({
   ]
 }));
 
+// --- The reveal waits for a mounted view; here it records what it was asked to show
+const revealWhenMounted = vi.fn(async () => true);
+vi.mock("@renderer/appIde/navigation/addressNavigationAdapters", () => ({
+  revealWhenMounted: (...args: unknown[]) => revealWhenMounted(...(args as []))
+}));
+
+import { spectrumPartitionInfo } from "@common/annotations/partitionInfo";
 import {
   SelectOutputPaneCommand,
   ShowMemoryCommand,
@@ -131,7 +138,8 @@ describe("ShowMemoryCommand", () => {
     });
 
     it("should have correct usage string", () => {
-      expect(command.usage).toBe("show-memory [<address>]");
+      expect(command.usage).toContain("show-memory [<address>");
+      expect(command.usage).toContain("<partition>:<offset>");
     });
 
     it("should have alias 'shmem'", () => {
@@ -342,7 +350,8 @@ describe("ShowDisassemblyCommand", () => {
     });
 
     it("should have correct usage string", () => {
-      expect(command.usage).toBe("show-disass [<address>]");
+      expect(command.usage).toContain("show-disass [<address>");
+      expect(command.usage).toContain("<label>");
     });
 
     it("should have alias 'shdis'", () => {
@@ -495,5 +504,82 @@ describe("HideDisassemblyCommand", () => {
       // Assert
       expect(result.success).toBe(true);
     });
+  });
+});
+
+/*
+ * `show-memory` and `show-disass` take the views' Go to language
+ * (`dev/plans/MEMORY_DISASSEMBLY_VIEWS_PLAN.md` phase 6): a number, a register, a label, `PART:offset`.
+ */
+describe("show-memory and show-disass targets", () => {
+  const labels = { [-2]: "R1", [-1]: "R0", 0: "B0", 2: "B2", 5: "B5", 7: "B7" };
+  function targetContext() {
+    const context = createMockContext() as MockIdeCommandContext;
+    const emuApi = context.emuApi as any;
+    emuApi.getPartitionLabels = vi.fn(async () => labels);
+    emuApi.getPartitionInfo = vi.fn(async () => spectrumPartitionInfo({ labels }));
+    emuApi.getMemoryContents = vi.fn(async () => ({
+      pc: 0x8008,
+      sp: 0xff3c,
+      hl: 0x5812,
+      de: 0x8020,
+      bc: 0x0e00,
+      ix: 0x5c3a,
+      iy: 0x5c3a,
+      slotPartitions: [-2, -2, 5, 5, 2, 2, 0, 0]
+    }));
+    const hub = (context.service as any).projectService.getActiveDocumentHubService();
+    hub.isOpen.mockReturnValue(true);
+    hub.setActiveDocument.mockResolvedValue(undefined);
+    return context;
+  }
+
+  beforeEach(() => revealWhenMounted.mockClear());
+
+  it("keeps a bare number decimal, as the command prompt reads numbers", async () => {
+    await new ShowMemoryCommand().execute(targetContext(), { address: "32768" });
+    expect(revealWhenMounted).toHaveBeenCalledWith(expect.anything(), "$memory", {
+      kind: "address",
+      address: 0x8000,
+      fullView: true
+    });
+  });
+
+  it("goes to a register's address", async () => {
+    await new ShowMemoryCommand().execute(targetContext(), { address: "hl" });
+    expect(revealWhenMounted).toHaveBeenCalledWith(expect.anything(), "$memory", expect.objectContaining({ address: 0x5812 }));
+  });
+
+  it("opens a partition at an offset in the Memory view", async () => {
+    await new ShowMemoryCommand().execute(targetContext(), { address: "B7:$0010" });
+    expect(revealWhenMounted).toHaveBeenCalledWith(expect.anything(), "$memory", {
+      kind: "address",
+      address: 0x10,
+      segment: 7,
+      fullView: false
+    });
+  });
+
+  it("lists a partition in the Disassembly view at its Origin", async () => {
+    // --- B2 is paged in at $8000: the listing's Origin
+    await new ShowDisassemblyCommand().execute(targetContext(), { address: "b2:$10" });
+    expect(revealWhenMounted).toHaveBeenCalledWith(expect.anything(), "$disassembly", {
+      kind: "address",
+      address: 0x8010,
+      segment: 2,
+      fullView: false,
+      base: 0x8000
+    });
+    // --- B7 is not paged in: $0000
+    await new ShowDisassemblyCommand().execute(targetContext(), { address: "B7:$10" });
+    expect(revealWhenMounted).toHaveBeenLastCalledWith(expect.anything(), "$disassembly", expect.objectContaining({ address: 0x10, base: 0 }));
+  });
+
+  it("refuses an unknown partition or name", async () => {
+    const result = await new ShowMemoryCommand().execute(targetContext(), { address: "Q9:0" });
+    expect(result.success).toBe(false);
+    expect(revealWhenMounted).not.toHaveBeenCalled();
+    const unknown = await new ShowDisassemblyCommand().execute(targetContext(), { address: "no_such_label" });
+    expect(unknown.success).toBe(false);
   });
 });
