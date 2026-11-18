@@ -8,10 +8,7 @@ import type { DocumentProps } from "@renderer/features/documents/DocumentsContai
 import type { GenericFileContext } from "../helpers/GenericFilePanel";
 
 import { GenericFilePanel } from "../helpers/GenericFilePanel";
-import { ExpandableRow } from "@renderer/controls/layout/ExpandableRow";
-import { LabeledText } from "@renderer/controls/layout/LabeledText";
-import { Row } from "@renderer/controls/layout/Row";
-import { Text } from "@renderer/controls/layout/Text";
+import { Fact, FactNote, Facts, FactSection } from "@renderer/controls/data/FileFacts";
 import { SmallIconButton } from "@renderer/controls/IconButton";
 import { DataLabel, DataRow, DataSecondary, DataValue, formatHex } from "@renderer/controls/data";
 import { disassemblyText } from "@renderer/controls/data/DisassemblyText";
@@ -194,9 +191,9 @@ const FileSection = ({ ctx, info, source }: { ctx: ViewContext; info: FwFileInfo
   const warnings = file.problems.filter((p) => p.severity === "warning").length;
   const aliases = file.entries.filter((e) => e.aliasOf !== undefined).length;
   return (
-    <ExpandableRow
-      heading={t("panels.next.fw.heading.file")}
-      headingAction={
+    <FactSection
+      title={t("panels.next.fw.heading.file")}
+      actions={
         <SmallIconButton
           iconName="binary"
           title={t("panels.next.fw.mapDump")}
@@ -216,47 +213,29 @@ const FileSection = ({ ctx, info, source }: { ctx: ViewContext; info: FwFileInfo
                 : t("panels.next.fw.verdict.ok")}
         </span>
       }
-      initialExpanded={ctx.viewState?.fileExpanded ?? true}
-      onExpanded={(exp) => ctx.changeViewState((vs) => (vs.fileExpanded = exp))}
+      expanded={ctx.viewState?.fileExpanded ?? true}
+      onExpandedChange={(exp) => ctx.changeViewState((vs) => (vs.fileExpanded = exp))}
     >
-      <Row>
-        <LabeledText
-          label={t("panels.next.fw.label.firmware")}
-          labelWidth={LABEL_WIDTH}
-          value={file.version ?? t("panels.next.fw.versionUnknown")}
-          valueTooltip={t("panels.next.fw.versionTooltip")}
-        />
-      </Row>
-      <Row>
-        <LabeledText
-          label={t("panels.next.fw.label.fileSize")}
-          labelWidth={LABEL_WIDTH}
-          value={t("panels.next.fw.fileSize", { bytes: num(file.fileSize), blocks: num(Math.floor(file.fileSize / FW_BLOCK)) })}
-        />
-      </Row>
-      <Row>
-        <LabeledText
-          label={t("panels.next.fw.label.map")}
-          labelWidth={LABEL_WIDTH}
-          value={t("panels.next.fw.mapUse", { count: file.entries.length, capacity: FW_MAP_CAPACITY, aliases })}
-        />
-      </Row>
-      <Row>
-        <LabeledText
-          label={t("panels.next.fw.label.layout")}
-          labelWidth={LABEL_WIDTH}
-          value={t(file.layout === "old" ? "panels.next.fw.layout.old" : "panels.next.fw.layout.current")}
-        />
-      </Row>
+      <Facts labelWidth={LABEL_WIDTH}>
+        <Fact label={t("panels.next.fw.label.firmware")} title={t("panels.next.fw.versionTooltip")}>
+          {file.version ?? t("panels.next.fw.versionUnknown")}
+        </Fact>
+        <Fact label={t("panels.next.fw.label.fileSize")}>
+          {t("panels.next.fw.fileSize", { bytes: num(file.fileSize), blocks: num(Math.floor(file.fileSize / FW_BLOCK)) })}
+        </Fact>
+        <Fact label={t("panels.next.fw.label.map")}>
+          {t("panels.next.fw.mapUse", { count: file.entries.length, capacity: FW_MAP_CAPACITY, aliases })}
+        </Fact>
+        <Fact label={t("panels.next.fw.label.layout")}>
+          {t(file.layout === "old" ? "panels.next.fw.layout.old" : "panels.next.fw.layout.current")}
+        </Fact>
+      </Facts>
       {file.problems.map((p, i) => (
-        <Row key={i}>
-          <Text
-            text={t(PROBLEM_KEYS[p.code], { entry: p.entry ?? 0, other: p.otherEntry ?? 0 })}
-            variant={p.severity === "error" ? "error" : p.severity === "warning" ? "warning" : undefined}
-          />
-        </Row>
+        <FactNote key={i} tone={p.severity === "error" ? "error" : p.severity === "warning" ? "warning" : "info"}>
+          {t(PROBLEM_KEYS[p.code], { entry: p.entry ?? 0, other: p.otherEntry ?? 0 })}
+        </FactNote>
       ))}
-    </ExpandableRow>
+    </FactSection>
   );
 };
 
@@ -292,11 +271,11 @@ const ModulesSection = ({ ctx, file, selected, target }: ModulesProps) => {
   const select = (index: number) => ctx.changeViewState((vs) => (vs.selected = index));
   const selectedBlock = target ? blocks.find((b) => b.entry === target)?.index : undefined;
   return (
-    <ExpandableRow
-      heading={t("panels.next.fw.heading.modules")}
+    <FactSection
+      title={t("panels.next.fw.heading.modules")}
       meta={t("panels.next.fw.entryCount", { count: file.entries.length })}
-      initialExpanded={ctx.viewState?.modulesExpanded ?? true}
-      onExpanded={(exp) => ctx.changeViewState((vs) => (vs.modulesExpanded = exp))}
+      expanded={ctx.viewState?.modulesExpanded ?? true}
+      onExpandedChange={(exp) => ctx.changeViewState((vs) => (vs.modulesExpanded = exp))}
     >
       <div className={styles.map}>
         <TimelineStrip
@@ -347,7 +326,7 @@ const ModulesSection = ({ ctx, file, selected, target }: ModulesProps) => {
           </DataRow>
         ))}
       </div>
-    </ExpandableRow>
+    </FactSection>
   );
 };
 
@@ -401,9 +380,9 @@ const DetailsSection = ({ ctx, info, entry, target, source }: DetailsProps) => {
     );
   const k = moduleKeys(entry, file);
   return (
-    <ExpandableRow
-      heading={t("panels.next.fw.heading.module", { index: entry.index, name: entryName(t, entry, file) })}
-      headingAction={
+    <FactSection
+      title={t("panels.next.fw.heading.module", { index: entry.index, name: entryName(t, entry, file) })}
+      actions={
         inFile ? (
           <>
             <SmallIconButton iconName="binary" title={t("panels.next.fw.moduleDump")} clicked={() => openDump("memory")} />
@@ -413,73 +392,46 @@ const DetailsSection = ({ ctx, info, entry, target, source }: DetailsProps) => {
           </>
         ) : undefined
       }
-      initialExpanded={ctx.viewState?.detailsExpanded ?? true}
-      onExpanded={(exp) => ctx.changeViewState((vs) => (vs.detailsExpanded = exp))}
+      expanded={ctx.viewState?.detailsExpanded ?? true}
+      onExpandedChange={(exp) => ctx.changeViewState((vs) => (vs.detailsExpanded = exp))}
     >
-      <Row>
-        <LabeledText label={t("panels.next.fw.label.what")} labelWidth={LABEL_WIDTH} value={entryWhat(t, entry, file)} />
-      </Row>
-      {k && (
-        <Row>
-          <LabeledText
-            label={t("panels.next.fw.label.startedBy")}
-            labelWidth={LABEL_WIDTH}
-            value={entry.name === "updater" ? t("panels.next.fw.updaterKeys") : keysText(entry, file)}
-          />
-        </Row>
-      )}
-      <Row>
-        <LabeledText
-          label={t("panels.next.fw.label.blocks")}
-          labelWidth={LABEL_WIDTH}
-          value={t("panels.next.fw.blockRange", { from: m.start, to: m.start + m.length - 1, count: num(m.length) })}
-        />
-      </Row>
-      <Row>
-        <LabeledText
-          label={t("panels.next.fw.label.range")}
-          labelWidth={LABEL_WIDTH}
-          value={t("panels.next.fw.fileRange", {
+      <Facts labelWidth={LABEL_WIDTH}>
+        <Fact label={t("panels.next.fw.label.what")}>{entryWhat(t, entry, file)}</Fact>
+        {k && (
+          <Fact label={t("panels.next.fw.label.startedBy")}>
+            {entry.name === "updater" ? t("panels.next.fw.updaterKeys") : keysText(entry, file)}
+          </Fact>
+        )}
+        <Fact label={t("panels.next.fw.label.blocks")}>
+          {t("panels.next.fw.blockRange", { from: m.start, to: m.start + m.length - 1, count: num(m.length) })}
+        </Fact>
+        <Fact label={t("panels.next.fw.label.range")} tone={inFile ? "neutral" : "error"}>
+          {t("panels.next.fw.fileRange", {
             from: formatHex(m.fileOffset, 6),
             to: formatHex(m.fileOffset + m.byteLength - 1, 6),
             size: kb(m.byteLength)
           })}
-          valueClassName={inFile ? undefined : styles.error}
-        />
-      </Row>
-      {inFile && (
-        <Row>
-          <LabeledText
-            label={t("panels.next.fw.label.kind")}
-            labelWidth={LABEL_WIDTH}
-            value={
-              m.kind === "code"
-                ? t("panels.next.fw.kind.code", { address: formatHex(m.runsAt ?? 0, 4) })
-                : t("panels.next.fw.kind.data")
-            }
-          />
-        </Row>
-      )}
-      {inFile && (
-        <Row>
-          <LabeledText
-            label={t("panels.next.fw.label.tail")}
-            labelWidth={LABEL_WIDTH}
-            value={t("panels.next.fw.tail", { data: num(m.dataLength), padding: num(m.paddingLength) })}
-          />
-        </Row>
-      )}
-      {texts.slice(0, TEXT_LIMIT).map((text, i) => (
-        <Row key={i}>
-          <LabeledText label={i === 0 ? t("panels.next.fw.label.texts") : ""} labelWidth={LABEL_WIDTH} value={text} />
-        </Row>
-      ))}
-      {texts.length > TEXT_LIMIT && (
-        <Row>
-          <LabeledText label="" labelWidth={LABEL_WIDTH} value={t("panels.next.fw.moreTexts")} valueClassName={styles.dim} />
-        </Row>
-      )}
-    </ExpandableRow>
+        </Fact>
+        {inFile && (
+          <Fact label={t("panels.next.fw.label.kind")}>
+            {m.kind === "code"
+              ? t("panels.next.fw.kind.code", { address: formatHex(m.runsAt ?? 0, 4) })
+              : t("panels.next.fw.kind.data")}
+          </Fact>
+        )}
+        {inFile && (
+          <Fact label={t("panels.next.fw.label.tail")}>
+            {t("panels.next.fw.tail", { data: num(m.dataLength), padding: num(m.paddingLength) })}
+          </Fact>
+        )}
+        {texts.slice(0, TEXT_LIMIT).map((text, i) => (
+          <Fact key={i} label={i === 0 ? t("panels.next.fw.label.texts") : ""}>
+            {text}
+          </Fact>
+        ))}
+      </Facts>
+      {texts.length > TEXT_LIMIT && <FactNote>{t("panels.next.fw.moreTexts")}</FactNote>}
+    </FactSection>
   );
 };
 
@@ -522,11 +474,11 @@ const ListingSection = ({ ctx, info, entry }: ContentProps) => {
     };
   }, [info.data, entry]);
   return (
-    <ExpandableRow
-      heading={t("panels.next.fw.heading.listing")}
+    <FactSection
+      title={t("panels.next.fw.heading.listing")}
       meta={t("panels.next.fw.listingMeta", { address: formatHex(entry.runsAt ?? 0, 4), count: LISTING_LIMIT })}
-      initialExpanded={ctx.viewState?.contentExpanded ?? true}
-      onExpanded={(exp) => ctx.changeViewState((vs) => (vs.contentExpanded = exp))}
+      expanded={ctx.viewState?.contentExpanded ?? true}
+      onExpandedChange={(exp) => ctx.changeViewState((vs) => (vs.contentExpanded = exp))}
     >
       <div className={styles.listing} data-testid="fw-listing">
         {(lines ?? []).map((line) => (
@@ -536,13 +488,9 @@ const ListingSection = ({ ctx, info, entry }: ContentProps) => {
             <DataValue text={line.instruction} xclass={classnames(styles.lInstruction, disassemblyText.instruction)} />
           </DataRow>
         ))}
-        {lines && (
-          <Row>
-            <Text text={t("panels.next.fw.listingMore")} />
-          </Row>
-        )}
+        {lines && <FactNote>{t("panels.next.fw.listingMore")}</FactNote>}
       </div>
-    </ExpandableRow>
+    </FactSection>
   );
 };
 
@@ -563,11 +511,11 @@ const PictureSection = ({ ctx, info, entry }: ContentProps) => {
     context.putImageData(image, 0, 0);
   }, [card]);
   return (
-    <ExpandableRow
-      heading={t("panels.next.fw.heading.picture")}
+    <FactSection
+      title={t("panels.next.fw.heading.picture")}
       meta={t("panels.next.fw.pictureMeta", { width: FW_TEST_CARD_WIDTH, height: FW_TEST_CARD_HEIGHT })}
-      initialExpanded={ctx.viewState?.contentExpanded ?? true}
-      onExpanded={(exp) => ctx.changeViewState((vs) => (vs.contentExpanded = exp))}
+      expanded={ctx.viewState?.contentExpanded ?? true}
+      onExpandedChange={(exp) => ctx.changeViewState((vs) => (vs.contentExpanded = exp))}
     >
       {card ? (
         <div className={styles.picture}>
@@ -580,10 +528,8 @@ const PictureSection = ({ ctx, info, entry }: ContentProps) => {
           />
         </div>
       ) : (
-        <Row>
-          <Text text={t("panels.next.fw.pictureMissing")} variant="warning" />
-        </Row>
+        <FactNote tone="warning">{t("panels.next.fw.pictureMissing")}</FactNote>
       )}
-    </ExpandableRow>
+    </FactSection>
   );
 };

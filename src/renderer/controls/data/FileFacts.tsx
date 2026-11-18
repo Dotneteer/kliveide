@@ -106,19 +106,34 @@ export const Fact = ({
 }: {
   label: ReactNode;
   children?: ReactNode;
-  tone?: "neutral" | "state";
+  /** `ok` / `warning` / `error`: a check the file passes or fails (a checksum), in the status tones */
+  tone?: "neutral" | "state" | "ok" | "warning" | "error";
   title?: string;
 }) => (
   <div className={styles.fact}>
     <FactLabel>{label}</FactLabel>
-    <dd className={classnames({ [styles.state]: tone === "state" })} title={title}>
+    <dd className={classnames({ [styles.state]: tone === "state", [styles.valueOk]: tone === "ok", [styles.valueWarning]: tone === "warning", [styles.valueError]: tone === "error" })} title={title}>
       {children}
     </dd>
   </div>
 );
 
-/** A yes/no fact: the Next Registers' flag, a filled dot for yes and a hollow one for no */
-export const FactFlag = ({ label, value, title }: { label: ReactNode; value: boolean; title?: string }) => (
+/**
+ * A yes/no fact: the Next Registers' flag, a filled dot for yes and a hollow one for no. A file's
+ * flag (loadable, signed) dims the hollow dot; a machine's (`tone="state"`: IFF1, a NEX header's
+ * flags) paints both in the state colour, as the register panels do, and lets the shape say which.
+ */
+export const FactFlag = ({
+  label,
+  value,
+  title,
+  tone = "neutral"
+}: {
+  label: ReactNode;
+  value: boolean;
+  title?: string;
+  tone?: "neutral" | "state";
+}) => (
   <div className={styles.fact}>
     <FactLabel>{label}</FactLabel>
     <dd className={styles.flag} title={title}>
@@ -126,7 +141,7 @@ export const FactFlag = ({ label, value, title }: { label: ReactNode; value: boo
         iconName={value ? "circle-filled" : "circle-outline"}
         width={14}
         height={14}
-        fill={value ? "--color-state-value" : "--data-secondary"}
+        fill={value || tone === "state" ? "--color-state-value" : "--data-secondary"}
       />
     </dd>
   </div>

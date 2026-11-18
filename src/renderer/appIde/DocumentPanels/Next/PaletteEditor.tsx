@@ -2,7 +2,8 @@ import styles from "./PaletteEditor.module.scss";
 import { Row } from "@renderer/controls/layout/Row";
 import { NextPaletteViewer } from "@renderer/controls/NextPaletteViewer";
 import { useEffect, useState } from "react";
-import { LabeledText } from "@renderer/controls/layout/LabeledText";
+import { Fact, Facts } from "@renderer/controls/data/FileFacts";
+import { DataLabel, DataValue } from "@renderer/controls/data";
 import { toHexa2 } from "@renderer/appIde/services/ide-commands";
 import {
   getCssStringForPaletteCode,
@@ -17,6 +18,9 @@ import { ToolbarSeparator } from "@renderer/controls/ToolbarSeparator";
 import { Column } from "@renderer/controls/layout/Column";
 import { Panel } from "@renderer/controls/layout/Panel";
 import { useT } from "@common/i18n/useT";
+
+/* --- M2: `ch`, not px. The help's keys ("Shift+Tab", "Space/Enter") */
+const HELP_LABEL_WIDTH = "12ch";
 
 type Props = {
   palette: number[];
@@ -236,14 +240,17 @@ export const PaletteEditor = ({
           {allowTransparencySelection && (
             <>
               <ToolbarSeparator small={true} />
-              <LabeledText
-                label={t("panels.next.palette.transparencyColor")}
-                value={
-                  typeof transparencyIndex === "number"
-                    ? `$${toHexa2(transparencyIndex)} (${transparencyIndex})`
-                    : t("panels.next.palette.none")
-                }
-              />
+              {/* --- A readout in the toolbar: the data hierarchy's label and value, no row of its own */}
+              <span className={styles.readout}>
+                <DataLabel text={t("panels.next.palette.transparencyColor")} />
+                <DataValue
+                  text={
+                    typeof transparencyIndex === "number"
+                      ? `$${toHexa2(transparencyIndex)} (${transparencyIndex})`
+                      : t("panels.next.palette.none")
+                  }
+                />
+              </span>
             </>
           )}
         </KeyHandler>
@@ -337,32 +344,18 @@ export const PaletteEditor = ({
               </ColorScale>
             </Row>
             <Column xclass={styles.trIndex}>
-              <Row>
-                <LabeledText label={t("panels.next.palette.help.clickPalette")} value={t("panels.next.palette.help.selectColor")} />
-              </Row>
-              <Row>
-                <LabeledText label={t("panels.next.palette.help.clickChannel")} value={t("panels.next.palette.help.selectChannel")} />
-              </Row>
-              <Row>
-                <LabeledText label={t("panels.next.palette.help.arrows")} value={t("panels.next.palette.help.changeSelection")} />
-              </Row>
-              <Row>
-                <LabeledText label={t("panels.next.palette.help.key8")} value={t("panels.next.palette.help.use8bit")} />
-              </Row>
-              <Row>
-                <LabeledText label={t("panels.next.palette.help.key9")} value={t("panels.next.palette.help.use9bit")} />
-              </Row>
-              <Row>
-                <LabeledText label={t("panels.next.palette.help.spaceEnter")} value={t("panels.next.palette.help.togglePriority")} />
-              </Row>
+              <Facts labelWidth={HELP_LABEL_WIDTH}>
+              <Fact label={t("panels.next.palette.help.clickPalette")}>{t("panels.next.palette.help.selectColor")}</Fact>
+              <Fact label={t("panels.next.palette.help.clickChannel")}>{t("panels.next.palette.help.selectChannel")}</Fact>
+              <Fact label={t("panels.next.palette.help.arrows")}>{t("panels.next.palette.help.changeSelection")}</Fact>
+              <Fact label={t("panels.next.palette.help.key8")}>{t("panels.next.palette.help.use8bit")}</Fact>
+              <Fact label={t("panels.next.palette.help.key9")}>{t("panels.next.palette.help.use9bit")}</Fact>
+              <Fact label={t("panels.next.palette.help.spaceEnter")}>{t("panels.next.palette.help.togglePriority")}</Fact>
               {allowTransparencySelection && (
-                <Row>
-                  <LabeledText label={t("panels.next.palette.help.keyTC")} value={t("panels.next.palette.help.setResetTransparency")} />
-                </Row>
+                <Fact label={t("panels.next.palette.help.keyTC")}>{t("panels.next.palette.help.setResetTransparency")}</Fact>
               )}
-              <Row>
-                <LabeledText label={t("panels.next.palette.help.shiftTab")} value={t("panels.next.palette.help.moveFocus")} />
-              </Row>
+              <Fact label={t("panels.next.palette.help.shiftTab")}>{t("panels.next.palette.help.moveFocus")}</Fact>
+              </Facts>
             </Column>
           </div>
           <NextPaletteViewer

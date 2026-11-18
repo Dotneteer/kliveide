@@ -2,7 +2,6 @@ import React from "react";
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { Column } from "@renderer/controls/layout/Column";
-import { ExpandableRow } from "@renderer/controls/layout/ExpandableRow";
 import { FullPanel, HStack, VStack } from "@renderer/controls/layout/Panels";
 import { Label } from "@renderer/controls/layout/Label";
 import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
@@ -117,19 +116,5 @@ describe("layout primitives", () => {
     expect(container.firstElementChild).toHaveStyle({
       width: "4px"
     });
-  });
-
-  it("uses initial expanded state for expandable rows", () => {
-    render(
-      <ExpandableRow heading="Details" initialExpanded={true}>
-        <span>Nested content</span>
-      </ExpandableRow>
-    );
-
-    expect(screen.getByText("Nested content")).toBeTruthy();
-
-    fireEvent.click(screen.getByText("Details"));
-
-    expect(screen.queryByText("Nested content")).toBeNull();
   });
 });

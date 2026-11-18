@@ -251,9 +251,9 @@ const CpuSection = ({ ctx, info }: SectionProps) => {
         <Byte label="I:" value={`$${toHexa2(cpu.i)}`} />
         <Byte label="R:" value={`$${toHexa2(cpu.r)}`} />
         <Byte label="IM:" value={`${cpu.im}`} />
-        <FactFlag label="IFF1:" value={cpu.iff1} />
-        <FactFlag label="IFF2:" value={cpu.iff2} />
-        {cpu.halted !== undefined && <FactFlag label="HALT:" value={cpu.halted} />}
+        <FactFlag label="IFF1:" tone="state" value={cpu.iff1} />
+        <FactFlag label="IFF2:" tone="state" value={cpu.iff2} />
+        {cpu.halted !== undefined && <FactFlag label="HALT:" tone="state" value={cpu.halted} />}
       </FactCells>
       {cpu.suppressInterrupt && <FactNote>{t("panels.spectrum.suppressInterrupt")}</FactNote>}
     </FactSection>

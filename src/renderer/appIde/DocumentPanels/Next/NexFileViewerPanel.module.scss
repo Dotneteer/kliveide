@@ -47,63 +47,8 @@
 .headerAttributeGroupTitle {
   color: var(--color-secondary-label);
   font-family: var(--main-font-family);
-  padding: var(--space-0_5) 0 var(--space-1) var(--space-1);
-}
-
-/*
- * One label/value pair in the header attributes.
- *
- * **No `min-height`.** It had `var(--space-6)` — 24px — which is taller than the app's own sidebar
- * list rows (22px) for content that is denser than they are: a short label and a short value. The
- * panel is the same kind of surface as the register/state panels, and those drop the row height for
- * exactly this reason; `Data.module.scss`'s `.dense` records that keeping it made the Z80 panel 47%
- * taller. `controls/layout`'s `.row` sets no height of its own, so the content decides, which is
- * what every other dense panel in the app does.
- *
- * The flag rows below add their own `row-gap` because they wrap; their height comes from the icons.
- */
-.headerAttributeRow {
-  min-width: 0;
-}
-
-.headerFlagRow {
-  flex-wrap: wrap;
-  row-gap: var(--space-1);
-}
-
-/*
- * A header attribute's value.
- *
- * `--color-state-value` is the token for "this cell is a live value a panel wants in colour" — the
- * same one the register and state panels use, and the reason the shared `--data-*` hierarchy stays
- * neutral. These values were `--data-value`, the plain body colour, which left a screenful of
- * numbers reading as prose with no way to tell a label from what it labels.
- */
-.headerValue {
-  color: var(--color-state-value);
-}
-
-/*
- * A fact about the section, carried in its heading.
- *
- * A chip rather than more text, because it is not part of the section's name: where the machine
- * currently is (PC, SP), or how many of a section's 112 flags are set. Not `.bankMark` any more —
- * the bank rows were simply the first to need one.
- */
-.headingChip {
-  display: inline-flex;
-  align-items: center;
-  flex: 0 0 auto;
-  padding: 0 var(--space-2);
-  border: 1px solid currentColor;
-  border-radius: 999px;
-  color: var(--accent-text);
-  font-family: var(--monospace-font);
-  /* --- M1: same compounding. See the note above. */
-  font-size: var(--font-size-100);
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  white-space: nowrap;
+  /* --- Flush with the labels under it: the facts carry no inset of their own */
+  padding: var(--space-0_5) 0 var(--space-1);
 }
 
 /*
