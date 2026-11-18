@@ -342,20 +342,17 @@ describe("NexFileViewerPanel annotations", () => {
    * name. Only the count is worth showing — the denominator is always 112 — so the full sense lives
    * in the tooltip rather than in the chip.
    */
-  it("counts the set bank flags in a chip on the section heading", async () => {
+  it("counts the set bank flags after the section's title", async () => {
     await renderNexViewer({ contents: createNexWithLayer2AndBank5() });
 
-    const row = (await screen.findByText(/Bank flags/)).closest(
-      '[class*="expandableRowHeading"]'
-    ) as HTMLElement;
-    expect(row).not.toBeNull();
+    const section = (await screen.findByText(/Bank flags/)).closest("section") as HTMLElement;
+    expect(section).not.toBeNull();
 
-    const chip = row.querySelector('[class*="headingChip"]') as HTMLElement;
-    expect(chip).not.toBeNull();
-    // --- One bank in this fixture, and the bare number is all the chip carries.
-    expect(chip.textContent).toBe("1");
-    expect(chip.getAttribute("title")).toBe("1 of 112 bank flags set");
-    expect(row.querySelector('[class*="headingMeta"]')).toBeNull();
+    const meta = section.querySelector('[class*="meta"]') as HTMLElement;
+    expect(meta).not.toBeNull();
+    // --- One bank in this fixture, and the bare number is all the count carries.
+    expect(meta.textContent).toBe("1");
+    expect(meta.querySelector("[title]")?.getAttribute("title")).toBe("1 of 112 bank flags set");
   });
 
   /**
@@ -396,8 +393,8 @@ describe("NexFileViewerPanel annotations", () => {
     });
 
     const heading = await screen.findByText("Layer 2 Loading Screen");
-    const row = heading.closest('[class*="expandableRowHeading"]') as HTMLElement;
-    const action = row.querySelector('[class*="headingAction"]') as HTMLElement;
+    const section = heading.closest("section") as HTMLElement;
+    const action = section.querySelector('[class*="actions"]') as HTMLElement;
     expect(action).not.toBeNull();
 
     // --- The same glyph a bank offers, not the old filled one.

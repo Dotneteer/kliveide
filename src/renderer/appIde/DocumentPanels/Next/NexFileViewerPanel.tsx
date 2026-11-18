@@ -11,10 +11,7 @@ import { MemoryDumpViewer } from "@renderer/controls/memory/MemoryDumpViewer";
 import { Layer2Screen } from "@renderer/controls/Next/Layer2Screen";
 import { getAbrgForPaletteCode } from "@emu/machines/zxNext/palette";
 import { GenericFilePanel } from "../helpers/GenericFilePanel";
-import { Row } from "@renderer/controls/layout/Row";
-import { LabeledText } from "@renderer/controls/layout/LabeledText";
-import { LabeledFlag } from "@renderer/controls/layout/LabeledFlag";
-import { ExpandableRow } from "@renderer/controls/layout/ExpandableRow";
+import { Fact, FactCells, FactFlag, Facts, FactSection } from "@renderer/controls/data/FileFacts";
 import { createElement, useEffect, useMemo, useState } from "react";
 import styles from "./NexFileViewerPanel.module.scss";
 import { loadNexFileContents, ScreenBlockFlags } from "./nexFileLoader";
@@ -80,12 +77,11 @@ import { useDialogs } from "@renderer/controls/overlay/DialogProvider";
  * used to render at (px / 6.4, rounded up), so no column narrows — but they now follow the user's
  * font size, which is the whole point.
  */
-const HEADER_LABEL_WIDTH = "25ch"; // 160px / 6.4
-const HEADER_VALUE_WIDTH = "21ch"; // 132px / 6.4
-const HEADER_WIDE_VALUE_WIDTH = "30ch"; // 188px / 6.4
-const HEADER_FLAG_LABEL_WIDTH = "25ch"; // 156px / 6.4
-const HEADER_FLAG_NARROW_LABEL_WIDTH = "15ch"; // 92px / 6.4
-const HEADER_FLAG_VALUE_WIDTH = "4ch"; // 22px / 6.4
+const HEADER_LABEL_WIDTH = "22ch";
+const SCREEN_FLAG_LABEL_WIDTH = "13ch";
+const SCREEN_FLAG_CELL_WIDTH = "18ch";
+const BANK_FLAG_LABEL_WIDTH = "4ch";
+const BANK_FLAG_CELL_WIDTH = "8ch";
 
 type NexAnnotationViewerState =
   | AnnotationSidecarState
@@ -410,56 +406,40 @@ const NexFileViewerContents = ({
         state={annotationState}
         onCreate={createAnnotation}
       />
-      <ExpandableRow
-        heading={t("panels.next.nex.headerAttributes")}
-        initialExpanded={cvs?.headerAttrExpanded ?? true}
-        onExpanded={exp => change(vs => (vs.headerAttrExpanded = exp))}
+      <FactSection
+        title={t("panels.next.nex.headerAttributes")}
+        expanded={cvs?.headerAttrExpanded ?? true}
+        onExpandedChange={exp => change(vs => (vs.headerAttrExpanded = exp))}
       >
         <HeaderAttributes header={h} />
-      </ExpandableRow>
+      </FactSection>
       {/*
         * The count rides in the heading as a chip, the way PC and SP do on a bank: it is a fact
         * about the section rather than part of its name. Only the count carries information — the
         * denominator is always 112 — so the chip shows that alone and the tooltip spells it out.
         */}
-      <ExpandableRow
-        heading={
-          <>
-            {t("panels.next.nex.bankFlags")}
-            <span
-              className={styles.headingChip}
-              title={t("panels.next.nex.bankFlagsSet", {
-                count: setBankFlagCount,
-                total: h.bankFlags.length
-              })}
-            >
-              {setBankFlagCount}
-            </span>
-          </>
+      <FactSection
+        title={t("panels.next.nex.bankFlags")}
+        meta={
+          <span title={t("panels.next.nex.bankFlagsSet", { count: setBankFlagCount, total: h.bankFlags.length })}>
+            {setBankFlagCount}
+          </span>
         }
-        initialExpanded={cvs?.bankFlagsExpanded ?? false}
-        onExpanded={exp => change(vs => (vs.bankFlagsExpanded = exp))}
+        expanded={cvs?.bankFlagsExpanded ?? false}
+        onExpandedChange={exp => change(vs => (vs.bankFlagsExpanded = exp))}
       >
-        <BankFlags startIndex={0} flags={h.bankFlags.slice(0, 8)} />
-        <BankFlags startIndex={8} flags={h.bankFlags.slice(8, 16)} />
-        <BankFlags startIndex={16} flags={h.bankFlags.slice(16, 24)} />
-        <BankFlags startIndex={24} flags={h.bankFlags.slice(24, 32)} />
-        <BankFlags startIndex={32} flags={h.bankFlags.slice(32, 40)} />
-        <BankFlags startIndex={40} flags={h.bankFlags.slice(40, 48)} />
-        <BankFlags startIndex={48} flags={h.bankFlags.slice(48, 56)} />
-        <BankFlags startIndex={56} flags={h.bankFlags.slice(56, 64)} />
-        <BankFlags startIndex={64} flags={h.bankFlags.slice(64, 72)} />
-        <BankFlags startIndex={72} flags={h.bankFlags.slice(72, 80)} />
-        <BankFlags startIndex={80} flags={h.bankFlags.slice(80, 88)} />
-        <BankFlags startIndex={88} flags={h.bankFlags.slice(88, 96)} />
-        <BankFlags startIndex={96} flags={h.bankFlags.slice(96, 104)} />
-        <BankFlags startIndex={104} flags={h.bankFlags.slice(104, 112)} />
-      </ExpandableRow>
+        {/* --- One flag per bank, as many to a line as the width takes */}
+        <FactCells cellWidth={BANK_FLAG_CELL_WIDTH} labelWidth={BANK_FLAG_LABEL_WIDTH}>
+          {h.bankFlags.map((f, idx) => (
+            <FactFlag tone="state" key={idx} label={`#${toHexa2(idx)}:`} value={f} />
+          ))}
+        </FactCells>
+      </FactSection>
       {fi.palette?.length > 0 && (
-        <ExpandableRow
-          heading={t("panels.next.nex.palette")}
-          initialExpanded={cvs?.paletteExpanded ?? false}
-          onExpanded={exp =>
+        <FactSection
+          title={t("panels.next.nex.palette")}
+          expanded={cvs?.paletteExpanded ?? false}
+          onExpandedChange={exp =>
             change(vs => (vs.paletteExpanded = exp))
           }
         >
@@ -468,12 +448,12 @@ const NexFileViewerContents = ({
             cellSize={29}
             allowSelection={true}
           />
-        </ExpandableRow>
+        </FactSection>
       )}
       {fi.layer2LoadingScreen?.length > 0 && (
-        <ExpandableRow
-          heading={t("panels.next.nex.layer2Screen")}
-          headingAction={
+        <FactSection
+          title={t("panels.next.nex.layer2Screen")}
+          actions={
             <SmallIconButton
               iconName='square-arrow-out-up-right'
               fill='--color-command-icon'
@@ -491,8 +471,8 @@ const NexFileViewerContents = ({
               }}
             />
           }
-          initialExpanded={cvs?.layer2LoadingScreenExpanded ?? false}
-          onExpanded={exp =>
+          expanded={cvs?.layer2LoadingScreenExpanded ?? false}
+          onExpandedChange={exp =>
             change(vs => (vs.layer2LoadingScreenExpanded = exp))
           }
         >
@@ -501,13 +481,13 @@ const NexFileViewerContents = ({
             data={fi?.layer2LoadingScreen}
             palette={layer2Palette}
           />
-        </ExpandableRow>
+        </FactSection>
       )}
       {fi.ulaLoadingScreen?.length > 0 && (
-        <ExpandableRow
-          heading={t("panels.next.nex.ulaScreen")}
-          initialExpanded={cvs?.ulaLoadingScreenExpanded ?? false}
-          onExpanded={exp =>
+        <FactSection
+          title={t("panels.next.nex.ulaScreen")}
+          expanded={cvs?.ulaLoadingScreenExpanded ?? false}
+          onExpandedChange={exp =>
             change(vs => (vs.ulaLoadingScreenExpanded = exp))
           }
         >
@@ -522,13 +502,13 @@ const NexFileViewerContents = ({
               t("panels.next.dumpTitle.screen", { source: documentSource, screen: "ULA" })
             }
           />
-        </ExpandableRow>
+        </FactSection>
       )}
       {fi.loResLoadingScreen?.length > 0 && (
-        <ExpandableRow
-          heading={t("panels.next.nex.loResScreen")}
-          initialExpanded={cvs?.loResLoadingScreenExpanded ?? false}
-          onExpanded={exp =>
+        <FactSection
+          title={t("panels.next.nex.loResScreen")}
+          expanded={cvs?.loResLoadingScreenExpanded ?? false}
+          onExpandedChange={exp =>
             change(vs => (vs.loResLoadingScreenExpanded = exp))
           }
         >
@@ -543,13 +523,13 @@ const NexFileViewerContents = ({
               t("panels.next.dumpTitle.screen", { source: documentSource, screen: "LoRes" })
             }
           />
-        </ExpandableRow>
+        </FactSection>
       )}
       {fi.timexHiResLoadingScreen?.length > 0 && (
-        <ExpandableRow
-          heading={t("panels.next.nex.timexHiResScreen")}
-          initialExpanded={cvs?.timexHiResLoadingScreenExpanded ?? false}
-          onExpanded={exp =>
+        <FactSection
+          title={t("panels.next.nex.timexHiResScreen")}
+          expanded={cvs?.timexHiResLoadingScreenExpanded ?? false}
+          onExpandedChange={exp =>
             change(vs => (vs.timexHiResLoadingScreenExpanded = exp))
           }
         >
@@ -564,13 +544,13 @@ const NexFileViewerContents = ({
               t("panels.next.dumpTitle.screen", { source: documentSource, screen: "Timex HiRes" })
             }
           />
-        </ExpandableRow>
+        </FactSection>
       )}
       {fi.timexHiColLoadingScreen?.length > 0 && (
-        <ExpandableRow
-          heading={t("panels.next.nex.timexHiColScreen")}
-          initialExpanded={cvs?.timexHiColLoadingScreenExpanded ?? false}
-          onExpanded={exp =>
+        <FactSection
+          title={t("panels.next.nex.timexHiColScreen")}
+          expanded={cvs?.timexHiColLoadingScreenExpanded ?? false}
+          onExpandedChange={exp =>
             change(vs => (vs.timexHiColLoadingScreenExpanded = exp))
           }
         >
@@ -585,7 +565,7 @@ const NexFileViewerContents = ({
               t("panels.next.dumpTitle.screen", { source: documentSource, screen: "Timex Hicol" })
             }
           />
-        </ExpandableRow>
+        </FactSection>
       )}
       <NexBankBrowser
         items={bankItems}
@@ -669,28 +649,6 @@ const NexAnnotationPanel = ({
   return null;
 };
 
-type BankFlagsProps = {
-  startIndex: number;
-  flags: boolean[];
-};
-
-const BankFlags = ({ flags, startIndex }: BankFlagsProps) => {
-  return (
-    <Row>
-      {flags.map((f, idx) => (
-        <LabeledFlag
-          key={idx}
-          label={`#${toHexa2(idx + startIndex)}:`}
-          labelWidth="6ch" // 36px / 6.4
-          valueWidth="4ch" // 20px / 6.4
-          value={f}
-          iconFill="--color-state-value"
-        />
-      ))}
-    </Row>
-  );
-};
-
 type HeaderAttributesProps = {
   header: NexHeader;
 };
@@ -700,75 +658,22 @@ type HeaderAttributeGroupProps = {
   children: React.ReactNode;
 };
 
-const HeaderAttributeGroup = ({
-  title,
-  children
-}: HeaderAttributeGroupProps) => (
+/** A titled group of the header's facts; the groups sit side by side while they fit */
+const HeaderAttributeGroup = ({ title, children }: HeaderAttributeGroupProps) => (
   <section className={styles.headerAttributeGroup}>
     <div className={styles.headerAttributeGroupTitle}>{title}</div>
     {children}
   </section>
 );
 
-type HeaderTextProps = {
-  label: string;
-  value: string;
-  tooltip?: string;
-  valueWidth?: string;
-};
-
-const HeaderText = ({
-  label,
-  value,
-  tooltip,
-  valueWidth = HEADER_VALUE_WIDTH
-}: HeaderTextProps) => (
-  <Row xclass={styles.headerAttributeRow}>
-    <LabeledText
-      label={label}
-      labelWidth={HEADER_LABEL_WIDTH}
-      value={value}
-      valueWidth={valueWidth}
-      tooltip={tooltip}
-      valueClassName={styles.headerValue}
-    />
-  </Row>
-);
-
-/**
- * A loading-screen block flag.
- *
- * Two of these share a row, so unlike `HeaderFlag` it brings no row of its own — which is why the
- * six of them were written out longhand, and why they were the ones that missed the panel's value
- * colour when `HeaderFlag` gained it.
+/*
+ * The header's values are what the loader will set the machine to (PC, SP, the entry bank, the
+ * border...), so they take the state colour, as the register panels' values do.
  */
-const ScreenBlockFlag = ({ label, value }: { label: string; value: boolean }) => (
-  <LabeledFlag
-    label={label}
-    labelWidth={HEADER_FLAG_NARROW_LABEL_WIDTH}
-    valueWidth={HEADER_FLAG_VALUE_WIDTH}
-    value={value}
-    center={true}
-    iconFill="--color-state-value"
-  />
-);
-
-type HeaderFlagProps = {
-  label: string;
-  value: boolean;
-};
-
-const HeaderFlag = ({ label, value }: HeaderFlagProps) => (
-  <Row xclass={styles.headerAttributeRow}>
-    <LabeledFlag
-      label={label}
-      labelWidth={HEADER_FLAG_LABEL_WIDTH}
-      value={value}
-      valueWidth={HEADER_FLAG_VALUE_WIDTH}
-      iconFill="--color-state-value"
-      center={false}
-    />
-  </Row>
+const HeaderText = ({ label, value, tooltip }: { label: string; value: string; tooltip?: string }) => (
+  <Fact label={label} tone="state" title={tooltip}>
+    {value}
+  </Fact>
 );
 
 const HeaderAttributes = ({ header: h }: HeaderAttributesProps) => {
@@ -776,80 +681,67 @@ const HeaderAttributes = ({ header: h }: HeaderAttributesProps) => {
   return (
     <div className={styles.headerAttributes}>
       <HeaderAttributeGroup title={t("panels.next.nex.group.file")}>
-        <HeaderText
-          label={t("panels.next.nex.attr.version")}
-          value={`V${h.versionMajor}.${h.versionMinor}`}
-          tooltip={t("panels.next.nex.attr.versionTooltip")}
-        />
-        <HeaderText
-          label={t("panels.next.nex.attr.requiredRam")}
-          value={h.fullRamRequired ? "1792K" : "768K"}
-        />
-        <HeaderText
-          label={t("panels.next.nex.attr.banksToLoad")}
-          value={h.numOf16KBanks.toString(10)}
-        />
-        <HeaderText label={t("panels.next.nex.attr.extraFiles")} value={h.numOfExtraBytes.toString(10)} />
-        <HeaderText
-          label={t("panels.next.nex.attr.requiredCore")}
-          value={`V${h.requiredCoreVersionMajor}.${h.requiredCoreVersionMinor}.${h.requiredCoreVersionSubMinor}`}
-        />
+        <Facts labelWidth={HEADER_LABEL_WIDTH}>
+          <HeaderText
+            label={t("panels.next.nex.attr.version")}
+            value={`V${h.versionMajor}.${h.versionMinor}`}
+            tooltip={t("panels.next.nex.attr.versionTooltip")}
+          />
+          <HeaderText label={t("panels.next.nex.attr.requiredRam")} value={h.fullRamRequired ? "1792K" : "768K"} />
+          <HeaderText label={t("panels.next.nex.attr.banksToLoad")} value={h.numOf16KBanks.toString(10)} />
+          <HeaderText label={t("panels.next.nex.attr.extraFiles")} value={h.numOfExtraBytes.toString(10)} />
+          <HeaderText
+            label={t("panels.next.nex.attr.requiredCore")}
+            value={`V${h.requiredCoreVersionMajor}.${h.requiredCoreVersionMinor}.${h.requiredCoreVersionSubMinor}`}
+          />
+        </Facts>
       </HeaderAttributeGroup>
 
       <HeaderAttributeGroup title={t("panels.next.nex.group.entry")}>
-        <HeaderText
-          label='PC:'
-          value={`$${toHexa4(h.programCounter)} (${h.programCounter.toString(10)})`}
-          valueWidth={HEADER_WIDE_VALUE_WIDTH}
-        />
-        <HeaderText
-          label='SP:'
-          value={`$${toHexa4(h.stackPointer)} (${h.stackPointer.toString(10)})`}
-          valueWidth={HEADER_WIDE_VALUE_WIDTH}
-        />
-        <HeaderText
-          label={t("panels.next.nex.attr.entryBank")}
-          value={`$${toHexa2(h.entryBank)} (${h.entryBank.toString(10)})`}
-        />
-        <HeaderText
-          label={t("panels.next.nex.attr.fileHandleAddress")}
-          value={`$${toHexa4(h.fileHandleAddress)} (${h.fileHandleAddress.toString(10)})`}
-          valueWidth={HEADER_WIDE_VALUE_WIDTH}
-        />
-        <HeaderFlag label={t("panels.next.nex.attr.preserveNextRegs")} value={!!h.preserveNextRegisters} />
+        <Facts labelWidth={HEADER_LABEL_WIDTH}>
+          <HeaderText label="PC:" value={`$${toHexa4(h.programCounter)} (${h.programCounter.toString(10)})`} />
+          <HeaderText label="SP:" value={`$${toHexa4(h.stackPointer)} (${h.stackPointer.toString(10)})`} />
+          <HeaderText
+            label={t("panels.next.nex.attr.entryBank")}
+            value={`$${toHexa2(h.entryBank)} (${h.entryBank.toString(10)})`}
+          />
+          <HeaderText
+            label={t("panels.next.nex.attr.fileHandleAddress")}
+            value={`$${toHexa4(h.fileHandleAddress)} (${h.fileHandleAddress.toString(10)})`}
+          />
+          <FactFlag tone="state" label={t("panels.next.nex.attr.preserveNextRegs")} value={!!h.preserveNextRegisters} />
+        </Facts>
       </HeaderAttributeGroup>
 
       <HeaderAttributeGroup title={t("panels.next.nex.group.loading")}>
-        <HeaderText label={t("panels.next.nex.attr.borderColor")} value={h.borderColor.toString(10)} />
-        <HeaderFlag label={t("panels.next.nex.attr.layer2LoadingBar")} value={!!h.layer2LoadingBar} />
-        <HeaderText
-          label={t("panels.next.nex.attr.barColor")}
-          value={`$${toHexa2(h.loadingBarColorFor)} (${h.loadingBarColorFor.toString(10)})`}
-        />
-        <HeaderText
-          label={t("panels.next.nex.attr.delayPerBank")}
-          value={h.loadingDelayPerBank.toString(10)}
-        />
-        <HeaderText label={t("panels.next.nex.attr.startDelay")} value={h.startDelay.toString(10)} />
-        <HeaderText
-          label={t("panels.next.nex.attr.timexHiResColor")}
-          value={`$${toHexa2(h.timexHiresModeColor)} (${h.timexHiresModeColor.toString(10)})`}
-        />
+        <Facts labelWidth={HEADER_LABEL_WIDTH}>
+          <HeaderText label={t("panels.next.nex.attr.borderColor")} value={h.borderColor.toString(10)} />
+          <FactFlag tone="state" label={t("panels.next.nex.attr.layer2LoadingBar")} value={!!h.layer2LoadingBar} />
+          <HeaderText
+            label={t("panels.next.nex.attr.barColor")}
+            value={`$${toHexa2(h.loadingBarColorFor)} (${h.loadingBarColorFor.toString(10)})`}
+          />
+          <HeaderText label={t("panels.next.nex.attr.delayPerBank")} value={h.loadingDelayPerBank.toString(10)} />
+          <HeaderText label={t("panels.next.nex.attr.startDelay")} value={h.startDelay.toString(10)} />
+          <HeaderText
+            label={t("panels.next.nex.attr.timexHiResColor")}
+            value={`$${toHexa2(h.timexHiresModeColor)} (${h.timexHiresModeColor.toString(10)})`}
+          />
+        </Facts>
       </HeaderAttributeGroup>
 
       <HeaderAttributeGroup title={t("panels.next.nex.group.screenBlocks")}>
-        <Row xclass={`${styles.headerAttributeRow} ${styles.headerFlagRow}`}>
-          <ScreenBlockFlag label='Layer2:' value={!!(h.screenBlockFlags & ScreenBlockFlags.Layer2)} />
-          <ScreenBlockFlag label='ULA:' value={!!(h.screenBlockFlags & ScreenBlockFlags.Ula)} />
-        </Row>
-        <Row xclass={`${styles.headerAttributeRow} ${styles.headerFlagRow}`}>
-          <ScreenBlockFlag label='LoRes:' value={!!(h.screenBlockFlags & ScreenBlockFlags.LoRes)} />
-          <ScreenBlockFlag label='HiRes:' value={!!(h.screenBlockFlags & ScreenBlockFlags.HiRes)} />
-        </Row>
-        <Row xclass={`${styles.headerAttributeRow} ${styles.headerFlagRow}`}>
-          <ScreenBlockFlag label='HiColor:' value={!!(h.screenBlockFlags & ScreenBlockFlags.HiColor)} />
-          <ScreenBlockFlag label={t("panels.next.nex.attr.noPalette")} value={!!(h.screenBlockFlags & ScreenBlockFlags.NoPalette)} />
-        </Row>
+        <FactCells cellWidth={SCREEN_FLAG_CELL_WIDTH} labelWidth={SCREEN_FLAG_LABEL_WIDTH}>
+          <FactFlag tone="state" label="Layer2:" value={!!(h.screenBlockFlags & ScreenBlockFlags.Layer2)} />
+          <FactFlag tone="state" label="ULA:" value={!!(h.screenBlockFlags & ScreenBlockFlags.Ula)} />
+          <FactFlag tone="state" label="LoRes:" value={!!(h.screenBlockFlags & ScreenBlockFlags.LoRes)} />
+          <FactFlag tone="state" label="HiRes:" value={!!(h.screenBlockFlags & ScreenBlockFlags.HiRes)} />
+          <FactFlag tone="state" label="HiColor:" value={!!(h.screenBlockFlags & ScreenBlockFlags.HiColor)} />
+          <FactFlag tone="state"
+            label={t("panels.next.nex.attr.noPalette")}
+            value={!!(h.screenBlockFlags & ScreenBlockFlags.NoPalette)}
+          />
+        </FactCells>
       </HeaderAttributeGroup>
     </div>
   );

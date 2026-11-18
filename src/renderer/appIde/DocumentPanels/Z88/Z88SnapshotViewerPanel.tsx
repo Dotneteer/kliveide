@@ -236,8 +236,8 @@ const CpuSection = ({ ctx, info }: SectionProps) => {
         <Fact label="I:" tone="state">{`$${toHexa2(cpu.i)}`}</Fact>
         <Fact label="R:" tone="state">{`$${toHexa2(cpu.r)}`}</Fact>
         <Fact label="IM:" tone="state">{`${cpu.im}`}</Fact>
-        <FactFlag label="IFF1:" value={cpu.iff1} />
-        <FactFlag label="IFF2:" value={cpu.iff2} />
+        <FactFlag label="IFF1:" tone="state" value={cpu.iff1} />
+        <FactFlag label="IFF2:" tone="state" value={cpu.iff2} />
       </FactCells>
     </FactSection>
   );

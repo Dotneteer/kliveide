@@ -17,4 +17,7 @@ The viewers of state files, debug recordings, snapshots and RZX recordings show 
 aligned, collapsible sections, with the screen framed beside the summary.
 The Graphics Finder, a NEX bank's sprites and a tape block's List at take the same Go to box, which
 marks text it cannot read; the Graphics Finder scrolls with the app's overlay scrollbar, and the
-µPD765 log colours its port and byte as the other state panels do.
+µPD765 log colours its port and byte as the other state panels do. The NEX, `TBBLUE.FW` and
+`TBBLUE.TBU` viewers and the palette editor's help use the same sections as the other file viewers,
+and the byte previews of the Disk Explorer, the Hard Disk Explorer and the File Manager draw their
+rows, cursor and selection as the other hex dumps do.

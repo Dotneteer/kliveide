@@ -1415,9 +1415,9 @@ mistake recurs anyway, which is why it is here too.
 ## A File Viewer's Facts
 
 A viewer that describes a file (a `.kls` state, a `.klr` debug recording, a `.sna`/`.z80`/`.szx`
-snapshot, an `.rzx` recording, a `.z88` snapshot) is built from `controls/data/FileFacts`, not from
-the old `ExpandableRow` / `LabeledText` / `LabeledFlag` rows (which only the Next file viewers still
-use). The rules the kit encodes:
+snapshot, an `.rzx` recording, a `.z88` snapshot, a `.nex`, `TBBLUE.FW` and `TBBLUE.TBU`, the palette
+editor's help) is built from `controls/data/FileFacts`. The old `ExpandableRow` / `LabeledText` /
+`LabeledFlag` rows are deleted. The rules the kit encodes:
 
 - **A section is a `SectionHeader` with a chevron**; a count goes after the title in the quiet
   `meta` slot, and commands on what the section names (memory or disassembly at PC) sit in
@@ -1429,9 +1429,15 @@ use). The rules the kit encodes:
   same column; the cells wrap to the width. Two blocks in one section (Facts, then cells) get a
   gap between them.
 - **Colour follows the data hierarchy**: a file's facts are neutral; a machine's *state* (registers,
-  ports, paging, the PC it opens at) takes `tone="state"`, `--color-state-value`, as the register
-  panels do. Yes/no is the Next Registers' dot (`FactFlag`), centred on the label's line, not on its
-  baseline. Errors and warnings are `FactNote` in the status tones, never a coloured value.
+  ports, paging, the PC it opens at, what a NEX header sets the machine to) takes `tone="state"`,
+  `--color-state-value`, as the register panels do. Yes/no is the Next Registers' dot (`FactFlag`),
+  centred on the label's line, not on its baseline: a file's flag (loadable, signed) dims the hollow
+  dot, a machine's (`tone="state"`: IFF1, a NEX header's flags) paints both dots in the state colour
+  and lets the shape tell yes from no. A *check* the file passes or fails (a checksum, a core that
+  fits its slot, a module inside the file) colours its value `ok` / `warning` / `error`; problems
+  about the file as a whole are `FactNote`s in the status tones.
+- **Many flags are cells, not hand-sliced rows**: the NEX header's 112 bank flags are one
+  `FactCells` that wraps to the width, not fourteen rows of eight.
 - **The picture is framed beside the summary** (`FactsWithPicture`) and wraps under it when narrow.
 - **A command inside a label stays on the label's line**: a `dt` holding a button is an inline flex
   row (the RZX segment's Play), otherwise the button breaks the label in two.
@@ -2770,7 +2776,12 @@ The Memory and Disassembly documents share one frame (`features/memoryMap/`,
   bank dumps take the same controls (`FrameControls`), the same per-row marks (`byteMarks.ts`), the
   same cursor, selection and Find (`useByteView`) and the same Value and Selection sections
   (`ByteSections.tsx`, a read-only `ByteInspector`); a dump with its own toolbar is how the old
-  8x2 layout and `AddressInput` outlived the Memory view's redesign. **A box that takes a typed
+  8x2 layout and `AddressInput` outlived the Memory view's redesign. **A byte preview inside another
+  view** (`StaticMemoryView`: a disk sector, a file on a disk, in the File Manager or on a hard disk)
+  draws the same rows - one `MemoryDumpSection` per 16-byte row in a `DataRow`, `useByteView`'s
+  cursor and selection - with no toolbar beyond the frame's `Check` for "Show all". Its cursor shows
+  only once the preview has had focus: a box on byte 0 of every sector is noise in its host. Its
+  offsets take four digits while what it shows fits in 64K, whatever the file's size. **A box that takes a typed
   address is `GoToBox`** everywhere (the Graphics Finder, a NEX bank's sprites, a tape block's List
   at, with `label` for a name other than Go to), parsed by `parseGoToNumber` and refusing with
   `GO_TO_ERROR_KEYS.number`; `AddressInput` is deleted. A document whose body is

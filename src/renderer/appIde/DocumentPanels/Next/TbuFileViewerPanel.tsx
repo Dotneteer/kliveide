@@ -8,10 +8,7 @@ import type { DocumentProps } from "@renderer/features/documents/DocumentsContai
 import type { GenericFileContext } from "../helpers/GenericFilePanel";
 
 import { GenericFilePanel } from "../helpers/GenericFilePanel";
-import { ExpandableRow } from "@renderer/controls/layout/ExpandableRow";
-import { LabeledText } from "@renderer/controls/layout/LabeledText";
-import { Row } from "@renderer/controls/layout/Row";
-import { Text } from "@renderer/controls/layout/Text";
+import { Fact, FactNote, Facts, FactSection } from "@renderer/controls/data/FileFacts";
 import { SmallIconButton } from "@renderer/controls/IconButton";
 import { DataLabel, DataRow, DataSecondary, DataValue, formatHex } from "@renderer/controls/data";
 import { disassemblyText } from "@renderer/controls/data/DisassemblyText";
@@ -194,9 +191,9 @@ const FileSection = ({ ctx, info, source }: { ctx: ViewContext; info: TbuFileInf
   const warnings = file.problems.filter((p) => p.severity === "warning").length;
   const legacy = file.legacy;
   return (
-    <ExpandableRow
-      heading={t("panels.next.tbu.heading.file")}
-      headingAction={
+    <FactSection
+      title={t("panels.next.tbu.heading.file")}
+      actions={
         <>
           <SmallIconButton
             iconName="binary"
@@ -233,74 +230,35 @@ const FileSection = ({ ctx, info, source }: { ctx: ViewContext; info: TbuFileInf
                 : t("panels.next.tbu.verdict.ok")}
         </span>
       }
-      initialExpanded={ctx.viewState?.fileExpanded ?? true}
-      onExpanded={(exp) => ctx.changeViewState((vs) => (vs.fileExpanded = exp))}
+      expanded={ctx.viewState?.fileExpanded ?? true}
+      onExpandedChange={(exp) => ctx.changeViewState((vs) => (vs.fileExpanded = exp))}
     >
-      <Row>
-        <LabeledText
-          label={t("panels.next.tbu.label.format")}
-          labelWidth={LABEL_WIDTH}
-          value={t(legacy ? "panels.next.tbu.format.legacy" : "panels.next.tbu.format.multi")}
-        />
-      </Row>
-      <Row>
-        <LabeledText label={t("panels.next.tbu.label.fileSize")} labelWidth={LABEL_WIDTH} value={t("panels.next.tbu.bytes", { count: file.fileSize })} />
-      </Row>
+      <Facts labelWidth={LABEL_WIDTH}>
+      <Fact label={t("panels.next.tbu.label.format")}>{t(legacy ? "panels.next.tbu.format.legacy" : "panels.next.tbu.format.multi")}</Fact>
+      <Fact label={t("panels.next.tbu.label.fileSize")}>{t("panels.next.tbu.bytes", { count: file.fileSize })}</Fact>
       {!legacy && (
         <>
-          <Row>
-            <LabeledText label={t("panels.next.tbu.label.machine")} labelWidth={LABEL_WIDTH} value={file.machine ?? ""} />
-          </Row>
-          <Row>
-            <LabeledText
-              label={t("panels.next.tbu.label.index")}
-              labelWidth={LABEL_WIDTH}
-              value={t("panels.next.tbu.indexUse", { count: file.records.length, capacity: TBU_INDEX_CAPACITY })}
-            />
-          </Row>
+          <Fact label={t("panels.next.tbu.label.machine")}>{file.machine ?? ""}</Fact>
+          <Fact label={t("panels.next.tbu.label.index")}>{t("panels.next.tbu.indexUse", { count: file.records.length, capacity: TBU_INDEX_CAPACITY })}</Fact>
         </>
       )}
       {legacy && (
         <>
-          <Row>
-            <LabeledText
-              label={t("panels.next.tbu.label.hardware")}
-              labelWidth={LABEL_WIDTH}
-              value={`${legacy.hardwareId} · ${legacy.hardwareName}`}
-            />
-          </Row>
-          <Row>
-            <LabeledText label={t("panels.next.tbu.label.core")} labelWidth={LABEL_WIDTH} value={legacy.version} />
-          </Row>
-          <Row>
-            <LabeledText
-              label={t("panels.next.tbu.label.imageSize")}
-              labelWidth={LABEL_WIDTH}
-              value={t("panels.next.tbu.legacySize", { stated: num(legacy.statedSize), actual: num(legacy.actualSize) })}
-            />
-          </Row>
-          <Row>
-            <LabeledText
-              label={t("panels.next.tbu.label.checksum")}
-              labelWidth={LABEL_WIDTH}
-              value={t(legacy.storedXor === legacy.computedXor ? "panels.next.tbu.checksumOk" : "panels.next.tbu.checksumBad", {
+          <Fact label={t("panels.next.tbu.label.hardware")}>{`${legacy.hardwareId} · ${legacy.hardwareName}`}</Fact>
+          <Fact label={t("panels.next.tbu.label.core")}>{legacy.version}</Fact>
+          <Fact label={t("panels.next.tbu.label.imageSize")}>{t("panels.next.tbu.legacySize", { stated: num(legacy.statedSize), actual: num(legacy.actualSize) })}</Fact>
+          <Fact label={t("panels.next.tbu.label.checksum")} tone={legacy.storedXor === legacy.computedXor ? "ok" : "error"}>{t(legacy.storedXor === legacy.computedXor ? "panels.next.tbu.checksumOk" : "panels.next.tbu.checksumBad", {
                 stored: formatHex(legacy.storedXor, 2),
                 computed: formatHex(legacy.computedXor, 2)
-              })}
-              valueClassName={legacy.storedXor === legacy.computedXor ? styles.ok : styles.error}
-            />
-          </Row>
-          <Row>
-            <LabeledText label={t("panels.next.tbu.label.fpga")} labelWidth={LABEL_WIDTH} value={fpgaText(t, legacy.bitstream)} />
-          </Row>
+              })}</Fact>
+          <Fact label={t("panels.next.tbu.label.fpga")}>{fpgaText(t, legacy.bitstream)}</Fact>
         </>
       )}
+      </Facts>
       {file.problems.map((p, i) => (
-        <Row key={i}>
-          <Text text={problemText(t, p)} variant={p.severity === "error" ? "error" : p.severity === "warning" ? "warning" : undefined} />
-        </Row>
+        <FactNote key={i} tone={p.severity === "error" ? "error" : p.severity === "warning" ? "warning" : "info"}>{problemText(t, p)}</FactNote>
       ))}
-    </ExpandableRow>
+    </FactSection>
   );
 };
 
@@ -340,11 +298,11 @@ const CoresSection = ({ ctx, file, selected }: { ctx: ViewContext; file: TbuFile
   const select = (n: number) => ctx.changeViewState((vs) => (vs.selected = n));
   const selectedBlock = selected ? blocks.find((b) => b.records.includes(selected))?.index : undefined;
   return (
-    <ExpandableRow
-      heading={t("panels.next.tbu.heading.cores")}
+    <FactSection
+      title={t("panels.next.tbu.heading.cores")}
       meta={t("panels.next.tbu.coreCount", { count: file.records.length })}
-      initialExpanded={ctx.viewState?.coresExpanded ?? true}
-      onExpanded={(exp) => ctx.changeViewState((vs) => (vs.coresExpanded = exp))}
+      expanded={ctx.viewState?.coresExpanded ?? true}
+      onExpandedChange={(exp) => ctx.changeViewState((vs) => (vs.coresExpanded = exp))}
     >
       {file.records.length > 0 && (
         <div className={styles.map}>
@@ -408,7 +366,7 @@ const CoresSection = ({ ctx, file, selected }: { ctx: ViewContext; file: TbuFile
           );
         })}
       </div>
-    </ExpandableRow>
+    </FactSection>
   );
 };
 
@@ -427,9 +385,9 @@ const DetailsSection = ({ ctx, info, record: r, source }: { ctx: ViewContext; in
     ? r.sharedWith.find((n) => info.file.records[n - 1]?.trailer?.matchesRecord)
     : undefined;
   return (
-    <ExpandableRow
-      heading={t("panels.next.tbu.heading.core", { number: r.number, name: r.pullName })}
-      headingAction={
+    <FactSection
+      title={t("panels.next.tbu.heading.core", { number: r.number, name: r.pullName })}
+      actions={
         inFile ? (
           <>
             <SmallIconButton
@@ -447,85 +405,37 @@ const DetailsSection = ({ ctx, info, record: r, source }: { ctx: ViewContext; in
           </>
         ) : undefined
       }
-      initialExpanded={ctx.viewState?.detailsExpanded ?? true}
-      onExpanded={(exp) => ctx.changeViewState((vs) => (vs.detailsExpanded = exp))}
+      expanded={ctx.viewState?.detailsExpanded ?? true}
+      onExpandedChange={(exp) => ctx.changeViewState((vs) => (vs.detailsExpanded = exp))}
     >
-      <Row>
-        <LabeledText label={t("panels.next.tbu.label.slot")} labelWidth={LABEL_WIDTH} value={slotText(t, r)} />
-      </Row>
-      <Row>
-        <LabeledText
-          label={t("panels.next.tbu.label.board")}
-          labelWidth={LABEL_WIDTH}
-          value={t("panels.next.tbu.boardByte", { byte: formatHex(r.boardByte, 2), board: boardText(t, r) })}
-          valueTooltip={t("panels.next.tbu.boardByteTooltip")}
-        />
-      </Row>
-      <Row>
-        <LabeledText label={t("panels.next.tbu.label.core")} labelWidth={LABEL_WIDTH} value={r.version} />
-      </Row>
-      <Row>
-        <LabeledText
-          label={t("panels.next.tbu.label.image")}
-          labelWidth={LABEL_WIDTH}
-          value={t("panels.next.tbu.imageRange", {
+      <Facts labelWidth={LABEL_WIDTH}>
+      <Fact label={t("panels.next.tbu.label.slot")}>{slotText(t, r)}</Fact>
+      <Fact label={t("panels.next.tbu.label.board")} title={t("panels.next.tbu.boardByteTooltip")}>{t("panels.next.tbu.boardByte", { byte: formatHex(r.boardByte, 2), board: boardText(t, r) })}</Fact>
+      <Fact label={t("panels.next.tbu.label.core")}>{r.version}</Fact>
+      <Fact label={t("panels.next.tbu.label.image")}>{t("panels.next.tbu.imageRange", {
             from: formatHex(r.fileOffset, 6),
             to: formatHex(r.fileOffset + r.byteLength - 1, 6),
             sectors: num(r.sectorLength)
-          })}
-        />
-      </Row>
-      <Row>
-        <LabeledText
-          label={t("panels.next.tbu.label.checksum")}
-          labelWidth={LABEL_WIDTH}
-          value={
+          })}</Fact>
+      <Fact label={t("panels.next.tbu.label.checksum")} tone={!inFile || r.computedChecksum !== r.storedChecksum ? "error" : "ok"}>{
             !inFile
               ? t("panels.next.tbu.checksumMissing", { stored: formatHex(r.storedChecksum, 4) })
               : t(r.computedChecksum === r.storedChecksum ? "panels.next.tbu.checksumOk" : "panels.next.tbu.checksumBad", {
                   stored: formatHex(r.storedChecksum, 4),
                   computed: formatHex(r.computedChecksum!, 4)
                 })
-          }
-          valueClassName={!inFile || r.computedChecksum !== r.storedChecksum ? styles.error : styles.ok}
-        />
-      </Row>
+          }</Fact>
       {r.sharedWith.length > 0 && (
-        <Row>
-          <LabeledText
-            label={t("panels.next.tbu.label.shared")}
-            labelWidth={LABEL_WIDTH}
-            value={t("panels.next.tbu.sharedWith", { records: r.sharedWith.join(", ") })}
-          />
-        </Row>
+        <Fact label={t("panels.next.tbu.label.shared")}>{t("panels.next.tbu.sharedWith", { records: r.sharedWith.join(", ") })}</Fact>
       )}
-      <Row>
-        <LabeledText label={t("panels.next.tbu.label.fpga")} labelWidth={LABEL_WIDTH} value={fpgaText(t, b)} />
-      </Row>
+      <Fact label={t("panels.next.tbu.label.fpga")}>{fpgaText(t, b)}</Fact>
       {b && (
-        <Row>
-          <LabeledText
-            label={t("panels.next.tbu.label.bitstream")}
-            labelWidth={LABEL_WIDTH}
-            value={t("panels.next.tbu.bitstreamSize", { data: num(b.dataLength), padding: num(b.paddingLength) })}
-          />
-        </Row>
+        <Fact label={t("panels.next.tbu.label.bitstream")}>{t("panels.next.tbu.bitstreamSize", { data: num(b.dataLength), padding: num(b.paddingLength) })}</Fact>
       )}
       {r.slotSize !== undefined && (
-        <Row>
-          <LabeledText
-            label={t("panels.next.tbu.label.slotFit")}
-            labelWidth={LABEL_WIDTH}
-            value={t("panels.next.tbu.slotFit", { size: kb(r.byteLength), slot: kb(r.slotSize) })}
-            valueClassName={r.byteLength > r.slotSize ? styles.error : styles.ok}
-          />
-        </Row>
+        <Fact label={t("panels.next.tbu.label.slotFit")} tone={r.byteLength > r.slotSize ? "error" : "ok"}>{t("panels.next.tbu.slotFit", { size: kb(r.byteLength), slot: kb(r.slotSize) })}</Fact>
       )}
-      <Row>
-        <LabeledText
-          label={t("panels.next.tbu.label.trailer")}
-          labelWidth={LABEL_WIDTH}
-          value={
+      <Fact label={t("panels.next.tbu.label.trailer")} tone={trailer && !trailer.matchesRecord && !trailerPeer ? "warning" : "neutral"}>{
             !trailer
               ? t("panels.next.tbu.trailer.none")
               : trailer.matchesRecord
@@ -533,11 +443,9 @@ const DetailsSection = ({ ctx, info, record: r, source }: { ctx: ViewContext; in
                 : trailerPeer
                   ? t("panels.next.tbu.trailer.peer", { text: trailer.description, record: trailerPeer })
                   : t("panels.next.tbu.trailer.differs", { text: trailer.description })
-          }
-          valueClassName={trailer && !trailer.matchesRecord && !trailerPeer ? styles.warning : undefined}
-        />
-      </Row>
-    </ExpandableRow>
+          }</Fact>
+      </Facts>
+    </FactSection>
   );
 };
 
@@ -556,15 +464,15 @@ const BitstreamSection = ({ ctx, info, start, end, bitstream }: BitstreamProps) 
     [info.data, start, end, family]
   );
   return (
-    <ExpandableRow
-      heading={t("panels.next.tbu.heading.bitstream")}
+    <FactSection
+      title={t("panels.next.tbu.heading.bitstream")}
       meta={t("panels.next.tbu.bitstreamMeta", {
         family: family === "spartan6" ? "Spartan-6" : "7-series",
         count: decoded.packets.length,
         frame: num(decoded.frameDataBytes)
       })}
-      initialExpanded={expanded}
-      onExpanded={(exp) => ctx.changeViewState((vs) => (vs.bitstreamExpanded = exp))}
+      expanded={expanded}
+      onExpandedChange={(exp) => ctx.changeViewState((vs) => (vs.bitstreamExpanded = exp))}
     >
       <div className={styles.listing} data-testid="tbu-bitstream">
         {decoded.syncOffset !== undefined && (
@@ -574,12 +482,10 @@ const BitstreamSection = ({ ctx, info, start, end, bitstream }: BitstreamProps) 
           <PacketRow key={i} p={p} decoded={decoded} t={t} />
         ))}
         {STOP_KEYS[decoded.stop] && (
-          <Row>
-            <Text text={t(STOP_KEYS[decoded.stop]!, { offset: formatHex(decoded.end, 6) })} variant="warning" />
-          </Row>
+          <FactNote tone="warning">{t(STOP_KEYS[decoded.stop]!, { offset: formatHex(decoded.end, 6) })}</FactNote>
         )}
       </div>
-    </ExpandableRow>
+    </FactSection>
   );
 };
 
