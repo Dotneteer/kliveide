@@ -1,7 +1,6 @@
 import styles from "./CommandResult.module.scss";
 import { Label } from "@renderer/controls/layout/Label";
 import { SmallIconButton } from "@controls/IconButton";
-import { ToolbarSeparator } from "@controls/ToolbarSeparator";
 import { useDispatch } from "@renderer/core/RendererProvider";
 import { setIdeStatusMessageAction } from "@state/actions";
 import { useRef } from "react";
@@ -9,7 +8,7 @@ import { CommandResultData } from "../../abstractions/CommandResultData";
 import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 import { ConsoleOutput } from "./helpers/ConsoleOutput";
-import { DataPanel, EmptyState, PanelHeader } from "@renderer/controls/data";
+import { DataPanel, EmptyState, PanelHeader, PanelHeaderGroup } from "@renderer/controls/data";
 import { useT } from "@common/i18n/useT";
 
 type CommandResultViewState = {
@@ -60,23 +59,26 @@ const CommandResultPanel = ({ document, contents }: DocumentProps) => {
   return (
     <DataPanel xclass={styles.panel}>
       <PanelHeader>
-        <SmallIconButton
-          iconName='copy'
-          title={t("panels.doc.common.copyToClipboard")}
-          clicked={async () => {
-            // --- No `replaceAll("\xa0", " ")` any more: the buffer stores real spaces, so this
-            // --- panel no longer has to undo a substitution the other two copy buttons never did.
-            navigator.clipboard.writeText(buffer.getBufferText());
-            dispatch(
-              setIdeStatusMessageAction(
-                t("panels.doc.commandResult.copied"),
-                true
-              )
-            );
-          }}
-        />
-        <ToolbarSeparator small={true} />
-        <Label text={title} />
+        <PanelHeaderGroup>
+          <SmallIconButton
+            iconName='copy'
+            title={t("panels.doc.common.copyToClipboard")}
+            clicked={async () => {
+              // --- No `replaceAll("\xa0", " ")` any more: the buffer stores real spaces, so this
+              // --- panel no longer has to undo a substitution the other two copy buttons never did.
+              navigator.clipboard.writeText(buffer.getBufferText());
+              dispatch(
+                setIdeStatusMessageAction(
+                  t("panels.doc.commandResult.copied"),
+                  true
+                )
+              );
+            }}
+          />
+        </PanelHeaderGroup>
+        <PanelHeaderGroup>
+          <Label text={title} />
+        </PanelHeaderGroup>
       </PanelHeader>
       <ConsoleOutput
         buffer={buffer}

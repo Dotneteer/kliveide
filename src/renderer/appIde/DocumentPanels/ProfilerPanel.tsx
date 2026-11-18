@@ -14,8 +14,7 @@ import { PROFILE_EXPORT_FOLDER, PROFILE_FILE_FILTERS, profileFormatOfName } from
 import type { AddressRow, CallNode, FlatRow } from "@common/profile/profileRollup";
 import { SmallIconButton } from "@controls/IconButton";
 import { LabeledSwitch } from "@controls/LabeledSwitch";
-import { ToolbarSeparator } from "@controls/ToolbarSeparator";
-import { EmptyState, PanelHeader } from "@renderer/controls/data";
+import { EmptyState, PanelHeader, PanelHeaderGroup } from "@renderer/controls/data";
 import { FullPanel } from "@renderer/controls/layout/Panels";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { useEmuApi } from "@renderer/core/EmuApi";
@@ -165,59 +164,64 @@ const ProfilerPanel = (_props: DocumentProps) => {
 
   const header = (
     <PanelHeader>
-      <span className={styles.tabs} role="tablist" aria-label={t("panels.doc.profiler.tabsLabel")}>
-        {TABS.map((tabDef) => (
-          <button
-            key={tabDef.id}
-            type="button"
-            role="tab"
-            className={styles.tab}
-            aria-selected={tab === tabDef.id}
-            onClick={() => setTab(tabDef.id)}
-          >
-            {t(tabDef.labelKey)}
-          </button>
-        ))}
-      </span>
-      <ToolbarSeparator small={true} />
-      <SmallIconButton
-        iconName="play"
-        title={t(withCalls ? "panels.doc.profiler.startWithCalls" : "panels.doc.profiler.start")}
-        enable={supported && !busy && !running}
-        clicked={() => run(`profile start${withCalls ? " -calls" : ""}`)}
-      />
-      <SmallIconButton
-        iconName="pause"
-        title={t("panels.doc.profiler.stop")}
-        enable={supported && !busy && running}
-        clicked={() => run("profile stop")}
-      />
-      <SmallIconButton
-        iconName="clear-all"
-        title={t("panels.doc.profiler.clear")}
-        enable={supported && !busy && !!status?.timeTotal}
-        clicked={() => run("profile reset")}
-      />
-      <SmallIconButton
-        iconName="save"
-        title={t("panels.doc.profiler.export")}
-        enable={supported && !busy && !!status?.timeTotal}
-        clicked={() => void exportProfile()}
-      />
-      <ToolbarSeparator small={true} />
-      <LabeledSwitch
-        value={withCalls}
-        label={t("panels.doc.profiler.callGraph")}
-        title={t("panels.doc.profiler.callGraphTitle")}
-        clicked={setWithCalls}
-      />
-      <ToolbarSeparator small={true} />
-      <LabeledSwitch
-        value={hideWaiting}
-        label={t("panels.doc.profiler.hideWaiting")}
-        title={t("panels.doc.profiler.hideWaitingTitle")}
-        clicked={setHideWaiting}
-      />
+      <PanelHeaderGroup>
+        <span className={styles.tabs} role="tablist" aria-label={t("panels.doc.profiler.tabsLabel")}>
+          {TABS.map((tabDef) => (
+            <button
+              key={tabDef.id}
+              type="button"
+              role="tab"
+              className={styles.tab}
+              aria-selected={tab === tabDef.id}
+              onClick={() => setTab(tabDef.id)}
+            >
+              {t(tabDef.labelKey)}
+            </button>
+          ))}
+        </span>
+      </PanelHeaderGroup>
+      <PanelHeaderGroup>
+        <SmallIconButton
+          iconName="play"
+          title={t(withCalls ? "panels.doc.profiler.startWithCalls" : "panels.doc.profiler.start")}
+          enable={supported && !busy && !running}
+          clicked={() => run(`profile start${withCalls ? " -calls" : ""}`)}
+        />
+        <SmallIconButton
+          iconName="pause"
+          title={t("panels.doc.profiler.stop")}
+          enable={supported && !busy && running}
+          clicked={() => run("profile stop")}
+        />
+        <SmallIconButton
+          iconName="clear-all"
+          title={t("panels.doc.profiler.clear")}
+          enable={supported && !busy && !!status?.timeTotal}
+          clicked={() => run("profile reset")}
+        />
+        <SmallIconButton
+          iconName="save"
+          title={t("panels.doc.profiler.export")}
+          enable={supported && !busy && !!status?.timeTotal}
+          clicked={() => void exportProfile()}
+        />
+      </PanelHeaderGroup>
+      <PanelHeaderGroup>
+        <LabeledSwitch
+          value={withCalls}
+          label={t("panels.doc.profiler.callGraph")}
+          title={t("panels.doc.profiler.callGraphTitle")}
+          clicked={setWithCalls}
+        />
+      </PanelHeaderGroup>
+      <PanelHeaderGroup>
+        <LabeledSwitch
+          value={hideWaiting}
+          label={t("panels.doc.profiler.hideWaiting")}
+          title={t("panels.doc.profiler.hideWaitingTitle")}
+          clicked={setHideWaiting}
+        />
+      </PanelHeaderGroup>
     </PanelHeader>
   );
 

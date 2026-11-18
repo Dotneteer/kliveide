@@ -2,4 +2,4 @@
 type: fix
 ---
 
-The Execution History's header broke apart in a narrow pane: its controls spilled above the panel, and the filter box was drawn over the history rows. The header now wraps into clean lines.
+Document toolbars broke apart in a narrow pane: the Execution History's, the Profiler's, the Copper List's, the BASIC and tape block listings', the script output's and the command result's controls spilled above the panel and over its content. They now wrap into clean lines. In a narrow pane the Execution History also moves its detail pane under the list, so the pane no longer squeezes the instruction column.

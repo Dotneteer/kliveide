@@ -32,6 +32,11 @@
   outline: none;
 }
 
+/* The detail pane's place depends on the document's own width, not the window's */
+.panel {
+  container: history / inline-size;
+}
+
 .table {
   display: flex;
   flex-direction: column;
@@ -152,6 +157,35 @@
   overflow: auto;
   padding: var(--space-1) 0;
   border-left: 1px solid var(--border-default);
+}
+
+/*
+ * A narrow document: the list needs ~68ch (step to instruction) and the detail pane 34ch, so below
+ * 104ch the pane beside the list would cut the instruction column off. The detail becomes a band
+ * under the list instead, and its rows flow into 26ch columns (a register row is 22ch) so the band
+ * stays short; columns that do not fit scroll sideways.
+ */
+@container history (max-width: 104ch) {
+  .body {
+    flex-direction: column;
+  }
+
+  .detail {
+    flex: 0 0 40%;
+    width: auto;
+    min-height: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    columns: 26ch auto;
+    column-fill: auto;
+    column-gap: var(--space-4);
+    border-left: none;
+    border-top: 1px solid var(--border-default);
+
+    > * {
+      break-inside: avoid;
+    }
+  }
 }
 
 .context {

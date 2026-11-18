@@ -8,9 +8,8 @@ import type { DiskFileEntry } from "@common/diskfs/types";
 import type { MessageKey } from "@common/i18n/keys.generated";
 import { useT } from "@common/i18n/useT";
 import { SPECTRUM_48_COLORS } from "@emu/machines/spectrum-colors";
-import { EmptyState, PanelHeader, PanelHeaderActions } from "@renderer/controls/data";
+import { EmptyState, PanelHeader, PanelHeaderGroup, PanelHeaderActions } from "@renderer/controls/data";
 import { SmallIconButton } from "@renderer/controls/IconButton";
-import { ToolbarSeparator } from "@renderer/controls/ToolbarSeparator";
 import Dropdown from "@renderer/controls/Dropdown";
 import { Icon } from "@renderer/controls/Icon";
 import ScrollViewer from "@renderer/controls/ScrollViewer";
@@ -208,59 +207,62 @@ const HardDiskExplorer = ({ document }: Pick<DocumentProps, "document">) => {
           />
         )}
         <PanelHeaderActions>
-          <SmallIconButton iconName="files" title={t("panels.diskExplorer.viewFiles")} selected={view === "files"} clicked={() => change((s) => (s.view = "files"))} />
-          <SmallIconButton iconName="spr-grid" title={t("panels.diskExplorer.viewLayout")} selected={view === "layout"} clicked={() => change((s) => (s.view = "layout"))} />
-          <ToolbarSeparator small={true} />
-          <SmallIconButton iconName="arrow-up" title={t("panels.diskExplorer.folderUp")} enable={!!vs.dir} clicked={() => change((s) => ((s.dir = (s.dir ?? "").split("/").slice(0, -1).join("/")), (s.selected = undefined)))} />
-          <SmallIconButton
-            iconName="folder"
-            title={t("panels.diskExplorer.newFolder")}
-            enable={editable}
-            clicked={act(async () => {
-              const name = await askName(t("panels.diskExplorer.newFolderName"));
-              if (name) await edit({ kind: "mkdir", path: inDir(name) });
-            })}
-          />
-          <SmallIconButton iconName="plus" title={t("panels.diskExplorer.add")} enable={editable} clicked={act(() => addFiles())} />
-          <SmallIconButton
-            iconName="save"
-            title={t("panels.diskExplorer.extract")}
-            enable={!!selected && !selected.isDirectory && !selected.deleted}
-            clicked={act(async () => {
-              const target = await mainApi.showSaveFileDialog({ title: t("panels.diskExplorer.extractTitle"), defaultPath: leafName(selected!), settingsId: "diskExplorer.extractFolder" });
-              if (target) await mainApi.saveBinaryFile(target, await mainApi.readHardDiskFile(filePath, selected!.name, vs.partition));
-            })}
-          />
-          <SmallIconButton
-            iconName="pencil"
-            title={t("panels.diskExplorer.rename")}
-            enable={editable && !!selected && !selected.deleted}
-            clicked={act(async () => {
-              const name = await askName(leafName(selected!));
-              if (name && name !== leafName(selected!)) await edit({ kind: "rename", name: selected!.name, newName: name });
-            })}
-          />
-          <SmallIconButton
-            iconName="trash"
-            title={t("panels.diskExplorer.delete")}
-            enable={editable && !!selected && !selected.deleted}
-            clicked={act(async () => {
-              const ok = await mainApi.confirmAction(
-                t("panels.diskExplorer.confirm.deleteTitle"),
-                t("panels.diskExplorer.confirm.delete", { count: 1, name: leafName(selected!) }),
-                undefined,
-                t("panels.diskExplorer.confirm.deleteButton")
-              );
-              if (ok) await edit({ kind: "delete", names: [selected!.name] });
-            })}
-          />
-          <SmallIconButton
-            iconName={vs.showDeleted ? "eye" : "eye-off"}
-            title={t("panels.diskExplorer.showDeleted")}
-            selected={!!vs.showDeleted}
-            clicked={() => change((s) => (s.showDeleted = !s.showDeleted))}
-          />
-          <SmallIconButton iconName="refresh" title={t("panels.diskExplorer.reload")} clicked={act(() => refresh())} />
+          <PanelHeaderGroup>
+            <SmallIconButton iconName="files" title={t("panels.diskExplorer.viewFiles")} selected={view === "files"} clicked={() => change((s) => (s.view = "files"))} />
+            <SmallIconButton iconName="spr-grid" title={t("panels.diskExplorer.viewLayout")} selected={view === "layout"} clicked={() => change((s) => (s.view = "layout"))} />
+          </PanelHeaderGroup>
+          <PanelHeaderGroup>
+            <SmallIconButton iconName="arrow-up" title={t("panels.diskExplorer.folderUp")} enable={!!vs.dir} clicked={() => change((s) => ((s.dir = (s.dir ?? "").split("/").slice(0, -1).join("/")), (s.selected = undefined)))} />
+            <SmallIconButton
+              iconName="folder"
+              title={t("panels.diskExplorer.newFolder")}
+              enable={editable}
+              clicked={act(async () => {
+                const name = await askName(t("panels.diskExplorer.newFolderName"));
+                if (name) await edit({ kind: "mkdir", path: inDir(name) });
+              })}
+            />
+            <SmallIconButton iconName="plus" title={t("panels.diskExplorer.add")} enable={editable} clicked={act(() => addFiles())} />
+            <SmallIconButton
+              iconName="save"
+              title={t("panels.diskExplorer.extract")}
+              enable={!!selected && !selected.isDirectory && !selected.deleted}
+              clicked={act(async () => {
+                const target = await mainApi.showSaveFileDialog({ title: t("panels.diskExplorer.extractTitle"), defaultPath: leafName(selected!), settingsId: "diskExplorer.extractFolder" });
+                if (target) await mainApi.saveBinaryFile(target, await mainApi.readHardDiskFile(filePath, selected!.name, vs.partition));
+              })}
+            />
+            <SmallIconButton
+              iconName="pencil"
+              title={t("panels.diskExplorer.rename")}
+              enable={editable && !!selected && !selected.deleted}
+              clicked={act(async () => {
+                const name = await askName(leafName(selected!));
+                if (name && name !== leafName(selected!)) await edit({ kind: "rename", name: selected!.name, newName: name });
+              })}
+            />
+            <SmallIconButton
+              iconName="trash"
+              title={t("panels.diskExplorer.delete")}
+              enable={editable && !!selected && !selected.deleted}
+              clicked={act(async () => {
+                const ok = await mainApi.confirmAction(
+                  t("panels.diskExplorer.confirm.deleteTitle"),
+                  t("panels.diskExplorer.confirm.delete", { count: 1, name: leafName(selected!) }),
+                  undefined,
+                  t("panels.diskExplorer.confirm.deleteButton")
+                );
+                if (ok) await edit({ kind: "delete", names: [selected!.name] });
+              })}
+            />
+            <SmallIconButton
+              iconName={vs.showDeleted ? "eye" : "eye-off"}
+              title={t("panels.diskExplorer.showDeleted")}
+              selected={!!vs.showDeleted}
+              clicked={() => change((s) => (s.showDeleted = !s.showDeleted))}
+            />
+            <SmallIconButton iconName="refresh" title={t("panels.diskExplorer.reload")} clicked={act(() => refresh())} />
+          </PanelHeaderGroup>
         </PanelHeaderActions>
       </PanelHeader>
       {failure && (

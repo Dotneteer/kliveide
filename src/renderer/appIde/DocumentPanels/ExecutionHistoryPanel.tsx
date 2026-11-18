@@ -702,7 +702,7 @@ const ExecutionHistoryPanel = (_props: DocumentProps) => {
   };
 
   return (
-    <FullPanel fontSize="--panel-font-size" fontFamily="--monospace-font">
+    <FullPanel classExt={styles.panel} fontSize="--panel-font-size" fontFamily="--monospace-font">
       {header}
       <div
         className={styles.body}

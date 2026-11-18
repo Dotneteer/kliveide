@@ -5,7 +5,6 @@ import { useDocumentHubService } from "@renderer/appIde/services/DocumentService
 import { OutputPaneBuffer } from "../ToolArea/OutputPaneBuffer";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { SmallIconButton } from "@renderer/controls/IconButton";
-import { ToolbarSeparator } from "@renderer/controls/ToolbarSeparator";
 import { Text } from "@renderer/controls/layout/Text";
 import {
   useDispatch,
@@ -19,7 +18,7 @@ import {
 } from "@common/state/actions";
 import { ConsoleOutput } from "./helpers/ConsoleOutput";
 import { createSettingsReader } from "@common/utils/SettingsReader";
-import { DataPanel, PanelHeader } from "@renderer/controls/data";
+import { DataPanel, PanelHeader, PanelHeaderGroup } from "@renderer/controls/data";
 import { useT } from "@common/i18n/useT";
 import type { MessageKey } from "@common/i18n/keys.generated";
 
@@ -135,70 +134,75 @@ const ScriptOutputPanel = ({ document, contents }: DocumentProps) => {
   return (
     <DataPanel xclass={styles.panel}>
       <PanelHeader>
-        <SmallIconButton
-          iconName='stop'
-          title={t("panels.doc.scriptOutput.stop")}
-          enable={scriptRunning}
-          clicked={async () => {
-            await ideCommandsService.executeCommand(
-              `script-cancel ${scriptId}`
-            );
-          }}
-        />
-        <SmallIconButton
-          iconName='square-arrow-out-up-right'
-          title={t("panels.doc.scriptOutput.openFile")}
-          clicked={async () => {
-            if (scriptFileName) {
-              documentHubService.setPermanent(document.id);
+        <PanelHeaderGroup>
+          <SmallIconButton
+            iconName='stop'
+            title={t("panels.doc.scriptOutput.stop")}
+            enable={scriptRunning}
+            clicked={async () => {
               await ideCommandsService.executeCommand(
-                `nav "${scriptFileName}"`
+                `script-cancel ${scriptId}`
               );
-            }
-          }}
-        />
-        <ToolbarSeparator small={true} />
-        <SmallIconButton
-          iconName='clear-all'
-          title={t("panels.doc.scriptOutput.clear")}
-          clicked={() => {
-            scriptBuffer?.clear();
-          }}
-        />
-        <SmallIconButton
-          iconName='copy'
-          title={t("panels.doc.common.copyToClipboard")}
-          clicked={() => {
-            navigator.clipboard.writeText(scriptBuffer?.getBufferText());
-            dispatch(
-              setIdeStatusMessageAction(
-                t("panels.doc.scriptOutput.copied"),
-                true
-              )
-            );
-            dispatch(incToolCommandSeqNoAction());
-          }}
-        />
-        {/*
-          * `scrollLocked` true means auto scrolling is OFF, so clicking turns it ON. The tooltip
-          * said the opposite — "Turn auto scrolling off" at the moment the click would turn it on —
-          * which is what a boolean you have to mentally negate eventually costs you. The state name
-          * and its persisted `locked` key are left alone; renaming them would need a view-state
-          * migration for no user-visible gain.
-          */}
-        <SmallIconButton
-          iconName={scrollLocked ? "unlock" : "lock"}
-          title={t(scrollLocked ? "panels.doc.scriptOutput.autoScrollOn" : "panels.doc.scriptOutput.autoScrollOff")}
-          clicked={() => setLocked(!scrollLocked)}
-        />
-        <ToolbarSeparator small={true} />
-        {/* --- `?? 0`: before the buffer resolves, this rendered the literal "Lines: undefined". */}
-        <Text text={t("panels.doc.scriptOutput.lines", { count: scriptBuffer?.getContents()?.length ?? 0 })} />
-        <ToolbarSeparator small={true} />
-        <Text
-          variant={variant}
-          text={t(scriptRunning ? "panels.doc.scriptOutput.statusRunning" : conclusion)}
-        />
+            }}
+          />
+          <SmallIconButton
+            iconName='square-arrow-out-up-right'
+            title={t("panels.doc.scriptOutput.openFile")}
+            clicked={async () => {
+              if (scriptFileName) {
+                documentHubService.setPermanent(document.id);
+                await ideCommandsService.executeCommand(
+                  `nav "${scriptFileName}"`
+                );
+              }
+            }}
+          />
+        </PanelHeaderGroup>
+        <PanelHeaderGroup>
+          <SmallIconButton
+            iconName='clear-all'
+            title={t("panels.doc.scriptOutput.clear")}
+            clicked={() => {
+              scriptBuffer?.clear();
+            }}
+          />
+          <SmallIconButton
+            iconName='copy'
+            title={t("panels.doc.common.copyToClipboard")}
+            clicked={() => {
+              navigator.clipboard.writeText(scriptBuffer?.getBufferText());
+              dispatch(
+                setIdeStatusMessageAction(
+                  t("panels.doc.scriptOutput.copied"),
+                  true
+                )
+              );
+              dispatch(incToolCommandSeqNoAction());
+            }}
+          />
+          {/*
+            * `scrollLocked` true means auto scrolling is OFF, so clicking turns it ON. The tooltip
+            * said the opposite — "Turn auto scrolling off" at the moment the click would turn it on —
+            * which is what a boolean you have to mentally negate eventually costs you. The state name
+            * and its persisted `locked` key are left alone; renaming them would need a view-state
+            * migration for no user-visible gain.
+            */}
+          <SmallIconButton
+            iconName={scrollLocked ? "unlock" : "lock"}
+            title={t(scrollLocked ? "panels.doc.scriptOutput.autoScrollOn" : "panels.doc.scriptOutput.autoScrollOff")}
+            clicked={() => setLocked(!scrollLocked)}
+          />
+        </PanelHeaderGroup>
+        <PanelHeaderGroup>
+          {/* --- `?? 0`: before the buffer resolves, this rendered the literal "Lines: undefined". */}
+          <Text text={t("panels.doc.scriptOutput.lines", { count: scriptBuffer?.getContents()?.length ?? 0 })} />
+        </PanelHeaderGroup>
+        <PanelHeaderGroup>
+          <Text
+            variant={variant}
+            text={t(scriptRunning ? "panels.doc.scriptOutput.statusRunning" : conclusion)}
+          />
+        </PanelHeaderGroup>
       </PanelHeader>
       <ConsoleOutput
         buffer={scriptBuffer}

@@ -2519,7 +2519,15 @@ toolbars that had them, and a new toolbar gets the rhythm without remembering to
 header wraps it takes the whole header's height and makes every line it sits on that tall; with
 `align-content: center` the lines then spill above the header and over the content below. The
 Execution History header did exactly this in a narrow pane (controls at -79px, the filter drawn over
-the first rows). Groups replace separators: the `& + &` margin is the divider.
+the first rows). Groups replace separators: the `& + &` margin is the divider. No `PanelHeader` has a
+separator any more; a header with its own fixed-height strip that never wraps (`DskSurfaceView`)
+may keep them.
+
+**A side pane that would starve the list becomes a band under it.** The Execution History's detail
+pane is 34ch beside a list that needs ~68ch; below 104ch (`@container history`, on the panel, since
+the row that switches direction cannot be its own container) it moves under the list at 40% of the
+height, and its rows flow into 26ch CSS columns (`column-fill: auto`, `break-inside: avoid` on each
+row) that scroll sideways. A band of one long column would cost the list half its rows.
 
 Smaller things:
 

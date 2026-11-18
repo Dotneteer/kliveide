@@ -8,10 +8,9 @@ import { HT1080Z_PROGRAM_START } from "@common/ht1080z/codePlacement";
 import { TVC_PROGRAM_START } from "@common/tvc/codePlacement";
 import { SPECTRUM_48_COLORS } from "@emu/machines/spectrum-colors";
 import { FullPanel } from "@renderer/controls/layout/Panels";
-import { EmptyState, PanelHeader } from "@renderer/controls/data";
+import { EmptyState, PanelHeader, PanelHeaderGroup } from "@renderer/controls/data";
 import { SmallIconButton } from "@controls/IconButton";
 import { LabeledSwitch } from "@controls/LabeledSwitch";
-import { ToolbarSeparator } from "@controls/ToolbarSeparator";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { ScreenCanvas } from "@renderer/controls/Next/ScreenCanvas";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
@@ -178,36 +177,41 @@ const TapeBasicListing = ({
   return (
     <FullPanel fontSize="--panel-font-size" fontFamily="--monospace-font">
       <PanelHeader>
-        <SmallIconButton
-          iconName="copy"
-          title={t("panels.tape.block.copy")}
-          clicked={async () => {
-            await navigator.clipboard.writeText(basicListingText(listing.lines));
-            dispatch(setIdeStatusMessageAction(t("panels.tape.block.copied"), true));
-          }}
-        />
-        <ToolbarSeparator small={true} />
-        <LabeledSwitch
-          value={showCodes}
-          label={t("panels.tape.block.showCodes")}
-          title={t("panels.tape.block.showCodesTitle")}
-          clicked={setShowCodes}
-        />
-        {sinclairFont && <ToolbarSeparator small={true} />}
+        <PanelHeaderGroup>
+          <SmallIconButton
+            iconName="copy"
+            title={t("panels.tape.block.copy")}
+            clicked={async () => {
+              await navigator.clipboard.writeText(basicListingText(listing.lines));
+              dispatch(setIdeStatusMessageAction(t("panels.tape.block.copied"), true));
+            }}
+          />
+        </PanelHeaderGroup>
+        <PanelHeaderGroup>
+          <LabeledSwitch
+            value={showCodes}
+            label={t("panels.tape.block.showCodes")}
+            title={t("panels.tape.block.showCodesTitle")}
+            clicked={setShowCodes}
+          />
+        </PanelHeaderGroup>
         {sinclairFont && (
-        <LabeledSwitch
-          value={showSpectrumFont}
-          label={zx81 ? t("panels.tape.block.sinclairFont") : t("panels.tape.block.spectrumFont")}
-          title={zx81 ? t("panels.tape.block.sinclairFontTitle") : t("panels.tape.block.spectrumFontTitle")}
-          clicked={setShowSpectrumFont}
-        />
+          <PanelHeaderGroup>
+            <LabeledSwitch
+              value={showSpectrumFont}
+              label={zx81 ? t("panels.tape.block.sinclairFont") : t("panels.tape.block.spectrumFont")}
+              title={zx81 ? t("panels.tape.block.sinclairFontTitle") : t("panels.tape.block.spectrumFontTitle")}
+              clicked={setShowSpectrumFont}
+            />
+          </PanelHeaderGroup>
         )}
-        <ToolbarSeparator small={true} />
-        <span>
-          {viewState?.autostart !== undefined
-            ? t("panels.tape.block.linesAutostart", { count: listing.lineCount, line: viewState.autostart })
-            : t("panels.helpers.lineCount", { count: listing.lineCount })}
-        </span>
+        <PanelHeaderGroup>
+          <span>
+            {viewState?.autostart !== undefined
+              ? t("panels.tape.block.linesAutostart", { count: listing.lineCount, line: viewState.autostart })
+              : t("panels.helpers.lineCount", { count: listing.lineCount })}
+          </span>
+        </PanelHeaderGroup>
       </PanelHeader>
       {lines.length === 0 ? (
         <EmptyState message={t("panels.tape.block.noLines")} />
