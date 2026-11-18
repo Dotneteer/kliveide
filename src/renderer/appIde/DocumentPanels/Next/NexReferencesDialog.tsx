@@ -9,6 +9,7 @@ import { useT } from "@common/i18n/useT";
 import { formatNexLabelValue } from "./NexLabelDialog";
 import { renderMarkup } from "./NexLabelsDialog";
 import styles from "./NexReferencesDialog.module.scss";
+import ScrollViewer from "@renderer/controls/ScrollViewer";
 
 export type NexReferencesDialogProps = DialogComponentProps<LabelReference> & {
   label: DefinitionLabel;
@@ -30,40 +31,42 @@ export function NexReferencesDialog({ label, references, controls }: NexReferenc
         {renderMarkup(t("panels.next.references.intro", { count: references.length, name: label.name }))}
       </p>
       <div className={styles.table}>
-        <div className={styles.tableHeader}>
-          <span>{t("panels.next.labels.column.address")}</span>
-          <span>{t("panels.next.references.column.instruction")}</span>
-          <span>{t("panels.next.references.column.within")}</span>
-          <span />
-        </div>
-        {references.map((reference) => (
-          <div
-            className={styles.referenceRow}
-            key={reference.rowIndex}
-            onDoubleClick={() => controls.close(reference)}
-          >
-            <span className={disassemblyText.address}>{formatNexLabelValue(reference.address)}</span>
-            <span className={styles.instruction} title={reference.instruction}>
-              <InstructionText text={reference.instruction} />
-            </span>
-            <span className={classnames(styles.within, disassemblyText.label)} title={reference.within}>
-              {reference.within ?? ""}
-            </span>
-            <span className={styles.actions}>
-              <button
-                className={styles.actionButton}
-                type="button"
-                autoFocus={reference === references[0]}
-                onClick={() => controls.close(reference)}
-              >
-                {t("panels.next.action.goTo")}
-              </button>
-            </span>
+        <ScrollViewer>
+          <div className={styles.tableHeader}>
+            <span>{t("panels.next.labels.column.address")}</span>
+            <span>{t("panels.next.references.column.instruction")}</span>
+            <span>{t("panels.next.references.column.within")}</span>
+            <span />
           </div>
-        ))}
-        {references.length === 0 && (
-          <div className={styles.emptyList}>{t("panels.next.references.empty")}</div>
-        )}
+          {references.map((reference) => (
+            <div
+              className={styles.referenceRow}
+              key={reference.rowIndex}
+              onDoubleClick={() => controls.close(reference)}
+            >
+              <span className={disassemblyText.address}>{formatNexLabelValue(reference.address)}</span>
+              <span className={styles.instruction} title={reference.instruction}>
+                <InstructionText text={reference.instruction} />
+              </span>
+              <span className={classnames(styles.within, disassemblyText.label)} title={reference.within}>
+                {reference.within ?? ""}
+              </span>
+              <span className={styles.actions}>
+                <button
+                  className={styles.actionButton}
+                  type="button"
+                  autoFocus={reference === references[0]}
+                  onClick={() => controls.close(reference)}
+                >
+                  {t("panels.next.action.goTo")}
+                </button>
+              </span>
+            </div>
+          ))}
+          {references.length === 0 && (
+            <div className={styles.emptyList}>{t("panels.next.references.empty")}</div>
+          )}
+        </ScrollViewer>
       </div>
       <DialogFooter>
         <Button variant="secondary" text={t("common.button.close")} clicked={controls.cancel} />

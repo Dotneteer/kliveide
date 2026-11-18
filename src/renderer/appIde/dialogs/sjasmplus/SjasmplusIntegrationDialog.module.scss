@@ -107,13 +107,16 @@ $labelWidth: 78px;
 }
 
 
+/* A content-sized `ScrollViewer`: the shortcuts scroll under its `max-height`, never a native bar */
 .suggestions {
+  min-width: 0;
+  max-height: 52px;
+}
+
+.suggestionItems {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  min-width: 0;
-  max-height: 52px;
-  overflow: auto;
 }
 
 button.suggestionButton {

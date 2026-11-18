@@ -25,7 +25,9 @@
   --list-visible-rows: 8;
 
   height: calc(var(--list-row-height) * var(--list-visible-rows));
-  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   margin-top: 6px;
   border: 1px solid var(--border-modal-section);
   border-radius: 4px;

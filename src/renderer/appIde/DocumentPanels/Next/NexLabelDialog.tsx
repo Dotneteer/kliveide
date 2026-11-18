@@ -18,6 +18,7 @@ import {
   DialogFooter,
   DialogFooterSpacer
 } from "@renderer/controls/overlay/DialogFooter";
+import ScrollViewer from "@renderer/controls/ScrollViewer";
 
 export type NexLabelDialogLabel = {
   scope: AnnotationLabelScope;
@@ -160,26 +161,28 @@ export function NexLabelDialog({
           onChange={setSearchText}
         />
         <div className={styles.labelList}>
-          {filteredLabels.map((label) => (
-            <button
-              className={styles.labelItem}
-              key={`${label.scope}:${label.bank ?? ""}:${label.name}`}
-              type="button"
-              onClick={() => loadLabel(label)}
-            >
-              <span className={styles.labelName}>{label.name}</span>
-              <span>{formatNexLabelValue(label.value)}</span>
-              <span>{scopeText(label, bank)}</span>
-              {/*
-                * A count, as the Labels list shows for the same fact — but spelled out, because
-                * this list has no column header to say what a bare number would mean.
-                */}
-              <span className={styles.labelRefs}>{formatReferenceCount(label)}</span>
-            </button>
-          ))}
-          {filteredLabels.length === 0 && (
-            <div className={styles.emptyList}>{t("panels.next.empty.noMatchingLabels")}</div>
-          )}
+          <ScrollViewer allowHorizontal={false}>
+            {filteredLabels.map((label) => (
+              <button
+                className={styles.labelItem}
+                key={`${label.scope}:${label.bank ?? ""}:${label.name}`}
+                type="button"
+                onClick={() => loadLabel(label)}
+              >
+                <span className={styles.labelName}>{label.name}</span>
+                <span>{formatNexLabelValue(label.value)}</span>
+                <span>{scopeText(label, bank)}</span>
+                {/*
+                  * A count, as the Labels list shows for the same fact — but spelled out, because
+                  * this list has no column header to say what a bare number would mean.
+                  */}
+                <span className={styles.labelRefs}>{formatReferenceCount(label)}</span>
+              </button>
+            ))}
+            {filteredLabels.length === 0 && (
+              <div className={styles.emptyList}>{t("panels.next.empty.noMatchingLabels")}</div>
+            )}
+          </ScrollViewer>
         </div>
       </DialogRow>
       <DialogFooter>

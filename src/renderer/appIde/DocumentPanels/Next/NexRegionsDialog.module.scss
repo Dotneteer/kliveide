@@ -44,7 +44,9 @@
   --list-visible-rows: 8;
 
   height: calc(var(--list-row-height) * (var(--list-visible-rows) + 1));
-  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   border: 1px solid var(--border-modal-section);
   border-radius: 4px;
   background: var(--bgcolor-modal-header);
@@ -145,16 +147,21 @@
 
   height: calc(var(--preview-lines) * 1.5em + 12px);
   line-height: 1.5;
-  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   border: 1px solid var(--border-modal-section);
   border-radius: 4px;
-  padding: 6px 8px;
   background: var(--bgcolor-modal-header);
   color: var(--color-doc-inactiveText);
   font-family: var(--monospace-font);
   white-space: pre-wrap;
 }
 
+/* The preview scrolls through its `ScrollViewer`; the padding is inside, so the bar sits at the border */
+.previewText {
+  padding: 6px 8px;
+}
 
 
 /* A suggestion about the selected region, with its one-click remedy; the same shape as the region

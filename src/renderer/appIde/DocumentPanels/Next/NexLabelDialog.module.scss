@@ -37,7 +37,9 @@
   --list-visible-rows: 3;
 
   height: calc(var(--list-row-height) * var(--list-visible-rows));
-  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   border: 1px solid var(--border-modal-section);
   border-radius: 4px;
   background: var(--bgcolor-modal-header);

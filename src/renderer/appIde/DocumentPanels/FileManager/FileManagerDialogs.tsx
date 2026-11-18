@@ -13,6 +13,7 @@ import type { DialogComponentProps } from "@renderer/controls/overlay/DialogProv
 import type { ConflictAnswer, DeleteMode, TransferConfirmation, TransferDialogRequest } from "./FileManagerController";
 import { becomesText, errorText, formatSizeWithUnit } from "./FileManagerViewModel";
 import styles from "./FileManagerDialogs.module.scss";
+import ScrollViewer from "@renderer/controls/ScrollViewer";
 
 /*
  * The File Manager's dialogs (`dev/ai/file-manager.md`): the copy dialog, which shows
@@ -124,29 +125,31 @@ export const FmTransferDialog = ({ plan: firstPlan, options: firstOptions, sourc
         )}
 
         <div className={styles.tableWrap}>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>{t("panels.fileManager.dialog.colSource")}</th>
-                <th>{t("panels.fileManager.dialog.colTarget")}</th>
-                <th>{t("panels.fileManager.dialog.colBecomes")}</th>
-                <th className={styles.end}>{t("panels.fileManager.col.size")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {plan.items.slice(0, LISTED_ROWS).map((i) => (
-                <tr key={i.id}>
-                  <td>{i.part ? `└ ${i.sourceName}` : (i.relDir ? `${i.relDir}/` : "") + i.sourceName}</td>
-                  <td className={classnames({ [styles.renamed]: i.shortened, [styles.conflict]: i.conflict })}>{i.isDirectory ? `${i.targetName}/` : i.targetName}</td>
-                  <td>{i.isDirectory ? t("panels.fileManager.becomes.folder") : becomesText(i.becomes)}</td>
-                  <td className={styles.end}>{i.isDirectory ? "" : formatSizeWithUnit(i.size)}</td>
+          <ScrollViewer sizeToContent={true}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>{t("panels.fileManager.dialog.colSource")}</th>
+                  <th>{t("panels.fileManager.dialog.colTarget")}</th>
+                  <th>{t("panels.fileManager.dialog.colBecomes")}</th>
+                  <th className={styles.end}>{t("panels.fileManager.col.size")}</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          {plan.items.length > LISTED_ROWS && (
-            <div className={styles.more}>{t("panels.fileManager.dialog.more", { count: plan.items.length - LISTED_ROWS })}</div>
-          )}
+              </thead>
+              <tbody>
+                {plan.items.slice(0, LISTED_ROWS).map((i) => (
+                  <tr key={i.id}>
+                    <td>{i.part ? `└ ${i.sourceName}` : (i.relDir ? `${i.relDir}/` : "") + i.sourceName}</td>
+                    <td className={classnames({ [styles.renamed]: i.shortened, [styles.conflict]: i.conflict })}>{i.isDirectory ? `${i.targetName}/` : i.targetName}</td>
+                    <td>{i.isDirectory ? t("panels.fileManager.becomes.folder") : becomesText(i.becomes)}</td>
+                    <td className={styles.end}>{i.isDirectory ? "" : formatSizeWithUnit(i.size)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {plan.items.length > LISTED_ROWS && (
+              <div className={styles.more}>{t("panels.fileManager.dialog.more", { count: plan.items.length - LISTED_ROWS })}</div>
+            )}
+          </ScrollViewer>
         </div>
 
         {conflicts > 0 && (
@@ -274,10 +277,12 @@ export const FmDeleteDialog = ({ names, mode, controls }: DeleteProps) => {
             : t("panels.fileManager.dialog.deleteMany", { count: names.length })}
         </div>
         {names.length > 1 && (
-          <ul className={styles.names}>
-            {names.slice(0, 12).map((n) => <li key={n}>{n}</li>)}
-            {names.length > 12 && <li>{t("panels.fileManager.dialog.more", { count: names.length - 12 })}</li>}
-          </ul>
+          <ScrollViewer sizeToContent={true} allowHorizontal={false} className={styles.names}>
+            <ul className={styles.nameList}>
+              {names.slice(0, 12).map((n) => <li key={n}>{n}</li>)}
+              {names.length > 12 && <li>{t("panels.fileManager.dialog.more", { count: names.length - 12 })}</li>}
+            </ul>
+          </ScrollViewer>
         )}
         <div className={mode === "trash" ? styles.hint : styles.note}>{t(DELETE_NOTES[mode], { count: names.length })}</div>
       </div>

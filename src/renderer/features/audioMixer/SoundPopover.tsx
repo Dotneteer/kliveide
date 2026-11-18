@@ -14,6 +14,7 @@ import { MixerCanvas, MuteSoloButtons, usePeakHold } from "./AudioMixerControls"
 import { drawMeter, groupChannels, levelDb } from "./audioMixerView";
 import { useAudioMixerFrame, useAudioMixerSettings } from "./useAudioMixer";
 import styles from "./SoundPopover.module.scss";
+import ScrollViewer from "@renderer/controls/ScrollViewer";
 
 /*
  * The emulator's sound popover (`dev/plans/AUDIO_MIXER_PLAN.md` §3.4, option C), from the chevron of
@@ -108,44 +109,48 @@ export const SoundPopover = ({ anchor, soundLevel, onSoundLevel, onClose }: Prop
         ))}
       </div>
       <div className={styles.body}>
-        {frame &&
-          groupChannels(frame.channels).map((g) => (
-            <div key={g.group}>
-              <div className={styles.group}>
-                <span className={styles.chip} style={{ background: `var(${g.hue})` }} />
-                {t(g.channels[0].groupLabelKey)}
-              </div>
-              {g.channels.map((ch) => {
-                const s = mixer.settings[ch.id] ?? {};
-                const audible = isChannelAudible(ch.id, mixer.settings, ids);
-                const name = t("panels.audioMixer.channelName", { group: t(ch.groupLabelKey), channel: t(ch.labelKey) });
-                const db = levelDb(ch.peak);
-                return (
-                  <div key={ch.id} className={styles.row} data-testid={`sound-popover-row-${ch.id}`}>
-                    <MuteSoloButtons
-                      name={name}
-                      mute={!!s.mute}
-                      solo={!!s.solo}
-                      onMute={() => void mixer.setChannel(ch.id, { mute: !s.mute })}
-                      onSolo={() => void mixer.setChannel(ch.id, { solo: !s.solo })}
-                    />
-                    <span className={classnames(styles.name, !audible && styles.dim)} title={name}>
-                      {t(ch.labelKey)}
-                    </span>
-                    <MixerCanvas
-                      className={styles.meter}
-                      draw={(c) => drawMeter(c, ch, holds[ch.id] ?? 0, { vertical: false, hue: g.hue, dim: !audible })}
-                    />
-                    <span className={styles.db}>
-                      {Number.isFinite(db)
-                        ? t("panels.audioMixer.db", { value: db.toFixed(0) })
-                        : t("panels.audioMixer.dbSilent")}
-                    </span>
+        <ScrollViewer sizeToContent={true} allowHorizontal={false} thinScrollBar={true}>
+          <div className={styles.bodyRows}>
+            {frame &&
+              groupChannels(frame.channels).map((g) => (
+                <div key={g.group}>
+                  <div className={styles.group}>
+                    <span className={styles.chip} style={{ background: `var(${g.hue})` }} />
+                    {t(g.channels[0].groupLabelKey)}
                   </div>
-                );
-              })}
-            </div>
-          ))}
+                  {g.channels.map((ch) => {
+                    const s = mixer.settings[ch.id] ?? {};
+                    const audible = isChannelAudible(ch.id, mixer.settings, ids);
+                    const name = t("panels.audioMixer.channelName", { group: t(ch.groupLabelKey), channel: t(ch.labelKey) });
+                    const db = levelDb(ch.peak);
+                    return (
+                      <div key={ch.id} className={styles.row} data-testid={`sound-popover-row-${ch.id}`}>
+                        <MuteSoloButtons
+                          name={name}
+                          mute={!!s.mute}
+                          solo={!!s.solo}
+                          onMute={() => void mixer.setChannel(ch.id, { mute: !s.mute })}
+                          onSolo={() => void mixer.setChannel(ch.id, { solo: !s.solo })}
+                        />
+                        <span className={classnames(styles.name, !audible && styles.dim)} title={name}>
+                          {t(ch.labelKey)}
+                        </span>
+                        <MixerCanvas
+                          className={styles.meter}
+                          draw={(c) => drawMeter(c, ch, holds[ch.id] ?? 0, { vertical: false, hue: g.hue, dim: !audible })}
+                        />
+                        <span className={styles.db}>
+                          {Number.isFinite(db)
+                            ? t("panels.audioMixer.db", { value: db.toFixed(0) })
+                            : t("panels.audioMixer.dbSilent")}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+          </div>
+        </ScrollViewer>
       </div>
       <div className={styles.footer}>
         <button type="button" className={styles.link} onClick={() => void mixer.unmuteAll()}>

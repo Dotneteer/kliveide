@@ -12,6 +12,7 @@ import styles from "./NavigationControls.module.scss";
 import { useT } from "@common/i18n/useT";
 import { labelRecord } from "@common/i18n/labels";
 import type { MessageKey } from "@common/i18n/keys.generated";
+import ScrollViewer from "@renderer/controls/ScrollViewer";
 
 /** How each reason reads in the list. */
 const REASON_KEYS: Record<NavigationReason, MessageKey> = {
@@ -143,43 +144,47 @@ export const NavigationHistoryPopover = ({ anchor, shortcuts, onClose }: Props) 
         </div>
       ) : (
         <div className={styles.historyList} role="listbox" aria-label={t("panels.feature.navigation.locations")}>
-          {rows.map(({ entry, i }) => {
-            const position = history.describe(entry);
-            const preview = history.preview(entry);
-            const current = i === index;
-            return (
-              <button
-                key={`${i}:${entry.documentId}:${entry.time}`}
-                type="button"
-                role="option"
-                aria-selected={current}
-                data-row={i}
-                data-current={current ? "true" : undefined}
-                className={classnames(styles.historyRow, {
-                  [styles.current]: current,
-                  [styles.ahead]: i > index
-                })}
-                title={entry.documentId}
-                onClick={() => choose(i)}
-              >
-                <span className={styles.rowIcon}>
-                  <Icon
-                    iconName={entry.iconName ?? "note"}
-                    width={iconSizes.sm}
-                    height={iconSizes.sm}
-                  />
-                </span>
-                <span className={styles.rowText}>
-                  <span className={styles.rowTitle}>
-                    {entry.title}
-                    {position && <span className={styles.rowPosition}>{position}</span>}
-                  </span>
-                  {preview && <span className={styles.rowPreview}>{preview}</span>}
-                </span>
-                <span className={styles.reasonChip}>{REASON_LABELS[entry.reason] ?? entry.reason}</span>
-              </button>
-            );
-          })}
+          <ScrollViewer sizeToContent={true} allowHorizontal={false} thinScrollBar={true}>
+            <div className={styles.historyRows}>
+              {rows.map(({ entry, i }) => {
+                const position = history.describe(entry);
+                const preview = history.preview(entry);
+                const current = i === index;
+                return (
+                  <button
+                    key={`${i}:${entry.documentId}:${entry.time}`}
+                    type="button"
+                    role="option"
+                    aria-selected={current}
+                    data-row={i}
+                    data-current={current ? "true" : undefined}
+                    className={classnames(styles.historyRow, {
+                      [styles.current]: current,
+                      [styles.ahead]: i > index
+                    })}
+                    title={entry.documentId}
+                    onClick={() => choose(i)}
+                  >
+                    <span className={styles.rowIcon}>
+                      <Icon
+                        iconName={entry.iconName ?? "note"}
+                        width={iconSizes.sm}
+                        height={iconSizes.sm}
+                      />
+                    </span>
+                    <span className={styles.rowText}>
+                      <span className={styles.rowTitle}>
+                        {entry.title}
+                        {position && <span className={styles.rowPosition}>{position}</span>}
+                      </span>
+                      {preview && <span className={styles.rowPreview}>{preview}</span>}
+                    </span>
+                    <span className={styles.reasonChip}>{REASON_LABELS[entry.reason] ?? entry.reason}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </ScrollViewer>
         </div>
       )}
       <div className={styles.popoverFooter}>

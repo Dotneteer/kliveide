@@ -18,11 +18,27 @@ interface Props {
   thinScrollBar?: boolean;
   allowHorizontal?: boolean;
   allowVertical?: boolean;
+  /*
+   * Size to the content instead of filling the parent.
+   *
+   * By default the viewer is `height: 100%` and needs a parent of definite height: a panel's pane,
+   * a grid cell. A box that grows with its content up to a limit - a `max-height` on this viewer's
+   * `className`, or the room a `max-height` popover leaves between its header and footer - has no
+   * such height, so `100%` resolves to `auto` and the library never sees the overflow; the box
+   * clips instead of scrolling. In this mode the viewer and the library's host are shrinkable flex
+   * items (`flex: 0 1 auto; min-height: 0`): as tall as their content, and squeezed by the flex
+   * layout - or by the viewer's own `max-height` - to the space there is, which the library then
+   * scrolls. Checked against OverlayScrollbars 2.13 in Chromium.
+   */
+  sizeToContent?: boolean;
   style?: React.CSSProperties;
   className?: string;
   apiLoaded?: (api: ScrollViewerApi) => void;
   onScrolled?: (pos: number) => void;
 }
+
+const FILLING_HOST: React.CSSProperties = { height: "100%" };
+const CONTENT_SIZED_HOST: React.CSSProperties = { flex: "0 1 auto", minHeight: 0 };
 
 const ScrollViewer: React.FC<Props> = ({
   children,
@@ -30,6 +46,7 @@ const ScrollViewer: React.FC<Props> = ({
   allowHorizontal = true,
   allowVertical = true,
   thinScrollBar,
+  sizeToContent,
   className,
   apiLoaded,
   onScrolled
@@ -181,12 +198,12 @@ const ScrollViewer: React.FC<Props> = ({
   return (
     <div
       ref={parentElement}
-      className={classnames(styles.scrollViewer, className)}
+      className={classnames(styles.scrollViewer, { [styles.sizeToContent]: sizeToContent }, className)}
       style={style}
     >
       <OverlayScrollbarsComponent
         ref={osRef}
-        style={{ height: "100%" }}
+        style={sizeToContent ? CONTENT_SIZED_HOST : FILLING_HOST}
         options={options}
         events={{
           scroll: handleScroll

@@ -9,6 +9,7 @@ import { toHexa2 } from "@renderer/appIde/services/ide-commands";
 import { flattenBankComment } from "@renderer/appIde/annotations/annotationEdits";
 import { useT } from "@common/i18n/useT";
 import styles from "./NexBankCommentViews.module.scss";
+import ScrollViewer from "@renderer/controls/ScrollViewer";
 
 /*
  * How a popped-out bank shows its comment without spending a row of the listing on it.
@@ -104,9 +105,12 @@ export function NexBankCommentChip ({ bank, comment, onEdit, onPin }: ChipProps)
             <div className={styles.popoverTitle}>
               {t("panels.next.bankComment.popoverTitle", { bank: toHexa2(bank) })}
             </div>
-            <div ref={bodyRef} className={styles.popoverBody} tabIndex={-1}>
-              {comment}
-            </div>
+            <ScrollViewer sizeToContent={true} allowHorizontal={false} className={styles.popoverBody}>
+              {/* --- Focused on open: the arrow keys scroll the viewer around it */}
+              <div ref={bodyRef} className={styles.popoverText} tabIndex={-1}>
+                {comment}
+              </div>
+            </ScrollViewer>
             <div className={styles.popoverFooter}>
               <Button text={t("panels.next.bankComment.edit")} clicked={() => close(onEdit)} />
               <Button variant="secondary" text={t("panels.next.bankComment.pin")} clicked={() => close(onPin)} />
@@ -178,15 +182,23 @@ export function NexBankCommentStrip ({
       <span className={styles.stripIcon}>
         <Icon iconName="note" width={14} height={14} fill="--accent-text" />
       </span>
-      <button
-        type="button"
-        ref={textRef}
-        className={styles.stripText}
-        title={t("panels.next.bankComment.editTitle")}
-        onClick={onEdit}
-      >
-        {showExpanded ? comment : flattened}
-      </button>
+      {/*
+        * Always inside the viewer, expanded or not: the overflow check observes this one button, so
+        * it must not be remounted when the strip expands. Collapsed, it is one line and never scrolls.
+        */}
+      <div className={styles.stripTextBox}>
+        <ScrollViewer sizeToContent={true} allowHorizontal={false} thinScrollBar={true}>
+          <button
+            type="button"
+            ref={textRef}
+            className={styles.stripText}
+            title={t("panels.next.bankComment.editTitle")}
+            onClick={onEdit}
+          >
+            {showExpanded ? comment : flattened}
+          </button>
+        </ScrollViewer>
+      </div>
       <span ref={measureRef} className={styles.stripMeasure} aria-hidden="true">
         {flattened}
       </span>

@@ -61,10 +61,15 @@
   text-transform: uppercase;
 }
 
-/* --- Sized in lines, and scrolled beyond them: a long comment must not run off the window. */
+/*
+ * --- Sized in lines, and scrolled beyond them: a long comment must not run off the window. The
+ * --- body is a content-sized `ScrollViewer`; the text, its padding and its focus are inside it.
+ */
 .popoverBody {
   max-height: calc(12 * 1.5em);
-  overflow: auto;
+}
+
+.popoverText {
   padding: var(--space-2) var(--space-3);
   line-height: 1.5;
   white-space: pre-wrap;
@@ -127,9 +132,17 @@
   height: 24px;
 }
 
-.stripText {
+/* The text's place in the strip; its `ScrollViewer` scrolls the expanded text, never a native bar */
+.stripTextBox {
+  display: flex;
+  flex-direction: column;
   flex: 1 1 0;
   min-width: 0;
+}
+
+.stripText {
+  display: block;
+  width: 100%;
   min-height: 24px;
   padding: 0;
   border: 0;
@@ -154,9 +167,11 @@
 }
 
 /* --- Expanded, the text keeps its own line breaks and may grow; the band is still chrome. */
-.stripExpanded .stripText {
+.stripExpanded .stripTextBox {
   max-height: calc(8 * 1.5em);
-  overflow: auto;
+}
+
+.stripExpanded .stripText {
   line-height: 1.5;
   padding: 3px 0;
   white-space: pre-wrap;

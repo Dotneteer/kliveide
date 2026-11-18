@@ -5,6 +5,7 @@ import type { SjasmplusIntent } from "../SjasmplusIntents";
 import type { SjasmplusViewModel } from "../SjasmplusViewModel";
 import styles from "../SjasmplusIntegrationDialog.module.scss";
 import { Row } from "./Row";
+import ScrollViewer from "@renderer/controls/ScrollViewer";
 
 type Props = {
   source: SjasmplusViewModel["source"];
@@ -28,20 +29,22 @@ export const SourcePanelLocal = ({ source, dispatch }: Props) => {
         --- when PATH holds nothing. */}
     {source.local.suggestions.length > 0 && (
       <Row label={t("dialog.sjasmplus.row.onPath")}>
-        <div className={styles.suggestions}>
-          {source.local.suggestions.map((path) => (
-            <button
-              key={path}
-              type="button"
-              className={styles.suggestionButton}
-              disabled={source.disabled}
-              title={t("dialog.sjasmplus.local.useSuggestion", { path })}
-              onClick={() => dispatch({ type: "suggestionPicked", executablePath: path })}
-            >
-              {path}
-            </button>
-          ))}
-        </div>
+        <ScrollViewer sizeToContent={true} allowHorizontal={false} thinScrollBar={true} className={styles.suggestions}>
+          <div className={styles.suggestionItems}>
+            {source.local.suggestions.map((path) => (
+              <button
+                key={path}
+                type="button"
+                className={styles.suggestionButton}
+                disabled={source.disabled}
+                title={t("dialog.sjasmplus.local.useSuggestion", { path })}
+                onClick={() => dispatch({ type: "suggestionPicked", executablePath: path })}
+              >
+                {path}
+              </button>
+            ))}
+          </div>
+        </ScrollViewer>
       </Row>
     )}
     <div className={styles.spacer} />

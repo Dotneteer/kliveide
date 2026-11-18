@@ -150,6 +150,32 @@ describe("ScrollViewer — Phase 8", () => {
     expect(screen.getByTestId("inner")).toBeInTheDocument();
   });
 
+  /*
+   * A content-sized box (a `max-height` list, a list in a `max-height` popover) has no definite
+   * height for `height: 100%` to resolve against; the library's host must be a shrinkable flex item
+   * instead, or the box clips rather than scrolls. jsdom has no layout, so this pins the styles; the
+   * scrolling itself was checked in Chromium.
+   */
+  it("sizes the host to its content in sizeToContent mode, and fills the parent otherwise", () => {
+    const { container } = renderWithProviders(
+      <>
+        <ScrollViewer sizeToContent className="fitted">
+          <div>Fitted</div>
+        </ScrollViewer>
+        <ScrollViewer className="filling">
+          <div>Filling</div>
+        </ScrollViewer>
+      </>
+    );
+    const [fittedHost, fillingHost] = screen.getAllByTestId("overlay-scrollbar");
+    expect(fittedHost.style.height).toBe("");
+    expect(fittedHost.style.flex).toBe("0 1 auto");
+    expect(fittedHost.style.minHeight).toBe("0px");
+    expect(fillingHost.style.height).toBe("100%");
+    expect(container.querySelector(".fitted")?.className).toMatch(/sizeToContent/);
+    expect(container.querySelector(".filling")?.className).not.toMatch(/sizeToContent/);
+  });
+
   it("renders with thinScrollBar prop", () => {
     const { container } = renderWithProviders(
       <ScrollViewer thinScrollBar>

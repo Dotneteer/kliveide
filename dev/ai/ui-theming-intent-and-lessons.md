@@ -2742,6 +2742,19 @@ cartridge) wraps it rather than copying `NexBankBrowser`.
   host's viewer** (`DataPanel autoHeight`); `useScrollViewer: false` is only for a panel that brings
   its own viewer or `VirtualizedList`. Find stragglers in the running app, not by grep: an element
   outside any `[data-overlayscrollbars-viewport]` whose computed overflow is `auto` or `scroll`.
+- **A box that grows with its content up to a limit is a `ScrollViewer sizeToContent`.** The default
+  viewer is `height: 100%`, which needs a parent of definite height; under a bare `max-height` (a
+  dialog's list, a popover's body) `100%` resolves to `auto`, the library sees no overflow, and the
+  box clips instead of scrolling. With `sizeToContent` the viewer and the library's host are
+  shrinkable flex items (`flex: 0 1 auto; min-height: 0`), so they are as tall as the content and
+  squeezed to the limit. Put the `max-height` on the viewer's `className`, or, in a `max-height`
+  popover, make the list's slot a `display: flex` column with `min-height: 0; overflow: hidden` and
+  let the flex layout do the squeezing. The list's own layout (padding, gap, `flex-wrap`, a `ul`'s
+  indent) moves to an element inside the viewer. A box with a fixed `height` (the Nex dialogs' lists)
+  needs no mode: it clips as a flex column and a plain viewer fills it, with a sticky header still
+  sticking to the viewer. Keep a focus target or a measured element at the same place in the tree
+  across states (the bank comment strip wraps its button in the viewer expanded or not), or a
+  remount drops the ref an effect observes.
 - **A viewer with content above its browser fills, it does not scroll** (`fill`, the TAP and HT tape
   viewers): the browser is as tall as the space left below the summary and graphics, so the viewer
   has nothing to scroll and the list and the details are the only scrollers. Bounding it to the whole
