@@ -1,6 +1,5 @@
 import { SmallIconButton } from "@controls/IconButton";
 import { LabeledSwitch } from "@controls/LabeledSwitch";
-import { ToolbarSeparator } from "@controls/ToolbarSeparator";
 import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
 import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
 import {
@@ -35,7 +34,7 @@ import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { FullPanel } from "@renderer/controls/layout/Panels";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import type { VirtualizedListApi } from "@renderer/controls/VirtualizedList";
-import { PanelHeader } from "@renderer/controls/data";
+import { PanelHeader, PanelHeaderGroup } from "@renderer/controls/data";
 import { useMainApi } from "@renderer/core/MainApi";
 import {
   type BasicViewState,
@@ -246,48 +245,54 @@ const BasicPanel = ({ document, viewState }: DocumentProps<BasicViewState>) => {
        --- listing's own ZxSpectrum face is applied by `.spectrum` further in. */
     <FullPanel fontSize="--panel-font-size" fontFamily="--monospace-font">
       <PanelHeader>
-        <SmallIconButton
-          iconName="refresh"
-          title={t("panels.doc.common.refreshNow")}
-          clicked={async () => {
-            refreshBasicView();
-            dispatch(setIdeStatusMessageAction(t("panels.doc.basic.refreshed"), true));
-          }}
-        />
-        <ToolbarSeparator small={true} />
-        <SmallIconButton
-          iconName="copy"
-          title={t("panels.doc.common.copyToClipboard")}
-          clicked={async () => {
-            navigator.clipboard.writeText(programBuffer.current.getBufferText());
-            dispatch(setIdeStatusMessageAction(t("panels.doc.basic.copied"), true));
-          }}
-        />
-        <ToolbarSeparator small={true} />
-        <LabeledSwitch
-          value={autoRefresh}
-          label={t("panels.doc.basic.autoRefresh")}
-          title={t("panels.doc.basic.autoRefreshTitle")}
-          clicked={setAutoRefresh}
-        />
-        <ToolbarSeparator small={true} />
-        <LabeledSwitch
-          value={showCodes}
-          label={t("panels.doc.basic.showCodes")}
-          title={t("panels.doc.basic.showCodesTitle")}
-          clicked={setShowCodes}
-        />
-        {/* --- The Sinclair fonts have no HT-1080Z or TVC glyphs (accents, the /64's mathematical signs) */}
-        {!ownFont && <ToolbarSeparator small={true} />}
-        {!ownFont && (
-          <LabeledSwitch
-            value={showSpectrumFont}
-            label={t(
-              zx8081Kind ? "panels.doc.basic.sinclairFont" : "panels.doc.basic.spectrumFont"
-            )}
-            title={t("panels.doc.basic.fontTitle")}
-            clicked={setShowSpectrumFont}
+        <PanelHeaderGroup>
+          <SmallIconButton
+            iconName="refresh"
+            title={t("panels.doc.common.refreshNow")}
+            clicked={async () => {
+              refreshBasicView();
+              dispatch(setIdeStatusMessageAction(t("panels.doc.basic.refreshed"), true));
+            }}
           />
+        </PanelHeaderGroup>
+        <PanelHeaderGroup>
+          <SmallIconButton
+            iconName="copy"
+            title={t("panels.doc.common.copyToClipboard")}
+            clicked={async () => {
+              navigator.clipboard.writeText(programBuffer.current.getBufferText());
+              dispatch(setIdeStatusMessageAction(t("panels.doc.basic.copied"), true));
+            }}
+          />
+        </PanelHeaderGroup>
+        <PanelHeaderGroup>
+          <LabeledSwitch
+            value={autoRefresh}
+            label={t("panels.doc.basic.autoRefresh")}
+            title={t("panels.doc.basic.autoRefreshTitle")}
+            clicked={setAutoRefresh}
+          />
+        </PanelHeaderGroup>
+        <PanelHeaderGroup>
+          <LabeledSwitch
+            value={showCodes}
+            label={t("panels.doc.basic.showCodes")}
+            title={t("panels.doc.basic.showCodesTitle")}
+            clicked={setShowCodes}
+          />
+        </PanelHeaderGroup>
+        {/* --- The Sinclair fonts have no HT-1080Z or TVC glyphs (accents, the /64's mathematical signs) */}
+        {!ownFont && (
+          <PanelHeaderGroup>
+            <LabeledSwitch
+              value={showSpectrumFont}
+              label={t(
+                zx8081Kind ? "panels.doc.basic.sinclairFont" : "panels.doc.basic.spectrumFont"
+              )}
+              title={t("panels.doc.basic.fontTitle")}
+              clicked={setShowSpectrumFont}
+            />
+          </PanelHeaderGroup>
         )}
       </PanelHeader>
       {message && (

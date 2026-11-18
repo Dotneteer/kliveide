@@ -9,9 +9,8 @@ import type { MessageKey } from "@common/i18n/keys.generated";
 import { ZxSpectrumChars } from "@common/machines/char-codes";
 import { MEDIA_DISK_A, MEDIA_DISK_B } from "@common/structs/project-const";
 import { SPECTRUM_48_COLORS } from "@emu/machines/spectrum-colors";
-import { EmptyState, PanelHeader, PanelHeaderActions } from "@renderer/controls/data";
+import { EmptyState, PanelHeader, PanelHeaderGroup, PanelHeaderActions } from "@renderer/controls/data";
 import { SmallIconButton } from "@renderer/controls/IconButton";
-import { ToolbarSeparator } from "@renderer/controls/ToolbarSeparator";
 import { Checkbox } from "@renderer/controls/Checkbox";
 import ScrollViewer from "@renderer/controls/ScrollViewer";
 import { ScreenCanvas } from "@renderer/controls/Next/ScreenCanvas";
@@ -224,23 +223,26 @@ const DiskExplorerView = ({ ctx, document }: { ctx: ViewContext; document: Docum
           </span>
         )}
         <PanelHeaderActions>
-          <SmallIconButton iconName="files" title={t("panels.diskExplorer.viewFiles")} selected={view === "files"} clicked={() => set((s) => { s.view = "files"; })} />
-          <SmallIconButton iconName="spr-grid" title={t("panels.diskExplorer.viewLayout")} selected={view === "layout"} clicked={() => set((s) => { s.view = "layout"; })} />
-          <ToolbarSeparator small={true} />
-          <SmallIconButton iconName="plus" title={t("panels.diskExplorer.add")} enable={canEdit} clicked={act(() => addHostFiles(ports, filePath, model.system!, model.files))} />
-          <SmallIconButton iconName="save" title={t("panels.diskExplorer.extract")} enable={!!selected && !selected.deleted} clicked={act(() => extractFile(ports, filePath, bytes, selected!))} />
-          <SmallIconButton iconName="pencil" title={t("panels.diskExplorer.rename")} enable={editable} clicked={act(() => renameFile(ports, filePath, selected!.name))} />
-          <SmallIconButton iconName="trash" title={t("panels.diskExplorer.delete")} enable={editable} clicked={act(() => deleteFiles(ports, filePath, [selected!.name]))} />
-          {model.system === "trdos" && (
-            <SmallIconButton iconName="combine" title={t("panels.diskExplorer.compact")} enable={canEdit && model.deletedFiles.length > 0} clicked={act(() => compactDisk(ports, filePath))} />
-          )}
-          <SmallIconButton
-            iconName={vs.showDeleted ? "eye" : "eye-off"}
-            title={t("panels.diskExplorer.showDeleted")}
-            selected={!!vs.showDeleted}
-            clicked={() => set((s) => { s.showDeleted = !s.showDeleted; })}
-          />
-          <SmallIconButton iconName="refresh" title={t("panels.diskExplorer.reload")} clicked={act(() => ports.reload())} />
+          <PanelHeaderGroup>
+            <SmallIconButton iconName="files" title={t("panels.diskExplorer.viewFiles")} selected={view === "files"} clicked={() => set((s) => { s.view = "files"; })} />
+            <SmallIconButton iconName="spr-grid" title={t("panels.diskExplorer.viewLayout")} selected={view === "layout"} clicked={() => set((s) => { s.view = "layout"; })} />
+          </PanelHeaderGroup>
+          <PanelHeaderGroup>
+            <SmallIconButton iconName="plus" title={t("panels.diskExplorer.add")} enable={canEdit} clicked={act(() => addHostFiles(ports, filePath, model.system!, model.files))} />
+            <SmallIconButton iconName="save" title={t("panels.diskExplorer.extract")} enable={!!selected && !selected.deleted} clicked={act(() => extractFile(ports, filePath, bytes, selected!))} />
+            <SmallIconButton iconName="pencil" title={t("panels.diskExplorer.rename")} enable={editable} clicked={act(() => renameFile(ports, filePath, selected!.name))} />
+            <SmallIconButton iconName="trash" title={t("panels.diskExplorer.delete")} enable={editable} clicked={act(() => deleteFiles(ports, filePath, [selected!.name]))} />
+            {model.system === "trdos" && (
+              <SmallIconButton iconName="combine" title={t("panels.diskExplorer.compact")} enable={canEdit && model.deletedFiles.length > 0} clicked={act(() => compactDisk(ports, filePath))} />
+            )}
+            <SmallIconButton
+              iconName={vs.showDeleted ? "eye" : "eye-off"}
+              title={t("panels.diskExplorer.showDeleted")}
+              selected={!!vs.showDeleted}
+              clicked={() => set((s) => { s.showDeleted = !s.showDeleted; })}
+            />
+            <SmallIconButton iconName="refresh" title={t("panels.diskExplorer.reload")} clicked={act(() => ports.reload())} />
+          </PanelHeaderGroup>
         </PanelHeaderActions>
       </PanelHeader>
       {failure && (

@@ -36,7 +36,6 @@ import { serviceSpanText, type HistoryServiceSpan } from "@common/history/servic
 import { integerSymbolsOf } from "@common/utils/breakpoint-condition/integer-symbols";
 import { SmallIconButton } from "@controls/IconButton";
 import { LabeledSwitch } from "@controls/LabeledSwitch";
-import { ToolbarSeparator } from "@controls/ToolbarSeparator";
 import {
   ContextMenu,
   ContextMenuItem,
@@ -50,6 +49,7 @@ import {
   EmptyState,
   PanelFilter,
   PanelHeader,
+  PanelHeaderGroup,
   PartitionPrefix,
   SectionHeader
 } from "@renderer/controls/data";
@@ -530,70 +530,82 @@ const ExecutionHistoryPanel = (_props: DocumentProps) => {
 
   // --- Empty states (§4.6.1)
   const empty = historyEmptyMessage({ supported, running, debugging: !!isDebugging, switchedOff: !advancedDebugging }, info);
+  /*
+   * Groups, not `ToolbarSeparator`s: the header wraps in a narrow pane, and a separator is
+   * `height: 100%` of the header, so on a wrapped header each one made its line as tall as the whole
+   * header and pushed the controls above the panel and over the list. A group wraps whole and
+   * carries its own spacing (`PanelHeaderGroup`).
+   */
   const header = (
     <PanelHeader>
-      <span className={styles.count}>{historyCountText(info)}</span>
-      <ToolbarSeparator small={true} />
-      <span
-        className={classnames(styles.recording, { [styles.recordingOn]: info?.enabled })}
-        title={t("panels.doc.history.recordingTitle")}
-      >
-        {t(info?.enabled ? "panels.doc.history.recording" : "panels.doc.history.notRecording")}
-      </span>
+      <PanelHeaderGroup>
+        <span className={styles.count}>{historyCountText(info)}</span>
+      </PanelHeaderGroup>
+      <PanelHeaderGroup>
+        <span
+          className={classnames(styles.recording, { [styles.recordingOn]: info?.enabled })}
+          title={t("panels.doc.history.recordingTitle")}
+        >
+          {t(info?.enabled ? "panels.doc.history.recording" : "panels.doc.history.notRecording")}
+        </span>
+      </PanelHeaderGroup>
       {reverseRange !== undefined && (
-        <>
-          <ToolbarSeparator small={true} />
+        <PanelHeaderGroup>
           <span
             className={styles.count}
             title={t("panels.doc.history.reverseRangeTitle")}
           >
             {t("panels.doc.history.reverseRange", { range: formatReverseSeconds(reverseRange) })}
           </span>
-        </>
+        </PanelHeaderGroup>
       )}
-      <ToolbarSeparator small={true} />
-      <LabeledSwitch
-        value={state.followNewest}
-        label={t("panels.doc.history.followNewest")}
-        title={t("panels.doc.history.followNewestTitle")}
-        clicked={(follow) => dispatch({ type: "followChanged", follow })}
-      />
-      <ToolbarSeparator small={true} />
-      <LabeledSwitch
-        value={foldService}
-        label={t("panels.doc.history.foldInterrupts")}
-        title={t("panels.doc.history.foldInterruptsTitle")}
-        clicked={(fold) => {
-          setFoldService(fold);
-          writeFoldPreference(machineId, fold);
-        }}
-      />
-      <ToolbarSeparator small={true} />
-      <SmallIconButton
-        iconName="clear-all"
-        title={t("panels.doc.history.clear")}
-        enable={supported && !!info?.count}
-        clicked={async () => {
-          await ideCommandsService.executeCommand("history-clear");
-          await refresh(machineState ?? MachineControllerState.Paused);
-        }}
-      />
-      <SmallIconButton
-        iconName="save"
-        title={t(running ? "panels.doc.history.exportPause" : "panels.doc.history.export")}
-        enable={supported && !running && !exporting && !!info?.count}
-        clicked={() => exportRows()}
-      />
-      <ToolbarSeparator small={true} />
-      <PanelFilter
-        value={state.filter}
-        onChange={(value) => dispatch({ type: "filterChanged", filter: value })}
-        placeholder={t("panels.doc.history.filterPlaceholder")}
-        label={t("panels.doc.history.filterLabel")}
-        status={
-          filteredSequences ? t("panels.doc.history.filterRows", { count: filteredSequences.length }) : undefined
-        }
-      />
+      <PanelHeaderGroup>
+        <LabeledSwitch
+          value={state.followNewest}
+          label={t("panels.doc.history.followNewest")}
+          title={t("panels.doc.history.followNewestTitle")}
+          clicked={(follow) => dispatch({ type: "followChanged", follow })}
+        />
+      </PanelHeaderGroup>
+      <PanelHeaderGroup>
+        <LabeledSwitch
+          value={foldService}
+          label={t("panels.doc.history.foldInterrupts")}
+          title={t("panels.doc.history.foldInterruptsTitle")}
+          clicked={(fold) => {
+            setFoldService(fold);
+            writeFoldPreference(machineId, fold);
+          }}
+        />
+      </PanelHeaderGroup>
+      <PanelHeaderGroup>
+        <SmallIconButton
+          iconName="clear-all"
+          title={t("panels.doc.history.clear")}
+          enable={supported && !!info?.count}
+          clicked={async () => {
+            await ideCommandsService.executeCommand("history-clear");
+            await refresh(machineState ?? MachineControllerState.Paused);
+          }}
+        />
+        <SmallIconButton
+          iconName="save"
+          title={t(running ? "panels.doc.history.exportPause" : "panels.doc.history.export")}
+          enable={supported && !running && !exporting && !!info?.count}
+          clicked={() => exportRows()}
+        />
+      </PanelHeaderGroup>
+      <PanelHeaderGroup>
+        <PanelFilter
+          value={state.filter}
+          onChange={(value) => dispatch({ type: "filterChanged", filter: value })}
+          placeholder={t("panels.doc.history.filterPlaceholder")}
+          label={t("panels.doc.history.filterLabel")}
+          status={
+            filteredSequences ? t("panels.doc.history.filterRows", { count: filteredSequences.length }) : undefined
+          }
+        />
+      </PanelHeaderGroup>
     </PanelHeader>
   );
 
@@ -690,7 +702,7 @@ const ExecutionHistoryPanel = (_props: DocumentProps) => {
   };
 
   return (
-    <FullPanel fontSize="--panel-font-size" fontFamily="--monospace-font">
+    <FullPanel classExt={styles.panel} fontSize="--panel-font-size" fontFamily="--monospace-font">
       {header}
       <div
         className={styles.body}

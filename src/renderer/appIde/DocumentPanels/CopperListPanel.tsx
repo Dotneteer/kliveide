@@ -17,14 +17,13 @@ import { matchCopperSource, type CopperSourceMatch } from "@common/zxnext/copper
 import { isCopperBreakpoint } from "@common/utils/breakpoint-scope";
 import { SmallIconButton } from "@controls/IconButton";
 import { LabeledSwitch } from "@controls/LabeledSwitch";
-import { ToolbarSeparator } from "@controls/ToolbarSeparator";
 import {
   ContextMenu,
   ContextMenuItem,
   ContextMenuSeparator,
   useContextMenuState
 } from "@controls/ContextMenu";
-import { EmptyState, PanelHeader } from "@renderer/controls/data";
+import { EmptyState, PanelHeader, PanelHeaderGroup } from "@renderer/controls/data";
 import { FullPanel } from "@renderer/controls/layout/Panels";
 import { Icon } from "@renderer/controls/Icon";
 import { VirtualizedList, type VirtualizedListApi } from "@renderer/controls/VirtualizedList";
@@ -306,42 +305,48 @@ const CopperListPanel = (_props: DocumentProps) => {
   return (
     <FullPanel fontSize="--panel-font-size" fontFamily="--monospace-font">
       <PanelHeader>
-        <LabeledSwitch
-          value={followPc}
-          label={t("panels.doc.copper.followPc")}
-          title={t("panels.doc.copper.followPcTitle")}
-          clicked={setFollowPc}
-        />
-        <ToolbarSeparator small={true} />
-        <LabeledSwitch
-          value={showSource}
-          label={t("panels.doc.copper.source")}
-          title={t("panels.doc.copper.sourceTitle")}
-          clicked={setShowSource}
-        />
-        <ToolbarSeparator small={true} />
-        <LabeledSwitch
-          value={hex}
-          label={t("panels.doc.copper.hexWait")}
-          title={t("panels.doc.copper.hexWaitTitle")}
-          clicked={setHex}
-        />
-        <ToolbarSeparator small={true} />
-        <SmallIconButton
-          iconName="step-into"
-          title={t("panels.doc.copper.step")}
-          clicked={async () => {
-            setFollowPc(true);
-            await emuApi.stepCopper();
-          }}
-        />
-        <ToolbarSeparator small={true} />
-        <span
-          className={classnames(styles.summary, { [styles.warning]: warnings.length > 0 })}
-          title={warnings.join("\n") || undefined}
-        >
-          {copperSummaryText(model.summary)}
-        </span>
+        <PanelHeaderGroup>
+          <LabeledSwitch
+            value={followPc}
+            label={t("panels.doc.copper.followPc")}
+            title={t("panels.doc.copper.followPcTitle")}
+            clicked={setFollowPc}
+          />
+        </PanelHeaderGroup>
+        <PanelHeaderGroup>
+          <LabeledSwitch
+            value={showSource}
+            label={t("panels.doc.copper.source")}
+            title={t("panels.doc.copper.sourceTitle")}
+            clicked={setShowSource}
+          />
+        </PanelHeaderGroup>
+        <PanelHeaderGroup>
+          <LabeledSwitch
+            value={hex}
+            label={t("panels.doc.copper.hexWait")}
+            title={t("panels.doc.copper.hexWaitTitle")}
+            clicked={setHex}
+          />
+        </PanelHeaderGroup>
+        <PanelHeaderGroup>
+          <SmallIconButton
+            iconName="step-into"
+            title={t("panels.doc.copper.step")}
+            clicked={async () => {
+              setFollowPc(true);
+              await emuApi.stepCopper();
+            }}
+          />
+        </PanelHeaderGroup>
+        <PanelHeaderGroup>
+          <span
+            className={classnames(styles.summary, { [styles.warning]: warnings.length > 0 })}
+            title={warnings.join("\n") || undefined}
+          >
+            {copperSummaryText(model.summary)}
+          </span>
+        </PanelHeaderGroup>
       </PanelHeader>
       <div className={styles.body}>
         <div className={styles.table}>
