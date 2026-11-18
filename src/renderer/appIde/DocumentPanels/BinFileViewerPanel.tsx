@@ -1,142 +1,191 @@
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
+import classnames from "classnames";
 import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import { MemoryDumpSection } from "@renderer/features/memory/MemoryDumpSection";
-import { VirtualizedList } from "@renderer/controls/VirtualizedList";
-import { FullPanel } from "@renderer/controls/layout/Panels";
-import { DataPanel, DataRow, EmptyState } from "@renderer/controls/data";
-import { PanelHeader } from "@renderer/controls/data";
-import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
-import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
-import { VListHandle } from "virtua";
-import { AddressInput } from "@renderer/controls/AddressInput";
-import Dropdown, { DropdownOption } from "@renderer/controls/Dropdown";
-import { Text } from "@renderer/controls/layout/Text";
-import { useT, type TFunction } from "@common/i18n/useT";
+import { VirtualizedList, type VirtualizedListApi } from "@renderer/controls/VirtualizedList";
+import { DataRow, EmptyState } from "@renderer/controls/data";
+import { useT } from "@common/i18n/useT";
 import { uiLocale } from "@common/i18n/i18n";
+import { useRowSizes } from "@renderer/theming/useRowSizes";
+import frame from "@renderer/features/memoryMap/MemoryMap.module.scss";
+import { Check, FindBox, GoToBox, Segmented, ToolGroup } from "@renderer/features/memoryMap/FrameControls";
+import { ByteInspector } from "@renderer/features/memoryMap/ByteSections";
+import { useByteView } from "@renderer/features/memoryMap/useByteView";
+import { parseGoToNumber } from "@renderer/features/memoryMap/goToTarget";
+
+/*
+ * The binary file viewer: any file Klive has no better viewer for, as a hex dump. It shares the
+ * Memory view's frame (`dev/plans/MEMORY_DISASSEMBLY_VIEWS_PLAN.md`): the Go to and Find boxes,
+ * 8/16/32 bytes a row, Hex/Dec, a cursor and selection, and a read-only inspector of the byte under
+ * the cursor. The bytes are the file's, so nothing here writes.
+ */
 
 const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4 MB
 
-type DumpViewMode = "8x1" | "8x2" | "16x1";
-
-const viewModeOptions = (t: TFunction): DropdownOption[] => [
-  { value: "8x1", label: t("panels.doc.binViewer.layout8x1") },
-  { value: "8x2", label: t("panels.doc.binViewer.layout8x2") },
-  { value: "16x1", label: t("panels.doc.binViewer.layout16x1") },
-];
+type BytesPerRow = 8 | 16 | 32;
 
 const BinFileViewerPanelComponent = ({ contents }: DocumentProps) => {
   const t = useT();
-  const data = contents as Uint8Array;
+  const data = useMemo(() => (contents as Uint8Array) ?? new Uint8Array(0), [contents]);
+  const { memory: rowHeight } = useRowSizes();
 
   const [decimalView, setDecimalView] = useState(false);
   const [charDump, setCharDump] = useState(true);
-  const [viewMode, setViewMode] = useState<DumpViewMode>("8x2");
-  const [lastJumpAddress, setLastJumpAddress] = useState(-1);
-  const vlApi = useRef<VListHandle>(null);
-  const lastScrolledIndex = useRef(-1);
+  const [bytesPerRow, setBytesPerRow] = useState<BytesPerRow>(16);
+  const [inspectorShown, setInspectorShown] = useState(true);
+  const vlApi = useRef<VirtualizedListApi | null>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
-  // Use 4 hex digits for files up to 64 KB, 6 digits for larger files (up to 4 MB)
-  const addressDigits: 4 | 6 = data && data.length <= 0x1_0000 ? 4 : 6;
-
-  const bytesPerRow = viewMode === "8x1" ? 8 : 16;
-  const showTwoColumns = viewMode === "8x2";
-  const byteCount: 8 | 16 = viewMode === "16x1" ? 16 : 8;
+  // --- 4 hex digits for files up to 64 KB, 6 beyond (up to 4 MB)
+  const addressDigits: 4 | 6 = data.length <= 0x1_0000 ? 4 : 6;
+  const tooLarge = data.length > MAX_FILE_SIZE;
 
   const rows = useMemo(() => {
-    if (!data || data.length === 0 || data.length > MAX_FILE_SIZE) return [];
+    if (data.length === 0 || tooLarge) return [];
     const items: number[] = [];
-    for (let addr = 0; addr < data.length; addr += bytesPerRow) {
-      items.push(addr);
-    }
+    for (let addr = 0; addr < data.length; addr += bytesPerRow) items.push(addr);
     return items;
-  }, [data, bytesPerRow]);
+  }, [data, bytesPerRow, tooLarge]);
 
-  if (!data || data.length === 0) {
+  const visibleRows = () => Math.max(1, Math.floor((vlApi.current?.viewportSize ?? 400) / rowHeight));
+
+  /** Scroll so a byte is in view, keeping the list still while it already is */
+  const reveal = useCallback(
+    (index: number) => {
+      const row = Math.floor(index / bytesPerRow);
+      const start = vlApi.current?.findStartIndex() ?? 0;
+      const count = Math.max(1, Math.floor((vlApi.current?.viewportSize ?? 400) / rowHeight));
+      if (row >= start && row < start + count - 1) return;
+      vlApi.current?.scrollToIndex(row < start ? row : Math.max(0, row - count + 2), { align: "start" });
+    },
+    [bytesPerRow, rowHeight]
+  );
+
+  const view = useByteView({ bytes: data, bytesPerRow, decimal: decimalView, reveal });
+
+  if (data.length === 0) {
     return <EmptyState message={t("panels.doc.binViewer.noContent")} />;
   }
-
-  if (data.length > MAX_FILE_SIZE) {
+  if (tooLarge) {
     const sizeMb = (data.length / (1024 * 1024)).toLocaleString(uiLocale(), {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     });
-    return (
-      <EmptyState
-        message={t("panels.doc.binViewer.tooLarge", { sizeMb, maxMb: 4 })}
-      />
-    );
+    return <EmptyState message={t("panels.doc.binViewer.tooLarge", { sizeMb, maxMb: 4 })} />;
   }
 
+  const goTo = (text: string): string | undefined => {
+    const value = parseGoToNumber(text, decimalView);
+    if (value === undefined) return t("panels.memoryMap.goToError.number");
+    if (value < 0 || value >= data.length) return t("panels.memoryMap.goToError.range");
+    view.moveTo(value, false, false);
+    vlApi.current?.scrollToIndex(Math.floor(value / bytesPerRow), { align: "start" });
+    listRef.current?.focus({ preventScroll: true });
+    return undefined;
+  };
+
   return (
-    <DataPanel>
-      <PanelHeader>
-        <LabeledSwitch
-          label={t("panels.doc.binViewer.decimal")}
-          title={t("panels.doc.binViewer.decimalTitle")}
-          value={decimalView}
-          clicked={(val) => setDecimalView(val)}
+    <div className={frame.document}>
+      <div className={frame.toolbar}>
+        <GoToBox placeholder={t("panels.doc.binViewer.goToPlaceholder")} title={t("panels.doc.binViewer.goToTitle")} onGo={goTo} />
+        <FindBox
+          placeholder={t("panels.memoryView.findPlaceholder")}
+          title={t("panels.memoryView.findBytesTitle")}
+          text={view.find.text}
+          count={view.find.matches?.length}
+          index={view.find.index}
+          invalid={view.find.invalid}
+          onTextChange={view.setFindText}
+          onSearch={view.runFind}
+          onStep={view.stepFind}
         />
-        <Text text={t("panels.doc.binViewer.view")} />
-        <LabelSeparator />
-        <Dropdown
-          options={viewModeOptions(t)}
-          initialValue={viewMode}
-          width={88}
-          onChanged={(val) => setViewMode(val as DumpViewMode)}
+        <ToolGroup label={t("panels.memoryView.bytes")}>
+          <Segmented
+            label={t("panels.memoryView.bytes")}
+            value={bytesPerRow}
+            options={[
+              { value: 8, text: "8" },
+              { value: 16, text: "16" },
+              { value: 32, text: "32" }
+            ]}
+            onChange={(v) => setBytesPerRow(v as BytesPerRow)}
+          />
+        </ToolGroup>
+        <Segmented
+          label={t("panels.memoryView.numberFormat")}
+          value={decimalView ? "dec" : "hex"}
+          options={[
+            { value: "hex", text: t("panels.memoryView.hex"), title: t("panels.memoryView.hexTitle") },
+            { value: "dec", text: t("panels.memoryView.dec"), title: t("panels.doc.binViewer.decimalTitle") }
+          ]}
+          onChange={(v) => setDecimalView(v === "dec")}
         />
-        <LabeledSwitch
-          label={t("panels.doc.binViewer.chars")}
-          title={t("panels.doc.binViewer.charsTitle")}
-          value={charDump}
-          clicked={(val) => setCharDump(val)}
+        <Check label={t("panels.doc.binViewer.chars")} title={t("panels.doc.binViewer.charsTitle")} value={charDump} onChange={setCharDump} />
+        <span className={frame.spacer} />
+        <Check
+          label={t("panels.memoryView.inspector")}
+          title={t("panels.memoryView.inspectorTitle")}
+          value={inspectorShown}
+          onChange={setInspectorShown}
         />
-        <AddressInput
-          label={t("panels.doc.common.goTo")}
-          clearOnEnter={true}
-          decimalView={decimalView}
-          hexDigits={addressDigits}
-          inputWidth={decimalView ? 64 : addressDigits === 6 ? 60 : 44}
-          onAddressSent={async (address) => {
-            const clampedAddress = Math.min(address, data.length - 1);
-            const rowIndex = Math.floor(clampedAddress / bytesPerRow);
-            setLastJumpAddress(clampedAddress);
-            lastScrolledIndex.current = rowIndex;
-            vlApi.current?.scrollToIndex(rowIndex, { align: "start" });
+      </div>
+      <div className={classnames(frame.body, { [frame.bodyNoInspector]: !inspectorShown })}>
+        <div
+          className={frame.listing}
+          ref={listRef}
+          tabIndex={0}
+          role="grid"
+          aria-label={t("panels.memoryView.dump")}
+          style={{ outline: "none" }}
+          onKeyDown={(e) => {
+            if (view.onKeyDown(e, visibleRows())) {
+              e.preventDefault();
+              e.stopPropagation();
+            }
           }}
-        />
-      </PanelHeader>
-      <FullPanel>
-        <VirtualizedList
-          items={rows}
-          apiLoaded={(api) => {
-            vlApi.current = api;
-            lastScrolledIndex.current = -1;
-          }}
-          renderItem={(idx) => (
-            <DataRow index={idx} hoverable>
-              <MemoryDumpSection
-                address={rows[idx]}
-                bytes={data.slice(rows[idx], rows[idx] + byteCount)}
-                decimalView={decimalView}
-                charDump={charDump}
-                lastJumpAddress={lastJumpAddress}
-                addressDigits={addressDigits}
-              />
-              {showTwoColumns && rows[idx] + 0x08 < data.length && (
-                <MemoryDumpSection
-                  address={rows[idx] + 0x08}
-                  bytes={data.slice(rows[idx] + 0x08, rows[idx] + 0x08 + byteCount)}
-                  decimalView={decimalView}
-                  charDump={charDump}
-                  lastJumpAddress={lastJumpAddress}
-                  addressDigits={addressDigits}
-                />
-              )}
-            </DataRow>
-          )}
-        />
-      </FullPanel>
-    </DataPanel>
+        >
+          <VirtualizedList
+            items={rows}
+            itemSize={rowHeight}
+            revealUnmeasuredItems
+            scrollRowsHorizontally
+            apiLoaded={(api) => {
+              vlApi.current = api;
+            }}
+            renderItem={(idx) => {
+              const address = rows[idx];
+              return (
+                <DataRow index={idx} hoverable>
+                  <MemoryDumpSection
+                    address={address}
+                    bytes={data.subarray(address, address + bytesPerRow) as unknown as readonly number[]}
+                    decimalView={decimalView}
+                    charDump={charDump}
+                    lastJumpAddress={-1}
+                    addressDigits={addressDigits}
+                    marks={view.marksOf(address, Math.min(bytesPerRow, data.length - address))}
+                    onBytePointer={(index, kind, extend) => {
+                      listRef.current?.focus({ preventScroll: true });
+                      view.onBytePointer(index, kind, extend);
+                    }}
+                  />
+                </DataRow>
+              );
+            }}
+          />
+        </div>
+        {inspectorShown && (
+          <ByteInspector
+            bytes={data}
+            cursor={view.cursor}
+            selection={view.selection}
+            addressDigits={addressDigits}
+            decimal={decimalView}
+            onFindBytes={(pattern) => view.setFindText(pattern)}
+          />
+        )}
+      </div>
+    </div>
   );
 };
 

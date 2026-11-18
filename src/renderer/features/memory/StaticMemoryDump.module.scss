@@ -109,3 +109,17 @@
   white-space: nowrap;
   opacity: 0.85;
 }
+
+/* The memory view: the dump beside its inspector, in the shared frame's grid, filling the panel */
+.memoryBody {
+  height: 100%;
+  min-height: 0;
+}
+
+/*
+ * The toolbar speaks the UI's font, as every other toolbar does; the document is monospace for its
+ * listings, and the frame's controls (`font: inherit`) would otherwise read in the code face
+ */
+.header {
+  font-family: var(--main-font-family);
+}
