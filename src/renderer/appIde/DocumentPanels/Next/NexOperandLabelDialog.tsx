@@ -24,6 +24,7 @@ import {
   DialogFooter,
   DialogFooterSpacer
 } from "@renderer/controls/overlay/DialogFooter";
+import ScrollViewer from "@renderer/controls/ScrollViewer";
 
 export type NexOperandLabelDialogResult =
   | {
@@ -173,28 +174,30 @@ export function NexOperandLabelDialog({
           onChange={setSearchText}
         />
         <div className={styles.candidateList}>
-          {filteredGroups.map((group) => (
-            <div key={group.group}>
-              <div className={styles.groupHeader}>{getGroupTitle(group.group)}</div>
-              {group.candidates.map((candidate) => (
-                <button
-                  className={styles.candidateItem}
-                  data-selected={getLabelKey(candidate) === selectedLabelKey ? "true" : undefined}
-                  key={getLabelKey(candidate)}
-                  type="button"
-                  onClick={() => setSelectedLabelKey(getLabelKey(candidate))}
-                >
-                  <span className={styles.labelName}>{candidate.name}</span>
-                  <span>{scopeText(candidate, bank)}</span>
-                  <span>{formatNexLabelValue(candidate.value)}</span>
-                  <span>{formatNexLabelValue(candidate.effectiveValue)}</span>
-                </button>
-              ))}
-            </div>
-          ))}
-          {filteredGroups.length === 0 && (
-            <div className={styles.emptyList}>{t("panels.next.empty.noMatchingLabels")}</div>
-          )}
+          <ScrollViewer allowHorizontal={false}>
+            {filteredGroups.map((group) => (
+              <div key={group.group}>
+                <div className={styles.groupHeader}>{getGroupTitle(group.group)}</div>
+                {group.candidates.map((candidate) => (
+                  <button
+                    className={styles.candidateItem}
+                    data-selected={getLabelKey(candidate) === selectedLabelKey ? "true" : undefined}
+                    key={getLabelKey(candidate)}
+                    type="button"
+                    onClick={() => setSelectedLabelKey(getLabelKey(candidate))}
+                  >
+                    <span className={styles.labelName}>{candidate.name}</span>
+                    <span>{scopeText(candidate, bank)}</span>
+                    <span>{formatNexLabelValue(candidate.value)}</span>
+                    <span>{formatNexLabelValue(candidate.effectiveValue)}</span>
+                  </button>
+                ))}
+              </div>
+            ))}
+            {filteredGroups.length === 0 && (
+              <div className={styles.emptyList}>{t("panels.next.empty.noMatchingLabels")}</div>
+            )}
+          </ScrollViewer>
         </div>
       </DialogRow>
       {/*

@@ -9,6 +9,7 @@ import type { MakeProjectIntent } from "./MakeProjectIntents";
 import type { MakeProjectChoice } from "./MakeProjectModel";
 import type { MakeProjectViewModel } from "./MakeProjectViewModel";
 import styles from "./MakeProjectDialog.module.scss";
+import ScrollViewer from "@renderer/controls/ScrollViewer";
 
 export type MakeProjectViewProps = {
   vm: MakeProjectViewModel;
@@ -97,25 +98,27 @@ export const MakeProjectView = ({ vm, dispatch }: MakeProjectViewProps) => {
       {vm.conflicts.visible && (
         <div className={styles.conflicts} data-testid="make-project-conflicts">
           <div className={styles.conflictsNote}>{t("dialog.makeProject.conflicts.note")}</div>
-          <div className={styles.conflictList}>
-            {vm.conflicts.items.map((item) =>
-              item.canOverwrite ? (
-                <Checkbox
-                  key={item.path}
-                  label={item.path}
-                  initialValue={item.overwrite}
-                  enabled={vm.fieldsEnabled}
-                  onChange={(overwrite) =>
-                    dispatch({ type: "overwriteToggled", path: item.path, overwrite })
-                  }
-                />
-              ) : (
-                <div key={item.path} className={styles.blocked}>
-                  {t("dialog.makeProject.conflicts.blocked", { path: item.path })}
-                </div>
-              )
-            )}
-          </div>
+          <ScrollViewer sizeToContent={true} allowHorizontal={false} className={styles.conflictList}>
+            <div className={styles.conflictItems}>
+              {vm.conflicts.items.map((item) =>
+                item.canOverwrite ? (
+                  <Checkbox
+                    key={item.path}
+                    label={item.path}
+                    initialValue={item.overwrite}
+                    enabled={vm.fieldsEnabled}
+                    onChange={(overwrite) =>
+                      dispatch({ type: "overwriteToggled", path: item.path, overwrite })
+                    }
+                  />
+                ) : (
+                  <div key={item.path} className={styles.blocked}>
+                    {t("dialog.makeProject.conflicts.blocked", { path: item.path })}
+                  </div>
+                )
+              )}
+            </div>
+          </ScrollViewer>
         </div>
       )}
     </DialogForm>

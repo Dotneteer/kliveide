@@ -26,6 +26,7 @@ import {
   DialogFooter,
   DialogFooterSpacer
 } from "@renderer/controls/overlay/DialogFooter";
+import ScrollViewer from "@renderer/controls/ScrollViewer";
 
 type NexRegionTypeFilter = "all" | AnnotationRegionType;
 
@@ -161,89 +162,95 @@ export function NexRegionsDialog({
         />
       </div>
       <div className={styles.table}>
-        <div className={styles.tableHeader}>
-          <span>{t("panels.next.regions.column.start")}</span>
-          <span>{t("panels.next.regions.column.end")}</span>
-          <span>{t("panels.next.region.length")}</span>
-          <span>{t("panels.next.region.type")}</span>
-          <span>{t("panels.next.regions.column.lines")}</span>
-          <span />
-        </div>
-        {filteredRegions.map((region) => {
-          const selected = getRegionKey(region) === selectedRegionKey;
-          return (
-            <div
-              className={classnames(styles.regionRow, { [styles.selected]: selected })}
-              key={getRegionKey(region)}
-              role="button"
-              tabIndex={0}
-              aria-pressed={selected}
-              onClick={() => setSelectedRegionKey(getRegionKey(region))}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  setSelectedRegionKey(getRegionKey(region));
-                }
-              }}
-            >
-              <span>{formatRegionOffset(region.start)}</span>
-              <span>{formatRegionOffset(region.end)}</span>
-              <span>{formatRegionLength(region)}</span>
-              <span className={styles.type}>{formatRegionType(region)}</span>
-              <span className={styles.muted}>{estimateRegionLineCount(region)}</span>
-              <span className={styles.actions}>
-                <button
-                  className={styles.actionButton}
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    controls.close({ action: "go-to", region });
-                  }}
-                >
-                  {t("panels.next.action.goTo")}
-                </button>
-                <button
-                  className={styles.actionButton}
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    controls.close({ action: "edit", region });
-                  }}
-                >
-                  {t("panels.next.regions.edit")}
-                </button>
-                <button
-                  className={styles.actionButton}
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    controls.close({ action: "split", region });
-                  }}
-                >
-                  {t("panels.next.regions.split")}
-                </button>
-                <button
-                  className={styles.actionButton}
-                  disabled={region.type === "disassemble"}
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    controls.close({ action: "revert", region });
-                  }}
-                >
-                  {t("panels.next.regions.revert")}
-                </button>
-              </span>
-            </div>
-          );
-        })}
-        {filteredRegions.length === 0 && (
-          <div className={styles.emptyList}>{t("panels.next.regions.noMatching")}</div>
-        )}
+        <ScrollViewer>
+          <div className={styles.tableHeader}>
+            <span>{t("panels.next.regions.column.start")}</span>
+            <span>{t("panels.next.regions.column.end")}</span>
+            <span>{t("panels.next.region.length")}</span>
+            <span>{t("panels.next.region.type")}</span>
+            <span>{t("panels.next.regions.column.lines")}</span>
+            <span />
+          </div>
+          {filteredRegions.map((region) => {
+            const selected = getRegionKey(region) === selectedRegionKey;
+            return (
+              <div
+                className={classnames(styles.regionRow, { [styles.selected]: selected })}
+                key={getRegionKey(region)}
+                role="button"
+                tabIndex={0}
+                aria-pressed={selected}
+                onClick={() => setSelectedRegionKey(getRegionKey(region))}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    setSelectedRegionKey(getRegionKey(region));
+                  }
+                }}
+              >
+                <span>{formatRegionOffset(region.start)}</span>
+                <span>{formatRegionOffset(region.end)}</span>
+                <span>{formatRegionLength(region)}</span>
+                <span className={styles.type}>{formatRegionType(region)}</span>
+                <span className={styles.muted}>{estimateRegionLineCount(region)}</span>
+                <span className={styles.actions}>
+                  <button
+                    className={styles.actionButton}
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      controls.close({ action: "go-to", region });
+                    }}
+                  >
+                    {t("panels.next.action.goTo")}
+                  </button>
+                  <button
+                    className={styles.actionButton}
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      controls.close({ action: "edit", region });
+                    }}
+                  >
+                    {t("panels.next.regions.edit")}
+                  </button>
+                  <button
+                    className={styles.actionButton}
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      controls.close({ action: "split", region });
+                    }}
+                  >
+                    {t("panels.next.regions.split")}
+                  </button>
+                  <button
+                    className={styles.actionButton}
+                    disabled={region.type === "disassemble"}
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      controls.close({ action: "revert", region });
+                    }}
+                  >
+                    {t("panels.next.regions.revert")}
+                  </button>
+                </span>
+              </div>
+            );
+          })}
+          {filteredRegions.length === 0 && (
+            <div className={styles.emptyList}>{t("panels.next.regions.noMatching")}</div>
+          )}
+        </ScrollViewer>
       </div>
       <DialogRow label={t("panels.next.field.preview")} rows={true}>
         <div className={styles.preview} aria-label={t("panels.next.region.previewLabel")}>
-          {preview}
+          <ScrollViewer allowHorizontal={false}>
+            <div className={styles.previewText}>
+              {preview}
+            </div>
+          </ScrollViewer>
         </div>
       </DialogRow>
       {selectedRegion && trimEnd !== undefined && (

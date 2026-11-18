@@ -19,6 +19,7 @@ import {
   DialogFooter,
   DialogFooterSpacer
 } from "@renderer/controls/overlay/DialogFooter";
+import ScrollViewer from "@renderer/controls/ScrollViewer";
 
 type NexLabelsScopeFilter = "all" | AnnotationLabelScope;
 type NexLabelsSortMode = "address" | "name" | "references";
@@ -156,64 +157,66 @@ export function NexLabelsDialog({
         />
       </div>
       <div className={styles.table}>
-        <div className={styles.tableHeader}>
-          <span>{t("panels.next.field.scope")}</span>
-          <span>{t("panels.next.field.name")}</span>
-          <span>{t("panels.next.field.value")}</span>
-          <span>{t("panels.next.labels.column.address")}</span>
-          <span title={t("panels.next.labels.column.refsTitle")}>{t("panels.next.labels.column.refs")}</span>
-          <span />
-        </div>
-        {filteredLabels.map((label) => (
-          <div className={styles.labelRow} key={getLabelKey(label)}>
-            <span>{scopeText(label, bank)}</span>
-            <span className={styles.labelName} title={label.name}>{label.name}</span>
-            <span>{formatNexLabelValue(label.value)}</span>
-            <span className={label.scope === "global" ? styles.muted : undefined}>
-              {label.scope === "local"
-                ? formatNexLabelValue(getLocalEffectiveAddress(label, bankAddressOffset))
-                : "-"}
-            </span>
-            <span>{label.referenceCount ?? (label.referenced ? 1 : 0)}</span>
-            <span className={styles.actions}>
-              {/*
-                * "Go To" keeps its words: it is the one action here that navigates away, it has no
-                * glyph anyone would read unaided, and it is what most rows are clicked for. The two
-                * that manage the label are icons — recognisable, and the pair takes the width a
-                * single spelled-out "Delete" used to.
-                */}
-              <button
-                className={styles.actionButton}
-                type="button"
-                onClick={() => controls.close({ action: "go-to", label })}
-              >
-                {t("panels.next.action.goTo")}
-              </button>
-              <SmallIconButton
-                iconName="pencil"
-                title={t("panels.next.labels.edit", { name: label.name })}
-                fill="--color-command-icon"
-                enable={!busy}
-                clicked={() => void runAction(() => onEditLabel(label))}
-              />
-              {/*
-                * The danger hue is on the glyph, not on a background: the row already carries a
-                * zebra stripe and a hover wash, and a filled red button in every row would read as
-                * an alert list rather than a label list.
-                */}
-              <SmallIconButton
-                iconName="trash"
-                title={t("panels.next.labels.delete", { name: label.name })}
-                fill="--status-error"
-                enable={!busy}
-                clicked={() => void runAction(() => onDeleteLabel(label))}
-              />
-            </span>
+        <ScrollViewer>
+          <div className={styles.tableHeader}>
+            <span>{t("panels.next.field.scope")}</span>
+            <span>{t("panels.next.field.name")}</span>
+            <span>{t("panels.next.field.value")}</span>
+            <span>{t("panels.next.labels.column.address")}</span>
+            <span title={t("panels.next.labels.column.refsTitle")}>{t("panels.next.labels.column.refs")}</span>
+            <span />
           </div>
-        ))}
-        {filteredLabels.length === 0 && (
-          <div className={styles.emptyList}>{t("panels.next.empty.noMatchingLabels")}</div>
-        )}
+          {filteredLabels.map((label) => (
+            <div className={styles.labelRow} key={getLabelKey(label)}>
+              <span>{scopeText(label, bank)}</span>
+              <span className={styles.labelName} title={label.name}>{label.name}</span>
+              <span>{formatNexLabelValue(label.value)}</span>
+              <span className={label.scope === "global" ? styles.muted : undefined}>
+                {label.scope === "local"
+                  ? formatNexLabelValue(getLocalEffectiveAddress(label, bankAddressOffset))
+                  : "-"}
+              </span>
+              <span>{label.referenceCount ?? (label.referenced ? 1 : 0)}</span>
+              <span className={styles.actions}>
+                {/*
+                  * "Go To" keeps its words: it is the one action here that navigates away, it has no
+                  * glyph anyone would read unaided, and it is what most rows are clicked for. The two
+                  * that manage the label are icons — recognisable, and the pair takes the width a
+                  * single spelled-out "Delete" used to.
+                  */}
+                <button
+                  className={styles.actionButton}
+                  type="button"
+                  onClick={() => controls.close({ action: "go-to", label })}
+                >
+                  {t("panels.next.action.goTo")}
+                </button>
+                <SmallIconButton
+                  iconName="pencil"
+                  title={t("panels.next.labels.edit", { name: label.name })}
+                  fill="--color-command-icon"
+                  enable={!busy}
+                  clicked={() => void runAction(() => onEditLabel(label))}
+                />
+                {/*
+                  * The danger hue is on the glyph, not on a background: the row already carries a
+                  * zebra stripe and a hover wash, and a filled red button in every row would read as
+                  * an alert list rather than a label list.
+                  */}
+                <SmallIconButton
+                  iconName="trash"
+                  title={t("panels.next.labels.delete", { name: label.name })}
+                  fill="--status-error"
+                  enable={!busy}
+                  clicked={() => void runAction(() => onDeleteLabel(label))}
+                />
+              </span>
+            </div>
+          ))}
+          {filteredLabels.length === 0 && (
+            <div className={styles.emptyList}>{t("panels.next.empty.noMatchingLabels")}</div>
+          )}
+        </ScrollViewer>
       </div>
       <DialogFooter>
         <Button variant="secondary" text={t("common.button.close")} clicked={controls.cancel} />

@@ -90,9 +90,12 @@
 }
 
 /* --- What each file becomes */
+/* --- The table scrolls through a content-sized `ScrollViewer` under this `max-height` */
 .tableWrap {
+  display: flex;
+  flex-direction: column;
   max-height: calc(var(--row-size-list) * 10);
-  overflow: auto;
+  overflow: hidden;
   border: 1px solid var(--border-default);
   border-radius: var(--radius-sm);
   background: var(--surface-canvas);
@@ -140,12 +143,15 @@
   color: var(--text-tertiary);
 }
 
+/* --- A content-sized `ScrollViewer`: the list scrolls under its `max-height` */
 .names {
+  max-height: calc(var(--row-size-list) * 8);
+  font-family: var(--monospace-font);
+}
+
+.nameList {
   margin: 0;
   padding-left: var(--space-5);
-  max-height: calc(var(--row-size-list) * 8);
-  overflow: auto;
-  font-family: var(--monospace-font);
 }
 
 /* --- The conflict dialog's own footer: the same strip as DialogForm's, more buttons */

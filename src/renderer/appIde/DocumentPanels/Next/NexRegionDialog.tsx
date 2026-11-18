@@ -27,6 +27,7 @@ import type { MessageKey } from "@common/i18n/keys.generated";
 import { DialogFooter } from "@renderer/controls/overlay/DialogFooter";
 import { decodeCopperWord, formatCopperSource } from "@common/zxnext/copper/copperDecoder";
 import { decodeDmaStream, formatDmaCommand } from "@common/zxnext/dma/dmaDecoder";
+import ScrollViewer from "@renderer/controls/ScrollViewer";
 
 export type NexRegionDialogResult = {
   type: AnnotationRegionType;
@@ -187,23 +188,29 @@ export function NexRegionDialog({
       )}
       <DialogRow label={t("panels.next.region.affected")} rows={true}>
         <div className={styles.regionList}>
-          {affectedRegions.map((region) => (
-            <div className={styles.regionItem} key={`${region.start}:${region.end}:${region.type}`}>
-              <span>{formatRegionOffset(region.start)}</span>
-              <span>{formatRegionOffset(region.end)}</span>
-              <span>{formatRegionLength(region)}</span>
-              <span>{region.type}</span>
-              <span>{describeRegionEffect(region, start!, end!, type)}</span>
-            </div>
-          ))}
-          {affectedRegions.length === 0 && (
-            <div className={styles.emptyList}>{t("panels.next.region.noAffected")}</div>
-          )}
+          <ScrollViewer allowHorizontal={false}>
+            {affectedRegions.map((region) => (
+              <div className={styles.regionItem} key={`${region.start}:${region.end}:${region.type}`}>
+                <span>{formatRegionOffset(region.start)}</span>
+                <span>{formatRegionOffset(region.end)}</span>
+                <span>{formatRegionLength(region)}</span>
+                <span>{region.type}</span>
+                <span>{describeRegionEffect(region, start!, end!, type)}</span>
+              </div>
+            ))}
+            {affectedRegions.length === 0 && (
+              <div className={styles.emptyList}>{t("panels.next.region.noAffected")}</div>
+            )}
+          </ScrollViewer>
         </div>
       </DialogRow>
       <DialogRow label={t("panels.next.field.preview")} rows={true}>
         <div className={styles.preview} aria-label={t("panels.next.region.previewLabel")}>
-          <RegionPreviewLines text={preview} />
+          <ScrollViewer allowHorizontal={false}>
+            <div className={styles.previewText}>
+              <RegionPreviewLines text={preview} />
+            </div>
+          </ScrollViewer>
         </div>
       </DialogRow>
       <DialogFooter>

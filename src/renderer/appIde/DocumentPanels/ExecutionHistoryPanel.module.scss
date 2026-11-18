@@ -151,12 +151,23 @@
   color: var(--color-state-value);
 }
 
+/*
+ * The detail pane scrolls through a `ScrollViewer` like every other scroll area, never a native
+ * `overflow: auto` bar: the pane is a flex column that clips, the viewer fills it, and the rows sit
+ * in `.detailContent` inside the viewer.
+ */
 .detail {
+  display: flex;
+  flex-direction: column;
   flex: 0 0 auto;
   width: 34ch;
-  overflow: auto;
-  padding: var(--space-1) 0;
+  min-height: 0;
+  overflow: hidden;
   border-left: 1px solid var(--border-default);
+}
+
+.detailContent {
+  padding: var(--space-1) 0;
 }
 
 /*
@@ -173,14 +184,17 @@
   .detail {
     flex: 0 0 40%;
     width: auto;
-    min-height: 0;
-    overflow-x: auto;
-    overflow-y: hidden;
+    border-left: none;
+    border-top: 1px solid var(--border-default);
+  }
+
+  /* As tall as the band, so the columns flow sideways and the viewer scrolls them horizontally */
+  .detailContent {
+    box-sizing: border-box;
+    height: 100%;
     columns: 26ch auto;
     column-fill: auto;
     column-gap: var(--space-4);
-    border-left: none;
-    border-top: 1px solid var(--border-default);
 
     > * {
       break-inside: avoid;

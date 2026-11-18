@@ -74,12 +74,19 @@
   grid-area: tools;
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  background: var(--surface-panel);
+  border-right: 1px solid var(--border-subtle);
+  /* A short pane scrolls the rail through its `ScrollViewer`: an overlay, not 15px of native bar */
+  overflow: hidden;
+}
+
+.toolRailContent {
+  display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 2px;
   padding: var(--space-1) 3px;
-  background: var(--surface-panel);
-  border-right: 1px solid var(--border-subtle);
-  overflow-y: auto;
 }
 
 .railSeparator {
@@ -235,7 +242,13 @@
   min-height: 0;
   background: var(--surface-panel);
   border-left: 1px solid var(--border-subtle);
-  overflow-y: auto;
+  /* The inspector's sections scroll through its `ScrollViewer`, never a native bar */
+  overflow: hidden;
+}
+
+.inspectorContent {
+  display: flex;
+  flex-direction: column;
 }
 
 .inspectorSection {

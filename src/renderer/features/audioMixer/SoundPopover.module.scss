@@ -95,9 +95,16 @@
   }
 }
 
+/* The channels scroll through a content-sized `ScrollViewer` that the popover's `max-height` squeezes */
 .body {
-  flex: 1 1 auto;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.bodyRows {
   padding: var(--space-1) 0;
 }
 

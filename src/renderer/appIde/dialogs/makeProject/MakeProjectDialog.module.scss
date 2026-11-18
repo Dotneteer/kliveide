@@ -27,11 +27,14 @@
 
 // --- Long lists scroll inside the dialog instead of growing it off the screen
 .conflictList {
+  max-height: 30vh;
+}
+
+// --- The list scrolls through a content-sized `ScrollViewer`, never a native bar
+.conflictItems {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
-  max-height: 30vh;
-  overflow-y: auto;
 }
 
 .blocked {

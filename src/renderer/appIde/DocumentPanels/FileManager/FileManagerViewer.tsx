@@ -2,6 +2,7 @@ import { useMemo } from "react";
 
 import { ZxSpectrumChars } from "@common/machines/char-codes";
 import { SPECTRUM_48_COLORS } from "@emu/machines/spectrum-colors";
+import ScrollViewer from "@renderer/controls/ScrollViewer";
 import { ScreenCanvas } from "@renderer/controls/Next/ScreenCanvas";
 import { decodeBasicProgram } from "../basicListing";
 import { BasicLineDisplay } from "../BasicPanel";
@@ -61,26 +62,28 @@ export const FileManagerViewer = ({ viewer, dispatch, refocus }: Props) => {
         </span>
       </div>
       <div className={styles.viewerBody}>
-        {viewer.error ? (
-          <div className={styles.message}>{viewer.error}</div>
-        ) : !viewer.data ? null : viewer.kind === "basic" ? (
-          <BasicListing data={viewer.data} end={viewer.basicEnd ?? viewer.data.length} />
-        ) : viewer.kind === "screen" ? (
-          <div className={styles.viewerScreen}>
-            <ScreenCanvas
-              data={viewer.data}
-              palette={SPECTRUM_48_COLORS}
-              zoomFactor={2}
-              screenWidth={256}
-              screenHeight={192}
-              createPixelData={createScrPixelData}
-            />
-          </div>
-        ) : viewer.kind === "text" ? (
-          <pre className={styles.viewerText}>{new TextDecoder("latin1").decode(viewer.data)}</pre>
-        ) : (
-          <StaticMemoryView memory={viewer.data} />
-        )}
+        <ScrollViewer>
+          {viewer.error ? (
+            <div className={styles.message}>{viewer.error}</div>
+          ) : !viewer.data ? null : viewer.kind === "basic" ? (
+            <BasicListing data={viewer.data} end={viewer.basicEnd ?? viewer.data.length} />
+          ) : viewer.kind === "screen" ? (
+            <div className={styles.viewerScreen}>
+              <ScreenCanvas
+                data={viewer.data}
+                palette={SPECTRUM_48_COLORS}
+                zoomFactor={2}
+                screenWidth={256}
+                screenHeight={192}
+                createPixelData={createScrPixelData}
+              />
+            </div>
+          ) : viewer.kind === "text" ? (
+            <pre className={styles.viewerText}>{new TextDecoder("latin1").decode(viewer.data)}</pre>
+          ) : (
+            <StaticMemoryView memory={viewer.data} />
+          )}
+        </ScrollViewer>
       </div>
     </div>
   );

@@ -10,6 +10,7 @@ import {
   DialogFooter,
   DialogFooterSpacer
 } from "@renderer/controls/overlay/DialogFooter";
+import ScrollViewer from "@renderer/controls/ScrollViewer";
 
 export type NexSynopsisCommentDialogResult = {
   synopsis?: string;
@@ -68,7 +69,11 @@ export function NexSynopsisCommentDialog({
       </DialogRow>
       <DialogRow label={t("panels.next.field.preview")} rows={true}>
         <div className={styles.preview} aria-label={t("panels.next.synopsis.previewLabel")}>
-          {preview}
+          <ScrollViewer allowHorizontal={false}>
+            <div className={styles.previewText}>
+              {preview}
+            </div>
+          </ScrollViewer>
         </div>
       </DialogRow>
       <DialogFooter>

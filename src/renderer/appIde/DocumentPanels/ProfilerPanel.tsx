@@ -15,6 +15,7 @@ import type { AddressRow, CallNode, FlatRow } from "@common/profile/profileRollu
 import { SmallIconButton } from "@controls/IconButton";
 import { LabeledSwitch } from "@controls/LabeledSwitch";
 import { EmptyState, PanelHeader, PanelHeaderGroup } from "@renderer/controls/data";
+import ScrollViewer from "@renderer/controls/ScrollViewer";
 import { FullPanel } from "@renderer/controls/layout/Panels";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { useEmuApi } from "@renderer/core/EmuApi";
@@ -509,9 +510,11 @@ const ProfilerPanel = (_props: DocumentProps) => {
           })}
         </div>
         {treeColumns}
-        <div className={styles.list} style={{ overflow: "auto" }}>
-          {list(t("panels.doc.profiler.calledBy", { count: callers.length }), callers)}
-          {list(t("panels.doc.profiler.callsList", { count: callees.length }), callees)}
+        <div className={styles.list}>
+          <ScrollViewer>
+            {list(t("panels.doc.profiler.calledBy", { count: callers.length }), callers)}
+            {list(t("panels.doc.profiler.callsList", { count: callees.length }), callees)}
+          </ScrollViewer>
         </div>
       </>
     );

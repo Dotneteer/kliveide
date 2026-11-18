@@ -286,13 +286,19 @@
   width: 44ch;
   max-width: calc(100% - var(--space-2));
   max-height: 100%;
-  overflow: auto;
-  padding: var(--space-1) 0;
+  /* --- The items scroll through a content-sized `ScrollViewer` that this `max-height` squeezes */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   border: 1px solid var(--border-context-menu);
   border-radius: var(--radius-sm);
   background: var(--surface-raised);
   box-shadow: var(--shadow-context-menu);
   font-family: var(--main-font-family);
+}
+
+.menuContent {
+  padding: var(--space-1) 0;
 }
 
 .menuGroup + .menuGroup {
@@ -607,9 +613,12 @@
   color: var(--text-on-accent);
 }
 
+/* The viewer's content scrolls through a `ScrollViewer`; the grid cell clips, never a native bar */
 .viewerBody {
+  display: flex;
+  flex-direction: column;
   min-height: 0;
-  overflow: auto;
+  overflow: hidden;
 }
 
 .viewerBasic,

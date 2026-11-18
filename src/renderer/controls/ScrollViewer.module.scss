@@ -14,3 +14,10 @@
     flex-direction: row;
   }
 }
+
+/* `sizeToContent`: as tall as the content, shrunk by the flex layout or a `max-height` (see the prop) */
+.sizeToContent {
+  flex: 0 1 auto;
+  height: auto;
+  min-height: 0;
+}

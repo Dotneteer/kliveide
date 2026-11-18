@@ -54,6 +54,7 @@ import {
   SectionHeader
 } from "@renderer/controls/data";
 import { FullPanel } from "@renderer/controls/layout/Panels";
+import ScrollViewer from "@renderer/controls/ScrollViewer";
 import { VirtualizedList, type VirtualizedListApi } from "@renderer/controls/VirtualizedList";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { useMainApi } from "@renderer/core/MainApi";
@@ -793,82 +794,86 @@ const HistoryDetail = ({
   const stepText = String(step).replace("-", "−");
   return (
     <div className={styles.detail}>
-      <SectionHeader
-        title={
-          isSeparatorRecord(record)
-            ? t("panels.doc.history.detail.step", { step: stepText })
-            : t("panels.doc.history.detail.stepAt", { step: stepText, address: `$${hex4(before.pc)}` })
-        }
-      />
-      <DataRow dense={true}>
-        <DataLabel text={t("panels.doc.history.detail.register")} width="5ch" />
-        <DataValue text={t("panels.doc.history.detail.before")} width="6ch" />
-        <DataValue
-          text={t(newest ? "panels.doc.history.detail.afterNow" : "panels.doc.history.detail.after")}
-          width="11ch"
-        />
-      </DataRow>
-      {REGISTER_ROWS.map(([key, name]) => {
-        const a = before[key] as number;
-        const b = after?.[key] as number | undefined;
-        return (
-          <DataRow key={key} dense={true}>
-            <DataLabel text={name} width="5ch" />
-            <DataValue text={hex4(a)} width="6ch" />
+      <ScrollViewer thinScrollBar={true}>
+        <div className={styles.detailContent}>
+          <SectionHeader
+            title={
+              isSeparatorRecord(record)
+                ? t("panels.doc.history.detail.step", { step: stepText })
+                : t("panels.doc.history.detail.stepAt", { step: stepText, address: `$${hex4(before.pc)}` })
+            }
+          />
+          <DataRow dense={true}>
+            <DataLabel text={t("panels.doc.history.detail.register")} width="5ch" />
+            <DataValue text={t("panels.doc.history.detail.before")} width="6ch" />
             <DataValue
-              text={b === undefined ? "" : hex4(b)}
+              text={t(newest ? "panels.doc.history.detail.afterNow" : "panels.doc.history.detail.after")}
               width="11ch"
-              changed={b !== undefined && a !== b}
             />
           </DataRow>
-        );
-      })}
-      <DataRow dense={true}>
-        <DataLabel text="IFF1" width="5ch" />
-        <DataValue text={before.iff1 ? "1" : "0"} width="6ch" />
-        <DataValue
-          text={after ? (after.iff1 ? "1" : "0") : ""}
-          width="11ch"
-          changed={!!after && after.iff1 !== before.iff1}
-        />
-      </DataRow>
-      <DataRow dense={true}>
-        <DataLabel text="IM" width="5ch" />
-        <DataValue text={String(before.interruptMode)} width="6ch" />
-        <DataValue
-          text={after ? String(after.interruptMode) : ""}
-          width="11ch"
-          changed={!!after && after.interruptMode !== before.interruptMode}
-        />
-      </DataRow>
-      <SectionHeader title={t("panels.doc.history.detail.when")} />
-      <DataRow dense={true}>
-        <DataLabel text={t("panels.doc.history.detail.frame")} width="7ch" />
-        <DataValue text={record.frame.toLocaleString("en-US")} />
-      </DataRow>
-      <DataRow dense={true}>
-        <DataLabel text="Tact" width="7ch" />
-        <DataValue
-          text={`${record.frameTact.toLocaleString("en-US")}${frameTactUnit ? ` (${frameTactUnit})` : ""}`}
-        />
-      </DataRow>
-      {record.repeat > 1 && (
-        <DataRow dense={true}>
-          <DataLabel
-            text={t(record.kind === HistoryKind.DmaHold ? "panels.doc.history.detail.held" : "panels.doc.history.detail.repeats")}
-            width="7ch"
-          />
-          <DataValue
-            text={`${record.repeat.toLocaleString("en-US")}${record.kind === HistoryKind.DmaHold ? " T" : ""}`}
-          />
-        </DataRow>
-      )}
-      {context && record.kind === HistoryKind.Instruction && (
-        <>
-          <SectionHeader title={t("panels.doc.history.detail.memoryMap")} />
-          <div className={styles.context}>{context}</div>
-        </>
-      )}
+          {REGISTER_ROWS.map(([key, name]) => {
+            const a = before[key] as number;
+            const b = after?.[key] as number | undefined;
+            return (
+              <DataRow key={key} dense={true}>
+                <DataLabel text={name} width="5ch" />
+                <DataValue text={hex4(a)} width="6ch" />
+                <DataValue
+                  text={b === undefined ? "" : hex4(b)}
+                  width="11ch"
+                  changed={b !== undefined && a !== b}
+                />
+              </DataRow>
+            );
+          })}
+          <DataRow dense={true}>
+            <DataLabel text="IFF1" width="5ch" />
+            <DataValue text={before.iff1 ? "1" : "0"} width="6ch" />
+            <DataValue
+              text={after ? (after.iff1 ? "1" : "0") : ""}
+              width="11ch"
+              changed={!!after && after.iff1 !== before.iff1}
+            />
+          </DataRow>
+          <DataRow dense={true}>
+            <DataLabel text="IM" width="5ch" />
+            <DataValue text={String(before.interruptMode)} width="6ch" />
+            <DataValue
+              text={after ? String(after.interruptMode) : ""}
+              width="11ch"
+              changed={!!after && after.interruptMode !== before.interruptMode}
+            />
+          </DataRow>
+          <SectionHeader title={t("panels.doc.history.detail.when")} />
+          <DataRow dense={true}>
+            <DataLabel text={t("panels.doc.history.detail.frame")} width="7ch" />
+            <DataValue text={record.frame.toLocaleString("en-US")} />
+          </DataRow>
+          <DataRow dense={true}>
+            <DataLabel text="Tact" width="7ch" />
+            <DataValue
+              text={`${record.frameTact.toLocaleString("en-US")}${frameTactUnit ? ` (${frameTactUnit})` : ""}`}
+            />
+          </DataRow>
+          {record.repeat > 1 && (
+            <DataRow dense={true}>
+              <DataLabel
+                text={t(record.kind === HistoryKind.DmaHold ? "panels.doc.history.detail.held" : "panels.doc.history.detail.repeats")}
+                width="7ch"
+              />
+              <DataValue
+                text={`${record.repeat.toLocaleString("en-US")}${record.kind === HistoryKind.DmaHold ? " T" : ""}`}
+              />
+            </DataRow>
+          )}
+          {context && record.kind === HistoryKind.Instruction && (
+            <>
+              <SectionHeader title={t("panels.doc.history.detail.memoryMap")} />
+              <div className={styles.context}>{context}</div>
+            </>
+          )}
+        </div>
+      </ScrollViewer>
     </div>
   );
 };

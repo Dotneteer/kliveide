@@ -363,6 +363,9 @@ export function useEmulatorScreen(
     if (!pixelData.current) return;
     const screenEl = screenElement.current;
     if (!screenEl) return;
+    // --- A redraw can be asked for (a step back, a history move) before the machine's screen size
+    // --- is known; a zero-sized ImageData throws, and there is nothing to draw yet anyway.
+    if (!(shadowCanvasWidth.current > 0) || !(shadowCanvasHeight.current > 0)) return;
 
     let screenCtx = screenCtxRef.current;
     if (!screenCtx) {

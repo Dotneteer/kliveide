@@ -116,6 +116,48 @@ describe("useEmulatorScreen", () => {
   });
 
   /*
+   * A step back (or any history move) asks for a redraw that can arrive before the machine has
+   * reported its screen size. `createImageData(0, ...)` throws an IndexSizeError, which took the
+   * whole emulator window down; the redraw has nothing to draw yet and must be skipped.
+   */
+  it("skips the redraw, without throwing, while the screen size is not known", async () => {
+    vi.doMock("@renderer/core/RendererProvider", () => ({
+      useGlobalSetting: () => "off"
+    }));
+    vi.doMock("@renderer/core/useResizeObserver", () => ({
+      useResizeObserver: vi.fn()
+    }));
+
+    const createImageData = vi.fn((width: number) => {
+      if (!width) throw new Error("IndexSizeError: The source width is zero or not a number.");
+      return {} as ImageData;
+    });
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(
+      () => ({ createImageData, drawImage: vi.fn(), putImageData: vi.fn() }) as unknown as CanvasRenderingContext2D
+    );
+
+    const controllerRef = {
+      current: { machine: { getBufferStartOffset: () => 0, screenWidthInPixels: 0, screenHeightInPixels: 0 } }
+    };
+    const hostDiv = document.createElement("div");
+    document.body.appendChild(hostDiv);
+
+    const { useEmulatorScreen } = await import("@renderer/features/emulator/useEmulatorScreen");
+    const { result } = renderHook(() =>
+      useEmulatorScreen({ current: hostDiv } as MutableRefObject<HTMLDivElement>, controllerRef as any)
+    );
+    result.current.screenElement.current = document.createElement("canvas");
+
+    expect(() =>
+      act(() => {
+        result.current.updateScreenDimensions();
+        result.current.displayScreenData();
+      })
+    ).not.toThrow();
+    expect(createImageData).not.toHaveBeenCalled();
+  });
+
+  /*
    * The zoom step is a step of the ratio the *user sees*, not of the machine's raw buffer.
    *
    * The Next draws a 640-pixel-wide buffer whose pixels are half as wide as they are tall

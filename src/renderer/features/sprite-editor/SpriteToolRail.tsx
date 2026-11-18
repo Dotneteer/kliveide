@@ -1,3 +1,4 @@
+import ScrollViewer from "@renderer/controls/ScrollViewer";
 import styles from "./SpriteEditor.module.scss";
 import { memo } from "react";
 import { SmallIconButton } from "@renderer/controls/IconButton";
@@ -47,36 +48,40 @@ export const SpriteToolRail = memo(
     const t = useT();
     return (
     <div className={styles.toolRail} role="toolbar" aria-orientation="vertical" aria-label={t("panels.spriteEditor.tools")}>
-      {TOOLS.map((entry) => (
-        <SmallIconButton
-          key={entry.tool}
-          iconName={entry.icon}
-          title={entry.draws ? `${t(entry.titleKey)}\n${t("panels.spriteEditor.drawHint")}` : t(entry.titleKey)}
-          selected={tool === entry.tool}
-          clicked={() => onSelectTool(entry.tool)}
-        />
-      ))}
-      <i className={styles.railSeparator} />
-      <SmallIconButton
-        iconName="spr-rotate-ccw"
-        title={t("panels.spriteEditor.rotateCcw")}
-        clicked={onRotateCcw}
-      />
-      <SmallIconButton
-        iconName="spr-rotate-cw"
-        title={t("panels.spriteEditor.rotateCw")}
-        clicked={onRotateCw}
-      />
-      {/*
-       * These two were crossed: "Flip vertically" mirrored columns (a left-to-right flip) and
-       * "Flip horizontally" mirrored rows. Each now does what its label and its icon say.
-       */}
-      <SmallIconButton iconName="spr-flip-v" title={t("panels.spriteEditor.flipVertical")} clicked={onFlipVertical} />
-      <SmallIconButton
-        iconName="spr-flip-h"
-        title={t("panels.spriteEditor.flipHorizontal")}
-        clicked={onFlipHorizontal}
-      />
+      <ScrollViewer allowHorizontal={false} thinScrollBar={true}>
+        <div className={styles.toolRailContent}>
+          {TOOLS.map((entry) => (
+            <SmallIconButton
+              key={entry.tool}
+              iconName={entry.icon}
+              title={entry.draws ? `${t(entry.titleKey)}\n${t("panels.spriteEditor.drawHint")}` : t(entry.titleKey)}
+              selected={tool === entry.tool}
+              clicked={() => onSelectTool(entry.tool)}
+            />
+          ))}
+          <i className={styles.railSeparator} />
+          <SmallIconButton
+            iconName="spr-rotate-ccw"
+            title={t("panels.spriteEditor.rotateCcw")}
+            clicked={onRotateCcw}
+          />
+          <SmallIconButton
+            iconName="spr-rotate-cw"
+            title={t("panels.spriteEditor.rotateCw")}
+            clicked={onRotateCw}
+          />
+          {/*
+           * These two were crossed: "Flip vertically" mirrored columns (a left-to-right flip) and
+           * "Flip horizontally" mirrored rows. Each now does what its label and its icon say.
+           */}
+          <SmallIconButton iconName="spr-flip-v" title={t("panels.spriteEditor.flipVertical")} clicked={onFlipVertical} />
+          <SmallIconButton
+            iconName="spr-flip-h"
+            title={t("panels.spriteEditor.flipHorizontal")}
+            clicked={onFlipHorizontal}
+          />
+        </div>
+      </ScrollViewer>
     </div>
     );
   }

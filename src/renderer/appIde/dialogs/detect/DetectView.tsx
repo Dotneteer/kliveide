@@ -10,6 +10,7 @@ import type { DetectIntent } from "./DetectIntents";
 import type { DetectOptionsState, DetectScopeChoice } from "./DetectModel";
 import type { DetectViewModel } from "./DetectViewModel";
 import styles from "./DetectDialog.module.scss";
+import ScrollViewer from "@renderer/controls/ScrollViewer";
 
 export type DetectViewProps = {
   vm: DetectViewModel;
@@ -120,11 +121,13 @@ export const DetectView = ({ vm, dispatch }: DetectViewProps) => {
         </table>
       )}
       {vm.notes.length > 0 && (
-        <ul className={styles.details} aria-label={t("dialog.detect.importNotes")}>
-          {vm.notes.map((note, i) => (
-            <li key={i}>{note}</li>
-          ))}
-        </ul>
+        <ScrollViewer sizeToContent={true} allowHorizontal={false} className={styles.details}>
+          <ul className={styles.detailList} aria-label={t("dialog.detect.importNotes")}>
+            {vm.notes.map((note, i) => (
+              <li key={i}>{note}</li>
+            ))}
+          </ul>
+        </ScrollViewer>
       )}
       {vm.replaceWarning && <div className={styles.warning}>{vm.replaceWarning}</div>}
       {vm.message && <div className={styles.message}>{vm.message}</div>}
@@ -176,20 +179,22 @@ const DetectTableRow = ({
     {row.expanded && (
       <tr>
         <td colSpan={8}>
-          <ul className={styles.details}>
-            {row.details.map((detail, i) => (
-              <li key={i}>
-                <button
-                  type="button"
-                  className={styles.linkButton}
-                  title={t("dialog.detect.notes.goTo")}
-                  onClick={() => dispatch({ type: "goToRequested", index: row.index, offset: detail.offset })}
-                >
-                  {detail.text}
-                </button>
-              </li>
-            ))}
-          </ul>
+          <ScrollViewer sizeToContent={true} allowHorizontal={false} className={styles.details}>
+            <ul className={styles.detailList}>
+              {row.details.map((detail, i) => (
+                <li key={i}>
+                  <button
+                    type="button"
+                    className={styles.linkButton}
+                    title={t("dialog.detect.notes.goTo")}
+                    onClick={() => dispatch({ type: "goToRequested", index: row.index, offset: detail.offset })}
+                  >
+                    {detail.text}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </ScrollViewer>
         </td>
       </tr>
     )}

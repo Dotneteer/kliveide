@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+// --- The lists and previews scroll in `ScrollViewer`s, which pick their scrollbar theme by tone: a
+// --- test rendered without the providers gets a dark tone, one rendered inside them the real theme
+vi.mock("@renderer/theming/ThemeProvider", async (importOriginal) => {
+  const original = await importOriginal<typeof import("@renderer/theming/ThemeProvider")>();
+  return { ...original, useTheme: () => original.useTheme() ?? { theme: { tone: "dark" } } };
+});
 
 afterEach(() => {
   cleanup();

@@ -15,6 +15,7 @@ import { PROJECT_FILE_DRAG_MIME, carriesFiles, droppedFilePaths } from "@rendere
 const FM_DRAG_MIME = "application/x-klive-file-manager";
 import { intentForKey } from "./fileManagerKeys";
 import styles from "./FileManagerPanel.module.scss";
+import ScrollViewer from "@renderer/controls/ScrollViewer";
 
 /*
  * The File Manager's view (`dev/ai/file-manager.md`): two panes side by side, each a header
@@ -495,35 +496,39 @@ const DriveMenu = ({ menu, dispatch, refocus }: DriveMenuProps) => {
     <>
       <div className={styles.menuBackdrop} onMouseDown={() => choose({ type: "driveMenuClosed" })} />
       <div className={styles.menu} role="menu" data-testid="fm-drive-menu">
-        {menu.groups.map((g) => (
-          <div key={g.title} className={styles.menuGroup}>
-            <div className={styles.menuTitle}>{g.title}</div>
-            {g.items.map((item) => (
-              <button
-                type="button"
-                role="menuitem"
-                key={item.id}
-                className={classnames(styles.menuItem, { [styles.menuSelected]: item.selected })}
-                disabled={item.disabled}
-                onClick={() => choose({ type: "driveChosen", side: menu.side as PaneSide, driveId: item.id })}
-              >
-                <Icon iconName={DRIVE_ICONS[item.icon]} width={14} height={14} fill="--color-command-icon" />
-                <span className={styles.menuLabel}>
-                  {item.label}
-                  {item.detail && <span className={styles.menuDetail}>{item.detail}</span>}
-                </span>
-                <span className={styles.menuFree}>{item.free ?? ""}</span>
-              </button>
+        <ScrollViewer sizeToContent={true} allowHorizontal={false} thinScrollBar={true}>
+          <div className={styles.menuContent}>
+            {menu.groups.map((g) => (
+              <div key={g.title} className={styles.menuGroup}>
+                <div className={styles.menuTitle}>{g.title}</div>
+                {g.items.map((item) => (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    key={item.id}
+                    className={classnames(styles.menuItem, { [styles.menuSelected]: item.selected })}
+                    disabled={item.disabled}
+                    onClick={() => choose({ type: "driveChosen", side: menu.side as PaneSide, driveId: item.id })}
+                  >
+                    <Icon iconName={DRIVE_ICONS[item.icon]} width={14} height={14} fill="--color-command-icon" />
+                    <span className={styles.menuLabel}>
+                      {item.label}
+                      {item.detail && <span className={styles.menuDetail}>{item.detail}</span>}
+                    </span>
+                    <span className={styles.menuFree}>{item.free ?? ""}</span>
+                  </button>
+                ))}
+              </div>
             ))}
+            <div className={styles.menuGroup}>
+              <button type="button" role="menuitem" className={styles.menuItem} onClick={() => choose({ type: "openImageRequested", side: menu.side })}>
+                <Icon iconName="floppy" width={14} height={14} fill="--color-command-icon" />
+                <span className={styles.menuLabel}>{menu.openImageLabel}</span>
+                <span className={styles.menuFree} />
+              </button>
+            </div>
           </div>
-        ))}
-        <div className={styles.menuGroup}>
-          <button type="button" role="menuitem" className={styles.menuItem} onClick={() => choose({ type: "openImageRequested", side: menu.side })}>
-            <Icon iconName="floppy" width={14} height={14} fill="--color-command-icon" />
-            <span className={styles.menuLabel}>{menu.openImageLabel}</span>
-            <span className={styles.menuFree} />
-          </button>
-        </div>
+        </ScrollViewer>
       </div>
     </>
   );
