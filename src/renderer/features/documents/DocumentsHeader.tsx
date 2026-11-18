@@ -79,13 +79,12 @@ export const DocumentsHeader = () => {
     : false;
   const editorInfo = getFileTypeEntry(activeNode?.fullPath ?? activeNode?.name, store);
 
-  // --- Ensures that the active document tab is visible in its full size
-  const ensureTabVisible = useCallback(() => {
-    const tabDim = tabDims.current[activeDocIndex];
+  // --- Scrolls the strip so that the tab at `idx` is visible in its full size
+  const revealTab = useCallback((idx: number) => {
+    const tabDim = tabDims.current[idx];
     if (!tabDim) return;
     if (!svApi.current) return;
 
-    // --- There is an active document
     const tabLeftPos = tabDim.offsetLeft;
     const tabRightPos = tabLeftPos + tabDim.offsetWidth;
     const scrollPos = svApi.current.getScrollLeft();
@@ -94,10 +93,16 @@ export const DocumentsHeader = () => {
       // --- Left tab edge is hidden, scroll to the left to display the tab
       svApi.current.scrollToHorizontal(tabLeftPos);
     } else if (tabRightPos > scrollPos + clientWidth) {
-      // --- Right tab edge is hidden, scroll to the left to display the tab
-      svApi.current.scrollToHorizontal(tabLeftPos - clientWidth + tabDim.offsetWidth);
+      // --- Right tab edge is hidden, scroll to the right to display the tab
+      svApi.current.scrollToHorizontal(tabRightPos - clientWidth);
     }
-  }, [activeDocIndex]);
+  }, []);
+
+  // --- Ensures that the active document tab is visible in its full size
+  const ensureTabVisible = useCallback(
+    () => revealTab(activeDocIndex),
+    [activeDocIndex, revealTab]
+  );
 
   /*
    * Which tabs the strip is currently showing.
@@ -235,6 +240,15 @@ export const DocumentsHeader = () => {
   // --- Responds to the event when a document tab has been clicked; it makes the clicked
   // --- document the active one
   const tabClicked = async (id: string) => {
+    // --- A click always brings the clicked tab entirely into view. Activating a different tab
+    // --- would reveal it too (through `ensureTabVisible`), but clicking the tab that is already
+    // --- active changes no state, so a partly scrolled-out active tab stayed clipped.
+    const clickedIdx = openDocs?.findIndex((d) => d.id === id) ?? -1;
+    if (clickedIdx >= 0) {
+      revealTab(clickedIdx);
+      measureOverflow();
+    }
+
     // --- Do not change, if clicking the active document tab
     const activeDocId = openDocs?.[activeDocIndex]?.id;
     if (!activeDocId || id === activeDocId) return;
